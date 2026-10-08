@@ -122,6 +122,8 @@ export interface Item extends Tracked {
   seriesIndex?: number;
   /** 기록에서 메모로 뺄 때 그 날 ('📅 10/6에서') */
   fromDate?: YMD;
+  /** 구글 Keep에서 가져온 메모의 열쇠 (V4 lib/keepImport - 다시 가져올 때 겹치지 않게) */
+  keepId?: string;
   tables?: EntryTable[];
   /** 학생 태그 '{classId}/{sid}' */
   studentIds?: string[];
@@ -179,6 +181,8 @@ export interface Series extends Tracked {
   count?: number;
   template: { text: string; labelIds: string[]; time?: HM; props?: ItemProps };
   imported?: true;
+  /** V4에서 가져온 반복 묶음 (V4 groupId) */
+  src?: ImportSource;
 }
 
 // ───────────────────────── 4-5. 수업 ─────────────────────────

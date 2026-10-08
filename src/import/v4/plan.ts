@@ -16,7 +16,7 @@ import { hashText, sameValue, stableStringify } from './hash';
 export const IMPORT_DELETER = 'v4-import';
 
 /** 가져올 수 있는 컬렉션 (문서에 src 칸이 있는 것) - 기능을 옮기는 세션이 더한다 */
-export type ImportColl = 'labels' | 'items';
+export type ImportColl = 'labels' | 'items' | 'series';
 
 export interface ImportCounts {
   /** 새로 (V4에서 지운 뒤 다시 생긴 것 포함) */
@@ -72,8 +72,18 @@ export function contentOf(doc: Fields): Fields {
   return out;
 }
 
+/**
+ * V5가 저절로 적는 표시 - 지문에 넣지 않는다(사용자가 고친 것이 아니다). 넣으면 이월 표시(carrying - P3-3 ForwardMarks)나
+ * 앱 안 알림이 울린 표시(alarmDone)만으로 'V5에서 고침'이 되어 그 뒤 V4에서 끝내거나 고친 것을 다시 가져오지 못한다.
+ */
+const NOT_IN_FINGERPRINT = new Set(['carrying', 'alarmDone']);
+
 /** 내용 칸의 지문 (칸 차례와 상관없다) */
-export const fingerprint = (content: Fields) => hashText(stableStringify(content), 16);
+export function fingerprint(content: Fields): string {
+  const rest: Fields = {};
+  for (const [k, v] of Object.entries(content)) if (!NOT_IN_FINGERPRINT.has(k)) rest[k] = v;
+  return hashText(stableStringify(rest), 16);
+}
 
 /** V4에서 가져와 V5에서 고치지 않은 문서인가 (src가 없거나 지문이 다르면 V5 것) */
 export function untouched(doc: { src?: ImportSource }): boolean {

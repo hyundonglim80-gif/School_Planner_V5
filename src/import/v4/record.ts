@@ -9,6 +9,7 @@
 //             V4 항목은 라벨을 이름·id·'[이름]'으로 들고 있어 P3-4는 V4 라벨 목록으로 이름을 푼 뒤(resolveEventLabelNames) 이것으로 찾는다
 //   settings  설정 칸마다 가져오기가 지난번에 적은 값 (pc·mobile·common) - 그 뒤 V5에서 바꿨는지 칸마다 본다(settings.ts)
 //   dismissed 처음 로그인 띠를 닫았다(계정에 하나 - 다른 기기에서도 다시 뜨지 않는다)
+//   notes     결과 표 아래에 적는 수 (뺀 공휴일 일정·자동 기록, 일정 날에 둔 알림, 합친 기간 일정, 반복 묶음, 뺀 링크 - P3-4)
 import type { DocPath } from '../../data/types';
 import type { ImportCounts } from './plan';
 
@@ -18,6 +19,7 @@ export interface ImportRecord {
   labelMap?: { event?: Record<string, string>; note?: Record<string, string> };
   settings?: Record<string, Record<string, unknown>>;
   dismissed?: boolean;
+  notes?: Record<string, number>;
 }
 
 export const recordPath = (sid: string): DocPath<'settings'> => ({ sid, coll: 'settings', id: 'import' });
@@ -52,6 +54,7 @@ export function readRecord(data: unknown): ImportRecord {
     out.settings = Object.fromEntries(Object.entries(data.settings).filter((e): e is [string, Record<string, unknown>] => isObj(e[1])));
   }
   if (data.dismissed === true) out.dismissed = true;
+  if (isObj(data.notes)) out.notes = Object.fromEntries(Object.entries(data.notes).filter((e): e is [string, number] => typeof e[1] === 'number'));
   return out;
 }
 
@@ -67,4 +70,18 @@ export const IMPORT_KINDS: ReadonlyArray<{ key: string; name: string }> = [
   { key: 'labels.event', name: '일정 라벨' },
   { key: 'labels.note', name: '메모·기록 라벨' },
   { key: 'settings', name: '설정' },
+  { key: 'items.event', name: '일정' },
+  { key: 'series', name: '반복 묶음' },
+  { key: 'items.note', name: '기록·메모' },
+];
+
+/** 결과 표 아래 한 줄 - notes 열쇠 → 글 (0이면 적지 않는다) */
+export const IMPORT_NOTES: ReadonlyArray<{ key: string; text: (n: number) => string }> = [
+  { key: 'periods', text: (n) => `기간 일정 ${n}개를 한 항목씩으로 합쳤습니다` },
+  { key: 'series', text: (n) => `반복 일정 ${n}묶음을 이었습니다` },
+  { key: 'holidays', text: (n) => `공휴일 일정 ${n}개는 가져오지 않았습니다(공휴일은 달력이 따로 보입니다)` },
+  { key: 'autoJournals', text: (n) => `알림장·출결 자동 기록 ${n}개는 가져오지 않았습니다(기록 칸에 원본이 보입니다)` },
+  { key: 'alarmMoved', text: (n) => `알림 날짜가 일정 날과 달랐던 ${n}개는 일정 날 그 시각으로 두었습니다` },
+  { key: 'empty', text: (n) => `글이 비어 있던 ${n}개는 가져오지 않았습니다` },
+  { key: 'linksDropped', text: (n) => `상대를 찾지 못한(지웠거나 공유 그룹의) 링크 ${n}개는 이지 않았습니다` },
 ];

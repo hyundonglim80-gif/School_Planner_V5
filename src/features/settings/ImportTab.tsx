@@ -2,7 +2,7 @@
 // V4 자료 가져오기: 단추 · 진행 칸 · 결과 표(종류마다 새로·바뀜·그대로·둠·지움, 항목은 학년도별). 일은 import/v4/run이 한다.
 import { useEffect } from 'react';
 import { useSession } from '../../data/session';
-import { IMPORT_KINDS } from '../../import/v4/record';
+import { IMPORT_KINDS, IMPORT_NOTES } from '../../import/v4/record';
 import { loadImportRecord, runImport, useImportRun } from '../../import/v4/run';
 import type { ImportCounts, Outcome } from '../../import/v4/plan';
 import { Section } from './parts';
@@ -84,7 +84,7 @@ export default function ImportTab() {
       <Section
         id="import-v4"
         title="V4 자료 가져오기"
-        desc="지금까지 쓰던 V4 플래너의 자료를 V5로 옮겨 옵니다. V4는 그대로 두고 읽기만 합니다. 여러 번 가져와도 겹치지 않고, V5에서 고치거나 지운 것은 덮지 않습니다. 지금은 라벨과 설정을 가져옵니다(일정·기록·메모·수업·학급은 V5로 옮기는 대로 더해집니다)."
+        desc="지금까지 쓰던 V4 플래너의 자료를 V5로 옮겨 옵니다. V4는 그대로 두고 읽기만 합니다. 여러 번 가져와도 겹치지 않고, V5에서 고치거나 지운 것은 덮지 않습니다. 지금은 라벨·설정·일정·기록·메모를 가져옵니다(수업·학급은 V5로 옮기는 대로 더해집니다)."
       >
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -118,6 +118,15 @@ export default function ImportTab() {
           </p>
         )}
         {!running && counts && <ResultTable counts={counts} />}
+        {!running && run.record?.notes && (
+          <ul data-import-notes className="mt-2 space-y-0.5 text-[11px] text-slate-500 list-disc pl-4">
+            {IMPORT_NOTES.filter((n) => (run.record?.notes?.[n.key] ?? 0) > 0).map((n) => (
+              <li key={n.key} data-import-note={n.key}>
+                {n.text(run.record!.notes![n.key])}
+              </li>
+            ))}
+          </ul>
+        )}
       </Section>
     </div>
   );
