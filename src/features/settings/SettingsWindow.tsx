@@ -18,7 +18,8 @@ const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean }> 
   { id: 'school', label: '학교', ready: false },
   { id: 'shortcuts', label: '단축키', ready: true },
   { id: 'app', label: '앱', ready: true },
-  // 개발자 계정만 - 라벨 상태 P2-3 · 공휴일 P5-3 · 나이스 키 P6-3 · 공유 그룹 점검 P8-4
+  // 개발자 계정만 - 공휴일 P5-3 · 나이스 키 P6-3 · 공유 그룹 점검 P8-4 (라벨 상태는 '앱' 탭 '이 기기 사본'이 맡는다 - P2-3,
+  // V4 labelDiagnostics는 라벨 문서를 못 읽어 기본값으로 때웠는지를 가리던 것 - V5는 라벨이 문서마다라 그런 때우기가 없다)
   { id: 'dev', label: '개발자', ready: false },
 ];
 

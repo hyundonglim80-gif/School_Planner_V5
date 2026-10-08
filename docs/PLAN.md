@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-3 라벨** (다음 대화에서 - PC든 클라우드든. 클라우드면 1-7을 먼저).
+**P2-4 가져오기 틀 + 라벨·설정 가져오기** (다음 대화에서 - 클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
 
 ---
 
@@ -137,8 +137,8 @@
 | **P2 자료 층** | | | | |
 | P2-1 | 타입·저장 도우미·지운 표시·되돌리기·규칙 | 중간 | 높음 | 끝 (2026-10-08) |
 | P2-2 | 기기 사본(IndexedDB)·바뀐 것만 받기 | 큼 | 높음 | 끝 (2026-10-08) |
-| P2-3 | 라벨(트리·속성·라벨 관리 창) | 중간 | 중간 | **다음** |
-| P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | |
+| P2-3 | 라벨(트리·속성·라벨 관리 창) | 중간 | 중간 | 끝 (2026-10-08) |
+| P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | **다음** |
 | **P3 하루 화면** | | | | |
 | P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | |
 | P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | |
@@ -193,6 +193,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 영-전-3-현동림 PC | P1-4 | P1-4 세션 끝 정리 | 단위 173 · inspect-settings 20 · inspect-pwa 5 · shell·login 통과 · https://schoolplanner-v5.web.app 자동 배포 · 👤 휴대폰 로그인 확인 · 클라우드 세션 준비(Chromium 찾기·seed 계정 만들기·CI claude/**) |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-1 | P2-1 세션 끝 정리 | 단위 263 · 자료 층(에뮬레이터) 11 · check-rules V4 35 + V5 59 · inspect-data 11 · settings 20 · shell 통과 · 브랜치 `claude/happy-rubin-wcxw0e` → PR · 👤 규칙 V4 복사·운영 배포는 PC에서 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-2 | P2-2 세션 끝 정리 | 단위 309 · 자료 층(에뮬레이터) 19 · inspect-mirror 27 · data·settings·shell·login 통과 · 브랜치 `ccr-85a3b20a-nxq1q4` → PR #2 → Claude가 합침(사용자 결정: 앞으로 자동 합치기·배포) · V4는 읽기용으로 옆에 받음(`--depth 1`) |
+| 2026-10-08 | 클라우드(claude.ai/code) | P2-3 | P2-3 세션 끝 정리 | 단위 363 · inspect-labels 20 · shell·settings·data 통과 · 브랜치 `claude/dreamy-ritchie-ub4ru5` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -295,6 +296,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   이어 받기는 `startAt(after 시각)`(겹쳐 받기). 처음 받기·견주기·확인은 `…FromServer`(연결 없이 캐시의 일부를 '다 받음'으로 믿지 않게).
 - **컨테이너 에뮬레이터**(10-08): 켜 둔 채 `firestore.rules`를 고치면 규칙 다시 읽기에서 Auth 쪽이 죽고 Firestore(java)만 남아 포트를 쥔다 →
   `ps aux | grep cloud-firestore-emulator`로 그 java를 끄고 `npm run emu`를 다시. 규칙을 고친 뒤에는 처음부터 다시 켠다.
+- **P2-3 라벨 트리**(10-08): 상위는 라벨 문서마다 `parentId`(DESIGN 4-3). 문서 값은 믿지 않고 다듬어 쓴다(`domain/labelTree` `parentMapOf` - 상위가 목록에 없거나
+  자기 자신이거나 3단계면 그 하위는 맨 위 단계로). **지운 상위의 하위 문서는 고쳐 쓰지 않는다**(권장안) - 맨 위 단계로 보이다가 상위를 휴지통에서 되살리면 트리가 돌아온다,
+  '이름을 바꾸면 문서 하나'처럼 지우기도 문서 하나. V4 빈 라벨 정리는 상위/하위 연결을 함께 뗐다 - V5는 떼지 않아도 같게 보인다.
+- **P2-3 기본 라벨**(권장안으로 고름): 라벨이 하나도 없는 공간에 저절로 넣지 않는다 - 라벨 관리 창의 그 탭이 비었을 때(서버 확인 뒤) '기본 라벨 넣기' 단추.
+  V4 사용자는 P2-4 가져오기로 라벨이 들어오는데, 먼저 기본 라벨을 만들어 두면 이름이 같은 라벨이 겹친다. id를 정해 두어(`dflt_e1`…) 두 기기에서 함께 눌러도 하나.
+  일정 = V4 기본 다섯(달력·수업X·이월·기간·반복), 메모·기록 = V4 기록 기본 넷과 라벨 관리 창의 메모 기본에서 겹치지 않게 일곱(긴급·중요·학급활동·학생상담·업무전달·수업기록·개인).
+- **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
+  일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
 ---
 
@@ -418,10 +427,18 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P2-3. 라벨
 **시작 조건**: P2-2 끝. 라벨 목록은 기기 사본에서 `data/select`의 `labelsOf`·`useLabels`로 고르고(이미 있다), 쓰기는 저장 도우미로 - 화면에 먼저 보인다.
 **먼저 읽을 것**: `DESIGN.md` 4-3, V4 설명서 `labels`·`event-attrs` 주제, V4 `components/LabelModal.tsx`·`hooks/useLabels.ts`·`lib/labelTree.ts`·`lib/labelUsage.ts`·`lib/eventLabels.ts`(풀이 규칙만).
-- [ ] ■1 labels 저장·고르기(일정 / 메모·기록, parentId, props, 차례), `domain/labelTree.ts`(V4 labelTree를 id로 - 테스트째), 맨 위 라벨 = 기본값.
-- [ ] ■2 라벨 관리 창(LabelModal 옮기기: 탭 둘·색·차례·속성(달력·이월·수업X·구글 캘린더)·상위/하위·더할 때 상위 고르기·빈 라벨 정리 = 사본에서 바로 세기·지우기 = 지운 표시).
+- [x] ■1 labels 저장·고르기(일정 / 메모·기록, parentId, props, 차례), `domain/labelTree.ts`(V4 labelTree를 id로 - 테스트째), 맨 위 라벨 = 기본값.
+  → `domain/labels.ts`(색 표·속성 읽기 `labelProps`·기본 라벨) · `data/labels.ts`(쓰기 묶음 `labelSaveOps` - 바뀐 칸만·옮긴 것만·지운 표시, `createLabelOp`·`defaultLabelOps`·이름 검사) ·
+  `select.ts` `labelTreeOf`·`useLabelTree`(트리 차례·기본 라벨 `defaultId`)·`itemsMatching`(라벨로 보기)·`labelUsageOf`(붙은 수 - 사본에서 바로) · `order.ts` `rekeyOrders`.
+- [x] ■2 라벨 관리 창(LabelModal 옮기기: 탭 둘·색·차례·속성(달력·이월·수업X·구글 캘린더)·상위/하위·더할 때 상위 고르기·빈 라벨 정리 = 사본에서 바로 세기·지우기 = 지운 표시).
   각 칸 ⚙️에서 그 탭으로.
-- [ ] ■3 라벨 칩·고르기 부품(쓰는 칸·카드가 쓸 것) + 크롬 점검 `inspect-labels.mjs`(이름 바꾸기 = 서버 문서 하나).
+  → `features/labels/LabelsWindow.tsx`(창 목록 `labels` - ⋮ 일정, `openWindow('labels', { tab: 'note' })`) · `ColorPicker.tsx`. 창은 고친 것만 들고(덧칠) 나머지는 사본 그대로 -
+  열어 둔 동안 다른 기기에서 고친 것도 들어온다. 붙은 수는 늘 보인다(V4 '🔢 항목 수 세기' 단추는 없앴다 - 사본에서 바로), 항목을 다 받기 전에는 세지 않는다.
+  '삭제된 라벨 복구' = 지웠지만 살아 있는 항목에 붙은 라벨 되살리기. 빈 탭에는 '기본 라벨 넣기'. 크롬 `inspect-labels.mjs` 20항목.
+- [x] ■3 라벨 칩·고르기 부품(쓰는 칸·카드가 쓸 것) + 크롬 점검 `inspect-labels.mjs`(이름 바꾸기 = 서버 문서 하나).
+  → `features/labels/LabelChip.tsx`(`LabelChip`·`LabelChips` - 끝낸 항목은 회색) · `LabelPicker.tsx`(일정 = 라벨 색, 메모·기록 = 트리 차례 └, '+ 새 라벨'은 저장 때 만들 이름 -
+  `data/labels` `ensureLabelOps`로 항목과 한 묶음, ⚙️ = 라벨 관리 그 탭) · `select` `itemLabels`(붙인 차례, 지운 라벨은 뺀다).
+  라벨로 보기 칩 줄(접기·'기타'·수)은 그 화면을 옮기는 P3-2·P4-1이 `domain/labelTree`의 고르기 규칙 위에 짓는다.
 **끝 조건**: 라벨 이름을 바꾸면 서버에서 그 라벨 문서 하나만 바뀐다. 설명서 `labels` 주제가 된다.
 
 ### P2-4. 가져오기 틀 + 라벨·설정 가져오기

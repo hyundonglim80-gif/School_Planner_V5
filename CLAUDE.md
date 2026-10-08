@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P2-2 끝·합침**(클라우드 - 기기 사본 IndexedDB·바뀐 것만 받기·내 쓰기 먼저·고르기 `data/select`·다시 받기·로그아웃 때 지움). '이어서' = **P2-3**.
+- **2026-10-08 P2-3 끝·합침**(클라우드 - 라벨 트리를 id로·라벨 관리 창(바뀐 칸만 저장 - 이름 바꾸기 = 문서 하나)·라벨 칩·고르기). '이어서' = **P2-4**(가져오기 - V4 저장소를 옆에 받는다).
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -168,10 +168,15 @@
   `undo.ts`(`recordUndo` = 안내의 되돌리기 단추 + Ctrl+Z 더미(공간마다 20), `undoLast` - `main.tsx`가 단축키 'undo'에 잇는다).
   `mirror/`(기기 사본 - `db.ts` IndexedDB `sp5-mirror-{uid}` 저장소 docs·meta · `codec.ts` Timestamp 지키기 · `store.ts` 화면 store `useMirror`(서버 판 + 내 쓰기 덧칠 `beginLocalWrite`) ·
   `server.ts` Firestore 받는 길(흉내 서버로 시험) · `sync.ts` `startMirror`·`useMirrorSync`(App)·`resetMirror`·`wipeMirror`(로그아웃)·받는 컬렉션 `MIRRORED`) ·
-  `select.ts`(화면이 고르는 곳 - `itemsOn`·`itemsBetween`·`itemsWithLabels`·`itemsOfKind`·`memos`·`trashOf`·`labelsOf` + `use…` 훅·`useDocs`·`useMirrorStatus`) ·
+  `select.ts`(화면이 고르는 곳 - `itemsOn`·`itemsBetween`·`itemsWithLabels`·`itemsOfKind`·`memos`·`trashOf`·`labelsOf` + `use…` 훅·`useDocs`·`useMirrorStatus`,
+  라벨: `labelTreeOf`·`useLabelTree`(트리 차례·기본 라벨 `defaultId`)·`itemLabels`·라벨로 보기 `itemsMatching`·붙은 수 `labelUsageOf`·`emptyLabelsOf`·`missingLabelsOf`) ·
+  `labels.ts`(라벨 쓰기 - 저장 = 바뀐 칸만 `labelSaveOps`·`createLabelOp`·이름으로 찾기·만들기 `ensureLabelOps`·`defaultLabelOps`·`labelNameProblem`, 적기 `addLabel`·`saveLabels`·`restoreLabels`·`addDefaultLabels`) ·
   `session.ts`의 `currentSpaceId`·`useCurrentSpaceId`(지금 공간 한 곳). 화면 문서 = `Stored<C>`(자리 id가 붙는다 - 저장 도우미는 id를 적지 않는다).
 - **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
   로그인한 화면은 `[data-session=signed-in][data-user=<메일>]`. `logout`은 기다리던 설정을 먼저 올린다.
+- **라벨** `src/features/labels/`: `LabelsWindow.tsx`(창 `labels` - ⋮ 일정, `{ tab: 'event'|'note' }`, 고친 것만 들고 사본 위에 얹는다, `[data-labels-window]`·
+  `[data-label-tab|row|name|color|prop|parent|up|down|delete|save|add|new-name|new-parent|usage|prune|prune-item|prune-confirm|recover|defaults]`) · `ColorPicker.tsx`(`[data-color-option]`) ·
+  `LabelChip.tsx`(`LabelChip`·`LabelChips` `[data-label-chip]`) · `LabelPicker.tsx`(쓰는 칸 - `[data-label-picker|pick|pick-new|pick-new-input|pick-pending|picker-settings]`).
 - **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 지금 보기·단축키·앱, `{ tab }`로 열기) · `ViewTab`(누르는 즉시) ·
   `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·이 기기 사본 `[data-mirror-state|count|reset]`·빌드 번호) · `parts`(Section·ToggleRow·Choices).
   `[data-settings-tab|panel|toggle]`·`[data-choice="이름:값"]`·`[data-shortcut-row|key|save|reset]`·`[data-install-pwa=ready|guide]`.
@@ -188,13 +193,16 @@
 - **공통 부품** `src/ui/`: `ModalShell.tsx`(창 껍데기, ✕ `[data-close]`) · `PopupFrame.tsx`(오른쪽 칸/배너/가운데 `[data-popup-frame]`) · `SidePanelFrame.tsx`(쓰는 칸 `[data-panel-frame]`) ·
   `sideColumn.ts`(오른쪽 줄·탭 차례 `useSideSlot`·`useDocked`) · `SideTabs.tsx`(`[data-side-tab]`·`[data-side-tab-close]`) · `useSaveKey.ts`(Ctrl+S 받기) · `ColumnResizer.tsx` ·
   `MiniCalendarPicker.tsx`(`[data-date-picker]`·`[data-picker-day]`) · 훅 `useMinWidth`·`useIsMobile`·`useMainWidth`·`useVisualViewport`·`useBodyScrollLock`·`useBackdropClose`.
-- **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
+- **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)·다시 세운 줄 `rekeyOrders`(옮긴 것만)) ·
+  `labelTree.ts`(V4 트리를 id로 - `parentMapOf`·`orderByTree`·라벨로 보기 `matchLabels`·탐색기식 `clickFilterLabel`·`filterChipOrder`·`otherKey`) ·
+  `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
   `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
 - **설치(PWA)** `public/`: `manifest.json`(SP5) · `sw.js`(설치·활성만 - 담아 두기·공유받기·푸시는 P8) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
   `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
-  `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움).
+  `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움) ·
+  `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기).
   자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 단위만 - `repo.emu`·`mirror.emu`).
   규칙 테스트: `app/windowConventions.test.ts`(창 틀·'취소' 금지·그림 단추 설명·⋮ 표) · `app/keys.test.tsx`(키 글자를 박지 않는다).
 - **빈 자리**: `src/import/v4`(`.gitkeep` - 첫 파일이 들어오면 지운다). 문서는 `docs/`, 소개는 `README.md`(에뮬레이터 순서).

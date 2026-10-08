@@ -1,6 +1,17 @@
 // 창 등록 한 곳 (DESIGN 7-2). 창을 만드는 세션이 여기에 한 줄씩 더한다 - ⋮ 구역·학급 도구·수업 머리줄은 MENU.md대로.
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
+// ⋮ 일정
+registerWindow({
+  id: 'labels',
+  title: '라벨 관리',
+  icon: '🏷️',
+  menu: '일정',
+  kind: 'side',
+  help: 'labels',
+  load: () => import('../features/labels/LabelsWindow'),
+});
+
 // ⋮ 설정
 registerWindow({
   id: 'settings',
