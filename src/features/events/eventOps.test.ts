@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { doneChanges, orderAfter, reorderOps, type ItemDoc } from './eventOps';
+import { carriedDoneChanges, doneChanges, orderAfter, reorderOps, type ItemDoc } from './eventOps';
 
 const ev = (id: string, order: string): ItemDoc => ({ id, order, kind: 'event', date: '2026-10-08', text: id, labelIds: [] }) as unknown as ItemDoc;
 
@@ -58,5 +58,23 @@ describe('doneChanges · orderAfter', () => {
   it('새 일정은 맨 뒤', () => {
     expect(orderAfter([])).toBe('a0');
     expect(orderAfter([{ order: 'a0' }, { order: 'a2' }, { order: 'a1' }]) > 'a2').toBe(true);
+  });
+});
+
+describe('carriedDoneChanges - 오늘 칸에서 따라오던 일정 끝내기', () => {
+  it('그날로 옮겨 적고 처음 날을 남긴다, carrying은 걷는다', () => {
+    const item = { ...ev('x', 'a3'), date: '2026-10-05', carrying: true } as ItemDoc;
+    expect(carriedDoneChanges(item, '2026-10-08', 'b0', 7)).toEqual({
+      done: true,
+      doneAt: 7,
+      date: '2026-10-08',
+      order: 'b0',
+      carriedFrom: '2026-10-05',
+      carrying: undefined,
+    });
+  });
+  it('끝냈다 푼 일정은 처음 날을 그대로 (다시 적지 않는다)', () => {
+    const item = { ...ev('x', 'a3'), date: '2026-10-07', carriedFrom: '2026-10-01' } as ItemDoc;
+    expect(carriedDoneChanges(item, '2026-10-08', 'b0', 7)).toEqual({ done: true, doneAt: 7, date: '2026-10-08', order: 'b0' });
   });
 });

@@ -3,6 +3,7 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { resetHistoryForTest } from '../../app/history';
 import { setPopupStyle, useLayoutPrefs } from '../../app/layoutPrefs';
 import { useNav } from '../../app/nav';
+import { useCommonSettings } from '../../app/prefs';
 import { handleAppKeyDown, setShortcutOverrides, useShortcutOverrides } from '../../app/keys';
 import { anyWindowUnsaved } from '../../app/windows';
 import { overridesFromBindings, resolveBindings } from '../../domain/shortcuts';
@@ -35,13 +36,31 @@ beforeEach(() => {
   setShortcutOverrides({});
 });
 
-const openSettings = (tab?: 'view' | 'shortcuts' | 'app' | 'import') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
+const openSettings = (tab?: 'view' | 'school' | 'shortcuts' | 'app' | 'import') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
 
 describe('환경설정 창', () => {
-  it('지금 있는 탭만 (보기·단축키·앱·가져오기) - 아직 옮기지 않은 기능의 탭은 숨긴다', () => {
+  it('지금 있는 탭만 (보기·학교·단축키·앱·가져오기) - 아직 옮기지 않은 기능의 탭은 숨긴다', () => {
     openSettings();
-    expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'shortcuts', 'app', 'import']);
+    expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'school', 'shortcuts', 'app', 'import']);
     expect(q('[data-settings-tab="view"]')).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('학교: 이월 기간 - 1~60일, 적는 즉시 계정 설정에 (칸을 떠나면 범위로 맞춘다)', () => {
+    useCommonSettings.setState({ forwardDays: 14 });
+    openSettings('school');
+    const input = q('[data-forward-days]') as HTMLInputElement;
+    expect(input.value).toBe('14');
+    fireEvent.change(input, { target: { value: '30' } });
+    expect(useCommonSettings.getState().forwardDays).toBe(30);
+    // 지우고 새로 적는 동안은 바꾸지 않는다
+    fireEvent.change(input, { target: { value: '' } });
+    expect(useCommonSettings.getState().forwardDays).toBe(30);
+    fireEvent.change(input, { target: { value: '99' } });
+    expect(useCommonSettings.getState().forwardDays).toBe(30);
+    fireEvent.blur(input);
+    expect(useCommonSettings.getState().forwardDays).toBe(60);
+    expect(input.value).toBe('60');
+    useCommonSettings.setState({ forwardDays: 14 });
   });
 
   it('열 때 탭을 고를 수 있다', () => {

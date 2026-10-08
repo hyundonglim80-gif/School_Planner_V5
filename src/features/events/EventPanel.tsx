@@ -11,7 +11,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
 import { showToast } from '../../app/toast';
-import { addDays, shortDateLabel, todayStr } from '../../domain/dateUtils';
+import { addDays, shortDateLabel } from '../../domain/dateUtils';
+import { carriedSince } from '../../domain/forward';
 import { parseQuickInput, stripMatch, type QuickMatch } from '../../domain/quickInput';
 import { useDraft } from '../../data/drafts';
 import { useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
@@ -20,6 +21,7 @@ import DraftOffer from '../../ui/DraftOffer';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
 import { createEvent, deleteEvent, saveEvent } from './actions';
+import { useCarried } from './forward';
 import DueBadge from './DueBadge';
 import EventAlarmWindow from './EventAlarmWindow';
 import { effectiveAttrs, formOf, newForm, sameForm, withAttr, withLabels, type AttrKey, type EventForm } from './eventForm';
@@ -66,7 +68,10 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   const [alarmOpen, setAlarmOpen] = useState(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const dayEvents = useItemsOn(form.date, 'event', sid);
-  const today = todayStr();
+  const carried = useCarried(sid);
+  const today = carried.today;
+  // 이월로 오늘에 따라오는 중인가 (날짜 칸은 처음 날 그대로 - DESIGN 5-1)
+  const carriedNow = !!item && carried.ids.has(item.id);
   // 쓰던 글 보관 (이 기기 - data/drafts). 새 칸은 공간·날짜, 고치는 칸은 일정마다
   const draft = useDraft<EventForm>(`event:${sid}:${params.id ?? `new:${form.date}`}`, form, !untouched);
   const restoreDraft = () => {
@@ -343,9 +348,15 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
               {dateChanged && item?.date && (
                 <p data-event-move-note className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
                   저장하면 {shortDateLabel(item.date)} → <b>{shortDateLabel(form.date)}</b>로 옮깁니다.{' '}
+                  {!item.done && form.date < today && attrs.forward && '이월 일정이라 끝내지 않으면 오늘 칸에 따라옵니다. '}
                   <button type="button" data-event-move-keep onClick={() => pickDate(item.date!)} className="underline cursor-pointer">
                     그대로 두기
                   </button>
+                </p>
+              )}
+              {carriedNow && !dateChanged && item && (
+                <p data-event-carry-note className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5">
+                  ↪ {shortDateLabel(carriedSince(item))}부터 끝내지 않아 오늘 칸에 따라오는 일정입니다. 오늘 칸에서 끝내면 오늘 일정이 됩니다.
                 </p>
               )}
               <div className="flex items-center gap-1.5 flex-wrap" data-event-due>

@@ -1,19 +1,23 @@
 // 일정 쓰기 (하루·주간·월간·년간이 함께 쓴다). 저장 도우미(data/repo)로 적고 되돌리기를 남긴다(data/undo).
 // 실패는 저장 도우미가 안내하고 던진다 - 누른 단추에서 부르면 `.catch(() => {})`로 받는다(안내는 이미 나갔다).
 // 쓰기마다 문서 하나(원칙 1).
-import { shortDateLabel } from '../../domain/dateUtils';
+import { shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { batch, create, newPath, patch, remove, writeOp } from '../../data/repo';
 import type { LabelTree } from '../../data/select';
 import { recordUndo } from '../../data/undo';
-import { createData, editChanges, type EventForm } from './eventForm';
-import { doneChanges, itemPath, reorderOps, type ItemDoc } from './eventOps';
+import { createData, editChanges, effectiveAttrs, type EventForm } from './eventForm';
+import { carriedDoneChanges, doneChanges, itemPath, reorderOps, type ItemDoc } from './eventOps';
 import { closeEventPanelsFor } from './open';
 
 const KEEP = '적은 내용은 칸에 남아 있습니다.';
 
-/** 완료 / 완료 풀기 (☐·라벨 칩). 안내 없이 Ctrl+Z 더미에만 - V4도 안내를 띄우지 않았다 */
-export async function setEventDone(sid: string, item: ItemDoc, done: boolean): Promise<void> {
-  const undo = await patch(itemPath(sid, item.id), doneChanges(done), item, {
+/**
+ * 완료 / 완료 풀기 (☐·라벨 칩). 안내 없이 Ctrl+Z 더미에만 - V4도 안내를 띄우지 않았다.
+ * carried = 오늘 칸에서 따라오던 일정을 끝낼 때 - 그날로 옮겨 적는다(eventOps carriedDoneChanges, 되돌리면 제자리로).
+ */
+export async function setEventDone(sid: string, item: ItemDoc, done: boolean, carried?: { today: string; order: string }): Promise<void> {
+  const changes = done && carried ? carriedDoneChanges(item, carried.today, carried.order) : doneChanges(done);
+  const undo = await patch(itemPath(sid, item.id), changes, item, {
     fail: done ? '일정을 완료하지 못했습니다.' : '일정 완료를 풀지 못했습니다.',
   });
   recordUndo(sid, '', undo, { what: done ? '일정 완료' : '일정 완료 풀기', quiet: true });
@@ -46,7 +50,9 @@ export async function saveEvent(sid: string, item: ItemDoc, form: EventForm, tre
   const to = changes.date;
   const undo = await patch(at, changes, item, { fail: `${to ? '일정을 옮기지 못했습니다.' : '일정을 저장하지 못했습니다.'} ${KEEP}` });
   if (to && item.date) {
-    recordUndo(sid, `📅 일정을 ${shortDateLabel(item.date)} → ${shortDateLabel(to)}로 옮겼습니다.`, [writeOp.patch(at, { date: item.date }, { date: to })], {
+    // 끝내지 않은 이월 일정을 지난 날에 두면 오늘 칸에 따라온다 - 미리 알린다 (V4 movesForwardIntoPast)
+    const bounce = !item.done && to < todayStr() && effectiveAttrs(form, tree).forward ? ' 이월 일정이라 끝내지 않으면 오늘 칸에 따라옵니다.' : '';
+    recordUndo(sid, `📅 일정을 ${shortDateLabel(item.date)} → ${shortDateLabel(to)}로 옮겼습니다.${bounce}`, [writeOp.patch(at, { date: item.date }, { date: to })], {
       what: '일정 옮기기',
     });
   } else {

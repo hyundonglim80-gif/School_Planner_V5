@@ -4,12 +4,16 @@
 // - 카드: 휴대폰 2열, PC 1열. ☐ 완료 · 라벨 칩(누르면 완료) · ⏰ 알림 · ⏳ 기한 · 글 · 🔗 링크 수 · 첨부.
 //   카드를 누르면 오른쪽 일정 칸(수정)이 열린다. 고치는 일정은 파란 테두리로 짚는다.
 // - ▲▼ 순서 = 옮긴 일정의 order 하나만 (features/events/eventOps reorderOps).
+// - 이월(DESIGN 5-1 - 계산): 오늘 칸은 오늘 것 아래에 따라오는 일정을 '↪ 10/5부터'와 함께(▲▼는 각 무리 안에서),
+//   지난 날 칸에서는 그 일정을 흐리게 '→ 오늘로'(누르면 오늘). 오늘 칸에서 끝내면 그날로 옮겨 적는다(eventOps carriedDoneChanges).
 // - 쓰기마다 문서 하나, 되돌리기는 Ctrl+Z(완료·순서는 안내 없이 - V4도 띄우지 않았다).
 // 새로 쓰고 고치는 칸은 여기 없다 - 오른쪽 일정 칸(EventPanel) 하나로 어느 화면에서나 같게 (V4 그대로).
 import { useState } from 'react';
+import { goToday } from '../../app/nav';
 import { openWindow } from '../../app/windows';
 import { showToast } from '../../app/toast';
-import { todayStr } from '../../domain/dateUtils';
+import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
+import { carriedSince } from '../../domain/forward';
 import { labelColor } from '../../domain/labels';
 import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
@@ -17,8 +21,11 @@ import type { YMD } from '../../data/types';
 import { deleteEvent, moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
 import DueBadge from '../events/DueBadge';
 import EventAlarmWindow from '../events/EventAlarmWindow';
-import type { ItemDoc } from '../events/eventOps';
+import { orderAfter, type ItemDoc } from '../events/eventOps';
+import { useCarried } from '../events/forward';
 import { openEventPanel, useEditingEventIds } from '../events/open';
+
+const NONE: readonly ItemDoc[] = [];
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -27,20 +34,26 @@ const quiet = () => {
 export default function DayEvents({ date }: { date: YMD }) {
   const sid = useCurrentSpaceId();
   const events = useItemsOn(date, 'event');
+  const carried = useCarried(sid);
+  const today = carried.today;
+  // 오늘 칸이면 오늘로 따라오는 일정을 오늘 것 아래에 (지난 날에서 따라오는 것만 - 제 날짜는 그대로다)
+  const follow = date === today ? carried.list : NONE;
+  const count = events.length + follow.length;
   const tree = useLabelTree('event');
   const status = useMirrorStatus('items');
   const editing = useEditingEventIds(sid);
   const [collapsed, setCollapsed] = useState(false);
   // ⏰ 표시를 누르면 알림 시각 창 (여기서는 누르는 즉시 저장 - V4 그대로)
   const [alarmFor, setAlarmFor] = useState<ItemDoc | null>(null);
-  const today = todayStr();
   // 사본도 서버 소식도 아직 없으면 '없다' 대신 받는 중이라고 한다
-  const waiting = events.length === 0 && (status === 'idle' || status === 'loading');
+  const waiting = count === 0 && (status === 'idle' || status === 'loading');
 
   const openCreate = () => sid && openEventPanel({ sid, date });
   const openEdit = (ev: ItemDoc) => sid && openEventPanel({ sid, date, id: ev.id });
   const toggleDone = (ev: ItemDoc) => sid && void setEventDone(sid, ev, !ev.done).catch(quiet);
-  const move = (from: number, to: number) => sid && void moveEventInList(sid, events, from, to).catch(quiet);
+  // 따라오던 일정을 오늘 칸에서 끝내면 오늘로 옮겨 적는다 - 오늘 목록의 맨 뒤(따라오는 줄 바로 위)
+  const finishCarried = (ev: ItemDoc) => sid && void setEventDone(sid, ev, true, { today, order: orderAfter(events) }).catch(quiet);
+  const move = (list: readonly ItemDoc[], from: number, to: number) => sid && void moveEventInList(sid, list, from, to).catch(quiet);
   const remove = (ev: ItemDoc) => sid && void deleteEvent(sid, ev).catch(quiet);
 
   return (
@@ -64,8 +77,8 @@ export default function DayEvents({ date }: { date: YMD }) {
             📅
           </span>
           <h3 className="text-base font-extrabold text-slate-800">일정</h3>
-          <span data-event-count={events.length} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-            {events.length}
+          <span data-event-count={count} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+            {count}
           </span>
           {!collapsed && (
             <button
@@ -94,25 +107,47 @@ export default function DayEvents({ date }: { date: YMD }) {
 
       {!collapsed && (
         // 카드. 휴대폰은 2열, PC(sm 이상)는 1열
-        <div className={`flex-1 overflow-y-auto pr-1 min-h-[110px] ${events.length > 0 ? 'grid grid-cols-2 sm:grid-cols-1 gap-2 content-start' : ''}`}>
-          {events.length > 0 ? (
-            events.map((ev, idx) => (
-              <EventCard
-                key={ev.id}
-                ev={ev}
-                labels={itemLabels(tree, ev.labelIds)}
-                editing={editing.has(ev.id)}
-                today={today}
-                first={idx === 0}
-                last={idx === events.length - 1}
-                onOpen={() => openEdit(ev)}
-                onAlarm={() => setAlarmFor(ev)}
-                onDelete={() => remove(ev)}
-                onToggle={() => toggleDone(ev)}
-                onUp={() => move(idx, idx - 1)}
-                onDown={() => move(idx, idx + 1)}
-              />
-            ))
+        <div className={`flex-1 overflow-y-auto pr-1 min-h-[110px] ${count > 0 ? 'grid grid-cols-2 sm:grid-cols-1 gap-2 content-start' : ''}`}>
+          {count > 0 ? (
+            <>
+              {events.map((ev, idx) => (
+                <EventCard
+                  key={ev.id}
+                  ev={ev}
+                  labels={itemLabels(tree, ev.labelIds)}
+                  editing={editing.has(ev.id)}
+                  today={today}
+                  first={idx === 0}
+                  last={idx === events.length - 1}
+                  // 지난 날 칸: 오늘로 따라가는 일정은 흐리게 '→ 오늘로'
+                  away={carried.ids.has(ev.id)}
+                  onOpen={() => openEdit(ev)}
+                  onAlarm={() => setAlarmFor(ev)}
+                  onDelete={() => remove(ev)}
+                  onToggle={() => toggleDone(ev)}
+                  onUp={() => move(events, idx, idx - 1)}
+                  onDown={() => move(events, idx, idx + 1)}
+                />
+              ))}
+              {follow.map((ev, idx) => (
+                <EventCard
+                  key={ev.id}
+                  ev={ev}
+                  labels={itemLabels(tree, ev.labelIds)}
+                  editing={editing.has(ev.id)}
+                  today={today}
+                  first={idx === 0}
+                  last={idx === follow.length - 1}
+                  since={carriedSince(ev)}
+                  onOpen={() => openEdit(ev)}
+                  onAlarm={() => setAlarmFor(ev)}
+                  onDelete={() => remove(ev)}
+                  onToggle={() => finishCarried(ev)}
+                  onUp={() => move(follow, idx, idx - 1)}
+                  onDown={() => move(follow, idx, idx + 1)}
+                />
+              ))}
+            </>
           ) : waiting ? (
             <p data-event-waiting className="py-10 text-center text-xs text-slate-400">
               일정을 받는 중…
@@ -148,6 +183,10 @@ interface EventCardProps {
   today: string;
   first: boolean;
   last: boolean;
+  /** 오늘로 따라오는 일정 - 처음 날 ('↪ 10/5부터') */
+  since?: string;
+  /** 지난 날 칸에서, 오늘로 따라간 일정 (흐리게 '→ 오늘로') */
+  away?: boolean;
   onOpen: () => void;
   onAlarm: () => void;
   onDelete: () => void;
@@ -156,7 +195,7 @@ interface EventCardProps {
   onDown: () => void;
 }
 
-function EventCard({ ev, labels, editing, today, first, last, onOpen, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
+function EventCard({ ev, labels, editing, today, first, last, since, away, onOpen, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
   const done = !!ev.done;
   const links = ev.linkIds?.length ?? 0;
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
@@ -165,9 +204,11 @@ function EventCard({ ev, labels, editing, today, first, last, onOpen, onAlarm, o
     <div
       data-event-card={ev.id}
       data-event-done={done ? '1' : '0'}
+      data-event-carried={since}
+      data-event-away={away ? '1' : undefined}
       onClick={onOpen}
       title="클릭하여 오른쪽 칸에서 수정"
-      className={`group flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-2xs transition-all cursor-pointer min-w-0 ${
+      className={`group flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-2xs transition-all cursor-pointer min-w-0 ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
         editing
           ? 'border-primary ring-1 ring-primary bg-primary/5'
           : done
@@ -292,6 +333,32 @@ function EventCard({ ev, labels, editing, today, first, last, onOpen, onAlarm, o
               }`}
             >
               ⏰ {ev.time}
+            </button>
+          )}
+
+          {/* 이월로 따라오는 중 - 처음 날 (V5: 제 날짜에 그대로 있고 오늘 칸에 함께 보인다) */}
+          {since && (
+            <span
+              data-event-since={since}
+              title={`${shortDateLabel(since)}부터 끝내지 않아 오늘로 따라왔습니다. 끝내면 오늘 일정이 됩니다.`}
+              className="inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-md border text-emerald-700 bg-emerald-50 border-emerald-200 whitespace-nowrap"
+            >
+              ↪ {monthDayLabel(since)}부터
+            </span>
+          )}
+          {/* 지난 날 칸 - 이 일정은 오늘로 따라갔다. 누르면 오늘로 */}
+          {away && (
+            <button
+              type="button"
+              data-event-to-today
+              onClick={(e) => {
+                stop(e);
+                goToday();
+              }}
+              title="끝내지 않아 오늘로 따라간 일정입니다. 누르면 오늘로 갑니다."
+              className="inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-md border text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 whitespace-nowrap cursor-pointer"
+            >
+              → 오늘로
             </button>
           )}
 

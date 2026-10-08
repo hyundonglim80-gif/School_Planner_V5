@@ -16,6 +16,18 @@ export function doneChanges(done: boolean, now = Date.now()): Changes<'items'> {
 }
 
 /**
+ * 오늘로 따라오던 일정을 오늘 칸에서 끝낼 때 (DESIGN 5-1 - 이월의 두 번째이자 마지막 쓰기): 그날(오늘)로 옮겨 적고 처음 날을 남긴다.
+ * carrying은 지운다. order = 오늘 목록의 맨 뒤(따라오는 줄 바로 위 - 끝낸 자리에서 크게 튀지 않게). 문서 하나.
+ */
+export function carriedDoneChanges(item: ItemDoc, today: string, order: string, now = Date.now()): Changes<'items'> {
+  const out: Changes<'items'> = { ...doneChanges(true, now), date: today, order };
+  const since = item.carriedFrom ?? item.date;
+  if (since && since !== item.carriedFrom) out.carriedFrom = since;
+  if (item.carrying) out.carrying = undefined;
+  return out;
+}
+
+/**
  * 보이는 목록에서 from번째를 to번째 자리로 옮길 때의 쓰기. 다시 세운 줄의 차례 값을 되도록 적게 고친다(domain/order rekeyOrders) -
  * 한 칸 옮기기는 문서 하나. 두 기기가 같은 차례 값을 만들어 둔 줄(값이 같다)도 그 자리에서 풀린다.
  */

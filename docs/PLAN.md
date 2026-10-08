@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** (다음 대화에서 - 클라우드면 1-7을 먼저).
+**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** - ■2 '📥 지난 일정 N개' 줄부터.
 
 ---
 
@@ -345,6 +345,19 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   학급을 옮기는 P7-1·P7-4에서 정한다. 그때까지 글에 적은 `#26040305`는 그대로 남는다('#라벨'로 떼지 않는다 - domain/hashLabels). V4의 '학생 태그가 든 기록을 메모로 옮기면 한 번 묻기'도 그때.
 - **P3-2 '#라벨'·'+ 새 라벨' = 항목과 한 묶음**: 없는 이름의 라벨은 저장할 때 항목 쓰기와 같은 batch로 만든다(`data/labels` `ensureLabelOps` - 메모·기록 라벨은 초록, 상위 없음). 새 항목의 되돌리기는 새 라벨도 함께 지운 표시.
   칸에 보이지 않는 라벨 id(지운 라벨)는 저장 때 떼지 않는다 - 손대지 않은 칸을 바꾸지 않고, 라벨을 되살리면 다시 붙어 보인다.
+- **P3-3 이월 = 계산**(DESIGN 5-1대로, `domain/forward`·`features/events/forward`·`ForwardMarks`): 일정은 제 날짜에 그대로 두고 오늘 칸에 함께 보인다(V4처럼 새 id로 옮겨 쓰지 않는다).
+  판단 차례는 V4 `isForwardTarget` 그대로(이 일정만 정한 값 → 아는 라벨 → 아는 라벨이 없으면 흔적 `carrying`). V4의 '오늘에 같은 글이 있으면 이월하지 않기'·'사슬이 오늘 끝났으면 멈추기'는 옮기지 않는다
+  (id가 바뀌지 않아 사본이 생기지 않는다 - 같은 글의 두 일정은 둘 다 보인다).
+  - **처음 따라올 때 한 번**: 껍데기의 `ForwardMarks`가 일정·라벨을 **서버에서 받은 뒤(live)**에만 판단해 carrying이 없는 것에 `carrying: true`(안내·되돌리기 없이, 한 묶음). 이미 적힌 것은 쓰지 않는다 - 앱을 열 때 쓰는 것은 그것뿐(inspect-forward로 확인).
+  - **오늘 칸**: 오늘 것 아래에 따라오는 일정을 모은다(V4는 이월한 일정을 오늘 목록 끝에 붙였다). ▲▼는 각 무리 안에서. 수(N)에 넣는다.
+  - **끝내기 = 본 날로**(권장안으로 고름): 오늘 칸에서 끝내면 `date = 오늘`·`carriedFrom = 처음 날`·carrying 걷기·`order` = 오늘 줄 맨 뒤(따라오는 줄 바로 위 - 튀지 않게), 문서 하나. 되돌리면 제자리로.
+    지난 날 칸(흐리게 '→ 오늘로')에서 끝내면 그날에 끝낸 것(날짜를 옮기지 않는다) - 보던 곳에 남는 것이 자연스럽다.
+  - **이월 중 알림 = 처음 날에만**(권장안으로 고름): `time`은 그 일정의 `date` 기준 그대로라, 따라오는 동안 날마다 다시 울리지 않는다. V4도 이월하면 알림이 따라오지 않았다(옮겨 쓴 사본에 time이 없었다).
+    날마다 울리게 하려면 날짜 칸으로 오늘에 옮긴다(옮기면 다시 울린다 - P3-1). 서버 푸시(P8-2)도 같은 규칙.
+  - **기간 일정은 이월하지 않는다**: 여러 날에 걸쳐 '오늘로'가 없다 - 날마다 완료(`doneDates`, ■3)로 끝낸다.
+  - 이월 기간은 환경설정 **'학교' 탭**(이번에 켰다 - 교사 유형 P6-1·우리 학교 P6-3이 더한다), 계정에 하나 `common.forwardDays`.
+  - 끝내지 않은 이월 일정을 지난 날로 옮기면 '이월 일정이라 끝내지 않으면 오늘 칸에 따라옵니다'(V4 `movesForwardIntoPast`) - 칸의 옮기기 안내와 저장 안내에.
+  - P3-4에 남김: V4에서 '오늘에 같은 글이 있어' 옮겨지지 않고 지난 날에 남은 이월 일정은 V5에서 따라온다(같은 글 둘) - 가져오기 결과 표에 수를 적을지 그때 본다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -566,8 +579,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: `DESIGN.md` 4-4·5-1·5-3, V4 설명서 `forwarding`·`period`·`recurring`·`group-delete`·`multi-select`, V4 `lib/forwarding.ts`,
 `hooks/useDayData.ts`의 `runAutoForwarding`(159~460줄 - 판단 규칙만), `components/ForwardingModal.tsx`·`PeriodModal.tsx`·`RecurringModal.tsx`·`GroupDeleteModal.tsx`·
 `GroupMoveModal.tsx`·`MultiEventActionBar.tsx`, `lib/eventGroups.ts`, `store/useAppStore.ts`의 `bulk*`.
-- [ ] ■1 이월 계산 `domain/forward.ts`(`DESIGN.md` 5-1 - 판단은 V4와 같게, 처음 따라올 때 `carrying` 한 번, 끝내면 `date` = 그날·`carriedFrom`) + 테스트.
+- [x] ■1 이월 계산 `domain/forward.ts`(`DESIGN.md` 5-1 - 판단은 V4와 같게, 처음 따라올 때 `carrying` 한 번, 끝내면 `date` = 그날·`carriedFrom`) + 테스트.
   오늘 칸 '↪ m/d부터', 지난 날 흐리게 '→ 오늘로'. 이월 중 알림을 어떻게 할지 정해 5장에 적는다.
+  → `domain/forward.ts`(`forwardOn`·`isCarried`·`carriedOf`·`carriedSince`) · `features/events/forward.ts`(`useCarried` - 사본에서 오늘로 따라오는 일정·`labelForwardOf`) ·
+  `ForwardMarks.tsx`(껍데기에 하나 - live에서만 carrying 한 번) · `eventOps.carriedDoneChanges`·`actions.setEventDone(…, carried)` · `ui/useToday.ts`(자정에 바뀌는 오늘) · `dateUtils.monthDayLabel` ·
+  `DayEvents`(오늘 것 아래 따라오는 줄 `[data-event-carried|event-since]`, 지난 날 `[data-event-away|event-to-today]`) · 일정 칸 `[data-event-carry-note]`·옮기기 안내 ·
+  환경설정 '학교' 탭 `SchoolTab.tsx`(`[data-forward-days]`) · 크롬 `inspect-forward.mjs` 26항목(events·settings 다시 통과).
 - [ ] ■2 '📥 지난 일정 N개 ▸'(오늘일 때 일정 칸 아래 - 이월 대상이 아닌 끝내지 않은 지난 N일 일정, 골라 오늘로 = `date` 바꾸기, 되돌리기). ⋮에는 두지 않는다(`MENU.md` 2-1).
 - [ ] ■3 기간 일정 = 한 항목(일정 칸 '끝 날', 날마다 '(k/n)'은 계산, 날마다 완료 `doneDates`), 묶음 지우기·옮기기 '이 날만(나누기)·이 날부터(끝 날 당기기)·전부'.
 - [ ] ■4 반복: 일정 칸 '🔁 반복' 줄(안 함·매일·매주 요일·매월 n째 주 요일·끝나는 날) → `series` + 항목들(한 batch), '이 날부터 바꾸기·지우기'.
