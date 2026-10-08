@@ -10,6 +10,7 @@
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-<무엇>.mjs   (SITE=… 로 다른 주소)
 // ⚠️ 에뮬레이터만 건드린다. 운영 자료와는 아무 상관이 없다.
 import { chromium } from 'playwright';
+import { existsSync, readdirSync } from 'node:fs';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, signInWithEmailAndPassword } from 'firebase/auth';
@@ -42,8 +43,30 @@ export function report() {
 /** data-* 고르개: sel('screen', 'day') → [data-screen="day"], sel('date-next') → [data-date-next] */
 export const sel = (name, value) => (value === undefined ? `[data-${name}]` : `[data-${name}="${String(value).replace(/"/g, '\\"')}"]`);
 
+/**
+ * 어느 크롬으로 띄우나. PC(Windows)는 설치된 크롬(channel 'chrome'). 클라우드 세션 컨테이너(리눅스)에는 크롬이 없고
+ * Playwright가 깔아 둔 Chromium만 있다(/opt/pw-browsers - 판 번호가 이 저장소의 playwright와 다를 수 있어 아무 판이나 찾는다).
+ * V4는 컨테이너에서 Chromium을 /opt/google/chrome/chrome으로 링크해 썼다(V4 CLAUDE.md 2장). CHROME=<경로>로 정할 수도 있다.
+ */
+export function browserOptions() {
+  if (process.env.CHROME) return { executablePath: process.env.CHROME };
+  if (process.platform !== 'linux' || existsSync('/opt/google/chrome/chrome')) return { channel: 'chrome' };
+  const root = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
+  try {
+    for (const dir of readdirSync(root).filter((n) => n.startsWith('chromium-')).sort().reverse()) {
+      for (const sub of ['chrome-linux64', 'chrome-linux']) {
+        const path = `${root}/${dir}/${sub}/chrome`;
+        if (existsSync(path)) return { executablePath: path };
+      }
+    }
+  } catch {
+    /* 없으면 Playwright 기본 Chromium */
+  }
+  return {};
+}
+
 export async function launch() {
-  return chromium.launch({ channel: 'chrome' });
+  return chromium.launch(browserOptions());
 }
 
 /**

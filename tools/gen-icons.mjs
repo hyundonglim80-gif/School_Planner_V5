@@ -5,9 +5,10 @@
 // favicon.svg를 바꾸면 다시 돌린다. 설치한 앱은 아이콘을 늦게 받는다 - 사용자에게 '지우고 크롬에서 다시 설치'를 함께 알린다.
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
+import { browserOptions } from './lib/probe.mjs';
 
 const svg = readFileSync('public/favicon.svg', 'utf-8');
-const browser = await chromium.launch({ channel: 'chrome' });
+const browser = await chromium.launch(browserOptions());
 const page = await browser.newPage();
 
 const shot = async (size, file, maskable = false) => {

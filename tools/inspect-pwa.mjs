@@ -8,11 +8,11 @@ import { chromium } from 'playwright';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { report, sel, SITE, waitFor } from './lib/probe.mjs';
+import { browserOptions, report, sel, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const dir = mkdtempSync(join(tmpdir(), 'sp5-pwa-'));
-const ctx = await chromium.launchPersistentContext(dir, { channel: 'chrome', viewport: { width: 1400, height: 900 } });
+const ctx = await chromium.launchPersistentContext(dir, { ...browserOptions(), viewport: { width: 1400, height: 900 } });
 try {
   const page = ctx.pages()[0] ?? (await ctx.newPage());
   const errors = [];
