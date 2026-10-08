@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-1 일정** ■2 일정 칸 (■1 끝 - 클라우드 `claude/peaceful-lamport-icu4gf`).
+**P3-1 일정** ■3 지우기·되돌리기 (■2 끝 - 클라우드 `claude/peaceful-lamport-icu4gf`).
 
 ---
 
@@ -324,6 +324,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   저장한 새 일정 칸은 창의 `setParams`로 id를 더해 그 일정의 수정 칸이 된다(V4 `setEntryPanelId` - 다시 그리지 않아 적은 것이 남는다).
 - **P3-1 하루 화면**: V4의 '불러오는 중' 막기와 `EmptyDayReport`(왜 비었나 서버에 묻기)는 옮기지 않는다 - 기기 사본에서 곧바로 그리고, 사본도 서버 소식도 없을 때만 '일정을 받는 중…'.
   V4 진단은 Firestore 캐시가 고장 났던 때(09-22)의 것이고 V5 사본 상태는 환경설정 '앱' 탭이 보인다.
+- **P3-1 알림 = 일정 날의 시각**(DESIGN 4-2대로): 알림 창에 날짜 칸이 없다 - 일정 날짜를 옮기면 알림도 따라간다(V4는 알림 날짜를 따로 골랐고, 옮길 때 같은 날 수만큼 옮겼다).
+  앞날 알림은 드물고, 따로 두면 옮기기·이월·서버 푸시(P8-2)가 날짜 둘을 맞춰야 한다. 시각을 바꾸거나 다른 날로 옮기면 `alarmDone`을 지워 다시 울린다.
+  P3-4 가져오기: V4 알림 날짜가 일정 날과 다르면 그 시각을 일정 날에 두고 결과 표에 수를 적는다.
+- **P3-1 속성 적기**: 일정 칸의 속성(달력·이월·수업X·구글 캘린더)은 **라벨이 정한 값과 다른 것만** `props`에 적는다(V4는 모두 적었고 구글 캘린더만 같으면 비웠다) -
+  나중에 라벨 속성을 바꾸면 손대지 않은 일정이 따라간다. 라벨이 정한 값 = 붙은 라벨 가운데 하나라도 켰으면 켬, 라벨이 없으면 달력만 켬(V4 그대로).
+  라벨을 바꾸면 따로 정한 것은 걷는다(V4 '라벨을 고르면 그 라벨 속성이 따라 켜진다'). 기간·반복은 속성이 아니라 일정 칸의 줄(P3-3).
+- **P3-1 테스트와 Firebase**: `data/select`·`session`을 부르는 단위 테스트는 `vi.mock('…/data/firebase')`를 둔다 - 진짜 앱을 띄우면 시험이 끝난 뒤 Firebase가
+  IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔(3번에 1번) 남는다. vitest가 'originated in …'으로 그 파일을 알려 준다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -499,8 +507,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   → `features/day/DayScreen.tsx`(수업·기록 자리는 `[data-day-slot]`) · `DayEvents.tsx`(`[data-day-events|event-card|event-done|event-complete|event-chip|event-alarm|event-links|event-up|event-down|event-edit|event-add|event-count|event-collapse|event-empty|event-waiting]`) ·
   `features/events/`(`eventOps.ts` 순수 - `reorderOps`(rekeyOrders로 옮긴 것만)·`doneChanges`·`orderAfter` / `actions.ts` `setEventDone`·`moveEventInList` / `open.ts` 쓰는 칸 'event' 열기·고치는 일정 짚기 / `DueBadge.tsx`) ·
   `domain/eventDue.ts`(V4 테스트째 - 사슬 기한은 없다) · `recordUndo(…, { quiet })` · 창 `setParams`(windows `setWindowParams`) · 크롬 `inspect-events.mjs` 16항목(■5에서 늘린다).
-- [ ] ■2 일정 칸(EventDrawer 옮기기 - 쓰는 칸 kind `event`): 내용 칸 맨 위·날짜·알림 시각·라벨·속성 줄(달력·이월·수업X·구글 캘린더 - 값이 있으면 라벨을 이긴다)·기한·빠른 입력 칩.
+- [x] ■2 일정 칸(EventDrawer 옮기기 - 쓰는 칸 kind `event`): 내용 칸 맨 위·날짜·알림 시각·라벨·속성 줄(달력·이월·수업X·구글 캘린더 - 값이 있으면 라벨을 이긴다)·기한·빠른 입력 칩.
   저장하면 그 항목의 수정 칸이 된다. 날짜를 바꾸면 `date`만.
+  → `features/events/EventPanel.tsx`(창 목록 `event` - `[data-event-panel=new|edit|event-id|event-text-input|event-date|event-date-prev|next|event-move-note|event-move-keep|event-due-input|event-due-clear|event-alarm-open|event-link-add|event-attr|event-save|event-close|event-missing]`) ·
+  `eventForm.ts`(순수 - 속성 = 라벨 먼저·다른 것만 `propsToStore`, 라벨을 바꾸면 따로 정한 것을 걷음, 저장 = 바뀐 칸만 `editChanges`) · `actions.ts` `createEvent`·`saveEvent`(옮기기의 되돌리기는 날짜만)·`setEventAlarm` ·
+  `EventAlarmWindow.tsx`(⏰ 시각만 - `[data-alarm-window|alarm-time|alarm-save|alarm-off]`, 하루 카드 ⏰는 누르는 즉시 저장) · `QuickInputChips.tsx`(`[data-quick-chip]`) ·
+  `domain/quickInput.ts`(V4 테스트째) · `domain/eventAlarm.ts` `normalizeTimeInput` · `ui/AutoTextarea.tsx`(V4 테스트째) · `dateUtils.shortDateLabel` · 크롬 `inspect-events` 40항목.
+  미룬 것: 반복 칩·'🔁 반복'·'끝 날'·이월 일정을 지난 날로 옮길 때 안내 → P3-3, 🔗 링크 추가 → P4-3(지금은 🚧), 구글 캘린더 로그인 묻기 → P8-1.
 - [ ] ■3 지우기 = 지운 표시 + 안내 '되돌리기' + Ctrl+Z. 저장 실패면 칸을 닫지 않는다.
 - [ ] ■4 앱 안 알림(useEventAlarms·EventAlarmPopup·소리 3초마다 3번·🔇 옮기기 - 사본에서 오늘 알림을 본다. 서버 푸시는 P8-2) + 머리줄 ＋ 새로 → 새 일정 칸.
 - [ ] ■5 크롬 점검 `inspect-events.mjs`: 추가·완료·순서·고치기·날짜 바꾸기·지우기·되돌리기·Ctrl+Z, **저장마다 서버 문서 하나만** 바뀌는지.

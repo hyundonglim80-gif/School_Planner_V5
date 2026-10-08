@@ -14,8 +14,9 @@ import { labelColor } from '../../domain/labels';
 import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
-import { moveEventInList, setEventDone } from '../events/actions';
+import { moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
 import DueBadge from '../events/DueBadge';
+import EventAlarmWindow from '../events/EventAlarmWindow';
 import type { ItemDoc } from '../events/eventOps';
 import { openEventPanel, useEditingEventIds } from '../events/open';
 
@@ -30,6 +31,8 @@ export default function DayEvents({ date }: { date: YMD }) {
   const status = useMirrorStatus('items');
   const editing = useEditingEventIds(sid);
   const [collapsed, setCollapsed] = useState(false);
+  // ⏰ 표시를 누르면 알림 시각 창 (여기서는 누르는 즉시 저장 - V4 그대로)
+  const [alarmFor, setAlarmFor] = useState<ItemDoc | null>(null);
   const today = todayStr();
   // 사본도 서버 소식도 아직 없으면 '없다' 대신 받는 중이라고 한다
   const waiting = events.length === 0 && (status === 'idle' || status === 'loading');
@@ -102,6 +105,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                 first={idx === 0}
                 last={idx === events.length - 1}
                 onOpen={() => openEdit(ev)}
+                onAlarm={() => setAlarmFor(ev)}
                 onToggle={() => toggleDone(ev)}
                 onUp={() => move(idx, idx - 1)}
                 onDown={() => move(idx, idx + 1)}
@@ -122,6 +126,15 @@ export default function DayEvents({ date }: { date: YMD }) {
           )}
         </div>
       )}
+      {alarmFor && sid && (
+        <EventAlarmWindow
+          onClose={() => setAlarmFor(null)}
+          date={alarmFor.date ?? date}
+          initialTime={alarmFor.time ?? ''}
+          onSave={(time) => setEventAlarm(sid, alarmFor, time)}
+          onTurnOff={() => setEventAlarm(sid, alarmFor, '')}
+        />
+      )}
     </section>
   );
 }
@@ -134,12 +147,13 @@ interface EventCardProps {
   first: boolean;
   last: boolean;
   onOpen: () => void;
+  onAlarm: () => void;
   onToggle: () => void;
   onUp: () => void;
   onDown: () => void;
 }
 
-function EventCard({ ev, labels, editing, today, first, last, onOpen, onToggle, onUp, onDown }: EventCardProps) {
+function EventCard({ ev, labels, editing, today, first, last, onOpen, onAlarm, onToggle, onUp, onDown }: EventCardProps) {
   const done = !!ev.done;
   const links = ev.linkIds?.length ?? 0;
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
@@ -247,14 +261,14 @@ function EventCard({ ev, labels, editing, today, first, last, onOpen, onToggle, 
             );
           })}
 
-          {/* 알림이 걸린 일정에만 ⏰ (없는 일정까지 보이면 모두 걸린 것처럼 헷갈린다 - V4). 누르면 일정 칸 */}
+          {/* 알림이 걸린 일정에만 ⏰ (없는 일정까지 보이면 모두 걸린 것처럼 헷갈린다 - V4). 누르면 시각 바꾸기·끄기 */}
           {ev.time && (
             <button
               type="button"
               data-event-alarm={ev.time}
               onClick={(e) => {
                 stop(e);
-                onOpen();
+                onAlarm();
               }}
               title="클릭하여 알림 시간 변경"
               className={`inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-md border transition-colors cursor-pointer ${

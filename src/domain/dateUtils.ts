@@ -93,3 +93,9 @@ export function academicYearOf(dateStr: string): number {
 export function academicYearRange(year: number): [string, string] {
   return [`${year}-03-01`, monthEnd(year + 1, 2)];
 }
+
+/** '10/8(목)' (V4 lib/notices shortDateLabel - 쓰는 칸 제목·안내·빠른 입력 칩) */
+export function shortDateLabel(dateStr: string): string {
+  const d = parseDateStr(dateStr);
+  return `${d.getMonth() + 1}/${d.getDate()}(${DAY_NAMES[d.getDay()]})`;
+}

@@ -2,6 +2,9 @@
 //   1) 하루 화면: 그날 일정 카드(라벨 칩·⏰·기한·🔗), 다른 날 일정은 없다.
 //   2) ☐ 완료 = 그 일정 문서 하나(done) - 다른 일정의 updatedAt은 그대로. 라벨 칩 = 완료 풀기.
 //   3) ▲ 순서 = 옮긴 일정의 order 하나.
+//   4) + 추가 → 새 일정 칸(맨 위 라벨) → Ctrl+S = 새 문서 하나, 칸은 그 일정의 수정 칸이 되고 카드를 짚는다.
+//   5) 고치기 = 그 문서의 바뀐 칸만. 날짜를 바꿔 '옮기고 저장' = date만, 안내의 되돌리기 = 원래 날짜.
+//   6) 빠른 입력 칩(내일·15:00) 모두 넣기 → 그날·알림. 카드 ⏰ → 시각 바꾸기 = time만.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-events.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 일정(insp_ev…)·라벨을 심고 끝에 지운다.
@@ -28,7 +31,13 @@ const stamps = async () => {
   return Object.fromEntries(snap.docs.map((d) => [d.id, d.data().updatedAt?.toMillis() ?? 0]));
 };
 const changed = (a, b) => Object.keys({ ...a, ...b }).filter((id) => a[id] !== b[id]);
-const stamp = { deletedAt: null, updatedAt: serverTimestamp(), v: 1, createdAt: Date.now(), authorId: uid };
+const startedAt = Date.now();
+const stamp = { deletedAt: null, updatedAt: serverTimestamp(), v: 1, createdAt: startedAt, authorId: uid };
+/** 점검이 화면에서 만든 일정 (끝에 지운다) */
+const madeHere = async () => {
+  const snap = await getDocs(collection(em.db, 'spaces', sid, 'items'));
+  return snap.docs.filter((d) => d.data().createdAt >= startedAt && String(d.data().text).includes('점검') && !d.id.startsWith('insp_'));
+};
 const EVENTS = {
   insp_ev1: { text: '점검 일정 하나', labelIds: ['insp_el'], order: 'Zz1', time: '09:30', due: '2026-10-10', linkIds: ['x'] },
   insp_ev2: { text: '점검 일정 둘', labelIds: [], order: 'Zz2' },
@@ -87,6 +96,72 @@ try {
     }),
     '셋째가 둘째 위로',
   );
+
+  r.section('새 일정 칸 → 저장 = 문서 하나 → 수정 칸');
+  undo.add(async () => {
+    for (const d of await madeHere()) await deleteDoc(d.ref);
+  });
+  const panel = page.locator(sel('event-panel'));
+  await page.locator(sel('event-add')).click();
+  r.check(await waitFor(panel), '+ 추가 → 오른쪽에 새 일정 칸');
+  r.check((await panel.getAttribute('data-event-panel')) === 'new', '새 일정');
+  r.check(await page.evaluate(() => document.activeElement?.hasAttribute('data-event-text-input')), '열면 커서가 내용 칸에');
+  const pickedDefault = await panel.locator('[data-label-pick][aria-pressed="true"]').count();
+  r.check(pickedDefault === 1, `맨 위 라벨을 골라 둔다 (${pickedDefault})`);
+  before = await stamps();
+  await page.keyboard.type('점검 새 일정');
+  await page.keyboard.press('Control+s');
+  r.check(await waitFor(async () => (await panel.getAttribute('data-event-panel')) === 'edit'), 'Ctrl+S → 그 일정의 수정 칸이 된다');
+  const newId = await panel.getAttribute('data-event-id');
+  after = await serverUntil(stamps, (s) => changed(before, s).length > 0);
+  r.check(JSON.stringify(changed(before, after)) === JSON.stringify([newId]), `서버에 새 문서 하나 (${changed(before, after).join(',')})`);
+  const made = await read(newId);
+  r.check(made?.kind === 'event' && made.date === DAY && made.text === '점검 새 일정' && made.deletedAt === null, '새 문서 모양 (kind·date·text·deletedAt)');
+  r.check(await waitFor(async () => ((await card(newId).getAttribute('class')) ?? '').includes('ring-primary')), '목록의 그 카드를 짚는다');
+  r.check((await page.locator(sel('event-text-input')).inputValue()) === '점검 새 일정', '적은 것이 남는다');
+
+  r.section('고치기 = 바뀐 칸만 / 날짜 옮기기 = date만');
+  before = await stamps();
+  await page.locator(sel('event-text-input')).fill('점검 새 일정 (고침)');
+  await page.locator(sel('event-save')).click();
+  const edited = await serverUntil(() => read(newId), (d) => d?.text === '점검 새 일정 (고침)');
+  r.check(edited?.text === '점검 새 일정 (고침)', '서버: 글이 바뀐다');
+  after = await serverUntil(stamps, (s) => changed(before, s).length > 0);
+  r.check(JSON.stringify(changed(before, after)) === JSON.stringify([newId]), '바뀐 문서는 그 일정 하나');
+  await page.locator(sel('event-date-next')).click();
+  r.check(await waitFor(page.locator(sel('event-move-note'))), "'저장하면 … 로 옮깁니다' 줄");
+  await page.locator(sel('event-save')).click();
+  const moved = await serverUntil(() => read(newId), (d) => d?.date === '2026-10-09');
+  r.check(moved?.date === '2026-10-09' && moved.text === '점검 새 일정 (고침)', '옮기고 저장 → date만 2026-10-09');
+  r.check(await waitFor(async () => (await card(newId).count()) === 0), '그날 목록에서 빠진다');
+  // 안내가 여럿 쌓여 있다(추가·저장·옮김) - 옮긴 안내의 되돌리기
+  const undoBtn = page.locator(sel('toast')).filter({ hasText: '옮겼습니다' }).locator('[data-toast-action="되돌리기"]');
+  r.check(await waitFor(undoBtn), '옮긴 안내에 되돌리기');
+  await undoBtn.click();
+  r.check((await serverUntil(() => read(newId), (d) => d?.date === DAY))?.date === DAY, '되돌리기 = 원래 날짜');
+  r.check(await waitFor(card(newId)), '목록에 돌아온다');
+
+  r.section('빠른 입력 · 카드 ⏰');
+  await page.locator(sel('close')).first().click();
+  await page.locator(sel('event-add')).click();
+  await waitFor(panel);
+  await page.locator(sel('event-text-input')).fill('점검 내일 15:00 회의');
+  r.check(await waitFor(page.locator(sel('quick-chip', 'date'))), '날짜·시각 칩이 뜬다');
+  await page.locator(sel('quick-chip', 'all')).click();
+  r.check((await page.locator(sel('event-date')).inputValue()) === '2026-10-09', '모두 넣기 → 저장할 날짜가 내일');
+  await page.locator(sel('event-save')).click();
+  r.check(await waitFor(async () => (await panel.getAttribute('data-event-panel')) === 'edit'), '저장');
+  const quickId = await panel.getAttribute('data-event-id');
+  const quickDoc = await serverUntil(() => read(quickId), (d) => !!d);
+  r.check(quickDoc?.date === '2026-10-09' && quickDoc.time === '15:00' && quickDoc.text === '점검 15:00 회의', `서버: 내일·15:00·'내일'은 글에서 뺐다 (${quickDoc?.text})`);
+  await page.locator(sel('close')).first().click();
+  before = await stamps();
+  await card('insp_ev1').locator(sel('event-alarm')).click();
+  await page.locator(sel('alarm-time')).fill('1010');
+  await page.locator(sel('alarm-save')).click();
+  r.check((await serverUntil(() => read('insp_ev1'), (d) => d?.time === '10:10'))?.time === '10:10', '카드 ⏰ → 시각 바꾸기 = 곧바로 저장');
+  after = await serverUntil(stamps, (s) => changed(before, s).length > 0);
+  r.check(JSON.stringify(changed(before, after)) === JSON.stringify(['insp_ev1']), '바뀐 문서는 그 일정 하나');
 
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
 } catch (e) {

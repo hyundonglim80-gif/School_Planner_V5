@@ -139,6 +139,19 @@ describe('하루 일정 칸', () => {
     expect(q('[data-event-card="a"]')!.className).not.toContain('ring-primary');
   });
 
+  it('⏰ 표시 = 알림 시각 창, 바꾸거나 끄면 곧바로 저장 (time만)', async () => {
+    seed();
+    render(<DayEvents date={DAY} />);
+    fireEvent.click(q('[data-event-card="a"] [data-event-alarm]')!);
+    fireEvent.change(q('[data-alarm-time]')!, { target: { value: '1000' } });
+    await act(async () => fireEvent.click(q('[data-alarm-save]')!));
+    expect(written.batches[0][0]).toMatchObject({ type: 'patch', at: { id: 'a' }, changes: { time: '10:00' } });
+    fireEvent.click(q('[data-event-card="a"] [data-event-alarm]')!);
+    await act(async () => fireEvent.click(q('[data-alarm-off]')!));
+    expect(written.batches[1][0]).toMatchObject({ changes: { time: undefined } });
+    expect(useWindows.getState().windows).toEqual([]);
+  });
+
   it('▼ 접으면 카드와 + 추가를 숨긴다', () => {
     seed();
     render(<DayEvents date={DAY} />);

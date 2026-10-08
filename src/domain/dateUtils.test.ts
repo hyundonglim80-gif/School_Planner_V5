@@ -8,6 +8,7 @@ import {
   daysBetween,
   formatDate,
   isValidDateStr,
+  shortDateLabel,
   weekMonday,
 } from './dateUtils';
 
@@ -39,6 +40,11 @@ describe('날짜 글자', () => {
     expect(addDays('2026-03-01', -1)).toBe('2026-02-28');
     expect(daysBetween('2026-10-08', '2026-10-10')).toBe(2);
     expect(daysBetween('2026-10-08', '2026-10-01')).toBe(-7);
+  });
+
+  it("짧은 날짜 '10/8(목)'", () => {
+    expect(shortDateLabel('2026-10-08')).toBe('10/8(목)');
+    expect(shortDateLabel('2027-01-03')).toBe('1/3(일)');
   });
 
   it('주의 월요일 (일요일은 앞 주)', () => {

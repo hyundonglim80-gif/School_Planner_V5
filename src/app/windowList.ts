@@ -1,5 +1,17 @@
 // 창 등록 한 곳 (DESIGN 7-2). 창을 만드는 세션이 여기에 한 줄씩 더한다 - ⋮ 구역·학급 도구·수업 머리줄은 MENU.md대로.
+import { EVENT_PANEL, sameEventPanel, type EventPanelParams } from '../features/events/open';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
+
+// 쓰는 칸 (오른쪽 줄 - 어느 화면에서나 같은 칸)
+registerWindow<EventPanelParams>({
+  id: EVENT_PANEL,
+  title: '일정',
+  icon: '📅',
+  kind: 'panel',
+  help: 'event-add',
+  sameAs: sameEventPanel,
+  load: () => import('../features/events/EventPanel'),
+});
 
 // ⋮ 일정
 registerWindow({
