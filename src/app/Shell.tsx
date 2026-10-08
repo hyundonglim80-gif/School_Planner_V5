@@ -10,7 +10,7 @@ import { RIGHT_COLUMN_CSS_WIDTH, useSidePopups } from '../ui/sideColumn';
 import SideTabs from '../ui/SideTabs';
 import { MainWidthContext } from '../ui/useMainWidth';
 import { startRouting } from './history';
-import { useAppKeys } from './keys';
+import { useAppKeys, useShortcutTitle } from './keys';
 import { useLayoutPrefs } from './layoutPrefs';
 import MobileTabBar from './MobileTabBar';
 import { dateLabel, goToday, setDate, setScope, setSemesterFilter, setToggle, stepDate, useNav, type SemesterFilter } from './nav';
@@ -75,6 +75,7 @@ export default function Shell() {
   // 어느 계정으로 들어와 있는지 언제든 확인할 수 있게 (V4 - 계정이 여럿이면 화면만 봐서는 알 수 없었다)
   const accountTitle = user?.email ? `${user.displayName || '사용자'} (${user.email})` : user?.displayName || '사용자';
   const Screen = SCREEN_COMPONENTS[scope];
+  const withShortcut = useShortcutTitle();
 
   return (
     <div
@@ -100,7 +101,7 @@ export default function Shell() {
                     data-scope-tab={s.id}
                     aria-pressed={scope === s.id}
                     onClick={() => setScope(s.id)}
-                    title={`${s.label} 화면`}
+                    title={withShortcut(`${s.label} 화면`, s.shortcut)}
                     className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
                       scope === s.id ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'
                     }`}
@@ -172,9 +173,9 @@ export default function Shell() {
 }
 
 const VIEW_TOGGLES = [
-  { key: 'showWeekend', label: '주말' },
-  { key: 'showEvents', label: '일정' },
-  { key: 'showClass', label: '수업' },
+  { key: 'showWeekend', label: '주말', shortcut: 'toggleWeekend' },
+  { key: 'showEvents', label: '일정', shortcut: 'toggleEvents' },
+  { key: 'showClass', label: '수업', shortcut: 'toggleClass' },
 ] as const;
 
 const SEMESTERS: Array<{ id: SemesterFilter; label: string }> = [
@@ -189,6 +190,7 @@ const SEMESTERS: Array<{ id: SemesterFilter; label: string }> = [
  */
 function SecondRow() {
   const nav = useNav();
+  const withShortcut = useShortcutTitle();
 
   return (
     <div
@@ -228,7 +230,7 @@ function SecondRow() {
               data-view-toggle={t.key}
               aria-pressed={on}
               onClick={() => setToggle(t.key, !on)}
-              title={`${t.label} ${on ? '숨기기' : '보이기'}`}
+              title={withShortcut(`${t.label} ${on ? '숨기기' : '보이기'}`, t.shortcut)}
               className={`px-1.5 py-0.5 text-2xs sm:px-3 sm:py-1 sm:text-xs rounded-lg font-bold border transition-all whitespace-nowrap ${
                 on ? 'bg-primary text-white border-primary shadow-xs' : 'bg-white text-slate-400 border-slate-200 line-through decoration-slate-300'
               }`}
@@ -246,7 +248,7 @@ function SecondRow() {
           data-date-prev
           onClick={() => stepDate(-1)}
           className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs sm:text-sm transition-all shadow-2xs cursor-pointer"
-          title="이전 날짜"
+          title={withShortcut('이전 날짜', 'datePrev')}
         >
           ◀
         </button>
@@ -256,7 +258,7 @@ function SecondRow() {
             data-date-label
             onClick={goToday}
             className="text-sm sm:text-base font-extrabold text-slate-800 hover:text-primary transition-colors cursor-pointer select-none text-center whitespace-nowrap px-1"
-            title="오늘 날짜로 돌아가기"
+            title={withShortcut('오늘 날짜로 돌아가기', 'dateToday')}
           >
             {dateLabel(nav.scope, nav.date)}
           </button>
@@ -268,7 +270,7 @@ function SecondRow() {
           data-date-next
           onClick={() => stepDate(1)}
           className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs sm:text-sm transition-all shadow-2xs cursor-pointer"
-          title="다음 날짜"
+          title={withShortcut('다음 날짜', 'dateNext')}
         >
           ▶
         </button>
