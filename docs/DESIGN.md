@@ -82,7 +82,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | `props` | `{ forward?, calendar?, skip?, gcal? }`? | 이 항목만의 속성 값 - **라벨이 정한 값과 다른 것만** 적는다(P3-1 `features/events/eventForm`). 없으면 라벨 속성을 따른다(붙은 라벨 하나라도 켰으면 켬, 라벨이 없으면 달력만 - V4와 같다) |
 | `carrying` / `carriedFrom` | boolean? / `'YYYY-MM-DD'`? | 이월로 따라오는 중(처음 따라올 때 한 번 쓴다) / 끝낼 때 그날로 옮겨 적으며 남기는 처음 날 |
 | `seriesId` / `seriesIndex` | string? / number? | 반복 묶음 |
-| `fromDate` | `'YYYY-MM-DD'`? | 기록에서 메모로 뺄 때 그 날('📅 10/6에서') |
+| `fromDate` | `'YYYY-MM-DD'`? | 기록에서 메모로 뺄 때 그 날('📅 10/6에서'). 메모를 다시 기록으로 옮기면 걷는다(P3-2 `features/notes/noteForm` `placeChanges` - 옮기기 = 같은 문서의 `date`만) |
 | `tables` | EntryTable[]? | 붙인 표(V4 `lib/entryTable` 모양 그대로 - `rows[].cells[]`) |
 | `studentIds` | string[]? | 학생 태그 `'{classId}/{sid}'` |
 | `attachments` | Attachment[]? | 드라이브 파일(V4 모양: name·url·type·size·driveId) |
@@ -237,6 +237,10 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 ### 6-3. 쓰던 글
 쓰는 칸의 글은 2초 뒤 IndexedDB `drafts`(이 기기만)에 남긴다. 칸을 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기'. 저장하면 지운다.
+- P3-2 `data/drafts.ts`: DB `sp5-drafts-{uid}`(계정마다) 저장소 `drafts`, 열쇠 = 칸 열쇠(`note:{sid}:{id}` · 새 칸은 `note:{sid}:new:{날짜|memo}`, 일정은 `event:…`).
+  `useDraft(열쇠, 칸 값, 손댔나)` - 손댄 동안 2초 뒤, 칸이 닫힐 때·`pagehide`에는 곧바로 적는다. 닫기·ESC로 버리고 닫아도 남는다(다시 열어 '버리기').
+  남은 글이 지금 칸과 같으면 묻지 않고 지운다. 새 칸의 날짜를 바꾸면 열쇠를 옮긴다. 로그아웃하면 `wipeDrafts`(기기 사본과 같은 까닭).
+- 트랜잭션은 끝(`tx.done`)까지 함께 기다린다 - 따로 두면 끊긴 트랜잭션의 done이 받는 이 없이 거절되어 '처리하지 않은 오류'가 된다. 고장 나면 조용히(콘솔에 한 번) - 칸은 그대로 쓴다.
 
 ## 7. 화면 뼈대 (`src/app`)
 
@@ -271,7 +275,8 @@ openWindow('seating', { classId })        // Layout이 열림 상태를 들지 �
 store(`src/app/windows.ts`)의 `windows: [{ key, id, params, openedAt, raisedAt }]`는 **무엇이 열려 있나**다. 같은 항목을 다시 열면
 새로 만들지 않고 `raisedAt`만 바꿔 그 탭을 보인다(창 `side`는 id마다 하나, 쓰는 칸 `panel`은 params마다 - `sameAs`로 바꾼다).
 창 컴포넌트는 기능 폴더의 `*Window.tsx`(ModalShell)·`*Panel.tsx`(SidePanelFrame)이고 `{ params, close, raise, setParams }`를 받아 스스로 틀을 그린다.
-`setParams`는 열린 창이 가리키는 것을 바꾼다(다시 그리지 않는다) - 새 일정 칸이 저장한 뒤 그 일정의 수정 칸이 될 때(P3-1 쓰는 칸 `event` = `{ sid, date, id? }`).
+`setParams`는 열린 창이 가리키는 것을 바꾼다(다시 그리지 않는다) - 새 일정 칸이 저장한 뒤 그 일정의 수정 칸이 될 때(P3-1 쓰는 칸 `event` = `{ sid, date, id? }`,
+P3-2 메모·기록 쓰는 칸 `note` = `{ sid, date: 날짜|null, id?, labelIds?, draftText? }` - 날짜 null = 메모, 메모와 기록은 같은 칸).
 오른쪽 줄의 탭 차례·숨은 탭·폭은 그 틀이 줄에 설 때 정한다(`src/ui/sideColumn.ts` - V4 PopupFrame 그대로, 다시 연 탭은 끝으로 간다).
 창 안에서 띄운 작은 창(등록하지 않은 PopupFrame)도 같은 줄에 선다. 닫기 단추에는 `data-close`(탭 ×가 누른다).
 저장 안 한 글이 있는 창은 `registerUnsavedCheck`로 알린다 - ESC·▶(줄 전체 닫기)가 먼저 묻는다.
