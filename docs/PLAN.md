@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-2 기기 사본(IndexedDB)·바뀐 것만 받기** - ■2부터 (클라우드 세션 브랜치 `ccr-85a3b20a-nxq1q4`).
+**P2-2 기기 사본(IndexedDB)·바뀐 것만 받기** - ■3부터 (클라우드 세션 브랜치 `ccr-85a3b20a-nxq1q4`).
 
 ---
 
@@ -382,8 +382,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: `DESIGN.md` 6-2·6-3, 이 파일 5장 'P2-1 저장 도우미'(사본 Timestamp 되살리기·영구 지우기는 받기에 보이지 않음), V4 `CLAUDE.md` 4장(09-22 'primary lease' - 무엇이 달라야 하나), V4 `lib/clipboardHistory.ts`(V4의 IndexedDB 쓰는 법).
 - [x] ■1 `src/data/mirror/db.ts`(idb): DB `sp5-mirror-{uid}`, 공간·컬렉션마다 저장소, 커서.
   → 저장소는 둘(`docs` 열쇠 [공간, 컬렉션, id] · `meta`) - 공간·컬렉션은 열쇠 범위로 나눈다(5장 'P2-2 사본 DB'). Timestamp는 `codec.ts`로 지킨다.
-- [ ] ■2 동기화 `src/data/mirror/sync.ts`: 처음 = 이번 학년도부터 쪽 나눠 받고 나머지는 뒤에서 / 그 뒤 = 컬렉션마다 `updatedAt > 커서 - 1분` 구독 하나 →
+- [x] ■2 동기화 `src/data/mirror/sync.ts`: 처음 = 이번 학년도부터 쪽 나눠 받고 나머지는 뒤에서 / 그 뒤 = 컬렉션마다 `updatedAt > 커서 - 1분` 구독 하나 →
   사본·store에 넣기(지운 표시도 그대로) / 내 쓰기는 화면에 먼저.
+  → `mirror/store.ts`(서버 판 + 내 쓰기 덧칠 - 저장 도우미가 적기 직전에 얹고 서버 판이 오면 걷는다), `mirror/server.ts`(Firestore 받는 길 - 시험은 흉내 서버),
+  구독의 '빠짐'은 서버에 물어 확인(내 쓰기 중에도 빠진다), 하루 한 번 지운 항목 견주기(다른 기기의 영구 지우기). 받는 컬렉션 `MIRRORED` = items·labels·series.
 - [ ] ■3 store 고르기 `src/data/select.ts`: 날짜로·기간으로·라벨로·종류로·메모만. 화면은 이것만 쓴다.
 - [ ] ■4 고장 대비: IndexedDB가 없거나·지워지거나·막히면 메모리로만(서버 구독은 그대로), 다음에 다시. 환경설정 '앱' 탭 '이 기기 사본 다시 받기'. 두 탭이 같이 써도 같은 값.
 - [ ] ■5 테스트(fake-indexeddb + 에뮬레이터): 다른 탭에서 고친 것 받기·지운 표시·커서 겹침·사본 지우고 다시 받기·IndexedDB 없음.
