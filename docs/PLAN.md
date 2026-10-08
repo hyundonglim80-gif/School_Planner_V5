@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** - ■3 되돌리기부터 (클라우드 세션 `claude/happy-rubin-wcxw0e`, 10-08).
+**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** - ■4 규칙부터 (클라우드 세션 `claude/happy-rubin-wcxw0e`, 10-08).
 
 ---
 
@@ -264,6 +264,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   `patch(자리, 바꿀 칸, 고치기 전 문서)` - 고치기 전 값은 서버에서 읽지 않고 화면이 든 문서에서. undefined = 칸 지우기, 점 = 깊은 칸.
   설정 동기화는 `writeOps`(안내 없이 원래 오류 - 뒤에서 맞추는 것이라 V4처럼 콘솔에만). **P2-2에 넘길 것**: 사본에서 꺼낸 문서를 `purge`·되돌리기에 넘길 때 Timestamp를 되살려야 한다
   (IndexedDB에서 꺼내면 `{seconds, nanoseconds}` 맵이 되어 규칙의 `deletedAt is timestamp`에 걸린다).
+- **P2-1 되돌리기**(10-08): `recordUndo(공간, 안내, 되돌리는 쓰기, { what })` 하나로 안내의 '되돌리기' 단추와 Ctrl+Z 더미가 함께 선다 - 어느 쪽으로 되돌려도 그 하나가 빠진다.
+  더미는 공간마다 20개, 로그인한 사람이 바뀌면 비운다. 실패하면 더미 맨 위로 돌려놓는다(다시 Ctrl+Z). 다시 하기(되돌리기의 되돌리기)는 없다.
+  Ctrl+Z는 `main.tsx`에서 `setShortcutAction('undo', undoLast)` - 지금 공간은 개인 공간 하나(P8-4가 보는 공간으로). 비었으면 '되돌릴 것이 없습니다'.
+  Ctrl+Z로 되돌리면 안내에 `what`('메모 지우기')을 붙인다 - 단추로 되돌릴 때는 방금 본 안내라 붙이지 않는다. **기능 세션이 쓰기마다 `what`을 준다.**
 
 ---
 
@@ -357,7 +361,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■1 `src/data/types.ts`(`DESIGN.md` 4장 그대로), `newId()`(20자 - `data/id.ts`), 차례 값 `domain/order.ts`(분수 인덱스 - 두 값 사이 값, 테스트).
 - [x] ■2 저장 도우미 `src/data/repo/`: `create`·`patch`·`remove`(지운 표시)·`restore`·`purge`·`batch` - `updatedAt` 서버 시각, 만들 때 `deletedAt: null`·`v`·`createdAt`·`authorId`.
   실패는 `failWithToast`로 던진다. 모두 **되돌릴 값**을 돌려준다.
-- [ ] ■3 되돌리기 `src/data/undo.ts`: 안내의 '되돌리기'(V4 undoToast 모양) + Ctrl+Z 쌓기(글 칸 밖에서만, 공간마다 20개).
+- [x] ■3 되돌리기 `src/data/undo.ts`: 안내의 '되돌리기'(V4 undoToast 모양) + Ctrl+Z 쌓기(글 칸 밖에서만, 공간마다 20개).
 - [ ] ■4 규칙: items·labels 모양 검사(`kind`·`deletedAt`·`v` 정도 - 지나치게 막지 않는다), check-rules V5 검사 더하기.
 - [ ] ■5 자료 층 테스트(에뮬레이터, 따로 된 설정 `vitest.data.config.ts` · `npm run test:data` - PC에서. CI는 단위만): 만들기·고치기·지우기·되살리기·되돌리기·Ctrl+Z.
 **끝 조건**: 위 테스트 통과. 저장이 실패하면 던지는 것을 테스트로 본다.

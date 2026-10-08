@@ -9,6 +9,8 @@ import { flushPendingToast } from './app/toast'
 import { auth } from './data/firebase'
 import { autoSignIn } from './data/emulator'
 import { watchSession } from './data/session'
+import { undoLast, watchUndoOwner } from './data/undo'
+import { setShortcutAction } from './app/keys'
 import { finishRedirectLogin } from './features/auth/login'
 
 // 로그인 상태 구독은 앱 전체에 하나.
@@ -22,6 +24,9 @@ applyTheme()
 watchSystemTheme()
 // 새로고침 앞에서 맡겨 둔 안내 (백업 복원 등)
 flushPendingToast()
+// 되돌리기 Ctrl+Z(글 칸 밖에서) - 지금 공간의 마지막 쓰기. 로그인한 사람이 바뀌면 더미를 비운다
+setShortcutAction('undo', () => void undoLast())
+watchUndoOwner()
 // 앱으로 설치 - 서비스 워커 등록, 크롬의 설치 이벤트는 화면보다 먼저 올 수 있어 여기서 듣는다
 startInstall()
 
