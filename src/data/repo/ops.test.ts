@@ -40,6 +40,11 @@ describe('toWrite - 무엇을 적나', () => {
     });
   });
 
+  it('지우기에 누가를 주면 그것으로 (V4 가져오기의 V4에서 지움)', () => {
+    expect(toWrite(writeOp.remove(at, 'v4-import'), ctx)).toMatchObject({ data: { deletedBy: 'v4-import' } });
+    expect(writeOp.remove(at)).toEqual({ type: 'remove', at });
+  });
+
   it('되살리기: 지운 표시를 null로, 지운 사람 칸은 뺀다', () => {
     expect(toWrite(writeOp.restore(at), ctx).kind).toBe('update');
     expect((toWrite(writeOp.restore(at), ctx) as { data: unknown }).data).toEqual({

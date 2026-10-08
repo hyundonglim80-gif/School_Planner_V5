@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-4 가져오기 틀 + 라벨·설정 가져오기** (다음 대화에서 - 클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
+**P2-4 가져오기 틀 + 라벨·설정 가져오기** - ■2 옛 모양 읽기 옮기기부터(클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
 
 ---
 
@@ -302,6 +302,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P2-3 기본 라벨**(권장안으로 고름): 라벨이 하나도 없는 공간에 저절로 넣지 않는다 - 라벨 관리 창의 그 탭이 비었을 때(서버 확인 뒤) '기본 라벨 넣기' 단추.
   V4 사용자는 P2-4 가져오기로 라벨이 들어오는데, 먼저 기본 라벨을 만들어 두면 이름이 같은 라벨이 겹친다. id를 정해 두어(`dflt_e1`…) 두 기기에서 함께 눌러도 하나.
   일정 = V4 기본 다섯(달력·수업X·이월·기간·반복), 메모·기록 = V4 기록 기본 넷과 라벨 관리 창의 메모 기본에서 겹치지 않게 일곱(긴급·중요·학급활동·학생상담·업무전달·수업기록·개인).
+- **P2-4 다시 가져오기 = 지문**(권장안으로 고름): 계획의 'V5에서 고친 것 = `updatedAt` > 지난 가져오기 때' 대신 문서마다 `src.h`(가져올 때 적은 칸의 지문)와
+  지금 칸을 견준다 - 가져오기가 중간에 끊겨 기록을 못 남겨도, 여러 기기가 가져와도 문서마다 맞다. V4에서 없어진 것의 지운 표시는 `deletedBy: 'v4-import'` -
+  사용자가 지운 것(되살리지 않는다)과 가져오기가 지운 것(V4에 다시 생기면 새로)을 가른다.
+- **P2-4 기록**(권장안으로 고름): 가져오기 기록은 `settings/common.import`가 아니라 **`settings/import`** 문서 - 설정 맞추기(`data/settingsSync`)가 `common`을
+  아는 칸만으로 통째로 다시 쓰므로 모르는 칸(기록)이 지워진다. 띠 닫음(`dismissed`)도 여기(계정에 하나).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -445,8 +450,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P2-3 끝. V4 저장소가 옆에 있고 에뮬레이터에 V4 seed 자료가 있다.
 **먼저 읽을 것**: `DESIGN.md` 8장, V4 `lib/eventText.ts`·`lib/evalList.ts`·`lib/entryLabels.ts`·`lib/legacyLabels.ts`·`lib/eventLabels.ts`·`hooks/useLabels.ts`(normalizeEventLabel)·
 `lib/labelTree.ts`(readLabelTree)·`lib/preferenceSync.ts`·`lib/backupJson.ts`(V4가 무엇을 어디서 읽나 - 목록으로 좋다).
-- [ ] ■1 `src/import/v4/` 틀: 결정적 id(`DESIGN.md` 8-2), 진행 칸·결과 표(종류·학년도별 수), 다시 가져오기 규칙(V5에서 고친 것은 덮지 않음·V4에서 지운 것은 지운 표시),
+- [x] ■1 `src/import/v4/` 틀: 결정적 id(`DESIGN.md` 8-2), 진행 칸·결과 표(종류·학년도별 수), 다시 가져오기 규칙(V5에서 고친 것은 덮지 않음·V4에서 지운 것은 지운 표시),
   가져오기 기록 `settings/common.import`(때·수·짝 표).
+  → `hash.ts`(SHA-1·base32·`stableStringify`) · `ids.ts`(`v4id`·id 없는 것 `idlessKey`/`nthKey`) · `plan.ts`(`planDocs` - 지문 `src.h`로 새로·바뀜·그대로·둠·지움,
+  결과 수 `ImportCounts`(학년도별 `years`)) · `record.ts`(기록은 **`settings/import`** - `common`이 아니다, 5장) · 저장 도우미 `remove(자리, 누가)`(`deletedBy: 'v4-import'`).
+  진행 칸·결과 표 화면은 ■4.
 - [ ] ■2 옛 모양 읽기를 `import/v4/legacy/`로 테스트째 옮긴다: readEventList·parseV3EventText·normalizeEventLabel·readEvalList·mergeEntryLabels·resolveEventLabelNames·readLabelTree.
   V5 본체가 이것을 import하지 않는지 테스트로 지킨다.
 - [ ] ■3 라벨·설정: `settings/labels` → labels(일정 = V3 이름 먼저, 메모·기록 = 이름으로 합침 + `v4_labelTree` 상위, `v4_gcal` → `props.gcal`, 짝 표),

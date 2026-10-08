@@ -91,12 +91,12 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | `createdAt` | number | 만든 때(ms) |
 | `updatedAt` | Timestamp | **서버 시각.** 기기 사본이 이것으로 바뀐 것만 받는다 |
 | `deletedAt` / `deletedBy` | Timestamp·`null` / string? | 지운 표시. **만들 때 `null`을 꼭 넣는다**(없는 칸은 쿼리로 거를 수 없다) |
-| `src` | `{ from: 'v4', path, id }`? | 가져온 항목의 V4 자리 - 다시 가져오기, V4가 보낸 구글 캘린더 일정과 짝 |
+| `src` | `{ from: 'v4', path, id, h }`? | 가져온 항목의 V4 자리 - 다시 가져오기(`h` = 가져올 때 적은 칸의 지문, 8-1), V4가 보낸 구글 캘린더 일정과 짝 |
 | `v` | 1 | 자료 판(나중에 모양을 바꿀 때 판으로 가린다) |
 
 ### 4-3. `labels/{id}`
 
-`{ kind: 'event'|'note', name, color, parentId: string|null, order, props?, updatedAt, deletedAt, v }`
+`{ kind: 'event'|'note', name, color, parentId: string|null, order, props?, src?, updatedAt, deletedAt, v }` (`src` = V4에서 가져온 라벨, 8-1)
 
 - `parentId`는 메모·기록 라벨만(2단계). 이름은 같은 종류 안에서 겹치지 않게 저장 때 본다.
 - `props`는 일정 라벨만: `{ calendar?, forward?, skip?, gcal?, period?, recur? }` — 화면 이름은 V4 그대로 **달력·이월·수업X·구글 캘린더**
@@ -147,7 +147,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 ### 4-8. 설정 (개인 공간 `settings/`)
 
 - `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` ·
-  우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 가져오기 기록 `import`.
+  우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases`.
+- `import`: V4 가져오기 기록(8-1) - 설정이 아니라 따로 둔다(설정 맞추기가 건드리지 않는다).
 - `pc` / `mobile`: 글자 크기·창 위치·시작 화면·단축키·화면 보기(V4 `v4_preferences_pc/_mobile`). 1초 뒤 올린다(V4 `preferenceSync`).
 - V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다.
 - 문서에는 **기본값과 다른 칸만** 적는다(없는 칸·틀린 칸 = 기본값). 칸마다 기본값과 읽기 규칙은 표 하나(`domain/settings.ts`의 `SettingsSpec`) -
@@ -287,14 +288,19 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 ### 8-1. 원칙
 - **한 방향**: V4를 읽기만 하고 V5에만 쓴다. V3·V4 자료와 코드는 손대지 않는다.
 - **결정적 id**: V5 id = V4 자리에서 셈한다(8-2). 그래서 **여러 번 가져와도 겹치지 않고**, 링크도 상대를 찾지 않고 바로 셈한다.
-- **다시 가져오기**: V5에서 고친 항목(`updatedAt` > 지난 가져오기)은 덮지 않고 결과 표에 적는다. V4에서 지운 것은 V5에서도 지운 표시.
+- **다시 가져오기**(`import/v4/plan.ts` `planDocs`): 가져온 문서는 `src.h`에 **가져올 때 적은 칸의 지문**을 남긴다. 다시 가져올 때
+  지금 V5 문서의 칸 지문 ≠ `src.h`면 V5에서 고친 것 → 덮지 않고(둠) 결과 표에 적는다. 새로 셈한 지문 == `src.h`면 그대로(쓰지 않는다), 그 밖은 바뀐 칸만.
+  '지난 가져오기 때'(`updatedAt` > 때)를 믿지 않는다 - 가져오기가 끊겨 기록을 못 남겨도, 기기 시각이 틀려도 같다.
+  V4에서 없어진 것은 V5에서 고치지 않았으면 지운 표시(`deletedBy: 'v4-import'` - 휴지통에 'V4에서 지움'), 고쳤으면 둔다.
+  V5에서 사용자가 지운 것은 되살리지 않고, 가져오기가 지운 것이 V4에 다시 생기면 새로 적는다. 결과 = 새로·바뀜·그대로·둠·지움(+ 항목은 학년도별 수).
 - **옛 모양 읽기는 여기에만**: V4 `readEventList`·`parseV3EventText`·`normalizeEventLabel`·`readEvalList`·`mergeEntryLabels`·`resolveEventLabelNames`·
   `readLabelTree`를 `import/v4/legacy/`로 테스트째 옮긴다. V5 본체는 이것을 import하지 않는다(테스트로 지킨다).
-- 가져온 항목에는 `src: { from: 'v4', path, id }`. 가져오기 기록(때·종류별 수·짝 표)은 `settings/common.import`.
+- 가져온 문서(항목·라벨 …)에는 `src: { from: 'v4', path, id, h }`. 가져오기 기록(때·종류별 수·라벨 짝 표·설정 칸마다 적은 값·띠 닫음)은
+  그 공간의 **`settings/import`**(`import/v4/record.ts`) - 설정 문서(common)에 두면 설정 맞추기가 모르는 칸으로 지운다.
 - 드라이브 파일은 옮기지 않고 그대로 가리킨다(같은 프로젝트라 권한이 그대로다).
 
 ### 8-2. 결정적 id
-`v4id(종류, 공간, 자리, V4 id)` = sha1을 base32로 20자. **주의**: V3가 id 없이 쓴 일정은 V4 `readEventList`가 `ev_차례`를 붙이므로
+`v4id(종류, 공간, 자리, V4 id)` = sha1을 base32로 20자(`import/v4/ids.ts` - SHA-1은 `hash.ts`에 직접 두어 기기에서 바로 셈한다). **주의**: V3가 id 없이 쓴 일정은 V4 `readEventList`가 `ev_차례`를 붙이므로
 그날 목록이 바뀌면 차례가 밀린다 - id 없는 항목은 `날짜|글|라벨` 해시로 셈하고, 같은 날 같은 글이 둘이면 몇째인지를 붙인다.
 
 ### 8-3. 짝 표
