@@ -5,17 +5,20 @@
 //   - 지운 라벨·모르는 라벨은 그리지 않는다(부르는 쪽이 itemLabels로 고른다).
 //   - 완료는 줄 긋기, ★ 즐겨찾기. 체크 줄(☐/☑)은 눌러서 체크 - 체크한 줄은 카드 아래쪽에 모아 보이기만 한다(V4 10-07, 구글 Keep처럼).
 //   - 접기: 긴 글은 접힌 채 시작(부르는 쪽이 domain/entryCollapse로), 접힌 카드에는 첫 줄만.
-// 그림 크게 보기·사이트 미리보기·표 고치기는 P4-2(지금은 그림을 새 탭으로, 표는 작게 보기만).
+// 그림은 누르면 크게 보기(넘겨 보기 - 접혔을 때는 🖼️ n을 눌러), 글 안 주소는 미리보기 카드, 표는 작게 보기만(고치기는 쓰는 칸에서).
 import { Fragment, useState, type ReactNode } from 'react';
 import { showToast } from '../../app/toast';
 import { checkCount, checkLineState, hasCheckLines } from '../../domain/checkLines';
 import { previewLine } from '../../domain/entryCollapse';
+import { fileIcon, isImageAttachment } from '../../domain/attachments';
 import { labelColor } from '../../domain/labels';
-import type { Attachment } from '../../data/types';
+import { attachmentImageSrc } from '../../data/google/drive';
 import FormattedText from '../../ui/FormattedText';
+import { openImageViewer } from '../../ui/imageViewer';
+import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import type { ItemDoc } from '../events/eventOps';
 import { nounOf } from './noteOps';
-import TablePreview from './TablePreview';
+import EntryTableView from './EntryTableView';
 
 export interface EntryCardProps {
   item: ItemDoc;
@@ -42,17 +45,6 @@ export interface EntryCardProps {
   onToggleCheckLine: (lineIndex: number, line: string) => Promise<unknown>;
 }
 
-const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|svg|heic)(\?|$)/i;
-/** 그림인가 (V4 lib/attachments isImageAttachment - 기록은 'image', 메모는 MIME, 드라이브 주소는 이름의 확장자로) */
-const isImage = (a: Attachment) => a.type === 'image' || (a.type ?? '').startsWith('image/') || IMAGE_EXT.test(a.name) || IMAGE_EXT.test(a.url);
-
-function fileIcon(name: string) {
-  if (/\.pdf$/i.test(name)) return '📄';
-  if (/\.(doc|docx|hwp|hwpx|txt)$/i.test(name)) return '📝';
-  if (/\.(xls|xlsx|csv)$/i.test(name)) return '📊';
-  if (/\.(zip|7z|rar)$/i.test(name)) return '🗜️';
-  return '📁';
-}
 
 export default function EntryCard(props: EntryCardProps) {
   const { item, labels, pathOf, dateText, editing, collapsed, onToggleCollapse, onMoveUp, onMoveDown } = props;
@@ -61,8 +53,14 @@ export default function EntryCard(props: EntryCardProps) {
   const done = !!item.done;
   const favorite = !!item.favorite;
   const attachments = (item.attachments ?? []).filter((a) => a && a.url);
-  const images = attachments.filter(isImage);
-  const files = attachments.filter((a) => !isImage(a));
+  const images = attachments.filter(isImageAttachment);
+  const files = attachments.filter((a) => !isImageAttachment(a));
+  /** 그림 크게 보기 (이 카드의 그림을 넘겨 본다) */
+  const viewImages = (index: number) =>
+    openImageViewer(
+      images.map((a) => ({ url: attachmentImageSrc(a), name: a.name || '첨부 이미지' })),
+      index,
+    );
   const tables = item.tables ?? [];
   const links = item.linkIds?.length ?? 0;
   const checks = checkCount(body);
@@ -284,9 +282,18 @@ export default function EntryCard(props: EntryCardProps) {
           )}
           {/* 접혀 있을 때는 그림이 있다는 표시만 */}
           {collapsed && images.length > 0 && (
-            <span data-entry-images={images.length} className="bg-indigo-50 text-indigo-700 text-xs px-1.5 py-0.5 rounded font-bold border border-indigo-200" title="첨부 이미지">
+            <button
+              type="button"
+              data-entry-images={images.length}
+              onClick={(e) => {
+                stop(e);
+                viewImages(0);
+              }}
+              className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs px-1.5 py-0.5 rounded font-bold border border-indigo-200 cursor-pointer"
+              title="첨부 이미지 크게 보기"
+            >
               🖼️ {images.length}
-            </span>
+            </button>
           )}
           {/* 파일·표 표시는 늘, 그림은 접혔을 때만 (펼치면 그림이 보인다) */}
           {files.length > 0 && (
@@ -342,17 +349,19 @@ export default function EntryCard(props: EntryCardProps) {
           {images.length > 0 && (
             <div className="space-y-2">
               {images.map((img, idx) => (
-                <a
+                <button
+                  type="button"
                   key={`${img.url}-${idx}`}
-                  href={img.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={stop}
-                  className="block rounded-xl overflow-hidden border border-slate-100 bg-slate-50"
-                  title="새 탭에서 크게 보기"
+                  data-entry-image={idx}
+                  onClick={(e) => {
+                    stop(e);
+                    viewImages(idx);
+                  }}
+                  className="block w-full rounded-xl overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer"
+                  title="눌러서 크게 보기"
                 >
-                  <img src={img.url} alt={img.name || '첨부 이미지'} className="w-full max-h-48 object-cover" loading="lazy" />
-                </a>
+                  <img src={attachmentImageSrc(img, 600)} alt={img.name || '첨부 이미지'} className="w-full max-h-48 object-cover" loading="lazy" />
+                </button>
               ))}
             </div>
           )}
@@ -369,7 +378,7 @@ export default function EntryCard(props: EntryCardProps) {
                   className="flex items-center gap-2 p-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-all group/file text-xs"
                 >
                   <span className="text-base shrink-0" aria-hidden>
-                    {fileIcon(f.name)}
+                    {fileIcon(f)}
                   </span>
                   <span className="font-semibold text-slate-700 group-hover/file:text-primary truncate flex-1" title={f.name}>
                     📎 {f.name}
@@ -384,9 +393,11 @@ export default function EntryCard(props: EntryCardProps) {
               {renderBody()}
             </p>
           )}
-          {/* 붙인 표 - 작게 보기만 (고치기는 P4-2) */}
+          {/* 글 안 주소 미리보기 */}
+          {body && <LinkPreviewCards text={body} />}
+          {/* 붙인 표 - 작게 보기만 (고치기는 쓰는 칸에서) */}
           {tables.map((t) => (
-            <TablePreview key={t.id} table={t} />
+            <EntryTableView key={t.id} table={t} compact />
           ))}
         </>
       )}

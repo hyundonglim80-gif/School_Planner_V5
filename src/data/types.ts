@@ -59,12 +59,55 @@ export interface ItemProps {
   gcal?: boolean;
 }
 
-/** 붙인 표 - V4 lib/entryTable 모양 그대로 (P4-2가 domain으로 옮기며 칸 서식 타입을 채운다) */
+/* 붙인 표 - V4 lib/entryTable 모양 그대로 (읽기·고치기는 domain/entryTable) */
+export interface TableCellStyle {
+  /** 배경색 */
+  bg?: string;
+  /** 글자색 */
+  c?: string;
+  b?: 1;
+  i?: 1;
+  u?: 1;
+  /** 글자 크기 (pt) */
+  fs?: number;
+  ha?: 'left' | 'center' | 'right';
+  va?: 'top' | 'middle' | 'bottom';
+  /** 칸 안에서 줄 바꿈 */
+  wrap?: 1;
+  /** 테두리 (위·오른쪽·아래·왼쪽). 예: '1px solid #000000' */
+  bt?: string;
+  br?: string;
+  bb?: string;
+  bl?: string;
+  /** 대각선 ↘(왼쪽 위 → 오른쪽 아래)·↗(왼쪽 아래 → 오른쪽 위). 테두리와 같은 모양. 엑셀의 mso-diagonal-down/up */
+  dd?: string;
+  du?: string;
+}
+
+export interface TableCell {
+  /** 보이는 값 (줄 바꿈은 \n) */
+  v: string;
+  /** 병합: 가로·세로로 차지하는 칸 수 (1이면 없다) */
+  cs?: number;
+  rs?: number;
+  /** 병합으로 가려진 자리 */
+  x?: 1;
+  /** styles의 번호 */
+  s?: number;
+}
+
+export interface TableRow {
+  /** 줄 높이 (px) */
+  h?: number;
+  cells: TableCell[];
+}
+
 export interface EntryTable {
   id: string;
-  rows: { h?: number; cells: { v: string; cs?: number; rs?: number; x?: 1; s?: number }[] }[];
+  rows: TableRow[];
+  /** 열 너비 (px). 모르면 0 */
   cols?: number[];
-  styles?: Record<string, unknown>[];
+  styles?: TableCellStyle[];
   createdAt: number;
 }
 

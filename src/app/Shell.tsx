@@ -8,9 +8,13 @@ import ForwardMarks from '../features/events/ForwardMarks';
 import MultiSelectBar from '../features/events/MultiSelectBar';
 import { useEventShortcuts } from '../features/events/shortcuts';
 import { useNoteShortcuts } from '../features/notes/shortcuts';
+import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
+import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
+import ClipboardColumn from '../features/clipboard/ClipboardColumn';
 import ImportBanner from '../features/import/ImportBanner';
 import ColumnResizer from '../ui/ColumnResizer';
-import { RIGHT_COLUMN_CSS_WIDTH, useSidePopups } from '../ui/sideColumn';
+import ImageViewer from '../ui/ImageViewer';
+import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../ui/sideColumn';
 import SideTabs from '../ui/SideTabs';
 import { MainWidthContext } from '../ui/useMainWidth';
 import { startRouting } from './history';
@@ -37,16 +41,24 @@ export default function Shell() {
   // ＋ 새로 → 새 일정 (단축키 newEvent)
   useEventShortcuts();
   useNoteShortcuts();
+  // 복사한 것 모으기 (왼쪽 📋 클립보드 칸 - 닫혀 있어도 모은다)
+  useClipboardCapture();
 
   // 오른쪽 줄(창·쓰는 칸)이 하나라도 서 있으면 그 폭만큼 화면을 줄인다. 폭은 모든 칸이 같다.
   const rightOpen = useSidePopups((s) => s.order.length > 0);
+  // 왼쪽 클립보드 칸이 화면 옆에 붙어 있으면 그 폭만큼 화면을 오른쪽으로 민다 (휴대폰은 위에 덮는다)
+  const docked = useDocked();
+  const leftOpen = useClipboardPanel((s) => s.open) && docked;
   // 경계선을 끌어 바꾼 폭. 칸들은 body 아래에 그려지므로(createPortal) 문서 맨 위에 건다.
   const rightPanelWidth = useLayoutPrefs((s) => s.rightPanelWidth);
+  const leftPanelWidth = useLayoutPrefs((s) => s.leftPanelWidth);
   useEffect(() => {
     const root = document.documentElement.style;
     if (rightPanelWidth) root.setProperty('--right-column-w', `${rightPanelWidth}px`);
     else root.removeProperty('--right-column-w');
-  }, [rightPanelWidth]);
+    if (leftPanelWidth) root.setProperty('--left-column-w', `${leftPanelWidth}px`);
+    else root.removeProperty('--left-column-w');
+  }, [rightPanelWidth, leftPanelWidth]);
 
   // 머리줄 높이를 --app-header-h로 알려 둔다. 머리줄에 붙어 따라 내려가는 칸(메모 화면의 라벨 거르개 등)이
   // 그만큼 아래에 멈춘다. 머리줄은 줄바꿈과 D-Day 표시에 따라 높이가 달라지므로 재서 쓴다.
@@ -85,7 +97,7 @@ export default function Shell() {
   return (
     <div
       className="min-h-screen bg-bg-body text-slate-900 transition-[padding] duration-200"
-      style={{ paddingRight: rightOpen ? RIGHT_COLUMN_CSS_WIDTH : undefined }}
+      style={{ paddingRight: rightOpen ? RIGHT_COLUMN_CSS_WIDTH : undefined, paddingLeft: leftOpen ? LEFT_COLUMN_CSS_WIDTH : undefined }}
     >
       <header ref={headerRef} className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm px-4 py-3 border-b border-border shadow-xs flex flex-col gap-2.5">
         <Header />
@@ -111,6 +123,13 @@ export default function Shell() {
       <EventAlarms />
       {/* 이월: 처음 따라오는 일정에 carrying 한 번 (DESIGN 5-1) */}
       <ForwardMarks />
+      {/* '구글 로그인이 필요합니다' - 드라이브·캘린더를 쓰다 토큰이 만료됐는데 로그인 창이 막힐 때 (data/google) */}
+      <GoogleLoginPrompt />
+      {/* 왼쪽 📋 클립보드 칸 (이 기기에만) */}
+      <ClipboardColumn />
+      {leftOpen && <ColumnResizer side="left" width={LEFT_COLUMN_CSS_WIDTH} />}
+      {/* 사진 크게 보기 (ui/imageViewer) */}
+      <ImageViewer />
       {/* 여러 개 고르기 - 고르는 동안 화면 아래 동작 줄 */}
       <MultiSelectBar />
       {/* 오른쪽 칸이 둘 이상이면 위에 탭 (V4 2026-10-07) */}

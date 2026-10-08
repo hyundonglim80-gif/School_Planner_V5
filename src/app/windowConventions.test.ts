@@ -15,7 +15,7 @@ const windowSources = import.meta.glob(['../features/**/*Window.tsx', '../featur
 }) as Record<string, string>;
 const entries = Object.entries(windowSources).map(([path, src]) => ({ name: path.replace('../features/', ''), src }));
 
-// 사진 보기는 화면 가운데 그림을 띄우는 것이 맞다 (P4-2에서 옮기면 여기에)
+// 화면 가운데에 띄우는 것이 맞는 창 (사진 크게 보기는 창 파일이 아니라 ui/ImageViewer - Shell에 하나)
 const CENTERED_BY_DESIGN: string[] = [];
 
 describe('창 공통 규칙', () => {

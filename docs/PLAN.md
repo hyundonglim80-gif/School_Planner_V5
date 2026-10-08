@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P4-2 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기** (클라우드면 1-7을 먼저).
+**P4-3 링크 연결·보기** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -146,8 +146,8 @@
 | P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | 끝 (2026-10-08) |
 | **P4 메모·첨부·링크** | | | | |
 | P4-1 | 메모 화면·라벨로 보기 | 중간 | 중간 | 끝 (2026-10-08) |
-| P4-2 | 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기 | 큼 | 중간 | **다음** |
-| P4-3 | 링크 연결·보기 | 중간 | 중간 | |
+| P4-2 | 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기 | 큼 | 중간 | 끝 (2026-10-08) |
+| P4-3 | 링크 연결·보기 | 중간 | 중간 | **다음** |
 | **P5 달력·찾기·정리** | | | | |
 | P5-1 | 주간·작년 이맘때 | 중간 | 중간 | |
 | P5-2 | 월간·년간·오늘로 | 큼 | 중간 | |
@@ -201,6 +201,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-1 | P3-1 세션 끝 정리 | 단위 721 · 자료 층(에뮬레이터) 24 · inspect-events 58 · shell·labels·settings·data 통과 · 브랜치 `claude/peaceful-lamport-icu4gf` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 단위 테스트 '처리하지 않은 오류'(진짜 Firebase를 띄운 시험 넷)를 고침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-2 | P3-2 세션 끝 정리 | 단위 832 · inspect-notes 61 · events·shell·settings·labels·data 통과 · 브랜치 `claude/amazing-clarke-hboeze` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 · 일정 칸에도 쓰던 글 보관 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-1 | P4-1 세션 끝 정리 | 단위 984 · inspect-memo 30 · notes·shell 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · inspect-shell이 계정에 '가운데 창'을 남기던 것을 고침 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P4-2 | P4-2 세션 끝 정리 | 단위 1081 · inspect-attach 47(구글 API는 흉내) · notes·memo·shell 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 👤 실제 계정으로 첨부 올리기·V4 첨부 열기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
@@ -392,6 +393,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 일정 본문 앞 '[이름]'은 DESIGN대로 본문에 그대로 둔다(V3 글 모양은 읽을 때 라벨로 떼어져 본문에 남지 않는다 - 남는 것은 드물다).
 - **P4-1 메모 화면**: V4 그대로(⭐ → 라벨 → 전체, 즐겨찾기가 없으면 열 때 전체, 진행/완료, 가장 짧은 열부터, '메모' 라벨 붙이기). 바뀐 것: '🗑️ 전체 비우기'는 묻지 않고 한 묶음 + 안내의 되돌리기(V4는 확인 창 - P3-3 여러 개 고르기와 같은 까닭).
   고른 라벨은 이 기기에 기억한다(`sp5-label-filters` - V4도 기기마다). 기록 칸 라벨로 보기도 같은 칩(한 줄) - 기억은 따로. QuickLinks(학교 사이트 바로가기)는 V4에서도 쓰이지 않던 부품이라 옮기지 않았다.
+- **P4-2 구글 토큰·첨부**: V4 규칙 그대로(조용한 토큰·방금 누른 때만 로그인 창·막히면 '구글 로그인이 필요합니다' 창 - 닫기 단추 글은 V5 규칙대로 '닫기').
+  바뀐 것(권장안으로 고름): 다시 받는 로그인 창은 **지금 계정으로**(`reauthenticateWithPopup` + login_hint) - V4 `signInWithPopup`은 다른 계정을 고르면 앱 계정이 바뀌었다.
+  구글이 토큰을 거절하면(401·드라이브 권한 칸을 빼고 허용한 403) 잊고 한 번 더(`withGoogleToken` 한 곳 - V4는 드라이브에만).
+  - 캡처는 **줄이지 않는다**(V4 그대로 - 글자가 뭉개진다). 줄이기 워커(`imageShrink`)는 V4에서도 학생 사진만 써서 P7(학생 사진)로 미룬다.
+  - 새 첨부의 type은 MIME(V4 메모 모양), id `file_…`. 기록 모양('image'/'file')도 `isImageAttachment`가 읽는다. 공유받은 파일(📥)은 P8-1(공유 대상)에서.
+  - 표: V4 entryTable 그대로, 글 없이 표만 있어도 저장한다(V4의 '[표]' 글은 V3 때문 - V5는 쓰지 않는다). 버튼·안내 글은 '행/열'(UX-AUDIT 결정 - V4 단추의 '줄'을 고쳤다).
+  - 사진 크게 보기는 Shell에 하나(`openImageViewer`) - 화면마다 들던 V4와 달리. ESC는 사진 창만 닫는다(뒤의 쓰는 칸은 그대로 - V4는 오른쪽 줄 전체가 닫혔다). ←/→는 넣지 않았다(V4에 없다·단축키 한 곳 규칙).
+  - **클립보드 목록은 계정마다 따로 두고 로그아웃하면 지운다**(V4는 기기에 하나 - 공용 PC에서 앞 사람의 복사·캡처가 보였다). 칸 이름은 `ClipboardColumn`(오른쪽 줄의 창·쓰는 칸 규칙과 다르다).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -684,10 +693,23 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: V4 설명서 `attach`·`paste-table`·`paste-image`·`clipboard`·`image-viewer`, V4 `lib/googleApi.ts`·`googleLoginPrompt.ts`·`components/GoogleLoginPrompt.tsx`·
 `lib/driveApi.ts`·`attachments.ts`·`imageShrink.ts`·`shrinkWorker.ts`·`hooks/usePasteImageUpload.ts`·`utils/uploadHelper.ts`·`lib/entryTable.ts`·`components/EntryTableView.tsx`·
 `ClipboardPanel.tsx`·`lib/clipboardHistory.ts`·`ImageViewerModal.tsx`·`lib/linkPreview.ts`·`LinkPreviewCards.tsx`.
-- [ ] ■1 구글 토큰(조용한 토큰·누른 직후 로그인 창·'구글 로그인이 필요합니다' 창 - V4 규칙 그대로).
-- [ ] ■2 첨부(드라이브 `School_Planner` 폴더 - V4가 올린 파일이 그대로 열린다), 캡처 Ctrl+V(줄이기 워커), 엑셀 표 붙여넣기(표 먼저 - 그림 올리기로 넘기지 않는다), 링크 미리보기.
-- [ ] ■3 클립보드 칸(왼쪽 📋, IndexedDB 이 기기만, 지우면 이 기기 휴지통), 이미지 크게 보기(넘겨 보기·3:4 틀).
-- [ ] ■4 크롬 점검(구글 API는 page.route로 흉내) + 👤 실제 계정: V4에서 가져온 기록의 첨부 하나가 V5에서 열리는지.
+- [x] ■1 구글 토큰(조용한 토큰·누른 직후 로그인 창·'구글 로그인이 필요합니다' 창 - V4 규칙 그대로).
+  → `data/google/token.ts`(`getGoogleTokenQuietly`·`getValidGoogleToken(reason)`·`renewGoogleToken`(지금 계정으로 다시 - reauthenticate + login_hint)·`withGoogleToken`(거절되면 잊고 한 번 더)·`googleFetch`·`GoogleApiError.needsLogin`) ·
+  `data/google/prompt.ts`(묻는 창 상태) · `features/auth/GoogleLoginPrompt.tsx`(Shell에 하나 `[data-google-login-prompt|google-login|google-login-close|google-login-reason|google-login-error]`). 크롬 확인은 ■4에서 첨부와 함께.
+- [x] ■2 첨부(드라이브 `School_Planner` 폴더 - V4가 올린 파일이 그대로 열린다), 캡처 Ctrl+V(줄이기 워커), 엑셀 표 붙여넣기(표 먼저 - 그림 올리기로 넘기지 않는다), 링크 미리보기.
+  → `data/google/drive.ts`(`uploadToDrive` - 폴더 찾기/만들기·resumable·공개 읽기, `attachmentImageSrc`·`driveUrlToStore`·`uploadFailReason`) · `domain/attachments.ts`(`isImageAttachment`·`fileIcon`·`formatFileSize`·`pastedImageName`·`makeAttachment`) ·
+  `notes/attach.ts`(`pastedTable`(표 먼저·한 칸이면 글자)·`extractImageFiles`·`uploadAttachments`(일부만 올라가면 올라간 것만)) · `domain/entryTable.ts`(V4 그대로 - 타입은 data/types) · `notes/EntryTableView.tsx`(고치기·compact - `[data-cell|table-op]`) ·
+  `domain/linkPreview.ts` + `ui/LinkPreviewCards.tsx`(`[data-link-preview]`) · NotePanel `[data-note-file-input|note-uploading=files|paste|note-attachment-image|note-attachment-view]`(올리는 동안 저장 막기).
+  캡처는 **줄이지 않는다**(V4 그대로 - 줄이기 워커는 학생 사진만, P7로 - 5장). 사진 크게 보기는 ■3을 당겨 함께(`ui/imageViewer.ts`·`ui/ImageViewer.tsx` Shell에 하나, ESC는 사진 창만).
+- [x] ■3 클립보드 칸(왼쪽 📋, IndexedDB 이 기기만, 지우면 이 기기 휴지통), 이미지 크게 보기(넘겨 보기·3:4 틀).
+  → `data/clipboard.ts`(목록·휴지통 store `useClipboard` - DB `sp5-clipboard-{uid}`(계정마다, 로그아웃하면 지움)·시스템 클립보드 읽기(달라졌을 때만)) ·
+  `features/clipboard/capture.ts`(열림 `sp5-clipboard-open`·폭 `LEFT_COLUMN_CSS_WIDTH`·`useClipboardCapture` - copy/cut·돌아올 때·열린 동안 2초·단축키 'clipboard') ·
+  `paste.ts`(글 쓰던 칸·커서 자리에, 그림은 붙여넣기 이벤트로 - 메모·기록 칸이 올려 붙인다, 받을 칸이 없으면 시스템 클립보드에) ·
+  `ClipboardColumn.tsx`(`[data-clipboard-panel|clipboard-toggle|clipboard-close|clipboard-fetch|clipboard-clear|clipboard-empty|clip-item|clip-paste|clip-remove]`) · Shell: 화면 왼쪽 여백·경계선 `[data-column-resizer=left]`.
+  휴지통 창(P5-4)이 '이 기기' 항목으로 `listClip…`·`restoreClipFromTrash`·`deleteClipTrash`·`purgeClipTrash`를 쓴다.
+- [x] ■4 크롬 점검(구글 API는 page.route로 흉내) + 👤 실제 계정: V4에서 가져온 기록의 첨부 하나가 V5에서 열리는지.
+  → `tools/inspect-attach.mjs` 47항목(만료 토큰 → 묻는 창·닫기 = 안 올림·캡처/파일 = 드라이브 흉내·표 먼저·칸 고치기·저장 = 문서 하나·카드·크게 보기·ESC·클립보드 칸 전부) ·
+  notes·memo·shell 다시 통과. 묻는 창의 '구글 로그인' = 로그인 창 열림은 컨테이너가 apis.google.com에 닿지 못해 건너뜀 - PC에서 이 점검을 돌리면 본다.
 **끝 조건**: 위 설명서 주제가 된다.
 
 ### P4-3. 링크 연결·보기

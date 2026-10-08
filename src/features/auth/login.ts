@@ -11,20 +11,15 @@ import type { UserCredential } from 'firebase/auth';
 import { auth, googleProvider } from '../../data/firebase';
 import { showErrorToast } from '../../app/toast';
 import { stopPrefsSync } from '../../app/prefs';
+import { wipeClipboard } from '../../data/clipboard';
 import { wipeDrafts } from '../../data/drafts';
+import { forgetGoogleToken, keepGoogleToken } from '../../data/google/token';
 import { wipeMirror } from '../../data/mirror/sync';
 
-const GOOGLE_TOKEN_KEY = 'sp5-google-token';
-
-/** 구글 액세스 토큰을 챙겨 둔다(드라이브·캘린더·시트). P4-2 구글 토큰 도우미가 이어받는다. */
+/** 구글 액세스 토큰을 챙겨 둔다(드라이브·캘린더·시트 - data/google/token이 쓴다) */
 function keepAccessToken(result: UserCredential | null) {
   const token = result ? GoogleAuthProvider.credentialFromResult(result)?.accessToken : undefined;
-  if (!token) return;
-  try {
-    sessionStorage.setItem(GOOGLE_TOKEN_KEY, token);
-  } catch {
-    /* 시크릿 모드 등에서 실패할 수 있다 - 그때는 쓸 때 다시 로그인을 묻는다 */
-  }
+  if (token) keepGoogleToken(token);
 }
 
 /** 팝업이 막혀 리디렉션으로 돌아온 로그인을 마무리한다. 앱이 뜰 때 한 번(main.tsx). */
@@ -93,13 +88,11 @@ export async function logout() {
     showErrorToast('로그아웃하지 못했습니다.', error);
     return;
   }
-  try {
-    sessionStorage.removeItem(GOOGLE_TOKEN_KEY);
-  } catch {
-    /* 무시 */
-  }
+  forgetGoogleToken();
   // 기기 사본(학생 자료가 든다)은 다음에 들어오면 서버에서 다시 받는다
   if (uid) await wipeMirror(uid).catch((e: unknown) => console.warn('[mirror] 로그아웃 때 기기 사본을 지우지 못했습니다.', e));
   // 쓰던 글 보관도 같은 까닭으로 (공용 PC)
   if (uid) await wipeDrafts(uid).catch((e: unknown) => console.warn('[drafts] 로그아웃 때 쓰던 글 보관을 지우지 못했습니다.', e));
+  // 클립보드 칸 목록도 (비밀번호·캡처가 지나간다)
+  if (uid) await wipeClipboard(uid).catch((e: unknown) => console.warn('[clipboard] 로그아웃 때 클립보드 목록을 지우지 못했습니다.', e));
 }
