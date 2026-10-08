@@ -1,0 +1,23 @@
+# 로그
+logs
+*.log
+npm-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+.env*
+
+# 편집기
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+
+# 에뮬레이터·점검 도구가 만드는 것
+.firebase
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+tools/report
