@@ -242,6 +242,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   첫 주소·index.html·sw.js·manifest.json은 `no-cache`(정규식 하나 - 첫 주소 '/'는 source '/index.html'에 걸리지 않는다), `/assets/**`는 1년(파일 이름에 해시).
   `authDomain`은 콘솔 두 곳(👤 승인된 도메인 · OAuth 클라이언트 원본·**리디렉션 URI** `https://schoolplanner-v5.web.app/__/auth/handler`)이 된 뒤에 바꾼다 -
   리디렉션 URI가 없으면 바꾸는 순간 로그인이 redirect_uri_mismatch로 막힌다(계획에는 JS 원본만 적혀 있었다).
+  승인된 도메인은 `getProjectConfig?key=…`(공개)로 확인했고, 리디렉션 URI는 실제 로그인으로만 확인된다(Google이 로그인 뒤에야 견준다) → 10-08 바꿔 다시 배포.
+- **P1-4 자동 배포**: 👤 `init hosting:github`가 비밀값 `FIREBASE_SERVICE_ACCOUNT_SCHOOLPLANNERV3`와 작업 파일 둘을 만들었다. 다듬은 것:
+  merge = CI가 main에서 **통과한 뒤**(`workflow_run`) 그 커밋을 배포(깨진 빌드가 실제 주소에 가지 않게, 잇달아 올리면 마지막 것만), Node 24 맞춤.
+  PR = 미리 보기 주소(7일) - 승인된 도메인이 아니라 구글 로그인은 안 된다(화면만). 사용자가 따로 GCP 프로젝트 'SchoolPlannerV5'를 만들었지만
+  V5는 `schoolplannerv3`를 그대로 쓴다(uid·드라이브 drive.file·푸시가 묶여 있다) - 새 프로젝트는 쓰지 않는다(지워도 된다).
+  init이 함께 깐 Firebase AI 스킬(`.agents/`·`.claude/skills/`·`skills-lock.json`)은 앱과 상관없어 `.gitignore`.
 
 ---
 
@@ -321,7 +327,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■1 설정 문서 `settings/common`·`pc`·`mobile` + 동기화(V4 preferenceSync - 1초 뒤 올림, PC/휴대폰 가르기) + store.
 - [x] ■2 환경설정 창(창 목록 `settings`, 탭 다섯 + 개발자 - `MENU.md` 3-6). 지금 있는 것만 채우고 아직 없는 기능의 칸은 숨긴다. 단축키 바꾸기(ShortcutModal 옮기기).
 - [x] ■3 계정 칸(사진 누르기): 이름·메일·로그아웃(공유 그룹은 P8-4 전까지 숨김).
-- [ ] ■4 배포: 👤 사이트 이름 고르기(권장 `schoolplanner-v5`, 쓰고 있으면 `sp5-` 붙인 이름) → `npx firebase hosting:sites:create <이름> --project schoolplannerv3`(묻고).
+- [x] ■4 배포: 👤 사이트 이름 고르기(권장 `schoolplanner-v5`, 쓰고 있으면 `sp5-` 붙인 이름) → `npx firebase hosting:sites:create <이름> --project schoolplannerv3`(묻고).
   `firebase.json` hosting(site·`dist`). 👤 콘솔 두 곳: Firebase › Authentication › 설정 › 승인된 도메인에 `<이름>.web.app` /
   Google Cloud › API 및 서비스 › 사용자 인증 정보 › V4가 쓰는 OAuth 웹 클라이언트 › 승인된 JavaScript 원본에 `https://<이름>.web.app`(드라이브·캘린더 토큰).
   `authDomain`을 `<이름>.web.app`로. 👤 `npx firebase init hosting:github`(브라우저로 GitHub 허락 → 서비스 계정·Secret이 저절로) → main 푸시 = 배포, PR = 미리 보기 주소.

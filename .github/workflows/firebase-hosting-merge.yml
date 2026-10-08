@@ -1,0 +1,44 @@
+# main에 올린 것을 https://schoolplanner-v5.web.app 에 배포한다 (P1-4 - `npx firebase init hosting:github`가 만든 것을 다듬음).
+#
+# CI(검사 → 테스트 → 빌드)가 통과한 커밋만 배포한다 - 깨진 빌드가 실제 주소에 올라가지 않게.
+# 배포 대상 사이트는 firebase.json hosting.site. 규칙·함수는 건드리지 않는다(hosting만).
+# 비밀값 FIREBASE_SERVICE_ACCOUNT_SCHOOLPLANNERV3 = init hosting:github가 만든 서비스 계정(Hosting 배포 권한).
+name: Deploy to Firebase Hosting on merge
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+  checks: write
+
+# 잇달아 올리면 마지막 것만 배포한다
+concurrency:
+  group: hosting-live
+  cancel-in-progress: true
+
+jobs:
+  build_and_deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # CI가 검사한 바로 그 커밋
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - run: npm ci && npm run build
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHOOLPLANNERV3 }}
+          channelId: live
+          projectId: schoolplannerv3

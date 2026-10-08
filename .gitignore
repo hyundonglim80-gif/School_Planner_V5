@@ -21,3 +21,8 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 tools/report
+
+# firebase init이 함께 깔아 두는 AI 도우미 스킬 (앱과 상관없다 - P1-4)
+.agents/
+.claude/skills/
+skills-lock.json

@@ -1,0 +1,27 @@
+# PR마다 미리 보기 주소(schoolplanner-v5--pr<번호>-….web.app, 7일)에 올리고 PR에 주소를 단다 (P1-4 - init hosting:github가 만든 것).
+# ⚠️ 미리 보기 주소는 Auth 승인된 도메인이 아니라 구글 로그인이 되지 않는다 - 화면만 본다(로그인은 main 배포에서).
+name: Deploy to Firebase Hosting on PR
+on: pull_request
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write
+jobs:
+  build_and_preview:
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - run: npm ci && npm run build
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHOOLPLANNERV3 }}
+          projectId: schoolplannerv3
