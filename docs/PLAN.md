@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** - ■5 여러 개 고르기부터.
+**P3-4 가져오기: 일정·기록·메모·링크** (다음 대화에서 - 클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
 
 ---
 
@@ -142,8 +142,8 @@
 | **P3 하루 화면** | | | | |
 | P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | 끝 (2026-10-08) |
 | P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | 끝 (2026-10-08) |
-| P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | **다음** |
-| P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | |
+| P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | 끝 (2026-10-08) |
+| P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | **다음** |
 | **P4 메모·첨부·링크** | | | | |
 | P4-1 | 메모 화면·라벨로 보기 | 중간 | 중간 | |
 | P4-2 | 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기 | 큼 | 중간 | |
@@ -198,6 +198,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-4 | P2-4 세션 끝 정리 | 단위 610 · 자료 층(에뮬레이터) 24(import.emu 5) · inspect-import-labels 32 · P2 단계 점검 모두(data·mirror·labels·import-labels + shell·settings·login·pwa) 통과 · 브랜치 `claude/eager-hypatia-mlpldd` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 👤 실제 계정으로 한 번 가져와 보기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-1 | P3-1 세션 끝 정리 | 단위 721 · 자료 층(에뮬레이터) 24 · inspect-events 58 · shell·labels·settings·data 통과 · 브랜치 `claude/peaceful-lamport-icu4gf` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 단위 테스트 '처리하지 않은 오류'(진짜 Firebase를 띄운 시험 넷)를 고침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-2 | P3-2 세션 끝 정리 | 단위 832 · inspect-notes 61 · events·shell·settings·labels·data 통과 · 브랜치 `claude/amazing-clarke-hboeze` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 · 일정 칸에도 쓰던 글 보관 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -639,6 +640,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [ ] ■1 `events/{date}` → items(event): readEventList(id 없는 항목 - `DESIGN.md` 8-2), 라벨 셋 자리 → `labelIds`, 속성(V3 이름 먼저), time·alarmTriggered,
   기한(사슬로), 공휴일 일정 빼기, 이월 사슬 → `carriedFrom`, authorId·createdAt·`src`.
 - [ ] ■2 기간 조각 → 한 항목(글 끝 '(i/n)' 떼기, 날마다 완료 → `doneDates`, 조각마다 글이 다르면 따로 두고 결과 표에), 반복 묶음 → `series`(imported) + 항목들.
+  P3-3이 둔 칸: 조각이 평일에만 있으면 `workdays: true`, 범위 안의 빈 날(지운 조각)은 `skipDates`(DESIGN 5-3 - `domain/period`가 그대로 센다). 반복은 `seriesId`·`seriesIndex`(규칙 없이 `imported: true` - 묶음 고치기·지우기는 된다).
+  이월: 진행 중인 V4 사슬(오늘 문서에 `originalDate`·`forwardChainId`)은 `date = originalDate`·`carrying: true`로 두면 오늘 칸에 '↪ 처음 날부터'로 따라온다(끝낸 사슬은 `carriedFrom`).
+  V4에서 '오늘에 같은 글이 있어' 옮겨지지 않고 지난 날에 남은 이월 일정은 V5에서 따라온다(같은 글 둘 - 결과 표에 수를 적을지 본다).
 - [ ] ■3 `journals` → items(note, date), `tasks` → items(note, null): 라벨 짝, tables, attachments, completed·favorite·fromDate·keepId, '[표]' → 빈 글,
   `notice_`·`attendance_` 자동 기록은 가져오지 않는다. `linkedItems` → `linkIds`(결정적 id로 바로 셈, 수업 → `'lesson:{date}:{n}'`).
 - [ ] ■4 결과 표 + 점검 `inspect-import-items.mjs`(V4 seed 수와 맞다·두 번째는 바뀐 것 0·V5에서 고친 것은 그대로). 👤 실제 계정으로 가져와 하루·메모 화면을 V4와 견주기 부탁.

@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P3-2 끝**(클라우드 - 하루 기록 칸·메모/기록 카드·쓰는 칸(📅 날짜 = 자리·#라벨·체크리스트)·쓰던 글 보관·＋ 새로 기록/메모). '이어서' = **P3-3**(이월·지난 일정·기간·반복·여러 개). 👤 V5 주소에서 기록·메모를 쓰고·날짜를 빼 메모로 옮기고·지워 보기, 그리고 (P2-4 부탁) 띠의 '가져오기'로 라벨·설정이 V4와 같은지(일정·기록 가져오기는 P3-4).
+- **2026-10-08 P3-3 끝**(클라우드 - 이월 = 계산(↪ m/d부터)·📥 지난 일정 줄·기간 일정 한 문서·🔁 반복·여러 개 고르기). '이어서' = **P3-4**(가져오기: 일정·기록·메모·링크 - V4 저장소를 옆에 받는다). 👤 V5 주소에서 이월 라벨 일정을 하루 넘겨 보기·기간(끝 날)과 반복을 만들고 '이 날부터' 지우기·Ctrl 누르며 여러 개 고르기, 그리고 (P2-4 부탁) 띠의 '가져오기'로 라벨·설정이 V4와 같은지.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -62,6 +62,9 @@
   - 정한 시간만 기다리지 않고 보려는 것이 뜰 때까지 기다린다(`waitFor`). 서버 확인은 기다려 읽는다(`serverUntil`).
   - 늘 움직이는 것(깜빡이는 ⏰ 알림 창)은 Playwright가 '멈춘 단추'를 끝없이 기다린다 → 그 단추만 `click({ force: true })`(P3-1).
   - 보던 화면이 기억되므로 묶음 시작에서 화면을 정한다(주소 `#/day/…`로 열면 된다). 같은 주소(# 뒤만 같은 것)를 `goto`하면 새로 읽지 않는다 - 앱을 처음부터 보려면 `page.reload()`(P2-4).
+  - 창을 닫은 바로 뒤 주소를 바꾸면 창 층의 뒤로가기가 주소를 되돌릴 수 있다 → 그 화면이 뜰 때까지 다시 간다(`inspect-groups` `go()` - P3-3). 서버를 읽어 셀 때 지운 표시(`deletedAt`)를 빼는지 본다.
+  - 같은 `data-*` 이름을 두 곳(카드 표시·칸 안내)에 쓰지 않는다 - Playwright가 둘을 찾아 멈춘다(P3-3 `event-series`/`event-series-info`).
+- **오늘에 따라 고르는 것(이월·지난 일정)의 단위 테스트는 날짜를 고정**한다: `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(…)`, 끝에 `vi.useRealTimers()`(P3-3 - 고정하지 않으면 다음 날 시험이 깨진다).
 - **단위 테스트가 `data/select`·`session`·`space`를 부르면 `vi.mock('…/data/firebase')`** - 진짜 Firebase 앱이 뜨면 시험이 끝난 뒤 IndexedDB를 열다
   '처리하지 않은 오류'가 가끔 남는다(P3-1 - 셋에 한 번). vitest가 'originated in <파일>'로 그 파일을 알려 준다. 끝에 `Errors`가 0인지도 본다.
 - **IndexedDB(idb)는 트랜잭션을 열어 일과 `tx.done`을 함께 기다린다**(P3-2) - `db.get`·`db.put` 줄임은 읽기 트랜잭션의 done을 아무도 받지 않아, 트랜잭션이 끊기면 '처리하지 않은 오류'(AbortError)가 된다.
@@ -182,7 +185,7 @@
 - **라벨** `src/features/labels/`: `LabelsWindow.tsx`(창 `labels` - ⋮ 일정, `{ tab: 'event'|'note' }`, 고친 것만 들고 사본 위에 얹는다, `[data-labels-window]`·
   `[data-label-tab|row|name|color|prop|parent|up|down|delete|save|add|new-name|new-parent|usage|prune|prune-item|prune-confirm|recover|defaults]`) · `ColorPicker.tsx`(`[data-color-option]`) ·
   `LabelChip.tsx`(`LabelChip`·`LabelChips` `[data-label-chip]`) · `LabelPicker.tsx`(쓰는 칸 - `[data-label-picker|pick|pick-new|pick-new-input|pick-pending|picker-settings]`).
-- **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 지금 보기·단축키·앱·가져오기, `{ tab }`로 열기 - 열린 창도 그 탭으로) · `ViewTab`(누르는 즉시) ·
+- **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 지금 보기·학교·단축키·앱·가져오기, `{ tab }`로 열기 - 열린 창도 그 탭으로) · `ViewTab`(누르는 즉시) · `SchoolTab`(이월 기간 `[data-forward-days]` - common.forwardDays) ·
   `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·이 기기 사본 `[data-mirror-state|count|reset]`·빌드 번호) · `parts`(Section·ToggleRow·Choices).
   `[data-settings-tab|panel|toggle]`·`[data-choice="이름:값"]`·`[data-shortcut-row|key|save|reset]`·`[data-install-pwa=ready|guide]`.
 - **껍데기** `src/app/`: `App.tsx`(로그인 상태 → `Shell`) · `Shell.tsx`(틀: 머리줄·본문·탭바·창·오른쪽 줄 ▶·폭 끌기) · `Header.tsx`(첫 줄 - ⏳·🗑️·＋ 새로·🔍·화면 탭·?·⋮·사진,
@@ -209,7 +212,12 @@
   `eventForm.ts`(순수 - 칸 ↔ 문서, 속성은 라벨과 다른 것만 `propsToStore`, 저장 = 바뀐 칸만 `editChanges`) · `eventOps.ts`(순수 - `reorderOps`·`doneChanges`·`orderAfter`·`itemPath`) ·
   `actions.ts`(`setEventDone`·`moveEventInList`·`createEvent`·`saveEvent`·`setEventAlarm`·`deleteEvent` - 되돌리기까지) · `EventAlarmWindow.tsx`(⏰ 시각 `[data-alarm-window|alarm-time|alarm-save|alarm-off]`) ·
   `EventAlarms.tsx`(Shell에 하나 - 앱 안 알림, 20초마다 사본) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]`) · `QuickInputChips.tsx`(`[data-quick-chip]`) · `DueBadge.tsx`(`[data-due-badge]`) ·
-  `shortcuts.ts`(`newEvent` = ＋ 새로 → 보는 날의 새 일정). 순수 셈 `domain/eventDue.ts`·`eventAlarm.ts`(`normalizeTimeInput`·`dueAlarms`)·`quickInput.ts`(V4 테스트째). 소리 `app/sound.ts`. 자동 높이 글 칸 `ui/AutoTextarea.tsx`.
+  `shortcuts.ts`(`newEvent` = ＋ 새로 → 보는 날의 새 일정, `recurring` = 반복 줄을 편 새 일정 칸, `forwarding` = 오늘로 가서 지난 일정 줄). 순수 셈 `domain/eventDue.ts`·`eventAlarm.ts`(`normalizeTimeInput`·`dueAlarms`)·`quickInput.ts`(V4 테스트째). 소리 `app/sound.ts`. 자동 높이 글 칸 `ui/AutoTextarea.tsx`.
+  - **이월(계산 - P3-3)**: `domain/forward.ts`(`forwardOn`·`isCarried`·`carriedOf`·`staleOf`·`carriedSince`) · `events/forward.ts`(`useCarried` = 오늘로 따라오는 일정·지난 일정, `usePastRow`·`staleCountNow`) · `ForwardMarks.tsx`(Shell - 처음 따라올 때 carrying 한 번, live에서만) ·
+    `eventOps.carriedDoneChanges`(오늘 칸에서 끝내면 오늘로) · 하루 `DayEvents`(오늘 것 아래 `[data-event-carried|event-since]`, 지난 날 `[data-event-away|event-to-today]`) · `day/DayPastEvents.tsx`('📥 지난 일정 N개' `[data-past-*]`) · `ui/useToday.ts`(자정에 바뀌는 오늘).
+  - **기간·반복·묶음(P3-3)**: `domain/period.ts`(보이는 날·'(k/n)'·doneDates·skipDates·끝 날 당기기 - 공휴일은 `HolidayCheck`로 P5-3) · `domain/recur.ts`(규칙·날짜·이름) · `events/seriesOps.ts`(순수 - 만들기·묶음 고치기·지우기)·`series.ts`(`useSeriesOf`) ·
+    일정 칸 '📆 끝 날' `[data-event-period-*|event-end|event-workdays]`·`RecurRow.tsx`(`[data-event-recur-row|recur-*]`)·`[data-event-series-info]` · `EventScopeWindow.tsx`(세 갈래 창 `[data-scope-window|scope-choice]`)·`EventDeleteChooser.tsx` · 카드 '(k/n)' `[data-event-period]`·🔁 `[data-event-series]`.
+  - **여러 개 고르기(P3-3)**: `events/multi.ts`(store `useMulti` - id + 그 날)·`multiOps.ts`(순수 - 한 일정 여러 날은 한 문서에 접는다)·`MultiSelectBar.tsx`(Shell - `[data-multi-*]`, ⋮ `multiSelect`·ESC) · 카드 `[data-event-picked]`·Ctrl·Shift·길게 누르기 · ESC에 함께 할 일 `app/keys.addEscapeAction`.
 - **메모·기록** `src/features/notes/`(하루 기록 칸·메모 화면(P4-1)이 함께 쓴다 - 메모와 기록은 같은 kind 'note', 날짜가 있으면 기록): `open.ts`(쓰는 칸 `note` = `{ sid, date|null, id? }`·`openNotePanel`·`useEditingNoteIds`·`closeNotePanelsFor`) ·
   `NotePanel.tsx`(`[data-note-panel=new|edit|note-id|note-noun|note-flag=done|favorite|note-date|note-date-clear|note-place-hint|note-place-keep|note-text-input|checklist-toggle|hash-preview|hash-label|note-save|note-delete|note-close]`) ·
   `noteForm.ts`(순수 - 칸 ↔ 문서, 자리 `placeChanges`(기록 → 메모 = fromDate), '#라벨'·새 라벨 `savePlanOf`) · `noteOps.ts`(순수 - 즐겨찾기 먼저·▲▼ 무리 안·체크 줄) ·
@@ -224,7 +232,10 @@
   `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기) ·
   `tools/inspect-import-labels.mjs`(P2-4: 띠 → 가져오기 → V5 라벨·설정 = V4·두 번째는 바뀐 것 0·띠 닫기, V4 문서를 고쳐 심고 되돌린다). seed는 계정마다 띠 닫음을 심는다.
   `tools/inspect-events.mjs`(P3-1: 일정 카드·완료·순서·추가·고치기·날짜 옮기기·빠른 입력·⏰·지우기·되돌리기·Ctrl+Z·앱 안 알림·＋ 새로 - 저장마다 서버 문서 하나, 58항목) ·
-  `tools/inspect-notes.mjs`(P3-2: 기록 카드·완료·즐겨찾기·체크 줄·순서·지우기·새 기록 칸·#라벨·고치기·날짜 빼기 = 같은 문서의 date·되돌리기·체크리스트·＋ 새로·쓰던 글 보관 - 61항목).
+  `tools/inspect-notes.mjs`(P3-2: 기록 카드·완료·즐겨찾기·체크 줄·순서·지우기·새 기록 칸·#라벨·고치기·날짜 빼기 = 같은 문서의 date·되돌리기·체크리스트·＋ 새로·쓰던 글 보관 - 61항목) ·
+  `tools/inspect-forward.mjs`(P3-3: 오늘 칸 ↪·carrying 한 번·다시 열면 쓰지 않음·끝내기 = 오늘로·→ 오늘로·학교 탭·지난 일정 줄·단축키 - 48항목, 날짜는 이 기기의 오늘) ·
+  `tools/inspect-groups.mjs`(P3-3: 기간 한 문서·(k/n)·그날만 완료·이 날만/이 날부터·통째로 옮기기, 반복 만들기·이 날부터 고치기·지우기 - 41항목, 2027-03) · `tools/inspect-multi.mjs`(P3-3: Ctrl·Shift·완료·라벨·옮기기(기간은 고른 날만)·지우기·ESC·⋮ - 26항목, 2027-04).
+  점검용 `window.sp5` = `openWindow`·`closeAllWindows`·`runShortcut`(키가 없는 단축키 일).
   자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 단위만 - `repo.emu`·`mirror.emu`·`import.emu`).
   규칙 테스트: `app/windowConventions.test.ts`(창 틀·'취소' 금지·그림 단추 설명·⋮ 표) · `app/keys.test.tsx`(키 글자를 박지 않는다).
 - **V4 가져오기** `src/import/v4/`(V4 자리를 읽는 곳은 여기뿐 - `boundary.test`가 지킨다, 쓰기는 V5에만): `hash.ts`(SHA-1·base32·`stableStringify`) · `ids.ts`(`v4id`·id 없는 것 `idlessKey`) ·
