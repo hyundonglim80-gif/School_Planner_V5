@@ -188,11 +188,15 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 ## 6. 자료 층 (`src/data`)
 
 ### 6-1. 쓰기
-- 도우미만 쓴다: `create` · `patch` · `remove`(지운 표시) · `restore` · `purge`(영구 - 휴지통에서만) · `batch`. 화면·기능 코드는 `setDoc`을 직접 부르지 않는다.
-- 도우미가 늘 넣는 것: `updatedAt: serverTimestamp()`, 만들 때 `deletedAt: null`·`v: 1`·`createdAt`·`authorId`.
-- 실패는 `failWithToast`로 **던진다**(V4 규칙). 부르는 칸은 실패하면 닫지 않는다.
-- 쓰기마다 **되돌릴 값**(고치기 전 칸 값)을 돌려준다 → 안내의 '되돌리기'와 Ctrl+Z(글 칸 밖)가 한 길이다.
-- 문서 둘 이상을 함께 바꿀 때만 `writeBatch`(링크 양쪽, 반복 묶음, 공간 옮기기). 서버에서 읽어 고쳐 쓰는 트랜잭션은 거의 없다.
+- 도우미(`src/data/repo`)만 쓴다: `create` · `patch` · `remove`(지운 표시) · `restore` · `purge`(영구 - 휴지통에서만) · `put`(문서 통째 - 설정) · `batch`.
+  화면·기능 코드는 `setDoc`을 직접 부르지 않는다. 자리는 `DocPath { sid, coll, id }`, 새 id는 `newPath(sid, coll)`(기기에서 - 저장 전에 그 항목의 칸을 열 수 있게).
+- 도우미가 늘 넣는 것: `updatedAt: serverTimestamp()`·`v: 1`, 만들 때 `deletedAt: null`·`createdAt`·`authorId`, 지울 때 `deletedBy`. 기능 코드는 이 칸을 쓰지 않는다(`Editable<C>`·쓰면 던진다).
+- `patch(자리, 바꿀 칸, 고치기 전 문서)`: 고치기 전 값은 서버에서 읽지 않고 화면이 든 문서에서. `undefined` = 그 칸 지우기, `'periods.3.memo'`처럼 점 = 깊은 칸. 없는 문서면 실패(updateDoc).
+- 실패는 `failWithToast`로 **던진다**(V4 규칙). 부르는 칸은 실패하면 닫지 않는다. 뒤에서 맞추는 설정 동기화만 `writeOps`(안내 없이 원래 오류).
+- 쓰기마다 **되돌리는 쓰기**(`Undo` = WriteOp 목록, 고치기 전 칸 값으로)를 돌려준다 → `recordUndo(공간, 안내, undo, { what })`(`src/data/undo.ts`)로
+  안내의 '되돌리기'와 Ctrl+Z(글 칸 밖, 공간마다 20개)가 한 길이다. 만들기의 되돌리기는 지운 표시, 영구 지우기의 되돌리기는 그 문서를 그대로 다시 적기.
+- 적는 것은 늘 `writeBatch` 하나(500개를 넘으면 나눈다). 여럿을 함께 바꾸는 것(링크 양쪽, 반복 묶음, 공간 옮기기)은 `batch([writeOp.…])`. 서버에서 읽어 고쳐 쓰는 트랜잭션은 거의 없다.
+- 규칙(`firestore.rules`)이 items·labels의 `kind`·`deletedAt`·`v`·**`updatedAt == 서버 시각`**을 본다 - 서버 시각을 빠뜨린 쓰기는 사본에 가지 않으므로 저장 실패로 드러낸다.
 
 ### 6-2. 기기 사본 (IndexedDB, `idb`)
 - DB `sp5-mirror-{uid}`, 공간·컬렉션마다 저장소, 커서 = 받은 `updatedAt`의 가장 큰 값.
@@ -299,7 +303,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | 무엇 | 언제 |
 |---|---|
 | `npx vitest run` (단위) | 조각마다. domain 순수 함수는 V4 테스트째 옮긴다. CI도 돈다 |
-| 자료 층 테스트(에뮬레이터) | 자료 층을 고칠 때. 규칙·저장 도우미·기기 사본·가져오기. PC에서(CI는 단위만) |
+| 자료 층 테스트(에뮬레이터) `npm run test:data` | 자료 층을 고칠 때. 저장 도우미·되돌리기·기기 사본·가져오기(`src/**/*.emu.test.ts`, `vitest.data.config.ts`). 에뮬레이터를 켠 곳에서(CI는 단위만) |
 | `tools/check-rules.mjs` | 규칙을 고칠 때마다. V4 35개 + V5 |
 | 크롬 점검 `tools/inspect-*.mjs` | 세션마다 바뀐 부분만. **`data-*`로만 찾는다**(화면 글자가 아니라). 심은 자료는 끝에 되돌린다. PC 1400px 크롬 하나 |
 | 가져오기 점검 | 가져오기 세션마다: V4 seed → 가져오기 → 종류·수 대조 → 두 번째 가져오기는 '바뀐 것 0' |

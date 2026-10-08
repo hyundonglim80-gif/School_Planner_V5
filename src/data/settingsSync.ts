@@ -11,9 +11,10 @@
 // - 문서가 없으면: 이 기기 값이 기본값과 다를 때만 올린다(같으면 문서를 만들지 않는다 - 기본값은 저장하지 않는다).
 //
 // 서버와 이야기하는 부분(port)과 맞추는 규칙(startSettingsSync)을 나눠, 규칙은 서버 없이 시험한다.
-import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from './firebase';
 import { personalSpaceId } from './space';
+import { writeOp, writeOps } from './repo';
 import { settingsKey } from '../domain/settings';
 
 export type SettingsData = Record<string, unknown>;
@@ -93,7 +94,8 @@ export function startSettingsSync(port: SettingsPort, binding: SettingsBinding, 
 
 /** 개인 공간의 설정 문서 하나 (규칙: 내 개인 공간 아래는 나만 - firestore.rules) */
 export function settingsPort(uid: string, docId: 'common' | 'pc' | 'mobile'): SettingsPort {
-  const ref = doc(db, 'spaces', personalSpaceId(uid), 'settings', docId);
+  const at = { sid: personalSpaceId(uid), coll: 'settings' as const, id: docId };
+  const ref = doc(db, 'spaces', at.sid, at.coll, at.id);
   return {
     watch: (onData) =>
       onSnapshot(
@@ -106,7 +108,7 @@ export function settingsPort(uid: string, docId: 'common' | 'pc' | 'mobile'): Se
         },
         (e) => console.warn(`[settings] ${docId} 구독 실패:`, e),
       ),
-    // 저장 도우미(P2-1) 전이라 여기서 서버 시각·판을 붙인다 - P2-1이 도우미로 옮긴다
-    save: (data) => setDoc(ref, { ...data, updatedAt: serverTimestamp(), v: 1 }),
+    // 문서 통째로(put - 서버 시각·판은 도우미가 붙인다). 뒤에서 맞추는 것이라 안내 없이 - 실패는 startSettingsSync가 콘솔에
+    save: (data) => writeOps([writeOp.put(at, data)]),
   };
 }

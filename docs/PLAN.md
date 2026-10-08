@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** (다음 대화에서 - PC든 클라우드든. 클라우드면 1-7을 먼저).
+**P2-2 기기 사본(IndexedDB)·바뀐 것만 받기** (다음 대화에서 - PC든 클라우드든. 클라우드면 1-7을 먼저).
 
 ---
 
@@ -93,6 +93,7 @@
 - 배포·운영 규칙·`firebase` 명령은 클라우드에서 하지 않는다(로그인이 없다) - 화면 배포는 main에 합치면 저절로, 운영 규칙·함수 배포는 PC에서(묻고).
 - 컨테이너에는 저장소가 하나다. **가져오기 세션(P2-4·P3-4·P6-4·P7-5·P8-4)은 V4 저장소도 옆에 받는다**(Public이라 권한 없이, V4에는 푸시하지 않는다):
   `git clone https://github.com/hyundonglim80-gif/School_Planner_V4 ../School_Planner_V4 && cd ../School_Planner_V4 && npm ci && npm run seed`. 안 되면 PC에서.
+- 규칙(`firestore.rules`)을 고치면 에뮬레이터를 처음부터 다시 켠다(켜 둔 채 고치면 죽는다 - 5장 '컨테이너 에뮬레이터'). 자료 층 테스트 `npm run test:data`는 컨테이너에서도 돈다.
 - 컨테이너 크롬은 내려받은 파일 이름을 모두 `download`로 준다 - 파일 이름 점검 실패는 앱 버그가 아니다. apis.google.com이 막혀 구글 창은 안 뜬다(흉내로 본다).
 
 ### 1-8. 막혔을 때
@@ -132,8 +133,8 @@
 | P1-3 | 앱 껍데기: 화면 탭·주소·창 목록·오른쪽 칸·단축키·머리줄 | 큼 | 높음 | 끝 (2026-10-08) |
 | P1-4 | 설정 동기화·환경설정 탭·계정 칸·배포·PWA 틀 | 중간 | 중간 | 끝 (2026-10-08) |
 | **P2 자료 층** | | | | |
-| P2-1 | 타입·저장 도우미·지운 표시·되돌리기·규칙 | 중간 | 높음 | **다음** |
-| P2-2 | 기기 사본(IndexedDB)·바뀐 것만 받기 | 큼 | 높음 | |
+| P2-1 | 타입·저장 도우미·지운 표시·되돌리기·규칙 | 중간 | 높음 | 끝 (2026-10-08) |
+| P2-2 | 기기 사본(IndexedDB)·바뀐 것만 받기 | 큼 | 높음 | **다음** |
 | P2-3 | 라벨(트리·속성·라벨 관리 창) | 중간 | 중간 | |
 | P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | |
 | **P3 하루 화면** | | | | |
@@ -188,6 +189,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 영-전-3-현동림 PC | P1-2 | P1-2 세션 끝 정리 | 규칙 V4 35 + V5 45 통과 · 에뮬레이터를 V5에서 · inspect-login 통과 · V4 화면도 그 에뮬레이터에서 · V4 `1f847e1` · 운영 규칙 배포(사용자 허락, 배포 전 운영 = V4 파일 확인) |
 | 2026-10-08 | 영-전-3-현동림 PC | P1-3 | P1-3 세션 끝 정리 | 단위 133 · inspect-shell 33항목 · inspect-login 통과 · 운영 빌드에 점검용 창·에뮬레이터 주소 없음 확인 |
 | 2026-10-08 | 영-전-3-현동림 PC | P1-4 | P1-4 세션 끝 정리 | 단위 173 · inspect-settings 20 · inspect-pwa 5 · shell·login 통과 · https://schoolplanner-v5.web.app 자동 배포 · 👤 휴대폰 로그인 확인 · 클라우드 세션 준비(Chromium 찾기·seed 계정 만들기·CI claude/**) |
+| 2026-10-08 | 클라우드(claude.ai/code) | P2-1 | P2-1 세션 끝 정리 | 단위 263 · 자료 층(에뮬레이터) 11 · check-rules V4 35 + V5 59 · inspect-data 11 · settings 20 · shell 통과 · 브랜치 `claude/happy-rubin-wcxw0e` → PR · 👤 규칙 V4 복사·운영 배포는 PC에서 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -235,7 +237,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   맞추기(`data/settingsSync.ts`): V4의 getDocFromServer + 구독 대신 **구독 하나**(memoryLocalCache라 첫 소식이 서버에서 온다 - 연결 없이 캐시에서 온 '문서 없음'만 믿지 않는다).
   문서가 없으면 이 기기 값이 기본값과 다를 때만 올린다. 적기를 기다리는 1초 동안 온 서버 값은 입히지 않는다(이 기기에서 방금 바꾼 것이 더 새것 - V4는 덮였다).
   이 기기 사본의 주인 `sp5-settings-owner` - 다른 계정으로 들어오면 앞 사람 설정을 기본값으로 비운다(새 계정 문서에 올리지 않게, `?as=` 점검도).
-  `common`은 지금 이월 기간 `forwardDays`(1~60, 기본 14)만 - 그 기능을 옮기는 세션이 칸을 더한다. `updatedAt`·`v`는 저장 도우미(P2-1) 전이라 `settingsPort`가 붙인다.
+  `common`은 지금 이월 기간 `forwardDays`(1~60, 기본 14)만 - 그 기능을 옮기는 세션이 칸을 더한다. `updatedAt`·`v`는 저장 도우미 `put`이 붙인다(P2-1 - 그 전에는 `settingsPort`가).
   **시작 화면**은 주소에 화면이 없을 때만(설치한 앱·첫 주소) - 새로고침·주소로 연 것은 그 화면 그대로.
 - **P1-4 환경설정 창**: '보기' 탭은 모두 **누르는 즉시** 바뀐다(V4는 글자 크기·창 위치·화면 밝기만 즉시, 토글·시작 화면은 '저장'을 기다려 섞여 있었다).
   '저장'은 단축키 탭에만 - 키를 하나씩 바꾸는 동안 잠깐 겹치므로(겹치면 저장을 막는다). Ctrl+S = 고치던 단축키 저장(다른 탭에 있어도), 고치던 것은 탭을 바꿔도 남고 ESC 때 묻는다.
@@ -257,6 +259,26 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   PR = 미리 보기 주소(7일) - 승인된 도메인이 아니라 구글 로그인은 안 된다(화면만). 사용자가 따로 GCP 프로젝트 'SchoolPlannerV5'를 만들었지만
   V5는 `schoolplannerv3`를 그대로 쓴다(uid·드라이브 drive.file·푸시가 묶여 있다) - 새 프로젝트는 쓰지 않는다(지워도 된다).
   init이 함께 깐 Firebase AI 스킬(`.agents/`·`.claude/skills/`·`skills-lock.json`)은 앱과 상관없어 `.gitignore`.
+- **P2-1 저장 도우미**(10-08): 규칙 부분(`data/repo/ops.ts` - 무엇을 적나 `toWrite`, 되돌리는 쓰기 `undoOf`)과 적는 부분(`repo/index.ts`)을 나눴다.
+  쓰기 하나 = `WriteOp` 하나, 되돌리기 = WriteOp 목록(`Undo`)이라 되돌리기도 `batch(undo)` 한 길이다. 늘 `writeBatch`로 적고 500개를 넘으면 나눈다(그때는 묶음마다만 한꺼번에).
+  **만들기의 되돌리기는 지운 표시**(영구로 지우면 다른 기기 사본이 모른다), 영구 지우기의 되돌리기는 그 문서를 그대로 다시 적기(put).
+  `patch`는 `updateDoc`(없는 문서면 실패 - 지운 항목을 빈 껍데기로 되살리지 않는다). 날짜 문서(lessonDays 등)를 처음 만드는 길은 그 세션(P6-1·P7-2)이 더한다.
+  `patch(자리, 바꿀 칸, 고치기 전 문서)` - 고치기 전 값은 서버에서 읽지 않고 화면이 든 문서에서. undefined = 칸 지우기, 점 = 깊은 칸.
+  설정 동기화는 `writeOps`(안내 없이 원래 오류 - 뒤에서 맞추는 것이라 V4처럼 콘솔에만). **P2-2에 넘길 것**: 사본에서 꺼낸 문서를 `purge`·되돌리기에 넘길 때 Timestamp를 되살려야 한다
+  (IndexedDB에서 꺼내면 `{seconds, nanoseconds}` 맵이 되어 규칙의 `deletedAt is timestamp`에 걸린다).
+  또 **영구 지우기는 '바뀐 것만 받기'에 보이지 않는다**(문서가 없어져 `updatedAt`이 없다) - 다른 기기 사본에는 지운 표시가 붙은 채 남아 그 기기 휴지통에 계속 보인다.
+  P2-2(또는 휴지통 P5-4)에서 사본의 지운 항목을 서버의 지운 항목 목록과 가끔 견줘 없는 것을 사본에서 뺀다.
+- **P2-1 되돌리기**(10-08): `recordUndo(공간, 안내, 되돌리는 쓰기, { what })` 하나로 안내의 '되돌리기' 단추와 Ctrl+Z 더미가 함께 선다 - 어느 쪽으로 되돌려도 그 하나가 빠진다.
+  더미는 공간마다 20개, 로그인한 사람이 바뀌면 비운다. 실패하면 더미 맨 위로 돌려놓는다(다시 Ctrl+Z). 다시 하기(되돌리기의 되돌리기)는 없다.
+  Ctrl+Z는 `main.tsx`에서 `setShortcutAction('undo', undoLast)` - 지금 공간은 개인 공간 하나(P8-4가 보는 공간으로). 비었으면 '되돌릴 것이 없습니다'.
+  Ctrl+Z로 되돌리면 안내에 `what`('메모 지우기')을 붙인다 - 단추로 되돌릴 때는 방금 본 안내라 붙이지 않는다. **기능 세션이 쓰기마다 `what`을 준다.**
+- **P2-1 규칙**(10-08): items·labels는 `kind`('event'|'note')·`deletedAt`(칸이 있고 null 또는 시각)·`v`(정수)·**`updatedAt == request.time`**만 본다.
+  서버 시각은 계획에 없던 것을 더했다 - 기기 시각이거나 칸만 고치고 빠뜨리면 기기 사본(P2-2)이 '바뀐 것만 받기'로 그 쓰기를 영영 놓치므로, 규칙에서 막아 저장 실패로 드러낸다.
+  같은 문서에 맞는 match가 여럿이면 하나만 허락해도 되므로 컬렉션마다 match를 두지 않고 `spaces/{sid}/{sub}/{document=**}` 하나에서 `sub`로 가른다(읽기·지우기는 모양을 보지 않는다).
+  check-rules V5 45 → 59. 👤 **PC에서**: V4 저장소 `firestore.rules`에 그대로 복사(V4 check:rules) → `node tools/live-rules.cjs`로 운영 = 앞 파일인지 보고 → 운영 배포(묻고).
+  지금 운영에 V5 항목 쓰기가 없어 배포가 늦어도 깨지는 것은 없다(배포 전 규칙이 더 느슨하다).
+- **컨테이너 에뮬레이터**(10-08): 켜 둔 채 `firestore.rules`를 고치면 규칙 다시 읽기에서 Auth 쪽이 죽고 Firestore(java)만 남아 포트를 쥔다 →
+  `ps aux | grep cloud-firestore-emulator`로 그 java를 끄고 `npm run emu`를 다시. 규칙을 고친 뒤에는 처음부터 다시 켠다.
 
 ---
 
@@ -347,17 +369,17 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P2-1. 타입·저장 도우미·지운 표시·되돌리기·규칙
 **시작 조건**: P1-4 끝(배포가 늦어지면 P1-3 끝이어도 된다 - 에뮬레이터로).
 **먼저 읽을 것**: `DESIGN.md` 2·4·6-1장, V4 `utils/toast.ts`(failWithToast·ShownError·showErrorToastOnce)·`lib/undoToast.ts`.
-- [ ] ■1 `src/data/types.ts`(`DESIGN.md` 4장 그대로), `newId()`(20자), 차례 값 `domain/order.ts`(분수 인덱스 - 두 값 사이 값, 테스트).
-- [ ] ■2 저장 도우미 `src/data/repo/`: `create`·`patch`·`remove`(지운 표시)·`restore`·`purge`·`batch` - `updatedAt` 서버 시각, 만들 때 `deletedAt: null`·`v`·`createdAt`·`authorId`.
+- [x] ■1 `src/data/types.ts`(`DESIGN.md` 4장 그대로), `newId()`(20자 - `data/id.ts`), 차례 값 `domain/order.ts`(분수 인덱스 - 두 값 사이 값, 테스트).
+- [x] ■2 저장 도우미 `src/data/repo/`: `create`·`patch`·`remove`(지운 표시)·`restore`·`purge`·`batch` - `updatedAt` 서버 시각, 만들 때 `deletedAt: null`·`v`·`createdAt`·`authorId`.
   실패는 `failWithToast`로 던진다. 모두 **되돌릴 값**을 돌려준다.
-- [ ] ■3 되돌리기 `src/data/undo.ts`: 안내의 '되돌리기'(V4 undoToast 모양) + Ctrl+Z 쌓기(글 칸 밖에서만, 공간마다 20개).
-- [ ] ■4 규칙: items·labels 모양 검사(`kind`·`deletedAt`·`v` 정도 - 지나치게 막지 않는다), check-rules V5 검사 더하기.
-- [ ] ■5 자료 층 테스트(에뮬레이터, 따로 된 설정 `vitest.data.config.ts` · `npm run test:data` - PC에서. CI는 단위만): 만들기·고치기·지우기·되살리기·되돌리기·Ctrl+Z.
+- [x] ■3 되돌리기 `src/data/undo.ts`: 안내의 '되돌리기'(V4 undoToast 모양) + Ctrl+Z 쌓기(글 칸 밖에서만, 공간마다 20개).
+- [x] ■4 규칙: items·labels 모양 검사(`kind`·`deletedAt`·`v` 정도 - 지나치게 막지 않는다), check-rules V5 검사 더하기.
+- [x] ■5 자료 층 테스트(에뮬레이터, 따로 된 설정 `vitest.data.config.ts` · `npm run test:data` - PC에서. CI는 단위만): 만들기·고치기·지우기·되살리기·되돌리기·Ctrl+Z.
 **끝 조건**: 위 테스트 통과. 저장이 실패하면 던지는 것을 테스트로 본다.
 
 ### P2-2. 기기 사본(IndexedDB)·바뀐 것만 받기
 **시작 조건**: P2-1 끝.
-**먼저 읽을 것**: `DESIGN.md` 6-2·6-3, V4 `CLAUDE.md` 4장(09-22 'primary lease' - 무엇이 달라야 하나), V4 `lib/clipboardHistory.ts`(V4의 IndexedDB 쓰는 법).
+**먼저 읽을 것**: `DESIGN.md` 6-2·6-3, 이 파일 5장 'P2-1 저장 도우미'(사본 Timestamp 되살리기·영구 지우기는 받기에 보이지 않음), V4 `CLAUDE.md` 4장(09-22 'primary lease' - 무엇이 달라야 하나), V4 `lib/clipboardHistory.ts`(V4의 IndexedDB 쓰는 법).
 - [ ] ■1 `src/data/mirror/db.ts`(idb): DB `sp5-mirror-{uid}`, 공간·컬렉션마다 저장소, 커서.
 - [ ] ■2 동기화 `src/data/mirror/sync.ts`: 처음 = 이번 학년도부터 쪽 나눠 받고 나머지는 뒤에서 / 그 뒤 = 컬렉션마다 `updatedAt > 커서 - 1분` 구독 하나 →
   사본·store에 넣기(지운 표시도 그대로) / 내 쓰기는 화면에 먼저.

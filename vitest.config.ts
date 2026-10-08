@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 
 // 컴포넌트 테스트용 설정.
@@ -16,5 +16,7 @@ export default defineConfig({
     globals: false,
     setupFiles: ['./src/test/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
+    // 자료 층 테스트(에뮬레이터)는 따로 - vitest.data.config.ts
+    exclude: [...configDefaults.exclude, 'src/**/*.emu.test.ts'],
   },
 });
