@@ -257,3 +257,53 @@ describe('고치기', () => {
     expect(q('[data-event-save]')).toBeDisabled();
   });
 });
+
+describe('기간 (끝 날 줄)', () => {
+  it("'📆 끝 날'을 눌러 끝 날을 고르면 한 문서의 기간 일정 (주말 빼기 기본), 날 수를 보인다", async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: '2026-10-14' }} />);
+    expect(document.querySelector('[data-event-period-row]')).toBeNull();
+    fireEvent.click(q('[data-event-period-open]'));
+    fireEvent.change(q('[data-event-end]'), { target: { value: '2026-10-20' } });
+    expect(q('[data-event-period-count]').dataset.eventPeriodCount).toBe('5');
+    expect(q('[data-event-period-count]').textContent).toContain('주말 2일 빼고');
+    type('기말고사');
+    await save();
+    expect(created()).toMatchObject({ date: '2026-10-14', endDate: '2026-10-20', workdays: true, text: '기말고사' });
+  });
+
+  it('시작 날을 옮기면 기간을 통째로 (끝 날이 따라간다)', async () => {
+    seed(new Map([['p', { ...ev1, date: '2026-10-14', endDate: '2026-10-20', workdays: true }]]));
+    render(<Host initial={{ sid: SID, date: '2026-10-14', id: 'p' }} />);
+    expect(q('[data-event-period-row]')).not.toBeNull();
+    fireEvent.click(q('[data-event-date-next]'));
+    expect((q('[data-event-end]') as HTMLInputElement).value).toBe('2026-10-21');
+    expect(q('[data-event-move-note]').textContent).toContain('~10/21');
+    await save();
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: '2026-10-15', endDate: '2026-10-21' });
+    // 되돌리기 = 자리 칸 모두 (끝 날도)
+    await act(async () => {
+      await undoLast();
+    });
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: '2026-10-14', endDate: '2026-10-20' });
+  });
+
+  it("'기간' 속성 라벨을 고른 새 일정 칸은 끝 날 줄을 펴 둔다", () => {
+    labels.set('per', { ...base, kind: 'event', name: '기간', color: 'indigo', parentId: null, order: 'z0', props: { calendar: false, period: true } });
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    expect(document.querySelector('[data-event-period-row]')).toBeNull();
+    fireEvent.click(q('[data-label-pick="per"]'));
+    expect(q('[data-event-period-row]')).not.toBeNull();
+    labels.delete('per');
+  });
+
+  it('삭제는 어디까지 묻는다 (그 칸을 연 날 기준)', async () => {
+    seed(new Map([['p', { ...ev1, date: '2026-10-14', endDate: '2026-10-20', workdays: true }]]));
+    render(<Host initial={{ sid: SID, date: '2026-10-16', id: 'p' }} />);
+    fireEvent.click(q('[data-event-delete]'));
+    expect(q('[data-scope-choice="after"]').textContent).toContain('3일');
+    await act(async () => fireEvent.click(q('[data-scope-choice="only"]')));
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ skipDates: ['2026-10-16'] });
+  });
+});

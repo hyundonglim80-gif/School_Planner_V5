@@ -15,6 +15,7 @@ import { openWindow } from '../../app/windows';
 import { showToast } from '../../app/toast';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
+import { isPeriod, periodDoneOn, periodPosition } from '../../domain/period';
 import { labelColor } from '../../domain/labels';
 import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
@@ -22,12 +23,16 @@ import type { YMD } from '../../data/types';
 import { deleteEvent, moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
 import DueBadge from '../events/DueBadge';
 import EventAlarmWindow from '../events/EventAlarmWindow';
-import { orderAfter, type ItemDoc } from '../events/eventOps';
+import { isGrouped, orderAfter, type ItemDoc } from '../events/eventOps';
 import { useCarried } from '../events/forward';
+import EventDeleteChooser from '../events/EventDeleteChooser';
 import DayPastEvents from './DayPastEvents';
 import { openEventPanel, useEditingEventIds } from '../events/open';
 
 const NONE: readonly ItemDoc[] = [];
+
+/** 그날 끝냈나 (기간 일정은 그날만) */
+const doneOn = (ev: ItemDoc, day: string) => (isPeriod(ev) ? periodDoneOn(ev, day) : !!ev.done);
 
 /** 목록의 맨 뒤 차례 값 (없으면 null) */
 function lastOrderOf(list: readonly ItemDoc[]): string | null {
@@ -60,11 +65,18 @@ export default function DayEvents({ date }: { date: YMD }) {
 
   const openCreate = () => sid && openEventPanel({ sid, date });
   const openEdit = (ev: ItemDoc) => sid && openEventPanel({ sid, date, id: ev.id });
-  const toggleDone = (ev: ItemDoc) => sid && void setEventDone(sid, ev, !ev.done).catch(quiet);
+  // 기간 일정은 그날만 (doneDates)
+  const toggleDone = (ev: ItemDoc) => sid && void setEventDone(sid, ev, !doneOn(ev, date), { day: date }).catch(quiet);
   // 따라오던 일정을 오늘 칸에서 끝내면 오늘로 옮겨 적는다 - 오늘 목록의 맨 뒤(따라오는 줄 바로 위)
-  const finishCarried = (ev: ItemDoc) => sid && void setEventDone(sid, ev, true, { today, order: orderAfter(events) }).catch(quiet);
+  const finishCarried = (ev: ItemDoc) => sid && void setEventDone(sid, ev, true, { carried: { today, order: orderAfter(events) } }).catch(quiet);
   const move = (list: readonly ItemDoc[], from: number, to: number) => sid && void moveEventInList(sid, list, from, to).catch(quiet);
-  const remove = (ev: ItemDoc) => sid && void deleteEvent(sid, ev).catch(quiet);
+  // 묶인 일정(기간)은 어디까지 지울지 먼저 묻는다
+  const [scopeFor, setScopeFor] = useState<ItemDoc | null>(null);
+  const remove = (ev: ItemDoc) => {
+    if (!sid) return;
+    if (isGrouped(ev)) setScopeFor(ev);
+    else void deleteEvent(sid, ev).catch(quiet);
+  };
 
   return (
     <section
@@ -124,6 +136,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                 <EventCard
                   key={ev.id}
                   ev={ev}
+                  day={date}
                   labels={itemLabels(tree, ev.labelIds)}
                   editing={editing.has(ev.id)}
                   today={today}
@@ -143,6 +156,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                 <EventCard
                   key={ev.id}
                   ev={ev}
+                  day={date}
                   labels={itemLabels(tree, ev.labelIds)}
                   editing={editing.has(ev.id)}
                   today={today}
@@ -177,6 +191,7 @@ export default function DayEvents({ date }: { date: YMD }) {
       {!collapsed && sid && date === today && (
         <DayPastEvents sid={sid} today={today} stale={carried.stale} forwardDays={forwardDays} lastOrder={lastOrderOf(events)} />
       )}
+      {scopeFor && sid && <EventDeleteChooser sid={sid} item={scopeFor} day={date} onClose={() => setScopeFor(null)} />}
       {alarmFor && sid && (
         <EventAlarmWindow
           onClose={() => setAlarmFor(null)}
@@ -192,6 +207,8 @@ export default function DayEvents({ date }: { date: YMD }) {
 
 interface EventCardProps {
   ev: ItemDoc;
+  /** 보이는 날 (기간 일정의 그날 완료·'(2/5)') */
+  day: string;
   labels: ReturnType<typeof itemLabels>;
   editing: boolean;
   today: string;
@@ -209,8 +226,10 @@ interface EventCardProps {
   onDown: () => void;
 }
 
-function EventCard({ ev, labels, editing, today, first, last, since, away, onOpen, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
-  const done = !!ev.done;
+function EventCard({ ev, day, labels, editing, today, first, last, since, away, onOpen, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
+  const done = doneOn(ev, day);
+  // 기간 일정의 그날 차례 '(2/5)' - 글에 적지 않고 센다 (DESIGN 5-3)
+  const pos = periodPosition(ev, day);
   const links = ev.linkIds?.length ?? 0;
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
@@ -381,6 +400,15 @@ function EventCard({ ev, labels, editing, today, first, last, since, away, onOpe
           <span data-event-text className={`inline align-middle ${done ? 'line-through text-slate-400' : ''}`}>
             {ev.text}
           </span>
+          {pos && (
+            <span
+              data-event-period={`${pos.k}/${pos.n}`}
+              title={`기간 일정 - ${pos.n}일 가운데 ${pos.k}째 날`}
+              className={`inline align-middle ml-1 text-xs font-bold ${done ? 'text-slate-400' : 'text-indigo-500'}`}
+            >
+              ({pos.k}/{pos.n})
+            </span>
+          )}
 
           {/* 이은 항목 (링크 보기 창은 P4-3) */}
           {links > 0 && (

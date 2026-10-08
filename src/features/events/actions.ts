@@ -3,7 +3,8 @@
 // 쓰기마다 문서 하나(원칙 1).
 import { shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { ordersBetween } from '../../domain/order';
-import { batch, create, newPath, patch, remove, writeOp, type WriteOp } from '../../data/repo';
+import { cutFromChanges, isPeriod, periodDoneChanges, skipDayChanges } from '../../domain/period';
+import { batch, create, newPath, patch, remove, writeOp, type Changes, type WriteOp } from '../../data/repo';
 import type { LabelTree } from '../../data/select';
 import { recordUndo } from '../../data/undo';
 import { createData, editChanges, effectiveAttrs, type EventForm } from './eventForm';
@@ -11,13 +12,25 @@ import { carriedDoneChanges, doneChanges, itemPath, reorderOps, type ItemDoc } f
 import { closeEventPanelsFor } from './open';
 
 const KEEP = '적은 내용은 칸에 남아 있습니다.';
+/** 옮기기의 되돌리기가 함께 되돌리는 자리 칸 (date 말고) */
+const PLACE_KEYS = ['endDate', 'skipDates', 'doneDates'] as const;
 
-/**
- * 완료 / 완료 풀기 (☐·라벨 칩). 안내 없이 Ctrl+Z 더미에만 - V4도 안내를 띄우지 않았다.
- * carried = 오늘 칸에서 따라오던 일정을 끝낼 때 - 그날로 옮겨 적는다(eventOps carriedDoneChanges, 되돌리면 제자리로).
- */
-export async function setEventDone(sid: string, item: ItemDoc, done: boolean, carried?: { today: string; order: string }): Promise<void> {
-  const changes = done && carried ? carriedDoneChanges(item, carried.today, carried.order) : doneChanges(done);
+export interface DoneOptions {
+  /** 오늘 칸에서 따라오던 일정을 끝낼 때 - 그날로 옮겨 적는다(eventOps carriedDoneChanges, 되돌리면 제자리로) */
+  carried?: { today: string; order: string };
+  /** 기간 일정은 그날만 (doneDates - domain/period) */
+  day?: string;
+}
+
+/** 완료 / 완료 풀기 (☐·라벨 칩). 안내 없이 Ctrl+Z 더미에만 - V4도 안내를 띄우지 않았다. */
+export async function setEventDone(sid: string, item: ItemDoc, done: boolean, opts: DoneOptions = {}): Promise<void> {
+  const changes = (
+    opts.day && isPeriod(item)
+      ? periodDoneChanges(item, opts.day, done)
+      : done && opts.carried
+        ? carriedDoneChanges(item, opts.carried.today, opts.carried.order)
+        : doneChanges(done)
+  ) as Changes<'items'>;
   const undo = await patch(itemPath(sid, item.id), changes, item, {
     fail: done ? '일정을 완료하지 못했습니다.' : '일정 완료를 풀지 못했습니다.',
   });
@@ -53,7 +66,17 @@ export async function saveEvent(sid: string, item: ItemDoc, form: EventForm, tre
   if (to && item.date) {
     // 끝내지 않은 이월 일정을 지난 날에 두면 오늘 칸에 따라온다 - 미리 알린다 (V4 movesForwardIntoPast)
     const bounce = !item.done && to < todayStr() && effectiveAttrs(form, tree).forward ? ' 이월 일정이라 끝내지 않으면 오늘 칸에 따라옵니다.' : '';
-    recordUndo(sid, `📅 일정을 ${shortDateLabel(item.date)} → ${shortDateLabel(to)}로 옮겼습니다.${bounce}`, [writeOp.patch(at, { date: item.date }, { date: to })], {
+    // 되돌리기는 자리만 - 기간이면 끝 날·뺀 날·끝낸 날도 함께 (같이 고친 글·라벨은 그대로)
+    const back: Changes<'items'> = { date: item.date };
+    const fwd: Changes<'items'> = { date: to };
+    for (const k of PLACE_KEYS) {
+      if (Object.hasOwn(changes, k)) {
+        (back as Record<string, unknown>)[k] = item[k];
+        (fwd as Record<string, unknown>)[k] = changes[k];
+      }
+    }
+    const span = item.endDate && changes.endDate ? `~${shortDateLabel(changes.endDate)}` : '';
+    recordUndo(sid, `📅 일정을 ${shortDateLabel(item.date)} → ${shortDateLabel(to)}${span}로 옮겼습니다.${bounce}`, [writeOp.patch(at, back, fwd)], {
       what: '일정 옮기기',
     });
   } else {
@@ -76,7 +99,7 @@ export async function setEventAlarm(sid: string, item: ItemDoc, time: string): P
 /**
  * 지우기 = 지운 표시(원칙 5 - 휴지통에서 되살린다). 확인 창 없이 곧바로, 안내의 되돌리기·Ctrl+Z로 그 자리에 돌아온다(V4 그대로).
  * 그 일정을 고치던 칸은 닫는다(없는 일정을 붙들고 있지 않게). 못 지웠으면 던진다 - 칸은 닫지 않는다.
- * 기간·반복 묶음의 '이 날만·이 날부터·전부'는 P3-3.
+ * 기간·반복 묶음은 먼저 어디까지 지울지 묻는다(EventDeleteChooser) - 기간의 '전부'가 이것이다.
  */
 export async function deleteEvent(sid: string, item: ItemDoc): Promise<void> {
   const undo = await remove(itemPath(sid, item.id), { fail: '일정을 지우지 못했습니다.' });
@@ -96,4 +119,20 @@ export async function bringEventsToToday(sid: string, list: readonly ItemDoc[], 
   );
   const undo = await batch(ops, { fail: '지난 일정을 오늘로 가져오지 못했습니다.' });
   recordUndo(sid, `📥 지난 일정 ${list.length}개를 오늘로 가져왔습니다.`, undo, { what: '지난 일정 가져오기' });
+}
+
+/**
+ * 기간 일정의 '이 날만'(그날 빼기 - skipDates) · '이 날부터'(끝 날 당기기). 문서 하나, 안내의 되돌리기·Ctrl+Z.
+ * 남는 날이 없으면 일정을 지운다(deleteEvent).
+ */
+export async function deletePeriodPart(sid: string, item: ItemDoc, day: string, scope: 'only' | 'after'): Promise<void> {
+  const changes = scope === 'only' ? skipDayChanges(item, day) : cutFromChanges(item, day);
+  if (!changes) return deleteEvent(sid, item);
+  const undo = await patch(itemPath(sid, item.id), changes as Changes<'items'>, item, { fail: '일정을 지우지 못했습니다.' });
+  recordUndo(
+    sid,
+    scope === 'only' ? `🗑️ ${shortDateLabel(day)} 하루를 기간에서 뺐습니다.` : `🗑️ ${shortDateLabel(day)}부터 뒤쪽 기간을 지웠습니다.`,
+    undo,
+    { what: '기간 일정 지우기' },
+  );
 }

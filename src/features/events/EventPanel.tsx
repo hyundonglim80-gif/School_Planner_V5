@@ -4,6 +4,8 @@
 // - 내용 칸이 맨 위(열면 곧바로 적는다) → 빠른 입력 칩(새 일정만) → 날짜·기한 → ⏰ 알림·🔗 링크 → 라벨 → 속성.
 // - 날짜: 새 일정은 저장할 날짜가 곧바로 바뀐다. 고치던 일정은 저장할 때 그 날짜로 옮긴다 = date만(되돌리기는 날짜만).
 // - 속성: 라벨이 정한 값 먼저, 이 일정만 다른 것만 적는다(eventForm). 기간·반복은 '끝 날'·'🔁 반복' 줄(P3-3).
+// - 기간(DESIGN 5-3): '끝 날' 줄 - 끝 날이 날짜보다 뒤면 한 문서의 기간 일정, 주말 빼기 기본 켬(V4). 시작 날을 옮기면 기간을 통째로 옮긴다(끝 날이 따라간다).
+//   라벨 속성 '기간'이 켜진 라벨을 고른 새 일정 칸은 끝 날 줄을 펴 둔다. 지우기는 어디까지 묻는다(EventDeleteChooser).
 // - 저장하면 칸은 닫히지 않고 그 일정의 수정 칸이 된다(V4 사용자 결정 - 기록·메모와 같다). 저장 = 바뀐 칸만, 문서 하나.
 // - 저장이 안 되면 칸을 닫지 않는다(적은 것은 그대로). ESC는 저장 안 한 글이 있으면 먼저 묻는다, 좁은 화면 배경 = 저장하고 닫기.
 // - 이 칸이 열린 동안 다른 기기에서 고친 것은, 손대기 전이면 따라간다(손댔으면 적던 것을 덮지 않는다).
@@ -11,8 +13,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
 import { showToast } from '../../app/toast';
-import { addDays, shortDateLabel } from '../../domain/dateUtils';
+import { addDays, daysBetween, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
+import { labelProps } from '../../domain/labels';
+import { MAX_PERIOD_DAYS, onPeriodDay, spanCount } from '../../domain/period';
 import { parseQuickInput, stripMatch, type QuickMatch } from '../../domain/quickInput';
 import { useDraft } from '../../data/drafts';
 import { useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
@@ -24,8 +28,9 @@ import { createEvent, deleteEvent, saveEvent } from './actions';
 import { useCarried } from './forward';
 import DueBadge from './DueBadge';
 import EventAlarmWindow from './EventAlarmWindow';
-import { effectiveAttrs, formOf, newForm, sameForm, withAttr, withLabels, type AttrKey, type EventForm } from './eventForm';
-import { orderAfter } from './eventOps';
+import EventDeleteChooser from './EventDeleteChooser';
+import { effectiveAttrs, formOf, newForm, periodOf, sameForm, withAttr, withLabels, withStartDate, type AttrKey, type EventForm } from './eventForm';
+import { isGrouped, orderAfter } from './eventOps';
 import type { EventPanelParams } from './open';
 import QuickInputChips, { type QuickChip } from './QuickInputChips';
 
@@ -66,6 +71,9 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [alarmOpen, setAlarmOpen] = useState(false);
+  const [deleteAsk, setDeleteAsk] = useState(false);
+  // 끝 날 줄: 끝 날이 있거나, 눌러 폈거나, 새 일정에서 '기간' 속성 라벨을 골랐으면
+  const [periodPicked, setPeriodPicked] = useState(false);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const dayEvents = useItemsOn(form.date, 'event', sid);
   const carried = useCarried(sid);
@@ -106,11 +114,17 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
 
   const dateChanged = isEditing && !!item && form.date !== item.date;
   const attrs = effectiveAttrs(form, tree);
+  const labelWantsPeriod = !isEditing && form.labelIds.some((id) => labelProps(tree.byId.get(id)?.props).period);
+  const periodOpen = periodPicked || !!form.endDate || labelWantsPeriod;
+  const period = periodOf(form);
+  const span = period.endDate ? spanCount(form.date, period.endDate, period.workdays) : null;
+  const periodTooLong = !!period.endDate && daysBetween(form.date, period.endDate) >= MAX_PERIOD_DAYS;
 
   /** 날짜 칸: 새 일정은 저장할 날짜가 곧바로 바뀐다(같은 날 새 일정 칸 찾기도 그날로), 고치던 일정은 저장할 때 옮긴다 */
   const pickDate = (next: string) => {
     if (!next) return;
-    setForm((f) => ({ ...f, date: next }));
+    // 기간이면 끝 날·뺀 날이 함께 옮겨 간다 (길이는 그대로)
+    setForm((f) => withStartDate(f, next));
     if (!isEditing) {
       setBase((b) => ({ ...b, date: next }));
       setParams({ ...params, date: next });
@@ -196,6 +210,10 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
       showToast('일정 내용을 입력하세요.');
       return false;
     }
+    if (periodTooLong) {
+      showToast(`기간은 ${MAX_PERIOD_DAYS}일까지 정할 수 있습니다. 끝 날을 앞당겨 주세요.`);
+      return false;
+    }
     // 앞선 저장이 끝나기 전에 또 들어오면 같은 일정이 두 개 생긴다
     if (savingRef.current) return false;
     savingRef.current = true;
@@ -230,6 +248,11 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   /** 지우기 = 지운 표시 (칸은 deleteEvent가 닫는다). 못 지웠으면 칸을 닫지 않는다 */
   const remove = async () => {
     if (!item || savingRef.current) return;
+    // 묶인 일정(기간)은 어디까지 지울지 먼저 묻는다 - 그 칸을 연 날 기준
+    if (isGrouped(item)) {
+      setDeleteAsk(true);
+      return;
+    }
     savingRef.current = true;
     setSaving(true);
     try {
@@ -256,7 +279,11 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   useEffect(() => registerUnsavedCheck(unsaved), []);
 
   const title = isEditing ? '일정 수정' : '새 일정';
-  const subtitle = useMemo(() => `${shortDateLabel(form.date)} 일정 · ${personal ? '개인' : '공유'}`, [form.date, personal]);
+  const subtitle = useMemo(
+    () =>
+      `${period.endDate ? `${shortDateLabel(form.date)}~${shortDateLabel(period.endDate)} 기간` : shortDateLabel(form.date)} 일정 · ${personal ? '개인' : '공유'}`,
+    [form.date, period.endDate, personal],
+  );
 
   return (
     <SidePanelFrame
@@ -317,7 +344,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
             {/* 날짜: 새 일정은 저장할 날짜가 곧바로 바뀌고, 고치던 일정은 저장할 때 그 날짜로 옮긴다 */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-xs font-bold text-slate-500 mr-1">날짜</span>
+                <span className="text-xs font-bold text-slate-500 mr-1">{periodOpen ? '시작' : '날짜'}</span>
                 <button
                   type="button"
                   data-event-date-prev
@@ -344,10 +371,82 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                 >
                   ▶
                 </button>
+                {!periodOpen && (
+                  <button
+                    type="button"
+                    data-event-period-open
+                    onClick={() => setPeriodPicked(true)}
+                    title="여러 날에 걸친 일정 (끝 날 정하기)"
+                    className="ml-1 px-2 py-1 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 cursor-pointer"
+                  >
+                    📆 끝 날
+                  </button>
+                )}
               </div>
+              {/* 기간: 끝 날 (한 문서 - 날마다 '(2/5)'는 센다) */}
+              {periodOpen && (
+                <div data-event-period-row className="space-y-1">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-xs font-bold text-slate-500 mr-1">끝</span>
+                    <input
+                      type="date"
+                      data-event-end
+                      value={form.endDate}
+                      min={addDays(form.date, 1)}
+                      onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))}
+                      aria-label="끝 날"
+                      className="px-2 py-1 text-sm border border-slate-200 rounded-lg font-bold text-slate-700 bg-white"
+                    />
+                    <label className="flex items-center gap-1 text-xs font-semibold text-slate-600 cursor-pointer select-none" title="토·일(공휴일)은 빼고 셉니다 - 수업하는 날에만">
+                      <input
+                        type="checkbox"
+                        data-event-workdays
+                        checked={form.workdays}
+                        onChange={(e) => setForm((f) => ({ ...f, workdays: e.target.checked }))}
+                        className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
+                      />
+                      주말 빼기
+                    </label>
+                    <button
+                      type="button"
+                      data-event-end-clear
+                      onClick={() => {
+                        setForm((f) => ({ ...f, endDate: '', skipDates: [] }));
+                        setPeriodPicked(false);
+                      }}
+                      title="끝 날 빼기 (하루 일정)"
+                      aria-label="끝 날 빼기"
+                      className="w-6 h-6 rounded-full text-slate-400 hover:text-red-500 hover:bg-slate-100 text-xs cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  {span ? (
+                    <p data-event-period-count={span.days} className={`text-2xs ${periodTooLong ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+                      {periodTooLong
+                        ? `기간은 ${MAX_PERIOD_DAYS}일까지 정할 수 있습니다.`
+                        : `${span.days}일${span.off ? ` (주말 ${span.off}일 빼고)` : ''}${period.skipDates.length ? ` · 뺀 날 ${period.skipDates.length}일` : ''} - 날마다 '(2/${span.days})'처럼 보입니다.`}
+                      {!periodTooLong && period.skipDates.length > 0 && (
+                        <button
+                          type="button"
+                          data-event-skip-restore
+                          onClick={() => setForm((f) => ({ ...f, skipDates: [] }))}
+                          className="ml-1 underline font-bold text-indigo-600 cursor-pointer"
+                        >
+                          뺀 날 다시 넣기
+                        </button>
+                      )}
+                    </p>
+                  ) : (
+                    <p className="text-2xs text-slate-400">끝 날을 고르면 여러 날에 걸친 일정 하나가 됩니다(시작 날을 옮기면 통째로 옮겨 갑니다).</p>
+                  )}
+                </div>
+              )}
               {dateChanged && item?.date && (
                 <p data-event-move-note className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
-                  저장하면 {shortDateLabel(item.date)} → <b>{shortDateLabel(form.date)}</b>로 옮깁니다.{' '}
+                  저장하면 {shortDateLabel(item.date)}
+                  {item.endDate && period.endDate ? `~${shortDateLabel(item.endDate)}` : ''} → <b>{shortDateLabel(form.date)}</b>
+                  {item.endDate && period.endDate ? <b>~{shortDateLabel(period.endDate)}</b> : ''}로 옮깁니다.{' '}
                   {!item.done && form.date < today && attrs.forward && '이월 일정이라 끝내지 않으면 오늘 칸에 따라옵니다. '}
                   <button type="button" data-event-move-keep onClick={() => pickDate(item.date!)} className="underline cursor-pointer">
                     그대로 두기
@@ -477,6 +576,9 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
         </div>
       </div>
 
+      {deleteAsk && item && (
+        <EventDeleteChooser sid={sid} item={item} day={onPeriodDay(item, params.date) ? params.date : (item.date ?? params.date)} onClose={() => setDeleteAsk(false)} />
+      )}
       {alarmOpen && (
         <EventAlarmWindow
           onClose={() => setAlarmOpen(false)}

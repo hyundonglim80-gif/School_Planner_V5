@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** - ■3 기간 일정부터.
+**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** - ■4 반복부터.
 
 ---
 
@@ -360,6 +360,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - **'📥 지난 일정' 줄은 아무것도 고르지 않고 연다**(권장안으로 고름): V4 창은 이월 대상만 보여 '모두 오늘로 전달'이었지만, V5의 줄은 이월이 아닌 일정(행사·연수처럼 달력에만 적은 것이 많다)이라
     골라서 가져온다. 가져오기 = 고른 문서의 `date`·`order`만(오늘 줄 맨 뒤부터), 한 묶음·안내의 되돌리기.
   - P3-4에 남김: V4에서 '오늘에 같은 글이 있어' 옮겨지지 않고 지난 날에 남은 이월 일정은 V5에서 따라온다(같은 글 둘) - 가져오기 결과 표에 수를 적을지 그때 본다.
+- **P3-3 기간 일정**(DESIGN 5-3): 한 문서. V4 기간 창의 '주말(토/일)과 공휴일 제외하고 계산하기'(기본 켬)는 칸 `workdays`로 옮겼다 - 날마다 문서를 만들지 않으니 빠지는 날을 계산으로 본다
+  (공휴일은 P5-3이 `domain/period`의 `HolidayCheck`로 넣는다 - 넣으면 지난 기간도 저절로 맞는다).
+  - **'이 날만 지우기' = `skipDates`**(권장안으로 고름, DESIGN의 '두 항목으로 나누기' 대신): 한 문서로 남아 '(k/n)'이 이어지고 고칠 곳이 하나, P3-4가 V4 기간 조각의 빈 날을 그대로 옮길 수 있다.
+    그날을 휴지통에서 따로 되살리지는 못한다 - 안내의 되돌리기·Ctrl+Z, 또는 일정 칸 '뺀 날 다시 넣기'.
+  - **옮기기**: 일정 칸에서 시작 날을 옮기면 통째로(끝 날·뺀 날·끝낸 날이 같은 날 수만큼 - 길이는 그대로), 끝 날만 바꾸면 늘이고 줄이기. V4 '이 날만·이 날부터 옮기기' 창은 두지 않는다 -
+    하루만 옮기기는 여러 개 고르기의 옮기기(■5 - V4도 '기간·반복 묶음이어도 고른 것만'), '이 날부터'는 끝 날 당기기 + 새 일정과 같아 드물다.
+  - 기간은 500일까지(V4 MAX_DAYS 그대로 - 칸의 한도). 기간 일정은 이월하지 않는다(■1).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -591,7 +598,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   → `domain/forward.staleOf` · `useCarried().stale` · `features/day/DayPastEvents.tsx`(`[data-past-events|past-toggle|past-list|past-item|past-pick|past-open|past-complete|past-delete|past-all|past-bring]` - 처음엔 접힘·아무것도 고르지 않음,
   줄마다 날짜·라벨(누르면 완료)·글(누르면 일정 칸)·🗑️) · `actions.bringEventsToToday`(date·order만 한 묶음, 울렸던 알림은 다시, 안내 되돌리기) ·
   단축키 `forwarding` = 오늘 하루 화면으로 가서 줄을 편다(`events/shortcuts.openPastEvents` - 없으면 안내) · 점검용 `window.sp5.runShortcut` · 크롬 `inspect-forward` 48항목.
-- [ ] ■3 기간 일정 = 한 항목(일정 칸 '끝 날', 날마다 '(k/n)'은 계산, 날마다 완료 `doneDates`), 묶음 지우기·옮기기 '이 날만(나누기)·이 날부터(끝 날 당기기)·전부'.
+- [x] ■3 기간 일정 = 한 항목(일정 칸 '끝 날', 날마다 '(k/n)'은 계산, 날마다 완료 `doneDates`), 묶음 지우기·옮기기 '이 날만(나누기)·이 날부터(끝 날 당기기)·전부'.
+  → `domain/period.ts`(`onPeriodDay`·`periodDays`·`periodPosition`·`spanCount`·`periodDoneChanges`·`skipDayChanges`·`cutFromChanges`·`shiftDates`, 공휴일은 `HolidayCheck`로 P5-3이) ·
+  자료 칸 `workdays`·`skipDates`(DESIGN 4-2) · `select.itemsOn`이 그날 보이는 기간만 · `eventForm`(`endDate`·`workdays`·`skipDates`, `periodOf`·`withStartDate` - 시작 날을 옮기면 통째로) ·
+  일정 칸 '📆 끝 날' 줄(`[data-event-period-open|event-period-row|event-end|event-workdays|event-end-clear|event-period-count|event-skip-restore]`, '기간' 속성 라벨이면 펴 둔다, 500일까지) ·
+  카드 '(k/n)' `[data-event-period]`·그날만 완료 · `EventScopeWindow.tsx`(세 갈래 창 `[data-scope-window|scope-choice]` - ■4 반복도) · `EventDeleteChooser.tsx` · `actions.deletePeriodPart` ·
+  옮기기의 되돌리기 = 자리 칸 모두(끝 날·뺀 날·끝낸 날) · 크롬 `inspect-groups.mjs` 23항목(events 다시 통과).
 - [ ] ■4 반복: 일정 칸 '🔁 반복' 줄(안 함·매일·매주 요일·매월 n째 주 요일·끝나는 날) → `series` + 항목들(한 batch), '이 날부터 바꾸기·지우기'.
 - [ ] ■5 여러 개 고르기: ⋮ + 일정 카드 Ctrl+누르기·Shift 범위(휴대폰 길게 누르기) → 아래 동작 줄(완료·라벨·날짜·지우기·끝), 되돌리기.
   크롬 점검 `inspect-forward.mjs`·`inspect-multi.mjs`.

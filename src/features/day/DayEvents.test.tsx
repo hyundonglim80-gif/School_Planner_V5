@@ -303,3 +303,56 @@ describe('이월 (계산 - DESIGN 5-1)', () => {
     expect(q('[data-past-events]')).toBeNull();
   });
 });
+
+describe('기간 일정 (한 문서 - DESIGN 5-3)', () => {
+  // 10/7(수) ~ 10/13(화), 주말 빼기 → 7·8·9·12·13
+  const span = new Map<string, Record<string, unknown>>([
+    ...items,
+    ev('p', 'a5', { date: '2026-10-07', endDate: '2026-10-13', workdays: true, doneDates: ['2026-10-07'] }),
+  ]);
+
+  it("날마다 '(k/n)', 주말에는 없다, 그날만 완료로 보인다", () => {
+    seed('live', span);
+    const { unmount } = render(<DayEvents date={DAY} />);
+    expect(q('[data-event-card="p"] [data-event-period]')?.dataset.eventPeriod).toBe('2/5');
+    expect(q('[data-event-card="p"]')!.dataset.eventDone).toBe('0');
+    unmount();
+    const r2 = render(<DayEvents date="2026-10-07" />);
+    expect(q('[data-event-card="p"]')!.dataset.eventDone).toBe('1');
+    r2.unmount();
+    render(<DayEvents date="2026-10-10" />);
+    expect(q('[data-event-card="p"]')).toBeNull();
+  });
+
+  it('☐ = 그날만 (doneDates - 문서 하나)', async () => {
+    seed('live', span);
+    render(<DayEvents date={DAY} />);
+    await act(async () => fireEvent.click(q('[data-event-card="p"] [data-event-complete]')!));
+    expect(written.batches[0][0]).toMatchObject({ at: { id: 'p' }, changes: { doneDates: ['2026-10-07', DAY] } });
+  });
+
+  it('🗑️ = 어디까지 묻는다 - 이 날만 = 그날 빼기(skipDates), 전부 = 지운 표시', async () => {
+    seed('live', span);
+    render(<DayEvents date={DAY} />);
+    fireEvent.click(q('[data-event-card="p"] [data-event-delete]')!);
+    expect(q('[data-scope-window]')).not.toBeNull();
+    expect(q('[data-scope-choice="after"]')?.textContent).toContain('4일');
+    expect(q('[data-scope-choice="all"]')?.textContent).toContain('5일');
+    expect(written.batches).toEqual([]);
+    await act(async () => fireEvent.click(q('[data-scope-choice="only"]')!));
+    expect(written.batches[0][0]).toMatchObject({ type: 'patch', at: { id: 'p' }, changes: { skipDates: [DAY] } });
+    expect(q('[data-scope-window]')).toBeNull();
+    expect(q('[data-toast]')?.textContent).toContain('하루를 기간에서 뺐습니다');
+    fireEvent.click(q('[data-event-card="p"] [data-event-delete]')!);
+    await act(async () => fireEvent.click(q('[data-scope-choice="all"]')!));
+    expect(written.batches[1]).toEqual([{ type: 'remove', at: { sid: SID, coll: 'items', id: 'p' } }]);
+  });
+
+  it('이 날부터 = 끝 날 당기기', async () => {
+    seed('live', span);
+    render(<DayEvents date="2026-10-12" />);
+    fireEvent.click(q('[data-event-card="p"] [data-event-delete]')!);
+    await act(async () => fireEvent.click(q('[data-scope-choice="after"]')!));
+    expect(written.batches[0][0]).toMatchObject({ changes: { endDate: '2026-10-09' } });
+  });
+});

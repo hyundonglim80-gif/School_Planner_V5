@@ -95,6 +95,10 @@ export interface Item extends Tracked {
   date: YMD | null;
   /** 기간 일정의 끝 날 (일정만) */
   endDate?: YMD;
+  /** 기간 일정: 주말·공휴일은 빼고 센다 (V4 '주말과 공휴일 제외' - domain/period) */
+  workdays?: boolean;
+  /** 기간 일정: '이 날만 지우기'로 뺀 날 */
+  skipDates?: YMD[];
   /** 본문. 읽기·저장 길에서 바꾸지 않는다 */
   text: string;
   labelIds: string[];
