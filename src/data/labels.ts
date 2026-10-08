@@ -140,3 +140,10 @@ export async function addDefaultLabels(sid: string, kind: ItemKind): Promise<voi
   const undo = await batch(defaultLabelOps(sid, kind));
   recordUndo(sid, '🏷️ 기본 라벨을 넣었습니다.', undo, { what: '기본 라벨 넣기' });
 }
+
+/** 지운 라벨 되살리기 (라벨 관리 '삭제된 라벨 복구') */
+export async function restoreLabels(sid: string, ids: readonly string[]): Promise<void> {
+  if (ids.length === 0) return;
+  const undo = await batch(ids.map((id) => writeOp.restore({ sid, coll: 'labels', id })));
+  recordUndo(sid, `🏷️ 라벨 ${ids.length}개를 되살렸습니다.`, undo, { what: '라벨 되살리기' });
+}

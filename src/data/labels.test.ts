@@ -146,3 +146,27 @@ describe('고르기 - 라벨 트리·라벨로 보기·붙은 수', () => {
     expect(usage.orphan).toBeUndefined();
   });
 });
+
+describe('빈 라벨 정리·지운 라벨 복구 목록', () => {
+  it('빈 라벨: 하위가 있는 상위와 맨 위(기본) 라벨은 처음에 체크를 뺀다', async () => {
+    const { emptyLabelsOf } = await import('./select');
+    const rows = [
+      { id: 'top', depth: 0 as const, hasChildren: false },
+      { id: 'p', depth: 0 as const, hasChildren: true },
+      { id: 'c', depth: 1 as const, parent: 'p', hasChildren: false },
+      { id: 'used', depth: 0 as const, hasChildren: false },
+    ];
+    expect(emptyLabelsOf(rows, { used: { memo: 1, record: 0, event: 0, trash: 0 } })).toEqual([
+      { id: 'top', checked: false },
+      { id: 'p', checked: false },
+      { id: 'c', checked: true },
+    ]);
+  });
+
+  it('지운 라벨 가운데 살아 있는 항목에 붙은 것만', async () => {
+    const { missingLabelsOf } = await import('./select');
+    const labels = docsOf(label('del', { deletedAt: t(3) }), label('del2', { deletedAt: t(4) }), label('ok', {}));
+    const items = docsOf(item('i1', { labelIds: ['del', 'ok'] }), item('i2', { labelIds: ['del2'], deletedAt: t(5) }));
+    expect(missingLabelsOf(labels, items).map((l) => l.id)).toEqual(['del']);
+  });
+});

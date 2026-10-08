@@ -180,6 +180,25 @@ export function labelUsageOf(items: Docs<'items'>, parents: ParentMap = {}): Rec
   return out;
 }
 
+/**
+ * 빈 라벨 정리 목록 (트리 차례): 어디에도 안 붙은 라벨과 처음에 체크할지. 하위가 있는 상위와 맨 위(기본) 라벨은 처음에 체크를 뺀다(V4 그대로).
+ * 빈 라벨은 저절로 지우지 않는다 - 사용자가 고른 것만(V4 U10).
+ */
+export function emptyLabelsOf(rows: readonly TreeRow[], usage: Record<string, LabelUsage>): { id: string; checked: boolean }[] {
+  return rows
+    .filter((r) => usageTotal(usage[r.id]) === 0)
+    .map((r) => ({ id: r.id, checked: !r.hasChildren && r.id !== rows[0]?.id }));
+}
+
+/** 지운 라벨 가운데 아직 살아 있는 항목에 붙어 있는 것 (라벨 관리 '삭제된 라벨 복구' - V4는 항목의 라벨 이름을 훑었다) */
+export function missingLabelsOf(labels: Docs<'labels'>, items: Docs<'items'>): LabelDoc[] {
+  const used = new Set<string>();
+  for (const d of indexOf(items).live) for (const id of d.labelIds ?? []) used.add(id);
+  return Object.values(labels)
+    .filter((l) => !!l.deletedAt && used.has(l.id))
+    .sort(compareOrder);
+}
+
 // ─────────────── 훅 ───────────────
 
 /** 공간 하나의 컬렉션 하나 (지운 것까지 - 문서 표 그대로). sid를 주지 않으면 지금 공간 */

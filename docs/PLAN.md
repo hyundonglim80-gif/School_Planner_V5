@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-3 라벨** ■2 라벨 관리 창 (클라우드 - 세션 브랜치 `claude/dreamy-ritchie-ub4ru5`).
+**P2-3 라벨** ■3 라벨 칩·고르기 부품 (클라우드 - 세션 브랜치 `claude/dreamy-ritchie-ub4ru5`).
 
 ---
 
@@ -429,8 +429,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■1 labels 저장·고르기(일정 / 메모·기록, parentId, props, 차례), `domain/labelTree.ts`(V4 labelTree를 id로 - 테스트째), 맨 위 라벨 = 기본값.
   → `domain/labels.ts`(색 표·속성 읽기 `labelProps`·기본 라벨) · `data/labels.ts`(쓰기 묶음 `labelSaveOps` - 바뀐 칸만·옮긴 것만·지운 표시, `createLabelOp`·`defaultLabelOps`·이름 검사) ·
   `select.ts` `labelTreeOf`·`useLabelTree`(트리 차례·기본 라벨 `defaultId`)·`itemsMatching`(라벨로 보기)·`labelUsageOf`(붙은 수 - 사본에서 바로) · `order.ts` `rekeyOrders`.
-- [ ] ■2 라벨 관리 창(LabelModal 옮기기: 탭 둘·색·차례·속성(달력·이월·수업X·구글 캘린더)·상위/하위·더할 때 상위 고르기·빈 라벨 정리 = 사본에서 바로 세기·지우기 = 지운 표시).
+- [x] ■2 라벨 관리 창(LabelModal 옮기기: 탭 둘·색·차례·속성(달력·이월·수업X·구글 캘린더)·상위/하위·더할 때 상위 고르기·빈 라벨 정리 = 사본에서 바로 세기·지우기 = 지운 표시).
   각 칸 ⚙️에서 그 탭으로.
+  → `features/labels/LabelsWindow.tsx`(창 목록 `labels` - ⋮ 일정, `openWindow('labels', { tab: 'note' })`) · `ColorPicker.tsx`. 창은 고친 것만 들고(덧칠) 나머지는 사본 그대로 -
+  열어 둔 동안 다른 기기에서 고친 것도 들어온다. 붙은 수는 늘 보인다(V4 '🔢 항목 수 세기' 단추는 없앴다 - 사본에서 바로), 항목을 다 받기 전에는 세지 않는다.
+  '삭제된 라벨 복구' = 지웠지만 살아 있는 항목에 붙은 라벨 되살리기. 빈 탭에는 '기본 라벨 넣기'. 크롬 `inspect-labels.mjs` 20항목.
 - [ ] ■3 라벨 칩·고르기 부품(쓰는 칸·카드가 쓸 것) + 크롬 점검 `inspect-labels.mjs`(이름 바꾸기 = 서버 문서 하나).
 **끝 조건**: 라벨 이름을 바꾸면 서버에서 그 라벨 문서 하나만 바뀐다. 설명서 `labels` 주제가 된다.
 
