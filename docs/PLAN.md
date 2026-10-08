@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** - ■4 규칙부터 (클라우드 세션 `claude/happy-rubin-wcxw0e`, 10-08).
+**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** - ■5 자료 층 테스트부터 (클라우드 세션 `claude/happy-rubin-wcxw0e`, 10-08).
 
 ---
 
@@ -268,6 +268,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   더미는 공간마다 20개, 로그인한 사람이 바뀌면 비운다. 실패하면 더미 맨 위로 돌려놓는다(다시 Ctrl+Z). 다시 하기(되돌리기의 되돌리기)는 없다.
   Ctrl+Z는 `main.tsx`에서 `setShortcutAction('undo', undoLast)` - 지금 공간은 개인 공간 하나(P8-4가 보는 공간으로). 비었으면 '되돌릴 것이 없습니다'.
   Ctrl+Z로 되돌리면 안내에 `what`('메모 지우기')을 붙인다 - 단추로 되돌릴 때는 방금 본 안내라 붙이지 않는다. **기능 세션이 쓰기마다 `what`을 준다.**
+- **P2-1 규칙**(10-08): items·labels는 `kind`('event'|'note')·`deletedAt`(칸이 있고 null 또는 시각)·`v`(정수)·**`updatedAt == request.time`**만 본다.
+  서버 시각은 계획에 없던 것을 더했다 - 기기 시각이거나 칸만 고치고 빠뜨리면 기기 사본(P2-2)이 '바뀐 것만 받기'로 그 쓰기를 영영 놓치므로, 규칙에서 막아 저장 실패로 드러낸다.
+  같은 문서에 맞는 match가 여럿이면 하나만 허락해도 되므로 컬렉션마다 match를 두지 않고 `spaces/{sid}/{sub}/{document=**}` 하나에서 `sub`로 가른다(읽기·지우기는 모양을 보지 않는다).
+  check-rules V5 45 → 59. 👤 **PC에서**: V4 저장소 `firestore.rules`에 그대로 복사(V4 check:rules) → `node tools/live-rules.cjs`로 운영 = 앞 파일인지 보고 → 운영 배포(묻고).
+  지금 운영에 V5 항목 쓰기가 없어 배포가 늦어도 깨지는 것은 없다(배포 전 규칙이 더 느슨하다).
+- **컨테이너 에뮬레이터**(10-08): 켜 둔 채 `firestore.rules`를 고치면 규칙 다시 읽기에서 Auth 쪽이 죽고 Firestore(java)만 남아 포트를 쥔다 →
+  `ps aux | grep cloud-firestore-emulator`로 그 java를 끄고 `npm run emu`를 다시. 규칙을 고친 뒤에는 처음부터 다시 켠다.
 
 ---
 
@@ -362,7 +369,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■2 저장 도우미 `src/data/repo/`: `create`·`patch`·`remove`(지운 표시)·`restore`·`purge`·`batch` - `updatedAt` 서버 시각, 만들 때 `deletedAt: null`·`v`·`createdAt`·`authorId`.
   실패는 `failWithToast`로 던진다. 모두 **되돌릴 값**을 돌려준다.
 - [x] ■3 되돌리기 `src/data/undo.ts`: 안내의 '되돌리기'(V4 undoToast 모양) + Ctrl+Z 쌓기(글 칸 밖에서만, 공간마다 20개).
-- [ ] ■4 규칙: items·labels 모양 검사(`kind`·`deletedAt`·`v` 정도 - 지나치게 막지 않는다), check-rules V5 검사 더하기.
+- [x] ■4 규칙: items·labels 모양 검사(`kind`·`deletedAt`·`v` 정도 - 지나치게 막지 않는다), check-rules V5 검사 더하기.
 - [ ] ■5 자료 층 테스트(에뮬레이터, 따로 된 설정 `vitest.data.config.ts` · `npm run test:data` - PC에서. CI는 단위만): 만들기·고치기·지우기·되살리기·되돌리기·Ctrl+Z.
 **끝 조건**: 위 테스트 통과. 저장이 실패하면 던지는 것을 테스트로 본다.
 

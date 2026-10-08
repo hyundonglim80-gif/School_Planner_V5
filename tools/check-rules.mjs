@@ -13,7 +13,7 @@
 import { initializeApp, deleteApp } from 'firebase/app';
 import {
   getFirestore, connectFirestoreEmulator, doc, setDoc, getDoc, getDocs, updateDoc,
-  deleteDoc, collection, query, where, arrayUnion, arrayRemove, deleteField, writeBatch,
+  deleteDoc, collection, query, where, arrayUnion, arrayRemove, deleteField, writeBatch, serverTimestamp,
 } from 'firebase/firestore';
 import {
   getAuth, connectAuthEmulator, signInWithEmailAndPassword, createUserWithEmailAndPassword,
@@ -257,7 +257,11 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
   const space = (c, sid) => doc(c.db, 'spaces', sid);
   const item = (c, sid, id) => doc(c.db, 'spaces', sid, 'items', id);
   const invite = (c, code) => doc(c.db, 'spaceInvites', code);
-  const note = (text) => ({ kind: 'note', date: null, text, deletedAt: null, updatedAt: now(), v: 1 });
+  // 저장 도우미(src/data/repo)가 적는 모양 - 서버 시각·지운 표시 null·판
+  const note = (text) => ({
+    kind: 'note', date: null, text, labelIds: [], order: 'a0',
+    createdAt: now(), authorId: 'rc', deletedAt: null, updatedAt: serverTimestamp(), v: 1,
+  });
 
   // 개인 공간 시험은 점검 전용 계정 X로 한다(teacher의 개인 공간은 앱·seed가 만든다).
   const xs = `u_${xUid}`;
@@ -304,6 +308,60 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
   });
   await must('내 항목을 지운다', async () => {
     await deleteDoc(item(X, xs, 'rc_x'));
+  });
+
+  console.log('\n[V5 항목·라벨 모양] — 종류·지운 표시·판·서버 시각만 본다');
+  const label = (name) => ({
+    kind: 'note', name, color: '#888', parentId: null, order: 'a0',
+    createdAt: now(), authorId: 'rc', deletedAt: null, updatedAt: serverTimestamp(), v: 1,
+  });
+  const label1 = doc(X.db, 'spaces', xs, 'labels', 'rc_l');
+  await must('저장 도우미 모양으로 항목을 만든다', async () => {
+    await setDoc(item(X, xs, 'rc_m'), note('모양 점검'));
+  });
+  await must('칸을 고치며 서버 시각을 붙인다', async () => {
+    await updateDoc(item(X, xs, 'rc_m'), { text: '고침', updatedAt: serverTimestamp() });
+  });
+  await must('지운 표시를 붙인다', async () => {
+    await updateDoc(item(X, xs, 'rc_m'), { deletedAt: serverTimestamp(), deletedBy: xUid, updatedAt: serverTimestamp() });
+  });
+  await must('되살린다 (지운 표시 null)', async () => {
+    await updateDoc(item(X, xs, 'rc_m'), { deletedAt: null, deletedBy: deleteField(), updatedAt: serverTimestamp() });
+  });
+  await mustNot('서버 시각을 빠뜨리고 칸만 고친다 (다른 기기에 가지 않는다)', async () => {
+    await updateDoc(item(X, xs, 'rc_m'), { text: '서버 시각 없이' });
+  });
+  await mustNot('기기 시각(ms)을 updatedAt에 쓴다', async () => {
+    await setDoc(item(X, xs, 'rc_m2'), { ...note('기기 시각'), updatedAt: now() });
+  });
+  await mustNot('deletedAt 칸 없이 만든다 (쿼리로 거를 수 없다)', async () => {
+    const { deletedAt: _omit, ...rest } = note('지운 표시 없음');
+    await setDoc(item(X, xs, 'rc_m2'), rest);
+  });
+  await mustNot('deletedAt에 글자를 쓴다', async () => {
+    await setDoc(item(X, xs, 'rc_m2'), { ...note('틀린 지운 표시'), deletedAt: 'yes' });
+  });
+  await mustNot("종류가 'event'·'note'가 아닌 항목", async () => {
+    await setDoc(item(X, xs, 'rc_m2'), { ...note('틀린 종류'), kind: 'task' });
+  });
+  await mustNot('판(v)이 없는 항목', async () => {
+    const { v: _omit, ...rest } = note('판 없음');
+    await setDoc(item(X, xs, 'rc_m2'), rest);
+  });
+  await must('라벨을 만든다', async () => {
+    await setDoc(label1, label('수업'));
+  });
+  await mustNot('종류 없는 라벨', async () => {
+    const { kind: _omit, ...rest } = label('종류 없음');
+    await setDoc(doc(X.db, 'spaces', xs, 'labels', 'rc_l2'), rest);
+  });
+  await must('설정 문서는 모양을 보지 않는다', async () => {
+    await setDoc(doc(X.db, 'spaces', xs, 'settings', 'rc_settings'), { fontScale: 1.1 });
+  });
+  await must('영구 지우기 (모양과 상관없이)', async () => {
+    await deleteDoc(item(X, xs, 'rc_m'));
+    await deleteDoc(label1);
+    await deleteDoc(doc(X.db, 'spaces', xs, 'settings', 'rc_settings'));
   });
 
   const gs = 'g_rulecheck';
