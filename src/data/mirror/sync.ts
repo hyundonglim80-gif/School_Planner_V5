@@ -265,8 +265,9 @@ class Runner {
       since,
       (batch) => {
         if (this.stopped) return;
-        // 캐시에서 온 것은 문서만 믿고 커서는 옮기지 않는다
-        this.take(batch.docs, !batch.fromCache && batch.docs.size > 0 ? { cursor: latest(batch.docs) } : null);
+        // 캐시에서 온 것은 문서만 믿고 커서는 옮기지 않는다. 서버가 확인한 소식이면 결과 전체에서 가장 늦은 판이 커서
+        const moved = !batch.fromCache && batch.latest && compareTime(batch.latest, this.meta.cursor) > 0;
+        this.take(batch.docs, moved ? { cursor: batch.latest } : null);
         for (const id of batch.removed) {
           // 내가 쓰는 중이면 서버 시각을 기다리느라 잠깐 빠진 것이다 - 덧칠이 보이고 있다
           if (!hasOverlay(this.sid, this.coll, id)) void this.confirmGone(id);

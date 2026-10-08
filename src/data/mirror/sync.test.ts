@@ -34,17 +34,29 @@ class FakeServer implements MirrorServer {
     return this.data.get(key)!;
   }
 
+  /** 구독 결과 전체(since보다 늦은 것)에서 가장 늦은 판 - Firestore가 주는 것과 같다 */
+  private latestFor(l: Listener) {
+    let max: Timestamp | null = null;
+    for (const d of this.data.get(l.key)?.values() ?? []) {
+      const at = d.updatedAt as Timestamp;
+      if ((!l.since || at.seconds > l.since.seconds) && (!max || at.seconds > max.seconds)) max = at;
+    }
+    return max;
+  }
+
   write(sid: string, coll: string, id: string, fields: Plain | null) {
     const map = this.coll(sid, coll);
     if (fields === null) {
       map.delete(id);
-      for (const l of this.listeners) if (l.key === `${sid}/${coll}`) l.onBatch({ docs: new Map(), removed: [id], fromCache: false });
+      for (const l of this.listeners) {
+        if (l.key === `${sid}/${coll}`) l.onBatch({ docs: new Map(), removed: [id], fromCache: false, latest: this.latestFor(l) });
+      }
       return;
     }
     const doc = { deletedAt: null, v: 1, ...fields, updatedAt: t(++this.clock) };
     map.set(id, doc);
     for (const l of this.listeners) {
-      if (l.key === `${sid}/${coll}`) l.onBatch({ docs: new Map([[id, doc]]), removed: [], fromCache: false });
+      if (l.key === `${sid}/${coll}`) l.onBatch({ docs: new Map([[id, doc]]), removed: [], fromCache: false, latest: this.latestFor(l) });
     }
     return doc;
   }
@@ -89,7 +101,7 @@ class FakeServer implements MirrorServer {
     const first = new Map(this.sorted(sid, coll).filter(([, d]) => !since || (d.updatedAt as Timestamp).seconds > since.seconds));
     void (this.holdListen ?? Promise.resolve()).then(() => {
       if (!this.listeners.has(l)) return;
-      onBatch({ docs: first, removed: [], fromCache: false });
+      onBatch({ docs: first, removed: [], fromCache: false, latest: this.latestFor(l) });
     });
     this.listeners.add(l);
     return () => void this.listeners.delete(l);
@@ -244,7 +256,7 @@ describe('구독', () => {
 
     // 내 쓰기 중에 구독이 '빠짐'을 주는 것(서버 시각을 기다리느라)은 영구 지우기가 아니다
     beginLocalWrite([writeOp.patch({ sid, coll: 'items', id: 'mine' }, { text: '고치는 중' }, {})], { uid, now: 1 });
-    for (const l of server.listening('items')) l.onBatch({ docs: new Map(), removed: ['mine'], fromCache: false });
+    for (const l of server.listening('items')) l.onBatch({ docs: new Map(), removed: ['mine'], fromCache: false, latest: null });
     expect(server.calls.fetchOne).toEqual(['gone']);
     expect(docsOf(uid).mine.text).toBe('고치는 중');
   });
@@ -259,9 +271,33 @@ describe('구독', () => {
     const runner = mirrorEngine()!.runners.find((r) => r.coll === 'items')!;
     const before = runner.meta.cursor!;
     const late = { ...item('캐시', null), updatedAt: t(server.clock + 100), deletedAt: null };
-    for (const l of server.listening('items')) l.onBatch({ docs: new Map([['c', late]]), removed: [], fromCache: true });
+    for (const l of server.listening('items')) l.onBatch({ docs: new Map([['c', late]]), removed: [], fromCache: true, latest: late.updatedAt });
     expect(docsOf(uid).c).toBeDefined();
     expect(runner.meta.cursor!.isEqual(before)).toBe(true);
+  });
+});
+
+describe('구독 - 서버 확인 소식', () => {
+  it('첫 소식이 캐시에서 오면 아직 구독 중이 아니고, 서버가 같은 결과를 확인하는 소식(문서 변화 없음)에 구독 중·커서를 옮긴다', async () => {
+    const uid = freshUid();
+    const sid = sidOf(uid);
+    const server = new FakeServer();
+    server.write(sid, 'items', 'a', item('a', null));
+    let release!: () => void;
+    server.holdListen = new Promise((r) => (release = r));
+    startMirror(uid, { server, today: '2026-10-08' });
+    await vi.waitFor(() => expect(server.listening('items')).toHaveLength(1));
+    const runner = mirrorEngine()!.runners.find((r) => r.coll === 'items')!;
+    const cursor = runner.meta.cursor!;
+    const [l] = server.listening('items');
+    const later = t(server.clock + 50);
+    l.onBatch({ docs: new Map(), removed: [], fromCache: true, latest: later });
+    expect(statusOf(uid)).not.toBe('live');
+    expect(runner.meta.cursor!.isEqual(cursor)).toBe(true);
+    l.onBatch({ docs: new Map(), removed: [], fromCache: false, latest: later });
+    expect(statusOf(uid)).toBe('live');
+    expect(runner.meta.cursor!.isEqual(later)).toBe(true);
+    release();
   });
 });
 

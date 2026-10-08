@@ -41,6 +41,8 @@ export interface ServerBatch {
   removed: string[];
   /** 연결 없이 캐시에서 온 것 - 문서는 믿어도 '여기까지 다 받았다'는 믿지 않는다(커서를 옮기지 않는다) */
   fromCache: boolean;
+  /** 지금 결과 전체(바뀐 것만이 아니라)에서 가장 늦은 updatedAt - 서버가 확인한 소식이면 커서가 된다 */
+  latest: Timestamp | null;
 }
 
 /** 연결이 없어 받지 못했다 (나중에 다시) */
@@ -112,6 +114,8 @@ export const firestoreServer: MirrorServer = {
     const col = collection(db, 'spaces', sid, coll);
     return onSnapshot(
       since ? query(col, where('updatedAt', '>', since)) : col,
+      // 메타데이터 소식도 받는다 - 첫 소식이 캐시에서 오면(빈 컬렉션 등) 서버가 같은 결과를 확인해 줄 때 문서 변화 없이 그것만 온다
+      { includeMetadataChanges: true },
       (snap) => {
         const docs = new Map<string, Plain>();
         const removed: string[] = [];
@@ -119,7 +123,12 @@ export const firestoreServer: MirrorServer = {
           if (change.type === 'removed') removed.push(change.doc.id);
           else if (!change.doc.metadata.hasPendingWrites) docs.set(change.doc.id, change.doc.data());
         }
-        onBatch({ docs, removed, fromCache: snap.metadata.fromCache });
+        let latest: Timestamp | null = null;
+        for (const d of snap.docs) {
+          const at = d.get('updatedAt') as Timestamp | null;
+          if (!d.metadata.hasPendingWrites && at && (!latest || at.toMillis() > latest.toMillis())) latest = at;
+        }
+        onBatch({ docs, removed, fromCache: snap.metadata.fromCache, latest });
       },
       onError,
     );
