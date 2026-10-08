@@ -400,6 +400,11 @@ function EventCard({ ev, day, labels, editing, today, first, last, since, away, 
           <span data-event-text className={`inline align-middle ${done ? 'line-through text-slate-400' : ''}`}>
             {ev.text}
           </span>
+          {ev.seriesId && (
+            <span data-event-series title="반복 일정 - 고치거나 지우면 어디까지 할지 묻습니다" className="inline align-middle ml-1 text-xs text-purple-500">
+              🔁
+            </span>
+          )}
           {pos && (
             <span
               data-event-period={`${pos.k}/${pos.n}`}

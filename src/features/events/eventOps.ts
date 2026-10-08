@@ -11,8 +11,8 @@ export type ItemDoc = Stored<'items'>;
 
 export const itemPath = (sid: string, id: string): DocPath<'items'> => ({ sid, coll: 'items', id });
 
-/** 지울 때 어디까지 물어야 하나 (기간 일정 - 이 날만·이 날부터·전부) */
-export const isGrouped = (item: ItemDoc) => isPeriod(item);
+/** 지울 때 어디까지 물어야 하나 (기간 일정·반복 묶음 - 이 날만·이 날부터·전부) */
+export const isGrouped = (item: ItemDoc) => isPeriod(item) || !!item.seriesId;
 
 /** 완료·완료 풀기에 바꿀 칸 (풀면 doneAt을 지운다) */
 export function doneChanges(done: boolean, now = Date.now()): Changes<'items'> {

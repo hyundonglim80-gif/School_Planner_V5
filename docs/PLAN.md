@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** - ■4 반복부터.
+**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** - ■5 여러 개 고르기부터.
 
 ---
 
@@ -367,6 +367,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - **옮기기**: 일정 칸에서 시작 날을 옮기면 통째로(끝 날·뺀 날·끝낸 날이 같은 날 수만큼 - 길이는 그대로), 끝 날만 바꾸면 늘이고 줄이기. V4 '이 날만·이 날부터 옮기기' 창은 두지 않는다 -
     하루만 옮기기는 여러 개 고르기의 옮기기(■5 - V4도 '기간·반복 묶음이어도 고른 것만'), '이 날부터'는 끝 날 당기기 + 새 일정과 같아 드물다.
   - 기간은 500일까지(V4 MAX_DAYS 그대로 - 칸의 한도). 기간 일정은 이월하지 않는다(■1).
+- **P3-3 반복**(DESIGN 4-4): 일정 칸의 '🔁 반복' 줄(새 일정에서만) - 안 함·매일·매주·격주·매월 n째 주 요일(V4는 첫째 주만)·매월 n일(여럿 - V4 '특정 일'), 끝나는 날은 꼭(V4 종료일).
+  저장 = 반복 문서 하나 + 날마다 항목(`seriesId`·`seriesIndex`) 한 묶음 - 한 묶음에 들게 **499개까지**(V4는 200개씩 나눠 적었다). V4의 '총 N개를 만듭니다' 확인 창은 두지 않는다 - 줄에 수·첫·끝 날이 늘 보이고 안내의 되돌리기가 모두 지운다.
+  - **고치기 = 어디까지 묻기**(V4 GroupMoveModal과 같은 세 갈래를 고치기에도): 이 일정만·이 날부터·전부 - **바꾼 칸만** 그 항목들에(따로 고친 다른 칸은 그대로), 날짜를 옮겼으면 같은 날 수만큼, 반복 문서의 template도.
+  - **규칙 바꾸기는 없다**(권장안으로 고름): 요일·끝나는 날을 바꾸려면 '이 날부터 삭제' 뒤 새로 만든다 - 규칙을 고쳐 항목을 다시 짓는 길은 완료·이월·알림이 날마다 따로 돈 항목을 지울 수 있어 두지 않는다.
+  - 이미 있는 하루 일정을 반복으로 바꾸지 않는다(V4도 반복 등록 창은 새로 만들었다). 기간과 반복은 함께 쓰지 않는다(한쪽을 켜면 다른 쪽 단추가 숨는다).
+  - 단축키 `recurring` = 새 일정 칸을 반복 줄(매주)을 편 채로(MENU 3-8). 라벨 속성 '반복'을 고른 새 일정 칸도 줄을 편다(고르기는 '안 함'으로 둔다 - 사용자가 고른다).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -604,7 +610,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   일정 칸 '📆 끝 날' 줄(`[data-event-period-open|event-period-row|event-end|event-workdays|event-end-clear|event-period-count|event-skip-restore]`, '기간' 속성 라벨이면 펴 둔다, 500일까지) ·
   카드 '(k/n)' `[data-event-period]`·그날만 완료 · `EventScopeWindow.tsx`(세 갈래 창 `[data-scope-window|scope-choice]` - ■4 반복도) · `EventDeleteChooser.tsx` · `actions.deletePeriodPart` ·
   옮기기의 되돌리기 = 자리 칸 모두(끝 날·뺀 날·끝낸 날) · 크롬 `inspect-groups.mjs` 23항목(events 다시 통과).
-- [ ] ■4 반복: 일정 칸 '🔁 반복' 줄(안 함·매일·매주 요일·매월 n째 주 요일·끝나는 날) → `series` + 항목들(한 batch), '이 날부터 바꾸기·지우기'.
+- [x] ■4 반복: 일정 칸 '🔁 반복' 줄(안 함·매일·매주 요일·매월 n째 주 요일·끝나는 날) → `series` + 항목들(한 batch), '이 날부터 바꾸기·지우기'.
+  → `domain/recur.ts`(`ruleOf`·`recurDates`(V4 computeRecurringDates와 같게 - 격주는 달력의 주)·`ruleLabel`·`recurFormFor`·`recurFormDates`, 한 번에 499개) · 자료 `SeriesRule.monthDays`(여럿 - DESIGN 4-4) ·
+  `features/events/seriesOps.ts`(순수 - `createSeriesOps`·`editSeriesOps`(바꾼 칸만·날짜는 같은 날 수만큼·template)·`deleteSeriesOps`(이 날부터 = until 당김)·`seriesItemsOf`·`scopeItems`) · `series.ts`(`useSeriesOf`) ·
+  `actions.createSeriesEvents`·`saveSeriesEvents`·`deleteSeriesEvents` · `RecurRow.tsx`(`[data-event-recur-row|recur-kind|recur-day|recur-week|recur-mday|recur-until|recur-count]`) ·
+  일정 칸 `[data-event-recur-open|event-series-info]`·고치면 어디까지(`EventScopeWindow`) · 빠른 입력 '매주 화'·'격주 금' 칩 · 카드 🔁 `[data-event-series]` · 지우기 창이 반복도 · 단축키 `recurring` = 새 일정 칸을 반복 줄을 편 채로 ·
+  크롬 `inspect-groups` 41항목(events 다시 통과).
 - [ ] ■5 여러 개 고르기: ⋮ + 일정 카드 Ctrl+누르기·Shift 범위(휴대폰 길게 누르기) → 아래 동작 줄(완료·라벨·날짜·지우기·끝), 되돌리기.
   크롬 점검 `inspect-forward.mjs`·`inspect-multi.mjs`.
 **끝 조건**: 위 설명서 주제가 된다. **앱을 열 때 이월이 서버에 아무것도 쓰지 않는다**(처음 따라올 때 한 번만 - 점검으로 확인).

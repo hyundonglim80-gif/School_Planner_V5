@@ -159,12 +159,16 @@ export interface Label extends Tracked {
 
 // ───────────────────────── 4-4. 반복 ─────────────────────────
 
+/** 반복 규칙 (domain/recur - 매일·매주·격주(interval 2)·매월 n째 주 요일·매월 n일 여럿) */
 export interface SeriesRule {
   freq: 'daily' | 'weekly' | 'monthly';
   interval: number;
+  /** 0(일) ~ 6(토) */
   weekdays?: number[];
+  /** 매월 n째 주 (1~5) */
   monthWeek?: number;
-  monthDay?: number;
+  /** 매월 n일 (여럿 - V4 '매월(특정 일)') */
+  monthDays?: number[];
 }
 
 export interface Series extends Tracked {

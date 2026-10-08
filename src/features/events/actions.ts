@@ -4,12 +4,15 @@
 import { shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { ordersBetween } from '../../domain/order';
 import { cutFromChanges, isPeriod, periodDoneChanges, skipDayChanges } from '../../domain/period';
+import { ruleLabel, type SeriesRuleShape } from '../../domain/recur';
 import { batch, create, newPath, patch, remove, writeOp, type Changes, type WriteOp } from '../../data/repo';
 import type { LabelTree } from '../../data/select';
 import { recordUndo } from '../../data/undo';
 import { createData, editChanges, effectiveAttrs, type EventForm } from './eventForm';
 import { carriedDoneChanges, doneChanges, itemPath, reorderOps, type ItemDoc } from './eventOps';
+import type { GroupScope } from './EventScopeWindow';
 import { closeEventPanelsFor } from './open';
+import { createSeriesOps, deleteSeriesOps, editSeriesOps, planDates, scopeItems, type SeriesDoc } from './seriesOps';
 
 const KEEP = '적은 내용은 칸에 남아 있습니다.';
 /** 옮기기의 되돌리기가 함께 되돌리는 자리 칸 (date 말고) */
@@ -135,4 +138,68 @@ export async function deletePeriodPart(sid: string, item: ItemDoc, day: string, 
     undo,
     { what: '기간 일정 지우기' },
   );
+}
+
+// ─────────────── 반복 (DESIGN 4-4 - features/events/seriesOps) ───────────────
+
+/**
+ * 반복 일정 만들기: series 하나 + 날마다 항목을 한 묶음으로. 안내의 되돌리기·Ctrl+Z = 모두 지운 표시. 만든 첫 항목 id와 수.
+ * 날짜가 없으면(규칙에 맞는 날이 없다) 쓰지 않고 null.
+ */
+export async function createSeriesEvents(
+  sid: string,
+  form: EventForm,
+  tree: LabelTree,
+  recur: { rule: SeriesRuleShape; until: string },
+  orderOn: (date: string) => string,
+): Promise<{ firstId: string; firstDate: string; count: number } | null> {
+  const plan = { rule: recur.rule, start: form.date, until: recur.until };
+  const dates = planDates(plan);
+  if (dates.length === 0) return null;
+  const itemIds = dates.map(() => newPath(sid, 'items').id);
+  const data = createData({ ...form, endDate: '', skipDates: [] }, tree, '');
+  const ops = createSeriesOps(sid, { ...plan, data, orderOn, seriesId: newPath(sid, 'series').id, itemIds });
+  const undo = await batch(ops, { fail: `반복 일정을 저장하지 못했습니다. ${KEEP}` });
+  recordUndo(sid, `🔁 반복 일정 ${dates.length}개를 만들었습니다 (${ruleLabel(recur.rule)}).`, undo, { what: '반복 일정 만들기' });
+  return { firstId: itemIds[0], firstDate: dates[0], count: dates.length };
+}
+
+/**
+ * 반복 묶음 고치기 (이 날부터·전부 - 이 날만은 saveEvent). 바꾼 칸만 고른 항목들에, 날짜를 옮겼으면 같은 날 수만큼.
+ * 바뀐 것이 없으면 false.
+ */
+export async function saveSeriesEvents(
+  sid: string,
+  item: ItemDoc,
+  form: EventForm,
+  tree: LabelTree,
+  scope: 'after' | 'all',
+  list: readonly ItemDoc[],
+  series: SeriesDoc | undefined,
+): Promise<boolean> {
+  const changes = editChanges(item, form, tree);
+  if (Object.keys(changes).length === 0) return false;
+  const targets = scopeItems(list, item, scope);
+  const ops = editSeriesOps(sid, item, changes, targets, series, true);
+  if (ops.length === 0) return false;
+  const undo = await batch(ops, { fail: `반복 일정을 저장하지 못했습니다. ${KEEP}` });
+  const n = targets.length;
+  recordUndo(sid, changes.date ? `📅 반복 일정 ${n}개를 옮겼습니다.` : `✅ 반복 일정 ${n}개를 고쳤습니다.`, undo, { what: '반복 일정 고치기' });
+  return true;
+}
+
+/** 반복 묶음 지우기 - 이 날만·이 날부터(series.until도 당긴다)·전부(series도). 안내의 되돌리기·Ctrl+Z */
+export async function deleteSeriesEvents(
+  sid: string,
+  item: ItemDoc,
+  scope: GroupScope,
+  list: readonly ItemDoc[],
+  series: SeriesDoc | undefined,
+): Promise<void> {
+  if (scope === 'only') return deleteEvent(sid, item);
+  const ops = deleteSeriesOps(sid, item, list, series, scope);
+  const undo = await batch(ops, { fail: '반복 일정을 지우지 못했습니다.' });
+  const removed = scopeItems(list, item, scope);
+  for (const d of removed) closeEventPanelsFor(sid, d.id);
+  recordUndo(sid, `🗑️ 반복 일정 ${removed.length}개를 삭제했습니다. 휴지통에서 복원할 수 있습니다.`, undo, { what: '반복 일정 지우기' });
 }

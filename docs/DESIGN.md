@@ -113,10 +113,11 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 
 ### 4-4. `series/{id}` — 반복
 
-`{ rule: { freq: 'daily'|'weekly'|'monthly', interval, weekdays?: number[], monthWeek?, monthDay? }, start, until?, count?,
+`{ rule: { freq: 'daily'|'weekly'|'monthly', interval, weekdays?: number[], monthWeek?, monthDays?: number[] }, start, until?, count?,
 template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deletedAt, v }`
 
-- 항목은 날마다 만들어 둔다(완료·이월·알림·구글 캘린더가 날마다 따로 돌게). 규칙은 '이 날부터 바꾸기·지우기'에 쓴다.
+- 항목은 날마다 만들어 둔다(완료·이월·알림·구글 캘린더가 날마다 따로 돌게). 규칙은 '어떤 반복인가'(일정 칸 '🔁 매주 화')를 보이는 데 쓰고,
+  묶음은 `seriesId`로 고른다 - 고치기·지우기 = 이 일정만·이 날부터·전부(바꾼 칸만 그 항목들에, 이 날부터 지우기는 `until`을 앞 항목 날로). 한 번에 499개까지(반복 문서와 한 묶음, P3-3).
 - V4에서 가져온 반복은 규칙을 모르므로 `imported: true`, `rule` 없음(묶음 지우기만 된다).
 
 ### 4-5. 수업
