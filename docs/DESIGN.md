@@ -91,12 +91,12 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | `createdAt` | number | 만든 때(ms) |
 | `updatedAt` | Timestamp | **서버 시각.** 기기 사본이 이것으로 바뀐 것만 받는다 |
 | `deletedAt` / `deletedBy` | Timestamp·`null` / string? | 지운 표시. **만들 때 `null`을 꼭 넣는다**(없는 칸은 쿼리로 거를 수 없다) |
-| `src` | `{ from: 'v4', path, id }`? | 가져온 항목의 V4 자리 - 다시 가져오기, V4가 보낸 구글 캘린더 일정과 짝 |
+| `src` | `{ from: 'v4', path, id, h }`? | 가져온 항목의 V4 자리 - 다시 가져오기(`h` = 가져올 때 적은 칸의 지문, 8-1), V4가 보낸 구글 캘린더 일정과 짝 |
 | `v` | 1 | 자료 판(나중에 모양을 바꿀 때 판으로 가린다) |
 
 ### 4-3. `labels/{id}`
 
-`{ kind: 'event'|'note', name, color, parentId: string|null, order, props?, updatedAt, deletedAt, v }`
+`{ kind: 'event'|'note', name, color, parentId: string|null, order, props?, src?, updatedAt, deletedAt, v }` (`src` = V4에서 가져온 라벨, 8-1)
 
 - `parentId`는 메모·기록 라벨만(2단계). 이름은 같은 종류 안에서 겹치지 않게 저장 때 본다.
 - `props`는 일정 라벨만: `{ calendar?, forward?, skip?, gcal?, period?, recur? }` — 화면 이름은 V4 그대로 **달력·이월·수업X·구글 캘린더**
@@ -147,7 +147,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 ### 4-8. 설정 (개인 공간 `settings/`)
 
 - `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` ·
-  우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 가져오기 기록 `import`.
+  우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases`.
+- `import`: V4 가져오기 기록(8-1) - 설정이 아니라 따로 둔다(설정 맞추기가 건드리지 않는다).
 - `pc` / `mobile`: 글자 크기·창 위치·시작 화면·단축키·화면 보기(V4 `v4_preferences_pc/_mobile`). 1초 뒤 올린다(V4 `preferenceSync`).
 - V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다.
 - 문서에는 **기본값과 다른 칸만** 적는다(없는 칸·틀린 칸 = 기본값). 칸마다 기본값과 읽기 규칙은 표 하나(`domain/settings.ts`의 `SettingsSpec`) -
@@ -287,22 +288,27 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 ### 8-1. 원칙
 - **한 방향**: V4를 읽기만 하고 V5에만 쓴다. V3·V4 자료와 코드는 손대지 않는다.
 - **결정적 id**: V5 id = V4 자리에서 셈한다(8-2). 그래서 **여러 번 가져와도 겹치지 않고**, 링크도 상대를 찾지 않고 바로 셈한다.
-- **다시 가져오기**: V5에서 고친 항목(`updatedAt` > 지난 가져오기)은 덮지 않고 결과 표에 적는다. V4에서 지운 것은 V5에서도 지운 표시.
+- **다시 가져오기**(`import/v4/plan.ts` `planDocs`): 가져온 문서는 `src.h`에 **가져올 때 적은 칸의 지문**을 남긴다. 다시 가져올 때
+  지금 V5 문서의 칸 지문 ≠ `src.h`면 V5에서 고친 것 → 덮지 않고(둠) 결과 표에 적는다. 새로 셈한 지문 == `src.h`면 그대로(쓰지 않는다), 그 밖은 바뀐 칸만.
+  '지난 가져오기 때'(`updatedAt` > 때)를 믿지 않는다 - 가져오기가 끊겨 기록을 못 남겨도, 기기 시각이 틀려도 같다.
+  V4에서 없어진 것은 V5에서 고치지 않았으면 지운 표시(`deletedBy: 'v4-import'` - 휴지통에 'V4에서 지움'), 고쳤으면 둔다.
+  V5에서 사용자가 지운 것은 되살리지 않고, 가져오기가 지운 것이 V4에 다시 생기면 새로 적는다. 결과 = 새로·바뀜·그대로·둠·지움(+ 항목은 학년도별 수).
 - **옛 모양 읽기는 여기에만**: V4 `readEventList`·`parseV3EventText`·`normalizeEventLabel`·`readEvalList`·`mergeEntryLabels`·`resolveEventLabelNames`·
   `readLabelTree`를 `import/v4/legacy/`로 테스트째 옮긴다. V5 본체는 이것을 import하지 않는다(테스트로 지킨다).
-- 가져온 항목에는 `src: { from: 'v4', path, id }`. 가져오기 기록(때·종류별 수·짝 표)은 `settings/common.import`.
+- 가져온 문서(항목·라벨 …)에는 `src: { from: 'v4', path, id, h }`. 가져오기 기록(때·종류별 수·라벨 짝 표·설정 칸마다 적은 값·띠 닫음)은
+  그 공간의 **`settings/import`**(`import/v4/record.ts`) - 설정 문서(common)에 두면 설정 맞추기가 모르는 칸으로 지운다.
 - 드라이브 파일은 옮기지 않고 그대로 가리킨다(같은 프로젝트라 권한이 그대로다).
 
 ### 8-2. 결정적 id
-`v4id(종류, 공간, 자리, V4 id)` = sha1을 base32로 20자. **주의**: V3가 id 없이 쓴 일정은 V4 `readEventList`가 `ev_차례`를 붙이므로
+`v4id(종류, 공간, 자리, V4 id)` = sha1을 base32로 20자(`import/v4/ids.ts` - SHA-1은 `hash.ts`에 직접 두어 기기에서 바로 셈한다). **주의**: V3가 id 없이 쓴 일정은 V4 `readEventList`가 `ev_차례`를 붙이므로
 그날 목록이 바뀌면 차례가 밀린다 - id 없는 항목은 `날짜|글|라벨` 해시로 셈하고, 같은 날 같은 글이 둘이면 몇째인지를 붙인다.
 
 ### 8-3. 짝 표
 
 | V4 | V5 | 주의 |
 |---|---|---|
-| `settings/labels`의 `eventLabels` | `labels`(event, props) | 속성은 V3 이름 먼저(`normalizeEventLabel`), `v4_gcal` → `props.gcal` |
-| `memoLabels`·`journalLabels` + `v4_labelTree` | `labels`(note, parentId) | 이름으로 합친다(`mergeEntryLabels`). 짝 표: V4 이름·기록 id·`jm_` → V5 id |
+| `settings/labels`의 `eventLabels` | `labels`(event, props) | 속성은 V3 이름 먼저(`normalizeEventLabel`), `v4_gcal` → `props.gcal`. 문서가 없으면 V4 기본 라벨. 열쇠 = V4 id(없으면 'name:이름') |
+| `memoLabels`·`journalLabels` + `v4_labelTree` | `labels`(note, parentId) | 이름으로 합친다(`mergeEntryLabels` - 열쇠 = 기록 id·`jm_이름`), 상위 이름 → `parentId`. V5에 이름이 같은 라벨이 있으면 그것에 잇는다. 짝 표 `labelMap`: V4 이름 → V5 id (`import/v4/labels.ts`) |
 | `{sp}/events/{date}`(`readEventList`) | `items`(event) | 라벨 셋 자리(`label`·`labelIds`·본문 앞 `[이름]` - 등록된 라벨만) → `labelIds`, 본문은 그대로. `time`('YYYY-MM-DDTHH:mm') → `time`, `alarmTriggered` → `alarmDone`, 공휴일 일정(`isHolidayEvent`) 빼기, 이월 사슬(`forwardChainId`·`originalDate`) → `carriedFrom`, 기한(`due` + `v4_eventDue` 사슬) → `due`, `gcal` → `props.gcal` |
 | 기간 조각(`groupId` + 글 끝 `(i/n)`) | `items` 하나(`date`~`endDate`) | 글 끝 '(i/n)'를 뗀다, 날마다 완료 → `doneDates`, 조각마다 글이 다르면 합치지 않고 따로(결과 표에) |
 | 반복 묶음(`groupId`, '(i/n)' 없음) | `series`(imported) + `items` | 규칙은 모른다 |
@@ -320,7 +326,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | `v4_progress` | `progress` | 모양 그대로 |
 | 기록·메모 글의 학생 태그 `#26040305` | `studentIds` | 글의 태그는 그대로 둔다(본문을 바꾸지 않는다) |
 | `settings/preferences.dDayList` | `settings/common.ddays` | |
-| `v4_preferences_pc/_mobile`, `v4_teaching`·`v4_classBell`·`v4_school`·`v4_trash`·`v4_autoBackup`·`v4_observationPhrases` | `settings/pc`·`mobile`·`common` | 단축키 id는 그대로라 사용자가 바꾼 키가 이어진다 |
+| `v4_preferences_pc/_mobile`, `v4_teaching`·`v4_classBell`·`v4_school`·`v4_trash`·`v4_autoBackup`·`v4_observationPhrases` | `settings/pc`·`mobile`·`common` | 단축키 id는 그대로라 사용자가 바꾼 키가 이어진다. 기기별 문서가 없으면 옛 한 벌 `v4_preferences`. `forwardLookbackDays` → `common.forwardDays`(PC 먼저). **칸마다** 가져오기가 지난번에 적은 값과 견줘 V5에서 바꾼 칸은 둔다(`import/v4/settings.ts`). common의 나머지는 그 칸이 생기는 세션이 `COMMON_FROM_V4`에 |
 | `groups/{gid}` + 그룹 자료 | `spaces/g_{gid}` + 그 아래 | `members` 배열 → 맵, 구성원 누구나 가져올 수 있다(결정적 id라 겹치지 않음) |
 | `trash`, `v4_pushTokens`, `v4_gcalQueue`, `v4_alarms` | 가져오지 않는다 | 휴지통의 것은 V4에서 되살린 뒤 다시 가져오면 된다. 알림·보내기는 기기에서 다시 켠다 |
 
@@ -332,7 +338,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | 자료 층 테스트(에뮬레이터) `npm run test:data` | 자료 층을 고칠 때. 저장 도우미·되돌리기·기기 사본·가져오기(`src/**/*.emu.test.ts`, `vitest.data.config.ts`). 에뮬레이터를 켠 곳에서(CI는 단위만) |
 | `tools/check-rules.mjs` | 규칙을 고칠 때마다. V4 35개 + V5 |
 | 크롬 점검 `tools/inspect-*.mjs` | 세션마다 바뀐 부분만. **`data-*`로만 찾는다**(화면 글자가 아니라). 심은 자료는 끝에 되돌린다. PC 1400px 크롬 하나. 화면이 없는 자료 층은 앱 모듈을 `import('/src/…')`로 불러 store를 읽는다(`inspect-data`·`inspect-mirror`). 서버에 쓰는 것은 '그 문서만 바뀌었나'를 다른 문서의 `updatedAt`으로 본다(`inspect-labels`) |
-| 가져오기 점검 | 가져오기 세션마다: V4 seed → 가져오기 → 종류·수 대조 → 두 번째 가져오기는 '바뀐 것 0' |
+| 가져오기 점검 | 가져오기 세션마다: V4 seed → 가져오기 → 종류·수 대조 → 두 번째 가져오기는 '바뀐 것 0'. 순수 규칙은 단위(`import/v4/*.test`), 규칙을 지나는지는 자료 층(`import.emu.test`), 화면은 `tools/inspect-import-labels.mjs`(V4 문서를 고쳐 심고 끝에 V4·V5 모두 되돌린다). seed는 계정마다 `settings/import`에 띠 닫음을 심는다(띠가 다른 점검을 밀어내지 않게) |
 | 설명서 점검 | P9-1부터. 여러 세션을 모아 마지막에 한 번 |
 | `PARITY.md` | 세션 끝마다 그 세션이 끝낸 기능을 체크 |
 

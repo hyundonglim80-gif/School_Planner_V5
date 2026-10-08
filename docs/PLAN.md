@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-4 가져오기 틀 + 라벨·설정 가져오기** (다음 대화에서 - 클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
+**P3-1 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림** (다음 대화에서 - 클라우드면 1-7을 먼저).
 
 ---
 
@@ -138,9 +138,9 @@
 | P2-1 | 타입·저장 도우미·지운 표시·되돌리기·규칙 | 중간 | 높음 | 끝 (2026-10-08) |
 | P2-2 | 기기 사본(IndexedDB)·바뀐 것만 받기 | 큼 | 높음 | 끝 (2026-10-08) |
 | P2-3 | 라벨(트리·속성·라벨 관리 창) | 중간 | 중간 | 끝 (2026-10-08) |
-| P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | **다음** |
+| P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | 끝 (2026-10-08) |
 | **P3 하루 화면** | | | | |
-| P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | |
+| P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | **다음** |
 | P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | |
 | P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | |
 | P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | |
@@ -180,7 +180,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 학급(P7)은 수업 칸(반 도구·출결)에 기대므로 P6 뒤.
 
 **단계 메모** (단계가 끝날 때 V4와 달라진 점 한 줄)
-- (아직 없음)
+- P2 자료 층(10-08): 항목·라벨이 문서 하나씩·id로 가리킨다(라벨 이름 바꾸기 = 문서 하나) · 지우기 = 지운 표시 + Ctrl+Z · 기기 사본(IndexedDB)으로 열자마자 보이고 바뀐 것만 받는다 ·
+  V4 자료는 한 방향으로 가져온다(라벨·설정부터 - 여러 번 해도 겹치지 않고 V5에서 고친 것은 덮지 않는다). V3와 함께 쓰던 옛 모양 읽기는 가져오기 안에만.
 
 ## 4. 세션 기록 (한 세션 한 줄 - 어느 기기에서 어디까지 했나)
 
@@ -194,6 +195,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-1 | P2-1 세션 끝 정리 | 단위 263 · 자료 층(에뮬레이터) 11 · check-rules V4 35 + V5 59 · inspect-data 11 · settings 20 · shell 통과 · 브랜치 `claude/happy-rubin-wcxw0e` → PR · 👤 규칙 V4 복사·운영 배포는 PC에서 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-2 | P2-2 세션 끝 정리 | 단위 309 · 자료 층(에뮬레이터) 19 · inspect-mirror 27 · data·settings·shell·login 통과 · 브랜치 `ccr-85a3b20a-nxq1q4` → PR #2 → Claude가 합침(사용자 결정: 앞으로 자동 합치기·배포) · V4는 읽기용으로 옆에 받음(`--depth 1`) |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-3 | P2-3 세션 끝 정리 | 단위 363 · inspect-labels 20 · shell·settings·data 통과 · 브랜치 `claude/dreamy-ritchie-ub4ru5` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P2-4 | P2-4 세션 끝 정리 | 단위 610 · 자료 층(에뮬레이터) 24(import.emu 5) · inspect-import-labels 32 · P2 단계 점검 모두(data·mirror·labels·import-labels + shell·settings·login·pwa) 통과 · 브랜치 `claude/eager-hypatia-mlpldd` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 👤 실제 계정으로 한 번 가져와 보기 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -302,6 +304,18 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P2-3 기본 라벨**(권장안으로 고름): 라벨이 하나도 없는 공간에 저절로 넣지 않는다 - 라벨 관리 창의 그 탭이 비었을 때(서버 확인 뒤) '기본 라벨 넣기' 단추.
   V4 사용자는 P2-4 가져오기로 라벨이 들어오는데, 먼저 기본 라벨을 만들어 두면 이름이 같은 라벨이 겹친다. id를 정해 두어(`dflt_e1`…) 두 기기에서 함께 눌러도 하나.
   일정 = V4 기본 다섯(달력·수업X·이월·기간·반복), 메모·기록 = V4 기록 기본 넷과 라벨 관리 창의 메모 기본에서 겹치지 않게 일곱(긴급·중요·학급활동·학생상담·업무전달·수업기록·개인).
+- **P2-4 다시 가져오기 = 지문**(권장안으로 고름): 계획의 'V5에서 고친 것 = `updatedAt` > 지난 가져오기 때' 대신 문서마다 `src.h`(가져올 때 적은 칸의 지문)와
+  지금 칸을 견준다 - 가져오기가 중간에 끊겨 기록을 못 남겨도, 여러 기기가 가져와도 문서마다 맞다. V4에서 없어진 것의 지운 표시는 `deletedBy: 'v4-import'` -
+  사용자가 지운 것(되살리지 않는다)과 가져오기가 지운 것(V4에 다시 생기면 새로)을 가른다.
+- **P2-4 기록**(권장안으로 고름): 가져오기 기록은 `settings/common.import`가 아니라 **`settings/import`** 문서 - 설정 맞추기(`data/settingsSync`)가 `common`을
+  아는 칸만으로 통째로 다시 쓰므로 모르는 칸(기록)이 지워진다. 띠 닫음(`dismissed`)도 여기(계정에 하나).
+- **P2-4 라벨 이름이 같을 때**(권장안으로 고름): V5에 이름이 같은 라벨(V5에서 만든 것·'기본 라벨 넣기')이 있으면 새로 만들지 않고 그 라벨에 잇는다
+  (같은 종류 안에서 이름이 겹치면 라벨 관리 창이 저장을 막는다). 이은 것은 짝 표(`settings/import.labelMap` - V4 이름 → V5 id)에 - P3-4 항목 가져오기가 이것으로 라벨을 찾는다.
+  V4에 라벨 문서가 없으면 V4가 보이던 기본 라벨(일정 다섯·기록 넷·메모 다섯)을 가져온다 - 그 사람 항목이 그 id·이름을 들고 있다.
+- **P2-4 설정 가져오기는 칸마다**: 설정 문서에는 기본값과 다른 칸만 있어 문서 지문으로는 'V5에서 바꿨나'를 알 수 없다 → 기록에 칸마다 가져오기가 적은 값을 두고 견준다.
+  V4 이월 기간(기기마다 `forwardLookbackDays`)은 V5 `common.forwardDays` 하나로(PC 값 먼저). 교사 유형·수업 종 같은 common 칸은 그 칸이 생기는 세션이
+  `import/v4/settings.ts` `COMMON_FROM_V4`에 한 줄 더한다(칸이 없으면 설정 맞추기가 지운다).
+- **P2-4 되돌리기 없음**: 가져오기는 Ctrl+Z 더미에 넣지 않는다 - 수백 개를 한꺼번에 지운 표시로 되돌리면 더 위험하고, 다시 가져오기가 바뀐 것만 고친다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -445,14 +459,27 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P2-3 끝. V4 저장소가 옆에 있고 에뮬레이터에 V4 seed 자료가 있다.
 **먼저 읽을 것**: `DESIGN.md` 8장, V4 `lib/eventText.ts`·`lib/evalList.ts`·`lib/entryLabels.ts`·`lib/legacyLabels.ts`·`lib/eventLabels.ts`·`hooks/useLabels.ts`(normalizeEventLabel)·
 `lib/labelTree.ts`(readLabelTree)·`lib/preferenceSync.ts`·`lib/backupJson.ts`(V4가 무엇을 어디서 읽나 - 목록으로 좋다).
-- [ ] ■1 `src/import/v4/` 틀: 결정적 id(`DESIGN.md` 8-2), 진행 칸·결과 표(종류·학년도별 수), 다시 가져오기 규칙(V5에서 고친 것은 덮지 않음·V4에서 지운 것은 지운 표시),
+- [x] ■1 `src/import/v4/` 틀: 결정적 id(`DESIGN.md` 8-2), 진행 칸·결과 표(종류·학년도별 수), 다시 가져오기 규칙(V5에서 고친 것은 덮지 않음·V4에서 지운 것은 지운 표시),
   가져오기 기록 `settings/common.import`(때·수·짝 표).
-- [ ] ■2 옛 모양 읽기를 `import/v4/legacy/`로 테스트째 옮긴다: readEventList·parseV3EventText·normalizeEventLabel·readEvalList·mergeEntryLabels·resolveEventLabelNames·readLabelTree.
+  → `hash.ts`(SHA-1·base32·`stableStringify`) · `ids.ts`(`v4id`·id 없는 것 `idlessKey`/`nthKey`) · `plan.ts`(`planDocs` - 지문 `src.h`로 새로·바뀜·그대로·둠·지움,
+  결과 수 `ImportCounts`(학년도별 `years`)) · `record.ts`(기록은 **`settings/import`** - `common`이 아니다, 5장) · 저장 도우미 `remove(자리, 누가)`(`deletedBy: 'v4-import'`).
+  진행 칸·결과 표 화면은 ■4.
+- [x] ■2 옛 모양 읽기를 `import/v4/legacy/`로 테스트째 옮긴다: readEventList·parseV3EventText·normalizeEventLabel·readEvalList·mergeEntryLabels·resolveEventLabelNames·readLabelTree.
   V5 본체가 이것을 import하지 않는지 테스트로 지킨다.
-- [ ] ■3 라벨·설정: `settings/labels` → labels(일정 = V3 이름 먼저, 메모·기록 = 이름으로 합침 + `v4_labelTree` 상위, `v4_gcal` → `props.gcal`, 짝 표),
+  → `legacy/eventText.ts`·`evalList.ts`·`eventLabels.ts`(+ V4 기본 일정 라벨)·`entryLabels.ts`(+ V4 기본 메모·기록 라벨, `mergeEntryTrees`)·`labelTree.ts` + `legacy.test.ts`(V4 테스트째, 쓰는 쪽은 뺐다 -
+  V5는 V4에 쓰지 않는다. `resolveEventLabelNames`의 keepUnknown도 뺐다 - 가져오기는 V4 라벨을 늘 먼저 읽는다).
+  `import/v4/boundary.test.ts`: `src/import/` 밖은 legacy를 import하지 않고 V4 자리(`'users'`·`'groups'`)를 부르지 않는다.
+- [x] ■3 라벨·설정: `settings/labels` → labels(일정 = V3 이름 먼저, 메모·기록 = 이름으로 합침 + `v4_labelTree` 상위, `v4_gcal` → `props.gcal`, 짝 표),
   V4 설정 문서들 → settings(`DESIGN.md` 8-3 표).
-- [ ] ■4 화면: 환경설정에 '가져오기' 자리(P8-3에서 백업 · 가져오기 · 보내기 창으로 옮긴다) + 처음 로그인 때 'V4 자료 가져오기' 띠.
+  → `labels.ts`(`planLabels` - V4에 문서가 없으면 V4 기본 라벨, V5에 이름이 같은 라벨이 있으면 그 라벨에 잇기, 짝 표 = V4 이름 → V5 id) ·
+  `settings.ts`(`planSettings` - **칸마다** 지난번에 적은 값과 견준다: V5에서 바꾼 칸은 둠, V4에 그 문서가 없으면 건너뜀. 지금은 pc·mobile 칸 전부 + common `forwardDays`) ·
+  `read.ts`(V4 자리를 읽는 유일한 곳·V5 문서는 서버에서) · `run.ts`(`runImport`·`checkImportOffer`·`dismissImportOffer`, 진행 store `useImportRun` - 500개씩, 기록은 맨 끝, 되돌리기에 넣지 않음) ·
+  자료 층 `import.emu.test.ts` 5(규칙을 지남·두 번째는 라벨 문서를 다시 쓰지 않음·V4에서 지운 라벨·띠).
+- [x] ■4 화면: 환경설정에 '가져오기' 자리(P8-3에서 백업 · 가져오기 · 보내기 창으로 옮긴다) + 처음 로그인 때 'V4 자료 가져오기' 띠.
   점검 `inspect-import-labels.mjs`: V4 seed → 가져오기 → 라벨 이름·색·속성·상위가 같다, 두 번째 가져오기는 '바뀐 것 0'.
+  → `features/settings/ImportTab.tsx`(탭 '가져오기' - 단추·진행 칸·결과 표 `[data-import-run|progress|result|row|count|years|last|failed]`) ·
+  `features/import/ImportBanner.tsx`(`Shell` 본문 맨 위, `[data-import-banner|banner-run|banner-close]`) · 열린 환경설정 창을 다른 탭으로 다시 열면 그 탭으로 ·
+  seed가 계정마다 띠 닫음(`settings/import.dismissed`)을 심는다 · 크롬 `inspect-import-labels.mjs` 32항목.
 **끝 조건**: 위 점검 통과. **P2 단계 끝 정리**(1-4).
 
 ### P3-1. 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림
@@ -497,6 +524,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P3-3 끝. V4 seed 자료.
 **먼저 읽을 것**: `DESIGN.md` 8-2·8-3, V4 `lib/eventText.ts`·`eventLabels.ts`·`eventDue.ts`·`eventDueStore.ts`·`periodBars.ts`(조각 알아보기 - groupId + '(i/n)')·
 `holidays.ts`(isHolidayEvent)·`journalEntries.ts`·`entryTable.ts`(TABLE_ONLY_CONTENT)·`utils/linkUtils.ts`.
+**P2-4가 둔 틀**(V5 `src/import/v4/`): `planDocs`(지문으로 새로·바뀜·그대로·둠·지움 - `ImportColl`에 'items'가 있다, `Planned.year`로 학년도별 수) · `ids`(`v4id`·`idlessKey`) ·
+`legacy/`(readEventList·resolveEventLabelNames …) · 라벨은 `planLabels(…).labelMap`(V4 이름 → V5 id - 같은 실행에서) · `run.ts`에 라벨 뒤 차례로 더하고 `record.IMPORT_KINDS`에 줄을 더한다.
 - [ ] ■1 `events/{date}` → items(event): readEventList(id 없는 항목 - `DESIGN.md` 8-2), 라벨 셋 자리 → `labelIds`, 속성(V3 이름 먼저), time·alarmTriggered,
   기한(사슬로), 공휴일 일정 빼기, 이월 사슬 → `carriedFrom`, authorId·createdAt·`src`.
 - [ ] ■2 기간 조각 → 한 항목(글 끝 '(i/n)' 떼기, 날마다 완료 → `doneDates`, 조각마다 글이 다르면 따로 두고 결과 표에), 반복 묶음 → `series`(imported) + 항목들.

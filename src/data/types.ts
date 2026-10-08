@@ -78,11 +78,15 @@ export interface Attachment {
   driveId?: string;
 }
 
-/** 가져온 항목의 V4 자리 (DESIGN 8장) */
+/** 가져온 문서의 V4 자리 (DESIGN 8장) */
 export interface ImportSource {
   from: 'v4';
+  /** V4 문서 자리 (공간 밑 - 'settings/labels', 'events/2026-03-02') */
   path: string;
+  /** 그 안의 V4 id (id가 없던 것은 import/v4 nthKey) */
   id: string;
+  /** 가져올 때 적은 칸의 지문 - 다시 가져올 때 그 뒤 V5에서 고쳤는지 본다(import/v4/plan) */
+  h?: string;
 }
 
 export interface Item extends Tracked {
@@ -145,6 +149,8 @@ export interface Label extends Tracked {
   parentId: string | null;
   order: string;
   props?: LabelProps;
+  /** V4에서 가져온 라벨 */
+  src?: ImportSource;
 }
 
 // ───────────────────────── 4-4. 반복 ─────────────────────────

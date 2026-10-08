@@ -52,6 +52,9 @@ async function main() {
       console.log(`${email} 계정이 없어 만들었습니다 (V4 자료는 없다 - V4 seed를 돌리면 더해진다)`);
     }
     await setDoc(doc(db, 'spaces', `u_${uid}`), personalSpace(uid));
+    // 처음 로그인 'V4 자료 가져오기' 띠는 닫아 둔다 - seed 계정에는 V4 자료가 있어 띠가 다른 점검의 화면을 밀어낸다.
+    // 띠와 가져오기는 tools/inspect-import-labels.mjs가 이 기록을 비우고 본 뒤 되돌린다.
+    await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'import'), { dismissed: true, updatedAt: serverTimestamp(), v: 1 });
     console.log(`${email} (${note}) → spaces/u_${uid}`);
   }
   console.log('V5 자료를 심었습니다 - 개인 공간 3개');

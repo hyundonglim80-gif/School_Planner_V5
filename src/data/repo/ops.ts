@@ -24,7 +24,8 @@ export type Changes<C extends SpaceCollection> = { [K in keyof Editable<C>]?: Ed
 export type WriteOp =
   | { type: 'create'; at: DocPath; data: Fields }
   | { type: 'patch'; at: DocPath; changes: Fields; before: Fields }
-  | { type: 'remove'; at: DocPath }
+  /** by = 누가 지웠나(없으면 적는 사람). V4 가져오기가 'V4에서 지움'을 적을 때만 준다(import/v4 IMPORT_DELETER) */
+  | { type: 'remove'; at: DocPath; by?: string }
   | { type: 'restore'; at: DocPath }
   /** 문서를 통째로 적는다 (설정 문서, 영구 지우기 되돌리기). before = 그 자리에 있던 문서(없으면 null) */
   | { type: 'put'; at: DocPath; data: Fields; before: Fields | null }
@@ -63,8 +64,8 @@ export const writeOp = {
     if (Object.keys(changes).length === 0) throw new Error('patch: 바꿀 칸이 없다');
     return { type: 'patch', at, changes: changes as Fields, before: before as Fields };
   },
-  remove(at: DocPath): WriteOp {
-    return { type: 'remove', at };
+  remove(at: DocPath, by?: string): WriteOp {
+    return by ? { type: 'remove', at, by } : { type: 'remove', at };
   },
   restore(at: DocPath): WriteOp {
     return { type: 'restore', at };
@@ -157,7 +158,7 @@ export function toWrite(op: WriteOp, ctx: WriteContext): Write {
       return { kind: 'update', path, data };
     }
     case 'remove':
-      return { kind: 'update', path, data: { deletedAt: SERVER_TIME, deletedBy: ctx.uid, updatedAt: SERVER_TIME } };
+      return { kind: 'update', path, data: { deletedAt: SERVER_TIME, deletedBy: op.by ?? ctx.uid, updatedAt: SERVER_TIME } };
     case 'restore':
       return { kind: 'update', path, data: { deletedAt: null, deletedBy: DELETE_FIELD, updatedAt: SERVER_TIME } };
     case 'put':

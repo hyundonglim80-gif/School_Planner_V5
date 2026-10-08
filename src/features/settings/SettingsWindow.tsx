@@ -1,14 +1,15 @@
-// ⚙️ 환경설정 창 (MENU 3-6, V4 components/SettingsModal.tsx). 탭: 보기 · 알림 · 학교 · 단축키 · 앱 · 개발자.
+// ⚙️ 환경설정 창 (MENU 3-6, V4 components/SettingsModal.tsx). 탭: 보기 · 알림 · 학교 · 단축키 · 앱 · 가져오기 · 개발자.
 // 그 기능이 V5로 옮겨 오기 전에는 탭·칸을 숨긴다(빈 탭을 보이지 않는다) - 기능을 옮기는 세션이 아래 표의 ready를 켜고 칸을 더한다.
 // 계정에 PC·휴대폰 따로 올라가는 값이 대부분이다(app/prefs). 휴지통 자동 비우기·드라이브 백업·교시 이름은 그 기능 창 안으로 옮겼다(MENU 3-7).
 import { useCallback, useRef, useState } from 'react';
 import type { WindowProps } from '../../app/windows';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import AppTab from './AppTab';
+import ImportTab from './ImportTab';
 import ShortcutsTab, { type ShortcutsTabHandle } from './ShortcutsTab';
 import ViewTab from './ViewTab';
 
-export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' | 'dev';
+export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' | 'import' | 'dev';
 
 const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean }> = [
   { id: 'view', label: '보기', ready: true },
@@ -18,6 +19,8 @@ const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean }> 
   { id: 'school', label: '학교', ready: false },
   { id: 'shortcuts', label: '단축키', ready: true },
   { id: 'app', label: '앱', ready: true },
+  // V4 자료 가져오기 (P2-4) - P8-3에서 '백업 · 가져오기 · 보내기' 창의 '가져오기' 탭으로 옮긴다
+  { id: 'import', label: '가져오기', ready: true },
   // 개발자 계정만 - 공휴일 P5-3 · 나이스 키 P6-3 · 공유 그룹 점검 P8-4 (라벨 상태는 '앱' 탭 '이 기기 사본'이 맡는다 - P2-3,
   // V4 labelDiagnostics는 라벨 문서를 못 읽어 기본값으로 때웠는지를 가리던 것 - V5는 라벨이 문서마다라 그런 때우기가 없다)
   { id: 'dev', label: '개발자', ready: false },
@@ -28,6 +31,12 @@ const SETTINGS_TABS = TABS.filter((t) => t.ready);
 export default function SettingsWindow({ params, close, raise }: WindowProps<{ tab?: SettingsTabId } | undefined>) {
   const first = SETTINGS_TABS.find((t) => t.id === params?.tab)?.id ?? 'view';
   const [tab, setTab] = useState<SettingsTabId>(first);
+  // 열려 있는 창을 다른 탭으로 다시 열면(처음 로그인 띠의 '가져오기' 등) 그 탭으로
+  const [askedTab, setAskedTab] = useState(params?.tab);
+  if (params?.tab !== askedTab) {
+    setAskedTab(params?.tab);
+    if (SETTINGS_TABS.some((t) => t.id === params?.tab)) setTab(params!.tab!);
+  }
   const shortcuts = useRef<ShortcutsTabHandle | null>(null);
   const [status, setStatus] = useState({ dirty: false, conflict: null as string | null, saved: false });
   const onStatus = useCallback((s: typeof status) => setStatus(s), []);
@@ -104,6 +113,9 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
         </div>
         <div role="tabpanel" data-settings-panel="app" hidden={tab !== 'app'}>
           <AppTab />
+        </div>
+        <div role="tabpanel" data-settings-panel="import" hidden={tab !== 'import'}>
+          <ImportTab />
         </div>
       </div>
     </ModalShell>
