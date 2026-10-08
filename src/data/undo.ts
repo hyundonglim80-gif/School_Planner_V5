@@ -7,8 +7,7 @@
 // - 되돌리기는 고치기 전 칸 값으로 다시 쓰는 것이다. 그 사이 다른 기기에서 같은 칸을 고쳤으면 그것도 되돌아간다(V4와 같다).
 // - 되돌리기를 되돌리지는 않는다(다시 하기 없음).
 import { batch, type Undo } from './repo';
-import { personalSpaceId } from './space';
-import { useSession } from './session';
+import { currentSpaceId, useSession } from './session';
 import { showErrorToastOnce, showToast } from '../app/toast';
 
 /** 되돌리기 단추가 있는 안내는 조금 더 오래 둔다 (마우스를 올려 둔 동안은 사라지지 않는다 - app/toast) */
@@ -68,12 +67,6 @@ async function runEntry(entry: UndoEntry, byKey: boolean): Promise<boolean> {
   }
   showToast(byKey && entry.what ? `↩️ 되돌렸습니다 - ${entry.what}` : '↩️ 되돌렸습니다.');
   return true;
-}
-
-/** 지금 공간 - 지금은 개인 공간 하나(공유 그룹을 고르는 것은 P8-4) */
-function currentSpaceId(): string | null {
-  const uid = useSession.getState().user?.uid;
-  return uid ? personalSpaceId(uid) : null;
 }
 
 /** Ctrl+Z: 그 공간(주지 않으면 지금 공간)의 마지막 쓰기를 되돌린다. 되돌렸으면 true */

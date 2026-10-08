@@ -330,6 +330,9 @@ export type ManagedField = keyof Tracked;
 /** 기능이 쓰는 칸만 (저장 도우미가 붙이는 칸을 뺀다) */
 export type Editable<C extends SpaceCollection> = Omit<DocOf<C>, ManagedField>;
 
+/** 화면이 보는 문서 = 문서 칸 + 자리(id). 기기 사본에서 고른다(data/select) - id는 칸이 아니라 저장 도우미가 적지 않는다 */
+export type Stored<C extends SpaceCollection> = DocOf<C> & { id: string };
+
 /** 문서 자리: spaces/{sid}/{coll}/{id} */
 export interface DocPath<C extends SpaceCollection = SpaceCollection> {
   sid: string;

@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { onAuthStateChanged } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { auth } from './firebase';
-import { ensurePersonalSpace } from './space';
+import { ensurePersonalSpace, personalSpaceId } from './space';
 import { showErrorToast } from '../app/toast';
 
 export interface SessionUser {
@@ -27,6 +27,17 @@ const toSessionUser = (u: User): SessionUser => ({
   displayName: u.displayName ?? '',
   photoURL: u.photoURL ?? '',
 });
+
+/** 지금 공간 - 지금은 개인 공간 하나(공유 그룹을 고르는 것은 P8-4). 로그인하지 않았으면 null */
+export function currentSpaceId(): string | null {
+  const uid = useSession.getState().user?.uid;
+  return uid ? personalSpaceId(uid) : null;
+}
+
+export function useCurrentSpaceId(): string | null {
+  const uid = useSession((s) => s.user?.uid);
+  return uid ? personalSpaceId(uid) : null;
+}
 
 /** 로그인 상태를 store에 옮기고, 들어오면 개인 공간을 챙긴다. 끊는 함수를 돌려준다. */
 export function watchSession(): () => void {
