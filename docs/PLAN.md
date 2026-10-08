@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-2 기기 사본(IndexedDB)·바뀐 것만 받기** (다음 대화에서 - PC든 클라우드든. 클라우드면 1-7을 먼저).
+**P2-2 기기 사본(IndexedDB)·바뀐 것만 받기** - ■2부터 (클라우드 세션 브랜치 `ccr-85a3b20a-nxq1q4`).
 
 ---
 
@@ -380,7 +380,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P2-2. 기기 사본(IndexedDB)·바뀐 것만 받기
 **시작 조건**: P2-1 끝.
 **먼저 읽을 것**: `DESIGN.md` 6-2·6-3, 이 파일 5장 'P2-1 저장 도우미'(사본 Timestamp 되살리기·영구 지우기는 받기에 보이지 않음), V4 `CLAUDE.md` 4장(09-22 'primary lease' - 무엇이 달라야 하나), V4 `lib/clipboardHistory.ts`(V4의 IndexedDB 쓰는 법).
-- [ ] ■1 `src/data/mirror/db.ts`(idb): DB `sp5-mirror-{uid}`, 공간·컬렉션마다 저장소, 커서.
+- [x] ■1 `src/data/mirror/db.ts`(idb): DB `sp5-mirror-{uid}`, 공간·컬렉션마다 저장소, 커서.
+  → 저장소는 둘(`docs` 열쇠 [공간, 컬렉션, id] · `meta`) - 공간·컬렉션은 열쇠 범위로 나눈다(5장 'P2-2 사본 DB'). Timestamp는 `codec.ts`로 지킨다.
 - [ ] ■2 동기화 `src/data/mirror/sync.ts`: 처음 = 이번 학년도부터 쪽 나눠 받고 나머지는 뒤에서 / 그 뒤 = 컬렉션마다 `updatedAt > 커서 - 1분` 구독 하나 →
   사본·store에 넣기(지운 표시도 그대로) / 내 쓰기는 화면에 먼저.
 - [ ] ■3 store 고르기 `src/data/select.ts`: 날짜로·기간으로·라벨로·종류로·메모만. 화면은 이것만 쓴다.
