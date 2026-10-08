@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P1-2 Firebase·로그인·규칙 합치기·에뮬레이터·seed** - ■1 끝, 다음 ■2 규칙 합치기.
+**P1-2 Firebase·로그인·규칙 합치기·에뮬레이터·seed** - ■1·■2 끝, 다음 ■3 V4 쪽 규칙 복사본.
 
 ---
 
@@ -230,7 +230,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 `tools/check-rules.mjs`·`tools/seed.mjs`(계정 만드는 앞부분), V4 `CLAUDE.md` 2장(JDK·에뮬레이터).
 - [x] ■1 `firebase.json`: firestore rules `firestore.rules`, emulators(auth 9099·firestore 8080·ui 4000·singleProjectMode - **V4와 같은 포트·project id**),
   hosting 자리(P1-4), functions는 P8-2(codebase `v5`). `npm run emu` = `firebase emulators:start --only auth,firestore --project schoolplannerv3`.
-- [ ] ■2 규칙 합치기: V4 `firestore.rules` 통째로 + V5 블록(`spaces/{sid}` - 개인 `u_{uid}`는 본인만, 그룹은 `members`에 있는 사람, 아래 문서도 같은 규칙 /
+- [x] ■2 규칙 합치기: V4 `firestore.rules` 통째로 + V5 블록(`spaces/{sid}` - 개인 `u_{uid}`는 본인만, 그룹은 `members`에 있는 사람, 아래 문서도 같은 규칙 /
   `spaceInvites/{code}` get만·list 막음 / `v5alarms` 막음). `tools/check-rules.mjs`: V4 35개 그대로 + V5 검사(남의 개인 공간·구성원 아님·초대 코드 목록 막힘 …).
   에뮬레이터를 V5에서 켜고 통과.
 - [ ] ■3 V4 쪽: V4 `firestore.rules`를 합친 것과 같게 + 맨 위 "정본은 V5 저장소 firestore.rules - 여기서 고치지 않는다", V4 `npm run check:rules` 통과 → V4 커밋·푸시.
