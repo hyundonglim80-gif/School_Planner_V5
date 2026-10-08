@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-3 라벨** (다음 대화에서 - PC든 클라우드든. 클라우드면 1-7을 먼저).
+**P2-3 라벨** ■2 라벨 관리 창 (클라우드 - 세션 브랜치 `claude/dreamy-ritchie-ub4ru5`).
 
 ---
 
@@ -295,6 +295,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   이어 받기는 `startAt(after 시각)`(겹쳐 받기). 처음 받기·견주기·확인은 `…FromServer`(연결 없이 캐시의 일부를 '다 받음'으로 믿지 않게).
 - **컨테이너 에뮬레이터**(10-08): 켜 둔 채 `firestore.rules`를 고치면 규칙 다시 읽기에서 Auth 쪽이 죽고 Firestore(java)만 남아 포트를 쥔다 →
   `ps aux | grep cloud-firestore-emulator`로 그 java를 끄고 `npm run emu`를 다시. 규칙을 고친 뒤에는 처음부터 다시 켠다.
+- **P2-3 라벨 트리**(10-08): 상위는 라벨 문서마다 `parentId`(DESIGN 4-3). 문서 값은 믿지 않고 다듬어 쓴다(`domain/labelTree` `parentMapOf` - 상위가 목록에 없거나
+  자기 자신이거나 3단계면 그 하위는 맨 위 단계로). **지운 상위의 하위 문서는 고쳐 쓰지 않는다**(권장안) - 맨 위 단계로 보이다가 상위를 휴지통에서 되살리면 트리가 돌아온다,
+  '이름을 바꾸면 문서 하나'처럼 지우기도 문서 하나. V4 빈 라벨 정리는 상위/하위 연결을 함께 뗐다 - V5는 떼지 않아도 같게 보인다.
+- **P2-3 기본 라벨**(권장안으로 고름): 라벨이 하나도 없는 공간에 저절로 넣지 않는다 - 라벨 관리 창의 그 탭이 비었을 때(서버 확인 뒤) '기본 라벨 넣기' 단추.
+  V4 사용자는 P2-4 가져오기로 라벨이 들어오는데, 먼저 기본 라벨을 만들어 두면 이름이 같은 라벨이 겹친다. id를 정해 두어(`dflt_e1`…) 두 기기에서 함께 눌러도 하나.
+  일정 = V4 기본 다섯(달력·수업X·이월·기간·반복), 메모·기록 = V4 기록 기본 넷과 라벨 관리 창의 메모 기본에서 겹치지 않게 일곱(긴급·중요·학급활동·학생상담·업무전달·수업기록·개인).
+- **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
+  일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
 ---
 
@@ -418,7 +426,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P2-3. 라벨
 **시작 조건**: P2-2 끝. 라벨 목록은 기기 사본에서 `data/select`의 `labelsOf`·`useLabels`로 고르고(이미 있다), 쓰기는 저장 도우미로 - 화면에 먼저 보인다.
 **먼저 읽을 것**: `DESIGN.md` 4-3, V4 설명서 `labels`·`event-attrs` 주제, V4 `components/LabelModal.tsx`·`hooks/useLabels.ts`·`lib/labelTree.ts`·`lib/labelUsage.ts`·`lib/eventLabels.ts`(풀이 규칙만).
-- [ ] ■1 labels 저장·고르기(일정 / 메모·기록, parentId, props, 차례), `domain/labelTree.ts`(V4 labelTree를 id로 - 테스트째), 맨 위 라벨 = 기본값.
+- [x] ■1 labels 저장·고르기(일정 / 메모·기록, parentId, props, 차례), `domain/labelTree.ts`(V4 labelTree를 id로 - 테스트째), 맨 위 라벨 = 기본값.
+  → `domain/labels.ts`(색 표·속성 읽기 `labelProps`·기본 라벨) · `data/labels.ts`(쓰기 묶음 `labelSaveOps` - 바뀐 칸만·옮긴 것만·지운 표시, `createLabelOp`·`defaultLabelOps`·이름 검사) ·
+  `select.ts` `labelTreeOf`·`useLabelTree`(트리 차례·기본 라벨 `defaultId`)·`itemsMatching`(라벨로 보기)·`labelUsageOf`(붙은 수 - 사본에서 바로) · `order.ts` `rekeyOrders`.
 - [ ] ■2 라벨 관리 창(LabelModal 옮기기: 탭 둘·색·차례·속성(달력·이월·수업X·구글 캘린더)·상위/하위·더할 때 상위 고르기·빈 라벨 정리 = 사본에서 바로 세기·지우기 = 지운 표시).
   각 칸 ⚙️에서 그 탭으로.
 - [ ] ■3 라벨 칩·고르기 부품(쓰는 칸·카드가 쓸 것) + 크롬 점검 `inspect-labels.mjs`(이름 바꾸기 = 서버 문서 하나).

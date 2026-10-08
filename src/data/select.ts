@@ -1,6 +1,7 @@
 // 화면이 자료를 고르는 곳 (DESIGN 6-2, 원칙 7). 화면은 Firestore를 부르지 않고 기기 사본(화면 store)에서 이것으로만 고른다.
 //
 //   날짜로 itemsOn · 기간으로 itemsBetween · 라벨로 itemsWithLabels · 종류로 itemsOfKind · 메모만 memos · 휴지통 trashOf · 라벨 labelsOf
+//   라벨 트리 labelTreeOf(상위/하위·트리 차례·기본 라벨) · 라벨로 보기 itemsMatching · 라벨마다 붙은 수 labelUsageOf
 //   훅은 같은 이름에 use를 붙인다(지금 공간 - 주지 않으면 개인 공간).
 //
 // - 지운 표시가 있는 것은 휴지통(trashOf)에서만 보인다.
@@ -9,6 +10,7 @@
 // - 계산하는 것(이월·수업 칸·기간 일정의 '(2/5)')은 여기에 없다 - 그 기능을 옮기는 세션이 이 위에 짓는다(DESIGN 5장).
 import { useMemo } from 'react';
 import { compareOrder } from '../domain/order';
+import { matchLabels, orderByTree, parentMapOf, type LabelFilter, type ParentMap, type TreeRow } from '../domain/labelTree';
 import { collKey, EMPTY_DOCS, useMirror, type MirrorStatus } from './mirror/store';
 import { useCurrentSpaceId } from './session';
 import type { ItemKind, SpaceCollection, Stored, YMD } from './types';
@@ -78,12 +80,20 @@ export function itemsBetween(items: Docs<'items'>, from: YMD, to: YMD, kind?: It
   return ofKind(out.sort(byDateThenOrder), kind);
 }
 
-/** 라벨 가운데 하나라도 붙은 것 (상위·하위 라벨 펼치기는 부르는 쪽 - P2-3) */
+/** 라벨 가운데 하나라도 붙은 것 (고른 id 그대로 - 상위를 고르면 하위도 함께는 itemsMatching) */
 export function itemsWithLabels(items: Docs<'items'>, labelIds: readonly string[], kind?: ItemKind): ItemDoc[] {
   if (labelIds.length === 0) return [];
   const want = new Set(labelIds);
   return ofKind(
     indexOf(items).live.filter((d) => d.labelIds?.some((id) => want.has(id))),
+    kind,
+  );
+}
+
+/** 라벨로 보기 - 상위를 고르면 하위도 함께, '기타' = 하위 없이 상위만 (domain/labelTree matchLabels). 빈 거르개면 모두 */
+export function itemsMatching(items: Docs<'items'>, filter: LabelFilter, parents: ParentMap, kind?: ItemKind): ItemDoc[] {
+  return ofKind(
+    indexOf(items).live.filter((d) => matchLabels(d.labelIds, filter, parents)),
     kind,
   );
 }
@@ -110,6 +120,64 @@ export function labelsOf(labels: Docs<'labels'>, kind?: ItemKind): LabelDoc[] {
   return Object.values(labels)
     .filter((d) => isLive(d) && (!kind || d.kind === kind))
     .sort(compareOrder);
+}
+
+/** 한 종류의 라벨 목록과 상위/하위 (라벨 관리 창·쓰는 칸·라벨로 보기가 함께 본다) */
+export interface LabelTree {
+  /** 살아 있는 라벨, 차례대로 */
+  list: LabelDoc[];
+  byId: ReadonlyMap<string, LabelDoc>;
+  /** 하위 id → 상위 id (일정 라벨은 늘 비었다) */
+  parents: ParentMap;
+  /** 트리 차례 (상위 → 그 하위) */
+  rows: TreeRow[];
+  /** 새 항목의 기본 라벨 = 트리 차례의 맨 위 (없으면 null) */
+  defaultId: string | null;
+}
+
+const treeCache = new WeakMap<object, Partial<Record<ItemKind, LabelTree>>>();
+
+export function labelTreeOf(labels: Docs<'labels'>, kind: ItemKind): LabelTree {
+  const cached = treeCache.get(labels)?.[kind];
+  if (cached) return cached;
+  const list = labelsOf(labels, kind);
+  // 상위/하위는 메모·기록 라벨만 (DESIGN 4-3)
+  const parents = kind === 'note' ? parentMapOf(list) : {};
+  const rows = orderByTree(
+    list.map((l) => l.id),
+    parents,
+  );
+  const tree: LabelTree = { list, byId: new Map(list.map((l) => [l.id, l])), parents, rows, defaultId: rows[0]?.id ?? null };
+  treeCache.set(labels, { ...treeCache.get(labels), [kind]: tree });
+  return tree;
+}
+
+/** 라벨마다 붙은 항목 수 - 메모·기록·일정·휴지통 (V4 '항목 수 세기' - 서버를 훑지 않고 사본에서 바로 센다) */
+export interface LabelUsage {
+  memo: number;
+  record: number;
+  event: number;
+  trash: number;
+}
+
+export const usageTotal = (u: LabelUsage | undefined) => (u ? u.memo + u.record + u.event + u.trash : 0);
+
+/**
+ * 라벨 id → 붙은 항목 수. 상위 라벨은 하위가 붙은 항목도 센다(한 항목이 상위와 하위를 함께 달았으면 상위는 한 번).
+ * 지운 항목은 휴지통으로 센다 - 휴지통의 항목을 되살리면 그 라벨이 필요하다.
+ */
+export function labelUsageOf(items: Docs<'items'>, parents: ParentMap = {}): Record<string, LabelUsage> {
+  const out: Record<string, LabelUsage> = {};
+  for (const d of Object.values(items)) {
+    const key: keyof LabelUsage = d.deletedAt ? 'trash' : d.kind === 'event' ? 'event' : d.date ? 'record' : 'memo';
+    const hit = new Set<string>();
+    for (const id of d.labelIds ?? []) {
+      hit.add(id);
+      if (parents[id]) hit.add(parents[id]);
+    }
+    for (const id of hit) (out[id] ??= { memo: 0, record: 0, event: 0, trash: 0 })[key] += 1;
+  }
+  return out;
 }
 
 // ─────────────── 훅 ───────────────
@@ -158,6 +226,17 @@ export function useMemos(sid?: string | null): ItemDoc[] {
 export function useLabels(kind?: ItemKind, sid?: string | null): LabelDoc[] {
   const labels = useDocs('labels', sid);
   return useMemo(() => labelsOf(labels, kind), [labels, kind]);
+}
+
+/** 한 종류의 라벨 트리 (labelTreeOf) */
+export function useLabelTree(kind: ItemKind, sid?: string | null): LabelTree {
+  const labels = useDocs('labels', sid);
+  return useMemo(() => labelTreeOf(labels, kind), [labels, kind]);
+}
+
+export function useItemsMatching(filter: LabelFilter, parents: ParentMap, kind?: ItemKind, sid?: string | null): ItemDoc[] {
+  const items = useDocs('items', sid);
+  return useMemo(() => itemsMatching(items, filter, parents, kind), [items, filter, parents, kind]);
 }
 
 export function useTrash<C extends SpaceCollection>(coll: C, sid?: string | null): Stored<C>[] {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { compareOrder, isOrderKey, orderBetween, ordersBetween } from './order';
+import { compareOrder, isOrderKey, orderBetween, ordersBetween, rekeyOrders } from './order';
 
 describe('orderBetween', () => {
   // 원래 라이브러리(rocicorp/fractional-indexing)의 시험 값 그대로
@@ -115,5 +115,34 @@ describe('compareOrder', () => {
       { order: 'a1', id: 'b' },
     ];
     expect([...list].sort(compareOrder).map((x) => x.id)).toEqual(['z', 'b', 'x']);
+  });
+});
+
+describe('rekeyOrders - 다시 세운 줄의 값 (옮긴 것만 고친다)', () => {
+  const sorted = (keys: string[]) => keys.every((k, i) => i === 0 || keys[i - 1] < k);
+
+  it('그대로면 하나도 바꾸지 않는다', () => {
+    expect(rekeyOrders(['a0', 'a1', 'a2'])).toEqual(['a0', 'a1', 'a2']);
+    expect(rekeyOrders([])).toEqual([]);
+  });
+
+  it('이웃 둘을 바꾸면 하나만 새 값', () => {
+    const out = rekeyOrders(['a1', 'a0', 'a2']);
+    expect(sorted(out)).toBe(true);
+    expect(out.filter((k, i) => k !== ['a1', 'a0', 'a2'][i]).length).toBe(1);
+  });
+
+  it('맨 뒤를 맨 앞으로 옮기면 그것만', () => {
+    const before = ['a3', 'a0', 'a1', 'a2'];
+    const out = rekeyOrders(before);
+    expect(sorted(out)).toBe(true);
+    expect(out.slice(1)).toEqual(['a0', 'a1', 'a2']);
+  });
+
+  it('값이 없거나 같은 것(두 기기가 동시에 끼움)도 줄이 선다', () => {
+    const out = rekeyOrders(['a0', null, 'a1', 'a1', 'bad!']);
+    expect(sorted(out)).toBe(true);
+    expect(out.every(isOrderKey)).toBe(true);
+    expect(out[0]).toBe('a0');
   });
 });

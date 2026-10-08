@@ -163,3 +163,47 @@ export function compareOrder(x: { order: string; id: string }, y: { order: strin
   if (x.order !== y.order) return x.order < y.order ? -1 : 1;
   return x.id < y.id ? -1 : x.id > y.id ? 1 : 0;
 }
+
+/**
+ * 줄을 다시 세운 뒤의 차례 값 - 되도록 적게 고친다(옮긴 것만 새 값). 라벨 관리 창의 ▲▼처럼 목록을 통째로 다시 세울 때.
+ * keys = 새 줄 차례대로 지금 값(null = 아직 없음). 돌려주는 것 = 같은 자리의 값(그대로 둘 것은 원래 값).
+ * 가장 긴 오름차순(그대로 둘 수 있는 것)을 남기고, 나머지만 앞뒤에 남긴 값 사이로 넣는다.
+ */
+export function rekeyOrders(keys: ReadonlyArray<string | null>): string[] {
+  const n = keys.length;
+  const ok = keys.map((k) => k !== null && isOrderKey(k));
+  // 가장 긴 오름차순 (n이 작다 - 라벨·한 날의 항목)
+  const len = new Array<number>(n).fill(0);
+  const prev = new Array<number>(n).fill(-1);
+  let best = -1;
+  for (let i = 0; i < n; i++) {
+    if (!ok[i]) continue;
+    len[i] = 1;
+    for (let j = 0; j < i; j++) {
+      if (ok[j] && keys[j]! < keys[i]! && len[j] + 1 > len[i]) {
+        len[i] = len[j] + 1;
+        prev[i] = j;
+      }
+    }
+    if (best < 0 || len[i] > len[best]) best = i;
+  }
+  const keep = new Array<boolean>(n).fill(false);
+  for (let i = best; i >= 0; i = prev[i]) keep[i] = true;
+
+  const out = new Array<string>(n);
+  let i = 0;
+  while (i < n) {
+    if (keep[i]) {
+      out[i] = keys[i]!;
+      i++;
+      continue;
+    }
+    let j = i;
+    while (j < n && !keep[j]) j++;
+    const lower = i > 0 ? out[i - 1] : null;
+    const upper = j < n ? keys[j]! : null;
+    ordersBetween(lower, upper, j - i).forEach((k, x) => (out[i + x] = k));
+    i = j;
+  }
+  return out;
+}
