@@ -684,7 +684,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: V4 설명서 `attach`·`paste-table`·`paste-image`·`clipboard`·`image-viewer`, V4 `lib/googleApi.ts`·`googleLoginPrompt.ts`·`components/GoogleLoginPrompt.tsx`·
 `lib/driveApi.ts`·`attachments.ts`·`imageShrink.ts`·`shrinkWorker.ts`·`hooks/usePasteImageUpload.ts`·`utils/uploadHelper.ts`·`lib/entryTable.ts`·`components/EntryTableView.tsx`·
 `ClipboardPanel.tsx`·`lib/clipboardHistory.ts`·`ImageViewerModal.tsx`·`lib/linkPreview.ts`·`LinkPreviewCards.tsx`.
-- [ ] ■1 구글 토큰(조용한 토큰·누른 직후 로그인 창·'구글 로그인이 필요합니다' 창 - V4 규칙 그대로).
+- [x] ■1 구글 토큰(조용한 토큰·누른 직후 로그인 창·'구글 로그인이 필요합니다' 창 - V4 규칙 그대로).
+  → `data/google/token.ts`(`getGoogleTokenQuietly`·`getValidGoogleToken(reason)`·`renewGoogleToken`(지금 계정으로 다시 - reauthenticate + login_hint)·`withGoogleToken`(거절되면 잊고 한 번 더)·`googleFetch`·`GoogleApiError.needsLogin`) ·
+  `data/google/prompt.ts`(묻는 창 상태) · `features/auth/GoogleLoginPrompt.tsx`(Shell에 하나 `[data-google-login-prompt|google-login|google-login-close|google-login-reason|google-login-error]`). 크롬 확인은 ■4에서 첨부와 함께.
 - [ ] ■2 첨부(드라이브 `School_Planner` 폴더 - V4가 올린 파일이 그대로 열린다), 캡처 Ctrl+V(줄이기 워커), 엑셀 표 붙여넣기(표 먼저 - 그림 올리기로 넘기지 않는다), 링크 미리보기.
 - [ ] ■3 클립보드 칸(왼쪽 📋, IndexedDB 이 기기만, 지우면 이 기기 휴지통), 이미지 크게 보기(넘겨 보기·3:4 틀).
 - [ ] ■4 크롬 점검(구글 API는 page.route로 흉내) + 👤 실제 계정: V4에서 가져온 기록의 첨부 하나가 V5에서 열리는지.
