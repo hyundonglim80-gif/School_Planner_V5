@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P1-2 Firebase·로그인·규칙 합치기·에뮬레이터·seed** - ■1~■4 끝(운영 규칙 배포는 아직 - 묻는다), 다음 ■5 V5 seed.
+**P1-2 Firebase·로그인·규칙 합치기·에뮬레이터·seed** - ■1~■5 끝(운영 규칙 배포는 아직 - 묻는다), 다음 세션 끝 정리.
 
 ---
 
@@ -197,6 +197,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P1-2 로그인 상태**: `src/data/session.ts`(zustand, 구독은 main에서 하나 - V4는 useAuth를 부르는 곳마다 구독). 들어오면 `ensurePersonalSpace`
   (없을 때만 만든다, 실패해도 앱은 막지 않고 안내 - 연결 없음은 조용히 다음에). 구글 토큰은 sessionStorage `sp5-google-token`(P4-2가 이어받는다).
   안내(toast)는 로그인 오류에 필요해 P1-3 ■4보다 먼저 `src/app/toast.ts`로 옮겼다.
+- **P1-2 V5 seed**: 계정은 만들지 않고 V4 seed 계정으로 들어가 개인 공간만 심는다. 설정 기본값은 문서로 심지 않는다(앱이 셈한다 - 원칙 '계산할 수 있는 것은
+  저장하지 않는다'). 점검 계정이 기본값과 달라야 하는 설정(teacher3 교과 전담 등)은 그 설정을 만드는 세션(P1-4·P6-1)에서 seed에 더한다.
 - **P1-1 lucide-react**: V4는 한 파일에서만 써서 넣지 않았다 - 그 파일을 옮길 때 이모지로 바꿀지 그때 정한다. `App.tsx`는 `src/app/`(껍데기 자리).
 
 ---
@@ -248,7 +250,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■4 `src/data/firebase.ts`: V4와 같은 웹 앱 설정, 앱 이름 `SchoolPlannerV5`, Firestore `memoryLocalCache`(기기 사본은 P2-2에서 앱이 따로),
   `VITE_USE_EMULATOR=1`이면 에뮬레이터. 로그인(구글, V4 `LoginScreen` 옮기기), 로그인하면 `spaces/u_{uid}`가 없으면 만든다.
   에뮬레이터 자동 로그인 `?as=2|3`(V4 `autoSignIn`).
-- [ ] ■5 `tools/seed.mjs`(V5): V4 seed가 만든 계정(teacher·teacher2·teacher3)으로 로그인해 V5 공간·설정 기본값만. 순서(V4 seed → V5 seed)를 README에.
+- [x] ■5 `tools/seed.mjs`(V5): V4 seed가 만든 계정(teacher·teacher2·teacher3)으로 로그인해 V5 공간·설정 기본값만. 순서(V4 seed → V5 seed)를 README에.
 **끝 조건**: 에뮬레이터에서 teacher로 로그인 → `spaces/u_{uid}` 생김. V5·V4 check-rules 모두 통과. V4 화면(serve-both)도 그 에뮬레이터에서 그대로 돈다.
 
 ### P1-3. 앱 껍데기: 화면 탭·주소·창 목록·오른쪽 칸·단축키·머리줄
