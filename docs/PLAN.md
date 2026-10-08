@@ -237,6 +237,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P1-4 PWA 틀**: ■4(배포)가 사용자 일을 기다려 ■5를 먼저 했다. 아이콘 글자를 V5로(P1-1이 V4 favicon을 그대로 옮겨 'V4'였다) → `tools/gen-icons.mjs`로 PNG.
   `sw.js`는 설치·활성만(fetch를 가로채지 않는다 - 화면 파일은 늘 서버에서). 지금 크롬은 설치에 fetch 처리기를 요구하지 않는다(CDP 설치 오류 0으로 확인).
   등록·설치 이벤트는 `src/app/install.ts`(main에서 일찍 - 이벤트가 화면보다 먼저 온다), 단추는 환경설정 '앱' 탭. 점검 `tools/inspect-pwa.mjs`(임시 프로필 - 시크릿 창은 크롬이 설치를 막는다).
+- **P1-4 배포**(10-08 사용자 허락 '만들고 배포'): Hosting 사이트 `schoolplanner-v5` → https://schoolplanner-v5.web.app (프로젝트의 기본 사이트 `schoolplannerv3`는 그대로).
+  첫 배포는 이 PC에서 `npx firebase deploy --only hosting --project schoolplannerv3`(규칙·함수는 건드리지 않는다). `firebase.json` hosting: site·`dist`,
+  첫 주소·index.html·sw.js·manifest.json은 `no-cache`(정규식 하나 - 첫 주소 '/'는 source '/index.html'에 걸리지 않는다), `/assets/**`는 1년(파일 이름에 해시).
+  `authDomain`은 콘솔 두 곳(👤 승인된 도메인 · OAuth 클라이언트 원본·**리디렉션 URI** `https://schoolplanner-v5.web.app/__/auth/handler`)이 된 뒤에 바꾼다 -
+  리디렉션 URI가 없으면 바꾸는 순간 로그인이 redirect_uri_mismatch로 막힌다(계획에는 JS 원본만 적혀 있었다).
 
 ---
 
