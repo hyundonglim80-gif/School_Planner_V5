@@ -101,7 +101,13 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 - `parentId`는 메모·기록 라벨만(2단계). 이름은 같은 종류 안에서 겹치지 않게 저장 때 본다.
 - `props`는 일정 라벨만: `{ calendar?, forward?, skip?, gcal?, period?, recur? }` — 화면 이름은 V4 그대로 **달력·이월·수업X·구글 캘린더**
   (UX-AUDIT T2·T6 사용자 결정). `period`·`recur`는 V5에서 '새 일정 칸을 열 때 끝 날·반복 줄을 펴 둔다'는 기본값으로만 쓴다(4-4·5-3).
-- 맨 위(order가 가장 앞) 라벨이 새 항목의 기본 라벨이다(V4와 같다).
+- 맨 위(order가 가장 앞) 라벨이 새 항목의 기본 라벨이다(V4와 같다). 메모·기록은 트리 차례의 맨 위(`data/select` `labelTreeOf().defaultId`).
+- 상위는 문서의 `parentId`를 믿지 않고 다듬어 쓴다(`domain/labelTree` `parentMapOf`): 상위가 살아 있는 같은 종류 라벨이 아니거나 자기 자신이거나 3단계면 그 하위는 맨 위 단계로 보인다.
+  **지운 상위의 하위 문서는 고쳐 쓰지 않는다** - 상위를 되살리면 트리가 돌아온다. 이름을 바꿔도 트리·항목은 그대로다(모두 id).
+- `props`는 바뀌면 여섯 칸을 모두 채워 적고, 읽기는 `domain/labels` `labelProps`(적지 않은 `calendar` = 켜짐 - V4 `normalizeEventLabel`과 같다).
+- `color`는 색 이름(`blue`·`green`…, `domain/labels` `LABEL_COLORS` - V4 표 그대로, 모르는 색은 회색).
+- 쓰기는 `data/labels`: 라벨 관리 창의 저장 = **바뀐 라벨 문서의 바뀐 칸만**(`labelSaveOps` - 차례는 옮긴 것만 `rekeyOrders`), 새 라벨은 그 종류의 맨 뒤,
+  쓰는 칸의 새 라벨·'#라벨'은 `ensureLabelOps`로 항목과 한 묶음. 라벨이 없는 공간에 기본 라벨을 저절로 넣지 않는다(라벨 관리의 '기본 라벨 넣기', id `dflt_…`).
 
 ### 4-4. `series/{id}` — 반복
 
@@ -185,7 +191,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 누르면 원본 칸(알림장·출석부)이 열린다. 검색에도 나온다. V4의 자동 기록 사본(`notice_{date}`·`attendance_…`)과 거꾸로 맞추기는 없앤다.
 
 ### 5-5. 그 밖에 사본에서 바로 세는 것
-빈 라벨 정리의 쓰임 수, 학생 기록(누가기록 - `studentIds`·`classId`로 모으기), 검색(치는 대로), 반별 진도 현황, 📝·📊 표식.
+빈 라벨 정리의 쓰임 수(`data/select` `labelUsageOf` - 메모·기록·일정·휴지통, 상위는 하위가 붙은 것도. 항목을 다 받기(구독 중) 전에는 세지 않는다), 학생 기록(누가기록 - `studentIds`·`classId`로 모으기), 검색(치는 대로), 반별 진도 현황, 📝·📊 표식.
 
 ## 6. 자료 층 (`src/data`)
 
@@ -325,7 +331,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | `npx vitest run` (단위) | 조각마다. domain 순수 함수는 V4 테스트째 옮긴다. CI도 돈다 |
 | 자료 층 테스트(에뮬레이터) `npm run test:data` | 자료 층을 고칠 때. 저장 도우미·되돌리기·기기 사본·가져오기(`src/**/*.emu.test.ts`, `vitest.data.config.ts`). 에뮬레이터를 켠 곳에서(CI는 단위만) |
 | `tools/check-rules.mjs` | 규칙을 고칠 때마다. V4 35개 + V5 |
-| 크롬 점검 `tools/inspect-*.mjs` | 세션마다 바뀐 부분만. **`data-*`로만 찾는다**(화면 글자가 아니라). 심은 자료는 끝에 되돌린다. PC 1400px 크롬 하나. 화면이 없는 자료 층은 앱 모듈을 `import('/src/…')`로 불러 store를 읽는다(`inspect-data`·`inspect-mirror`) |
+| 크롬 점검 `tools/inspect-*.mjs` | 세션마다 바뀐 부분만. **`data-*`로만 찾는다**(화면 글자가 아니라). 심은 자료는 끝에 되돌린다. PC 1400px 크롬 하나. 화면이 없는 자료 층은 앱 모듈을 `import('/src/…')`로 불러 store를 읽는다(`inspect-data`·`inspect-mirror`). 서버에 쓰는 것은 '그 문서만 바뀌었나'를 다른 문서의 `updatedAt`으로 본다(`inspect-labels`) |
 | 가져오기 점검 | 가져오기 세션마다: V4 seed → 가져오기 → 종류·수 대조 → 두 번째 가져오기는 '바뀐 것 0' |
 | 설명서 점검 | P9-1부터. 여러 세션을 모아 마지막에 한 번 |
 | `PARITY.md` | 세션 끝마다 그 세션이 끝낸 기능을 체크 |
