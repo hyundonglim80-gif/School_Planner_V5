@@ -89,6 +89,15 @@ export async function runImport(uid: string): Promise<boolean> {
   }
 }
 
+/** 기록만 읽는다 (환경설정 '가져오기' - 지난 결과). 연결이 없으면 조용히 */
+export async function loadImportRecord(uid: string): Promise<void> {
+  try {
+    set({ record: readRecord(await readSpaceDoc(personalSpaceId(uid), 'settings', 'import')) });
+  } catch (e) {
+    console.warn('[import] 가져오기 기록을 읽지 못했습니다.', e);
+  }
+}
+
 /** 기록을 읽고 처음 로그인 띠를 보일지 정한다. 연결이 없으면 조용히 그만둔다(다음에 열 때 다시) */
 export async function checkImportOffer(uid: string): Promise<void> {
   try {

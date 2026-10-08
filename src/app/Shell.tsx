@@ -3,6 +3,7 @@
 // V4 Layout은 창 30여 개의 열림 상태와 키 처리를 모두 들고 있었다(1,200줄). V5는 창을 창 목록(windows.ts)에,
 // 키를 단축키 한 곳(shortcuts.ts)에 두고, 여기는 자리만 잡는다.
 import { Suspense, useEffect, useRef, useState } from 'react';
+import ImportBanner from '../features/import/ImportBanner';
 import ColumnResizer from '../ui/ColumnResizer';
 import { RIGHT_COLUMN_CSS_WIDTH, useSidePopups } from '../ui/sideColumn';
 import SideTabs from '../ui/SideTabs';
@@ -85,6 +86,8 @@ export default function Shell() {
 
       {/* 아래 탭바에 내용이 가리지 않도록 아래 여백을 둔다 */}
       <main ref={mainRef} className="@container px-3 py-3 sm:p-5 max-w-7xl mx-auto pb-24 sm:pb-5">
+        {/* 처음 로그인 'V4 자료 가져오기' 띠 (V4 자료가 있고 가져온 적이 없을 때만) */}
+        <ImportBanner />
         <MainWidthContext.Provider value={mainWidth}>
           <Suspense fallback={<p className="p-6 text-xs text-slate-400">불러오는 중…</p>}>
             <Screen />
