@@ -12,6 +12,9 @@ import type { ImportCounts } from '../../import/v4/plan';
 import { resetImportRun, useImportRun } from '../../import/v4/run';
 import SettingsWindow from './SettingsWindow';
 
+// 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
+vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
+
 // '이 기기 사본 다시 받기'는 Firebase를 부른다 - 창 시험에서는 흉내만
 const resetMirror = vi.hoisted(() => vi.fn(() => Promise.resolve()));
 vi.mock('../../data/mirror/sync', () => ({ resetMirror }));

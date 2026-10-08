@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { WriteOp } from '../../data/repo/ops';
 import { changedTotal } from './plan';
 import { planSettings, v4SettingsDocs } from './settings';
+
+// 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
+vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 
 const SID = 'u_me';
 const keys = { search: { key: 'k', ctrl: true, alt: false, shift: false } };
