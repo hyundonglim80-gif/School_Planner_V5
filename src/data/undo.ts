@@ -42,14 +42,16 @@ function drop(entry: UndoEntry) {
 /**
  * 한 일을 알리고 되돌리기를 남긴다. sid = 그 쓰기를 한 공간(칸을 연 순간의 공간).
  * undo가 비었으면 단추 없이 알리기만 한다.
+ * quiet = 안내 없이 Ctrl+Z 더미에만 (일정 완료·순서처럼 V4가 안내를 띄우지 않던 작은 일 - 누를 때마다 안내가 뜨면 시끄럽다)
  */
-export function recordUndo(sid: string, message: string, undo: Undo, opts: { what?: string } = {}): void {
+export function recordUndo(sid: string, message: string, undo: Undo, opts: { what?: string; quiet?: boolean } = {}): void {
   if (undo.length === 0) {
-    showToast(message);
+    if (!opts.quiet) showToast(message);
     return;
   }
   const entry: UndoEntry = { sid, undo, what: opts.what, used: false };
   push(entry);
+  if (opts.quiet) return;
   showToast(message, UNDO_TOAST_MS, 'info', { label: UNDO_LABEL, run: () => void runEntry(entry, false) });
 }
 

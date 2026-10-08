@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-1 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림** (다음 대화에서 - 클라우드면 1-7을 먼저).
+**P3-1 일정** ■2 일정 칸 (■1 끝 - 클라우드 `claude/peaceful-lamport-icu4gf`).
 
 ---
 
@@ -316,6 +316,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   V4 이월 기간(기기마다 `forwardLookbackDays`)은 V5 `common.forwardDays` 하나로(PC 값 먼저). 교사 유형·수업 종 같은 common 칸은 그 칸이 생기는 세션이
   `import/v4/settings.ts` `COMMON_FROM_V4`에 한 줄 더한다(칸이 없으면 설정 맞추기가 지운다).
 - **P2-4 되돌리기 없음**: 가져오기는 Ctrl+Z 더미에 넣지 않는다 - 수백 개를 한꺼번에 지운 표시로 되돌리면 더 위험하고, 다시 가져오기가 바뀐 것만 고친다.
+- **P3-1 완료·순서의 되돌리기**(권장안으로 고름): ☐ 완료·라벨 칩·▲▼는 V4처럼 안내를 띄우지 않고 Ctrl+Z 더미에만 넣는다(`recordUndo(…, { quiet: true })`) -
+  누를 때마다 '되돌리기' 안내가 뜨면 시끄럽고, 잘못 누른 것은 한 번 더 누르거나 Ctrl+Z로 되돌린다. 지우기·옮기기는 안내 + 되돌리기(■3).
+- **P3-1 순서**: ▲▼는 보이는 줄을 다시 세워 `rekeyOrders`로 **옮긴 것만** 새 차례 값 - 한 칸 옮기기는 문서 하나(어느 쪽이 바뀔지는 가장 긴 오름차순이 정한다).
+  두 기기가 같은 차례 값을 만든 줄도 그 자리에서 풀린다. 기간 일정(P3-3)은 차례 값이 하나라 한 날에서 옮기면 다른 날에서도 그 차례다.
+- **P3-1 쓰는 칸 자리**: 창 목록의 쓰는 칸 `event` - 새 일정 = `{ sid, date }`(같은 날의 새 일정 칸이 열려 있으면 그 탭), 수정 = `{ sid, date, id }`(같은 일정이면 그 탭 - 항목은 id로 찾으므로 날짜는 보지 않는다).
+  저장한 새 일정 칸은 창의 `setParams`로 id를 더해 그 일정의 수정 칸이 된다(V4 `setEntryPanelId` - 다시 그리지 않아 적은 것이 남는다).
+- **P3-1 하루 화면**: V4의 '불러오는 중' 막기와 `EmptyDayReport`(왜 비었나 서버에 묻기)는 옮기지 않는다 - 기기 사본에서 곧바로 그리고, 사본도 서버 소식도 없을 때만 '일정을 받는 중…'.
+  V4 진단은 Firestore 캐시가 고장 났던 때(09-22)의 것이고 V5 사본 상태는 환경설정 '앱' 탭이 보인다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -487,7 +495,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: V4 설명서 `event-add`·`event-edit`·`event-complete`·`event-labels`·`event-attrs`·`alarm`, V4 `features/day/DayScreen.tsx`·`DayEvents.tsx`·`EmptyDayReport.tsx`,
 `components/EventDrawer.tsx`·`EventItemActions.tsx`·`EventAlarmModal.tsx`·`EventAlarmPopup.tsx`·`QuickInputChips.tsx`·`DueBadge.tsx`·`EntryPanelHost.tsx`,
 `lib/quickInput.ts`·`eventDue.ts`·`sound.ts`, `hooks/useEventAlarms.ts`.
-- [ ] ■1 하루 화면 틀(수업 자리·일정·기록 자리·급식 자리) + 일정 목록(PC 1열·휴대폰 2열 카드, ☐ 완료, 라벨 칩 누르기 = 완료, ⏰, 🔗 수, `data-event-*`), 순서 바꾸기(`order` 하나만).
+- [x] ■1 하루 화면 틀(수업 자리·일정·기록 자리·급식 자리) + 일정 목록(PC 1열·휴대폰 2열 카드, ☐ 완료, 라벨 칩 누르기 = 완료, ⏰, 🔗 수, `data-event-*`), 순서 바꾸기(`order` 하나만).
+  → `features/day/DayScreen.tsx`(수업·기록 자리는 `[data-day-slot]`) · `DayEvents.tsx`(`[data-day-events|event-card|event-done|event-complete|event-chip|event-alarm|event-links|event-up|event-down|event-edit|event-add|event-count|event-collapse|event-empty|event-waiting]`) ·
+  `features/events/`(`eventOps.ts` 순수 - `reorderOps`(rekeyOrders로 옮긴 것만)·`doneChanges`·`orderAfter` / `actions.ts` `setEventDone`·`moveEventInList` / `open.ts` 쓰는 칸 'event' 열기·고치는 일정 짚기 / `DueBadge.tsx`) ·
+  `domain/eventDue.ts`(V4 테스트째 - 사슬 기한은 없다) · `recordUndo(…, { quiet })` · 창 `setParams`(windows `setWindowParams`) · 크롬 `inspect-events.mjs` 16항목(■5에서 늘린다).
 - [ ] ■2 일정 칸(EventDrawer 옮기기 - 쓰는 칸 kind `event`): 내용 칸 맨 위·날짜·알림 시각·라벨·속성 줄(달력·이월·수업X·구글 캘린더 - 값이 있으면 라벨을 이긴다)·기한·빠른 입력 칩.
   저장하면 그 항목의 수정 칸이 된다. 날짜를 바꾸면 `date`만.
 - [ ] ■3 지우기 = 지운 표시 + 안내 '되돌리기' + Ctrl+Z. 저장 실패면 칸을 닫지 않는다.

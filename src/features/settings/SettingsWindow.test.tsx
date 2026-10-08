@@ -32,7 +32,7 @@ beforeEach(() => {
   setShortcutOverrides({});
 });
 
-const openSettings = (tab?: 'view' | 'shortcuts' | 'app' | 'import') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} />);
+const openSettings = (tab?: 'view' | 'shortcuts' | 'app' | 'import') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
 
 describe('환경설정 창', () => {
   it('지금 있는 탭만 (보기·단축키·앱·가져오기) - 아직 옮기지 않은 기능의 탭은 숨긴다', () => {
@@ -49,7 +49,7 @@ describe('환경설정 창', () => {
 
   it('열려 있는 창을 다른 탭으로 다시 열면 그 탭으로', () => {
     const { rerender } = openSettings('view');
-    rerender(<SettingsWindow params={{ tab: 'import' }} close={vi.fn()} raise={0} />);
+    rerender(<SettingsWindow params={{ tab: 'import' }} close={vi.fn()} raise={0} setParams={vi.fn()} />);
     expect(q('[data-settings-panel="import"]')).toBeVisible();
     expect(q('[data-settings-tab="import"]')).toHaveAttribute('aria-selected', 'true');
   });

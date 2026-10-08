@@ -55,7 +55,7 @@ function seed(opts: { labels?: Map<string, Record<string, unknown>>; status?: 'l
   }
 }
 
-const open = (tab?: 'event' | 'note') => render(<LabelsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} />);
+const open = (tab?: 'event' | 'note') => render(<LabelsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
 const save = async () => {
   await act(async () => fireEvent.click(q('[data-label-save]')));
 };
