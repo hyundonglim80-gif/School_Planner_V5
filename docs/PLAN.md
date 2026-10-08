@@ -418,6 +418,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   년간 자세히는 일정이 꺼져 있으면 일정만 있는 날 줄을 그리지 않는다(V4는 빈 날짜 줄이 남았다). Ctrl·Shift로도 고른다(V4는 '여러 개 고르기'를 켠 때만). 🖨️ 학사력 인쇄는 P6-3(⋮ '이 화면 인쇄').
 - **P5-3 끌어 옮기기**: V4 그대로(마우스 화면만·하루짜리는 곧바로·묶음은 범위 창·되돌리기). 바뀐 것: 기간 일정은 '이 날만'(그날을 빼고 하루 일정으로)·'기간 통째로' 둘만 -
   '이 날부터'는 기간 문서가 둘로 갈라져 묶음이 끊기므로 뺐다(반복은 세 갈래 그대로). 범위 창의 주말 경고는 주말 빼기 기간이면 대신 '옮긴 뒤 N일'.
+- **P5-3 D-Day·공휴일**: D-Day는 DESIGN대로 `settings/common`(V4 `settings/preferences` - V3와 함께 쓰던 문서). 지우기 = 지운 표시(휴지통 P5-4) + 안내의 되돌리기(설정이라 Ctrl+Z 더미에는 넣지 않는다).
+  공휴일 표를 받는 개발자 도구(V4 환경설정)는 옮기지 않는다 - 표는 V4와 함께 쓰는 `holidays/{연도}`라 V4에서 받으면 V5도 본다. 주말 빼기 기간은 공휴일을 **계산할 때** 건너뛴다(V4는 만들 때 날마다 문서를 만들며 건너뛰었다) -
+  나중에 표가 바뀌면(대체공휴일) 기간의 날도 따라 바뀐다. 이름 고르기에 양력 고정 공휴일을 더했다(표가 없는 해도 빨갛게 - V4 학사력만 하던 것).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -774,7 +777,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■1 끌어 옮기기(주간·월간·년간 자세히 - `date`만, 기간·반복이면 범위 묻기, 되돌리기).
   → `features/events/drag.ts`(`useEventDrop`·`eventDragProps`·`dropTargetProps` - 마우스 화면만, `[data-drag-event|drop-date]`) · `moveOps.ts`(순수 - 이 날만·기간 통째로·반복 같은 날 수만큼·미리 보기) ·
   `EventMoveChooser.tsx`(범위 창 - `EventScopeWindow` `mood="change"`·`[data-scope-warn]`) · `actions.moveEventTo`(한 묶음 + 되돌리기) · 쓰는 칸은 손댔어도 옮겨진 날짜를 따라간다(V4 retarget).
-- [ ] ■2 D-Day(`settings/common.ddays` - 머리줄·둘째 줄·관리 창), 공휴일(`holidays/{year}` + 개인 공휴일)·주말 색.
+- [x] ■2 D-Day(`settings/common.ddays` - 머리줄·둘째 줄·관리 창), 공휴일(`holidays/{year}` + 개인 공휴일)·주말 색.
+  → D-Day: 순수 `domain/dday.ts` · `features/dday/`(`DDayWindow.tsx` 창 `dday` `[data-dday-window|dday-title|dday-date|dday-add|dday-row|dday-picked|dday-pick|dday-delete|dday-empty]`·`actions.ts`) ·
+  `settings/common.ddays·ddayPick`(지운 것은 deletedAt) · 머리줄 `[data-header-dday-text]` · 둘째 줄 보는 날 기준 `[data-date-dday]`. 가져오기: V3·V4 `settings/preferences.dDayList·selectedDDayId`.
+  공휴일: 순수 `domain/holidays.ts`(개인 → 공유 → 고정) · `data/holidays.ts`(`holidays/{연도}` 해마다 한 번·이 기기 `sp5-holidays`, `useHolidayName`, `startHolidays` = domain/period 기본 공휴일) ·
+  개인 공휴일 `settings/common.myHolidays`(V3 `settings/holidays.map` 가져오기) · `ui/HolidayName.tsx`(`[data-holiday-name]`) · 주간·월간·년간 색·이름, 학사력 목록·D-Day 테, 일정 칸 '🎌 빠지는 공휴일' `[data-event-period-holidays]`.
 - [ ] ■3 크롬 점검.
 
 ### P5-4. 검색(치는 대로)·휴지통

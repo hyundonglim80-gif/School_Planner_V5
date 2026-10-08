@@ -13,6 +13,7 @@ import { compareOrder } from '../domain/order';
 import { isPeriod as spansDays, onPeriodDay } from '../domain/period';
 import { matchLabels, orderByTree, parentMapOf, type LabelFilter, type ParentMap, type TreeRow } from '../domain/labelTree';
 import { collKey, EMPTY_DOCS, useMirror, type MirrorStatus } from './mirror/store';
+import { useHolidayStore } from './holidays';
 import { useCurrentSpaceId } from './session';
 import type { ItemKind, SpaceCollection, Stored, YMD } from './types';
 
@@ -228,7 +229,12 @@ export function useMirrorStatus(coll: SpaceCollection, sid?: string | null): Mir
 
 export function useItemsOn(date: YMD, kind?: ItemKind, sid?: string | null): ItemDoc[] {
   const items = useDocs('items', sid);
-  return useMemo(() => itemsOn(items, date, kind), [items, date, kind]);
+  // 공휴일 표가 들어오면 주말 빼기 기간이 그날 빠질 수 있다 - 다시 고른다
+  const holidays = useHolidayStore((s) => s.version);
+  return useMemo(() => {
+    void holidays;
+    return itemsOn(items, date, kind);
+  }, [items, date, kind, holidays]);
 }
 
 export function useItemsBetween(from: YMD, to: YMD, kind?: ItemKind, sid?: string | null): ItemDoc[] {

@@ -11,6 +11,8 @@ import { labelColor } from '../../domain/labels';
 import type { LabelDoc } from '../../data/select';
 import DueBadge from '../events/DueBadge';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
+import { useHolidayName } from '../../data/holidays';
+import HolidayName from '../../ui/HolidayName';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 
 export interface WeekDayCardProps {
@@ -166,7 +168,8 @@ function EventChip({
 
 export default function WeekDayCard(props: WeekDayCardProps) {
   const { date, today, events, carried = [], noteCount, showEvents } = props;
-  const tone = dayToneOf(date);
+  const holiday = useHolidayName()(date);
+  const tone = dayToneOf(date, holiday);
   const [, m, d] = date.split('-').map(Number);
   const isToday = date === today;
   const count = events.length + carried.length;
@@ -191,6 +194,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
           <span className={`text-xs font-bold ${DAY_NUMBER_COLOR[tone]}`} data-week-day-label>
             {m}.{d}
           </span>
+          {holiday && <HolidayName name={holiday} tier="week" fill={false} />}
         </div>
         {noteCount > 0 && (
           <button

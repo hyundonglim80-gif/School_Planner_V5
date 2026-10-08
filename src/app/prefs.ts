@@ -12,8 +12,10 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEFAULT_FONT_SCALE, FONT_SCALES, type FontScale } from '../domain/fontScale';
 import { readShortcutOverrides, type ShortcutOverrides } from '../domain/shortcuts';
+import { readDDayList, type DDay } from '../domain/dday';
 import {
   boolField,
+  customField,
   intField,
   oneOfField,
   readSettings,
@@ -112,10 +114,26 @@ const deviceBinding: SettingsBinding = {
 export interface CommonSettings {
   /** 이월: 며칠 전까지 거슬러 볼지 (V4 forwardLookbackDays, 1~60) - P3-3이 쓴다 */
   forwardDays: number;
+  /** D-Day 목록 (V4 settings/preferences.dDayList - P5-3, 지운 것은 deletedAt) */
+  ddays: DDay[];
+  /** 머리줄에 세울 D-Day (V4 selectedDDayId) */
+  ddayPick: string | null;
+  /** 개인 공휴일 '날짜' → 이름 (V3가 사람마다 받아 둔 settings/holidays 표 - 공유 표 위에 덮는다, P5-3) */
+  myHolidays: Record<string, string>;
 }
+
+const readHolidayMap = (v: unknown): Record<string, string> | undefined => {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [d, name] of Object.entries(v as Record<string, unknown>)) if (/^\d{4}-\d{2}-\d{2}$/.test(d) && typeof name === 'string' && name.trim()) out[d] = name.trim();
+  return out;
+};
 
 export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   forwardDays: intField(14, 1, 60),
+  ddays: customField<DDay[]>([], readDDayList),
+  ddayPick: customField<string | null>(null, (v) => (typeof v === 'string' && v ? v : v === null ? null : undefined)),
+  myHolidays: customField<Record<string, string>>({}, readHolidayMap),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */
@@ -126,6 +144,7 @@ export const useCommonSettings = create<CommonSettings>()(
 export function setCommonSetting<K extends keyof CommonSettings>(key: K, value: CommonSettings[K]) {
   useCommonSettings.setState({ [key]: value } as Pick<CommonSettings, K>);
 }
+
 
 const commonBinding: SettingsBinding = {
   local: () => sparseSettings(COMMON_SETTINGS, useCommonSettings.getState()),

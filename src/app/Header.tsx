@@ -3,14 +3,17 @@
 //   휴대폰 : SP5 · ⏳ · 🗑️ … 🔍 · (📂) | ? · ⋮ · 사진   (화면 탭은 아래 탭바, ＋는 탭바 위 둥근 단추)
 // 단추는 단축키 id로 일을 부탁한다(keys.runShortcut) - 창이 들어오면 저절로 열린다.
 import { useEffect, useRef, useState } from 'react';
+import { ddayText, primaryDDay } from '../domain/dday';
 import type { ShortcutId } from '../domain/shortcuts';
 import { useSession } from '../data/session';
 import { logout } from '../features/auth/login';
 import { canRun, runFromButton, useShortcutOverrides, useShortcutTitle } from './keys';
 import { MORE_MENU } from './moreMenu';
+import { useCommonSettings } from './prefs';
 import { setScope, useNav } from './nav';
 import { SCREENS } from './screens';
 import { formatActionBinding, resolveBindings, SHORTCUT_ACTIONS } from '../domain/shortcuts';
+import { useToday } from '../ui/useToday';
 
 /** 머리줄 작은 단추 (V4 모양) */
 const HEAD_BTN =
@@ -20,6 +23,8 @@ export default function Header() {
   const scope = useNav((s) => s.scope);
   const user = useSession((s) => s.user);
   const withShortcut = useShortcutTitle();
+  const primary = useCommonSettings((st) => primaryDDay({ list: st.ddays, pick: st.ddayPick }));
+  const today = useToday();
   // 어느 계정으로 들어와 있는지 언제든 확인할 수 있게 (V4 - 계정이 여럿이면 화면만 봐서는 알 수 없었다)
   const accountTitle = user?.email ? `${user.displayName || '사용자'} (${user.email})` : user?.displayName || '사용자';
 
@@ -29,7 +34,7 @@ export default function Header() {
       <div className="flex flex-wrap items-center justify-between flex-1 gap-x-0.5 sm:gap-x-4 gap-y-1.5 pr-1 sm:pr-2 min-w-0">
         <div className="flex items-center gap-0.5 sm:gap-2 shrink">
           <h1 className="text-base sm:text-xl font-extrabold text-primary tracking-tighter pr-0 sm:pr-1 shrink-0">SP5</h1>
-          {/* ⏳ D-Day - 좁은 화면에서도 남은 날은 보인다(V4). 남은 날 글자는 P5-3 */}
+          {/* ⏳ D-Day - 고른 것이 있으면 이름·남은 날(오늘 기준). 좁은 화면에서도 남은 날은 보인다(V4) */}
           <button
             type="button"
             data-header-dday
@@ -38,7 +43,16 @@ export default function Header() {
             title={withShortcut('학사 D-Day 관리', 'dday')}
           >
             <span>⏳</span>
-            <span className="hidden sm:inline">D-Day</span>
+            {primary ? (
+              <>
+                <span className="hidden sm:inline">{primary.title}</span>
+                <strong data-header-dday-text className="text-rose-600 font-extrabold text-xs">
+                  {ddayText(primary.date, today).text}
+                </strong>
+              </>
+            ) : (
+              <span className="hidden sm:inline">D-Day</span>
+            )}
           </button>
           {/* 휴지통은 휴대폰에서도 맨 위에 (V4 사용자 결정) */}
           <button

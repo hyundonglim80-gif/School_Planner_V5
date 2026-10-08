@@ -10,6 +10,8 @@ import { layoutWeekBars, type BarCell } from '../../domain/periodBars';
 import { fitToWidthFontSize } from '../../domain/typeScale';
 import type { LabelDoc } from '../../data/select';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
+import { useHolidayName } from '../../data/holidays';
+import HolidayName from '../../ui/HolidayName';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import PeriodBar from './PeriodBar';
 
@@ -65,6 +67,7 @@ export default function MonthGrid(p: MonthGridProps) {
   };
   const todayWeek = sundayOf(p.today);
   const weekdays = p.showWeekend ? WEEKDAYS : WEEKDAYS.slice(1, 6);
+  const holidayOf = useHolidayName();
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden" data-month-grid={p.month}>
@@ -90,7 +93,8 @@ export default function MonthGrid(p: MonthGridProps) {
             >
               {week.map((date, col) => {
                 const inMonth = date.startsWith(p.month);
-                const tone = dayToneOf(date);
+                const holiday = holidayOf(date);
+                const tone = dayToneOf(date, holiday);
                 const isToday = date === p.today;
                 const day = Number(date.slice(8, 10));
                 const notes = p.noteCount(date);
@@ -116,6 +120,7 @@ export default function MonthGrid(p: MonthGridProps) {
                         >
                           {day}
                         </span>
+                        {holiday && !p.compact && <HolidayName name={holiday} tier="month" />}
                         <div className="flex items-center gap-0.5 shrink-0">
                           {notes > 0 && (
                             <button
@@ -150,6 +155,11 @@ export default function MonthGrid(p: MonthGridProps) {
                           )}
                         </div>
                       </div>
+                      {holiday && p.compact && (
+                        <div data-holiday-name={holiday} title={holiday} className="font-bold text-red-600 leading-tight whitespace-nowrap overflow-hidden mb-[2px] [container-type:inline-size]">
+                          <span style={{ fontSize: fitToWidthFontSize(holiday) }}>{holiday}</span>
+                        </div>
+                      )}
                     </div>
                     {p.showEvents && (
                       <div className={`min-w-0 ${p.compact ? 'space-y-[2px]' : 'space-y-1'}`} style={{ gridRow: lanes + 2 }}>

@@ -18,10 +18,11 @@ import { showToast } from '../../app/toast';
 import { addDays, daysBetween, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
 import { labelProps } from '../../domain/labels';
-import { MAX_PERIOD_DAYS, onPeriodDay, spanCount } from '../../domain/period';
+import { isWeekend, MAX_PERIOD_DAYS, onPeriodDay, spanCount } from '../../domain/period';
 import { MAX_SERIES_ITEMS, recurFormDates, recurFormFor, ruleLabel, ruleOf, type RecurForm } from '../../domain/recur';
 import { parseQuickInput, stripMatch, type QuickMatch } from '../../domain/quickInput';
 import { useDraft } from '../../data/drafts';
+import { useHolidayName } from '../../data/holidays';
 import { itemsOn, useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import AutoTextarea from '../../ui/AutoTextarea';
 import DraftOffer from '../../ui/DraftOffer';
@@ -141,6 +142,14 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   const periodOpen = !recurOn && (periodPicked || !!form.endDate || labelWants('period'));
   const period = periodOf(form);
   const span = period.endDate ? spanCount(form.date, period.endDate, period.workdays) : null;
+  // 주말 빼기 기간에서 빠지는 공휴일 이름 (평일에 든 것만 - V4 '빠지는 공휴일 이름을 확인')
+  const holidayOf = useHolidayName();
+  const skippedHolidays =
+    span && period.workdays && span.off > 0
+      ? Array.from({ length: Math.min(daysBetween(form.date, period.endDate) + 1, MAX_PERIOD_DAYS) }, (_, i) => addDays(form.date, i))
+          .filter((d) => !isWeekend(d) && !!holidayOf(d))
+          .map((d) => `${holidayOf(d)}(${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))})`)
+      : [];
   const periodTooLong = !!period.endDate && daysBetween(form.date, period.endDate) >= MAX_PERIOD_DAYS;
 
   /** 날짜 칸: 새 일정은 저장할 날짜가 곧바로 바뀐다(같은 날 새 일정 칸 찾기도 그날로), 고치던 일정은 저장할 때 옮긴다 */
@@ -508,7 +517,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                       aria-label="끝 날"
                       className="px-2 py-1 text-sm border border-slate-200 rounded-lg font-bold text-slate-700 bg-white"
                     />
-                    <label className="flex items-center gap-1 text-xs font-semibold text-slate-600 cursor-pointer select-none" title="토·일(공휴일)은 빼고 셉니다 - 수업하는 날에만">
+                    <label className="flex items-center gap-1 text-xs font-semibold text-slate-600 cursor-pointer select-none" title="토·일과 공휴일은 빼고 셉니다 - 수업하는 날에만">
                       <input
                         type="checkbox"
                         data-event-workdays
@@ -516,7 +525,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                         onChange={(e) => setForm((f) => ({ ...f, workdays: e.target.checked }))}
                         className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
                       />
-                      주말 빼기
+                      주말·공휴일 빼기
                     </label>
                     <button
                       type="button"
@@ -536,7 +545,12 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                     <p data-event-period-count={span.days} className={`text-2xs ${periodTooLong ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
                       {periodTooLong
                         ? `기간은 ${MAX_PERIOD_DAYS}일까지 정할 수 있습니다.`
-                        : `${span.days}일${span.off ? ` (주말 ${span.off}일 빼고)` : ''}${period.skipDates.length ? ` · 뺀 날 ${period.skipDates.length}일` : ''} - 날마다 '(2/${span.days})'처럼 보입니다.`}
+                        : `${span.days}일${span.off ? ` (주말·공휴일 ${span.off}일 빼고)` : ''}${period.skipDates.length ? ` · 뺀 날 ${period.skipDates.length}일` : ''} - 날마다 '(2/${span.days})'처럼 보입니다.`}
+                      {!periodTooLong && skippedHolidays.length > 0 && (
+                        <span data-event-period-holidays className="block text-red-500 font-semibold">
+                          🎌 빠지는 공휴일: {skippedHolidays.join(', ')}
+                        </span>
+                      )}
                       {!periodTooLong && period.skipDates.length > 0 && (
                         <button
                           type="button"

@@ -15,6 +15,8 @@ import { BODY_TEXT, SECTION_TITLE } from '../../domain/typeScale';
 import { monthWeeks, type AcademicMonth } from '../../domain/yearSheet';
 import { itemLabels, type LabelTree } from '../../data/select';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
+import { useHolidayName } from '../../data/holidays';
+import HolidayName from '../../ui/HolidayName';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import type { CalendarEvents } from '../month/calendarEvents';
 
@@ -95,8 +97,9 @@ function YearMonthCard(p: Props) {
   const startsOn = new Map<string, ShownPeriod<ItemDoc>[]>();
   for (const sp of periods) startsOn.set(sp.cells[0].date, [...(startsOn.get(sp.cells[0].date) ?? []), sp]);
   const eventsOn = (d: string) => (p.showEvents ? (p.cal.byDate.get(d) ?? []) : []);
-  // 그릴 날 = 일정이 있는 날 (수업은 P6-1, 공휴일 P5-3, 학사일정 P6-3이 더한다)
-  const activeDays = dates.filter((d) => eventsOn(d).length > 0 || startsOn.has(d));
+  const holidayOf = useHolidayName();
+  // 그릴 날 = 일정이 있는 날·공휴일 (수업은 P6-1, 학사일정 P6-3이 더한다)
+  const activeDays = dates.filter((d) => eventsOn(d).length > 0 || startsOn.has(d) || !!holidayOf(d));
   const firstLabel = (ev: ItemDoc) => itemLabels(p.tree, ev.labelIds)[0];
   const isPicked = (id: string, d: string) => p.picked.has(`${id}|${d}`);
 
@@ -234,7 +237,8 @@ function YearMonthCard(p: Props) {
         <div className="flex flex-col gap-3 flex-1">
           {activeDays.length > 0 ? (
             activeDays.map((d) => {
-              const tone = dayToneOf(d);
+              const holiday = holidayOf(d);
+              const tone = dayToneOf(d, holiday);
               const isToday = d === p.today;
               const notes = p.noteCounts.get(d) ?? 0;
               const evs = eventsOn(d);
@@ -259,6 +263,7 @@ function YearMonthCard(p: Props) {
                         {Number(d.slice(8, 10))}일 ({DAY_NAMES[new Date(`${d}T00:00:00`).getDay()]})
                       </span>
                       {isToday && <span className="text-2xs bg-blue-600 text-white px-1.5 py-0.5 rounded-full ml-1 shrink-0">오늘</span>}
+                      {holiday && <HolidayName name={holiday} tier="month" fill={false} className="ml-1 bg-red-50 border border-red-100 px-1 py-0.5 rounded" />}
                     </button>
                     <div className="flex items-center gap-0.5 shrink-0">
                       {notes > 0 && (

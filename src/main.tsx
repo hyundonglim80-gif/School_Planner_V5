@@ -9,12 +9,19 @@ import { flushPendingToast } from './app/toast'
 import { auth } from './data/firebase'
 import { autoSignIn } from './data/emulator'
 import { watchSession } from './data/session'
+import { setMyHolidays, startHolidays } from './data/holidays'
 import { undoLast, watchUndoOwner } from './data/undo'
 import { setShortcutAction } from './app/keys'
+import { useCommonSettings } from './app/prefs'
 import { finishRedirectLogin } from './features/auth/login'
 
 // 로그인 상태 구독은 앱 전체에 하나.
 watchSession()
+// 주말 빼기 기간·달력 색이 공휴일 표를 쓴다 (data/holidays)
+startHolidays()
+// 개인 공휴일(계정 설정)도 공휴일 표에
+setMyHolidays(useCommonSettings.getState().myHolidays)
+useCommonSettings.subscribe((s) => setMyHolidays(s.myHolidays))
 // 팝업이 막혀 리디렉션으로 돌아온 로그인을 마무리한다(구글 토큰을 챙긴다).
 finishRedirectLogin()
 // 점검용 에뮬레이터에서만 seed 계정으로 들어간다(운영 빌드에서는 통째로 빠진다).

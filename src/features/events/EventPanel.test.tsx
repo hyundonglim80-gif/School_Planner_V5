@@ -266,7 +266,7 @@ describe('기간 (끝 날 줄)', () => {
     fireEvent.click(q('[data-event-period-open]'));
     fireEvent.change(q('[data-event-end]'), { target: { value: '2026-10-20' } });
     expect(q('[data-event-period-count]').dataset.eventPeriodCount).toBe('5');
-    expect(q('[data-event-period-count]').textContent).toContain('주말 2일 빼고');
+    expect(q('[data-event-period-count]').textContent).toContain('주말·공휴일 2일 빼고');
     type('기말고사');
     await save();
     expect(created()).toMatchObject({ date: '2026-10-14', endDate: '2026-10-20', workdays: true, text: '기말고사' });

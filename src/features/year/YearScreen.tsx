@@ -4,7 +4,7 @@
 //   - 열두 달을 한 판에 그리면 화면이 1초 넘게 굳는다(V4) - 세 달씩 프레임마다 나눠 그린다. 달 카드는 memo.
 //   - 자료는 기기 사본에서(그 학년도 범위). '달력' 속성을 켠 일정만(월간과 같은 calendarEvents).
 //   - 오늘 칸 data-today, 이번 달 data-today-area (app/todayScroll).
-//   - 자세히에서 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3). 인쇄(🖨️ 학사력 A4 가로)는 P6-3, 학사일정은 P6-3, 자세히의 수업 칩은 P6-1.
+//   - 자세히에서 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3). 공휴일·D-Day는 달 카드가 직접(data/holidays·설정). 인쇄(🖨️ 학사력 A4 가로)·학사일정은 P6-3, 자세히의 수업 칩은 P6-1.
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { academicYearOf, academicYearRange } from '../../domain/dateUtils';
@@ -37,9 +37,17 @@ const VIEWS: ReadonlyArray<readonly [YearView, string, string]> = [
   ['detail', '📋 자세히', '날마다 일정을 모두 (고치기·완료·여러 개 고르기)'],
 ];
 
-/** 학사력 아래 범례 (공휴일·D-Day는 P5-3, 학사일정은 P6-3에서 더한다) */
+/** 학사력 범례 (학사일정은 P6-3에서 더한다) */
 const LEGEND = (
   <span className="hidden sm:flex items-center gap-2.5 text-2xs font-bold text-slate-500" data-year-legend>
+    <span className="flex items-center gap-1">
+      <span className="w-[6px] h-[6px] rounded-full bg-red-500" />
+      공휴일
+    </span>
+    <span className="flex items-center gap-1">
+      <span className="w-[10px] h-[10px] rounded-full ring-[1.5px] ring-amber-400" />
+      D-Day
+    </span>
     <span className="flex items-center gap-1">
       <span className="w-[6px] h-[6px] rounded-full bg-blue-400" />
       달력 일정(라벨 빛깔)

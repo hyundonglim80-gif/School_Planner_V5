@@ -1,6 +1,9 @@
 // 머리줄 둘째 줄 (MENU.md 3-2 - 메모·학급 화면에는 없다). V4 그대로.
 import MiniCalendarPicker from '../ui/MiniCalendarPicker';
-import { useShortcutTitle } from './keys';
+import { ddayText, primaryDDay } from '../domain/dday';
+import { useToday } from '../ui/useToday';
+import { runFromButton, useShortcutTitle } from './keys';
+import { useCommonSettings } from './prefs';
 import { dateLabel, goToday, setDate, setSemesterFilter, setToggle, stepDate, useNav, type SemesterFilter } from './nav';
 
 const VIEW_TOGGLES = [
@@ -22,6 +25,9 @@ const SEMESTERS: Array<{ id: SemesterFilter; label: string }> = [
 export default function SecondRow() {
   const nav = useNav();
   const withShortcut = useShortcutTitle();
+  const today = useToday();
+  const primary = useCommonSettings((st) => primaryDDay({ list: st.ddays, pick: st.ddayPick }));
+  const dayDDay = nav.scope === 'day' && nav.date !== today ? primary : null;
 
   return (
     <div
@@ -95,7 +101,18 @@ export default function SecondRow() {
           </button>
           <MiniCalendarPicker date={nav.date} onSelectDate={setDate} />
         </div>
-        {/* P5-3: 보는 날 기준 D-Day 남은 날 (하루 화면에서 오늘이 아닐 때) */}
+        {/* 보는 날 기준 D-Day 남은 날 (하루 화면에서 오늘이 아닐 때 - 날짜 바로 옆이라 무엇 기준인지는 자리가 말한다, V4) */}
+        {dayDDay && (
+          <button
+            type="button"
+            data-date-dday
+            onClick={() => runFromButton('dday')}
+            title={`${dayDDay.title} (${dayDDay.date})까지, 지금 보고 있는 날 기준`}
+            className="px-2 py-0.5 rounded-full text-2xs sm:text-xs font-bold bg-rose-50 text-rose-600 border border-rose-100 whitespace-nowrap shrink-0 cursor-pointer hover:bg-rose-100 transition-colors"
+          >
+            {ddayText(dayDDay.date, nav.date).text}
+          </button>
+        )}
         <button
           type="button"
           data-date-next

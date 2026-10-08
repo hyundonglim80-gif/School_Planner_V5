@@ -56,6 +56,16 @@ registerWindow<LinkWindowParams>({
   load: () => import('../features/links/LinkViewerWindow'),
 });
 
+// 머리줄 ⏳ D-Day (P5-3) - 단축키 'dday'
+registerWindow({
+  id: 'dday',
+  title: 'D-Day',
+  icon: '⏳',
+  kind: 'side',
+  help: 'dday',
+  load: () => import('../features/dday/DDayWindow'),
+});
+
 // ⋮ 일정
 registerWindow({
   id: 'labels',
