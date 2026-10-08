@@ -8,6 +8,7 @@
 // - 저장하면 칸은 닫히지 않고 그 항목의 수정 칸이 된다(V4 사용자 결정). 저장 = 바뀐 칸만, 문서 하나(+ 새 라벨).
 // - 저장이 안 되면 칸을 닫지 않는다. ESC는 저장 안 한 글이 있으면 먼저 묻는다, 좁은 화면 배경 = 저장하고 닫기.
 // - 이 칸이 열린 동안 다른 기기에서 고친 것은, 손대기 전이면 따라간다(손댔으면 적던 것을 덮지 않는다).
+// - 쓰던 글은 2초 뒤 이 기기에 남긴다(data/drafts) - 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기'.
 // @이름 학생 태그는 학급(명렬표)이 들어오는 P7-1에서 - 지금은 #26040305를 글에 적으면 그대로 남는다.
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
@@ -15,8 +16,10 @@ import { showErrorToastOnce, showToast } from '../../app/toast';
 import { useShortcutTitle } from '../../app/keys';
 import { continueOnEnter, toggleCheckAtCaret, toggleLinesPrefix } from '../../domain/checkLines';
 import { shortDateLabel } from '../../domain/dateUtils';
+import { useDraft } from '../../data/drafts';
 import { useDocs, useItemsOn, useLabelTree, useMemos, useMirrorStatus } from '../../data/select';
 import AutoTextarea from '../../ui/AutoTextarea';
+import DraftOffer from '../../ui/DraftOffer';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
 import { orderAfter } from '../events/eventOps';
@@ -51,6 +54,18 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const textRef = useRef<HTMLTextAreaElement>(null);
   const dayNotes = useItemsOn(form.date, 'note', sid);
   const memoList = useMemos(sid);
+  // 쓰던 글 보관 (이 기기 - data/drafts). 새 칸은 공간·자리, 고치는 칸은 항목마다. 고치던 항목의 완료·즐겨찾기는 칸의 것이 아니라 빼고 둔다
+  const draft = useDraft<NoteForm>(
+    `note:${sid}:${params.id ?? `new:${form.date || 'memo'}`}`,
+    isEditing ? { ...form, done: false, favorite: false } : form,
+    !untouched,
+  );
+  const restoreDraft = () => {
+    const kept = draft.take();
+    if (!kept) return;
+    setForm((f) => ({ ...f, ...kept, ...(isEditing ? { done: f.done, favorite: f.favorite } : {}) }));
+    if (!isEditing && kept.date !== form.date) setParams({ ...params, date: kept.date || null });
+  };
 
   // 항목·라벨은 사본에서 오므로 칸을 여는 순간에는 아직 없을 수 있다. 도착하면 채운다.
   // 다른 기기에서 고친 것도 따라간다 - 단, 손대기 시작했으면 적던 것을 덮지 않는다. (바뀐 때 그리는 중에 맞춘다 - effect로 미루지 않는다)
@@ -181,6 +196,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
       if (!isEditing) {
         const order = orderAfter(form.date ? dayNotes : memoList);
         const saved = await createNote(sid, form, tree, order);
+        draft.clear();
         // 저장한 뒤에도 적은 것이 남고 그 항목의 수정 칸이 된다 (V4 사용자 결정). '#라벨' 줄은 떼고 칩으로
         const next = { ...form, text: saved.text, labelIds: saved.labelIds, newLabels: [] };
         setForm(next);
@@ -192,6 +208,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
           return false;
         }
         const saved = await saveNote(sid, item, form, tree);
+        draft.clear();
         const next = saved ? { ...form, text: saved.text, labelIds: saved.labelIds, newLabels: [] } : form;
         setForm(next);
         setBase(next);
@@ -342,6 +359,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
           </div>
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-6" data-scroll-lock>
+            {draft.offer && <DraftOffer savedAt={draft.offer.savedAt} onRestore={restoreDraft} onDiscard={draft.discard} />}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="block text-xs font-semibold text-slate-600">

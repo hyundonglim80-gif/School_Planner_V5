@@ -7,13 +7,16 @@
 // - 저장하면 칸은 닫히지 않고 그 일정의 수정 칸이 된다(V4 사용자 결정 - 기록·메모와 같다). 저장 = 바뀐 칸만, 문서 하나.
 // - 저장이 안 되면 칸을 닫지 않는다(적은 것은 그대로). ESC는 저장 안 한 글이 있으면 먼저 묻는다, 좁은 화면 배경 = 저장하고 닫기.
 // - 이 칸이 열린 동안 다른 기기에서 고친 것은, 손대기 전이면 따라간다(손댔으면 적던 것을 덮지 않는다).
+// - 쓰던 글은 2초 뒤 이 기기에 남긴다(data/drafts) - 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기'.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
 import { showToast } from '../../app/toast';
 import { addDays, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { parseQuickInput, stripMatch, type QuickMatch } from '../../domain/quickInput';
+import { useDraft } from '../../data/drafts';
 import { useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import AutoTextarea from '../../ui/AutoTextarea';
+import DraftOffer from '../../ui/DraftOffer';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
 import { createEvent, deleteEvent, saveEvent } from './actions';
@@ -64,6 +67,14 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   const textRef = useRef<HTMLTextAreaElement>(null);
   const dayEvents = useItemsOn(form.date, 'event', sid);
   const today = todayStr();
+  // 쓰던 글 보관 (이 기기 - data/drafts). 새 칸은 공간·날짜, 고치는 칸은 일정마다
+  const draft = useDraft<EventForm>(`event:${sid}:${params.id ?? `new:${form.date}`}`, form, !untouched);
+  const restoreDraft = () => {
+    const kept = draft.take();
+    if (!kept) return;
+    setForm(kept);
+    if (!isEditing && kept.date !== form.date) setParams({ ...params, date: kept.date });
+  };
 
   // 라벨·일정은 사본에서 오므로 칸을 여는 순간에는 아직 없을 수 있다. 도착하면 채운다.
   // 다른 기기에서 고친 것도 따라간다 - 단, 손대기 시작했으면 적던 것을 덮지 않는다. (바뀐 때 그리는 중에 맞춘다 - effect로 미루지 않는다)
@@ -187,6 +198,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     try {
       if (!isEditing) {
         const id = await createEvent(sid, form, tree, orderAfter(dayEvents));
+        draft.clear();
         // 저장한 뒤에도 적은 것이 남고 그 일정의 수정 칸이 된다 (V4 사용자 결정)
         setBase(form);
         setParams({ sid, date: form.date, id });
@@ -196,6 +208,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
           return false;
         }
         const wrote = await saveEvent(sid, item, form, tree);
+        draft.clear();
         setBase(form);
         if (!wrote) showToast('바뀐 것이 없습니다.');
       }
@@ -275,6 +288,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
           </div>
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-5" data-scroll-lock>
+            {draft.offer && <DraftOffer savedAt={draft.offer.savedAt} onRestore={restoreDraft} onDiscard={draft.discard} />}
             {/* 일정 내용: 칸을 열면 곧바로 적게 맨 위에 둔다 */}
             <div>
               <span className="block text-xs font-bold text-slate-500 mb-1">일정 내용</span>

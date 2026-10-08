@@ -1,13 +1,14 @@
 // 메모·기록 칸 - 새로(맨 위 라벨·자리 맨 뒤·저장하면 수정 칸)·#라벨(새 라벨과 한 묶음)·'+ 새 라벨'·고치기 = 바뀐 칸만·
 // 📅 날짜 = 자리(date만·되돌리기는 자리만)·완료/즐겨찾기(고치던 항목은 곧바로 그 칸만)·체크리스트·손대기 전에는 다른 기기 고침을 따라감·저장 안 한 글
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { useEffect, useState } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { resetHistoryForTest } from '../../app/history';
 import { setPopupStyle } from '../../app/layoutPrefs';
 import { anyWindowUnsaved } from '../../app/windows';
 import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mirror/store';
+import { readDraft, resetDraftsForTest, wipeDrafts, writeDraft } from '../../data/drafts';
 import { useSession } from '../../data/session';
 import { clearUndo, undoLast } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
@@ -71,7 +72,9 @@ function Host({ initial }: { initial: NotePanelParams }) {
 const type = (text: string) => fireEvent.change(textInput(), { target: { value: text } });
 const save = () => act(async () => fireEvent.click(q('[data-note-save]')));
 
-beforeEach(() => {
+beforeEach(async () => {
+  resetDraftsForTest();
+  await wipeDrafts('me');
   resetHistoryForTest();
   resetMirrorStore();
   clearUndo();
@@ -280,5 +283,31 @@ describe('체크리스트', () => {
       window.dispatchEvent(new Event('sp5-checklist'));
     });
     expect(textInput().value).toBe('☐ 빵');
+  });
+});
+
+describe('쓰던 글 보관', () => {
+  it('다시 열면 남은 글을 묻고, 되살리기 = 칸에 그 글(저장 안 한 글), 저장하면 보관을 지운다', async () => {
+    seed();
+    await writeDraft('me', `note:${SID}:n1`, { text: '적다 만 글', date: DAY, labelIds: ['L2'], newLabels: [], done: false, favorite: false, attachments: [], tables: [] }, 1);
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+    await waitFor(() => expect(document.querySelector('[data-draft-offer]')).not.toBeNull());
+    fireEvent.click(q('[data-draft-restore]'));
+    expect(textInput().value).toBe('적다 만 글');
+    expect(document.querySelector('[data-draft-offer]')).toBeNull();
+    expect(anyWindowUnsaved()).toBe(true);
+    await save();
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ text: '적다 만 글' });
+    await waitFor(async () => expect(await readDraft('me', `note:${SID}:n1`)).toBeNull());
+  });
+
+  it('버리기 = 보관을 지우고 칸은 그대로', async () => {
+    seed();
+    await writeDraft('me', `note:${SID}:new:${DAY}`, { text: '새 글 쓰다 말았다', date: DAY, labelIds: [], newLabels: [], done: false, favorite: false, attachments: [], tables: [] }, 1);
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    await waitFor(() => expect(document.querySelector('[data-draft-offer]')).not.toBeNull());
+    fireEvent.click(q('[data-draft-discard]'));
+    expect(textInput().value).toBe('');
+    await waitFor(async () => expect(await readDraft('me', `note:${SID}:new:${DAY}`)).toBeNull());
   });
 });

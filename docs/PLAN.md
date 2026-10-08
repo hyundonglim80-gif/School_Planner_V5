@@ -552,7 +552,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   `noteForm.ts`(순수 - 새 칸 = 맨 위 라벨, 저장 = 바뀐 칸만, 자리 `placeChanges`(기록 → 메모 = fromDate 남김·메모 → 기록 = 걷음), '#라벨'·새 라벨 이름 `savePlanOf`) ·
   `actions.ts` `createNote`·`saveNote`(새 라벨과 한 묶음, 옮기기의 되돌리기는 자리만) · 칸의 예상 못 한 실패도 안내(`showErrorToastOnce`) · 크롬 `inspect-notes` 47항목.
   미룬 것: @이름·🧑‍🎓 학생 태그 → P7-1(명렬표가 생길 때 - 5장), 📎 파일 첨부·캡처·표 붙여넣기·표 고치기 → P4-2(지금은 빼기만), 🔗 링크 추가 → P4-3(🚧).
-- [ ] ■3 쓰던 글 보관: IndexedDB `drafts`(칸마다, 2초 뒤), 칸을 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기', 저장하면 지움.
+- [x] ■3 쓰던 글 보관: IndexedDB `drafts`(칸마다, 2초 뒤), 칸을 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기', 저장하면 지움.
+  → `data/drafts.ts`(DB `sp5-drafts-{uid}` 저장소 drafts, `useDraft(칸 열쇠, 칸 값, 손댔나)` - 손댄 동안 2초 뒤·칸이 닫힐 때·pagehide에 곧바로, 다시 열면 묻기(지금과 같으면 묻지 않고 지움),
+  저장하면 `clear`, 새 칸의 날짜를 바꾸면 열쇠를 옮김, 트랜잭션 끝까지 기다림(끊긴 트랜잭션이 '처리하지 않은 오류'가 되지 않게), 고장 나면 조용히) ·
+  `ui/DraftOffer.tsx`(`[data-draft-offer|draft-restore|draft-discard]`) · 메모·기록 칸과 **일정 칸에도** · 로그아웃하면 `wipeDrafts`(기기 사본과 같은 까닭) · 크롬 `inspect-notes` 54항목·`inspect-events` 58 다시 통과.
 - [ ] ■4 ＋ 새로 → 새 기록·새 메모 + 크롬 점검 `inspect-notes.mjs`(쓰기·#라벨·체크·날짜 넣고 빼기 = 문서 하나의 `date`만·쓰던 글 되살리기).
 **끝 조건**: 설명서 `journal`·`memo-write`·`move-entry`가 된다.
 
