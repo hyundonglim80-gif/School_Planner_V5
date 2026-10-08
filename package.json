@@ -10,6 +10,7 @@
     "build:emu": "tsc -b && vite build --mode emu",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:data": "vitest run --config vitest.data.config.ts",
     "lint": "oxlint",
     "emu": "firebase emulators:start --only auth,firestore --project schoolplannerv3",
     "seed": "node tools/seed.mjs",

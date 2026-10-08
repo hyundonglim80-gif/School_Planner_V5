@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** - ■5 자료 층 테스트부터 (클라우드 세션 `claude/happy-rubin-wcxw0e`, 10-08).
+**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** - 세션 끝 정리 (클라우드 세션 `claude/happy-rubin-wcxw0e`, 10-08).
 
 ---
 
@@ -370,7 +370,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   실패는 `failWithToast`로 던진다. 모두 **되돌릴 값**을 돌려준다.
 - [x] ■3 되돌리기 `src/data/undo.ts`: 안내의 '되돌리기'(V4 undoToast 모양) + Ctrl+Z 쌓기(글 칸 밖에서만, 공간마다 20개).
 - [x] ■4 규칙: items·labels 모양 검사(`kind`·`deletedAt`·`v` 정도 - 지나치게 막지 않는다), check-rules V5 검사 더하기.
-- [ ] ■5 자료 층 테스트(에뮬레이터, 따로 된 설정 `vitest.data.config.ts` · `npm run test:data` - PC에서. CI는 단위만): 만들기·고치기·지우기·되살리기·되돌리기·Ctrl+Z.
+- [x] ■5 자료 층 테스트(에뮬레이터, 따로 된 설정 `vitest.data.config.ts` · `npm run test:data` - PC에서. CI는 단위만): 만들기·고치기·지우기·되살리기·되돌리기·Ctrl+Z.
 **끝 조건**: 위 테스트 통과. 저장이 실패하면 던지는 것을 테스트로 본다.
 
 ### P2-2. 기기 사본(IndexedDB)·바뀐 것만 받기
