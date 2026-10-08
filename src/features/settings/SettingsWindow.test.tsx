@@ -6,7 +6,12 @@ import { useNav } from '../../app/nav';
 import { handleAppKeyDown, setShortcutOverrides, useShortcutOverrides } from '../../app/keys';
 import { anyWindowUnsaved } from '../../app/windows';
 import { overridesFromBindings, resolveBindings } from '../../domain/shortcuts';
+import { useMirror } from '../../data/mirror/store';
 import SettingsWindow from './SettingsWindow';
+
+// '이 기기 사본 다시 받기'는 Firebase를 부른다 - 창 시험에서는 흉내만
+const resetMirror = vi.hoisted(() => vi.fn(() => Promise.resolve()));
+vi.mock('../../data/mirror/sync', () => ({ resetMirror }));
 
 const q = (s: string) => document.querySelector<HTMLElement>(s)!;
 const qa = (s: string) => [...document.querySelectorAll<HTMLElement>(s)];
@@ -114,5 +119,20 @@ describe('바꾼 키 고르기', () => {
     const b = resolveBindings({ help: { ctrl: true, alt: false, shift: false, key: 'H' } });
     expect(overridesFromBindings(b)).toEqual({ help: { ctrl: true, alt: false, shift: false, key: 'H' } });
     expect(overridesFromBindings(resolveBindings())).toEqual({});
+  });
+
+  it('앱: 이 기기 사본 - 어디에 두나·몇 개, 다시 받기', async () => {
+    useMirror.setState({
+      persisted: 'memory',
+      colls: { 'u_a/items': { status: 'live', docs: { a: { id: 'a' }, b: { id: 'b' } } }, 'u_a/labels': { status: 'live', docs: { l: { id: 'l' } } } },
+    });
+    openSettings('app');
+    expect(q('[data-mirror-state]').dataset.mirrorState).toBe('memory');
+    expect(q('[data-mirror-count]').dataset.mirrorCount).toBe('3');
+    await act(async () => {
+      fireEvent.click(q('[data-mirror-reset]'));
+    });
+    expect(resetMirror).toHaveBeenCalledTimes(1);
+    useMirror.setState({ persisted: null, colls: {} });
   });
 });
