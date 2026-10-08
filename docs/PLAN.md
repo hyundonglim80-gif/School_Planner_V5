@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P1-4 설정 동기화·환경설정 탭·계정 칸·배포·PWA 틀** - ■1 끝, 다음 ■2(환경설정 창).
+**P1-4 설정 동기화·환경설정 탭·계정 칸·배포·PWA 틀** - ■1·■2 끝, 다음 ■3(계정 칸).
 
 ---
 
@@ -228,6 +228,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   이 기기 사본의 주인 `sp5-settings-owner` - 다른 계정으로 들어오면 앞 사람 설정을 기본값으로 비운다(새 계정 문서에 올리지 않게, `?as=` 점검도).
   `common`은 지금 이월 기간 `forwardDays`(1~60, 기본 14)만 - 그 기능을 옮기는 세션이 칸을 더한다. `updatedAt`·`v`는 저장 도우미(P2-1) 전이라 `settingsPort`가 붙인다.
   **시작 화면**은 주소에 화면이 없을 때만(설치한 앱·첫 주소) - 새로고침·주소로 연 것은 그 화면 그대로.
+- **P1-4 환경설정 창**: '보기' 탭은 모두 **누르는 즉시** 바뀐다(V4는 글자 크기·창 위치·화면 밝기만 즉시, 토글·시작 화면은 '저장'을 기다려 섞여 있었다).
+  '저장'은 단축키 탭에만 - 키를 하나씩 바꾸는 동안 잠깐 겹치므로(겹치면 저장을 막는다). Ctrl+S = 고치던 단축키 저장(다른 탭에 있어도), 고치던 것은 탭을 바꿔도 남고 ESC 때 묻는다.
+  아직 옮기지 않은 기능의 탭(알림 P8-2·학교 P3-3/P6-1/P6-3·개발자)은 `SettingsWindow.tsx` 탭 표의 `ready: false`로 숨긴다 - 기능을 옮기는 세션이 켠다.
+  단축키 목록에는 아직 없는 기능도 흐리게 두어 키를 미리 정할 수 있다. P1-3에서 미룬 손짓 안내는 '스크롤로 페이지 이동' 줄의 설명으로(첫 화면에 띄우지 않는다).
 
 ---
 
@@ -305,7 +309,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: `MENU.md` 3-5·3-6, `DESIGN.md` 3장(주소)·4-8, V4 `lib/preferenceSync.ts`·`hooks/usePreferenceSync.ts`·`components/SettingsModal.tsx`(구역만 - `grep -n 'title="'`)·
 `ShortcutModal.tsx`, V4 `public/manifest.json`·`public/sw.js`(앞부분)·`tools/gen-icons.mjs`.
 - [x] ■1 설정 문서 `settings/common`·`pc`·`mobile` + 동기화(V4 preferenceSync - 1초 뒤 올림, PC/휴대폰 가르기) + store.
-- [ ] ■2 환경설정 창(창 목록 `settings`, 탭 다섯 + 개발자 - `MENU.md` 3-6). 지금 있는 것만 채우고 아직 없는 기능의 칸은 숨긴다. 단축키 바꾸기(ShortcutModal 옮기기).
+- [x] ■2 환경설정 창(창 목록 `settings`, 탭 다섯 + 개발자 - `MENU.md` 3-6). 지금 있는 것만 채우고 아직 없는 기능의 칸은 숨긴다. 단축키 바꾸기(ShortcutModal 옮기기).
 - [ ] ■3 계정 칸(사진 누르기): 이름·메일·로그아웃(공유 그룹은 P8-4 전까지 숨김).
 - [ ] ■4 배포: 👤 사이트 이름 고르기(권장 `schoolplanner-v5`, 쓰고 있으면 `sp5-` 붙인 이름) → `npx firebase hosting:sites:create <이름> --project schoolplannerv3`(묻고).
   `firebase.json` hosting(site·`dist`). 👤 콘솔 두 곳: Firebase › Authentication › 설정 › 승인된 도메인에 `<이름>.web.app` /

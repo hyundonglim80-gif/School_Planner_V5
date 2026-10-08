@@ -267,6 +267,17 @@ export function resolveBindings(overrides: ShortcutOverrides = {}): Record<Short
   return out;
 }
 
+/** 고른 키 전부 → 기본값과 다른 것만 (나중에 기본값을 고치면 그대로 따라온다, V4) */
+export function overridesFromBindings(bindings: Record<ShortcutId, Binding>): ShortcutOverrides {
+  const out: ShortcutOverrides = {};
+  for (const action of SHORTCUT_ACTIONS) {
+    const cur = bindings[action.id];
+    const def = action.def;
+    if (cur.ctrl !== def.ctrl || cur.alt !== def.alt || cur.shift !== def.shift || cur.key !== def.key) out[action.id] = cur;
+  }
+  return out;
+}
+
 /**
  * 계정 설정 문서에서 읽은 바꾼 키 → 믿을 만한 것만 (V4 sanitizePreferences).
  * 모르는 id(나중 판이 더한 것·없어진 것)와 모양이 틀린 키는 뺀다. 통째로 틀리면 undefined.
