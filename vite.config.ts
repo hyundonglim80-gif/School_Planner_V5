@@ -4,7 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 
 // 지금 브라우저가 어느 빌드를 돌리고 있는지 화면에서 확인할 수 있게 한다(V4에서 가져온 규칙 -
 // 이것이 없을 때 고친 것이 그 기기에서 돌고 있는지 몰라 '고쳤는데 그대로'를 여러 번 주고받았다).
-const BUILD_ID = new Date().toISOString().slice(0, 16).replace('T', ' ');
+// 한국 시각으로 적는다 - V4는 UTC라 화면의 빌드 번호가 9시간 앞섰다. 자동 배포(GitHub Actions)는 UTC 기기에서 빌드하므로 기기 시간대가 아니라 +9시간으로 센다.
+const BUILD_ID = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 16).replace('T', ' ');
 
 export default defineConfig(({ mode }) => ({
   // V5는 Firebase Hosting 새 사이트의 맨 위에 선다(V3·V4의 github.io 하위 경로와 출처를 나누려고 - PLAN 2장).
