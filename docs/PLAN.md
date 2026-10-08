@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P4-3 링크 연결·보기** (클라우드면 1-7을 먼저).
+**P5-1 주간·작년 이맘때** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -147,9 +147,9 @@
 | **P4 메모·첨부·링크** | | | | |
 | P4-1 | 메모 화면·라벨로 보기 | 중간 | 중간 | 끝 (2026-10-08) |
 | P4-2 | 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기 | 큼 | 중간 | 끝 (2026-10-08) |
-| P4-3 | 링크 연결·보기 | 중간 | 중간 | **다음** |
+| P4-3 | 링크 연결·보기 | 중간 | 중간 | 끝 (2026-10-08) |
 | **P5 달력·찾기·정리** | | | | |
-| P5-1 | 주간·작년 이맘때 | 중간 | 중간 | |
+| P5-1 | 주간·작년 이맘때 | 중간 | 중간 | **다음** |
 | P5-2 | 월간·년간·오늘로 | 큼 | 중간 | |
 | P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | |
 | P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | |
@@ -184,6 +184,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   V4 자료는 한 방향으로 가져온다(라벨·설정부터 - 여러 번 해도 겹치지 않고 V5에서 고친 것은 덮지 않는다). V3와 함께 쓰던 옛 모양 읽기는 가져오기 안에만.
 - P3 하루 화면(10-08): 일정·기록·메모가 문서 하나씩(완료·순서·옮기기 = 그 문서의 칸만) · 이월은 계산(옮겨 쓰지 않고 오늘 칸에 '↪ 처음 날부터') · 기간 일정 = 한 항목('(2/5)'는 센다, '이 날만 지우기' = 그날 빼기) ·
   반복 = 일정 칸 줄 · 여러 개 고르기는 Ctrl·길게 누르기로 바로, 지우기는 묻지 않고 되돌리기 · 쓰던 글 보관 · V4 일정·기록·메모를 가져온다(공휴일 일정·알림장/출결 자동 기록은 빼고).
+- P4 메모·첨부·링크(10-08): 메모 화면은 V4 그대로(카드 쌓기·라벨로 보기 기억) · 첨부·캡처는 드라이브 원본(다시 받는 로그인은 지금 계정으로) · 표는 '행/열' · 사진 크게 보기는 Shell 하나(ESC는 사진만) ·
+  클립보드 칸은 계정마다·로그아웃하면 지움 · 링크 = 양쪽 linkIds 한 묶음(역링크 갈아끼우기·트랜잭션 없음), 끊기는 묻지 않고 되돌리기, 새 항목의 🔗는 먼저 저장 · 수업 링크 잇기는 P6-1.
 
 ## 4. 세션 기록 (한 세션 한 줄 - 어느 기기에서 어디까지 했나)
 
@@ -202,6 +204,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-2 | P3-2 세션 끝 정리 | 단위 832 · inspect-notes 61 · events·shell·settings·labels·data 통과 · 브랜치 `claude/amazing-clarke-hboeze` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 · 일정 칸에도 쓰던 글 보관 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-1 | P4-1 세션 끝 정리 | 단위 984 · inspect-memo 30 · notes·shell 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · inspect-shell이 계정에 '가운데 창'을 남기던 것을 고침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-2 | P4-2 세션 끝 정리 | 단위 1081 · inspect-attach 47(구글 API는 흉내) · notes·memo·shell 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 👤 실제 계정으로 첨부 올리기·V4 첨부 열기 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P4-3 | P4-3 세션 끝 정리 (P4 단계 끝) | 단위 1132 · inspect-links 32 · P4 점검 모두(memo·attach·links + events·notes) 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 디스크가 차 에뮬레이터가 죽음 - 디버그 로그 30GB를 비우고 /dev/null로 이어 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
@@ -401,6 +404,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 표: V4 entryTable 그대로, 글 없이 표만 있어도 저장한다(V4의 '[표]' 글은 V3 때문 - V5는 쓰지 않는다). 버튼·안내 글은 '행/열'(UX-AUDIT 결정 - V4 단추의 '줄'을 고쳤다).
   - 사진 크게 보기는 Shell에 하나(`openImageViewer`) - 화면마다 들던 V4와 달리. ESC는 사진 창만 닫는다(뒤의 쓰는 칸은 그대로 - V4는 오른쪽 줄 전체가 닫혔다). ←/→는 넣지 않았다(V4에 없다·단축키 한 곳 규칙).
   - **클립보드 목록은 계정마다 따로 두고 로그아웃하면 지운다**(V4는 기기에 하나 - 공용 PC에서 앞 사람의 복사·캡처가 보였다). 칸 이름은 `ClipboardColumn`(오른쪽 줄의 창·쓰는 칸 규칙과 다르다).
+- **P4-3 링크**: 양쪽 `linkIds`를 한 묶음으로 잇고 끊는다(V4는 역링크를 트랜잭션으로 하나씩 - 이월·옮기기 때 갈아끼웠다). 바뀐 것(권장안으로 고름):
+  - 🗑️ 연결 끊기는 묻지 않고 안내의 되돌리기(V4는 확인 창 - P3-3·P4-1과 같은 까닭).
+  - 새 항목 칸의 '🔗 링크 추가'는 **먼저 저장**하고 그 항목의 연결 창을 연다(V4는 칸이 링크를 들고 있다가 저장할 때 역링크 - V5는 칸이 링크를 들지 않는다).
+  - 🏫 수업 탭은 수업 칸이 생기는 P6-1에서(수업 쪽 `lessonDays`에 함께 적는다). 그 전에는 가져온 수업 링크를 날·교시로만 보이고 📌 이동·🗑️(항목 쪽만).
+  - 지운 항목·찾을 수 없는 항목도 목록에 남기고(휴지통에서 되살리면 다시 이어진다) 끊을 수 있다. 목록은 기기 사본에서 - V4처럼 범위마다 서버를 읽지 않는다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -715,9 +723,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P4-3. 링크 연결·보기
 **시작 조건**: P4-2 끝.
 **먼저 읽을 것**: V4 설명서 `links`·`link-viewer`, V4 `components/LinkerModal.tsx`·`LinkViewerModal.tsx`·`utils/linkUtils.ts`·`lib/semester.ts`(schoolYearSpan).
-- [ ] ■1 링크 연결 창(LinkerModal 옮기기 - 사본에서 목록, 기간 고르기), 저장 = 양쪽 `linkIds`를 한 batch로, 저장 뒤 닫기.
-- [ ] ■2 링크 보기(LinkViewerModal - 탭, 같은 항목은 그 탭), 고치기 = 같은 쓰는 칸. 수업 링크는 P6-1 뒤 수업 칸으로(그 전에는 그날로만).
-- [ ] ■3 '+ 새 00 만들어 연결'(처음 저장하면 연결) + 크롬 점검 `inspect-links.mjs`(가져온 V4 링크가 양쪽에 보인다).
+- [x] ■1 링크 연결 창(LinkerModal 옮기기 - 사본에서 목록, 기간 고르기), 저장 = 양쪽 `linkIds`를 한 batch로, 저장 뒤 닫기.
+  → `features/links/linkOps.ts`(순수 - `linkOps`·`unlinkOps`·`lessonLinkId`·`parseLessonLink`·`linkKindOf`) · `linkerList.ts`(범위 `rangeOf`·목록 `candidatesOf`) · `actions.ts`(`saveLinks`·`removeLink` - 한 묶음 + 되돌리기) ·
+  `LinkerWindow.tsx`(창 `linker` `[data-linker|linker-tab|linker-range|linker-date|linker-label|linker-keyword|linker-new|linker-list|linker-item|linker-picked|linker-unpick|linker-tray|linker-save|linker-prev|linker-next]`) · 학기 셈 `domain/semester.ts`(V4 그대로).
+- [x] ■2 링크 보기(LinkViewerModal - 탭, 같은 항목은 그 탭), 고치기 = 같은 쓰는 칸. 수업 링크는 P6-1 뒤 수업 칸으로(그 전에는 그날로만).
+  → `LinkViewerWindow.tsx`(창 `links` `[data-link-viewer|link-row|link-kind|link-text|link-unlink|link-move|link-edit|link-image]`) · 카드 🔗 n(`onOpenLinks`) · 쓰는 칸 '🔗 링크 추가'(새 항목은 먼저 저장)·'📑 연결 N개' `[data-event-links-open|note-links-open]`.
+- [x] ■3 '+ 새 00 만들어 연결'(처음 저장하면 연결) + 크롬 점검 `inspect-links.mjs`(가져온 V4 링크가 양쪽에 보인다).
+  → 쪽지 `links/open.ts` `listenLinkPick`·`deliverLinkPick`(쓰는 칸 params `pickFor`) · `inspect-links.mjs` 32항목 · events·notes·memo 다시 통과.
 **끝 조건**: 설명서 `links`·`link-viewer`가 된다. **P4 단계 끝 정리**(1-4).
 
 ### P5-1. 주간·작년 이맘때

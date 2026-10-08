@@ -33,6 +33,7 @@ import { orderAfter } from '../events/eventOps';
 import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite } from './actions';
 import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
 import EntryTableView from './EntryTableView';
+import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
 import { hasContent, isKnownLabel, newNoteForm, noteFormOf, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
 import { nounOf, objectOf } from './noteOps';
 import type { NotePanelParams } from './open';
@@ -236,6 +237,20 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     void attach(images, true);
   };
 
+  // ─── 링크 (links/) ───
+  /** 처음 저장해 만든 항목 (🔗 링크 추가가 새 항목을 먼저 저장한 뒤 그 항목에 잇는다) */
+  const savedId = useRef<string | null>(null);
+  /** 🔗 링크 추가 - 고치던 항목은 곧바로 연결 창, 새 항목은 먼저 저장하고(그 항목의 수정 칸이 된다) 연결 창 */
+  const addLink = async () => {
+    if (isEditing && params.id) {
+      openLinker({ sid, id: params.id });
+      return;
+    }
+    if (await save()) {
+      if (savedId.current) openLinker({ sid, id: savedId.current });
+    }
+  };
+
   // ─── 저장 ───
   /** 저장한다. 저장했거나 저장할 것이 없으면 true */
   const save = async (): Promise<boolean> => {
@@ -261,6 +276,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
         const next = { ...form, text: saved.text, labelIds: saved.labelIds, newLabels: [] };
         setForm(next);
         setBase(next);
+        deliverLinkPick(params.pickFor, saved.id);
+        savedId.current = saved.id;
         setParams({ sid, date: form.date || null, id: saved.id });
       } else {
         if (!item) {
@@ -497,7 +514,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               onNewNamesChange={(newLabels) => setForm((f) => ({ ...f, newLabels }))}
             />
 
-            {/* 첨부 (드라이브 School_Planner 폴더), 링크 (P4-3) */}
+            {/* 첨부 (드라이브 School_Planner 폴더) · 링크 */}
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="block text-xs font-semibold text-slate-600">첨부 ({form.attachments.length}개)</span>
@@ -523,13 +540,25 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 <button
                   type="button"
                   data-note-link-add
-                  onClick={() => showToast('🚧 아직 V5로 옮기지 않은 기능입니다.')}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-yellow-50 text-slate-700 hover:text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 hover:border-yellow-300 shadow-2xs opacity-60"
+                  onClick={() => void addLink()}
+                  disabled={saving || !!uploading}
+                  title={isEditing ? `이 ${noun}에 일정·기록·메모를 잇습니다` : `먼저 저장하고 이 ${noun}에 일정·기록·메모를 잇습니다`}
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-yellow-50 text-slate-700 hover:text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 hover:border-yellow-300 shadow-2xs"
                 >
                   <span>🔗</span>
                   <span>링크 추가</span>
                 </button>
               </div>
+              {(item?.linkIds?.length ?? 0) > 0 && (
+                <button
+                  type="button"
+                  data-note-links-open={item?.linkIds?.length}
+                  onClick={() => item && openLinkViewer({ sid, id: item.id })}
+                  className="w-full flex items-center justify-center gap-2 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-yellow-200"
+                >
+                  📑 연결된 항목 {item?.linkIds?.length}개 보기
+                </button>
+              )}
               {form.attachments.map((att, idx) =>
                 // 그림은 무엇인지 바로 알아보게 크게, 파일은 종류 그림 + 이름 (누르면 새 탭)
                 isImageAttachment(att) ? (

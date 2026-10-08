@@ -38,6 +38,7 @@ import EventDeleteChooser from './EventDeleteChooser';
 import { editChanges, effectiveAttrs, formOf, newForm, periodOf, sameForm, withAttr, withLabels, withStartDate, type AttrKey, type EventForm } from './eventForm';
 import { isGrouped, orderAfter } from './eventOps';
 import type { EventPanelParams } from './open';
+import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
 import QuickInputChips, { type QuickChip } from './QuickInputChips';
 
 /** 빠른 입력 칩 글자 */
@@ -230,6 +231,19 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
 
   // ─── 저장 ───
   /** 저장한다. 저장했거나 저장할 것이 없으면 true */
+  /** 처음 저장해 만든 일정 (🔗 링크 추가가 새 일정을 먼저 저장한 뒤 그 일정에 잇는다) */
+  const savedId = useRef<string | null>(null);
+  /** 🔗 링크 추가 - 고치던 일정은 곧바로 연결 창, 새 일정은 먼저 저장하고(그 일정의 수정 칸이 된다) 연결 창 */
+  const addLink = async () => {
+    if (isEditing && params.id) {
+      openLinker({ sid, id: params.id });
+      return;
+    }
+    if (await save()) {
+      if (savedId.current) openLinker({ sid, id: savedId.current });
+    }
+  };
+
   const save = async (): Promise<boolean> => {
     if (!form.text.trim()) {
       // 지우기는 삭제 단추로만 한다. 내용을 다 지운 채 저장해도 일정은 남는다
@@ -273,12 +287,16 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
         draft.clear();
         // 첫 항목의 수정 칸이 된다 (적은 것은 그대로 - 날짜는 첫 항목의 날로 따라간다)
         setBase(form);
+        deliverLinkPick(params.pickFor, made.firstId);
+        savedId.current = made.firstId;
         setParams({ sid, date: made.firstDate, id: made.firstId });
       } else if (!isEditing) {
         const id = await createEvent(sid, form, tree, orderAfter(dayEvents));
         draft.clear();
         // 저장한 뒤에도 적은 것이 남고 그 일정의 수정 칸이 된다 (V4 사용자 결정)
         setBase(form);
+        deliverLinkPick(params.pickFor, id);
+        savedId.current = id;
         setParams({ sid, date: form.date, id });
       } else {
         if (!item) {
@@ -595,15 +613,27 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
               >
                 ⏰ {form.time ? `${shortDateLabel(form.date)} ${form.time}` : '알림 추가'}
               </button>
-              {/* 링크 연결은 P4-3 */}
+              {/* 링크 - 새 일정은 먼저 저장한다 */}
               <button
                 type="button"
                 data-event-link-add
-                onClick={() => showToast('🚧 아직 V5로 옮기지 않은 기능입니다.')}
-                className="px-3 py-1.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer opacity-60"
+                onClick={() => void addLink()}
+                disabled={saving}
+                title={isEditing ? '이 일정에 기록·메모·다른 일정을 잇습니다' : '먼저 저장하고 이 일정에 기록·메모·다른 일정을 잇습니다'}
+                className="px-3 py-1.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 🔗 링크 추가
               </button>
+              {(item?.linkIds?.length ?? 0) > 0 && (
+                <button
+                  type="button"
+                  data-event-links-open={item?.linkIds?.length}
+                  onClick={() => item && openLinkViewer({ sid, id: item.id })}
+                  className="px-3 py-1.5 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  📑 연결 {item?.linkIds?.length}개
+                </button>
+              )}
             </div>
 
             <LabelPicker kind="event" tree={tree} selected={form.labelIds} onChange={(ids) => setForm((f) => withLabels(f, ids))} />

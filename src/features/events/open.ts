@@ -19,7 +19,8 @@ export interface EventPanelParams {
   /** 새 일정 칸에 미리 적어 둘 글 (학사일정 '일정으로 담기' - P6-3) */
   draftText?: string;
   /** 새 일정 칸을 '🔁 반복' 줄을 편 채로 (단축키 '반복 일정' - MENU 3-8) */
-  recur?: boolean;
+  recur?: boolean;  /** 링크 연결 창의 '+ 새 00 만들어 연결' 쪽지 - 처음 저장하면 만든 항목을 연결 창에 돌려준다(links/open deliverLinkPick) */
+  pickFor?: string;
 }
 
 export const sameEventPanel = (a: EventPanelParams, b: EventPanelParams) =>

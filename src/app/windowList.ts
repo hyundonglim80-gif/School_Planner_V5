@@ -1,5 +1,6 @@
 // 창 등록 한 곳 (DESIGN 7-2). 창을 만드는 세션이 여기에 한 줄씩 더한다 - ⋮ 구역·학급 도구·수업 머리줄은 MENU.md대로.
 import { EVENT_PANEL, sameEventPanel, type EventPanelParams } from '../features/events/open';
+import { LINK_VIEWER, LINKER, sameLinkWindow, type LinkWindowParams } from '../features/links/open';
 import { NOTE_PANEL, sameNotePanel, type NotePanelParams } from '../features/notes/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
@@ -22,6 +23,26 @@ registerWindow<NotePanelParams>({
   help: 'journal',
   sameAs: sameNotePanel,
   load: () => import('../features/notes/NotePanel'),
+});
+
+// 링크 (P4-3) - 쓰는 칸의 '🔗 링크 추가'·카드의 '🔗 n'에서 연다. 같은 항목이면 그 탭
+registerWindow<LinkWindowParams>({
+  id: LINKER,
+  title: '링크 연결',
+  icon: '🔗',
+  kind: 'side',
+  help: 'links',
+  sameAs: sameLinkWindow,
+  load: () => import('../features/links/LinkerWindow'),
+});
+registerWindow<LinkWindowParams>({
+  id: LINK_VIEWER,
+  title: '연결된 데이터',
+  icon: '📑',
+  kind: 'side',
+  help: 'link-viewer',
+  sameAs: sameLinkWindow,
+  load: () => import('../features/links/LinkViewerWindow'),
 });
 
 // ⋮ 일정
