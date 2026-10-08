@@ -19,7 +19,8 @@ export interface NotePanelParams {
   /** 새 칸에 미리 골라 둘 라벨 (라벨로 보기에서 고른 것 - P4-1) */
   labelIds?: string[];
   /** 새 칸에 미리 적어 둘 글 (공유받은 글 - P8-3) */
-  draftText?: string;
+  draftText?: string;  /** 링크 연결 창의 '+ 새 00 만들어 연결' 쪽지 - 처음 저장하면 만든 항목을 연결 창에 돌려준다(links/open deliverLinkPick) */
+  pickFor?: string;
 }
 
 export const sameNotePanel = (a: NotePanelParams, b: NotePanelParams) =>

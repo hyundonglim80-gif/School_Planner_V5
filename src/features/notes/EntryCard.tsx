@@ -7,7 +7,6 @@
 //   - 접기: 긴 글은 접힌 채 시작(부르는 쪽이 domain/entryCollapse로), 접힌 카드에는 첫 줄만.
 // 그림은 누르면 크게 보기(넘겨 보기 - 접혔을 때는 🖼️ n을 눌러), 글 안 주소는 미리보기 카드, 표는 작게 보기만(고치기는 쓰는 칸에서).
 import { Fragment, useState, type ReactNode } from 'react';
-import { showToast } from '../../app/toast';
 import { checkCount, checkLineState, hasCheckLines } from '../../domain/checkLines';
 import { previewLine } from '../../domain/entryCollapse';
 import { fileIcon, isImageAttachment } from '../../domain/attachments';
@@ -38,6 +37,8 @@ export interface EntryCardProps {
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   onOpen: () => void;
+  /** 🔗 n - 이은 항목 보기 (links/LinkViewerWindow) */
+  onOpenLinks?: () => void;
   onToggleDone: () => void;
   onToggleFavorite: () => void;
   onDelete: () => void;
@@ -265,14 +266,14 @@ export default function EntryCard(props: EntryCardProps) {
               ☑ {checks.done}/{checks.total}
             </span>
           )}
-          {/* 이은 항목 (링크 보기 창은 P4-3) */}
+          {/* 이은 항목 - 누르면 📑 연결된 데이터 */}
           {links > 0 && (
             <button
               type="button"
               data-entry-links={links}
               onClick={(e) => {
                 stop(e);
-                showToast('🚧 아직 V5로 옮기지 않은 기능입니다.');
+                props.onOpenLinks?.();
               }}
               className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 transition-colors cursor-pointer flex items-center gap-1"
               title={`링크된 항목 ${links}개`}

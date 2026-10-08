@@ -13,7 +13,6 @@ import { useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { goToday } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { openWindow } from '../../app/windows';
-import { showToast } from '../../app/toast';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
 import { isPeriod, periodDoneOn, periodPosition } from '../../domain/period';
@@ -29,6 +28,7 @@ import { useCarried } from '../events/forward';
 import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
 import EventDeleteChooser from '../events/EventDeleteChooser';
 import DayPastEvents from './DayPastEvents';
+import { openLinkViewer } from '../links/open';
 import { openEventPanel, useEditingEventIds } from '../events/open';
 
 const NONE: readonly ItemDoc[] = [];
@@ -160,6 +160,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                   onCardClick={(e) => cardClick(ev, e)}
                   onLongPress={() => togglePick({ id: ev.id, day: date })}
                   onOpen={() => openEdit(ev)}
+                  onOpenLinks={() => sid && openLinkViewer({ sid, id: ev.id })}
                   onAlarm={() => setAlarmFor(ev)}
                   onDelete={() => remove(ev)}
                   onToggle={() => toggleDone(ev)}
@@ -182,6 +183,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                   onCardClick={(e) => cardClick(ev, e)}
                   onLongPress={() => togglePick({ id: ev.id, day: date })}
                   onOpen={() => openEdit(ev)}
+                  onOpenLinks={() => sid && openLinkViewer({ sid, id: ev.id })}
                   onAlarm={() => setAlarmFor(ev)}
                   onDelete={() => remove(ev)}
                   onToggle={() => finishCarried(ev)}
@@ -243,6 +245,8 @@ interface EventCardProps {
   /** 지난 날 칸에서, 오늘로 따라간 일정 (흐리게 '→ 오늘로') */
   away?: boolean;
   onOpen: () => void;
+  /** 🔗 n - 이은 항목 보기 */
+  onOpenLinks: () => void;
   onAlarm: () => void;
   onDelete: () => void;
   onToggle: () => void;
@@ -253,7 +257,7 @@ interface EventCardProps {
 /** 길게 누르기 (손가락만 - 0.5초, 움직이면 그만) */
 const LONG_PRESS_MS = 500;
 
-function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpen, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
+function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpen, onOpenLinks, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
   const done = doneOn(ev, day);
   const press = useRef<{ timer: ReturnType<typeof setTimeout> | null; x: number; y: number; fired: boolean }>({ timer: null, x: 0, y: 0, fired: false });
   const cancelPress = () => {
@@ -480,14 +484,14 @@ function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing,
             </span>
           )}
 
-          {/* 이은 항목 (링크 보기 창은 P4-3) */}
+          {/* 이은 항목 - 누르면 📑 연결된 데이터 */}
           {links > 0 && (
             <button
               type="button"
               data-event-links={links}
               onClick={(e) => {
                 stop(e);
-                showToast('🚧 아직 V5로 옮기지 않은 기능입니다.');
+                onOpenLinks();
               }}
               className="inline-flex align-middle ml-1 bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 transition-colors cursor-pointer items-center gap-1"
               title={`링크된 항목 ${links}개`}

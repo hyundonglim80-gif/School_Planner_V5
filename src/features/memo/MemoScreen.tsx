@@ -19,6 +19,7 @@ import { useIsMobile } from '../../ui/useIsMobile';
 import type { ItemDoc } from '../events/eventOps';
 import { deleteNote, deleteNotes, labelNotes, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
 import EntryCard from '../notes/EntryCard';
+import { openLinkViewer } from '../links/open';
 import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterChips';
 import { setMemoFilter, useLabelFilters, type MemoFilter } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst } from '../notes/noteOps';
@@ -157,6 +158,7 @@ export default function MemoScreen() {
             onMoveUp={sid && canMoveNote(list, i, -1) ? () => void moveNoteInList(sid, list, i, -1).catch(quiet) : undefined}
             onMoveDown={sid && canMoveNote(list, i, 1) ? () => void moveNoteInList(sid, list, i, 1).catch(quiet) : undefined}
             onOpen={() => sid && openNotePanel({ sid, date: null, id: m.id })}
+            onOpenLinks={() => sid && openLinkViewer({ sid, id: m.id })}
             onToggleDone={() => sid && void setNoteDone(sid, m, !m.done).catch(quiet)}
             onToggleFavorite={() => sid && void setNoteFavorite(sid, m, !m.favorite).catch(quiet)}
             onDelete={() => sid && void deleteNote(sid, m).catch(quiet)}

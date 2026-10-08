@@ -18,6 +18,7 @@ import { useMainWidth } from '../../ui/useMainWidth';
 import type { ItemDoc } from '../events/eventOps';
 import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
 import EntryCard from '../notes/EntryCard';
+import { openLinkViewer } from '../links/open';
 import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterChips';
 import { setJournalFilter, useLabelFilters } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
@@ -156,6 +157,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                       onMoveUp={sid && canMoveNote(shown, index, -1) ? () => void moveNoteInList(sid, shown, index, -1).catch(quiet) : undefined}
                       onMoveDown={sid && canMoveNote(shown, index, 1) ? () => void moveNoteInList(sid, shown, index, 1).catch(quiet) : undefined}
                       onOpen={() => openEdit(item)}
+                      onOpenLinks={() => sid && openLinkViewer({ sid, id: item.id })}
                       onToggleDone={() => sid && void setNoteDone(sid, item, !item.done).catch(quiet)}
                       onToggleFavorite={() => sid && void setNoteFavorite(sid, item, !item.favorite).catch(quiet)}
                       onDelete={() => sid && void deleteNote(sid, item).catch(quiet)}
