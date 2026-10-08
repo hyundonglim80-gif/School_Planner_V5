@@ -4,6 +4,7 @@ import './index.css'
 import './dark.css'
 import App from './app/App.tsx'
 import { applyTheme, watchSystemTheme } from './app/theme'
+import { startInstall } from './app/install'
 import { flushPendingToast } from './app/toast'
 import { auth } from './data/firebase'
 import { autoSignIn } from './data/emulator'
@@ -21,6 +22,8 @@ applyTheme()
 watchSystemTheme()
 // 새로고침 앞에서 맡겨 둔 안내 (백업 복원 등)
 flushPendingToast()
+// 앱으로 설치 - 서비스 워커 등록, 크롬의 설치 이벤트는 화면보다 먼저 올 수 있어 여기서 듣는다
+startInstall()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
