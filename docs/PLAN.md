@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** - ■2 저장 도우미부터 (클라우드 세션 `claude/happy-rubin-wcxw0e`, 10-08).
+**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** - ■3 되돌리기부터 (클라우드 세션 `claude/happy-rubin-wcxw0e`, 10-08).
 
 ---
 
@@ -257,6 +257,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   PR = 미리 보기 주소(7일) - 승인된 도메인이 아니라 구글 로그인은 안 된다(화면만). 사용자가 따로 GCP 프로젝트 'SchoolPlannerV5'를 만들었지만
   V5는 `schoolplannerv3`를 그대로 쓴다(uid·드라이브 drive.file·푸시가 묶여 있다) - 새 프로젝트는 쓰지 않는다(지워도 된다).
   init이 함께 깐 Firebase AI 스킬(`.agents/`·`.claude/skills/`·`skills-lock.json`)은 앱과 상관없어 `.gitignore`.
+- **P2-1 저장 도우미**(10-08): 규칙 부분(`data/repo/ops.ts` - 무엇을 적나 `toWrite`, 되돌리는 쓰기 `undoOf`)과 적는 부분(`repo/index.ts`)을 나눴다.
+  쓰기 하나 = `WriteOp` 하나, 되돌리기 = WriteOp 목록(`Undo`)이라 되돌리기도 `batch(undo)` 한 길이다. 늘 `writeBatch`로 적고 500개를 넘으면 나눈다(그때는 묶음마다만 한꺼번에).
+  **만들기의 되돌리기는 지운 표시**(영구로 지우면 다른 기기 사본이 모른다), 영구 지우기의 되돌리기는 그 문서를 그대로 다시 적기(put).
+  `patch`는 `updateDoc`(없는 문서면 실패 - 지운 항목을 빈 껍데기로 되살리지 않는다). 날짜 문서(lessonDays 등)를 처음 만드는 길은 그 세션(P6-1·P7-2)이 더한다.
+  `patch(자리, 바꿀 칸, 고치기 전 문서)` - 고치기 전 값은 서버에서 읽지 않고 화면이 든 문서에서. undefined = 칸 지우기, 점 = 깊은 칸.
+  설정 동기화는 `writeOps`(안내 없이 원래 오류 - 뒤에서 맞추는 것이라 V4처럼 콘솔에만). **P2-2에 넘길 것**: 사본에서 꺼낸 문서를 `purge`·되돌리기에 넘길 때 Timestamp를 되살려야 한다
+  (IndexedDB에서 꺼내면 `{seconds, nanoseconds}` 맵이 되어 규칙의 `deletedAt is timestamp`에 걸린다).
 
 ---
 
@@ -348,7 +355,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P1-4 끝(배포가 늦어지면 P1-3 끝이어도 된다 - 에뮬레이터로).
 **먼저 읽을 것**: `DESIGN.md` 2·4·6-1장, V4 `utils/toast.ts`(failWithToast·ShownError·showErrorToastOnce)·`lib/undoToast.ts`.
 - [x] ■1 `src/data/types.ts`(`DESIGN.md` 4장 그대로), `newId()`(20자 - `data/id.ts`), 차례 값 `domain/order.ts`(분수 인덱스 - 두 값 사이 값, 테스트).
-- [ ] ■2 저장 도우미 `src/data/repo/`: `create`·`patch`·`remove`(지운 표시)·`restore`·`purge`·`batch` - `updatedAt` 서버 시각, 만들 때 `deletedAt: null`·`v`·`createdAt`·`authorId`.
+- [x] ■2 저장 도우미 `src/data/repo/`: `create`·`patch`·`remove`(지운 표시)·`restore`·`purge`·`batch` - `updatedAt` 서버 시각, 만들 때 `deletedAt: null`·`v`·`createdAt`·`authorId`.
   실패는 `failWithToast`로 던진다. 모두 **되돌릴 값**을 돌려준다.
 - [ ] ■3 되돌리기 `src/data/undo.ts`: 안내의 '되돌리기'(V4 undoToast 모양) + Ctrl+Z 쌓기(글 칸 밖에서만, 공간마다 20개).
 - [ ] ■4 규칙: items·labels 모양 검사(`kind`·`deletedAt`·`v` 정도 - 지나치게 막지 않는다), check-rules V5 검사 더하기.
