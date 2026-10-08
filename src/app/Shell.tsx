@@ -5,6 +5,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import EventAlarms from '../features/events/EventAlarms';
 import { useEventShortcuts } from '../features/events/shortcuts';
+import { useNoteShortcuts } from '../features/notes/shortcuts';
 import ImportBanner from '../features/import/ImportBanner';
 import ColumnResizer from '../ui/ColumnResizer';
 import { RIGHT_COLUMN_CSS_WIDTH, useSidePopups } from '../ui/sideColumn';
@@ -33,6 +34,7 @@ export default function Shell() {
   useAppKeys();
   // ＋ 새로 → 새 일정 (단축키 newEvent)
   useEventShortcuts();
+  useNoteShortcuts();
 
   // 오른쪽 줄(창·쓰는 칸)이 하나라도 서 있으면 그 폭만큼 화면을 줄인다. 폭은 모든 칸이 같다.
   const rightOpen = useSidePopups((s) => s.order.length > 0);

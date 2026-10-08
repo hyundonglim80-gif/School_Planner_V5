@@ -5,6 +5,7 @@
 //   4) + 추가 → 새 기록 칸(맨 위 라벨·커서는 글 칸) → '#라벨' 미리 보기 → Ctrl+S = 새 문서 하나 + 새 라벨, 칸은 그 기록의 수정 칸('#' 줄은 떼고).
 //   5) 고치기 = 그 문서의 바뀐 칸만. 📅 날짜 빼기 → '옮기고 저장' = date null·fromDate(메모로), 안내의 되돌리기 = 원래 날.
 //   6) ☑ 체크리스트 단추·Enter 이어 쓰기, 칸의 ☐ 완료 = 곧바로 그 칸만. + 메모 → 새 메모 칸(날짜 없음).
+//   8) ＋ 새로 → 새 기록(보는 날)·새 메모(날짜 없음).
 //   7) 쓰던 글 보관: 새 기록 칸에 적고 2초 → 새로고침 → 다시 열면 '저장하지 않은 글' → 되살리기, 버리기면 다시 묻지 않는다(IndexedDB sp5-drafts-{uid}).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-notes.mjs
@@ -175,6 +176,17 @@ try {
   await page.locator(sel('journal-add-memo')).click();
   r.check(await waitFor(async () => (await panel.getAttribute('data-note-noun')) === '메모'), '+ 메모 → 새 메모 칸');
   r.check((await page.locator(sel('note-date')).inputValue()) === '', '날짜 없음');
+  await page.locator(sel('note-close')).click();
+
+  r.section('＋ 새로 → 새 기록·새 메모');
+  await page.locator(sel('new-menu')).click();
+  await page.locator(sel('new', 'newNote')).click();
+  r.check(await waitFor(async () => (await panel.getAttribute('data-note-noun')) === '기록' && (await panel.getAttribute('data-note-panel')) === 'new'), '새 기록 → 새 기록 칸');
+  r.check((await page.locator(sel('note-date')).inputValue()) === DAY, '보는 날의 기록');
+  await page.locator(sel('note-close')).click();
+  await page.locator(sel('new-menu')).click();
+  await page.locator(sel('new', 'newMemo')).click();
+  r.check(await waitFor(async () => (await panel.getAttribute('data-note-noun')) === '메모'), '새 메모 → 새 메모 칸 (날짜 없음)');
   await page.locator(sel('note-close')).click();
 
   r.section('쓰던 글 보관 (이 기기)');
