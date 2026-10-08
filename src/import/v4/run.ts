@@ -3,14 +3,15 @@
 //
 // - 한 번에 하나만 돈다. 적기는 500개씩 묶어(Firestore 한도) 진행 칸을 채운다 - 끊기면 다시 누르면 된다(결정적 id·지문이라 겹치지 않는다).
 // - 되돌리기(Ctrl+Z)에 넣지 않는다: 수백 개를 한꺼번에 지운 표시로 되돌리면 더 위험하다. 다시 가져오기가 바뀐 것만 고친다.
-// - 라벨이 먼저(항목이 라벨을 id로 가리킨다 - P3-4가 이 뒤에 더한다), 기록은 맨 끝(다 적은 뒤).
+// - 라벨이 먼저(항목이 라벨을 id로 가리킨다), 그다음 반복 묶음·일정·기록·메모(P3-4 - 같은 실행의 라벨 짝 표로), 기록은 맨 끝(다 적은 뒤).
 import { create } from 'zustand';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { batch, BATCH_LIMIT, writeOp } from '../../data/repo';
 import { personalSpaceId } from '../../data/space';
 import { planLabels } from './labels';
 import { changedTotal, addCounts, emptyCounts, type ImportCounts } from './plan';
-import { hasV4Data, readSpaceDoc, readSpaceDocs, readV4SettingsDocs } from './read';
+import { planItems } from './items';
+import { hasV4Data, readSpaceDoc, readSpaceDocs, readV4ItemDocs, readV4SettingsDocs } from './read';
 import { readRecord, recordData, recordPath, type ImportRecord } from './record';
 import { planSettings } from './settings';
 
@@ -52,9 +53,12 @@ export async function runImport(uid: string): Promise<boolean> {
   const sid = personalSpaceId(uid);
   set({ state: 'running', step: 'V4 자료를 읽는 중…', done: 0, total: 0, counts: undefined, offer: false });
   try {
-    const [v4, labels, pc, mobile, common, recDoc] = await Promise.all([
+    const [v4, v4Items, labels, items, series, pc, mobile, common, recDoc] = await Promise.all([
       readV4SettingsDocs(uid),
+      readV4ItemDocs(uid),
       readSpaceDocs(sid, 'labels'),
+      readSpaceDocs(sid, 'items'),
+      readSpaceDocs(sid, 'series'),
       readSpaceDoc(sid, 'settings', 'pc'),
       readSpaceDoc(sid, 'settings', 'mobile'),
       readSpaceDoc(sid, 'settings', 'common'),
@@ -65,8 +69,10 @@ export async function runImport(uid: string): Promise<boolean> {
     set({ step: 'V5에 있는 것과 맞춰 보는 중…' });
     const lp = planLabels(sid, v4.labels, labels);
     const sp = planSettings(sid, v4.prefs, { pc, mobile, common }, record.settings);
-    const ops = [...lp.ops, ...sp.ops];
-    const counts: Record<string, ImportCounts> = { 'labels.event': lp.counts.event, 'labels.note': lp.counts.note, settings: sp.counts };
+    const ip = planItems(sid, v4Items, v4.labels, lp.labelMap, { items, series });
+    const ops = [...lp.ops, ...sp.ops, ...ip.ops];
+    const counts: Record<string, ImportCounts> = { 'labels.event': lp.counts.event, 'labels.note': lp.counts.note, settings: sp.counts, ...ip.counts };
+    const notes = Object.fromEntries(Object.entries(ip.notes).filter(([, n]) => n > 0));
 
     set({ step: '적는 중…', total: ops.length + 1 });
     const fail = 'V4 자료를 다 가져오지 못했습니다. 네트워크를 확인하고 다시 가져와 주세요(가져온 것은 겹치지 않습니다).';
@@ -75,7 +81,7 @@ export async function runImport(uid: string): Promise<boolean> {
       await batch(chunk, { fail });
       set({ done: i + chunk.length });
     }
-    const next: ImportRecord = { ...record, at: Date.now(), counts, labelMap: lp.labelMap, settings: sp.written };
+    const next: ImportRecord = { ...record, at: Date.now(), counts, labelMap: lp.labelMap, settings: sp.written, notes };
     await batch([writeOp.put(recordPath(sid), recordData(next), recDoc)], { fail });
 
     const changed = changedTotal(totalCounts(counts));

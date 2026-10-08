@@ -85,6 +85,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | `carrying` / `carriedFrom` | boolean? / `'YYYY-MM-DD'`? | 이월로 따라오는 중(처음 따라올 때 한 번 쓴다) / 끝낼 때 그날로 옮겨 적으며 남기는 처음 날 |
 | `seriesId` / `seriesIndex` | string? / number? | 반복 묶음 |
 | `fromDate` | `'YYYY-MM-DD'`? | 기록에서 메모로 뺄 때 그 날('📅 10/6에서'). 메모를 다시 기록으로 옮기면 걷는다(P3-2 `features/notes/noteForm` `placeChanges` - 옮기기 = 같은 문서의 `date`만) |
+| `keepId` | string? | 구글 Keep에서 가져온 메모의 열쇠(V4 tasks 그대로 - P3-4) |
 | `tables` | EntryTable[]? | 붙인 표(V4 `lib/entryTable` 모양 그대로 - `rows[].cells[]`) |
 | `studentIds` | string[]? | 학생 태그 `'{classId}/{sid}'` |
 | `attachments` | Attachment[]? | 드라이브 파일(V4 모양: name·url·type·size·driveId) |
@@ -305,6 +306,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
   지금 V5 문서의 칸 지문 ≠ `src.h`면 V5에서 고친 것 → 덮지 않고(둠) 결과 표에 적는다. 새로 셈한 지문 == `src.h`면 그대로(쓰지 않는다), 그 밖은 바뀐 칸만.
   '지난 가져오기 때'(`updatedAt` > 때)를 믿지 않는다 - 가져오기가 끊겨 기록을 못 남겨도, 기기 시각이 틀려도 같다.
   V4에서 없어진 것은 V5에서 고치지 않았으면 지운 표시(`deletedBy: 'v4-import'` - 휴지통에 'V4에서 지움'), 고쳤으면 둔다.
+  V5가 저절로 적는 표시(`carrying`·`alarmDone`)는 지문에 넣지 않는다 - 그것만으로 'V5에서 고침'이 되지 않게(P3-4).
   V5에서 사용자가 지운 것은 되살리지 않고, 가져오기가 지운 것이 V4에 다시 생기면 새로 적는다. 결과 = 새로·바뀜·그대로·둠·지움(+ 항목은 학년도별 수).
 - **옛 모양 읽기는 여기에만**: V4 `readEventList`·`parseV3EventText`·`normalizeEventLabel`·`readEvalList`·`mergeEntryLabels`·`resolveEventLabelNames`·
   `readLabelTree`를 `import/v4/legacy/`로 테스트째 옮긴다. V5 본체는 이것을 import하지 않는다(테스트로 지킨다).
@@ -323,7 +325,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | `settings/labels`의 `eventLabels` | `labels`(event, props) | 속성은 V3 이름 먼저(`normalizeEventLabel`), `v4_gcal` → `props.gcal`. 문서가 없으면 V4 기본 라벨. 열쇠 = V4 id(없으면 'name:이름') |
 | `memoLabels`·`journalLabels` + `v4_labelTree` | `labels`(note, parentId) | 이름으로 합친다(`mergeEntryLabels` - 열쇠 = 기록 id·`jm_이름`), 상위 이름 → `parentId`. V5에 이름이 같은 라벨이 있으면 그것에 잇는다. 짝 표 `labelMap`: V4 이름 → V5 id (`import/v4/labels.ts`) |
 | `{sp}/events/{date}`(`readEventList`) | `items`(event) | 라벨 셋 자리(`label`·`labelIds`·본문 앞 `[이름]` - 등록된 라벨만) → `labelIds`, 본문은 그대로. `time`('YYYY-MM-DDTHH:mm') → `time`, `alarmTriggered` → `alarmDone`, 공휴일 일정(`isHolidayEvent`) 빼기, 이월 사슬(`forwardChainId`·`originalDate`) → `carriedFrom`, 기한(`due` + `v4_eventDue` 사슬) → `due`, `gcal` → `props.gcal` |
-| 기간 조각(`groupId` + 글 끝 `(i/n)`) | `items` 하나(`date`~`endDate`) | 글 끝 '(i/n)'를 뗀다, 날마다 완료 → `doneDates`, 조각마다 글이 다르면 합치지 않고 따로(결과 표에) |
+| 기간 조각(`groupId` + 글 끝 `(i/n)`) | `items` 하나(`date`~`endDate`) | 글 끝 '(i/n)'를 뗀다, 날마다 완료 → `doneDates`, 조각이 평일에만 → `workdays`, 범위 안의 빈 날 → `skipDates`, 조각마다 글이 다르면 합치지 않고 따로(P3-4) |
 | 반복 묶음(`groupId`, '(i/n)' 없음) | `series`(imported) + `items` | 규칙은 모른다 |
 | `{sp}/journals/{date}.entries` | `items`(note, date) | 기록 라벨 id → V5 id, `tables`, `attachments`, `completed`·`favorite`, 글 `[표]` → 빈 글, **`notice_`·`attendance_` 자동 기록은 가져오지 않는다**(5-4) |
 | `{sp}/tasks/{id}` | `items`(note, `null`) | 라벨 이름 → id, `fromDate`, `keepId`, `order` |

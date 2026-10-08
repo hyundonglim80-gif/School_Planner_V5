@@ -3,6 +3,7 @@
 import { collection, doc, getDocFromServer, getDocsFromServer, limit, query } from 'firebase/firestore';
 import { db } from '../../data/firebase';
 import type { SpaceCollection, Stored } from '../../data/types';
+import type { V4ItemDocs } from './items';
 import type { V4LabelDocs } from './labels';
 import type { V4PrefDocs } from './settings';
 
@@ -18,6 +19,16 @@ export async function readV4SettingsDocs(uid: string): Promise<{ labels: V4Label
   const ids = ['labels', 'v4_labelTree', 'v4_gcal', 'v4_preferences_pc', 'v4_preferences_mobile', 'v4_preferences'] as const;
   const [labels, labelTree, gcal, pc, mobile, legacy] = await Promise.all(ids.map((id) => readV4Doc(uid, id)));
   return { labels: { labels, labelTree, gcal }, prefs: { pc, mobile, legacy } };
+}
+
+/** 일정·기록·메모 가져오기에 쓰는 V4 문서들 (개인 공간 - 그룹은 P8-4) */
+export async function readV4ItemDocs(uid: string): Promise<V4ItemDocs> {
+  const all = async (coll: string) => {
+    const snap = await getDocsFromServer(collection(db, 'users', uid, coll));
+    return Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+  };
+  const [events, journals, tasks, dues] = await Promise.all([all('events'), all('journals'), all('tasks'), readV4Doc(uid, 'v4_eventDue')]);
+  return { events, journals, tasks, dues };
 }
 
 /** V4로 쓴 자료가 있나 (처음 로그인 띠) - 라벨·설정 문서, 일정·기록·메모 중 하나라도 */

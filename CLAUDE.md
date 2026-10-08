@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P3-3 끝**(클라우드 - 이월 = 계산(↪ m/d부터)·📥 지난 일정 줄·기간 일정 한 문서·🔁 반복·여러 개 고르기). '이어서' = **P3-4**(가져오기: 일정·기록·메모·링크 - V4 저장소를 옆에 받는다). 👤 V5 주소에서 이월 라벨 일정을 하루 넘겨 보기·기간(끝 날)과 반복을 만들고 '이 날부터' 지우기·Ctrl 누르며 여러 개 고르기, 그리고 (P2-4 부탁) 띠의 '가져오기'로 라벨·설정이 V4와 같은지.
+- **2026-10-08 P3-4 끝 = P3 단계 끝**(클라우드 - V4 일정·기간·반복·이월 사슬·기록·메모·링크 가져오기). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P4-1. 👤 V5 주소 환경설정 '가져오기'로 실제 계정을 가져와 하루·메모 화면을 V4와 견주기, 이월·기간·반복·여러 개 고르기 써 보기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -242,5 +242,6 @@
   `plan.ts`(다시 가져오기 규칙 `planDocs` - 지문 `src.h`로 새로·바뀜·그대로·둠·지움, V4에서 없어진 것은 `deletedBy: 'v4-import'`, 결과 수 `ImportCounts`) ·
   `record.ts`(기록 `settings/import` - 때·결과·라벨 짝 표·설정 칸마다 적은 값·띠 닫음, 결과 표 줄 `IMPORT_KINDS`) · `legacy/`(V4 옛 모양 읽기 - 본체는 import 금지) ·
   `labels.ts`(`planLabels` - V4 기본 라벨·이름 같은 V5 라벨에 잇기·짝 표) · `settings.ts`(`planSettings` - 칸마다, `COMMON_FROM_V4`) · `read.ts`(서버 읽기) ·
-  `run.ts`(`runImport`·`checkImportOffer`·`dismissImportOffer`·진행 store `useImportRun`). 화면: 환경설정 '가져오기' 탭 `features/settings/ImportTab.tsx`(P8-3에서 백업 창으로) ·
+  `items.ts`(P3-4 `planItems` - 일정·기간 한 항목·반복 series·이월 사슬·기록·메모·링크) · `legacy/entries.ts`(기록·공휴일·기한·기간 조각 읽기) ·
+  `run.ts`(`runImport`·`checkImportOffer`·`dismissImportOffer`·진행 store `useImportRun`), 결과 표 아래 안내 `record.IMPORT_NOTES`. 점검 `tools/inspect-import-items.mjs`(P3-4 - seed 수·두 번째 0·V5 고친 것 둠, 끝에 되돌림). 화면: 환경설정 '가져오기' 탭 `features/settings/ImportTab.tsx`(P8-3에서 백업 창으로) ·
   처음 로그인 띠 `features/import/ImportBanner.tsx`(Shell 본문 맨 위). 문서는 `docs/`, 소개는 `README.md`(에뮬레이터 순서).

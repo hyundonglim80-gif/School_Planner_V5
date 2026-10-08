@@ -150,3 +150,14 @@ describe('결과 수', () => {
     expect(addCounts(emptyCounts(), emptyCounts()).years).toBeUndefined();
   });
 });
+
+describe('지문 - V5가 저절로 적는 표시', () => {
+  it('carrying·alarmDone은 지문에 넣지 않는다 (이월 표시만으로 V5에서 고친 것이 되지 않는다)', async () => {
+    const { fingerprint, untouched, contentOf } = await import('./plan');
+    const base = { kind: 'event', date: '2026-10-01', text: '공문', labelIds: [], order: 'a0' };
+    const h = fingerprint(base);
+    expect(fingerprint({ ...base, carrying: true, alarmDone: true })).toBe(h);
+    expect(untouched({ ...base, carrying: true, src: { from: 'v4', path: 'events/2026-10-01', id: 'a', h } } as never)).toBe(true);
+    expect(fingerprint(contentOf({ ...base, text: '고침' }))).not.toBe(h);
+  });
+});
