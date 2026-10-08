@@ -533,7 +533,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P3-1 끝.
 **먼저 읽을 것**: V4 설명서 `journal`·`memo-write`·`move-entry`, V4 `components/EntryDrawer.tsx`·`EntryCard.tsx`·`AutoTextarea.tsx`·`StudentTagPicker.tsx`·`StudentMentionList.tsx`·
 `EntryTableView.tsx`(보기만 - 붙여넣기는 P4-2), `features/day/DayJournal.tsx`, `lib/hashLabels.ts`·`checkLines.ts`·`mention.ts`·`studentTag.ts`·`entryCollapse.ts`·`journalEntries.ts`.
-- [ ] ■1 기록 목록(DayJournal: PC 2~4열·휴대폰 2열, 머리줄 `▼ 기록 N [+ 추가] [+ 메모] … ⚙️`) + EntryCard 옮기기(머리줄 한 줄·칩 위·접기·☑ n/m·체크 줄 누르기·체크한 줄 아래·완료·★·'📅 m/d에서').
+- [x] ■1 기록 목록(DayJournal: PC 2~4열·휴대폰 2열, 머리줄 `▼ 기록 N [+ 추가] [+ 메모] … ⚙️`) + EntryCard 옮기기(머리줄 한 줄·칩 위·접기·☑ n/m·체크 줄 누르기·체크한 줄 아래·완료·★·'📅 m/d에서').
+  → `features/day/DayJournal.tsx`(`[data-day-journal|journal-count|journal-add|journal-add-memo|journal-labels-settings|journal-collapse|journal-empty|journal-waiting]`, 즐겨찾기 먼저·가로 우선 열) ·
+  `features/notes/`(`EntryCard.tsx` 메모·기록 같은 카드 `[data-entry-card|entry-kind|entry-done|entry-favorite|entry-collapsed|entry-collapse|entry-up|entry-down|entry-complete|entry-favorite-toggle|entry-chip|entry-date|entry-note|entry-checks|entry-links|entry-images|entry-files|entry-tables|entry-edit|entry-delete|entry-preview|entry-text|check-line|check-done]` ·
+  `TablePreview.tsx`(표 작게 보기만 - 서식·고치기는 P4-2) · `noteOps.ts` 순수(즐겨찾기 먼저·▲▼ = 즐겨찾기끼리/나머지끼리 order 하나·체크 줄) · `actions.ts` `setNoteDone`·`setNoteFavorite`·`moveNoteInList`·`toggleNoteCheckLine`(안내 없이 Ctrl+Z 더미)·`deleteNote`(안내 + 되돌리기) ·
+  `open.ts` 쓰는 칸 'note' 열기(■2에서 등록 - 그 전에는 🚧)) · `domain/checkLines`·`entryCollapse`·`hashLabels`(V4 테스트째) · `ui/FormattedText.tsx`(주소 → 링크) · 크롬 `inspect-notes.mjs` 23항목.
+  미룬 것: 그림 크게 보기·사이트 미리보기 → P4-2(지금은 그림을 새 탭으로), 🔗 링크 보기 → P4-3(🚧), 기록 칸 라벨로 보기 → P4-1(메모 화면과 같은 부품).
 - [ ] ■2 쓰는 칸(EntryDrawer 옮기기): 📅 날짜 = 자리(바꾸면 `date`만 - 휴지통 사본 없음), 첫·마지막 줄 #라벨, ☑ 체크리스트(Enter 이어 쓰기·단축키), '+ 새 라벨',
   @이름 학생 태그(학급은 P7 전까지 이름 칩만 - `studentIds` 자리만), 완료·★(저장된 항목은 그 칸만 곧바로).
 - [ ] ■3 쓰던 글 보관: IndexedDB `drafts`(칸마다, 2초 뒤), 칸을 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기', 저장하면 지움.
