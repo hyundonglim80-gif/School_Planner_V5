@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P5-3 끌어 옮기기·D-Day·공휴일** (클라우드면 1-7을 먼저).
+**P5-4 검색(치는 대로)·휴지통** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -151,8 +151,8 @@
 | **P5 달력·찾기·정리** | | | | |
 | P5-1 | 주간·작년 이맘때 | 중간 | 중간 | 끝 (2026-10-08) |
 | P5-2 | 월간·년간·오늘로 | 큼 | 중간 | 끝 (2026-10-08) |
-| P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | **다음** |
-| P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | |
+| P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | 끝 (2026-10-08) |
+| P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | **다음** |
 | **P6 수업** | | | | |
 | P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | |
 | P6-2 | 진도 | 큼 | 높음 | |
@@ -207,6 +207,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-3 | P4-3 세션 끝 정리 (P4 단계 끝) | 단위 1132 · inspect-links 32 · P4 점검 모두(memo·attach·links + events·notes) 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 디스크가 차 에뮬레이터가 죽음 - 디버그 로그 30GB를 비우고 /dev/null로 이어 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P5-3 | P5-3 세션 끝 정리 | 단위 1227 · inspect-move-dday 41 · groups·week·month-year·multi·shell·import 둘·forward·events·settings 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
@@ -782,7 +783,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   `settings/common.ddays·ddayPick`(지운 것은 deletedAt) · 머리줄 `[data-header-dday-text]` · 둘째 줄 보는 날 기준 `[data-date-dday]`. 가져오기: V3·V4 `settings/preferences.dDayList·selectedDDayId`.
   공휴일: 순수 `domain/holidays.ts`(개인 → 공유 → 고정) · `data/holidays.ts`(`holidays/{연도}` 해마다 한 번·이 기기 `sp5-holidays`, `useHolidayName`, `startHolidays` = domain/period 기본 공휴일) ·
   개인 공휴일 `settings/common.myHolidays`(V3 `settings/holidays.map` 가져오기) · `ui/HolidayName.tsx`(`[data-holiday-name]`) · 주간·월간·년간 색·이름, 학사력 목록·D-Day 테, 일정 칸 '🎌 빠지는 공휴일' `[data-event-period-holidays]`.
-- [ ] ■3 크롬 점검.
+- [x] ■3 크롬 점검.
+  → `tools/inspect-move-dday.mjs` 41항목(공휴일은 관리자로 `holidays/2026`을 심고 되돌린다 - `probe.emulatorAdmin`) · groups·week·month-year·multi·shell·import·forward·events·settings 다시 통과
+  (month-year는 점검 기간이 10.9 한글날에 걸려 공휴일 없는 주로 옮겼다, import-labels는 가져온 항목도 걷는다).
 
 ### P5-4. 검색(치는 대로)·휴지통
 **시작 조건**: P5-3 끝.
