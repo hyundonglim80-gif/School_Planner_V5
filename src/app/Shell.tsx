@@ -4,14 +4,22 @@
 // 키를 단축키 한 곳(shortcuts.ts)에 두고, 여기는 자리만 잡는다.
 import { Suspense, useEffect, useRef, useState } from 'react';
 import { useSession } from '../data/session';
+import ColumnResizer from '../ui/ColumnResizer';
 import MiniCalendarPicker from '../ui/MiniCalendarPicker';
+import { RIGHT_COLUMN_CSS_WIDTH, useSidePopups } from '../ui/sideColumn';
+import SideTabs from '../ui/SideTabs';
 import { MainWidthContext } from '../ui/useMainWidth';
 import { startRouting } from './history';
+import { useAppKeys } from './keys';
+import { useLayoutPrefs } from './layoutPrefs';
 import MobileTabBar from './MobileTabBar';
 import { dateLabel, goToday, setDate, setScope, setSemesterFilter, setToggle, stepDate, useNav, type SemesterFilter } from './nav';
 import { isDatelessScope } from './route';
 import { SCREEN_COMPONENTS, SCREENS } from './screens';
 import { useGlobalGestures } from './useGlobalGestures';
+import WindowHost from './WindowHost';
+import './windowList';
+import { closeAllWindows } from './windows';
 
 export default function Shell() {
   const user = useSession((s) => s.user);
@@ -20,6 +28,17 @@ export default function Shell() {
   // 주소와 맞물린다 (뒤로가기 = 앞 화면, 새로고침해도 그 자리)
   useEffect(() => startRouting(), []);
   useGlobalGestures();
+  useAppKeys();
+
+  // 오른쪽 줄(창·쓰는 칸)이 하나라도 서 있으면 그 폭만큼 화면을 줄인다. 폭은 모든 칸이 같다.
+  const rightOpen = useSidePopups((s) => s.order.length > 0);
+  // 경계선을 끌어 바꾼 폭. 칸들은 body 아래에 그려지므로(createPortal) 문서 맨 위에 건다.
+  const rightPanelWidth = useLayoutPrefs((s) => s.rightPanelWidth);
+  useEffect(() => {
+    const root = document.documentElement.style;
+    if (rightPanelWidth) root.setProperty('--right-column-w', `${rightPanelWidth}px`);
+    else root.removeProperty('--right-column-w');
+  }, [rightPanelWidth]);
 
   // 머리줄 높이를 --app-header-h로 알려 둔다. 머리줄에 붙어 따라 내려가는 칸(메모 화면의 라벨 거르개 등)이
   // 그만큼 아래에 멈춘다. 머리줄은 줄바꿈과 D-Day 표시에 따라 높이가 달라지므로 재서 쓴다.
@@ -58,7 +77,10 @@ export default function Shell() {
   const Screen = SCREEN_COMPONENTS[scope];
 
   return (
-    <div className="min-h-screen bg-bg-body text-slate-900 transition-[padding] duration-200">
+    <div
+      className="min-h-screen bg-bg-body text-slate-900 transition-[padding] duration-200"
+      style={{ paddingRight: rightOpen ? RIGHT_COLUMN_CSS_WIDTH : undefined }}
+    >
       <header ref={headerRef} className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm px-4 py-3 border-b border-border shadow-xs flex flex-col gap-2.5">
         <div className="flex items-center gap-2 max-w-7xl mx-auto w-full">
           {/* 자리가 모자라면 겹치는 대신 화면 탭 묶음이 아랫줄로 내려간다 (V4) */}
@@ -124,6 +146,27 @@ export default function Shell() {
       </main>
 
       <MobileTabBar />
+
+      {/* 창·쓰는 칸 (창 목록). 화면과 따로 살아서 다른 화면으로 옮겨도 남는다. */}
+      <WindowHost />
+      {/* 오른쪽 칸이 둘 이상이면 위에 탭 (V4 2026-10-07) */}
+      <SideTabs />
+      {rightOpen && <ColumnResizer side="right" width={RIGHT_COLUMN_CSS_WIDTH} />}
+      {/* 오른쪽 줄을 닫는 작은 단추 (V4 2026-09-30) - ESC와 같다(저장 안 한 글이 있으면 먼저 묻는다) */}
+      {rightOpen && (
+        <button
+          type="button"
+          data-close-column
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => closeAllWindows()}
+          title="오른쪽 칸 닫기 (ESC와 같음)"
+          aria-label="오른쪽 칸 닫기"
+          className="fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center rounded-l-xl bg-white/90 border border-r-0 border-slate-200 shadow-md text-xs text-slate-500 hover:bg-primary/10 hover:w-7 transition-all cursor-pointer"
+          style={{ right: RIGHT_COLUMN_CSS_WIDTH }}
+        >
+          ▶
+        </button>
+      )}
     </div>
   );
 }

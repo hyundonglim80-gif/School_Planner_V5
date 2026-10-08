@@ -3,7 +3,8 @@
 //
 // ── 층 ──
 // 창(팝업·오른쪽 칸)이 열린 순서대로 z-index를 올려, 창 안에서 연 창이 늘 위에 쌓이게 한다.
-// 닫기 단추는 그 창 하나만, ESC는 closeAllLayers(). 휴대폰 뒤로가기는 맨 위 하나만 닫는다.
+// 닫기 단추는 그 창 하나만, 배경 누르기·ESC는 모두(closeAllLayers - ESC는 저장 안 한 글을 먼저 묻는 껍데기 키 처리가 부른다).
+// 휴대폰 뒤로가기는 맨 위 하나만 닫는다.
 // 화면 옆에 붙은 오른쪽 칸(useBackLayer)은 팝업이 아니지만 뒤로가기는 받는다.
 //
 // ── 뒤로가기 ──
@@ -230,22 +231,14 @@ export function isAnyLayerOpen(): boolean {
   return modalLayers().length > 0;
 }
 
-function handleEscape(e: KeyboardEvent) {
-  if (e.key === 'Escape') closeAllLayers();
-}
-
-// 같은 함수를 등록하므로 여러 번 불러도 하나만 남는다.
-function syncEscapeListener() {
-  if (modalLayers().length > 0) document.addEventListener('keydown', handleEscape);
-  else document.removeEventListener('keydown', handleEscape);
-}
-
-/** 팝업 층을 모두 닫는다 (ESC·배경 누르기). 옆에 붙은 칸(뒤로가기만 받는 층)은 그대로. */
+/**
+ * 팝업 층을 모두 닫는다 (배경 누르기, 그리고 ESC - 껍데기의 키 처리가 windows.closeAllWindows로 부른다).
+ * 옆에 붙은 칸(뒤로가기만 받는 층)은 그대로.
+ */
 export function closeAllLayers() {
   const snapshot = modalLayers().reverse();
   stack = stack.filter((l) => l.backOnly);
   openCount = 0;
-  syncEscapeListener();
   // 한꺼번에 닫으므로 아래 각 층의 정리에서 또 물러나지 않도록 미리 표시한다.
   snapshot.forEach((l) => historyHandled.add(l.id));
   snapshot.forEach((l) => {
@@ -294,12 +287,10 @@ function useLayer(isOpen: boolean, onClose: () => void, backOnly: boolean, raise
     stack.push({ id, close: () => closeRef.current(), backOnly });
     bindPopState();
     postSign();
-    syncEscapeListener();
 
     return () => {
       stack = stack.filter((l) => l.id !== id);
       if (modalLayers().length === 0) openCount = 0;
-      syncEscapeListener();
       // 뒤로가기로 닫혔거나 한꺼번에 정리된 것이면 기록은 이미 물러나 있다.
       if (historyHandled.has(id)) {
         historyHandled.delete(id);

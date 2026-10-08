@@ -233,7 +233,12 @@ registerWindow({
 })
 openWindow('seating', { classId })        // Layout이 열림 상태를 들지 않는다
 ```
-store의 `windows: [{ key, id, params, openedAt }]` 차례가 오른쪽 칸 탭 차례다. 같은 항목을 다시 열면 그 탭을 보인다.
+store(`src/app/windows.ts`)의 `windows: [{ key, id, params, openedAt, raisedAt }]`는 **무엇이 열려 있나**다. 같은 항목을 다시 열면
+새로 만들지 않고 `raisedAt`만 바꿔 그 탭을 보인다(창 `side`는 id마다 하나, 쓰는 칸 `panel`은 params마다 - `sameAs`로 바꾼다).
+창 컴포넌트는 기능 폴더의 `*Window.tsx`(ModalShell)·`*Panel.tsx`(SidePanelFrame)이고 `{ params, close, raise }`를 받아 스스로 틀을 그린다.
+오른쪽 줄의 탭 차례·숨은 탭·폭은 그 틀이 줄에 설 때 정한다(`src/ui/sideColumn.ts` - V4 PopupFrame 그대로, 다시 연 탭은 끝으로 간다).
+창 안에서 띄운 작은 창(등록하지 않은 PopupFrame)도 같은 줄에 선다. 닫기 단추에는 `data-close`(탭 ×가 누른다).
+저장 안 한 글이 있는 창은 `registerUnsavedCheck`로 알린다 - ESC·▶(줄 전체 닫기)가 먼저 묻는다.
 
 ### 7-3. 주소
 `#/day/2026-10-08` · `#/week/2026-10-05` · `#/month/2026-10` · `#/year/2026` · `#/memo` · `#/class/2026-5-2`.
@@ -241,7 +246,8 @@ store의 `windows: [{ key, id, params, openedAt }]` 차례가 오른쪽 칸 탭 
 
 ### 7-4. 오른쪽 칸·단축키
 V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ESC = 줄 전체(저장 안 한 글은 먼저 묻기), Ctrl+S = 커서가 든 칸(없으면 보이는 탭),
-휴대폰 뒤로가기 = 맨 위 하나, 환경설정 '창 위치'로 가운데 창. 단축키는 V4 `lib/shortcuts.SHORTCUT_ACTIONS`를 id째 옮기고 새 id를 더한다(MENU.md 3-8).
+휴대폰 뒤로가기 = 맨 위 하나, 환경설정 '창 위치'로 가운데 창(쓰는 칸은 그래도 오른쪽).
+자리: 브라우저 기록·창 층 `src/app/history.ts`, 키 `src/app/keys.ts`(ESC·Ctrl+S 막기·단축키), Ctrl+S 받기 `src/ui/useSaveKey.ts`, 창 자리 설정 `src/app/layoutPrefs.ts`. 단축키는 V4 `lib/shortcuts.SHORTCUT_ACTIONS`를 id째 옮기고 새 id를 더한다(MENU.md 3-8).
 
 ## 8. V4 → V5 가져오기 (`src/import/v4`)
 
