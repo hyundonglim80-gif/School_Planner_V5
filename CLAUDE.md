@@ -25,8 +25,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P1-4 끝**(설정 동기화·환경설정·계정 칸·https://schoolplanner-v5.web.app 자동 배포·PWA 틀, 👤 휴대폰 로그인 확인). '이어서' = **P2-1**. 클라우드(웹)에서 하면 `docs/PLAN.md` 1-7부터.
-- 👤 클라우드 세션: Claude GitHub 앱에 이 저장소 권한. 클라우드는 `claude/…` 브랜치에 푸시 → 세션 끝에 PR을 합쳐 주면 배포된다. P2-1 ■4 운영 규칙 배포는 PC에서(묻고).
+- **2026-10-08 P2-1 끝**(클라우드 - 자료 모양·저장 도우미·되돌리기·Ctrl+Z·items/labels 규칙). '이어서' = **P2-2**. 👤 세션 브랜치 PR을 합쳐 주세요(합치면 다음 대화가 이어 받는다).
+- 👤 PC에서(묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙'). 클라우드는 `claude/…` 브랜치에 푸시 → PR.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -64,6 +64,7 @@
 - **C: 디스크가 차면 에뮬레이터가 죽는다**: `firebase-debug.log`·`firestore-debug.log`(git 무시)가 커진다. 긴 점검 전에 `df -h /c`, 차면 두 로그를 비우고 `npm run emu` → seed.
 - 에뮬레이터에서 문서 하나 저장이 6~7초씩 걸리면 앱 버그가 아니라 남은 잠금이다(점검 브라우저를 저장 도중에 끈 탓) - 에뮬레이터를 다시 켜고 seed.
 - 클라우드 세션(claude.ai/code): `docs/PLAN.md` 1-7(세션 브랜치 푸시 → PR, 준비 순서, Chromium, V4 받기). 배포·운영 규칙은 PC에서.
+  컨테이너 에뮬레이터는 켜 둔 채 `firestore.rules`를 고치면 죽고 Firestore java만 포트를 쥔다 → 그 java를 끄고 `npm run emu`를 다시(P2-1).
 
 ## 3. V5 규칙 (자세히는 `docs/DESIGN.md`)
 
@@ -147,17 +148,20 @@
 
 기능을 고치기 전에 이 지도로 자리를 찾는다. 세션 끝 정리에서 새 파일·자리를 한 줄씩 더하고, 단계 끝에 다듬는다.
 
-- **도구**: `package.json`(dev 5175·dev:emu·build:emu·preview 4175·test·lint·emu·seed·check:rules, `allowScripts`) · `vite.config.ts`(base `/`, `__BUILD_ID__` 한국 시각, `__USE_EMULATOR__`) ·
+- **도구**: `package.json`(dev 5175·dev:emu·build:emu·preview 4175·test·test:data·lint·emu·seed·check:rules, `allowScripts`) · `vite.config.ts`(base `/`, `__BUILD_ID__` 한국 시각, `__USE_EMULATOR__`) ·
   `vitest.config.ts`(jsdom·vmThreads, `__BUILD_ID__`='test') · `src/test/setup.ts`(jest-dom·fake-indexeddb·cleanup) · `.github/workflows/ci.yml`(lint → test → build - main·`wip/**`·`claude/**`·PR) ·
   `firebase-hosting-merge.yml`(main CI가 통과하면 그 커밋을 schoolplanner-v5에 배포, 비밀값 `FIREBASE_SERVICE_ACCOUNT_SCHOOLPLANNERV3`) · `firebase-hosting-pull-request.yml`(PR 미리 보기 - 로그인 안 됨).
   npm 11은 설치 스크립트를 허락 없이 돌리지 않는다 - 'not yet covered by allowScripts'가 나오면 `npm install-scripts approve|deny <패키지>`(`docs/PLAN.md` 5장).
 - **들어가는 곳**: `index.html`(manifest 링크) → `src/main.tsx`(watchSession·리디렉션 로그인 마무리·에뮬레이터 자동 로그인·앱 설치 이벤트) → `src/app/App.tsx`(불러오는 중 `[data-session=loading]` /
   로그인 화면 / 로그인하면 'SP5' `[data-session=signed-in]`, 빌드 번호 `[data-build-id]`). 글자·간격 단계(`@theme`)는 `src/index.css`(V4 앞부분).
 - **서버·규칙**: `firebase.json`(에뮬레이터 auth 9099·firestore 8080·ui 4000 · hosting 사이트 `schoolplanner-v5` = https://schoolplanner-v5.web.app, `dist`, 첫 주소·sw·manifest no-cache) · `.firebaserc` · `firestore.rules`(**정본** - V4 규칙 전부 + V5 블록, V4 저장소 것은 복사본) ·
-  `tools/check-rules.mjs`(V4 35 + V5 45) · `tools/live-rules.cjs`(운영 규칙 = 파일인지, 읽기만) · `tools/seed.mjs`(V4 seed 계정의 V5 개인 공간 - 계정이 없으면 만든다) · `tools/inspect-login.mjs`(크롬: 로그인·개인 공간·Firestore IndexedDB 없음).
+  `tools/check-rules.mjs`(V4 35 + V5 59 - items·labels 모양 포함) · `tools/live-rules.cjs`(운영 규칙 = 파일인지, 읽기만) · `tools/seed.mjs`(V4 seed 계정의 V5 개인 공간 - 계정이 없으면 만든다) · `tools/inspect-login.mjs`(크롬: 로그인·개인 공간·Firestore IndexedDB 없음).
 - **자료 층** `src/data/`: `firebase.ts`(앱 이름 SchoolPlannerV5, memoryLocalCache, googleProvider 범위) · `emulator.ts`(`?as=2|3`) ·
   `session.ts`(로그인 store `useSession` - 구독 하나) · `space.ts`(`personalSpaceId`·`ensurePersonalSpace`) ·
-  `settingsSync.ts`(설정 문서 하나 맞추기 `startSettingsSync` - 구독 하나·1초 뒤·받기 전엔 안 올림, `settingsPort` = `spaces/u_{uid}/settings/{common|pc|mobile}`).
+  `settingsSync.ts`(설정 문서 하나 맞추기 `startSettingsSync` - 구독 하나·1초 뒤·받기 전엔 안 올림, `settingsPort` = `spaces/u_{uid}/settings/{common|pc|mobile}`, 적기는 `writeOps`) ·
+  `types.ts`(자료 모양 = DESIGN 4장, 컬렉션 표 `SpaceCollections`·`Editable<C>`·`DocPath`) · `id.ts`(`newId` 20자) ·
+  `repo/`(저장 도우미 - `ops.ts` 무엇을 적나·되돌리는 쓰기(순수), `index.ts` `create`·`patch`·`remove`·`restore`·`put`·`purge`·`batch`·`newPath`·`writeOps`, 모두 `Undo`를 돌려준다) ·
+  `undo.ts`(`recordUndo` = 안내의 되돌리기 단추 + Ctrl+Z 더미(공간마다 20), `undoLast` - `main.tsx`가 단축키 'undo'에 잇는다).
 - **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
   로그인한 화면은 `[data-session=signed-in][data-user=<메일>]`. `logout`은 기다리던 설정을 먼저 올린다.
 - **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 지금 보기·단축키·앱, `{ tab }`로 열기) · `ViewTab`(누르는 즉시) ·
@@ -176,11 +180,12 @@
 - **공통 부품** `src/ui/`: `ModalShell.tsx`(창 껍데기, ✕ `[data-close]`) · `PopupFrame.tsx`(오른쪽 칸/배너/가운데 `[data-popup-frame]`) · `SidePanelFrame.tsx`(쓰는 칸 `[data-panel-frame]`) ·
   `sideColumn.ts`(오른쪽 줄·탭 차례 `useSideSlot`·`useDocked`) · `SideTabs.tsx`(`[data-side-tab]`·`[data-side-tab-close]`) · `useSaveKey.ts`(Ctrl+S 받기) · `ColumnResizer.tsx` ·
   `MiniCalendarPicker.tsx`(`[data-date-picker]`·`[data-picker-day]`) · 훅 `useMinWidth`·`useIsMobile`·`useMainWidth`·`useVisualViewport`·`useBodyScrollLock`·`useBackdropClose`.
-- **순수 함수** `src/domain/`: `dateUtils.ts` · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
+- **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
   `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
 - **설치(PWA)** `public/`: `manifest.json`(SP5) · `sw.js`(설치·활성만 - 담아 두기·공유받기·푸시는 P8) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
-  `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창).
+  `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
+  `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z). 자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 단위만).
   규칙 테스트: `app/windowConventions.test.ts`(창 틀·'취소' 금지·그림 단추 설명·⋮ 표) · `app/keys.test.tsx`(키 글자를 박지 않는다).
 - **빈 자리**: `src/import/v4`(`.gitkeep` - 첫 파일이 들어오면 지운다). 문서는 `docs/`, 소개는 `README.md`(에뮬레이터 순서).
