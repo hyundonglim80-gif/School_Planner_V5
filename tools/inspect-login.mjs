@@ -54,8 +54,8 @@ try {
     const signedIn = page.locator('[data-session="signed-in"]');
     try {
       await signedIn.waitFor({ timeout: 15000 });
-      const text = await signedIn.textContent();
-      check(text.includes(email), `로그인 화면에 ${email}`, `다른 계정으로 들어갔다: ${text}`);
+      const who = await signedIn.getAttribute('data-user');
+      check(who === email, `로그인 화면에 ${email}`, `다른 계정으로 들어갔다: ${who}`);
     } catch {
       bad('로그인 상태가 되지 않았다');
     }

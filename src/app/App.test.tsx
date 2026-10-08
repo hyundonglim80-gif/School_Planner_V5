@@ -21,14 +21,16 @@ describe('App 껍데기', () => {
     expect(container.querySelector('[data-login-google]')).toBeInTheDocument();
   });
 
-  it('로그인하면 SP5와 빌드 번호', () => {
+  it('로그인하면 껍데기(SP5·화면 탭)와 빌드 번호', async () => {
     useSession.setState({
       loading: false,
       user: { uid: 'u1', email: 't@example.com', displayName: '', photoURL: '' },
     });
     const { container } = render(<App />);
     expect(screen.getByText('SP5')).toBeInTheDocument();
-    expect(container.querySelector('[data-session="signed-in"]')).toHaveTextContent('t@example.com');
+    expect(container.querySelector('[data-session="signed-in"]')).toHaveAttribute('data-user', 't@example.com');
+    expect(container.querySelectorAll('[data-scope-tab]')).toHaveLength(6);
+    expect(await screen.findByText('P3-1에서 채웁니다.')).toBeInTheDocument();
     expect(container.querySelector('[data-build-id]')).toHaveTextContent('빌드 test');
   });
 });

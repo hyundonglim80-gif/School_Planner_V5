@@ -1,6 +1,7 @@
-// 앱 껍데기. P1-3에서 화면 탭·주소·창 목록·오른쪽 칸을 여기에 세운다(DESIGN 7장).
+// 앱 맨 위: 로그인 상태에 따라 불러오는 중 / 로그인 화면 / 껍데기(Shell - 머리줄·화면·창).
 import { useSession } from '../data/session';
 import LoginScreen from '../features/auth/LoginScreen';
+import Shell from './Shell';
 
 export default function App() {
   const loading = useSession((s) => s.loading);
@@ -15,9 +16,8 @@ export default function App() {
       ) : !user ? (
         <LoginScreen />
       ) : (
-        <div data-session="signed-in" className="min-h-screen bg-bg-body p-6 text-slate-800">
-          <h1 className="text-2xl font-black text-primary">SP5</h1>
-          <p className="mt-2 text-sm text-slate-500">{user.email}</p>
+        <div data-session="signed-in" data-user={user.email}>
+          <Shell />
         </div>
       )}
       {/* 어느 빌드가 돌고 있는지 화면에서 본다(V4 규칙). */}

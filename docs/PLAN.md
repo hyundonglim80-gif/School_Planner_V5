@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P1-3 앱 껍데기: 화면 탭·주소·창 목록·오른쪽 칸·단축키·머리줄** (다음 대화에서).
+**P1-3 앱 껍데기: 화면 탭·주소·창 목록·오른쪽 칸·단축키·머리줄** - ■1 끝(10-08), 다음 **■2 창 목록 + 오른쪽 칸**.
 
 ---
 
@@ -202,6 +202,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   안내(toast)는 로그인 오류에 필요해 P1-3 ■4보다 먼저 `src/app/toast.ts`로 옮겼다.
 - **P1-2 V5 seed**: 계정은 만들지 않고 V4 seed 계정으로 들어가 개인 공간만 심는다. 설정 기본값은 문서로 심지 않는다(앱이 셈한다 - 원칙 '계산할 수 있는 것은
   저장하지 않는다'). 점검 계정이 기본값과 달라야 하는 설정(teacher3 교과 전담 등)은 그 설정을 만드는 세션(P1-4·P6-1)에서 seed에 더한다.
+- **P1-3 주소와 뒤로가기**(10-08): 화면(탭)을 바꾸면 기록 한 칸, 같은 화면에서 날짜만 바꾸면(◀▶·📅) 주소만 고친다 - ◀▶를 여러 번 누른 뒤
+  뒤로가기가 하루씩 되돌아가면 '앞 화면'이 아니다. 기록과 창 층(뒤로가기로 창 닫기)은 `src/app/history.ts` 한 곳이 다룬다(기록마다 차례 번호 `sp5Idx`,
+  창이 열린 동안 표지판 하나 - V4 그대로). 창을 연 채 화면을 바꾸면 [앞 화면][새 화면][표지판] → 뒤로가기는 창부터, 그다음 앞 화면.
+- **P1-3 날짜**: store의 보는 날은 'YYYY-MM-DD' 글자(이 기기 시각). V4는 toISOString(UTC)이라 한국 새벽에 하루 앞날이 됐다.
+  주간 둘째 줄 '○월 ○주'는 그 주(월~일) 목요일로 센다 - V4는 일요일이면 다음 주 목요일로 셌다(그 주와 어긋남).
+- **P1-3 손짓**: V4처럼 환경설정 '스크롤 페이지 이동'(기본 끔)을 켰을 때만. V4가 휴대폰 첫 화면에 띄우던 손짓 안내는 기본이 꺼져 있어 맞지 않아
+  P1-4(그 설정을 옮길 때)에서 안내를 설정과 함께 정한다.
 - **P1-1 lucide-react**: V4는 한 파일에서만 써서 넣지 않았다 - 그 파일을 옮길 때 이모지로 바꿀지 그때 정한다. `App.tsx`는 `src/app/`(껍데기 자리).
 
 ---
@@ -263,7 +270,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 `hooks/useModalLayer.ts`·`useBodyScrollLock.ts`·`useBackdropClose.ts`·`useMainWidth.ts`·`useIsMobile.ts`·`useGlobalGestures.ts`·`useVisualViewport.ts`,
 `lib/shortcuts.ts`·`theme.ts`·`fontScale.ts`·`typeScale.ts`·`dateUtils.ts`·`todayScroll.ts`·`lazyWithReload.ts`, `utils/toast.ts`, `src/dark.css`·`tools/gen-dark-css.mjs`,
 테스트 `modalConventions.test.ts`.
-- [ ] ■1 store(zustand)의 화면·날짜 + 주소(`DESIGN.md` 7-3)가 서로 맞물리게, 뒤로가기 = 앞 화면. 화면 탭(PC)·탭바(휴대폰), 날짜 이동(`addMonthsClamped`·주말을 감추면 건너뛰기),
+- [x] ■1 store(zustand)의 화면·날짜 + 주소(`DESIGN.md` 7-3)가 서로 맞물리게, 뒤로가기 = 앞 화면. 화면 탭(PC)·탭바(휴대폰), 날짜 이동(`addMonthsClamped`·주말을 감추면 건너뛰기),
   둘째 줄(토글·◀ 날짜 ▶·📅 고르기·D-Day 자리·년간 학기 칩). 빈 화면 여섯.
 - [ ] ■2 창 목록 + 오른쪽 칸: `registerWindow`·`openWindow`(`DESIGN.md` 7-2), ModalShell·PopupFrame·SidePanelFrame 옮기기, 탭(숨은 탭 display:none - 글이 남는다),
   폭 끌기·두 번 누르기, ESC = 줄 전체(저장 안 한 글은 묻기), Ctrl+S = 커서 든 칸 → 없으면 보이는 탭, 휴대폰 뒤로가기 = 맨 위 하나, 가운데 창 모드.
