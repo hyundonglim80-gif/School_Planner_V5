@@ -62,3 +62,15 @@ describe('날짜 글자', () => {
     expect(academicYearRange(2026)).toEqual(['2026-03-01', '2027-02-28']);
   });
 });
+
+describe('월간 달력 날', () => {
+  it('1일이 든 주의 일요일 ~ 말일이 든 주의 토요일', async () => {
+    const { monthGridDates } = await import('./dateUtils');
+    const d = monthGridDates(2026, 10);
+    expect(d[0]).toBe('2026-09-27');
+    expect(d[d.length - 1]).toBe('2026-10-31');
+    expect(d.length % 7).toBe(0);
+    const f = monthGridDates(2027, 2);
+    expect([f[0], f[f.length - 1], f.length]).toEqual(['2027-01-31', '2027-03-06', 35]);
+  });
+});

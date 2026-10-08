@@ -750,7 +750,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P5-2. 월간·년간·오늘로
 **시작 조건**: P5-1 끝.
 **먼저 읽을 것**: V4 설명서 `month`·`year`, V4 `features/month/*`·`features/year/*`, `lib/periodBars.ts`(그리기 부분)·`yearSheet.ts`·`todayScroll.ts`.
-- [ ] ■1 월간(MonthGrid subgrid - 한 주 한 줄, 기간 막대 = 항목의 `date`~`endDate` 그대로, 휴대폰 MonthDaySheet·칩 완료).
+- [x] ■1 월간(MonthGrid subgrid - 한 주 한 줄, 기간 막대 = 항목의 `date`~`endDate` 그대로, 휴대폰 MonthDaySheet·칩 완료).
+  → `features/month/MonthScreen.tsx`(`[data-screen=month]`) · `MonthGrid.tsx`(`[data-month-week|month-day|today|selected|month-day-number|month-notes|month-add|month-event|month-event-done|month-event-chip|month-event-links|month-event-delete]`) ·
+  `PeriodBar.tsx`(`[data-period-bar|period-bar-done|period-cell|period-bar-links]` - 주마다 칸 나눔·이어짐 ◂▸·그날 완료) · `MonthDaySheet.tsx`(휴대폰 `[data-month-day-sheet|sheet-add|sheet-go-day|sheet-close|sheet-event|sheet-event-chip|sheet-hidden]`) ·
+  `calendarEvents.ts`('달력' 속성만) · 순수 `domain/periodBars.ts`(주마다 막대·줄 `layoutWeekBars`) · `dateUtils.monthGridDates`(일요일 시작).
 - [ ] ■2 년간(📅 학사력 / 📋 자세히 - 고른 것은 이 기기, 학기 칩, 달 나눠 그리기) + 오늘로(V4 todayScroll - 2.5초 찾고 0.7초 지켜보기).
 - [ ] ■3 크롬 점검 `inspect-month-year.mjs`.
 
