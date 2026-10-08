@@ -15,7 +15,7 @@ import { useCommonSettings } from '../../app/prefs';
 import { openWindow } from '../../app/windows';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
-import { isPeriod, periodDoneOn, periodPosition } from '../../domain/period';
+import { periodPosition } from '../../domain/period';
 import { labelColor } from '../../domain/labels';
 import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
@@ -23,7 +23,7 @@ import type { YMD } from '../../data/types';
 import { deleteEvent, moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
 import DueBadge from '../events/DueBadge';
 import EventAlarmWindow from '../events/EventAlarmWindow';
-import { isGrouped, orderAfter, type ItemDoc } from '../events/eventOps';
+import { doneOnDay, isGrouped, orderAfter, type ItemDoc } from '../events/eventOps';
 import { useCarried } from '../events/forward';
 import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
 import EventDeleteChooser from '../events/EventDeleteChooser';
@@ -34,7 +34,7 @@ import { openEventPanel, useEditingEventIds } from '../events/open';
 const NONE: readonly ItemDoc[] = [];
 
 /** 그날 끝냈나 (기간 일정은 그날만) */
-const doneOn = (ev: ItemDoc, day: string) => (isPeriod(ev) ? periodDoneOn(ev, day) : !!ev.done);
+const doneOn = doneOnDay;
 
 /** 목록의 맨 뒤 차례 값 (없으면 null) */
 function lastOrderOf(list: readonly ItemDoc[]): string | null {

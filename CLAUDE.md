@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P4-3 끝 = P4 단계 끝**(클라우드 - 메모 화면·첨부·캡처·표·클립보드·사진 보기·링크). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P5-1. 👤 V5 주소에서 첨부·캡처(구글 로그인이 필요합니다 창 포함)·링크 잇기/끊기 써 보기, 실제 계정 가져오기로 V4와 견주기.
+- **2026-10-08 P5-1 끝**(클라우드 - 주간 화면·작년 이맘때·📝 그날 기록 창). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P5-2. 👤 V5 주소에서 주간·작년 이맘때(가져오기·되돌리기)·첨부·링크 써 보기, 실제 계정 가져오기로 V4와 견주기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -230,6 +230,8 @@
   - **여러 개 고르기(P3-3)**: `events/multi.ts`(store `useMulti` - id + 그 날)·`multiOps.ts`(순수 - 한 일정 여러 날은 한 문서에 접는다)·`MultiSelectBar.tsx`(Shell - `[data-multi-*]`, ⋮ `multiSelect`·ESC) · 카드 `[data-event-picked]`·Ctrl·Shift·길게 누르기 · ESC에 함께 할 일 `app/keys.addEscapeAction`.
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker`) · `LinkViewerWindow.tsx`(창 `links`). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
+- **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
+  `lastYear.ts`(순수 가져오기 셈)·`actions.ts`(`importLastYear`)·`prefs.ts`(`sp5-last-year`·단축키 'lastYear') · 셈 `domain/lastYearWeek.ts`·`domain/dayTone.ts`. 📝 n = 창 `dayNotes`(`notes/DayNotesWindow.tsx`, `notes/open.openDayNotes`). 점검 `tools/inspect-week.mjs`(44).
 - **메모 화면** `src/features/memo/MemoScreen.tsx`(P4-1 - ⭐/라벨/전체·진행/완료·전체 비우기·'메모' 라벨 붙이기, 카드 쌓기 `ui/Masonry.tsx`·`domain/masonry.ts`) ·
   라벨로 보기 칩 `notes/LabelFilterChips.tsx`(메모 화면 세로·하루 기록 칸 한 줄)·기억 `notes/labelFilter.ts`(`sp5-label-filters`). 점검 `tools/inspect-memo.mjs`(30).
 - **메모·기록** `src/features/notes/`(하루 기록 칸·메모 화면(P4-1)이 함께 쓴다 - 메모와 기록은 같은 kind 'note', 날짜가 있으면 기록): `open.ts`(쓰는 칸 `note` = `{ sid, date|null, id? }`·`openNotePanel`·`useEditingNoteIds`·`closeNotePanelsFor`) ·

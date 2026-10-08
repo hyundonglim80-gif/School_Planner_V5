@@ -3,7 +3,7 @@
 // - 쓰기마다 문서 하나(원칙 1): 완료 = 그 일정의 done·doneAt만, 순서 = 옮긴 것의 order만(대개 하나).
 // - 새 일정은 그날 목록의 맨 뒤(order). 날짜를 바꾸면 date만(DESIGN 4-2 - 알림 시각은 date 기준이라 따라간다).
 import { orderBetween, rekeyOrders } from '../../domain/order';
-import { isPeriod } from '../../domain/period';
+import { isPeriod, periodDoneOn } from '../../domain/period';
 import { writeOp, type Changes, type WriteOp } from '../../data/repo/ops';
 import type { DocPath, Stored } from '../../data/types';
 
@@ -13,6 +13,9 @@ export const itemPath = (sid: string, id: string): DocPath<'items'> => ({ sid, c
 
 /** 지울 때 어디까지 물어야 하나 (기간 일정·반복 묶음 - 이 날만·이 날부터·전부) */
 export const isGrouped = (item: ItemDoc) => isPeriod(item) || !!item.seriesId;
+
+/** 그날 끝냈나 (기간 일정은 그날만 - doneDates) */
+export const doneOnDay = (item: ItemDoc, day: string) => (isPeriod(item) ? periodDoneOn(item, day) : !!item.done);
 
 /** 완료·완료 풀기에 바꿀 칸 (풀면 doneAt을 지운다) */
 export function doneChanges(done: boolean, now = Date.now()): Changes<'items'> {

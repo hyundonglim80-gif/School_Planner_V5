@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P5-1 주간·작년 이맘때** (클라우드면 1-7을 먼저).
+**P5-2 월간·년간·오늘로** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -149,8 +149,8 @@
 | P4-2 | 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기 | 큼 | 중간 | 끝 (2026-10-08) |
 | P4-3 | 링크 연결·보기 | 중간 | 중간 | 끝 (2026-10-08) |
 | **P5 달력·찾기·정리** | | | | |
-| P5-1 | 주간·작년 이맘때 | 중간 | 중간 | **다음** |
-| P5-2 | 월간·년간·오늘로 | 큼 | 중간 | |
+| P5-1 | 주간·작년 이맘때 | 중간 | 중간 | 끝 (2026-10-08) |
+| P5-2 | 월간·년간·오늘로 | 큼 | 중간 | **다음** |
 | P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | |
 | P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | |
 | **P6 수업** | | | | |
@@ -205,6 +205,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-1 | P4-1 세션 끝 정리 | 단위 984 · inspect-memo 30 · notes·shell 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · inspect-shell이 계정에 '가운데 창'을 남기던 것을 고침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-2 | P4-2 세션 끝 정리 | 단위 1081 · inspect-attach 47(구글 API는 흉내) · notes·memo·shell 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 👤 실제 계정으로 첨부 올리기·V4 첨부 열기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-3 | P4-3 세션 끝 정리 (P4 단계 끝) | 단위 1132 · inspect-links 32 · P4 점검 모두(memo·attach·links + events·notes) 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 디스크가 차 에뮬레이터가 죽음 - 디버그 로그 30GB를 비우고 /dev/null로 이어 다시 켜고 seed |
+| 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
@@ -409,6 +410,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 새 항목 칸의 '🔗 링크 추가'는 **먼저 저장**하고 그 항목의 연결 창을 연다(V4는 칸이 링크를 들고 있다가 저장할 때 역링크 - V5는 칸이 링크를 들지 않는다).
   - 🏫 수업 탭은 수업 칸이 생기는 P6-1에서(수업 쪽 `lessonDays`에 함께 적는다). 그 전에는 가져온 수업 링크를 날·교시로만 보이고 📌 이동·🗑️(항목 쪽만).
   - 지운 항목·찾을 수 없는 항목도 목록에 남기고(휴지통에서 되살리면 다시 이어진다) 끊을 수 있다. 목록은 기기 사본에서 - V4처럼 범위마다 서버를 읽지 않는다.
+- **P5-1 주간**: V4 그대로(요일 카드·다음 주 줄·라벨 칩 = 완료·📝 = 그날 기록 창·작년 이맘때). 바뀐 것: 오늘 카드에 이월로 따라오는 일정을 ↪로 함께(이월이 계산이라 - 하루 화면과 같다),
+  주간 위 단추 줄의 📰 주간학습안내·🖨️ 인쇄는 P6-3에서(인쇄는 MENU대로 ⋮), 수업 칸은 P6-1, 끌어 옮기기·공휴일은 P5-3. 작년 이맘때 가져오기는 '올해 같은 글'을 기록에도 본다(V4는 일정만 '올해 있음' - 기록은 가져올 때 건너뛰기만).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -735,9 +738,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P5-1. 주간·작년 이맘때
 **시작 조건**: P4-3 끝.
 **먼저 읽을 것**: V4 설명서 `week`·`badges`·`toggles`, V4 `features/week/*`, `hooks/useLastYearWeek.ts`, `lib/lastYearWeek.ts`·`lastYearImport.ts`.
-- [ ] ■1 주간 표(WeekGrid·WeekHeader 옮기기 - 본문 1200px가 넘으면 다음 주도(읽는 범위는 늘 두 주), 요일 카드, 일정 칩 완료, 📝 표식, 수업 칸 자리(P6-1), 주말 감추기, `data-today`·`data-today-area`).
-- [ ] ■2 작년 이맘때(학년도 몇째 주, 이번 주 줄에만 흐리게, 골라서 올해로 = 새 항목 - 첨부·링크·알림·묶음은 빼고, 같은 글은 건너뜀, 되돌리기).
-- [ ] ■3 크롬 점검 `inspect-week.mjs`.
+- [x] ■1 주간 표(WeekGrid·WeekHeader 옮기기 - 본문 1200px가 넘으면 다음 주도(읽는 범위는 늘 두 주), 요일 카드, 일정 칩 완료, 📝 표식, 수업 칸 자리(P6-1), 주말 감추기, `data-today`·`data-today-area`).
+  → `features/week/WeekScreen.tsx`(`[data-screen=week|week-this|week-next|week-grid]`) · `WeekDayCard.tsx`(`[data-week-day|today|week-day-label|week-notes|week-add|week-count|week-event|week-event-done|week-carried|week-event-chip|week-event-links|week-event-delete]` - 오늘 카드에 이월 ↪) ·
+  `notes/DayNotesWindow.tsx`(창 `dayNotes` - 📝 n, `[data-day-notes|day-notes-add|day-notes-empty]`) · `domain/dayTone.ts`(토 파랑·일 빨강 - 공휴일은 P5-3) · `dateUtils.weekDates` · `eventOps.doneOnDay`.
+- [x] ■2 작년 이맘때(학년도 몇째 주, 이번 주 줄에만 흐리게, 골라서 올해로 = 새 항목 - 첨부·링크·알림·묶음은 빼고, 같은 글은 건너뜀, 되돌리기).
+  → `domain/lastYearWeek.ts`(V4 테스트째) · `week/lastYear.ts`(순수 - `lastYearImportPlan`·`existsThisYear`·`isImportableNote`) · `week/actions.ts`(`importLastYear` - 한 묶음 + 되돌리기) · `LastYearDay.tsx`(`[data-last-year|last-year-item|last-year-id|already]`) ·
+  켜기 `week/prefs.ts`(`sp5-last-year` 이 기기·단축키 'lastYear') · `[data-last-year-toggle|last-year-label|last-year-picks|last-year-import|last-year-unpick|last-year-pick-all]`. 자료는 기기 사본에서(V4는 켤 때 서버를 읽었다).
+- [x] ■3 크롬 점검 `inspect-week.mjs`.
+  → 44항목(카드·색·다음 주·(k/n)·📝·완료·칸·좁아지면 다음 주 빠짐·🔗·✕/되돌리기·+·Ctrl·주말·카드 = 하루·오늘 이월 ↪·작년 이맘때 전부).
 
 ### P5-2. 월간·년간·오늘로
 **시작 조건**: P5-1 끝.

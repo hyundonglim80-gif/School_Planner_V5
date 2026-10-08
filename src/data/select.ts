@@ -18,7 +18,7 @@ import type { ItemKind, SpaceCollection, Stored, YMD } from './types';
 
 export type Docs<C extends SpaceCollection> = Readonly<Record<string, Stored<C>>>;
 type ItemDoc = Stored<'items'>;
-type LabelDoc = Stored<'labels'>;
+export type LabelDoc = Stored<'labels'>;
 
 export const isLive = (d: { deletedAt?: unknown }) => !d.deletedAt;
 
