@@ -28,6 +28,7 @@ vi.mock('../../data/repo', async (orig) => {
     batch: vi.fn(record),
     create: vi.fn((at, data) => record([real.writeOp.create(at, data)])),
     patch: vi.fn((at, changes, before) => record([real.writeOp.patch(at, changes, before)])),
+    remove: vi.fn((at) => record([real.writeOp.remove(at)])),
   };
 });
 
@@ -228,6 +229,25 @@ describe('고치기', () => {
     type('내가 적는 중');
     act(() => applyBase(SID, 'items', new Map([['e1', { ...ev1, text: '또 다른 기기' }]])));
     expect(textInput().value).toBe('내가 적는 중');
+  });
+
+  it('삭제 = 지운 표시 하나', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'e1' }} />);
+    await act(async () => fireEvent.click(q('[data-event-delete]')));
+    expect(lastOps()).toEqual([{ type: 'remove', at: { sid: SID, coll: 'items', id: 'e1' } }]);
+  });
+
+  it('저장이 안 되면 칸을 닫지 않고 적은 것을 둔다', async () => {
+    const { patch } = await import('../../data/repo');
+    vi.mocked(patch).mockRejectedValueOnce(new Error('막힘'));
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'e1' }} />);
+    type('못 적은 글');
+    await save();
+    expect(close).not.toHaveBeenCalled();
+    expect(textInput().value).toBe('못 적은 글');
+    expect(anyWindowUnsaved()).toBe(true);
   });
 
   it('지운 일정은 고치지 않는다', () => {

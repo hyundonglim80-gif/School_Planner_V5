@@ -16,7 +16,7 @@ import { useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/s
 import AutoTextarea from '../../ui/AutoTextarea';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
-import { createEvent, saveEvent } from './actions';
+import { createEvent, deleteEvent, saveEvent } from './actions';
 import DueBadge from './DueBadge';
 import EventAlarmWindow from './EventAlarmWindow';
 import { effectiveAttrs, formOf, newForm, sameForm, withAttr, withLabels, type AttrKey, type EventForm } from './eventForm';
@@ -203,6 +203,21 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     } catch {
       // 저장이 안 됐다 (안내는 저장 도우미가 했다). 적은 것은 칸에 그대로 두고 '저장된 것'으로 여기지 않는다
       return false;
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  };
+
+  /** 지우기 = 지운 표시 (칸은 deleteEvent가 닫는다). 못 지웠으면 칸을 닫지 않는다 */
+  const remove = async () => {
+    if (!item || savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      await deleteEvent(sid, item);
+    } catch {
+      // 안내는 저장 도우미가 했다
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -401,7 +416,19 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
         )}
 
         <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50/50">
-          <div />
+          {isEditing && item ? (
+            <button
+              type="button"
+              data-event-delete
+              onClick={() => void remove()}
+              disabled={saving}
+              className="px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
+            >
+              삭제
+            </button>
+          ) : (
+            <div />
+          )}
           <div className="flex gap-2">
             <button
               type="button"

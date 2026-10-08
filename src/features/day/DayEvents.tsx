@@ -14,7 +14,7 @@ import { labelColor } from '../../domain/labels';
 import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
-import { moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
+import { deleteEvent, moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
 import DueBadge from '../events/DueBadge';
 import EventAlarmWindow from '../events/EventAlarmWindow';
 import type { ItemDoc } from '../events/eventOps';
@@ -41,6 +41,7 @@ export default function DayEvents({ date }: { date: YMD }) {
   const openEdit = (ev: ItemDoc) => sid && openEventPanel({ sid, date, id: ev.id });
   const toggleDone = (ev: ItemDoc) => sid && void setEventDone(sid, ev, !ev.done).catch(quiet);
   const move = (from: number, to: number) => sid && void moveEventInList(sid, events, from, to).catch(quiet);
+  const remove = (ev: ItemDoc) => sid && void deleteEvent(sid, ev).catch(quiet);
 
   return (
     <section
@@ -106,6 +107,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                 last={idx === events.length - 1}
                 onOpen={() => openEdit(ev)}
                 onAlarm={() => setAlarmFor(ev)}
+                onDelete={() => remove(ev)}
                 onToggle={() => toggleDone(ev)}
                 onUp={() => move(idx, idx - 1)}
                 onDown={() => move(idx, idx + 1)}
@@ -148,12 +150,13 @@ interface EventCardProps {
   last: boolean;
   onOpen: () => void;
   onAlarm: () => void;
+  onDelete: () => void;
   onToggle: () => void;
   onUp: () => void;
   onDown: () => void;
 }
 
-function EventCard({ ev, labels, editing, today, first, last, onOpen, onAlarm, onToggle, onUp, onDown }: EventCardProps) {
+function EventCard({ ev, labels, editing, today, first, last, onOpen, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
   const done = !!ev.done;
   const links = ev.linkIds?.length ?? 0;
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
@@ -205,7 +208,7 @@ function EventCard({ ev, labels, editing, today, first, last, onOpen, onAlarm, o
             ▼
           </button>
         </div>
-        {/* 마우스를 올리면 나오는 ✏️ (V4 EventItemActions - 🗑️ 지우기는 ■3) */}
+        {/* 마우스를 올리면 나오는 ✏️ 수정 · 🗑️ 삭제 (V4 EventItemActions - 확인 창 없이 지우고 안내의 되돌리기로 돌아온다) */}
         <span className="shrink-0 sm:order-3 inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             type="button"
@@ -219,6 +222,19 @@ function EventCard({ ev, labels, editing, today, first, last, onOpen, onAlarm, o
             aria-label="일정 수정"
           >
             ✏️
+          </button>
+          <button
+            type="button"
+            data-event-delete
+            onClick={(e) => {
+              stop(e);
+              onDelete();
+            }}
+            className="px-1 text-2xs leading-none text-slate-400 hover:text-red-500 cursor-pointer"
+            title="일정 삭제"
+            aria-label="일정 삭제"
+          >
+            🗑️
           </button>
         </span>
       </div>

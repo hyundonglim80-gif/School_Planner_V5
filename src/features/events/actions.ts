@@ -2,11 +2,12 @@
 // 실패는 저장 도우미가 안내하고 던진다 - 누른 단추에서 부르면 `.catch(() => {})`로 받는다(안내는 이미 나갔다).
 // 쓰기마다 문서 하나(원칙 1).
 import { shortDateLabel } from '../../domain/dateUtils';
-import { batch, create, newPath, patch, writeOp } from '../../data/repo';
+import { batch, create, newPath, patch, remove, writeOp } from '../../data/repo';
 import type { LabelTree } from '../../data/select';
 import { recordUndo } from '../../data/undo';
 import { createData, editChanges, type EventForm } from './eventForm';
 import { doneChanges, itemPath, reorderOps, type ItemDoc } from './eventOps';
+import { closeEventPanelsFor } from './open';
 
 const KEEP = '적은 내용은 칸에 남아 있습니다.';
 
@@ -63,4 +64,15 @@ export async function setEventAlarm(sid: string, item: ItemDoc, time: string): P
     { fail: time ? '알림을 저장하지 못했습니다.' : '알림을 끄지 못했습니다.' },
   );
   recordUndo(sid, '', undo, { what: time ? '알림 바꾸기' : '알림 끄기', quiet: true });
+}
+
+/**
+ * 지우기 = 지운 표시(원칙 5 - 휴지통에서 되살린다). 확인 창 없이 곧바로, 안내의 되돌리기·Ctrl+Z로 그 자리에 돌아온다(V4 그대로).
+ * 그 일정을 고치던 칸은 닫는다(없는 일정을 붙들고 있지 않게). 못 지웠으면 던진다 - 칸은 닫지 않는다.
+ * 기간·반복 묶음의 '이 날만·이 날부터·전부'는 P3-3.
+ */
+export async function deleteEvent(sid: string, item: ItemDoc): Promise<void> {
+  const undo = await remove(itemPath(sid, item.id), { fail: '일정을 지우지 못했습니다.' });
+  closeEventPanelsFor(sid, item.id);
+  recordUndo(sid, '🗑️ 일정을 삭제했습니다. 휴지통에서 복원할 수 있습니다.', undo, { what: '일정 지우기' });
 }

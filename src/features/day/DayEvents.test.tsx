@@ -22,6 +22,7 @@ vi.mock('../../data/repo', async (orig) => {
     ...real,
     batch: vi.fn(record),
     patch: vi.fn((at, changes, before) => record([real.writeOp.patch(at, changes, before)])),
+    remove: vi.fn((at) => record([real.writeOp.remove(at)])),
   };
 });
 
@@ -150,6 +151,22 @@ describe('하루 일정 칸', () => {
     await act(async () => fireEvent.click(q('[data-alarm-off]')!));
     expect(written.batches[1][0]).toMatchObject({ changes: { time: undefined } });
     expect(useWindows.getState().windows).toEqual([]);
+  });
+
+  it('🗑️ = 지운 표시 (확인 없이), 안내의 되돌리기·Ctrl+Z, 그 일정을 고치던 칸은 닫는다', async () => {
+    seed();
+    useWindows.setState({
+      windows: [
+        { key: 1, id: 'event', params: { sid: SID, date: DAY, id: 'c' }, openedAt: 1, raisedAt: 1 },
+        { key: 2, id: 'event', params: { sid: SID, date: DAY, id: 'a' }, openedAt: 2, raisedAt: 2 },
+      ],
+    });
+    render(<DayEvents date={DAY} />);
+    await act(async () => fireEvent.click(q('[data-event-card="c"] [data-event-delete]')!));
+    expect(written.batches[0]).toEqual([{ type: 'remove', at: { sid: SID, coll: 'items', id: 'c' } }]);
+    expect(q('[data-toast]')?.textContent).toContain('일정을 삭제했습니다');
+    expect(q('[data-toast-action="되돌리기"]')).not.toBeNull();
+    expect(useWindows.getState().windows.map((w) => w.key)).toEqual([2]);
   });
 
   it('▼ 접으면 카드와 + 추가를 숨긴다', () => {

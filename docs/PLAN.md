@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-1 일정** ■3 지우기·되돌리기 (■2 끝 - 클라우드 `claude/peaceful-lamport-icu4gf`).
+**P3-1 일정** ■4 앱 안 알림·＋ 새로 (■3 끝 - 클라우드 `claude/peaceful-lamport-icu4gf`).
 
 ---
 
@@ -514,7 +514,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   `EventAlarmWindow.tsx`(⏰ 시각만 - `[data-alarm-window|alarm-time|alarm-save|alarm-off]`, 하루 카드 ⏰는 누르는 즉시 저장) · `QuickInputChips.tsx`(`[data-quick-chip]`) ·
   `domain/quickInput.ts`(V4 테스트째) · `domain/eventAlarm.ts` `normalizeTimeInput` · `ui/AutoTextarea.tsx`(V4 테스트째) · `dateUtils.shortDateLabel` · 크롬 `inspect-events` 40항목.
   미룬 것: 반복 칩·'🔁 반복'·'끝 날'·이월 일정을 지난 날로 옮길 때 안내 → P3-3, 🔗 링크 추가 → P4-3(지금은 🚧), 구글 캘린더 로그인 묻기 → P8-1.
-- [ ] ■3 지우기 = 지운 표시 + 안내 '되돌리기' + Ctrl+Z. 저장 실패면 칸을 닫지 않는다.
+- [x] ■3 지우기 = 지운 표시 + 안내 '되돌리기' + Ctrl+Z. 저장 실패면 칸을 닫지 않는다.
+  → `actions.deleteEvent`(확인 창 없이 - V4 그대로, 그 일정을 고치던 칸은 `open.closeEventPanelsFor`로 닫는다) · 카드 🗑️ `[data-event-delete]`(✏️ 옆, 마우스를 올리면) · 칸의 '삭제'.
+  크롬 `inspect-events` 51항목(🗑️·안내 되돌리기·칸 삭제·Ctrl+Z·완료 Ctrl+Z). 묶음 지우기(이 날만·이 날부터·전부)는 P3-3.
 - [ ] ■4 앱 안 알림(useEventAlarms·EventAlarmPopup·소리 3초마다 3번·🔇 옮기기 - 사본에서 오늘 알림을 본다. 서버 푸시는 P8-2) + 머리줄 ＋ 새로 → 새 일정 칸.
 - [ ] ■5 크롬 점검 `inspect-events.mjs`: 추가·완료·순서·고치기·날짜 바꾸기·지우기·되돌리기·Ctrl+Z, **저장마다 서버 문서 하나만** 바뀌는지.
 **끝 조건**: 위 설명서 주제가 V5에서 된다(PARITY 체크).

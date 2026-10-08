@@ -5,6 +5,7 @@
 //   4) + 추가 → 새 일정 칸(맨 위 라벨) → Ctrl+S = 새 문서 하나, 칸은 그 일정의 수정 칸이 되고 카드를 짚는다.
 //   5) 고치기 = 그 문서의 바뀐 칸만. 날짜를 바꿔 '옮기고 저장' = date만, 안내의 되돌리기 = 원래 날짜.
 //   6) 빠른 입력 칩(내일·15:00) 모두 넣기 → 그날·알림. 카드 ⏰ → 시각 바꾸기 = time만.
+//   7) 🗑️ = 지운 표시(문서는 남는다) → 안내의 되돌리기. 칸의 삭제 → 칸이 닫힌다 → Ctrl+Z로 되돌리기. 완료도 Ctrl+Z.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-events.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 일정(insp_ev…)·라벨을 심고 끝에 지운다.
@@ -162,6 +163,35 @@ try {
   r.check((await serverUntil(() => read('insp_ev1'), (d) => d?.time === '10:10'))?.time === '10:10', '카드 ⏰ → 시각 바꾸기 = 곧바로 저장');
   after = await serverUntil(stamps, (s) => changed(before, s).length > 0);
   r.check(JSON.stringify(changed(before, after)) === JSON.stringify(['insp_ev1']), '바뀐 문서는 그 일정 하나');
+
+  r.section('지우기 = 지운 표시 · 되돌리기 · Ctrl+Z');
+  before = await stamps();
+  await card('insp_ev3').hover();
+  await card('insp_ev3').locator(sel('event-delete')).click();
+  r.check(await waitFor(async () => (await card('insp_ev3').count()) === 0), '🗑️ → 곧바로 목록에서 빠진다 (확인 창 없이)');
+  const del = await serverUntil(() => read('insp_ev3'), (d) => !!d?.deletedAt);
+  r.check(!!del?.deletedAt && del.text === '점검 일정 셋', '서버: 문서는 남고 지운 표시(deletedAt)');
+  after = await serverUntil(stamps, (s) => changed(before, s).length > 0);
+  r.check(JSON.stringify(changed(before, after)) === JSON.stringify(['insp_ev3']), '바뀐 문서는 그 일정 하나');
+  await page.locator(sel('toast')).filter({ hasText: '삭제했습니다' }).locator('[data-toast-action="되돌리기"]').click();
+  r.check((await serverUntil(() => read('insp_ev3'), (d) => d?.deletedAt === null))?.deletedAt === null, '안내의 되돌리기 → 지운 표시가 걷힌다');
+  r.check(await waitFor(card('insp_ev3')), '목록에 돌아온다');
+
+  await card('insp_ev2').click();
+  r.check(await waitFor(async () => (await panel.getAttribute('data-event-id')) === 'insp_ev2'), '카드를 누르면 그 일정의 수정 칸');
+  await page.locator(sel('event-delete')).last().click();
+  r.check(await waitFor(async () => (await panel.count()) === 0), '칸의 삭제 → 칸이 닫힌다');
+  r.check(!!(await serverUntil(() => read('insp_ev2'), (d) => !!d?.deletedAt))?.deletedAt, '서버: 지운 표시');
+  await page.locator('body').click({ position: { x: 5, y: 600 } });
+  await page.keyboard.press('Control+z');
+  r.check((await serverUntil(() => read('insp_ev2'), (d) => d?.deletedAt === null))?.deletedAt === null, 'Ctrl+Z → 되살아난다');
+  r.check(await waitFor(card('insp_ev2')), '목록에 돌아온다');
+
+  await card('insp_ev1').locator(sel('event-complete')).click();
+  await serverUntil(() => read('insp_ev1'), (d) => d?.done === true);
+  await page.locator('body').click({ position: { x: 5, y: 600 } });
+  await page.keyboard.press('Control+z');
+  r.check((await serverUntil(() => read('insp_ev1'), (d) => d?.done === false))?.done === false, '완료도 Ctrl+Z로 되돌린다');
 
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
 } catch (e) {

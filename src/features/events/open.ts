@@ -3,7 +3,7 @@
 // - 새 일정 칸 = { sid, date } - 같은 공간·같은 날의 새 일정 칸이 열려 있으면 그 탭을 보인다.
 // - 수정 칸 = { sid, date, id } - 같은 일정이면 그 탭(날짜는 보지 않는다 - 항목은 id로 찾는다, 원칙 2).
 // - 저장한 새 일정 칸은 그 일정의 수정 칸이 된다(setParams로 id를 더한다 - 적은 것은 그대로 남는다).
-import { getWindowDef, openWindow, useWindows } from '../../app/windows';
+import { closeWindow, getWindowDef, openWindow, useWindows } from '../../app/windows';
 import { showToast } from '../../app/toast';
 import type { YMD } from '../../data/types';
 
@@ -29,6 +29,14 @@ export function openEventPanel(params: EventPanelParams) {
     return;
   }
   openWindow(EVENT_PANEL, params);
+}
+
+/** 이 일정을 고치던 칸을 모두 닫는다 (지웠을 때) */
+export function closeEventPanelsFor(sid: string, id: string) {
+  for (const w of useWindows.getState().windows) {
+    const p = w.params as EventPanelParams | undefined;
+    if (w.id === EVENT_PANEL && p?.sid === sid && p.id === id) closeWindow(w.key);
+  }
 }
 
 /** 지금 수정 칸이 열린 일정 id (목록에서 파란 테두리로 짚는다) */
