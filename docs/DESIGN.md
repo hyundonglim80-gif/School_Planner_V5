@@ -307,8 +307,8 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 
 | V4 | V5 | 주의 |
 |---|---|---|
-| `settings/labels`의 `eventLabels` | `labels`(event, props) | 속성은 V3 이름 먼저(`normalizeEventLabel`), `v4_gcal` → `props.gcal` |
-| `memoLabels`·`journalLabels` + `v4_labelTree` | `labels`(note, parentId) | 이름으로 합친다(`mergeEntryLabels`). 짝 표: V4 이름·기록 id·`jm_` → V5 id |
+| `settings/labels`의 `eventLabels` | `labels`(event, props) | 속성은 V3 이름 먼저(`normalizeEventLabel`), `v4_gcal` → `props.gcal`. 문서가 없으면 V4 기본 라벨. 열쇠 = V4 id(없으면 'name:이름') |
+| `memoLabels`·`journalLabels` + `v4_labelTree` | `labels`(note, parentId) | 이름으로 합친다(`mergeEntryLabels` - 열쇠 = 기록 id·`jm_이름`), 상위 이름 → `parentId`. V5에 이름이 같은 라벨이 있으면 그것에 잇는다. 짝 표 `labelMap`: V4 이름 → V5 id (`import/v4/labels.ts`) |
 | `{sp}/events/{date}`(`readEventList`) | `items`(event) | 라벨 셋 자리(`label`·`labelIds`·본문 앞 `[이름]` - 등록된 라벨만) → `labelIds`, 본문은 그대로. `time`('YYYY-MM-DDTHH:mm') → `time`, `alarmTriggered` → `alarmDone`, 공휴일 일정(`isHolidayEvent`) 빼기, 이월 사슬(`forwardChainId`·`originalDate`) → `carriedFrom`, 기한(`due` + `v4_eventDue` 사슬) → `due`, `gcal` → `props.gcal` |
 | 기간 조각(`groupId` + 글 끝 `(i/n)`) | `items` 하나(`date`~`endDate`) | 글 끝 '(i/n)'를 뗀다, 날마다 완료 → `doneDates`, 조각마다 글이 다르면 합치지 않고 따로(결과 표에) |
 | 반복 묶음(`groupId`, '(i/n)' 없음) | `series`(imported) + `items` | 규칙은 모른다 |
@@ -326,7 +326,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | `v4_progress` | `progress` | 모양 그대로 |
 | 기록·메모 글의 학생 태그 `#26040305` | `studentIds` | 글의 태그는 그대로 둔다(본문을 바꾸지 않는다) |
 | `settings/preferences.dDayList` | `settings/common.ddays` | |
-| `v4_preferences_pc/_mobile`, `v4_teaching`·`v4_classBell`·`v4_school`·`v4_trash`·`v4_autoBackup`·`v4_observationPhrases` | `settings/pc`·`mobile`·`common` | 단축키 id는 그대로라 사용자가 바꾼 키가 이어진다 |
+| `v4_preferences_pc/_mobile`, `v4_teaching`·`v4_classBell`·`v4_school`·`v4_trash`·`v4_autoBackup`·`v4_observationPhrases` | `settings/pc`·`mobile`·`common` | 단축키 id는 그대로라 사용자가 바꾼 키가 이어진다. 기기별 문서가 없으면 옛 한 벌 `v4_preferences`. `forwardLookbackDays` → `common.forwardDays`(PC 먼저). **칸마다** 가져오기가 지난번에 적은 값과 견줘 V5에서 바꾼 칸은 둔다(`import/v4/settings.ts`). common의 나머지는 그 칸이 생기는 세션이 `COMMON_FROM_V4`에 |
 | `groups/{gid}` + 그룹 자료 | `spaces/g_{gid}` + 그 아래 | `members` 배열 → 맵, 구성원 누구나 가져올 수 있다(결정적 id라 겹치지 않음) |
 | `trash`, `v4_pushTokens`, `v4_gcalQueue`, `v4_alarms` | 가져오지 않는다 | 휴지통의 것은 V4에서 되살린 뒤 다시 가져오면 된다. 알림·보내기는 기기에서 다시 켠다 |
 

@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-4 가져오기 틀 + 라벨·설정 가져오기** - ■3 라벨·설정부터(클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
+**P2-4 가져오기 틀 + 라벨·설정 가져오기** - ■4 화면(환경설정 '가져오기'·처음 로그인 띠)·크롬 점검부터(클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
 
 ---
 
@@ -307,6 +307,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   사용자가 지운 것(되살리지 않는다)과 가져오기가 지운 것(V4에 다시 생기면 새로)을 가른다.
 - **P2-4 기록**(권장안으로 고름): 가져오기 기록은 `settings/common.import`가 아니라 **`settings/import`** 문서 - 설정 맞추기(`data/settingsSync`)가 `common`을
   아는 칸만으로 통째로 다시 쓰므로 모르는 칸(기록)이 지워진다. 띠 닫음(`dismissed`)도 여기(계정에 하나).
+- **P2-4 라벨 이름이 같을 때**(권장안으로 고름): V5에 이름이 같은 라벨(V5에서 만든 것·'기본 라벨 넣기')이 있으면 새로 만들지 않고 그 라벨에 잇는다
+  (같은 종류 안에서 이름이 겹치면 라벨 관리 창이 저장을 막는다). 이은 것은 짝 표(`settings/import.labelMap` - V4 이름 → V5 id)에 - P3-4 항목 가져오기가 이것으로 라벨을 찾는다.
+  V4에 라벨 문서가 없으면 V4가 보이던 기본 라벨(일정 다섯·기록 넷·메모 다섯)을 가져온다 - 그 사람 항목이 그 id·이름을 들고 있다.
+- **P2-4 설정 가져오기는 칸마다**: 설정 문서에는 기본값과 다른 칸만 있어 문서 지문으로는 'V5에서 바꿨나'를 알 수 없다 → 기록에 칸마다 가져오기가 적은 값을 두고 견준다.
+  V4 이월 기간(기기마다 `forwardLookbackDays`)은 V5 `common.forwardDays` 하나로(PC 값 먼저). 교사 유형·수업 종 같은 common 칸은 그 칸이 생기는 세션이
+  `import/v4/settings.ts` `COMMON_FROM_V4`에 한 줄 더한다(칸이 없으면 설정 맞추기가 지운다).
+- **P2-4 되돌리기 없음**: 가져오기는 Ctrl+Z 더미에 넣지 않는다 - 수백 개를 한꺼번에 지운 표시로 되돌리면 더 위험하고, 다시 가져오기가 바뀐 것만 고친다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -460,8 +467,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   → `legacy/eventText.ts`·`evalList.ts`·`eventLabels.ts`(+ V4 기본 일정 라벨)·`entryLabels.ts`(+ V4 기본 메모·기록 라벨, `mergeEntryTrees`)·`labelTree.ts` + `legacy.test.ts`(V4 테스트째, 쓰는 쪽은 뺐다 -
   V5는 V4에 쓰지 않는다. `resolveEventLabelNames`의 keepUnknown도 뺐다 - 가져오기는 V4 라벨을 늘 먼저 읽는다).
   `import/v4/boundary.test.ts`: `src/import/` 밖은 legacy를 import하지 않고 V4 자리(`'users'`·`'groups'`)를 부르지 않는다.
-- [ ] ■3 라벨·설정: `settings/labels` → labels(일정 = V3 이름 먼저, 메모·기록 = 이름으로 합침 + `v4_labelTree` 상위, `v4_gcal` → `props.gcal`, 짝 표),
+- [x] ■3 라벨·설정: `settings/labels` → labels(일정 = V3 이름 먼저, 메모·기록 = 이름으로 합침 + `v4_labelTree` 상위, `v4_gcal` → `props.gcal`, 짝 표),
   V4 설정 문서들 → settings(`DESIGN.md` 8-3 표).
+  → `labels.ts`(`planLabels` - V4에 문서가 없으면 V4 기본 라벨, V5에 이름이 같은 라벨이 있으면 그 라벨에 잇기, 짝 표 = V4 이름 → V5 id) ·
+  `settings.ts`(`planSettings` - **칸마다** 지난번에 적은 값과 견준다: V5에서 바꾼 칸은 둠, V4에 그 문서가 없으면 건너뜀. 지금은 pc·mobile 칸 전부 + common `forwardDays`) ·
+  `read.ts`(V4 자리를 읽는 유일한 곳·V5 문서는 서버에서) · `run.ts`(`runImport`·`checkImportOffer`·`dismissImportOffer`, 진행 store `useImportRun` - 500개씩, 기록은 맨 끝, 되돌리기에 넣지 않음) ·
+  자료 층 `import.emu.test.ts` 5(규칙을 지남·두 번째는 라벨 문서를 다시 쓰지 않음·V4에서 지운 라벨·띠).
 - [ ] ■4 화면: 환경설정에 '가져오기' 자리(P8-3에서 백업 · 가져오기 · 보내기 창으로 옮긴다) + 처음 로그인 때 'V4 자료 가져오기' 띠.
   점검 `inspect-import-labels.mjs`: V4 seed → 가져오기 → 라벨 이름·색·속성·상위가 같다, 두 번째 가져오기는 '바뀐 것 0'.
 **끝 조건**: 위 점검 통과. **P2 단계 끝 정리**(1-4).

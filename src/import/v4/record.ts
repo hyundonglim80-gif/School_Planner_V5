@@ -5,8 +5,8 @@
 //
 //   at        마지막으로 끝낸 때(ms - 보이기만 한다. 다시 가져오기 규칙은 문서마다 src.h로 - plan.ts)
 //   counts    지난 결과 표 (종류 → 수)
-//   labelMap  라벨 짝 표: V4 열쇠(라벨 id, id 없던 것은 'name:이름') → V5 라벨 id. 이름이 같은 V5 라벨에 이은 것도 여기에 -
-//             결정적 id만으로는 셈할 수 없어 적어 둔다(P3-4 항목 가져오기가 라벨을 이것으로 찾는다)
+//   labelMap  라벨 짝 표: V4 이름 → V5 라벨 id (종류마다). 이름이 같은 V5 라벨에 이은 것도 여기에 - 결정적 id만으로는 셈할 수 없다.
+//             V4 항목은 라벨을 이름·id·'[이름]'으로 들고 있어 P3-4는 V4 라벨 목록으로 이름을 푼 뒤(resolveEventLabelNames) 이것으로 찾는다
 //   settings  설정 칸마다 가져오기가 지난번에 적은 값 (pc·mobile·common) - 그 뒤 V5에서 바꿨는지 칸마다 본다(settings.ts)
 //   dismissed 처음 로그인 띠를 닫았다(계정에 하나 - 다른 기기에서도 다시 뜨지 않는다)
 import type { DocPath } from '../../data/types';
