@@ -25,8 +25,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P1-3 끝**(앱 껍데기: 화면 탭·주소·창 목록·오른쪽 칸·단축키·머리줄·점검 틀). 다음 대화의 '이어서' = **P1-4**(설정 동기화·환경설정·계정 칸·배포·PWA).
-- 👤 P1-4 ■4에서 사이트 이름(권장 `schoolplanner-v5`)·콘솔 두 곳·`firebase init hosting:github`를 부탁한다. (골라서) 클라우드 세션을 쓰려면 Claude GitHub 앱에 이 저장소 권한.
+- **2026-10-08 P1-4 ■1·■2·■3·■5 끝, ■4 일부**(사이트 `schoolplanner-v5` 만들고 첫 배포 - https://schoolplanner-v5.web.app). '이어서' = ■4 나머지(`authDomain` 바꾸기·자동 배포 다듬기) → 세션 끝 정리.
+- 👤 콘솔 두 곳(Auth 승인된 도메인 / OAuth 클라이언트 JS 원본·리디렉션 URI) + V5 폴더 터미널에서 `npx firebase init hosting:github` + 휴대폰에서 주소 열기 한 번. 자세히는 `docs/PLAN.md` P1-4 ■4.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -150,28 +150,36 @@
 - **도구**: `package.json`(dev 5175·dev:emu·build:emu·preview 4175·test·lint·emu·seed·check:rules, `allowScripts`) · `vite.config.ts`(base `/`, `__BUILD_ID__`, `__USE_EMULATOR__`) ·
   `vitest.config.ts`(jsdom·vmThreads, `__BUILD_ID__`='test') · `src/test/setup.ts`(jest-dom·fake-indexeddb·cleanup) · `.github/workflows/ci.yml`(lint → test → build, 배포 없음 - P1-4).
   npm 11은 설치 스크립트를 허락 없이 돌리지 않는다 - 'not yet covered by allowScripts'가 나오면 `npm install-scripts approve|deny <패키지>`(`docs/PLAN.md` 5장).
-- **들어가는 곳**: `index.html` → `src/main.tsx`(watchSession·리디렉션 로그인 마무리·에뮬레이터 자동 로그인) → `src/app/App.tsx`(불러오는 중 `[data-session=loading]` /
+- **들어가는 곳**: `index.html`(manifest 링크) → `src/main.tsx`(watchSession·리디렉션 로그인 마무리·에뮬레이터 자동 로그인·앱 설치 이벤트) → `src/app/App.tsx`(불러오는 중 `[data-session=loading]` /
   로그인 화면 / 로그인하면 'SP5' `[data-session=signed-in]`, 빌드 번호 `[data-build-id]`). 글자·간격 단계(`@theme`)는 `src/index.css`(V4 앞부분).
-- **서버·규칙**: `firebase.json`(에뮬레이터 auth 9099·firestore 8080·ui 4000) · `.firebaserc` · `firestore.rules`(**정본** - V4 규칙 전부 + V5 블록, V4 저장소 것은 복사본) ·
+- **서버·규칙**: `firebase.json`(에뮬레이터 auth 9099·firestore 8080·ui 4000 · hosting 사이트 `schoolplanner-v5` = https://schoolplanner-v5.web.app, `dist`, 첫 주소·sw·manifest no-cache) · `.firebaserc` · `firestore.rules`(**정본** - V4 규칙 전부 + V5 블록, V4 저장소 것은 복사본) ·
   `tools/check-rules.mjs`(V4 35 + V5 45) · `tools/live-rules.cjs`(운영 규칙 = 파일인지, 읽기만) · `tools/seed.mjs`(V4 seed 계정의 V5 개인 공간) · `tools/inspect-login.mjs`(크롬: 로그인·개인 공간·Firestore IndexedDB 없음).
 - **자료 층** `src/data/`: `firebase.ts`(앱 이름 SchoolPlannerV5, memoryLocalCache, googleProvider 범위) · `emulator.ts`(`?as=2|3`) ·
-  `session.ts`(로그인 store `useSession` - 구독 하나) · `space.ts`(`personalSpaceId`·`ensurePersonalSpace`).
+  `session.ts`(로그인 store `useSession` - 구독 하나) · `space.ts`(`personalSpaceId`·`ensurePersonalSpace`) ·
+  `settingsSync.ts`(설정 문서 하나 맞추기 `startSettingsSync` - 구독 하나·1초 뒤·받기 전엔 안 올림, `settingsPort` = `spaces/u_{uid}/settings/{common|pc|mobile}`).
 - **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
-  로그인한 화면은 `[data-session=signed-in][data-user=<메일>]`.
+  로그인한 화면은 `[data-session=signed-in][data-user=<메일>]`. `logout`은 기다리던 설정을 먼저 올린다.
+- **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 지금 보기·단축키·앱, `{ tab }`로 열기) · `ViewTab`(누르는 즉시) ·
+  `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·빌드 번호) · `parts`(Section·ToggleRow·Choices).
+  `[data-settings-tab|panel|toggle]`·`[data-choice="이름:값"]`·`[data-shortcut-row|key|save|reset]`·`[data-install-pwa=ready|guide]`.
 - **껍데기** `src/app/`: `App.tsx`(로그인 상태 → `Shell`) · `Shell.tsx`(틀: 머리줄·본문·탭바·창·오른쪽 줄 ▶·폭 끌기) · `Header.tsx`(첫 줄 - ⏳·🗑️·＋ 새로·🔍·화면 탭·?·⋮·사진,
   `[data-header-*]`·`[data-scope-tab]`·`[data-more-menu]`·`[data-menu-item]`·`[data-new]`) · `SecondRow.tsx`(토글·◀ 날짜 ▶·📅·학기 칩, `[data-date-prev|next|label]`·`[data-view-toggle]`) ·
-  `MobileTabBar.tsx`(`[data-tabbar-tab]`) · `screens.ts`(화면 여섯 = 탭·단축키, 화면은 `features/<화면>/<Name>Screen.tsx` - 지금은 빈 자리 `ui/EmptyScreen` `[data-screen]`) ·
+  계정 칸(사진 → `[data-account]`·`[data-account-panel]`·`[data-account-name|email]`·`[data-logout]`) · `MobileTabBar.tsx`(`[data-tabbar-tab]`) · `screens.ts`(화면 여섯 = 탭·단축키, 화면은 `features/<화면>/<Name>Screen.tsx` - 지금은 빈 자리 `ui/EmptyScreen` `[data-screen]`) ·
   `route.ts`(주소 ↔ 화면, 순수) · `nav.ts`(화면·날짜·토글 store `useNav` - 'YYYY-MM-DD', `stepDate`·`goToday`·`dateLabel`) ·
   `history.ts`(브라우저 기록 한 곳: 주소 맞물리기 `startRouting` + 창 층 `useModalLayer`·`useBackLayer`·`closeAllLayers`, 뒤로가기 표지판) ·
   `windows.ts`(창 목록 `registerWindow`·`openWindow`·`closeAllWindows`·`registerUnsavedCheck`) · `windowList.ts`(창 등록 한 곳 - 창을 만드는 세션이 한 줄씩) · `WindowHost.tsx` ·
   `moreMenu.ts`(⋮ 4구역 8항목 표) · `keys.ts`(키 처리 한 곳 `runShortcut`·`setShortcutAction`·`runFromButton`·`useShortcutTitle`, 바꾼 키 `sp5-shortcuts`) ·
-  `layoutPrefs.ts`(창 위치·글자 크기·줄 폭 `sp5-layout`) · `theme.ts`(화면 밝기 `sp5_theme` - `index.html` 스크립트와 같은 규칙) · `todayScroll.ts` · `useGlobalGestures.ts` · `lazyWithReload.ts` ·
+  `layoutPrefs.ts`(창 위치·글자 크기·줄 폭 `sp5-layout`) · `prefs.ts`(어느 설정을 어느 문서에 - `DEVICE_PREFS`·`COMMON_SETTINGS`·`useCommonSettings`·`usePrefsSync`·`stopPrefsSync`,
+  값은 nav·layoutPrefs·keys store 그대로, 사본 주인 `sp5-settings-owner`) · `install.ts`(sw 등록·설치 이벤트 `installApp`·`useInstall`) · `theme.ts`(화면 밝기 `sp5_theme` - `index.html` 스크립트와 같은 규칙) · `todayScroll.ts` · `useGlobalGestures.ts` · `lazyWithReload.ts` ·
   `toast.ts`(`showToast`·`showErrorToast`·`failWithToast`·`ShownError`·`showToastAfterReload` - 안내 `[data-toast]`). 다크 색표 `src/dark.css` = `node tools/gen-dark-css.mjs`.
 - **공통 부품** `src/ui/`: `ModalShell.tsx`(창 껍데기, ✕ `[data-close]`) · `PopupFrame.tsx`(오른쪽 칸/배너/가운데 `[data-popup-frame]`) · `SidePanelFrame.tsx`(쓰는 칸 `[data-panel-frame]`) ·
   `sideColumn.ts`(오른쪽 줄·탭 차례 `useSideSlot`·`useDocked`) · `SideTabs.tsx`(`[data-side-tab]`·`[data-side-tab-close]`) · `useSaveKey.ts`(Ctrl+S 받기) · `ColumnResizer.tsx` ·
   `MiniCalendarPicker.tsx`(`[data-date-picker]`·`[data-picker-day]`) · 훅 `useMinWidth`·`useIsMobile`·`useMainWidth`·`useVisualViewport`·`useBodyScrollLock`·`useBackdropClose`.
-- **순수 함수** `src/domain/`: `dateUtils.ts` · `shortcuts.ts`(V4 id + 새 id 다섯) · `fontScale.ts` · `typeScale.ts`.
+- **순수 함수** `src/domain/`: `dateUtils.ts` · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
+  `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
+- **설치(PWA)** `public/`: `manifest.json`(SP5) · `sw.js`(설치·활성만 - 담아 두기·공유받기·푸시는 P8) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
-- **점검** `tools/lib/probe.mjs`(크롬 1400px·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs`.
+- **점검** `tools/lib/probe.mjs`(크롬 1400px·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
+  `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창).
   규칙 테스트: `app/windowConventions.test.ts`(창 틀·'취소' 금지·그림 단추 설명·⋮ 표) · `app/keys.test.tsx`(키 글자를 박지 않는다).
 - **빈 자리**: `src/import/v4`(`.gitkeep` - 첫 파일이 들어오면 지운다). 문서는 `docs/`, 소개는 `README.md`(에뮬레이터 순서).
