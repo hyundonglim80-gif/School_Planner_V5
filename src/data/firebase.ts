@@ -8,9 +8,9 @@ import { connectEmulators } from './emulator';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyBd1z4RZnSbZWdwAIFvPOue5AaZ8wQ9ka0',
-  // P1-4에서 V5 Hosting 주소(<이름>.web.app)로 바꾼다. 로그인 처리(/__/auth/handler)가
-  // 앱과 같은 출처가 되어 휴대폰 리디렉트 로그인이 안정적이다(DESIGN 3장).
-  authDomain: 'schoolplannerv3.firebaseapp.com',
+  // V5 Hosting 주소(P1-4). 로그인 처리(/__/auth/handler)가 앱과 같은 출처가 되어 휴대폰 리디렉트 로그인이 안정적이다(DESIGN 3장).
+  // 바꾸려면 Auth 승인된 도메인과 OAuth 클라이언트의 리디렉션 URI(https://<주소>/__/auth/handler)가 먼저 있어야 한다.
+  authDomain: 'schoolplanner-v5.web.app',
   projectId: 'schoolplannerv3',
   storageBucket: 'schoolplannerv3.firebasestorage.app',
   messagingSenderId: '906471951519',
