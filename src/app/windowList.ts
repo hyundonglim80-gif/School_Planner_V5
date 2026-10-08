@@ -56,6 +56,16 @@ registerWindow<LinkWindowParams>({
   load: () => import('../features/links/LinkViewerWindow'),
 });
 
+// 머리줄 🔍 검색 (P5-4) - 단축키 'search'
+registerWindow({
+  id: 'search',
+  title: '검색',
+  icon: '🔍',
+  kind: 'side',
+  help: 'search',
+  load: () => import('../features/search/SearchWindow'),
+});
+
 // 머리줄 ⏳ D-Day (P5-3) - 단축키 'dday'
 registerWindow({
   id: 'dday',

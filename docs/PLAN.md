@@ -422,6 +422,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P5-3 D-Day·공휴일**: D-Day는 DESIGN대로 `settings/common`(V4 `settings/preferences` - V3와 함께 쓰던 문서). 지우기 = 지운 표시(휴지통 P5-4) + 안내의 되돌리기(설정이라 Ctrl+Z 더미에는 넣지 않는다).
   공휴일 표를 받는 개발자 도구(V4 환경설정)는 옮기지 않는다 - 표는 V4와 함께 쓰는 `holidays/{연도}`라 V4에서 받으면 V5도 본다. 주말 빼기 기간은 공휴일을 **계산할 때** 건너뛴다(V4는 만들 때 날마다 문서를 만들며 건너뛰었다) -
   나중에 표가 바뀌면(대체공휴일) 기간의 날도 따라 바뀐다. 이름 고르기에 양력 고정 공휴일을 더했다(표가 없는 해도 빨갛게 - V4 학사력만 하던 것).
+- **P5-4 검색**: 치는 대로(기기 사본 - V4 '데이터 찾기' 단추와 '클라우드에서 분석 중' 없앰). 결과를 누르면 자세히 창 없이 곧바로 그 자리로 가서 짚는다(검색 창은 오른쪽 칸에 남아 다음 결과로 - 휴대폰만 닫는다),
+  ✏️ = 그 쓰는 칸(V4 자세히 창이 보이던 라벨·첨부는 결과 줄에). 라벨로 거르기를 더했다. 표 칸 글도 찾는다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -790,7 +792,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P5-4. 검색(치는 대로)·휴지통
 **시작 조건**: P5-3 끝.
 **먼저 읽을 것**: V4 설명서 `search`·`trash`, V4 `components/SearchModal.tsx`·`lib/searchFocus.ts`·`components/TrashModal.tsx`·`lib/trashRetention.ts`.
-- [ ] ■1 검색(사본에서 치는 대로 - 모든 학년도·종류·라벨·기간·첨부만, 결과를 누르면 그 자리로 가서 찾은 글을 짚는다).
+- [x] ■1 검색(사본에서 치는 대로 - 모든 학년도·종류·라벨·기간·첨부만, 결과를 누르면 그 자리로 가서 찾은 글을 짚는다).
+  → 순수 `domain/search.ts`(`searchItems`·`scopeRange` - 글·표 칸 글, 메모는 만든 날, 첨부는 파일마다) · `features/search/SearchWindow.tsx`(창 `search` `[data-search-window|search-input|search-kind|search-scope|search-range|search-label|search-results|search-hit|search-hit-kind|search-open|search-file|search-more|search-empty]`) ·
+  짚기 `features/search/focus.ts`(`requestFocus`·`useSearchFocusRunner`(Shell)·`useFocusReveal` - 하루 일정·기록 칸, 메모 화면 진행/완료를 편다, 거르개는 옮기기 전에 푼다) · `.search-focus`(index.css). 수업·조사표 갈래는 P6-1·P7-4.
 - [ ] ■2 휴지통(지운 표시 걸러 보기·되살리기·영구 삭제 = 문서 지우기 + 드라이브 첨부 정리(누른 때 토큰), ⚙️ 자동 비우기 - `settings/common.trashDays`, 앱을 열 때 지난 것만).
 - [ ] ■3 크롬 점검.
 **끝 조건**: 설명서 `search`·`trash`가 된다. **P5 단계 끝 정리**(1-4).
