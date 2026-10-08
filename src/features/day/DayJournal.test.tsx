@@ -7,6 +7,9 @@ import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mi
 import { useSession } from '../../data/session';
 import { undoCount } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
+import { handleAppKeyDown } from '../../app/keys';
+import { EMPTY_FILTER } from '../../domain/labelTree';
+import { setJournalFilter, useLabelFilters } from '../notes/labelFilter';
 import DayJournal from './DayJournal';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
@@ -176,5 +179,30 @@ describe('하루 기록 칸', () => {
     fireEvent.click(q('[data-journal-collapse]')!);
     expect(cards()).toEqual([]);
     expect(q('[data-journal-add]')).toBeNull();
+  });
+});
+
+describe('기록 칸 라벨로 보기 (P4-1)', () => {
+  it('전체 · 라벨 칩 - 상위를 고르면 하위가 붙은 기록도, 기억하고 ESC로 뗀다', () => {
+    setJournalFilter(EMPTY_FILTER);
+    seed();
+    render(<DayJournal date={DAY} />);
+    expect(q('[data-journal-filter]')).not.toBeNull();
+    expect(q('[data-filter-chip="all"]')?.getAttribute('aria-pressed')).toBe('true');
+    // 상위 '학급'의 숫자 = 하위 '상담'이 붙은 기록 a
+    expect(q('[data-filter-chip="P"]')?.textContent).toContain('1');
+    fireEvent.click(q('[data-filter-chip="P"]')!);
+    expect(cards()).toEqual(['a']);
+    expect(useLabelFilters.getState().journal).toEqual({ labels: ['P'], others: [] });
+    act(() => handleAppKeyDown(new KeyboardEvent('keydown', { key: 'Escape' })));
+    expect(cards().length).toBe(4);
+  });
+
+  it('고른 라벨의 기록이 없으면 그렇다고', () => {
+    setJournalFilter({ labels: [], others: ['P'] });
+    seed();
+    render(<DayJournal date={DAY} />);
+    expect(q('[data-journal-filtered-empty]')).not.toBeNull();
+    setJournalFilter(EMPTY_FILTER);
   });
 });
