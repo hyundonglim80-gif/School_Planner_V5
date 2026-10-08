@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** (다음 대화에서 - PC든 클라우드든. 클라우드면 1-7을 먼저).
+**P2-1 타입·저장 도우미·지운 표시·되돌리기·규칙** - ■2 저장 도우미부터 (클라우드 세션 `claude/happy-rubin-wcxw0e`, 10-08).
 
 ---
 
@@ -347,7 +347,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P2-1. 타입·저장 도우미·지운 표시·되돌리기·규칙
 **시작 조건**: P1-4 끝(배포가 늦어지면 P1-3 끝이어도 된다 - 에뮬레이터로).
 **먼저 읽을 것**: `DESIGN.md` 2·4·6-1장, V4 `utils/toast.ts`(failWithToast·ShownError·showErrorToastOnce)·`lib/undoToast.ts`.
-- [ ] ■1 `src/data/types.ts`(`DESIGN.md` 4장 그대로), `newId()`(20자), 차례 값 `domain/order.ts`(분수 인덱스 - 두 값 사이 값, 테스트).
+- [x] ■1 `src/data/types.ts`(`DESIGN.md` 4장 그대로), `newId()`(20자 - `data/id.ts`), 차례 값 `domain/order.ts`(분수 인덱스 - 두 값 사이 값, 테스트).
 - [ ] ■2 저장 도우미 `src/data/repo/`: `create`·`patch`·`remove`(지운 표시)·`restore`·`purge`·`batch` - `updatedAt` 서버 시각, 만들 때 `deletedAt: null`·`v`·`createdAt`·`authorId`.
   실패는 `failWithToast`로 던진다. 모두 **되돌릴 값**을 돌려준다.
 - [ ] ■3 되돌리기 `src/data/undo.ts`: 안내의 '되돌리기'(V4 undoToast 모양) + Ctrl+Z 쌓기(글 칸 밖에서만, 공간마다 20개).
