@@ -76,10 +76,10 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | `done` / `doneAt` | boolean / number? | 완료 / 완료한 때(ms) |
 | `doneDates` | string[]? | 기간 일정의 날마다 완료 |
 | `favorite` | boolean? | ★ (메모·기록) |
-| `order` | string | 같은 날·같은 목록 안 차례. 분수 인덱스 글자라 하나만 고쳐 끼운다 |
-| `time` / `alarmDone` | `'HH:mm'`? / boolean? | 알림 시각(그 항목의 `date` 기준 - 날짜를 옮기면 알림도 따라간다) / 울려서 확인함 |
+| `order` | string | 같은 날·같은 목록 안 차례. 분수 인덱스 글자라 하나만 고쳐 끼운다(▲▼ = 다시 세운 줄에서 옮긴 것만 - `rekeyOrders`). 새 항목은 그날 맨 뒤, 날짜를 옮겨도 그대로 |
+| `time` / `alarmDone` | `'HH:mm'`? / boolean? | 알림 시각(그 항목의 `date` 기준 - 날짜를 옮기면 알림도 따라간다, 알림 창에 날짜 칸이 없다) / 울림 - 앱 안 알림이 울린 기기가 적고 다른 기기는 건너뛴다. 시각을 바꾸거나 날짜를 옮기면 지운다(다시 울린다) |
 | `due` | `'YYYY-MM-DD'`? | 기한 |
-| `props` | `{ forward?, calendar?, skip?, gcal? }`? | 이 항목만의 속성 값. 없으면 라벨 속성을 따른다(V4와 같다) |
+| `props` | `{ forward?, calendar?, skip?, gcal? }`? | 이 항목만의 속성 값 - **라벨이 정한 값과 다른 것만** 적는다(P3-1 `features/events/eventForm`). 없으면 라벨 속성을 따른다(붙은 라벨 하나라도 켰으면 켬, 라벨이 없으면 달력만 - V4와 같다) |
 | `carrying` / `carriedFrom` | boolean? / `'YYYY-MM-DD'`? | 이월로 따라오는 중(처음 따라올 때 한 번 쓴다) / 끝낼 때 그날로 옮겨 적으며 남기는 처음 날 |
 | `seriesId` / `seriesIndex` | string? / number? | 반복 묶음 |
 | `fromDate` | `'YYYY-MM-DD'`? | 기록에서 메모로 뺄 때 그 날('📅 10/6에서') |
@@ -204,6 +204,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - 실패는 `failWithToast`로 **던진다**(V4 규칙). 부르는 칸은 실패하면 닫지 않는다. 뒤에서 맞추는 설정 동기화만 `writeOps`(안내 없이 원래 오류).
 - 쓰기마다 **되돌리는 쓰기**(`Undo` = WriteOp 목록, 고치기 전 칸 값으로)를 돌려준다 → `recordUndo(공간, 안내, undo, { what })`(`src/data/undo.ts`)로
   안내의 '되돌리기'와 Ctrl+Z(글 칸 밖, 공간마다 20개)가 한 길이다. 만들기의 되돌리기는 지운 표시, 영구 지우기의 되돌리기는 그 문서를 그대로 다시 적기.
+  작은 일(일정 완료·순서·카드 ⏰)은 `{ quiet: true }` - 안내 없이 Ctrl+Z 더미에만(V4도 안내가 없었다). 되돌리는 쓰기를 기능이 지을 수도 있다(일정 옮기기 = 날짜만 되돌린다).
 - 적는 것은 늘 `writeBatch` 하나(500개를 넘으면 나눈다). 여럿을 함께 바꾸는 것(링크 양쪽, 반복 묶음, 공간 옮기기)은 `batch([writeOp.…])`. 서버에서 읽어 고쳐 쓰는 트랜잭션은 거의 없다.
 - 규칙(`firestore.rules`)이 items·labels의 `kind`·`deletedAt`·`v`·**`updatedAt == 서버 시각`**을 본다 - 서버 시각을 빠뜨린 쓰기는 사본에 가지 않으므로 저장 실패로 드러낸다.
 
@@ -269,7 +270,8 @@ openWindow('seating', { classId })        // Layout이 열림 상태를 들지 �
 ```
 store(`src/app/windows.ts`)의 `windows: [{ key, id, params, openedAt, raisedAt }]`는 **무엇이 열려 있나**다. 같은 항목을 다시 열면
 새로 만들지 않고 `raisedAt`만 바꿔 그 탭을 보인다(창 `side`는 id마다 하나, 쓰는 칸 `panel`은 params마다 - `sameAs`로 바꾼다).
-창 컴포넌트는 기능 폴더의 `*Window.tsx`(ModalShell)·`*Panel.tsx`(SidePanelFrame)이고 `{ params, close, raise }`를 받아 스스로 틀을 그린다.
+창 컴포넌트는 기능 폴더의 `*Window.tsx`(ModalShell)·`*Panel.tsx`(SidePanelFrame)이고 `{ params, close, raise, setParams }`를 받아 스스로 틀을 그린다.
+`setParams`는 열린 창이 가리키는 것을 바꾼다(다시 그리지 않는다) - 새 일정 칸이 저장한 뒤 그 일정의 수정 칸이 될 때(P3-1 쓰는 칸 `event` = `{ sid, date, id? }`).
 오른쪽 줄의 탭 차례·숨은 탭·폭은 그 틀이 줄에 설 때 정한다(`src/ui/sideColumn.ts` - V4 PopupFrame 그대로, 다시 연 탭은 끝으로 간다).
 창 안에서 띄운 작은 창(등록하지 않은 PopupFrame)도 같은 줄에 선다. 닫기 단추에는 `data-close`(탭 ×가 누른다).
 저장 안 한 글이 있는 창은 `registerUnsavedCheck`로 알린다 - ESC·▶(줄 전체 닫기)가 먼저 묻는다.

@@ -21,6 +21,11 @@ export interface WindowProps<P = unknown> {
   close: () => void;
   /** 이미 열린 창을 다시 열면 바뀐다 - 틀(ModalShell·SidePanelFrame)에 그대로 넘긴다 */
   raise: number;
+  /**
+   * 이 창이 가리키는 것을 바꾼다 (다시 그리지 않아 적던 것이 남는다). 새 일정 칸이 저장한 뒤 그 일정의 수정 칸이 될 때처럼 -
+   * 같은 창인지(sameAs)를 새 값으로 본다.
+   */
+  setParams: (params: P) => void;
 }
 
 export interface WindowDef<P = unknown> {
@@ -69,11 +74,11 @@ export function registerWindow<P>(def: WindowDef<P>) {
 }
 
 export function getWindowDef(id: string): WindowDef<unknown> | undefined {
-  return registry.get(id) as WindowDef<unknown> | undefined;
+  return registry.get(id) as unknown as WindowDef<unknown> | undefined;
 }
 
 export function listWindows(): WindowDef<unknown>[] {
-  return [...registry.values()] as WindowDef<unknown>[];
+  return [...registry.values()] as unknown as WindowDef<unknown>[];
 }
 
 export const useWindows = create<{ windows: OpenWindow[] }>(() => ({ windows: [] }));
@@ -101,6 +106,11 @@ export function openWindow(id: string, params?: unknown): number {
   }
   useWindows.setState((s) => ({ windows: [...s.windows, { key: now, id, params, openedAt: now, raisedAt: now }] }));
   return now;
+}
+
+/** 열린 창이 가리키는 것을 바꾼다 (WindowProps.setParams) */
+export function setWindowParams(key: number, params: unknown) {
+  useWindows.setState((s) => ({ windows: s.windows.map((w) => (w.key === key ? { ...w, params } : w)) }));
 }
 
 /** 창 하나를 닫는다 (저장 없이 - 묻는 것은 창이 닫기 전에 한다) */

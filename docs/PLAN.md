@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-1 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림** (다음 대화에서 - 클라우드면 1-7을 먼저).
+**P3-2 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관** (다음 대화에서 - 클라우드면 1-7을 먼저).
 
 ---
 
@@ -140,8 +140,8 @@
 | P2-3 | 라벨(트리·속성·라벨 관리 창) | 중간 | 중간 | 끝 (2026-10-08) |
 | P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | 끝 (2026-10-08) |
 | **P3 하루 화면** | | | | |
-| P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | **다음** |
-| P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | |
+| P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | 끝 (2026-10-08) |
+| P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | **다음** |
 | P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | |
 | P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | |
 | **P4 메모·첨부·링크** | | | | |
@@ -196,6 +196,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-2 | P2-2 세션 끝 정리 | 단위 309 · 자료 층(에뮬레이터) 19 · inspect-mirror 27 · data·settings·shell·login 통과 · 브랜치 `ccr-85a3b20a-nxq1q4` → PR #2 → Claude가 합침(사용자 결정: 앞으로 자동 합치기·배포) · V4는 읽기용으로 옆에 받음(`--depth 1`) |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-3 | P2-3 세션 끝 정리 | 단위 363 · inspect-labels 20 · shell·settings·data 통과 · 브랜치 `claude/dreamy-ritchie-ub4ru5` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-4 | P2-4 세션 끝 정리 | 단위 610 · 자료 층(에뮬레이터) 24(import.emu 5) · inspect-import-labels 32 · P2 단계 점검 모두(data·mirror·labels·import-labels + shell·settings·login·pwa) 통과 · 브랜치 `claude/eager-hypatia-mlpldd` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 👤 실제 계정으로 한 번 가져와 보기 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P3-1 | P3-1 세션 끝 정리 | 단위 721 · 자료 층(에뮬레이터) 24 · inspect-events 58 · shell·labels·settings·data 통과 · 브랜치 `claude/peaceful-lamport-icu4gf` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 단위 테스트 '처리하지 않은 오류'(진짜 Firebase를 띄운 시험 넷)를 고침 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -316,6 +317,26 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   V4 이월 기간(기기마다 `forwardLookbackDays`)은 V5 `common.forwardDays` 하나로(PC 값 먼저). 교사 유형·수업 종 같은 common 칸은 그 칸이 생기는 세션이
   `import/v4/settings.ts` `COMMON_FROM_V4`에 한 줄 더한다(칸이 없으면 설정 맞추기가 지운다).
 - **P2-4 되돌리기 없음**: 가져오기는 Ctrl+Z 더미에 넣지 않는다 - 수백 개를 한꺼번에 지운 표시로 되돌리면 더 위험하고, 다시 가져오기가 바뀐 것만 고친다.
+- **P3-1 완료·순서의 되돌리기**(권장안으로 고름): ☐ 완료·라벨 칩·▲▼는 V4처럼 안내를 띄우지 않고 Ctrl+Z 더미에만 넣는다(`recordUndo(…, { quiet: true })`) -
+  누를 때마다 '되돌리기' 안내가 뜨면 시끄럽고, 잘못 누른 것은 한 번 더 누르거나 Ctrl+Z로 되돌린다. 지우기·옮기기는 안내 + 되돌리기(■3).
+- **P3-1 순서**: ▲▼는 보이는 줄을 다시 세워 `rekeyOrders`로 **옮긴 것만** 새 차례 값 - 한 칸 옮기기는 문서 하나(어느 쪽이 바뀔지는 가장 긴 오름차순이 정한다).
+  두 기기가 같은 차례 값을 만든 줄도 그 자리에서 풀린다. 기간 일정(P3-3)은 차례 값이 하나라 한 날에서 옮기면 다른 날에서도 그 차례다.
+- **P3-1 쓰는 칸 자리**: 창 목록의 쓰는 칸 `event` - 새 일정 = `{ sid, date }`(같은 날의 새 일정 칸이 열려 있으면 그 탭), 수정 = `{ sid, date, id }`(같은 일정이면 그 탭 - 항목은 id로 찾으므로 날짜는 보지 않는다).
+  저장한 새 일정 칸은 창의 `setParams`로 id를 더해 그 일정의 수정 칸이 된다(V4 `setEntryPanelId` - 다시 그리지 않아 적은 것이 남는다).
+- **P3-1 하루 화면**: V4의 '불러오는 중' 막기와 `EmptyDayReport`(왜 비었나 서버에 묻기)는 옮기지 않는다 - 기기 사본에서 곧바로 그리고, 사본도 서버 소식도 없을 때만 '일정을 받는 중…'.
+  V4 진단은 Firestore 캐시가 고장 났던 때(09-22)의 것이고 V5 사본 상태는 환경설정 '앱' 탭이 보인다.
+- **P3-1 알림 = 일정 날의 시각**(DESIGN 4-2대로): 알림 창에 날짜 칸이 없다 - 일정 날짜를 옮기면 알림도 따라간다(V4는 알림 날짜를 따로 골랐고, 옮길 때 같은 날 수만큼 옮겼다).
+  앞날 알림은 드물고, 따로 두면 옮기기·이월·서버 푸시(P8-2)가 날짜 둘을 맞춰야 한다. 시각을 바꾸거나 다른 날로 옮기면 `alarmDone`을 지워 다시 울린다.
+  P3-4 가져오기: V4 알림 날짜가 일정 날과 다르면 그 시각을 일정 날에 두고 결과 표에 수를 적는다.
+- **P3-1 속성 적기**: 일정 칸의 속성(달력·이월·수업X·구글 캘린더)은 **라벨이 정한 값과 다른 것만** `props`에 적는다(V4는 모두 적었고 구글 캘린더만 같으면 비웠다) -
+  나중에 라벨 속성을 바꾸면 손대지 않은 일정이 따라간다. 라벨이 정한 값 = 붙은 라벨 가운데 하나라도 켰으면 켬, 라벨이 없으면 달력만 켬(V4 그대로).
+  라벨을 바꾸면 따로 정한 것은 걷는다(V4 '라벨을 고르면 그 라벨 속성이 따라 켜진다'). 기간·반복은 속성이 아니라 일정 칸의 줄(P3-3).
+- **P3-1 앱 안 알림**: V4처럼 이 탭이 20초마다 보되 오늘 문서를 따로 구독하지 않고 **기기 사본**에서 본다(어제 밤 알림도 1시간 안이면). 울리면 그 일정의 `alarmDone`만 적는다
+  (V4는 하루 문서를 트랜잭션으로 다시 썼다). **알림 허용을 앱을 열 때 묻지 않는다**(권장안 - V4는 처음 열 때 물었다): 아무것도 누르지 않았는데 뜨는 허용 창은
+  크롬이 조용히 막고, 서버 푸시(P8-2)의 '이 기기에서 받기'가 누를 때 묻는다. 그 전에는 허용해 둔 기기에서만 탭이 가려졌을 때 OS 알림도 띄운다.
+  서비스 워커가 넘기는 알림('sp4-event-alarm' 메시지)은 P8-2.
+- **P3-1 테스트와 Firebase**: `data/select`·`session`을 부르는 단위 테스트는 `vi.mock('…/data/firebase')`를 둔다 - 진짜 앱을 띄우면 시험이 끝난 뒤 Firebase가
+  IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔(3번에 1번) 남는다. vitest가 'originated in …'으로 그 파일을 알려 준다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -487,12 +508,25 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: V4 설명서 `event-add`·`event-edit`·`event-complete`·`event-labels`·`event-attrs`·`alarm`, V4 `features/day/DayScreen.tsx`·`DayEvents.tsx`·`EmptyDayReport.tsx`,
 `components/EventDrawer.tsx`·`EventItemActions.tsx`·`EventAlarmModal.tsx`·`EventAlarmPopup.tsx`·`QuickInputChips.tsx`·`DueBadge.tsx`·`EntryPanelHost.tsx`,
 `lib/quickInput.ts`·`eventDue.ts`·`sound.ts`, `hooks/useEventAlarms.ts`.
-- [ ] ■1 하루 화면 틀(수업 자리·일정·기록 자리·급식 자리) + 일정 목록(PC 1열·휴대폰 2열 카드, ☐ 완료, 라벨 칩 누르기 = 완료, ⏰, 🔗 수, `data-event-*`), 순서 바꾸기(`order` 하나만).
-- [ ] ■2 일정 칸(EventDrawer 옮기기 - 쓰는 칸 kind `event`): 내용 칸 맨 위·날짜·알림 시각·라벨·속성 줄(달력·이월·수업X·구글 캘린더 - 값이 있으면 라벨을 이긴다)·기한·빠른 입력 칩.
+- [x] ■1 하루 화면 틀(수업 자리·일정·기록 자리·급식 자리) + 일정 목록(PC 1열·휴대폰 2열 카드, ☐ 완료, 라벨 칩 누르기 = 완료, ⏰, 🔗 수, `data-event-*`), 순서 바꾸기(`order` 하나만).
+  → `features/day/DayScreen.tsx`(수업·기록 자리는 `[data-day-slot]`) · `DayEvents.tsx`(`[data-day-events|event-card|event-done|event-complete|event-chip|event-alarm|event-links|event-up|event-down|event-edit|event-add|event-count|event-collapse|event-empty|event-waiting]`) ·
+  `features/events/`(`eventOps.ts` 순수 - `reorderOps`(rekeyOrders로 옮긴 것만)·`doneChanges`·`orderAfter` / `actions.ts` `setEventDone`·`moveEventInList` / `open.ts` 쓰는 칸 'event' 열기·고치는 일정 짚기 / `DueBadge.tsx`) ·
+  `domain/eventDue.ts`(V4 테스트째 - 사슬 기한은 없다) · `recordUndo(…, { quiet })` · 창 `setParams`(windows `setWindowParams`) · 크롬 `inspect-events.mjs` 16항목(■5에서 늘린다).
+- [x] ■2 일정 칸(EventDrawer 옮기기 - 쓰는 칸 kind `event`): 내용 칸 맨 위·날짜·알림 시각·라벨·속성 줄(달력·이월·수업X·구글 캘린더 - 값이 있으면 라벨을 이긴다)·기한·빠른 입력 칩.
   저장하면 그 항목의 수정 칸이 된다. 날짜를 바꾸면 `date`만.
-- [ ] ■3 지우기 = 지운 표시 + 안내 '되돌리기' + Ctrl+Z. 저장 실패면 칸을 닫지 않는다.
-- [ ] ■4 앱 안 알림(useEventAlarms·EventAlarmPopup·소리 3초마다 3번·🔇 옮기기 - 사본에서 오늘 알림을 본다. 서버 푸시는 P8-2) + 머리줄 ＋ 새로 → 새 일정 칸.
-- [ ] ■5 크롬 점검 `inspect-events.mjs`: 추가·완료·순서·고치기·날짜 바꾸기·지우기·되돌리기·Ctrl+Z, **저장마다 서버 문서 하나만** 바뀌는지.
+  → `features/events/EventPanel.tsx`(창 목록 `event` - `[data-event-panel=new|edit|event-id|event-text-input|event-date|event-date-prev|next|event-move-note|event-move-keep|event-due-input|event-due-clear|event-alarm-open|event-link-add|event-attr|event-save|event-close|event-missing]`) ·
+  `eventForm.ts`(순수 - 속성 = 라벨 먼저·다른 것만 `propsToStore`, 라벨을 바꾸면 따로 정한 것을 걷음, 저장 = 바뀐 칸만 `editChanges`) · `actions.ts` `createEvent`·`saveEvent`(옮기기의 되돌리기는 날짜만)·`setEventAlarm` ·
+  `EventAlarmWindow.tsx`(⏰ 시각만 - `[data-alarm-window|alarm-time|alarm-save|alarm-off]`, 하루 카드 ⏰는 누르는 즉시 저장) · `QuickInputChips.tsx`(`[data-quick-chip]`) ·
+  `domain/quickInput.ts`(V4 테스트째) · `domain/eventAlarm.ts` `normalizeTimeInput` · `ui/AutoTextarea.tsx`(V4 테스트째) · `dateUtils.shortDateLabel` · 크롬 `inspect-events` 40항목.
+  미룬 것: 반복 칩·'🔁 반복'·'끝 날'·이월 일정을 지난 날로 옮길 때 안내 → P3-3, 🔗 링크 추가 → P4-3(지금은 🚧), 구글 캘린더 로그인 묻기 → P8-1.
+- [x] ■3 지우기 = 지운 표시 + 안내 '되돌리기' + Ctrl+Z. 저장 실패면 칸을 닫지 않는다.
+  → `actions.deleteEvent`(확인 창 없이 - V4 그대로, 그 일정을 고치던 칸은 `open.closeEventPanelsFor`로 닫는다) · 카드 🗑️ `[data-event-delete]`(✏️ 옆, 마우스를 올리면) · 칸의 '삭제'.
+  크롬 `inspect-events` 51항목(🗑️·안내 되돌리기·칸 삭제·Ctrl+Z·완료 Ctrl+Z). 묶음 지우기(이 날만·이 날부터·전부)는 P3-3.
+- [x] ■4 앱 안 알림(useEventAlarms·EventAlarmPopup·소리 3초마다 3번·🔇 옮기기 - 사본에서 오늘 알림을 본다. 서버 푸시는 P8-2) + 머리줄 ＋ 새로 → 새 일정 칸.
+  → `features/events/EventAlarms.tsx`(Shell에 하나 - 3초 뒤·20초마다 사본을 보고, 울린 일정에 `alarmDone`(writeOps - 안내·되돌리기 없이)) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]`, 깜빡임 `index.css` `sp5-alarm-*`) ·
+  `domain/eventAlarm.ts` `dueAlarms`·`alarmAt` · `app/sound.ts`(V4 lib/sound - 수업 종 `playBell`은 P6-3이 쓴다) · `features/events/shortcuts.ts`(`newEvent` = 보는 날의 새 일정 칸, 메모·학급 화면이면 오늘) · 크롬 `inspect-events` 58항목.
+- [x] ■5 크롬 점검 `inspect-events.mjs`: 추가·완료·순서·고치기·날짜 바꾸기·지우기·되돌리기·Ctrl+Z, **저장마다 서버 문서 하나만** 바뀌는지.
+  → ■1~■4에서 조각마다 늘려 58항목(+ 빠른 입력·카드 ⏰·앱 안 알림·＋ 새로). shell·labels·settings·data 점검과 자료 층 24도 다시 통과.
 **끝 조건**: 위 설명서 주제가 V5에서 된다(PARITY 체크).
 
 ### P3-2. 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관

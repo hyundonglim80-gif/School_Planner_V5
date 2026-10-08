@@ -9,6 +9,9 @@ import { OfflineError, type MirrorServer, type ServerBatch, type ServerPage } fr
 import { beginLocalWrite, useMirror, type Plain } from './store';
 import { mirrorEngine, OVERLAP_MS, PRUNE_EVERY_MS, resetMirror, startMirror, stopMirror, wipeMirror } from './sync';
 
+// 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
+vi.mock('../firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
+
 const t = (s: number) => new Timestamp(s, 0);
 
 interface Listener {

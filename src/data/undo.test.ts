@@ -80,6 +80,14 @@ describe('되돌리기', () => {
     expect(undoCount(sid)).toBe(0);
   });
 
+  it('quiet = 안내 없이 Ctrl+Z 더미에만 (일정 완료·순서)', async () => {
+    recordUndo(sid, '완료', undoOf('a'), { what: '일정 완료', quiet: true });
+    expect(toasts()).toEqual([]);
+    expect(undoCount(sid)).toBe(1);
+    expect(await undoLast()).toBe(true);
+    expect(toasts().some((t) => t.includes('되돌렸습니다 - 일정 완료'))).toBe(true);
+  });
+
   it('로그인한 사람이 바뀌면 더미를 비운다', () => {
     const stop = watchUndoOwner();
     recordUndo(sid, '하나', undoOf('a'));
