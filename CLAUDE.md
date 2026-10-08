@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P5-1 끝**(클라우드 - 주간 화면·작년 이맘때·📝 그날 기록 창). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P5-2. 👤 V5 주소에서 주간·작년 이맘때(가져오기·되돌리기)·첨부·링크 써 보기, 실제 계정 가져오기로 V4와 견주기.
+- **2026-10-08 P5-2 끝**(클라우드 - 월간·년간 학사력/자세히·오늘로). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P5-3. 👤 V5 주소에서 월간·년간·주간·첨부·링크 써 보기, 실제 계정 가져오기로 V4와 견주기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -228,6 +228,10 @@
   - **기간·반복·묶음(P3-3)**: `domain/period.ts`(보이는 날·'(k/n)'·doneDates·skipDates·끝 날 당기기 - 공휴일은 `HolidayCheck`로 P5-3) · `domain/recur.ts`(규칙·날짜·이름) · `events/seriesOps.ts`(순수 - 만들기·묶음 고치기·지우기)·`series.ts`(`useSeriesOf`) ·
     일정 칸 '📆 끝 날' `[data-event-period-*|event-end|event-workdays]`·`RecurRow.tsx`(`[data-event-recur-row|recur-*]`)·`[data-event-series-info]` · `EventScopeWindow.tsx`(세 갈래 창 `[data-scope-window|scope-choice]`)·`EventDeleteChooser.tsx` · 카드 '(k/n)' `[data-event-period]`·🔁 `[data-event-series]`.
   - **여러 개 고르기(P3-3)**: `events/multi.ts`(store `useMulti` - id + 그 날)·`multiOps.ts`(순수 - 한 일정 여러 날은 한 문서에 접는다)·`MultiSelectBar.tsx`(Shell - `[data-multi-*]`, ⋮ `multiSelect`·ESC) · 카드 `[data-event-picked]`·Ctrl·Shift·길게 누르기 · ESC에 함께 할 일 `app/keys.addEscapeAction`.
+- **월간** `src/features/month/`(P5-2): `MonthScreen.tsx`(휴대폰은 날짜 → 그날 목록) · `MonthGrid.tsx`(한 주 한 줄 subgrid `[data-month-week|month-day|month-event|month-event-chip|month-add|month-notes]`) · `PeriodBar.tsx`(`[data-period-bar|period-cell]`) ·
+  `MonthDaySheet.tsx`(`[data-month-day-sheet]`) · `calendarEvents.ts`('달력' 속성 일정만 - 년간도 쓴다). 순수 `domain/periodBars.ts`(`layoutWeekBars`·`periodsInDates`) · `dateUtils.monthGridDates`.
+- **년간** `src/features/year/`(P5-2): `YearScreen.tsx`(📅 학사력 / 📋 자세히 `[data-year-view]` - `prefs.ts` `sp5-year-view` 이 기기, 세 달씩 그리기) · `YearSheetMonth.tsx`(`[data-sheet-month|sheet-date|sheet-bar|sheet-item]`) ·
+  `YearMonthCard.tsx`(`[data-year-month|year-day|year-event|year-period|year-add|year-notes]`) · 순수 `domain/yearSheet.ts`(`academicMonths`·`monthWeeks`·`monthSheetItems`). 점검 `tools/inspect-month-year.mjs`(60).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker`) · `LinkViewerWindow.tsx`(창 `links`). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·

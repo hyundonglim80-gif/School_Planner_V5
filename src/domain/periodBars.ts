@@ -88,3 +88,30 @@ export function periodIndexLabel(cells: readonly { index: number }[], total: num
   const b = cells[cells.length - 1].index;
   return a === b ? `${a}/${total}` : `${a}~${b}/${total}`;
 }
+
+export interface ShownPeriod<T> {
+  item: T;
+  /** 보이는 날들 가운데 이 기간이 걸친 날 (차례대로) */
+  cells: { date: string; index: number }[];
+  /** 모두 며칠 */
+  total: number;
+  startsPeriod: boolean;
+  endsPeriod: boolean;
+}
+
+/**
+ * 보이는 날들(년간의 한 달 - 주말을 감추면 평일만)에 걸친 기간 일정을 하나씩 (V4 collapsePeriods).
+ * 년간은 기간을 날마다 늘어놓지 않고 그 달에서 처음 보이는 날 한 번만 범위와 함께 보인다.
+ */
+export function periodsInDates<T extends PeriodItem>(dates: readonly string[], periods: readonly T[], isHoliday?: HolidayCheck): ShownPeriod<T>[] {
+  const shown = new Set(dates);
+  const out: ShownPeriod<T>[] = [];
+  for (const item of periods) {
+    const days = periodDays(item, isHoliday);
+    if (days.length < 2) continue;
+    const cells = days.flatMap((date, i) => (shown.has(date) ? [{ date, index: i + 1 }] : []));
+    if (cells.length === 0) continue;
+    out.push({ item, cells, total: days.length, startsPeriod: cells[0].index === 1, endsPeriod: cells[cells.length - 1].index === days.length });
+  }
+  return out;
+}
