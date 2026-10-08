@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P3-1 끝**(클라우드 - 하루 화면 틀·일정 카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림·＋ 새로). '이어서' = **P3-2**(기록·메모). 👤 V5 주소에서 일정을 넣고·고치고·지워 보기, 그리고 (P2-4 부탁) 띠의 '가져오기'로 라벨·설정이 V4와 같은지(일정 가져오기는 P3-4).
+- **2026-10-08 P3-2 끝**(클라우드 - 하루 기록 칸·메모/기록 카드·쓰는 칸(📅 날짜 = 자리·#라벨·체크리스트)·쓰던 글 보관·＋ 새로 기록/메모). '이어서' = **P3-3**(이월·지난 일정·기간·반복·여러 개). 👤 V5 주소에서 기록·메모를 쓰고·날짜를 빼 메모로 옮기고·지워 보기, 그리고 (P2-4 부탁) 띠의 '가져오기'로 라벨·설정이 V4와 같은지(일정·기록 가져오기는 P3-4).
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -64,6 +64,8 @@
   - 보던 화면이 기억되므로 묶음 시작에서 화면을 정한다(주소 `#/day/…`로 열면 된다). 같은 주소(# 뒤만 같은 것)를 `goto`하면 새로 읽지 않는다 - 앱을 처음부터 보려면 `page.reload()`(P2-4).
 - **단위 테스트가 `data/select`·`session`·`space`를 부르면 `vi.mock('…/data/firebase')`** - 진짜 Firebase 앱이 뜨면 시험이 끝난 뒤 IndexedDB를 열다
   '처리하지 않은 오류'가 가끔 남는다(P3-1 - 셋에 한 번). vitest가 'originated in <파일>'로 그 파일을 알려 준다. 끝에 `Errors`가 0인지도 본다.
+- **IndexedDB(idb)는 트랜잭션을 열어 일과 `tx.done`을 함께 기다린다**(P3-2) - `db.get`·`db.put` 줄임은 읽기 트랜잭션의 done을 아무도 받지 않아, 트랜잭션이 끊기면 '처리하지 않은 오류'(AbortError)가 된다.
+- **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
 - **C: 디스크가 차면 에뮬레이터가 죽는다**: `firebase-debug.log`·`firestore-debug.log`(git 무시)가 커진다. 긴 점검 전에 `df -h /c`, 차면 두 로그를 비우고 `npm run emu` → seed.
 - 에뮬레이터에서 문서 하나 저장이 6~7초씩 걸리면 앱 버그가 아니라 남은 잠금이다(점검 브라우저를 저장 도중에 끈 탓) - 에뮬레이터를 다시 켜고 seed.
 - 클라우드 세션(claude.ai/code): `docs/PLAN.md` 1-7(세션 브랜치 푸시 → PR, 준비 순서, Chromium, V4 받기). 운영 규칙·함수 배포는 PC에서(묻고).
@@ -176,7 +178,7 @@
   `labels.ts`(라벨 쓰기 - 저장 = 바뀐 칸만 `labelSaveOps`·`createLabelOp`·이름으로 찾기·만들기 `ensureLabelOps`·`defaultLabelOps`·`labelNameProblem`, 적기 `addLabel`·`saveLabels`·`restoreLabels`·`addDefaultLabels`) ·
   `session.ts`의 `currentSpaceId`·`useCurrentSpaceId`(지금 공간 한 곳). 화면 문서 = `Stored<C>`(자리 id가 붙는다 - 저장 도우미는 id를 적지 않는다).
 - **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
-  로그인한 화면은 `[data-session=signed-in][data-user=<메일>]`. `logout`은 기다리던 설정을 먼저 올린다.
+  로그인한 화면은 `[data-session=signed-in][data-user=<메일>]`. `logout`은 기다리던 설정을 먼저 올리고, 나간 뒤 기기 사본·쓰던 글 보관을 지운다.
 - **라벨** `src/features/labels/`: `LabelsWindow.tsx`(창 `labels` - ⋮ 일정, `{ tab: 'event'|'note' }`, 고친 것만 들고 사본 위에 얹는다, `[data-labels-window]`·
   `[data-label-tab|row|name|color|prop|parent|up|down|delete|save|add|new-name|new-parent|usage|prune|prune-item|prune-confirm|recover|defaults]`) · `ColorPicker.tsx`(`[data-color-option]`) ·
   `LabelChip.tsx`(`LabelChip`·`LabelChips` `[data-label-chip]`) · `LabelPicker.tsx`(쓰는 칸 - `[data-label-picker|pick|pick-new|pick-new-input|pick-pending|picker-settings]`).
@@ -200,7 +202,7 @@
   `labelTree.ts`(V4 트리를 id로 - `parentMapOf`·`orderByTree`·라벨로 보기 `matchLabels`·탐색기식 `clickFilterLabel`·`filterChipOrder`·`otherKey`) ·
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
   `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
-- **하루 화면** `src/features/day/`: `DayScreen.tsx`(수업·일정 7:5 - 본문 폭 720px, 기록 자리 `[data-day-slot]` - 수업 P6-1·기록 P3-2) ·
+- **하루 화면** `src/features/day/`: `DayScreen.tsx`(수업·일정 7:5 - 본문 폭 720px, 수업 자리 `[data-day-slot]` - P6-1, 아래 기록 칸) · `DayJournal.tsx`(기록 칸 - `▼ 📔 기록 N [+ 추가] [+ 메모] … ⚙️`, 즐겨찾기 먼저·본문 폭 2~4열, `[data-day-journal|journal-count|journal-add|journal-add-memo|journal-collapse|journal-empty|journal-waiting]`) ·
   `DayEvents.tsx`(일정 칸 - `▼ 📅 일정 N [+ 추가] … ⚙️`, 카드 PC 1열·휴대폰 2열, `[data-day-events|event-card|event-done|event-complete|event-chip|event-alarm|event-links|event-up|event-down|event-edit|event-delete|event-add|event-count]`).
 - **일정** `src/features/events/`(하루·주간·월간·년간이 함께 쓴다): `open.ts`(쓰는 칸 `event` = `{ sid, date, id? }`·`openEventPanel`·`useEditingEventIds`·`closeEventPanelsFor`) ·
   `EventPanel.tsx`(일정 칸 - `[data-event-panel=new|edit]`·`[data-event-text-input|event-date|event-date-prev|next|event-move-note|event-due-input|event-alarm-open|event-attr|event-save|event-delete]`) ·
@@ -208,6 +210,12 @@
   `actions.ts`(`setEventDone`·`moveEventInList`·`createEvent`·`saveEvent`·`setEventAlarm`·`deleteEvent` - 되돌리기까지) · `EventAlarmWindow.tsx`(⏰ 시각 `[data-alarm-window|alarm-time|alarm-save|alarm-off]`) ·
   `EventAlarms.tsx`(Shell에 하나 - 앱 안 알림, 20초마다 사본) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]`) · `QuickInputChips.tsx`(`[data-quick-chip]`) · `DueBadge.tsx`(`[data-due-badge]`) ·
   `shortcuts.ts`(`newEvent` = ＋ 새로 → 보는 날의 새 일정). 순수 셈 `domain/eventDue.ts`·`eventAlarm.ts`(`normalizeTimeInput`·`dueAlarms`)·`quickInput.ts`(V4 테스트째). 소리 `app/sound.ts`. 자동 높이 글 칸 `ui/AutoTextarea.tsx`.
+- **메모·기록** `src/features/notes/`(하루 기록 칸·메모 화면(P4-1)이 함께 쓴다 - 메모와 기록은 같은 kind 'note', 날짜가 있으면 기록): `open.ts`(쓰는 칸 `note` = `{ sid, date|null, id? }`·`openNotePanel`·`useEditingNoteIds`·`closeNotePanelsFor`) ·
+  `NotePanel.tsx`(`[data-note-panel=new|edit|note-id|note-noun|note-flag=done|favorite|note-date|note-date-clear|note-place-hint|note-place-keep|note-text-input|checklist-toggle|hash-preview|hash-label|note-save|note-delete|note-close]`) ·
+  `noteForm.ts`(순수 - 칸 ↔ 문서, 자리 `placeChanges`(기록 → 메모 = fromDate), '#라벨'·새 라벨 `savePlanOf`) · `noteOps.ts`(순수 - 즐겨찾기 먼저·▲▼ 무리 안·체크 줄) ·
+  `actions.ts`(`createNote`·`saveNote`(새 라벨과 한 묶음·옮기기 되돌리기는 자리만)·`setNoteDone`·`setNoteFavorite`·`moveNoteInList`·`toggleNoteCheckLine`·`deleteNote`) ·
+  `EntryCard.tsx`(메모·기록 같은 카드 `[data-entry-card|entry-kind|entry-done|entry-favorite|entry-collapsed|entry-collapse|entry-up|entry-down|entry-complete|entry-favorite-toggle|entry-chip|entry-checks|entry-edit|entry-delete|check-line|check-done]`) · `TablePreview.tsx`(표 보기만) · `shortcuts.ts`(`newNote`·`newMemo`).
+  순수 셈 `domain/checkLines`·`entryCollapse`·`hashLabels`(V4 테스트째). 주소 → 링크 `ui/FormattedText.tsx`. **쓰던 글 보관** `data/drafts.ts`(`useDraft` - DB `sp5-drafts-{uid}`, 메모·기록·일정 칸, 로그아웃하면 지움) + `ui/DraftOffer.tsx`(`[data-draft-offer|draft-restore|draft-discard]`).
 - **설치(PWA)** `public/`: `manifest.json`(SP5) · `sw.js`(설치·활성만 - 담아 두기·공유받기·푸시는 P8) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
@@ -215,7 +223,8 @@
   `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움) ·
   `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기) ·
   `tools/inspect-import-labels.mjs`(P2-4: 띠 → 가져오기 → V5 라벨·설정 = V4·두 번째는 바뀐 것 0·띠 닫기, V4 문서를 고쳐 심고 되돌린다). seed는 계정마다 띠 닫음을 심는다.
-  `tools/inspect-events.mjs`(P3-1: 일정 카드·완료·순서·추가·고치기·날짜 옮기기·빠른 입력·⏰·지우기·되돌리기·Ctrl+Z·앱 안 알림·＋ 새로 - 저장마다 서버 문서 하나, 58항목).
+  `tools/inspect-events.mjs`(P3-1: 일정 카드·완료·순서·추가·고치기·날짜 옮기기·빠른 입력·⏰·지우기·되돌리기·Ctrl+Z·앱 안 알림·＋ 새로 - 저장마다 서버 문서 하나, 58항목) ·
+  `tools/inspect-notes.mjs`(P3-2: 기록 카드·완료·즐겨찾기·체크 줄·순서·지우기·새 기록 칸·#라벨·고치기·날짜 빼기 = 같은 문서의 date·되돌리기·체크리스트·＋ 새로·쓰던 글 보관 - 61항목).
   자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 단위만 - `repo.emu`·`mirror.emu`·`import.emu`).
   규칙 테스트: `app/windowConventions.test.ts`(창 틀·'취소' 금지·그림 단추 설명·⋮ 표) · `app/keys.test.tsx`(키 글자를 박지 않는다).
 - **V4 가져오기** `src/import/v4/`(V4 자리를 읽는 곳은 여기뿐 - `boundary.test`가 지킨다, 쓰기는 V5에만): `hash.ts`(SHA-1·base32·`stableStringify`) · `ids.ts`(`v4id`·id 없는 것 `idlessKey`) ·

@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-2 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관** (다음 대화에서 - 클라우드면 1-7을 먼저).
+**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** (다음 대화에서 - 클라우드면 1-7을 먼저).
 
 ---
 
@@ -141,8 +141,8 @@
 | P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | 끝 (2026-10-08) |
 | **P3 하루 화면** | | | | |
 | P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | 끝 (2026-10-08) |
-| P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | **다음** |
-| P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | |
+| P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | 끝 (2026-10-08) |
+| P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | **다음** |
 | P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | |
 | **P4 메모·첨부·링크** | | | | |
 | P4-1 | 메모 화면·라벨로 보기 | 중간 | 중간 | |
@@ -197,6 +197,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-3 | P2-3 세션 끝 정리 | 단위 363 · inspect-labels 20 · shell·settings·data 통과 · 브랜치 `claude/dreamy-ritchie-ub4ru5` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-4 | P2-4 세션 끝 정리 | 단위 610 · 자료 층(에뮬레이터) 24(import.emu 5) · inspect-import-labels 32 · P2 단계 점검 모두(data·mirror·labels·import-labels + shell·settings·login·pwa) 통과 · 브랜치 `claude/eager-hypatia-mlpldd` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 👤 실제 계정으로 한 번 가져와 보기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-1 | P3-1 세션 끝 정리 | 단위 721 · 자료 층(에뮬레이터) 24 · inspect-events 58 · shell·labels·settings·data 통과 · 브랜치 `claude/peaceful-lamport-icu4gf` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 단위 테스트 '처리하지 않은 오류'(진짜 Firebase를 띄운 시험 넷)를 고침 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P3-2 | P3-2 세션 끝 정리 | 단위 832 · inspect-notes 61 · events·shell·settings·labels·data 통과 · 브랜치 `claude/amazing-clarke-hboeze` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 · 일정 칸에도 쓰던 글 보관 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -337,6 +338,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   서비스 워커가 넘기는 알림('sp4-event-alarm' 메시지)은 P8-2.
 - **P3-1 테스트와 Firebase**: `data/select`·`session`을 부르는 단위 테스트는 `vi.mock('…/data/firebase')`를 둔다 - 진짜 앱을 띄우면 시험이 끝난 뒤 Firebase가
   IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔(3번에 1번) 남는다. vitest가 'originated in …'으로 그 파일을 알려 준다.
+- **P3-2 메모·기록 옮기기 = 문서 하나의 date**(DESIGN 4-2대로): 📅 날짜 칸을 바꾸고 저장하면 같은 문서의 `date`만 바꾼다(V4는 원래 자리를 휴지통 사본 '(날짜를 바꿈)'으로 남기고
+  새 자리에 다시 썼다 - id가 그대로라 링크도 고칠 것이 없다). 기록 → 메모는 `fromDate`(카드 '📅 10/6에서')를 남기고, 메모 → 기록은 걷는다. 안내의 되돌리기는 **자리만**(함께 고친 글은 그대로 - V4 '원래 자리로 돌아옵니다').
+  차례(`order`)는 옮겨도 그대로(DESIGN 4-2). 새 기록·메모 칸은 맨 위 라벨을 골라 둔다(V4 기록·메모 화면 그대로 - V4 하루 화면의 '+ 메모'만 라벨 없이 열었다, V5는 하나로).
+- **P3-2 @이름 학생 태그는 P7-1로**(권장안으로 고름): V5에는 아직 학급(명렬표)이 없어 고를 학생이 없다. 학생 기록(누가기록)이 모으는 길(`studentIds`·`#26040305`)은
+  학급을 옮기는 P7-1·P7-4에서 정한다. 그때까지 글에 적은 `#26040305`는 그대로 남는다('#라벨'로 떼지 않는다 - domain/hashLabels). V4의 '학생 태그가 든 기록을 메모로 옮기면 한 번 묻기'도 그때.
+- **P3-2 '#라벨'·'+ 새 라벨' = 항목과 한 묶음**: 없는 이름의 라벨은 저장할 때 항목 쓰기와 같은 batch로 만든다(`data/labels` `ensureLabelOps` - 메모·기록 라벨은 초록, 상위 없음). 새 항목의 되돌리기는 새 라벨도 함께 지운 표시.
+  칸에 보이지 않는 라벨 id(지운 라벨)는 저장 때 떼지 않는다 - 손대지 않은 칸을 바꾸지 않고, 라벨을 되살리면 다시 붙어 보인다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -533,11 +541,24 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P3-1 끝.
 **먼저 읽을 것**: V4 설명서 `journal`·`memo-write`·`move-entry`, V4 `components/EntryDrawer.tsx`·`EntryCard.tsx`·`AutoTextarea.tsx`·`StudentTagPicker.tsx`·`StudentMentionList.tsx`·
 `EntryTableView.tsx`(보기만 - 붙여넣기는 P4-2), `features/day/DayJournal.tsx`, `lib/hashLabels.ts`·`checkLines.ts`·`mention.ts`·`studentTag.ts`·`entryCollapse.ts`·`journalEntries.ts`.
-- [ ] ■1 기록 목록(DayJournal: PC 2~4열·휴대폰 2열, 머리줄 `▼ 기록 N [+ 추가] [+ 메모] … ⚙️`) + EntryCard 옮기기(머리줄 한 줄·칩 위·접기·☑ n/m·체크 줄 누르기·체크한 줄 아래·완료·★·'📅 m/d에서').
-- [ ] ■2 쓰는 칸(EntryDrawer 옮기기): 📅 날짜 = 자리(바꾸면 `date`만 - 휴지통 사본 없음), 첫·마지막 줄 #라벨, ☑ 체크리스트(Enter 이어 쓰기·단축키), '+ 새 라벨',
+- [x] ■1 기록 목록(DayJournal: PC 2~4열·휴대폰 2열, 머리줄 `▼ 기록 N [+ 추가] [+ 메모] … ⚙️`) + EntryCard 옮기기(머리줄 한 줄·칩 위·접기·☑ n/m·체크 줄 누르기·체크한 줄 아래·완료·★·'📅 m/d에서').
+  → `features/day/DayJournal.tsx`(`[data-day-journal|journal-count|journal-add|journal-add-memo|journal-labels-settings|journal-collapse|journal-empty|journal-waiting]`, 즐겨찾기 먼저·가로 우선 열) ·
+  `features/notes/`(`EntryCard.tsx` 메모·기록 같은 카드 `[data-entry-card|entry-kind|entry-done|entry-favorite|entry-collapsed|entry-collapse|entry-up|entry-down|entry-complete|entry-favorite-toggle|entry-chip|entry-date|entry-note|entry-checks|entry-links|entry-images|entry-files|entry-tables|entry-edit|entry-delete|entry-preview|entry-text|check-line|check-done]` ·
+  `TablePreview.tsx`(표 작게 보기만 - 서식·고치기는 P4-2) · `noteOps.ts` 순수(즐겨찾기 먼저·▲▼ = 즐겨찾기끼리/나머지끼리 order 하나·체크 줄) · `actions.ts` `setNoteDone`·`setNoteFavorite`·`moveNoteInList`·`toggleNoteCheckLine`(안내 없이 Ctrl+Z 더미)·`deleteNote`(안내 + 되돌리기) ·
+  `open.ts` 쓰는 칸 'note' 열기(■2에서 등록 - 그 전에는 🚧)) · `domain/checkLines`·`entryCollapse`·`hashLabels`(V4 테스트째) · `ui/FormattedText.tsx`(주소 → 링크) · 크롬 `inspect-notes.mjs` 23항목.
+  미룬 것: 그림 크게 보기·사이트 미리보기 → P4-2(지금은 그림을 새 탭으로), 🔗 링크 보기 → P4-3(🚧), 기록 칸 라벨로 보기 → P4-1(메모 화면과 같은 부품).
+- [x] ■2 쓰는 칸(EntryDrawer 옮기기): 📅 날짜 = 자리(바꾸면 `date`만 - 휴지통 사본 없음), 첫·마지막 줄 #라벨, ☑ 체크리스트(Enter 이어 쓰기·단축키), '+ 새 라벨',
   @이름 학생 태그(학급은 P7 전까지 이름 칩만 - `studentIds` 자리만), 완료·★(저장된 항목은 그 칸만 곧바로).
-- [ ] ■3 쓰던 글 보관: IndexedDB `drafts`(칸마다, 2초 뒤), 칸을 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기', 저장하면 지움.
-- [ ] ■4 ＋ 새로 → 새 기록·새 메모 + 크롬 점검 `inspect-notes.mjs`(쓰기·#라벨·체크·날짜 넣고 빼기 = 문서 하나의 `date`만·쓰던 글 되살리기).
+  → `features/notes/NotePanel.tsx`(창 목록 `note` - `[data-note-panel=new|edit|note-id|note-noun|note-flag=done|favorite|note-place|note-date|note-date-clear|note-place-hint|note-place-keep|note-text-input|checklist-toggle|hash-preview|hash-label|note-table|note-table-remove|note-attach|note-link-add|note-attachment|note-attachment-remove|note-delete|note-close|note-save|note-missing]`) ·
+  `noteForm.ts`(순수 - 새 칸 = 맨 위 라벨, 저장 = 바뀐 칸만, 자리 `placeChanges`(기록 → 메모 = fromDate 남김·메모 → 기록 = 걷음), '#라벨'·새 라벨 이름 `savePlanOf`) ·
+  `actions.ts` `createNote`·`saveNote`(새 라벨과 한 묶음, 옮기기의 되돌리기는 자리만) · 칸의 예상 못 한 실패도 안내(`showErrorToastOnce`) · 크롬 `inspect-notes` 47항목.
+  미룬 것: @이름·🧑‍🎓 학생 태그 → P7-1(명렬표가 생길 때 - 5장), 📎 파일 첨부·캡처·표 붙여넣기·표 고치기 → P4-2(지금은 빼기만), 🔗 링크 추가 → P4-3(🚧).
+- [x] ■3 쓰던 글 보관: IndexedDB `drafts`(칸마다, 2초 뒤), 칸을 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기', 저장하면 지움.
+  → `data/drafts.ts`(DB `sp5-drafts-{uid}` 저장소 drafts, `useDraft(칸 열쇠, 칸 값, 손댔나)` - 손댄 동안 2초 뒤·칸이 닫힐 때·pagehide에 곧바로, 다시 열면 묻기(지금과 같으면 묻지 않고 지움),
+  저장하면 `clear`, 새 칸의 날짜를 바꾸면 열쇠를 옮김, 트랜잭션 끝까지 기다림(끊긴 트랜잭션이 '처리하지 않은 오류'가 되지 않게), 고장 나면 조용히) ·
+  `ui/DraftOffer.tsx`(`[data-draft-offer|draft-restore|draft-discard]`) · 메모·기록 칸과 **일정 칸에도** · 로그아웃하면 `wipeDrafts`(기기 사본과 같은 까닭) · 크롬 `inspect-notes` 54항목·`inspect-events` 58 다시 통과.
+- [x] ■4 ＋ 새로 → 새 기록·새 메모 + 크롬 점검 `inspect-notes.mjs`(쓰기·#라벨·체크·날짜 넣고 빼기 = 문서 하나의 `date`만·쓰던 글 되살리기).
+  → `features/notes/shortcuts.ts`(`newNote` = 보는 날의 새 기록 칸(메모·학급 화면이면 오늘), `newMemo` = 새 메모 칸 - Shell이 건다) · 크롬 `inspect-notes` 61항목(■1~■3에서 조각마다 늘림).
 **끝 조건**: 설명서 `journal`·`memo-write`·`move-entry`가 된다.
 
 ### P3-3. 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기

@@ -4,9 +4,10 @@
 //   [기록 (넓게)]
 // 수업·일정을 나란히 두는 기준은 **본문 폭** 720px(@container) - 오른쪽 칸이 열려 본문이 좁아지면 위아래로 쌓는다(V4 그대로).
 // 보는 날은 둘째 줄 날짜(app/nav). 자료는 기기 사본에서 고른다(data/select) - V4처럼 '불러오는 중'으로 화면을 막지 않는다.
-// 수업 칸(+ 급식·학사일정)은 P6-1·P6-3, 기록 칸은 P3-2에서 채운다 - 지금은 자리만.
+// 수업 칸(+ 급식·학사일정)은 P6-1·P6-3에서 채운다 - 지금은 자리만.
 import { useNav } from '../../app/nav';
 import DayEvents from './DayEvents';
+import DayJournal from './DayJournal';
 
 function Placeholder({ slot, title, session }: { slot: string; title: string; session: string }) {
   return (
@@ -40,7 +41,7 @@ export default function DayScreen() {
         </div>
       )}
       <div className="w-full">
-        <Placeholder slot="journal" title="📔 기록" session="P3-2" />
+        <DayJournal date={date} />
       </div>
     </div>
   );

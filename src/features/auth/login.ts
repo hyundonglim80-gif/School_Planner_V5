@@ -11,6 +11,7 @@ import type { UserCredential } from 'firebase/auth';
 import { auth, googleProvider } from '../../data/firebase';
 import { showErrorToast } from '../../app/toast';
 import { stopPrefsSync } from '../../app/prefs';
+import { wipeDrafts } from '../../data/drafts';
 import { wipeMirror } from '../../data/mirror/sync';
 
 const GOOGLE_TOKEN_KEY = 'sp5-google-token';
@@ -99,4 +100,6 @@ export async function logout() {
   }
   // 기기 사본(학생 자료가 든다)은 다음에 들어오면 서버에서 다시 받는다
   if (uid) await wipeMirror(uid).catch((e: unknown) => console.warn('[mirror] 로그아웃 때 기기 사본을 지우지 못했습니다.', e));
+  // 쓰던 글 보관도 같은 까닭으로 (공용 PC)
+  if (uid) await wipeDrafts(uid).catch((e: unknown) => console.warn('[drafts] 로그아웃 때 쓰던 글 보관을 지우지 못했습니다.', e));
 }
