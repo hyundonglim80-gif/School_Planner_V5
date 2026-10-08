@@ -26,7 +26,7 @@
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
 - **2026-10-08 P2-1 끝**(클라우드 - 자료 모양·저장 도우미·되돌리기·Ctrl+Z·items/labels 규칙). '이어서' = **P2-2**. 👤 세션 브랜치 PR을 합쳐 주세요(합치면 다음 대화가 이어 받는다).
-- 👤 PC에서(묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙'). 클라우드는 `claude/…` 브랜치에 푸시 → PR.
+- 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
