@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P1-4 설정 동기화·환경설정 탭·계정 칸·배포·PWA 틀** (다음 대화에서).
+**P1-4 설정 동기화·환경설정 탭·계정 칸·배포·PWA 틀** - ■1 끝, 다음 ■2(환경설정 창).
 
 ---
 
@@ -220,6 +220,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   '🚧 아직 V5로 옮기지 않은 기능입니다' - 자리를 먼저 보이게(사용자가 V5를 쓰기 전까지만 보인다). ⋮ 표는 `src/app/moreMenu.ts` 한 곳(창 목록 테스트가 지킨다),
   '이 화면 인쇄'는 주간·년간에서만. 화면 밝기 키 `sp5_theme`(이 기기), 글자 크기는 `layoutPrefs.fontScale`(P1-4에서 계정과 맞춘다).
 - **P1-1 lucide-react**: V4는 한 파일에서만 써서 넣지 않았다 - 그 파일을 옮길 때 이모지로 바꿀지 그때 정한다. `App.tsx`는 `src/app/`(껍데기 자리).
+- **P1-4 설정 문서**(10-08): `spaces/u_{uid}/settings/{common|pc|mobile}`에 **기본값과 다른 칸만** 적는다(통째로 setDoc - 기본값으로 되돌리면 칸이 빠진다).
+  없는 칸·모양이 틀린 칸은 기본값으로 읽는다(V4는 틀린 칸에 이 기기 값을 두어 기기마다 다른 값이 남을 수 있었다). 칸 표는 `domain/settings.ts`(기본값·읽기 한 곳).
+  값이 사는 store는 그대로(토글·시작 화면 = nav, 글자 크기·창 위치 = layoutPrefs, 바꾼 키 = keys) - `app/prefs.ts`가 어느 값을 어느 문서에 두는지만 정한다.
+  맞추기(`data/settingsSync.ts`): V4의 getDocFromServer + 구독 대신 **구독 하나**(memoryLocalCache라 첫 소식이 서버에서 온다 - 연결 없이 캐시에서 온 '문서 없음'만 믿지 않는다).
+  문서가 없으면 이 기기 값이 기본값과 다를 때만 올린다. 적기를 기다리는 1초 동안 온 서버 값은 입히지 않는다(이 기기에서 방금 바꾼 것이 더 새것 - V4는 덮였다).
+  이 기기 사본의 주인 `sp5-settings-owner` - 다른 계정으로 들어오면 앞 사람 설정을 기본값으로 비운다(새 계정 문서에 올리지 않게, `?as=` 점검도).
+  `common`은 지금 이월 기간 `forwardDays`(1~60, 기본 14)만 - 그 기능을 옮기는 세션이 칸을 더한다. `updatedAt`·`v`는 저장 도우미(P2-1) 전이라 `settingsPort`가 붙인다.
+  **시작 화면**은 주소에 화면이 없을 때만(설치한 앱·첫 주소) - 새로고침·주소로 연 것은 그 화면 그대로.
 
 ---
 
@@ -296,7 +304,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P1-3 끝.
 **먼저 읽을 것**: `MENU.md` 3-5·3-6, `DESIGN.md` 3장(주소)·4-8, V4 `lib/preferenceSync.ts`·`hooks/usePreferenceSync.ts`·`components/SettingsModal.tsx`(구역만 - `grep -n 'title="'`)·
 `ShortcutModal.tsx`, V4 `public/manifest.json`·`public/sw.js`(앞부분)·`tools/gen-icons.mjs`.
-- [ ] ■1 설정 문서 `settings/common`·`pc`·`mobile` + 동기화(V4 preferenceSync - 1초 뒤 올림, PC/휴대폰 가르기) + store.
+- [x] ■1 설정 문서 `settings/common`·`pc`·`mobile` + 동기화(V4 preferenceSync - 1초 뒤 올림, PC/휴대폰 가르기) + store.
 - [ ] ■2 환경설정 창(창 목록 `settings`, 탭 다섯 + 개발자 - `MENU.md` 3-6). 지금 있는 것만 채우고 아직 없는 기능의 칸은 숨긴다. 단축키 바꾸기(ShortcutModal 옮기기).
 - [ ] ■3 계정 칸(사진 누르기): 이름·메일·로그아웃(공유 그룹은 P8-4 전까지 숨김).
 - [ ] ■4 배포: 👤 사이트 이름 고르기(권장 `schoolplanner-v5`, 쓰고 있으면 `sp5-` 붙인 이름) → `npx firebase hosting:sites:create <이름> --project schoolplannerv3`(묻고).

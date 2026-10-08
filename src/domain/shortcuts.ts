@@ -267,6 +267,31 @@ export function resolveBindings(overrides: ShortcutOverrides = {}): Record<Short
   return out;
 }
 
+/**
+ * 계정 설정 문서에서 읽은 바꾼 키 → 믿을 만한 것만 (V4 sanitizePreferences).
+ * 모르는 id(나중 판이 더한 것·없어진 것)와 모양이 틀린 키는 뺀다. 통째로 틀리면 undefined.
+ */
+export function readShortcutOverrides(v: unknown): ShortcutOverrides | undefined {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const known = new Set<string>(SHORTCUT_ACTIONS.map((a) => a.id));
+  const out: ShortcutOverrides = {};
+  for (const [id, raw] of Object.entries(v as Record<string, unknown>)) {
+    const k = raw as Record<string, unknown> | null;
+    if (
+      known.has(id) &&
+      k &&
+      typeof k === 'object' &&
+      typeof k.key === 'string' &&
+      typeof k.ctrl === 'boolean' &&
+      typeof k.alt === 'boolean' &&
+      typeof k.shift === 'boolean'
+    ) {
+      out[id as ShortcutId] = { ctrl: k.ctrl, alt: k.alt, shift: k.shift, key: k.key };
+    }
+  }
+  return out;
+}
+
 /** 같은 조합을 쓰는 기능이 있으면 그 쌍을 돌려준다 */
 export function findConflicts(bindings: Record<ShortcutId, Binding>): Array<[ShortcutId, ShortcutId]> {
   const slots = new Map<string, ShortcutId>();

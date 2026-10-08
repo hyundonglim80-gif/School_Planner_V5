@@ -22,7 +22,7 @@ import { goToday, setScope, setToggle, stepDate, stepScope, useNav } from './nav
 import { toggleThemeMode } from './theme';
 import { closeAllWindows, getWindowDef, openWindow } from './windows';
 
-/** 기본값에서 바꾼 단축키만 (이 기기 - P1-4에서 계정 설정과 맞춘다, V4 shortcutOverrides) */
+/** 기본값에서 바꾼 단축키만 (V4 shortcutOverrides). 이 기기 사본 - 계정(기기 종류마다)과는 app/prefs.ts가 맞춘다 */
 export const useShortcutOverrides = create<{ overrides: ShortcutOverrides }>()(
   persist(() => ({ overrides: {} as ShortcutOverrides }), { name: 'sp5-shortcuts' }),
 );

@@ -15,7 +15,7 @@ let stop: () => void = () => {};
 beforeEach(() => {
   resetHistoryForTest();
   window.history.replaceState(null, '', '/');
-  useNav.setState({ scope: 'day', date: '2026-10-08', classId: null });
+  useNav.setState({ scope: 'day', date: '2026-10-08', classId: null, startupScope: 'last' });
 });
 afterEach(() => stop());
 
@@ -34,6 +34,17 @@ describe('주소', () => {
     window.history.replaceState(null, '', '#/month/2026-12');
     stop = startRouting();
     expect(useNav.getState()).toMatchObject({ scope: 'month', date: '2026-12-01' });
+  });
+
+  it('주소에 화면이 없으면 환경설정 "시작 화면"으로 (새로고침은 보던 화면 그대로)', () => {
+    useNav.setState({ startupScope: 'week' });
+    stop = startRouting();
+    expect(window.location.hash).toBe('#/week/2026-10-05');
+    stop();
+    resetHistoryForTest();
+    window.history.replaceState(null, '', '#/month/2026-12');
+    stop = startRouting();
+    expect(useNav.getState().scope).toBe('month');
   });
 
   it('모르는 주소면 지금 화면의 주소로 고친다', () => {

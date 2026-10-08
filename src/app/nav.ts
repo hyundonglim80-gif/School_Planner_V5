@@ -10,6 +10,10 @@ import { scrollToToday } from './todayScroll';
 
 export type SemesterFilter = 'all' | 1 | 2;
 
+/** 환경설정 '시작 화면' - 주소에 화면이 없이 열 때(설치한 앱·첫 주소). 'last' = 마지막에 보던 화면 */
+export type StartupScope = 'last' | Scope;
+export const STARTUP_SCOPES: readonly StartupScope[] = ['last', ...SCOPES];
+
 export interface NavState {
   scope: Scope;
   /** 보는 날 'YYYY-MM-DD' (이 기기 시각). 새로 열면 오늘(주소에 날짜가 있으면 그날) */
@@ -21,13 +25,14 @@ export interface NavState {
   showClass: boolean;
   /** 년간 학기 칩 */
   semesterFilter: SemesterFilter;
-  /** 위아래 끝에서 더 굴리거나 옆으로 밀어 화면·날짜 옮기기 (환경설정 - P1-4) */
+  /** 위아래 끝에서 더 굴리거나 옆으로 밀어 화면·날짜 옮기기 (환경설정) */
   enableScrollNav: boolean;
+  startupScope: StartupScope;
 }
 
 /**
- * 이 기기에 남기는 것: 마지막 화면(시작 화면 '마지막에 보던 화면'), 토글. 날짜는 남기지 않는다(늘 오늘부터).
- * 계정에 올려 기기끼리 맞추는 것은 P1-4(설정 동기화)에서 고른다.
+ * 이 기기에 남기는 것: 마지막 화면(시작 화면 '마지막에 보던 화면'), 토글·설정. 날짜는 남기지 않는다(늘 오늘부터).
+ * 토글·설정은 계정(기기 종류마다)과도 맞춘다 - app/prefs.ts.
  */
 export const useNav = create<NavState>()(
   persist(
@@ -40,6 +45,7 @@ export const useNav = create<NavState>()(
       showClass: true,
       semesterFilter: 'all',
       enableScrollNav: false,
+      startupScope: 'last',
     }),
     {
       name: 'sp5-view',
@@ -50,6 +56,7 @@ export const useNav = create<NavState>()(
         showClass: s.showClass,
         semesterFilter: s.semesterFilter,
         enableScrollNav: s.enableScrollNav,
+        startupScope: s.startupScope,
       }),
     },
   ),
@@ -123,6 +130,9 @@ export function setToggle(key: 'showWeekend' | 'showEvents' | 'showClass', on: b
 export function setSemesterFilter(semesterFilter: SemesterFilter) {
   useNav.setState({ semesterFilter });
 }
+
+export const setEnableScrollNav = (enableScrollNav: boolean) => useNav.setState({ enableScrollNav });
+export const setStartupScope = (startupScope: StartupScope) => useNav.setState({ startupScope });
 
 /** 둘째 줄 가운데 날짜 글자 (V4 getFormattedDateRange) */
 export function dateLabel(scope: Scope, date: string): string {

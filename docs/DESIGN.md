@@ -144,6 +144,9 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 가져오기 기록 `import`.
 - `pc` / `mobile`: 글자 크기·창 위치·시작 화면·단축키·화면 보기(V4 `v4_preferences_pc/_mobile`). 1초 뒤 올린다(V4 `preferenceSync`).
 - V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다.
+- 문서에는 **기본값과 다른 칸만** 적는다(없는 칸·틀린 칸 = 기본값). 칸마다 기본값과 읽기 규칙은 표 하나(`domain/settings.ts`의 `SettingsSpec`) -
+  `app/prefs.ts`의 `DEVICE_PREFS`(pc/mobile)·`COMMON_SETTINGS`(common). 기능을 옮기는 세션이 그 표에 칸을 더한다. 맞추기는 `data/settingsSync.ts`.
+- 이 기기에만(문서에 넣지 않는다): 지금 보는 화면·날짜, 화면 밝기 `sp5_theme`, 오른쪽 칸 폭.
 
 ### 4-9. 그 밖
 

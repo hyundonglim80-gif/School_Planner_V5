@@ -5,6 +5,7 @@ import { useSession } from '../data/session';
 
 // 화면 구조만 본다 - Firebase에 붙지 않는다.
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
+vi.mock('../data/settingsSync', () => ({ settingsPort: () => ({}), startSettingsSync: () => () => {} }));
 
 beforeEach(() => useSession.setState({ loading: true, user: null }));
 

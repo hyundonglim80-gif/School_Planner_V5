@@ -204,8 +204,8 @@ function onNavChange(s: ReturnType<typeof useNav.getState>, prev: ReturnType<typ
 }
 
 /**
- * 주소 맞물리기를 시작한다 (로그인한 껍데기가 한 번). 주소에 화면이 있으면 그 화면으로, 없으면 지금 화면의 주소를 적는다.
- * 끝내는 함수를 돌려준다.
+ * 주소 맞물리기를 시작한다 (로그인한 껍데기가 한 번). 주소에 화면이 있으면 그 화면으로(새로고침은 보던 화면 그대로),
+ * 없으면(설치한 앱·첫 주소) 환경설정 '시작 화면'으로 열고 그 주소를 적는다. 끝내는 함수를 돌려준다.
  */
 export function startRouting(): () => void {
   if (routing) return () => {};
@@ -214,6 +214,8 @@ export function startRouting(): () => void {
   // 새로고침하면 창은 없다 - 남은 표지판 자리는 보통 자리로
   signPosted = false;
   window.history.replaceState({ sp5Idx: curIdx }, '');
+  const { startupScope } = useNav.getState();
+  if (!parseRoute(window.location.hash) && startupScope !== 'last') useNav.setState({ scope: startupScope });
   routing = true;
   bindPopState();
   applyLocation();

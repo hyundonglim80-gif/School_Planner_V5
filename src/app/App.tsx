@@ -2,10 +2,13 @@
 import { useSession } from '../data/session';
 import LoginScreen from '../features/auth/LoginScreen';
 import Shell from './Shell';
+import { usePrefsSync } from './prefs';
 
 export default function App() {
   const loading = useSession((s) => s.loading);
   const user = useSession((s) => s.user);
+  // 로그인한 동안 설정(글자 크기·단축키 …)을 계정과 맞춘다
+  usePrefsSync(user?.uid);
 
   return (
     <>
