@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-4 가져오기 틀 + 라벨·설정 가져오기** - ■4 화면(환경설정 '가져오기'·처음 로그인 띠)·크롬 점검부터(클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
+**P3-1 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림** (다음 대화에서 - 클라우드면 1-7을 먼저).
 
 ---
 
@@ -138,9 +138,9 @@
 | P2-1 | 타입·저장 도우미·지운 표시·되돌리기·규칙 | 중간 | 높음 | 끝 (2026-10-08) |
 | P2-2 | 기기 사본(IndexedDB)·바뀐 것만 받기 | 큼 | 높음 | 끝 (2026-10-08) |
 | P2-3 | 라벨(트리·속성·라벨 관리 창) | 중간 | 중간 | 끝 (2026-10-08) |
-| P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | **다음** |
+| P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | 끝 (2026-10-08) |
 | **P3 하루 화면** | | | | |
-| P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | |
+| P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | **다음** |
 | P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | |
 | P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | |
 | P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | |
@@ -180,7 +180,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 학급(P7)은 수업 칸(반 도구·출결)에 기대므로 P6 뒤.
 
 **단계 메모** (단계가 끝날 때 V4와 달라진 점 한 줄)
-- (아직 없음)
+- P2 자료 층(10-08): 항목·라벨이 문서 하나씩·id로 가리킨다(라벨 이름 바꾸기 = 문서 하나) · 지우기 = 지운 표시 + Ctrl+Z · 기기 사본(IndexedDB)으로 열자마자 보이고 바뀐 것만 받는다 ·
+  V4 자료는 한 방향으로 가져온다(라벨·설정부터 - 여러 번 해도 겹치지 않고 V5에서 고친 것은 덮지 않는다). V3와 함께 쓰던 옛 모양 읽기는 가져오기 안에만.
 
 ## 4. 세션 기록 (한 세션 한 줄 - 어느 기기에서 어디까지 했나)
 
@@ -194,6 +195,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-1 | P2-1 세션 끝 정리 | 단위 263 · 자료 층(에뮬레이터) 11 · check-rules V4 35 + V5 59 · inspect-data 11 · settings 20 · shell 통과 · 브랜치 `claude/happy-rubin-wcxw0e` → PR · 👤 규칙 V4 복사·운영 배포는 PC에서 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-2 | P2-2 세션 끝 정리 | 단위 309 · 자료 층(에뮬레이터) 19 · inspect-mirror 27 · data·settings·shell·login 통과 · 브랜치 `ccr-85a3b20a-nxq1q4` → PR #2 → Claude가 합침(사용자 결정: 앞으로 자동 합치기·배포) · V4는 읽기용으로 옆에 받음(`--depth 1`) |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-3 | P2-3 세션 끝 정리 | 단위 363 · inspect-labels 20 · shell·settings·data 통과 · 브랜치 `claude/dreamy-ritchie-ub4ru5` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P2-4 | P2-4 세션 끝 정리 | 단위 610 · 자료 층(에뮬레이터) 24(import.emu 5) · inspect-import-labels 32 · P2 단계 점검 모두(data·mirror·labels·import-labels + shell·settings·login·pwa) 통과 · 브랜치 `claude/eager-hypatia-mlpldd` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 👤 실제 계정으로 한 번 가져와 보기 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -473,8 +475,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   `settings.ts`(`planSettings` - **칸마다** 지난번에 적은 값과 견준다: V5에서 바꾼 칸은 둠, V4에 그 문서가 없으면 건너뜀. 지금은 pc·mobile 칸 전부 + common `forwardDays`) ·
   `read.ts`(V4 자리를 읽는 유일한 곳·V5 문서는 서버에서) · `run.ts`(`runImport`·`checkImportOffer`·`dismissImportOffer`, 진행 store `useImportRun` - 500개씩, 기록은 맨 끝, 되돌리기에 넣지 않음) ·
   자료 층 `import.emu.test.ts` 5(규칙을 지남·두 번째는 라벨 문서를 다시 쓰지 않음·V4에서 지운 라벨·띠).
-- [ ] ■4 화면: 환경설정에 '가져오기' 자리(P8-3에서 백업 · 가져오기 · 보내기 창으로 옮긴다) + 처음 로그인 때 'V4 자료 가져오기' 띠.
+- [x] ■4 화면: 환경설정에 '가져오기' 자리(P8-3에서 백업 · 가져오기 · 보내기 창으로 옮긴다) + 처음 로그인 때 'V4 자료 가져오기' 띠.
   점검 `inspect-import-labels.mjs`: V4 seed → 가져오기 → 라벨 이름·색·속성·상위가 같다, 두 번째 가져오기는 '바뀐 것 0'.
+  → `features/settings/ImportTab.tsx`(탭 '가져오기' - 단추·진행 칸·결과 표 `[data-import-run|progress|result|row|count|years|last|failed]`) ·
+  `features/import/ImportBanner.tsx`(`Shell` 본문 맨 위, `[data-import-banner|banner-run|banner-close]`) · 열린 환경설정 창을 다른 탭으로 다시 열면 그 탭으로 ·
+  seed가 계정마다 띠 닫음(`settings/import.dismissed`)을 심는다 · 크롬 `inspect-import-labels.mjs` 32항목.
 **끝 조건**: 위 점검 통과. **P2 단계 끝 정리**(1-4).
 
 ### P3-1. 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림
@@ -519,6 +524,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P3-3 끝. V4 seed 자료.
 **먼저 읽을 것**: `DESIGN.md` 8-2·8-3, V4 `lib/eventText.ts`·`eventLabels.ts`·`eventDue.ts`·`eventDueStore.ts`·`periodBars.ts`(조각 알아보기 - groupId + '(i/n)')·
 `holidays.ts`(isHolidayEvent)·`journalEntries.ts`·`entryTable.ts`(TABLE_ONLY_CONTENT)·`utils/linkUtils.ts`.
+**P2-4가 둔 틀**(V5 `src/import/v4/`): `planDocs`(지문으로 새로·바뀜·그대로·둠·지움 - `ImportColl`에 'items'가 있다, `Planned.year`로 학년도별 수) · `ids`(`v4id`·`idlessKey`) ·
+`legacy/`(readEventList·resolveEventLabelNames …) · 라벨은 `planLabels(…).labelMap`(V4 이름 → V5 id - 같은 실행에서) · `run.ts`에 라벨 뒤 차례로 더하고 `record.IMPORT_KINDS`에 줄을 더한다.
 - [ ] ■1 `events/{date}` → items(event): readEventList(id 없는 항목 - `DESIGN.md` 8-2), 라벨 셋 자리 → `labelIds`, 속성(V3 이름 먼저), time·alarmTriggered,
   기한(사슬로), 공휴일 일정 빼기, 이월 사슬 → `carriedFrom`, authorId·createdAt·`src`.
 - [ ] ■2 기간 조각 → 한 항목(글 끝 '(i/n)' 떼기, 날마다 완료 → `doneDates`, 조각마다 글이 다르면 따로 두고 결과 표에), 반복 묶음 → `series`(imported) + 항목들.
