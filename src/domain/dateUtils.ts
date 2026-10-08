@@ -99,3 +99,9 @@ export function shortDateLabel(dateStr: string): string {
   const d = parseDateStr(dateStr);
   return `${d.getMonth() + 1}/${d.getDate()}(${DAY_NAMES[d.getDay()]})`;
 }
+
+/** '10/8' (요일 없이 - 카드의 작은 칩 '↪ 10/5부터') */
+export function monthDayLabel(dateStr: string): string {
+  const [, m, d] = dateStr.split('-').map(Number);
+  return `${m}/${d}`;
+}

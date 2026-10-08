@@ -4,6 +4,8 @@
 // 키를 단축키 한 곳(shortcuts.ts)에 두고, 여기는 자리만 잡는다.
 import { Suspense, useEffect, useRef, useState } from 'react';
 import EventAlarms from '../features/events/EventAlarms';
+import ForwardMarks from '../features/events/ForwardMarks';
+import MultiSelectBar from '../features/events/MultiSelectBar';
 import { useEventShortcuts } from '../features/events/shortcuts';
 import { useNoteShortcuts } from '../features/notes/shortcuts';
 import ImportBanner from '../features/import/ImportBanner';
@@ -107,6 +109,10 @@ export default function Shell() {
       <WindowHost />
       {/* ⏰ 일정 알림 (앱 안 - 서버 푸시는 P8-2) */}
       <EventAlarms />
+      {/* 이월: 처음 따라오는 일정에 carrying 한 번 (DESIGN 5-1) */}
+      <ForwardMarks />
+      {/* 여러 개 고르기 - 고르는 동안 화면 아래 동작 줄 */}
+      <MultiSelectBar />
       {/* 오른쪽 칸이 둘 이상이면 위에 탭 (V4 2026-10-07) */}
       <SideTabs />
       {rightOpen && <ColumnResizer side="right" width={RIGHT_COLUMN_CSS_WIDTH} />}

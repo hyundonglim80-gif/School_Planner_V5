@@ -1,6 +1,7 @@
 // 창 등록 한 곳 (DESIGN 7-2). 창을 만드는 세션이 여기에 한 줄씩 더한다 - ⋮ 구역·학급 도구·수업 머리줄은 MENU.md대로.
 import { EVENT_PANEL, sameEventPanel, type EventPanelParams } from '../features/events/open';
 import { NOTE_PANEL, sameNotePanel, type NotePanelParams } from '../features/notes/open';
+import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
 // 쓰는 칸 (오른쪽 줄 - 어느 화면에서나 같은 칸)
@@ -56,6 +57,6 @@ if (import.meta.env.DEV || __USE_EMULATOR__) {
     dev: true,
     load: () => import('../features/dev/TestPanel'),
   });
-  // 점검 스크립트(tools/inspect-*.mjs)가 창을 연다
-  (window as unknown as { sp5: unknown }).sp5 = { openWindow, closeAllWindows };
+  // 점검 스크립트(tools/inspect-*.mjs)가 창을 열고 키가 없는 단축키 일을 부른다
+  (window as unknown as { sp5: unknown }).sp5 = { openWindow, closeAllWindows, runShortcut };
 }

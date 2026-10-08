@@ -34,7 +34,7 @@ try {
   await a.page.click(sel('menu-item', 'settings'));
   r.check(await waitFor(a.page.locator(sel('settings-window'))), '⋮ → 환경설정이 열린다');
   const tabs = await a.page.locator(sel('settings-tab')).evaluateAll((els) => els.map((e) => e.dataset.settingsTab));
-  r.check(tabs.join() === 'view,shortcuts,app,import', `탭은 지금 있는 것만 (${tabs.join()})`);
+  r.check(tabs.join() === 'view,school,shortcuts,app,import', `탭은 지금 있는 것만 (${tabs.join()})`);
 
   r.section('글자 크기 → 계정 → 다른 창');
   await a.page.click(sel('choice', 'fontScale:lg'));

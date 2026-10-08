@@ -10,6 +10,7 @@
 // - 계산하는 것(이월·수업 칸·기간 일정의 '(2/5)')은 여기에 없다 - 그 기능을 옮기는 세션이 이 위에 짓는다(DESIGN 5장).
 import { useMemo } from 'react';
 import { compareOrder } from '../domain/order';
+import { isPeriod as spansDays, onPeriodDay } from '../domain/period';
 import { matchLabels, orderByTree, parentMapOf, type LabelFilter, type ParentMap, type TreeRow } from '../domain/labelTree';
 import { collKey, EMPTY_DOCS, useMirror, type MirrorStatus } from './mirror/store';
 import { useCurrentSpaceId } from './session';
@@ -34,7 +35,7 @@ interface ItemIndex {
 
 const indexCache = new WeakMap<object, ItemIndex>();
 
-const isPeriod = (d: ItemDoc) => !!d.date && !!d.endDate && d.endDate > d.date;
+const isPeriod = (d: ItemDoc) => spansDays(d);
 const byDateThenOrder = (a: ItemDoc, b: ItemDoc) => (a.date ?? '').localeCompare(b.date ?? '') || compareOrder(a, b);
 
 function indexOf(items: Docs<'items'>): ItemIndex {
@@ -62,16 +63,16 @@ function indexOf(items: Docs<'items'>): ItemIndex {
 
 const ofKind = (list: ItemDoc[], kind?: ItemKind) => (kind ? list.filter((d) => d.kind === kind) : list);
 
-/** 그날 것 (하루짜리 + 그날이 든 기간 일정) */
+/** 그날 것 (하루짜리 + 그날 보이는 기간 일정 - 주말 빼기·뺀 날은 domain/period onPeriodDay) */
 export function itemsOn(items: Docs<'items'>, date: YMD, kind?: ItemKind): ItemDoc[] {
   const ix = indexOf(items);
   const day = ix.byDate.get(date) ?? [];
-  const spans = ix.periods.filter((d) => d.date! <= date && date <= d.endDate!);
+  const spans = ix.periods.filter((d) => onPeriodDay(d, date));
   const all = spans.length ? [...day, ...spans].sort(compareOrder) : day;
   return ofKind(all, kind);
 }
 
-/** 기간 [from, to]에 걸친 것 (날짜 다음 차례) */
+/** 기간 [from, to]에 걸친 것 (날짜 다음 차례 - 기간 일정은 범위가 걸치면 한 번. 날마다 보이는지는 onPeriodDay로) */
 export function itemsBetween(items: Docs<'items'>, from: YMD, to: YMD, kind?: ItemKind): ItemDoc[] {
   const ix = indexOf(items);
   const out: ItemDoc[] = [];

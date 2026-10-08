@@ -257,3 +257,147 @@ describe('고치기', () => {
     expect(q('[data-event-save]')).toBeDisabled();
   });
 });
+
+describe('기간 (끝 날 줄)', () => {
+  it("'📆 끝 날'을 눌러 끝 날을 고르면 한 문서의 기간 일정 (주말 빼기 기본), 날 수를 보인다", async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: '2026-10-14' }} />);
+    expect(document.querySelector('[data-event-period-row]')).toBeNull();
+    fireEvent.click(q('[data-event-period-open]'));
+    fireEvent.change(q('[data-event-end]'), { target: { value: '2026-10-20' } });
+    expect(q('[data-event-period-count]').dataset.eventPeriodCount).toBe('5');
+    expect(q('[data-event-period-count]').textContent).toContain('주말 2일 빼고');
+    type('기말고사');
+    await save();
+    expect(created()).toMatchObject({ date: '2026-10-14', endDate: '2026-10-20', workdays: true, text: '기말고사' });
+  });
+
+  it('시작 날을 옮기면 기간을 통째로 (끝 날이 따라간다)', async () => {
+    seed(new Map([['p', { ...ev1, date: '2026-10-14', endDate: '2026-10-20', workdays: true }]]));
+    render(<Host initial={{ sid: SID, date: '2026-10-14', id: 'p' }} />);
+    expect(q('[data-event-period-row]')).not.toBeNull();
+    fireEvent.click(q('[data-event-date-next]'));
+    expect((q('[data-event-end]') as HTMLInputElement).value).toBe('2026-10-21');
+    expect(q('[data-event-move-note]').textContent).toContain('~10/21');
+    await save();
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: '2026-10-15', endDate: '2026-10-21' });
+    // 되돌리기 = 자리 칸 모두 (끝 날도)
+    await act(async () => {
+      await undoLast();
+    });
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: '2026-10-14', endDate: '2026-10-20' });
+  });
+
+  it("'기간' 속성 라벨을 고른 새 일정 칸은 끝 날 줄을 펴 둔다", () => {
+    labels.set('per', { ...base, kind: 'event', name: '기간', color: 'indigo', parentId: null, order: 'z0', props: { calendar: false, period: true } });
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    expect(document.querySelector('[data-event-period-row]')).toBeNull();
+    fireEvent.click(q('[data-label-pick="per"]'));
+    expect(q('[data-event-period-row]')).not.toBeNull();
+    labels.delete('per');
+  });
+
+  it('삭제는 어디까지 묻는다 (그 칸을 연 날 기준)', async () => {
+    seed(new Map([['p', { ...ev1, date: '2026-10-14', endDate: '2026-10-20', workdays: true }]]));
+    render(<Host initial={{ sid: SID, date: '2026-10-16', id: 'p' }} />);
+    fireEvent.click(q('[data-event-delete]'));
+    expect(q('[data-scope-choice="after"]').textContent).toContain('3일');
+    await act(async () => fireEvent.click(q('[data-scope-choice="only"]')));
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ skipDates: ['2026-10-16'] });
+  });
+});
+
+describe('반복 (🔁 줄)', () => {
+  it("'🔁 반복' → 매주(시작 날 요일) · 끝나는 날 → 반복 문서 + 날마다 항목 한 묶음, 칸은 첫 항목의 수정 칸", async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: '2026-10-14' }} />);
+    fireEvent.click(q('[data-event-recur-open]'));
+    expect(q('[data-recur-kind="weekly"]').getAttribute('aria-pressed')).toBe('true');
+    expect(q('[data-recur-day="3"]').getAttribute('aria-pressed')).toBe('true');
+    // 끝 날 단추는 숨는다 (기간과 반복은 함께 쓰지 않는다)
+    expect(document.querySelector('[data-event-period-open]')).toBeNull();
+    fireEvent.click(q('[data-recur-day="3"]'));
+    fireEvent.click(q('[data-recur-day="2"]'));
+    fireEvent.change(q('[data-recur-until]'), { target: { value: '2026-11-03' } });
+    expect(q('[data-recur-count]').dataset.recurCount).toBe('3');
+    type('학년 협의회');
+    await save();
+    const ops = lastOps();
+    expect(ops).toHaveLength(4);
+    expect(ops[0]).toMatchObject({ type: 'create', at: { coll: 'series' }, data: { rule: { freq: 'weekly', interval: 1, weekdays: [2] }, start: '2026-10-14', until: '2026-11-03', count: 3 } });
+    const firstItem = ops[1] as Extract<WriteOp, { type: 'create' }>;
+    expect(firstItem.data).toMatchObject({ date: '2026-10-20', text: '학년 협의회', seriesIndex: 0, seriesId: ops[0].at.id });
+    expect(shown.params).toEqual({ sid: SID, date: '2026-10-20', id: firstItem.at.id });
+    expect(q('[data-toast]').textContent).toContain('반복 일정 3개를 만들었습니다');
+  });
+
+  it("단축키 '반복 일정'으로 연 새 칸은 반복 줄을 편 채로 (매주)", () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: '2026-10-14', recur: true }} />);
+    expect(q('[data-recur-kind="weekly"]').getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('끝나는 날이 없으면 저장하지 않고 알린다', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: '2026-10-14' }} />);
+    fireEvent.click(q('[data-event-recur-open]'));
+    type('협의회');
+    await save();
+    expect(written.batches).toEqual([]);
+    expect(q('[data-toast]').textContent).toContain('끝나는 날');
+  });
+
+  it("빠른 입력 '격주 금' 칩 → 반복 줄을 편다 (글에서 뺀다)", () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: '2026-10-14' }} />);
+    type('동아리 격주 금');
+    fireEvent.click(q('[data-quick-chip="recur"]'));
+    expect(q('[data-recur-kind="biweekly"]').getAttribute('aria-pressed')).toBe('true');
+    expect(q('[data-recur-day="5"]').getAttribute('aria-pressed')).toBe('true');
+    expect(textInput().value).toBe('동아리');
+  });
+
+  describe('반복 일정 고치기·지우기', () => {
+    const mk = (id: string, date: string, i: number) => [id, { ...ev1, date, text: '협의회', seriesId: 's1', seriesIndex: i, order: 'a0' }] as const;
+    const seedSeries = () => {
+      seed(new Map([mk('a', '2026-10-06', 0), mk('b', '2026-10-13', 1), mk('c', '2026-10-20', 2)]));
+      trackColl(SID, 'series');
+      applyBase(SID, 'series', new Map([['s1', { ...base, rule: { freq: 'weekly', interval: 1, weekdays: [2] }, start: '2026-10-06', until: '2026-10-20', template: { text: '협의회', labelIds: ['fwd'] } }]]));
+      setStatus(SID, 'series', 'live');
+    };
+
+    it('반복 정보, 고치면 어디까지 묻고 - 이 날부터 = 그 항목들 + template (한 묶음)', async () => {
+      seedSeries();
+      render(<Host initial={{ sid: SID, date: '2026-10-13', id: 'b' }} />);
+      expect(q('[data-event-series-info]').textContent).toContain('매주 화');
+      expect(q('[data-event-series-info]').textContent).toContain('3개 가운데 2번째');
+      type('학년 협의회');
+      await save();
+      expect(written.batches).toEqual([]);
+      expect(q('[data-scope-choice="after"]').textContent).toContain('2개');
+      await act(async () => fireEvent.click(q('[data-scope-choice="after"]')));
+      expect(lastOps().map((o) => o.at.id)).toEqual(['b', 'c', 's1']);
+      expect(document.querySelector('[data-scope-window]')).toBeNull();
+    });
+
+    it('이 일정만 = 그 문서 하나', async () => {
+      seedSeries();
+      render(<Host initial={{ sid: SID, date: '2026-10-13', id: 'b' }} />);
+      type('보강');
+      await save();
+      await act(async () => fireEvent.click(q('[data-scope-choice="only"]')));
+      expect(lastOps()).toHaveLength(1);
+      expect((lastOps()[0] as { changes: object }).changes).toEqual({ text: '보강' });
+    });
+
+    it('삭제 → 어디까지 (반복) - 전부 = 항목 모두 + 반복 문서', async () => {
+      seedSeries();
+      render(<Host initial={{ sid: SID, date: '2026-10-13', id: 'b' }} />);
+      fireEvent.click(q('[data-event-delete]'));
+      expect(q('[data-scope-choice="all"]').textContent).toContain('3개');
+      await act(async () => fireEvent.click(q('[data-scope-choice="all"]')));
+      expect(lastOps().map((o) => `${o.type}:${o.at.id}`)).toEqual(['remove:a', 'remove:b', 'remove:c', 'remove:s1']);
+    });
+  });
+});

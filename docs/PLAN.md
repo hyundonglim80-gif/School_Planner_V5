@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** (다음 대화에서 - 클라우드면 1-7을 먼저).
+**P3-4 가져오기: 일정·기록·메모·링크** (다음 대화에서 - 클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
 
 ---
 
@@ -142,8 +142,8 @@
 | **P3 하루 화면** | | | | |
 | P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | 끝 (2026-10-08) |
 | P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | 끝 (2026-10-08) |
-| P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | **다음** |
-| P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | |
+| P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | 끝 (2026-10-08) |
+| P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | **다음** |
 | **P4 메모·첨부·링크** | | | | |
 | P4-1 | 메모 화면·라벨로 보기 | 중간 | 중간 | |
 | P4-2 | 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기 | 큼 | 중간 | |
@@ -198,6 +198,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-4 | P2-4 세션 끝 정리 | 단위 610 · 자료 층(에뮬레이터) 24(import.emu 5) · inspect-import-labels 32 · P2 단계 점검 모두(data·mirror·labels·import-labels + shell·settings·login·pwa) 통과 · 브랜치 `claude/eager-hypatia-mlpldd` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 👤 실제 계정으로 한 번 가져와 보기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-1 | P3-1 세션 끝 정리 | 단위 721 · 자료 층(에뮬레이터) 24 · inspect-events 58 · shell·labels·settings·data 통과 · 브랜치 `claude/peaceful-lamport-icu4gf` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 단위 테스트 '처리하지 않은 오류'(진짜 Firebase를 띄운 시험 넷)를 고침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-2 | P3-2 세션 끝 정리 | 단위 832 · inspect-notes 61 · events·shell·settings·labels·data 통과 · 브랜치 `claude/amazing-clarke-hboeze` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 · 일정 칸에도 쓰던 글 보관 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -345,6 +346,40 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   학급을 옮기는 P7-1·P7-4에서 정한다. 그때까지 글에 적은 `#26040305`는 그대로 남는다('#라벨'로 떼지 않는다 - domain/hashLabels). V4의 '학생 태그가 든 기록을 메모로 옮기면 한 번 묻기'도 그때.
 - **P3-2 '#라벨'·'+ 새 라벨' = 항목과 한 묶음**: 없는 이름의 라벨은 저장할 때 항목 쓰기와 같은 batch로 만든다(`data/labels` `ensureLabelOps` - 메모·기록 라벨은 초록, 상위 없음). 새 항목의 되돌리기는 새 라벨도 함께 지운 표시.
   칸에 보이지 않는 라벨 id(지운 라벨)는 저장 때 떼지 않는다 - 손대지 않은 칸을 바꾸지 않고, 라벨을 되살리면 다시 붙어 보인다.
+- **P3-3 이월 = 계산**(DESIGN 5-1대로, `domain/forward`·`features/events/forward`·`ForwardMarks`): 일정은 제 날짜에 그대로 두고 오늘 칸에 함께 보인다(V4처럼 새 id로 옮겨 쓰지 않는다).
+  판단 차례는 V4 `isForwardTarget` 그대로(이 일정만 정한 값 → 아는 라벨 → 아는 라벨이 없으면 흔적 `carrying`). V4의 '오늘에 같은 글이 있으면 이월하지 않기'·'사슬이 오늘 끝났으면 멈추기'는 옮기지 않는다
+  (id가 바뀌지 않아 사본이 생기지 않는다 - 같은 글의 두 일정은 둘 다 보인다).
+  - **처음 따라올 때 한 번**: 껍데기의 `ForwardMarks`가 일정·라벨을 **서버에서 받은 뒤(live)**에만 판단해 carrying이 없는 것에 `carrying: true`(안내·되돌리기 없이, 한 묶음). 이미 적힌 것은 쓰지 않는다 - 앱을 열 때 쓰는 것은 그것뿐(inspect-forward로 확인).
+  - **오늘 칸**: 오늘 것 아래에 따라오는 일정을 모은다(V4는 이월한 일정을 오늘 목록 끝에 붙였다). ▲▼는 각 무리 안에서. 수(N)에 넣는다.
+  - **끝내기 = 본 날로**(권장안으로 고름): 오늘 칸에서 끝내면 `date = 오늘`·`carriedFrom = 처음 날`·carrying 걷기·`order` = 오늘 줄 맨 뒤(따라오는 줄 바로 위 - 튀지 않게), 문서 하나. 되돌리면 제자리로.
+    지난 날 칸(흐리게 '→ 오늘로')에서 끝내면 그날에 끝낸 것(날짜를 옮기지 않는다) - 보던 곳에 남는 것이 자연스럽다.
+  - **이월 중 알림 = 처음 날에만**(권장안으로 고름): `time`은 그 일정의 `date` 기준 그대로라, 따라오는 동안 날마다 다시 울리지 않는다. V4도 이월하면 알림이 따라오지 않았다(옮겨 쓴 사본에 time이 없었다).
+    날마다 울리게 하려면 날짜 칸으로 오늘에 옮긴다(옮기면 다시 울린다 - P3-1). 서버 푸시(P8-2)도 같은 규칙.
+  - **기간 일정은 이월하지 않는다**: 여러 날에 걸쳐 '오늘로'가 없다 - 날마다 완료(`doneDates`, ■3)로 끝낸다.
+  - 이월 기간은 환경설정 **'학교' 탭**(이번에 켰다 - 교사 유형 P6-1·우리 학교 P6-3이 더한다), 계정에 하나 `common.forwardDays`.
+  - 끝내지 않은 이월 일정을 지난 날로 옮기면 '이월 일정이라 끝내지 않으면 오늘 칸에 따라옵니다'(V4 `movesForwardIntoPast`) - 칸의 옮기기 안내와 저장 안내에.
+  - **'📥 지난 일정' 줄은 아무것도 고르지 않고 연다**(권장안으로 고름): V4 창은 이월 대상만 보여 '모두 오늘로 전달'이었지만, V5의 줄은 이월이 아닌 일정(행사·연수처럼 달력에만 적은 것이 많다)이라
+    골라서 가져온다. 가져오기 = 고른 문서의 `date`·`order`만(오늘 줄 맨 뒤부터), 한 묶음·안내의 되돌리기.
+  - P3-4에 남김: V4에서 '오늘에 같은 글이 있어' 옮겨지지 않고 지난 날에 남은 이월 일정은 V5에서 따라온다(같은 글 둘) - 가져오기 결과 표에 수를 적을지 그때 본다.
+- **P3-3 기간 일정**(DESIGN 5-3): 한 문서. V4 기간 창의 '주말(토/일)과 공휴일 제외하고 계산하기'(기본 켬)는 칸 `workdays`로 옮겼다 - 날마다 문서를 만들지 않으니 빠지는 날을 계산으로 본다
+  (공휴일은 P5-3이 `domain/period`의 `HolidayCheck`로 넣는다 - 넣으면 지난 기간도 저절로 맞는다).
+  - **'이 날만 지우기' = `skipDates`**(권장안으로 고름, DESIGN의 '두 항목으로 나누기' 대신): 한 문서로 남아 '(k/n)'이 이어지고 고칠 곳이 하나, P3-4가 V4 기간 조각의 빈 날을 그대로 옮길 수 있다.
+    그날을 휴지통에서 따로 되살리지는 못한다 - 안내의 되돌리기·Ctrl+Z, 또는 일정 칸 '뺀 날 다시 넣기'.
+  - **옮기기**: 일정 칸에서 시작 날을 옮기면 통째로(끝 날·뺀 날·끝낸 날이 같은 날 수만큼 - 길이는 그대로), 끝 날만 바꾸면 늘이고 줄이기. V4 '이 날만·이 날부터 옮기기' 창은 두지 않는다 -
+    하루만 옮기기는 여러 개 고르기의 옮기기(■5 - V4도 '기간·반복 묶음이어도 고른 것만'), '이 날부터'는 끝 날 당기기 + 새 일정과 같아 드물다.
+  - 기간은 500일까지(V4 MAX_DAYS 그대로 - 칸의 한도). 기간 일정은 이월하지 않는다(■1).
+- **P3-3 반복**(DESIGN 4-4): 일정 칸의 '🔁 반복' 줄(새 일정에서만) - 안 함·매일·매주·격주·매월 n째 주 요일(V4는 첫째 주만)·매월 n일(여럿 - V4 '특정 일'), 끝나는 날은 꼭(V4 종료일).
+  저장 = 반복 문서 하나 + 날마다 항목(`seriesId`·`seriesIndex`) 한 묶음 - 한 묶음에 들게 **499개까지**(V4는 200개씩 나눠 적었다). V4의 '총 N개를 만듭니다' 확인 창은 두지 않는다 - 줄에 수·첫·끝 날이 늘 보이고 안내의 되돌리기가 모두 지운다.
+  - **고치기 = 어디까지 묻기**(V4 GroupMoveModal과 같은 세 갈래를 고치기에도): 이 일정만·이 날부터·전부 - **바꾼 칸만** 그 항목들에(따로 고친 다른 칸은 그대로), 날짜를 옮겼으면 같은 날 수만큼, 반복 문서의 template도.
+  - **규칙 바꾸기는 없다**(권장안으로 고름): 요일·끝나는 날을 바꾸려면 '이 날부터 삭제' 뒤 새로 만든다 - 규칙을 고쳐 항목을 다시 짓는 길은 완료·이월·알림이 날마다 따로 돈 항목을 지울 수 있어 두지 않는다.
+  - 이미 있는 하루 일정을 반복으로 바꾸지 않는다(V4도 반복 등록 창은 새로 만들었다). 기간과 반복은 함께 쓰지 않는다(한쪽을 켜면 다른 쪽 단추가 숨는다).
+  - 단축키 `recurring` = 새 일정 칸을 반복 줄(매주)을 편 채로(MENU 3-8). 라벨 속성 '반복'을 고른 새 일정 칸도 줄을 편다(고르기는 '안 함'으로 둔다 - 사용자가 고른다).
+- **P3-3 여러 개 고르기**(MENU 2-1): ⋮ 그대로 + 카드 Ctrl+누르기·Shift 범위·휴대폰 길게 누르기로 바로 시작. 고르는 동안 그냥 누르기 = 고르기·풀기(V4 그대로 - 휴대폰엔 Ctrl이 없다), Shift = 앞서 누른 것부터 범위(같은 날 목록).
+  ESC·✕·동작 뒤에 끝난다(ESC는 오른쪽 칸도 함께 닫는다 - 라벨로 보기 칩과 같다). 고른 것은 날을 넘어 남는다(V4 '다른 날짜의 일정도 함께').
+  - **지우기는 묻지 않는다**(권장안으로 고름 - V4는 확인 창): 지운 표시 + 안내의 되돌리기 하나로 모두 돌아온다(한 묶음). 완료·라벨·옮기기도 한 묶음·되돌리기 하나(V4는 날마다 따로 적고 되돌리기를 모았다).
+  - **기간 일정은 고른 날만**: 완료 = 그날 doneDates, 지우기 = 그날 skipDates, 옮기기 = 그날을 빼고 옮길 날에 하루 일정으로(알림 시각은 첫날 것만 따라간다). 라벨은 일정 전체.
+  - 오늘 칸에서 따라오던 일정을 골라 완료하면 이월 끝내기와 같다(오늘로 옮겨 적는다). 끝내지 않은 이월 일정을 지난 날로 옮기면 안내에 '오늘 칸에 따라옵니다'.
+  - 라벨 바꾸기는 V4처럼 라벨 하나로(또는 떼기) - 일정 칸에서 라벨을 바꿀 때처럼 따로 정한 속성은 걷는다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -566,13 +601,34 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: `DESIGN.md` 4-4·5-1·5-3, V4 설명서 `forwarding`·`period`·`recurring`·`group-delete`·`multi-select`, V4 `lib/forwarding.ts`,
 `hooks/useDayData.ts`의 `runAutoForwarding`(159~460줄 - 판단 규칙만), `components/ForwardingModal.tsx`·`PeriodModal.tsx`·`RecurringModal.tsx`·`GroupDeleteModal.tsx`·
 `GroupMoveModal.tsx`·`MultiEventActionBar.tsx`, `lib/eventGroups.ts`, `store/useAppStore.ts`의 `bulk*`.
-- [ ] ■1 이월 계산 `domain/forward.ts`(`DESIGN.md` 5-1 - 판단은 V4와 같게, 처음 따라올 때 `carrying` 한 번, 끝내면 `date` = 그날·`carriedFrom`) + 테스트.
+- [x] ■1 이월 계산 `domain/forward.ts`(`DESIGN.md` 5-1 - 판단은 V4와 같게, 처음 따라올 때 `carrying` 한 번, 끝내면 `date` = 그날·`carriedFrom`) + 테스트.
   오늘 칸 '↪ m/d부터', 지난 날 흐리게 '→ 오늘로'. 이월 중 알림을 어떻게 할지 정해 5장에 적는다.
-- [ ] ■2 '📥 지난 일정 N개 ▸'(오늘일 때 일정 칸 아래 - 이월 대상이 아닌 끝내지 않은 지난 N일 일정, 골라 오늘로 = `date` 바꾸기, 되돌리기). ⋮에는 두지 않는다(`MENU.md` 2-1).
-- [ ] ■3 기간 일정 = 한 항목(일정 칸 '끝 날', 날마다 '(k/n)'은 계산, 날마다 완료 `doneDates`), 묶음 지우기·옮기기 '이 날만(나누기)·이 날부터(끝 날 당기기)·전부'.
-- [ ] ■4 반복: 일정 칸 '🔁 반복' 줄(안 함·매일·매주 요일·매월 n째 주 요일·끝나는 날) → `series` + 항목들(한 batch), '이 날부터 바꾸기·지우기'.
-- [ ] ■5 여러 개 고르기: ⋮ + 일정 카드 Ctrl+누르기·Shift 범위(휴대폰 길게 누르기) → 아래 동작 줄(완료·라벨·날짜·지우기·끝), 되돌리기.
+  → `domain/forward.ts`(`forwardOn`·`isCarried`·`carriedOf`·`carriedSince`) · `features/events/forward.ts`(`useCarried` - 사본에서 오늘로 따라오는 일정·`labelForwardOf`) ·
+  `ForwardMarks.tsx`(껍데기에 하나 - live에서만 carrying 한 번) · `eventOps.carriedDoneChanges`·`actions.setEventDone(…, carried)` · `ui/useToday.ts`(자정에 바뀌는 오늘) · `dateUtils.monthDayLabel` ·
+  `DayEvents`(오늘 것 아래 따라오는 줄 `[data-event-carried|event-since]`, 지난 날 `[data-event-away|event-to-today]`) · 일정 칸 `[data-event-carry-note]`·옮기기 안내 ·
+  환경설정 '학교' 탭 `SchoolTab.tsx`(`[data-forward-days]`) · 크롬 `inspect-forward.mjs` 26항목(events·settings 다시 통과).
+- [x] ■2 '📥 지난 일정 N개 ▸'(오늘일 때 일정 칸 아래 - 이월 대상이 아닌 끝내지 않은 지난 N일 일정, 골라 오늘로 = `date` 바꾸기, 되돌리기). ⋮에는 두지 않는다(`MENU.md` 2-1).
+  → `domain/forward.staleOf` · `useCarried().stale` · `features/day/DayPastEvents.tsx`(`[data-past-events|past-toggle|past-list|past-item|past-pick|past-open|past-complete|past-delete|past-all|past-bring]` - 처음엔 접힘·아무것도 고르지 않음,
+  줄마다 날짜·라벨(누르면 완료)·글(누르면 일정 칸)·🗑️) · `actions.bringEventsToToday`(date·order만 한 묶음, 울렸던 알림은 다시, 안내 되돌리기) ·
+  단축키 `forwarding` = 오늘 하루 화면으로 가서 줄을 편다(`events/shortcuts.openPastEvents` - 없으면 안내) · 점검용 `window.sp5.runShortcut` · 크롬 `inspect-forward` 48항목.
+- [x] ■3 기간 일정 = 한 항목(일정 칸 '끝 날', 날마다 '(k/n)'은 계산, 날마다 완료 `doneDates`), 묶음 지우기·옮기기 '이 날만(나누기)·이 날부터(끝 날 당기기)·전부'.
+  → `domain/period.ts`(`onPeriodDay`·`periodDays`·`periodPosition`·`spanCount`·`periodDoneChanges`·`skipDayChanges`·`cutFromChanges`·`shiftDates`, 공휴일은 `HolidayCheck`로 P5-3이) ·
+  자료 칸 `workdays`·`skipDates`(DESIGN 4-2) · `select.itemsOn`이 그날 보이는 기간만 · `eventForm`(`endDate`·`workdays`·`skipDates`, `periodOf`·`withStartDate` - 시작 날을 옮기면 통째로) ·
+  일정 칸 '📆 끝 날' 줄(`[data-event-period-open|event-period-row|event-end|event-workdays|event-end-clear|event-period-count|event-skip-restore]`, '기간' 속성 라벨이면 펴 둔다, 500일까지) ·
+  카드 '(k/n)' `[data-event-period]`·그날만 완료 · `EventScopeWindow.tsx`(세 갈래 창 `[data-scope-window|scope-choice]` - ■4 반복도) · `EventDeleteChooser.tsx` · `actions.deletePeriodPart` ·
+  옮기기의 되돌리기 = 자리 칸 모두(끝 날·뺀 날·끝낸 날) · 크롬 `inspect-groups.mjs` 23항목(events 다시 통과).
+- [x] ■4 반복: 일정 칸 '🔁 반복' 줄(안 함·매일·매주 요일·매월 n째 주 요일·끝나는 날) → `series` + 항목들(한 batch), '이 날부터 바꾸기·지우기'.
+  → `domain/recur.ts`(`ruleOf`·`recurDates`(V4 computeRecurringDates와 같게 - 격주는 달력의 주)·`ruleLabel`·`recurFormFor`·`recurFormDates`, 한 번에 499개) · 자료 `SeriesRule.monthDays`(여럿 - DESIGN 4-4) ·
+  `features/events/seriesOps.ts`(순수 - `createSeriesOps`·`editSeriesOps`(바꾼 칸만·날짜는 같은 날 수만큼·template)·`deleteSeriesOps`(이 날부터 = until 당김)·`seriesItemsOf`·`scopeItems`) · `series.ts`(`useSeriesOf`) ·
+  `actions.createSeriesEvents`·`saveSeriesEvents`·`deleteSeriesEvents` · `RecurRow.tsx`(`[data-event-recur-row|recur-kind|recur-day|recur-week|recur-mday|recur-until|recur-count]`) ·
+  일정 칸 `[data-event-recur-open|event-series-info]`·고치면 어디까지(`EventScopeWindow`) · 빠른 입력 '매주 화'·'격주 금' 칩 · 카드 🔁 `[data-event-series]` · 지우기 창이 반복도 · 단축키 `recurring` = 새 일정 칸을 반복 줄을 편 채로 ·
+  크롬 `inspect-groups` 41항목(events 다시 통과).
+- [x] ■5 여러 개 고르기: ⋮ + 일정 카드 Ctrl+누르기·Shift 범위(휴대폰 길게 누르기) → 아래 동작 줄(완료·라벨·날짜·지우기·끝), 되돌리기.
   크롬 점검 `inspect-forward.mjs`·`inspect-multi.mjs`.
+  → `features/events/multi.ts`(store `useMulti` - 고른 것 = 일정 id + 그 날, `togglePick`·`pickRange`·`startMulti`·`endMulti`·`toggleMulti`) · `multiOps.ts`(순수 - `resolvePicks`·`multiDoneOps`·`multiLabelOps`·`multiMoveOps`·`multiDeleteOps`,
+  한 일정을 여러 날 골랐으면 한 문서에 접어 적는다) · `actions.completePicked`·`relabelPicked`·`movePicked`·`deletePicked`(모두 한 묶음·안내 되돌리기 하나) ·
+  `MultiSelectBar.tsx`(껍데기에 하나 `[data-multi-bar|multi-count|multi-complete|multi-label-open|multi-label|multi-move-open|multi-move-date|multi-move-prev|multi-move-next|multi-move-go|multi-delete|multi-end]`, ⋮ `multiSelect`·ESC) ·
+  카드 `[data-event-picked]`·Ctrl·Shift·길게 누르기(0.5초) · `app/keys.addEscapeAction`(ESC에 함께 할 일) · 크롬 `inspect-multi.mjs` 26항목(forward·groups·events·notes·shell·labels·data 다시 통과).
 **끝 조건**: 위 설명서 주제가 된다. **앱을 열 때 이월이 서버에 아무것도 쓰지 않는다**(처음 따라올 때 한 번만 - 점검으로 확인).
 
 ### P3-4. 가져오기: 일정·기록·메모·링크
@@ -584,6 +640,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [ ] ■1 `events/{date}` → items(event): readEventList(id 없는 항목 - `DESIGN.md` 8-2), 라벨 셋 자리 → `labelIds`, 속성(V3 이름 먼저), time·alarmTriggered,
   기한(사슬로), 공휴일 일정 빼기, 이월 사슬 → `carriedFrom`, authorId·createdAt·`src`.
 - [ ] ■2 기간 조각 → 한 항목(글 끝 '(i/n)' 떼기, 날마다 완료 → `doneDates`, 조각마다 글이 다르면 따로 두고 결과 표에), 반복 묶음 → `series`(imported) + 항목들.
+  P3-3이 둔 칸: 조각이 평일에만 있으면 `workdays: true`, 범위 안의 빈 날(지운 조각)은 `skipDates`(DESIGN 5-3 - `domain/period`가 그대로 센다). 반복은 `seriesId`·`seriesIndex`(규칙 없이 `imported: true` - 묶음 고치기·지우기는 된다).
+  이월: 진행 중인 V4 사슬(오늘 문서에 `originalDate`·`forwardChainId`)은 `date = originalDate`·`carrying: true`로 두면 오늘 칸에 '↪ 처음 날부터'로 따라온다(끝낸 사슬은 `carriedFrom`).
+  V4에서 '오늘에 같은 글이 있어' 옮겨지지 않고 지난 날에 남은 이월 일정은 V5에서 따라온다(같은 글 둘 - 결과 표에 수를 적을지 본다).
 - [ ] ■3 `journals` → items(note, date), `tasks` → items(note, null): 라벨 짝, tables, attachments, completed·favorite·fromDate·keepId, '[표]' → 빈 글,
   `notice_`·`attendance_` 자동 기록은 가져오지 않는다. `linkedItems` → `linkIds`(결정적 id로 바로 셈, 수업 → `'lesson:{date}:{n}'`).
 - [ ] ■4 결과 표 + 점검 `inspect-import-items.mjs`(V4 seed 수와 맞다·두 번째는 바뀐 것 0·V5에서 고친 것은 그대로). 👤 실제 계정으로 가져와 하루·메모 화면을 V4와 견주기 부탁.

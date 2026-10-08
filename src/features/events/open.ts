@@ -18,6 +18,8 @@ export interface EventPanelParams {
   id?: string;
   /** 새 일정 칸에 미리 적어 둘 글 (학사일정 '일정으로 담기' - P6-3) */
   draftText?: string;
+  /** 새 일정 칸을 '🔁 반복' 줄을 편 채로 (단축키 '반복 일정' - MENU 3-8) */
+  recur?: boolean;
 }
 
 export const sameEventPanel = (a: EventPanelParams, b: EventPanelParams) =>

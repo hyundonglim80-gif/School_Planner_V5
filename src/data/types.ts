@@ -95,6 +95,10 @@ export interface Item extends Tracked {
   date: YMD | null;
   /** 기간 일정의 끝 날 (일정만) */
   endDate?: YMD;
+  /** 기간 일정: 주말·공휴일은 빼고 센다 (V4 '주말과 공휴일 제외' - domain/period) */
+  workdays?: boolean;
+  /** 기간 일정: '이 날만 지우기'로 뺀 날 */
+  skipDates?: YMD[];
   /** 본문. 읽기·저장 길에서 바꾸지 않는다 */
   text: string;
   labelIds: string[];
@@ -155,12 +159,16 @@ export interface Label extends Tracked {
 
 // ───────────────────────── 4-4. 반복 ─────────────────────────
 
+/** 반복 규칙 (domain/recur - 매일·매주·격주(interval 2)·매월 n째 주 요일·매월 n일 여럿) */
 export interface SeriesRule {
   freq: 'daily' | 'weekly' | 'monthly';
   interval: number;
+  /** 0(일) ~ 6(토) */
   weekdays?: number[];
+  /** 매월 n째 주 (1~5) */
   monthWeek?: number;
-  monthDay?: number;
+  /** 매월 n일 (여럿 - V4 '매월(특정 일)') */
+  monthDays?: number[];
 }
 
 export interface Series extends Tracked {

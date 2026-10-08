@@ -7,10 +7,12 @@ import {
   formOf,
   labelAttrs,
   newForm,
+  periodOf,
   propsToStore,
   sameForm,
   withAttr,
   withLabels,
+  withStartDate,
 } from './eventForm';
 import type { ItemDoc } from './eventOps';
 
@@ -86,5 +88,50 @@ describe('새로 만들기·고치기', () => {
     expect(sameForm(f, { ...f, text: '회의  ' }, tree)).toBe(true);
     expect(sameForm(f, withAttr(f, 'forward', true), tree)).toBe(true);
     expect(sameForm(f, withAttr(f, 'forward', false), tree)).toBe(false);
+  });
+});
+
+describe('기간 (끝 날)', () => {
+  it('끝 날이 날짜보다 뒤일 때만 기간 - 주말 빼기는 기본 켬, 뺀 날은 범위 안만', () => {
+    const f = newForm('2026-10-14', tree);
+    expect(f.workdays).toBe(true);
+    expect(periodOf({ ...f, endDate: '2026-10-14' }).endDate).toBe('');
+    expect(periodOf({ ...f, endDate: '2026-10-20', skipDates: ['2026-10-30', '2026-10-15'] })).toEqual({
+      endDate: '2026-10-20',
+      workdays: true,
+      skipDates: ['2026-10-15'],
+    });
+    expect(createData({ ...f, text: '기말고사', endDate: '2026-10-20' }, tree, 'a0')).toMatchObject({ endDate: '2026-10-20', workdays: true });
+    expect(createData({ ...f, text: '하루', endDate: '' }, tree, 'a0')).not.toHaveProperty('endDate');
+  });
+
+  it('시작 날을 옮기면 끝 날·뺀 날도 같은 날 수만큼', () => {
+    const f = { ...newForm('2026-10-14', tree), endDate: '2026-10-20', skipDates: ['2026-10-16'] };
+    expect(withStartDate(f, '2026-10-21')).toMatchObject({ date: '2026-10-21', endDate: '2026-10-27', skipDates: ['2026-10-23'] });
+    expect(withStartDate({ ...f, endDate: '' }, '2026-10-21')).toMatchObject({ date: '2026-10-21', endDate: '' });
+  });
+
+  it('고치기: 끝 날 넣기·빼기 = 그 칸들만', () => {
+    const one = item({ date: '2026-10-14' });
+    expect(editChanges(one, { ...formOf(one), endDate: '2026-10-20' }, tree)).toEqual({ endDate: '2026-10-20', workdays: true });
+    const span = item({ date: '2026-10-14', endDate: '2026-10-20', workdays: true, skipDates: ['2026-10-16'], doneDates: ['2026-10-14'] });
+    expect(editChanges(span, formOf(span), tree)).toEqual({});
+    expect(editChanges(span, { ...formOf(span), endDate: '' }, tree)).toEqual({
+      endDate: undefined,
+      workdays: undefined,
+      skipDates: undefined,
+      doneDates: undefined,
+    });
+    expect(editChanges(span, { ...formOf(span), workdays: false }, tree)).toEqual({ workdays: undefined });
+  });
+
+  it('통째로 옮기면 끝낸 날도 함께, 범위를 줄이면 범위 안만', () => {
+    const span = item({ date: '2026-10-14', endDate: '2026-10-20', workdays: true, doneDates: ['2026-10-14', '2026-10-19'] });
+    expect(editChanges(span, withStartDate(formOf(span), '2026-10-21'), tree)).toEqual({
+      date: '2026-10-21',
+      endDate: '2026-10-27',
+      doneDates: ['2026-10-21', '2026-10-26'],
+    });
+    expect(editChanges(span, { ...formOf(span), endDate: '2026-10-16' }, tree)).toEqual({ endDate: '2026-10-16', doneDates: ['2026-10-14'] });
   });
 });
