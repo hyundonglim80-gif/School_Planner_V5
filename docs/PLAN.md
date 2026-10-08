@@ -288,7 +288,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   글을 칠 때는 Ctrl·Alt 없는 키를 듣지 않는다. 설명서·툴팁에 키 글자를 박지 않는 테스트.
 - [x] ■4 머리줄(`MENU.md` 3-1): ⏳ D-Day 자리·🗑️·＋ 새로(PC)/둥근 ＋(휴대폰)·🔍·화면 탭·📂 자리·?·⋮(창 목록에서 4구역)·계정 칸 자리.
   다크 모드(`gen-dark-css` 옮기기)·글자 크기·안내(toast)·빌드 번호.
-- [ ] ■5 점검 틀: `tools/lib/probe.mjs`(크롬·1400px·`data-*`로 찾기·`waitFor`·`serverUntil`·자료 되돌리기 도우미) + `tools/inspect-shell.mjs`(화면 탭·주소·뒤로가기·창 둘 탭·ESC·Ctrl+S·단축키).
+- [x] ■5 점검 틀: `tools/lib/probe.mjs`(크롬·1400px·`data-*`로 찾기·`waitFor`·`serverUntil`·자료 되돌리기 도우미) + `tools/inspect-shell.mjs`(화면 탭·주소·뒤로가기·창 둘 탭·ESC·Ctrl+S·단축키).
 **끝 조건**: 빈 화면 여섯을 탭·단축키·주소로 오가고, 시험 창 둘이 V4처럼 탭·ESC·Ctrl+S·뒤로가기로 움직인다(`inspect-shell` 통과).
 
 ### P1-4. 설정 동기화·환경설정 탭·계정 칸·배포·PWA 틀
