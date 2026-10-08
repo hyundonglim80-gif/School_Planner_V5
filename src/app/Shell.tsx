@@ -11,6 +11,7 @@ import { useNoteShortcuts } from '../features/notes/shortcuts';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import ImportBanner from '../features/import/ImportBanner';
 import ColumnResizer from '../ui/ColumnResizer';
+import ImageViewer from '../ui/ImageViewer';
 import { RIGHT_COLUMN_CSS_WIDTH, useSidePopups } from '../ui/sideColumn';
 import SideTabs from '../ui/SideTabs';
 import { MainWidthContext } from '../ui/useMainWidth';
@@ -114,6 +115,8 @@ export default function Shell() {
       <ForwardMarks />
       {/* '구글 로그인이 필요합니다' - 드라이브·캘린더를 쓰다 토큰이 만료됐는데 로그인 창이 막힐 때 (data/google) */}
       <GoogleLoginPrompt />
+      {/* 사진 크게 보기 (ui/imageViewer) */}
+      <ImageViewer />
       {/* 여러 개 고르기 - 고르는 동안 화면 아래 동작 줄 */}
       <MultiSelectBar />
       {/* 오른쪽 칸이 둘 이상이면 위에 탭 (V4 2026-10-07) */}

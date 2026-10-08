@@ -687,7 +687,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■1 구글 토큰(조용한 토큰·누른 직후 로그인 창·'구글 로그인이 필요합니다' 창 - V4 규칙 그대로).
   → `data/google/token.ts`(`getGoogleTokenQuietly`·`getValidGoogleToken(reason)`·`renewGoogleToken`(지금 계정으로 다시 - reauthenticate + login_hint)·`withGoogleToken`(거절되면 잊고 한 번 더)·`googleFetch`·`GoogleApiError.needsLogin`) ·
   `data/google/prompt.ts`(묻는 창 상태) · `features/auth/GoogleLoginPrompt.tsx`(Shell에 하나 `[data-google-login-prompt|google-login|google-login-close|google-login-reason|google-login-error]`). 크롬 확인은 ■4에서 첨부와 함께.
-- [ ] ■2 첨부(드라이브 `School_Planner` 폴더 - V4가 올린 파일이 그대로 열린다), 캡처 Ctrl+V(줄이기 워커), 엑셀 표 붙여넣기(표 먼저 - 그림 올리기로 넘기지 않는다), 링크 미리보기.
+- [x] ■2 첨부(드라이브 `School_Planner` 폴더 - V4가 올린 파일이 그대로 열린다), 캡처 Ctrl+V(줄이기 워커), 엑셀 표 붙여넣기(표 먼저 - 그림 올리기로 넘기지 않는다), 링크 미리보기.
+  → `data/google/drive.ts`(`uploadToDrive` - 폴더 찾기/만들기·resumable·공개 읽기, `attachmentImageSrc`·`driveUrlToStore`·`uploadFailReason`) · `domain/attachments.ts`(`isImageAttachment`·`fileIcon`·`formatFileSize`·`pastedImageName`·`makeAttachment`) ·
+  `notes/attach.ts`(`pastedTable`(표 먼저·한 칸이면 글자)·`extractImageFiles`·`uploadAttachments`(일부만 올라가면 올라간 것만)) · `domain/entryTable.ts`(V4 그대로 - 타입은 data/types) · `notes/EntryTableView.tsx`(고치기·compact - `[data-cell|table-op]`) ·
+  `domain/linkPreview.ts` + `ui/LinkPreviewCards.tsx`(`[data-link-preview]`) · NotePanel `[data-note-file-input|note-uploading=files|paste|note-attachment-image|note-attachment-view]`(올리는 동안 저장 막기).
+  캡처는 **줄이지 않는다**(V4 그대로 - 줄이기 워커는 학생 사진만, P7로 - 5장). 사진 크게 보기는 ■3을 당겨 함께(`ui/imageViewer.ts`·`ui/ImageViewer.tsx` Shell에 하나, ESC는 사진 창만).
 - [ ] ■3 클립보드 칸(왼쪽 📋, IndexedDB 이 기기만, 지우면 이 기기 휴지통), 이미지 크게 보기(넘겨 보기·3:4 틀).
 - [ ] ■4 크롬 점검(구글 API는 page.route로 흉내) + 👤 실제 계정: V4에서 가져온 기록의 첨부 하나가 V5에서 열리는지.
 **끝 조건**: 위 설명서 주제가 된다.

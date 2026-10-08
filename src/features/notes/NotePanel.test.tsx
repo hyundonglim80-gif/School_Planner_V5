@@ -1,6 +1,6 @@
 // 메모·기록 칸 - 새로(맨 위 라벨·자리 맨 뒤·저장하면 수정 칸)·#라벨(새 라벨과 한 묶음)·'+ 새 라벨'·고치기 = 바뀐 칸만·
 // 📅 날짜 = 자리(date만·되돌리기는 자리만)·완료/즐겨찾기(고치던 항목은 곧바로 그 칸만)·체크리스트·손대기 전에는 다른 기기 고침을 따라감·저장 안 한 글
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { useEffect, useState } from 'react';
 import { Timestamp } from 'firebase/firestore';
@@ -15,7 +15,20 @@ import type { WriteOp } from '../../data/repo';
 import NotePanel from './NotePanel';
 import type { NotePanelParams } from './open';
 
-vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
+vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, GOOGLE_SCOPES: [] }));
+const upload = vi.hoisted(() => ({ release: null as null | (() => void), names: [] as string[] }));
+vi.mock('../../data/google/drive', async (orig) => {
+  const real = await orig<typeof import('../../data/google/drive')>();
+  return {
+    ...real,
+    // 풀어 줄 때까지 기다린다 (올리는 동안 저장을 막는지 보려고)
+    uploadToDrive: vi.fn(async (_file: Blob, name: string) => {
+      await new Promise<void>((r) => (upload.release = r));
+      upload.names.push(name);
+      return { id: `D${upload.names.length}`, name, downloadLink: `https://d/${name}` };
+    }),
+  };
+});
 const written = vi.hoisted(() => ({ batches: [] as WriteOp[][] }));
 vi.mock('../../data/repo', async (orig) => {
   const real = await orig<typeof import('../../data/repo')>();
@@ -83,6 +96,11 @@ beforeEach(async () => {
   close.mockReset();
   document.body.innerHTML = '';
   useSession.setState({ loading: false, user: { uid: 'me', email: 'me@x', displayName: '', photoURL: '' } });
+});
+
+// 마지막 시험이 연 쓰던 글 보관 DB를 다 열고 닫은 뒤 끝낸다 (끝난 뒤 열리면 '처리하지 않은 오류' - IDBRequest is not defined)
+afterAll(async () => {
+  await wipeDrafts('me');
 });
 
 describe('새 기록·메모', () => {
@@ -309,5 +327,71 @@ describe('쓰던 글 보관', () => {
     fireEvent.click(q('[data-draft-discard]'));
     expect(textInput().value).toBe('');
     await waitFor(async () => expect(await readDraft('me', `note:${SID}:new:${DAY}`)).toBeNull());
+  });
+});
+
+/** 붙여넣기 흉내 (jsdom에는 DataTransfer가 없다) */
+function pasteInto(el: HTMLElement, html: string, files: File[] = []) {
+  const items = files.map((f) => ({ kind: 'file', type: f.type, getAsFile: () => f }));
+  const data = { getData: (t: string) => (t === 'text/html' ? html : ''), items: Object.assign(items, { length: items.length }) };
+  return fireEvent.paste(el, { clipboardData: data });
+}
+
+describe('붙이기 (P4-2)', () => {
+  it('엑셀 표 Ctrl+V = 표 (그림보다 먼저), 칸 글자 고치기·행 넣기, 저장하면 tables', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    type('성적');
+    const png = new File(['x'], 'image.png', { type: 'image/png' });
+    pasteInto(textInput(), '<table><tr><td>이름</td><td>점수</td></tr><tr><td>가</td><td>90</td></tr></table>', [png]);
+    expect(document.querySelectorAll('[data-note-table]')).toHaveLength(1);
+    expect(upload.release).toBeNull();
+    fireEvent.click(q('[data-cell="1-1"]'));
+    const cell = q('[data-cell="1-1"] textarea') as HTMLTextAreaElement;
+    fireEvent.change(cell, { target: { value: '95' } });
+    fireEvent.keyDown(cell, { key: 'Enter' });
+    fireEvent.click(q('[data-table-op="row-below"]'));
+    await save();
+    const data = (lastOps().find((o) => o.type === 'create') as unknown as { data: { tables: { rows: { cells: { v: string }[] }[] }[] } }).data;
+    expect(data.tables[0].rows.map((r) => r.cells.map((c) => c.v).join(','))).toEqual(['이름,점수', '가,95', ',']);
+  });
+
+  it('캡처 Ctrl+V = 드라이브에 올려 첨부, 올리는 동안은 저장하지 않는다', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    type('공문');
+    pasteInto(textInput(), '', [new File(['x'], 'image.png', { type: 'image/png' })]);
+    await waitFor(() => expect(upload.release).not.toBeNull());
+    expect(q('[data-note-uploading="paste"]')).not.toBeNull();
+    await save();
+    expect(written.batches).toHaveLength(0);
+    await act(async () => upload.release!());
+    await waitFor(() => expect(document.querySelector('[data-note-attachment-image]')).not.toBeNull());
+    await save();
+    const data = (lastOps().find((o) => o.type === 'create') as unknown as { data: { attachments: { name: string; type: string; url: string }[] } }).data;
+    expect(data.attachments[0]).toMatchObject({ type: 'image/png', url: expect.stringContaining('thumbnail?id=D') });
+    expect(data.attachments[0].name).toMatch(/^붙여넣은_이미지_/);
+    upload.release = null;
+  });
+
+  it('📎 파일 첨부 = 고른 파일을 올려 목록에, ✕ = 빼기', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    const input = q('[data-note-file-input]') as HTMLInputElement;
+    fireEvent.change(input, { target: { files: [new File(['a'], '통신문.hwp')] } });
+    await waitFor(() => expect(upload.release).not.toBeNull());
+    expect(q('[data-note-uploading="files"]')).not.toBeNull();
+    await act(async () => upload.release!());
+    await waitFor(() => expect(document.querySelector('[data-note-attachment="통신문.hwp"]')).not.toBeNull());
+    fireEvent.click(q('[data-note-attachment="통신문.hwp"] [data-note-attachment-remove]'));
+    expect(document.querySelector('[data-note-attachment]')).toBeNull();
+    upload.release = null;
+  });
+
+  it('글 안 주소는 미리보기 카드', () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    type('영상 https://youtu.be/abc123 보기');
+    expect(q('[data-link-preview="youtube"]')).not.toBeNull();
   });
 });

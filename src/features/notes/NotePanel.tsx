@@ -3,31 +3,39 @@
 // - 어느 화면에서든 이 칸 하나로 새로 쓰고 고친다. 칸을 연 순간의 공간에 저장한다.
 // - 머리: 제목 · ☐ 완료 · ☆ 즐겨찾기(고치던 항목은 누르는 즉시 그 칸만 저장, 새 항목은 처음 저장 때 함께) · 📅 날짜 = 자리.
 //   날짜를 넣으면 그날 기록, 빼면 메모 - 고치던 항목은 저장할 때 옮긴다(date만, 안내의 되돌리기 = 자리만).
-// - 내용: ☑ 체크리스트(단추·단축키·Enter 이어 쓰기·☐ 누르기) · 첫·마지막 줄 '#라벨' 미리 보기 · 붙인 표·첨부(빼기만 - 붙이기는 P4-2).
+// - 내용: ☑ 체크리스트(단추·단축키·Enter 이어 쓰기·☐ 누르기) · 첫·마지막 줄 '#라벨' 미리 보기 · 글 안 주소의 미리보기.
+// - 붙이기(P4-2 - attach.ts): 📎 파일 첨부·캡처 Ctrl+V = 드라이브에 원본으로, 엑셀 표 Ctrl+V = 표(그림보다 먼저) - 칸 글자·행/열 고치기.
+//   올리는 동안은 저장하지 않는다(올라간 것이 빠진 채 저장되지 않게).
 // - 라벨(여러 개, '+ 새 라벨') - 저장할 때 새 라벨과 항목을 한 묶음으로.
 // - 저장하면 칸은 닫히지 않고 그 항목의 수정 칸이 된다(V4 사용자 결정). 저장 = 바뀐 칸만, 문서 하나(+ 새 라벨).
 // - 저장이 안 되면 칸을 닫지 않는다. ESC는 저장 안 한 글이 있으면 먼저 묻는다, 좁은 화면 배경 = 저장하고 닫기.
 // - 이 칸이 열린 동안 다른 기기에서 고친 것은, 손대기 전이면 따라간다(손댔으면 적던 것을 덮지 않는다).
 // - 쓰던 글은 2초 뒤 이 기기에 남긴다(data/drafts) - 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기'.
 // @이름 학생 태그는 학급(명렬표)이 들어오는 P7-1에서 - 지금은 #26040305를 글에 적으면 그대로 남는다.
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
-import { showErrorToastOnce, showToast } from '../../app/toast';
+import { showErrorToast, showErrorToastOnce, showToast } from '../../app/toast';
 import { useShortcutTitle } from '../../app/keys';
+import { fileIcon, formatFileSize, isImageAttachment } from '../../domain/attachments';
 import { continueOnEnter, toggleCheckAtCaret, toggleLinesPrefix } from '../../domain/checkLines';
 import { shortDateLabel } from '../../domain/dateUtils';
 import { useDraft } from '../../data/drafts';
+import { attachmentImageSrc } from '../../data/google/drive';
+import type { Attachment } from '../../data/types';
 import { useDocs, useItemsOn, useLabelTree, useMemos, useMirrorStatus } from '../../data/select';
 import AutoTextarea from '../../ui/AutoTextarea';
 import DraftOffer from '../../ui/DraftOffer';
+import { openImageViewer } from '../../ui/imageViewer';
+import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
 import { orderAfter } from '../events/eventOps';
 import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite } from './actions';
+import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
+import EntryTableView from './EntryTableView';
 import { hasContent, isKnownLabel, newNoteForm, noteFormOf, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
 import { nounOf, objectOf } from './noteOps';
 import type { NotePanelParams } from './open';
-import TablePreview from './TablePreview';
 
 const PLACEHOLDER = {
   기록: '오늘 있었던 일을 기록해 보세요...',
@@ -51,6 +59,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [flagBusy, setFlagBusy] = useState(false);
+  /** 드라이브에 올리는 중 (📎 파일 / 붙여넣은 캡처) */
+  const [uploading, setUploading] = useState<'files' | 'paste' | null>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const dayNotes = useItemsOn(form.date, 'note', sid);
   const memoList = useMemos(sid);
@@ -180,12 +190,62 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   }, []);
   const withShortcut = useShortcutTitle();
 
+  /** 그림 크게 보기 - 이 칸의 그림들을 넘겨 본다 */
+  const viewImage = (att: Attachment) => {
+    const pics = form.attachments.filter(isImageAttachment);
+    openImageViewer(
+      pics.map((a) => ({ url: attachmentImageSrc(a), name: a.name })),
+      pics.indexOf(att),
+    );
+  };
+
+  // ─── 붙이기 (attach.ts) ───
+  const attach = async (files: File[], pasted: boolean) => {
+    if (files.length === 0) return;
+    setUploading(pasted ? 'paste' : 'files');
+    try {
+      const added = await uploadAttachments(files, pasted);
+      if (added.length > 0) setForm((f) => ({ ...f, attachments: [...f.attachments, ...added] }));
+    } finally {
+      setUploading(null);
+    }
+  };
+  const onPickFiles = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files ? Array.from(e.target.files) : [];
+    e.target.value = '';
+    void attach(files, false);
+  };
+  /** 표가 먼저(엑셀은 그림도 함께 복사한다), 그다음 캡처 그림, 나머지(글자)는 그대로 */
+  const onTextPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const table = pastedTable(e.clipboardData);
+    if (table === 'text') return;
+    if (table && 'error' in table) {
+      e.preventDefault();
+      showErrorToast(table.error);
+      return;
+    }
+    if (table) {
+      e.preventDefault();
+      setForm((f) => ({ ...f, tables: [...f.tables, table] }));
+      showToast(tablePastedText(table));
+      return;
+    }
+    const images = extractImageFiles(e.clipboardData);
+    if (images.length === 0) return;
+    e.preventDefault();
+    void attach(images, true);
+  };
+
   // ─── 저장 ───
   /** 저장한다. 저장했거나 저장할 것이 없으면 true */
   const save = async (): Promise<boolean> => {
     if (!hasContent(form)) {
       // 지우기는 삭제 단추로만 한다. 내용을 다 지운 채 저장해도 항목은 남는다
       showToast(`${noun} 내용을 입력하세요.`);
+      return false;
+    }
+    if (uploading) {
+      showToast('파일을 올리는 중입니다. 끝난 뒤 저장해 주세요.');
       return false;
     }
     // 앞선 저장이 끝나기 전에 또 들어오면 같은 항목이 두 개 생긴다
@@ -387,6 +447,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 onKeyDown={onTextKeyDown}
                 // 줄 맨 앞 ☐/☑ 바로 위를 누르면 바꾼다 (쓰는 칸 안에서도 체크)
                 onClick={onTextClick}
+                onPaste={onTextPaste}
                 placeholder={PLACEHOLDER[noun]}
                 className="w-full min-h-[84px] p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 leading-relaxed placeholder-slate-400 text-sm"
               />
@@ -410,25 +471,20 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   })}
                 </div>
               )}
-              <p className="text-2xs text-slate-400">첫 줄·마지막 줄의 #이름은 라벨이 됩니다. ☐ 줄 끝에서 Enter를 누르면 다음 줄도 ☐로 시작합니다.</p>
-              {/* 붙인 표 - 작게 보기·빼기 (칸 글자·행/열 고치기와 붙여넣기는 P4-2) */}
+              <p className="text-2xs text-slate-400">
+                첫 줄·마지막 줄의 #이름은 라벨이 됩니다. ☐ 줄 끝에서 Enter를 누르면 다음 줄도 ☐로 시작합니다. 캡처·엑셀 표는 Ctrl+V로 붙입니다.
+              </p>
+              {/* 글 안 주소 미리보기 (보이기만 - 글은 바꾸지 않는다) */}
+              <LinkPreviewCards text={form.text} />
+              {/* 붙인 표 - 칸을 눌러 글자를 고치고 행·열을 넣고 뺀다 */}
               {form.tables.map((t, i) => (
-                <div key={t.id} data-note-table={t.id} className="space-y-1">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-600">
-                    <span>▦ {form.tables.length > 1 ? `표 ${i + 1}` : '표'}</span>
-                    <button
-                      type="button"
-                      data-note-table-remove={t.id}
-                      onClick={() => setForm((f) => ({ ...f, tables: f.tables.filter((x) => x.id !== t.id) }))}
-                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer"
-                      title="표 삭제"
-                      aria-label="표 삭제"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                  <TablePreview table={t} />
-                </div>
+                <EntryTableView
+                  key={t.id}
+                  table={t}
+                  title={form.tables.length > 1 ? `표 ${i + 1}` : '표'}
+                  onChange={(next) => setForm((f) => ({ ...f, tables: f.tables.map((x) => (x.id === t.id ? next : x)) }))}
+                  onRemove={() => setForm((f) => ({ ...f, tables: f.tables.filter((x) => x.id !== t.id) }))}
+                />
               ))}
             </div>
 
@@ -441,47 +497,93 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               onNewNamesChange={(newLabels) => setForm((f) => ({ ...f, newLabels }))}
             />
 
-            {/* 첨부 (빼기만 - 파일 올리기·캡처 붙여넣기는 P4-2), 링크 (P4-3) */}
+            {/* 첨부 (드라이브 School_Planner 폴더), 링크 (P4-3) */}
             <div className="space-y-2">
-              <div className="flex flex-wrap gap-1.5">
-                <button
-                  type="button"
+              <div className="flex items-center justify-between gap-2">
+                <span className="block text-xs font-semibold text-slate-600">첨부 ({form.attachments.length}개)</span>
+                {uploading === 'paste' && (
+                  <span data-note-uploading="paste" className="text-xs font-bold text-primary">
+                    ⏳ 붙여넣은 이미지 업로드 중...
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <label
                   data-note-attach
-                  onClick={() => showToast('🚧 아직 V5로 옮기지 않은 기능입니다.')}
-                  className="px-3 py-1.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer opacity-60"
+                  aria-disabled={!!uploading}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-dashed border-slate-300 shadow-2xs ${
+                    uploading ? 'opacity-60 cursor-wait' : 'cursor-pointer'
+                  }`}
+                  title="파일을 골라 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 여러 개를 한 번에 골라도 됩니다."
                 >
-                  📎 파일 첨부
-                </button>
+                  <span>{uploading === 'files' ? '⏳' : '📎'}</span>
+                  <span data-note-uploading={uploading === 'files' ? 'files' : undefined}>{uploading === 'files' ? '업로드 중...' : '파일 첨부'}</span>
+                  <input type="file" multiple data-note-file-input onChange={onPickFiles} className="hidden" disabled={!!uploading} />
+                </label>
                 <button
                   type="button"
                   data-note-link-add
                   onClick={() => showToast('🚧 아직 V5로 옮기지 않은 기능입니다.')}
-                  className="px-3 py-1.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer opacity-60"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-yellow-50 text-slate-700 hover:text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 hover:border-yellow-300 shadow-2xs opacity-60"
                 >
-                  🔗 링크 추가
+                  <span>🔗</span>
+                  <span>링크 추가</span>
                 </button>
               </div>
-              {form.attachments.map((att, idx) => (
-                <div
-                  key={`${att.url}-${idx}`}
-                  data-note-attachment={att.name}
-                  className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-2"
-                >
-                  <a href={att.url} target="_blank" rel="noreferrer" className="text-xs font-semibold text-slate-700 hover:text-primary truncate" title={att.name}>
-                    📎 {att.name}
-                  </a>
-                  <button
-                    type="button"
-                    data-note-attachment-remove
-                    onClick={() => setForm((f) => ({ ...f, attachments: f.attachments.filter((_, i) => i !== idx) }))}
-                    className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer shrink-0"
-                    title="첨부 빼기 (저장할 때)"
-                    aria-label="첨부 빼기"
+              {form.attachments.map((att, idx) =>
+                // 그림은 무엇인지 바로 알아보게 크게, 파일은 종류 그림 + 이름 (누르면 새 탭)
+                isImageAttachment(att) ? (
+                  <div key={`${att.url}-${idx}`} data-note-attachment={att.name} data-note-attachment-image className="relative bg-slate-50 border border-slate-200 rounded-xl overflow-hidden">
+                    <button type="button" data-note-attachment-view onClick={() => viewImage(att)} className="block w-full cursor-pointer" title="눌러서 크게 보기">
+                      <img src={attachmentImageSrc(att)} alt={att.name} className="w-full max-h-64 object-contain bg-white" loading="lazy" />
+                    </button>
+                    <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-t border-slate-200">
+                      <span className="text-xs text-slate-500 truncate" title={att.name}>
+                        🖼️ {att.name}
+                        {att.size ? ` · ${formatFileSize(att.size)}` : ''}
+                      </span>
+                      <button
+                        type="button"
+                        data-note-attachment-remove
+                        onClick={() => setForm((f) => ({ ...f, attachments: f.attachments.filter((_, i) => i !== idx) }))}
+                        className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer shrink-0"
+                        title="그림 빼기 (저장할 때)"
+                        aria-label="그림 빼기"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    key={`${att.url}-${idx}`}
+                    data-note-attachment={att.name}
+                    className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-2 hover:bg-slate-100/80 transition-colors"
                   >
-                    ✕
-                  </button>
-                </div>
-              ))}
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                      <span className="text-xl shrink-0" aria-hidden>
+                        {fileIcon(att)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <a href={att.url} target="_blank" rel="noreferrer" className="text-xs font-bold text-slate-800 hover:text-primary truncate block hover:underline" title={att.name}>
+                          {att.name}
+                        </a>
+                        {att.size ? <span className="text-xs text-slate-400 block">{formatFileSize(att.size)}</span> : null}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      data-note-attachment-remove
+                      onClick={() => setForm((f) => ({ ...f, attachments: f.attachments.filter((_, i) => i !== idx) }))}
+                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer shrink-0"
+                      title="첨부 빼기 (저장할 때)"
+                      aria-label="첨부 빼기"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ),
+              )}
             </div>
           </div>
         )}
