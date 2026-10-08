@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-1 일정** ■4 앱 안 알림·＋ 새로 (■3 끝 - 클라우드 `claude/peaceful-lamport-icu4gf`).
+**P3-1 일정** ■5 점검·세션 끝 정리 (■4 끝 - 클라우드 `claude/peaceful-lamport-icu4gf`).
 
 ---
 
@@ -330,6 +330,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P3-1 속성 적기**: 일정 칸의 속성(달력·이월·수업X·구글 캘린더)은 **라벨이 정한 값과 다른 것만** `props`에 적는다(V4는 모두 적었고 구글 캘린더만 같으면 비웠다) -
   나중에 라벨 속성을 바꾸면 손대지 않은 일정이 따라간다. 라벨이 정한 값 = 붙은 라벨 가운데 하나라도 켰으면 켬, 라벨이 없으면 달력만 켬(V4 그대로).
   라벨을 바꾸면 따로 정한 것은 걷는다(V4 '라벨을 고르면 그 라벨 속성이 따라 켜진다'). 기간·반복은 속성이 아니라 일정 칸의 줄(P3-3).
+- **P3-1 앱 안 알림**: V4처럼 이 탭이 20초마다 보되 오늘 문서를 따로 구독하지 않고 **기기 사본**에서 본다(어제 밤 알림도 1시간 안이면). 울리면 그 일정의 `alarmDone`만 적는다
+  (V4는 하루 문서를 트랜잭션으로 다시 썼다). **알림 허용을 앱을 열 때 묻지 않는다**(권장안 - V4는 처음 열 때 물었다): 아무것도 누르지 않았는데 뜨는 허용 창은
+  크롬이 조용히 막고, 서버 푸시(P8-2)의 '이 기기에서 받기'가 누를 때 묻는다. 그 전에는 허용해 둔 기기에서만 탭이 가려졌을 때 OS 알림도 띄운다.
+  서비스 워커가 넘기는 알림('sp4-event-alarm' 메시지)은 P8-2.
 - **P3-1 테스트와 Firebase**: `data/select`·`session`을 부르는 단위 테스트는 `vi.mock('…/data/firebase')`를 둔다 - 진짜 앱을 띄우면 시험이 끝난 뒤 Firebase가
   IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔(3번에 1번) 남는다. vitest가 'originated in …'으로 그 파일을 알려 준다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
@@ -517,7 +521,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■3 지우기 = 지운 표시 + 안내 '되돌리기' + Ctrl+Z. 저장 실패면 칸을 닫지 않는다.
   → `actions.deleteEvent`(확인 창 없이 - V4 그대로, 그 일정을 고치던 칸은 `open.closeEventPanelsFor`로 닫는다) · 카드 🗑️ `[data-event-delete]`(✏️ 옆, 마우스를 올리면) · 칸의 '삭제'.
   크롬 `inspect-events` 51항목(🗑️·안내 되돌리기·칸 삭제·Ctrl+Z·완료 Ctrl+Z). 묶음 지우기(이 날만·이 날부터·전부)는 P3-3.
-- [ ] ■4 앱 안 알림(useEventAlarms·EventAlarmPopup·소리 3초마다 3번·🔇 옮기기 - 사본에서 오늘 알림을 본다. 서버 푸시는 P8-2) + 머리줄 ＋ 새로 → 새 일정 칸.
+- [x] ■4 앱 안 알림(useEventAlarms·EventAlarmPopup·소리 3초마다 3번·🔇 옮기기 - 사본에서 오늘 알림을 본다. 서버 푸시는 P8-2) + 머리줄 ＋ 새로 → 새 일정 칸.
+  → `features/events/EventAlarms.tsx`(Shell에 하나 - 3초 뒤·20초마다 사본을 보고, 울린 일정에 `alarmDone`(writeOps - 안내·되돌리기 없이)) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]`, 깜빡임 `index.css` `sp5-alarm-*`) ·
+  `domain/eventAlarm.ts` `dueAlarms`·`alarmAt` · `app/sound.ts`(V4 lib/sound - 수업 종 `playBell`은 P6-3이 쓴다) · `features/events/shortcuts.ts`(`newEvent` = 보는 날의 새 일정 칸, 메모·학급 화면이면 오늘) · 크롬 `inspect-events` 58항목.
 - [ ] ■5 크롬 점검 `inspect-events.mjs`: 추가·완료·순서·고치기·날짜 바꾸기·지우기·되돌리기·Ctrl+Z, **저장마다 서버 문서 하나만** 바뀌는지.
 **끝 조건**: 위 설명서 주제가 V5에서 된다(PARITY 체크).
 

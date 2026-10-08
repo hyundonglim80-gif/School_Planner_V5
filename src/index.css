@@ -36,3 +36,21 @@
     overscroll-behavior-y: none; /* 모바일에서 당겨서 새로고침 방지 */
   }
 }
+
+/* 일정 알림 창이 깜빡인다 (V4 index.css 그대로 - 화면 가운데 큰 창, features/events/EventAlarmPopup) */
+@keyframes sp5-alarm-blink {
+  0% { background-color: rgba(0, 0, 0, 0.85); }
+  50% { background-color: rgba(127, 29, 29, 0.9); }
+  100% { background-color: rgba(0, 0, 0, 0.85); }
+}
+@keyframes sp5-alarm-content-blink {
+  0% { background-color: #ef4444; transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+  50% { background-color: #fef08a; transform: scale(1.03); box-shadow: 0 0 80px 30px rgba(239, 68, 68, 0.9); }
+  100% { background-color: #ef4444; transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+}
+.sp5-alarm-backdrop {
+  animation: sp5-alarm-blink 0.6s infinite;
+}
+.sp5-alarm-content {
+  animation: sp5-alarm-content-blink 0.6s infinite;
+}

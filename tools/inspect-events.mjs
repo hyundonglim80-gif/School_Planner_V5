@@ -6,6 +6,7 @@
 //   5) 고치기 = 그 문서의 바뀐 칸만. 날짜를 바꿔 '옮기고 저장' = date만, 안내의 되돌리기 = 원래 날짜.
 //   6) 빠른 입력 칩(내일·15:00) 모두 넣기 → 그날·알림. 카드 ⏰ → 시각 바꾸기 = time만.
 //   7) 🗑️ = 지운 표시(문서는 남는다) → 안내의 되돌리기. 칸의 삭제 → 칸이 닫힌다 → Ctrl+Z로 되돌리기. 완료도 Ctrl+Z.
+//   8) 앱 안 알림: 1분 전 알림 → 가운데 ⏰ 창·소리, 서버에 alarmDone(그 문서 하나), 🔇·확인. ＋ 새로 → 새 일정 = 보는 날의 새 일정 칸.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-events.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 일정(insp_ev…)·라벨을 심고 끝에 지운다.
@@ -192,6 +193,33 @@ try {
   await page.locator('body').click({ position: { x: 5, y: 600 } });
   await page.keyboard.press('Control+z');
   r.check((await serverUntil(() => read('insp_ev1'), (d) => d?.done === false))?.done === false, '완료도 Ctrl+Z로 되돌린다');
+
+  r.section('앱 안 알림 · ＋ 새로');
+  // 이 기기 시각으로 오늘·1분 전 (알림은 일정 날의 시각)
+  const now = new Date(Date.now() - 60_000);
+  const pad = (n) => String(n).padStart(2, '0');
+  const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+  await setDoc(itemRef('insp_alarm'), { kind: 'event', date: today, text: '점검 알림', labelIds: [], order: 'Zz9', time: `${pad(now.getHours())}:${pad(now.getMinutes())}`, ...stamp });
+  undo.add(() => deleteDoc(itemRef('insp_alarm')));
+  await page.evaluate(() => {
+    window.__spAlarmSoundCount = 0;
+  });
+  const popup = page.locator(sel('alarm-item', 'insp_alarm'));
+  r.check(await waitFor(popup, 30000), '알림 시각이 지난 일정 → 가운데 ⏰ 알림 창 (20초 안)');
+  r.check((await page.evaluate(() => window.__spAlarmSoundCount)) >= 1, '알림 소리');
+  r.check((await serverUntil(() => read('insp_alarm'), (d) => d?.alarmDone === true))?.alarmDone === true, '서버: 그 일정에 alarmDone (다른 기기는 건너뛴다)');
+  // 알림 창은 늘 깜빡이며 커졌다 작아진다(V4 그대로) - Playwright가 '멈춘 단추'를 기다리지 않게 force
+  await page.locator(sel('alarm-mute')).click({ force: true });
+  const muted = await page.evaluate(() => window.__spAlarmSoundCount);
+  await page.waitForTimeout(3500);
+  r.check((await page.evaluate(() => window.__spAlarmSoundCount)) === muted, '🔇 소리 끄기 → 더 울리지 않는다');
+  await page.locator(sel('alarm-dismiss')).click({ force: true });
+  r.check(await waitFor(async () => (await page.locator(sel('alarm-popup')).count()) === 0), '확인 → 창이 닫힌다');
+
+  await page.locator(sel('new-menu')).click();
+  await page.locator(sel('new', 'newEvent')).click();
+  r.check(await waitFor(async () => (await panel.getAttribute('data-event-panel')) === 'new'), '＋ 새로 → 새 일정 → 새 일정 칸');
+  r.check((await page.locator(sel('event-date')).inputValue()) === DAY, '보는 날의 일정');
 
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
 } catch (e) {

@@ -3,6 +3,8 @@
 // V4 Layout은 창 30여 개의 열림 상태와 키 처리를 모두 들고 있었다(1,200줄). V5는 창을 창 목록(windows.ts)에,
 // 키를 단축키 한 곳(shortcuts.ts)에 두고, 여기는 자리만 잡는다.
 import { Suspense, useEffect, useRef, useState } from 'react';
+import EventAlarms from '../features/events/EventAlarms';
+import { useEventShortcuts } from '../features/events/shortcuts';
 import ImportBanner from '../features/import/ImportBanner';
 import ColumnResizer from '../ui/ColumnResizer';
 import { RIGHT_COLUMN_CSS_WIDTH, useSidePopups } from '../ui/sideColumn';
@@ -29,6 +31,8 @@ export default function Shell() {
   useEffect(() => startRouting(), []);
   useGlobalGestures();
   useAppKeys();
+  // ＋ 새로 → 새 일정 (단축키 newEvent)
+  useEventShortcuts();
 
   // 오른쪽 줄(창·쓰는 칸)이 하나라도 서 있으면 그 폭만큼 화면을 줄인다. 폭은 모든 칸이 같다.
   const rightOpen = useSidePopups((s) => s.order.length > 0);
@@ -99,6 +103,8 @@ export default function Shell() {
 
       {/* 창·쓰는 칸 (창 목록). 화면과 따로 살아서 다른 화면으로 옮겨도 남는다. */}
       <WindowHost />
+      {/* ⏰ 일정 알림 (앱 안 - 서버 푸시는 P8-2) */}
+      <EventAlarms />
       {/* 오른쪽 칸이 둘 이상이면 위에 탭 (V4 2026-10-07) */}
       <SideTabs />
       {rightOpen && <ColumnResizer side="right" width={RIGHT_COLUMN_CSS_WIDTH} />}
