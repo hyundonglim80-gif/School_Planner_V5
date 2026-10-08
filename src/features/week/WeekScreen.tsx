@@ -11,6 +11,8 @@ import { useCurrentSpaceId } from '../../data/session';
 import { useMainWidth } from '../../ui/useMainWidth';
 import { deleteEvent, setEventDone } from '../events/actions';
 import EventDeleteChooser from '../events/EventDeleteChooser';
+import { useEventDrop } from '../events/drag';
+import EventMoveChooser from '../events/EventMoveChooser';
 import { doneOnDay, isGrouped, orderAfter, type ItemDoc } from '../events/eventOps';
 import { useCarried } from '../events/forward';
 import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
@@ -43,6 +45,7 @@ export default function WeekScreen() {
   const carried = useCarried(sid);
   const today = carried.today;
   const multi = useMulti();
+  const drop = useEventDrop(sid);
   const showNextWeek = useMainWidth() >= 1200;
   const [scopeFor, setScopeFor] = useState<{ item: ItemDoc; day: string } | null>(null);
 
@@ -151,6 +154,7 @@ export default function WeekScreen() {
             onToggleDone={(ev, isCarried) => toggleDone(ev, day, isCarried)}
             onDelete={(ev) => remove(ev, day)}
             onOpenLinks={(ev) => sid && openLinkViewer({ sid, id: ev.id })}
+            drop={{ handlers: drop.handlers, over: drop.overDate === day, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}
             lastYear={
               ly && (
                 <LastYearDay
@@ -245,6 +249,7 @@ export default function WeekScreen() {
         )}
       </div>
       {scopeFor && sid && <EventDeleteChooser sid={sid} item={scopeFor.item} day={scopeFor.day} onClose={() => setScopeFor(null)} />}
+      {drop.pending && sid && <EventMoveChooser sid={sid} {...drop.pending} onClose={drop.cancel} />}
     </div>
   );
 }

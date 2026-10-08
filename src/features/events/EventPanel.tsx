@@ -112,6 +112,14 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
       const f = JSON.parse(itemKey) as EventForm;
       setForm(f);
       setBase(f);
+    } else if (itemKey && seenItem) {
+      // 손댄 칸이라도 그 일정이 다른 데서 옮겨졌으면(끌어 옮기기 등) 날짜는 따라간다 - 그대로 두면 저장이 옛 날로 되돌린다(V4 retarget)
+      const before = JSON.parse(seenItem) as EventForm;
+      const now = JSON.parse(itemKey) as EventForm;
+      if (now.date !== before.date && form.date === before.date) {
+        setForm(withStartDate(form, now.date));
+        setBase(now);
+      }
     }
   }
   // 새 일정 칸을 연 뒤에 라벨이 도착했으면 맨 위 라벨을 골라 둔다
@@ -713,6 +721,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
           ]}
           onPick={saveScoped}
           onClose={() => setSaveAsk(false)}
+          mood="change"
         />
       )}
       {deleteAsk && item && (

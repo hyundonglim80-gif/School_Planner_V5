@@ -2,13 +2,14 @@
 //   1줄 = 날짜·📝·+ / 막대 줄들 / 마지막 줄 = 그날 일정. 막대가 칸을 건너 이어지도록 막대는 칸 밖(주 격자)에 있다.
 //   - 일정은 접지 않고 다 보인다(V4 - '+1개'로 줄이면 무엇인지 몰라 결국 들어가 봐야 한다).
 //   - 휴대폰(compact)은 칸 모양은 두고 안에 든 것만 줄인다: 라벨은 색 띠, 제목은 한 줄·칸 폭에 맞춘 글자, 일정·막대를 누르면 그날 목록.
-//   - 수업 칩은 P6-1, 공휴일·끌어 옮기기는 P5-3.
+//   - 일정·막대 조각을 끌어 다른 날 칸에 놓으면 옮긴다(P5-3 - 마우스 화면만). 수업 칩은 P6-1.
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { labelColor } from '../../domain/labels';
 import { layoutWeekBars, type BarCell } from '../../domain/periodBars';
 import { fitToWidthFontSize } from '../../domain/typeScale';
 import type { LabelDoc } from '../../data/select';
+import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import PeriodBar from './PeriodBar';
 
@@ -46,6 +47,8 @@ export interface MonthGridProps {
   onToggleDone: (ev: ItemDoc, date: string) => void;
   onDelete: (ev: ItemDoc, date: string) => void;
   onOpenLinks: (ev: ItemDoc) => void;
+  /** 끌어 옮기기 (drag.useEventDrop) */
+  drop?: { handlers: DropHandlers; overDate: string | null; dragEnabled: boolean; onDragEnd: () => void };
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
@@ -99,10 +102,11 @@ export default function MonthGrid(p: MonthGridProps) {
                     data-today={isToday ? 'true' : undefined}
                     data-selected={p.selectedDate === date ? 'true' : undefined}
                     onClick={() => p.onSelectDate(date)}
+                    {...(p.drop ? dropTargetProps(p.drop.handlers, date) : {})}
                     style={{ gridColumn: col + 1, gridRow: '1 / -1', gridTemplateRows: 'subgrid' }}
                     className={`${p.compact ? 'p-1' : 'p-2'} grid transition-all cursor-pointer group hover:brightness-98 min-w-0 overflow-hidden ${col > 0 ? 'border-l border-slate-100' : ''} ${
                       !inMonth ? 'bg-slate-50/40 opacity-40' : DAY_CELL_BG[tone]
-                    } ${p.selectedDate === date ? 'ring-2 ring-inset ring-primary' : isToday ? 'ring-2 ring-inset ring-primary/40' : ''}`}
+                    } ${p.selectedDate === date ? 'ring-2 ring-inset ring-primary' : isToday ? 'ring-2 ring-inset ring-primary/40' : ''} ${p.drop?.overDate === date ? DROP_TARGET_CLASS : ''}`}
                   >
                     <div className="min-w-0" style={{ gridRow: 1 }}>
                       <div className={`flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5 ${p.compact ? 'mb-0.5' : 'mb-1.5'}`}>
@@ -161,6 +165,7 @@ export default function MonthGrid(p: MonthGridProps) {
                               data-month-event={ev.id}
                               data-month-event-done={done ? '1' : '0'}
                               data-event-picked={isPicked ? '1' : undefined}
+                              {...eventDragProps(ev, date, !!p.drop?.dragEnabled && !p.compact, p.drop?.onDragEnd)}
                               onClick={(e) => {
                                 stop(e);
                                 p.onEventClick(ev, date, e);
@@ -253,6 +258,7 @@ export default function MonthGrid(p: MonthGridProps) {
                     isCurrentMonth={(d) => d.startsWith(p.month)}
                     onOpen={(cell, e) => p.onEventClick(bar.item, cell.date, e)}
                     onOpenLinks={() => p.onOpenLinks(bar.item)}
+                    drag={p.drop && !p.compact ? { enabled: p.drop.dragEnabled, onEnd: p.drop.onDragEnd } : undefined}
                     style={{ gridColumn: `${bar.start + 1} / span ${bar.len}`, gridRow: bar.lane + 2 }}
                   />
                 );

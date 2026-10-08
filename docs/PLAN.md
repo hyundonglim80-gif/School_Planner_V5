@@ -416,6 +416,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P5-2 월간·년간**: V4 그대로(월간 한 주 한 줄·막대, 년간 📅 학사력 / 📋 자세히 - 고른 보기는 이 기기, 학기 칩, 세 달씩 나눠 그리기). 바뀐 것:
   기간 막대는 항목 하나의 date~endDate를 그대로 놓는다(V4는 날마다의 조각을 글·groupId로 이어 붙였다) - 주말 빼기·뺀 날이 끼면 그 자리에서 끊긴다.
   년간 자세히는 일정이 꺼져 있으면 일정만 있는 날 줄을 그리지 않는다(V4는 빈 날짜 줄이 남았다). Ctrl·Shift로도 고른다(V4는 '여러 개 고르기'를 켠 때만). 🖨️ 학사력 인쇄는 P6-3(⋮ '이 화면 인쇄').
+- **P5-3 끌어 옮기기**: V4 그대로(마우스 화면만·하루짜리는 곧바로·묶음은 범위 창·되돌리기). 바뀐 것: 기간 일정은 '이 날만'(그날을 빼고 하루 일정으로)·'기간 통째로' 둘만 -
+  '이 날부터'는 기간 문서가 둘로 갈라져 묶음이 끊기므로 뺐다(반복은 세 갈래 그대로). 범위 창의 주말 경고는 주말 빼기 기간이면 대신 '옮긴 뒤 N일'.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -769,7 +771,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P5-2 끝.
 **먼저 읽을 것**: V4 설명서 `event-edit`(옮기기)·`dday`·`holidays`, V4 `hooks/useEventDrag.tsx`·`useEventMove.tsx`·`components/GroupMoveModal.tsx`·`DDayModal.tsx`·`hooks/useDDay.ts`·
 `lib/holiday.ts`·`holidays.ts`·`hooks/useGovHolidays.ts`·`components/HolidayName.tsx`.
-- [ ] ■1 끌어 옮기기(주간·월간·년간 자세히 - `date`만, 기간·반복이면 범위 묻기, 되돌리기).
+- [x] ■1 끌어 옮기기(주간·월간·년간 자세히 - `date`만, 기간·반복이면 범위 묻기, 되돌리기).
+  → `features/events/drag.ts`(`useEventDrop`·`eventDragProps`·`dropTargetProps` - 마우스 화면만, `[data-drag-event|drop-date]`) · `moveOps.ts`(순수 - 이 날만·기간 통째로·반복 같은 날 수만큼·미리 보기) ·
+  `EventMoveChooser.tsx`(범위 창 - `EventScopeWindow` `mood="change"`·`[data-scope-warn]`) · `actions.moveEventTo`(한 묶음 + 되돌리기) · 쓰는 칸은 손댔어도 옮겨진 날짜를 따라간다(V4 retarget).
 - [ ] ■2 D-Day(`settings/common.ddays` - 머리줄·둘째 줄·관리 창), 공휴일(`holidays/{year}` + 개인 공휴일)·주말 색.
 - [ ] ■3 크롬 점검.
 

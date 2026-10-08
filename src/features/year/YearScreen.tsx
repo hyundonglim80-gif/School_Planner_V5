@@ -4,7 +4,7 @@
 //   - 열두 달을 한 판에 그리면 화면이 1초 넘게 굳는다(V4) - 세 달씩 프레임마다 나눠 그린다. 달 카드는 memo.
 //   - 자료는 기기 사본에서(그 학년도 범위). '달력' 속성을 켠 일정만(월간과 같은 calendarEvents).
 //   - 오늘 칸 data-today, 이번 달 data-today-area (app/todayScroll).
-//   - 인쇄(🖨️ 학사력 A4 가로)는 P6-3, 공휴일·D-Day·끌어 옮기기는 P5-3, 학사일정은 P6-3, 자세히의 수업 칩은 P6-1.
+//   - 자세히에서 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3). 인쇄(🖨️ 학사력 A4 가로)는 P6-3, 학사일정은 P6-3, 자세히의 수업 칩은 P6-1.
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { academicYearOf, academicYearRange } from '../../domain/dateUtils';
@@ -17,6 +17,8 @@ import { useIsMobile } from '../../ui/useIsMobile';
 import { useToday } from '../../ui/useToday';
 import { deleteEvent, setEventDone } from '../events/actions';
 import EventDeleteChooser from '../events/EventDeleteChooser';
+import { useEventDrop } from '../events/drag';
+import EventMoveChooser from '../events/EventMoveChooser';
 import { doneOnDay, isGrouped, type ItemDoc } from '../events/eventOps';
 import { pickKey, pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
 import { openEventPanel } from '../events/open';
@@ -76,6 +78,7 @@ export default function YearScreen() {
   const today = useToday();
   const multi = useMulti();
   const isMobile = useIsMobile();
+  const drop = useEventDrop(sid);
   const [scopeFor, setScopeFor] = useState<{ item: ItemDoc; day: string } | null>(null);
 
   const academicYear = academicYearOf(date);
@@ -253,12 +256,17 @@ export default function YearScreen() {
                 onToggleDone={toggleDone}
                 onDelete={remove}
                 onOpenLinks={openLinks}
+                dropHandlers={drop.handlers}
+                dragEnabled={drop.dragEnabled}
+                onDragEnd={drop.clearOver}
+                overDate={drop.overDate?.startsWith(m.key) ? drop.overDate : null}
               />
             );
           })}
         </div>
       )}
       {scopeFor && sid && <EventDeleteChooser sid={sid} item={scopeFor.item} day={scopeFor.day} onClose={() => setScopeFor(null)} />}
+      {drop.pending && sid && <EventMoveChooser sid={sid} {...drop.pending} onClose={drop.cancel} />}
     </div>
   );
 }
