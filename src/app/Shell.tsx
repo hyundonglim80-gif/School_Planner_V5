@@ -8,6 +8,7 @@ import ForwardMarks from '../features/events/ForwardMarks';
 import MultiSelectBar from '../features/events/MultiSelectBar';
 import { useEventShortcuts } from '../features/events/shortcuts';
 import { useNoteShortcuts } from '../features/notes/shortcuts';
+import { useWeekShortcuts } from '../features/week/prefs';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
 import ClipboardColumn from '../features/clipboard/ClipboardColumn';
@@ -41,6 +42,8 @@ export default function Shell() {
   // ＋ 새로 → 새 일정 (단축키 newEvent)
   useEventShortcuts();
   useNoteShortcuts();
+  // 작년 이맘때 보이기 / 숨기기 (주간)
+  useWeekShortcuts();
   // 복사한 것 모으기 (왼쪽 📋 클립보드 칸 - 닫혀 있어도 모은다)
   useClipboardCapture();
 

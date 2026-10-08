@@ -78,6 +78,12 @@ export function weekMonday(dateStr: string): string {
   return addDays(dateStr, day === 0 ? -6 : 1 - day);
 }
 
+/** 그 날이 든 주의 날짜 일곱 (월 ~ 일) */
+export function weekDates(dateStr: string): string[] {
+  const monday = weekMonday(dateStr);
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
+}
+
 /** 그 달의 마지막 날 */
 export function monthEnd(year: number, month: number): string {
   return formatDate(new Date(year, month, 0));

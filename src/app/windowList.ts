@@ -1,7 +1,7 @@
 // 창 등록 한 곳 (DESIGN 7-2). 창을 만드는 세션이 여기에 한 줄씩 더한다 - ⋮ 구역·학급 도구·수업 머리줄은 MENU.md대로.
 import { EVENT_PANEL, sameEventPanel, type EventPanelParams } from '../features/events/open';
 import { LINK_VIEWER, LINKER, sameLinkWindow, type LinkWindowParams } from '../features/links/open';
-import { NOTE_PANEL, sameNotePanel, type NotePanelParams } from '../features/notes/open';
+import { DAY_NOTES, NOTE_PANEL, sameDayNotes, sameNotePanel, type DayNotesParams, type NotePanelParams } from '../features/notes/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -23,6 +23,17 @@ registerWindow<NotePanelParams>({
   help: 'journal',
   sameAs: sameNotePanel,
   load: () => import('../features/notes/NotePanel'),
+});
+
+// 그날 기록 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n
+registerWindow<DayNotesParams>({
+  id: DAY_NOTES,
+  title: '그날 기록',
+  icon: '📝',
+  kind: 'side',
+  help: 'badges',
+  sameAs: sameDayNotes,
+  load: () => import('../features/notes/DayNotesWindow'),
 });
 
 // 링크 (P4-3) - 쓰는 칸의 '🔗 링크 추가'·카드의 '🔗 n'에서 연다. 같은 항목이면 그 탭

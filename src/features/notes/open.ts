@@ -65,3 +65,17 @@ function editingSet(key: string): ReadonlySet<string> {
   }
   return lastSet;
 }
+
+// ── 그날 기록 보기 (주간·월간·년간 날짜 옆 📝 n - 창 'dayNotes') ──
+export const DAY_NOTES = 'dayNotes';
+
+export interface DayNotesParams {
+  sid: string;
+  date: YMD;
+}
+
+export const sameDayNotes = (a: DayNotesParams, b: DayNotesParams) => a.sid === b.sid && a.date === b.date;
+
+export function openDayNotes(params: DayNotesParams) {
+  if (getWindowDef(DAY_NOTES)) openWindow(DAY_NOTES, params);
+}
