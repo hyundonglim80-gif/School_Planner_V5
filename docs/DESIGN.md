@@ -60,6 +60,9 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 - **개인 공간에만**(V4처럼 늘 개인): `classes`, `attendance`, `subjectAttendance`, `seating`, `classHub`, `quiz`, `progress`,
   `settings`, `pushTokens`, `gcalQueue`.
 - V4와 다른 점: **라벨이 공간 것**이다. 항목이 라벨을 id로 가리키므로 그룹 구성원이 같은 라벨 목록을 봐야 한다(개인 공간은 V4처럼 내 라벨).
+- 규칙(`firestore.rules` V5 블록, P1-2): 개인 공간 아래는 id `u_{uid}`만 본다(공간 문서가 없어도 된다 - 로그인하면 `ensurePersonalSpace`가 만든다).
+  그룹은 `members`. **`inviteCode`가 있으면 초대가 열린 것** - 참여는 그때 나만 'member'로, 나가기는 나만, 주인은 나가지 못하고 그룹을 지운다.
+  `spaceInvites/{code}`는 그 그룹 주인만 만든다. 개인 공간 문서는 지우지 못한다.
 
 ### 4-2. `items/{id}` — 일정·메모·기록
 

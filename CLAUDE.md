@@ -25,8 +25,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P1-1 끝**(저장소·도구·뼈대·문서 옮기기·CI). 다음 대화의 '이어서' = **P1-2**(Firebase·로그인·규칙 합치기·에뮬레이터·seed).
-- 👤 (골라서) 클라우드 세션(claude.ai/code)도 쓰려면 Claude GitHub 앱에 이 저장소 권한을 더한다.
+- **2026-10-08 P1-2 끝**(규칙 합치기·에뮬레이터를 V5에서·로그인·개인 공간·seed). 다음 대화의 '이어서' = **P1-3**(앱 껍데기).
+- 👤 운영 규칙 배포(합친 규칙 - V3·V4 경로는 그대로)를 할지 답을 기다린다. 늦어도 P1-4 배포 전에 필요. 클라우드 세션을 쓰려면 Claude GitHub 앱에 이 저장소 권한(골라서).
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -147,8 +147,15 @@
 
 기능을 고치기 전에 이 지도로 자리를 찾는다. 세션 끝 정리에서 새 파일·자리를 한 줄씩 더하고, 단계 끝에 다듬는다.
 
-- **도구**: `package.json`(dev 5175·preview 4175·test·lint·emu·seed·check:rules, `allowScripts`) · `vite.config.ts`(base `/`, `__BUILD_ID__`) ·
+- **도구**: `package.json`(dev 5175·dev:emu·build:emu·preview 4175·test·lint·emu·seed·check:rules, `allowScripts`) · `vite.config.ts`(base `/`, `__BUILD_ID__`, `__USE_EMULATOR__`) ·
   `vitest.config.ts`(jsdom·vmThreads, `__BUILD_ID__`='test') · `src/test/setup.ts`(jest-dom·fake-indexeddb·cleanup) · `.github/workflows/ci.yml`(lint → test → build, 배포 없음 - P1-4).
   npm 11은 설치 스크립트를 허락 없이 돌리지 않는다 - 'not yet covered by allowScripts'가 나오면 `npm install-scripts approve|deny <패키지>`(`docs/PLAN.md` 5장).
-- **들어가는 곳**: `index.html` → `src/main.tsx` → `src/app/App.tsx`(지금은 'SP5'와 빌드 번호 `[data-build-id]`). 글자·간격 단계(`@theme`)는 `src/index.css`(V4 앞부분).
-- **빈 자리**: `src/{data,domain,features,import/v4,ui}`(`.gitkeep` - 첫 파일이 들어오면 지운다). 문서는 `docs/`, 소개는 `README.md`.
+- **들어가는 곳**: `index.html` → `src/main.tsx`(watchSession·리디렉션 로그인 마무리·에뮬레이터 자동 로그인) → `src/app/App.tsx`(불러오는 중 `[data-session=loading]` /
+  로그인 화면 / 로그인하면 'SP5' `[data-session=signed-in]`, 빌드 번호 `[data-build-id]`). 글자·간격 단계(`@theme`)는 `src/index.css`(V4 앞부분).
+- **서버·규칙**: `firebase.json`(에뮬레이터 auth 9099·firestore 8080·ui 4000) · `.firebaserc` · `firestore.rules`(**정본** - V4 규칙 전부 + V5 블록, V4 저장소 것은 복사본) ·
+  `tools/check-rules.mjs`(V4 35 + V5 45) · `tools/seed.mjs`(V4 seed 계정의 V5 개인 공간) · `tools/inspect-login.mjs`(크롬: 로그인·개인 공간·Firestore IndexedDB 없음).
+- **자료 층** `src/data/`: `firebase.ts`(앱 이름 SchoolPlannerV5, memoryLocalCache, googleProvider 범위) · `emulator.ts`(`?as=2|3`) ·
+  `session.ts`(로그인 store `useSession` - 구독 하나) · `space.ts`(`personalSpaceId`·`ensurePersonalSpace`).
+- **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
+- **껍데기** `src/app/`: `toast.ts`(`showToast`·`showErrorToast`·`failWithToast`·`ShownError` - 안내 `[data-toast]`).
+- **빈 자리**: `src/{domain,import/v4,ui}`(`.gitkeep` - 첫 파일이 들어오면 지운다). 문서는 `docs/`, 소개는 `README.md`(에뮬레이터 순서).
