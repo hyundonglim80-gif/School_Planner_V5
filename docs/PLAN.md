@@ -373,6 +373,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - **규칙 바꾸기는 없다**(권장안으로 고름): 요일·끝나는 날을 바꾸려면 '이 날부터 삭제' 뒤 새로 만든다 - 규칙을 고쳐 항목을 다시 짓는 길은 완료·이월·알림이 날마다 따로 돈 항목을 지울 수 있어 두지 않는다.
   - 이미 있는 하루 일정을 반복으로 바꾸지 않는다(V4도 반복 등록 창은 새로 만들었다). 기간과 반복은 함께 쓰지 않는다(한쪽을 켜면 다른 쪽 단추가 숨는다).
   - 단축키 `recurring` = 새 일정 칸을 반복 줄(매주)을 편 채로(MENU 3-8). 라벨 속성 '반복'을 고른 새 일정 칸도 줄을 편다(고르기는 '안 함'으로 둔다 - 사용자가 고른다).
+- **P3-3 여러 개 고르기**(MENU 2-1): ⋮ 그대로 + 카드 Ctrl+누르기·Shift 범위·휴대폰 길게 누르기로 바로 시작. 고르는 동안 그냥 누르기 = 고르기·풀기(V4 그대로 - 휴대폰엔 Ctrl이 없다), Shift = 앞서 누른 것부터 범위(같은 날 목록).
+  ESC·✕·동작 뒤에 끝난다(ESC는 오른쪽 칸도 함께 닫는다 - 라벨로 보기 칩과 같다). 고른 것은 날을 넘어 남는다(V4 '다른 날짜의 일정도 함께').
+  - **지우기는 묻지 않는다**(권장안으로 고름 - V4는 확인 창): 지운 표시 + 안내의 되돌리기 하나로 모두 돌아온다(한 묶음). 완료·라벨·옮기기도 한 묶음·되돌리기 하나(V4는 날마다 따로 적고 되돌리기를 모았다).
+  - **기간 일정은 고른 날만**: 완료 = 그날 doneDates, 지우기 = 그날 skipDates, 옮기기 = 그날을 빼고 옮길 날에 하루 일정으로(알림 시각은 첫날 것만 따라간다). 라벨은 일정 전체.
+  - 오늘 칸에서 따라오던 일정을 골라 완료하면 이월 끝내기와 같다(오늘로 옮겨 적는다). 끝내지 않은 이월 일정을 지난 날로 옮기면 안내에 '오늘 칸에 따라옵니다'.
+  - 라벨 바꾸기는 V4처럼 라벨 하나로(또는 떼기) - 일정 칸에서 라벨을 바꿀 때처럼 따로 정한 속성은 걷는다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -616,8 +622,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   `actions.createSeriesEvents`·`saveSeriesEvents`·`deleteSeriesEvents` · `RecurRow.tsx`(`[data-event-recur-row|recur-kind|recur-day|recur-week|recur-mday|recur-until|recur-count]`) ·
   일정 칸 `[data-event-recur-open|event-series-info]`·고치면 어디까지(`EventScopeWindow`) · 빠른 입력 '매주 화'·'격주 금' 칩 · 카드 🔁 `[data-event-series]` · 지우기 창이 반복도 · 단축키 `recurring` = 새 일정 칸을 반복 줄을 편 채로 ·
   크롬 `inspect-groups` 41항목(events 다시 통과).
-- [ ] ■5 여러 개 고르기: ⋮ + 일정 카드 Ctrl+누르기·Shift 범위(휴대폰 길게 누르기) → 아래 동작 줄(완료·라벨·날짜·지우기·끝), 되돌리기.
+- [x] ■5 여러 개 고르기: ⋮ + 일정 카드 Ctrl+누르기·Shift 범위(휴대폰 길게 누르기) → 아래 동작 줄(완료·라벨·날짜·지우기·끝), 되돌리기.
   크롬 점검 `inspect-forward.mjs`·`inspect-multi.mjs`.
+  → `features/events/multi.ts`(store `useMulti` - 고른 것 = 일정 id + 그 날, `togglePick`·`pickRange`·`startMulti`·`endMulti`·`toggleMulti`) · `multiOps.ts`(순수 - `resolvePicks`·`multiDoneOps`·`multiLabelOps`·`multiMoveOps`·`multiDeleteOps`,
+  한 일정을 여러 날 골랐으면 한 문서에 접어 적는다) · `actions.completePicked`·`relabelPicked`·`movePicked`·`deletePicked`(모두 한 묶음·안내 되돌리기 하나) ·
+  `MultiSelectBar.tsx`(껍데기에 하나 `[data-multi-bar|multi-count|multi-complete|multi-label-open|multi-label|multi-move-open|multi-move-date|multi-move-prev|multi-move-next|multi-move-go|multi-delete|multi-end]`, ⋮ `multiSelect`·ESC) ·
+  카드 `[data-event-picked]`·Ctrl·Shift·길게 누르기(0.5초) · `app/keys.addEscapeAction`(ESC에 함께 할 일) · 크롬 `inspect-multi.mjs` 26항목(forward·groups·events·notes·shell·labels·data 다시 통과).
 **끝 조건**: 위 설명서 주제가 된다. **앱을 열 때 이월이 서버에 아무것도 쓰지 않는다**(처음 따라올 때 한 번만 - 점검으로 확인).
 
 ### P3-4. 가져오기: 일정·기록·메모·링크

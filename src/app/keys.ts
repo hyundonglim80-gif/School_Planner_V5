@@ -65,6 +65,16 @@ export function runFromButton(id: ShortcutId) {
   if (!runShortcut(id)) showToast('🚧 아직 V5로 옮기지 않은 기능입니다.');
 }
 
+const escapeActions = new Set<() => void>();
+
+/** ESC에 함께 할 일 (여러 개 고르기 끝내기 등). 떼는 함수를 돌려준다 */
+export function addEscapeAction(run: () => void): () => void {
+  escapeActions.add(run);
+  return () => {
+    escapeActions.delete(run);
+  };
+}
+
 /** 화면·기능이 더하는 단축키 동작 (예: P3-1 되돌리기, P4-2 클립보드). 되돌리는 함수를 돌려준다. */
 export function setShortcutAction(id: ShortcutId, run: () => void): () => void {
   ACTIONS[id] = run;
@@ -101,6 +111,8 @@ export function handleAppKeyDown(e: KeyboardEvent) {
     return;
   }
   if (e.key === 'Escape') {
+    // 고르던 것을 먼저 푼다(여러 개 고르기 - 오른쪽 칸도 함께 닫힌다, 라벨로 보기 칩과 같다)
+    for (const fn of [...escapeActions]) fn();
     closeAllWindows();
     return;
   }

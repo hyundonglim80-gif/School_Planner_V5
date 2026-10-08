@@ -6,9 +6,10 @@
 // - ▲▼ 순서 = 옮긴 일정의 order 하나만 (features/events/eventOps reorderOps).
 // - 이월(DESIGN 5-1 - 계산): 오늘 칸은 오늘 것 아래에 따라오는 일정을 '↪ 10/5부터'와 함께(▲▼는 각 무리 안에서),
 //   지난 날 칸에서는 그 일정을 흐리게 '→ 오늘로'(누르면 오늘). 오늘 칸에서 끝내면 그날로 옮겨 적는다(eventOps carriedDoneChanges).
+// - 여러 개 고르기(features/events/multi): Ctrl+누르기·Shift 범위·휴대폰 길게 누르기로 바로 시작, 고르는 동안 누르면 고르기·풀기(V4 그대로).
 // - 쓰기마다 문서 하나, 되돌리기는 Ctrl+Z(완료·순서는 안내 없이 - V4도 띄우지 않았다).
 // 새로 쓰고 고치는 칸은 여기 없다 - 오른쪽 일정 칸(EventPanel) 하나로 어느 화면에서나 같게 (V4 그대로).
-import { useState } from 'react';
+import { useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { goToday } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { openWindow } from '../../app/windows';
@@ -25,6 +26,7 @@ import DueBadge from '../events/DueBadge';
 import EventAlarmWindow from '../events/EventAlarmWindow';
 import { isGrouped, orderAfter, type ItemDoc } from '../events/eventOps';
 import { useCarried } from '../events/forward';
+import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
 import EventDeleteChooser from '../events/EventDeleteChooser';
 import DayPastEvents from './DayPastEvents';
 import { openEventPanel, useEditingEventIds } from '../events/open';
@@ -65,6 +67,16 @@ export default function DayEvents({ date }: { date: YMD }) {
 
   const openCreate = () => sid && openEventPanel({ sid, date });
   const openEdit = (ev: ItemDoc) => sid && openEventPanel({ sid, date, id: ev.id });
+  // 여러 개 고르기: 고르는 동안이거나 Ctrl·Shift와 함께 누르면 고른다 (아니면 수정 칸)
+  const multi = useMulti();
+  const pickedHere = new Set(multi.picks.filter((p) => p.day === date).map((p) => p.id));
+  const visible: EventPick[] = [...events, ...follow].map((ev) => ({ id: ev.id, day: date }));
+  const cardClick = (ev: ItemDoc, e: ReactMouseEvent) => {
+    const p = { id: ev.id, day: date };
+    if (e.shiftKey) pickRange(visible, p);
+    else if (multi.on || e.ctrlKey || e.metaKey) togglePick(p);
+    else openEdit(ev);
+  };
   // 기간 일정은 그날만 (doneDates)
   const toggleDone = (ev: ItemDoc) => sid && void setEventDone(sid, ev, !doneOn(ev, date), { day: date }).catch(quiet);
   // 따라오던 일정을 오늘 칸에서 끝내면 오늘로 옮겨 적는다 - 오늘 목록의 맨 뒤(따라오는 줄 바로 위)
@@ -144,6 +156,9 @@ export default function DayEvents({ date }: { date: YMD }) {
                   last={idx === events.length - 1}
                   // 지난 날 칸: 오늘로 따라가는 일정은 흐리게 '→ 오늘로'
                   away={carried.ids.has(ev.id)}
+                  picked={pickedHere.has(ev.id)}
+                  onCardClick={(e) => cardClick(ev, e)}
+                  onLongPress={() => togglePick({ id: ev.id, day: date })}
                   onOpen={() => openEdit(ev)}
                   onAlarm={() => setAlarmFor(ev)}
                   onDelete={() => remove(ev)}
@@ -163,6 +178,9 @@ export default function DayEvents({ date }: { date: YMD }) {
                   first={idx === 0}
                   last={idx === follow.length - 1}
                   since={carriedSince(ev)}
+                  picked={pickedHere.has(ev.id)}
+                  onCardClick={(e) => cardClick(ev, e)}
+                  onLongPress={() => togglePick({ id: ev.id, day: date })}
                   onOpen={() => openEdit(ev)}
                   onAlarm={() => setAlarmFor(ev)}
                   onDelete={() => remove(ev)}
@@ -207,6 +225,12 @@ export default function DayEvents({ date }: { date: YMD }) {
 
 interface EventCardProps {
   ev: ItemDoc;
+  /** 여러 개 고르기로 골랐나 */
+  picked?: boolean;
+  /** 카드를 누름 (여러 개 고르기면 고르기, 아니면 수정 칸) */
+  onCardClick: (e: ReactMouseEvent) => void;
+  /** 휴대폰 길게 누르기 = 여러 개 고르기 시작 */
+  onLongPress: () => void;
   /** 보이는 날 (기간 일정의 그날 완료·'(2/5)') */
   day: string;
   labels: ReturnType<typeof itemLabels>;
@@ -226,8 +250,16 @@ interface EventCardProps {
   onDown: () => void;
 }
 
-function EventCard({ ev, day, labels, editing, today, first, last, since, away, onOpen, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
+/** 길게 누르기 (손가락만 - 0.5초, 움직이면 그만) */
+const LONG_PRESS_MS = 500;
+
+function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpen, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
   const done = doneOn(ev, day);
+  const press = useRef<{ timer: ReturnType<typeof setTimeout> | null; x: number; y: number; fired: boolean }>({ timer: null, x: 0, y: 0, fired: false });
+  const cancelPress = () => {
+    if (press.current.timer) clearTimeout(press.current.timer);
+    press.current.timer = null;
+  };
   // 기간 일정의 그날 차례 '(2/5)' - 글에 적지 않고 센다 (DESIGN 5-3)
   const pos = periodPosition(ev, day);
   const links = ev.linkIds?.length ?? 0;
@@ -239,10 +271,43 @@ function EventCard({ ev, day, labels, editing, today, first, last, since, away, 
       data-event-done={done ? '1' : '0'}
       data-event-carried={since}
       data-event-away={away ? '1' : undefined}
-      onClick={onOpen}
-      title="클릭하여 오른쪽 칸에서 수정"
-      className={`group flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-2xs transition-all cursor-pointer min-w-0 ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
-        editing
+      data-event-picked={picked ? '1' : undefined}
+      onClick={(e) => {
+        // 길게 눌러 고른 뒤 손을 떼면 click이 한 번 더 온다 - 그것은 넘긴다
+        if (press.current.fired) {
+          press.current.fired = false;
+          return;
+        }
+        onCardClick(e);
+      }}
+      onPointerDown={(e) => {
+        if (e.pointerType !== 'touch') return;
+        cancelPress();
+        press.current = {
+          x: e.clientX,
+          y: e.clientY,
+          fired: false,
+          timer: setTimeout(() => {
+            press.current.fired = true;
+            press.current.timer = null;
+            onLongPress();
+          }, LONG_PRESS_MS),
+        };
+      }}
+      onPointerMove={(e) => {
+        if (press.current.timer && Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y) > 10) cancelPress();
+      }}
+      onPointerUp={cancelPress}
+      onPointerCancel={cancelPress}
+      onContextMenu={(e) => {
+        // 길게 누르기에 뜨는 휴대폰 메뉴를 막는다
+        if (press.current.fired) e.preventDefault();
+      }}
+      title="클릭하여 오른쪽 칸에서 수정 (Ctrl·Shift와 함께 누르면 여러 개 고르기)"
+      className={`group flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-2xs transition-all cursor-pointer min-w-0 select-none sm:select-auto ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
+        picked
+          ? 'border-primary ring-2 ring-primary bg-blue-50 text-slate-800'
+          : editing
           ? 'border-primary ring-1 ring-primary bg-primary/5'
           : done
             ? 'bg-slate-50 border-slate-100 text-slate-400'

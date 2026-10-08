@@ -1,6 +1,7 @@
 // 일정 쓰기 (하루·주간·월간·년간이 함께 쓴다). 저장 도우미(data/repo)로 적고 되돌리기를 남긴다(data/undo).
 // 실패는 저장 도우미가 안내하고 던진다 - 누른 단추에서 부르면 `.catch(() => {})`로 받는다(안내는 이미 나갔다).
 // 쓰기마다 문서 하나(원칙 1).
+import { showToast } from '../../app/toast';
 import { shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { ordersBetween } from '../../domain/order';
 import { cutFromChanges, isPeriod, periodDoneChanges, skipDayChanges } from '../../domain/period';
@@ -13,6 +14,7 @@ import { carriedDoneChanges, doneChanges, itemPath, reorderOps, type ItemDoc } f
 import type { GroupScope } from './EventScopeWindow';
 import { closeEventPanelsFor } from './open';
 import { createSeriesOps, deleteSeriesOps, editSeriesOps, planDates, scopeItems, type SeriesDoc } from './seriesOps';
+import { multiDeleteOps, multiDoneOps, multiLabelOps, multiMoveOps, pickedCount, type MoveResult, type Picked } from './multiOps';
 
 const KEEP = '적은 내용은 칸에 남아 있습니다.';
 /** 옮기기의 되돌리기가 함께 되돌리는 자리 칸 (date 말고) */
@@ -202,4 +204,56 @@ export async function deleteSeriesEvents(
   const removed = scopeItems(list, item, scope);
   for (const d of removed) closeEventPanelsFor(sid, d.id);
   recordUndo(sid, `🗑️ 반복 일정 ${removed.length}개를 삭제했습니다. 휴지통에서 복원할 수 있습니다.`, undo, { what: '반복 일정 지우기' });
+}
+
+// ─────────────── 여러 개 고르기 (features/events/multiOps - 모두 한 묶음, 안내의 되돌리기 하나) ───────────────
+
+/** 고른 일정 모두 완료 (이미 끝낸 것은 그대로). 바꾼 수 */
+export async function completePicked(sid: string, list: readonly Picked[], opts: Parameters<typeof multiDoneOps>[2]): Promise<number> {
+  const ops = multiDoneOps(sid, list, opts);
+  if (ops.length === 0) return 0;
+  const undo = await batch(ops, { fail: '일정을 완료하지 못했습니다.' });
+  recordUndo(sid, `✅ 일정 ${ops.length}건을 완료로 표시했습니다.`, undo, { what: '여러 일정 완료' });
+  return ops.length;
+}
+
+/** 고른 일정의 라벨을 하나로 바꾸거나(null = 떼기) */
+export async function relabelPicked(sid: string, list: readonly Picked[], labelId: string | null, labelName: string): Promise<number> {
+  const ops = multiLabelOps(sid, list, labelId);
+  if (ops.length === 0) return 0;
+  const undo = await batch(ops, { fail: '라벨을 바꾸지 못했습니다.' });
+  recordUndo(sid, labelId ? `🏷️ 일정 ${ops.length}건의 라벨을 '${labelName}'(으)로 바꿨습니다.` : `🏷️ 일정 ${ops.length}건의 라벨을 뗐습니다.`, undo, {
+    what: '여러 일정 라벨',
+  });
+  return ops.length;
+}
+
+/** 고른 일정을 모두 한 날로. orders = 그 날 맨 뒤부터 쓸 차례 값 */
+export async function movePicked(sid: string, list: readonly Picked[], to: string, lastOrder: string | null, bounce: boolean): Promise<MoveResult> {
+  const r = multiMoveOps(sid, list, to, ordersBetween(lastOrder, null, Math.max(1, pickedCount(list))), () => newPath(sid, 'items').id);
+  if (r.ops.length === 0) {
+    showToast(r.same > 0 ? `옮긴 일정이 없습니다. ${r.same}건은 이미 그 날입니다.` : '옮긴 일정이 없습니다.');
+    return r;
+  }
+  const undo = await batch(r.ops, { fail: '일정을 옮기지 못했습니다. 고른 것은 그대로 두었습니다.' });
+  recordUndo(
+    sid,
+    `📅 일정 ${r.moved}건을 ${shortDateLabel(to)}로 옮겼습니다.` +
+      (r.same > 0 ? ` ${r.same}건은 이미 그 날입니다.` : '') +
+      (bounce ? ' 이월 일정은 끝내지 않으면 오늘 칸에 따라옵니다.' : ''),
+    undo,
+    { what: '여러 일정 옮기기' },
+  );
+  return r;
+}
+
+/** 고른 일정 지우기 (기간은 고른 날만) */
+export async function deletePicked(sid: string, list: readonly Picked[]): Promise<number> {
+  const ops = multiDeleteOps(sid, list);
+  if (ops.length === 0) return 0;
+  const undo = await batch(ops, { fail: '일정을 지우지 못했습니다.' });
+  for (const { item } of list) if (!isPeriod(item)) closeEventPanelsFor(sid, item.id);
+  const n = pickedCount(list);
+  recordUndo(sid, `🗑️ 일정 ${n}건을 삭제했습니다. 휴지통에서 복원할 수 있습니다.`, undo, { what: '여러 일정 지우기' });
+  return n;
 }
