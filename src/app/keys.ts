@@ -17,7 +17,9 @@ import {
   type ShortcutOverrides,
 } from '../domain/shortcuts';
 import { isSaveKey } from '../ui/useSaveKey';
+import { showToast } from './toast';
 import { goToday, setScope, setToggle, stepDate, stepScope, useNav } from './nav';
+import { toggleThemeMode } from './theme';
 import { closeAllWindows, getWindowDef, openWindow } from './windows';
 
 /** 기본값에서 바꾼 단축키만 (이 기기 - P1-4에서 계정 설정과 맞춘다, V4 shortcutOverrides) */
@@ -49,7 +51,19 @@ const ACTIONS: Partial<Record<ShortcutId, () => void>> = {
   checklist: () => window.dispatchEvent(new Event('sp5-checklist')),
   // 이 화면 인쇄 - 화면마다 인쇄 모양은 P6-3. 그 전에는 브라우저 인쇄
   print: () => window.print(),
+  // 어둡게 ↔ 밝게 (V4 ROADMAP 17)
+  toggleTheme: toggleThemeMode,
 };
+
+/** 이 단축키(·메뉴 항목)가 지금 할 일이 있나 - 아직 옮기지 않은 기능은 false */
+export function canRun(id: ShortcutId): boolean {
+  return !!ACTIONS[id] || !!getWindowDef(id);
+}
+
+/** 단추·메뉴에서 누른 것. 아직 옮기지 않은 기능이면 안내한다(단축키는 조용히 브라우저에 맡긴다). */
+export function runFromButton(id: ShortcutId) {
+  if (!runShortcut(id)) showToast('🚧 아직 V5로 옮기지 않은 기능입니다.');
+}
 
 /** 화면·기능이 더하는 단축키 동작 (예: P3-1 되돌리기, P4-2 클립보드). 되돌리는 함수를 돌려준다. */
 export function setShortcutAction(id: ShortcutId, run: () => void): () => void {

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { MORE_MENU } from './moreMenu';
 import './windowList';
 import { listWindows } from './windows';
 
@@ -68,20 +69,16 @@ describe('그림만 있는 단추에는 설명이 붙어 있다', () => {
 });
 
 // 창 목록이 MENU.md 자리를 지킨다 (MENU.md 5장 - V4 inspect-more-menu 대신).
-// 창이 들어오는 세션마다 여기 표에 맞춰 등록한다. 다 들어오면(P8) '⊆'를 '='로 바꾼다.
-const MENU_SPEC: Record<string, string[]> = {
-  일정: ['labels', 'multiSelect'],
-  수업: ['progress', 'timetable'],
-  자료: ['backup', 'print'],
-  설정: ['settings', 'help'],
-};
+// 창이 들어오는 세션마다 이 표(moreMenu.ts)에 맞춰 등록한다.
+const MENU_SPEC: Record<string, string[]> = Object.fromEntries(MORE_MENU.map((s) => [s.section, s.items.map((i) => i.id)]));
 const CLASS_TOOLS = ['attendance', 'notices', 'subjectAttendance', 'seating', 'drawStudent', 'studentRecord', 'evalOverview', 'roster'];
 
 describe('창 목록 = MENU.md', () => {
   const real = listWindows().filter((w) => !w.dev);
 
   it('⋮ 메뉴는 4구역 8항목 안에서만 (MENU.md 3-4)', () => {
-    expect(Object.values(MENU_SPEC).flat()).toHaveLength(8);
+    expect(Object.keys(MENU_SPEC)).toEqual(['일정', '수업', '자료', '설정']);
+    expect(Object.values(MENU_SPEC).flat()).toEqual(['labels', 'multiSelect', 'progress', 'timetable', 'backup', 'print', 'settings', 'help']);
     for (const w of real.filter((x) => x.menu)) {
       expect(MENU_SPEC[w.menu!], `${w.id}는 ⋮ '${w.menu}' 구역에 없다`).toContain(w.id);
     }

@@ -110,3 +110,29 @@ export function showErrorToastOnce(message: string, error?: unknown) {
   if (error instanceof ShownError) return;
   showErrorToast(message, error);
 }
+
+const AFTER_RELOAD_KEY = 'sp5_toast_after_reload';
+
+/**
+ * 화면을 새로 그린 다음에 알린다. 백업 복원처럼 안내 바로 뒤에 새로고침하면 안내가 쓸려 사라져
+ * 됐는지 안 됐는지 알 수 없었다(V4). 새로고침을 건너온 뒤에 띄우도록 맡겨 둔다.
+ */
+export function showToastAfterReload(message: string) {
+  try {
+    sessionStorage.setItem(AFTER_RELOAD_KEY, message);
+  } catch {
+    showToast(message);
+  }
+}
+
+/** 앱이 처음 뜰 때 한 번 불러, 맡겨 둔 안내가 있으면 띄운다 */
+export function flushPendingToast() {
+  try {
+    const msg = sessionStorage.getItem(AFTER_RELOAD_KEY);
+    if (!msg) return;
+    sessionStorage.removeItem(AFTER_RELOAD_KEY);
+    showToast(msg, 4000);
+  } catch {
+    /* 못 읽으면 넘어간다 */
+  }
+}

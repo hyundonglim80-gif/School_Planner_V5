@@ -113,7 +113,7 @@ describe('단축키는 한 곳에서만 정한다', () => {
   });
 
   it('둘째 줄 토글 셋은 단축키 설정을 따른다', () => {
-    const shell = files.find(([p]) => p.endsWith('/Shell.tsx'))![1];
-    for (const id of ['toggleWeekend', 'toggleEvents', 'toggleClass', 'datePrev', 'dateNext', 'dateToday']) expect(shell).toContain(`'${id}'`);
+    const row = files.find(([p]) => p.endsWith('/SecondRow.tsx'))![1];
+    for (const id of ['toggleWeekend', 'toggleEvents', 'toggleClass', 'datePrev', 'dateNext', 'dateToday']) expect(row).toContain(`'${id}'`);
   });
 });
