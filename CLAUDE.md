@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P2-1 끝**(클라우드 - 자료 모양·저장 도우미·되돌리기·Ctrl+Z·items/labels 규칙). '이어서' = **P2-2**. 👤 세션 브랜치 PR을 합쳐 주세요(합치면 다음 대화가 이어 받는다).
+- **2026-10-08 P2-2 끝**(클라우드 - 기기 사본 IndexedDB·바뀐 것만 받기·내 쓰기 먼저·고르기 `data/select`·다시 받기·로그아웃 때 지움). '이어서' = **P2-3**. 👤 세션 브랜치 PR을 합쳐 주세요(합치면 다음 대화가 이어 받는다).
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -71,10 +71,13 @@
 - **원칙 일곱**(`docs/DESIGN.md` 2장): 항목 하나 = 문서 하나 · id는 바뀌지 않는다 · 이름 대신 id · 계산할 수 있는 것은 저장하지 않는다 ·
   지우기 = 지운 표시 · 기기 사본 + 바뀐 것만 받기 · 화면은 자료 층만, 창은 창 목록 한 곳.
 - 코드를 고치기 전에 `docs/DESIGN.md` 10장 체크리스트를 본다.
+- **화면은 고르기(`data/select`)로만 읽고 저장 도우미(`data/repo`)로만 쓴다** - 그 사이에 기기 사본(`data/mirror`)이 선다. 화면에 새 컬렉션을 쓰면 `MIRRORED`에 더한다.
 - **서버를 함께 쓰는 데서 오는 함정**(V5만의 것):
   - 기본 데이터베이스의 **규칙은 한 벌**이다 - V5 저장소 `firestore.rules`(V4 규칙 전부 + V5)가 정본, V4에서 규칙을 고치지 않는다. 배포는 사용자에게 묻고.
   - **함수는 codebase `v5`**로만 배포한다(`--only functions:v5`) - 빼면 V4 함수(default)를 지우려 한다.
   - V5는 V4 자료를 **읽기만** 한다(가져오기). V4·V3 경로에 쓰지 않는다.
+  - **기기 사본**(P2-2): 받은 것은 메모리 먼저·사본은 뒤따라, 사본이 고장 나면 그 탭은 메모리로만(다시 열지 않는다). 구독은 내가 쓰는 동안 그 문서를 '빠짐'으로 준다 -
+    영구 지우기로 믿지 않는다. **에뮬레이터는 색인을 보지 않는다** - 서버 쿼리는 칸 하나로 짓는다.
 
 ## 4. V4에서 배운 것 중 V5에도 남는 것
 
@@ -162,10 +165,14 @@
   `types.ts`(자료 모양 = DESIGN 4장, 컬렉션 표 `SpaceCollections`·`Editable<C>`·`DocPath`) · `id.ts`(`newId` 20자) ·
   `repo/`(저장 도우미 - `ops.ts` 무엇을 적나·되돌리는 쓰기(순수), `index.ts` `create`·`patch`·`remove`·`restore`·`put`·`purge`·`batch`·`newPath`·`writeOps`, 모두 `Undo`를 돌려준다) ·
   `undo.ts`(`recordUndo` = 안내의 되돌리기 단추 + Ctrl+Z 더미(공간마다 20), `undoLast` - `main.tsx`가 단축키 'undo'에 잇는다).
+  `mirror/`(기기 사본 - `db.ts` IndexedDB `sp5-mirror-{uid}` 저장소 docs·meta · `codec.ts` Timestamp 지키기 · `store.ts` 화면 store `useMirror`(서버 판 + 내 쓰기 덧칠 `beginLocalWrite`) ·
+  `server.ts` Firestore 받는 길(흉내 서버로 시험) · `sync.ts` `startMirror`·`useMirrorSync`(App)·`resetMirror`·`wipeMirror`(로그아웃)·받는 컬렉션 `MIRRORED`) ·
+  `select.ts`(화면이 고르는 곳 - `itemsOn`·`itemsBetween`·`itemsWithLabels`·`itemsOfKind`·`memos`·`trashOf`·`labelsOf` + `use…` 훅·`useDocs`·`useMirrorStatus`) ·
+  `session.ts`의 `currentSpaceId`·`useCurrentSpaceId`(지금 공간 한 곳). 화면 문서 = `Stored<C>`(자리 id가 붙는다 - 저장 도우미는 id를 적지 않는다).
 - **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
   로그인한 화면은 `[data-session=signed-in][data-user=<메일>]`. `logout`은 기다리던 설정을 먼저 올린다.
 - **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 지금 보기·단축키·앱, `{ tab }`로 열기) · `ViewTab`(누르는 즉시) ·
-  `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·빌드 번호) · `parts`(Section·ToggleRow·Choices).
+  `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·이 기기 사본 `[data-mirror-state|count|reset]`·빌드 번호) · `parts`(Section·ToggleRow·Choices).
   `[data-settings-tab|panel|toggle]`·`[data-choice="이름:값"]`·`[data-shortcut-row|key|save|reset]`·`[data-install-pwa=ready|guide]`.
 - **껍데기** `src/app/`: `App.tsx`(로그인 상태 → `Shell`) · `Shell.tsx`(틀: 머리줄·본문·탭바·창·오른쪽 줄 ▶·폭 끌기) · `Header.tsx`(첫 줄 - ⏳·🗑️·＋ 새로·🔍·화면 탭·?·⋮·사진,
   `[data-header-*]`·`[data-scope-tab]`·`[data-more-menu]`·`[data-menu-item]`·`[data-new]`) · `SecondRow.tsx`(토글·◀ 날짜 ▶·📅·학기 칩, `[data-date-prev|next|label]`·`[data-view-toggle]`) ·
@@ -186,6 +193,7 @@
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
   `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
-  `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z). 자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 단위만).
+  `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움).
+  자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 단위만 - `repo.emu`·`mirror.emu`).
   규칙 테스트: `app/windowConventions.test.ts`(창 틀·'취소' 금지·그림 단추 설명·⋮ 표) · `app/keys.test.tsx`(키 글자를 박지 않는다).
 - **빈 자리**: `src/import/v4`(`.gitkeep` - 첫 파일이 들어오면 지운다). 문서는 `docs/`, 소개는 `README.md`(에뮬레이터 순서).
