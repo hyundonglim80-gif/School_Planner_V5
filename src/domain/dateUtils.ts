@@ -78,6 +78,17 @@ export function weekMonday(dateStr: string): string {
   return addDays(dateStr, day === 0 ? -6 : 1 - day);
 }
 
+/** 월간 달력의 날들 - 그 달 1일이 든 주의 일요일부터 말일이 든 주의 토요일까지 (주 단위, V4 getMonthCalendarDays) */
+export function monthGridDates(year: number, month: number): string[] {
+  const first = `${year}-${String(month).padStart(2, '0')}-01`;
+  const last = monthEnd(year, month);
+  const start = addDays(first, -weekdayOf(first));
+  const end = addDays(last, 6 - weekdayOf(last));
+  const out: string[] = [];
+  for (let d = start; d <= end; d = addDays(d, 1)) out.push(d);
+  return out;
+}
+
 /** 그 날이 든 주의 날짜 일곱 (월 ~ 일) */
 export function weekDates(dateStr: string): string[] {
   const monday = weekMonday(dateStr);

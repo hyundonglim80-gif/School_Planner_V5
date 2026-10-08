@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P5-2 월간·년간·오늘로** (클라우드면 1-7을 먼저).
+**P5-3 끌어 옮기기·D-Day·공휴일** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -150,8 +150,8 @@
 | P4-3 | 링크 연결·보기 | 중간 | 중간 | 끝 (2026-10-08) |
 | **P5 달력·찾기·정리** | | | | |
 | P5-1 | 주간·작년 이맘때 | 중간 | 중간 | 끝 (2026-10-08) |
-| P5-2 | 월간·년간·오늘로 | 큼 | 중간 | **다음** |
-| P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | |
+| P5-2 | 월간·년간·오늘로 | 큼 | 중간 | 끝 (2026-10-08) |
+| P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | **다음** |
 | P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | |
 | **P6 수업** | | | | |
 | P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | |
@@ -206,6 +206,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-2 | P4-2 세션 끝 정리 | 단위 1081 · inspect-attach 47(구글 API는 흉내) · notes·memo·shell 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 👤 실제 계정으로 첨부 올리기·V4 첨부 열기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-3 | P4-3 세션 끝 정리 (P4 단계 끝) | 단위 1132 · inspect-links 32 · P4 점검 모두(memo·attach·links + events·notes) 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 디스크가 차 에뮬레이터가 죽음 - 디버그 로그 30GB를 비우고 /dev/null로 이어 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
+| 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
@@ -412,6 +413,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 지운 항목·찾을 수 없는 항목도 목록에 남기고(휴지통에서 되살리면 다시 이어진다) 끊을 수 있다. 목록은 기기 사본에서 - V4처럼 범위마다 서버를 읽지 않는다.
 - **P5-1 주간**: V4 그대로(요일 카드·다음 주 줄·라벨 칩 = 완료·📝 = 그날 기록 창·작년 이맘때). 바뀐 것: 오늘 카드에 이월로 따라오는 일정을 ↪로 함께(이월이 계산이라 - 하루 화면과 같다),
   주간 위 단추 줄의 📰 주간학습안내·🖨️ 인쇄는 P6-3에서(인쇄는 MENU대로 ⋮), 수업 칸은 P6-1, 끌어 옮기기·공휴일은 P5-3. 작년 이맘때 가져오기는 '올해 같은 글'을 기록에도 본다(V4는 일정만 '올해 있음' - 기록은 가져올 때 건너뛰기만).
+- **P5-2 월간·년간**: V4 그대로(월간 한 주 한 줄·막대, 년간 📅 학사력 / 📋 자세히 - 고른 보기는 이 기기, 학기 칩, 세 달씩 나눠 그리기). 바뀐 것:
+  기간 막대는 항목 하나의 date~endDate를 그대로 놓는다(V4는 날마다의 조각을 글·groupId로 이어 붙였다) - 주말 빼기·뺀 날이 끼면 그 자리에서 끊긴다.
+  년간 자세히는 일정이 꺼져 있으면 일정만 있는 날 줄을 그리지 않는다(V4는 빈 날짜 줄이 남았다). Ctrl·Shift로도 고른다(V4는 '여러 개 고르기'를 켠 때만). 🖨️ 학사력 인쇄는 P6-3(⋮ '이 화면 인쇄').
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -750,9 +754,16 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P5-2. 월간·년간·오늘로
 **시작 조건**: P5-1 끝.
 **먼저 읽을 것**: V4 설명서 `month`·`year`, V4 `features/month/*`·`features/year/*`, `lib/periodBars.ts`(그리기 부분)·`yearSheet.ts`·`todayScroll.ts`.
-- [ ] ■1 월간(MonthGrid subgrid - 한 주 한 줄, 기간 막대 = 항목의 `date`~`endDate` 그대로, 휴대폰 MonthDaySheet·칩 완료).
-- [ ] ■2 년간(📅 학사력 / 📋 자세히 - 고른 것은 이 기기, 학기 칩, 달 나눠 그리기) + 오늘로(V4 todayScroll - 2.5초 찾고 0.7초 지켜보기).
-- [ ] ■3 크롬 점검 `inspect-month-year.mjs`.
+- [x] ■1 월간(MonthGrid subgrid - 한 주 한 줄, 기간 막대 = 항목의 `date`~`endDate` 그대로, 휴대폰 MonthDaySheet·칩 완료).
+  → `features/month/MonthScreen.tsx`(`[data-screen=month]`) · `MonthGrid.tsx`(`[data-month-week|month-day|today|selected|month-day-number|month-notes|month-add|month-event|month-event-done|month-event-chip|month-event-links|month-event-delete]`) ·
+  `PeriodBar.tsx`(`[data-period-bar|period-bar-done|period-cell|period-bar-links]` - 주마다 칸 나눔·이어짐 ◂▸·그날 완료) · `MonthDaySheet.tsx`(휴대폰 `[data-month-day-sheet|sheet-add|sheet-go-day|sheet-close|sheet-event|sheet-event-chip|sheet-hidden]`) ·
+  `calendarEvents.ts`('달력' 속성만) · 순수 `domain/periodBars.ts`(주마다 막대·줄 `layoutWeekBars`) · `dateUtils.monthGridDates`(일요일 시작).
+- [x] ■2 년간(📅 학사력 / 📋 자세히 - 고른 것은 이 기기, 학기 칩, 달 나눠 그리기) + 오늘로(V4 todayScroll - 2.5초 찾고 0.7초 지켜보기).
+  → `features/year/YearScreen.tsx`(`[data-screen=year|year|year-view|year-legend|year-sheet|year-detail|year-waiting]` - 세 달씩 프레임마다) · `YearSheetMonth.tsx`(학사력 달 `[data-sheet-month|sheet-month-name|sheet-date|sheet-dots|sheet-bar|sheet-list|sheet-item|sheet-item-id|sheet-extra|sheet-more]`) ·
+  `YearMonthCard.tsx`(자세히 달 `[data-year-month|year-month-open|year-month-toggle|year-day|year-day-label|year-notes|year-add|year-event|year-event-done|year-event-chip|year-event-links|year-event-delete|year-period|year-period-done|year-period-range|year-month-empty]`) ·
+  `year/prefs.ts`(`sp5-year-view` 이 기기) · 순수 `domain/yearSheet.ts`(`academicMonths`·`monthWeeks`·`monthSheetItems`·`dayTooltip` - V4 테스트째)·`periodBars.periodsInDates`(V4 collapsePeriods). 오늘로는 P1-3의 `app/todayScroll` 그대로.
+- [x] ■3 크롬 점검 `inspect-month-year.mjs`.
+  → 60항목(월간 27·학사력 16·자세히 10·오늘로 4 + 오류 없음).
 
 ### P5-3. 끌어 옮기기·D-Day·공휴일
 **시작 조건**: P5-2 끝.
