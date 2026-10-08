@@ -153,16 +153,34 @@ function claimLocalCopy(uid: string) {
   }
 }
 
-/** 로그인한 동안 설정 문서 둘(common + 이 기기 종류)을 맞춘다. 끊는 함수를 돌려준다. */
-export function startPrefsSync(uid: string): () => void {
+let running: (() => Promise<void>) | null = null;
+
+/** 로그인한 동안 설정 문서 둘(common + 이 기기 종류)을 맞춘다. 끊는 함수를 돌려준다(두 번 불러도 한 번만 끊는다). */
+export function startPrefsSync(uid: string): () => Promise<void> {
   claimLocalCopy(uid);
   const stops = [
     startSettingsSync(settingsPort(uid, 'common'), commonBinding),
     startSettingsSync(settingsPort(uid, detectDeviceKind()), deviceBinding),
   ];
-  return () => stops.forEach((s) => s());
+  let done: Promise<void> | null = null;
+  const stop = () => {
+    if (running === stop) running = null;
+    done ??= Promise.all(stops.map((s) => s())).then(() => {});
+    return done;
+  };
+  running = stop;
+  return stop;
+}
+
+/** 로그아웃 앞에서: 1초 뒤 올리려고 기다리던 설정을 지금 올리고 끊는다 */
+export function stopPrefsSync(): Promise<void> {
+  return running?.() ?? Promise.resolve();
 }
 
 export function usePrefsSync(uid: string | undefined) {
-  useEffect(() => (uid ? startPrefsSync(uid) : undefined), [uid]);
+  useEffect(() => {
+    if (!uid) return;
+    const stop = startPrefsSync(uid);
+    return () => void stop();
+  }, [uid]);
 }

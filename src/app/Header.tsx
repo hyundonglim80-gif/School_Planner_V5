@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ShortcutId } from '../domain/shortcuts';
 import { useSession } from '../data/session';
+import { logout } from '../features/auth/login';
 import { canRun, runFromButton, useShortcutOverrides, useShortcutTitle } from './keys';
 import { MORE_MENU } from './moreMenu';
 import { setScope, useNav } from './nav';
@@ -101,24 +102,7 @@ export default function Header() {
           ?
         </button>
         <MoreMenu />
-        {/* 사진을 누르면 계정 칸 (P1-4 - 이름·메일·로그아웃) */}
-        {user?.photoURL ? (
-          <img
-            src={user.photoURL}
-            alt="Profile"
-            data-account
-            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-white shadow-sm object-cover"
-            title={accountTitle}
-          />
-        ) : (
-          <div
-            data-account
-            className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-xs font-bold text-slate-500 shadow-sm"
-            title={accountTitle}
-          >
-            {(user?.displayName || '선').charAt(0)}
-          </div>
-        )}
+        <AccountMenu title={accountTitle} />
       </div>
     </div>
   );
@@ -219,6 +203,71 @@ function NewMenu() {
           className="fixed sm:absolute right-4 sm:right-auto sm:left-0 bottom-36 sm:bottom-auto sm:top-10 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs"
         >
           <NewItems close={() => setOpen(false)} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** 계정 사진 (없으면 이름 첫 글자) */
+function Avatar({ size }: { size: 'sm' | 'lg' }) {
+  const user = useSession((s) => s.user);
+  const box = size === 'lg' ? 'w-10 h-10 text-base' : 'w-6 h-6 sm:w-8 sm:h-8 text-xs';
+  return user?.photoURL ? (
+    <img src={user.photoURL} alt="" className={`${box} rounded-full border-2 border-white shadow-sm object-cover shrink-0`} />
+  ) : (
+    <span className={`${box} rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-bold text-slate-500 shadow-sm shrink-0`}>
+      {(user?.displayName || '선').charAt(0)}
+    </span>
+  );
+}
+
+/**
+ * 계정 칸 (MENU 3-5): 사진을 누르면 이름·메일·로그아웃. V4는 PC 머리줄에 로그아웃 단추, 휴대폰은 ⋮에 두었다.
+ * 👥 공유 그룹(만들기·참여·관리)은 P8-4에서 이 칸에 더한다.
+ */
+function AccountMenu({ title }: { title: string }) {
+  const { open, setOpen, ref } = useDropdown();
+  const user = useSession((s) => s.user);
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        data-account
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        title={title}
+        aria-label={`계정: ${title}`}
+        className="flex rounded-full cursor-pointer"
+      >
+        <Avatar size="sm" />
+      </button>
+      {open && (
+        <div data-account-panel className="absolute right-0 top-10 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs">
+          <div className="flex items-center gap-3 px-4 py-2">
+            <Avatar size="lg" />
+            <div className="min-w-0">
+              <div data-account-name className="text-sm font-black text-slate-800 truncate">
+                {user?.displayName || '이름 없음'}
+              </div>
+              <div data-account-email className="text-xs text-slate-500 truncate">
+                {user?.email}
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-slate-100 mt-1 pt-1">
+            <button
+              type="button"
+              data-logout
+              onClick={() => {
+                setOpen(false);
+                void logout();
+              }}
+              className="w-full px-4 py-2 text-left font-bold flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-red-600 cursor-pointer"
+            >
+              <span>🚪</span> 로그아웃
+            </button>
+          </div>
         </div>
       )}
     </div>

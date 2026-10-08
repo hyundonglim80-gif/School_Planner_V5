@@ -10,6 +10,7 @@ import {
 import type { UserCredential } from 'firebase/auth';
 import { auth, googleProvider } from '../../data/firebase';
 import { showErrorToast } from '../../app/toast';
+import { stopPrefsSync } from '../../app/prefs';
 
 const GOOGLE_TOKEN_KEY = 'sp5-google-token';
 
@@ -81,6 +82,8 @@ export function useGoogleLogin() {
 
 /** 로그아웃. 이 기기에 챙겨 둔 구글 토큰도 지운다(다음 사람이 쓰지 않게). */
 export async function logout() {
+  // 방금 바꿔 1초 뒤 올리려던 설정은 로그아웃 전에 올린다(뒤에 가면 권한이 없다). 연결이 없으면 오래 기다리지 않는다.
+  await Promise.race([stopPrefsSync(), new Promise((r) => setTimeout(r, 3000))]);
   try {
     await signOut(auth);
   } catch (error) {

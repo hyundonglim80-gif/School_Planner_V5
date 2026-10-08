@@ -6,8 +6,11 @@ import { handleAppKeyDown, setShortcutOverrides } from './keys';
 import { useNav } from './nav';
 import { registerWindow, resetWindowsForTest, useWindows } from './windows';
 import * as toast from './toast';
+import { useSession } from '../data/session';
+import { logout } from '../features/auth/login';
 
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
+vi.mock('../features/auth/login', () => ({ logout: vi.fn() }));
 
 beforeEach(() => {
   resetWindowsForTest();
@@ -84,5 +87,23 @@ describe('어둡게 / 밝게 (단축키 toggleTheme)', () => {
     expect(localStorage.getItem('sp5_theme')).toBe('dark');
     press();
     expect(document.documentElement.classList.contains('dark')).toBe(false);
+  });
+});
+
+describe('계정 칸 (MENU.md 3-5)', () => {
+  it('사진을 누르면 이름·메일·로그아웃 (공유 그룹은 P8-4 전까지 없다)', async () => {
+    useSession.setState({ loading: false, user: { uid: 'u1', email: 't@example.com', displayName: '김선생', photoURL: '' } });
+    const user = userEvent.setup();
+    const { container } = render(<Header />);
+    const photo = container.querySelector<HTMLElement>('[data-account]')!;
+    expect(photo).toHaveAttribute('title', '김선생 (t@example.com)');
+    expect(photo).toHaveTextContent('김');
+    await user.click(photo);
+    expect(container.querySelector('[data-account-name]')).toHaveTextContent('김선생');
+    expect(container.querySelector('[data-account-email]')).toHaveTextContent('t@example.com');
+    expect(container.querySelector('[data-account-panel]')).not.toHaveTextContent('공유 그룹');
+    await user.click(container.querySelector('[data-logout]')!);
+    expect(logout).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('[data-account-panel]')).toBeNull();
   });
 });

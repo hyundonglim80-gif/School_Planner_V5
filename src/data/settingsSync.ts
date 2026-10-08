@@ -35,8 +35,11 @@ export interface SettingsBinding {
 
 export const SETTINGS_WRITE_DELAY_MS = 1000;
 
-/** 맞추기를 시작한다. 끊는 함수를 돌려준다(기다리던 쓰기는 버리지 않고 바로 적는다). */
-export function startSettingsSync(port: SettingsPort, binding: SettingsBinding, delayMs = SETTINGS_WRITE_DELAY_MS): () => void {
+/**
+ * 맞추기를 시작한다. 끊는 함수를 돌려준다 - 기다리던 쓰기는 버리지 않고 바로 적고, 그 쓰기가 끝나면 풀리는 약속을 돌려준다
+ * (로그아웃 앞에서 기다린다 - 로그아웃한 뒤에 가면 권한이 없어 버려진다).
+ */
+export function startSettingsSync(port: SettingsPort, binding: SettingsBinding, delayMs = SETTINGS_WRITE_DELAY_MS): () => Promise<void> {
   let ready = false;
   let applying = false;
   // 서버와 이 기기가 마지막으로 맞춰진 값. 같으면 다시 적지 않는다.
@@ -47,14 +50,14 @@ export function startSettingsSync(port: SettingsPort, binding: SettingsBinding, 
     timer = null;
     const data = binding.local();
     lastKey = settingsKey(data);
-    port.save(data).catch((e: unknown) => console.warn('[settings] 설정을 계정에 저장하지 못했습니다:', e));
+    return port.save(data).catch((e: unknown) => console.warn('[settings] 설정을 계정에 저장하지 못했습니다:', e));
   };
 
   const unsubLocal = binding.subscribe(() => {
     if (!ready || applying) return;
     if (settingsKey(binding.local()) === lastKey) return;
     if (timer) clearTimeout(timer);
-    timer = setTimeout(write, delayMs);
+    timer = setTimeout(() => void write(), delayMs);
   });
 
   const unsubRemote = port.watch((data, fromCache) => {
@@ -76,16 +79,15 @@ export function startSettingsSync(port: SettingsPort, binding: SettingsBinding, 
     ready = true;
     const local = binding.local();
     lastKey = settingsKey(local);
-    if (Object.keys(local).length > 0) write();
+    if (Object.keys(local).length > 0) void write();
   });
 
   return () => {
     unsubLocal();
     unsubRemote();
-    if (timer) {
-      clearTimeout(timer);
-      write();
-    }
+    if (!timer) return Promise.resolve();
+    clearTimeout(timer);
+    return write();
   };
 }
 

@@ -78,6 +78,22 @@ try {
   await a.page.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
   r.check(await waitFor(a.page.locator(sel('screen', 'week'))), '새로고침은 보던 화면(주간) 그대로');
 
+  r.section('계정 칸');
+  await a.page.click(sel('account'));
+  r.check(await waitFor(a.page.locator(sel('account-panel'))), '사진을 누르면 계정 칸');
+  const email = await a.page.locator(sel('account-email')).textContent();
+  r.check(email === 'teacher@example.com', `메일이 보인다 (${email})`);
+  r.check((await a.page.locator(sel('account-panel')).textContent()).includes('로그아웃'), '로그아웃 단추');
+  await a.page.keyboard.press('Escape');
+  // 글자 크기를 바꾸자마자 로그아웃해도 그 설정은 계정에 남는다(1초를 기다리지 않고 먼저 올린다)
+  await a.page.evaluate(() => window.sp5.openWindow('settings'));
+  await a.page.click(sel('choice', 'fontScale:xl'));
+  await a.page.click(sel('account'));
+  await a.page.click(sel('logout'));
+  r.check(await waitFor(a.page.locator(sel('login-google')), 10000), '로그아웃하면 로그인 화면');
+  const out = await serverUntil(serverPc, (d) => d.fontScale === 'xl', 5000);
+  r.check(out.fontScale === 'xl', `바꾸자마자 로그아웃해도 설정이 올라가 있다 (${out.fontScale})`);
+
   r.check(a.errors.length + b.errors.length === 0, '화면 오류 없음', `화면 오류: ${[...a.errors, ...b.errors].join(' | ')}`);
 } finally {
   await browser.close();
