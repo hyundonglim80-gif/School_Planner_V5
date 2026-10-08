@@ -59,3 +59,27 @@ export function carriedOf<T extends ForwardItem>(items: readonly T[], labels: La
 
 /** '↪ 10/5부터'의 날 (끝냈다 푼 일정은 처음 날을 carriedFrom에 들고 있다) */
 export const carriedSince = (item: Pick<ForwardItem, 'date' | 'carriedFrom'>) => item.carriedFrom ?? item.date ?? '';
+
+/**
+ * 지난 일정 (하루 화면 오늘 칸 아래 '📥 지난 일정 N개' - V4 '지난 일정 오늘로 가져오기' 창을 줄로): 이월 기간 안의 지난 날에 끝내지 않은 하루짜리 일정 가운데
+ * **오늘로 따라오지 않는 것**(따라오는 것은 이미 오늘 칸에 있다). 날짜 다음 주어진 차례.
+ */
+export function staleOf<T extends ForwardItem>(items: readonly T[], labels: LabelForward, today: string, forwardDays: number): T[] {
+  const from = forwardWindowStart(today, forwardDays);
+  return items
+    .filter(
+      (d) =>
+        d.kind === 'event' &&
+        !d.done &&
+        !d.deletedAt &&
+        !!d.date &&
+        !(d.endDate && d.endDate > d.date) &&
+        d.date >= from &&
+        d.date < today &&
+        !!d.text?.trim() &&
+        !isCarried(d, labels, today, forwardDays),
+    )
+    .map((d, i) => [d, i] as const)
+    .sort(([a, i], [b, j]) => a.date!.localeCompare(b.date!) || i - j)
+    .map(([d]) => d);
+}

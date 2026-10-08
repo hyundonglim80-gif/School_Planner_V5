@@ -2,7 +2,8 @@
 // 실패는 저장 도우미가 안내하고 던진다 - 누른 단추에서 부르면 `.catch(() => {})`로 받는다(안내는 이미 나갔다).
 // 쓰기마다 문서 하나(원칙 1).
 import { shortDateLabel, todayStr } from '../../domain/dateUtils';
-import { batch, create, newPath, patch, remove, writeOp } from '../../data/repo';
+import { ordersBetween } from '../../domain/order';
+import { batch, create, newPath, patch, remove, writeOp, type WriteOp } from '../../data/repo';
 import type { LabelTree } from '../../data/select';
 import { recordUndo } from '../../data/undo';
 import { createData, editChanges, effectiveAttrs, type EventForm } from './eventForm';
@@ -81,4 +82,18 @@ export async function deleteEvent(sid: string, item: ItemDoc): Promise<void> {
   const undo = await remove(itemPath(sid, item.id), { fail: '일정을 지우지 못했습니다.' });
   closeEventPanelsFor(sid, item.id);
   recordUndo(sid, '🗑️ 일정을 삭제했습니다. 휴지통에서 복원할 수 있습니다.', undo, { what: '일정 지우기' });
+}
+
+/**
+ * 지난 일정을 오늘로 (하루 화면 '📥 지난 일정' 줄 - V4 '오늘로 전달'). 고른 것마다 date = 오늘·order = 오늘 줄 맨 뒤부터 차례로(한 묶음).
+ * 알림이 울렸던 일정은 오늘 다시 울린다(날짜를 옮기면 - P3-1). 안내의 되돌리기·Ctrl+Z = 모두 제 날짜로.
+ */
+export async function bringEventsToToday(sid: string, list: readonly ItemDoc[], today: string, lastOrder: string | null): Promise<void> {
+  if (list.length === 0) return;
+  const orders = ordersBetween(lastOrder, null, list.length);
+  const ops: WriteOp[] = list.map((d, i) =>
+    writeOp.patch(itemPath(sid, d.id), { date: today, order: orders[i], ...(d.alarmDone && d.time ? { alarmDone: undefined } : {}) }, d),
+  );
+  const undo = await batch(ops, { fail: '지난 일정을 오늘로 가져오지 못했습니다.' });
+  recordUndo(sid, `📥 지난 일정 ${list.length}개를 오늘로 가져왔습니다.`, undo, { what: '지난 일정 가져오기' });
 }

@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** - ■2 '📥 지난 일정 N개' 줄부터.
+**P3-3 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기** - ■3 기간 일정부터.
 
 ---
 
@@ -357,6 +357,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - **기간 일정은 이월하지 않는다**: 여러 날에 걸쳐 '오늘로'가 없다 - 날마다 완료(`doneDates`, ■3)로 끝낸다.
   - 이월 기간은 환경설정 **'학교' 탭**(이번에 켰다 - 교사 유형 P6-1·우리 학교 P6-3이 더한다), 계정에 하나 `common.forwardDays`.
   - 끝내지 않은 이월 일정을 지난 날로 옮기면 '이월 일정이라 끝내지 않으면 오늘 칸에 따라옵니다'(V4 `movesForwardIntoPast`) - 칸의 옮기기 안내와 저장 안내에.
+  - **'📥 지난 일정' 줄은 아무것도 고르지 않고 연다**(권장안으로 고름): V4 창은 이월 대상만 보여 '모두 오늘로 전달'이었지만, V5의 줄은 이월이 아닌 일정(행사·연수처럼 달력에만 적은 것이 많다)이라
+    골라서 가져온다. 가져오기 = 고른 문서의 `date`·`order`만(오늘 줄 맨 뒤부터), 한 묶음·안내의 되돌리기.
   - P3-4에 남김: V4에서 '오늘에 같은 글이 있어' 옮겨지지 않고 지난 날에 남은 이월 일정은 V5에서 따라온다(같은 글 둘) - 가져오기 결과 표에 수를 적을지 그때 본다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
@@ -585,7 +587,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   `ForwardMarks.tsx`(껍데기에 하나 - live에서만 carrying 한 번) · `eventOps.carriedDoneChanges`·`actions.setEventDone(…, carried)` · `ui/useToday.ts`(자정에 바뀌는 오늘) · `dateUtils.monthDayLabel` ·
   `DayEvents`(오늘 것 아래 따라오는 줄 `[data-event-carried|event-since]`, 지난 날 `[data-event-away|event-to-today]`) · 일정 칸 `[data-event-carry-note]`·옮기기 안내 ·
   환경설정 '학교' 탭 `SchoolTab.tsx`(`[data-forward-days]`) · 크롬 `inspect-forward.mjs` 26항목(events·settings 다시 통과).
-- [ ] ■2 '📥 지난 일정 N개 ▸'(오늘일 때 일정 칸 아래 - 이월 대상이 아닌 끝내지 않은 지난 N일 일정, 골라 오늘로 = `date` 바꾸기, 되돌리기). ⋮에는 두지 않는다(`MENU.md` 2-1).
+- [x] ■2 '📥 지난 일정 N개 ▸'(오늘일 때 일정 칸 아래 - 이월 대상이 아닌 끝내지 않은 지난 N일 일정, 골라 오늘로 = `date` 바꾸기, 되돌리기). ⋮에는 두지 않는다(`MENU.md` 2-1).
+  → `domain/forward.staleOf` · `useCarried().stale` · `features/day/DayPastEvents.tsx`(`[data-past-events|past-toggle|past-list|past-item|past-pick|past-open|past-complete|past-delete|past-all|past-bring]` - 처음엔 접힘·아무것도 고르지 않음,
+  줄마다 날짜·라벨(누르면 완료)·글(누르면 일정 칸)·🗑️) · `actions.bringEventsToToday`(date·order만 한 묶음, 울렸던 알림은 다시, 안내 되돌리기) ·
+  단축키 `forwarding` = 오늘 하루 화면으로 가서 줄을 편다(`events/shortcuts.openPastEvents` - 없으면 안내) · 점검용 `window.sp5.runShortcut` · 크롬 `inspect-forward` 48항목.
 - [ ] ■3 기간 일정 = 한 항목(일정 칸 '끝 날', 날마다 '(k/n)'은 계산, 날마다 완료 `doneDates`), 묶음 지우기·옮기기 '이 날만(나누기)·이 날부터(끝 날 당기기)·전부'.
 - [ ] ■4 반복: 일정 칸 '🔁 반복' 줄(안 함·매일·매주 요일·매월 n째 주 요일·끝나는 날) → `series` + 항목들(한 batch), '이 날부터 바꾸기·지우기'.
 - [ ] ■5 여러 개 고르기: ⋮ + 일정 카드 Ctrl+누르기·Shift 범위(휴대폰 길게 누르기) → 아래 동작 줄(완료·라벨·날짜·지우기·끝), 되돌리기.

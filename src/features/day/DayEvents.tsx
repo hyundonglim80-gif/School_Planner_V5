@@ -10,6 +10,7 @@
 // 새로 쓰고 고치는 칸은 여기 없다 - 오른쪽 일정 칸(EventPanel) 하나로 어느 화면에서나 같게 (V4 그대로).
 import { useState } from 'react';
 import { goToday } from '../../app/nav';
+import { useCommonSettings } from '../../app/prefs';
 import { openWindow } from '../../app/windows';
 import { showToast } from '../../app/toast';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
@@ -23,9 +24,17 @@ import DueBadge from '../events/DueBadge';
 import EventAlarmWindow from '../events/EventAlarmWindow';
 import { orderAfter, type ItemDoc } from '../events/eventOps';
 import { useCarried } from '../events/forward';
+import DayPastEvents from './DayPastEvents';
 import { openEventPanel, useEditingEventIds } from '../events/open';
 
 const NONE: readonly ItemDoc[] = [];
+
+/** 목록의 맨 뒤 차례 값 (없으면 null) */
+function lastOrderOf(list: readonly ItemDoc[]): string | null {
+  let last: string | null = null;
+  for (const d of list) if (d.order && (last === null || d.order > last)) last = d.order;
+  return last;
+}
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -35,6 +44,7 @@ export default function DayEvents({ date }: { date: YMD }) {
   const sid = useCurrentSpaceId();
   const events = useItemsOn(date, 'event');
   const carried = useCarried(sid);
+  const forwardDays = useCommonSettings((s) => s.forwardDays);
   const today = carried.today;
   // 오늘 칸이면 오늘로 따라오는 일정을 오늘 것 아래에 (지난 날에서 따라오는 것만 - 제 날짜는 그대로다)
   const follow = date === today ? carried.list : NONE;
@@ -162,6 +172,10 @@ export default function DayEvents({ date }: { date: YMD }) {
             </div>
           )}
         </div>
+      )}
+      {/* 오늘이면 아래에 '📥 지난 일정 N개 ▸' (있을 때만 - V4 '지난 일정 오늘로 가져오기' 창) */}
+      {!collapsed && sid && date === today && (
+        <DayPastEvents sid={sid} today={today} stale={carried.stale} forwardDays={forwardDays} lastOrder={lastOrderOf(events)} />
       )}
       {alarmFor && sid && (
         <EventAlarmWindow

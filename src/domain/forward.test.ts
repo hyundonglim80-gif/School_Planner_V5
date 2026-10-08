@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { carriedOf, carriedSince, forwardOn, forwardWindowStart, isCarried, type ForwardItem, type LabelForward } from './forward';
+import { carriedOf, carriedSince, forwardOn, forwardWindowStart, isCarried, staleOf, type ForwardItem, type LabelForward } from './forward';
 
 const labels: LabelForward = new Map([
   ['fwd', true],
@@ -63,5 +63,21 @@ describe('carriedSince', () => {
   it('처음 날 = carriedFrom → 없으면 date', () => {
     expect(carriedSince(ev())).toBe('2026-10-05');
     expect(carriedSince(ev({ date: '2026-10-07', carriedFrom: '2026-10-01' }))).toBe('2026-10-01');
+  });
+});
+
+describe('staleOf - 지난 일정 (오늘로 따라오지 않는 것)', () => {
+  it('이월 기간 안 · 끝내지 않음 · 이월이 아닌 것만, 날짜 차례', () => {
+    const list = [
+      ev({ text: 'b', date: '2026-10-06', labelIds: ['cal'] }),
+      ev({ text: 'carried', date: '2026-10-05' }),
+      ev({ text: 'a', date: '2026-10-01', labelIds: [] }),
+      ev({ text: 'done', date: '2026-10-05', labelIds: [], done: true }),
+      ev({ text: 'old', date: '2026-09-01', labelIds: [] }),
+      ev({ text: 'today', date: TODAY, labelIds: [] }),
+      ev({ text: 'span', date: '2026-10-01', endDate: '2026-10-03', labelIds: [] }),
+      ev({ text: 'off', date: '2026-10-07', props: { forward: false } }),
+    ];
+    expect(staleOf(list, labels, TODAY, 14).map((d) => d.text)).toEqual(['a', 'b', 'off']);
   });
 });

@@ -5,6 +5,7 @@ import { Timestamp } from 'firebase/firestore';
 import { useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { useWindows } from '../../app/windows';
+import { setPastRowOpen } from '../events/forward';
 import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
 import { undoCount } from '../../data/undo';
@@ -12,6 +13,12 @@ import type { WriteOp } from '../../data/repo';
 import DayEvents from './DayEvents';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
+// 일정 칸 열기는 그대로 하되 무엇으로 열었는지 본다 (창 목록은 이 시험에 등록하지 않는다)
+const opened = vi.hoisted(() => ({ calls: [] as unknown[] }));
+vi.mock('../events/open', async (orig) => {
+  const real = await orig<typeof import('../events/open')>();
+  return { ...real, openEventPanel: vi.fn((p: unknown) => (opened.calls.push(p), real.openEventPanel(p as never))) };
+});
 const written = vi.hoisted(() => ({ batches: [] as WriteOp[][] }));
 vi.mock('../../data/repo', async (orig) => {
   const real = await orig<typeof import('../../data/repo')>();
@@ -69,7 +76,9 @@ beforeEach(() => {
   vi.setSystemTime(new Date(2026, 9, 8, 12));
   useCommonSettings.setState({ forwardDays: 14 });
   resetMirrorStore();
+  setPastRowOpen(false);
   written.batches = [];
+  opened.calls = [];
   useWindows.setState({ windows: [] });
   document.body.innerHTML = '';
   useSession.setState({ loading: false, user: { uid: 'me', email: '', displayName: '', photoURL: '' } });
@@ -241,5 +250,56 @@ describe('이월 (계산 - DESIGN 5-1)', () => {
     expect(useNav.getState().date).toBe(DAY);
     // 오늘로 가기는 수정 칸을 열지 않는다
     expect(useWindows.getState().windows).toEqual([]);
+  });
+
+  it("오늘 칸 아래 '📥 지난 일정 N개' - 따라오지 않는 끝내지 않은 지난 일정, 처음엔 접힘·아무것도 고르지 않음", () => {
+    seed('live', carriedItems);
+    render(<DayEvents date={DAY} />);
+    expect(q('[data-past-events]')?.dataset.pastEvents).toBe('1');
+    expect(q('[data-past-toggle]')?.textContent).toContain('지난 일정 1개');
+    expect(q('[data-past-list]')).toBeNull();
+    fireEvent.click(q('[data-past-toggle]')!);
+    expect(qa('[data-past-item]').map((e) => e.dataset.pastItem)).toEqual(['plain']);
+    expect(q('[data-past-pick="plain"]')).not.toBeChecked();
+    expect(q('[data-past-bring]')).toBeDisabled();
+  });
+
+  it('골라 오늘로 가져오기 = date·order만 (한 묶음), 안내의 되돌리기', async () => {
+    seed('live', carriedItems);
+    render(<DayEvents date={DAY} />);
+    fireEvent.click(q('[data-past-toggle]')!);
+    fireEvent.click(q('[data-past-pick="plain"]')!);
+    expect(q('[data-past-bring]')?.textContent).toContain('(1)');
+    await act(async () => fireEvent.click(q('[data-past-bring]')!));
+    expect(written.batches).toHaveLength(1);
+    const [op] = written.batches[0] as { at: { id: string }; changes: Record<string, string> }[];
+    expect(op.at.id).toBe('plain');
+    expect(Object.keys(op.changes).sort()).toEqual(['date', 'order']);
+    expect(op.changes.date).toBe(DAY);
+    expect(op.changes.order > 'a2').toBe(true);
+    expect(q('[data-toast]')?.textContent).toContain('지난 일정 1개를 오늘로 가져왔습니다');
+    expect(q('[data-toast-action="되돌리기"]')).not.toBeNull();
+  });
+
+  it('줄의 라벨(없으면 완료) = 완료만 (날짜는 그대로), 글 = 수정 칸', async () => {
+    seed('live', carriedItems);
+    render(<DayEvents date={DAY} />);
+    fireEvent.click(q('[data-past-toggle]')!);
+    expect(q('[data-past-complete="plain"]')?.textContent).toBe('완료');
+    await act(async () => fireEvent.click(q('[data-past-complete="plain"]')!));
+    expect(Object.keys((written.batches[0][0] as { changes: object }).changes).sort()).toEqual(['done', 'doneAt']);
+    fireEvent.click(q('[data-past-open="plain"]')!);
+    expect(opened.calls).toEqual([{ sid: SID, date: '2026-10-05', id: 'plain' }]);
+  });
+
+  it('지난 날 칸·지난 일정이 없으면 줄이 없다', () => {
+    seed('live', carriedItems);
+    const { unmount } = render(<DayEvents date="2026-10-05" />);
+    expect(q('[data-past-events]')).toBeNull();
+    unmount();
+    resetMirrorStore();
+    seed('live', items);
+    render(<DayEvents date={DAY} />);
+    expect(q('[data-past-events]')).toBeNull();
   });
 });

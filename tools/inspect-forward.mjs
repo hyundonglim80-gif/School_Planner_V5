@@ -4,6 +4,8 @@
 //   3) 오늘 칸에서 끝내기 = date 오늘·carriedFrom 처음 날·carrying 걷기 (그 문서 하나) → Ctrl+Z로 제자리.
 //   4) 지난 날 칸: 흐리게 '→ 오늘로' → 누르면 오늘. 일정 칸을 열면 '↪ … 부터' 안내.
 //   5) 환경설정 '학교' → 이월 기간 → 계정(settings/common.forwardDays).
+//   6) '📥 지난 일정 N개 ▸'(오늘 칸 아래): 따라오지 않는 지난 일정만, 처음엔 접힘 → 골라 오늘로 = 고른 문서의 date·order만(한 묶음) → 안내의 되돌리기.
+//      줄의 '완료' = 완료만. 단축키 '지난 일정 오늘로 가져오기' = 오늘로 가서 줄을 편다.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-forward.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 일정(insp_fw…)·라벨을 심고 끝에 지운다. 날짜는 이 기기의 오늘에 맞춘다.
@@ -52,8 +54,10 @@ const EVENTS = {
   insp_fw4: { text: '점검 이월 처음', date: daysAgo(2), labelIds: FW, order: 'Zz4' },
   // 끝낸 것
   insp_fw5: { text: '점검 끝낸 일정', date: daysAgo(3), labelIds: FW, order: 'Zz5', done: true, doneAt: 1 },
-  // 이월 아닌 것
+  // 이월 아닌 것 (지난 일정 줄에 나온다)
   insp_fw6: { text: '점검 그냥 일정', date: daysAgo(3), labelIds: [], order: 'Zz6' },
+  insp_fw7: { text: '점검 지난 일정 둘', date: daysAgo(1), labelIds: [], order: 'Zz7', time: '09:00', alarmDone: true },
+  insp_fw8: { text: '점검 지난 일정 셋', date: daysAgo(5), labelIds: [], order: 'Zz8' },
 };
 
 try {
@@ -139,6 +143,46 @@ try {
   await page.fill(sel('forward-days'), '14');
   await serverUntil(async () => (await getDoc(commonRef)).data() ?? {}, (d) => d.forwardDays === undefined || d.forwardDays === 14);
   await new Promise((res) => setTimeout(res, 2500));
+
+  r.section("'📥 지난 일정 N개' 줄");
+  await page.keyboard.press('Escape');
+  await page.goto(page.url().replace(/#.*$/, `#/day/${TODAY}`));
+  const past = page.locator(sel('past-events'));
+  r.check(await waitFor(past), '오늘 칸 아래에 지난 일정 줄');
+  r.check((await page.locator(sel('past-list')).count()) === 0, '처음에는 접혀 있다');
+  await page.locator(sel('past-toggle')).click();
+  const pastIds = await page.locator(sel('past-item')).evaluateAll((els) => els.map((e) => e.dataset.pastItem));
+  r.check(['insp_fw6', 'insp_fw7', 'insp_fw8'].every((id) => pastIds.includes(id)), '이월 아닌 끝내지 않은 지난 일정이 보인다');
+  r.check(!pastIds.some((id) => ['insp_fw1', 'insp_fw2', 'insp_fw4', 'insp_fw5'].includes(id)), '따라오는 일정·끝낸 일정은 없다');
+  r.check(pastIds.indexOf('insp_fw8') < pastIds.indexOf('insp_fw6') && pastIds.indexOf('insp_fw6') < pastIds.indexOf('insp_fw7'), '날짜 차례');
+  r.check(await page.locator(sel('past-bring')).isDisabled(), '처음에는 아무것도 고르지 않는다');
+  before = await stamps();
+  await page.locator(sel('past-pick', 'insp_fw7')).check();
+  await page.locator(sel('past-pick', 'insp_fw8')).check();
+  await page.locator(sel('past-bring')).click();
+  const brought = await serverUntil(async () => [await read('insp_fw7'), await read('insp_fw8')], ([a, b]) => a?.date === TODAY && b?.date === TODAY);
+  r.check(brought.every((d) => d?.date === TODAY), '고른 일정이 오늘로 (date)');
+  r.check(brought[0].alarmDone === undefined, '울렸던 알림은 다시 (alarmDone 걷기)');
+  after = await serverUntil(stamps, (s) => changed(before, s).length >= 2);
+  r.check(JSON.stringify(changed(before, after).sort()) === JSON.stringify(['insp_fw7', 'insp_fw8']), `바뀐 문서는 고른 둘 (${changed(before, after).join(',')})`);
+  r.check(await waitFor(card('insp_fw7')), '오늘 칸에 들어왔다');
+  await page.locator(sel('toast')).filter({ hasText: '오늘로 가져왔습니다' }).locator('[data-toast-action="되돌리기"]').click();
+  const returned = await serverUntil(async () => [await read('insp_fw7'), await read('insp_fw8')], ([a, b]) => a?.date === daysAgo(1) && b?.date === daysAgo(5));
+  r.check(returned[0]?.date === daysAgo(1) && returned[1]?.date === daysAgo(5), '안내의 되돌리기 = 제 날짜로');
+  before = await stamps();
+  await page.locator(sel('past-complete', 'insp_fw6')).first().click();
+  const fin6 = await serverUntil(() => read('insp_fw6'), (d) => d?.done === true);
+  r.check(fin6?.done === true && fin6.date === daysAgo(3), "줄의 '완료' = 완료만 (날짜는 그대로)");
+  r.check(await waitFor(async () => (await page.locator(sel('past-item', 'insp_fw6')).count()) === 0), '끝낸 것은 줄에서 빠진다');
+
+  r.section("단축키 '지난 일정 오늘로 가져오기'");
+  await page.locator(sel('past-toggle')).click();
+  r.check(await waitFor(async () => (await page.locator(sel('past-list')).count()) === 0), '줄을 접는다');
+  await page.goto(page.url().replace(/#.*$/, `#/week/${daysAgo(10)}`));
+  await page.locator(sel('screen', 'week')).waitFor({ timeout: 5000 }).catch(() => {});
+  await page.evaluate(() => window.sp5.runShortcut('forwarding'));
+  r.check(await waitFor(async () => hashOf(page).startsWith(`#/day/${TODAY}`)), `오늘 하루 화면으로 (${hashOf(page)})`);
+  r.check(await waitFor(page.locator(sel('past-list'))), '지난 일정 줄이 펴져 있다');
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
