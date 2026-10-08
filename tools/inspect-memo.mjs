@@ -121,6 +121,8 @@ try {
   const panel = page.locator(sel('note-panel'));
   r.check(await waitFor(panel), '오른쪽에 새 메모 칸');
   r.check((await panel.locator('[data-label-pick="insp_mlu"][aria-pressed="true"]').count()) === 1, '고른 라벨을 미리');
+  // 커서가 글 칸에 든 뒤에 친다 (칸이 처음 실릴 때는 조금 늦다 - 한 번 앞질러 쳐서 글이 비었다)
+  r.check(await waitFor(() => panel.locator(sel('note-text-input')).evaluate((el) => el === document.activeElement)), '커서는 글 칸에');
   await page.keyboard.type('점검 새 메모');
   await page.keyboard.press('Control+s');
   r.check(await waitFor(async () => (await panel.getAttribute('data-note-panel')) === 'edit'), '저장 → 수정 칸');

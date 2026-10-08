@@ -11,6 +11,7 @@ import type { UserCredential } from 'firebase/auth';
 import { auth, googleProvider } from '../../data/firebase';
 import { showErrorToast } from '../../app/toast';
 import { stopPrefsSync } from '../../app/prefs';
+import { wipeClipboard } from '../../data/clipboard';
 import { wipeDrafts } from '../../data/drafts';
 import { forgetGoogleToken, keepGoogleToken } from '../../data/google/token';
 import { wipeMirror } from '../../data/mirror/sync';
@@ -92,4 +93,6 @@ export async function logout() {
   if (uid) await wipeMirror(uid).catch((e: unknown) => console.warn('[mirror] 로그아웃 때 기기 사본을 지우지 못했습니다.', e));
   // 쓰던 글 보관도 같은 까닭으로 (공용 PC)
   if (uid) await wipeDrafts(uid).catch((e: unknown) => console.warn('[drafts] 로그아웃 때 쓰던 글 보관을 지우지 못했습니다.', e));
+  // 클립보드 칸 목록도 (비밀번호·캡처가 지나간다)
+  if (uid) await wipeClipboard(uid).catch((e: unknown) => console.warn('[clipboard] 로그아웃 때 클립보드 목록을 지우지 못했습니다.', e));
 }
