@@ -434,7 +434,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   → `features/labels/LabelsWindow.tsx`(창 목록 `labels` - ⋮ 일정, `openWindow('labels', { tab: 'note' })`) · `ColorPicker.tsx`. 창은 고친 것만 들고(덧칠) 나머지는 사본 그대로 -
   열어 둔 동안 다른 기기에서 고친 것도 들어온다. 붙은 수는 늘 보인다(V4 '🔢 항목 수 세기' 단추는 없앴다 - 사본에서 바로), 항목을 다 받기 전에는 세지 않는다.
   '삭제된 라벨 복구' = 지웠지만 살아 있는 항목에 붙은 라벨 되살리기. 빈 탭에는 '기본 라벨 넣기'. 크롬 `inspect-labels.mjs` 20항목.
-- [ ] ■3 라벨 칩·고르기 부품(쓰는 칸·카드가 쓸 것) + 크롬 점검 `inspect-labels.mjs`(이름 바꾸기 = 서버 문서 하나).
+- [x] ■3 라벨 칩·고르기 부품(쓰는 칸·카드가 쓸 것) + 크롬 점검 `inspect-labels.mjs`(이름 바꾸기 = 서버 문서 하나).
+  → `features/labels/LabelChip.tsx`(`LabelChip`·`LabelChips` - 끝낸 항목은 회색) · `LabelPicker.tsx`(일정 = 라벨 색, 메모·기록 = 트리 차례 └, '+ 새 라벨'은 저장 때 만들 이름 -
+  `data/labels` `ensureLabelOps`로 항목과 한 묶음, ⚙️ = 라벨 관리 그 탭) · `select` `itemLabels`(붙인 차례, 지운 라벨은 뺀다).
+  라벨로 보기 칩 줄(접기·'기타'·수)은 그 화면을 옮기는 P3-2·P4-1이 `domain/labelTree`의 고르기 규칙 위에 짓는다.
 **끝 조건**: 라벨 이름을 바꾸면 서버에서 그 라벨 문서 하나만 바뀐다. 설명서 `labels` 주제가 된다.
 
 ### P2-4. 가져오기 틀 + 라벨·설정 가져오기

@@ -170,3 +170,18 @@ describe('빈 라벨 정리·지운 라벨 복구 목록', () => {
     expect(missingLabelsOf(labels, items).map((l) => l.id)).toEqual(['del']);
   });
 });
+
+describe('이름으로 라벨 찾기·만들기 (쓰는 칸의 새 라벨·#라벨)', () => {
+  it('있는 이름은 그 라벨, 없는 이름은 맨 뒤에 차례대로 새로, 겹친 이름은 하나', async () => {
+    const { ensureLabelOps } = await import('./labels');
+    const { ids, ops } = ensureLabelOps('u_me', 'note', ['#업무', '회의', ' 회의 ', '공문', ''], live);
+    expect(ids[0]).toBe('w');
+    expect(ids).toHaveLength(3);
+    expect(ops.map((o) => (o.type === 'create' ? [o.at.id, o.data.name] : null))).toEqual([
+      [ids[1], '회의'],
+      [ids[2], '공문'],
+    ]);
+    const orders = ops.map((o) => (o.type === 'create' ? (o.data.order as string) : ''));
+    expect('a2' < orders[0] && orders[0] < orders[1]).toBe(true);
+  });
+});

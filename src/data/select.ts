@@ -152,6 +152,16 @@ export function labelTreeOf(labels: Docs<'labels'>, kind: ItemKind): LabelTree {
   return tree;
 }
 
+/** 항목에 붙은 라벨 (붙인 차례대로 - 첫 라벨이 카드의 색. 지웠거나 모르는 라벨은 뺀다) */
+export function itemLabels(tree: LabelTree, labelIds: readonly string[] | undefined): LabelDoc[] {
+  const out: LabelDoc[] = [];
+  for (const id of labelIds ?? []) {
+    const l = tree.byId.get(id);
+    if (l && !out.includes(l)) out.push(l);
+  }
+  return out;
+}
+
 /** 라벨마다 붙은 항목 수 - 메모·기록·일정·휴지통 (V4 '항목 수 세기' - 서버를 훑지 않고 사본에서 바로 센다) */
 export interface LabelUsage {
   memo: number;

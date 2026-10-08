@@ -70,6 +70,36 @@ export function createLabelOp(sid: string, kind: ItemKind, fields: NewLabel, liv
   return { op: writeOp.create(at, newLabelData(kind, fields, orderBetween(lastOrder(live), null))), id: at.id };
 }
 
+/**
+ * 이름으로 라벨 찾기·만들기 (쓰는 칸의 '+ 새 라벨'·첫·마지막 줄 '#라벨' - 저장할 때 항목과 한 묶음으로 적는다).
+ * 같은 이름(다듬은 뒤)이 있으면 그 라벨, 없으면 새로(그 종류의 맨 뒤에 차례대로). ids는 names 차례대로(겹친 이름은 하나).
+ */
+export function ensureLabelOps(
+  sid: string,
+  kind: ItemKind,
+  names: readonly string[],
+  live: readonly LabelDoc[],
+): { ids: string[]; ops: WriteOp[] } {
+  const byName = new Map(live.map((l) => [cleanLabelName(l.name), l.id]));
+  const ids: string[] = [];
+  const ops: WriteOp[] = [];
+  let last = lastOrder(live);
+  for (const raw of names) {
+    const name = cleanLabelName(raw);
+    if (!name) continue;
+    let id = byName.get(name);
+    if (!id) {
+      const at = newPath(sid, 'labels');
+      last = orderBetween(last, null);
+      ops.push(writeOp.create(at, newLabelData(kind, { name, color: kind === 'event' ? 'blue' : 'green' }, last)));
+      byName.set(name, at.id);
+      id = at.id;
+    }
+    if (!ids.includes(id)) ids.push(id);
+  }
+  return { ids, ops };
+}
+
 /** 기본 라벨 (그 종류에 라벨이 하나도 없을 때 - domain/labels DEFAULT_LABELS, id를 정해 두었다) */
 export function defaultLabelOps(sid: string, kind: ItemKind): WriteOp[] {
   const list = DEFAULT_LABELS[kind];
