@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P3-1 일정** ■5 점검·세션 끝 정리 (■4 끝 - 클라우드 `claude/peaceful-lamport-icu4gf`).
+**P3-2 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관** (다음 대화에서 - 클라우드면 1-7을 먼저).
 
 ---
 
@@ -140,8 +140,8 @@
 | P2-3 | 라벨(트리·속성·라벨 관리 창) | 중간 | 중간 | 끝 (2026-10-08) |
 | P2-4 | 가져오기 틀 + 라벨·설정 가져오기 | 중간 | 높음 | 끝 (2026-10-08) |
 | **P3 하루 화면** | | | | |
-| P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | **다음** |
-| P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | |
+| P3-1 | 일정: 목록·카드·일정 칸·완료·순서·지우기·Ctrl+Z·앱 안 알림 | 큼 | 높음 | 끝 (2026-10-08) |
+| P3-2 | 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관 | 큼 | 높음 | **다음** |
 | P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | |
 | P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | |
 | **P4 메모·첨부·링크** | | | | |
@@ -196,6 +196,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-2 | P2-2 세션 끝 정리 | 단위 309 · 자료 층(에뮬레이터) 19 · inspect-mirror 27 · data·settings·shell·login 통과 · 브랜치 `ccr-85a3b20a-nxq1q4` → PR #2 → Claude가 합침(사용자 결정: 앞으로 자동 합치기·배포) · V4는 읽기용으로 옆에 받음(`--depth 1`) |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-3 | P2-3 세션 끝 정리 | 단위 363 · inspect-labels 20 · shell·settings·data 통과 · 브랜치 `claude/dreamy-ritchie-ub4ru5` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-4 | P2-4 세션 끝 정리 | 단위 610 · 자료 층(에뮬레이터) 24(import.emu 5) · inspect-import-labels 32 · P2 단계 점검 모두(data·mirror·labels·import-labels + shell·settings·login·pwa) 통과 · 브랜치 `claude/eager-hypatia-mlpldd` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 👤 실제 계정으로 한 번 가져와 보기 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P3-1 | P3-1 세션 끝 정리 | 단위 721 · 자료 층(에뮬레이터) 24 · inspect-events 58 · shell·labels·settings·data 통과 · 브랜치 `claude/peaceful-lamport-icu4gf` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 단위 테스트 '처리하지 않은 오류'(진짜 Firebase를 띄운 시험 넷)를 고침 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -524,7 +525,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■4 앱 안 알림(useEventAlarms·EventAlarmPopup·소리 3초마다 3번·🔇 옮기기 - 사본에서 오늘 알림을 본다. 서버 푸시는 P8-2) + 머리줄 ＋ 새로 → 새 일정 칸.
   → `features/events/EventAlarms.tsx`(Shell에 하나 - 3초 뒤·20초마다 사본을 보고, 울린 일정에 `alarmDone`(writeOps - 안내·되돌리기 없이)) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]`, 깜빡임 `index.css` `sp5-alarm-*`) ·
   `domain/eventAlarm.ts` `dueAlarms`·`alarmAt` · `app/sound.ts`(V4 lib/sound - 수업 종 `playBell`은 P6-3이 쓴다) · `features/events/shortcuts.ts`(`newEvent` = 보는 날의 새 일정 칸, 메모·학급 화면이면 오늘) · 크롬 `inspect-events` 58항목.
-- [ ] ■5 크롬 점검 `inspect-events.mjs`: 추가·완료·순서·고치기·날짜 바꾸기·지우기·되돌리기·Ctrl+Z, **저장마다 서버 문서 하나만** 바뀌는지.
+- [x] ■5 크롬 점검 `inspect-events.mjs`: 추가·완료·순서·고치기·날짜 바꾸기·지우기·되돌리기·Ctrl+Z, **저장마다 서버 문서 하나만** 바뀌는지.
+  → ■1~■4에서 조각마다 늘려 58항목(+ 빠른 입력·카드 ⏰·앱 안 알림·＋ 새로). shell·labels·settings·data 점검과 자료 층 24도 다시 통과.
 **끝 조건**: 위 설명서 주제가 V5에서 된다(PARITY 체크).
 
 ### P3-2. 기록·메모: 카드·쓰는 칸·날짜 칸·#라벨·체크리스트·쓰던 글 보관
