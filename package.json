@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:emu": "vite --mode emu",
     "build": "tsc -b && vite build",
+    "build:emu": "tsc -b && vite build --mode emu",
     "preview": "vite preview",
     "test": "vitest run",
     "lint": "oxlint",

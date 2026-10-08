@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react()],
   define: {
     __BUILD_ID__: JSON.stringify('test'),
+    __USE_EMULATOR__: JSON.stringify(false),
   },
   test: {
     environment: 'jsdom',

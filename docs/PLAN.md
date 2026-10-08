@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P1-2 Firebase·로그인·규칙 합치기·에뮬레이터·seed** - ■1~■3 끝(운영 규칙 배포는 아직 - 묻는다), 다음 ■4 firebase.ts·로그인.
+**P1-2 Firebase·로그인·규칙 합치기·에뮬레이터·seed** - ■1~■4 끝(운영 규칙 배포는 아직 - 묻는다), 다음 ■5 V5 seed.
 
 ---
 
@@ -188,6 +188,15 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P1-1 tsconfig**: `strict` + `noUnusedLocals`·`noUnusedParameters`를 켰다(V4는 쓰지 않는 변수 검사를 꺼 두어 쌓였다). V4 코드를 옮길 때 그 파일만 정리한다.
 - **P1-1 npm 11 설치 스크립트**: npm 11은 패키지의 설치 스크립트를 허락 없이 돌리지 않는다 → `package.json` `allowScripts`에 `@firebase/util`·`protobufjs` 허락,
   `re2` 막음(firebase-tools가 쓰는 선택 모듈, node-gyp 빌드가 필요 - 없어도 `firebase` 명령이 돈다). 새 패키지가 경고를 내면 같은 자리에서 고른다.
+- **P1-2 규칙**(10-08): V4 groups보다 조였다 - 참여는 그룹에 `inviteCode`가 있을 때만(주인이 지우면 초대 닫힘), 참여자는 나만·'member'로만,
+  `spaceInvites` 만들기는 그 그룹 주인만(`getAfter` - 그룹과 한 묶음으로 만들 수 있게), 개인 공간 문서는 지우지 못한다. 개인 공간 아래는 id만 보고(문서 읽기 없음).
+- **P1-2 에뮬레이터**: V5 `npm run emu`는 auth·firestore만(V4 함수는 V4 것). V4 서버 푸시를 에뮬레이터로 볼 때는 V4에서
+  `firebase emulators:start --only auth,firestore,functions` - 규칙 파일이 같아 결과도 같다. 이 PC는 PowerShell `Start-Process`(숨김)로 띄워 대화가 끝나도 남긴다.
+- **P1-2 에뮬레이터 빌드**: 빌드 상수 `__USE_EMULATOR__`(`--mode emu` 또는 V4처럼 `VITE_USE_EMULATOR=1`) → `npm run dev:emu`(5175)·`build:emu`.
+  운영 빌드에는 에뮬레이터 주소·자동 로그인이 없다(빌드 결과에서 확인). `?as=2|3`은 남은 로그인이 다른 계정이면 바꿔 들어간다.
+- **P1-2 로그인 상태**: `src/data/session.ts`(zustand, 구독은 main에서 하나 - V4는 useAuth를 부르는 곳마다 구독). 들어오면 `ensurePersonalSpace`
+  (없을 때만 만든다, 실패해도 앱은 막지 않고 안내 - 연결 없음은 조용히 다음에). 구글 토큰은 sessionStorage `sp5-google-token`(P4-2가 이어받는다).
+  안내(toast)는 로그인 오류에 필요해 P1-3 ■4보다 먼저 `src/app/toast.ts`로 옮겼다.
 - **P1-1 lucide-react**: V4는 한 파일에서만 써서 넣지 않았다 - 그 파일을 옮길 때 이모지로 바꿀지 그때 정한다. `App.tsx`는 `src/app/`(껍데기 자리).
 
 ---
@@ -236,7 +245,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■3 V4 쪽: V4 `firestore.rules`를 합친 것과 같게 + 맨 위 "정본은 V5 저장소 firestore.rules - 여기서 고치지 않는다", V4 `npm run check:rules` 통과 → V4 커밋·푸시.
   👤 **운영 규칙 배포는 묻고 한다**(`npx firebase deploy --only firestore:rules --project schoolplannerv3` - V4 규칙은 그대로라 V3·V4에는 바뀌는 것이 없다).
   묻기 전·답을 받기 전에는 배포하지 않는다(에뮬레이터로만 계속 - 운영 V5 쓰기는 P1-4 배포 뒤에야 필요하다).
-- [ ] ■4 `src/data/firebase.ts`: V4와 같은 웹 앱 설정, 앱 이름 `SchoolPlannerV5`, Firestore `memoryLocalCache`(기기 사본은 P2-2에서 앱이 따로),
+- [x] ■4 `src/data/firebase.ts`: V4와 같은 웹 앱 설정, 앱 이름 `SchoolPlannerV5`, Firestore `memoryLocalCache`(기기 사본은 P2-2에서 앱이 따로),
   `VITE_USE_EMULATOR=1`이면 에뮬레이터. 로그인(구글, V4 `LoginScreen` 옮기기), 로그인하면 `spaces/u_{uid}`가 없으면 만든다.
   에뮬레이터 자동 로그인 `?as=2|3`(V4 `autoSignIn`).
 - [ ] ■5 `tools/seed.mjs`(V5): V4 seed가 만든 계정(teacher·teacher2·teacher3)으로 로그인해 V5 공간·설정 기본값만. 순서(V4 seed → V5 seed)를 README에.

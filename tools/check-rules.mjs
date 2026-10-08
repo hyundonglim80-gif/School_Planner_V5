@@ -58,7 +58,8 @@ async function mustNot(what, fn) {
   } catch (e) {
     const denied = e.code === 'permission-denied';
     console.log(`  ${denied ? '✔' : '△'} ${what} — ${denied ? '막혔다' : '다른 이유로 실패: ' + (e.code || e.message)}`);
-    denied ? pass++ : fail++;
+    if (denied) pass++;
+    else fail++;
   }
 }
 
