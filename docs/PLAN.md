@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P1-1 저장소·도구·문서 옮기기·CI** - ■1~■3 끝, 다음은 **■4**(V4 쪽 정리·위 폴더 CLAUDE.md).
+**P1-1 저장소·도구·문서 옮기기·CI** - ■1~■4 끝, 다음은 **■5**(CI).
 
 ---
 
@@ -217,7 +217,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■2 뼈대 폴더(`DESIGN.md` 7-1: app·data·domain·features·import/v4·ui) + `main.tsx`·`App.tsx`에 'SP5'와 빌드 번호, Tailwind, 테스트 하나. `npm run build`·`npx vitest run` 통과.
 - [x] ■3 문서: V4 `docs/V5/{PLAN,DESIGN,MENU,PARITY}.md` → V5 `docs/`, V4 `docs/V5/CLAUDE.md` → V5 `CLAUDE.md`(맨 위).
   문서 안의 'V4 저장소 docs/V5에 있다' 안내 문구와 경로를 V5 기준으로 고친다. `README.md` 한 문단.
-- [ ] ■4 GitHub: `git init -b main` → `git remote add origin …` → 첫 커밋·푸시(10-08: 저장소가 이미 있어 clone으로 대신, ■1부터 조각마다 푸시). 그다음 **V4 저장소**: `docs/V5/`의 다섯 파일을 지우고
+- [x] ■4 GitHub: `git init -b main` → `git remote add origin …` → 첫 커밋·푸시(10-08: 저장소가 이미 있어 clone으로 대신, ■1부터 조각마다 푸시). 그다음 **V4 저장소**: `docs/V5/`의 다섯 파일을 지우고
   `docs/V5/README.md`(옮긴 곳 한 줄), V4 `CLAUDE.md` 지금 상태의 V5 줄을 'V5 저장소 CLAUDE.md를 본다'로 고쳐 커밋·푸시.
   이 PC의 `D:\gody5\Git\CLAUDE.md`(이 기기에만)를 'School_Planner_V5/CLAUDE.md를 먼저 읽는다'로.
 - [ ] ■5 CI: `.github/workflows/ci.yml` - push·PR마다 lint → test → build(배포는 P1-4). 푸시해 통과를 본다(👤 gh가 없으면 Actions 탭을 보고 알려 달라고 한다).
