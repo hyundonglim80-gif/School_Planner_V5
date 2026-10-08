@@ -7,6 +7,8 @@ import { useSession } from './session';
 vi.mock('./firebase', () => ({ auth: {}, db: {} }));
 
 const UID = 'me';
+/** 가짜 시계가 건드리지 않는 다음 차례 (Node의 setImmediate - fake-indexeddb가 이것으로 돈다) */
+const nextMacrotask = (globalThis as unknown as { setImmediate: (f: (v?: unknown) => void) => void }).setImmediate;
 
 beforeEach(async () => {
   resetDraftsForTest();
@@ -58,7 +60,7 @@ describe('useDraft', () => {
     // IndexedDB 적기가 끝나기를 기다린다 (fake-indexeddb는 setImmediate로 돈다 - 가짜 시계 밖)
     let got: unknown = null;
     for (let i = 0; i < 20 && !got; i++) {
-      await new Promise((r) => setImmediate(r));
+      await new Promise((r) => nextMacrotask(r));
       got = (await readDraft<{ text: string }>(UID, 'note:x'))?.value ?? null;
     }
     expect(got).toEqual({ text: '적는 중' });
