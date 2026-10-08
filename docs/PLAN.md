@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P1-3 앱 껍데기: 화면 탭·주소·창 목록·오른쪽 칸·단축키·머리줄** (다음 대화에서). 👤 P1-2 운영 규칙 배포는 답을 기다린다(늦어도 P1-4 ■4 전).
+**P1-3 앱 껍데기: 화면 탭·주소·창 목록·오른쪽 칸·단축키·머리줄** (다음 대화에서).
 
 ---
 
@@ -177,7 +177,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 |---|---|---|---|---|
 | 2026-10-08 | 영-전-3-현동림 PC | P0 | V4 `100c0e4` | 계획 문서 다섯(V4 `docs/V5/` - P1-1에서 이 저장소로) |
 | 2026-10-08 | 영-전-3-현동림 PC | P1-1 | P1-1 세션 끝 정리 | 웹에서 만든 Public 저장소를 clone · 도구·뼈대·문서·CI(42초 통과) · V4 `8d4c7b6` |
-| 2026-10-08 | 영-전-3-현동림 PC | P1-2 | P1-2 세션 끝 정리 | 규칙 V4 35 + V5 45 통과 · 에뮬레이터를 V5에서 · inspect-login 통과 · V4 화면도 그 에뮬레이터에서 · V4 `1f847e1` · 운영 규칙 배포는 묻는 중 |
+| 2026-10-08 | 영-전-3-현동림 PC | P1-2 | P1-2 세션 끝 정리 | 규칙 V4 35 + V5 45 통과 · 에뮬레이터를 V5에서 · inspect-login 통과 · V4 화면도 그 에뮬레이터에서 · V4 `1f847e1` · 운영 규칙 배포(사용자 허락, 배포 전 운영 = V4 파일 확인) |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -191,6 +191,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   `re2` 막음(firebase-tools가 쓰는 선택 모듈, node-gyp 빌드가 필요 - 없어도 `firebase` 명령이 돈다). 새 패키지가 경고를 내면 같은 자리에서 고른다.
 - **P1-2 규칙**(10-08): V4 groups보다 조였다 - 참여는 그룹에 `inviteCode`가 있을 때만(주인이 지우면 초대 닫힘), 참여자는 나만·'member'로만,
   `spaceInvites` 만들기는 그 그룹 주인만(`getAfter` - 그룹과 한 묶음으로 만들 수 있게), 개인 공간 문서는 지우지 못한다. 개인 공간 아래는 id만 보고(문서 읽기 없음).
+- **P1-2 운영 규칙 배포**(10-08 사용자 허락): 배포 전에 운영 규칙(10-01 배포)이 V4 파일과 한 글자도 다르지 않음을 확인했다 → 바뀐 것은 V5 블록뿐.
+  `npx firebase deploy --only firestore:rules --project schoolplannerv3` 뒤 `node tools/live-rules.cjs`로 운영 = 파일. 다음 배포도 먼저 `live-rules`로 본다.
 - **P1-2 에뮬레이터**: V5 `npm run emu`는 auth·firestore만(V4 함수는 V4 것). V4 서버 푸시를 에뮬레이터로 볼 때는 V4에서
   `firebase emulators:start --only auth,firestore,functions` - 규칙 파일이 같아 결과도 같다. 이 PC는 PowerShell `Start-Process`(숨김)로 띄워 대화가 끝나도 남긴다.
 - **P1-2 에뮬레이터 빌드**: 빌드 상수 `__USE_EMULATOR__`(`--mode emu` 또는 V4처럼 `VITE_USE_EMULATOR=1`) → `npm run dev:emu`(5175)·`build:emu`.
@@ -284,7 +286,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   `firebase.json` hosting(site·`dist`). 👤 콘솔 두 곳: Firebase › Authentication › 설정 › 승인된 도메인에 `<이름>.web.app` /
   Google Cloud › API 및 서비스 › 사용자 인증 정보 › V4가 쓰는 OAuth 웹 클라이언트 › 승인된 JavaScript 원본에 `https://<이름>.web.app`(드라이브·캘린더 토큰).
   `authDomain`을 `<이름>.web.app`로. 👤 `npx firebase init hosting:github`(브라우저로 GitHub 허락 → 서비스 계정·Secret이 저절로) → main 푸시 = 배포, PR = 미리 보기 주소.
-  (운영 규칙이 아직 배포되지 않았으면 여기서 P1-2 ■3의 배포를 다시 묻는다 - 운영 V5 쓰기에 필요.)
+  (운영 규칙은 P1-2에서 배포했다 - 10-08. 규칙을 또 고쳤으면 `node tools/live-rules.cjs`로 보고 배포를 묻는다.)
 - [ ] ■5 PWA 틀: manifest(이름 SP5, 아이콘은 V4 gen-icons로 PNG), `sw.js` 최소(설치만 - 앱 파일 캐시는 P8-3), 화면 끝에 빌드 번호.
 **끝 조건**: 실제 주소에서 구글 로그인 → 빈 V5. PC에서 글자 크기를 바꾸면 다른 탭·다른 기기(같은 종류)에 따라온다. 👤 휴대폰에서 주소가 열리는지 한 번.
 
