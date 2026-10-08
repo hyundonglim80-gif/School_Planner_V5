@@ -11,6 +11,7 @@ import type { UserCredential } from 'firebase/auth';
 import { auth, googleProvider } from '../../data/firebase';
 import { showErrorToast } from '../../app/toast';
 import { stopPrefsSync } from '../../app/prefs';
+import { wipeMirror } from '../../data/mirror/sync';
 
 const GOOGLE_TOKEN_KEY = 'sp5-google-token';
 
@@ -80,8 +81,9 @@ export function useGoogleLogin() {
   return { signingIn, loginWithGoogle };
 }
 
-/** 로그아웃. 이 기기에 챙겨 둔 구글 토큰도 지운다(다음 사람이 쓰지 않게). */
+/** 로그아웃. 이 기기에 챙겨 둔 구글 토큰과 기기 사본도 지운다(다음 사람이 쓰지 않게 - 공용 PC). */
 export async function logout() {
+  const uid = auth.currentUser?.uid;
   // 방금 바꿔 1초 뒤 올리려던 설정은 로그아웃 전에 올린다(뒤에 가면 권한이 없다). 연결이 없으면 오래 기다리지 않는다.
   await Promise.race([stopPrefsSync(), new Promise((r) => setTimeout(r, 3000))]);
   try {
@@ -95,4 +97,6 @@ export async function logout() {
   } catch {
     /* 무시 */
   }
+  // 기기 사본(학생 자료가 든다)은 다음에 들어오면 서버에서 다시 받는다
+  if (uid) await wipeMirror(uid).catch((e: unknown) => console.warn('[mirror] 로그아웃 때 기기 사본을 지우지 못했습니다.', e));
 }

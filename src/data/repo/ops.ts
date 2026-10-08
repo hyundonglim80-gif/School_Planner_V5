@@ -6,6 +6,7 @@
 // - 지우기 = 지운 표시(deletedAt·deletedBy). 영구 지우기(purge)는 휴지통에서만
 // - 칸 바꾸기(patch)에서 undefined는 '그 칸 지우기', 'periods.3.memo'처럼 점은 깊은 칸
 // - 되돌리기는 고치기 전 칸 값으로 다시 쓰는 것 - 안내의 '되돌리기'와 Ctrl+Z가 같은 길(data/undo.ts)
+// - 맨 위 `id`는 자리일 뿐 칸이 아니다 - 화면이 든 문서(data/select - id가 붙어 있다)를 그대로 넘겨도 적지 않는다(P2-2)
 import type { DocOf, DocPath, Editable, SpaceCollection } from '../types';
 
 export type Fields = Record<string, unknown>;
@@ -41,6 +42,14 @@ function assertNoManaged(fields: Fields, what: string) {
   }
 }
 
+/** 화면이 든 문서의 자리(id)는 적지 않는다 */
+function withoutId(data: Fields): Fields {
+  if (!Object.hasOwn(data, 'id')) return data;
+  const rest = { ...data };
+  delete rest.id;
+  return rest;
+}
+
 /** 칸을 고르는 쓰기 짓기 - 타입을 맞춰 WriteOp로 */
 export const writeOp = {
   create<C extends SpaceCollection>(at: DocPath<C>, data: Editable<C>): WriteOp {
@@ -50,6 +59,7 @@ export const writeOp = {
   /** before = 고치기 전 문서(화면이 들고 있는 것). 되돌리기에 쓴다 */
   patch<C extends SpaceCollection>(at: DocPath<C>, changes: Changes<C>, before: Partial<DocOf<C>>): WriteOp {
     assertNoManaged(changes as Fields, 'patch');
+    if (Object.hasOwn(changes, 'id')) throw new Error("patch: 'id'는 자리라 바꾸지 않는다");
     if (Object.keys(changes).length === 0) throw new Error('patch: 바꿀 칸이 없다');
     return { type: 'patch', at, changes: changes as Fields, before: before as Fields };
   },
@@ -78,11 +88,12 @@ export function valueAt(doc: Fields, path: string): unknown {
   return cur;
 }
 
-/** 서버 시각 칸은 다시 적을 때 새로 붙는다 */
+/** 서버 시각 칸은 다시 적을 때 새로 붙는다 (자리 id도 빼고) */
 function withoutStamp(data: Fields): Fields {
   const rest = { ...data };
   delete rest.updatedAt;
   delete rest.v;
+  delete rest.id;
   return rest;
 }
 
@@ -137,7 +148,7 @@ export function toWrite(op: WriteOp, ctx: WriteContext): Write {
       return {
         kind: 'set',
         path,
-        data: { ...op.data, createdAt: ctx.now, authorId: ctx.uid, deletedAt: null, updatedAt: SERVER_TIME, v: 1 },
+        data: { ...withoutId(op.data), createdAt: ctx.now, authorId: ctx.uid, deletedAt: null, updatedAt: SERVER_TIME, v: 1 },
       };
     case 'patch': {
       const data: Fields = {};

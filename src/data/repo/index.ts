@@ -10,11 +10,12 @@
 // 실패는 안내하고 던진다(failWithToast) - 부르는 칸은 실패하면 닫지 않는다(V4 규칙).
 //
 // ⚠️ Firestore는 기기 저장소 없이(memoryLocalCache) 쓰므로 약속은 서버가 받았을 때 풀린다.
-//    화면에 먼저 보이기는 기기 사본(P2-2)이 한다.
+//    화면에 먼저 보이기는 기기 사본이 한다 - 적기 직전에 그 결과를 화면 store에 얹고(data/mirror/store 덧칠), 실패하면 걷는다.
 import { deleteField, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { failWithToast } from '../../app/toast';
 import { newId } from '../id';
+import { beginLocalWrite, endLocalWrite } from '../mirror/store';
 import type { DocOf, DocPath, Editable, SpaceCollection } from '../types';
 import {
   DELETE_FIELD,
@@ -60,18 +61,25 @@ export async function writeOps(ops: WriteOp[]): Promise<void> {
   if (ops.length === 0) return;
   const uid = auth.currentUser?.uid;
   if (!uid) throw Object.assign(new Error('로그인하지 않아 적을 수 없다'), { code: 'unauthenticated' });
-  const now = Date.now();
-  for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
-    const b = writeBatch(db);
-    for (const op of ops.slice(i, i + BATCH_LIMIT)) {
-      const w = toWrite(op, { uid, now });
-      const ref = doc(db, w.path);
-      if (w.kind === 'set') b.set(ref, toFirestore(w.data));
-      else if (w.kind === 'update') b.update(ref, toFirestore(w.data));
-      else b.delete(ref);
+  const ctx = { uid, now: Date.now() };
+  const local = beginLocalWrite(ops, ctx);
+  try {
+    for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+      const b = writeBatch(db);
+      for (const op of ops.slice(i, i + BATCH_LIMIT)) {
+        const w = toWrite(op, ctx);
+        const ref = doc(db, w.path);
+        if (w.kind === 'set') b.set(ref, toFirestore(w.data));
+        else if (w.kind === 'update') b.update(ref, toFirestore(w.data));
+        else b.delete(ref);
+      }
+      await b.commit();
     }
-    await b.commit();
+  } catch (e) {
+    endLocalWrite(local, false);
+    throw e;
   }
+  endLocalWrite(local, true);
 }
 
 /** 여럿을 한 묶음으로 적고 되돌리는 쓰기를 돌려준다. 실패는 안내하고 던진다 */

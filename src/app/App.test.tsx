@@ -6,6 +6,8 @@ import { useSession } from '../data/session';
 // 화면 구조만 본다 - Firebase에 붙지 않는다.
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 vi.mock('../data/settingsSync', () => ({ settingsPort: () => ({}), startSettingsSync: () => () => {} }));
+const useMirrorSync = vi.hoisted(() => vi.fn());
+vi.mock('../data/mirror/sync', () => ({ useMirrorSync }));
 
 beforeEach(() => useSession.setState({ loading: true, user: null }));
 
@@ -33,5 +35,7 @@ describe('App 껍데기', () => {
     expect(container.querySelectorAll('[data-scope-tab]')).toHaveLength(6);
     expect(await screen.findByText('P3-1에서 채웁니다.')).toBeInTheDocument();
     expect(container.querySelector('[data-build-id]')).toHaveTextContent('빌드 test');
+    // 로그인한 동안 기기 사본을 맞춘다
+    expect(useMirrorSync).toHaveBeenLastCalledWith('u1');
   });
 });

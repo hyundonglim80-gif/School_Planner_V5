@@ -145,4 +145,14 @@ describe('그 밖', () => {
     expect(failMessage([writeOp.restore(at)])).toMatch(/되살리지 못했/);
     expect(failMessage([writeOp.create(at, note as never)])).toMatch(/저장하지 못했/);
   });
+
+  it('화면이 든 문서의 자리(id)는 적지 않는다 - 만들기·통째로·영구 지우기 되돌리기 (P2-2)', () => {
+    const shown = { ...note, id: 'x1' } as never;
+    expect((toWrite(writeOp.create(at, shown), ctx) as { data: object }).data).not.toHaveProperty('id');
+    expect((toWrite(writeOp.put(at, shown), ctx) as { data: object }).data).not.toHaveProperty('id');
+    const [back] = undoOf(writeOp.purge(at, { ...note, id: 'x1', updatedAt: 1, v: 1 } as never));
+    expect((back as { data: object }).data).not.toHaveProperty('id');
+    expect(() => writeOp.patch(at, { id: 'y' } as never, {})).toThrow(/자리/);
+  });
 });
+
