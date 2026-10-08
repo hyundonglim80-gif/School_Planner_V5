@@ -1,11 +1,78 @@
 // 메모·기록 쓰기 (하루 화면 기록 칸·메모 화면·쓰는 칸이 함께 쓴다). 저장 도우미(data/repo)로 적고 되돌리기를 남긴다(data/undo).
 // 실패는 저장 도우미가 안내하고 던진다 - 누른 단추에서 부르면 `.catch(() => {})`로 받는다(안내는 이미 나갔다).
 // 쓰기마다 문서 하나(원칙 1).
-import { batch, patch, remove } from '../../data/repo';
+import { shortDateLabel } from '../../domain/dateUtils';
+import { ensureLabelOps } from '../../data/labels';
+import { batch, newPath, patch, remove, writeOp, type WriteOp } from '../../data/repo';
+import type { LabelTree } from '../../data/select';
 import { recordUndo } from '../../data/undo';
 import { doneChanges, itemPath, type ItemDoc } from '../events/eventOps';
-import { checkLineChanges, favoriteChanges, noteMoveOps, nounOf, objectOf } from './noteOps';
+import { createNoteData, noteEditChanges, savePlanOf, type NoteForm } from './noteForm';
+import { checkLineChanges, favoriteChanges, noteMoveOps, nounOf, objectOf, type NoteNoun } from './noteOps';
 import { closeNotePanelsFor } from './open';
+
+const KEEP = '적은 내용은 칸에 남아 있습니다.';
+
+/** 저장한 것 - 칸이 '#라벨'을 뗀 글과 붙은 라벨로 바뀐다 (V4 그대로) */
+export interface NoteSaved {
+  id: string;
+  text: string;
+  labelIds: string[];
+}
+
+/** '#라벨'·'+ 새 라벨' → 라벨 id (없는 이름은 새 라벨 - 항목과 한 묶음으로 적을 쓰기) */
+function labelsFor(sid: string, form: NoteForm, tree: LabelTree): { text: string; labelIds: string[]; ops: WriteOp[] } {
+  const plan = savePlanOf(form);
+  const made = ensureLabelOps(sid, 'note', plan.names, tree.list);
+  // 칸에 보이지 않는 라벨(지운 라벨)도 그대로 둔다 - 라벨을 되살리면 다시 붙어 보인다(손대지 않은 칸을 바꾸지 않는다)
+  const labelIds = [...form.labelIds];
+  for (const id of made.ids) if (!labelIds.includes(id)) labelIds.push(id);
+  return { text: plan.text, labelIds, ops: made.ops };
+}
+
+/** 새 메모·기록 (그 자리 목록의 맨 뒤 - order는 부르는 쪽이). 새 라벨과 한 묶음 */
+export async function createNote(sid: string, form: NoteForm, tree: LabelTree, order: string): Promise<NoteSaved> {
+  const noun: NoteNoun = form.date ? '기록' : '메모';
+  const at = newPath(sid, 'items');
+  const { text, labelIds, ops } = labelsFor(sid, form, tree);
+  const undo = await batch([...ops, writeOp.create(at, createNoteData(form, text, labelIds, order))], {
+    fail: `${objectOf(noun)} 저장하지 못했습니다. ${KEEP}`,
+  });
+  recordUndo(sid, `✅ ${objectOf(noun)} 저장했습니다.`, undo, { what: `${noun} 추가` });
+  return { id: at.id, text, labelIds };
+}
+
+/** 옮긴 안내 ('📅 기록을 10/8 → 10/9로', '메모로', '10/9 기록으로') */
+function moveMessage(from: string | null, to: string | null): string {
+  if (!to) return '🗒️ 메모로 옮겼습니다.';
+  if (!from) return `📔 ${shortDateLabel(to)} 기록으로 옮겼습니다.`;
+  return `📅 기록을 ${shortDateLabel(from)} → ${shortDateLabel(to)}로 옮겼습니다.`;
+}
+
+/**
+ * 고친 메모·기록 저장 = 바뀐 칸만(새 라벨과 한 묶음). 바뀐 것이 없으면 null (쓰지 않는다).
+ * 📅 날짜를 바꿨으면 옮기기 - 안내의 되돌리기는 **자리만** 원래대로(함께 고친 글은 그대로 - V4 '원래 자리로 돌아옵니다').
+ */
+export async function saveNote(sid: string, item: ItemDoc, form: NoteForm, tree: LabelTree): Promise<NoteSaved | null> {
+  const { text, labelIds, ops } = labelsFor(sid, form, tree);
+  const changes = noteEditChanges(item, form, text, labelIds);
+  if (Object.keys(changes).length === 0 && ops.length === 0) return null;
+  const at = itemPath(sid, item.id);
+  const noun = nounOf(item);
+  const moved = Object.hasOwn(changes, 'date');
+  const writes = Object.keys(changes).length > 0 ? [...ops, writeOp.patch(at, changes, item)] : ops;
+  const undo = await batch(writes, { fail: `${moved ? `${objectOf(noun)} 옮기지 못했습니다.` : `${objectOf(noun)} 저장하지 못했습니다.`} ${KEEP}` });
+  if (moved) {
+    const to = changes.date ?? null;
+    const placeNow = { date: to, fromDate: Object.hasOwn(changes, 'fromDate') ? changes.fromDate : item.fromDate };
+    recordUndo(sid, moveMessage(item.date ?? null, to), [writeOp.patch(at, { date: item.date ?? null, fromDate: item.fromDate }, placeNow)], {
+      what: `${noun} 옮기기`,
+    });
+  } else {
+    recordUndo(sid, `✅ ${objectOf(noun)} 저장했습니다.`, undo, { what: `${noun} 고치기` });
+  }
+  return { id: item.id, text, labelIds };
+}
 
 /** 완료 / 완료 풀기 (카드 ☐·쓰는 칸 머리줄). 안내 없이 Ctrl+Z 더미에만 - V4도 안내를 띄우지 않았다 */
 export async function setNoteDone(sid: string, item: ItemDoc, done: boolean): Promise<void> {
