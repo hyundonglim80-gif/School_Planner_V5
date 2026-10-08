@@ -6,10 +6,25 @@
 //   4) 머리줄 ⋮ = 4구역.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-shell.mjs
-// 서버 자료는 쓰지 않는다(창 위치 같은 것은 이 창의 기기 저장소에만 - 새 창이라 끝나면 사라진다).
-import { hashOf, launch, newPage, open, report, sel, waitFor } from './lib/probe.mjs';
+// 창 위치는 계정 설정(settings/pc)을 따른다 - 처음에 '창 위치'가 적혀 있으면 걷고(다른 점검이 남긴 것에 흔들리지 않게),
+// 끝에는 이 점검이 '가운데 창'을 시험하며 올린 것도 걷는다(P4-1 - 남겨 두면 다음 점검들이 가운데 창으로 열렸다).
+import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { emulator, hashOf, launch, newPage, open, report, sel, waitFor } from './lib/probe.mjs';
 
 const r = report();
+const em = emulator();
+const uid = await em.signIn('teacher@example.com');
+const pcRef = doc(em.db, 'spaces', `u_${uid}`, 'settings', 'pc');
+/** pc 설정에서 창 위치를 걷는다 (다른 칸이 없으면 문서째) */
+async function clearPopupStyle() {
+  const snap = await getDoc(pcRef);
+  if (!snap.exists() || snap.data().popupStyle === undefined) return;
+  const rest = { ...snap.data() };
+  delete rest.popupStyle;
+  if (Object.keys(rest).every((k) => k === 'v' || k === 'updatedAt')) await deleteDoc(pcRef);
+  else await setDoc(pcRef, rest);
+}
+await clearPopupStyle();
 const browser = await launch();
 try {
   const { page, errors, dialogs } = await newPage(browser);
@@ -70,7 +85,7 @@ try {
   await page.locator(`${sel('test-panel', 1)} textarea`).fill('첫 칸 글');
   await openWin('devWindow');
   await waitFor(page.locator(sel('test-window')));
-  r.check((await page.locator(sel('side-tab')).count()) === 2, '둘이면 위에 탭 둘');
+  r.check((await page.locator(sel('side-tab')).count()) === 2, `둘이면 위에 탭 둘 (${await page.locator(sel('side-tab')).count()})`);
   r.check(!(await page.locator(sel('test-panel', 1)).isVisible()) && (await page.locator(sel('test-window')).isVisible()), '새 창이 보이고 먼저 연 칸은 숨는다');
   await page.locator(sel('side-tab')).first().locator('button').first().click();
   r.check((await page.locator(`${sel('test-panel', 1)} textarea`).inputValue()) === '첫 칸 글', '숨었던 칸의 글이 그대로');
@@ -129,11 +144,9 @@ try {
   r.check(await screenIs('month'), '그다음 뒤로가기는 앞 화면');
 
   r.section('창 위치 - 가운데 창');
-  await page.evaluate(() => {
-    const v = JSON.parse(localStorage.getItem('sp5-layout') || '{"state":{},"version":0}');
-    v.state.popupStyle = 'center';
-    localStorage.setItem('sp5-layout', JSON.stringify(v));
-  });
+  // 창 위치는 계정 설정(PC) - 기기 저장소만 바꾸면 다시 열 때 계정 값이 이긴다(P1-4 설정 맞추기)
+  const pcNow = (await getDoc(pcRef)).data() ?? {};
+  await setDoc(pcRef, { ...pcNow, popupStyle: 'center', v: 1 });
   await page.reload();
   await screenIs('month');
   await openWin('devWindow');
@@ -154,5 +167,7 @@ try {
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
 } finally {
   await browser.close();
+  await clearPopupStyle();
 }
 r.done();
+process.exit();

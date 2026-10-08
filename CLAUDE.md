@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P3-4 끝 = P3 단계 끝**(클라우드 - V4 일정·기간·반복·이월 사슬·기록·메모·링크 가져오기). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P4-1. 👤 V5 주소 환경설정 '가져오기'로 실제 계정을 가져와 하루·메모 화면을 V4와 견주기, 이월·기간·반복·여러 개 고르기 써 보기.
+- **2026-10-08 P4-1 끝**(클라우드 - 메모 화면·라벨로 보기(메모·기록 칸)). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P4-2. 👤 V5 주소 환경설정 '가져오기'로 실제 계정을 가져와 하루·메모 화면을 V4와 견주기, 이월·기간·반복·여러 개 고르기·메모 라벨로 보기 써 보기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -64,6 +64,7 @@
   - 보던 화면이 기억되므로 묶음 시작에서 화면을 정한다(주소 `#/day/…`로 열면 된다). 같은 주소(# 뒤만 같은 것)를 `goto`하면 새로 읽지 않는다 - 앱을 처음부터 보려면 `page.reload()`(P2-4).
   - 창을 닫은 바로 뒤 주소를 바꾸면 창 층의 뒤로가기가 주소를 되돌릴 수 있다 → 그 화면이 뜰 때까지 다시 간다(`inspect-groups` `go()` - P3-3). 서버를 읽어 셀 때 지운 표시(`deletedAt`)를 빼는지 본다.
   - 같은 `data-*` 이름을 두 곳(카드 표시·칸 안내)에 쓰지 않는다 - Playwright가 둘을 찾아 멈춘다(P3-3 `event-series`/`event-series-info`).
+  - **계정에 올라가는 설정은 기기 저장소만 바꿔서 시험하지 않는다** - 다시 열면 계정 값이 이긴다. 계정 문서로 바꾸고 끝에 걷는다(P4-1 - inspect-shell이 '가운데 창'을 계정에 남겨 다른 점검이 깨졌다).
 - **오늘에 따라 고르는 것(이월·지난 일정)의 단위 테스트는 날짜를 고정**한다: `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(…)`, 끝에 `vi.useRealTimers()`(P3-3 - 고정하지 않으면 다음 날 시험이 깨진다).
 - **단위 테스트가 `data/select`·`session`·`space`를 부르면 `vi.mock('…/data/firebase')`** - 진짜 Firebase 앱이 뜨면 시험이 끝난 뒤 IndexedDB를 열다
   '처리하지 않은 오류'가 가끔 남는다(P3-1 - 셋에 한 번). vitest가 'originated in <파일>'로 그 파일을 알려 준다. 끝에 `Errors`가 0인지도 본다.
@@ -218,6 +219,8 @@
   - **기간·반복·묶음(P3-3)**: `domain/period.ts`(보이는 날·'(k/n)'·doneDates·skipDates·끝 날 당기기 - 공휴일은 `HolidayCheck`로 P5-3) · `domain/recur.ts`(규칙·날짜·이름) · `events/seriesOps.ts`(순수 - 만들기·묶음 고치기·지우기)·`series.ts`(`useSeriesOf`) ·
     일정 칸 '📆 끝 날' `[data-event-period-*|event-end|event-workdays]`·`RecurRow.tsx`(`[data-event-recur-row|recur-*]`)·`[data-event-series-info]` · `EventScopeWindow.tsx`(세 갈래 창 `[data-scope-window|scope-choice]`)·`EventDeleteChooser.tsx` · 카드 '(k/n)' `[data-event-period]`·🔁 `[data-event-series]`.
   - **여러 개 고르기(P3-3)**: `events/multi.ts`(store `useMulti` - id + 그 날)·`multiOps.ts`(순수 - 한 일정 여러 날은 한 문서에 접는다)·`MultiSelectBar.tsx`(Shell - `[data-multi-*]`, ⋮ `multiSelect`·ESC) · 카드 `[data-event-picked]`·Ctrl·Shift·길게 누르기 · ESC에 함께 할 일 `app/keys.addEscapeAction`.
+- **메모 화면** `src/features/memo/MemoScreen.tsx`(P4-1 - ⭐/라벨/전체·진행/완료·전체 비우기·'메모' 라벨 붙이기, 카드 쌓기 `ui/Masonry.tsx`·`domain/masonry.ts`) ·
+  라벨로 보기 칩 `notes/LabelFilterChips.tsx`(메모 화면 세로·하루 기록 칸 한 줄)·기억 `notes/labelFilter.ts`(`sp5-label-filters`). 점검 `tools/inspect-memo.mjs`(30).
 - **메모·기록** `src/features/notes/`(하루 기록 칸·메모 화면(P4-1)이 함께 쓴다 - 메모와 기록은 같은 kind 'note', 날짜가 있으면 기록): `open.ts`(쓰는 칸 `note` = `{ sid, date|null, id? }`·`openNotePanel`·`useEditingNoteIds`·`closeNotePanelsFor`) ·
   `NotePanel.tsx`(`[data-note-panel=new|edit|note-id|note-noun|note-flag=done|favorite|note-date|note-date-clear|note-place-hint|note-place-keep|note-text-input|checklist-toggle|hash-preview|hash-label|note-save|note-delete|note-close]`) ·
   `noteForm.ts`(순수 - 칸 ↔ 문서, 자리 `placeChanges`(기록 → 메모 = fromDate), '#라벨'·새 라벨 `savePlanOf`) · `noteOps.ts`(순수 - 즐겨찾기 먼저·▲▼ 무리 안·체크 줄) ·

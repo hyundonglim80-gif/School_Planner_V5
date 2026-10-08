@@ -5,11 +5,12 @@
 // - 카드: 메모와 같은 카드(features/notes/EntryCard). 휴대폰 2열, 본문 폭에 따라 3·4열(가로 우선으로 나눠 담는다).
 //   즐겨찾기한 기록은 그날 기록의 맨 위. 긴 기록은 접힌 채 시작(누른 것만 기억한다 - 기록이 새로 오거나 길어져도 낡지 않게).
 // - 쓰기마다 문서 하나. 완료·즐겨찾기·순서·체크 줄은 안내 없이 Ctrl+Z 더미에, 지우기는 안내 + 되돌리기.
-// 라벨로 보기(라벨 칩 거르개)는 메모 화면과 같은 부품으로 P4-1에서 붙인다.
-import { useState } from 'react';
+// - 라벨로 보기(V4 journal-view): 머리줄 아래 '전체 · 라벨 칩'(메모 화면과 같은 LabelFilterChips - 여러 개·탐색기식·상위 → 하위·'기타'), 고른 것은 이 기기에 기억, ESC = 모두 떼기.
+import { useEffect, useState } from 'react';
+import { addEscapeAction } from '../../app/keys';
 import { openWindow } from '../../app/windows';
 import { isLongEntry } from '../../domain/entryCollapse';
-import { labelPath } from '../../domain/labelTree';
+import { EMPTY_FILTER, isEmptyFilter, isOtherKey, labelPath, matchLabels, otherParentOf, pruneFilter } from '../../domain/labelTree';
 import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
@@ -17,6 +18,8 @@ import { useMainWidth } from '../../ui/useMainWidth';
 import type { ItemDoc } from '../events/eventOps';
 import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
 import EntryCard from '../notes/EntryCard';
+import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterChips';
+import { setJournalFilter, useLabelFilters } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
 import { openNotePanel, useEditingNoteIds } from '../notes/open';
 
@@ -33,7 +36,14 @@ export default function DayJournal({ date }: { date: YMD }) {
   const [collapsed, setCollapsed] = useState(false);
   // 카드 접기: 사용자가 누른 것만 담는다. 손대지 않은 카드는 길이를 보고 정한다
   const [cardCollapsed, setCardCollapsed] = useState<Record<string, boolean>>({});
-  const shown = favoriteFirst(notes);
+  // 라벨로 보기 (지운 라벨은 빼고 - 라벨을 받기 전에는 그대로)
+  const labelStatus = useMirrorStatus('labels');
+  const remembered = useLabelFilters((s) => s.journal);
+  const filter = labelStatus === 'idle' || labelStatus === 'loading' ? remembered : pruneFilter(remembered, tree.list.map((l) => l.id));
+  useEffect(() => addEscapeAction(() => setJournalFilter(EMPTY_FILTER)), []);
+  const countOf = (key: string) =>
+    notes.filter((n) => matchLabels(n.labelIds, isOtherKey(key) ? { labels: [], others: [otherParentOf(key)] } : { labels: [key], others: [] }, tree.parents)).length;
+  const shown = favoriteFirst(notes.filter((n) => matchLabels(n.labelIds, filter, tree.parents)));
   const waiting = notes.length === 0 && (status === 'idle' || status === 'loading');
 
   // 칸 수는 창 폭이 아니라 본문 폭으로 - 오른쪽 칸이 열려 본문이 좁아지면 줄인다. 휴대폰도 2열(일정 칸과 같게)
@@ -95,6 +105,24 @@ export default function DayJournal({ date }: { date: YMD }) {
               </button>
             )}
           </div>
+          {!collapsed && tree.list.length > 0 && (
+            <div data-journal-filter className="flex items-center gap-1 flex-wrap order-last w-full">
+              <FilterChip
+                chipKey="all"
+                text="전체"
+                title="모든 기록 보기"
+                count={notes.length}
+                selected={isEmptyFilter(filter)}
+                selectedClass="bg-slate-800 text-white border-slate-800"
+                row
+                onClick={() => setJournalFilter(EMPTY_FILTER)}
+              />
+              <LabelFilterChips tree={tree} filter={filter} onChange={setJournalFilter} countOf={countOf} row />
+              <span data-filter-help title={FILTER_HELP} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-slate-500 text-2xs cursor-help">
+                ?
+              </span>
+            </div>
+          )}
           <button
             type="button"
             data-journal-labels-settings
@@ -137,6 +165,10 @@ export default function DayJournal({ date }: { date: YMD }) {
                 })}
               </div>
             ))}
+          </div>
+        ) : notes.length > 0 ? (
+          <div data-journal-filtered-empty className="w-full text-center py-8 bg-white/60 rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
+            고른 라벨의 기록이 없습니다.
           </div>
         ) : waiting ? (
           <p data-journal-waiting className="py-10 text-center text-xs text-slate-400">

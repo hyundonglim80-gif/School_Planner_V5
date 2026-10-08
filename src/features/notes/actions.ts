@@ -119,3 +119,25 @@ export async function deleteNote(sid: string, item: ItemDoc): Promise<void> {
   closeNotePanelsFor(sid, item.id);
   recordUndo(sid, `🗑️ ${objectOf(noun)} 삭제했습니다. 휴지통에서 복원할 수 있습니다.`, undo, { what: `${noun} 지우기` });
 }
+
+/** 완료된 메모 모두 지우기 (메모 화면 '🗑️ 전체 비우기') - 지운 표시 여럿을 한 묶음, 안내의 되돌리기 하나로 모두 (V4는 묻고 휴지통으로) */
+export async function deleteNotes(sid: string, list: readonly ItemDoc[]): Promise<void> {
+  if (list.length === 0) return;
+  const undo = await batch(
+    list.map((d) => writeOp.remove(itemPath(sid, d.id))),
+    { fail: '메모를 지우지 못했습니다.' },
+  );
+  for (const d of list) closeNotePanelsFor(sid, d.id);
+  recordUndo(sid, `🗑️ 완료된 메모 ${list.length}개를 삭제했습니다. 휴지통에서 복원할 수 있습니다.`, undo, { what: '완료된 메모 지우기' });
+}
+
+/** 라벨이 없는 메모에 한 라벨 붙이기 (메모 화면 - 라벨로 보기에서 찾을 수 있게, V4 '메모' 라벨 붙이기). 없는 라벨이면 함께 만든다(한 묶음) */
+export async function labelNotes(sid: string, list: readonly ItemDoc[], name: string, tree: LabelTree): Promise<void> {
+  if (list.length === 0) return;
+  const { ids, ops } = ensureLabelOps(sid, 'note', [name], tree.list);
+  const undo = await batch(
+    [...ops, ...list.map((d) => writeOp.patch(itemPath(sid, d.id), { labelIds: [...(d.labelIds ?? []), ids[0]] }, d))],
+    { fail: '라벨을 붙이지 못했습니다.' },
+  );
+  recordUndo(sid, `🏷️ 메모 ${list.length}개에 '${name}' 라벨을 붙였습니다.`, undo, { what: '라벨 붙이기' });
+}

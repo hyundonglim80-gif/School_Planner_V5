@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P4-1 메모 화면·라벨로 보기** (클라우드면 1-7을 먼저).
+**P4-2 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -145,8 +145,8 @@
 | P3-3 | 이월(계산)·지난 일정 줄·기간·반복·여러 개 고르기 | 큼 | 높음 | 끝 (2026-10-08) |
 | P3-4 | 가져오기: 일정·기록·메모·링크 | 중간 | 높음 | 끝 (2026-10-08) |
 | **P4 메모·첨부·링크** | | | | |
-| P4-1 | 메모 화면·라벨로 보기 | 중간 | 중간 | **다음** |
-| P4-2 | 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기 | 큼 | 중간 | |
+| P4-1 | 메모 화면·라벨로 보기 | 중간 | 중간 | 끝 (2026-10-08) |
+| P4-2 | 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기 | 큼 | 중간 | **다음** |
 | P4-3 | 링크 연결·보기 | 중간 | 중간 | |
 | **P5 달력·찾기·정리** | | | | |
 | P5-1 | 주간·작년 이맘때 | 중간 | 중간 | |
@@ -200,6 +200,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P2-4 | P2-4 세션 끝 정리 | 단위 610 · 자료 층(에뮬레이터) 24(import.emu 5) · inspect-import-labels 32 · P2 단계 점검 모두(data·mirror·labels·import-labels + shell·settings·login·pwa) 통과 · 브랜치 `claude/eager-hypatia-mlpldd` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 👤 실제 계정으로 한 번 가져와 보기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-1 | P3-1 세션 끝 정리 | 단위 721 · 자료 층(에뮬레이터) 24 · inspect-events 58 · shell·labels·settings·data 통과 · 브랜치 `claude/peaceful-lamport-icu4gf` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 단위 테스트 '처리하지 않은 오류'(진짜 Firebase를 띄운 시험 넷)를 고침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-2 | P3-2 세션 끝 정리 | 단위 832 · inspect-notes 61 · events·shell·settings·labels·data 통과 · 브랜치 `claude/amazing-clarke-hboeze` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 작업 중 사용량 한도로 한 번 멈췄다가 이어 함 · 일정 칸에도 쓰던 글 보관 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P4-1 | P4-1 세션 끝 정리 | 단위 984 · inspect-memo 30 · notes·shell 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · inspect-shell이 계정에 '가운데 창'을 남기던 것을 고침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
@@ -389,6 +390,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 링크는 같은 실행에서 셈한 짝(`event|날짜|V4 id` 등)으로 바로, 수업은 `lesson:날짜:교시`, 그룹·못 찾은 링크는 빼고 수를 적는다. 학생 태그(studentIds)는 P7.
   - **지문에서 `carrying`·`alarmDone`을 뺀다**(권장안으로 고름): V5가 저절로 적는 표시만으로 'V5에서 고침'이 되면 그 뒤 V4에서 끝낸 것을 다시 가져오지 못한다.
   - 일정 본문 앞 '[이름]'은 DESIGN대로 본문에 그대로 둔다(V3 글 모양은 읽을 때 라벨로 떼어져 본문에 남지 않는다 - 남는 것은 드물다).
+- **P4-1 메모 화면**: V4 그대로(⭐ → 라벨 → 전체, 즐겨찾기가 없으면 열 때 전체, 진행/완료, 가장 짧은 열부터, '메모' 라벨 붙이기). 바뀐 것: '🗑️ 전체 비우기'는 묻지 않고 한 묶음 + 안내의 되돌리기(V4는 확인 창 - P3-3 여러 개 고르기와 같은 까닭).
+  고른 라벨은 이 기기에 기억한다(`sp5-label-filters` - V4도 기기마다). 기록 칸 라벨로 보기도 같은 칩(한 줄) - 기억은 따로. QuickLinks(학교 사이트 바로가기)는 V4에서도 쓰이지 않던 부품이라 옮기지 않았다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -665,9 +668,15 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P4-1. 메모 화면·라벨로 보기
 **시작 조건**: P3-4 끝.
 **먼저 읽을 것**: V4 설명서 `memo-screen`·`memo-manage`·`journal-view`, V4 `features/memo/*`, `lib/labelTree.ts`(matchEntry·clickFilterLabel·filterChipOrder·readLabelFilter)·`lib/masonry.ts`.
-- [ ] ■1 메모 화면(MemoScreen·MemoMasonry·MemoCard·QuickLinks 옮기기 - 즐겨찾기가 있으면 즐겨찾기 먼저·없으면 전체, 접기, '완료된 메모 모두 삭제' = 지운 표시 여럿 + 되돌리기).
-- [ ] ■2 라벨로 보기(MemoFilter 옮기기 - 탐색기식 누르기·상위 → 하위·'기타'·처음 접힘·ESC·'?'), 기록 칸도 같은 부품, 고른 라벨 기억.
-- [ ] ■3 크롬 점검 `inspect-memo.mjs`.
+- [x] ■1 메모 화면(MemoScreen·MemoMasonry·MemoCard·QuickLinks 옮기기 - 즐겨찾기가 있으면 즐겨찾기 먼저·없으면 전체, 접기, '완료된 메모 모두 삭제' = 지운 표시 여럿 + 되돌리기).
+  → `features/memo/MemoScreen.tsx`(`[data-memo-screen|memo-new|memo-filter-nav|memo-active|memo-done|memo-section-toggle|memo-clear-done|memo-unlabeled|memo-label-unlabeled|memo-empty|memo-labels-settings]`) ·
+  `ui/Masonry.tsx`·`domain/masonry.ts`(가장 짧은 열부터) · 카드 = `EntryCard`(만든 때·'📅 m/d에서') · `notes/actions.deleteNotes`(완료 전체 비우기 한 묶음)·`labelNotes`('메모' 라벨 붙이기 - 없으면 함께 만든다).
+  QuickLinks는 옮기지 않는다 - V4에서도 어디서도 부르지 않는 부품이었다(5장).
+- [x] ■2 라벨로 보기(MemoFilter 옮기기 - 탐색기식 누르기·상위 → 하위·'기타'·처음 접힘·ESC·'?'), 기록 칸도 같은 부품, 고른 라벨 기억.
+  → `notes/LabelFilterChips.tsx`(`LabelFilterChips`·`FilterChip` `[data-filter-chip|filter-caret|filter-group|filter-help]` - domain/labelTree 그대로) · `notes/labelFilter.ts`(기억 `sp5-label-filters` - 메모·기록) ·
+  하루 기록 칸 `[data-journal-filter|journal-filtered-empty]`(전체·칩 한 줄) · ESC = 키 처리 한 곳의 `addEscapeAction`.
+- [x] ■3 크롬 점검 `inspect-memo.mjs`.
+  → 30항목(즐겨찾기로 열기·여러 열·칩·숫자·다녀와도 그대로·ESC·완료·전체 비우기·되돌리기·새 메모·기록 칸 칩) · notes·shell 다시 통과(shell은 계정의 창 위치를 걷고 '가운데 창'은 계정 설정으로 시험 - 남기던 것을 고쳤다).
 **끝 조건**: 설명서 `memo-screen`·`memo-manage`·`journal-view`가 된다.
 
 ### P4-2. 구글 토큰·첨부·캡처·표·클립보드·사진 보기·링크 미리보기
