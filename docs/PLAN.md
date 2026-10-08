@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P2-4 가져오기 틀 + 라벨·설정 가져오기** - ■2 옛 모양 읽기 옮기기부터(클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
+**P2-4 가져오기 틀 + 라벨·설정 가져오기** - ■3 라벨·설정부터(클라우드면 1-7을 먼저, V4 저장소를 옆에 받는다).
 
 ---
 
@@ -455,8 +455,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   → `hash.ts`(SHA-1·base32·`stableStringify`) · `ids.ts`(`v4id`·id 없는 것 `idlessKey`/`nthKey`) · `plan.ts`(`planDocs` - 지문 `src.h`로 새로·바뀜·그대로·둠·지움,
   결과 수 `ImportCounts`(학년도별 `years`)) · `record.ts`(기록은 **`settings/import`** - `common`이 아니다, 5장) · 저장 도우미 `remove(자리, 누가)`(`deletedBy: 'v4-import'`).
   진행 칸·결과 표 화면은 ■4.
-- [ ] ■2 옛 모양 읽기를 `import/v4/legacy/`로 테스트째 옮긴다: readEventList·parseV3EventText·normalizeEventLabel·readEvalList·mergeEntryLabels·resolveEventLabelNames·readLabelTree.
+- [x] ■2 옛 모양 읽기를 `import/v4/legacy/`로 테스트째 옮긴다: readEventList·parseV3EventText·normalizeEventLabel·readEvalList·mergeEntryLabels·resolveEventLabelNames·readLabelTree.
   V5 본체가 이것을 import하지 않는지 테스트로 지킨다.
+  → `legacy/eventText.ts`·`evalList.ts`·`eventLabels.ts`(+ V4 기본 일정 라벨)·`entryLabels.ts`(+ V4 기본 메모·기록 라벨, `mergeEntryTrees`)·`labelTree.ts` + `legacy.test.ts`(V4 테스트째, 쓰는 쪽은 뺐다 -
+  V5는 V4에 쓰지 않는다. `resolveEventLabelNames`의 keepUnknown도 뺐다 - 가져오기는 V4 라벨을 늘 먼저 읽는다).
+  `import/v4/boundary.test.ts`: `src/import/` 밖은 legacy를 import하지 않고 V4 자리(`'users'`·`'groups'`)를 부르지 않는다.
 - [ ] ■3 라벨·설정: `settings/labels` → labels(일정 = V3 이름 먼저, 메모·기록 = 이름으로 합침 + `v4_labelTree` 상위, `v4_gcal` → `props.gcal`, 짝 표),
   V4 설정 문서들 → settings(`DESIGN.md` 8-3 표).
 - [ ] ■4 화면: 환경설정에 '가져오기' 자리(P8-3에서 백업 · 가져오기 · 보내기 창으로 옮긴다) + 처음 로그인 때 'V4 자료 가져오기' 띠.
