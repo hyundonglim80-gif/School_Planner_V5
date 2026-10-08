@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P1-2 Firebase·로그인·규칙 합치기·에뮬레이터·seed** - ■1·■2 끝, 다음 ■3 V4 쪽 규칙 복사본.
+**P1-2 Firebase·로그인·규칙 합치기·에뮬레이터·seed** - ■1~■3 끝(운영 규칙 배포는 아직 - 묻는다), 다음 ■4 firebase.ts·로그인.
 
 ---
 
@@ -233,7 +233,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■2 규칙 합치기: V4 `firestore.rules` 통째로 + V5 블록(`spaces/{sid}` - 개인 `u_{uid}`는 본인만, 그룹은 `members`에 있는 사람, 아래 문서도 같은 규칙 /
   `spaceInvites/{code}` get만·list 막음 / `v5alarms` 막음). `tools/check-rules.mjs`: V4 35개 그대로 + V5 검사(남의 개인 공간·구성원 아님·초대 코드 목록 막힘 …).
   에뮬레이터를 V5에서 켜고 통과.
-- [ ] ■3 V4 쪽: V4 `firestore.rules`를 합친 것과 같게 + 맨 위 "정본은 V5 저장소 firestore.rules - 여기서 고치지 않는다", V4 `npm run check:rules` 통과 → V4 커밋·푸시.
+- [x] ■3 V4 쪽: V4 `firestore.rules`를 합친 것과 같게 + 맨 위 "정본은 V5 저장소 firestore.rules - 여기서 고치지 않는다", V4 `npm run check:rules` 통과 → V4 커밋·푸시.
   👤 **운영 규칙 배포는 묻고 한다**(`npx firebase deploy --only firestore:rules --project schoolplannerv3` - V4 규칙은 그대로라 V3·V4에는 바뀌는 것이 없다).
   묻기 전·답을 받기 전에는 배포하지 않는다(에뮬레이터로만 계속 - 운영 V5 쓰기는 P1-4 배포 뒤에야 필요하다).
 - [ ] ■4 `src/data/firebase.ts`: V4와 같은 웹 앱 설정, 앱 이름 `SchoolPlannerV5`, Firestore `memoryLocalCache`(기기 사본은 P2-2에서 앱이 따로),
