@@ -46,6 +46,24 @@ describe('휴지통 목록', () => {
     expect(t.map((e) => [e.key, e.text, tabOf(e.kind)])).toEqual([['timetable:t1', '⏰ 2학기 (8.17~2.28)', 'etc']]);
   });
 
+  it('진도(P6-2)도 기타 탭에 - 과정은 과목 · 반', () => {
+    const t = trashEntries({
+      items: {},
+      labels: {},
+      ddays: [],
+      clips: [],
+      progress: {
+        p1: { id: 'p1', key: '국어', lessons: [{}, {}], deletedAt: ts(NOW) },
+        p2: { id: 'p2', key: '5-2 과학', subject: '과학', classes: ['5-2', '5-3'], lessons: [{}], deletedAt: ts(NOW - 1000) },
+        p3: { id: 'p3', key: '수학', lessons: [] },
+      },
+      now: NOW,
+    });
+    expect(t.map((e) => tabOf(e.kind))).toEqual(['etc', 'etc']);
+    expect(t.find((e) => e.id === 'p1')?.text).toBe('📘 국어 진도 (2차시)');
+    expect(t.find((e) => e.id === 'p2')?.text).toContain('과학');
+  });
+
   it('자동 비우기: 기간보다 먼저 지운 것만, 0은 끄기', () => {
     expect(expiredOf(entries, 7, NOW).map((e) => e.id)).toEqual(['b']);
     expect(expiredOf(entries, 0, NOW)).toEqual([]);

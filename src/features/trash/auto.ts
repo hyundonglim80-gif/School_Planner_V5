@@ -14,6 +14,7 @@ export function useTrashAutoEmpty() {
   const items = useDocs('items', sid);
   const labels = useDocs('labels', sid);
   const timetables = useDocs('timetables', sid);
+  const progress = useDocs('progress', sid);
   const itemsLive = useMirrorStatus('items', sid) === 'live';
   const labelsLive = useMirrorStatus('labels', sid) === 'live';
   const done = useRef<string | null>(null);
@@ -22,7 +23,7 @@ export function useTrashAutoEmpty() {
     done.current = sid;
     const { ddays } = useCommonSettings.getState();
     const clips = useClipboard.getState().trash;
-    const expired = expiredOf(trashEntries({ items, labels, ddays, clips, timetables }), days);
-    void autoEmptyTrash(sid, expired, items, labels, Date.now(), timetables);
-  }, [sid, days, itemsLive, labelsLive, items, labels, timetables]);
+    const expired = expiredOf(trashEntries({ items, labels, ddays, clips, timetables, progress }), days);
+    void autoEmptyTrash(sid, expired, items, labels, Date.now(), timetables, progress);
+  }, [sid, days, itemsLive, labelsLive, items, labels, timetables, progress]);
 }

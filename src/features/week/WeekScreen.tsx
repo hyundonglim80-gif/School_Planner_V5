@@ -24,6 +24,7 @@ import { openLessonPanel } from '../lessons/open';
 import { useClassColorOf, useTeaching } from '../lessons/teaching';
 import { useLessonsFor } from '../lessons/useLessons';
 import WeekLessonRows from '../lessons/WeekLessonRows';
+import { useProgressMarks } from '../progress/useProgress';
 import { lessonLinkId } from '../links/linkOps';
 import { openLinkViewer } from '../links/open';
 import { openDayNotes } from '../notes/open';
@@ -72,6 +73,8 @@ export default function WeekScreen() {
   const nowMs = useClock(showClass && allDays.includes(today));
   const { isClassUnit } = useTeaching();
   const classColorOf = useClassColorOf(date, sid);
+  // 진도 (P6-2) - 보이는 마지막 날까지 (개인 공간에서만 겹친다)
+  const { marks } = useProgressMarks(allDays[allDays.length - 1]);
   const rowsOf = (days: string[]) => Math.max(periodDefs.length, ...days.map((d) => lessons[d]?.cells.length ?? 0));
   const lessonRows = (day: string, rows: number) => {
     const view = lessons[day];
@@ -85,6 +88,7 @@ export default function WeekScreen() {
         nowPeriod={state?.kind === 'during' ? state.period : null}
         isClassUnit={isClassUnit}
         classColorOf={classColorOf}
+        marks={marks}
         onOpen={(n) => openLessonPanel({ sid, date: day, n })}
         onLinks={(n) => openLinkViewer({ sid, id: lessonLinkId(day, n) })}
       />

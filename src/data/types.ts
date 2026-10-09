@@ -332,14 +332,31 @@ export interface Notice extends Stamped {
   lines: string[];
 }
 
-/** progress/{planId} - V4 v4_progress 모양 그대로 (P6-2가 칸을 채운다) */
+/** 진도 차시 한 행 (V4 v4_progress lessons[]) */
+export interface ProgressLessonRow {
+  unit: string;
+  /** 표에 적힌 차시 글자 그대로 ('5', '5~6' …) */
+  no: string;
+  content: string;
+  /** 교과서 쪽 */
+  page: string;
+  supplies: string;
+}
+
+/** progress/{planId} - V4 v4_progress 모양 그대로 (개인 공간, P6-2 - 읽기는 domain/progress sanitizePlan) */
 export interface Progress extends Tracked {
+  /** 세는 칸 글자 (과정이면 첫 반 열쇠 '5-1 과학') */
   key: string;
+  /** 과정(여러 반): 과목 */
   subject?: string;
+  /** 과정(여러 반): 반 '5-2' 목록 */
   classes?: string[];
   startDate: YMD;
-  lessons: unknown[];
-  bumps: unknown[];
+  lessons: ProgressLessonRow[];
+  /** 민 교시 'YYYY-MM-DD#교시' */
+  bumps: string[];
+  /** V4에서 가져온 진도 */
+  src?: ImportSource;
 }
 
 // ───────────────────────── 4-8·4-9. 설정·그 밖 ─────────────────────────

@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-09 P6-1 끝**(클라우드 - 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P6-2. 👤 V5 주소에서 ⏰ 시간표 창·수업 칸 써 보기(수업 자료는 P6-4에서 V4에서 가져온다), 달력·검색·휴지통·첨부·링크, 실제 계정 가져오기로 V4와 견주기.
+- **2026-10-09 P6-2 끝**(클라우드 - 진도: 진도 창·진도 줄·밀기·과정(여러 반)). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P6-3. 👤 V5 주소에서 ⏰ 시간표·📘 진도 써 보기(수업 자료는 P6-4에서 V4에서 가져온다), 달력·검색·휴지통·첨부·링크, 실제 계정 가져오기로 V4와 견주기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -246,6 +246,11 @@
   `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson]`) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
   시간표 창 `features/timetable/`(`TimetableWindow` 창 `timetable` `{ tab }` `[data-timetable-window|timetable-tab|timetable-save|timetable-dirty]` · `GridTab`(`[data-timetable-pick|add|name|from|to|quick|delete]`·`input[data-cell="행-열"]`) · `PeriodsTab`(`[data-period-name|start|end|period-fill-run]`) · `TermsTab`(`[data-terms="summer-from"…]`) · `TeachingTab`(`[data-teacher-preset|teaching-*|class-color|homeroom-*]`) · `timetableDraft`(순수) · `shortcuts`(`teachingMode`)).
   `ui/useClock.ts`(분 단위 '지금') · `ui/listKeys.ts`(▼ 목록 키). 점검 `tools/inspect-lessons.mjs`(98 - teacher·teacher3). seed는 계정마다 교사 유형을 심는다(띠가 다른 점검을 밀지 않게).
+  수업 셈 나눠 쓰기: `useLessons`는 같은 재료면 같은 `LessonSource`(공간마다) - 그 위의 `cachedSubjects(src, from, to)`·`offDayOf(src)`를 진도·지난 시간이 함께 쓴다.
+- **진도**(P6-2 - 개인 공간 `progress/{planId}`): 순수 `domain/progress.ts`(V4 lib째 - `computeProgress`·`progressMarks`(slotId '날짜#교시' → 진도)·`progressUntil`·`courseStatus`·`toggleBump`·`sanitizePlan`·표/CSV 읽기)·`csv.ts`·`progressSample.ts` ·
+  `features/progress/`(`useProgress`(`useProgressPlans`·`useProgressMarks(보는 날)` - 개인 공간을 볼 때만) · `actions`(`saveProgressPlan` 바뀐 칸만·bumps는 빼고 · `setProgressBump` · `deleteProgressPlan` 휴지통) · `progressDraft`(순수) · `open.ts`(`openProgress` - 창 `progress` `{ planId?, cls?, preset?, course?, at }`) · `shortcuts`(`newCourse`) ·
+  `ProgressWindow`(`[data-progress-window|plan|new|key|key-option|subject|start|start-quick|sample|csv-open|csv-input|paste|table|row|row-delete|add-row|preview|summary|rows|save|delete]`·`[data-course-form|subject|class-toggle|hint|status|status-row|behind|bump|preview]`·`[data-slot|slot-bump]`) ·
+  `ProgressMarkLine`(`[data-progress-mark=k|bumped|progress-mark-open|progress-page|progress-supplies|progress-bump=bump|undo]`, `ProgressCreateButton` `[data-progress-create]`)) · 주간 배지 `[data-week-progress]` · 시간표 창 `[data-timetable-progress]` · `ui/download.ts`(`downloadCsv`). 점검 `tools/inspect-progress.mjs`(66).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
