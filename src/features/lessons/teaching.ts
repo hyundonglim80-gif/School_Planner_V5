@@ -7,6 +7,7 @@ import { academicYearOf, todayStr } from '../../domain/dateUtils';
 import { DEFAULT_TEACHING_MODE, presetOf, showsHomeroomTools, type TeachingMode } from '../../domain/teachingMode';
 import { classColor, teachingClasses, teachingSubjects, type ClassColorClasses, type SlotGrid } from '../../domain/teachingSlot';
 import { isLive, useDocs } from '../../data/select';
+import { usePersonalSpaceId } from '../../data/session';
 
 export function useTeaching() {
   const teaching = useCommonSettings((s) => s.teaching);
@@ -57,18 +58,25 @@ function useDaySubjects(sid?: string | null): Record<string, Record<string, stri
   }, [days]);
 }
 
+/** 명렬표의 학급 (개인 공간) - 반 표기 '5-2'를 셈하는 모양으로 */
+function useRosterLikes() {
+  const docs = useDocs('classes', usePersonalSpaceId());
+  return useMemo(() => Object.values(docs).filter(isLive).map((c) => ({ year: c.year, grade: c.grade, classNum: c.num })), [docs]);
+}
+
 /**
- * 가르치는 반 (V4 19번 U1): 시간표에 적힌 반 + 그 학년도 수업 칸의 반 + 시간표 창 '가르치는 반' (+ 명렬표의 반은 P7-1).
+ * 가르치는 반 (V4 19번 U1): 명렬표의 반(P7-1) + 시간표에 적힌 반 + 그 학년도 수업 칸의 반 + 시간표 창 '가르치는 반'.
  * extra = 시간표 창이 고치는 중인 표(아직 저장 전)
  */
 export function useTeachingClasses(date?: string, sid?: string | null, extra?: readonly SlotGrid[]): string[] {
   const { mode } = useTeaching();
+  const rosters = useRosterLikes();
   const grids = useGrids(sid, extra);
   const subjectsByDate = useDaySubjects(sid);
   const schoolYear = academicYearOf(date ?? todayStr());
   return useMemo(
-    () => teachingClasses({ grids, subjectsByDate, settingClasses: mode.classes, schoolYear }),
-    [grids, subjectsByDate, mode.classes, schoolYear],
+    () => teachingClasses({ rosters, grids, subjectsByDate, settingClasses: mode.classes, schoolYear }),
+    [rosters, grids, subjectsByDate, mode.classes, schoolYear],
   );
 }
 

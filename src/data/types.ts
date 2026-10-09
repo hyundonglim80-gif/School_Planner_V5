@@ -270,15 +270,19 @@ export interface Student {
   gender?: string;
   status: 'active' | 'out';
   outDate?: YMD;
+  /** 특이사항 (V4 note - 명렬표 관리 칸) */
+  note?: string;
 }
 
-/** classes/{classId} - classId = '{학년도}-{학년}-{반}' */
-export interface ClassDoc extends Stamped {
+/** classes/{classId} - classId = '{학년도}-{학년}-{반}'. 지우기 = 지운 표시(휴지통 '기타'에 '학급') */
+export interface ClassDoc extends Tracked {
   year: number;
   grade: number;
   num: number;
   name?: string;
   students: Student[];
+  /** V4 settings/rosters에서 가져온 것 (P7-5) */
+  src?: ImportSource;
 }
 
 export interface AttendanceRecord {

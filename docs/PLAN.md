@@ -912,8 +912,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P6-4 끝.
 **먼저 읽을 것**: `DESIGN.md` 4-6, V4 설명서 `class-screen`·`roster`·`student-photos`·`roster-search`, V4 `features/class/ClassScreen.tsx`, `components/RosterModal.tsx`·`roster/*`,
 `hooks/useRoster.ts`·`useStudentPhotos.ts`, `lib/studentPhotos.ts`·`studentPhotoNames.ts`·`photoBulkUpload.ts`·`photoDiagnosis.ts`·`rosterCsv.ts`·`classPicker.ts`·`classMemory.ts`·`googlePicker.ts`·`hangul.ts`.
-- [ ] ■1 classes(학생 sid·번호·이름·성별·전출) + 명렬표(관리 - 붙여넣기·파일·전출 / 검색).
-- [ ] ■2 학급 화면(🏫 학급 도구 | 🧑‍🤝‍🧑 명렬표, 학급 고르기, 도구 카드 = 창 목록 `classTool`, 학생 명단 이름/사진, 이름 → 학생 기록 자리).
+- [x] ■1 classes(학생 sid·번호·이름·성별·전출) + 명렬표(관리 - 붙여넣기·파일·전출 / 검색).
+  → 순수 `domain/roster.ts`(V4 classPicker·rosterCsv·csvHelper를 숫자 학년·반으로 - `classIdOf`·고르기 세 칸·`nextClassNum`·`addStudents`·CSV 학급 하나/전체·`withSids`(이름이 같으면 sid를 잇는다)·`cleanStudent`) ·
+  `ClassDoc` = Tracked(지운 표시) + 학생 `note` · 사본 `MIRRORED` += classes(휴지통째) · 휴지통 '기타'에 '학급' · `features/class/`(`classes.ts` `useClasses`·`rosterOps`/`saveRoster`(바뀐 학급만, 학년도·학년·반을 고치면 새 id로 옮기고 옛 것은 지운 표시)·고른 학급 `useHubClass`(`sp5-class-hub`) ·
+  `rosterDraft.ts`(고치던 것은 저장 전까지 이 탭에 - 화면을 떠났다 와도) · `RosterView.tsx`(관리·검색·암기 자리, 학급 편집, CSV 넷, 💾·Ctrl+S·되돌리기)) · 가르치는 반에 명렬표의 반(`teaching.useTeachingClasses`).
+- [x] ■2 학급 화면(🏫 학급 도구 | 🧑‍🤝‍🧑 명렬표, 학급 고르기, 도구 카드 = 창 목록 `classTool`, 학생 명단 이름/사진, 이름 → 학생 기록 자리).
+  → `ClassScreen.tsx`(학급 도구 | 명렬표 - `view.ts` 이 탭에서 기억, 단축키 '명렬표') · 도구 카드 여덟 `tools.ts`(담임/교과 걸러, 아직 없는 도구는 🚧) · 교과 모드 학년별 반 칩 · 학생 명단(이름 → `studentRecord` 창이 생기면 P7-4). 오늘 출결 줄은 P7-2, 사진은 ■3.
+  점검 `tools/inspect-class.mjs`(34).
 - [ ] ■3 학생 사진(드라이브 `Students_Poto` 그대로·드라이브에서 고르기) + 쓰는 칸 @이름 → `studentIds`.
 - [ ] ■4 크롬 점검.
 
