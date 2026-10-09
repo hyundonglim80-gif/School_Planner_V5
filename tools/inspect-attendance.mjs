@@ -4,6 +4,7 @@
 //      전출 학생은 빼고 · 다른 기기에서 고친 것이 따라온다 · 📊 누계(종류×사유·내역) · 학급 화면 오늘 출결 줄·도구 카드·단축키
 //   2) 📢 알림장: 하루 수업 머리줄 📢 · 📥 다음 수업일 불러오기(수업 칸 준비물 + 일정, 주말 건너뜀) · 번호 떼기·미리 보기·📋 복사 · 💾 저장 = notices/{date} ·
 //      다른 날로 옮기면 적던 것은 그 날에 · 다른 기기 고침이 따라온다 · 📚 모아 보기(달) → 그날 쓰기 · 학급 도구 카드·단축키 '알림장 모아 보기'
+//   3) 기록 칸 카드(계산): 그날 '📋 출결 5-2'·'📢 알림장' 카드 → 누르면 원본 칸 · 기록 창(📝)에도 · 검색 '기록'에 나오고 누르면 그날로·원본 칸
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-attendance.mjs
 // 에뮬레이터 teacher의 classes를 비우고 점검 학급을 심었다가 끝에 되돌린다. 점검 학급의 출석부 문서는 끝에 지운다.
@@ -224,6 +225,45 @@ try {
   await np.locator(sel('close')).click();
   await page.evaluate(() => window.sp5.runShortcut('notices'));
   r.check(await waitFor(np.locator(sel('notice-range'))), "단축키 '알림장 모아 보기' = 모아 보기");
+  await np.locator(sel('close')).click();
+  r.check(errors.length === 0, '화면 오류 없음', errors.join(' | '));
+
+  // ── 3) 기록 칸 카드 ──
+  r.section('기록 칸의 출결·알림장 카드');
+  await page.goto(page.url().split('#')[0] + `#/day/${TODAY}`);
+  const attCard = page.locator(sel('day-card-key', `attendance:${CLASS_ID}:${TODAY}`));
+  r.check(await waitFor(attCard, 8000), `오늘 기록 칸에 '📋 출결 5-2' 카드 (저장하지 않고 계산)`);
+  const attText = await attCard.textContent();
+  r.check(attText.includes('2번 이두리 결석') && attText.includes('3번 박세나 조퇴') && attText.includes('1번 김하나 결과'), `출석부의 학생 셋 (${attText.replace(/\s+/g, ' ')})`);
+  const itemsBefore = (await getDocs(collection(em.db, 'spaces', sid, 'items'))).docs.filter((d) => String(d.data().text ?? '').includes('[출결]')).length;
+  r.check(itemsBefore === 0, '기록 항목은 만들지 않는다 (V4의 자동 기록 사본 없음)');
+  await attCard.click();
+  r.check(await waitFor(panel, 8000), '카드를 누르면 출석부 (그 학급·날)');
+  await panel.locator(sel('close')).click();
+  await page.goto(page.url().split('#')[0] + `#/day/${N1}`);
+  const noticeCard = page.locator(sel('day-card-key', `notice:${N1}`));
+  r.check(await waitFor(noticeCard, 8000), "4/7 기록 칸에 '📢 알림장' 카드");
+  r.check((await noticeCard.textContent()).includes('1. 다른 기기에서 고침'), '번호 붙인 줄');
+  await noticeCard.click();
+  r.check(await waitFor(async () => (await np.getAttribute('data-notice-date').catch(() => null)) === N1, 8000), '카드를 누르면 그날 알림장 칸');
+  await np.locator(sel('close')).click();
+  await page.evaluate(([s0, d]) => window.sp5.openWindow('dayNotes', { sid: s0, date: d }), [sid, N1]);
+  r.check(await waitFor(page.locator(`[data-day-notes="${N1}"] [data-day-card="notice"]`)), '그날 기록 창(📝)에도 알림장 카드');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+
+  r.section('검색');
+  await page.goto(page.url().split('#')[0] + `#/day/${TODAY}`);
+  await page.locator('[data-header-search]').click();
+  await page.locator('[data-search-input]').fill('다른 기기에서');
+  const hit = page.locator(sel('search-hit', `notice:${N1}`));
+  r.check(await waitFor(hit, 8000), "검색 '기록'에 알림장 카드");
+  await hit.click();
+  r.check(await waitFor(async () => (await np.getAttribute('data-notice-date').catch(() => null)) === N1, 8000), '누르면 그날 알림장 칸');
+  r.check(page.url().includes(`#/day/${N1}`), '하루 화면도 그날로');
+  // 알림장 칸이 탭으로 앞에 왔다 - 검색 탭을 다시 보인다
+  await page.locator('[data-header-search]').click();
+  await page.locator('[data-search-input]').fill('박세나 조퇴');
+  r.check(await waitFor(page.locator(sel('search-hit', `attendance:${CLASS_ID}:${TODAY}`))), '출결 카드도 찾는다');
   r.check(errors.length === 0, '화면 오류 없음', errors.join(' | '));
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);

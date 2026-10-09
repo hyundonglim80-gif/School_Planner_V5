@@ -949,7 +949,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   → 순수 `domain/notices.ts`(V4 lib째 - 다음 수업일은 계산한 수업 칸의 쉬는 날(공휴일·방학·수업X)을 건너뛴다, 초안 = 수업 칸 준비물 + 진도 차시 준비물 + 그날 끝내지 않은 일정) · `ui/shareText.ts`(공유·복사) ·
   사본 `MIRRORED` += notices · `features/notices/`(`NoticePanel` 쓰는 칸 `notices` `{ sid?, date, tab? }` 공간마다 하나 - 칸을 연 공간에 저장, 다른 날로 옮기면 적던 것은 그 날에, 다른 기기 고침이 따라온다 · `actions.saveNotice`(merge·되돌리기) · 단축키 '알림장 모아 보기') ·
   하루 수업 머리줄 📢(담임) · 학급 도구 카드(오늘). 점검 inspect-attendance ■1·■2 49.
-- [ ] ■3 기록 칸 카드(그날 알림장·출결을 계산해 보인다 - 누르면 원본 칸, 검색에도). V4 autoJournal·autoJournalSync는 옮기지 않는다.
+- [x] ■3 기록 칸 카드(그날 알림장·출결을 계산해 보인다 - 누르면 원본 칸, 검색에도). V4 autoJournal·autoJournalSync는 옮기지 않는다.
+  → 순수 `domain/dayCards.ts`(`noticeCard`·`attendanceCard`(학급마다, 모두 출석이면 없다)·`searchDayCards`) · `features/day/useDayCards.ts`(`useAllDayCards`·`useDayCardsOn`·`openDayCard` - 출결은 개인 공간을 볼 때만) · `DayCards.tsx`(카드 `[data-day-card|day-card-key]`) ·
+  하루 기록 칸 맨 위(라벨로 보기를 하면 숨긴다)·그날 기록 창(📝)·검색 '기록'(누르면 그날로·원본 칸). 기록 칸 숫자·주간 📝 n은 기록 항목만 센다. 점검 inspect-attendance ■3까지 62 · notes·search-trash 통과.
 - [ ] ■4 교과 출결(교시 카드 🙋 → 칸, 누계·학급 탭) + 크롬 점검.
 **끝 조건**: 설명서 `notice`·`attendance`·`subject-attendance`가 된다.
 
