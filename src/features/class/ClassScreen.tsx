@@ -7,6 +7,7 @@ import { useMemo, useState } from 'react';
 import { KIND_LABEL, attendanceDocId, readMarks } from '../../domain/attendance';
 import { useDocs } from '../../data/select';
 import { openAttendance } from '../attendance/open';
+import { openNotices } from '../notices/open';
 import { runFromButton } from '../../app/keys';
 import { getWindowDef, openWindow } from '../../app/windows';
 import { showToast } from '../../app/toast';
@@ -74,6 +75,7 @@ function ClassHub() {
     if (id === 'roster') openClassRoster();
     // 출석부는 오늘로 (단축키는 보는 날)
     else if (id === 'attendance') openAttendance({ date: todayStr(), classId: cls?.id });
+    else if (id === 'notices') openNotices({ date: todayStr() });
     else runFromButton(id);
   };
   // 오늘 출결 (출석한 학생은 적지 않는다 - 적힌 학생만)

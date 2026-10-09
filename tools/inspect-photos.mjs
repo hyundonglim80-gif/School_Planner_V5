@@ -280,6 +280,8 @@ try {
   await page.locator(sel('logout')).click();
   r.check(await waitFor(async () => !(await dbs()).includes('sp5-student-photos'), 8000), '로그아웃 = 사진 담아 두기를 지운다');
   r.check(errors.length === 0, '화면 오류 없음', errors.join(' | '));
+} catch (e) {
+  r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
   await undo.run();
   await browser.close();

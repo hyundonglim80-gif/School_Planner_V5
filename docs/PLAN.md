@@ -945,7 +945,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   → 순수 `domain/attendance.ts`(V4 lib째 + 학생 sid·`marksChanges` 바뀐 학생 칸만(고친 학생은 칸마다 - 옛 교시가 남지 않게)·`dayLines`·`summaryRangeOf`) · 사본 `MIRRORED` += attendance ·
   `features/attendance/`(`AttendancePanel` 쓰는 칸 하나 `attendance` `{ date, classId?, tab? }` - 고친 것은 학급·날짜와 함께 들고 다른 날로 가면 그 날에 저장·다른 기기 고침이 따라온다 · `actions.saveAttendance`(merge·되돌리기) · `attendanceClass`(고를 학급) · `open.ts` 단축키) ·
   하루 수업 머리줄 📋(담임) · 학급 화면 📋 오늘 출결 줄·도구 카드(오늘). 점검 `tools/inspect-attendance.mjs`(■1 33).
-- [ ] ■2 알림장(쓰기·모아 보기·📤 공유·다음 수업일 불러오기 + 진도 준비물).
+- [x] ■2 알림장(쓰기·모아 보기·📤 공유·다음 수업일 불러오기 + 진도 준비물).
+  → 순수 `domain/notices.ts`(V4 lib째 - 다음 수업일은 계산한 수업 칸의 쉬는 날(공휴일·방학·수업X)을 건너뛴다, 초안 = 수업 칸 준비물 + 진도 차시 준비물 + 그날 끝내지 않은 일정) · `ui/shareText.ts`(공유·복사) ·
+  사본 `MIRRORED` += notices · `features/notices/`(`NoticePanel` 쓰는 칸 `notices` `{ sid?, date, tab? }` 공간마다 하나 - 칸을 연 공간에 저장, 다른 날로 옮기면 적던 것은 그 날에, 다른 기기 고침이 따라온다 · `actions.saveNotice`(merge·되돌리기) · 단축키 '알림장 모아 보기') ·
+  하루 수업 머리줄 📢(담임) · 학급 도구 카드(오늘). 점검 inspect-attendance ■1·■2 49.
 - [ ] ■3 기록 칸 카드(그날 알림장·출결을 계산해 보인다 - 누르면 원본 칸, 검색에도). V4 autoJournal·autoJournalSync는 옮기지 않는다.
 - [ ] ■4 교과 출결(교시 카드 🙋 → 칸, 누계·학급 탭) + 크롬 점검.
 **끝 조건**: 설명서 `notice`·`attendance`·`subject-attendance`가 된다.

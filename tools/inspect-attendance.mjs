@@ -2,6 +2,8 @@
 //   1) 📋 출석부: 하루 수업 머리줄 📋 = 그날 칸 · 결석·사유 = 2.5초 뒤 저절로 저장(바뀐 학생 칸만 - 학생 sid) · 지각 교시·사유 메모 ·
 //      지각 → 결석이면 옛 교시가 남지 않는다 · 출석으로 돌리기 = 그 칸 지우기 · Ctrl+S = 바로 · 날짜 옮기기 전 적던 것은 그 날에 ·
 //      전출 학생은 빼고 · 다른 기기에서 고친 것이 따라온다 · 📊 누계(종류×사유·내역) · 학급 화면 오늘 출결 줄·도구 카드·단축키
+//   2) 📢 알림장: 하루 수업 머리줄 📢 · 📥 다음 수업일 불러오기(수업 칸 준비물 + 일정, 주말 건너뜀) · 번호 떼기·미리 보기·📋 복사 · 💾 저장 = notices/{date} ·
+//      다른 날로 옮기면 적던 것은 그 날에 · 다른 기기 고침이 따라온다 · 📚 모아 보기(달) → 그날 쓰기 · 학급 도구 카드·단축키 '알림장 모아 보기'
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-attendance.mjs
 // 에뮬레이터 teacher의 classes를 비우고 점검 학급을 심었다가 끝에 되돌린다. 점검 학급의 출석부 문서는 끝에 지운다.
@@ -143,7 +145,88 @@ try {
   await page.locator(sel('close')).first().click();
   await page.evaluate(() => window.sp5.runShortcut('attendance'));
   r.check(await waitFor(panel, 8000), "단축키 '출석부'");
+  await panel.locator(sel('close')).click();
   r.check(errors.length === 0, '화면 오류 없음', errors.join(' | '));
+
+  // ── 2) 알림장 ──
+  // 2027-04-07(수) 알림장 → 다음 수업일 04-08(목): 수업 칸 준비물 + 일정
+  const N1 = '2027-04-07';
+  const N2 = '2027-04-08';
+  const keep = async (c, id) => {
+    const s0 = await getDoc(ref(c, id));
+    undo.add(async () => (s0.exists() ? setDoc(ref(c, id), s0.data()) : deleteDoc(ref(c, id))));
+  };
+  for (const d of [N1, N2]) await keep('notices', d);
+  await keep('lessonDays', N2);
+  await setDoc(ref('lessonDays', N2), { periods: { '2': { subject: '미술', supplies: '색연필' } }, updatedAt: serverTimestamp(), v: 1 });
+  await keep('items', 'inspNoticeEv');
+  await setDoc(ref('items', 'inspNoticeEv'), {
+    kind: 'event',
+    date: N2,
+    text: '점검알림 동의서 제출',
+    labelIds: [],
+    order: 'a0',
+    authorId: uid,
+    deletedAt: null,
+    createdAt: Date.now(),
+    updatedAt: serverTimestamp(),
+    v: 1,
+  });
+  const notice = async (d) => {
+    const s0 = await getDoc(ref('notices', d));
+    return s0.exists() ? s0.data() : null;
+  };
+  const np = page.locator(sel('notice-panel', sid));
+  const ntext = np.locator(sel('notice-text'));
+
+  r.section('📢 알림장 쓰기');
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(page.url()).origin });
+  await page.goto(page.url().split('#')[0] + `#/day/${N1}`);
+  await page.locator(sel('lessons-tool', 'notices')).click();
+  r.check(await waitFor(np, 8000), '하루 수업 머리줄 📢 = 그날 알림장 (개인 공간)');
+  r.check((await np.getAttribute('data-notice-date')) === N1, '그날');
+  r.check((await np.locator(sel('notice-draft')).getAttribute('data-notice-draft')) === N2, '다음 수업일 = 4/8(목)');
+  await np.locator(sel('notice-draft')).click();
+  r.check(await waitFor(async () => (await ntext.inputValue()) === '미술 준비물: 색연필\n점검알림 동의서 제출'), `📥 불러오기 = 수업 칸 준비물 + 일정 (${JSON.stringify(await ntext.inputValue())})`);
+  await np.locator(sel('notice-draft')).click();
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '이미 모두 적혀' })), '다시 누르면 이미 적힌 것은 더하지 않는다');
+  await ntext.press('Control+End');
+  await ntext.type('\n3) 우유 가져오기');
+  r.check((await np.locator('[data-notice-preview]').getAttribute('data-notice-preview')) === '3', '미리 보기 셋 (번호는 떼고 다시 붙인다)');
+  await np.locator(sel('notice-copy')).click();
+  const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+  r.check(clip === '[4/7(수) 알림장]\n1. 미술 준비물: 색연필\n2. 점검알림 동의서 제출\n3. 우유 가져오기', `📋 복사 = 날짜 머리 + 번호 (${JSON.stringify(clip)})`);
+  await page.keyboard.press('Control+s');
+  let n1 = await serverUntil(() => notice(N1), (d) => (d?.lines?.length ?? 0) === 3);
+  r.check(JSON.stringify(n1?.lines) === JSON.stringify(['미술 준비물: 색연필', '점검알림 동의서 제출', '우유 가져오기']) && n1?.date === N1, `Ctrl+S = notices/${N1} 줄 셋`);
+  r.check(await waitFor(async () => !(await np.locator(sel('notice-dirty')).isVisible())), '저장하면 표시가 사라진다');
+
+  r.section('날짜 옮기기·다른 기기');
+  await np.locator(sel('notice-next')).click();
+  r.check(await waitFor(async () => (await ntext.inputValue()) === ''), '다음 날은 빈 알림장');
+  await ntext.fill('점검 다음 날');
+  await np.locator(sel('notice-prev')).click();
+  const n2 = await serverUntil(() => notice(N2), (d) => d?.lines?.[0] === '점검 다음 날');
+  r.check(n2?.lines?.[0] === '점검 다음 날', '적던 것은 옮기기 전 그 날에 저장한다');
+  await updateDoc(ref('notices', N1), { lines: ['다른 기기에서 고침'], updatedAt: serverTimestamp() });
+  r.check(await waitFor(async () => (await ntext.inputValue()) === '다른 기기에서 고침', 8000), '다른 기기에서 고친 것이 따라온다');
+
+  r.section('📚 모아 보기');
+  await np.locator(sel('notice-tab', 'list')).click();
+  r.check(await waitFor(np.locator(sel('notice-day', N2))), '4월 알림장');
+  r.check((await np.locator('[data-notice-count]').getAttribute('data-notice-count')) === '2', '이틀');
+  await np.locator(sel('notice-open', N2)).click();
+  r.check(await waitFor(async () => (await np.getAttribute('data-notice-date')) === N2 && (await ntext.isVisible())), '날짜를 누르면 그날 쓰기');
+  await np.locator(sel('close')).click();
+  await page.goto(page.url().split('#')[0] + '#/class');
+  await page.locator(sel('class-tool', 'notices')).click();
+  r.check(await waitFor(async () => (await np.getAttribute('data-notice-date').catch(() => null)) === TODAY, 8000), '학급 도구 카드 📢 = 오늘 쓰기');
+  await np.locator(sel('close')).click();
+  await page.evaluate(() => window.sp5.runShortcut('notices'));
+  r.check(await waitFor(np.locator(sel('notice-range'))), "단축키 '알림장 모아 보기' = 모아 보기");
+  r.check(errors.length === 0, '화면 오류 없음', errors.join(' | '));
+} catch (e) {
+  r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
   await undo.run();
   await browser.close();

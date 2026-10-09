@@ -6,6 +6,7 @@ import { LESSON_PANEL, sameLessonPanel, type LessonPanelParams } from '../featur
 import type { WeeklyGuideParams } from '../features/weeklyGuide/WeeklyGuideWindow';
 import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/open';
 import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attendance/open';
+import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -52,6 +53,20 @@ registerWindow<AttendancePanelParams>({
   help: 'attendance',
   sameAs: () => true,
   load: () => import('../features/attendance/AttendancePanel'),
+});
+
+// 📢 알림장 (P7-2) - 쓰는 칸, 공간마다 하나(칸을 연 공간에 저장). 하루 수업 머리줄·학급 도구 카드·단축키 '알림장 모아 보기'. 담임 도구
+registerWindow<NoticePanelParams>({
+  id: NOTICE_PANEL,
+  title: '알림장',
+  icon: '📢',
+  kind: 'panel',
+  classTool: true,
+  lessonHeader: true,
+  show: ({ homeroom }) => homeroom,
+  help: 'notice',
+  sameAs: sameNoticePanel,
+  load: () => import('../features/notices/NoticePanel'),
 });
 
 // 그날 기록 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n
