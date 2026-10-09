@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P7-3 자리표·뽑기·모둠** (클라우드면 1-7을 먼저).
+**P7-4 조사표·모아 보기·학생 기록** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -161,8 +161,8 @@
 | **P7 학급** | | | | |
 | P7-1 | 학급·명렬표·사진 | 큼 | 중간 | 끝 (2026-10-09) |
 | P7-2 | 출석부·알림장·기록 칸 카드·교과 출결 | 큼 | 높음 | 끝 (2026-10-09) |
-| P7-3 | 자리표·뽑기·모둠 | 중간 | 중간 | **다음** |
-| P7-4 | 조사표·모아 보기·학생 기록 | 큼 | 높음 | |
+| P7-3 | 자리표·뽑기·모둠 | 중간 | 중간 | 끝 (2026-10-09) |
+| P7-4 | 조사표·모아 보기·학생 기록 | 큼 | 높음 | **다음** |
 | P7-5 | 암기 + 가져오기: 학급 | 중간 | 높음 | |
 | **P8 연동** | | | | |
 | P8-1 | 구글 캘린더 | 중간 | 높음 | |
@@ -212,6 +212,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-09 | 클라우드(claude.ai/code) | P7-3 | P7-3 세션 끝 정리 | 단위 1961 · inspect-seating 69(자리표·학생 칸·뽑기·모둠·여는 길·휴지통 - teacher·teacher3) · class·lessons·attendance·search-trash 통과 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 크게 보기 ESC가 자리표 창까지 닫던 것을 고침 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-2 | P7-2 세션 끝 정리 | 단위 1874 · inspect-attendance 81(출석부·알림장·기록 칸 카드·교과 출결 - teacher·teacher3) · lessons·class·notes·search-trash 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-1 | P7-1 세션 끝 정리 | 단위 1794 · inspect-class 34 · inspect-photos 47(드라이브 흉내) · notes 61 통과 · 사용량 한도로 멈췄다가 이어서(컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed) · 빌드에서 빠진 사진 줄이기 워커를 찾아 옮김 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-4 | P6-4 세션 끝 정리 (P6 단계 끝) | 단위 1645 · 자료 층 26 · inspect-import-lessons 30 · P6 점검 모두(lessons·progress·bell-guide·neis·import-lessons·week) + import-items·import-labels 통과 · 같은 브랜치 → PR → Claude가 합침 |
@@ -485,6 +486,17 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 알림장은 공간마다(칸을 연 공간에 저장), 다음 수업일 = 계산한 수업 칸의 쉬는 날(공휴일·방학·수업X 일정)도 건너뛴다(V4는 공휴일·방학만). 저장 단추·Ctrl+S는 V4 그대로(저절로 저장하지 않는다).
   - 학급 도구 카드: 출석부·알림장 = 오늘(단축키는 보는 날), 교과 출결 누계 = 고른 반. 출석부에서 학급을 바꾸면 학급 화면의 고른 학급도 바뀐다(한 곳에 기억).
   - 교과 출결은 누를 때마다 저장하므로 안내 없이 Ctrl+Z 더미에만 되돌리기를 남긴다.
+- **P7-3 자리표·뽑기·모둠**(권장안으로 고름 - V4 그대로, 바뀐 것만):
+  - 학생은 sid로(V4는 번호). 떨어뜨릴 학생 쌍은 `'sidA|sidB'`(글자 차례 - Firestore가 배열 안 배열을 받지 않는다), 이번 판·모둠도 sid.
+  - 학급 고르기 = 넘겨받은 학급 → 학급 화면에서 고른 학급(한 곳 `sp5-class-hub` - V4는 자리표·출석부가 따로 기억했다) → 올해 학생이 있는 첫 학급. 자리표에서 학급을 바꾸면 학급 화면도 바뀐다.
+    마지막에 본 자리표(학급마다)·섞기 조건은 이 기기(`sp5-seating-chart`·`sp5-seating-shuffle` - V4 그대로).
+  - 저장: 자리표는 바뀐 칸만(자리 `seats`는 한 덩어리라 통째로). 손으로 바꾼 것(끌기·고정·모양)은 Ctrl+Z 더미에만, 섞기·🔢 번호 차례·지우기는 안내의 되돌리기(V4 그대로).
+    떨어뜨릴 학생·이번 판·모둠은 학급 허브 문서 하나(`classHub/{classId}` merge) - 모둠은 한 벌씩 칸(`groupSets.{id}`)이라 다른 벌을 덮지 않는다.
+  - **모둠 지우기 = 안내의 되돌리기**(V4는 휴지통) - 모둠은 따로 문서가 아니라 학급 허브의 칸이라 휴지통 줄을 만들지 않았다. 자리표 지우기는 V4 그대로 휴지통('자리표').
+  - 학생 칸: 오늘 출결은 출석부와 같은 문서의 그 학생 칸만, 누를 때마다 저장(안내 없이 Ctrl+Z). 관찰 한 줄 = **글은 그대로 + 학생 칩(`studentIds`)**(V4는 글 끝에 `#26040305`) - 학생 기록(P7-4)이 모은다.
+    '오늘 조사표' 줄은 조사표가 생기는 P7-4에서 더한다. 관찰 문구는 계정 설정 `common.phrases`(V4 `v4_observationPhrases` 문서 - 기본 문구와 같으면 적지 않는다).
+  - 🎯 뽑기 여는 길: 하루 수업 머리줄 '🎯 뽑기'(담임 - 교과 + 담임은 담임반, 담임은 학급 화면에서 고른 학급) · 교과 모드 교시 카드 반 도구 🪑·🎯(그 반, 📊는 P7-4) · 학급 도구 카드 · 단축키. ⋮에는 없다(MENU).
+  - 크게 보기의 ESC는 크게 보기만 닫는다(사진 크게 보기와 같다 - 뒤의 자리표 창은 그대로). 뽑기는 '움직임 줄이기'를 켠 기기에서는 굴리지 않고 곧바로 멈춘다(V4 그대로).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -971,16 +983,22 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P7-2 끝.
 **먼저 읽을 것**: V4 설명서 `seating`, V4 `components/SeatingModal.tsx`·`SeatStudentCard.tsx`·`SeatDrawPanel.tsx`·`DrawBigView.tsx`·`SeatGroupsPanel.tsx`·`ObservationPhrases.tsx`,
 `lib/seating.ts`·`seatingStore.ts`·`draw.ts`·`groups.ts`·`classHub.ts`·`classHubStore.ts`·`observationPhrases.ts`, `hooks/useStudentDraw.ts`.
-- [ ] ■1 자리표(sid, 섞기·고정·떨어뜨릴 학생·모양·되돌리기) + 학생 칸(출결·조사표·관찰 한 줄).
-- [ ] ■2 발표자 뽑기(하루 수업 머리 🎯 - 담임 / 교시 카드 반 도구 - 교과 / 학급 화면) + 모둠.
-- [ ] ■3 크롬 점검.
+- [x] ■1 자리표(sid, 섞기·고정·떨어뜨릴 학생·모양·되돌리기) + 학생 칸(출결·조사표·관찰 한 줄).
+  → 순수 `domain/seating.ts`·`draw.ts`·`groups.ts`(V4 lib째 + 학생 sid, 테스트째)·`observationPhrases.ts` · 사본 `MIRRORED` += seating·classHub(휴지통 '자리표') ·
+  `features/seating/`(`seatingData`(`useSeatingCharts`·`useClassHub`·`createChart`·`updateChart`·`saveShuffled`·`deleteChart`·`saveApart`·`saveDraw`·`saveGroupSet`) · `SeatingWindow` 창 `seating` `{ classId?, draw?, at? }` ·
+  `SeatShapeBox`·`SeatApartBox` · `SeatStudentCard`(오늘 출결·관찰 한 줄) · `observation.ts`(오늘 기록 + `studentIds`) · `ObservationPhrases`(설정 `common.phrases`) · `open.ts`(`openSeating`·단축키)) · 학급 도구 카드 🪑. 조사표 줄은 P7-4.
+- [x] ■2 발표자 뽑기(하루 수업 머리 🎯 - 담임 / 교시 카드 반 도구 - 교과 / 학급 화면) + 모둠.
+  → `useStudentDraw`·`SeatDrawBox`·`DrawBigView`(ESC는 크게 보기만) · `SeatGroupsBox`(무작위·자리대로·옮기기·저장·지우기 되돌리기) · 하루 수업 머리줄 `[data-lessons-tool=drawStudent]`(담임) · 교시 카드 `[data-class-tools]`(교과) · 학급 도구 카드 🎯 · 단축키 '발표자 뽑기 (자리표)'.
+- [x] ■3 크롬 점검.
+  → `tools/inspect-seating.mjs`(69 - teacher·teacher3) · class(🚧 점검은 조사표 모아 보기로)·lessons·attendance·search-trash 통과.
 
 ### P7-4. 조사표·모아 보기·학생 기록
 **시작 조건**: P7-3 끝.
 **먼저 읽을 것**: V4 설명서 `evaluation`·`student-record`, V4 `components/EvaluationModal.tsx`·`EvalOverviewModal.tsx`·`CourseEvalOverview.tsx`·`EvalCountBadge.tsx`·`StudentRecordModal.tsx`,
 `hooks/useEvaluation.ts`·`useDayEvalCounts.ts`, `lib/evalArchive.ts`·`evalSummary.ts`·`courseEvals.ts`.
 - [ ] ■1 조사표 한 장 = 문서 하나(평가·체크·메모·조별·여러 반에 같은 조사표·교시에 붙이기) + 📊 표식.
-- [ ] ■2 조사표 모아 보기(학급별·과정별·CSV·표 복사·인쇄) + 학생 기록(`studentIds`·`classId`로 사본에서 모으기 - 기록·메모·출결·교과 출결·조사표, 학생 카드).
+  P7-3에서 미룬 것: 자리표 학생 칸의 '오늘 조사표' 줄(`seating/SeatStudentCard`) · 교과 교시 카드 반 도구 📊(`lessons/DayLessons` `[data-class-tools]`) · 조별 평가의 저장한 모둠(`classHub.groupSets` - `domain/groups.evalGroupsFrom`).
+- [ ] ■2 조사표 모아 보기(학급별·과정별·CSV·표 복사·인쇄 - `inspect-class`의 🚧 점검을 다른 도구로) + 학생 기록(관찰 문구 단추 `seating/ObservationPhrases` 함께 · `studentIds`·`classId`로 사본에서 모으기 - 기록·메모·출결·교과 출결·조사표, 학생 카드).
 - [ ] ■3 크롬 점검.
 **끝 조건**: 설명서 `evaluation`·`student-record`가 된다.
 

@@ -138,8 +138,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 | `classes/{classId}` | classId = `'{학년도}-{학년}-{반}'`(예 `'2026-5-2'`). `{ year, grade, num, name?, students: [{ sid, num, name, gender?, status: 'active'\|'out', outDate? }], updatedAt, v }` — **학생은 sid로 가리킨다**(번호가 바뀌어도 기록이 따라간다) |
 | `attendance/{classId}_{date}` | `{ classId, date, records: { [sid]: { kind, reason, periods?, note? } }, updatedAt }` — 바뀐 학생 칸만 쓴다 |
 | `subjectAttendance/{classId}_{date}` | `{ classId, date, periods: { '<교시>': { [sid]: { kind, reason, note? } } }, updatedAt }` |
-| `seating/{id}` | V4 `v4_seating` 모양, 학생은 sid |
-| `classHub/{classId}` | `{ apart: ['sidA\|sidB'], draw: { picked: [sid], round }, groupSets: {…} }` |
+| `seating/{id}` | V4 `v4_seating` 모양, 학생은 sid: `{ classId, name, rows, cols, groupCols, front: 'top'\|'bottom', seats: { '줄-열': sid }, off: ['줄-열'], locked: ['줄-열'], history: [{ at, pairs: ['sidA\|sidB'] }], updatedAt, deletedAt }` |
+| `classHub/{classId}` | `{ apart: ['sidA\|sidB'], draw: { picked: [sid], round }, groupSets: { [id]: { name, groups: [{ name, members: [sid] }], createdAt, updatedAt } } }` — 한 벌씩 칸으로 쓴다 |
 | `quiz/{key}` | 암기 성적(V4 `settings/photoQuiz`) |
 
 ### 4-7. 조사표·알림장·진도 (조사표·알림장은 공간마다, 진도는 개인)

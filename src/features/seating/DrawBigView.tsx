@@ -31,6 +31,23 @@ export default function DrawBigView({ isOpen, onClose, sid, num, name, rolling, 
     if (isOpen) pickRef.current?.focus();
   }, [isOpen]);
 
+  // ESC는 크게 보기만 닫는다 (뒤의 자리표 창은 그대로) - 앱 키 처리(window 거품 단계)보다 먼저 받아 멈춘다 (ui/ImageViewer와 같다)
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      e.preventDefault();
+      closeRef.current();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return createPortal(
