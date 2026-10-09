@@ -152,7 +152,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 ### 4-8. 설정 (개인 공간 `settings/`)
 
 - `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` ·
-  우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases`.
+  우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 학급마다 고른 사진 폴더 `photoFolders`(V4 backup_config).
 - `import`: V4 가져오기 기록(8-1) - 설정이 아니라 따로 둔다(설정 맞추기가 건드리지 않는다).
 - `pc` / `mobile`: 글자 크기·창 위치·시작 화면·단축키·화면 보기(V4 `v4_preferences_pc/_mobile`). 1초 뒤 올린다(V4 `preferenceSync`).
 - V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다.
