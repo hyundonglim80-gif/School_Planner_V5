@@ -19,7 +19,9 @@ let uid = '';
 let sid = '';
 
 const v4Doc = (id: string) => doc(db, 'users', uid, 'settings', id);
-const V4_IDS = ['labels', 'v4_labelTree', 'v4_gcal', 'v4_preferences_pc', 'v4_preferences_mobile', 'v4_preferences'];
+const V4_IDS = ['labels', 'v4_labelTree', 'v4_gcal', 'v4_preferences_pc', 'v4_preferences_mobile', 'v4_preferences', 'rosters', 'photoQuiz', 'v4_observationPhrases'];
+const V5_COLLS = ['labels', 'settings', 'items', 'series', 'classes', 'attendance', 'subjectAttendance', 'notices', 'evaluations', 'seating', 'classHub', 'quiz'];
+const V4_COLLS = ['events', 'journals', 'tasks', 'attendance', 'v4_subjectAttendance', 'notices', 'evaluations', 'v4_seating', 'v4_classHub'];
 
 const V4_LABELS = {
   eventLabels: [
@@ -32,12 +34,12 @@ const V4_LABELS = {
 };
 
 async function clean() {
-  for (const coll of ['labels', 'settings', 'items', 'series']) {
+  for (const coll of V5_COLLS) {
     const snap = await getDocs(collection(db, 'spaces', sid, coll));
     for (const d of snap.docs) await deleteDoc(d.ref);
   }
   for (const id of V4_IDS) await deleteDoc(v4Doc(id));
-  for (const coll of ['events', 'journals', 'tasks']) {
+  for (const coll of V4_COLLS) {
     const snap = await getDocs(collection(db, 'users', uid, coll));
     for (const d of snap.docs) await deleteDoc(d.ref);
   }
@@ -183,5 +185,36 @@ describe('V4 가져오기 (에뮬레이터)', () => {
     expect(changedTotal(totalCounts(useImportRun.getState().counts))).toBe(0);
     const again = (await v5Items()).map((i) => (i.updatedAt as { toMillis: () => number }).toMillis()).sort();
     expect(again).toEqual(stamps);
+  });
+
+  it('학급: 명렬표·출결·교과 출결·알림장·조사표·자리표·허브·암기·관찰 문구·학생 태그, 두 번째는 바뀐 것 0 (P7-5)', async () => {
+    const C = '2026_5_2';
+    await setDoc(v4Doc('rosters'), { classList: [{ year: 2026, grade: '5', classNum: '2', students: [{ num: 1, name: '김하나', gender: 'F' }, { num: 2, name: '이둘', gender: 'M' }] }] });
+    await setDoc(doc(db, 'users', uid, 'attendance', `${C}_2026-10-14`), { classKey: C, year: 2026, grade: '5', classNum: '2', date: '2026-10-14', records: { 1: { num: 1, name: '김하나', kind: 'absent', reason: 'sick' } } });
+    await setDoc(doc(db, 'users', uid, 'v4_subjectAttendance', `${C}_2026-10-14`), { classKey: C, date: '2026-10-14', periods: { 2: { 2: { num: 2, name: '이둘', kind: 'late', reason: 'other' } } } });
+    await setDoc(doc(db, 'users', uid, 'notices', '2026-10-14'), { date: '2026-10-14', lines: ['색연필'] });
+    await setDoc(doc(db, 'users', uid, 'evaluations', '2026-10-14'), {
+      evalList: [{ id: 'eval_1', title: '받아쓰기', type: 'eval', methodObj: { indiv: true, group: false }, steps: ['잘함'], periodStr: 1, context: { source: 'schedule', period: 1 }, rosterMeta: { year: 2026, grade: '5', classNum: '2' }, studentsSnapshot: [{ num: 1, name: '김하나' }], records: { 1: { indivScore: '잘함' } } }],
+    });
+    await setDoc(doc(db, 'users', uid, 'v4_seating', 'st_1'), { classKey: C, name: '자리', rows: 1, cols: 2, groupCols: 2, front: 'top', seats: { '0-0': 1, '0-1': 2 }, off: [], locked: [], history: [] });
+    await setDoc(doc(db, 'users', uid, 'v4_classHub', C), { apart: ['1-2'], draw: { picked: [1], round: 1 } });
+    await setDoc(v4Doc('photoQuiz'), { records: { '2026-5-2-김하나': { o: 1, x: 0, streak: 1 } } });
+    await setDoc(v4Doc('v4_observationPhrases'), { phrases: ['발표를 잘함'] });
+    await setDoc(doc(db, 'users', uid, 'journals', '2026-10-15'), { entries: [{ id: 'j9', content: '#26050202 칭찬' }] });
+
+    expect(await runImport(uid)).toBe(true);
+    const counts = useImportRun.getState().counts!;
+    for (const k of ['classes', 'attendance', 'subjectAttendance', 'notices', 'evaluations', 'seating', 'classHub', 'quiz']) expect(counts[k], k).toMatchObject({ added: 1 });
+    const cls = (await getDoc(doc(db, 'spaces', sid, 'classes', '2026-5-2'))).data()!;
+    const [a, b] = cls.students.map((x: { sid: string }) => x.sid);
+    expect((await getDoc(doc(db, 'spaces', sid, 'attendance', '2026-5-2_2026-10-14'))).data()!.records).toEqual({ [a]: { kind: 'absent', reason: 'sick' } });
+    expect((await getDoc(doc(db, 'spaces', sid, 'quiz', '2026-5-2'))).data()!.records).toEqual({ [a]: { o: 1, x: 0, streak: 1 } });
+    const ev = (await getDocs(collection(db, 'spaces', sid, 'evaluations'))).docs[0].data();
+    expect(ev).toMatchObject({ classId: '2026-5-2', period: 1, values: { [a]: { indiv: '잘함' } }, deletedAt: null });
+    expect((await v5Items()).find((i) => i.text === '#26050202 칭찬')!.studentIds).toEqual([`2026-5-2/${b}`]);
+    expect((await settingsDoc('common'))!.phrases).toEqual(['발표를 잘함']);
+
+    expect(await runImport(uid)).toBe(true);
+    expect(changedTotal(totalCounts(useImportRun.getState().counts))).toBe(0);
   });
 });

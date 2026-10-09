@@ -152,6 +152,24 @@ describe('기록·메모·링크 가져오기', () => {
     expect(first.order < second.order).toBe(true);
   });
 
+  it('학생 태그 #26050201 → studentIds (같은 실행의 명렬표로 - 글은 그대로, P7-5)', () => {
+    const studentKeysOf = (text: string) => (text.includes('#26050201') ? ['2026-5-2/s1'] : []);
+    const r = planItems(
+      SID,
+      { events: {}, journals: { '2026-10-05': { entries: [{ id: 'j1', content: '#26050201 발표' }, { id: 'j2', content: '태그 없음' }] } }, tasks: { m1: { text: '상담 #26050201' } } },
+      labelDocs,
+      labelMap,
+      none as never,
+      { studentKeysOf },
+    );
+    const rows = created(r.ops);
+    expect(rows.map((x) => [x.text, x.studentIds])).toEqual([
+      ['#26050201 발표', ['2026-5-2/s1']],
+      ['태그 없음', undefined],
+      ['상담 #26050201', ['2026-5-2/s1']],
+    ]);
+  });
+
   it('링크: 결정적 id로 바로, 수업은 lesson:날짜:교시, 그룹 것·못 찾은 것은 뺀다', () => {
     const r = plan({
       events: {

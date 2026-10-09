@@ -12,7 +12,7 @@
 //   {sp}/tasks/{id}                             → items(note, null)  라벨 이름 → labelIds, fromDate·keepId, 차례는 V4 차례대로
 //   linkedItems                                  → linkIds           결정적 id로 바로 셈(같은 실행에서 짝을 찾는다), 수업 → 'lesson:{date}:{n}', 다른 공간(그룹) 것은 빼다
 //
-// 학생 태그(#26040305 → studentIds)는 학급을 옮기는 P7에서. 글의 태그는 그대로 남는다.
+// 학생 태그(#26040305 → studentIds)는 같은 실행의 학급 가져오기(classes.ts)가 셈한 명렬표로(P7-5 - opts.studentKeysOf). 글의 태그는 그대로 남는다.
 import { academicYearOf, isValidDateStr } from '../../domain/dateUtils';
 import { ordersBetween } from '../../domain/order';
 import { isWeekend } from '../../domain/period';
@@ -122,6 +122,7 @@ export function planItems(
   labelDocs: V4LabelDocs,
   labelMap: { event: Readonly<Record<string, string>>; note: Readonly<Record<string, string>> },
   existing: ExistingDocs,
+  opts: { studentKeysOf?: (text: string) => string[] } = {},
 ): ItemsPlan {
   const notes: ItemNotes = { holidays: 0, empty: 0, alarmMoved: 0, autoJournals: 0, periods: 0, series: 0, linksDropped: 0 };
   const dueMap = sanitizeDueMap(isObj(docs.dues) ? docs.dues.dues : undefined);
@@ -322,6 +323,8 @@ export function planItems(
       if (e.favorite === true) data.favorite = true;
       if (tables) data.tables = tables;
       if (att) data.attachments = att;
+      const studentIds = opts.studentKeysOf?.(content) ?? [];
+      if (studentIds.length) data.studentIds = studentIds;
       notePlanned.push({ id, data, src: { path: `journals/${date}`, id: key }, year: yearOf(date) });
       if (Array.isArray(e.linkedItems) && e.linkedItems.length) linkJobs.push({ data, links: e.linkedItems });
     });
@@ -356,6 +359,8 @@ export function planItems(
     if (str(o.keepId)) data.keepId = str(o.keepId);
     if (tables) data.tables = tables;
     if (att) data.attachments = att;
+    const studentIds = opts.studentKeysOf?.(content) ?? [];
+    if (studentIds.length) data.studentIds = studentIds;
     notePlanned.push({ id, data, src: { path: `tasks/${docId}`, id: docId } });
     if (Array.isArray(o.linkedItems) && o.linkedItems.length) linkJobs.push({ data, links: o.linkedItems });
   });

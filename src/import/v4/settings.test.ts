@@ -121,4 +121,9 @@ describe('수업 설정 (P6-4)', () => {
     expect(common.classBell).toEqual({ enabled: true, start: { on: true, amount: 1, unit: 'min', when: 'before' }, end: { on: false, amount: 0, unit: 'min', when: 'after' }, weekdaysOnly: true });
     expect(common.school).toEqual({ officeCode: 'B10', schoolCode: '7091375', officeName: '서울', name: '점검초', kind: '초등학교', grade: 3 });
   });
+
+  it('관찰 문구는 v4_observationPhrases.phrases → common.phrases (P7-5)', () => {
+    const { ops } = planSettings(SID, { phrases: { phrases: ['발표를 잘함', ' ', '발표를 잘함', '친구를 도움'] } }, {});
+    expect((putOf(ops, 'common') as Record<string, unknown>).phrases).toEqual(['발표를 잘함', '친구를 도움']);
+  });
 });

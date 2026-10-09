@@ -76,6 +76,14 @@ export const IMPORT_KINDS: ReadonlyArray<{ key: string; name: string }> = [
   { key: 'timetables', name: '시간표' },
   { key: 'lessonDays', name: '수업 칸(날짜)' },
   { key: 'progress', name: '진도' },
+  { key: 'classes', name: '학급(명렬표)' },
+  { key: 'attendance', name: '출석부(날짜)' },
+  { key: 'subjectAttendance', name: '교과 출결(날짜)' },
+  { key: 'notices', name: '알림장(날짜)' },
+  { key: 'evaluations', name: '조사표' },
+  { key: 'seating', name: '자리표' },
+  { key: 'classHub', name: '모둠·뽑기(학급)' },
+  { key: 'quiz', name: '이름 암기(학급)' },
 ];
 
 /** 결과 표 아래 한 줄 - notes 열쇠 → 글 (0이면 적지 않는다) */
@@ -87,4 +95,7 @@ export const IMPORT_NOTES: ReadonlyArray<{ key: string; text: (n: number) => str
   { key: 'alarmMoved', text: (n) => `알림 날짜가 일정 날과 달랐던 ${n}개는 일정 날 그 시각으로 두었습니다` },
   { key: 'empty', text: (n) => `글이 비어 있던 ${n}개는 가져오지 않았습니다` },
   { key: 'linksDropped', text: (n) => `상대를 찾지 못한(지웠거나 공유 그룹의) 링크 ${n}개는 이지 않았습니다` },
+  { key: 'classSkipped', text: (n) => `학년·반이 숫자가 아닌 학급 ${n}개는 가져오지 않았습니다` },
+  { key: 'noClass', text: (n) => `학급을 알 수 없는 출결·조사표·자리표 ${n}개는 가져오지 않았습니다` },
+  { key: 'quizDropped', text: (n) => `명렬표에 없는 이름의 암기 성적 ${n}개는 가져오지 않았습니다` },
 ];

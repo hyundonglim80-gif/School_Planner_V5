@@ -508,6 +508,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 학생 기록: 기록·메모 = 학생 칩(`studentIds`)이 붙은 것(V4는 글의 `#26040305`를 찾았다 - V5는 글에 태그를 넣지 않아 V4 '태그 복사' 단추를 뺐다), '#26040305'로 학생 찾기는 V4 그대로.
     누가기록 창은 기록을 눌러도 닫지 않는다(오른쪽 칸 - 하루 화면과 나란히). 전출 학생도 칩에 흐리게 남는다.
   - 📊 표식: 하루 수업 칸 📊n(없으면 마우스를 올려야)·'N교시 수정' 칸 📊·기록 칸 머리 📊·주간·월간·년간 📊 n(그날 전체 목록) - 년간 '자세히'는 일정·공휴일이 있는 날만 줄을 세워 조사표만 있는 날은 줄이 없다(V4 그대로). 검색에 '조사표' 갈래(제목·교과).
+- **P7-5 암기·가져오기: 학급**(권장안으로 고름):
+  - 학생 sid는 **셈한다**: `v4id('student', 공간, 'settings/rosters', '{classId}#{번호}')`(같은 학급에 같은 번호가 또 있으면 '#2'). 다시 가져와도 같은 sid라
+    DESIGN 8-3의 '번호 → sid 짝 표를 가져오기 기록에'를 두지 않는다(기록이 끊겨도 같다 - 라벨 짝 표와 달리 이름으로 이을 일이 없다).
+    V5에서 고친 학급(둠)은 번호 → sid를 그 V5 명렬표에서 찾는다 - 출결·조사표·자리표가 V5 학생에 붙는다(없으면 셈한 sid).
+  - 지운 표시가 없는 문서(출결·교과 출결·알림장·학급 허브·암기)는 V4에서 없어지면 칸을 비운다(수업 칸과 같다). 조사표·자리표·학급은 지운 표시(휴지통).
+  - 출결은 학생 이름을 옮기지 않는다(명렬표에서 읽는다). 조사표 명단 이름 끝의 '(전출/삭제됨)'은 떼고 out. 암기 성적은 V4가 이름으로 이었다 → 그 학급 명렬표의 같은 이름 학생(없으면 버리고 수를 적는다).
+  - 기록·메모의 `#26040305` → `studentIds`는 같은 실행의 명렬표로 셈한다(글은 그대로). 그룹 공간의 알림장·조사표는 P8-4(그룹 가져오기).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -1027,8 +1034,10 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 - [x] ■1 암기(사진 틀 고정·정답은 이름만·자동 넘김·출제 수·함께 외울 학급).
   → 순수 `domain/photoQuiz.ts`(V4 lib째 + 테스트, 열쇠 '{classId}/{sid}') · 사본 `MIRRORED` += quiz · `features/quiz/`(`quizData` 성적 = 개인 공간 `quiz/{classId}` `records.{sid}` · `usePhotoQuiz` 모았다 1.5초 뒤 한 번에) ·
   `features/class/MemorizeTab`(명렬표 '암기' 탭 - 사진 끄면 켜는 단추, 설정 `sp5-photo-quiz` 이 기기, 키 = `ui/listKeys.quizKeyOf`). 점검 inspect-photos 56(■1 9).
-- [ ] ■2 가져오기: rosters → classes(번호 → sid 짝 표를 가져오기 기록에 - 다시 해도 같은 sid), attendance·subjectAttendance·notices·evaluations(evalList 먼저)·seating·classHub·quiz·관찰 문구,
+- [x] ■2 가져오기: rosters → classes(번호 → sid 짝 표를 가져오기 기록에 - 다시 해도 같은 sid), attendance·subjectAttendance·notices·evaluations(evalList 먼저)·seating·classHub·quiz·관찰 문구,
   기록·메모의 `#26040305` 태그 → `studentIds`(글은 그대로).
+  → `import/v4/classes.ts`(`planClasses` - 학생 sid는 셈한다(짝 표 대신 - 5장 P7-5), 지운 표시 없는 문서는 칸 비우기 `planEmptiable`, `v4Eval`·`v4Hub`) + 테스트 12 ·
+  `read.ts` `readV4ClassDocs`(V3 옛 `settings/roster`도) · `settings.ts` `phrases` · `items.ts` `opts.studentKeysOf` · `run.ts`(학급을 항목보다 먼저 셈) · 결과 표 줄 여덟·안내 셋(`record.ts`) · `import.emu.test` 학급 묶음(규칙 통과·두 번째 0).
 - [ ] ■3 점검 `inspect-import-class.mjs` + 👤 실제 계정 확인(학급 화면·출석 누계·조사표 모아 보기가 V4와 같은지) 부탁.
 **끝 조건**: 점검 통과. **P7 단계 끝 정리**(1-4).
 

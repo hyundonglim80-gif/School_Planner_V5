@@ -300,6 +300,8 @@ export interface Attendance extends Stamped {
   classId: string;
   date: YMD;
   records: Record<string, AttendanceRecord>;
+  /** V4에서 가져온 것 (P7-5) */
+  src?: ImportSource;
 }
 
 /** subjectAttendance/{classId}_{date} */
@@ -307,6 +309,8 @@ export interface SubjectAttendance extends Stamped {
   classId: string;
   date: YMD;
   periods: Record<string, Record<string, { kind: string; reason: string; note?: string }>>;
+  /** V4에서 가져온 것 (P7-5) */
+  src?: ImportSource;
 }
 
 /** seating/{id} - 자리표 한 장 (V4 v4_seating 모양, 학생은 sid - domain/seating). 지운 표시 = 휴지통 '기타' */
@@ -324,16 +328,22 @@ export interface Seating extends Tracked {
   locked: string[];
   /** 지난 짝 ('sidA|sidB') */
   history: Array<{ at: number; pairs: string[] }>;
+  /** V4에서 가져온 것 (P7-5) */
+  src?: ImportSource;
 }
 /** classHub/{classId} - 학급마다 하나: 떨어뜨릴 학생 'sidA|sidB' · 발표자 뽑기 이번 판 · 저장한 모둠(id → 한 벌) */
 export interface ClassHub extends Stamped {
   apart?: string[];
   draw?: { picked: string[]; round: number };
   groupSets?: Record<string, { name: string; groups: Array<{ name: string; members: string[] }>; createdAt: number; updatedAt: number }>;
+  /** V4에서 가져온 것 (P7-5) */
+  src?: ImportSource;
 }
 /** quiz/{classId} - 그 학급의 암기 성적 (P7-5 - V4 settings/photoQuiz 하나를 학급마다 나눴다). 학생 sid → 성적 */
 export interface Quiz extends Stamped {
   records: Record<string, { o: number; x: number; streak: number; seenAt?: number }>;
+  /** V4에서 가져온 것 (P7-5) */
+  src?: ImportSource;
 }
 
 // ───────────────────────── 4-7. 조사표·알림장·진도 ─────────────────────────
@@ -358,12 +368,16 @@ export interface Evaluation extends Tracked {
   groups?: Array<{ name: string; members: string[] }>;
   students: Array<{ sid: string; num: number; name: string; out?: true }>;
   values: Record<string, { indiv?: string; group?: string; groupName?: string; checked?: boolean; reason?: string; memo?: string }>;
+  /** V4에서 가져온 것 (P7-5) */
+  src?: ImportSource;
 }
 
 /** notices/{date} */
 export interface Notice extends Stamped {
   date: YMD;
   lines: string[];
+  /** V4에서 가져온 것 (P7-5) */
+  src?: ImportSource;
 }
 
 /** 진도 차시 한 행 (V4 v4_progress lessons[]) */

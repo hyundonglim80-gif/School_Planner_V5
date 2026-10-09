@@ -3,6 +3,7 @@
 import { collection, doc, getDocFromServer, getDocsFromServer, limit, query } from 'firebase/firestore';
 import { db } from '../../data/firebase';
 import type { SpaceCollection, Stored } from '../../data/types';
+import type { V4ClassDocs } from './classes';
 import type { V4ItemDocs } from './items';
 import type { V4LabelDocs } from './labels';
 import type { V4LessonDocs } from './lessons';
@@ -21,12 +22,12 @@ export async function readV4SettingsDocs(uid: string): Promise<{ labels: V4Label
   // v4_teaching·v4_classBell·v4_school·timetable_v5·v4_periodTimes = 수업 설정 (P6-4)
   const ids = [
     'labels', 'v4_labelTree', 'v4_gcal', 'v4_preferences_pc', 'v4_preferences_mobile', 'v4_preferences', 'preferences', 'holidays', 'v4_trash',
-    'v4_teaching', 'v4_classBell', 'v4_school', 'timetable_v5', 'v4_periodTimes',
+    'v4_teaching', 'v4_classBell', 'v4_school', 'timetable_v5', 'v4_periodTimes', 'v4_observationPhrases',
   ] as const;
-  const [labels, labelTree, gcal, pc, mobile, legacy, shared, holidays, trash, teaching, classBell, school, timetable, periodTimes] = await Promise.all(
+  const [labels, labelTree, gcal, pc, mobile, legacy, shared, holidays, trash, teaching, classBell, school, timetable, periodTimes, phrases] = await Promise.all(
     ids.map((id) => readV4Doc(uid, id)),
   );
-  return { labels: { labels, labelTree, gcal }, prefs: { pc, mobile, legacy, shared, holidays, trash, teaching, classBell, school, timetable, periodTimes } };
+  return { labels: { labels, labelTree, gcal }, prefs: { pc, mobile, legacy, shared, holidays, trash, teaching, classBell, school, timetable, periodTimes, phrases } };
 }
 
 /** 수업 가져오기에 쓰는 V4 문서들 (P6-4 - 시간표 문서는 설정과 함께 읽은 것을 넘긴다) */
@@ -47,6 +48,27 @@ export async function readV4ItemDocs(uid: string): Promise<V4ItemDocs> {
   };
   const [events, journals, tasks, dues] = await Promise.all([all('events'), all('journals'), all('tasks'), readV4Doc(uid, 'v4_eventDue')]);
   return { events, journals, tasks, dues };
+}
+
+/** 학급 가져오기에 쓰는 V4 문서들 (P7-5 - 개인 공간, 그룹의 알림장·조사표는 P8-4) */
+export async function readV4ClassDocs(uid: string): Promise<V4ClassDocs> {
+  const all = async (coll: string) => {
+    const snap = await getDocsFromServer(collection(db, 'users', uid, coll));
+    return Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]));
+  };
+  // roster = V3 옛 한 학급 문서 (rosters가 없을 때만 V4가 읽었다)
+  const [rosters, legacyRoster, attendance, subjectAttendance, notices, evaluations, seating, classHub, photoQuiz] = await Promise.all([
+    readV4Doc(uid, 'rosters'),
+    readV4Doc(uid, 'roster'),
+    all('attendance'),
+    all('v4_subjectAttendance'),
+    all('notices'),
+    all('evaluations'),
+    all('v4_seating'),
+    all('v4_classHub'),
+    readV4Doc(uid, 'photoQuiz'),
+  ]);
+  return { rosters, legacyRoster, attendance, subjectAttendance, notices, evaluations, seating, classHub, photoQuiz };
 }
 
 /** V4로 쓴 자료가 있나 (처음 로그인 띠) - 라벨·설정 문서, 일정·기록·메모 중 하나라도 */
