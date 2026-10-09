@@ -16,6 +16,7 @@ import HolidayName from '../../ui/HolidayName';
 import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
+import EvalCountBadge from '../evaluations/EvalCountBadge';
 
 export interface WeekDayCardProps {
   date: string;
@@ -25,6 +26,10 @@ export interface WeekDayCardProps {
   carried?: readonly ItemDoc[];
   /** 그날 기록 수 */
   noteCount: number;
+  /** 그날 조사표 수 (📊 n - P7-4) */
+  evalCount?: number;
+  /** 조사표 창을 열 공간 */
+  sid?: string | null;
   showEvents: boolean;
   /** 수업 줄 (둘째 줄 '수업'을 켰을 때만) */
   lessons?: ReactNode;
@@ -219,6 +224,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
             <span>{noteCount}</span>
           </button>
         )}
+        <EvalCountBadge sid={props.sid ?? null} date={date} count={props.evalCount ?? 0} tag="week-evals" />
       </div>
 
       {props.lessons}

@@ -23,6 +23,7 @@ import { openDayNotes } from '../notes/open';
 import { calendarEvents } from './calendarEvents';
 import MonthDaySheet from './MonthDaySheet';
 import MonthGrid from './MonthGrid';
+import { useEvalCountsByDate } from '../evaluations/evalData';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -30,6 +31,7 @@ const quiet = () => {
 
 export default function MonthScreen() {
   const sid = useCurrentSpaceId();
+  const evalCounts = useEvalCountsByDate(sid);
   const date = useNav((s) => s.date);
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
@@ -101,6 +103,8 @@ export default function MonthScreen() {
         eventsOn={eventsOn}
         periods={cal.periods}
         noteCount={(d) => itemsOn(items, d, 'note').length}
+        evalCount={(d) => evalCounts[d] ?? 0}
+        sid={sid}
         labelsOf={(ev) => itemLabels(tree, ev.labelIds)}
         pickedOn={(d) => new Set(multi.picks.filter((p) => p.day === d).map((p) => p.id))}
         multiOn={multi.on}

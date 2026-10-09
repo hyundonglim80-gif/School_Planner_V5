@@ -26,6 +26,8 @@ import { openNotePanel, useEditingNoteIds } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
 import DayCardView from './DayCards';
 import { useDayCardsOn } from './useDayCards';
+import { useEvalsOn } from '../evaluations/evalData';
+import { openEvaluation } from '../evaluations/open';
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -33,6 +35,7 @@ const quiet = () => {
 
 export default function DayJournal({ date }: { date: YMD }) {
   const sid = useCurrentSpaceId();
+  const journalEvals = useEvalsOn(date, sid).filter((e) => e.period === null).length;
   const notes = useItemsOn(date, 'note');
   const tree = useLabelTree('note');
   const status = useMirrorStatus('items');
@@ -111,6 +114,21 @@ export default function DayJournal({ date }: { date: YMD }) {
                 className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-xl transition-colors shrink-0"
               >
                 + 메모
+              </button>
+            )}
+            {/* 기록 칸에 붙은 조사표 (P7-4 - V4 그대로 제목 옆, 있으면 수) */}
+            {!collapsed && sid && (
+              <button
+                type="button"
+                data-journal-evals={journalEvals}
+                onClick={() => openEvaluation({ sid, date, place: 'journal' })}
+                title={journalEvals ? `기록 칸 조사표 ${journalEvals}건` : '기록 칸에 조사표 만들기'}
+                aria-label={journalEvals ? `기록 칸 조사표 ${journalEvals}건` : '기록 칸에 조사표 만들기'}
+                className={`px-2 py-1 text-xs font-bold rounded-xl transition-colors shrink-0 cursor-pointer ${
+                  journalEvals ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700' : 'text-slate-400 hover:text-emerald-700 hover:bg-slate-100'
+                }`}
+              >
+                📊{journalEvals || ''}
               </button>
             )}
           </div>

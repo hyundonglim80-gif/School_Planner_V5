@@ -1,5 +1,5 @@
 // 검색 (V4 components/SearchModal.tsx의 셈). V5는 서버를 기간마다 읽지 않고 기기 사본에서 치는 대로 찾는다(원칙 6) - 그리는 것은 features/search.
-//   - 갈래: 메모·일정·기록·수업·수업 메모·비고(P6-1 - 계산한 수업 칸, searchLessons)·첨부파일 (조사표명은 P7-4가 더한다). '전체'는 모두.
+//   - 갈래: 메모·일정·기록·수업·수업 메모·비고(P6-1 - 계산한 수업 칸, searchLessons)·조사표(P7-4 - 제목·교과, searchEvals)·첨부파일. '전체'는 모두.
 //   - 기간: 전체 기간(처음 값 - 날짜 제한 없음)·학년도·1학기·2학기·해당 월·해당 주(월~금)·해당 일·직접 지정 - 보고 있는 날 기준.
 //     메모는 날짜 대신 만든 날로 거른다(만든 날을 모르면 남긴다 - V4). 기간 일정은 범위가 걸치면.
 //   - 검색어가 비면(또는 '*') 고른 기간의 모든 것(V4). 글·붙인 표의 칸 글을 본다(대소문자 무시).
@@ -10,7 +10,7 @@ import { lessonsOn, type LessonSource } from './lessons';
 import { schoolYearSpan, semesterSpan, type SemesterConfig } from './semester';
 
 export type LessonSearchKind = 'lesson' | 'lessonMemo' | 'lessonSupplies';
-export type SearchKind = 'memo' | 'event' | 'journal' | LessonSearchKind | 'attachment';
+export type SearchKind = 'memo' | 'event' | 'journal' | LessonSearchKind | 'evaluation' | 'attachment';
 export type SearchScope = 'all' | 'year' | 'sem1' | 'sem2' | 'month' | 'week' | 'day' | 'custom';
 
 export const SEARCH_KINDS: ReadonlyArray<{ id: SearchKind; label: string }> = [
@@ -20,6 +20,7 @@ export const SEARCH_KINDS: ReadonlyArray<{ id: SearchKind; label: string }> = [
   { id: 'lesson', label: '수업' },
   { id: 'lessonMemo', label: '수업 메모' },
   { id: 'lessonSupplies', label: '비고' },
+  { id: 'evaluation', label: '조사표' },
   // 첨부는 갈래가 아니라 '붙은 파일만 모아 보기' - 검색어를 비우고 이것만 고르면 그 기간의 파일이 한눈에 (V4)
   { id: 'attachment', label: '첨부파일' },
 ];
@@ -190,4 +191,26 @@ export function searchLessons(src: LessonSource, q: SearchQuery): LessonHit[] {
     }
   }
   return out;
+}
+
+// ── 조사표 (P7-4) - 제목·교과로 찾는다 (V4 '조사표명') ──
+
+export interface EvalSearchable {
+  id: string;
+  date: string;
+  period: number | null;
+  title: string;
+  subject?: string;
+  classId: string;
+}
+
+/** 조사표 찾기 - 날짜 내림차순, 같은 날은 교시 차례 */
+export function searchEvals<T extends EvalSearchable>(evals: readonly T[], q: SearchQuery): T[] {
+  if (q.kinds.size > 0 && !q.kinds.has('evaluation')) return [];
+  const raw = q.term.trim().toLowerCase();
+  const all = raw === '' || raw === '*';
+  return evals
+    .filter((e) => !q.range || !q.range.start || !q.range.end || (e.date >= q.range.start && e.date <= q.range.end))
+    .filter((e) => all || `${e.title}\n${e.subject ?? ''}`.toLowerCase().includes(raw))
+    .sort((a, b) => b.date.localeCompare(a.date) || (a.period ?? 99) - (b.period ?? 99));
 }

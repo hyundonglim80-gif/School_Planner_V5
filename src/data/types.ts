@@ -338,18 +338,26 @@ export interface Quiz extends Stamped {
 
 // ───────────────────────── 4-7. 조사표·알림장·진도 ─────────────────────────
 
-/** 조사표 한 장 = 문서 하나 */
+/**
+ * 조사표 한 장 = 문서 하나 (P7-4 - 셈은 domain/evaluation). 학생은 sid.
+ * students = 명단(만들 때 찍고 열 때 명렬표와 맞춘다 - 그룹 공간의 다른 사람도 이름을 본다), values = 학생마다 값.
+ */
 export interface Evaluation extends Tracked {
   date: YMD;
-  period?: string;
-  classId?: string;
+  /** 교시 (1부터). null = 기록 칸 */
+  period: number | null;
+  /** 학급 '2026-5-2' */
+  classId: string;
   title: string;
-  type: string;
-  columns?: unknown[];
-  values: Record<string, unknown>;
-  groups?: unknown;
+  type: 'eval' | 'check' | 'memo';
   subject?: string;
-  courseId?: string;
+  /** 평가: 개인·조별·단계 */
+  indiv?: boolean;
+  group?: boolean;
+  steps?: string[];
+  groups?: Array<{ name: string; members: string[] }>;
+  students: Array<{ sid: string; num: number; name: string; out?: true }>;
+  values: Record<string, { indiv?: string; group?: string; groupName?: string; checked?: boolean; reason?: string; memo?: string }>;
 }
 
 /** notices/{date} */

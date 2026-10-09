@@ -2,7 +2,8 @@
 //   - 오늘 출결: 출석부와 같은 문서(attendance/{classId}_{오늘}) - 누를 때마다 그 학생 칸만 저장(안내 없이 Ctrl+Z 더미에).
 //     기록 칸의 출결 카드는 계산해 보이므로(P7-2 ■3) 따로 맞출 것이 없다.
 //   - 관찰 한 줄: 개인 공간 오늘 기록에 학생을 붙여 한 줄(observation.ts) - 관찰 문구 단추를 누르면 그 문구로 곧바로.
-//   - 오늘 조사표는 조사표를 옮기는 P7-4가 더한다.
+//   - 오늘 조사표(P7-4): 지금 보는 공간의 오늘 조사표 중 이 학급 것 - 이 학생 값만 곧바로 저장(조사표 창에서 다른 학생을 적던 것을 덮지 않는다).
+//     공유 그룹에서 남이 만든 조사표는 읽기만.
 //   저장 순서: 사본이 쓰기를 먼저 보이므로 빨리 여러 번 눌러도 다음 누름이 앞의 것을 본다(V4의 '하나씩 차례로'가 필요 없다).
 import { useState } from 'react';
 import { useItemsOn, useLabelTree } from '../../data/select';
@@ -15,6 +16,9 @@ import { saveAttendance } from '../attendance/actions';
 import type { ClassItem } from '../class/classes';
 import ObservationPhrases from './ObservationPhrases';
 import { addObservation } from './observation';
+import { useCurrentSpaceId, useSession } from '../../data/session';
+import { EVAL_TYPE_LABEL, evalHasStudent, evalTextField, sortEvals, type EvalValue } from '../../domain/evaluation';
+import { saveEvalStudentValue, useEvalsOn, type EvalItem } from '../evaluations/evalData';
 
 interface Props {
   /** 개인 공간 */
@@ -50,6 +54,24 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
     if (noteDraft === null) return;
     if (record && noteDraft.trim() !== (record.note || '')) saveMarks({ ...marks, [student.sid]: { ...record, note: noteDraft.trim() } });
     setNoteDraft(null);
+  };
+
+  // ── 오늘 조사표 (지금 보는 공간 - 이 학급 것) ──
+  const space = useCurrentSpaceId();
+  const uid = useSession((st) => st.user?.uid);
+  const classEvals = sortEvals(useEvalsOn(date, space).filter((e) => e.classId === cls.id));
+  const canEditEval = (e: EvalItem) => space === sid || !e.authorId || e.authorId === uid;
+  const patchEval = (e: EvalItem, p: EvalValue) => {
+    if (space) track(saveEvalStudentValue(space, e, student.sid, p));
+  };
+  /** 글 칸은 적는 동안 들고 있다가 칸을 떠날 때(Enter) 저장한다 */
+  const [evalDrafts, setEvalDrafts] = useState<Record<string, string>>({});
+  const saveEvalText = (e: EvalItem) => {
+    const field = evalTextField(e.type);
+    const d = evalDrafts[e.id];
+    if (d === undefined) return;
+    if (d.trim() !== (e.values[student.sid]?.[field] ?? '')) patchEval(e, { [field]: d });
+    setEvalDrafts(({ [e.id]: _done, ...rest }) => rest);
   };
 
   // ── 관찰 한 줄 (개인 공간 오늘 기록) ──
@@ -177,6 +199,78 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                   aria-label="출결 사유"
                   className="w-full px-2 py-1 border border-slate-200 rounded-lg"
                 />
+              </div>
+            )}
+          </section>
+
+          <section data-seat-student-section="eval">
+            <div className={sectionTitle}>오늘 조사표{space !== sid ? ' (지금 보는 그룹)' : ''}</div>
+            {classEvals.length === 0 ? (
+              <p className="text-slate-400">오늘 이 학급의 조사표가 없습니다.</p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {classEvals.map((e) => {
+                  const val = e.values[student.sid] ?? {};
+                  const editable = canEditEval(e);
+                  const field = evalTextField(e.type);
+                  const steps = (e.steps ?? []).map((st) => (
+                    <option key={st} value={st}>
+                      {st}
+                    </option>
+                  ));
+                  return (
+                    <div key={e.id} className="flex flex-wrap items-center gap-1.5" data-seat-eval={e.id}>
+                      <span className="font-bold text-slate-700 truncate max-w-[45%]" title={e.title}>
+                        {e.subject ? `${e.subject} · ` : ''}
+                        {e.title || '(제목 없음)'}
+                      </span>
+                      <span className="text-2xs text-slate-400">{EVAL_TYPE_LABEL[e.type]}</span>
+                      {!evalHasStudent(e, student.sid) ? (
+                        <span className="text-slate-400">명단에 없는 학생</span>
+                      ) : (
+                        <>
+                          {e.type === 'eval' && e.indiv && (
+                            <select value={val.indiv ?? ''} data-seat-eval-indiv onChange={(ev) => patchEval(e, { indiv: ev.target.value })} disabled={!editable} aria-label={`${e.title} 개인 평가`} className="border border-slate-200 rounded-lg py-0.5 px-1">
+                              <option value="">-</option>
+                              {steps}
+                            </select>
+                          )}
+                          {e.type === 'eval' && e.group && (
+                            <select value={val.group ?? ''} data-seat-eval-group onChange={(ev) => patchEval(e, { group: ev.target.value })} disabled={!editable} aria-label={`${e.title} 모둠 평가`} className="border border-slate-200 rounded-lg py-0.5 px-1">
+                              <option value="">모둠 -</option>
+                              {(e.steps ?? []).map((st) => (
+                                <option key={st} value={st}>
+                                  모둠 {st}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                          {e.type === 'check' && (
+                            <input type="checkbox" data-seat-eval-check checked={!!val.checked} onChange={(ev) => patchEval(e, { checked: ev.target.checked })} disabled={!editable} aria-label={`${e.title} 체크`} className="w-5 h-5 accent-slate-600" />
+                          )}
+                          <input
+                            type="text"
+                            data-seat-eval-text
+                            value={evalDrafts[e.id] ?? val[field] ?? ''}
+                            onChange={(ev) => setEvalDrafts((d) => ({ ...d, [e.id]: ev.target.value }))}
+                            onBlur={() => saveEvalText(e)}
+                            onKeyDown={(ev) => {
+                              if (ev.key === 'Enter' && !ev.nativeEvent.isComposing) {
+                                ev.preventDefault();
+                                saveEvalText(e);
+                              }
+                            }}
+                            readOnly={!editable}
+                            placeholder={e.type === 'memo' ? '메모' : '근거'}
+                            aria-label={`${e.title} ${e.type === 'memo' ? '메모' : '근거'}`}
+                            className="flex-1 min-w-24 px-2 py-0.5 border border-slate-200 rounded-lg"
+                          />
+                          {!editable && <span className="text-2xs text-slate-400">다른 사람이 만든 조사표</span>}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </section>

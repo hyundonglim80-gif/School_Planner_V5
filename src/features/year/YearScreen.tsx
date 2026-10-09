@@ -29,6 +29,7 @@ import { openDayNotes } from '../notes/open';
 import { setYearView, useYearView, type YearView } from './prefs';
 import YearMonthCard from './YearMonthCard';
 import YearSheetMonth from './YearSheetMonth';
+import { useEvalCountsByDate } from '../evaluations/evalData';
 
 /** 한 번에 그릴 달의 수 (V4 MONTHS_PER_FRAME) */
 const MONTHS_PER_FRAME = 3;
@@ -76,6 +77,7 @@ function visiblePicks(months: readonly AcademicMonth[], cal: CalendarEvents, sho
 
 export default function YearScreen() {
   const sid = useCurrentSpaceId();
+  const evalCounts = useEvalCountsByDate(sid);
   const date = useNav((s) => s.date);
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
@@ -256,6 +258,8 @@ export default function YearScreen() {
                 cal={cal}
                 tree={tree}
                 noteCounts={noteCounts}
+                evalCounts={evalCounts}
+                sid={sid}
                 showWeekend={showWeekend}
                 showEvents={showEvents}
                 isMobile={isMobile}

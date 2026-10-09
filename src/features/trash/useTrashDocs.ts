@@ -10,5 +10,6 @@ export function useTrashDocs(sid: string | null): TrashDocs {
   const progress = useDocs('progress', sid);
   const classes = useDocs('classes', sid);
   const seating = useDocs('seating', sid);
-  return useMemo(() => ({ items, labels, timetables, progress, classes, seating }), [items, labels, timetables, progress, classes, seating]);
+  const evaluations = useDocs('evaluations', sid);
+  return useMemo(() => ({ items, labels, timetables, progress, classes, seating, evaluations }), [items, labels, timetables, progress, classes, seating, evaluations]);
 }

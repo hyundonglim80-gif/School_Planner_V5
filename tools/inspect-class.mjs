@@ -140,9 +140,10 @@ try {
   r.check(await waitFor(page.locator(sel('class-students', 2))), '학급 고르기 = 그 학급 학생 명단');
   r.check((await page.evaluate(() => localStorage.getItem('sp5-class-hub'))) === `${year}-5-1`, '고른 학급은 이 기기에 남는다');
   r.check((await page.locator(sel('class-tool')).count()) === 7 && !(await page.locator(sel('class-tool', 'subjectAttendance')).count()), '담임 = 도구 카드 7 (교과 출결 빼고)');
-  // 아직 옮기지 않은 도구 (조사표 모아 보기 - P7-4에서 창이 생기면 그 세션이 다른 도구로 바꾸거나 뺀다)
+  // 도구 카드 = 그 학급으로 (여덟 도구 모두 창이 있다 - P7-4)
   await page.locator(sel('class-tool', 'evalOverview')).click();
-  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '아직 V5로' })), '아직 없는 도구 = 🚧 안내');
+  r.check(await waitFor(page.locator(sel('eval-overview-window', `${year}-5-1`))), "카드 '조사표 모아 보기' = 그 학급");
+  await page.evaluate(() => window.sp5.closeAllWindows());
   await page.locator(sel('class-tool', 'roster')).click();
   r.check(await waitFor(page.locator(sel('roster', `${year}-5-1`))), "카드 '명렬표' = 명렬표로 (그 학급)");
   await page.locator(sel('class-mode', 'hub')).click();

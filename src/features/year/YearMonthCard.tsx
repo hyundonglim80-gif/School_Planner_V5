@@ -21,12 +21,17 @@ import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import type { CalendarEvents } from '../month/calendarEvents';
+import EvalCountBadge from '../evaluations/EvalCountBadge';
 
 interface Props {
   m: AcademicMonth;
   cal: CalendarEvents;
   tree: LabelTree;
   noteCounts: ReadonlyMap<string, number>;
+  /** 날짜 → 조사표 수 (📊 n - P7-4) */
+  evalCounts?: Readonly<Record<string, number>>;
+  /** 조사표 창을 열 공간 */
+  sid?: string | null;
   showWeekend: boolean;
   showEvents: boolean;
   isMobile: boolean;
@@ -287,6 +292,7 @@ function YearMonthCard(p: Props) {
                           <span>{notes}</span>
                         </button>
                       )}
+                      <EvalCountBadge sid={p.sid ?? null} date={d} count={p.evalCounts?.[d] ?? 0} tag="year-evals" />
                       <button
                         type="button"
                         data-year-add={d}

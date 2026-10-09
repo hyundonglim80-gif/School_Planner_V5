@@ -8,7 +8,7 @@
 //   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
 //   - 🔔 종(features/bell - P6-3): '수업' 옆 단추로 수업 종 설정을 펼친다.
 //   - 🍚 급식·📚 학사(features/school - P6-3): 카드 아래, 환경설정 '우리 학교'를 골랐을 때만.
-// 교과 모드 칸의 🙋 = 그 반·그 교시 교과 출결(P7-2 - 개인 공간에서, 칸의 반이 그 학년도 명렬표에 있을 때). 교시 카드의 반 도구 = 🪑 자리표·🎯 뽑기(P7-3 - 그 반으로 연다). 아직 옮기지 않은 것: 📊 조사표(P7-4).
+// 교과 모드 칸의 🙋 = 그 반·그 교시 교과 출결(P7-2 - 개인 공간에서, 칸의 반이 그 학년도 명렬표에 있을 때). 교시 카드의 반 도구 = 🪑 자리표·🎯 뽑기(P7-3 - 그 반으로 연다)·📊 조사표(P7-4). 교시마다 📊n = 그 교시 조사표(없으면 마우스를 올려야 보인다).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { setDate } from '../../app/nav';
@@ -44,6 +44,9 @@ import { isEdited } from './lessonOps';
 import SlotPairInput from './SlotPairInput';
 import { useClassColorOf, useSlotPairOptions, useTeaching } from './teaching';
 import { cachedSubjects, useLessonSource } from './useLessons';
+import { evalCountsByPlace } from '../../domain/evaluation';
+import { useEvalsOn } from '../evaluations/evalData';
+import { openEvaluation } from '../evaluations/open';
 
 const PERIOD_COLORS = [
   'bg-blue-50 text-blue-700 border-blue-200',
@@ -119,6 +122,8 @@ export default function DayLessons({ date }: { date: string }) {
   const { marks } = useProgressMarks(date);
   const personalSid = usePersonalSpaceId();
   const inPersonal = !!sid && sid === personalSid;
+  // 교시마다 조사표 수 (📊n - P7-4)
+  const evalCounts = evalCountsByPlace(useEvalsOn(date, sid));
   // 교과 출결 (P7-2): 칸의 반 → 그 학년도 명렬표의 학급
   const { classes } = useClasses();
   const subjectAtt = useDocs('subjectAttendance', personalSid ?? '');
@@ -527,6 +532,24 @@ export default function DayLessons({ date }: { date: string }) {
                         )}
                       </div>
                       <div className="flex items-center gap-0.5 shrink-0">
+                        {sid && (
+                          <button
+                            type="button"
+                            data-lesson-evals={n}
+                            data-eval-count={evalCounts[String(n)] ?? 0}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEvaluation({ sid, date, place: String(n), slot: c.subject });
+                            }}
+                            className={`p-1 rounded hover:bg-slate-100 text-xs transition-all cursor-pointer ${
+                              evalCounts[String(n)] ? 'text-emerald-700 font-bold' : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-emerald-600'
+                            }`}
+                            title={evalCounts[String(n)] ? `조사표 ${evalCounts[String(n)]}건` : '조사표 관리'}
+                            aria-label={evalCounts[String(n)] ? `조사표 ${evalCounts[String(n)]}건` : '조사표 관리'}
+                          >
+                            📊{evalCounts[String(n)] || ''}
+                          </button>
+                        )}
                         <button
                           type="button"
                           data-lesson-link={n}
@@ -563,6 +586,7 @@ export default function DayLessons({ date }: { date: string }) {
                           [
                             ['seating', '🪑 자리표'],
                             ['drawStudent', '🎯 뽑기'],
+                            ['eval', '📊 조사표'],
                           ] as const
                         ).map(([tool, label]) => (
                           <button
@@ -571,7 +595,9 @@ export default function DayLessons({ date }: { date: string }) {
                             data-class-tool-btn={tool}
                             onClick={(e) => {
                               e.stopPropagation();
-                              openSeating({ classId: slotClass.id, draw: tool === 'drawStudent' });
+                              if (tool === 'eval') {
+                                if (sid) openEvaluation({ sid, date, place: String(n), slot: c.subject });
+                              } else openSeating({ classId: slotClass.id, draw: tool === 'drawStudent' });
                             }}
                             title={`${slot?.cls} ${label.slice(2).trim()}`}
                             className="text-2xs font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-700 border border-slate-200 rounded-md px-1.5 py-0.5 cursor-pointer"

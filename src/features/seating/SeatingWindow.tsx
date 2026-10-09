@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
-import { getWindowDef, openWindow, type WindowProps } from '../../app/windows';
+import type { WindowProps } from '../../app/windows';
 import { useDocs, useMirrorStatus } from '../../data/select';
 import { KIND_LABEL, attendanceDocId, readMarks } from '../../domain/attendance';
 import { academicYearOf } from '../../domain/dateUtils';
@@ -44,6 +44,7 @@ import SeatShapeBox from './SeatShapeBox';
 import SeatStudentCard from './SeatStudentCard';
 import { createChart, saveShuffled, updateChart, useClassHub, useSeatingCharts } from './seatingData';
 import { useStudentDraw } from './useStudentDraw';
+import { openStudentRecord } from '../studentRecord/open';
 
 /** 학급마다 마지막에 본 자리표 (이 기기) */
 const CHART_KEY = 'sp5-seating-chart';
@@ -68,12 +69,6 @@ function writeJson(key: string, value: unknown) {
 
 type Panel = 'shape' | 'apart' | 'draw' | 'groups';
 type Selection = { kind: 'seat'; key: string } | { kind: 'student'; sid: string } | null;
-
-/** 그 학생의 누가기록 (P7-4가 창을 등록한다) */
-function openStudentRecord(classId: string, sid: string) {
-  if (getWindowDef('studentRecord')) openWindow('studentRecord', { classId, sid });
-  else showToast('🚧 학생 기록(누가기록)은 아직 V5로 옮기지 않았습니다.');
-}
 
 export default function SeatingWindow({ params, close, raise }: WindowProps<SeatingParams | undefined>) {
   const { classes, sid } = useClasses();
@@ -597,7 +592,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                   marks={marks}
                   periodCount={periodCount}
                   onClose={() => setFocusSid(null)}
-                  onOpenRecord={() => openStudentRecord(cls.id, focusStudent.sid)}
+                  onOpenRecord={() => openStudentRecord({ classId: cls.id, sid: focusStudent.sid })}
                   onOpenAttendance={() => openAttendance({ date: today, classId: cls.id })}
                 />
               )}

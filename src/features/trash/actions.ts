@@ -18,6 +18,7 @@ const timetableAt = (sid: string, id: string) => ({ sid, coll: 'timetables' as c
 const progressAt = (sid: string, id: string) => ({ sid, coll: 'progress' as const, id });
 const classAt = (sid: string, id: string) => ({ sid, coll: 'classes' as const, id });
 const seatingAt = (sid: string, id: string) => ({ sid, coll: 'seating' as const, id });
+const evalAt = (sid: string, id: string) => ({ sid, coll: 'evaluations' as const, id });
 
 /** 휴지통이 보는 문서 묶음 (useTrashDocs) */
 export interface TrashDocs {
@@ -27,6 +28,7 @@ export interface TrashDocs {
   progress: Docs<'progress'>;
   classes: Docs<'classes'>;
   seating: Docs<'seating'>;
+  evaluations: Docs<'evaluations'>;
 }
 
 /** 되살리기 (여럿) - 되살린 수 */
@@ -38,6 +40,7 @@ export async function restoreEntries(sid: string, entries: readonly TrashEntry[]
     else if (e.kind === 'progress') ops.push(writeOp.restore(progressAt(sid, e.id)));
     else if (e.kind === 'class') ops.push(writeOp.restore(classAt(sid, e.id)));
     else if (e.kind === 'seating') ops.push(writeOp.restore(seatingAt(sid, e.id)));
+    else if (e.kind === 'evaluation') ops.push(writeOp.restore(evalAt(sid, e.id)));
     else if (e.kind === 'event' || e.kind === 'journal' || e.kind === 'memo') ops.push(writeOp.restore(itemAt(sid, e.id)));
   }
   const undo = ops.length ? await batch(ops, { fail: '되살리지 못했습니다.' }) : [];
@@ -77,7 +80,7 @@ async function deleteDriveFiles(ids: readonly string[], token: string): Promise<
  * interactive = 누른 때(구글 로그인을 물을 수 있다) · 아니면 조용한 토큰이 있을 때만.
  */
 export async function purgeEntries(sid: string, entries: readonly TrashEntry[], docs: TrashDocs, interactive: boolean): Promise<number> {
-  const { items, labels, timetables, progress, classes, seating } = docs;
+  const { items, labels, timetables, progress, classes, seating, evaluations } = docs;
   const ops: WriteOp[] = [];
   const purgedItems = [];
   for (const e of entries) {
@@ -86,6 +89,7 @@ export async function purgeEntries(sid: string, entries: readonly TrashEntry[], 
     else if (e.kind === 'progress' && progress[e.id]) ops.push(writeOp.purge(progressAt(sid, e.id), progress[e.id]));
     else if (e.kind === 'class' && classes[e.id]) ops.push(writeOp.purge(classAt(sid, e.id), classes[e.id]));
     else if (e.kind === 'seating' && seating[e.id]) ops.push(writeOp.purge(seatingAt(sid, e.id), seating[e.id]));
+    else if (e.kind === 'evaluation' && evaluations[e.id]) ops.push(writeOp.purge(evalAt(sid, e.id), evaluations[e.id]));
     else if ((e.kind === 'event' || e.kind === 'journal' || e.kind === 'memo') && items[e.id]) {
       ops.push(writeOp.purge(itemAt(sid, e.id), items[e.id]));
       purgedItems.push(items[e.id]);

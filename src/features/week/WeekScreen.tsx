@@ -35,6 +35,7 @@ import { existsThisYear, isImportableNote, pickKeyOf, type LastYearPick } from '
 import LastYearDay from './LastYearDay';
 import { toggleLastYear, useShowLastYear } from './prefs';
 import WeekDayCard from './WeekDayCard';
+import { useEvalCountsByDate } from '../evaluations/evalData';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -46,6 +47,7 @@ const gridClass = (n: number) =>
 
 export default function WeekScreen() {
   const sid = useCurrentSpaceId();
+  const evalCounts = useEvalCountsByDate(sid);
   const date = useNav((s) => s.date);
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
@@ -184,6 +186,8 @@ export default function WeekScreen() {
               events={eventsOf(day)}
               carried={day === today ? carried.list : undefined}
               noteCount={itemsOn(items, day, 'note').length}
+              evalCount={evalCounts[day] ?? 0}
+              sid={sid}
               showEvents={showEvents}
               lessons={lessonRows(day, rows)}
               labelsOf={(ev) => itemLabels(eventTree, ev.labelIds)}
