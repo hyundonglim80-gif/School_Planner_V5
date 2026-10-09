@@ -39,6 +39,12 @@ export function useCurrentSpaceId(): string | null {
   return uid ? personalSpaceId(uid) : null;
 }
 
+/** 개인 공간 (진도·학급처럼 개인 공간에만 있는 것 - 그룹 공간을 보고 있어도 여기) */
+export function usePersonalSpaceId(): string | null {
+  const uid = useSession((s) => s.user?.uid);
+  return uid ? personalSpaceId(uid) : null;
+}
+
 /** 로그인 상태를 store에 옮기고, 들어오면 개인 공간을 챙긴다. 끊는 함수를 돌려준다. */
 export function watchSession(): () => void {
   let lastUid: string | null = null;

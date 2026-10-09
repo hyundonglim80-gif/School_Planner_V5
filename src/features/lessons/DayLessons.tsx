@@ -5,31 +5,35 @@
 //   - 지금 몇 교시: 교시 시각(시간표 창 '교시')을 적어 두면 오늘은 '지금 · N분 남음' / '다음 · N분 뒤', 머리줄에 다음 교시와 준비물.
 //   - 교과 모드(전담·(중등) 전담 + 담임): 반을 크게·반 색 막대, 수정 칸은 학년-반 + 과목 두 칸, '⏪ 지난 시간' 줄(같은 반·과목의 바로 앞 수업 메모).
 //   - ▲▼ 위아래 교시와 맞바꾸기, 🔗 링크 추가, 📑 n 연결된 것, ✏️ 고치기. 머리줄 ⚙️ = 시간표 창.
-// 아직 옮기지 않은 것(그 세션이 머리줄·카드에 더한다): 🔔 수업 종·급식(P6-3) · 📘 진도 줄(P6-2) · 📢 알림장·📋 출석부·🎯 뽑기(P7) · 📊 조사표(P7-4) · 🙋 교과 출결·반 도구(P7).
+//   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
+// 아직 옮기지 않은 것(그 세션이 머리줄·카드에 더한다): 🔔 수업 종·급식(P6-3) · 📢 알림장·📋 출석부·🎯 뽑기(P7) · 📊 조사표(P7-4) · 🙋 교과 출결·반 도구(P7).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { setDate } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { listWindows, openWindow } from '../../app/windows';
 import { addDays, shortDateLabel } from '../../domain/dateUtils';
-import { lessonsOn, OFF_REASON_LABEL, subjectsBetween, type LessonCell } from '../../domain/lessons';
+import { lessonsOn, OFF_REASON_LABEL, type LessonCell } from '../../domain/lessons';
 import { periodLabel, periodRangeLabel, periodStateAt, timesOf } from '../../domain/periodTimes';
 import { normalizeSlotText, parseSlot, previousSlotOf } from '../../domain/teachingSlot';
 import { useHolidayName } from '../../data/holidays';
 import { useDocs } from '../../data/select';
-import { useCurrentSpaceId } from '../../data/session';
+import { useCurrentSpaceId, usePersonalSpaceId } from '../../data/session';
 import AutoTextarea from '../../ui/AutoTextarea';
 import { useClock } from '../../ui/useClock';
 import { isSaveKey } from '../../ui/useSaveKey';
 import { useToday } from '../../ui/useToday';
 import { lessonLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
+import ProgressMarkLine, { ProgressCreateButton } from '../progress/ProgressMarkLine';
+import { useProgressMarks } from '../progress/useProgress';
+import { slotId } from '../../domain/progress';
 import { useFocusReveal } from '../search/focus';
 import { saveLesson, swapLessons } from './actions';
 import { isEdited } from './lessonOps';
 import SlotPairInput from './SlotPairInput';
 import { useClassColorOf, useSlotPairOptions, useTeaching } from './teaching';
-import { useLessonSource } from './useLessons';
+import { cachedSubjects, useLessonSource } from './useLessons';
 
 const PERIOD_COLORS = [
   'bg-blue-50 text-blue-700 border-blue-200',
@@ -97,7 +101,11 @@ export default function DayLessons({ date }: { date: string }) {
   useFocusReveal((t) => t.kind === 'lesson' && t.date === date, () => setCollapsed(false));
 
   // 교과 모드: 같은 반·과목의 바로 앞 수업 (그 수업에 적은 메모 첫 줄을 보인다)
-  const recent = useMemo(() => (isClassUnit ? subjectsBetween(addDays(date, -PREV_LOOKBACK_DAYS), date, src) : null), [isClassUnit, date, src]);
+  const recent = isClassUnit ? cachedSubjects(src, addDays(date, -PREV_LOOKBACK_DAYS), date) : null;
+  // 진도는 개인 공간 수업으로 센다 - 그룹 공간에서는 겹치지 않는다
+  const { marks } = useProgressMarks(date);
+  const personalSid = usePersonalSpaceId();
+  const inPersonal = !!sid && sid === personalSid;
 
   const subjectToSave = (text: string) => (isClassUnit ? normalizeSlotText(text) : text.trim());
   const cellOf = (n: number) => view.cells.find((c) => c.n === n);
@@ -285,7 +293,10 @@ export default function DayLessons({ date }: { date: string }) {
                         📑 연결된 링크 ({linkCount})
                       </button>
                     )}
+                    {/* 이 교시에 진도가 없으면 그 칸 글자로 진도 만들기 (개인 공간만 - 진도는 개인 수업으로 센다) */}
+                    {!marks[slotId(date, n)] && inPersonal && <ProgressCreateButton subject={subjectToSave(open.subject)} />}
                   </div>
+                  {marks[slotId(date, n)] && <ProgressMarkLine mark={marks[slotId(date, n)]} date={date} period={n} alwaysShowAction />}
                   <div className="grid grid-cols-3 gap-2">
                     {isClassUnit ? (
                       // 전담: 수업하는 학년-반 + 과목 두 칸. 저장은 '5-2 과학' 한 글자
@@ -346,7 +357,8 @@ export default function DayLessons({ date }: { date: string }) {
             const slotColor = slot?.cls ? classColorOf(slot.cls) : null;
             const prev = slot?.cls && recent ? previousSlotOf(recent, c.subject, date, n) : null;
             const prevNote = prev ? (src.days[prev.date]?.periods?.[prev.period]?.memo ?? '').split('\n')[0].trim() : '';
-            const hasDetails = !!(c.memo || c.supplies || prevNote);
+            const mark = marks[slotId(date, n)];
+            const hasDetails = !!(c.memo || c.supplies || prevNote || mark);
             return (
               <div
                 key={n}
@@ -477,13 +489,19 @@ export default function DayLessons({ date }: { date: string }) {
                           setDate(prev.date);
                         }}
                         title={`지난 시간 수업 메모 - 누르면 ${shortDateLabel(prev.date)}로 갑니다`}
-                        className={`self-start max-w-full truncate text-left text-xs text-slate-500 hover:text-primary hover:underline cursor-pointer ${c.memo || c.supplies ? 'mb-1.5' : ''}`}
+                        className={`self-start max-w-full truncate text-left text-xs text-slate-500 hover:text-primary hover:underline cursor-pointer ${mark || c.memo || c.supplies ? 'mb-1.5' : ''}`}
                       >
                         ⏪ 지난 시간 {shortDateLabel(prev.date)} {prev.period}교시: <span className="text-slate-700">{prevNote}</span>
                       </button>
                     )}
 
-                    {/* 차례: 과목 / (진도 줄 - P6-2) / 준비물 / 메모 */}
+                    {mark && (
+                      <div className={c.memo || c.supplies ? 'mb-2' : ''}>
+                        <ProgressMarkLine mark={mark} date={date} period={n} />
+                      </div>
+                    )}
+
+                    {/* 차례: 과목 / 진도 줄 / 준비물 / 메모 */}
                     {(c.memo || c.supplies) && (
                       <div className={`grid grid-cols-1 ${c.memo && c.supplies ? 'sm:grid-cols-2' : ''} gap-3 text-xs`}>
                         {c.supplies && (

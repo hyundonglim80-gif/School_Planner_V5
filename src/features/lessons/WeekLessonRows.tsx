@@ -1,7 +1,8 @@
 // 주간 요일 카드의 수업 줄 (V4 features/week/WeekGrid.tsx 수업 부분). 모든 요일에 같은 수의 교시 줄 - 같은 교시가 옆 요일과 나란히 선다.
 //   빈 교시도 같은 높이(h-7)의 자리. 교시를 누르면 'N교시 수정' 칸(features/lessons/LessonPanel). 🔗 n = 연결된 것.
-//   교과 모드는 반을 반 색 칩으로('5-2'), 과목은 작게. 오늘 카드는 지금 교시를 짚는다.
+//   교과 모드는 반을 반 색 칩으로('5-2'), 과목은 작게. 오늘 카드는 지금 교시를 짚는다. 진도가 있으면 'k/n'(민 교시는 '밀림') 배지(P6-2).
 import type { LessonDayView } from '../../domain/lessons';
+import { slotId, type ProgressMark } from '../../domain/progress';
 import { parseSlot, type ClassColorClasses } from '../../domain/teachingSlot';
 
 interface Props {
@@ -12,13 +13,15 @@ interface Props {
   nowPeriod: number | null;
   isClassUnit: boolean;
   classColorOf: (cls: string) => ClassColorClasses;
+  /** 교시마다 진도 (slotId → 진도) */
+  marks: Record<string, ProgressMark>;
   onOpen: (n: number) => void;
   onLinks: (n: number) => void;
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
-export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUnit, classColorOf, onOpen, onLinks }: Props) {
+export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUnit, classColorOf, marks, onOpen, onLinks }: Props) {
   return (
     <div className="mb-4" data-week-lessons={date}>
       <div className="text-xs font-extrabold text-slate-400 mb-2 flex items-center gap-1">
@@ -32,6 +35,7 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
           const links = c?.linkIds.length ?? 0;
           const slot = isClassUnit && c?.subject ? parseSlot(c.subject) : null;
           const now = nowPeriod === n;
+          const mark = marks[slotId(date, n)];
           return (
             <div
               key={n}
@@ -62,6 +66,23 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
               {c?.changed && (
                 <span className="shrink-0 text-2xs font-bold text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>
                   ✎
+                </span>
+              )}
+              {mark && (
+                <span
+                  data-week-progress={mark.bumped ? 'bumped' : (mark.index ?? 0) + 1}
+                  className={`shrink-0 text-2xs leading-none px-1 py-0.5 rounded font-bold border tabular-nums ${
+                    mark.bumped ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-indigo-700 bg-indigo-50 border-indigo-100'
+                  }`}
+                  title={
+                    mark.bumped
+                      ? `${mark.key} 진도 - 이 교시는 밀어서 차시가 없습니다`
+                      : `${mark.key} ${(mark.index ?? 0) + 1}/${mark.total}차시` +
+                        (mark.lesson?.content ? ` · ${mark.lesson.content}` : '') +
+                        (mark.lesson?.supplies ? ` · 준비물 ${mark.lesson.supplies}` : '')
+                  }
+                >
+                  {mark.bumped ? '밀림' : `${(mark.index ?? 0) + 1}/${mark.total}`}
                 </span>
               )}
               {links > 0 && (

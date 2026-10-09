@@ -15,6 +15,7 @@ import { driveFilesToClean, type TrashEntry } from './trashList';
 const itemAt = (sid: string, id: string) => ({ sid, coll: 'items' as const, id });
 const labelAt = (sid: string, id: string) => ({ sid, coll: 'labels' as const, id });
 const timetableAt = (sid: string, id: string) => ({ sid, coll: 'timetables' as const, id });
+const progressAt = (sid: string, id: string) => ({ sid, coll: 'progress' as const, id });
 
 /** 되살리기 (여럿) - 되살린 수 */
 export async function restoreEntries(sid: string, entries: readonly TrashEntry[]): Promise<number> {
@@ -22,6 +23,7 @@ export async function restoreEntries(sid: string, entries: readonly TrashEntry[]
   for (const e of entries) {
     if (e.kind === 'label') ops.push(writeOp.restore(labelAt(sid, e.id)));
     else if (e.kind === 'timetable') ops.push(writeOp.restore(timetableAt(sid, e.id)));
+    else if (e.kind === 'progress') ops.push(writeOp.restore(progressAt(sid, e.id)));
     else if (e.kind === 'event' || e.kind === 'journal' || e.kind === 'memo') ops.push(writeOp.restore(itemAt(sid, e.id)));
   }
   const undo = ops.length ? await batch(ops, { fail: '되살리지 못했습니다.' }) : [];
@@ -67,12 +69,14 @@ export async function purgeEntries(
   labels: Docs<'labels'>,
   interactive: boolean,
   timetables: Docs<'timetables'> = {},
+  progress: Docs<'progress'> = {},
 ): Promise<number> {
   const ops: WriteOp[] = [];
   const purgedItems = [];
   for (const e of entries) {
     if (e.kind === 'label' && labels[e.id]) ops.push(writeOp.purge(labelAt(sid, e.id), labels[e.id]));
     else if (e.kind === 'timetable' && timetables[e.id]) ops.push(writeOp.purge(timetableAt(sid, e.id), timetables[e.id]));
+    else if (e.kind === 'progress' && progress[e.id]) ops.push(writeOp.purge(progressAt(sid, e.id), progress[e.id]));
     else if ((e.kind === 'event' || e.kind === 'journal' || e.kind === 'memo') && items[e.id]) {
       ops.push(writeOp.purge(itemAt(sid, e.id), items[e.id]));
       purgedItems.push(items[e.id]);
@@ -122,6 +126,7 @@ export async function autoEmptyTrash(
   labels: Docs<'labels'>,
   now = Date.now(),
   timetables: Docs<'timetables'> = {},
+  progress: Docs<'progress'> = {},
 ): Promise<number> {
   try {
     const last = Number(localStorage.getItem(LAST_RUN_KEY) || 0);
@@ -132,7 +137,7 @@ export async function autoEmptyTrash(
   }
   if (expired.length === 0) return 0;
   try {
-    return await purgeEntries(sid, expired, items, labels, false, timetables);
+    return await purgeEntries(sid, expired, items, labels, false, timetables, progress);
   } catch {
     return 0;
   }

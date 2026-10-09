@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P6-2 진도** (클라우드면 1-7을 먼저).
+**P6-3 수업 종·주간학습안내·나이스·인쇄** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -155,8 +155,8 @@
 | P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | 끝 (2026-10-09) |
 | **P6 수업** | | | | |
 | P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | 끝 (2026-10-09) |
-| P6-2 | 진도 | 큼 | 높음 | **다음** |
-| P6-3 | 수업 종·주간학습안내·나이스·인쇄 | 중간 | 중간 | |
+| P6-2 | 진도 | 큼 | 높음 | 끝 (2026-10-09) |
+| P6-3 | 수업 종·주간학습안내·나이스·인쇄 | 중간 | 중간 | **다음** |
 | P6-4 | 가져오기: 수업 | 중간 | 높음 | |
 | **P7 학급** | | | | |
 | P7-1 | 학급·명렬표·사진 | 큼 | 중간 | |
@@ -210,6 +210,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-09 | 클라우드(claude.ai/code) | P6-2 | P6-2 세션 끝 정리 | 단위 1553 · 자료 층(에뮬레이터) 26 · inspect-progress 66(teacher·teacher3) · lessons·week·search-trash 통과 · 사용량 한도로 멈췄다가 이어서(컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed) · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-1 | P6-1 세션 끝 정리 | 단위 1469 · 자료 층(에뮬레이터) 26 · inspect-lessons 98(teacher·teacher3) · week·links·search-trash·shell·settings·events·notes·forward·import 둘·month-year·move-dday·groups 통과 · seed에 교사 유형(셋 다 - 띠가 다른 점검을 밀지 않게) · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-3 | P5-3 세션 끝 정리 | 단위 1227 · inspect-move-dday 41 · groups·week·month-year·multi·shell·import 둘·forward·events·settings 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
@@ -442,6 +443,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - '교사 유형을 골라 주세요' 띠는 계정 설정을 **서버에서 받은 뒤에만**(받기 전의 '없음'은 모르는 것 - `useCommonLoaded`). 담임반은 명렬표(P7-1) 전까지 가르치는 반·시간표의 반 + 직접 적기.
   - 검색 수업 갈래 셋(수업·수업 메모·비고 - V4 그대로), '전체 기간'은 시간표·수업 칸이 있는 범위(최대 1100일). 링크 🏫 수업 탭은 항목에서 열 때만(수업끼리는 잇지 않는다, 범위 최대 400일). 지난 시간은 60일 거슬러.
   - 아직 없는 것(그 세션이 머리줄·카드에 더한다): 🔔 수업 종·급식·학사일정으로 방학 채우기(P6-3) · 📘 진도 줄·📘 진도 만들기(P6-2) · 📢 알림장·📋 출석부·🎯 뽑기·📊 조사표·🙋 교과 출결·반 도구(P7). 머리줄 단추는 창 목록의 `lessonHeader`로.
+- **P6-2 진도**(권장안으로 고름 - V4 모양·셈 그대로, 바뀐 것만):
+  - **세는 입력 = 계산한 수업 칸**(`subjectsBetween` - 기간 시간표 + 그날 바꾼 칸 + 수업 없는 날). V4처럼 수업 문서를 범위로 읽지 않는다. 범위는 가장 이른 진도 시작일 ~ 보는 날이 든 학년도 끝(날을 넘길 때마다 다시 세지 않게),
+    같은 재료면 하루·주간·진도 창·지난 시간이 한 번 센 것을 함께 쓴다(`useLessons` `cachedSubjects`).
+  - 저장은 바뀐 칸만(과목·반·시작일·차시 목록) - **밀기(bumps)는 저장에 넣지 않는다**(다른 기기에서 민 것을 덮지 않게, V4 그대로). 밀기·되돌리기는 누르는 대로, 안내의 되돌리기·Ctrl+Z.
+  - 지우기 = 지운 표시(휴지통 '기타'에 '📘 과목 진도 (n차시)'). V4는 바로 지웠다.
+  - 진도는 개인 공간 수업으로 센다(V4 그대로) - 그룹 공간을 보면 수업 칸에 겹치지 않고 진도 만들기도 없다, 진도 창은 열리고 안내 한 줄.
+  - 예시 CSV는 blob 주소를 10초 뒤에 걷는다(바로 걷으면 크롬이 받기 전에 사라질 수 있다). 컨테이너 Chromium은 한글 파일 이름을 'download'로 바꾼다 - 점검은 내용으로 본다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -842,9 +850,15 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P6-2. 진도
 **시작 조건**: P6-1 끝.
 **먼저 읽을 것**: V4 설명서 `progress`, V4 `lib/progress.ts`·`progressDraft.ts`·`progressSample.ts`·`csv.ts`, `components/ProgressModal.tsx`·`ProgressMarkLine.tsx`·`ProgressCreateButton.tsx`, `hooks/useProgress.ts`.
-- [ ] ■1 progress 저장(V4 모양 + `updatedAt`·`deletedAt`) + 셈(`lib/progress` 옮기기 - 입력을 수업 칸 계산 결과로, 수업 문서 범위 쿼리 대신 사본).
-- [ ] ■2 진도 창(붙여넣기·CSV·예시 CSV·행 추가·Ctrl+Enter·과정(여러 반)·반 탭·현황표·차시 수 늘리기) + 진도 줄·밀기·되돌리기·'📘 진도 만들기'·지난 시간 줄.
-- [ ] ■3 크롬 점검 `inspect-progress.mjs`(V4 inspect-progress·course·course-status·refine-u2·u3 항목 가운데 V5에 맞는 것).
+- [x] ■1 progress 저장(V4 모양 + `updatedAt`·`deletedAt`) + 셈(`lib/progress` 옮기기 - 입력을 수업 칸 계산 결과로, 수업 문서 범위 쿼리 대신 사본).
+  → `domain/progress.ts`(V4 테스트째 - `computeProgress`·`progressMarks`·`progressUntil`·`courseStatus`·`toggleBump`·`sanitizePlan`·표 읽기) · `domain/csv.ts`·`progressSample.ts` · 자료 `Progress`(types) · 사본 `MIRRORED` += progress(휴지통째) ·
+  `features/progress/`(`useProgress`(`useProgressPlans`·`useProgressMarks` - 학년도 끝까지 한 번 세기)·`actions`(저장 = 바뀐 칸만·밀기 = bumps 한 칸·지우기 = 휴지통)·`progressDraft`(순수)) ·
+  수업 셈 나눠 쓰기 `lessons/useLessons`(같은 재료면 같은 LessonSource - `cachedSubjects`·`offDayOf`) · 휴지통 '기타'에 '진도'.
+- [x] ■2 진도 창(붙여넣기·CSV·예시 CSV·행 추가·Ctrl+Enter·과정(여러 반)·반 탭·현황표·차시 수 늘리기) + 진도 줄·밀기·되돌리기·'📘 진도 만들기'·지난 시간 줄.
+  → `ProgressWindow`(창 `progress` `{ planId?, cls?, preset?, course? }` - ⋮ 수업·하루 수업 머리줄 📘·시간표 창 위 📘·단축키 '진도 관리'·'진도 만들기 (여러 반)') · `ProgressMarkLine`(진도 줄·이 교시 밀기/되돌리기, `ProgressCreateButton`) ·
+  하루 수업 칸·수정 칸·`LessonPanel`·주간 `WeekLessonRows` 배지 k/n·밀림 · `ui/download.ts`(예시 CSV). 지난 시간 줄은 P6-1.
+- [x] ■3 크롬 점검 `inspect-progress.mjs`(V4 inspect-progress·course·course-status·refine-u2·u3 항목 가운데 V5에 맞는 것).
+  → 66항목(진도 만들기·붙여넣기(차시 수 늘리기)·미리보기·저장 = 문서 하나·진도 줄·밀기·안내 되돌리기·주간 배지·줄 누르기 = 그 진도·ESC 묻기·Ctrl+Enter·Ctrl+S·행 지우기·CSV·예시 CSV·지우기/되살리기·⋮·단축키·시간표 창 📘·전담 과정·반별 현황·다음 수업 밀기).
 **끝 조건**: 설명서 `progress`가 된다.
 
 ### P6-3. 수업 종·주간학습안내·나이스·인쇄

@@ -109,6 +109,19 @@ registerWindow({
   load: () => import('../features/labels/LabelsWindow'),
 });
 
+// ⋮ 수업 - 진도 관리(P6-2). 하루 수업 머리줄 📘에도(주간·월간·메모 화면에서도 열려고 ⋮에도 - MENU 규칙 3의 예외).
+//   수업 칸의 진도 줄 = 그 진도 · '📘 진도 만들기' = 그 칸 글자로 새 진도 · 단축키 '진도 만들기 (여러 반)' = 새 과정(features/progress/shortcuts)
+registerWindow({
+  id: 'progress',
+  title: '진도 관리',
+  icon: '📘',
+  menu: '수업',
+  lessonHeader: true,
+  kind: 'side',
+  help: 'progress',
+  load: () => import('../features/progress/ProgressWindow'),
+});
+
 // ⋮ 수업 - 시간표(교사 유형·시간표·교시·학기). 하루 수업 칸 ⚙️, 단축키 '시간표'·'교사 유형 바꾸기'(교사 유형 탭)
 registerWindow({
   id: 'timetable',

@@ -1,5 +1,5 @@
 // 수업 수정 칸 'N교시 수정' (V4 components/DetailEditModal.tsx 수업 갈래). 쓰는 칸 'lesson' = { sid, date, n }.
-//   과목(교과 모드는 학년-반 + 과목)·비고/준비물·수업 메모, 🔗 링크 추가·📑 연결된 링크, 삭제 = 그 교시 비우기.
+//   과목(교과 모드는 학년-반 + 과목)·비고/준비물·수업 메모, 🔗 링크 추가·📑 연결된 링크, 📘 진도 줄·진도 만들기(개인 공간), 삭제 = 그 교시 비우기.
 //   칸은 그 교시의 **지금 내용**을 따라간다 - 연 채로 하루 화면이나 다른 기기에서 고치면 칸도 바뀐다(고치는 중이면 적던 것을 둔다 - V4 10-04).
 //   저장·Ctrl+S, 좁은 화면에서 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -10,10 +10,14 @@ import { periodLabel } from '../../domain/periodTimes';
 import { normalizeSlotText } from '../../domain/teachingSlot';
 import { useCommonSettings } from '../../app/prefs';
 import { useDocs } from '../../data/select';
+import { usePersonalSpaceId } from '../../data/session';
+import { slotId } from '../../domain/progress';
 import AutoTextarea from '../../ui/AutoTextarea';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import { lessonLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
+import ProgressMarkLine, { ProgressCreateButton } from '../progress/ProgressMarkLine';
+import { useProgressMarks } from '../progress/useProgress';
 import { clearLesson, saveLesson } from './actions';
 import { isEdited, type LessonEdit } from './lessonOps';
 import type { LessonPanelParams } from './open';
@@ -30,6 +34,9 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
   const { isClassUnit } = useTeaching();
   const pairOptions = useSlotPairOptions(date, sid);
   const [saving, setSaving] = useState(false);
+  // 진도는 개인 공간 수업으로 센다
+  const inPersonal = sid === usePersonalSpaceId();
+  const mark = useProgressMarks(date).marks[slotId(date, n)];
 
   const live: LessonEdit = { subject: cell?.subject ?? '', memo: cell?.memo ?? '', supplies: cell?.supplies ?? '' };
   // 고치기 시작하면 적던 것을 들고, 아니면 지금 내용을 따라간다
@@ -114,7 +121,9 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
                 📑 연결된 링크 ({linkCount})
               </button>
             )}
+            {!mark && inPersonal && <ProgressCreateButton subject={subjectToSave(form.subject)} />}
           </div>
+          {mark && <ProgressMarkLine mark={mark} date={date} period={n} alwaysShowAction />}
           <div>
             <span className="block text-xs font-bold text-slate-500 mb-1">{isClassUnit ? '학년-반 · 과목' : '과목'}</span>
             {isClassUnit ? (

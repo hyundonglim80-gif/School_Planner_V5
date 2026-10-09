@@ -1,0 +1,558 @@
+import { toCsv, decodeTextBytes } from './csv';
+import { PROGRESS_SAMPLE_ROWS } from './progressSample';
+import { describe, it, expect } from 'vitest';
+import {
+  computeProgress,
+  courseStatus,
+  courseTimelines,
+  planCourseEvals,
+  slotOfLesson,
+  courseTitle,
+  isCourse,
+  lessonAt,
+  planKeys,
+  planLabel,
+  sanitizeClasses,
+  parseLessonCsv,
+  parseLessonTable,
+  progressMarks,
+  suppliesByPeriod,
+  progressUntil,
+  lessonPageLabel,
+  looksNumbered,
+  parseLessonTableInfo,
+  sanitizePlan,
+  schoolYearEnd,
+  slotId,
+  toggleBump,
+  type ProgressLesson,
+} from './progress';
+
+// 진도 관리 (V4 lib/progress.test.ts - V5는 수업 문서 읽기(scheduleSubjects·scheduleNotes)·offDayChecker가 domain/lessons로 갔다)
+
+const tsv = (...rows: string[][]) => rows.map((r) => r.join('\t')).join('\r\n') + '\r\n';
+const L = (content: string, extra: Partial<ProgressLesson> = {}): ProgressLesson => ({
+  unit: '',
+  no: '',
+  content,
+  page: '',
+  supplies: '',
+  ...extra,
+});
+
+describe('차시 표 붙여넣기', () => {
+  it('머리줄은 건너뛰고, 빈 줄은 빼고, 합친 단원 칸은 아래로 잇는다', () => {
+    const text = tsv(
+      ['단원', '차시', '내용', '준비물'],
+      ['1. 비유하는 표현', '1', '비유 표현 찾기', '교과서'],
+      ['', '1', '비유 표현 만들기', ''],
+      ['', '', '', ''],
+      ['2. 이야기 속 세상', '1', '인물 말 읽기', '활동지']
+    );
+    expect(parseLessonTable(text)).toEqual([
+      { unit: '1. 비유하는 표현', no: '1', content: '비유 표현 찾기', page: '', supplies: '교과서' },
+      { unit: '1. 비유하는 표현', no: '1', content: '비유 표현 만들기', page: '', supplies: '' },
+      { unit: '2. 이야기 속 세상', no: '1', content: '인물 말 읽기', page: '', supplies: '활동지' },
+    ]);
+  });
+
+  it('머리줄 이름으로 칸을 맞춘다 (차례가 달라도, 모르는 칸은 버린다)', () => {
+    const text = tsv(['차시', '학습 내용', '비고', '준비물'], ['1', '자기소개', '모둠', '이름표']);
+    expect(parseLessonTable(text)).toEqual([{ unit: '', no: '1', content: '자기소개', page: '', supplies: '이름표' }]);
+  });
+
+  it('단원 칸만 있는 줄은 단원 제목 - 아래 차시들에 붙는다', () => {
+    const text = tsv(['1단원 수와 연산', '', '', ''], ['', '1', '큰 수 읽기', ''], ['', '1', '큰 수 쓰기', '']);
+    expect(parseLessonTable(text).map((l) => [l.unit, l.no, l.content])).toEqual([
+      ['1단원 수와 연산', '1', '큰 수 읽기'],
+      ['1단원 수와 연산', '1', '큰 수 쓰기'],
+    ]);
+  });
+
+  it('머리줄이 없으면 단원 | 차시 | 내용 | 준비물 차례', () => {
+    expect(parseLessonTable(tsv(['1단원', '1', '큰 수 읽기', '공책']))).toEqual([
+      { unit: '1단원', no: '1', content: '큰 수 읽기', page: '', supplies: '공책' },
+    ]);
+    // 내용 칸에 머리줄 이름 같은 글자가 하나 있어도 머리줄로 보지 않는다
+    expect(parseLessonTable(tsv(['1단원', '1', '활동', '공책']))).toHaveLength(1);
+  });
+
+  // 교과서(쪽) 칸 (19번 U2) - 옛 4칸 표는 4번째를 준비물로, 5칸 표는 단원·차시·내용·교과서·준비물
+  it('머리줄이 없을 때 칸 수로 가른다: 4칸 = 옛 차례(준비물), 5칸 = 교과서 칸이 든 새 차례', () => {
+    expect(parseLessonTable(tsv(['1단원', '1', '큰 수 읽기', '공책']))[0]).toMatchObject({ page: '', supplies: '공책' });
+    expect(parseLessonTable(tsv(['1단원', '1', '큰 수 읽기', '12~13', '공책']))).toEqual([
+      { unit: '1단원', no: '1', content: '큰 수 읽기', page: '12~13', supplies: '공책' },
+    ]);
+    // 숫자 칸이 없을 때도 같다
+    expect(parseLessonTable(tsv(['가', '나', '다', '라', '마']))).toEqual([
+      { unit: '가', no: '나', content: '다', page: '라', supplies: '마' },
+    ]);
+    expect(parseLessonTable(tsv(['가', '나', '다', '라']))[0]).toMatchObject({ page: '', supplies: '라' });
+    // 교과서 쪽도 숫자처럼 보이고 준비물이 비어도 - 차시는 내용 앞의 숫자 칸
+    expect(parseLessonTable(tsv(['1', '1', '가', '8~9', ''], ['1', '1', '나', '10', '']))).toEqual([
+      { unit: '1', no: '1', content: '가', page: '8~9', supplies: '' },
+      { unit: '1', no: '1', content: '나', page: '10', supplies: '' },
+    ]);
+  });
+
+  it("머리줄 '교과서'·'쪽'·'쪽수'·'교과서(쪽)'은 교과서 칸", () => {
+    for (const name of ['교과서', '쪽', '쪽수', '교과서(쪽)', '교과서 쪽']) {
+      expect(parseLessonTable(tsv(['차시', '내용', name], ['1', '자기소개', '8~9']))).toEqual([
+        { unit: '', no: '1', content: '자기소개', page: '8~9', supplies: '' },
+      ]);
+    }
+  });
+
+  it('교과서 칸만 적힌 줄도 차시로 센다 (단원 제목 줄이 아니다)', () => {
+    expect(parseLessonTable(tsv(['단원', '차시', '내용', '교과서'], ['1단원', '', '', ''], ['', '', '', '10']))).toEqual([
+      { unit: '1단원', no: '', content: '', page: '10', supplies: '' },
+    ]);
+  });
+
+  it('내용 칸 이름을 모르면 이름을 모르는 첫 칸이 내용', () => {
+    expect(parseLessonTable(tsv(['차시', '오늘 배울 것', '준비물'], ['1', '자기소개', '이름표']))).toEqual([
+      { unit: '', no: '1', content: '자기소개', page: '', supplies: '이름표' },
+    ]);
+  });
+
+  it('머리줄이 없어도 차시(숫자) 칸을 찾아 맞춘다', () => {
+    // 차시 | 내용 | 준비물
+    expect(parseLessonTable(tsv(['1', '자기소개', '이름표'], ['2~3', '규칙 정하기', '']))).toEqual([
+      { unit: '', no: '1', content: '자기소개', page: '', supplies: '이름표' },
+      { unit: '', no: '2~3', content: '규칙 정하기', page: '', supplies: '' },
+    ]);
+    // 단원 번호도 숫자일 때 - 듬성듬성한 단원 칸이 아니라 차시 칸을 고른다
+    const parsed = parseLessonTable(tsv(['1', '1', '가'], ['', '1', '나'], ['2', '1', '다']));
+    expect(parsed.map((l) => [l.unit, l.no, l.content])).toEqual([
+      ['1', '1', '가'],
+      ['1', '1', '나'],
+      ['2', '1', '다'],
+    ]);
+  });
+
+  it('한 칸짜리는 내용으로 (머리줄 한 칸도 건너뛴다)', () => {
+    expect(parseLessonTable('학습 내용\n자기소개\n')).toEqual([L('자기소개')]);
+    expect(parseLessonTable('자기소개\n규칙 정하기\n\n')).toEqual([L('자기소개'), L('규칙 정하기')]);
+  });
+
+  it('비었거나 머리줄뿐이면 빈 목록', () => {
+    expect(parseLessonTable('')).toEqual([]);
+    expect(parseLessonTable(tsv(['단원', '차시', '내용', '준비물']))).toEqual([]);
+  });
+});
+
+describe('진도 세기', () => {
+  const lessons = [L('1차시'), L('2차시'), L('3차시'), L('4차시')];
+  const plan = { key: '국어', startDate: '2026-10-05', lessons, bumps: [] as string[] };
+  const subjects = {
+    '2026-10-02': { '1': '국어' }, // 시작일 전 - 세지 않는다
+    '2026-10-05': { '1': '국어', '2': '수학', '10': '국어', '3': ' 국어 ' }, // 같은 날 세 교시 - 교시 차례(3 다음 10)
+    '2026-10-06': { '1': '수학' },
+    '2026-10-07': { '2': '국어' },
+    '2026-10-08': { '4': '국어' },
+  };
+
+  it('시작일부터 그 글자의 교시를 차례로 세어 k번째 교시 = k번째 차시', () => {
+    const t = computeProgress(plan, subjects);
+    expect(t.slots.map((s) => [s.date, s.period, s.lesson])).toEqual([
+      ['2026-10-05', '1', 0],
+      ['2026-10-05', '3', 1],
+      ['2026-10-05', '10', 2],
+      ['2026-10-07', '2', 3],
+      ['2026-10-08', '4', 4], // 목록 밖
+    ]);
+    expect(t.last).toMatchObject({ date: '2026-10-07', period: '2' });
+    expect(lessonAt(plan, t, '2026-10-07', 2)?.lesson.content).toBe('4차시');
+    expect(lessonAt(plan, t, '2026-10-08', '4')).toBeNull(); // 목록이 끝났다
+    expect(lessonAt(plan, t, '2026-10-06', '1')).toBeNull(); // 다른 과목
+  });
+
+  it("글자가 다르면 따로 센다 ('3-2 국어'와 '3-3 국어')", () => {
+    const s = { '2026-10-05': { '1': '3-2 국어', '2': '3-3 국어', '3': '3-2 국어' } };
+    const t = computeProgress({ ...plan, key: ' 3-2 국어' }, s);
+    expect(t.slots.map((x) => [x.period, x.lesson])).toEqual([
+      ['1', 0],
+      ['3', 1],
+    ]);
+  });
+
+  it('수업이 없는 날(방학·공휴일·수업X)은 건너뛴다', () => {
+    const t = computeProgress(plan, subjects, (d) => d === '2026-10-05');
+    expect(t.slots.map((s) => [s.date, s.lesson])).toEqual([
+      ['2026-10-07', 0],
+      ['2026-10-08', 1],
+    ]);
+    expect(t.last).toBeNull(); // 범위 안에서 목록이 끝나지 않는다
+  });
+
+  it('민 교시는 차시를 받지 않고 뒤가 한 칸씩 밀린다, 되돌리면 다시 당겨진다', () => {
+    const bumps = toggleBump([], '2026-10-05', '3');
+    expect(bumps).toEqual([slotId('2026-10-05', '3')]);
+    const t = computeProgress({ ...plan, bumps }, subjects);
+    expect(t.slots.map((s) => [s.date, s.period, s.lesson, s.bumped])).toEqual([
+      ['2026-10-05', '1', 0, false],
+      ['2026-10-05', '3', null, true],
+      ['2026-10-05', '10', 1, false],
+      ['2026-10-07', '2', 2, false],
+      ['2026-10-08', '4', 3, false],
+    ]);
+    expect(t.last).toMatchObject({ date: '2026-10-08', period: '4' });
+    expect(lessonAt({ lessons }, t, '2026-10-05', '3')).toBeNull();
+
+    const undone = toggleBump(bumps, '2026-10-05', 3);
+    expect(undone).toEqual([]);
+    expect(computeProgress({ ...plan, bumps: undone }, subjects).slots[1].lesson).toBe(1);
+  });
+
+  it('과목이 바뀌어 맞지 않게 된 밀기는 아무것도 밀지 않는다', () => {
+    const t = computeProgress({ ...plan, bumps: [slotId('2026-10-06', '1')] }, subjects);
+    expect(t.slots.every((s) => !s.bumped)).toBe(true);
+    expect(t.slots[3].lesson).toBe(3);
+  });
+
+  it('같은 칸 글자의 다음 진도가 그 시작일부터 이어받는다', () => {
+    const plans = [
+      { id: 'a', key: '국어', startDate: '2026-03-02' },
+      { id: 'b', key: '국어 ', startDate: '2026-10-07' },
+      { id: 'c', key: '국어', startDate: '2026-12-01' },
+      { id: 'd', key: '수학', startDate: '2026-09-01' },
+    ];
+    expect(progressUntil(plans[0], plans)).toBe('2026-10-07');
+    expect(progressUntil(plans[1], plans)).toBe('2026-12-01');
+    expect(progressUntil(plans[2], plans)).toBeUndefined();
+    const t = computeProgress(plan, subjects, undefined, '2026-10-07');
+    expect(t.slots.map((s) => s.date)).toEqual(['2026-10-05', '2026-10-05', '2026-10-05']);
+  });
+
+  it('칸 글자나 시작일이 없으면 세지 않는다', () => {
+    expect(computeProgress({ ...plan, key: '  ' }, subjects).slots).toEqual([]);
+    expect(computeProgress({ ...plan, startDate: '' }, subjects).slots).toEqual([]);
+  });
+
+});
+
+describe('수업 칸에 겹쳐 보기', () => {
+  const base = { bumps: [] as string[], updatedAt: 1 };
+  const plans = [
+    { ...base, id: 'k1', key: '국어', startDate: '2026-10-05', lessons: [L('가', { supplies: '공책' }), L('나')] },
+    { ...base, id: 'm1', key: '수학', startDate: '2026-10-05', lessons: [L('하나')], bumps: ['2026-10-05#2'] },
+    { ...base, id: 'k2', key: '국어', startDate: '2026-10-07', lessons: [L('2학기 첫 차시')] },
+    { ...base, id: 'e', key: '과학', startDate: '2026-10-05', lessons: [] },
+  ];
+  const subjects = {
+    '2026-10-05': { '1': '국어', '2': '수학', '3': '과학' },
+    '2026-10-06': { '1': '국어', '2': '수학', '3': '국어' },
+    '2026-10-07': { '1': '국어' },
+  };
+
+  it('교시마다 그 진도의 차시, 민 교시, 목록이 끝난 뒤는 빈칸, 다음 진도가 이어받음', () => {
+    const m = progressMarks(plans, subjects);
+    expect(m['2026-10-05#1']).toMatchObject({ planId: 'k1', index: 0, total: 2, bumped: false });
+    expect(m['2026-10-05#1'].lesson?.supplies).toBe('공책');
+    expect(m['2026-10-06#1']).toMatchObject({ planId: 'k1', index: 1 });
+    expect(m['2026-10-06#3']).toBeUndefined(); // 국어 목록(2차시)이 끝났다
+    expect(m['2026-10-05#2']).toMatchObject({ planId: 'm1', index: null, bumped: true, lesson: null });
+    expect(m['2026-10-06#2']).toMatchObject({ planId: 'm1', index: 0 });
+    expect(m['2026-10-07#1']).toMatchObject({ planId: 'k2', index: 0, total: 1 }); // 10/7부터 다음 국어 진도
+    expect(m['2026-10-05#3']).toBeUndefined(); // 차시가 없는 진도
+  });
+
+  it('알림장에 넣을 그날 교시별 차시 준비물 (민 교시·준비물 없는 차시는 뺀다)', () => {
+    const m = progressMarks(plans, subjects);
+    expect(suppliesByPeriod(m, '2026-10-05')).toEqual({ '1': '공책' });
+    expect(suppliesByPeriod(m, '2026-10-06')).toEqual({});
+  });
+});
+
+describe('저장된 모양 읽기', () => {
+  it('모르는 모양은 고쳐 읽는다', () => {
+    expect(
+      sanitizePlan('pg_1', { key: ' 국어 ', startDate: '2026/10/05', lessons: [{ content: 3 }, null], bumps: ['a', 1] })
+    ).toEqual({
+      id: 'pg_1',
+      key: '국어',
+      startDate: '',
+      lessons: [{ unit: '', no: '', content: '3', page: '', supplies: '' }],
+      bumps: ['a'],
+      updatedAt: undefined,
+    });
+  });
+
+  it('학년도 끝 (3월~이듬해 2월)', () => {
+    expect(schoolYearEnd('2026-10-01')).toBe('2027-02-28');
+    expect(schoolYearEnd('2027-02-10')).toBe('2027-02-28');
+    expect(schoolYearEnd('2026-03-02')).toBe('2027-02-28');
+    expect(schoolYearEnd('2027-05-01')).toBe('2028-02-29');
+  });
+});
+
+describe('과정 - 차시 목록 하나를 여러 반에 (ROADMAP-SUBJECT S4)', () => {
+  const lessons = [L('가'), L('나'), L('다')];
+  const course = {
+    id: 'c1',
+    key: '5-1 과학',
+    subject: '과학',
+    classes: ['5-1', '5-2'],
+    startDate: '2026-11-02',
+    lessons,
+    bumps: [] as string[],
+  };
+  // 5-1: 월 1교시·수 2교시, 5-2: 월 3교시·수 1교시 (칸 글자는 사람마다 다르게 적혀 있다)
+  const subjects = {
+    '2026-11-02': { '1': '5-1 과학', '3': '5-2과학', '4': '5-3 과학' },
+    '2026-11-04': { '1': '5학년 2반 과학', '2': '5-1 과학' },
+    '2026-11-09': { '1': '5-1 과학', '3': '5-2 과학' },
+    '2026-11-11': { '1': '5-2 과학', '2': '5-1 과학' },
+  };
+
+  it('열쇠는 반마다 (과정이 아니면 칸 글자 하나)', () => {
+    expect(isCourse(course)).toBe(true);
+    expect(planKeys(course)).toEqual(['5-1 과학', '5-2 과학']);
+    expect(planKeys({ key: ' 국어 ' })).toEqual(['국어']);
+    expect(isCourse({ classes: [] })).toBe(false);
+  });
+
+  it('반마다 따로 0, 1, 2… (칸 글자를 정규화해 센다)', () => {
+    const a = computeProgress(course, subjects, undefined, undefined, '5-1 과학');
+    expect(a.slots.map((s) => [s.date, s.period, s.lesson])).toEqual([
+      ['2026-11-02', '1', 0],
+      ['2026-11-04', '2', 1],
+      ['2026-11-09', '1', 2],
+      ['2026-11-11', '2', 3],
+    ]);
+    const b = computeProgress(course, subjects, undefined, undefined, '5-2 과학');
+    expect(b.slots.map((s) => [s.date, s.period, s.lesson])).toEqual([
+      ['2026-11-02', '3', 0], // '5-2과학'
+      ['2026-11-04', '1', 1], // '5학년 2반 과학'
+      ['2026-11-09', '3', 2],
+      ['2026-11-11', '1', 3],
+    ]);
+  });
+
+  it('수업 칸에는 반마다 겹치고, 한 반만 밀면 그 반만 밀린다', () => {
+    const m = progressMarks([course], subjects);
+    expect(m['2026-11-02#1']).toMatchObject({ planId: 'c1', key: '5-1 과학', cls: '5-1', index: 0, total: 3 });
+    expect(m['2026-11-02#3']).toMatchObject({ key: '5-2 과학', cls: '5-2', index: 0 });
+    expect(m['2026-11-04#1']).toMatchObject({ cls: '5-2', index: 1 });
+    expect(m['2026-11-02#4']).toBeUndefined(); // 고르지 않은 반
+
+    const bumped = progressMarks([{ ...course, bumps: ['2026-11-02#3'] }], subjects);
+    expect(bumped['2026-11-02#3']).toMatchObject({ cls: '5-2', bumped: true, index: null });
+    expect(bumped['2026-11-04#1']).toMatchObject({ cls: '5-2', index: 0 });
+    expect(bumped['2026-11-09#3']).toMatchObject({ cls: '5-2', index: 1 });
+    // 5-1은 그대로
+    expect(bumped['2026-11-04#2']).toMatchObject({ cls: '5-1', index: 1 });
+    expect(bumped['2026-11-09#1']).toMatchObject({ cls: '5-1', index: 2 });
+  });
+
+  it('목록이 끝난 반이 있어도 다른 반은 계속 센다', () => {
+    // 5-2를 두 번 밀면 5-2는 11-11에야 마지막 차시, 5-1은 11-09에 끝난다
+    const m = progressMarks([{ ...course, bumps: ['2026-11-02#3', '2026-11-04#1'] }], subjects);
+    expect(m['2026-11-11#2']).toBeUndefined(); // 5-1은 끝났다
+    expect(m['2026-11-11#1']).toMatchObject({ cls: '5-2', index: 1 });
+  });
+
+  it('반 하나를 빼면 그 반 표시가 사라진다', () => {
+    const m = progressMarks([{ ...course, classes: ['5-1'] }], subjects);
+    expect(m['2026-11-02#1']).toMatchObject({ cls: '5-1' });
+    expect(m['2026-11-02#3']).toBeUndefined();
+    expect(m['2026-11-04#1']).toBeUndefined();
+  });
+
+  it('같은 반 열쇠를 가진 옛 진도와는 늦게 시작한 쪽이 이어받는다', () => {
+    const old = { id: 'o1', key: '5-2 과학', startDate: '2026-11-04', lessons: [L('옛')], bumps: [] as string[] };
+    const plans = [course, old];
+    expect(progressUntil(course, plans, '5-2 과학')).toBe('2026-11-04');
+    expect(progressUntil(course, plans, '5-1 과학')).toBeUndefined();
+    expect(progressUntil(old, plans)).toBeUndefined();
+    const m = progressMarks(plans, subjects);
+    expect(m['2026-11-02#3']).toMatchObject({ planId: 'c1', cls: '5-2', index: 0 });
+    expect(m['2026-11-09#3']).toMatchObject({ planId: 'o1', index: 0 }); // 11-04부터 옛 진도 (11-04 칸은 '5학년 2반 과학'이라 옛 진도가 세지 않는다)
+    expect(m['2026-11-09#1']).toMatchObject({ planId: 'c1', cls: '5-1', index: 2 }); // 5-1은 과정 그대로
+
+    // 과정이 늦게 시작하면 옛 진도가 그날까지만
+    const later = { ...course, id: 'c2', startDate: '2026-11-09' };
+    expect(progressUntil({ id: 'o2', key: '5-1 과학', startDate: '2026-11-02' }, [later])).toBe('2026-11-09');
+  });
+
+  it('과정 이름과 저장된 모양 읽기', () => {
+    expect(courseTitle(course)).toBe('5학년 과학');
+    expect(courseTitle({ subject: '과학', classes: ['5-1', '6-2', '6-3'] })).toBe('과학 (5-1 외 2)');
+    expect(planLabel(course)).toBe('5학년 과학');
+    expect(planLabel({ key: '국어' })).toBe('국어');
+    expect(sanitizeClasses(['5-2', ' 05-02 ', '5-1', 'x', 3, '0-1', '5-'])).toEqual(['5-2', '5-1']);
+    expect(sanitizePlan('c', { subject: ' 과학 ', classes: ['5-3', '5-1'], startDate: '2026-11-02' })).toMatchObject({
+      key: '5-3 과학',
+      subject: '과학',
+      classes: ['5-3', '5-1'],
+    });
+    // 반이 없으면 옛 진도 (과정 칸을 두지 않는다)
+    expect(sanitizePlan('o', { key: '국어', subject: '과학', classes: [] })).not.toHaveProperty('classes');
+  });
+});
+
+describe('과정 반별 현황과 지난 시간 메모 (ROADMAP-SUBJECT S5)', () => {
+  const lessons = [L('가'), L('나'), L('다'), L('라')];
+  const course = { key: '', subject: '과학', classes: ['5-1', '5-2', '5-3'], lessons };
+  // 5-1·5-2는 월·수·금, 5-3은 월·수 (5-3을 두 번 밀었다)
+  const subjects = {
+    '2026-11-02': { '1': '5-1 과학', '2': '5-2 과학', '3': '5-3 과학' },
+    '2026-11-04': { '1': '5-1 과학', '2': '5-2 과학', '3': '5-3 과학' },
+    '2026-11-06': { '1': '5-1 과학', '2': '5-2 과학' },
+    '2026-11-09': { '1': '5-1 과학', '2': '5-2 과학', '3': '5-3 과학' },
+    '2026-11-11': { '1': '5-1 과학', '3': '5-3 과학' },
+  };
+  const plan = { ...course, startDate: '2026-11-02', bumps: ['2026-11-02#3', '2026-11-04#3'] };
+  const timelines = Object.fromEntries(
+    ['5-1 과학', '5-2 과학', '5-3 과학'].map((k) => [k, computeProgress(plan, subjects, undefined, undefined, k)])
+  );
+
+  it('오늘까지 한 차시, 다음 수업, 가장 앞선 반과의 차이', () => {
+    const rows = courseStatus(plan, timelines, '2026-11-06');
+    expect(rows.map((r) => [r.cls, r.done, r.behind, r.next && `${r.next.date}#${r.next.period}`])).toEqual([
+      ['5-1', 3, 0, '2026-11-09#1'],
+      ['5-2', 3, 0, '2026-11-09#2'],
+      ['5-3', 0, 3, '2026-11-09#3'], // 두 번 밀어 아직 0차시
+    ]);
+    expect(rows[0].last).toMatchObject({ date: '2026-11-06', lesson: 2 });
+    expect(rows[2].last).toBeNull();
+  });
+
+  it('목록이 끝난 반은 다음 수업이 없고 끝', () => {
+    const rows = courseStatus(plan, timelines, '2026-11-11');
+    expect(rows[0]).toMatchObject({ cls: '5-1', done: 4, finished: true, next: null });
+    expect(rows[1]).toMatchObject({ cls: '5-2', done: 4, finished: true }); // 11-09에 4차시
+    expect(rows[2]).toMatchObject({ cls: '5-3', done: 2, behind: 2, finished: false });
+  });
+
+});
+
+describe('같은 과정의 다른 반에 조사표 (ROADMAP-SUBJECT S8)', () => {
+  const lessons = [L('가'), L('나'), L('다')];
+  const plan = {
+    id: 'c',
+    key: '5-1 과학',
+    subject: '과학',
+    classes: ['5-1', '5-2', '5-3'],
+    startDate: '2026-11-02',
+    lessons,
+    bumps: ['2026-11-02#3'], // 5-2 첫 수업을 밀었다
+  };
+  const subjects = {
+    '2026-11-02': { '1': '5-1 과학', '3': '5-2 과학' },
+    '2026-11-04': { '1': '5-2 과학', '2': '5-1 과학' },
+    '2026-11-06': { '1': '5-1 과학', '2': '5-2 과학' },
+  };
+  const timelines = courseTimelines(plan, [plan], subjects);
+
+  it('차시 → 그 차시를 하는 첫 교시 (민 교시는 건너뛴다)', () => {
+    expect(slotOfLesson(timelines['5-2 과학'], 0)).toMatchObject({ date: '2026-11-04', period: '1' });
+    expect(slotOfLesson(timelines['5-1 과학'], 2)).toMatchObject({ date: '2026-11-06', period: '1' });
+    expect(slotOfLesson(timelines['5-1 과학'], 5)).toBeNull();
+  });
+
+  it('다른 반마다 같은 차시의 교시, 밀린 반은 뒤로, 시간표에 없는 반은 null, 이 반은 뺀다', () => {
+    const mark = { key: '5-1 과학', cls: '5-1', index: 1 };
+    expect(planCourseEvals(mark, plan, timelines).map((t) => [t.cls, t.slot && `${t.slot.date}#${t.slot.period}`])).toEqual([
+      ['5-2', '2026-11-06#2'], // 밀려서 2차시가 11-06
+      ['5-3', null], // 5-3은 시간표에 없다
+    ]);
+  });
+
+  it('과정이 아니거나 민 교시면 빈 목록', () => {
+    expect(planCourseEvals({ key: '국어', index: 0 }, { key: '국어' }, {})).toEqual([]);
+    expect(planCourseEvals({ key: '5-2 과학', cls: '5-2', index: null }, plan, timelines)).toEqual([]);
+  });
+});
+
+// 예시 CSV (진도 관리 '⬇️ 예시 CSV 받기', 2026-10-04) - 받은 그대로 불러오면 차시 목록이 된다
+describe('예시 CSV · parseLessonCsv', () => {
+  it('예시 CSV를 그대로 불러오면 17차시(차시 칸 2인 두 내용은 두 번씩), 단원 칸이 비면 위 단원을 잇고 단원만 적힌 줄은 세지 않는다', () => {
+    const lessons = parseLessonCsv(toCsv(PROGRESS_SAMPLE_ROWS));
+    expect(lessons).toHaveLength(17);
+    expect(lessons[4]).toMatchObject({ no: '2', content: '강이나 연못에 사는 식물의 특징' });
+    expect(lessons[5]).toMatchObject({ no: '', content: '강이나 연못에 사는 식물의 특징', supplies: '부레옥잠' });
+    expect(lessons[0]).toEqual({ unit: '1. 식물의 생활', no: '1', content: '우리 주변 식물 이야기하기', page: '8~9', supplies: '식물 사진 카드' });
+    expect(lessons[9].page).toBe('28~29');
+    expect(lessons[1]).toMatchObject({ unit: '1. 식물의 생활', no: '1', supplies: '돋보기, 여러 가지 잎' });
+    expect(lessons[3].supplies).toBe('');
+    expect(lessons[9]).toMatchObject({ unit: '2. 물의 상태 변화', no: '1', content: '물의 세 가지 상태 알아보기' });
+    expect(lessons[16]).toMatchObject({ unit: '2. 물의 상태 변화', content: '단원 정리' });
+  });
+
+  it('엑셀에서 고쳐 저장한 모양(따옴표 없음·칸 차례 바뀜·앞뒤 빈칸)도 읽는다', () => {
+    const csv = '차시,내용,준비물,단원\r\n1, 비유 표현 알기 ,,1. 생각과 느낌\r\n1,"시를 읽고, 느낌 나누기",시집,\r\n';
+    expect(parseLessonCsv(csv)).toEqual([
+      { unit: '1. 생각과 느낌', no: '1', content: '비유 표현 알기', page: '', supplies: '' },
+      { unit: '1. 생각과 느낌', no: '1', content: '시를 읽고, 느낌 나누기', page: '', supplies: '시집' },
+    ]);
+  });
+
+  it('붙여넣기(엑셀 복사)와 같은 규칙으로 읽는다', () => {
+    const tsv = PROGRESS_SAMPLE_ROWS.map((r) => r.join('\t')).join('\n');
+    expect(parseLessonTable(tsv)).toEqual(parseLessonCsv(toCsv(PROGRESS_SAMPLE_ROWS)));
+  });
+});
+
+describe('decodeTextBytes - 엑셀이 저장한 CSV의 글자', () => {
+  it('UTF-8(BOM 포함)도, 한국어 윈도우 엑셀의 CP949도 한글이 깨지지 않는다', () => {
+    const utf8 = new TextEncoder().encode('﻿단원,차시\r\n식물,1');
+    expect(decodeTextBytes(utf8)).toBe('단원,차시\r\n식물,1');
+    // '단원,차시' 를 CP949로 적은 바이트
+    const cp949 = new Uint8Array([0xb4, 0xdc, 0xbf, 0xf8, 0x2c, 0xc2, 0xf7, 0xbd, 0xc3]);
+    expect(decodeTextBytes(cp949)).toBe('단원,차시');
+  });
+});
+
+describe('진도 줄의 교과서 쪽 (19번 U3)', () => {
+  it("'12~13' → '12~13쪽', 이미 쪽·p가 있으면 그대로, 비면 ''", () => {
+    expect(lessonPageLabel('12~13')).toBe('12~13쪽');
+    expect(lessonPageLabel(' 40 ')).toBe('40쪽');
+    expect(lessonPageLabel('12~13쪽')).toBe('12~13쪽');
+    expect(lessonPageLabel('p.12')).toBe('p.12');
+    expect(lessonPageLabel('12p')).toBe('12p');
+    expect(lessonPageLabel('')).toBe('');
+    expect(lessonPageLabel(undefined)).toBe('');
+  });
+});
+
+// 차시 칸의 숫자 = 그 내용을 몇 차시 동안 (2026-10-07 사용자가 정함)
+describe('차시 칸의 숫자만큼 같은 내용을 잇달아', () => {
+  it("'2'면 같은 내용 2행, 뒤 행의 차시 칸은 비운다 (다시 붙여 넣어도 또 늘지 않게)", () => {
+    const info = parseLessonTableInfo(tsv(['단원', '차시', '내용', '준비물'], ['1단원', '1', '가', ''], ['', '2', '나', '자'], ['', '1', '다', '']));
+    expect(info.lessons.map((l) => [l.no, l.content, l.supplies])).toEqual([
+      ['1', '가', ''],
+      ['2', '나', '자'],
+      ['', '나', '자'],
+      ['1', '다', ''],
+    ]);
+    expect(info.repeated).toBe(1);
+    expect(info.numbered).toBe(false);
+    // 늘린 표를 다시 붙여 넣으면 그대로
+    const again = tsv(['단원', '차시', '내용', '준비물'], ...info.lessons.map((l) => [l.unit, l.no, l.content, l.supplies]));
+    expect(parseLessonTable(again)).toHaveLength(4);
+  });
+
+  it("'3차시'·'2'도 숫자, 범위('5~6')·글자는 한 행, 너무 큰 수는 10행까지", () => {
+    expect(parseLessonTable(tsv(['차시', '내용'], ['3차시', '가']))).toHaveLength(3);
+    expect(parseLessonTable(tsv(['차시', '내용'], ['5~6', '가']))).toHaveLength(1);
+    expect(parseLessonTable(tsv(['차시', '내용'], ['보충', '가']))).toHaveLength(1);
+    expect(parseLessonTable(tsv(['차시', '내용'], ['40', '가']))).toHaveLength(10);
+  });
+
+  it('옛 진도표처럼 차시 칸이 1, 2, 3 … 차례 번호면 늘리지 않는다 (단원마다 다시 1부터, 범위 포함)', () => {
+    const info = parseLessonTableInfo(
+      tsv(['단원', '차시', '내용'], ['1단원', '1', '가'], ['', '2', '나'], ['', '3~4', '다'], ['', '5', '라'], ['2단원', '1', '마'], ['', '2', '바'])
+    );
+    expect(info.numbered).toBe(true);
+    expect(info.lessons).toHaveLength(6);
+  });
+
+  it('차례 번호 판단: 셋 이상 이어지고 어긋나는 단원이 없어야', () => {
+    const L2 = (unit: string, no: string) => ({ unit, no });
+    expect(looksNumbered([L2('a', '1'), L2('a', '2'), L2('a', '3')])).toBe(true);
+    expect(looksNumbered([L2('a', '1'), L2('a', '2')])).toBe(false);
+    expect(looksNumbered([L2('a', '1'), L2('a', '1'), L2('a', '2'), L2('a', '1')])).toBe(false);
+    expect(looksNumbered([L2('a', '9'), L2('a', '10'), L2('a', '11'), L2('b', '12')])).toBe(true);
+  });
+});
