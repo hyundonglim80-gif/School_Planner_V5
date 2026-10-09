@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P6-4 가져오기: 수업** (클라우드면 1-7을 먼저).
+**P7-1 학급·명렬표·사진** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -157,9 +157,9 @@
 | P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | 끝 (2026-10-09) |
 | P6-2 | 진도 | 큼 | 높음 | 끝 (2026-10-09) |
 | P6-3 | 수업 종·주간학습안내·나이스·인쇄 | 중간 | 중간 | 끝 (2026-10-09) |
-| P6-4 | 가져오기: 수업 | 중간 | 높음 | **다음** |
+| P6-4 | 가져오기: 수업 | 중간 | 높음 | 끝 (2026-10-09) |
 | **P7 학급** | | | | |
-| P7-1 | 학급·명렬표·사진 | 큼 | 중간 | |
+| P7-1 | 학급·명렬표·사진 | 큼 | 중간 | **다음** |
 | P7-2 | 출석부·알림장·기록 칸 카드·교과 출결 | 큼 | 높음 | |
 | P7-3 | 자리표·뽑기·모둠 | 중간 | 중간 | |
 | P7-4 | 조사표·모아 보기·학생 기록 | 큼 | 높음 | |
@@ -188,6 +188,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   클립보드 칸은 계정마다·로그아웃하면 지움 · 링크 = 양쪽 linkIds 한 묶음(역링크 갈아끼우기·트랜잭션 없음), 끊기는 묻지 않고 되돌리기, 새 항목의 🔗는 먼저 저장 · 수업 링크 잇기는 P6-1.
 - P5 달력·찾기·정리(10-09): 주간·월간·년간은 V4 그대로(기간은 한 항목을 막대로) · 끌어 옮기기는 기간이면 '이 날만/통째로' · D-Day는 계정 설정 · 공휴일은 계산할 때 건너뛰고 고정 공휴일도 ·
   검색은 기기 사본에서 치는 대로·누르면 그 자리로 가서 짚기 · 휴지통은 지운 표시를 걸러 보기(사본 없음), V4에서 가져온 항목의 첨부는 드라이브에서 지우지 않는다.
+- P6 수업(10-09): 수업 칸은 계산(그날 바꾼 칸 → 수업 없는 날 → 기간별 시간표) - '적용' 단추가 없고 시간표를 고치면 따라온다 · 방학은 학년도마다 · 진도는 계산한 수업 칸으로 센다·지우면 휴지통 ·
+  수업 종·우리 학교는 계정 설정 · 주간학습안내는 열어 둔 채 고쳐도 따라온다 · 인쇄는 ⋮·Ctrl+P · V4 수업은 학기마다 맞는 표를 시간표로, 다른 칸만 수업 칸으로 가져온다.
 
 ## 4. 세션 기록 (한 세션 한 줄 - 어느 기기에서 어디까지 했나)
 
@@ -210,6 +212,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-09 | 클라우드(claude.ai/code) | P6-4 | P6-4 세션 끝 정리 (P6 단계 끝) | 단위 1645 · 자료 층 26 · inspect-import-lessons 30 · P6 점검 모두(lessons·progress·bell-guide·neis·import-lessons·week) + import-items·import-labels 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-3 | P6-3 세션 끝 정리 | 단위 1633 · inspect-bell-guide 48 · neis 36 · week·month-year·lessons·settings·move-dday·shell 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-2 | P6-2 세션 끝 정리 | 단위 1553 · 자료 층(에뮬레이터) 26 · inspect-progress 66(teacher·teacher3) · lessons·week·search-trash 통과 · 사용량 한도로 멈췄다가 이어서(컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed) · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-1 | P6-1 세션 끝 정리 | 단위 1469 · 자료 층(에뮬레이터) 26 · inspect-lessons 98(teacher·teacher3) · week·links·search-trash·shell·settings·events·notes·forward·import 둘·month-year·move-dday·groups 통과 · seed에 교사 유형(셋 다 - 띠가 다른 점검을 밀지 않게) · 같은 브랜치 → PR → Claude가 합침 |
@@ -457,6 +460,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 인쇄: V4 주간·년간 머리의 🖨️ 단추 대신 ⋮ '🖨️ 이 화면 인쇄'·Ctrl+P(MENU 4장) - 화면이 찍을 칸을 `usePrintTarget`으로 건다. 년간 자세히·다른 화면은 브라우저 인쇄. 창 안의 인쇄(주간학습안내)는 그 창에.
   - 나이스: Firebase 없이 시험하려고 키 읽기를 갈라 냈다(`setNeisKeySource`). 학사일정으로 채우기는 **보는 학년도**(V4는 올해만).
   - 학사일정 이름은 V4처럼 날짜 칸 버튼 - 년간 자세히는 날짜 단추 안에 넣지 않고 옆에(단추 안 단추는 HTML이 막는다).
+- **P6-4 가져오기: 수업**(권장안으로 고름):
+  - V4는 이름 붙은 표를 날짜 범위에 '적용'했을 뿐 어느 표를 언제 썼는지 남기지 않는다 → **학기마다 그 학기 V4 수업 칸과 과목이 가장 많이(절반 넘게) 맞는 표**를 그 학기 시간표로(학년도 끝까지 - 늦게 시작한 것이 이긴다).
+    아무 학기에도 맞지 않은 표는 이름의 '1학기'·'2학기'로 올해 그 학기(비어 있으면), 나머지는 '기간 없음'(쓰이지 않음 - 시간표 창에서 기간을 정하면 쓰인다), 빈 표는 가져오지 않는다.
+  - V4 수업 문서가 있는 날은 V5 수업 칸 = V4(다른 칸만 적으니 시간표를 고치면 다른 날은 따라간다). V4 문서가 없는 날은 V5에서 시간표가 보인다(V4는 적용하지 않은 날이 비어 있었다).
+  - 수업 없는 날(방학·공휴일·수업X)에 V4가 적어 둔 과목은 시간표와 같아도 그대로 적는다(그날은 시간표가 없다). V4에서 없어진 날은 칸만 비운다(날짜 문서는 지우지 않는다).
+  - V5에서 고친 날 문서는 다시 가져와도 덮지 않는다(문서마다 지문 - 칸마다가 아니다).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -889,9 +898,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 ### P6-4. 가져오기: 수업
 **시작 조건**: P6-3 끝. V4 seed 자료.
 **먼저 읽을 것**: `DESIGN.md` 8-3 수업 줄, V4 `hooks/useTimetableTemplate.ts`(timetable_v5 모양)·`lib/periodTimes.ts`·`teachingMode.ts`·`classBell.ts`·`progress.ts`(저장 모양).
-- [ ] ■1 `timetable_v5` → timetables(기간)·terms, 교시(이름·시각), `v4_teaching`·`v4_classBell`·`v4_school` → settings.
-- [ ] ■2 `schedules/{date}` → lessonDays: **그 기간 시간표와 같은 칸은 빼고** 다른 것만(과목이 다르거나 메모·준비물·첨부·링크가 있는 칸), 옛 문자열 값.
-- [ ] ■3 `v4_progress` → progress + 점검(V4 seed: 하루·주간 수업 칸·진도 줄이 V4와 같다). 👤 실제 계정 확인 부탁.
+- [x] ■1 `timetable_v5` → timetables(기간)·terms, 교시(이름·시각), `v4_teaching`·`v4_classBell`·`v4_school` → settings.
+  → `import/v4/lessons.ts`(`v4Templates`·`timetableRanges` - 학기마다 과목 칸의 절반 넘게 맞는 표 = 그 학기 시간표, 학년도 끝까지, 이름 '1학기'·'2학기'로 올해, 나머지는 기간 없음) ·
+  `settings.ts` `COMMON_FROM_V4` += teaching·classBell·school·periods(`periodsFromV4` = currentNames + v4_periodTimes)·terms(`termsFromV4` = 여름 방학이 든 학년도) · `read.ts`가 다섯 문서를 더 읽는다.
+- [x] ■2 `schedules/{date}` → lessonDays: **그 기간 시간표와 같은 칸은 빼고** 다른 것만(과목이 다르거나 메모·준비물·첨부·링크가 있는 칸), 옛 문자열 값.
+  → `planLessons` - V4에 칸이 없는데 시간표에 과목이 있으면 subject '', 수업 없는 날(가져올 방학·공휴일·수업X 일정 = `run.ts` `lessonOffDay`)은 과목 그대로, memo = memo|옛 content, 링크 = items의 짝 표(`items.ts` `linkOf`·`linkIdsOf`로 갈라 냄),
+  V4에서 없어진 날 = 칸 비우기(날짜 문서는 지우지 않는다). `LessonDay`·`Timetable`에 `src`, `ImportColl` += timetables·lessonDays·progress, 결과 표 줄 셋.
+- [x] ■3 `v4_progress` → progress + 점검(V4 seed: 하루·주간 수업 칸·진도 줄이 V4와 같다). 👤 실제 계정 확인 부탁.
+  → 진도 = `sanitizePlan` 모양 그대로. 점검 `tools/inspect-import-lessons.mjs`(30 - seed 260일 + 2027 점검 날: 결과 표·시간표 기간·다른 칸만·교시/방학/종 설정·하루 = V4·진도 줄·주간·두 번째 0·V5에서 고친 날 둠) · import-items·import-labels·test:data 통과.
 **끝 조건**: 점검 통과. **P6 단계 끝 정리**(1-4).
 
 ### P7-1. 학급·명렬표·사진

@@ -73,6 +73,9 @@ export const IMPORT_KINDS: ReadonlyArray<{ key: string; name: string }> = [
   { key: 'items.event', name: '일정' },
   { key: 'series', name: '반복 묶음' },
   { key: 'items.note', name: '기록·메모' },
+  { key: 'timetables', name: '시간표' },
+  { key: 'lessonDays', name: '수업 칸(날짜)' },
+  { key: 'progress', name: '진도' },
 ];
 
 /** 결과 표 아래 한 줄 - notes 열쇠 → 글 (0이면 적지 않는다) */

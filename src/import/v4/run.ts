@@ -3,17 +3,25 @@
 //
 // - 한 번에 하나만 돈다. 적기는 500개씩 묶어(Firestore 한도) 진행 칸을 채운다 - 끊기면 다시 누르면 된다(결정적 id·지문이라 겹치지 않는다).
 // - 되돌리기(Ctrl+Z)에 넣지 않는다: 수백 개를 한꺼번에 지운 표시로 되돌리면 더 위험하다. 다시 가져오기가 바뀐 것만 고친다.
-// - 라벨이 먼저(항목이 라벨을 id로 가리킨다), 그다음 반복 묶음·일정·기록·메모(P3-4 - 같은 실행의 라벨 짝 표로), 기록은 맨 끝(다 적은 뒤).
+// - 라벨이 먼저(항목이 라벨을 id로 가리킨다), 그다음 반복 묶음·일정·기록·메모(P3-4 - 같은 실행의 라벨 짝 표로),
+//   시간표·수업 칸·진도(P6-4 - 수업 칸의 링크는 같은 실행의 항목 짝 표로, 수업 없는 날은 가져올 방학·일정으로), 기록은 맨 끝(다 적은 뒤).
 import { create } from 'zustand';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { batch, BATCH_LIMIT, writeOp } from '../../data/repo';
 import { personalSpaceId } from '../../data/space';
 import { planLabels } from './labels';
 import { changedTotal, addCounts, emptyCounts, type ImportCounts } from './plan';
-import { planItems } from './items';
-import { hasV4Data, readSpaceDoc, readSpaceDocs, readV4ItemDocs, readV4SettingsDocs } from './read';
+import { isHoliday } from '../../data/holidays';
+import { todayStr } from '../../domain/dateUtils';
+import { classOffReason } from '../../domain/lessons';
+import { onPeriodDay } from '../../domain/period';
+import { readTerms } from '../../domain/semester';
+import { planItems, type ItemsPlan } from './items';
+import { eventLabelSources, type V4LabelDocs } from './labels';
+import { planLessons } from './lessons';
+import { hasV4Data, readSpaceDoc, readSpaceDocs, readV4ItemDocs, readV4LessonDocs, readV4SettingsDocs } from './read';
 import { readRecord, recordData, recordPath, type ImportRecord } from './record';
-import { planSettings } from './settings';
+import { planSettings, termsFromV4 } from './settings';
 
 export type ImportState = 'idle' | 'running' | 'done' | 'failed';
 
@@ -53,12 +61,16 @@ export async function runImport(uid: string): Promise<boolean> {
   const sid = personalSpaceId(uid);
   set({ state: 'running', step: 'V4 자료를 읽는 중…', done: 0, total: 0, counts: undefined, offer: false });
   try {
-    const [v4, v4Items, labels, items, series, pc, mobile, common, recDoc] = await Promise.all([
-      readV4SettingsDocs(uid),
+    const v4 = await readV4SettingsDocs(uid);
+    const [v4Items, v4Lessons, labels, items, series, timetables, lessonDays, progress, pc, mobile, common, recDoc] = await Promise.all([
       readV4ItemDocs(uid),
+      readV4LessonDocs(uid, v4.prefs.timetable),
       readSpaceDocs(sid, 'labels'),
       readSpaceDocs(sid, 'items'),
       readSpaceDocs(sid, 'series'),
+      readSpaceDocs(sid, 'timetables'),
+      readSpaceDocs(sid, 'lessonDays'),
+      readSpaceDocs(sid, 'progress'),
       readSpaceDoc(sid, 'settings', 'pc'),
       readSpaceDoc(sid, 'settings', 'mobile'),
       readSpaceDoc(sid, 'settings', 'common'),
@@ -70,8 +82,10 @@ export async function runImport(uid: string): Promise<boolean> {
     const lp = planLabels(sid, v4.labels, labels);
     const sp = planSettings(sid, v4.prefs, { pc, mobile, common }, record.settings);
     const ip = planItems(sid, v4Items, v4.labels, lp.labelMap, { items, series });
-    const ops = [...lp.ops, ...sp.ops, ...ip.ops];
-    const counts: Record<string, ImportCounts> = { 'labels.event': lp.counts.event, 'labels.note': lp.counts.note, settings: sp.counts, ...ip.counts };
+    const offDay = lessonOffDay(ip, v4.labels, lp.labelMap.event, { ...(readTerms(common?.terms) ?? {}), ...(readTerms(termsFromV4(v4.prefs.timetable)) ?? {}) });
+    const lsp = planLessons(sid, v4Lessons, { timetables, lessonDays, progress }, { offDay, linkOf: ip.linkOf, today: todayStr() });
+    const ops = [...lp.ops, ...sp.ops, ...ip.ops, ...lsp.ops];
+    const counts: Record<string, ImportCounts> = { 'labels.event': lp.counts.event, 'labels.note': lp.counts.note, settings: sp.counts, ...ip.counts, ...lsp.counts };
     const notes = Object.fromEntries(Object.entries(ip.notes).filter(([, n]) => n > 0));
 
     set({ step: '적는 중…', total: ops.length + 1 });
@@ -93,6 +107,20 @@ export async function runImport(uid: string): Promise<boolean> {
     set({ state: 'failed', step: '' });
     return false;
   }
+}
+
+/**
+ * 가져올 자료로 본 '수업 없는 날' (방학 - 가져올 방학이 이긴다, 공휴일, 수업X 일정 - 가져올 일정·라벨 속성).
+ * 이날은 시간표가 없으니 V4 과목을 그대로 적는다(시간표와 같아도).
+ */
+function lessonOffDay(ip: ItemsPlan, labelDocs: V4LabelDocs, eventLabelMap: Readonly<Record<string, string>>, terms: ReturnType<typeof readTerms>) {
+  const labels = new Map<string, boolean>();
+  for (const s of eventLabelSources(labelDocs)) {
+    const id = eventLabelMap[s.v4Name];
+    if (id) labels.set(id, !!s.props?.skip);
+  }
+  const eventsOn = (date: string) => ip.events.filter((e) => e.date === date || onPeriodDay(e as Parameters<typeof onPeriodDay>[0], date, isHoliday));
+  return (date: string) => classOffReason(date, { terms, isHoliday, eventsOn, labels }) !== null;
 }
 
 /** 기록만 읽는다 (환경설정 '가져오기' - 지난 결과). 연결이 없으면 조용히 */

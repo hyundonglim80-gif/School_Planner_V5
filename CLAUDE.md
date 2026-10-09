@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-09 P6-3 끝**(클라우드 - 수업 종·주간학습안내·나이스·인쇄). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P6-4. 👤 V5 주소에서 ⏰ 시간표·📘 진도·🔔 종·📰 주간학습안내·🏫 우리 학교(급식·학사) 써 보기, 달력·검색·휴지통·첨부·링크, 실제 계정 가져오기로 V4와 견주기.
+- **2026-10-09 P6-4 끝 = P6 수업 단계 끝**(클라우드 - V4 수업 가져오기: 시간표·수업 칸·진도·수업 설정). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-1. 👤 V5 주소에서 실제 계정으로 '가져오기'를 한 번 더 눌러 수업 칸·진도가 V4와 같은지, ⏰ 시간표·📘 진도·🔔 종·📰 주간학습안내·🏫 우리 학교 써 보기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -287,6 +287,7 @@
   자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 단위만 - `repo.emu`·`mirror.emu`·`import.emu`).
   규칙 테스트: `app/windowConventions.test.ts`(창 틀·'취소' 금지·그림 단추 설명·⋮ 표) · `app/keys.test.tsx`(키 글자를 박지 않는다).
 - **V4 가져오기** `src/import/v4/`(V4 자리를 읽는 곳은 여기뿐 - `boundary.test`가 지킨다, 쓰기는 V5에만): `hash.ts`(SHA-1·base32·`stableStringify`) · `ids.ts`(`v4id`·id 없는 것 `idlessKey`) ·
+  `lessons.ts`(P6-4 `planLessons` - 표 → 기간 `timetableRanges`(학기마다 절반 넘게 맞는 표), schedules → lessonDays 다른 칸만, v4_progress → progress, 수업 없는 날은 `run.ts` `lessonOffDay`, 링크는 `items.ts` `linkOf`) · `settings.ts` `periodsFromV4`·`termsFromV4` · 점검 `tools/inspect-import-lessons.mjs`(30) ·
   `plan.ts`(다시 가져오기 규칙 `planDocs` - 지문 `src.h`로 새로·바뀜·그대로·둠·지움, V4에서 없어진 것은 `deletedBy: 'v4-import'`, 결과 수 `ImportCounts`) ·
   `record.ts`(기록 `settings/import` - 때·결과·라벨 짝 표·설정 칸마다 적은 값·띠 닫음, 결과 표 줄 `IMPORT_KINDS`) · `legacy/`(V4 옛 모양 읽기 - 본체는 import 금지) ·
   `labels.ts`(`planLabels` - V4 기본 라벨·이름 같은 V5 라벨에 잇기·짝 표) · `settings.ts`(`planSettings` - 칸마다, `COMMON_FROM_V4`) · `read.ts`(서버 읽기) ·

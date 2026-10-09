@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { WriteOp } from '../../data/repo/ops';
 import { changedTotal } from './plan';
-import { planSettings, v4SettingsDocs } from './settings';
+import { periodsFromV4, planSettings, termsFromV4, v4SettingsDocs } from './settings';
 
 // 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
@@ -87,5 +87,38 @@ describe('planSettings - 다시 가져오기', () => {
     // 그다음에도 글자 크기는 V5에서 바꾼 칸
     const third = planSettings(SID, { pc: { fontScale: 'xl', forwardLookbackDays: 30 } }, { ...edited, pc: {} }, again.written);
     expect(putOf(third.ops, 'pc')).toBeUndefined();
+  });
+});
+
+describe('수업 설정 (P6-4)', () => {
+  it('교시: 이름(currentNames) + 시각(v4_periodTimes), 시각만 있으면 기본 이름', () => {
+    expect(periodsFromV4({ currentNames: ['1교시', '2교시', '점심 뒤'] }, { times: { '1': { start: '09:00', end: '09:40' } } })).toEqual([
+      { n: 1, name: '1교시', start: '09:00', end: '09:40' },
+      { n: 2, name: '2교시', start: '', end: '' },
+      { n: 3, name: '점심 뒤', start: '', end: '' },
+    ]);
+    expect(periodsFromV4(undefined, { times: { '2': { start: '09:50', end: '10:30' } } })).toEqual([
+      { n: 1, name: '1교시', start: '', end: '' },
+      { n: 2, name: '2교시', start: '09:50', end: '10:30' },
+    ]);
+    expect(periodsFromV4(undefined, undefined)).toBeUndefined();
+  });
+
+  it('방학: 한 벌 → 여름 방학이 든 학년도', () => {
+    expect(termsFromV4({ semesterConfig: { summerStart: '2026-07-25', summerEnd: '2026-08-16', winterStart: '2027-01-09', winterEnd: '2027-02-28' } })).toEqual({
+      '2026': { summer: { from: '2026-07-25', to: '2026-08-16' }, winter: { from: '2027-01-09', to: '2027-02-28' } },
+    });
+    expect(termsFromV4({})).toBeUndefined();
+  });
+
+  it('교사 유형·수업 종·우리 학교는 모양 그대로 common에', () => {
+    const teaching = { unit: 'class', hasHomeroom: false, homeroomClass: '', subjects: ['과학'], classes: ['5-1'], classColors: {}, updatedAt: 1 };
+    const classBell = { enabled: true, start: { on: true, amount: 1, unit: 'min', when: 'before' }, end: { on: false, amount: 0, unit: 'min', when: 'after' }, weekdaysOnly: true, updatedAt: 1 };
+    const school = { officeCode: 'B10', schoolCode: '7091375', officeName: '서울', name: '점검초', kind: '초등학교', grade: 3, updatedAt: 1 };
+    const { ops } = planSettings(SID, { teaching, classBell, school }, {});
+    const common = putOf(ops, 'common') as Record<string, unknown>;
+    expect(common.teaching).toMatchObject({ unit: 'class', subjects: ['과학'], classes: ['5-1'] });
+    expect(common.classBell).toEqual({ enabled: true, start: { on: true, amount: 1, unit: 'min', when: 'before' }, end: { on: false, amount: 0, unit: 'min', when: 'after' }, weekdaysOnly: true });
+    expect(common.school).toEqual({ officeCode: 'B10', schoolCode: '7091375', officeName: '서울', name: '점검초', kind: '초등학교', grade: 3 });
   });
 });
