@@ -14,12 +14,14 @@ import { driveFilesToClean, type TrashEntry } from './trashList';
 
 const itemAt = (sid: string, id: string) => ({ sid, coll: 'items' as const, id });
 const labelAt = (sid: string, id: string) => ({ sid, coll: 'labels' as const, id });
+const timetableAt = (sid: string, id: string) => ({ sid, coll: 'timetables' as const, id });
 
 /** 되살리기 (여럿) - 되살린 수 */
 export async function restoreEntries(sid: string, entries: readonly TrashEntry[]): Promise<number> {
   const ops: WriteOp[] = [];
   for (const e of entries) {
     if (e.kind === 'label') ops.push(writeOp.restore(labelAt(sid, e.id)));
+    else if (e.kind === 'timetable') ops.push(writeOp.restore(timetableAt(sid, e.id)));
     else if (e.kind === 'event' || e.kind === 'journal' || e.kind === 'memo') ops.push(writeOp.restore(itemAt(sid, e.id)));
   }
   const undo = ops.length ? await batch(ops, { fail: '되살리지 못했습니다.' }) : [];
@@ -58,11 +60,19 @@ async function deleteDriveFiles(ids: readonly string[], token: string): Promise<
  * 영구 삭제 (여럿) - 문서를 지우고 V5에서 올린 첨부를 드라이브에서 정리한다. 지운 수.
  * interactive = 누른 때(구글 로그인을 물을 수 있다) · 아니면 조용한 토큰이 있을 때만.
  */
-export async function purgeEntries(sid: string, entries: readonly TrashEntry[], items: Docs<'items'>, labels: Docs<'labels'>, interactive: boolean): Promise<number> {
+export async function purgeEntries(
+  sid: string,
+  entries: readonly TrashEntry[],
+  items: Docs<'items'>,
+  labels: Docs<'labels'>,
+  interactive: boolean,
+  timetables: Docs<'timetables'> = {},
+): Promise<number> {
   const ops: WriteOp[] = [];
   const purgedItems = [];
   for (const e of entries) {
     if (e.kind === 'label' && labels[e.id]) ops.push(writeOp.purge(labelAt(sid, e.id), labels[e.id]));
+    else if (e.kind === 'timetable' && timetables[e.id]) ops.push(writeOp.purge(timetableAt(sid, e.id), timetables[e.id]));
     else if ((e.kind === 'event' || e.kind === 'journal' || e.kind === 'memo') && items[e.id]) {
       ops.push(writeOp.purge(itemAt(sid, e.id), items[e.id]));
       purgedItems.push(items[e.id]);
@@ -105,7 +115,14 @@ const LAST_RUN_KEY = 'sp5-trash-auto-last';
 const DAY_MS = 86_400_000;
 
 /** 자동 비우기 - 앱을 열 때 하루 한 번 (이 기기 기준, V4 그대로). 지운 수 */
-export async function autoEmptyTrash(sid: string, expired: readonly TrashEntry[], items: Docs<'items'>, labels: Docs<'labels'>, now = Date.now()): Promise<number> {
+export async function autoEmptyTrash(
+  sid: string,
+  expired: readonly TrashEntry[],
+  items: Docs<'items'>,
+  labels: Docs<'labels'>,
+  now = Date.now(),
+  timetables: Docs<'timetables'> = {},
+): Promise<number> {
   try {
     const last = Number(localStorage.getItem(LAST_RUN_KEY) || 0);
     if (now - last < DAY_MS) return 0;
@@ -115,7 +132,7 @@ export async function autoEmptyTrash(sid: string, expired: readonly TrashEntry[]
   }
   if (expired.length === 0) return 0;
   try {
-    return await purgeEntries(sid, expired, items, labels, false);
+    return await purgeEntries(sid, expired, items, labels, false, timetables);
   } catch {
     return 0;
   }

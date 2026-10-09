@@ -1,5 +1,6 @@
 // 찾은 글 짚기 (V4 lib/searchFocus.ts). 검색 결과를 누르면 그 화면으로 간 뒤, 그 카드가 나타나기를 기다려 가운데로 굴리고 잠깐 노랗게 짚는다.
-//   - 카드는 이미 붙어 있는 표식으로 찾는다: 일정 `[data-event-card]` · 메모·기록 `[data-entry-card]` (본문이 먼저 - 창 안의 같은 카드보다 앞이다).
+//   - 카드는 이미 붙어 있는 표식으로 찾는다: 일정 `[data-event-card]` · 메모·기록 `[data-entry-card]` (본문이 먼저 - 창 안의 같은 카드보다 앞이다) ·
+//     수업 `[data-lesson-id="lesson:날짜:교시"]`(하루 수업 칸 - P6-1).
 //   - 접힌 칸은 펼친다: 그 칸이 useFocusReveal로 듣는다(하루 일정·기록 칸, 메모 화면의 진행/완료). 거르개(라벨로 보기)는 검색 창이 옮기기 전에 푼다.
 //   - 자료가 늦게 올 수 있어 6초까지 기다리고, 못 찾으면 안내한다.
 import { useEffect, useState } from 'react';
@@ -7,8 +8,9 @@ import { create } from 'zustand';
 import { showToast } from '../../app/toast';
 
 export interface FocusTarget {
+  /** 항목 id, 수업은 'lesson:날짜:교시' */
   id: string;
-  kind: 'event' | 'note';
+  kind: 'event' | 'note' | 'lesson';
   /** 그 카드가 있는 날 (메모는 null) */
   date: string | null;
   /** 부른 때 - 같은 항목을 다시 골라도 다시 짚는다 */
@@ -27,7 +29,8 @@ const HIGHLIGHT_MS = 2600;
 const WAIT_MS = 6000;
 const POLL_MS = 150;
 
-const selectorOf = (t: FocusTarget) => (t.kind === 'event' ? `[data-event-card="${t.id}"]` : `[data-entry-card="${t.id}"]`);
+const selectorOf = (t: FocusTarget) =>
+  t.kind === 'event' ? `[data-event-card="${t.id}"]` : t.kind === 'lesson' ? `[data-lesson-id="${t.id}"]` : `[data-entry-card="${t.id}"]`;
 
 /** 카드를 찾아 가운데로 굴리고 짚는다. 찾으면 true */
 export function scrollToFocus(t: FocusTarget): boolean {

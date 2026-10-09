@@ -2,7 +2,8 @@
 import { describe, expect, it } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
 import type { Docs } from '../../data/select';
-import { candidatesOf, rangeOf } from './linkerList';
+import { candidatesOf, lessonCandidatesOf, rangeOf } from './linkerList';
+import type { LessonSource } from '../../domain/lessons';
 
 const t = new Timestamp(1, 0);
 const base = { deletedAt: null, updatedAt: t, v: 1, authorId: 'me', labelIds: [], order: 'a0' };
@@ -43,5 +44,24 @@ describe('링크 연결 창 목록', () => {
     expect(candidatesOf(items, 'journal', r, { labelIds: ['L1'] }).map((c) => c.id)).toEqual(['j1']);
     expect(candidatesOf(items, 'journal', r, { labelIds: ['L9'] })).toEqual([]);
     expect(candidatesOf(items, 'event', r, { keyword: '상담' }).map((c) => c.id)).toEqual(['e1']);
+  });
+});
+
+describe('🏫 수업 탭 (계산한 수업 칸)', () => {
+  it('범위 안의 과목·메모가 있는 칸 - 최근 날짜부터, 같은 날은 교시 차례, 키워드', () => {
+    const src: LessonSource = {
+      timetables: [{ id: 't', from: '2026-03-01', to: '2027-02-28', grid: { '4': { '1': '국어', '2': '수학' } } }],
+      days: { '2026-10-08': { periods: { '3': { memo: '실험 준비' } } } },
+      count: 3,
+    };
+    const list = lessonCandidatesOf(src, { start: '2026-10-01', end: '2026-10-08' });
+    expect(list.map((c) => [c.id, c.text])).toEqual([
+      ['lesson:2026-10-08:1', '1교시 국어'],
+      ['lesson:2026-10-08:2', '2교시 수학'],
+      ['lesson:2026-10-08:3', '3교시 (과목 없음) · 실험 준비'],
+      ['lesson:2026-10-01:1', '1교시 국어'],
+      ['lesson:2026-10-01:2', '2교시 수학'],
+    ]);
+    expect(lessonCandidatesOf(src, { start: '2026-10-01', end: '2026-10-08' }, '실험').map((c) => c.id)).toEqual(['lesson:2026-10-08:3']);
   });
 });

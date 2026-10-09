@@ -36,9 +36,9 @@ import {
 } from './store';
 
 /** 사본에 두는 컬렉션 - 그 기능을 옮기는 세션이 더한다(수업 P6-1, 학급 P7-1 …). 개인·그룹 공간 같다 */
-export const MIRRORED: readonly SpaceCollection[] = ['items', 'labels', 'series'];
-/** 지운 표시(deletedAt)가 있는 컬렉션 - 영구 지우기를 서버와 견준다 */
-const WITH_TRASH = new Set<string>(['items', 'labels', 'series']);
+export const MIRRORED: readonly SpaceCollection[] = ['items', 'labels', 'series', 'timetables', 'lessonDays'];
+/** 지운 표시(deletedAt)가 있는 컬렉션 - 영구 지우기를 서버와 견준다 (lessonDays는 날짜 문서라 지우지 않는다) */
+const WITH_TRASH = new Set<string>(['items', 'labels', 'series', 'timetables']);
 
 /** 구독은 커서보다 이만큼 앞부터 (서버 시각이 앞뒤로 조금 어긋나도 놓치지 않게) */
 export const OVERLAP_MS = 60_000;

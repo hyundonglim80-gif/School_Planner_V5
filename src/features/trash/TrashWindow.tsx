@@ -23,10 +23,11 @@ export default function TrashWindow({ close, raise }: WindowProps) {
   const sid = useCurrentSpaceId();
   const items = useDocs('items', sid);
   const labels = useDocs('labels', sid);
+  const timetables = useDocs('timetables', sid);
   const ddays = useCommonSettings((s) => s.ddays);
   const trashDays = useCommonSettings((s) => s.trashDays);
   const clips = useClipboard((s) => s.trash);
-  const entries = useMemo(() => trashEntries({ items, labels, ddays, clips }), [items, labels, ddays, clips]);
+  const entries = useMemo(() => trashEntries({ items, labels, ddays, clips, timetables }), [items, labels, ddays, clips, timetables]);
   const [tab, setTab] = useState<TrashTab>('all');
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -43,8 +44,8 @@ export default function TrashWindow({ close, raise }: WindowProps) {
     if (swept.current || !sid || trashDays <= 0) return;
     const old = expiredOf(entries, trashDays);
     swept.current = true;
-    if (old.length) void purgeEntries(sid, old, items, labels, false).catch(quiet);
-  }, [sid, trashDays, entries, items, labels]);
+    if (old.length) void purgeEntries(sid, old, items, labels, false, timetables).catch(quiet);
+  }, [sid, trashDays, entries, items, labels, timetables]);
 
   const run = async (job: () => Promise<unknown>) => {
     if (busy) return;
@@ -62,7 +63,7 @@ export default function TrashWindow({ close, raise }: WindowProps) {
   const purge = (list: readonly TrashEntry[], ask: string) => {
     if (!sid || list.length === 0 || !window.confirm(ask)) return;
     void run(async () => {
-      const n = await purgeEntries(sid, list, items, labels, true);
+      const n = await purgeEntries(sid, list, items, labels, true, timetables);
       showToast(`🗑️ ${n}개를 영구 삭제했습니다.`);
     });
   };

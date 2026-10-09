@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DELETE_FIELD, failMessage, SERVER_TIME, toWrite, undoOf, undoOfAll, valueAt, writeOp, type WriteOp } from './ops';
+import { DELETE_FIELD, failMessage, nestPaths, SERVER_TIME, toWrite, undoOf, undoOfAll, valueAt, writeOp, type WriteOp } from './ops';
 import type { DocPath, Item } from '../types';
 
 const at: DocPath<'items'> = { sid: 'u_me', coll: 'items', id: 'abc' };
@@ -75,6 +75,29 @@ describe('toWrite - 무엇을 적나', () => {
 
   it('바꿀 칸이 없는 patch는 던진다 (서버 시각만 바뀌어 사본을 흔들지 않게)', () => {
     expect(() => writeOp.patch(at, {}, {})).toThrow();
+  });
+
+  it('칸 합치기(날짜 문서): 바꾼 칸·서버 시각·판, 겹친 모양으로 적는다', () => {
+    const day: DocPath<'lessonDays'> = { sid: 'u_me', coll: 'lessonDays', id: '2026-10-12' };
+    const op = writeOp.merge<'lessonDays'>(day, { 'periods.3.memo': '실험', 'periods.3.supplies': undefined }, null);
+    const w = toWrite(op, ctx);
+    expect(w).toEqual({
+      kind: 'merge',
+      path: 'spaces/u_me/lessonDays/2026-10-12',
+      data: { 'periods.3.memo': '실험', 'periods.3.supplies': DELETE_FIELD, updatedAt: SERVER_TIME, v: 1 },
+    });
+    expect(nestPaths((w as { data: Record<string, unknown> }).data)).toEqual({
+      periods: { '3': { memo: '실험', supplies: DELETE_FIELD } },
+      updatedAt: SERVER_TIME,
+      v: 1,
+    });
+    // 되돌리기 = 그 칸의 옛 값 (없던 칸은 지우기)
+    expect(undoOf(op)).toEqual([
+      { type: 'merge', at: day, changes: { 'periods.3.memo': undefined, 'periods.3.supplies': undefined }, before: op.type === 'merge' ? op.changes : {} },
+    ]);
+    // 한 칸과 그 안쪽 칸을 함께 적으면 던진다
+    expect(() => writeOp.merge<'lessonDays'>(day, { 'periods.3': undefined, 'periods.3.memo': 'x' }, null)).toThrow(/함께/);
+    expect(() => writeOp.merge<'lessonDays'>(day, {}, null)).toThrow();
   });
 });
 

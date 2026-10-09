@@ -5,6 +5,7 @@
 // - 만들 때 더: createdAt(ms)·authorId·deletedAt: null (없는 칸은 쿼리로 거를 수 없다)
 // - 지우기 = 지운 표시(deletedAt·deletedBy). 영구 지우기(purge)는 휴지통에서만
 // - 칸 바꾸기(patch)에서 undefined는 '그 칸 지우기', 'periods.3.memo'처럼 점은 깊은 칸
+// - 칸 합치기(merge)는 patch와 같되 문서가 없으면 만든다 - 날짜가 id인 문서(lessonDays)를 그날 처음 고칠 때(P6-1)
 // - 되돌리기는 고치기 전 칸 값으로 다시 쓰는 것 - 안내의 '되돌리기'와 Ctrl+Z가 같은 길(data/undo.ts)
 // - 맨 위 `id`는 자리일 뿐 칸이 아니다 - 화면이 든 문서(data/select - id가 붙어 있다)를 그대로 넘겨도 적지 않는다(P2-2)
 import type { DocOf, DocPath, Editable, SpaceCollection } from '../types';
@@ -24,6 +25,8 @@ export type Changes<C extends SpaceCollection> = { [K in keyof Editable<C>]?: Ed
 export type WriteOp =
   | { type: 'create'; at: DocPath; data: Fields }
   | { type: 'patch'; at: DocPath; changes: Fields; before: Fields }
+  /** patch와 같되 문서가 없으면 만든다 (setDoc merge). 지운 표시·만든 칸은 붙이지 않는다 - 날짜 문서(lessonDays)용 */
+  | { type: 'merge'; at: DocPath; changes: Fields; before: Fields }
   /** by = 누가 지웠나(없으면 적는 사람). V4 가져오기가 'V4에서 지움'을 적을 때만 준다(import/v4 IMPORT_DELETER) */
   | { type: 'remove'; at: DocPath; by?: string }
   | { type: 'restore'; at: DocPath }
@@ -63,6 +66,15 @@ export const writeOp = {
     if (Object.hasOwn(changes, 'id')) throw new Error("patch: 'id'는 자리라 바꾸지 않는다");
     if (Object.keys(changes).length === 0) throw new Error('patch: 바꿀 칸이 없다');
     return { type: 'patch', at, changes: changes as Fields, before: before as Fields };
+  },
+  /** 문서가 없어도 되는 칸 바꾸기 (날짜가 id인 문서). before = 고치기 전 문서(없으면 {}) */
+  merge<C extends SpaceCollection>(at: DocPath<C>, changes: Changes<C>, before: Partial<DocOf<C>> | null): WriteOp {
+    assertNoManaged(changes as Fields, 'merge');
+    if (Object.keys(changes).length === 0) throw new Error('merge: 바꿀 칸이 없다');
+    const paths = Object.keys(changes);
+    // 'periods.3'과 'periods.3.memo'를 함께 적으면 어느 쪽이 이길지 모른다
+    for (const a of paths) for (const b of paths) if (a !== b && b.startsWith(`${a}.`)) throw new Error(`merge: '${a}'와 '${b}'를 함께 적지 않는다`);
+    return { type: 'merge', at, changes: changes as Fields, before: (before ?? {}) as Fields };
   },
   remove(at: DocPath, by?: string): WriteOp {
     return by ? { type: 'remove', at, by } : { type: 'remove', at };
@@ -104,11 +116,12 @@ export function undoOf(op: WriteOp): Undo {
     // 만든 것은 지운 표시로 (영구로 지우면 다른 기기의 사본이 그 사실을 모른다)
     case 'create':
       return [{ type: 'remove', at: op.at }];
-    case 'patch': {
+    case 'patch':
+    case 'merge': {
       // before는 문서 모양이거나(화면이 든 것) 바꾼 칸 표(되돌리기의 되돌리기 - 'props.forward' 같은 점 이름 그대로)
       const back: Fields = {};
       for (const key of Object.keys(op.changes)) back[key] = Object.hasOwn(op.before, key) ? op.before[key] : valueAt(op.before, key);
-      return [{ type: 'patch', at: op.at, changes: back, before: op.changes }];
+      return [{ type: op.type, at: op.at, changes: back, before: op.changes }];
     }
     case 'remove':
       return [{ type: 'restore', at: op.at }];
@@ -132,6 +145,8 @@ export function undoOfAll(ops: WriteOp[]): Undo {
 export type Write =
   | { kind: 'set'; path: string; data: Fields }
   | { kind: 'update'; path: string; data: Fields }
+  /** 문서가 없으면 만들고 있으면 이 칸만 (data의 열쇠는 점으로 고른 깊은 칸 - 적는 쪽이 겹친 모양으로 바꾼다) */
+  | { kind: 'merge'; path: string; data: Fields }
   | { kind: 'delete'; path: string };
 
 export const docPathString = (at: DocPath) => `spaces/${at.sid}/${at.coll}/${at.id}`;
@@ -157,6 +172,13 @@ export function toWrite(op: WriteOp, ctx: WriteContext): Write {
       data.updatedAt = SERVER_TIME;
       return { kind: 'update', path, data };
     }
+    case 'merge': {
+      const data: Fields = {};
+      for (const [key, value] of Object.entries(op.changes)) data[key] = value === undefined ? DELETE_FIELD : value;
+      data.updatedAt = SERVER_TIME;
+      data.v = 1;
+      return { kind: 'merge', path, data };
+    }
     case 'remove':
       return { kind: 'update', path, data: { deletedAt: SERVER_TIME, deletedBy: op.by ?? ctx.uid, updatedAt: SERVER_TIME } };
     case 'restore':
@@ -180,4 +202,19 @@ export function failMessage(ops: WriteOp[]): string {
     default:
       return '저장하지 못했습니다. 네트워크를 확인하고 다시 저장해 주세요.';
   }
+}
+
+/** 점으로 고른 칸 표 → 겹친 모양 ({ 'periods.3.memo': x } → { periods: { 3: { memo: x } } }) - merge 쓰기를 setDoc에 넘길 때 */
+export function nestPaths(data: Fields): Fields {
+  const out: Fields = {};
+  for (const [path, value] of Object.entries(data)) {
+    const keys = path.split('.');
+    let cur = out;
+    for (const k of keys.slice(0, -1)) {
+      const next = cur[k];
+      cur = (cur[k] = next !== null && typeof next === 'object' && !Array.isArray(next) ? next : {}) as Fields;
+    }
+    cur[keys[keys.length - 1]] = value;
+  }
+  return out;
 }

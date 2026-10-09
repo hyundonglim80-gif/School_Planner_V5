@@ -2,10 +2,12 @@
 //
 // V5는 양쪽 항목의 `linkIds`에 서로의 id를 적는다(DESIGN 4-2). id가 바뀌지 않으므로 V4의 역링크 갈아끼우기
 // (이월·옮기기 때마다 새 id)·트랜잭션 읽기가 없다 - 잇기·끊기는 늘 양쪽을 한 묶음(batch)으로 적는다.
-// 수업은 'lesson:{날짜}:{교시}' - 수업 쪽(lessonDays)에 적는 것은 수업 칸이 생기는 P6-1에서. 지금은 항목 쪽만 다룬다.
+// 수업은 'lesson:{날짜}:{교시}' - 수업 쪽은 lessonDays의 그 칸 `periods.{교시}.linkIds`(P6-1 - 날짜 문서라 merge, 없으면 만든다).
+// 링크는 교시 자리에 붙는다 - ▲▼로 교시를 맞바꿔도 링크는 그 교시에 남는다(features/lessons/lessonOps).
 import { writeOp, type WriteOp } from '../../data/repo/ops';
-import type { YMD } from '../../data/types';
+import type { Stored, YMD } from '../../data/types';
 import { itemPath, type ItemDoc } from '../events/eventOps';
+import { lessonDayPath } from '../lessons/lessonOps';
 
 export const LESSON_LINK_PREFIX = 'lesson:';
 
@@ -18,46 +20,101 @@ export function parseLessonLink(id: string): { date: YMD; period: number } | nul
   return m ? { date: m[1], period: Number(m[2]) } : null;
 }
 
-/** 이 항목에 더한 링크 목록 (이미 있는 것은 그대로) - 바뀐 것이 없으면 null */
-function withLinks(item: ItemDoc, add: readonly string[]): string[] | null {
-  const have = item.linkIds ?? [];
-  const more = add.filter((id) => id !== item.id && !have.includes(id));
+/** 수업 쪽 끝 - 그날 그 교시 (lessonDays 문서의 periods[교시].linkIds) */
+export interface LessonEnd {
+  /** 'lesson:날짜:교시' */
+  id: string;
+  date: YMD;
+  period: number;
+  linkIds: readonly string[];
+  /** 그날 lessonDays 문서 (없으면 null - 처음 적으면 만든다) */
+  day: Stored<'lessonDays'> | null;
+}
+
+/** 수업 링크 id → 수업 쪽 끝 (그날 문서에서 지금 링크를 읽는다). 수업 링크가 아니면 null */
+export function lessonEndOf(id: string, days: Readonly<Record<string, Stored<'lessonDays'>>>): LessonEnd | null {
+  const p = parseLessonLink(id);
+  if (!p) return null;
+  const day = days[p.date] ?? null;
+  return { id, date: p.date, period: p.period, linkIds: day?.periods?.[String(p.period)]?.linkIds ?? [], day };
+}
+
+/** 링크 목록에 더하기 (이미 있는 것은 그대로) - 바뀐 것이 없으면 null */
+function added(have: readonly string[], self: string, add: readonly string[]): string[] | null {
+  const more = add.filter((id) => id !== self && !have.includes(id));
   if (more.length === 0) return null;
   return [...have, ...[...new Set(more)]];
 }
 
-/** 이 항목에서 뺀 링크 목록 - 없던 것이면 null (빈 목록이면 칸을 지운다 = undefined) */
-function withoutLink(item: ItemDoc, id: string): string[] | undefined | null {
-  const have = item.linkIds ?? [];
+/** 링크 목록에서 빼기 - 없던 것이면 null (빈 목록이면 칸을 지운다 = undefined) */
+function removed(have: readonly string[], id: string): string[] | undefined | null {
   if (!have.includes(id)) return null;
   const next = have.filter((x) => x !== id);
   return next.length > 0 ? next : undefined;
 }
 
+const itemLinks = (sid: string, item: ItemDoc, next: string[] | undefined) => writeOp.patch(itemPath(sid, item.id), { linkIds: next }, item);
+const lessonLinks = (sid: string, end: LessonEnd, next: string[] | undefined) =>
+  writeOp.merge(lessonDayPath(sid, end.date), { [`periods.${end.period}.linkIds`]: next }, end.day);
+
 /**
- * 잇기: source의 linkIds에 targets를, 각 target의 linkIds에 source를. 이미 이어진 것은 건드리지 않는다.
- * 수업 링크(lessonIds)는 source 쪽에만 적는다(수업 쪽은 P6-1).
+ * 잇기: source의 linkIds에 targets(항목·수업)를, 각 상대의 linkIds에 source를. 이미 이어진 것은 건드리지 않는다.
  */
-export function linkOps(sid: string, source: ItemDoc, targets: readonly ItemDoc[], lessonIds: readonly string[] = []): WriteOp[] {
+export function linkOps(sid: string, source: ItemDoc, targets: readonly ItemDoc[], lessons: readonly LessonEnd[] = []): WriteOp[] {
   const ops: WriteOp[] = [];
-  const mine = withLinks(source, [...targets.map((t) => t.id), ...lessonIds]);
-  if (mine) ops.push(writeOp.patch(itemPath(sid, source.id), { linkIds: mine }, source));
+  const mine = added(source.linkIds ?? [], source.id, [...targets.map((t) => t.id), ...lessons.map((l) => l.id)]);
+  if (mine) ops.push(itemLinks(sid, source, mine));
   for (const t of targets) {
     if (t.id === source.id) continue;
-    const theirs = withLinks(t, [source.id]);
-    if (theirs) ops.push(writeOp.patch(itemPath(sid, t.id), { linkIds: theirs }, t));
+    const theirs = added(t.linkIds ?? [], t.id, [source.id]);
+    if (theirs) ops.push(itemLinks(sid, t, theirs));
+  }
+  const seen = new Set<string>();
+  for (const l of lessons) {
+    if (seen.has(l.id)) continue;
+    seen.add(l.id);
+    const theirs = added(l.linkIds, l.id, [source.id]);
+    if (theirs) ops.push(lessonLinks(sid, l, theirs));
   }
   return ops;
 }
 
-/** 끊기: 양쪽 모두에서 (상대가 없거나 지운 항목이어도 source 쪽은 끊는다) */
-export function unlinkOps(sid: string, source: ItemDoc, targetId: string, target?: ItemDoc): WriteOp[] {
+/** 수업에서 잇기: 그 교시의 linkIds에 항목들을, 각 항목의 linkIds에 그 교시를 */
+export function lessonLinkOps(sid: string, source: LessonEnd, targets: readonly ItemDoc[]): WriteOp[] {
   const ops: WriteOp[] = [];
-  const mine = withoutLink(source, targetId);
-  if (mine !== null) ops.push(writeOp.patch(itemPath(sid, source.id), { linkIds: mine }, source));
+  const mine = added(source.linkIds, source.id, targets.map((t) => t.id));
+  if (mine) ops.push(lessonLinks(sid, source, mine));
+  for (const t of targets) {
+    const theirs = added(t.linkIds ?? [], t.id, [source.id]);
+    if (theirs) ops.push(itemLinks(sid, t, theirs));
+  }
+  return ops;
+}
+
+/** 끊기: 양쪽 모두에서 (상대가 없거나 지운 항목이어도 source 쪽은 끊는다). 상대가 수업이면 lesson으로 */
+export function unlinkOps(sid: string, source: ItemDoc, targetId: string, target?: ItemDoc, lesson?: LessonEnd | null): WriteOp[] {
+  const ops: WriteOp[] = [];
+  const mine = removed(source.linkIds ?? [], targetId);
+  if (mine !== null) ops.push(itemLinks(sid, source, mine));
   if (target) {
-    const theirs = withoutLink(target, source.id);
-    if (theirs !== null) ops.push(writeOp.patch(itemPath(sid, target.id), { linkIds: theirs }, target));
+    const theirs = removed(target.linkIds ?? [], source.id);
+    if (theirs !== null) ops.push(itemLinks(sid, target, theirs));
+  }
+  if (lesson) {
+    const theirs = removed(lesson.linkIds, source.id);
+    if (theirs !== null) ops.push(lessonLinks(sid, lesson, theirs));
+  }
+  return ops;
+}
+
+/** 수업에서 끊기 */
+export function lessonUnlinkOps(sid: string, source: LessonEnd, targetId: string, target?: ItemDoc): WriteOp[] {
+  const ops: WriteOp[] = [];
+  const mine = removed(source.linkIds, targetId);
+  if (mine !== null) ops.push(lessonLinks(sid, source, mine));
+  if (target) {
+    const theirs = removed(target.linkIds ?? [], source.id);
+    if (theirs !== null) ops.push(itemLinks(sid, target, theirs));
   }
   return ops;
 }

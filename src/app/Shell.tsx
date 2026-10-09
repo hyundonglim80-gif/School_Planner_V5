@@ -8,6 +8,7 @@ import ForwardMarks from '../features/events/ForwardMarks';
 import MultiSelectBar from '../features/events/MultiSelectBar';
 import { useEventShortcuts } from '../features/events/shortcuts';
 import { useNoteShortcuts } from '../features/notes/shortcuts';
+import { useTimetableShortcuts } from '../features/timetable/shortcuts';
 import { useSearchFocusRunner } from '../features/search/focus';
 import { useTrashAutoEmpty } from '../features/trash/auto';
 import { useWeekShortcuts } from '../features/week/prefs';
@@ -44,6 +45,7 @@ export default function Shell() {
   // ＋ 새로 → 새 일정 (단축키 newEvent)
   useEventShortcuts();
   useNoteShortcuts();
+  useTimetableShortcuts();
   // 작년 이맘때 보이기 / 숨기기 (주간)
   useWeekShortcuts();
   // 검색 결과로 간 카드 짚기 (P5-4)

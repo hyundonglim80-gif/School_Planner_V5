@@ -3,19 +3,26 @@
 //   - 갈래(여러 개)·기간(보고 있는 날 기준)·라벨로 거른다. 결과는 50개씩(더 보기).
 //   - 결과를 누르면 그 자리(그날 하루 화면·메모 화면)로 가서 찾은 카드를 짚는다(features/search/focus). 오른쪽 칸이라 검색 창은 그대로 -
 //     휴대폰은 화면을 덮으므로 닫는다. ✏️는 그 항목의 쓰는 칸, 📎는 그 파일을 연다.
-//   - 수업·수업 메모·비고는 P6-1, 조사표명은 P7-4가 갈래를 더한다.
+//   - 수업·수업 메모·비고(P6-1)는 계산한 수업 칸에서 찾는다(domain/search searchLessons) - 누르면 그날 하루 화면의 그 교시, ✏️는 'N교시 수정' 칸.
+//     라벨로 거르면 수업은 빠진다(라벨이 없다). 조사표명은 P7-4가 갈래를 더한다.
 import { useDeferredValue, useMemo, useState } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
+import { useCommonSettings } from '../../app/prefs';
 import type { WindowProps } from '../../app/windows';
 import { isEmptyFilter, matchLabels } from '../../domain/labelTree';
 import { labelColor } from '../../domain/labels';
-import { scopeRange, SEARCH_KINDS, SEARCH_SCOPES, searchItems, type SearchHit, type SearchKind, type SearchScope } from '../../domain/search';
+import { academicYearOf } from '../../domain/dateUtils';
+import { scopeRange, SEARCH_KINDS, SEARCH_SCOPES, searchItems, searchLessons, type LessonHit, type SearchHit, type SearchKind, type SearchScope } from '../../domain/search';
+import { semesterConfigOf } from '../../domain/semester';
 import { itemLabels, useDocs, useLabelTree, type LabelTree } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { useIsMobile } from '../../ui/useIsMobile';
 import type { ItemDoc } from '../events/eventOps';
 import { openEventPanel } from '../events/open';
+import { openLessonPanel } from '../lessons/open';
+import { useLessonSource } from '../lessons/useLessons';
+import { lessonLinkId } from '../links/linkOps';
 import { setJournalFilter, setMemoFilter, useLabelFilters } from '../notes/labelFilter';
 import { openNotePanel } from '../notes/open';
 import { requestFocus } from './focus';
@@ -26,9 +33,15 @@ const BADGES: Record<SearchKind, { text: string; className: string }> = {
   memo: { text: '메모', className: 'bg-amber-50 text-amber-700 border-amber-200' },
   event: { text: '일정', className: 'bg-blue-50 text-blue-700 border-blue-200' },
   journal: { text: '기록', className: 'bg-purple-50 text-purple-700 border-purple-200' },
+  lesson: { text: '수업', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  lessonMemo: { text: '수업 메모', className: 'bg-lime-50 text-lime-700 border-lime-200' },
+  lessonSupplies: { text: '비고', className: 'bg-orange-50 text-orange-700 border-orange-200' },
   attachment: { text: '첨부파일', className: 'bg-rose-50 text-rose-700 border-rose-200' },
 };
-const WHERE: Record<Exclude<SearchKind, 'attachment'>, string> = { memo: '메모', event: '일정', journal: '기록' };
+const WHERE: Record<'memo' | 'event' | 'journal', string> = { memo: '메모', event: '일정', journal: '기록' };
+
+/** 결과 한 줄 - 항목이거나 수업 칸 */
+type Row = { t: 'item'; key: string; date?: string; hit: SearchHit<ItemDoc> } | { t: 'lesson'; key: string; date: string; hit: LessonHit };
 
 const md = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}`;
 
@@ -49,6 +62,8 @@ export default function SearchWindow({ close, raise }: WindowProps) {
   const sid = useCurrentSpaceId();
   const date = useNav((s) => s.date);
   const items = useDocs('items', sid);
+  const lessonSrc = useLessonSource(sid);
+  const terms = useCommonSettings((s) => s.terms);
   const eventTree = useLabelTree('event', sid);
   const noteTree = useLabelTree('note', sid);
   const isMobile = useIsMobile();
@@ -60,13 +75,22 @@ export default function SearchWindow({ close, raise }: WindowProps) {
   const [labelId, setLabelId] = useState('');
   const [visible, setVisible] = useState(PAGE_SIZE);
 
-  const range = scopeRange(scope, date, custom);
+  const range = scopeRange(scope, date, custom, semesterConfigOf(terms, academicYearOf(date)));
   const rangeKey = range ? `${range.start}~${range.end}` : '';
   const hits = useMemo(() => {
     const live = Object.values(items).filter((d) => !d.deletedAt);
-    const found = searchItems(live, { term, kinds, range: rangeKey ? { start: rangeKey.split('~')[0], end: rangeKey.split('~')[1] } : null });
-    return labelId ? found.filter((h) => hasLabel(h.item, labelId, eventTree, noteTree)) : found;
-  }, [items, term, kinds, rangeKey, labelId, eventTree, noteTree]);
+    const q = { term, kinds, range: rangeKey ? { start: rangeKey.split('~')[0], end: rangeKey.split('~')[1] } : null };
+    const found = searchItems(live, q);
+    const itemRows: Row[] = (labelId ? found.filter((h) => hasLabel(h.item, labelId, eventTree, noteTree)) : found).map((hit) => ({ t: 'item', key: hit.key, date: hit.date, hit }));
+    // 수업은 라벨이 없다 - 라벨로 거르면 뺀다
+    const lessonRows: Row[] = labelId ? [] : searchLessons(lessonSrc, q).map((hit) => ({ t: 'lesson', key: hit.key, date: hit.date, hit }));
+    // 날짜 내림차순, 날짜를 모르는 메모는 맨 뒤 (같은 날은 항목 먼저 - 둘 다 이미 차례대로)
+    const rows = [...itemRows, ...lessonRows];
+    return rows
+      .map((r, i) => [r, i] as const)
+      .sort(([a, ia], [b, ib]) => (a.date && b.date ? b.date.localeCompare(a.date) || ia - ib : a.date ? -1 : b.date ? 1 : ia - ib))
+      .map(([r]) => r);
+  }, [items, lessonSrc, term, kinds, rangeKey, labelId, eventTree, noteTree]);
 
   const toggleKind = (k: SearchKind | 'all') => {
     setVisible(PAGE_SIZE);
@@ -97,6 +121,12 @@ export default function SearchWindow({ close, raise }: WindowProps) {
       setScope('memo');
       requestFocus({ id: it.id, kind: 'note', date: null });
     }
+    if (isMobile) close();
+  };
+  const goLesson = (hit: LessonHit) => {
+    setDate(hit.date);
+    setScope('day');
+    requestFocus({ id: lessonLinkId(hit.date, hit.n), kind: 'lesson', date: hit.date });
     if (isMobile) close();
   };
   const edit = (hit: SearchHit<ItemDoc>) => {
@@ -201,7 +231,45 @@ export default function SearchWindow({ close, raise }: WindowProps) {
               <div className="text-xs font-bold text-slate-700 pl-1">
                 {hits.length}건{hits.length > visible && <span className="font-semibold text-slate-500"> (앞에서 {visible}건)</span>}
               </div>
-              {hits.slice(0, visible).map((hit) => {
+              {hits.slice(0, visible).map((row) => {
+                if (row.t === 'lesson') {
+                  const hit = row.hit;
+                  const badge = BADGES[hit.kind];
+                  return (
+                    <div
+                      key={row.key}
+                      data-search-hit={row.key}
+                      data-search-hit-kind={hit.kind}
+                      onClick={() => goLesson(hit)}
+                      title="그날 하루 화면의 그 교시로 가서 짚기"
+                      className="p-3 bg-white hover:bg-blue-50/40 border border-slate-200 hover:border-primary/50 rounded-xl cursor-pointer transition-all flex items-start gap-3 shadow-xs group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold border ${badge.className}`}>{badge.text}</span>
+                          <span className="text-xs font-bold text-slate-600">
+                            {hit.date} {hit.n}교시{hit.kind !== 'lesson' && hit.subject ? ` · ${hit.subject}` : ''}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed line-clamp-3 break-words">{hit.text}</p>
+                      </div>
+                      <button
+                        type="button"
+                        data-search-open={row.key}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (sid) openLessonPanel({ sid, date: hit.date, n: hit.n });
+                        }}
+                        title="이 수업의 수정 칸 열기"
+                        aria-label="수정 칸 열기"
+                        className="shrink-0 w-7 h-7 rounded-lg hover:bg-slate-100 text-sm cursor-pointer"
+                      >
+                        ✏️
+                      </button>
+                    </div>
+                  );
+                }
+                const hit = row.hit;
                 const badge = BADGES[hit.kind];
                 const labels = itemLabels(hit.item.kind === 'event' ? eventTree : noteTree, hit.item.labelIds);
                 return (

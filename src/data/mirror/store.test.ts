@@ -128,6 +128,18 @@ describe('내 쓰기는 화면에 먼저 (덧칠)', () => {
     expect(shown('none')).toBeUndefined();
   });
 
+  it('칸 합치기(날짜 문서)는 없는 문서도 만들어 얹고, 있는 문서는 그 칸만', () => {
+    trackColl('u_me', 'lessonDays');
+    const day = (id: string): DocPath<'lessonDays'> => ({ sid: 'u_me', coll: 'lessonDays', id });
+    const lesson = (id: string) => useMirror.getState().colls['u_me/lessonDays']?.docs[id];
+    beginLocalWrite([writeOp.merge(day('2026-10-12'), { 'periods.3.memo': '실험' }, null)], ctx);
+    expect(lesson('2026-10-12')).toMatchObject({ periods: { '3': { memo: '실험' } }, v: 1 });
+    applyBase('u_me', 'lessonDays', new Map([['2026-10-13', { periods: { '1': { subject: '국어', memo: 'a' } }, updatedAt: t(1), v: 1 }]]));
+    beginLocalWrite([writeOp.merge(day('2026-10-13'), { 'periods.1.memo': undefined, 'periods.2.subject': '' }, null)], ctx);
+    expect(lesson('2026-10-13')).toMatchObject({ periods: { '1': { subject: '국어' }, '2': { subject: '' } } });
+    expect((lesson('2026-10-13') as unknown as { periods: Record<string, object> }).periods['1']).not.toHaveProperty('memo');
+  });
+
   it('끝났는데 서버 판이 오지 않으면 잠시 뒤 걷는다', () => {
     vi.useFakeTimers();
     applyBase('u_me', 'items', new Map([['a', server('처음', 1)]]));

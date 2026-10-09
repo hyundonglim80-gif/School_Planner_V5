@@ -1,13 +1,16 @@
 // 주간 화면 (V4 features/week/WeekScreen.tsx·WeekGrid.tsx). 한 주를 요일 카드로 - 날짜·◀▶는 둘째 줄(SecondRow).
 //   - 본문 폭이 1200px 이상이면 요일이 한 줄로 서고 아래에 다음 주도 한 줄. 읽는 범위는 늘 두 주 - 기기 사본에서 고르므로 폭이 바뀌어도 다시 읽지 않는다.
 //   - 🕰️ 작년 이맘때: 이번 주 줄의 카드 아래에 작년 학년도 같은 주 같은 요일(domain/lastYearWeek), 골라서 📥 올해로 가져오기.
-//   - 주간학습안내·인쇄는 P6-3, 수업 칸은 P6-1, 끌어 옮기기는 P5-3, 공휴일은 P5-3.
+//   - 주간학습안내·인쇄는 P6-3. 수업 줄은 P6-1(features/lessons/WeekLessonRows - 요일끼리 교시 줄 수가 같다), 끌어 옮기기·공휴일은 P5-3.
 import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
+import { useCommonSettings } from '../../app/prefs';
 import { addDays, weekDates } from '../../domain/dateUtils';
 import { lastYearWeekOf } from '../../domain/lastYearWeek';
+import { periodStateAt, timesOf } from '../../domain/periodTimes';
 import { itemLabels, itemsOn, useDocs, useLabelTree } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
+import { useClock } from '../../ui/useClock';
 import { useMainWidth } from '../../ui/useMainWidth';
 import { deleteEvent, setEventDone } from '../events/actions';
 import EventDeleteChooser from '../events/EventDeleteChooser';
@@ -17,6 +20,11 @@ import { doneOnDay, isGrouped, orderAfter, type ItemDoc } from '../events/eventO
 import { useCarried } from '../events/forward';
 import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
 import { openEventPanel } from '../events/open';
+import { openLessonPanel } from '../lessons/open';
+import { useClassColorOf, useTeaching } from '../lessons/teaching';
+import { useLessonsFor } from '../lessons/useLessons';
+import WeekLessonRows from '../lessons/WeekLessonRows';
+import { lessonLinkId } from '../links/linkOps';
 import { openLinkViewer } from '../links/open';
 import { openDayNotes } from '../notes/open';
 import { importLastYear } from './actions';
@@ -38,6 +46,7 @@ export default function WeekScreen() {
   const date = useNav((s) => s.date);
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
+  const showClass = useNav((s) => s.showClass);
   const showLastYear = useShowLastYear((s) => s.on);
   const items = useDocs('items', sid);
   const eventTree = useLabelTree('event', sid);
@@ -54,6 +63,33 @@ export default function WeekScreen() {
   const visible = (days: string[]) => (showWeekend ? days : days.filter((d) => ![0, 6].includes(new Date(`${d}T00:00:00`).getDay())));
   const shownThis = visible(thisWeek);
   const shownNext = visible(nextWeek);
+
+  // ─── 수업 (P6-1) - 두 주를 함께 셈한다. 교시 줄 수는 보이는 요일끼리 같게(7교시 보충이 있으면 그만큼) ───
+  const allDays = useMemo(() => [...thisWeek, ...nextWeek], [thisWeek, nextWeek]);
+  const lessons = useLessonsFor(allDays, sid);
+  const periodDefs = useCommonSettings((s) => s.periods);
+  const times = useMemo(() => timesOf(periodDefs), [periodDefs]);
+  const nowMs = useClock(showClass && allDays.includes(today));
+  const { isClassUnit } = useTeaching();
+  const classColorOf = useClassColorOf(date, sid);
+  const rowsOf = (days: string[]) => Math.max(periodDefs.length, ...days.map((d) => lessons[d]?.cells.length ?? 0));
+  const lessonRows = (day: string, rows: number) => {
+    const view = lessons[day];
+    if (!showClass || !view || !sid) return undefined;
+    const state = day === today ? periodStateAt(times, new Date(nowMs), rows) : null;
+    return (
+      <WeekLessonRows
+        date={day}
+        view={view}
+        rows={rows}
+        nowPeriod={state?.kind === 'during' ? state.period : null}
+        isClassUnit={isClassUnit}
+        classColorOf={classColorOf}
+        onOpen={(n) => openLessonPanel({ sid, date: day, n })}
+        onLinks={(n) => openLinkViewer({ sid, id: lessonLinkId(day, n) })}
+      />
+    );
+  };
 
   // 작년 이맘때 (이번 주 줄에만)
   const lastYear = useMemo(() => lastYearWeekOf(thisWeek), [thisWeek]);
@@ -127,54 +163,58 @@ export default function WeekScreen() {
     else void deleteEvent(sid, ev).catch(quiet);
   };
 
-  const grid = (days: string[], withLastYear: boolean) => (
-    <div data-week-grid className={gridClass(days.length)} style={{ ['--week-cols' as string]: days.length }}>
-      {days.map((day) => {
-        const pickedHere = new Set(multi.picks.filter((p) => p.day === day).map((p) => p.id));
-        const ly = withLastYear && showLastYear ? lastYearOf(day) : null;
-        return (
-          <WeekDayCard
-            key={day}
-            date={day}
-            today={today}
-            events={eventsOf(day)}
-            carried={day === today ? carried.list : undefined}
-            noteCount={itemsOn(items, day, 'note').length}
-            showEvents={showEvents}
-            labelsOf={(ev) => itemLabels(eventTree, ev.labelIds)}
-            pickedIds={pickedHere}
-            multiOn={multi.on}
-            onOpenDay={() => {
-              setDate(day);
-              setScope('day');
-            }}
-            onAdd={() => sid && openEventPanel({ sid, date: day })}
-            onOpenNotes={() => sid && openDayNotes({ sid, date: day })}
-            onEventClick={(ev, e) => eventClick(ev, day, days, e)}
-            onToggleDone={(ev, isCarried) => toggleDone(ev, day, isCarried)}
-            onDelete={(ev) => remove(ev, day)}
-            onOpenLinks={(ev) => sid && openLinkViewer({ sid, id: ev.id })}
-            drop={{ handlers: drop.handlers, over: drop.overDate === day, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}
-            lastYear={
-              ly && (
-                <LastYearDay
-                  lastDate={ly.from}
-                  toDate={day}
-                  events={ly.events}
-                  notes={ly.notes}
-                  existsThisYear={(it) => existsThisYear(items, it, day)}
-                  eventLabels={(it) => itemLabels(eventTree, it.labelIds)}
-                  noteLabels={(it) => itemLabels(noteTree, it.labelIds)}
-                  picked={pickedKeys}
-                  onTogglePick={togglePickItem}
-                />
-              )
-            }
-          />
-        );
-      })}
-    </div>
-  );
+  const grid = (days: string[], withLastYear: boolean) => {
+    const rows = rowsOf(days);
+    return (
+      <div data-week-grid className={gridClass(days.length)} style={{ ['--week-cols' as string]: days.length }}>
+        {days.map((day) => {
+          const pickedHere = new Set(multi.picks.filter((p) => p.day === day).map((p) => p.id));
+          const ly = withLastYear && showLastYear ? lastYearOf(day) : null;
+          return (
+            <WeekDayCard
+              key={day}
+              date={day}
+              today={today}
+              events={eventsOf(day)}
+              carried={day === today ? carried.list : undefined}
+              noteCount={itemsOn(items, day, 'note').length}
+              showEvents={showEvents}
+              lessons={lessonRows(day, rows)}
+              labelsOf={(ev) => itemLabels(eventTree, ev.labelIds)}
+              pickedIds={pickedHere}
+              multiOn={multi.on}
+              onOpenDay={() => {
+                setDate(day);
+                setScope('day');
+              }}
+              onAdd={() => sid && openEventPanel({ sid, date: day })}
+              onOpenNotes={() => sid && openDayNotes({ sid, date: day })}
+              onEventClick={(ev, e) => eventClick(ev, day, days, e)}
+              onToggleDone={(ev, isCarried) => toggleDone(ev, day, isCarried)}
+              onDelete={(ev) => remove(ev, day)}
+              onOpenLinks={(ev) => sid && openLinkViewer({ sid, id: ev.id })}
+              drop={{ handlers: drop.handlers, over: drop.overDate === day, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}
+              lastYear={
+                ly && (
+                  <LastYearDay
+                    lastDate={ly.from}
+                    toDate={day}
+                    events={ly.events}
+                    notes={ly.notes}
+                    existsThisYear={(it) => existsThisYear(items, it, day)}
+                    eventLabels={(it) => itemLabels(eventTree, it.labelIds)}
+                    noteLabels={(it) => itemLabels(noteTree, it.labelIds)}
+                    picked={pickedKeys}
+                    onTogglePick={togglePickItem}
+                  />
+                )
+              }
+            />
+          );
+        })}
+      </div>
+    );
+  };
 
   const pickedCount = pickedKeys.size;
   const md = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}`;

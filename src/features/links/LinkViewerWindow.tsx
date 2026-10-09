@@ -2,11 +2,14 @@
 //   - 이은 항목의 **지금 내용**(글·표·사진·파일)을 기기 사본에서 바로 보인다(V4는 서버에서 하나씩 읽었다).
 //   - ✏️ 수정 = 하루·메모 화면과 같은 쓰는 칸, 📌 이동 = 그날 하루 화면(메모는 메모 화면), 🗑️ 삭제 = 연결만 끊는다(양쪽 - 안내의 되돌리기).
 //   - 다른 항목의 링크를 열면 오른쪽 줄에 탭으로 쌓이고, 같은 항목이면 그 탭(창 목록 sameAs).
-//   - 수업 링크('lesson:…')는 그날·교시만 보인다 - 수업 내용·수정은 수업 칸이 생기는 P6-1에서.
+//   - 수업('lesson:날짜:교시')도 같다: 수업 칸에서 열면 그 교시에 이은 항목, 항목에서 열면 이은 수업의 과목·준비물·메모(계산 - P6-1),
+//     ✏️ = 'N교시 수정' 칸, 📌 = 그날 하루 화면의 그 교시.
+import { useMemo } from 'react';
 import { setDate, setScope } from '../../app/nav';
 import type { WindowProps } from '../../app/windows';
 import { fileIcon, isImageAttachment } from '../../domain/attachments';
 import { shortDateLabel } from '../../domain/dateUtils';
+import { lessonsOn } from '../../domain/lessons';
 import { attachmentImageSrc } from '../../data/google/drive';
 import { useDocs, useMirrorStatus } from '../../data/select';
 import FormattedText from '../../ui/FormattedText';
@@ -15,9 +18,12 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import type { ItemDoc } from '../events/eventOps';
 import { openEventPanel } from '../events/open';
 import EntryTableView from '../notes/EntryTableView';
+import { openLessonPanel } from '../lessons/open';
+import { useLessonSource } from '../lessons/useLessons';
 import { openNotePanel } from '../notes/open';
-import { removeLink } from './actions';
-import { LINK_KIND_ICON, LINK_KIND_NAME, linkKindOf, parseLessonLink } from './linkOps';
+import { requestFocus } from '../search/focus';
+import { removeLessonLink, removeLink } from './actions';
+import { LINK_KIND_ICON, LINK_KIND_NAME, lessonEndOf, linkKindOf, parseLessonLink } from './linkOps';
 import type { LinkWindowParams } from './open';
 
 const btn = 'px-2 py-1 text-xs font-bold rounded-lg border transition-colors cursor-pointer';
@@ -25,9 +31,14 @@ const btn = 'px-2 py-1 text-xs font-bold rounded-lg border transition-colors cur
 export default function LinkViewerWindow({ params, close, raise }: WindowProps<LinkWindowParams>) {
   const { sid, id } = params;
   const items = useDocs('items', sid);
+  const days = useDocs('lessonDays', sid);
+  const lessonSrc = useLessonSource(sid);
   const status = useMirrorStatus('items', sid);
-  const source = items[id];
-  const links = source?.linkIds ?? [];
+  const lessonEnd = useMemo(() => (parseLessonLink(id) ? lessonEndOf(id, days) : null), [id, days]);
+  const source = lessonEnd ? undefined : items[id];
+  const links = (lessonEnd ? lessonEnd.linkIds : source?.linkIds) ?? [];
+  /** 그 교시 (계산한 수업 칸) */
+  const lessonCell = (date: string, n: number) => lessonsOn(date, lessonSrc).cells.find((c) => c.n === n);
 
   const goTo = (date: string | null) => {
     if (date) {
@@ -42,11 +53,12 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
   };
 
   const unlink = (targetId: string) => {
-    if (!source) return;
     const target = items[targetId];
-    void removeLink(sid, source, targetId, target).catch(() => {
+    const quiet = () => {
       // 안내는 저장 도우미가 했다
-    });
+    };
+    if (lessonEnd) void removeLessonLink(sid, lessonEnd, targetId, target).catch(quiet);
+    else if (source) void removeLink(sid, source, targetId, target, lessonEndOf(targetId, days)).catch(quiet);
   };
 
   const header = (icon: string, title: string, linkId: string, actions: { move?: () => void; edit?: () => void }) => (
@@ -75,10 +87,20 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
   const card = (linkId: string) => {
     const lesson = parseLessonLink(linkId);
     if (lesson) {
+      const c = lessonCell(lesson.date, lesson.period);
       return (
         <div key={linkId} data-link-row={linkId} data-link-kind="lesson" className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
-          {header(LINK_KIND_ICON.lesson, `[${shortDateLabel(lesson.date)}] ${lesson.period}교시 수업`, linkId, { move: () => goTo(lesson.date) })}
-          <p className="text-xs text-slate-400">수업 내용은 수업 칸에서 봅니다.</p>
+          {header(LINK_KIND_ICON.lesson, `[${shortDateLabel(lesson.date)}] ${lesson.period}교시 ${c?.subject || '수업'}`, linkId, {
+            move: () => {
+              goTo(lesson.date);
+              requestFocus({ kind: 'lesson', id: linkId, date: lesson.date });
+            },
+            edit: () => openLessonPanel({ sid, date: lesson.date, n: lesson.period }),
+          })}
+          {c?.supplies && <p className="text-xs text-amber-600 font-medium mb-1">📌 {c.supplies}</p>}
+          <div data-link-text className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs font-medium whitespace-pre-wrap break-words leading-relaxed min-h-[36px] text-slate-800">
+            {c?.memo ? <FormattedText text={c.memo} /> : <span className="text-slate-400">(수업 메모 없음)</span>}
+          </div>
         </div>
       );
     }
@@ -148,6 +170,8 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
     );
   };
 
+  const lessonTitle = lessonEnd ? `[${shortDateLabel(lessonEnd.date)}] ${lessonEnd.period}교시 ${lessonCell(lessonEnd.date, lessonEnd.period)?.subject || '수업'}` : '';
+
   return (
     <ModalShell isOpen onClose={close} raise={raise} width="lg" title={`📑 연결된 데이터 (${links.length})`} footer={<ModalCloseButton onClose={close} />}>
       <div data-link-viewer={id} className="space-y-3">
@@ -156,10 +180,15 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
             {LINK_KIND_ICON[linkKindOf(source)]} {source.text.split('\n')[0] || '(내용 없음)'} 에 이은 것
           </p>
         )}
+        {lessonEnd && (
+          <p className="text-xs text-slate-500 truncate" data-link-viewer-source>
+            {LINK_KIND_ICON.lesson} {lessonTitle} 에 이은 것
+          </p>
+        )}
         {links.length === 0 ? (
           <div className="text-center py-12 text-slate-400 flex flex-col items-center gap-2" data-link-viewer-empty>
             <span className="text-3xl opacity-50">📂</span>
-            <p className="text-xs font-medium">{source ? '연결된 항목이 없습니다.' : status === 'live' ? '항목을 찾지 못했습니다.' : '불러오는 중…'}</p>
+            <p className="text-xs font-medium">{source || lessonEnd ? '연결된 항목이 없습니다.' : status === 'live' ? '항목을 찾지 못했습니다.' : '불러오는 중…'}</p>
           </div>
         ) : (
           links.map(card)
