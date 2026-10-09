@@ -72,8 +72,8 @@ try {
   undo.add(async () => {
     for (const l of await v5Labels()) if (!beforeIds.has(l.id)) await deleteDoc(doc(em.db, 'spaces', sid, 'labels', l.id));
   });
-  // 가져오기는 일정·기록도 함께 들여온다 - 끝에 걷는다(남기면 inspect-import-items가 '이미 있음'으로 센다)
-  for (const c of ['items', 'series']) {
+  // 가져오기는 일정·기록·수업도 함께 들여온다 - 끝에 걷는다(남기면 inspect-import-items·lessons가 '이미 있음'으로 센다)
+  for (const c of ['items', 'series', 'timetables', 'lessonDays', 'progress']) {
     const ref = collection(em.db, 'spaces', sid, c);
     const had = new Set((await getDocs(ref)).docs.map((d) => d.id));
     undo.add(async () => {
