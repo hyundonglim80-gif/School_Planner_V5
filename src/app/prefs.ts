@@ -17,6 +17,7 @@ import { DEFAULT_PERIODS, readPeriods, type PeriodDef } from '../domain/periodTi
 import { readTerms, type SchoolTerms } from '../domain/semester';
 import { sanitizeTeachingMode, type TeachingMode } from '../domain/teachingMode';
 import { DEFAULT_BELL, sanitizeBell, type ClassBellSettings } from '../domain/classBell';
+import { DEFAULT_PHRASES, sanitizePhrases } from '../domain/observationPhrases';
 import { sanitizeSchool, type SchoolSetting } from '../domain/schoolSetting';
 import {
   boolField,
@@ -139,6 +140,8 @@ export interface CommonSettings {
   school: SchoolSetting | null;
   /** 학생 사진 폴더 (V4 backup_config.studentPhotoFolder* - P7-1). 학급마다 따로 고른 폴더 + 옛 위쪽 폴더 */
   photoFolders: PhotoFolders;
+  /** 관찰 문구 단추 (V4 v4_observationPhrases - P7-3). 자리표 학생 칸·학생 기록이 함께 쓴다 */
+  phrases: string[];
 }
 
 export interface PhotoFolderConfig {
@@ -190,6 +193,7 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   classBell: customField<ClassBellSettings>(DEFAULT_BELL, (v) => (v && typeof v === 'object' && !Array.isArray(v) ? sanitizeBell(v) : undefined)),
   school: customField<SchoolSetting | null>(null, (v) => (v === null ? null : (sanitizeSchool(v) ?? undefined))),
   photoFolders: customField<PhotoFolders>(EMPTY_FOLDERS, readPhotoFolders),
+  phrases: customField<string[]>(DEFAULT_PHRASES, (v) => (Array.isArray(v) ? sanitizePhrases(v) : undefined)),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */

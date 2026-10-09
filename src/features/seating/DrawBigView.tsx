@@ -1,0 +1,103 @@
+// 발표자 뽑기 크게 보기 (V4 components/DrawBigView.tsx). 화면 가득 뽑힌 학생 이름 - 교실 화면에 띄워 함께 본다.
+//   사진 크게 보기처럼 화면 가운데에 덮는다(오른쪽 칸이 아니다). '다음 학생'에 처음부터 커서를 두어 Enter·Space(발표용 리모컨)로 이어 뽑는다.
+import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { useModalLayer } from '../../app/history';
+import { useBackdropClose } from '../../ui/useBackdropClose';
+import { useBodyScrollLock } from '../../ui/useBodyScrollLock';
+import { useVisualViewport } from '../../ui/useVisualViewport';
+
+interface Props {
+  isOpen: boolean;
+  onClose: () => void;
+  /** 보이는 학생 (없으면 아직 안 뽑음) */
+  sid: string | null;
+  num: number | null;
+  name: string;
+  rolling: boolean;
+  /** '이번 판 3/25명' 같은 한 줄 */
+  statusLine: string;
+  onPick: () => void;
+}
+
+export default function DrawBigView({ isOpen, onClose, sid, num, name, rolling, statusLine, onPick }: Props) {
+  useBodyScrollLock(isOpen);
+  const vv = useVisualViewport(isOpen);
+  const zIndex = useModalLayer(isOpen, onClose);
+  const backdrop = useBackdropClose(onClose);
+  const pickRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (isOpen) pickRef.current?.focus();
+  }, [isOpen]);
+
+  // ESC는 크게 보기만 닫는다 (뒤의 자리표 창은 그대로) - 앱 키 처리(window 거품 단계)보다 먼저 받아 멈춘다 (ui/ImageViewer와 같다)
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  });
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      e.preventDefault();
+      closeRef.current();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 flex flex-col items-center justify-center gap-6 p-6 bg-slate-900/95 text-white"
+      style={{ left: vv.left, top: vv.top, width: vv.width, height: vv.height, zIndex }}
+      role="dialog"
+      aria-label="발표자 뽑기 크게 보기"
+      data-draw-big
+      {...backdrop}
+    >
+      <button
+        type="button"
+        data-draw-big-close
+        onClick={onClose}
+        className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 font-bold cursor-pointer"
+        title="닫기"
+        aria-label="크게 보기 닫기"
+      >
+        ✕
+      </button>
+      <div className="flex flex-col items-center gap-2 select-none" aria-live="polite" data-draw-big-name={rolling ? '' : (sid ?? '')}>
+        {sid === null ? (
+          <span className="text-3xl font-black text-white/60">🎯 다음 학생을 누르면 뽑습니다</span>
+        ) : (
+          <>
+            {num !== null && (
+              <span className={`font-black leading-none ${rolling ? 'text-white/50' : 'text-amber-300'}`} style={{ fontSize: 'min(10vw, 96px)' }}>
+                {num}
+              </span>
+            )}
+            <span className={`font-black leading-tight text-center break-keep transition-transform duration-200 ${rolling ? 'text-white/60' : 'text-white scale-105'}`} style={{ fontSize: 'min(16vw, 180px)' }}>
+              {name}
+            </span>
+          </>
+        )}
+      </div>
+      <p className="text-sm font-bold text-white/60">{statusLine}</p>
+      <button
+        ref={pickRef}
+        type="button"
+        data-draw-big-pick
+        onClick={onPick}
+        // disabled로 두면 굴리는 동안 커서가 빠져 Enter로 이어 뽑지 못한다 - 누름은 onPick이 굴리는 중이면 무시한다
+        aria-disabled={rolling}
+        className={`px-8 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 text-xl font-black cursor-pointer ${rolling ? 'opacity-60' : ''}`}
+      >
+        🎯 다음 학생
+      </button>
+    </div>,
+    document.body,
+  );
+}

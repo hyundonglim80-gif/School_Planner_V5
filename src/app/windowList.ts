@@ -8,6 +8,7 @@ import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/
 import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attendance/open';
 import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
 import { SUBJECT_ATT_CELL, SUBJECT_ATT_SUMMARY, sameSubjectCell, type SubjectAttendanceCellParams, type SubjectAttendanceSummaryParams } from '../features/subjectAttendance/open';
+import { SEATING_WINDOW, type SeatingParams } from '../features/seating/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -89,6 +90,18 @@ registerWindow<SubjectAttendanceSummaryParams | undefined>({
   show: ({ classUnit }) => classUnit,
   help: 'subject-attendance',
   load: () => import('../features/subjectAttendance/SubjectAttendanceWindow'),
+});
+
+// 🪑 자리표 (P7-3) - 학급 도구 카드 🪑·🎯, 하루 수업 머리줄 🎯 뽑기(담임 - DayLessons), 교과 모드 교시 카드의 반 도구, 단축키 '자리표'·'발표자 뽑기 (자리표)'.
+//   창은 하나 - 다시 열면 그 탭을 보이고 학급·뽑기 칸을 맞춘다(features/seating/open)
+registerWindow<SeatingParams | undefined>({
+  id: SEATING_WINDOW,
+  title: '자리표',
+  icon: '🪑',
+  kind: 'side',
+  classTool: true,
+  help: 'seating',
+  load: () => import('../features/seating/SeatingWindow'),
 });
 
 // 그날 기록 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n

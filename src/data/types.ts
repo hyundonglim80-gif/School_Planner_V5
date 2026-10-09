@@ -309,15 +309,29 @@ export interface SubjectAttendance extends Stamped {
   periods: Record<string, Record<string, { kind: string; reason: string; note?: string }>>;
 }
 
-/** seating·classHub·quiz - V4 모양(학생은 sid). 그 기능을 옮기는 세션(P7-3·P7-5)이 칸을 채운다 */
-export interface Seating extends Stamped {
-  [field: string]: unknown;
+/** seating/{id} - 자리표 한 장 (V4 v4_seating 모양, 학생은 sid - domain/seating). 지운 표시 = 휴지통 '기타' */
+export interface Seating extends Tracked {
+  classId: string;
+  name: string;
+  rows: number;
+  cols: number;
+  /** 분단 폭 (0 통로 없음 · 1 한 칸씩 · 2 짝 · 3) */
+  groupCols: number;
+  front: 'top' | 'bottom';
+  /** '줄-열' → sid */
+  seats: Record<string, string>;
+  off: string[];
+  locked: string[];
+  /** 지난 짝 ('sidA|sidB') */
+  history: Array<{ at: number; pairs: string[] }>;
 }
+/** classHub/{classId} - 학급마다 하나: 떨어뜨릴 학생 'sidA|sidB' · 발표자 뽑기 이번 판 · 저장한 모둠(id → 한 벌) */
 export interface ClassHub extends Stamped {
   apart?: string[];
   draw?: { picked: string[]; round: number };
-  groupSets?: Record<string, unknown>;
+  groupSets?: Record<string, { name: string; groups: Array<{ name: string; members: string[] }>; createdAt: number; updatedAt: number }>;
 }
+/** quiz - 암기 성적 (P7-5가 칸을 채운다) */
 export interface Quiz extends Stamped {
   [field: string]: unknown;
 }

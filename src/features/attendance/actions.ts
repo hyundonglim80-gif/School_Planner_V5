@@ -16,6 +16,8 @@ export async function saveAttendance(
   stored: Stored<'attendance'> | undefined,
   before: AttendanceMarks,
   after: AttendanceMarks,
+  /** quiet = 안내 없이 Ctrl+Z 더미에만 (자리표 학생 칸 - 누를 때마다 저장) */
+  opts?: { quiet?: boolean },
 ): Promise<boolean> {
   const changes = marksChanges(before, after);
   if (Object.keys(changes).length === 0) return false;
@@ -24,6 +26,6 @@ export async function saveAttendance(
     fail: '출석부를 저장하지 못했습니다. 적던 것은 그대로 두었으니 다시 저장해 주세요.',
   });
   const n = Object.keys(after).length;
-  recordUndo(sid, n ? `✅ ${shortDateLabel(date)} 출결 ${n}건을 저장했습니다.` : `✅ ${shortDateLabel(date)} 모두 출석으로 저장했습니다.`, undo, { what: '출결 저장' });
+  recordUndo(sid, n ? `✅ ${shortDateLabel(date)} 출결 ${n}건을 저장했습니다.` : `✅ ${shortDateLabel(date)} 모두 출석으로 저장했습니다.`, undo, { what: '출결 저장', quiet: opts?.quiet });
   return true;
 }

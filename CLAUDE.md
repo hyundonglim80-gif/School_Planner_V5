@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-09 P7-2 끝**(클라우드 - 출석부·알림장·기록 칸 카드·교과 출결). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-3. 👤 V5 주소에서 📋 출석부(2.5초 뒤 저절로 저장)·📢 알림장·🙋 교과 출결 써 보기, 학급 화면 명렬표·📷 사진(드라이브 선택창은 PC에서)·'@이름'.
+- **2026-10-09 P7-3 끝**(클라우드 - 🪑 자리표·학생 칸·🎯 발표자 뽑기·👥 모둠). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-4. 👤 V5 주소에서 학급 화면 → 🪑 자리표(끌어 바꾸기·섞기·자리를 눌러 출결·관찰 한 줄)·하루 수업 '🎯 뽑기'(크게 보기) 써 보기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -74,6 +74,7 @@
 - **클라우드 컨테이너는 apis.google.com·*.web.app에 닿지 못한다** - Firebase 팝업 로그인(다시 받기 포함)이 창을 열기 전에 `auth/internal-error`. 그 확인은 PC에서(P4-2 inspect-attach가 건너뛴다).
 - **저장소에 prettier가 없다 - `npx prettier --write`를 돌리지 않는다**(P6-1 - 따옴표·줄 폭을 통째로 바꿨다. 되돌리고 고친 것만 다시).
 - **V4에서 옮긴 파일이 `new URL('./…', import.meta.url)`로 부르는 것(워커 등)은 개발 서버에서는 없어도 넘어가고 빌드에서만 깨진다** - 옮기면 `npm run build`까지(P7-1 `ui/shrinkWorker.ts`). 점검 스크립트는 끝에 `process.exit()`(에뮬레이터 Firebase가 노드를 붙잡는다).
+- **`pkill -f <글자>`는 그 글자가 든 자기 명령 줄(셸)도 죽인다**(P7-3 - `pkill -f vite`로 Bash가 144로 끝났다). 에뮬레이터·개발 서버는 뒤에서(`run_in_background`) 켠다.
 - **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
 - **C: 디스크가 차면 에뮬레이터가 죽는다**: `firebase-debug.log`·`firestore-debug.log`(git 무시)가 커진다. 긴 점검 전에 `df -h /c`, 차면 두 로그를 비우고 `npm run emu` → seed.
   클라우드 컨테이너는 두 로그를 `/dev/null` 링크로 둔다(`ln -s /dev/null firebase-debug.log` - P4-3에 30GB가 되어 Auth 에뮬레이터가 죽었다). 링크는 git 무시라 기기마다 한 번.
@@ -118,7 +119,7 @@
 - 오른쪽 칸은 **한 줄에 한 폭**. 경계선을 끌어 폭을 바꾸고, 두 번 누르면 기본 폭.
 - 여러 개면 **위에 탭**. 새 칸은 탭 하나로 더해지고 보인다, 숨은 탭도 적던 글째 살아 있다, 탭 ×는 그 칸 닫기. 높이를 나누는 방식(62/38)은 사용자가 거절했다.
 - **쓰는 칸(메모·기록·일정·알림장·출석부)도 탭**이다. 이미 열린 항목을 다시 열면 그 탭을 보인다. 닫기·뒤로가기·Ctrl+S는 그 칸 하나만.
-- **ESC는 오른쪽 줄 전체**를 닫는다(저장 안 한 글이 있으면 먼저 묻는다). **Ctrl+S**는 커서가 든 칸·창만, 커서가 없으면 보이는 탭.
+- **ESC는 오른쪽 줄 전체**를 닫는다(저장 안 한 글이 있으면 먼저 묻는다). 화면 가운데를 덮는 크게 보기(사진·🎯 뽑기)는 ESC를 window capture에서 먼저 받아 그것만 닫는다(P7-3). **Ctrl+S**는 커서가 든 칸·창만, 커서가 없으면 보이는 탭.
   Ctrl+S는 저장 단추가 있는 모든 곳에서 저장한다. 좁은 화면에서 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
 - 기록·메모를 여는 길은 모두 **하루·메모 화면과 같은 쓰는 칸**이다. 새 일정·기록·메모는 **저장한 뒤에도 적은 것이 남고** 그 항목의 수정 칸이 된다.
 - 새 창은 반드시 `ModalShell` 또는 `PopupFrame`(테스트가 지킨다).
@@ -276,6 +277,12 @@
   `features/notices/`(`NoticePanel` 쓰는 칸 `notices` `{ sid?, date, tab? }` 공간마다 `[data-notice-panel|tab|text|draft|meal|preview|copy|share|save|dirty|range|day|open|count]`) ·
   `features/subjectAttendance/`(`SubjectAttendancePanel` 쓰는 칸 `subjectAttendanceCell` `{ classId, date, n }` `[data-subject-att-panel|row|kind|reason|note|open-summary]` · `SubjectAttendanceWindow` 누계 창 `subjectAttendance` `[data-subject-summary|summary-class|summary-range|summary-row|summary-history|summary-csv]`) ·
   하루 수업 머리줄 📋·📢(담임) · 교과 모드 교시 카드 🙋 `[data-subject-attendance=n]` · 기록 칸 맨 위 카드 `features/day/useDayCards.ts`·`DayCards.tsx`(`[data-day-card|day-card-key]` - 그날 기록 창·검색 '기록'에도) · 학급 화면 📋 오늘 출결 줄 `[data-class-today]` · 주간학습안내 '알림장' 줄. 점검 `tools/inspect-attendance.mjs`(81).
+- **자리표·뽑기·모둠**(P7-3 - 개인 공간 `seating/{id}`·`classHub/{classId}`, 학생 sid): 순수 `domain/seating.ts`(섞기 `shuffleSeats`·`numberOrderSeats`·`pairKey` 'a|b'·`nearApartSeats`·`displayOrder`)·`draw.ts`(`pickNext`·`afterPick`·`drawStatusLine`)·`groups.ts`(`randomGroups`·`seatGroups`·`moveMember`·`swapMembers`·`evalGroupsFrom`)·`observationPhrases.ts` ·
+  사본 `MIRRORED` += seating·classHub(휴지통 '자리표' - `trash/useTrashDocs`) · 설정 `common.phrases` · `features/seating/`(`seatingData`(읽기·쓰기 한 곳) · `SeatingWindow` 창 `seating` `{ classId?, draw?, at? }`(`[data-seating-window|seating-class|seating-tab|seating-new|seating-create|seating-empty|seating-tool=shuffle|edit|shape|apart|groups|draw|seating-grid|seat|seat-sid|seat-locked|seat-warn|seat-att|seat-drawn|seat-drawn-now|seat-group|seat-action|unseated|unseated-sid|shuffle-opt]`) ·
+  `SeatShapeBox`(`[data-seating-box=shape|seating-name|seating-size|seating-size-up|down|seating-group-cols|seating-front|seating-number-order|seating-delete]`) · `SeatApartBox`(`[data-apart|apart-a|apart-b|apart-add|apart-remove]`) ·
+  `SeatStudentCard`(`[data-seat-student|seat-att-kind|reason|period|note|seat-observe-input|seat-observe-save|seat-student-lines|seat-student-close]`)·`observation.ts`·`ObservationPhrases`(`[data-observation-phrase|phrase-remove|phrase-input|phrase-add|phrases-edit]`) ·
+  `useStudentDraw`·`SeatDrawBox`(`[data-seating-box=draw|draw-pick|draw-result|draw-undo|draw-new-round|draw-big-open|draw-picked]`)·`DrawBigView`(`[data-draw-big|draw-big-name|draw-big-pick|draw-big-close]`) · `SeatGroupsBox`(`[data-seating-box=groups|group-*]`) · `open.ts`(`openSeating`·단축키 '자리표'·'발표자 뽑기 (자리표)')) ·
+  하루 수업 머리줄 `[data-lessons-tool=drawStudent]`(담임) · 교과 교시 카드 `[data-class-tools|class-tool-btn]`. 점검 `tools/inspect-seating.mjs`(69).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·

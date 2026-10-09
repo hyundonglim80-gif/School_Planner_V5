@@ -9,6 +9,7 @@ import { useDocs } from '../../data/select';
 import { openAttendance } from '../attendance/open';
 import { openNotices } from '../notices/open';
 import { openSubjectAttendanceSummary } from '../subjectAttendance/open';
+import { openSeating } from '../seating/open';
 import { runFromButton } from '../../app/keys';
 import { getWindowDef, openWindow } from '../../app/windows';
 import { showToast } from '../../app/toast';
@@ -81,6 +82,7 @@ function ClassHub() {
       if (space) openNotices({ sid: space, date: todayStr() });
     }
     else if (id === 'subjectAttendance') openSubjectAttendanceSummary({ classId: cls?.id });
+    else if (id === 'seating' || id === 'drawStudent') openSeating({ classId: cls?.id, draw: id === 'drawStudent' });
     else runFromButton(id);
   };
   // 오늘 출결 (출석한 학생은 적지 않는다 - 적힌 학생만)

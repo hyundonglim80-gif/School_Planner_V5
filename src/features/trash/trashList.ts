@@ -1,11 +1,11 @@
 // 휴지통에 보일 것 (V4 TrashModal·trashHelper) - 셈만(순수). V5의 지우기는 지운 표시(원칙 5)라 휴지통은 따로 모은 사본이 아니라
-// 지운 표시가 붙은 문서를 걸러 보는 것이다: 일정·기록·메모(items)·라벨(labels)·시간표(timetables - P6-1)·진도(progress - P6-2)·학급(classes - P7-1)·D-Day(settings/common.ddays) + 이 기기의 클립보드 휴지통.
+// 지운 표시가 붙은 문서를 걸러 보는 것이다: 일정·기록·메모(items)·라벨(labels)·시간표(timetables - P6-1)·진도(progress - P6-2)·학급(classes - P7-1)·자리표(seating - P7-3)·D-Day(settings/common.ddays) + 이 기기의 클립보드 휴지통.
 //   - 탭: 전체 / 일정 / 기록 / 메모 / 클립보드 / 기타(라벨·D-Day, 뒤에 생길 수업·조사표·명단… 모두) - V4 2026-09-30 사용자 요청 그대로.
 //   - 영구 삭제의 드라이브 첨부 정리: V5에서 올린 파일만, 다른 항목(살아 있는 것·휴지통)이 같은 파일을 쓰면 남긴다.
 //     **V4에서 가져온 항목(src)의 첨부는 지우지 않는다** - V4가 같은 파일을 보고 있다(PLAN 5장 P5-4).
 import { driveFileIdOf } from '../../data/google/drive';
 
-export type TrashKind = 'event' | 'journal' | 'memo' | 'label' | 'timetable' | 'progress' | 'class' | 'dday' | 'clip';
+export type TrashKind = 'event' | 'journal' | 'memo' | 'label' | 'timetable' | 'progress' | 'class' | 'seating' | 'dday' | 'clip';
 export type TrashTab = 'all' | 'event' | 'journal' | 'memo' | 'clip' | 'etc';
 
 export const TRASH_TABS: ReadonlyArray<{ key: TrashTab; label: string }> = [
@@ -17,7 +17,7 @@ export const TRASH_TABS: ReadonlyArray<{ key: TrashTab; label: string }> = [
   { key: 'etc', label: '기타' },
 ];
 
-export const KIND_LABEL: Record<TrashKind, string> = { event: '일정', journal: '기록', memo: '메모', label: '라벨', timetable: '시간표', progress: '진도', class: '학급', dday: 'D-Day', clip: '클립보드' };
+export const KIND_LABEL: Record<TrashKind, string> = { event: '일정', journal: '기록', memo: '메모', label: '라벨', timetable: '시간표', progress: '진도', class: '학급', seating: '자리표', dday: 'D-Day', clip: '클립보드' };
 
 export const tabOf = (kind: TrashKind): Exclude<TrashTab, 'all'> => (kind === 'event' || kind === 'journal' || kind === 'memo' || kind === 'clip' ? kind : 'etc');
 
@@ -69,6 +69,7 @@ export function trashEntries(src: {
   timetables?: Readonly<Record<string, { id: string; name: string; from: string; to: string; deletedAt?: unknown }>>;
   progress?: Readonly<Record<string, { id: string; key: string; subject?: string; classes?: string[]; lessons?: readonly unknown[]; deletedAt?: unknown }>>;
   classes?: Readonly<Record<string, { id: string; year: number; grade: number; num: number; students?: readonly unknown[]; deletedAt?: unknown }>>;
+  seating?: Readonly<Record<string, { id: string; name: string; classId: string; deletedAt?: unknown }>>;
   now?: number;
 }): TrashEntry[] {
   const now = src.now ?? Date.now();
@@ -95,6 +96,10 @@ export function trashEntries(src: {
   for (const c of Object.values(src.classes ?? {})) {
     if (!c.deletedAt) continue;
     out.push({ key: `class:${c.id}`, kind: 'class', id: c.id, text: `🏫 ${c.year}학년도 ${c.grade}학년 ${c.num}반 (학생 ${c.students?.length ?? 0}명)`, deletedAt: deletedMs(c.deletedAt, now) });
+  }
+  for (const c of Object.values(src.seating ?? {})) {
+    if (!c.deletedAt) continue;
+    out.push({ key: `seating:${c.id}`, kind: 'seating', id: c.id, text: `🪑 ${c.name} (${c.classId})`, deletedAt: deletedMs(c.deletedAt, now) });
   }
   for (const d of src.ddays) if (d.deletedAt) out.push({ key: `dday:${d.id}`, kind: 'dday', id: d.id, text: `${d.title} (${d.date})`, deletedAt: d.deletedAt });
   for (const c of src.clips) out.push({ key: `clip:${c.id}`, kind: 'clip', id: c.id, text: c.kind === 'image' ? '🖼️ 그림' : (c.text ?? ''), deletedAt: c.deletedAt });
