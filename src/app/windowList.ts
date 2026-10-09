@@ -7,6 +7,7 @@ import type { WeeklyGuideParams } from '../features/weeklyGuide/WeeklyGuideWindo
 import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/open';
 import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attendance/open';
 import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
+import { SUBJECT_ATT_CELL, SUBJECT_ATT_SUMMARY, sameSubjectCell, type SubjectAttendanceCellParams, type SubjectAttendanceSummaryParams } from '../features/subjectAttendance/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -67,6 +68,27 @@ registerWindow<NoticePanelParams>({
   help: 'notice',
   sameAs: sameNoticePanel,
   load: () => import('../features/notices/NoticePanel'),
+});
+
+// 🙋 교과 출결 (P7-2) - 교과 모드 하루 수업 칸의 🙋 = 그 반·그 교시 쓰는 칸 / 누계 창 = 학급 도구 카드·단축키 '교과 출결 누계'
+registerWindow<SubjectAttendanceCellParams>({
+  id: SUBJECT_ATT_CELL,
+  title: '교과 출결',
+  icon: '🙋',
+  kind: 'panel',
+  help: 'subject-attendance',
+  sameAs: sameSubjectCell,
+  load: () => import('../features/subjectAttendance/SubjectAttendancePanel'),
+});
+registerWindow<SubjectAttendanceSummaryParams | undefined>({
+  id: SUBJECT_ATT_SUMMARY,
+  title: '교과 출결 누계',
+  icon: '🙋',
+  kind: 'side',
+  classTool: true,
+  show: ({ classUnit }) => classUnit,
+  help: 'subject-attendance',
+  load: () => import('../features/subjectAttendance/SubjectAttendanceWindow'),
 });
 
 // 그날 기록 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n

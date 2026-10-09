@@ -140,7 +140,8 @@ try {
   r.check(await waitFor(page.locator(sel('class-students', 2))), '학급 고르기 = 그 학급 학생 명단');
   r.check((await page.evaluate(() => localStorage.getItem('sp5-class-hub'))) === `${year}-5-1`, '고른 학급은 이 기기에 남는다');
   r.check((await page.locator(sel('class-tool')).count()) === 7 && !(await page.locator(sel('class-tool', 'subjectAttendance')).count()), '담임 = 도구 카드 7 (교과 출결 빼고)');
-  await page.locator(sel('class-tool', 'attendance')).click();
+  // 아직 옮기지 않은 도구 (자리표 - P7-3에서 창이 생기면 그 세션이 고친다)
+  await page.locator(sel('class-tool', 'seating')).click();
   r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '아직 V5로' })), '아직 없는 도구 = 🚧 안내');
   await page.locator(sel('class-tool', 'roster')).click();
   r.check(await waitFor(page.locator(sel('roster', `${year}-5-1`))), "카드 '명렬표' = 명렬표로 (그 학급)");

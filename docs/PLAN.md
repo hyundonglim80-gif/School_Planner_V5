@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P7-2 출석부·알림장·기록 칸 카드·교과 출결** (클라우드면 1-7을 먼저).
+**P7-3 자리표·뽑기·모둠** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -160,8 +160,8 @@
 | P6-4 | 가져오기: 수업 | 중간 | 높음 | 끝 (2026-10-09) |
 | **P7 학급** | | | | |
 | P7-1 | 학급·명렬표·사진 | 큼 | 중간 | 끝 (2026-10-09) |
-| P7-2 | 출석부·알림장·기록 칸 카드·교과 출결 | 큼 | 높음 | **다음** |
-| P7-3 | 자리표·뽑기·모둠 | 중간 | 중간 | |
+| P7-2 | 출석부·알림장·기록 칸 카드·교과 출결 | 큼 | 높음 | 끝 (2026-10-09) |
+| P7-3 | 자리표·뽑기·모둠 | 중간 | 중간 | **다음** |
 | P7-4 | 조사표·모아 보기·학생 기록 | 큼 | 높음 | |
 | P7-5 | 암기 + 가져오기: 학급 | 중간 | 높음 | |
 | **P8 연동** | | | | |
@@ -212,6 +212,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-09 | 클라우드(claude.ai/code) | P7-2 | P7-2 세션 끝 정리 | 단위 1874 · inspect-attendance 81(출석부·알림장·기록 칸 카드·교과 출결 - teacher·teacher3) · lessons·class·notes·search-trash 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-1 | P7-1 세션 끝 정리 | 단위 1794 · inspect-class 34 · inspect-photos 47(드라이브 흉내) · notes 61 통과 · 사용량 한도로 멈췄다가 이어서(컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed) · 빌드에서 빠진 사진 줄이기 워커를 찾아 옮김 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-4 | P6-4 세션 끝 정리 (P6 단계 끝) | 단위 1645 · 자료 층 26 · inspect-import-lessons 30 · P6 점검 모두(lessons·progress·bell-guide·neis·import-lessons·week) + import-items·import-labels 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-3 | P6-3 세션 끝 정리 | 단위 1633 · inspect-bell-guide 48 · neis 36 · week·month-year·lessons·settings·move-dday·shell 통과 · 같은 브랜치 → PR → Claude가 합침 |
@@ -476,6 +477,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
     글에 손으로 적은 `#26040305`는 저장할 때 명렬표의 그 학생 칩을 더한다(글은 그대로 - 원래 있던 태그는 다시 읽지 않는다, 뺀 칩이 되살아나지 않게). V4 '직접:' 줄(명렬표에 없는 학생)은 sid가 없어 뺐다.
     학생 태그가 든 기록을 메모로 옮겨도 묻지 않는다 - 칩이 그대로라 학생 기록(P7-4)에 메모로 모인다.
   - 미룬 것: 📊 시트 동기화·명렬표 시트 → P8-3(백업 창과 함께), 암기 → P7-5, 오늘 출결 줄 → P7-2, 학생 기록 창 → P7-4. 드라이브 선택창(사진 폴더 고르기·드라이브에서 고르기)은 컨테이너에서 못 띄운다 - PC에서 확인.
+- **P7-2 출석부·알림장·교과 출결**(권장안으로 고름 - V4 그대로, 바뀐 것만):
+  - 출석부·교과 출결은 학생 sid로(V4는 번호 + 그때 이름). 출석부 저장 = 바뀐 학생 칸만, 고친 학생은 칸마다(`records.sid.kind`…) - 학생 칸을 통째로 합치면 지각 → 결석에 옛 교시가 남는다(V4 교훈).
+  - 쓰는 칸은 고친 것을 학급·날짜와 함께 든다 - 다른 날·학급으로 옮기면 기다리지 않고 그 날에 저장한다(V4는 저장이 끝나야 옮겼다). 다른 기기에서 고친 것은 적던 것이 없으면 따라온다.
+  - V4의 '그날 기록 칸에 알림장·출결 항목 만들기'와 거꾸로 맞추기는 없다 - 기록 칸·그날 기록 창·검색이 그날 문서에서 카드를 계산한다(DESIGN 5-4). 기록 칸 숫자·주간 📝 n은 기록 항목만 센다.
+    카드는 라벨이 없어 라벨로 보기를 하면 숨긴다. 출결 카드는 개인 공간을 볼 때만(출석부는 개인 공간에만).
+  - 알림장은 공간마다(칸을 연 공간에 저장), 다음 수업일 = 계산한 수업 칸의 쉬는 날(공휴일·방학·수업X 일정)도 건너뛴다(V4는 공휴일·방학만). 저장 단추·Ctrl+S는 V4 그대로(저절로 저장하지 않는다).
+  - 학급 도구 카드: 출석부·알림장 = 오늘(단축키는 보는 날), 교과 출결 누계 = 고른 반. 출석부에서 학급을 바꾸면 학급 화면의 고른 학급도 바뀐다(한 곳에 기억).
+  - 교과 출결은 누를 때마다 저장하므로 안내 없이 Ctrl+Z 더미에만 되돌리기를 남긴다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -952,7 +961,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■3 기록 칸 카드(그날 알림장·출결을 계산해 보인다 - 누르면 원본 칸, 검색에도). V4 autoJournal·autoJournalSync는 옮기지 않는다.
   → 순수 `domain/dayCards.ts`(`noticeCard`·`attendanceCard`(학급마다, 모두 출석이면 없다)·`searchDayCards`) · `features/day/useDayCards.ts`(`useAllDayCards`·`useDayCardsOn`·`openDayCard` - 출결은 개인 공간을 볼 때만) · `DayCards.tsx`(카드 `[data-day-card|day-card-key]`) ·
   하루 기록 칸 맨 위(라벨로 보기를 하면 숨긴다)·그날 기록 창(📝)·검색 '기록'(누르면 그날로·원본 칸). 기록 칸 숫자·주간 📝 n은 기록 항목만 센다. 점검 inspect-attendance ■3까지 62 · notes·search-trash 통과.
-- [ ] ■4 교과 출결(교시 카드 🙋 → 칸, 누계·학급 탭) + 크롬 점검.
+- [x] ■4 교과 출결(교시 카드 🙋 → 칸, 누계·학급 탭) + 크롬 점검.
+  → 순수 `domain/subjectAttendance.ts`(V4 lib째 + 학생 sid·`subjectCellChanges` 학생 한 칸만·`studentTotals`·CSV) · 사본 `MIRRORED` += subjectAttendance ·
+  `features/subjectAttendance/`(`SubjectAttendancePanel` 쓰는 칸 `subjectAttendanceCell` `{ classId, date, n, subject? }` - 누르는 대로 저장, 담임반이면 그날 결석 학생 · `SubjectAttendanceWindow` 누계 창 `subjectAttendance`(반 칩·학기·CSV·인쇄·내역) · `actions.saveSubjectCell`(되돌리기는 Ctrl+Z 더미만)) ·
+  교과 모드 하루 수업 칸 🙋 출결 / '결과 1 · 조퇴 1' 칩(개인 공간, 그 학년도 명렬표의 반) · 학급 도구 카드(교과 모드). 점검 `tools/inspect-attendance.mjs`(81 - teacher·teacher3) · lessons·class·notes·search-trash 통과.
 **끝 조건**: 설명서 `notice`·`attendance`·`subject-attendance`가 된다.
 
 ### P7-3. 자리표·뽑기·모둠

@@ -72,7 +72,7 @@ export function weekRangeText(dates: string[]): string {
   return `${f(dates[0])} ~ ${f(dates[dates.length - 1])}`;
 }
 
-/** 계산한 수업 칸 → 교시 표 (과목·메모·준비물이 다 빈 교시는 뺀다). notices = 날짜 → 알림장 줄 (알림장은 P7-2) */
+/** 계산한 수업 칸 → 교시 표 (과목·메모·준비물이 다 빈 교시는 뺀다). notices = 날짜 → 그날 알림장 줄 */
 export function guideDaysOf(
   dates: string[],
   lessons: (date: string) => { cells: ReadonlyArray<{ n: number; subject: string; memo: string; supplies: string }> },

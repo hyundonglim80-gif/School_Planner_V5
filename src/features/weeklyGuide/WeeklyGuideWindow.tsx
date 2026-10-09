@@ -1,7 +1,7 @@
 // 📰 주간학습안내 (V4 components/WeeklyGuideModal.tsx). 창 'weeklyGuide' = { date? } - 주간 화면 단추(보는 주)·단축키(다음 주).
 // 한 주(월~금)의 요일 × 교시 표(과목 + 수업 메모) + 날마다 준비물·알림장 → 인쇄(A4 세로)·표 복사(한글·워드는 표, 엑셀은 칸마다).
 // 재료는 지금 공간의 계산한 수업 칸(features/lessons/useLessons - 읽기만), 셈은 domain/weeklyGuide, 인쇄는 ui/print.
-// 제목·넣을 것·주마다 알리는 말은 이 기기에만 남긴다(학교·반마다 쓰는 말이 다르다 - V4 그대로). 알림장 줄은 알림장이 생기는 P7-2에서 잇는다.
+// 제목·넣을 것·주마다 알리는 말은 이 기기에만 남긴다(학교·반마다 쓰는 말이 다르다 - V4 그대로). 알림장 줄 = 그날 적은 알림장(P7-2).
 import { useMemo, useRef, useState } from 'react';
 import { showErrorToast, showToast } from '../../app/toast';
 import type { WindowProps } from '../../app/windows';
@@ -19,6 +19,8 @@ import {
   type GuideOptions,
 } from '../../domain/weeklyGuide';
 import { useCurrentSpaceId } from '../../data/session';
+import { useDocs } from '../../data/select';
+import { readNoticeLines } from '../../domain/notices';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { printNode } from '../../ui/print';
 import { useLessonsFor } from '../lessons/useLessons';
@@ -32,8 +34,6 @@ const OPTS_KEY = 'sp5-weekly-guide-opts';
 const TITLE_KEY = 'sp5-weekly-guide-title';
 const NOTES_KEY = 'sp5-weekly-guide-notes';
 const DEFAULT_OPTS: GuideOptions = { memo: true, supplies: true, notices: true };
-/** 알림장(P7-2)이 생기면 켠다 - 그 전에는 '알림장' 줄·체크를 그리지 않는다 */
-const HAS_NOTICES = false;
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -93,8 +93,10 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
     writeText(OPTS_KEY, JSON.stringify(next));
   };
 
-  const shown: GuideOptions = { ...opts, notices: HAS_NOTICES && opts.notices };
-  const days = useMemo(() => guideDaysOf(dates, (d) => lessons[d] ?? { cells: [] }), [dates, lessons]);
+  const shown: GuideOptions = opts;
+  // 알림장 줄 = 그날 적은 알림장 (보는 공간 - P7-2)
+  const noticeDocs = useDocs('notices', sid);
+  const days = useMemo(() => guideDaysOf(dates, (d) => lessons[d] ?? { cells: [] }, (d) => readNoticeLines(noticeDocs[d]?.lines)), [dates, lessons, noticeDocs]);
   const table = guideTable(days, periodNames, shown);
   const fullTitle = `${title.trim() || '주간학습안내'} (${weekRangeText(dates)})`;
   const emptyWeek = days.every((d) => Object.keys(d.periods).length === 0 && d.notices.length === 0);
@@ -130,7 +132,7 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
   const optionList: Array<readonly [keyof GuideOptions, string]> = [
     ['memo', '수업 메모'],
     ['supplies', '준비물'],
-    ...(HAS_NOTICES ? ([['notices', '알림장']] as const) : []),
+    ['notices', '알림장'],
   ];
 
   return (

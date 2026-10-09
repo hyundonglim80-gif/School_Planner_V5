@@ -5,6 +5,7 @@
 //   2) 📢 알림장: 하루 수업 머리줄 📢 · 📥 다음 수업일 불러오기(수업 칸 준비물 + 일정, 주말 건너뜀) · 번호 떼기·미리 보기·📋 복사 · 💾 저장 = notices/{date} ·
 //      다른 날로 옮기면 적던 것은 그 날에 · 다른 기기 고침이 따라온다 · 📚 모아 보기(달) → 그날 쓰기 · 학급 도구 카드·단축키 '알림장 모아 보기'
 //   3) 기록 칸 카드(계산): 그날 '📋 출결 5-2'·'📢 알림장' 카드 → 누르면 원본 칸 · 기록 창(📝)에도 · 검색 '기록'에 나오고 누르면 그날로·원본 칸
+//   4) 🙋 교과 출결(전담 teacher3): 교시 카드 🙋 → 칸 · 누르는 대로 학생 한 칸만 저장 · 사유 · 두 교시가 서로 덮지 않는다 · 칩 '결과 1' · 📊 누계(학생마다·내역) · 학급 도구 카드
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-attendance.mjs
 // 에뮬레이터 teacher의 classes를 비우고 점검 학급을 심었다가 끝에 되돌린다. 점검 학급의 출석부 문서는 끝에 지운다.
@@ -265,6 +266,93 @@ try {
   await page.locator('[data-search-input]').fill('박세나 조퇴');
   r.check(await waitFor(page.locator(sel('search-hit', `attendance:${CLASS_ID}:${TODAY}`))), '출결 카드도 찾는다');
   r.check(errors.length === 0, '화면 오류 없음', errors.join(' | '));
+
+  // ── 4) 교과 출결 (교과 전담 teacher3) ──
+  const em3 = emulator('inspect3');
+  const uid3 = await em3.signIn('teacher3@example.com');
+  const sid3 = `u_${uid3}`;
+  const ref3 = (c, id) => doc(em3.db, 'spaces', sid3, c, id);
+  const C3 = `${year}-5-1`;
+  const D3 = `${year}-11-04`;
+  const before3 = (await getDocs(collection(em3.db, 'spaces', sid3, 'classes'))).docs.map((d) => [d.id, d.data()]);
+  for (const [id] of before3) await deleteDoc(ref3('classes', id));
+  undo.add(async () => {
+    for (const d of (await getDocs(collection(em3.db, 'spaces', sid3, 'classes'))).docs) await deleteDoc(d.ref);
+    for (const [id, data] of before3) await setDoc(ref3('classes', id), data);
+  });
+  await setDoc(ref3('classes', C3), {
+    year,
+    grade: 5,
+    num: 1,
+    students: [st('t1', 1, '가람'), st('t2', 2, '나래'), st('t3', 3, '다솜')],
+    authorId: uid3,
+    deletedAt: null,
+    updatedAt: serverTimestamp(),
+    v: 1,
+    createdAt: Date.now(),
+  });
+  const ld = await getDoc(ref3('lessonDays', D3));
+  undo.add(async () => (ld.exists() ? setDoc(ref3('lessonDays', D3), ld.data()) : deleteDoc(ref3('lessonDays', D3))));
+  await setDoc(ref3('lessonDays', D3), { periods: { '3': { subject: '5-1 과학' }, '5': { subject: '5-1 과학' } }, updatedAt: serverTimestamp(), v: 1 });
+  undo.add(async () => deleteDoc(ref3('subjectAttendance', `${C3}_${D3}`)));
+  const sa = async () => {
+    const s0 = await getDoc(ref3('subjectAttendance', `${C3}_${D3}`));
+    return s0.exists() ? s0.data() : null;
+  };
+  const p3 = await newPage(browser);
+  const page3 = p3.page;
+  const cell = (n) => page3.locator(sel('subject-att-panel', `${C3}_${D3}#${n}`));
+  const srow = (n, s0) => cell(n).locator(sel('subject-att-row', s0));
+
+  r.section('🙋 교과 출결 (전담)');
+  await open(page3, `#/day/${D3}`, { as: 3 });
+  const chip3 = page3.locator(sel('subject-attendance', 3));
+  r.check(await waitFor(chip3, 8000), "교시 카드 '5-1 과학'에 🙋 출결");
+  await chip3.click();
+  r.check(await waitFor(cell(3), 8000), '🙋 = 그 반·그 교시 칸');
+  r.check((await cell(3).locator('[data-subject-att-title]').textContent()).includes('5-1') && (await cell(3).locator('[data-subject-att-title]').textContent()).includes('과학'), '머리줄 5-1 · 3교시 · 과학');
+  await srow(3, 't1').locator(sel('subject-att-kind', 'absent')).click();
+  let d3 = await serverUntil(sa, (d) => d?.periods?.['3']?.t1?.kind === 'absent');
+  r.check(same(d3?.periods?.['3']?.t1, { kind: 'absent', reason: 'sick' }) && d3?.classId === C3, '누르는 대로 바로 저장 = periods.3.t1 결과(질병)');
+  await srow(3, 't1').locator(sel('subject-att-reason', 'other')).click();
+  await srow(3, 't1').locator(sel('subject-att-note-open')).click();
+  await srow(3, 't1').locator(sel('subject-att-note')).fill('보건실');
+  await srow(3, 't1').locator(sel('subject-att-note')).press('Enter');
+  d3 = await serverUntil(sa, (d) => d?.periods?.['3']?.t1?.note === '보건실');
+  r.check(same(d3?.periods?.['3']?.t1, { kind: 'absent', reason: 'other', note: '보건실' }), '사유 기타 · 보건실 (Enter)');
+  await srow(3, 't2').locator(sel('subject-att-kind', 'early')).click();
+  d3 = await serverUntil(sa, (d) => d?.periods?.['3']?.t2?.kind === 'early');
+  r.check(d3?.periods?.['3']?.t2?.kind === 'early' && d3?.periods?.['3']?.t1?.note === '보건실', 't2 조퇴 - t1은 그대로 (학생 한 칸만)');
+  r.check(await waitFor(async () => ((await page3.locator(sel('subject-attendance', 3)).textContent()) ?? '').includes('결과 1 · 조퇴 1')), "교시 카드 칩 '결과 1 · 조퇴 1'");
+
+  // 다른 교시 칸을 함께 열어도 서로 덮지 않는다
+  await page3.locator(sel('subject-attendance', 5)).click();
+  r.check(await waitFor(cell(5), 8000), '5교시 칸');
+  await srow(5, 't3').locator(sel('subject-att-kind', 'late')).click();
+  d3 = await serverUntil(sa, (d) => d?.periods?.['5']?.t3?.kind === 'late');
+  r.check(d3?.periods?.['5']?.t3?.kind === 'late' && d3?.periods?.['3']?.t2?.kind === 'early', '5교시 t3 지각 - 3교시 것은 그대로');
+  await srow(5, 't3').locator(sel('subject-att-kind', 'present')).click();
+  d3 = await serverUntil(sa, (d) => !d?.periods?.['5']?.t3);
+  r.check(!d3?.periods?.['5']?.t3, '출석으로 = 그 칸 지우기');
+
+  r.section('📊 교과 출결 누계');
+  await cell(5).locator(sel('subject-att-open-summary')).click();
+  const sum = page3.locator(sel('subject-summary', C3));
+  r.check(await waitFor(sum, 8000), '📊 누계 = 그 반');
+  await sum.locator(sel('summary-range', 'year')).click();
+  r.check((await sum.locator(sel('summary-row', 't1')).locator('[data-summary-absent]').textContent()) === '1', '가람 결과 1');
+  r.check((await sum.locator(sel('summary-row', 't2')).locator('[data-summary-early]').textContent()) === '1', '나래 조퇴 1');
+  await sum.locator(sel('summary-row', 't1')).click();
+  r.check(await waitFor(sum.locator(sel('summary-history', 't1'))), '학생을 누르면 날짜·교시 내역');
+  r.check((await sum.locator(sel('summary-history', 't1')).textContent()).includes('3교시 결과(기타) - 보건실'), '3교시 결과(기타) - 보건실');
+  await page3.evaluate(() => window.sp5.closeAllWindows());
+  await page3.goto(page3.url().split('#')[0] + '#/class');
+  const tool3 = page3.locator(sel('class-tool', 'subjectAttendance'));
+  r.check(await waitFor(tool3, 8000), '전담 학급 도구에 교과 출결');
+  r.check(!(await page3.locator(sel('class-tool', 'attendance')).count()) && !(await page3.locator('[data-class-today]').count()), '전담은 출석부·오늘 출결 줄이 없다');
+  await tool3.click();
+  r.check(await waitFor(sum, 8000), '도구 카드 = 그 반 누계');
+  r.check(p3.errors.length === 0, '화면 오류 없음', p3.errors.join(' | '));
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {

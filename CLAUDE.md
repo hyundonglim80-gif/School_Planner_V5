@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-09 P7-1 끝**(클라우드 - 학급·명렬표·학생 사진·@이름 학생 태그). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-2. 👤 V5 주소에서 학급 화면 → 🧑‍🤝‍🧑 명렬표에 학생을 넣고 📷 사진(드라이브 선택창·사진 폴더 고르기는 PC에서), 기록 칸에서 '@이름' 써 보기. 실제 계정 가져오기로 수업 칸·진도가 V4와 같은지도.
+- **2026-10-09 P7-2 끝**(클라우드 - 출석부·알림장·기록 칸 카드·교과 출결). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-3. 👤 V5 주소에서 📋 출석부(2.5초 뒤 저절로 저장)·📢 알림장·🙋 교과 출결 써 보기, 학급 화면 명렬표·📷 사진(드라이브 선택창은 PC에서)·'@이름'.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -270,6 +270,11 @@
   `StudentPhoto`(`[data-photo=이름|photo-empty|photo-file-input|photo-drive-pick]`) · `PhotoStatusBar`(`[data-photo-status]`) · `drivePhotoPick`) · 켬/끔은 이 기기 `sp5-roster-photos`·`sp5-class-photos`. 점검 `tools/inspect-photos.mjs`(47 - 드라이브 흉내).
 - **학생 태그**(P7-1 - 기록·메모 `studentIds` `'{classId}/{sid}'`): 순수 `domain/studentTag.ts`(V4 '#26040305' 읽기 `findStudentTags`·`studentIdsToSave`(새로 적은 태그만)·'@이름' `findMention`·`matchMentionStudents`·`applyMention`) ·
   `notes/StudentTags.tsx`(`StudentMentionList` `[data-student-mention|mention-option]` · `StudentTagRow` `[data-note-students|note-student|note-student-remove|note-student-pick-open|note-student-picker|note-student-class|note-student-option]` · 카드 `EntryStudents` `[data-entry-students]`) · 쓰는 칸 키는 `ui/listKeys`.
+- **출석부·알림장·교과 출결**(P7-2 - 학생 sid): 순수 `domain/attendance.ts`(`marksChanges` 바뀐 학생 칸만·`dayLines`·`summaryRangeOf`)·`notices.ts`(다음 수업일·초안·급식 줄)·`subjectAttendance.ts`(`subjectCellChanges` 학생 한 칸)·`dayCards.ts`(기록 칸 카드 계산) · `ui/shareText.ts`(공유·복사) ·
+  사본 `MIRRORED` += attendance·notices·subjectAttendance · `features/attendance/`(`AttendancePanel` 쓰는 칸 `attendance` `{ date, classId?, tab? }` - 2.5초 뒤 저절로·고친 것은 학급·날짜와 함께(다른 날로 가면 그 날에) `[data-attendance-panel|tab|class|row|kind|reason|period|note|count|all-present|prev|next|save|dirty|range|summary-row|history|print]`·`attendanceClass`(고를 학급)·`actions`·`open`(단축키)) ·
+  `features/notices/`(`NoticePanel` 쓰는 칸 `notices` `{ sid?, date, tab? }` 공간마다 `[data-notice-panel|tab|text|draft|meal|preview|copy|share|save|dirty|range|day|open|count]`) ·
+  `features/subjectAttendance/`(`SubjectAttendancePanel` 쓰는 칸 `subjectAttendanceCell` `{ classId, date, n }` `[data-subject-att-panel|row|kind|reason|note|open-summary]` · `SubjectAttendanceWindow` 누계 창 `subjectAttendance` `[data-subject-summary|summary-class|summary-range|summary-row|summary-history|summary-csv]`) ·
+  하루 수업 머리줄 📋·📢(담임) · 교과 모드 교시 카드 🙋 `[data-subject-attendance=n]` · 기록 칸 맨 위 카드 `features/day/useDayCards.ts`·`DayCards.tsx`(`[data-day-card|day-card-key]` - 그날 기록 창·검색 '기록'에도) · 학급 화면 📋 오늘 출결 줄 `[data-class-today]` · 주간학습안내 '알림장' 줄. 점검 `tools/inspect-attendance.mjs`(81).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
