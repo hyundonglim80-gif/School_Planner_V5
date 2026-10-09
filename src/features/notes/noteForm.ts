@@ -6,6 +6,7 @@
 //   목록에 없는 이름과 '+ 새 라벨'은 저장할 때 항목과 한 묶음으로 만든다(data/labels ensureLabelOps - actions.ts).
 // - 저장 = 바뀐 칸만(원칙 1). 고치던 항목의 완료·즐겨찾기는 누르는 즉시 그 칸만 저장하므로 여기 견주지 않는다(새 항목만 처음 저장 때 함께).
 // - 글은 앞뒤 빈칸만 다듬어 적는다(V4 그대로).
+// - 🧑‍🎓 학생(studentIds '{classId}/{sid}'): '@이름'·학생 고르기로 더하고 칩 ✕로 뺀다. 글에 적은 '#26040305'는 저장할 때 더한다(domain/studentTag - NotePanel).
 import { takeHashLabels } from '../../domain/hashLabels';
 import type { Changes } from '../../data/repo/ops';
 import type { LabelTree } from '../../data/select';
@@ -24,6 +25,8 @@ export interface NoteForm {
   favorite: boolean;
   attachments: Attachment[];
   tables: EntryTable[];
+  /** 학생 태그 '{classId}/{sid}' */
+  studentIds: string[];
 }
 
 /**
@@ -41,6 +44,7 @@ export function newNoteForm(date: YMD | null, tree: LabelTree, labelIds?: readon
     favorite: false,
     attachments: [],
     tables: [],
+    studentIds: [],
   };
 }
 
@@ -55,6 +59,7 @@ export function noteFormOf(item: ItemDoc): NoteForm {
     favorite: !!item.favorite,
     attachments: [...(item.attachments ?? [])],
     tables: [...(item.tables ?? [])],
+    studentIds: [...(item.studentIds ?? [])],
   };
 }
 
@@ -66,6 +71,7 @@ const keyOf = (f: NoteForm, isNew: boolean) =>
     f.newLabels,
     f.attachments.map((a) => a.url),
     f.tables,
+    f.studentIds,
     // 고치던 항목의 완료·즐겨찾기는 칸이 아니라 항목에 곧바로 저장한다
     isNew ? [f.done, f.favorite] : null,
   ]);
@@ -111,6 +117,7 @@ export function createNoteData(form: NoteForm, text: string, labelIds: string[],
     ...(form.favorite ? { favorite: true } : {}),
     ...(form.attachments.length > 0 ? { attachments: form.attachments } : {}),
     ...(form.tables.length > 0 ? { tables: form.tables } : {}),
+    ...(form.studentIds.length > 0 ? { studentIds: form.studentIds } : {}),
   };
 }
 
@@ -126,6 +133,7 @@ export function noteEditChanges(item: ItemDoc, form: NoteForm, text: string, lab
   if (!sameJson(labelIds, item.labelIds ?? [])) out.labelIds = labelIds;
   if (!sameJson(form.attachments, item.attachments ?? [])) out.attachments = form.attachments.length > 0 ? form.attachments : undefined;
   if (!sameJson(form.tables, item.tables ?? [])) out.tables = form.tables.length > 0 ? form.tables : undefined;
+  if (!sameJson(form.studentIds, item.studentIds ?? [])) out.studentIds = form.studentIds.length > 0 ? form.studentIds : undefined;
   Object.assign(out, placeChanges(item, form.date || null));
   return out;
 }

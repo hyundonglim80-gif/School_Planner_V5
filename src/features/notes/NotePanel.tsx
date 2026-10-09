@@ -11,19 +11,22 @@
 // - 저장이 안 되면 칸을 닫지 않는다. ESC는 저장 안 한 글이 있으면 먼저 묻는다, 좁은 화면 배경 = 저장하고 닫기.
 // - 이 칸이 열린 동안 다른 기기에서 고친 것은, 손대기 전이면 따라간다(손댔으면 적던 것을 덮지 않는다).
 // - 쓰던 글은 2초 뒤 이 기기에 남긴다(data/drafts) - 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기'.
-// @이름 학생 태그는 학급(명렬표)이 들어오는 P7-1에서 - 지금은 #26040305를 글에 적으면 그대로 남는다.
+// - 🧑‍🎓 학생(P7-1 - studentIds '{classId}/{sid}'): 글 칸에서 '@이름'(초성·번호도) → 목록 → 고르면 '@김지'가 이름으로 바뀌고 학생 칩이 붙는다.
+//   '+ 학생 고르기'로도, 칩 ✕로 뺀다. 글에 적은 '#26040305'(V4 태그)는 저장할 때 명렬표의 그 학생을 더한다(글은 그대로).
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type KeyboardEvent, type MouseEvent } from 'react';
 import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
 import { showErrorToast, showErrorToastOnce, showToast } from '../../app/toast';
 import { useShortcutTitle } from '../../app/keys';
 import { fileIcon, formatFileSize, isImageAttachment } from '../../domain/attachments';
 import { continueOnEnter, toggleCheckAtCaret, toggleLinesPrefix } from '../../domain/checkLines';
-import { shortDateLabel } from '../../domain/dateUtils';
+import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
+import { applyMention, findMention, matchMentionStudents, studentIdsToSave, type Mention, type MentionCandidate } from '../../domain/studentTag';
 import { useDraft } from '../../data/drafts';
 import { attachmentImageSrc } from '../../data/google/drive';
 import type { Attachment } from '../../data/types';
 import { useDocs, useItemsOn, useLabelTree, useMemos, useMirrorStatus } from '../../data/select';
 import AutoTextarea from '../../ui/AutoTextarea';
+import { listKeyOf } from '../../ui/listKeys';
 import DraftOffer from '../../ui/DraftOffer';
 import { openImageViewer } from '../../ui/imageViewer';
 import LinkPreviewCards from '../../ui/LinkPreviewCards';
@@ -36,6 +39,8 @@ import EntryTableView from './EntryTableView';
 import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
 import { hasContent, isKnownLabel, newNoteForm, noteFormOf, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
 import { nounOf, objectOf } from './noteOps';
+import { StudentMentionList, StudentTagRow } from './StudentTags';
+import { useClasses, useHubClass, type ClassItem } from '../class/classes';
 import type { NotePanelParams } from './open';
 
 const PLACEHOLDER = {
@@ -63,6 +68,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   /** 드라이브에 올리는 중 (📎 파일 / 붙여넣은 캡처) */
   const [uploading, setUploading] = useState<'files' | 'paste' | null>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
+  const { classes } = useClasses();
+  const hubClass = useHubClass((s) => s.id);
   const dayNotes = useItemsOn(form.date, 'note', sid);
   const memoList = useMemos(sid);
   // 쓰던 글 보관 (이 기기 - data/drafts). 새 칸은 공간·자리, 고치는 칸은 항목마다. 고치던 항목의 완료·즐겨찾기는 칸의 것이 아니라 빼고 둔다
@@ -161,7 +168,52 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     const r = toggleLinesPrefix(form.text, start, end);
     setTextAndCaret(r.text, r.selStart, r.selEnd);
   };
+  // ─── '@이름' 학생 태그 (domain/studentTag) - 키보드는 글 칸이 받는다(목록으로 초점을 옮기면 한글 조합이 끊긴다) ───
+  const [mention, setMention] = useState<Mention | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const schoolYear = academicYearOf(todayStr());
+  const mentionList = mention ? matchMentionStudents(classes, mention.query, { preferClassId: hubClass, schoolYear }) : [];
+  const updateMention = (el: HTMLTextAreaElement) => {
+    const next = findMention(el.value, el.selectionStart ?? el.value.length);
+    if (!next || next.query !== mention?.query || next.start !== mention?.start) setMentionIndex(0);
+    setMention(next);
+  };
+  const pickMention = (c: MentionCandidate<ClassItem>) => {
+    if (!mention) return;
+    const r = applyMention(form.text, mention, c.student.name || `${c.student.num}번`);
+    setMention(null);
+    pendingCaret.current = [r.caret, r.caret];
+    setForm((f) => ({ ...f, text: r.text, studentIds: f.studentIds.includes(c.key) ? f.studentIds : [...f.studentIds, c.key] }));
+  };
+  /** 목록이 떠 있을 때의 키 - 받았으면 true */
+  const onMentionKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>): boolean => {
+    if (!mention || e.nativeEvent.isComposing) return false;
+    const key = listKeyOf(e.key);
+    if (key === 'close') {
+      // 목록만 닫는다 - 오른쪽 줄 전체가 닫히면(전역 ESC) 적던 것이 사라진다
+      e.preventDefault();
+      e.stopPropagation();
+      setMention(null);
+      return true;
+    }
+    if (mentionList.length === 0 || !key) return false;
+    if (key === 'next' || key === 'prev') {
+      e.preventDefault();
+      const step = key === 'next' ? 1 : -1;
+      setMentionIndex((i) => (i + step + mentionList.length) % mentionList.length);
+      return true;
+    }
+    // Enter·Tab = 넣기
+    if (!e.shiftKey && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      e.preventDefault();
+      pickMention(mentionList[Math.min(mentionIndex, mentionList.length - 1)]);
+      return true;
+    }
+    return false;
+  };
+
   const onTextKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (onMentionKeyDown(e)) return;
     // 한글 조합 중 Enter는 건드리지 않는다
     if (e.key !== 'Enter' || e.nativeEvent.isComposing || e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return;
     const el = e.currentTarget;
@@ -267,13 +319,15 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     if (savingRef.current) return false;
     savingRef.current = true;
     setSaving(true);
+    // 글에 새로 적은 '#26040305'(V4 태그)의 학생도 더한다 - 원래 있던 태그는 다시 읽지 않는다
+    const toSave = { ...form, studentIds: studentIdsToSave(form.studentIds, form.text, base.text, classes) };
     try {
       if (!isEditing) {
         const order = orderAfter(form.date ? dayNotes : memoList);
-        const saved = await createNote(sid, form, tree, order);
+        const saved = await createNote(sid, toSave, tree, order);
         draft.clear();
         // 저장한 뒤에도 적은 것이 남고 그 항목의 수정 칸이 된다 (V4 사용자 결정). '#라벨' 줄은 떼고 칩으로
-        const next = { ...form, text: saved.text, labelIds: saved.labelIds, newLabels: [] };
+        const next = { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] };
         setForm(next);
         setBase(next);
         deliverLinkPick(params.pickFor, saved.id);
@@ -284,9 +338,9 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
           showToast(`${noun}를 찾지 못했습니다. 그 사이 지워졌을 수 있습니다.`);
           return false;
         }
-        const saved = await saveNote(sid, item, form, tree);
+        const saved = await saveNote(sid, item, toSave, tree);
         draft.clear();
-        const next = saved ? { ...form, text: saved.text, labelIds: saved.labelIds, newLabels: [] } : form;
+        const next = saved ? { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] } : toSave;
         setForm(next);
         setBase(next);
         if (!saved) showToast('바뀐 것이 없습니다.');
@@ -455,19 +509,28 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   ☑ 체크리스트
                 </button>
               </div>
-              <AutoTextarea
-                ref={textRef}
-                autoFocus
-                data-note-text-input
-                value={form.text}
-                onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
-                onKeyDown={onTextKeyDown}
-                // 줄 맨 앞 ☐/☑ 바로 위를 누르면 바꾼다 (쓰는 칸 안에서도 체크)
-                onClick={onTextClick}
-                onPaste={onTextPaste}
-                placeholder={PLACEHOLDER[noun]}
-                className="w-full min-h-[84px] p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 leading-relaxed placeholder-slate-400 text-sm"
-              />
+              <div className="relative">
+                <AutoTextarea
+                  ref={textRef}
+                  autoFocus
+                  data-note-text-input
+                  value={form.text}
+                  onChange={(e) => {
+                    setForm((f) => ({ ...f, text: e.target.value }));
+                    updateMention(e.target);
+                  }}
+                  onKeyDown={onTextKeyDown}
+                  // 줄 맨 앞 ☐/☑ 바로 위를 누르면 바꾼다 (쓰는 칸 안에서도 체크)
+                  onClick={onTextClick}
+                  // 커서만 옮겨도(누르기·화살표) '@' 밖으로 나가면 목록을 닫는다
+                  onSelect={(e) => mention && updateMention(e.currentTarget)}
+                  onBlur={() => setMention(null)}
+                  onPaste={onTextPaste}
+                  placeholder={PLACEHOLDER[noun]}
+                  className="w-full min-h-[84px] p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 leading-relaxed placeholder-slate-400 text-sm"
+                />
+                {mention && <StudentMentionList query={mention.query} candidates={mentionList} activeIndex={mentionIndex} hasClasses={classes.length > 0} onPick={pickMention} />}
+              </div>
               {/* 첫·마지막 줄 '#라벨' 미리 보기 - 저장하면 무엇이 일어날지 */}
               {hashPreview.length > 0 && (
                 <div data-hash-preview className="flex flex-wrap items-center gap-1 text-2xs font-bold text-slate-500">
@@ -489,7 +552,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 </div>
               )}
               <p className="text-2xs text-slate-400">
-                첫 줄·마지막 줄의 #이름은 라벨이 됩니다. ☐ 줄 끝에서 Enter를 누르면 다음 줄도 ☐로 시작합니다. 캡처·엑셀 표는 Ctrl+V로 붙입니다.
+                첫 줄·마지막 줄의 #이름은 라벨이 됩니다. ☐ 줄 끝에서 Enter를 누르면 다음 줄도 ☐로 시작합니다. @이름으로 학생을 붙입니다. 캡처·엑셀 표는 Ctrl+V로 붙입니다.
               </p>
               {/* 글 안 주소 미리보기 (보이기만 - 글은 바꾸지 않는다) */}
               <LinkPreviewCards text={form.text} />
@@ -513,6 +576,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               newNames={form.newLabels}
               onNewNamesChange={(newLabels) => setForm((f) => ({ ...f, newLabels }))}
             />
+
+            <StudentTagRow studentIds={form.studentIds} onChange={(studentIds) => setForm((f) => ({ ...f, studentIds }))} year={schoolYear} />
 
             {/* 첨부 (드라이브 School_Planner 폴더) · 링크 */}
             <div className="space-y-2">

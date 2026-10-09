@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-09 P6-4 끝 = P6 수업 단계 끝**(클라우드 - V4 수업 가져오기: 시간표·수업 칸·진도·수업 설정). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-1. 👤 V5 주소에서 실제 계정으로 '가져오기'를 한 번 더 눌러 수업 칸·진도가 V4와 같은지, ⏰ 시간표·📘 진도·🔔 종·📰 주간학습안내·🏫 우리 학교 써 보기.
+- **2026-10-09 P7-1 끝**(클라우드 - 학급·명렬표·학생 사진·@이름 학생 태그). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-2. 👤 V5 주소에서 학급 화면 → 🧑‍🤝‍🧑 명렬표에 학생을 넣고 📷 사진(드라이브 선택창·사진 폴더 고르기는 PC에서), 기록 칸에서 '@이름' 써 보기. 실제 계정 가져오기로 수업 칸·진도가 V4와 같은지도.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -72,6 +72,7 @@
   쓰던 글 보관을 여는 칸을 그리는 시험 파일은 `afterAll`에서 `wipeDrafts`를 기다린다 - 마지막 시험이 연 DB가 환경이 걷힌 뒤 열리면 'IDBRequest is not defined'(P4-2).
 - **클라우드 컨테이너는 apis.google.com·*.web.app에 닿지 못한다** - Firebase 팝업 로그인(다시 받기 포함)이 창을 열기 전에 `auth/internal-error`. 그 확인은 PC에서(P4-2 inspect-attach가 건너뛴다).
 - **저장소에 prettier가 없다 - `npx prettier --write`를 돌리지 않는다**(P6-1 - 따옴표·줄 폭을 통째로 바꿨다. 되돌리고 고친 것만 다시).
+- **V4에서 옮긴 파일이 `new URL('./…', import.meta.url)`로 부르는 것(워커 등)은 개발 서버에서는 없어도 넘어가고 빌드에서만 깨진다** - 옮기면 `npm run build`까지(P7-1 `ui/shrinkWorker.ts`). 점검 스크립트는 끝에 `process.exit()`(에뮬레이터 Firebase가 노드를 붙잡는다).
 - **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
 - **C: 디스크가 차면 에뮬레이터가 죽는다**: `firebase-debug.log`·`firestore-debug.log`(git 무시)가 커진다. 긴 점검 전에 `df -h /c`, 차면 두 로그를 비우고 `npm run emu` → seed.
   클라우드 컨테이너는 두 로그를 `/dev/null` 링크로 둔다(`ln -s /dev/null firebase-debug.log` - P4-3에 30GB가 되어 Auth 에뮬레이터가 죽었다). 링크는 git 무시라 기기마다 한 번.
@@ -258,6 +259,17 @@
   `features/school/`(`school.ts` `useSchool`·`saveSchool`·`saveSchoolGrade`·`useSchoolSchedule(달들)`·`useDayMeals` · `SchoolPicker`(환경설정 '학교' 탭 `[data-school-setting|school-name|school-change|school-clear|school-grade|school-query|school-search|school-results|school-result]`) ·
   `DayMeals`(`[data-day-meals|day-meal|day-school-events|day-school-event-open]`) · `SchoolEventName`(`[data-school-event=날짜]` - 주간 카드·월간 칸·월간 휴대폰 목록·년간 자세히, 학사력은 `monthSheetItems.schoolOf`) · 창 `schoolEvent` `{ date, items }`(`SchoolEventWindow` `[data-school-event-window|school-event-item|school-event-dday|school-event-to-event]`)) ·
   시간표 창 학기·방학 `[data-terms-fill|terms-fill-note]`. 점검 `tools/inspect-neis.mjs`(36 - 나이스는 page.route 흉내).
+- **학급·명렬표**(P7-1 - 개인 공간 `classes/{학년도-학년-반}`, 학생 sid): 순수 `domain/roster.ts`(`classIdOf`·고르기 세 칸·`nextClassNum`·`addStudents`·CSV 학급 하나/전체·`withSids`·`cleanStudent`) · 사본 `MIRRORED` += classes(휴지통 '기타'의 학급) ·
+  `features/class/`(`classes.ts` `useClasses`·`saveRoster`(바뀐 학급만·학년도/학년/반을 고치면 새 id)·고른 학급 `useHubClass`(`sp5-class-hub`) · `rosterDraft.ts`(저장 전까지 이 탭에) · `view.ts`(학급 도구 | 명렬표·탭, 단축키 '명렬표') · `tools.ts`(도구 카드 `CLASS_TOOLS`) ·
+  `ClassScreen.tsx`(`[data-class-mode|class-empty|class-students|class-student|class-view=name|photo|class-photo-grid|class-photo-card|class-photo-count]`) ·
+  `RosterView.tsx`(`[data-roster|roster-pick|roster-edit|roster-tab|roster-row|student-field|roster-remove|roster-save|roster-dirty|roster-discard|roster-photos|roster-view=list|tile|roster-tiles|roster-tile|roster-drop|roster-photo-count|roster-photo-folder|roster-csv-*|roster-all-csv-*|search-*]`)) ·
+  가르치는 반에 명렬표의 반(`lessons/teaching.useTeachingClasses`). 점검 `tools/inspect-class.mjs`(34).
+- **학생 사진**(P7-1 ■3 - 드라이브 School_Planner/Students_Poto/2026-5-2, V4 그대로): 순수 `domain/studentPhotoNames`(`photoClassKey`·`classFolderName`·짝짓기)·`photoBulkUpload`·`photoDiagnosis` · `ui/imageShrink` ·
+  `data/google/studentPhotos.ts`(훑기·내려받기 blob·담아 두기 IndexedDB `sp5-student-photos`·올리기(같은 학생은 갈아끼우기)·`wipePhotoCache` - 로그아웃)·`picker.ts`(드라이브 선택창) · 설정 `common.photoFolders`(학급마다 고른 폴더) ·
+  `features/photos/`(`useStudentPhotos`(켤 때만 드라이브, 토큰이 없으면 'needs-auth') · `usePhotoTools`(누르는 일 한 곳·크게 보기 아래 바꾸기 `PhotoReplaceButtons`) · `PhotoParts`(`[data-photo-bulk-group|photo-bulk-input|photo-bulk-device|photo-drive-many|photo-bulk-progress|photo-bulk-report|photo-needs-auth|photo-auth|photo-error|photo-loading]`) ·
+  `StudentPhoto`(`[data-photo=이름|photo-empty|photo-file-input|photo-drive-pick]`) · `PhotoStatusBar`(`[data-photo-status]`) · `drivePhotoPick`) · 켬/끔은 이 기기 `sp5-roster-photos`·`sp5-class-photos`. 점검 `tools/inspect-photos.mjs`(47 - 드라이브 흉내).
+- **학생 태그**(P7-1 - 기록·메모 `studentIds` `'{classId}/{sid}'`): 순수 `domain/studentTag.ts`(V4 '#26040305' 읽기 `findStudentTags`·`studentIdsToSave`(새로 적은 태그만)·'@이름' `findMention`·`matchMentionStudents`·`applyMention`) ·
+  `notes/StudentTags.tsx`(`StudentMentionList` `[data-student-mention|mention-option]` · `StudentTagRow` `[data-note-students|note-student|note-student-remove|note-student-pick-open|note-student-picker|note-student-class|note-student-option]` · 카드 `EntryStudents` `[data-entry-students]`) · 쓰는 칸 키는 `ui/listKeys`.
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·

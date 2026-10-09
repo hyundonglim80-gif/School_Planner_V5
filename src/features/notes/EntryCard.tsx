@@ -18,6 +18,7 @@ import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import type { ItemDoc } from '../events/eventOps';
 import { nounOf } from './noteOps';
 import EntryTableView from './EntryTableView';
+import { EntryStudents } from './StudentTags';
 
 export interface EntryCardProps {
   item: ItemDoc;
@@ -266,6 +267,7 @@ export default function EntryCard(props: EntryCardProps) {
               ☑ {checks.done}/{checks.total}
             </span>
           )}
+          {(item.studentIds?.length ?? 0) > 0 && <EntryStudents studentIds={item.studentIds ?? []} />}
           {/* 이은 항목 - 누르면 📑 연결된 데이터 */}
           {links > 0 && (
             <button

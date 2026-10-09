@@ -95,4 +95,8 @@ export async function logout() {
   if (uid) await wipeDrafts(uid).catch((e: unknown) => console.warn('[drafts] 로그아웃 때 쓰던 글 보관을 지우지 못했습니다.', e));
   // 클립보드 칸 목록도 (비밀번호·캡처가 지나간다)
   if (uid) await wipeClipboard(uid).catch((e: unknown) => console.warn('[clipboard] 로그아웃 때 클립보드 목록을 지우지 못했습니다.', e));
+  // 학생 사진 담아 두기도 (얼굴 사진 - 공용 PC). 사진을 쓰는 화면에서만 읽는 모듈이라 그때 불러온다
+  await import('../../data/google/studentPhotos')
+    .then((m) => m.wipePhotoCache())
+    .catch((e: unknown) => console.warn('[photos] 로그아웃 때 사진 담아 두기를 지우지 못했습니다.', e));
 }

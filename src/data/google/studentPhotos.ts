@@ -1,0 +1,643 @@
+// 학생 사진 - 드라이브에서 찾고, 받고, 올리고, 이 기기에 재어 둔다 (V4 lib/studentPhotos.ts 그대로 - 폴더 기억은 features/photos/photoFolders).
+//
+// 첨부(drive.ts)와 따로 두는 까닭:
+//  1. 공개 설정을 하지 않는다 - 학생 얼굴 사진은 주소만 알면 누구나 보게 열어 두지 않는다. 선생님 토큰으로 내려받아 화면에만 띄운다.
+//  2. 자리가 다르다 - 사진은 School_Planner / Students_Poto / 2026-3-1 로 학급마다 나뉜다(V4와 같은 폴더 - 같은 구글 앱이라 V4가 올린 사진이 보인다).
+import { getOrCreateFolder } from './drive';
+import { pickDriveImages, type PickedFile } from './picker';
+import { getValidGoogleToken } from './token';
+import { shrinkPhoto, type ShrinkResult } from '../../ui/imageShrink';
+import {
+  classFolderName,
+  isPhotoFile,
+  photoBaseName,
+  photoFileName,
+  PHOTO_EXTENSIONS,
+  type ClassKey,
+  type DrivePhotoFile,
+  type PhotoScan,
+} from '../../domain/studentPhotoNames';
+
+export type { DrivePhotoFile, PhotoScan };
+
+const DRIVE_FILES = 'https://www.googleapis.com/drive/v3/files';
+const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
+const FOLDER_MIME = 'application/vnd.google-apps.folder';
+
+/**
+ * 드라이브에 이미 있는 사진을 골라 파일로 받아 온다 (여러 장도). 취소하면 빈 배열.
+ *
+ * 고른 사진은 선택창이 drive.file 권한 안으로 넣어 주므로 받아 올 수 있다(lib/googlePicker.pickDriveImages).
+ * 받은 파일은 기기에서 고른 것과 똑같이 uploadStudentPhoto / 여러 장 올리기로 넘긴다 - 줄이고, 이름을
+ * '2026-3-1-05-홍길동'으로 맞춰 학급 폴더에 넣는다. 드라이브의 원본은 건드리지 않는다.
+ */
+export async function pickPhotosFromDrive(
+  opts: { title?: string; multiple?: boolean } = {},
+  onProgress?: (done: number, total: number) => void
+): Promise<File[]> {
+  const token = await getValidGoogleToken('드라이브에서 사진을 고르려면');
+  const picked = await pickDriveImages(token, opts);
+  return downloadPickedImages(picked, token, onProgress);
+}
+
+/** 고른 드라이브 파일을 차례로 받는다 (한꺼번에 던지면 구글이 잠시 막는다) */
+export async function downloadPickedImages(
+  picked: PickedFile[],
+  token: string,
+  onProgress?: (done: number, total: number) => void
+): Promise<File[]> {
+  const files: File[] = [];
+  for (const [i, p] of picked.entries()) {
+    onProgress?.(i, picked.length);
+    const res = await driveFetch(`${DRIVE_FILES}/${encodeURIComponent(p.id)}?alt=media`, token);
+    const blob = await res.blob();
+    files.push(new File([blob], p.name, { type: p.mimeType || blob.type || 'image/jpeg' }));
+  }
+  onProgress?.(picked.length, picked.length);
+  return files;
+}
+
+async function driveFetch(url: string, token: string, init?: RequestInit): Promise<Response> {
+  const res = await fetch(url, {
+    ...init,
+    headers: { Authorization: `Bearer ${token}`, ...(init?.headers || {}) },
+  });
+  if (res.ok) return res;
+
+  if (res.status === 403 || res.status === 404) {
+    throw new PhotoAccessError(
+      '고른 폴더를 읽을 수 없습니다. 폴더를 다시 골라 주시거나, 폴더가 지워지지 않았는지 확인해 주세요.'
+    );
+  }
+  const body = await res.text().catch(() => '');
+  throw new Error(`구글 드라이브 오류 ${res.status} ${body.slice(0, 200)}`);
+}
+
+/** 폴더에 손이 닿지 않는 경우. 화면에서 '다시 연결' 안내를 띄우는 데 쓴다. */
+export class PhotoAccessError extends Error {
+  readonly needsReconnect = true;
+}
+
+
+/**
+ * 앱이 맡아 두는 사진 자리.
+ *
+ *   School_Planner / Students_Poto / 2026-3-1 / 2026-3-1-23-최지우.png
+ *
+ * ⚠️ 왜 하필 School_Planner 아래인가.
+ *    drive.file 권한은 '앱이 만들었거나 사용자가 앱에 직접 건네준 것'만 열어
+ *    준다. School_Planner는 첨부를 담느라 앱이 손수 만든 폴더다. 그 아래로
+ *    Students_Poto와 학급 폴더까지 앱이 만들면, 그 안에 앱이 올린 사진은
+ *    처음부터 끝까지 앱 것이라 권한이 막힐 일이 없다.
+ *
+ *    선생님이 따로 만든 폴더(School_Planner_Students_Poto)를 골랐을 때는
+ *    학급 폴더는 보여도 그 안의 사진이 안 보였다. 고른 폴더의 '자식'까지만
+ *    열리고 '손자'는 안 열리기 때문이다. 이 자리는 그 벽을 아예 만나지 않는다.
+ *
+ *    다만 선생님이 드라이브 화면에서 이 폴더에 사진을 손수 끌어다 넣으면,
+ *    그 파일은 앱이 만든 것이 아니므로 또 안 보일 수 있다. 그때를 위해
+ *    학급 폴더를 직접 고르는 길(picked)을 그대로 남겨 둔다.
+ */
+export const PHOTO_SUBFOLDER_NAME = 'Students_Poto';
+
+/** Students_Poto 폴더 id를 기억해 둔다 */
+let managedRootId: string | null = null;
+
+/** 한 폴더 아래에서 이름이 같은 폴더를 찾는다 */
+async function findChildFolder(
+  parentId: string,
+  name: string,
+  token: string
+): Promise<string | null> {
+  const q = encodeURIComponent(
+    `'${parentId}' in parents and name='${name.replace(/'/g, "\\'")}' and ` +
+      `mimeType='${FOLDER_MIME}' and trashed=false`
+  );
+  const res = await driveFetch(`${DRIVE_FILES}?q=${q}&fields=files(id)&pageSize=1`, token);
+  const data = await res.json();
+  return data.files?.[0]?.id || null;
+}
+
+async function createChildFolder(
+  parentId: string,
+  name: string,
+  token: string
+): Promise<string> {
+  const res = await driveFetch(DRIVE_FILES, token, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, mimeType: FOLDER_MIME, parents: [parentId] }),
+  });
+  return (await res.json()).id;
+}
+
+/** School_Planner / Students_Poto. create가 아니면 없을 때 null. */
+export async function getManagedPhotoRoot(
+  token: string,
+  create: boolean
+): Promise<string | null> {
+  if (managedRootId) return managedRootId;
+  const appFolder = await getOrCreateFolder(token);
+  const found = await findChildFolder(appFolder, PHOTO_SUBFOLDER_NAME, token);
+  if (found) {
+    managedRootId = found;
+    return found;
+  }
+  if (!create) return null;
+  managedRootId = await createChildFolder(appFolder, PHOTO_SUBFOLDER_NAME, token);
+  return managedRootId;
+}
+
+/** School_Planner / Students_Poto / 2026-3-1. 없으면 null (읽을 때는 만들지 않는다). */
+export async function findManagedClassFolder(
+  cls: ClassKey,
+  token: string
+): Promise<string | null> {
+  const root = await getManagedPhotoRoot(token, false);
+  if (!root) return null;
+  return findChildFolder(root, classFolderName(cls), token);
+}
+
+/** 위와 같되, 없으면 만든다 (사진을 올릴 때) */
+export async function ensureManagedClassFolder(
+  cls: ClassKey,
+  token: string
+): Promise<string> {
+  const root = await getManagedPhotoRoot(token, true);
+  if (!root) throw new Error('사진 폴더를 만들지 못했습니다.');
+  const name = classFolderName(cls);
+  const found = await findChildFolder(root, name, token);
+  return found || createChildFolder(root, name, token);
+}
+
+/** 앱이 맡아 두는 폴더를 드라이브에서 열 주소 (없으면 만들어서 연다) */
+export async function openManagedPhotoFolder(cls: ClassKey): Promise<string> {
+  const token = await getValidGoogleToken('사진 폴더를 열려면');
+  const id = await ensureManagedClassFolder(cls, token);
+  return `https://drive.google.com/drive/folders/${id}`;
+}
+
+/** 폴더 하나의 속살. 사진 파일과 하위 폴더 이름을 함께 준다. */
+interface FolderContents {
+  photos: DrivePhotoFile[];
+  folders: { id: string; name: string }[];
+  /** 사진도 폴더도 아닌 것까지 합친 전체 개수 (비었는지 가리는 데 쓴다) */
+  total: number;
+}
+
+
+/** 폴더 안을 한 번에 훑는다 (한 쪽에 200개씩, 다음 쪽까지 따라간다) */
+async function listFolder(folderId: string, token: string): Promise<FolderContents> {
+  const photos: DrivePhotoFile[] = [];
+  const folders: { id: string; name: string }[] = [];
+  let total = 0;
+  let pageToken = '';
+
+  do {
+    const params = new URLSearchParams({
+      q: `'${folderId}' in parents and trashed=false`,
+      fields: 'nextPageToken, files(id,name,mimeType,modifiedTime)',
+      pageSize: '200',
+      orderBy: 'name',
+    });
+    if (pageToken) params.set('pageToken', pageToken);
+
+    const res = await driveFetch(`${DRIVE_FILES}?${params}`, token);
+    const data = await res.json();
+    for (const f of data.files || []) {
+      total += 1;
+      if (f.mimeType === FOLDER_MIME) folders.push({ id: f.id, name: f.name });
+      else if (isPhotoFile(f.name)) {
+        photos.push({ id: f.id, name: f.name, modifiedTime: f.modifiedTime });
+      }
+    }
+    pageToken = data.nextPageToken || '';
+  } while (pageToken);
+
+  return { photos, folders, total };
+}
+
+
+/**
+ * 학급의 사진을 찾는다.
+ *
+ * 두 가지 모양을 모두 받아들인다.
+ *   1. 고른 폴더 / 2026-3-1 / 사진들        (원래 약속한 모양)
+ *   2. 고른 폴더 / 사진들                    (학급 폴더를 바로 고른 경우)
+ *
+ * 2를 받아들이는 까닭이 있다. drive.file 권한에서는 사용자가 선택창에서 고른
+ * 폴더까지만 앱에 열린다. 그 안의 하위 폴더가 함께 열리지 않는 경우가 있어,
+ * 뿌리 폴더를 골랐는데 정작 2026-3-1 폴더는 앱 눈에 안 보일 수 있다.
+ * 그럴 때는 선생님이 학급 폴더를 바로 고르면 되게 길을 열어 둔다.
+ */
+export async function scanClassPhotos(
+  rootId: string | null,
+  cls: ClassKey,
+  token: string,
+  /** 이 학급을 위해 따로 골라 둔 폴더가 있으면 그것부터 본다 */
+  pickedFolderId?: string
+): Promise<PhotoScan> {
+  const wanted = classFolderName(cls);
+
+  if (pickedFolderId) {
+    const inner = await listFolder(pickedFolderId, token);
+    return {
+      folderId: pickedFolderId,
+      source: 'picked',
+      files: inner.photos,
+      subfolderNames: inner.folders.map((f) => f.name),
+      rootEmpty: false,
+      itemCount: inner.total,
+      classFolderLooksEmpty: inner.photos.length === 0,
+    };
+  }
+
+  // 앱이 맡아 두는 자리부터 본다. 여기 있는 것은 권한 걱정이 없다.
+  const managed = await findManagedClassFolder(cls, token);
+  if (managed) {
+    const inner = await listFolder(managed, token);
+    return {
+      folderId: managed,
+      source: 'managed',
+      files: inner.photos,
+      subfolderNames: inner.folders.map((f) => f.name),
+      rootEmpty: false,
+      itemCount: inner.total,
+      classFolderLooksEmpty: inner.photos.length === 0,
+    };
+  }
+
+  if (!rootId) {
+    return {
+      folderId: null,
+      source: 'none',
+      files: [],
+      subfolderNames: [],
+      rootEmpty: true,
+      itemCount: 0,
+      classFolderLooksEmpty: false,
+    };
+  }
+
+  const root = await listFolder(rootId, token);
+  const subfolderNames = root.folders.map((f) => f.name);
+
+  const sub = root.folders.find((f) => f.name.trim() === wanted);
+  if (sub) {
+    const inner = await listFolder(sub.id, token);
+    return {
+      folderId: sub.id,
+      source: 'subfolder',
+      files: inner.photos,
+      subfolderNames,
+      rootEmpty: false,
+      itemCount: inner.total,
+      // 폴더는 보이는데 안이 비었다. 권한이 손자까지 안 닿는 경우가 여기다.
+      classFolderLooksEmpty: inner.photos.length === 0,
+    };
+  }
+
+  // 하위 폴더가 없다면, 고른 폴더가 곧 학급 폴더일 수 있다
+  if (root.photos.length > 0) {
+    return {
+      folderId: rootId,
+      source: 'root',
+      files: root.photos,
+      subfolderNames,
+      rootEmpty: false,
+      itemCount: root.total,
+      classFolderLooksEmpty: false,
+    };
+  }
+
+  return {
+    folderId: null,
+    source: 'none',
+    files: [],
+    subfolderNames,
+    rootEmpty: root.total === 0,
+    itemCount: root.total,
+    classFolderLooksEmpty: false,
+  };
+}
+
+/**
+ * 사진을 올릴 폴더.
+ *
+ * 이 학급을 위해 따로 골라 둔 폴더가 있으면 거기, 아니면 앱이 맡아 두는
+ * School_Planner/Students_Poto/2026-3-1 에 넣는다(없으면 만든다).
+ * 선생님이 따로 고른 '위쪽 폴더'에는 넣지 않는다. 그 아래에 앱이 만든 폴더는
+ * 나중에 다시 읽을 때 손자가 되어 안 보일 수 있기 때문이다.
+ */
+export async function ensureClassFolderId(
+  cls: ClassKey,
+  token: string,
+  pickedFolderId?: string
+): Promise<string> {
+  if (pickedFolderId) return pickedFolderId;
+  return ensureManagedClassFolder(cls, token);
+}
+
+// ────────────────────────────────────────────────────────────────
+// 기기에 재어 두기
+//
+// 스물다섯 장을 플래시카드로 몇 바퀴 돌면 드라이브를 수백 번 부르게 된다.
+// 느리고, 구글이 잠시 막기도 한다. 한 번 받은 사진은 브라우저에 재어 두고,
+// 파일이 바뀌었을 때(modifiedTime)만 다시 받는다.
+// ────────────────────────────────────────────────────────────────
+
+const CACHE_DB = 'sp5-student-photos';
+const CACHE_STORE = 'photos';
+
+/**
+ * 저장소는 한 번만 연다.
+ *
+ * 예전에는 사진 한 장마다 열었다. 스물세 장이면 스물세 번이고, 여는 일 자체가
+ * 공짜가 아니다. 한 번 연 것을 계속 쓴다.
+ */
+let cacheOpening: Promise<IDBDatabase | null> | null = null;
+
+function openCache(): Promise<IDBDatabase | null> {
+  if (cacheOpening) return cacheOpening;
+  cacheOpening = openCacheOnce();
+  return cacheOpening;
+}
+
+function openCacheOnce(): Promise<IDBDatabase | null> {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open(CACHE_DB, 1);
+      req.onupgradeneeded = () => {
+        const idb = req.result;
+        if (!idb.objectStoreNames.contains(CACHE_STORE)) idb.createObjectStore(CACHE_STORE);
+      };
+      req.onsuccess = () => resolve(req.result);
+      // 시크릿 모드·저장소 차단 등. 재어 두지 못할 뿐이므로 그냥 넘어간다.
+      req.onerror = () => resolve(null);
+      req.onblocked = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+interface CachedPhoto {
+  blob: Blob;
+  modifiedTime: string;
+}
+
+function cacheGet(idb: IDBDatabase, key: string): Promise<CachedPhoto | null> {
+  return new Promise((resolve) => {
+    try {
+      const req = idb.transaction(CACHE_STORE, 'readonly').objectStore(CACHE_STORE).get(key);
+      req.onsuccess = () => resolve((req.result as CachedPhoto) || null);
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+function cachePut(idb: IDBDatabase, key: string, value: CachedPhoto): void {
+  try {
+    idb.transaction(CACHE_STORE, 'readwrite').objectStore(CACHE_STORE).put(value, key);
+  } catch {
+    /* 재어 두지 못해도 화면에는 보인다 */
+  }
+}
+
+function cacheDelete(key: string): void {
+  openCache().then((idb) => {
+    if (!idb) return;
+    try {
+      idb.transaction(CACHE_STORE, 'readwrite').objectStore(CACHE_STORE).delete(key);
+    } catch {
+      /* 무시 */
+    }
+  });
+}
+
+/**
+ * 한 파일에 대해 화면에 띄울 주소 하나만 만들어 쓴다.
+ *
+ * createObjectURL은 부를 때마다 새 주소를 만들고, 그 주소는 URL.revokeObjectURL
+ * 을 부르기 전까지 메모리를 붙잡는다. 같은 얼굴을 목록·타일·플래시카드에서
+ * 거듭 그리므로, 파일당 하나로 모아 두지 않으면 사진 수백 장어치가 쌓인다.
+ */
+const objectUrls = new Map<string, string>();
+
+/**
+ * 붙잡아 둘 주소의 수.
+ *
+ * 한 반이 서른 명 남짓이니 열 학급을 오가도 삼백 장이다. 그 언저리에서
+ * 끊어 준다. 넘으면 가장 오래 전에 넣은 것부터 놓아준다(Map은 넣은 차례를
+ * 지키므로 첫 열쇠가 곧 가장 오래된 것이다). 놓아준 사진은 IndexedDB에
+ * 그대로 있으므로, 다시 보게 되면 드라이브가 아니라 거기서 꺼낸다.
+ */
+const MAX_OBJECT_URLS = 400;
+
+function rememberUrl(fileId: string, url: string): void {
+  objectUrls.set(fileId, url);
+  while (objectUrls.size > MAX_OBJECT_URLS) {
+    const oldest = objectUrls.keys().next();
+    if (oldest.done) break;
+    const stale = objectUrls.get(oldest.value);
+    objectUrls.delete(oldest.value);
+    if (stale) URL.revokeObjectURL(stale);
+  }
+}
+
+/**
+ * 사진 하나를 화면에 띄울 수 있는 주소로 받아온다.
+ *
+ * 드라이브의 thumbnail 주소를 <img>에 바로 꽂는 길도 있지만, 그 길은 파일이
+ * '링크가 있는 사람은 볼 수 있음'으로 열려 있어야 한다. 학생 사진을 그렇게
+ * 열어 둘 수는 없으므로, 토큰을 실어 내려받은 뒤 blob 주소로 바꾼다.
+ */
+export async function getPhotoUrl(file: DrivePhotoFile, token: string): Promise<string> {
+  const cached = objectUrls.get(file.id);
+  if (cached) return cached;
+
+  const modifiedTime = file.modifiedTime || '';
+  const idb = await openCache();
+
+  if (idb) {
+    const hit = await cacheGet(idb, file.id);
+    if (hit && hit.modifiedTime === modifiedTime) {
+      const url = URL.createObjectURL(hit.blob);
+      rememberUrl(file.id, url);
+      return url;
+    }
+  }
+
+  const res = await driveFetch(`${DRIVE_FILES}/${file.id}?alt=media`, token);
+  const blob = await res.blob();
+  if (idb) cachePut(idb, file.id, { blob, modifiedTime });
+
+  const url = URL.createObjectURL(blob);
+  rememberUrl(file.id, url);
+  return url;
+}
+
+/**
+ * 사진 한 장을 올린다. 이미 같은 이름이 있으면 그 파일의 내용을 갈아끼운다
+ * (새로 만들면 같은 학생의 사진이 두 장이 되어 어느 것이 나올지 알 수 없다).
+ */
+export async function uploadStudentPhoto(
+  cls: ClassKey,
+  student: { num: number; name: string },
+  original: File,
+  pickedFolderId?: string,
+  /**
+   * 여러 장을 올릴 때 미리 잡아 둔 토큰과 폴더.
+   *
+   * ⚠️ 없으면 한 장마다 토큰을 확인하고 폴더를 다시 찾는다. 스무 장이면
+   *    그 왕복만 예순 번이고, 중간에 토큰이 만료되면 올리는 도중에 로그인
+   *    창이 튀어나온다. 여러 장 올릴 때는 밖에서 한 번 잡아 넘긴다.
+   */
+  ready?: { token: string; folderId: string }
+): Promise<DrivePhotoFile & { shrink: ShrinkResult }> {
+  const token = ready?.token || (await getValidGoogleToken('학생 사진을 올리려면'));
+
+  // 올리기 전에 줄인다. 4000px짜리를 들고 다닐 까닭이 없다(lib/imageShrink.ts).
+  // 원본 파일과 선생님의 원래 폴더는 건드리지 않는다.
+  const shrink = await shrinkPhoto(original);
+  const file = shrink.file;
+
+  const folderId = ready?.folderId || (await ensureClassFolderId(cls, token, pickedFolderId));
+  const name = photoFileName(cls, student.num, student.name, file.name);
+
+  // ⚠️ 확장자까지 맞는 것만 찾으면 안 된다.
+  //    올리기 전에 줄이면 이름이 .webp로 바뀌고(lib/imageShrink.ts), 이미 가벼워
+  //    줄이지 않은 사진은 원래 확장자 그대로 올라간다. 그래서 같은 학생인데
+  //    한 번은 .webp, 한 번은 .jpg가 된다. 확장자까지 맞는 것만 찾으면 서로를
+  //    못 알아보고 두 장이 남는데, 화면은 PHOTO_EXTENSIONS 차례대로 .webp를
+  //    먼저 고르므로 방금 올린 .jpg가 아니라 옛 .webp가 계속 보인다.
+  //    확장자를 뗀 이름으로 한 식구를 다 찾아, 한 장만 남긴다.
+  const base = photoBaseName(cls, student.num, student.name);
+  const siblings = await findPhotoSiblings(folderId, base, token);
+  const same = siblings.find((f) => f.name === name);
+
+  const uploaded = same
+    ? await replaceContent(same.id, file, token)
+    : await createFile(folderId, name, file, token);
+
+  // 확장자만 다른 옛 사진은 치운다. 남겨 두면 어느 것이 보일지 알 수 없다.
+  for (const old of siblings) {
+    if (old.id === uploaded.id) continue;
+    try {
+      await trashFile(old.id, token);
+    } catch (e) {
+      // 못 치워도 방금 올린 것은 올라갔다. 다음에 다시 치워진다.
+      console.warn('옛 사진을 치우지 못했습니다.', old.name, e);
+    }
+    forgetPhoto(old.id);
+  }
+
+  // 갈아끼운 파일은 재어 둔 것이 낡았다. 지워야 다음에 새 사진을 받는다.
+  forgetPhoto(uploaded.id);
+  return { ...uploaded, shrink };
+}
+
+/** 재어 둔 사진 한 장을 잊는다 (내용이 바뀌었거나 사라졌을 때) */
+function forgetPhoto(fileId: string): void {
+  const stale = objectUrls.get(fileId);
+  objectUrls.delete(fileId);
+  if (stale) URL.revokeObjectURL(stale);
+  cacheDelete(fileId);
+}
+
+/**
+ * 같은 학생의 사진을 확장자만 달리해서 모두 찾는다.
+ *
+ * 이름이 아니라 '확장자를 뗀 이름'이 그 학생을 가리킨다. 올릴 때 줄이기가
+ * 걸리느냐에 따라 확장자가 달라지므로(줄이면 webp, 못 줄이면 원래 것),
+ * 한 식구를 다 걷어 와야 옛것을 치울 수 있다.
+ */
+async function findPhotoSiblings(
+  folderId: string,
+  base: string,
+  token: string
+): Promise<{ id: string; name: string }[]> {
+  // 드라이브 질의문 안의 홑따옴표와 역슬래시는 앞에 역슬래시를 붙여 준다
+  const esc = (s: string) => s.split('\\').join('\\\\').split("'").join("\\'");
+  const names = PHOTO_EXTENSIONS.map((ext) => `name='${esc(base)}.${ext}'`).join(' or ');
+  const q = encodeURIComponent(`'${esc(folderId)}' in parents and (${names}) and trashed=false`);
+  const res = await driveFetch(
+    `${DRIVE_FILES}?q=${q}&fields=files(id,name)&pageSize=${PHOTO_EXTENSIONS.length}`,
+    token
+  );
+  const data = await res.json();
+  return (data.files || []) as { id: string; name: string }[];
+}
+
+/** 파일을 휴지통으로 보낸다. 아주 지우지 않는 편이 되돌릴 길을 남긴다. */
+async function trashFile(fileId: string, token: string): Promise<void> {
+  await driveFetch(`${DRIVE_FILES}/${fileId}`, token, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ trashed: true }),
+  });
+}
+
+async function createFile(
+  folderId: string,
+  name: string,
+  file: File,
+  token: string
+): Promise<DrivePhotoFile> {
+  const metadata = {
+    name,
+    mimeType: file.type || 'image/png',
+    parents: [folderId],
+  };
+  const body = new FormData();
+  body.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  body.append('file', file);
+
+  const res = await driveFetch(
+    `${DRIVE_UPLOAD}?uploadType=multipart&fields=id,name,modifiedTime`,
+    token,
+    { method: 'POST', body }
+  );
+  return res.json();
+}
+
+async function replaceContent(
+  fileId: string,
+  file: File,
+  token: string
+): Promise<DrivePhotoFile> {
+  const res = await driveFetch(
+    `${DRIVE_UPLOAD}/${fileId}?uploadType=media&fields=id,name,modifiedTime`,
+    token,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': file.type || 'image/png' },
+      body: file,
+    }
+  );
+  return res.json();
+}
+
+/** 폴더를 다시 찾게 한다 (사진을 올린 뒤, 또는 연결을 바꾼 뒤) */
+export function forgetFolderCache(): void {
+  managedRootId = null;
+}
+
+/** 로그아웃 - 이 기기에 재어 둔 사진을 지운다 (다음 사람이 보지 않게) */
+export async function wipePhotoCache(): Promise<void> {
+  for (const url of objectUrls.values()) URL.revokeObjectURL(url);
+  objectUrls.clear();
+  const idb = await cacheOpening;
+  idb?.close();
+  cacheOpening = null;
+  await new Promise<void>((resolve) => {
+    try {
+      const req = indexedDB.deleteDatabase(CACHE_DB);
+      req.onsuccess = req.onerror = req.onblocked = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}

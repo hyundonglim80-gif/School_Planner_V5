@@ -137,7 +137,36 @@ export interface CommonSettings {
   classBell: ClassBellSettings;
   /** 우리 학교 (V4 v4_school - P6-3). null = 고르지 않음(나이스 급식·학사일정을 부르지 않는다) */
   school: SchoolSetting | null;
+  /** 학생 사진 폴더 (V4 backup_config.studentPhotoFolder* - P7-1). 학급마다 따로 고른 폴더 + 옛 위쪽 폴더 */
+  photoFolders: PhotoFolders;
 }
+
+export interface PhotoFolderConfig {
+  id: string;
+  name: string;
+}
+export interface PhotoFolders {
+  /** 예전에 고른 위쪽 폴더 (새로 고르는 길은 없다 - 읽기만) */
+  root: PhotoFolderConfig | null;
+  /** '2026-3-1' → 그 학급을 위해 따로 고른 폴더 */
+  byClass: Record<string, PhotoFolderConfig>;
+}
+export const EMPTY_FOLDERS: PhotoFolders = { root: null, byClass: {} };
+
+const readFolder = (v: unknown): PhotoFolderConfig | null =>
+  v && typeof v === 'object' && typeof (v as PhotoFolderConfig).id === 'string' && (v as PhotoFolderConfig).id
+    ? { id: (v as PhotoFolderConfig).id, name: typeof (v as PhotoFolderConfig).name === 'string' ? (v as PhotoFolderConfig).name : '' }
+    : null;
+const readPhotoFolders = (v: unknown): PhotoFolders | undefined => {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const o = v as Record<string, unknown>;
+  const byClass: Record<string, PhotoFolderConfig> = {};
+  for (const [k, f] of Object.entries((o.byClass as Record<string, unknown>) ?? {})) {
+    const r = readFolder(f);
+    if (r) byClass[k] = r;
+  }
+  return { root: readFolder(o.root), byClass };
+};
 
 /** 휴지통 자동 비우기에서 고를 수 있는 날 (0 = 끄기) */
 export const TRASH_DAYS = [0, 7, 14, 30, 60, 90] as const;
@@ -160,6 +189,7 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   terms: customField<SchoolTerms>({}, readTerms),
   classBell: customField<ClassBellSettings>(DEFAULT_BELL, (v) => (v && typeof v === 'object' && !Array.isArray(v) ? sanitizeBell(v) : undefined)),
   school: customField<SchoolSetting | null>(null, (v) => (v === null ? null : (sanitizeSchool(v) ?? undefined))),
+  photoFolders: customField<PhotoFolders>(EMPTY_FOLDERS, readPhotoFolders),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */
