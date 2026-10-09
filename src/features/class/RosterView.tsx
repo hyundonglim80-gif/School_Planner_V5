@@ -2,7 +2,8 @@
 //   관리: 학생 줄(번호·이름·성별·상태·특이사항·✕), 인원 + 학생 추가, 학급 하나 ↑↓ CSV, 전체 학급 ↑↓ CSV(파일에 없는 학급은 그대로), 💾 저장(Ctrl+S).
 //   검색: 학년도·학년·반·번호·이름(초성)으로 모든 학급에서 - 누르면 관리 탭의 그 줄로.
 //   고친 것은 💾 저장 전까지 이 탭에 남는다(학급 화면을 떠났다 와도). 저장 = 바뀐 학급만(features/class/classes).
-//   아직 없는 것: 사진(P7-1 ■3) · 암기(P7-5) · 📊 시트 동기화·명렬표 시트(P8-3 백업 창과 함께).
+//   📷 사진(켤 때만 드라이브를 부른다 - features/photos): 목록의 사진 칸·타일 보기·끌어다 놓기·여러 장 업로드·사진 폴더.
+//   아직 없는 것: 암기(P7-5) · 📊 시트 동기화·명렬표 시트(P8-3 백업 창과 함께).
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { showErrorToast, showToast } from '../../app/toast';
 import { newId } from '../../data/id';
@@ -30,6 +31,9 @@ import {
   type RosterStudent,
 } from '../../domain/roster';
 import { downloadCsv } from '../../ui/download';
+import { PhotoBulkGroup, PhotoBulkProgress, PhotoBulkReportBand, PhotoStateLine } from '../photos/PhotoParts';
+import StudentPhoto from '../photos/StudentPhoto';
+import { readOn, usePhotoTools, writeOn, type PhotoTools } from '../photos/usePhotoTools';
 import { isSaveKey } from '../../ui/useSaveKey';
 import { saveRoster, useClasses, type ClassDraft } from './classes';
 import { draftActions, draftsOf, isDirty, useRosterDraft } from './rosterDraft';
@@ -42,6 +46,11 @@ const TABS: Array<{ id: RosterTab; label: string }> = [
 ];
 
 const selectCls = 'appearance-none bg-white border border-blue-200 rounded-lg pl-2.5 pr-6 py-1.5 text-xs font-bold text-slate-700 shadow-2xs focus:outline-none focus:border-primary cursor-pointer';
+/** 명렬표 관리의 사진 보기 켬/끔 - 이 기기에만 (V4 sp4-roster-photos) */
+const PHOTOS_KEY = 'sp5-roster-photos';
+
+type ListView = 'list' | 'tile';
+
 const FIELD = 'w-full bg-white border border-slate-300 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-primary';
 
 export default function RosterView() {
@@ -62,6 +71,21 @@ export default function RosterView() {
   const classInput = useRef<HTMLInputElement>(null);
   const allInput = useRef<HTMLInputElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+  const [showPhotos, setShowPhotos] = useState(() => readOn(PHOTOS_KEY));
+  const [view, setView] = useState<ListView>('list');
+  const [dragging, setDragging] = useState(false);
+  const panel = usePhotoTools(cur ?? null, students, showPhotos);
+  const photos = panel.photos;
+
+  // 사진을 켜는 그 자리에서 로그인까지 (누른 때가 아니면 브라우저가 로그인 창을 막는다)
+  const togglePhotos = () => {
+    const next = !showPhotos;
+    writeOn(PHOTOS_KEY, next);
+    // 사진을 끄면 타일 보기는 뜻이 없다 (빈 칸만 늘어선다)
+    if (!next) setView('list');
+    setShowPhotos(next);
+    if (next) void panel.authorize();
+  };
 
   // 다른 학급을 고르면 짚은 학생은 풀린다
   const [lastIndex, setLastIndex] = useState(index);
@@ -215,6 +239,17 @@ export default function RosterView() {
             학급 편집
           </button>
         </div>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            data-roster-photos
+            aria-pressed={showPhotos}
+            onClick={togglePhotos}
+            title={showPhotos ? '사진 칸을 감추고 구글 드라이브를 부르지 않습니다' : '사진 칸을 내고 구글 드라이브에서 사진을 불러옵니다'}
+            className={`rounded-lg px-2.5 py-1.5 text-xs font-bold border transition-colors cursor-pointer ${showPhotos ? 'bg-primary text-white border-primary' : 'bg-white text-slate-600 border-blue-200 hover:bg-blue-100'}`}
+          >
+            📷 사진
+          </button>
         <div className="flex gap-1 bg-blue-100 rounded-xl p-1" role="tablist" aria-label="명렬표">
           {TABS.map((t) => (
             <button
@@ -229,6 +264,7 @@ export default function RosterView() {
               {t.label}
             </button>
           ))}
+        </div>
         </div>
       </div>
 
@@ -267,7 +303,9 @@ export default function RosterView() {
             ))}
           </div>
           {dupId && <p className="text-2xs font-bold text-red-600">같은 학급({dupId})이 둘입니다 - 저장하기 전에 고쳐 주세요.</p>}
-          <p className="text-2xs text-slate-400 font-semibold">학년도·학년·반을 고치면 새 학급으로 옮겨 저장합니다(학생은 그대로). 사진 폴더 이름(2026-3-2)도 달라집니다.</p>
+          <p className="text-2xs text-slate-400 font-semibold">
+            학년도·학년·반을 고치면 새 학급으로 옮겨 저장합니다(학생은 그대로). 사진 폴더 이름(2026-3-2)도 달라지니 드라이브의 폴더 이름도 함께 바꿔 주세요.
+          </p>
         </div>
       )}
 
@@ -278,8 +316,30 @@ export default function RosterView() {
               <div className="text-xs text-slate-600 font-bold" data-roster-count={students.length}>
                 총 <span className="text-primary font-extrabold">{students.length}</span>명 (재학 <span className="text-emerald-600">{activeCount}</span>명
                 {students.length - activeCount > 0 && <span className="text-slate-400">, 전출 {students.length - activeCount}명</span>})
+                {showPhotos && photos.status === 'ready' && students.length > 0 && (
+                  <span className="text-slate-400 font-semibold" data-roster-photo-count={students.length - photos.missing.length}>
+                    {' '}
+                    · 사진 {students.length - photos.missing.length}/{students.length}명
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
+                {showPhotos && (
+                  <div className="flex gap-1 bg-slate-100 rounded-lg p-1">
+                    {(['list', 'tile'] as const).map((v) => (
+                      <button
+                        key={v}
+                        type="button"
+                        data-roster-view={v}
+                        aria-pressed={view === v}
+                        onClick={() => setView(v)}
+                        className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${view === v ? 'bg-white text-slate-800 shadow-2xs' : 'text-slate-500'}`}
+                      >
+                        {v === 'list' ? '목록' : '타일'}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-1 bg-slate-100 rounded-lg px-1.5 py-1">
                   <input type="file" accept=".csv,text/csv" ref={classInput} onChange={(e) => void uploadClass(e)} className="hidden" data-roster-csv-input />
                   <button type="button" data-roster-csv-up onClick={() => classInput.current?.click()} title="이 학급 명단을 CSV에서 올립니다" className="px-2 py-0.5 bg-white text-slate-700 border border-slate-300 rounded text-xs font-bold hover:bg-slate-50 cursor-pointer">
@@ -334,21 +394,58 @@ export default function RosterView() {
                 >
                   전체 삭제
                 </button>
+                {showPhotos && <PhotoBulkGroup panel={panel} />}
               </div>
             </div>
-            <StudentTable
-              students={students}
-              highlight={highlight}
-              onChange={act.setStudent}
-              onRemove={(row) => {
-                const st = students[row];
-                act.removeStudent(row);
-                showToast(`🗑️ '${st.name || `${st.num}번`}' 학생을 지웠습니다. 💾 저장해야 반영됩니다.`);
+            {/* 목록·타일 위로 사진을 끌어다 놓아도 올라간다 (폴더에서 끌어 오는 쪽이 자연스럽다 - V4) */}
+            <div
+              data-roster-drop={dragging ? 'over' : ''}
+              onDragOver={(e) => {
+                if (!showPhotos || !e.dataTransfer.types.includes('Files')) return;
+                e.preventDefault();
+                setDragging(true);
               }}
-            />
+              onDragLeave={(e) => {
+                // 자식 위로 옮겨 갈 때도 leave가 난다 - 실제로 벗어났을 때만 끈다
+                if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+                setDragging(false);
+              }}
+              onDrop={(e) => {
+                if (!showPhotos || !e.dataTransfer.types.includes('Files')) return;
+                e.preventDefault();
+                setDragging(false);
+                void panel.bulkUpload(Array.from(e.dataTransfer.files));
+              }}
+              className={`relative rounded-xl transition-colors ${dragging ? 'ring-2 ring-primary ring-offset-2 bg-blue-50/40' : ''}`}
+            >
+              {dragging && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-blue-50/80 pointer-events-none">
+                  <span className="text-sm font-extrabold text-primary">여기에 놓으면 파일 이름으로 학생을 찾아 올립니다</span>
+                </div>
+              )}
+              <StudentTable
+                students={students}
+                highlight={highlight}
+                view={view}
+                panel={showPhotos ? panel : null}
+                onChange={act.setStudent}
+                onRemove={(row) => {
+                  const st = students[row];
+                  act.removeStudent(row);
+                  showToast(`🗑️ '${st.name || `${st.num}번`}' 학생을 지웠습니다. 💾 저장해야 반영됩니다.`);
+                }}
+              />
+            </div>
+            {showPhotos && (
+              <>
+                <PhotoBulkProgress panel={panel} />
+                <PhotoBulkReportBand panel={panel} />
+                <PhotoStateLine panel={panel} count={students.length} />
+              </>
+            )}
           </>
         )}
-        {tab === 'search' && <RosterSearch drafts={drafts} pick={pick} onOpen={openFromSearch} />}
+        {tab === 'search' && <RosterSearch drafts={drafts} pick={pick} onOpen={openFromSearch} photos={showPhotos && photos.status === 'ready' ? photos.photos : null} />}
         {tab === 'memorize' && (
           <p className="py-10 text-center text-xs text-slate-400 font-semibold" data-roster-memorize>
             🚧 얼굴 외우기(암기)는 학생 사진과 함께 옮깁니다.
@@ -357,8 +454,17 @@ export default function RosterView() {
       </div>
 
       <div className="px-4 py-3 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+        <button
+          type="button"
+          data-roster-photo-folder
+          onClick={() => void panel.openPhotoFolder()}
+          title={photos.folder ? `드라이브에서 ${photos.folder.name || '사진 폴더'}를 엽니다` : '구글 드라이브에서 이 학급의 사진 폴더를 엽니다'}
+          className="mr-auto bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
+        >
+          📁 사진 폴더
+        </button>
         {dirty && (
-          <span className="mr-auto text-xs font-bold text-amber-600" data-roster-dirty>
+          <span className="text-xs font-bold text-amber-600" data-roster-dirty>
             저장하지 않은 것이 있습니다
           </span>
         )}
@@ -387,27 +493,82 @@ export default function RosterView() {
   );
 }
 
-/** 관리 탭의 학생 줄 (V4 RosterManageTab 목록 보기) */
+/** 관리 탭의 학생 줄 (V4 RosterManageTab - 목록 / 타일, 사진은 켰을 때만) */
 function StudentTable({
   students,
   highlight,
+  view,
+  panel,
   onChange,
   onRemove,
 }: {
   students: RosterStudent[];
   highlight: string | null;
+  view: ListView;
+  /** 사진 보기를 켰을 때만 - 꺼져 있으면 사진 칸 자체가 없다 */
+  panel: PhotoTools | null;
   onChange: (row: number, patch: Partial<RosterStudent>) => void;
   onRemove: (row: number) => void;
 }) {
   if (students.length === 0) {
     return <div className="border border-slate-200 rounded-xl py-10 text-center text-xs text-slate-400 font-semibold">등록된 학생이 없습니다. 위의 '+ 학생 추가'나 CSV로 넣으세요.</div>;
   }
+  const photoOf = (st: RosterStudent) => panel?.photos.photos.get(st.num);
+  const photoProps = (st: RosterStudent) => {
+    const photo = photoOf(st);
+    return {
+      url: photo?.url,
+      name: st.name,
+      canUpload: true,
+      uploading: panel?.photos.uploading === st.num,
+      onUpload: (file: File) => void panel?.upload(st, file),
+      loose: photo?.exact === false,
+      onOpen: photo?.url && panel ? () => panel.openViewer(st, photo.url) : undefined,
+    };
+  };
+
+  if (view === 'tile' && panel) {
+    // 휴대폰에서 여섯 칸이면 한 칸이 55px이라 얼굴도 이름도 못 읽는다 - 세 칸 (V4)
+    return (
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2" data-roster-tiles>
+        {students.map((st, row) => (
+          <div
+            key={st.sid}
+            data-roster-tile={row}
+            data-sid={st.sid}
+            className={`border rounded-xl overflow-hidden bg-white shadow-2xs transition-all ${highlight === st.sid ? 'border-primary ring-2 ring-primary/20' : 'border-slate-200'} ${!isActive(st) ? 'opacity-45' : ''}`}
+          >
+            <div className="relative">
+              <StudentPhoto {...photoProps(st)} shape="card" onPickDrive={() => void panel.pickDrive(st)} />
+              {!isActive(st) && <span className="absolute top-1.5 left-1.5 bg-slate-600/90 text-white text-2xs font-bold rounded px-1.5 py-0.5">전출</span>}
+            </div>
+            <div className="flex items-center gap-1 px-1.5 py-1.5 sm:gap-1.5 sm:px-2">
+              <span className="bg-blue-50 text-primary rounded text-2xs font-extrabold px-1 sm:px-1.5 py-0.5 shrink-0">{st.num}</span>
+              <input
+                type="text"
+                data-student-field="name"
+                value={st.name}
+                onChange={(e) => onChange(row, { name: e.target.value })}
+                aria-label="이름"
+                className="min-w-0 flex-1 bg-transparent text-xs font-extrabold text-slate-800 focus:outline-none focus:bg-slate-50 rounded px-0.5"
+              />
+              <button type="button" data-roster-remove={row} onClick={() => onRemove(row)} title="삭제" aria-label="삭제" className="text-slate-300 hover:text-red-500 font-black text-xs cursor-pointer shrink-0">
+                ✕
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   const input = 'bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none focus:border-primary';
   return (
     <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-2xs">
       <table className="w-full text-xs text-left border-collapse" data-roster-table>
         <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
           <tr>
+            {panel && <th className="p-2.5 text-center w-13">사진</th>}
             <th className="p-2.5 text-center w-16">번호</th>
             <th className="p-2.5 w-28">이름</th>
             <th className="p-2.5 text-center w-17">성별</th>
@@ -419,6 +580,13 @@ function StudentTable({
         <tbody className="divide-y divide-slate-100">
           {students.map((st, row) => (
             <tr key={st.sid} data-roster-row={row} data-sid={st.sid} className={`${highlight === st.sid ? 'bg-blue-50' : 'hover:bg-slate-50/80'} ${!isActive(st) ? 'opacity-50 bg-slate-100' : ''}`}>
+              {panel && (
+                <td className="p-1.5">
+                  <div className="flex items-center justify-center">
+                    <StudentPhoto {...photoProps(st)} shape="circle" size={32} />
+                  </div>
+                </td>
+              )}
               <td className="p-1.5 text-center">
                 <input type="number" data-student-field="num" value={st.num || ''} onChange={(e) => onChange(row, { num: parseInt(e.target.value, 10) || 0 })} aria-label="번호" className={`${input} no-spinner w-12 text-center font-bold text-slate-700`} />
               </td>
@@ -474,7 +642,18 @@ function HighlightedName({ name, query }: { name: string; query: string }) {
 }
 
 /** 검색 탭 (V4 RosterSearchTab) - 학년도·학년·반·번호·이름(초성) */
-function RosterSearch({ drafts, pick, onOpen }: { drafts: ClassDraft[]; pick: ClassPick; onOpen: (classIndex: number, student: RosterStudent) => void }) {
+function RosterSearch({
+  drafts,
+  pick,
+  onOpen,
+  photos,
+}: {
+  drafts: ClassDraft[];
+  pick: ClassPick;
+  onOpen: (classIndex: number, student: RosterStudent) => void;
+  /** 위에서 고른 학급의 사진 (사진 보기를 켜고 다 받았을 때만) - 다른 학급은 사진 없이 */
+  photos: ReadonlyMap<number, { url: string; exact: boolean }> | null;
+}) {
   const [scope, setScope] = useState<ClassPick>(pick);
   const [num, setNum] = useState('');
   const [name, setName] = useState('');
@@ -482,6 +661,7 @@ function RosterSearch({ drafts, pick, onOpen }: { drafts: ClassDraft[]; pick: Cl
   const [hideNames, setHideNames] = useState(false);
   // 위에서 학급을 바꾸면 검색 칸도 따라간다
   const pickKey = `${pick.year}|${pick.grade}|${pick.num}`;
+  const pickKeyId = `${pick.year}-${pick.grade}-${pick.num}`;
   const [lastPickKey, setLastPickKey] = useState(pickKey);
   if (lastPickKey !== pickKey) {
     setLastPickKey(pickKey);
@@ -554,31 +734,41 @@ function RosterSearch({ drafts, pick, onOpen }: { drafts: ClassDraft[]; pick: Cl
       )}
       {groups.length === 0 && <div className="text-center py-10 text-xs text-slate-400 font-semibold">조건에 맞는 학생이 없습니다.</div>}
       <div className="flex flex-col gap-4">
-        {groups.map(({ cls, hits }) => (
-          <div key={classIdOf(cls)} className="flex flex-col gap-2" data-search-class={classIdOf(cls)}>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-extrabold text-slate-700">{describeClass(cls)}</span>
-              <span className="text-2xs font-bold text-slate-500 bg-slate-100 rounded px-1.5 py-0.5">{hits.length}명</span>
-              <span className="flex-1 h-px bg-slate-200" />
+        {groups.map(({ cls, hits }) => {
+          const own = photos && classIdOf(cls) === pickKeyId ? photos : null;
+          return (
+            <div key={classIdOf(cls)} className="flex flex-col gap-2" data-search-class={classIdOf(cls)}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-extrabold text-slate-700">{describeClass(cls)}</span>
+                <span className="text-2xs font-bold text-slate-500 bg-slate-100 rounded px-1.5 py-0.5">{hits.length}명</span>
+                <span className="flex-1 h-px bg-slate-200" />
+                {photos && !own && <span className="text-2xs font-semibold text-slate-400">사진은 위에서 이 학급을 골라야 보입니다</span>}
+              </div>
+              <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2">
+                {hits.map((st) => {
+                  const photo = own?.get(st.num);
+                  return (
+                    <button
+                      key={st.sid}
+                      type="button"
+                      data-search-hit={st.sid}
+                      onClick={() => onOpen(drafts.indexOf(cls), st)}
+                      title={`${st.num}번 ${st.name}`}
+                      className={`text-left border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs hover:border-primary cursor-pointer ${!isActive(st) ? 'opacity-45' : ''}`}
+                    >
+                      {photos && <StudentPhoto url={photo?.url} name={st.name} shape="card" loose={photo?.exact === false} />}
+                      <span className="flex items-center gap-1 px-1.5 py-1.5">
+                        <span className="bg-blue-50 text-primary rounded text-2xs font-extrabold px-1 shrink-0">{st.num}</span>
+                        <span className="text-xs font-extrabold text-slate-800 truncate">{hideNames ? '?' : <HighlightedName name={st.name} query={name} />}</span>
+                        {st.gender && <span className="ml-auto text-2xs font-bold text-slate-400 shrink-0">{st.gender === 'M' ? '남' : '여'}</span>}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2">
-              {hits.map((st) => (
-                <button
-                  key={st.sid}
-                  type="button"
-                  data-search-hit={st.sid}
-                  onClick={() => onOpen(drafts.indexOf(cls), st)}
-                  title={`${st.num}번 ${st.name}`}
-                  className={`text-left border border-slate-200 rounded-xl bg-white shadow-2xs hover:border-primary flex items-center gap-1 px-1.5 py-1.5 cursor-pointer ${!isActive(st) ? 'opacity-45' : ''}`}
-                >
-                  <span className="bg-blue-50 text-primary rounded text-2xs font-extrabold px-1 shrink-0">{st.num}</span>
-                  <span className="text-xs font-extrabold text-slate-800 truncate">{hideNames ? '?' : <HighlightedName name={st.name} query={name} />}</span>
-                  {st.gender && <span className="ml-auto text-2xs font-bold text-slate-400 shrink-0">{st.gender === 'M' ? '남' : '여'}</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

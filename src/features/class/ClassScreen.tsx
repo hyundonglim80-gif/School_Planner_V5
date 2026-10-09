@@ -1,8 +1,9 @@
 // 학급 화면 (V4 features/class/ClassScreen.tsx) = 🏫 학급 도구 | 🧑‍🤝‍🧑 명렬표 (관리 · 검색 · 암기) - MENU 3-3.
 //   학급 도구: 학급을 고르면(이 기기에 남는다 - 도구가 그 학급으로 연다) 도구 카드(CLASS_TOOLS)·학생 명단. 이름을 누르면 그 학생의 누가기록(P7-4).
+//   학생 명단은 '이름 / 📷 사진'으로 본다(명렬표 관리의 사진 보기와 같은 것, 켜 둔 것은 이 기기 sp5-class-photos). 사진을 누르면 크게(아래 '사진 바꾸기').
 //   교과 모드: 올해 반을 학년별 줄의 반 색 칩으로 고른다. 교과 + 담임은 담임반에서만 담임 도구.
-//   아직 없는 것: 📋 오늘 출결 줄(P7-2) · 📷 사진 보기(P7-1 ■3). 도구는 그 기능을 옮기는 세션이 창을 등록하면 열린다(그 전에는 🚧 안내).
-import { useMemo } from 'react';
+//   아직 없는 것: 📋 오늘 출결 줄(P7-2). 도구는 그 기능을 옮기는 세션이 창을 등록하면 열린다(그 전에는 🚧 안내).
+import { useMemo, useState } from 'react';
 import { runFromButton } from '../../app/keys';
 import { getWindowDef, openWindow } from '../../app/windows';
 import { showToast } from '../../app/toast';
@@ -12,6 +13,8 @@ import { normalizeSlotText } from '../../domain/teachingSlot';
 import { useMirrorStatus } from '../../data/select';
 import { usePersonalSpaceId } from '../../data/session';
 import { useClassColorOf, useTeaching } from '../lessons/teaching';
+import StudentPhoto from '../photos/StudentPhoto';
+import { readOn, usePhotoTools, writeOn } from '../photos/usePhotoTools';
 import { rememberHubClass, useClasses, useHubClass, type ClassItem } from './classes';
 import RosterView from './RosterView';
 import { CLASS_TOOLS, type ClassTool } from './tools';
@@ -23,6 +26,9 @@ function openStudentRecord(classId: string, sid: string) {
   if (getWindowDef('studentRecord')) openWindow('studentRecord', { classId, sid });
   else showToast('🚧 학생 기록(누가기록)은 아직 V5로 옮기지 않았습니다.');
 }
+
+/** 학급 화면의 사진 보기 켬/끔 - 이 기기에만 (명렬표 관리의 sp5-roster-photos와 따로 - V4) */
+const PHOTOS_KEY = 'sp5-class-photos';
 
 function ClassHub() {
   const { classes } = useClasses();
@@ -48,6 +54,16 @@ function ClassHub() {
     return rows;
   }, [isClassUnit, classes, year]);
   const students = useMemo(() => (cls?.students ?? []).filter(isActive).sort((a, b) => a.num - b.num), [cls]);
+  const [showPhotos, setShowPhotos] = useState(() => readOn(PHOTOS_KEY));
+  const panel = usePhotoTools(cls, students, showPhotos);
+  const photos = panel.photos;
+  const setPhotoMode = (next: boolean) => {
+    if (next === showPhotos) return;
+    writeOn(PHOTOS_KEY, next);
+    setShowPhotos(next);
+    // 로그인 창은 누른 그 자리에서만 열린다 - 상태가 바뀌기를 기다리지 않고 바로 부른다
+    if (next) void panel.authorize();
+  };
 
   const choose = (id: string) => rememberHubClass(id);
   const openTool = (id: ClassTool['id']) => {
@@ -134,13 +150,91 @@ function ClassHub() {
         ))}
       </div>
 
-      {/* 학생 명단 - 이름을 누르면 그 학생의 누가기록 */}
+      {/* 학생 명단 - 이름 / 사진. 이름을 누르면 그 학생의 누가기록 */}
       <section className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4" data-class-students={students.length}>
-        <h3 className="font-black text-sm text-slate-700 mb-2">
-          🧑‍🎓 학생 {students.length}명 <span className="text-xs font-semibold text-slate-400">- 누르면 그 학생의 누가기록</span>
-        </h3>
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <h3 className="font-black text-sm text-slate-700">
+            🧑‍🎓 학생 {students.length}명 <span className="text-xs font-semibold text-slate-400">- {showPhotos ? '사진을 누르면 크게, 이름을 누르면 누가기록' : '누르면 그 학생의 누가기록'}</span>
+          </h3>
+          {showPhotos && photos.status === 'ready' && students.length > 0 && (
+            <span className="text-xs font-semibold text-slate-400" data-class-photo-count={students.length - photos.missing.length}>
+              사진 {students.length - photos.missing.length}/{students.length}명
+            </span>
+          )}
+          <div className="ml-auto flex gap-1 bg-slate-100 rounded-lg p-1" role="group" aria-label="명단 보기">
+            {([false, true] as const).map((on) => (
+              <button
+                key={String(on)}
+                type="button"
+                data-class-view={on ? 'photo' : 'name'}
+                aria-pressed={showPhotos === on}
+                onClick={() => setPhotoMode(on)}
+                title={on ? '구글 드라이브의 학생 사진으로 봅니다 (명렬표 관리의 사진과 같습니다)' : '번호와 이름으로 봅니다'}
+                className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${showPhotos === on ? 'bg-white text-slate-800 shadow-2xs' : 'text-slate-500'}`}
+              >
+                {on ? '📷 사진' : '이름'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 사진을 불러오지 못한 까닭 (명단은 그대로 보인다) */}
+        {showPhotos &&
+          students.length > 0 &&
+          (photos.status === 'needs-auth' ? (
+            <div className="mb-2 flex items-center justify-between gap-2 text-xs font-semibold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 flex-wrap" data-photo-needs-auth>
+              <span>구글 연결이 끊겨 사진을 불러오지 못했습니다.</span>
+              <button type="button" data-photo-auth onClick={panel.authorize} className="px-2.5 py-1 bg-primary hover:bg-primary/90 rounded text-xs font-bold text-white cursor-pointer shrink-0">
+                구글 연결하고 사진 불러오기
+              </button>
+            </div>
+          ) : photos.status === 'error' ? (
+            <div className="mb-2 flex items-center justify-between gap-2 text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-lg px-2.5 py-2 flex-wrap" data-photo-error>
+              <span>{photos.error || '사진 폴더를 읽지 못했습니다.'}</span>
+              <button type="button" onClick={() => openTool('roster')} className="px-2.5 py-1 bg-white border border-red-300 rounded text-xs font-bold text-red-700 hover:bg-red-100 cursor-pointer shrink-0">
+                명렬표에서 사진 폴더 보기
+              </button>
+            </div>
+          ) : photos.status === 'checking' || photos.status === 'loading' || photos.resolving ? (
+            <p className="mb-2 text-xs text-slate-400 font-semibold" data-photo-loading>
+              사진을 불러오는 중... ({students.length - photos.missing.length}/{students.length})
+            </p>
+          ) : null)}
+
         {students.length === 0 ? (
           <p className="text-sm text-slate-400">이 학급에 학생이 없습니다. 위의 🧑‍🤝‍🧑 명렬표에서 더합니다.</p>
+        ) : showPhotos ? (
+          /* 명렬표 관리의 타일 보기와 같은 카드 - 휴대폰 세 칸(한 칸이 너무 좁으면 얼굴·이름을 못 읽는다) */
+          <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2" data-class-photo-grid>
+            {students.map((s) => {
+              const photo = photos.photos.get(s.num);
+              return (
+                <div key={s.sid} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs" data-class-photo-card={s.num}>
+                  <StudentPhoto
+                    url={photo?.url}
+                    name={s.name}
+                    shape="card"
+                    canUpload
+                    uploading={photos.uploading === s.num}
+                    onUpload={(file) => void panel.upload(s, file)}
+                    loose={photo?.exact === false}
+                    onOpen={photo?.url ? () => panel.openViewer(s, photo.url) : undefined}
+                    onPickDrive={() => void panel.pickDrive(s)}
+                  />
+                  <button
+                    type="button"
+                    data-class-student={s.num}
+                    onClick={() => cls && openStudentRecord(classIdOf(cls), s.sid)}
+                    title="이 학생의 누가기록"
+                    className="w-full flex items-center gap-1 px-1.5 py-1.5 sm:gap-1.5 sm:px-2 hover:bg-primary/5 text-left min-w-0 cursor-pointer"
+                  >
+                    <span className="bg-blue-50 text-primary rounded text-2xs font-extrabold px-1 sm:px-1.5 py-0.5 shrink-0">{s.num}</span>
+                    <span className="text-xs font-extrabold text-slate-800 truncate">{s.name || '이름 없음'}</span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-1.5">
             {students.map((s) => (

@@ -18,6 +18,10 @@ const firebaseConfig = {
 };
 
 // 앱 이름을 V3('[DEFAULT]')·V4('SchoolPlannerV4')와 달리 두어 로그인 세션·기기 저장소 이름이 섞이지 않게 한다.
+/** 구글 Picker(학생 사진 고르기)가 쓴다 - 웹 API 키와 프로젝트 번호 (V4와 같다) */
+export const GOOGLE_API_KEY = firebaseConfig.apiKey;
+export const GOOGLE_APP_ID = firebaseConfig.messagingSenderId;
+
 export const app = initializeApp(firebaseConfig, 'SchoolPlannerV5');
 
 // Firestore 오프라인 저장소(IndexedDB)는 쓰지 않는다(memoryLocalCache).
