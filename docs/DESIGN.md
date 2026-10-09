@@ -331,9 +331,9 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | `{sp}/journals/{date}.entries` | `items`(note, date) | 기록 라벨 id → V5 id, `tables`, `attachments`, `completed`·`favorite`, 글 `[표]` → 빈 글, **`notice_`·`attendance_` 자동 기록은 가져오지 않는다**(5-4) |
 | `{sp}/tasks/{id}` | `items`(note, `null`) | 라벨 이름 → id, `fromDate`, `keepId`, `order` |
 | 항목의 `linkedItems` | `linkIds` | 결정적 id로 바로 셈, 수업 → `'lesson:{date}:{n}'` |
-| `{sp}/schedules/{date}` | `lessonDays` | **그 기간 시간표와 같은 칸은 뺀다**(과목이 같고 메모·준비물·첨부·링크가 없으면) - 그래야 시간표를 고치면 따라간다. 옛 문자열 값 읽기 |
-| `settings/timetable_v5` | `timetables`·`settings/common.terms` | 템플릿 → 기간(방학 설정으로 학기) |
-| `v4_periodTimes` + 설정의 수업 시간 명칭 | `settings/common.periods` | |
+| `{sp}/schedules/{date}` | `lessonDays` | **그 기간 시간표와 같은 칸은 뺀다**(과목이 같고 메모·준비물·첨부·링크가 없으면) - 그래야 시간표를 고치면 따라간다. 옛 문자열 값 읽기. V4에 칸이 없는데 시간표에 과목이 있으면 `subject: ''`, 수업 없는 날(방학·공휴일·수업X)은 과목 그대로, memo = memo(없으면 옛 content). 문서에 `src`(날짜 문서 하나 = 지문 하나), V4에서 없어진 날은 `periods: {}`(지우지 않는다) |
+| `settings/timetable_v5` | `timetables`·`settings/common.terms` | 템플릿 → 기간: 학기마다 그 학기 V4 수업 칸과 과목이 절반 넘게 맞는 표 = 그 학기부터 학년도 끝까지, 맞은 학기가 없으면 이름의 '1학기'·'2학기'로 올해, 나머지는 기간 없음('' - 쓰이지 않음), 빈 표는 뺀다(P6-4 `import/v4/lessons.ts`). 방학 한 벌 → `terms[여름 방학이 든 학년도]` |
+| `v4_periodTimes` + 설정의 수업 시간 명칭 | `settings/common.periods` | 이름 = `timetable_v5.currentNames`(없으면 첫 표의 names), 시각 = `v4_periodTimes.times` (P6-4) |
 | `settings/rosters` | `classes` | 학생마다 새 sid. **번호 → sid 짝 표를 가져오기 기록에** 둔다(다시 해도 같은 sid) |
 | `attendance`, `v4_subjectAttendance` | `attendance`, `subjectAttendance` | 번호 → sid |
 | `{sp}/evaluations/{date}`(`readEvalList`) | `evaluations` 한 장씩 | `evalList`가 최신, 학생 칸 번호 → sid |

@@ -16,7 +16,7 @@ import { hashText, sameValue, stableStringify } from './hash';
 export const IMPORT_DELETER = 'v4-import';
 
 /** 가져올 수 있는 컬렉션 (문서에 src 칸이 있는 것) - 기능을 옮기는 세션이 더한다 */
-export type ImportColl = 'labels' | 'items' | 'series';
+export type ImportColl = 'labels' | 'items' | 'series' | 'timetables' | 'lessonDays' | 'progress';
 
 export interface ImportCounts {
   /** 새로 (V4에서 지운 뒤 다시 생긴 것 포함) */

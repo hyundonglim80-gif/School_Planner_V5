@@ -236,9 +236,12 @@ export type TimetableGrid = Record<string, Record<string, string>>;
 /** 기간별 시간표. 기간이 겹치면 늦게 시작한 것이 이긴다 */
 export interface Timetable extends Tracked {
   name: string;
+  /** '' = 기간 없음(적용 안 됨 - V4에서 가져왔는데 어느 학기에도 쓰지 않은 표) */
   from: YMD;
   to: YMD;
   grid: TimetableGrid;
+  /** V4 timetable_v5에서 가져온 것 (P6-4) */
+  src?: ImportSource;
 }
 
 export interface LessonPeriod {
@@ -253,6 +256,8 @@ export interface LessonPeriod {
 /** lessonDays/{date} - 그날 바꾼 칸만. 칸이 없으면 시간표를 따른다 */
 export interface LessonDay extends Stamped {
   periods: Record<string, LessonPeriod>;
+  /** V4 schedules에서 가져온 것 (P6-4) */
+  src?: ImportSource;
 }
 
 // ───────────────────────── 4-6. 학급 (개인 공간) ─────────────────────────

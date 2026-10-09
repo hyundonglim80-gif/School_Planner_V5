@@ -63,9 +63,11 @@ const PLANT_M = { insp_memo: { text: '점검 메모', labels: ['긴급'], order:
 try {
   // V5 처음 모습 (끝에 되돌린다)
   const before = {};
-  for (const c of ['items', 'series', 'labels', 'settings']) before[c] = await snapDocs(v5Coll(c));
+  // 가져오기는 수업(P6-4)도 함께 들여온다 - 남기면 다른 점검(import-lessons·주간)이 그것을 본다
+  const V5 = ['items', 'series', 'labels', 'settings', 'timetables', 'lessonDays', 'progress'];
+  for (const c of V5) before[c] = await snapDocs(v5Coll(c));
   undo.add(async () => {
-    for (const c of ['items', 'series', 'labels', 'settings']) await restoreColl(v5Coll(c), before[c]);
+    for (const c of V5) await restoreColl(v5Coll(c), before[c]);
   });
   // V4에 점검 문서 심기
   for (const [d, data] of Object.entries(PLANT)) {

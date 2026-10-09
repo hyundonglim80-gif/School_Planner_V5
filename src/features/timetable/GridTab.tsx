@@ -114,10 +114,10 @@ export default function GridTab({ list, current, todayId, today, onPick, onChang
       {/* 시간표 고르기 */}
       <div className="flex items-center gap-1.5 flex-wrap px-3 py-2.5 bg-blue-50 border border-blue-100 rounded-xl" data-timetable-list={list.length}>
         {list.map((t) => (
-          <button key={t.id} type="button" data-timetable-pick={t.id} aria-pressed={t.id === current.id} onClick={() => onPick(t.id)} className={pill(t.id === current.id)} title={`${t.from} ~ ${t.to}`}>
+          <button key={t.id} type="button" data-timetable-pick={t.id} aria-pressed={t.id === current.id} onClick={() => onPick(t.id)} className={pill(t.id === current.id)} title={t.from ? `${t.from} ~ ${t.to}` : '기간이 없어 쓰이지 않습니다 (V4에서 가져온 표 - 아래에서 기간을 정하면 쓰입니다)'}>
             📅 {t.name.trim() || '이름 없음'}
             <span className={`ml-1 font-semibold ${t.id === current.id ? 'text-blue-100' : 'text-slate-400'}`}>
-              {md(t.from)}~{md(t.to)}
+              {t.from ? `${md(t.from)}~${md(t.to)}` : '기간 없음'}
             </span>
             {t.id === todayId && <span className="ml-1">· 오늘</span>}
           </button>

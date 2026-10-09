@@ -59,6 +59,10 @@ export interface ItemsPlan {
   ops: WriteOp[];
   counts: { 'items.event': ImportCounts; 'items.note': ImportCounts; series: ImportCounts };
   notes: ItemNotes;
+  /** V4 링크 하나 → V5 id (수업 가져오기가 같은 짝 표로) */
+  linkOf: (l: unknown) => string | undefined;
+  /** 가져올 일정 (수업 없는 날 셈 - 수업X 일정) */
+  events: ReadonlyArray<Planned<'items'>['data']>;
 }
 
 type Raw = Record<string, unknown>;
@@ -357,25 +361,27 @@ export function planItems(
   });
 
   // ───────── 링크 (모두 셈한 뒤 - 상대를 찾지 않고 바로) ─────────
-  for (const { data, links } of linkJobs) {
-    const ids: string[] = [];
-    for (const l of links) {
-      if (!isObj(l)) continue;
-      if (l.targetFId && l.targetFId !== 'personal') {
-        notes.linksDropped++;
-        continue;
-      }
-      const type = str(l.targetType);
-      const tid = String(l.targetId ?? l.id ?? '');
-      const tdate = str(l.targetDate).slice(0, 10);
-      let id: string | undefined;
-      if (type === 'schedule' && isValidDateStr(tdate) && l.targetPeriod !== undefined && l.targetPeriod !== '') id = `lesson:${tdate}:${String(l.targetPeriod)}`;
-      else if (type === 'event') id = linkTarget.get(`event|${tdate}|${tid}`);
-      else if (type === 'journal') id = linkTarget.get(`journal|${tdate}|${tid}`);
-      else if (type === 'memo') id = linkTarget.get(`memo|${tid}`);
-      if (id && !id.startsWith('period:') && !ids.includes(id)) ids.push(id);
-      else if (!id) notes.linksDropped++;
+  /** V4 링크 하나 → V5 id (찾지 못했거나 다른 공간 것이면 undefined - 수를 센다). 수업 가져오기(lessons.ts)도 쓴다 */
+  const linkOf = (l: unknown): string | undefined => {
+    if (!isObj(l)) return undefined;
+    if (l.targetFId && l.targetFId !== 'personal') {
+      notes.linksDropped++;
+      return undefined;
     }
+    const type = str(l.targetType);
+    const tid = String(l.targetId ?? l.id ?? '');
+    const tdate = str(l.targetDate).slice(0, 10);
+    let id: string | undefined;
+    if (type === 'schedule' && isValidDateStr(tdate) && l.targetPeriod !== undefined && l.targetPeriod !== '') id = `lesson:${tdate}:${String(l.targetPeriod)}`;
+    else if (type === 'event') id = linkTarget.get(`event|${tdate}|${tid}`);
+    else if (type === 'journal') id = linkTarget.get(`journal|${tdate}|${tid}`);
+    else if (type === 'memo') id = linkTarget.get(`memo|${tid}`);
+    if (id?.startsWith('period:')) id = undefined;
+    if (!id) notes.linksDropped++;
+    return id;
+  };
+  for (const { data, links } of linkJobs) {
+    const ids = linkIdsOf(links, linkOf);
     if (ids.length) data.linkIds = ids;
   }
 
@@ -389,7 +395,19 @@ export function planItems(
     ops: [...sr.ops, ...ev.ops, ...nt.ops],
     counts: { 'items.event': ev.counts, 'items.note': nt.counts, series: sr.counts ?? emptyCounts() },
     notes,
+    linkOf,
+    events: eventPlanned.map((p) => p.data),
   };
+}
+
+/** V4 링크 목록 → V5 id 목록 (겹친 것·못 찾은 것은 뺀다) */
+export function linkIdsOf(links: readonly unknown[], linkOf: (l: unknown) => string | undefined): string[] {
+  const ids: string[] = [];
+  for (const l of links) {
+    const id = linkOf(l);
+    if (id && !ids.includes(id)) ids.push(id);
+  }
+  return ids;
 }
 
 function nextDay(d: string): string {
