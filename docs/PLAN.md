@@ -866,8 +866,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: V4 설명서 `weekly-guide`·`neis`, V4 `lib/classBell.ts`·`hooks/useClassBell.ts`·`components/ClassBellPanel.tsx`, `lib/weeklyGuide.ts`·`weeklyGuideStore.ts`·
 `components/WeeklyGuideModal.tsx`, `lib/neis.ts`·`schoolSetting.ts`·`govApi.ts`·`hooks/useNeis.ts`·`useSchool.ts`·`components/SchoolSettingPanel.tsx`·`SchoolEventModal.tsx`·`SchoolEventName.tsx`·
 `features/day/DayMeals.tsx`, `lib/print.ts`.
-- [ ] ■1 수업 종(하루 '수업' 옆 🔔, 이 기기에서 울리기).
-- [ ] ■2 주간학습안내(주간 화면 단추, 담임만).
+- [x] ■1 수업 종(하루 '수업' 옆 🔔, 이 기기에서 울리기).
+  → 순수 `domain/classBell.ts`(V4 테스트째) · 설정 `common.classBell`(고르는 즉시 - 1초 뒤) · `features/bell/`(`bell.ts` `useClassBell`·`saveClassBell`·이 기기 끄기 `useBellMutedHere`(`sp5-class-bell-muted`)·`useClassBellRunner`(Shell - 1초마다, 교시 이름으로 안내) · `BellSettings.tsx`) · 하루 수업 머리줄 🔔/🔕 종.
+- [x] ■2 주간학습안내(주간 화면 단추, 담임만).
+  → 순수 `domain/weeklyGuide.ts`(V4 테스트째 - 재료 = 계산한 수업 칸 `guideDaysOf`) · 창 `weeklyGuide` `{ date? }`(`features/weeklyGuide/WeeklyGuideWindow` - 주 고르기·제목·넣을 것·알리는 말(이 기기)·🖨️ A4 세로·📋 표 복사) · 단축키 = 다음 주 · 알림장 줄은 P7-2(`HAS_NOTICES`).
+  인쇄(■3에서 당겨 옴): `ui/print.ts`(V4 lib/print - `#sp5-print-root`, index.css @media print) · `app/printScreen.ts`(`usePrintTarget` - 주간 = 이번 주 A4 가로, 년간 = 학사력, 없으면 브라우저 인쇄 · `usePrintShortcut` = ⋮·Ctrl+P). 점검 `tools/inspect-bell-guide.mjs`(52).
 - [ ] ■3 나이스(우리 학교·급식·학사일정 표시·D-Day로·일정으로·방학 채우기) + 인쇄(⋮ '🖨️ 이 화면 인쇄'·Ctrl+P - 주간 A4·학사력, `data-print-hide`).
 - [ ] ■4 크롬 점검.
 **끝 조건**: 설명서 `weekly-guide`·`neis`와 인쇄가 된다.

@@ -7,6 +7,7 @@
 //   - 자세히에서 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3). 공휴일·D-Day는 달 카드가 직접(data/holidays·설정). 인쇄(🖨️ 학사력 A4 가로)·학사일정은 P6-3, 자세히의 수업 칩은 P6-1.
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
+import { usePrintTarget } from '../../app/printScreen';
 import { academicYearOf, academicYearRange } from '../../domain/dateUtils';
 import { onPeriodDay } from '../../domain/period';
 import type { ShownPeriod } from '../../domain/periodBars';
@@ -189,6 +190,14 @@ export default function YearScreen() {
     return keys.length ? new Set(keys) : EMPTY;
   };
   const visible = months.slice(0, shownCount);
+
+  // ⋮ '이 화면 인쇄'·Ctrl+P = 학사력을 A4 가로로 (V4 년간 🖨️) - 자세히 보기는 브라우저 인쇄
+  const sheetRef = useRef<HTMLDivElement>(null);
+  usePrintTarget(
+    view === 'sheet'
+      ? () => ({ node: sheetRef.current, opts: { title: `${academicYear}학년도 학사력${semesterFilter === 'all' ? '' : ` (${semesterFilter}학기)`}`, landscape: true } })
+      : null,
+  );
   const waiting = (status === 'idle' || status === 'loading') && Object.keys(items).length === 0;
 
   return (
@@ -218,7 +227,7 @@ export default function YearScreen() {
           <p className="text-xs text-slate-400 font-medium">데이터를 불러오는 중...</p>
         </div>
       ) : view === 'sheet' ? (
-        <div data-year-sheet className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 items-start">
+        <div ref={sheetRef} data-year-sheet className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 items-start">
           {visible.map((m) => (
             <YearSheetMonth
               key={m.key}

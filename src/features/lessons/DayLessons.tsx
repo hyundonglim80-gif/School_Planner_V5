@@ -6,7 +6,8 @@
 //   - 교과 모드(전담·(중등) 전담 + 담임): 반을 크게·반 색 막대, 수정 칸은 학년-반 + 과목 두 칸, '⏪ 지난 시간' 줄(같은 반·과목의 바로 앞 수업 메모).
 //   - ▲▼ 위아래 교시와 맞바꾸기, 🔗 링크 추가, 📑 n 연결된 것, ✏️ 고치기. 머리줄 ⚙️ = 시간표 창.
 //   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
-// 아직 옮기지 않은 것(그 세션이 머리줄·카드에 더한다): 🔔 수업 종·급식(P6-3) · 📢 알림장·📋 출석부·🎯 뽑기(P7) · 📊 조사표(P7-4) · 🙋 교과 출결·반 도구(P7).
+//   - 🔔 종(features/bell - P6-3): '수업' 옆 단추로 수업 종 설정을 펼친다.
+// 아직 옮기지 않은 것(그 세션이 머리줄·카드에 더한다): 급식·학사일정(P6-3) · 📢 알림장·📋 출석부·🎯 뽑기(P7) · 📊 조사표(P7-4) · 🙋 교과 출결·반 도구(P7).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { setDate } from '../../app/nav';
@@ -14,7 +15,7 @@ import { useCommonSettings } from '../../app/prefs';
 import { listWindows, openWindow } from '../../app/windows';
 import { addDays, shortDateLabel } from '../../domain/dateUtils';
 import { lessonsOn, OFF_REASON_LABEL, type LessonCell } from '../../domain/lessons';
-import { periodLabel, periodRangeLabel, periodStateAt, timesOf } from '../../domain/periodTimes';
+import { periodLabel, periodRangeLabel, periodStateAt, timesOf, validPeriods } from '../../domain/periodTimes';
 import { normalizeSlotText, parseSlot, previousSlotOf } from '../../domain/teachingSlot';
 import { useHolidayName } from '../../data/holidays';
 import { useDocs } from '../../data/select';
@@ -25,6 +26,8 @@ import { isSaveKey } from '../../ui/useSaveKey';
 import { useToday } from '../../ui/useToday';
 import { lessonLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
+import { useClassBell } from '../bell/bell';
+import BellSettings from '../bell/BellSettings';
 import ProgressMarkLine, { ProgressCreateButton } from '../progress/ProgressMarkLine';
 import { useProgressMarks } from '../progress/useProgress';
 import { slotId } from '../../domain/progress';
@@ -96,6 +99,9 @@ export default function DayLessons({ date }: { date: string }) {
   const pairOptions = useSlotPairOptions(date, sid);
 
   const [collapsed, setCollapsed] = useState(false);
+  // 수업 종 설정 - '⏰ 수업' 옆 🔔 단추로 펼친다 (V4 10-07 사용자 요청 - 시간표 창에서 옮김)
+  const bell = useClassBell();
+  const [bellOpen, setBellOpen] = useState(false);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [saving, setSaving] = useState(false);
   useFocusReveal((t) => t.kind === 'lesson' && t.date === date, () => setCollapsed(false));
@@ -202,6 +208,18 @@ export default function DayLessons({ date }: { date: string }) {
             ⏰
           </span>
           <h3 className="text-base font-extrabold text-slate-800">수업</h3>
+          <button
+            type="button"
+            data-day-bell
+            aria-expanded={bellOpen}
+            onClick={() => setBellOpen((v) => !v)}
+            className={`px-2 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+              bell.enabled ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200' : 'bg-white hover:bg-slate-50 text-slate-500 border-slate-200'
+            }`}
+            title="수업 종 - 교시 시작·끝 시각에 종을 울립니다"
+          >
+            {bell.enabled ? '🔔 종' : '🔕 종'}
+          </button>
           {offText && (
             <span data-lessons-off={view.off} className="text-2xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100" title="이날은 시간표 수업이 없습니다 (그날 따로 적은 과목은 보입니다)">
               {offText}
@@ -240,6 +258,22 @@ export default function DayLessons({ date }: { date: string }) {
           </div>
         )}
       </div>
+
+      {bellOpen && (
+        <div className="mb-3 relative" data-day-bell-panel>
+          <button
+            type="button"
+            data-day-bell-close
+            onClick={() => setBellOpen(false)}
+            className="absolute -top-2 -right-2 z-10 w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-full shadow-xs text-slate-400 hover:text-slate-700 text-xs hover:bg-slate-100 cursor-pointer"
+            title="수업 종 설정 닫기"
+            aria-label="수업 종 설정 닫기"
+          >
+            ✕
+          </button>
+          <BellSettings hasTimes={validPeriods(times).length > 0} />
+        </div>
+      )}
 
       {!collapsed && (
         <div className="grid grid-cols-1 gap-3">

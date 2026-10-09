@@ -10,6 +10,8 @@ import { useEventShortcuts } from '../features/events/shortcuts';
 import { useNoteShortcuts } from '../features/notes/shortcuts';
 import { useTimetableShortcuts } from '../features/timetable/shortcuts';
 import { useProgressShortcuts } from '../features/progress/shortcuts';
+import { useClassBellRunner } from '../features/bell/bell';
+import { usePrintShortcut } from './printScreen';
 import { useSearchFocusRunner } from '../features/search/focus';
 import { useTrashAutoEmpty } from '../features/trash/auto';
 import { useWeekShortcuts } from '../features/week/prefs';
@@ -48,6 +50,8 @@ export default function Shell() {
   useNoteShortcuts();
   useTimetableShortcuts();
   useProgressShortcuts();
+  useClassBellRunner();
+  usePrintShortcut();
   // 작년 이맘때 보이기 / 숨기기 (주간)
   useWeekShortcuts();
   // 검색 결과로 간 카드 짚기 (P5-4)

@@ -3,6 +3,7 @@ import { EVENT_PANEL, sameEventPanel, type EventPanelParams } from '../features/
 import { LINK_VIEWER, LINKER, sameLinkWindow, type LinkWindowParams } from '../features/links/open';
 import { DAY_NOTES, NOTE_PANEL, sameDayNotes, sameNotePanel, type DayNotesParams, type NotePanelParams } from '../features/notes/open';
 import { LESSON_PANEL, sameLessonPanel, type LessonPanelParams } from '../features/lessons/open';
+import type { WeeklyGuideParams } from '../features/weeklyGuide/WeeklyGuideWindow';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -107,6 +108,16 @@ registerWindow({
   kind: 'side',
   help: 'labels',
   load: () => import('../features/labels/LabelsWindow'),
+});
+
+// 주간학습안내 (P6-3) - 주간 화면 단추(보는 주, 담임)·단축키 '주간학습안내'(다음 주). ⋮에서는 뺐다(MENU)
+registerWindow<WeeklyGuideParams | undefined>({
+  id: 'weeklyGuide',
+  title: '주간학습안내',
+  icon: '📰',
+  kind: 'side',
+  help: 'weekly-guide',
+  load: () => import('../features/weeklyGuide/WeeklyGuideWindow'),
 });
 
 // ⋮ 수업 - 진도 관리(P6-2). 하루 수업 머리줄 📘에도(주간·월간·메모 화면에서도 열려고 ⋮에도 - MENU 규칙 3의 예외).
