@@ -3,7 +3,7 @@
 //   검색: 학년도·학년·반·번호·이름(초성)으로 모든 학급에서 - 누르면 관리 탭의 그 줄로.
 //   고친 것은 💾 저장 전까지 이 탭에 남는다(학급 화면을 떠났다 와도). 저장 = 바뀐 학급만(features/class/classes).
 //   📷 사진(켤 때만 드라이브를 부른다 - features/photos): 목록의 사진 칸·타일 보기·끌어다 놓기·여러 장 업로드·사진 폴더.
-//   아직 없는 것: 암기(P7-5) · 📊 시트 동기화·명렬표 시트(P8-3 백업 창과 함께).
+//   암기 탭(P7-5) = MemorizeTab. 아직 없는 것: 📊 시트 동기화·명렬표 시트(P8-3 백업 창과 함께).
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
 import { showErrorToast, showToast } from '../../app/toast';
 import { newId } from '../../data/id';
@@ -38,6 +38,8 @@ import { isSaveKey } from '../../ui/useSaveKey';
 import { saveRoster, useClasses, type ClassDraft } from './classes';
 import { draftActions, draftsOf, isDirty, useRosterDraft } from './rosterDraft';
 import { useClassView, type RosterTab } from './view';
+import MemorizeTab from './MemorizeTab';
+import { quizStudentsOf } from '../quiz/usePhotoQuiz';
 
 const TABS: Array<{ id: RosterTab; label: string }> = [
   { id: 'manage', label: '관리' },
@@ -76,6 +78,8 @@ export default function RosterView() {
   const [dragging, setDragging] = useState(false);
   const panel = usePhotoTools(cur ?? null, students, showPhotos);
   const photos = panel.photos;
+  // 암기 판 후보 = 사진이 있는 재학생 (사진을 껐으면 없다)
+  const quizCandidates = cur && showPhotos ? quizStudentsOf(cur, students, (st) => photos.photos.get(st.num)?.url) : [];
 
   // 사진을 켜는 그 자리에서 로그인까지 (누른 때가 아니면 브라우저가 로그인 창을 막는다)
   const togglePhotos = () => {
@@ -447,9 +451,25 @@ export default function RosterView() {
         )}
         {tab === 'search' && <RosterSearch drafts={drafts} pick={pick} onOpen={openFromSearch} photos={showPhotos && photos.status === 'ready' ? photos.photos : null} />}
         {tab === 'memorize' && (
-          <p className="py-10 text-center text-xs text-slate-400 font-semibold" data-roster-memorize>
-            🚧 얼굴 외우기(암기)는 학생 사진과 함께 옮깁니다.
-          </p>
+          <div className="flex flex-col gap-2.5" data-roster-memorize>
+            {/* 사진 없이는 얼굴을 보고 이름을 맞힐 수가 없다 - 꺼져 있으면 켜는 단추부터 (V4 그대로) */}
+            {!showPhotos && (
+              <div className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 border border-slate-200 bg-slate-50 flex-wrap" data-memorize-photos-off>
+                <span className="text-2xs font-bold text-slate-600">사진 보기가 꺼져 있습니다. 얼굴이 있어야 이름을 맞힐 수 있습니다.</span>
+                <button type="button" data-memorize-photos-on onClick={togglePhotos} className="px-2.5 py-1 bg-primary hover:bg-primary/90 rounded text-2xs font-bold text-white transition-colors cursor-pointer">
+                  사진 켜기
+                </button>
+              </div>
+            )}
+            {showPhotos && quizCandidates.length === 0 && <PhotoStateLine panel={panel} count={students.length} />}
+            <MemorizeTab
+              cls={cur ?? null}
+              classes={drafts}
+              photosOn={showPhotos}
+              candidates={quizCandidates}
+              withoutPhoto={students.filter((s) => isActive(s) && !photos.photos.has(s.num)).length}
+            />
+          </div>
         )}
       </div>
 

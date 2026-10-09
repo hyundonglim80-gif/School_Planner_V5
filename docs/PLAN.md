@@ -1024,7 +1024,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P7-4 끝. V4 seed 자료.
 **먼저 읽을 것**: `DESIGN.md` 8-3 학급 줄, V4 `components/roster/RosterMemorizeTab.tsx`·`hooks/usePhotoQuiz.ts`·`lib/photoQuiz.ts`, V4 저장 모양(attendance·evaluations·v4_seating·v4_classHub·
 v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
-- [ ] ■1 암기(사진 틀 고정·정답은 이름만·자동 넘김·출제 수·함께 외울 학급).
+- [x] ■1 암기(사진 틀 고정·정답은 이름만·자동 넘김·출제 수·함께 외울 학급).
+  → 순수 `domain/photoQuiz.ts`(V4 lib째 + 테스트, 열쇠 '{classId}/{sid}') · 사본 `MIRRORED` += quiz · `features/quiz/`(`quizData` 성적 = 개인 공간 `quiz/{classId}` `records.{sid}` · `usePhotoQuiz` 모았다 1.5초 뒤 한 번에) ·
+  `features/class/MemorizeTab`(명렬표 '암기' 탭 - 사진 끄면 켜는 단추, 설정 `sp5-photo-quiz` 이 기기, 키 = `ui/listKeys.quizKeyOf`). 점검 inspect-photos 56(■1 9).
 - [ ] ■2 가져오기: rosters → classes(번호 → sid 짝 표를 가져오기 기록에 - 다시 해도 같은 sid), attendance·subjectAttendance·notices·evaluations(evalList 먼저)·seating·classHub·quiz·관찰 문구,
   기록·메모의 `#26040305` 태그 → `studentIds`(글은 그대로).
 - [ ] ■3 점검 `inspect-import-class.mjs` + 👤 실제 계정 확인(학급 화면·출석 누계·조사표 모아 보기가 V4와 같은지) 부탁.

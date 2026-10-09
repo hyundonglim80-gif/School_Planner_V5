@@ -331,9 +331,9 @@ export interface ClassHub extends Stamped {
   draw?: { picked: string[]; round: number };
   groupSets?: Record<string, { name: string; groups: Array<{ name: string; members: string[] }>; createdAt: number; updatedAt: number }>;
 }
-/** quiz - 암기 성적 (P7-5가 칸을 채운다) */
+/** quiz/{classId} - 그 학급의 암기 성적 (P7-5 - V4 settings/photoQuiz 하나를 학급마다 나눴다). 학생 sid → 성적 */
 export interface Quiz extends Stamped {
-  [field: string]: unknown;
+  records: Record<string, { o: number; x: number; streak: number; seenAt?: number }>;
 }
 
 // ───────────────────────── 4-7. 조사표·알림장·진도 ─────────────────────────
