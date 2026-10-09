@@ -16,6 +16,8 @@ import { readDDayList, type DDay } from '../domain/dday';
 import { DEFAULT_PERIODS, readPeriods, type PeriodDef } from '../domain/periodTimes';
 import { readTerms, type SchoolTerms } from '../domain/semester';
 import { sanitizeTeachingMode, type TeachingMode } from '../domain/teachingMode';
+import { DEFAULT_BELL, sanitizeBell, type ClassBellSettings } from '../domain/classBell';
+import { sanitizeSchool, type SchoolSetting } from '../domain/schoolSetting';
 import {
   boolField,
   customField,
@@ -131,6 +133,10 @@ export interface CommonSettings {
   periods: PeriodDef[];
   /** 학년도마다 방학 (V4 timetable_v5.semesterConfig - P6-1, 학기는 방학에서 셈한다) */
   terms: SchoolTerms;
+  /** 수업 종 (V4 v4_classBell - P6-3). 이 기기에서 울릴지는 이 기기에만(domain/classBell BELL_MUTE_KEY) */
+  classBell: ClassBellSettings;
+  /** 우리 학교 (V4 v4_school - P6-3). null = 고르지 않음(나이스 급식·학사일정을 부르지 않는다) */
+  school: SchoolSetting | null;
 }
 
 /** 휴지통 자동 비우기에서 고를 수 있는 날 (0 = 끄기) */
@@ -152,6 +158,8 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   teaching: customField<TeachingMode | null>(null, (v) => (v && typeof v === 'object' && !Array.isArray(v) ? sanitizeTeachingMode(v) : undefined)),
   periods: customField<PeriodDef[]>(DEFAULT_PERIODS, readPeriods),
   terms: customField<SchoolTerms>({}, readTerms),
+  classBell: customField<ClassBellSettings>(DEFAULT_BELL, (v) => (v && typeof v === 'object' && !Array.isArray(v) ? sanitizeBell(v) : undefined)),
+  school: customField<SchoolSetting | null>(null, (v) => (v === null ? null : (sanitizeSchool(v) ?? undefined))),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */

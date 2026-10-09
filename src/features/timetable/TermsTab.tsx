@@ -1,7 +1,14 @@
 // 시간표 창 '🏖️ 학기·방학' 탭 (V4 '학사일정(학기) 기간 설정'). 계정에 하나 settings/common.terms - 학년도마다.
 // 방학을 적으면 학기는 저절로 셈한다(1학기 = 3/1 ~ 여름 방학 전날, 2학기 = 여름 방학 다음 날 ~ 겨울 방학 전날).
-// 방학에는 시간표 수업이 없다(domain/lessons). 검색·링크 연결의 '1학기 / 2학기'도 이 값을 쓴다. 학사일정으로 채우기는 우리 학교(P6-3)에서.
+// 방학에는 시간표 수업이 없다(domain/lessons). 검색·링크 연결의 '1학기 / 2학기'도 이 값을 쓴다.
+// '📚 학사일정으로 채우기'(P6-3): 우리 학교를 골랐으면 그 학년도 학사일정의 방학식·개학식으로 칸을 채운다(저장은 💾로).
+import { useState } from 'react';
+import { showErrorToast } from '../../app/toast';
+import { loadMonthSchedule } from '../../data/neis';
+import { installNeisKey } from '../../data/neisKey';
 import { academicYearOf, todayStr } from '../../domain/dateUtils';
+import { filterScheduleByGrade, findVacations, vacationMonths } from '../../domain/schoolSetting';
+import { useSchool } from '../school/school';
 import { termSemesters, type DateSpan, type SchoolTerms, type YearTerms } from '../../domain/semester';
 
 interface Props {
@@ -17,6 +24,35 @@ export default function TermsTab({ terms, onChange, year, onYear }: Props) {
   const t: YearTerms = terms[String(year)] ?? {};
   const sems = termSemesters(t, year);
   const thisYear = academicYearOf(todayStr());
+  const school = useSchool();
+  const [filling, setFilling] = useState(false);
+  const [note, setNote] = useState<{ year: number; text: string } | null>(null);
+
+  const fill = async () => {
+    if (!school || filling) return;
+    setFilling(true);
+    try {
+      installNeisKey();
+      const lists = await Promise.all(vacationMonths(year).map((m) => loadMonthSchedule(school, m)));
+      const { summer, winter } = findVacations(filterScheduleByGrade(lists.flat(), school.grade), year);
+      const md = (d: string) => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;
+      if (!summer && !winter) {
+        setNote({ year, text: `${year}학년도 학사일정에서 방학식·개학식을 찾지 못했습니다. 방학 기간을 직접 적어 주세요.` });
+        return;
+      }
+      onChange({
+        ...terms,
+        [String(year)]: { ...t, ...(summer ? { summer: { from: summer.start, to: summer.end } } : {}), ...(winter ? { winter: { from: winter.start, to: winter.end } } : {}) },
+      });
+      const found = [summer && `여름 ${md(summer.start)}~${md(summer.end)}`, winter && `겨울 ${md(winter.start)}~${md(winter.end)}`].filter(Boolean).join(' · ');
+      const missing = [!summer && '여름', !winter && '겨울'].filter(Boolean).join('·');
+      setNote({ year, text: `📚 ${year}학년도 학사일정으로 채웠습니다: ${found}.` + (missing ? ` ${missing} 방학은 찾지 못해 그대로 두었습니다.` : '') + ' 맞으면 💾 저장을 누르세요.' });
+    } catch (e) {
+      showErrorToast('학사일정을 불러오지 못했습니다. 잠시 뒤 다시 눌러 보세요.', e);
+    } finally {
+      setFilling(false);
+    }
+  };
 
   const set = (which: 'summer' | 'winter', edge: keyof DateSpan, value: string) => {
     const cur = t[which] ?? { from: '', to: '' };
@@ -62,7 +98,24 @@ export default function TermsTab({ terms, onChange, year, onYear }: Props) {
             올해로
           </button>
         )}
+        {school && (
+          <button
+            type="button"
+            data-terms-fill
+            onClick={() => void fill()}
+            disabled={filling}
+            title={`${school.name} ${year}학년도 학사일정의 방학식·개학식으로 방학 기간을 채웁니다 (저장은 💾로)`}
+            className="ml-auto px-3 py-1 bg-teal-50 hover:bg-teal-100 border border-teal-200 disabled:opacity-50 text-teal-700 font-bold rounded-lg transition-colors cursor-pointer"
+          >
+            {filling ? '불러오는 중…' : '📚 학사일정으로 채우기'}
+          </button>
+        )}
       </div>
+      {note?.year === year && (
+        <p className="text-teal-700 font-bold" data-terms-fill-note>
+          {note.text}
+        </p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {box('summer', '☀️ 여름 방학', 'text-orange-700')}
         {box('winter', '❄️ 겨울 방학', 'text-sky-700')}

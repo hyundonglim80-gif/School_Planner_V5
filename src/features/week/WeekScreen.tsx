@@ -1,11 +1,13 @@
 // 주간 화면 (V4 features/week/WeekScreen.tsx·WeekGrid.tsx). 한 주를 요일 카드로 - 날짜·◀▶는 둘째 줄(SecondRow).
 //   - 본문 폭이 1200px 이상이면 요일이 한 줄로 서고 아래에 다음 주도 한 줄. 읽는 범위는 늘 두 주 - 기기 사본에서 고르므로 폭이 바뀌어도 다시 읽지 않는다.
 //   - 🕰️ 작년 이맘때: 이번 주 줄의 카드 아래에 작년 학년도 같은 주 같은 요일(domain/lastYearWeek), 골라서 📥 올해로 가져오기.
-//   - 주간학습안내·인쇄는 P6-3. 수업 줄은 P6-1(features/lessons/WeekLessonRows - 요일끼리 교시 줄 수가 같다), 끌어 옮기기·공휴일은 P5-3.
-import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
+//   - 📰 주간학습안내(담임 - features/weeklyGuide)·인쇄(⋮·Ctrl+P = 이번 주 A4 가로 - app/printScreen)는 P6-3. 수업 줄은 P6-1(features/lessons/WeekLessonRows - 요일끼리 교시 줄 수가 같다), 끌어 옮기기·공휴일은 P5-3.
+import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
-import { addDays, weekDates } from '../../domain/dateUtils';
+import { usePrintTarget } from '../../app/printScreen';
+import { openWindow } from '../../app/windows';
+import { addDays, todayStr, weekDates } from '../../domain/dateUtils';
 import { lastYearWeekOf } from '../../domain/lastYearWeek';
 import { periodStateAt, timesOf } from '../../domain/periodTimes';
 import { itemLabels, itemsOn, useDocs, useLabelTree } from '../../data/select';
@@ -71,7 +73,7 @@ export default function WeekScreen() {
   const periodDefs = useCommonSettings((s) => s.periods);
   const times = useMemo(() => timesOf(periodDefs), [periodDefs]);
   const nowMs = useClock(showClass && allDays.includes(today));
-  const { isClassUnit } = useTeaching();
+  const { isClassUnit, showHomeroomTools } = useTeaching();
   const classColorOf = useClassColorOf(date, sid);
   // 진도 (P6-2) - 보이는 마지막 날까지 (개인 공간에서만 겹친다)
   const { marks } = useProgressMarks(allDays[allDays.length - 1]);
@@ -223,9 +225,17 @@ export default function WeekScreen() {
   const pickedCount = pickedKeys.size;
   const md = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}`;
 
+  // ⋮ '이 화면 인쇄'·Ctrl+P = 이번 주 칸을 A4 가로로 (V4 주간 🖨️)
+  const printRef = useRef<HTMLDivElement>(null);
+  usePrintTarget(() => {
+    const first = shownThis[0] ?? thisWeek[0];
+    const last = shownThis[shownThis.length - 1] ?? thisWeek[6];
+    return { node: printRef.current, opts: { title: `${first.slice(0, 4)}년 ${md(first)} ~ ${md(last)} 주간`, subtitle: `인쇄 ${todayStr()}`, landscape: true } };
+  });
+
   return (
     <div data-screen="week" className="animate-fade-in pb-12">
-      <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 mb-2 px-1">
+      <div className="flex flex-wrap items-center justify-end gap-x-2 gap-y-1 mb-2 px-1" data-print-hide>
         {showLastYear && lastYear && (
           <span data-last-year-label className="text-xs text-slate-500 min-w-0">
             작년 같은 주 · <strong className="font-bold text-slate-700">{lastYear.label}</strong>
@@ -260,6 +270,17 @@ export default function WeekScreen() {
               모두 고르기
             </button>
           ))}
+        {showHomeroomTools && (
+          <button
+            type="button"
+            data-week-guide
+            onClick={() => openWindow('weeklyGuide', { date: shownThis[0] ?? thisWeek[0] })}
+            title="보고 있는 주의 주간학습안내(요일 × 교시 + 준비물)를 만듭니다"
+            className="px-2.5 py-1 rounded-lg text-xs font-bold border bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-700 whitespace-nowrap cursor-pointer"
+          >
+            📰 주간학습안내
+          </button>
+        )}
         <button
           type="button"
           data-last-year-toggle
@@ -276,7 +297,7 @@ export default function WeekScreen() {
 
       <div className="flex flex-col gap-4">
         {/* 날짜(둘째 줄)를 누르면 오늘로 - 오늘 카드가 없으면(주말을 감춘 토·일) 이번 주 (app/todayScroll) */}
-        <div data-today-area={thisWeek.includes(today) ? 'true' : undefined} data-week-this>
+        <div ref={printRef} data-today-area={thisWeek.includes(today) ? 'true' : undefined} data-week-this>
           {grid(shownThis, true)}
         </div>
         {showNextWeek && (

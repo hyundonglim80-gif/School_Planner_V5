@@ -13,6 +13,7 @@ import { itemLabels, type LabelTree } from '../../data/select';
 import { useCommonSettings } from '../../app/prefs';
 import { liveDDays } from '../../domain/dday';
 import { useHolidayName } from '../../data/holidays';
+import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import type { CalendarEvents } from '../month/calendarEvents';
 
@@ -54,7 +55,10 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
     return label ? labelColor(label.color).border : DEFAULT_DOT;
   };
 
-  const items = monthSheetItems<ItemDoc>({ dates, eventsOn, periods: periodsInDates(dates, periods), textOf: (ev) => ev.text, doneOn: doneOnDay, holidayOf, ddays });
+  // 우리 학교 학사일정 (P6-3)
+  const { byDate: schoolEvents } = useSchoolSchedule([`${m.year}-${String(m.month).padStart(2, '0')}`]);
+  const schoolOf = (d: string) => schoolEvents[d]?.map((it) => it.name);
+  const items = monthSheetItems<ItemDoc>({ dates, eventsOn, periods: periodsInDates(dates, periods), textOf: (ev) => ev.text, doneOn: doneOnDay, holidayOf, ddays, schoolOf });
 
   const openItem = (it: SheetItem<ItemDoc>) => {
     if (it.item) onOpenEvent(it.item, it.date);
