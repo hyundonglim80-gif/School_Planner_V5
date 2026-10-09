@@ -16,6 +16,7 @@ import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import PeriodBar from './PeriodBar';
+import EvalCountBadge from '../evaluations/EvalCountBadge';
 
 const WEEKDAYS = [
   { name: '일', color: 'text-red-500' },
@@ -41,6 +42,10 @@ export interface MonthGridProps {
   eventsOn: (date: string) => ItemDoc[];
   periods: readonly ItemDoc[];
   noteCount: (date: string) => number;
+  /** 그날 조사표 수 (📊 n - P7-4) */
+  evalCount?: (date: string) => number;
+  /** 조사표 창을 열 공간 */
+  sid?: string | null;
   labelsOf: (ev: ItemDoc) => LabelDoc[];
   pickedOn: (date: string) => ReadonlySet<string>;
   multiOn: boolean;
@@ -143,6 +148,7 @@ export default function MonthGrid(p: MonthGridProps) {
                               <span>{notes}</span>
                             </button>
                           )}
+                          <EvalCountBadge sid={p.sid ?? null} date={date} count={p.evalCount?.(date) ?? 0} tag="month-evals" />
                           {!p.compact && (
                             <button
                               type="button"

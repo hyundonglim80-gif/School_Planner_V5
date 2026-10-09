@@ -4,7 +4,7 @@
 //   - 결과를 누르면 그 자리(그날 하루 화면·메모 화면)로 가서 찾은 카드를 짚는다(features/search/focus). 오른쪽 칸이라 검색 창은 그대로 -
 //     휴대폰은 화면을 덮으므로 닫는다. ✏️는 그 항목의 쓰는 칸, 📎는 그 파일을 연다.
 //   - 수업·수업 메모·비고(P6-1)는 계산한 수업 칸에서 찾는다(domain/search searchLessons) - 누르면 그날 하루 화면의 그 교시, ✏️는 'N교시 수정' 칸.
-//     라벨로 거르면 수업은 빠진다(라벨이 없다). 조사표명은 P7-4가 갈래를 더한다.
+//     라벨로 거르면 수업은 빠진다(라벨이 없다). 조사표(P7-4)는 제목·교과로 - 누르면 그날 하루 화면과 그 조사표 창.
 //   - 그날 '📢 알림장'·'📋 출결' 카드(P7-2 - 계산, domain/dayCards)는 '기록'으로 나온다 - 누르면 그날 하루 화면과 원본 칸.
 import { useDeferredValue, useMemo, useState } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
@@ -13,7 +13,7 @@ import type { WindowProps } from '../../app/windows';
 import { isEmptyFilter, matchLabels } from '../../domain/labelTree';
 import { labelColor } from '../../domain/labels';
 import { academicYearOf } from '../../domain/dateUtils';
-import { scopeRange, SEARCH_KINDS, SEARCH_SCOPES, searchItems, searchLessons, type LessonHit, type SearchHit, type SearchKind, type SearchScope } from '../../domain/search';
+import { scopeRange, SEARCH_KINDS, SEARCH_SCOPES, searchItems, searchEvals, searchLessons, type LessonHit, type SearchHit, type SearchKind, type SearchScope } from '../../domain/search';
 import { semesterConfigOf } from '../../domain/semester';
 import { itemLabels, useDocs, useLabelTree, type LabelTree } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
@@ -29,6 +29,9 @@ import { openNotePanel } from '../notes/open';
 import { requestFocus } from './focus';
 import { searchDayCards, type DayCard } from '../../domain/dayCards';
 import { openDayCard, useAllDayCards } from '../day/useDayCards';
+import { evalPlaceOf } from '../../domain/evaluation';
+import { useEvaluations, type EvalItem } from '../evaluations/evalData';
+import { openEvaluation } from '../evaluations/open';
 
 const PAGE_SIZE = 50;
 
@@ -39,6 +42,7 @@ const BADGES: Record<SearchKind, { text: string; className: string }> = {
   lesson: { text: '수업', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   lessonMemo: { text: '수업 메모', className: 'bg-lime-50 text-lime-700 border-lime-200' },
   lessonSupplies: { text: '비고', className: 'bg-orange-50 text-orange-700 border-orange-200' },
+  evaluation: { text: '조사표', className: 'bg-teal-50 text-teal-700 border-teal-200' },
   attachment: { text: '첨부파일', className: 'bg-rose-50 text-rose-700 border-rose-200' },
 };
 const WHERE: Record<'memo' | 'event' | 'journal', string> = { memo: '메모', event: '일정', journal: '기록' };
@@ -47,7 +51,8 @@ const WHERE: Record<'memo' | 'event' | 'journal', string> = { memo: '메모', ev
 type Row =
   | { t: 'item'; key: string; date?: string; hit: SearchHit<ItemDoc> }
   | { t: 'lesson'; key: string; date: string; hit: LessonHit }
-  | { t: 'card'; key: string; date: string; card: DayCard };
+  | { t: 'card'; key: string; date: string; card: DayCard }
+  | { t: 'eval'; key: string; date: string; ev: EvalItem };
 
 const md = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}`;
 
@@ -70,6 +75,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
   const items = useDocs('items', sid);
   const lessonSrc = useLessonSource(sid);
   const dayCards = useAllDayCards(sid);
+  const evals = useEvaluations(sid);
   const terms = useCommonSettings((s) => s.terms);
   const eventTree = useLabelTree('event', sid);
   const noteTree = useLabelTree('note', sid);
@@ -95,12 +101,13 @@ export default function SearchWindow({ close, raise }: WindowProps) {
     // 그날 알림장·출결 카드는 '기록' 갈래 (라벨이 없다)
     const cardRows: Row[] =
       labelId || !(kinds.size === 0 || kinds.has('journal')) ? [] : searchDayCards(dayCards, term, q.range).map((card) => ({ t: 'card', key: card.key, date: card.date, card }));
-    const rows = [...itemRows, ...lessonRows, ...cardRows];
+    const evalRows: Row[] = labelId ? [] : searchEvals(evals, q).map((ev) => ({ t: 'eval', key: `eval:${ev.id}`, date: ev.date, ev }));
+    const rows = [...itemRows, ...lessonRows, ...cardRows, ...evalRows];
     return rows
       .map((r, i) => [r, i] as const)
       .sort(([a, ia], [b, ib]) => (a.date && b.date ? b.date.localeCompare(a.date) || ia - ib : a.date ? -1 : b.date ? 1 : ia - ib))
       .map(([r]) => r);
-  }, [items, lessonSrc, dayCards, term, kinds, rangeKey, labelId, eventTree, noteTree]);
+  }, [items, lessonSrc, dayCards, evals, term, kinds, rangeKey, labelId, eventTree, noteTree]);
 
   const toggleKind = (k: SearchKind | 'all') => {
     setVisible(PAGE_SIZE);
@@ -138,6 +145,11 @@ export default function SearchWindow({ close, raise }: WindowProps) {
     setScope('day');
     requestFocus({ id: lessonLinkId(hit.date, hit.n), kind: 'lesson', date: hit.date });
     if (isMobile) close();
+  };
+  const goEval = (ev: EvalItem) => {
+    setDate(ev.date);
+    setScope('day');
+    if (sid) openEvaluation({ sid, date: ev.date, place: evalPlaceOf(ev), evalId: ev.id });
   };
   const goCard = (card: DayCard) => {
     setDate(card.date);
@@ -247,6 +259,28 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                 {hits.length}건{hits.length > visible && <span className="font-semibold text-slate-500"> (앞에서 {visible}건)</span>}
               </div>
               {hits.slice(0, visible).map((row) => {
+                if (row.t === 'eval') {
+                  const ev = row.ev;
+                  return (
+                    <div
+                      key={row.key}
+                      data-search-hit={row.key}
+                      data-search-hit-kind="evaluation"
+                      onClick={() => goEval(ev)}
+                      title="그날로 가서 그 조사표 열기"
+                      className="p-3 bg-white hover:bg-blue-50/40 border border-slate-200 hover:border-primary/50 rounded-xl cursor-pointer transition-all shadow-xs"
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${BADGES.evaluation.className}`}>{BADGES.evaluation.text}</span>
+                        <span className="text-xs font-bold text-slate-600">
+                          {ev.date} · {ev.period == null ? '기록' : `${ev.period}교시`} · {ev.classId}
+                          {ev.subject ? ` · ${ev.subject}` : ''}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-800 break-words">📊 {ev.title}</p>
+                    </div>
+                  );
+                }
                 if (row.t === 'card') {
                   const card = row.card;
                   return (

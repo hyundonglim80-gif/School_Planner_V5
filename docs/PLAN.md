@@ -996,8 +996,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P7-3 끝.
 **먼저 읽을 것**: V4 설명서 `evaluation`·`student-record`, V4 `components/EvaluationModal.tsx`·`EvalOverviewModal.tsx`·`CourseEvalOverview.tsx`·`EvalCountBadge.tsx`·`StudentRecordModal.tsx`,
 `hooks/useEvaluation.ts`·`useDayEvalCounts.ts`, `lib/evalArchive.ts`·`evalSummary.ts`·`courseEvals.ts`.
-- [ ] ■1 조사표 한 장 = 문서 하나(평가·체크·메모·조별·여러 반에 같은 조사표·교시에 붙이기) + 📊 표식.
+- [x] ■1 조사표 한 장 = 문서 하나(평가·체크·메모·조별·여러 반에 같은 조사표·교시에 붙이기) + 📊 표식.
   P7-3에서 미룬 것: 자리표 학생 칸의 '오늘 조사표' 줄(`seating/SeatStudentCard`) · 교과 교시 카드 반 도구 📊(`lessons/DayLessons` `[data-class-tools]`) · 조별 평가의 저장한 모둠(`classHub.groupSets` - `domain/groups.evalGroupsFrom`).
+  → 순수 `domain/evaluation.ts`(V4 evalSummary·courseEvals째 + sid - 명단 맞추기 `syncEvalStudents`·값 = 바뀐 학생 칸만 `evalValuesChanges`·CSV·학기) · 사본 `MIRRORED` += evaluations(휴지통 '조사표') ·
+  `features/evaluations/`(`evalData`(`useEvaluations`·`useEvalsOn`·`useEvalCountsByDate`·만들기·값·기본 정보·지우기) · `EvaluationWindow` 창 `evaluation` `{ sid, date, place?, slot?, evalId? }`(목록·만들기·보기) · `EvalCreateForm`(같은 과정의 다른 반 `useCourseTargets`) · `EvalMetaBox` · `EvalTable` · `EvalCountBadge` · `open.ts`) ·
+  하루 수업 칸 📊n·'N교시 수정' 칸 📊·기록 칸 머리 📊·주간·월간·년간 📊 n·교과 반 도구 📊·자리표 학생 칸 '오늘 조사표'·검색 '조사표'. 점검 `tools/inspect-evaluations.mjs`(38).
 - [ ] ■2 조사표 모아 보기(학급별·과정별·CSV·표 복사·인쇄 - `inspect-class`의 🚧 점검을 다른 도구로) + 학생 기록(관찰 문구 단추 `seating/ObservationPhrases` 함께 · `studentIds`·`classId`로 사본에서 모으기 - 기록·메모·출결·교과 출결·조사표, 학생 카드).
 - [ ] ■3 크롬 점검.
 **끝 조건**: 설명서 `evaluation`·`student-record`가 된다.

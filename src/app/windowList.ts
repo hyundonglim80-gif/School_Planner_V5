@@ -9,6 +9,7 @@ import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attend
 import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
 import { SUBJECT_ATT_CELL, SUBJECT_ATT_SUMMARY, sameSubjectCell, type SubjectAttendanceCellParams, type SubjectAttendanceSummaryParams } from '../features/subjectAttendance/open';
 import { SEATING_WINDOW, type SeatingParams } from '../features/seating/open';
+import { EVAL_WINDOW, sameEvalWindow, type EvaluationParams } from '../features/evaluations/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -102,6 +103,18 @@ registerWindow<SeatingParams | undefined>({
   classTool: true,
   help: 'seating',
   load: () => import('../features/seating/SeatingWindow'),
+});
+
+// 📊 조사표 (P7-4) - 하루 수업 칸 📊n(그 교시)·기록 칸 머리 📊(기록 칸)·주간·월간·년간 📊 n(그날 전체)·자리표 학생 칸·조사표 모아 보기·학생 기록·검색.
+//   같은 공간·날·자리면 그 탭 (features/evaluations/open)
+registerWindow<EvaluationParams>({
+  id: EVAL_WINDOW,
+  title: '조사표',
+  icon: '📊',
+  kind: 'side',
+  help: 'evaluation',
+  sameAs: sameEvalWindow,
+  load: () => import('../features/evaluations/EvaluationWindow'),
 });
 
 // 그날 기록 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n

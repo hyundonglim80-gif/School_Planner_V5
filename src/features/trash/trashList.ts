@@ -5,7 +5,7 @@
 //     **V4에서 가져온 항목(src)의 첨부는 지우지 않는다** - V4가 같은 파일을 보고 있다(PLAN 5장 P5-4).
 import { driveFileIdOf } from '../../data/google/drive';
 
-export type TrashKind = 'event' | 'journal' | 'memo' | 'label' | 'timetable' | 'progress' | 'class' | 'seating' | 'dday' | 'clip';
+export type TrashKind = 'event' | 'journal' | 'memo' | 'label' | 'timetable' | 'progress' | 'class' | 'seating' | 'evaluation' | 'dday' | 'clip';
 export type TrashTab = 'all' | 'event' | 'journal' | 'memo' | 'clip' | 'etc';
 
 export const TRASH_TABS: ReadonlyArray<{ key: TrashTab; label: string }> = [
@@ -17,7 +17,7 @@ export const TRASH_TABS: ReadonlyArray<{ key: TrashTab; label: string }> = [
   { key: 'etc', label: '기타' },
 ];
 
-export const KIND_LABEL: Record<TrashKind, string> = { event: '일정', journal: '기록', memo: '메모', label: '라벨', timetable: '시간표', progress: '진도', class: '학급', seating: '자리표', dday: 'D-Day', clip: '클립보드' };
+export const KIND_LABEL: Record<TrashKind, string> = { event: '일정', journal: '기록', memo: '메모', label: '라벨', timetable: '시간표', progress: '진도', class: '학급', seating: '자리표', evaluation: '조사표', dday: 'D-Day', clip: '클립보드' };
 
 export const tabOf = (kind: TrashKind): Exclude<TrashTab, 'all'> => (kind === 'event' || kind === 'journal' || kind === 'memo' || kind === 'clip' ? kind : 'etc');
 
@@ -70,6 +70,7 @@ export function trashEntries(src: {
   progress?: Readonly<Record<string, { id: string; key: string; subject?: string; classes?: string[]; lessons?: readonly unknown[]; deletedAt?: unknown }>>;
   classes?: Readonly<Record<string, { id: string; year: number; grade: number; num: number; students?: readonly unknown[]; deletedAt?: unknown }>>;
   seating?: Readonly<Record<string, { id: string; name: string; classId: string; deletedAt?: unknown }>>;
+  evaluations?: Readonly<Record<string, { id: string; title: string; classId: string; date: string; deletedAt?: unknown }>>;
   now?: number;
 }): TrashEntry[] {
   const now = src.now ?? Date.now();
@@ -100,6 +101,10 @@ export function trashEntries(src: {
   for (const c of Object.values(src.seating ?? {})) {
     if (!c.deletedAt) continue;
     out.push({ key: `seating:${c.id}`, kind: 'seating', id: c.id, text: `🪑 ${c.name} (${c.classId})`, deletedAt: deletedMs(c.deletedAt, now) });
+  }
+  for (const e of Object.values(src.evaluations ?? {})) {
+    if (!e.deletedAt) continue;
+    out.push({ key: `evaluation:${e.id}`, kind: 'evaluation', id: e.id, text: `📊 ${e.title} (${e.classId})`, when: e.date, deletedAt: deletedMs(e.deletedAt, now) });
   }
   for (const d of src.ddays) if (d.deletedAt) out.push({ key: `dday:${d.id}`, kind: 'dday', id: d.id, text: `${d.title} (${d.date})`, deletedAt: d.deletedAt });
   for (const c of src.clips) out.push({ key: `clip:${c.id}`, kind: 'clip', id: c.id, text: c.kind === 'image' ? '🖼️ 그림' : (c.text ?? ''), deletedAt: c.deletedAt });

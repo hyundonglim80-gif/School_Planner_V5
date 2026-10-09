@@ -1,5 +1,5 @@
 // 수업 수정 칸 'N교시 수정' (V4 components/DetailEditModal.tsx 수업 갈래). 쓰는 칸 'lesson' = { sid, date, n }.
-//   과목(교과 모드는 학년-반 + 과목)·비고/준비물·수업 메모, 🔗 링크 추가·📑 연결된 링크, 📘 진도 줄·진도 만들기(개인 공간), 삭제 = 그 교시 비우기.
+//   과목(교과 모드는 학년-반 + 과목)·비고/준비물·수업 메모, 🔗 링크 추가·📑 연결된 링크, 📊 조사표(P7-4 - 그 교시), 📘 진도 줄·진도 만들기(개인 공간), 삭제 = 그 교시 비우기.
 //   칸은 그 교시의 **지금 내용**을 따라간다 - 연 채로 하루 화면이나 다른 기기에서 고치면 칸도 바뀐다(고치는 중이면 적던 것을 둔다 - V4 10-04).
 //   저장·Ctrl+S, 좁은 화면에서 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -24,9 +24,12 @@ import type { LessonPanelParams } from './open';
 import SlotPairInput from './SlotPairInput';
 import { useSlotPairOptions, useTeaching } from './teaching';
 import { useLessonSource } from './useLessons';
+import { useEvalsOn } from '../evaluations/evalData';
+import { openEvaluation } from '../evaluations/open';
 
 export default function LessonPanel({ params, close, raise }: WindowProps<LessonPanelParams>) {
   const { sid, date, n } = params;
+  const evalCount = useEvalsOn(date, sid).filter((e) => e.period === n).length;
   const src = useLessonSource(sid);
   const cell = useMemo(() => lessonsOn(date, src).cells.find((c) => c.n === n), [date, n, src]);
   const dayDoc = useDocs('lessonDays', sid)[date];
@@ -121,6 +124,14 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
                 📑 연결된 링크 ({linkCount})
               </button>
             )}
+            <button
+              type="button"
+              data-lesson-panel-evals={evalCount}
+              onClick={() => openEvaluation({ sid, date, place: String(n), slot: subjectToSave(form.subject) })}
+              className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            >
+              📊 조사표{evalCount ? ` (${evalCount})` : ''}
+            </button>
             {!mark && inPersonal && <ProgressCreateButton subject={subjectToSave(form.subject)} />}
           </div>
           {mark && <ProgressMarkLine mark={mark} date={date} period={n} alwaysShowAction />}
