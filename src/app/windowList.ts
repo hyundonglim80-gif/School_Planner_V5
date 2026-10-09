@@ -5,6 +5,9 @@ import { DAY_NOTES, NOTE_PANEL, sameDayNotes, sameNotePanel, type DayNotesParams
 import { LESSON_PANEL, sameLessonPanel, type LessonPanelParams } from '../features/lessons/open';
 import type { WeeklyGuideParams } from '../features/weeklyGuide/WeeklyGuideWindow';
 import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/open';
+import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attendance/open';
+import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
+import { SUBJECT_ATT_CELL, SUBJECT_ATT_SUMMARY, sameSubjectCell, type SubjectAttendanceCellParams, type SubjectAttendanceSummaryParams } from '../features/subjectAttendance/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -37,6 +40,55 @@ registerWindow<LessonPanelParams>({
   help: 'detail-popup',
   sameAs: sameLessonPanel,
   load: () => import('../features/lessons/LessonPanel'),
+});
+
+// 📋 출석부 (P7-2) - 쓰는 칸 하나(다시 열면 그 날·학급으로). 하루 수업 머리줄·학급 도구 카드·단축키 '출석부'. 담임 도구(전담은 숨긴다)
+registerWindow<AttendancePanelParams>({
+  id: ATTENDANCE_PANEL,
+  title: '출석부',
+  icon: '📋',
+  kind: 'panel',
+  classTool: true,
+  lessonHeader: true,
+  show: ({ homeroom }) => homeroom,
+  help: 'attendance',
+  sameAs: () => true,
+  load: () => import('../features/attendance/AttendancePanel'),
+});
+
+// 📢 알림장 (P7-2) - 쓰는 칸, 공간마다 하나(칸을 연 공간에 저장). 하루 수업 머리줄·학급 도구 카드·단축키 '알림장 모아 보기'. 담임 도구
+registerWindow<NoticePanelParams>({
+  id: NOTICE_PANEL,
+  title: '알림장',
+  icon: '📢',
+  kind: 'panel',
+  classTool: true,
+  lessonHeader: true,
+  show: ({ homeroom }) => homeroom,
+  help: 'notice',
+  sameAs: sameNoticePanel,
+  load: () => import('../features/notices/NoticePanel'),
+});
+
+// 🙋 교과 출결 (P7-2) - 교과 모드 하루 수업 칸의 🙋 = 그 반·그 교시 쓰는 칸 / 누계 창 = 학급 도구 카드·단축키 '교과 출결 누계'
+registerWindow<SubjectAttendanceCellParams>({
+  id: SUBJECT_ATT_CELL,
+  title: '교과 출결',
+  icon: '🙋',
+  kind: 'panel',
+  help: 'subject-attendance',
+  sameAs: sameSubjectCell,
+  load: () => import('../features/subjectAttendance/SubjectAttendancePanel'),
+});
+registerWindow<SubjectAttendanceSummaryParams | undefined>({
+  id: SUBJECT_ATT_SUMMARY,
+  title: '교과 출결 누계',
+  icon: '🙋',
+  kind: 'side',
+  classTool: true,
+  show: ({ classUnit }) => classUnit,
+  help: 'subject-attendance',
+  load: () => import('../features/subjectAttendance/SubjectAttendanceWindow'),
 });
 
 // 그날 기록 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n

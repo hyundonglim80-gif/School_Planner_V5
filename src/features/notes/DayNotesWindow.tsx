@@ -11,6 +11,8 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { openLinkViewer } from '../links/open';
 import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from './actions';
 import EntryCard from './EntryCard';
+import DayCardView from '../day/DayCards';
+import { useDayCardsOn } from '../day/useDayCards';
 import { canMoveNote, favoriteFirst, timeLabel } from './noteOps';
 import { openNotePanel, useEditingNoteIds, type DayNotesParams } from './open';
 
@@ -25,6 +27,8 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
   const editing = useEditingNoteIds(sid);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const pathOf = (id: string) => labelPath(id, tree.parents, (x) => tree.byId.get(x)?.name);
+  // 그날 알림장·출결 (계산한 카드 - 누르면 원본 칸)
+  const cards = useDayCardsOn(date, sid);
 
   return (
     <ModalShell
@@ -47,10 +51,15 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
       footer={<ModalCloseButton onClose={close} />}
     >
       <div data-day-notes={date} className="space-y-3">
+        {cards.map((c) => (
+          <DayCardView key={c.key} card={c} sid={sid} />
+        ))}
         {notes.length === 0 ? (
+          cards.length > 0 ? null : (
           <p className="py-10 text-center text-xs text-slate-400" data-day-notes-empty>
             이 날 기록이 없습니다.
           </p>
+          )
         ) : (
           notes.map((item, index) => {
             const isCollapsed = collapsed[item.id] ?? isLongEntry(item.text);

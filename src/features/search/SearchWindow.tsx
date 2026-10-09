@@ -5,6 +5,7 @@
 //     휴대폰은 화면을 덮으므로 닫는다. ✏️는 그 항목의 쓰는 칸, 📎는 그 파일을 연다.
 //   - 수업·수업 메모·비고(P6-1)는 계산한 수업 칸에서 찾는다(domain/search searchLessons) - 누르면 그날 하루 화면의 그 교시, ✏️는 'N교시 수정' 칸.
 //     라벨로 거르면 수업은 빠진다(라벨이 없다). 조사표명은 P7-4가 갈래를 더한다.
+//   - 그날 '📢 알림장'·'📋 출결' 카드(P7-2 - 계산, domain/dayCards)는 '기록'으로 나온다 - 누르면 그날 하루 화면과 원본 칸.
 import { useDeferredValue, useMemo, useState } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
@@ -26,6 +27,8 @@ import { lessonLinkId } from '../links/linkOps';
 import { setJournalFilter, setMemoFilter, useLabelFilters } from '../notes/labelFilter';
 import { openNotePanel } from '../notes/open';
 import { requestFocus } from './focus';
+import { searchDayCards, type DayCard } from '../../domain/dayCards';
+import { openDayCard, useAllDayCards } from '../day/useDayCards';
 
 const PAGE_SIZE = 50;
 
@@ -41,7 +44,10 @@ const BADGES: Record<SearchKind, { text: string; className: string }> = {
 const WHERE: Record<'memo' | 'event' | 'journal', string> = { memo: '메모', event: '일정', journal: '기록' };
 
 /** 결과 한 줄 - 항목이거나 수업 칸 */
-type Row = { t: 'item'; key: string; date?: string; hit: SearchHit<ItemDoc> } | { t: 'lesson'; key: string; date: string; hit: LessonHit };
+type Row =
+  | { t: 'item'; key: string; date?: string; hit: SearchHit<ItemDoc> }
+  | { t: 'lesson'; key: string; date: string; hit: LessonHit }
+  | { t: 'card'; key: string; date: string; card: DayCard };
 
 const md = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}`;
 
@@ -63,6 +69,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
   const date = useNav((s) => s.date);
   const items = useDocs('items', sid);
   const lessonSrc = useLessonSource(sid);
+  const dayCards = useAllDayCards(sid);
   const terms = useCommonSettings((s) => s.terms);
   const eventTree = useLabelTree('event', sid);
   const noteTree = useLabelTree('note', sid);
@@ -85,12 +92,15 @@ export default function SearchWindow({ close, raise }: WindowProps) {
     // 수업은 라벨이 없다 - 라벨로 거르면 뺀다
     const lessonRows: Row[] = labelId ? [] : searchLessons(lessonSrc, q).map((hit) => ({ t: 'lesson', key: hit.key, date: hit.date, hit }));
     // 날짜 내림차순, 날짜를 모르는 메모는 맨 뒤 (같은 날은 항목 먼저 - 둘 다 이미 차례대로)
-    const rows = [...itemRows, ...lessonRows];
+    // 그날 알림장·출결 카드는 '기록' 갈래 (라벨이 없다)
+    const cardRows: Row[] =
+      labelId || !(kinds.size === 0 || kinds.has('journal')) ? [] : searchDayCards(dayCards, term, q.range).map((card) => ({ t: 'card', key: card.key, date: card.date, card }));
+    const rows = [...itemRows, ...lessonRows, ...cardRows];
     return rows
       .map((r, i) => [r, i] as const)
       .sort(([a, ia], [b, ib]) => (a.date && b.date ? b.date.localeCompare(a.date) || ia - ib : a.date ? -1 : b.date ? 1 : ia - ib))
       .map(([r]) => r);
-  }, [items, lessonSrc, term, kinds, rangeKey, labelId, eventTree, noteTree]);
+  }, [items, lessonSrc, dayCards, term, kinds, rangeKey, labelId, eventTree, noteTree]);
 
   const toggleKind = (k: SearchKind | 'all') => {
     setVisible(PAGE_SIZE);
@@ -128,6 +138,11 @@ export default function SearchWindow({ close, raise }: WindowProps) {
     setScope('day');
     requestFocus({ id: lessonLinkId(hit.date, hit.n), kind: 'lesson', date: hit.date });
     if (isMobile) close();
+  };
+  const goCard = (card: DayCard) => {
+    setDate(card.date);
+    setScope('day');
+    openDayCard(card, sid);
   };
   const edit = (hit: SearchHit<ItemDoc>) => {
     if (!sid) return;
@@ -232,6 +247,27 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                 {hits.length}건{hits.length > visible && <span className="font-semibold text-slate-500"> (앞에서 {visible}건)</span>}
               </div>
               {hits.slice(0, visible).map((row) => {
+                if (row.t === 'card') {
+                  const card = row.card;
+                  return (
+                    <div
+                      key={row.key}
+                      data-search-hit={row.key}
+                      data-search-hit-kind={card.kind}
+                      onClick={() => goCard(card)}
+                      title={card.kind === 'notice' ? '그날로 가서 알림장 열기' : '그날로 가서 출석부 열기'}
+                      className="p-3 bg-white hover:bg-blue-50/40 border border-slate-200 hover:border-primary/50 rounded-xl cursor-pointer transition-all shadow-xs"
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${BADGES.journal.className}`}>{BADGES.journal.text}</span>
+                        <span className="text-xs font-bold text-slate-600">
+                          {card.date} · {card.title}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed line-clamp-3 break-words">{card.lines.join('\n')}</p>
+                    </div>
+                  );
+                }
                 if (row.t === 'lesson') {
                   const hit = row.hit;
                   const badge = BADGES[hit.kind];

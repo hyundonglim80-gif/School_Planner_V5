@@ -24,6 +24,8 @@ import { setJournalFilter, useLabelFilters } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
 import { openNotePanel, useEditingNoteIds } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
+import DayCardView from './DayCards';
+import { useDayCardsOn } from './useDayCards';
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -48,6 +50,9 @@ export default function DayJournal({ date }: { date: YMD }) {
   const countOf = (key: string) =>
     notes.filter((n) => matchLabels(n.labelIds, isOtherKey(key) ? { labels: [], others: [otherParentOf(key)] } : { labels: [key], others: [] }, tree.parents)).length;
   const shown = favoriteFirst(notes.filter((n) => matchLabels(n.labelIds, filter, tree.parents)));
+  // 그날 알림장·출결 (계산한 카드 - 라벨이 없어 라벨로 보기를 하면 숨긴다)
+  const allCards = useDayCardsOn(date, sid);
+  const cards = isEmptyFilter(filter) ? allCards : [];
   const waiting = notes.length === 0 && (status === 'idle' || status === 'loading');
 
   // 칸 수는 창 폭이 아니라 본문 폭으로 - 오른쪽 칸이 열려 본문이 좁아지면 줄인다. 휴대폰도 2열(일정 칸과 같게)
@@ -140,6 +145,13 @@ export default function DayJournal({ date }: { date: YMD }) {
         </div>
       </div>
 
+      {!collapsed && cards.length > 0 && (
+        <div className="grid gap-4 items-start" data-day-cards={cards.length} style={{ gridTemplateColumns: `repeat(${Math.min(columnsCount, Math.max(cards.length, 2))}, minmax(0, 1fr))` }}>
+          {cards.map((c) => (
+            <DayCardView key={c.key} card={c} sid={sid} />
+          ))}
+        </div>
+      )}
       {!collapsed &&
         (shown.length > 0 ? (
           <div className="grid gap-4 items-start" style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}>
@@ -179,7 +191,7 @@ export default function DayJournal({ date }: { date: YMD }) {
           <p data-journal-waiting className="py-10 text-center text-xs text-slate-400">
             기록을 받는 중…
           </p>
-        ) : (
+        ) : cards.length > 0 ? null : (
           <div data-journal-empty className="w-full text-center py-10 bg-white/60 rounded-2xl border border-dashed border-slate-300 p-6 shadow-xs">
             <p className="text-slate-500 font-bold text-sm">등록된 기록이 없습니다.</p>
           </div>

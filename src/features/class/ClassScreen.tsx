@@ -2,8 +2,13 @@
 //   학급 도구: 학급을 고르면(이 기기에 남는다 - 도구가 그 학급으로 연다) 도구 카드(CLASS_TOOLS)·학생 명단. 이름을 누르면 그 학생의 누가기록(P7-4).
 //   학생 명단은 '이름 / 📷 사진'으로 본다(명렬표 관리의 사진 보기와 같은 것, 켜 둔 것은 이 기기 sp5-class-photos). 사진을 누르면 크게(아래 '사진 바꾸기').
 //   교과 모드: 올해 반을 학년별 줄의 반 색 칩으로 고른다. 교과 + 담임은 담임반에서만 담임 도구.
-//   아직 없는 것: 📋 오늘 출결 줄(P7-2). 도구는 그 기능을 옮기는 세션이 창을 등록하면 열린다(그 전에는 🚧 안내).
+//   📋 오늘 출결 한 줄(담임 도구 - 적힌 학생만, 누르면 출석부). 도구는 그 기능을 옮기는 세션이 창을 등록하면 열린다(그 전에는 🚧 안내).
 import { useMemo, useState } from 'react';
+import { KIND_LABEL, attendanceDocId, readMarks } from '../../domain/attendance';
+import { useDocs } from '../../data/select';
+import { openAttendance } from '../attendance/open';
+import { openNotices } from '../notices/open';
+import { openSubjectAttendanceSummary } from '../subjectAttendance/open';
 import { runFromButton } from '../../app/keys';
 import { getWindowDef, openWindow } from '../../app/windows';
 import { showToast } from '../../app/toast';
@@ -11,7 +16,7 @@ import { academicYearOf, todayStr } from '../../domain/dateUtils';
 import { classIdOf, classLabelOf, describeClass, isActive } from '../../domain/roster';
 import { normalizeSlotText } from '../../domain/teachingSlot';
 import { useMirrorStatus } from '../../data/select';
-import { usePersonalSpaceId } from '../../data/session';
+import { currentSpaceId, usePersonalSpaceId } from '../../data/session';
 import { useClassColorOf, useTeaching } from '../lessons/teaching';
 import StudentPhoto from '../photos/StudentPhoto';
 import { readOn, usePhotoTools, writeOn } from '../photos/usePhotoTools';
@@ -69,8 +74,21 @@ function ClassHub() {
   const openTool = (id: ClassTool['id']) => {
     if (cls) rememberHubClass(cls.id);
     if (id === 'roster') openClassRoster();
+    // 출석부는 오늘로 (단축키는 보는 날)
+    else if (id === 'attendance') openAttendance({ date: todayStr(), classId: cls?.id });
+    else if (id === 'notices') {
+      const space = currentSpaceId();
+      if (space) openNotices({ sid: space, date: todayStr() });
+    }
+    else if (id === 'subjectAttendance') openSubjectAttendanceSummary({ classId: cls?.id });
     else runFromButton(id);
   };
+  // 오늘 출결 (출석한 학생은 적지 않는다 - 적힌 학생만)
+  const personal = usePersonalSpaceId();
+  const attendance = useDocs('attendance', personal);
+  const today = todayStr();
+  const todayMarks = cls ? readMarks(attendance[attendanceDocId(cls.id, today)]?.records) : {};
+  const todayRows = (cls?.students ?? []).filter((s) => todayMarks[s.sid]).sort((a, b) => a.num - b.num);
 
   if (classes.length === 0) {
     if (status !== 'live') {
@@ -131,6 +149,31 @@ function ClassHub() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* 오늘 출결 한 줄 (교과 전담은 출석부를 숨긴다) */}
+      {showHomeroomTools && cls && (
+        <button
+          type="button"
+          data-class-today={todayRows.length}
+          onClick={() => openTool('attendance')}
+          className="text-left bg-white border border-slate-200 rounded-2xl px-4 py-3 hover:bg-slate-50 flex flex-wrap items-center gap-x-3 gap-y-1 cursor-pointer"
+        >
+          <span className="font-black text-sm text-slate-700">📋 오늘 출결</span>
+          {todayRows.length === 0 ? (
+            <span className="text-sm text-emerald-700 font-bold">적힌 결석·지각·조퇴·결과가 없습니다</span>
+          ) : (
+            todayRows.map((s) => (
+              <span key={s.sid} className="text-sm text-slate-700">
+                <span className="font-bold">
+                  {s.num} {s.name}
+                </span>{' '}
+                <span className="text-rose-600 font-bold">{KIND_LABEL[todayMarks[s.sid].kind]}</span>
+              </span>
+            ))
+          )}
+          <span className="ml-auto text-xs font-bold text-primary">출석부 열기 →</span>
+        </button>
       )}
 
       {/* 도구 */}

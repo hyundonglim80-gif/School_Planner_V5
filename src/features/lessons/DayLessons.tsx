@@ -8,13 +8,15 @@
 //   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
 //   - 🔔 종(features/bell - P6-3): '수업' 옆 단추로 수업 종 설정을 펼친다.
 //   - 🍚 급식·📚 학사(features/school - P6-3): 카드 아래, 환경설정 '우리 학교'를 골랐을 때만.
-// 아직 옮기지 않은 것(그 세션이 머리줄·카드에 더한다): 📢 알림장·📋 출석부·🎯 뽑기(P7) · 📊 조사표(P7-4) · 🙋 교과 출결·반 도구(P7).
+// 교과 모드 칸의 🙋 = 그 반·그 교시 교과 출결(P7-2 - 개인 공간에서, 칸의 반이 그 학년도 명렬표에 있을 때). 아직 옮기지 않은 것: 🎯 뽑기·반 도구(P7-3) · 📊 조사표(P7-4).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { setDate } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { listWindows, openWindow } from '../../app/windows';
-import { addDays, shortDateLabel } from '../../domain/dateUtils';
+import { academicYearOf, addDays, shortDateLabel } from '../../domain/dateUtils';
+import { classLabelOf } from '../../domain/roster';
+import { periodSummary, readSubjectPeriods, subjectAttendanceDocId } from '../../domain/subjectAttendance';
 import { lessonsOn, OFF_REASON_LABEL, type LessonCell } from '../../domain/lessons';
 import { periodLabel, periodRangeLabel, periodStateAt, timesOf, validPeriods } from '../../domain/periodTimes';
 import { normalizeSlotText, parseSlot, previousSlotOf } from '../../domain/teachingSlot';
@@ -34,6 +36,8 @@ import ProgressMarkLine, { ProgressCreateButton } from '../progress/ProgressMark
 import { useProgressMarks } from '../progress/useProgress';
 import { slotId } from '../../domain/progress';
 import { useFocusReveal } from '../search/focus';
+import { useClasses } from '../class/classes';
+import { openSubjectAttendanceCell } from '../subjectAttendance/open';
 import { saveLesson, swapLessons } from './actions';
 import { isEdited } from './lessonOps';
 import SlotPairInput from './SlotPairInput';
@@ -114,6 +118,10 @@ export default function DayLessons({ date }: { date: string }) {
   const { marks } = useProgressMarks(date);
   const personalSid = usePersonalSpaceId();
   const inPersonal = !!sid && sid === personalSid;
+  // 교과 출결 (P7-2): 칸의 반 → 그 학년도 명렬표의 학급
+  const { classes } = useClasses();
+  const subjectAtt = useDocs('subjectAttendance', personalSid ?? '');
+  const schoolYear = academicYearOf(date);
 
   const subjectToSave = (text: string) => (isClassUnit ? normalizeSlotText(text) : text.trim());
   const cellOf = (n: number) => view.cells.find((c) => c.n === n);
@@ -233,7 +241,7 @@ export default function DayLessons({ date }: { date: string }) {
                 key={d.id}
                 type="button"
                 data-lessons-tool={d.id}
-                onClick={() => openWindow(d.id, { date })}
+                onClick={() => openWindow(d.id, { date, ...(sid ? { sid } : {}) })}
                 className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
               >
                 {d.icon} {d.title}
@@ -395,6 +403,8 @@ export default function DayLessons({ date }: { date: string }) {
             const prevNote = prev ? (src.days[prev.date]?.periods?.[prev.period]?.memo ?? '').split('\n')[0].trim() : '';
             const mark = marks[slotId(date, n)];
             const hasDetails = !!(c.memo || c.supplies || prevNote || mark);
+            const slotClass = slot?.cls && inPersonal ? classes.find((k) => k.year === schoolYear && classLabelOf(k) === slot.cls) : undefined;
+            const attSummary = slotClass ? periodSummary(readSubjectPeriods(subjectAtt[subjectAttendanceDocId(slotClass.id, date)]?.periods)[String(n)]) : '';
             return (
               <div
                 key={n}
@@ -459,6 +469,22 @@ export default function DayLessons({ date }: { date: string }) {
                           <span data-lesson-subject={c.subject} className={`truncate leading-tight ${c.subject ? 'font-black text-base sm:text-lg text-slate-900' : 'text-sm'}`}>
                             {c.subject || <span className="text-slate-300 font-normal">{view.off && !c.changed ? '수업 없음' : '과목 미등록'}</span>}
                           </span>
+                        )}
+                        {slotClass && (
+                          <button
+                            type="button"
+                            data-subject-attendance={n}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openSubjectAttendanceCell({ classId: slotClass.id, date, n, subject: slot?.subject });
+                            }}
+                            title={`${slot?.cls} ${n}교시 교과 출결 (결과·지각·조퇴)`}
+                            className={`shrink-0 text-2xs font-bold rounded-full px-1.5 py-0.5 border transition-colors cursor-pointer ${
+                              attSummary ? 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100' : 'text-slate-400 bg-white border-slate-200 hover:text-slate-600 hover:border-slate-400'
+                            }`}
+                          >
+                            {attSummary ? <span data-subject-att-chip>{attSummary}</span> : '🙋 출결'}
+                          </button>
                         )}
                         {c.changed && (
                           <span data-lesson-changed className="shrink-0 text-2xs font-bold text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>

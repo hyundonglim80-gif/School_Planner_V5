@@ -43,6 +43,10 @@ try {
   await setDoc(A.ref('settings', 'common'), { ...(common ?? {}), periods, classBell: null, updatedAt: Date.now() });
   await setDoc(A.ref('timetables', 'insp_bg1'), { name: '점검 주간학습', from: '2026-03-01', to: '2027-02-28', grid: { '1': { '1': '국어', '2': '수학' }, '3': { '1': '과학' } }, authorId: uid, ...tracked });
   await setDoc(A.ref('lessonDays', '2026-10-12'), { periods: { '1': { memo: '시 낭송', supplies: '공책, 색연필' }, '2': { supplies: '색연필·자' } }, authorId: uid, ...tracked });
+  // 그날 알림장 (P7-2) - 주간학습안내의 '알림장' 줄
+  const notice0 = await getDoc(A.ref('notices', '2026-10-12'));
+  undo.add(async () => (notice0.exists() ? setDoc(A.ref('notices', '2026-10-12'), notice0.data()) : deleteDoc(A.ref('notices', '2026-10-12'))));
+  await setDoc(A.ref('notices', '2026-10-12'), { date: '2026-10-12', lines: ['우유 가져오기', '동의서'], updatedAt: serverTimestamp(), v: 1 });
 
   const { page, errors, ctx } = await newPage(browser);
   await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(SITE).origin });
@@ -102,7 +106,7 @@ try {
   r.check((await cell('1교시', 1).textContent()).includes('시 낭송'), '과목 아래 수업 메모');
   r.check((await cell('1교시', 3).textContent()).includes('과학'), '수 1교시 = 과학');
   r.check((await cell('준비물', 1).textContent()) === '공책, 색연필, 자', `준비물 = 모아서 겹친 것 하나로 (${await cell('준비물', 1).textContent()})`);
-  r.check(!(await page.locator('[data-guide-row="알림장"]').count()), '알림장 줄은 알림장이 생기면 (P7-2)');
+  r.check(((await cell('알림장', 1).textContent()) ?? '').includes('1. 우유 가져오기') && ((await cell('알림장', 1).textContent()) ?? '').includes('2. 동의서'), `알림장 줄 = 그날 알림장 (${await cell('알림장', 1).textContent()})`);
   await page.locator(sel('guide-opt', 'memo')).uncheck();
   r.check(!(await cell('1교시', 1).textContent()).includes('시 낭송'), '수업 메모 끄기');
   r.check((await page.evaluate(() => localStorage.getItem('sp5-weekly-guide-opts'))).includes('"memo":false'), '넣을 것은 이 기기에 남는다');
