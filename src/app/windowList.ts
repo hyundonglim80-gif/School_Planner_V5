@@ -9,7 +9,8 @@ import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attend
 import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
 import { SUBJECT_ATT_CELL, SUBJECT_ATT_SUMMARY, sameSubjectCell, type SubjectAttendanceCellParams, type SubjectAttendanceSummaryParams } from '../features/subjectAttendance/open';
 import { SEATING_WINDOW, type SeatingParams } from '../features/seating/open';
-import { EVAL_WINDOW, sameEvalWindow, type EvaluationParams } from '../features/evaluations/open';
+import { STUDENT_RECORD, type StudentRecordParams } from '../features/studentRecord/open';
+import { EVAL_OVERVIEW, EVAL_WINDOW, sameEvalWindow, type EvalOverviewParams, type EvaluationParams } from '../features/evaluations/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -115,6 +116,26 @@ registerWindow<EvaluationParams>({
   help: 'evaluation',
   sameAs: sameEvalWindow,
   load: () => import('../features/evaluations/EvaluationWindow'),
+});
+// 📊 조사표 모아 보기 (P7-4) - 학급 도구 카드·단축키 '조사표 모아 보기'
+registerWindow<EvalOverviewParams | undefined>({
+  id: EVAL_OVERVIEW,
+  title: '조사표 모아 보기',
+  icon: '📊',
+  kind: 'side',
+  classTool: true,
+  help: 'evaluation',
+  load: () => import('../features/evaluations/EvalOverviewWindow'),
+});
+// 🧑‍🎓 학생 기록(누가기록) (P7-4) - 학급 화면 학생 이름·도구 카드, 자리표 학생 칸, 단축키
+registerWindow<StudentRecordParams | undefined>({
+  id: STUDENT_RECORD,
+  title: '학생 기록(누가기록)',
+  icon: '🧑‍🎓',
+  kind: 'side',
+  classTool: true,
+  help: 'student-record',
+  load: () => import('../features/studentRecord/StudentRecordWindow'),
 });
 
 // 그날 기록 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n

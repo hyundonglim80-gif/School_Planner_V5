@@ -1,5 +1,5 @@
 // 학급 화면 (V4 features/class/ClassScreen.tsx) = 🏫 학급 도구 | 🧑‍🤝‍🧑 명렬표 (관리 · 검색 · 암기) - MENU 3-3.
-//   학급 도구: 학급을 고르면(이 기기에 남는다 - 도구가 그 학급으로 연다) 도구 카드(CLASS_TOOLS)·학생 명단. 이름을 누르면 그 학생의 누가기록(P7-4).
+//   학급 도구: 학급을 고르면(이 기기에 남는다 - 도구가 그 학급으로 연다) 도구 카드(CLASS_TOOLS)·학생 명단. 이름을 누르면 그 학생의 누가기록.
 //   학생 명단은 '이름 / 📷 사진'으로 본다(명렬표 관리의 사진 보기와 같은 것, 켜 둔 것은 이 기기 sp5-class-photos). 사진을 누르면 크게(아래 '사진 바꾸기').
 //   교과 모드: 올해 반을 학년별 줄의 반 색 칩으로 고른다. 교과 + 담임은 담임반에서만 담임 도구.
 //   📋 오늘 출결 한 줄(담임 도구 - 적힌 학생만, 누르면 출석부). 도구는 그 기능을 옮기는 세션이 창을 등록하면 열린다(그 전에는 🚧 안내).
@@ -10,9 +10,8 @@ import { openAttendance } from '../attendance/open';
 import { openNotices } from '../notices/open';
 import { openSubjectAttendanceSummary } from '../subjectAttendance/open';
 import { openSeating } from '../seating/open';
+import { openEvalOverview } from '../evaluations/open';
 import { runFromButton } from '../../app/keys';
-import { getWindowDef, openWindow } from '../../app/windows';
-import { showToast } from '../../app/toast';
 import { academicYearOf, todayStr } from '../../domain/dateUtils';
 import { classIdOf, classLabelOf, describeClass, isActive } from '../../domain/roster';
 import { normalizeSlotText } from '../../domain/teachingSlot';
@@ -26,12 +25,7 @@ import RosterView from './RosterView';
 import { CLASS_TOOLS, type ClassTool } from './tools';
 import { openClassRoster, setClassView, useClassView } from './view';
 import { isDirty, useRosterDraft } from './rosterDraft';
-
-/** 그 학생의 누가기록 (P7-4가 창을 등록한다) */
-function openStudentRecord(classId: string, sid: string) {
-  if (getWindowDef('studentRecord')) openWindow('studentRecord', { classId, sid });
-  else showToast('🚧 학생 기록(누가기록)은 아직 V5로 옮기지 않았습니다.');
-}
+import { openStudentRecord } from '../studentRecord/open';
 
 /** 학급 화면의 사진 보기 켬/끔 - 이 기기에만 (명렬표 관리의 sp5-roster-photos와 따로 - V4) */
 const PHOTOS_KEY = 'sp5-class-photos';
@@ -83,6 +77,8 @@ function ClassHub() {
     }
     else if (id === 'subjectAttendance') openSubjectAttendanceSummary({ classId: cls?.id });
     else if (id === 'seating' || id === 'drawStudent') openSeating({ classId: cls?.id, draw: id === 'drawStudent' });
+    else if (id === 'evalOverview') openEvalOverview({ classId: cls?.id });
+    else if (id === 'studentRecord') openStudentRecord({ classId: cls?.id });
     else runFromButton(id);
   };
   // 오늘 출결 (출석한 학생은 적지 않는다 - 적힌 학생만)
@@ -269,7 +265,7 @@ function ClassHub() {
                   <button
                     type="button"
                     data-class-student={s.num}
-                    onClick={() => cls && openStudentRecord(classIdOf(cls), s.sid)}
+                    onClick={() => cls && openStudentRecord({ classId: classIdOf(cls), sid: s.sid })}
                     title="이 학생의 누가기록"
                     className="w-full flex items-center gap-1 px-1.5 py-1.5 sm:gap-1.5 sm:px-2 hover:bg-primary/5 text-left min-w-0 cursor-pointer"
                   >
@@ -287,7 +283,7 @@ function ClassHub() {
                 key={s.sid}
                 type="button"
                 data-class-student={s.num}
-                onClick={() => cls && openStudentRecord(classIdOf(cls), s.sid)}
+                onClick={() => cls && openStudentRecord({ classId: classIdOf(cls), sid: s.sid })}
                 className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-primary/5 hover:border-primary/40 text-sm text-left min-w-0 cursor-pointer"
               >
                 <span className="text-xs font-bold text-slate-400 tabular-nums shrink-0">{s.num}</span>

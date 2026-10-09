@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-09 P7-3 끝**(클라우드 - 🪑 자리표·학생 칸·🎯 발표자 뽑기·👥 모둠). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-4. 👤 V5 주소에서 학급 화면 → 🪑 자리표(끌어 바꾸기·섞기·자리를 눌러 출결·관찰 한 줄)·하루 수업 '🎯 뽑기'(크게 보기) 써 보기.
+- **2026-10-09 P7-4 끝**(클라우드 - 📊 조사표·모아 보기·🧑‍🎓 학생 기록). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-5. 👤 V5 주소에서 수업 칸 📊로 조사표 만들기·학급 화면 → 조사표 모아 보기·학생 이름 → 누가기록, 🪑 자리표·🎯 뽑기 써 보기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -64,6 +64,7 @@
   - 보던 화면이 기억되므로 묶음 시작에서 화면을 정한다(주소 `#/day/…`로 열면 된다). 같은 주소(# 뒤만 같은 것)를 `goto`하면 새로 읽지 않는다 - 앱을 처음부터 보려면 `page.reload()`(P2-4).
   - 창을 닫은 바로 뒤 주소를 바꾸면 창 층의 뒤로가기가 주소를 되돌릴 수 있다 → 그 화면이 뜰 때까지 다시 간다(`inspect-groups` `go()` - P3-3). 서버를 읽어 셀 때 지운 표시(`deletedAt`)를 빼는지 본다.
   - 같은 `data-*` 이름을 두 곳(카드 표시·칸 안내)에 쓰지 않는다 - Playwright가 둘을 찾아 멈춘다(P3-3 `event-series`/`event-series-info`).
+  - `ModalShell`의 `headerExtra`·`footer` 단추(저장·삭제·+ 새로)는 창 본문의 `data-*` 상자 밖에 그려진다 - 본문 상자로 좁혀 찾지 말고 page에서(그 창 하나만 연 채로 - P7-4).
   - **계정에 올라가는 설정은 기기 저장소만 바꿔서 시험하지 않는다** - 다시 열면 계정 값이 이긴다. 계정 문서로 바꾸고 끝에 걷는다(P4-1 - inspect-shell이 '가운데 창'을 계정에 남겨 다른 점검이 깨졌다).
 - **오늘에 따라 고르는 것(이월·지난 일정)의 단위 테스트는 날짜를 고정**한다: `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(…)`, 끝에 `vi.useRealTimers()`(P3-3 - 고정하지 않으면 다음 날 시험이 깨진다).
 - **창 목록(`app/windowList`)이 부르는 `features/*/open.ts`는 `data/session`·`select`를 import하지 않는다** - windowConventions.test가 창 목록을 읽어 진짜 Firebase가 뜨고 CI에서 가끔 '처리하지 않은 오류'(P7-2 알림장 - 단축키는 `shortcuts.ts`로 나눴다).
@@ -283,6 +284,16 @@
   `SeatStudentCard`(`[data-seat-student|seat-att-kind|reason|period|note|seat-observe-input|seat-observe-save|seat-student-lines|seat-student-close]`)·`observation.ts`·`ObservationPhrases`(`[data-observation-phrase|phrase-remove|phrase-input|phrase-add|phrases-edit]`) ·
   `useStudentDraw`·`SeatDrawBox`(`[data-seating-box=draw|draw-pick|draw-result|draw-undo|draw-new-round|draw-big-open|draw-picked]`)·`DrawBigView`(`[data-draw-big|draw-big-name|draw-big-pick|draw-big-close]`) · `SeatGroupsBox`(`[data-seating-box=groups|group-*]`) · `open.ts`(`openSeating`·단축키 '자리표'·'발표자 뽑기 (자리표)')) ·
   하루 수업 머리줄 `[data-lessons-tool=drawStudent]`(담임) · 교과 교시 카드 `[data-class-tools|class-tool-btn]`. 점검 `tools/inspect-seating.mjs`(69).
+- **조사표**(P7-4 - 공간마다 `evaluations/{id}`, 한 장 = 문서 하나, 학생 sid): 순수 `domain/evaluation.ts`(`syncEvalStudents`·`evalValuesChanges` 학생 칸만·`studentEvalCell`·`filterEvals`·`semesterOf`·`overviewCsvRows`·`stepCounts`·과정별 `groupCourseEvals`) · 사본 `MIRRORED` += evaluations(휴지통 '조사표') ·
+  `features/evaluations/`(`evalData`(`useEvaluations`·`useEvalsOn`·`useEvalCountsByDate`·`useSpacesEvals`·`createEvaluations`·`saveEvalValues`·`saveEvalStudentValue`·`saveEvalMeta`·`syncEvalRoster`·`deleteEvaluation`) ·
+  `EvaluationWindow` 창 `evaluation` `{ sid, date, place?, slot?, evalId? }`(`[data-eval-window="날짜|자리"|eval-mode|eval-new|eval-list-open|eval-item|eval-view|eval-heading|eval-info|eval-print|eval-save|eval-dirty|eval-delete]`) ·
+  `EvalCreateForm`(`[data-eval-create|eval-class|eval-title|eval-type|eval-subject|eval-date|eval-place|eval-indiv|eval-group|eval-step-count|eval-step|eval-group-set|eval-group-preview|eval-group-count|course-evals|eval-create-submit]`)·`useCourseTargets` ·
+  `EvalMetaBox`(`[data-eval-meta|eval-meta-*]`) · `EvalTable`(`[data-eval-table|eval-row|eval-all|eval-all-indiv|eval-all-group|eval-all-check|eval-indiv-score|eval-group-score|eval-group-name|eval-check|eval-text]`) · `EvalCountBadge`(`[data-week-evals|month-evals|year-evals]`) ·
+  `EvalOverviewWindow` 창 `evalOverview`(`[data-eval-overview-window|eval-overview-class|subject|semester|type|count|copy|csv|print|eval-col|eval-cell|eval-steps|eval-overview-tab]`)·`CourseEvalOverview`(`[data-course-overview|course-cell]`) · `open.ts`) ·
+  하루 수업 칸 `[data-lesson-evals=n][data-eval-count]`·'N교시 수정' `[data-lesson-panel-evals]`·기록 칸 `[data-journal-evals]`·교과 반 도구 `[data-class-tool-btn=eval]`·자리표 학생 칸 `[data-seat-eval|seat-eval-indiv|group|check|text]`·검색 '조사표'. 점검 `tools/inspect-evaluations.mjs`(38).
+- **학생 기록(누가기록)**(P7-4): 순수 `domain/studentRecord.ts`(`noteTimeline`·`attendanceTimeline`·`sortTimeline`·`recordCopyText`) · `features/studentRecord/`(`StudentRecordWindow` 창 `studentRecord` `{ classId?, sid?, at? }`
+  `[data-student-record|student-record-class|tag|tag-find|pick|student-card|student-counts|student-record-copy|student-observe|student-observe-input|student-record-tab|student-timeline|student-timeline-item|timeline-kind|student-evals|student-eval|student-eval-value]` · `open.ts` `openStudentRecord`) ·
+  학급 화면 학생 이름·도구 카드·자리표 학생 칸 '🧑‍🎓 누가기록'. 점검 `tools/inspect-student-record.mjs`(29).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·

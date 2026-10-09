@@ -23,3 +23,16 @@ export function openEvaluation(params: Omit<EvaluationParams, 'at'>) {
   if (!getWindowDef(EVAL_WINDOW)) return showToast('🚧 아직 V5로 옮기지 않은 기능입니다.');
   openWindow(EVAL_WINDOW, { ...params, at: Date.now() });
 }
+
+// ── 조사표 모아 보기 (창 'evalOverview' = 단축키 id) ──
+
+export const EVAL_OVERVIEW = 'evalOverview';
+
+export interface EvalOverviewParams {
+  classId?: string;
+}
+
+export function openEvalOverview(params: EvalOverviewParams = {}) {
+  if (!getWindowDef(EVAL_OVERVIEW)) return showToast('🚧 아직 V5로 옮기지 않은 기능입니다.');
+  openWindow(EVAL_OVERVIEW, params);
+}

@@ -6,6 +6,7 @@ import { useMemo } from 'react';
 import { batch, create, newPath, patch, remove, writeOp, writeOps } from '../../data/repo';
 import type { Changes } from '../../data/repo/ops';
 import { isLive, useDocs } from '../../data/select';
+import { useCurrentSpaceId, usePersonalSpaceId } from '../../data/session';
 import type { DocPath, Editable, Stored } from '../../data/types';
 import { recordUndo } from '../../data/undo';
 import { cleanEvalValue, evalValuesChanges, withEvalValue, type EvalDoc, type EvalStudent, type EvalValue, type EvalValues } from '../../domain/evaluation';
@@ -31,6 +32,21 @@ export function readEval(d: EvalItem): EvalItem {
 export function useEvaluations(sid?: string | null): EvalItem[] {
   const docs = useDocs('evaluations', sid);
   return useMemo(() => Object.values(docs).filter(isLive).map(readEval), [docs]);
+}
+
+/** 어느 공간의 조사표인가 (모아 보기·학생 기록 - 개인 + 지금 보는 그룹) */
+export type SpaceEval = EvalItem & { space: string; shared: boolean };
+
+/** 개인 공간과 지금 보는 공유 그룹의 조사표 (V4 evalArchive - 학년도·학급은 부르는 쪽이 거른다) */
+export function useSpacesEvals(): SpaceEval[] {
+  const personal = usePersonalSpaceId();
+  const current = useCurrentSpaceId();
+  const mine = useEvaluations(personal);
+  const group = useEvaluations(current && current !== personal ? current : '');
+  return useMemo(
+    () => [...mine.map((e) => ({ ...e, space: personal ?? '', shared: false })), ...group.map((e) => ({ ...e, space: current ?? '', shared: true }))],
+    [mine, group, personal, current],
+  );
 }
 
 /** 그날 조사표 */
