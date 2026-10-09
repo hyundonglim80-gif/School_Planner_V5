@@ -120,7 +120,12 @@ export interface CommonSettings {
   ddayPick: string | null;
   /** 개인 공휴일 '날짜' → 이름 (V3가 사람마다 받아 둔 settings/holidays 표 - 공유 표 위에 덮는다, P5-3) */
   myHolidays: Record<string, string>;
+  /** 휴지통 자동 비우기 (일, 0 = 끄기 - 기본 끄기, V4 사용자 결정, P5-4) */
+  trashDays: number;
 }
+
+/** 휴지통 자동 비우기에서 고를 수 있는 날 (0 = 끄기) */
+export const TRASH_DAYS = [0, 7, 14, 30, 60, 90] as const;
 
 const readHolidayMap = (v: unknown): Record<string, string> | undefined => {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
@@ -134,6 +139,7 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   ddays: customField<DDay[]>([], readDDayList),
   ddayPick: customField<string | null>(null, (v) => (typeof v === 'string' && v ? v : v === null ? null : undefined)),
   myHolidays: customField<Record<string, string>>({}, readHolidayMap),
+  trashDays: customField<number>(0, (v) => ((TRASH_DAYS as readonly number[]).includes(Number(v)) ? Number(v) : undefined)),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */

@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P5-4 검색(치는 대로)·휴지통** (클라우드면 1-7을 먼저).
+**P6-1 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -152,9 +152,9 @@
 | P5-1 | 주간·작년 이맘때 | 중간 | 중간 | 끝 (2026-10-08) |
 | P5-2 | 월간·년간·오늘로 | 큼 | 중간 | 끝 (2026-10-08) |
 | P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | 끝 (2026-10-08) |
-| P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | **다음** |
+| P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | 끝 (2026-10-09) |
 | **P6 수업** | | | | |
-| P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | |
+| P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | **다음** |
 | P6-2 | 진도 | 큼 | 높음 | |
 | P6-3 | 수업 종·주간학습안내·나이스·인쇄 | 중간 | 중간 | |
 | P6-4 | 가져오기: 수업 | 중간 | 높음 | |
@@ -186,6 +186,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   반복 = 일정 칸 줄 · 여러 개 고르기는 Ctrl·길게 누르기로 바로, 지우기는 묻지 않고 되돌리기 · 쓰던 글 보관 · V4 일정·기록·메모를 가져온다(공휴일 일정·알림장/출결 자동 기록은 빼고).
 - P4 메모·첨부·링크(10-08): 메모 화면은 V4 그대로(카드 쌓기·라벨로 보기 기억) · 첨부·캡처는 드라이브 원본(다시 받는 로그인은 지금 계정으로) · 표는 '행/열' · 사진 크게 보기는 Shell 하나(ESC는 사진만) ·
   클립보드 칸은 계정마다·로그아웃하면 지움 · 링크 = 양쪽 linkIds 한 묶음(역링크 갈아끼우기·트랜잭션 없음), 끊기는 묻지 않고 되돌리기, 새 항목의 🔗는 먼저 저장 · 수업 링크 잇기는 P6-1.
+- P5 달력·찾기·정리(10-09): 주간·월간·년간은 V4 그대로(기간은 한 항목을 막대로) · 끌어 옮기기는 기간이면 '이 날만/통째로' · D-Day는 계정 설정 · 공휴일은 계산할 때 건너뛰고 고정 공휴일도 ·
+  검색은 기기 사본에서 치는 대로·누르면 그 자리로 가서 짚기 · 휴지통은 지운 표시를 걸러 보기(사본 없음), V4에서 가져온 항목의 첨부는 드라이브에서 지우지 않는다.
 
 ## 4. 세션 기록 (한 세션 한 줄 - 어느 기기에서 어디까지 했나)
 
@@ -207,6 +209,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-3 | P4-3 세션 끝 정리 (P4 단계 끝) | 단위 1132 · inspect-links 32 · P4 점검 모두(memo·attach·links + events·notes) 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 디스크가 차 에뮬레이터가 죽음 - 디버그 로그 30GB를 비우고 /dev/null로 이어 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
+| 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-3 | P5-3 세션 끝 정리 | 단위 1227 · inspect-move-dday 41 · groups·week·month-year·multi·shell·import 둘·forward·events·settings 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
@@ -424,6 +427,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   나중에 표가 바뀌면(대체공휴일) 기간의 날도 따라 바뀐다. 이름 고르기에 양력 고정 공휴일을 더했다(표가 없는 해도 빨갛게 - V4 학사력만 하던 것).
 - **P5-4 검색**: 치는 대로(기기 사본 - V4 '데이터 찾기' 단추와 '클라우드에서 분석 중' 없앰). 결과를 누르면 자세히 창 없이 곧바로 그 자리로 가서 짚는다(검색 창은 오른쪽 칸에 남아 다음 결과로 - 휴대폰만 닫는다),
   ✏️ = 그 쓰는 칸(V4 자세히 창이 보이던 라벨·첨부는 결과 줄에). 라벨로 거르기를 더했다. 표 칸 글도 찾는다.
+- **P5-4 휴지통**: 지운 표시를 걸러 본다(V4는 휴지통 컬렉션에 사본 - V5는 사본이 없어 되살리기 = 칸 하나). 복원은 안내의 되돌리기(= 다시 지움)·Ctrl+Z로. 영구 삭제는 V4처럼 묻는다(되돌릴 수 없다).
+  드라이브 첨부 정리는 V5에서 올린 파일만 - **V4에서 가져온 항목의 첨부는 지우지 않는다**(V4가 같은 파일을 본다), 남는 항목이 같은 파일을 쓰면 남긴다. 자동 비우기는 조용한 토큰이 있을 때만 파일을 지운다(없으면 드라이브에 남는다).
+  D-Day 되살리기는 머리줄에 다시 세우지 않는다(지운 때 세워 두었어도 - 휴지통에서는 알 수 없다). 클립보드 탭은 이 기기의 휴지통.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -795,8 +801,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■1 검색(사본에서 치는 대로 - 모든 학년도·종류·라벨·기간·첨부만, 결과를 누르면 그 자리로 가서 찾은 글을 짚는다).
   → 순수 `domain/search.ts`(`searchItems`·`scopeRange` - 글·표 칸 글, 메모는 만든 날, 첨부는 파일마다) · `features/search/SearchWindow.tsx`(창 `search` `[data-search-window|search-input|search-kind|search-scope|search-range|search-label|search-results|search-hit|search-hit-kind|search-open|search-file|search-more|search-empty]`) ·
   짚기 `features/search/focus.ts`(`requestFocus`·`useSearchFocusRunner`(Shell)·`useFocusReveal` - 하루 일정·기록 칸, 메모 화면 진행/완료를 편다, 거르개는 옮기기 전에 푼다) · `.search-focus`(index.css). 수업·조사표 갈래는 P6-1·P7-4.
-- [ ] ■2 휴지통(지운 표시 걸러 보기·되살리기·영구 삭제 = 문서 지우기 + 드라이브 첨부 정리(누른 때 토큰), ⚙️ 자동 비우기 - `settings/common.trashDays`, 앱을 열 때 지난 것만).
-- [ ] ■3 크롬 점검.
+- [x] ■2 휴지통(지운 표시 걸러 보기·되살리기·영구 삭제 = 문서 지우기 + 드라이브 첨부 정리(누른 때 토큰), ⚙️ 자동 비우기 - `settings/common.trashDays`, 앱을 열 때 지난 것만).
+  → `features/trash/trashList.ts`(순수 - 일정·기록·메모·라벨·D-Day·이 기기 클립보드, 탭, `expiredOf`, `driveFilesToClean`) · `actions.ts`(`restoreEntries`·`purgeEntries`(드라이브 정리)·`autoEmptyTrash`(하루 한 번 `sp5-trash-auto-last`)) ·
+  `TrashWindow.tsx`(창 `trash` `[data-trash-window|trash-tab|trash-count|trash-row|trash-pick|trash-pick-all|trash-restore|trash-purge|trash-restore-picked|trash-purge-picked|trash-empty|trash-v4|trash-auto|trash-settings|trash-settings-panel|trash-days|trash-empty-note]`) ·
+  `auto.ts`(`useTrashAutoEmpty` - Shell, 항목·라벨 사본이 live일 때) · `settings/common.trashDays`(V4 `v4_trash.retentionDays` 가져오기).
+- [x] ■3 크롬 점검.
+  → `tools/inspect-search-trash.mjs` 43항목(드라이브 지우기는 page.route 흉내) · P5 단계 점검 week·month-year·move-dday·search-trash + memo·notes·events·shell 다시 통과.
 **끝 조건**: 설명서 `search`·`trash`가 된다. **P5 단계 끝 정리**(1-4).
 
 ### P6-1. 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸

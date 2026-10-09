@@ -66,6 +66,16 @@ registerWindow({
   load: () => import('../features/search/SearchWindow'),
 });
 
+// 머리줄 🗑️ 휴지통 (P5-4) - 단축키 'trash'
+registerWindow({
+  id: 'trash',
+  title: '휴지통',
+  icon: '🗑️',
+  kind: 'side',
+  help: 'trash',
+  load: () => import('../features/trash/TrashWindow'),
+});
+
 // 머리줄 ⏳ D-Day (P5-3) - 단축키 'dday'
 registerWindow({
   id: 'dday',

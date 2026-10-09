@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-08 P5-3 끝**(클라우드 - 끌어 옮기기·D-Day·공휴일). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P5-4. 👤 V5 주소에서 달력(주간·월간·년간)·끌어 옮기기·D-Day·첨부·링크 써 보기, 실제 계정 가져오기로 V4와 견주기(D-Day도 들어온다).
+- **2026-10-09 P5-4 끝 = P5 단계 끝**(클라우드 - 검색·휴지통). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P6-1. 👤 V5 주소에서 달력·끌어 옮기기·D-Day·검색·휴지통·첨부·링크 써 보기, 실제 계정 가져오기로 V4와 견주기(D-Day·휴지통 자동 비우기도 들어온다).
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -235,6 +235,8 @@
 - **끌어 옮기기·D-Day·공휴일**(P5-3): `features/events/drag.ts`(`useEventDrop`·`eventDragProps`·`dropTargetProps` - 주간 카드·월간 칸·년간 자세히 날 줄)·`moveOps.ts`(순수)·`EventMoveChooser.tsx`·`actions.moveEventTo` ·
   `features/dday/`(`DDayWindow` 창 `dday`·`actions` - `settings/common.ddays·ddayPick`, 순수 `domain/dday.ts`) · 머리줄 `[data-header-dday-text]`·둘째 줄 `[data-date-dday]` ·
   공휴일 `data/holidays.ts`(`holidays/{연도}`·이 기기 `sp5-holidays`·`useHolidayName`·`startHolidays` = `domain/period.setDefaultHolidayCheck`)·`domain/holidays.ts`(개인 → 공유 → 고정)·`ui/HolidayName.tsx`. 점검 `tools/inspect-move-dday.mjs`(41) · 관리자 쓰기 `probe.emulatorAdmin`.
+- **검색·휴지통**(P5-4): `features/search/SearchWindow.tsx`(창 `search` - 치는 대로 `[data-search-*]`)·`focus.ts`(짚기 `requestFocus`·`useSearchFocusRunner`(Shell)·`useFocusReveal`(칸이 편다), `.search-focus`) · 순수 `domain/search.ts` ·
+  `features/trash/`(`TrashWindow` 창 `trash` `[data-trash-*]`·`trashList.ts`(순수)·`actions.ts`(복원·영구 삭제·드라이브 정리)·`auto.ts`(`useTrashAutoEmpty` - Shell)) · `settings/common.trashDays`. 점검 `tools/inspect-search-trash.mjs`(43).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker`) · `LinkViewerWindow.tsx`(창 `links`). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·

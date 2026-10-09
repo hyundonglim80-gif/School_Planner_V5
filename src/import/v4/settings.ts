@@ -4,7 +4,7 @@
 //   V4 settings/v4_preferences_mobile → settings/mobile
 //   V4 settings/v4_preferences        → 위 둘이 없을 때 (기기별로 나누기 전의 한 벌 - V4도 그것을 옮겨 왔다)
 //   V4 forwardLookbackDays(기기마다)   → settings/common.forwardDays (계정에 하나 - PC 값 먼저)
-// 교사 유형·수업 종·우리 학교·휴지통·자동 백업·관찰 문구는 V5에 그 칸이 생기는 세션이 이 표에 더한다(COMMON_FROM_V4). D-Day·개인 공휴일은 P5-3.
+// 교사 유형·수업 종·우리 학교·자동 백업·관찰 문구는 V5에 그 칸이 생기는 세션이 이 표에 더한다(COMMON_FROM_V4). D-Day·개인 공휴일은 P5-3, 휴지통 자동 비우기는 P5-4.
 //
 // **칸마다** 견준다 - 설정 문서는 기본값과 다른 칸만 적고(DESIGN 4-8), 사용자가 V5에서 몇 칸만 바꿨을 수 있다.
 //   prev = 가져오기가 지난번에 그 칸에 적은 값(기록 settings - 없으면 '적은 적 없음' = 기본값)
@@ -29,6 +29,8 @@ export interface V4PrefDocs {
   shared?: unknown;
   /** settings/holidays - V3가 사람마다 받아 둔 공휴일 표 ({ map: { 날짜: 이름 } }) */
   holidays?: unknown;
+  /** settings/v4_trash - 휴지통 자동 비우기 ({ retentionDays }) */
+  trash?: unknown;
 }
 
 export type SettingsDocId = 'pc' | 'mobile' | 'common';
@@ -41,6 +43,7 @@ const COMMON_FROM_V4: Record<string, (v4: V4PrefDocs) => unknown> = {
   ddays: (v4) => obj(v4.shared)?.dDayList,
   ddayPick: (v4) => obj(v4.shared)?.selectedDDayId,
   myHolidays: (v4) => obj(v4.holidays)?.map,
+  trashDays: (v4) => obj(v4.trash)?.retentionDays,
 };
 
 /** V4 문서들 → V5 설정 문서마다 V4가 보던 값(문서 모양 - 아직 다듬지 않은 것). V4에 없으면 null */

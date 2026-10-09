@@ -9,6 +9,7 @@ import MultiSelectBar from '../features/events/MultiSelectBar';
 import { useEventShortcuts } from '../features/events/shortcuts';
 import { useNoteShortcuts } from '../features/notes/shortcuts';
 import { useSearchFocusRunner } from '../features/search/focus';
+import { useTrashAutoEmpty } from '../features/trash/auto';
 import { useWeekShortcuts } from '../features/week/prefs';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
@@ -47,6 +48,8 @@ export default function Shell() {
   useWeekShortcuts();
   // 검색 결과로 간 카드 짚기 (P5-4)
   useSearchFocusRunner();
+  // 휴지통 자동 비우기 - 하루 한 번 (P5-4)
+  useTrashAutoEmpty();
   // 복사한 것 모으기 (왼쪽 📋 클립보드 칸 - 닫혀 있어도 모은다)
   useClipboardCapture();
 
