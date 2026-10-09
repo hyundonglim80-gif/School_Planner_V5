@@ -1,10 +1,11 @@
-// 환경설정 '학교' 탭 (MENU 3-6). 교사 유형(→ 시간표 창으로 가는 단추 - V4 그대로, P6-1) · 이월 기간. 우리 학교(급식·학사일정)는 P6-3이 더한다.
+// 환경설정 '학교' 탭 (MENU 3-6). 교사 유형(→ 시간표 창으로 가는 단추 - V4 그대로, P6-1) · 이월 기간 · 우리 학교(나이스 급식·학사일정 - P6-3).
 // 계정에 하나(settings/common - app/prefs useCommonSettings). 고치는 즉시 바뀐다(다른 기기에는 1초 뒤).
 import { useState } from 'react';
 import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { openWindow } from '../../app/windows';
 import { TEACHER_PRESETS } from '../../domain/teachingMode';
 import { useTeaching } from '../lessons/teaching';
+import SchoolPicker from '../school/SchoolPicker';
 import { Section } from './parts';
 
 export const MIN_FORWARD_DAYS = 1;
@@ -67,6 +68,9 @@ export default function SchoolTab() {
             {MIN_FORWARD_DAYS}~{MAX_FORWARD_DAYS}일
           </span>
         </div>
+      </Section>
+      <Section id="school" title="우리 학교" desc="학교를 고르면 나이스에서 급식(하루 화면 수업 칸 아래)과 학사일정(날짜 옆 청록색 이름)을 불러옵니다. 계정에 하나 - PC·휴대폰이 같은 학교를 봅니다.">
+        <SchoolPicker />
       </Section>
     </>
   );

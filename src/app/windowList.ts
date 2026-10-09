@@ -4,6 +4,7 @@ import { LINK_VIEWER, LINKER, sameLinkWindow, type LinkWindowParams } from '../f
 import { DAY_NOTES, NOTE_PANEL, sameDayNotes, sameNotePanel, type DayNotesParams, type NotePanelParams } from '../features/notes/open';
 import { LESSON_PANEL, sameLessonPanel, type LessonPanelParams } from '../features/lessons/open';
 import type { WeeklyGuideParams } from '../features/weeklyGuide/WeeklyGuideWindow';
+import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -118,6 +119,16 @@ registerWindow<WeeklyGuideParams | undefined>({
   kind: 'side',
   help: 'weekly-guide',
   load: () => import('../features/weeklyGuide/WeeklyGuideWindow'),
+});
+
+// 그날 학사일정 (P6-3) - 날짜 칸의 학사일정 이름·하루 '📚 학사' 줄. D-Day로·일정으로 담기
+registerWindow<SchoolEventParams>({
+  id: SCHOOL_EVENT_WINDOW,
+  title: '학사일정',
+  icon: '📚',
+  kind: 'side',
+  help: 'neis',
+  load: () => import('../features/school/SchoolEventWindow'),
 });
 
 // ⋮ 수업 - 진도 관리(P6-2). 하루 수업 머리줄 📘에도(주간·월간·메모 화면에서도 열려고 ⋮에도 - MENU 규칙 3의 예외).

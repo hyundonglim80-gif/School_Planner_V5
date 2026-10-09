@@ -13,6 +13,8 @@ import DueBadge from '../events/DueBadge';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
 import { useHolidayName } from '../../data/holidays';
 import HolidayName from '../../ui/HolidayName';
+import SchoolEventName from '../school/SchoolEventName';
+import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 
 export interface WeekDayCardProps {
@@ -171,6 +173,8 @@ function EventChip({
 export default function WeekDayCard(props: WeekDayCardProps) {
   const { date, today, events, carried = [], noteCount, showEvents } = props;
   const holiday = useHolidayName()(date);
+  // 우리 학교 학사일정 (P6-3 - 나이스, 학교·달마다 담아 둔다)
+  const { byDate: schoolEvents } = useSchoolSchedule([date.slice(0, 7)]);
   const tone = dayToneOf(date, holiday);
   const [, m, d] = date.split('-').map(Number);
   const isToday = date === today;
@@ -197,6 +201,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
             {m}.{d}
           </span>
           {holiday && <HolidayName name={holiday} tier="week" fill={false} />}
+          <SchoolEventName items={schoolEvents[date]} />
         </div>
         {noteCount > 0 && (
           <button

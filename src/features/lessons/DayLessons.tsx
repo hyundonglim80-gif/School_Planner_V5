@@ -7,7 +7,8 @@
 //   - ▲▼ 위아래 교시와 맞바꾸기, 🔗 링크 추가, 📑 n 연결된 것, ✏️ 고치기. 머리줄 ⚙️ = 시간표 창.
 //   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
 //   - 🔔 종(features/bell - P6-3): '수업' 옆 단추로 수업 종 설정을 펼친다.
-// 아직 옮기지 않은 것(그 세션이 머리줄·카드에 더한다): 급식·학사일정(P6-3) · 📢 알림장·📋 출석부·🎯 뽑기(P7) · 📊 조사표(P7-4) · 🙋 교과 출결·반 도구(P7).
+//   - 🍚 급식·📚 학사(features/school - P6-3): 카드 아래, 환경설정 '우리 학교'를 골랐을 때만.
+// 아직 옮기지 않은 것(그 세션이 머리줄·카드에 더한다): 📢 알림장·📋 출석부·🎯 뽑기(P7) · 📊 조사표(P7-4) · 🙋 교과 출결·반 도구(P7).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { setDate } from '../../app/nav';
@@ -28,6 +29,7 @@ import { lessonLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useClassBell } from '../bell/bell';
 import BellSettings from '../bell/BellSettings';
+import DayMeals from '../school/DayMeals';
 import ProgressMarkLine, { ProgressCreateButton } from '../progress/ProgressMarkLine';
 import { useProgressMarks } from '../progress/useProgress';
 import { slotId } from '../../domain/progress';
@@ -559,6 +561,8 @@ export default function DayLessons({ date }: { date: string }) {
           })}
         </div>
       )}
+      {/* 우리 학교의 그날 학사일정·급식 (P6-3 - 학교를 고르지 않았으면 없다) */}
+      {!collapsed && <DayMeals date={date} />}
     </section>
   );
 }

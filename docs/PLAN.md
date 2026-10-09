@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P6-3 수업 종·주간학습안내·나이스·인쇄** (클라우드면 1-7을 먼저).
+**P6-4 가져오기: 수업** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -156,8 +156,8 @@
 | **P6 수업** | | | | |
 | P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | 끝 (2026-10-09) |
 | P6-2 | 진도 | 큼 | 높음 | 끝 (2026-10-09) |
-| P6-3 | 수업 종·주간학습안내·나이스·인쇄 | 중간 | 중간 | **다음** |
-| P6-4 | 가져오기: 수업 | 중간 | 높음 | |
+| P6-3 | 수업 종·주간학습안내·나이스·인쇄 | 중간 | 중간 | 끝 (2026-10-09) |
+| P6-4 | 가져오기: 수업 | 중간 | 높음 | **다음** |
 | **P7 학급** | | | | |
 | P7-1 | 학급·명렬표·사진 | 큼 | 중간 | |
 | P7-2 | 출석부·알림장·기록 칸 카드·교과 출결 | 큼 | 높음 | |
@@ -210,6 +210,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-09 | 클라우드(claude.ai/code) | P6-3 | P6-3 세션 끝 정리 | 단위 1633 · inspect-bell-guide 48 · neis 36 · week·month-year·lessons·settings·move-dday·shell 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-2 | P6-2 세션 끝 정리 | 단위 1553 · 자료 층(에뮬레이터) 26 · inspect-progress 66(teacher·teacher3) · lessons·week·search-trash 통과 · 사용량 한도로 멈췄다가 이어서(컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed) · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-1 | P6-1 세션 끝 정리 | 단위 1469 · 자료 층(에뮬레이터) 26 · inspect-lessons 98(teacher·teacher3) · week·links·search-trash·shell·settings·events·notes·forward·import 둘·month-year·move-dday·groups 통과 · seed에 교사 유형(셋 다 - 띠가 다른 점검을 밀지 않게) · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-3 | P5-3 세션 끝 정리 | 단위 1227 · inspect-move-dday 41 · groups·week·month-year·multi·shell·import 둘·forward·events·settings 통과 · 같은 브랜치 → PR → Claude가 합침 |
@@ -450,6 +451,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 지우기 = 지운 표시(휴지통 '기타'에 '📘 과목 진도 (n차시)'). V4는 바로 지웠다.
   - 진도는 개인 공간 수업으로 센다(V4 그대로) - 그룹 공간을 보면 수업 칸에 겹치지 않고 진도 만들기도 없다, 진도 창은 열리고 안내 한 줄.
   - 예시 CSV는 blob 주소를 10초 뒤에 걷는다(바로 걷으면 크롬이 받기 전에 사라질 수 있다). 컨테이너 Chromium은 한글 파일 이름을 'download'로 바꾼다 - 점검은 내용으로 본다.
+- **P6-3 수업 종·주간학습안내·나이스·인쇄**(권장안으로 고름 - V4 그대로, 바뀐 것만):
+  - 수업 종·우리 학교는 계정 설정 `common.classBell`·`common.school`(V4는 문서 따로 v4_classBell·v4_school). '이 기기에서 울리기'는 이 기기 저장소 `sp5-class-bell-muted`(V4 그대로).
+  - 주간학습안내의 재료 = 계산한 수업 칸(시간표 + 그날 바꾼 칸) - 열어 둔 채 고쳐도 표가 따라온다(V4는 열 때 한 번 읽었다). 알림장 줄은 알림장이 생기는 P7-2에서(`HAS_NOTICES`). 담임만(전담은 단추 없음 - MENU).
+  - 인쇄: V4 주간·년간 머리의 🖨️ 단추 대신 ⋮ '🖨️ 이 화면 인쇄'·Ctrl+P(MENU 4장) - 화면이 찍을 칸을 `usePrintTarget`으로 건다. 년간 자세히·다른 화면은 브라우저 인쇄. 창 안의 인쇄(주간학습안내)는 그 창에.
+  - 나이스: Firebase 없이 시험하려고 키 읽기를 갈라 냈다(`setNeisKeySource`). 학사일정으로 채우기는 **보는 학년도**(V4는 올해만).
+  - 학사일정 이름은 V4처럼 날짜 칸 버튼 - 년간 자세히는 날짜 단추 안에 넣지 않고 옆에(단추 안 단추는 HTML이 막는다).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -871,8 +878,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - [x] ■2 주간학습안내(주간 화면 단추, 담임만).
   → 순수 `domain/weeklyGuide.ts`(V4 테스트째 - 재료 = 계산한 수업 칸 `guideDaysOf`) · 창 `weeklyGuide` `{ date? }`(`features/weeklyGuide/WeeklyGuideWindow` - 주 고르기·제목·넣을 것·알리는 말(이 기기)·🖨️ A4 세로·📋 표 복사) · 단축키 = 다음 주 · 알림장 줄은 P7-2(`HAS_NOTICES`).
   인쇄(■3에서 당겨 옴): `ui/print.ts`(V4 lib/print - `#sp5-print-root`, index.css @media print) · `app/printScreen.ts`(`usePrintTarget` - 주간 = 이번 주 A4 가로, 년간 = 학사력, 없으면 브라우저 인쇄 · `usePrintShortcut` = ⋮·Ctrl+P). 점검 `tools/inspect-bell-guide.mjs`(52).
-- [ ] ■3 나이스(우리 학교·급식·학사일정 표시·D-Day로·일정으로·방학 채우기) + 인쇄(⋮ '🖨️ 이 화면 인쇄'·Ctrl+P - 주간 A4·학사력, `data-print-hide`).
-- [ ] ■4 크롬 점검.
+- [x] ■3 나이스(우리 학교·급식·학사일정 표시·D-Day로·일정으로·방학 채우기) + 인쇄(⋮ '🖨️ 이 화면 인쇄'·Ctrl+P - 주간 A4·학사력, `data-print-hide`).
+  → `data/neis.ts`(V4 lib/neis 그대로 + 테스트 - 키는 `setNeisKeySource`, `data/neisKey.ts`가 sharedConfig/neis를 읽기만) · 순수 `domain/schoolSetting.ts`(V4 테스트째 - `sanitizeSchool`·`schoolFrom`·학년 거르기·`findVacations`) ·
+  설정 `common.school` · `features/school/`(`school.ts` `useSchool`·`saveSchool`·`saveSchoolGrade`·`useSchoolSchedule`·`useDayMeals` · `SchoolPicker`(환경설정 '학교' 탭) · `DayMeals`(하루 수업 칸 아래) · `SchoolEventName`(주간·월간·월간 휴대폰 목록·년간 자세히 날짜 옆, 학사력은 🏫 줄) ·
+  창 `schoolEvent` `{ date, items }`(`SchoolEventWindow` - D-Day로·일정으로 담기 = 새 일정 칸 `draftText`)) · 시간표 창 학기·방학 '📚 학사일정으로 채우기'(보는 학년도). 인쇄는 ■2에서.
+- [x] ■4 크롬 점검.
+  → `inspect-bell-guide.mjs`(48 - 종·주간학습안내·⋮/Ctrl+P 인쇄·전담 단추 없음) · `inspect-neis.mjs`(36 - 나이스는 page.route 흉내: 찾기·고르기·학년·급식·학사·공휴일 빼기·나눠 받기·청록 이름·창·D-Day로·일정으로 담기·월간·학사력·자세히·방학 채우기·지우기) · week·month-year·lessons·settings·move-dday·shell 통과.
 **끝 조건**: 설명서 `weekly-guide`·`neis`와 인쇄가 된다.
 
 ### P6-4. 가져오기: 수업

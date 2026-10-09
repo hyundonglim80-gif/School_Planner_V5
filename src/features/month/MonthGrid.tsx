@@ -12,6 +12,8 @@ import type { LabelDoc } from '../../data/select';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
 import { useHolidayName } from '../../data/holidays';
 import HolidayName from '../../ui/HolidayName';
+import SchoolEventName from '../school/SchoolEventName';
+import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import PeriodBar from './PeriodBar';
 
@@ -68,6 +70,8 @@ export default function MonthGrid(p: MonthGridProps) {
   const todayWeek = sundayOf(p.today);
   const weekdays = p.showWeekend ? WEEKDAYS : WEEKDAYS.slice(1, 6);
   const holidayOf = useHolidayName();
+  // 우리 학교 학사일정 (P6-3)
+  const { byDate: schoolEvents } = useSchoolSchedule(shown.map((d) => d.slice(0, 7)));
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden" data-month-grid={p.month}>
@@ -121,6 +125,7 @@ export default function MonthGrid(p: MonthGridProps) {
                           {day}
                         </span>
                         {holiday && !p.compact && <HolidayName name={holiday} tier="month" />}
+                        {!p.compact && <SchoolEventName items={schoolEvents[date]} />}
                         <div className="flex items-center gap-0.5 shrink-0">
                           {notes > 0 && (
                             <button

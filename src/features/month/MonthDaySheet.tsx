@@ -4,6 +4,8 @@
 // 창(ModalShell)이 아니다 - 휴대폰 창은 오른쪽에서 화면을 덮어 달력이 가려진다. 이것은 화면의 일부다. 수업 칩은 P6-1.
 import { useLayoutEffect, useState } from 'react';
 import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
+import SchoolEventName from '../school/SchoolEventName';
+import { useSchoolSchedule } from '../school/school';
 import { labelColor } from '../../domain/labels';
 import type { LabelDoc } from '../../data/select';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
@@ -37,6 +39,8 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
     ro.observe(bar);
     return () => ro.disconnect();
   }, []);
+  // 우리 학교 학사일정 (P6-3)
+  const { byDate: schoolEvents } = useSchoolSchedule([date.slice(0, 7)]);
   const d = parseDateStr(date);
   const title = `${d.getMonth() + 1}월 ${d.getDate()}일 (${DAY_NAMES[d.getDay()]})`;
 
@@ -49,6 +53,7 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
     >
       <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-2 border-b border-slate-100 shrink-0">
         <h3 className={`font-black text-sm whitespace-nowrap ${d.getDay() === 0 ? 'text-red-600' : d.getDay() === 6 ? 'text-blue-600' : 'text-slate-800'}`}>{title}</h3>
+        <SchoolEventName items={schoolEvents[date]} />
         <div className="ml-auto flex items-center gap-1 shrink-0">
           <button type="button" data-sheet-add onClick={onAdd} className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer">
             + 일정
