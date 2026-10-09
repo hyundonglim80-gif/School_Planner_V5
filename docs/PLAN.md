@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P6-1 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸** (클라우드면 1-7을 먼저).
+**P6-2 진도** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -154,8 +154,8 @@
 | P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | 끝 (2026-10-08) |
 | P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | 끝 (2026-10-09) |
 | **P6 수업** | | | | |
-| P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | **다음** |
-| P6-2 | 진도 | 큼 | 높음 | |
+| P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | 끝 (2026-10-09) |
+| P6-2 | 진도 | 큼 | 높음 | **다음** |
 | P6-3 | 수업 종·주간학습안내·나이스·인쇄 | 중간 | 중간 | |
 | P6-4 | 가져오기: 수업 | 중간 | 높음 | |
 | **P7 학급** | | | | |
@@ -210,6 +210,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-09 | 클라우드(claude.ai/code) | P6-1 | P6-1 세션 끝 정리 | 단위 1469 · 자료 층(에뮬레이터) 26 · inspect-lessons 98(teacher·teacher3) · week·links·search-trash·shell·settings·events·notes·forward·import 둘·month-year·move-dday·groups 통과 · seed에 교사 유형(셋 다 - 띠가 다른 점검을 밀지 않게) · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-3 | P5-3 세션 끝 정리 | 단위 1227 · inspect-move-dday 41 · groups·week·month-year·multi·shell·import 둘·forward·events·settings 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
@@ -430,6 +431,17 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P5-4 휴지통**: 지운 표시를 걸러 본다(V4는 휴지통 컬렉션에 사본 - V5는 사본이 없어 되살리기 = 칸 하나). 복원은 안내의 되돌리기(= 다시 지움)·Ctrl+Z로. 영구 삭제는 V4처럼 묻는다(되돌릴 수 없다).
   드라이브 첨부 정리는 V5에서 올린 파일만 - **V4에서 가져온 항목의 첨부는 지우지 않는다**(V4가 같은 파일을 본다), 남는 항목이 같은 파일을 쓰면 남긴다. 자동 비우기는 조용한 토큰이 있을 때만 파일을 지운다(없으면 드라이브에 남는다).
   D-Day 되살리기는 머리줄에 다시 세우지 않는다(지운 때 세워 두었어도 - 휴지통에서는 알 수 없다). 클립보드 탭은 이 기기의 휴지통.
+- **P6-1 시간표·수업 칸**(권장안으로 고름 - 설계 DESIGN 4-5·5-2 그대로, 바뀐 것만):
+  - **학기·방학 = 학년도마다 방학만** `common.terms = { '2026': { summer, winter } }`(DESIGN의 sem1·sem2 칸은 빼고 셈한다 - V4 getSemesterRanges). V4는 방학 한 벌이라 해가 바뀌면 고쳐 적어야 했다.
+  - **수업 칸 쓰기 = 그날 바꾼 것만**: 과목이 그날 시간표(수업 없는 날이면 '')와 같으면 subject 칸을 뺀다(시간표를 고치면 따라가게), 다 비면 교시 칸째 뺀다. 날짜 문서라 저장 도우미에 `merge`(setDoc merge - 문서가 없으면 만든다)를 더했다.
+  - ▲▼ 맞바꾸기는 과목·메모·준비물·첨부만 - **링크는 교시 자리에 남는다**(링크 id가 'lesson:날짜:교시'). V4는 링크째 옮겨 상대 항목의 역링크가 엇갈렸다.
+  - 시간표 창: 교사 유형은 누르는 즉시(V4), 시간표·교시·학기는 💾 한 번에(V4는 칸마다 저장 단추 셋). '+ 새 시간표' = 지금 표를 베껴 **오늘부터 학년도 끝까지**(V4는 이름만 묻는 템플릿).
+    '1학기부터'·'2학기부터' = 학년도 끝까지 - 늦게 시작한 것이 이기므로 2학기 시간표를 두면 거기서 바뀐다. 지우기 = 지운 표시(휴지통 '기타'에 '시간표').
+  - 수업 수정 칸(주간·링크·검색에서)은 오른쪽 쓰는 칸 `lesson`(V4 DetailEditModal 팝업). 하루 화면은 V4처럼 카드 자리에서 고친다.
+  - 계산이라 보이게 더한 것: 그날만 바꾼 과목 '✎'(시간표 과목을 칸 안내에), 수업 없는 날 칩(🏖️ 방학·🎌 공휴일 이름·🚫 수업X 일정) - V4는 적용할 때 비워서 까닭이 안 보였다.
+  - '교사 유형을 골라 주세요' 띠는 계정 설정을 **서버에서 받은 뒤에만**(받기 전의 '없음'은 모르는 것 - `useCommonLoaded`). 담임반은 명렬표(P7-1) 전까지 가르치는 반·시간표의 반 + 직접 적기.
+  - 검색 수업 갈래 셋(수업·수업 메모·비고 - V4 그대로), '전체 기간'은 시간표·수업 칸이 있는 범위(최대 1100일). 링크 🏫 수업 탭은 항목에서 열 때만(수업끼리는 잇지 않는다, 범위 최대 400일). 지난 시간은 60일 거슬러.
+  - 아직 없는 것(그 세션이 머리줄·카드에 더한다): 🔔 수업 종·급식·학사일정으로 방학 채우기(P6-3) · 📘 진도 줄·📘 진도 만들기(P6-2) · 📢 알림장·📋 출석부·🎯 뽑기·📊 조사표·🙋 교과 출결·반 도구(P7). 머리줄 단추는 창 목록의 `lessonHeader`로.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -814,11 +826,17 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **먼저 읽을 것**: `DESIGN.md` 4-5·5-2, V4 설명서 `teaching-mode`·`class-cell`·`detail-popup`·`timetable`, V4 `components/TimetableTemplateModal.tsx`·`TeachingModePanel.tsx`·
 `TeachingModeBanner.tsx`·`PeriodTimesEditor.tsx`·`SlotCombobox.tsx`·`SlotPairInput.tsx`·`DetailEditModal.tsx`(수업 갈래), `hooks/useTimetableTemplate.ts`·`useTeachingMode.ts`·
 `useTeachingClasses.ts`·`useClassColor.ts`·`usePeriodTimes.ts`·`useClock.ts`, `lib/semester.ts`·`classDays.ts`·`teachingSlot.ts`·`teachingMode.ts`·`periodTimes.ts`·`gridNav.ts`, `features/day/DaySchedule.tsx`.
-- [ ] ■1 시간표 창(탭: 교사 유형 / 시간표 - 기간별 여러 장 / 교시 - 이름·시각 / 학기·방학). **'적용' 단추 없음**(`MENU.md` 2-3).
-- [ ] ■2 수업 칸 계산 `domain/lessons.ts`(`DESIGN.md` 5-2 - classDays 옮기기, `lessonDays`가 이긴다) + 테스트(기간 경계·방학·공휴일·수업X 일정·'휴업'·바꾼 칸).
-- [ ] ■3 하루 수업 칸(DaySchedule 옮기기 - 과목 크게·교시 색 막대·지금 몇 교시·진도 줄 자리·준비물·메모·✏️·🔗·교과 모드 반 중심·SlotPairInput·처음 안내 띠),
+- [x] ■1 시간표 창(탭: 교사 유형 / 시간표 - 기간별 여러 장 / 교시 - 이름·시각 / 학기·방학). **'적용' 단추 없음**(`MENU.md` 2-3).
+  → `features/timetable/`(`TimetableWindow`(창 `timetable` `{ tab }` - 시간표·교시·학기는 💾 한 번에, 교사 유형은 누르는 즉시) · `TeachingTab`·`GridTab`(칩·이름·기간·1학기부터/2학기부터·🗑️, 표 = gridNav·엑셀 붙여넣기·교과 모드 두 칸)·`PeriodsTab`(빠르게 채우기)·`TermsTab`(학년도 ◀▶) ·
+  `timetableDraft.ts`(순수 - 고친 것 → create/patch/remove) · `shortcuts.ts`(`teachingMode` = 교사 유형 탭)) · 설정 칸 `common.teaching`(null = 안 고름)·`periods`·`terms` · 순수 `domain/teachingSlot`·`teachingMode`·`periodTimes`·`gridNav`·`hangul`(V4 테스트째) · 휴지통 '시간표'.
+- [x] ■2 수업 칸 계산 `domain/lessons.ts`(`DESIGN.md` 5-2 - classDays 옮기기, `lessonDays`가 이긴다) + 테스트(기간 경계·방학·공휴일·수업X 일정·'휴업'·바꾼 칸).
+  → `lessonsOn`·`timetableOn`(늦게 시작한 것)·`classOffReason`·`eventSkipsClass`·`subjectsBetween` · 방학 `domain/semester` `readTerms`·`isVacation`·`semesterConfigOf`·`termSemesters` · 사본 `MIRRORED` += timetables·lessonDays · 저장 도우미 `merge`(날짜 문서 - 없으면 만든다).
+- [x] ■3 하루 수업 칸(DaySchedule 옮기기 - 과목 크게·교시 색 막대·지금 몇 교시·진도 줄 자리·준비물·메모·✏️·🔗·교과 모드 반 중심·SlotPairInput·처음 안내 띠),
   고치면 `lessonDays`의 그 칸만(field path). 수업 수정 창(DetailEditModal 수업 갈래), 주간 수업 칸 채우기.
-- [ ] ■4 크롬 점검 `inspect-lessons.mjs`(teacher·teacher3).
+  → `features/lessons/`(`DayLessons`(그 자리 고치기·▲▼·✎ 바꾼 과목·수업 없는 날 칩·지난 시간) · `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }`) · `WeekLessonRows` · `TeachingBanner` · `lessonOps`(순수 - 시간표와 같은 과목은 빼기)·`actions` ·
+  `teaching.ts`(교사 유형·반·과목 ▼·반 색) · `useLessons.ts`(사본에서 셈) · `SlotCombobox`·`SlotPairInput`) · 링크 수업 쪽(`links/linkOps` `LessonEnd`·🏫 수업 탭·📑 수업 줄) · 검색 수업·수업 메모·비고 · 환경설정 학교 탭 교사 유형 단추.
+- [x] ■4 크롬 점검 `inspect-lessons.mjs`(teacher·teacher3).
+  → 98항목(시간표 창·적용 없이 따라옴·칸 옮기기·붙여넣기·ESC 묻기·기간별·교시·방학·공휴일·수업X·그 자리 고치기·맞바꾸기·주간·수정 칸·링크 양쪽·검색·휴지통·띠·지금 몇 교시(시각 고정)·전담 두 칸·지난 시간·가르치는 반 ▼).
 **끝 조건**: 위 설명서 주제가 된다(시간표는 '적용' 대신 기간별).
 
 ### P6-2. 진도

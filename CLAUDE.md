@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-09 P5-4 끝 = P5 단계 끝**(클라우드 - 검색·휴지통). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P6-1. 👤 V5 주소에서 달력·끌어 옮기기·D-Day·검색·휴지통·첨부·링크 써 보기, 실제 계정 가져오기로 V4와 견주기(D-Day·휴지통 자동 비우기도 들어온다).
+- **2026-10-09 P6-1 끝**(클라우드 - 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P6-2. 👤 V5 주소에서 ⏰ 시간표 창·수업 칸 써 보기(수업 자료는 P6-4에서 V4에서 가져온다), 달력·검색·휴지통·첨부·링크, 실제 계정 가져오기로 V4와 견주기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -71,6 +71,7 @@
 - **IndexedDB(idb)는 트랜잭션을 열어 일과 `tx.done`을 함께 기다린다**(P3-2) - `db.get`·`db.put` 줄임은 읽기 트랜잭션의 done을 아무도 받지 않아, 트랜잭션이 끊기면 '처리하지 않은 오류'(AbortError)가 된다.
   쓰던 글 보관을 여는 칸을 그리는 시험 파일은 `afterAll`에서 `wipeDrafts`를 기다린다 - 마지막 시험이 연 DB가 환경이 걷힌 뒤 열리면 'IDBRequest is not defined'(P4-2).
 - **클라우드 컨테이너는 apis.google.com·*.web.app에 닿지 못한다** - Firebase 팝업 로그인(다시 받기 포함)이 창을 열기 전에 `auth/internal-error`. 그 확인은 PC에서(P4-2 inspect-attach가 건너뛴다).
+- **저장소에 prettier가 없다 - `npx prettier --write`를 돌리지 않는다**(P6-1 - 따옴표·줄 폭을 통째로 바꿨다. 되돌리고 고친 것만 다시).
 - **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
 - **C: 디스크가 차면 에뮬레이터가 죽는다**: `firebase-debug.log`·`firestore-debug.log`(git 무시)가 커진다. 긴 점검 전에 `df -h /c`, 차면 두 로그를 비우고 `npm run emu` → seed.
   클라우드 컨테이너는 두 로그를 `/dev/null` 링크로 둔다(`ln -s /dev/null firebase-debug.log` - P4-3에 30GB가 되어 Auth 에뮬레이터가 죽었다). 링크는 git 무시라 기기마다 한 번.
@@ -215,7 +216,7 @@
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) ·
   `entryTable.ts`(붙인 표 - V4 그대로: 붙여넣은 HTML 읽기·행/열·칸 서식) · `attachments.ts`(그림인가·파일 그림·크기·붙여넣은 이름·새 붙임) · `linkPreview.ts`(주소 → 카드) · `masonry.ts`(가장 짧은 열) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
   `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
-- **하루 화면** `src/features/day/`: `DayScreen.tsx`(수업·일정 7:5 - 본문 폭 720px, 수업 자리 `[data-day-slot]` - P6-1, 아래 기록 칸) · `DayJournal.tsx`(기록 칸 - `▼ 📔 기록 N [+ 추가] [+ 메모] … ⚙️`, 즐겨찾기 먼저·본문 폭 2~4열, `[data-day-journal|journal-count|journal-add|journal-add-memo|journal-collapse|journal-empty|journal-waiting]`) ·
+- **하루 화면** `src/features/day/`: `DayScreen.tsx`(맨 위 교사 유형 띠, 수업(`lessons/DayLessons` - P6-1)·일정 7:5 - 본문 폭 720px, 아래 기록 칸) · `DayJournal.tsx`(기록 칸 - `▼ 📔 기록 N [+ 추가] [+ 메모] … ⚙️`, 즐겨찾기 먼저·본문 폭 2~4열, `[data-day-journal|journal-count|journal-add|journal-add-memo|journal-collapse|journal-empty|journal-waiting]`) ·
   `DayEvents.tsx`(일정 칸 - `▼ 📅 일정 N [+ 추가] … ⚙️`, 카드 PC 1열·휴대폰 2열, `[data-day-events|event-card|event-done|event-complete|event-chip|event-alarm|event-links|event-up|event-down|event-edit|event-delete|event-add|event-count]`).
 - **일정** `src/features/events/`(하루·주간·월간·년간이 함께 쓴다): `open.ts`(쓰는 칸 `event` = `{ sid, date, id? }`·`openEventPanel`·`useEditingEventIds`·`closeEventPanelsFor`) ·
   `EventPanel.tsx`(일정 칸 - `[data-event-panel=new|edit]`·`[data-event-text-input|event-date|event-date-prev|next|event-move-note|event-due-input|event-alarm-open|event-attr|event-save|event-delete]`) ·
@@ -237,8 +238,16 @@
   공휴일 `data/holidays.ts`(`holidays/{연도}`·이 기기 `sp5-holidays`·`useHolidayName`·`startHolidays` = `domain/period.setDefaultHolidayCheck`)·`domain/holidays.ts`(개인 → 공유 → 고정)·`ui/HolidayName.tsx`. 점검 `tools/inspect-move-dday.mjs`(41) · 관리자 쓰기 `probe.emulatorAdmin`.
 - **검색·휴지통**(P5-4): `features/search/SearchWindow.tsx`(창 `search` - 치는 대로 `[data-search-*]`)·`focus.ts`(짚기 `requestFocus`·`useSearchFocusRunner`(Shell)·`useFocusReveal`(칸이 편다), `.search-focus`) · 순수 `domain/search.ts` ·
   `features/trash/`(`TrashWindow` 창 `trash` `[data-trash-*]`·`trashList.ts`(순수)·`actions.ts`(복원·영구 삭제·드라이브 정리)·`auto.ts`(`useTrashAutoEmpty` - Shell)) · `settings/common.trashDays`. 점검 `tools/inspect-search-trash.mjs`(43).
+- **수업**(P6-1 - 계산, DESIGN 5-2): 순수 `domain/lessons.ts`(`lessonsOn`(lessonDays → 수업 없는 날 → 늦게 시작한 시간표)·`timetableOn`·`classOffReason`·`eventSkipsClass`·`subjectsBetween`) ·
+  `domain/teachingSlot`('5-2 과학' 읽기·반 색·지난 시간·가르치는 반)·`teachingMode`(교사 유형 셋)·`periodTimes`(교시 `PeriodDef`·지금 몇 교시·빠르게 채우기)·`gridNav`(표 칸·엑셀 붙여넣기)·`hangul`(초성)·`semester`(학년도마다 방학 `readTerms`·`isVacation`·`termSemesters`) ·
+  설정 `common.teaching`(null = 안 고름)·`periods`·`terms`(app/prefs, 받았나 `useCommonLoaded`) · 사본 `MIRRORED` += timetables·lessonDays · 저장 도우미 `merge`(날짜 문서 - 없으면 만든다) ·
+  `features/lessons/`(`useLessons`(`useLessonSource`·`useLessonsOn`·`useLessonsFor`) · `teaching.ts`(`useTeaching`·`updateTeaching`·`useTeachingClasses`·`useSlotPairOptions`·`useClassColorOf`) · `lessonOps`(순수 - 시간표와 같은 과목은 빼기·비우기·맞바꾸기)·`actions`(`saveLesson`·`clearLesson`·`swapLessons`) ·
+  `DayLessons`(하루 칸 `[data-day-lessons|lesson-card|lesson-id|lesson-subject|lesson-changed|lessons-off|now-line|lesson-up|down|link|links|edit|prev|lesson-editor|lesson-*-input|lesson-save|close|lessons-settings]`) ·
+  `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson]`) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
+  시간표 창 `features/timetable/`(`TimetableWindow` 창 `timetable` `{ tab }` `[data-timetable-window|timetable-tab|timetable-save|timetable-dirty]` · `GridTab`(`[data-timetable-pick|add|name|from|to|quick|delete]`·`input[data-cell="행-열"]`) · `PeriodsTab`(`[data-period-name|start|end|period-fill-run]`) · `TermsTab`(`[data-terms="summer-from"…]`) · `TeachingTab`(`[data-teacher-preset|teaching-*|class-color|homeroom-*]`) · `timetableDraft`(순수) · `shortcuts`(`teachingMode`)).
+  `ui/useClock.ts`(분 단위 '지금') · `ui/listKeys.ts`(▼ 목록 키). 점검 `tools/inspect-lessons.mjs`(98 - teacher·teacher3). seed는 계정마다 교사 유형을 심는다(띠가 다른 점검을 밀지 않게).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
-  `LinkerWindow.tsx`(창 `linker`) · `LinkViewerWindow.tsx`(창 `links`). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
+  `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
   `lastYear.ts`(순수 가져오기 셈)·`actions.ts`(`importLastYear`)·`prefs.ts`(`sp5-last-year`·단축키 'lastYear') · 셈 `domain/lastYearWeek.ts`·`domain/dayTone.ts`. 📝 n = 창 `dayNotes`(`notes/DayNotesWindow.tsx`, `notes/open.openDayNotes`). 점검 `tools/inspect-week.mjs`(44).
 - **메모 화면** `src/features/memo/MemoScreen.tsx`(P4-1 - ⭐/라벨/전체·진행/완료·전체 비우기·'메모' 라벨 붙이기, 카드 쌓기 `ui/Masonry.tsx`·`domain/masonry.ts`) ·
