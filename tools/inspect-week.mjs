@@ -120,7 +120,8 @@ try {
   r.check(await waitFor(async () => (await page.locator(`${sel('week-this')} ${sel('week-day')}`).count()) === 5), '주말을 끄면 다섯');
   await page.locator(sel('view-toggle', 'showWeekend')).click();
   await page.waitForTimeout(2500); // 계정 설정은 1초 뒤 올라간다
-  await day('2026-10-05').click({ position: { x: 20, y: 200 } });
+  // 머리줄 빈 곳 (가운데는 수업 줄이 받는다 - P6-1)
+  await day('2026-10-05').click({ position: { x: 90, y: 20 } });
   r.check(await waitFor(async () => hashOf(page) === '#/day/2026-10-05'), `카드 빈 곳 = 그날 하루 화면 (${hashOf(page)})`);
 
   r.section('오늘 카드 - 이월');

@@ -1,6 +1,17 @@
 // V4 lib/semester.test.ts 그대로 (evalSummary.semesterOf와 견주던 것은 '한 학기에만 든다'로 - 조사표는 P7)
 import { describe, it, expect } from 'vitest';
-import { shiftDate, getSemesterRanges, isVacationDay, schoolYearSpan, semesterSpan, type SemesterConfig } from './semester';
+import {
+  getSemesterRanges,
+  isVacation,
+  isVacationDay,
+  readTerms,
+  schoolYearSpan,
+  semesterConfigOf,
+  semesterSpan,
+  shiftDate,
+  termSemesters,
+  type SemesterConfig,
+} from './semester';
 
 // 2026학년도 예시: 여름 방학 7/21~8/16, 겨울 방학 1/5~2/28
 const CONFIG: SemesterConfig = {
@@ -110,5 +121,45 @@ describe('schoolYearSpan · semesterSpan (검색·링크·내보내기·출석 �
         expect(inS1 !== inS2).toBe(true);
       }
     }
+  });
+});
+
+describe('V5 학년도마다 방학 (settings/common.terms)', () => {
+  const terms = readTerms({
+    '2026': { summer: { from: '2026-07-21', to: '2026-08-16' }, winter: { from: '2027-01-05', to: '2027-02-28' } },
+    '2027': { summer: { from: '2027-07-20', to: '2027-08-15' }, winter: { from: '2027-08-20', to: '2027-08-01' } }, // 겨울이 거꾸로 - 뺀다
+    '이상한': { summer: { from: '2026-07-01', to: '2026-07-02' } },
+    '2028': { summer: '여름' },
+  })!;
+
+  it('틀린 칸·해는 빼고 읽는다', () => {
+    expect(Object.keys(terms)).toEqual(['2026', '2027']);
+    expect(terms['2027'].winter).toBeUndefined();
+    expect(readTerms([1])).toBeUndefined();
+    expect(readTerms(null)).toBeUndefined();
+  });
+
+  it('방학은 그 날의 학년도 것으로 본다 (2027-02는 2026학년도 겨울)', () => {
+    expect(isVacation('2026-07-21', terms)).toBe(true);
+    expect(isVacation('2026-08-17', terms)).toBe(false);
+    expect(isVacation('2027-02-10', terms)).toBe(true);
+    expect(isVacation('2027-07-25', terms)).toBe(true);
+    expect(isVacation('2028-07-25', terms)).toBe(false); // 적지 않은 학년도
+    expect(isVacation('2026-07-25', {})).toBe(false);
+  });
+
+  it('학기 셈에 넘기는 옛 모양 - 여름이 없으면 null', () => {
+    expect(semesterConfigOf(terms, 2026)).toEqual(CONFIG);
+    expect(semesterSpan(2026, 2, semesterConfigOf(terms, 2026))).toEqual({ start: '2026-08-17', end: '2027-02-28' });
+    expect(semesterConfigOf(terms, 2028)).toBeNull();
+  });
+
+  it('창에 보이는 학기', () => {
+    expect(termSemesters(terms['2026'], 2026)).toEqual({
+      sem1: { from: '2026-03-01', to: '2026-07-20' },
+      sem2: { from: '2026-08-17', to: '2027-01-04' },
+    });
+    expect(termSemesters(terms['2027'], 2027).sem2).toBeNull();
+    expect(termSemesters(undefined, 2027)).toEqual({ sem1: null, sem2: null });
   });
 });

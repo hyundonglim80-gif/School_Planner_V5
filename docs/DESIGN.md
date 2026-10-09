@@ -126,9 +126,10 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 | 자리 | 모양 | 뜻 |
 |---|---|---|
 | `timetables/{id}` | `{ name, from, to, grid: { '1'~'5'(요일): { '<교시>': '국어' \| '5-2 과학' } }, updatedAt, deletedAt, v }` | **기간별 시간표**(1학기·2학기·'10/14부터 바뀐 시간표'). 기간이 겹치면 늦게 시작한 것이 이긴다 |
-| `lessonDays/{date}` | `{ periods: { '<교시>': { subject?, memo?, supplies?, attachments?, linkIds? } }, updatedAt, v }` | **그날 바꾼 칸만.** `subject`가 있으면 그 과목(`''`이면 그 교시 수업 없음), 칸이 없으면 시간표를 따른다. 고칠 때는 `periods.3.memo`처럼 그 칸만 |
-| `settings/common.periods` | `[{ n, name, start, end }]` | 교시 이름·시각(V4 '수업 시간 명칭' + `v4_periodTimes`를 하나로) |
-| `settings/common.terms` | `{ '2026': { sem1: {from,to}, summer: {from,to}, sem2: {from,to}, winter?: {from,to} } }` | 학기·방학(학년도 = 3월~이듬해 2월, V4 `lib/semester` 규칙) |
+| `lessonDays/{date}` | `{ periods: { '<교시>': { subject?, memo?, supplies?, attachments?, linkIds? } }, updatedAt, v }` | **그날 바꾼 칸만.** `subject`가 있으면 그 과목(`''`이면 그 교시 수업 없음), 칸이 없으면 시간표를 따른다. 과목이 그날 시간표와 같으면 적지 않는다(P6-1 `features/lessons/lessonOps`). 고칠 때는 `periods.3.memo`처럼 그 칸만 - 날짜 문서라 저장 도우미 `merge`(없으면 만든다). 지운 표시는 없다 |
+| `settings/common.periods` | `[{ n, name, start, end }]` | 교시 이름·시각(V4 '수업 시간 명칭' + `v4_periodTimes`를 하나로). 교시 수 = 길이(1~12), 기본 1~6교시·시각 없음 |
+| `settings/common.terms` | `{ '2026': { summer?: {from,to}, winter?: {from,to} } }` | 학년도마다 **방학만**(학년도 = 3월~이듬해 2월). 학기는 셈한다 - 1학기 = 3/1 ~ 여름 방학 전날, 2학기 = 여름 방학 다음 날 ~ 겨울 방학 전날(V4 `lib/semester` - `domain/semester` `termSemesters`·`semesterConfigOf`) |
+| `settings/common.teaching` | `{ unit, hasHomeroom, homeroomClass, subjects, classes, classColors }` 또는 없음 | 교사 유형(V4 `v4_teaching`). 없으면 (초등) 담임으로 보고 하루 화면에 '교사 유형을 골라 주세요' 띠 |
 
 ### 4-6. 학급 (개인 공간)
 
@@ -204,7 +205,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 ## 6. 자료 층 (`src/data`)
 
 ### 6-1. 쓰기
-- 도우미(`src/data/repo`)만 쓴다: `create` · `patch` · `remove`(지운 표시) · `restore` · `purge`(영구 - 휴지통에서만) · `put`(문서 통째 - 설정) · `batch`.
+- 도우미(`src/data/repo`)만 쓴다: `create` · `patch` · `merge`(칸 바꾸기 - 문서가 없으면 만든다, 날짜 문서 lessonDays) · `remove`(지운 표시) · `restore` · `purge`(영구 - 휴지통에서만) · `put`(문서 통째 - 설정) · `batch`.
   화면·기능 코드는 `setDoc`을 직접 부르지 않는다. 자리는 `DocPath { sid, coll, id }`, 새 id는 `newPath(sid, coll)`(기기에서 - 저장 전에 그 항목의 칸을 열 수 있게).
 - 도우미가 늘 넣는 것: `updatedAt: serverTimestamp()`·`v: 1`, 만들 때 `deletedAt: null`·`createdAt`·`authorId`, 지울 때 `deletedBy`. 기능 코드는 이 칸을 쓰지 않는다(`Editable<C>`·쓰면 던진다).
 - `patch(자리, 바꿀 칸, 고치기 전 문서)`: 고치기 전 값은 서버에서 읽지 않고 화면이 든 문서에서. `undefined` = 그 칸 지우기, `'periods.3.memo'`처럼 점 = 깊은 칸. 없는 문서면 실패(updateDoc).

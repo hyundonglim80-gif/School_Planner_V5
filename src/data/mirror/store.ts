@@ -188,8 +188,9 @@ export function applyWrite(before: Plain | null, op: WriteOp, ctx: WriteContext)
     for (const [k, v] of Object.entries(w.data)) if (v !== DELETE_FIELD) doc[k] = v === SERVER_TIME ? Timestamp.now() : v;
     return doc;
   }
-  if (!before) return undefined;
-  const doc: Plain = { ...before };
+  // merge는 문서가 없어도 만든다(날짜 문서). update는 없는 문서면 서버에서 실패한다
+  if (!before && w.kind !== 'merge') return undefined;
+  const doc: Plain = { ...(before ?? {}) };
   for (const [path, v] of Object.entries(w.data)) setDeep(doc, path, v);
   return doc;
 }
@@ -223,7 +224,7 @@ export function beginLocalWrite(ops: readonly WriteOp[], ctx: WriteContext): Loc
     }
     const cur = byId.get(op.at.id)!;
     if (op.type === 'purge') cur.purgedFrom = timeOf(map.get(op.at.id));
-    else if (op.type === 'create' || op.type === 'put') cur.purgedFrom = undefined;
+    else if (op.type === 'create' || op.type === 'put' || op.type === 'merge') cur.purgedFrom = undefined;
     keys.push({ key, id: op.at.id });
     if (!touched.has(key)) touched.set(key, new Set());
     touched.get(key)!.add(op.at.id);

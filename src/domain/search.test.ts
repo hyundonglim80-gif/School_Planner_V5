@@ -1,6 +1,7 @@
 // 검색 셈 - 갈래·기간(메모는 만든 날)·빈 검색어 = 모두·표 칸 글·첨부는 파일마다·날짜 내림차순
 import { describe, expect, it } from 'vitest';
-import { scopeRange, searchItems, type SearchKind, type Searchable } from './search';
+import { lessonSpan, scopeRange, searchItems, searchLessons, type SearchKind, type Searchable } from './search';
+import type { LessonSource } from './lessons';
 
 const ts = (d: string) => new Date(`${d}T09:00:00`).getTime();
 const items: Searchable[] = [
@@ -39,5 +40,30 @@ describe('검색', () => {
     expect(scopeRange('week', '2026-10-08', { start: '', end: '' })).toEqual({ start: '2026-10-05', end: '2026-10-09' });
     expect(scopeRange('month', '2026-02-10', { start: '', end: '' })).toEqual({ start: '2026-02-01', end: '2026-02-28' });
     expect(scopeRange('custom', '2026-10-08', { start: '2026-01-01', end: '2026-01-31' })).toEqual({ start: '2026-01-01', end: '2026-01-31' });
+  });
+});
+
+describe('수업 찾기 (계산한 수업 칸 - P6-1)', () => {
+  const src: LessonSource = {
+    timetables: [{ id: 't', from: '2026-10-05', to: '2026-10-09', grid: { '1': { '1': '과학' }, '2': { '1': '국어' } } }],
+    days: { '2026-10-06': { periods: { '2': { memo: '과학실 실험', supplies: '비커' } } } },
+    count: 2,
+  };
+  const q = (term: string, kinds: SearchKind[] = [], range: { start: string; end: string } | null = null) => ({ term, kinds: new Set(kinds), range });
+
+  it('과목·수업 메모·비고를 따로, 날짜 내림차순', () => {
+    expect(searchLessons(src, q('과학')).map((h) => [h.kind, h.date, h.n, h.text])).toEqual([
+      ['lessonMemo', '2026-10-06', 2, '과학실 실험'],
+      ['lesson', '2026-10-05', 1, '과학'],
+    ]);
+    expect(searchLessons(src, q('비커')).map((h) => h.key)).toEqual(['lesson:2026-10-06:2:lessonSupplies']);
+  });
+
+  it('갈래·기간으로 거르고, 전체 기간은 시간표·수업 칸이 있는 범위', () => {
+    expect(searchLessons(src, q('과학', ['event']))).toEqual([]);
+    expect(searchLessons(src, q('과학', ['lesson'])).map((h) => h.kind)).toEqual(['lesson']);
+    expect(searchLessons(src, q('', [], { start: '2026-10-06', end: '2026-10-06' })).map((h) => h.text)).toEqual(['국어', '과학실 실험', '비커']);
+    expect(lessonSpan(src)).toEqual({ start: '2026-10-05', end: '2026-10-09' });
+    expect(lessonSpan({ timetables: [], days: {}, count: 6 })).toBeNull();
   });
 });

@@ -32,6 +32,8 @@ export interface SettingsBinding {
   apply(data: SettingsData): void;
   /** 이 기기 값이 바뀌면 부른다. 끊는 함수를 돌려준다 */
   subscribe(onChange: () => void): () => void;
+  /** 서버 값을 처음 받았을 때 (문서가 없다는 대답도) */
+  ready?(): void;
 }
 
 export const SETTINGS_WRITE_DELAY_MS = 1000;
@@ -72,12 +74,16 @@ export function startSettingsSync(port: SettingsPort, binding: SettingsBinding, 
         applying = false;
       }
       lastKey = settingsKey(binding.local());
-      ready = true;
+      if (!ready) {
+        ready = true;
+        binding.ready?.();
+      }
       return;
     }
     // 문서 없음: 처음 한 번만, 서버가 그렇다고 할 때만
     if (ready || fromCache) return;
     ready = true;
+    binding.ready?.();
     const local = binding.local();
     lastKey = settingsKey(local);
     if (Object.keys(local).length > 0) void write();

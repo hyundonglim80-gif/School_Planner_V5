@@ -7,7 +7,7 @@ import { writeOp } from '../repo/ops';
 import { deleteMirrorDb, openMirrorDb } from './db';
 import { OfflineError, type MirrorServer, type ServerBatch, type ServerPage } from './server';
 import { beginLocalWrite, useMirror, type Plain } from './store';
-import { mirrorEngine, OVERLAP_MS, PRUNE_EVERY_MS, resetMirror, startMirror, stopMirror, wipeMirror } from './sync';
+import { MIRRORED, mirrorEngine, OVERLAP_MS, PRUNE_EVERY_MS, resetMirror, startMirror, stopMirror, wipeMirror } from './sync';
 
 // 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
 vi.mock('../firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
@@ -130,7 +130,7 @@ const freshUid = () => `sync-test-${++n}-${Date.now()}`;
 const sidOf = (uid: string) => `u_${uid}`;
 const docsOf = (uid: string, coll = 'items') => useMirror.getState().colls[`${sidOf(uid)}/${coll}`]?.docs ?? {};
 const statusOf = (uid: string, coll = 'items') => useMirror.getState().colls[`${sidOf(uid)}/${coll}`]?.status;
-const allLive = (uid: string) => ['items', 'labels', 'series'].every((c) => statusOf(uid, c) === 'live');
+const allLive = (uid: string) => MIRRORED.every((c) => statusOf(uid, c) === 'live');
 const item = (text: string, date: string | null, extra: Plain = {}) => ({ kind: 'note', date, text, labelIds: [], order: 'a0', ...extra });
 
 async function readCopy(uid: string, coll = 'items') {
@@ -162,7 +162,7 @@ describe('처음 받기', () => {
     await vi.waitFor(() => expect(allLive(uid)).toBe(true));
 
     expect(server.calls.fromDate).toEqual([{ coll: 'items', date: '2026-03-01' }]);
-    expect(server.calls.pages.map((c) => c.coll).sort()).toEqual(['items', 'labels', 'series']);
+    expect(server.calls.pages.map((c) => c.coll).sort()).toEqual(['items', 'labels', 'lessonDays', 'series', 'timetables']);
     expect(Object.keys(docsOf(uid)).sort()).toEqual(['memo', 'now', 'old']);
     expect(docsOf(uid).now).toMatchObject({ id: 'now', text: '올해 기록' });
     expect(Object.keys(docsOf(uid, 'labels'))).toEqual(['l1']);

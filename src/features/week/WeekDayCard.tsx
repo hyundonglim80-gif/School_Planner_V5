@@ -1,6 +1,6 @@
 // 주간 요일 카드 하나 (V4 features/week/WeekGrid.tsx의 카드). 주간 화면이 이번 주·다음 주 줄에 쓴다.
 //   머리: 요일 · 날짜(토 파랑·일 빨강) · 📝 기록 수(누르면 그날 기록 창 - 하루 화면으로 가지 않는다).
-//   수업: 수업 칸이 생기는 P6-1에서(지금은 자리만 없다).
+//   수업: 교시 줄(features/lessons/WeekLessonRows - P6-1) - 누르면 'N교시 수정' 칸.
 //   일정: 라벨 칩 누르기 = 완료, 글 누르기 = 오른쪽 일정 칸, 마우스를 올리면 ✕, 🔗 n = 연결된 데이터. 오늘 카드에는 이월로 따라오는 일정도(↪).
 //   카드 빈 곳 = 그날 하루 화면. + = 그날 새 일정. 일정을 끌어 다른 요일 카드에 놓으면 옮긴다(P5-3 - 마우스 화면만).
 import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
@@ -24,6 +24,8 @@ export interface WeekDayCardProps {
   /** 그날 기록 수 */
   noteCount: number;
   showEvents: boolean;
+  /** 수업 줄 (둘째 줄 '수업'을 켰을 때만) */
+  lessons?: ReactNode;
   labelsOf: (ev: ItemDoc) => LabelDoc[];
   pickedIds: ReadonlySet<string>;
   multiOn: boolean;
@@ -213,6 +215,8 @@ export default function WeekDayCard(props: WeekDayCardProps) {
           </button>
         )}
       </div>
+
+      {props.lessons}
 
       {showEvents && (
         <div>

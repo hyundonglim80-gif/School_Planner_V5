@@ -34,6 +34,18 @@ describe('휴지통 목록', () => {
     expect(entries.map((e) => tabOf(e.kind))).toEqual(['event', 'memo', 'etc', 'etc', 'clip', 'journal']);
   });
 
+  it('시간표(P6-1)도 기타 탭에', () => {
+    const t = trashEntries({
+      items: {},
+      labels: {},
+      ddays: [],
+      clips: [],
+      timetables: { t1: { id: 't1', name: '2학기', from: '2026-08-17', to: '2027-02-28', deletedAt: ts(NOW) }, t2: { id: 't2', name: '살아 있음', from: '2026-03-01', to: '2027-02-28' } },
+      now: NOW,
+    });
+    expect(t.map((e) => [e.key, e.text, tabOf(e.kind)])).toEqual([['timetable:t1', '⏰ 2학기 (8.17~2.28)', 'etc']]);
+  });
+
   it('자동 비우기: 기간보다 먼저 지운 것만, 0은 끄기', () => {
     expect(expiredOf(entries, 7, NOW).map((e) => e.id)).toEqual(['b']);
     expect(expiredOf(entries, 0, NOW)).toEqual([]);

@@ -13,6 +13,9 @@ import { persist } from 'zustand/middleware';
 import { DEFAULT_FONT_SCALE, FONT_SCALES, type FontScale } from '../domain/fontScale';
 import { readShortcutOverrides, type ShortcutOverrides } from '../domain/shortcuts';
 import { readDDayList, type DDay } from '../domain/dday';
+import { DEFAULT_PERIODS, readPeriods, type PeriodDef } from '../domain/periodTimes';
+import { readTerms, type SchoolTerms } from '../domain/semester';
+import { sanitizeTeachingMode, type TeachingMode } from '../domain/teachingMode';
 import {
   boolField,
   customField,
@@ -122,6 +125,12 @@ export interface CommonSettings {
   myHolidays: Record<string, string>;
   /** 휴지통 자동 비우기 (일, 0 = 끄기 - 기본 끄기, V4 사용자 결정, P5-4) */
   trashDays: number;
+  /** 교사 유형 (V4 v4_teaching - P6-1). null = 아직 고르지 않음(초등 담임으로 보고 하루 화면에 고르라는 띠) */
+  teaching: TeachingMode | null;
+  /** 교시 이름·시각 (V4 '수업 시간 명칭' + v4_periodTimes - P6-1). 교시 수 = 길이 */
+  periods: PeriodDef[];
+  /** 학년도마다 방학 (V4 timetable_v5.semesterConfig - P6-1, 학기는 방학에서 셈한다) */
+  terms: SchoolTerms;
 }
 
 /** 휴지통 자동 비우기에서 고를 수 있는 날 (0 = 끄기) */
@@ -140,6 +149,9 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   ddayPick: customField<string | null>(null, (v) => (typeof v === 'string' && v ? v : v === null ? null : undefined)),
   myHolidays: customField<Record<string, string>>({}, readHolidayMap),
   trashDays: customField<number>(0, (v) => ((TRASH_DAYS as readonly number[]).includes(Number(v)) ? Number(v) : undefined)),
+  teaching: customField<TeachingMode | null>(null, (v) => (v && typeof v === 'object' && !Array.isArray(v) ? sanitizeTeachingMode(v) : undefined)),
+  periods: customField<PeriodDef[]>(DEFAULT_PERIODS, readPeriods),
+  terms: customField<SchoolTerms>({}, readTerms),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */
@@ -152,10 +164,14 @@ export function setCommonSetting<K extends keyof CommonSettings>(key: K, value: 
 }
 
 
+/** 계정 설정(common)을 서버에서 한 번 받았나 - '교사 유형을 골라 주세요' 띠처럼 '아직 없음'을 알리는 것은 받은 뒤에만 */
+export const useCommonLoaded = create<{ loaded: boolean }>(() => ({ loaded: false }));
+
 const commonBinding: SettingsBinding = {
   local: () => sparseSettings(COMMON_SETTINGS, useCommonSettings.getState()),
   apply: (data) => useCommonSettings.setState(readSettings(COMMON_SETTINGS, data)),
   subscribe: (onChange) => useCommonSettings.subscribe(onChange),
+  ready: () => useCommonLoaded.setState({ loaded: true }),
 };
 
 // ── 맞추기 ──
@@ -183,6 +199,7 @@ let running: (() => Promise<void>) | null = null;
 /** 로그인한 동안 설정 문서 둘(common + 이 기기 종류)을 맞춘다. 끊는 함수를 돌려준다(두 번 불러도 한 번만 끊는다). */
 export function startPrefsSync(uid: string): () => Promise<void> {
   claimLocalCopy(uid);
+  useCommonLoaded.setState({ loaded: false });
   const stops = [
     startSettingsSync(settingsPort(uid, 'common'), commonBinding),
     startSettingsSync(settingsPort(uid, detectDeviceKind()), deviceBinding),

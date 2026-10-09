@@ -6,7 +6,7 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } f
 import { doc, getDoc, terminate, Timestamp } from 'firebase/firestore';
 import { deleteApp } from 'firebase/app';
 import { app, auth, db } from './firebase';
-import { batch, create, newPath, patch, purge, remove, restore, writeOp } from './repo';
+import { batch, create, merge, newPath, patch, purge, remove, restore, writeOp } from './repo';
 import { personalSpaceId } from './space';
 import { useSession } from './session';
 import { clearUndo, recordUndo, undoCount, undoLast } from './undo';
@@ -137,6 +137,22 @@ describe('저장 도우미 (에뮬레이터)', () => {
     const at = newPath(sid, 'items');
     await expect(patch(at, { text: 'x' }, {})).rejects.toBeInstanceOf(ShownError);
     expect(await read(at)).toBeNull();
+  });
+
+  it('칸 합치기(날짜 문서): 없으면 만들고, 있으면 그 칸만 - 깊은 칸 지우기와 되돌리기', async () => {
+    const at: DocPath<'lessonDays'> = { sid, coll: 'lessonDays', id: '2026-10-12' };
+    made.push(at);
+    const undo1 = await merge(at, { 'periods.3.memo': '실험', 'periods.3.supplies': '비커' }, null);
+    expect(await read(at)).toMatchObject({ periods: { '3': { memo: '실험', supplies: '비커' } }, v: 1 });
+    await merge(at, { 'periods.1.subject': '', 'periods.3.supplies': undefined }, { periods: { '3': { memo: '실험', supplies: '비커' } } });
+    const d = await read<{ periods: Record<string, Record<string, unknown>>; updatedAt: unknown }>(at);
+    expect(d!.periods).toEqual({ '1': { subject: '' }, '3': { memo: '실험' } });
+    expect(d!.updatedAt).toBeInstanceOf(Timestamp);
+    // 처음 것을 되돌리면 그 칸들이 빠진다 (문서는 남는다)
+    await batch(undo1);
+    expect((await read<{ periods: Record<string, unknown> }>(at))!.periods).toEqual({ '1': { subject: '' }, '3': {} });
+    await merge(at, { 'periods.3': undefined }, null);
+    expect((await read<{ periods: Record<string, unknown> }>(at))!.periods).toEqual({ '1': { subject: '' } });
   });
 });
 

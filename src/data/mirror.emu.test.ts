@@ -48,7 +48,7 @@ let other: Firestore;
 
 const items = () => useMirror.getState().colls[`${sid}/items`]?.docs ?? {};
 const statusOf = (coll = 'items') => useMirror.getState().colls[`${sid}/${coll}`]?.status;
-const allLive = () => ['items', 'labels', 'series'].every((c) => statusOf(c) === 'live');
+const allLive = () => ['items', 'labels', 'series', 'timetables', 'lessonDays'].every((c) => statusOf(c) === 'live');
 
 /** 다른 기기에서 적기 (규칙이 보는 칸을 갖춰 - 저장 도우미가 붙이는 것과 같다) */
 function otherWrite(id: string, text: string) {
@@ -86,7 +86,7 @@ beforeAll(async () => {
   connectFirestoreEmulator(other, '127.0.0.1', 8080);
 
   // 지난 시험이 남긴 것을 비운다
-  for (const coll of ['items', 'labels', 'series']) {
+  for (const coll of ['items', 'labels', 'series', 'timetables', 'lessonDays']) {
     for (const d of (await getDocs(collection(other, 'spaces', sid, coll))).docs) await deleteDoc(d.ref);
   }
 });

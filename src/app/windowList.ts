@@ -2,6 +2,7 @@
 import { EVENT_PANEL, sameEventPanel, type EventPanelParams } from '../features/events/open';
 import { LINK_VIEWER, LINKER, sameLinkWindow, type LinkWindowParams } from '../features/links/open';
 import { DAY_NOTES, NOTE_PANEL, sameDayNotes, sameNotePanel, type DayNotesParams, type NotePanelParams } from '../features/notes/open';
+import { LESSON_PANEL, sameLessonPanel, type LessonPanelParams } from '../features/lessons/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -23,6 +24,17 @@ registerWindow<NotePanelParams>({
   help: 'journal',
   sameAs: sameNotePanel,
   load: () => import('../features/notes/NotePanel'),
+});
+
+// 수업 수정 칸 'N교시 수정' (P6-1) - 주간 수업 줄·링크 보기·검색에서 (하루 화면은 카드 자리에서 바로 고친다)
+registerWindow<LessonPanelParams>({
+  id: LESSON_PANEL,
+  title: '수업',
+  icon: '⏰',
+  kind: 'panel',
+  help: 'detail-popup',
+  sameAs: sameLessonPanel,
+  load: () => import('../features/lessons/LessonPanel'),
 });
 
 // 그날 기록 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n
@@ -95,6 +107,17 @@ registerWindow({
   kind: 'side',
   help: 'labels',
   load: () => import('../features/labels/LabelsWindow'),
+});
+
+// ⋮ 수업 - 시간표(교사 유형·시간표·교시·학기). 하루 수업 칸 ⚙️, 단축키 '시간표'·'교사 유형 바꾸기'(교사 유형 탭)
+registerWindow({
+  id: 'timetable',
+  title: '시간표',
+  icon: '⏰',
+  menu: '수업',
+  kind: 'side',
+  help: 'timetable',
+  load: () => import('../features/timetable/TimetableWindow'),
 });
 
 // ⋮ 설정

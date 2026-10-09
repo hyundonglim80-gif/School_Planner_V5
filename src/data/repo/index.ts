@@ -4,6 +4,7 @@
 //   patch   칸 바꾸기 (before = 고치기 전 문서, 되돌리기에 쓴다)
 //   remove  지운 표시 / restore 되살리기 / purge 영구 지우기(휴지통에서만)
 //   put     문서 통째로 (설정 문서)
+//   merge   칸 바꾸기 - 문서가 없으면 만든다 (날짜 문서 lessonDays)
 //   batch   여럿을 한 묶음으로 (링크 양쪽·반복 묶음·공간 옮기기)
 //
 // 모두 **되돌리는 쓰기(Undo)**를 돌려준다 - 안내의 '되돌리기'와 Ctrl+Z가 그것을 쓴다(data/undo.ts).
@@ -20,6 +21,7 @@ import type { DocOf, DocPath, Editable, SpaceCollection } from '../types';
 import {
   DELETE_FIELD,
   failMessage,
+  nestPaths,
   SERVER_TIME,
   toWrite,
   undoOfAll,
@@ -53,6 +55,22 @@ function toFirestore(data: Fields): Fields {
   return out;
 }
 
+/** 겹친 모양 안쪽까지 자리 표시를 바꾼다 (merge 쓰기 - 칸 지우기가 깊은 칸에 있다) */
+function toFirestoreDeep(data: Fields): Fields {
+  const out: Fields = {};
+  for (const [key, value] of Object.entries(data)) {
+    out[key] =
+      value === SERVER_TIME
+        ? serverTimestamp()
+        : value === DELETE_FIELD
+          ? deleteField()
+          : value !== null && typeof value === 'object' && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype
+            ? toFirestoreDeep(value as Fields)
+            : value;
+  }
+  return out;
+}
+
 /**
  * 안내 없이 적는다 - 실패하면 Firestore 오류를 그대로 던진다.
  * 사용자가 누른 저장이 아니라 뒤에서 맞추는 것(설정 동기화)만 쓴다. 나머지는 아래 도우미로.
@@ -71,6 +89,7 @@ export async function writeOps(ops: WriteOp[]): Promise<void> {
         const ref = doc(db, w.path);
         if (w.kind === 'set') b.set(ref, toFirestore(w.data));
         else if (w.kind === 'update') b.update(ref, toFirestore(w.data));
+        else if (w.kind === 'merge') b.set(ref, toFirestoreDeep(nestPaths(w.data)), { merge: true });
         else b.delete(ref);
       }
       await b.commit();
@@ -107,6 +126,16 @@ export function patch<C extends SpaceCollection>(
   opts?: WriteOptions,
 ): Promise<Undo> {
   return batch([writeOp.patch(at, changes, before)], opts);
+}
+
+/** 칸 바꾸기 - 문서가 없으면 만든다 (날짜 문서). before = 지금 문서(없으면 null) */
+export function merge<C extends SpaceCollection>(
+  at: DocPath<C>,
+  changes: Changes<C>,
+  before: Partial<DocOf<C>> | null,
+  opts?: WriteOptions,
+): Promise<Undo> {
+  return batch([writeOp.merge(at, changes, before)], opts);
 }
 
 export function remove(at: DocPath, opts?: WriteOptions): Promise<Undo> {

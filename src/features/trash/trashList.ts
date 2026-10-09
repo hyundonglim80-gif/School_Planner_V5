@@ -1,11 +1,11 @@
 // 휴지통에 보일 것 (V4 TrashModal·trashHelper) - 셈만(순수). V5의 지우기는 지운 표시(원칙 5)라 휴지통은 따로 모은 사본이 아니라
-// 지운 표시가 붙은 문서를 걸러 보는 것이다: 일정·기록·메모(items)·라벨(labels)·D-Day(settings/common.ddays) + 이 기기의 클립보드 휴지통.
+// 지운 표시가 붙은 문서를 걸러 보는 것이다: 일정·기록·메모(items)·라벨(labels)·시간표(timetables - P6-1)·D-Day(settings/common.ddays) + 이 기기의 클립보드 휴지통.
 //   - 탭: 전체 / 일정 / 기록 / 메모 / 클립보드 / 기타(라벨·D-Day, 뒤에 생길 수업·조사표·명단… 모두) - V4 2026-09-30 사용자 요청 그대로.
 //   - 영구 삭제의 드라이브 첨부 정리: V5에서 올린 파일만, 다른 항목(살아 있는 것·휴지통)이 같은 파일을 쓰면 남긴다.
 //     **V4에서 가져온 항목(src)의 첨부는 지우지 않는다** - V4가 같은 파일을 보고 있다(PLAN 5장 P5-4).
 import { driveFileIdOf } from '../../data/google/drive';
 
-export type TrashKind = 'event' | 'journal' | 'memo' | 'label' | 'dday' | 'clip';
+export type TrashKind = 'event' | 'journal' | 'memo' | 'label' | 'timetable' | 'dday' | 'clip';
 export type TrashTab = 'all' | 'event' | 'journal' | 'memo' | 'clip' | 'etc';
 
 export const TRASH_TABS: ReadonlyArray<{ key: TrashTab; label: string }> = [
@@ -17,7 +17,7 @@ export const TRASH_TABS: ReadonlyArray<{ key: TrashTab; label: string }> = [
   { key: 'etc', label: '기타' },
 ];
 
-export const KIND_LABEL: Record<TrashKind, string> = { event: '일정', journal: '기록', memo: '메모', label: '라벨', dday: 'D-Day', clip: '클립보드' };
+export const KIND_LABEL: Record<TrashKind, string> = { event: '일정', journal: '기록', memo: '메모', label: '라벨', timetable: '시간표', dday: 'D-Day', clip: '클립보드' };
 
 export const tabOf = (kind: TrashKind): Exclude<TrashTab, 'all'> => (kind === 'event' || kind === 'journal' || kind === 'memo' || kind === 'clip' ? kind : 'etc');
 
@@ -66,6 +66,7 @@ export function trashEntries(src: {
   labels: Readonly<Record<string, LabelLike>>;
   ddays: ReadonlyArray<{ id: string; title: string; date: string; deletedAt?: number }>;
   clips: ReadonlyArray<{ id: string; kind: 'text' | 'image'; text?: string; deletedAt: number }>;
+  timetables?: Readonly<Record<string, { id: string; name: string; from: string; to: string; deletedAt?: unknown }>>;
   now?: number;
 }): TrashEntry[] {
   const now = src.now ?? Date.now();
@@ -79,6 +80,10 @@ export function trashEntries(src: {
   for (const l of Object.values(src.labels)) {
     if (!l.deletedAt) continue;
     out.push({ key: `label:${l.id}`, kind: 'label', id: l.id, text: `${l.kind === 'event' ? '📅' : '📝'} ${l.name}`, deletedAt: deletedMs(l.deletedAt, now) });
+  }
+  for (const t of Object.values(src.timetables ?? {})) {
+    if (!t.deletedAt) continue;
+    out.push({ key: `timetable:${t.id}`, kind: 'timetable', id: t.id, text: `⏰ ${t.name} (${md(t.from)}~${md(t.to)})`, deletedAt: deletedMs(t.deletedAt, now) });
   }
   for (const d of src.ddays) if (d.deletedAt) out.push({ key: `dday:${d.id}`, kind: 'dday', id: d.id, text: `${d.title} (${d.date})`, deletedAt: d.deletedAt });
   for (const c of src.clips) out.push({ key: `clip:${c.id}`, kind: 'clip', id: c.id, text: c.kind === 'image' ? '🖼️ 그림' : (c.text ?? ''), deletedAt: c.deletedAt });

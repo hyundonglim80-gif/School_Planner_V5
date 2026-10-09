@@ -18,10 +18,14 @@ import { getFirestore, connectFirestoreEmulator, doc, setDoc, serverTimestamp } 
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 const PASSWORD = 'test1234';
+// 교사 유형(settings/common.teaching - P6-1): 고르지 않은 계정은 하루 화면 맨 위에 '교사 유형을 골라 주세요' 띠가 떠
+// 다른 점검의 화면을 밀어낸다 - 셋 다 골라 둔다. 띠는 tools/inspect-lessons.mjs가 칸을 비우고 본 뒤 되돌린다.
+const HOMEROOM = { unit: 'subject', hasHomeroom: true, homeroomClass: '', subjects: [], classes: [], classColors: {} };
+const SUBJECT_ONLY = { unit: 'class', hasHomeroom: false, homeroomClass: '', subjects: ['과학'], classes: ['5-1', '5-2', '5-3'], classColors: {} };
 const ACCOUNTS = [
-  { email: 'teacher@example.com', note: '기본 계정 - V4 seed 자료가 있다' },
-  { email: 'teacher2@example.com', note: '공유 그룹 둘째 사람 (?as=2)' },
-  { email: 'teacher3@example.com', note: '교과 전담 (?as=3)' },
+  { email: 'teacher@example.com', note: '기본 계정 - V4 seed 자료가 있다', teaching: HOMEROOM },
+  { email: 'teacher2@example.com', note: '공유 그룹 둘째 사람 (?as=2)', teaching: HOMEROOM },
+  { email: 'teacher3@example.com', note: '교과 전담 (?as=3)', teaching: SUBJECT_ONLY },
 ];
 
 const app = initializeApp({ projectId: 'schoolplannerv3', apiKey: 'fake-api-key' }, 'seed-v5');
@@ -42,7 +46,7 @@ const personalSpace = (uid) => ({
 });
 
 async function main() {
-  for (const { email, note } of ACCOUNTS) {
+  for (const { email, note, teaching } of ACCOUNTS) {
     let uid;
     try {
       uid = (await signInWithEmailAndPassword(auth, email, PASSWORD)).user.uid;
@@ -55,6 +59,8 @@ async function main() {
     // 처음 로그인 'V4 자료 가져오기' 띠는 닫아 둔다 - seed 계정에는 V4 자료가 있어 띠가 다른 점검의 화면을 밀어낸다.
     // 띠와 가져오기는 tools/inspect-import-labels.mjs가 이 기록을 비우고 본 뒤 되돌린다.
     await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'import'), { dismissed: true, updatedAt: serverTimestamp(), v: 1 });
+    // 계정 설정은 다른 칸을 두고 교사 유형만 (merge)
+    await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'common'), { teaching, updatedAt: serverTimestamp(), v: 1 }, { merge: true });
     console.log(`${email} (${note}) → spaces/u_${uid}`);
   }
   console.log('V5 자료를 심었습니다 - 개인 공간 3개');
