@@ -22,6 +22,14 @@ describe('V4 설정 문서 → V5 문서마다', () => {
     expect(docs.common).toEqual({ forwardDays: 7 });
     expect(v4SettingsDocs({})).toEqual({ pc: null, mobile: null, common: null });
   });
+
+  it('D-Day는 V3·V4가 함께 쓰는 preferences에서, 개인 공휴일은 V3 holidays 표에서 (P5-3)', () => {
+    const list = [{ id: 'dday_1', title: '수능', date: '2026-11-19' }];
+    const docs = v4SettingsDocs({ shared: { dDayList: list, selectedDDayId: 'dday_1' }, holidays: { map: { '2026-10-05': '추석' } } });
+    expect(docs.common).toEqual({ ddays: list, ddayPick: 'dday_1', myHolidays: { '2026-10-05': '추석' } });
+    const { ops } = planSettings(SID, { shared: { dDayList: list, selectedDDayId: 'dday_1' }, holidays: { map: { '2026-10-05': '추석' } } }, {});
+    expect(putOf(ops, 'common')).toEqual({ ddays: list, ddayPick: 'dday_1', myHolidays: { '2026-10-05': '추석' } });
+  });
 });
 
 describe('planSettings - 처음 가져오기', () => {

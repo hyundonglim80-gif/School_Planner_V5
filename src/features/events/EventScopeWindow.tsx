@@ -12,8 +12,16 @@ export interface ScopeChoice {
   title: string;
   desc: string;
   disabled?: boolean;
+  /** 덧붙여 짚을 것 (주말·공휴일에 놓이는 날 등 - 노란 글) */
+  warn?: string;
 }
 
+/** 지우기는 붉게, 옮기기·고치기는 파랗게 (V4 GroupDeleteModal·GroupMoveModal) */
+const CHANGE_TONE: Record<GroupScope, string> = {
+  only: 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800',
+  after: 'border-blue-200 bg-blue-50 hover:bg-blue-100 text-slate-800',
+  all: 'border-indigo-200 bg-indigo-50 hover:bg-indigo-100 text-slate-800',
+};
 const TONE: Record<GroupScope, string> = {
   only: 'border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800',
   after: 'border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700',
@@ -28,9 +36,11 @@ export interface EventScopeWindowProps {
   onPick: (scope: GroupScope) => Promise<void>;
   onClose: () => void;
   footnote?: string;
+  /** 'change' = 옮기기·고치기 (파란 단추) - 기본은 지우기 */
+  mood?: 'delete' | 'change';
 }
 
-export default function EventScopeWindow({ title, intro, choices, onPick, onClose, footnote }: EventScopeWindowProps) {
+export default function EventScopeWindow({ title, intro, choices, onPick, onClose, footnote, mood = 'delete' }: EventScopeWindowProps) {
   const [busy, setBusy] = useState<GroupScope | null>(null);
   const pick = async (scope: GroupScope) => {
     if (busy) return;
@@ -56,10 +66,15 @@ export default function EventScopeWindow({ title, intro, choices, onPick, onClos
             data-scope-choice={c.key}
             onClick={() => void pick(c.key)}
             disabled={busy !== null || c.disabled}
-            className={`w-full text-left px-3.5 py-3 rounded-xl border disabled:opacity-40 transition-colors cursor-pointer ${TONE[c.key]}`}
+            className={`w-full text-left px-3.5 py-3 rounded-xl border disabled:opacity-40 transition-colors cursor-pointer ${(mood === 'change' ? CHANGE_TONE : TONE)[c.key]}`}
           >
             <span className="block text-xs font-bold">{c.title}</span>
             <span className="block mt-0.5 text-xs opacity-80">{c.desc}</span>
+            {c.warn && (
+              <span data-scope-warn className="block mt-0.5 text-xs font-bold text-amber-700">
+                ⚠️ {c.warn}
+              </span>
+            )}
           </button>
         ))}
         {footnote && <p className="text-xs text-slate-400">{footnote}</p>}

@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P5-3 끌어 옮기기·D-Day·공휴일** (클라우드면 1-7을 먼저).
+**P5-4 검색(치는 대로)·휴지통** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -151,8 +151,8 @@
 | **P5 달력·찾기·정리** | | | | |
 | P5-1 | 주간·작년 이맘때 | 중간 | 중간 | 끝 (2026-10-08) |
 | P5-2 | 월간·년간·오늘로 | 큼 | 중간 | 끝 (2026-10-08) |
-| P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | **다음** |
-| P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | |
+| P5-3 | 끌어 옮기기·D-Day·공휴일 | 중간 | 중간 | 끝 (2026-10-08) |
+| P5-4 | 검색(치는 대로)·휴지통 | 중간 | 중간 | **다음** |
 | **P6 수업** | | | | |
 | P6-1 | 시간표(기간별)·수업 칸 계산·하루/주간 수업 칸 | 큼 | 높음 | |
 | P6-2 | 진도 | 큼 | 높음 | |
@@ -207,6 +207,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P4-3 | P4-3 세션 끝 정리 (P4 단계 끝) | 단위 1132 · inspect-links 32 · P4 점검 모두(memo·attach·links + events·notes) 통과 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 디스크가 차 에뮬레이터가 죽음 - 디버그 로그 30GB를 비우고 /dev/null로 이어 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
+| 2026-10-08 | 클라우드(claude.ai/code) | P5-3 | P5-3 세션 끝 정리 | 단위 1227 · inspect-move-dday 41 · groups·week·month-year·multi·shell·import 둘·forward·events·settings 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
@@ -416,6 +417,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P5-2 월간·년간**: V4 그대로(월간 한 주 한 줄·막대, 년간 📅 학사력 / 📋 자세히 - 고른 보기는 이 기기, 학기 칩, 세 달씩 나눠 그리기). 바뀐 것:
   기간 막대는 항목 하나의 date~endDate를 그대로 놓는다(V4는 날마다의 조각을 글·groupId로 이어 붙였다) - 주말 빼기·뺀 날이 끼면 그 자리에서 끊긴다.
   년간 자세히는 일정이 꺼져 있으면 일정만 있는 날 줄을 그리지 않는다(V4는 빈 날짜 줄이 남았다). Ctrl·Shift로도 고른다(V4는 '여러 개 고르기'를 켠 때만). 🖨️ 학사력 인쇄는 P6-3(⋮ '이 화면 인쇄').
+- **P5-3 끌어 옮기기**: V4 그대로(마우스 화면만·하루짜리는 곧바로·묶음은 범위 창·되돌리기). 바뀐 것: 기간 일정은 '이 날만'(그날을 빼고 하루 일정으로)·'기간 통째로' 둘만 -
+  '이 날부터'는 기간 문서가 둘로 갈라져 묶음이 끊기므로 뺐다(반복은 세 갈래 그대로). 범위 창의 주말 경고는 주말 빼기 기간이면 대신 '옮긴 뒤 N일'.
+- **P5-3 D-Day·공휴일**: D-Day는 DESIGN대로 `settings/common`(V4 `settings/preferences` - V3와 함께 쓰던 문서). 지우기 = 지운 표시(휴지통 P5-4) + 안내의 되돌리기(설정이라 Ctrl+Z 더미에는 넣지 않는다).
+  공휴일 표를 받는 개발자 도구(V4 환경설정)는 옮기지 않는다 - 표는 V4와 함께 쓰는 `holidays/{연도}`라 V4에서 받으면 V5도 본다. 주말 빼기 기간은 공휴일을 **계산할 때** 건너뛴다(V4는 만들 때 날마다 문서를 만들며 건너뛰었다) -
+  나중에 표가 바뀌면(대체공휴일) 기간의 날도 따라 바뀐다. 이름 고르기에 양력 고정 공휴일을 더했다(표가 없는 해도 빨갛게 - V4 학사력만 하던 것).
+- **P5-4 검색**: 치는 대로(기기 사본 - V4 '데이터 찾기' 단추와 '클라우드에서 분석 중' 없앰). 결과를 누르면 자세히 창 없이 곧바로 그 자리로 가서 짚는다(검색 창은 오른쪽 칸에 남아 다음 결과로 - 휴대폰만 닫는다),
+  ✏️ = 그 쓰는 칸(V4 자세히 창이 보이던 라벨·첨부는 결과 줄에). 라벨로 거르기를 더했다. 표 칸 글도 찾는다.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -769,14 +777,24 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P5-2 끝.
 **먼저 읽을 것**: V4 설명서 `event-edit`(옮기기)·`dday`·`holidays`, V4 `hooks/useEventDrag.tsx`·`useEventMove.tsx`·`components/GroupMoveModal.tsx`·`DDayModal.tsx`·`hooks/useDDay.ts`·
 `lib/holiday.ts`·`holidays.ts`·`hooks/useGovHolidays.ts`·`components/HolidayName.tsx`.
-- [ ] ■1 끌어 옮기기(주간·월간·년간 자세히 - `date`만, 기간·반복이면 범위 묻기, 되돌리기).
-- [ ] ■2 D-Day(`settings/common.ddays` - 머리줄·둘째 줄·관리 창), 공휴일(`holidays/{year}` + 개인 공휴일)·주말 색.
-- [ ] ■3 크롬 점검.
+- [x] ■1 끌어 옮기기(주간·월간·년간 자세히 - `date`만, 기간·반복이면 범위 묻기, 되돌리기).
+  → `features/events/drag.ts`(`useEventDrop`·`eventDragProps`·`dropTargetProps` - 마우스 화면만, `[data-drag-event|drop-date]`) · `moveOps.ts`(순수 - 이 날만·기간 통째로·반복 같은 날 수만큼·미리 보기) ·
+  `EventMoveChooser.tsx`(범위 창 - `EventScopeWindow` `mood="change"`·`[data-scope-warn]`) · `actions.moveEventTo`(한 묶음 + 되돌리기) · 쓰는 칸은 손댔어도 옮겨진 날짜를 따라간다(V4 retarget).
+- [x] ■2 D-Day(`settings/common.ddays` - 머리줄·둘째 줄·관리 창), 공휴일(`holidays/{year}` + 개인 공휴일)·주말 색.
+  → D-Day: 순수 `domain/dday.ts` · `features/dday/`(`DDayWindow.tsx` 창 `dday` `[data-dday-window|dday-title|dday-date|dday-add|dday-row|dday-picked|dday-pick|dday-delete|dday-empty]`·`actions.ts`) ·
+  `settings/common.ddays·ddayPick`(지운 것은 deletedAt) · 머리줄 `[data-header-dday-text]` · 둘째 줄 보는 날 기준 `[data-date-dday]`. 가져오기: V3·V4 `settings/preferences.dDayList·selectedDDayId`.
+  공휴일: 순수 `domain/holidays.ts`(개인 → 공유 → 고정) · `data/holidays.ts`(`holidays/{연도}` 해마다 한 번·이 기기 `sp5-holidays`, `useHolidayName`, `startHolidays` = domain/period 기본 공휴일) ·
+  개인 공휴일 `settings/common.myHolidays`(V3 `settings/holidays.map` 가져오기) · `ui/HolidayName.tsx`(`[data-holiday-name]`) · 주간·월간·년간 색·이름, 학사력 목록·D-Day 테, 일정 칸 '🎌 빠지는 공휴일' `[data-event-period-holidays]`.
+- [x] ■3 크롬 점검.
+  → `tools/inspect-move-dday.mjs` 41항목(공휴일은 관리자로 `holidays/2026`을 심고 되돌린다 - `probe.emulatorAdmin`) · groups·week·month-year·multi·shell·import·forward·events·settings 다시 통과
+  (month-year는 점검 기간이 10.9 한글날에 걸려 공휴일 없는 주로 옮겼다, import-labels는 가져온 항목도 걷는다).
 
 ### P5-4. 검색(치는 대로)·휴지통
 **시작 조건**: P5-3 끝.
 **먼저 읽을 것**: V4 설명서 `search`·`trash`, V4 `components/SearchModal.tsx`·`lib/searchFocus.ts`·`components/TrashModal.tsx`·`lib/trashRetention.ts`.
-- [ ] ■1 검색(사본에서 치는 대로 - 모든 학년도·종류·라벨·기간·첨부만, 결과를 누르면 그 자리로 가서 찾은 글을 짚는다).
+- [x] ■1 검색(사본에서 치는 대로 - 모든 학년도·종류·라벨·기간·첨부만, 결과를 누르면 그 자리로 가서 찾은 글을 짚는다).
+  → 순수 `domain/search.ts`(`searchItems`·`scopeRange` - 글·표 칸 글, 메모는 만든 날, 첨부는 파일마다) · `features/search/SearchWindow.tsx`(창 `search` `[data-search-window|search-input|search-kind|search-scope|search-range|search-label|search-results|search-hit|search-hit-kind|search-open|search-file|search-more|search-empty]`) ·
+  짚기 `features/search/focus.ts`(`requestFocus`·`useSearchFocusRunner`(Shell)·`useFocusReveal` - 하루 일정·기록 칸, 메모 화면 진행/완료를 편다, 거르개는 옮기기 전에 푼다) · `.search-focus`(index.css). 수업·조사표 갈래는 P6-1·P7-4.
 - [ ] ■2 휴지통(지운 표시 걸러 보기·되살리기·영구 삭제 = 문서 지우기 + 드라이브 첨부 정리(누른 때 토큰), ⚙️ 자동 비우기 - `settings/common.trashDays`, 앱을 열 때 지난 것만).
 - [ ] ■3 크롬 점검.
 **끝 조건**: 설명서 `search`·`trash`가 된다. **P5 단계 끝 정리**(1-4).

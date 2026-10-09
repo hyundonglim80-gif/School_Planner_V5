@@ -13,6 +13,8 @@ import { useIsMobile } from '../../ui/useIsMobile';
 import { useToday } from '../../ui/useToday';
 import { deleteEvent, setEventDone } from '../events/actions';
 import EventDeleteChooser from '../events/EventDeleteChooser';
+import { useEventDrop } from '../events/drag';
+import EventMoveChooser from '../events/EventMoveChooser';
 import { doneOnDay, isGrouped, type ItemDoc } from '../events/eventOps';
 import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
 import { openEventPanel } from '../events/open';
@@ -36,6 +38,7 @@ export default function MonthScreen() {
   const today = useToday();
   const multi = useMulti();
   const isMobile = useIsMobile();
+  const drop = useEventDrop(sid);
   const [scopeFor, setScopeFor] = useState<{ item: ItemDoc; day: string } | null>(null);
 
   const year = Number(date.slice(0, 4));
@@ -108,6 +111,7 @@ export default function MonthScreen() {
         onToggleDone={toggleDone}
         onDelete={remove}
         onOpenLinks={(ev) => sid && openLinkViewer({ sid, id: ev.id })}
+        drop={{ handlers: drop.handlers, overDate: drop.overDate, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}
       />
       {isMobile && sheetDate && (
         <MonthDaySheet
@@ -124,6 +128,7 @@ export default function MonthScreen() {
         />
       )}
       {scopeFor && sid && <EventDeleteChooser sid={sid} item={scopeFor.item} day={scopeFor.day} onClose={() => setScopeFor(null)} />}
+      {drop.pending && sid && <EventMoveChooser sid={sid} {...drop.pending} onClose={drop.cancel} />}
     </div>
   );
 }

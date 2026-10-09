@@ -3,6 +3,7 @@
 // 누르면 그 일정 칸(그날), 그날 끝냈으면(doneDates) 그 조각만 흐리게.
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { periodIndexLabel, periodRangeLabel, type BarCell, type WeekBar } from '../../domain/periodBars';
+import { eventDragProps } from '../events/drag';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 
 interface Props {
@@ -18,13 +19,15 @@ interface Props {
   onOpen: (cell: BarCell, e: ReactMouseEvent) => void;
   onOpenLinks: () => void;
   style?: CSSProperties;
+  /** 조각을 끌어 다른 날로 (기간이라 놓으면 어디까지 묻는다) */
+  drag?: { enabled: boolean; onEnd: () => void };
 }
 
 /** 라벨이 없을 때의 막대 빛깔 (보통 일정 칩보다 한 단계 짙게 - 칸 바탕과 갈리게) */
 const DEFAULT_COLOR = { bg: '#dbeafe', text: '#1e3a8a', border: '#bfdbfe' };
 const DONE_BG = 'var(--color-slate-100)';
 
-export default function PeriodBar({ bar, labelName, labelColor, compact, multiOn, picked, isCurrentMonth, onOpen, onOpenLinks, style }: Props) {
+export default function PeriodBar({ bar, labelName, labelColor, compact, multiOn, picked, isCurrentMonth, onOpen, onOpenLinks, style, drag }: Props) {
   const color = labelColor || DEFAULT_COLOR;
   const ev = bar.item;
   const doneAt = (date: string) => doneOnDay(ev, date);
@@ -63,6 +66,7 @@ export default function PeriodBar({ bar, labelName, labelColor, compact, multiOn
           <div
             key={cell.date}
             data-period-cell={cell.date}
+            {...eventDragProps(ev, cell.date, !!drag?.enabled, drag?.onEnd)}
             onClick={(e) => {
               e.stopPropagation();
               onOpen(cell, e);

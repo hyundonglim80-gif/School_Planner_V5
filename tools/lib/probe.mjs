@@ -152,3 +152,41 @@ export function restorer() {
 
 /** 주소의 # 뒤 */
 export const hashOf = (page) => new URL(page.url()).hash;
+
+/**
+ * 에뮬레이터 관리자 쓰기 (규칙을 건너뛴다 - 'Bearer owner'). 모두가 읽기만 하는 공유 자료(holidays/{연도})를 점검에 심을 때.
+ * 값은 글·수·참거짓·객체만. get은 없으면 null, set은 통째로 덮는다.
+ */
+export function emulatorAdmin(projectId = 'schoolplannerv3') {
+  const base = `http://127.0.0.1:8080/v1/projects/${projectId}/databases/(default)/documents`;
+  const headers = { Authorization: 'Bearer owner', 'Content-Type': 'application/json' };
+  const toValue = (v) =>
+    typeof v === 'string'
+      ? { stringValue: v }
+      : typeof v === 'number'
+        ? Number.isInteger(v)
+          ? { integerValue: String(v) }
+          : { doubleValue: v }
+        : typeof v === 'boolean'
+          ? { booleanValue: v }
+          : v === null
+            ? { nullValue: null }
+            : { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, toValue(x)])) } };
+  const fromValue = (v) =>
+    'stringValue' in v ? v.stringValue : 'integerValue' in v ? Number(v.integerValue) : 'doubleValue' in v ? v.doubleValue : 'booleanValue' in v ? v.booleanValue : 'mapValue' in v ? fromFields(v.mapValue.fields ?? {}) : null;
+  const fromFields = (f) => Object.fromEntries(Object.entries(f).map(([k, v]) => [k, fromValue(v)]));
+  return {
+    async get(path) {
+      const res = await fetch(`${base}/${path}`, { headers });
+      if (res.status === 404) return null;
+      return fromFields((await res.json()).fields ?? {});
+    },
+    async set(path, data) {
+      const res = await fetch(`${base}/${path}`, { method: 'PATCH', headers, body: JSON.stringify({ fields: toValue(data).mapValue.fields }) });
+      if (!res.ok) throw new Error(`관리자 쓰기 실패 ${path}: ${res.status}`);
+    },
+    async remove(path) {
+      await fetch(`${base}/${path}`, { method: 'DELETE', headers });
+    },
+  };
+}

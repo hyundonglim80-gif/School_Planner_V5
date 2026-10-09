@@ -17,7 +17,15 @@ export interface PeriodItem {
 
 /** 그날이 공휴일인가 (P5-3 공휴일 표가 준다 - 없으면 주말만 뺀다) */
 export type HolidayCheck = (date: string) => boolean;
-const noHoliday: HolidayCheck = () => false;
+let current: HolidayCheck = () => false;
+/**
+ * 따로 넘기지 않으면 쓰는 공휴일 (data/holidays가 표를 받으면 넣는다 - 화면마다 넘기지 않아도 주말 빼기 기간이 공휴일을 건너뛴다).
+ * 시험은 넘기지 않으면 공휴일 없이 센다(아무도 넣지 않았다).
+ */
+export function setDefaultHolidayCheck(check: HolidayCheck) {
+  current = check;
+}
+const noHoliday: HolidayCheck = (date) => current(date);
 
 /** 기간은 한 번에 이만큼까지 (V4 MAX_DAYS - 날마다 문서를 만들던 한도를 그대로 칸의 한도로) */
 export const MAX_PERIOD_DAYS = 500;

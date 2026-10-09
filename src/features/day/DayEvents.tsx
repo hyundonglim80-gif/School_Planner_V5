@@ -30,6 +30,7 @@ import EventDeleteChooser from '../events/EventDeleteChooser';
 import DayPastEvents from './DayPastEvents';
 import { openLinkViewer } from '../links/open';
 import { openEventPanel, useEditingEventIds } from '../events/open';
+import { useFocusReveal } from '../search/focus';
 
 const NONE: readonly ItemDoc[] = [];
 
@@ -60,6 +61,8 @@ export default function DayEvents({ date }: { date: YMD }) {
   const status = useMirrorStatus('items');
   const editing = useEditingEventIds(sid);
   const [collapsed, setCollapsed] = useState(false);
+  // 검색 결과로 이 날 일정을 짚으러 오면 접힌 칸을 편다
+  useFocusReveal((t) => t.kind === 'event' && t.date === date, () => setCollapsed(false));
   // ⏰ 표시를 누르면 알림 시각 창 (여기서는 누르는 즉시 저장 - V4 그대로)
   const [alarmFor, setAlarmFor] = useState<ItemDoc | null>(null);
   // 사본도 서버 소식도 아직 없으면 '없다' 대신 받는 중이라고 한다

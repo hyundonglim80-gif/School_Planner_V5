@@ -54,3 +54,15 @@
 .sp5-alarm-content {
   animation: sp5-alarm-content-blink 0.6s infinite;
 }
+
+/* 검색 결과로 간 카드를 잠깐 짚는다 (V4 index.css 그대로 - features/search/focus) */
+@keyframes search-focus-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(245 158 11 / 0); }
+  25%, 65% { box-shadow: 0 0 0 4px rgb(245 158 11 / 0.8); }
+}
+.search-focus {
+  animation: search-focus-pulse 1.3s ease-in-out 2;
+  background-color: #fffbeb !important;
+  border-color: #f59e0b !important;
+  scroll-margin-top: calc(var(--app-header-h, 64px) + 16px);
+}

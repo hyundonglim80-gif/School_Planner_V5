@@ -4,7 +4,7 @@
 //   - 일정 = 오른쪽 일정 칸, 라벨 칩 = 완료, ✕ = 지우기(묶음이면 범위를 묻는다), 🔗 n = 연결된 데이터, + 일정 = 그날 새 일정, 📝 n = 그날 기록 창,
 //     날짜 = 그날 하루 화면, Ctrl·Shift·여러 개 고르기.
 //   - 휴대폰: 이번 달만 펼치고 나머지는 머리글만(접은 달은 날을 그리지 않는다 - V4 그대로), 펼친 달은 두 칸을 다 쓴다.
-//   - 수업 칩은 P6-1, 공휴일·끌어 옮기기는 P5-3, 학사일정은 P6-3.
+//   - 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3 - 그리는 날에만 놓을 수 있다, V4 그대로). 수업 칩은 P6-1, 학사일정은 P6-3.
 //   달 카드는 React.memo - 바뀐 달만 다시 그린다(V4 - 열두 달 요소가 11,000개였다).
 import { memo, type MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_NAMES } from '../../domain/dateUtils';
@@ -14,6 +14,9 @@ import { periodIndexLabel, periodRangeLabel, periodsInDates, type ShownPeriod } 
 import { BODY_TEXT, SECTION_TITLE } from '../../domain/typeScale';
 import { monthWeeks, type AcademicMonth } from '../../domain/yearSheet';
 import { itemLabels, type LabelTree } from '../../data/select';
+import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
+import { useHolidayName } from '../../data/holidays';
+import HolidayName from '../../ui/HolidayName';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import type { CalendarEvents } from '../month/calendarEvents';
 
@@ -40,6 +43,11 @@ interface Props {
   onToggleDone: (ev: ItemDoc, date: string) => void;
   onDelete: (ev: ItemDoc, date: string) => void;
   onOpenLinks: (ev: ItemDoc) => void;
+  /** 끌어 옮기기 - handlers·onDragEnd는 늘 같은 함수, overDate는 이 달 것일 때만 (다른 달은 다시 그리지 않는다) */
+  dropHandlers?: DropHandlers;
+  dragEnabled: boolean;
+  onDragEnd: () => void;
+  overDate: string | null;
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
@@ -89,8 +97,9 @@ function YearMonthCard(p: Props) {
   const startsOn = new Map<string, ShownPeriod<ItemDoc>[]>();
   for (const sp of periods) startsOn.set(sp.cells[0].date, [...(startsOn.get(sp.cells[0].date) ?? []), sp]);
   const eventsOn = (d: string) => (p.showEvents ? (p.cal.byDate.get(d) ?? []) : []);
-  // 그릴 날 = 일정이 있는 날 (수업은 P6-1, 공휴일 P5-3, 학사일정 P6-3이 더한다)
-  const activeDays = dates.filter((d) => eventsOn(d).length > 0 || startsOn.has(d));
+  const holidayOf = useHolidayName();
+  // 그릴 날 = 일정이 있는 날·공휴일 (수업은 P6-1, 학사일정 P6-3이 더한다)
+  const activeDays = dates.filter((d) => eventsOn(d).length > 0 || startsOn.has(d) || !!holidayOf(d));
   const firstLabel = (ev: ItemDoc) => itemLabels(p.tree, ev.labelIds)[0];
   const isPicked = (id: string, d: string) => p.picked.has(`${id}|${d}`);
 
@@ -109,6 +118,7 @@ function YearMonthCard(p: Props) {
         data-year-period={ev.id}
         data-year-period-done={allDone ? '1' : '0'}
         data-event-picked={anyPicked ? '1' : undefined}
+        {...eventDragProps(ev, sp.cells[0].date, p.dragEnabled, p.onDragEnd)}
         onClick={(e) => {
           stop(e);
           p.onPeriodClick(sp, e);
@@ -153,6 +163,7 @@ function YearMonthCard(p: Props) {
         data-year-event={ev.id}
         data-year-event-done={done ? '1' : '0'}
         data-event-picked={picked ? '1' : undefined}
+        {...eventDragProps(ev, d, p.dragEnabled, p.onDragEnd)}
         onClick={(e) => {
           stop(e);
           p.onEventClick(ev, d, e);
@@ -226,7 +237,8 @@ function YearMonthCard(p: Props) {
         <div className="flex flex-col gap-3 flex-1">
           {activeDays.length > 0 ? (
             activeDays.map((d) => {
-              const tone = dayToneOf(d);
+              const holiday = holidayOf(d);
+              const tone = dayToneOf(d, holiday);
               const isToday = d === p.today;
               const notes = p.noteCounts.get(d) ?? 0;
               const evs = eventsOn(d);
@@ -236,7 +248,8 @@ function YearMonthCard(p: Props) {
                   key={d}
                   data-year-day={d}
                   data-today={isToday ? 'true' : undefined}
-                  className={`flex flex-col gap-1.5 p-2 -mx-2 rounded-xl border-b border-dashed border-slate-200 last:border-0 ${DAY_CELL_BG[tone]} ${isToday ? 'ring-1 ring-primary/40 border-solid' : ''}`}
+                  {...(p.dropHandlers ? dropTargetProps(p.dropHandlers, d) : {})}
+                  className={`flex flex-col gap-1.5 p-2 -mx-2 rounded-xl border-b border-dashed border-slate-200 last:border-0 ${DAY_CELL_BG[tone]} ${isToday ? 'ring-1 ring-primary/40 border-solid' : ''} ${p.overDate === d ? DROP_TARGET_CLASS : ''}`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5 min-w-0">
                     <button
@@ -250,6 +263,7 @@ function YearMonthCard(p: Props) {
                         {Number(d.slice(8, 10))}일 ({DAY_NAMES[new Date(`${d}T00:00:00`).getDay()]})
                       </span>
                       {isToday && <span className="text-2xs bg-blue-600 text-white px-1.5 py-0.5 rounded-full ml-1 shrink-0">오늘</span>}
+                      {holiday && <HolidayName name={holiday} tier="month" fill={false} className="ml-1 bg-red-50 border border-red-100 px-1 py-0.5 rounded" />}
                     </button>
                     <div className="flex items-center gap-0.5 shrink-0">
                       {notes > 0 && (

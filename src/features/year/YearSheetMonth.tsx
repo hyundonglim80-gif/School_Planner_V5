@@ -1,7 +1,7 @@
 // 년간 '학사력'의 달 하나 (V4 features/year/YearSheet.tsx). 열두 달을 작은 달력으로 늘어놓는다.
 //
 //   날짜 칸에는 '달력' 일정을 점(라벨 빛깔)과 가는 막대(기간)로만 찍고, 달 아래 그 달의 것을 한 줄씩 적는다.
-//   고치기·여러 개 고르기는 '자세히'에서. 공휴일·D-Day는 P5-3, 학사일정은 P6-3이 더한다.
+//   공휴일(빨간 칸·이름)·D-Day(노란 테)도 날짜 칸과 목록에. 고치기·여러 개 고르기는 '자세히'에서. 학사일정은 P6-3이 더한다.
 //   달 카드는 React.memo - 부모가 넘기는 값은 붙들어 둔다(열두 달을 판마다 다시 그리지 않게, V4 그대로).
 import { memo, useState } from 'react';
 import { DAY_NAMES } from '../../domain/dateUtils';
@@ -10,6 +10,9 @@ import { labelColor } from '../../domain/labels';
 import { layoutWeekBars, periodsInDates } from '../../domain/periodBars';
 import { dayTooltip, monthSheetItems, monthWeeks, type AcademicMonth, type SheetItem } from '../../domain/yearSheet';
 import { itemLabels, type LabelTree } from '../../data/select';
+import { useCommonSettings } from '../../app/prefs';
+import { liveDDays } from '../../domain/dday';
+import { useHolidayName } from '../../data/holidays';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import type { CalendarEvents } from '../month/calendarEvents';
 
@@ -36,6 +39,9 @@ const md = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}`;
 
 function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth, today, onDateClick, onMonthClick, onOpenEvent }: Props) {
   const [expanded, setExpanded] = useState(false);
+  const holidayOf = useHolidayName();
+  const ddays = liveDDays(useCommonSettings((s) => s.ddays));
+  const ddayDates = new Set(ddays.map((d) => d.date));
   const weeks = monthWeeks(m.year, m.month, showWeekend);
   const cols = showWeekend ? 7 : 5;
   const dayNames = showWeekend ? DAY_NAMES : DAY_NAMES.slice(1, 6);
@@ -48,7 +54,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
     return label ? labelColor(label.color).border : DEFAULT_DOT;
   };
 
-  const items = monthSheetItems<ItemDoc>({ dates, eventsOn, periods: periodsInDates(dates, periods), textOf: (ev) => ev.text, doneOn: doneOnDay });
+  const items = monthSheetItems<ItemDoc>({ dates, eventsOn, periods: periodsInDates(dates, periods), textOf: (ev) => ev.text, doneOn: doneOnDay, holidayOf, ddays });
 
   const openItem = (it: SheetItem<ItemDoc>) => {
     if (it.item) onOpenEvent(it.item, it.date);
@@ -88,7 +94,8 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
             <div key={wi} className="relative grid" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`, height: 26 + layout.lanes * LANE }}>
               {week.map((d, col) => {
                 if (!d) return <div key={`e${col}`} />;
-                const tone = dayToneOf(d);
+                const holiday = holidayOf(d);
+                const tone = dayToneOf(d, holiday);
                 const isToday = d === today;
                 const dots = eventsOn(d).map((ev) => (doneOnDay(ev, d) ? DONE_DOT : colorOf(ev)));
                 return (
@@ -98,14 +105,16 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                     data-sheet-date={d}
                     data-today={isToday ? 'true' : undefined}
                     data-sheet-dots={dots.length || undefined}
+                    data-sheet-holiday={holiday}
+                    data-sheet-dday={ddayDates.has(d) ? '1' : undefined}
                     onClick={() => onDateClick(d)}
                     title={dayTooltip(d, items)}
-                    className="relative flex flex-col items-center pt-0.5 rounded-md hover:bg-slate-100 cursor-pointer"
+                    className={`relative flex flex-col items-center pt-0.5 rounded-md hover:bg-slate-100 cursor-pointer ${holiday ? 'bg-red-50/70' : ''}`}
                   >
                     <span
                       className={`text-2xs font-bold w-[18px] h-[16px] leading-[16px] rounded-full tabular-nums ${
                         isToday ? 'bg-primary text-white' : tone === 'holiday' ? 'text-red-500' : tone === 'saturday' ? 'text-blue-500' : 'text-slate-700'
-                      }`}
+                      } ${ddayDates.has(d) ? 'ring-[1.5px] ring-amber-400' : ''}`}
                     >
                       {Number(d.slice(8, 10))}
                     </span>

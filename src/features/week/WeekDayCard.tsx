@@ -2,7 +2,7 @@
 //   머리: 요일 · 날짜(토 파랑·일 빨강) · 📝 기록 수(누르면 그날 기록 창 - 하루 화면으로 가지 않는다).
 //   수업: 수업 칸이 생기는 P6-1에서(지금은 자리만 없다).
 //   일정: 라벨 칩 누르기 = 완료, 글 누르기 = 오른쪽 일정 칸, 마우스를 올리면 ✕, 🔗 n = 연결된 데이터. 오늘 카드에는 이월로 따라오는 일정도(↪).
-//   카드 빈 곳 = 그날 하루 화면. + = 그날 새 일정.
+//   카드 빈 곳 = 그날 하루 화면. + = 그날 새 일정. 일정을 끌어 다른 요일 카드에 놓으면 옮긴다(P5-3 - 마우스 화면만).
 import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
@@ -10,6 +10,9 @@ import { periodPosition } from '../../domain/period';
 import { labelColor } from '../../domain/labels';
 import type { LabelDoc } from '../../data/select';
 import DueBadge from '../events/DueBadge';
+import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
+import { useHolidayName } from '../../data/holidays';
+import HolidayName from '../../ui/HolidayName';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 
 export interface WeekDayCardProps {
@@ -33,6 +36,8 @@ export interface WeekDayCardProps {
   onOpenLinks: (ev: ItemDoc) => void;
   /** 작년 이맘때 칸 (켰을 때만) */
   lastYear?: ReactNode;
+  /** 끌어 옮기기 (drag.useEventDrop) - 놓을 칸·짚은 날·일정에 끌기를 붙일지 */
+  drop?: { handlers: DropHandlers; over: boolean; dragEnabled: boolean; onDragEnd: () => void };
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
@@ -49,7 +54,9 @@ function EventChip({
   onToggle,
   onDelete,
   onLinks,
+  drag,
 }: {
+  drag?: { enabled: boolean; onEnd: () => void };
   ev: ItemDoc;
   day: string;
   today: string;
@@ -73,11 +80,12 @@ function EventChip({
       data-week-event-done={done ? '1' : '0'}
       data-week-carried={carried ? '1' : undefined}
       data-event-picked={picked ? '1' : undefined}
+      {...eventDragProps(ev, day, !!drag?.enabled, drag?.onEnd)}
       onClick={(e) => {
         stop(e);
         onClick(e);
       }}
-      title="누르면 오른쪽 칸에서 고치기 (Ctrl·Shift와 함께 누르면 여러 개 고르기)"
+      title={`누르면 오른쪽 칸에서 고치기 (Ctrl·Shift와 함께 누르면 여러 개 고르기)${drag?.enabled ? ' · 끌어서 다른 날로 옮기기' : ''}`}
       className={`group relative px-2 py-1.5 rounded-lg text-xs leading-snug transition-all border block hover:shadow-sm cursor-pointer break-words ${
         picked
           ? 'bg-primary/10 border-primary text-primary'
@@ -160,7 +168,8 @@ function EventChip({
 
 export default function WeekDayCard(props: WeekDayCardProps) {
   const { date, today, events, carried = [], noteCount, showEvents } = props;
-  const tone = dayToneOf(date);
+  const holiday = useHolidayName()(date);
+  const tone = dayToneOf(date, holiday);
   const [, m, d] = date.split('-').map(Number);
   const isToday = date === today;
   const count = events.length + carried.length;
@@ -170,9 +179,10 @@ export default function WeekDayCard(props: WeekDayCardProps) {
       data-week-day={date}
       data-today={isToday ? 'true' : undefined}
       onClick={props.onOpenDay}
+      {...(props.drop ? dropTargetProps(props.drop.handlers, date) : {})}
       className={`${DAY_CELL_BG[tone]} rounded-2xl border p-2.5 flex flex-col transition-all cursor-pointer group/day hover:shadow-md hover:border-primary/50 min-h-[250px] min-w-0 overflow-hidden ${
         isToday ? 'border-primary ring-2 ring-primary/20 shadow-xs' : 'border-slate-200/80 shadow-xs'
-      }`}
+      } ${props.drop?.over ? DROP_TARGET_CLASS : ''}`}
       title="누르면 그날 하루 화면"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-1 pb-2.5 border-b border-slate-100 mb-3">
@@ -184,6 +194,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
           <span className={`text-xs font-bold ${DAY_NUMBER_COLOR[tone]}`} data-week-day-label>
             {m}.{d}
           </span>
+          {holiday && <HolidayName name={holiday} tier="week" fill={false} />}
         </div>
         {noteCount > 0 && (
           <button
@@ -245,6 +256,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
                   onToggle={() => props.onToggleDone(ev, isCarried)}
                   onDelete={() => props.onDelete(ev)}
                   onLinks={() => props.onOpenLinks(ev)}
+                  drag={props.drop ? { enabled: props.drop.dragEnabled, onEnd: props.drop.onDragEnd } : undefined}
                 />
               ))}
             </div>

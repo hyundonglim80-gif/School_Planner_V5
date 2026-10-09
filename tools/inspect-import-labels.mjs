@@ -9,7 +9,7 @@
 //
 //   npm run emu · V4 저장소 npm run seed · npm run seed · npm run dev:emu (켜 둔다) → node tools/inspect-import-labels.mjs
 // 에뮬레이터 teacher 계정의 V4 설정 문서를 고쳐 심고(V4 seed 라벨 + 트리·구글 캘린더·V3 속성 이름·설정), 끝에 V4·V5 문서를 모두 되돌린다.
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, writeBatch } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -72,6 +72,19 @@ try {
   undo.add(async () => {
     for (const l of await v5Labels()) if (!beforeIds.has(l.id)) await deleteDoc(doc(em.db, 'spaces', sid, 'labels', l.id));
   });
+  // 가져오기는 일정·기록도 함께 들여온다 - 끝에 걷는다(남기면 inspect-import-items가 '이미 있음'으로 센다)
+  for (const c of ['items', 'series']) {
+    const ref = collection(em.db, 'spaces', sid, c);
+    const had = new Set((await getDocs(ref)).docs.map((d) => d.id));
+    undo.add(async () => {
+      const extra = (await getDocs(ref)).docs.filter((d) => !had.has(d.id));
+      for (let i = 0; i < extra.length; i += 400) {
+        const b = writeBatch(em.db);
+        for (const d of extra.slice(i, i + 400)) b.delete(d.ref);
+        await b.commit();
+      }
+    });
+  }
   for (const id of ['labels', 'v4_labelTree', 'v4_gcal', 'v4_preferences_pc']) await keep(v4Ref(id));
   for (const id of ['pc', 'mobile', 'common', 'import']) await keep(v5Settings(id));
   await setDoc(v4Ref('labels'), V4_LABELS);

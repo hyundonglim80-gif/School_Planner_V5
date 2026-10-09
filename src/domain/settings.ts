@@ -63,3 +63,8 @@ export function intField(def: number, min: number, max: number): SettingField<nu
     },
   };
 }
+
+/** 모양을 따로 읽는 칸 (목록·표 - 읽기가 믿을 만한 것만 돌려준다) */
+export function customField<T>(def: T, read: (v: unknown) => T | undefined): SettingField<T> {
+  return { def, read };
+}

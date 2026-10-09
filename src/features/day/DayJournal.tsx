@@ -23,6 +23,7 @@ import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterC
 import { setJournalFilter, useLabelFilters } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
 import { openNotePanel, useEditingNoteIds } from '../notes/open';
+import { useFocusReveal } from '../search/focus';
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -35,6 +36,8 @@ export default function DayJournal({ date }: { date: YMD }) {
   const status = useMirrorStatus('items');
   const editing = useEditingNoteIds(sid);
   const [collapsed, setCollapsed] = useState(false);
+  // 검색 결과로 이 날 기록을 짚으러 오면 접힌 칸을 편다 (라벨로 보기는 검색 창이 옮기기 전에 푼다)
+  useFocusReveal((t) => t.kind === 'note' && t.date === date, () => setCollapsed(false));
   // 카드 접기: 사용자가 누른 것만 담는다. 손대지 않은 카드는 길이를 보고 정한다
   const [cardCollapsed, setCardCollapsed] = useState<Record<string, boolean>>({});
   // 라벨로 보기 (지운 라벨은 빼고 - 라벨을 받기 전에는 그대로)

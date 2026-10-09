@@ -2,7 +2,7 @@
 // 실패는 저장 도우미가 안내하고 던진다 - 누른 단추에서 부르면 `.catch(() => {})`로 받는다(안내는 이미 나갔다).
 // 쓰기마다 문서 하나(원칙 1).
 import { showToast } from '../../app/toast';
-import { shortDateLabel, todayStr } from '../../domain/dateUtils';
+import { daysBetween, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { ordersBetween } from '../../domain/order';
 import { cutFromChanges, isPeriod, periodDoneChanges, skipDayChanges } from '../../domain/period';
 import { ruleLabel, type SeriesRuleShape } from '../../domain/recur';
@@ -15,6 +15,7 @@ import type { GroupScope } from './EventScopeWindow';
 import { closeEventPanelsFor } from './open';
 import { createSeriesOps, deleteSeriesOps, editSeriesOps, planDates, scopeItems, type SeriesDoc } from './seriesOps';
 import { multiDeleteOps, multiDoneOps, multiLabelOps, multiMoveOps, pickedCount, type MoveResult, type Picked } from './multiOps';
+import { moveOnlyOps, shiftLabel, shiftPeriodOps, shiftSeriesOps, type MoveScope } from './moveOps';
 
 const KEEP = '적은 내용은 칸에 남아 있습니다.';
 /** 옮기기의 되돌리기가 함께 되돌리는 자리 칸 (date 말고) */
@@ -256,4 +257,38 @@ export async function deletePicked(sid: string, list: readonly Picked[]): Promis
   const n = pickedCount(list);
   recordUndo(sid, `🗑️ 일정 ${n}건을 삭제했습니다. 휴지통에서 복원할 수 있습니다.`, undo, { what: '여러 일정 지우기' });
   return n;
+}
+
+export interface MoveContext {
+  /** 그 날 맨 뒤 차례 (하루짜리·떼어 낸 하루 일정) */
+  order: string;
+  /** 끝내지 않은 이월 일정을 지난 날로 - 안내에 덧붙인다 */
+  bounce: boolean;
+  /** 반복 묶음 */
+  series?: { list: readonly ItemDoc[]; series: SeriesDoc | undefined };
+}
+
+/**
+ * 끌어 옮기기 (day = 끈 칸의 날 - 기간은 그 날). 묶음이 아니면 scope 'only'.
+ * 한 묶음으로 적고 안내의 되돌리기·Ctrl+Z로 원래 날에. 옮긴 것이 없으면 false.
+ */
+export async function moveEventTo(sid: string, item: ItemDoc, day: string, to: string, scope: MoveScope, ctx: MoveContext): Promise<boolean> {
+  const period = isPeriod(item);
+  const ops =
+    scope === 'only'
+      ? moveOnlyOps(sid, item, day, to, ctx.order, () => newPath(sid, 'items').id)
+      : period
+        ? shiftPeriodOps(sid, item, daysBetween(day, to))
+        : shiftSeriesOps(sid, item, to, scope, ctx.series?.list ?? [item], ctx.series?.series);
+  if (ops.length === 0) return false;
+  const undo = await batch(ops, { fail: '일정을 옮기지 못했습니다.' });
+  const bounce = ctx.bounce ? ' 이월 일정이라 끝내지 않으면 오늘 칸에 따라옵니다.' : '';
+  const msg =
+    scope === 'only'
+      ? `📅 일정을 ${shortDateLabel(day)} → ${shortDateLabel(to)}로 옮겼습니다.`
+      : period
+        ? `📅 기간 일정을 ${shiftLabel(day, to)} 옮겼습니다.`
+        : `📅 반복 일정 ${ops.filter((o) => o.at.coll === 'items').length}개를 ${shiftLabel(day, to)} 옮겼습니다.`;
+  recordUndo(sid, msg + bounce, undo, { what: '일정 옮기기' });
+  return true;
 }

@@ -24,6 +24,7 @@ import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterC
 import { setMemoFilter, useLabelFilters, type MemoFilter } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst } from '../notes/noteOps';
 import { openNotePanel, useEditingNoteIds } from '../notes/open';
+import { useFocusReveal } from '../search/focus';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
 const FALLBACK_LABEL = '메모';
@@ -77,6 +78,11 @@ export default function MemoScreen() {
   const columns = useColumnCount(listRef);
   const [activeOpen, setActiveOpen] = useState(true);
   const [doneOpen, setDoneOpen] = useState(true);
+  // 검색 결과로 메모를 짚으러 오면 그 메모가 든 칸(진행/완료)을 편다
+  useFocusReveal(
+    (t) => t.kind === 'note' && t.date === null,
+    (t) => (memos.find((m) => m.id === t.id)?.done ? setDoneOpen(true) : setActiveOpen(true)),
+  );
   const [cardCollapsed, setCardCollapsed] = useState<Record<string, boolean>>({});
 
   // 즐겨찾기가 하나도 없으면 즐겨찾기 대신 전체로 연다 - 메모를 받은 뒤 화면을 열 때 한 번만 정한다
