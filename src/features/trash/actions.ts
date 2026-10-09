@@ -17,6 +17,17 @@ const labelAt = (sid: string, id: string) => ({ sid, coll: 'labels' as const, id
 const timetableAt = (sid: string, id: string) => ({ sid, coll: 'timetables' as const, id });
 const progressAt = (sid: string, id: string) => ({ sid, coll: 'progress' as const, id });
 const classAt = (sid: string, id: string) => ({ sid, coll: 'classes' as const, id });
+const seatingAt = (sid: string, id: string) => ({ sid, coll: 'seating' as const, id });
+
+/** 휴지통이 보는 문서 묶음 (useTrashDocs) */
+export interface TrashDocs {
+  items: Docs<'items'>;
+  labels: Docs<'labels'>;
+  timetables: Docs<'timetables'>;
+  progress: Docs<'progress'>;
+  classes: Docs<'classes'>;
+  seating: Docs<'seating'>;
+}
 
 /** 되살리기 (여럿) - 되살린 수 */
 export async function restoreEntries(sid: string, entries: readonly TrashEntry[]): Promise<number> {
@@ -26,6 +37,7 @@ export async function restoreEntries(sid: string, entries: readonly TrashEntry[]
     else if (e.kind === 'timetable') ops.push(writeOp.restore(timetableAt(sid, e.id)));
     else if (e.kind === 'progress') ops.push(writeOp.restore(progressAt(sid, e.id)));
     else if (e.kind === 'class') ops.push(writeOp.restore(classAt(sid, e.id)));
+    else if (e.kind === 'seating') ops.push(writeOp.restore(seatingAt(sid, e.id)));
     else if (e.kind === 'event' || e.kind === 'journal' || e.kind === 'memo') ops.push(writeOp.restore(itemAt(sid, e.id)));
   }
   const undo = ops.length ? await batch(ops, { fail: '되살리지 못했습니다.' }) : [];
@@ -64,16 +76,8 @@ async function deleteDriveFiles(ids: readonly string[], token: string): Promise<
  * 영구 삭제 (여럿) - 문서를 지우고 V5에서 올린 첨부를 드라이브에서 정리한다. 지운 수.
  * interactive = 누른 때(구글 로그인을 물을 수 있다) · 아니면 조용한 토큰이 있을 때만.
  */
-export async function purgeEntries(
-  sid: string,
-  entries: readonly TrashEntry[],
-  items: Docs<'items'>,
-  labels: Docs<'labels'>,
-  interactive: boolean,
-  timetables: Docs<'timetables'> = {},
-  progress: Docs<'progress'> = {},
-  classes: Docs<'classes'> = {},
-): Promise<number> {
+export async function purgeEntries(sid: string, entries: readonly TrashEntry[], docs: TrashDocs, interactive: boolean): Promise<number> {
+  const { items, labels, timetables, progress, classes, seating } = docs;
   const ops: WriteOp[] = [];
   const purgedItems = [];
   for (const e of entries) {
@@ -81,6 +85,7 @@ export async function purgeEntries(
     else if (e.kind === 'timetable' && timetables[e.id]) ops.push(writeOp.purge(timetableAt(sid, e.id), timetables[e.id]));
     else if (e.kind === 'progress' && progress[e.id]) ops.push(writeOp.purge(progressAt(sid, e.id), progress[e.id]));
     else if (e.kind === 'class' && classes[e.id]) ops.push(writeOp.purge(classAt(sid, e.id), classes[e.id]));
+    else if (e.kind === 'seating' && seating[e.id]) ops.push(writeOp.purge(seatingAt(sid, e.id), seating[e.id]));
     else if ((e.kind === 'event' || e.kind === 'journal' || e.kind === 'memo') && items[e.id]) {
       ops.push(writeOp.purge(itemAt(sid, e.id), items[e.id]));
       purgedItems.push(items[e.id]);
@@ -123,16 +128,7 @@ const LAST_RUN_KEY = 'sp5-trash-auto-last';
 const DAY_MS = 86_400_000;
 
 /** 자동 비우기 - 앱을 열 때 하루 한 번 (이 기기 기준, V4 그대로). 지운 수 */
-export async function autoEmptyTrash(
-  sid: string,
-  expired: readonly TrashEntry[],
-  items: Docs<'items'>,
-  labels: Docs<'labels'>,
-  now = Date.now(),
-  timetables: Docs<'timetables'> = {},
-  progress: Docs<'progress'> = {},
-  classes: Docs<'classes'> = {},
-): Promise<number> {
+export async function autoEmptyTrash(sid: string, expired: readonly TrashEntry[], docs: TrashDocs, now = Date.now()): Promise<number> {
   try {
     const last = Number(localStorage.getItem(LAST_RUN_KEY) || 0);
     if (now - last < DAY_MS) return 0;
@@ -142,7 +138,7 @@ export async function autoEmptyTrash(
   }
   if (expired.length === 0) return 0;
   try {
-    return await purgeEntries(sid, expired, items, labels, false, timetables, progress, classes);
+    return await purgeEntries(sid, expired, docs, false);
   } catch {
     return 0;
   }

@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { useClipboard } from '../../data/clipboard';
-import { useDocs, useMirrorStatus } from '../../data/select';
+import { useMirrorStatus } from '../../data/select';
+import { useTrashDocs } from './useTrashDocs';
 import { useCurrentSpaceId } from '../../data/session';
 import { autoEmptyTrash } from './actions';
 import { expiredOf, trashEntries } from './trashList';
@@ -11,11 +12,7 @@ import { expiredOf, trashEntries } from './trashList';
 export function useTrashAutoEmpty() {
   const sid = useCurrentSpaceId();
   const days = useCommonSettings((s) => s.trashDays);
-  const items = useDocs('items', sid);
-  const labels = useDocs('labels', sid);
-  const timetables = useDocs('timetables', sid);
-  const progress = useDocs('progress', sid);
-  const classes = useDocs('classes', sid);
+  const docs = useTrashDocs(sid);
   const itemsLive = useMirrorStatus('items', sid) === 'live';
   const labelsLive = useMirrorStatus('labels', sid) === 'live';
   const done = useRef<string | null>(null);
@@ -24,7 +21,7 @@ export function useTrashAutoEmpty() {
     done.current = sid;
     const { ddays } = useCommonSettings.getState();
     const clips = useClipboard.getState().trash;
-    const expired = expiredOf(trashEntries({ items, labels, ddays, clips, timetables, progress, classes }), days);
-    void autoEmptyTrash(sid, expired, items, labels, Date.now(), timetables, progress, classes);
-  }, [sid, days, itemsLive, labelsLive, items, labels, timetables, progress, classes]);
+    const expired = expiredOf(trashEntries({ ...docs, ddays, clips }), days);
+    void autoEmptyTrash(sid, expired, docs, Date.now());
+  }, [sid, days, itemsLive, labelsLive, docs]);
 }
