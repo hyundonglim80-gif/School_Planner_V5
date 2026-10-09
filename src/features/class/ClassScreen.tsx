@@ -16,7 +16,7 @@ import { academicYearOf, todayStr } from '../../domain/dateUtils';
 import { classIdOf, classLabelOf, describeClass, isActive } from '../../domain/roster';
 import { normalizeSlotText } from '../../domain/teachingSlot';
 import { useMirrorStatus } from '../../data/select';
-import { usePersonalSpaceId } from '../../data/session';
+import { currentSpaceId, usePersonalSpaceId } from '../../data/session';
 import { useClassColorOf, useTeaching } from '../lessons/teaching';
 import StudentPhoto from '../photos/StudentPhoto';
 import { readOn, usePhotoTools, writeOn } from '../photos/usePhotoTools';
@@ -76,7 +76,10 @@ function ClassHub() {
     if (id === 'roster') openClassRoster();
     // 출석부는 오늘로 (단축키는 보는 날)
     else if (id === 'attendance') openAttendance({ date: todayStr(), classId: cls?.id });
-    else if (id === 'notices') openNotices({ date: todayStr() });
+    else if (id === 'notices') {
+      const space = currentSpaceId();
+      if (space) openNotices({ sid: space, date: todayStr() });
+    }
     else if (id === 'subjectAttendance') openSubjectAttendanceSummary({ classId: cls?.id });
     else runFromButton(id);
   };

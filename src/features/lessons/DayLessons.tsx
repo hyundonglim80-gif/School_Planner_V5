@@ -241,7 +241,7 @@ export default function DayLessons({ date }: { date: string }) {
                 key={d.id}
                 type="button"
                 data-lessons-tool={d.id}
-                onClick={() => openWindow(d.id, { date })}
+                onClick={() => openWindow(d.id, { date, ...(sid ? { sid } : {}) })}
                 className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
               >
                 {d.icon} {d.title}

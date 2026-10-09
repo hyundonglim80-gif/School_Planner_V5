@@ -14,7 +14,7 @@ import { useClassBellRunner } from '../features/bell/bell';
 import { usePrintShortcut } from './printScreen';
 import { useClassShortcuts } from '../features/class/view';
 import { useAttendanceShortcuts } from '../features/attendance/open';
-import { useNoticeShortcuts } from '../features/notices/open';
+import { useNoticeShortcuts } from '../features/notices/shortcuts';
 import { useSearchFocusRunner } from '../features/search/focus';
 import { useTrashAutoEmpty } from '../features/trash/auto';
 import { useWeekShortcuts } from '../features/week/prefs';

@@ -32,6 +32,8 @@ export function useDayCardsOn(date: string, sid: string | null): DayCard[] {
 
 /** 원본 칸 열기 */
 export function openDayCard(card: DayCard, sid: string | null) {
-  if (card.kind === 'notice') openNotices({ sid: sid ?? undefined, date: card.date });
+  if (card.kind === 'notice') {
+    if (sid) openNotices({ sid, date: card.date });
+  }
   else openAttendance({ date: card.date, classId: card.classId });
 }
