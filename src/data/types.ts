@@ -286,9 +286,12 @@ export interface ClassDoc extends Tracked {
 }
 
 export interface AttendanceRecord {
+  /** 'absent' | 'late' | 'early' | 'result' (domain/attendance) */
   kind: string;
+  /** 'sick' | 'unexcused' | 'other' | 'approved' */
   reason: string;
-  periods?: string[];
+  /** 지각·조퇴·결과의 교시 */
+  periods?: number[];
   note?: string;
 }
 

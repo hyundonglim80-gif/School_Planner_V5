@@ -162,7 +162,7 @@ describe('처음 받기', () => {
     await vi.waitFor(() => expect(allLive(uid)).toBe(true));
 
     expect(server.calls.fromDate).toEqual([{ coll: 'items', date: '2026-03-01' }]);
-    expect(server.calls.pages.map((c) => c.coll).sort()).toEqual(['classes', 'items', 'labels', 'lessonDays', 'progress', 'series', 'timetables']);
+    expect(server.calls.pages.map((c) => c.coll).sort()).toEqual(['attendance', 'classes', 'items', 'labels', 'lessonDays', 'progress', 'series', 'timetables']);
     expect(Object.keys(docsOf(uid)).sort()).toEqual(['memo', 'now', 'old']);
     expect(docsOf(uid).now).toMatchObject({ id: 'now', text: '올해 기록' });
     expect(Object.keys(docsOf(uid, 'labels'))).toEqual(['l1']);

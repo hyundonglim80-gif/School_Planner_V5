@@ -941,7 +941,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P7-1 끝.
 **먼저 읽을 것**: `DESIGN.md` 5-4, V4 설명서 `notice`·`attendance`·`subject-attendance`, V4 `components/AttendanceDrawer.tsx`·`NoticeDrawer.tsx`·`SubjectAttendancePanel.tsx`·
 `SubjectAttendanceSummaryModal.tsx`, `lib/attendance.ts`·`attendanceStore.ts`·`notices.ts`·`shareText.ts`·`subjectAttendance.ts`·`subjectAttendanceStore.ts`·`autoJournal.ts`(무엇을 보였나만).
-- [ ] ■1 출석부(sid, 2.5초 뒤 저절로 저장, 누계·인쇄), 하루 '📋'·학급 화면.
+- [x] ■1 출석부(sid, 2.5초 뒤 저절로 저장, 누계·인쇄), 하루 '📋'·학급 화면.
+  → 순수 `domain/attendance.ts`(V4 lib째 + 학생 sid·`marksChanges` 바뀐 학생 칸만(고친 학생은 칸마다 - 옛 교시가 남지 않게)·`dayLines`·`summaryRangeOf`) · 사본 `MIRRORED` += attendance ·
+  `features/attendance/`(`AttendancePanel` 쓰는 칸 하나 `attendance` `{ date, classId?, tab? }` - 고친 것은 학급·날짜와 함께 들고 다른 날로 가면 그 날에 저장·다른 기기 고침이 따라온다 · `actions.saveAttendance`(merge·되돌리기) · `attendanceClass`(고를 학급) · `open.ts` 단축키) ·
+  하루 수업 머리줄 📋(담임) · 학급 화면 📋 오늘 출결 줄·도구 카드(오늘). 점검 `tools/inspect-attendance.mjs`(■1 33).
 - [ ] ■2 알림장(쓰기·모아 보기·📤 공유·다음 수업일 불러오기 + 진도 준비물).
 - [ ] ■3 기록 칸 카드(그날 알림장·출결을 계산해 보인다 - 누르면 원본 칸, 검색에도). V4 autoJournal·autoJournalSync는 옮기지 않는다.
 - [ ] ■4 교과 출결(교시 카드 🙋 → 칸, 누계·학급 탭) + 크롬 점검.

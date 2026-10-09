@@ -8,7 +8,7 @@
 //   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
 //   - 🔔 종(features/bell - P6-3): '수업' 옆 단추로 수업 종 설정을 펼친다.
 //   - 🍚 급식·📚 학사(features/school - P6-3): 카드 아래, 환경설정 '우리 학교'를 골랐을 때만.
-// 아직 옮기지 않은 것(그 세션이 머리줄·카드에 더한다): 📢 알림장·📋 출석부·🎯 뽑기(P7) · 📊 조사표(P7-4) · 🙋 교과 출결·반 도구(P7).
+// 아직 옮기지 않은 것(그 세션이 머리줄·카드에 더한다): 📢 알림장·🎯 뽑기(P7) · 📊 조사표(P7-4) · 🙋 교과 출결·반 도구(P7).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { setDate } from '../../app/nav';
