@@ -30,7 +30,7 @@ export default function ImportBanner() {
           type="button"
           data-import-banner-run
           onClick={() => {
-            openWindow('settings', { tab: 'import' });
+            openWindow('backup', { tab: 'import' });
             void runImport(uid);
           }}
           className="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold cursor-pointer"

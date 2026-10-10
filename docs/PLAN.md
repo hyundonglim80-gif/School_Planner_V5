@@ -531,6 +531,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 알림 칸은 항목 하나에 하나(`v5alarms/{itemId}`). 알림은 처음 날에만(이월로 따라오는 동안 다시 울리지 않는다 - V4도), 기간 일정은 첫날을 끝냈으면 울리지 않는다.
     순서·라벨만 바꾼 저장은 알림 칸을 읽지도 않는다(`touchesAlarm`). 그룹 일정은 쓴 사람(없으면 구성원 모두 - 공간 문서 members).
   - 기기 토큰은 개인 공간 `pushTokens/{토큰 해시}`(V4 `v4_pushTokens` 모양). V4 토큰은 가져오지 않는다 - 기기에서 다시 켠다(DESIGN 8-3).
+- **P8-3 백업 창**(권장안으로 고름):
+  - 백업 JSON은 **V5 모양**(`version: 'SP5-BACKUP'`, 컬렉션 → 문서 id → 문서, 시각은 기기 사본과 같은 `{$ts}`) - 공간 하나씩. 지운 것(휴지통)은 담지 않는다.
+    기간을 고르면 날짜가 있는 것만 그 기간(메모·라벨·설정·학급은 늘 통째로). 설정은 common·pc·mobile 셋만(가져오기 기록·띠 닫음은 기기·계정 일).
+  - 되살리기는 **없거나 지운 문서만** 다시 넣는다 - 지금 있는 것은 덮지 않는다(백업 뒤에 고친 것을 지키려고. 같은 id라 두 번 눌러도 겹치지 않는다).
+    되돌리기 더미에 넣지 않는다(수백 개를 한꺼번에 지우는 쪽이 더 위험하다). V4 백업 파일은 되살리지 않는다 - '가져오기' 탭의 V4 자료 가져오기를 안내.
+  - CSV는 V4 모양 한 장(`#구분,날짜/작성일,…`) - 기기 사본으로 만든다(받기만, 되읽지 않는다).
+  - 환경설정 '가져오기' 탭과 '구글 캘린더로 보내기' 창은 이 창의 탭으로 옮겼다 - 단축키 '구글 캘린더로 보내기'(calendar)는 '보내기' 탭을 연다, 처음 로그인 띠는 '가져오기' 탭.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -1092,10 +1099,15 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 **시작 조건**: P8-2 끝.
 **먼저 읽을 것**: `MENU.md` 2-3·3-7, V4 `components/BackupModal.tsx`·`lib/backupJson.ts`·`autoBackup.ts`·`hooks/useAutoBackup.ts`·`components/AutoBackupBanner.tsx`·`KeepImportModal.tsx`·
 `lib/keepImport.ts`·`sheetsSync.ts`·`driveMigration.ts`, `lib/shareTarget.ts`·`hooks/useShareReceiver.ts`·`public/sw.js`·`public/manifest.json`.
-- [ ] ■1 '💾 백업 · 가져오기 · 보내기' 창(탭: 백업 - 받기·되살리기·드라이브 자동 백업 / 가져오기 - V4·Keep / 보내기 - 구글 캘린더·시트 / 정리 - 첨부 모으기). 백업 JSON은 V5 모양.
-- [ ] ■2 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).
-- [ ] ■3 오프라인 앱: `sw.js`가 앱 파일을 캐시(index.html은 네트워크 먼저, 해시 붙은 파일은 캐시 먼저, 새 빌드면 '새 판이 있습니다 - 새로고침' 띠) → 기기 사본과 함께 오프라인 보기.
-- [ ] ■4 크롬 점검(오프라인으로 열기 포함).
+- [x] ■1 '💾 백업 · 가져오기 · 보내기' 창 틀(탭: 백업 / 가져오기 - V4 / 보내기 - 구글 캘린더) + 백업 탭(JSON 받기·되살리기·CSV). 백업 JSON은 V5 모양.
+  → 순수 `domain/backup.ts`(갈래·기간 고르기 `keepInBackup`·수 `countBackup`·파일 읽기·되살리기 셈 `planRestore`·CSV 줄 `csvRowsOf`) · `data/backup.ts`(서버에서 읽기 `buildBackup`·`writeRestore` 400개씩) ·
+  `features/backup/`(`BackupWindow` 창 `backup` `{ tab }` · `BackupTab` · `V4ImportSection`(환경설정 ImportTab을 옮김) · `open.ts`·`shortcuts.ts`) · `gcal/CalendarSyncSection`(창 → 탭). 점검 `tools/inspect-backup.mjs` 21 · gcal·import-labels 통과.
+- [ ] ■2 드라이브 자동 백업(백업 탭 - V4 autoBackup 그대로: 드라이브 School_Planner/backup, 주기·보관 수) + 늦었다는 띠.
+- [ ] ■3 Keep 가져오기('가져오기' 탭 - 테이크아웃 JSON/zip → 메모).
+- [ ] ■4 '보내기' 탭 구글 시트(일정·기록·메모 시트로 내보내기·되읽기, 명렬표 시트) + '정리' 첨부 모으기(V4 Storage 그림을 드라이브로 - 복사만, V4가 아직 쓰니 지우지 않는다).
+- [ ] ■5 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).
+- [ ] ■6 오프라인 앱: `sw.js`가 앱 파일을 캐시(index.html은 네트워크 먼저, 해시 붙은 파일은 캐시 먼저, 새 빌드면 '새 판이 있습니다 - 새로고침' 띠) → 기기 사본과 함께 오프라인 보기.
+- [ ] ■7 크롬 점검(오프라인으로 열기 포함).
 **끝 조건**: 설명서 `backup`·`keep`·`install`이 되고, 네트워크 없이 열어도 화면과 자료가 보인다.
 
 ### P8-4. 공유 그룹 + 그룹 가져오기

@@ -5,13 +5,12 @@ import { useCallback, useRef, useState } from 'react';
 import type { WindowProps } from '../../app/windows';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import AppTab from './AppTab';
-import ImportTab from './ImportTab';
 import NotifyTab from './NotifyTab';
 import SchoolTab from './SchoolTab';
 import ShortcutsTab, { type ShortcutsTabHandle } from './ShortcutsTab';
 import ViewTab from './ViewTab';
 
-export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' | 'import' | 'dev';
+export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' | 'dev';
 
 const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean }> = [
   { id: 'view', label: '보기', ready: true },
@@ -21,8 +20,6 @@ const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean }> 
   { id: 'school', label: '학교', ready: true },
   { id: 'shortcuts', label: '단축키', ready: true },
   { id: 'app', label: '앱', ready: true },
-  // V4 자료 가져오기 (P2-4) - P8-3에서 '백업 · 가져오기 · 보내기' 창의 '가져오기' 탭으로 옮긴다
-  { id: 'import', label: '가져오기', ready: true },
   // 개발자 계정만 - 공휴일 P5-3 · 나이스 키 P6-3 · 공유 그룹 점검 P8-4 (라벨 상태는 '앱' 탭 '이 기기 사본'이 맡는다 - P2-3,
   // V4 labelDiagnostics는 라벨 문서를 못 읽어 기본값으로 때웠는지를 가리던 것 - V5는 라벨이 문서마다라 그런 때우기가 없다)
   { id: 'dev', label: '개발자', ready: false },
@@ -121,9 +118,6 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
         </div>
         <div role="tabpanel" data-settings-panel="app" hidden={tab !== 'app'}>
           <AppTab />
-        </div>
-        <div role="tabpanel" data-settings-panel="import" hidden={tab !== 'import'}>
-          <ImportTab />
         </div>
       </div>
     </ModalShell>

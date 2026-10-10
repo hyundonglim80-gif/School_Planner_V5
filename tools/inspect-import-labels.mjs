@@ -1,7 +1,7 @@
 // tools/inspect-import-labels.mjs - P2-4: V4 라벨·설정 가져오기를 실제 크롬에서 본다
 // (끝 조건: V4 seed → 가져오기 → 라벨 이름·색·속성·상위가 같다, 두 번째 가져오기는 '바뀐 것 0').
 //   1) 가져온 적이 없으면 본문 맨 위에 'V4 자료 가져오기' 띠가 뜬다.
-//   2) 띠의 '가져오기' → 환경설정 '가져오기' 탭이 열리고 결과 표가 나온다.
+//   2) 띠의 '가져오기' → 백업 창 '가져오기' 탭이 열리고 결과 표가 나온다.
 //   3) 서버의 V5 라벨이 V4와 같다: 이름·색·속성(V3 이름 먼저·구글 캘린더)·상위. 라벨 관리 창에도 그대로 보인다.
 //   4) V4 설정(글자 크기·창 위치·이월 기간)이 V5 설정 문서에 들어오고 이 기기에 입혀진다.
 //   5) 두 번째 가져오기는 바뀐 것 0 - 라벨 문서의 updatedAt이 그대로.
@@ -100,9 +100,9 @@ try {
   r.section('처음 로그인 띠');
   r.check(await waitFor(banner, 8000), "가져온 적이 없으면 'V4 자료 가져오기' 띠가 뜬다");
 
-  r.section('띠의 가져오기 → 환경설정 가져오기 탭');
+  r.section('띠의 가져오기 → 백업 창 가져오기 탭');
   await page.locator(sel('import-banner-run')).click();
-  r.check(await waitFor(page.locator(sel('settings-panel', 'import'))), '환경설정 가져오기 탭이 열린다');
+  r.check(await waitFor(async () => (await page.locator(sel('backup-window')).getAttribute('data-backup-window')) === 'import'), '백업 창 가져오기 탭이 열린다');
   r.check(await waitFor(page.locator(sel('import-result')), 15000), '결과 표가 나온다');
   const count = async (kind, what) => Number(await page.locator(`${sel('import-row', kind)} ${sel('import-count', what)}`).textContent());
   const nNote = V4_LABELS.journalLabels.length + V4_LABELS.memoLabels.length;
@@ -166,8 +166,8 @@ try {
 
   r.section('두 번째 가져오기 = 바뀐 것 0');
   const stamps = Object.fromEntries(mine.map((l) => [l.id, l.updatedAt.toMillis()]));
-  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'import' }));
-  await page.locator(sel('settings-panel', 'import')).waitFor();
+  await page.evaluate(() => window.sp5.openWindow('backup', { tab: 'import' }));
+  await page.locator(sel('import-run')).waitFor();
   await page.locator(sel('import-run')).click();
   r.check(await waitFor(async () => (await page.locator(sel('import-run')).textContent())?.includes('다시'), 15000), '다시 가져오기 끝');
   const changed = [];

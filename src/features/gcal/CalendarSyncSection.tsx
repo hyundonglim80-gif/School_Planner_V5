@@ -1,10 +1,9 @@
-// '📅 구글 캘린더로 보내기' 창 (V4 CalendarSyncModal, P8-1 ■2). 단축키 '구글 캘린더로 보내기'(id calendar) - P8-3에서 '백업 · 가져오기 · 보내기' 창의 '보내기' 탭으로.
+// '📅 구글 캘린더로 보내기' (V4 CalendarSyncModal, P8-1 ■2) - '💾 백업 · 가져오기 · 보내기' 창 '보내기' 탭(P8-3). 단축키 '구글 캘린더로 보내기'(id calendar)는 그 탭을 연다.
 // 기간(처음 = 지금 화면 기간) · 보낼 대상(일정·수업·기록) · 방식(병합/교체). 보내기는 창 밖에서 돈다(manual.ts) - 닫아도 끝까지, 다시 열면 어디까지 왔나.
 import { useState } from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { useNav } from '../../app/nav';
 import { showErrorToast, showToast } from '../../app/toast';
-import type { WindowProps } from '../../app/windows';
 import type { ManualDay, SyncKind, SyncMode } from '../../domain/gcal';
 import { todayStr } from '../../domain/dateUtils';
 import { carriedOf } from '../../domain/forward';
@@ -14,7 +13,6 @@ import { getValidGoogleToken } from '../../data/google/token';
 import { isHoliday } from '../../data/holidays';
 import { itemLabels, itemsOfKind, itemsOn, labelTreeOf, useDocs } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
-import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { labelForwardOf } from '../events/forward';
 import { useLessonSource } from '../lessons/useLessons';
 import { KIND_NAME, rangeForScope, startCalendarSync, useCalendarSync } from './manual';
@@ -22,7 +20,7 @@ import { KIND_NAME, rangeForScope, startCalendarSync, useCalendarSync } from './
 const KIND_DESC: Record<SyncKind, string> = { event: 'SP(work) 캘린더', class: 'SP(class) 캘린더', journal: 'SP(commentary) 캘린더' };
 const KINDS: SyncKind[] = ['event', 'class', 'journal'];
 
-export default function CalendarSyncWindow({ close, raise }: WindowProps) {
+export default function CalendarSyncSection() {
   const sid = useCurrentSpaceId();
   const scope = useNav((s) => s.scope);
   const date = useNav((s) => s.date);
@@ -75,28 +73,7 @@ export default function CalendarSyncWindow({ close, raise }: WindowProps) {
   };
 
   return (
-    <ModalShell
-      isOpen
-      onClose={close}
-      raise={raise}
-      width="lg"
-      title="📅 구글 캘린더로 보내기"
-      footer={
-        <>
-          <ModalCloseButton onClose={close} />
-          <button
-            type="button"
-            data-cal-send
-            onClick={() => void send()}
-            disabled={progress.running}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
-          >
-            {progress.running ? '보내는 중...' : '구글 캘린더로 보내기'}
-          </button>
-        </>
-      }
-    >
-      <div data-calendar-sync-window className="space-y-4 text-xs">
+      <div data-calendar-sync-window className="space-y-4 text-xs px-5 py-4">
         {/* 저절로 보내기가 있다는 것을 여기서 알린다 (V4 UX-AUDIT C6) */}
         <p data-gcal-auto-hint className="px-3 py-2 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 leading-relaxed">
           💡 자주 보내는 일정은 ⋮ → 라벨 관리 → 일정 라벨에서 <b>구글 캘린더</b>를 켜 두면 저장·완료·지우기 때 <b>저절로</b> 보냅니다(일정 칸에서 하나씩 켜도 됩니다). 여기서는 기간을
@@ -182,6 +159,18 @@ export default function CalendarSyncWindow({ close, raise }: WindowProps) {
           </div>
         </div>
 
+        <div className="flex justify-end">
+          <button
+            type="button"
+            data-cal-send
+            onClick={() => void send()}
+            disabled={progress.running}
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+          >
+            {progress.running ? '보내는 중...' : '📅 구글 캘린더로 보내기'}
+          </button>
+        </div>
+
         {progress.running && (
           <div data-cal-progress={progress.percent} className="space-y-1">
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -196,6 +185,5 @@ export default function CalendarSyncWindow({ close, raise }: WindowProps) {
           </p>
         )}
       </div>
-    </ModalShell>
   );
 }

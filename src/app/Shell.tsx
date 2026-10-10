@@ -15,6 +15,7 @@ import { usePrintShortcut } from './printScreen';
 import { useClassShortcuts } from '../features/class/view';
 import { useAttendanceShortcuts } from '../features/attendance/open';
 import { useNoticeShortcuts } from '../features/notices/shortcuts';
+import { useBackupShortcuts } from '../features/backup/shortcuts';
 import { useSeatingShortcuts } from '../features/seating/open';
 import { useSearchFocusRunner } from '../features/search/focus';
 import { useTrashAutoEmpty } from '../features/trash/auto';
@@ -60,6 +61,7 @@ export default function Shell() {
   useClassShortcuts();
   useAttendanceShortcuts();
   useNoticeShortcuts();
+  useBackupShortcuts();
   useSeatingShortcuts();
   // 작년 이맘때 보이기 / 숨기기 (주간)
   useWeekShortcuts();

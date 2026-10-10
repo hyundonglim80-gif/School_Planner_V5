@@ -1,7 +1,7 @@
 // tools/inspect-import-lessons.mjs - P6-4: V4 수업 가져오기를 실제 크롬에서 본다
 // (끝 조건: 하루·주간 수업 칸·진도 줄이 V4와 같다 · 두 번째는 바뀐 것 0 · V5에서 고친 날은 그대로).
 //   1) V4 seed(teacher - 수업 260일, 시간표 문서 없음) + 점검용 V4 문서: timetable_v5(표 둘·방학)·v4_periodTimes·v4_classBell·v4_progress, 2027-03 수업 날(seed 밖)
-//   2) 환경설정 '가져오기' → 결과 표(시간표·수업 칸·진도 줄)
+//   2) 백업 창 '가져오기' → 결과 표(시간표·수업 칸·진도 줄)
 //   3) 서버: 시간표 = 학기마다 맞는 표(기간), 수업 칸 = 시간표와 다른 칸만, 교시 이름·시각·방학·수업 종 = 계정 설정
 //   4) 하루 화면 수업 칸 = V4 schedules 과목 (seed 날 여럿 + 점검 날), 진도 줄 1/3차시, 주간 수업 줄
 //   5) 두 번째 가져오기는 바뀐 것 0, V5에서 고친 날은 V4가 바뀌어도 둔다
@@ -90,7 +90,7 @@ try {
   await open(page, '#/day/2027-03-08');
 
   r.section('가져오기 → 결과 표');
-  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'import' }));
+  await page.evaluate(() => window.sp5.openWindow('backup', { tab: 'import' }));
   await page.locator(sel('import-run')).click();
   r.check(await waitFor(page.locator(sel('import-result')), 120000), '결과 표가 나온다');
   const count = async (row, col) => Number(await page.locator(`${sel('import-row', row)} ${sel('import-count', col)}`).textContent());
@@ -152,7 +152,7 @@ try {
   await setDoc(doc(em.db, 'users', uid, 'schedules', '2027-03-10'), { periods: { 1: cell('도덕') } });
   const stamp = async () => Object.fromEntries(Object.entries(await snapDocs(v5Coll('lessonDays'))).map(([id, d]) => [id, d.updatedAt?.toMillis?.() ?? 0]));
   const s1 = await stamp();
-  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'import' }));
+  await page.evaluate(() => window.sp5.openWindow('backup', { tab: 'import' }));
   await page.locator(sel('import-run')).click();
   r.check(await waitFor(async () => (await page.locator(sel('import-run')).textContent()).includes('다시 가져오기') && (await page.locator(sel('import-progress')).count()) === 0, 120000), '두 번째 가져오기 끝');
   await waitFor(page.locator(sel('import-result')), 5000);

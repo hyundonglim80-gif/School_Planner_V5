@@ -4,6 +4,7 @@ import { LINK_VIEWER, LINKER, sameLinkWindow, type LinkWindowParams } from '../f
 import { DAY_NOTES, NOTE_PANEL, sameDayNotes, sameNotePanel, type DayNotesParams, type NotePanelParams } from '../features/notes/open';
 import { LESSON_PANEL, sameLessonPanel, type LessonPanelParams } from '../features/lessons/open';
 import type { WeeklyGuideParams } from '../features/weeklyGuide/WeeklyGuideWindow';
+import type { BackupParams } from '../features/backup/open';
 import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/open';
 import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attendance/open';
 import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
@@ -189,14 +190,15 @@ registerWindow({
   load: () => import('../features/trash/TrashWindow'),
 });
 
-// 구글 캘린더로 보내기 (P8-1) - 단축키 '구글 캘린더로 보내기'(calendar). P8-3에서 '백업 · 가져오기 · 보내기' 창의 '보내기' 탭으로
-registerWindow({
-  id: 'calendar',
-  title: '구글 캘린더로 보내기',
-  icon: '📅',
+// ⋮ 자료 - 💾 백업 · 가져오기 · 보내기 (P8-3) - 단축키 'backup', '구글 캘린더로 보내기'(calendar)는 '보내기' 탭(features/backup/shortcuts)
+registerWindow<BackupParams | undefined>({
+  id: 'backup',
+  title: '백업 · 가져오기 · 보내기',
+  icon: '💾',
+  menu: '자료',
   kind: 'side',
-  help: 'calendar-sync',
-  load: () => import('../features/gcal/CalendarSyncWindow'),
+  help: 'backup',
+  load: () => import('../features/backup/BackupWindow'),
 });
 
 // 머리줄 ⏳ D-Day (P5-3) - 단축키 'dday'

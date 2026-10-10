@@ -1,7 +1,7 @@
 // tools/inspect-import-class.mjs - P7-5 ■3: V4 학급 가져오기를 실제 크롬에서 본다
 // (끝 조건: 학급 화면·출석부·조사표·자리표·알림장·학생 기록이 V4와 같다 · 두 번째는 바뀐 것 0 · V5에서 고친 것은 그대로).
 //   1) 점검용 V4 문서(teacher - V4 seed에는 명렬표가 없다): 2027학년도 6학년 3반 명렬표·출석부·교과 출결·알림장·조사표·자리표·모둠·암기·관찰 문구·'#27060301' 기록
-//   2) 환경설정 '가져오기' → 결과 표(학급 줄 여덟)
+//   2) 백업 창 '가져오기' → 결과 표(학급 줄 여덟)
 //   3) 서버: 학생 sid로 이어졌나 (출결·조사표·자리표·모둠·암기·학생 태그)
 //   4) 화면: 학급 화면 명단 · 출석부 = 지각 · 조사표 값 · 자리표 이름 · 알림장 줄 · 학생 기록(기록·조사표·출결이 그 학생에)
 //   5) 두 번째 가져오기는 바뀐 것 0, V5에서 고친 출석부는 V4가 바뀌어도 둔다
@@ -95,7 +95,7 @@ try {
   await open(page, `#/day/${DAY}`);
 
   r.section('가져오기 → 결과 표');
-  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'import' }));
+  await page.evaluate(() => window.sp5.openWindow('backup', { tab: 'import' }));
   await page.locator(sel('import-run')).click();
   r.check(await waitFor(page.locator(sel('import-result')), 120000), '결과 표가 나온다');
   const count = async (row, col) => Number(await page.locator(`${sel('import-row', row)} ${sel('import-count', col)}`).textContent());
@@ -162,7 +162,7 @@ try {
     return out;
   };
   const s1 = await stamp();
-  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'import' }));
+  await page.evaluate(() => window.sp5.openWindow('backup', { tab: 'import' }));
   await page.locator(sel('import-run')).click();
   r.check(await waitFor(async () => (await page.locator(sel('import-run')).textContent()).includes('다시 가져오기') && (await page.locator(sel('import-progress')).count()) === 0, 120000), '두 번째 가져오기 끝');
   await waitFor(page.locator(sel('import-result')), 5000);

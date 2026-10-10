@@ -1,8 +1,16 @@
-// 파일로 내려주기 (V4 lib/csv.ts downloadCsv) - 진도 예시 CSV·내보내기
+// 파일로 내려주기 (V4 lib/csv.ts downloadCsv) - 진도 예시 CSV·내보내기·백업 JSON
 import { toCsv } from '../domain/csv';
 
 export function downloadCsv(rows: unknown[][], filename: string) {
-  const blob = new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8;' });
+  downloadBlob(new Blob([toCsv(rows)], { type: 'text/csv;charset=utf-8;' }), filename);
+}
+
+/** JSON 파일로 (백업) */
+export function downloadJson(value: unknown, filename: string) {
+  downloadBlob(new Blob([JSON.stringify(value, null, 1)], { type: 'application/json' }), filename);
+}
+
+export function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;

@@ -1,7 +1,7 @@
 // tools/inspect-import-items.mjs - P3-4: V4 일정·기록·메모 가져오기를 실제 크롬에서 본다
 // (끝 조건: V4 seed 수와 맞다 · 두 번째는 바뀐 것 0 · V5에서 고친 것은 그대로).
 //   1) V4 seed(일정 914·기록 178·메모 120) + 점검용 V4 문서(기간 조각·반복 묶음·이월 사슬·링크·공휴일·자동 기록 - 2027-03, seed 밖)를 심는다.
-//   2) 환경설정 '가져오기' → 결과 표(일정·반복 묶음·기록·메모 줄과 학년도별 수)·아래 안내(합친 기간·묶음·뺀 공휴일·자동 기록).
+//   2) 백업 창 '가져오기' → 결과 표(일정·반복 묶음·기록·메모 줄과 학년도별 수)·아래 안내(합친 기간·묶음·뺀 공휴일·자동 기록).
 //   3) 서버의 V5 항목 수 = V4에서 센 수. 라벨이 id로 붙었다. 하루 화면에 기간 '(k/n)'·반복 🔁·이월 '↪'·링크 🔗가 보인다.
 //   4) 두 번째 가져오기는 바뀐 것 0(updatedAt 그대로). V5에서 고친 일정은 V4가 바뀌어도 덮지 않는다(둠).
 //
@@ -97,7 +97,7 @@ try {
   await open(page, '#/day/2027-03-02');
 
   r.section('가져오기 → 결과 표');
-  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'import' }));
+  await page.evaluate(() => window.sp5.openWindow('backup', { tab: 'import' }));
   await page.locator(sel('import-run')).click();
   r.check(await waitFor(page.locator(sel('import-result')), 90000), '결과 표가 나온다');
   const count = async (row, col) => Number(await page.locator(`${sel('import-row', row)} ${sel('import-count', col)}`).textContent());
@@ -145,7 +145,7 @@ try {
     eventList: PLANT['2027-03-02'].eventList.map((e) => (e.id === 'insp_l' ? { ...e, content: '점검 링크 일정 (V4에서 고침)' } : e)),
   });
   const s1 = await stamp();
-  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'import' }));
+  await page.evaluate(() => window.sp5.openWindow('backup', { tab: 'import' }));
   await page.locator(sel('import-run')).click();
   r.check(await waitFor(async () => (await page.locator(sel('import-run')).textContent()).includes('다시 가져오기') && (await page.locator(sel('import-progress')).count()) === 0, 90000), '두 번째 가져오기 끝');
   await waitFor(page.locator(sel('import-result')), 5000);

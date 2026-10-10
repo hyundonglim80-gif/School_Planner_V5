@@ -1,11 +1,11 @@
-// 환경설정 '가져오기' 탭 (P2-4 - P8-3에서 '💾 백업 · 가져오기 · 보내기' 창의 '가져오기' 탭으로 옮긴다, MENU 3장).
+// '💾 백업 · 가져오기 · 보내기' 창 '가져오기' 탭의 V4 자료 가져오기 (P2-4 환경설정 '가져오기' 탭 → P8-3에서 이리로, MENU 2-3).
 // V4 자료 가져오기: 단추 · 진행 칸 · 결과 표(종류마다 새로·바뀜·그대로·둠·지움, 항목은 학년도별). 일은 import/v4/run이 한다.
 import { useEffect } from 'react';
 import { useSession } from '../../data/session';
 import { IMPORT_KINDS, IMPORT_NOTES } from '../../import/v4/record';
 import { loadImportRecord, runImport, useImportRun } from '../../import/v4/run';
 import type { ImportCounts, Outcome } from '../../import/v4/plan';
-import { Section } from './parts';
+import { Section } from '../settings/parts';
 
 const COLUMNS: ReadonlyArray<{ key: Outcome; label: string; title: string }> = [
   { key: 'added', label: '새로', title: 'V5에 새로 들어온 것' },
@@ -68,7 +68,7 @@ function ResultTable({ counts }: { counts: Record<string, ImportCounts> }) {
   );
 }
 
-export default function ImportTab() {
+export default function V4ImportSection() {
   const uid = useSession((s) => s.user?.uid);
   const run = useImportRun();
   useEffect(() => {
@@ -84,7 +84,7 @@ export default function ImportTab() {
       <Section
         id="import-v4"
         title="V4 자료 가져오기"
-        desc="지금까지 쓰던 V4 플래너의 자료를 V5로 옮겨 옵니다. V4는 그대로 두고 읽기만 합니다. 여러 번 가져와도 겹치지 않고, V5에서 고치거나 지운 것은 덮지 않습니다. 지금은 라벨·설정·일정·기록·메모를 가져옵니다(수업·학급은 V5로 옮기는 대로 더해집니다)."
+        desc="지금까지 쓰던 V4 플래너의 자료를 V5로 옮겨 옵니다. V4는 그대로 두고 읽기만 합니다. 여러 번 가져와도 겹치지 않고, V5에서 고치거나 지운 것은 덮지 않습니다. 라벨·설정·일정·기록·메모·수업·진도·학급(명렬표·출석부·조사표·자리표·암기)을 가져옵니다(공유 그룹 자료는 그룹을 옮긴 뒤에)."
       >
         <div className="flex items-center gap-2 flex-wrap">
           <button
