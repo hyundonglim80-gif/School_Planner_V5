@@ -214,6 +214,11 @@ export function missingLabelsOf(labels: Docs<'labels'>, items: Docs<'items'>): L
 // ─────────────── 훅 ───────────────
 
 /** 공간 하나의 컬렉션 하나 (지운 것까지 - 문서 표 그대로). sid를 주지 않으면 지금 공간 */
+/** 지금 화면 store의 문서 표 (훅이 아닌 곳 - 뒤에서 도는 일. 그리는 곳은 useDocs) */
+export function docsNow<C extends SpaceCollection>(coll: C, sid: string): Docs<C> {
+  return (useMirror.getState().colls[collKey(sid, coll)]?.docs ?? EMPTY_DOCS) as Docs<C>;
+}
+
 export function useDocs<C extends SpaceCollection>(coll: C, sid?: string | null): Docs<C> {
   const current = useCurrentSpaceId();
   const key = collKey(sid ?? current ?? '', coll);

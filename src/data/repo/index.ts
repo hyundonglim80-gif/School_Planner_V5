@@ -72,6 +72,41 @@ function toFirestoreDeep(data: Fields): Fields {
 }
 
 /**
+ * 쓰기 지켜보기 (P8-1 구글 캘린더 자동 보내기 - V4 lib/gcalNote). 적기 직전에 ops와 함께 부르고(화면 store가 아직 옛 판일 때),
+ * 돌려준 함수를 끝난 뒤 성공 여부와 함께 부른다. 지켜보는 쪽은 가볍게 - 쓰기를 늦추지 않게 오래 걸리는 일은 뒤로 미룬다.
+ */
+export type WriteObserver = (ops: readonly WriteOp[]) => ((ok: boolean) => void) | void;
+const observers = new Set<WriteObserver>();
+
+export function observeWrites(fn: WriteObserver): () => void {
+  observers.add(fn);
+  return () => {
+    observers.delete(fn);
+  };
+}
+
+function noticeWrites(ops: readonly WriteOp[]): (ok: boolean) => void {
+  const after: Array<(ok: boolean) => void> = [];
+  for (const fn of observers) {
+    try {
+      const done = fn(ops);
+      if (done) after.push(done);
+    } catch (e) {
+      console.warn('[repo] 쓰기 지켜보기 실패', e);
+    }
+  }
+  return (ok) => {
+    for (const done of after) {
+      try {
+        done(ok);
+      } catch (e) {
+        console.warn('[repo] 쓰기 지켜보기 실패', e);
+      }
+    }
+  };
+}
+
+/**
  * 안내 없이 적는다 - 실패하면 Firestore 오류를 그대로 던진다.
  * 사용자가 누른 저장이 아니라 뒤에서 맞추는 것(설정 동기화)만 쓴다. 나머지는 아래 도우미로.
  */
@@ -80,6 +115,7 @@ export async function writeOps(ops: WriteOp[]): Promise<void> {
   const uid = auth.currentUser?.uid;
   if (!uid) throw Object.assign(new Error('로그인하지 않아 적을 수 없다'), { code: 'unauthenticated' });
   const ctx = { uid, now: Date.now() };
+  const noticed = observers.size ? noticeWrites(ops) : null;
   const local = beginLocalWrite(ops, ctx);
   try {
     for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
@@ -96,9 +132,11 @@ export async function writeOps(ops: WriteOp[]): Promise<void> {
     }
   } catch (e) {
     endLocalWrite(local, false);
+    noticed?.(false);
     throw e;
   }
   endLocalWrite(local, true);
+  noticed?.(true);
 }
 
 /** 여럿을 한 묶음으로 적고 되돌리는 쓰기를 돌려준다. 실패는 안내하고 던진다 */

@@ -8,6 +8,8 @@ vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 vi.mock('../data/settingsSync', () => ({ settingsPort: () => ({}), startSettingsSync: () => () => {} }));
 const useMirrorSync = vi.hoisted(() => vi.fn());
 vi.mock('../data/mirror/sync', () => ({ useMirrorSync }));
+// 구글 캘린더 큐는 Firestore를 바로 구독한다 (P8-1)
+vi.mock('../data/gcalQueue', () => ({ watchGcalQueue: () => () => {} }));
 
 beforeEach(() => useSession.setState({ loading: true, user: null }));
 

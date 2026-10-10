@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P8-1 구글 캘린더** (클라우드면 1-7을 먼저).
+**P8-2 서버 푸시 알림 (함수 v5)** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -165,8 +165,8 @@
 | P7-4 | 조사표·모아 보기·학생 기록 | 큼 | 높음 | 끝 (2026-10-09) |
 | P7-5 | 암기 + 가져오기: 학급 | 중간 | 높음 | 끝 (2026-10-09) |
 | **P8 연동** | | | | |
-| P8-1 | 구글 캘린더 | 중간 | 높음 | **다음** |
-| P8-2 | 서버 푸시 알림(함수 v5) | 중간 | 높음 | |
+| P8-1 | 구글 캘린더 | 중간 | 높음 | 끝 (2026-10-10) |
+| P8-2 | 서버 푸시 알림(함수 v5) | 중간 | 높음 | **다음** |
 | P8-3 | 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱 | 큼 | 중간 | |
 | P8-4 | 공유 그룹 + 그룹 가져오기 | 중간 | 높음 | |
 | **P9 마무리·넘어가기** | | | | |
@@ -214,6 +214,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-10 | 클라우드(claude.ai/code) | P8-1 | P8-1 세션 끝 정리 | 단위 2094 · inspect-gcal 35(구글 캘린더 API 흉내) · events 통과 · P7-5 합침 뒤 같은 대화에서 이어서 · 같은 브랜치 → PR → Claude가 합침 · 👤 실제 구글 캘린더 확인 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-5 | P7-5 세션 끝 정리 (P7 단계 끝) | 단위 2062 · 자료 층(에뮬레이터) 27(import.emu 학급 묶음) · inspect-photos 56(■1 암기 9) · inspect-import-class 36 · P7 점검 모두 + 가져오기 점검(labels·items·lessons) 통과(attendance는 묶음에서 한 번 클릭 30초로 멈춤 - 에뮬레이터가 시간 한도로 꺼지기 직전, 다시 켜고 seed한 뒤 따로·같은 차례로 두 번 통과) · 사용량 한도로 멈췄다가 이어서 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 · 👤 실제 계정으로 학급 가져와 보기 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-4 | P7-4 세션 끝 정리 | 단위 2019 · inspect-evaluations 38 · inspect-student-record 29(모아 보기·학생 기록·과정별 탭 - teacher·teacher3) · seating·lessons·notes·week·month-year·search-trash·class·photos·attendance 통과 · 같은 대화에서 P7-3 합침 뒤 이어서 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-3 | P7-3 세션 끝 정리 | 단위 1961 · inspect-seating 69(자리표·학생 칸·뽑기·모둠·여는 길·휴지통 - teacher·teacher3) · class·lessons·attendance·search-trash 통과 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 크게 보기 ESC가 자리표 창까지 닫던 것을 고침 · 같은 브랜치 → PR → Claude가 합침 |
@@ -518,6 +519,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 지운 표시가 없는 문서(출결·교과 출결·알림장·학급 허브·암기)는 V4에서 없어지면 칸을 비운다(수업 칸과 같다). 조사표·자리표·학급은 지운 표시(휴지통).
   - 출결은 학생 이름을 옮기지 않는다(명렬표에서 읽는다). 조사표 명단 이름 끝의 '(전출/삭제됨)'은 떼고 out. 암기 성적은 V4가 이름으로 이었다 → 그 학급 명렬표의 같은 이름 학생(없으면 버리고 수를 적는다).
   - 기록·메모의 `#26040305` → `studentIds`는 같은 실행의 명렬표로 셈한다(글은 그대로). 그룹 공간의 알림장·조사표는 P8-4(그룹 가져오기).
+- **P8-1 구글 캘린더**(권장안으로 고름 - V4 그대로, 바뀐 것만):
+  - 자동 보내기는 **항목마다** 맞춘다(V4는 날짜 문서마다 - V5는 항목이 문서 하나). 구글 일정에 `sp_item`(V5 id)을 더 단다 - 옮기거나 지운 것을 그 표시로 찾는다.
+    sp_id는 V4와 같게(가져온 것은 V4 id) - V4 손으로 보내기·V3와 겹치지 않는다. 기간 일정은 보이는 날마다 하나('(k/n)'·그날 완료 ✅ - V4 조각과 같은 모양).
+  - 이월 중인 일정은 구글에서도 오늘로 옮긴다(V4는 옮겨 썼으니 저절로) - 앱을 열 때·자정에 이 기기에서 하루 한 번 큐에 넣는다(`sp5-gcal-carried`).
+  - 큐는 기기 사본에 넣지 않고 바로 구독한다(보낸 것을 지우는데 사본은 영구 지우기를 믿지 않는다). 가져오기가 쓴 것(src를 적는 쓰기)은 큐에 넣지 않는다 - V4가 이미 보냈다.
+  - V4 `v4_gcal.used`(일정에서 켠 적이 있다)는 없앴다 - 쓰기마다 그 항목이 쓰기 전·뒤에 '구글 캘린더'였나를 본다(끈 것·지운 것도 그래서 잡힌다).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -1049,10 +1056,16 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 ### P8-1. 구글 캘린더
 **시작 조건**: P7-5 끝.
 **먼저 읽을 것**: V4 설명서 `calendar-sync`, V4 `lib/gcalAuto.ts`·`gcalPlan.ts`·`gcalNote.ts`·`calendarSync.ts`·`calendarSyncTask.ts`·`components/CalendarSyncModal.tsx`, V4 ARCHITECTURE 5장 'U11' 단락.
-- [ ] ■1 자동 보내기(항목 큐 `gcalQueue/{itemId}`, 보내는 날 = 이월·기간·반복을 계산한 날, 끈 것·지운 것은 구글에서 지움, **가져온 항목은 `src.id`로 V4가 보낸 구글 일정과 짝** - 두 벌이 되지 않게),
+- [x] ■1 자동 보내기(항목 큐 `gcalQueue/{itemId}`, 보내는 날 = 이월·기간·반복을 계산한 날, 끈 것·지운 것은 구글에서 지움, **가져온 항목은 `src.id`로 V4가 보낸 구글 일정과 짝** - 두 벌이 되지 않게),
   '📅 못 보낸 일정 N', 저장 때 로그인 묻기.
-- [ ] ■2 손으로 보내기(나중에 백업 · 가져오기 · 보내기 창의 '보내기' 탭 - 지금은 단독 창으로 등록).
-- [ ] ■3 크롬 점검(구글 API 흉내) + 👤 실제 구글 캘린더 확인.
+  → 순수 `domain/gcal.ts`(V4 calendarSync·gcalPlan 글·짝 + `gcalOn`·`itemPayloads`·`planItemSync`) + 테스트 13 · 저장 도우미 `observeWrites`(쓰기 전·뒤) · `data/gcalQueue.ts`(큐 바로 구독·쓰기 - 사본에 넣지 않는다) ·
+  `data/google/calendar.ts` · `features/gcal/auto.ts`(`useGcalAuto` Shell - 쓰기 → 큐 1.2초 → 보내기, 이월은 이 기기에서 하루 한 번 오늘로, 라벨 끄면 보낸 것을 맞춤, `ensureGcalLogin`) ·
+  머리줄 `GcalPendingButton` `[data-gcal-pending=N]` · 일정 칸 저장 뒤 로그인 묻기. 점검 `tools/inspect-gcal.mjs` 28(구글 API 흉내).
+- [x] ■2 손으로 보내기(나중에 백업 · 가져오기 · 보내기 창의 '보내기' 탭 - 지금은 단독 창으로 등록).
+  → 창 `calendar`(단축키 '구글 캘린더로 보내기') `features/gcal/CalendarSyncWindow.tsx`(`[data-calendar-sync-window|cal-start|cal-end|cal-scope-range|cal-include|cal-mode|cal-send|cal-progress|cal-result|gcal-auto-hint]`) ·
+  `manual.ts`(창 밖에서 돈다 - store `useCalendarSync`, `rangeForScope`) · 순수 `manualPayloads`·`planManualSync`(자동 표시는 남긴다). 오늘 칸에는 이월 중인 일정도(교체가 지우지 않게).
+- [x] ■3 크롬 점검(구글 API 흉내) + 👤 실제 구글 캘린더 확인.
+  → `tools/inspect-gcal.mjs` 35(만들기·완료·옮기기·끄기·다시 켜기·지우기·가져온 일정 짝·기간 (k/n)·이월 = 오늘·토큰 없을 때 묻기·📅 못 보낸 일정·손으로 보내기 병합/교체·라벨 끄기) · events 통과. 👤 실제 구글 캘린더 확인은 부탁.
 
 ### P8-2. 서버 푸시 알림 (함수 v5)
 **시작 조건**: P8-1 끝.
