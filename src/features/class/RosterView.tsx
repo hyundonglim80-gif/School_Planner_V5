@@ -5,7 +5,8 @@
 //   📷 사진(켤 때만 드라이브를 부른다 - features/photos): 목록의 사진 칸·타일 보기·끌어다 놓기·여러 장 업로드·사진 폴더.
 //   암기 탭(P7-5) = MemorizeTab. 아직 없는 것: 📊 시트 동기화·명렬표 시트(P8-3 백업 창과 함께).
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type KeyboardEvent } from 'react';
-import { showErrorToast, showToast } from '../../app/toast';
+import { showErrorToast, showToast, ShownError } from '../../app/toast';
+import { mergeSheetRoster } from '../../domain/sheets';
 import { newId } from '../../data/id';
 import { decodeTextBytes, parseCsv } from '../../domain/csv';
 import { todayStr } from '../../domain/dateUtils';
@@ -39,6 +40,7 @@ import { saveRoster, useClasses, type ClassDraft } from './classes';
 import { draftActions, draftsOf, isDirty, useRosterDraft } from './rosterDraft';
 import { useClassView, type RosterTab } from './view';
 import MemorizeTab from './MemorizeTab';
+import { readRosterSheet } from './rosterSheet';
 import { quizStudentsOf } from '../quiz/usePhotoQuiz';
 
 const TABS: Array<{ id: RosterTab; label: string }> = [
@@ -157,6 +159,38 @@ export default function RosterView() {
       showToast('✅ 명단을 바꿨습니다. 💾 저장을 눌러야 반영됩니다.');
     } catch (err) {
       showErrorToast('CSV를 읽지 못했습니다.', err);
+    }
+  };
+  // ── 📊 시트 (V4 '구글 시트에서 불러오기') ──
+  const [sheetBusy, setSheetBusy] = useState(false);
+  const fromSheet = async () => {
+    if (!sid || sheetBusy) return;
+    if (!cur.year || !cur.grade || !cur.num) return showErrorToast('불러올 학급의 학년도·학년·반을 먼저 정해 주세요.');
+    setSheetBusy(true);
+    try {
+      const res = await readRosterSheet(sid, classIdOf(cur), (tab) =>
+        window.confirm(`[${tab}] 탭이 시트에 없습니다.\n머리말(번호·이름·성별)만 적은 탭을 만들까요? 시트에 명단을 적은 뒤 다시 눌러 주세요.`),
+      );
+      if (res.kind === 'declined') return;
+      if (res.kind !== 'students') {
+        showToast(
+          res.kind === 'created'
+            ? `✅ [${res.tab}] 탭을 만들었습니다. 시트에 번호·이름을 적은 뒤 다시 '📊 시트'를 눌러 주세요.`
+            : `[${res.tab}] 탭에 학생이 없습니다. 번호·이름(A·B열)을 적어 주세요.`,
+          6000,
+        );
+        window.open(res.url, '_blank', 'noopener');
+        return;
+      }
+      const merged = mergeSheetRoster(res.students, students, newId);
+      const leavers = merged.keptLeavers > 0 ? `\n시트에 없는 전출 학생 ${merged.keptLeavers}명은 그대로 둡니다.` : '';
+      if (!window.confirm(`[${res.tab}] 시트에서 ${res.students.length}명을 찾았습니다. ${describeClass(cur)} 명단을 이것으로 바꿀까요?${leavers}`)) return;
+      act.setStudents(merged.students);
+      showToast('✅ 명단을 바꿨습니다. 💾 저장을 눌러야 반영됩니다.');
+    } catch (err) {
+      if (!(err instanceof ShownError)) showErrorToast('구글 시트에서 명단을 불러오지 못했습니다.', err);
+    } finally {
+      setSheetBusy(false);
     }
   };
   const downloadAll = () => {
@@ -351,6 +385,16 @@ export default function RosterView() {
                   </button>
                   <button type="button" data-roster-csv-down onClick={downloadClass} title="지금 고른 학급만 CSV로 내려받기" className="px-2 py-0.5 bg-white text-slate-700 border border-slate-300 rounded text-xs font-bold hover:bg-slate-50 cursor-pointer">
                     ↓ CSV
+                  </button>
+                  <button
+                    type="button"
+                    data-roster-sheet
+                    disabled={sheetBusy}
+                    onClick={() => void fromSheet()}
+                    title="구글 시트(V5 시트 파일)의 [조사표_학년도-학년-반] 탭에서 이 학급 명단을 불러옵니다"
+                    className="px-2 py-0.5 bg-white text-slate-700 border border-slate-300 rounded text-xs font-bold hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                  >
+                    {sheetBusy ? '…' : '📊 시트'}
                   </button>
                 </div>
                 <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-lg px-1.5 py-1">

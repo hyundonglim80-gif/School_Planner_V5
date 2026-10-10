@@ -8,6 +8,8 @@
 //
 // V5는 **V5만의 시트 파일**에 쓴다(V4·V3가 함께 쓰는 시트를 덮지 않는다 - PLAN 5장 P8-3). 되읽기는 고치고 더하기만 - 시트에서 지운 줄은 앱에서 지우지 않는다.
 
+import { textToGender, withSids, type CsvStudent, type RosterStudent } from './roster';
+
 export const SHEET_SCHEDULE = '일정기록';
 export const SHEET_MEMO = '메모';
 export const EVAL_SHEET_PREFIX = '조사표_';
@@ -404,6 +406,46 @@ export function parseMemoRows(rows: unknown[][]): Array<Omit<SheetMemo, 'url' | 
     });
   }
   return out;
+}
+
+// ── 명렬표 시트 (V4 RosterModal '구글 시트에서 불러오기') - 학급 탭 '조사표_학급'의 '번호 | 이름 | 성별 | (특이사항…)' 줄 ──
+
+export const ROSTER_SHEET_HEADER = ['번호', '이름', '성별'];
+
+/** 학급 탭 → 학생 (머리말 '번호'(또는 '순번') 줄 아래, 번호가 숫자이고 이름이 있는 줄만. 넷째 칸부터는 특이사항) */
+export function parseRosterSheet(rows: unknown[][]): CsvStudent[] {
+  const cell = (r: unknown[], c: number) => String(r[c] ?? '').trim();
+  const header = rows.findIndex((r) => cell(r, 0) === '번호' || cell(r, 0) === '순번');
+  const out: CsvStudent[] = [];
+  for (const row of rows.slice(header + 1)) {
+    const num = parseInt(cell(row, 0), 10);
+    const name = cell(row, 1);
+    if (isNaN(num) || !name) continue;
+    const note = row
+      .slice(3)
+      .map((v) => String(v ?? '').trim())
+      .filter(Boolean)
+      .join(' ');
+    out.push({ num, name, gender: textToGender(cell(row, 2)), status: 'active', ...(note ? { note } : {}) });
+  }
+  return out;
+}
+
+/**
+ * 시트 명단 → 이 학급 명단. 시트에는 번호·이름·성별뿐이라 전출 표시와 특이사항은 앱 것을 잇고(같은 번호·이름),
+ * 시트에서 빠진 전출 학생은 남긴다(지난 조사표가 그 학생을 가리킨다 - V4 그대로). 학생 id는 이름으로 잇는다(withSids).
+ */
+export function mergeSheetRoster(incoming: readonly CsvStudent[], current: readonly RosterStudent[], newSid: () => string): { students: RosterStudent[]; keptLeavers: number } {
+  const key = (s: { num: number; name: string }) => `${s.num} ${s.name.trim()}`;
+  const prev = new Map(current.map((s) => [key(s), s]));
+  const fromSheet = new Set(incoming.map(key));
+  const keptLeavers = current.filter((s) => s.status === 'out' && !fromSheet.has(key(s)));
+  const merged = incoming.map((s) => {
+    const old = prev.get(key(s));
+    return old ? { ...s, status: old.status, ...(old.outDate ? { outDate: old.outDate } : {}), note: s.note || old.note || '' } : s;
+  });
+  const withIds = withSids(merged, current.filter((s) => !keptLeavers.includes(s)), newSid);
+  return { students: [...withIds, ...keptLeavers].sort((a, b) => a.num - b.num), keptLeavers: keptLeavers.length };
 }
 
 /** 시트 주소/id → id */

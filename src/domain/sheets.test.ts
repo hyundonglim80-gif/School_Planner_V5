@@ -3,6 +3,8 @@ import {
   buildEvalRows,
   buildMemoRows,
   buildScheduleRows,
+  mergeSheetRoster,
+  parseRosterSheet,
   evalUpdatesFor,
   formatItemLine,
   formatPeriodCell,
@@ -151,6 +153,42 @@ describe("'조사표_학급' 시트", () => {
     one[9][1] = '나나';
     one[9][3] = '하';
     expect(evalUpdatesFor(ev(), parseEvalRows(one))).toEqual({ s2: { indiv: '하' } });
+  });
+});
+
+describe('명렬표 시트', () => {
+  it('머리말 아래 번호·이름이 있는 줄만, 성별 글자 · 넷째 칸부터 특이사항', () => {
+    const rows = [['상위 항목(조사표 제목)', '', ''], ['번호', '이름', '성별', '메모'], ['1', '가', '남'], ['2', ' 나 ', 'F', '알레르기', '안경'], ['x', '다'], ['3', '']];
+    expect(parseRosterSheet(rows)).toEqual([
+      { num: 1, name: '가', gender: 'M', status: 'active' },
+      { num: 2, name: '나', gender: 'F', status: 'active', note: '알레르기 안경' },
+    ]);
+    expect(parseRosterSheet([['1', '가']])).toEqual([{ num: 1, name: '가', gender: '', status: 'active' }]);
+  });
+  it('전출 표시·특이사항·학생 id는 잇고, 시트에서 빠진 전출 학생은 남긴다', () => {
+    const current = [
+      { sid: 'a', num: 1, name: '가', status: 'active' as const, note: '앱 메모' },
+      { sid: 'b', num: 2, name: '나', status: 'out' as const, outDate: '2027-04-01' },
+      { sid: 'c', num: 3, name: '다', status: 'out' as const },
+    ];
+    let n = 0;
+    const { students, keptLeavers } = mergeSheetRoster(
+      [
+        { num: 1, name: '가', gender: 'M', status: 'active' },
+        { num: 2, name: '나', gender: '', status: 'active' },
+        { num: 4, name: '라', gender: '', status: 'active' },
+      ],
+      current,
+      () => `new${++n}`,
+    );
+    expect(keptLeavers).toBe(1);
+    expect(students.map((s) => [s.sid, s.num, s.status, s.note ?? ''])).toEqual([
+      ['a', 1, 'active', '앱 메모'],
+      ['b', 2, 'out', ''],
+      ['c', 3, 'out', ''],
+      ['new1', 4, 'active', ''],
+    ]);
+    expect(students[1].outDate).toBe('2027-04-01');
   });
 });
 

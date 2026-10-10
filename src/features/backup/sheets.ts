@@ -65,6 +65,15 @@ async function writeSheetRecord(sid: string, spreadsheetId: string, before: stri
   });
 }
 
+/** 이 공간의 시트 파일 (없거나 지웠으면 새로 만들어 적는다) */
+export async function ensureSpreadsheet(token: string, sid: string): Promise<string> {
+  const before = await readSheetRecord(sid);
+  if (before && (await spreadsheetExists(token, before))) return before;
+  const id = await createSpreadsheet(token, SHEETS_TITLE);
+  await writeSheetRecord(sid, id, before);
+  return id;
+}
+
 const live = <T extends { deletedAt?: unknown }>(d: T | undefined): d is T => !!d && !d.deletedAt;
 
 function datesOf(start: string, end: string): string[] {
@@ -112,13 +121,7 @@ export interface SheetsExportResult {
 export function exportToSheets(d: SheetsData, range: { start: string; end: string }, include: SheetsInclude, onStep?: (msg: string) => void): Promise<SheetsExportResult> {
   return withGoogleToken('구글 시트로 보내려면 구글 로그인이 필요합니다.', async (token) => {
     onStep?.('시트 파일을 확인하는 중…');
-    const before = await readSheetRecord(d.sid);
-    let id = before;
-    if (id && !(await spreadsheetExists(token, id))) id = null;
-    if (!id) {
-      id = await createSpreadsheet(token, SHEETS_TITLE);
-      await writeSheetRecord(d.sid, id, before);
-    }
+    const id = await ensureSpreadsheet(token, d.sid);
     const titles = await listSheetTitles(token, id);
     const evTree = labelTreeOf(d.labels, 'event');
     const noteTree = labelTreeOf(d.labels, 'note');

@@ -1,6 +1,7 @@
 // tools/inspect-sheets.mjs - P8-3 ■4: 백업 창 '보내기' 탭의 📊 구글 시트를 실제 크롬에서 본다(시트 API는 page.route 흉내).
 //   보내기 = V5만의 시트 파일(공간 settings/sheets) · '일정기록'(줄·메타데이터 id·교시 칸) · '조사표_학급' 탭 · '메모' 탭
 //   되읽기 = 고친 글·완료·라벨(새 라벨) · 손으로 더한 줄은 새로 · 교시 칸 = 수업 칸 · 조사표 점수 · 메모 · 시트에서 지운 줄은 앱에 남는다 · 두 번 되읽어도 그대로
+//   명렬표 '📊 시트' = 학급 탭의 번호·이름·성별 → 명단(학생 id·전출 잇기, 💾 저장 전까지 고치는 중) · 탭이 없으면 머리말 탭을 만든다
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-sheets.mjs
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -152,6 +153,32 @@ try {
   await page.locator(sel('sheets-import')).click();
   r.check(await waitFor(async () => ((await page.locator(sel('sheets-result')).textContent()) ?? '').includes('고친 것 0건 · 새로 0건'), 20000), '두 번 되읽어도 그대로 (고친 것 0 · 새로 0)');
   r.check((await madeItems()).filter((d) => d.data().text === '시트점검 새 일정').length === 1, '손으로 더한 줄이 두 번 들어가지 않는다');
+
+  r.section('명렬표 📊 시트');
+  // 학급 탭 = 조사표 탭과 같은 탭 - 아래에 학생 하나를 더 적고 성별을 고친다
+  evTab.push(['3', '다', '남', '새로 전입']);
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.goto(page.url().replace(/#.*$/, '#/class'));
+  await page.locator(sel('class-mode', 'roster')).click();
+  await page.locator(sel('roster')).waitFor({ timeout: 10000 });
+  if ((await page.locator(sel('roster-edit')).getAttribute('aria-pressed')) !== 'true') await page.locator(sel('roster-edit')).click();
+  dialogs.seen.length = 0;
+  await page.locator(sel('roster-sheet')).click();
+  r.check(await waitFor(() => dialogs.seen.some((m) => m.includes('3명을 찾았습니다')), 15000), `학급 탭에서 3명을 찾아 묻는다 (${dialogs.seen.at(-1) ?? ''})`);
+  const names = async () => page.locator('[data-roster-row] [data-student-field="name"]').evaluateAll((els) => els.map((e) => e.value));
+  r.check(await waitFor(async () => (await names()).join() === '가,나,다', 8000), '명단 = 시트 (가·나·다)');
+  r.check(await waitFor(page.locator(sel('roster-dirty')), 5000), '💾 저장 전까지 고치는 중');
+  await page.locator(sel('roster-save')).click();
+  const cls = await serverUntil(async () => (await getDoc(ref('classes', CLS))).data(), (x) => x?.students?.length === 3);
+  r.check(cls?.students?.[0]?.sid === 's1' && cls?.students?.[1]?.sid === 's2', '같은 학생은 학생 id를 잇는다 (기록이 따라간다)');
+  r.check(cls?.students?.[2]?.name === '다' && cls?.students?.[2]?.gender === 'M' && cls?.students?.[2]?.note === '새로 전입', '새 학생 · 성별 · 넷째 칸 = 특이사항');
+  // 탭이 없는 학급
+  sh.tabs.delete(`조사표_${CLS}`);
+  dialogs.seen.length = 0;
+  const popup = ctx.waitForEvent('page', { timeout: 15000 }).catch(() => null);
+  await page.locator(sel('roster-sheet')).click();
+  r.check(await waitFor(() => sh.tabs.get(`조사표_${CLS}`)?.[0]?.join() === '번호,이름,성별', 15000), '탭이 없으면 묻고 머리말 탭을 만든다');
+  r.check(dialogs.seen.some((m) => m.includes('탭이 시트에 없습니다')) && !!(await popup), '만들고 시트를 연다');
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
