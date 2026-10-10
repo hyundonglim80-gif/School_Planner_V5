@@ -4,7 +4,8 @@
 // - 한 번에 하나만 돈다. 적기는 500개씩 묶어(Firestore 한도) 진행 칸을 채운다 - 끊기면 다시 누르면 된다(결정적 id·지문이라 겹치지 않는다).
 // - 되돌리기(Ctrl+Z)에 넣지 않는다: 수백 개를 한꺼번에 지운 표시로 되돌리면 더 위험하다. 다시 가져오기가 바뀐 것만 고친다.
 // - 라벨이 먼저(항목이 라벨을 id로 가리킨다), 그다음 반복 묶음·일정·기록·메모(P3-4 - 같은 실행의 라벨 짝 표로),
-//   시간표·수업 칸·진도(P6-4 - 수업 칸의 링크는 같은 실행의 항목 짝 표로, 수업 없는 날은 가져올 방학·일정으로), 기록은 맨 끝(다 적은 뒤).
+//   시간표·수업 칸·진도(P6-4 - 수업 칸의 링크는 같은 실행의 항목 짝 표로, 수업 없는 날은 가져올 방학·일정으로),
+//   학급(P7-5 - 명렬표·출결·알림장·조사표·자리표·모둠·암기, 기록·메모의 학생 태그는 같은 실행의 명렬표로), 기록은 맨 끝(다 적은 뒤).
 import { create } from 'zustand';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { batch, BATCH_LIMIT, writeOp } from '../../data/repo';
@@ -16,10 +17,11 @@ import { todayStr } from '../../domain/dateUtils';
 import { classOffReason } from '../../domain/lessons';
 import { onPeriodDay } from '../../domain/period';
 import { readTerms } from '../../domain/semester';
+import { planClasses } from './classes';
 import { planItems, type ItemsPlan } from './items';
 import { eventLabelSources, type V4LabelDocs } from './labels';
 import { planLessons } from './lessons';
-import { hasV4Data, readSpaceDoc, readSpaceDocs, readV4ItemDocs, readV4LessonDocs, readV4SettingsDocs } from './read';
+import { hasV4Data, readSpaceDoc, readSpaceDocs, readV4ClassDocs, readV4ItemDocs, readV4LessonDocs, readV4SettingsDocs } from './read';
 import { readRecord, recordData, recordPath, type ImportRecord } from './record';
 import { planSettings, termsFromV4 } from './settings';
 
@@ -62,9 +64,10 @@ export async function runImport(uid: string): Promise<boolean> {
   set({ state: 'running', step: 'V4 자료를 읽는 중…', done: 0, total: 0, counts: undefined, offer: false });
   try {
     const v4 = await readV4SettingsDocs(uid);
-    const [v4Items, v4Lessons, labels, items, series, timetables, lessonDays, progress, pc, mobile, common, recDoc] = await Promise.all([
+    const [v4Items, v4Lessons, v4Classes, labels, items, series, timetables, lessonDays, progress, pc, mobile, common, recDoc] = await Promise.all([
       readV4ItemDocs(uid),
       readV4LessonDocs(uid, v4.prefs.timetable),
+      readV4ClassDocs(uid),
       readSpaceDocs(sid, 'labels'),
       readSpaceDocs(sid, 'items'),
       readSpaceDocs(sid, 'series'),
@@ -76,17 +79,29 @@ export async function runImport(uid: string): Promise<boolean> {
       readSpaceDoc(sid, 'settings', 'common'),
       readSpaceDoc(sid, 'settings', 'import'),
     ]);
+    const [classes, attendance, subjectAttendance, notices, evaluations, seating, classHub, quiz] = await Promise.all([
+      readSpaceDocs(sid, 'classes'),
+      readSpaceDocs(sid, 'attendance'),
+      readSpaceDocs(sid, 'subjectAttendance'),
+      readSpaceDocs(sid, 'notices'),
+      readSpaceDocs(sid, 'evaluations'),
+      readSpaceDocs(sid, 'seating'),
+      readSpaceDocs(sid, 'classHub'),
+      readSpaceDocs(sid, 'quiz'),
+    ]);
     const record = readRecord(recDoc);
 
     set({ step: 'V5에 있는 것과 맞춰 보는 중…' });
     const lp = planLabels(sid, v4.labels, labels);
     const sp = planSettings(sid, v4.prefs, { pc, mobile, common }, record.settings);
-    const ip = planItems(sid, v4Items, v4.labels, lp.labelMap, { items, series });
+    const today = todayStr();
+    const cp = planClasses(sid, v4Classes, { classes, attendance, subjectAttendance, notices, evaluations, seating, classHub, quiz }, { today });
+    const ip = planItems(sid, v4Items, v4.labels, lp.labelMap, { items, series }, { studentKeysOf: cp.studentKeysOf });
     const offDay = lessonOffDay(ip, v4.labels, lp.labelMap.event, { ...(readTerms(common?.terms) ?? {}), ...(readTerms(termsFromV4(v4.prefs.timetable)) ?? {}) });
-    const lsp = planLessons(sid, v4Lessons, { timetables, lessonDays, progress }, { offDay, linkOf: ip.linkOf, today: todayStr() });
-    const ops = [...lp.ops, ...sp.ops, ...ip.ops, ...lsp.ops];
-    const counts: Record<string, ImportCounts> = { 'labels.event': lp.counts.event, 'labels.note': lp.counts.note, settings: sp.counts, ...ip.counts, ...lsp.counts };
-    const notes = Object.fromEntries(Object.entries(ip.notes).filter(([, n]) => n > 0));
+    const lsp = planLessons(sid, v4Lessons, { timetables, lessonDays, progress }, { offDay, linkOf: ip.linkOf, today });
+    const ops = [...lp.ops, ...sp.ops, ...ip.ops, ...lsp.ops, ...cp.ops];
+    const counts: Record<string, ImportCounts> = { 'labels.event': lp.counts.event, 'labels.note': lp.counts.note, settings: sp.counts, ...ip.counts, ...lsp.counts, ...cp.counts };
+    const notes = Object.fromEntries(Object.entries({ ...ip.notes, ...cp.notes }).filter(([, n]) => n > 0));
 
     set({ step: '적는 중…', total: ops.length + 1 });
     const fail = 'V4 자료를 다 가져오지 못했습니다. 네트워크를 확인하고 다시 가져와 주세요(가져온 것은 겹치지 않습니다).';

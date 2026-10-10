@@ -223,6 +223,37 @@ try {
   r.check(await countIs(3), "'구글 연결하고 사진 불러오기' = 그때 불러온다");
   r.check(errors.length === 0, '화면 오류 없음', errors.join(' | '));
 
+  r.section('암기 (P7-5)');
+  undo.add(() => deleteDoc(ref('quiz', CLASS_ID)));
+  await page.locator(sel('roster-tab', 'memorize')).click();
+  const stage = page.locator('[data-quiz-stage]');
+  r.check(await waitFor(stage, 8000), '암기 = 사진 있는 학생으로 판');
+  await page.locator('[data-quiz-count]').fill('3');
+  await page.locator('[data-quiz-photo]').click();
+  r.check(await waitFor(async () => (await page.locator('[data-quiz-progress]').getAttribute('data-quiz-progress')) === '0/3'), '출제 수 3 = 0 / 3');
+  const shotBefore = await page.locator('[data-quiz-photo]').boundingBox();
+  await page.locator('[data-quiz-no]').click();
+  r.check((await stage.getAttribute('data-quiz-stage')) === 'answer' && (await page.locator('[data-quiz-name]').isVisible()), '모르겠어요 = 이름이 드러난다');
+  const shotAfter = await page.locator('[data-quiz-photo]').boundingBox();
+  r.check(!!shotBefore && !!shotAfter && Math.abs(shotBefore.x - shotAfter.x) < 1 && Math.abs(shotBefore.width - shotAfter.width) < 1, '문제·정답의 사진 자리·크기가 같다');
+  await page.keyboard.press('ArrowRight');
+  r.check(await waitFor(async () => (await stage.getAttribute('data-quiz-stage')) === 'question'), '→ = 다음');
+  await page.keyboard.press('ArrowRight');
+  r.check(await waitFor(async () => (await page.locator('[data-quiz-tally]').getAttribute('data-quiz-tally')) === '1|1'), '→ = 알아요 (○ 1 ✕ 1)');
+  await page.keyboard.press('Backspace');
+  r.check(await waitFor(async () => (await page.locator('[data-quiz-tally]').getAttribute('data-quiz-tally')) === '0|1' && (await stage.getAttribute('data-quiz-stage')) === 'question'), 'Backspace = 되돌리기');
+  await page.keyboard.press('ArrowRight');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('Enter');
+  r.check(await waitFor(page.locator('[data-quiz-finished]')), '세 장 = 마침 (한 판 더)');
+  const quizDoc = async () => (await getDoc(ref('quiz', CLASS_ID))).data();
+  const qd = await serverUntil(quizDoc, (d) => Object.keys(d?.records ?? {}).length >= 2);
+  const recs = Object.values(qd?.records ?? {});
+  r.check(recs.reduce((n, x) => n + x.o, 0) === 1 && recs.reduce((n, x) => n + x.x, 0) === 2 && Object.keys(qd?.records ?? {}).every((k) => ['p1', 'p2', 'p3'].includes(k)), '성적 = quiz/학급 문서, 학생 sid마다 (○1 ✕2)');
+  await page.locator('[data-quiz-count]').fill('0');
+  await page.locator(sel('roster-tab', 'manage')).click();
+
   r.section('학급 화면 이름 / 📷 사진');
   await page.locator(sel('class-mode', 'hub')).click();
   await page.locator('[data-class-students]').waitFor({ timeout: 8000 });

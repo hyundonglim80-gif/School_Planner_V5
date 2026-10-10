@@ -36,7 +36,7 @@ import {
 } from './store';
 
 /** 사본에 두는 컬렉션 - 그 기능을 옮기는 세션이 더한다(수업 P6-1, 학급 P7-1 …). 개인·그룹 공간 같다 */
-export const MIRRORED: readonly SpaceCollection[] = ['items', 'labels', 'series', 'timetables', 'lessonDays', 'progress', 'classes', 'attendance', 'notices', 'subjectAttendance', 'seating', 'classHub', 'evaluations'];
+export const MIRRORED: readonly SpaceCollection[] = ['items', 'labels', 'series', 'timetables', 'lessonDays', 'progress', 'classes', 'attendance', 'notices', 'subjectAttendance', 'seating', 'classHub', 'evaluations', 'quiz'];
 /** 지운 표시(deletedAt)가 있는 컬렉션 - 영구 지우기를 서버와 견준다 (lessonDays는 날짜 문서라 지우지 않는다) */
 const WITH_TRASH = new Set<string>(['items', 'labels', 'series', 'timetables', 'progress', 'classes', 'seating', 'evaluations']);
 

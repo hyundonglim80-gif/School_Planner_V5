@@ -18,3 +18,22 @@ export function listKeyOf(key: string): ListKey | null {
       return null;
   }
 }
+
+/** 암기 카드의 키 (features/class/MemorizeTab - V4 RosterMemorizeTab): ← 모르겠어요 · → 알아요/다음 · Space·Enter 다음 · Backspace 되돌리기 */
+export type QuizKey = 'no' | 'yes' | 'next' | 'undo';
+
+export function quizKeyOf(key: string): QuizKey | null {
+  switch (key) {
+    case 'ArrowLeft':
+      return 'no';
+    case 'ArrowRight':
+      return 'yes';
+    case ' ':
+    case 'Enter':
+      return 'next';
+    case 'Backspace':
+      return 'undo';
+    default:
+      return null;
+  }
+}

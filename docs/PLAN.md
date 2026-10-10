@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P7-5 암기 + 가져오기: 학급** (클라우드면 1-7을 먼저).
+**P8-1 구글 캘린더** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -163,9 +163,9 @@
 | P7-2 | 출석부·알림장·기록 칸 카드·교과 출결 | 큼 | 높음 | 끝 (2026-10-09) |
 | P7-3 | 자리표·뽑기·모둠 | 중간 | 중간 | 끝 (2026-10-09) |
 | P7-4 | 조사표·모아 보기·학생 기록 | 큼 | 높음 | 끝 (2026-10-09) |
-| P7-5 | 암기 + 가져오기: 학급 | 중간 | 높음 | **다음** |
+| P7-5 | 암기 + 가져오기: 학급 | 중간 | 높음 | 끝 (2026-10-09) |
 | **P8 연동** | | | | |
-| P8-1 | 구글 캘린더 | 중간 | 높음 | |
+| P8-1 | 구글 캘린더 | 중간 | 높음 | **다음** |
 | P8-2 | 서버 푸시 알림(함수 v5) | 중간 | 높음 | |
 | P8-3 | 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱 | 큼 | 중간 | |
 | P8-4 | 공유 그룹 + 그룹 가져오기 | 중간 | 높음 | |
@@ -190,6 +190,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   검색은 기기 사본에서 치는 대로·누르면 그 자리로 가서 짚기 · 휴지통은 지운 표시를 걸러 보기(사본 없음), V4에서 가져온 항목의 첨부는 드라이브에서 지우지 않는다.
 - P6 수업(10-09): 수업 칸은 계산(그날 바꾼 칸 → 수업 없는 날 → 기간별 시간표) - '적용' 단추가 없고 시간표를 고치면 따라온다 · 방학은 학년도마다 · 진도는 계산한 수업 칸으로 센다·지우면 휴지통 ·
   수업 종·우리 학교는 계정 설정 · 주간학습안내는 열어 둔 채 고쳐도 따라온다 · 인쇄는 ⋮·Ctrl+P · V4 수업은 학기마다 맞는 표를 시간표로, 다른 칸만 수업 칸으로 가져온다.
+- P7 학급(10-09): 학생은 번호 대신 sid(번호를 바꿔도 출결·조사표·자리표·기록이 따라간다) · 조사표 한 장 = 문서 하나(명단을 문서에) · 출석부·관찰 한 줄은 기록 칸에 계산한 카드·학생 칩(글에 태그를 넣지 않는다) ·
+  학급 도구(자리표·뽑기·모둠·암기·모아 보기·누가기록)는 오른쪽 칸 · V4 학급 자료는 셈한 sid로 가져와 다시 해도 같은 학생에 붙는다.
 
 ## 4. 세션 기록 (한 세션 한 줄 - 어느 기기에서 어디까지 했나)
 
@@ -212,6 +214,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-09 | 클라우드(claude.ai/code) | P7-5 | P7-5 세션 끝 정리 (P7 단계 끝) | 단위 2062 · 자료 층(에뮬레이터) 27(import.emu 학급 묶음) · inspect-photos 56(■1 암기 9) · inspect-import-class 36 · P7 점검 모두 + 가져오기 점검(labels·items·lessons) 통과(attendance는 묶음에서 한 번 클릭 30초로 멈춤 - 에뮬레이터가 시간 한도로 꺼지기 직전, 다시 켜고 seed한 뒤 따로·같은 차례로 두 번 통과) · 사용량 한도로 멈췄다가 이어서 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 · 👤 실제 계정으로 학급 가져와 보기 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-4 | P7-4 세션 끝 정리 | 단위 2019 · inspect-evaluations 38 · inspect-student-record 29(모아 보기·학생 기록·과정별 탭 - teacher·teacher3) · seating·lessons·notes·week·month-year·search-trash·class·photos·attendance 통과 · 같은 대화에서 P7-3 합침 뒤 이어서 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-3 | P7-3 세션 끝 정리 | 단위 1961 · inspect-seating 69(자리표·학생 칸·뽑기·모둠·여는 길·휴지통 - teacher·teacher3) · class·lessons·attendance·search-trash 통과 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 크게 보기 ESC가 자리표 창까지 닫던 것을 고침 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-2 | P7-2 세션 끝 정리 | 단위 1874 · inspect-attendance 81(출석부·알림장·기록 칸 카드·교과 출결 - teacher·teacher3) · lessons·class·notes·search-trash 통과 · 같은 브랜치 → PR → Claude가 합침 |
@@ -508,6 +511,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 학생 기록: 기록·메모 = 학생 칩(`studentIds`)이 붙은 것(V4는 글의 `#26040305`를 찾았다 - V5는 글에 태그를 넣지 않아 V4 '태그 복사' 단추를 뺐다), '#26040305'로 학생 찾기는 V4 그대로.
     누가기록 창은 기록을 눌러도 닫지 않는다(오른쪽 칸 - 하루 화면과 나란히). 전출 학생도 칩에 흐리게 남는다.
   - 📊 표식: 하루 수업 칸 📊n(없으면 마우스를 올려야)·'N교시 수정' 칸 📊·기록 칸 머리 📊·주간·월간·년간 📊 n(그날 전체 목록) - 년간 '자세히'는 일정·공휴일이 있는 날만 줄을 세워 조사표만 있는 날은 줄이 없다(V4 그대로). 검색에 '조사표' 갈래(제목·교과).
+- **P7-5 암기·가져오기: 학급**(권장안으로 고름):
+  - 학생 sid는 **셈한다**: `v4id('student', 공간, 'settings/rosters', '{classId}#{번호}')`(같은 학급에 같은 번호가 또 있으면 '#2'). 다시 가져와도 같은 sid라
+    DESIGN 8-3의 '번호 → sid 짝 표를 가져오기 기록에'를 두지 않는다(기록이 끊겨도 같다 - 라벨 짝 표와 달리 이름으로 이을 일이 없다).
+    V5에서 고친 학급(둠)은 번호 → sid를 그 V5 명렬표에서 찾는다 - 출결·조사표·자리표가 V5 학생에 붙는다(없으면 셈한 sid).
+  - 지운 표시가 없는 문서(출결·교과 출결·알림장·학급 허브·암기)는 V4에서 없어지면 칸을 비운다(수업 칸과 같다). 조사표·자리표·학급은 지운 표시(휴지통).
+  - 출결은 학생 이름을 옮기지 않는다(명렬표에서 읽는다). 조사표 명단 이름 끝의 '(전출/삭제됨)'은 떼고 out. 암기 성적은 V4가 이름으로 이었다 → 그 학급 명렬표의 같은 이름 학생(없으면 버리고 수를 적는다).
+  - 기록·메모의 `#26040305` → `studentIds`는 같은 실행의 명렬표로 셈한다(글은 그대로). 그룹 공간의 알림장·조사표는 P8-4(그룹 가져오기).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -1024,10 +1034,16 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 **시작 조건**: P7-4 끝. V4 seed 자료.
 **먼저 읽을 것**: `DESIGN.md` 8-3 학급 줄, V4 `components/roster/RosterMemorizeTab.tsx`·`hooks/usePhotoQuiz.ts`·`lib/photoQuiz.ts`, V4 저장 모양(attendance·evaluations·v4_seating·v4_classHub·
 v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
-- [ ] ■1 암기(사진 틀 고정·정답은 이름만·자동 넘김·출제 수·함께 외울 학급).
-- [ ] ■2 가져오기: rosters → classes(번호 → sid 짝 표를 가져오기 기록에 - 다시 해도 같은 sid), attendance·subjectAttendance·notices·evaluations(evalList 먼저)·seating·classHub·quiz·관찰 문구,
+- [x] ■1 암기(사진 틀 고정·정답은 이름만·자동 넘김·출제 수·함께 외울 학급).
+  → 순수 `domain/photoQuiz.ts`(V4 lib째 + 테스트, 열쇠 '{classId}/{sid}') · 사본 `MIRRORED` += quiz · `features/quiz/`(`quizData` 성적 = 개인 공간 `quiz/{classId}` `records.{sid}` · `usePhotoQuiz` 모았다 1.5초 뒤 한 번에) ·
+  `features/class/MemorizeTab`(명렬표 '암기' 탭 - 사진 끄면 켜는 단추, 설정 `sp5-photo-quiz` 이 기기, 키 = `ui/listKeys.quizKeyOf`). 점검 inspect-photos 56(■1 9).
+- [x] ■2 가져오기: rosters → classes(번호 → sid 짝 표를 가져오기 기록에 - 다시 해도 같은 sid), attendance·subjectAttendance·notices·evaluations(evalList 먼저)·seating·classHub·quiz·관찰 문구,
   기록·메모의 `#26040305` 태그 → `studentIds`(글은 그대로).
-- [ ] ■3 점검 `inspect-import-class.mjs` + 👤 실제 계정 확인(학급 화면·출석 누계·조사표 모아 보기가 V4와 같은지) 부탁.
+  → `import/v4/classes.ts`(`planClasses` - 학생 sid는 셈한다(짝 표 대신 - 5장 P7-5), 지운 표시 없는 문서는 칸 비우기 `planEmptiable`, `v4Eval`·`v4Hub`) + 테스트 12 ·
+  `read.ts` `readV4ClassDocs`(V3 옛 `settings/roster`도) · `settings.ts` `phrases` · `items.ts` `opts.studentKeysOf` · `run.ts`(학급을 항목보다 먼저 셈) · 결과 표 줄 여덟·안내 셋(`record.ts`) · `import.emu.test` 학급 묶음(규칙 통과·두 번째 0).
+- [x] ■3 점검 `inspect-import-class.mjs` + 👤 실제 계정 확인(학급 화면·출석 누계·조사표 모아 보기가 V4와 같은지) 부탁.
+  → `tools/inspect-import-class.mjs` 36(teacher - 2027-6-3 V4 문서를 심어 가져오기 → 학생 sid로 이어졌나·학급 화면·출석부·조사표·자리표·알림장·학생 기록 → 두 번째 0·V5에서 고친 출석부는 둠).
+  P7 단계 끝: class·photos·attendance·seating·evaluations·student-record·import-class + import-labels·import-items·import-lessons 통과.
 **끝 조건**: 점검 통과. **P7 단계 끝 정리**(1-4).
 
 ### P8-1. 구글 캘린더
