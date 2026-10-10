@@ -20,6 +20,9 @@ export default defineConfig(({ mode }) => ({
     react(),
     tailwindcss(),
   ],
+  // 서비스 워커가 이 판의 앱 파일을 미리 담을 목록 (public/sw.js precache - P8-3 오프라인 앱).
+  // 점(.)으로 시작하는 기본 자리(.vite/)는 Firebase Hosting이 올리지 않아 맨 위에 둔다.
+  build: { manifest: 'asset-manifest.json' },
   // V4 개발 서버(5173)·미리 보기(4173)와 같이 켜 둘 수 있게 번호를 비킨다.
   server: { port: 5175, strictPort: true },
   preview: { port: 4175, strictPort: true },

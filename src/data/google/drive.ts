@@ -55,7 +55,7 @@ export function uploadFailReason(e: unknown): string {
 }
 
 /** 드라이브 부르기 (본문 그대로). 거절하면 GoogleApiError - 401·권한 모자람은 needsLogin */
-async function driveFetch(url: string, token: string, init?: RequestInit): Promise<Response> {
+export async function driveFetch(url: string, token: string, init?: RequestInit): Promise<Response> {
   const res = await fetch(url, { ...init, headers: { Authorization: `Bearer ${token}`, ...(init?.headers || {}) } });
   if (res.ok) return res;
   const body = await res.text().catch(() => '');

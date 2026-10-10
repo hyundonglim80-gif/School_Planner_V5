@@ -15,6 +15,7 @@ import { usePrintShortcut } from './printScreen';
 import { useClassShortcuts } from '../features/class/view';
 import { useAttendanceShortcuts } from '../features/attendance/open';
 import { useNoticeShortcuts } from '../features/notices/shortcuts';
+import { useBackupShortcuts } from '../features/backup/shortcuts';
 import { useSeatingShortcuts } from '../features/seating/open';
 import { useSearchFocusRunner } from '../features/search/focus';
 import { useTrashAutoEmpty } from '../features/trash/auto';
@@ -24,6 +25,9 @@ import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
 import ClipboardColumn from '../features/clipboard/ClipboardColumn';
 import ImportBanner from '../features/import/ImportBanner';
+import AutoBackupBanner from '../features/backup/AutoBackupBanner';
+import { useShareReceiver } from '../features/share/receive';
+import NewBuildBanner from './NewBuildBanner';
 import ColumnResizer from '../ui/ColumnResizer';
 import ImageViewer from '../ui/ImageViewer';
 import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../ui/sideColumn';
@@ -60,6 +64,9 @@ export default function Shell() {
   useClassShortcuts();
   useAttendanceShortcuts();
   useNoticeShortcuts();
+  useBackupShortcuts();
+  // 다른 앱에서 공유받은 것 → 새 메모 칸 (P8-3)
+  useShareReceiver();
   useSeatingShortcuts();
   // 작년 이맘때 보이기 / 숨기기 (주간)
   useWeekShortcuts();
@@ -135,7 +142,9 @@ export default function Shell() {
       {/* 아래 탭바에 내용이 가리지 않도록 아래 여백을 둔다 */}
       <main ref={mainRef} className="@container px-3 py-3 sm:p-5 max-w-7xl mx-auto pb-24 sm:pb-5">
         {/* 처음 로그인 'V4 자료 가져오기' 띠 (V4 자료가 있고 가져온 적이 없을 때만) */}
+        <NewBuildBanner />
         <ImportBanner />
+        <AutoBackupBanner />
         <MainWidthContext.Provider value={mainWidth}>
           <Suspense fallback={<p className="p-6 text-xs text-slate-400">불러오는 중…</p>}>
             <Screen />

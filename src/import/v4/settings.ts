@@ -7,7 +7,7 @@
 //   V4 v4_teaching·v4_classBell·v4_school → common.teaching·classBell·school (P6-4 - 모양이 같다)
 //   V4 timetable_v5.currentNames(없으면 첫 표의 names) + v4_periodTimes.times → common.periods (교시 이름·시각)
 //   V4 timetable_v5.semesterConfig(한 벌) → common.terms[여름 방학이 든 학년도] (방학만 - 학기는 셈한다)
-// 자동 백업은 V5에 그 칸이 생기는 세션이 이 표에 더한다(COMMON_FROM_V4). D-Day·개인 공휴일은 P5-3, 휴지통 자동 비우기는 P5-4, 관찰 문구는 P7-5.
+// D-Day·개인 공휴일은 P5-3, 휴지통 자동 비우기는 P5-4, 관찰 문구는 P7-5, 드라이브 자동 백업(켜기·주기·남길 개수)은 P8-3.
 //
 // **칸마다** 견준다 - 설정 문서는 기본값과 다른 칸만 적고(DESIGN 4-8), 사용자가 V5에서 몇 칸만 바꿨을 수 있다.
 //   prev = 가져오기가 지난번에 그 칸에 적은 값(기록 settings - 없으면 '적은 적 없음' = 기본값)
@@ -40,6 +40,8 @@ export interface V4PrefDocs {
   school?: unknown;
   /** settings/v4_observationPhrases ({ phrases }) - P7-5 */
   phrases?: unknown;
+  /** settings/v4_autoBackup (켜기·주기·남길 개수 - 마지막 백업 시각은 V4 것이라 옮기지 않는다) - P8-3 */
+  autoBackup?: unknown;
   /** settings/timetable_v5 (교시 이름·방학) · v4_periodTimes (교시 시각) */
   timetable?: unknown;
   periodTimes?: unknown;
@@ -62,6 +64,10 @@ const COMMON_FROM_V4: Record<string, (v4: V4PrefDocs) => unknown> = {
   periods: (v4) => periodsFromV4(v4.timetable, v4.periodTimes),
   terms: (v4) => termsFromV4(v4.timetable),
   phrases: (v4) => obj(v4.phrases)?.phrases,
+  autoBackup: (v4) => {
+    const a = obj(v4.autoBackup);
+    return a && { enabled: a.enabled, intervalDays: a.intervalDays, keep: a.keep };
+  },
 };
 
 /** 교시 이름(timetable_v5.currentNames, 없으면 첫 표) + 시각(v4_periodTimes.times) → V5 교시. 둘 다 없으면 undefined */

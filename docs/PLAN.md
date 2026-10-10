@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P8-3 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱** (클라우드면 1-7을 먼저).
+**P8-4 공유 그룹 + 그룹 가져오기** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -167,8 +167,8 @@
 | **P8 연동** | | | | |
 | P8-1 | 구글 캘린더 | 중간 | 높음 | 끝 (2026-10-10) |
 | P8-2 | 서버 푸시 알림(함수 v5) | 중간 | 높음 | 끝 (2026-10-10 - 👤 함수 배포·휴대폰 확인) |
-| P8-3 | 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱 | 큼 | 중간 | **다음** |
-| P8-4 | 공유 그룹 + 그룹 가져오기 | 중간 | 높음 | |
+| P8-3 | 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱 | 큼 | 중간 | 끝 (2026-10-10) |
+| P8-4 | 공유 그룹 + 그룹 가져오기 | 중간 | 높음 | **다음** |
 | **P9 마무리·넘어가기** | | | | |
 | P9-1 | 설명서 옮기기·설명서 점검 | 큼 | 중간 | |
 | P9-2 | 새 학년도 넘기기 | 중간 | 중간 | |
@@ -214,6 +214,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-10 | 클라우드(claude.ai/code) | P8-3 | P8-3 세션 끝 정리 | 단위 2204 · inspect-backup 42 · keep 29 · sheets 31(시트 API 흉내) · offline 12(빌드 + preview - 끊고 다시 열기·공유받기·새 판 띠) · pwa(개발·빌드)·gcal·import-labels·attach 통과 · 환경설정 '가져오기' 탭·캘린더 창 → 백업 창 탭 · 👤 서비스 워커·매니페스트가 바뀌었다(설치한 앱은 지우고 다시 설치) |
 | 2026-10-10 | 클라우드(claude.ai/code) | P8-2 | P8-2 세션 끝 정리 | 단위 2098 · 함수 순수 셈 7(`npm run test:functions` - CI에도) · inspect-push 13(CDP 푸시) · events·settings 통과 · 함수 코드를 불러 세 함수 확인 - 함수 에뮬레이터는 컨테이너 프록시가 트리거 등록을 막아 PC에서 · 👤 함수 배포·휴대폰 확인 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-10 | 클라우드(claude.ai/code) | P8-1 | P8-1 세션 끝 정리 | 단위 2094 · inspect-gcal 35(구글 캘린더 API 흉내) · events 통과 · P7-5 합침 뒤 같은 대화에서 이어서 · 같은 브랜치 → PR → Claude가 합침 · 👤 실제 구글 캘린더 확인 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-5 | P7-5 세션 끝 정리 (P7 단계 끝) | 단위 2062 · 자료 층(에뮬레이터) 27(import.emu 학급 묶음) · inspect-photos 56(■1 암기 9) · inspect-import-class 36 · P7 점검 모두 + 가져오기 점검(labels·items·lessons) 통과(attendance는 묶음에서 한 번 클릭 30초로 멈춤 - 에뮬레이터가 시간 한도로 꺼지기 직전, 다시 켜고 seed한 뒤 따로·같은 차례로 두 번 통과) · 사용량 한도로 멈췄다가 이어서 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 · 👤 실제 계정으로 학급 가져와 보기 |
@@ -531,6 +532,21 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 알림 칸은 항목 하나에 하나(`v5alarms/{itemId}`). 알림은 처음 날에만(이월로 따라오는 동안 다시 울리지 않는다 - V4도), 기간 일정은 첫날을 끝냈으면 울리지 않는다.
     순서·라벨만 바꾼 저장은 알림 칸을 읽지도 않는다(`touchesAlarm`). 그룹 일정은 쓴 사람(없으면 구성원 모두 - 공간 문서 members).
   - 기기 토큰은 개인 공간 `pushTokens/{토큰 해시}`(V4 `v4_pushTokens` 모양). V4 토큰은 가져오지 않는다 - 기기에서 다시 켠다(DESIGN 8-3).
+- **P8-3 백업 창**(권장안으로 고름):
+  - 백업 JSON은 **V5 모양**(`version: 'SP5-BACKUP'`, 컬렉션 → 문서 id → 문서, 시각은 기기 사본과 같은 `{$ts}`) - 공간 하나씩. 지운 것(휴지통)은 담지 않는다.
+    기간을 고르면 날짜가 있는 것만 그 기간(메모·라벨·설정·학급은 늘 통째로). 설정은 common·pc·mobile 셋만(가져오기 기록·띠 닫음은 기기·계정 일).
+  - 되살리기는 **없거나 지운 문서만** 다시 넣는다 - 지금 있는 것은 덮지 않는다(백업 뒤에 고친 것을 지키려고. 같은 id라 두 번 눌러도 겹치지 않는다).
+    되돌리기 더미에 넣지 않는다(수백 개를 한꺼번에 지우는 쪽이 더 위험하다). V4 백업 파일은 되살리지 않는다 - '가져오기' 탭의 V4 자료 가져오기를 안내.
+  - CSV는 V4 모양 한 장(`#구분,날짜/작성일,…`) - 기기 사본으로 만든다(받기만, 되읽지 않는다).
+  - 드라이브 자동 백업은 V4 그대로(PC에서만·토큰이 있을 때만 조용히·3일 넘게 밀리면 띠). 고르는 것은 `common.autoBackup`, 마지막 백업은 `settings/backupLog`(V4의 마지막 백업 시각은 옮기지 않는다 - V4 파일이다).
+    파일 이름 앞 `SP5_자동백업_` - V4와 같은 폴더지만 서로의 파일을 지우지 않는다. 자동 백업 파일 = V5 백업 JSON(`auto: true`) - 되살리기는 백업 탭에서.
+  - Keep 가져오기는 창 대신 '가져오기' 탭의 칸(V4 KeepImportModal 그대로 - 지금 공간의 메모로, 되돌리기 더미에는 넣지 않는다). '라벨도 함께 가져오기'를 끄면
+    이미 있는 메모의 라벨은 견주지도 바꾸지도 않는다(V4는 라벨을 비웠다). keepId는 V4와 같은 열쇠라 V4에서 가져온 Keep 메모도 알아본다.
+  - 구글 시트는 **V5만의 시트 파일**('School Planner V5 시트' - 공간마다 `settings/sheets`)에 쓴다. V4·V3는 한 시트를 함께 써서 V5가 보내면 그쪽 표를 덮는다.
+    탭 모양은 V4 그대로(사람이 익숙한 모양). 되읽기는 **고치고 더하기만** - 메타데이터 id로 같은 항목, id 없는 줄은 같은 날·같은 글이 있으면 그것, 없으면 새로.
+    시트에서 지운 줄은 앱에서 지우지 않는다(V4는 그날 목록을 통째로 바꿨다 - 실제 자료를 지우는 길을 만들지 않는다). 날짜 옮기기·기간 일정의 날마다 완료는 앱에서.
+    조사표 칸은 제목만(읽기만) - 조사표를 시트에서 만들지 않는다, 점수는 학급 탭에서 되읽는다.
+  - 환경설정 '가져오기' 탭과 '구글 캘린더로 보내기' 창은 이 창의 탭으로 옮겼다 - 단축키 '구글 캘린더로 보내기'(calendar)는 '보내기' 탭을 연다, 처음 로그인 띠는 '가져오기' 탭.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -1092,10 +1108,33 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 **시작 조건**: P8-2 끝.
 **먼저 읽을 것**: `MENU.md` 2-3·3-7, V4 `components/BackupModal.tsx`·`lib/backupJson.ts`·`autoBackup.ts`·`hooks/useAutoBackup.ts`·`components/AutoBackupBanner.tsx`·`KeepImportModal.tsx`·
 `lib/keepImport.ts`·`sheetsSync.ts`·`driveMigration.ts`, `lib/shareTarget.ts`·`hooks/useShareReceiver.ts`·`public/sw.js`·`public/manifest.json`.
-- [ ] ■1 '💾 백업 · 가져오기 · 보내기' 창(탭: 백업 - 받기·되살리기·드라이브 자동 백업 / 가져오기 - V4·Keep / 보내기 - 구글 캘린더·시트 / 정리 - 첨부 모으기). 백업 JSON은 V5 모양.
-- [ ] ■2 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).
-- [ ] ■3 오프라인 앱: `sw.js`가 앱 파일을 캐시(index.html은 네트워크 먼저, 해시 붙은 파일은 캐시 먼저, 새 빌드면 '새 판이 있습니다 - 새로고침' 띠) → 기기 사본과 함께 오프라인 보기.
-- [ ] ■4 크롬 점검(오프라인으로 열기 포함).
+- [x] ■1 '💾 백업 · 가져오기 · 보내기' 창 틀(탭: 백업 / 가져오기 - V4 / 보내기 - 구글 캘린더) + 백업 탭(JSON 받기·되살리기·CSV). 백업 JSON은 V5 모양.
+  → 순수 `domain/backup.ts`(갈래·기간 고르기 `keepInBackup`·수 `countBackup`·파일 읽기·되살리기 셈 `planRestore`·CSV 줄 `csvRowsOf`) · `data/backup.ts`(서버에서 읽기 `buildBackup`·`writeRestore` 400개씩) ·
+  `features/backup/`(`BackupWindow` 창 `backup` `{ tab }` · `BackupTab` · `V4ImportSection`(환경설정 ImportTab을 옮김) · `open.ts`·`shortcuts.ts`) · `gcal/CalendarSyncSection`(창 → 탭). 점검 `tools/inspect-backup.mjs` 21 · gcal·import-labels 통과.
+- [x] ■2 드라이브 자동 백업(백업 탭 - V4 autoBackup 그대로: 드라이브 School_Planner/백업, 주기·보관 수) + 늦었다는 띠.
+  → 순수 `domain/autoBackup.ts`(V4 셈 그대로, 파일 이름 앞 `SP5_자동백업_`) · `data/google/driveBackup.ts`(백업 폴더·목록·공개하지 않고 올리기·휴지통) · `data/backupLog.ts`(settings/backupLog 지켜보기) ·
+  `features/backup/auto.ts`(`useAutoBackupRunner`·`backupNow`) · `AutoBackupSection`(백업 탭 `[data-auto-backup|auto-backup-last|auto-backup-now|auto-backup-folder]`·`data-choice="auto-backup-interval|keep:값"`) ·
+  `AutoBackupBanner`(Shell 본문 위 `[data-auto-backup-banner|…-run|…-later]`) · 설정 `common.autoBackup`(V4 v4_autoBackup에서 가져오기 - 켜기·주기·개수만). seed는 마지막 백업을 1년 뒤로(토큰을 심는 점검에 끼어들지 않게).
+  점검 `inspect-backup.mjs` +21 = 42 · attach 통과.
+- [x] ■3 Keep 가져오기('가져오기' 탭 - 테이크아웃 JSON → 메모).
+  → 순수 `domain/keepImport.ts`(V4 lib 그대로 + `planKeepNote` - 미리보기와 넣기가 같은 계획) · `features/backup/keep.ts`(`runKeepImport` 400개씩·라벨은 `ensureLabelOps`·사진은 드라이브 첨부, 백업 탭 → Keep 칸 `useKeepInbox`) ·
+  `KeepImportSection`(`[data-keep-import|keep-pick|keep-file|keep-count|keep-clear|keep-opt=labels|archived|files|keep-plan=add|update|skip|keep-preview-item|keep-run|keep-result]`).
+  백업 창은 탭 이름이 아니라 params를 견줘 다시 연 탭으로 넘어간다. 점검 `tools/inspect-keep.mjs` 21.
+- [x] ■4 '보내기' 탭 구글 시트(일정·기록·메모 시트로 내보내기·되읽기, 명렬표 시트) + '정리' 첨부 모으기(V4 Storage 그림을 드라이브로 - 복사만, V4가 아직 쓰니 지우지 않는다).
+  → 시트 보내기·되읽기: 순수 `domain/sheets.ts`(V4 칸 모양 - 줄·교시 칸·'일정기록'·'조사표_학급'·'메모', `evalUpdatesFor` 학생 sid) · `data/google/sheets.ts`(만들기·탭·쓰기·읽기) ·
+    `features/backup/sheets.ts`(`exportToSheets`·`importFromSheets` - 시트 파일 id는 공간 `settings/sheets`) · `SheetsSection`(`[data-sheets|sheets-period|sheets-start|sheets-end|sheets-include|sheets-export|sheets-import|sheets-open|sheets-busy|sheets-result]`).
+    명렬표 '📊 시트' `[data-roster-sheet]`(`class/rosterSheet.ts` - 같은 V5 시트 파일의 학급 탭 '조사표_학급', 순수 `parseRosterSheet`·`mergeSheetRoster` 학생 id·전출 잇기, 탭이 없으면 머리말 탭).
+    점검 `tools/inspect-sheets.mjs` 31(시트 API 흉내).
+  → 첨부 모으기: 순수 `domain/attachCollect.ts`(Storage 주소 찾기·바꾼 칸 - 수업 칸은 'periods.n'만) · `features/backup/collect.ts`(내려받기 → 드라이브 → V5 주소, CORS면 한 번 알리고 멈춤) ·
+    '🧹 정리' 탭 `CollectSection`(`[data-collect|collect-count|collect-run|collect-result]`). 점검 `inspect-keep.mjs` +8 = 29 · backup 통과(탭 넷).
+- [x] ■5 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).
+  → `manifest.json` share_target(`/share-target` POST) · `sw.js` `receiveShare`(캐시 `sp5share-inbox` → `/?share=id`) · 순수 `domain/share.ts`(V4 그대로) · `features/share/receive.ts`(`takeSharedPayload`·`useShareReceiver` - Shell, 개인 공간 새 메모 칸) ·
+    메모 칸 `draftText`·`draftFiles` → 공유받은 파일 줄 `[data-note-shared-files|note-shared-attach|note-shared-drop]`. 앱으로 설치는 P1-4 그대로(점검 inspect-pwa 통과).
+- [x] ■6 오프라인 앱: `sw.js`가 앱 파일을 캐시(index.html은 네트워크 먼저, 해시 붙은 파일은 캐시 먼저, 새 빌드면 '새 판이 있습니다 - 새로고침' 띠) → 기기 사본과 함께 오프라인 보기.
+  → 빌드가 `asset-manifest.json`(vite `build.manifest`)을 남기고, 앱이 뜬 3초 뒤 'sp5-precache' → 이 판 파일을 모두 담고 옛 판 파일은 지운다(첫 화면 '/'도). 짝 찾기는 `ignoreVary`(모듈 스크립트는 Origin을 단다 - 'Vary: Origin').
+    새 판 띠 `app/newBuild.ts`·`NewBuildBanner`(`[data-new-build|new-build-reload]` - 창으로 돌아올 때·30분마다 '/'의 첫 스크립트를 견준다). `firebase.json` asset-manifest no-cache.
+- [x] ■7 크롬 점검(오프라인으로 열기 포함).
+  → `tools/inspect-offline.mjs` 12(빌드 + preview 4175 - 담기·끊고 다시 열기·나중 창·공유받기·새 판 띠) · pwa(개발·빌드) · backup 42 · keep 29 · sheets 31 · gcal · import-labels · attach 통과.
 **끝 조건**: 설명서 `backup`·`keep`·`install`이 되고, 네트워크 없이 열어도 화면과 자료가 보인다.
 
 ### P8-4. 공유 그룹 + 그룹 가져오기

@@ -59,6 +59,9 @@ async function main() {
     // 처음 로그인 'V4 자료 가져오기' 띠는 닫아 둔다 - seed 계정에는 V4 자료가 있어 띠가 다른 점검의 화면을 밀어낸다.
     // 띠와 가져오기는 tools/inspect-import-labels.mjs가 이 기록을 비우고 본 뒤 되돌린다.
     await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'import'), { dismissed: true, updatedAt: serverTimestamp(), v: 1 });
+    // 드라이브 자동 백업(P8-3)은 1년 동안 할 때가 아니게 - 마지막 백업을 앞날로 둔다. 구글 토큰을 심는 점검(첨부·사진·캘린더)에
+    // 자동 백업이 끼어들어 드라이브 흉내에 백업 파일을 올리지 않게. 자동 백업은 tools/inspect-backup.mjs가 이 기록을 바꿔 본 뒤 되돌린다.
+    await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'backupLog'), { lastAt: Date.now() + 365 * 86400000, updatedAt: serverTimestamp(), v: 1 });
     // 계정 설정은 다른 칸을 두고 교사 유형만 (merge)
     await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'common'), { teaching, updatedAt: serverTimestamp(), v: 1 }, { merge: true });
     console.log(`${email} (${note}) → spaces/u_${uid}`);

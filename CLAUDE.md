@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-10 P8-2 끝**(클라우드 - 일정 알림 서버 푸시: 함수 v5·기기 토큰·환경설정 '알림' 탭). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P8-3. 👤 V5 주소: 라벨 '구글 캘린더' 자동 보내기·단축키 '구글 캘린더로 보내기', 실제 계정 학급 가져오기 한 번. 서비스 워커가 바뀌었다 - 설치한 앱은 지우고 크롬에서 다시 설치.
+- **2026-10-10 P8-3 끝**(클라우드 - 💾 백업 · 가져오기 · 보내기 창: JSON·CSV·드라이브 자동 백업·Keep·구글 시트·첨부 모으기 + 공유받기·오프라인 앱). **P9-4까지 쉬지 않고 이어 간다** - 다음 P8-4. 👤 V5 주소에서 ⋮ 자료 → '보내기' 탭 시트로 보내기·되읽기 한 번. 서비스 워커·매니페스트가 바뀌었다 - 설치한 앱은 지우고 크롬에서 다시 설치(안드로이드 '공유'에 SP5).
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙'). 그리고 **함수 v5 배포**(PLAN P8-2 ■3 순서 - `--only functions:v5`) → 휴대폰 '알림' 탭에서 받기.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -66,6 +66,8 @@
   - 같은 `data-*` 이름을 두 곳(카드 표시·칸 안내)에 쓰지 않는다 - Playwright가 둘을 찾아 멈춘다(P3-3 `event-series`/`event-series-info`).
   - `ModalShell`의 `headerExtra`·`footer` 단추(저장·삭제·+ 새로)는 창 본문의 `data-*` 상자 밖에 그려진다 - 본문 상자로 좁혀 찾지 말고 page에서(그 창 하나만 연 채로 - P7-4).
   - 정한 날(`DAY`)에 심는 점검은 **날이 지나면 깨질 수 있다**: 이월 라벨 일정은 그날이 지나면 오늘로 따라와 ForwardMarks가 `carrying`을 한 번 쓴다 - '바뀐 문서 하나'를 세는 점검이면 `carrying: true`로 심는다(P8-2 inspect-events).
+  - Playwright `route.fulfill` 흉내 응답은 **CORS를 보지 않는다** - 막힌 내려받기(버킷 CORS)는 `route.abort('failed')`로 흉내 낸다(P8-3 첨부 모으기). 컨테이너 Chromium은 한글 내려받기 이름을 'download'로 바꾼다(이름은 PC에서).
+  - 서비스 워커·오프라인은 개발 서버가 아니라 **빌드 + preview(4175)**로 본다(`SITE=http://localhost:4175/` - inspect-offline). 응답이 `Vary: Origin`이라 캐시 짝 찾기는 `ignoreVary`(P8-3).
   - **계정에 올라가는 설정은 기기 저장소만 바꿔서 시험하지 않는다** - 다시 열면 계정 값이 이긴다. 계정 문서로 바꾸고 끝에 걷는다(P4-1 - inspect-shell이 '가운데 창'을 계정에 남겨 다른 점검이 깨졌다).
 - **오늘에 따라 고르는 것(이월·지난 일정)의 단위 테스트는 날짜를 고정**한다: `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(…)`, 끝에 `vi.useRealTimers()`(P3-3 - 고정하지 않으면 다음 날 시험이 깨진다).
 - **창 목록(`app/windowList`)이 부르는 `features/*/open.ts`는 `data/session`·`select`를 import하지 않는다** - windowConventions.test가 창 목록을 읽어 진짜 Firebase가 뜨고 CI에서 가끔 '처리하지 않은 오류'(P7-2 알림장 - 단축키는 `shortcuts.ts`로 나눴다).
@@ -198,7 +200,7 @@
 - **라벨** `src/features/labels/`: `LabelsWindow.tsx`(창 `labels` - ⋮ 일정, `{ tab: 'event'|'note' }`, 고친 것만 들고 사본 위에 얹는다, `[data-labels-window]`·
   `[data-label-tab|row|name|color|prop|parent|up|down|delete|save|add|new-name|new-parent|usage|prune|prune-item|prune-confirm|recover|defaults]`) · `ColorPicker.tsx`(`[data-color-option]`) ·
   `LabelChip.tsx`(`LabelChip`·`LabelChips` `[data-label-chip]`) · `LabelPicker.tsx`(쓰는 칸 - `[data-label-picker|pick|pick-new|pick-new-input|pick-pending|picker-settings]`).
-- **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 지금 보기·학교·단축키·앱·가져오기, `{ tab }`로 열기 - 열린 창도 그 탭으로) · `ViewTab`(누르는 즉시) · `SchoolTab`(이월 기간 `[data-forward-days]` - common.forwardDays) ·
+- **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 보기·알림·학교·단축키·앱(가져오기는 P8-3에서 백업 창으로), `{ tab }`로 열기 - 열린 창도 그 탭으로) · `ViewTab`(누르는 즉시) · `SchoolTab`(이월 기간 `[data-forward-days]` - common.forwardDays) ·
   `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·이 기기 사본 `[data-mirror-state|count|reset]`·빌드 번호) · `parts`(Section·ToggleRow·Choices).
   `[data-settings-tab|panel|toggle]`·`[data-choice="이름:값"]`·`[data-shortcut-row|key|save|reset]`·`[data-install-pwa=ready|guide]`.
 - **껍데기** `src/app/`: `App.tsx`(로그인 상태 → `Shell`) · `Shell.tsx`(틀: 머리줄·본문·탭바·창·오른쪽 줄 ▶·폭 끌기) · `Header.tsx`(첫 줄 - ⏳·🗑️·＋ 새로·🔍·화면 탭·?·⋮·사진,
@@ -301,10 +303,14 @@
 - **구글 캘린더**(P8-1 - V4와 같은 캘린더 SP(work)·표시 app=SchoolPlannerV3·sp_id, V5는 `sp_item`·`sp_auto`를 더 단다): 순수 `domain/gcal.ts`(글·짝 V4 그대로 + `gcalOn`·`itemPayloads`(보이는 날마다·기간 (k/n)·이월 = 오늘)·`planItemSync`·손으로 `manualPayloads`·`planManualSync`) ·
   저장 도우미 `observeWrites`(쓰기 전·뒤 - 그 항목이 '구글 캘린더'였나) · `data/gcalQueue.ts`(큐 `gcalQueue/{itemId}` 바로 구독·쓰기 - 사본에 넣지 않는다) · `data/google/calendar.ts`(캘린더 찾기·만들기·목록·넣기·고치기·지우기) ·
   `features/gcal/`(`auto.ts` `useGcalAuto`(Shell - 쓰기 → 1.2초 → 큐 → 보내기, 이월은 이 기기 하루 한 번 `sp5-gcal-carried`, 라벨 끄면 보낸 것 맞춤)·`ensureGcalLogin`(일정 칸 저장 뒤)·`sendGcalNow` · 머리줄 `GcalPendingButton` `[data-gcal-pending=N]` ·
-  `CalendarSyncWindow` 창 `calendar`(단축키 '구글 캘린더로 보내기' `[data-calendar-sync-window|cal-*]`)·`manual.ts`(창 밖에서 `useCalendarSync`)). 점검 `tools/inspect-gcal.mjs`(35 - 캘린더 API 흉내). `select.docsNow`(훅 아닌 곳의 사본 읽기).
+  `CalendarSyncSection`(백업 창 '보내기' 탭 - 단축키 '구글 캘린더로 보내기'가 그 탭을 연다 `[data-calendar-sync-window|cal-*]`)·`manual.ts`(창 밖에서 `useCalendarSync`·`rangeForScope`)). 점검 `tools/inspect-gcal.mjs`(35 - 캘린더 API 흉내). `select.docsNow`(훅 아닌 곳의 사본 읽기).
 - **서버 푸시 알림**(P8-2): 함수 `functions/`(codebase `v5`, Node 22, 서울 - `index.js` `v5AlarmIndex`(items 쓰기 → `v5alarms/{itemId}`)·`v5SendDueAlarms`(매분)·`v5CleanupAlarms`, 순수 `alarmPlan.js` + `node --test` = `npm run test:functions`, `firebase.json` functions) ·
   `data/push.ts`(이 기기 FCM 토큰 `spaces/u_{uid}/pushTokens/{해시}` - `enablePush`·`disablePush`·`refreshPushToken`·`forgetPushOnLogout`, 이 기기 `sp5-push`) · 환경설정 '알림' 탭 `settings/NotifyTab.tsx`(`[data-push-alarm|push-state|push-on|push-off]`) ·
   `public/sw.js` push(보는 창이면 'sp5-event-alarm' 메시지, 아니면 OS 알림)·notificationclick · `EventAlarms`가 그 메시지로 울린다. 점검 `tools/inspect-push.mjs`(13 - CDP `ServiceWorker.deliverPushMessage`).
+- **백업 · 가져오기 · 보내기**(P8-3 - 창 `backup` `{ tab: backup|import|send|tidy }` = ⋮ 자료, `features/backup/`): `BackupWindow`(`[data-backup-window=탭|backup-tab-btn|backup-panel]`) · `open.ts`(`openBackup`)·`shortcuts.ts`(calendar → '보내기') ·
+  '백업' `BackupTab`(JSON = 순수 `domain/backup.ts` + `data/backup.ts` 서버 읽기·되살리기 없거나 지운 것만, CSV = V4 모양 `[data-backup-*|restore-*]`) · `AutoBackupSection`·`auto.ts`(드라이브 자동 백업 `useAutoBackupRunner` - PC·토큰 있을 때만, `common.autoBackup`·`settings/backupLog` `data/backupLog.ts`, `data/google/driveBackup.ts`, 순수 `domain/autoBackup.ts`)·`AutoBackupBanner`(Shell) ·
+  '가져오기' `V4ImportSection` + `KeepImportSection`·`keep.ts`(순수 `domain/keepImport.ts`, 백업 탭에 넣은 Keep 파일은 `useKeepInbox`로) · '보내기' `gcal/CalendarSyncSection` + `SheetsSection`·`sheets.ts`(V5 시트 파일 `settings/sheets`, 순수 `domain/sheets.ts`, `data/google/sheets.ts`, 명렬표 '📊 시트' `class/rosterSheet.ts`) ·
+  '정리' `CollectSection`·`collect.ts`(첨부 모으기 - 순수 `domain/attachCollect.ts`, Storage 원본은 지우지 않는다). 점검 `inspect-backup`(42)·`inspect-keep`(29 - 첨부 모으기 포함)·`inspect-sheets`(31).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
@@ -318,7 +324,8 @@
   `EntryCard.tsx`(메모·기록 같은 카드 `[data-entry-card|entry-kind|entry-done|entry-favorite|entry-collapsed|entry-collapse|entry-up|entry-down|entry-complete|entry-favorite-toggle|entry-chip|entry-checks|entry-edit|entry-delete|entry-image|entry-images|check-line|check-done]`) ·
   `EntryTableView.tsx`(표 - 쓰는 칸은 칸 글자·행/열 `[data-note-table|cell|table-op]`, 카드는 compact `[data-entry-table]`) · `attach.ts`(📎·캡처 = 드라이브, 표 먼저 `pastedTable`) · `shortcuts.ts`(`newNote`·`newMemo`).
   순수 셈 `domain/checkLines`·`entryCollapse`·`hashLabels`(V4 테스트째). 주소 → 링크 `ui/FormattedText.tsx`. **쓰던 글 보관** `data/drafts.ts`(`useDraft` - DB `sp5-drafts-{uid}`, 메모·기록·일정 칸, 로그아웃하면 지움) + `ui/DraftOffer.tsx`(`[data-draft-offer|draft-restore|draft-discard]`).
-- **설치(PWA)** `public/`: `manifest.json`(SP5) · `sw.js`(설치·활성만 - 담아 두기·공유받기·푸시는 P8) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
+- **설치(PWA)** `public/`: `manifest.json`(SP5 · share_target `/share-target`) · `sw.js`(문서는 네트워크 먼저·`/assets/`는 담아 둔 것 먼저·'sp5-precache' = 빌드의 `asset-manifest.json`대로 이 판을 담고 옛 판은 지움(`ignoreVary`)·공유받기 캐시 `sp5share-inbox`·푸시) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
+  공유받기 `features/share/receive.ts`(`useShareReceiver` - Shell, 새 메모 칸 `draftText`·`draftFiles`) · 순수 `domain/share.ts` · 새 판 띠 `app/newBuild.ts`·`NewBuildBanner`(`[data-new-build]`). 점검 `tools/inspect-offline.mjs`(빌드 + preview 4175).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
   `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
@@ -341,5 +348,5 @@
   `record.ts`(기록 `settings/import` - 때·결과·라벨 짝 표·설정 칸마다 적은 값·띠 닫음, 결과 표 줄 `IMPORT_KINDS`) · `legacy/`(V4 옛 모양 읽기 - 본체는 import 금지) ·
   `labels.ts`(`planLabels` - V4 기본 라벨·이름 같은 V5 라벨에 잇기·짝 표) · `settings.ts`(`planSettings` - 칸마다, `COMMON_FROM_V4`) · `read.ts`(서버 읽기) ·
   `items.ts`(P3-4 `planItems` - 일정·기간 한 항목·반복 series·이월 사슬·기록·메모·링크) · `legacy/entries.ts`(기록·공휴일·기한·기간 조각 읽기) ·
-  `run.ts`(`runImport`·`checkImportOffer`·`dismissImportOffer`·진행 store `useImportRun`), 결과 표 아래 안내 `record.IMPORT_NOTES`. 점검 `tools/inspect-import-items.mjs`(P3-4 - seed 수·두 번째 0·V5 고친 것 둠, 끝에 되돌림). 화면: 환경설정 '가져오기' 탭 `features/settings/ImportTab.tsx`(P8-3에서 백업 창으로) ·
+  `run.ts`(`runImport`·`checkImportOffer`·`dismissImportOffer`·진행 store `useImportRun`), 결과 표 아래 안내 `record.IMPORT_NOTES`. 점검 `tools/inspect-import-items.mjs`(P3-4 - seed 수·두 번째 0·V5 고친 것 둠, 끝에 되돌림). 화면: 백업 창 '가져오기' 탭 `features/backup/V4ImportSection.tsx` ·
   처음 로그인 띠 `features/import/ImportBanner.tsx`(Shell 본문 맨 위). 문서는 `docs/`, 소개는 `README.md`(에뮬레이터 순서).
