@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P8-2 서버 푸시 알림 (함수 v5)** (클라우드면 1-7을 먼저).
+**P8-3 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱** (클라우드면 1-7을 먼저).
 
 ---
 
@@ -166,8 +166,8 @@
 | P7-5 | 암기 + 가져오기: 학급 | 중간 | 높음 | 끝 (2026-10-09) |
 | **P8 연동** | | | | |
 | P8-1 | 구글 캘린더 | 중간 | 높음 | 끝 (2026-10-10) |
-| P8-2 | 서버 푸시 알림(함수 v5) | 중간 | 높음 | **다음** |
-| P8-3 | 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱 | 큼 | 중간 | |
+| P8-2 | 서버 푸시 알림(함수 v5) | 중간 | 높음 | 끝 (2026-10-10 - 👤 함수 배포·휴대폰 확인) |
+| P8-3 | 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱 | 큼 | 중간 | **다음** |
 | P8-4 | 공유 그룹 + 그룹 가져오기 | 중간 | 높음 | |
 | **P9 마무리·넘어가기** | | | | |
 | P9-1 | 설명서 옮기기·설명서 점검 | 큼 | 중간 | |
@@ -214,6 +214,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-1 | P5-1 세션 끝 정리 | 단위 1163 · inspect-week 44 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 다시 켜고 seed |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-10 | 클라우드(claude.ai/code) | P8-2 | P8-2 세션 끝 정리 | 단위 2098 · 함수 순수 셈 7(`npm run test:functions` - CI에도) · inspect-push 13(CDP 푸시) · events·settings 통과 · 함수 코드를 불러 세 함수 확인 - 함수 에뮬레이터는 컨테이너 프록시가 트리거 등록을 막아 PC에서 · 👤 함수 배포·휴대폰 확인 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-10 | 클라우드(claude.ai/code) | P8-1 | P8-1 세션 끝 정리 | 단위 2094 · inspect-gcal 35(구글 캘린더 API 흉내) · events 통과 · P7-5 합침 뒤 같은 대화에서 이어서 · 같은 브랜치 → PR → Claude가 합침 · 👤 실제 구글 캘린더 확인 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-5 | P7-5 세션 끝 정리 (P7 단계 끝) | 단위 2062 · 자료 층(에뮬레이터) 27(import.emu 학급 묶음) · inspect-photos 56(■1 암기 9) · inspect-import-class 36 · P7 점검 모두 + 가져오기 점검(labels·items·lessons) 통과(attendance는 묶음에서 한 번 클릭 30초로 멈춤 - 에뮬레이터가 시간 한도로 꺼지기 직전, 다시 켜고 seed한 뒤 따로·같은 차례로 두 번 통과) · 사용량 한도로 멈췄다가 이어서 · 작업 프로세스가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 · 👤 실제 계정으로 학급 가져와 보기 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P7-4 | P7-4 세션 끝 정리 | 단위 2019 · inspect-evaluations 38 · inspect-student-record 29(모아 보기·학생 기록·과정별 탭 - teacher·teacher3) · seating·lessons·notes·week·month-year·search-trash·class·photos·attendance 통과 · 같은 대화에서 P7-3 합침 뒤 이어서 · 같은 브랜치 → PR → Claude가 합침 |
@@ -1084,6 +1085,8 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   `EventAlarms`(앱이 뜰 때 `refreshPushToken` · 서비스 워커 'sp5-event-alarm' → 같은 알림 창, 그 일정에 alarmDone) · `sw.js` push·notificationclick · 로그아웃 때 토큰 문서 지움.
   점검 `tools/inspect-push.mjs` 13(CDP로 서비스 워커에 푸시를 넣는다) · events·settings 통과(events는 날이 바뀌어 이월 라벨 일정에 carrying을 미리 심음).
 - [ ] ■3 👤 배포를 묻고 `npx firebase deploy --only functions:v5 --project schoolplannerv3` → `npx firebase functions:list`로 V4 함수(default)가 그대로인지 본다. 👤 휴대폰 확인.
+  → (클라우드 - 함수 배포는 PC에서 묻고. CLAUDE.md 지금 상태에 부탁을 적었다) 순서: `npm --prefix functions ci` → (함수 에뮬레이터로 트리거 확인 `npx firebase emulators:start --only auth,firestore,functions`:
+  일정에 ⏰을 걸면 `v5alarms/{id}`가 생기는지) → 배포 → functions:list에 V4 넷(alarmIndexUser·alarmIndexGroup·sendDueAlarms·cleanupAlarms) + V5 셋 → 휴대폰에서 '알림' 탭 받기 → 1~2분 뒤 알림.
 
 ### P8-3. 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱
 **시작 조건**: P8-2 끝.
