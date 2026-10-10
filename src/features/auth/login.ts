@@ -15,6 +15,7 @@ import { wipeClipboard } from '../../data/clipboard';
 import { wipeDrafts } from '../../data/drafts';
 import { forgetGoogleToken, keepGoogleToken } from '../../data/google/token';
 import { wipeMirror } from '../../data/mirror/sync';
+import { forgetPushOnLogout } from '../../data/push';
 
 /** 구글 액세스 토큰을 챙겨 둔다(드라이브·캘린더·시트 - data/google/token이 쓴다) */
 function keepAccessToken(result: UserCredential | null) {
@@ -82,6 +83,8 @@ export async function logout() {
   const uid = auth.currentUser?.uid;
   // 방금 바꿔 1초 뒤 올리려던 설정은 로그아웃 전에 올린다(뒤에 가면 권한이 없다). 연결이 없으면 오래 기다리지 않는다.
   await Promise.race([stopPrefsSync(), new Promise((r) => setTimeout(r, 3000))]);
+  // 이 기기 알림 토큰 문서를 지운다 - 다른 계정의 일정 알림이 이 기기로 오지 않게 (P8-2, 나간 뒤에는 권한이 없다)
+  await Promise.race([forgetPushOnLogout(), new Promise((r) => setTimeout(r, 3000))]);
   try {
     await signOut(auth);
   } catch (error) {

@@ -1079,7 +1079,10 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   매분 보내기(두 번 안 보내게), 30일 지난 것 지우기. alarmPlan을 항목 하나 단위로 + 테스트(`npm run test:functions`).
   → `functions/alarmPlan.js`(`alarmOf`·`planItemAlarm`·`recipientsOf`·`touchesAlarm`·`pushData`) + 테스트 7(CI에도) · `functions/index.js` **`v5AlarmIndex`·`v5SendDueAlarms`·`v5CleanupAlarms`**(V4 함수와 이름이 겹치지 않게) ·
   `firebase.json` functions codebase `v5`. 함수 코드를 불러 세 함수가 잡히는 것까지 봤다 - 함수 에뮬레이터는 컨테이너 프록시가 Firestore 트리거 등록을 막아 PC에서 본다.
-- [ ] ■2 기기 토큰(`spaces/u_{uid}/pushTokens`) + 환경설정 '알림' 탭 + `sw.js` push(보는 창이 있으면 앱으로, 없으면 알림).
+- [x] ■2 기기 토큰(`spaces/u_{uid}/pushTokens`) + 환경설정 '알림' 탭 + `sw.js` push(보는 창이 있으면 앱으로, 없으면 알림).
+  → `data/push.ts`(V4 lib/push 그대로 - `sp5-push`·`sp5-push-token`, firebase/messaging은 쓸 때만 불러온다, 에뮬레이터는 가짜 토큰) · `settings/NotifyTab.tsx`(`[data-push-alarm|push-state|push-on|push-off]`) ·
+  `EventAlarms`(앱이 뜰 때 `refreshPushToken` · 서비스 워커 'sp5-event-alarm' → 같은 알림 창, 그 일정에 alarmDone) · `sw.js` push·notificationclick · 로그아웃 때 토큰 문서 지움.
+  점검 `tools/inspect-push.mjs` 13(CDP로 서비스 워커에 푸시를 넣는다) · events·settings 통과(events는 날이 바뀌어 이월 라벨 일정에 carrying을 미리 심음).
 - [ ] ■3 👤 배포를 묻고 `npx firebase deploy --only functions:v5 --project schoolplannerv3` → `npx firebase functions:list`로 V4 함수(default)가 그대로인지 본다. 👤 휴대폰 확인.
 
 ### P8-3. 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱

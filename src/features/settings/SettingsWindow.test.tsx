@@ -39,9 +39,9 @@ beforeEach(() => {
 const openSettings = (tab?: 'view' | 'school' | 'shortcuts' | 'app' | 'import') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
 
 describe('환경설정 창', () => {
-  it('지금 있는 탭만 (보기·학교·단축키·앱·가져오기) - 아직 옮기지 않은 기능의 탭은 숨긴다', () => {
+  it('지금 있는 탭만 (보기·알림·학교·단축키·앱·가져오기) - 아직 옮기지 않은 기능의 탭은 숨긴다', () => {
     openSettings();
-    expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'school', 'shortcuts', 'app', 'import']);
+    expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'notify', 'school', 'shortcuts', 'app', 'import']);
     expect(q('[data-settings-tab="view"]')).toHaveAttribute('aria-selected', 'true');
   });
 

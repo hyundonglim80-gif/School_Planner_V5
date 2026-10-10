@@ -41,7 +41,8 @@ const madeHere = async () => {
   return snap.docs.filter((d) => d.data().createdAt >= startedAt && String(d.data().text).includes('점검') && !d.id.startsWith('insp_'));
 };
 const EVENTS = {
-  insp_ev1: { text: '점검 일정 하나', labelIds: ['insp_el'], order: 'Zz1', time: '09:30', due: '2026-10-10', linkIds: ['x'] },
+  // carrying: 이월 라벨이라 DAY가 지나면 오늘로 따라온다 - ForwardMarks가 처음 한 번 쓰는 것이 '바뀐 문서'에 끼지 않게 미리 (P8-2 - 날이 바뀌어 깨졌다)
+  insp_ev1: { text: '점검 일정 하나', labelIds: ['insp_el'], order: 'Zz1', time: '09:30', due: '2026-10-10', linkIds: ['x'], carrying: true },
   insp_ev2: { text: '점검 일정 둘', labelIds: [], order: 'Zz2' },
   insp_ev3: { text: '점검 일정 셋', labelIds: [], order: 'Zz3' },
   insp_ev9: { text: '점검 다른 날', labelIds: [], order: 'Zz1', date: '2026-10-09' },
