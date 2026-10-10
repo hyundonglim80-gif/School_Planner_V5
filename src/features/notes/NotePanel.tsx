@@ -252,6 +252,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     );
   };
 
+  // 공유받은 파일 (P8-3 - 저장은 사용자가: 누르면 드라이브에 올려 첨부)
+  const [sharedFiles, setSharedFiles] = useState<File[]>(() => (isEditing ? [] : (params.draftFiles ?? [])));
   // ─── 붙이기 (attach.ts) ───
   const attach = async (files: File[], pasted: boolean) => {
     if (files.length === 0) return;
@@ -491,6 +493,28 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-6" data-scroll-lock>
             {draft.offer && <DraftOffer savedAt={draft.offer.savedAt} onRestore={restoreDraft} onDiscard={draft.discard} />}
+            {sharedFiles.length > 0 && (
+              <div data-note-shared-files={sharedFiles.length} className="flex flex-wrap items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
+                <span className="font-bold">📥 공유받은 파일 {sharedFiles.length}개</span>
+                <span className="text-sky-700 truncate">{sharedFiles.map((f) => f.name).join(', ')}</span>
+                <button
+                  type="button"
+                  data-note-shared-attach
+                  disabled={!!uploading}
+                  onClick={() => {
+                    const files = sharedFiles;
+                    setSharedFiles([]);
+                    void attach(files, false);
+                  }}
+                  className="ml-auto px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold disabled:opacity-50 cursor-pointer"
+                >
+                  드라이브에 올려 첨부
+                </button>
+                <button type="button" data-note-shared-drop onClick={() => setSharedFiles([])} className="px-2 py-1 rounded-lg hover:bg-sky-100 font-bold cursor-pointer">
+                  버리기
+                </button>
+              </div>
+            )}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="block text-xs font-semibold text-slate-600">

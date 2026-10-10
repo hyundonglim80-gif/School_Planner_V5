@@ -1126,9 +1126,14 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
     점검 `tools/inspect-sheets.mjs` 31(시트 API 흉내).
   → 첨부 모으기: 순수 `domain/attachCollect.ts`(Storage 주소 찾기·바꾼 칸 - 수업 칸은 'periods.n'만) · `features/backup/collect.ts`(내려받기 → 드라이브 → V5 주소, CORS면 한 번 알리고 멈춤) ·
     '🧹 정리' 탭 `CollectSection`(`[data-collect|collect-count|collect-run|collect-result]`). 점검 `inspect-keep.mjs` +8 = 29 · backup 통과(탭 넷).
-- [ ] ■5 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).
-- [ ] ■6 오프라인 앱: `sw.js`가 앱 파일을 캐시(index.html은 네트워크 먼저, 해시 붙은 파일은 캐시 먼저, 새 빌드면 '새 판이 있습니다 - 새로고침' 띠) → 기기 사본과 함께 오프라인 보기.
-- [ ] ■7 크롬 점검(오프라인으로 열기 포함).
+- [x] ■5 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).
+  → `manifest.json` share_target(`/share-target` POST) · `sw.js` `receiveShare`(캐시 `sp5share-inbox` → `/?share=id`) · 순수 `domain/share.ts`(V4 그대로) · `features/share/receive.ts`(`takeSharedPayload`·`useShareReceiver` - Shell, 개인 공간 새 메모 칸) ·
+    메모 칸 `draftText`·`draftFiles` → 공유받은 파일 줄 `[data-note-shared-files|note-shared-attach|note-shared-drop]`. 앱으로 설치는 P1-4 그대로(점검 inspect-pwa 통과).
+- [x] ■6 오프라인 앱: `sw.js`가 앱 파일을 캐시(index.html은 네트워크 먼저, 해시 붙은 파일은 캐시 먼저, 새 빌드면 '새 판이 있습니다 - 새로고침' 띠) → 기기 사본과 함께 오프라인 보기.
+  → 빌드가 `asset-manifest.json`(vite `build.manifest`)을 남기고, 앱이 뜬 3초 뒤 'sp5-precache' → 이 판 파일을 모두 담고 옛 판 파일은 지운다(첫 화면 '/'도). 짝 찾기는 `ignoreVary`(모듈 스크립트는 Origin을 단다 - 'Vary: Origin').
+    새 판 띠 `app/newBuild.ts`·`NewBuildBanner`(`[data-new-build|new-build-reload]` - 창으로 돌아올 때·30분마다 '/'의 첫 스크립트를 견준다). `firebase.json` asset-manifest no-cache.
+- [x] ■7 크롬 점검(오프라인으로 열기 포함).
+  → `tools/inspect-offline.mjs` 12(빌드 + preview 4175 - 담기·끊고 다시 열기·나중 창·공유받기·새 판 띠) · pwa(개발·빌드) · backup 42 · keep 29 · sheets 31 · gcal · import-labels · attach 통과.
 **끝 조건**: 설명서 `backup`·`keep`·`install`이 되고, 네트워크 없이 열어도 화면과 자료가 보인다.
 
 ### P8-4. 공유 그룹 + 그룹 가져오기

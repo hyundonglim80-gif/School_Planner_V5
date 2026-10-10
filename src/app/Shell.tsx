@@ -26,6 +26,8 @@ import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '.
 import ClipboardColumn from '../features/clipboard/ClipboardColumn';
 import ImportBanner from '../features/import/ImportBanner';
 import AutoBackupBanner from '../features/backup/AutoBackupBanner';
+import { useShareReceiver } from '../features/share/receive';
+import NewBuildBanner from './NewBuildBanner';
 import ColumnResizer from '../ui/ColumnResizer';
 import ImageViewer from '../ui/ImageViewer';
 import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../ui/sideColumn';
@@ -63,6 +65,8 @@ export default function Shell() {
   useAttendanceShortcuts();
   useNoticeShortcuts();
   useBackupShortcuts();
+  // 다른 앱에서 공유받은 것 → 새 메모 칸 (P8-3)
+  useShareReceiver();
   useSeatingShortcuts();
   // 작년 이맘때 보이기 / 숨기기 (주간)
   useWeekShortcuts();
@@ -138,6 +142,7 @@ export default function Shell() {
       {/* 아래 탭바에 내용이 가리지 않도록 아래 여백을 둔다 */}
       <main ref={mainRef} className="@container px-3 py-3 sm:p-5 max-w-7xl mx-auto pb-24 sm:pb-5">
         {/* 처음 로그인 'V4 자료 가져오기' 띠 (V4 자료가 있고 가져온 적이 없을 때만) */}
+        <NewBuildBanner />
         <ImportBanner />
         <AutoBackupBanner />
         <MainWidthContext.Provider value={mainWidth}>

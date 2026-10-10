@@ -42,6 +42,8 @@ export function startInstall() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('/sw.js').catch((err: unknown) => console.warn('[sw] 서비스 워커 등록 실패:', err));
+      // 앱이 다 뜬 뒤 이 판의 앱 파일을 미리 담아 둔다(오프라인으로 열기 - P8-3). 처음 여는 동안의 받기와 겹치지 않게 조금 뒤에
+      void navigator.serviceWorker.ready.then((reg) => window.setTimeout(() => reg.active?.postMessage({ type: 'sp5-precache' }), 3000));
     });
   }
 }

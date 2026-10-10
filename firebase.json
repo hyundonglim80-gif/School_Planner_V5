@@ -20,7 +20,7 @@
     ],
     "headers": [
       {
-        "regex": "^/(index\\.html|sw\\.js|manifest\\.json)?$",
+        "regex": "^/(index\\.html|sw\\.js|manifest\\.json|asset-manifest\\.json)?$",
         "headers": [
           {
             "key": "Cache-Control",
