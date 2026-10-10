@@ -525,6 +525,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 이월 중인 일정은 구글에서도 오늘로 옮긴다(V4는 옮겨 썼으니 저절로) - 앱을 열 때·자정에 이 기기에서 하루 한 번 큐에 넣는다(`sp5-gcal-carried`).
   - 큐는 기기 사본에 넣지 않고 바로 구독한다(보낸 것을 지우는데 사본은 영구 지우기를 믿지 않는다). 가져오기가 쓴 것(src를 적는 쓰기)은 큐에 넣지 않는다 - V4가 이미 보냈다.
   - V4 `v4_gcal.used`(일정에서 켠 적이 있다)는 없앴다 - 쓰기마다 그 항목이 쓰기 전·뒤에 '구글 캘린더'였나를 본다(끈 것·지운 것도 그래서 잡힌다).
+- **P8-2 서버 푸시 알림**(권장안으로 고름):
+  - 함수 이름은 **v5를 붙인다**(`v5AlarmIndex`·`v5SendDueAlarms`·`v5CleanupAlarms`) - V4와 같은 프로젝트라 이름이 같으면 codebase가 달라도 서로 덮는다.
+  - 알림 칸은 항목 하나에 하나(`v5alarms/{itemId}`). 알림은 처음 날에만(이월로 따라오는 동안 다시 울리지 않는다 - V4도), 기간 일정은 첫날을 끝냈으면 울리지 않는다.
+    순서·라벨만 바꾼 저장은 알림 칸을 읽지도 않는다(`touchesAlarm`). 그룹 일정은 쓴 사람(없으면 구성원 모두 - 공간 문서 members).
+  - 기기 토큰은 개인 공간 `pushTokens/{토큰 해시}`(V4 `v4_pushTokens` 모양). V4 토큰은 가져오지 않는다 - 기기에서 다시 켠다(DESIGN 8-3).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -1070,8 +1075,10 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 ### P8-2. 서버 푸시 알림 (함수 v5)
 **시작 조건**: P8-1 끝.
 **먼저 읽을 것**: V4 ARCHITECTURE 8장 '일정 알림 서버 푸시', V4 `functions/index.js`·`alarmPlan.js`·`alarmPlan.test.js`, `lib/push.ts`·`components/PushAlarmPanel.tsx`·`public/sw.js`(push 부분).
-- [ ] ■1 함수(V5 `functions/`, `firebase.json` codebase `v5`, Node 22, 서울): `spaces/{sid}/items/{id}` 쓰기 → `v5alarms/{itemId}` 하나 맞춤(받는 사람: 개인 = 그 사람, 그룹 = authorId),
+- [x] ■1 함수(V5 `functions/`, `firebase.json` codebase `v5`, Node 22, 서울): `spaces/{sid}/items/{id}` 쓰기 → `v5alarms/{itemId}` 하나 맞춤(받는 사람: 개인 = 그 사람, 그룹 = authorId),
   매분 보내기(두 번 안 보내게), 30일 지난 것 지우기. alarmPlan을 항목 하나 단위로 + 테스트(`npm run test:functions`).
+  → `functions/alarmPlan.js`(`alarmOf`·`planItemAlarm`·`recipientsOf`·`touchesAlarm`·`pushData`) + 테스트 7(CI에도) · `functions/index.js` **`v5AlarmIndex`·`v5SendDueAlarms`·`v5CleanupAlarms`**(V4 함수와 이름이 겹치지 않게) ·
+  `firebase.json` functions codebase `v5`. 함수 코드를 불러 세 함수가 잡히는 것까지 봤다 - 함수 에뮬레이터는 컨테이너 프록시가 Firestore 트리거 등록을 막아 PC에서 본다.
 - [ ] ■2 기기 토큰(`spaces/u_{uid}/pushTokens`) + 환경설정 '알림' 탭 + `sw.js` push(보는 창이 있으면 앱으로, 없으면 알림).
 - [ ] ■3 👤 배포를 묻고 `npx firebase deploy --only functions:v5 --project schoolplannerv3` → `npx firebase functions:list`로 V4 함수(default)가 그대로인지 본다. 👤 휴대폰 확인.
 
