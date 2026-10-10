@@ -1,9 +1,10 @@
 // tools/inspect-keep.mjs - P8-3 ■3: 백업 창 '가져오기' 탭의 구글 Keep 메모 가져오기를 실제 크롬에서 본다.
 //   Takeout 파일(.json·사진·.html)을 고르면 메모 수·미리보기(새로/고쳐 씀/건너뜀) → 가져오기 = 메모(date null)·keepId·라벨·드라이브 첨부·체크 줄
 //   다시 고르면 건너뜀 · 글을 고친 파일은 고쳐 씀 · 백업 탭에 Keep 파일을 넣으면 Keep 칸으로 넘어온다. 드라이브는 page.route 흉내.
+//   '정리' 탭 📎 첨부 모으기: 옛 Storage 첨부(기록·수업 칸) → 드라이브 복사 · V5 주소만 바꿈 · CORS로 막히면 한 번 알리고 멈춤
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-keep.mjs
-import { collection, deleteDoc, getDocs } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -117,6 +118,48 @@ try {
   await page.locator(sel('restore-file')).setInputFiles([files()[0]]);
   r.check(await waitFor(async () => (await page.locator(sel('backup-window')).getAttribute('data-backup-window')) === 'import', 8000), "Keep 파일을 넣으면 '가져오기' 탭으로");
   r.check(await waitFor(page.locator(sel('keep-count', 1)), 8000), 'Keep 칸이 그 파일을 받는다');
+
+  r.section('📎 첨부 모으기');
+  const STORE = (n) => `https://firebasestorage.googleapis.com/v0/b/x.appspot.com/o/users%2Fu%2F1712345678901_old${n}.png?alt=media&token=t`;
+  const iref = doc(em.db, 'spaces', sid, 'items', 'inspCollectN');
+  const dref = doc(em.db, 'spaces', sid, 'lessonDays', '2030-01-07');
+  await setDoc(iref, {
+    kind: 'note',
+    date: '2030-01-07',
+    text: 'Keep점검 옛 첨부',
+    labelIds: [],
+    order: 'a0',
+    attachments: [{ name: 'old1.png', url: STORE(1), type: 'image/png' }],
+    createdAt: Date.now(),
+    authorId: uid,
+    deletedAt: null,
+    v: 1,
+    updatedAt: serverTimestamp(),
+  });
+  await setDoc(dref, { periods: { 1: { memo: '수업 메모', attachments: [{ name: 'old2.png', url: STORE(2), type: 'image/png' }] }, 2: { memo: '그대로' } }, v: 1, updatedAt: serverTimestamp() });
+  undo.add(async () => {
+    await deleteDoc(iref);
+    await deleteDoc(dref);
+  });
+  let cors = false;
+  // 버킷에 CORS가 없으면 브라우저가 내려받기를 막는다 = fetch가 TypeError (흉내 응답은 CORS를 보지 않아 끊어서 흉내 낸다)
+  await ctx.route(/firebasestorage\.googleapis\.com/, (route) =>
+    cors ? route.fulfill({ status: 200, headers: { 'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*' }, body: PNG }) : route.abort('failed'),
+  );
+  await page.locator(sel('backup-tab-btn', 'tidy')).click();
+  r.check(await waitFor(page.locator(sel('collect-count', 2)), 10000), "'정리' 탭 = 옮길 Storage 첨부 2개 (기록·수업 칸)");
+  const before = drive.uploads.length;
+  await page.locator(sel('collect-run')).click();
+  r.check(await waitFor(async () => ((await page.locator(sel('collect-result')).textContent()) ?? '').includes('CORS'), 10000), '내려받기가 막히면(CORS) 한 번 알리고 멈춘다');
+  r.check((await getDoc(iref)).data()?.attachments?.[0]?.url === STORE(1) && drive.uploads.length === before, '막히면 옛 주소 그대로 · 올리지 않는다');
+  cors = true;
+  await page.locator(sel('collect-run')).click();
+  r.check(await waitFor(async () => ((await page.locator(sel('collect-result')).textContent()) ?? '').includes('2개를 드라이브로'), 15000), '첨부 2개를 드라이브로');
+  const ni = await serverUntil(async () => (await getDoc(iref)).data(), (x) => x?.attachments?.[0]?.driveId);
+  r.check(/drive\.google\.com\/thumbnail/.test(ni?.attachments?.[0]?.url ?? '') && !!ni?.attachments?.[0]?.driveId, '기록 첨부 = 드라이브 주소 · driveId');
+  const nd = (await getDoc(dref)).data();
+  r.check(!!nd?.periods?.['1']?.attachments?.[0]?.driveId && nd?.periods?.['1']?.memo === '수업 메모' && nd?.periods?.['2']?.memo === '그대로', '수업 칸 첨부도 (다른 교시는 그대로)');
+  r.check(await waitFor(page.locator(sel('collect-count', 0)), 8000), '다 옮기면 0개');
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);

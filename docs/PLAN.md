@@ -1119,11 +1119,13 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   → 순수 `domain/keepImport.ts`(V4 lib 그대로 + `planKeepNote` - 미리보기와 넣기가 같은 계획) · `features/backup/keep.ts`(`runKeepImport` 400개씩·라벨은 `ensureLabelOps`·사진은 드라이브 첨부, 백업 탭 → Keep 칸 `useKeepInbox`) ·
   `KeepImportSection`(`[data-keep-import|keep-pick|keep-file|keep-count|keep-clear|keep-opt=labels|archived|files|keep-plan=add|update|skip|keep-preview-item|keep-run|keep-result]`).
   백업 창은 탭 이름이 아니라 params를 견줘 다시 연 탭으로 넘어간다. 점검 `tools/inspect-keep.mjs` 21.
-- [ ] ■4 '보내기' 탭 구글 시트(일정·기록·메모 시트로 내보내기·되읽기, 명렬표 시트) + '정리' 첨부 모으기(V4 Storage 그림을 드라이브로 - 복사만, V4가 아직 쓰니 지우지 않는다).
+- [x] ■4 '보내기' 탭 구글 시트(일정·기록·메모 시트로 내보내기·되읽기, 명렬표 시트) + '정리' 첨부 모으기(V4 Storage 그림을 드라이브로 - 복사만, V4가 아직 쓰니 지우지 않는다).
   → 시트 보내기·되읽기: 순수 `domain/sheets.ts`(V4 칸 모양 - 줄·교시 칸·'일정기록'·'조사표_학급'·'메모', `evalUpdatesFor` 학생 sid) · `data/google/sheets.ts`(만들기·탭·쓰기·읽기) ·
     `features/backup/sheets.ts`(`exportToSheets`·`importFromSheets` - 시트 파일 id는 공간 `settings/sheets`) · `SheetsSection`(`[data-sheets|sheets-period|sheets-start|sheets-end|sheets-include|sheets-export|sheets-import|sheets-open|sheets-busy|sheets-result]`).
     명렬표 '📊 시트' `[data-roster-sheet]`(`class/rosterSheet.ts` - 같은 V5 시트 파일의 학급 탭 '조사표_학급', 순수 `parseRosterSheet`·`mergeSheetRoster` 학생 id·전출 잇기, 탭이 없으면 머리말 탭).
-    점검 `tools/inspect-sheets.mjs` 31(시트 API 흉내). 남은 것: 첨부 모으기.
+    점검 `tools/inspect-sheets.mjs` 31(시트 API 흉내).
+  → 첨부 모으기: 순수 `domain/attachCollect.ts`(Storage 주소 찾기·바꾼 칸 - 수업 칸은 'periods.n'만) · `features/backup/collect.ts`(내려받기 → 드라이브 → V5 주소, CORS면 한 번 알리고 멈춤) ·
+    '🧹 정리' 탭 `CollectSection`(`[data-collect|collect-count|collect-run|collect-result]`). 점검 `inspect-keep.mjs` +8 = 29 · backup 통과(탭 넷).
 - [ ] ■5 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).
 - [ ] ■6 오프라인 앱: `sw.js`가 앱 파일을 캐시(index.html은 네트워크 먼저, 해시 붙은 파일은 캐시 먼저, 새 빌드면 '새 판이 있습니다 - 새로고침' 띠) → 기기 사본과 함께 오프라인 보기.
 - [ ] ■7 크롬 점검(오프라인으로 열기 포함).

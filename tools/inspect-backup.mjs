@@ -42,7 +42,7 @@ try {
   const win = page.locator(sel('backup-window'));
   r.check(await waitFor(win, 8000), '⋮ 자료 → 백업 · 가져오기 · 보내기 창');
   const tabs = await page.locator('[data-backup-tab-btn]').evaluateAll((els) => els.map((e) => e.getAttribute('data-backup-tab-btn')));
-  r.check(tabs.join() === 'backup,import,send', `탭 셋 (${tabs.join()})`);
+  r.check(tabs.join() === 'backup,import,send,tidy', `탭 넷 (${tabs.join()})`);
   await page.locator(sel('backup-tab-btn', 'import')).click();
   r.check(await page.locator(sel('import-run')).isVisible(), "'가져오기' 탭 = V4 자료 가져오기");
   await page.evaluate(() => window.sp5.closeAllWindows());
