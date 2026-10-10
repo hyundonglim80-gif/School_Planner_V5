@@ -53,6 +53,8 @@ export interface BackupFile {
   period: { start: string; end: string } | 'all';
   include: BackupKind[];
   colls: Partial<Record<BackupColl, Record<string, Doc>>>;
+  /** 드라이브 자동 백업이 만든 파일 */
+  auto?: true;
 }
 
 export interface DateRange {

@@ -537,6 +537,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 되살리기는 **없거나 지운 문서만** 다시 넣는다 - 지금 있는 것은 덮지 않는다(백업 뒤에 고친 것을 지키려고. 같은 id라 두 번 눌러도 겹치지 않는다).
     되돌리기 더미에 넣지 않는다(수백 개를 한꺼번에 지우는 쪽이 더 위험하다). V4 백업 파일은 되살리지 않는다 - '가져오기' 탭의 V4 자료 가져오기를 안내.
   - CSV는 V4 모양 한 장(`#구분,날짜/작성일,…`) - 기기 사본으로 만든다(받기만, 되읽지 않는다).
+  - 드라이브 자동 백업은 V4 그대로(PC에서만·토큰이 있을 때만 조용히·3일 넘게 밀리면 띠). 고르는 것은 `common.autoBackup`, 마지막 백업은 `settings/backupLog`(V4의 마지막 백업 시각은 옮기지 않는다 - V4 파일이다).
+    파일 이름 앞 `SP5_자동백업_` - V4와 같은 폴더지만 서로의 파일을 지우지 않는다. 자동 백업 파일 = V5 백업 JSON(`auto: true`) - 되살리기는 백업 탭에서.
   - 환경설정 '가져오기' 탭과 '구글 캘린더로 보내기' 창은 이 창의 탭으로 옮겼다 - 단축키 '구글 캘린더로 보내기'(calendar)는 '보내기' 탭을 연다, 처음 로그인 띠는 '가져오기' 탭.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
@@ -1102,7 +1104,11 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 - [x] ■1 '💾 백업 · 가져오기 · 보내기' 창 틀(탭: 백업 / 가져오기 - V4 / 보내기 - 구글 캘린더) + 백업 탭(JSON 받기·되살리기·CSV). 백업 JSON은 V5 모양.
   → 순수 `domain/backup.ts`(갈래·기간 고르기 `keepInBackup`·수 `countBackup`·파일 읽기·되살리기 셈 `planRestore`·CSV 줄 `csvRowsOf`) · `data/backup.ts`(서버에서 읽기 `buildBackup`·`writeRestore` 400개씩) ·
   `features/backup/`(`BackupWindow` 창 `backup` `{ tab }` · `BackupTab` · `V4ImportSection`(환경설정 ImportTab을 옮김) · `open.ts`·`shortcuts.ts`) · `gcal/CalendarSyncSection`(창 → 탭). 점검 `tools/inspect-backup.mjs` 21 · gcal·import-labels 통과.
-- [ ] ■2 드라이브 자동 백업(백업 탭 - V4 autoBackup 그대로: 드라이브 School_Planner/backup, 주기·보관 수) + 늦었다는 띠.
+- [x] ■2 드라이브 자동 백업(백업 탭 - V4 autoBackup 그대로: 드라이브 School_Planner/백업, 주기·보관 수) + 늦었다는 띠.
+  → 순수 `domain/autoBackup.ts`(V4 셈 그대로, 파일 이름 앞 `SP5_자동백업_`) · `data/google/driveBackup.ts`(백업 폴더·목록·공개하지 않고 올리기·휴지통) · `data/backupLog.ts`(settings/backupLog 지켜보기) ·
+  `features/backup/auto.ts`(`useAutoBackupRunner`·`backupNow`) · `AutoBackupSection`(백업 탭 `[data-auto-backup|auto-backup-last|auto-backup-now|auto-backup-folder]`·`data-choice="auto-backup-interval|keep:값"`) ·
+  `AutoBackupBanner`(Shell 본문 위 `[data-auto-backup-banner|…-run|…-later]`) · 설정 `common.autoBackup`(V4 v4_autoBackup에서 가져오기 - 켜기·주기·개수만). seed는 마지막 백업을 1년 뒤로(토큰을 심는 점검에 끼어들지 않게).
+  점검 `inspect-backup.mjs` +21 = 42 · attach 통과.
 - [ ] ■3 Keep 가져오기('가져오기' 탭 - 테이크아웃 JSON/zip → 메모).
 - [ ] ■4 '보내기' 탭 구글 시트(일정·기록·메모 시트로 내보내기·되읽기, 명렬표 시트) + '정리' 첨부 모으기(V4 Storage 그림을 드라이브로 - 복사만, V4가 아직 쓰니 지우지 않는다).
 - [ ] ■5 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).

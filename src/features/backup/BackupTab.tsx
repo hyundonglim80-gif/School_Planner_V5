@@ -15,6 +15,7 @@ import { downloadCsv, downloadJson } from '../../ui/download';
 import { rangeForScope } from '../gcal/manual';
 import { useLessonSource } from '../lessons/useLessons';
 import { Section } from '../settings/parts';
+import AutoBackupSection from './AutoBackupSection';
 
 type Period = 'all' | 'year' | 'view' | 'custom';
 
@@ -208,6 +209,8 @@ export default function BackupTab() {
           </button>
         </div>
       </Section>
+
+      {personal && <AutoBackupSection />}
 
       <Section
         id="backup-restore"

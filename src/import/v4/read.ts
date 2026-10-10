@@ -22,12 +22,15 @@ export async function readV4SettingsDocs(uid: string): Promise<{ labels: V4Label
   // v4_teaching·v4_classBell·v4_school·timetable_v5·v4_periodTimes = 수업 설정 (P6-4)
   const ids = [
     'labels', 'v4_labelTree', 'v4_gcal', 'v4_preferences_pc', 'v4_preferences_mobile', 'v4_preferences', 'preferences', 'holidays', 'v4_trash',
-    'v4_teaching', 'v4_classBell', 'v4_school', 'timetable_v5', 'v4_periodTimes', 'v4_observationPhrases',
+    'v4_teaching', 'v4_classBell', 'v4_school', 'timetable_v5', 'v4_periodTimes', 'v4_observationPhrases', 'v4_autoBackup',
   ] as const;
-  const [labels, labelTree, gcal, pc, mobile, legacy, shared, holidays, trash, teaching, classBell, school, timetable, periodTimes, phrases] = await Promise.all(
+  const [labels, labelTree, gcal, pc, mobile, legacy, shared, holidays, trash, teaching, classBell, school, timetable, periodTimes, phrases, autoBackup] = await Promise.all(
     ids.map((id) => readV4Doc(uid, id)),
   );
-  return { labels: { labels, labelTree, gcal }, prefs: { pc, mobile, legacy, shared, holidays, trash, teaching, classBell, school, timetable, periodTimes, phrases } };
+  return {
+    labels: { labels, labelTree, gcal },
+    prefs: { pc, mobile, legacy, shared, holidays, trash, teaching, classBell, school, timetable, periodTimes, phrases, autoBackup },
+  };
 }
 
 /** 수업 가져오기에 쓰는 V4 문서들 (P6-4 - 시간표 문서는 설정과 함께 읽은 것을 넘긴다) */

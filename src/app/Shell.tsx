@@ -25,6 +25,7 @@ import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
 import ClipboardColumn from '../features/clipboard/ClipboardColumn';
 import ImportBanner from '../features/import/ImportBanner';
+import AutoBackupBanner from '../features/backup/AutoBackupBanner';
 import ColumnResizer from '../ui/ColumnResizer';
 import ImageViewer from '../ui/ImageViewer';
 import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../ui/sideColumn';
@@ -138,6 +139,7 @@ export default function Shell() {
       <main ref={mainRef} className="@container px-3 py-3 sm:p-5 max-w-7xl mx-auto pb-24 sm:pb-5">
         {/* 처음 로그인 'V4 자료 가져오기' 띠 (V4 자료가 있고 가져온 적이 없을 때만) */}
         <ImportBanner />
+        <AutoBackupBanner />
         <MainWidthContext.Provider value={mainWidth}>
           <Suspense fallback={<p className="p-6 text-xs text-slate-400">불러오는 중…</p>}>
             <Screen />

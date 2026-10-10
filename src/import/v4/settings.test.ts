@@ -126,4 +126,11 @@ describe('수업 설정 (P6-4)', () => {
     const { ops } = planSettings(SID, { phrases: { phrases: ['발표를 잘함', ' ', '발표를 잘함', '친구를 도움'] } }, {});
     expect((putOf(ops, 'common') as Record<string, unknown>).phrases).toEqual(['발표를 잘함', '친구를 도움']);
   });
+
+  it('드라이브 자동 백업은 켜기·주기·남길 개수만 (마지막 백업 시각은 V4 것) - P8-3', () => {
+    const { ops } = planSettings(SID, { autoBackup: { enabled: false, intervalDays: 14, keep: 4, lastAt: 5, lastName: 'SP4_자동백업_2026-10-01.json' } }, {});
+    expect((putOf(ops, 'common') as Record<string, unknown>).autoBackup).toEqual({ enabled: false, intervalDays: 14, keep: 4 });
+    // V4가 기본값 그대로면 칸을 적지 않는다
+    expect(planSettings(SID, { autoBackup: { lastAt: 5 } }, {}).ops.length).toBe(0);
+  });
 });

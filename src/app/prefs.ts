@@ -19,6 +19,7 @@ import { sanitizeTeachingMode, type TeachingMode } from '../domain/teachingMode'
 import { DEFAULT_BELL, sanitizeBell, type ClassBellSettings } from '../domain/classBell';
 import { DEFAULT_PHRASES, sanitizePhrases } from '../domain/observationPhrases';
 import { sanitizeSchool, type SchoolSetting } from '../domain/schoolSetting';
+import { DEFAULT_AUTO_BACKUP, sanitizeAutoBackup, type AutoBackupSettings } from '../domain/autoBackup';
 import {
   boolField,
   customField,
@@ -142,6 +143,8 @@ export interface CommonSettings {
   photoFolders: PhotoFolders;
   /** 관찰 문구 단추 (V4 v4_observationPhrases - P7-3). 자리표 학생 칸·학생 기록이 함께 쓴다 */
   phrases: string[];
+  /** 드라이브 자동 백업 (V4 v4_autoBackup - P8-3). 마지막 백업은 settings/backupLog(백업이 적는다) */
+  autoBackup: AutoBackupSettings;
 }
 
 export interface PhotoFolderConfig {
@@ -194,6 +197,7 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   school: customField<SchoolSetting | null>(null, (v) => (v === null ? null : (sanitizeSchool(v) ?? undefined))),
   photoFolders: customField<PhotoFolders>(EMPTY_FOLDERS, readPhotoFolders),
   phrases: customField<string[]>(DEFAULT_PHRASES, (v) => (Array.isArray(v) ? sanitizePhrases(v) : undefined)),
+  autoBackup: customField<AutoBackupSettings>(DEFAULT_AUTO_BACKUP, sanitizeAutoBackup),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */
