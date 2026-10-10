@@ -1,5 +1,5 @@
 // '💾 백업 · 가져오기 · 보내기' 창 (P8-3 - MENU 2-3, V4 BackupModal·KeepImportModal·CalendarSyncModal·환경설정 가져오기를 한 창에).
-// 탭: 백업(JSON·CSV·되살리기·드라이브 자동 백업) / 가져오기(V4 자료·구글 Keep) / 보내기(구글 캘린더). 탭을 바꿔도 적던 것이 남게 숨기기만 한다.
+// 탭: 백업(JSON·CSV·되살리기·드라이브 자동 백업) / 가져오기(V4 자료·구글 Keep) / 보내기(구글 캘린더·구글 시트). 탭을 바꿔도 적던 것이 남게 숨기기만 한다.
 import { useState } from 'react';
 import type { WindowProps } from '../../app/windows';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
@@ -7,6 +7,7 @@ import CalendarSyncSection from '../gcal/CalendarSyncSection';
 import BackupTab from './BackupTab';
 import type { BackupParams, BackupTabId } from './open';
 import KeepImportSection from './KeepImportSection';
+import SheetsSection from './SheetsSection';
 import V4ImportSection from './V4ImportSection';
 
 const TABS: ReadonlyArray<{ id: BackupTabId; label: string }> = [
@@ -53,6 +54,7 @@ export default function BackupWindow({ params, close, raise }: WindowProps<Backu
         </div>
         <div role="tabpanel" data-backup-panel="send" hidden={tab !== 'send'}>
           <CalendarSyncSection />
+          <SheetsSection />
         </div>
       </div>
     </ModalShell>

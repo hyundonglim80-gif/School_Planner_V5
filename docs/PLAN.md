@@ -541,6 +541,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
     파일 이름 앞 `SP5_자동백업_` - V4와 같은 폴더지만 서로의 파일을 지우지 않는다. 자동 백업 파일 = V5 백업 JSON(`auto: true`) - 되살리기는 백업 탭에서.
   - Keep 가져오기는 창 대신 '가져오기' 탭의 칸(V4 KeepImportModal 그대로 - 지금 공간의 메모로, 되돌리기 더미에는 넣지 않는다). '라벨도 함께 가져오기'를 끄면
     이미 있는 메모의 라벨은 견주지도 바꾸지도 않는다(V4는 라벨을 비웠다). keepId는 V4와 같은 열쇠라 V4에서 가져온 Keep 메모도 알아본다.
+  - 구글 시트는 **V5만의 시트 파일**('School Planner V5 시트' - 공간마다 `settings/sheets`)에 쓴다. V4·V3는 한 시트를 함께 써서 V5가 보내면 그쪽 표를 덮는다.
+    탭 모양은 V4 그대로(사람이 익숙한 모양). 되읽기는 **고치고 더하기만** - 메타데이터 id로 같은 항목, id 없는 줄은 같은 날·같은 글이 있으면 그것, 없으면 새로.
+    시트에서 지운 줄은 앱에서 지우지 않는다(V4는 그날 목록을 통째로 바꿨다 - 실제 자료를 지우는 길을 만들지 않는다). 날짜 옮기기·기간 일정의 날마다 완료는 앱에서.
+    조사표 칸은 제목만(읽기만) - 조사표를 시트에서 만들지 않는다, 점수는 학급 탭에서 되읽는다.
   - 환경설정 '가져오기' 탭과 '구글 캘린더로 보내기' 창은 이 창의 탭으로 옮겼다 - 단축키 '구글 캘린더로 보내기'(calendar)는 '보내기' 탭을 연다, 처음 로그인 띠는 '가져오기' 탭.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
@@ -1116,6 +1120,9 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   `KeepImportSection`(`[data-keep-import|keep-pick|keep-file|keep-count|keep-clear|keep-opt=labels|archived|files|keep-plan=add|update|skip|keep-preview-item|keep-run|keep-result]`).
   백업 창은 탭 이름이 아니라 params를 견줘 다시 연 탭으로 넘어간다. 점검 `tools/inspect-keep.mjs` 21.
 - [ ] ■4 '보내기' 탭 구글 시트(일정·기록·메모 시트로 내보내기·되읽기, 명렬표 시트) + '정리' 첨부 모으기(V4 Storage 그림을 드라이브로 - 복사만, V4가 아직 쓰니 지우지 않는다).
+  → 시트 보내기·되읽기: 순수 `domain/sheets.ts`(V4 칸 모양 - 줄·교시 칸·'일정기록'·'조사표_학급'·'메모', `evalUpdatesFor` 학생 sid) · `data/google/sheets.ts`(만들기·탭·쓰기·읽기) ·
+    `features/backup/sheets.ts`(`exportToSheets`·`importFromSheets` - 시트 파일 id는 공간 `settings/sheets`) · `SheetsSection`(`[data-sheets|sheets-period|sheets-start|sheets-end|sheets-include|sheets-export|sheets-import|sheets-open|sheets-busy|sheets-result]`).
+    점검 `tools/inspect-sheets.mjs` 24(시트 API 흉내). 남은 것: 명렬표 시트 · 첨부 모으기.
 - [ ] ■5 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).
 - [ ] ■6 오프라인 앱: `sw.js`가 앱 파일을 캐시(index.html은 네트워크 먼저, 해시 붙은 파일은 캐시 먼저, 새 빌드면 '새 판이 있습니다 - 새로고침' 띠) → 기기 사본과 함께 오프라인 보기.
 - [ ] ■7 크롬 점검(오프라인으로 열기 포함).
