@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:data": "vitest run --config vitest.data.config.ts",
+    "test:functions": "node --test functions/alarmPlan.test.js",
     "lint": "oxlint",
     "emu": "firebase emulators:start --only auth,firestore --project schoolplannerv3",
     "seed": "node tools/seed.mjs",

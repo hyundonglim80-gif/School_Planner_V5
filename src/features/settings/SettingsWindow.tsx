@@ -6,6 +6,7 @@ import type { WindowProps } from '../../app/windows';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import AppTab from './AppTab';
 import ImportTab from './ImportTab';
+import NotifyTab from './NotifyTab';
 import SchoolTab from './SchoolTab';
 import ShortcutsTab, { type ShortcutsTabHandle } from './ShortcutsTab';
 import ViewTab from './ViewTab';
@@ -15,7 +16,7 @@ export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' |
 const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean }> = [
   { id: 'view', label: '보기', ready: true },
   // 일정 알림(앱을 닫아도) - P8-2 서버 푸시
-  { id: 'notify', label: '알림', ready: false },
+  { id: 'notify', label: '알림', ready: true },
   // 이월 기간(P3-3) · 교사 유형 → 시간표 창 P6-1 · 우리 학교 P6-3
   { id: 'school', label: '학교', ready: true },
   { id: 'shortcuts', label: '단축키', ready: true },
@@ -108,6 +109,9 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
         {/* 탭을 바꿔도 단축키를 고치던 것이 남게 숨기기만 한다 */}
         <div role="tabpanel" data-settings-panel="view" hidden={tab !== 'view'}>
           <ViewTab />
+        </div>
+        <div role="tabpanel" data-settings-panel="notify" hidden={tab !== 'notify'}>
+          <NotifyTab />
         </div>
         <div role="tabpanel" data-settings-panel="school" hidden={tab !== 'school'}>
           <SchoolTab />

@@ -25,8 +25,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-10 P8-1 끝**(클라우드 - 구글 캘린더 자동 보내기·손으로 보내기 창). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P8-2. 👤 V5 주소에서 일정 라벨 '구글 캘린더'를 켜고 저장·완료·옮기기·지우기가 구글 캘린더 SP(work)에 맞게 가는지, 단축키 '구글 캘린더로 보내기' 창, 실제 계정으로 학급 가져오기 한 번.
-- 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
+- **2026-10-10 P8-2 끝**(클라우드 - 일정 알림 서버 푸시: 함수 v5·기기 토큰·환경설정 '알림' 탭). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P8-3. 👤 V5 주소: 라벨 '구글 캘린더' 자동 보내기·단축키 '구글 캘린더로 보내기', 실제 계정 학급 가져오기 한 번. 서비스 워커가 바뀌었다 - 설치한 앱은 지우고 크롬에서 다시 설치.
+- 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙'). 그리고 **함수 v5 배포**(PLAN P8-2 ■3 순서 - `--only functions:v5`) → 휴대폰 '알림' 탭에서 받기.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -65,6 +65,7 @@
   - 창을 닫은 바로 뒤 주소를 바꾸면 창 층의 뒤로가기가 주소를 되돌릴 수 있다 → 그 화면이 뜰 때까지 다시 간다(`inspect-groups` `go()` - P3-3). 서버를 읽어 셀 때 지운 표시(`deletedAt`)를 빼는지 본다.
   - 같은 `data-*` 이름을 두 곳(카드 표시·칸 안내)에 쓰지 않는다 - Playwright가 둘을 찾아 멈춘다(P3-3 `event-series`/`event-series-info`).
   - `ModalShell`의 `headerExtra`·`footer` 단추(저장·삭제·+ 새로)는 창 본문의 `data-*` 상자 밖에 그려진다 - 본문 상자로 좁혀 찾지 말고 page에서(그 창 하나만 연 채로 - P7-4).
+  - 정한 날(`DAY`)에 심는 점검은 **날이 지나면 깨질 수 있다**: 이월 라벨 일정은 그날이 지나면 오늘로 따라와 ForwardMarks가 `carrying`을 한 번 쓴다 - '바뀐 문서 하나'를 세는 점검이면 `carrying: true`로 심는다(P8-2 inspect-events).
   - **계정에 올라가는 설정은 기기 저장소만 바꿔서 시험하지 않는다** - 다시 열면 계정 값이 이긴다. 계정 문서로 바꾸고 끝에 걷는다(P4-1 - inspect-shell이 '가운데 창'을 계정에 남겨 다른 점검이 깨졌다).
 - **오늘에 따라 고르는 것(이월·지난 일정)의 단위 테스트는 날짜를 고정**한다: `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(…)`, 끝에 `vi.useRealTimers()`(P3-3 - 고정하지 않으면 다음 날 시험이 깨진다).
 - **창 목록(`app/windowList`)이 부르는 `features/*/open.ts`는 `data/session`·`select`를 import하지 않는다** - windowConventions.test가 창 목록을 읽어 진짜 Firebase가 뜨고 CI에서 가끔 '처리하지 않은 오류'(P7-2 알림장 - 단축키는 `shortcuts.ts`로 나눴다).
@@ -301,6 +302,9 @@
   저장 도우미 `observeWrites`(쓰기 전·뒤 - 그 항목이 '구글 캘린더'였나) · `data/gcalQueue.ts`(큐 `gcalQueue/{itemId}` 바로 구독·쓰기 - 사본에 넣지 않는다) · `data/google/calendar.ts`(캘린더 찾기·만들기·목록·넣기·고치기·지우기) ·
   `features/gcal/`(`auto.ts` `useGcalAuto`(Shell - 쓰기 → 1.2초 → 큐 → 보내기, 이월은 이 기기 하루 한 번 `sp5-gcal-carried`, 라벨 끄면 보낸 것 맞춤)·`ensureGcalLogin`(일정 칸 저장 뒤)·`sendGcalNow` · 머리줄 `GcalPendingButton` `[data-gcal-pending=N]` ·
   `CalendarSyncWindow` 창 `calendar`(단축키 '구글 캘린더로 보내기' `[data-calendar-sync-window|cal-*]`)·`manual.ts`(창 밖에서 `useCalendarSync`)). 점검 `tools/inspect-gcal.mjs`(35 - 캘린더 API 흉내). `select.docsNow`(훅 아닌 곳의 사본 읽기).
+- **서버 푸시 알림**(P8-2): 함수 `functions/`(codebase `v5`, Node 22, 서울 - `index.js` `v5AlarmIndex`(items 쓰기 → `v5alarms/{itemId}`)·`v5SendDueAlarms`(매분)·`v5CleanupAlarms`, 순수 `alarmPlan.js` + `node --test` = `npm run test:functions`, `firebase.json` functions) ·
+  `data/push.ts`(이 기기 FCM 토큰 `spaces/u_{uid}/pushTokens/{해시}` - `enablePush`·`disablePush`·`refreshPushToken`·`forgetPushOnLogout`, 이 기기 `sp5-push`) · 환경설정 '알림' 탭 `settings/NotifyTab.tsx`(`[data-push-alarm|push-state|push-on|push-off]`) ·
+  `public/sw.js` push(보는 창이면 'sp5-event-alarm' 메시지, 아니면 OS 알림)·notificationclick · `EventAlarms`가 그 메시지로 울린다. 점검 `tools/inspect-push.mjs`(13 - CDP `ServiceWorker.deliverPushMessage`).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·

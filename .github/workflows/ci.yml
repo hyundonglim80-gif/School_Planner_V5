@@ -37,5 +37,9 @@ jobs:
       - name: Test
         run: npm test
 
+      # 함수(P8-2)의 순수 셈 - 함수 의존성은 깔지 않는다
+      - name: Test functions
+        run: npm run test:functions
+
       - name: Build
         run: npm run build
