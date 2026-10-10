@@ -5,6 +5,7 @@ import { useNav } from '../../app/nav';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { BACKUP_KINDS, countBackup, csvRowsOf, describeCounts, isV4Backup, planRestore, readBackupFile, type BackupFile, type BackupKind, type DateRange } from '../../domain/backup';
 import { academicYearOf, addDays, todayStr } from '../../domain/dateUtils';
+import { fileLooksLikeKeep } from '../../domain/keepImport';
 import { lessonsOn } from '../../domain/lessons';
 import { classIdOf, describeClass, genderToText } from '../../domain/roster';
 import { schoolYearSpan } from '../../domain/semester';
@@ -16,6 +17,8 @@ import { rangeForScope } from '../gcal/manual';
 import { useLessonSource } from '../lessons/useLessons';
 import { Section } from '../settings/parts';
 import AutoBackupSection from './AutoBackupSection';
+import { sendToKeep } from './keep';
+import { openBackup } from './open';
 
 type Period = 'all' | 'year' | 'view' | 'custom';
 
@@ -111,9 +114,16 @@ export default function BackupTab() {
 
   const pickFiles = async (list: FileList | null) => {
     const next: Array<{ name: string; file: BackupFile }> = [];
+    const keep: File[] = [];
     for (const f of Array.from(list ?? [])) {
       try {
-        const raw = JSON.parse(await f.text()) as unknown;
+        const text = await f.text();
+        // Keep 파일을 넣는 일이 잦다 - '가져오기' 탭의 Keep 칸으로 넘긴다 (V4 그대로)
+        if (fileLooksLikeKeep(text)) {
+          keep.push(f);
+          continue;
+        }
+        const raw = JSON.parse(text) as unknown;
         if (isV4Backup(raw)) {
           showToast(`${f.name}: V4 백업 파일입니다. V4 자료는 '가져오기' 탭에서 V4 계정 그대로 가져옵니다.`);
           continue;
@@ -130,6 +140,11 @@ export default function BackupTab() {
     }
     setFiles(next);
     setResult('');
+    if (keep.length > 0) {
+      showToast(`구글 Keep 파일 ${keep.length}개 - '가져오기' 탭의 Keep 메모 가져오기로 넘깁니다.`);
+      sendToKeep(keep);
+      openBackup('import');
+    }
   };
 
   const restore = async () => {

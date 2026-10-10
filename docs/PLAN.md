@@ -539,6 +539,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - CSV는 V4 모양 한 장(`#구분,날짜/작성일,…`) - 기기 사본으로 만든다(받기만, 되읽지 않는다).
   - 드라이브 자동 백업은 V4 그대로(PC에서만·토큰이 있을 때만 조용히·3일 넘게 밀리면 띠). 고르는 것은 `common.autoBackup`, 마지막 백업은 `settings/backupLog`(V4의 마지막 백업 시각은 옮기지 않는다 - V4 파일이다).
     파일 이름 앞 `SP5_자동백업_` - V4와 같은 폴더지만 서로의 파일을 지우지 않는다. 자동 백업 파일 = V5 백업 JSON(`auto: true`) - 되살리기는 백업 탭에서.
+  - Keep 가져오기는 창 대신 '가져오기' 탭의 칸(V4 KeepImportModal 그대로 - 지금 공간의 메모로, 되돌리기 더미에는 넣지 않는다). '라벨도 함께 가져오기'를 끄면
+    이미 있는 메모의 라벨은 견주지도 바꾸지도 않는다(V4는 라벨을 비웠다). keepId는 V4와 같은 열쇠라 V4에서 가져온 Keep 메모도 알아본다.
   - 환경설정 '가져오기' 탭과 '구글 캘린더로 보내기' 창은 이 창의 탭으로 옮겼다 - 단축키 '구글 캘린더로 보내기'(calendar)는 '보내기' 탭을 연다, 처음 로그인 띠는 '가져오기' 탭.
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
@@ -1109,7 +1111,10 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   `features/backup/auto.ts`(`useAutoBackupRunner`·`backupNow`) · `AutoBackupSection`(백업 탭 `[data-auto-backup|auto-backup-last|auto-backup-now|auto-backup-folder]`·`data-choice="auto-backup-interval|keep:값"`) ·
   `AutoBackupBanner`(Shell 본문 위 `[data-auto-backup-banner|…-run|…-later]`) · 설정 `common.autoBackup`(V4 v4_autoBackup에서 가져오기 - 켜기·주기·개수만). seed는 마지막 백업을 1년 뒤로(토큰을 심는 점검에 끼어들지 않게).
   점검 `inspect-backup.mjs` +21 = 42 · attach 통과.
-- [ ] ■3 Keep 가져오기('가져오기' 탭 - 테이크아웃 JSON/zip → 메모).
+- [x] ■3 Keep 가져오기('가져오기' 탭 - 테이크아웃 JSON → 메모).
+  → 순수 `domain/keepImport.ts`(V4 lib 그대로 + `planKeepNote` - 미리보기와 넣기가 같은 계획) · `features/backup/keep.ts`(`runKeepImport` 400개씩·라벨은 `ensureLabelOps`·사진은 드라이브 첨부, 백업 탭 → Keep 칸 `useKeepInbox`) ·
+  `KeepImportSection`(`[data-keep-import|keep-pick|keep-file|keep-count|keep-clear|keep-opt=labels|archived|files|keep-plan=add|update|skip|keep-preview-item|keep-run|keep-result]`).
+  백업 창은 탭 이름이 아니라 params를 견줘 다시 연 탭으로 넘어간다. 점검 `tools/inspect-keep.mjs` 21.
 - [ ] ■4 '보내기' 탭 구글 시트(일정·기록·메모 시트로 내보내기·되읽기, 명렬표 시트) + '정리' 첨부 모으기(V4 Storage 그림을 드라이브로 - 복사만, V4가 아직 쓰니 지우지 않는다).
 - [ ] ■5 공유받기(Web Share Target - 안드로이드 설치본, 새 메모 칸) + 앱으로 설치(환경설정 '앱' 탭). 매니페스트를 바꾸면 '지우고 다시 설치' 안내(V4 교훈).
 - [ ] ■6 오프라인 앱: `sw.js`가 앱 파일을 캐시(index.html은 네트워크 먼저, 해시 붙은 파일은 캐시 먼저, 새 빌드면 '새 판이 있습니다 - 새로고침' 띠) → 기기 사본과 함께 오프라인 보기.
