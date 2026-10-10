@@ -201,6 +201,16 @@ registerWindow<BackupParams | undefined>({
   load: () => import('../features/backup/BackupWindow'),
 });
 
+// 👥 공유 그룹 (P8-4) - 계정 칸·공간 고르기 끝 '그룹 관리…', 단축키 'group'(창 목록 id라 저절로 열린다)
+registerWindow({
+  id: 'group',
+  title: '공유 그룹',
+  icon: '👥',
+  kind: 'side',
+  help: 'groups',
+  load: () => import('../features/groups/GroupsWindow'),
+});
+
 // 머리줄 ⏳ D-Day (P5-3) - 단축키 'dday'
 registerWindow({
   id: 'dday',

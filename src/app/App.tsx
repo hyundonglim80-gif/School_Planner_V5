@@ -1,6 +1,7 @@
 // 앱 맨 위: 로그인 상태에 따라 불러오는 중 / 로그인 화면 / 껍데기(Shell - 머리줄·화면·창).
 import { useSession } from '../data/session';
 import { useMirrorSync } from '../data/mirror/sync';
+import { useMySpacesWatch } from '../data/spaces';
 import LoginScreen from '../features/auth/LoginScreen';
 import Shell from './Shell';
 import { usePrefsSync } from './prefs';
@@ -10,6 +11,8 @@ export default function App() {
   const user = useSession((s) => s.user);
   // 로그인한 동안 설정(글자 크기·단축키 …)을 계정과 맞춘다
   usePrefsSync(user?.uid);
+  // 내가 든 공유 그룹 (P8-4 - 공간 고르기·기기 사본이 함께 본다)
+  useMySpacesWatch(user?.uid);
   // 로그인한 동안 기기 사본(일정·메모·기록·라벨 …)을 서버와 맞춘다 - 화면은 data/select로 고른다
   useMirrorSync(user?.uid);
 

@@ -547,6 +547,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
     시트에서 지운 줄은 앱에서 지우지 않는다(V4는 그날 목록을 통째로 바꿨다 - 실제 자료를 지우는 길을 만들지 않는다). 날짜 옮기기·기간 일정의 날마다 완료는 앱에서.
     조사표 칸은 제목만(읽기만) - 조사표를 시트에서 만들지 않는다, 점수는 학급 탭에서 되읽는다.
   - 환경설정 '가져오기' 탭과 '구글 캘린더로 보내기' 창은 이 창의 탭으로 옮겼다 - 단축키 '구글 캘린더로 보내기'(calendar)는 '보내기' 탭을 연다, 처음 로그인 띠는 '가져오기' 탭.
+- **P8-4 공유 그룹**(권장안으로 고름):
+  - 지금 공간은 **이 기기에** 고른다(`sp5-space` - V4도 기기마다). 계정에 올리면 PC에서 그룹을 보는 동안 휴대폰도 바뀐다.
+  - 그룹을 만들면 기본 라벨을 넣는다(라벨이 공간 것이라 빈 그룹은 라벨이 없다). 구성원 이름은 `people/{uid}`에 각자 적는다(공간 문서는 주인만 고친다 - 규칙).
+  - 기기 사본은 지난번에 받은 그룹(`known`)을 곧바로 펼치고, 목록이 바뀌면 받는 공간만 더하고 뺀다(다시 시작하면 화면이 비었다 찬다).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -1140,7 +1144,12 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 ### P8-4. 공유 그룹 + 그룹 가져오기
 **시작 조건**: P8-3 끝.
 **먼저 읽을 것**: V4 설명서 `groups`, V4 `components/GroupModal.tsx`·`hooks/useGroups.ts`·`lib/groups.ts`, V4 `firestore.rules`의 groups·inviteCodes 블록.
-- [ ] ■1 그룹 공간(`spaces/g_…`, members 맵, 초대 코드 `spaceInvites`) + 공간 선택(목록 끝 '👥 그룹 관리…') + 계정 칸 공유 그룹 + 그룹 라벨(공간 것) + 기기 사본에 그룹 공간도.
+- [x] ■1 그룹 공간(`spaces/g_…`, members 맵, 초대 코드 `spaceInvites`) + 공간 선택(목록 끝 '👥 그룹 관리…') + 계정 칸 공유 그룹 + 그룹 라벨(공간 것) + 기기 사본에 그룹 공간도.
+  → `data/spaceChoice.ts`(내 그룹 store `useMySpaces`·이 기기에서 고른 공간 `sp5-space`·`chooseSpace` - 목록을 받기 전에는 고른 것을 믿는다·지난번 그룹 `known`) · `data/session` `currentSpaceId`가 고른 공간 ·
+    `data/spaces.ts`(`watchMySpaces`(App)·`createGroup`(공간 + 초대 코드 한 묶음, 기본 라벨·내 이름 `people/{uid}`)·`joinGroup`·`leaveGroup`·`deleteGroup`(아래 자료째)) ·
+    기기 사본 `setSpaces`(그룹에 들고 나면 다시 시작하지 않고 더하고 뺀다, 그룹은 `GROUP_MIRRORED`만) · 머리줄 📂 `SpaceSelect`(`[data-space-select|space-list|space-option|space-manage]`) · 계정 칸 `[data-account-groups]` ·
+    창 `group`(`features/groups/GroupsWindow` `[data-groups-window|group-row|group-role|group-open|group-members|group-code-text|group-copy|group-leave|group-delete|group-new-name|group-create|group-join-code|group-join|groups-empty]`).
+    점검 `tools/inspect-share-groups.mjs` 27(두 계정) · memo·mirror 통과.
 - [ ] ■2 그룹 자료 가져오기(`groups/{gid}` → `spaces/g_{gid}`, 구성원 누구나 - 결정적 id라 겹치지 않음, members 배열 → 맵).
 - [ ] ■3 크롬 점검(두 계정).
 **끝 조건**: 설명서 `groups`가 된다. **P8 단계 끝 정리**(1-4).

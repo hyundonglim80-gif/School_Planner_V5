@@ -91,7 +91,7 @@ describe('어둡게 / 밝게 (단축키 toggleTheme)', () => {
 });
 
 describe('계정 칸 (MENU.md 3-5)', () => {
-  it('사진을 누르면 이름·메일·로그아웃 (공유 그룹은 P8-4 전까지 없다)', async () => {
+  it('사진을 누르면 이름·메일·👥 공유 그룹·로그아웃 (P8-4)', async () => {
     useSession.setState({ loading: false, user: { uid: 'u1', email: 't@example.com', displayName: '김선생', photoURL: '' } });
     const user = userEvent.setup();
     const { container } = render(<Header />);
@@ -101,7 +101,7 @@ describe('계정 칸 (MENU.md 3-5)', () => {
     await user.click(photo);
     expect(container.querySelector('[data-account-name]')).toHaveTextContent('김선생');
     expect(container.querySelector('[data-account-email]')).toHaveTextContent('t@example.com');
-    expect(container.querySelector('[data-account-panel]')).not.toHaveTextContent('공유 그룹');
+    expect(container.querySelector('[data-account-groups]')).toHaveTextContent('공유 그룹');
     await user.click(container.querySelector('[data-logout]')!);
     expect(logout).toHaveBeenCalledTimes(1);
     expect(container.querySelector('[data-account-panel]')).toBeNull();

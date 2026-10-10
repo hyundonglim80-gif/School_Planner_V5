@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import type { User } from 'firebase/auth';
 import { auth } from './firebase';
 import { ensurePersonalSpace, personalSpaceId } from './space';
+import { chooseSpace, useMySpaces, useSpaceChoice } from './spaceChoice';
 import { showErrorToast } from '../app/toast';
 
 export interface SessionUser {
@@ -28,15 +29,17 @@ const toSessionUser = (u: User): SessionUser => ({
   photoURL: u.photoURL ?? '',
 });
 
-/** 지금 공간 - 지금은 개인 공간 하나(공유 그룹을 고르는 것은 P8-4). 로그인하지 않았으면 null */
+/** 지금 공간 - 개인 공간 또는 이 기기에서 고른 공유 그룹(P8-4 `spaceChoice`). 로그인하지 않았으면 null */
 export function currentSpaceId(): string | null {
   const uid = useSession.getState().user?.uid;
-  return uid ? personalSpaceId(uid) : null;
+  return uid ? chooseSpace(uid, useSpaceChoice.getState(), useMySpaces.getState()) : null;
 }
 
 export function useCurrentSpaceId(): string | null {
   const uid = useSession((s) => s.user?.uid);
-  return uid ? personalSpaceId(uid) : null;
+  const choice = useSpaceChoice();
+  const mine = useMySpaces();
+  return uid ? chooseSpace(uid, choice, mine) : null;
 }
 
 /** 개인 공간 (진도·학급처럼 개인 공간에만 있는 것 - 그룹 공간을 보고 있어도 여기) */
