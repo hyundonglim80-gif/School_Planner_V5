@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-09 P7-4 끝**(클라우드 - 📊 조사표·모아 보기·🧑‍🎓 학생 기록). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P7-5. 👤 V5 주소에서 수업 칸 📊로 조사표 만들기·학급 화면 → 조사표 모아 보기·학생 이름 → 누가기록, 🪑 자리표·🎯 뽑기 써 보기.
+- **2026-10-09 P7-5 끝 = P7 학급 단계 끝**(클라우드 - 명렬표 '암기' 탭·V4 학급 가져오기). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P8-1. 👤 실제 계정으로 환경설정 '가져오기'를 한 번 더 눌러 학급 화면·출석 누계·조사표 모아 보기·자리표가 V4와 같은지, 명렬표 '암기' 써 보기.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -270,7 +270,10 @@
 - **학생 사진**(P7-1 ■3 - 드라이브 School_Planner/Students_Poto/2026-5-2, V4 그대로): 순수 `domain/studentPhotoNames`(`photoClassKey`·`classFolderName`·짝짓기)·`photoBulkUpload`·`photoDiagnosis` · `ui/imageShrink` ·
   `data/google/studentPhotos.ts`(훑기·내려받기 blob·담아 두기 IndexedDB `sp5-student-photos`·올리기(같은 학생은 갈아끼우기)·`wipePhotoCache` - 로그아웃)·`picker.ts`(드라이브 선택창) · 설정 `common.photoFolders`(학급마다 고른 폴더) ·
   `features/photos/`(`useStudentPhotos`(켤 때만 드라이브, 토큰이 없으면 'needs-auth') · `usePhotoTools`(누르는 일 한 곳·크게 보기 아래 바꾸기 `PhotoReplaceButtons`) · `PhotoParts`(`[data-photo-bulk-group|photo-bulk-input|photo-bulk-device|photo-drive-many|photo-bulk-progress|photo-bulk-report|photo-needs-auth|photo-auth|photo-error|photo-loading]`) ·
-  `StudentPhoto`(`[data-photo=이름|photo-empty|photo-file-input|photo-drive-pick]`) · `PhotoStatusBar`(`[data-photo-status]`) · `drivePhotoPick`) · 켬/끔은 이 기기 `sp5-roster-photos`·`sp5-class-photos`. 점검 `tools/inspect-photos.mjs`(47 - 드라이브 흉내).
+  `StudentPhoto`(`[data-photo=이름|photo-empty|photo-file-input|photo-drive-pick]`) · `PhotoStatusBar`(`[data-photo-status]`) · `drivePhotoPick`) · 켬/끔은 이 기기 `sp5-roster-photos`·`sp5-class-photos`. 점검 `tools/inspect-photos.mjs`(56 - 드라이브 흉내, 암기 포함).
+- **이름 암기**(P7-5 - 개인 공간 `quiz/{classId}` `records.{sid}`): 순수 `domain/photoQuiz.ts`(열쇠 '{classId}/{sid}' `buildRound`·`extendDeck`·`applyAnswer`·`undoAnswer`·`sanitizeQuizSettings`) · 사본 `MIRRORED` += quiz ·
+  `features/quiz/`(`quizData`(`useQuizRecords`·`saveQuizRecords` - 학급마다 merge) · `usePhotoQuiz`(판·O/X 모았다 1.5초 뒤 한 번에, `quizStudentsOf`)) · 명렬표 '암기' 탭 `features/class/MemorizeTab.tsx`(설정 이 기기 `sp5-photo-quiz`, 키 `ui/listKeys.quizKeyOf`,
+  `[data-roster-memorize|memorize-photos-off|memorize-photos-on|quiz-*]`).
 - **학생 태그**(P7-1 - 기록·메모 `studentIds` `'{classId}/{sid}'`): 순수 `domain/studentTag.ts`(V4 '#26040305' 읽기 `findStudentTags`·`studentIdsToSave`(새로 적은 태그만)·'@이름' `findMention`·`matchMentionStudents`·`applyMention`) ·
   `notes/StudentTags.tsx`(`StudentMentionList` `[data-student-mention|mention-option]` · `StudentTagRow` `[data-note-students|note-student|note-student-remove|note-student-pick-open|note-student-picker|note-student-class|note-student-option]` · 카드 `EntryStudents` `[data-entry-students]`) · 쓰는 칸 키는 `ui/listKeys`.
 - **출석부·알림장·교과 출결**(P7-2 - 학생 sid): 순수 `domain/attendance.ts`(`marksChanges` 바뀐 학생 칸만·`dayLines`·`summaryRangeOf`)·`notices.ts`(다음 수업일·초안·급식 줄)·`subjectAttendance.ts`(`subjectCellChanges` 학생 한 칸)·`dayCards.ts`(기록 칸 카드 계산) · `ui/shareText.ts`(공유·복사) ·
@@ -323,6 +326,8 @@
   자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 단위만 - `repo.emu`·`mirror.emu`·`import.emu`).
   규칙 테스트: `app/windowConventions.test.ts`(창 틀·'취소' 금지·그림 단추 설명·⋮ 표) · `app/keys.test.tsx`(키 글자를 박지 않는다).
 - **V4 가져오기** `src/import/v4/`(V4 자리를 읽는 곳은 여기뿐 - `boundary.test`가 지킨다, 쓰기는 V5에만): `hash.ts`(SHA-1·base32·`stableStringify`) · `ids.ts`(`v4id`·id 없는 것 `idlessKey`) ·
+  `classes.ts`(P7-5 `planClasses` - 명렬표(학생 sid = 셈한 값 `studentSid`, V5에서 고친 학급은 그 명렬표의 번호로)·출결·교과 출결·알림장·조사표(`v4Eval`)·자리표·허브(`v4Hub`)·암기(이름 열쇠),
+  지운 표시 없는 문서는 칸 비우기 `planEmptiable`, 기록·메모 태그 → `studentKeysOf`(planItems opts)) · 점검 `tools/inspect-import-class.mjs`(36) ·
   `lessons.ts`(P6-4 `planLessons` - 표 → 기간 `timetableRanges`(학기마다 절반 넘게 맞는 표), schedules → lessonDays 다른 칸만, v4_progress → progress, 수업 없는 날은 `run.ts` `lessonOffDay`, 링크는 `items.ts` `linkOf`) · `settings.ts` `periodsFromV4`·`termsFromV4` · 점검 `tools/inspect-import-lessons.mjs`(30) ·
   `plan.ts`(다시 가져오기 규칙 `planDocs` - 지문 `src.h`로 새로·바뀜·그대로·둠·지움, V4에서 없어진 것은 `deletedBy: 'v4-import'`, 결과 수 `ImportCounts`) ·
   `record.ts`(기록 `settings/import` - 때·결과·라벨 짝 표·설정 칸마다 적은 값·띠 닫음, 결과 표 줄 `IMPORT_KINDS`) · `legacy/`(V4 옛 모양 읽기 - 본체는 import 금지) ·

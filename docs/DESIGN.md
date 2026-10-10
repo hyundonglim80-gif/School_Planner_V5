@@ -335,11 +335,11 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | `{sp}/schedules/{date}` | `lessonDays` | **그 기간 시간표와 같은 칸은 뺀다**(과목이 같고 메모·준비물·첨부·링크가 없으면) - 그래야 시간표를 고치면 따라간다. 옛 문자열 값 읽기. V4에 칸이 없는데 시간표에 과목이 있으면 `subject: ''`, 수업 없는 날(방학·공휴일·수업X)은 과목 그대로, memo = memo(없으면 옛 content). 문서에 `src`(날짜 문서 하나 = 지문 하나), V4에서 없어진 날은 `periods: {}`(지우지 않는다) |
 | `settings/timetable_v5` | `timetables`·`settings/common.terms` | 템플릿 → 기간: 학기마다 그 학기 V4 수업 칸과 과목이 절반 넘게 맞는 표 = 그 학기부터 학년도 끝까지, 맞은 학기가 없으면 이름의 '1학기'·'2학기'로 올해, 나머지는 기간 없음('' - 쓰이지 않음), 빈 표는 뺀다(P6-4 `import/v4/lessons.ts`). 방학 한 벌 → `terms[여름 방학이 든 학년도]` |
 | `v4_periodTimes` + 설정의 수업 시간 명칭 | `settings/common.periods` | 이름 = `timetable_v5.currentNames`(없으면 첫 표의 names), 시각 = `v4_periodTimes.times` (P6-4) |
-| `settings/rosters` | `classes` | 학생마다 새 sid. **번호 → sid 짝 표를 가져오기 기록에** 둔다(다시 해도 같은 sid) |
-| `attendance`, `v4_subjectAttendance` | `attendance`, `subjectAttendance` | 번호 → sid |
-| `{sp}/evaluations/{date}`(`readEvalList`) | `evaluations` 한 장씩 | `evalList`가 최신, 학생 칸 번호 → sid |
-| `{sp}/notices/{date}` | `notices` | |
-| `v4_seating`, `v4_classHub`, `settings/photoQuiz` | `seating`, `classHub`, `quiz` | 번호 → sid |
+| `settings/rosters`(없으면 V3 `settings/roster`) | `classes` | 학생 sid는 **셈한다** `v4id('student', 공간, 'settings/rosters', '{classId}#{번호}')` - 다시 해도 같은 sid라 짝 표를 두지 않는다(P7-5). V5에서 고친 학급은 번호 → sid를 그 V5 명렬표에서 찾는다. 성별 남/여 → M/F, `isActive: false` → out |
+| `attendance`, `v4_subjectAttendance` | `attendance`, `subjectAttendance` | 번호 → sid, 적을 때의 이름은 빼다. V4에서 없어지면 칸을 비운다(지운 표시 없음) |
+| `{sp}/evaluations/{date}`(`readEvalList`) | `evaluations` 한 장씩 | `evalList`가 최신, 학생 칸 번호 → sid, `indivScore`(옛 `score`)·`groupScore` → `indiv`·`group`, 명단 이름의 '(전출/삭제됨)' → out, 기록 칸(`context.source: 'journal'`) → `period: null`, 학급(`rosterMeta`)을 모르면 뺀다 |
+| `{sp}/notices/{date}` | `notices` | 개인 공간(그룹 것은 P8-4). V4에서 없어지면 줄을 비운다 |
+| `v4_seating`, `v4_classHub`, `settings/photoQuiz` | `seating`, `classHub`, `quiz` | 번호 → sid(지난 짝·떨어뜨릴 학생 '3-5' → 'sidA\|sidB'), 암기 열쇠 '{학년도}-{학년}-{반}-{이름}' → 그 학급의 같은 이름 학생(없으면 버린다), 학급마다 `quiz/{classId}` (`import/v4/classes.ts`) |
 | `v4_progress` | `progress` | 모양 그대로 |
 | 기록·메모 글의 학생 태그 `#26040305` | `studentIds` | 글의 태그는 그대로 둔다(본문을 바꾸지 않는다) |
 | `settings/preferences.dDayList` | `settings/common.ddays` | |
