@@ -231,3 +231,90 @@ export function planItemSync(itemId: string, spId: string, existing: readonly Go
 
 /** 쓰기 수 (보낸 뒤 안내 '…건 반영') */
 export const planSize = (p: SyncPlan) => p.post.length + p.put.length + p.del.length;
+
+// ── 손으로 보내기 (V4 '구글 캘린더로 보내기' 창 - 기간·대상·병합/교체) ──
+
+export type SyncMode = 'merge' | 'overwrite';
+
+/** 하루치 보낼 것 (화면 store에서 셈해 넘긴다) */
+export interface ManualDay {
+  date: string;
+  events: Array<{ item: GcalItem; position?: { k: number; n: number } | null; done: boolean; labelNames: readonly string[] }>;
+  /** 과목이 있는 교시 (교시 이름은 설정의 교시) */
+  lessons: Array<{ n: number; subject: string; periodName: string }>;
+  journals: Array<{ item: GcalItem; done: boolean; labelNames: readonly string[] }>;
+}
+
+/** 하루치 → 종류별 보낼 것 (V4 buildPayloads - 차례 번호는 그날 종류를 이어 센다) */
+export function manualPayloads(day: ManualDay): Record<SyncKind, GoogleEventPayload[]> {
+  const end = nextDayStr(day.date);
+  const out: Record<SyncKind, GoogleEventPayload[]> = { event: [], class: [], journal: [] };
+  let seq = 1;
+  const at = (summary: string, description: string, priv: Record<string, string>): GoogleEventPayload => ({
+    summary,
+    description,
+    start: { date: day.date },
+    end: { date: end },
+    extendedProperties: { private: { app: APP_TAG, dateStr: day.date, ...priv } },
+  });
+  for (const e of day.events) {
+    const text = (e.item.text ?? '').trim();
+    if (!text) continue;
+    const labelStr = e.labelNames.length ? e.labelNames.join(', ') : '일정';
+    const content = `${text}${e.position ? ` (${e.position.k}/${e.position.n})` : ''}`;
+    out.event.push(
+      at(composeSummary(seq++, e.done, content, labelStr), EVENT_DESCRIPTION, {
+        type: 'event',
+        labelStr,
+        completed: e.done ? 'true' : 'false',
+        sp_id: spIdOf(e.item),
+        sp_forwardChainId: '',
+      }),
+    );
+  }
+  for (const l of day.lessons) {
+    const subject = l.subject.trim();
+    // 'X'는 수업 없음 표시다
+    if (!subject || subject.toUpperCase() === 'X') continue;
+    out.class.push(at(composeSummary(seq++, false, subject, l.periodName || `${l.n}교시`, true), '🎒 [수업]', { type: 'class', period: String(l.n) }));
+  }
+  for (const j of day.journals) {
+    const text = (j.item.text ?? '').trim();
+    if (!text) continue;
+    const labelStr = j.labelNames.length ? j.labelNames.join(', ') : '기록';
+    // 제목이 길면 달력에서 읽기 어렵다 - 전체는 설명에
+    const shown = text.length > 25 ? `${text.slice(0, 25)}...` : text;
+    out.journal.push(
+      at(composeSummary(seq++, j.done, shown, labelStr), `📝 [전체 기록 내용]\n${text}`, {
+        type: 'journal',
+        labelStr,
+        completed: j.done ? 'true' : 'false',
+        sp_id: spIdOf(j.item),
+      }),
+    );
+  }
+  return out;
+}
+
+/**
+ * 손으로 보내기 - 그날 구글의 우리 것(existing) ↔ 보낼 것. 짝이면 고칠 것만 PUT(자동 보내기 표시는 남긴다), 없으면 POST,
+ * '교체'면 짝을 못 찾은 우리 것을 지운다(구글에서 직접 만든 일정에는 우리 표시가 없어 건드리지 않는다).
+ */
+export function planManualSync(existing: readonly GoogleEvent[], payloads: readonly GoogleEventPayload[], mode: SyncMode): SyncPlan {
+  const plan: SyncPlan = { post: [], put: [], del: [] };
+  const matched = new Set<string>();
+  for (const p of payloads) {
+    const hit = existing.find((ev) => !matched.has(ev.id) && isSameItem(ev, p));
+    if (!hit) {
+      plan.post.push(p);
+      continue;
+    }
+    matched.add(hit.id);
+    if (!needsUpdate(hit, p)) continue;
+    const auto = hit.extendedProperties?.private ?? {};
+    const keep: Record<string, string> = auto.sp_item ? { sp_item: auto.sp_item, sp_auto: auto.sp_auto ?? 'true' } : {};
+    plan.put.push({ id: hit.id, payload: { ...p, extendedProperties: { private: { ...p.extendedProperties.private, ...keep } } } });
+  }
+  if (mode === 'overwrite') for (const ev of existing) if (!matched.has(ev.id)) plan.del.push(ev.id);
+  return plan;
+}

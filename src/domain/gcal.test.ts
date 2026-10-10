@@ -6,8 +6,10 @@ import {
   invisiblePrefix,
   isSameItem,
   itemPayloads,
+  manualPayloads,
   nextDayStr,
   planItemSync,
+  planManualSync,
   spIdOf,
   summaryCore,
   type GoogleEvent,
@@ -119,5 +121,38 @@ describe('구글의 것과 맞추기', () => {
     const manual = gev('m', { dateStr: '2026-10-01', sp_id: 'ev_1' }, '상담 [회의]');
     const other = gev('o', { dateStr: '2026-10-05', sp_id: 'ev_2', sp_auto: 'true' }, '다른 일 [회의]');
     expect(planItemSync('v5', 'ev_1', [auto, manual, other], [])).toEqual({ post: [], put: [], del: ['a'] });
+  });
+});
+
+describe('손으로 보내기', () => {
+  const day = {
+    date: '2026-10-05',
+    events: [{ item: { id: 'e1', kind: 'event', date: '2026-10-05', text: '협의회' }, done: true, labelNames: ['회의'] }],
+    lessons: [
+      { n: 1, subject: '국어', periodName: '1교시' },
+      { n: 2, subject: 'x', periodName: '2교시' },
+      { n: 3, subject: '수학', periodName: '' },
+    ],
+    journals: [{ item: { id: 'j1', kind: 'note', date: '2026-10-05', text: '가'.repeat(30) }, done: false, labelNames: [] }],
+  };
+  it('일정·수업(X는 빼고, 교시 먼저)·기록(25자 넘으면 자르고 전체는 설명) - 차례는 이어 센다', () => {
+    const p = manualPayloads(day);
+    expect(p.event[0].summary).toBe(`${invisiblePrefix(1)}✅ 협의회 [회의]`);
+    expect(p.class.map((x) => bareSummary(x.summary))).toEqual(['[1교시] 국어', '[3교시] 수학']);
+    expect(p.class[1].extendedProperties.private).toMatchObject({ type: 'class', period: '3' });
+    expect(bareSummary(p.journal[0].summary)).toBe(`${'가'.repeat(25)}... [기록]`);
+    expect(p.journal[0].description).toBe(`📝 [전체 기록 내용]\n${'가'.repeat(30)}`);
+    expect(p.journal[0].summary.startsWith(invisiblePrefix(4))).toBe(true);
+    expect(p.event[0].extendedProperties.private.sp_auto).toBeUndefined();
+  });
+  it('병합: 넣고 고친다(자동 표시는 남긴다) · 교체: 짝 없는 우리 것을 지운다', () => {
+    const p = manualPayloads(day).event[0];
+    const auto = gev('g1', { dateStr: '2026-10-05', sp_id: 'e1', sp_item: 'e1', sp_auto: 'true', completed: 'false' }, '협의회 [회의]');
+    const stale = gev('g2', { dateStr: '2026-10-05', sp_id: 'gone' }, '지운 일 [회의]');
+    const merge = planManualSync([auto, stale], [p], 'merge');
+    expect(merge.put[0].payload.extendedProperties.private).toMatchObject({ sp_item: 'e1', sp_auto: 'true', completed: 'true' });
+    expect(merge.del).toEqual([]);
+    expect(planManualSync([auto, stale], [p], 'overwrite').del).toEqual(['g2']);
+    expect(planManualSync([], [p], 'merge').post).toEqual([p]);
   });
 });

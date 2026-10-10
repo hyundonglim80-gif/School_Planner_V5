@@ -27,13 +27,15 @@ const DAY = '2027-05-04';
 const DAY_NEXT = '2027-05-05';
 const DAY_V4 = '2027-05-06';
 const DAY_P = '2027-05-10';
+const DAY_M = '2027-05-17';
 const LABEL = 'inspGcalLabel';
-const startedAt = Date.now();
 
 // ── 구글 캘린더 흉내 ──
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*' };
-const google = { tokenOk: true, events: new Map(), seq: 0, calls: 0 };
-const all = () => [...google.events.values()];
+const google = { tokenOk: true, events: new Map(), seq: 0, calls: 0, cals: new Map([['SP(work)', 'CAL_WORK']]) };
+/** 자동 보내기가 보는 SP(work)의 일정 */
+const all = () => [...google.events.values()].filter((e) => e._cal === 'CAL_WORK');
+const inCal = (name) => [...google.events.values()].filter((e) => e._cal === google.cals.get(name));
 const ofItem = (id) => all().filter((e) => e.extendedProperties?.private?.sp_item === id);
 const bare = (s) => String(s ?? '').replace(/^[‌‍]+/, '');
 async function mockGoogle(ctx) {
@@ -46,23 +48,31 @@ async function mockGoogle(ctx) {
     google.calls += 1;
     if (!google.tokenOk) return route.fulfill({ status: 401, headers: CORS, json: { error: { message: 'Invalid Credentials' } } });
     const url = new URL(req.url());
-    if (url.pathname.endsWith('/users/me/calendarList')) return route.fulfill({ status: 200, headers: CORS, json: { items: [{ id: 'CAL_WORK', summary: 'SP(work)' }] } });
+    if (url.pathname.endsWith('/users/me/calendarList'))
+      return route.fulfill({ status: 200, headers: CORS, json: { items: [...google.cals].map(([summary, id]) => ({ id, summary })) } });
+    if (url.pathname.endsWith('/calendars') && req.method() === 'POST') {
+      const { summary } = JSON.parse(req.postData() || '{}');
+      const id = `CAL_${google.cals.size + 1}`;
+      google.cals.set(summary, id);
+      return route.fulfill({ status: 200, headers: CORS, json: { id, summary } });
+    }
     const m = url.pathname.match(/\/calendars\/([^/]+)\/events(?:\/([^/]+))?$/);
     if (!m) return route.fulfill({ status: 404, headers: CORS, json: {} });
+    const cal = decodeURIComponent(m[1]);
     const id = m[2] && decodeURIComponent(m[2]);
     if (req.method() === 'GET') {
       const want = url.searchParams.getAll('privateExtendedProperty').map((p) => p.split('='));
-      const items = all().filter((e) => want.every(([k, v]) => e.extendedProperties?.private?.[k] === v));
+      const items = [...google.events.values()].filter((e) => e._cal === cal && want.every(([k, v]) => e.extendedProperties?.private?.[k] === v));
       return route.fulfill({ status: 200, headers: CORS, json: { items } });
     }
     if (req.method() === 'POST') {
-      const ev = { ...JSON.parse(req.postData() || '{}'), id: `G${++google.seq}` };
+      const ev = { ...JSON.parse(req.postData() || '{}'), id: `G${++google.seq}`, _cal: cal };
       google.events.set(ev.id, ev);
       return route.fulfill({ status: 200, headers: CORS, json: ev });
     }
     if (!google.events.has(id)) return route.fulfill({ status: 404, headers: CORS, json: { error: { message: 'Not Found' } } });
     if (req.method() === 'PUT') {
-      const ev = { ...JSON.parse(req.postData() || '{}'), id };
+      const ev = { ...JSON.parse(req.postData() || '{}'), id, _cal: cal };
       google.events.set(id, ev);
       return route.fulfill({ status: 200, headers: CORS, json: ev });
     }
@@ -105,10 +115,18 @@ try {
     src: { from: 'v4', path: `events/${DAY_V4}`, id: 'ev_insp_v4', h: 'x' },
     ...base,
   });
+  // 손으로 보내기: 라벨 없는 일정·기록·그날 바꾼 수업 칸
+  await setDoc(ref('items', 'inspGcalManualEv'), { kind: 'event', date: DAY_M, text: '구글점검 손 일정', labelIds: [], order: 'a0', createdAt: Date.now(), authorId: uid, ...base });
+  await setDoc(ref('items', 'inspGcalManualNote'), { kind: 'note', date: DAY_M, text: '구글점검 손 기록', labelIds: [], order: 'a0', createdAt: Date.now(), authorId: uid, ...base });
+  const dayRef = ref('lessonDays', DAY_M);
+  const oldDay = await getDoc(dayRef);
+  await setDoc(dayRef, { periods: { '1': { subject: '점검국어' } }, updatedAt: serverTimestamp(), v: 1 });
+  undo.add(() => (oldDay.exists() ? setDoc(dayRef, oldDay.data()) : deleteDoc(dayRef)));
   // 기간 일정 (월~수) - 보이는 날마다 하나
   await setDoc(ref('items', 'inspGcalPeriod'), { kind: 'event', date: DAY_P, endDate: '2027-05-12', text: '구글점검 기간', labelIds: [LABEL], order: 'a0', createdAt: Date.now(), authorId: uid, ...base });
   google.events.set('V4SENT', {
     id: 'V4SENT',
+    _cal: 'CAL_WORK',
     summary: '구글점검 가져온 일정 [구글점검]',
     description: '📌 School Planner에서 관리되는 일정입니다.',
     start: { date: DAY_V4 },
@@ -200,6 +218,39 @@ try {
   await pending.click();
   r.check(await waitFor(() => ofItem(loginId).length === 1, 10000), '누르면 보낸다');
   r.check(await waitFor(async () => (await pending.count()) === 0, 8000), '보내면 단추가 사라진다');
+
+  r.section('손으로 보내기 (병합·교체)');
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => window.sp5.runShortcut('calendar'));
+  const win = page.locator(sel('calendar-sync-window'));
+  r.check(await waitFor(win, 8000), "단축키 '구글 캘린더로 보내기' = 창");
+  await page.locator(sel('cal-start')).fill(DAY_M);
+  await page.locator(sel('cal-end')).fill(DAY_M);
+  await page.locator(sel('cal-include', 'journal')).check();
+  await page.locator(sel('cal-send')).click();
+  r.check(await waitFor(page.locator(sel('cal-result')), 15000), '끝나면 결과 줄');
+  const work = () => inCal('SP(work)').filter((e) => e.start?.date === DAY_M);
+  r.check(work().length === 1 && bare(work()[0].summary) === '구글점검 손 일정 [일정]' && !work()[0].extendedProperties.private.sp_auto, '일정 → SP(work) (자동 표시 없음)');
+  r.check(inCal('SP(class)').some((e) => e.start?.date === DAY_M && bare(e.summary) === '[1교시] 점검국어'), '수업 → SP(class) [1교시] 과목');
+  r.check(inCal('SP(commentary)').some((e) => e.start?.date === DAY_M && bare(e.summary) === '구글점검 손 기록 [기록]'), '기록 → SP(commentary)');
+  const before = google.events.size;
+  await page.locator(sel('cal-send')).click();
+  await waitFor(async () => !(await page.locator(sel('cal-send')).isDisabled()), 15000);
+  await page.waitForTimeout(500);
+  r.check(google.events.size === before, `병합을 다시 해도 두 벌이 되지 않는다 (${before} → ${google.events.size})`);
+  await setDoc(ref('items', 'inspGcalManualNote'), { deletedAt: serverTimestamp(), updatedAt: serverTimestamp() }, { merge: true });
+  await page.waitForTimeout(1500);
+  await page.locator(sel('cal-mode', 'overwrite')).click();
+  await page.locator(sel('cal-send')).click();
+  r.check(await waitFor(() => !inCal('SP(commentary)').some((e) => e.start?.date === DAY_M), 15000), '교체: 지운 기록은 구글에서도 지운다');
+  await waitFor(async () => !(await page.locator(sel('cal-send')).isDisabled()), 15000);
+  await page.locator(sel('cal-start')).fill(TODAY);
+  await page.locator(sel('cal-end')).fill(TODAY);
+  await page.locator(sel('cal-send')).click();
+  await waitFor(async () => (await page.locator(sel('cal-send')).isDisabled()) === false && google.calls > 0, 15000);
+  await page.waitForTimeout(1000);
+  r.check(ofItem('inspGcalCarried').length === 1 && ofItem('inspGcalCarried')[0].start?.date === TODAY, '오늘을 교체해도 이월 중인 일정(자동)은 남는다 (자동 표시도 그대로)');
+  await page.evaluate(() => window.sp5.closeAllWindows());
 
   r.section("라벨의 '구글 캘린더' 끄기");
   await page.keyboard.press('Escape');

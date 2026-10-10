@@ -189,6 +189,16 @@ registerWindow({
   load: () => import('../features/trash/TrashWindow'),
 });
 
+// 구글 캘린더로 보내기 (P8-1) - 단축키 '구글 캘린더로 보내기'(calendar). P8-3에서 '백업 · 가져오기 · 보내기' 창의 '보내기' 탭으로
+registerWindow({
+  id: 'calendar',
+  title: '구글 캘린더로 보내기',
+  icon: '📅',
+  kind: 'side',
+  help: 'calendar-sync',
+  load: () => import('../features/gcal/CalendarSyncWindow'),
+});
+
 // 머리줄 ⏳ D-Day (P5-3) - 단축키 'dday'
 registerWindow({
   id: 'dday',

@@ -1060,7 +1060,9 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   → 순수 `domain/gcal.ts`(V4 calendarSync·gcalPlan 글·짝 + `gcalOn`·`itemPayloads`·`planItemSync`) + 테스트 13 · 저장 도우미 `observeWrites`(쓰기 전·뒤) · `data/gcalQueue.ts`(큐 바로 구독·쓰기 - 사본에 넣지 않는다) ·
   `data/google/calendar.ts` · `features/gcal/auto.ts`(`useGcalAuto` Shell - 쓰기 → 큐 1.2초 → 보내기, 이월은 이 기기에서 하루 한 번 오늘로, 라벨 끄면 보낸 것을 맞춤, `ensureGcalLogin`) ·
   머리줄 `GcalPendingButton` `[data-gcal-pending=N]` · 일정 칸 저장 뒤 로그인 묻기. 점검 `tools/inspect-gcal.mjs` 28(구글 API 흉내).
-- [ ] ■2 손으로 보내기(나중에 백업 · 가져오기 · 보내기 창의 '보내기' 탭 - 지금은 단독 창으로 등록).
+- [x] ■2 손으로 보내기(나중에 백업 · 가져오기 · 보내기 창의 '보내기' 탭 - 지금은 단독 창으로 등록).
+  → 창 `calendar`(단축키 '구글 캘린더로 보내기') `features/gcal/CalendarSyncWindow.tsx`(`[data-calendar-sync-window|cal-start|cal-end|cal-scope-range|cal-include|cal-mode|cal-send|cal-progress|cal-result|gcal-auto-hint]`) ·
+  `manual.ts`(창 밖에서 돈다 - store `useCalendarSync`, `rangeForScope`) · 순수 `manualPayloads`·`planManualSync`(자동 표시는 남긴다). 오늘 칸에는 이월 중인 일정도(교체가 지우지 않게).
 - [ ] ■3 크롬 점검(구글 API 흉내) + 👤 실제 구글 캘린더 확인.
 
 ### P8-2. 서버 푸시 알림 (함수 v5)
