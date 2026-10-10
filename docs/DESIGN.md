@@ -163,7 +163,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 ### 4-9. 그 밖
 
-- `pushTokens/{id}`: V4 `v4_pushTokens` 모양. `gcalQueue/{itemId}`: `{ at, fails }`(V4는 날짜 큐 - V5는 항목 큐).
+- `pushTokens/{id}`: V4 `v4_pushTokens` 모양. `gcalQueue/{itemId}`: `{ at, fails }`(V4는 날짜 큐 - V5는 항목 큐). 기기 사본에 넣지 않고 바로 구독한다(보낸 것을 지운다 - P8-1 `data/gcalQueue.ts`). 구글 일정 표시는 V4 그대로 + `sp_item`(V5 id)·`sp_auto`.
 - `spaceInvites/{code}`: `{ sid, ownerId }` — 코드를 아는 사람만 하나 읽기(목록 막음).
 - `v5alarms/{itemId}`: 함수만 읽고 쓴다(규칙에 없어 앱은 막힘). V4 `v4_alarms`를 항목 하나 단위로.
 - 공유 자료 `holidays/{year}`, `sharedConfig/neis`는 V4와 같이 읽기만.

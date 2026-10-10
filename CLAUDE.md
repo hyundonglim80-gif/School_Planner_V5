@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-09 P7-5 끝 = P7 학급 단계 끝**(클라우드 - 명렬표 '암기' 탭·V4 학급 가져오기). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P8-1. 👤 실제 계정으로 환경설정 '가져오기'를 한 번 더 눌러 학급 화면·출석 누계·조사표 모아 보기·자리표가 V4와 같은지, 명렬표 '암기' 써 보기.
+- **2026-10-10 P8-1 끝**(클라우드 - 구글 캘린더 자동 보내기·손으로 보내기 창). 사용자 요청(10-08)으로 **P9-4까지 쉬지 않고 이어 간다** - 다음 P8-2. 👤 V5 주소에서 일정 라벨 '구글 캘린더'를 켜고 저장·완료·옮기기·지우기가 구글 캘린더 SP(work)에 맞게 가는지, 단축키 '구글 캘린더로 보내기' 창, 실제 계정으로 학급 가져오기 한 번.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙').
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -297,6 +297,10 @@
 - **학생 기록(누가기록)**(P7-4): 순수 `domain/studentRecord.ts`(`noteTimeline`·`attendanceTimeline`·`sortTimeline`·`recordCopyText`) · `features/studentRecord/`(`StudentRecordWindow` 창 `studentRecord` `{ classId?, sid?, at? }`
   `[data-student-record|student-record-class|tag|tag-find|pick|student-card|student-counts|student-record-copy|student-observe|student-observe-input|student-record-tab|student-timeline|student-timeline-item|timeline-kind|student-evals|student-eval|student-eval-value]` · `open.ts` `openStudentRecord`) ·
   학급 화면 학생 이름·도구 카드·자리표 학생 칸 '🧑‍🎓 누가기록'. 점검 `tools/inspect-student-record.mjs`(29).
+- **구글 캘린더**(P8-1 - V4와 같은 캘린더 SP(work)·표시 app=SchoolPlannerV3·sp_id, V5는 `sp_item`·`sp_auto`를 더 단다): 순수 `domain/gcal.ts`(글·짝 V4 그대로 + `gcalOn`·`itemPayloads`(보이는 날마다·기간 (k/n)·이월 = 오늘)·`planItemSync`·손으로 `manualPayloads`·`planManualSync`) ·
+  저장 도우미 `observeWrites`(쓰기 전·뒤 - 그 항목이 '구글 캘린더'였나) · `data/gcalQueue.ts`(큐 `gcalQueue/{itemId}` 바로 구독·쓰기 - 사본에 넣지 않는다) · `data/google/calendar.ts`(캘린더 찾기·만들기·목록·넣기·고치기·지우기) ·
+  `features/gcal/`(`auto.ts` `useGcalAuto`(Shell - 쓰기 → 1.2초 → 큐 → 보내기, 이월은 이 기기 하루 한 번 `sp5-gcal-carried`, 라벨 끄면 보낸 것 맞춤)·`ensureGcalLogin`(일정 칸 저장 뒤)·`sendGcalNow` · 머리줄 `GcalPendingButton` `[data-gcal-pending=N]` ·
+  `CalendarSyncWindow` 창 `calendar`(단축키 '구글 캘린더로 보내기' `[data-calendar-sync-window|cal-*]`)·`manual.ts`(창 밖에서 `useCalendarSync`)). 점검 `tools/inspect-gcal.mjs`(35 - 캘린더 API 흉내). `select.docsNow`(훅 아닌 곳의 사본 읽기).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
