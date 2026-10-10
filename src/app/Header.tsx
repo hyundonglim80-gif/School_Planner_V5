@@ -7,6 +7,7 @@ import { ddayText, primaryDDay } from '../domain/dday';
 import type { ShortcutId } from '../domain/shortcuts';
 import { useSession } from '../data/session';
 import { logout } from '../features/auth/login';
+import GcalPendingButton from '../features/gcal/GcalPendingButton';
 import { canRun, runFromButton, useShortcutOverrides, useShortcutTitle } from './keys';
 import { MORE_MENU } from './moreMenu';
 import { useCommonSettings } from './prefs';
@@ -66,7 +67,8 @@ export default function Header() {
             <span>🗑️</span>
             <span className="hidden sm:inline">휴지통</span>
           </button>
-          {/* P8-1: 📅 못 보낸 일정 N (구글 캘린더 - 있을 때만) */}
+          {/* 📅 못 보낸 일정 N (구글 캘린더 - 있을 때만, P8-1) */}
+          <GcalPendingButton className={HEAD_BTN} />
         </div>
 
         <div className="flex flex-wrap items-center gap-0.5 sm:gap-2 gap-y-1.5 shrink min-w-0">

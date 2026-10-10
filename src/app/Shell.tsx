@@ -18,6 +18,7 @@ import { useNoticeShortcuts } from '../features/notices/shortcuts';
 import { useSeatingShortcuts } from '../features/seating/open';
 import { useSearchFocusRunner } from '../features/search/focus';
 import { useTrashAutoEmpty } from '../features/trash/auto';
+import { useGcalAuto } from '../features/gcal/auto';
 import { useWeekShortcuts } from '../features/week/prefs';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
@@ -66,6 +67,8 @@ export default function Shell() {
   useSearchFocusRunner();
   // 휴지통 자동 비우기 - 하루 한 번 (P5-4)
   useTrashAutoEmpty();
+  // 구글 캘린더 자동 보내기 (P8-1)
+  useGcalAuto();
   // 복사한 것 모으기 (왼쪽 📋 클립보드 칸 - 닫혀 있어도 모은다)
   useClipboardCapture();
 

@@ -29,6 +29,7 @@ import DraftOffer from '../../ui/DraftOffer';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
 import { createEvent, createSeriesEvents, deleteEvent, saveEvent, saveSeriesEvents } from './actions';
+import { ensureGcalLogin } from '../gcal/auto';
 import EventScopeWindow from './EventScopeWindow';
 import RecurRow from './RecurRow';
 import { useSeriesOf } from './series';
@@ -261,7 +262,13 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     }
   };
 
+  /** '구글 캘린더' 일정(켰거나 방금 끈 것)을 저장했으면 구글 로그인을 확인한다 - 없으면 묻는다 (V4 ensureGcalLogin, P8-1) */
+  const checkGcalLogin = (before: EventForm) => {
+    if (personal && (effectiveAttrs(before, tree).gcal || attrs.gcal)) void ensureGcalLogin();
+  };
+
   const save = async (): Promise<boolean> => {
+    const before = base;
     if (!form.text.trim()) {
       // 지우기는 삭제 단추로만 한다. 내용을 다 지운 채 저장해도 일정은 남는다
       showToast('일정 내용을 입력하세요.');
@@ -325,6 +332,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
         setBase(form);
         if (!wrote) showToast('바뀐 것이 없습니다.');
       }
+      checkGcalLogin(before);
       return true;
     } catch {
       // 저장이 안 됐다 (안내는 저장 도우미가 했다). 적은 것은 칸에 그대로 두고 '저장된 것'으로 여기지 않는다
@@ -338,6 +346,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   /** 반복 일정 고치기 - 고른 범위로 (이 일정만 = saveEvent). 실패하면 던진다(묻는 창이 그대로 남는다) */
   const saveScoped = async (scope: 'only' | 'after' | 'all') => {
     if (!item || savingRef.current) return;
+    const before = base;
     savingRef.current = true;
     setSaving(true);
     try {
@@ -345,6 +354,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
       draft.clear();
       setBase(form);
       if (!wrote) showToast('바뀐 것이 없습니다.');
+      checkGcalLogin(before);
     } finally {
       savingRef.current = false;
       setSaving(false);
