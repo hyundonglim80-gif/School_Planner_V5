@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P9-1 설명서 옮기기·설명서 점검** (클라우드면 1-7을 먼저) - P8-4 끝(2026-10-13, P8 단계 끝). 👤 운영 규칙 배포(V4 그룹 가져오기 갈래 - CLAUDE.md 지금 상태).
+**P9-1 설명서 옮기기·설명서 점검** - ■1 끝(설명서 창·장 파일). 다음 ■2 내용 고치기(장마다 V5로). 👤 운영 규칙 배포(V4 그룹 가져오기 갈래 - CLAUDE.md 지금 상태).
 
 ---
 
@@ -1178,7 +1178,12 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 ### P9-1. 설명서 옮기기·설명서 점검
 **시작 조건**: P8-4 끝.
 **먼저 읽을 것**: `MENU.md`, `PARITY.md`, V4 `src/lib/helpTopics.ts`(장마다 나눠 옮기며 읽는다), `components/HelpModal.tsx`, V4 `tools/inspect-manual.mjs`.
-- [ ] ■1 helpTopics 옮기기(장마다 파일 `features/help/chapters/*.ts`) + HelpModal(왼쪽 목차 트리) + 링크·단축키 자리 테스트 옮기기.
+- [x] ■1 helpTopics 옮기기(장마다 파일 `features/help/chapters/*.ts`) + HelpModal(왼쪽 목차 트리) + 링크·단축키 자리 테스트 옮기기.
+  → `features/help/`(`types.ts` · `topics.ts` 장 차례·자리표 풀기 · `chapters/` 11장 = V4 글 그대로(수업 장 id `class` → `lessons`) · 창 `help` `{ topic? }` `HelpWindow.tsx`
+    (`[data-help-window|help-home|help-search|help-results|help-category|help-topic|help-detail|help-example|help-link|help-key|help-lookback|help-related|help-prev|help-next|help-crumb*|help-back|help-tree*|help-shortcuts*]`,
+    목차 접기 이 기기 `sp5-help-tree-hidden`, 열린 설명서를 다른 주제로 다시 열면 그 항목)) · ⋮ 설정·머리줄 ?는 창 목록으로 살아남.
+    V4 버그 고침: 굵은 글 안의 자리표(`**{lookback}일**`)가 글자 그대로 보였다 → 안도 푼다. 시험: 창의 `help` 주제가 모두 있다·모든 항목을 그려 기호가 남지 않는다.
+    단위 2291 · `tools/inspect-manual.mjs` 설명서 창 20.
 - [ ] ■2 내용 고치기: `MENU.md`대로(화면 구성·⋮ 목록·단축키·휴대폰·환경설정), 계산으로 바뀐 것(이월·시간표·기간·기록 칸 카드), 'V3와 함께 쓰기' → 'V4에서 옮겨 오기', 문제 해결을 V5 내용으로.
 - [ ] ■3 설명서 점검 `inspect-manual.mjs`(V5 - 항목마다 `data-*`로).
 

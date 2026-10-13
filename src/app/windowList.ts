@@ -5,6 +5,7 @@ import { DAY_NOTES, NOTE_PANEL, sameDayNotes, sameNotePanel, type DayNotesParams
 import { LESSON_PANEL, sameLessonPanel, type LessonPanelParams } from '../features/lessons/open';
 import type { WeeklyGuideParams } from '../features/weeklyGuide/WeeklyGuideWindow';
 import type { BackupParams } from '../features/backup/open';
+import type { HelpParams } from '../features/help/HelpWindow';
 import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/open';
 import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attendance/open';
 import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
@@ -285,6 +286,16 @@ registerWindow({
   kind: 'side',
   help: 'settings',
   load: () => import('../features/settings/SettingsWindow'),
+});
+
+// ⋮ 설정 · 머리줄 ? - 사용 설명서 (P9-1). `{ topic }`으로 열면 그 항목을 연다(창의 `help`)
+registerWindow<HelpParams | undefined>({
+  id: 'help',
+  title: '사용 설명서',
+  icon: '💡',
+  menu: '설정',
+  kind: 'side',
+  load: () => import('../features/help/HelpWindow'),
 });
 
 // 점검용 창 둘 (개발·에뮬레이터 빌드에만 - 운영 빌드에서는 통째로 빠진다)
