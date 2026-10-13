@@ -10,6 +10,7 @@ const useMirrorSync = vi.hoisted(() => vi.fn());
 vi.mock('../data/mirror/sync', () => ({ useMirrorSync }));
 // 구글 캘린더 큐는 Firestore를 바로 구독한다 (P8-1)
 vi.mock('../data/gcalQueue', () => ({ watchGcalQueue: () => () => {} }));
+vi.mock('../data/spaces', () => ({ useMySpacesWatch: () => {} }));
 vi.mock('../data/backupLog', () => ({ BACKUP_LOG_ID: 'backupLog', watchBackupLog: () => () => {} }));
 
 beforeEach(() => useSession.setState({ loading: true, user: null }));

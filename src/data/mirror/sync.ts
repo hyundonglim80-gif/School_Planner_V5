@@ -16,6 +16,7 @@ import { useEffect } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { academicYearOf, academicYearRange, todayStr } from '../../domain/dateUtils';
 import { personalSpaceId } from '../space';
+import { knownGroupsOf, useMySpaces } from '../spaceChoice';
 import type { SpaceCollection } from '../types';
 import { compareTime } from './codec';
 import { deleteMirrorDb, emptyMeta, mergeMeta, openMirrorDb, type MirrorDb, type MirrorDrop, type MirrorMeta } from './db';
@@ -37,6 +38,9 @@ import {
 
 /** 사본에 두는 컬렉션 - 그 기능을 옮기는 세션이 더한다(수업 P6-1, 학급 P7-1 …). 개인·그룹 공간 같다 */
 export const MIRRORED: readonly SpaceCollection[] = ['items', 'labels', 'series', 'timetables', 'lessonDays', 'progress', 'classes', 'attendance', 'notices', 'subjectAttendance', 'seating', 'classHub', 'evaluations', 'quiz'];
+/** 그룹 공간이 받는 것 - 공간마다 있는 것만(DESIGN 4-1, 학급·출결·진도는 개인 공간에만) */
+export const GROUP_MIRRORED: readonly SpaceCollection[] = ['items', 'labels', 'series', 'timetables', 'lessonDays', 'notices', 'evaluations'];
+const collsOf = (sid: string) => (sid.startsWith('g_') ? GROUP_MIRRORED : MIRRORED);
 /** 지운 표시(deletedAt)가 있는 컬렉션 - 영구 지우기를 서버와 견준다 (lessonDays는 날짜 문서라 지우지 않는다) */
 const WITH_TRASH = new Set<string>(['items', 'labels', 'series', 'timetables', 'progress', 'classes', 'seating', 'evaluations']);
 
@@ -114,8 +118,28 @@ class Engine {
       this.persist(key.slice(0, cut), key.slice(cut + 1), new Map(), [drop], null);
     });
     if (typeof window !== 'undefined') window.addEventListener('online', this.onOnline);
-    for (const sid of spaces) for (const coll of MIRRORED) this.runners.push(new Runner(this, sid, coll));
+    for (const sid of spaces) for (const coll of collsOf(sid)) this.runners.push(new Runner(this, sid, coll));
     for (const r of this.runners) void r.start();
+  }
+
+  /** 받는 공간을 맞춘다 (그룹에 들거나 나가면 - 다시 시작하지 않고 더하고 뺀다, 화면이 비었다 차지 않게). 뺀 공간의 사본은 둔다 */
+  setSpaces(spaces: readonly string[]) {
+    if (this.stopped) return;
+    const want = new Set(spaces);
+    for (let i = this.runners.length - 1; i >= 0; i--) {
+      if (want.has(this.runners[i].sid)) continue;
+      this.runners[i].halt();
+      this.runners.splice(i, 1);
+    }
+    const have = new Set(this.runners.map((r) => r.sid));
+    for (const sid of spaces) {
+      if (have.has(sid)) continue;
+      for (const coll of collsOf(sid)) {
+        const r = new Runner(this, sid, coll);
+        this.runners.push(r);
+        void r.start();
+      }
+    }
   }
 
   /** 사본을 잃었다 - 이 탭은 메모리로만. 다시 열지 않는다(맨 위 ⚠️) */
@@ -168,8 +192,16 @@ class Runner {
     this.coll = coll;
   }
 
+  /** 이 공간만 그만 받는다 (그룹에서 나갔다) */
+  private halted = false;
+
   private get stopped() {
-    return this.engine.stopped;
+    return this.engine.stopped || this.halted;
+  }
+
+  halt() {
+    this.halted = true;
+    this.stop();
   }
 
   async start() {
@@ -386,7 +418,14 @@ export function mirrorEngine(): { uid: string; runners: readonly Runner[] } | nu
 export function useMirrorSync(uid: string | undefined) {
   useEffect(() => {
     if (!uid) return;
-    startMirror(uid);
+    // 지난번에 받은 그룹도 곧바로 (목록을 다시 받기 전에·오프라인에도 그룹 공간이 보이게 - P8-4)
+    startMirror(uid, { spaces: [personalSpaceId(uid), ...knownGroupsOf(uid)] });
     return () => stopMirror();
   }, [uid]);
+  // 그룹에 들거나 나가면 받는 공간을 맞춘다
+  const groups = useMySpaces((s) => (s.loaded ? s.groups.map((g) => g.id).join(',') : null));
+  useEffect(() => {
+    if (!uid || groups === null || !running || running.uid !== uid) return;
+    running.setSpaces([personalSpaceId(uid), ...(groups ? groups.split(',') : [])]);
+  }, [uid, groups]);
 }

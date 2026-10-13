@@ -5,7 +5,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { ddayText, primaryDDay } from '../domain/dday';
 import type { ShortcutId } from '../domain/shortcuts';
-import { useSession } from '../data/session';
+import { useCurrentSpaceId, useSession } from '../data/session';
+import { setSpaceChoice, useMySpaces } from '../data/spaceChoice';
 import { logout } from '../features/auth/login';
 import GcalPendingButton from '../features/gcal/GcalPendingButton';
 import { canRun, runFromButton, useShortcutOverrides, useShortcutTitle } from './keys';
@@ -101,7 +102,8 @@ export default function Header() {
               </button>
             ))}
           </div>
-          {/* P8-4: 📂 공간 고르기 (공유 그룹이 있을 때) */}
+          {/* 📂 공간 고르기 (공유 그룹이 있을 때 - P8-4) */}
+          <SpaceSelect />
         </div>
       </div>
 
@@ -245,6 +247,7 @@ function Avatar({ size }: { size: 'sm' | 'lg' }) {
 function AccountMenu({ title }: { title: string }) {
   const { open, setOpen, ref } = useDropdown();
   const user = useSession((s) => s.user);
+  const groupCount = useMySpaces((s) => s.groups.length);
   return (
     <div className="relative" ref={ref}>
       <button
@@ -274,6 +277,18 @@ function AccountMenu({ title }: { title: string }) {
           <div className="border-t border-slate-100 mt-1 pt-1">
             <button
               type="button"
+              data-account-groups
+              onClick={() => {
+                setOpen(false);
+                runFromButton('group');
+              }}
+              className="w-full px-4 py-2 text-left font-bold flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer"
+            >
+              <span>👥</span> 공유 그룹
+              {groupCount > 0 && <span className="ml-auto text-2xs text-slate-400">{groupCount}개</span>}
+            </button>
+            <button
+              type="button"
               data-logout
               onClick={() => {
                 setOpen(false);
@@ -282,6 +297,64 @@ function AccountMenu({ title }: { title: string }) {
               className="w-full px-4 py-2 text-left font-bold flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-red-600 cursor-pointer"
             >
               <span>🚪</span> 로그아웃
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * 📂 공간 고르기 (P8-4 - V4 '📂 공간 선택'). 든 그룹이 있을 때만(또는 그룹을 보고 있을 때). 고른 것은 이 기기에(data/spaceChoice).
+ * 목록 끝 '👥 그룹 관리…' = 공유 그룹 창.
+ */
+function SpaceSelect() {
+  const { open, setOpen, ref } = useDropdown();
+  const uid = useSession((s) => s.user?.uid);
+  const groups = useMySpaces((s) => s.groups);
+  const current = useCurrentSpaceId();
+  if (!uid || (groups.length === 0 && !current?.startsWith('g_'))) return null;
+  const now = groups.find((g) => g.id === current);
+  const pick = (sid: string | null) => {
+    setOpen(false);
+    setSpaceChoice(uid, sid);
+  };
+  const item = (on: boolean) => `w-full px-4 py-2 text-left font-bold flex items-center gap-2 hover:bg-slate-50 cursor-pointer ${on ? 'text-primary' : 'text-slate-700'}`;
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        data-space-select={current ?? ''}
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        title="공간 고르기 (개인 / 공유 그룹)"
+        className={`${HEAD_BTN} border ${now ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+      >
+        <span>📂</span>
+        <span className="max-w-32 truncate">{now ? `👥 ${now.name}` : '🔒 개인'}</span>
+      </button>
+      {open && (
+        <div data-space-list className="absolute left-0 top-10 w-60 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs">
+          <button type="button" data-space-option={`u_${uid}`} onClick={() => pick(null)} className={item(!now)}>
+            🔒 개인 공간
+          </button>
+          {groups.map((g) => (
+            <button key={g.id} type="button" data-space-option={g.id} onClick={() => pick(g.id)} className={item(g.id === current)}>
+              👥 <span className="truncate">{g.name}</span>
+            </button>
+          ))}
+          <div className="border-t border-slate-100 mt-1 pt-1">
+            <button
+              type="button"
+              data-space-manage
+              onClick={() => {
+                setOpen(false);
+                runFromButton('group');
+              }}
+              className={item(false)}
+            >
+              👥 그룹 관리…
             </button>
           </div>
         </div>
