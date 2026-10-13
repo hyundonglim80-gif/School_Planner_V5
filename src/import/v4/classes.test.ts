@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DELETE_FIELD, SERVER_TIME, toWrite, type WriteOp } from '../../data/repo/ops';
-import { classIdOfKey, classIdOfV4, planClasses, studentSid, v4Rosters, type ExistingClassDocs, type V4ClassDocs } from './classes';
+import { classIdOfKey, classIdOfV4, planClasses, planEvaluations, planNotices, studentSid, v4Rosters, type ExistingClassDocs, type V4ClassDocs } from './classes';
 import { changedTotal } from './plan';
 
 // V4 학급 → V5 (P7-5)
@@ -215,5 +215,29 @@ describe('planClasses', () => {
     const again = planClasses(SID, v4(), { ...NONE, attendance: mine as never }, { today: TODAY });
     expect(again.counts.attendance.kept).toBe(1);
     expect(again.ops.some((o) => o.at.coll === 'attendance')).toBe(false);
+  });
+});
+
+describe('그룹 공간의 알림장·조사표 (P8-4)', () => {
+  const GSID = 'g_grp';
+  it('조사표 학생 sid는 만든 사람의 것으로 셈하고, keepAuthor면 만든 사람을 그대로 둔다', () => {
+    const docs = { '2026-10-05': { evalList: [{ id: 'e1', title: '모둠 활동', authorId: 'uidB', rosterMeta: { year: 2026, grade: 5, classNum: 2 }, studentsSnapshot: [{ num: 1, name: '김하나' }], records: { 1: { indivScore: '잘함' } } }] } };
+    const notes = { noClass: 0 };
+    const seen: Array<string | undefined> = [];
+    const r = planEvaluations(GSID, docs, {}, (c, n, author) => (seen.push(author), studentSid(`u_${author ?? 'me'}`, `${c}#${n}`)), notes, { keepAuthor: true });
+    const op = r.ops[0] as Extract<WriteOp, { type: 'create' }>;
+    const sidB = studentSid('u_uidB', `${C}#1`);
+    expect(op.at).toMatchObject({ sid: GSID, coll: 'evaluations' });
+    expect(op.authorId).toBe('uidB');
+    expect(op.data).toMatchObject({ classId: C, students: [{ sid: sidB, num: 1 }], values: { [sidB]: { indiv: '잘함' } } });
+    expect(seen.every((a) => a === 'uidB')).toBe(true);
+    // 개인 공간은 만든 사람을 적지 않는다
+    expect((planEvaluations(SID, docs, {}, (c, n) => studentSid(SID, `${c}#${n}`), notes).ops[0] as Extract<WriteOp, { type: 'create' }>).authorId).toBeUndefined();
+  });
+
+  it('알림장: 날짜 문서 그대로 (그룹 공간에도)', () => {
+    const r = planNotices(GSID, v4().notices, {});
+    expect(r.counts.added).toBe(1);
+    expect(r.ops[0]).toMatchObject({ type: 'create', at: { sid: GSID, coll: 'notices', id: '2026-10-05' }, data: { lines: ['준비물: 색연필'] } });
   });
 });

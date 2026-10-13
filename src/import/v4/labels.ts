@@ -11,6 +11,8 @@
 // - 이름은 같은 종류 안에서 겹치지 않게(DESIGN 4-3): V5에 이름이 같은 라벨이 이미 있으면(V5에서 만든 것·'기본 라벨 넣기') 새로 만들지 않고 그 라벨에 잇는다.
 //   V4에 이름이 같은 라벨이 둘이면 앞의 것에 잇는다. 이은 것은 짝 표(labelMap - V4 이름 → V5 id)에 - P3-4 항목 가져오기가 이것으로 라벨을 찾는다.
 // - 차례는 V4 차례대로 'a0', 'a1' … (V5 상태와 상관없이 셈해 다시 가져와도 같다).
+// - 그룹 공간(P8-4 opts.shared): 구성원마다 V4 라벨 목록이 달라(V4 그룹 일정은 보는 사람의 라벨을 이름으로 썼다) 누가 가져오든
+//   이름이 같은 라벨(남이 가져온 것 포함)에 잇고, 가져오기가 라벨을 지우지 않는다. opts.only = 그 공간 항목이 쓰는 이름만(상위도 함께).
 import { cleanLabelName, labelProps } from '../../domain/labels';
 import { ordersBetween } from '../../domain/order';
 import type { WriteOp } from '../../data/repo/ops';
@@ -93,7 +95,7 @@ export function noteLabelSources(docs: V4LabelDocs): Source[] {
 
 const owns = (kind: ItemKind) => (d: LabelDoc) => d.kind === kind && d.src?.from === 'v4' && d.src.path === V4_LABELS_PATH;
 
-function planKind(sid: string, kind: ItemKind, sources: Source[], existing: Readonly<Record<string, LabelDoc>>) {
+function planKind(sid: string, kind: ItemKind, sources: Source[], existing: Readonly<Record<string, LabelDoc>>, shared = false) {
   const labelMap: Record<string, string> = {};
   const idOf = (s: Source) => v4id(`label.${kind}`, sid, V4_LABELS_PATH, s.key);
   const plannedIds = new Set(sources.map(idOf));
@@ -101,7 +103,7 @@ function planKind(sid: string, kind: ItemKind, sources: Source[], existing: Read
   const taken = new Map<string, string>();
   for (const d of Object.values(existing)) {
     if (d.kind !== kind || d.deletedAt || plannedIds.has(d.id)) continue;
-    if (owns(kind)(d) && untouched(d)) continue;
+    if (!shared && owns(kind)(d) && untouched(d)) continue;
     if (!taken.has(cleanLabelName(d.name))) taken.set(cleanLabelName(d.name), d.id);
   }
 
@@ -139,15 +141,32 @@ function planKind(sid: string, kind: ItemKind, sources: Source[], existing: Read
     return { id, data, src: { path: V4_LABELS_PATH, id: s.key } };
   });
 
-  const { ops, counts } = planDocs(sid, 'labels', planned, existing, owns(kind));
+  const { ops, counts } = planDocs(sid, 'labels', planned, existing, shared ? () => false : owns(kind));
   for (let i = 0; i < kept.length; i++) tally(counts, 'kept');
   return { ops, counts, labelMap };
 }
 
+export interface LabelsOptions {
+  /** 이 이름만 가져온다 (메모·기록은 상위도 함께) - 그룹 공간 */
+  only?: { event: ReadonlySet<string>; note: ReadonlySet<string> };
+  /** 여럿이 가져오는 공간(그룹): 이름이 같은 라벨에 잇고 지우지 않는다 */
+  shared?: boolean;
+}
+
 /** V4 라벨 → 쓰기 묶음·결과 수·짝 표. existing = 그 공간의 V5 라벨(지운 것 포함, 서버에서 읽은 것) */
-export function planLabels(sid: string, docs: V4LabelDocs, existing: Readonly<Record<string, LabelDoc>>): LabelsPlan {
-  const ev = planKind(sid, 'event', eventLabelSources(docs), existing);
-  const note = planKind(sid, 'note', noteLabelSources(docs), existing);
+export function planLabels(sid: string, docs: V4LabelDocs, existing: Readonly<Record<string, LabelDoc>>, opts: LabelsOptions = {}): LabelsPlan {
+  let evSources = eventLabelSources(docs);
+  let noteSources = noteLabelSources(docs);
+  if (opts.only) {
+    const { event, note: noteNames } = opts.only;
+    evSources = evSources.filter((s) => event.has(s.v4Name));
+    const parentOf = new Map(noteSources.map((s) => [s.v4Name, s.parentName]));
+    const keep = new Set<string>();
+    for (const n of noteNames) for (let cur: string | undefined = n; cur && !keep.has(cur); cur = parentOf.get(cur)) keep.add(cur);
+    noteSources = noteSources.filter((s) => keep.has(s.v4Name));
+  }
+  const ev = planKind(sid, 'event', evSources, existing, opts.shared);
+  const note = planKind(sid, 'note', noteSources, existing, opts.shared);
   return {
     ops: [...ev.ops, ...note.ops],
     counts: { event: ev.counts, note: note.counts },

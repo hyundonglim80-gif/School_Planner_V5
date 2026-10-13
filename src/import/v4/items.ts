@@ -10,7 +10,9 @@
 //   반복 묶음(groupId, '(i/n)' 없음, 둘 이상) → series(imported - 규칙 없음) + 항목마다 seriesId·seriesIndex
 //   {sp}/journals/{date}.entries                → items(note, date)  기록 라벨 id·이름 → labelIds, '[표]' → 빈 글, notice_·attendance_ 자동 기록은 빼다(DESIGN 5-4)
 //   {sp}/tasks/{id}                             → items(note, null)  라벨 이름 → labelIds, fromDate·keepId, 차례는 V4 차례대로
-//   linkedItems                                  → linkIds           결정적 id로 바로 셈(같은 실행에서 짝을 찾는다), 수업 → 'lesson:{date}:{n}', 다른 공간(그룹) 것은 빼다
+//   linkedItems                                  → linkIds           결정적 id로 바로 셈(같은 실행에서 짝을 찾는다), 수업 → 'lesson:{date}:{n}', 다른 공간(개인 ↔ 그룹) 것은 빼다
+//
+// 그룹 자료(P8-4 - groups/{gid} 밑)도 같은 길: opts.home = 그 그룹 id(링크의 targetFId가 같으면 같은 공간), opts.keepAuthor = V4 authorId를 그대로(만든 사람).
 //
 // 학생 태그(#26040305 → studentIds)는 같은 실행의 학급 가져오기(classes.ts)가 셈한 명렬표로(P7-5 - opts.studentKeysOf). 글의 태그는 그대로 남는다.
 import { academicYearOf, isValidDateStr } from '../../domain/dateUtils';
@@ -122,8 +124,16 @@ export function planItems(
   labelDocs: V4LabelDocs,
   labelMap: { event: Readonly<Record<string, string>>; note: Readonly<Record<string, string>> },
   existing: ExistingDocs,
-  opts: { studentKeysOf?: (text: string) => string[] } = {},
+  opts: {
+    studentKeysOf?: (text: string) => string[];
+    /** 이 공간의 V4 이름 (링크 targetFId - 개인 'personal', 그룹은 그 id) */
+    home?: string;
+    /** V4 authorId를 만든 사람으로 둔다 (그룹 - 구성원마다 다르다) */
+    keepAuthor?: boolean;
+  } = {},
 ): ItemsPlan {
+  const home = opts.home ?? 'personal';
+  const authorOf = (o: Raw) => (opts.keepAuthor && str(o.authorId)) || undefined;
   const notes: ItemNotes = { holidays: 0, empty: 0, alarmMoved: 0, autoJournals: 0, periods: 0, series: 0, linksDropped: 0 };
   const dueMap = sanitizeDueMap(isObj(docs.dues) ? docs.dues.dues : undefined);
 
@@ -184,7 +194,7 @@ export function planItems(
       const id = v4id('item.event', sid, chain && key.startsWith('chain:') ? 'events/chain' : `events/${date}`, key);
       linkTarget.set(`event|${date}|${str(it.id)}`, id);
       const data = eventData(it, date, content, orders[idx]);
-      const p: Planned<'items'> = { id, data, src: { path: `events/${date}`, id: key }, year: yearOf(data.date) };
+      const p: Planned<'items'> = { id, data, src: { path: `events/${date}`, id: key }, year: yearOf(data.date), author: authorOf(it) };
       eventPlanned.push(p);
       if (Array.isArray(it.linkedItems) && it.linkedItems.length) linkJobs.push({ data, links: it.linkedItems });
       const gid = str(it.groupId);
@@ -265,7 +275,7 @@ export function planItems(
     const id = v4id('item.event', sid, 'events/period', key);
     for (const d of ds) linkTarget.set(`event|${d}|${str(byDate.get(d)!.it.id)}`, id);
     for (const [k, v] of linkTarget) if (v === `period:${key}`) linkTarget.set(k, id);
-    eventPlanned.push({ id, data, src: { path: `events/${ds[0]}`, id: `period:${key}` }, year: yearOf(ds[0]) });
+    eventPlanned.push({ id, data, src: { path: `events/${ds[0]}`, id: `period:${key}` }, year: yearOf(ds[0]), author: authorOf(first.it) });
     const links = ds.flatMap((d) => (Array.isArray(byDate.get(d)!.it.linkedItems) ? (byDate.get(d)!.it.linkedItems as unknown[]) : []));
     if (links.length) linkJobs.push({ data, links });
   }
@@ -325,7 +335,7 @@ export function planItems(
       if (att) data.attachments = att;
       const studentIds = opts.studentKeysOf?.(content) ?? [];
       if (studentIds.length) data.studentIds = studentIds;
-      notePlanned.push({ id, data, src: { path: `journals/${date}`, id: key }, year: yearOf(date) });
+      notePlanned.push({ id, data, src: { path: `journals/${date}`, id: key }, year: yearOf(date), author: authorOf(e as Raw) });
       if (Array.isArray(e.linkedItems) && e.linkedItems.length) linkJobs.push({ data, links: e.linkedItems });
     });
   }
@@ -361,7 +371,7 @@ export function planItems(
     if (att) data.attachments = att;
     const studentIds = opts.studentKeysOf?.(content) ?? [];
     if (studentIds.length) data.studentIds = studentIds;
-    notePlanned.push({ id, data, src: { path: `tasks/${docId}`, id: docId } });
+    notePlanned.push({ id, data, src: { path: `tasks/${docId}`, id: docId }, author: authorOf(o) });
     if (Array.isArray(o.linkedItems) && o.linkedItems.length) linkJobs.push({ data, links: o.linkedItems });
   });
 
@@ -369,7 +379,9 @@ export function planItems(
   /** V4 링크 하나 → V5 id (찾지 못했거나 다른 공간 것이면 undefined - 수를 센다). 수업 가져오기(lessons.ts)도 쓴다 */
   const linkOf = (l: unknown): string | undefined => {
     if (!isObj(l)) return undefined;
-    if (l.targetFId && l.targetFId !== 'personal') {
+    // 공간: targetFId(옛것은 fId), 없으면 그 항목의 공간
+    const space = str(l.targetFId) || str(l.fId);
+    if (space && space !== home) {
       notes.linksDropped++;
       return undefined;
     }
@@ -419,4 +431,22 @@ function nextDay(d: string): string {
   const [y, m, day] = d.split('-').map(Number);
   const t = new Date(y, m - 1, day + 1);
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * V4 항목들이 쓰는 라벨 이름 (종류마다 - planItems가 푸는 길 그대로). 그룹 가져오기는 이 라벨만 그룹 공간에 둔다
+ * (V4 그룹 일정은 보는 사람의 라벨을 이름으로 썼다 - 내 라벨을 모두 넣으면 그룹 라벨 목록이 내 것으로 찬다).
+ */
+export function usedLabelNames(docs: V4ItemDocs, labelDocs: V4LabelDocs): { event: Set<string>; note: Set<string> } {
+  const evLabelList = eventLabelSources(labelDocs).map((s) => ({ id: s.key, name: s.v4Name }));
+  const noteList = noteLabelSources(labelDocs).map((s) => ({ id: s.key, name: s.v4Name }));
+  const event = new Set<string>();
+  const note = new Set<string>();
+  for (const data of Object.values(docs.events)) for (const { it } of eventsOf(data)) for (const n of resolveEventLabelNames(it, evLabelList)) event.add(n);
+  for (const data of Object.values(docs.journals)) for (const e of readJournalEntries(data)) for (const n of journalLabelNames(e, noteList)) note.add(n);
+  for (const d of Object.values(docs.tasks)) {
+    if (!isObj(d) || !Array.isArray(d.labels)) continue;
+    for (const n of d.labels) if (String(n).trim()) note.add(String(n).trim());
+  }
+  return { event, note };
 }

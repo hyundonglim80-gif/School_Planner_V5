@@ -466,6 +466,72 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
     await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member' });
   });
 
+  // V4 그룹 가져오기 (P8-4 ■2): V4 groups/{gid}의 구성원이 g_{gid}를 V4 주인·구성원 그대로 만든다
+  console.log('\n[V5 V4 그룹 가져오기] — V4 구성원이 g_{V4 id}를 V4 그대로');
+  const v4gid = 'v4grpRulecheck';
+  const v4gs = `g_${v4gid}`;
+  const C = client('member2');
+  const cUid = await login(C, 'teacher3@example.com');
+  await must('(준비) V4 그룹: 주인 A, 구성원 B', async () => {
+    await setDoc(doc(A.db, 'groups', v4gid), { name: 'V4 그룹', ownerId: aUid, ownerName: 'A', inviteCode: 'V4RCHK', members: [aUid, bUid], createdAt: now() });
+  });
+  const imported = { kind: 'group', name: 'V4 그룹', ownerId: aUid, members: { [aUid]: 'owner', [bUid]: 'member' }, createdAt: now(), updatedAt: now(), v: 1 };
+  await mustNot('V4 구성원이 아닌 사람이 가져온다', async () => {
+    await setDoc(space(X, v4gs), { ...imported, members: { [aUid]: 'owner', [bUid]: 'member', [xUid]: 'member' } });
+  });
+  await mustNot('구성원이 스스로 주인이 되어 가져온다', async () => {
+    await setDoc(space(B, v4gs), { ...imported, ownerId: bUid, members: { [aUid]: 'member', [bUid]: 'owner' } });
+  });
+  await mustNot('V4에 없는 사람을 함께 넣어 가져온다', async () => {
+    await setDoc(space(B, v4gs), { ...imported, members: { ...imported.members, [cUid]: 'member' } });
+  });
+  await mustNot('V4 구성원을 빼고 가져온다', async () => {
+    await setDoc(space(B, v4gs), { ...imported, members: { [aUid]: 'owner' }, ownerId: aUid });
+  });
+  await mustNot('구성원을 둘 다 owner로 가져온다', async () => {
+    await setDoc(space(B, v4gs), { ...imported, members: { [aUid]: 'owner', [bUid]: 'owner' } });
+  });
+  await mustNot('주인이 아닌 구성원이 초대 코드를 열어 가져온다', async () => {
+    await setDoc(space(B, v4gs), { ...imported, inviteCode: 'V5OPEN' });
+  });
+  await mustNot('V4 그룹이 없는 g_ 이름으로 남을 넣어 만든다', async () => {
+    await setDoc(space(B, 'g_noSuchV4Group'), imported);
+  });
+  await must('주인이 아닌 V4 구성원이 V4 그대로 가져온다', async () => {
+    await setDoc(space(B, v4gs), imported);
+  });
+  await must('가져온 뒤 주인은 그룹 문서를 읽는다 (V4 주인 = V5 주인)', async () => {
+    const d = await getDoc(space(A, v4gs));
+    if (d.data()?.members?.[aUid] !== 'owner') throw new Error('주인이 아니다');
+  });
+  await must('가져온 구성원이 그룹에 항목을 쓴다', async () => {
+    await setDoc(item(B, v4gs, 'rc_v4g1'), note('가져온 그룹 메모'));
+  });
+  await mustNot('초대가 닫힌 그룹에 V4 구성원이 아닌 사람이 참여한다', async () => {
+    await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'member', updatedAt: now() });
+  });
+  await must('(준비) 가져온 뒤 V4에 C가 들어온다', async () => {
+    await updateDoc(doc(C.db, 'groups', v4gid), { members: arrayUnion(cUid) });
+  });
+  await mustNot('V4 구성원이어도 owner로는 참여하지 못한다', async () => {
+    await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'owner', updatedAt: now() });
+  });
+  await must('V4 구성원은 초대 코드 없이 member로 참여한다', async () => {
+    await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'member', updatedAt: now() });
+  });
+  await must('주인이 나중에 초대 코드를 연다 (공간 + 초대 코드 한 묶음)', async () => {
+    const b = writeBatch(A.db);
+    b.update(space(A, v4gs), { inviteCode: 'V5RCV4', updatedAt: now() });
+    b.set(invite(A, 'V5RCV4'), { sid: v4gs, ownerId: aUid });
+    await b.commit();
+  });
+  await must('(정리) 가져온 그룹·V4 그룹을 지운다', async () => {
+    await deleteDoc(item(A, v4gs, 'rc_v4g1'));
+    await deleteDoc(invite(A, 'V5RCV4'));
+    await deleteDoc(space(A, v4gs));
+    await deleteDoc(doc(A.db, 'groups', v4gid));
+  });
+
   console.log('\n[V5 v5alarms] — 함수만');
   await mustNot('앱이 알림 큐를 읽는다', async () => {
     await getDoc(doc(A.db, 'v5alarms', 'rc_g1'));

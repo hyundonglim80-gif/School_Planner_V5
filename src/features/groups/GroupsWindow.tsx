@@ -1,14 +1,15 @@
 // 👥 공유 그룹 창 (V4 GroupModal - MENU 2-2: 계정 칸 '👥 공유 그룹'·공간 고르기 끝 '👥 그룹 관리…', 단축키 'group'). P8-4.
-// 내 그룹(초대 코드·구성원·열기·나가기/지우기) · 새 그룹 만들기 · 초대 코드로 참여. V4 그룹 자료 가져오기는 아래 칸(■2).
+// 내 그룹(초대 코드·구성원·열기·나가기/지우기) · 새 그룹 만들기 · 초대 코드로 참여 · V4 그룹 가져오기(■2 - V4GroupsSection).
 import { useEffect, useState } from 'react';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import type { WindowProps } from '../../app/windows';
 import { useSession } from '../../data/session';
 import { setSpaceChoice, useMySpaces, type GroupSpace } from '../../data/spaceChoice';
-import { createGroup, deleteGroup, joinGroup, leaveGroup, readPeople, writeMyName } from '../../data/spaces';
+import { createGroup, deleteGroup, joinGroup, leaveGroup, openInvite, readPeople, writeMyName } from '../../data/spaces';
 import { useCurrentSpaceId } from '../../data/session';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { Section } from '../settings/parts';
+import V4GroupsSection from './V4GroupsSection';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -53,6 +54,19 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
       showToast(`👋 [${group.name}] 그룹에서 나왔습니다.`);
     } catch (e) {
       showErrorToast(errText(e), e);
+    } finally {
+      setBusy('');
+    }
+  };
+  // V4에서 주인이 아닌 사람이 가져온 그룹은 초대 코드가 없다 - 주인이 연다
+  const makeCode = async () => {
+    if (!user) return;
+    setBusy('만드는 중…');
+    try {
+      const code = await openInvite(user, group);
+      showToast(`🔑 초대 코드 ${code}를 만들었습니다. 동료에게 보내 주세요.`);
+    } catch (e) {
+      showErrorToast(`초대 코드를 만들지 못했습니다. ${errText(e)}`, e);
     } finally {
       setBusy('');
     }
@@ -105,6 +119,11 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
               코드 복사
             </button>
           </>
+        )}
+        {owner && !group.inviteCode && (
+          <button type="button" data-group-make-code disabled={!!busy} onClick={() => void makeCode()} className="px-2 py-0.5 rounded border border-primary/40 text-primary font-bold hover:bg-primary/5 disabled:opacity-50 cursor-pointer">
+            🔑 초대 코드 만들기
+          </button>
         )}
         <span className="ml-auto" />
         {owner ? (
@@ -207,6 +226,7 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
             </button>
           </div>
         </Section>
+        <V4GroupsSection />
       </div>
     </ModalShell>
   );

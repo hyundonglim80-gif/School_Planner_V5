@@ -180,3 +180,29 @@ describe('planLabels - 이름이 같은 라벨', () => {
     expect(plan.labelMap.event[' 회의']).toBe(plan.labelMap.event['회의']);
   });
 });
+
+describe('planLabels - 그룹 공간 (P8-4 shared·only)', () => {
+  const GSID = 'g_grp';
+  it('그 그룹 항목이 쓰는 이름만 (메모·기록은 상위도 함께)', () => {
+    const plan = planLabels(GSID, seed(), {}, { only: { event: new Set(['이월']), note: new Set(['A초']) }, shared: true });
+    const docs = apply({}, plan.ops);
+    expect(live(docs, 'event').map((d) => d.name)).toEqual(['이월']);
+    expect(live(docs, 'note').map((d) => d.name).sort()).toEqual(['A초', '학교']);
+    const school = live(docs, 'note').find((d) => d.name === '학교')!;
+    expect(live(docs, 'note').find((d) => d.name === 'A초')!.parentId).toBe(school.id);
+  });
+
+  it('다른 구성원이 가져온 이름이 같은 라벨에 잇고, 가져오기가 라벨을 지우지 않는다', () => {
+    // A가 먼저 가져온 라벨 (A의 V4 id로 셈 - 지문이 그대로라 개인 공간이었으면 '없어진 것'으로 지웠다)
+    const fromA = apply({}, planLabels(GSID, { labels: { eventLabels: [{ id: 'a_1', name: '이월', color: 'blue' }, { id: 'a_2', name: '회의' }] } }, {}, { shared: true }).ops);
+    const aId = live(fromA, 'event').find((d) => d.name === '이월')!.id;
+    const plan = planLabels(GSID, seed(), fromA, { only: { event: new Set(['이월', '달력']), note: new Set() }, shared: true });
+    expect(plan.labelMap.event['이월']).toBe(aId);
+    expect(plan.counts.event).toMatchObject({ added: 1, kept: 1, removed: 0 });
+    expect(plan.ops.some((o) => o.type === 'remove')).toBe(false);
+    const after = apply(fromA, plan.ops);
+    expect(live(after, 'event').map((d) => d.name).sort()).toEqual(['달력', '이월', '회의']);
+    // 다시 해도 그대로
+    expect(changedTotal(planLabels(GSID, seed(), after, { only: { event: new Set(['이월', '달력']), note: new Set() }, shared: true }).counts.event)).toBe(0);
+  });
+});

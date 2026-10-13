@@ -4,7 +4,7 @@
 import { useEffect } from 'react';
 import { openWindow } from '../../app/windows';
 import { useSession } from '../../data/session';
-import { checkImportOffer, dismissImportOffer, resetImportRun, runImport, useImportRun } from '../../import/v4/run';
+import { checkImportOffer, dismissImportOffer, resetGroupImportRun, resetImportRun, runImport, useImportRun } from '../../import/v4/run';
 
 export default function ImportBanner() {
   const uid = useSession((s) => s.user?.uid);
@@ -13,7 +13,10 @@ export default function ImportBanner() {
   useEffect(() => {
     if (!uid) return;
     void checkImportOffer(uid);
-    return () => resetImportRun();
+    return () => {
+      resetImportRun();
+      resetGroupImportRun();
+    };
   }, [uid]);
 
   if (!offer || !uid) return null;

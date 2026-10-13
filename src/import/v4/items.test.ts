@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { WriteOp } from '../../data/repo/ops';
 import type { Stored } from '../../data/types';
 import { v4id } from './ids';
-import { planItems, type V4ItemDocs } from './items';
+import { planItems, usedLabelNames, type V4ItemDocs } from './items';
 import type { V4LabelDocs } from './labels';
 
 const SID = 'u_me';
@@ -207,5 +207,63 @@ describe('기록·메모·링크 가져오기', () => {
     const again = plan(docs, existing);
     expect(again.ops).toEqual([]);
     expect(again.counts['items.note']).toMatchObject({ same: 1, added: 0 });
+  });
+});
+
+describe('그룹 자료 (P8-4 - home·keepAuthor)', () => {
+  const GSID = 'g_grp';
+  const groupPlan = (docs: Partial<V4ItemDocs>) =>
+    planItems(GSID, { events: {}, journals: {}, tasks: {}, ...docs }, labelDocs, labelMap, none as never, { home: 'grp', keepAuthor: true });
+
+  it('링크: 같은 그룹(targetFId = 그룹 id·없음)은 잇고, 개인·다른 그룹 것은 뺀다', () => {
+    const r = groupPlan({
+      events: {
+        '2026-10-05': {
+          eventList: [
+            {
+              id: 'e1',
+              content: '협의',
+              linkedItems: [
+                { targetType: 'memo', targetId: 'm1', targetFId: 'grp' },
+                { targetType: 'memo', targetId: 'm1' },
+                { targetType: 'memo', targetId: 'm1', targetFId: 'personal' },
+                { targetType: 'memo', targetId: 'm1', fId: 'other' },
+              ],
+            },
+          ],
+        },
+      },
+      tasks: { m1: { text: '그룹 메모' } },
+    });
+    const ev = created(r.ops).find((i) => i.text === '협의')!;
+    expect(ev.linkIds).toEqual([v4id('item.note', GSID, 'tasks/m1', 'm1')]);
+    expect(r.notes.linksDropped).toBe(2);
+  });
+
+  it('만든 사람(V4 authorId)을 그대로 - 없으면 가져오는 사람', () => {
+    const r = groupPlan({
+      events: { '2026-10-05': { eventList: [{ id: 'e1', content: '협의', authorId: 'uidB' }] } },
+      journals: { '2026-10-05': { entries: [{ id: 'j1', content: '기록', authorId: 'uidC' }] } },
+      tasks: { m1: { text: '메모' } },
+    });
+    const author = (text: string) => (r.ops as Create[]).find((o) => o.data.text === text)!.authorId;
+    expect(author('협의')).toBe('uidB');
+    expect(author('기록')).toBe('uidC');
+    expect(author('메모')).toBeUndefined();
+    // 개인 가져오기는 V4 authorId를 쓰지 않는다
+    expect((plan({ tasks: { m1: { text: '메모', authorId: 'uidB' } } }).ops as Create[])[0].authorId).toBeUndefined();
+  });
+
+  it('usedLabelNames: 그 자료가 쓰는 라벨 이름 (등록된 라벨만 - planItems와 같은 길)', () => {
+    const used = usedLabelNames(
+      {
+        events: { '2026-10-05': { eventList: [{ id: 'e1', content: '협의', label: '이월' }, { id: 'e2', content: 'x', labelIds: ['ev_1', '없는라벨'] }] } },
+        journals: { '2026-10-05': { entries: [{ id: 'j1', content: '기록', labelIds: ['j_1'] }] } },
+        tasks: { m1: { text: '메모', labels: ['긴급'] } },
+      },
+      labelDocs,
+    );
+    expect([...used.event].sort()).toEqual(['달력', '이월']);
+    expect([...used.note].sort()).toEqual(['긴급', '학급활동']);
   });
 });

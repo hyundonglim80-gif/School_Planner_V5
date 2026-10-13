@@ -99,3 +99,10 @@ export const IMPORT_NOTES: ReadonlyArray<{ key: string; text: (n: number) => str
   { key: 'noClass', text: (n) => `학급을 알 수 없는 출결·조사표·자리표 ${n}개는 가져오지 않았습니다` },
   { key: 'quizDropped', text: (n) => `명렬표에 없는 이름의 암기 성적 ${n}개는 가져오지 않았습니다` },
 ];
+
+/** 지난 가져오기 때 'YYYY-MM-DD HH:mm' (이 기기 시각) */
+export function importTimeText(ms: number): string {
+  const d = new Date(ms);
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}

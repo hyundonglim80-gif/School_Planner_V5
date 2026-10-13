@@ -171,6 +171,20 @@ service cloud.firestore {
       return signedIn() && data.members[request.auth.uid] in ['owner', 'member'];
     }
 
+    // V4 그룹에서 가져온 공간 `g_{V4 그룹 id}`(P8-4 ■2)의 V4 그룹 문서 - 없으면 오류 = 거부.
+    // V4 그룹 id는 Firestore 자동 id(영문·숫자)라 경로에 그대로 넣는다.
+    function v4GroupOf(sid) {
+      return get(/databases/$(database)/documents/groups/$(sid.replace('^g_', ''))).data;
+    }
+
+    // 내가 그 V4 그룹(groups/{gid}.members 배열)의 구성원인가
+    function isV4GroupMember(sid) {
+      return signedIn()
+        && sid.matches('g_[A-Za-z0-9]+')
+        && exists(/databases/$(database)/documents/groups/$(sid.replace('^g_', '')))
+        && request.auth.uid in v4GroupOf(sid).members;
+    }
+
     match /spaces/{sid} {
       // 내 개인 공간은 문서가 없어도 읽어 본다(없으면 로그인할 때 만든다).
       allow get: if isMySpaceId(sid) || isSpaceMember(resource.data);
@@ -178,13 +192,24 @@ service cloud.firestore {
       allow list: if isSpaceMember(resource.data);
 
       // 만들 때는 내가 주인이고 나 혼자 구성원이다.
-      allow create: if signedIn()
+      allow create: if (signedIn()
         && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.members.keys().hasOnly([request.auth.uid])
         && request.resource.data.members[request.auth.uid] == 'owner'
         && (
           (isMySpaceId(sid) && request.resource.data.kind == 'personal')
           || (sid.matches('g_.+') && request.resource.data.kind == 'group')
+        )) || (
+          // V4 그룹 가져오기: V4 구성원 누구나 `g_{V4 그룹 id}`를 V4 주인·구성원 그대로 만든다(배열 → 맵).
+          // 주인 한 사람만 'owner', 나머지는 'member'. 초대 코드는 V4 주인만 연다(아니면 주인이 나중에 그룹 창에서).
+          isV4GroupMember(sid)
+          && request.resource.data.kind == 'group'
+          && request.resource.data.ownerId == v4GroupOf(sid).ownerId
+          && request.resource.data.members.keys().hasOnly(v4GroupOf(sid).members)
+          && request.resource.data.members.keys().hasAll(v4GroupOf(sid).members)
+          && request.resource.data.members[v4GroupOf(sid).ownerId] == 'owner'
+          && request.resource.data.members.values().removeAll(['member']) == ['owner']
+          && (request.auth.uid == v4GroupOf(sid).ownerId || !('inviteCode' in request.resource.data))
         );
 
       allow update: if (
@@ -204,9 +229,10 @@ service cloud.firestore {
           && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
           && (
             // 참여: 초대 코드가 열려 있을 때(주인이 inviteCode를 지우면 닫힌다), 'member'로만
-            (resource.data.get('inviteCode', null) != null
+            ((resource.data.get('inviteCode', null) != null || isV4GroupMember(sid))
               && !(request.auth.uid in resource.data.members)
               && request.resource.data.members[request.auth.uid] == 'member')
+            // (V4 그룹에서 가져온 공간은 V4 구성원이면 초대 코드 없이도 - 남이 먼저 가져온 뒤 V4에 들어온 사람)
             // 나가기: 구성원이 나를 뺀다(주인은 나가지 못한다 - 그룹을 지운다)
             || (resource.data.members[request.auth.uid] == 'member'
               && !(request.auth.uid in request.resource.data.members))

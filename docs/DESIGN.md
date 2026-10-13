@@ -63,6 +63,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 - 규칙(`firestore.rules` V5 블록, P1-2): 개인 공간 아래는 id `u_{uid}`만 본다(공간 문서가 없어도 된다 - 로그인하면 `ensurePersonalSpace`가 만든다).
   그룹은 `members`. **`inviteCode`가 있으면 초대가 열린 것** - 참여는 그때 나만 'member'로, 나가기는 나만, 주인은 나가지 못하고 그룹을 지운다.
   `spaceInvites/{code}`는 그 그룹 주인만 만든다. 개인 공간 문서는 지우지 못한다.
+  V4 그룹에서 가져온 공간 `g_{V4 그룹 id}`는 V4 `groups/{gid}`의 구성원 누구나 V4 주인·구성원 그대로 만들고, V4 구성원이면 초대 코드 없이 'member'로 들어간다(P8-4 ■2).
 
 ### 4-2. `items/{id}` — 일정·메모·기록
 
@@ -224,7 +225,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - DB `sp5-mirror-{uid}`(계정마다), 저장소 둘: `docs`(열쇠 [공간, 컬렉션, id]) · `meta`(공간·컬렉션마다 커서 `cursor`·이어 받을 자리 `after`·다 받음 `complete`·견준 때 `prunedAt`).
   공간·컬렉션은 **열쇠 범위로** 나눈다 - 저장소를 더하려면 DB 판을 올려야 하고, 판 올리기는 다른 탭이 열어 둔 동안 막힌다. 커서 = 받은 `updatedAt`의 가장 큰 값.
   Timestamp는 `codec.ts`가 표시해 넣고 되살려 꺼낸다(구조 복제로 모양을 잃으면 되돌리기·영구 지우기 때 규칙 `deletedAt is timestamp`에 걸린다).
-- 받는 컬렉션 `MIRRORED`(`sync.ts`) = items·labels·series - 기능을 옮기는 세션이 더한다. 지금은 개인 공간 하나(그룹은 P8-4 - `startMirror`의 `spaces`).
+- 받는 컬렉션 `MIRRORED`(`sync.ts`) - 기능을 옮기는 세션이 더한다(P8 끝: items·labels·series·timetables·lessonDays·progress·학급 것들·notices·evaluations·quiz).
+  그룹 공간은 `GROUP_MIRRORED`(공간마다 있는 것만 - items·labels·series·timetables·lessonDays·notices·evaluations). 내 그룹 목록이 바뀌면 받는 공간만 더하고 뺀다(`setSpaces` - P8-4).
 - **처음**: 이번 학년도 항목(`date >= 3/1`)부터, 그다음 `orderBy('updatedAt')`으로 500개씩 모두. 끊기면 `after`부터 잇는다(같은 시각은 겹쳐 받는다 - id로 덮는다).
   받는 동안 다른 기기가 고친 것은 `updatedAt`이 늦어 뒤 쪽에서 온다. **그 뒤**: 컬렉션마다 `where('updatedAt', '>', 커서 - 1분)` 구독 하나.
   구독은 `includeMetadataChanges` - 첫 소식이 캐시에서 오면(빈 컬렉션 등) 서버 확인은 문서 변화 없는 메타데이터 소식으로만 온다(P2-2 에뮬레이터로 찾음).
@@ -341,13 +343,13 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | `settings/rosters`(없으면 V3 `settings/roster`) | `classes` | 학생 sid는 **셈한다** `v4id('student', 공간, 'settings/rosters', '{classId}#{번호}')` - 다시 해도 같은 sid라 짝 표를 두지 않는다(P7-5). V5에서 고친 학급은 번호 → sid를 그 V5 명렬표에서 찾는다. 성별 남/여 → M/F, `isActive: false` → out |
 | `attendance`, `v4_subjectAttendance` | `attendance`, `subjectAttendance` | 번호 → sid, 적을 때의 이름은 빼다. V4에서 없어지면 칸을 비운다(지운 표시 없음) |
 | `{sp}/evaluations/{date}`(`readEvalList`) | `evaluations` 한 장씩 | `evalList`가 최신, 학생 칸 번호 → sid, `indivScore`(옛 `score`)·`groupScore` → `indiv`·`group`, 명단 이름의 '(전출/삭제됨)' → out, 기록 칸(`context.source: 'journal'`) → `period: null`, 학급(`rosterMeta`)을 모르면 뺀다 |
-| `{sp}/notices/{date}` | `notices` | 개인 공간(그룹 것은 P8-4). V4에서 없어지면 줄을 비운다 |
+| `{sp}/notices/{date}` | `notices` | 개인·그룹 공간(`planNotices`). V4에서 없어지면 줄을 비운다 |
 | `v4_seating`, `v4_classHub`, `settings/photoQuiz` | `seating`, `classHub`, `quiz` | 번호 → sid(지난 짝·떨어뜨릴 학생 '3-5' → 'sidA\|sidB'), 암기 열쇠 '{학년도}-{학년}-{반}-{이름}' → 그 학급의 같은 이름 학생(없으면 버린다), 학급마다 `quiz/{classId}` (`import/v4/classes.ts`) |
 | `v4_progress` | `progress` | 모양 그대로 |
 | 기록·메모 글의 학생 태그 `#26040305` | `studentIds` | 글의 태그는 그대로 둔다(본문을 바꾸지 않는다) |
 | `settings/preferences.dDayList` | `settings/common.ddays` | |
 | `v4_preferences_pc/_mobile`, `v4_teaching`·`v4_classBell`·`v4_school`·`v4_trash`·`v4_autoBackup`·`v4_observationPhrases` | `settings/pc`·`mobile`·`common` | 단축키 id는 그대로라 사용자가 바꾼 키가 이어진다. 기기별 문서가 없으면 옛 한 벌 `v4_preferences`. `forwardLookbackDays` → `common.forwardDays`(PC 먼저). **칸마다** 가져오기가 지난번에 적은 값과 견줘 V5에서 바꾼 칸은 둔다(`import/v4/settings.ts`). common의 나머지는 그 칸이 생기는 세션이 `COMMON_FROM_V4`에 |
-| `groups/{gid}` + 그룹 자료 | `spaces/g_{gid}` + 그 아래 | `members` 배열 → 맵, 구성원 누구나 가져올 수 있다(결정적 id라 겹치지 않음) |
+| `groups/{gid}` + 그룹 자료 | `spaces/g_{gid}` + 그 아래 | `members` 배열 → 맵(주인 'owner'·나머지 'member'), 구성원 누구나 가져올 수 있다(결정적 id라 겹치지 않음, `run.ts` `runGroupImport`). 그 밑 events·journals·tasks·`settings/v4_eventDue` → items, schedules → lessonDays(그룹엔 시간표가 없어 그대로), notices, evaluations(학생 sid는 만든 사람의 명렬표). 라벨은 그 그룹 항목이 쓰는 것만 가져오는 사람의 V4 라벨에서 - 이름이 같은 그룹 라벨에 잇고 지우지 않는다. V4 `authorId` → 만든 사람(`authorId`), `memberDetails` 이름 → `people/{uid}`(비어 있을 때만). 링크는 같은 그룹 것만 |
 | `trash`, `v4_pushTokens`, `v4_gcalQueue`, `v4_alarms` | 가져오지 않는다 | 휴지통의 것은 V4에서 되살린 뒤 다시 가져오면 된다. 알림·보내기는 기기에서 다시 켠다 |
 
 ## 9. 점검

@@ -25,8 +25,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-10 P8-4 ■1 끝**(클라우드 - 공유 그룹: 그룹 공간·초대 코드·📂 공간 고르기·공유 그룹 창·기기 사본). **다음 대화: P8-4 ■2 그룹 자료 가져오기**(PLAN P8-4 ■2 아래 메모부터 - 규칙 고침이 들어가니 배포는 묻기) → ■3 → P8 단계 끝 → P9. 👤 V5 주소에서 ⋮ 자료 → '보내기' 탭 시트 한 번, 계정 칸 '👥 공유 그룹'으로 그룹 하나 만들어 보기. 서비스 워커가 바뀌었다 - 설치한 앱은 지우고 다시 설치.
-- 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙'). 그리고 **함수 v5 배포**(PLAN P8-2 ■3 순서 - `--only functions:v5`) → 휴대폰 '알림' 탭에서 받기.
+- **2026-10-13 P8-4 끝 = P8 단계 끝**(클라우드 - V4 그룹 가져오기·그룹장 '초대 코드 만들기'). **다음 대화: P9-1 설명서 옮기기**. 👤 규칙 배포 뒤 V5 주소 계정 칸 '👥 공유 그룹' → 'V4 그룹 가져오기'로 실제 그룹 하나 가져와 보기(혼자인 그룹은 지금도 된다). P8-3에 서비스 워커가 바뀌었다 - 설치한 앱은 지우고 다시 설치.
+- 👤 PC에 갈 때(묻고): 바뀐 `firestore.rules`(V4 그룹 가져오기 갈래 - 여럿인 V4 그룹은 배포 전에 '그룹 공간을 열지 못했습니다')를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙'). 그리고 **함수 v5 배포**(PLAN P8-2 ■3 - `--only functions:v5`) → 휴대폰 '알림' 탭에서 받기.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -180,7 +180,7 @@
 - **들어가는 곳**: `index.html`(manifest 링크) → `src/main.tsx`(watchSession·리디렉션 로그인 마무리·에뮬레이터 자동 로그인·앱 설치 이벤트) → `src/app/App.tsx`(불러오는 중 `[data-session=loading]` /
   로그인 화면 / 로그인하면 'SP5' `[data-session=signed-in]`, 빌드 번호 `[data-build-id]`). 글자·간격 단계(`@theme`)는 `src/index.css`(V4 앞부분).
 - **서버·규칙**: `firebase.json`(에뮬레이터 auth 9099·firestore 8080·ui 4000 · hosting 사이트 `schoolplanner-v5` = https://schoolplanner-v5.web.app, `dist`, 첫 주소·sw·manifest no-cache) · `.firebaserc` · `firestore.rules`(**정본** - V4 규칙 전부 + V5 블록, V4 저장소 것은 복사본) ·
-  `tools/check-rules.mjs`(V4 35 + V5 59 - items·labels 모양 포함) · `tools/live-rules.cjs`(운영 규칙 = 파일인지, 읽기만) · `tools/seed.mjs`(V4 seed 계정의 V5 개인 공간 - 계정이 없으면 만든다) · `tools/inspect-login.mjs`(크롬: 로그인·개인 공간·Firestore IndexedDB 없음).
+  `tools/check-rules.mjs`(V4 35 + V5 76 - items·labels 모양·V4 그룹 가져오기 갈래 포함) · `tools/live-rules.cjs`(운영 규칙 = 파일인지, 읽기만) · `tools/seed.mjs`(V4 seed 계정의 V5 개인 공간 - 계정이 없으면 만든다) · `tools/inspect-login.mjs`(크롬: 로그인·개인 공간·Firestore IndexedDB 없음).
 - **자료 층** `src/data/`: `firebase.ts`(앱 이름 SchoolPlannerV5, memoryLocalCache, googleProvider 범위) · `emulator.ts`(`?as=2|3`) ·
   `session.ts`(로그인 store `useSession` - 구독 하나) · `space.ts`(`personalSpaceId`·`ensurePersonalSpace`) ·
   `settingsSync.ts`(설정 문서 하나 맞추기 `startSettingsSync` - 구독 하나·1초 뒤·받기 전엔 안 올림, `settingsPort` = `spaces/u_{uid}/settings/{common|pc|mobile}`, 적기는 `writeOps`) ·
@@ -315,6 +315,8 @@
 - **공유 그룹**(P8-4 ■1 - `spaces/g_…` members 맵·초대 코드 `spaceInvites/{code}`·구성원 이름 `people/{uid}`): `data/spaceChoice.ts`(store `useMySpaces`·이 기기에서 고른 공간 `useSpaceChoice` `sp5-space`·`chooseSpace`·`rememberGroups`·초대 코드 셈) ·
   `data/spaces.ts`(`watchMySpaces`·`useMySpacesWatch`(App)·`createGroup`·`joinGroup`·`leaveGroup`·`deleteGroup`·`readPeople`) · `session.currentSpaceId`가 고른 공간 · 기기 사본 `Engine.setSpaces`·`GROUP_MIRRORED` ·
   머리줄 📂 `SpaceSelect`(`[data-space-select=sid|space-list|space-option|space-manage]`) · 계정 칸 `[data-account-groups]` · 창 `group`(`features/groups/GroupsWindow` `[data-groups-window|group-row|group-*]`). 점검 `tools/inspect-share-groups.mjs`(27 - 두 계정).
+  **V4 그룹 가져오기**(■2): 공간 `g_{V4 그룹 id}` - `spaces.ensureImportedGroup`(V4 주인·구성원 그대로 만들기 → 안 되면 V4 구성원으로 참여·빈 `people`은 V4 이름)·`openInvite`(그룹장 '🔑 초대 코드 만들기' `[data-group-make-code]`) ·
+  창 칸 `features/groups/V4GroupsSection.tsx`(`[data-v4-groups|v4-group=V4 id|v4-group-state=new|imported|v4-group-import|v4-group-progress|v4-group-result|v4-groups-empty]`) · 결과 표 `features/import/ImportResult.tsx`(백업 탭과 함께) · 규칙 `isV4GroupMember`. 점검 `tools/inspect-import-groups.mjs`(33 - 세 계정, V4 그룹을 심고 끝에 지운다).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
@@ -352,5 +354,6 @@
   `record.ts`(기록 `settings/import` - 때·결과·라벨 짝 표·설정 칸마다 적은 값·띠 닫음, 결과 표 줄 `IMPORT_KINDS`) · `legacy/`(V4 옛 모양 읽기 - 본체는 import 금지) ·
   `labels.ts`(`planLabels` - V4 기본 라벨·이름 같은 V5 라벨에 잇기·짝 표) · `settings.ts`(`planSettings` - 칸마다, `COMMON_FROM_V4`) · `read.ts`(서버 읽기) ·
   `items.ts`(P3-4 `planItems` - 일정·기간 한 항목·반복 series·이월 사슬·기록·메모·링크) · `legacy/entries.ts`(기록·공휴일·기한·기간 조각 읽기) ·
-  `run.ts`(`runImport`·`checkImportOffer`·`dismissImportOffer`·진행 store `useImportRun`), 결과 표 아래 안내 `record.IMPORT_NOTES`. 점검 `tools/inspect-import-items.mjs`(P3-4 - seed 수·두 번째 0·V5 고친 것 둠, 끝에 되돌림). 화면: 백업 창 '가져오기' 탭 `features/backup/V4ImportSection.tsx` ·
+  `run.ts`(`runImport`·`checkImportOffer`·`dismissImportOffer`·진행 store `useImportRun` · 공유 그룹 `runGroupImport`·`useGroupImportRun` - `read.readV4Groups`·`readV4GroupDocs`·`readV4LabelDocs`,
+  라벨은 `items.usedLabelNames` + `planLabels` `{ only, shared }`, 항목·조사표의 만든 사람은 `Planned.author` → `writeOp.create(…, authorId)`, 알림장·조사표 `classes.planNotices`·`planEvaluations`), 결과 표 아래 안내 `record.IMPORT_NOTES`. 점검 `tools/inspect-import-items.mjs`(P3-4 - seed 수·두 번째 0·V5 고친 것 둠, 끝에 되돌림). 화면: 백업 창 '가져오기' 탭 `features/backup/V4ImportSection.tsx` ·
   처음 로그인 띠 `features/import/ImportBanner.tsx`(Shell 본문 맨 위). 문서는 `docs/`, 소개는 `README.md`(에뮬레이터 순서).
