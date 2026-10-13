@@ -225,7 +225,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - DB `sp5-mirror-{uid}`(계정마다), 저장소 둘: `docs`(열쇠 [공간, 컬렉션, id]) · `meta`(공간·컬렉션마다 커서 `cursor`·이어 받을 자리 `after`·다 받음 `complete`·견준 때 `prunedAt`).
   공간·컬렉션은 **열쇠 범위로** 나눈다 - 저장소를 더하려면 DB 판을 올려야 하고, 판 올리기는 다른 탭이 열어 둔 동안 막힌다. 커서 = 받은 `updatedAt`의 가장 큰 값.
   Timestamp는 `codec.ts`가 표시해 넣고 되살려 꺼낸다(구조 복제로 모양을 잃으면 되돌리기·영구 지우기 때 규칙 `deletedAt is timestamp`에 걸린다).
-- 받는 컬렉션 `MIRRORED`(`sync.ts`) = items·labels·series - 기능을 옮기는 세션이 더한다. 지금은 개인 공간 하나(그룹은 P8-4 - `startMirror`의 `spaces`).
+- 받는 컬렉션 `MIRRORED`(`sync.ts`) - 기능을 옮기는 세션이 더한다(P8 끝: items·labels·series·timetables·lessonDays·progress·학급 것들·notices·evaluations·quiz).
+  그룹 공간은 `GROUP_MIRRORED`(공간마다 있는 것만 - items·labels·series·timetables·lessonDays·notices·evaluations). 내 그룹 목록이 바뀌면 받는 공간만 더하고 뺀다(`setSpaces` - P8-4).
 - **처음**: 이번 학년도 항목(`date >= 3/1`)부터, 그다음 `orderBy('updatedAt')`으로 500개씩 모두. 끊기면 `after`부터 잇는다(같은 시각은 겹쳐 받는다 - id로 덮는다).
   받는 동안 다른 기기가 고친 것은 `updatedAt`이 늦어 뒤 쪽에서 온다. **그 뒤**: 컬렉션마다 `where('updatedAt', '>', 커서 - 1분)` 구독 하나.
   구독은 `includeMetadataChanges` - 첫 소식이 캐시에서 오면(빈 컬렉션 등) 서버 확인은 문서 변화 없는 메타데이터 소식으로만 온다(P2-2 에뮬레이터로 찾음).
