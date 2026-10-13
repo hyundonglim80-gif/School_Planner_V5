@@ -58,6 +58,8 @@ export interface Planned<C extends ImportColl> {
   src: { path: string; id: string };
   /** 학년도 (결과 표의 학년도별 수) */
   year?: string;
+  /** 만든 사람 (V4 그룹 자료 - V4 authorId를 그대로. 없으면 가져오는 사람) */
+  author?: string;
 }
 
 type Fields = Record<string, unknown>;
@@ -118,7 +120,7 @@ export function planDocs<C extends ImportColl>(
     const data = contentOf(p.data as Fields);
     const src: ImportSource = { from: 'v4', path: p.src.path, id: p.src.id, h: fingerprint(data) };
     const cur = existing[p.id] as (Stored<C> & Fields) | undefined;
-    const write = () => ops.push(writeOp.create(at(p.id), { ...data, src } as unknown as Editable<C>));
+    const write = () => ops.push(writeOp.create(at(p.id), { ...data, src } as unknown as Editable<C>, p.author));
 
     if (!cur) {
       write();

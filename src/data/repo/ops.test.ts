@@ -23,6 +23,12 @@ describe('toWrite - 무엇을 적나', () => {
     });
   });
 
+  it('만들기: 만든 사람을 넘기면 그것을 (V4 그룹 가져오기 - 다른 구성원이 만든 것)', () => {
+    const op = writeOp.create(at, { ...note, labelIds: [] }, 'uidB');
+    expect(toWrite(op, ctx)).toMatchObject({ kind: 'set', data: { authorId: 'uidB' } });
+    expect(undoOf(op)).toEqual([{ type: 'remove', at }]);
+  });
+
   it('칸 바꾸기: 바꾼 칸과 서버 시각만, undefined는 칸 지우기, 점은 깊은 칸', () => {
     const op = writeOp.patch<'items'>(at, { text: '새 글', time: undefined, 'props.forward': false }, {});
     expect(toWrite(op, ctx)).toEqual({

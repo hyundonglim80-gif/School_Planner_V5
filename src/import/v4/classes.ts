@@ -5,7 +5,7 @@
 //                                                                       V5에서 고친 학급(둠)은 번호 → sid를 그 V5 명렬표에서 찾는다(없으면 셈한 sid).
 //   attendance/{classKey_date}           → attendance/{classId_date}   records 번호 → sid (적을 때의 이름은 빼다 - 명렬표에서 읽는다)
 //   v4_subjectAttendance/{classKey_date} → subjectAttendance          periods.교시.번호 → sid
-//   notices/{date}                       → notices/{date}             lines 그대로 (개인 공간 - 그룹 것은 P8-4)
+//   notices/{date}                       → notices/{date}             lines 그대로 (그룹 공간도 - P8-4 planNotices)
 //   evaluations/{date}(readEvalList)     → evaluations/{id} 한 장씩     학생 칸 번호 → sid, indivScore(옛 score) → indiv, groupScore → group,
 //                                                                       명단 이름 끝의 '(전출/삭제됨)' → out, 개인·조별 = methodObj(옛 method 글자)
 //   v4_seating/{id}                      → seating/{id}               seats 번호 → sid, 지난 짝 '3-5' → 'sidA|sidB'
@@ -14,6 +14,7 @@
 //                                                                       (명렬표에 없는 이름은 버린다)
 // 지운 표시가 없는 문서(출결·교과 출결·알림장·학급 허브·암기)는 V4에서 없어지면 칸을 비운다(수업 칸과 같다 - 지운 표시를 화면이 보지 않는다).
 // 기록·메모의 '#26040305' → studentIds 는 items.ts가 여기서 셈한 명렬표로(studentKeysOf).
+// 그룹 공간의 알림장·조사표(P8-4)는 planNotices·planEvaluations만 - 조사표 학생 sid는 만든 사람의 명렬표로(run.ts runGroupImport).
 import { readMarks, type AttendanceMarks } from '../../domain/attendance';
 import { academicYearOf, isValidDateStr } from '../../domain/dateUtils';
 import { sanitizeDraw } from '../../domain/draw';
@@ -201,7 +202,6 @@ export function planClasses(sid: string, docs: V4ClassDocs, existing: ExistingCl
     }
     return out;
   };
-  const dateOfDoc = (d: Raw, docId: string) => (isValidDateStr(str(d.date)) ? str(d.date) : docId.slice(-10));
   const classOfDoc = (d: Raw, docId: string) => classIdOfV4(d) ?? classIdOfKey(d.classKey) ?? classIdOfKey(docId.slice(0, -11));
 
   // ───────── 출결 ─────────
@@ -238,35 +238,9 @@ export function planClasses(sid: string, docs: V4ClassDocs, existing: ExistingCl
   }
   const sub = planEmptiable(sid, 'subjectAttendance', subPlanned, existing.subjectAttendance, ownsPath('v4_subjectAttendance/'), { periods: {} });
 
-  // ───────── 알림장 ─────────
-  const noticePlanned: Planned<'notices'>[] = [];
-  for (const [docId, d] of Object.entries(docs.notices)) {
-    if (!isObj(d)) continue;
-    const date = dateOfDoc(d, docId);
-    const lines = readNoticeLines(d.lines);
-    if (!isValidDateStr(date) || lines.length === 0) continue;
-    noticePlanned.push({ id: date, data: { date, lines }, src: { path: `notices/${docId}`, id: docId }, year: String(academicYearOf(date)) });
-  }
-  const notice = planEmptiable(sid, 'notices', noticePlanned, existing.notices, ownsPath('notices/'), { lines: [] });
-
-  // ───────── 조사표 ─────────
-  const evalPlanned: Planned<'evaluations'>[] = [];
-  for (const [docId, d] of Object.entries(docs.evaluations)) {
-    const seen = new Map<string, number>();
-    for (const item of readEvalList(d)) {
-      if (!isObj(item)) continue;
-      const date = isValidDateStr(docId) ? docId : str(item.dateStr);
-      const classId = classIdOfV4(isObj(item.rosterMeta) ? item.rosterMeta : {});
-      if (!classId || !isValidDateStr(date)) {
-        notes.noClass++;
-        continue;
-      }
-      const key = str(item.id) || nthKey(seen, `${date}|${str(item.title)}`);
-      const ev = v4Eval(item, date, classId, sidOf);
-      evalPlanned.push({ id: v4id('evaluation', sid, `evaluations/${docId}`, key), data: ev, src: { path: `evaluations/${docId}`, id: key }, year: String(academicYearOf(date)) });
-    }
-  }
-  const evals = planDocs(sid, 'evaluations', evalPlanned, existing.evaluations, ownsPath('evaluations/'));
+  // ───────── 알림장·조사표 ─────────
+  const notice = planNotices(sid, docs.notices, existing.notices);
+  const evals = planEvaluations(sid, docs.evaluations, existing.evaluations, sidOf, notes);
 
   // ───────── 자리표 ─────────
   const seatPlanned: Planned<'seating'>[] = [];
@@ -347,6 +321,59 @@ export function planClasses(sid: string, docs: V4ClassDocs, existing: ExistingCl
     classes,
     studentKeysOf: (text: string) => studentKeysOfTags(text, classes),
   };
+}
+
+const dateOfDoc = (d: Raw, docId: string) => (isValidDateStr(str(d.date)) ? str(d.date) : docId.slice(-10));
+
+/** 알림장 notices/{date} → notices/{date} (지운 표시가 없다 - V4에서 없어지면 줄을 비운다). 개인·그룹 공간 */
+export function planNotices(sid: string, docs: Readonly<Record<string, unknown>>, existing: Readonly<Record<string, Stored<'notices'>>>) {
+  const planned: Planned<'notices'>[] = [];
+  for (const [docId, d] of Object.entries(docs)) {
+    if (!isObj(d)) continue;
+    const date = dateOfDoc(d, docId);
+    const lines = readNoticeLines(d.lines);
+    if (!isValidDateStr(date) || lines.length === 0) continue;
+    planned.push({ id: date, data: { date, lines }, src: { path: `notices/${docId}`, id: docId }, year: String(academicYearOf(date)) });
+  }
+  return planEmptiable(sid, 'notices', planned, existing, ownsPath('notices/'), { lines: [] });
+}
+
+/**
+ * 조사표 evaluations/{date}(readEvalList) → evaluations 한 장씩. 개인·그룹 공간.
+ * sidOf(학급, 번호, 만든 사람) - 그룹은 만든 사람(V4 authorId)의 명렬표로 셈한다. keepAuthor면 만든 사람을 그대로 둔다(그룹 - 고치기 권한).
+ */
+export function planEvaluations(
+  sid: string,
+  docs: Readonly<Record<string, unknown>>,
+  existing: Readonly<Record<string, Stored<'evaluations'>>>,
+  sidOf: (classId: string, num: unknown, author?: string) => string,
+  notes: Pick<ClassNotes, 'noClass'>,
+  opts: { keepAuthor?: boolean } = {},
+) {
+  const planned: Planned<'evaluations'>[] = [];
+  for (const [docId, d] of Object.entries(docs)) {
+    const seen = new Map<string, number>();
+    for (const item of readEvalList(d)) {
+      if (!isObj(item)) continue;
+      const date = isValidDateStr(docId) ? docId : str(item.dateStr);
+      const classId = classIdOfV4(isObj(item.rosterMeta) ? item.rosterMeta : {});
+      if (!classId || !isValidDateStr(date)) {
+        notes.noClass++;
+        continue;
+      }
+      const key = str(item.id) || nthKey(seen, `${date}|${str(item.title)}`);
+      const author = str(item.authorId) || undefined;
+      const ev = v4Eval(item, date, classId, (c, n) => sidOf(c, n, author));
+      planned.push({
+        id: v4id('evaluation', sid, `evaluations/${docId}`, key),
+        data: ev,
+        src: { path: `evaluations/${docId}`, id: key },
+        year: String(academicYearOf(date)),
+        ...(opts.keepAuthor && author ? { author } : {}),
+      });
+    }
+  }
+  return planDocs(sid, 'evaluations', planned, existing, ownsPath('evaluations/'));
 }
 
 /** V4 짝 '3-5' → [3, 5] */

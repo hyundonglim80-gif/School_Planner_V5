@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P8-4 공유 그룹 + 그룹 가져오기** (클라우드면 1-7을 먼저) - ■1 끝(2026-10-10), **다음 ■2 그룹 자료 가져오기**.
+**P8-4 공유 그룹 + 그룹 가져오기** (클라우드면 1-7을 먼저) - ■1 끝(2026-10-10), ■2 끝(2026-10-13), **다음 ■3 크롬 점검(두 계정)**.
 
 ---
 
@@ -551,6 +551,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   - 지금 공간은 **이 기기에** 고른다(`sp5-space` - V4도 기기마다). 계정에 올리면 PC에서 그룹을 보는 동안 휴대폰도 바뀐다.
   - 그룹을 만들면 기본 라벨을 넣는다(라벨이 공간 것이라 빈 그룹은 라벨이 없다). 구성원 이름은 `people/{uid}`에 각자 적는다(공간 문서는 주인만 고친다 - 규칙).
   - 기기 사본은 지난번에 받은 그룹(`known`)을 곧바로 펼치고, 목록이 바뀌면 받는 공간만 더하고 뺀다(다시 시작하면 화면이 비었다 찬다).
+  - **V4 그룹 가져오기(■2)**: 공간 id = `g_{V4 그룹 id}`(셈하지 않고 그대로 - 구성원 누가 가져와도 같은 공간, 규칙이 그 id로 V4 그룹 문서를 읽는다).
+    V4 주인·구성원 그대로 만든다(규칙 갈래 - 배포 필요). 초대 코드는 V4 주인이 가져오면 V4 코드 그대로(spaceInvites에 비었으면), 아니면 없다 - 주인이 그룹 창 '초대 코드 만들기'.
+    V4 그룹 일정은 보는 사람의 라벨을 이름으로 썼다 → 가져오는 사람의 V4 라벨 목록으로 풀고, 그 그룹 항목이 쓰는 라벨만 그룹에 둔다(내 라벨을 다 넣으면 그룹 목록이 내 것으로 찬다).
+    여럿이 가져오므로 라벨은 이름이 같으면 이미 있는 그룹 라벨(남이 가져온 것도)에 잇고, 가져오기가 라벨을 지우지 않는다. 항목·기록·메모·조사표는 V4 `authorId`를 만든 사람으로 둔다
+    (그룹 일정 알림·조사표 고치기가 만든 사람을 본다). 조사표 학생 sid는 만든 사람의 명렬표 - 나는 내 V5 명렬표, 남은 그 사람 개인 가져오기가 셈하는 sid(`studentSid(u_{그 사람}, …)`).
+    그룹에는 V4 시간표가 없어 수업 칸을 그대로 적는다. 학생 태그(studentIds)는 그룹에서 셈하지 않는다(명렬표가 개인 것).
 - **P2-3 차례**: 라벨 관리 창의 ▲▼는 창 안에서만 줄을 바꾸고, 저장할 때 **옮긴 라벨만** 새 차례 값(`domain/order` `rekeyOrders` - 가장 긴 오름차순을 남긴다).
   일정 라벨 속성은 바뀌면 여섯 칸을 모두 채워 적는다(읽기는 `labelProps` - 적지 않은 달력 = 켜짐, V4와 같다).
 
@@ -1150,12 +1156,17 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
     기기 사본 `setSpaces`(그룹에 들고 나면 다시 시작하지 않고 더하고 뺀다, 그룹은 `GROUP_MIRRORED`만) · 머리줄 📂 `SpaceSelect`(`[data-space-select|space-list|space-option|space-manage]`) · 계정 칸 `[data-account-groups]` ·
     창 `group`(`features/groups/GroupsWindow` `[data-groups-window|group-row|group-role|group-open|group-members|group-code-text|group-copy|group-leave|group-delete|group-new-name|group-create|group-join-code|group-join|groups-empty]`).
     점검 `tools/inspect-share-groups.mjs` 27(두 계정) · memo·mirror 통과.
-- [ ] ■2 그룹 자료 가져오기(`groups/{gid}` → `spaces/g_{gid}`, 구성원 누구나 - 결정적 id라 겹치지 않음, members 배열 → 맵).
-  → 다음 대화 메모(10-10에 읽어 둔 것): V4 그룹 하위 자료 = `groups/{gid}/` `events`·`schedules`·`journals`·`tasks`·`evaluations`·`notices`(V4 `lib/notices.ts`·`useCalendarData`) -
-    `import/v4/read.ts`의 읽기(지금 `users/{uid}`)를 바탕 경로를 받게 넓혀 `planItems`·`planLessons`(시간표 없음 - schedules → lessonDays)·`planClasses`의 알림장·조사표 부분을 sid `g_{gid}`로 돌린다.
-    내 V4 그룹 = `groups` where `members` array-contains 나(V4 규칙이 허락). ⚠️ 지금 규칙은 그룹 공간을 '나 혼자 주인'으로만 만든다 → 구성원 누구나 V4 주인·구성원 그대로 `g_{gid}`를 만들게
-    `spaces` create에 갈래 하나 더(`get(groups/{gid})`로 내가 V4 구성원인지·ownerId·members 키가 V4와 같은지) - **규칙 배포가 필요하다(사용자에게 묻기, 지금 상태의 👤 배포와 함께)**.
-    가져온 사람이 V4 주인이 아니면 초대 코드는 주인만 만든다(`spaceInvites` 규칙) - 그룹 창에 주인용 '초대 코드 만들기'. 공유 그룹 창에 'V4 그룹 가져오기' 칸, 기록은 공간마다 `settings/import`.
+- [x] ■2 그룹 자료 가져오기(`groups/{gid}` → `spaces/g_{gid}`, 구성원 누구나 - 결정적 id라 겹치지 않음, members 배열 → 맵).
+  → 규칙: `spaces` create에 갈래 하나(`isV4GroupMember` - V4 groups/{gid}.members에 내가 있고 ownerId·구성원이 V4 그대로, owner 하나, 초대 코드는 V4 주인만) +
+    참여 갈래에 'V4 구성원이면 초대 코드 없이 member로'(남이 먼저 가져온 뒤) - check-rules V5 76(+17). **운영 배포는 PC에서 묻고**(지금 상태 👤).
+    `import/v4/read.ts` `readV4Groups`(array-contains)·`readV4GroupDocs`(events·journals·tasks·schedules·notices·evaluations·settings/v4_eventDue)·`readV4LabelDocs` ·
+    `data/spaces.ts` `ensureImportedGroup`(만들기 → 안 되면 V4 구성원으로 참여, 빈 구성원 이름은 V4 이름으로 `people`)·`openInvite`(주인 - 초대 코드 만들기) ·
+    `run.ts` `runGroupImport`·`useGroupImportRun` - 라벨은 그 그룹 항목이 쓰는 것만(`items.usedLabelNames`, 상위 함께)·이름이 같은 그룹 라벨에 잇고 지우지 않는다(`planLabels` `shared`),
+    항목·조사표는 V4 `authorId`를 만든 사람으로(`Planned.author` → `writeOp.create(…, authorId)`), 링크는 같은 그룹 것만(`home`), 수업 칸은 그대로(그룹엔 시간표가 없다),
+    알림장·조사표 = `classes.planNotices`·`planEvaluations`(나눔 - 조사표 학생 sid는 만든 사람의 명렬표로), 기록은 그 그룹의 `settings/import`.
+    화면: 공유 그룹 창 'V4 그룹 가져오기' `features/groups/V4GroupsSection.tsx`(`[data-v4-groups|v4-group|v4-group-state|v4-group-import|v4-group-progress|v4-group-result|v4-groups-empty]`) ·
+    그룹장 '🔑 초대 코드 만들기' `[data-group-make-code]` · 백업 창 '가져오기' 탭에 공유 그룹 창 길 `[data-import-groups-open]` · 결과 표 `features/import/ImportResult.tsx`(나눔).
+    단위 2229 · 자료 층 30(`group.emu.test` 3 - 주인이 가져오기·두 번째 0).
 - [ ] ■3 크롬 점검(두 계정).
 **끝 조건**: 설명서 `groups`가 된다. **P8 단계 끝 정리**(1-4).
 

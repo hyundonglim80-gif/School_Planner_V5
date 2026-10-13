@@ -5,6 +5,8 @@
 // - 참여하는 사람은 아직 그룹 문서를 읽지 못한다 - 코드 문서로 sid를 알고 members.{나}만 넣는다(규칙이 그것만 허락한다).
 // - 구성원 이름은 `people/{uid}`(그룹 공간 아래 - 참여할 때 내가 적는다). 공간 문서는 주인만 고치므로 거기 두지 않는다.
 // - 그룹 지우기는 주인만: 아래 자료를 먼저 비우고(Firestore는 하위 컬렉션을 함께 지우지 않는다 - V4 교훈) 공간 문서와 초대 코드를 지운다.
+// - V4 그룹 가져오기(■2): `g_{V4 그룹 id}`를 V4 주인·구성원 그대로 만든다(규칙이 V4 groups/{gid}.members로 본다 - 구성원 누구나).
+//   남이 먼저 가져왔으면 V4 구성원으로 들어간다. 초대 코드는 주인만 연다 - 주인이 아닌 사람이 가져오면 주인이 나중에 그룹 창에서(openInvite).
 import { useEffect } from 'react';
 import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
@@ -56,8 +58,7 @@ export async function createGroup(user: SessionUser, name: string): Promise<stri
   const clean = name.trim();
   if (!clean) throw new Error('그룹 이름을 적어 주세요.');
   // 이미 쓰는 코드면 다시 뽑는다
-  let code = inviteCodeOf();
-  for (let i = 0; i < 5 && (await getDoc(doc(db, 'spaceInvites', code))).exists(); i++) code = inviteCodeOf();
+  const code = await freeInviteCode();
   const sid = `g_${newId()}`;
   const b = writeBatch(db);
   b.set(doc(db, 'spaces', sid), { kind: 'group', name: clean, ownerId: user.uid, members: { [user.uid]: 'owner' }, inviteCode: code, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), v: 1 });
@@ -112,6 +113,83 @@ export async function deleteGroup(user: SessionUser, group: GroupSpace, onStep?:
   }
   if (group.inviteCode) await deleteDoc(doc(db, 'spaceInvites', group.inviteCode)).catch((e: unknown) => console.warn('[spaces] 초대 코드를 지우지 못했습니다.', e));
   await deleteDoc(doc(db, 'spaces', group.id));
+}
+
+/** V4에서 가져올 그룹 (import/v4/read.ts V4Group 모양 - 여기는 V4 자리를 읽지 않는다) */
+export interface ImportedGroupInfo {
+  /** V4 그룹 id - 공간 id는 `g_{id}` */
+  id: string;
+  name: string;
+  ownerId: string;
+  ownerName: string;
+  members: string[];
+  memberNames: Record<string, string>;
+  inviteCode?: string;
+}
+
+export const importedGroupSid = (v4GroupId: string) => `g_${v4GroupId}`;
+
+/** 쓰지 않은 초대 코드 하나 (먼저 바라는 코드가 비었으면 그것) */
+async function freeInviteCode(wish?: string): Promise<string> {
+  let code = wish && /^[A-Z0-9]{4,12}$/.test(wish) ? wish : inviteCodeOf();
+  for (let i = 0; i < 5 && (await getDoc(doc(db, 'spaceInvites', code))).exists(); i++) code = inviteCodeOf();
+  return code;
+}
+
+/**
+ * V4 그룹의 V5 공간을 연다 (P8-4 ■2) - 내 목록에 없으면 V4 주인·구성원 그대로 만들고(V4 주인이면 V4 초대 코드도 - 쓰고 있으면 새로),
+ * 이미 있으면(남이 먼저 가져왔다) V4 구성원으로 들어간다. 구성원 이름(people)은 비어 있는 사람만 V4 이름으로.
+ */
+export async function ensureImportedGroup(user: SessionUser, g: ImportedGroupInfo): Promise<string> {
+  const sid = importedGroupSid(g.id);
+  // 목록을 받기 전에는 만들지 않는다 - 이미 있는 내 그룹을 V4 모양으로 덮어쓸 수 있다(주인은 통째로 쓸 수 있다)
+  if (!useMySpaces.getState().loaded) throw new Error('공유 그룹 목록을 받는 중입니다. 잠시 뒤 다시 눌러 주세요.');
+  if (!useMySpaces.getState().groups.some((x) => x.id === sid)) {
+    try {
+      const members = Object.fromEntries(g.members.map((uid) => [uid, uid === g.ownerId ? 'owner' : 'member']));
+      const code = user.uid === g.ownerId ? await freeInviteCode(g.inviteCode) : null;
+      const b = writeBatch(db);
+      b.set(doc(db, 'spaces', sid), {
+        kind: 'group', name: g.name, ownerId: g.ownerId, members, ...(code ? { inviteCode: code } : {}),
+        createdAt: serverTimestamp(), updatedAt: serverTimestamp(), v: 1,
+      });
+      if (code) b.set(doc(db, 'spaceInvites', code), { sid, ownerId: user.uid, createdAt: serverTimestamp() });
+      await b.commit();
+    } catch (e) {
+      // 이미 있다(남이 먼저 가져왔다) - V4 구성원이면 member로 들어간다
+      try {
+        await updateDoc(doc(db, 'spaces', sid), { [`members.${user.uid}`]: 'member', updatedAt: serverTimestamp() });
+      } catch (e2) {
+        console.error('[spaces] V4 그룹 공간을 열지 못했습니다.', e, e2);
+        throw new Error(`[${g.name}] 그룹 공간을 열지 못했습니다. V4에서 이 그룹의 구성원인지, 네트워크를 확인해 주세요.`);
+      }
+    }
+  }
+  try {
+    const people = await readPeople(sid);
+    if (!people[user.uid]) await writeMyName(sid, user);
+    const names: Record<string, string> = { ...g.memberNames, ...(g.ownerName ? { [g.ownerId]: g.ownerName } : {}) };
+    const missing = g.members.filter((uid) => uid !== user.uid && !people[uid] && names[uid]);
+    if (missing.length) {
+      const b = writeBatch(db);
+      for (const uid of missing) b.set(doc(db, 'spaces', sid, 'people', uid), { name: names[uid], photoURL: '', joinedAt: Date.now(), updatedAt: serverTimestamp(), v: 1 }, { merge: true });
+      await b.commit();
+    }
+  } catch (e) {
+    console.warn('[spaces] 구성원 이름을 적지 못했습니다(그룹은 열었다).', e);
+  }
+  return sid;
+}
+
+/** 초대 코드 열기 (주인만 - V4 그룹을 주인이 아닌 사람이 가져와 코드가 없을 때). 공간과 코드 문서를 한 묶음으로 */
+export async function openInvite(user: SessionUser, group: GroupSpace): Promise<string> {
+  if (group.ownerId !== user.uid) throw new Error('초대 코드는 그룹장만 만듭니다.');
+  const code = await freeInviteCode();
+  const b = writeBatch(db);
+  b.update(doc(db, 'spaces', group.id), { inviteCode: code, updatedAt: serverTimestamp() });
+  b.set(doc(db, 'spaceInvites', code), { sid: group.id, ownerId: user.uid, createdAt: serverTimestamp() });
+  await b.commit();
+  return code;
 }
 
 /** 구성원 이름 (그룹 관리 창 - 읽기만) */

@@ -6,10 +6,14 @@
 // - 라벨이 먼저(항목이 라벨을 id로 가리킨다), 그다음 반복 묶음·일정·기록·메모(P3-4 - 같은 실행의 라벨 짝 표로),
 //   시간표·수업 칸·진도(P6-4 - 수업 칸의 링크는 같은 실행의 항목 짝 표로, 수업 없는 날은 가져올 방학·일정으로),
 //   학급(P7-5 - 명렬표·출결·알림장·조사표·자리표·모둠·암기, 기록·메모의 학생 태그는 같은 실행의 명렬표로), 기록은 맨 끝(다 적은 뒤).
+// 공유 그룹(P8-4 runGroupImport): V4 groups/{gid} → spaces/g_{gid} - 공간을 열고(data/spaces ensureImportedGroup) 그 그룹 항목이 쓰는 라벨·일정·기록·메모·수업 칸·
+//   알림장·조사표를 같은 규칙으로. 기록은 그 그룹의 settings/import.
 import { create } from 'zustand';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { batch, BATCH_LIMIT, writeOp } from '../../data/repo';
 import { personalSpaceId } from '../../data/space';
+import { ensureImportedGroup } from '../../data/spaces';
+import type { SessionUser } from '../../data/session';
 import { planLabels } from './labels';
 import { changedTotal, addCounts, emptyCounts, type ImportCounts } from './plan';
 import { isHoliday } from '../../data/holidays';
@@ -17,11 +21,11 @@ import { todayStr } from '../../domain/dateUtils';
 import { classOffReason } from '../../domain/lessons';
 import { onPeriodDay } from '../../domain/period';
 import { readTerms } from '../../domain/semester';
-import { planClasses } from './classes';
-import { planItems, type ItemsPlan } from './items';
+import { planClasses, planEvaluations, planNotices, studentSid } from './classes';
+import { planItems, usedLabelNames, type ItemsPlan } from './items';
 import { eventLabelSources, type V4LabelDocs } from './labels';
 import { planLessons } from './lessons';
-import { hasV4Data, readSpaceDoc, readSpaceDocs, readV4ClassDocs, readV4ItemDocs, readV4LessonDocs, readV4SettingsDocs } from './read';
+import { hasV4Data, readSpaceDoc, readSpaceDocs, readV4ClassDocs, readV4GroupDocs, readV4ItemDocs, readV4LabelDocs, readV4LessonDocs, readV4SettingsDocs, type V4Group } from './read';
 import { readRecord, recordData, recordPath, type ImportRecord } from './record';
 import { planSettings, termsFromV4 } from './settings';
 
@@ -171,5 +175,106 @@ export async function dismissImportOffer(uid: string): Promise<void> {
     set({ record: next });
   } catch (e) {
     if (!(e instanceof ShownError)) showErrorToast('띠를 닫은 것을 계정에 남기지 못했습니다. 다음에 다시 보일 수 있습니다.', e);
+  }
+}
+
+// ───────── 공유 그룹 (P8-4) ─────────
+
+export interface GroupImportRun {
+  state: ImportState;
+  /** 가져오는(가져온) V4 그룹 id */
+  gid: string | null;
+  step: string;
+  done: number;
+  total: number;
+  /** 끝난 결과 - V4 그룹 id → 결과 수·안내 수 (이번 로그인 동안) */
+  results: Record<string, { at: number; counts: Record<string, ImportCounts>; notes: Record<string, number> }>;
+}
+
+const GROUP_IDLE: GroupImportRun = { state: 'idle', gid: null, step: '', done: 0, total: 0, results: {} };
+export const useGroupImportRun = create<GroupImportRun>(() => GROUP_IDLE);
+const setGroup = (p: Partial<GroupImportRun>) => useGroupImportRun.setState(p);
+
+export function resetGroupImportRun() {
+  useGroupImportRun.setState(GROUP_IDLE, true);
+}
+
+/**
+ * V4 공유 그룹 하나 → V5 그룹 공간 (구성원 누구나 - 결정적 id라 여럿이 가져와도 겹치지 않는다). 끝까지 하면 그 공간 id, 실패는 안내하고 null.
+ * 라벨은 그 그룹 항목이 쓰는 것만(가져오는 사람의 V4 라벨 목록으로 푼다 - V4도 보는 사람의 라벨이었다), 이름이 같은 그룹 라벨에 잇고 지우지 않는다.
+ * 조사표 학생 sid는 만든 사람(V4 authorId)의 명렬표로 셈한다 - 내가 만든 것은 내 V5 명렬표, 남의 것은 그 사람 개인 가져오기가 셈하는 sid.
+ */
+export async function runGroupImport(user: SessionUser, g: V4Group): Promise<string | null> {
+  if (useGroupImportRun.getState().state === 'running' || useImportRun.getState().state === 'running') return null;
+  setGroup({ state: 'running', gid: g.id, step: '그룹 공간을 여는 중…', done: 0, total: 0 });
+  let sid: string;
+  try {
+    sid = await ensureImportedGroup(user, g);
+  } catch (e) {
+    showErrorToast(e instanceof Error ? e.message : String(e), e);
+    setGroup({ state: 'failed', step: '' });
+    return null;
+  }
+  try {
+    setGroup({ step: 'V4 그룹 자료를 읽는 중…' });
+    const personal = personalSpaceId(user.uid);
+    const [v4, labelDocs, labels, items, series, lessonDays, notices, evaluations, myClasses, recDoc] = await Promise.all([
+      readV4GroupDocs(g.id),
+      readV4LabelDocs(user.uid),
+      readSpaceDocs(sid, 'labels'),
+      readSpaceDocs(sid, 'items'),
+      readSpaceDocs(sid, 'series'),
+      readSpaceDocs(sid, 'lessonDays'),
+      readSpaceDocs(sid, 'notices'),
+      readSpaceDocs(sid, 'evaluations'),
+      readSpaceDocs(personal, 'classes'),
+      readSpaceDoc(sid, 'settings', 'import'),
+    ]);
+    const record = readRecord(recDoc);
+
+    setGroup({ step: 'V5에 있는 것과 맞춰 보는 중…' });
+    const lp = planLabels(sid, labelDocs, labels, { only: usedLabelNames(v4.items, labelDocs), shared: true });
+    const ip = planItems(sid, v4.items, labelDocs, lp.labelMap, { items, series }, { home: g.id, keepAuthor: true });
+    // 그룹에는 V4 시간표가 없다 - 수업 칸을 그대로 적는다(시간표와 같은 칸 빼기도, 수업 없는 날 셈도 없다)
+    const lsp = planLessons(sid, { schedules: v4.schedules, progress: {} }, { timetables: {}, lessonDays, progress: {} }, { offDay: () => false, linkOf: ip.linkOf, today: todayStr() });
+    const sidOf = (classId: string, num: unknown, author?: string) => {
+      const n = Number(num);
+      if (author && author !== user.uid) return studentSid(personalSpaceId(author), `${classId}#${n}`);
+      const mine = myClasses[classId];
+      const found = mine && !mine.deletedAt ? mine.students.find((st) => st.num === n) : undefined;
+      return found?.sid ?? studentSid(personal, `${classId}#${n}`);
+    };
+    const classNotes = { noClass: 0 };
+    const np = planNotices(sid, v4.notices, notices);
+    const ep = planEvaluations(sid, v4.evaluations, evaluations, sidOf, classNotes, { keepAuthor: true });
+    const ops = [...lp.ops, ...ip.ops, ...lsp.ops, ...np.ops, ...ep.ops];
+    const counts: Record<string, ImportCounts> = {
+      'labels.event': lp.counts.event,
+      'labels.note': lp.counts.note,
+      ...ip.counts,
+      lessonDays: lsp.counts.lessonDays,
+      notices: np.counts,
+      evaluations: ep.counts,
+    };
+    const notes = Object.fromEntries(Object.entries({ ...ip.notes, ...classNotes }).filter(([, n]) => n > 0));
+
+    setGroup({ step: '적는 중…', total: ops.length + 1 });
+    const fail = 'V4 그룹 자료를 다 가져오지 못했습니다. 네트워크를 확인하고 다시 가져와 주세요(가져온 것은 겹치지 않습니다).';
+    for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+      const chunk = ops.slice(i, i + BATCH_LIMIT);
+      await batch(chunk, { fail });
+      setGroup({ done: i + chunk.length });
+    }
+    const next: ImportRecord = { ...record, at: Date.now(), counts, labelMap: lp.labelMap, notes };
+    await batch([writeOp.put(recordPath(sid), recordData(next), recDoc)], { fail });
+
+    const changed = changedTotal(totalCounts(counts));
+    setGroup({ state: 'done', step: '', done: ops.length + 1, results: { ...useGroupImportRun.getState().results, [g.id]: { at: next.at!, counts, notes } } });
+    showToast(changed > 0 ? `📥 [${g.name}] V4 그룹 자료를 가져왔습니다 (바뀐 것 ${changed}개).` : `📥 [${g.name}] V4 그룹 자료를 다시 보았습니다 - 바뀐 것이 없습니다.`);
+    return sid;
+  } catch (e) {
+    if (!(e instanceof ShownError)) showErrorToast('V4 그룹 자료를 읽지 못했습니다. 네트워크를 확인하고 다시 가져와 주세요.', e);
+    setGroup({ state: 'failed', step: '' });
+    return null;
   }
 }

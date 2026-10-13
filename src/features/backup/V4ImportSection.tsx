@@ -2,71 +2,11 @@
 // V4 자료 가져오기: 단추 · 진행 칸 · 결과 표(종류마다 새로·바뀜·그대로·둠·지움, 항목은 학년도별). 일은 import/v4/run이 한다.
 import { useEffect } from 'react';
 import { useSession } from '../../data/session';
-import { IMPORT_KINDS, IMPORT_NOTES } from '../../import/v4/record';
+import { openWindow } from '../../app/windows';
 import { loadImportRecord, runImport, useImportRun } from '../../import/v4/run';
-import type { ImportCounts, Outcome } from '../../import/v4/plan';
+import { importTimeText } from '../../import/v4/record';
+import { ResultNotes, ResultTable } from '../import/ImportResult';
 import { Section } from '../settings/parts';
-
-const COLUMNS: ReadonlyArray<{ key: Outcome; label: string; title: string }> = [
-  { key: 'added', label: '새로', title: 'V5에 새로 들어온 것' },
-  { key: 'changed', label: '바뀜', title: 'V4에서 바뀐 칸을 고친 것' },
-  { key: 'same', label: '그대로', title: '바뀐 것이 없어 다시 쓰지 않은 것' },
-  { key: 'kept', label: '둠', title: 'V5에서 고쳤거나 지운 것, 이름이 같은 V5 라벨이 있어 그것에 이은 것 - V5 것을 그대로 둡니다' },
-  { key: 'removed', label: '지움', title: 'V4에서 없어져 V5에서도 지운 것 (휴지통에서 되살릴 수 있습니다)' },
-];
-
-const when = (ms: number) => {
-  const d = new Date(ms);
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
-};
-
-function ResultTable({ counts }: { counts: Record<string, ImportCounts> }) {
-  const rows = IMPORT_KINDS.filter((k) => counts[k.key]);
-  return (
-    <table data-import-result className="w-full mt-3 text-xs border-collapse">
-      <thead>
-        <tr className="text-slate-400">
-          <th className="text-left font-bold py-1">종류</th>
-          {COLUMNS.map((c) => (
-            <th key={c.key} title={c.title} className="text-right font-bold py-1 px-1.5">
-              {c.label}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((k) => {
-          const c = counts[k.key];
-          return (
-            <tr key={k.key} data-import-row={k.key} className="border-t border-slate-100">
-              <td className="py-1.5 font-bold text-slate-700">
-                {k.name}
-                {c.years && Object.keys(c.years).length > 0 && (
-                  <span data-import-years className="block font-normal text-[11px] text-slate-400">
-                    {Object.entries(c.years)
-                      .sort(([a], [b]) => (a < b ? 1 : -1))
-                      .map(([y, n]) => `${y}학년도 ${n}`)
-                      .join(' · ')}
-                  </span>
-                )}
-              </td>
-              {COLUMNS.map((col) => (
-                <td
-                  key={col.key}
-                  data-import-count={col.key}
-                  className={`py-1.5 px-1.5 text-right tabular-nums ${c[col.key] ? 'font-bold text-slate-800' : 'text-slate-300'}`}
-                >
-                  {c[col.key]}
-                </td>
-              ))}
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
-}
 
 export default function V4ImportSection() {
   const uid = useSession((s) => s.user?.uid);
@@ -84,7 +24,7 @@ export default function V4ImportSection() {
       <Section
         id="import-v4"
         title="V4 자료 가져오기"
-        desc="지금까지 쓰던 V4 플래너의 자료를 V5로 옮겨 옵니다. V4는 그대로 두고 읽기만 합니다. 여러 번 가져와도 겹치지 않고, V5에서 고치거나 지운 것은 덮지 않습니다. 라벨·설정·일정·기록·메모·수업·진도·학급(명렬표·출석부·조사표·자리표·암기)을 가져옵니다(공유 그룹 자료는 그룹을 옮긴 뒤에)."
+        desc="지금까지 쓰던 V4 플래너의 자료를 V5로 옮겨 옵니다. V4는 그대로 두고 읽기만 합니다. 여러 번 가져와도 겹치지 않고, V5에서 고치거나 지운 것은 덮지 않습니다. 라벨·설정·일정·기록·메모·수업·진도·학급(명렬표·출석부·조사표·자리표·암기)을 가져옵니다(공유 그룹 자료는 아래 공유 그룹 창에서)."
       >
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -98,7 +38,7 @@ export default function V4ImportSection() {
           </button>
           {run.record?.at && !running && (
             <span data-import-last className="text-xs text-slate-400">
-              지난 가져오기 {when(run.record.at)}
+              지난 가져오기 {importTimeText(run.record.at)}
             </span>
           )}
         </div>
@@ -118,15 +58,14 @@ export default function V4ImportSection() {
           </p>
         )}
         {!running && counts && <ResultTable counts={counts} />}
-        {!running && run.record?.notes && (
-          <ul data-import-notes className="mt-2 space-y-0.5 text-[11px] text-slate-500 list-disc pl-4">
-            {IMPORT_NOTES.filter((n) => (run.record?.notes?.[n.key] ?? 0) > 0).map((n) => (
-              <li key={n.key} data-import-note={n.key}>
-                {n.text(run.record!.notes![n.key])}
-              </li>
-            ))}
-          </ul>
-        )}
+        {!running && <ResultNotes notes={run.record?.notes} />}
+        <p className="mt-3 text-xs text-slate-500">
+          V4 공유 그룹의 자료는{' '}
+          <button type="button" data-import-groups-open onClick={() => openWindow('group', {})} className="font-bold text-primary underline underline-offset-2 cursor-pointer">
+            👥 공유 그룹
+          </button>{' '}
+          창에서 그룹마다 가져옵니다.
+        </p>
       </Section>
     </div>
   );
