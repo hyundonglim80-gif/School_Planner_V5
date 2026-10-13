@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-10 P8-3 끝**(클라우드 - 💾 백업 · 가져오기 · 보내기 창: JSON·CSV·드라이브 자동 백업·Keep·구글 시트·첨부 모으기 + 공유받기·오프라인 앱). **P9-4까지 쉬지 않고 이어 간다** - 다음 P8-4. 👤 V5 주소에서 ⋮ 자료 → '보내기' 탭 시트로 보내기·되읽기 한 번. 서비스 워커·매니페스트가 바뀌었다 - 설치한 앱은 지우고 크롬에서 다시 설치(안드로이드 '공유'에 SP5).
+- **2026-10-10 P8-4 ■1 끝**(클라우드 - 공유 그룹: 그룹 공간·초대 코드·📂 공간 고르기·공유 그룹 창·기기 사본). **다음 대화: P8-4 ■2 그룹 자료 가져오기**(PLAN P8-4 ■2 아래 메모부터 - 규칙 고침이 들어가니 배포는 묻기) → ■3 → P8 단계 끝 → P9. 👤 V5 주소에서 ⋮ 자료 → '보내기' 탭 시트 한 번, 계정 칸 '👥 공유 그룹'으로 그룹 하나 만들어 보기. 서비스 워커가 바뀌었다 - 설치한 앱은 지우고 다시 설치.
 - 👤 PC에 갈 때(급하지 않다 - 그동안 클라우드로 이어 간다, 묻고): 바뀐 `firestore.rules`를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙'). 그리고 **함수 v5 배포**(PLAN P8-2 ■3 순서 - `--only functions:v5`) → 휴대폰 '알림' 탭에서 받기.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -68,6 +68,7 @@
   - 정한 날(`DAY`)에 심는 점검은 **날이 지나면 깨질 수 있다**: 이월 라벨 일정은 그날이 지나면 오늘로 따라와 ForwardMarks가 `carrying`을 한 번 쓴다 - '바뀐 문서 하나'를 세는 점검이면 `carrying: true`로 심는다(P8-2 inspect-events).
   - Playwright `route.fulfill` 흉내 응답은 **CORS를 보지 않는다** - 막힌 내려받기(버킷 CORS)는 `route.abort('failed')`로 흉내 낸다(P8-3 첨부 모으기). 컨테이너 Chromium은 한글 내려받기 이름을 'download'로 바꾼다(이름은 PC에서).
   - 서비스 워커·오프라인은 개발 서버가 아니라 **빌드 + preview(4175)**로 본다(`SITE=http://localhost:4175/` - inspect-offline). 응답이 `Vary: Origin`이라 캐시 짝 찾기는 `ignoreVary`(P8-3).
+  - 지운(없는) 공간 문서는 규칙이 읽기를 막는다(`resource`가 없어 members를 못 본다) - 점검에서 '없어졌나'는 읽기 거부도 없음으로 센다(P8-4 inspect-share-groups).
   - **계정에 올라가는 설정은 기기 저장소만 바꿔서 시험하지 않는다** - 다시 열면 계정 값이 이긴다. 계정 문서로 바꾸고 끝에 걷는다(P4-1 - inspect-shell이 '가운데 창'을 계정에 남겨 다른 점검이 깨졌다).
 - **오늘에 따라 고르는 것(이월·지난 일정)의 단위 테스트는 날짜를 고정**한다: `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(…)`, 끝에 `vi.useRealTimers()`(P3-3 - 고정하지 않으면 다음 날 시험이 깨진다).
 - **창 목록(`app/windowList`)이 부르는 `features/*/open.ts`는 `data/session`·`select`를 import하지 않는다** - windowConventions.test가 창 목록을 읽어 진짜 Firebase가 뜨고 CI에서 가끔 '처리하지 않은 오류'(P7-2 알림장 - 단축키는 `shortcuts.ts`로 나눴다).
@@ -311,6 +312,9 @@
   '백업' `BackupTab`(JSON = 순수 `domain/backup.ts` + `data/backup.ts` 서버 읽기·되살리기 없거나 지운 것만, CSV = V4 모양 `[data-backup-*|restore-*]`) · `AutoBackupSection`·`auto.ts`(드라이브 자동 백업 `useAutoBackupRunner` - PC·토큰 있을 때만, `common.autoBackup`·`settings/backupLog` `data/backupLog.ts`, `data/google/driveBackup.ts`, 순수 `domain/autoBackup.ts`)·`AutoBackupBanner`(Shell) ·
   '가져오기' `V4ImportSection` + `KeepImportSection`·`keep.ts`(순수 `domain/keepImport.ts`, 백업 탭에 넣은 Keep 파일은 `useKeepInbox`로) · '보내기' `gcal/CalendarSyncSection` + `SheetsSection`·`sheets.ts`(V5 시트 파일 `settings/sheets`, 순수 `domain/sheets.ts`, `data/google/sheets.ts`, 명렬표 '📊 시트' `class/rosterSheet.ts`) ·
   '정리' `CollectSection`·`collect.ts`(첨부 모으기 - 순수 `domain/attachCollect.ts`, Storage 원본은 지우지 않는다). 점검 `inspect-backup`(42)·`inspect-keep`(29 - 첨부 모으기 포함)·`inspect-sheets`(31).
+- **공유 그룹**(P8-4 ■1 - `spaces/g_…` members 맵·초대 코드 `spaceInvites/{code}`·구성원 이름 `people/{uid}`): `data/spaceChoice.ts`(store `useMySpaces`·이 기기에서 고른 공간 `useSpaceChoice` `sp5-space`·`chooseSpace`·`rememberGroups`·초대 코드 셈) ·
+  `data/spaces.ts`(`watchMySpaces`·`useMySpacesWatch`(App)·`createGroup`·`joinGroup`·`leaveGroup`·`deleteGroup`·`readPeople`) · `session.currentSpaceId`가 고른 공간 · 기기 사본 `Engine.setSpaces`·`GROUP_MIRRORED` ·
+  머리줄 📂 `SpaceSelect`(`[data-space-select=sid|space-list|space-option|space-manage]`) · 계정 칸 `[data-account-groups]` · 창 `group`(`features/groups/GroupsWindow` `[data-groups-window|group-row|group-*]`). 점검 `tools/inspect-share-groups.mjs`(27 - 두 계정).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·

@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P8-4 공유 그룹 + 그룹 가져오기** (클라우드면 1-7을 먼저).
+**P8-4 공유 그룹 + 그룹 가져오기** (클라우드면 1-7을 먼저) - ■1 끝(2026-10-10), **다음 ■2 그룹 자료 가져오기**.
 
 ---
 
@@ -1151,6 +1151,11 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
     창 `group`(`features/groups/GroupsWindow` `[data-groups-window|group-row|group-role|group-open|group-members|group-code-text|group-copy|group-leave|group-delete|group-new-name|group-create|group-join-code|group-join|groups-empty]`).
     점검 `tools/inspect-share-groups.mjs` 27(두 계정) · memo·mirror 통과.
 - [ ] ■2 그룹 자료 가져오기(`groups/{gid}` → `spaces/g_{gid}`, 구성원 누구나 - 결정적 id라 겹치지 않음, members 배열 → 맵).
+  → 다음 대화 메모(10-10에 읽어 둔 것): V4 그룹 하위 자료 = `groups/{gid}/` `events`·`schedules`·`journals`·`tasks`·`evaluations`·`notices`(V4 `lib/notices.ts`·`useCalendarData`) -
+    `import/v4/read.ts`의 읽기(지금 `users/{uid}`)를 바탕 경로를 받게 넓혀 `planItems`·`planLessons`(시간표 없음 - schedules → lessonDays)·`planClasses`의 알림장·조사표 부분을 sid `g_{gid}`로 돌린다.
+    내 V4 그룹 = `groups` where `members` array-contains 나(V4 규칙이 허락). ⚠️ 지금 규칙은 그룹 공간을 '나 혼자 주인'으로만 만든다 → 구성원 누구나 V4 주인·구성원 그대로 `g_{gid}`를 만들게
+    `spaces` create에 갈래 하나 더(`get(groups/{gid})`로 내가 V4 구성원인지·ownerId·members 키가 V4와 같은지) - **규칙 배포가 필요하다(사용자에게 묻기, 지금 상태의 👤 배포와 함께)**.
+    가져온 사람이 V4 주인이 아니면 초대 코드는 주인만 만든다(`spaceInvites` 규칙) - 그룹 창에 주인용 '초대 코드 만들기'. 공유 그룹 창에 'V4 그룹 가져오기' 칸, 기록은 공간마다 `settings/import`.
 - [ ] ■3 크롬 점검(두 계정).
 **끝 조건**: 설명서 `groups`가 된다. **P8 단계 끝 정리**(1-4).
 
