@@ -1,5 +1,5 @@
 // 수업 수정 칸 'N교시 수정' (V4 components/DetailEditModal.tsx 수업 갈래). 쓰는 칸 'lesson' = { sid, date, n }.
-//   과목(교과 모드는 학년-반 + 과목)·비고/준비물·수업 메모, 🔗 링크 추가·📑 연결된 링크, 📊 조사표(P7-4 - 그 교시), 📘 진도 줄·진도 만들기(개인 공간), 삭제 = 그 교시 비우기.
+//   과목(교과 모드는 학년-반 + 과목)·비고(준비물)(P10-2 - 수업 메모와 한 칸), 🔗 링크 추가·📑 연결된 링크, 📊 조사표(P7-4 - 그 교시), 📘 진도 줄·진도 만들기(개인 공간), 삭제 = 그 교시 비우기.
 //   칸은 그 교시의 **지금 내용**을 따라간다 - 연 채로 하루 화면이나 다른 기기에서 고치면 칸도 바뀐다(고치는 중이면 적던 것을 둔다 - V4 10-04).
 //   저장·Ctrl+S, 좁은 화면에서 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -41,7 +41,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
   const inPersonal = sid === usePersonalSpaceId();
   const mark = useProgressMarks(date).marks[slotId(date, n)];
 
-  const live: LessonEdit = { subject: cell?.subject ?? '', memo: cell?.memo ?? '', supplies: cell?.supplies ?? '' };
+  const live: LessonEdit = { subject: cell?.subject ?? '', note: cell?.note ?? '' };
   // 고치기 시작하면 적던 것을 들고, 아니면 지금 내용을 따라간다
   const [typed, setTyped] = useState<LessonEdit | null>(null);
   const form = typed ?? live;
@@ -159,23 +159,12 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
             )}
           </div>
           <div>
-            <span className="block text-xs font-bold text-slate-500 mb-1">비고 / 준비물</span>
-            <input
-              type="text"
-              data-lesson-panel-supplies
-              value={form.supplies}
-              onChange={(e) => set({ supplies: e.target.value })}
-              aria-label="비고 / 준비물"
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            />
-          </div>
-          <div>
-            <span className="block text-xs font-bold text-slate-500 mb-1">수업 메모</span>
+            <span className="block text-xs font-bold text-slate-500 mb-1">비고(준비물)</span>
             <AutoTextarea
-              data-lesson-panel-memo
-              value={form.memo}
-              onChange={(e) => set({ memo: e.target.value })}
-              aria-label="수업 메모"
+              data-lesson-panel-note
+              value={form.note}
+              onChange={(e) => set({ note: e.target.value })}
+              aria-label="비고(준비물)"
               className="w-full min-h-[68px] px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>

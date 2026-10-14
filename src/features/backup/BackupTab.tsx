@@ -87,7 +87,7 @@ export default function BackupTab() {
     const lessons: Parameters<typeof csvRowsOf>[0]['lessons'] = [];
     if (include.has('lessons') && lessonRange) {
       for (let d = lessonRange.start, i = 0; d <= lessonRange.end && i < 800; d = addDays(d, 1), i++) {
-        for (const c of lessonsOn(d, lessonSrc).cells) if (c.subject || c.memo) lessons.push({ date: d, n: c.n, subject: c.subject, memo: c.memo });
+        for (const c of lessonsOn(d, lessonSrc).cells) if (c.subject || c.note) lessons.push({ date: d, n: c.n, subject: c.subject, memo: c.note });
       }
     }
     const rows = csvRowsOf({

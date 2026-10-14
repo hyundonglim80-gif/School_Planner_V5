@@ -37,6 +37,17 @@
   }
 }
 
+/* 숫자 칸의 위아래 화살표 숨기기 (명렬표 번호 - 화살표가 칸을 먹어 두 자리 번호가 잘렸다, P10-2) */
+@utility no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
 /* 일정 알림 창이 깜빡인다 (V4 index.css 그대로 - 화면 가운데 큰 창, features/events/EventAlarmPopup) */
 @keyframes sp5-alarm-blink {
   0% { background-color: rgba(0, 0, 0, 0.85); }

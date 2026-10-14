@@ -98,9 +98,8 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
             },
             edit: () => openLessonPanel({ sid, date: lesson.date, n: lesson.period }),
           })}
-          {c?.supplies && <p className="text-xs text-amber-600 font-medium mb-1">📌 {c.supplies}</p>}
           <div data-link-text className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs font-medium whitespace-pre-wrap break-words leading-relaxed min-h-[36px] text-slate-800">
-            {c?.memo ? <FormattedText text={c.memo} /> : <span className="text-slate-400">(수업 메모 없음)</span>}
+            {c?.note ? <FormattedText text={c.note} /> : <span className="text-slate-400">(비고(준비물) 없음)</span>}
           </div>
         </div>
       );

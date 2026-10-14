@@ -1,12 +1,13 @@
 // 주간학습안내 (V4 lib/weeklyGuide.ts) - 순수 셈. 재료는 계산한 수업 칸(domain/lessons - guideDaysOf), 화면은 features/weeklyGuide.
 //
-//   한 주(월~금)의 요일 × 교시 표: 과목 + 수업 메모, 날마다 준비물(교시 준비물을 모아 겹친 것은 하나로)·알림장 줄.
+//   한 주(월~금)의 요일 × 교시 표: 과목 + 비고(준비물), 날마다 알림장 줄.
+//   P10-2: 수업 메모와 준비물이 '비고(준비물)' 한 칸이 되어 교시 칸에 함께 적는다 - 따로 모으던 '준비물' 줄은 같은 글이 두 번 나와 뺐다.
 //   인쇄(lib/print)와 표 복사(엑셀·한글·워드에 붙여넣기 - HTML 표와 탭 글 둘 다)에 같은 표를 쓴다.
 
 export interface GuidePeriod {
   subject: string;
-  memo: string;
-  supplies: string;
+  /** 비고(준비물) */
+  note: string;
 }
 
 export interface GuideDay {
@@ -18,8 +19,8 @@ export interface GuideDay {
 }
 
 export interface GuideOptions {
-  memo: boolean;
-  supplies: boolean;
+  /** 교시 칸에 비고(준비물) */
+  note: boolean;
   notices: boolean;
 }
 
@@ -72,17 +73,17 @@ export function weekRangeText(dates: string[]): string {
   return `${f(dates[0])} ~ ${f(dates[dates.length - 1])}`;
 }
 
-/** 계산한 수업 칸 → 교시 표 (과목·메모·준비물이 다 빈 교시는 뺀다). notices = 날짜 → 그날 알림장 줄 */
+/** 계산한 수업 칸 → 교시 표 (과목·비고가 다 빈 교시는 뺀다). notices = 날짜 → 그날 알림장 줄 */
 export function guideDaysOf(
   dates: string[],
-  lessons: (date: string) => { cells: ReadonlyArray<{ n: number; subject: string; memo: string; supplies: string }> },
+  lessons: (date: string) => { cells: ReadonlyArray<{ n: number; subject: string; note: string }> },
   notices: (date: string) => string[] = () => [],
 ): GuideDay[] {
   return dates.map((date) => {
     const periods: Record<number, GuidePeriod> = {};
     for (const c of lessons(date).cells) {
-      const p = { subject: c.subject.trim(), memo: c.memo.trim(), supplies: c.supplies.trim() };
-      if (p.subject || p.memo || p.supplies) periods[c.n] = p;
+      const p = { subject: c.subject.trim(), note: c.note.trim() };
+      if (p.subject || p.note) periods[c.n] = p;
     }
     return { date, periods, notices: notices(date) };
   });
@@ -93,18 +94,6 @@ export function periodCountOf(days: GuideDay[], templateCount: number): number {
   let max = templateCount;
   for (const d of days) for (const k of Object.keys(d.periods)) max = Math.max(max, Number(k));
   return Math.max(1, max);
-}
-
-/** 그날 준비물 - 교시 준비물을 쉼표·가운뎃점으로 나눠 겹친 것은 하나로 */
-export function suppliesOf(day: GuideDay): string[] {
-  const out: string[] = [];
-  for (const k of Object.keys(day.periods).map(Number).sort((a, b) => a - b)) {
-    for (const s of day.periods[k].supplies.split(/[,·、\n]/)) {
-      const t = s.trim();
-      if (t && !out.includes(t)) out.push(t);
-    }
-  }
-  return out;
 }
 
 export interface GuideTable {
@@ -124,11 +113,10 @@ export function guideTable(days: GuideDay[], periodNames: string[], opts: GuideO
       ...days.map((d) => {
         const p = d.periods[n];
         if (!p) return '';
-        return [p.subject, opts.memo ? p.memo : ''].filter(Boolean).join('\n');
+        return [p.subject, opts.note ? p.note : ''].filter(Boolean).join('\n');
       }),
     ]);
   }
-  if (opts.supplies) rows.push(['준비물', ...days.map((d) => suppliesOf(d).join(', '))]);
   if (opts.notices) rows.push(['알림장', ...days.map((d) => d.notices.map((l, i) => `${i + 1}. ${l}`).join('\n'))]);
   return { head, rows };
 }

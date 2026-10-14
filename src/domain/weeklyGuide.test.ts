@@ -9,7 +9,6 @@ import {
   guideDaysOf,
   schoolWeekOf,
   shiftWeek,
-  suppliesOf,
   weekRangeText,
   type GuideDay,
 } from './weeklyGuide';
@@ -28,19 +27,19 @@ describe('주 고르기', () => {
 describe('guideDaysOf', () => {
   it('계산한 수업 칸에서 - 빈 교시는 빼고, 알림장 줄은 따로', () => {
     const cells = [
-      { n: 1, subject: '국어', memo: '시 낭송 ', supplies: '공책' },
-      { n: 2, subject: '', memo: '', supplies: '' },
-      { n: 3, subject: '', memo: '자습', supplies: '' },
+      { n: 1, subject: '국어', note: '공책\n시 낭송 ' },
+      { n: 2, subject: '', note: '' },
+      { n: 3, subject: '', note: '자습' },
     ];
     expect(guideDaysOf(['2026-10-05'], () => ({ cells }), (d) => (d === '2026-10-05' ? ['체육복'] : []))).toEqual([
-      { date: '2026-10-05', periods: { 1: { subject: '국어', memo: '시 낭송', supplies: '공책' }, 3: { subject: '', memo: '자습', supplies: '' } }, notices: ['체육복'] },
+      { date: '2026-10-05', periods: { 1: { subject: '국어', note: '공책\n시 낭송' }, 3: { subject: '', note: '자습' } }, notices: ['체육복'] },
     ]);
   });
 });
 
 const days: GuideDay[] = [
-  { date: '2026-10-05', periods: { 1: { subject: '국어', memo: '시 낭송', supplies: '공책, 색연필' }, 3: { subject: '미술', memo: '', supplies: '색연필·풀' } }, notices: ['우유 급식', '체육복'] },
-  { date: '2026-10-06', periods: { 7: { subject: '동아리', memo: '', supplies: '' } }, notices: [] },
+  { date: '2026-10-05', periods: { 1: { subject: '국어', note: '시 낭송' }, 3: { subject: '미술', note: '색연필·풀' } }, notices: ['우유 급식', '체육복'] },
+  { date: '2026-10-06', periods: { 7: { subject: '동아리', note: '' } }, notices: [] },
 ];
 
 describe('표', () => {
@@ -48,22 +47,19 @@ describe('표', () => {
     expect(periodCountOf(days, 6)).toBe(7);
     expect(periodCountOf([], 0)).toBe(1);
   });
-  it('준비물은 모아서 겹친 것 하나로', () => {
-    expect(suppliesOf(days[0])).toEqual(['공책', '색연필', '풀']);
-  });
-  it('요일 머리, 교시 줄(과목 + 메모), 준비물·알림장 줄 - 끄면 빠진다', () => {
-    const t = guideTable(days, ['1교시', '2교시', '3교시', '4교시', '5교시', '6교시'], { memo: true, supplies: true, notices: true });
+  it('요일 머리, 교시 줄(과목 + 비고(준비물)), 알림장 줄 - 끄면 빠진다', () => {
+    const t = guideTable(days, ['1교시', '2교시', '3교시', '4교시', '5교시', '6교시'], { note: true, notices: true });
     expect(t.head).toEqual(['', '10/5(월)', '10/6(화)']);
     expect(t.rows[0]).toEqual(['1교시', '국어\n시 낭송', '']);
     expect(t.rows[6]).toEqual(['7교시', '', '동아리']);
-    expect(t.rows[7]).toEqual(['준비물', '공책, 색연필, 풀', '']);
-    expect(t.rows[8]).toEqual(['알림장', '1. 우유 급식\n2. 체육복', '']);
-    const bare = guideTable(days, [], { memo: false, supplies: false, notices: false });
+    expect(t.rows[2]).toEqual(['3교시', '미술\n색연필·풀', '']);
+    expect(t.rows[7]).toEqual(['알림장', '1. 우유 급식\n2. 체육복', '']);
+    const bare = guideTable(days, [], { note: false, notices: false });
     expect(bare.rows).toHaveLength(7);
     expect(bare.rows[0][1]).toBe('국어');
   });
   it('복사: HTML 표(이스케이프·줄바꿈)와 탭 글(줄바꿈 칸은 따옴표)', () => {
-    const t = guideTable(days, ['1교시'], { memo: true, supplies: false, notices: false });
+    const t = guideTable(days, ['1교시'], { note: true, notices: false });
     const html = guideHtml('주간학습안내 <4-3>', '가정에서\n살펴 주세요', t);
     expect(html).toContain('&lt;4-3&gt;');
     expect(html).toContain('가정에서<br>살펴 주세요');

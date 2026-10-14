@@ -231,8 +231,9 @@ try {
   await setDoc(ref3('lessonDays', D), { periods: { '3': { subject: '5-1 과학' } }, updatedAt: serverTimestamp(), v: 1 });
   const p3 = await newPage(browser);
   await open(p3.page, `#/day/${D}`, { as: 3 });
-  const tool3 = p3.page.locator(sel('class-tools', C3)).locator(sel('class-tool-btn', 'eval'));
-  r.check(await waitFor(tool3, 8000), '교시 카드 반 도구에 📊 조사표');
+  r.check(await waitFor(p3.page.locator(sel('class-tools', C3)), 8000), '교시 카드에 반 도구');
+  const tool3 = p3.page.locator(sel('lesson-evals', 3));
+  r.check(await waitFor(tool3, 8000), '교시 카드 📊 조사표');
   await tool3.click();
   const w33 = p3.page.locator(sel('eval-window', `${D}|3`));
   r.check(await waitFor(w33.locator('[data-eval-create]'), 8000), '그 교시 새 조사표');

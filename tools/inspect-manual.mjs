@@ -378,6 +378,8 @@ try {
     r.check((await q(sel('lesson-subject')).innerText()).includes('국어'), '과목 = 시간표 것');
     await card.click();
     r.check(await has(sel('lesson-editor')), '교시를 누르면 그 자리에서 고친다');
+    r.check((await count(sel('lesson-note-input'))) === 1 && (await count(sel('lesson-memo-input'))) === 0, '과목 + 비고(준비물) 한 칸');
+    r.check((await count(sel('lesson-editor-link'))) === 1 && (await count(sel('lesson-editor-tool', 'eval'))) === 1, '수정 칸에도 🔗 링크 추가 · 📊 조사표');
     await page.keyboard.press('Escape');
   });
 

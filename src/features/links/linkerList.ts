@@ -1,6 +1,6 @@
 // 링크 연결 창의 목록 셈 (V4 LinkerModal의 조회 범위·라벨·키워드 거르기를 순수 함수로). 자료는 기기 사본에서 - 서버에 묻지 않는다.
 import { academicYearOf, addDays, formatDate } from '../../domain/dateUtils';
-import { lessonsOn, type LessonSource } from '../../domain/lessons';
+import { firstLine, lessonsOn, type LessonSource } from '../../domain/lessons';
 import { schoolYearSpan, semesterSpan, type SemesterConfig } from '../../domain/semester';
 import type { Docs } from '../../data/select';
 import type { YMD } from '../../data/types';
@@ -68,16 +68,16 @@ export function candidatesOf(
 /** 한 번에 훑는 날 수의 끝 (기간 설정을 몇 해로 잡아도 창이 멈추지 않게) */
 const LESSON_SCAN_DAYS = 400;
 
-/** 🏫 수업 탭: 범위 안의 수업 칸 가운데 과목이나 메모가 있는 것 - 최근 날짜부터, 같은 날은 교시 차례 (계산 - domain/lessons) */
+/** 🏫 수업 탭: 범위 안의 수업 칸 가운데 과목이나 비고(준비물)가 있는 것 - 최근 날짜부터, 같은 날은 교시 차례 (계산 - domain/lessons) */
 export function lessonCandidatesOf(src: LessonSource, range: { start: YMD; end: YMD }, keyword = ''): Candidate[] {
   const kw = keyword.trim().toLowerCase();
   const out: Candidate[] = [];
   let d = range.end;
   for (let i = 0; i < LESSON_SCAN_DAYS && d >= range.start; i++, d = addDays(d, -1)) {
     for (const c of lessonsOn(d, src).cells) {
-      if (!c.subject && !c.memo.trim()) continue;
-      const memo = c.memo.split('\n')[0].trim();
-      const text = `${c.n}교시 ${c.subject || '(과목 없음)'}${memo ? ` · ${memo}` : ''}`;
+      if (!c.subject && !c.note) continue;
+      const note = firstLine(c.note);
+      const text = `${c.n}교시 ${c.subject || '(과목 없음)'}${note ? ` · ${note}` : ''}`;
       if (kw && !text.toLowerCase().includes(kw)) continue;
       out.push({ id: lessonLinkId(d, c.n), kind: 'lesson', date: d, text, labelIds: [] });
     }

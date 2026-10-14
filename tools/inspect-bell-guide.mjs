@@ -1,6 +1,6 @@
 // tools/inspect-bell-guide.mjs - P6-3 ■1·■2: 수업 종·주간학습안내·이 화면 인쇄를 실제 크롬에서 본다.
 //   1) 하루 '⏰ 수업' 옆 🔕 종 → 설정 칸: 켜기 = 계정 설정 common.classBell, 시각을 고정한 창에서 교시 시작에 종(안내·소리 수), '이 기기에서 울리기' 끄면 조용
-//   2) 주간 '📰 주간학습안내'(담임) → 요일 × 교시 표(과목·메모)·준비물 줄, 넣을 것 끄기·주 넘기기·제목·알리는 말, 🖨️ 인쇄 = 그 표만 찍을 준비, 📋 표 복사, 단축키 = 다음 주
+//   2) 주간 '📰 주간학습안내'(담임) → 요일 × 교시 표(과목·비고(준비물) - 옛 수업 메모도 이어서)·알림장 줄, 넣을 것 끄기·주 넘기기·제목·알리는 말, 🖨️ 인쇄 = 그 표만 찍을 준비, 📋 표 복사, 단축키 = 다음 주
 //   3) ⋮ '🖨️ 이 화면 인쇄'·Ctrl+P: 주간 = 이번 주(A4 가로), 년간 학사력, 다른 화면에는 ⋮ 항목이 없다. 전담은 주간학습안내 단추가 없다.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-bell-guide.mjs
@@ -103,14 +103,14 @@ try {
   r.check((await page.locator(sel('guide-range')).getAttribute('data-guide-range')) === '2026-10-12', '보고 있는 주로 (월~금)');
   const cell = (row, c) => page.locator(`[data-guide-cell="${row}:${c}"]`);
   r.check(await waitFor(async () => ((await cell('1교시', 1).textContent()) ?? '').includes('국어'), 8000), '월 1교시 = 국어 (계산한 수업 칸)');
-  r.check((await cell('1교시', 1).textContent()).includes('시 낭송'), '과목 아래 수업 메모');
+  r.check((await cell('1교시', 1).textContent()) === '국어공책, 색연필\n시 낭송', `과목 아래 비고(준비물) - 옛 수업 메모는 이어서 (${await cell('1교시', 1).textContent()})`);
   r.check((await cell('1교시', 3).textContent()).includes('과학'), '수 1교시 = 과학');
-  r.check((await cell('준비물', 1).textContent()) === '공책, 색연필, 자', `준비물 = 모아서 겹친 것 하나로 (${await cell('준비물', 1).textContent()})`);
+  r.check(!(await cell('준비물', 1).count()), "따로 모으던 '준비물' 줄은 없다 (교시 칸에 비고째)");
   r.check(((await cell('알림장', 1).textContent()) ?? '').includes('1. 우유 가져오기') && ((await cell('알림장', 1).textContent()) ?? '').includes('2. 동의서'), `알림장 줄 = 그날 알림장 (${await cell('알림장', 1).textContent()})`);
-  await page.locator(sel('guide-opt', 'memo')).uncheck();
-  r.check(!(await cell('1교시', 1).textContent()).includes('시 낭송'), '수업 메모 끄기');
-  r.check((await page.evaluate(() => localStorage.getItem('sp5-weekly-guide-opts'))).includes('"memo":false'), '넣을 것은 이 기기에 남는다');
-  await page.locator(sel('guide-opt', 'memo')).check();
+  await page.locator(sel('guide-opt', 'note')).uncheck();
+  r.check((await cell('1교시', 1).textContent()) === '국어', '비고(준비물) 끄기');
+  r.check((await page.evaluate(() => localStorage.getItem('sp5-weekly-guide-opts'))).includes('"note":false'), '넣을 것은 이 기기에 남는다');
+  await page.locator(sel('guide-opt', 'note')).check();
   await page.locator(sel('guide-title')).fill('4학년 3반 주간학습안내');
   await page.locator(sel('guide-note-input')).fill('수요일은 현장체험학습입니다.');
   r.check((await page.locator(sel('guide-heading')).textContent()) === '4학년 3반 주간학습안내 (10.12 ~ 10.16)', '제목 (주 범위)');

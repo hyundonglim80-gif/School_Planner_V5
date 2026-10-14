@@ -331,6 +331,27 @@ try {
   const tools3 = p3.page.locator(sel('class-tools', C3));
   r.check(await waitFor(tools3, 8000), "교시 카드 '5-1 과학'에 반 도구");
   r.check(!(await p3.page.locator(sel('lessons-tool', 'drawStudent')).count()), '전담은 머리줄 🎯가 없다');
+  // 반 도구·🙋 출결은 마우스를 올렸을 때만 (P10-2 - 📊🔗✏️처럼)
+  const opacity = (loc) => loc.evaluate((el) => getComputedStyle(el).opacity);
+  const lessonCard3 = p3.page.locator(sel('lesson-card', 3));
+  await p3.page.mouse.move(5, 5);
+  r.check(await waitFor(async () => (await opacity(tools3.locator(sel('class-tool-btn', 'seating')))) === '0' && (await opacity(lessonCard3.locator(sel('subject-attendance', 3)))) === '0', 3000), '마우스를 올리기 전에는 🪑·🎯·🙋 숨김');
+  await lessonCard3.hover();
+  r.check(await waitFor(async () => (await opacity(tools3.locator(sel('class-tool-btn', 'seating')))) === '1' && (await opacity(lessonCard3.locator(sel('subject-attendance', 3)))) === '1', 3000), '마우스를 올리면 보인다');
+  // 수정 칸에도 같은 단추 (고치는 동안 사라지지 않게 - P10-2)
+  await lessonCard3.click();
+  const ed = p3.page.locator(sel('lesson-editor', 3));
+  r.check(await waitFor(ed), '교시를 누르면 수정 칸');
+  r.check(
+    (await ed.locator(sel('lesson-editor-tool')).evaluateAll((els) => els.map((e) => e.getAttribute('data-lesson-editor-tool')).join())) === 'eval,attendance,seating,drawStudent',
+    '수정 칸에 📊 조사표·🙋 출결·🪑 자리표·🎯 뽑기',
+  );
+  await ed.locator(sel('lesson-editor-tool', 'seating')).click();
+  r.check(await waitFor(p3.page.locator(sel('seating-window', C3)), 8000), '수정 칸 🪑 = 그 반 자리표');
+  r.check(await waitFor(ed), '도구를 열어도 수정 칸은 그대로');
+  await ed.locator(sel('lesson-close')).click();
+  await p3.page.locator(`[data-popup-frame]:has(${sel('seating-window', C3)}) [data-close]`).click();
+  await lessonCard3.hover();
   await tools3.locator(sel('class-tool-btn', 'drawStudent')).click();
   const win3 = p3.page.locator(sel('seating-window', C3));
   r.check(await waitFor(win3, 8000), '🎯 뽑기 = 그 반 자리표');

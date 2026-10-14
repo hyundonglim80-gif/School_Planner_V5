@@ -98,7 +98,7 @@ describe('그날 수업 칸 (lessonsOn)', () => {
 
   it('그날 바꾼 과목이 이긴다 - 빈 글자면 그 교시 수업 없음', () => {
     const v = lessonsOn('2026-10-12', source({ days: { '2026-10-12': { periods: { '1': { subject: '국어' }, '2': { subject: '' }, '3': { memo: '실험' } } } } }));
-    expect(v.cells.slice(0, 3).map((c) => [c.subject, c.base, c.changed, c.memo])).toEqual([
+    expect(v.cells.slice(0, 3).map((c) => [c.subject, c.base, c.changed, c.note])).toEqual([
       ['국어', '영어', true, ''],
       ['', '수학', true, ''],
       ['', '', false, '실험'],
@@ -109,7 +109,7 @@ describe('그날 수업 칸 (lessonsOn)', () => {
     const v = lessonsOn('2026-10-09', source({ days: { '2026-10-09': { periods: { '2': { subject: '보강 수학', supplies: '자' } } } } })); // 금, 한글날
     expect(v.off).toBe('holiday');
     expect(v.cells[0]).toMatchObject({ subject: '', base: '' });
-    expect(v.cells[1]).toMatchObject({ subject: '보강 수학', supplies: '자', changed: true });
+    expect(v.cells[1]).toMatchObject({ subject: '보강 수학', note: '자', changed: true });
     expect(lessonsOn('2026-07-27', source()).off).toBe('vacation');
     expect(lessonsOn('2026-07-27', source()).cells[0].subject).toBe('');
   });
@@ -117,7 +117,7 @@ describe('그날 수업 칸 (lessonsOn)', () => {
   it('설정보다 뒤 교시에 적어 둔 것이 있으면 그만큼 늘린다', () => {
     const v = lessonsOn('2026-10-12', source({ days: { '2026-10-12': { periods: { '8': { memo: '보충' }, '9': {} } } } }));
     expect(v.cells).toHaveLength(8);
-    expect(v.cells[7].memo).toBe('보충');
+    expect(v.cells[7].note).toBe('보충');
   });
 
   it('주말은 시간표가 없고 그날 적은 것만', () => {
