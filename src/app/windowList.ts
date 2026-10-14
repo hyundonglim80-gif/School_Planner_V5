@@ -6,6 +6,7 @@ import { LESSON_PANEL, sameLessonPanel, type LessonPanelParams } from '../featur
 import type { WeeklyGuideParams } from '../features/weeklyGuide/WeeklyGuideWindow';
 import type { BackupParams } from '../features/backup/open';
 import type { HelpParams } from '../features/help/HelpWindow';
+import type { NewYearParams } from '../features/newYear/NewYearWindow';
 import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/open';
 import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attendance/open';
 import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
@@ -275,6 +276,16 @@ registerWindow({
   kind: 'side',
   help: 'timetable',
   load: () => import('../features/timetable/TimetableWindow'),
+});
+
+// 3월 안내 띠 · 시간표 창 머리줄 🌱 - 새 학년도 준비(새 학급·시간표·방학·담임반, P9-2). `{ year }`으로 그 학년도. ⋮에는 넣지 않는다(MENU 3-4 8항목)
+registerWindow<NewYearParams | undefined>({
+  id: 'newYear',
+  title: '새 학년도 준비',
+  icon: '🌱',
+  kind: 'side',
+  help: 'new-year',
+  load: () => import('../features/newYear/NewYearWindow'),
 });
 
 // ⋮ 설정

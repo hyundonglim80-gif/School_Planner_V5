@@ -25,8 +25,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-14 P9-1 끝**(클라우드 - 설명서를 V5로: 창 `help`·11장 68주제·inspect-manual 282). **다음 대화: P9-2 새 학년도 넘기기**. 👤 V5 주소에서 ? → 설명서를 훑어 V5 화면과 다른 곳을 알려 주기. 👤 규칙 배포 뒤 계정 칸 '👥 공유 그룹' → 'V4 그룹 가져오기'로 실제 그룹 하나 가져와 보기.
-- **10-14 PC에서 배포함**: 운영 규칙(V4 그룹 가져오기 갈래) · 함수 v5 셋(14:20 다시 - 건너뛴 까닭 로그) · 알림 소리 막힘 → OS 알림도. 👤 휴대폰·PC '알림' 탭에서 받기 → ⏰ 일정 1~2분 뒤 소리(기기 알림음) 나는지.
+- **2026-10-14 P9-2 끝**(PC - 새 학년도 준비: 2/15~3/31 띠 · 시간표 창 🌱). **다음 대화: P9-3 전체 점검·성능**. 👤 V5 주소 ? → 설명서를 훑어 V5 화면과 다른 곳 알려 주기 · 계정 칸 '👥 공유 그룹' → 'V4 그룹 가져오기'로 실제 그룹 하나.
+- **10-14 PC에서 배포함**: 운영 규칙(V4 그룹 가져오기 갈래) · 함수 v5 셋(알림 건너뛴 까닭 로그) · 알림 소리 막힘 → OS 알림도. 👤 휴대폰·PC '알림' 탭에서 받기 → ⏰ 일정 1~2분 뒤 소리(기기 알림음) 나는지.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -257,6 +257,9 @@
   `DayLessons`(하루 칸 `[data-day-lessons|lesson-card|lesson-id|lesson-subject|lesson-changed|lessons-off|now-line|lesson-up|down|link|links|edit|prev|lesson-editor|lesson-*-input|lesson-save|close|lessons-settings]`) ·
   `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson]`) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
   시간표 창 `features/timetable/`(`TimetableWindow` 창 `timetable` `{ tab }` `[data-timetable-window|timetable-tab|timetable-save|timetable-dirty]` · `GridTab`(`[data-timetable-pick|add|name|from|to|quick|delete]`·`input[data-cell="행-열"]`) · `PeriodsTab`(`[data-period-name|start|end|period-fill-run]`) · `TermsTab`(`[data-terms="summer-from"…]`) · `TeachingTab`(`[data-teacher-preset|teaching-*|class-color|homeroom-*]`) · `timetableDraft`(순수) · `shortcuts`(`teachingMode`)).
+  새 학년도 준비(P9-2): 순수 `domain/newYear.ts`(2/15~3/31 `newYearTarget`·할 것 `newYearState`·`parseRosterPaste`·`copiedTimetable`) · `features/newYear/`(`useNewYear`·`NewYearBanner`(Shell `[data-new-year-banner|new-year-open|new-year-dismiss]`) ·
+  `NewYearWindow` 창 `newYear` `{ year }` `[data-new-year-window|new-year-step=classes|timetable|terms|teaching(data-done)|new-year-grade|num|names|create-class|copy-timetable|open-terms|set-homeroom|done]`) · 계정 `common.newYearDone` ·
+  시간표 창 `{ tab, pick, termsYear }`·머리줄 `[data-timetable-new-year]`. 점검 `tools/inspect-new-year.mjs`(32 - 시계 2027-02-20). seed는 `newYearDone: 9999`(띠가 다른 점검을 밀지 않게).
   `ui/useClock.ts`(분 단위 '지금') · `ui/listKeys.ts`(▼ 목록 키). 점검 `tools/inspect-lessons.mjs`(98 - teacher·teacher3). seed는 계정마다 교사 유형을 심는다(띠가 다른 점검을 밀지 않게).
   수업 셈 나눠 쓰기: `useLessons`는 같은 재료면 같은 `LessonSource`(공간마다) - 그 위의 `cachedSubjects(src, from, to)`·`offDayOf(src)`를 진도·지난 시간이 함께 쓴다.
 - **진도**(P6-2 - 개인 공간 `progress/{planId}`): 순수 `domain/progress.ts`(V4 lib째 - `computeProgress`·`progressMarks`(slotId '날짜#교시' → 진도)·`progressUntil`·`courseStatus`·`toggleBump`·`sanitizePlan`·표/CSV 읽기)·`csv.ts`·`progressSample.ts` ·

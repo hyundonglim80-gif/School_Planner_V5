@@ -145,6 +145,8 @@ export interface CommonSettings {
   phrases: string[];
   /** 드라이브 자동 백업 (V4 v4_autoBackup - P8-3). 마지막 백업은 settings/backupLog(백업이 적는다) */
   autoBackup: AutoBackupSettings;
+  /** 새 학년도 준비를 끝냈다고(띠 닫기) 누른 학년도 (P9-2 - 0 = 없음). 그 학년도에는 띠를 다시 띄우지 않는다 */
+  newYearDone: number;
 }
 
 export interface PhotoFolderConfig {
@@ -198,6 +200,7 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   photoFolders: customField<PhotoFolders>(EMPTY_FOLDERS, readPhotoFolders),
   phrases: customField<string[]>(DEFAULT_PHRASES, (v) => (Array.isArray(v) ? sanitizePhrases(v) : undefined)),
   autoBackup: customField<AutoBackupSettings>(DEFAULT_AUTO_BACKUP, sanitizeAutoBackup),
+  newYearDone: intField(0, 0, 9999),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */

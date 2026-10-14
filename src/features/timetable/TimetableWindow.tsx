@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
-import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
+import { openWindow, registerUnsavedCheck, type WindowProps } from '../../app/windows';
 import { academicYearOf, todayStr } from '../../domain/dateUtils';
 import { timetableOn } from '../../domain/lessons';
 import { toMinutes, type PeriodDef } from '../../domain/periodTimes';
@@ -76,14 +76,12 @@ function cleanTerms(terms: SchoolTerms): SchoolTerms {
   return out;
 }
 
-export default function TimetableWindow({ params, close, raise }: WindowProps<{ tab?: TimetableTab } | undefined>) {
+/** pick = 처음 고를 시간표 id, termsYear = '학기·방학' 탭의 학년도 (새 학년도 준비 창 P9-2) */
+export type TimetableParams = { tab?: TimetableTab; pick?: string; termsYear?: number };
+
+export default function TimetableWindow({ params, close, raise }: WindowProps<TimetableParams | undefined>) {
   const [tab, setTab] = useState<TimetableTab>(params?.tab ?? 'grid');
-  // 열려 있는 창을 다른 탭으로 다시 열면(단축키 '교사 유형 바꾸기') 그 탭으로
-  const [askedTab, setAskedTab] = useState(params?.tab);
-  if (params?.tab !== askedTab) {
-    setAskedTab(params?.tab);
-    if (params?.tab) setTab(params.tab);
-  }
+  const [picked, setPicked] = useState<string | null>(params?.pick ?? null);
 
   const sid = useCurrentSpaceId();
   const docs = useDocs('timetables', sid);
@@ -98,9 +96,16 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<{ 
   const [removed, setRemoved] = useState<string[]>([]);
   const [periodsDraft, setPeriodsDraft] = useState<PeriodDef[] | null>(null);
   const [termsDraft, setTermsDraft] = useState<SchoolTerms | null>(null);
-  const [termsYear, setTermsYear] = useState(thisYear);
+  const [termsYear, setTermsYear] = useState(params?.termsYear ?? thisYear);
   const [firstId] = useState(() => newId());
-  const [picked, setPicked] = useState<string | null>(null);
+  // 열려 있는 창을 다시 열면(단축키 '교사 유형 바꾸기'·새 학년도 준비) 그 탭·시간표·학년도로
+  const [asked, setAsked] = useState(params);
+  if (params !== asked) {
+    setAsked(params);
+    if (params?.tab) setTab(params.tab);
+    if (params?.pick) setPicked(params.pick);
+    if (params?.termsYear) setTermsYear(params.termsYear);
+  }
   const [saving, setSaving] = useState(false);
 
   const periods = periodsDraft ?? savedPeriods;
@@ -206,16 +211,28 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<{ 
       title="⏰ 시간표"
       onSave={() => void save()}
       headerExtra={
-        // 진도는 시간표 칸 글자마다 센다 - 시간표를 만지다 바로 갈 수 있게 (V4 그대로)
-        <button
-          type="button"
-          data-timetable-progress
-          onClick={() => openProgress()}
-          title="과목마다 차시 목록을 붙여 넣고 시간표를 따라 몇 차시인지 봅니다"
-          className="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
-        >
-          📘 진도 관리
-        </button>
+        <>
+          {/* 새 학년도 준비 (P9-2) - 3월 띠를 닫은 뒤에도 여기서 */}
+          <button
+            type="button"
+            data-timetable-new-year
+            onClick={() => openWindow('newYear')}
+            title="새 학급·시간표·방학·담임반을 새 학년도에 맞춥니다"
+            className="px-2.5 py-1.5 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+          >
+            🌱 새 학년도
+          </button>
+          {/* 진도는 시간표 칸 글자마다 센다 - 시간표를 만지다 바로 갈 수 있게 (V4 그대로) */}
+          <button
+            type="button"
+            data-timetable-progress
+            onClick={() => openProgress()}
+            title="과목마다 차시 목록을 붙여 넣고 시간표를 따라 몇 차시인지 봅니다"
+            className="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+          >
+            📘 진도 관리
+          </button>
+        </>
       }
       footer={
         <>

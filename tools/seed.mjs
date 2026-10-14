@@ -63,7 +63,8 @@ async function main() {
     // 자동 백업이 끼어들어 드라이브 흉내에 백업 파일을 올리지 않게. 자동 백업은 tools/inspect-backup.mjs가 이 기록을 바꿔 본 뒤 되돌린다.
     await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'backupLog'), { lastAt: Date.now() + 365 * 86400000, updatedAt: serverTimestamp(), v: 1 });
     // 계정 설정은 다른 칸을 두고 교사 유형만 (merge)
-    await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'common'), { teaching, updatedAt: serverTimestamp(), v: 1 }, { merge: true });
+    // 새 학년도 띠(P9-2)는 2/15 ~ 3/31에 뜬다 - 그때 돌리는 다른 점검을 밀지 않게 '준비 끝'을 먼 학년도로 (tools/inspect-new-year.mjs가 바꿔 본다)
+    await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'common'), { teaching, newYearDone: 9999, updatedAt: serverTimestamp(), v: 1 }, { merge: true });
     console.log(`${email} (${note}) → spaces/u_${uid}`);
   }
   console.log('V5 자료를 심었습니다 - 개인 공간 3개');

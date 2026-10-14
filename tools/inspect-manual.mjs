@@ -398,6 +398,15 @@ try {
     r.check((await count('input[data-cell]')) > 0, '요일 × 교시 칸');
   });
 
+  await topic('new-year', async () => {
+    // 띠는 2/15 ~ 3/31에만 (tools/inspect-new-year.mjs) - 여기서는 시간표 창 머리줄 🌱로 창과 네 단계
+    await win('timetable', { tab: 'grid' });
+    await q(sel('timetable-new-year')).click();
+    r.check(await has(sel('new-year-window')), '⏰ 시간표 창 위 🌱 새 학년도 → 새 학년도 준비 창');
+    r.check((await count(sel('new-year-step'))) === 4, '단계 넷 (새 학급·시간표·학기·방학·교사 유형·담임반)');
+    r.check((await count(sel('new-year-names'))) === 1 && (await count(sel('new-year-create-class'))) === 1 && (await count(sel('new-year-done'))) === 1, '명단 붙여넣기·🏫 학급 만들기·✅ 준비 끝');
+  });
+
   await topic('progress', async () => {
     await q(sel('lessons-tool', 'progress')).click();
     r.check(await has(sel('progress-window')), '하루 수업 칸 📘 진도 관리');
@@ -716,7 +725,7 @@ try {
   if (!MATCH) {
     r.section('설명서 주제를 모두 거쳤나');
     const missing = TOPICS.filter((t) => !visited.has(t));
-    r.check(TOPICS.length >= 68 && missing.length === 0, `장 파일의 주제 ${TOPICS.length}개를 모두 점검했다`, `점검에 없는 주제: ${missing.join(', ')}`);
+    r.check(TOPICS.length >= 69 && missing.length === 0, `장 파일의 주제 ${TOPICS.length}개를 모두 점검했다`, `점검에 없는 주제: ${missing.join(', ')}`);
   }
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' | ')}`);
 } finally {

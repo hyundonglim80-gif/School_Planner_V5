@@ -26,6 +26,7 @@ import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '.
 import ClipboardColumn from '../features/clipboard/ClipboardColumn';
 import ImportBanner from '../features/import/ImportBanner';
 import AutoBackupBanner from '../features/backup/AutoBackupBanner';
+import NewYearBanner from '../features/newYear/NewYearBanner';
 import { useShareReceiver } from '../features/share/receive';
 import NewBuildBanner from './NewBuildBanner';
 import ColumnResizer from '../ui/ColumnResizer';
@@ -145,6 +146,7 @@ export default function Shell() {
         <NewBuildBanner />
         <ImportBanner />
         <AutoBackupBanner />
+        <NewYearBanner />
         <MainWidthContext.Provider value={mainWidth}>
           <Suspense fallback={<p className="p-6 text-xs text-slate-400">불러오는 중…</p>}>
             <Screen />

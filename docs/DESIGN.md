@@ -130,6 +130,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 | `lessonDays/{date}` | `{ periods: { '<교시>': { subject?, memo?, supplies?, attachments?, linkIds? } }, updatedAt, v }` | **그날 바꾼 칸만.** `subject`가 있으면 그 과목(`''`이면 그 교시 수업 없음), 칸이 없으면 시간표를 따른다. 과목이 그날 시간표와 같으면 적지 않는다(P6-1 `features/lessons/lessonOps`). 고칠 때는 `periods.3.memo`처럼 그 칸만 - 날짜 문서라 저장 도우미 `merge`(없으면 만든다). 지운 표시는 없다 |
 | `settings/common.periods` | `[{ n, name, start, end }]` | 교시 이름·시각(V4 '수업 시간 명칭' + `v4_periodTimes`를 하나로). 교시 수 = 길이(1~12), 기본 1~6교시·시각 없음 |
 | `settings/common.terms` | `{ '2026': { summer?: {from,to}, winter?: {from,to} } }` | 학년도마다 **방학만**(학년도 = 3월~이듬해 2월). 학기는 셈한다 - 1학기 = 3/1 ~ 여름 방학 전날, 2학기 = 여름 방학 다음 날 ~ 겨울 방학 전날(V4 `lib/semester` - `domain/semester` `termSemesters`·`semesterConfigOf`) |
+| `settings/common.newYearDone` | number (학년도, 0 = 없음) | 새 학년도 준비 띠를 닫았거나 '준비 끝'을 누른 학년도(P9-2) - 그 학년도에는 띠를 다시 띄우지 않는다. 띠는 2/15~3/31, 할 것 = 그 학년도 학급·시간표·방학·담임반(`domain/newYear`) |
 | `settings/common.teaching` | `{ unit, hasHomeroom, homeroomClass, subjects, classes, classColors }` 또는 없음 | 교사 유형(V4 `v4_teaching`). 없으면 (초등) 담임으로 보고 하루 화면에 '교사 유형을 골라 주세요' 띠 |
 
 ### 4-6. 학급 (개인 공간)
