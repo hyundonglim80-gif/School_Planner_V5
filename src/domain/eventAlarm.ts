@@ -54,3 +54,25 @@ export function dueAlarms<T extends AlarmCandidate>(items: Iterable<T>, now: num
   }
   return out.sort((a, b) => a.at - b.at || (a.item.id < b.item.id ? -1 : 1)).map((x) => x.item);
 }
+
+// ─── 알림 소리 길이 (P10-1 사용자 의견 8 - 환경설정 '알림', 계정에 하나) ───
+
+/** 소리를 3초마다 한 번 (V4 2026-10-08 그대로) */
+export const CHIME_EVERY_MS = 3000;
+/** 고를 수 있는 길이(초): 0 = 한 번, -1 = 확인할 때까지. 기본 10초 = 3초마다 3번(V4 그대로) */
+export const ALARM_SOUND_CHOICES = [
+  { value: 0, label: '한 번' },
+  { value: 10, label: '10초' },
+  { value: 30, label: '30초' },
+  { value: 60, label: '1분' },
+  { value: 300, label: '5분' },
+  { value: -1, label: '확인할 때까지' },
+] as const;
+export const ALARM_SOUND_SECONDS = ALARM_SOUND_CHOICES.map((c) => c.value);
+export const DEFAULT_ALARM_SOUND = 10;
+
+/** 그 길이에 울릴 횟수 (3초마다 - 10초 = 3번, 1분 = 20번, 확인할 때까지 = 끝없이) */
+export function chimeCount(seconds: number): number {
+  if (seconds < 0) return Infinity;
+  return Math.max(1, Math.round((seconds * 1000) / CHIME_EVERY_MS));
+}

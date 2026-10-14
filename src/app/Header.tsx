@@ -192,48 +192,21 @@ function NewItems({ close }: { close: () => void }) {
 }
 
 /**
- * ＋ 새로 (PC 머리줄) / 둥근 ＋ (휴대폰 - 탭바 위 오른쪽). 어느 화면에서나 새 일정·기록·메모 (V5 새 기능)
+ * 둥근 ＋ (휴대폰 - 탭바 위 오른쪽). 어느 화면에서나 새 일정·기록·메모 (V5 새 기능).
+ * PC 머리줄의 '＋ 새로'는 뺐다(P10-1 사용자 의견 6d) - PC는 칸마다 '+ 추가'와 단축키 '새 일정'.
  * 둥근 ＋와 그 목록은 body에 그린다 - 머리줄은 backdrop-blur라 fixed의 기준이 되어, 머리줄 안에 두면 화면 맨 위에 반쯤 걸렸다(P9-3 390px 점검).
  */
 function NewMenu() {
   const { open, setOpen, ref, portalRef } = useDropdown();
-  // 목록을 연 단추 - 둥근 ＋면 그 위에, 머리줄 단추면 그 아래
-  const [fromFab, setFromFab] = useState(false);
-  const list = (
-    <div
-      data-new-list
-      className={`${fromFab ? 'fixed right-4 bottom-36' : 'absolute left-0 top-10'} w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs`}
-    >
-      <NewItems close={() => setOpen(false)} />
-    </div>
-  );
   return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        data-new-menu
-        onClick={() => {
-          setFromFab(false);
-          setOpen(!(open && !fromFab));
-        }}
-        aria-expanded={open && !fromFab}
-        className={`${HEAD_BTN} hidden sm:flex bg-primary hover:bg-blue-700 text-white`}
-        title="새로 만들기"
-      >
-        <span>＋</span>
-        <span>새로</span>
-      </button>
-      {open && !fromFab && list}
+    <div className="contents" ref={ref}>
       {createPortal(
         <div ref={portalRef} className="sm:hidden">
           <button
             type="button"
             data-new-fab
-            onClick={() => {
-              setFromFab(true);
-              setOpen(!(open && fromFab));
-            }}
-            aria-expanded={open && fromFab}
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
             className="fixed right-4 z-40 w-12 h-12 rounded-full bg-primary text-white text-2xl font-bold shadow-lg flex items-center justify-center"
             style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
             title="새로 만들기"
@@ -241,7 +214,11 @@ function NewMenu() {
           >
             ＋
           </button>
-          {open && fromFab && list}
+          {open && (
+            <div data-new-list className="fixed right-4 bottom-36 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs">
+              <NewItems close={() => setOpen(false)} />
+            </div>
+          )}
         </div>,
         document.body,
       )}

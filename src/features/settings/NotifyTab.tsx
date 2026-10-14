@@ -1,9 +1,12 @@
 // 환경설정 '알림' 탭 (P8-2): 일정 알림(앱을 닫아도) - 이 기기에서 서버 푸시를 켜고 끈다(V4 PushAlarmPanel).
 // 휴대폰은 허용을 묻는 창을 '누른 직후'에만 띄우므로 켜기는 반드시 이 단추에서 한다.
+// 알림 소리 길이(P10-1) - 앱 안 ⏰ 알림 창의 소리, 계정에 하나(기기마다 같다).
 import { useEffect, useState } from 'react';
+import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
 import { disablePush, enablePush, readPushState, type PushState } from '../../data/push';
-import { Section } from './parts';
+import { ALARM_SOUND_CHOICES } from '../../domain/eventAlarm';
+import { Choices, Section } from './parts';
 
 const STATE_TEXT: Record<PushState, string> = {
   on: '✅ 이 기기에서 받습니다',
@@ -79,14 +82,35 @@ function PushAlarmPanel() {
   );
 }
 
+function AlarmSoundChoices() {
+  const value = useCommonSettings((s) => s.alarmSound);
+  return (
+    <div className="space-y-2">
+      <Choices name="alarmSound" options={ALARM_SOUND_CHOICES} value={value} onChange={(v) => setCommonSetting('alarmSound', v)} />
+      <p className="text-2xs text-slate-400">
+        3초마다 울리고, 알림 창의 <b>확인</b>이나 <b>🔇 소리 끄기</b>를 누르면 바로 멈춥니다. 앱을 닫았을 때 오는 기기 알림의 소리는 휴대폰·PC의 알림 설정을 따릅니다.
+      </p>
+    </div>
+  );
+}
+
 export default function NotifyTab() {
   return (
-    <Section
-      id="push"
-      title="일정 알림 (앱을 닫아도)"
-      desc="켜 두면 일정에 건 ⏰ 알림 시각에 앱을 닫아 두었어도 이 기기(휴대폰·PC)에 알림이 옵니다. 앱을 보고 있으면 알림 창과 소리로 알려 줍니다. 기기마다 따로 켭니다 - 휴대폰은 휴대폰에서 이 단추를 눌러 주세요."
-    >
-      <PushAlarmPanel />
-    </Section>
+    <>
+      <Section
+        id="alarm-sound"
+        title="알림 소리"
+        desc="일정의 ⏰ 알림 시각에 앱을 보고 있으면 화면 가운데 알림 창과 함께 소리가 울립니다. 소리가 얼마나 이어질지 고릅니다(모든 기기에 같게)."
+      >
+        <AlarmSoundChoices />
+      </Section>
+      <Section
+        id="push"
+        title="일정 알림 (앱을 닫아도)"
+        desc="켜 두면 일정에 건 ⏰ 알림 시각에 앱을 닫아 두었어도 이 기기(휴대폰·PC)에 알림이 옵니다. 앱을 보고 있으면 알림 창과 소리로 알려 줍니다. 기기마다 따로 켭니다 - 휴대폰은 휴대폰에서 이 단추를 눌러 주세요."
+      >
+        <PushAlarmPanel />
+      </Section>
+    </>
   );
 }

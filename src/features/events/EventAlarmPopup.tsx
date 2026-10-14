@@ -1,12 +1,12 @@
 // ⏰ 알림이 울릴 때 화면 가운데 깜빡이는 큰 창 (V4 components/EventAlarmPopup.tsx 그대로).
 // 창 목록·오른쪽 칸에 서지 않는다 - 무엇을 하던 중이든 가운데를 덮어야 한다(V4 그대로).
-// 소리: 3초마다 3번(0·3·6초, 약 10초) - V4 2026-10-08 사용자가 정함. 확인·'소리 끄기'를 누르면 바로 멈춘다.
+// 소리: 3초마다, 환경설정 '알림 소리' 길이만큼(한 번 · 10초 = 3번(기본 - V4 2026-10-08) · 30초 · 1분 · 5분 · 확인할 때까지 - P10-1).
+// 확인·'소리 끄기'를 누르면 바로 멈춘다.
 import { useEffect, useState } from 'react';
+import { useCommonSettings } from '../../app/prefs';
 import { playAlarmChime } from '../../app/sound';
+import { CHIME_EVERY_MS, chimeCount } from '../../domain/eventAlarm';
 import { useVisualViewport } from '../../ui/useVisualViewport';
-
-const CHIME_EVERY_MS = 3000;
-const CHIME_TIMES = 3;
 
 export interface RingingAlarm {
   id: string;
@@ -21,18 +21,20 @@ export default function EventAlarmPopup({ alarms, onDismiss }: { alarms: Ringing
   const ringKey = alarms.map((a) => a.id).join('|');
   const [mutedKey, setMutedKey] = useState('');
   const muted = !!ringKey && mutedKey === ringKey;
+  const times = chimeCount(useCommonSettings((s) => s.alarmSound));
 
   useEffect(() => {
     if (!ringKey || muted) return;
     playAlarmChime();
+    if (times <= 1) return;
     let played = 1;
     const id = setInterval(() => {
       playAlarmChime();
       played += 1;
-      if (played >= CHIME_TIMES) clearInterval(id);
+      if (played >= times) clearInterval(id);
     }, CHIME_EVERY_MS);
     return () => clearInterval(id);
-  }, [ringKey, muted]);
+  }, [ringKey, muted, times]);
 
   if (!isOpen) return null;
 

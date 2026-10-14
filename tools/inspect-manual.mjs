@@ -160,12 +160,10 @@ try {
 
   // ════════ 1장 시작하기 ════════
   await topic('layout', async () => {
-    for (const s of ['header-dday', 'header-trash', 'new-menu', 'header-search', 'header-help', 'more-menu', 'account']) r.check((await count(sel(s))) > 0, `머리줄 ${s}`);
+    for (const s of ['header-dday', 'header-trash', 'header-search', 'header-help', 'more-menu', 'account']) r.check((await count(sel(s))) > 0, `머리줄 ${s}`);
+    r.check((await count(sel('new-menu'))) === 0, 'PC 머리줄에 ＋ 새로 없음 (P10-1 - 휴대폰은 둥근 ＋)');
     r.check((await count(sel('scope-tab'))) === 6, '화면 탭 여섯');
     r.check((await count(sel('view-toggle'))) === 3 && (await count(sel('date-label'))) === 1, '둘째 줄: 토글 셋·날짜');
-    await q(sel('new-menu')).click();
-    r.check((await count(sel('new'))) === 3, '＋ 새로 = 새 일정·새 기록·새 메모');
-    await page.keyboard.press('Escape');
     await q(sel('more-menu')).click();
     r.check((await count(sel('menu-section'))) === 4, '⋮ 네 구역');
     r.check((await count(sel('menu-item'))) === 7, '⋮ 하루 화면에서 일곱 항목 (인쇄는 주간·년간에서만)');

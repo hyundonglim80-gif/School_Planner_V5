@@ -4,6 +4,7 @@
 //   3) 단축키를 바꿔 저장하면 다른 창에서도 그 키로 돈다.
 //   4) 시작 화면: 주소에 화면 없이 열면 그 화면, 새로고침은 보던 화면 그대로.
 //   5) 계정 칸: 사진을 누르면 이름·메일·로그아웃 (■3에서 더한다).
+//   6) 알림 소리 길이(P10-1): 계정(settings/common)에 올라가고 다른 창이 따라온다, 처음 값(10초)이면 문서에서 빠진다.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-settings.mjs
 // 에뮬레이터 teacher 계정의 V5 설정 문서(spaces/u_{uid}/settings/pc)를 쓴다 - 처음 것을 읽어 두고 끝에 되돌린다.
@@ -14,7 +15,10 @@ const r = report();
 const em = emulator();
 const uid = await em.signIn('teacher@example.com');
 const pcRef = doc(em.db, 'spaces', `u_${uid}`, 'settings', 'pc');
+const commonRef = doc(em.db, 'spaces', `u_${uid}`, 'settings', 'common');
 const undo = restorer();
+const commonBefore = await getDoc(commonRef);
+undo.add(() => (commonBefore.exists() ? setDoc(commonRef, commonBefore.data()) : deleteDoc(commonRef)));
 const before = await getDoc(pcRef);
 undo.add(() => (before.exists() ? setDoc(pcRef, before.data()) : deleteDoc(pcRef)));
 // 기본값에서 시작한다 (지난 점검이 남긴 것이 있으면 결과가 흔들린다)
@@ -46,6 +50,18 @@ try {
   const back = await serverUntil(serverPc, (d) => !('fontScale' in d));
   r.check(!('fontScale' in back), '보통으로 되돌리면 문서에서 그 칸이 빠진다');
   r.check(await waitFor(async () => (await fontOf(b.page)) === '100%'), '다른 창도 보통으로');
+
+  r.section('알림 소리 길이 → 계정 → 다른 창 (P10-1)');
+  const serverCommon = async () => (await getDoc(commonRef)).data() ?? {};
+  const commonCopy = (p) => p.evaluate(() => localStorage.getItem('sp5-common') || '');
+  await a.page.click(sel('settings-tab', 'notify'));
+  r.check((await a.page.getAttribute(sel('choice', 'alarmSound:10'), 'aria-pressed')) === 'true', '처음 값은 10초 (3초마다 3번)');
+  await a.page.click(sel('choice', 'alarmSound:-1'));
+  const snd = await serverUntil(serverCommon, (d) => d.alarmSound === -1);
+  r.check(snd.alarmSound === -1, `'확인할 때까지' → settings/common에 올라간다 (${JSON.stringify(snd.alarmSound)})`);
+  r.check(await waitFor(async () => (await commonCopy(b.page)).includes('"alarmSound":-1')), '다른 창이 따라온다');
+  await a.page.click(sel('choice', 'alarmSound:10'));
+  r.check(!('alarmSound' in (await serverUntil(serverCommon, (d) => !('alarmSound' in d)))), '10초로 되돌리면 문서에서 그 칸이 빠진다');
 
   r.section('단축키');
   await a.page.click(sel('settings-tab', 'shortcuts'));

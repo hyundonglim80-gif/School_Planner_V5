@@ -178,14 +178,12 @@ try {
   r.check((await page.locator(sel('note-date')).inputValue()) === '', '날짜 없음');
   await page.locator(sel('note-close')).click();
 
-  r.section('＋ 새로 → 새 기록·새 메모');
-  await page.locator(sel('new-menu')).click();
-  await page.locator(sel('new', 'newNote')).click();
+  r.section('단축키 새 기록·새 메모 (PC 머리줄 ＋ 새로는 뺐다 - P10-1)');
+  await page.evaluate(() => window.sp5.runShortcut('newNote'));
   r.check(await waitFor(async () => (await panel.getAttribute('data-note-noun')) === '기록' && (await panel.getAttribute('data-note-panel')) === 'new'), '새 기록 → 새 기록 칸');
   r.check((await page.locator(sel('note-date')).inputValue()) === DAY, '보는 날의 기록');
   await page.locator(sel('note-close')).click();
-  await page.locator(sel('new-menu')).click();
-  await page.locator(sel('new', 'newMemo')).click();
+  await page.evaluate(() => window.sp5.runShortcut('newMemo'));
   r.check(await waitFor(async () => (await panel.getAttribute('data-note-noun')) === '메모'), '새 메모 → 새 메모 칸 (날짜 없음)');
   await page.locator(sel('note-close')).click();
 

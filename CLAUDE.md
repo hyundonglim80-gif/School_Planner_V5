@@ -26,7 +26,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-14 V5 계획(P0~P9) 모두 끝**. 같은 날 사용자 의견 27가지로 **P10(세션 다섯)** 계획 - `docs/PLAN.md` 6장 `### P10`. '이어서' = **P10-1**(■3부터 - ■1 완료 ✓ 칩·■2 끝 날 + 요일 반복 끝). 부탁 없음.
+- **2026-10-14 V5 계획(P0~P9) 모두 끝**. 같은 날 사용자 의견 27가지로 **P10(세션 다섯)** 계획 - `docs/PLAN.md` 6장 `### P10`. '이어서' = **P10-1**(■4부터 - 세션 끝 점검·정리만 남음). 부탁 없음.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -171,6 +171,7 @@
 - 구글 로그인이 만료되면(첨부·사진·백업·캘린더) 오류 대신 '구글 로그인이 필요합니다' 창을 띄우고 그 단추에서 로그인 창을 연다.
 - 진도표 차시 칸 = 그 내용의 차시 수('2'면 같은 내용을 2행으로). 1, 2, 3 … 차례 번호로 적은 옛 표는 늘리지 않는다.
 - 체크리스트는 글 안의 `☐ `/`☑ `, 카드 '☑ n/m', 체크한 줄은 보이기만 아래로. 첫·마지막 줄 '#라벨'은 라벨로 떼고 그 줄을 지운다(숫자 8자리 학생 태그는 남긴다).
+- **PC 머리줄 '＋ 새로' 없음**(P10-1 사용자 의견 6d - 칸마다 '+ 추가'·단축키, 휴대폰 둥근 ＋는 둔다) · **알림 소리 길이**는 환경설정 '알림'(한 번·10초(기본 - 3초마다 3번)·30초·1분·5분·확인할 때까지, 계정에 하나).
 - **반복 = 끝 날 + 요일**(P10-1 10-14 사용자 의견 6b): '📆 끝 날 · 🔁 반복' 줄 하나 - 요일을 안 고르면 기간 하나, 고르면 그 요일만 반복(새 일정만), 격주·매월·매일은 '더 보기'.
 - **일정 완료 = 칩 앞에 ✓**(P10-1 10-14 사용자 의견): 끝낸 일정도 칩 색·글은 그대로(흑백·줄긋기 없음), 하루 카드의 ☐는 없앴다 - 라벨 칩을 누르면 완료, 라벨이 없으면 회색 ○ 칩.
 - 일정 라벨 속성 '구글 캘린더' - 켠 라벨의 일정은 저장·완료·옮기기·지우기를 구글 캘린더에도. 저장할 때 로그인이 없으면 로그인 창을 묻는다.
@@ -223,7 +224,7 @@
 - **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 보기·알림·학교·단축키·앱(가져오기는 P8-3에서 백업 창으로), `{ tab }`로 열기 - 열린 창도 그 탭으로) · `ViewTab`(누르는 즉시) · `SchoolTab`(이월 기간 `[data-forward-days]` - common.forwardDays) ·
   `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·이 기기 사본 `[data-mirror-state|count|reset]`·빌드 번호) · `parts`(Section·ToggleRow·Choices).
   `[data-settings-tab|panel|toggle]`·`[data-choice="이름:값"]`·`[data-shortcut-row|key|save|reset]`·`[data-install-pwa=ready|guide]`.
-- **껍데기** `src/app/`: `App.tsx`(로그인 상태 → `Shell`) · `Shell.tsx`(틀: 머리줄·본문·탭바·창·오른쪽 줄 ▶·폭 끌기) · `Header.tsx`(첫 줄 - ⏳·🗑️·＋ 새로·🔍·화면 탭·?·⋮·사진,
+- **껍데기** `src/app/`: `App.tsx`(로그인 상태 → `Shell`) · `Shell.tsx`(틀: 머리줄·본문·탭바·창·오른쪽 줄 ▶·폭 끌기) · `Header.tsx`(첫 줄 - ⏳·🗑️·🔍·화면 탭·?·⋮·사진 - PC '＋ 새로'는 P10-1에서 뺐다, 휴대폰 둥근 ＋ `[data-new-fab]`만,
   `[data-header-*]`·`[data-scope-tab]`·`[data-more-menu]`·`[data-menu-item]`·`[data-new]`) · `SecondRow.tsx`(토글·◀ 날짜 ▶·📅·학기 칩, `[data-date-prev|next|label]`·`[data-view-toggle]`) ·
   계정 칸(사진 → `[data-account]`·`[data-account-panel]`·`[data-account-name|email]`·`[data-logout]`) · `MobileTabBar.tsx`(`[data-tabbar-tab]`) · `screens.ts`(화면 여섯 = 탭·단축키, 화면은 `features/<화면>/<Name>Screen.tsx` - 하루 말고는 아직 빈 자리 `ui/EmptyScreen` `[data-screen]`) ·
   `route.ts`(주소 ↔ 화면, 순수) · `nav.ts`(화면·날짜·토글 store `useNav` - 'YYYY-MM-DD', `stepDate`·`goToday`·`dateLabel`) ·
@@ -249,9 +250,9 @@
   `EventPanel.tsx`(일정 칸 - `[data-event-panel=new|edit]`·`[data-event-text-input|event-date|event-date-prev|next|event-move-note|event-due-input|event-alarm-open|event-attr|event-save|event-delete]`) ·
   `eventForm.ts`(순수 - 칸 ↔ 문서, 속성은 라벨과 다른 것만 `propsToStore`, 저장 = 바뀐 칸만 `editChanges`) · `eventOps.ts`(순수 - `reorderOps`·`doneChanges`·`orderAfter`·`itemPath`) ·
   `actions.ts`(`setEventDone`·`moveEventInList`·`createEvent`·`saveEvent`·`setEventAlarm`·`deleteEvent` - 되돌리기까지) · `EventAlarmWindow.tsx`(⏰ 시각 `[data-alarm-window|alarm-time|alarm-save|alarm-off]`) ·
-  `EventAlarms.tsx`(Shell에 하나 - 앱 안 알림, 20초마다 사본) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]`) · `QuickInputChips.tsx`(`[data-quick-chip]`) · `DueBadge.tsx`(`[data-due-badge]`) ·
+  `EventAlarms.tsx`(Shell에 하나 - 앱 안 알림, 20초마다 사본) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]` - 소리 길이 = 계정 `common.alarmSound`(초, 0 한 번·-1 확인할 때까지, `eventAlarm.chimeCount` - P10-1)) · `QuickInputChips.tsx`(`[data-quick-chip]`) · `DueBadge.tsx`(`[data-due-badge]`) ·
   `EventDoneChip.tsx`(완료 칩 한 곳 - 라벨 칩·라벨 없으면 회색 ○, 끝내면 칩 앞 ✓ `[data-event-done-chip=0|1]`(✓를 단 칩)·`[data-event-check]`, 좁은 자리는 `DoneMark` - 하루·주간·작년·월간·그날 목록·년간·학사력·링크 보기, P10-1) ·
-  `shortcuts.ts`(`newEvent` = ＋ 새로 → 보는 날의 새 일정, `recurring` = 끝 날 줄을 펴고 시작 날 요일을 고른 새 일정 칸, `forwarding` = 오늘로 가서 지난 일정 줄). 순수 셈 `domain/eventDue.ts`·`eventAlarm.ts`(`normalizeTimeInput`·`dueAlarms`)·`quickInput.ts`(V4 테스트째). 소리 `app/sound.ts`. 자동 높이 글 칸 `ui/AutoTextarea.tsx`.
+  `shortcuts.ts`(`newEvent` = 단축키·휴대폰 둥근 ＋ → 보는 날의 새 일정, `recurring` = 끝 날 줄을 펴고 시작 날 요일을 고른 새 일정 칸, `forwarding` = 오늘로 가서 지난 일정 줄). 순수 셈 `domain/eventDue.ts`·`eventAlarm.ts`(`normalizeTimeInput`·`dueAlarms`)·`quickInput.ts`(V4 테스트째). 소리 `app/sound.ts`. 자동 높이 글 칸 `ui/AutoTextarea.tsx`.
   - **이월(계산 - P3-3)**: `domain/forward.ts`(`forwardOn`·`isCarried`·`carriedOf`·`staleOf`·`carriedSince`) · `events/forward.ts`(`useCarried` = 오늘로 따라오는 일정·지난 일정, `usePastRow`·`staleCountNow`) · `ForwardMarks.tsx`(Shell - 처음 따라올 때 carrying 한 번, live에서만) ·
     `eventOps.carriedDoneChanges`(오늘 칸에서 끝내면 오늘로) · 하루 `DayEvents`(오늘 것 아래 `[data-event-carried|event-since]`, 지난 날 `[data-event-away|event-to-today]`) · `day/DayPastEvents.tsx`('📥 지난 일정 N개' `[data-past-*]`) · `ui/useToday.ts`(자정에 바뀌는 오늘).
   - **기간·반복·묶음(P3-3)**: `domain/period.ts`(보이는 날·'(k/n)'·doneDates·skipDates·끝 날 당기기 - 공휴일은 `HolidayCheck`로 P5-3) · `domain/recur.ts`(규칙·날짜·이름) · `events/seriesOps.ts`(순수 - 만들기·묶음 고치기·지우기)·`series.ts`(`useSeriesOf`) ·
@@ -329,7 +330,7 @@
   `features/gcal/`(`auto.ts` `useGcalAuto`(Shell - 쓰기 → 1.2초 → 큐 → 보내기, 이월은 이 기기 하루 한 번 `sp5-gcal-carried`, 라벨 끄면 보낸 것 맞춤)·`ensureGcalLogin`(일정 칸 저장 뒤)·`sendGcalNow` · 머리줄 `GcalPendingButton` `[data-gcal-pending=N]` ·
   `CalendarSyncSection`(백업 창 '보내기' 탭 - 단축키 '구글 캘린더로 보내기'가 그 탭을 연다 `[data-calendar-sync-window|cal-*]`)·`manual.ts`(창 밖에서 `useCalendarSync`·`rangeForScope`)). 점검 `tools/inspect-gcal.mjs`(35 - 캘린더 API 흉내). `select.docsNow`(훅 아닌 곳의 사본 읽기).
 - **서버 푸시 알림**(P8-2): 함수 `functions/`(codebase `v5`, Node 22, 서울 - `index.js` `v5AlarmIndex`(items 쓰기 → `v5alarms/{itemId}`)·`v5SendDueAlarms`(매분)·`v5CleanupAlarms`, 순수 `alarmPlan.js` + `node --test` = `npm run test:functions`, `firebase.json` functions) ·
-  `data/push.ts`(이 기기 FCM 토큰 `spaces/u_{uid}/pushTokens/{해시}` - `enablePush`·`disablePush`·`refreshPushToken`·`forgetPushOnLogout`, 이 기기 `sp5-push`) · 환경설정 '알림' 탭 `settings/NotifyTab.tsx`(`[data-push-alarm|push-state|push-on|push-off]`) ·
+  `data/push.ts`(이 기기 FCM 토큰 `spaces/u_{uid}/pushTokens/{해시}` - `enablePush`·`disablePush`·`refreshPushToken`·`forgetPushOnLogout`, 이 기기 `sp5-push`) · 환경설정 '알림' 탭 `settings/NotifyTab.tsx`(알림 소리 `[data-choice=alarmSound:…]` · `[data-push-alarm|push-state|push-on|push-off]`) ·
   `public/sw.js` push(보는 창이면 'sp5-event-alarm' 메시지, 아니면 OS 알림)·notificationclick · `EventAlarms`가 그 메시지로 울린다. 점검 `tools/inspect-push.mjs`(13 - CDP `ServiceWorker.deliverPushMessage`).
 - **백업 · 가져오기 · 보내기**(P8-3 - 창 `backup` `{ tab: backup|import|send|tidy }` = ⋮ 자료, `features/backup/`): `BackupWindow`(`[data-backup-window=탭|backup-tab-btn|backup-panel]`) · `open.ts`(`openBackup`)·`shortcuts.ts`(calendar → '보내기') ·
   '백업' `BackupTab`(JSON = 순수 `domain/backup.ts` + `data/backup.ts` 서버 읽기·되살리기 없거나 지운 것만, CSV = V4 모양 `[data-backup-*|restore-*]`) · `AutoBackupSection`·`auto.ts`(드라이브 자동 백업 `useAutoBackupRunner` - PC·토큰 있을 때만, `common.autoBackup`·`settings/backupLog` `data/backupLog.ts`, `data/google/driveBackup.ts`, 순수 `domain/autoBackup.ts`)·`AutoBackupBanner`(Shell) ·
@@ -364,8 +365,8 @@
   `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움) ·
   `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기) ·
   `tools/inspect-import-labels.mjs`(P2-4: 띠 → 가져오기 → V5 라벨·설정 = V4·두 번째는 바뀐 것 0·띠 닫기, V4 문서를 고쳐 심고 되돌린다). seed는 계정마다 띠 닫음을 심는다.
-  `tools/inspect-events.mjs`(P3-1: 일정 카드·완료·순서·추가·고치기·날짜 옮기기·빠른 입력·⏰·지우기·되돌리기·Ctrl+Z·앱 안 알림·＋ 새로 - 저장마다 서버 문서 하나, 58항목) ·
-  `tools/inspect-notes.mjs`(P3-2: 기록 카드·완료·즐겨찾기·체크 줄·순서·지우기·새 기록 칸·#라벨·고치기·날짜 빼기 = 같은 문서의 date·되돌리기·체크리스트·＋ 새로·쓰던 글 보관 - 61항목) ·
+  `tools/inspect-events.mjs`(P3-1: 일정 카드·완료·순서·추가·고치기·날짜 옮기기·빠른 입력·⏰·지우기·되돌리기·Ctrl+Z·앱 안 알림·단축키 새 일정(PC ＋ 새로 없음) - 저장마다 서버 문서 하나, 63항목) ·
+  `tools/inspect-notes.mjs`(P3-2: 기록 카드·완료·즐겨찾기·체크 줄·순서·지우기·새 기록 칸·#라벨·고치기·날짜 빼기 = 같은 문서의 date·되돌리기·체크리스트·단축키 새 기록·메모·쓰던 글 보관 - 61항목) ·
   `tools/inspect-attach.mjs`(P4-2: 구글 API는 page.route 흉내 - 만료 토큰 묻는 창·캡처/파일 = 드라이브·표 먼저·칸 고치기·카드·크게 보기·클립보드 칸 - 47항목, 컨테이너는 로그인 창 열림을 건너뛴다) ·
   `tools/inspect-forward.mjs`(P3-3: 오늘 칸 ↪·carrying 한 번·다시 열면 쓰지 않음·끝내기 = 오늘로·→ 오늘로·학교 탭·지난 일정 줄·단축키 - 48항목, 날짜는 이 기기의 오늘) ·
   `tools/inspect-groups.mjs`(P3-3: 기간 한 문서·(k/n)·그날만 완료·이 날만/이 날부터·통째로 옮기기, 반복 만들기·이 날부터 고치기·지우기 - 41항목, 2027-03) · `tools/inspect-multi.mjs`(P3-3: Ctrl·Shift·완료·라벨·옮기기(기간은 고른 날만)·지우기·ESC·⋮ - 26항목, 2027-04).

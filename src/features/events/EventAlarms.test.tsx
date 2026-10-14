@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
 import { runShortcut } from '../../app/keys';
+import { setCommonSetting } from '../../app/prefs';
 import { setDate, setScope } from '../../app/nav';
 import '../../app/windowList';
 import { useWindows } from '../../app/windows';
@@ -50,6 +51,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers();
   useWindows.setState({ windows: [] });
+  setCommonSetting('alarmSound', 10);
 });
 
 describe('앱 안 일정 알림', () => {
@@ -91,6 +93,26 @@ describe('앱 안 일정 알림', () => {
     expect(q('[data-alarm-popup]')).not.toBeNull();
     fireEvent.click(q('[data-alarm-dismiss]')!);
     expect(q('[data-alarm-popup]')).toBeNull();
+  });
+
+  it("환경설정 '알림 소리' 길이만큼 (P10-1): 기본 10초 = 3번 · 한 번 · 확인할 때까지", async () => {
+    const ring = async (sec: number, waitMs: number) => {
+      setCommonSetting('alarmSound', sec);
+      resetMirrorStore();
+      (window as unknown as { __spAlarmSoundCount?: number }).__spAlarmSoundCount = 0;
+      seed({ [`s${sec}`]: { ...base, kind: 'event', date: '2026-10-08', text: '소리', time: '14:30' } });
+      const r = render(<EventAlarms />);
+      await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+      await act(async () => vi.advanceTimersByTime(waitMs));
+      const n = sounds();
+      r.unmount();
+      return n;
+    };
+    expect(await ring(10, 30_000)).toBe(3);
+    expect(await ring(0, 30_000)).toBe(1);
+    expect(await ring(30, 60_000)).toBe(10);
+    // 확인할 때까지 = 3초마다 끝없이 (5분 뒤에도)
+    expect(await ring(-1, 300_000)).toBe(101);
   });
 
   // 10-14 사용자 보고 '알림은 화면으로 나오지만 소리가 없다' - 이 탭을 아직 누르지 않아 소리가 막히면 OS 알림(기기 소리)도

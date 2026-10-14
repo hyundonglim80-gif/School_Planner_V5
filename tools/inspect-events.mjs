@@ -223,9 +223,10 @@ try {
   await page.locator(sel('alarm-dismiss')).click({ force: true });
   r.check(await waitFor(async () => (await page.locator(sel('alarm-popup')).count()) === 0), '확인 → 창이 닫힌다');
 
-  await page.locator(sel('new-menu')).click();
-  await page.locator(sel('new', 'newEvent')).click();
-  r.check(await waitFor(async () => (await panel.getAttribute('data-event-panel')) === 'new'), '＋ 새로 → 새 일정 → 새 일정 칸');
+  // PC 머리줄의 ＋ 새로는 뺐다 (P10-1) - 단축키 '새 일정'은 그대로
+  r.check((await page.locator(sel('new-menu')).count()) === 0, 'PC 머리줄에 ＋ 새로 없음');
+  await page.evaluate(() => window.sp5.runShortcut('newEvent'));
+  r.check(await waitFor(async () => (await panel.getAttribute('data-event-panel')) === 'new'), "단축키 '새 일정' → 새 일정 칸");
   r.check((await page.locator(sel('event-date')).inputValue()) === DAY, '보는 날의 일정');
 
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);

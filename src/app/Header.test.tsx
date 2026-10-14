@@ -61,11 +61,12 @@ describe('⋮ 메뉴 (MENU.md 3-4)', () => {
 });
 
 describe('머리줄', () => {
-  it('⏳ · 🗑️ · ＋ 새로 · 🔍 · 화면 탭 여섯 · ? · ⋮ · 사진', () => {
+  it('⏳ · 🗑️ · 🔍 · 화면 탭 여섯 · ? · ⋮ · 사진 (PC ＋ 새로는 없다 - P10-1)', () => {
     const { container } = render(<Header />);
-    for (const sel of ['[data-header-dday]', '[data-header-trash]', '[data-new-menu]', '[data-header-search]', '[data-header-help]', '[data-more-menu]', '[data-account]']) {
+    for (const sel of ['[data-header-dday]', '[data-header-trash]', '[data-header-search]', '[data-header-help]', '[data-more-menu]', '[data-account]']) {
       expect(container.querySelector(sel), sel).not.toBeNull();
     }
+    expect(document.querySelector('[data-new-menu]')).toBeNull();
     // 둥근 ＋는 머리줄(backdrop-blur - fixed의 기준) 밖 body에 (P9-3)
     expect(container.querySelector('[data-new-fab]')).toBeNull();
     expect(document.body.querySelector('[data-new-fab]')).not.toBeNull();
@@ -73,11 +74,11 @@ describe('머리줄', () => {
     expect(screen.getByText('SP5')).toBeInTheDocument();
   });
 
-  it('＋ 새로 = 새 일정·새 기록·새 메모', async () => {
+  it('휴대폰 둥근 ＋ = 새 일정·새 기록·새 메모', async () => {
     const user = userEvent.setup();
-    const { container } = render(<Header />);
-    await user.click(container.querySelector('[data-new-menu]')!);
-    expect([...container.querySelectorAll<HTMLElement>('[data-new]')].map((b) => b.dataset.new)).toEqual(['newEvent', 'newNote', 'newMemo']);
+    render(<Header />);
+    await user.click(document.body.querySelector('[data-new-fab]')!);
+    expect([...document.body.querySelectorAll<HTMLElement>('[data-new]')].map((b) => b.dataset.new)).toEqual(['newEvent', 'newNote', 'newMemo']);
   });
 });
 

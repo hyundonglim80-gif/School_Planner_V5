@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { alarmAt, dueAlarms, normalizeTimeInput, type AlarmCandidate } from './eventAlarm';
+import { alarmAt, chimeCount, dueAlarms, normalizeTimeInput, type AlarmCandidate } from './eventAlarm';
 
 describe('normalizeTimeInput', () => {
   it('1430 · 930 · 14:30 · 9:05 → HH:mm', () => {
@@ -46,5 +46,16 @@ describe('dueAlarms', () => {
   it('alarmAt - 이 기기 시각', () => {
     expect(alarmAt('2026-10-08', '14:00')).toBe(new Date(2026, 9, 8, 14, 0).getTime());
     expect(alarmAt('2026-10-08', 'xx')).toBeNaN();
+  });
+});
+
+describe('알림 소리 길이 (P10-1)', () => {
+  it('3초마다 - 한 번 · 10초 = 3번(V4 그대로) · 1분 = 20번 · 5분 = 100번 · 확인할 때까지 = 끝없이', () => {
+    expect(chimeCount(0)).toBe(1);
+    expect(chimeCount(10)).toBe(3);
+    expect(chimeCount(30)).toBe(10);
+    expect(chimeCount(60)).toBe(20);
+    expect(chimeCount(300)).toBe(100);
+    expect(chimeCount(-1)).toBe(Infinity);
   });
 });
