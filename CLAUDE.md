@@ -26,8 +26,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P10(사용 의견 27가지, 세션 다섯)** - `docs/PLAN.md` 6장 `### P10`. **P10-2 끝(10-15)**: 수업 칸 비고(준비물) 한 칸 · 반 도구 hover·수정 칸에도 · ✎ 크게 · 주간 비고 '…' · 명렬표 번호 두 자리.
-- '이어서' = **P10-3**(■1부터). 부탁 없음.
+- **P10(사용 의견 27가지, 세션 다섯)** - `docs/PLAN.md` 6장 `### P10`. **P10-3 끝(10-15)**: 메모 하나 + 날짜 링크 여러 개 · 하루 '📝 메모' 칸(+ 메모 뺌·라벨 칩 접힘) · 메모 화면에 날짜 링크 메모도.
+- '이어서' = **P10-4**(■1부터). 부탁 없음.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -150,15 +150,15 @@
 - 왼쪽 가장자리 📋로 여닫는다. 최신 복사가 위, 누르면 글 쓰던 칸에 붙여넣기. **이 기기에만**(IndexedDB) - 계정에 올리지 않는다(비밀번호·캡처가 지나간다). 지우면 이 기기의 휴지통으로.
 
 ### 하루 화면
-- 일정·기록 머리줄: `▼ 제목 숫자 [+ 추가] ……… ⚙️`(라벨 설정은 오른쪽 끝).
-- 일정은 **휴대폰 2열 카드, PC 1열**. 기록은 휴대폰 2열, PC 2~4열.
+- 일정·메모 머리줄: `▼ 제목 숫자 [+ 추가] ……… ⚙️`(라벨 설정은 오른쪽 끝). 메모 칸은 '📝 메모'(P10-3 - 옛 '📔 기록', '+ 메모' 없음), 라벨로 보기 칩 줄은 **접힌 채** 🏷️로 편다.
+- 일정은 **휴대폰 2열 카드, PC 1열**. 메모는 휴대폰 2열, PC 2~4열.
 - 수업 칸: 과목은 **굵고 크게**(PC 18px·휴대폰 16px, font-black), 과목이 있는 교시 카드는 왼쪽에 **교시 색 막대**.
 - **수업 칸 = 과목 + '비고(준비물)' 한 칸**(P10-2 사용자 의견 2a - 수업 메모 칸 없음, 옛 메모는 비고 아래 줄에 이어 보인다) · 교과 모드 반 도구(🪑·🎯)·🙋 출결은 📊🔗✏️처럼 **마우스를 올렸을 때만**(적힌 것이 있으면 늘, 휴대폰은 늘), 수정 칸에도 같은 단추 · 주간 교시 줄은 과목 뒤에 비고 첫 줄 '…'.
 
-### 메모 ↔ 기록 = 날짜 칸
-- **메모와 기록만** 서로 옮긴다. **일정은 제외**(라벨 속성·기간/반복 묶음 때문).
-- 쓰는 칸 머리의 '📅 날짜'가 자리다: 날짜가 있으면 그날 기록, 비우면 메모. 기록 → 메모는 글에 날짜 줄을 더하지 않고 카드에 '📅 10/6에서'.
-  (V5에서는 날짜 칸 하나만 바뀐다 - 휴지통 사본이 없다.)
+### 메모 하나 + 날짜 링크 (P10-3 사용자 의견 1 - V4 '메모 ↔ 기록 = 날짜 칸'을 바꿈)
+- 기록·메모 → **'메모' 하나**. 쓰는 칸 머리 '📅 날짜' = **날짜 칩 여러 개**(+ 날짜 = 작은 달력, × = 그 날 빼기) - 이은 날마다 하루 '📝 메모' 칸에, 메모 화면에는 늘(날짜 없는 메모 → 날짜 링크 메모 최근 날부터).
+- 하루 메모 칸 + 추가 = 그날 링크 하나로 새 메모. 카드 🗑️ = 메모 지우기(모든 날에서). **일정은 날짜 링크 없음**(라벨 속성·기간/반복 묶음 때문).
+- 자료: `dates`는 둘 이상일 때만, `date` = 가장 이른 날(옛 기록 = 날짜 하나인 메모, 자료 옮기기 없음). '📅 10/6에서'(fromDate)는 적지도 보이지도 않는다.
 
 ### 라벨 상위/하위와 라벨로 보기
 - 메모·기록 라벨만 2단계 트리(일정 라벨은 뺀다). 메모·기록 라벨은 한 목록.
@@ -215,7 +215,7 @@
   `mirror/`(기기 사본 - `db.ts` IndexedDB `sp5-mirror-{uid}` 저장소 docs·meta · `codec.ts` Timestamp 지키기 · `store.ts` 화면 store `useMirror`(서버 판 + 내 쓰기 덧칠 `beginLocalWrite`) ·
   `server.ts` Firestore 받는 길(흉내 서버로 시험 - 에뮬레이터 빌드는 읽기 수 `window.__sp5Reads`) · `sync.ts` `startMirror`·`useMirrorSync`(App)·`resetMirror`·`wipeMirror`(로그아웃)·받는 컬렉션 `MIRRORED`·
   처음 받기는 오늘 − 62일부터 먼저 `NEAR_DAYS`(P9-3 - 학년도 첫날부터면 1만 항목에 첫 카드 14초)) ·
-  `select.ts`(화면이 고르는 곳 - `itemsOn`·`itemsBetween`·`itemsWithLabels`·`itemsOfKind`·`memos`·`trashOf`·`labelsOf` + `use…` 훅·`useDocs`·`useMirrorStatus`,
+  `select.ts`(화면이 고르는 곳 - `itemsOn`(메모는 날짜 링크마다)·`itemsBetween`·`noteDaysBetween`·`allNotes`·`itemsWithLabels`·`itemsOfKind`·`memos`·`trashOf`·`labelsOf` + `use…` 훅·`useDocs`·`useMirrorStatus`,
   라벨: `labelTreeOf`·`useLabelTree`(트리 차례·기본 라벨 `defaultId`)·`itemLabels`·라벨로 보기 `itemsMatching`·붙은 수 `labelUsageOf`·`emptyLabelsOf`·`missingLabelsOf`) ·
   `labels.ts`(라벨 쓰기 - 저장 = 바뀐 칸만 `labelSaveOps`·`createLabelOp`·이름으로 찾기·만들기 `ensureLabelOps`·`defaultLabelOps`·`labelNameProblem`, 적기 `addLabel`·`saveLabels`·`restoreLabels`·`addDefaultLabels`) ·
   `session.ts`의 `currentSpaceId`·`useCurrentSpaceId`(지금 공간 한 곳). 화면 문서 = `Stored<C>`(자리 id가 붙는다 - 저장 도우미는 id를 적지 않는다).
@@ -247,7 +247,7 @@
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) ·
   `entryTable.ts`(붙인 표 - V4 그대로: 붙여넣은 HTML 읽기·행/열·칸 서식) · `attachments.ts`(그림인가·파일 그림·크기·붙여넣은 이름·새 붙임) · `linkPreview.ts`(주소 → 카드) · `masonry.ts`(가장 짧은 열) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
   `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
-- **하루 화면** `src/features/day/`: `DayScreen.tsx`(맨 위 교사 유형 띠, 수업(`lessons/DayLessons` - P6-1)·일정 7:5 - 본문 폭 720px, 아래 기록 칸) · `DayJournal.tsx`(기록 칸 - `▼ 📔 기록 N [+ 추가] [+ 메모] … ⚙️`, 즐겨찾기 먼저·본문 폭 2~4열, `[data-day-journal|journal-count|journal-add|journal-add-memo|journal-collapse|journal-empty|journal-waiting]`) ·
+- **하루 화면** `src/features/day/`: `DayScreen.tsx`(맨 위 교사 유형 띠, 수업(`lessons/DayLessons` - P6-1)·일정 7:5 - 본문 폭 720px, 아래 기록 칸) · `DayJournal.tsx`(메모 칸 - `▼ 📝 메모 N [+ 추가] 📊 🏷️ … ⚙️`(P10-3), 그 날짜 링크가 있는 메모·즐겨찾기 먼저·본문 폭 2~4열, `[data-day-journal|journal-count|journal-add|journal-filter-toggle|journal-filter|journal-collapse|journal-empty|journal-waiting]`) ·
   `DayEvents.tsx`(일정 칸 - `▼ 📅 일정 N [+ 추가] … ⚙️`, 카드 PC 1열·휴대폰 2열, `[data-day-events|event-card|event-done|event-complete|event-chip|event-alarm|event-links|event-up|event-down|event-edit|event-delete|event-add|event-count]`).
 - **일정** `src/features/events/`(하루·주간·월간·년간이 함께 쓴다): `open.ts`(쓰는 칸 `event` = `{ sid, date, id? }`·`openEventPanel`·`useEditingEventIds`·`closeEventPanelsFor`) ·
   `EventPanel.tsx`(일정 칸 - `[data-event-panel=new|edit]`·`[data-event-text-input|event-date|event-date-prev|next|event-move-note|event-due-input|event-alarm-open|event-attr|event-save|event-delete]`) ·
@@ -348,13 +348,13 @@
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
   `lastYear.ts`(순수 가져오기 셈)·`actions.ts`(`importLastYear`)·`prefs.ts`(`sp5-last-year`·단축키 'lastYear') · 셈 `domain/lastYearWeek.ts`·`domain/dayTone.ts`. 📝 n = 창 `dayNotes`(`notes/DayNotesWindow.tsx`, `notes/open.openDayNotes`). 점검 `tools/inspect-week.mjs`(44).
-- **메모 화면** `src/features/memo/MemoScreen.tsx`(P4-1 - ⭐/라벨/전체·진행/완료·전체 비우기·'메모' 라벨 붙이기, 카드 쌓기 `ui/Masonry.tsx`·`domain/masonry.ts`) ·
-  라벨로 보기 칩 `notes/LabelFilterChips.tsx`(메모 화면 세로·하루 기록 칸 한 줄)·기억 `notes/labelFilter.ts`(`sp5-label-filters`). 점검 `tools/inspect-memo.mjs`(30).
-- **메모·기록** `src/features/notes/`(하루 기록 칸·메모 화면(P4-1)이 함께 쓴다 - 메모와 기록은 같은 kind 'note', 날짜가 있으면 기록): `open.ts`(쓰는 칸 `note` = `{ sid, date|null, id? }`·`openNotePanel`·`useEditingNoteIds`·`closeNotePanelsFor`) ·
-  `NotePanel.tsx`(`[data-note-panel=new|edit|note-id|note-noun|note-flag=done|favorite|note-date|note-date-clear|note-place-hint|note-place-keep|note-text-input|checklist-toggle|hash-preview|hash-label|note-save|note-delete|note-close]`) ·
-  `noteForm.ts`(순수 - 칸 ↔ 문서, 자리 `placeChanges`(기록 → 메모 = fromDate), '#라벨'·새 라벨 `savePlanOf`) · `noteOps.ts`(순수 - 즐겨찾기 먼저·▲▼ 무리 안·체크 줄) ·
-  `actions.ts`(`createNote`·`saveNote`(새 라벨과 한 묶음·옮기기 되돌리기는 자리만)·`setNoteDone`·`setNoteFavorite`·`moveNoteInList`·`toggleNoteCheckLine`·`deleteNote`) ·
-  `EntryCard.tsx`(메모·기록 같은 카드 `[data-entry-card|entry-kind|entry-done|entry-favorite|entry-collapsed|entry-collapse|entry-up|entry-down|entry-complete|entry-favorite-toggle|entry-chip|entry-checks|entry-edit|entry-delete|entry-image|entry-images|check-line|check-done]`) ·
+- **메모 화면** `src/features/memo/MemoScreen.tsx`(P4-1 - ⭐/라벨/전체·진행/완료·전체 비우기·'메모' 라벨 붙이기, 카드 쌓기 `ui/Masonry.tsx`·`domain/masonry.ts`, P10-3 - 모든 메모 `select.allNotes`·차례 `noteOps.memoScreenOrder`·카드 📅 칩 `[data-entry-date-chip]`·60장씩 `[data-memo-more]`) ·
+  라벨로 보기 칩 `notes/LabelFilterChips.tsx`(메모 화면 세로·하루 메모 칸 한 줄)·기억 `notes/labelFilter.ts`(`sp5-label-filters` - 하루 칸 칩 줄 폄 `journalOpen`). 점검 `tools/inspect-memo.mjs`(33).
+- **메모** `src/features/notes/`(하루 메모 칸·메모 화면(P4-1)이 함께 쓴다 - kind 'note' 하나, 날짜 링크 `domain/noteDates`(`noteDates`·`datesFields`·`datesChanges` - P10-3), 고르기 `itemsOn`은 날짜 링크마다·`noteDaysBetween`·`allNotes`): `open.ts`(쓰는 칸 `note` = `{ sid, date|null(연 날), id? }`·`openNotePanel`·`useEditingNoteIds`·`closeNotePanelsFor`) ·
+  `NotePanel.tsx`(`[data-note-panel=new|edit|note-id|note-dates(쉼표로)|note-flag=done|favorite|note-date-chip|note-date-remove|note-date-add|note-dates-empty|note-text-input|checklist-toggle|hash-preview|hash-label|note-save|note-delete|note-close]` - + 날짜 = `ui/MiniCalendarPicker` trigger·marked) ·
+  `noteForm.ts`(순수 - 칸 ↔ 문서, 날짜 칩 `dates`, '#라벨'·새 라벨 `savePlanOf`) · `noteOps.ts`(순수 - 즐겨찾기 먼저·▲▼ 무리 안·체크 줄·메모 화면 차례) ·
+  `actions.ts`(`createNote`·`saveNote`(새 라벨과 한 묶음)·`setNoteDone`·`setNoteFavorite`·`moveNoteInList`·`toggleNoteCheckLine`·`deleteNote`) ·
+  `EntryCard.tsx`(메모 카드 `[data-entry-card|entry-kind(journal = 날짜 있음)|entry-date-chip|entry-done|entry-favorite|entry-collapsed|entry-collapse|entry-up|entry-down|entry-complete|entry-favorite-toggle|entry-chip|entry-checks|entry-edit|entry-delete|entry-image|entry-images|check-line|check-done]`) ·
   `EntryTableView.tsx`(표 - 쓰는 칸은 칸 글자·행/열 `[data-note-table|cell|table-op]`, 카드는 compact `[data-entry-table]`) · `attach.ts`(📎·캡처 = 드라이브, 표 먼저 `pastedTable`) · `shortcuts.ts`(`newNote`·`newMemo`).
   순수 셈 `domain/checkLines`·`entryCollapse`·`hashLabels`(V4 테스트째). 주소 → 링크 `ui/FormattedText.tsx`. **쓰던 글 보관** `data/drafts.ts`(`useDraft` - DB `sp5-drafts-{uid}`, 메모·기록·일정 칸, 로그아웃하면 지움) + `ui/DraftOffer.tsx`(`[data-draft-offer|draft-restore|draft-discard]`).
 - **설치(PWA)** `public/`: `manifest.json`(SP5 · share_target `/share-target`) · `sw.js`(문서는 네트워크 먼저·`/assets/`는 담아 둔 것 먼저·'sp5-precache' = 빌드의 `asset-manifest.json`대로 이 판을 담고 옛 판은 지움(`ignoreVary`)·공유받기 캐시 `sp5share-inbox`·푸시) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).

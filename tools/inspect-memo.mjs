@@ -3,7 +3,7 @@
 //   2) 라벨 칩: 그냥 = 하나만, Ctrl = 더하기, 상위 → 하위 것도, ▸ 펴서 '기타', 숫자 = 진행 중, 다른 화면에 다녀와도 그대로, ESC = 전체.
 //   3) 진행/완료 구역, ☐ 완료 = 완료 구역으로(문서 하나), 🗑️ 전체 비우기 = 한 묶음 + 되돌리기.
 //   4) + 새 메모 = 날짜 없는 칸(고른 라벨 미리) → 저장하면 메모 화면에.
-//   5) 하루 기록 칸 라벨로 보기: 전체·칩, 고르면 그 기록만.
+//   5) 하루 메모 칸 라벨로 보기: 접힘 → 🏷️로 펴기 → 전체·칩, 고르면 그 메모만.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-memo.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 메모·기록·라벨(insp_mm…)을 심고 끝에 지운다.
@@ -84,20 +84,22 @@ try {
 
   r.section('라벨로 보기');
   await chip('insp_mlp').click();
-  r.check(JSON.stringify((await cardIds()).sort()) === '["insp_mm1","insp_mm2"]', `상위 = 하위 것도 (${await cardIds()})`);
+  // 날짜 링크 메모(옛 기록 insp_mj…)도 메모 화면에 함께 (P10-3)
+  r.check(JSON.stringify((await cardIds()).sort()) === '["insp_mj2","insp_mm1","insp_mm2"]', `상위 = 하위 것도 (${await cardIds()})`);
   await chip('insp_mlu').click({ modifiers: ['Control'] });
-  r.check((await cardIds()).length === 5, 'Ctrl = 더하기');
-  r.check((await chip('insp_mlu').textContent()).includes('2'), '숫자는 진행 중만 (개인 3개 중 2)');
+  r.check((await cardIds()).length === 7, 'Ctrl = 더하기');
+  r.check((await chip('insp_mlu').textContent()).includes('3'), '숫자는 진행 중만 (개인 4개 중 3 - 날짜 링크 메모도)');
   await chip('insp_mlu').click();
-  r.check(JSON.stringify((await cardIds()).sort()) === '["insp_mm3","insp_mm4","insp_mm5"]', '그냥 누르기 = 하나만');
+  r.check(JSON.stringify((await cardIds()).sort()) === '["insp_mj1","insp_mm3","insp_mm4","insp_mm5"]', '그냥 누르기 = 하나만');
   await page.locator(sel('filter-caret', 'insp_mlp')).click();
   await chip('기타:insp_mlp').click();
-  r.check(JSON.stringify(await cardIds()) === '["insp_mm1"]', "'기타' = 하위 없이 상위만");
+  r.check(JSON.stringify((await cardIds()).sort()) === '["insp_mj2","insp_mm1"]', "'기타' = 하위 없이 상위만");
   await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));
   await page.locator(sel('day-journal', DAY)).waitFor({ timeout: 8000 });
   await page.goto(page.url().replace(/#.*$/, '#/memo'));
   await waitFor(page.locator(sel('memo-screen')));
-  r.check(await waitFor(async () => JSON.stringify(await cardIds()) === '["insp_mm1"]'), '다른 화면에 다녀와도 그대로');
+  r.check(await waitFor(async () => JSON.stringify((await cardIds()).sort()) === '["insp_mj2","insp_mm1"]'), '다른 화면에 다녀와도 그대로');
+  r.check((await card('insp_mj2').locator(sel('entry-date-chip', DAY)).count()) === 1, '날짜 링크 메모 카드에 📅 칩');
   await page.locator('body').click({ position: { x: 5, y: 600 } });
   await page.keyboard.press('Escape');
   r.check(await waitFor(async () => await pressed('all')), 'ESC = 전체');
@@ -131,17 +133,23 @@ try {
   r.check((await read(newId))?.date === null, '날짜 없는 메모');
   await page.keyboard.press('Escape');
 
-  r.section('하루 기록 칸 라벨로 보기');
+  r.section('하루 메모 칸 라벨로 보기 (칩 줄은 접혀 시작 - 🏷️로 편다, P10-3)');
   await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));
   await page.locator(sel('day-journal', DAY)).waitFor({ timeout: 8000 });
   const jf = page.locator(sel('journal-filter'));
-  r.check(await waitFor(jf), '기록 칸 머리에 라벨 칩');
+  const jToggle = page.locator(sel('journal-filter-toggle'));
+  if ((await jToggle.getAttribute('aria-expanded')) === 'true') await jToggle.click();
+  r.check(await waitFor(async () => (await jf.count()) === 0), '칩 줄은 접혀 있다');
+  await jToggle.click();
+  r.check(await waitFor(jf), '🏷️ → 메모 칸 머리에 라벨 칩');
   await jf.locator(sel('filter-chip', 'insp_mlu')).click();
   const jIds = await page.locator(`${sel('day-journal', DAY)} ${sel('entry-card')}`).evaluateAll((els) => els.map((e) => e.dataset.entryCard));
   r.check(JSON.stringify(jIds) === '["insp_mj1"]', `고른 라벨의 기록만 (${jIds})`);
   await jf.locator(sel('filter-chip', 'all')).click();
   r.check(await waitFor(async () => (await page.locator(`${sel('day-journal', DAY)} ${sel('entry-card', 'insp_mj2')}`).count()) === 1), '전체 = 모두');
   r.check(hashOf(page).startsWith('#/day'), '하루 화면');
+  await jToggle.click();
+  r.check(await waitFor(async () => (await jf.count()) === 0), '🏷️ 다시 → 접힌다 (이 기기에 기억)');
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {

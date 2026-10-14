@@ -137,6 +137,9 @@ describe('메모 화면', () => {
     fireEvent.click(q('[data-memo-more="active"]')!);
     expect(cards()).toHaveLength(72);
     expect(q('[data-memo-more]')).toBeNull();
+    // 고른 것이 바뀌면 '더 보기'는 처음부터
+    fireEvent.click(q('[data-filter-chip="U"]')!);
+    expect(cards()).toHaveLength(60);
     fireEvent.click(q('[data-entry-card="two"] [data-entry-date-chip="2026-12-01"]')!);
     expect(useNav.getState()).toMatchObject({ scope: 'day', date: '2026-12-01' });
   });

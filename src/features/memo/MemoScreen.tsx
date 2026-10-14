@@ -112,6 +112,13 @@ export default function MemoScreen() {
     return isEmptyFilter(pruned) ? favOrAll : pruned;
   })();
   const labelFilter: LabelFilter | null = typeof current === 'string' ? null : current;
+  // 고른 것이 바뀌면 '더 보기'는 처음부터 (그리는 중에 맞춘다)
+  const filterKey = JSON.stringify(current);
+  const [seenFilter, setSeenFilter] = useState(filterKey);
+  if (filterKey !== seenFilter) {
+    setSeenFilter(filterKey);
+    setLimit({ active: PAGE, done: PAGE });
+  }
   const choose = (f: MemoFilter) => {
     // 손으로 고른 것은 그대로 보인다(즐겨찾기가 없어도 ⭐를 누르면 빈 즐겨찾기와 안내)
     setNoFavOnOpen(false);

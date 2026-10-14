@@ -225,7 +225,7 @@ try {
     r.check((await count(sel('day-bell'))) === 1 && (await count(sel('lessons-settings'))) === 1, '수업 칸 머리줄 🔔 종·⚙️');
     r.check((await count(sel('lessons-tool', 'attendance'))) + (await count(sel('lessons-tool', 'notices'))) === 2, '담임: 📋 출석부·📢 알림장');
     r.check((await count(sel('lessons-tool', 'drawStudent'))) === 1, '담임: 🎯 뽑기');
-    r.check((await count(sel('journal-add-memo'))) === 1, '기록 칸 + 메모');
+    r.check((await count(sel('journal-add'))) === 1 && (await count(sel('journal-add-memo'))) === 0, "📝 메모 칸 + 추가 ('+ 메모'는 없다 - P10-3)");
   });
 
   await topic('week', async () => {
@@ -424,32 +424,38 @@ try {
     await go(`#/day/${DAY}`, 'day');
   });
 
-  // ════════ 5장 기록 · 메모 ════════
+  // ════════ 5장 메모 ════════
   await topic('journal', async () => {
     await q(sel('journal-add')).click();
-    r.check(await has(sel('note-panel', 'new')), '+ 추가 → 새 기록 칸');
-    for (const s of ['note-date', 'checklist-toggle', 'note-students', 'note-attach']) r.check((await count(sel(s))) > 0, `칸: ${s}`);
-    r.check(await has(sel('day-card', 'notice')), "기록 칸 맨 위 '📢 알림장' 카드 (그날 알림장을 계산해 보인다)");
+    r.check(await has(sel('note-panel', 'new')), '+ 추가 → 새 메모 칸');
+    r.check((await count(sel('note-date-chip', DAY))) === 1, '📅 날짜 칩 = 그날');
+    for (const s of ['note-date-add', 'checklist-toggle', 'note-students', 'note-attach']) r.check((await count(sel(s))) > 0, `칸: ${s}`);
+    r.check(await has(sel('day-card', 'notice')), "메모 칸 맨 위 '📢 알림장' 카드 (그날 알림장을 계산해 보인다)");
   });
 
   await topic('journal-view', async () => {
     const card = q(sel('entry-card', 'insp_man_n1'));
-    r.check(await waitFor(card), '기록 카드');
+    r.check(await waitFor(card), '메모 카드');
     for (const s of ['entry-complete', 'entry-favorite-toggle', 'entry-table', 'entry-students']) r.check((await card.locator(sel(s)).count()) > 0, `카드 ${s}`);
-    r.check((await count(sel('filter-chip'))) > 0, '라벨로 보기 칩');
+    const toggle = q(sel('journal-filter-toggle'));
+    r.check((await toggle.count()) === 1, '제목 줄 🏷️ (라벨로 보기 펴기·접기)');
+    if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
+    r.check(await waitFor(async () => (await count(sel('filter-chip'))) > 0), '🏷️ → 라벨로 보기 칩');
+    await toggle.click();
   });
 
   await topic('memo-screen', async () => {
     await go('#/memo', 'memo');
     r.check(await has(sel('memo-filter-nav')), '📁 라벨로 보기');
     r.check(await has(sel('entry-card', 'insp_man_m1')), '메모 카드');
+    r.check(await waitFor(async () => (await count(sel('entry-date-chip'))) > 0), '날짜에 이은 메모도 (카드에 📅 날짜 칩)');
     r.check((await count(sel('memo-active'))) === 1 && (await count(sel('memo-done'))) === 1, '진행 / 완료 구역');
   });
 
   await topic('memo-write', async () => {
     await q(sel('memo-new')).click();
     r.check(await has(sel('note-panel', 'new')), '+ 새 메모 → 새 메모 칸');
-    r.check((await q(sel('note-date')).inputValue()) === '', '메모 = 날짜 없음');
+    r.check((await count(sel('note-date-chip'))) === 0 && (await count(sel('note-dates-empty'))) === 1, '+ 새 메모 = 날짜 없음');
   });
 
   await topic('memo-manage', async () => {
@@ -463,9 +469,12 @@ try {
     await go('#/memo', 'memo');
     await q(sel('entry-card', 'insp_man_m1')).locator(sel('entry-edit')).click();
     r.check(await has(sel('note-panel', 'edit')), '메모 수정 칸');
-    await q(sel('note-date')).fill(DAY);
-    r.check(await has(sel('note-place-hint')), "📅 날짜를 넣으면 '저장하면 … 기록으로 옮깁니다'");
-    await q(sel('note-place-keep')).click();
+    await q(sel('note-date-add')).click();
+    r.check(await has(sel('date-picker-popover')), '+ 날짜 → 작은 달력');
+    await q(sel('picker-today')).click();
+    r.check((await count(sel('note-date-chip'))) === 1, '날짜를 누르면 칩으로 더해진다');
+    await q(sel('note-date-remove')).click();
+    r.check((await count(sel('note-date-chip'))) === 0, '칩 × = 그 날짜 빼기 (저장 안 함)');
     await go(`#/day/${DAY}`, 'day');
   });
 

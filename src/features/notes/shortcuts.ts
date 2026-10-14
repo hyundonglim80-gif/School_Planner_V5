@@ -1,5 +1,5 @@
 // 메모·기록 단축키·＋ 새로 (MENU.md 3-8 새 id). 껍데기(Shell)가 한 번 건다 - 단축키 한 곳(app/keys)에 하는 일만 더한다.
-//   newNote = 새 기록 칸 (지금 보는 날 - 메모·학급 화면이면 오늘) · newMemo = 새 메모 칸 (날짜 없음). 칸을 연 순간의 공간에 저장한다.
+//   newNote = 그날 새 메모 칸 (지금 보는 날의 날짜 링크 - 메모·학급 화면이면 오늘) · newMemo = 날짜 없는 새 메모 칸. 칸을 연 순간의 공간에 저장한다.
 import { useEffect } from 'react';
 import { setShortcutAction } from '../../app/keys';
 import { useNav } from '../../app/nav';
