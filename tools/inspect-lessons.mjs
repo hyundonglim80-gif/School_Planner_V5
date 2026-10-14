@@ -225,6 +225,7 @@ try {
   r.check(await waitFor(async () => (await subjectOf(1)) === '수학' && (await subjectOf(2)) === '도덕', 8000), '▲ = 위 교시와 맞바꾼다');
   const sw = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['1']?.subject === '수학');
   r.check(sw?.periods?.['1']?.supplies === '운동장\n줄넘기' && sw?.periods?.['2']?.subject === '도덕' && !sw?.periods?.['2']?.supplies, '과목·비고가 함께 옮겨 간다 (저마다 시간표와 견준다)');
+  r.check(await waitFor(async () => (await lessonCard(1).locator(sel('lesson-changed')).count()) === 1 && (await lessonCard(2).locator(sel('lesson-changed')).count()) === 1, 6000), '맞바꾼 두 교시 모두 ✎ (시간표와 과목이 다르다)');
   await toastUndo('맞바꿨습니다').click();
   r.check(await waitFor(async () => (await subjectOf(1)) === '도덕' && (await subjectOf(2)) === '수학', 8000), '안내의 되돌리기 = 제자리');
 
@@ -239,8 +240,11 @@ try {
   r.check(await waitFor(panel), "누르면 'N교시 수정' 칸 (오른쪽)");
   r.check((await panel.locator(sel('lesson-panel-note')).inputValue()) === '지도 그리기', '칸 = 그 교시의 지금 내용');
   await panel.locator(sel('lesson-panel-note')).fill('지도 그리기\n색연필');
+  await panel.locator(sel('lesson-panel-subject')).fill('미술');
   await panel.locator(sel('lesson-panel-save')).click();
-  r.check((await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.supplies === '지도 그리기\n색연필'))?.periods?.['3']?.supplies === '지도 그리기\n색연필', '수정 칸 저장 = 그 칸만');
+  const pd = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.supplies === '지도 그리기\n색연필');
+  r.check(pd?.periods?.['3']?.supplies === '지도 그리기\n색연필' && pd.periods['3'].subject === '미술', '수정 칸 저장 = 그 칸만 (과목·비고)');
+  r.check(await waitFor(weekRow('2026-10-12', 3).locator(sel('week-lesson-changed')), 6000), '주간 줄도 그날 바꾼 과목은 ✎');
   await panel.locator(sel('lesson-panel-clear')).click();
   const cleared = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.subject === '');
   r.check(cleared?.periods?.['3']?.subject === '' && !cleared.periods['3'].supplies, "삭제 = 그 교시 비우기 (과목 '' = 수업 없음)");
@@ -361,6 +365,7 @@ try {
   await p3.keyboard.press('Control+s');
   const d3 = await serverUntil(() => read(B.ref('lessonDays', '2026-10-12')), (d) => d?.periods?.['3']?.subject === '5-2 과학');
   r.check(d3?.periods?.['3']?.subject === '5-2 과학', "저장 = 칸 글자 하나 '5-2 과학'");
+  r.check(await waitFor(card3(3).locator(sel('lesson-changed')), 6000), '교과 모드도 그날 바꾼 과목은 ✎');
   // 지난 시간 - 10/14(수) 1교시 5-2 과학의 바로 앞 = 10/12 3교시 (같은 날 늦은 교시가 더 가깝다)
   await p3.goto(p3.url().replace(/#.*$/, '#/day/2026-10-14'));
   const prev = p3.locator(`${sel('lesson-card', 1)} ${sel('lesson-prev')}`);

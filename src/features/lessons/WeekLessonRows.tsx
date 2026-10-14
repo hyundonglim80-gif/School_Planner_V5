@@ -64,7 +64,7 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
                 </span>
               )}
               {c?.changed && (
-                <span className="shrink-0 text-2xs font-bold text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>
+                <span data-week-lesson-changed className="shrink-0 text-xs font-black text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>
                   ✎
                 </span>
               )}

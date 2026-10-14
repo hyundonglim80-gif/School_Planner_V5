@@ -8,7 +8,8 @@
 //   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
 //   - 🔔 종(features/bell - P6-3): '수업' 옆 단추로 수업 종 설정을 펼친다.
 //   - 🍚 급식·📚 학사(features/school - P6-3): 카드 아래, 환경설정 '우리 학교'를 골랐을 때만.
-// 교과 모드 칸의 🙋 = 그 반·그 교시 교과 출결(P7-2 - 개인 공간에서, 칸의 반이 그 학년도 명렬표에 있을 때). 교시 카드의 반 도구 = 🪑 자리표·🎯 뽑기(P7-3 - 그 반으로 연다)·📊 조사표(P7-4). 교시마다 📊n = 그 교시 조사표(없으면 마우스를 올려야 보인다).
+// 교과 모드 칸의 🙋 = 그 반·그 교시 교과 출결(P7-2 - 개인 공간에서, 칸의 반이 그 학년도 명렬표에 있을 때). 교시 카드의 반 도구 = 🪑 자리표·🎯 뽑기(P7-3 - 그 반으로 연다).
+// 교시마다 📊n = 그 교시 조사표(P7-4). 반 도구·🙋·📊는 적힌 것(출결·조사표 수)이 없으면 마우스를 올려야 보인다(P10-2), 수정 칸에도 같은 단추 줄.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { setDate } from '../../app/nav';
@@ -59,6 +60,12 @@ const PERIOD_COLORS = [
 ];
 /** 과목이 있는 교시 카드 왼쪽의 굵은 막대 - 교시 칩과 같은 색 (차례도 같다) */
 const PERIOD_ACCENTS = ['border-l-blue-400', 'border-l-emerald-400', 'border-l-amber-400', 'border-l-purple-400', 'border-l-rose-400', 'border-l-indigo-400', 'border-l-slate-400'];
+
+/** 마우스를 올렸을 때만 보이는 반 도구 (P10-2) - 휴대폰(sm 아래)은 마우스가 없으니 지금처럼 늘, 키보드로 오면 보인다.
+ *  📊🔗✏️는 예전대로 휴대폰에서도 숨는다 - 휴대폰은 교시를 눌러 연 수정 칸에서 (그 줄에 모두 있다) */
+const HOVER_ONLY = 'sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100';
+/** 수정 칸의 도구 단추 (🔗 링크 추가와 같은 줄) */
+const editorToolClass = 'px-3 py-1.5 bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 rounded-xl text-xs font-bold transition-colors cursor-pointer';
 
 /** 지난 시간을 거슬러 찾는 날 수 */
 const PREV_LOOKBACK_DAYS = 60;
@@ -316,6 +323,13 @@ export default function DayLessons({ date }: { date: string }) {
             const name = periodLabel(periods, n);
             const linkCount = c.linkIds.length;
             const id = lessonLinkId(date, n);
+            // 교과 모드에서 칸 글자에 반이 있으면('5-2 과학') 반을 크게, 막대는 반 색. 반이 없는 칸('창체')은 그대로
+            const slot = isClassUnit && c.subject ? parseSlot(c.subject) : null;
+            const slotClass = slot?.cls && inPersonal ? classes.find((k) => k.year === schoolYear && classLabelOf(k) === slot.cls) : undefined;
+            const attSummary = slotClass ? periodSummary(readSubjectPeriods(subjectAtt[subjectAttendanceDocId(slotClass.id, date)]?.periods)[String(n)]) : '';
+            const evalCount = evalCounts[String(n)] ?? 0;
+            const openAtt = () => slotClass && openSubjectAttendanceCell({ classId: slotClass.id, date, n, subject: slot?.subject });
+            const openEval = () => sid && openEvaluation({ sid, date, place: String(n), slot: c.subject });
 
             if (open && open.n === n) {
               const set = (patch: Partial<Editing>) => setEditing({ ...open, ...patch });
@@ -358,6 +372,31 @@ export default function DayLessons({ date }: { date: string }) {
                       >
                         📑 연결된 링크 ({linkCount})
                       </button>
+                    )}
+                    {/* 카드의 도구도 고치는 동안 그대로 (P10-2 - 수정 칸이 카드를 갈아 끼우며 사라졌다) */}
+                    {sid && (
+                      <button type="button" data-lesson-editor-tool="eval" onClick={openEval} className={editorToolClass}>
+                        📊 조사표{evalCount ? ` ${evalCount}` : ''}
+                      </button>
+                    )}
+                    {slotClass && (
+                      <>
+                        <button type="button" data-lesson-editor-tool="attendance" onClick={openAtt} className={editorToolClass} title={`${slot?.cls} ${n}교시 교과 출결`}>
+                          🙋 {attSummary || '출결'}
+                        </button>
+                        <button type="button" data-lesson-editor-tool="seating" onClick={() => openSeating({ classId: slotClass.id })} className={editorToolClass} title={`${slot?.cls} 자리표`}>
+                          🪑 자리표
+                        </button>
+                        <button
+                          type="button"
+                          data-lesson-editor-tool="drawStudent"
+                          onClick={() => openSeating({ classId: slotClass.id, draw: true })}
+                          className={editorToolClass}
+                          title={`${slot?.cls} 발표자 뽑기`}
+                        >
+                          🎯 뽑기
+                        </button>
+                      </>
                     )}
                     {/* 이 교시에 진도가 없으면 그 칸 글자로 진도 만들기 (개인 공간만 - 진도는 개인 수업으로 센다) */}
                     {!marks[slotId(date, n)] && inPersonal && <ProgressCreateButton subject={subjectToSave(open.subject)} />}
@@ -409,15 +448,11 @@ export default function DayLessons({ date }: { date: string }) {
             const isNow = nowState?.kind === 'during' && nowState.period === n;
             const isNext = (nowState?.kind === 'break' || nowState?.kind === 'before') && nowState.next === n;
             const range = periodRangeLabel(times, n);
-            // 교과 모드에서 칸 글자에 반이 있으면('5-2 과학') 반을 크게, 막대는 반 색. 반이 없는 칸('창체')은 그대로
-            const slot = isClassUnit && c.subject ? parseSlot(c.subject) : null;
             const slotColor = slot?.cls ? classColorOf(slot.cls) : null;
             const prev = slot?.cls && recent ? previousSlotOf(recent, c.subject, date, n) : null;
             const prevNote = prev ? firstLine(lessonNote(src.days[prev.date]?.periods?.[prev.period])) : '';
             const mark = marks[slotId(date, n)];
-            const slotClass = slot?.cls && inPersonal ? classes.find((k) => k.year === schoolYear && classLabelOf(k) === slot.cls) : undefined;
-            const hasDetails = !!(c.note || prevNote || mark || slotClass);
-            const attSummary = slotClass ? periodSummary(readSubjectPeriods(subjectAtt[subjectAttendanceDocId(slotClass.id, date)]?.periods)[String(n)]) : '';
+            const hasDetails = !!(c.note || prevNote || mark);
             return (
               <div
                 key={n}
@@ -489,18 +524,20 @@ export default function DayLessons({ date }: { date: string }) {
                             data-subject-attendance={n}
                             onClick={(e) => {
                               e.stopPropagation();
-                              openSubjectAttendanceCell({ classId: slotClass.id, date, n, subject: slot?.subject });
+                              openAtt();
                             }}
                             title={`${slot?.cls} ${n}교시 교과 출결 (결과·지각·조퇴)`}
-                            className={`shrink-0 text-2xs font-bold rounded-full px-1.5 py-0.5 border transition-colors cursor-pointer ${
-                              attSummary ? 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100' : 'text-slate-400 bg-white border-slate-200 hover:text-slate-600 hover:border-slate-400'
+                            className={`shrink-0 text-2xs font-bold rounded-full px-1.5 py-0.5 border transition-all cursor-pointer ${
+                              attSummary
+                                ? 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100'
+                                : `text-slate-400 bg-white border-slate-200 hover:text-slate-600 hover:border-slate-400 ${HOVER_ONLY}`
                             }`}
                           >
                             {attSummary ? <span data-subject-att-chip>{attSummary}</span> : '🙋 출결'}
                           </button>
                         )}
                         {c.changed && (
-                          <span data-lesson-changed className="shrink-0 text-2xs font-bold text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>
+                          <span data-lesson-changed className="shrink-0 text-xs font-black text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>
                             ✎
                           </span>
                         )}
@@ -526,22 +563,48 @@ export default function DayLessons({ date }: { date: string }) {
                         )}
                       </div>
                       <div className="flex items-center gap-0.5 shrink-0">
+                        {/* 교과 모드: 이 반으로 바로 가는 학급 도구 (V4 S8) - 📊🔗✏️처럼 마우스를 올렸을 때만 (P10-2, 휴대폰은 늘) */}
+                        {slotClass && (
+                          <span data-class-tools={slotClass.id} className="flex items-center gap-0.5">
+                            {(
+                              [
+                                ['seating', '🪑', '자리표'],
+                                ['drawStudent', '🎯', '발표자 뽑기'],
+                              ] as const
+                            ).map(([tool, icon, label]) => (
+                              <button
+                                key={tool}
+                                type="button"
+                                data-class-tool-btn={tool}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openSeating({ classId: slotClass.id, draw: tool === 'drawStudent' });
+                                }}
+                                title={`${slot?.cls} ${label}`}
+                                aria-label={`${slot?.cls} ${label}`}
+                                className={`text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 text-xs transition-all cursor-pointer ${HOVER_ONLY}`}
+                              >
+                                {icon}
+                              </button>
+                            ))}
+                          </span>
+                        )}
                         {sid && (
                           <button
                             type="button"
                             data-lesson-evals={n}
-                            data-eval-count={evalCounts[String(n)] ?? 0}
+                            data-eval-count={evalCount}
                             onClick={(e) => {
                               e.stopPropagation();
-                              openEvaluation({ sid, date, place: String(n), slot: c.subject });
+                              openEval();
                             }}
                             className={`p-1 rounded hover:bg-slate-100 text-xs transition-all cursor-pointer ${
-                              evalCounts[String(n)] ? 'text-emerald-700 font-bold' : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-emerald-600'
+                              evalCount ? 'text-emerald-700 font-bold' : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-emerald-600'
                             }`}
-                            title={evalCounts[String(n)] ? `조사표 ${evalCounts[String(n)]}건` : '조사표 관리'}
-                            aria-label={evalCounts[String(n)] ? `조사표 ${evalCounts[String(n)]}건` : '조사표 관리'}
+                            title={evalCount ? `조사표 ${evalCount}건` : slot?.cls ? `${slot.cls} 조사표` : '조사표 관리'}
+                            aria-label={evalCount ? `조사표 ${evalCount}건` : '조사표 관리'}
                           >
-                            📊{evalCounts[String(n)] || ''}
+                            📊{evalCount || ''}
                           </button>
                         )}
                         <button
@@ -573,34 +636,6 @@ export default function DayLessons({ date }: { date: string }) {
                       </div>
                     </div>
 
-                    {/* 교과 모드: 이 반으로 바로 가는 학급 도구 (V4 S8) */}
-                    {slotClass && (
-                      <div data-class-tools={slotClass.id} className="flex flex-wrap items-center gap-1 mb-1.5 -mt-0.5">
-                        {(
-                          [
-                            ['seating', '🪑 자리표'],
-                            ['drawStudent', '🎯 뽑기'],
-                            ['eval', '📊 조사표'],
-                          ] as const
-                        ).map(([tool, label]) => (
-                          <button
-                            key={tool}
-                            type="button"
-                            data-class-tool-btn={tool}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (tool === 'eval') {
-                                if (sid) openEvaluation({ sid, date, place: String(n), slot: c.subject });
-                              } else openSeating({ classId: slotClass.id, draw: tool === 'drawStudent' });
-                            }}
-                            title={`${slot?.cls} ${label.slice(2).trim()}`}
-                            className="text-2xs font-bold text-slate-500 bg-slate-50 hover:bg-slate-100 hover:text-slate-700 border border-slate-200 rounded-md px-1.5 py-0.5 cursor-pointer"
-                          >
-                            {label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
                     {prevNote && prev && (
                       <button
                         type="button"
