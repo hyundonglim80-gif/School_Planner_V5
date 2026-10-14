@@ -21,6 +21,7 @@ import HolidayName from '../../ui/HolidayName';
 import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
+import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
 import type { CalendarEvents } from '../month/calendarEvents';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
 import { LessonStrip, LessonWraps } from '../lessons/CalendarLessons';
@@ -139,25 +140,15 @@ function YearMonthCard(p: Props) {
           p.onPeriodClick(sp, e);
         }}
         className={`group/ev relative px-1.5 py-1 rounded-lg ${BODY_TEXT.month} leading-snug transition-all border border-l-4 block hover:shadow-sm cursor-pointer break-words ${
-          anyPicked ? 'bg-primary/10 border-primary text-primary' : allDone ? 'bg-slate-50 border-slate-100 text-slate-400' : 'bg-blue-50/60 border-blue-100 text-slate-700 font-medium'
+          anyPicked ? 'bg-primary/10 border-primary text-primary' : 'bg-blue-50/60 border-blue-100 text-slate-700 font-medium'
         }`}
-        style={anyPicked || allDone ? undefined : { borderLeftColor: c?.border || '#93c5fd' }}
+        style={anyPicked ? undefined : { borderLeftColor: c?.border || '#93c5fd' }}
         title={`${ev.text} (${indexLabel}) · ${range}${sp.startsPeriod ? '' : ' · 앞 달에서 이어짐'}${sp.endsPeriod ? '' : ' · 다음 달로 이어짐'} - 누르면 고치기`}
       >
         {p.multiOn && <input type="checkbox" checked={allPicked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
-        {label && c && (
-          <span
-            className="inline-block align-middle mr-1.5 text-2xs font-bold px-1.5 py-0.5 rounded shadow-2xs whitespace-nowrap"
-            style={{
-              backgroundColor: allDone ? 'var(--color-slate-100)' : c.bg,
-              color: allDone ? 'var(--color-slate-400)' : c.text,
-              border: '1px solid ' + (allDone ? 'var(--color-slate-200)' : c.border),
-            }}
-          >
-            {label.name}
-          </span>
-        )}
-        <span className={`inline align-middle ${allDone ? 'line-through text-slate-400' : ''}`}>{ev.text}</span>
+        {/* 기간 일정은 날마다 끝내므로 여기서는 보기만 - 다 끝냈으면 칩 앞에 ✓ (P10-1) */}
+        <EventDoneChip label={label ?? null} done={allDone} className="mr-1.5 text-2xs px-1.5 py-0.5" />
+        <span className="inline align-middle">{ev.text}</span>
         <span data-year-period-range className="inline-block align-middle ml-1.5 text-2xs font-semibold text-slate-500 whitespace-nowrap">
           {sp.startsPeriod ? '' : '◂ '}📆 {range} ({indexLabel}){sp.endsPeriod ? '' : ' ▸'}
         </span>
@@ -169,7 +160,6 @@ function YearMonthCard(p: Props) {
 
   const renderEvent = (ev: ItemDoc, d: string) => {
     const label = firstLabel(ev);
-    const c = label ? labelColor(label.color) : null;
     const done = doneOnDay(ev, d);
     const picked = isPicked(ev.id, d);
     return (
@@ -184,39 +174,25 @@ function YearMonthCard(p: Props) {
           p.onEventClick(ev, d, e);
         }}
         className={`group/ev relative px-1.5 py-1 rounded-lg ${BODY_TEXT.month} leading-snug transition-all border block hover:shadow-sm cursor-pointer break-words ${
-          picked ? 'bg-primary/10 border-primary text-primary' : done ? 'bg-slate-50 border-slate-100 text-slate-400' : 'bg-white border-slate-200 text-slate-700 font-medium'
+          picked ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-slate-200 text-slate-700 font-medium'
         }`}
         title="누르면 오른쪽 칸에서 고치기"
       >
         {p.multiOn && <input type="checkbox" checked={picked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
-        {/* 라벨 칩 = 완료 (V4 그대로) */}
-        {label && c && !p.multiOn && (
-          <span
-            data-year-event-chip={ev.id}
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              stop(e);
-              p.onToggleDone(ev, d);
-            }}
-            onKeyDown={(e) => {
-              if (e.key !== 'Enter' && e.key !== ' ') return;
-              e.preventDefault();
-              stop(e);
-              p.onToggleDone(ev, d);
-            }}
-            title={done ? '눌러서 완료 풀기' : '눌러서 완료'}
-            className="inline-block align-middle mr-1.5 text-2xs font-bold px-1.5 py-0.5 rounded shadow-2xs whitespace-nowrap cursor-pointer"
-            style={{
-              backgroundColor: done ? 'var(--color-slate-100)' : c.bg,
-              color: done ? 'var(--color-slate-400)' : c.text,
-              border: '1px solid ' + (done ? 'var(--color-slate-200)' : c.border),
-            }}
-          >
-            {label.name}
-          </span>
+        {/* 라벨 칩 = 완료, 끝내면 칩 앞에 ✓ (P10-1 - 라벨이 없으면 회색 ○ 칩). 여러 개 고르는 동안은 ✓만 */}
+        {p.multiOn ? (
+          done && <DoneMark />
+        ) : (
+          <EventDoneChip
+            label={label ?? null}
+            done={done}
+            onToggle={() => p.onToggleDone(ev, d)}
+            forward={!!label?.props?.forward}
+            className="mr-1.5 text-2xs px-1.5 py-0.5"
+            data={{ 'data-year-event-chip': ev.id }}
+          />
         )}
-        <span className={`inline align-middle ${done ? 'line-through text-slate-400' : ''}`}>{ev.text}</span>
+        <span className="inline align-middle">{ev.text}</span>
         <LinksButton ev={ev} onOpen={p.onOpenLinks} />
         {!p.multiOn && <DeleteButton onDelete={() => p.onDelete(ev, d)} />}
       </div>

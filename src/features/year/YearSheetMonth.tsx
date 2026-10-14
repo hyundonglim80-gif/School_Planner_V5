@@ -15,6 +15,7 @@ import { liveDDays } from '../../domain/dday';
 import { useHolidayName } from '../../data/holidays';
 import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
+import { DoneMark } from '../events/EventDoneChip';
 import type { CalendarEvents } from '../month/calendarEvents';
 
 interface Props {
@@ -31,7 +32,6 @@ interface Props {
 }
 
 const DEFAULT_DOT = '#60a5fa';
-const DONE_DOT = 'var(--color-slate-300)';
 /** 달 아래 목록을 처음에 몇 줄까지 (더 있으면 '+N개 더') */
 const LIST_LIMIT = 8;
 /** 막대 한 줄의 높이·사이 (px) */
@@ -101,7 +101,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                 const holiday = holidayOf(d);
                 const tone = dayToneOf(d, holiday);
                 const isToday = d === today;
-                const dots = eventsOn(d).map((ev) => (doneOnDay(ev, d) ? DONE_DOT : colorOf(ev)));
+                const dots = eventsOn(d).map((ev) => colorOf(ev));
                 return (
                   <button
                     key={d}
@@ -133,7 +133,6 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                 );
               })}
               {layout.bars.map((bar) => {
-                const done = bar.cells.every((c) => doneOnDay(bar.item, c.date));
                 return (
                   <div
                     key={`${bar.item.id}@${bar.start}`}
@@ -146,7 +145,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                       top: 18 + bar.lane * LANE,
                       height: 3,
                       borderRadius: `${bar.startsPeriod ? 2 : 0}px ${bar.endsPeriod ? 2 : 0}px ${bar.endsPeriod ? 2 : 0}px ${bar.startsPeriod ? 2 : 0}px`,
-                      backgroundColor: done ? DONE_DOT : colorOf(bar.item),
+                      backgroundColor: colorOf(bar.item),
                     }}
                   />
                 );
@@ -179,7 +178,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                     className="shrink-0 mt-[4px] w-[6px] h-[6px] rounded-full"
                     style={{
                       backgroundColor:
-                        it.kind === 'holiday' ? '#ef4444' : it.kind === 'dday' ? '#f59e0b' : it.kind === 'school' ? '#14b8a6' : it.done ? DONE_DOT : it.item ? colorOf(it.item) : DEFAULT_DOT,
+                        it.kind === 'holiday' ? '#ef4444' : it.kind === 'dday' ? '#f59e0b' : it.kind === 'school' ? '#14b8a6' : it.item ? colorOf(it.item) : DEFAULT_DOT,
                     }}
                   />
                   <span
@@ -190,11 +189,11 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                           ? 'text-amber-700 font-bold'
                           : it.kind === 'school'
                             ? 'text-teal-700 font-semibold'
-                            : it.done
-                              ? 'text-slate-400 line-through'
-                              : 'text-slate-700 font-medium'
+                            : 'text-slate-700 font-medium'
                     }`}
                   >
+                    {/* 끝낸 일정은 글 앞에 ✓ (P10-1 - 색은 그대로) */}
+                    {it.done && <DoneMark className="!mr-0.5" />}
                     {it.kind === 'dday' && '🎯 '}
                     {it.kind === 'period' && it.continuesBefore && '◂ '}
                     {it.text}

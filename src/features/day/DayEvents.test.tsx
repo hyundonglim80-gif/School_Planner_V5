@@ -100,16 +100,22 @@ describe('하루 일정 칸', () => {
     expect(a.querySelector('[data-event-alarm]')?.textContent).toContain('09:30');
     expect(a.querySelector('[data-due-badge]')).not.toBeNull();
     expect(a.querySelector('[data-event-links]')?.textContent).toContain('2');
-    // 끝낸 일정은 체크·취소선
-    expect(q('[data-event-card="b"]')!.dataset.eventDone).toBe('1');
-    expect(q('[data-event-card="b"] [data-event-complete]')).toBeChecked();
+    // 끝낸 일정은 칩 앞에 ✓ - 줄긋기·☐ 없음 (P10-1)
+    const b = q('[data-event-card="b"]')!;
+    expect(b.dataset.eventDone).toBe('1');
+    expect(b.querySelector('[data-event-done-chip]')?.getAttribute('data-event-done-chip')).toBe('1');
+    expect(b.querySelector('[data-event-done-chip] [data-event-check]')?.textContent).toBe('✓');
+    expect(b.querySelector('[data-event-text]')?.className).not.toContain('line-through');
+    expect(document.querySelector('input[type="checkbox"]')).toBeNull();
+    // 끝내지 않은 일정에는 ✓가 없다
+    expect(a.querySelector('[data-event-check]')).toBeNull();
   });
 
-  it('☐ = 완료 (done·doneAt만 - 문서 하나), 안내 없이 Ctrl+Z 더미에', async () => {
+  it('완료 칩 = 완료 (done·doneAt만 - 문서 하나), 안내 없이 Ctrl+Z 더미에', async () => {
     seed();
     render(<DayEvents date={DAY} />);
     const before = undoCount(SID);
-    await act(async () => fireEvent.click(q('[data-event-card="c"] [data-event-complete]')!));
+    await act(async () => fireEvent.click(q('[data-event-card="c"] [data-event-done-chip]')!));
     expect(written.batches).toHaveLength(1);
     const [op] = written.batches[0];
     expect(op).toMatchObject({ type: 'patch', at: { sid: SID, coll: 'items', id: 'c' } });
@@ -123,7 +129,7 @@ describe('하루 일정 칸', () => {
     render(<DayEvents date={DAY} />);
     await act(async () => fireEvent.click(q('[data-event-card="a"] [data-event-chip="L1"]')!));
     expect(written.batches[0][0]).toMatchObject({ changes: { done: true } });
-    await act(async () => fireEvent.click(q('[data-event-card="b"] [data-event-complete]')!));
+    await act(async () => fireEvent.click(q('[data-event-card="b"] [data-event-done-chip]')!));
     expect(written.batches[1][0]).toMatchObject({ changes: { done: false, doneAt: undefined } });
     // 카드를 누른 것(수정 칸 열기)으로 번지지 않는다
     expect(useWindows.getState().windows).toEqual([]);
@@ -226,7 +232,7 @@ describe('이월 (계산 - DESIGN 5-1)', () => {
   it('오늘 칸에서 끝내면 오늘로 옮겨 적는다 (date·carriedFrom·carrying 걷기·order = 오늘 줄 맨 뒤 - 문서 하나)', async () => {
     seed('live', carriedItems);
     render(<DayEvents date={DAY} />);
-    await act(async () => fireEvent.click(q('[data-event-card="f2"] [data-event-complete]')!));
+    await act(async () => fireEvent.click(q('[data-event-card="f2"] [data-event-done-chip]')!));
     expect(written.batches).toHaveLength(1);
     const [op] = written.batches[0] as { at: { id: string }; changes: Record<string, unknown> }[];
     expect(op.at.id).toBe('f2');
@@ -324,10 +330,10 @@ describe('기간 일정 (한 문서 - DESIGN 5-3)', () => {
     expect(q('[data-event-card="p"]')).toBeNull();
   });
 
-  it('☐ = 그날만 (doneDates - 문서 하나)', async () => {
+  it('완료 칩 = 그날만 (doneDates - 문서 하나)', async () => {
     seed('live', span);
     render(<DayEvents date={DAY} />);
-    await act(async () => fireEvent.click(q('[data-event-card="p"] [data-event-complete]')!));
+    await act(async () => fireEvent.click(q('[data-event-card="p"] [data-event-done-chip]')!));
     expect(written.batches[0][0]).toMatchObject({ at: { id: 'p' }, changes: { doneDates: ['2026-10-07', DAY] } });
   });
 

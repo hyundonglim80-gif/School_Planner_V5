@@ -78,7 +78,7 @@ try {
   r.section('그날만 완료 (doneDates)');
   await go('2027-03-04');
   let before = await stamps();
-  await card.locator(sel('event-complete')).click();
+  await card.locator(sel('event-done-chip')).click();
   const done = await serverUntil(() => readMine('점검 묶음 기말고사'), (d) => d?.doneDates?.length === 1);
   r.check(JSON.stringify(done?.doneDates) === '["2027-03-04"]' && !done.done, 'doneDates = 그날만 (done은 그대로)');
   let after = await stamps();

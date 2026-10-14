@@ -1,6 +1,6 @@
 // 월간 달력의 기간 일정 막대 (V4 features/month/PeriodBar.tsx). 한 주 줄 안에서 이어지는 날을 한 막대로.
 // 막대는 날짜 칸 밖(주 줄의 격자)에 있어 칸 누르기(그날 하루 화면)와 따로 논다. 막대 안은 날마다 한 조각 -
-// 누르면 그 일정 칸(그날), 그날 끝냈으면(doneDates) 그 조각만 흐리게.
+// 누르면 그 일정 칸(그날), 그날 끝냈으면(doneDates) 그 조각에 ✓ (P10-1 - 색은 그대로, 다 끝냈으면 글 앞에도 ✓).
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { periodIndexLabel, periodRangeLabel, type BarCell, type WeekBar } from '../../domain/periodBars';
 import { eventDragProps } from '../events/drag';
@@ -25,7 +25,6 @@ interface Props {
 
 /** 라벨이 없을 때의 막대 빛깔 (보통 일정 칩보다 한 단계 짙게 - 칸 바탕과 갈리게) */
 const DEFAULT_COLOR = { bg: '#dbeafe', text: '#1e3a8a', border: '#bfdbfe' };
-const DONE_BG = 'var(--color-slate-100)';
 
 export default function PeriodBar({ bar, labelName, labelColor, compact, multiOn, picked, isCurrentMonth, onOpen, onOpenLinks, style, drag }: Props) {
   const color = labelColor || DEFAULT_COLOR;
@@ -53,7 +52,7 @@ export default function PeriodBar({ bar, labelName, labelColor, compact, multiOn
       <div
         className="absolute inset-0 flex overflow-hidden border"
         style={{
-          borderColor: allDone ? 'var(--color-slate-200)' : color.border,
+          borderColor: color.border,
           borderTopLeftRadius: bar.startsPeriod ? radius : 0,
           borderBottomLeftRadius: bar.startsPeriod ? radius : 0,
           borderTopRightRadius: bar.endsPeriod ? radius : 0,
@@ -72,23 +71,36 @@ export default function PeriodBar({ bar, labelName, labelColor, compact, multiOn
               onOpen(cell, e);
             }}
             className={`relative flex-1 min-w-0 cursor-pointer hover:brightness-95 ${picked(cell) ? 'ring-2 ring-inset ring-primary' : ''} ${isCurrentMonth(cell.date) ? '' : 'opacity-40'}`}
-            style={{ backgroundColor: doneAt(cell.date) ? DONE_BG : color.bg }}
+            style={{ backgroundColor: color.bg }}
+            data-period-cell-done={doneAt(cell.date) ? '1' : undefined}
             title={`${ev.text} (${cell.index}/${bar.total}) · ${Number(cell.date.slice(5, 7))}.${Number(cell.date.slice(8, 10))}${doneAt(cell.date) ? ' · 완료' : ''} - ${multiOn ? '눌러서 고르기' : '누르면 일정 칸'}`}
-          />
+          >
+            {doneAt(cell.date) && !allDone && (
+              <span className="absolute right-0.5 top-1/2 -translate-y-1/2 text-2xs leading-none font-black text-emerald-600" aria-label="그날 완료">
+                ✓
+              </span>
+            )}
+          </div>
         ))}
       </div>
       {/* 글은 막대 전체에 한 줄로 (누르는 것은 아래 조각으로 지나간다) */}
       <div
         className={`relative pointer-events-none flex items-center gap-1 whitespace-nowrap overflow-hidden ${compact ? 'h-full px-1 text-2xs leading-none' : 'px-1.5 py-0.5 text-2xs leading-tight'} font-bold`}
-        style={{ color: allDone ? 'var(--color-slate-400)' : color.text }}
+        style={{ color: color.text }}
       >
         {!bar.startsPeriod && <span className="shrink-0 opacity-60">◂</span>}
         {labelName && !compact && (
-          <span className="shrink-0 px-1 rounded bg-white/70 text-2xs font-bold" style={{ color: allDone ? 'var(--color-slate-400)' : color.text }}>
+          <span className="shrink-0 px-1 rounded bg-white/70 text-2xs font-bold" style={{ color: color.text }}>
+            {allDone && <span data-event-check className="font-black mr-0.5">✓</span>}
             {labelName}
           </span>
         )}
-        <span className={`truncate ${allDone ? 'line-through' : ''}`}>{ev.text}</span>
+        {allDone && (compact || !labelName) && (
+          <span data-event-check className="shrink-0 font-black text-emerald-600">
+            ✓
+          </span>
+        )}
+        <span className="truncate">{ev.text}</span>
         {!compact && <span className="shrink-0 text-2xs font-semibold opacity-70">{indexLabel}</span>}
         {links > 0 && !compact && (
           <button

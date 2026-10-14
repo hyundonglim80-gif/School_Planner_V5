@@ -72,8 +72,12 @@ try {
 
   r.section('완료 = 문서 하나');
   let before = await stamps();
-  await card('insp_ev2').locator(sel('event-complete')).click();
-  r.check(await waitFor(async () => (await card('insp_ev2').getAttribute('data-event-done')) === '1', 2000), '☐ 누르면 곧바로 완료로 보인다');
+  r.check((await page.locator(`${sel('event-card')} input[type="checkbox"]`).count()) === 0, '카드에 ☐ 체크 칸이 없다 (P10-1)');
+  const chipBg = await card('insp_ev1').locator(sel('event-chip', 'insp_el')).evaluate((e) => getComputedStyle(e).backgroundColor);
+  await card('insp_ev2').locator(sel('event-done-chip')).click();
+  r.check(await waitFor(async () => (await card('insp_ev2').getAttribute('data-event-done')) === '1', 2000), '완료 칩을 누르면 곧바로 완료로 보인다');
+  r.check((await card('insp_ev2').locator(sel('event-check')).textContent()) === '✓', '끝낸 일정은 칩 앞에 ✓');
+  r.check(!(await card('insp_ev2').locator(sel('event-text')).getAttribute('class')).includes('line-through'), '글에 줄긋기 없음');
   const done = await serverUntil(() => read('insp_ev2'), (d) => d?.done === true);
   r.check(done?.done === true && typeof done.doneAt === 'number', '서버: done·doneAt');
   let after = await serverUntil(stamps, (s) => changed(before, s).length > 0);
@@ -81,6 +85,8 @@ try {
   before = after;
   await card('insp_ev1').locator(sel('event-chip', 'insp_el')).click();
   r.check((await serverUntil(() => read('insp_ev1'), (d) => d?.done === true))?.done === true, '라벨 칩 누르기 = 완료');
+  r.check(await waitFor(async () => (await card('insp_ev1').locator(sel('event-check')).count()) === 1, 2000), '라벨 칩 앞에 ✓');
+  r.check((await card('insp_ev1').locator(sel('event-chip', 'insp_el')).evaluate((e) => getComputedStyle(e).backgroundColor)) === chipBg, '끝내도 라벨 칩 색은 그대로');
   await card('insp_ev1').locator(sel('event-chip', 'insp_el')).click();
   const undone = await serverUntil(() => read('insp_ev1'), (d) => d?.done === false);
   r.check(undone?.done === false && undone.doneAt === undefined, '한 번 더 = 완료 풀기 (doneAt 지움)');
@@ -189,7 +195,7 @@ try {
   r.check((await serverUntil(() => read('insp_ev2'), (d) => d?.deletedAt === null))?.deletedAt === null, 'Ctrl+Z → 되살아난다');
   r.check(await waitFor(card('insp_ev2')), '목록에 돌아온다');
 
-  await card('insp_ev1').locator(sel('event-complete')).click();
+  await card('insp_ev1').locator(sel('event-done-chip')).click();
   await serverUntil(() => read('insp_ev1'), (d) => d?.done === true);
   await page.locator('body').click({ position: { x: 5, y: 600 } });
   await page.keyboard.press('Control+z');

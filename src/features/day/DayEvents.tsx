@@ -1,7 +1,7 @@
 // 하루 화면의 일정 칸 (V4 features/day/DayEvents.tsx).
 //
 // - 머리줄 `▼ 📅 일정 N [+ 추가] ……… ⚙️` (기록 칸과 같은 배치 - V4 사용자 결정).
-// - 카드: 휴대폰 2열, PC 1열. ☐ 완료 · 라벨 칩(누르면 완료) · ⏰ 알림 · ⏳ 기한 · 글 · 🔗 링크 수 · 첨부.
+// - 카드: 휴대폰 2열, PC 1열. 라벨 칩(누르면 완료 - 끝내면 칩 앞에 ✓, 라벨이 없으면 회색 ○ 칩 - P10-1) · ⏰ 알림 · ⏳ 기한 · 글 · 🔗 링크 수 · 첨부.
 //   카드를 누르면 오른쪽 일정 칸(수정)이 열린다. 고치는 일정은 파란 테두리로 짚는다.
 // - ▲▼ 순서 = 옮긴 일정의 order 하나만 (features/events/eventOps reorderOps).
 // - 이월(DESIGN 5-1 - 계산): 오늘 칸은 오늘 것 아래에 따라오는 일정을 '↪ 10/5부터'와 함께(▲▼는 각 무리 안에서),
@@ -16,12 +16,12 @@ import { openWindow } from '../../app/windows';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
 import { periodPosition } from '../../domain/period';
-import { labelColor } from '../../domain/labels';
 import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
 import { deleteEvent, moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
 import DueBadge from '../events/DueBadge';
+import EventDoneChip from '../events/EventDoneChip';
 import EventAlarmWindow from '../events/EventAlarmWindow';
 import { doneOnDay, isGrouped, orderAfter, type ItemDoc } from '../events/eventOps';
 import { useCarried } from '../events/forward';
@@ -316,9 +316,7 @@ function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing,
           ? 'border-primary ring-2 ring-primary bg-blue-50 text-slate-800'
           : editing
           ? 'border-primary ring-1 ring-primary bg-primary/5'
-          : done
-            ? 'bg-slate-50 border-slate-100 text-slate-400'
-            : 'bg-white border-slate-200/60 hover:border-slate-300 text-slate-800'
+          : 'bg-white border-slate-200/60 hover:border-slate-300 text-slate-800'
       }`}
     >
       {/* 휴대폰(2열 카드): 위 줄에 순서 바꾸기 · 수정, 아래에 내용. PC(1열): 한 줄 - 왼쪽 ▲▼(세로), 가운데 내용, 오른쪽 수정.
@@ -387,41 +385,19 @@ function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing,
 
       <div className="min-w-0 sm:order-2 sm:flex-1">
         <div className="leading-relaxed text-sm break-words">
-          {/* 완료 체크 (UX-AUDIT H1) - 라벨 칩 누르기도 그대로 완료다 */}
-          <input
-            type="checkbox"
-            checked={done}
-            data-event-complete
-            aria-label="일정 완료"
-            title={done ? '완료 풀기' : '완료'}
-            onClick={stop}
-            onChange={onToggle}
-            className="inline-block align-middle mr-1.5 w-4 h-4 rounded text-primary border-slate-300 accent-primary cursor-pointer"
-          />
-
-          {/* 라벨 칩: 누르면 완료 (이월 라벨이면 이월도 멈춘다) */}
-          {labels.map((l) => {
-            const c = labelColor(l.color);
-            return (
-              <span
-                key={l.id}
-                data-event-chip={l.id}
-                onClick={(e) => {
-                  stop(e);
-                  onToggle();
-                }}
-                title={l.props?.forward ? '클릭하여 완료 처리 (이월 정지)' : '클릭하여 완료 처리'}
-                className="inline-block align-middle mr-1.5 text-xs font-bold px-2 py-0.5 rounded-md shadow-2xs whitespace-nowrap cursor-pointer"
-                style={{
-                  backgroundColor: done ? 'var(--color-slate-100)' : c.bg,
-                  color: done ? 'var(--color-slate-400)' : c.text,
-                  border: '1px solid ' + (done ? 'var(--color-slate-200)' : c.border),
-                }}
-              >
-                {l.name}
-              </span>
-            );
-          })}
+          {/* 라벨 칩 = 완료 (P10-1: ☐는 없앴다, 끝내면 칩 앞에 ✓ - 색·글은 그대로). 라벨이 없으면 회색 ○ 칩 */}
+          {(labels.length > 0 ? labels : [null]).map((l, i) => (
+            <EventDoneChip
+              key={l?.id ?? 'none'}
+              label={l}
+              done={done}
+              mark={i === 0}
+              onToggle={onToggle}
+              forward={!!l?.props?.forward}
+              className="mr-1.5 text-xs px-2 py-0.5 rounded-md"
+              data={{ 'data-event-chip': l?.id ?? '' }}
+            />
+          ))}
 
           {/* 알림이 걸린 일정에만 ⏰ (없는 일정까지 보이면 모두 걸린 것처럼 헷갈린다 - V4). 누르면 시각 바꾸기·끄기 */}
           {ev.time && (
@@ -469,7 +445,7 @@ function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing,
 
           <DueBadge due={ev.due} today={today} completed={done} />
 
-          <span data-event-text className={`inline align-middle ${done ? 'line-through text-slate-400' : ''}`}>
+          <span data-event-text className="inline align-middle">
             {ev.text}
           </span>
           {ev.seriesId && (
@@ -481,7 +457,7 @@ function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing,
             <span
               data-event-period={`${pos.k}/${pos.n}`}
               title={`기간 일정 - ${pos.n}일 가운데 ${pos.k}째 날`}
-              className={`inline align-middle ml-1 text-xs font-bold ${done ? 'text-slate-400' : 'text-indigo-500'}`}
+              className="inline align-middle ml-1 text-xs font-bold text-indigo-500"
             >
               ({pos.k}/{pos.n})
             </span>

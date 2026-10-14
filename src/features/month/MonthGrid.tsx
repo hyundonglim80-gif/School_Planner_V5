@@ -16,6 +16,7 @@ import HolidayName from '../../ui/HolidayName';
 import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
+import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
 import PeriodBar from './PeriodBar';
 import { LessonStrip } from '../lessons/CalendarLessons';
 import type { LessonSubjects } from '../lessons/lessonSubjects';
@@ -199,41 +200,28 @@ export default function MonthGrid(p: MonthGridProps) {
                                 stop(e);
                                 p.onEventClick(ev, date, e);
                               }}
-                              style={p.compact && c && !done ? { borderLeftWidth: '3px', borderLeftColor: c.border } : undefined}
+                              style={p.compact && c ? { borderLeftWidth: '3px', borderLeftColor: c.border } : undefined}
                               title="누르면 오른쪽 칸에서 고치기"
                               className={`group/ev relative rounded text-2xs font-medium leading-tight transition-all border block hover:shadow-sm cursor-pointer ${
                                 p.compact ? 'px-1 py-[1px] truncate whitespace-nowrap [container-type:inline-size]' : 'px-1.5 py-0.5 break-words'
-                              } ${isPicked ? 'bg-primary/10 border-primary text-primary' : done ? 'bg-slate-100 text-slate-400 border-slate-100' : 'bg-blue-50 text-blue-800 border-blue-100'}`}
+                              } ${isPicked ? 'bg-primary/10 border-primary text-primary' : 'bg-blue-50 text-blue-800 border-blue-100'}`}
                             >
                               {p.multiOn && <input type="checkbox" checked={isPicked} readOnly tabIndex={-1} className="inline-block align-middle mr-1 pointer-events-none" />}
-                              {/* 휴대폰은 라벨 이름 대신 왼쪽 색 띠 (이름이 칸의 절반을 먹었다 - V4) */}
-                              {label && c && !p.multiOn && !p.compact && (
-                                <span
-                                  data-month-event-chip={ev.id}
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={(e) => {
-                                    stop(e);
-                                    p.onToggleDone(ev, date);
-                                  }}
-                                  onKeyDown={(e) => {
-                                    if (e.key !== 'Enter' && e.key !== ' ') return;
-                                    e.preventDefault();
-                                    stop(e);
-                                    p.onToggleDone(ev, date);
-                                  }}
-                                  title={done ? '눌러서 완료 풀기' : '눌러서 완료'}
-                                  className="inline-block align-middle mr-1 text-2xs font-bold px-1.5 py-0.5 rounded shadow-2xs whitespace-nowrap cursor-pointer"
-                                  style={{
-                                    backgroundColor: done ? 'var(--color-slate-100)' : c.bg,
-                                    color: done ? 'var(--color-slate-400)' : c.text,
-                                    border: '1px solid ' + (done ? 'var(--color-slate-200)' : c.border),
-                                  }}
-                                >
-                                  {label.name}
-                                </span>
+                              {/* 휴대폰은 라벨 이름 대신 왼쪽 색 띠 (이름이 칸의 절반을 먹었다 - V4). 칩 = 완료, 끝내면 칩 앞에 ✓ (P10-1).
+                                  칩이 없는 자리(휴대폰·여러 개 고르기)는 글 앞에 ✓만 */}
+                              {!p.multiOn && !p.compact ? (
+                                <EventDoneChip
+                                  label={label ?? null}
+                                  done={done}
+                                  onToggle={() => p.onToggleDone(ev, date)}
+                                  forward={!!label?.props?.forward}
+                                  className="mr-1 text-2xs px-1.5 py-0.5"
+                                  data={{ 'data-month-event-chip': ev.id }}
+                                />
+                              ) : (
+                                done && <DoneMark className={p.compact ? 'mr-0.5' : ''} />
                               )}
-                              <span className={`inline align-middle ${done ? 'line-through text-slate-400' : ''}`} style={p.compact ? { fontSize: fitToWidthFontSize(ev.text) } : undefined}>
+                              <span className="inline align-middle" style={p.compact ? { fontSize: fitToWidthFontSize(ev.text) } : undefined}>
                                 {ev.text}
                               </span>
                               {links > 0 && !p.compact && (

@@ -6,7 +6,7 @@
 > 저장소 `hyundonglim80-gif/School_Planner_V5`. 계획·설계 문서는 `docs/`(PLAN·DESIGN·MENU·PARITY). P1-1(10-08)에 V4 저장소 `docs/V5/`에서 옮겨 왔다 - 이것이 정본.
 > **이 파일이 정본 기억**이다(10-14 P9-4 - V4는 '보관 - 고칠 때만', V4 화면에 'V5로 옮겼습니다' 띠, V4 알림 함수 넷은 10-14 지웠다).
 
-마지막 합침: 2026-10-08 (영-전-3-현동림 PC) - 처음 씀(V4 CLAUDE.md 1·2·5장과 이 기기 기억에서)
+마지막 합침: 2026-10-14 (C:\HDL PC) - 이 기기 기억의 '이어서'를 P10으로 맞춤 (처음 씀 10-08 영-전-3-현동림 PC)
 
 ---
 
@@ -26,7 +26,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-14 V5 계획(P0~P9) 모두 끝**. 같은 날 사용자 의견 27가지로 **P10(세션 다섯)** 계획 - `docs/PLAN.md` 6장 `### P10`. '이어서' = **P10-1**(■1부터). 부탁 없음.
+- **2026-10-14 V5 계획(P0~P9) 모두 끝**. 같은 날 사용자 의견 27가지로 **P10(세션 다섯)** 계획 - `docs/PLAN.md` 6장 `### P10`. '이어서' = **P10-1**(■2부터 - ■1 완료 ✓ 칩 끝). 부탁 없음.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -171,6 +171,7 @@
 - 구글 로그인이 만료되면(첨부·사진·백업·캘린더) 오류 대신 '구글 로그인이 필요합니다' 창을 띄우고 그 단추에서 로그인 창을 연다.
 - 진도표 차시 칸 = 그 내용의 차시 수('2'면 같은 내용을 2행으로). 1, 2, 3 … 차례 번호로 적은 옛 표는 늘리지 않는다.
 - 체크리스트는 글 안의 `☐ `/`☑ `, 카드 '☑ n/m', 체크한 줄은 보이기만 아래로. 첫·마지막 줄 '#라벨'은 라벨로 떼고 그 줄을 지운다(숫자 8자리 학생 태그는 남긴다).
+- **일정 완료 = 칩 앞에 ✓**(P10-1 10-14 사용자 의견): 끝낸 일정도 칩 색·글은 그대로(흑백·줄긋기 없음), 하루 카드의 ☐는 없앴다 - 라벨 칩을 누르면 완료, 라벨이 없으면 회색 ○ 칩.
 - 일정 라벨 속성 '구글 캘린더' - 켠 라벨의 일정은 저장·완료·옮기기·지우기를 구글 캘린더에도. 저장할 때 로그인이 없으면 로그인 창을 묻는다.
 - 교사 유형은 시간표 창에서 고른다((초등) 담임 / 전담 / (중등) 전담 + 담임). 전담은 담임 도구(출석부·알림장)를 숨긴다. 수업 칸 글자는 '5-2 과학'.
 - 명렬표는 학급 화면 안(⋮에 없다). 수업 종은 하루 '수업' 옆. 링크 연결 창은 저장하면 닫힌다.
@@ -248,6 +249,7 @@
   `eventForm.ts`(순수 - 칸 ↔ 문서, 속성은 라벨과 다른 것만 `propsToStore`, 저장 = 바뀐 칸만 `editChanges`) · `eventOps.ts`(순수 - `reorderOps`·`doneChanges`·`orderAfter`·`itemPath`) ·
   `actions.ts`(`setEventDone`·`moveEventInList`·`createEvent`·`saveEvent`·`setEventAlarm`·`deleteEvent` - 되돌리기까지) · `EventAlarmWindow.tsx`(⏰ 시각 `[data-alarm-window|alarm-time|alarm-save|alarm-off]`) ·
   `EventAlarms.tsx`(Shell에 하나 - 앱 안 알림, 20초마다 사본) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]`) · `QuickInputChips.tsx`(`[data-quick-chip]`) · `DueBadge.tsx`(`[data-due-badge]`) ·
+  `EventDoneChip.tsx`(완료 칩 한 곳 - 라벨 칩·라벨 없으면 회색 ○, 끝내면 칩 앞 ✓ `[data-event-done-chip=0|1]`(✓를 단 칩)·`[data-event-check]`, 좁은 자리는 `DoneMark` - 하루·주간·작년·월간·그날 목록·년간·학사력·링크 보기, P10-1) ·
   `shortcuts.ts`(`newEvent` = ＋ 새로 → 보는 날의 새 일정, `recurring` = 반복 줄을 편 새 일정 칸, `forwarding` = 오늘로 가서 지난 일정 줄). 순수 셈 `domain/eventDue.ts`·`eventAlarm.ts`(`normalizeTimeInput`·`dueAlarms`)·`quickInput.ts`(V4 테스트째). 소리 `app/sound.ts`. 자동 높이 글 칸 `ui/AutoTextarea.tsx`.
   - **이월(계산 - P3-3)**: `domain/forward.ts`(`forwardOn`·`isCarried`·`carriedOf`·`staleOf`·`carriedSince`) · `events/forward.ts`(`useCarried` = 오늘로 따라오는 일정·지난 일정, `usePastRow`·`staleCountNow`) · `ForwardMarks.tsx`(Shell - 처음 따라올 때 carrying 한 번, live에서만) ·
     `eventOps.carriedDoneChanges`(오늘 칸에서 끝내면 오늘로) · 하루 `DayEvents`(오늘 것 아래 `[data-event-carried|event-since]`, 지난 날 `[data-event-away|event-to-today]`) · `day/DayPastEvents.tsx`('📥 지난 일정 N개' `[data-past-*]`) · `ui/useToday.ts`(자정에 바뀌는 오늘).

@@ -7,7 +7,7 @@ import { useLayoutEffect, useState } from 'react';
 import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
 import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
-import { labelColor } from '../../domain/labels';
+import EventDoneChip from '../events/EventDoneChip';
 import type { LabelDoc } from '../../data/select';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import { LessonWraps } from '../lessons/CalendarLessons';
@@ -77,7 +77,6 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
           <ul className="flex flex-col gap-1">
             {events.map((ev) => {
               const label = labelsOf(ev)[0];
-              const c = label ? labelColor(label.color) : null;
               const done = doneOnDay(ev, date);
               const links = ev.linkIds?.length ?? 0;
               return (
@@ -86,35 +85,18 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
                     type="button"
                     data-sheet-event={ev.id}
                     onClick={() => onOpenEvent(ev)}
-                    className={`w-full text-left flex items-start gap-1.5 px-2 py-1.5 rounded-lg border text-sm leading-snug cursor-pointer ${
-                      done ? 'bg-slate-50 border-slate-100 text-slate-400' : 'bg-white border-slate-200 text-slate-800'
-                    }`}
+                    className="w-full text-left flex items-start gap-1.5 px-2 py-1.5 rounded-lg border text-sm leading-snug cursor-pointer bg-white border-slate-200 text-slate-800"
                   >
-                    {label && c && (
-                      // 감싼 것이 <button>이라 칩은 span(role=button) - 누르면 일정을 열지 않고 완료만 뒤집는다
-                      <span
-                        role={onToggleDone ? 'button' : undefined}
-                        data-sheet-event-chip={ev.id}
-                        title={onToggleDone ? '눌러서 완료' : undefined}
-                        onClick={
-                          onToggleDone
-                            ? (e) => {
-                                e.stopPropagation();
-                                onToggleDone(ev);
-                              }
-                            : undefined
-                        }
-                        className={`shrink-0 text-2xs font-bold px-1.5 py-0.5 rounded ${onToggleDone ? 'cursor-pointer' : ''}`}
-                        style={{
-                          backgroundColor: done ? 'var(--color-slate-100)' : c.bg,
-                          color: done ? 'var(--color-slate-400)' : c.text,
-                          border: `1px solid ${done ? 'var(--color-slate-200)' : c.border}`,
-                        }}
-                      >
-                        {label.name}
-                      </span>
-                    )}
-                    <span className={`min-w-0 break-words ${done ? 'line-through' : ''}`}>{ev.text}</span>
+                    {/* 감싼 것이 <button>이라 칩은 span(role=button) - 누르면 일정을 열지 않고 완료만 뒤집는다. 끝내면 칩 앞에 ✓ (P10-1) */}
+                    <EventDoneChip
+                      label={label ?? null}
+                      done={done}
+                      onToggle={onToggleDone ? () => onToggleDone(ev) : undefined}
+                      forward={!!label?.props?.forward}
+                      className="shrink-0 text-2xs px-1.5 py-0.5"
+                      data={{ 'data-sheet-event-chip': ev.id }}
+                    />
+                    <span className="min-w-0 break-words">{ev.text}</span>
                     {links > 0 && <span className="ml-auto shrink-0 text-2xs font-bold text-yellow-700">🔗 {links}</span>}
                   </button>
                 </li>

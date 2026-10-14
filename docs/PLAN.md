@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P10-1 일정 - 완료 표시·체크박스·반복 요일·＋ 새로·알림 소리 길이** (6장 `### P10-1`, ■1부터).
+**P10-1 일정 - 완료 표시·체크박스·반복 요일·＋ 새로·알림 소리 길이** (6장 `### P10-1`, ■2부터 - ■1 끝 10-14).
 P10 = 사용자가 V5를 써 보며 모은 의견 27가지(2026-10-14) - 확인 결과와 세션 나누기는 6장 `### P10. 사용 의견 반영` 머리 표.
 P0~P9는 모두 끝났다(10-14). main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다.
 
@@ -1325,7 +1325,7 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 **시작 조건**: 없음(P9 끝). **의견**: 2d · 6a · 6b · 6d · 8.
 **먼저 읽을 것**: `CLAUDE.md` 7장 '일정'·'기간·반복·묶음' 줄 · `features/day/DayEvents.tsx` 380~430줄(☐·라벨 칩) · `features/events/EventPanel.tsx` 80~200줄(끝 날·반복 줄) ·
 `features/events/RecurRow.tsx` · `domain/recur.ts` · 설명서 `chapters/events.ts`(완료·기간·반복·알림 주제) · `chapters/settings.ts`(알림 탭).
-- [ ] ■1 **완료 = 라벨에 ✓**(6a) + **☐ 빼기**(2d): 완료한 일정은 칩 색·글을 그대로 두고 칩 앞에 ✓(흑백·줄긋기 없앰). 한 곳 부품으로 모은다(예 `events/EventDoneChip` - 칩·✓·누르면 완료).
+- [x] ■1 **완료 = 라벨에 ✓**(6a) + **☐ 빼기**(2d): 완료한 일정은 칩 색·글을 그대로 두고 칩 앞에 ✓(흑백·줄긋기 없앰). 한 곳 부품으로 모은다(예 `events/EventDoneChip` - 칩·✓·누르면 완료).
   고칠 곳: 하루 `DayEvents` · 주간 `WeekDayCard`·`LastYearDay` · 월간 `MonthGrid`·`MonthDaySheet`·`PeriodBar` · 년간 `YearMonthCard`·`YearSheetMonth`(학사력) - 칩이 없는 좁은 자리는 글 앞 ✓.
   **라벨 없는 일정**(이 칸이 없으면 완료할 길이 없다): 회색 작은 칩(완료 전 '○' → '✓')을 둔다(권장 - 세션에서 모양 정함). 기간 일정은 그날만(doneDates) 그대로. 여러 개 고르기·검색 표시도 본다.
   점검: `inspect-events`·`forward`·`gcal`·`groups`·`manual`이 `event-complete`를 누른다 → 칩 누르기로 바꾼다. `event-done` 값 읽기는 그대로.

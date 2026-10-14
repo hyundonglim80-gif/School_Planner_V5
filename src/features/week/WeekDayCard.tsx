@@ -7,7 +7,7 @@ import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
 import { periodPosition } from '../../domain/period';
-import { labelColor } from '../../domain/labels';
+import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
 import type { LabelDoc } from '../../data/select';
 import DueBadge from '../events/DueBadge';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
@@ -80,7 +80,6 @@ function EventChip({
 }) {
   const done = doneOnDay(ev, day);
   const label = labels[0];
-  const c = label ? labelColor(label.color) : null;
   const pos = periodPosition(ev, day);
   const links = ev.linkIds?.length ?? 0;
   return (
@@ -98,9 +97,7 @@ function EventChip({
       className={`group relative px-2 py-1.5 rounded-lg text-xs leading-snug transition-all border block hover:shadow-sm cursor-pointer break-words ${
         picked
           ? 'bg-primary/10 border-primary text-primary'
-          : done
-            ? 'bg-slate-50 border-slate-100 text-slate-400'
-            : carried
+          : carried
               ? 'bg-amber-50/60 border-amber-100 text-slate-800 font-medium'
               : 'bg-blue-50/60 border-blue-100 text-slate-800 font-medium'
       }`}
@@ -111,35 +108,21 @@ function EventChip({
           ↪
         </span>
       )}
-      {/* 라벨 칩을 누르면 완료 (V4 그대로) */}
-      {label && c && !multiOn && (
-        <span
-          data-week-event-chip={ev.id}
-          role="button"
-          tabIndex={0}
-          onClick={(e) => {
-            stop(e);
-            onToggle();
-          }}
-          onKeyDown={(e) => {
-            if (e.key !== 'Enter' && e.key !== ' ') return;
-            e.preventDefault();
-            stop(e);
-            onToggle();
-          }}
-          title={done ? '눌러서 완료 풀기' : '눌러서 완료'}
-          className="inline-block align-middle mr-1.5 text-2xs font-bold px-1.5 py-0.5 rounded shadow-2xs whitespace-nowrap cursor-pointer"
-          style={{
-            backgroundColor: done ? 'var(--color-slate-100)' : c.bg,
-            color: done ? 'var(--color-slate-400)' : c.text,
-            border: '1px solid ' + (done ? 'var(--color-slate-200)' : c.border),
-          }}
-        >
-          {label.name}
-        </span>
+      {/* 라벨 칩을 누르면 완료 - 끝내면 칩 앞에 ✓ (P10-1, 라벨이 없으면 회색 ○ 칩). 여러 개 고르는 동안은 칩 대신 ✓만 */}
+      {multiOn ? (
+        done && <DoneMark />
+      ) : (
+        <EventDoneChip
+          label={label ?? null}
+          done={done}
+          onToggle={onToggle}
+          forward={!!label?.props?.forward}
+          className="mr-1.5 text-2xs px-1.5 py-0.5"
+          data={{ 'data-week-event-chip': ev.id }}
+        />
       )}
       <DueBadge due={ev.due} today={today} completed={done} small />
-      <span className={`inline align-middle ${done ? 'line-through text-slate-400' : ''}`}>{ev.text}</span>
+      <span className="inline align-middle">{ev.text}</span>
       {pos && <span className="inline align-middle ml-1 text-2xs font-bold text-slate-400">({pos.k}/{pos.n})</span>}
       {links > 0 && (
         <button

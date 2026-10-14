@@ -104,7 +104,7 @@ try {
 
   r.section('오늘 칸에서 끝내기 = 그날로 옮겨 적기 (문서 하나)');
   let before = await stamps();
-  await card('insp_fw1').locator(sel('event-complete')).click();
+  await card('insp_fw1').locator(sel('event-done-chip')).click();
   const fin = await serverUntil(() => read('insp_fw1'), (d) => d?.done === true);
   r.check(fin?.date === TODAY && fin.carriedFrom === daysAgo(3) && fin.carrying === undefined, `date 오늘·carriedFrom 처음 날·carrying 걷기 (${fin?.date}, ${fin?.carriedFrom}, ${fin?.carrying})`);
   after = await serverUntil(stamps, (s) => changed(before, s).length > 0);

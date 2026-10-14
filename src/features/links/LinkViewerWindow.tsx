@@ -25,6 +25,7 @@ import { requestFocus } from '../search/focus';
 import { removeLessonLink, removeLink } from './actions';
 import { LINK_KIND_ICON, LINK_KIND_NAME, lessonEndOf, linkKindOf, parseLessonLink } from './linkOps';
 import type { LinkWindowParams } from './open';
+import { DoneMark } from '../events/EventDoneChip';
 
 const btn = 'px-2 py-1 text-xs font-bold rounded-lg border transition-colors cursor-pointer';
 
@@ -123,7 +124,9 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
         {header(LINK_KIND_ICON[kind], title, linkId, { move: () => goTo(t.date ?? null), edit: () => edit(t) })}
         {/* 글 없이 표만 있으면 글 칸은 비운다 */}
         {(t.text || tables.length === 0) && (
-          <div data-link-text className={`p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs font-medium whitespace-pre-wrap break-words leading-relaxed min-h-[36px] ${t.done ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+          <div data-link-text className={`p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs font-medium whitespace-pre-wrap break-words leading-relaxed min-h-[36px] ${t.done && kind !== 'event' ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+            {/* 끝낸 일정은 줄긋기 대신 ✓ (P10-1) - 메모·기록의 완료는 그대로 */}
+            {t.done && kind === 'event' && <DoneMark />}
             {t.text ? <FormattedText text={t.text} /> : <span className="text-slate-400">(내용 없음)</span>}
           </div>
         )}

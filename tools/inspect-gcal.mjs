@@ -161,7 +161,7 @@ try {
   await page.keyboard.press('Escape');
   const card = page.locator(sel('event-card', id));
   await waitFor(card, 8000);
-  await card.locator(sel('event-complete')).click();
+  await card.locator(sel('event-done-chip')).click();
   r.check(await waitFor(() => bare(ofItem(id)[0]?.summary).startsWith('✅ ') && ofItem(id)[0]?.extendedProperties?.private?.completed === 'true', 10000), '완료 → ✅');
   const openEdit = async () => {
     await page.evaluate(([s, d, i]) => window.sp5.openWindow('event', { sid: s, date: d, id: i }), [sid, DAY, id]);
@@ -184,7 +184,7 @@ try {
   await page.goto(page.url().replace(/#.*$/, `#/day/${DAY_V4}`));
   const v4card = page.locator(sel('event-card', 'inspGcalV4'));
   await waitFor(v4card, 8000);
-  await v4card.locator(sel('event-complete')).click();
+  await v4card.locator(sel('event-done-chip')).click();
   r.check(await waitFor(() => google.events.get('V4SENT')?.extendedProperties?.private?.sp_item === 'inspGcalV4', 10000), 'V4 것을 고쳐 V5가 맡는다(sp_item)');
   const twins = all().filter((e) => e.start?.date === DAY_V4 && bare(e.summary).includes('구글점검 가져온 일정'));
   r.check(twins.length === 1 && bare(twins[0].summary).startsWith('✅'), `두 벌이 되지 않는다 (${twins.length}) · 완료 ✅`);
@@ -193,7 +193,7 @@ try {
   await page.goto(page.url().replace(/#.*$/, `#/day/${DAY_P}`));
   const pcard = page.locator(sel('event-card', 'inspGcalPeriod'));
   await waitFor(pcard, 8000);
-  await pcard.locator(sel('event-complete')).click();
+  await pcard.locator(sel('event-done-chip')).click();
   r.check(await waitFor(() => ofItem('inspGcalPeriod').length === 3, 10000), `사흘 = 셋 (${ofItem('inspGcalPeriod').length})`);
   const ps = ofItem('inspGcalPeriod').sort((a, b) => a.start.date.localeCompare(b.start.date));
   r.check(ps.map((e) => bare(e.summary)).join(' | ') === '✅ 구글점검 기간 (1/3) [구글점검] | 구글점검 기간 (2/3) [구글점검] | 구글점검 기간 (3/3) [구글점검]', `그날만 완료 ✅ (${ps.map((e) => bare(e.summary)).join(' | ')})`);

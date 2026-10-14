@@ -1,7 +1,7 @@
 // 작년 이맘때 (V4 features/week/LastYearDay.tsx) - 주간 요일 카드 아래에 작년 같은 요일의 일정·기록을 흐리게.
 // 항목을 누르면 고르고(체크), 주간 화면 위 '📥 올해로 가져오기'가 올해 이 요일로 복사한다. 이 칸을 눌러도 하루 화면으로 가지 않는다.
 // 자료는 기기 사본에서 - 작년 것도 사본에 있다(V4는 켤 때 서버에서 읽었다).
-import { labelColor } from '../../domain/labels';
+import EventDoneChip from '../events/EventDoneChip';
 import type { LabelDoc } from '../../data/select';
 import type { ItemDoc } from '../events/eventOps';
 import { isImportableNote, pickKeyOf, type LastYearPick } from './lastYear';
@@ -43,19 +43,12 @@ export default function LastYearDay({ lastDate, toDate, events, notes, existsThi
         <div className="space-y-1">
           {events.map((ev) => {
             const label = eventLabels(ev)[0];
-            const c = label ? labelColor(label.color) : null;
             const key = pickKeyOf({ item: ev, toDate });
             const body = (
               <span className="min-w-0">
-                {label && c && (
-                  <span
-                    className="inline-block align-middle mr-1 text-2xs font-bold px-1 py-px rounded whitespace-nowrap"
-                    style={{ backgroundColor: c.bg, color: c.text, border: '1px solid ' + c.border }}
-                  >
-                    {label.name}
-                  </span>
-                )}
-                <span className={`align-middle ${ev.done ? 'line-through text-slate-400' : ''}`}>{ev.text}</span>
+                {/* 끝낸 일정은 칩 앞에 ✓ (P10-1 - 보기만) */}
+                <EventDoneChip label={label ?? null} done={!!ev.done} className="mr-1 text-2xs px-1 py-px" />
+                <span className="align-middle">{ev.text}</span>
               </span>
             );
             if (existsThisYear(ev)) {

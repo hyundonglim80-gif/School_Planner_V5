@@ -294,8 +294,9 @@ try {
   });
 
   await topic('event-complete', async () => {
-    r.check((await count('[data-event-card="insp_man_e1"][data-event-done="0"]')) === 1, '카드에 완료 표시 (☐ - 끝내지 않음)');
-    r.check((await q(sel('event-card', 'insp_man_e1')).locator(sel('event-complete')).count()) === 1, '카드의 ☐ 단추');
+    r.check((await count('[data-event-card="insp_man_e1"][data-event-done="0"]')) === 1, '카드에 완료 표시 (끝내지 않음)');
+    r.check((await q(sel('event-card', 'insp_man_e1')).locator(sel('event-done-chip', '0')).count()) === 1, '완료 칩 (✓ 없음)');
+    r.check((await q(sel('event-card', 'insp_man_e1')).locator('input[type="checkbox"]').count()) === 0, '☐ 체크 칸 없음');
     r.check((await q(sel('event-card', 'insp_man_e1')).locator(sel('event-chip')).count()) > 0, '라벨 칩 (누르면 완료)');
   });
 
