@@ -70,6 +70,21 @@ try {
   await field(0, 'gender').selectOption('F');
   await field(2, 'status').selectOption('out');
   r.check(await waitFor(page.locator(sel('roster-dirty'))), '저장하지 않은 것 표시');
+  // 번호 칸: 두 자리 번호가 잘리지 않는다 (숫자 칸 화살표가 칸을 먹었다 - P10-2)
+  await field(2, 'num').fill('38');
+  const numFits = await field(2, 'num').evaluate((el) => {
+    const probe = document.createElement('span');
+    const cs = getComputedStyle(el);
+    probe.style.font = cs.font;
+    probe.textContent = el.value;
+    document.body.append(probe);
+    const textW = probe.getBoundingClientRect().width;
+    probe.remove();
+    const inner = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    return { textW, inner, spinner: cs.appearance };
+  });
+  r.check(numFits.textW + 4 <= numFits.inner && numFits.spinner === 'textfield', `번호 칸 두 자리가 다 보인다 (글 ${numFits.textW.toFixed(1)} / 칸 ${numFits.inner.toFixed(1)}, 화살표 ${numFits.spinner})`);
+  await field(2, 'num').fill('3');
   r.check(((await page.locator(sel('roster-count')).textContent()) ?? '').includes('전출 1명'), '총·재학·전출 수');
   // 화면을 떠났다 와도 고치던 것이 남는다
   await page.goto(page.url().replace(/#.*$/, '#/day'));

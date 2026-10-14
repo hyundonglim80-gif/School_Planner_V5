@@ -234,6 +234,9 @@ try {
   const weekRow = (d, n) => page.locator(`${sel('week-lessons', d)} ${sel('week-lesson', n)}`);
   r.check(await waitFor(weekRow('2026-10-12', 1), 8000), '요일 카드에 수업 줄');
   r.check((await weekRow('2026-10-12', 1).textContent()).includes('도덕'), '주간 1교시 = 도덕');
+  r.check((await weekRow('2026-10-12', 2).locator(sel('week-lesson-note')).textContent()) === '운동장', '과목 뒤에 비고(준비물) 첫 줄');
+  r.check((await weekRow('2026-10-12', 2).getAttribute('title')) === '2교시 수학\n운동장\n줄넘기', '마우스를 올리면 비고 전체');
+  r.check(await weekRow('2026-10-12', 2).locator(sel('week-lesson-note')).evaluate((el) => getComputedStyle(el).textOverflow === 'ellipsis'), "칸 폭을 넘으면 '…'");
   r.check((await page.locator(`${sel('week-lessons', '2026-10-13')} ${sel('week-lesson')}`).count()) === (await page.locator(`${sel('week-lessons', '2026-10-12')} ${sel('week-lesson')}`).count()), '요일끼리 교시 줄 수가 같다');
   await weekRow('2026-10-12', 3).click();
   const panel = page.locator(sel('lesson-panel', 'lesson:2026-10-12:3'));

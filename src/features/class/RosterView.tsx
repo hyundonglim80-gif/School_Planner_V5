@@ -652,7 +652,7 @@ function StudentTable({
                 </td>
               )}
               <td className="p-1.5 text-center">
-                <input type="number" data-student-field="num" value={st.num || ''} onChange={(e) => onChange(row, { num: parseInt(e.target.value, 10) || 0 })} aria-label="번호" className={`${input} no-spinner w-12 text-center font-bold text-slate-700`} />
+                <input type="number" data-student-field="num" value={st.num || ''} onChange={(e) => onChange(row, { num: parseInt(e.target.value, 10) || 0 })} aria-label="번호" className={`${input} no-spinner w-14 text-center font-bold text-slate-700 tabular-nums`} />
               </td>
               <td className="p-1.5">
                 <input type="text" data-student-field="name" value={st.name} placeholder="이름" onChange={(e) => onChange(row, { name: e.target.value })} aria-label="이름" className={`${input} w-full font-bold text-slate-800`} />

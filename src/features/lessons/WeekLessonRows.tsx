@@ -1,6 +1,7 @@
 // 주간 요일 카드의 수업 줄 (V4 features/week/WeekGrid.tsx 수업 부분). 모든 요일에 같은 수의 교시 줄 - 같은 교시가 옆 요일과 나란히 선다.
 //   빈 교시도 같은 높이(h-7)의 자리. 교시를 누르면 'N교시 수정' 칸(features/lessons/LessonPanel). 🔗 n = 연결된 것.
 //   교과 모드는 반을 반 색 칩으로('5-2'), 과목은 작게. 오늘 카드는 지금 교시를 짚는다. 진도가 있으면 'k/n'(민 교시는 '밀림') 배지(P6-2).
+//   과목 뒤에 비고(준비물) 첫 줄을 남은 폭만큼 흐리게('…' - 마우스를 올리면 전체, P10-2). 과목이 없으면 비고가 그 자리에.
 import { firstLine, type LessonDayView } from '../../domain/lessons';
 import { slotId, type ProgressMark } from '../../domain/progress';
 import { parseSlot, type ClassColorClasses } from '../../domain/teachingSlot';
@@ -32,6 +33,8 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
           const c = view.cells.find((x) => x.n === n);
           const filled = !!(c && (c.subject || c.note));
           const text = c ? c.subject || firstLine(c.note) : '';
+          // 과목 뒤에 붙이는 비고 첫 줄 (과목이 없으면 비고가 이미 text다)
+          const noteLine = c?.subject ? firstLine(c.note) : '';
           const links = c?.linkIds.length ?? 0;
           const slot = isClassUnit && c?.subject ? parseSlot(c.subject) : null;
           const now = nowPeriod === n;
@@ -45,24 +48,31 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
                 stop(e);
                 onOpen(n);
               }}
-              title={filled ? `${n}교시 ${text}` : `${n}교시 (비어 있음) - 눌러서 수업 적기`}
+              title={filled ? `${n}교시 ${c?.subject || ''}${c?.note ? `${c.subject ? '\n' : ''}${c.note}` : ''}` : `${n}교시 (비어 있음) - 눌러서 수업 적기`}
               className={`h-7 flex items-center gap-1.5 px-2 rounded-lg border text-xs cursor-pointer transition-colors ${
                 filled ? 'bg-slate-50 border-slate-100 hover:bg-slate-100' : 'bg-white/40 border-dashed border-slate-200 hover:bg-slate-50'
               } ${now ? 'ring-2 ring-primary/60 bg-blue-50' : ''}`}
             >
               <span className={`font-bold text-xs shrink-0 ${filled ? 'text-primary' : 'text-slate-300'}`}>{n}교시</span>
-              {slot?.cls ? (
-                <span className="flex-1 min-w-0 flex items-center gap-1">
-                  <span data-slot-class className={`shrink-0 px-1 rounded font-black text-xs tabular-nums ${classColorOf(slot.cls).chip}`}>
-                    {slot.cls}
+              <span className="flex-1 min-w-0 flex items-center gap-1">
+                {slot?.cls ? (
+                  <>
+                    <span data-slot-class className={`shrink-0 px-1 rounded font-black text-xs tabular-nums ${classColorOf(slot.cls).chip}`}>
+                      {slot.cls}
+                    </span>
+                    {slot.subject && <span className="shrink-0 max-w-[60%] truncate text-2xs font-semibold text-slate-600">{slot.subject}</span>}
+                  </>
+                ) : (
+                  <span data-week-lesson-text className={`truncate text-xs ${noteLine ? 'shrink-0 max-w-[60%]' : 'flex-1'} ${filled ? 'font-semibold text-slate-800' : 'text-slate-300'}`}>
+                    {filled ? text : '-'}
                   </span>
-                  {slot.subject && <span className="truncate text-2xs font-semibold text-slate-600">{slot.subject}</span>}
-                </span>
-              ) : (
-                <span data-week-lesson-text className={`truncate text-xs flex-1 ${filled ? 'font-semibold text-slate-800' : 'text-slate-300'}`}>
-                  {filled ? text : '-'}
-                </span>
-              )}
+                )}
+                {noteLine && (
+                  <span data-week-lesson-note className="flex-1 min-w-0 truncate text-2xs text-amber-700/80">
+                    {noteLine}
+                  </span>
+                )}
+              </span>
               {c?.changed && (
                 <span data-week-lesson-changed className="shrink-0 text-xs font-black text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>
                   ✎
