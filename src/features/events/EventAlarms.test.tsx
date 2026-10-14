@@ -102,9 +102,13 @@ describe('＋ 새로 → 새 일정', () => {
     openNewEvent();
     expect(useWindows.getState().windows.map((w) => [w.id, w.params])).toEqual([['event', { sid: SID, date: '2026-10-14' }]]);
     useWindows.setState({ windows: [] });
+    // 메모 화면이면 오늘 - 오늘을 고정한다(고정하지 않으면 오늘이 10-14인 날 깨졌다 - CLAUDE.md 2장)
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 20, 9, 0));
     setScope('memo');
     openNewEvent();
-    expect((useWindows.getState().windows[0].params as { date: string }).date).not.toBe('2026-10-14');
+    expect((useWindows.getState().windows[0].params as { date: string }).date).toBe('2026-10-20');
+    vi.useRealTimers();
   });
 
   it('useEventShortcuts가 단축키 newEvent(＋ 새로)에 건다', () => {
