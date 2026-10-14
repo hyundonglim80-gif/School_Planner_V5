@@ -73,8 +73,9 @@ export async function launch() {
  * 새 창(빈 기기 저장소). 화면 오류(pageerror)와 묻는 창(confirm)을 모은다.
  * dialogs.answer = true/false 로 다음 confirm의 답을 정한다(기본 아니오 - 지우지 않는 쪽).
  */
-export async function newPage(browser, { width = 1400, height = 900 } = {}) {
-  const ctx = await browser.newContext({ viewport: { width, height } });
+export async function newPage(browser, { width = 1400, height = 900, ...context } = {}) {
+  // context = Playwright 창 설정 더 (휴대폰: isMobile·hasTouch·deviceScaleFactor - P9-3 inspect-mobile)
+  const ctx = await browser.newContext({ viewport: { width, height }, ...context });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));

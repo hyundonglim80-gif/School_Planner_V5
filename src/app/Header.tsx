@@ -3,6 +3,7 @@
 //   휴대폰 : SP5 · ⏳ · 🗑️ … 🔍 · (📂) | ? · ⋮ · 사진   (화면 탭은 아래 탭바, ＋는 탭바 위 둥근 단추)
 // 단추는 단축키 id로 일을 부탁한다(keys.runShortcut) - 창이 들어오면 저절로 열린다.
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ddayText, primaryDDay } from '../domain/dday';
 import type { ShortcutId } from '../domain/shortcuts';
 import { useCurrentSpaceId, useSession } from '../data/session';
@@ -130,10 +131,13 @@ export default function Header() {
 function useDropdown() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  /** body로 옮겨 그린 것(둥근 ＋와 그 목록)도 안쪽으로 본다 */
+  const portalRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      const t = e.target as Node;
+      if (ref.current && !ref.current.contains(t) && !portalRef.current?.contains(t)) setOpen(false);
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
@@ -145,7 +149,7 @@ function useDropdown() {
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
-  return { open, setOpen, ref };
+  return { open, setOpen, ref, portalRef };
 }
 
 /** 메뉴 항목 오른쪽의 단축키 (정한 것이 없으면 아무것도) */
@@ -187,41 +191,59 @@ function NewItems({ close }: { close: () => void }) {
   );
 }
 
-/** ＋ 새로 (PC 머리줄) / 둥근 ＋ (휴대폰 - 탭바 위 오른쪽). 어느 화면에서나 새 일정·기록·메모 (V5 새 기능) */
+/**
+ * ＋ 새로 (PC 머리줄) / 둥근 ＋ (휴대폰 - 탭바 위 오른쪽). 어느 화면에서나 새 일정·기록·메모 (V5 새 기능)
+ * 둥근 ＋와 그 목록은 body에 그린다 - 머리줄은 backdrop-blur라 fixed의 기준이 되어, 머리줄 안에 두면 화면 맨 위에 반쯤 걸렸다(P9-3 390px 점검).
+ */
 function NewMenu() {
-  const { open, setOpen, ref } = useDropdown();
+  const { open, setOpen, ref, portalRef } = useDropdown();
+  // 목록을 연 단추 - 둥근 ＋면 그 위에, 머리줄 단추면 그 아래
+  const [fromFab, setFromFab] = useState(false);
+  const list = (
+    <div
+      data-new-list
+      className={`${fromFab ? 'fixed right-4 bottom-36' : 'absolute left-0 top-10'} w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs`}
+    >
+      <NewItems close={() => setOpen(false)} />
+    </div>
+  );
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
         data-new-menu
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
+        onClick={() => {
+          setFromFab(false);
+          setOpen(!(open && !fromFab));
+        }}
+        aria-expanded={open && !fromFab}
         className={`${HEAD_BTN} hidden sm:flex bg-primary hover:bg-blue-700 text-white`}
         title="새로 만들기"
       >
         <span>＋</span>
         <span>새로</span>
       </button>
-      <button
-        type="button"
-        data-new-fab
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        className="sm:hidden fixed right-4 z-40 w-12 h-12 rounded-full bg-primary text-white text-2xl font-bold shadow-lg flex items-center justify-center"
-        style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
-        title="새로 만들기"
-        aria-label="새로 만들기"
-      >
-        ＋
-      </button>
-      {open && (
-        <div
-          data-new-list
-          className="fixed sm:absolute right-4 sm:right-auto sm:left-0 bottom-36 sm:bottom-auto sm:top-10 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs"
-        >
-          <NewItems close={() => setOpen(false)} />
-        </div>
+      {open && !fromFab && list}
+      {createPortal(
+        <div ref={portalRef} className="sm:hidden">
+          <button
+            type="button"
+            data-new-fab
+            onClick={() => {
+              setFromFab(true);
+              setOpen(!(open && fromFab));
+            }}
+            aria-expanded={open && fromFab}
+            className="fixed right-4 z-40 w-12 h-12 rounded-full bg-primary text-white text-2xl font-bold shadow-lg flex items-center justify-center"
+            style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
+            title="새로 만들기"
+            aria-label="새로 만들기"
+          >
+            ＋
+          </button>
+          {open && fromFab && list}
+        </div>,
+        document.body,
       )}
     </div>
   );

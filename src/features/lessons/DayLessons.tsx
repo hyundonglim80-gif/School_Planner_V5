@@ -211,27 +211,30 @@ export default function DayLessons({ date }: { date: string }) {
   return (
     <section data-day-lessons={date} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
       <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
-        {/* 제목은 줄어들지 않는다. 좁으면 오른쪽의 '지금' 안내만 줄어든다 (V4 - '수업'이 '수/업'으로 꺾였다) */}
-        <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
-          <button
-            type="button"
-            data-lessons-collapse
-            onClick={() => setCollapsed(!collapsed)}
-            className="text-slate-400 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
-            title={collapsed ? '수업 펼치기' : '수업 접기'}
-          >
-            {collapsed ? '▶' : '▼'}
-          </button>
-          <span className="text-xl" aria-hidden>
-            ⏰
-          </span>
-          <h3 className="text-base font-extrabold text-slate-800">수업</h3>
+        {/* 제목은 줄어들지 않는다. 좁으면 오른쪽의 '지금' 안내만 줄어든다 (V4 - '수업'이 '수/업'으로 꺾였다).
+            휴대폰은 단추(종·출석부·알림장·진도·뽑기)가 제목 뒤에서 줄을 바꾼다 - 한 줄이면 390px 화면 밖으로 나갔다(P9-3). */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0 sm:shrink-0">
+          <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
+            <button
+              type="button"
+              data-lessons-collapse
+              onClick={() => setCollapsed(!collapsed)}
+              className="text-slate-400 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+              title={collapsed ? '수업 펼치기' : '수업 접기'}
+            >
+              {collapsed ? '▶' : '▼'}
+            </button>
+            <span className="text-xl" aria-hidden>
+              ⏰
+            </span>
+            <h3 className="text-base font-extrabold text-slate-800">수업</h3>
+          </div>
           <button
             type="button"
             data-day-bell
             aria-expanded={bellOpen}
             onClick={() => setBellOpen((v) => !v)}
-            className={`px-2 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+            className={`whitespace-nowrap px-2 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
               bell.enabled ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200' : 'bg-white hover:bg-slate-50 text-slate-500 border-slate-200'
             }`}
             title="수업 종 - 교시 시작·끝 시각에 종을 울립니다"
@@ -239,7 +242,7 @@ export default function DayLessons({ date }: { date: string }) {
             {bell.enabled ? '🔔 종' : '🔕 종'}
           </button>
           {offText && (
-            <span data-lessons-off={view.off} className="text-2xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100" title="이날은 시간표 수업이 없습니다 (그날 따로 적은 과목은 보입니다)">
+            <span data-lessons-off={view.off} className="whitespace-nowrap text-2xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100" title="이날은 시간표 수업이 없습니다 (그날 따로 적은 과목은 보입니다)">
               {offText}
             </span>
           )}
@@ -250,7 +253,7 @@ export default function DayLessons({ date }: { date: string }) {
                 type="button"
                 data-lessons-tool={d.id}
                 onClick={() => openWindow(d.id, { date, ...(sid ? { sid } : {}) })}
-                className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                className="whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
               >
                 {d.icon} {d.title}
               </button>
@@ -261,7 +264,7 @@ export default function DayLessons({ date }: { date: string }) {
               data-lessons-tool="drawStudent"
               onClick={() => openSeating({ draw: true, classId: homeroomClass?.id })}
               title="발표자 뽑기 - 자리표가 뽑기 칸을 펴서 열립니다"
-              className="px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+              className="whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
             >
               🎯 뽑기
             </button>
