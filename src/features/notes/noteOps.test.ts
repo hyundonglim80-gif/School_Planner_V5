@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ItemDoc } from '../events/eventOps';
-import { canMoveNote, checkLineChanges, favoriteChanges, favoriteFirst, noteMoveOps } from './noteOps';
+import { canMoveNote, checkLineChanges, favoriteChanges, favoriteFirst, memoScreenOrder, noteMoveOps } from './noteOps';
 
 const note = (id: string, order: string, more: Partial<ItemDoc> = {}): ItemDoc =>
   ({ id, order, kind: 'note', date: '2026-10-08', text: id, labelIds: [], ...more }) as unknown as ItemDoc;
@@ -13,6 +13,18 @@ function orderAfterOps(list: ItemDoc[], ops: ReturnType<typeof noteMoveOps>): st
 }
 
 describe('메모 셈', () => {
+  it('메모 화면 차례: 즐겨찾기 → 날짜 없는 메모(차례) → 날짜 링크 메모(가장 늦은 날이 최근인 것부터)', () => {
+    const list = [
+      note('m2', 'a2', { date: null }),
+      note('d1', 'a0', { date: '2026-10-01' }),
+      note('m1', 'a1', { date: null }),
+      note('d2', 'a5', { date: '2026-09-01', dates: ['2026-09-01', '2026-10-09'] }),
+      note('fd', 'a9', { date: '2026-10-02', favorite: true }),
+      note('fm', 'a9', { date: null, favorite: true }),
+    ];
+    expect(memoScreenOrder(list).map((d) => d.id)).toEqual(['fm', 'fd', 'm1', 'm2', 'd2', 'd1']);
+  });
+
   it('즐겨찾기는 켠 것만 적는다 (풀면 칸을 지운다)', () => {
     expect(favoriteChanges(true)).toEqual({ favorite: true });
     expect(favoriteChanges(false)).toEqual({ favorite: undefined });

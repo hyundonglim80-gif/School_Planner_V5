@@ -1,11 +1,12 @@
-// 하루 화면의 기록 칸 (V4 features/day/DayJournal.tsx).
+// 하루 화면의 메모 칸 (V4 features/day/DayJournal.tsx '기록' 칸 - P10-3부터 '메모' 하나, 그 날짜 링크가 있는 메모).
 //
-// - 머리줄 `▼ 📔 기록 N [+ 추가] [+ 메모] ……… ⚙️` (일정 칸과 같은 배치 - V4 사용자 결정). ⚙️ = 메모·기록 라벨 관리(한 목록).
-//   '+ 메모'는 날짜 없는 메모를 하루 화면에서 바로(V4 UX-AUDIT C2) - 칸의 📅 날짜를 넣으면 그날 기록이 된다.
-// - 카드: 메모와 같은 카드(features/notes/EntryCard). 휴대폰 2열, 본문 폭에 따라 3·4열(가로 우선으로 나눠 담는다).
-//   즐겨찾기한 기록은 그날 기록의 맨 위. 긴 기록은 접힌 채 시작(누른 것만 기억한다 - 기록이 새로 오거나 길어져도 낡지 않게).
+// - 머리줄 `▼ 📝 메모 N [+ 추가] 📊 🏷️ ……… ⚙️` (일정 칸과 같은 배치 - V4 사용자 결정). ⚙️ = 메모 라벨 관리.
+//   + 추가 = 그 날짜 링크 하나로 새 메모(P10-3 2g). 옛 '+ 메모'(날짜 없는 메모 - V4 UX-AUDIT C2)는 뺐다(사용자 의견 2i).
+// - 카드: 메모 화면과 같은 카드(features/notes/EntryCard). 휴대폰 2열, 본문 폭에 따라 3·4열(가로 우선으로 나눠 담는다).
+//   즐겨찾기한 메모는 그날 칸의 맨 위. 긴 메모는 접힌 채 시작(누른 것만 기억한다 - 메모가 새로 오거나 길어져도 낡지 않게).
 // - 쓰기마다 문서 하나. 완료·즐겨찾기·순서·체크 줄은 안내 없이 Ctrl+Z 더미에, 지우기는 안내 + 되돌리기.
-// - 라벨로 보기(V4 journal-view): 머리줄 아래 '전체 · 라벨 칩'(메모 화면과 같은 LabelFilterChips - 여러 개·탐색기식·상위 → 하위·'기타'), 고른 것은 이 기기에 기억, ESC = 모두 떼기.
+// - 라벨로 보기(V4 journal-view): '전체 · 라벨 칩'(메모 화면과 같은 LabelFilterChips - 여러 개·탐색기식·상위 → 하위·'기타'), 고른 것은 이 기기에 기억, ESC = 모두 떼기.
+//   칩 줄은 **접힌 채** 시작하고 머리줄 🏷️로 편다(사용자 의견 2h - 편 상태도 이 기기에 기억). 접혀 있어도 고른 라벨은 그대로 걸러 🏷️에 그 수를 보인다.
 import { useEffect, useState } from 'react';
 import { addEscapeAction } from '../../app/keys';
 import { openWindow } from '../../app/windows';
@@ -20,7 +21,7 @@ import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteChe
 import EntryCard from '../notes/EntryCard';
 import { openLinkViewer } from '../links/open';
 import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterChips';
-import { setJournalFilter, useLabelFilters } from '../notes/labelFilter';
+import { setJournalFilter, setJournalFilterOpen, useLabelFilters } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
 import { openNotePanel, useEditingNoteIds } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
@@ -41,13 +42,14 @@ export default function DayJournal({ date }: { date: YMD }) {
   const status = useMirrorStatus('items');
   const editing = useEditingNoteIds(sid);
   const [collapsed, setCollapsed] = useState(false);
-  // 검색 결과로 이 날 기록을 짚으러 오면 접힌 칸을 편다 (라벨로 보기는 검색 창이 옮기기 전에 푼다)
+  // 검색 결과로 이 날 메모를 짚으러 오면 접힌 칸을 편다 (라벨로 보기는 검색 창이 옮기기 전에 푼다)
   useFocusReveal((t) => t.kind === 'note' && t.date === date, () => setCollapsed(false));
   // 카드 접기: 사용자가 누른 것만 담는다. 손대지 않은 카드는 길이를 보고 정한다
   const [cardCollapsed, setCardCollapsed] = useState<Record<string, boolean>>({});
   // 라벨로 보기 (지운 라벨은 빼고 - 라벨을 받기 전에는 그대로)
   const labelStatus = useMirrorStatus('labels');
   const remembered = useLabelFilters((s) => s.journal);
+  const filterOpen = useLabelFilters((s) => s.journalOpen);
   const filter = labelStatus === 'idle' || labelStatus === 'loading' ? remembered : pruneFilter(remembered, tree.list.map((l) => l.id));
   useEffect(() => addEscapeAction(() => setJournalFilter(EMPTY_FILTER)), []);
   const countOf = (key: string) =>
@@ -57,6 +59,7 @@ export default function DayJournal({ date }: { date: YMD }) {
   const allCards = useDayCardsOn(date, sid);
   const cards = isEmptyFilter(filter) ? allCards : [];
   const waiting = notes.length === 0 && (status === 'idle' || status === 'loading');
+  const picked = filter.labels.length + filter.others.length;
 
   // 칸 수는 창 폭이 아니라 본문 폭으로 - 오른쪽 칸이 열려 본문이 좁아지면 줄인다. 휴대폰도 2열(일정 칸과 같게)
   const mainWidth = useMainWidth();
@@ -66,13 +69,12 @@ export default function DayJournal({ date }: { date: YMD }) {
 
   const pathOf = (id: string) => labelPath(id, tree.parents, (x) => tree.byId.get(x)?.name);
   const openCreate = () => sid && openNotePanel({ sid, date });
-  const openMemo = () => sid && openNotePanel({ sid, date: null });
   const openEdit = (item: ItemDoc) => sid && openNotePanel({ sid, date, id: item.id });
 
   return (
     <section data-day-journal={date} className="flex flex-col gap-4">
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
-        {/* 머리줄: ▼ 📔 기록 N [+ 추가] [+ 메모] ……… ⚙️ */}
+        {/* 머리줄: ▼ 📝 메모 N [+ 추가] 📊 🏷️ ……… ⚙️ */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -85,9 +87,9 @@ export default function DayJournal({ date }: { date: YMD }) {
               {collapsed ? '▶' : '▼'}
             </button>
             <span className="text-xl" aria-hidden>
-              📔
+              📝
             </span>
-            <h3 className="text-base font-extrabold text-slate-800">기록</h3>
+            <h3 className="text-base font-extrabold text-slate-800">메모</h3>
             <span data-journal-count={notes.length} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
               {notes.length}
             </span>
@@ -96,34 +98,21 @@ export default function DayJournal({ date }: { date: YMD }) {
                 type="button"
                 data-journal-add
                 onClick={openCreate}
-                aria-label="기록 추가"
-                title="기록 추가 (오른쪽 칸)"
+                aria-label="메모 추가"
+                title="이 날의 메모 추가 (오른쪽 칸) - 쓰는 칸의 📅 날짜로 다른 날도 이을 수 있습니다"
                 className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors shrink-0"
               >
                 + 추가
               </button>
             )}
-            {/* 날짜 없는 메모를 하루 화면에서 바로 (V4 UX-AUDIT C2) - 메모 화면으로 가지 않고 */}
-            {!collapsed && (
-              <button
-                type="button"
-                data-journal-add-memo
-                onClick={openMemo}
-                aria-label="메모 추가"
-                title="날짜 없는 메모 쓰기 (오른쪽 칸) - 메모 화면에 모입니다. 칸의 📅 날짜를 넣으면 그날 기록이 됩니다"
-                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-xl transition-colors shrink-0"
-              >
-                + 메모
-              </button>
-            )}
-            {/* 기록 칸에 붙은 조사표 (P7-4 - V4 그대로 제목 옆, 있으면 수) */}
+            {/* 메모 칸에 붙은 조사표 (P7-4 - V4 그대로 제목 옆, 있으면 수) */}
             {!collapsed && sid && (
               <button
                 type="button"
                 data-journal-evals={journalEvals}
                 onClick={() => openEvaluation({ sid, date, place: 'journal' })}
-                title={journalEvals ? `기록 칸 조사표 ${journalEvals}건` : '기록 칸에 조사표 만들기'}
-                aria-label={journalEvals ? `기록 칸 조사표 ${journalEvals}건` : '기록 칸에 조사표 만들기'}
+                title={journalEvals ? `메모 칸 조사표 ${journalEvals}건` : '메모 칸에 조사표 만들기'}
+                aria-label={journalEvals ? `메모 칸 조사표 ${journalEvals}건` : '메모 칸에 조사표 만들기'}
                 className={`px-2 py-1 text-xs font-bold rounded-xl transition-colors shrink-0 cursor-pointer ${
                   journalEvals ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700' : 'text-slate-400 hover:text-emerald-700 hover:bg-slate-100'
                 }`}
@@ -131,13 +120,29 @@ export default function DayJournal({ date }: { date: YMD }) {
                 📊{journalEvals || ''}
               </button>
             )}
+            {/* 🏷️ 라벨로 보기 칩 줄 펴기·접기 (기본 접힘 - 고른 라벨이 있으면 그 수) */}
+            {!collapsed && tree.list.length > 0 && (
+              <button
+                type="button"
+                data-journal-filter-toggle={picked}
+                aria-expanded={filterOpen}
+                onClick={() => setJournalFilterOpen(!filterOpen)}
+                title={filterOpen ? '라벨로 보기 접기' : picked ? `라벨로 보기 - ${picked}개 고름 (펴기)` : '라벨로 보기 펴기'}
+                aria-label={filterOpen ? '라벨로 보기 접기' : '라벨로 보기 펴기'}
+                className={`px-2 py-1 text-xs font-bold rounded-xl transition-colors shrink-0 cursor-pointer ${
+                  picked ? 'bg-sky-50 hover:bg-sky-100 text-sky-700' : filterOpen ? 'bg-slate-100 text-slate-700' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                🏷️{picked ? ` ${picked}` : ''} {filterOpen ? '▴' : '▾'}
+              </button>
+            )}
           </div>
-          {!collapsed && tree.list.length > 0 && (
+          {!collapsed && filterOpen && tree.list.length > 0 && (
             <div data-journal-filter className="flex items-center gap-1 flex-wrap order-last w-full">
               <FilterChip
                 chipKey="all"
                 text="전체"
-                title="모든 기록 보기"
+                title="이 날의 메모 모두 보기"
                 count={notes.length}
                 selected={isEmptyFilter(filter)}
                 selectedClass="bg-slate-800 text-white border-slate-800"
@@ -155,8 +160,8 @@ export default function DayJournal({ date }: { date: YMD }) {
             data-journal-labels-settings
             onClick={() => openWindow('labels', { tab: 'note' })}
             className="ml-auto w-7 h-7 flex items-center justify-center rounded-md text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
-            title="메모·기록 라벨 설정"
-            aria-label="메모·기록 라벨 설정"
+            title="메모 라벨 설정"
+            aria-label="메모 라벨 설정"
           >
             ⚙️
           </button>
@@ -203,15 +208,15 @@ export default function DayJournal({ date }: { date: YMD }) {
           </div>
         ) : notes.length > 0 ? (
           <div data-journal-filtered-empty className="w-full text-center py-8 bg-white/60 rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
-            고른 라벨의 기록이 없습니다.
+            고른 라벨의 메모가 없습니다.
           </div>
         ) : waiting ? (
           <p data-journal-waiting className="py-10 text-center text-xs text-slate-400">
-            기록을 받는 중…
+            메모를 받는 중…
           </p>
         ) : cards.length > 0 ? null : (
           <div data-journal-empty className="w-full text-center py-10 bg-white/60 rounded-2xl border border-dashed border-slate-300 p-6 shadow-xs">
-            <p className="text-slate-500 font-bold text-sm">등록된 기록이 없습니다.</p>
+            <p className="text-slate-500 font-bold text-sm">이 날의 메모가 없습니다.</p>
           </div>
         ))}
     </section>

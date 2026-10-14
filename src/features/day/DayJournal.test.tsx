@@ -1,4 +1,4 @@
-// 하루 기록 칸 - 그날 기록만·카드(라벨 칩·☑ n/m·📅·🔗·▦)·즐겨찾기 먼저·완료·★·체크 줄·순서(▲▼ = 문서 하나)·접기·지우기·받는 중
+// 하루 메모 칸 - 그 날짜 링크가 있는 메모만(두 날에 이은 메모도)·라벨로 보기 접힘·카드(라벨 칩·☑ n/m·📅·🔗·▦)·즐겨찾기 먼저·완료·★·체크 줄·순서(▲▼ = 문서 하나)·접기·지우기·받는 중
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
@@ -9,7 +9,7 @@ import { undoCount } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
 import { handleAppKeyDown } from '../../app/keys';
 import { EMPTY_FILTER } from '../../domain/labelTree';
-import { setJournalFilter, useLabelFilters } from '../notes/labelFilter';
+import { setJournalFilter, setJournalFilterOpen, useLabelFilters } from '../notes/labelFilter';
 import DayJournal from './DayJournal';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
@@ -86,6 +86,18 @@ describe('하루 기록 칸', () => {
     const cols = qa('[data-day-journal] .grid > div').map((col) => [...col.querySelectorAll<HTMLElement>('[data-entry-card]')].map((c) => c.dataset.entryCard));
     expect(cols[0][0]).toBe('b');
     expect(q('[data-entry-card="b"]')!.dataset.entryFavorite).toBe('1');
+  });
+
+  it('두 날에 이은 메모 (P10-3)는 두 날 모두에, 옛 기록(date 하나)도 그대로', () => {
+    const more = new Map(items);
+    more.set('two', { ...base, kind: 'note', date: '2026-10-01', dates: ['2026-10-01', DAY], text: '두 날', labelIds: [], order: 'a9' });
+    seed('live', more);
+    render(<DayJournal date={DAY} />);
+    expect(q('[data-journal-count]')?.textContent).toBe('5');
+    expect(cards()).toContain('two');
+    document.body.innerHTML = '';
+    render(<DayJournal date="2026-10-01" />);
+    expect(cards()).toEqual(['two']);
   });
 
   it('카드: 모르는 라벨은 칩을 그리지 않고, 하위 라벨 칩에 마우스를 올리면 상위 › 하위, 🔗·▦ 수, 체크 줄 ☑ n/m', () => {
@@ -183,8 +195,28 @@ describe('하루 기록 칸', () => {
 });
 
 describe('기록 칸 라벨로 보기 (P4-1)', () => {
+  it('칩 줄은 접힌 채 시작, 🏷️로 펴고(기억한다) 고른 수를 보인다', () => {
+    setJournalFilter(EMPTY_FILTER);
+    setJournalFilterOpen(false);
+    seed();
+    render(<DayJournal date={DAY} />);
+    expect(q('[data-journal-filter]')).toBeNull();
+    expect(q('[data-journal-add-memo]')).toBeNull();
+    fireEvent.click(q('[data-journal-filter-toggle]')!);
+    expect(q('[data-journal-filter]')).not.toBeNull();
+    expect(useLabelFilters.getState().journalOpen).toBe(true);
+    fireEvent.click(q('[data-filter-chip="P"]')!);
+    fireEvent.click(q('[data-journal-filter-toggle]')!);
+    // 접어도 고른 라벨로 걸러 보이고, 🏷️에 그 수
+    expect(q('[data-journal-filter]')).toBeNull();
+    expect(q('[data-journal-filter-toggle]')!.dataset.journalFilterToggle).toBe('1');
+    expect(cards()).toEqual(['a']);
+    setJournalFilter(EMPTY_FILTER);
+  });
+
   it('전체 · 라벨 칩 - 상위를 고르면 하위가 붙은 기록도, 기억하고 ESC로 뗀다', () => {
     setJournalFilter(EMPTY_FILTER);
+    setJournalFilterOpen(true);
     seed();
     render(<DayJournal date={DAY} />);
     expect(q('[data-journal-filter]')).not.toBeNull();

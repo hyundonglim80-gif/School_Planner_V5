@@ -6,6 +6,7 @@
 //   - 완료는 줄 긋기, ★ 즐겨찾기. 체크 줄(☐/☑)은 눌러서 체크 - 체크한 줄은 카드 아래쪽에 모아 보이기만 한다(V4 10-07, 구글 Keep처럼).
 //   - 접기: 긴 글은 접힌 채 시작(부르는 쪽이 domain/entryCollapse로), 접힌 카드에는 첫 줄만.
 // 그림은 누르면 크게 보기(넘겨 보기 - 접혔을 때는 🖼️ n을 눌러), 글 안 주소는 미리보기 카드, 표는 작게 보기만(고치기는 쓰는 칸에서).
+import { shortDateLabel } from '../../domain/dateUtils';
 import { Fragment, useState, type ReactNode } from 'react';
 import { checkCount, checkLineState, hasCheckLines } from '../../domain/checkLines';
 import { previewLine } from '../../domain/entryCollapse';
@@ -27,8 +28,11 @@ export interface EntryCardProps {
   pathOf?: (id: string) => string;
   /** 머리줄의 날짜·시각 글 */
   dateText: string;
-  /** 시각 옆에 작게 (메모: 기록에서 왔으면 '📅 10/6에서') */
+  /** 시각 옆에 작게 */
   note?: string;
+  /** 날짜 링크 칩 (메모 화면 - P10-3). 누르면 그날 하루 화면 */
+  dates?: readonly string[];
+  onOpenDate?: (date: string) => void;
   /** 지금 쓰는 칸에서 고치는 항목 (파란 테두리) */
   editing?: boolean;
   collapsed: boolean;
@@ -254,6 +258,21 @@ export default function EntryCard(props: EntryCardProps) {
               {props.note}
             </span>
           )}
+          {props.dates?.map((d) => (
+            <button
+              key={d}
+              type="button"
+              data-entry-date-chip={d}
+              onClick={(e) => {
+                e.stopPropagation();
+                props.onOpenDate?.(d);
+              }}
+              title={`${shortDateLabel(d)} 하루 화면으로`}
+              className="px-1.5 py-0.5 rounded-md text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
+            >
+              📅 {shortDateLabel(d)}
+            </button>
+          ))}
           {checks.total > 0 && (
             <span
               data-entry-checks={`${checks.done}/${checks.total}`}

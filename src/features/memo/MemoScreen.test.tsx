@@ -1,4 +1,4 @@
-// 메모 화면 - 즐겨찾기로 열기(없으면 전체)·라벨로 보기(여러 개·상위 → 하위·기타)·숫자·진행/완료·전체 비우기·라벨 없는 메모·새 메모에 고른 라벨·ESC
+// 메모 화면 - 날짜 링크 메모도(차례·📅 칩·더 보기 - P10-3)·즐겨찾기로 열기(없으면 전체)·라벨로 보기(여러 개·상위 → 하위·기타)·숫자·진행/완료·전체 비우기·라벨 없는 메모·새 메모에 고른 라벨·ESC
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
@@ -70,7 +70,7 @@ beforeEach(() => {
 });
 
 describe('메모 화면', () => {
-  it('처음은 즐겨찾기, 즐겨찾기가 없으면 전체로 연다 (메모만 - 기록은 없다)', () => {
+  it('처음은 즐겨찾기, 즐겨찾기가 없으면 전체로 연다', () => {
     seed();
     const { unmount } = render(<MemoScreen />);
     expect(q('[data-filter-chip="fav"]')?.getAttribute('aria-pressed')).toBe('true');
@@ -110,11 +110,35 @@ describe('메모 화면', () => {
     useLabelFilters.setState({ memo: 'all' });
     seed();
     render(<MemoScreen />);
-    expect(q('[data-memo-active]')?.dataset.memoActive).toBe('4');
+    expect(q('[data-memo-active]')?.dataset.memoActive).toBe('5');
+    // 날짜 링크 메모(옛 기록)도 - 날짜 없는 메모 뒤에, 📅 칩
+    expect(cards().indexOf('rec')).toBe(4);
+    expect(q('[data-entry-card="rec"] [data-entry-date-chip="2026-10-08"]')).not.toBeNull();
+    expect((q('[data-entry-card="rec"] [data-entry-up]') as HTMLButtonElement | null)?.disabled ?? true).toBe(true);
     expect(q('[data-memo-done]')?.dataset.memoDone).toBe('1');
     await act(async () => fireEvent.click(q('[data-memo-clear-done]')!));
     expect(written.batches[0]).toEqual([{ type: 'remove', at: { sid: SID, coll: 'items', id: 'm4' } }]);
     expect(q('[data-toast-action="되돌리기"]')).not.toBeNull();
+  });
+
+  it('날짜 링크 메모: 가장 늦은 날이 최근인 것부터, 칩을 누르면 그날 하루 화면, 처음 60장 + 더 보기', async () => {
+    const { useNav } = await import('../../app/nav');
+    useLabelFilters.setState({ memo: 'all' });
+    const many = new Map<string, Record<string, unknown>>([memo('m1', 'a0')]);
+    for (let i = 1; i <= 70; i++) {
+      const d = `2026-0${1 + (i % 9)}-${String(1 + (i % 28)).padStart(2, '0')}`;
+      many.set(`r${i}`, { ...base, kind: 'note', date: d, text: `기록 ${i}`, labelIds: ['U'], order: 'a0' });
+    }
+    many.set('two', { ...base, kind: 'note', date: '2026-01-01', dates: ['2026-01-01', '2026-12-01'], text: '두 날', labelIds: ['U'], order: 'a0' });
+    seed(many);
+    render(<MemoScreen />);
+    expect(cards().slice(0, 2)).toEqual(['m1', 'two']);
+    expect(cards()).toHaveLength(60);
+    fireEvent.click(q('[data-memo-more="active"]')!);
+    expect(cards()).toHaveLength(72);
+    expect(q('[data-memo-more]')).toBeNull();
+    fireEvent.click(q('[data-entry-card="two"] [data-entry-date-chip="2026-12-01"]')!);
+    expect(useNav.getState()).toMatchObject({ scope: 'day', date: '2026-12-01' });
   });
 
   it("라벨 없는 메모 → '메모' 라벨을 만들어 붙인다 (한 묶음)", async () => {

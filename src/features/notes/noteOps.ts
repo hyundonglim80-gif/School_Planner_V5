@@ -4,6 +4,7 @@
 // - 쓰기마다 문서 하나(원칙 1): 완료 = done·doneAt, 즐겨찾기 = favorite, 체크 줄 = text, 순서 = 옮긴 것의 order(대개 하나).
 // - 차례·완료·자리(itemPath)는 일정과 같은 셈을 쓴다(features/events/eventOps).
 import { toggleCheckLine } from '../../domain/checkLines';
+import { noteDates } from '../../domain/noteDates';
 import { compareOrder } from '../../domain/order';
 import type { Changes, WriteOp } from '../../data/repo/ops';
 import { reorderOps, type ItemDoc } from '../events/eventOps';
@@ -54,4 +55,16 @@ export function canMoveNote(shown: readonly ItemDoc[], index: number, step: -1 |
 export function checkLineChanges(item: ItemDoc, lineIndex: number, shownLine: string): Changes<'items'> | null {
   const text = toggleCheckLine(item.text ?? '', lineIndex, shownLine);
   return text === null ? null : { text };
+}
+
+/** 가장 늦은 날짜 링크 (없으면 '') */
+const latestDate = (d: ItemDoc) => noteDates(d).at(-1) ?? '';
+
+/**
+ * 메모 화면 차례 (P10-3 - 날짜 링크 메모도 함께): 즐겨찾기 먼저, 그 안에서 날짜 없는 메모(저장된 차례) → 날짜 링크 메모(가장 늦은 날이 최근인 것부터, 같으면 차례).
+ * 받은 목록은 이미 차례대로다(data/select).
+ */
+export function memoScreenOrder(list: readonly ItemDoc[]): ItemDoc[] {
+  const rank = (d: ItemDoc) => (d.favorite ? 0 : 2) + (noteDates(d).length > 0 ? 1 : 0);
+  return [...list].sort((a, b) => rank(a) - rank(b) || latestDate(b).localeCompare(latestDate(a)) || compareOrder(a, b));
 }
