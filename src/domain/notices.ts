@@ -34,13 +34,13 @@ export function nextClassDay(date: string, isOffDay: (d: string) => boolean): st
 }
 
 /**
- * 그날 수업 칸의 준비물과 일정으로 알림장 초안 줄.
+ * 그날 수업 칸의 비고(준비물)와 일정으로 알림장 초안 줄.
  *   '국어 준비물: 색연필' · '현장체험학습 동의서 제출'
- * 수업 메모는 교사용이라 넣지 않는다. 그날 끝낸 일정도 뺀다.
+ * 비고(준비물)는 P10-2부터 한 칸이라 그 칸을 넣는다(여러 줄이면 ', '로 - 옛 수업 메모가 붙은 칸도). 초안은 보내기 전에 고친다. 그날 끝낸 일정은 뺀다.
  * lessonSupplies: 교시 → 그 교시에 하는 차시의 준비물(진도) - 수업 칸의 준비물과 한 줄로 합친다(같은 것은 한 번).
  */
 export function draftLinesFrom(
-  cells: readonly { n: number; subject: string; supplies: string }[],
+  cells: readonly { n: number; subject: string; note: string }[],
   events: readonly { text?: string; done: boolean }[],
   lessonSupplies: Record<string, string> = {},
 ): string[] {
@@ -49,7 +49,12 @@ export function draftLinesFrom(
   const ns = new Set([...cells.map((c) => c.n), ...Object.keys(lessonSupplies).map(Number).filter(Number.isInteger)]);
   for (const n of [...ns].sort((a, b) => a - b)) {
     const cell = byN.get(n);
-    const parts = [String(cell?.supplies ?? '').trim(), String(lessonSupplies[n] ?? '').trim()].filter(Boolean);
+    const note = String(cell?.note ?? '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean)
+      .join(', ');
+    const parts = [note, String(lessonSupplies[n] ?? '').trim()].filter(Boolean);
     const supplies = [...new Set(parts)].join(', ');
     if (!supplies) continue;
     const subject = String(cell?.subject ?? '').trim();

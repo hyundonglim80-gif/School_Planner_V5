@@ -5,7 +5,7 @@
 // 시트에서 지운 줄은 앱에서 지우지 않는다(V4는 그날 목록을 통째로 바꿨다 - PLAN 5장 P8-3). 날짜 옮기기는 앱에서.
 import { doc, getDocFromServer } from 'firebase/firestore';
 import { addDays } from '../../domain/dateUtils';
-import { lessonsOn, type LessonSource } from '../../domain/lessons';
+import { lessonNote, lessonsOn, type LessonSource } from '../../domain/lessons';
 import { cleanLabelName } from '../../domain/labels';
 import { orderBetween } from '../../domain/order';
 import {
@@ -143,7 +143,8 @@ export function exportToSheets(d: SheetsData, range: { start: string; end: strin
         return {
           date,
           events: (events.get(date) ?? []).map((e) => ({ id: e.id, text: e.text ?? '', labels: names(evTree, e.labelIds), done: !!e.done })),
-          periods: cells.map((c) => ({ subject: c.subject, memo: c.memo, supplies: c.supplies })),
+          // 비고(준비물)는 한 칸 - 시트 칸 '[과목] 비고' (P10-2, V4 '[과목] 메모 [준비물]'도 읽는다)
+          periods: cells.map((c) => ({ subject: c.subject, memo: c.note, supplies: '' })),
           records: (records.get(date) ?? []).map((n) => ({ id: n.id, text: n.text ?? '', labels: names(noteTree, n.labelIds), done: !!n.done })),
           evals: evalsInRange.filter((e) => e.date === date).map((e) => (e.period ? `${e.title} (${e.period}교시)` : e.title)),
         };
@@ -287,8 +288,9 @@ export function importFromSheets(d: SheetsData, include: SheetsInclude, onStep?:
         for (const [key, cellText] of Object.entries(day.periods)) {
           const cell = cells[Number(key) - 1];
           if (!cell) continue;
-          if (cellText.subject === cell.subject && cellText.memo === cell.memo.trim() && cellText.supplies === cell.supplies.trim()) continue;
-          const ch = editChanges(cell, cellText);
+          const note = lessonNote(cellText);
+          if (cellText.subject === cell.subject && note === cell.note) continue;
+          const ch = editChanges(cell, { subject: cellText.subject, note });
           if (ch) {
             Object.assign(merged, ch);
             r.lessons += 1;

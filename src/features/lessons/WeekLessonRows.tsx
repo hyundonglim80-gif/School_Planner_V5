@@ -1,7 +1,7 @@
 // 주간 요일 카드의 수업 줄 (V4 features/week/WeekGrid.tsx 수업 부분). 모든 요일에 같은 수의 교시 줄 - 같은 교시가 옆 요일과 나란히 선다.
 //   빈 교시도 같은 높이(h-7)의 자리. 교시를 누르면 'N교시 수정' 칸(features/lessons/LessonPanel). 🔗 n = 연결된 것.
 //   교과 모드는 반을 반 색 칩으로('5-2'), 과목은 작게. 오늘 카드는 지금 교시를 짚는다. 진도가 있으면 'k/n'(민 교시는 '밀림') 배지(P6-2).
-import type { LessonDayView } from '../../domain/lessons';
+import { firstLine, type LessonDayView } from '../../domain/lessons';
 import { slotId, type ProgressMark } from '../../domain/progress';
 import { parseSlot, type ClassColorClasses } from '../../domain/teachingSlot';
 
@@ -30,8 +30,8 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
       <div className="space-y-1">
         {Array.from({ length: rows }, (_, i) => i + 1).map((n) => {
           const c = view.cells.find((x) => x.n === n);
-          const filled = !!(c && (c.subject || c.memo));
-          const text = c ? c.subject || c.memo.split('\n')[0] : '';
+          const filled = !!(c && (c.subject || c.note));
+          const text = c ? c.subject || firstLine(c.note) : '';
           const links = c?.linkIds.length ?? 0;
           const slot = isClassUnit && c?.subject ? parseSlot(c.subject) : null;
           const now = nowPeriod === n;

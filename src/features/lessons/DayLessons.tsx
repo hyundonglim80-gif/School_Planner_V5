@@ -1,9 +1,9 @@
 // 하루 화면 ⏰ 수업 칸 (V4 features/day/DaySchedule.tsx). 교시마다 카드 - 과목 굵고 크게(PC 18px·휴대폰 16px), 과목이 있으면 왼쪽 교시 색 막대.
 //   - 수업 칸은 계산이다(domain/lessons): 그날 바꾼 칸(lessonDays) → 수업 없는 날 → 그 기간 시간표. '✎'는 그날만 바꾼 과목.
-//   - 교시를 누르면 그 자리에서 고친다(과목·준비물·메모). 저장·Ctrl+S, 바깥을 누르면 고친 것을 저장하고 닫는다, 닫기·ESC는 저장 없이.
+//   - 교시를 누르면 그 자리에서 고친다(과목·비고(준비물) - P10-2에 수업 메모와 준비물을 한 칸으로). 저장·Ctrl+S, 바깥을 누르면 고친 것을 저장하고 닫는다, 닫기·ESC는 저장 없이.
 //     고친 것은 lessonDays의 그 칸만(field path) - 시간표와 같은 과목은 적지 않는다(features/lessons/lessonOps).
-//   - 지금 몇 교시: 교시 시각(시간표 창 '교시')을 적어 두면 오늘은 '지금 · N분 남음' / '다음 · N분 뒤', 머리줄에 다음 교시와 준비물.
-//   - 교과 모드(전담·(중등) 전담 + 담임): 반을 크게·반 색 막대, 수정 칸은 학년-반 + 과목 두 칸, '⏪ 지난 시간' 줄(같은 반·과목의 바로 앞 수업 메모).
+//   - 지금 몇 교시: 교시 시각(시간표 창 '교시')을 적어 두면 오늘은 '지금 · N분 남음' / '다음 · N분 뒤', 머리줄에 다음 교시와 비고 첫 줄.
+//   - 교과 모드(전담·(중등) 전담 + 담임): 반을 크게·반 색 막대, 수정 칸은 학년-반 + 과목 두 칸, '⏪ 지난 시간' 줄(같은 반·과목의 바로 앞 수업 비고).
 //   - ▲▼ 위아래 교시와 맞바꾸기, 🔗 링크 추가, 📑 n 연결된 것, ✏️ 고치기. 머리줄 ⚙️ = 시간표 창.
 //   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
 //   - 🔔 종(features/bell - P6-3): '수업' 옆 단추로 수업 종 설정을 펼친다.
@@ -17,7 +17,7 @@ import { listWindows, openWindow } from '../../app/windows';
 import { academicYearOf, addDays, shortDateLabel } from '../../domain/dateUtils';
 import { classLabelOf } from '../../domain/roster';
 import { periodSummary, readSubjectPeriods, subjectAttendanceDocId } from '../../domain/subjectAttendance';
-import { lessonsOn, OFF_REASON_LABEL, type LessonCell } from '../../domain/lessons';
+import { firstLine, lessonNote, lessonsOn, OFF_REASON_LABEL, type LessonCell } from '../../domain/lessons';
 import { periodLabel, periodRangeLabel, periodStateAt, timesOf, validPeriods } from '../../domain/periodTimes';
 import { normalizeSlotText, parseSlot, previousSlotOf } from '../../domain/teachingSlot';
 import { useHolidayName } from '../../data/holidays';
@@ -68,8 +68,8 @@ interface Editing {
   date: string;
   n: number;
   subject: string;
-  memo: string;
-  supplies: string;
+  /** 비고(준비물) */
+  note: string;
 }
 
 /** 바깥을 누르면 (▼ 목록은 몸 밖에 붙지만 안으로 친다) */
@@ -116,7 +116,7 @@ export default function DayLessons({ date }: { date: string }) {
   const [saving, setSaving] = useState(false);
   useFocusReveal((t) => t.kind === 'lesson' && t.date === date, () => setCollapsed(false));
 
-  // 교과 모드: 같은 반·과목의 바로 앞 수업 (그 수업에 적은 메모 첫 줄을 보인다)
+  // 교과 모드: 같은 반·과목의 바로 앞 수업 (그 수업에 적은 비고 첫 줄을 보인다)
   const recent = isClassUnit ? cachedSubjects(src, addDays(date, -PREV_LOOKBACK_DAYS), date) : null;
   // 진도는 개인 공간 수업으로 센다 - 그룹 공간에서는 겹치지 않는다
   const { marks } = useProgressMarks(date);
@@ -137,7 +137,7 @@ export default function DayLessons({ date }: { date: string }) {
 
   const startEdit = (c: LessonCell) => {
     if (!sid) return;
-    setEditing({ sid, date, n: c.n, subject: c.subject, memo: c.memo, supplies: c.supplies });
+    setEditing({ sid, date, n: c.n, subject: c.subject, note: c.note });
   };
 
   /** 저장 - 칸을 연 순간의 공간·날짜에. 실패하면 칸을 닫지 않는다 */
@@ -147,7 +147,7 @@ export default function DayLessons({ date }: { date: string }) {
     if (!cell) return false;
     setSaving(true);
     try {
-      await saveLesson(e.sid, e.date, e.date === date ? dayDoc : undefined, cell, { subject: subjectToSave(e.subject), memo: e.memo, supplies: e.supplies });
+      await saveLesson(e.sid, e.date, e.date === date ? dayDoc : undefined, cell, { subject: subjectToSave(e.subject), note: e.note });
       setEditing(null);
       return true;
     } catch {
@@ -161,7 +161,7 @@ export default function DayLessons({ date }: { date: string }) {
   const editRef = useOutside(!!open, () => {
     if (!open || saving) return;
     const cell = cellOf(open.n);
-    if (cell && isEdited(cell, { subject: subjectToSave(open.subject), memo: open.memo, supplies: open.supplies })) void save(open);
+    if (cell && isEdited(cell, { subject: subjectToSave(open.subject), note: open.note })) void save(open);
     else setEditing(null);
   });
 
@@ -194,11 +194,11 @@ export default function DayLessons({ date }: { date: string }) {
     }
     if (nowState.kind === 'break' || nowState.kind === 'before') {
       const p = nowState.next;
-      const supplies = (cellOf(p)?.supplies ?? '').trim();
+      const note = firstLine(cellOf(p)?.note ?? '');
       return (
         (nowState.kind === 'break' ? '쉬는 시간 · ' : '') +
         `다음 ${p}교시${subjectOf(p) ? ' ' + subjectOf(p) : ''} ${nowState.minutes}분 뒤` +
-        (supplies ? ` · 준비물 ${supplies}` : '')
+        (note ? ` · 📌 ${note}` : '')
       );
     }
     return '';
@@ -387,22 +387,13 @@ export default function DayLessons({ date }: { date: string }) {
                         autoFocus
                       />
                     )}
-                    <input
-                      type="text"
-                      data-lesson-supplies-input
-                      value={open.supplies}
-                      onChange={(e) => set({ supplies: e.target.value })}
-                      placeholder="준비물"
-                      aria-label="준비물"
-                      className={`${isClassUnit ? 'col-span-1' : 'col-span-2'} px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary`}
-                    />
                   </div>
                   <AutoTextarea
-                    data-lesson-memo-input
-                    value={open.memo}
-                    onChange={(e) => set({ memo: e.target.value })}
-                    placeholder="수업 메모..."
-                    aria-label="수업 메모"
+                    data-lesson-note-input
+                    value={open.note}
+                    onChange={(e) => set({ note: e.target.value })}
+                    placeholder="비고(준비물)..."
+                    aria-label="비고(준비물)"
                     className="w-full min-h-[40px] p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary placeholder-slate-400 leading-relaxed"
                   />
                   {c.changed && (
@@ -414,7 +405,7 @@ export default function DayLessons({ date }: { date: string }) {
               );
             }
 
-            // 빈 메모·준비물은 그리지 않는다(둘 다 비면 한 줄 카드 - 휴대폰에서도 아래 일정 칸이 금방 나온다)
+            // 빈 비고(준비물)는 그리지 않는다(비면 한 줄 카드 - 휴대폰에서도 아래 일정 칸이 금방 나온다)
             const isNow = nowState?.kind === 'during' && nowState.period === n;
             const isNext = (nowState?.kind === 'break' || nowState?.kind === 'before') && nowState.next === n;
             const range = periodRangeLabel(times, n);
@@ -422,10 +413,10 @@ export default function DayLessons({ date }: { date: string }) {
             const slot = isClassUnit && c.subject ? parseSlot(c.subject) : null;
             const slotColor = slot?.cls ? classColorOf(slot.cls) : null;
             const prev = slot?.cls && recent ? previousSlotOf(recent, c.subject, date, n) : null;
-            const prevNote = prev ? (src.days[prev.date]?.periods?.[prev.period]?.memo ?? '').split('\n')[0].trim() : '';
+            const prevNote = prev ? firstLine(lessonNote(src.days[prev.date]?.periods?.[prev.period])) : '';
             const mark = marks[slotId(date, n)];
             const slotClass = slot?.cls && inPersonal ? classes.find((k) => k.year === schoolYear && classLabelOf(k) === slot.cls) : undefined;
-            const hasDetails = !!(c.memo || c.supplies || prevNote || mark || slotClass);
+            const hasDetails = !!(c.note || prevNote || mark || slotClass);
             const attSummary = slotClass ? periodSummary(readSubjectPeriods(subjectAtt[subjectAttendanceDocId(slotClass.id, date)]?.periods)[String(n)]) : '';
             return (
               <div
@@ -618,34 +609,24 @@ export default function DayLessons({ date }: { date: string }) {
                           e.stopPropagation();
                           setDate(prev.date);
                         }}
-                        title={`지난 시간 수업 메모 - 누르면 ${shortDateLabel(prev.date)}로 갑니다`}
-                        className={`self-start max-w-full truncate text-left text-xs text-slate-500 hover:text-primary hover:underline cursor-pointer ${mark || c.memo || c.supplies ? 'mb-1.5' : ''}`}
+                        title={`지난 시간 비고(준비물) - 누르면 ${shortDateLabel(prev.date)}로 갑니다`}
+                        className={`self-start max-w-full truncate text-left text-xs text-slate-500 hover:text-primary hover:underline cursor-pointer ${mark || c.note ? 'mb-1.5' : ''}`}
                       >
                         ⏪ 지난 시간 {shortDateLabel(prev.date)} {prev.period}교시: <span className="text-slate-700">{prevNote}</span>
                       </button>
                     )}
 
                     {mark && (
-                      <div className={c.memo || c.supplies ? 'mb-2' : ''}>
+                      <div className={c.note ? 'mb-2' : ''}>
                         <ProgressMarkLine mark={mark} date={date} period={n} />
                       </div>
                     )}
 
-                    {/* 차례: 과목 / 진도 줄 / 준비물 / 메모 */}
-                    {(c.memo || c.supplies) && (
-                      <div className={`grid grid-cols-1 ${c.memo && c.supplies ? 'sm:grid-cols-2' : ''} gap-3 text-xs`}>
-                        {c.supplies && (
-                          <div className="flex flex-col" data-lesson-supplies>
-                            <span className="text-slate-400 text-xs mb-0.5">📌 비고 / 준비물</span>
-                            <p className="text-amber-600 font-medium whitespace-pre-wrap leading-relaxed">{c.supplies}</p>
-                          </div>
-                        )}
-                        {c.memo && (
-                          <div className="flex flex-col" data-lesson-memo>
-                            <span className="text-slate-400 text-xs mb-0.5">📝 수업 메모</span>
-                            <p className="text-slate-600 whitespace-pre-wrap leading-relaxed">{c.memo}</p>
-                          </div>
-                        )}
+                    {/* 차례: 과목 / 진도 줄 / 비고(준비물) */}
+                    {c.note && (
+                      <div className="flex flex-col text-xs" data-lesson-note>
+                        <span className="text-slate-400 text-xs mb-0.5">📌 비고(준비물)</span>
+                        <p className="text-amber-700 font-medium whitespace-pre-wrap leading-relaxed">{c.note}</p>
                       </div>
                     )}
                   </div>

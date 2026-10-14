@@ -15,24 +15,25 @@ describe('알림장', () => {
     expect(nextClassDay('2026-10-02', (d) => d === '2026-10-05')).toBe('2026-10-06');
     expect(nextClassDay('2026-10-02', () => true)).toBeNull();
   });
-  it('준비물과 일정으로 초안을 만든다 (수업 메모·끝낸 일정은 뺀다)', () => {
+  it('비고(준비물)와 일정으로 초안을 만든다 (끝낸 일정은 뺀다, 여러 줄은 쉼표로)', () => {
     const cells = [
-      { n: 1, subject: '국어', supplies: '' },
-      { n: 2, subject: '미술', supplies: '색연필' },
-      { n: 3, subject: '음악', supplies: '리코더' },
+      { n: 1, subject: '국어', note: '' },
+      { n: 2, subject: '미술', note: '색연필' },
+      { n: 3, subject: '음악', note: '리코더' },
+      { n: 4, subject: '체육', note: '줄넘기\n물병' },
     ];
     const events = [
       { text: '현장체험학습 동의서 제출', done: false },
       { text: '끝난 일', done: true },
     ];
-    expect(draftLinesFrom(cells, events)).toEqual(['미술 준비물: 색연필', '음악 준비물: 리코더', '현장체험학습 동의서 제출']);
+    expect(draftLinesFrom(cells, events)).toEqual(['미술 준비물: 색연필', '음악 준비물: 리코더', '체육 준비물: 줄넘기, 물병', '현장체험학습 동의서 제출']);
   });
   it('진도의 차시 준비물을 그 교시 줄에 합친다 (같은 것은 한 번)', () => {
     const cells = [
-      { n: 1, subject: '국어', supplies: '공책' },
-      { n: 2, subject: '수학', supplies: '' },
-      { n: 3, subject: '과학', supplies: '' },
-      { n: 4, subject: '미술', supplies: '색연필' },
+      { n: 1, subject: '국어', note: '공책' },
+      { n: 2, subject: '수학', note: '' },
+      { n: 3, subject: '과학', note: '' },
+      { n: 4, subject: '미술', note: '색연필' },
     ];
     expect(draftLinesFrom(cells, [], { 1: '교과서', 2: '자', 3: '돋보기', 4: '색연필' })).toEqual(['국어 준비물: 공책, 교과서', '수학 준비물: 자', '과학 준비물: 돋보기', '미술 준비물: 색연필']);
   });

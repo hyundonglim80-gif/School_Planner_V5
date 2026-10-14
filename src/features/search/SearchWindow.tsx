@@ -3,7 +3,7 @@
 //   - 갈래(여러 개)·기간(보고 있는 날 기준)·라벨로 거른다. 결과는 50개씩(더 보기).
 //   - 결과를 누르면 그 자리(그날 하루 화면·메모 화면)로 가서 찾은 카드를 짚는다(features/search/focus). 오른쪽 칸이라 검색 창은 그대로 -
 //     휴대폰은 화면을 덮으므로 닫는다. ✏️는 그 항목의 쓰는 칸, 📎는 그 파일을 연다.
-//   - 수업·수업 메모·비고(P6-1)는 계산한 수업 칸에서 찾는다(domain/search searchLessons) - 누르면 그날 하루 화면의 그 교시, ✏️는 'N교시 수정' 칸.
+//   - 수업·비고(준비물)(P6-1)는 계산한 수업 칸에서 찾는다(domain/search searchLessons) - 누르면 그날 하루 화면의 그 교시, ✏️는 'N교시 수정' 칸.
 //     라벨로 거르면 수업은 빠진다(라벨이 없다). 조사표(P7-4)는 제목·교과로 - 누르면 그날 하루 화면과 그 조사표 창.
 //   - 그날 '📢 알림장'·'📋 출결' 카드(P7-2 - 계산, domain/dayCards)는 '기록'으로 나온다 - 누르면 그날 하루 화면과 원본 칸.
 import { useDeferredValue, useMemo, useState } from 'react';
@@ -40,8 +40,7 @@ const BADGES: Record<SearchKind, { text: string; className: string }> = {
   event: { text: '일정', className: 'bg-blue-50 text-blue-700 border-blue-200' },
   journal: { text: '기록', className: 'bg-purple-50 text-purple-700 border-purple-200' },
   lesson: { text: '수업', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  lessonMemo: { text: '수업 메모', className: 'bg-lime-50 text-lime-700 border-lime-200' },
-  lessonSupplies: { text: '비고', className: 'bg-orange-50 text-orange-700 border-orange-200' },
+  lessonNote: { text: '비고(준비물)', className: 'bg-orange-50 text-orange-700 border-orange-200' },
   evaluation: { text: '조사표', className: 'bg-teal-50 text-teal-700 border-teal-200' },
   attachment: { text: '첨부파일', className: 'bg-rose-50 text-rose-700 border-rose-200' },
 };

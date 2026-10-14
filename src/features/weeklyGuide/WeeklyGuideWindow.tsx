@@ -1,5 +1,5 @@
 // 📰 주간학습안내 (V4 components/WeeklyGuideModal.tsx). 창 'weeklyGuide' = { date? } - 주간 화면 단추(보는 주)·단축키(다음 주).
-// 한 주(월~금)의 요일 × 교시 표(과목 + 수업 메모) + 날마다 준비물·알림장 → 인쇄(A4 세로)·표 복사(한글·워드는 표, 엑셀은 칸마다).
+// 한 주(월~금)의 요일 × 교시 표(과목 + 비고(준비물)) + 날마다 알림장 → 인쇄(A4 세로)·표 복사(한글·워드는 표, 엑셀은 칸마다).
 // 재료는 지금 공간의 계산한 수업 칸(features/lessons/useLessons - 읽기만), 셈은 domain/weeklyGuide, 인쇄는 ui/print.
 // 제목·넣을 것·주마다 알리는 말은 이 기기에만 남긴다(학교·반마다 쓰는 말이 다르다 - V4 그대로). 알림장 줄 = 그날 적은 알림장(P7-2).
 import { useMemo, useRef, useState } from 'react';
@@ -33,7 +33,7 @@ export interface WeeklyGuideParams {
 const OPTS_KEY = 'sp5-weekly-guide-opts';
 const TITLE_KEY = 'sp5-weekly-guide-title';
 const NOTES_KEY = 'sp5-weekly-guide-notes';
-const DEFAULT_OPTS: GuideOptions = { memo: true, supplies: true, notices: true };
+const DEFAULT_OPTS: GuideOptions = { note: true, notices: true };
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -100,7 +100,7 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
   const table = guideTable(days, periodNames, shown);
   const fullTitle = `${title.trim() || '주간학습안내'} (${weekRangeText(dates)})`;
   const emptyWeek = days.every((d) => Object.keys(d.periods).length === 0 && d.notices.length === 0);
-  const periodRows = table.rows.length - (shown.supplies ? 1 : 0) - (shown.notices ? 1 : 0);
+  const periodRows = table.rows.length - (shown.notices ? 1 : 0);
 
   const print = () => {
     if (previewRef.current) printNode(previewRef.current, { landscape: false, marginMm: 10 });
@@ -130,8 +130,7 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
   const thisMonday = schoolWeekOf(today)[0];
   const nextMonday = shiftWeek(thisMonday, 1);
   const optionList: Array<readonly [keyof GuideOptions, string]> = [
-    ['memo', '수업 메모'],
-    ['supplies', '준비물'],
+    ['note', '비고(준비물)'],
     ['notices', '알림장'],
   ];
 
@@ -248,7 +247,7 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
         </div>
         {emptyWeek && <p className="text-2xs text-amber-700 font-bold" data-guide-empty>이 주에 수업 칸이 비어 있습니다. ⏰ 시간표 창에서 시간표를 만들거나 다른 주를 고릅니다.</p>}
         <p className="text-2xs text-slate-400">
-          지금 보는 공간의 수업 칸(과목·수업 메모·준비물)을 읽기만 합니다. 고치려면 그날 하루 화면에서 고칩니다 - 열어 둔 채로 고쳐도 표가 따라옵니다. 인쇄 창에서 'PDF로 저장'을 고르면 PDF가 됩니다.
+          지금 보는 공간의 수업 칸(과목·비고(준비물))을 읽기만 합니다. 고치려면 그날 하루 화면에서 고칩니다 - 열어 둔 채로 고쳐도 표가 따라옵니다. 인쇄 창에서 'PDF로 저장'을 고르면 PDF가 됩니다.
         </p>
       </div>
     </ModalShell>

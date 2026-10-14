@@ -3,7 +3,8 @@
 //   그날 n교시 = lessonDays[date].periods[n].subject (있으면 - ''이면 그 교시 수업 없음)
 //             → 없으면 수업 없는 날(방학·공휴일·수업X 일정·'휴업')이면 없음
 //             → 아니면 그 날짜가 든 시간표(기간이 겹치면 늦게 시작한 것)의 grid[요일][n]
-//   준비물·메모·첨부·링크는 lessonDays에만 있다.
+//   비고(준비물)·첨부·링크는 lessonDays에만 있다.
+//   비고(준비물)는 한 칸이다(P10-2 사용자 의견) - supplies에 적고, 옛 수업 메모(memo)는 읽을 때 그 뒤에 이어 보인다(lessonNote).
 //
 // V4는 '⚡ 이 기간에 시간표 일괄 덮어쓰기'로 날마다 과목을 적어 두었다 - 시간표를 고치면 다시 덮어써야 했고, 그날 고친 과목도 덮였다.
 // V5는 시간표를 고치면 그 기간의 날이 저절로 따라가고, 그날 바꾼 칸(lessonDays)은 그대로 남는다.
@@ -25,7 +26,9 @@ export interface TimetableLike {
 /** 그날 바꾼 칸 하나 (lessonDays 문서의 periods[n]) */
 export interface LessonCellDoc {
   subject?: string;
+  /** 옛 '수업 메모' (P10-2 전·V4 가져오기) - 새로 적지 않는다, 그 칸을 고쳐 저장하면 supplies로 합친다 */
   memo?: string;
+  /** 비고(준비물) */
   supplies?: string;
   attachments?: readonly unknown[];
   linkIds?: readonly string[];
@@ -120,8 +123,8 @@ export interface LessonCell {
   base: string;
   /** 그날 과목을 바꿨나 (lessonDays에 subject가 있다) */
   changed: boolean;
-  memo: string;
-  supplies: string;
+  /** 비고(준비물) - 옛 수업 메모가 있으면 이어 붙인 것 (lessonNote) */
+  note: string;
   attachments: readonly unknown[];
   linkIds: readonly string[];
   /** lessonDays의 그 칸 (없으면 undefined) */
@@ -137,7 +140,15 @@ export interface LessonDayView {
 
 const EMPTY: readonly never[] = [];
 
-/** 칸에 적은 것이 있나 (과목을 바꿨거나 메모·준비물·첨부·링크) */
+/** 비고(준비물) 한 칸 - 준비물 다음 줄에 옛 수업 메모 (둘 중 하나만 있으면 그것) */
+export function lessonNote(doc: Pick<LessonCellDoc, 'memo' | 'supplies'> | undefined): string {
+  return [doc?.supplies?.trim(), doc?.memo?.trim()].filter(Boolean).join('\n');
+}
+
+/** 비고(준비물)의 첫 줄 (좁은 자리 - 주간·지난 시간·머리줄) */
+export const firstLine = (text: string) => text.split('\n').find((l) => l.trim())?.trim() ?? '';
+
+/** 칸에 적은 것이 있나 (과목을 바꿨거나 비고(준비물)·옛 메모·첨부·링크) */
 export function cellHasContent(doc: LessonCellDoc | undefined): boolean {
   if (!doc) return false;
   return (
@@ -171,8 +182,7 @@ export function lessonsOn(date: string, src: LessonSource): LessonDayView {
       subject: changed ? doc!.subject!.trim() : base,
       base,
       changed,
-      memo: doc?.memo ?? '',
-      supplies: doc?.supplies ?? '',
+      note: lessonNote(doc),
       attachments: doc?.attachments ?? EMPTY,
       linkIds: doc?.linkIds ?? EMPTY,
       doc,
