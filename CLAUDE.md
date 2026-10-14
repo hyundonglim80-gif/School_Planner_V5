@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-13 P8-4 끝 = P8 단계 끝**(클라우드 - V4 그룹 가져오기·그룹장 '초대 코드 만들기'). **다음 대화: P9-1 설명서 옮기기**. 👤 규칙 배포 뒤 V5 주소 계정 칸 '👥 공유 그룹' → 'V4 그룹 가져오기'로 실제 그룹 하나 가져와 보기(혼자인 그룹은 지금도 된다). P8-3에 서비스 워커가 바뀌었다 - 설치한 앱은 지우고 다시 설치.
+- **2026-10-14 P9-1 끝**(클라우드 - 설명서를 V5로: 창 `help`·11장 68주제·inspect-manual 282). **다음 대화: P9-2 새 학년도 넘기기**. 👤 V5 주소에서 ? → 설명서를 훑어 V5 화면과 다른 곳을 알려 주기. 👤 규칙 배포 뒤 계정 칸 '👥 공유 그룹' → 'V4 그룹 가져오기'로 실제 그룹 하나 가져와 보기.
 - 👤 PC에 갈 때(묻고): 바뀐 `firestore.rules`(V4 그룹 가져오기 갈래 - 여럿인 V4 그룹은 배포 전에 '그룹 공간을 열지 못했습니다')를 V4 저장소에 복사 → `node tools/live-rules.cjs` → 운영 규칙 배포(`docs/PLAN.md` 5장 'P2-1 규칙'). 그리고 **함수 v5 배포**(PLAN P8-2 ■3 - `--only functions:v5`) → 휴대폰 '알림' 탭에서 받기.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -80,6 +80,8 @@
 - **저장소에 prettier가 없다 - `npx prettier --write`를 돌리지 않는다**(P6-1 - 따옴표·줄 폭을 통째로 바꿨다. 되돌리고 고친 것만 다시).
 - **V4에서 옮긴 파일이 `new URL('./…', import.meta.url)`로 부르는 것(워커 등)은 개발 서버에서는 없어도 넘어가고 빌드에서만 깨진다** - 옮기면 `npm run build`까지(P7-1 `ui/shrinkWorker.ts`). 점검 스크립트는 끝에 `process.exit()`(에뮬레이터 Firebase가 노드를 붙잡는다).
 - **`pkill -f <글자>`는 그 글자가 든 자기 명령 줄(셸)도 죽인다**(P7-3 - `pkill -f vite`로 Bash가 144로 끝났다). 에뮬레이터·개발 서버는 뒤에서(`run_in_background`) 켠다.
+- **클라우드 백그라운드 명령은 기본 30분에 꺼진다** - 에뮬레이터·개발 서버는 `run_in_background` + `timeout: 7200000`(최대 2시간, 그 뒤에도 꺼진다 - 다시 켜고 seed, P9-1). 점검이 갑자기 다 깨지면 먼저 8080·5175가 살아 있나.
+- 점검에서 칸을 닫는 `sp5.closeAllWindows()`는 저장 안 한 칸이 있으면 confirm으로 묻고 probe는 '아니오'라 **칸이 남는다** → 그때만 `dialogs.answer = true`(inspect-manual `closeAll`, P9-1).
 - **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
 - **C: 디스크가 차면 에뮬레이터가 죽는다**: `firebase-debug.log`·`firestore-debug.log`(git 무시)가 커진다. 긴 점검 전에 `df -h /c`, 차면 두 로그를 비우고 `npm run emu` → seed.
   클라우드 컨테이너는 두 로그를 `/dev/null` 링크로 둔다(`ln -s /dev/null firebase-debug.log` - P4-3에 30GB가 되어 Auth 에뮬레이터가 죽었다). 링크는 git 무시라 기기마다 한 번.
@@ -165,9 +167,10 @@
 
 ## 6. 사용 설명서 = 기능 명세
 
-- **P9-1 전까지는 V4 설명서**(`../School_Planner_V4/src/lib/helpTopics.ts`, 11장 68주제)가 명세다. 기능을 옮기기 전에 그 주제 부분만 읽는다
-  (`grep -n "id: '<주제 id>'" ../School_Planner_V4/src/lib/helpTopics.ts` - 주제 id는 `docs/PARITY.md`). 대화 시작에 전부 읽지 않는다.
-- V5에서 동작이 바뀌는 것은 `docs/MENU.md`·`docs/DESIGN.md`·`docs/PARITY.md`에 적고, P9-1에서 설명서를 V5로 옮기며 반영한다. 그 뒤로는 동작을 바꾸면 설명서도 같은 커밋에서 고친다.
+- **P9-1부터 V5 설명서**(`src/features/help/chapters/*.ts`, 11장 68주제 - 차례는 `topics.ts`)가 명세다. 기능을 고치기 전에 그 주제 부분만 읽는다
+  (`grep -rn "id: '<주제 id>'" src/features/help/chapters` - 주제 id는 `docs/PARITY.md`, 창 목록의 `help`). 대화 시작에 전부 읽지 않는다.
+- **동작·자리를 바꾸면 설명서도 같은 커밋에서** 고치고 `node tools/inspect-manual.mjs`(그 주제만 `MATCH=`)를 돌린다. 새 주제를 더하면 inspect-manual에도 한 묶음(모든 주제를 거쳤나 센다).
+  바꿀 수 있는 값(단축키·이월 기간)은 자리표 `{key:…}`·`{lookback}`로만 - 키가 없는 기능은 '단축키 **이름**({key:…})' 꼴(시험이 지킨다).
 
 ## 7. V5 시스템 지도 (세션마다 채운다)
 
@@ -332,6 +335,9 @@
   순수 셈 `domain/checkLines`·`entryCollapse`·`hashLabels`(V4 테스트째). 주소 → 링크 `ui/FormattedText.tsx`. **쓰던 글 보관** `data/drafts.ts`(`useDraft` - DB `sp5-drafts-{uid}`, 메모·기록·일정 칸, 로그아웃하면 지움) + `ui/DraftOffer.tsx`(`[data-draft-offer|draft-restore|draft-discard]`).
 - **설치(PWA)** `public/`: `manifest.json`(SP5 · share_target `/share-target`) · `sw.js`(문서는 네트워크 먼저·`/assets/`는 담아 둔 것 먼저·'sp5-precache' = 빌드의 `asset-manifest.json`대로 이 판을 담고 옛 판은 지움(`ignoreVary`)·공유받기 캐시 `sp5share-inbox`·푸시) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
   공유받기 `features/share/receive.ts`(`useShareReceiver` - Shell, 새 메모 칸 `draftText`·`draftFiles`) · 순수 `domain/share.ts` · 새 판 띠 `app/newBuild.ts`·`NewBuildBanner`(`[data-new-build]`). 점검 `tools/inspect-offline.mjs`(빌드 + preview 4175).
+- **사용 설명서**(P9-1 - 창 `help` `{ topic? }` = ⋮ 설정·머리줄 ?·단축키 'help'): `features/help/`(`types.ts` 모양 · `topics.ts` 장 차례·자리표 풀기 `plainText`·`topicText`·`findHelpTopic` · `chapters/*.ts` 11장(start·views·events·lessons·notes·attachments·classroom·find·share·settings·trouble) ·
+  `HelpWindow.tsx`(V4 HelpModal - 분류 → 기능 → 설명·사용 예·왼쪽 목차(접기 이 기기 `sp5-help-tree-hidden`)·찾기·단축키 표, `[data-help-window|help-home|help-search|help-results|help-category|help-topic|help-detail|help-example|help-link|help-key|help-lookback|help-related|help-prev|help-next|help-crumb-home|help-back|help-tree|help-tree-topic|help-tree-category|help-tree-fold|help-tree-all|help-tree-toggle|help-shortcuts|help-shortcut|help-shortcuts-open]`)) ·
+  시험 `topics.test`(링크·자리표·창의 `help` 주제가 있나)·`HelpWindow.test`(모든 항목을 그려 기호가 남지 않나). 점검 `tools/inspect-manual.mjs`(282 - 68주제마다 설명서가 말하는 자리).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
   `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·

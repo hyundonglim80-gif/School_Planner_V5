@@ -361,7 +361,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | `tools/check-rules.mjs` | 규칙을 고칠 때마다. V4 35개 + V5 |
 | 크롬 점검 `tools/inspect-*.mjs` | 세션마다 바뀐 부분만. **`data-*`로만 찾는다**(화면 글자가 아니라). 심은 자료는 끝에 되돌린다. PC 1400px 크롬 하나. 화면이 없는 자료 층은 앱 모듈을 `import('/src/…')`로 불러 store를 읽는다(`inspect-data`·`inspect-mirror`). 서버에 쓰는 것은 '그 문서만 바뀌었나'를 다른 문서의 `updatedAt`으로 본다(`inspect-labels`) |
 | 가져오기 점검 | 가져오기 세션마다: V4 seed → 가져오기 → 종류·수 대조 → 두 번째 가져오기는 '바뀐 것 0'. 순수 규칙은 단위(`import/v4/*.test`), 규칙을 지나는지는 자료 층(`import.emu.test`), 화면은 `tools/inspect-import-labels.mjs`(V4 문서를 고쳐 심고 끝에 V4·V5 모두 되돌린다). seed는 계정마다 `settings/import`에 띠 닫음을 심는다(띠가 다른 점검을 밀어내지 않게) |
-| 설명서 점검 | P9-1부터. 여러 세션을 모아 마지막에 한 번 |
+| 설명서 점검 `tools/inspect-manual.mjs` | 설명서를 고치거나 자리를 옮길 때. 68주제마다 설명서가 말하는 자리가 있나·주제가 열리나, 장 파일의 새 주제는 점검에도 더한다 |
 | `PARITY.md` | 세션 끝마다 그 세션이 끝낸 기능을 체크 |
 
 ## 10. 고치기 전에 확인할 것
