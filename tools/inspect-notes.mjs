@@ -1,11 +1,11 @@
-// tools/inspect-notes.mjs - P3-2: 하루 화면 기록 칸·메모·기록 쓰는 칸을 실제 크롬에서 본다 (저장마다 서버 문서 하나만 바뀐다).
+// tools/inspect-notes.mjs - P3-2(P10-3 메모 하나 + 날짜 링크): 하루 화면 메모 칸·메모 쓰는 칸을 실제 크롬에서 본다 (저장마다 서버 문서 하나만 바뀐다).
 //   1) 하루 화면 기록 칸: 그날 기록 카드(라벨 칩·☑ n/m·🔗), 즐겨찾기가 맨 위, 메모·다른 날은 없다, 긴 기록은 접혀 있다.
 //   2) ☐ 완료·☆ 즐겨찾기·체크 줄 = 그 기록 문서 하나(다른 기록의 updatedAt은 그대로), 안내 없이. ▲ 순서 = 문서 하나.
 //   3) 🗑️ = 지운 표시 → 안내의 되돌리기.
 //   4) + 추가 → 새 기록 칸(맨 위 라벨·커서는 글 칸) → '#라벨' 미리 보기 → Ctrl+S = 새 문서 하나 + 새 라벨, 칸은 그 기록의 수정 칸('#' 줄은 떼고).
-//   5) 고치기 = 그 문서의 바뀐 칸만. 📅 날짜 빼기 → '옮기고 저장' = date null·fromDate(메모로), 안내의 되돌리기 = 원래 날.
-//   6) ☑ 체크리스트 단추·Enter 이어 쓰기, 칸의 ☐ 완료 = 곧바로 그 칸만. + 메모 → 새 메모 칸(날짜 없음).
-//   8) ＋ 새로 → 새 기록(보는 날)·새 메모(날짜 없음).
+//   5) 고치기 = 그 문서의 바뀐 칸만. + 날짜로 둘째 날 → dates 두 개, 그 날 메모 칸에도 · 메모 화면에 📅 칩 둘 · 칩 × 다 빼기 = date null, 안내의 되돌리기 = 원래대로.
+//   6) ☑ 체크리스트 단추·Enter 이어 쓰기, 칸의 ☐ 완료 = 곧바로 그 칸만. '+ 메모'는 없다(P10-3).
+//   8) 단축키 그날 새 메모(보는 날)·날짜 없는 새 메모.
 //   7) 쓰던 글 보관: 새 기록 칸에 적고 2초 → 새로고침 → 다시 열면 '저장하지 않은 글' → 되살리기, 버리기면 다시 묻지 않는다(IndexedDB sp5-drafts-{uid}).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-notes.mjs
@@ -103,11 +103,11 @@ try {
   const removed = await serverUntil(() => read('insp_nt3'), (d) => !!d?.deletedAt);
   r.check(!!removed?.deletedAt && removed.text.includes('장보기'), '서버: 지운 표시 (문서는 남는다)');
   r.check(await waitFor(async () => (await card('insp_nt3').count()) === 0), '목록에서 빠진다');
-  await page.locator(sel('toast')).filter({ hasText: '기록을 삭제했습니다' }).locator('[data-toast-action="되돌리기"]').click();
+  await page.locator(sel('toast')).filter({ hasText: '메모를 삭제했습니다' }).locator('[data-toast-action="되돌리기"]').click();
   r.check((await serverUntil(() => read('insp_nt3'), (d) => d?.deletedAt === null))?.deletedAt === null, '안내의 되돌리기 → 되살아난다');
   r.check(await waitFor(card('insp_nt3')), '카드가 돌아온다');
 
-  r.section('새 기록 칸 → #라벨 → 저장 = 문서 하나 + 새 라벨 → 수정 칸');
+  r.section('새 메모 칸 → #라벨 → 저장 = 문서 하나 + 새 라벨 → 수정 칸');
   undo.add(async () => {
     const snap = await getDocs(collection(em.db, 'spaces', sid, 'items'));
     for (const d of snap.docs) if (d.data().createdAt >= startedAt && String(d.data().text).includes('점검') && !d.id.startsWith('insp_')) await deleteDoc(d.ref);
@@ -116,11 +116,11 @@ try {
   });
   const panel = page.locator(sel('note-panel'));
   await page.locator(sel('journal-add')).click();
-  r.check(await waitFor(panel), '+ 추가 → 오른쪽에 새 기록 칸');
-  r.check((await panel.getAttribute('data-note-panel')) === 'new' && (await panel.getAttribute('data-note-noun')) === '기록', '새 기록');
+  r.check(await waitFor(panel), '+ 추가 → 오른쪽에 새 메모 칸');
+  r.check((await panel.getAttribute('data-note-panel')) === 'new' && (await panel.getAttribute('data-note-dates')) === DAY, '새 메모 (그날 날짜 링크)');
   r.check(await page.evaluate(() => document.activeElement?.hasAttribute('data-note-text-input')), '열면 커서가 내용 칸에');
   r.check((await panel.locator('[data-label-pick][aria-pressed="true"]').count()) === 1, '맨 위 라벨을 골라 둔다');
-  r.check((await page.locator(sel('note-date')).inputValue()) === DAY, '📅 날짜 = 보던 날');
+  r.check((await page.locator(sel('note-date-chip', DAY)).count()) === 1, '📅 날짜 칩 = 보던 날');
   await page.keyboard.type('점검 새 기록');
   await page.keyboard.press('Enter');
   await page.keyboard.type('#점검새라벨');
@@ -138,26 +138,46 @@ try {
   r.check((await page.locator(sel('note-text-input')).inputValue()) === '점검 새 기록', "칸의 글에서도 '#' 줄이 빠진다");
   r.check(await waitFor(async () => ((await card(newId).getAttribute('class')) ?? '').includes('ring-primary')), '목록의 그 카드를 짚는다');
 
-  r.section('고치기 = 바뀐 칸만 / 날짜 빼기 = 메모로 (date만)');
+  r.section('고치기 = 바뀐 칸만 / 날짜 링크 더하기·빼기 (같은 문서)');
   before = await stamps();
   await page.locator(sel('note-text-input')).fill('점검 새 기록 (고침)');
   await page.locator(sel('note-save')).click();
   r.check((await serverUntil(() => read(newId), (d) => d?.text === '점검 새 기록 (고침)'))?.text === '점검 새 기록 (고침)', '서버: 글이 바뀐다');
   after = await serverUntil(stamps, (s) => changed(before, s).length > 0);
   r.check(JSON.stringify(changed(before, after)) === JSON.stringify([newId]), '바뀐 문서는 그 기록 하나');
-  await page.locator(sel('note-date-clear')).click();
-  r.check(await waitFor(page.locator(sel('note-place-hint'))), "'저장하면 메모로 옮깁니다'");
+  const DAY2 = '2026-10-21';
+  await page.locator(sel('note-date-add')).click();
+  await page.locator(sel('picker-day', DAY2)).click();
+  r.check((await page.locator(sel('note-date-chip', DAY2)).count()) === 1, '+ 날짜 → 둘째 날 칩');
+  before = await stamps();
+  await page.locator(sel('note-save')).click();
+  const two = await serverUntil(() => read(newId), (d) => d?.dates?.length === 2);
+  r.check(JSON.stringify(two?.dates) === JSON.stringify([DAY, DAY2]) && two.date === DAY, `dates 두 개·date = 가장 이른 날 (${JSON.stringify(two?.dates)})`);
+  r.check(await waitFor(card(newId)), '보던 날 메모 칸에 그대로');
+  await open(page, `#/day/${DAY2}`);
+  r.check(await waitFor(card(newId), 8000), '둘째 날 메모 칸에도 같은 카드');
+  await open(page, '#/memo');
+  await page.locator(sel('filter-chip', 'all')).click();
+  const memoCard = page.locator(`${sel('entry-card', newId)}`);
+  r.check(await waitFor(memoCard, 8000), '메모 화면에도');
+  r.check((await memoCard.locator('[data-entry-date-chip]').count()) === 2, '메모 화면 카드에 📅 칩 둘');
+  await memoCard.locator(sel('entry-date-chip', DAY)).click();
+  r.check(await waitFor(async () => new URL(page.url()).hash === `#/day/${DAY}`), '칩 → 그날 하루 화면');
+  // 칩 × 로 둘 다 빼기 = 날짜 없는 메모 (같은 문서)
+  await waitFor(panel);
+  await page.locator(sel('note-date-remove', DAY2)).click();
+  await page.locator(sel('note-date-remove', DAY)).click();
+  r.check(await waitFor(page.locator(sel('note-dates-empty'))), "칩을 다 빼면 '날짜 없음'");
   await page.locator(sel('note-save')).click();
   const toMemo = await serverUntil(() => read(newId), (d) => d?.date === null);
-  r.check(toMemo?.date === null && toMemo.fromDate === DAY && toMemo.text === '점검 새 기록 (고침)', '옮기고 저장 → date null · fromDate (같은 문서)');
-  r.check(await waitFor(async () => (await card(newId).count()) === 0), '그날 기록에서 빠진다');
-  r.check((await panel.getAttribute('data-note-noun')) === '메모', '칸은 같은 항목(이제 메모)을 가리킨다');
-  await page.locator(sel('toast')).filter({ hasText: '메모로 옮겼습니다' }).locator('[data-toast-action="되돌리기"]').click();
+  r.check(toMemo?.date === null && toMemo.dates === undefined && toMemo.fromDate === undefined && toMemo.text === '점검 새 기록 (고침)', '저장 → date null · dates 걷음 (같은 문서)');
+  r.check(await waitFor(async () => (await card(newId).count()) === 0), '그날 메모 칸에서 빠진다');
+  await page.locator(sel('toast')).filter({ hasText: '메모를 저장했습니다' }).last().locator('[data-toast-action="되돌리기"]').click();
   const back = await serverUntil(() => read(newId), (d) => d?.date === DAY);
-  r.check(back?.date === DAY && back.fromDate === undefined && back.text === '점검 새 기록 (고침)', '안내의 되돌리기 → 원래 날 (자리만)');
+  r.check(back?.date === DAY && back.dates?.length === 2 && back.text === '점검 새 기록 (고침)', '안내의 되돌리기 → 두 날짜 링크로');
   r.check(await waitFor(card(newId)), '카드가 돌아온다');
 
-  r.section('체크리스트·완료·+ 메모');
+  r.section('체크리스트·완료·+ 메모 없음');
   const input = page.locator(sel('note-text-input'));
   await input.fill('점검 할 일');
   await input.press('End');
@@ -173,18 +193,14 @@ try {
   r.check((await input.inputValue()) === '☐ 점검 할 일\n☐ 우유', '쓰던 글은 칸에 그대로');
   await page.locator(sel('note-close')).click();
   r.check(await waitFor(async () => (await panel.count()) === 0), '닫기 → 칸이 닫힌다 (저장 없이)');
-  await page.locator(sel('journal-add-memo')).click();
-  r.check(await waitFor(async () => (await panel.getAttribute('data-note-noun')) === '메모'), '+ 메모 → 새 메모 칸');
-  r.check((await page.locator(sel('note-date')).inputValue()) === '', '날짜 없음');
-  await page.locator(sel('note-close')).click();
+  r.check((await page.locator(sel('journal-add-memo')).count()) === 0, "하루 메모 칸에 '+ 메모'는 없다 (+ 추가 하나)");
 
-  r.section('단축키 새 기록·새 메모 (PC 머리줄 ＋ 새로는 뺐다 - P10-1)');
+  r.section('단축키 그날 새 메모·날짜 없는 새 메모 (PC 머리줄 ＋ 새로는 뺐다 - P10-1)');
   await page.evaluate(() => window.sp5.runShortcut('newNote'));
-  r.check(await waitFor(async () => (await panel.getAttribute('data-note-noun')) === '기록' && (await panel.getAttribute('data-note-panel')) === 'new'), '새 기록 → 새 기록 칸');
-  r.check((await page.locator(sel('note-date')).inputValue()) === DAY, '보는 날의 기록');
+  r.check(await waitFor(async () => (await panel.getAttribute('data-note-dates')) === DAY && (await panel.getAttribute('data-note-panel')) === 'new'), '그날 새 메모 → 보는 날 날짜 링크');
   await page.locator(sel('note-close')).click();
   await page.evaluate(() => window.sp5.runShortcut('newMemo'));
-  r.check(await waitFor(async () => (await panel.getAttribute('data-note-noun')) === '메모'), '새 메모 → 새 메모 칸 (날짜 없음)');
+  r.check(await waitFor(async () => (await panel.getAttribute('data-note-dates')) === ''), '날짜 없는 새 메모 → 날짜 칩 없음');
   await page.locator(sel('note-close')).click();
 
   r.section('쓰던 글 보관 (이 기기)');

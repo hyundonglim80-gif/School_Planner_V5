@@ -163,8 +163,8 @@ function MenuKey({ id }: { id: ShortcutId }) {
 
 const NEW_ITEMS: Array<{ id: ShortcutId; icon: string; label: string }> = [
   { id: 'newEvent', icon: '📅', label: '새 일정' },
-  { id: 'newNote', icon: '📔', label: '새 기록' },
-  { id: 'newMemo', icon: '🗒️', label: '새 메모' },
+  { id: 'newNote', icon: '📝', label: '그날 새 메모' },
+  { id: 'newMemo', icon: '🗒️', label: '날짜 없는 새 메모' },
 ];
 
 function NewItems({ close }: { close: () => void }) {

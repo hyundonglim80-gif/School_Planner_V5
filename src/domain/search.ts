@@ -71,6 +71,8 @@ export interface Searchable {
   id: string;
   kind: string;
   date?: string | null;
+  /** 메모의 날짜 링크 (둘 이상일 때만 - domain/noteDates) */
+  dates?: readonly string[];
   endDate?: string;
   text?: string;
   createdAt?: number;
@@ -112,6 +114,16 @@ export function kindOf(item: Pick<Searchable, 'kind' | 'date'>): ItemSearchKind 
 /** 메모의 날 = 만든 날 */
 const memoDate = (it: Searchable) => (it.createdAt ? formatDate(new Date(it.createdAt)) : undefined);
 
+/**
+ * 결과에 보일 그 항목의 날. 날짜 링크 여럿인 메모(P10-3)는 기간 안의 가장 늦은 날(기간이 없으면 가장 늦은 날) -
+ * 기간 안에 하나도 없으면 가장 이른 날(기간 밖이라 빠진다)
+ */
+function linkedDate(it: Searchable, range: DateRange | null): string | undefined {
+  if (!it.dates || it.dates.length < 2) return it.date ?? undefined;
+  const inside = it.dates.filter((d) => !range || !range.start || !range.end || (range.start <= d && d <= range.end));
+  return inside.length > 0 ? inside[inside.length - 1] : it.dates[0];
+}
+
 function inRange(it: Searchable, date: string | undefined, range: DateRange | null): boolean {
   if (!range || !range.start || !range.end) return true;
   // 만든 때를 알 수 없는 메모는 기간 때문에 사라지지 않게 남긴다 (V4)
@@ -130,7 +142,7 @@ export function searchItems<T extends Searchable>(items: readonly T[], q: Search
   for (const it of items) {
     const kind = kindOf(it);
     if (!kind) continue;
-    const date = kind === 'memo' ? memoDate(it) : (it.date ?? undefined);
+    const date = kind === 'memo' ? memoDate(it) : linkedDate(it, q.range);
     if (!inRange(it, date, q.range)) continue;
     const body = `${it.text ?? ''}\n${tableText(it.tables)}`;
     if (want(kind) && match(body)) out.push({ key: it.id, kind, item: it, date });

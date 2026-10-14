@@ -10,7 +10,7 @@ import { lessonsOn } from '../../domain/lessons';
 import { classIdOf, describeClass, genderToText } from '../../domain/roster';
 import { schoolYearSpan } from '../../domain/semester';
 import { buildBackup, readCurrentFor, writeRestore } from '../../data/backup';
-import { itemLabels, itemsBetween, labelTreeOf, memos, useDocs } from '../../data/select';
+import { itemLabels, itemsBetween, labelTreeOf, memos, noteDaysBetween, useDocs } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { downloadCsv, downloadJson } from '../../ui/download';
 import { rangeForScope } from '../gcal/manual';
@@ -95,7 +95,7 @@ export default function BackupTab() {
         ? itemsBetween(items, r.start, r.end, 'event').map((e) => ({ date: e.date ?? '', labels: names(evTree, e.labelIds), text: e.text ?? '', done: !!e.done, time: e.time }))
         : [],
       lessons,
-      records: include.has('records') ? itemsBetween(items, r.start, r.end, 'note').map((n) => ({ date: n.date ?? '', labels: names(noteTree, n.labelIds), text: n.text ?? '' })) : [],
+      records: include.has('records') ? noteDaysBetween(items, r.start, r.end).map(({ date: d, item: n }) => ({ date: d, labels: names(noteTree, n.labelIds), text: n.text ?? '' })) : [],
       students:
         include.has('classes') && personal
           ? Object.values(classes)

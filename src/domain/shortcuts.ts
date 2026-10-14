@@ -115,8 +115,8 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   // 자주 쓰는 조합을 미리 차지해 두면 오히려 걸리적거린다.
   // 새로 만들기 (V5 - 머리줄 '＋ 새로'와 같다)
   { id: 'newEvent', label: '새 일정', group: '메뉴 열기', def: b('') },
-  { id: 'newNote', label: '새 기록', group: '메뉴 열기', def: b('') },
-  { id: 'newMemo', label: '새 메모', group: '메뉴 열기', def: b('') },
+  { id: 'newNote', label: '그날 새 메모', group: '메뉴 열기', def: b('') },
+  { id: 'newMemo', label: '날짜 없는 새 메모', group: '메뉴 열기', def: b('') },
   { id: 'multiSelect', label: '여러 개 고르기', group: '메뉴 열기', def: b('') },
   // 주간 화면의 '작년 이맘때' (ROADMAP 7). 다른 화면에서 누르면 주간으로 가서 켠다.
   { id: 'lastYear', label: '작년 이맘때 보이기 / 숨기기 (주간)', group: '메뉴 열기', def: b('') },

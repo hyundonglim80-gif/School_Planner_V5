@@ -1,17 +1,24 @@
 // 둘째 줄 날짜 옆 📅 - 눌러도 올려도 작은 달력이 뜬다 (V4 components/MiniCalendarPicker.tsx에서 옮김, 날짜는 'YYYY-MM-DD').
-import { useState, useEffect, useRef, useCallback } from 'react';
+// 메모 쓰는 칸의 '+ 날짜'(P10-3)도 이것 - trigger로 단추 모양을 바꾸고(누를 때만 열린다), marked = 이미 고른 날짜들.
+import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { formatDate, parseDateStr, todayStr } from '../domain/dateUtils';
 
 interface MiniCalendarPickerProps {
   /** 보는 날 'YYYY-MM-DD' */
   date: string;
   onSelectDate: (date: string) => void;
+  /** 다른 단추 모양 (주면 마우스를 올려도 열리지 않고 누를 때만, data-date-picker 대신 data-{data}) */
+  trigger?: { label: ReactNode; title: string; data: string; className?: string; disabled?: boolean };
+  /** 고른 것처럼 칠할 날짜들 (주면 date 대신) */
+  marked?: readonly string[];
+  /** 달력 아래 안내 */
+  hint?: string;
 }
 
 const POPOVER_WIDTH = 230;
 const WEEK_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
-export default function MiniCalendarPicker({ date, onSelectDate }: MiniCalendarPickerProps) {
+export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked, hint = '클릭 시 이동' }: MiniCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewYear, setViewYear] = useState(() => parseDateStr(date).getFullYear());
   const [viewMonth, setViewMonth] = useState(() => parseDateStr(date).getMonth()); // 0 ~ 11
@@ -121,32 +128,40 @@ export default function MiniCalendarPicker({ date, onSelectDate }: MiniCalendarP
   const today = todayStr();
 
   return (
-    <div className="relative inline-flex items-center" onMouseEnter={handleMouseEnter} onMouseLeave={startCloseTimer}>
+    <div
+      className="relative inline-flex items-center"
+      onMouseEnter={trigger ? undefined : handleMouseEnter}
+      onMouseLeave={trigger ? undefined : startCloseTimer}
+    >
       <button
         ref={btnRef}
         type="button"
-        data-date-picker
+        {...(trigger ? { [`data-${trigger.data}`]: '' } : { 'data-date-picker': '' })}
+        disabled={trigger?.disabled}
         onClick={(e) => {
           e.stopPropagation();
           if (isOpen) handleClose();
           else handleOpen();
         }}
-        className={`ml-1 px-1.5 py-0.5 text-xs rounded-md border transition-all flex items-center justify-center cursor-pointer shadow-2xs ${
-          isOpen
-            ? 'bg-sky-100 border-sky-300 text-primary'
-            : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-500 hover:text-primary'
-        }`}
-        title="달력에서 날짜 선택 (마우스 올리기 또는 클릭)"
+        className={
+          trigger?.className ??
+          `ml-1 px-1.5 py-0.5 text-xs rounded-md border transition-all flex items-center justify-center cursor-pointer shadow-2xs ${
+            isOpen
+              ? 'bg-sky-100 border-sky-300 text-primary'
+              : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-500 hover:text-primary'
+          }`
+        }
+        title={trigger?.title ?? '달력에서 날짜 선택 (마우스 올리기 또는 클릭)'}
       >
-        📅
+        {trigger?.label ?? '📅'}
       </button>
 
       {isOpen && (
         <div
           ref={popoverRef}
           data-date-picker-popover
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={startCloseTimer}
+          onMouseEnter={trigger ? undefined : handleMouseEnter}
+          onMouseLeave={trigger ? undefined : startCloseTimer}
           onClick={(e) => e.stopPropagation()}
           style={{ position: 'fixed', top: popoverPos.top, left: popoverPos.left, width: POPOVER_WIDTH, zIndex: 99999 }}
           className="bg-white border border-slate-200 rounded-xl shadow-xl p-2.5 text-slate-800 select-none text-left"
@@ -211,7 +226,7 @@ export default function MiniCalendarPicker({ date, onSelectDate }: MiniCalendarP
                 );
               }
               const wd = parseDateStr(dateStr).getDay();
-              const selected = dateStr === date;
+              const selected = marked ? marked.includes(dateStr) : dateStr === date;
               let color = wd === 0 ? 'text-rose-500' : wd === 6 ? 'text-blue-600' : 'text-slate-700';
               let bg = 'hover:bg-blue-50 hover:text-blue-700';
               let border = 'border border-transparent';
@@ -247,7 +262,7 @@ export default function MiniCalendarPicker({ date, onSelectDate }: MiniCalendarP
                 }}
               />
             </label>
-            <span className="text-2xs text-slate-400">클릭 시 이동</span>
+            <span className="text-2xs text-slate-400">{hint}</span>
           </div>
         </div>
       )}

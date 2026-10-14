@@ -11,6 +11,7 @@
 import { useMemo } from 'react';
 import { compareOrder } from '../domain/order';
 import { isPeriod as spansDays, onPeriodDay } from '../domain/period';
+import { noteDates } from '../domain/noteDates';
 import { matchLabels, orderByTree, parentMapOf, type LabelFilter, type ParentMap, type TreeRow } from '../domain/labelTree';
 import { collKey, EMPTY_DOCS, useMirror, type MirrorStatus } from './mirror/store';
 import { useHolidayStore } from './holidays';
@@ -27,11 +28,14 @@ export const isLive = (d: { deletedAt?: unknown }) => !d.deletedAt;
 
 interface ItemIndex {
   live: ItemDoc[];
-  /** 하루짜리 - 날짜 → 그날 것 (차례대로) */
+  /** 하루짜리 - 날짜 → 그날 것 (차례대로). 메모는 날짜 링크마다 (P10-3 - 두 날에 이은 메모는 두 날 모두에) */
   byDate: Map<YMD, ItemDoc[]>;
   /** 기간 일정 (date ~ endDate) */
   periods: ItemDoc[];
+  /** 날짜 링크 없는 메모 */
   memos: ItemDoc[];
+  /** 모든 메모 (날짜 링크 있는 것도) */
+  notes: ItemDoc[];
 }
 
 const indexCache = new WeakMap<object, ItemIndex>();
@@ -46,25 +50,34 @@ function indexOf(items: Docs<'items'>): ItemIndex {
   const byDate = new Map<YMD, ItemDoc[]>();
   const periods: ItemDoc[] = [];
   const memos: ItemDoc[] = [];
+  const notes: ItemDoc[] = [];
+  const put = (date: YMD, d: ItemDoc) => {
+    const day = byDate.get(date);
+    if (day) day.push(d);
+    else byDate.set(date, [d]);
+  };
   for (const d of live) {
-    if (!d.date) {
-      if (d.kind === 'note') memos.push(d);
+    if (d.kind === 'note') {
+      notes.push(d);
+      const dates = noteDates(d);
+      if (dates.length === 0) memos.push(d);
+      for (const date of dates) put(date, d);
+    } else if (!d.date) {
+      // 날짜 없는 일정은 없다 - 고르지 않는다
     } else if (isPeriod(d)) {
       periods.push(d);
     } else {
-      const day = byDate.get(d.date);
-      if (day) day.push(d);
-      else byDate.set(d.date, [d]);
+      put(d.date, d);
     }
   }
-  ix = { live, byDate, periods, memos };
+  ix = { live, byDate, periods, memos, notes };
   indexCache.set(items, ix);
   return ix;
 }
 
 const ofKind = (list: ItemDoc[], kind?: ItemKind) => (kind ? list.filter((d) => d.kind === kind) : list);
 
-/** 그날 것 (하루짜리 + 그날 보이는 기간 일정 - 주말 빼기·뺀 날은 domain/period onPeriodDay) */
+/** 그날 것 (하루짜리 + 그날 보이는 기간 일정 - 주말 빼기·뺀 날은 domain/period onPeriodDay). 메모는 그 날짜 링크가 있는 것 */
 export function itemsOn(items: Docs<'items'>, date: YMD, kind?: ItemKind): ItemDoc[] {
   const ix = indexOf(items);
   const day = ix.byDate.get(date) ?? [];
@@ -73,13 +86,25 @@ export function itemsOn(items: Docs<'items'>, date: YMD, kind?: ItemKind): ItemD
   return ofKind(all, kind);
 }
 
-/** 기간 [from, to]에 걸친 것 (날짜 다음 차례 - 기간 일정은 범위가 걸치면 한 번. 날마다 보이는지는 onPeriodDay로) */
+/**
+ * 기간 [from, to]에 걸친 것 (날짜 다음 차례 - 기간 일정·날짜 둘 이상인 메모는 범위가 걸치면 한 번.
+ * 날마다 보이는지는 onPeriodDay로, 메모의 날마다는 noteDaysBetween)
+ */
 export function itemsBetween(items: Docs<'items'>, from: YMD, to: YMD, kind?: ItemKind): ItemDoc[] {
   const ix = indexOf(items);
-  const out: ItemDoc[] = [];
-  for (const [date, list] of ix.byDate) if (from <= date && date <= to) out.push(...list);
-  for (const d of ix.periods) if (d.date! <= to && from <= d.endDate!) out.push(d);
-  return ofKind(out.sort(byDateThenOrder), kind);
+  const seen = new Set<ItemDoc>();
+  for (const [date, list] of ix.byDate) if (from <= date && date <= to) for (const d of list) seen.add(d);
+  for (const d of ix.periods) if (d.date! <= to && from <= d.endDate!) seen.add(d);
+  return ofKind([...seen].sort(byDateThenOrder), kind);
+}
+
+/** 기간 [from, to]의 메모를 날짜 링크마다 (날짜 차례 - 두 날에 이은 메모는 두 번. 📝 n 세기·백업 CSV) */
+export function noteDaysBetween(items: Docs<'items'>, from: YMD, to: YMD): { date: YMD; item: ItemDoc }[] {
+  const out: { date: YMD; item: ItemDoc }[] = [];
+  for (const [date, list] of indexOf(items).byDate) {
+    if (from <= date && date <= to) for (const d of list) if (d.kind === 'note') out.push({ date, item: d });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date) || compareOrder(a.item, b.item));
 }
 
 /** 라벨 가운데 하나라도 붙은 것 (고른 id 그대로 - 상위를 고르면 하위도 함께는 itemsMatching) */
@@ -104,9 +129,14 @@ export function itemsOfKind(items: Docs<'items'>, kind: ItemKind): ItemDoc[] {
   return ofKind(indexOf(items).live, kind);
 }
 
-/** 메모 (날짜 없는 메모·기록 - 날짜가 있으면 그날 기록) */
+/** 날짜 링크 없는 메모 (차례대로) */
 export function memos(items: Docs<'items'>): ItemDoc[] {
   return indexOf(items).memos;
+}
+
+/** 모든 메모 - 날짜 링크가 있는 것도 (차례대로. 메모 화면 - P10-3) */
+export function allNotes(items: Docs<'items'>): ItemDoc[] {
+  return indexOf(items).notes;
 }
 
 /** 휴지통 - 지운 것, 늦게 지운 것부터 */
@@ -283,4 +313,9 @@ export function useItemsMatching(filter: LabelFilter, parents: ParentMap, kind?:
 export function useTrash<C extends SpaceCollection>(coll: C, sid?: string | null): Stored<C>[] {
   const docs = useDocs(coll, sid);
   return useMemo(() => trashOf(docs as Readonly<Record<string, Stored<C> & { deletedAt?: unknown }>>), [docs]);
+}
+
+export function useAllNotes(sid?: string | null): ItemDoc[] {
+  const items = useDocs('items', sid);
+  return useMemo(() => allNotes(items), [items]);
 }

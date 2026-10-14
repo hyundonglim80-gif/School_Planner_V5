@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { showErrorToast, showToast } from '../../app/toast';
 import { assetKey, isKeepAsset, parseKeepFile, planKeepNote, selectNotesToImport, type ExistingMemo, type KeepImportOptions, type KeepNote } from '../../domain/keepImport';
-import { labelsOf, memos, useDocs } from '../../data/select';
+import { allNotes, labelsOf, useDocs } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { Section } from '../settings/parts';
 import { keepResultText, runKeepImport, useKeepInbox } from './keep';
@@ -22,7 +22,8 @@ export default function KeepImportSection() {
   const [busy, setBusy] = useState('');
   const [result, setResult] = useState('');
 
-  const memoList = useMemo(() => memos(items), [items]);
+  // 날짜에 이은 메모도 본다 - 가져온 뒤 날짜를 달았어도 다시 가져오지 않게
+  const memoList = useMemo(() => allNotes(items), [items]);
   const existing = useMemo<ExistingMemo[]>(
     () =>
       memoList.map((m) => ({

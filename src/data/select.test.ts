@@ -3,12 +3,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
 import {
+  allNotes,
   itemsBetween,
   itemsOfKind,
   itemsOn,
   itemsWithLabels,
   labelsOf,
   memos,
+  noteDaysBetween,
   trashOf,
   useItemsOn,
   useItemsWithLabels,
@@ -67,6 +69,20 @@ describe('고르기 (순수)', () => {
   it('종류로·메모만 (날짜 없는 메모·기록)', () => {
     expect(ids(itemsOfKind(sample, 'note'))).toEqual(['m0', 'r1', 'm1']); // 차례가 같으면 id로
     expect(ids(memos(sample))).toEqual(['m0', 'm1']);
+  });
+
+  it('날짜 링크 여러 개인 메모 (P10-3): 날마다 그날 것에, 기간으로는 한 번, 날마다 세기는 날마다', () => {
+    const many = docs(
+      ...Object.values(sample),
+      item('n2', { kind: 'note', date: '2026-10-07', dates: ['2026-10-07', '2026-10-09'], order: 'a3' }),
+    );
+    expect(ids(itemsOn(many, '2026-10-07', 'note'))).toEqual(['n2']);
+    expect(ids(itemsOn(many, '2026-10-09', 'note'))).toEqual(['n2']);
+    expect(ids(itemsOn(many, '2026-10-08', 'note'))).toEqual(['r1']);
+    expect(ids(itemsBetween(many, '2026-10-01', '2026-10-31', 'note'))).toEqual(['n2', 'r1']);
+    expect(noteDaysBetween(many, '2026-10-08', '2026-10-31').map((x) => `${x.date}:${x.item.id}`)).toEqual(['2026-10-08:r1', '2026-10-09:n2']);
+    expect(ids(memos(many))).toEqual(['m0', 'm1']);
+    expect(ids(allNotes(many))).toEqual(['m0', 'r1', 'n2', 'm1']);
   });
 
   it('휴지통: 지운 것만, 늦게 지운 것부터', () => {

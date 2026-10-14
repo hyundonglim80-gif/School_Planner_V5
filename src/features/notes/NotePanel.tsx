@@ -1,8 +1,9 @@
-// 메모·기록을 쓰는 칸 (V4 components/EntryDrawer.tsx - 메모와 기록이 같은 칸). 쓰는 칸 'note'.
+// 메모를 쓰는 칸 (V4 components/EntryDrawer.tsx - 메모와 기록이 같은 칸, P10-3부터 '메모' 하나). 쓰는 칸 'note'.
 //
 // - 어느 화면에서든 이 칸 하나로 새로 쓰고 고친다. 칸을 연 순간의 공간에 저장한다.
-// - 머리: 제목 · ☐ 완료 · ☆ 즐겨찾기(고치던 항목은 누르는 즉시 그 칸만 저장, 새 항목은 처음 저장 때 함께) · 📅 날짜 = 자리.
-//   날짜를 넣으면 그날 기록, 빼면 메모 - 고치던 항목은 저장할 때 옮긴다(date만, 안내의 되돌리기 = 자리만).
+// - 머리: 제목 · ☐ 완료 · ☆ 즐겨찾기(고치던 항목은 누르는 즉시 그 칸만 저장, 새 항목은 처음 저장 때 함께) · 📅 날짜 링크.
+//   날짜 칩 여러 개(+ 날짜 = 작은 달력, 칩 × = 그 날짜 빼기) - 그 날마다 하루 '메모' 칸에 보인다. 다 빼면 메모 화면에만(domain/noteDates).
+//   하루 '메모' 칸에서 + 추가 = 그 날짜 링크 하나로 새 메모.
 // - 내용: ☑ 체크리스트(단추·단축키·Enter 이어 쓰기·☐ 누르기) · 첫·마지막 줄 '#라벨' 미리 보기 · 글 안 주소의 미리보기.
 // - 붙이기(P4-2 - attach.ts): 📎 파일 첨부·캡처 Ctrl+V = 드라이브에 원본으로, 엑셀 표 Ctrl+V = 표(그림보다 먼저) - 칸 글자·행/열 고치기.
 //   올리는 동안은 저장하지 않는다(올라간 것이 빠진 채 저장되지 않게).
@@ -20,11 +21,13 @@ import { useShortcutTitle } from '../../app/keys';
 import { fileIcon, formatFileSize, isImageAttachment } from '../../domain/attachments';
 import { continueOnEnter, toggleCheckAtCaret, toggleLinesPrefix } from '../../domain/checkLines';
 import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
+import { addNoteDate, removeNoteDate } from '../../domain/noteDates';
 import { applyMention, findMention, matchMentionStudents, studentIdsToSave, type Mention, type MentionCandidate } from '../../domain/studentTag';
 import { useDraft } from '../../data/drafts';
 import { attachmentImageSrc } from '../../data/google/drive';
 import type { Attachment } from '../../data/types';
 import { useDocs, useItemsOn, useLabelTree, useMemos, useMirrorStatus } from '../../data/select';
+import MiniCalendarPicker from '../../ui/MiniCalendarPicker';
 import AutoTextarea from '../../ui/AutoTextarea';
 import { listKeyOf } from '../../ui/listKeys';
 import DraftOffer from '../../ui/DraftOffer';
@@ -38,15 +41,12 @@ import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } fr
 import EntryTableView from './EntryTableView';
 import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
 import { hasContent, isKnownLabel, newNoteForm, noteFormOf, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
-import { nounOf, objectOf } from './noteOps';
 import { StudentMentionList, StudentTagRow } from './StudentTags';
 import { useClasses, useHubClass, type ClassItem } from '../class/classes';
 import type { NotePanelParams } from './open';
 
-const PLACEHOLDER = {
-  기록: '오늘 있었던 일을 기록해 보세요...',
-  메모: '자유롭게 생각을 적어 보세요...',
-} as const;
+const PLACEHOLDER = '자유롭게 생각을 적어 보세요...';
+const noun = '메모';
 
 export default function NotePanel({ params, close, raise, setParams }: WindowProps<NotePanelParams>) {
   const { sid } = params;
@@ -70,19 +70,22 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const textRef = useRef<HTMLTextAreaElement>(null);
   const { classes } = useClasses();
   const hubClass = useHubClass((s) => s.id);
-  const dayNotes = useItemsOn(form.date, 'note', sid);
+  // 새 메모의 차례 = 연 날(그 날짜 링크가 남아 있으면 - 아니면 첫 날짜) 목록의 맨 뒤, 날짜가 없으면 메모 목록의 맨 뒤
+  const anchorDate = params.date && form.dates.includes(params.date) ? params.date : (form.dates[0] ?? '');
+  const dayNotes = useItemsOn(anchorDate, 'note', sid);
   const memoList = useMemos(sid);
   // 쓰던 글 보관 (이 기기 - data/drafts). 새 칸은 공간·자리, 고치는 칸은 항목마다. 고치던 항목의 완료·즐겨찾기는 칸의 것이 아니라 빼고 둔다
   const draft = useDraft<NoteForm>(
-    `note:${sid}:${params.id ?? `new:${form.date || 'memo'}`}`,
+    `note:${sid}:${params.id ?? `new:${params.date || 'memo'}`}`,
     isEditing ? { ...form, done: false, favorite: false } : form,
     !untouched,
   );
   const restoreDraft = () => {
-    const kept = draft.take();
+    const kept = draft.take() as (NoteForm & { date?: string }) | null;
     if (!kept) return;
-    setForm((f) => ({ ...f, ...kept, ...(isEditing ? { done: f.done, favorite: f.favorite } : {}) }));
-    if (!isEditing && kept.date !== form.date) setParams({ ...params, date: kept.date || null });
+    // P10-3 전에 남긴 글은 날짜 칸 하나(date)였다
+    const dates = kept.dates ?? (kept.date ? [kept.date] : []);
+    setForm((f) => ({ ...f, ...kept, dates, ...(isEditing ? { done: f.done, favorite: f.favorite } : {}) }));
   };
 
   // 항목·라벨은 사본에서 오므로 칸을 여는 순간에는 아직 없을 수 있다. 도착하면 채운다.
@@ -108,21 +111,13 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     }
   }
 
-  /** 지금 칸이 가리키는 자리의 이름 - 고치던 항목은 저장된 자리, 새 항목은 날짜 칸 */
-  const noun = isEditing && item ? nounOf(item) : form.date ? '기록' : '메모';
-  const placeChanged = isEditing && !!item && (form.date || null) !== (item.date ?? null);
   const done = isEditing ? !!item?.done : form.done;
   const favorite = isEditing ? !!item?.favorite : form.favorite;
   const hashPreview = savePlanOf({ ...form, newLabels: [] }).names;
 
-  /** 날짜 칸: 새 항목은 저장할 자리가 곧바로 바뀐다(같은 자리 새 칸 찾기도 그리로), 고치던 항목은 저장할 때 옮긴다 */
-  const pickDate = (next: string) => {
-    setForm((f) => ({ ...f, date: next }));
-    if (!isEditing) {
-      setBase((b) => ({ ...b, date: next }));
-      setParams({ ...params, date: next || null });
-    }
-  };
+  /** 날짜 링크 더하기·빼기 - 저장할 때 적는다 */
+  const addDate = (d: string) => setForm((f) => ({ ...f, dates: addNoteDate(f.dates, d) }));
+  const removeDate = (d: string) => setForm((f) => ({ ...f, dates: removeNoteDate(f.dates, d) }));
 
   // ─── 완료·즐겨찾기 ───
   const toggleFlag = async (flag: 'done' | 'favorite') => {
@@ -325,7 +320,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     const toSave = { ...form, studentIds: studentIdsToSave(form.studentIds, form.text, base.text, classes) };
     try {
       if (!isEditing) {
-        const order = orderAfter(form.date ? dayNotes : memoList);
+        const order = orderAfter(anchorDate ? dayNotes : memoList);
         const saved = await createNote(sid, toSave, tree, order);
         draft.clear();
         // 저장한 뒤에도 적은 것이 남고 그 항목의 수정 칸이 된다 (V4 사용자 결정). '#라벨' 줄은 떼고 칩으로
@@ -334,10 +329,10 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
         setBase(next);
         deliverLinkPick(params.pickFor, saved.id);
         savedId.current = saved.id;
-        setParams({ sid, date: form.date || null, id: saved.id });
+        setParams({ sid, date: params.date, id: saved.id });
       } else {
         if (!item) {
-          showToast(`${noun}를 찾지 못했습니다. 그 사이 지워졌을 수 있습니다.`);
+          showToast('메모를 찾지 못했습니다. 그 사이 지워졌을 수 있습니다.');
           return false;
         }
         const saved = await saveNote(sid, item, toSave, tree);
@@ -350,7 +345,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
       return true;
     } catch (e) {
       // 저장이 안 됐다 - 적은 것은 칸에 그대로 두고 '저장된 것'으로 여기지 않는다. 안내는 저장 도우미가 했다(아니면 여기서 한 번)
-      showErrorToastOnce(`${objectOf(noun)} 저장하지 못했습니다. 적은 내용은 칸에 남아 있습니다.`, e);
+      showErrorToastOnce('메모를 저장하지 못했습니다. 적은 내용은 칸에 남아 있습니다.', e);
       return false;
     } finally {
       savingRef.current = false;
@@ -387,8 +382,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   useEffect(() => registerUnsavedCheck(unsaved), []);
 
   const title = isEditing ? `${noun} 수정` : `새 ${noun}`;
-  const shownDate = isEditing ? (item?.date ?? null) : form.date || null;
-  const subtitle = `${shownDate ? `${shortDateLabel(shownDate)} 기록` : '메모'} · ${personal ? '개인' : '공유'}`;
+  const subtitle = personal ? '개인' : '공유';
 
   return (
     <SidePanelFrame
@@ -398,7 +392,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
       onSave={() => void save()}
       raise={raise}
     >
-      <div data-note-panel={isEditing ? 'edit' : 'new'} data-note-id={params.id ?? ''} data-note-noun={noun} className="flex flex-col h-full min-h-0">
+      <div data-note-panel={isEditing ? 'edit' : 'new'} data-note-id={params.id ?? ''} data-note-dates={form.dates.join(',')} className="flex flex-col h-full min-h-0">
         <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100">
           <div className="min-w-0">
             <h3 className="text-lg font-bold text-slate-800">{title}</h3>
@@ -433,40 +427,44 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     {favorite ? '★' : '☆'} 즐겨찾기
                   </button>
                 </div>
-                {/* 📅 날짜 = 자리 (V4 U7): 날짜가 있으면 그날 기록, 비우면 메모 */}
-                <div className="flex flex-wrap items-center gap-1.5 mt-1.5" data-note-place>
+                {/* 📅 날짜 링크 (P10-3): 칩마다 그날 하루 '메모' 칸에 보인다. 다 빼면 메모 화면에만 */}
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5" data-note-dates-row>
                   <span className="text-xs font-bold text-slate-500">📅 날짜</span>
-                  <input
-                    type="date"
-                    aria-label="날짜"
-                    data-note-date
-                    value={form.date}
-                    disabled={saving}
-                    title="날짜가 있으면 그날의 기록, 비우면 메모입니다. 바꾸고 저장하면 옮겨 갑니다."
-                    onChange={(e) => pickDate(e.target.value)}
-                    className="px-2 py-0.5 text-xs font-bold text-slate-700 bg-white border border-slate-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary disabled:opacity-60"
-                  />
-                  {!form.date && <span className="text-xs text-slate-400">날짜 없음 (메모)</span>}
-                  {form.date && (
-                    <button
-                      type="button"
-                      data-note-date-clear
-                      onClick={() => pickDate('')}
-                      disabled={saving}
-                      title="날짜를 빼면 메모가 됩니다 (저장할 때 옮깁니다)"
-                      className="px-1.5 py-0.5 text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded cursor-pointer"
+                  {form.dates.map((d) => (
+                    <span
+                      key={d}
+                      data-note-date-chip={d}
+                      className="inline-flex items-center gap-0.5 pl-2 pr-0.5 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-xs font-bold text-sky-800"
                     >
-                      날짜 빼기
-                    </button>
-                  )}
-                  {placeChanged && (
-                    <span className="text-xs font-bold text-amber-700" data-note-place-hint>
-                      {form.date ? `저장하면 ${shortDateLabel(form.date)} 기록으로 옮깁니다` : '저장하면 메모로 옮깁니다'}{' '}
-                      <button type="button" data-note-place-keep onClick={() => pickDate(item?.date ?? '')} className="underline cursor-pointer">
-                        그대로 두기
+                      {shortDateLabel(d)}
+                      <button
+                        type="button"
+                        data-note-date-remove={d}
+                        disabled={saving}
+                        onClick={() => removeDate(d)}
+                        title={`${shortDateLabel(d)} 빼기 - 그날 '메모' 칸에서 빠집니다 (저장할 때)`}
+                        aria-label={`${shortDateLabel(d)} 빼기`}
+                        className="w-4 h-4 flex items-center justify-center rounded text-sky-500 hover:text-sky-900 hover:bg-sky-100 cursor-pointer"
+                      >
+                        ×
                       </button>
                     </span>
-                  )}
+                  ))}
+                  <MiniCalendarPicker
+                    date={form.dates[form.dates.length - 1] ?? params.date ?? todayStr()}
+                    marked={form.dates}
+                    hint="누르면 날짜 더하기"
+                    onSelectDate={(d) => (form.dates.includes(d) ? removeDate(d) : addDate(d))}
+                    trigger={{
+                      data: 'note-date-add',
+                      label: '+ 날짜',
+                      title: "날짜를 더하면 그날 하루 '메모' 칸에도 보입니다 (여러 날 가능)",
+                      disabled: saving,
+                      className:
+                        'px-1.5 py-0.5 text-xs font-bold text-slate-500 border border-dashed border-slate-300 rounded-md hover:text-primary hover:border-primary disabled:opacity-60 cursor-pointer',
+                    }}
+                  />
+                  {form.dates.length === 0 && <span className="text-xs text-slate-400" data-note-dates-empty>날짜 없음 (메모 화면에만)</span>}
                 </div>
               </>
             )}
@@ -550,7 +548,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   onSelect={(e) => mention && updateMention(e.currentTarget)}
                   onBlur={() => setMention(null)}
                   onPaste={onTextPaste}
-                  placeholder={PLACEHOLDER[noun]}
+                  placeholder={PLACEHOLDER}
                   className="w-full min-h-[84px] p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 leading-relaxed placeholder-slate-400 text-sm"
                 />
                 {mention && <StudentMentionList query={mention.query} candidates={mentionList} activeIndex={mentionIndex} hasClasses={classes.length > 0} onPick={pickMention} />}
@@ -631,7 +629,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   data-note-link-add
                   onClick={() => void addLink()}
                   disabled={saving || !!uploading}
-                  title={isEditing ? `이 ${noun}에 일정·기록·메모를 잇습니다` : `먼저 저장하고 이 ${noun}에 일정·기록·메모를 잇습니다`}
+                  title={isEditing ? '이 메모에 일정·메모·수업을 잇습니다' : '먼저 저장하고 이 메모에 일정·메모·수업을 잇습니다'}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-yellow-50 text-slate-700 hover:text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 hover:border-yellow-300 shadow-2xs"
                 >
                   <span>🔗</span>
@@ -737,7 +735,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               disabled={saving || !hasContent(form) || (isEditing && !item)}
               className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
-              {saving ? '저장 중...' : placeChanged ? '옮기고 저장' : '저장'}
+              {saving ? '저장 중...' : '저장'}
             </button>
           </div>
         </div>

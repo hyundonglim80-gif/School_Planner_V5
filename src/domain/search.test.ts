@@ -34,6 +34,14 @@ describe('검색', () => {
     expect(q('', ['event'], { start: '2026-10-03', end: '2026-10-31' }).map((h) => h.key)).toEqual(['e1']);
   });
 
+  it('날짜 링크 여럿인 메모 (P10-3): 기간 안의 가장 늦은 날로, 하나도 없으면 빠진다', () => {
+    const many: Searchable[] = [{ id: 'n2', kind: 'note', date: '2026-09-01', dates: ['2026-09-01', '2026-10-05', '2026-11-02'], text: '이은 메모' }];
+    const find = (range: { start: string; end: string } | null) => searchItems(many, { term: '이은', kinds: new Set(), range }).map((h) => `${h.key}:${h.date}`);
+    expect(find(null)).toEqual(['n2:2026-11-02']);
+    expect(find({ start: '2026-10-01', end: '2026-10-31' })).toEqual(['n2:2026-10-05']);
+    expect(find({ start: '2026-12-01', end: '2026-12-31' })).toEqual([]);
+  });
+
   it('기간: 학년도(1~2월은 지난해)·해당 주(월~금)·해당 월', () => {
     expect(scopeRange('all', '2026-10-08', { start: '', end: '' })).toBeNull();
     expect(scopeRange('year', '2027-01-10', { start: '', end: '' })).toEqual({ start: '2026-03-01', end: '2027-02-28' });

@@ -70,7 +70,8 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | 칸 | 모양 | 뜻 |
 |---|---|---|
 | `kind` | `'event'`·`'note'` | 일정 / 메모·기록 |
-| `date` | `'YYYY-MM-DD'`·`null` | 일정은 늘 있다. 메모·기록은 날짜가 있으면 그날 **기록**, `null`이면 **메모**(V4 U7 '날짜 칸 = 자리') |
+| `date` | `'YYYY-MM-DD'`·`null` | 일정은 늘 있다. 메모는 **날짜 링크의 가장 이른 날**(없으면 `null`) - 색인·처음 받기 순서용(P10-3 '메모 하나로'. 그 전에는 V4 U7 '날짜 칸 = 자리': 날짜가 있으면 기록) |
+| `dates` | `'YYYY-MM-DD'[]`? | 메모의 날짜 링크(P10-3) - 차례대로·겹침 없이, **둘 이상일 때만** 적는다(하나면 `date`만 = 옛 기록과 같은 모양 - 자료 옮기기 없음). 읽기는 `domain/noteDates` `noteDates(item)`, 고르기 `itemsOn`은 날짜 링크마다 |
 | `endDate` | `'YYYY-MM-DD'`? | 기간 일정의 끝 날(일정만) |
 | `workdays` | boolean? | 기간 일정: 주말·공휴일은 빼고 센다(V4 '주말과 공휴일 제외하고 계산하기' - 새 기간은 기본 켬, P3-3) |
 | `skipDates` | string[]? | 기간 일정: '이 날만 지우기'로 뺀 날(한 문서를 그대로 두고 그날만 뺀다 - P3-3) |
@@ -85,7 +86,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | `props` | `{ forward?, calendar?, skip?, gcal? }`? | 이 항목만의 속성 값 - **라벨이 정한 값과 다른 것만** 적는다(P3-1 `features/events/eventForm`). 없으면 라벨 속성을 따른다(붙은 라벨 하나라도 켰으면 켬, 라벨이 없으면 달력만 - V4와 같다) |
 | `carrying` / `carriedFrom` | boolean? / `'YYYY-MM-DD'`? | 이월로 따라오는 중(처음 따라올 때 한 번 쓴다) / 끝낼 때 그날로 옮겨 적으며 남기는 처음 날 |
 | `seriesId` / `seriesIndex` | string? / number? | 반복 묶음 |
-| `fromDate` | `'YYYY-MM-DD'`? | 기록에서 메모로 뺄 때 그 날('📅 10/6에서'). 메모를 다시 기록으로 옮기면 걷는다(P3-2 `features/notes/noteForm` `placeChanges` - 옮기기 = 같은 문서의 `date`만) |
+| `fromDate` | `'YYYY-MM-DD'`? | 기록에서 메모로 뺄 때 그 날('📅 10/6에서' - P3-2). P10-3부터 적지 않고 보이지도 않는다(옛 문서에 남은 것은 둔다 - 학생 기록 타임라인이 날 없는 메모의 날로 읽는다) |
 | `keepId` | string? | 구글 Keep에서 가져온 메모의 열쇠(V4 tasks 그대로 - P3-4) |
 | `tables` | EntryTable[]? | 붙인 표(V4 `lib/entryTable` 모양 그대로 - `rows[].cells[]`) |
 | `studentIds` | string[]? | 학생 태그 `'{classId}/{sid}'` |

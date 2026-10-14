@@ -134,8 +134,10 @@ export interface ImportSource {
 
 export interface Item extends Tracked {
   kind: ItemKind;
-  /** 일정은 늘 있다. 메모·기록은 날짜가 있으면 그날 기록, null이면 메모 */
+  /** 일정은 늘 있다. 메모는 날짜 링크의 가장 이른 날(없으면 null) - 날짜 링크는 domain/noteDates noteDates(item) */
   date: YMD | null;
+  /** 메모의 날짜 링크 (P10-3 - 차례대로·겹침 없이, **둘 이상일 때만** 적는다. 하나면 date만 - 옛 기록과 같은 모양) */
+  dates?: YMD[];
   /** 기간 일정의 끝 날 (일정만) */
   endDate?: YMD;
   /** 기간 일정: 주말·공휴일은 빼고 센다 (V4 '주말과 공휴일 제외' - domain/period) */

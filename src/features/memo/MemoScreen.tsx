@@ -1,18 +1,21 @@
-// 메모 화면 (V4 features/memo/MemoScreen.tsx·MemoCard.tsx). 날짜 없는 메모(date: null)를 모아 둔다.
+// 메모 화면 (V4 features/memo/MemoScreen.tsx·MemoCard.tsx). 모든 메모 - 날짜 없는 메모와 날짜 링크 메모(P10-3 - 옛 기록도).
 //
 // - 왼쪽: '+ 새 메모'와 '📁 라벨로 보기'(⭐ 즐겨찾기 → 라벨(트리 차례) → 전체 메모). 라벨은 여러 개 고르기(LabelFilterChips - 하루 기록 칸과 같은 부품).
 //   고른 것은 이 기기에 기억한다(features/notes/labelFilter). 처음은 즐겨찾기 - 즐겨찾기한 메모가 하나도 없으면 화면을 열 때 전체로(빈 화면 대신, V4).
 //   옆 숫자는 진행 중 메모 수. ESC = 고른 라벨 모두 떼기(오른쪽 칸도 함께 닫힌다).
 // - 오른쪽: 진행 / 완료 두 구역(제목을 누르면 접고 편다). 카드는 가장 짧은 열부터 쌓는다(ui/Masonry - 칸 폭으로 2~4열, 휴대폰도 2열).
-//   즐겨찾기가 맨 위. 카드는 기록과 같은 EntryCard(완료·★·▲▼·체크 줄·접기·✏️·🗑️).
+//   차례 = 즐겨찾기 → 날짜 없는 메모(▲▼로 옮긴다) → 날짜 링크 메모(가장 늦은 날이 최근인 것부터 - ▲▼ 없음, 카드에 📅 날짜 칩 = 그날 하루 화면).
+//   한 구역에 처음 PAGE장, '더 보기'로 더 (가져온 V4 기록이 많다). 카드는 하루 메모 칸과 같은 EntryCard(완료·★·▲▼·체크 줄·접기·✏️·🗑️).
 // - 완료 구역 '🗑️ 전체 비우기' = 지운 표시 여럿 한 묶음 + 안내의 되돌리기(V4는 묻고 휴지통으로).
 // - 라벨이 없는 메모가 있으면 위에 안내 - '메모' 라벨 붙이기(라벨로 보기에서도 찾게, V4).
 import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { addEscapeAction } from '../../app/keys';
+import { setDate, setScope } from '../../app/nav';
 import { openWindow } from '../../app/windows';
 import { isLongEntry } from '../../domain/entryCollapse';
 import { isEmptyFilter, isOtherKey, labelPath, matchLabels, otherParentOf, pruneFilter, type LabelFilter } from '../../domain/labelTree';
-import { itemLabels, useLabelTree, useMemos, useMirrorStatus } from '../../data/select';
+import { noteDates } from '../../domain/noteDates';
+import { itemLabels, useAllNotes, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import Masonry from '../../ui/Masonry';
 import { useIsMobile } from '../../ui/useIsMobile';
@@ -22,7 +25,7 @@ import EntryCard from '../notes/EntryCard';
 import { openLinkViewer } from '../links/open';
 import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterChips';
 import { setMemoFilter, useLabelFilters, type MemoFilter } from '../notes/labelFilter';
-import { canMoveNote, favoriteFirst } from '../notes/noteOps';
+import { canMoveNote, memoScreenOrder } from '../notes/noteOps';
 import { openNotePanel, useEditingNoteIds } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
 
@@ -32,6 +35,8 @@ const FALLBACK_LABEL = '메모';
 const MIN_CARD_WIDTH = 170;
 const MIN_COLUMNS = 2;
 const MAX_COLUMNS = 4;
+/** 한 구역에 처음 그리는 카드 수 ('더 보기'로 이만큼씩 더) */
+const PAGE = 60;
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -57,16 +62,15 @@ function useColumnCount(ref: React.RefObject<HTMLElement | null>) {
 const createdText = (ms: number | undefined) =>
   ms ? new Date(ms).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
 
-/** 기록에서 날짜를 빼 메모가 되었으면 '📅 10/6에서' */
-const fromNote = (d: string | undefined) => {
-  if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return undefined;
-  const [, m, day] = d.split('-').map(Number);
-  return `📅 ${m}/${day}에서`;
+/** 날짜 칩을 누르면 그날 하루 화면 */
+const openDay = (d: string) => {
+  setDate(d);
+  setScope('day');
 };
 
 export default function MemoScreen() {
   const sid = useCurrentSpaceId();
-  const memos = useMemos();
+  const memos = useAllNotes();
   const tree = useLabelTree('note');
   const status = useMirrorStatus('items');
   const labelStatus = useMirrorStatus('labels');
@@ -79,9 +83,16 @@ export default function MemoScreen() {
   const [activeOpen, setActiveOpen] = useState(true);
   const [doneOpen, setDoneOpen] = useState(true);
   // 검색 결과로 메모를 짚으러 오면 그 메모가 든 칸(진행/완료)을 편다
+  const [limit, setLimit] = useState({ active: PAGE, done: PAGE });
   useFocusReveal(
     (t) => t.kind === 'note' && t.date === null,
-    (t) => (memos.find((m) => m.id === t.id)?.done ? setDoneOpen(true) : setActiveOpen(true)),
+    (t) => {
+      const doneOne = !!memos.find((m) => m.id === t.id)?.done;
+      if (doneOne) setDoneOpen(true);
+      else setActiveOpen(true);
+      // '더 보기' 뒤에 있어도 보이게
+      setLimit((l) => ({ ...l, [doneOne ? 'done' : 'active']: Infinity }));
+    },
   );
   const [cardCollapsed, setCardCollapsed] = useState<Record<string, boolean>>({});
 
@@ -101,6 +112,13 @@ export default function MemoScreen() {
     return isEmptyFilter(pruned) ? favOrAll : pruned;
   })();
   const labelFilter: LabelFilter | null = typeof current === 'string' ? null : current;
+  // 고른 것이 바뀌면 '더 보기'는 처음부터 (그리는 중에 맞춘다)
+  const filterKey = JSON.stringify(current);
+  const [seenFilter, setSeenFilter] = useState(filterKey);
+  if (filterKey !== seenFilter) {
+    setSeenFilter(filterKey);
+    setLimit({ active: PAGE, done: PAGE });
+  }
   const choose = (f: MemoFilter) => {
     // 손으로 고른 것은 그대로 보인다(즐겨찾기가 없어도 ⭐를 누르면 빈 즐겨찾기와 안내)
     setNoFavOnOpen(false);
@@ -118,14 +136,15 @@ export default function MemoScreen() {
   );
 
   const matches = (m: ItemDoc, f: MemoFilter) => (f === 'all' ? true : f === 'fav' ? !!m.favorite : matchLabels(m.labelIds, f, tree.parents));
-  const shown = favoriteFirst(memos.filter((m) => matches(m, current)));
+  const shown = memoScreenOrder(memos.filter((m) => matches(m, current)));
   const active = shown.filter((m) => !m.done);
   const done = shown.filter((m) => m.done);
   const allActive = memos.filter((m) => !m.done);
   const countOf = (key: string) =>
     allActive.filter((m) => matchLabels(m.labelIds, isOtherKey(key) ? { labels: [], others: [otherParentOf(key)] } : { labels: [key], others: [] }, tree.parents)).length;
 
-  const unlabeled = memos.filter((m) => itemLabels(tree, m.labelIds).length === 0);
+  // 라벨 붙이기 안내는 날짜 없는 메모만 (날짜 링크 메모는 그날 칸에서 찾는다 - 옛 기록 수천 개를 한꺼번에 고치지 않게)
+  const unlabeled = memos.filter((m) => noteDates(m).length === 0 && itemLabels(tree, m.labelIds).length === 0);
   const [busy, setBusy] = useState(false);
   const run = async (job: () => Promise<void>) => {
     if (busy) return;
@@ -142,38 +161,59 @@ export default function MemoScreen() {
   const openCreate = () => sid && openNotePanel({ sid, date: null, ...(labelFilter?.labels[0] ? { labelIds: [labelFilter.labels[0]] } : {}) });
   const pathOf = (id: string) => labelPath(id, tree.parents, (x) => tree.byId.get(x)?.name);
 
-  const grid = (list: ItemDoc[]) => (
-    <Masonry
-      items={list}
-      getKey={(m) => m.id}
-      columns={columns}
-      gap={isMobile ? 8 : 16}
-      renderItem={(m) => {
-        const i = list.indexOf(m);
-        const isCollapsed = cardCollapsed[m.id] ?? isLongEntry(m.text);
-        return (
-          <EntryCard
-            item={m}
-            labels={itemLabels(tree, m.labelIds)}
-            pathOf={pathOf}
-            dateText={createdText(m.createdAt)}
-            note={fromNote(m.fromDate)}
-            editing={editing.has(m.id)}
-            collapsed={isCollapsed}
-            onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [m.id]: !isCollapsed }))}
-            onMoveUp={sid && canMoveNote(list, i, -1) ? () => void moveNoteInList(sid, list, i, -1).catch(quiet) : undefined}
-            onMoveDown={sid && canMoveNote(list, i, 1) ? () => void moveNoteInList(sid, list, i, 1).catch(quiet) : undefined}
-            onOpen={() => sid && openNotePanel({ sid, date: null, id: m.id })}
+  const grid = (key: 'active' | 'done', list: ItemDoc[]) => {
+    // ▲▼는 날짜 없는 메모끼리 (날짜 링크 메모는 날짜 차례)
+    const movable = list.filter((m) => noteDates(m).length === 0);
+    const page = list.slice(0, limit[key]);
+    return (
+      <>
+        <Masonry
+          items={page}
+          getKey={(m) => m.id}
+          columns={columns}
+          gap={isMobile ? 8 : 16}
+          renderItem={(m) => {
+            const i = movable.indexOf(m);
+            const dates = noteDates(m);
+            const isCollapsed = cardCollapsed[m.id] ?? isLongEntry(m.text);
+            return (
+              <EntryCard
+                item={m}
+                labels={itemLabels(tree, m.labelIds)}
+                pathOf={pathOf}
+                dateText={createdText(m.createdAt)}
+                dates={dates}
+                onOpenDate={openDay}
+                editing={editing.has(m.id)}
+                collapsed={isCollapsed}
+                onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [m.id]: !isCollapsed }))}
+                onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => void moveNoteInList(sid, movable, i, -1).catch(quiet) : undefined}
+                onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => void moveNoteInList(sid, movable, i, 1).catch(quiet) : undefined}
+                onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}
             onOpenLinks={() => sid && openLinkViewer({ sid, id: m.id })}
             onToggleDone={() => sid && void setNoteDone(sid, m, !m.done).catch(quiet)}
             onToggleFavorite={() => sid && void setNoteFavorite(sid, m, !m.favorite).catch(quiet)}
             onDelete={() => sid && void deleteNote(sid, m).catch(quiet)}
-            onToggleCheckLine={(idx, line) => (sid ? toggleNoteCheckLine(sid, m, idx, line) : Promise.resolve(false))}
-          />
-        );
-      }}
-    />
-  );
+                onToggleCheckLine={(idx, line) => (sid ? toggleNoteCheckLine(sid, m, idx, line) : Promise.resolve(false))}
+              />
+            );
+          }}
+        />
+        {list.length > page.length && (
+          <div className="flex justify-center mt-4">
+            <button
+              type="button"
+              data-memo-more={key}
+              onClick={() => setLimit((l) => ({ ...l, [key]: l[key] + PAGE }))}
+              className="px-4 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold cursor-pointer"
+            >
+              더 보기 ({list.length - page.length}개 남음)
+            </button>
+          </div>
+        )}
+      </>
+    );
+  };
 
   const sectionTitle = (key: 'active' | 'done', text: ReactNode, open: boolean, toggle: () => void) => (
     <button
@@ -232,8 +272,8 @@ export default function MemoScreen() {
                 data-memo-labels-settings
                 onClick={() => openWindow('labels', { tab: 'note' })}
                 className="w-6 h-6 flex items-center justify-center rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer shrink-0"
-                title="메모·기록 라벨 설정"
-                aria-label="메모·기록 라벨 설정"
+                title="메모 라벨 설정"
+                aria-label="메모 라벨 설정"
               >
                 ⚙️
               </button>
@@ -272,7 +312,7 @@ export default function MemoScreen() {
               </div>
               {activeOpen &&
                 (active.length > 0 ? (
-                  grid(active)
+                  grid('active', active)
                 ) : (
                   <p data-memo-empty className="text-center text-slate-400 text-sm py-6">
                     {current === 'fav' ? '즐겨찾기한 메모가 없습니다. 메모의 ☆를 눌러 놓으면 여기 모입니다.' : '조건에 맞는 메모가 없습니다.'}
@@ -295,7 +335,7 @@ export default function MemoScreen() {
                 )}
               </div>
               {doneOpen &&
-                (done.length > 0 ? grid(done) : <p className="text-center text-slate-400 text-sm py-4">아직 완료된 항목이 없습니다.</p>)}
+                (done.length > 0 ? grid('done', done) : <p className="text-center text-slate-400 text-sm py-4">아직 완료된 항목이 없습니다.</p>)}
             </>
           )}
         </section>
