@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LabelTree } from '../../data/select';
 import type { ItemDoc } from '../events/eventOps';
-import { createNoteData, hasContent, newNoteForm, noteEditChanges, noteFormOf, placeChanges, sameNoteForm, savePlanOf } from './noteForm';
+import { createNoteData, hasContent, newNoteForm, noteEditChanges, noteFormOf, sameNoteForm, savePlanOf } from './noteForm';
 
 const label = (id: string, name: string) => ({ id, name, color: 'blue', kind: 'note', parentId: null, order: 'a0' });
 const tree = {
@@ -18,9 +18,9 @@ const item = (more: Partial<ItemDoc> = {}): ItemDoc =>
   ({ id: 'n1', kind: 'note', date: '2026-10-08', text: '회의', labelIds: ['L1'], order: 'a0', ...more }) as unknown as ItemDoc;
 
 describe('새 칸', () => {
-  it('미리 고른 라벨이 없으면 맨 위 라벨, 날짜 없음 = 메모', () => {
-    expect(newNoteForm('2026-10-08', tree)).toMatchObject({ date: '2026-10-08', labelIds: ['L1'], text: '' });
-    expect(newNoteForm(null, tree).date).toBe('');
+  it('미리 고른 라벨이 없으면 맨 위 라벨, 연 날 = 날짜 링크 하나 (없으면 날짜 없는 메모)', () => {
+    expect(newNoteForm('2026-10-08', tree)).toMatchObject({ dates: ['2026-10-08'], labelIds: ['L1'], text: '' });
+    expect(newNoteForm(null, tree).dates).toEqual([]);
     expect(newNoteForm(null, tree, ['L2', 'gone']).labelIds).toEqual(['L2']);
     expect(newNoteForm(null, tree, [], '공유받은 글').text).toBe('공유받은 글');
   });
@@ -38,6 +38,8 @@ describe('새 칸', () => {
       favorite: true,
     });
     expect(createNoteData(newNoteForm('2026-10-08', tree), '글', [], 'a0')).toEqual({ kind: 'note', date: '2026-10-08', text: '글', labelIds: [], order: 'a0' });
+    const two = { ...newNoteForm('2026-10-08', tree), dates: ['2026-10-09', '2026-10-08'] };
+    expect(createNoteData(two, '글', [], 'a0')).toMatchObject({ date: '2026-10-08', dates: ['2026-10-08', '2026-10-09'] });
   });
 
   it('저장할 것이 있나 = 글·첨부·표 가운데 하나', () => {
@@ -71,12 +73,12 @@ describe('고치기 = 바뀐 칸만', () => {
     expect(noteEditChanges(it0, { ...noteFormOf(it0), attachments: [] }, '회의', ['L1'])).toEqual({ attachments: undefined });
   });
 
-  it('자리: 기록 → 메모는 fromDate를 남기고, 메모 → 기록은 걷고, 기록 → 다른 날은 date만', () => {
-    expect(placeChanges({ date: '2026-10-08' }, null)).toEqual({ date: null, fromDate: '2026-10-08' });
-    expect(placeChanges({ date: null, fromDate: '2026-10-06' }, '2026-10-09')).toEqual({ date: '2026-10-09', fromDate: undefined });
-    expect(placeChanges({ date: '2026-10-08' }, '2026-10-09')).toEqual({ date: '2026-10-09' });
-    expect(placeChanges({ date: '2026-10-08' }, '2026-10-08')).toEqual({});
+  it('날짜 링크: 더하면 dates, 다 빼면 date null (옛 fromDate는 적지 않는다), 같은 날짜들이면 바뀐 것 없음', () => {
     const it0 = item();
-    expect(noteEditChanges(it0, { ...noteFormOf(it0), date: '' }, '회의', ['L1'])).toEqual({ date: null, fromDate: '2026-10-08' });
+    expect(noteEditChanges(it0, { ...noteFormOf(it0), dates: ['2026-10-08', '2026-10-10'] }, '회의', ['L1'])).toEqual({ dates: ['2026-10-08', '2026-10-10'] });
+    expect(noteEditChanges(it0, { ...noteFormOf(it0), dates: [] }, '회의', ['L1'])).toEqual({ date: null });
+    const two = item({ dates: ['2026-10-08', '2026-10-10'] });
+    expect(noteEditChanges(two, { ...noteFormOf(two), dates: ['2026-10-10', '2026-10-08'] }, '회의', ['L1'])).toEqual({});
+    expect(noteEditChanges(two, { ...noteFormOf(two), dates: ['2026-10-10'] }, '회의', ['L1'])).toEqual({ date: '2026-10-10', dates: undefined });
   });
 });

@@ -160,7 +160,7 @@ describe('하루 기록 칸', () => {
     expect(q('[data-entry-card="a"]')!.className).toContain('ring-primary');
     await act(async () => fireEvent.click(q('[data-entry-card="a"] [data-entry-delete]')!));
     expect(written.batches[0]).toEqual([{ type: 'remove', at: { sid: SID, coll: 'items', id: 'a' } }]);
-    expect(q('[data-toast]')?.textContent).toContain('기록을 삭제했습니다');
+    expect(q('[data-toast]')?.textContent).toContain('메모를 삭제했습니다');
     expect(q('[data-toast-action="되돌리기"]')).not.toBeNull();
     expect(useWindows.getState().windows.map((w) => w.key)).toEqual([2]);
   });

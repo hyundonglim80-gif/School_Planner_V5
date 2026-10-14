@@ -1,5 +1,5 @@
-// 메모·기록 칸 - 새로(맨 위 라벨·자리 맨 뒤·저장하면 수정 칸)·#라벨(새 라벨과 한 묶음)·'+ 새 라벨'·고치기 = 바뀐 칸만·
-// 📅 날짜 = 자리(date만·되돌리기는 자리만)·완료/즐겨찾기(고치던 항목은 곧바로 그 칸만)·체크리스트·손대기 전에는 다른 기기 고침을 따라감·저장 안 한 글
+// 메모 칸 - 새로(맨 위 라벨·연 날 맨 뒤·저장하면 수정 칸)·#라벨(새 라벨과 한 묶음)·'+ 새 라벨'·고치기 = 바뀐 칸만·
+// 📅 날짜 링크(칩 여러 개 - P10-3)·완료/즐겨찾기(고치던 항목은 곧바로 그 칸만)·체크리스트·손대기 전에는 다른 기기 고침을 따라감·저장 안 한 글
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { useEffect, useState } from 'react';
@@ -12,6 +12,7 @@ import { readDraft, resetDraftsForTest, wipeDrafts, writeDraft } from '../../dat
 import { useSession } from '../../data/session';
 import { clearUndo, undoLast } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
+import { todayStr } from '../../domain/dateUtils';
 import NotePanel from './NotePanel';
 import type { NotePanelParams } from './open';
 
@@ -103,12 +104,12 @@ afterAll(async () => {
   await wipeDrafts('me');
 });
 
-describe('새 기록·메모', () => {
-  it('새 기록: 맨 위 라벨, 저장하면 그날 맨 뒤에 만들고 그 항목의 수정 칸이 된다', async () => {
+describe('새 메모', () => {
+  it('그날 새 메모: 그 날짜 링크 하나·맨 위 라벨, 저장하면 그날 맨 뒤에 만들고 그 항목의 수정 칸이 된다', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY }} />);
     expect(q('[data-note-panel]').dataset.notePanel).toBe('new');
-    expect(q('[data-note-panel]').dataset.noteNoun).toBe('기록');
+    expect(q('[data-note-panel]').dataset.noteDates).toBe(DAY);
     expect(q('[data-label-pick="L1"]')).toHaveAttribute('aria-pressed', 'true');
     expect(q('[data-note-save]')).toBeDisabled();
     type('  체육대회 준비 ');
@@ -120,21 +121,22 @@ describe('새 기록·메모', () => {
     expect(String(data.order) > 'a5').toBe(true);
     const id = (op as { at: { id: string } }).at.id;
     expect(shown.params).toMatchObject({ id, date: DAY });
-    expect(document.querySelector('[data-toast]')?.textContent).toContain('기록을 저장했습니다');
+    expect(document.querySelector('[data-toast]')?.textContent).toContain('메모를 저장했습니다');
     act(() => applyBase(SID, 'items', new Map([[id, { ...base, ...data }]])));
     expect(q('[data-note-panel]').dataset.notePanel).toBe('edit');
     expect(textInput().value).toBe('체육대회 준비');
     expect(anyWindowUnsaved()).toBe(false);
   });
 
-  it('새 메모(날짜 없음) = date null, 메모 목록 맨 뒤. 날짜를 넣으면 곧바로 그날 기록 칸이 된다', async () => {
+  it('날짜 없는 새 메모 = date null, 메모 목록 맨 뒤. 날짜 칩을 더했다 빼면 그대로', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: null }} />);
-    expect(q('[data-note-panel]').dataset.noteNoun).toBe('메모');
-    fireEvent.change(q('[data-note-date]'), { target: { value: '2026-10-09' } });
-    expect(shown.params!.date).toBe('2026-10-09');
-    expect(q('[data-note-panel]').dataset.noteNoun).toBe('기록');
-    fireEvent.click(q('[data-note-date-clear]'));
+    expect(q('[data-note-panel]').dataset.noteDates).toBe('');
+    expect(q('[data-note-dates-empty]')).not.toBeNull();
+    fireEvent.click(q('[data-note-date-add]'));
+    fireEvent.click(q('[data-picker-today]'));
+    expect(document.querySelectorAll('[data-note-date-chip]')).toHaveLength(1);
+    fireEvent.click(q('[data-note-date-remove]'));
     expect(shown.params!.date).toBeNull();
     type('메모 둘');
     await save();
@@ -220,35 +222,42 @@ describe('고치기', () => {
     expect(textInput().value).toBe('적던 글');
   });
 
-  it('📅 날짜 빼기 = 메모로 옮기기: date만(+ fromDate), 되돌리기는 자리만', async () => {
+  it('📅 날짜 칩 더하기: 둘이면 dates, 한 번의 저장 = 바뀐 칸만, 되돌리기 하나로', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
-    fireEvent.click(q('[data-note-date-clear]'));
-    expect(q('[data-note-place-hint]').textContent).toContain('메모로 옮깁니다');
-    expect(q('[data-note-save]').textContent).toBe('옮기고 저장');
-    type('회의 기록 + 덧붙임');
+    expect([...document.querySelectorAll<HTMLElement>('[data-note-date-chip]')].map((e) => e.dataset.noteDateChip)).toEqual([DAY]);
+    fireEvent.click(q('[data-note-date-add]'));
+    fireEvent.click(q('[data-picker-day="2026-10-15"]'));
+    // 고른 날짜는 칠해 보이고, 다시 누르면 뺀다
+    fireEvent.click(q('[data-note-date-add]'));
+    expect(q('[data-picker-day="2026-10-15"]').className).toContain('bg-primary');
+    fireEvent.click(q('[data-picker-day="2026-10-15"]'));
+    expect(document.querySelectorAll('[data-note-date-chip]')).toHaveLength(1);
+    fireEvent.click(q('[data-note-date-add]'));
+    fireEvent.click(q('[data-picker-day="2026-10-15"]'));
+    expect([...document.querySelectorAll<HTMLElement>('[data-note-date-chip]')].map((e) => e.dataset.noteDateChip)).toEqual([DAY, '2026-10-15']);
+    expect(anyWindowUnsaved()).toBe(true);
     await save();
-    expect((lastOps()[0] as { changes: object }).changes).toEqual({ text: '회의 기록 + 덧붙임', date: null, fromDate: DAY });
-    expect(document.querySelector('[data-toast]')?.textContent).toContain('메모로 옮겼습니다');
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ dates: [DAY, '2026-10-15'] });
     await act(async () => {
       await undoLast(SID);
     });
-    // 되돌리기는 자리만 - 함께 고친 글은 그대로
-    expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: DAY, fromDate: undefined });
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ dates: undefined });
   });
 
-  it('메모에 날짜 넣기 = 그날 기록으로, fromDate는 걷는다', async () => {
+  it('📅 날짜 칩을 다 빼면 날짜 없는 메모 (옛 fromDate 표시는 적지 않는다), 메모에 날짜를 더하면 그 날', async () => {
     seed();
-    render(<Host initial={{ sid: SID, date: null, id: 'm1' }} />);
-    fireEvent.change(q('[data-note-date]'), { target: { value: DAY } });
-    expect(q('[data-note-place-hint]').textContent).toContain('10/8');
-    // 그대로 두기 = 원래 자리
-    fireEvent.click(q('[data-note-place-keep]'));
-    expect(document.querySelector('[data-note-place-hint]')).toBeNull();
-    fireEvent.change(q('[data-note-date]'), { target: { value: DAY } });
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+    fireEvent.click(q(`[data-note-date-remove="${DAY}"]`));
+    expect(q('[data-note-dates-empty]')).not.toBeNull();
     await save();
-    expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: DAY, fromDate: undefined });
-    expect(document.querySelector('[data-toast]')?.textContent).toContain('기록으로 옮겼습니다');
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: null });
+    document.body.innerHTML = '';
+    render(<Host initial={{ sid: SID, date: null, id: 'm1' }} />);
+    fireEvent.click(q('[data-note-date-add]'));
+    fireEvent.click(q('[data-picker-today]'));
+    await save();
+    expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: todayStr() });
   });
 
   it('손대기 전에는 다른 기기에서 고친 것을 따라가고, 손댔으면 덮지 않는다', () => {

@@ -1,20 +1,12 @@
-// 메모·기록 쓰기에서 '무엇을 적나' (순수 - 서버 없이 시험한다). 적는 것은 actions.ts.
+// 메모 쓰기에서 '무엇을 적나' (순수 - 서버 없이 시험한다). 적는 것은 actions.ts.
 //
-// - 메모·기록은 한 종류(kind 'note')다. 날짜가 있으면 그날 기록, 없으면 메모(DESIGN 4-2 - V4 '날짜 칸 = 자리').
+// - 메모는 한 종류(kind 'note')다. 날짜 링크(P10-3 - domain/noteDates)가 있으면 그 날마다 하루 '메모' 칸에도.
 // - 쓰기마다 문서 하나(원칙 1): 완료 = done·doneAt, 즐겨찾기 = favorite, 체크 줄 = text, 순서 = 옮긴 것의 order(대개 하나).
 // - 차례·완료·자리(itemPath)는 일정과 같은 셈을 쓴다(features/events/eventOps).
 import { toggleCheckLine } from '../../domain/checkLines';
 import { compareOrder } from '../../domain/order';
 import type { Changes, WriteOp } from '../../data/repo/ops';
 import { reorderOps, type ItemDoc } from '../events/eventOps';
-
-export type NoteNoun = '메모' | '기록';
-
-/** 메모인가 기록인가 (날짜 칸 = 자리) */
-export const nounOf = (item: { date?: string | null }): NoteNoun => (item.date ? '기록' : '메모');
-
-/** '기록을'·'메모를' (안내 글) */
-export const objectOf = (noun: NoteNoun) => (noun === '기록' ? '기록을' : '메모를');
 
 /** 기록 카드 머리줄의 쓴 시각 (V4 그대로 '오후 03:12') */
 export const timeLabel = (ms: number | undefined) =>

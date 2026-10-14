@@ -16,7 +16,6 @@ import FormattedText from '../../ui/FormattedText';
 import { openImageViewer } from '../../ui/imageViewerStore';
 import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import type { ItemDoc } from '../events/eventOps';
-import { nounOf } from './noteOps';
 import EntryTableView from './EntryTableView';
 import { EntryStudents } from './StudentTags';
 
@@ -47,10 +46,9 @@ export interface EntryCardProps {
   onToggleCheckLine: (lineIndex: number, line: string) => Promise<unknown>;
 }
 
-
 export default function EntryCard(props: EntryCardProps) {
   const { item, labels, pathOf, dateText, editing, collapsed, onToggleCollapse, onMoveUp, onMoveDown } = props;
-  const noun = nounOf(item);
+  const noun = '메모';
   const body = item.text ?? '';
   const done = !!item.done;
   const favorite = !!item.favorite;
@@ -144,7 +142,7 @@ export default function EntryCard(props: EntryCardProps) {
   return (
     <div
       data-entry-card={item.id}
-      data-entry-kind={noun === '기록' ? 'journal' : 'memo'}
+      data-entry-kind={item.date ? 'journal' : 'memo'}
       data-entry-done={done ? '1' : '0'}
       data-entry-favorite={favorite ? '1' : '0'}
       data-entry-collapsed={collapsed ? '1' : '0'}
