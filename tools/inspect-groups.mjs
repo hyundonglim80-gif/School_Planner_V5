@@ -128,15 +128,17 @@ try {
   r.check(unmoved?.date === '2027-03-03' && unmoved.endDate === '2027-03-09' && JSON.stringify(unmoved.doneDates) === '["2027-03-04"]', '안내의 되돌리기 = 자리 칸 모두');
   await page.keyboard.press('Escape');
 
-  r.section('반복: 새 일정 칸 🔁 → 반복 문서 + 날마다 항목');
+  r.section('반복: 새 일정 칸 📆 끝 날 + 요일 → 반복 문서 + 날마다 항목 (P10-1)');
   await go('2027-03-03');
   await page.locator(sel('event-add')).click();
   await waitFor(panel);
   await page.keyboard.type('점검 묶음 협의회');
-  await page.locator(sel('event-recur-open')).click();
-  r.check((await page.locator(sel('recur-day', 3)).getAttribute('aria-pressed')) === 'true', '매주 · 시작 날 요일(수)을 골라 둔다');
-  await page.fill(sel('recur-until'), '2027-03-24');
-  r.check((await page.locator(sel('recur-count')).getAttribute('data-recur-count')) === '4', '끝나는 날까지 4개');
+  await page.locator(sel('event-period-open')).click();
+  r.check((await page.locator(sel('event-recur-row')).getAttribute('data-event-recur-row')) === 'none', '요일을 안 고르면 기간 (요일 칩 모두 꺼짐)');
+  await page.fill(sel('event-end'), '2027-03-24');
+  await page.locator(sel('recur-day', 3)).click();
+  r.check((await page.locator(sel('recur-day', 3)).getAttribute('aria-pressed')) === 'true', '요일(수)을 고르면 그 요일만 반복');
+  r.check((await page.locator(sel('recur-count')).getAttribute('data-recur-count')) === '4', '끝 날까지 4개');
   await page.locator(sel('event-save')).click();
   r.check(await waitFor(async () => (await panel.getAttribute('data-event-panel')) === 'edit'), '저장 → 첫 항목의 수정 칸');
   const sItems = await serverUntil(seriesItems, (l) => l.length === 4);

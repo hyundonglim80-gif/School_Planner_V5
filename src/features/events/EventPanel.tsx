@@ -6,7 +6,8 @@
 // - 속성: 라벨이 정한 값 먼저, 이 일정만 다른 것만 적는다(eventForm). 기간·반복은 '끝 날'·'🔁 반복' 줄(P3-3).
 // - 기간(DESIGN 5-3): '끝 날' 줄 - 끝 날이 날짜보다 뒤면 한 문서의 기간 일정, 주말 빼기 기본 켬(V4). 시작 날을 옮기면 기간을 통째로 옮긴다(끝 날이 따라간다).
 //   라벨 속성 '기간'이 켜진 라벨을 고른 새 일정 칸은 끝 날 줄을 펴 둔다. 지우기는 어디까지 묻는다(EventDeleteChooser).
-// - 반복(DESIGN 4-4): 새 일정의 '🔁 반복' 줄(RecurRow) - 저장하면 반복 문서 하나 + 날마다 항목(한 묶음), 칸은 첫 항목의 수정 칸이 된다.
+// - 반복(DESIGN 4-4): 새 일정의 '📆 끝 날' 줄 안 요일 칩(RecurRow - P10-1) - 요일을 고르면 시작 날 ~ 끝 날의 그 요일만,
+//   저장하면 반복 문서 하나 + 날마다 항목(한 묶음), 칸은 첫 항목의 수정 칸이 된다. 요일을 안 고르면 기간 일정 하나.
 //   반복 일정을 고치면 어디까지 묻는다(이 일정만·이 날부터·전부 - 바꾼 칸만 그 항목들에, 날짜는 같은 날 수만큼). 기간과 반복은 함께 쓰지 않는다.
 // - 저장하면 칸은 닫히지 않고 그 일정의 수정 칸이 된다(V4 사용자 결정 - 기록·메모와 같다). 저장 = 바뀐 칸만, 문서 하나.
 // - 저장이 안 되면 칸을 닫지 않는다(적은 것은 그대로). ESC는 저장 안 한 글이 있으면 먼저 묻는다, 좁은 화면 배경 = 저장하고 닫기.
@@ -81,9 +82,9 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   const savingRef = useRef(false);
   const [alarmOpen, setAlarmOpen] = useState(false);
   const [deleteAsk, setDeleteAsk] = useState(false);
-  // 끝 날 줄: 끝 날이 있거나, 눌러 폈거나, 새 일정에서 '기간' 속성 라벨을 골랐으면
+  // 끝 날 줄: 끝 날이 있거나, 눌러 폈거나, 새 일정에서 '기간'·'반복' 속성 라벨을 골랐으면
   const [periodPicked, setPeriodPicked] = useState(false);
-  // 반복 줄 (새 일정만): 눌러 폈거나 '반복' 속성 라벨을 골랐으면
+  // 반복 (새 일정만 - 끝 날 줄 안 요일 칩). 단축키 '반복 일정'은 시작 날 요일을 골라 둔 채로
   const [recur, setRecur] = useState<RecurForm>(() => recurFormFor(params.date, params.recur && !params.id ? 'weekly' : 'none'));
   const [recurPicked, setRecurPicked] = useState(!!params.recur);
   // 반복 일정을 고칠 때 어디까지 묻기
@@ -139,8 +140,8 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   const attrs = effectiveAttrs(form, tree);
   const labelWants = (key: 'period' | 'recur') => !isEditing && form.labelIds.some((id) => labelProps(tree.byId.get(id)?.props)[key]);
   const recurOn = !isEditing && recur.kind !== 'none';
-  const recurOpen = !isEditing && !form.endDate && (recurPicked || recurOn || labelWants('recur'));
-  const periodOpen = !recurOn && (periodPicked || !!form.endDate || labelWants('period'));
+  // 끝 날 줄 하나에 기간과 반복이 함께 (요일을 고르면 반복 - P10-1)
+  const periodOpen = periodPicked || recurPicked || recurOn || !!form.endDate || labelWants('period') || labelWants('recur');
   const period = periodOf(form);
   const span = period.endDate ? spanCount(form.date, period.endDate, period.workdays) : null;
   // 주말 빼기 기간에서 빠지는 공휴일 이름 (평일에 든 것만 - V4 '빠지는 공휴일 이름을 확인')
@@ -151,7 +152,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
           .filter((d) => !isWeekend(d) && !!holidayOf(d))
           .map((d) => `${holidayOf(d)}(${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))})`)
       : [];
-  const periodTooLong = !!period.endDate && daysBetween(form.date, period.endDate) >= MAX_PERIOD_DAYS;
+  const periodTooLong = !recurOn && !!period.endDate && daysBetween(form.date, period.endDate) >= MAX_PERIOD_DAYS;
 
   /** 날짜 칸: 새 일정은 저장할 날짜가 곧바로 바뀐다(같은 날 새 일정 칸 찾기도 그날로), 고치던 일정은 저장할 때 옮긴다 */
   const pickDate = (next: string) => {
@@ -185,10 +186,9 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     }
     if (keys.includes('time') && quick.time) next = { ...next, time: quick.time.hhmm };
     if (keys.includes('recur') && quick.recur) {
-      // '매주 화' → 반복 줄을 펴고 고른다 (끝나는 날은 줄에서 정한다)
+      // '매주 화' → 끝 날 줄을 펴고 그 요일을 고른다 (끝 날은 줄에서 정한다)
       setRecur((r) => ({ ...r, kind: quick.recur!.biweekly ? 'biweekly' : 'weekly', weekdays: quick.recur!.days }));
       setRecurPicked(true);
-      next = { ...next, endDate: '', skipDates: [] };
       strips.push(quick.recur.match);
     }
     const add = quick.labels.filter((l) => keys.includes(`label:${l.name}`));
@@ -244,7 +244,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   }
   if (quick?.recur) {
     const rl = ruleLabel({ freq: 'weekly', interval: quick.recur.biweekly ? 2 : 1, weekdays: quick.recur.days });
-    quickChips.push({ key: 'recur', icon: '🔁', label: rl, title: `반복 줄을 '${rl}'(으)로 펴고 글에서 '${quick.recur.match.text}'를 뺍니다` });
+    quickChips.push({ key: 'recur', icon: '🔁', label: rl, title: `끝 날 줄을 펴고 '${rl}'(으)로 고른 뒤 글에서 '${quick.recur.match.text}'를 뺍니다` });
   }
 
   // ─── 저장 ───
@@ -278,13 +278,14 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
       showToast(`기간은 ${MAX_PERIOD_DAYS}일까지 정할 수 있습니다. 끝 날을 앞당겨 주세요.`);
       return false;
     }
+    // 반복이 끝나는 날 = 끝 날 칸
     const rule = recurOn ? ruleOf(recur) : null;
     if (recurOn) {
-      const dates = recurFormDates(form.date, recur);
+      const dates = recurFormDates(form.date, { ...recur, until: form.endDate });
       const problem = !rule
         ? '반복할 요일(날)을 고르세요.'
-        : !recur.until
-          ? '반복이 끝나는 날을 고르세요.'
+        : !form.endDate
+          ? '반복이 끝나는 날(끝 날)을 고르세요.'
           : dates.length === 0
             ? '반복 조건에 맞는 날이 없습니다.'
             : dates.length > MAX_SERIES_ITEMS
@@ -306,7 +307,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     setSaving(true);
     try {
       if (!isEditing && rule) {
-        const made = await createSeriesEvents(sid, form, tree, { rule, until: recur.until }, (date) => orderAfter(itemsOn(items, date, 'event')));
+        const made = await createSeriesEvents(sid, form, tree, { rule, until: form.endDate }, (date) => orderAfter(itemsOn(items, date, 'event')));
         if (!made) return false;
         draft.clear();
         // 첫 항목의 수정 칸이 된다 (적은 것은 그대로 - 날짜는 첫 항목의 날로 따라간다)
@@ -397,7 +398,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   const title = isEditing ? '일정 수정' : '새 일정';
   const subtitle = useMemo(
     () =>
-      `${period.endDate ? `${shortDateLabel(form.date)}~${shortDateLabel(period.endDate)} 기간` : shortDateLabel(form.date)} ${recurOn ? '반복 ' : ''}일정 · ${personal ? '개인' : '공유'}`,
+      `${period.endDate ? `${shortDateLabel(form.date)}~${shortDateLabel(period.endDate)} ${recurOn ? '반복' : '기간'}` : `${shortDateLabel(form.date)}${recurOn ? ' 반복' : ''}`} 일정 · ${personal ? '개인' : '공유'}`,
     [form.date, period.endDate, recurOn, personal],
   );
 
@@ -487,33 +488,19 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                 >
                   ▶
                 </button>
-                {!isEditing && !recurOpen && !form.endDate && (
-                  <button
-                    type="button"
-                    data-event-recur-open
-                    onClick={() => {
-                      setRecurPicked(true);
-                      setRecur((r) => (r.kind === 'none' ? { ...r, kind: 'weekly' } : r));
-                    }}
-                    title="매주·매월 같은 일정을 한 번에 (끝나는 날까지)"
-                    className="ml-1 px-2 py-1 rounded-lg text-xs font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 cursor-pointer"
-                  >
-                    🔁 반복
-                  </button>
-                )}
-                {!periodOpen && !recurOn && (
+                {!periodOpen && (
                   <button
                     type="button"
                     data-event-period-open
                     onClick={() => setPeriodPicked(true)}
-                    title="여러 날에 걸친 일정 (끝 날 정하기)"
+                    title={isEditing ? '여러 날에 걸친 일정 (끝 날 정하기)' : '여러 날에 걸친 일정 (끝 날 정하기) - 요일을 고르면 그 요일만 반복'}
                     className="ml-1 px-2 py-1 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 cursor-pointer"
                   >
-                    📆 끝 날
+                    📆 끝 날{isEditing ? '' : ' · 🔁 반복'}
                   </button>
                 )}
               </div>
-              {/* 기간: 끝 날 (한 문서 - 날마다 '(2/5)'는 센다) */}
+              {/* 끝 날: 요일을 안 고르면 기간(한 문서 - 날마다 '(2/5)'는 센다), 고르면 그 요일만 반복 (새 일정만 - P10-1) */}
               {periodOpen && (
                 <div data-event-period-row className="space-y-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -527,31 +514,36 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                       aria-label="끝 날"
                       className="px-2 py-1 text-sm border border-slate-200 rounded-lg font-bold text-slate-700 bg-white"
                     />
-                    <label className="flex items-center gap-1 text-xs font-semibold text-slate-600 cursor-pointer select-none" title="토·일과 공휴일은 빼고 셉니다 - 수업하는 날에만">
-                      <input
-                        type="checkbox"
-                        data-event-workdays
-                        checked={form.workdays}
-                        onChange={(e) => setForm((f) => ({ ...f, workdays: e.target.checked }))}
-                        className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
-                      />
-                      주말·공휴일 빼기
-                    </label>
+                    {!recurOn && (
+                      <label className="flex items-center gap-1 text-xs font-semibold text-slate-600 cursor-pointer select-none" title="토·일과 공휴일은 빼고 셉니다 - 수업하는 날에만">
+                        <input
+                          type="checkbox"
+                          data-event-workdays
+                          checked={form.workdays}
+                          onChange={(e) => setForm((f) => ({ ...f, workdays: e.target.checked }))}
+                          className="w-3.5 h-3.5 rounded accent-indigo-600 cursor-pointer"
+                        />
+                        주말·공휴일 빼기
+                      </label>
+                    )}
                     <button
                       type="button"
                       data-event-end-clear
                       onClick={() => {
                         setForm((f) => ({ ...f, endDate: '', skipDates: [] }));
                         setPeriodPicked(false);
+                        setRecurPicked(false);
+                        setRecur((r) => ({ ...r, kind: 'none', weekdays: [] }));
                       }}
-                      title="끝 날 빼기 (하루 일정)"
+                      title={recurOn ? '끝 날·반복 빼기 (하루 일정)' : '끝 날 빼기 (하루 일정)'}
                       aria-label="끝 날 빼기"
                       className="w-6 h-6 rounded-full text-slate-400 hover:text-red-500 hover:bg-slate-100 text-xs cursor-pointer"
                     >
                       ✕
                     </button>
                   </div>
-                  {span ? (
+                  {!isEditing && <RecurRow start={form.date} end={form.endDate} recur={recur} onChange={setRecur} />}
+                  {recurOn ? null : span ? (
                     <p data-event-period-count={span.days} className={`text-2xs ${periodTooLong ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
                       {periodTooLong
                         ? `기간은 ${MAX_PERIOD_DAYS}일까지 정할 수 있습니다.`
@@ -573,7 +565,9 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                       )}
                     </p>
                   ) : (
-                    <p className="text-2xs text-slate-400">끝 날을 고르면 여러 날에 걸친 일정 하나가 됩니다(시작 날을 옮기면 통째로 옮겨 갑니다).</p>
+                    <p className="text-2xs text-slate-400">
+                      끝 날을 고르면 여러 날에 걸친 일정 하나가 됩니다(시작 날을 옮기면 통째로 옮겨 갑니다).{isEditing ? '' : ' 요일을 고르면 그 요일만 반복합니다.'}
+                    </p>
                   )}
                 </div>
               )}
@@ -593,7 +587,6 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                   ↪ {shortDateLabel(carriedSince(item))}부터 끝내지 않아 오늘 칸에 따라오는 일정입니다. 오늘 칸에서 끝내면 오늘 일정이 됩니다.
                 </p>
               )}
-              {recurOpen && <RecurRow start={form.date} recur={recur} onChange={setRecur} />}
               {isEditing && seriesInfo && (
                 <p data-event-series-info={seriesInfo.list.length} className="text-xs font-bold text-purple-800 bg-purple-50 border border-purple-200 rounded-lg px-2.5 py-1.5">
                   🔁 {ruleLabel(seriesInfo.series?.rule)} · {seriesInfo.list.length}개 가운데 {seriesInfo.index + 1}번째

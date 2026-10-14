@@ -186,7 +186,7 @@ export interface LabelProps {
   gcal?: boolean;
   /** 새 일정 칸을 열 때 끝 날 줄을 펴 둔다 */
   period?: boolean;
-  /** 새 일정 칸을 열 때 반복 줄을 펴 둔다 */
+  /** 새 일정 칸을 열 때 끝 날 줄(요일을 고르면 반복)을 펴 둔다 - P10-1 */
   recur?: boolean;
 }
 

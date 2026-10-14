@@ -308,18 +308,21 @@ describe('기간 (끝 날 줄)', () => {
   });
 });
 
-describe('반복 (🔁 줄)', () => {
-  it("'🔁 반복' → 매주(시작 날 요일) · 끝나는 날 → 반복 문서 + 날마다 항목 한 묶음, 칸은 첫 항목의 수정 칸", async () => {
+describe('반복 (끝 날 줄의 요일 - P10-1)', () => {
+  it("'📆 끝 날' → 끝 날 + 요일 → 그 요일만 반복: 반복 문서 + 날마다 항목 한 묶음, 칸은 첫 항목의 수정 칸", async () => {
     seed();
     render(<Host initial={{ sid: SID, date: '2026-10-14' }} />);
-    fireEvent.click(q('[data-event-recur-open]'));
-    expect(q('[data-recur-kind="weekly"]').getAttribute('aria-pressed')).toBe('true');
-    expect(q('[data-recur-day="3"]').getAttribute('aria-pressed')).toBe('true');
-    // 끝 날 단추는 숨는다 (기간과 반복은 함께 쓰지 않는다)
-    expect(document.querySelector('[data-event-period-open]')).toBeNull();
-    fireEvent.click(q('[data-recur-day="3"]'));
+    fireEvent.click(q('[data-event-period-open]'));
+    // 요일을 안 고르면 기간 (요일 칩은 모두 꺼져 있다)
+    expect(q('[data-event-recur-row]').dataset.eventRecurRow).toBe('none');
+    expect(q('[data-recur-day="3"]').getAttribute('aria-pressed')).toBe('false');
+    fireEvent.change(q('[data-event-end]'), { target: { value: '2026-11-03' } });
+    expect(q('[data-event-period-count]')).not.toBeNull();
     fireEvent.click(q('[data-recur-day="2"]'));
-    fireEvent.change(q('[data-recur-until]'), { target: { value: '2026-11-03' } });
+    expect(q('[data-event-recur-row]').dataset.eventRecurRow).toBe('weekly');
+    // 반복이면 기간 날 수·주말 빼기는 숨고 반복 날 수
+    expect(document.querySelector('[data-event-period-count]')).toBeNull();
+    expect(document.querySelector('[data-event-workdays]')).toBeNull();
     expect(q('[data-recur-count]').dataset.recurCount).toBe('3');
     type('학년 협의회');
     await save();
@@ -332,16 +335,52 @@ describe('반복 (🔁 줄)', () => {
     expect(q('[data-toast]').textContent).toContain('반복 일정 3개를 만들었습니다');
   });
 
-  it("단축키 '반복 일정'으로 연 새 칸은 반복 줄을 편 채로 (매주)", () => {
+  it("단축키 '반복 일정'으로 연 새 칸은 끝 날 줄을 펴고 시작 날 요일을 골라 둔다 (매주)", () => {
     seed();
     render(<Host initial={{ sid: SID, date: '2026-10-14', recur: true }} />);
-    expect(q('[data-recur-kind="weekly"]').getAttribute('aria-pressed')).toBe('true');
+    expect(q('[data-event-recur-row]').dataset.eventRecurRow).toBe('weekly');
+    expect(q('[data-recur-day="3"]').getAttribute('aria-pressed')).toBe('true');
   });
 
-  it('끝나는 날이 없으면 저장하지 않고 알린다', async () => {
+  it('마지막 요일을 풀면 다시 기간, ✕는 끝 날과 반복을 함께 뗀다', () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: '2026-10-14', recur: true }} />);
+    fireEvent.click(q('[data-recur-day="3"]'));
+    expect(q('[data-event-recur-row]').dataset.eventRecurRow).toBe('none');
+    fireEvent.click(q('[data-recur-day="5"]'));
+    fireEvent.click(q('[data-event-end-clear]'));
+    expect(document.querySelector('[data-event-period-row]')).toBeNull();
+    fireEvent.click(q('[data-event-period-open]'));
+    expect(q('[data-event-recur-row]').dataset.eventRecurRow).toBe('none');
+  });
+
+  it("'더 보기' - 격주·매월 n일 (다시 누르면 매주·기간으로)", () => {
     seed();
     render(<Host initial={{ sid: SID, date: '2026-10-14' }} />);
-    fireEvent.click(q('[data-event-recur-open]'));
+    fireEvent.click(q('[data-event-period-open]'));
+    expect(document.querySelector('[data-recur-kind]')).toBeNull();
+    fireEvent.click(q('[data-recur-more]'));
+    fireEvent.click(q('[data-recur-kind="biweekly"]'));
+    expect(q('[data-recur-day="3"]').getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(q('[data-recur-kind="biweekly"]'));
+    expect(q('[data-event-recur-row]').dataset.eventRecurRow).toBe('weekly');
+    // 편 '더 보기'는 그대로
+    fireEvent.click(q('[data-recur-kind="monthDay"]'));
+    expect(q('[data-recur-mday="14"]').getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(q('[data-recur-kind="monthDay"]'));
+    expect(q('[data-event-recur-row]').dataset.eventRecurRow).toBe('none');
+  });
+
+  it('고치는 일정의 끝 날 줄에는 요일 칩이 없다 (반복은 새 일정에서)', () => {
+    seed(new Map([['p', { ...ev1, date: '2026-10-14', endDate: '2026-10-20', workdays: true }]]));
+    render(<Host initial={{ sid: SID, date: '2026-10-14', id: 'p' }} />);
+    expect(q('[data-event-period-row]')).not.toBeNull();
+    expect(document.querySelector('[data-event-recur-row]')).toBeNull();
+  });
+
+  it('끝 날이 없으면 저장하지 않고 알린다', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: '2026-10-14', recur: true }} />);
     type('협의회');
     await save();
     expect(written.batches).toEqual([]);
@@ -353,6 +392,7 @@ describe('반복 (🔁 줄)', () => {
     render(<Host initial={{ sid: SID, date: '2026-10-14' }} />);
     type('동아리 격주 금');
     fireEvent.click(q('[data-quick-chip="recur"]'));
+    expect(q('[data-event-recur-row]').dataset.eventRecurRow).toBe('biweekly');
     expect(q('[data-recur-kind="biweekly"]').getAttribute('aria-pressed')).toBe('true');
     expect(q('[data-recur-day="5"]').getAttribute('aria-pressed')).toBe('true');
     expect(textInput().value).toBe('동아리');

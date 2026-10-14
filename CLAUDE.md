@@ -26,7 +26,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-14 V5 계획(P0~P9) 모두 끝**. 같은 날 사용자 의견 27가지로 **P10(세션 다섯)** 계획 - `docs/PLAN.md` 6장 `### P10`. '이어서' = **P10-1**(■2부터 - ■1 완료 ✓ 칩 끝). 부탁 없음.
+- **2026-10-14 V5 계획(P0~P9) 모두 끝**. 같은 날 사용자 의견 27가지로 **P10(세션 다섯)** 계획 - `docs/PLAN.md` 6장 `### P10`. '이어서' = **P10-1**(■3부터 - ■1 완료 ✓ 칩·■2 끝 날 + 요일 반복 끝). 부탁 없음.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -171,6 +171,7 @@
 - 구글 로그인이 만료되면(첨부·사진·백업·캘린더) 오류 대신 '구글 로그인이 필요합니다' 창을 띄우고 그 단추에서 로그인 창을 연다.
 - 진도표 차시 칸 = 그 내용의 차시 수('2'면 같은 내용을 2행으로). 1, 2, 3 … 차례 번호로 적은 옛 표는 늘리지 않는다.
 - 체크리스트는 글 안의 `☐ `/`☑ `, 카드 '☑ n/m', 체크한 줄은 보이기만 아래로. 첫·마지막 줄 '#라벨'은 라벨로 떼고 그 줄을 지운다(숫자 8자리 학생 태그는 남긴다).
+- **반복 = 끝 날 + 요일**(P10-1 10-14 사용자 의견 6b): '📆 끝 날 · 🔁 반복' 줄 하나 - 요일을 안 고르면 기간 하나, 고르면 그 요일만 반복(새 일정만), 격주·매월·매일은 '더 보기'.
 - **일정 완료 = 칩 앞에 ✓**(P10-1 10-14 사용자 의견): 끝낸 일정도 칩 색·글은 그대로(흑백·줄긋기 없음), 하루 카드의 ☐는 없앴다 - 라벨 칩을 누르면 완료, 라벨이 없으면 회색 ○ 칩.
 - 일정 라벨 속성 '구글 캘린더' - 켠 라벨의 일정은 저장·완료·옮기기·지우기를 구글 캘린더에도. 저장할 때 로그인이 없으면 로그인 창을 묻는다.
 - 교사 유형은 시간표 창에서 고른다((초등) 담임 / 전담 / (중등) 전담 + 담임). 전담은 담임 도구(출석부·알림장)를 숨긴다. 수업 칸 글자는 '5-2 과학'.
@@ -250,11 +251,11 @@
   `actions.ts`(`setEventDone`·`moveEventInList`·`createEvent`·`saveEvent`·`setEventAlarm`·`deleteEvent` - 되돌리기까지) · `EventAlarmWindow.tsx`(⏰ 시각 `[data-alarm-window|alarm-time|alarm-save|alarm-off]`) ·
   `EventAlarms.tsx`(Shell에 하나 - 앱 안 알림, 20초마다 사본) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]`) · `QuickInputChips.tsx`(`[data-quick-chip]`) · `DueBadge.tsx`(`[data-due-badge]`) ·
   `EventDoneChip.tsx`(완료 칩 한 곳 - 라벨 칩·라벨 없으면 회색 ○, 끝내면 칩 앞 ✓ `[data-event-done-chip=0|1]`(✓를 단 칩)·`[data-event-check]`, 좁은 자리는 `DoneMark` - 하루·주간·작년·월간·그날 목록·년간·학사력·링크 보기, P10-1) ·
-  `shortcuts.ts`(`newEvent` = ＋ 새로 → 보는 날의 새 일정, `recurring` = 반복 줄을 편 새 일정 칸, `forwarding` = 오늘로 가서 지난 일정 줄). 순수 셈 `domain/eventDue.ts`·`eventAlarm.ts`(`normalizeTimeInput`·`dueAlarms`)·`quickInput.ts`(V4 테스트째). 소리 `app/sound.ts`. 자동 높이 글 칸 `ui/AutoTextarea.tsx`.
+  `shortcuts.ts`(`newEvent` = ＋ 새로 → 보는 날의 새 일정, `recurring` = 끝 날 줄을 펴고 시작 날 요일을 고른 새 일정 칸, `forwarding` = 오늘로 가서 지난 일정 줄). 순수 셈 `domain/eventDue.ts`·`eventAlarm.ts`(`normalizeTimeInput`·`dueAlarms`)·`quickInput.ts`(V4 테스트째). 소리 `app/sound.ts`. 자동 높이 글 칸 `ui/AutoTextarea.tsx`.
   - **이월(계산 - P3-3)**: `domain/forward.ts`(`forwardOn`·`isCarried`·`carriedOf`·`staleOf`·`carriedSince`) · `events/forward.ts`(`useCarried` = 오늘로 따라오는 일정·지난 일정, `usePastRow`·`staleCountNow`) · `ForwardMarks.tsx`(Shell - 처음 따라올 때 carrying 한 번, live에서만) ·
     `eventOps.carriedDoneChanges`(오늘 칸에서 끝내면 오늘로) · 하루 `DayEvents`(오늘 것 아래 `[data-event-carried|event-since]`, 지난 날 `[data-event-away|event-to-today]`) · `day/DayPastEvents.tsx`('📥 지난 일정 N개' `[data-past-*]`) · `ui/useToday.ts`(자정에 바뀌는 오늘).
   - **기간·반복·묶음(P3-3)**: `domain/period.ts`(보이는 날·'(k/n)'·doneDates·skipDates·끝 날 당기기 - 공휴일은 `HolidayCheck`로 P5-3) · `domain/recur.ts`(규칙·날짜·이름) · `events/seriesOps.ts`(순수 - 만들기·묶음 고치기·지우기)·`series.ts`(`useSeriesOf`) ·
-    일정 칸 '📆 끝 날' `[data-event-period-*|event-end|event-workdays]`·`RecurRow.tsx`(`[data-event-recur-row|recur-*]`)·`[data-event-series-info]` · `EventScopeWindow.tsx`(세 갈래 창 `[data-scope-window|scope-choice]`)·`EventDeleteChooser.tsx` · 카드 '(k/n)' `[data-event-period]`·🔁 `[data-event-series]`.
+    일정 칸 '📆 끝 날 · 🔁 반복' 줄 하나 `[data-event-period-*|event-end|event-workdays|event-end-clear]` 안에 `RecurRow.tsx`(새 일정만 - 요일 칩 `[data-recur-day]`·▸ 더 보기 `[data-recur-more|recur-kind]`, `[data-event-recur-row=none|weekly|…]` - 요일을 안 고르면 기간, 고르면 그 요일만 반복, 끝나는 날 = 끝 날 칸, 셈 `domain/recur` `toggleWeekday`·`toggleKind` - P10-1)·`[data-event-series-info]` · `EventScopeWindow.tsx`(세 갈래 창 `[data-scope-window|scope-choice]`)·`EventDeleteChooser.tsx` · 카드 '(k/n)' `[data-event-period]`·🔁 `[data-event-series]`.
   - **여러 개 고르기(P3-3)**: `events/multi.ts`(store `useMulti` - id + 그 날)·`multiOps.ts`(순수 - 한 일정 여러 날은 한 문서에 접는다)·`MultiSelectBar.tsx`(Shell - `[data-multi-*]`, ⋮ `multiSelect`·ESC) · 카드 `[data-event-picked]`·Ctrl·Shift·길게 누르기 · ESC에 함께 할 일 `app/keys.addEscapeAction`.
 - **월간** `src/features/month/`(P5-2): `MonthScreen.tsx`(휴대폰은 날짜 → 그날 목록) · `MonthGrid.tsx`(한 주 한 줄 subgrid `[data-month-week|month-day|month-event|month-event-chip|month-add|month-notes]`) · `PeriodBar.tsx`(`[data-period-bar|period-cell]`) ·
   `MonthDaySheet.tsx`(`[data-month-day-sheet]`) · `calendarEvents.ts`('달력' 속성 일정만 - 년간도 쓴다). 순수 `domain/periodBars.ts`(`layoutWeekBars`·`periodsInDates`) · `dateUtils.monthGridDates`.

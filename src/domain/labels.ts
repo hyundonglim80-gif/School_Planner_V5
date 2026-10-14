@@ -48,7 +48,7 @@ export const EVENT_LABEL_PROPS: ReadonlyArray<{ key: keyof LabelProps; name: str
   { key: 'calendar', name: '달력', title: '켜 둔 라벨의 일정만 월간·년간 달력에 나옵니다. 끄면 하루·주간 화면에만 보입니다.', color: 'accent-blue-600' },
   { key: 'forward', name: '이월', title: '끝내지 못하면 다음 날로 따라옵니다.', color: 'accent-emerald-600' },
   { key: 'period', name: '기간', title: '새 일정 칸을 열 때 끝 날 줄을 펴 둡니다.', color: 'accent-indigo-600' },
-  { key: 'recur', name: '반복', title: '새 일정 칸을 열 때 반복 줄을 펴 둡니다.', color: 'accent-purple-600' },
+  { key: 'recur', name: '반복', title: '새 일정 칸을 열 때 끝 날 줄을 펴 둡니다 (요일을 고르면 그 요일만 반복).', color: 'accent-purple-600' },
   { key: 'skip', name: '수업X', title: '그날은 수업이 없는 날로 봅니다.', color: 'accent-amber-600' },
   {
     key: 'gcal',

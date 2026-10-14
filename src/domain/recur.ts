@@ -107,3 +107,31 @@ export function recurFormDates(start: string, form: RecurForm): string[] {
   const rule = ruleOf(form);
   return rule && form.until ? recurDates(rule, start, form.until) : [];
 }
+
+// ─── 일정 칸 '📆 끝 날' 줄의 요일·주기 고르기 (P10-1 - 요일을 안 고르면 기간, 고르면 그 요일만 반복) ───
+
+/** 요일 칩을 쓰는 반복 ('none' = 아직 안 고름 → 기간) */
+export const BY_WEEKDAY: ReadonlySet<RecurKind> = new Set(['none', 'weekly', 'biweekly', 'monthWeek']);
+
+/** 요일 하나 누르기: 안 고른 상태(기간)면 그 요일만 매주, 마지막 요일을 풀면 다시 기간 */
+export function toggleWeekday(recur: RecurForm, w: number): RecurForm {
+  if (recur.kind === 'none') return { ...recur, kind: 'weekly', weekdays: [w] };
+  const days = recur.weekdays.includes(w) ? recur.weekdays.filter((x) => x !== w) : [...recur.weekdays, w];
+  return days.length ? { ...recur, weekdays: days } : { ...recur, kind: 'none', weekdays: [] };
+}
+
+/** '더 보기'의 주기 누르기: 켜면 그 주기(요일·며칠이 없으면 시작 날 것), 켠 것을 다시 누르면 매주(요일이 있으면) 또는 기간 */
+export function toggleKind(recur: RecurForm, kind: RecurKind, start: string): RecurForm {
+  if (recur.kind === kind) {
+    const back: RecurKind = BY_WEEKDAY.has(kind) && recur.weekdays.length > 0 ? 'weekly' : 'none';
+    return { ...recur, kind: back, weekdays: back === 'none' ? [] : recur.weekdays };
+  }
+  const base = recurFormFor(start);
+  const keepDays = BY_WEEKDAY.has(recur.kind) && recur.kind !== 'none' && recur.weekdays.length > 0;
+  return {
+    ...recur,
+    kind,
+    weekdays: keepDays ? recur.weekdays : base.weekdays,
+    monthDays: recur.monthDays.length ? recur.monthDays : base.monthDays,
+  };
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { recurDates, recurFormFor, ruleLabel, ruleOf, weekOfMonth, type RecurForm } from './recur';
+import { recurDates, recurFormDates, recurFormFor, ruleLabel, ruleOf, toggleKind, toggleWeekday, weekOfMonth, type RecurForm } from './recur';
 
 // 2026-10-14 = 수요일
 const form = (over: Partial<RecurForm>): RecurForm => ({ ...recurFormFor('2026-10-14'), ...over });
@@ -50,5 +50,33 @@ describe('반복 날짜 (V4 computeRecurringDates와 같게)', () => {
     expect(recurDates({ freq: 'daily', interval: 1 }, '2026-10-14', '')).toEqual([]);
     expect(recurDates({ freq: 'daily', interval: 1 }, '2026-10-14', '2026-10-13')).toEqual([]);
     expect(recurDates({ freq: 'daily', interval: 1 }, '2026-01-01', '2027-12-31', 10)).toHaveLength(10);
+  });
+});
+
+describe("끝 날 줄의 요일·더 보기 (P10-1)", () => {
+  const none = form({ kind: 'none' });
+
+  it('요일을 안 고르면 기간 - 하나 고르면 그 요일만 매주, 마지막 요일을 풀면 다시 기간', () => {
+    const tue = toggleWeekday(none, 2);
+    expect(tue).toMatchObject({ kind: 'weekly', weekdays: [2] });
+    // 시작 날 요일(수)이 미리 골라져 있지 않다 - 고른 요일만
+    expect(recurFormDates('2026-10-14', { ...tue, until: '2026-11-03' })).toEqual(['2026-10-20', '2026-10-27', '2026-11-03']);
+    const tueThu = toggleWeekday(tue, 4);
+    expect(tueThu.weekdays).toEqual([2, 4]);
+    expect(toggleWeekday(toggleWeekday(tueThu, 2), 4)).toMatchObject({ kind: 'none', weekdays: [] });
+  });
+
+  it('더 보기: 격주·매월 n째 주는 고른 요일을 두고(없으면 시작 날 요일), 다시 누르면 매주', () => {
+    const tue = toggleWeekday(none, 2);
+    expect(toggleKind(tue, 'biweekly', '2026-10-14')).toMatchObject({ kind: 'biweekly', weekdays: [2] });
+    expect(toggleKind(toggleKind(tue, 'biweekly', '2026-10-14'), 'biweekly', '2026-10-14')).toMatchObject({ kind: 'weekly', weekdays: [2] });
+    expect(toggleKind(none, 'monthWeek', '2026-10-14')).toMatchObject({ kind: 'monthWeek', weekdays: [3], monthWeek: 2 });
+  });
+
+  it('더 보기: 매월 n일·매일은 다시 누르면 기간', () => {
+    const md = toggleKind(none, 'monthDay', '2026-10-14');
+    expect(md).toMatchObject({ kind: 'monthDay', monthDays: [14] });
+    expect(toggleKind(md, 'monthDay', '2026-10-14')).toMatchObject({ kind: 'none', weekdays: [] });
+    expect(toggleKind(toggleKind(none, 'daily', '2026-10-14'), 'daily', '2026-10-14').kind).toBe('none');
   });
 });

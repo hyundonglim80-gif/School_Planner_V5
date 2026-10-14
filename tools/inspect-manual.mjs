@@ -279,7 +279,7 @@ try {
   await topic('event-add', async () => {
     await q(sel('event-add')).click();
     r.check(await has(sel('event-panel', 'new')), '+ 추가 → 새 일정 칸');
-    for (const s of ['event-text-input', 'event-date', 'event-due-input', 'event-alarm-open', 'event-period-open', 'event-recur-open', 'label-picker']) r.check((await count(sel(s))) > 0, `칸: ${s}`);
+    for (const s of ['event-text-input', 'event-date', 'event-due-input', 'event-alarm-open', 'event-period-open', 'label-picker']) r.check((await count(sel(s))) > 0, `칸: ${s}`);
     await q(sel('event-text-input')).fill('내일 15:00 점검');
     r.check(await waitFor(async () => (await count(sel('quick-chip'))) >= 2, 3000), '빠른 입력 칩 (내일·15:00)');
     await q(sel('event-text-input')).fill('');
@@ -329,6 +329,7 @@ try {
     await q(sel('event-period-open')).click();
     r.check(await has(sel('event-end')), '📆 끝 날 → 끝 칸');
     r.check((await count(sel('event-workdays'))) === 1, '주말·공휴일 빼기');
+    r.check((await count(`${sel('event-recur-row', 'none')} ${sel('recur-day')}`)) === 7, '끝 날 줄의 요일 칩 일곱 (안 고르면 기간)');
     await closeAll();
     r.check(await has(sel('event-period')), "기간 일정 카드에 '(k/n)'");
   });
@@ -336,7 +337,7 @@ try {
   await topic('recurring', async () => {
     await shortcut('recurring');
     r.check(await has(sel('event-panel', 'new')), "단축키 '반복 일정' = 새 일정 칸");
-    r.check(await has(sel('recur-kind', 'weekly')), '🔁 반복 줄이 펴져 있다 (매주…)');
+    r.check(await has(sel('event-recur-row', 'weekly')), '끝 날 줄이 펴지고 시작 날 요일을 골라 둔다 (매주)');
   });
 
   await topic('group-delete', async () => {
