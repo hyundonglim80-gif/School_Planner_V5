@@ -27,7 +27,7 @@ try {
   // 앱이 쓰는 모듈 그대로 (개발 서버가 같은 주소로 주므로 앱과 같은 것)
   const run = (fn, arg) => page.evaluate(fn, arg);
   const ids = await run(async (sid) => {
-    const repo = await import('/src/data/repo/index.ts');
+    const repo = await import(window.__appModule('/src/data/repo/index.ts'));
     const a = repo.newPath(sid, 'items');
     const b = repo.newPath(sid, 'items');
     const note = (text) => ({ kind: 'note', date: null, text, labelIds: [], order: 'a0' });
@@ -46,8 +46,8 @@ try {
 
   r.section('안내의 되돌리기');
   await run(async ({ sid, id }) => {
-    const repo = await import('/src/data/repo/index.ts');
-    const { recordUndo } = await import('/src/data/undo.ts');
+    const repo = await import(window.__appModule('/src/data/repo/index.ts'));
+    const { recordUndo } = await import(window.__appModule('/src/data/undo.ts'));
     recordUndo(sid, '🗑️ 메모를 지웠습니다.', await repo.remove({ sid, coll: 'items', id }));
   }, { sid, id: a });
   r.check(!!(await serverUntil(() => readItem(a), (d) => !!d?.deletedAt))?.deletedAt, '지우면 지운 표시');
@@ -58,8 +58,8 @@ try {
 
   r.section('Ctrl+Z');
   await run(async ({ sid, id }) => {
-    const repo = await import('/src/data/repo/index.ts');
-    const { recordUndo } = await import('/src/data/undo.ts');
+    const repo = await import(window.__appModule('/src/data/repo/index.ts'));
+    const { recordUndo } = await import(window.__appModule('/src/data/undo.ts'));
     const at = { sid, coll: 'items', id };
     recordUndo(sid, '고쳤습니다.', await repo.patch(at, { text: '점검 둘째 고침' }, { text: '점검 둘째' }), { what: '둘째 고치기' });
   }, { sid, id: b });

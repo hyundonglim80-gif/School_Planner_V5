@@ -1,5 +1,5 @@
 // 기기 사본 맞추기 - 흉내 낸 서버 + fake-indexeddb.
-// 처음 받기(이번 학년도 먼저·쪽 나눠·끊기면 이어서) · 사본으로 먼저 그리기 · 구독(커서 - 1분) · 빠짐 확인 · 지운 항목 견주기 ·
+// 처음 받기(오늘 가까운 것 먼저·쪽 나눠·끊기면 이어서) · 사본으로 먼저 그리기 · 구독(커서 - 1분) · 빠짐 확인 · 지운 항목 견주기 ·
 // 고장 대비(사본이 없음·잃음·적기 실패에도 서버 구독은 그대로) · 다시 받기.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
@@ -149,7 +149,7 @@ afterEach(() => {
 });
 
 describe('처음 받기', () => {
-  it('이번 학년도 항목 먼저, 그다음 updatedAt 차례로 모두 받고, 다 받은 커서 - 1분부터 구독한다', async () => {
+  it('오늘 가까운 항목(62일 앞부터) 먼저, 그다음 updatedAt 차례로 모두 받고, 다 받은 커서 - 1분부터 구독한다', async () => {
     const uid = freshUid();
     const sid = sidOf(uid);
     const server = new FakeServer();
@@ -161,7 +161,7 @@ describe('처음 받기', () => {
     startMirror(uid, { server, today: '2026-10-08' });
     await vi.waitFor(() => expect(allLive(uid)).toBe(true));
 
-    expect(server.calls.fromDate).toEqual([{ coll: 'items', date: '2026-03-01' }]);
+    expect(server.calls.fromDate).toEqual([{ coll: 'items', date: '2026-08-07' }]);
     expect(server.calls.pages.map((c) => c.coll).sort()).toEqual(['attendance', 'classHub', 'classes', 'evaluations', 'items', 'labels', 'lessonDays', 'notices', 'progress', 'quiz', 'seating', 'series', 'subjectAttendance', 'timetables']);
     expect(Object.keys(docsOf(uid)).sort()).toEqual(['memo', 'now', 'old']);
     expect(docsOf(uid).now).toMatchObject({ id: 'now', text: '올해 기록' });

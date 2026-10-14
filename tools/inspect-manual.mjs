@@ -251,7 +251,8 @@ try {
   await topic('year', async () => {
     await go(`#/year/${YEAR}`, 'year');
     r.check((await count(sel('year-view'))) === 2, '📅 학사력 / 📋 자세히');
-    r.check((await count(sel('sheet-month'))) >= 12 || (await count(sel('year-month'))) >= 12, '열두 달');
+    // 열두 달은 세 달씩 나눠 그린다 - 다 그릴 때까지 기다린다 (P9-3 - 바쁠 때 덜 그려진 것을 세었다)
+    r.check(await waitFor(async () => (await count(sel('sheet-month'))) >= 12 || (await count(sel('year-month'))) >= 12, 5000), '열두 달');
   });
 
   await topic('badges', async () => {

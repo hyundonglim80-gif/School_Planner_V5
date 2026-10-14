@@ -36,7 +36,7 @@ async function serverWrite(id, text) {
 /** 화면 store (앱이 쓰는 모듈 그대로 - 개발 서버가 같은 주소로 준다) */
 const mirror = (page) =>
   page.evaluate(async (sid) => {
-    const { useMirror } = await import('/src/data/mirror/store.ts');
+    const { useMirror } = await import(window.__appModule('/src/data/mirror/store.ts'));
     const s = useMirror.getState();
     const c = s.colls[`${sid}/items`];
     const docs = c?.docs ?? {};
@@ -91,10 +91,10 @@ try {
   b.on('pageerror', (e) => a.errors.push(String(e)));
   await open(b, DAY);
   const newId = await b.evaluate(async (sid) => {
-    const repo = await import('/src/data/repo/index.ts');
+    const repo = await import(window.__appModule('/src/data/repo/index.ts'));
     const at = repo.newPath(sid, 'items');
     const saving = repo.create(at, { kind: 'note', date: '2026-10-08', text: '다른 탭에서', labelIds: [], order: 'a0' });
-    const { useMirror } = await import('/src/data/mirror/store.ts');
+    const { useMirror } = await import(window.__appModule('/src/data/mirror/store.ts'));
     const shownAtOnce = !!useMirror.getState().colls[`${sid}/items`]?.docs[at.id];
     await saving;
     return { id: at.id, shownAtOnce };

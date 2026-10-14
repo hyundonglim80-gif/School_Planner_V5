@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-14 P9-3 ■1·■2 끝**(PC - PARITY 모두·점검 48 통과, 월간·년간 수업 칩 옮김, 휴대폰 둥근 ＋·수업 머리줄 고침). **다음: P9-3 ■3 성능**. 👤 V5 주소 ? → 설명서를 훑어 V5 화면과 다른 곳 알려 주기 · 계정 칸 '👥 공유 그룹' → 'V4 그룹 가져오기'로 실제 그룹 하나.
+- **2026-10-14 P9-3 끝**(PC - PARITY 모두·점검 49, 월간·년간 수업 칩·휴대폰 둥근 ＋·처음 받기 첫 카드 14→1.5초). **다음 대화: P9-4 넘어가기**(👤 함께 - 마지막 가져오기·V4 띠·V4 푸시 끄기는 묻고). 👤 V5 주소 ? → 설명서를 훑어 V5 화면과 다른 곳 알려 주기 · 계정 칸 '👥 공유 그룹' → 'V4 그룹 가져오기'로 실제 그룹 하나.
 - **10-14 PC에서 배포함**: 운영 규칙(V4 그룹 가져오기 갈래) · 함수 v5 셋(알림 건너뛴 까닭 로그) · 알림 소리 막힘 → OS 알림도. 👤 휴대폰·PC '알림' 탭에서 받기 → ⏰ 일정 1~2분 뒤 소리(기기 알림음) 나는지.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -81,6 +81,10 @@
   진짜 로그인 창을 닫으면 Firebase가 8초쯤 기다린 뒤 닫힘을 알린다(P9-3 - 컨테이너에서만 통과하던 attach·gcal).
 - **클라우드에서만 돌던 점검을 PC에서 돌리면**(P9-3): Windows 클립보드는 `\r\n`으로 돌려준다 · '오늘부터' 세는 것(진도 다음 수업 밀기)은 `page.clock.setFixedTime` ·
   가져오기 점검은 **V4 seed**가 있어야 한다(V4 `node tools/seed.mjs` → V5 `npm run seed` - 에뮬레이터를 새로 켰으면).
+- **점검이 화면 안에서 앱 모듈을 부를 때는 `import(window.__appModule('/src/…'))`** - 개발 서버는 고친 파일(과 그것을 부르는 것) 뒤에 `?t=…`를 붙여 내려,
+  `/src/…`를 그냥 부르면 다른 모듈(되돌리기 더미·사본 store가 따로)이 된다(P9-3 - 자료 층을 고친 뒤 inspect-data Ctrl+Z가 깨졌다. `newPage`가 심는다).
+- **한꺼번에 심은 문서가 구독 겹침(1분, `OVERLAP_MS`) 안에 들면 구독이 그것을 다시 보내** 에뮬레이터 통로가 막힌다(`too many pending messagings (10001)` -
+  `firestore-debug.log`가 300MB, 모든 점검이 느려졌다). 큰 자료를 심은 점검(`inspect-perf`)은 1분 넘게 기다린 뒤 표시 하나를 쓰고 연다. 점검이 갑자기 다 느리면 로그를 보고 에뮬레이터를 다시 켠다(→ V4 seed → V5 seed).
 - **휴대폰 흉내(`isMobile`)는 글이 넘치면 화면 폭(innerWidth)째 넓힌다** - 넘침은 정한 폭(390)과 견준다(P9-3 inspect-mobile). 전체 화면 그림(`fullPage`)의 fixed(탭바·＋)는 엉뚱한 자리에 찍힌다 - 자리는 보이는 화면 그림으로.
 - **저장소에 prettier가 없다 - `npx prettier --write`를 돌리지 않는다**(P6-1 - 따옴표·줄 폭을 통째로 바꿨다. 되돌리고 고친 것만 다시).
 - **V4에서 옮긴 파일이 `new URL('./…', import.meta.url)`로 부르는 것(워커 등)은 개발 서버에서는 없어도 넘어가고 빌드에서만 깨진다** - 옮기면 `npm run build`까지(P7-1 `ui/shrinkWorker.ts`). 점검 스크립트는 끝에 `process.exit()`(에뮬레이터 Firebase가 노드를 붙잡는다).
@@ -201,7 +205,8 @@
   `prompt.ts` '구글 로그인이 필요합니다' 상태 · `drive.ts` `uploadToDrive`(School_Planner 폴더·공개 읽기)·`attachmentImageSrc`(thumbnail)·`driveUrlToStore`·`uploadFailReason`) ·
   `clipboard.ts`(클립보드 칸 목록·이 기기 휴지통 `useClipboard` - DB `sp5-clipboard-{uid}`, 로그아웃하면 지움, 시스템 클립보드 읽기).
   `mirror/`(기기 사본 - `db.ts` IndexedDB `sp5-mirror-{uid}` 저장소 docs·meta · `codec.ts` Timestamp 지키기 · `store.ts` 화면 store `useMirror`(서버 판 + 내 쓰기 덧칠 `beginLocalWrite`) ·
-  `server.ts` Firestore 받는 길(흉내 서버로 시험) · `sync.ts` `startMirror`·`useMirrorSync`(App)·`resetMirror`·`wipeMirror`(로그아웃)·받는 컬렉션 `MIRRORED`) ·
+  `server.ts` Firestore 받는 길(흉내 서버로 시험 - 에뮬레이터 빌드는 읽기 수 `window.__sp5Reads`) · `sync.ts` `startMirror`·`useMirrorSync`(App)·`resetMirror`·`wipeMirror`(로그아웃)·받는 컬렉션 `MIRRORED`·
+  처음 받기는 오늘 − 62일부터 먼저 `NEAR_DAYS`(P9-3 - 학년도 첫날부터면 1만 항목에 첫 카드 14초)) ·
   `select.ts`(화면이 고르는 곳 - `itemsOn`·`itemsBetween`·`itemsWithLabels`·`itemsOfKind`·`memos`·`trashOf`·`labelsOf` + `use…` 훅·`useDocs`·`useMirrorStatus`,
   라벨: `labelTreeOf`·`useLabelTree`(트리 차례·기본 라벨 `defaultId`)·`itemLabels`·라벨로 보기 `itemsMatching`·붙은 수 `labelUsageOf`·`emptyLabelsOf`·`missingLabelsOf`) ·
   `labels.ts`(라벨 쓰기 - 저장 = 바뀐 칸만 `labelSaveOps`·`createLabelOp`·이름으로 찾기·만들기 `ensureLabelOps`·`defaultLabelOps`·`labelNameProblem`, 적기 `addLabel`·`saveLabels`·`restoreLabels`·`addDefaultLabels`) ·
@@ -349,7 +354,7 @@
   `HelpWindow.tsx`(V4 HelpModal - 분류 → 기능 → 설명·사용 예·왼쪽 목차(접기 이 기기 `sp5-help-tree-hidden`)·찾기·단축키 표, `[data-help-window|help-home|help-search|help-results|help-category|help-topic|help-detail|help-example|help-link|help-key|help-lookback|help-related|help-prev|help-next|help-crumb-home|help-back|help-tree|help-tree-topic|help-tree-category|help-tree-fold|help-tree-all|help-tree-toggle|help-shortcuts|help-shortcut|help-shortcuts-open]`)) ·
   시험 `topics.test`(링크·자리표·창의 `help` 주제가 있나)·`HelpWindow.test`(모든 항목을 그려 기호가 남지 않나). 점검 `tools/inspect-manual.mjs`(282 - 68주제마다 설명서가 말하는 자리).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
-- **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`·`noUserActivation`(P9-3)·`newPage(…, { isMobile… })`) · `tools/inspect-mobile.mjs`(P9-3 휴대폰 390·다크 대비) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
+- **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`·`noUserActivation`(P9-3)·`newPage(…, { isMobile… })`) · `tools/inspect-mobile.mjs`(P9-3 휴대폰 390·다크 대비) · `tools/inspect-perf.mjs`(P9-3 성능 - 빌드 + preview, teacher4 `?as=4` 1만 항목, 앱이 센 서버 읽기 `window.__sp5Reads`(`mirror/server` - 에뮬레이터 빌드만), 결과 = DESIGN 11장) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
   `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
   `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움) ·
   `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기) ·

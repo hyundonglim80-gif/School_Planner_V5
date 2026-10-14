@@ -2,7 +2,7 @@
 //
 // 서버에 묻는 것은 칸 하나짜리뿐이다(복합 색인이 필요 없다 - DESIGN 4-10):
 //   처음 받기   orderBy('updatedAt') 쪽 나눠 (이어 받을 때는 그 시각부터 - 같은 시각은 겹쳐 받는다, id로 덮으니 괜찮다)
-//   이번 학년도 where('date', '>=', 첫날) orderBy('date') 쪽 나눠 (항목만 - 처음 받기에서 먼저)
+//   오늘 가까운 것 where('date', '>=', 오늘 - 62일) orderBy('date') 쪽 나눠 (항목만 - 처음 받기에서 먼저, sync NEAR_DAYS)
 //   그 뒤      where('updatedAt', '>', 커서 - 1분) 구독 하나
 //   견주기      where('deletedAt', '!=', null) - 지운 항목 id (다른 기기의 영구 지우기는 구독에 보이지 않는다)
 // 처음 받기·견주기·하나 확인은 서버에서만 읽는다(…FromServer) - 연결이 없으면 캐시의 일부를 '다 받음'으로 믿지 않고 실패로.
@@ -24,6 +24,7 @@ import {
   type QuerySnapshot,
   type Timestamp,
 } from 'firebase/firestore';
+import { USING_EMULATOR } from '../emulator';
 import { db } from '../firebase';
 
 type Plain = Record<string, unknown>;
@@ -56,7 +57,7 @@ export class OfflineError extends Error {
 export interface MirrorServer {
   /** updatedAt 차례로 쪽 나눠 받는다 (from = 이 시각부터). 연결이 없으면 OfflineError */
   pages(sid: string, coll: string, from: Timestamp | null, size: number): AsyncGenerator<ServerPage>;
-  /** 날짜가 이날부터인 것을 쪽 나눠 (처음 받기에서 이번 학년도 먼저) */
+  /** 날짜가 이날부터인 것을 쪽 나눠 (처음 받기에서 오늘 가까운 것 먼저) */
   pagesFromDate(sid: string, coll: string, fromDate: string, size: number): AsyncGenerator<ServerPage>;
   /** since보다 늦게 바뀐 것을 구독한다(since가 없으면 모두). 끊는 함수를 돌려준다 */
   listen(
@@ -74,13 +75,24 @@ export interface MirrorServer {
 
 const isOffline = (e: unknown) => (e as { code?: string })?.code === 'unavailable';
 
+/**
+ * 서버 읽기 수 - 컬렉션마다 Firestore가 값을 매기는 읽기(받은 문서 수, 빈 결과도 쿼리 하나는 1, 구독은 서버에서 온 문서마다).
+ * 성능 점검용(P9-3 inspect-perf - window.__sp5Reads). 에뮬레이터 빌드에서만 센다 - 운영 빌드에는 빠진다.
+ */
+const serverReads: Record<string, number> = {};
+function countReads(coll: string, n: number) {
+  if (!USING_EMULATOR) return;
+  serverReads[coll] = (serverReads[coll] ?? 0) + n;
+  (window as unknown as { __sp5Reads?: Record<string, number> }).__sp5Reads = serverReads;
+}
+
 function docsOf(snap: QuerySnapshot<DocumentData>): Map<string, Plain> {
   const docs = new Map<string, Plain>();
   for (const d of snap.docs) if (!d.metadata.hasPendingWrites) docs.set(d.id, d.data());
   return docs;
 }
 
-async function* paged(first: Query, next: (last: QueryDocumentSnapshot) => Query, size: number): AsyncGenerator<ServerPage> {
+async function* paged(coll: string, first: Query, next: (last: QueryDocumentSnapshot) => Query, size: number): AsyncGenerator<ServerPage> {
   let q = query(first, limit(size));
   for (;;) {
     let snap: QuerySnapshot<DocumentData>;
@@ -89,6 +101,7 @@ async function* paged(first: Query, next: (last: QueryDocumentSnapshot) => Query
     } catch (e) {
       throw isOffline(e) ? new OfflineError(e) : e;
     }
+    countReads(coll, Math.max(1, snap.size));
     const lastSnap = snap.docs.at(-1);
     const at = lastSnap?.get('updatedAt') as Timestamp | undefined;
     yield { docs: docsOf(snap), last: lastSnap && at ? { at, id: lastSnap.id } : null };
@@ -101,13 +114,13 @@ export const firestoreServer: MirrorServer = {
   pages(sid, coll, from, size) {
     const col = collection(db, 'spaces', sid, coll);
     const ordered = query(col, orderBy('updatedAt'));
-    return paged(from ? query(ordered, startAt(from)) : ordered, (last) => query(ordered, startAfter(last)), size);
+    return paged(coll, from ? query(ordered, startAt(from)) : ordered, (last) => query(ordered, startAfter(last)), size);
   },
 
   pagesFromDate(sid, coll, fromDate, size) {
     const col = collection(db, 'spaces', sid, coll);
     const ordered = query(col, where('date', '>=', fromDate), orderBy('date'));
-    return paged(ordered, (last) => query(ordered, startAfter(last)), size);
+    return paged(coll, ordered, (last) => query(ordered, startAfter(last)), size);
   },
 
   listen(sid, coll, since, onBatch, onError) {
@@ -123,6 +136,7 @@ export const firestoreServer: MirrorServer = {
           if (change.type === 'removed') removed.push(change.doc.id);
           else if (!change.doc.metadata.hasPendingWrites) docs.set(change.doc.id, change.doc.data());
         }
+        if (!snap.metadata.fromCache) countReads(coll, docs.size);
         let latest: Timestamp | null = null;
         for (const d of snap.docs) {
           const at = d.get('updatedAt') as Timestamp | null;
@@ -137,6 +151,7 @@ export const firestoreServer: MirrorServer = {
   async fetchOne(sid, coll, id) {
     try {
       const snap = await getDocFromServer(doc(db, 'spaces', sid, coll, id));
+      countReads(coll, 1);
       return snap.exists() ? snap.data() : null;
     } catch (e) {
       if (isOffline(e)) return undefined;
@@ -147,6 +162,7 @@ export const firestoreServer: MirrorServer = {
   async deletedIds(sid, coll) {
     try {
       const snap = await getDocsFromServer(query(collection(db, 'spaces', sid, coll), where('deletedAt', '!=', null)));
+      countReads(coll, Math.max(1, snap.size));
       return new Set(snap.docs.map((d) => d.id));
     } catch (e) {
       if (isOffline(e)) return null;

@@ -14,7 +14,7 @@
 //   - 사본은 화면에 먼저 보이는 데만 쓴다. "있다/없다"를 판단해 쓰는 데 쓰지 않는다(쓰기는 문서 하나 - 읽고 고칠 일이 없다).
 import { useEffect } from 'react';
 import { Timestamp } from 'firebase/firestore';
-import { academicYearOf, academicYearRange, todayStr } from '../../domain/dateUtils';
+import { addDays, todayStr } from '../../domain/dateUtils';
 import { personalSpaceId } from '../space';
 import { knownGroupsOf, useMySpaces } from '../spaceChoice';
 import type { SpaceCollection } from '../types';
@@ -48,6 +48,11 @@ const WITH_TRASH = new Set<string>(['items', 'labels', 'series', 'timetables', '
 export const OVERLAP_MS = 60_000;
 export const PAGE_SIZE = 500;
 export const PRIORITY_PAGE_SIZE = 300;
+/**
+ * 처음 받기에서 먼저 받는 항목 = 날짜가 오늘에서 이만큼 앞부터(이월 기간 최대 60일 + 2) - 오늘 화면(이월·이번 주·이번 달)이 첫 쪽에 든다.
+ * 예전에는 학년도 첫날부터 날짜 차례로 받아 10월에는 오늘 항목이 일곱째 쪽에야 왔고(1만 항목 14초), 올해 항목을 모두 두 번 읽었다(P9-3).
+ */
+export const NEAR_DAYS = 62;
 /** 서버의 지운 항목과 견주는 간격 */
 export const PRUNE_EVERY_MS = 24 * 60 * 60 * 1000;
 /** 받지 못하면 다시 해 보는 간격 (연결이 돌아오면 곧바로) */
@@ -241,9 +246,9 @@ class Runner {
     this.busy = true;
     try {
       if (!this.meta.complete) {
-        // 처음: 이번 학년도 항목 먼저 (커서는 옮기지 않는다 - updatedAt 차례가 아니다)
+        // 처음: 오늘 가까운 항목 먼저(NEAR_DAYS) - 커서는 옮기지 않는다(updatedAt 차례가 아니다). 그다음 모두 받기가 나머지를
         if (this.coll === 'items' && !this.meta.after && !this.meta.cursor) {
-          const first = academicYearRange(academicYearOf(this.engine.today))[0];
+          const first = addDays(this.engine.today, -NEAR_DAYS);
           for await (const page of this.engine.server.pagesFromDate(this.sid, this.coll, first, Math.min(PRIORITY_PAGE_SIZE, this.engine.pageSize))) {
             if (this.stopped) return;
             this.take(page.docs, null);

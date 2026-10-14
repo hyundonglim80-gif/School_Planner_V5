@@ -76,6 +76,11 @@ export async function launch() {
 export async function newPage(browser, { width = 1400, height = 900, ...context } = {}) {
   // context = Playwright 창 설정 더 (휴대폰: isMobile·hasTouch·deviceScaleFactor - P9-3 inspect-mobile)
   const ctx = await browser.newContext({ viewport: { width, height }, ...context });
+  // 점검이 화면 안에서 앱 모듈을 부를 때는 앱이 받은 주소 그대로 - 개발 서버는 고친 파일 뒤에 '?t=…'를 붙여 내려
+  // '/src/…'를 그냥 부르면 다른 모듈(되돌리기 더미가 따로)이 된다(P9-3 inspect-data Ctrl+Z). window.__appModule('/src/data/undo.ts')
+  await ctx.addInitScript(() => {
+    window.__appModule = (path) => performance.getEntriesByType('resource').map((e) => e.name).find((n) => new URL(n).pathname === path) ?? path;
+  });
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));

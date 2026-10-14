@@ -54,7 +54,7 @@ try {
   r.check((await getDoc(doc(em.db, 'spaceInvites', g.inviteCode ?? 'x'))).data()?.sid === gid, '초대 코드 → 그룹 (spaceInvites)');
   const labels = await serverUntil(async () => (await getDocs(collection(em.db, 'spaces', gid, 'labels'))).size, (n) => n > 0);
   r.check(labels > 0, `그룹 기본 라벨 (${labels}개 - 라벨은 그룹 것)`);
-  r.check((await getDoc(doc(em.db, 'spaces', gid, 'people', uidA))).exists(), '구성원 이름 (people/나)');
+  r.check(!!(await serverUntil(async () => (await getDoc(doc(em.db, 'spaces', gid, 'people', uidA))).exists(), (x) => x)), '구성원 이름 (people/나)');
   r.check(await waitFor(A.page.locator(sel('space-select', gid)), 8000), '만들면 그 그룹을 본다 (📂 공간 고르기에 그룹)');
   r.check(((await A.page.locator(sel('group-code-text')).textContent()) ?? '') === g.inviteCode, '창에 초대 코드');
   await A.page.evaluate(() => window.sp5.closeAllWindows());

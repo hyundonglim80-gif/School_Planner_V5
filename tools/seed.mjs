@@ -26,6 +26,7 @@ const ACCOUNTS = [
   { email: 'teacher@example.com', note: '기본 계정 - V4 seed 자료가 있다', teaching: HOMEROOM },
   { email: 'teacher2@example.com', note: '공유 그룹 둘째 사람 (?as=2)', teaching: HOMEROOM },
   { email: 'teacher3@example.com', note: '교과 전담 (?as=3)', teaching: SUBJECT_ONLY },
+  { email: 'teacher4@example.com', note: '성능 점검 (?as=4) - 1만 항목은 tools/inspect-perf가 심는다', teaching: HOMEROOM },
 ];
 
 const app = initializeApp({ projectId: 'schoolplannerv3', apiKey: 'fake-api-key' }, 'seed-v5');
@@ -67,7 +68,7 @@ async function main() {
     await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'common'), { teaching, newYearDone: 9999, updatedAt: serverTimestamp(), v: 1 }, { merge: true });
     console.log(`${email} (${note}) → spaces/u_${uid}`);
   }
-  console.log('V5 자료를 심었습니다 - 개인 공간 3개');
+  console.log(`V5 자료를 심었습니다 - 개인 공간 ${ACCOUNTS.length}개`);
   await deleteApp(app);
   process.exit(0);
 }
