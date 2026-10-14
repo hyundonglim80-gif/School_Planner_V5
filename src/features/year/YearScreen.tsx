@@ -14,7 +14,7 @@ import { academicYearOf, academicYearRange, addDays } from '../../domain/dateUti
 import { onPeriodDay } from '../../domain/period';
 import type { ShownPeriod } from '../../domain/periodBars';
 import { academicMonths, monthWeeks, type AcademicMonth } from '../../domain/yearSheet';
-import { itemsBetween, useDocs, useLabelTree, useMirrorStatus } from '../../data/select';
+import { noteDaysBetween, useDocs, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { useIsMobile } from '../../ui/useIsMobile';
 import { useToday } from '../../ui/useToday';
@@ -111,7 +111,7 @@ export default function YearScreen() {
   const cal = useMemo(() => calendarEvents(items, from, to, tree), [items, from, to, tree]);
   const noteCounts = useMemo(() => {
     const map = new Map<string, number>();
-    for (const n of itemsBetween(items, from, to, 'note')) map.set(n.date!, (map.get(n.date!) ?? 0) + 1);
+    for (const { date: d } of noteDaysBetween(items, from, to)) map.set(d, (map.get(d) ?? 0) + 1);
     return map;
   }, [items, from, to]);
   const thisMonth = today.slice(0, 7);

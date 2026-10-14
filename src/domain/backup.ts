@@ -92,6 +92,8 @@ export function kindOf(coll: BackupColl, doc: Doc): BackupKind | null {
 export function docInRange(coll: BackupColl, id: string, doc: Doc, r: DateRange | null): boolean {
   if (!r) return true;
   if (coll === 'items') {
+    // 날짜 링크 여럿인 메모는 그 가운데 하나라도 기간 안이면 (P10-3)
+    if (Array.isArray(doc.dates) && doc.dates.length > 0) return doc.dates.some((d) => inRange(str(d), r));
     const date = str(doc.date);
     if (!date) return true;
     const end = str(doc.endDate) || date;

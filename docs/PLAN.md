@@ -624,6 +624,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
     글자를 2xs → xs 굵게(하루·주간). 사용자 자료에서 다시 보이면 그 날짜·교시를 받아 원인부터.
     ■3 주간 - 과목 뒤에 비고 첫 줄(흐린 주황, 남은 폭에서 '…', title에 전체), 과목이 없으면 비고가 그 자리. 월간 - 크롬으로 PC 월간 칸 수업 칩이 보이고 오른쪽 칸을 열어도 남는 것을 확인(고친 것 없음).
     명렬표 번호 - 원인은 `no-spinner`(숫자 칸 화살표 숨기기) CSS가 V5에 없어 크롬 화살표가 칸을 먹은 것. `index.css` `@utility no-spinner` + 칸 w-12 → w-14(타일·검색·암기는 줄어들지 않는 칩이라 그대로).
+  - **P10-3에서 고른 것(권장대로)**: ■1 자료 - `dates`는 **둘 이상일 때만**(하나면 `date`만 - 옛 기록과 같은 모양이라 V4 다시 가져오기 지문도 그대로, 날짜를 단 것은 지문이 바뀌어 'V5에서 고침'),
+    고르기 `itemsOn`은 날짜 링크마다(색인 `byDate`에 메모를 날마다), `itemsBetween`은 한 번(겹침 없이), 날마다 세기는 `noteDaysBetween`(년간 📝 n·백업 CSV 기록 줄).
+    `memos` = **날짜 링크 없는 메모** 그대로(백업 CSV '메모'·시트 '메모'가 기록과 겹치지 않게), 모든 메모는 새 `allNotes`(메모 화면·Keep 겹침 찾기).
+    검색은 기간 안의 가장 늦은 날짜 링크로 보이고, 백업 JSON 기간은 날짜 링크 하나라도 기간 안이면.
   - **이은 것으로 그날 칸에 모이는 메모는 계산**(P10-4 - V5 원칙 '계산할 수 있는 것은 저장하지 않는다'): 그날 일정·수업 칸의 `linkIds`, 진도 차시의 메모 링크 → 그날 '메모' 칸. 메모 쪽에 날짜를 더 적지 않는다.
 
 ---
@@ -1376,7 +1380,7 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 **시작 조건**: 없음(P10-1·2와 따로). **의견**: 1 · 2g · 2h · 2i.
 **먼저 읽을 것**: 5장 'P10' 결정 메모 · `CLAUDE.md` 7장 '메모·기록'·'메모 화면'·'자료 층' 줄 · `docs/DESIGN.md` 4장(항목 모양)·10장 체크리스트 · `features/notes/noteForm.ts`·`NotePanel.tsx`(머리 📅 날짜 칸) ·
 `features/day/DayJournal.tsx` · `features/memo/MemoScreen.tsx` · `data/select.ts`(`indexOf`·`itemsOn`·`memos`) · 설명서 `chapters/notes.ts`.
-- [ ] ■1 **자료**: `Item.dates?: YMD[]`(메모의 날짜 링크 - 차례대로·겹침 없이), `date` = 가장 이른 날(없으면 null) - 저장 도우미에서 맞춘다. 순수 `noteDates(item)`(옛 기록은 `date` 하나).
+- [x] ■1 **자료**: `Item.dates?: YMD[]`(메모의 날짜 링크 - 차례대로·겹침 없이), `date` = 가장 이른 날(없으면 null) - 저장 도우미에서 맞춘다. 순수 `noteDates(item)`(옛 기록은 `date` 하나).
   고르기: `notesOnDay(date)`(그 날짜 링크가 있는 메모 - 두 번째 뒤 날짜도 찾게 `indexOf`에 색인), `memos` = 모든 메모. `types.ts`·`DESIGN.md` 4장·단위 테스트.
   함께 볼 곳: 백업 JSON(`domain/backup` - 칸을 다 담나)·휴지통 되살리기·검색(`domain/search`)·학생 기록 타임라인(`domain/studentRecord` - 날짜)·주간/월간/년간 '📝 n'(날짜 링크로 센다)·Keep 가져오기·공유받기(새 메모)·V4 가져오기 다시 하기(지문 `h` - `dates`를 V5에서 고친 것으로 본다).
 - [ ] ■2 **쓰는 칸**: 머리 '📅 날짜' 하나 → **날짜 칩 여러 개**(+ 날짜 = `MiniCalendarPicker`, 칩 × = 그 날짜 빼기). '기록/메모' 이름(noun)은 '메모' 하나 · '기록 → 메모' `fromDate`·'📅 10/6에서'는 정리(권장: 날짜를 다 빼면 그대로 메모, 표시는 없앤다).

@@ -27,6 +27,9 @@ describe('백업에 담기', () => {
     expect(keepInBackup('settings', 'common', {}, only, R)).toBe(true);
     expect(keepInBackup('settings', 'import', {}, only, R)).toBe(false);
     expect(keepInBackup('labels', 'L', {}, new Set(), R)).toBe(true);
+    // 날짜 링크 여럿인 메모는 하나라도 기간 안이면 (P10-3)
+    expect(keepInBackup('items', 'n', { kind: 'note', date: '2025-10-05', dates: ['2025-10-05', '2026-10-05'] }, ALL, R)).toBe(true);
+    expect(keepInBackup('items', 'n', { kind: 'note', date: '2025-10-05', dates: ['2025-10-05', '2025-11-05'] }, ALL, R)).toBe(false);
   });
 });
 
