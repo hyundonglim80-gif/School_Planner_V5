@@ -144,7 +144,7 @@ try {
   r.check(fresh.length === 1 && fresh[0].date === DAY && fresh[0].kind === 'event', '손으로 더한 줄 = 그날 새 일정');
   r.check(!(await getDoc(ref('items', 'inspShN'))).data()?.deletedAt, '시트에서 지운 기록 줄은 앱에 남는다');
   const ld = (await getDoc(ref('lessonDays', DAY))).data();
-  r.check(ld?.periods?.['1']?.subject === '수학' && ld?.periods?.['1']?.memo === '받아쓰기', `교시 칸 → 수업 칸 (${JSON.stringify(ld?.periods?.['1'])})`);
+  r.check(ld?.periods?.['1']?.subject === '수학' && ld?.periods?.['1']?.supplies === '받아쓰기' && !ld.periods['1'].memo, `교시 칸 → 수업 칸 비고(준비물) - supplies 한 칸 (${JSON.stringify(ld?.periods?.['1'])})`);
   const ev = (await getDoc(ref('evaluations', 'inspShEv'))).data();
   r.check(ev?.values?.s2?.indiv === '중' && ev?.values?.s1?.indiv === '상', '조사표 점수 (고친 학생만)');
   r.check((await getDoc(ref('items', 'inspShM'))).data()?.text === '시트점검 메모 고침', '메모 탭에서 고친 글');

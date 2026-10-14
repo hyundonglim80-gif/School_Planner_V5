@@ -26,8 +26,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P10(사용 의견 27가지, 세션 다섯)** - `docs/PLAN.md` 6장 `### P10`. **P10-1 끝(10-15)**: 일정 완료 = 칩 앞 ✓ · ☐ 없음 · 끝 날 + 요일 반복 · PC ＋ 새로 없음 · 알림 소리 길이.
-- '이어서' = **P10-2**(■1부터). 부탁 없음.
+- **P10(사용 의견 27가지, 세션 다섯)** - `docs/PLAN.md` 6장 `### P10`. **P10-2 끝(10-15)**: 수업 칸 비고(준비물) 한 칸 · 반 도구 hover·수정 칸에도 · ✎ 크게 · 주간 비고 '…' · 명렬표 번호 두 자리.
+- '이어서' = **P10-3**(■1부터). 부탁 없음.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -88,6 +88,7 @@
   `firestore-debug.log`가 300MB, 모든 점검이 느려졌다). 큰 자료를 심은 점검(`inspect-perf`)은 1분 넘게 기다린 뒤 표시 하나를 쓰고 연다. 점검이 갑자기 다 느리면 로그를 보고 에뮬레이터를 다시 켠다(→ V4 seed → V5 seed).
 - **휴대폰 흉내(`isMobile`)는 글이 넘치면 화면 폭(innerWidth)째 넓힌다** - 넘침은 정한 폭(390)과 견준다(P9-3 inspect-mobile). 전체 화면 그림(`fullPage`)의 fixed(탭바·＋)는 엉뚱한 자리에 찍힌다 - 자리는 보이는 화면 그림으로.
 - **저장소에 prettier가 없다 - `npx prettier --write`를 돌리지 않는다**(P6-1 - 따옴표·줄 폭을 통째로 바꿨다. 되돌리고 고친 것만 다시).
+- **V4에서 옮긴 화면의 직접 만든 CSS 클래스(`no-spinner` 등)는 V5 `index.css`에 있는지 본다** - 없으면 Tailwind가 말없이 버린다(P10-2 - 명렬표 번호 칸의 숫자 화살표가 두 자리를 가렸다, `@utility no-spinner`로 넣음).
 - **V4에서 옮긴 파일이 `new URL('./…', import.meta.url)`로 부르는 것(워커 등)은 개발 서버에서는 없어도 넘어가고 빌드에서만 깨진다** - 옮기면 `npm run build`까지(P7-1 `ui/shrinkWorker.ts`). 점검 스크립트는 끝에 `process.exit()`(에뮬레이터 Firebase가 노드를 붙잡는다).
 - **`pkill -f <글자>`는 그 글자가 든 자기 명령 줄(셸)도 죽인다**(P7-3 - `pkill -f vite`로 Bash가 144로 끝났다). 에뮬레이터·개발 서버는 뒤에서(`run_in_background`) 켠다.
 - **클라우드 백그라운드 명령은 기본 30분에 꺼진다** - 에뮬레이터·개발 서버는 `run_in_background` + `timeout: 7200000`(최대 2시간, 그 뒤에도 꺼진다 - 다시 켜고 seed, P9-1). 점검이 갑자기 다 깨지면 먼저 8080·5175가 살아 있나.
@@ -152,6 +153,7 @@
 - 일정·기록 머리줄: `▼ 제목 숫자 [+ 추가] ……… ⚙️`(라벨 설정은 오른쪽 끝).
 - 일정은 **휴대폰 2열 카드, PC 1열**. 기록은 휴대폰 2열, PC 2~4열.
 - 수업 칸: 과목은 **굵고 크게**(PC 18px·휴대폰 16px, font-black), 과목이 있는 교시 카드는 왼쪽에 **교시 색 막대**.
+- **수업 칸 = 과목 + '비고(준비물)' 한 칸**(P10-2 사용자 의견 2a - 수업 메모 칸 없음, 옛 메모는 비고 아래 줄에 이어 보인다) · 교과 모드 반 도구(🪑·🎯)·🙋 출결은 📊🔗✏️처럼 **마우스를 올렸을 때만**(적힌 것이 있으면 늘, 휴대폰은 늘), 수정 칸에도 같은 단추 · 주간 교시 줄은 과목 뒤에 비고 첫 줄 '…'.
 
 ### 메모 ↔ 기록 = 날짜 칸
 - **메모와 기록만** 서로 옮긴다. **일정은 제외**(라벨 속성·기간/반복 묶음 때문).
@@ -268,12 +270,12 @@
   공휴일 `data/holidays.ts`(`holidays/{연도}`·이 기기 `sp5-holidays`·`useHolidayName`·`startHolidays` = `domain/period.setDefaultHolidayCheck`)·`domain/holidays.ts`(개인 → 공유 → 고정)·`ui/HolidayName.tsx`. 점검 `tools/inspect-move-dday.mjs`(41) · 관리자 쓰기 `probe.emulatorAdmin`.
 - **검색·휴지통**(P5-4): `features/search/SearchWindow.tsx`(창 `search` - 치는 대로 `[data-search-*]`)·`focus.ts`(짚기 `requestFocus`·`useSearchFocusRunner`(Shell)·`useFocusReveal`(칸이 편다), `.search-focus`) · 순수 `domain/search.ts` ·
   `features/trash/`(`TrashWindow` 창 `trash` `[data-trash-*]`·`trashList.ts`(순수)·`actions.ts`(복원·영구 삭제·드라이브 정리)·`auto.ts`(`useTrashAutoEmpty` - Shell)) · `settings/common.trashDays`. 점검 `tools/inspect-search-trash.mjs`(43).
-- **수업**(P6-1 - 계산, DESIGN 5-2): 순수 `domain/lessons.ts`(`lessonsOn`(lessonDays → 수업 없는 날 → 늦게 시작한 시간표)·`timetableOn`·`classOffReason`·`eventSkipsClass`·`subjectsBetween`) ·
+- **수업**(P6-1 - 계산, DESIGN 5-2): 순수 `domain/lessons.ts`(`lessonsOn`(lessonDays → 수업 없는 날 → 늦게 시작한 시간표)·`timetableOn`·`classOffReason`·`eventSkipsClass`·`subjectsBetween`·비고(준비물) `lessonNote`(supplies + 옛 memo - 수업 칸 `note`)·`firstLine` - P10-2) ·
   `domain/teachingSlot`('5-2 과학' 읽기·반 색·지난 시간·가르치는 반)·`teachingMode`(교사 유형 셋)·`periodTimes`(교시 `PeriodDef`·지금 몇 교시·빠르게 채우기)·`gridNav`(표 칸·엑셀 붙여넣기)·`hangul`(초성)·`semester`(학년도마다 방학 `readTerms`·`isVacation`·`termSemesters`) ·
   설정 `common.teaching`(null = 안 고름)·`periods`·`terms`(app/prefs, 받았나 `useCommonLoaded`) · 사본 `MIRRORED` += timetables·lessonDays · 저장 도우미 `merge`(날짜 문서 - 없으면 만든다) ·
   `features/lessons/`(`useLessons`(`useLessonSource`·`useLessonsOn`·`useLessonsFor`) · `teaching.ts`(`useTeaching`·`updateTeaching`·`useTeachingClasses`·`useSlotPairOptions`·`useClassColorOf`) · `lessonOps`(순수 - 시간표와 같은 과목은 빼기·비우기·맞바꾸기)·`actions`(`saveLesson`·`clearLesson`·`swapLessons`) ·
-  `DayLessons`(하루 칸 `[data-day-lessons|lesson-card|lesson-id|lesson-subject|lesson-changed|lessons-off|now-line|lesson-up|down|link|links|edit|prev|lesson-editor|lesson-*-input|lesson-save|close|lessons-settings]`) ·
-  `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson]`) · `CalendarLessons`(월간·년간 수업 칩 - `LessonStrip` PC·`LessonWraps` 휴대폰 `[data-month-lessons|month-lesson|year-lessons|year-lesson|sheet-lessons|sheet-lesson]`, P9-3)·`lessonSubjects`(순수 - 'X' = 수업 없음) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
+  `DayLessons`(하루 칸 `[data-day-lessons|lesson-card|lesson-id|lesson-subject|lesson-changed|lesson-note|lessons-off|now-line|lesson-up|down|link|links|edit|prev|lesson-editor|lesson-subject-input|lesson-note-input|lesson-editor-tool=eval|attendance|seating|drawStudent|lesson-save|close|lessons-settings]` - 반 도구 `[data-class-tools|class-tool-btn]`는 hover, P10-2) ·
+  `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-subject|lesson-panel-note|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson|week-lesson-note|week-lesson-changed]`) · `CalendarLessons`(월간·년간 수업 칩 - `LessonStrip` PC·`LessonWraps` 휴대폰 `[data-month-lessons|month-lesson|year-lessons|year-lesson|sheet-lessons|sheet-lesson]`, P9-3)·`lessonSubjects`(순수 - 'X' = 수업 없음) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
   시간표 창 `features/timetable/`(`TimetableWindow` 창 `timetable` `{ tab }` `[data-timetable-window|timetable-tab|timetable-save|timetable-dirty]` · `GridTab`(`[data-timetable-pick|add|name|from|to|quick|delete]`·`input[data-cell="행-열"]`) · `PeriodsTab`(`[data-period-name|start|end|period-fill-run]`) · `TermsTab`(`[data-terms="summer-from"…]`) · `TeachingTab`(`[data-teacher-preset|teaching-*|class-color|homeroom-*]`) · `timetableDraft`(순수) · `shortcuts`(`teachingMode`)).
   새 학년도 준비(P9-2): 순수 `domain/newYear.ts`(2/15~3/31 `newYearTarget`·할 것 `newYearState`·`parseRosterPaste`·`copiedTimetable`) · `features/newYear/`(`useNewYear`·`NewYearBanner`(Shell `[data-new-year-banner|new-year-open|new-year-dismiss]`) ·
   `NewYearWindow` 창 `newYear` `{ year }` `[data-new-year-window|new-year-step=classes|timetable|terms|teaching(data-done)|new-year-grade|num|names|create-class|copy-timetable|open-terms|set-homeroom|done]`) · 계정 `common.newYearDone` ·

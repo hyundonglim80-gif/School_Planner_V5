@@ -127,7 +127,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 | 자리 | 모양 | 뜻 |
 |---|---|---|
 | `timetables/{id}` | `{ name, from, to, grid: { '1'~'5'(요일): { '<교시>': '국어' \| '5-2 과학' } }, updatedAt, deletedAt, v }` | **기간별 시간표**(1학기·2학기·'10/14부터 바뀐 시간표'). 기간이 겹치면 늦게 시작한 것이 이긴다 |
-| `lessonDays/{date}` | `{ periods: { '<교시>': { subject?, memo?, supplies?, attachments?, linkIds? } }, updatedAt, v }` | **그날 바꾼 칸만.** `subject`가 있으면 그 과목(`''`이면 그 교시 수업 없음), 칸이 없으면 시간표를 따른다. 과목이 그날 시간표와 같으면 적지 않는다(P6-1 `features/lessons/lessonOps`). 고칠 때는 `periods.3.memo`처럼 그 칸만 - 날짜 문서라 저장 도우미 `merge`(없으면 만든다). 지운 표시는 없다 |
+| `lessonDays/{date}` | `{ periods: { '<교시>': { subject?, memo?, supplies?, attachments?, linkIds? } }, updatedAt, v }` | **그날 바꾼 칸만.** `subject`가 있으면 그 과목(`''`이면 그 교시 수업 없음), 칸이 없으면 시간표를 따른다. 과목이 그날 시간표와 같으면 적지 않는다(P6-1 `features/lessons/lessonOps`). **비고(준비물)는 `supplies` 한 칸**(P10-2) - `memo`는 옛 수업 메모(P10-2 전·V4 가져오기)로 읽을 때 그 아래 줄에 이어 보이고(`domain/lessons.lessonNote`), 그 칸의 비고를 고쳐 저장하면 합친 글을 `supplies`에 쓰고 `memo`를 지운다(자료 옮기기 없음). 고칠 때는 `periods.3.supplies`처럼 그 칸만 - 날짜 문서라 저장 도우미 `merge`(없으면 만든다). 지운 표시는 없다 |
 | `settings/common.periods` | `[{ n, name, start, end }]` | 교시 이름·시각(V4 '수업 시간 명칭' + `v4_periodTimes`를 하나로). 교시 수 = 길이(1~12), 기본 1~6교시·시각 없음 |
 | `settings/common.terms` | `{ '2026': { summer?: {from,to}, winter?: {from,to} } }` | 학년도마다 **방학만**(학년도 = 3월~이듬해 2월). 학기는 셈한다 - 1학기 = 3/1 ~ 여름 방학 전날, 2학기 = 여름 방학 다음 날 ~ 겨울 방학 전날(V4 `lib/semester` - `domain/semester` `termSemesters`·`semesterConfigOf`) |
 | `settings/common.newYearDone` | number (학년도, 0 = 없음) | 새 학년도 준비 띠를 닫았거나 '준비 끝'을 누른 학년도(P9-2) - 그 학년도에는 띠를 다시 띄우지 않는다. 띠는 2/15~3/31, 할 것 = 그 학년도 학급·시간표·방학·담임반(`domain/newYear`) |
