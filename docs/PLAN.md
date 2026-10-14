@@ -29,7 +29,7 @@
 ## 지금 하는 일
 
 **P9-4 넘어가기** - P9-3 끝(2026-10-14 PC - PARITY 모두·점검 49·390px·다크·성능). V4 띠·V4 알림 칸·V4 CLAUDE.md '보관'은 10-14 배포.
-남은 것은 👤 PC에서: 운영 V4 함수 지우기(5장 명령) · 마지막 가져오기(개인·그룹) 결과 표 함께 보기 → ■3 이 파일 끝(지금 하는 일 = 없음).
+■2 끝(10-14 PC - V4 운영 함수 넷 지움, v5 셋만 남음). 남은 것: 👤 마지막 가져오기(개인·그룹) 결과 표 함께 보기(■1) → ■3 이 파일 끝(지금 하는 일 = 없음).
 
 ---
 
@@ -585,7 +585,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
     라벨 상태·공유 그룹 점검은 V3/V4 함께 쓰기 때 것이라 없앰. → **P9-4에서 V4를 '보관'으로 두어도 V4 사이트는 남긴다**(해마다 공휴일 받기 - 개발자 계정).
 - **P9-4 넘어가기**(10-14 사용자가 고름): V4 띠는 **이 기기에서 닫기 가능**(`MovedToV5Banner` `sp4-moved-to-v5-closed`, V4 쓰기는 막지 않는다 - 보기만 '권함'),
   V4 알림 함수 넷은 **내린다** - V4 `firebase.json`에서 functions를 빼고(다시 배포되지 않게) V4 환경설정 '일정 알림'은 V5 안내 + '이 기기에서 끄기'만.
-  운영 함수 지우기는 PC에서: `npx firebase functions:delete alarmIndexUser alarmIndexGroup sendDueAlarms cleanupAlarms --region asia-northeast3 --project schoolplannerv3 --force`.
+  운영 함수 지우기는 PC에서(10-14 지움 - Claude 자동 권한이 운영 지우기를 막아 사용자가 VS Code 터미널에서 `npx.cmd`로): `npx firebase functions:delete alarmIndexUser alarmIndexGroup sendDueAlarms cleanupAlarms --region asia-northeast3 --project schoolplannerv3 --force`.
   마지막 가져오기는 사용자가 나중에 PC에서(결과 표를 함께 본다). V4 PR [hyundonglim80-gif/School_Planner_V4#1](https://github.com/hyundonglim80-gif/School_Planner_V4/pull/1) 합쳐 GitHub Pages 배포.
   - 둥근 ＋(휴대폰)는 머리줄 밖 body에 그린다(머리줄의 `backdrop-blur`는 V4 모양이라 둔다). 라벨 칩·라벨 없는 기간 막대는 다크에서도 정해 둔 빛깔(V4 그대로 - 바꾸면 V4 디자인을 바꾸는 일).
   - 점검은 PC 크롬에서도 같은 갈래를 보게 고쳤다(클라우드에서만 통과하던 것): 구글 로그인 묻는 창은 '방금 누르지 않았을 때' 갈래라 `noUserActivation`으로 그 상태를 만든다(앱은 방금 누른 때 로그인 창을 바로 연다 - 그대로 둔다).
@@ -1257,6 +1257,6 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 ### P9-4. 넘어가기
 **시작 조건**: P9-3 끝.
 - [ ] ■1 👤 마지막 가져오기(개인·그룹) - 결과 표를 사용자와 함께 확인.
-- [ ] ■2 👤 V4에 'V5로 옮겼습니다' 띠(새 주소, V4는 보기만 권함 - V4 커밋·배포는 묻고), V4 서버 푸시 끄기(👤 묻고 - V4 알림 함수 넷 내리기, 같은 일정이 두 번 울리지 않게).
-  → 10-14 V4 띠·알림 칸 안내·firebase.json functions 빼기 배포(V4 PR 1). **남은 것: 👤 PC에서 운영 함수 지우기**(명령은 5장 'P9-4 넘어가기').
+- [x] ■2 👤 V4에 'V5로 옮겼습니다' 띠(새 주소, V4는 보기만 권함 - V4 커밋·배포는 묻고), V4 서버 푸시 끄기(👤 묻고 - V4 알림 함수 넷 내리기, 같은 일정이 두 번 울리지 않게).
+  → 10-14 V4 띠·알림 칸 안내·firebase.json functions 빼기 배포(V4 PR 1). 10-14 PC에서 운영 함수 넷 지움 - `functions:list`에 v5AlarmIndex·v5CleanupAlarms·v5SendDueAlarms만.
 - [ ] ■3 문서: V5 `CLAUDE.md`가 정본, V4 `CLAUDE.md`에 '보관 - V4는 고칠 때만' 표시, 이 파일 끝(지금 하는 일 = 없음).
