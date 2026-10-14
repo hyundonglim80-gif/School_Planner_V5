@@ -10,7 +10,7 @@
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-gcal.mjs
 // teacher 계정 - 점검 라벨·일정·큐는 끝에 지운다.
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, launch, newPage, noUserActivation, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const undo = restorer();
@@ -203,9 +203,12 @@ try {
   await page.evaluate(([s, d]) => window.sp5.openWindow('event', { sid: s, date: d }), [sid, DAY]);
   await page.locator(sel('event-text-input')).fill('구글점검 로그인');
   await pickLabel(page);
+  // 방금 누르지 않은 것처럼 (방금 누른 때면 로그인 창을 바로 연다 - PC 크롬)
+  await noUserActivation(page);
   await page.locator(sel('event-save')).click();
   const prompt = page.locator(sel('google-login-prompt'));
   r.check(await waitFor(prompt, 10000), "저장하면 '구글 로그인이 필요합니다' (로그인이 없다)");
+  await noUserActivation(page, false);
   r.check(((await page.locator(sel('google-login-reason')).textContent()) ?? '').includes('구글 캘린더'), '까닭 = 구글 캘린더');
   await page.locator(sel('google-login-close')).click();
   const pending = page.locator(sel('gcal-pending'));

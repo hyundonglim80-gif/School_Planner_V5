@@ -4,7 +4,8 @@
 //   - 일정 = 오른쪽 일정 칸, 라벨 칩 = 완료, ✕ = 지우기(묶음이면 범위를 묻는다), 🔗 n = 연결된 데이터, + 일정 = 그날 새 일정, 📝 n = 그날 기록 창,
 //     날짜 = 그날 하루 화면, Ctrl·Shift·여러 개 고르기.
 //   - 휴대폰: 이번 달만 펼치고 나머지는 머리글만(접은 달은 날을 그리지 않는다 - V4 그대로), 펼친 달은 두 칸을 다 쓴다.
-//   - 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3 - 그리는 날에만 놓을 수 있다, V4 그대로). 수업 칩은 P6-1, 학사일정은 P6-3.
+//   - 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3 - 그리는 날에만 놓을 수 있다, V4 그대로). 학사일정은 P6-3.
+//   - 수업 칩(둘째 줄 '수업' - V4 그대로): 수업이 있는 날도 줄로 선다. PC는 교시마다 같은 폭의 띠, 휴대폰은 든 교시만 번호와 칩. 누르면 그 교시 수업 칸.
 //   달 카드는 React.memo - 바뀐 달만 다시 그린다(V4 - 열두 달 요소가 11,000개였다).
 import { memo, type MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_NAMES } from '../../domain/dateUtils';
@@ -22,6 +23,7 @@ import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import type { CalendarEvents } from '../month/calendarEvents';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
+import { LessonStrip, LessonWraps } from '../lessons/CalendarLessons';
 
 interface Props {
   m: AcademicMonth;
@@ -32,6 +34,9 @@ interface Props {
   evalCounts?: Readonly<Record<string, number>>;
   /** 조사표 창을 열 공간 */
   sid?: string | null;
+  /** 이 달 수업 칸 - { 날짜: 교시마다 과목 } 의 JSON ('' = 없음). 글이라 같으면 memo가 산다 */
+  lessons: string;
+  onOpenLesson: (date: string, n: number) => void;
   showWeekend: boolean;
   showEvents: boolean;
   isMobile: boolean;
@@ -107,8 +112,9 @@ function YearMonthCard(p: Props) {
   const holidayOf = useHolidayName();
   // 우리 학교 학사일정 (P6-3)
   const { byDate: schoolEvents } = useSchoolSchedule(dates.length ? [dates[0].slice(0, 7)] : []);
-  // 그릴 날 = 일정이 있는 날·공휴일·학사일정
-  const activeDays = dates.filter((d) => eventsOn(d).length > 0 || startsOn.has(d) || !!holidayOf(d) || !!schoolEvents[d]);
+  const lessonsOn: Readonly<Record<string, readonly string[]>> = p.lessons ? JSON.parse(p.lessons) : {};
+  // 그릴 날 = 일정이 있는 날·공휴일·학사일정·수업이 있는 날
+  const activeDays = dates.filter((d) => eventsOn(d).length > 0 || startsOn.has(d) || !!holidayOf(d) || !!schoolEvents[d] || !!lessonsOn[d]);
   const firstLabel = (ev: ItemDoc) => itemLabels(p.tree, ev.labelIds)[0];
   const isPicked = (id: string, d: string) => p.picked.has(`${id}|${d}`);
 
@@ -307,6 +313,12 @@ function YearMonthCard(p: Props) {
                       </button>
                     </div>
                   </div>
+                  {lessonsOn[d] &&
+                    (p.isMobile ? (
+                      <LessonWraps date={d} subjects={lessonsOn[d]} tag="year" onOpen={p.onOpenLesson} />
+                    ) : (
+                      <LessonStrip date={d} subjects={lessonsOn[d]} tag="year" onOpen={p.onOpenLesson} height={22} />
+                    ))}
                   {(starts.length > 0 || evs.length > 0) && (
                     <div className="flex flex-col gap-1">
                       {starts.map(renderPeriod)}

@@ -219,6 +219,8 @@ try {
   r.section('전담 (teacher3) - 과정');
   const { page: p3, errors: e3, dialogs: d3 } = await newPage(browser);
   const card3 = (n) => p3.locator(sel('lesson-card', n));
+  // '다음 수업 밀기'는 오늘 다음 날부터 센다 - 시계를 그 주 앞 일요일에 둔다 (날이 지나면 다음 주 교시를 밀어 깨졌다 - P9-3)
+  await p3.clock.setFixedTime(new Date('2026-10-11T09:00:00'));
   await open(p3, '#/day/2026-10-12', { as: '3' });
   r.check(await waitFor(card3(1).locator('[data-slot-class]'), 8000), '전담 수업 칸');
   await card3(1).click();

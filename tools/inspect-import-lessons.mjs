@@ -125,7 +125,9 @@ try {
   };
   // seed 날 여럿 - V4 schedules의 과목과 같다
   const seedDates = Object.keys(v4Schedules).filter((d) => d.startsWith('2026-') && new Date(`${d}T00:00:00`).getDay() % 6 !== 0).sort();
-  const sample = [seedDates[0], seedDates[Math.floor(seedDates.length / 2)], seedDates[seedDates.length - 1]];
+  // V4 seed가 없으면(에뮬레이터를 새로 켜고 V5 seed만 넣었다) 견줄 날이 없다 - 멈추지 않고 알린다 (P9-3)
+  if (!seedDates.length) r.bad('V4 seed의 2026년 수업 날이 없다 - V4 `node tools/seed.mjs` → V5 `npm run seed` 뒤 다시');
+  const sample = seedDates.length ? [seedDates[0], seedDates[Math.floor(seedDates.length / 2)], seedDates[seedDates.length - 1]] : [];
   for (const d of sample) {
     await go(`#/day/${d}`);
     await waitFor(page.locator(sel('day-lessons', d)), 8000);

@@ -52,6 +52,10 @@ try {
     await setDoc(itemRef(id), { ...data, ...stamp });
     undo.add(() => deleteDoc(itemRef(id)));
   }
+  // 수업 칩 (P9-3): 이틀만 쓰는 시간표 - 월 10.12·화 10.13 (다른 날 줄은 그대로라 아래 '일정이 있는 날만' 점검을 건드리지 않는다)
+  const ttRef = doc(em.db, 'spaces', sid, 'timetables', 'insp_my_tt');
+  await setDoc(ttRef, { name: '점검달력 시간표', from: '2026-10-12', to: '2026-10-13', grid: { '1': { '1': '점검국어', '3': '점검수학' }, '2': { '2': 'X' } }, ...stamp });
+  undo.add(() => deleteDoc(ttRef));
 
   const { page, errors } = await newPage(browser);
   await open(page, '#/month/2026-10');
@@ -118,6 +122,26 @@ try {
   r.check(await waitFor(bars('insp_my3'), 8000), '다음 달에도 막대');
   r.check((await bars('insp_my3').textContent()).includes('◂') && (await bars('insp_my3').textContent()).includes('4~6/6'), '앞 달에서 이어진다 (◂ 4~6/6)');
 
+  r.section('월간 - 수업 칩');
+  await page.goto(page.url().replace(/#.*$/, '#/month/2026-10'));
+  const lessonsOf = (d) => page.locator(sel('month-lessons', d));
+  r.check(await waitFor(lessonsOf('2026-10-12'), 8000), '시간표가 있는 날 칸에 수업 칩 (PC)');
+  r.check(
+    (await lessonsOf('2026-10-12').locator(sel('month-lesson')).allTextContents()).join(',') === '점검국어,점검수학',
+    `든 교시만 글자 (${(await lessonsOf('2026-10-12').locator(sel('month-lesson')).allTextContents()).join(',')})`,
+  );
+  r.check((await lessonsOf('2026-10-12').locator(':scope > div').count()) >= 3, '빈 교시도 자리를 둔다 (교시가 나란히)');
+  r.check((await lessonsOf('2026-10-13').count()) === 0 && (await lessonsOf('2026-10-14').count()) === 0, "과목 'X'뿐인 날·시간표 밖의 날은 칩이 없다");
+  await lessonsOf('2026-10-12').locator(sel('month-lesson', 3)).click();
+  r.check(await waitFor(page.locator(sel('lesson-panel'))), '칩 = 그 교시 수업 칸');
+  r.check(((await page.locator(sel('lesson-panel-subject')).inputValue().catch(() => '')) || '') === '점검수학', '3교시 수업 칸');
+  await page.keyboard.press('Escape');
+  await page.locator(sel('view-toggle', 'showClass')).click();
+  r.check(await waitFor(async () => (await lessonsOf('2026-10-12').count()) === 0), "둘째 줄 '수업'을 끄면 칩이 사라진다");
+  await page.locator(sel('view-toggle', 'showClass')).click();
+  r.check(await waitFor(lessonsOf('2026-10-12')), '다시 켜면 돌아온다');
+  await page.waitForTimeout(3000); // 계정 설정이 올라갈 때까지
+
   r.section('년간 - 학사력');
   await page.goto(page.url().replace(/#.*$/, '#/year/2026'));
   const sheet = (m) => page.locator(sel('sheet-month', m));
@@ -157,6 +181,10 @@ try {
   r.check(await waitFor(card('2027-02'), 8000), '📋 자세히 = 달 카드');
   const days = await card('2026-10').locator(sel('year-day')).evaluateAll((els) => els.map((e) => e.dataset.yearDay));
   r.check(['2026-10-06', '2026-10-15', '2026-10-21', '2026-10-29'].every((d) => days.includes(d)) && !days.includes('2026-10-07') && !days.includes('2026-10-16'), `일정이 있는 날·공휴일만 (${days.join(', ')})`);
+  r.check(days.includes('2026-10-12') && (await card('2026-10').locator(`${sel('year-lessons', '2026-10-12')} ${sel('year-lesson')}`).count()) === 2, '수업이 있는 날도 줄로 서고 교시 칩 (일정이 없어도)');
+  await card('2026-10').locator(sel('year-lessons', '2026-10-12')).locator(sel('year-lesson', 1)).click();
+  r.check(await waitFor(page.locator(sel('lesson-panel'))), '칩 = 그 교시 수업 칸');
+  await page.keyboard.press('Escape');
   r.check((await card('2026-10').locator(sel('year-period', 'insp_my2')).count()) === 1, '기간은 처음 날 한 번');
   r.check((await card('2026-10').locator(`${sel('year-period', 'insp_my2')} ${sel('year-period-range')}`).textContent()).includes('(1~5/5)'), '기간 범위 (1~5/5)');
   r.check((await card('2026-11').locator(`${sel('year-period', 'insp_my3')} ${sel('year-period-range')}`).textContent()).includes('◂'), '다음 달 카드에 ◂ 이어짐');

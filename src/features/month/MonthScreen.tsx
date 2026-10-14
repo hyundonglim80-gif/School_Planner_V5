@@ -3,6 +3,7 @@
 //   - PC: 칸 빈 곳 = 그날 하루 화면, 일정 = 오른쪽 일정 칸, 라벨 칩 = 완료, + = 그날 새 일정, 📝 n = 그날 기록 창.
 //   - 휴대폰: 날짜를 누르면 아래에 그날 목록(MonthDaySheet), 같은 날을 한 번 더 누르면 하루 화면.
 //   - 오늘 칸 data-today, 이번 주 줄 data-today-area (app/todayScroll).
+//   - 수업 칩(둘째 줄 '수업'): 계산한 수업 칸 - PC는 칸에, 휴대폰은 그날 목록에(V4 그대로).
 import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { monthGridDates } from '../../domain/dateUtils';
@@ -24,6 +25,9 @@ import { calendarEvents } from './calendarEvents';
 import MonthDaySheet from './MonthDaySheet';
 import MonthGrid from './MonthGrid';
 import { useEvalCountsByDate } from '../evaluations/evalData';
+import { lessonSubjects } from '../lessons/lessonSubjects';
+import { openLessonPanel } from '../lessons/open';
+import { useLessonsFor } from '../lessons/useLessons';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -35,6 +39,7 @@ export default function MonthScreen() {
   const date = useNav((s) => s.date);
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
+  const showClass = useNav((s) => s.showClass);
   const items = useDocs('items', sid);
   const tree = useLabelTree('event', sid);
   const today = useToday();
@@ -49,6 +54,10 @@ export default function MonthScreen() {
   const dates = useMemo(() => monthGridDates(year, month), [year, month]);
   const cal = useMemo(() => calendarEvents(items, dates[0], dates[dates.length - 1], tree), [items, dates, tree]);
   const eventsOn = (d: string) => cal.byDate.get(d) ?? [];
+  // 수업 칸 (끄면 셈하지 않는다)
+  const lessons = useLessonsFor(showClass && sid ? dates : [], sid);
+  const lessonsOn = (d: string) => lessonSubjects(lessons[d]);
+  const openLesson = (d: string, n: number) => sid && openLessonPanel({ sid, date: d, n });
 
   // 휴대폰: 날짜를 누르면 아래 그날 목록, 같은 날을 한 번 더 = 하루 화면. 달을 넘기거나 넓어지면 닫는다
   const [sheetDate, setSheetDate] = useState<string | null>(null);
@@ -104,6 +113,8 @@ export default function MonthScreen() {
         periods={cal.periods}
         noteCount={(d) => itemsOn(items, d, 'note').length}
         evalCount={(d) => evalCounts[d] ?? 0}
+        lessonsOn={showClass ? lessonsOn : undefined}
+        onOpenLesson={openLesson}
         sid={sid}
         labelsOf={(ev) => itemLabels(tree, ev.labelIds)}
         pickedOn={(d) => new Set(multi.picks.filter((p) => p.day === d).map((p) => p.id))}
@@ -123,6 +134,7 @@ export default function MonthScreen() {
           events={sheetEvents}
           hiddenCount={sheetHidden}
           showEvents={showEvents}
+          lessons={showClass ? lessonsOn(sheetDate) : []}
           labelsOf={(ev) => itemLabels(tree, ev.labelIds)}
           onClose={() => setSheetDate(null)}
           onGoDay={() => goDay(sheetDate)}

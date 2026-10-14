@@ -154,6 +154,19 @@ export function restorer() {
 export const hashOf = (page) => new URL(page.url()).hash;
 
 /**
+ * '방금 누르지 않은' 것처럼 만든다 (navigator.userActivation.isActive = false) - off=false로 되돌린다.
+ * 앱은 방금 누른(키를 친) 때에만 구글 로그인 창을 바로 띄우고, 아니면 '구글 로그인이 필요합니다' 창을 띄운다(data/google/token).
+ * Playwright의 클릭·타자는 진짜 누름이라 PC 크롬은 로그인 창을 바로 연다 - 묻는 창 갈래를 보려면 이것으로 막는다
+ * (클라우드 컨테이너는 apis.google.com에 닿지 못해 로그인 창이 실패하고 묻는 창으로 넘어가 우연히 같은 갈래였다 - P9-3).
+ */
+export async function noUserActivation(page, off = true) {
+  await page.evaluate((off) => {
+    if (off) Object.defineProperty(navigator, 'userActivation', { configurable: true, value: { isActive: false, hasBeenActive: true } });
+    else delete navigator.userActivation;
+  }, off);
+}
+
+/**
  * 에뮬레이터 관리자 쓰기 (규칙을 건너뛴다 - 'Bearer owner'). 모두가 읽기만 하는 공유 자료(holidays/{연도})를 점검에 심을 때.
  * 값은 글·수·참거짓·객체만. get은 없으면 null, set은 통째로 덮는다.
  */

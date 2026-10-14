@@ -1,7 +1,8 @@
 // 휴대폰 월간의 '그날 목록' (V4 features/month/MonthDaySheet.tsx - V4 ROADMAP 15).
 // 휴대폰 월간 칸은 53px 남짓이라 일정이 한 줄로 잘린다. 칸 모양은 두고, 날짜를 누르면 아래 탭바 위에 그날 목록이 올라온다.
 // 달력은 가리지 않아 날짜를 연달아 눌러 볼 수 있고, 같은 날을 한 번 더 누르거나 '하루 화면'을 누르면 하루 화면으로 간다.
-// 창(ModalShell)이 아니다 - 휴대폰 창은 오른쪽에서 화면을 덮어 달력이 가려진다. 이것은 화면의 일부다. 수업 칩은 P6-1.
+// 창(ModalShell)이 아니다 - 휴대폰 창은 오른쪽에서 화면을 덮어 달력이 가려진다. 이것은 화면의 일부다.
+// 그날 수업은 교시 번호와 과목 칩(달력 칸에는 그리지 않는다 - V4 ROADMAP 15).
 import { useLayoutEffect, useState } from 'react';
 import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
 import SchoolEventName from '../school/SchoolEventName';
@@ -9,6 +10,8 @@ import { useSchoolSchedule } from '../school/school';
 import { labelColor } from '../../domain/labels';
 import type { LabelDoc } from '../../data/select';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
+import { LessonWraps } from '../lessons/CalendarLessons';
+import { hasLessons, type LessonSubjects } from '../lessons/lessonSubjects';
 
 interface Props {
   date: string;
@@ -17,6 +20,8 @@ interface Props {
   /** 달력에 올리지 않은 그날 일정 수 */
   hiddenCount: number;
   showEvents: boolean;
+  /** 그날 교시마다 과목 (둘째 줄 '수업'을 끄면 빈 것) */
+  lessons: LessonSubjects;
   labelsOf: (ev: ItemDoc) => LabelDoc[];
   onClose: () => void;
   onGoDay: () => void;
@@ -26,7 +31,7 @@ interface Props {
   onToggleDone?: (ev: ItemDoc) => void;
 }
 
-export default function MonthDaySheet({ date, events, hiddenCount, showEvents, labelsOf, onClose, onGoDay, onAdd, onOpenEvent, onToggleDone }: Props) {
+export default function MonthDaySheet({ date, events, hiddenCount, showEvents, lessons, labelsOf, onClose, onGoDay, onAdd, onOpenEvent, onToggleDone }: Props) {
   // 아래 탭바 바로 위에 붙는다 (탭바 높이는 기기 안전 여백에 따라 달라 재서 쓴다)
   const [tabBarHeight, setTabBarHeight] = useState(0);
   useLayoutEffect(() => {
@@ -67,6 +72,7 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
         </div>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-3 py-2 flex flex-col gap-2" data-scroll-lock>
+        <LessonWraps date={date} subjects={lessons} tag="sheet" />
         {showEvents && (
           <ul className="flex flex-col gap-1">
             {events.map((ev) => {
@@ -116,7 +122,7 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
             })}
           </ul>
         )}
-        {showEvents && events.length === 0 && <p className="text-xs text-slate-400 py-2 text-center">달력에 올린 일정이 없습니다.</p>}
+        {showEvents && events.length === 0 && !hasLessons(lessons) && <p className="text-xs text-slate-400 py-2 text-center">달력에 올린 일정이 없습니다.</p>}
         {showEvents && hiddenCount > 0 && (
           <button type="button" data-sheet-hidden={hiddenCount} onClick={onGoDay} className="text-left text-xs text-slate-400 cursor-pointer">
             달력에 올리지 않은 일정 {hiddenCount}개 - 하루 화면에서 봅니다 →

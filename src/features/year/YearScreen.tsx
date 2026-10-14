@@ -4,11 +4,13 @@
 //   - 열두 달을 한 판에 그리면 화면이 1초 넘게 굳는다(V4) - 세 달씩 프레임마다 나눠 그린다. 달 카드는 memo.
 //   - 자료는 기기 사본에서(그 학년도 범위). '달력' 속성을 켠 일정만(월간과 같은 calendarEvents).
 //   - 오늘 칸 data-today, 이번 달 data-today-area (app/todayScroll).
-//   - 자세히에서 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3). 공휴일·D-Day는 달 카드가 직접(data/holidays·설정). 인쇄(🖨️ 학사력 A4 가로)·학사일정은 P6-3, 자세히의 수업 칩은 P6-1.
+//   - 자세히에서 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3). 공휴일·D-Day는 달 카드가 직접(data/holidays·설정). 인쇄(🖨️ 학사력 A4 가로)·학사일정은 P6-3.
+//   - 자세히의 수업 칩(둘째 줄 '수업' - V4 그대로): 계산한 수업 칸. 수업이 있는 날도 줄로 서고, 칩을 누르면 그 교시 수업 칸.
+//     달 카드에는 그 달 과목을 글(JSON)로 넘긴다 - 일정 하나만 바뀌어도 수업 칸 셈이 새로 나오지만, 글이 같으면 그 달은 다시 그리지 않는다.
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { usePrintTarget } from '../../app/printScreen';
-import { academicYearOf, academicYearRange } from '../../domain/dateUtils';
+import { academicYearOf, academicYearRange, addDays } from '../../domain/dateUtils';
 import { onPeriodDay } from '../../domain/period';
 import type { ShownPeriod } from '../../domain/periodBars';
 import { academicMonths, monthWeeks, type AcademicMonth } from '../../domain/yearSheet';
@@ -30,6 +32,9 @@ import { setYearView, useYearView, type YearView } from './prefs';
 import YearMonthCard from './YearMonthCard';
 import YearSheetMonth from './YearSheetMonth';
 import { useEvalCountsByDate } from '../evaluations/evalData';
+import { lessonSubjects } from '../lessons/lessonSubjects';
+import { openLessonPanel } from '../lessons/open';
+import { useLessonsFor } from '../lessons/useLessons';
 
 /** 한 번에 그릴 달의 수 (V4 MONTHS_PER_FRAME) */
 const MONTHS_PER_FRAME = 3;
@@ -62,6 +67,13 @@ const LEGEND = (
 );
 
 const EMPTY: ReadonlySet<string> = new Set();
+
+/** from ~ to 날마다 */
+function datesFromTo(from: string, to: string): string[] {
+  const out: string[] = [];
+  for (let d = from; d <= to; d = addDays(d, 1)) out.push(d);
+  return out;
+}
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
 };
@@ -81,6 +93,7 @@ export default function YearScreen() {
   const date = useNav((s) => s.date);
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
+  const showClass = useNav((s) => s.showClass);
   const semesterFilter = useNav((s) => s.semesterFilter);
   const view = useYearView((s) => s.view);
   const items = useDocs('items', sid);
@@ -102,6 +115,20 @@ export default function YearScreen() {
     return map;
   }, [items, from, to]);
   const thisMonth = today.slice(0, 7);
+
+  // 자세히의 수업 칩 - 달마다 과목 글 (학사력이거나 '수업'을 끄면 셈하지 않는다)
+  const lessonDates = useMemo(() => (showClass && sid && view === 'detail' ? datesFromTo(from, to) : []), [showClass, sid, view, from, to]);
+  const lessons = useLessonsFor(lessonDates, sid);
+  const lessonsByMonth = useMemo(() => {
+    const byMonth = new Map<string, Record<string, readonly string[]>>();
+    for (const d of lessonDates) {
+      const subjects = lessonSubjects(lessons[d]);
+      if (!subjects.some(Boolean)) continue;
+      const key = d.slice(0, 7);
+      byMonth.set(key, { ...byMonth.get(key), [d]: subjects });
+    }
+    return new Map([...byMonth].map(([k, v]) => [k, JSON.stringify(v)]));
+  }, [lessonDates, lessons]);
 
   // 세 달씩 나눠 그린다 - 학년도·학기·보기가 바뀌면 처음부터 (V4: 한 흐름 안에서 끝까지 걸어간다 - 둘로 나누면 서로 물려 멈췄다)
   const runKey = `${academicYear}|${semesterFilter}|${view}`;
@@ -151,6 +178,10 @@ export default function YearScreen() {
   const openLinks = useCallback((ev: ItemDoc) => {
     const s = latest.current.sid;
     if (s) openLinkViewer({ sid: s, id: ev.id });
+  }, []);
+  const openLesson = useCallback((d: string, n: number) => {
+    const s = latest.current.sid;
+    if (s) openLessonPanel({ sid: s, date: d, n });
   }, []);
   const eventClick = useCallback(
     (ev: ItemDoc, d: string, e: ReactMouseEvent) => {
@@ -259,6 +290,8 @@ export default function YearScreen() {
                 tree={tree}
                 noteCounts={noteCounts}
                 evalCounts={evalCounts}
+                lessons={lessonsByMonth.get(m.key) ?? ''}
+                onOpenLesson={openLesson}
                 sid={sid}
                 showWeekend={showWeekend}
                 showEvents={showEvents}

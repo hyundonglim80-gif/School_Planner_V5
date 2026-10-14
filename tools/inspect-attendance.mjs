@@ -196,7 +196,8 @@ try {
   await ntext.type('\n3) 우유 가져오기');
   r.check((await np.locator('[data-notice-preview]').getAttribute('data-notice-preview')) === '3', '미리 보기 셋 (번호는 떼고 다시 붙인다)');
   await np.locator(sel('notice-copy')).click();
-  const clip = await page.evaluate(() => navigator.clipboard.readText()).catch(() => '');
+  // Windows 클립보드는 줄바꿈을 \r\n으로 돌려준다 (크롬이 바꾼다 - 앱은 \n을 쓴다, P9-3)
+  const clip = (await page.evaluate(() => navigator.clipboard.readText()).catch(() => '')).replace(/\r\n/g, '\n');
   r.check(clip === '[4/7(수) 알림장]\n1. 미술 준비물: 색연필\n2. 점검알림 동의서 제출\n3. 우유 가져오기', `📋 복사 = 날짜 머리 + 번호 (${JSON.stringify(clip)})`);
   await page.keyboard.press('Control+s');
   let n1 = await serverUntil(() => notice(N1), (d) => (d?.lines?.length ?? 0) === 3);

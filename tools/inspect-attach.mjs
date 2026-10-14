@@ -10,7 +10,7 @@
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-attach.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 기록('점검첨부…')을 만들고 끝에 지운다.
 import { collection, deleteDoc, getDocs } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, launch, newPage, noUserActivation, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -104,9 +104,12 @@ try {
   const panel = page.locator(sel('note-panel'));
   await waitFor(panel);
   await page.keyboard.type('점검첨부 기록');
+  // 방금 누르지 않은 붙여넣기 (방금 누른 때면 로그인 창을 바로 연다 - PC 크롬)
+  await noUserActivation(page);
   await paste(page, { image: true });
   const prompt = page.locator(sel('google-login-prompt'));
-  r.check(await waitFor(prompt), '토큰이 만료돼 있으면 붙여넣기 뒤 묻는 창이 뜬다 (로그인 창을 바로 띄우지 않는다)');
+  r.check(await waitFor(prompt), '토큰이 만료돼 있으면 붙여넣기 뒤 묻는 창이 뜬다 (방금 누르지 않았으면 로그인 창을 바로 띄우지 않는다)');
+  await noUserActivation(page, false);
   r.check(google.uploads.length === 0, '아직 올리지 않았다');
   const popupP = page.waitForEvent('popup', { timeout: 5000 }).catch(() => null);
   await page.locator(sel('google-login')).click();
@@ -114,8 +117,9 @@ try {
   // 클라우드 컨테이너는 apis.google.com에 닿지 못해 Firebase가 로그인 창을 열기 전에 auth/internal-error로 멈춘다 - PC에서만 본다
   if (!popup && consoleErrors.some((t) => t.includes('auth/internal-error'))) console.log("  - '구글 로그인' 단추 = 로그인 창: 이 컴퓨터는 apis.google.com에 닿지 못해 건너뜀 (PC에서 확인)");
   else r.check(!!popup, "'구글 로그인' 단추 = 누른 자리에서 로그인 창이 열린다 (막히지 않는다)");
+  // 진짜 로그인 창을 닫으면 Firebase는 8초쯤 더 기다린 뒤 'popup-closed-by-user'를 낸다 (PC - 클라우드는 창이 열리지 않아 곧바로)
   await popup?.close();
-  r.check(await waitFor(page.locator(sel('google-login-error')), 8000), `로그인 창을 닫으면 묻는 창에 까닭이 남는다 (${await page.locator(sel('google-login-error')).textContent().catch(() => '')})`);
+  r.check(await waitFor(page.locator(sel('google-login-error')), 15000), `로그인 창을 닫으면 묻는 창에 까닭이 남는다 (${await page.locator(sel('google-login-error')).textContent().catch(() => '')})`);
   await page.locator(sel('google-login-close')).click();
   const failToast = page.locator(sel('toast')).filter({ hasText: '업로드에 실패' });
   r.check(await waitFor(failToast), '닫기 = 올리지 않고 안내');

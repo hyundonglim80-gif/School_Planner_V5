@@ -106,7 +106,8 @@ try {
   r.check(evAdded === expectEvents, `일정 새로 = V4에서 센 수 (${evAdded} / ${expectEvents})`);
   r.check(noteAdded === expectJournals + expectMemos, `기록·메모 새로 = V4 기록 + 메모 (${noteAdded} / ${expectJournals}+${expectMemos})`);
   r.check((await count('series', 'added')) === 1, '반복 묶음 1');
-  r.check((await page.locator(`${sel('import-row', 'items.event')} ${sel('import-years')}`).textContent()).includes('2026학년도'), '학년도별 수');
+  const years = (await page.locator(`${sel('import-row', 'items.event')} ${sel('import-years')}`).textContent()) ?? '';
+  r.check(years.includes('2026학년도'), `학년도별 수 (${years.trim()})`, `학년도별 수에 2026학년도가 없다 (${years.trim() || '빈칸'}) - V4 seed가 없으면 V4 \`node tools/seed.mjs\` → V5 \`npm run seed\``);
   const notes = await page.locator(sel('import-note')).evaluateAll((els) => els.map((e) => e.dataset.importNote));
   r.check(['periods', 'series', 'holidays', 'autoJournals'].every((k) => notes.includes(k)), `아래 안내 (${notes.join(',')})`);
 

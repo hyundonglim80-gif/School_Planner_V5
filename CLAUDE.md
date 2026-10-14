@@ -25,7 +25,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **2026-10-14 P9-2 끝**(PC - 새 학년도 준비: 2/15~3/31 띠 · 시간표 창 🌱). **다음 대화: P9-3 전체 점검·성능**. 👤 V5 주소 ? → 설명서를 훑어 V5 화면과 다른 곳 알려 주기 · 계정 칸 '👥 공유 그룹' → 'V4 그룹 가져오기'로 실제 그룹 하나.
+- **2026-10-14 P9-3 ■1 끝**(PC - PARITY 모두·점검 47 통과, 빠져 있던 월간·년간 수업 칩 옮김). **다음: P9-3 ■2 휴대폰 390px + 다크 모드**. 👤 V5 주소 ? → 설명서를 훑어 V5 화면과 다른 곳 알려 주기 · 계정 칸 '👥 공유 그룹' → 'V4 그룹 가져오기'로 실제 그룹 하나.
 - **10-14 PC에서 배포함**: 운영 규칙(V4 그룹 가져오기 갈래) · 함수 v5 셋(알림 건너뛴 까닭 로그) · 알림 소리 막힘 → OS 알림도. 👤 휴대폰·PC '알림' 탭에서 받기 → ⏰ 일정 1~2분 뒤 소리(기기 알림음) 나는지.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
@@ -77,6 +77,10 @@
 - **IndexedDB(idb)는 트랜잭션을 열어 일과 `tx.done`을 함께 기다린다**(P3-2) - `db.get`·`db.put` 줄임은 읽기 트랜잭션의 done을 아무도 받지 않아, 트랜잭션이 끊기면 '처리하지 않은 오류'(AbortError)가 된다.
   쓰던 글 보관을 여는 칸을 그리는 시험 파일은 `afterAll`에서 `wipeDrafts`를 기다린다 - 마지막 시험이 연 DB가 환경이 걷힌 뒤 열리면 'IDBRequest is not defined'(P4-2).
 - **클라우드 컨테이너는 apis.google.com·*.web.app에 닿지 못한다** - Firebase 팝업 로그인(다시 받기 포함)이 창을 열기 전에 `auth/internal-error`. 그 확인은 PC에서(P4-2 inspect-attach가 건너뛴다).
+  거꾸로 **PC 크롬은 방금 누른(Playwright 클릭·타자) 때 로그인 창을 바로 연다** - '구글 로그인이 필요합니다' 창 갈래는 `noUserActivation(page)`로 '방금 누르지 않음'을 만들어 본다.
+  진짜 로그인 창을 닫으면 Firebase가 8초쯤 기다린 뒤 닫힘을 알린다(P9-3 - 컨테이너에서만 통과하던 attach·gcal).
+- **클라우드에서만 돌던 점검을 PC에서 돌리면**(P9-3): Windows 클립보드는 `\r\n`으로 돌려준다 · '오늘부터' 세는 것(진도 다음 수업 밀기)은 `page.clock.setFixedTime` ·
+  가져오기 점검은 **V4 seed**가 있어야 한다(V4 `node tools/seed.mjs` → V5 `npm run seed` - 에뮬레이터를 새로 켰으면).
 - **저장소에 prettier가 없다 - `npx prettier --write`를 돌리지 않는다**(P6-1 - 따옴표·줄 폭을 통째로 바꿨다. 되돌리고 고친 것만 다시).
 - **V4에서 옮긴 파일이 `new URL('./…', import.meta.url)`로 부르는 것(워커 등)은 개발 서버에서는 없어도 넘어가고 빌드에서만 깨진다** - 옮기면 `npm run build`까지(P7-1 `ui/shrinkWorker.ts`). 점검 스크립트는 끝에 `process.exit()`(에뮬레이터 Firebase가 노드를 붙잡는다).
 - **`pkill -f <글자>`는 그 글자가 든 자기 명령 줄(셸)도 죽인다**(P7-3 - `pkill -f vite`로 Bash가 144로 끝났다). 에뮬레이터·개발 서버는 뒤에서(`run_in_background`) 켠다.
@@ -255,7 +259,7 @@
   설정 `common.teaching`(null = 안 고름)·`periods`·`terms`(app/prefs, 받았나 `useCommonLoaded`) · 사본 `MIRRORED` += timetables·lessonDays · 저장 도우미 `merge`(날짜 문서 - 없으면 만든다) ·
   `features/lessons/`(`useLessons`(`useLessonSource`·`useLessonsOn`·`useLessonsFor`) · `teaching.ts`(`useTeaching`·`updateTeaching`·`useTeachingClasses`·`useSlotPairOptions`·`useClassColorOf`) · `lessonOps`(순수 - 시간표와 같은 과목은 빼기·비우기·맞바꾸기)·`actions`(`saveLesson`·`clearLesson`·`swapLessons`) ·
   `DayLessons`(하루 칸 `[data-day-lessons|lesson-card|lesson-id|lesson-subject|lesson-changed|lessons-off|now-line|lesson-up|down|link|links|edit|prev|lesson-editor|lesson-*-input|lesson-save|close|lessons-settings]`) ·
-  `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson]`) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
+  `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson]`) · `CalendarLessons`(월간·년간 수업 칩 - `LessonStrip` PC·`LessonWraps` 휴대폰 `[data-month-lessons|month-lesson|year-lessons|year-lesson|sheet-lessons|sheet-lesson]`, P9-3)·`lessonSubjects`(순수 - 'X' = 수업 없음) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
   시간표 창 `features/timetable/`(`TimetableWindow` 창 `timetable` `{ tab }` `[data-timetable-window|timetable-tab|timetable-save|timetable-dirty]` · `GridTab`(`[data-timetable-pick|add|name|from|to|quick|delete]`·`input[data-cell="행-열"]`) · `PeriodsTab`(`[data-period-name|start|end|period-fill-run]`) · `TermsTab`(`[data-terms="summer-from"…]`) · `TeachingTab`(`[data-teacher-preset|teaching-*|class-color|homeroom-*]`) · `timetableDraft`(순수) · `shortcuts`(`teachingMode`)).
   새 학년도 준비(P9-2): 순수 `domain/newYear.ts`(2/15~3/31 `newYearTarget`·할 것 `newYearState`·`parseRosterPaste`·`copiedTimetable`) · `features/newYear/`(`useNewYear`·`NewYearBanner`(Shell `[data-new-year-banner|new-year-open|new-year-dismiss]`) ·
   `NewYearWindow` 창 `newYear` `{ year }` `[data-new-year-window|new-year-step=classes|timetable|terms|teaching(data-done)|new-year-grade|num|names|create-class|copy-timetable|open-terms|set-homeroom|done]`) · 계정 `common.newYearDone` ·
@@ -343,7 +347,7 @@
   `HelpWindow.tsx`(V4 HelpModal - 분류 → 기능 → 설명·사용 예·왼쪽 목차(접기 이 기기 `sp5-help-tree-hidden`)·찾기·단축키 표, `[data-help-window|help-home|help-search|help-results|help-category|help-topic|help-detail|help-example|help-link|help-key|help-lookback|help-related|help-prev|help-next|help-crumb-home|help-back|help-tree|help-tree-topic|help-tree-category|help-tree-fold|help-tree-all|help-tree-toggle|help-shortcuts|help-shortcut|help-shortcuts-open]`)) ·
   시험 `topics.test`(링크·자리표·창의 `help` 주제가 있나)·`HelpWindow.test`(모든 항목을 그려 기호가 남지 않나). 점검 `tools/inspect-manual.mjs`(282 - 68주제마다 설명서가 말하는 자리).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
-- **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
+- **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`·`noUserActivation`(P9-3)) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
   `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
   `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움) ·
   `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기) ·
