@@ -59,14 +59,22 @@ export const v5SendDueAlarms = onSchedule({ schedule: 'every 1 minutes', timeZon
   for (const doc of due.docs) {
     const alarm = doc.data();
     // 먼저 '보냄'으로 바꾼다 - 앞 회차가 아직 돌고 있어도 두 번 보내지 않게(그 사이 바뀌었으면 건너뛴다)
+    // 건너뛸 때도 까닭을 남긴다 - 휴대폰에 안 왔을 때 로그만 보고 가려내게(10-14 '보냄'이 없어 운영 자료를 읽어야 했다)
     try {
       await doc.ref.update({ sent: true, pendingAt: null, sentAt: now }, { lastUpdateTime: doc.updateTime });
-    } catch {
+    } catch (err) {
+      logger.info('알림 건너뜀 - 그 사이 바뀜', { id: doc.id, error: String(err?.message || err) });
       continue;
     }
-    if (typeof alarm.atMs === 'number' && alarm.atMs < now - ALARM_WINDOW_MS) continue; // 너무 늦었다
+    if (typeof alarm.atMs === 'number' && alarm.atMs < now - ALARM_WINDOW_MS) {
+      logger.info('알림 건너뜀 - 너무 늦음', { id: doc.id, atMs: alarm.atMs });
+      continue;
+    }
     const tokens = (await Promise.all((alarm.recipients || []).map(tokensOf))).flat();
-    if (tokens.length === 0) continue;
+    if (tokens.length === 0) {
+      logger.info('알림 건너뜀 - 받는 사람 기기 토큰 없음', { id: doc.id, recipients: (alarm.recipients || []).length });
+      continue;
+    }
     const res = await messaging.sendEachForMulticast({
       tokens: tokens.map((t) => t.token),
       data: pushData(alarm),
@@ -78,7 +86,8 @@ export const v5SendDueAlarms = onSchedule({ schedule: 'every 1 minutes', timeZon
       if (!r.success && isDeadTokenError(r.error?.code)) dead.push(tokens[i].ref);
     });
     await Promise.all(dead.map((ref) => ref.delete().catch(() => {})));
-    logger.info('알림 보냄', { id: doc.id, ok: res.successCount, fail: res.failureCount, removed: dead.length });
+    const errors = res.responses.filter((r) => !r.success).map((r) => r.error?.code || 'unknown');
+    logger.info('알림 보냄', { id: doc.id, tokens: tokens.length, ok: res.successCount, fail: res.failureCount, removed: dead.length, errors });
   }
 });
 

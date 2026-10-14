@@ -1,6 +1,7 @@
 // 앱이 내는 소리(일정 알림·수업 종 P6-3)가 함께 쓰는 소리 장치 (V4 lib/sound.ts). 소리는 Web Audio로 만든다(파일 없이).
 // 브라우저는 사용자가 이 페이지를 한 번 누르거나 키를 치기 전에는 소리를 막는다 - wakeAudioOnGesture로
-// 처음 누를 때 깨워 둔다. 한 번도 누르지 않은 탭에서는 소리가 나지 않을 수 있다(화면 알림은 뜬다).
+// 처음 누를 때 깨워 둔다. 한 번도 누르지 않은 탭에서는 소리가 나지 않을 수 있다 - 일정 알림은 그때 OS 알림을 함께 띄워
+// 기기 알림 소리로 울린다(soundAllowed, features/events/EventAlarms).
 
 /** 점검이 몇 번 울렸는지 본다 (window.__spAlarmSoundCount·__spBellCount) */
 type SoundCounters = { __spAlarmSoundCount?: number; __spBellCount?: number };
@@ -29,6 +30,22 @@ export function wakeAudioOnGesture(): () => void {
     window.removeEventListener('pointerdown', wake);
     window.removeEventListener('keydown', wake);
   };
+}
+
+/**
+ * 지금 소리를 낼 수 있나 - 막혀 있으면 한 번 깨워 보고(0.3초) 본다.
+ * 이 탭을 한 번도 누르지 않았으면(앱을 막 열었을 때·새로 고친 뒤) 대개 false - 새 주소라 브라우저가 자동 재생을 허락하지 않은 곳도.
+ */
+export async function soundAllowed(): Promise<boolean> {
+  const ctx = audioContext();
+  if (!ctx) return false;
+  if (ctx.state === 'running') return true;
+  try {
+    await Promise.race([ctx.resume(), new Promise((r) => setTimeout(r, 300))]);
+  } catch {
+    /* 막혔다 */
+  }
+  return (ctx.state as AudioContextState) === 'running'; // resume 뒤에 바뀐다(위에서 좁힌 타입이 아니다)
 }
 
 /** 음 하나 (at: ctx 시각, len: 초) */

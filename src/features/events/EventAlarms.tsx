@@ -3,12 +3,12 @@
 // - 기기 사본에서 본다(V4는 오늘 일정 문서를 따로 구독했다): 알림 시각이 지났고 1시간 안, 끝내지 않았고 아직 울리지 않은 일정(domain/eventAlarm dueAlarms).
 // - 울리면 그 일정에 alarmDone을 적는다(문서 하나의 그 칸만 - V4는 하루 문서를 트랜잭션으로 다시 썼다). 다른 기기는 사본으로 받아 건너뛴다.
 //   뒤에서 맞추는 쓰기라 안내·되돌리기 없이(writeOps) - 못 적으면 콘솔에만(V4 그대로).
-// - 같은 일정은 이 탭에서 한 번만 울린다. 탭이 화면에 보이지 않고 알림을 허용해 두었으면 OS 알림도.
+// - 같은 일정은 이 탭에서 한 번만 울린다. 알림을 허용해 두었고 탭이 화면에 보이지 않거나 소리가 막혔으면 OS 알림도(10-14 - 소리 없음 보고).
 //   허용을 묻는 창은 여기서 띄우지 않는다 - 환경설정 '알림' 탭의 '이 기기에서 받기'(서버 푸시 P8-2)에서 묻는다.
 // - 서버 푸시(P8-2): 앱을 보고 있으면 서비스 워커가 'sp5-event-alarm'으로 넘겨 준다 - 같은 창·같은 소리(이 탭에서 한 번만).
 //   앱이 뜰 때 이 기기 알림 토큰을 맞춘다(data/push refreshPushToken).
 import { useEffect, useRef, useState } from 'react';
-import { wakeAudioOnGesture } from '../../app/sound';
+import { soundAllowed, wakeAudioOnGesture } from '../../app/sound';
 import { dueAlarms } from '../../domain/eventAlarm';
 import { writeOp, writeOps } from '../../data/repo';
 import { useDocs } from '../../data/select';
@@ -21,11 +21,27 @@ import { itemPath } from './eventOps';
 export const ALARM_CHECK_MS = 20_000;
 export const ALARM_FIRST_CHECK_MS = 3_000;
 
-function osNotify(alarms: RingingAlarm[]) {
-  if (typeof document === 'undefined' || !document.hidden) return;
+/**
+ * OS 알림 - 탭이 보이지 않거나 앱이 소리를 낼 수 없을 때(이 탭을 아직 누르지 않음). OS 알림은 기기 알림 소리가 난다.
+ * 서비스 워커로 띄운다(안드로이드 크롬은 new Notification을 막는다 - 누르면 sw.js notificationclick). tag는 서버 푸시와 같다(겹치면 하나로).
+ */
+async function osNotify(alarms: RingingAlarm[], soundBlocked: boolean) {
+  if (typeof document === 'undefined' || (!document.hidden && !soundBlocked)) return;
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  const reg = await navigator.serviceWorker?.getRegistration?.().catch(() => undefined);
   for (const a of alarms) {
     try {
+      if (reg) {
+        await reg.showNotification('⏰ 일정 알림', {
+          body: a.text,
+          tag: `sp5-alarm-${a.id}`,
+          requireInteraction: true,
+          icon: `${reg.scope}icon-192.png`,
+          badge: `${reg.scope}icon-192.png`,
+          data: { url: reg.scope },
+        });
+        continue;
+      }
       const n = new Notification('⏰ 일정 알림', { body: a.text, tag: `sp5-alarm-${a.id}` });
       n.onclick = () => {
         window.focus();
@@ -73,7 +89,7 @@ export default function EventAlarms() {
         const more = added.filter((a) => !prev.some((p) => p.id === a.id));
         return more.length ? [...prev, ...more] : prev;
       });
-      osNotify(added);
+      void soundAllowed().then((ok) => osNotify(added, !ok));
     };
     // 서버 푸시를 서비스 워커가 넘겨 준다 (앱을 보고 있는 창 - public/sw.js 'sp5-event-alarm')
     const onMessage = (e: MessageEvent) => {

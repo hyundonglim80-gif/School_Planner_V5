@@ -88,6 +88,35 @@ try {
   r.check(await waitFor(async () => (await getDoc(doc(em.db, 'spaces', sid, 'items', ITEM))).data()?.alarmDone === true, 8000), "그 일정에 alarmDone (다른 기기의 앱 안 알림은 건너뛴다)");
   await page.locator(sel('alarm-dismiss')).click({ force: true });
 
+  // 10-14 사용자 보고 '알림은 화면으로 나오지만 소리가 없다' - 새로 연 창(아직 누르지 않음)은 브라우저가 소리를 막는다 → OS 알림으로 소리
+  r.section('소리가 막힌 창(새로 열고 아직 누르지 않음) = OS 알림도 띄운다');
+  await page.reload();
+  await page.locator('[data-session=signed-in]').waitFor({ timeout: 15000 });
+  await page.waitForTimeout(1500);
+  const blocked = await page.evaluate(async () => {
+    const c = new AudioContext();
+    await Promise.race([c.resume(), new Promise((res) => setTimeout(res, 300))]);
+    const s = c.state;
+    await c.close();
+    return s !== 'running';
+  });
+  await cdp.send('ServiceWorker.deliverPushMessage', {
+    origin,
+    registrationId: reg.registrationId,
+    data: JSON.stringify({ data: { type: 'event-alarm', id: ITEM, sid, content: '소리점검 일정', time: `${TODAY}T${TIME}` } }),
+  });
+  r.check(await waitFor(popup, 10000), '알림 창이 뜬다');
+  const osShown = () =>
+    page.evaluate(async (tag) => (await (await navigator.serviceWorker.getRegistration())?.getNotifications({ tag }))?.length ?? 0, `sp5-alarm-${ITEM}`);
+  if (blocked) {
+    r.check(await waitFor(async () => (await osShown()) > 0, 8000), '소리가 막혔으면 OS 알림(서비스 워커 showNotification, 같은 tag)도 뜬다');
+  } else {
+    await page.waitForTimeout(1500);
+    r.check((await osShown()) === 0, '소리가 나면 OS 알림은 띄우지 않는다 (점검 크롬은 같은 사이트를 이미 눌러 소리가 난다 - 막힌 갈래는 EventAlarms.test)');
+  }
+  await page.locator(sel('alarm-dismiss')).click({ force: true });
+  await page.evaluate(async (tag) => (await (await navigator.serviceWorker.getRegistration())?.getNotifications({ tag }))?.forEach((n) => n.close()), `sp5-alarm-${ITEM}`);
+
   r.section('로그아웃하면 이 기기 토큰을 지운다');
   await page.locator(sel('account')).click();
   await page.locator(sel('logout')).click();

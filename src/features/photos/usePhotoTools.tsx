@@ -6,7 +6,7 @@ import { showErrorToast, showToast } from '../../app/toast';
 import { openManagedPhotoFolder } from '../../data/google/studentPhotos';
 import { diagnosePhotos } from '../../domain/photoDiagnosis';
 import { classFolderName, photoClassKey } from '../../domain/studentPhotoNames';
-import { closeImageViewer, openImageViewer } from '../../ui/imageViewer';
+import { closeImageViewer, openImageViewer } from '../../ui/imageViewerStore';
 import { formatBytes } from '../../ui/imageShrink';
 import { pickManyPhotosFromDrive, pickStudentPhotoFromDrive } from './drivePhotoPick';
 import PhotoReplaceButtons from './PhotoReplaceButtons';

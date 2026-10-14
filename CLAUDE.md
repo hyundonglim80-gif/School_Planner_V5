@@ -218,7 +218,7 @@
   `layoutPrefs.ts`(창 위치·글자 크기·줄 폭 `sp5-layout`) · `prefs.ts`(어느 설정을 어느 문서에 - `DEVICE_PREFS`·`COMMON_SETTINGS`·`useCommonSettings`·`usePrefsSync`·`stopPrefsSync`,
   값은 nav·layoutPrefs·keys store 그대로, 사본 주인 `sp5-settings-owner`) · `install.ts`(sw 등록·설치 이벤트 `installApp`·`useInstall`) · `theme.ts`(화면 밝기 `sp5_theme` - `index.html` 스크립트와 같은 규칙) · `todayScroll.ts` · `useGlobalGestures.ts` · `lazyWithReload.ts` ·
   `toast.ts`(`showToast`·`showErrorToast`·`failWithToast`·`ShownError`·`showToastAfterReload` - 안내 `[data-toast]`). 다크 색표 `src/dark.css` = `node tools/gen-dark-css.mjs`.
-  Shell에 하나씩: '구글 로그인이 필요합니다' `features/auth/GoogleLoginPrompt.tsx` · 사진 크게 보기 `ui/ImageViewer.tsx`(`openImageViewer` - `ui/imageViewer.ts`, `[data-image-viewer|…-title|…-next|…-prev|…-close|…-original]`, ESC는 사진 창만) ·
+  Shell에 하나씩: '구글 로그인이 필요합니다' `features/auth/GoogleLoginPrompt.tsx` · 사진 크게 보기 `ui/ImageViewer.tsx`(`openImageViewer` - `ui/imageViewerStore.ts`, `[data-image-viewer|…-title|…-next|…-prev|…-close|…-original]`, ESC는 사진 창만) ·
   왼쪽 📋 클립보드 칸 `features/clipboard/`(`capture.ts` 열림·폭·모으기 · `paste.ts` 글 쓰던 칸에 · `ClipboardColumn.tsx`).
 - **공통 부품** `src/ui/`: `ModalShell.tsx`(창 껍데기, ✕ `[data-close]`) · `PopupFrame.tsx`(오른쪽 칸/배너/가운데 `[data-popup-frame]`) · `SidePanelFrame.tsx`(쓰는 칸 `[data-panel-frame]`) ·
   `sideColumn.ts`(오른쪽 줄·탭 차례 `useSideSlot`·`useDocked`) · `SideTabs.tsx`(`[data-side-tab]`·`[data-side-tab-close]`) · `useSaveKey.ts`(Ctrl+S 받기) · `ColumnResizer.tsx` ·

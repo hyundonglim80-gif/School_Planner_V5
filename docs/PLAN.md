@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P9-2 새 학년도 넘기기** - P9-1 끝(2026-10-14 - 설명서 V5). 👤 운영 규칙 배포(V4 그룹 가져오기 갈래 - CLAUDE.md 지금 상태). 👤 운영 규칙 배포(V4 그룹 가져오기 갈래 - CLAUDE.md 지금 상태).
+**P9-2 새 학년도 넘기기** - P9-1 끝(2026-10-14 - 설명서 V5). 운영 규칙·함수 v5는 10-14 PC에서 배포함.
 
 ---
 
@@ -217,6 +217,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-2 | P5-2 세션 끝 정리 | 단위 1193 · inspect-month-year 60 · 같은 브랜치(합친 뒤 main에서 다시) → PR → Claude가 합침 |
 | 2026-10-09 | 클라우드(claude.ai/code) | P5-4 | P5-4 세션 끝 정리 (P5 단계 끝) | 단위 1255 · inspect-search-trash 43 · P5 점검 모두(week·month-year·move-dday·search-trash) + memo·notes·events·shell 통과 · 컨테이너가 다시 켜져 에뮬레이터·개발 서버를 켜고 seed · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-14 | 클라우드(claude.ai/code) | P9-1 | P9-1 세션 끝 정리 | 단위 2291(설명서 31) · inspect-manual 282(68주제 + 설명서 창) · shell 통과 · 새 컨테이너(V4 clone·에뮬레이터·seed) · 에뮬레이터·개발 서버가 백그라운드 시간 한도로 두 번 꺼져 다시 켜고 seed · 작업 프로세스가 다시 켜진 뒤 사용자 '다시 시도'로 이어서 · 같은 브랜치 → PR → Claude가 합침 |
+| 2026-10-14 | PC | (보고) | 일정 알림 소리 없음 고침 | 소리가 막힌 탭(아직 누르지 않음)이면 OS 알림(서비스 워커)도 띄움 · 함수 v5SendDueAlarms 건너뛴 까닭 로그 · `ui/imageViewer.ts`→`imageViewerStore.ts`(Windows 대소문자) · 단위 2293 · inspect-push 통과 · 함수 v5 다시 배포 |
 | 2026-10-13 | 클라우드(claude.ai/code) | P8-4 | P8-4 세션 끝 정리 (P8 단계 끝) | 단위 2229 · 자료 층 30(group.emu 3) · check-rules V4 35 + V5 76 · inspect-import-groups 33(세 계정) · P8 점검 모두 + import-labels·items·class 통과 · ■1은 10-10, ■2·■3은 새 컨테이너(V4 clone·에뮬레이터·seed) · 규칙에 V4 그룹 가져오기 갈래 - 👤 운영 배포 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-10 | 클라우드(claude.ai/code) | P8-3 | P8-3 세션 끝 정리 | 단위 2204 · inspect-backup 42 · keep 29 · sheets 31(시트 API 흉내) · offline 12(빌드 + preview - 끊고 다시 열기·공유받기·새 판 띠) · pwa(개발·빌드)·gcal·import-labels·attach 통과 · 환경설정 '가져오기' 탭·캘린더 창 → 백업 창 탭 · 👤 서비스 워커·매니페스트가 바뀌었다(설치한 앱은 지우고 다시 설치) |
 | 2026-10-10 | 클라우드(claude.ai/code) | P8-2 | P8-2 세션 끝 정리 | 단위 2098 · 함수 순수 셈 7(`npm run test:functions` - CI에도) · inspect-push 13(CDP 푸시) · events·settings 통과 · 함수 코드를 불러 세 함수 확인 - 함수 에뮬레이터는 컨테이너 프록시가 트리거 등록을 막아 PC에서 · 👤 함수 배포·휴대폰 확인 · 같은 브랜치 → PR → Claude가 합침 |

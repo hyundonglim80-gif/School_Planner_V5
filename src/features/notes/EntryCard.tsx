@@ -13,7 +13,7 @@ import { fileIcon, isImageAttachment } from '../../domain/attachments';
 import { labelColor } from '../../domain/labels';
 import { attachmentImageSrc } from '../../data/google/drive';
 import FormattedText from '../../ui/FormattedText';
-import { openImageViewer } from '../../ui/imageViewer';
+import { openImageViewer } from '../../ui/imageViewerStore';
 import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import type { ItemDoc } from '../events/eventOps';
 import { nounOf } from './noteOps';

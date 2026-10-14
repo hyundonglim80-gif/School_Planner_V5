@@ -1,10 +1,10 @@
-// 사진 크게 보기 (V4 components/ImageViewerModal.tsx). Shell에 하나 - 상태는 ui/imageViewer.
+// 사진 크게 보기 (V4 components/ImageViewerModal.tsx). Shell에 하나 - 상태는 ui/imageViewerStore(파일 이름이 대소문자만 다르면 Windows에서 같은 파일이 된다).
 //   - 여러 장이면 ‹ › · 휴대폰은 옆으로 밀어 넘긴다, 위에 (2/5).
 //   - '원본' = 새 탭에서 원래 크기. ✕·바깥 누르기·ESC로 닫는다 - ESC는 이 창만(뒤의 쓰는 칸은 그대로).
 //   - 그림은 화면 가운데에 띄운다(창 위치 설정과 상관없이 - 오른쪽 칸에 넣으면 작아진다).
 import { useEffect, useRef } from 'react';
 import { useModalLayer } from '../app/history';
-import { closeImageViewer, stepImageViewer, useImageViewer } from './imageViewer';
+import { closeImageViewer, stepImageViewer, useImageViewer } from './imageViewerStore';
 import { useBackdropClose } from './useBackdropClose';
 import { useBodyScrollLock } from './useBodyScrollLock';
 import { useVisualViewport } from './useVisualViewport';

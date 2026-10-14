@@ -4,7 +4,7 @@ import { act, fireEvent, render } from '@testing-library/react';
 import { handleAppKeyDown } from '../app/keys';
 import { useWindows } from '../app/windows';
 import ImageViewer from './ImageViewer';
-import { closeImageViewer, openImageViewer, useImageViewer } from './imageViewer';
+import { closeImageViewer, openImageViewer, useImageViewer } from './imageViewerStore';
 
 const q = (s: string) => document.querySelector<HTMLElement>(s);
 const IMGS = [

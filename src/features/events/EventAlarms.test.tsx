@@ -92,6 +92,46 @@ describe('앱 안 일정 알림', () => {
     fireEvent.click(q('[data-alarm-dismiss]')!);
     expect(q('[data-alarm-popup]')).toBeNull();
   });
+
+  // 10-14 사용자 보고 '알림은 화면으로 나오지만 소리가 없다' - 이 탭을 아직 누르지 않아 소리가 막히면 OS 알림(기기 소리)도
+  describe('OS 알림 (알림 허용)', () => {
+    const shown = vi.fn();
+    beforeEach(() => {
+      shown.mockClear();
+      vi.stubGlobal('Notification', { permission: 'granted' });
+      Object.defineProperty(navigator, 'serviceWorker', {
+        configurable: true,
+        value: { getRegistration: async () => ({ scope: '/', showNotification: shown }), addEventListener: () => {}, removeEventListener: () => {} },
+      });
+    });
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      Reflect.deleteProperty(navigator, 'serviceWorker');
+    });
+    const ring = async () => {
+      seed({ a: { ...base, kind: 'event', date: '2026-10-08', text: '하나', time: '14:30' } });
+      render(<EventAlarms />);
+      await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+      await act(async () => vi.advanceTimersByTime(400)); // soundAllowed가 깨워 보는 0.3초
+    };
+
+    it('소리가 막혔으면(소리 장치 없음·깨우지 못함) 화면을 보고 있어도 서비스 워커로 OS 알림 - 같은 tag', async () => {
+      await ring();
+      expect(q('[data-alarm-popup]')).not.toBeNull();
+      expect(shown).toHaveBeenCalledWith('⏰ 일정 알림', expect.objectContaining({ body: '하나', tag: 'sp5-alarm-a' }));
+    });
+
+    it('소리를 낼 수 있고 화면을 보고 있으면 OS 알림은 띄우지 않는다', async () => {
+      // 소리 장치가 돈다 - 음을 만드는 부름은 무엇이든 받는 빈 것
+      const any: object = new Proxy(() => any, { get: (_, k) => (k === 'state' ? 'running' : k === 'currentTime' ? 0 : any) });
+      vi.stubGlobal('AudioContext', function AudioContext() {
+        return any;
+      });
+      await ring();
+      expect(q('[data-alarm-popup]')).not.toBeNull();
+      expect(shown).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe('＋ 새로 → 새 일정', () => {

@@ -13,7 +13,7 @@ import { lessonsOn } from '../../domain/lessons';
 import { attachmentImageSrc } from '../../data/google/drive';
 import { useDocs, useMirrorStatus } from '../../data/select';
 import FormattedText from '../../ui/FormattedText';
-import { openImageViewer } from '../../ui/imageViewer';
+import { openImageViewer } from '../../ui/imageViewerStore';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import type { ItemDoc } from '../events/eventOps';
 import { openEventPanel } from '../events/open';

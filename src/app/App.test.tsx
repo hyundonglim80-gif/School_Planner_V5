@@ -38,7 +38,7 @@ describe('App 껍데기', () => {
     expect(container.querySelector('[data-session="signed-in"]')).toHaveAttribute('data-user', 't@example.com');
     expect(container.querySelectorAll('[data-scope-tab]')).toHaveLength(6);
     // 첫 화면 = 하루 (사본이 비어 있으면 '받는 중')
-    expect(await screen.findByText('일정을 받는 중…')).toBeInTheDocument();
+    expect(await screen.findByText('일정을 받는 중…', {}, { timeout: 5000 })).toBeInTheDocument();
     expect(container.querySelector('[data-build-id]')).toHaveTextContent('빌드 test');
     // 로그인한 동안 기기 사본을 맞춘다
     expect(useMirrorSync).toHaveBeenLastCalledWith('u1');

@@ -28,7 +28,7 @@ import { useDocs, useItemsOn, useLabelTree, useMemos, useMirrorStatus } from '..
 import AutoTextarea from '../../ui/AutoTextarea';
 import { listKeyOf } from '../../ui/listKeys';
 import DraftOffer from '../../ui/DraftOffer';
-import { openImageViewer } from '../../ui/imageViewer';
+import { openImageViewer } from '../../ui/imageViewerStore';
 import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
