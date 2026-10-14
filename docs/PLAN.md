@@ -1120,9 +1120,11 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   → `data/push.ts`(V4 lib/push 그대로 - `sp5-push`·`sp5-push-token`, firebase/messaging은 쓸 때만 불러온다, 에뮬레이터는 가짜 토큰) · `settings/NotifyTab.tsx`(`[data-push-alarm|push-state|push-on|push-off]`) ·
   `EventAlarms`(앱이 뜰 때 `refreshPushToken` · 서비스 워커 'sp5-event-alarm' → 같은 알림 창, 그 일정에 alarmDone) · `sw.js` push·notificationclick · 로그아웃 때 토큰 문서 지움.
   점검 `tools/inspect-push.mjs` 13(CDP로 서비스 워커에 푸시를 넣는다) · events·settings 통과(events는 날이 바뀌어 이월 라벨 일정에 carrying을 미리 심음).
-- [ ] ■3 👤 배포를 묻고 `npx firebase deploy --only functions:v5 --project schoolplannerv3` → `npx firebase functions:list`로 V4 함수(default)가 그대로인지 본다. 👤 휴대폰 확인.
+- [x] ■3 👤 배포를 묻고 `npx firebase deploy --only functions:v5 --project schoolplannerv3` → `npx firebase functions:list`로 V4 함수(default)가 그대로인지 본다. 👤 휴대폰 확인.
   → (클라우드 - 함수 배포는 PC에서 묻고. CLAUDE.md 지금 상태에 부탁을 적었다) 순서: `npm --prefix functions ci` → (함수 에뮬레이터로 트리거 확인 `npx firebase emulators:start --only auth,firestore,functions`:
   일정에 ⏰을 걸면 `v5alarms/{id}`가 생기는지) → 배포 → functions:list에 V4 넷(alarmIndexUser·alarmIndexGroup·sendDueAlarms·cleanupAlarms) + V5 셋 → 휴대폰에서 '알림' 탭 받기 → 1~2분 뒤 알림.
+  → **10-14 PC에서 배포**: 테스트 7 · 함수 에뮬레이터에 셋 잡힘(`FUNCTIONS_DISCOVERY_TIMEOUT=60` - 기본 10초면 시간 초과) · functions:list에 V4 넷 + V5 셋, 셋 ACTIVE ·
+  v5SendDueAlarms 매분 돎(오류 없음). 같은 때 운영 규칙도 배포(check-rules V4 35·V5 76, live-rules 같음). 👤 휴대폰 확인만 남음.
 
 ### P8-3. 백업 · 가져오기 · 보내기 창·공유받기·오프라인 앱
 **시작 조건**: P8-2 끝.
