@@ -186,7 +186,7 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
                 })}
                 {students.length === 0 && <p className="text-center text-slate-400 py-6">이 반에 학생이 없습니다.</p>}
               </div>
-              <p className="text-slate-400">적지 않은 학생은 출석입니다. 교과 출결은 담임 출석부·기록 칸에 들어가지 않습니다 - 이 반 이 교시에만 남습니다.</p>
+              <p className="text-slate-400">적지 않은 학생은 출석입니다. 교과 출결은 담임 출석부·메모 칸에 들어가지 않습니다 - 이 반 이 교시에만 남습니다.</p>
             </>
           )}
         </div>

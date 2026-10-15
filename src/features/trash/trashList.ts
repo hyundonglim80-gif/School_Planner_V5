@@ -11,15 +11,15 @@ export type TrashTab = 'all' | 'event' | 'journal' | 'memo' | 'clip' | 'etc';
 export const TRASH_TABS: ReadonlyArray<{ key: TrashTab; label: string }> = [
   { key: 'all', label: '전체' },
   { key: 'event', label: '일정' },
-  { key: 'journal', label: '기록' },
   { key: 'memo', label: '메모' },
   { key: 'clip', label: '클립보드' },
   { key: 'etc', label: '기타' },
 ];
 
-export const KIND_LABEL: Record<TrashKind, string> = { event: '일정', journal: '기록', memo: '메모', label: '라벨', timetable: '시간표', progress: '진도', class: '학급', seating: '자리표', evaluation: '조사표', dday: 'D-Day', clip: '클립보드' };
+export const KIND_LABEL: Record<TrashKind, string> = { event: '일정', journal: '메모', memo: '메모', label: '라벨', timetable: '시간표', progress: '진도', class: '학급', seating: '자리표', evaluation: '조사표', dday: 'D-Day', clip: '클립보드' };
 
-export const tabOf = (kind: TrashKind): Exclude<TrashTab, 'all'> => (kind === 'event' || kind === 'journal' || kind === 'memo' || kind === 'clip' ? kind : 'etc');
+// 날짜를 단 메모(journal)도 '메모' 탭 (P10-4 - 메모 하나)
+export const tabOf = (kind: TrashKind): Exclude<TrashTab, 'all' | 'journal'> => (kind === 'journal' ? 'memo' : kind === 'event' || kind === 'memo' || kind === 'clip' ? kind : 'etc');
 
 export interface TrashEntry {
   /** 종류:id (휴지통 안에서 하나) */

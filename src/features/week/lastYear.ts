@@ -94,7 +94,7 @@ export function lastYearImportPlan(sid: string, items: Docs<'items'>, picks: rea
 
 /** 안내 글 (V4 importedMessage) */
 export function importedMessage(p: Pick<ImportPlan, 'events' | 'notes' | 'skipped'>): string {
-  const parts = [p.events ? `일정 ${p.events}개` : '', p.notes ? `기록 ${p.notes}개` : ''].filter(Boolean).join(' · ');
+  const parts = [p.events ? `일정 ${p.events}개` : '', p.notes ? `메모 ${p.notes}개` : ''].filter(Boolean).join(' · ');
   const head = parts ? `📥 작년 ${parts}를 올해로 가져왔습니다.` : '가져올 것이 없습니다.';
   return p.skipped > 0 ? `${head} 그날 같은 글이 있어 ${p.skipped}개는 건너뛰었습니다.` : head;
 }

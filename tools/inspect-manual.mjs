@@ -655,7 +655,7 @@ try {
   await topic('trash', async () => {
     await q(sel('header-trash')).click();
     r.check(await has(sel('trash-window')), '🗑️ → 휴지통');
-    r.check((await count(sel('trash-tab'))) === 6, '탭 여섯 (전체·일정·기록·메모·클립보드·기타)');
+    r.check((await count(sel('trash-tab'))) === 5 && (await count(sel('trash-tab', 'journal'))) === 0, '탭 다섯 (전체·일정·메모·클립보드·기타 - 기록 탭은 메모에 합침)');
     r.check((await count(sel('trash-settings'))) === 1, '⚙️ 자동 비우기');
   });
 

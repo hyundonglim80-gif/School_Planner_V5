@@ -1,4 +1,4 @@
-// 🏷️ 라벨 관리 창 (V4 components/LabelModal.tsx, 설명서 'labels'). 탭 둘: 📅 일정 라벨 · 📝 메모·기록 라벨(한 목록 - 상위/하위 2단계).
+// 🏷️ 라벨 관리 창 (V4 components/LabelModal.tsx, 설명서 'labels'). 탭 둘: 📅 일정 라벨 · 📝 메모 라벨(한 목록 - 상위/하위 2단계).
 //
 // - 새 라벨 **추가**는 누르는 즉시 저장한다. 이름·색·순서·속성·상위 바꾸기와 지우기는 💾 저장(또는 Ctrl+S)에서 한꺼번에 (V4 그대로).
 // - 창은 고친 것만 들고(덧칠) 나머지는 기기 사본을 그대로 보인다 - 열어 둔 동안 다른 기기에서 고친 것도 들어온다.
@@ -85,7 +85,7 @@ function moveSibling<T extends { id: string }>(list: T[], id: string, dir: 'up' 
   return next;
 }
 
-const KIND_NOUN: Record<ItemKind, string> = { event: '일정', note: '메모·기록' };
+const KIND_NOUN: Record<ItemKind, string> = { event: '일정', note: '메모' };
 
 export default function LabelsWindow({ params, close, raise }: WindowProps<LabelsWindowParams | undefined>) {
   // 칸을 연 순간의 공간 (V4 규칙)
@@ -260,7 +260,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
             data-label-recover
             onClick={() => void recover()}
             disabled={!canScan}
-            title="지웠지만 아직 일정·기록·메모에 붙어 있는 라벨을 찾아 되살립니다"
+            title="지웠지만 아직 일정·메모에 붙어 있는 라벨을 찾아 되살립니다"
             className="mr-auto px-3 py-2 bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 border border-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
           >
             🔍 삭제된 라벨 복구
@@ -281,7 +281,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
       }
     >
       <div data-labels-window>
-        {/* 탭 (일정, 메모·기록) */}
+        {/* 탭 (일정, 메모) */}
         <div className="flex border-b border-slate-200 bg-slate-100/70 p-1.5 gap-1 sticky top-0 z-10">
           {(['event', 'note'] as const).map((k) => (
             <button
@@ -317,10 +317,10 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
             </div>
           ) : (
             <div className="bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded-r-xl text-xs text-emerald-900 leading-relaxed">
-              <strong>💡 메모·기록 라벨</strong>
+              <strong>💡 메모 라벨</strong>
               <p className="mt-0.5 text-emerald-800">
-                메모와 기록에 함께 쓰는 라벨입니다. 쓰는 칸과 메모 화면·하루 화면의 라벨로 보기가 이 목록을 봅니다. 순서를 위/아래로, 상위 라벨 밑에 둘 수 있습니다(2단계까지).
-                맨 위 라벨이 새 메모·기록의 기본 라벨입니다.
+                날짜를 단 메모와 날짜 없는 메모가 함께 쓰는 라벨입니다. 쓰는 칸과 메모 화면·하루 화면의 라벨로 보기가 이 목록을 봅니다. 순서를 위/아래로, 상위 라벨 밑에 둘 수 있습니다(2단계까지).
+                맨 위 라벨이 새 메모의 기본 라벨입니다.
               </p>
             </div>
           )}
@@ -425,7 +425,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                           type="text"
                           data-label-name
                           value={d.name}
-                          aria-label="메모·기록 라벨 이름"
+                          aria-label="메모 라벨 이름"
                           onChange={(e) => edit(d.id, { name: e.target.value })}
                           className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-bold text-slate-800 w-28 focus:outline-none focus:border-emerald-500"
                         />
@@ -456,11 +456,11 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                             title={row.hasChildren ? '하위 라벨이 붙은 항목도 셉니다' : undefined}
                             className={`text-2xs font-bold ${usageTotal(u) === 0 ? 'text-rose-500' : 'text-slate-500'}`}
                           >
-                            메모 {u?.memo ?? 0} · 기록 {u?.record ?? 0} · 휴지통 {u?.trash ?? 0}
+                            메모 {(u?.memo ?? 0) + (u?.record ?? 0)} · 휴지통 {u?.trash ?? 0}
                           </span>
                         )}
                       </div>
-                      <DeleteButton noun="메모·기록" name={d.name} onDelete={() => removeRow(d.id)} />
+                      <DeleteButton noun="메모" name={d.name} onDelete={() => removeRow(d.id)} />
                     </div>
                   );
                 })}
@@ -473,7 +473,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                   data-label-prune
                   disabled={emptyCount === 0}
                   onClick={() => setPruneList(emptyLabelsOf(noteRows, usage))}
-                  title={counted ? '메모·기록·휴지통 어디에도 붙지 않은 라벨' : '항목을 다 받은 뒤에 셉니다'}
+                  title={counted ? '메모·휴지통 어디에도 붙지 않은 라벨' : '항목을 다 받은 뒤에 셉니다'}
                   className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 disabled:opacity-50 border border-rose-200 rounded-lg font-bold text-rose-700 cursor-pointer"
                 >
                   🧹 빈 라벨 정리 ({emptyCount}개)
@@ -483,7 +483,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
               {pruneList && (
                 <div data-label-prune-list className="border border-rose-200 bg-rose-50/50 rounded-xl p-3 space-y-2 text-xs">
                   <p className="text-slate-600">
-                    메모·기록·휴지통 어디에도 붙지 않은 라벨입니다. 남길 것은 체크를 빼세요. 하위가 있는 상위·맨 위(기본) 라벨은 처음부터 빼 두었습니다. 지운 라벨은
+                    메모·휴지통 어디에도 붙지 않은 라벨입니다. 남길 것은 체크를 빼세요. 하위가 있는 상위·맨 위(기본) 라벨은 처음부터 빼 두었습니다. 지운 라벨은
                     휴지통으로 가고, 저장하지 않은 고침도 함께 저장합니다.
                   </p>
                   <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -527,8 +527,8 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                   value={newNote.name}
                   onChange={(e) => setNewNote((f) => ({ ...f, name: e.target.value }))}
                   onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && void add('note')}
-                  placeholder="새 메모·기록 라벨 이름..."
-                  aria-label="새 메모·기록 라벨 이름"
+                  placeholder="새 메모 라벨 이름..."
+                  aria-label="새 메모 라벨 이름"
                   className="flex-1 min-w-0 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500"
                 />
                 <ColorPicker name="new-note" color={newNote.color} onChange={(color) => setNewNote((f) => ({ ...f, color }))} />
@@ -536,7 +536,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                   상위
                   <select
                     data-label-new-parent
-                    aria-label="새 메모·기록 라벨의 상위 라벨"
+                    aria-label="새 메모 라벨의 상위 라벨"
                     title="새 라벨을 어느 라벨 밑에 둘지 (없음이면 맨 위 단계)"
                     value={noteRows.some((r) => r.depth === 0 && r.id === newNote.parent) ? newNote.parent : ''}
                     onChange={(e) => setNewNote((f) => ({ ...f, parent: e.target.value }))}

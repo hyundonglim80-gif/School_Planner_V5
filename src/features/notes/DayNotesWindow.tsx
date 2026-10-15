@@ -45,13 +45,13 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
       onClose={close}
       raise={raise}
       width="lg"
-      title={`📝 ${shortDateLabel(date)} 기록 (${notes.length})`}
+      title={`📝 ${shortDateLabel(date)} 메모 (${notes.length})`}
       headerExtra={
         <button
           type="button"
           data-day-notes-add
           onClick={() => openNotePanel({ sid, date })}
-          title="이 날 기록 추가 (하루 화면과 같은 기록 칸)"
+          title="이 날의 메모 추가 (하루 화면과 같은 쓰는 칸)"
           className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
         >
           + 추가
@@ -66,7 +66,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
         {notes.length === 0 ? (
           cards.length > 0 ? null : (
           <p className="py-10 text-center text-xs text-slate-400" data-day-notes-empty>
-            이 날 기록이 없습니다.
+            이 날의 메모가 없습니다.
           </p>
           )
         ) : (

@@ -205,7 +205,7 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
                 {name}
               </option>
             ))}
-            <option value="journal">기록 (그날 기록 칸)</option>
+            <option value="journal">메모 칸 (그날 하루 화면)</option>
           </select>
         </div>
       </div>

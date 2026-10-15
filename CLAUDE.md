@@ -26,8 +26,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P10(사용 의견 27가지, 세션 다섯)** - `docs/PLAN.md` 6장 `### P10`. **P10-3 끝(10-15)**: 메모 하나 + 날짜 링크 여러 개 · 하루 '📝 메모' 칸(+ 메모 뺌·라벨 칩 접힘) · 메모 화면에 날짜 링크 메모도.
-- '이어서' = **P10-4**(■4부터). 부탁 없음.
+- **P10(사용 의견 27가지, 세션 다섯)** - `docs/PLAN.md` 6장 `### P10`. **P10-4 끝(10-15)**: 그날 메모 칸에 일정·수업·진도 차시에 이은 메모 · 진도 차시 링크 · 링크 창 일정·메모·수업 · '기록' 글자 → '메모'.
+- '이어서' = **P10-5**(■1부터 - P10 마지막). 부탁 없음.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -159,6 +159,8 @@
 - 기록·메모 → **'메모' 하나**. 쓰는 칸 머리 '📅 날짜' = **날짜 칩 여러 개**(+ 날짜 = 작은 달력, × = 그 날 빼기) - 이은 날마다 하루 '📝 메모' 칸에, 메모 화면에는 늘(날짜 없는 메모 → 날짜 링크 메모 최근 날부터).
 - 하루 메모 칸 + 추가 = 그날 링크 하나로 새 메모. 카드 🗑️ = 메모 지우기(모든 날에서). **일정은 날짜 링크 없음**(라벨 속성·기간/반복 묶음 때문).
 - 자료: `dates`는 둘 이상일 때만, `date` = 가장 이른 날(옛 기록 = 날짜 하나인 메모, 자료 옮기기 없음). '📅 10/6에서'(fromDate)는 적지도 보이지도 않는다.
+- **그날 메모 칸에 이은 메모도**(P10-4 사용자 의견 2f·6c - 계산): 그날 일정(기간·이월)·수업 교시·진도 차시에 이은 메모가 겹치지 않게, 카드에 📌·🏫·📘. 진도 차시 링크는 **진도 쪽 그 행에만**(그 차시를 하는 모든 수업 칸에 🔗 n).
+- 링크 창 탭 = 📌 일정 · 📝 메모 · 🏫 수업, 메모 카드 🔗 링크 추가(마우스를 올리면). 화면 글자 '기록'은 '메모'로(학생 기록·출결 기록 등 다른 뜻은 남김, 시트·백업 CSV·캘린더의 '기록'은 자료 모양이라 그대로).
 
 ### 라벨 상위/하위와 라벨로 보기
 - 메모·기록 라벨만 2단계 트리(일정 라벨은 뺀다). 메모·기록 라벨은 한 목록.
@@ -247,6 +249,8 @@
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) ·
   `entryTable.ts`(붙인 표 - V4 그대로: 붙여넣은 HTML 읽기·행/열·칸 서식) · `attachments.ts`(그림인가·파일 그림·크기·붙여넣은 이름·새 붙임) · `linkPreview.ts`(주소 → 카드) · `masonry.ts`(가장 짧은 열) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
   `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
+- **그날 메모 칸에 모이는 메모**(P10-4): 순수 `notes/dayNotes.ts`(`dayNoteSources` - 날짜 링크 → 일정 → 교시 → 진도, 겹치지 않게 · `noteFromLabel`) · `day/useDayNotes.ts`(하루 메모 칸·그날 메모 창이 함께) · 카드 `[data-entry-from=event:id|lesson:n|progress:n]`·`[data-entry-link-add]` ·
+  진도 창 행 `[data-progress-row-link|progress-row-links]`·진도 줄 `[data-progress-links|progress-link-add]` · `progressDraft.lessonsToSave`(이은 메모는 지금 문서의 그 행 `_from`에서).
 - **하루 화면** `src/features/day/`: `DayScreen.tsx`(맨 위 교사 유형 띠, 수업(`lessons/DayLessons` - P6-1)·일정 7:5 - 본문 폭 720px, 아래 기록 칸) · `DayJournal.tsx`(메모 칸 - `▼ 📝 메모 N [+ 추가] 📊 🏷️ … ⚙️`(P10-3), 그 날짜 링크가 있는 메모·즐겨찾기 먼저·본문 폭 2~4열, `[data-day-journal|journal-count|journal-add|journal-filter-toggle|journal-filter|journal-collapse|journal-empty|journal-waiting]`) ·
   `DayEvents.tsx`(일정 칸 - `▼ 📅 일정 N [+ 추가] … ⚙️`, 카드 PC 1열·휴대폰 2열, `[data-day-events|event-card|event-done|event-complete|event-chip|event-alarm|event-links|event-up|event-down|event-edit|event-delete|event-add|event-count]`).
 - **일정** `src/features/events/`(하루·주간·월간·년간이 함께 쓴다): `open.ts`(쓰는 칸 `event` = `{ sid, date, id? }`·`openEventPanel`·`useEditingEventIds`·`closeEventPanelsFor`) ·
@@ -344,7 +348,7 @@
   머리줄 📂 `SpaceSelect`(`[data-space-select=sid|space-list|space-option|space-manage]`) · 계정 칸 `[data-account-groups]` · 창 `group`(`features/groups/GroupsWindow` `[data-groups-window|group-row|group-*]`). 점검 `tools/inspect-share-groups.mjs`(27 - 두 계정).
   **V4 그룹 가져오기**(■2): 공간 `g_{V4 그룹 id}` - `spaces.ensureImportedGroup`(V4 주인·구성원 그대로 만들기 → 안 되면 V4 구성원으로 참여·빈 `people`은 V4 이름)·`openInvite`(그룹장 '🔑 초대 코드 만들기' `[data-group-make-code]`) ·
   창 칸 `features/groups/V4GroupsSection.tsx`(`[data-v4-groups|v4-group=V4 id|v4-group-state=new|imported|v4-group-import|v4-group-progress|v4-group-result|v4-groups-empty]`) · 결과 표 `features/import/ImportResult.tsx`(백업 탭과 함께) · 규칙 `isV4GroupMember`. 점검 `tools/inspect-import-groups.mjs`(33 - 세 계정, V4 그룹을 심고 끝에 지운다).
-- **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id) · `linkerList.ts`(범위·목록) · `actions.ts`(`saveLinks`·`removeLink`) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
+- **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id · `LinkKind` event·note(P10-4) · 진도 차시 `progress:{planId}:{행}` `progressEndOf`·`progressLinkOps`·`progressLinksByNote` - 진도 쪽에만) · `linkerList.ts`(범위·목록 - 메모는 범위 안 가장 늦은 날짜 링크) · `actions.ts`(`saveLinks`·`removeLink`·`saveProgressLinks`·`removeProgressLink`) · `useProgressLinks.ts`(메모 → 이은 차시, 카드 🔗 n에 더함) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
   `lastYear.ts`(순수 가져오기 셈)·`actions.ts`(`importLastYear`)·`prefs.ts`(`sp5-last-year`·단축키 'lastYear') · 셈 `domain/lastYearWeek.ts`·`domain/dayTone.ts`. 📝 n = 창 `dayNotes`(`notes/DayNotesWindow.tsx`, `notes/open.openDayNotes`). 점검 `tools/inspect-week.mjs`(44).

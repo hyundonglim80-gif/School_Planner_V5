@@ -26,7 +26,7 @@ function MirrorSection() {
     <Section
       id="mirror"
       title="이 기기 사본"
-      desc="일정·메모·기록·라벨을 이 기기에도 담아 두어 앱을 열면 곧바로 보이고, 인터넷이 끊겨도 볼 수 있습니다. 화면이 서버와 다르게 보이면 다시 받으세요(지워지는 것은 이 기기 사본뿐입니다)."
+      desc="일정·메모·라벨을 이 기기에도 담아 두어 앱을 열면 곧바로 보이고, 인터넷이 끊겨도 볼 수 있습니다. 화면이 서버와 다르게 보이면 다시 받으세요(지워지는 것은 이 기기 사본뿐입니다)."
     >
       <p data-mirror-state={persisted ?? 'none'} className="text-xs text-slate-500 mb-2">
         {persisted === 'memory'

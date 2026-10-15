@@ -216,7 +216,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
             </div>
 
             {!student || !cls ? (
-              <p className="text-center text-slate-400 py-6">학생을 고르세요. 기록·메모를 쓸 때 '@이름'이나 🧑‍🎓 학생 고르기로 학생을 붙여 두면 여기에 모입니다.</p>
+              <p className="text-center text-slate-400 py-6">학생을 고르세요. 메모를 쓸 때 '@이름'이나 🧑‍🎓 학생 고르기로 학생을 붙여 두면 여기에 모입니다.</p>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap p-3 bg-slate-50 border border-slate-200 rounded-xl" data-student-card={student.sid}>
@@ -234,7 +234,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                         </div>
                       )}
                       <div className="text-slate-500 mt-0.5" data-student-counts={`${noteCount}|${filledEvals}`}>
-                        기록 {noteCount}건 · 조사표 {filledEvals}건
+                        메모 {noteCount}건 · 조사표 {filledEvals}건
                         {tally &&
                           KINDS.map((k) => {
                             const n = REASONS.reduce((s, rs) => s + tally[k][rs], 0);
@@ -264,7 +264,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                 </div>
 
                 <div className="p-3 border border-amber-200 bg-amber-50/40 rounded-xl" data-student-observe>
-                  <div className="text-2xs font-black text-slate-400 mb-1">관찰 한 줄 → 오늘 기록 (개인)</div>
+                  <div className="text-2xs font-black text-slate-400 mb-1">관찰 한 줄 → 오늘 메모 (개인)</div>
                   <div className="flex items-center gap-1.5">
                     <input
                       type="text"
@@ -282,7 +282,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                       className="flex-1 min-w-0 px-2 py-1 border border-slate-200 rounded-lg bg-white"
                     />
                     <button type="button" data-student-observe-save onClick={() => void observe()} disabled={!obs.trim() || obsBusy} className="px-2.5 py-1 rounded-lg bg-slate-800 text-white font-bold disabled:opacity-40 cursor-pointer">
-                      기록에 남기기
+                      메모로 남기기
                     </button>
                   </div>
                   <ObservationPhrases onPick={(p) => void observe(p)} disabled={obsBusy} />
@@ -291,7 +291,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                 <div className="flex items-center gap-1" role="tablist" aria-label="누가기록 갈래">
                   {(
                     [
-                      ['timeline', `🗓️ 기록·출결 ${items.length}`],
+                      ['timeline', `🗓️ 메모·출결 ${items.length}`],
                       ['evals', `📊 조사표 ${studentEvals.length}`],
                     ] as const
                   ).map(([k, label]) => (
@@ -344,7 +344,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                     </ul>
                   )
                 ) : items.length === 0 ? (
-                  <p className="text-center text-slate-400 py-6">{cls.year}학년도에 이 학생이 붙은 기록과 출결 기록이 없습니다.</p>
+                  <p className="text-center text-slate-400 py-6">{cls.year}학년도에 이 학생이 붙은 메모와 출결 기록이 없습니다.</p>
                 ) : (
                   <ol className="relative border-l-2 border-slate-200 ml-2 space-y-2" data-student-timeline={items.length}>
                     {items.map((it) => (
@@ -362,7 +362,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                             <b className="text-slate-800">{it.date}</b>
                             <span className="text-slate-400">{shortDateLabel(it.date).replace(/^\d+\/\d+/, '')}</span>
                             <span data-timeline-kind={it.kind} className={`px-1.5 py-px rounded-md font-bold border ${tone(it.kind)}`}>
-                              {it.kind === 'memo' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : it.kind === 'journal' ? it.labels || '기록' : TIMELINE_LABEL[it.kind]}
+                              {it.kind === 'memo' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : it.kind === 'journal' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : TIMELINE_LABEL[it.kind]}
                             </span>
                             {it.shared && <span className="text-slate-400">👥</span>}
                           </div>

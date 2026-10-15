@@ -22,7 +22,7 @@ export async function addObservation(
   if (!line) return null;
   const at = newPath(sid, 'items');
   const form = { ...newNoteForm(date, tree), text: line, studentIds: [studentKey] };
-  const undo = await create(at, createNoteData(form, line, form.labelIds, orderAfter(dayNotes)), { fail: '기록에 남기지 못했습니다. 네트워크를 확인해 주세요.' });
-  recordUndo(sid, `📝 오늘 기록에 남겼습니다: ${line}`, undo, { what: '관찰 한 줄' });
+  const undo = await create(at, createNoteData(form, line, form.labelIds, orderAfter(dayNotes)), { fail: '메모로 남기지 못했습니다. 네트워크를 확인해 주세요.' });
+  recordUndo(sid, `📝 오늘 메모로 남겼습니다: ${line}`, undo, { what: '관찰 한 줄' });
   return at.id;
 }

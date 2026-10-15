@@ -51,7 +51,7 @@ export default function CollectSection() {
     <Section
       id="collect"
       title="📎 첨부 모으기"
-      desc="V4에서 가져온 기록·메모·일정·수업 칸의 첨부 가운데 예전 저장소(Firebase Storage)에 있는 것을 구글 드라이브 School_Planner 폴더로 복사하고, V5의 주소를 드라이브 것으로 바꿉니다. V4가 아직 같은 파일을 쓰므로 원본은 지우지 않습니다."
+      desc="V4에서 가져온 메모·일정·수업 칸의 첨부 가운데 예전 저장소(Firebase Storage)에 있는 것을 구글 드라이브 School_Planner 폴더로 복사하고, V5의 주소를 드라이브 것으로 바꿉니다. V4가 아직 같은 파일을 쓰므로 원본은 지우지 않습니다."
     >
       <div data-collect className="space-y-2">
         <p className="text-xs text-slate-600">

@@ -32,7 +32,7 @@ export default function ObservationPhrases({ onPick, disabled }: Props) {
             onClick={() => (editing ? undefined : onPick(p))}
             disabled={disabled && !editing}
             data-observation-phrase={p}
-            title={editing ? undefined : `'${p}'을(를) 오늘 기록에 남깁니다`}
+            title={editing ? undefined : `'${p}'을(를) 오늘 메모로 남깁니다`}
             className={`px-2 py-0.5 border text-2xs font-bold ${
               editing
                 ? 'rounded-l-full bg-white border-slate-200 text-slate-500 cursor-default'

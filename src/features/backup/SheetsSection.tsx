@@ -23,9 +23,9 @@ const PERIODS: ReadonlyArray<{ key: Period; name: string }> = [
 const KINDS: ReadonlyArray<{ key: keyof SheetsInclude; name: string }> = [
   { key: 'event', name: '📅 일정' },
   { key: 'class', name: '⏰ 수업' },
-  { key: 'journal', name: '📔 기록' },
+  { key: 'journal', name: '📝 날짜를 단 메모' },
   { key: 'evaluation', name: '📊 조사표' },
-  { key: 'memo', name: '📝 메모' },
+  { key: 'memo', name: '🗒️ 날짜 없는 메모' },
 ];
 const MAX_DAYS = 400;
 
@@ -92,7 +92,7 @@ export default function SheetsSection() {
     if (!chosen) return showToast('되읽을 것을 하나 이상 골라 주세요.');
     if (
       !window.confirm(
-        '구글 시트의 내용을 앱으로 되읽습니다.\n\n시트에서 고친 일정·기록·메모·수업·조사표 점수는 앱에서도 바뀌고, 시트에 새로 적은 줄은 새로 만들어집니다.\n시트에서 지운 줄은 앱에서 지우지 않습니다. 계속할까요?',
+        '구글 시트의 내용을 앱으로 되읽습니다.\n\n시트에서 고친 일정·메모·수업·조사표 점수는 앱에서도 바뀌고, 시트에 새로 적은 줄은 새로 만들어집니다.\n시트에서 지운 줄은 앱에서 지우지 않습니다. 계속할까요?',
       )
     )
       return;
@@ -117,7 +117,7 @@ export default function SheetsSection() {
     <Section
       id="sheets"
       title="📊 구글 시트"
-      desc="일정·수업·기록·조사표·메모를 내 드라이브의 V5 시트 파일에 표로 씁니다. 시트에서 고친 것은 '시트에서 되읽기'로 앱에 돌려놓습니다(V4 시트와는 다른 파일입니다)."
+      desc="일정·수업·메모·조사표를 내 드라이브의 V5 시트 파일에 표로 씁니다. 시트에서 고친 것은 '시트에서 되읽기'로 앱에 돌려놓습니다(V4 시트와는 다른 파일입니다)."
     >
       <div data-sheets className="space-y-2.5">
         <div className="flex flex-wrap gap-1.5">

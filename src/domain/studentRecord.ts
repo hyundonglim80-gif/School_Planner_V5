@@ -5,7 +5,7 @@ import { recordText, type AttendanceMark } from './attendance';
 import { EVAL_TYPE_LABEL, evalCellText, isEmptyCell, type EvalCell, type EvalType } from './evaluation';
 
 export type TimelineKind = 'journal' | 'memo' | 'attendance' | 'subjectAttendance';
-export const TIMELINE_LABEL: Record<TimelineKind, string> = { journal: '기록', memo: '메모', attendance: '출결', subjectAttendance: '교과 출결' };
+export const TIMELINE_LABEL: Record<TimelineKind, string> = { journal: '메모', memo: '메모', attendance: '출결', subjectAttendance: '교과 출결' };
 
 export interface TimelineItem {
   key: string;

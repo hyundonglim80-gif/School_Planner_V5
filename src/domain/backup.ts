@@ -13,8 +13,8 @@ export type BackupKind = 'events' | 'lessons' | 'records' | 'memos' | 'classes' 
 export const BACKUP_KINDS: ReadonlyArray<{ key: BackupKind; name: string; personalOnly?: true }> = [
   { key: 'events', name: '📅 일정' },
   { key: 'lessons', name: '⏰ 수업' },
-  { key: 'records', name: '📔 기록 (알림장 함께)' },
-  { key: 'memos', name: '📝 메모' },
+  { key: 'records', name: '📝 날짜를 단 메모 (알림장 함께)' },
+  { key: 'memos', name: '🗒️ 날짜 없는 메모' },
   { key: 'classes', name: '🧑‍🤝‍🧑 학급 (명렬표·출석부·자리표·모둠·암기)', personalOnly: true },
   { key: 'evaluations', name: '📊 조사표' },
 ];
@@ -127,7 +127,7 @@ export function countBackup(colls: BackupFile['colls']): Record<BackupKind, numb
 
 /** 한 줄 안내 ('일정 12 · 메모 3') */
 export function describeCounts(c: Record<BackupKind, number>): string {
-  const names: Record<BackupKind, string> = { events: '일정', lessons: '수업', records: '기록', memos: '메모', classes: '학급', evaluations: '조사표' };
+  const names: Record<BackupKind, string> = { events: '일정', lessons: '수업', records: '날짜 메모', memos: '날짜 없는 메모', classes: '학급', evaluations: '조사표' };
   return (Object.keys(names) as BackupKind[])
     .filter((k) => c[k] > 0)
     .map((k) => `${names[k]} ${c[k]}`)

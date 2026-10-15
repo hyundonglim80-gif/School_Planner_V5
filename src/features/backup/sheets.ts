@@ -132,7 +132,7 @@ export function exportToSheets(d: SheetsData, range: { start: string; end: strin
       .filter((e) => live(e) && e.date >= range.start && e.date <= range.end)
       .sort((a, b) => (a.date + String(a.period ?? 0)).localeCompare(b.date + String(b.period ?? 0)));
     if (include.event || include.class || include.journal || include.evaluation) {
-      onStep?.('일정·수업·기록·조사표를 모으는 중…');
+      onStep?.('일정·수업·메모·조사표를 모으는 중…');
       const events = byDate(d.items, 'event');
       const records = byDate(d.items, 'note');
       const dates = datesOf(range.start, range.end);

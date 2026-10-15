@@ -644,7 +644,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                 data-event-link-add
                 onClick={() => void addLink()}
                 disabled={saving}
-                title={isEditing ? '이 일정에 기록·메모·다른 일정을 잇습니다' : '먼저 저장하고 이 일정에 기록·메모·다른 일정을 잇습니다'}
+                title={isEditing ? '이 일정에 메모·다른 일정·수업을 잇습니다' : '먼저 저장하고 이 일정에 메모·다른 일정·수업을 잇습니다'}
                 className="px-3 py-1.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 🔗 링크 추가

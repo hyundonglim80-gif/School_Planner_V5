@@ -51,7 +51,7 @@ describe('되살리기', () => {
     expect(readBackupFile(JSON.parse(JSON.stringify(f)))?.colls.items?.e1).toBeTruthy();
     expect(readBackupFile({ version: 'x' })).toBeNull();
     expect(isV4Backup({ version: 'SP4-UNIFIED-BACKUP' })).toBe(true);
-    expect(describeCounts(countBackup(f.colls))).toBe('일정 3 · 메모 1 · 학급 1');
+    expect(describeCounts(countBackup(f.colls))).toBe('일정 3 · 날짜 없는 메모 1 · 학급 1');
   });
   it('없는 것·지운 것만 넣고 지금 있는 것은 둔다, 고른 갈래만 (설정은 없을 때만)', () => {
     const plan = planRestore(f, new Set(['events']), {

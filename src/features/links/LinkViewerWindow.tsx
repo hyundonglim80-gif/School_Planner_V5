@@ -157,7 +157,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
         {/* 글 없이 표만 있으면 글 칸은 비운다 */}
         {(t.text || tables.length === 0) && (
           <div data-link-text className={`p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs font-medium whitespace-pre-wrap break-words leading-relaxed min-h-[36px] ${t.done && kind !== 'event' ? 'line-through text-slate-400' : 'text-slate-800'}`}>
-            {/* 끝낸 일정은 줄긋기 대신 ✓ (P10-1) - 메모·기록의 완료는 그대로 */}
+            {/* 끝낸 일정은 줄긋기 대신 ✓ (P10-1) - 메모의 완료는 그대로 */}
             {t.done && kind === 'event' && <DoneMark />}
             {t.text ? <FormattedText text={t.text} /> : <span className="text-slate-400">(내용 없음)</span>}
           </div>

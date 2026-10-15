@@ -29,8 +29,8 @@ registerWindow<EventPanelParams>({
 });
 registerWindow<NotePanelParams>({
   id: NOTE_PANEL,
-  title: '메모·기록',
-  icon: '📔',
+  title: '메모',
+  icon: '📝',
   kind: 'panel',
   help: 'journal',
   sameAs: sameNotePanel,
@@ -141,10 +141,10 @@ registerWindow<StudentRecordParams | undefined>({
   load: () => import('../features/studentRecord/StudentRecordWindow'),
 });
 
-// 그날 기록 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n
+// 그날 메모 보기 (P5-1) - 주간·월간·년간 날짜 옆 📝 n
 registerWindow<DayNotesParams>({
   id: DAY_NOTES,
-  title: '그날 기록',
+  title: '그날 메모',
   icon: '📝',
   kind: 'side',
   help: 'badges',

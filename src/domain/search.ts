@@ -1,5 +1,5 @@
 // 검색 (V4 components/SearchModal.tsx의 셈). V5는 서버를 기간마다 읽지 않고 기기 사본에서 치는 대로 찾는다(원칙 6) - 그리는 것은 features/search.
-//   - 갈래: 메모·일정·기록·수업·비고(준비물)(P6-1 - 계산한 수업 칸, searchLessons - P10-2에 수업 메모와 비고를 한 칸으로)·조사표(P7-4 - 제목·교과, searchEvals)·첨부파일. '전체'는 모두.
+//   - 갈래: 메모(날짜를 단 메모 'journal'도 - P10-4)·일정·수업·비고(준비물)(P6-1 - 계산한 수업 칸, searchLessons - P10-2에 수업 메모와 비고를 한 칸으로)·조사표(P7-4 - 제목·교과, searchEvals)·첨부파일. '전체'는 모두.
 //   - 기간: 전체 기간(처음 값 - 날짜 제한 없음)·학년도·1학기·2학기·해당 월·해당 주(월~금)·해당 일·직접 지정 - 보고 있는 날 기준.
 //     메모는 날짜 대신 만든 날로 거른다(만든 날을 모르면 남긴다 - V4). 기간 일정은 범위가 걸치면.
 //   - 검색어가 비면(또는 '*') 고른 기간의 모든 것(V4). 글·붙인 표의 칸 글을 본다(대소문자 무시).
@@ -16,7 +16,6 @@ export type SearchScope = 'all' | 'year' | 'sem1' | 'sem2' | 'month' | 'week' | 
 export const SEARCH_KINDS: ReadonlyArray<{ id: SearchKind; label: string }> = [
   { id: 'memo', label: '메모' },
   { id: 'event', label: '일정' },
-  { id: 'journal', label: '기록' },
   { id: 'lesson', label: '수업' },
   { id: 'lessonNote', label: '비고(준비물)' },
   { id: 'evaluation', label: '조사표' },
@@ -137,7 +136,8 @@ export function searchItems<T extends Searchable>(items: readonly T[], q: Search
   const raw = q.term.trim().toLowerCase();
   const all = raw === '' || raw === '*';
   const match = (s: string | undefined) => all || (!!s && s.toLowerCase().includes(raw));
-  const want = (k: SearchKind) => q.kinds.size === 0 || q.kinds.has(k);
+  // 날짜를 단 메모(journal)는 '메모' 갈래로 고른다 (P10-4 - 갈래 하나)
+  const want = (k: SearchKind) => q.kinds.size === 0 || q.kinds.has(k) || (k === 'journal' && q.kinds.has('memo'));
   const out: SearchHit<T>[] = [];
   for (const it of items) {
     const kind = kindOf(it);
