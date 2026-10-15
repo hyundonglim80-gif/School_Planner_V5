@@ -1,9 +1,10 @@
 // 메모 화면 (V4 features/memo/MemoScreen.tsx·MemoCard.tsx). 모든 메모 - 날짜 없는 메모와 날짜 링크 메모(P10-3 - 옛 기록도).
 //
-// - 왼쪽: '+ 새 메모'와 '📁 라벨로 보기'(⭐ 즐겨찾기 → 라벨(트리 차례) → 전체 메모). 라벨은 여러 개 고르기(LabelFilterChips - 하루 기록 칸과 같은 부품).
+// - 왼쪽: '+ 새 메모'와 '🏷️ 라벨 관리'(제목을 누르면 라벨 관리 창 - P10-5, 아래 칩 = ⭐ 즐겨찾기 → 라벨(트리 차례) → 전체 메모). 라벨은 여러 개 고르기(LabelFilterChips - 하루 기록 칸과 같은 부품).
 //   고른 것은 이 기기에 기억한다(features/notes/labelFilter). 처음은 즐겨찾기 - 즐겨찾기한 메모가 하나도 없으면 화면을 열 때 전체로(빈 화면 대신, V4).
 //   옆 숫자는 진행 중 메모 수. ESC = 고른 라벨 모두 떼기(오른쪽 칸도 함께 닫힌다).
 // - 오른쪽: 진행 / 완료 두 구역(제목을 누르면 접고 편다). 카드는 가장 짧은 열부터 쌓는다(ui/Masonry - 칸 폭으로 2~4열, 휴대폰도 2열).
+//   머리줄 ☰ / ▦(메모 화면에서만)로 목록 보기 - 한 줄에 메모 하나(MemoListRow, P10-5 사용자 의견 5e).
 //   차례 = 즐겨찾기 → 날짜 없는 메모(▲▼로 옮긴다) → 날짜 링크 메모(가장 늦은 날이 최근인 것부터 - ▲▼ 없음, 카드에 📅 날짜 칩 = 그날 하루 화면).
 //   한 구역에 처음 PAGE장, '더 보기'로 더 (가져온 V4 기록이 많다). 카드는 하루 메모 칸과 같은 EntryCard(완료·★·▲▼·체크 줄·접기·✏️·🗑️).
 // - 완료 구역 '🗑️ 전체 비우기' = 지운 표시 여럿 한 묶음 + 안내의 되돌리기(V4는 묻고 휴지통으로).
@@ -22,6 +23,8 @@ import { useIsMobile } from '../../ui/useIsMobile';
 import type { ItemDoc } from '../events/eventOps';
 import { deleteNote, deleteNotes, labelNotes, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
 import EntryCard from '../notes/EntryCard';
+import MemoListRow from './MemoListRow';
+import { useMemoView } from './memoView';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useProgressNoteLinks } from '../links/useProgressLinks';
 import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterChips';
@@ -81,6 +84,8 @@ export default function MemoScreen() {
   const remembered = useLabelFilters((s) => s.memo);
   const loaded = status !== 'idle' && status !== 'loading';
   const isMobile = useIsMobile();
+  // 카드 / 목록 (머리줄 그림 단추 - 이 기기 기억)
+  const view = useMemoView((s) => s.view);
   const listRef = useRef<HTMLElement>(null);
   const columns = useColumnCount(listRef);
   const [activeOpen, setActiveOpen] = useState(true);
@@ -170,40 +175,63 @@ export default function MemoScreen() {
     const page = list.slice(0, limit[key]);
     return (
       <>
-        <Masonry
-          items={page}
-          getKey={(m) => m.id}
-          columns={columns}
-          gap={isMobile ? 8 : 16}
-          renderItem={(m) => {
-            const i = movable.indexOf(m);
-            const dates = noteDates(m);
-            const isCollapsed = cardCollapsed[m.id] ?? isLongEntry(m.text);
-            return (
-              <EntryCard
-                item={m}
-                labels={itemLabels(tree, m.labelIds)}
-                pathOf={pathOf}
-                dateText={createdText(m.createdAt)}
-                dates={dates}
-                onOpenDate={openDay}
-                editing={editing.has(m.id)}
-                collapsed={isCollapsed}
-                onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [m.id]: !isCollapsed }))}
-                onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => void moveNoteInList(sid, movable, i, -1).catch(quiet) : undefined}
-                onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => void moveNoteInList(sid, movable, i, 1).catch(quiet) : undefined}
-                onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}
-            onOpenLinks={() => sid && openLinkViewer({ sid, id: m.id })}
-            moreLinks={progressLinks.get(m.id)?.length}
-            onAddLink={() => sid && openLinker({ sid, id: m.id })}
-            onToggleDone={() => sid && void setNoteDone(sid, m, !m.done).catch(quiet)}
-            onToggleFavorite={() => sid && void setNoteFavorite(sid, m, !m.favorite).catch(quiet)}
-            onDelete={() => sid && void deleteNote(sid, m).catch(quiet)}
-                onToggleCheckLine={(idx, line) => (sid ? toggleNoteCheckLine(sid, m, idx, line) : Promise.resolve(false))}
-              />
-            );
-          }}
-        />
+        {view === 'list' ? (
+          <ul data-memo-list={key} className="flex flex-col gap-1.5">
+            {page.map((m) => {
+              const dates = noteDates(m);
+              return (
+                <MemoListRow
+                  key={m.id}
+                  item={m}
+                  labels={itemLabels(tree, m.labelIds)}
+                  pathOf={pathOf}
+                  dates={dates}
+                  dateText={createdText(m.createdAt)}
+                  editing={editing.has(m.id)}
+                  onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}
+                  onOpenDate={openDay}
+                  onToggleDone={() => sid && void setNoteDone(sid, m, !m.done).catch(quiet)}
+                  onToggleFavorite={() => sid && void setNoteFavorite(sid, m, !m.favorite).catch(quiet)}
+                />
+              );
+            })}
+          </ul>
+        ) : (
+          <Masonry
+            items={page}
+            getKey={(m) => m.id}
+            columns={columns}
+            gap={isMobile ? 8 : 16}
+            renderItem={(m) => {
+              const i = movable.indexOf(m);
+              const dates = noteDates(m);
+              const isCollapsed = cardCollapsed[m.id] ?? isLongEntry(m.text);
+              return (
+                <EntryCard
+                  item={m}
+                  labels={itemLabels(tree, m.labelIds)}
+                  pathOf={pathOf}
+                  dateText={createdText(m.createdAt)}
+                  dates={dates}
+                  onOpenDate={openDay}
+                  editing={editing.has(m.id)}
+                  collapsed={isCollapsed}
+                  onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [m.id]: !isCollapsed }))}
+                  onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => void moveNoteInList(sid, movable, i, -1).catch(quiet) : undefined}
+                  onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => void moveNoteInList(sid, movable, i, 1).catch(quiet) : undefined}
+                  onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}
+                  onOpenLinks={() => sid && openLinkViewer({ sid, id: m.id })}
+                  moreLinks={progressLinks.get(m.id)?.length}
+                  onAddLink={() => sid && openLinker({ sid, id: m.id })}
+                  onToggleDone={() => sid && void setNoteDone(sid, m, !m.done).catch(quiet)}
+                  onToggleFavorite={() => sid && void setNoteFavorite(sid, m, !m.favorite).catch(quiet)}
+                  onDelete={() => sid && void deleteNote(sid, m).catch(quiet)}
+                  onToggleCheckLine={(idx, line) => (sid ? toggleNoteCheckLine(sid, m, idx, line) : Promise.resolve(false))}
+                />
+              );
+            }}
+          />
+        )}
         {list.length > page.length && (
           <div className="flex justify-center mt-4">
             <button
@@ -266,22 +294,19 @@ export default function MemoScreen() {
             className="min-h-0 flex flex-col gap-2 sm:gap-1.5 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-1.5 sm:p-3 overflow-y-auto overscroll-contain"
           >
             <div className="sticky -top-1.5 sm:-top-3 z-10 -mt-1.5 sm:-mt-3 pt-1.5 sm:pt-3 bg-white flex items-center justify-between gap-1 text-xs font-extrabold text-blue-800 border-b-2 border-slate-100 pb-1.5 mb-0.5 px-0.5">
-              <span>
-                📁 라벨<span className="hidden sm:inline">로 보기</span>
-                <span data-filter-help title={FILTER_HELP} className="ml-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-slate-500 text-2xs cursor-help align-middle">
-                  ?
-                </span>
-              </span>
+              {/* 제목 = 라벨 관리 창 (P10-5 사용자 의견 5a - 옛 '📁 라벨로 보기'). 칩 고르기는 그대로 */}
               <button
                 type="button"
                 data-memo-labels-settings
                 onClick={() => openWindow('labels', { tab: 'note' })}
-                className="w-6 h-6 flex items-center justify-center rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 cursor-pointer shrink-0"
-                title="메모 라벨 설정"
-                aria-label="메모 라벨 설정"
+                className="flex items-center gap-1 px-1 -mx-1 rounded-md hover:bg-slate-100 hover:text-blue-900 cursor-pointer min-w-0"
+                title="메모 라벨 관리 (이름·색·상위 라벨·차례)"
               >
-                ⚙️
+                🏷️ 라벨<span className="hidden sm:inline"> 관리</span>
               </button>
+              <span data-filter-help title={FILTER_HELP} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-slate-500 text-2xs cursor-help shrink-0">
+                ?
+              </span>
             </div>
             {specialChip('fav', '⭐ 즐겨찾기', 'bg-amber-100 text-amber-900 border-amber-300', '즐겨찾기한 메모만 보기')}
             <LabelFilterChips tree={tree} filter={labelFilter ?? { labels: [], others: [] }} onChange={(f) => choose(f)} countOf={countOf} />

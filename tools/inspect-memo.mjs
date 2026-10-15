@@ -131,7 +131,44 @@ try {
   const newId = await panel.getAttribute('data-note-id');
   r.check(await waitFor(card(newId)), '메모 화면에 나온다');
   r.check((await read(newId))?.date === null, '날짜 없는 메모');
+
+  r.section('내용을 다 지우고 저장 = 메모 지우기 (P10-5)');
+  await panel.locator(sel('note-text-input')).fill('');
+  await page.keyboard.press('Control+s');
+  const emptied = await serverUntil(() => read(newId), (d) => !!d?.deletedAt);
+  r.check(!!emptied?.deletedAt, '서버: 지운 표시 (휴지통)');
+  r.check(await waitFor(async () => (await panel.count()) === 0), '칸이 닫힌다');
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '휴지통' })), '안내 + 되돌리기');
+  await page.locator(sel('toast')).filter({ hasText: '내용을 모두 지워' }).locator('[data-toast-action="되돌리기"]').click();
+  r.check(!(await serverUntil(() => read(newId), (d) => !d?.deletedAt))?.deletedAt, '되돌리기 = 되살린다');
+  await page.locator(sel('memo-new')).click();
+  r.check(await waitFor(panel), '새 칸');
+  await page.keyboard.press('Control+s');
+  r.check(await waitFor(async () => (await panel.count()) === 0), '빈 새 칸에서 저장 = 만들지 않고 닫는다');
+
+  r.section("'🏷️ 라벨 관리'·카드/목록 보기 (P10-5)");
+  await page.locator(sel('memo-labels-settings')).click();
+  r.check(await waitFor(page.locator(sel('labels-window'))), "왼쪽 제목 '🏷️ 라벨 관리' → 라벨 관리 창");
+  r.check((await page.locator(sel('label-tab', 'note')).getAttribute('aria-selected')) === 'true' || (await page.locator(`${sel('label-tab', 'note')}[aria-pressed="true"]`).count()) === 1, '메모 라벨 탭');
   await page.keyboard.press('Escape');
+  const viewBtn = page.locator(sel('memo-view-toggle'));
+  r.check((await viewBtn.getAttribute('data-memo-view-toggle')) === 'card', '머리줄 그림 단추 (메모 화면 - 지금 카드)');
+  await viewBtn.click();
+  r.check(await waitFor(page.locator(sel('memo-row', 'insp_mm5'))), '☰ → 목록 (한 줄에 메모 하나)');
+  r.check((await page.locator(sel('entry-card')).count()) === 0, '카드는 없다');
+  const rowText = await page.locator(`${sel('memo-row', 'insp_mm5')} ${sel('memo-row-text')}`).textContent();
+  r.check(rowText === '점검 메모 길게', `첫 줄만 (${rowText})`);
+  await page.locator(sel('memo-row', 'insp_mm1')).click();
+  r.check(await waitFor(page.locator(`${sel('note-panel', 'edit')}[data-note-id="insp_mm1"]`)), '줄을 누르면 쓰는 칸');
+  await page.keyboard.press('Escape');
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT });
+  await page.reload();
+  r.check(await waitFor(page.locator(sel('memo-row', 'insp_mm1')), 10000), '다시 열어도 목록 (이 기기 기억)');
+  await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));
+  r.check(await waitFor(async () => (await page.locator(sel('memo-view-toggle')).count()) === 0), '다른 화면에는 단추가 없다');
+  await page.goto(page.url().replace(/#.*$/, '#/memo'));
+  await page.locator(sel('memo-view-toggle')).click();
+  r.check(await waitFor(card('insp_mm1')), '▦ → 카드로');
 
   r.section('하루 메모 칸 라벨로 보기 (칩 줄은 접혀 시작 - 🏷️로 편다, P10-3)');
   await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));

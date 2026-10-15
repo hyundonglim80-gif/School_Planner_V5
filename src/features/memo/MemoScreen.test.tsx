@@ -9,6 +9,7 @@ import { useSession } from '../../data/session';
 import type { WriteOp } from '../../data/repo';
 import { useLabelFilters } from '../notes/labelFilter';
 import MemoScreen from './MemoScreen';
+import { useMemoView } from './memoView';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 const written = vi.hoisted(() => ({ batches: [] as WriteOp[][] }));
@@ -152,6 +153,22 @@ describe('메모 화면', () => {
     const [create, p] = written.batches[0] as { type: string; at: { coll: string; id: string }; data?: { name: string }; changes?: { labelIds: string[] } }[];
     expect(create).toMatchObject({ type: 'create', at: { coll: 'labels' }, data: { name: '메모' } });
     expect(p).toMatchObject({ type: 'patch', at: { id: 'm5' }, changes: { labelIds: [create.at.id] } });
+  });
+
+  it('목록 보기 (P10-5) - 한 줄에 메모 하나(첫 줄·라벨·날짜), 누르면 쓰는 칸, ☐ 완료는 그 칸만', async () => {
+    useMemoView.setState({ view: 'list' });
+    seed(new Map([memo('x', 'a0', { text: '첫 줄\n둘째 줄' }), memo('y', 'a1')]));
+    render(<MemoScreen />);
+    expect(cards()).toEqual([]);
+    const rows = [...document.querySelectorAll<HTMLElement>('[data-memo-row]')];
+    expect(rows.map((r) => r.dataset.memoRow)).toEqual(['x', 'y']);
+    expect(rows[0].querySelector('[data-memo-row-text]')?.textContent).toBe('첫 줄');
+    fireEvent.click(rows[0]);
+    expect(opened.calls.at(-1)).toMatchObject({ sid: SID, id: 'x' });
+    await act(async () => fireEvent.click(rows[1].querySelector('[data-memo-row-complete]')!));
+    expect(written.batches.at(-1)?.[0]).toMatchObject({ at: { id: 'y' }, changes: { done: true } });
+    expect(opened.calls).toHaveLength(1);
+    useMemoView.setState({ view: 'card' });
   });
 
   it('+ 새 메모 = 날짜 없는 칸, 고른 라벨을 미리', () => {

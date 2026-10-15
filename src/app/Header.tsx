@@ -14,6 +14,7 @@ import { canRun, runFromButton, useShortcutOverrides, useShortcutTitle } from '.
 import { MORE_MENU } from './moreMenu';
 import { useCommonSettings } from './prefs';
 import { setScope, useNav } from './nav';
+import { toggleMemoView, useMemoView } from '../features/memo/memoView';
 import { SCREENS } from './screens';
 import { formatActionBinding, resolveBindings, SHORTCUT_ACTIONS } from '../domain/shortcuts';
 import { useToday } from '../ui/useToday';
@@ -75,6 +76,8 @@ export default function Header() {
 
         <div className="flex flex-wrap items-center gap-0.5 sm:gap-2 gap-y-1.5 shrink min-w-0">
           <NewMenu />
+          {/* 메모 화면에서만 - 카드 ↔ 목록 보기 (그림만, P10-5 사용자 의견 5e) */}
+          {scope === 'memo' && <MemoViewButton className={`${HEAD_BTN} bg-slate-100 hover:bg-slate-200 text-slate-600 shadow-none`} />}
           <button
             type="button"
             data-header-search
@@ -407,5 +410,16 @@ function MoreMenu() {
         </div>
       )}
     </div>
+  );
+}
+
+/** 메모 화면 보기 바꾸기 - 지금이 카드면 ☰(목록으로), 목록이면 ▦(카드로) */
+function MemoViewButton({ className }: { className: string }) {
+  const view = useMemoView((s) => s.view);
+  const label = view === 'card' ? '목록으로 보기 (한 줄에 메모 하나)' : '카드로 보기';
+  return (
+    <button type="button" data-memo-view-toggle={view} onClick={toggleMemoView} className={className} title={label} aria-label={label}>
+      <span aria-hidden>{view === 'card' ? '☰' : '▦'}</span>
+    </button>
   );
 }

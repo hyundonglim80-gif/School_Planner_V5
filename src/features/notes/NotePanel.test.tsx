@@ -271,6 +271,30 @@ describe('고치기', () => {
     expect(anyWindowUnsaved()).toBe(true);
   });
 
+  it('내용을 다 지우고 저장 = 그 메모 지우기 (P10-5) - 휴지통 + 되돌리기 안내, 새 칸이면 만들지 않고 닫는다', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+    type('   ');
+    expect(anyWindowUnsaved()).toBe(true);
+    expect((q('[data-note-save]') as HTMLButtonElement).disabled).toBe(false);
+    await save();
+    expect(lastOps()).toEqual([{ type: 'remove', at: { sid: SID, coll: 'items', id: 'n1' } }]);
+    expect(q('[data-toast]').textContent).toContain('휴지통');
+    document.body.innerHTML = '';
+    const before = written.batches.length;
+    close.mockClear();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    type('잠깐');
+    type('');
+    act(() => {
+      textInput().focus();
+      fireEvent.keyDown(textInput(), { key: 's', ctrlKey: true });
+    });
+    await act(async () => {});
+    expect(written.batches.length).toBe(before);
+    expect(close).toHaveBeenCalled();
+  });
+
   it('삭제 = 지운 표시, 지운 항목이면 안내만', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);

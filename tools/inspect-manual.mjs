@@ -447,7 +447,9 @@ try {
 
   await topic('memo-screen', async () => {
     await go('#/memo', 'memo');
-    r.check(await has(sel('memo-filter-nav')), '📁 라벨로 보기');
+    r.check(await has(sel('memo-filter-nav')), '왼쪽 라벨로 보기 칩');
+    r.check((await q(sel('memo-labels-settings')).textContent()).includes('라벨'), '제목 🏷️ 라벨 관리 (P10-5)');
+    r.check((await count(sel('memo-view-toggle'))) === 1, '머리줄 ☰ / ▦ 카드·목록 보기 (메모 화면에서만)');
     r.check(await has(sel('entry-card', 'insp_man_m1')), '메모 카드');
     r.check(await waitFor(async () => (await count(sel('entry-date-chip'))) > 0), '날짜에 이은 메모도 (카드에 📅 날짜 칩)');
     r.check((await count(sel('memo-active'))) === 1 && (await count(sel('memo-done'))) === 1, '진행 / 완료 구역');

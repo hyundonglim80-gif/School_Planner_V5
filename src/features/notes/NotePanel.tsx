@@ -313,8 +313,14 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   /** 저장한다. 저장했거나 저장할 것이 없으면 true */
   const save = async (): Promise<boolean> => {
     if (!hasContent(form)) {
-      // 지우기는 삭제 단추로만 한다. 내용을 다 지운 채 저장해도 항목은 남는다
-      showToast(`${noun} 내용을 입력하세요.`);
+      // 글·첨부·표를 다 지우고 저장 = 그 메모 지우기(휴지통 + 되돌리기, 칸은 deleteNote가 닫는다 - P10-5 사용자 의견 5d).
+      // 새 칸이면 만들 것이 없다 - 닫는다
+      if (!isEditing) {
+        close();
+        return false;
+      }
+      if (!item) return false;
+      await remove('🗑️ 내용을 모두 지워 메모를 휴지통으로 옮겼습니다.');
       return false;
     }
     if (uploading) {
@@ -363,12 +369,12 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   };
 
   /** 지우기 = 지운 표시 (칸은 deleteNote가 닫는다). 못 지웠으면 칸을 닫지 않는다 */
-  const remove = async () => {
+  const remove = async (message?: string) => {
     if (!item || savingRef.current) return;
     savingRef.current = true;
     setSaving(true);
     try {
-      await deleteNote(sid, item);
+      await deleteNote(sid, item, message);
     } catch {
       // 안내는 저장 도우미가 했다
     } finally {
@@ -378,15 +384,16 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   };
 
   const saveIfChanged = async (): Promise<boolean> => {
-    // 내용을 다 지운 것은 '지우기'로 보지 않는다 - 저장하지 않고 넘어간다
-    if (untouched || !hasContent(form)) return true;
+    if (untouched) return true;
+    // 내용을 다 지운 채면 save가 지우고(고치던 메모) 칸을 닫는다 - 여기서 또 닫지 않는다
     return save();
   };
 
   // ESC로 모두 닫기 전에 저장 안 한 글을 묻는다
   const unsaved = useRef<(() => boolean) | null>(null);
   useEffect(() => {
-    unsaved.current = () => !untouched && hasContent(form);
+    // 고치던 메모를 다 지운 것도 저장하면 지워지니 묻는다
+    unsaved.current = () => !untouched && (hasContent(form) || isEditing);
   });
   useEffect(() => registerUnsavedCheck(unsaved), []);
 
@@ -743,7 +750,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               type="button"
               data-note-save
               onClick={() => void save()}
-              disabled={saving || !hasContent(form) || (isEditing && !item)}
+              disabled={saving || (!isEditing && !hasContent(form)) || (isEditing && !item)}
+              title={isEditing && !hasContent(form) ? '내용을 모두 지웠습니다 - 저장하면 이 메모를 휴지통으로 옮깁니다' : undefined}
               className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {saving ? '저장 중...' : '저장'}

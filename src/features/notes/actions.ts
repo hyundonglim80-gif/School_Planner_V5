@@ -90,10 +90,10 @@ export async function toggleNoteCheckLine(sid: string, item: ItemDoc, lineIndex:
  * 지우기 = 지운 표시(원칙 5 - 휴지통에서 되살린다). 확인 창 없이 곧바로, 안내의 되돌리기·Ctrl+Z로 그 자리에 돌아온다(V4 그대로).
  * 그 항목을 고치던 칸은 닫는다. 못 지웠으면 던진다 - 칸은 닫지 않는다.
  */
-export async function deleteNote(sid: string, item: ItemDoc): Promise<void> {
+export async function deleteNote(sid: string, item: ItemDoc, message = '🗑️ 메모를 삭제했습니다. 휴지통에서 복원할 수 있습니다.'): Promise<void> {
   const undo = await remove(itemPath(sid, item.id), { fail: '메모를 지우지 못했습니다.' });
   closeNotePanelsFor(sid, item.id);
-  recordUndo(sid, '🗑️ 메모를 삭제했습니다. 휴지통에서 복원할 수 있습니다.', undo, { what: '메모 지우기' });
+  recordUndo(sid, message, undo, { what: '메모 지우기' });
 }
 
 /** 완료된 메모 모두 지우기 (메모 화면 '🗑️ 전체 비우기') - 지운 표시 여럿을 한 묶음, 안내의 되돌리기 하나로 모두 (V4는 묻고 휴지통으로) */
