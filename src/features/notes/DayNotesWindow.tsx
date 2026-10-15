@@ -6,13 +6,15 @@ import type { WindowProps } from '../../app/windows';
 import { shortDateLabel } from '../../domain/dateUtils';
 import { isLongEntry } from '../../domain/entryCollapse';
 import { labelPath } from '../../domain/labelTree';
-import { itemLabels, useItemsOn, useLabelTree } from '../../data/select';
+import { itemLabels, useLabelTree } from '../../data/select';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { openLinkViewer } from '../links/open';
 import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from './actions';
 import EntryCard from './EntryCard';
 import DayCardView from '../day/DayCards';
 import { useDayCardsOn } from '../day/useDayCards';
+import { useDayNotes } from '../day/useDayNotes';
+import { noteFromLabel } from './dayNotes';
 import { canMoveNote, favoriteFirst, timeLabel } from './noteOps';
 import { openNotePanel, useEditingNoteIds, type DayNotesParams } from './open';
 
@@ -22,7 +24,11 @@ const quiet = () => {
 
 export default function DayNotesWindow({ params, close, raise }: WindowProps<DayNotesParams>) {
   const { sid, date } = params;
-  const notes = favoriteFirst(useItemsOn(date, 'note', sid));
+  // 하루 메모 칸과 같게: 날짜 링크 메모(즐겨찾기 먼저 - ▲▼는 이것들끼리) → 그날 일정·수업에 이은 메모 (P10-4)
+  const rows = useDayNotes(date, sid);
+  const dated = favoriteFirst(rows.filter((r) => r.dated).map((r) => r.item));
+  const notes = [...dated, ...rows.filter((r) => !r.dated).map((r) => r.item)];
+  const fromOf = new Map(rows.map((r) => [r.item.id, r.from.map(noteFromLabel)]));
   const tree = useLabelTree('note', sid);
   const editing = useEditingNoteIds(sid);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -73,8 +79,9 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
                 editing={editing.has(item.id)}
                 collapsed={isCollapsed}
                 onToggleCollapse={() => setCollapsed((p) => ({ ...p, [item.id]: !isCollapsed }))}
-                onMoveUp={canMoveNote(notes, index, -1) ? () => void moveNoteInList(sid, notes, index, -1).catch(quiet) : undefined}
-                onMoveDown={canMoveNote(notes, index, 1) ? () => void moveNoteInList(sid, notes, index, 1).catch(quiet) : undefined}
+                from={fromOf.get(item.id)}
+                onMoveUp={canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
+                onMoveDown={canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                 onOpen={() => openNotePanel({ sid, date, id: item.id })}
                 onOpenLinks={() => openLinkViewer({ sid, id: item.id })}
                 onToggleDone={() => void setNoteDone(sid, item, !item.done).catch(quiet)}

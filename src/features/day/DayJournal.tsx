@@ -12,7 +12,7 @@ import { addEscapeAction } from '../../app/keys';
 import { openWindow } from '../../app/windows';
 import { isLongEntry } from '../../domain/entryCollapse';
 import { EMPTY_FILTER, isEmptyFilter, isOtherKey, labelPath, matchLabels, otherParentOf, pruneFilter } from '../../domain/labelTree';
-import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
+import { itemLabels, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
 import { useMainWidth } from '../../ui/useMainWidth';
@@ -27,6 +27,8 @@ import { openNotePanel, useEditingNoteIds } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
 import DayCardView from './DayCards';
 import { useDayCardsOn } from './useDayCards';
+import { useDayNotes } from './useDayNotes';
+import { noteFromLabel } from '../notes/dayNotes';
 import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
 
@@ -37,7 +39,9 @@ const quiet = () => {
 export default function DayJournal({ date }: { date: YMD }) {
   const sid = useCurrentSpaceId();
   const journalEvals = useEvalsOn(date, sid).filter((e) => e.period === null).length;
-  const notes = useItemsOn(date, 'note');
+  // 그 날짜 링크 메모 + 그날 일정·수업에 이은 메모 (P10-4 - 겹치지 않게, 계산)
+  const rows = useDayNotes(date, sid);
+  const notes = rows.map((r) => r.item);
   const tree = useLabelTree('note');
   const status = useMirrorStatus('items');
   const editing = useEditingNoteIds(sid);
@@ -54,7 +58,11 @@ export default function DayJournal({ date }: { date: YMD }) {
   useEffect(() => addEscapeAction(() => setJournalFilter(EMPTY_FILTER)), []);
   const countOf = (key: string) =>
     notes.filter((n) => matchLabels(n.labelIds, isOtherKey(key) ? { labels: [], others: [otherParentOf(key)] } : { labels: [key], others: [] }, tree.parents)).length;
-  const shown = favoriteFirst(notes.filter((n) => matchLabels(n.labelIds, filter, tree.parents)));
+  // 날짜 링크 메모(즐겨찾기 먼저 - ▲▼는 이것들끼리) → 이은 것으로만 오는 메모
+  const pass = (n: ItemDoc) => matchLabels(n.labelIds, filter, tree.parents);
+  const dated = favoriteFirst(rows.filter((r) => r.dated && pass(r.item)).map((r) => r.item));
+  const shown = [...dated, ...rows.filter((r) => !r.dated && pass(r.item)).map((r) => r.item)];
+  const fromOf = new Map(rows.map((r) => [r.item.id, r.from.map(noteFromLabel)]));
   // 그날 알림장·출결 (계산한 카드 - 라벨이 없어 라벨로 보기를 하면 숨긴다)
   const allCards = useDayCardsOn(date, sid);
   const cards = isEmptyFilter(filter) ? allCards : [];
@@ -192,8 +200,9 @@ export default function DayJournal({ date }: { date: YMD }) {
                       editing={editing.has(item.id)}
                       collapsed={isCollapsed}
                       onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [item.id]: !isCollapsed }))}
-                      onMoveUp={sid && canMoveNote(shown, index, -1) ? () => void moveNoteInList(sid, shown, index, -1).catch(quiet) : undefined}
-                      onMoveDown={sid && canMoveNote(shown, index, 1) ? () => void moveNoteInList(sid, shown, index, 1).catch(quiet) : undefined}
+                      from={fromOf.get(item.id)}
+                      onMoveUp={sid && canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
+                      onMoveDown={sid && canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                       onOpen={() => openEdit(item)}
                       onOpenLinks={() => sid && openLinkViewer({ sid, id: item.id })}
                       onToggleDone={() => sid && void setNoteDone(sid, item, !item.done).catch(quiet)}
