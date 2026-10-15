@@ -2,7 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
 import type { Docs } from '../../data/select';
-import { candidatesOf, lessonCandidatesOf, rangeOf } from './linkerList';
+import { candidatesOf, lessonCandidatesOf, progressCandidatesOf, rangeOf } from './linkerList';
+import type { ProgressMark } from '../../domain/progress';
+import type { Stored } from '../../data/types';
 import type { LessonSource } from '../../domain/lessons';
 
 const t = new Timestamp(1, 0);
@@ -73,5 +75,37 @@ describe('🏫 수업 탭 (계산한 수업 칸)', () => {
       ['lesson:2026-10-01:2', '2교시 수학'],
     ]);
     expect(lessonCandidatesOf(src, { start: '2026-10-01', end: '2026-10-08' }, '실험').map((c) => c.id)).toEqual(['lesson:2026-10-08:3']);
+  });
+});
+
+describe('📘 진도표 탭 (P11-1 - 그 차시를 하는 날로)', () => {
+  const row = (content: string) => ({ unit: '', no: '', content, page: '', supplies: '' });
+  const plan = (id: string, key: string, lessons: ReturnType<typeof row>[], more: Record<string, unknown> = {}) =>
+    ({ id, key, startDate: '2026-09-01', bumps: [], lessons, deletedAt: null, updatedAt: t, v: 1, createdAt: 0, authorId: 'me', ...more }) as unknown as Stored<'progress'>;
+  const docs = { p1: plan('p1', '과학', [row('불'), row('물'), row('흙')]), p2: plan('p2', '국어', [row('시')]), p3: plan('p3', '사회', [row('땅')], { deletedAt: t }) };
+  const mark = (planId: string, index: number | null, more: Partial<ProgressMark> = {}): ProgressMark => ({ planId, key: '', index, total: 3, lesson: null, bumped: index === null, ...more });
+  const marks: Record<string, ProgressMark> = {
+    '2026-10-06#2': mark('p1', 0),
+    '2026-10-08#3': mark('p1', 1),
+    '2026-10-08#1': mark('p1', 1, { cls: '5-1' }), // 과정 - 다른 반이 같은 날 먼저
+    '2026-10-12#4': mark('p1', null), // 민 교시
+    '2026-10-20#2': mark('p1', 2), // 범위 밖
+    '2026-10-07#5': mark('p2', 0),
+    '2026-10-07#6': mark('p3', 0), // 지운 진도
+  };
+  const range = { start: '2026-10-01', end: '2026-10-15' };
+
+  it('범위 안에 하는 행만 - 행 하나에 한 줄(범위 안 첫 교시), 최근 날부터 · 민 교시·지운 진도는 빼고', () => {
+    expect(progressCandidatesOf(docs, marks, range).map((c) => [c.id, c.date, c.text])).toEqual([
+      ['progress:p1:1', '2026-10-08', '1교시 · 과학 2차시 · 물'],
+      ['progress:p2:0', '2026-10-07', '5교시 · 국어 1차시 · 시'],
+      ['progress:p1:0', '2026-10-06', '2교시 · 과학 1차시 · 불'],
+    ]);
+  });
+
+  it('진도 고르기·키워드', () => {
+    expect(progressCandidatesOf(docs, marks, range, { planIds: ['p2'] }).map((c) => c.id)).toEqual(['progress:p2:0']);
+    expect(progressCandidatesOf(docs, marks, range, { keyword: '불' }).map((c) => c.id)).toEqual(['progress:p1:0']);
+    expect(progressCandidatesOf(docs, marks, { start: '2026-10-16', end: '2026-10-31' }).map((c) => c.id)).toEqual(['progress:p1:2']);
   });
 });

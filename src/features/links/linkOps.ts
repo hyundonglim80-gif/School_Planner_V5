@@ -127,8 +127,8 @@ export type LinkKind = 'event' | 'note';
 
 export const linkKindOf = (item: Pick<ItemDoc, 'kind'>): LinkKind => (item.kind === 'event' ? 'event' : 'note');
 
-export const LINK_KIND_ICON: Record<LinkKind | 'lesson', string> = { event: '📌', note: '📝', lesson: '🏫' };
-export const LINK_KIND_NAME: Record<LinkKind | 'lesson', string> = { event: '일정', note: '메모', lesson: '수업' };
+export const LINK_KIND_ICON: Record<LinkKind | 'lesson' | 'progress', string> = { event: '📌', note: '📝', lesson: '🏫', progress: '📘' };
+export const LINK_KIND_NAME: Record<LinkKind | 'lesson' | 'progress', string> = { event: '일정', note: '메모', lesson: '수업', progress: '진도표' };
 
 // ── 진도 차시 (P10-4) ──
 
@@ -185,6 +185,29 @@ function progressRowLinks(sid: string, end: ProgressEnd, next: string[] | undefi
 export function progressLinkOps(sid: string, end: ProgressEnd, targets: readonly ItemDoc[]): WriteOp[] {
   const next = added(end.linkIds, end.id, targets.map((t) => t.id));
   return next ? [progressRowLinks(sid, end, next)] : [];
+}
+
+/**
+ * 메모 하나를 진도 차시 여럿에 잇기 (메모에서 연 링크 창 📘 진도표 탭 - P11-1). 진도 쪽 그 행들에만 적는다(P10-4 규칙 그대로).
+ * 같은 진도의 행 여럿은 문서 하나 고치기로 모은다(행마다 따로 lessons 배열째 쓰면 뒤의 것이 앞의 것을 덮는다). 이미 이은 행은 그대로.
+ */
+export function noteToProgressOps(sid: string, noteId: string, ends: readonly ProgressEnd[]): WriteOp[] {
+  const byPlan = new Map<string, ProgressEnd[]>();
+  for (const e of ends) byPlan.set(e.planId, [...(byPlan.get(e.planId) ?? []), e]);
+  const ops: WriteOp[] = [];
+  for (const list of byPlan.values()) {
+    const plan = list[0].plan;
+    const rows = new Set(list.map((e) => e.row));
+    let changed = false;
+    const lessons = (plan.lessons ?? []).map((l, i) => {
+      const next = rows.has(i) ? added(l.linkIds ?? [], '', [noteId]) : null;
+      if (!next) return l;
+      changed = true;
+      return { ...l, linkIds: next };
+    });
+    if (changed) ops.push(writeOp.patch({ sid, coll: 'progress', id: plan.id }, { lessons }, plan));
+  }
+  return ops;
 }
 
 /** 진도 행에서 메모 끊기 */

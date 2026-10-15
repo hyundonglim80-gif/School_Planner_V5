@@ -5,6 +5,7 @@
 //   4) 📑의 🗑️ = 양쪽에서 끊기 → 안내의 되돌리기 = 다시 이어진다. 📌 이동 = 그날 하루 화면, ✏️ 수정 = 쓰는 칸.
 //   5) 새 메모 칸의 🔗 링크 추가 = 먼저 저장(수정 칸이 된다) → 그 메모의 연결 창. 다른 항목의 📑은 탭으로 쌓인다.
 //   6) P10-4: 그날 일정·수업 칸에 이은 메모가 그날 '메모' 칸에 한 번씩 (📌·🏫 표시, ▲▼ 없음) - 제 날짜 칸에는 표시 없이.
+//   7) P11-1: 메모에서 연 연결 창의 📘 진도표 탭 - 그 차시를 하는 날로 찾고, 저장 = 진도 쪽 그 행에만(점검 시간표 insp_lkt·진도 insp_lkp를 심고 끝에 지운다).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-links.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 항목(insp_lk…)을 심고 끝에 지운다.
@@ -170,6 +171,43 @@ try {
   await inJournal('insp_lkm').hover();
   await inJournal('insp_lkm').locator(sel('entry-link-add')).click();
   r.check(await waitFor(page.locator(sel('linker', 'insp_lkm'))), '메모 카드 🔗 (마우스를 올리면) = 그 메모의 연결 창');
+
+  r.section('메모 → 연결 창 📘 진도표 탭 (P11-1)');
+  // 점검 시간표(월~금 1교시 - 늦게 시작해 이긴다)와 그 과목의 점검 진도를 심는다 - 9/24부터 세면 ±1주일(9/24~10/8) 안에 차시가 든다
+  const subject = '점검링크과목';
+  const ttRef = doc(em.db, 'spaces', sid, 'timetables', 'insp_lkt');
+  const week = Object.fromEntries(['1', '2', '3', '4', '5'].map((d) => [d, { 1: subject }]));
+  await setDoc(ttRef, { name: '점검링크 시간표', from: '2026-09-23', to: '2027-02-28', grid: week, ...stamp });
+  undo.add(() => deleteDoc(ttRef));
+  const planRef = doc(em.db, 'spaces', sid, 'progress', 'insp_lkp');
+  const rowOf = (n) => ({ unit: '점검 단원', no: '', content: `점검링크 차시 ${n}`, page: '', supplies: '' });
+  await setDoc(planRef, { key: subject, startDate: '2026-09-24', lessons: Array.from({ length: 12 }, (_, i) => rowOf(i + 1)), bumps: [], ...stamp });
+  undo.add(() => deleteDoc(planRef));
+  const lk = page.locator(sel('linker', 'insp_lkm'));
+  r.check(
+    (await lk.locator(sel('linker-tab')).evaluateAll((els) => els.map((e) => e.dataset.linkerTab).join(','))) === 'event,note,lesson,progress',
+    '메모에서 열면 탭 = 일정·메모·수업·📘 진도표 (일정에서는 없다)',
+  );
+  await lk.locator(sel('linker-tab', 'progress')).click();
+  r.check(await waitFor(lk.locator(sel('linker-plan', 'insp_lkp')), 8000), '라벨 칩 대신 진도 칩');
+  await lk.locator(sel('linker-plan', 'insp_lkp')).click();
+  const pItem = lk.locator('[data-linker-item^="progress:insp_lkp:"]');
+  r.check(await waitFor(pItem.first(), 8000), '그 차시를 하는 날(±1주일)로 찾은 진도 차시');
+  const pid = await pItem.first().getAttribute('data-linker-item');
+  r.check(((await pItem.first().textContent()) ?? '').includes('점검링크 차시'), `차시 이름 (${(await pItem.first().textContent())?.trim()})`);
+  await pItem.first().click();
+  r.check((await lk.locator(sel('linker-picked', pid)).count()) === 1, '🛒에 담긴다');
+  await page.locator(sel('linker-save')).click();
+  const pRow = Number(pid.split(':')[2]);
+  const linkedPlan = await serverUntil(async () => (await getDoc(planRef)).data(), (d) => !!d?.lessons?.[pRow]?.linkIds?.includes('insp_lkm'));
+  r.check(!!linkedPlan?.lessons?.[pRow]?.linkIds?.includes('insp_lkm'), '연결 저장 = 진도 쪽 그 행 linkIds');
+  r.check(linkedPlan?.lessons?.filter((l) => l.linkIds).length === 1, '다른 행은 그대로');
+  r.check(!((await read('insp_lkm'))?.linkIds ?? []).some((x) => x.startsWith('progress:')), '메모 문서에는 적지 않는다 (P10-4 규칙)');
+  r.check(await waitFor(async () => (await lk.count()) === 0), '창이 닫힌다');
+  await inJournal('insp_lkm').hover();
+  await inJournal('insp_lkm').locator(sel('entry-link-add')).click();
+  await lk.locator(sel('linker-tab', 'progress')).click();
+  r.check(await waitFor(async () => (await lk.locator(sel('linker-item', pid)).count()) === 1 && (await lk.locator(sel('linker-item', pid)).isDisabled())), '다시 열면 그 차시는 연결됨');
   await page.keyboard.press('Escape');
   await page.goto(page.url().replace(/#.*$/, '#/day/2026-10-01'));
   const own = page.locator(`${sel('day-journal', '2026-10-01')} ${sel('entry-card', 'insp_lkm')}`);

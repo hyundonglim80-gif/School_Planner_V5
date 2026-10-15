@@ -9,6 +9,7 @@ import {
   lessonUnlinkOps,
   linkKindOf,
   linkOps,
+  noteToProgressOps,
   parseLessonLink,
   parseProgressLink,
   progressEndOf,
@@ -119,6 +120,16 @@ describe('진도 차시 링크 (P10-4) - 진도 쪽 그 행에만', () => {
     const cut = progressUnlinkOps(SID, progressEndOf('progress:p1:1', docs)!, 'm1')[0] as unknown as typeof op;
     expect(cut.changes.lessons[1]).not.toHaveProperty('linkIds');
     expect(cut.changes.lessons[1].content).toBe('나');
+  });
+
+  it('메모에서 차시 여럿 잇기 (P11-1) = 진도 하나에 쓰기 하나 - 같은 진도의 행은 모으고, 이미 이은 행은 그대로', () => {
+    const more = { ...docs, p3: plan('p3', [row('라')]) };
+    const ends = ['progress:p1:0', 'progress:p1:1', 'progress:p3:0'].map((id) => progressEndOf(id, more)!);
+    const ops = noteToProgressOps(SID, 'm1', ends) as unknown as { at: { id: string }; changes: { lessons: ReturnType<typeof row>[] } }[];
+    expect(ops.map((o) => o.at.id)).toEqual(['p1', 'p3']);
+    expect(ops[0].changes.lessons.map((l) => l.linkIds)).toEqual([['m1'], ['m1']]);
+    expect(ops[1].changes.lessons[0].linkIds).toEqual(['m1']);
+    expect(noteToProgressOps(SID, 'm1', [progressEndOf('progress:p1:1', docs)!])).toEqual([]);
   });
 
   it('메모 쪽은 계산 - 지운 진도는 빼고', () => {

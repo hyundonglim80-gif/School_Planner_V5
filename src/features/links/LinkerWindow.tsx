@@ -1,6 +1,7 @@
 // 🔗 링크 연결 창 (V4 components/LinkerModal.tsx). 창 'linker' = { sid, id } - 그 항목(또는 수업 'lesson:날짜:교시', 진도 차시 'progress:진도:행')에 잇는다.
 //   진도 차시에서 열면 📝 메모 탭만 - 진도 쪽 그 행에만 적는다(P10-4 ■2).
-//   - 탭 📌 일정 · 📝 메모 · 🏫 수업(P6-1 - 계산한 수업 칸 가운데 과목·비고가 있는 것, 항목에서 열 때만).
+//   - 탭 📌 일정 · 📝 메모 · 🏫 수업(P6-1 - 계산한 수업 칸 가운데 과목·비고가 있는 것, 항목에서 열 때만) · 📘 진도표(P11-1 - 메모에서 열 때만,
+//     조회 범위 = 그 차시를 하는 날(수업 칸에 겹친 진도를 뒤집어 계산), 라벨 칩 대신 진도 칩. 저장은 진도 쪽 그 행에만 - 진도 창에서 메모를 잇는 것과 같다).
 //     옛 📔 기록 탭은 📝 메모에 합쳤다(P10-4 5g - 메모 하나: 날짜 링크 메모와 날짜 없는 메모가 한 목록).
 //   - 조회 범위(±1주일·±1개월·1학기·2학기·학년도·기간 설정 - 날짜를 고치면 기간 설정), 라벨 칩·키워드로 좁히고 ‹ ›로 쪽을 넘긴다.
 //   - 누르면 🛒 담기(여러 개), 이미 이은 것은 '연결됨'. '+ 새 00 만들어 연결' = 같은 쓰는 칸을 열고, 처음 저장하면 담긴다.
@@ -14,13 +15,15 @@ import { labelColor } from '../../domain/labels';
 import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { lessonsOn } from '../../domain/lessons';
 import { semesterConfigOf } from '../../domain/semester';
-import { useDocs, useLabelTree } from '../../data/select';
+import { planLabel, sanitizePlan } from '../../domain/progress';
+import { isLive, useDocs, useLabelTree } from '../../data/select';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { openEventPanel } from '../events/open';
 import { useLessonSource } from '../lessons/useLessons';
+import { useProgressMarks } from '../progress/useProgress';
 import { openNotePanel } from '../notes/open';
 import { saveLessonLinks, saveLinks, saveProgressLinks } from './actions';
-import { candidatesOf, lessonCandidatesOf, RANGE_OPTIONS, rangeOf, type RangeKey } from './linkerList';
+import { candidatesOf, lessonCandidatesOf, progressCandidatesOf, RANGE_OPTIONS, rangeOf, type RangeKey } from './linkerList';
 import {
   LINK_KIND_ICON,
   LINK_KIND_NAME,
@@ -29,12 +32,14 @@ import {
   parseLessonLink,
   parseProgressLink,
   progressEndOf,
+  progressLinksByNote,
   type LessonEnd,
   type LinkKind,
+  type ProgressEnd,
 } from './linkOps';
 import { listenLinkPick, type LinkWindowParams } from './open';
 
-type LinkerTab = LinkKind | 'lesson';
+type LinkerTab = LinkKind | 'lesson' | 'progress';
 const ITEM_TABS: LinkerTab[] = ['event', 'note'];
 const PER_PAGE = 6;
 
@@ -53,7 +58,9 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
   const center = source?.date ?? lessonEnd?.date ?? todayStr();
   const eventTree = useLabelTree('event', sid);
   const noteTree = useLabelTree('note', sid);
-  const tabs: LinkerTab[] = fromProgress ? ['note'] : lessonEnd ? ITEM_TABS : [...ITEM_TABS, 'lesson'];
+  // 📘 진도표는 메모에서만 (진도 차시 링크는 메모 ↔ 진도 - P10-4)
+  const fromNote = !!source && linkKindOf(source) === 'note';
+  const tabs: LinkerTab[] = fromProgress ? ['note'] : lessonEnd ? ITEM_TABS : [...ITEM_TABS, 'lesson', ...(fromNote ? (['progress'] as const) : [])];
 
   const [tab, setTab] = useState<LinkerTab>(fromProgress ? 'note' : 'event');
   const [rangeKey, setRangeKey] = useState<RangeKey>('1week');
@@ -78,16 +85,39 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
 
   const range = rangeOf(rangeKey, center, custom, semesterConfigOf(terms, academicYearOf(center)));
   const { start, end } = range;
+  // 진도 차시를 하는 날 (보는 범위의 끝까지 센다 - 개인 공간을 볼 때만, 하루·주간 수업 칸과 같은 셈)
+  const { marks } = useProgressMarks(end);
+  // 메모에 이은 진도 차시는 진도 쪽에만 적혀 있다 - 계산해 '연결됨'에 넣는다
+  const progressByNote = useMemo(() => progressLinksByNote(progressDocs), [progressDocs]);
   const linkedIds = lessonEnd ? lessonEnd.linkIds : progressEnd ? progressEnd.linkIds : source?.linkIds;
-  const linked = useMemo(() => new Set(linkedIds ?? []), [linkedIds]);
+  const sourceProgress = source ? progressByNote.get(source.id) : undefined;
+  const linked = useMemo(() => new Set([...(linkedIds ?? []), ...(sourceProgress ?? [])]), [linkedIds, sourceProgress]);
   const list = useMemo(
-    () => (tab === 'lesson' ? lessonCandidatesOf(lessonSrc, { start, end }, keyword) : candidatesOf(items, tab, { start, end }, { labelIds, keyword, exclude: id })),
-    [items, lessonSrc, tab, start, end, labelIds, keyword, id],
+    () =>
+      tab === 'lesson'
+        ? lessonCandidatesOf(lessonSrc, { start, end }, keyword)
+        : tab === 'progress'
+          ? progressCandidatesOf(progressDocs, marks, { start, end }, { planIds: labelIds, keyword })
+          : candidatesOf(items, tab, { start, end }, { labelIds, keyword, exclude: id }),
+    [items, lessonSrc, progressDocs, marks, tab, start, end, labelIds, keyword, id],
   );
   const pages = Math.max(1, Math.ceil(list.length / PER_PAGE));
   const current = Math.min(page, pages);
   const shown = list.slice((current - 1) * PER_PAGE, current * PER_PAGE);
-  const tabLabels = tab === 'lesson' ? [] : (tab === 'event' ? eventTree : noteTree).list;
+  const tabLabels = tab === 'lesson' || tab === 'progress' ? [] : (tab === 'event' ? eventTree : noteTree).list;
+  // 📘 진도표 탭은 라벨 대신 진도 칩 (라벨 고르기 칸 labelIds에 진도 id를 담는다 - 탭을 바꾸면 비운다)
+  const planChips = useMemo(
+    () =>
+      tab !== 'progress'
+        ? []
+        : Object.values(progressDocs)
+            .filter(isLive)
+            .map((d) => ({ id: d.id, name: planLabel(sanitizePlan(d.id, d)) }))
+            .sort((a, b) => a.name.localeCompare(b.name, 'ko')),
+    [tab, progressDocs],
+  );
+  /** 담은 진도 차시 한 줄 ('과학 5차시 · 비유 표현') */
+  const progressText = (pid: string) => progressEndOf(pid, progressDocs)?.title ?? '불러오는 중…';
   /** 수업 칸 한 줄 ('[10/9] 3교시 국어') */
   const lessonText = (lessonId: string) => {
     const p = parseLessonLink(lessonId);
@@ -115,7 +145,8 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
     }
     const targets = picked.map((p) => items[p]).filter((d) => d && !d.deletedAt);
     const lessons = picked.map((p) => lessonEndOf(p, days)).filter((l): l is LessonEnd => !!l);
-    if (targets.length === 0 && lessons.length === 0) {
+    const progress = source ? picked.map((p) => progressEndOf(p, progressDocs)).filter((e): e is ProgressEnd => !!e) : [];
+    if (targets.length === 0 && lessons.length === 0 && progress.length === 0) {
       showToast('연결할 항목을 골라 주세요.');
       return;
     }
@@ -124,7 +155,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
     try {
       if (progressEnd) await saveProgressLinks(sid, progressEnd, targets);
       else if (lessonEnd) await saveLessonLinks(sid, lessonEnd, targets);
-      else if (source) await saveLinks(sid, source, targets, lessons);
+      else if (source) await saveLinks(sid, source, targets, lessons, progress);
       close();
     } catch {
       // 안내는 저장 도우미가 했다 - 담은 것은 그대로
@@ -236,6 +267,31 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
               />
             ))}
           </div>
+          {planChips.length > 0 && (
+            <div className="flex flex-wrap gap-1.5" data-linker-plans>
+              <button type="button" data-linker-plan="all" onClick={() => setLabelIds([])} className={chip(labelIds.length === 0)}>
+                전체
+              </button>
+              {planChips.map((p) => {
+                const on = labelIds.includes(p.id);
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    data-linker-plan={p.id}
+                    aria-pressed={on}
+                    onClick={() => {
+                      setLabelIds((x) => (on ? x.filter((y) => y !== p.id) : [...x, p.id]));
+                      setPage(1);
+                    }}
+                    className={chip(on)}
+                  >
+                    📘 {p.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {tabLabels.length > 0 && (
             <div className="flex flex-wrap gap-1.5" data-linker-labels>
               <button type="button" data-linker-label="all" onClick={() => setLabelIds([])} className={chip(labelIds.length === 0)}>
@@ -274,7 +330,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
             }}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
-          {tab !== 'lesson' && (
+          {tab !== 'lesson' && tab !== 'progress' && (
             <button
               type="button"
               data-linker-new={tab}
@@ -288,8 +344,12 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
 
         <div className="border border-slate-200 rounded-xl bg-white overflow-hidden flex flex-col" data-linker-list={list.length}>
           {list.length === 0 ? (
-            <div className="h-[152px] flex items-center justify-center text-xs text-slate-400" data-linker-empty>
-              해당 조건에 맞는 데이터가 없습니다.
+            <div className="h-[152px] flex items-center justify-center text-xs text-slate-400 text-center px-4" data-linker-empty>
+              {tab === 'progress' && planChips.length === 0
+                ? '진도표가 없습니다. 하루 수업 칸의 📘 진도에서 만들 수 있습니다.'
+                : tab === 'progress'
+                  ? '이 범위에 하는 차시가 없습니다. 조회 범위를 넓혀 보세요.'
+                  : '해당 조건에 맞는 데이터가 없습니다.'}
             </div>
           ) : (
             <>
@@ -361,11 +421,14 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
               picked.map((p) => {
                 const d = items[p];
                 const isLesson = !!parseLessonLink(p);
-                const kind: LinkerTab = isLesson ? 'lesson' : d ? linkKindOf(d) : 'note';
+                const isProgress = !!parseProgressLink(p);
+                const kind: LinkerTab = isLesson ? 'lesson' : isProgress ? 'progress' : d ? linkKindOf(d) : 'note';
                 return (
                   <span key={p} data-linker-picked={p} className="inline-flex items-center bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg text-xs text-blue-900 font-medium">
                     <span className="mr-1">{LINK_KIND_ICON[kind]}</span>
-                    <span className="max-w-[130px] truncate font-bold">{isLesson ? lessonText(p) : d ? d.text.split('\n')[0] || '(표·첨부만)' : '불러오는 중…'}</span>
+                    <span className="max-w-[130px] truncate font-bold">
+                      {isLesson ? lessonText(p) : isProgress ? progressText(p) : d ? d.text.split('\n')[0] || '(표·첨부만)' : '불러오는 중…'}
+                    </span>
                     <button
                       type="button"
                       data-linker-unpick={p}

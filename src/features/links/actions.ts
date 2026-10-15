@@ -2,14 +2,25 @@
 import { batch } from '../../data/repo';
 import { recordUndo } from '../../data/undo';
 import type { ItemDoc } from '../events/eventOps';
-import { lessonLinkOps, lessonUnlinkOps, linkOps, progressLinkOps, progressUnlinkOps, unlinkOps, type LessonEnd, type ProgressEnd } from './linkOps';
+import { lessonLinkOps, lessonUnlinkOps, linkOps, noteToProgressOps, progressLinkOps, progressUnlinkOps, unlinkOps, type LessonEnd, type ProgressEnd } from './linkOps';
 
-/** 연결 저장 - 양쪽 linkIds를 한 묶음으로(수업이면 lessonDays의 그 칸). 새로 이은 수(이미 이은 것은 빼고) */
-export async function saveLinks(sid: string, source: ItemDoc, targets: readonly ItemDoc[], lessons: readonly LessonEnd[] = []): Promise<number> {
-  const ops = linkOps(sid, source, targets, lessons);
+/**
+ * 연결 저장 - 양쪽 linkIds를 한 묶음으로(수업이면 lessonDays의 그 칸). 새로 이은 수(이미 이은 것은 빼고).
+ * progress = 메모에서 고른 진도 차시(P11-1) - 진도 쪽 그 행에만 적는다(같은 묶음).
+ */
+export async function saveLinks(
+  sid: string,
+  source: ItemDoc,
+  targets: readonly ItemDoc[],
+  lessons: readonly LessonEnd[] = [],
+  progress: readonly ProgressEnd[] = [],
+): Promise<number> {
+  const ops = [...linkOps(sid, source, targets, lessons), ...noteToProgressOps(sid, source.id, progress)];
   if (ops.length === 0) return 0;
   const before = new Set(source.linkIds ?? []);
-  const added = new Set([...targets.map((t) => t.id), ...lessons.map((l) => l.id)].filter((id) => !before.has(id))).size;
+  const added =
+    new Set([...targets.map((t) => t.id), ...lessons.map((l) => l.id)].filter((id) => !before.has(id))).size +
+    new Set(progress.filter((p) => !p.linkIds.includes(source.id)).map((p) => p.id)).size;
   const undo = await batch(ops, { fail: '연결을 저장하지 못했습니다.' });
   recordUndo(sid, `🔗 ${added}개를 연결했습니다.`, undo, { what: '링크 연결' });
   return added;

@@ -5,7 +5,9 @@ import { noteDates } from '../../domain/noteDates';
 import { schoolYearSpan, semesterSpan, type SemesterConfig } from '../../domain/semester';
 import type { Docs } from '../../data/select';
 import type { YMD } from '../../data/types';
-import { lessonLinkId, linkKindOf, type LinkKind } from './linkOps';
+import { lessonLinkId, linkKindOf, progressLinkId, progressRowTitle, type LinkKind } from './linkOps';
+import type { ProgressMark } from '../../domain/progress';
+import type { Stored } from '../../data/types';
 
 export type RangeKey = '1week' | '1month' | 'sem1' | 'sem2' | 'year' | 'custom';
 
@@ -30,7 +32,7 @@ export function rangeOf(key: RangeKey, center: YMD, custom: { start: YMD; end: Y
 
 export interface Candidate {
   id: string;
-  kind: LinkKind | 'lesson';
+  kind: LinkKind | 'lesson' | 'progress';
   /** 일정은 그 날, 메모는 범위 안의 가장 늦은 날짜 링크 - 날짜 링크가 없으면 만든 날(모르면 '') */
   date: string;
   text: string;
@@ -95,4 +97,42 @@ export function lessonCandidatesOf(src: LessonSource, range: { start: YMD; end: 
     }
   }
   return out;
+}
+
+/**
+ * 📘 진도표 탭 (메모에서 열 때 - P11-1): 범위 안에 하는 진도 차시(행). 날짜는 계산 - 수업 칸에 겹친 진도(progressMarks: '날짜#교시' → 진도의 몇째 행)를 뒤집어,
+ * 그 행을 하는 교시 가운데 범위 안의 첫 교시. 과정(여러 반)이면 반마다 하는 날이 달라도 행 하나(링크는 행에 붙는다). 범위 안에 하는 날이 없는 행은 뺀다.
+ * planIds를 주면 그 진도만, 키워드는 '3교시 · 과학 5차시 · 비유 표현' 글에서. 최근 날짜부터(다른 탭과 같게), 같은 날은 교시 차례.
+ */
+export function progressCandidatesOf(
+  docs: Readonly<Record<string, Stored<'progress'>>>,
+  marks: Readonly<Record<string, ProgressMark>>,
+  range: { start: YMD; end: YMD },
+  opts: { planIds?: readonly string[]; keyword?: string } = {},
+): Candidate[] {
+  const kw = (opts.keyword ?? '').trim().toLowerCase();
+  const plans = opts.planIds ?? [];
+  // 행 → 범위 안의 첫 교시
+  const first = new Map<string, { date: YMD; period: number; planId: string; row: number }>();
+  for (const [slot, m] of Object.entries(marks)) {
+    if (m.index === null || m.bumped) continue;
+    const [date, p] = slot.split('#');
+    if (date < range.start || date > range.end) continue;
+    const id = progressLinkId(m.planId, m.index);
+    const period = Number(p);
+    const had = first.get(id);
+    if (!had || date < had.date || (date === had.date && period < had.period)) first.set(id, { date, period, planId: m.planId, row: m.index });
+  }
+  const out: (Candidate & { period: number })[] = [];
+  for (const [id, f] of first) {
+    const plan = docs[f.planId];
+    if (!plan || plan.deletedAt || !plan.lessons?.[f.row]) continue;
+    if (plans.length > 0 && !plans.includes(f.planId)) continue;
+    const text = `${f.period}교시 · ${progressRowTitle(plan, f.row)}`;
+    if (kw && !text.toLowerCase().includes(kw)) continue;
+    out.push({ id, kind: 'progress', date: f.date, text, labelIds: [], period: f.period });
+  }
+  return out
+    .sort((a, b) => b.date.localeCompare(a.date) || a.period - b.period || a.id.localeCompare(b.id))
+    .map(({ period: _p, ...c }) => (void _p, c));
 }
