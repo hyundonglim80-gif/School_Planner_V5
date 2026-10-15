@@ -75,7 +75,7 @@ try {
   await evCard.locator(sel('event-links')).click();
   r.check(await waitFor(viewer('insp_lke')), '🔗 누르기 = 📑 연결된 데이터');
   const kinds = await viewer('insp_lke').locator(sel('link-row')).evaluateAll((els) => els.map((e) => e.dataset.linkKind).join(','));
-  r.check(kinds === 'journal,lesson,missing', `기록·수업·찾을 수 없는 항목 (${kinds})`);
+  r.check(kinds === 'note,lesson,missing', `메모·수업·찾을 수 없는 항목 (${kinds})`);
   r.check((await viewer('insp_lke').locator(`${sel('link-row', 'insp_lkj')} ${sel('link-text')}`).textContent()) === '점검링크 상담 기록', '이은 기록의 지금 글');
   r.check((await viewer('insp_lke').locator(`${sel('link-row', 'insp_lkj')} ${sel('entry-table')}`).count()) === 1, '이은 기록의 표');
   await jrCard.locator(sel('entry-links')).click();
@@ -102,24 +102,26 @@ try {
   await evPanel.locator(sel('event-link-add')).click();
   const linker = page.locator(sel('linker', 'insp_lke'));
   r.check(await waitFor(linker), '연결 창');
-  await linker.locator(sel('linker-tab', 'journal')).click();
-  r.check((await linker.locator(sel('linker-item', 'insp_lkj')).isDisabled()) && (await linker.locator(sel('linker-item', 'insp_lkj')).textContent()).includes('연결됨'), '이미 이은 기록은 연결됨');
+  await linker.locator(sel('linker-tab', 'note')).click();
+  r.check((await linker.locator(sel('linker-item', 'insp_lkj')).isDisabled()) && (await linker.locator(sel('linker-item', 'insp_lkj')).textContent()).includes('연결됨'), '메모 탭 - 이미 이은 메모는 연결됨');
   await linker.locator(sel('linker-keyword')).fill('어제');
   await linker.locator(sel('linker-item', 'insp_lkk')).click();
   r.check((await linker.locator(sel('linker-picked', 'insp_lkk')).count()) === 1, '🛒에 담긴다');
 
-  r.section("'+ 새 기록 만들어 연결'");
-  await linker.locator(sel('linker-new', 'journal')).click();
+  r.check((await linker.locator(sel('linker-tab')).evaluateAll((els) => els.map((e) => e.dataset.linkerTab).join(','))) === 'event,note,lesson', '탭 = 일정·메모·수업 (기록 탭 없음)');
+
+  r.section("'+ 새 메모 만들어 연결'");
+  await linker.locator(sel('linker-new', 'note')).click();
   const newPanel = page.locator(sel('note-panel', 'new'));
-  r.check(await waitFor(newPanel), '같은 쓰는 칸(새 기록)이 열린다');
+  r.check(await waitFor(newPanel), '같은 쓰는 칸(새 메모)이 열린다');
   await waitFor(() => newPanel.locator(sel('note-text-input')).evaluate((el) => el === document.activeElement));
-  await page.keyboard.type('점검링크 새로 만든 기록');
+  await page.keyboard.type('점검링크 새로 만든 메모');
   await page.keyboard.press('Control+s');
   const madePanel = page.locator(sel('note-panel', 'edit'));
   r.check(await waitFor(madePanel, 8000), '저장 → 수정 칸');
   const madeId = await madePanel.getAttribute('data-note-id');
   await page.locator(sel('side-tab')).filter({ hasText: '데이터 연결하기' }).locator('button').first().click();
-  r.check(await waitFor(linker.locator(sel('linker-picked', madeId))), '만든 기록이 🛒에 담겼다');
+  r.check(await waitFor(linker.locator(sel('linker-picked', madeId))), '만든 메모가 🛒에 담겼다');
   await page.locator(sel('linker-save')).click(); // 저장 단추는 창 아랫단 (data-linker 밖)
   const saved = await serverUntil(async () => [await read('insp_lke'), await read('insp_lkk'), await read(madeId)], ([e, k, m]) => e?.linkIds?.includes('insp_lkk') && e?.linkIds?.includes(madeId) && k?.linkIds && m?.linkIds);
   r.check(saved[0]?.linkIds?.includes('insp_lkk') && saved[0]?.linkIds?.includes(madeId), '서버: 일정 쪽에 둘');
@@ -165,6 +167,10 @@ try {
   r.check(await inJournal('insp_lkm').locator(sel('entry-up')).isDisabled(), '이은 것으로만 온 메모는 ▲▼ 없음');
   const count = Number(await journal.locator(sel('journal-count')).getAttribute('data-journal-count'));
   r.check(count === (await journal.locator(sel('entry-card')).count()), `머리줄 수 = 카드 수 (${count})`);
+  await inJournal('insp_lkm').hover();
+  await inJournal('insp_lkm').locator(sel('entry-link-add')).click();
+  r.check(await waitFor(page.locator(sel('linker', 'insp_lkm'))), '메모 카드 🔗 (마우스를 올리면) = 그 메모의 연결 창');
+  await page.keyboard.press('Escape');
   await page.goto(page.url().replace(/#.*$/, '#/day/2026-10-01'));
   const own = page.locator(`${sel('day-journal', '2026-10-01')} ${sel('entry-card', 'insp_lkm')}`);
   r.check(await waitFor(own), '제 날짜 칸에도');

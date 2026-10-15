@@ -9,6 +9,7 @@ import { setDate, setScope } from '../../app/nav';
 import type { WindowProps } from '../../app/windows';
 import { fileIcon, isImageAttachment } from '../../domain/attachments';
 import { shortDateLabel } from '../../domain/dateUtils';
+import { noteDates } from '../../domain/noteDates';
 import { lessonsOn } from '../../domain/lessons';
 import { attachmentImageSrc } from '../../data/google/drive';
 import { useDocs, useMirrorStatus } from '../../data/select';
@@ -117,7 +118,9 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
     const pics = (t.attachments ?? []).filter((a) => a?.url && isImageAttachment(a));
     const files = (t.attachments ?? []).filter((a) => a?.url && !isImageAttachment(a));
     const tables = t.tables ?? [];
-    const title = `[${t.date ? shortDateLabel(t.date) : '메모'}] ${LINK_KIND_NAME[kind]}`;
+    // 메모는 날짜 링크(여럿이면 첫 날 외 n), 날짜 없는 메모는 '메모'만
+    const dates = kind === 'note' ? noteDates(t) : t.date ? [t.date] : [];
+    const title = dates.length ? `[${shortDateLabel(dates[0])}${dates.length > 1 ? ` 외 ${dates.length - 1}` : ''}] ${LINK_KIND_NAME[kind]}` : LINK_KIND_NAME[kind];
     return (
       <div key={linkId} data-link-row={linkId} data-link-kind={kind} className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm hover:border-slate-300 transition-colors">
         {header(LINK_KIND_ICON[kind], title, linkId, { move: () => goTo(t.date ?? null), edit: () => edit(t) })}

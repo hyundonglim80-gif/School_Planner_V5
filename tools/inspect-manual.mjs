@@ -524,7 +524,7 @@ try {
     await has(sel('event-panel', 'edit'));
     await q(sel('event-link-add')).click();
     r.check(await has(sel('linker')), '🔗 링크 추가 → 새 데이터 연결하기');
-    r.check((await count(sel('linker-tab'))) >= 4 && (await count(sel('linker-save'))) === 1, '탭(일정·수업·기록·메모)·연결 저장');
+    r.check((await count(sel('linker-tab'))) === 3 && (await count(sel('linker-tab', 'note'))) === 1 && (await count(sel('linker-save'))) === 1, '탭(일정·메모·수업)·연결 저장');
   });
 
   await topic('link-viewer', async () => {

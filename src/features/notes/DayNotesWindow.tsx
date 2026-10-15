@@ -8,7 +8,7 @@ import { isLongEntry } from '../../domain/entryCollapse';
 import { labelPath } from '../../domain/labelTree';
 import { itemLabels, useLabelTree } from '../../data/select';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
-import { openLinkViewer } from '../links/open';
+import { openLinker, openLinkViewer } from '../links/open';
 import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from './actions';
 import EntryCard from './EntryCard';
 import DayCardView from '../day/DayCards';
@@ -84,6 +84,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
                 onMoveDown={canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                 onOpen={() => openNotePanel({ sid, date, id: item.id })}
                 onOpenLinks={() => openLinkViewer({ sid, id: item.id })}
+                onAddLink={() => openLinker({ sid, id: item.id })}
                 onToggleDone={() => void setNoteDone(sid, item, !item.done).catch(quiet)}
                 onToggleFavorite={() => void setNoteFavorite(sid, item, !item.favorite).catch(quiet)}
                 onDelete={() => void deleteNote(sid, item).catch(quiet)}

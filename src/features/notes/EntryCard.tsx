@@ -1,6 +1,6 @@
 // 메모·기록 카드 하나 (V4 components/EntryCard.tsx - 메모 화면과 하루 화면 기록 칸이 같은 카드를 쓴다).
 //
-//   머리줄: ▶ ▲▼ ☐완료 ☆ 라벨칩…  시각·'📅 10/6에서'  ☑ 2/5  🔗 (접혔을 때 🖼️)·📎·▦  ……  ✏️ 🗑️(마우스를 올리면)
+//   머리줄: ▶ ▲▼ ☐완료 ☆ 라벨칩…  시각·📅 날짜 칩·📌/🏫 온 길  ☑ 2/5  🔗 n (접혔을 때 🖼️)·📎·▦  ……  🔗 ✏️ 🗑️(마우스를 올리면)
 //   - 단추·라벨 칩은 한 줄에(V4 10-07 사용자 요청), 시각·표시는 넘치면 다음 줄로. 라벨 칩은 위(머리줄)에 - 메모·기록 라벨 한 목록의 색.
 //   - 지운 라벨·모르는 라벨은 그리지 않는다(부르는 쪽이 itemLabels로 고른다).
 //   - 완료는 줄 긋기, ★ 즐겨찾기. 체크 줄(☐/☑)은 눌러서 체크 - 체크한 줄은 카드 아래쪽에 모아 보이기만 한다(V4 10-07, 구글 Keep처럼).
@@ -45,6 +45,8 @@ export interface EntryCardProps {
   onOpen: () => void;
   /** 🔗 n - 이은 항목 보기 (links/LinkViewerWindow) */
   onOpenLinks?: () => void;
+  /** 🔗 링크 추가 - 연결 창 (마우스를 올렸을 때 ✏️ 앞에, P10-4 5g) */
+  onAddLink?: () => void;
   onToggleDone: () => void;
   onToggleFavorite: () => void;
   onDelete: () => void;
@@ -341,6 +343,21 @@ export default function EntryCard(props: EntryCardProps) {
         </div>
         {/* 마우스를 올렸을 때만 - 자리를 차지하지 않게 위에 띄운다 (칩이 밀려 줄바꿈되지 않게) */}
         <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 absolute top-2 right-2 bg-white/95 rounded-lg shadow-xs">
+          {props.onAddLink && (
+            <button
+              type="button"
+              data-entry-link-add
+              onClick={(e) => {
+                stop(e);
+                props.onAddLink?.();
+              }}
+              className="p-1 text-slate-400 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+              title="링크 추가 - 일정·메모·수업에 잇기"
+              aria-label="링크 추가"
+            >
+              🔗
+            </button>
+          )}
           <button
             type="button"
             data-entry-edit

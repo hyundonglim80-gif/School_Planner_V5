@@ -72,8 +72,7 @@ describe('링크 쓰기', () => {
   });
 
   it('종류: 일정 · 기록(날짜) · 메모(날짜 없음)', () => {
-    expect(linkKindOf({ kind: 'event', date: '2026-10-08' })).toBe('event');
-    expect(linkKindOf({ kind: 'note', date: '2026-10-08' })).toBe('journal');
-    expect(linkKindOf({ kind: 'note', date: null })).toBe('memo');
+    expect(linkKindOf({ kind: 'event' })).toBe('event');
+    expect(linkKindOf({ kind: 'note' })).toBe('note');
   });
 });

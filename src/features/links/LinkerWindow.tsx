@@ -1,5 +1,6 @@
 // 🔗 링크 연결 창 (V4 components/LinkerModal.tsx). 창 'linker' = { sid, id } - 그 항목(또는 수업 'lesson:날짜:교시')에 잇는다.
-//   - 탭 📌 일정 · 📔 기록 · 📝 메모 · 🏫 수업(P6-1 - 계산한 수업 칸 가운데 과목·메모가 있는 것, 항목에서 열 때만).
+//   - 탭 📌 일정 · 📝 메모 · 🏫 수업(P6-1 - 계산한 수업 칸 가운데 과목·비고가 있는 것, 항목에서 열 때만).
+//     옛 📔 기록 탭은 📝 메모에 합쳤다(P10-4 5g - 메모 하나: 날짜 링크 메모와 날짜 없는 메모가 한 목록).
 //   - 조회 범위(±1주일·±1개월·1학기·2학기·학년도·기간 설정 - 날짜를 고치면 기간 설정), 라벨 칩·키워드로 좁히고 ‹ ›로 쪽을 넘긴다.
 //   - 누르면 🛒 담기(여러 개), 이미 이은 것은 '연결됨'. '+ 새 00 만들어 연결' = 같은 쓰는 칸을 열고, 처음 저장하면 담긴다.
 //   - 연결 저장(Ctrl+S) = 양쪽 linkIds를 한 묶음으로 → 창을 닫는다(V4 10-07 - 열어 두면 링크 수가 바뀐 칸이 숨은 탭에 가려진다).
@@ -19,11 +20,11 @@ import { useLessonSource } from '../lessons/useLessons';
 import { openNotePanel } from '../notes/open';
 import { saveLessonLinks, saveLinks } from './actions';
 import { candidatesOf, lessonCandidatesOf, RANGE_OPTIONS, rangeOf, type RangeKey } from './linkerList';
-import { LINK_KIND_ICON, LINK_KIND_NAME, lessonEndOf, parseLessonLink, type LessonEnd, type LinkKind } from './linkOps';
+import { LINK_KIND_ICON, LINK_KIND_NAME, lessonEndOf, linkKindOf, parseLessonLink, type LessonEnd, type LinkKind } from './linkOps';
 import { listenLinkPick, type LinkWindowParams } from './open';
 
 type LinkerTab = LinkKind | 'lesson';
-const ITEM_TABS: LinkerTab[] = ['event', 'journal', 'memo'];
+const ITEM_TABS: LinkerTab[] = ['event', 'note'];
 const PER_PAGE = 6;
 
 export default function LinkerWindow({ params, close, raise }: WindowProps<LinkWindowParams>) {
@@ -86,10 +87,10 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
     setPicked((p) => (p.includes(itemId) ? p.filter((x) => x !== itemId) : [...p, itemId]));
   };
 
+  // 새 메모는 날짜 없이 - 이으면 잇는 쪽(일정·수업)의 날 메모 칸에 저절로 보인다(P10-4 ■1)
   const makeNew = () => {
     const pickFor = pickToken.current;
-    if (tab === 'memo') openNotePanel({ sid, date: null, pickFor });
-    else if (tab === 'journal') openNotePanel({ sid, date: center, pickFor });
+    if (tab === 'note') openNotePanel({ sid, date: null, pickFor });
     else openEventPanel({ sid, date: center, pickFor });
   };
 
@@ -146,7 +147,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
       <div data-linker={id} className="flex flex-col gap-4">
         {source && (
           <p className="text-xs text-slate-500 truncate" data-linker-source>
-            {LINK_KIND_ICON[source.kind === 'event' ? 'event' : source.date ? 'journal' : 'memo']} {source.text.split('\n')[0] || '(내용 없음)'} 에 잇습니다
+            {LINK_KIND_ICON[linkKindOf(source)]} {source.text.split('\n')[0] || '(내용 없음)'} 에 잇습니다
           </p>
         )}
         {lessonEnd && (
@@ -340,7 +341,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
               picked.map((p) => {
                 const d = items[p];
                 const isLesson = !!parseLessonLink(p);
-                const kind: LinkerTab = isLesson ? 'lesson' : d?.kind === 'event' ? 'event' : d?.date ? 'journal' : 'memo';
+                const kind: LinkerTab = isLesson ? 'lesson' : d ? linkKindOf(d) : 'note';
                 return (
                   <span key={p} data-linker-picked={p} className="inline-flex items-center bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg text-xs text-blue-900 font-medium">
                     <span className="mr-1">{LINK_KIND_ICON[kind]}</span>

@@ -119,10 +119,10 @@ export function lessonUnlinkOps(sid: string, source: LessonEnd, targetId: string
   return ops;
 }
 
-export type LinkKind = 'event' | 'journal' | 'memo';
+/** 항목의 링크 종류 - 일정 · 메모 (P10-4 5g: 옛 '기록'(날짜 있는 메모)·'메모' 둘을 메모 하나로) */
+export type LinkKind = 'event' | 'note';
 
-/** 항목의 링크 종류 (일정 · 기록(날짜 있는 note) · 메모) */
-export const linkKindOf = (item: Pick<ItemDoc, 'kind' | 'date'>): LinkKind => (item.kind === 'event' ? 'event' : item.date ? 'journal' : 'memo');
+export const linkKindOf = (item: Pick<ItemDoc, 'kind'>): LinkKind => (item.kind === 'event' ? 'event' : 'note');
 
-export const LINK_KIND_ICON: Record<LinkKind | 'lesson', string> = { event: '📌', journal: '📔', memo: '📝', lesson: '🏫' };
-export const LINK_KIND_NAME: Record<LinkKind | 'lesson', string> = { event: '일정', journal: '기록', memo: '메모', lesson: '수업' };
+export const LINK_KIND_ICON: Record<LinkKind | 'lesson', string> = { event: '📌', note: '📝', lesson: '🏫' };
+export const LINK_KIND_NAME: Record<LinkKind | 'lesson', string> = { event: '일정', note: '메모', lesson: '수업' };
