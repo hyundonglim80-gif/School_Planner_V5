@@ -35,7 +35,7 @@ import { openImageViewer } from '../../ui/imageViewerStore';
 import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
-import { orderAfter } from '../events/eventOps';
+import { orderAfter, orderBefore } from '../events/eventOps';
 import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite } from './actions';
 import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
 import EntryTableView from './EntryTableView';
@@ -335,7 +335,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     const toSave = { ...form, studentIds: studentIdsToSave(form.studentIds, form.text, base.text, classes) };
     try {
       if (!isEditing) {
-        const order = orderAfter(anchorDate ? dayNotes : memoList);
+        // 하루 메모 칸은 그날 목록 맨 뒤, 메모 화면(날짜 없이 연 칸)은 맨 앞 - 최근 메모가 맨 위(P11-1 사용자 의견, V4 그대로)
+        const order = anchorDate ? orderAfter(dayNotes) : orderBefore(memoList);
         const saved = await createNote(sid, toSave, tree, order);
         draft.clear();
         // 저장한 뒤에도 적은 것이 남고 그 항목의 수정 칸이 된다 (V4 사용자 결정). '#라벨' 줄은 떼고 칩으로

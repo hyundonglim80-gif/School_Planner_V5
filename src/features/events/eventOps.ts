@@ -57,3 +57,10 @@ export function orderAfter(list: readonly { order?: string }[]): string {
   for (const d of list) if (d.order && (last === null || d.order > last)) last = d.order;
   return orderBetween(last, null);
 }
+
+/** 목록의 맨 앞 차례 값 (메모 화면의 새 메모 - 최근 것이 맨 위, V4 그대로 - P11-1) */
+export function orderBefore(list: readonly { order?: string }[]): string {
+  let first: string | null = null;
+  for (const d of list) if (d.order && (first === null || d.order < first)) first = d.order;
+  return orderBetween(null, first);
+}

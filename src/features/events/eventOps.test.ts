@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { carriedDoneChanges, doneChanges, orderAfter, reorderOps, type ItemDoc } from './eventOps';
+import { carriedDoneChanges, doneChanges, orderAfter, orderBefore, reorderOps, type ItemDoc } from './eventOps';
 
 const ev = (id: string, order: string): ItemDoc => ({ id, order, kind: 'event', date: '2026-10-08', text: id, labelIds: [] }) as unknown as ItemDoc;
 
@@ -58,6 +58,11 @@ describe('doneChanges · orderAfter', () => {
   it('새 일정은 맨 뒤', () => {
     expect(orderAfter([])).toBe('a0');
     expect(orderAfter([{ order: 'a0' }, { order: 'a2' }, { order: 'a1' }]) > 'a2').toBe(true);
+  });
+  it('메모 화면의 새 메모는 맨 앞 (P11-1)', () => {
+    expect(orderBefore([])).toBe('a0');
+    const key = orderBefore([{ order: 'a1' }, { order: 'Zz' }, { order: 'a0' }]);
+    expect(key < 'Zz').toBe(true);
   });
 });
 

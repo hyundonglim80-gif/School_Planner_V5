@@ -128,7 +128,7 @@ describe('새 메모', () => {
     expect(anyWindowUnsaved()).toBe(false);
   });
 
-  it('날짜 없는 새 메모 = date null, 메모 목록 맨 뒤. 날짜 칩을 더했다 빼면 그대로', async () => {
+  it('날짜 없는 새 메모 = date null, 메모 목록 맨 앞(최근 것이 맨 위 - P11-1). 날짜 칩을 더했다 빼면 그대로', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: null }} />);
     expect(q('[data-note-panel]').dataset.noteDates).toBe('');
@@ -142,7 +142,7 @@ describe('새 메모', () => {
     await save();
     const data = (lastOps()[0] as { data: Record<string, unknown> }).data;
     expect(data).toMatchObject({ date: null, text: '메모 둘' });
-    expect(String(data.order) > 'a7').toBe(true);
+    expect(String(data.order) < 'a7').toBe(true);
     expect(document.querySelector('[data-toast]')?.textContent).toContain('메모를 저장했습니다');
   });
 

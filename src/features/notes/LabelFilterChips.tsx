@@ -171,3 +171,5 @@ export default function LabelFilterChips({ tree, filter, onChange, countOf, row 
 
 /** 숨은 조작 안내 (V4 UX-AUDIT H4 - 키 조합은 글로 박지 않는다는 규칙의 예외: 마우스 누르기 방법이라 단축키가 아니다) */
 export const FILTER_HELP = '누르기: 그 라벨 하나만 · Ctrl+누르기: 더하기·빼기 · Shift+누르기: 범위 · ESC: 모두 떼기 · 상위를 고르면 하위도 함께 (▸로 펴서 \'기타\' = 상위만)';
+/** 칩 아래(옆)에 보이는 짧은 안내 - 마우스를 올리면 FILTER_HELP 전부 (P11-1 사용자 의견 - 옛 '?'는 뜻을 몰랐다) */
+export const FILTER_HINT = 'Ctrl·Shift+누르기 = 여러 개';

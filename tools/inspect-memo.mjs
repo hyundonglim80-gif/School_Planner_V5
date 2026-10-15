@@ -131,6 +131,8 @@ try {
   const newId = await panel.getAttribute('data-note-id');
   r.check(await waitFor(card(newId)), '메모 화면에 나온다');
   r.check((await read(newId))?.date === null, '날짜 없는 메모');
+  const newOrder = (await read(newId))?.order;
+  r.check(!!newOrder && newOrder < 'Zz1', `새 메모 = 날짜 없는 메모 맨 앞 차례 (최근 것이 맨 위 - P11-1, ${newOrder})`);
 
   r.section('내용을 다 지우고 저장 = 메모 지우기 (P10-5)');
   await panel.locator(sel('note-text-input')).fill('');
@@ -158,6 +160,15 @@ try {
   r.check((await page.locator(sel('entry-card')).count()) === 0, '카드는 없다');
   const rowText = await page.locator(`${sel('memo-row', 'insp_mm5')} ${sel('memo-row-text')}`).textContent();
   r.check(rowText === '점검 메모 길게', `첫 줄만 (${rowText})`);
+  const row5 = page.locator(sel('memo-row', 'insp_mm5'));
+  r.check(!(await row5.locator(sel('memo-row-body')).count()), '목록 줄은 접힌 채 시작 (P11-1)');
+  await row5.locator(sel('memo-row-expand')).click();
+  r.check(await waitFor(async () => ((await row5.locator(`${sel('memo-row-body')} ${sel('entry-text')}`).textContent()) ?? '').includes('줄 줄')), '▶ = 그 줄 아래에 본문 (카드와 같은 글)');
+  r.check((await page.locator(`${sel('note-panel', 'edit')}[data-note-id="insp_mm5"]`).count()) === 0, '▶는 쓰는 칸을 열지 않는다');
+  await row5.locator(sel('memo-row-expand')).click();
+  r.check(await waitFor(async () => !(await row5.locator(sel('memo-row-body')).count())), '▼ = 다시 한 줄');
+  const hint = page.locator(`${sel('memo-filter-nav')} ${sel('filter-help')}`);
+  r.check(((await hint.textContent()) ?? '').includes('여러 개') && (await hint.isVisible()), "칩 아래 'Ctrl·Shift+누르기 = 여러 개' (옛 '?' - P11-1)");
   await page.locator(sel('memo-row', 'insp_mm1')).click();
   r.check(await waitFor(page.locator(`${sel('note-panel', 'edit')}[data-note-id="insp_mm1"]`)), '줄을 누르면 쓰는 칸');
   await page.keyboard.press('Escape');

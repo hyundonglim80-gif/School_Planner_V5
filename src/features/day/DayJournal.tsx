@@ -21,7 +21,7 @@ import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteChe
 import EntryCard from '../notes/EntryCard';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useProgressNoteLinks } from '../links/useProgressLinks';
-import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterChips';
+import LabelFilterChips, { FILTER_HELP, FILTER_HINT, FilterChip } from '../notes/LabelFilterChips';
 import { setJournalFilter, setJournalFilterOpen, useLabelFilters } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
 import { openNotePanel, useEditingNoteIds } from '../notes/open';
@@ -161,8 +161,8 @@ export default function DayJournal({ date }: { date: YMD }) {
                 onClick={() => setJournalFilter(EMPTY_FILTER)}
               />
               <LabelFilterChips tree={tree} filter={filter} onChange={setJournalFilter} countOf={countOf} row />
-              <span data-filter-help title={FILTER_HELP} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-slate-500 text-2xs cursor-help">
-                ?
+              <span data-filter-help title={FILTER_HELP} className="hidden sm:inline text-2xs text-slate-400 whitespace-nowrap">
+                {FILTER_HINT}
               </span>
             </div>
           )}
