@@ -26,8 +26,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P10(사용 의견 27가지, 세션 다섯)** - `docs/PLAN.md` 6장 `### P10`. **P10-4 끝(10-15)**: 그날 메모 칸에 일정·수업·진도 차시에 이은 메모 · 진도 차시 링크 · 링크 창 일정·메모·수업 · '기록' 글자 → '메모'.
-- '이어서' = **P10-5**(■1부터 - P10 마지막). 부탁 없음.
+- **P10 끝(10-15)** - 사용 의견 27가지 모두(세션 다섯). P10-5: 쓰는 칸 체크리스트(☐ 누르기 = 맨 아래로·줄긋기·▲▼) · 빈 메모 저장 = 휴지통 · 메모 화면 '🏷️ 라벨 관리'·☰/▦ 카드·목록 · 긴 메모 커서 줄·표·옆 칸 휠('스크롤로 페이지 이동'이 날짜를 넘기던 것).
+- '이어서' = **없음**(P0~P10 끝 - 새 요청을 기다린다). 부탁 없음.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -93,6 +93,7 @@
 - **`pkill -f <글자>`는 그 글자가 든 자기 명령 줄(셸)도 죽인다**(P7-3 - `pkill -f vite`로 Bash가 144로 끝났다). 에뮬레이터·개발 서버는 뒤에서(`run_in_background`) 켠다.
 - **클라우드 백그라운드 명령은 기본 30분에 꺼진다** - 에뮬레이터·개발 서버는 `run_in_background` + `timeout: 7200000`(최대 2시간, 그 뒤에도 꺼진다 - 다시 켜고 seed, P9-1). 점검이 갑자기 다 깨지면 먼저 8080·5175가 살아 있나.
 - 점검에서 칸을 닫는 `sp5.closeAllWindows()`는 저장 안 한 칸이 있으면 confirm으로 묻고 probe는 '아니오'라 **칸이 남는다** → 그때만 `dialogs.answer = true`(inspect-manual `closeAll`, P9-1).
+- **점검이 개발 서버로 도는 동안 저장소 파일(.md 포함)을 고치지 않는다**(P10-5) - Tailwind가 다시 훑어 `index.css`·`Shell`이 HMR로 바뀌고 열린 칸이 사라져 점검이 틀린다. 문서는 점검 묶음 뒤에.
 - **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
 - **운영을 지우는 명령(`functions:delete`, `git push --delete`)은 Claude 자동 권한이 막는다**(10-14) - 사용자에게 한 줄 명령을 주고 VS Code 터미널에서 돌리게 한 뒤, 결과는 사용자가 보낸 화면으로 확인한다.
   VS Code 터미널(PowerShell)은 `npx`가 실행 정책에 막힌다(`npx.ps1` 보안 오류) → **`npx.cmd`**로. `firebase login`은 `!`로는 안 된다(브라우저·질문) - 터미널에서.
@@ -167,6 +168,7 @@
 - 라벨로 보기는 **여러 개** 고른다(하나라도 붙은 항목). **상위를 고르면 하위도 함께**, 하위 끝 가상 칩 **'기타'** = 하위 없이 상위만 붙은 항목. 하위는 화면을 열면 접혀 있다.
 - 칩 고르기는 **윈도우 탐색기처럼**: 그냥 누르기 = 하나만, Ctrl = 더하기·빼기, Shift = 범위, ESC = 모두 떼기(오른쪽 칸도 닫힘). 라벨을 더할 때 상위 라벨도 고른다.
 - 빈 라벨은 **저절로 지우지 않는다**(라벨 관리 '빈 라벨 정리 (N개)').
+- 메모 화면 왼쪽 제목은 **'🏷️ 라벨 관리'**(누르면 라벨 관리 창 - P10-5 사용자 의견 5a, 옛 '📁 라벨로 보기'), 그 아래 칩과 하루 메모 칸 🏷️ 칩 줄의 이름은 '라벨로 보기' 그대로.
 
 ### 메모·기록의 표
 - 엑셀·한셀·구글 시트에서 복사해 본문에 붙여넣으면 서식째 표. 붙인 뒤에는 **칸 글자와 행·열만** 고친다(서식 편집 없음). 표는 글 아래 첨부처럼.
@@ -175,14 +177,17 @@
 - 휴지통 자동 비우기: 끄기/7/14/30/60/90일(계정에 하나, **기본 끄기**). 휴대폰에서도 맨 위에 🗑️ 휴지통.
 - 구글 로그인이 만료되면(첨부·사진·백업·캘린더) 오류 대신 '구글 로그인이 필요합니다' 창을 띄우고 그 단추에서 로그인 창을 연다.
 - 진도표 차시 칸 = 그 내용의 차시 수('2'면 같은 내용을 2행으로). 1, 2, 3 … 차례 번호로 적은 옛 표는 늘리지 않는다.
-- 체크리스트는 글 안의 `☐ `/`☑ `, 카드 '☑ n/m', 체크한 줄은 보이기만 아래로. 첫·마지막 줄 '#라벨'은 라벨로 떼고 그 줄을 지운다(숫자 8자리 학생 태그는 남긴다).
+- 체크리스트는 글 안의 `☐ `/`☑ `, 카드 '☑ n/m', 카드는 체크한 줄을 **보이기만** 아래로. **쓰는 칸은 글 차례를 실제로 바꾼다**(P10-5 사용자 의견 5b·5c): ☐ 누르기 = 체크하고 그 목록 맨 아래·줄긋기,
+  풀면 체크 안 한 줄들의 맨 아래, 줄마다 ▲▼(같은 무리끼리) - 글 칸 하나 + 덧그림(`notes/CheckLinesOverlay`). 첫·마지막 줄 '#라벨'은 라벨로 떼고 그 줄을 지운다(숫자 8자리 학생 태그는 남긴다).
+- **메모 글·첨부·표를 다 지우고 저장 = 그 메모 지우기**(휴지통 + 되돌리기, P10-5 사용자 의견 5d - V4는 남겼다). 메모만(일정 칸은 그대로). 빈 새 칸은 만들지 않고 닫는다.
+- 메모 화면 **카드/목록**: 머리줄 🔍 왼쪽 그림 단추(메모 화면에서만 ☰/▦, 이 기기 기억 - P10-5 5e). 오른쪽 칸·클립보드 칸 위의 휠은 그 칸만(가운데 화면·'스크롤로 페이지 이동' 날짜 넘기기를 하지 않는다 - 6e).
 - **PC 머리줄 '＋ 새로' 없음**(P10-1 사용자 의견 6d - 칸마다 '+ 추가'·단축키, 휴대폰 둥근 ＋는 둔다) · **알림 소리 길이**는 환경설정 '알림'(한 번·10초(기본 - 3초마다 3번)·30초·1분·5분·확인할 때까지, 계정에 하나).
 - **반복 = 끝 날 + 요일**(P10-1 10-14 사용자 의견 6b): '📆 끝 날 · 🔁 반복' 줄 하나 - 요일을 안 고르면 기간 하나, 고르면 그 요일만 반복(새 일정만), 격주·매월·매일은 '더 보기'.
 - **일정 완료 = 칩 앞에 ✓**(P10-1 10-14 사용자 의견): 끝낸 일정도 칩 색·글은 그대로(흑백·줄긋기 없음), 하루 카드의 ☐는 없앴다 - 라벨 칩을 누르면 완료, 라벨이 없으면 회색 ○ 칩.
 - 일정 라벨 속성 '구글 캘린더' - 켠 라벨의 일정은 저장·완료·옮기기·지우기를 구글 캘린더에도. 저장할 때 로그인이 없으면 로그인 창을 묻는다.
 - 교사 유형은 시간표 창에서 고른다((초등) 담임 / 전담 / (중등) 전담 + 담임). 전담은 담임 도구(출석부·알림장)를 숨긴다. 수업 칸 글자는 '5-2 과학'.
 - 명렬표는 학급 화면 안(⋮에 없다). 수업 종은 하루 '수업' 옆. 링크 연결 창은 저장하면 닫힌다.
-- 화면 이름(UX-AUDIT 10-07 사용자 결정): 일정 속성 **'달력'·'수업X'은 그대로**, '조사표'로 통일(모아 보기도 '조사표 모아 보기'), 표는 '행/열', 메모 거르개는 '라벨로 보기',
+- 화면 이름(UX-AUDIT 10-07 사용자 결정): 일정 속성 **'달력'·'수업X'은 그대로**, '조사표'로 통일(모아 보기도 '조사표 모아 보기'), 표는 '행/열', 메모 거르개는 '라벨로 보기'(메모 화면 제목은 '🏷️ 라벨 관리' - P10-5),
   '창 위치'(오른쪽 칸 / 가운데 창), '⏰ 시간표', '💾 저장', '지난 일정 오늘로 가져오기', '여러 개 고르기', '라벨 관리', '검색', '학생 기록(누가기록)', '앱으로 설치'.
 - **하지 않기로 한 것**(V4 ROADMAP): 학부모 소통(알림 발송·설문·상담 예약 - 복사·공유로 잇기만), AI API 직접 연결(학생 개인정보가 밖으로 나간다).
 
@@ -243,7 +248,9 @@
   왼쪽 📋 클립보드 칸 `features/clipboard/`(`capture.ts` 열림·폭·모으기 · `paste.ts` 글 쓰던 칸에 · `ClipboardColumn.tsx`).
 - **공통 부품** `src/ui/`: `ModalShell.tsx`(창 껍데기, ✕ `[data-close]`) · `PopupFrame.tsx`(오른쪽 칸/배너/가운데 `[data-popup-frame]`) · `SidePanelFrame.tsx`(쓰는 칸 `[data-panel-frame]`) ·
   `sideColumn.ts`(오른쪽 줄·탭 차례 `useSideSlot`·`useDocked`) · `SideTabs.tsx`(`[data-side-tab]`·`[data-side-tab-close]`) · `useSaveKey.ts`(Ctrl+S 받기) · `ColumnResizer.tsx` ·
-  `MiniCalendarPicker.tsx`(`[data-date-picker]`·`[data-picker-day]`) · `LinkPreviewCards.tsx`(글 안 주소 카드 `[data-link-preview]`) · 훅 `useMinWidth`·`useIsMobile`·`useMainWidth`·`useVisualViewport`·`useBodyScrollLock`·`useBackdropClose`.
+  `MiniCalendarPicker.tsx`(`[data-date-picker]`·`[data-picker-day]`) · `LinkPreviewCards.tsx`(글 안 주소 카드 `[data-link-preview]`) · 훅 `useMinWidth`·`useIsMobile`·`useMainWidth`·`useVisualViewport`·`useBodyScrollLock`·`useBackdropClose` ·
+  `AutoTextarea.tsx`(높이를 다시 잴 때 둘레 스크롤을 지키고 커서 줄을 보이게 - P10-5) · `containScroll.ts`(옆 칸 위 휠·밀기는 그 칸 안에서만 - 오른쪽 줄 `getSideColumn`·클립보드 칸, P10-5).
+  '스크롤로 페이지 이동'(`app/useGlobalGestures`)은 옆 칸(`#side-column`·`[data-clipboard-panel]`) 안의 휠·밀기를 무시한다(P10-5 - 쓰는 칸은 창 층이 아니라 날짜가 넘어갔다).
 - **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)·다시 세운 줄 `rekeyOrders`(옮긴 것만)) ·
   `labelTree.ts`(V4 트리를 id로 - `parentMapOf`·`orderByTree`·라벨로 보기 `matchLabels`·탐색기식 `clickFilterLabel`·`filterChipOrder`·`otherKey`) ·
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) ·
@@ -352,10 +359,12 @@
   `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
   `lastYear.ts`(순수 가져오기 셈)·`actions.ts`(`importLastYear`)·`prefs.ts`(`sp5-last-year`·단축키 'lastYear') · 셈 `domain/lastYearWeek.ts`·`domain/dayTone.ts`. 📝 n = 창 `dayNotes`(`notes/DayNotesWindow.tsx`, `notes/open.openDayNotes`). 점검 `tools/inspect-week.mjs`(44).
-- **메모 화면** `src/features/memo/MemoScreen.tsx`(P4-1 - ⭐/라벨/전체·진행/완료·전체 비우기·'메모' 라벨 붙이기, 카드 쌓기 `ui/Masonry.tsx`·`domain/masonry.ts`, P10-3 - 모든 메모 `select.allNotes`·차례 `noteOps.memoScreenOrder`·카드 📅 칩 `[data-entry-date-chip]`·60장씩 `[data-memo-more]`) ·
+- **메모 화면** `src/features/memo/MemoScreen.tsx`(P4-1 - ⭐/라벨/전체·진행/완료·전체 비우기·'메모' 라벨 붙이기, 카드 쌓기 `ui/Masonry.tsx`·`domain/masonry.ts`, P10-3 - 모든 메모 `select.allNotes`·차례 `noteOps.memoScreenOrder`·카드 📅 칩 `[data-entry-date-chip]`·60장씩 `[data-memo-more]`,
+  P10-5 - 왼쪽 제목 '🏷️ 라벨 관리' `[data-memo-labels-settings]`·카드/목록 `memoView.ts`(`sp5-memo-view` - 머리줄 `[data-memo-view-toggle=card|list]`, 메모 화면에서만)·목록 한 줄 `MemoListRow.tsx`(`[data-memo-list|memo-row|memo-row-text|memo-row-complete|memo-row-favorite]`)) ·
   라벨로 보기 칩 `notes/LabelFilterChips.tsx`(메모 화면 세로·하루 메모 칸 한 줄)·기억 `notes/labelFilter.ts`(`sp5-label-filters` - 하루 칸 칩 줄 폄 `journalOpen`). 점검 `tools/inspect-memo.mjs`(33).
 - **메모** `src/features/notes/`(하루 메모 칸·메모 화면(P4-1)이 함께 쓴다 - kind 'note' 하나, 날짜 링크 `domain/noteDates`(`noteDates`·`datesFields`·`datesChanges` - P10-3), 고르기 `itemsOn`은 날짜 링크마다·`noteDaysBetween`·`allNotes`): `open.ts`(쓰는 칸 `note` = `{ sid, date|null(연 날), id? }`·`openNotePanel`·`useEditingNoteIds`·`closeNotePanelsFor`) ·
-  `NotePanel.tsx`(`[data-note-panel=new|edit|note-id|note-dates(쉼표로)|note-flag=done|favorite|note-date-chip|note-date-remove|note-date-add|note-dates-empty|note-text-input|checklist-toggle|hash-preview|hash-label|note-save|note-delete|note-close]` - + 날짜 = `ui/MiniCalendarPicker` trigger·marked) ·
+  `NotePanel.tsx`(`[data-note-panel=new|edit|note-id|note-dates(쉼표로)|note-flag=done|favorite|note-date-chip|note-date-remove|note-date-add|note-dates-empty|note-text-input|checklist-toggle|hash-preview|hash-label|note-save|note-delete|note-close]` - + 날짜 = `ui/MiniCalendarPicker` trigger·marked, 빈 글 저장 = 지우기(P10-5)) ·
+  `CheckLinesOverlay.tsx`(쓰는 칸 체크리스트 - 같은 글을 글 칸 아래에 그려 ☑ 줄긋기·▲▼ `[data-check-backdrop|check-row|check-state|check-up|check-down]`, 글 칸 `[data-check-mode]`, 셈 `domain/checkLines` `toggleCheckMoving`·`moveCheckLine` - P10-5) ·
   `noteForm.ts`(순수 - 칸 ↔ 문서, 날짜 칩 `dates`, '#라벨'·새 라벨 `savePlanOf`) · `noteOps.ts`(순수 - 즐겨찾기 먼저·▲▼ 무리 안·체크 줄·메모 화면 차례) ·
   `actions.ts`(`createNote`·`saveNote`(새 라벨과 한 묶음)·`setNoteDone`·`setNoteFavorite`·`moveNoteInList`·`toggleNoteCheckLine`·`deleteNote`) ·
   `EntryCard.tsx`(메모 카드 `[data-entry-card|entry-kind(journal = 날짜 있음)|entry-date-chip|entry-done|entry-favorite|entry-collapsed|entry-collapse|entry-up|entry-down|entry-complete|entry-favorite-toggle|entry-chip|entry-checks|entry-edit|entry-delete|entry-image|entry-images|check-line|check-done]`) ·
@@ -367,7 +376,7 @@
   `HelpWindow.tsx`(V4 HelpModal - 분류 → 기능 → 설명·사용 예·왼쪽 목차(접기 이 기기 `sp5-help-tree-hidden`)·찾기·단축키 표, `[data-help-window|help-home|help-search|help-results|help-category|help-topic|help-detail|help-example|help-link|help-key|help-lookback|help-related|help-prev|help-next|help-crumb-home|help-back|help-tree|help-tree-topic|help-tree-category|help-tree-fold|help-tree-all|help-tree-toggle|help-shortcuts|help-shortcut|help-shortcuts-open]`)) ·
   시험 `topics.test`(링크·자리표·창의 `help` 주제가 있나)·`HelpWindow.test`(모든 항목을 그려 기호가 남지 않나). 점검 `tools/inspect-manual.mjs`(282 - 68주제마다 설명서가 말하는 자리).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
-- **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`·`noUserActivation`(P9-3)·`newPage(…, { isMobile… })`) · `tools/inspect-mobile.mjs`(P9-3 휴대폰 390·다크 대비) · `tools/inspect-perf.mjs`(P9-3 성능 - 빌드 + preview, teacher4 `?as=4` 1만 항목, 앱이 센 서버 읽기 `window.__sp5Reads`(`mirror/server` - 에뮬레이터 빌드만), 결과 = DESIGN 11장) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
+- **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`·`noUserActivation`(P9-3)·`newPage(…, { isMobile… })`) · `tools/inspect-mobile.mjs`(P9-3 휴대폰 390·다크 대비) · `tools/inspect-scroll.mjs`(P10-5 - 긴 메모 끝 커서 줄·쓰는 칸 표 세로 스크롤 없음·옆 칸 휠·'스크롤로 페이지 이동' 날짜 그대로, 끝에 설정을 끈다) · `tools/inspect-perf.mjs`(P9-3 성능 - 빌드 + preview, teacher4 `?as=4` 1만 항목, 앱이 센 서버 읽기 `window.__sp5Reads`(`mirror/server` - 에뮬레이터 빌드만), 결과 = DESIGN 11장) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
   `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
   `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움) ·
   `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기) ·

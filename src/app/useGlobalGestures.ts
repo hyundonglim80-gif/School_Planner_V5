@@ -9,6 +9,12 @@ import { isDatelessScope } from './route';
 /** 창이 떠 있으면 손짓은 그 창의 것이다 */
 const isWindowOpen = () => isAnyLayerOpen() || !!document.querySelector('[role="dialog"]');
 
+/**
+ * 옆 칸(오른쪽 줄의 쓰는 칸·왼쪽 클립보드 칸) 안의 손짓은 그 칸의 것이다 - 가운데 화면의 날짜·화면을 옮기지 않는다.
+ * 쓰는 칸은 창 층에 들지 않아(isWindowOpen이 모른다) 긴 메모를 굴리다 끝에 닿으면 가운데 날짜가 넘어갔다(P10-5 사용자 의견 6e).
+ */
+const inSideColumn = (t: EventTarget | null) => t instanceof Element && !!t.closest('#side-column, [data-clipboard-panel]');
+
 const pageMetrics = (edge: number) => {
   const scrollHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
   const bottom = Math.ceil(window.innerHeight + window.scrollY);
@@ -16,7 +22,7 @@ const pageMetrics = (edge: number) => {
 };
 
 export function useGlobalGestures() {
-  const start = useRef({ x: 0, y: 0, atTop: false, atBottom: false });
+  const start = useRef({ x: 0, y: 0, atTop: false, atBottom: false, side: false });
   const blockWheelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navLock = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -31,11 +37,11 @@ export function useGlobalGestures() {
 
     const onTouchStart = (e: TouchEvent) => {
       if (isWindowOpen()) return;
-      start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, ...pageMetrics(50) };
+      start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, ...pageMetrics(50), side: inSideColumn(e.target) };
     };
 
     const onTouchEnd = (e: TouchEvent) => {
-      if (isWindowOpen() || navLock.current) return;
+      if (isWindowOpen() || navLock.current || start.current.side) return;
       const s = useNav.getState();
       if (!s.enableScrollNav) return;
       const deltaX = start.current.x - e.changedTouches[0].clientX;
@@ -57,7 +63,7 @@ export function useGlobalGestures() {
     };
 
     const onWheel = (e: WheelEvent) => {
-      if (isWindowOpen() || navLock.current) return;
+      if (isWindowOpen() || navLock.current || inSideColumn(e.target)) return;
       const s = useNav.getState();
       if (!s.enableScrollNav || isDatelessScope(s.scope)) return;
       const { atTop, atBottom } = pageMetrics(10);

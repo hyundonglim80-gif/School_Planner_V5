@@ -6,7 +6,7 @@
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-scroll.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 메모(insp_sc…)를 심고 끝에 지운다.
 import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, waitFor } from './lib/probe.mjs';
+import { emulator, hashOf, launch, newPage, open, report, restorer, sel, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -55,12 +55,20 @@ try {
   }
   const { page, errors, dialogs } = await newPage(browser);
   await open(page, `#/day/${DAY}`);
+  /** 카드의 ✏️로 그 메모의 수정 칸을 연다 - 앞 칸이 닫히는 사이에 누르면 빠질 때가 있어 뜰 때까지 다시 */
+  const openEdit = async (id) => {
+    const p = page.locator(`${sel('note-panel', 'edit')}[data-note-id="${id}"]`);
+    for (let i = 0; i < 4 && !(await p.count()); i++) {
+      await page.locator(sel('entry-card', id)).locator(sel('entry-edit')).click({ force: true });
+      await waitFor(p, 3000);
+    }
+    return p;
+  };
 
   r.section('긴 메모 끝에서 쓰기 (5f)');
   const card = page.locator(sel('entry-card', 'insp_sc_long'));
   r.check(await waitFor(card, 8000), '긴 메모 카드');
-  await card.locator(sel('entry-edit')).click({ force: true });
-  const panel = page.locator(sel('note-panel', 'edit'));
+  const panel = await openEdit('insp_sc_long');
   r.check(await waitFor(panel), '수정 칸');
   const input = panel.locator(sel('note-text-input'));
   await input.click();
@@ -88,12 +96,7 @@ try {
   dialogs.answer = false;
 
   r.section('쓰는 칸의 표는 세로로 따로 스크롤하지 않는다 (6f)');
-  const table = page.locator(`${sel('note-panel', 'edit')} ${sel('note-table', 'tb1')}`);
-  // 앞 칸이 닫히는 사이에 누르면 빠질 때가 있다 - 뜰 때까지 한 번 더
-  for (let i = 0; i < 3 && !(await table.count()); i++) {
-    await page.locator(sel('entry-card', 'insp_sc_table')).locator(sel('entry-edit')).click({ force: true });
-    await waitFor(table, 3000);
-  }
+  const table = (await openEdit('insp_sc_table')).locator(sel('note-table', 'tb1'));
   r.check(await waitFor(table), '표가 있는 수정 칸');
   const boxes = await table.evaluate((el) =>
     [...el.querySelectorAll('div')].filter((d) => d.querySelector('table')).map((d) => ({ y: getComputedStyle(d).overflowY, h: d.scrollHeight - d.clientHeight })),
@@ -133,8 +136,7 @@ try {
   await page.locator(sel('clipboard-close')).click();
 
   // 긴 메모 칸을 끝까지 내린 뒤 더 내린다 (끝에 닿은 휠)
-  await page.locator(sel('entry-card', 'insp_sc_long')).locator(sel('entry-edit')).click({ force: true });
-  const longPanel = page.locator(sel('note-panel', 'edit'));
+  const longPanel = await openEdit('insp_sc_long');
   r.check(await waitFor(longPanel), '긴 메모 칸');
   await page.evaluate(() => window.scrollTo(0, 300));
   const before3 = await page.evaluate(() => window.scrollY);
@@ -150,6 +152,38 @@ try {
     r.check((await page.evaluate(() => window.scrollY)) === before3, `긴 칸 끝까지 내린 뒤 ${label} 휠 - 가운데 그대로 (${await page.evaluate(() => window.scrollY)})`);
   }
   await page.keyboard.press('Escape');
+
+  r.section("'스크롤로 페이지 이동'을 켜도 쓰는 칸 위 휠은 날짜를 넘기지 않는다 (6e)");
+  // 계정(기기 설정 문서)에 올라가는 설정 - 끝에 끄고 기다린다
+  const nav = (on) => page.evaluate(async (v) => (await import(window.__appModule('/src/app/nav.ts'))).setEnableScrollNav(v), on);
+  await nav(true);
+  try {
+    await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));
+    const navPanel = await openEdit('insp_sc_long');
+    r.check(await waitFor(navPanel), '긴 메모 칸');
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.waitForTimeout(400);
+    const np = await navPanel.boundingBox();
+    await page.mouse.move(np.x + np.width / 2, np.y + np.height * 0.5);
+    for (let i = 0; i < 25; i++) await page.mouse.wheel(0, 500);
+    await page.waitForTimeout(400);
+    // 칸 끝에 닿은 뒤 새로 굴리기 (굴리기를 시작한 자리가 끝일 때 넘어가던 갈래)
+    await page.waitForTimeout(300);
+    for (let i = 0; i < 3; i++) await page.mouse.wheel(0, 300);
+    await page.waitForTimeout(600);
+    r.check(hashOf(page) === `#/day/${DAY}`, `쓰는 칸 위 휠 - 날짜 그대로 (${hashOf(page)})`);
+    // 비교: 가운데 화면 맨 아래에서 굴리면 다음 날 (설정이 정말 켜졌나)
+    await page.keyboard.press('Escape');
+    await waitFor(async () => (await navPanel.count()) === 0);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await page.mouse.move(300, 300);
+    await page.waitForTimeout(300);
+    await page.mouse.wheel(0, 300);
+    r.check(await waitFor(async () => hashOf(page) !== `#/day/${DAY}`), `가운데 맨 아래에서 굴리면 다음 날 (${hashOf(page)})`);
+  } finally {
+    await nav(false);
+    await page.waitForTimeout(3000);
+  }
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
