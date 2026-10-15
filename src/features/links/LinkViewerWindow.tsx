@@ -4,6 +4,8 @@
 //   - 다른 항목의 링크를 열면 오른쪽 줄에 탭으로 쌓이고, 같은 항목이면 그 탭(창 목록 sameAs).
 //   - 수업('lesson:날짜:교시')도 같다: 수업 칸에서 열면 그 교시에 이은 항목, 항목에서 열면 이은 수업의 과목·준비물·메모(계산 - P6-1),
 //     ✏️ = 'N교시 수정' 칸, 📌 = 그날 하루 화면의 그 교시.
+//   - 진도 차시('progress:진도:행' - P10-4): 차시에서 열면 그 행에 이은 메모, 메모에서 열면 그 메모를 이은 차시 줄(계산 - 메모에는 적지 않는다).
+//     ✏️ = 진도 관리 창, 🗑️ = 진도 쪽 그 행에서만 끊는다.
 import { useMemo } from 'react';
 import { setDate, setScope } from '../../app/nav';
 import type { WindowProps } from '../../app/windows';
@@ -23,8 +25,9 @@ import { openLessonPanel } from '../lessons/open';
 import { useLessonSource } from '../lessons/useLessons';
 import { openNotePanel } from '../notes/open';
 import { requestFocus } from '../search/focus';
-import { removeLessonLink, removeLink } from './actions';
-import { LINK_KIND_ICON, LINK_KIND_NAME, lessonEndOf, linkKindOf, parseLessonLink } from './linkOps';
+import { openProgress } from '../progress/open';
+import { removeLessonLink, removeLink, removeProgressLink } from './actions';
+import { LINK_KIND_ICON, LINK_KIND_NAME, lessonEndOf, linkKindOf, parseLessonLink, parseProgressLink, progressEndOf, progressLinksByNote } from './linkOps';
 import type { LinkWindowParams } from './open';
 import { DoneMark } from '../events/EventDoneChip';
 
@@ -34,11 +37,15 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
   const { sid, id } = params;
   const items = useDocs('items', sid);
   const days = useDocs('lessonDays', sid);
+  const progressDocs = useDocs('progress', sid);
   const lessonSrc = useLessonSource(sid);
   const status = useMirrorStatus('items', sid);
   const lessonEnd = useMemo(() => (parseLessonLink(id) ? lessonEndOf(id, days) : null), [id, days]);
-  const source = lessonEnd ? undefined : items[id];
-  const links = (lessonEnd ? lessonEnd.linkIds : source?.linkIds) ?? [];
+  const progressEnd = useMemo(() => (parseProgressLink(id) ? progressEndOf(id, progressDocs) : null), [id, progressDocs]);
+  const source = lessonEnd || parseProgressLink(id) ? undefined : items[id];
+  // 메모면 그 메모를 이은 진도 차시도 (진도 쪽에만 적혀 있다 - 계산)
+  const progressRefs = useMemo(() => (source && source.kind === 'note' ? (progressLinksByNote(progressDocs).get(source.id) ?? []) : []), [source, progressDocs]);
+  const links = lessonEnd ? lessonEnd.linkIds : progressEnd ? progressEnd.linkIds : [...(source?.linkIds ?? []), ...progressRefs];
   /** 그 교시 (계산한 수업 칸) */
   const lessonCell = (date: string, n: number) => lessonsOn(date, lessonSrc).cells.find((c) => c.n === n);
 
@@ -59,7 +66,10 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
     const quiet = () => {
       // 안내는 저장 도우미가 했다
     };
+    const progressTarget = parseProgressLink(targetId) ? progressEndOf(targetId, progressDocs) : null;
     if (lessonEnd) void removeLessonLink(sid, lessonEnd, targetId, target).catch(quiet);
+    else if (progressEnd) void removeProgressLink(sid, progressEnd, targetId).catch(quiet);
+    else if (progressTarget && source) void removeProgressLink(sid, progressTarget, source.id).catch(quiet);
     else if (source) void removeLink(sid, source, targetId, target, lessonEndOf(targetId, days)).catch(quiet);
   };
 
@@ -87,6 +97,26 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
   );
 
   const card = (linkId: string) => {
+    if (parseProgressLink(linkId)) {
+      const end = progressEndOf(linkId, progressDocs);
+      if (!end) {
+        return (
+          <div key={linkId} data-link-row={linkId} data-link-kind="missing" className="bg-white border border-dashed border-slate-300 rounded-xl p-3.5">
+            {header('❔', '찾을 수 없는 진도 차시', linkId, {})}
+          </div>
+        );
+      }
+      const row = end.plan.lessons[end.row];
+      const detail = [row?.unit, row?.page && `교과서 ${row.page}`, row?.supplies && `준비물 ${row.supplies}`].filter(Boolean).join(' · ');
+      return (
+        <div key={linkId} data-link-row={linkId} data-link-kind="progress" className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
+          {header('📘', `진도 ${end.title}`, linkId, { edit: () => openProgress({ planId: end.planId }) })}
+          <p data-link-text className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs text-slate-600">
+            {detail || '이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다.'}
+          </p>
+        </div>
+      );
+    }
     const lesson = parseLessonLink(linkId);
     if (lesson) {
       const c = lessonCell(lesson.date, lesson.period);
@@ -190,10 +220,15 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
             {LINK_KIND_ICON.lesson} {lessonTitle} 에 이은 것
           </p>
         )}
+        {progressEnd && (
+          <p className="text-xs text-slate-500 truncate" data-link-viewer-source>
+            📘 진도 {progressEnd.title} 에 이은 것
+          </p>
+        )}
         {links.length === 0 ? (
           <div className="text-center py-12 text-slate-400 flex flex-col items-center gap-2" data-link-viewer-empty>
             <span className="text-3xl opacity-50">📂</span>
-            <p className="text-xs font-medium">{source || lessonEnd ? '연결된 항목이 없습니다.' : status === 'live' ? '항목을 찾지 못했습니다.' : '불러오는 중…'}</p>
+            <p className="text-xs font-medium">{source || lessonEnd || progressEnd ? '연결된 항목이 없습니다.' : status === 'live' ? '항목을 찾지 못했습니다.' : '불러오는 중…'}</p>
           </div>
         ) : (
           links.map(card)

@@ -8,8 +8,12 @@ import { isCourse, progressKey, type ProgressLesson, type ProgressPlan } from '.
 import { formatSlot, parseSlot } from '../../domain/teachingSlot';
 import { newId } from '../../data/id';
 
-/** 고치는 중인 행 - _k는 React key (행을 가운데 넣어도 입력 중인 칸이 엉키지 않게). 저장할 때 뺀다 */
-export type DraftLesson = ProgressLesson & { _k: string };
+/**
+ * 고치는 중인 행 - _k는 React key (행을 가운데 넣어도 입력 중인 칸이 엉키지 않게). 저장할 때 뺀다.
+ * _from = 저장한 진도에서 몇 번째 행이었나 - 이은 메모(linkIds)는 저장할 때 **지금 문서의 그 행**에서 가져온다
+ * (창을 연 채 수업 칸에서 메모를 이어도 덮지 않게, P10-4). 새로 넣거나 붙여 넣은 행은 없다.
+ */
+export type DraftLesson = ProgressLesson & { _k: string; _from?: number };
 
 export interface Draft {
   id: string;
@@ -36,13 +40,21 @@ export const trimLesson = (l: ProgressLesson): ProgressLesson => ({
   page: l.page.trim(),
   supplies: l.supplies.trim(),
 });
-/** 저장할 모양: 앞뒤 공백을 떼고 빈 행은 뺀다 (_k도 빠진다) */
+/** 견줄 모양: 앞뒤 공백을 떼고 빈 행은 뺀다 (_k·이은 메모는 빠진다) */
 export const cleanLessons = (lessons: ProgressLesson[]): ProgressLesson[] => lessons.map(trimLesson).filter(hasText);
+
+/** 저장할 행: cleanLessons + 이은 메모는 지금 문서의 그 행(_from)에서 (행을 지우면 링크도 함께 사라진다) */
+export function lessonsToSave(lessons: readonly DraftLesson[], docLessons: readonly ProgressLesson[] | undefined): ProgressLesson[] {
+  return lessons.filter(hasText).map((l) => {
+    const links = l._from === undefined ? undefined : docLessons?.[l._from]?.linkIds;
+    return { ...trimLesson(l), ...(links?.length ? { linkIds: [...links] } : {}) };
+  });
+}
 export const squeeze = (s: string) => s.trim().replace(/\s+/g, ' ');
 
 /** 저장한 진도 → 고치는 모양. 교과 모드면 옛 칸 글자 진도도 과목 + 반 칩으로('5-2 과학' → 과학 · 5-2, '창체' → 창체) */
 export const toDraft = (p: ProgressPlan, classUnit: boolean): Draft => {
-  const base = { id: p.id, key: p.key, startDate: p.startDate, lessons: p.lessons.map(withKey) };
+  const base = { id: p.id, key: p.key, startDate: p.startDate, lessons: p.lessons.map((l, i) => ({ ...withKey(l), _from: i })) };
   if (isCourse(p)) return { ...base, subject: p.subject || '', classes: [...p.classes!], legacyKey: null };
   if (!classUnit) return { ...base, subject: '', classes: null, legacyKey: null };
   const slot = parseSlot(p.key);
@@ -87,7 +99,7 @@ export const sameAsSaved = (d: Draft, p: ProgressPlan) => {
   const t = draftTarget(d);
   return (
     d.startDate === p.startDate &&
-    JSON.stringify(cleanLessons(d.lessons)) === JSON.stringify(p.lessons) &&
+    JSON.stringify(cleanLessons(d.lessons)) === JSON.stringify(cleanLessons(p.lessons)) &&
     (t.classes
       ? isCourse(p) && t.subject === (p.subject || '') && t.classes.join(',') === p.classes!.join(',')
       : !isCourse(p) && t.key === p.key)

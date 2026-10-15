@@ -9,6 +9,7 @@ import { labelPath } from '../../domain/labelTree';
 import { itemLabels, useLabelTree } from '../../data/select';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { openLinker, openLinkViewer } from '../links/open';
+import { useProgressNoteLinks } from '../links/useProgressLinks';
 import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from './actions';
 import EntryCard from './EntryCard';
 import DayCardView from '../day/DayCards';
@@ -24,6 +25,8 @@ const quiet = () => {
 
 export default function DayNotesWindow({ params, close, raise }: WindowProps<DayNotesParams>) {
   const { sid, date } = params;
+  // 이 메모를 이은 진도 차시 수 (🔗 n에 더한다 - P10-4)
+  const progressLinks = useProgressNoteLinks(sid);
   // 하루 메모 칸과 같게: 날짜 링크 메모(즐겨찾기 먼저 - ▲▼는 이것들끼리) → 그날 일정·수업에 이은 메모 (P10-4)
   const rows = useDayNotes(date, sid);
   const dated = favoriteFirst(rows.filter((r) => r.dated).map((r) => r.item));
@@ -84,6 +87,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
                 onMoveDown={canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                 onOpen={() => openNotePanel({ sid, date, id: item.id })}
                 onOpenLinks={() => openLinkViewer({ sid, id: item.id })}
+                moreLinks={progressLinks.get(item.id)?.length}
                 onAddLink={() => openLinker({ sid, id: item.id })}
                 onToggleDone={() => void setNoteDone(sid, item, !item.done).catch(quiet)}
                 onToggleFavorite={() => void setNoteFavorite(sid, item, !item.favorite).catch(quiet)}

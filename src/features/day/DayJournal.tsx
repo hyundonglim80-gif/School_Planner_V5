@@ -20,6 +20,7 @@ import type { ItemDoc } from '../events/eventOps';
 import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
 import EntryCard from '../notes/EntryCard';
 import { openLinker, openLinkViewer } from '../links/open';
+import { useProgressNoteLinks } from '../links/useProgressLinks';
 import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterChips';
 import { setJournalFilter, setJournalFilterOpen, useLabelFilters } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
@@ -38,6 +39,8 @@ const quiet = () => {
 
 export default function DayJournal({ date }: { date: YMD }) {
   const sid = useCurrentSpaceId();
+  // 이 메모를 이은 진도 차시 수 (🔗 n에 더한다 - P10-4)
+  const progressLinks = useProgressNoteLinks(sid);
   const journalEvals = useEvalsOn(date, sid).filter((e) => e.period === null).length;
   // 그 날짜 링크 메모 + 그날 일정·수업에 이은 메모 (P10-4 - 겹치지 않게, 계산)
   const rows = useDayNotes(date, sid);
@@ -205,6 +208,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                       onMoveDown={sid && canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                       onOpen={() => openEdit(item)}
                       onOpenLinks={() => sid && openLinkViewer({ sid, id: item.id })}
+                      moreLinks={progressLinks.get(item.id)?.length}
                       onAddLink={() => sid && openLinker({ sid, id: item.id })}
                       onToggleDone={() => sid && void setNoteDone(sid, item, !item.done).catch(quiet)}
                       onToggleFavorite={() => sid && void setNoteFavorite(sid, item, !item.favorite).catch(quiet)}

@@ -91,7 +91,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | `tables` | EntryTable[]? | 붙인 표(V4 `lib/entryTable` 모양 그대로 - `rows[].cells[]`) |
 | `studentIds` | string[]? | 학생 태그 `'{classId}/{sid}'` |
 | `attachments` | Attachment[]? | 드라이브 파일(V4 모양: name·url·type·size·driveId) |
-| `linkIds` | string[]? | 이은 항목 id. 수업은 `'lesson:{date}:{교시}'` |
+| `linkIds` | string[]? | 이은 항목 id. 수업은 `'lesson:{date}:{교시}'`. 진도 차시(`'progress:{planId}:{행}'`)는 진도 쪽에만 적고 메모에는 적지 않는다(P10-4 - 계산해 보인다) |
 | `authorId` | string | 만든 사람(그룹에서 보존) |
 | `createdAt` | number | 만든 때(ms) |
 | `updatedAt` | Timestamp | **서버 시각.** 기기 사본이 이것으로 바뀐 것만 받는다 |
@@ -152,6 +152,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   (V4는 하루 문서의 배열 `list`/`evalList` - 두 이름을 함께 쓰던 것을 없앤다). 명단은 문서에 둔다(그룹 공간의 다른 사람도 이름을 본다 - 열 때 명렬표와 맞춘다).
 - `notices/{date}`: `{ date, lines: string[], updatedAt }`.
 - `progress/{planId}`: V4 `v4_progress` 모양 그대로(`key, subject?, classes?, startDate, lessons[], bumps[]`) + `updatedAt, deletedAt`.
+  P10-4: 행에 `linkIds?`(그 차시에 이은 메모 id - 진도 쪽에만, 비면 칸이 없다). 그 차시를 하는 모든 수업 칸·그날 메모 칸에 계산해 보인다(행을 지우면 함께 사라진다).
+  진도 창은 저장할 때 이은 메모를 **지금 문서의 그 행**에서 가져온다(`progressDraft.lessonsToSave` - 창을 연 채 수업 칸에서 이은 것을 덮지 않게).
 
 ### 4-8. 설정 (개인 공간 `settings/`)
 

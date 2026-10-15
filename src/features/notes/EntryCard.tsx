@@ -45,6 +45,8 @@ export interface EntryCardProps {
   onOpen: () => void;
   /** 🔗 n - 이은 항목 보기 (links/LinkViewerWindow) */
   onOpenLinks?: () => void;
+  /** 🔗 n에 더할 수 - 이 메모를 이은 진도 차시 (진도 쪽에만 적혀 있다 - P10-4) */
+  moreLinks?: number;
   /** 🔗 링크 추가 - 연결 창 (마우스를 올렸을 때 ✏️ 앞에, P10-4 5g) */
   onAddLink?: () => void;
   onToggleDone: () => void;
@@ -70,7 +72,7 @@ export default function EntryCard(props: EntryCardProps) {
       index,
     );
   const tables = item.tables ?? [];
-  const links = item.linkIds?.length ?? 0;
+  const links = (item.linkIds?.length ?? 0) + (props.moreLinks ?? 0);
   const checks = checkCount(body);
   const preview = previewLine(body);
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();

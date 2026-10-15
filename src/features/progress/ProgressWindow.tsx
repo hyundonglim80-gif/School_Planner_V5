@@ -3,6 +3,7 @@
 //   시작일부터 그 글자의 교시를 차례로 세어(계산한 수업 칸 - domain/lessons) 어느 날 몇 교시에 몇 차시인지 미리 본다(domain/progress).
 //   교과 모드는 과정: 과목 하나 + 반(하나든 여럿이든), 차시 목록은 하나이고 반마다 제 수업 칸에서 따로 센다. 반별 현황표·반 탭·다음 수업 밀기.
 //   저장은 개인 공간 progress/{planId}(💾·Ctrl+S, 바뀐 칸만) · 밀기는 누르는 대로 · 🗑️ 지우기 = 휴지통.
+//   행마다 🔗 = 그 차시에 메모 잇기(P10-4 - 고치던 것이 있으면 먼저 저장, 진도 쪽 그 행에만 적는다) · 숫자 = 이은 메모 보기.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useCommonSettings } from '../../app/prefs';
@@ -23,8 +24,8 @@ import {
   progressKey,
   progressUntil,
   schoolYearEnd,
+  type LessonField,
   type LessonParseInfo,
-  type ProgressLesson,
   type ProgressTimeline,
 } from '../../domain/progress';
 import { PROGRESS_SAMPLE_FILENAME, PROGRESS_SAMPLE_ROWS } from '../../domain/progressSample';
@@ -45,6 +46,7 @@ import {
   emptyLesson,
   hasText,
   insertRowAfter,
+  lessonsToSave,
   newCourseDraft,
   newDraft,
   sameAsSaved,
@@ -55,8 +57,10 @@ import {
   type Draft,
 } from './progressDraft';
 import { useProgressPlans } from './useProgress';
+import { progressLinkId } from '../links/linkOps';
+import { openLinker, openLinkViewer } from '../links/open';
 
-const FIELDS: Array<{ key: keyof ProgressLesson; label: string; title?: string }> = [
+const FIELDS: Array<{ key: LessonField; label: string; title?: string }> = [
   { key: 'unit', label: '단원' },
   { key: 'no', label: '차시' },
   { key: 'content', label: '내용' },
@@ -65,7 +69,7 @@ const FIELDS: Array<{ key: keyof ProgressLesson; label: string; title?: string }
 ];
 const isDay = (s: string) => /^(20\d\d)-\d\d-\d\d$/.test(s);
 // 단원 | 차시 | 내용 | 교과서 | 준비물 | 삭제 - 오른쪽 칸에서도 내용 칸이 가장 넓게(비율로 나눈다)
-const ROW_GRID = 'grid grid-cols-[minmax(0,0.9fr)_2.25rem_minmax(0,2fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_1.25rem] gap-1';
+const ROW_GRID = 'grid grid-cols-[minmax(0,0.9fr)_2.25rem_minmax(0,2fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_2.5rem_1.25rem] gap-1';
 
 export default function ProgressWindow({ params, close, raise }: WindowProps<ProgressWindowParams | undefined>) {
   const { plans, loaded, sid } = useProgressPlans();
@@ -272,7 +276,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     }
   };
 
-  const setCell = (row: number, field: keyof ProgressLesson, value: string) =>
+  const setCell = (row: number, field: LessonField, value: string) =>
     setDraft((d) => (d ? { ...d, lessons: d.lessons.map((l, i) => (i === row ? { ...l, [field]: value } : l)) } : d));
 
   const focusCell = (pos: CellPos) => {
@@ -354,17 +358,24 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
 
   // ── 저장·지우기·밀기 ──
 
-  const handleSave = async () => {
-    if (!sid || !draft || saving) return;
+  /** 저장 - 됐으면 true (🔗가 먼저 저장할 때 기다린다) */
+  const handleSave = async (): Promise<boolean> => {
+    if (!sid || !draft || saving) return false;
     const clean = cleanLessons(draft.lessons);
     const t = draftTarget(draft);
-    if (courseDraft && !squeeze(draft.subject)) return showErrorToast('과목을 고르거나 적어 주세요.');
-    if (!t.key && !t.classes) return showErrorToast('과목을 고르거나 적어 주세요.');
-    if (!isDay(draft.startDate)) return showErrorToast('시작일을 정해 주세요.');
-    if (clean.length === 0) return showErrorToast('차시 목록을 붙여 넣거나 적어 주세요.');
+    const fail = (text: string) => {
+      showErrorToast(text);
+      return false;
+    };
+    if (courseDraft && !squeeze(draft.subject)) return fail('과목을 고르거나 적어 주세요.');
+    if (!t.key && !t.classes) return fail('과목을 고르거나 적어 주세요.');
+    if (!isDay(draft.startDate)) return fail('시작일을 정해 주세요.');
+    if (clean.length === 0) return fail('차시 목록을 붙여 넣거나 적어 주세요.');
+    // 이은 메모는 지금 문서의 그 행에서 (창을 연 채 수업 칸에서 이은 것도 덮지 않게)
+    const lessons = lessonsToSave(draft.lessons, savedDoc?.lessons);
     const next = t.classes
-      ? { id: draft.id, key: '', startDate: draft.startDate, lessons: clean, subject: t.subject!, classes: t.classes }
-      : { id: draft.id, key: t.key, startDate: draft.startDate, lessons: clean };
+      ? { id: draft.id, key: '', startDate: draft.startDate, lessons, subject: t.subject!, classes: t.classes }
+      : { id: draft.id, key: t.key, startDate: draft.startDate, lessons };
     // 같은 열쇠(과정이면 반마다)에 같은 시작일의 진도가 이미 있으면 둘이 같은 교시를 다툰다
     const mine = planKeys(next).map(normalizeSlotText);
     const clash = plans.find(
@@ -373,7 +384,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
         p.startDate === draft.startDate &&
         (t.classes || isCourse(p) ? planKeys(p).some((k) => mine.includes(normalizeSlotText(k))) : p.key === next.key),
     );
-    if (clash) return showErrorToast(`'${planLabel(clash)}' 진도가 같은 반·시작일로 이미 있습니다.`);
+    if (clash) return fail(`'${planLabel(clash)}' 진도가 같은 반·시작일로 이미 있습니다.`);
     setSaving(true);
     try {
       await saveProgressPlan(sid, next, savedDoc);
@@ -381,15 +392,32 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
         ...draft,
         key: planKeys(next)[0],
         subject: t.subject ?? draft.subject,
-        lessons: draft.lessons.filter(hasText).map((l) => ({ ...trimLesson(l), _k: l._k })),
+        lessons: draft.lessons.filter(hasText).map((l, i) => ({ ...trimLesson(l), _k: l._k, _from: i })),
         // 반 없이(또는 옛 모양 그대로) 저장했으면 다음에도 그 글자로, 과정이 되었으면 과정으로
         legacyKey: draft.classes && !t.classes ? t.key : null,
       });
+      return true;
     } catch {
       // 안내는 저장 도우미가 했다 - 고친 것은 그대로
+      return false;
     } finally {
       setSaving(false);
     }
+  };
+
+  /** 그 행(차시)에 이은 메모 수 - 저장한 문서의 그 행 */
+  const rowLinks = (r: number) => {
+    const from = draft?.lessons[r]?._from;
+    return from === undefined ? 0 : (savedDoc?.lessons?.[from]?.linkIds?.length ?? 0);
+  };
+  /** 🔗 그 차시에 메모 잇기 - 고치던 것이 있으면 먼저 저장한다(행 차례가 문서와 같아지게) */
+  const linkRow = async (r: number) => {
+    if (!sid || !draft) return;
+    const row = draft.lessons[r];
+    if (!row || !hasText(row)) return showErrorToast('차시 내용을 먼저 적어 주세요.');
+    const index = draft.lessons.slice(0, r).filter(hasText).length;
+    if ((dirty || !savedDoc) && !(await handleSave())) return;
+    openLinker({ sid, id: progressLinkId(draft.id, index) });
   };
 
   const handleDelete = async () => {
@@ -710,6 +738,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                       {f.label}
                     </span>
                   ))}
+                  <span title="그 차시에 이은 메모 - 그 차시를 하는 수업 칸과 그날 메모 칸에 보입니다">메모</span>
                   <span />
                 </div>
                 <div className="space-y-1 pr-0.5">
@@ -729,6 +758,30 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           className="min-w-0 px-1.5 py-1 text-xs bg-white border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary"
                         />
                       ))}
+                      <span className="flex items-center justify-center gap-0.5">
+                        <button
+                          type="button"
+                          data-progress-row-link={r}
+                          onClick={() => void linkRow(r)}
+                          className="text-slate-400 hover:text-yellow-700 text-xs cursor-pointer"
+                          title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다 (고치던 것이 있으면 먼저 저장)"
+                          aria-label={`${r + 1}번째 행에 메모 잇기`}
+                        >
+                          🔗
+                        </button>
+                        {rowLinks(r) > 0 && (
+                          <button
+                            type="button"
+                            data-progress-row-links={rowLinks(r)}
+                            onClick={() => sid && draft.lessons[r]._from !== undefined && openLinkViewer({ sid, id: progressLinkId(draft.id, draft.lessons[r]._from!) })}
+                            className="px-1 rounded bg-yellow-100 text-yellow-800 border border-yellow-300 text-2xs font-bold cursor-pointer"
+                            title={`이은 메모 ${rowLinks(r)}개 보기`}
+                            aria-label={`이은 메모 ${rowLinks(r)}개 보기`}
+                          >
+                            {rowLinks(r)}
+                          </button>
+                        )}
+                      </span>
                       <button
                         type="button"
                         data-progress-row-delete={r}

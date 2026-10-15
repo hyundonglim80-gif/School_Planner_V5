@@ -391,6 +391,8 @@ export interface ProgressLessonRow {
   /** 교과서 쪽 */
   page: string;
   supplies: string;
+  /** 이 차시에 이은 메모 id (P10-4 - 진도 쪽에만, 비면 칸이 없다) */
+  linkIds?: string[];
 }
 
 /** progress/{planId} - V4 v4_progress 모양 그대로 (개인 공간, P6-2 - 읽기는 domain/progress sanitizePlan) */
