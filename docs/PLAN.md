@@ -28,8 +28,8 @@
 
 ## 지금 하는 일
 
-**P11-1 ■4** - 사용 의견 둘째 묶음 6가지(10-15). 확인 결과와 조각은 6장 `### P11. 사용 의견 ② 반영` 머리 표.
-P0~P10은 모두 끝났다(10-15). main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다.
+**없음 - P0~P11 모두 끝(10-16).** 새 요청(사용 의견·버그)을 기다린다. 새 요청이 오면 6장에 `### P12` 절을 만들어 세션으로 나눈다(P10·P11처럼 코드와 견준 표부터).
+P11 = 사용 의견 둘째 묶음 6가지(10-15) - 확인 결과와 조각은 6장 `### P11. 사용 의견 ② 반영` 머리 표. main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다.
 
 ---
 
@@ -182,7 +182,7 @@ P0~P10은 모두 끝났다(10-15). main은 **실제로 쓰는 사이트**라 빌
 | P10-4 | 메모 하나로 ②: 일정·수업·진도에 이은 메모가 그날 칸에·링크 창 하나로·'기록' 글자 쓸기 | 큼 | 높음 | 끝 (2026-10-15) |
 | P10-5 | 메모 쓰는 칸·메모 화면: 스크롤 셋·체크리스트 편집·빈 메모 지우기·카드/목록·'라벨 관리' | 중간 | 중간 | 끝 (2026-10-15) |
 | **P11 사용 의견 ②** (10-15) | | | | |
-| P11-1 | 주간 빈 칸 ✎·하루 교시 시각 빼기·새 메모 맨 위·'?' 안내·목록 펼치기·링크 창 📘 진도표 탭 | 중간 | 중간 | 하는 중 |
+| P11-1 | 주간 빈 칸 ✎·하루 교시 시각 빼기·새 메모 맨 위·'?' 안내·목록 펼치기·링크 창 📘 진도표 탭 | 중간 | 중간 | 끝 (2026-10-16) |
 
 **차례의 까닭**: 뼈대(P1)와 자료 층(P2)이 모든 화면의 바탕이다. 하루 화면(P3)이 가장 많이 쓰는 곳이라 먼저 하고, 가져오기를 단계마다 붙여
 P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6)이 달력(P5) 뒤인 까닭: 수업 칸은 주간에도 그려지므로 화면 틀이 먼저 있어야 한다.
@@ -205,6 +205,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   오프라인으로 열린다 · 공유 그룹 = 공간(라벨도 그룹 것, 지금 공간은 이 기기에 고른다) · V4 그룹은 구성원 누구나 V4 주인·구성원 그대로 가져온다(만든 사람도 그대로).
 - P10 사용 의견(10-15): V4에서 사용자가 정한 것을 바꿨다 - 기록·메모 → **메모 하나 + 날짜 링크 여러 개**(그날 칸에 일정·수업·진도 차시에 이은 메모도 계산) · 일정 완료 = 라벨 칩 앞 ✓(☐·흑백 없음) ·
   반복 = 끝 날 + 요일 · PC ＋ 새로 없음 · 알림 소리 길이 · 수업 '비고(준비물)' 한 칸 · 쓰는 칸 체크리스트는 글 차례를 바꾼다 · 빈 메모 저장 = 휴지통 · 메모 화면 '라벨 관리'·카드/목록 · 옆 칸 휠은 그 칸만.
+- P11 사용 의견 ②(10-16): 수업 카드 교시 시각 없음(수업 종에서만) · ✎는 시간표와 다른 과목이 보일 때만 · 메모 화면 새 메모는 맨 위(V4로 되돌림 - V5가 맨 뒤에 붙였다) · 라벨로 보기 안내는 보이는 글 · 목록 줄 펴기 · 메모 → 진도 차시 잇기(링크 창 📘 진도표).
 
 ## 4. 세션 기록 (한 세션 한 줄 - 어느 기기에서 어디까지 했나)
 
@@ -252,6 +253,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-15 | 클라우드 | P10-2 | P10-2 세션 끝 정리 | 단위 2325 · inspect-lessons·seating·evaluations·class·week·month-year·bell-guide·attendance·links·sheets·backup·search-trash 통과 · manual(MATCH 바뀐 주제 11) 통과 · ✎는 재현 안 됨(점검에 셋 더함) · 명렬표 번호 = no-spinner CSS 빠짐 |
 | 2026-10-15 | 클라우드 | P10-3 | P10-3 세션 끝 정리 | 단위 2337 · inspect-notes·memo·week·month-year·search-trash·backup·keep·student-record·links·perf 통과 · manual(MATCH 바뀐 주제 9) 통과 · teacher4 메모 화면(메모 2611) 다시 열기 0.6~1.1초(개발 서버) |
 | 2026-10-15 | 클라우드 | P10-4 | P10-4 세션 끝 정리 | 단위 2351 · inspect-links·progress·notes·memo·search-trash·student-record·lessons·labels·evaluations·week 통과 · manual(MATCH 없이 - 휴지통 탭 수를 고친 뒤 trash·search 다시) 통과 · ■3을 ■2보다 먼저 |
+| 2026-10-16 | 영-전-3-현동림 PC | P11-1 | P11-1 세션 끝 정리 | 단위 2375 · inspect-lessons·week·memo·notes·attach·links·progress 통과 · manual MATCH 없이 통과(MATCH로 일부만 고르면 앞 주제가 열던 화면이 빠져 memo-write·links가 멈춘다 - 앱 버그 아님) · 10-15 ■3 도중 PC가 다시 켜져 에뮬레이터·dev를 다시 켬(JBR Java → V4 seed → V5 seed) · V5 seed에는 teacher 시간표가 없다(inspect-links가 점검 시간표를 심음) |
 | 2026-10-15 | 영-전-3-현동림 PC | P10-5 | P10-5 세션 끝 정리 · P10 단계 끝 | 단위 2368 · P10 단계 점검 28개 MATCH 없이 통과(scroll·notes·memo·attach·links·progress·events·groups·week·month-year·forward·gcal·settings·mobile·lessons·seating·evaluations·class·bell-guide·attendance·sheets·backup·search-trash·keep·student-record·labels·manual·perf - notes·memo·groups는 점검 중 문서를 고친 HMR·겹쳐 돌린 탓에 한 번 틀려 다시 돌려 통과) · perf 다시 열기 1.0초·검색 58~84ms(개발 서버) · 처음에 겹친 P10-4 ■1(클라우드가 먼저 합침)은 버림 · 6e 원인 = '스크롤로 페이지 이동'이 쓰는 칸 휠에도 날짜를 넘김 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-3 | P3-3 세션 끝 정리 | 단위 951 · inspect-forward 48 · groups 41 · multi 26 · events·notes·shell·settings·labels·data 통과 · 브랜치 `ccr-df696f8d-16jecy` → PR → Claude가 합침 · V4는 읽기용으로 옆에 받음(`--depth 1`) · 설계 바꿈: 기간의 '이 날만 지우기' = skipDates(나누기 대신)·주말 빼기 workdays |
 
@@ -1502,5 +1504,5 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   **목록 펴고 접기**(5): 목록 한 줄 앞 ▶/▼ - 펴면 그 줄 아래 카드와 같은 본문(글·체크 줄·그림·첨부·표 - `notes/EntryBody`로 카드와 나눠 쓴다). 설명서 메모 화면 · 점검 memo.
 - [x] ■3 **링크 창 📘 진도표 탭**(6): 메모에서 열면 탭 하나 더 - 진도 차시(행) 목록, 조회 범위 = 그 차시를 하는 날(계산 - `useProgressMarks`), 진도 칩·키워드로 좁힌다.
   저장은 진도 쪽 그 행 `linkIds`(P10-4 규칙 그대로 - 같은 진도의 여러 행은 문서 하나 고치기로 모은다). 설명서 링크 · 점검 links.
-- [ ] ■4 `CLAUDE.md` 5장(수업 칸·메모 화면·링크 줄)·7장 지도 · 점검 lessons·week·memo·links·progress·manual(MATCH) · 세션 끝 정리.
+- [x] ■4 `CLAUDE.md` 5장(수업 칸·메모 화면·링크 줄)·7장 지도 · 점검 lessons·week·memo·links·progress·manual(MATCH) · 세션 끝 정리.
 **끝 조건**: 빈 칸에 ✎ 없음 · 하루 카드에 시각 없음 · 메모 화면에서 만든 메모가 맨 위 · '?' 없음 · 목록 줄 펴기/접기 · 메모 → 링크 창 진도표 탭으로 차시를 이으면 그 차시 수업 칸에 🔗.

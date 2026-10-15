@@ -26,8 +26,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P11-1 하는 중(10-15)** - 사용 의견 ② 6가지(`docs/PLAN.md` 6장 `### P11`). ■1 끝(주간 빈 칸 ✎·하루 카드 시각).
-- '이어서' = **P11-1 ■2**(새 메모 맨 위·'?' 안내·목록 펴기) → ■3(링크 창 📘 진도표) → ■4(정리). 부탁 없음.
+- **P11 끝(10-16)** - 사용 의견 ② 6가지: 주간 빈 칸 ✎ · 하루 카드 교시 시각 빼기 · 메모 화면 새 메모 맨 위 · '?' → 'Ctrl·Shift+누르기 = 여러 개' · 목록 줄 ▶/▼ 펴기 · 메모 링크 창 📘 진도표 탭.
+- '이어서' = **없음**(P0~P11 끝 - 새 요청을 기다린다). 부탁 없음.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -153,7 +153,8 @@
 ### 하루 화면
 - 일정·메모 머리줄: `▼ 제목 숫자 [+ 추가] ……… ⚙️`(라벨 설정은 오른쪽 끝). 메모 칸은 '📝 메모'(P10-3 - 옛 '📔 기록', '+ 메모' 없음), 라벨로 보기 칩 줄은 **접힌 채** 🏷️로 편다.
 - 일정은 **휴대폰 2열 카드, PC 1열**. 메모는 휴대폰 2열, PC 2~4열.
-- 수업 칸: 과목은 **굵고 크게**(PC 18px·휴대폰 16px, font-black), 과목이 있는 교시 카드는 왼쪽에 **교시 색 막대**.
+- 수업 칸: 과목은 **굵고 크게**(PC 18px·휴대폰 16px, font-black), 과목이 있는 교시 카드는 왼쪽에 **교시 색 막대**. 카드에 **교시 시각은 적지 않는다**(P11-1 사용자 의견 - 수업 종에서만, title에만).
+- **✎ = 그날만 바꾼 과목**: 적힌 과목이 그날 시간표와 다르고 과목이 보이는 칸만(P11-1 - 비운 칸은 '수업 없음', 시간표를 고쳐 같아지면 사라진다). 하루·주간 같게.
 - **수업 칸 = 과목 + '비고(준비물)' 한 칸**(P10-2 사용자 의견 2a - 수업 메모 칸 없음, 옛 메모는 비고 아래 줄에 이어 보인다) · 교과 모드 반 도구(🪑·🎯)·🙋 출결은 📊🔗✏️처럼 **마우스를 올렸을 때만**(적힌 것이 있으면 늘, 휴대폰은 늘), 수정 칸에도 같은 단추 · 주간 교시 줄은 과목 뒤에 비고 첫 줄 '…'.
 
 ### 메모 하나 + 날짜 링크 (P10-3 사용자 의견 1 - V4 '메모 ↔ 기록 = 날짜 칸'을 바꿈)
@@ -161,7 +162,7 @@
 - 하루 메모 칸 + 추가 = 그날 링크 하나로 새 메모. 카드 🗑️ = 메모 지우기(모든 날에서). **일정은 날짜 링크 없음**(라벨 속성·기간/반복 묶음 때문).
 - 자료: `dates`는 둘 이상일 때만, `date` = 가장 이른 날(옛 기록 = 날짜 하나인 메모, 자료 옮기기 없음). '📅 10/6에서'(fromDate)는 적지도 보이지도 않는다.
 - **그날 메모 칸에 이은 메모도**(P10-4 사용자 의견 2f·6c - 계산): 그날 일정(기간·이월)·수업 교시·진도 차시에 이은 메모가 겹치지 않게, 카드에 📌·🏫·📘. 진도 차시 링크는 **진도 쪽 그 행에만**(그 차시를 하는 모든 수업 칸에 🔗 n).
-- 링크 창 탭 = 📌 일정 · 📝 메모 · 🏫 수업, 메모 카드 🔗 링크 추가(마우스를 올리면). 화면 글자 '기록'은 '메모'로(학생 기록·출결 기록 등 다른 뜻은 남김, 시트·백업 CSV·캘린더의 '기록'은 자료 모양이라 그대로).
+- 링크 창 탭 = 📌 일정 · 📝 메모 · 🏫 수업 + **메모에서 열면 📘 진도표**(P11-1 사용자 의견 - 그 차시를 하는 날로 찾고 진도 칩으로 좁힌다, 저장은 진도 쪽 그 행에만), 메모 카드 🔗 링크 추가(마우스를 올리면). 화면 글자 '기록'은 '메모'로(학생 기록·출결 기록 등 다른 뜻은 남김, 시트·백업 CSV·캘린더의 '기록'은 자료 모양이라 그대로).
 
 ### 라벨 상위/하위와 라벨로 보기
 - 메모·기록 라벨만 2단계 트리(일정 라벨은 뺀다). 메모·기록 라벨은 한 목록.
@@ -169,6 +170,7 @@
 - 칩 고르기는 **윈도우 탐색기처럼**: 그냥 누르기 = 하나만, Ctrl = 더하기·빼기, Shift = 범위, ESC = 모두 떼기(오른쪽 칸도 닫힘). 라벨을 더할 때 상위 라벨도 고른다.
 - 빈 라벨은 **저절로 지우지 않는다**(라벨 관리 '빈 라벨 정리 (N개)').
 - 메모 화면 왼쪽 제목은 **'🏷️ 라벨 관리'**(누르면 라벨 관리 창 - P10-5 사용자 의견 5a, 옛 '📁 라벨로 보기'), 그 아래 칩과 하루 메모 칸 🏷️ 칩 줄의 이름은 '라벨로 보기' 그대로.
+  칩 고르기 안내는 **보이는 글** 'Ctrl·Shift+누르기 = 여러 개'(P11-1 - 옛 '?'는 뜻을 몰랐다, PC만·마우스를 올리면 전부).
 
 ### 메모·기록의 표
 - 엑셀·한셀·구글 시트에서 복사해 본문에 붙여넣으면 서식째 표. 붙인 뒤에는 **칸 글자와 행·열만** 고친다(서식 편집 없음). 표는 글 아래 첨부처럼.
@@ -180,7 +182,8 @@
 - 체크리스트는 글 안의 `☐ `/`☑ `, 카드 '☑ n/m', 카드는 체크한 줄을 **보이기만** 아래로. **쓰는 칸은 글 차례를 실제로 바꾼다**(P10-5 사용자 의견 5b·5c): ☐ 누르기 = 체크하고 그 목록 맨 아래·줄긋기,
   풀면 체크 안 한 줄들의 맨 아래, 줄마다 ▲▼(같은 무리끼리) - 글 칸 하나 + 덧그림(`notes/CheckLinesOverlay`). 첫·마지막 줄 '#라벨'은 라벨로 떼고 그 줄을 지운다(숫자 8자리 학생 태그는 남긴다).
 - **메모 글·첨부·표를 다 지우고 저장 = 그 메모 지우기**(휴지통 + 되돌리기, P10-5 사용자 의견 5d - V4는 남겼다). 메모만(일정 칸은 그대로). 빈 새 칸은 만들지 않고 닫는다.
-- 메모 화면 **카드/목록**: 머리줄 🔍 왼쪽 그림 단추(메모 화면에서만 ☰/▦, 이 기기 기억 - P10-5 5e). 오른쪽 칸·클립보드 칸 위의 휠은 그 칸만(가운데 화면·'스크롤로 페이지 이동' 날짜 넘기기를 하지 않는다 - 6e).
+- 메모 화면 **카드/목록**: 머리줄 🔍 왼쪽 그림 단추(메모 화면에서만 ☰/▦, 이 기기 기억 - P10-5 5e). 목록 줄 맨 앞 ▶/▼ = 그 줄 아래에 본문 펴기·접기(P11-1, 처음은 접힘).
+  **메모 화면에서 쓴 새 메모는 맨 위**(P11-1 사용자 의견 - V4 그대로, 날짜 없는 메모 맨 앞 차례, ▲▼로 바꾼다. 하루 메모 칸 + 추가는 그날 목록 맨 뒤). 오른쪽 칸·클립보드 칸 위의 휠은 그 칸만(가운데 화면·'스크롤로 페이지 이동' 날짜 넘기기를 하지 않는다 - 6e).
 - **PC 머리줄 '＋ 새로' 없음**(P10-1 사용자 의견 6d - 칸마다 '+ 추가'·단축키, 휴대폰 둥근 ＋는 둔다) · **알림 소리 길이**는 환경설정 '알림'(한 번·10초(기본 - 3초마다 3번)·30초·1분·5분·확인할 때까지, 계정에 하나).
 - **반복 = 끝 날 + 요일**(P10-1 10-14 사용자 의견 6b): '📆 끝 날 · 🔁 반복' 줄 하나 - 요일을 안 고르면 기간 하나, 고르면 그 요일만 반복(새 일정만), 격주·매월·매일은 '더 보기'.
 - **일정 완료 = 칩 앞에 ✓**(P10-1 10-14 사용자 의견): 끝낸 일정도 칩 색·글은 그대로(흑백·줄긋기 없음), 하루 카드의 ☐는 없앴다 - 라벨 칩을 누르면 완료, 라벨이 없으면 회색 ○ 칩.
@@ -356,11 +359,12 @@
   **V4 그룹 가져오기**(■2): 공간 `g_{V4 그룹 id}` - `spaces.ensureImportedGroup`(V4 주인·구성원 그대로 만들기 → 안 되면 V4 구성원으로 참여·빈 `people`은 V4 이름)·`openInvite`(그룹장 '🔑 초대 코드 만들기' `[data-group-make-code]`) ·
   창 칸 `features/groups/V4GroupsSection.tsx`(`[data-v4-groups|v4-group=V4 id|v4-group-state=new|imported|v4-group-import|v4-group-progress|v4-group-result|v4-groups-empty]`) · 결과 표 `features/import/ImportResult.tsx`(백업 탭과 함께) · 규칙 `isV4GroupMember`. 점검 `tools/inspect-import-groups.mjs`(33 - 세 계정, V4 그룹을 심고 끝에 지운다).
 - **링크** `src/features/links/`(P4-3 - 양쪽 `linkIds` 한 묶음): `linkOps.ts`(순수 잇기·끊기·수업 링크 id · `LinkKind` event·note(P10-4) · 진도 차시 `progress:{planId}:{행}` `progressEndOf`·`progressLinkOps`·`progressLinksByNote` - 진도 쪽에만) · `linkerList.ts`(범위·목록 - 메모는 범위 안 가장 늦은 날짜 링크) · `actions.ts`(`saveLinks`·`removeLink`·`saveProgressLinks`·`removeProgressLink`) · `useProgressLinks.ts`(메모 → 이은 차시, 카드 🔗 n에 더함) · `open.ts`(`openLinker`·`openLinkViewer`·'+ 새로 만들어 연결' 쪽지 `pickFor`) ·
-  `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
+  `LinkerWindow.tsx`(창 `linker` - 수업에서도 열린다·🏫 수업 탭 `lessonCandidatesOf`·메모에서 열면 📘 진도표 탭 `progressCandidatesOf`(그 차시를 하는 날 = `useProgressMarks` 뒤집기)·진도 칩 `[data-linker-plan|linker-plans]`, 저장 `saveLinks(…, progress)` → `linkOps.noteToProgressOps` - P11-1) · `LinkViewerWindow.tsx`(창 `links` - 수업 줄 = 그 교시 과목·메모). 수업 쪽 = `LessonEnd`(lessonDays `periods.n.linkIds`, P6-1). 학기 셈 `domain/semester.ts`. 점검 `tools/inspect-links.mjs`(32).
 - **주간 화면** `src/features/week/`(P5-1): `WeekScreen.tsx`(이번 주·넓으면 다음 주 줄·🕰️ 작년 이맘때 단추 줄) · `WeekDayCard.tsx`(요일 카드·일정 칩 - 오늘 카드에 이월 ↪) · `LastYearDay.tsx` ·
   `lastYear.ts`(순수 가져오기 셈)·`actions.ts`(`importLastYear`)·`prefs.ts`(`sp5-last-year`·단축키 'lastYear') · 셈 `domain/lastYearWeek.ts`·`domain/dayTone.ts`. 📝 n = 창 `dayNotes`(`notes/DayNotesWindow.tsx`, `notes/open.openDayNotes`). 점검 `tools/inspect-week.mjs`(44).
 - **메모 화면** `src/features/memo/MemoScreen.tsx`(P4-1 - ⭐/라벨/전체·진행/완료·전체 비우기·'메모' 라벨 붙이기, 카드 쌓기 `ui/Masonry.tsx`·`domain/masonry.ts`, P10-3 - 모든 메모 `select.allNotes`·차례 `noteOps.memoScreenOrder`·카드 📅 칩 `[data-entry-date-chip]`·60장씩 `[data-memo-more]`,
-  P10-5 - 왼쪽 제목 '🏷️ 라벨 관리' `[data-memo-labels-settings]`·카드/목록 `memoView.ts`(`sp5-memo-view` - 머리줄 `[data-memo-view-toggle=card|list]`, 메모 화면에서만)·목록 한 줄 `MemoListRow.tsx`(`[data-memo-list|memo-row|memo-row-text|memo-row-complete|memo-row-favorite]`)) ·
+  P10-5 - 왼쪽 제목 '🏷️ 라벨 관리' `[data-memo-labels-settings]`·카드/목록 `memoView.ts`(`sp5-memo-view` - 머리줄 `[data-memo-view-toggle=card|list]`, 메모 화면에서만)·목록 한 줄 `MemoListRow.tsx`(`[data-memo-list|memo-row|memo-row-text|memo-row-complete|memo-row-favorite]`,
+  P11-1 - ▶/▼ `[data-memo-row-expand|memo-row-expanded|memo-row-body]`, 본문 = `notes/EntryBody`) · 칩 안내 `[data-filter-help]` = `LabelFilterChips.FILTER_HINT`(P11-1) · 새 메모 차례 `eventOps.orderBefore`(P11-1)) ·
   라벨로 보기 칩 `notes/LabelFilterChips.tsx`(메모 화면 세로·하루 메모 칸 한 줄)·기억 `notes/labelFilter.ts`(`sp5-label-filters` - 하루 칸 칩 줄 폄 `journalOpen`). 점검 `tools/inspect-memo.mjs`(33).
 - **메모** `src/features/notes/`(하루 메모 칸·메모 화면(P4-1)이 함께 쓴다 - kind 'note' 하나, 날짜 링크 `domain/noteDates`(`noteDates`·`datesFields`·`datesChanges` - P10-3), 고르기 `itemsOn`은 날짜 링크마다·`noteDaysBetween`·`allNotes`): `open.ts`(쓰는 칸 `note` = `{ sid, date|null(연 날), id? }`·`openNotePanel`·`useEditingNoteIds`·`closeNotePanelsFor`) ·
   `NotePanel.tsx`(`[data-note-panel=new|edit|note-id|note-dates(쉼표로)|note-flag=done|favorite|note-date-chip|note-date-remove|note-date-add|note-dates-empty|note-text-input|checklist-toggle|hash-preview|hash-label|note-save|note-delete|note-close]` - + 날짜 = `ui/MiniCalendarPicker` trigger·marked, 빈 글 저장 = 지우기(P10-5)) ·
@@ -368,6 +372,7 @@
   `noteForm.ts`(순수 - 칸 ↔ 문서, 날짜 칩 `dates`, '#라벨'·새 라벨 `savePlanOf`) · `noteOps.ts`(순수 - 즐겨찾기 먼저·▲▼ 무리 안·체크 줄·메모 화면 차례) ·
   `actions.ts`(`createNote`·`saveNote`(새 라벨과 한 묶음)·`setNoteDone`·`setNoteFavorite`·`moveNoteInList`·`toggleNoteCheckLine`·`deleteNote`) ·
   `EntryCard.tsx`(메모 카드 `[data-entry-card|entry-kind(journal = 날짜 있음)|entry-date-chip|entry-done|entry-favorite|entry-collapsed|entry-collapse|entry-up|entry-down|entry-complete|entry-favorite-toggle|entry-chip|entry-checks|entry-edit|entry-delete|entry-image|entry-images|check-line|check-done]`) ·
+  `EntryBody.tsx`(카드 본문 - 그림·파일·글·체크 줄·주소 미리보기·표, 카드와 메모 화면 목록의 펼친 줄이 함께 - P11-1) ·
   `EntryTableView.tsx`(표 - 쓰는 칸은 칸 글자·행/열 `[data-note-table|cell|table-op]`, 카드는 compact `[data-entry-table]`) · `attach.ts`(📎·캡처 = 드라이브, 표 먼저 `pastedTable`) · `shortcuts.ts`(`newNote`·`newMemo`).
   순수 셈 `domain/checkLines`·`entryCollapse`·`hashLabels`(V4 테스트째). 주소 → 링크 `ui/FormattedText.tsx`. **쓰던 글 보관** `data/drafts.ts`(`useDraft` - DB `sp5-drafts-{uid}`, 메모·기록·일정 칸, 로그아웃하면 지움) + `ui/DraftOffer.tsx`(`[data-draft-offer|draft-restore|draft-discard]`).
 - **설치(PWA)** `public/`: `manifest.json`(SP5 · share_target `/share-target`) · `sw.js`(문서는 네트워크 먼저·`/assets/`는 담아 둔 것 먼저·'sp5-precache' = 빌드의 `asset-manifest.json`대로 이 판을 담고 옛 판은 지움(`ignoreVary`)·공유받기 캐시 `sp5share-inbox`·푸시) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
