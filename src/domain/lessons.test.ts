@@ -105,6 +105,15 @@ describe('그날 수업 칸 (lessonsOn)', () => {
     ]);
   });
 
+  it('적힌 과목이 그날 시간표와 같으면 바꾼 것이 아니다 (시간표를 나중에 고쳤다 - P11-1)', () => {
+    const v = lessonsOn('2026-10-12', source({ days: { '2026-10-12': { periods: { '1': { subject: '영어' }, '3': { subject: '' } } } } }));
+    expect(v.cells.slice(0, 3).map((c) => [c.subject, c.base, c.changed])).toEqual([
+      ['영어', '영어', false],
+      ['수학', '수학', false],
+      ['', '', false],
+    ]);
+  });
+
   it('방학·공휴일·수업X 날은 시간표가 비고, 그날 적은 과목·메모는 남는다', () => {
     const v = lessonsOn('2026-10-09', source({ days: { '2026-10-09': { periods: { '2': { subject: '보강 수학', supplies: '자' } } } } })); // 금, 한글날
     expect(v.off).toBe('holiday');

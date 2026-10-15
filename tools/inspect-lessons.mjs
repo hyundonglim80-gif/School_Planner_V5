@@ -161,7 +161,7 @@ try {
   r.check(common?.terms?.['2026']?.summer?.from === '2026-07-21', '방학 = 계정 설정 terms (학년도마다)');
   await page.locator(`[data-popup-frame]:has(${win}) [data-close]`).click();
   r.check(await waitFor(lessonCard(1).filter({ hasText: '아침' })), '하루 칸의 교시 이름이 바뀐다');
-  r.check((await lessonCard(1).textContent()).includes('09:00~09:40'), '교시 옆에 시각');
+  r.check(!(await lessonCard(1).textContent()).includes('09:00') && (await lessonCard(1).getAttribute('title'))?.startsWith('09:00~09:40'), '카드에 시각은 적지 않는다 (title에만 - P11-1)');
 
   r.section('기간별 시간표·수업 없는 날');
   await go('#/day/2026-10-19');
@@ -251,6 +251,10 @@ try {
   await panel.locator(sel('lesson-panel-clear')).click();
   const cleared = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.subject === '');
   r.check(cleared?.periods?.['3']?.subject === '' && !cleared.periods['3'].supplies, "삭제 = 그 교시 비우기 (과목 '' = 수업 없음)");
+  r.check(
+    await waitFor(async () => !(await weekRow('2026-10-12', 3).locator(sel('week-lesson-changed')).count()) && (await weekRow('2026-10-12', 3).getAttribute('title'))?.includes('이날만 비움'), 6000),
+    '비운 칸에는 ✎가 없다 (title에 이날만 비움 - P11-1)',
+  );
   await toastUndo('비웠습니다').click();
   r.check((await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.supplies === '지도 그리기\n색연필'))?.periods?.['3']?.supplies === '지도 그리기\n색연필', '되돌리기 = 그대로');
 

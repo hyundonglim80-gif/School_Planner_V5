@@ -121,7 +121,7 @@ export interface LessonCell {
   subject: string;
   /** 그날 바꾸지 않았으면 보일 과목 (수업 없는 날이면 '') - 고친 과목이 이것과 같으면 lessonDays에서 뺀다 */
   base: string;
-  /** 그날 과목을 바꿨나 (lessonDays에 subject가 있다) */
+  /** 그날 과목을 바꿨나 (lessonDays에 적힌 과목이 그날 시간표와 다르다 - 시간표를 나중에 고쳐 같아지면 false, P11-1) */
   changed: boolean;
   /** 비고(준비물) - 옛 수업 메모가 있으면 이어 붙인 것 (lessonNote) */
   note: string;
@@ -176,10 +176,12 @@ export function lessonsOn(date: string, src: LessonSource): LessonDayView {
   for (let n = 1; n <= count; n++) {
     const doc = day?.periods?.[String(n)];
     const base = off ? '' : gridSubject(timetable, date, n);
-    const changed = typeof doc?.subject === 'string';
+    // 적힌 과목이 있어도 그날 시간표와 같으면 바꾼 것이 아니다 (시간표를 나중에 고쳤다 - 빈 칸에 ✎가 남았다, P11-1)
+    const stored = typeof doc?.subject === 'string' ? doc.subject.trim() : null;
+    const changed = stored !== null && stored !== base;
     cells.push({
       n,
-      subject: changed ? doc!.subject!.trim() : base,
+      subject: stored ?? base,
       base,
       changed,
       note: lessonNote(doc),

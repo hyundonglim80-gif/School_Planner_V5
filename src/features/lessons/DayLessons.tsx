@@ -1,8 +1,9 @@
 // 하루 화면 ⏰ 수업 칸 (V4 features/day/DaySchedule.tsx). 교시마다 카드 - 과목 굵고 크게(PC 18px·휴대폰 16px), 과목이 있으면 왼쪽 교시 색 막대.
-//   - 수업 칸은 계산이다(domain/lessons): 그날 바꾼 칸(lessonDays) → 수업 없는 날 → 그 기간 시간표. '✎'는 그날만 바꾼 과목.
+//   - 수업 칸은 계산이다(domain/lessons): 그날 바꾼 칸(lessonDays) → 수업 없는 날 → 그 기간 시간표. '✎'는 그날만 바꾼 과목(과목이 보이는 칸만 - 비운 칸은 '수업 없음', P11-1).
 //   - 교시를 누르면 그 자리에서 고친다(과목·비고(준비물) - P10-2에 수업 메모와 준비물을 한 칸으로). 저장·Ctrl+S, 바깥을 누르면 고친 것을 저장하고 닫는다, 닫기·ESC는 저장 없이.
 //     고친 것은 lessonDays의 그 칸만(field path) - 시간표와 같은 과목은 적지 않는다(features/lessons/lessonOps).
 //   - 지금 몇 교시: 교시 시각(시간표 창 '교시')을 적어 두면 오늘은 '지금 · N분 남음' / '다음 · N분 뒤', 머리줄에 다음 교시와 비고 첫 줄.
+//     카드에는 교시 시각을 적지 않는다(P11-1 사용자 의견 - 수업 종 설정에서만 본다, 카드 title에만).
 //   - 교과 모드(전담·(중등) 전담 + 담임): 반을 크게·반 색 막대, 수정 칸은 학년-반 + 과목 두 칸, '⏪ 지난 시간' 줄(같은 반·과목의 바로 앞 수업 비고).
 //   - ▲▼ 위아래 교시와 맞바꾸기, 🔗 링크 추가, 📑 n 연결된 것, ✏️ 고치기. 머리줄 ⚙️ = 시간표 창.
 //   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
@@ -461,7 +462,7 @@ export default function DayLessons({ date }: { date: string }) {
                 data-now={isNow ? 'true' : isNext ? 'next' : undefined}
                 data-slot-color={slotColor?.name}
                 onClick={() => startEdit(c)}
-                title="눌러서 고치기"
+                title={`${range ? `${range} · ` : ''}눌러서 고치기`}
                 className={`group relative ${hasDetails ? 'p-3.5' : 'px-3.5 py-2'} rounded-xl border border-slate-200/70 transition-all flex flex-col justify-between min-h-[40px] hover:border-primary/50 hover:bg-slate-50/50 cursor-pointer ${
                   c.subject ? `border-l-4 ${slotColor ? slotColor.bar : accentClass}` : ''
                 } ${isNow ? 'ring-2 ring-primary/60 bg-blue-50/40' : isNext ? 'ring-1 ring-primary/30' : ''}`}
@@ -501,7 +502,6 @@ export default function DayLessons({ date }: { date: string }) {
                     <div className={`flex items-center justify-between gap-1 ${hasDetails ? 'mb-2' : ''}`}>
                       <div className="flex items-center gap-1.5 min-w-0 flex-1">
                         <span className={`px-2 py-0.5 shrink-0 rounded-lg text-xs font-bold border ${colorClass}`}>{name}</span>
-                        {range && <span className="shrink-0 text-2xs font-semibold text-slate-400 tabular-nums">{range}</span>}
                         {slot?.cls ? (
                           <span data-lesson-subject={c.subject} className="flex items-baseline gap-1.5 min-w-0 leading-tight">
                             <span data-slot-class className="shrink-0 font-black text-base sm:text-lg text-slate-900 tabular-nums">
@@ -515,7 +515,11 @@ export default function DayLessons({ date }: { date: string }) {
                           </span>
                         ) : (
                           <span data-lesson-subject={c.subject} className={`truncate leading-tight ${c.subject ? 'font-black text-base sm:text-lg text-slate-900' : 'text-sm'}`}>
-                            {c.subject || <span className="text-slate-300 font-normal">{view.off && !c.changed ? '수업 없음' : '과목 미등록'}</span>}
+                            {c.subject || (
+                              <span className="text-slate-300 font-normal" title={c.changed ? `이날만 비움 (시간표: ${c.base})` : undefined}>
+                                {view.off || c.changed ? '수업 없음' : '과목 미등록'}
+                              </span>
+                            )}
                           </span>
                         )}
                         {slotClass && (
@@ -536,7 +540,7 @@ export default function DayLessons({ date }: { date: string }) {
                             {attSummary ? <span data-subject-att-chip>{attSummary}</span> : '🙋 출결'}
                           </button>
                         )}
-                        {c.changed && (
+                        {c.changed && c.subject && (
                           <span data-lesson-changed className="shrink-0 text-xs font-black text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>
                             ✎
                           </span>
