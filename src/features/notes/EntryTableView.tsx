@@ -1,5 +1,5 @@
 // 메모·기록에 붙인 표를 그린다 (V4 components/EntryTableView.tsx - domain/entryTable).
-//   - 쓰는 칸(NotePanel)에서는 칸을 눌러 글자를 고치고, 행·열을 더하고 뺀다.
+//   - 쓰는 칸(NotePanel)에서는 칸을 눌러 글자를 고치고, 행·열을 더하고 뺀다. 긴 표는 쓰는 칸 전체로 스크롤한다(가로만 표 안에서).
 //     Enter = 고치고 아래 칸, Tab / Shift+Tab = 옆 칸, Alt+Enter = 칸 안 줄 바꿈, ESC = 고치기 취소.
 //   - 카드(메모·기록 목록)에서는 작게 보기만 한다.
 // 테두리가 없는 칸은 엑셀의 눈금선처럼 옅은 선을 긋는다 (엑셀은 눈금선을 복사하지 않는다).
@@ -250,7 +250,8 @@ export default function EntryTableView({ table, onChange, onRemove, compact, ful
           </button>
         </div>
       )}
-      <div className="overflow-auto max-h-[60vh] overscroll-contain p-2">{grid}</div>
+      {/* 세로는 칸 안에서 따로 스크롤하지 않고 쓰는 칸 전체로 (P10-5 사용자 의견 6f), 넓은 표는 가로만 */}
+      <div className="overflow-x-auto overflow-y-hidden p-2">{grid}</div>
     </div>
   );
 }

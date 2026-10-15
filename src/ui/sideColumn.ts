@@ -11,6 +11,7 @@
 // 줄 위의 탭은 SideTabs.tsx.
 import { useEffect, useId, type CSSProperties } from 'react';
 import { create } from 'zustand';
+import { containScroll } from './containScroll';
 import { useMinWidth } from './useMinWidth';
 
 /** 이 폭 이상이면 오른쪽 칸을 화면 옆에 붙인다. 그보다 좁으면(휴대폰) 화면을 덮는 배너. */
@@ -59,6 +60,8 @@ export function getSideColumn(): HTMLElement {
   columnEl.className =
     'fixed top-0 right-0 bottom-0 z-[45] flex flex-col bg-white border-l border-slate-200 shadow-xl overflow-y-auto overscroll-contain empty:hidden';
   columnEl.style.width = RIGHT_COLUMN_CSS_WIDTH;
+  // 칸 위의 휠은 칸 안에서만 (내용이 짧거나 끝에 닿아도 뒤 화면을 움직이지 않게 - P10-5)
+  containScroll(columnEl);
   document.body.appendChild(columnEl);
   return columnEl;
 }

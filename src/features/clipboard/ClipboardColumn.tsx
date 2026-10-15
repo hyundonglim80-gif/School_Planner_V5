@@ -8,6 +8,7 @@ import { useBackLayer } from '../../app/history';
 import { useShortcutTitle } from '../../app/keys';
 import { showErrorToast, showToast } from '../../app/toast';
 import { clearClips, clipboardReadGranted, readSystemClipboard, removeClip, useClipboard, type ClipItem } from '../../data/clipboard';
+import { containScroll } from '../../ui/containScroll';
 import { useDocked } from '../../ui/sideColumn';
 import { LEFT_COLUMN_CSS_WIDTH, setClipboardOpen, toggleClipboard, useClipboardPanel } from './capture';
 import { pasteClip } from './paste';
@@ -70,6 +71,9 @@ function ClipRow({ item }: { item: ClipItem }) {
   );
 }
 
+/** 칸 위의 휠은 칸 안에서만 (P10-5 - 목록이 짧거나 끝에 닿아도 뒤 화면을 움직이지 않게) */
+const containRef = (el: HTMLElement | null) => (el ? containScroll(el) : undefined);
+
 export default function ClipboardColumn() {
   const open = useClipboardPanel((s) => s.open);
   const docked = useDocked();
@@ -117,6 +121,7 @@ export default function ClipboardColumn() {
 
   const panel = (
     <aside
+      ref={containRef}
       data-clipboard-panel
       aria-label="클립보드"
       className="bg-white h-full flex flex-col overflow-y-auto overscroll-contain"
