@@ -67,7 +67,7 @@ export default function EvalMetaBox({ open, onToggle, meta, onChange, onSave, cl
                   </option>
                 ))}
                 {/^\d+$/.test(meta.place) && Number(meta.place) > periodNames.length && <option value={meta.place}>{meta.place}교시</option>}
-                <option value="journal">기록 (그날 기록 칸)</option>
+                <option value="journal">메모 칸 (그날 하루 화면)</option>
               </select>
             </div>
             <div className="flex-1">

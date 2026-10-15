@@ -22,7 +22,8 @@ import { useIsMobile } from '../../ui/useIsMobile';
 import type { ItemDoc } from '../events/eventOps';
 import { deleteNote, deleteNotes, labelNotes, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
 import EntryCard from '../notes/EntryCard';
-import { openLinkViewer } from '../links/open';
+import { openLinker, openLinkViewer } from '../links/open';
+import { useProgressNoteLinks } from '../links/useProgressLinks';
 import LabelFilterChips, { FILTER_HELP, FilterChip } from '../notes/LabelFilterChips';
 import { setMemoFilter, useLabelFilters, type MemoFilter } from '../notes/labelFilter';
 import { canMoveNote, memoScreenOrder } from '../notes/noteOps';
@@ -70,6 +71,8 @@ const openDay = (d: string) => {
 
 export default function MemoScreen() {
   const sid = useCurrentSpaceId();
+  // 이 메모를 이은 진도 차시 수 (🔗 n에 더한다 - P10-4)
+  const progressLinks = useProgressNoteLinks(sid);
   const memos = useAllNotes();
   const tree = useLabelTree('note');
   const status = useMirrorStatus('items');
@@ -191,6 +194,8 @@ export default function MemoScreen() {
                 onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => void moveNoteInList(sid, movable, i, 1).catch(quiet) : undefined}
                 onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}
             onOpenLinks={() => sid && openLinkViewer({ sid, id: m.id })}
+            moreLinks={progressLinks.get(m.id)?.length}
+            onAddLink={() => sid && openLinker({ sid, id: m.id })}
             onToggleDone={() => sid && void setNoteDone(sid, m, !m.done).catch(quiet)}
             onToggleFavorite={() => sid && void setNoteFavorite(sid, m, !m.favorite).catch(quiet)}
             onDelete={() => sid && void deleteNote(sid, m).catch(quiet)}

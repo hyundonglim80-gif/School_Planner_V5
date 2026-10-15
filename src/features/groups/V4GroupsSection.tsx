@@ -96,7 +96,7 @@ export default function V4GroupsSection() {
     <Section
       id="groups-v4"
       title="V4 그룹 가져오기"
-      desc="V4에서 쓰던 공유 그룹의 일정·수업·기록·메모·알림장·조사표를 V5 그룹으로 옮깁니다. V4는 그대로 두고 읽기만 합니다. 라벨은 그 그룹 자료가 쓰는 것만 내 V4 라벨에서 가져옵니다."
+      desc="V4에서 쓰던 공유 그룹의 일정·수업·메모(V4 기록·메모)·알림장·조사표를 V5 그룹으로 옮깁니다. V4는 그대로 두고 읽기만 합니다. 라벨은 그 그룹 자료가 쓰는 것만 내 V4 라벨에서 가져옵니다."
     >
       <div data-v4-groups={list ? list.length : failed ? 'failed' : 'loading'}>
         {failed ? (

@@ -26,7 +26,14 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stri
 export async function saveProgressPlan(sid: string, next: PlanToSave, before: Stored<'progress'> | undefined): Promise<boolean> {
   const course = isCourse(next);
   const key = course ? planKeys(next)[0] : next.key.trim();
-  const lessons = next.lessons.map((l) => ({ unit: l.unit, no: l.no, content: l.content, page: l.page, supplies: l.supplies }));
+  const lessons = next.lessons.map((l) => ({
+    unit: l.unit,
+    no: l.no,
+    content: l.content,
+    page: l.page,
+    supplies: l.supplies,
+    ...(l.linkIds?.length ? { linkIds: l.linkIds } : {}),
+  }));
   const label = planLabel({ ...next, key });
   if (!before || before.deletedAt) {
     const undo = await create(

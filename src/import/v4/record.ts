@@ -68,11 +68,11 @@ export function recordData(r: ImportRecord): Record<string, unknown> {
 /** 결과 표의 줄 - 종류 열쇠와 화면 이름 (차례대로). 가져오기를 더하는 세션이 줄을 더한다 */
 export const IMPORT_KINDS: ReadonlyArray<{ key: string; name: string }> = [
   { key: 'labels.event', name: '일정 라벨' },
-  { key: 'labels.note', name: '메모·기록 라벨' },
+  { key: 'labels.note', name: '메모 라벨' },
   { key: 'settings', name: '설정' },
   { key: 'items.event', name: '일정' },
   { key: 'series', name: '반복 묶음' },
-  { key: 'items.note', name: '기록·메모' },
+  { key: 'items.note', name: '메모 (V4 기록·메모)' },
   { key: 'timetables', name: '시간표' },
   { key: 'lessonDays', name: '수업 칸(날짜)' },
   { key: 'progress', name: '진도' },
@@ -91,7 +91,7 @@ export const IMPORT_NOTES: ReadonlyArray<{ key: string; text: (n: number) => str
   { key: 'periods', text: (n) => `기간 일정 ${n}개를 한 항목씩으로 합쳤습니다` },
   { key: 'series', text: (n) => `반복 일정 ${n}묶음을 이었습니다` },
   { key: 'holidays', text: (n) => `공휴일 일정 ${n}개는 가져오지 않았습니다(공휴일은 달력이 따로 보입니다)` },
-  { key: 'autoJournals', text: (n) => `알림장·출결 자동 기록 ${n}개는 가져오지 않았습니다(기록 칸에 원본이 보입니다)` },
+  { key: 'autoJournals', text: (n) => `알림장·출결 자동 기록 ${n}개는 가져오지 않았습니다(메모 칸 맨 위에 알림장·출결 카드로 보입니다)` },
   { key: 'alarmMoved', text: (n) => `알림 날짜가 일정 날과 달랐던 ${n}개는 일정 날 그 시각으로 두었습니다` },
   { key: 'empty', text: (n) => `글이 비어 있던 ${n}개는 가져오지 않았습니다` },
   { key: 'linksDropped', text: (n) => `상대를 찾지 못한(지웠거나 공유 그룹의) 링크 ${n}개는 이지 않았습니다` },

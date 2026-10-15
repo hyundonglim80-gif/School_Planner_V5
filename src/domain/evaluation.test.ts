@@ -42,10 +42,10 @@ const base: EvalDoc = {
 };
 
 describe('자리·조 나누기·명단', () => {
-  it('자리 = 교시 글자 / 기록 칸', () => {
+  it('자리 = 교시 글자 / 메모 칸', () => {
     expect(evalPlaceOf(base)).toBe('2');
     expect(evalPlaceOf({ period: null })).toBe('journal');
-    expect(evalPlaceLabel('journal')).toBe('기록');
+    expect(evalPlaceLabel('journal')).toBe('메모 칸');
     expect(evalPlaceLabel('3', ['아침', '1교시', '2교시'])).toBe('2교시');
     expect(evalPlaceLabel('7')).toBe('7교시');
     expect(evalCountsByPlace([{ period: 2 }, { period: 2 }, { period: null }])).toEqual({ '2': 2, journal: 1 });

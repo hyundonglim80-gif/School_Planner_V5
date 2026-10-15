@@ -6,13 +6,16 @@ import type { WindowProps } from '../../app/windows';
 import { shortDateLabel } from '../../domain/dateUtils';
 import { isLongEntry } from '../../domain/entryCollapse';
 import { labelPath } from '../../domain/labelTree';
-import { itemLabels, useItemsOn, useLabelTree } from '../../data/select';
+import { itemLabels, useLabelTree } from '../../data/select';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
-import { openLinkViewer } from '../links/open';
+import { openLinker, openLinkViewer } from '../links/open';
+import { useProgressNoteLinks } from '../links/useProgressLinks';
 import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from './actions';
 import EntryCard from './EntryCard';
 import DayCardView from '../day/DayCards';
 import { useDayCardsOn } from '../day/useDayCards';
+import { useDayNotes } from '../day/useDayNotes';
+import { noteFromLabel } from './dayNotes';
 import { canMoveNote, favoriteFirst, timeLabel } from './noteOps';
 import { openNotePanel, useEditingNoteIds, type DayNotesParams } from './open';
 
@@ -22,7 +25,13 @@ const quiet = () => {
 
 export default function DayNotesWindow({ params, close, raise }: WindowProps<DayNotesParams>) {
   const { sid, date } = params;
-  const notes = favoriteFirst(useItemsOn(date, 'note', sid));
+  // 이 메모를 이은 진도 차시 수 (🔗 n에 더한다 - P10-4)
+  const progressLinks = useProgressNoteLinks(sid);
+  // 하루 메모 칸과 같게: 날짜 링크 메모(즐겨찾기 먼저 - ▲▼는 이것들끼리) → 그날 일정·수업에 이은 메모 (P10-4)
+  const rows = useDayNotes(date, sid);
+  const dated = favoriteFirst(rows.filter((r) => r.dated).map((r) => r.item));
+  const notes = [...dated, ...rows.filter((r) => !r.dated).map((r) => r.item)];
+  const fromOf = new Map(rows.map((r) => [r.item.id, r.from.map(noteFromLabel)]));
   const tree = useLabelTree('note', sid);
   const editing = useEditingNoteIds(sid);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -36,13 +45,13 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
       onClose={close}
       raise={raise}
       width="lg"
-      title={`📝 ${shortDateLabel(date)} 기록 (${notes.length})`}
+      title={`📝 ${shortDateLabel(date)} 메모 (${notes.length})`}
       headerExtra={
         <button
           type="button"
           data-day-notes-add
           onClick={() => openNotePanel({ sid, date })}
-          title="이 날 기록 추가 (하루 화면과 같은 기록 칸)"
+          title="이 날의 메모 추가 (하루 화면과 같은 쓰는 칸)"
           className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
         >
           + 추가
@@ -57,7 +66,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
         {notes.length === 0 ? (
           cards.length > 0 ? null : (
           <p className="py-10 text-center text-xs text-slate-400" data-day-notes-empty>
-            이 날 기록이 없습니다.
+            이 날의 메모가 없습니다.
           </p>
           )
         ) : (
@@ -73,10 +82,13 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
                 editing={editing.has(item.id)}
                 collapsed={isCollapsed}
                 onToggleCollapse={() => setCollapsed((p) => ({ ...p, [item.id]: !isCollapsed }))}
-                onMoveUp={canMoveNote(notes, index, -1) ? () => void moveNoteInList(sid, notes, index, -1).catch(quiet) : undefined}
-                onMoveDown={canMoveNote(notes, index, 1) ? () => void moveNoteInList(sid, notes, index, 1).catch(quiet) : undefined}
+                from={fromOf.get(item.id)}
+                onMoveUp={canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
+                onMoveDown={canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                 onOpen={() => openNotePanel({ sid, date, id: item.id })}
                 onOpenLinks={() => openLinkViewer({ sid, id: item.id })}
+                moreLinks={progressLinks.get(item.id)?.length}
+                onAddLink={() => openLinker({ sid, id: item.id })}
                 onToggleDone={() => void setNoteDone(sid, item, !item.done).catch(quiet)}
                 onToggleFavorite={() => void setNoteFavorite(sid, item, !item.favorite).catch(quiet)}
                 onDelete={() => void deleteNote(sid, item).catch(quiet)}

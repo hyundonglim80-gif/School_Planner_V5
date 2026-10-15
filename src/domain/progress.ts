@@ -22,6 +22,8 @@ export interface ProgressLesson {
   /** 교과서 쪽 ('12~15' 같은 글자 그대로, 19번 U2). 옛 문서에는 없다 - 빈 글자로 읽는다 */
   page: string;
   supplies: string;
+  /** 이 차시에 이은 메모 id (P10-4 - 진도 쪽에만 적는다, 비면 칸이 없다). 그 차시를 하는 모든 수업 칸·그날 메모 칸에 보인다 */
+  linkIds?: string[];
 }
 
 export interface ProgressPlan {
@@ -82,7 +84,9 @@ export function planLabel(plan: Pick<ProgressPlan, 'key'> & CourseFields): strin
 
 // ── 표 붙여넣기 ─────────────────────────────────────────────────────────
 
-type Field = keyof ProgressLesson;
+/** 차시 행의 글 칸 (이은 메모 linkIds는 빼고) */
+export type LessonField = Exclude<keyof ProgressLesson, 'linkIds'>;
+type Field = LessonField;
 
 /** 머리줄 칸 글자 → 어느 칸인가 */
 function headerField(cell: string): Field | null {
@@ -565,13 +569,17 @@ export function sanitizePlan(id: string, raw: unknown): ProgressPlan {
   const lessons: ProgressLesson[] = Array.isArray(r.lessons)
     ? r.lessons
         .filter((l): l is Record<string, unknown> => !!l && typeof l === 'object')
-        .map((l) => ({
-          unit: str(l.unit),
-          no: str(l.no),
-          content: str(l.content),
-          page: str(l.page),
-          supplies: str(l.supplies),
-        }))
+        .map((l) => {
+          const links = Array.isArray(l.linkIds) ? [...new Set(l.linkIds.filter((x): x is string => typeof x === 'string' && !!x))] : [];
+          return {
+            unit: str(l.unit),
+            no: str(l.no),
+            content: str(l.content),
+            page: str(l.page),
+            supplies: str(l.supplies),
+            ...(links.length ? { linkIds: links } : {}),
+          };
+        })
     : [];
   const classes = sanitizeClasses(r.classes);
   const course = classes.length > 0 ? { subject: str(r.subject).trim().replace(/\s+/g, ' '), classes } : null;

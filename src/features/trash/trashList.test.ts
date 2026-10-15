@@ -31,7 +31,7 @@ describe('휴지통 목록', () => {
   });
 
   it('탭: 라벨·D-Day는 기타', () => {
-    expect(entries.map((e) => tabOf(e.kind))).toEqual(['event', 'memo', 'etc', 'etc', 'clip', 'journal']);
+    expect(entries.map((e) => tabOf(e.kind))).toEqual(['event', 'memo', 'etc', 'etc', 'clip', 'memo']);
   });
 
   it('시간표(P6-1)도 기타 탭에', () => {

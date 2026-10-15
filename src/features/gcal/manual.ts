@@ -24,7 +24,7 @@ export const useCalendarSync = create<CalendarSyncState>(() => IDLE);
 
 const set = (p: Partial<CalendarSyncState>) => useCalendarSync.setState(p);
 
-export const KIND_NAME: Record<SyncKind, string> = { event: '일정', class: '수업', journal: '기록' };
+export const KIND_NAME: Record<SyncKind, string> = { event: '일정', class: '수업', journal: '날짜를 단 메모' };
 
 export interface ManualSyncArgs {
   token: string;

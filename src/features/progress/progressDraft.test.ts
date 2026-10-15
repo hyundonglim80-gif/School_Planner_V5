@@ -5,6 +5,7 @@ import {
   draftTarget,
   emptyLesson,
   insertRowAfter,
+  lessonsToSave,
   newCourseDraft,
   newDraft,
   sameAsSaved,
@@ -124,5 +125,24 @@ describe("'📘 진도 만들기' - 수업 칸 글자로 새 진도 (19번 U3)",
     expect(d).toMatchObject({ subject: '과학', classes: ['5-2'], legacyKey: null });
     expect(draftTarget(d)).toEqual({ key: '', subject: '과학', classes: ['5-2'] });
     expect(draftTarget(draftForSlot('창체', true))).toEqual({ key: '창체' });
+  });
+});
+
+describe('차시에 이은 메모 (P10-4)', () => {
+  it('이은 메모는 고친 것으로 치지 않고, 저장할 때 지금 문서의 그 행에서 가져온다 (행을 넣어도·지우면 함께 사라진다)', () => {
+    const saved = sanitizePlan('p1', { key: '국어', startDate: '2026-09-01', lessons: [lesson('가'), { ...lesson('나'), linkIds: ['m1'] }], bumps: [] });
+    expect(saved.lessons[1].linkIds).toEqual(['m1']);
+    const d = toDraft(saved, false);
+    expect(sameAsSaved(d, saved)).toBe(true);
+    // 창을 연 채 수업 칸에서 '가'에 메모를 이었다 (문서만 바뀜)
+    const doc = [{ ...lesson('가'), linkIds: ['m9'] }, { ...lesson('나'), linkIds: ['m1'] }];
+    const { lessons } = insertRowAfter(d.lessons, -1);
+    lessons[0] = { ...lessons[0], content: '새' };
+    expect(lessonsToSave(lessons, doc).map((l) => [l.content, l.linkIds])).toEqual([
+      ['새', undefined],
+      ['가', ['m9']],
+      ['나', ['m1']],
+    ]);
+    expect(lessonsToSave(lessons.filter((l) => l.content !== '나'), doc).map((l) => l.linkIds)).toEqual([undefined, ['m9']]);
   });
 });

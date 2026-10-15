@@ -192,7 +192,7 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                 </button>
               </div>
               {evals.length === 0 ? (
-                <p className="text-center text-slate-400 py-8">{cls ? `${cls.year}학년도에 이 학급으로 만든 조사표가 없습니다.` : ''} 조사표는 수업 칸·기록 칸의 📊에서 만듭니다.</p>
+                <p className="text-center text-slate-400 py-8">{cls ? `${cls.year}학년도에 이 학급으로 만든 조사표가 없습니다.` : ''} 조사표는 수업 칸·메모 칸의 📊에서 만듭니다.</p>
               ) : shown.length === 0 ? (
                 <p className="text-center text-slate-400 py-8">고른 교과·학기·유형에 맞는 조사표가 없습니다.</p>
               ) : (

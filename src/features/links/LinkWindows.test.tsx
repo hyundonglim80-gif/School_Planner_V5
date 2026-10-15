@@ -71,11 +71,12 @@ describe('🔗 링크 연결 창', () => {
     seed();
     render(<LinkerWindow params={{ sid: SID, id: 'ev' }} close={close} raise={0} setParams={() => {}} />);
     expect(qa('[data-linker-item]')).toHaveLength(0);
-    fireEvent.click(q('[data-linker-tab="journal"]')!);
-    expect(qa('[data-linker-item]').map((e) => e.dataset.linkerItem)).toEqual(['j1', 'j2']);
+    expect(qa('[data-linker-tab]').map((e) => e.dataset.linkerTab)).toEqual(['event', 'note', 'lesson']);
+    fireEvent.click(q('[data-linker-tab="note"]')!);
+    // 메모 하나 (P10-4): 날짜 링크 메모와 날짜 없는 메모(만든 날)가 한 목록
+    expect(qa('[data-linker-item]').map((e) => e.dataset.linkerItem)).toEqual(['j1', 'j2', 'm1']);
     expect((q('[data-linker-item="j1"]') as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(q('[data-linker-item="j2"]')!);
-    fireEvent.click(q('[data-linker-tab="memo"]')!);
     fireEvent.click(q('[data-linker-item="m1"]')!);
     expect(q('[data-linker-tray]')?.dataset.linkerTray).toBe('2');
     await act(async () => fireEvent.click(q('[data-linker-save]')!));
@@ -92,9 +93,9 @@ describe('🔗 링크 연결 창', () => {
   it('범위를 학년도로·라벨·키워드로 좁힌다, 아무것도 안 고르고 저장하면 안내만', async () => {
     seed();
     render(<LinkerWindow params={{ sid: SID, id: 'ev' }} close={close} raise={0} setParams={() => {}} />);
-    fireEvent.click(q('[data-linker-tab="journal"]')!);
+    fireEvent.click(q('[data-linker-tab="note"]')!);
     fireEvent.change(q('[data-linker-range]')!, { target: { value: 'year' } });
-    expect(qa('[data-linker-item]')).toHaveLength(3);
+    expect(qa('[data-linker-item]')).toHaveLength(4);
     expect((q('[data-linker-date="start"]') as HTMLInputElement).value).toBe('2026-03-01');
     fireEvent.click(q('[data-linker-label="N1"]')!);
     expect(qa('[data-linker-item]').map((e) => e.dataset.linkerItem)).toEqual(['j1']);
@@ -106,18 +107,18 @@ describe('🔗 링크 연결 창', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
-  it("'+ 새 기록 만들어 연결' = 그날 새 기록 칸(쪽지), 처음 저장하면 담긴다", () => {
+  it("'+ 새 메모 만들어 연결' = 날짜 없는 새 메모 칸(쪽지 - 이으면 일정의 날 메모 칸에 보인다), 처음 저장하면 담긴다", () => {
     seed();
     render(<LinkerWindow params={{ sid: SID, id: 'ev' }} close={close} raise={0} setParams={() => {}} />);
-    fireEvent.click(q('[data-linker-tab="journal"]')!);
-    fireEvent.click(q('[data-linker-new="journal"]')!);
-    const p = opened.notes[0] as { sid: string; date: string; pickFor: string };
-    expect(p).toMatchObject({ sid: SID, date: '2026-10-08' });
+    fireEvent.click(q('[data-linker-tab="note"]')!);
+    fireEvent.click(q('[data-linker-new="note"]')!);
+    const p = opened.notes[0] as { sid: string; date: string | null; pickFor: string };
+    expect(p).toMatchObject({ sid: SID, date: null });
     act(() => deliverLinkPick(p.pickFor, 'j3'));
     expect(q('[data-linker-picked="j3"]')).not.toBeNull();
-    fireEvent.click(q('[data-linker-tab="memo"]')!);
-    fireEvent.click(q('[data-linker-new="memo"]')!);
-    expect(opened.notes[1]).toMatchObject({ date: null });
+    fireEvent.click(q('[data-linker-tab="event"]')!);
+    fireEvent.click(q('[data-linker-new="event"]')!);
+    expect(opened.events[0]).toMatchObject({ date: '2026-10-08' });
   });
 });
 
@@ -125,7 +126,7 @@ describe('📑 연결된 데이터', () => {
   it('지금 내용(글·표)·수업 링크·찾을 수 없는 항목', () => {
     seed();
     render(<LinkViewerWindow params={{ sid: SID, id: 'ev' }} close={close} raise={0} setParams={() => {}} />);
-    expect(qa('[data-link-row]').map((e) => e.dataset.linkKind)).toEqual(['journal', 'lesson', 'missing']);
+    expect(qa('[data-link-row]').map((e) => e.dataset.linkKind)).toEqual(['note', 'lesson', 'missing']);
     expect(q('[data-link-row="j1"] [data-link-text]')?.textContent).toBe('상담 기록');
     expect(q('[data-link-row="j1"] [data-entry-table]')).not.toBeNull();
     expect(q('[data-link-row="lesson:2026-10-08:3"]')?.textContent).toContain('3교시 수업');

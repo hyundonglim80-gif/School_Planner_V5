@@ -254,7 +254,7 @@ export default function WeekScreen() {
                 data-last-year-import
                 disabled={importing}
                 onClick={() => void runImport()}
-                title="고른 작년 일정·기록을 올해 같은 요일에 복사합니다 (작년 것은 그대로)"
+                title="고른 작년 일정·메모를 올해 같은 요일에 복사합니다 (작년 것은 그대로)"
                 className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 shadow-xs whitespace-nowrap cursor-pointer"
               >
                 {importing ? '가져오는 중…' : '📥 올해로 가져오기'}
@@ -268,7 +268,7 @@ export default function WeekScreen() {
               type="button"
               data-last-year-pick-all
               onClick={pickAll}
-              title="보이는 요일의 작년 일정·기록을 모두 고릅니다 (올해 이미 있는 것은 빼고)"
+              title="보이는 요일의 작년 일정·메모를 모두 고릅니다 (올해 이미 있는 것은 빼고)"
               className="px-2 py-1 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 whitespace-nowrap cursor-pointer"
             >
               모두 고르기
@@ -290,7 +290,7 @@ export default function WeekScreen() {
           data-last-year-toggle
           aria-pressed={showLastYear}
           onClick={toggleLastYear}
-          title={showLastYear ? '작년 이맘때 숨기기' : '작년 학년도 같은 주의 일정·기록을 요일 카드 아래에 흐리게 보기'}
+          title={showLastYear ? '작년 이맘때 숨기기' : '작년 학년도 같은 주의 일정·메모를 요일 카드 아래에 흐리게 보기'}
           className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all whitespace-nowrap cursor-pointer ${
             showLastYear ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-xs' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-700'
           }`}

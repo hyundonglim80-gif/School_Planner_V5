@@ -266,8 +266,8 @@ function YearMonthCard(p: Props) {
                             stop(e);
                             p.onOpenNotes(d);
                           }}
-                          title={`기록 ${notes}건 보기`}
-                          aria-label={`기록 ${notes}건 보기`}
+                          title={`메모 ${notes}건 보기`}
+                          aria-label={`메모 ${notes}건 보기`}
                           className="inline-flex items-center gap-px px-1 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-2xs font-bold leading-none hover:bg-amber-100 transition-colors shrink-0 cursor-pointer"
                         >
                           <span aria-hidden>📝</span>
@@ -306,7 +306,7 @@ function YearMonthCard(p: Props) {
             })
           ) : (
             <div data-year-month-empty className="text-center text-slate-400 text-xs py-8 font-semibold">
-              기록된 일정이 없습니다.
+              일정이 없습니다.
             </div>
           )}
         </div>

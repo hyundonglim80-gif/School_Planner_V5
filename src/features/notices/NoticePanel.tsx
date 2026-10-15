@@ -265,7 +265,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                   </ol>
                 </div>
               )}
-              <p className="text-slate-400">저장하면 그날 기록 칸에 '📢 알림장'으로 보입니다. 다른 날로 옮기면 적던 것은 그 날에 저장합니다.</p>
+              <p className="text-slate-400">저장하면 그날 메모 칸 맨 위에 '📢 알림장'으로 보입니다. 다른 날로 옮기면 적던 것은 그 날에 저장합니다.</p>
             </div>
           ) : (
             <div className="space-y-3">

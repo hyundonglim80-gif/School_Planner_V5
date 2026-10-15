@@ -2,7 +2,22 @@
 import { describe, expect, it } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
 import type { ItemDoc } from '../events/eventOps';
-import { lessonEndOf, lessonLinkId, lessonLinkOps, lessonUnlinkOps, linkKindOf, linkOps, parseLessonLink, unlinkOps } from './linkOps';
+import {
+  lessonEndOf,
+  lessonLinkId,
+  lessonLinkOps,
+  lessonUnlinkOps,
+  linkKindOf,
+  linkOps,
+  parseLessonLink,
+  parseProgressLink,
+  progressEndOf,
+  progressLinkId,
+  progressLinkOps,
+  progressLinksByNote,
+  progressUnlinkOps,
+  unlinkOps,
+} from './linkOps';
 import type { Stored } from '../../data/types';
 
 const t = new Timestamp(1, 0);
@@ -72,8 +87,41 @@ describe('링크 쓰기', () => {
   });
 
   it('종류: 일정 · 기록(날짜) · 메모(날짜 없음)', () => {
-    expect(linkKindOf({ kind: 'event', date: '2026-10-08' })).toBe('event');
-    expect(linkKindOf({ kind: 'note', date: '2026-10-08' })).toBe('journal');
-    expect(linkKindOf({ kind: 'note', date: null })).toBe('memo');
+    expect(linkKindOf({ kind: 'event' })).toBe('event');
+    expect(linkKindOf({ kind: 'note' })).toBe('note');
+  });
+});
+
+describe('진도 차시 링크 (P10-4) - 진도 쪽 그 행에만', () => {
+  const row = (content: string, linkIds?: string[]) => ({ unit: '1. 비유', no: '', content, page: '', supplies: '', ...(linkIds ? { linkIds } : {}) });
+  const plan = (id: string, lessons: ReturnType<typeof row>[], more: Record<string, unknown> = {}) =>
+    ({ id, key: '국어', startDate: '2026-09-01', bumps: [], lessons, deletedAt: null, updatedAt: t, v: 1, createdAt: 0, authorId: 'me', ...more }) as unknown as Stored<'progress'>;
+  const docs = { p1: plan('p1', [row('가'), row('나', ['m1'])]), p2: plan('p2', [row('다', ['m1', 'm2'])], { deletedAt: t }) };
+
+  it('id 읽기·끝 (지운 진도·없는 행은 null)·이름', () => {
+    expect(progressLinkId('p1', 1)).toBe('progress:p1:1');
+    expect(parseProgressLink('progress:p1:1')).toEqual({ planId: 'p1', row: 1 });
+    expect(parseProgressLink('lesson:2026-10-08:1')).toBeNull();
+    const end = progressEndOf('progress:p1:1', docs)!;
+    expect(end).toMatchObject({ planId: 'p1', row: 1, linkIds: ['m1'], title: '국어 2차시 · 나' });
+    expect(progressEndOf('progress:p1:5', docs)).toBeNull();
+    expect(progressEndOf('progress:p2:0', docs)).toBeNull();
+  });
+
+  it('잇기·끊기 = 그 행의 linkIds만 (다른 행·메모는 그대로, 빈 목록이면 칸을 지운다)', () => {
+    const end = progressEndOf('progress:p1:0', docs)!;
+    const ops = progressLinkOps(SID, end, [item('m2'), item('m3')]);
+    expect(ops).toHaveLength(1);
+    const op = ops[0] as unknown as { at: { coll: string; id: string }; changes: { lessons: ReturnType<typeof row>[] } };
+    expect(op.at).toMatchObject({ coll: 'progress', id: 'p1' });
+    expect(op.changes.lessons.map((l) => l.linkIds)).toEqual([['m2', 'm3'], ['m1']]);
+    expect(progressLinkOps(SID, progressEndOf('progress:p1:1', docs)!, [item('m1')])).toEqual([]);
+    const cut = progressUnlinkOps(SID, progressEndOf('progress:p1:1', docs)!, 'm1')[0] as unknown as typeof op;
+    expect(cut.changes.lessons[1]).not.toHaveProperty('linkIds');
+    expect(cut.changes.lessons[1].content).toBe('나');
+  });
+
+  it('메모 쪽은 계산 - 지운 진도는 빼고', () => {
+    expect(Object.fromEntries(progressLinksByNote(docs))).toEqual({ m1: ['progress:p1:1'] });
   });
 });

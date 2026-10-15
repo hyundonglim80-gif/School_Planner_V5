@@ -92,7 +92,7 @@ export default function LastYearDay({ lastDate, toDate, events, notes, existsThi
                   key={key}
                   data-last-year-item="note"
                   data-already={already || undefined}
-                  title={already ? `${shown} - 올해 이 날에 같은 기록이 있습니다` : `${shown} - 첨부만 있는 기록은 가져오지 않습니다`}
+                  title={already ? `${shown} - 올해 이 날에 같은 메모가 있습니다` : `${shown} - 첨부만 있는 메모는 가져오지 않습니다`}
                   className={rowClass(false, 'note')}
                 >
                   {body}
@@ -106,7 +106,7 @@ export default function LastYearDay({ lastDate, toDate, events, notes, existsThi
                   type="checkbox"
                   checked={picked.has(key)}
                   onChange={() => onTogglePick({ item: n, toDate })}
-                  aria-label={`작년 기록 고르기: ${shown.split('\n')[0]}`}
+                  aria-label={`작년 메모 고르기: ${shown.split('\n')[0]}`}
                   className="mt-0.5 shrink-0 accent-amber-500"
                 />
                 {body}

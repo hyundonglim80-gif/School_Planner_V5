@@ -31,18 +31,28 @@ describe('링크 연결 창 목록', () => {
     const r = rangeOf('1week', '2026-10-08', { start: '', end: '' });
     expect(candidatesOf(items, 'event', r).map((c) => c.id)).toEqual(['e1', 'e2']);
     expect(candidatesOf(items, 'event', r, { exclude: 'e1' }).map((c) => c.id)).toEqual(['e2']);
-    expect(candidatesOf(items, 'journal', r).map((c) => c.id)).toEqual(['j1']);
+    expect(candidatesOf(items, 'note', r).map((c) => c.id)).toEqual(['j1', 'm1']);
   });
 
-  it('메모는 만든 날로 범위, 빈 글은 뺀다', () => {
-    expect(candidatesOf(items, 'memo', rangeOf('1week', '2026-10-08', { start: '', end: '' })).map((c) => [c.id, c.date])).toEqual([['m1', '2026-10-01']]);
-    expect(candidatesOf(items, 'memo', { start: '2026-11-01', end: '2026-11-30' })).toEqual([]);
+  it('메모 하나 (P10-4): 날짜 링크 하나라도 범위 안이면 - 그 가운데 가장 늦은 날, 날짜 링크가 없으면 만든 날, 빈 글은 뺀다', () => {
+    const r = rangeOf('1week', '2026-10-08', { start: '', end: '' });
+    expect(candidatesOf(items, 'note', r).map((c) => [c.id, c.date])).toEqual([
+      ['j1', '2026-10-07'],
+      ['m1', '2026-10-01'],
+    ]);
+    expect(candidatesOf(items, 'note', { start: '2026-11-01', end: '2026-11-30' })).toEqual([]);
+    const linked = {
+      ...items,
+      d2: { id: 'd2', ...base, createdAt: 0, kind: 'note', date: '2026-09-01', dates: ['2026-09-01', '2026-10-05', '2026-10-30'], text: '여러 날 메모' },
+    } as unknown as Docs<'items'>;
+    expect(candidatesOf(linked, 'note', r).find((c) => c.id === 'd2')?.date).toBe('2026-10-05');
+    expect(candidatesOf(linked, 'note', { start: '2026-09-10', end: '2026-09-30' }).map((c) => c.id)).toEqual([]);
   });
 
   it('라벨(하나라도)·키워드', () => {
     const r = { start: '2026-01-01', end: '2026-12-31' };
-    expect(candidatesOf(items, 'journal', r, { labelIds: ['L1'] }).map((c) => c.id)).toEqual(['j1']);
-    expect(candidatesOf(items, 'journal', r, { labelIds: ['L9'] })).toEqual([]);
+    expect(candidatesOf(items, 'note', r, { labelIds: ['L1'] }).map((c) => c.id)).toEqual(['j1']);
+    expect(candidatesOf(items, 'note', r, { labelIds: ['L9'] })).toEqual([]);
     expect(candidatesOf(items, 'event', r, { keyword: '상담' }).map((c) => c.id)).toEqual(['e1']);
   });
 });

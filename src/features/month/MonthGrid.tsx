@@ -148,8 +148,8 @@ export default function MonthGrid(p: MonthGridProps) {
                                 stop(e);
                                 p.onOpenNotes(date);
                               }}
-                              title={`기록 ${notes}건 보기`}
-                              aria-label={`기록 ${notes}건 보기`}
+                              title={`메모 ${notes}건 보기`}
+                              aria-label={`메모 ${notes}건 보기`}
                               className="inline-flex items-center gap-px px-1 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-2xs font-bold leading-none hover:bg-amber-100 transition-colors shrink-0 cursor-pointer"
                             >
                               <span aria-hidden>📝</span>

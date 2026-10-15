@@ -3,6 +3,7 @@
 //   2) 수업 칸 진도 줄(📘 k/n차시 · 📖 쪽 · 🎒 준비물) · 이 교시 밀기 = bumps 한 칸 · 되돌리기(안내) · 주간 k/n 배지 · 줄을 누르면 그 진도
 //   3) 진도 창: 칸 고치기 = 바뀐 칸만 · ESC 묻기 · Ctrl+Enter 행 · CSV 불러오기 · 예시 CSV 받기 · + 새 진도 · 지우기 = 휴지통 · ⋮·머리줄 📘 · 단축키
 //   4) 전담(teacher3 ?as=3): 과정(과목 + 여러 반) - 반마다 따로 세기·반별 현황표·다음 수업 밀기
+//   5) P10-4: 진도 행 🔗 = 그 차시에 메모 잇기(고치던 것은 먼저 저장) → 진도 쪽 그 행에만 · 그 차시를 하는 수업 칸 🔗 n · 그날 메모 칸(📘) · 끊기
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-progress.mjs
 // 에뮬레이터 teacher·teacher3 계정의 시간표·수업 칸·진도를 비우고 심은 뒤 끝에 되돌린다.
@@ -168,6 +169,44 @@ try {
   // 행 지우기
   await page.locator(sel('progress-row-delete', 4)).click();
   r.check(await waitFor(page.locator(sel('progress-table', 4))), '✕ = 행 지우기');
+
+  r.section('차시에 메모 잇기 (P10-4)');
+  await setDoc(A.ref('items', 'insp_pgn'), { kind: 'note', date: null, text: '점검진도 비유 활동지', labelIds: [], order: 'Zz9', authorId: uid, ...tracked });
+  undo.add(() => deleteDoc(A.ref('items', 'insp_pgn')));
+  // 행을 지운 채(고치던 것) 🔗 = 먼저 저장 → 그 차시의 연결 창 (2행 = 2차시 '비유 표현')
+  await page.locator(sel('progress-row-link', 1)).click();
+  const linker = page.locator(sel('linker', `progress:${planId}:1`));
+  r.check(await waitFor(linker, 8000), '🔗 = 그 차시의 연결 창');
+  r.check((await serverUntil(() => read(A.ref('progress', planId)), (d) => d?.lessons?.length === 4))?.lessons?.length === 4, '고치던 것(행 지우기)은 먼저 저장');
+  r.check((await linker.locator(sel('linker-tab')).evaluateAll((els) => els.map((e) => e.dataset.linkerTab).join(','))) === 'note', '차시에서 열면 메모 탭만');
+  await linker.locator(sel('linker-keyword')).fill('점검진도');
+  await linker.locator(sel('linker-item', 'insp_pgn')).click();
+  await page.locator(sel('linker-save')).click();
+  const linkedPlan = await serverUntil(() => read(A.ref('progress', planId)), (d) => d?.lessons?.[1]?.linkIds?.length === 1);
+  r.check(linkedPlan?.lessons?.[1]?.linkIds?.[0] === 'insp_pgn' && !linkedPlan.lessons[0].linkIds, '서버: 진도 그 행에만 linkIds');
+  r.check(!(await read(A.ref('items', 'insp_pgn')))?.linkIds, '서버: 메모 쪽에는 적지 않는다');
+  r.check(await waitFor(page.locator(sel('progress-row-links', 1))), '진도 창 그 행에 🔗 1');
+  r.check(!(await page.locator(sel('progress-save')).isEnabled()), '이어도 고친 것으로 치지 않는다 (💾 꺼짐)');
+  await go('#/day/2026-10-14');
+  const mark14 = card(1).locator(sel('progress-mark'));
+  r.check(await waitFor(mark14.locator(sel('progress-links', 1)), 8000), '그 차시를 하는 수업 칸(수 1교시 2차시)에 🔗 1');
+  const jr = page.locator(`${sel('day-journal', '2026-10-14')} ${sel('entry-card', 'insp_pgn')}`);
+  r.check(await waitFor(jr), '그날 메모 칸에 그 메모');
+  r.check(((await jr.locator(sel('entry-from')).getAttribute('data-entry-from')) ?? '').startsWith('progress:'), '카드에 📘 진도 표시');
+  r.check((await jr.locator(sel('entry-links')).getAttribute('data-entry-links')) === '1', '메모 카드 🔗 1 (진도 차시 - 계산)');
+  await mark14.locator(sel('progress-links')).click();
+  const pv = page.locator(sel('link-viewer', `progress:${planId}:1`));
+  r.check(await waitFor(pv.locator(sel('link-row', 'insp_pgn'))), '🔗 1 → 이은 메모 보기');
+  await jr.locator(sel('entry-links')).click();
+  const nv = page.locator(sel('link-viewer', 'insp_pgn'));
+  r.check(await waitFor(nv.locator(sel('link-row', `progress:${planId}:1`))), '메모 쪽 링크 보기에 📘 진도 줄');
+  await nv.locator(sel('link-unlink', `progress:${planId}:1`)).click();
+  const cutPlan = await serverUntil(() => read(A.ref('progress', planId)), (d) => !d?.lessons?.[1]?.linkIds);
+  r.check(!cutPlan?.lessons?.[1]?.linkIds && cutPlan?.lessons?.[1]?.content === '비유 표현', '🗑️ = 진도 그 행에서 끊기 (차시는 그대로)');
+  r.check(await waitFor(async () => (await jr.count()) === 0), '끊으면 그날 메모 칸에서 빠진다');
+  await go('#/day/2026-10-12');
+  await page.locator(sel('side-tab')).filter({ hasText: '진도' }).first().click();
+  await waitFor(page.locator(win));
 
   r.section('+ 새 진도 · CSV');
   dialogs.answer = true;

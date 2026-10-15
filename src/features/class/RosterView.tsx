@@ -677,7 +677,7 @@ function StudentTable({
                 </select>
               </td>
               <td className="p-1.5">
-                <input type="text" data-student-field="note" value={st.note ?? ''} onChange={(e) => onChange(row, { note: e.target.value })} placeholder="특이사항, 조사표 내용, 상담 기록..." aria-label="특이사항" className={`${input} w-full text-slate-600`} />
+                <input type="text" data-student-field="note" value={st.note ?? ''} onChange={(e) => onChange(row, { note: e.target.value })} placeholder="특이사항, 조사표 내용, 상담 메모..." aria-label="특이사항" className={`${input} w-full text-slate-600`} />
               </td>
               <td className="p-1.5 text-center">
                 <button type="button" data-roster-remove={row} onClick={() => onRemove(row)} title="삭제" aria-label="삭제" className="text-slate-300 hover:text-red-500 font-black p-1 cursor-pointer">

@@ -437,6 +437,7 @@ try {
     const card = q(sel('entry-card', 'insp_man_n1'));
     r.check(await waitFor(card), '메모 카드');
     for (const s of ['entry-complete', 'entry-favorite-toggle', 'entry-table', 'entry-students']) r.check((await card.locator(sel(s)).count()) > 0, `카드 ${s}`);
+    r.check((await card.locator(sel('entry-from', 'event:insp_man_e1')).count()) === 1, '그날 일정에 이은 메모 = 카드에 📌 표시 (한 번만)');
     const toggle = q(sel('journal-filter-toggle'));
     r.check((await toggle.count()) === 1, '제목 줄 🏷️ (라벨로 보기 펴기·접기)');
     if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
@@ -523,7 +524,7 @@ try {
     await has(sel('event-panel', 'edit'));
     await q(sel('event-link-add')).click();
     r.check(await has(sel('linker')), '🔗 링크 추가 → 새 데이터 연결하기');
-    r.check((await count(sel('linker-tab'))) >= 4 && (await count(sel('linker-save'))) === 1, '탭(일정·수업·기록·메모)·연결 저장');
+    r.check((await count(sel('linker-tab'))) === 3 && (await count(sel('linker-tab', 'note'))) === 1 && (await count(sel('linker-save'))) === 1, '탭(일정·메모·수업)·연결 저장');
   });
 
   await topic('link-viewer', async () => {
@@ -654,7 +655,7 @@ try {
   await topic('trash', async () => {
     await q(sel('header-trash')).click();
     r.check(await has(sel('trash-window')), '🗑️ → 휴지통');
-    r.check((await count(sel('trash-tab'))) === 6, '탭 여섯 (전체·일정·기록·메모·클립보드·기타)');
+    r.check((await count(sel('trash-tab'))) === 5 && (await count(sel('trash-tab', 'journal'))) === 0, '탭 다섯 (전체·일정·메모·클립보드·기타 - 기록 탭은 메모에 합침)');
     r.check((await count(sel('trash-settings'))) === 1, '⚙️ 자동 비우기');
   });
 

@@ -1,5 +1,7 @@
-// 🔗 링크 연결 창 (V4 components/LinkerModal.tsx). 창 'linker' = { sid, id } - 그 항목(또는 수업 'lesson:날짜:교시')에 잇는다.
-//   - 탭 📌 일정 · 📔 기록 · 📝 메모 · 🏫 수업(P6-1 - 계산한 수업 칸 가운데 과목·메모가 있는 것, 항목에서 열 때만).
+// 🔗 링크 연결 창 (V4 components/LinkerModal.tsx). 창 'linker' = { sid, id } - 그 항목(또는 수업 'lesson:날짜:교시', 진도 차시 'progress:진도:행')에 잇는다.
+//   진도 차시에서 열면 📝 메모 탭만 - 진도 쪽 그 행에만 적는다(P10-4 ■2).
+//   - 탭 📌 일정 · 📝 메모 · 🏫 수업(P6-1 - 계산한 수업 칸 가운데 과목·비고가 있는 것, 항목에서 열 때만).
+//     옛 📔 기록 탭은 📝 메모에 합쳤다(P10-4 5g - 메모 하나: 날짜 링크 메모와 날짜 없는 메모가 한 목록).
 //   - 조회 범위(±1주일·±1개월·1학기·2학기·학년도·기간 설정 - 날짜를 고치면 기간 설정), 라벨 칩·키워드로 좁히고 ‹ ›로 쪽을 넘긴다.
 //   - 누르면 🛒 담기(여러 개), 이미 이은 것은 '연결됨'. '+ 새 00 만들어 연결' = 같은 쓰는 칸을 열고, 처음 저장하면 담긴다.
 //   - 연결 저장(Ctrl+S) = 양쪽 linkIds를 한 묶음으로 → 창을 닫는다(V4 10-07 - 열어 두면 링크 수가 바뀐 칸이 숨은 탭에 가려진다).
@@ -17,30 +19,43 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { openEventPanel } from '../events/open';
 import { useLessonSource } from '../lessons/useLessons';
 import { openNotePanel } from '../notes/open';
-import { saveLessonLinks, saveLinks } from './actions';
+import { saveLessonLinks, saveLinks, saveProgressLinks } from './actions';
 import { candidatesOf, lessonCandidatesOf, RANGE_OPTIONS, rangeOf, type RangeKey } from './linkerList';
-import { LINK_KIND_ICON, LINK_KIND_NAME, lessonEndOf, parseLessonLink, type LessonEnd, type LinkKind } from './linkOps';
+import {
+  LINK_KIND_ICON,
+  LINK_KIND_NAME,
+  lessonEndOf,
+  linkKindOf,
+  parseLessonLink,
+  parseProgressLink,
+  progressEndOf,
+  type LessonEnd,
+  type LinkKind,
+} from './linkOps';
 import { listenLinkPick, type LinkWindowParams } from './open';
 
 type LinkerTab = LinkKind | 'lesson';
-const ITEM_TABS: LinkerTab[] = ['event', 'journal', 'memo'];
+const ITEM_TABS: LinkerTab[] = ['event', 'note'];
 const PER_PAGE = 6;
 
 export default function LinkerWindow({ params, close, raise }: WindowProps<LinkWindowParams>) {
   const { sid, id } = params;
   const items = useDocs('items', sid);
   const days = useDocs('lessonDays', sid);
+  const progressDocs = useDocs('progress', sid);
   const lessonSrc = useLessonSource(sid);
   const terms = useCommonSettings((s) => s.terms);
   // 잇는 쪽: 항목 또는 수업 (수업에서 열면 수업 탭은 없다)
   const lessonEnd: LessonEnd | null = parseLessonLink(id) ? lessonEndOf(id, days) : null;
-  const source = !lessonEnd && items[id] && !items[id].deletedAt ? items[id] : undefined;
+  const fromProgress = !!parseProgressLink(id);
+  const progressEnd = fromProgress ? progressEndOf(id, progressDocs) : null;
+  const source = !lessonEnd && !fromProgress && items[id] && !items[id].deletedAt ? items[id] : undefined;
   const center = source?.date ?? lessonEnd?.date ?? todayStr();
   const eventTree = useLabelTree('event', sid);
   const noteTree = useLabelTree('note', sid);
-  const tabs: LinkerTab[] = lessonEnd ? ITEM_TABS : [...ITEM_TABS, 'lesson'];
+  const tabs: LinkerTab[] = fromProgress ? ['note'] : lessonEnd ? ITEM_TABS : [...ITEM_TABS, 'lesson'];
 
-  const [tab, setTab] = useState<LinkerTab>('event');
+  const [tab, setTab] = useState<LinkerTab>(fromProgress ? 'note' : 'event');
   const [rangeKey, setRangeKey] = useState<RangeKey>('1week');
   const [custom, setCustom] = useState({ start: center, end: center });
   const [labelIds, setLabelIds] = useState<string[]>([]);
@@ -63,7 +78,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
 
   const range = rangeOf(rangeKey, center, custom, semesterConfigOf(terms, academicYearOf(center)));
   const { start, end } = range;
-  const linkedIds = lessonEnd ? lessonEnd.linkIds : source?.linkIds;
+  const linkedIds = lessonEnd ? lessonEnd.linkIds : progressEnd ? progressEnd.linkIds : source?.linkIds;
   const linked = useMemo(() => new Set(linkedIds ?? []), [linkedIds]);
   const list = useMemo(
     () => (tab === 'lesson' ? lessonCandidatesOf(lessonSrc, { start, end }, keyword) : candidatesOf(items, tab, { start, end }, { labelIds, keyword, exclude: id })),
@@ -86,15 +101,15 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
     setPicked((p) => (p.includes(itemId) ? p.filter((x) => x !== itemId) : [...p, itemId]));
   };
 
+  // 새 메모는 날짜 없이 - 이으면 잇는 쪽(일정·수업)의 날 메모 칸에 저절로 보인다(P10-4 ■1)
   const makeNew = () => {
     const pickFor = pickToken.current;
-    if (tab === 'memo') openNotePanel({ sid, date: null, pickFor });
-    else if (tab === 'journal') openNotePanel({ sid, date: center, pickFor });
+    if (tab === 'note') openNotePanel({ sid, date: null, pickFor });
     else openEventPanel({ sid, date: center, pickFor });
   };
 
   const save = async () => {
-    if (!source && !lessonEnd) {
+    if (!source && !lessonEnd && !progressEnd) {
       showErrorToast('연결할 항목을 찾지 못했습니다. 그 사이 지워졌을 수 있습니다.');
       return;
     }
@@ -107,7 +122,8 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
     if (saving) return;
     setSaving(true);
     try {
-      if (lessonEnd) await saveLessonLinks(sid, lessonEnd, targets);
+      if (progressEnd) await saveProgressLinks(sid, progressEnd, targets);
+      else if (lessonEnd) await saveLessonLinks(sid, lessonEnd, targets);
       else if (source) await saveLinks(sid, source, targets, lessons);
       close();
     } catch {
@@ -146,12 +162,17 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
       <div data-linker={id} className="flex flex-col gap-4">
         {source && (
           <p className="text-xs text-slate-500 truncate" data-linker-source>
-            {LINK_KIND_ICON[source.kind === 'event' ? 'event' : source.date ? 'journal' : 'memo']} {source.text.split('\n')[0] || '(내용 없음)'} 에 잇습니다
+            {LINK_KIND_ICON[linkKindOf(source)]} {source.text.split('\n')[0] || '(내용 없음)'} 에 잇습니다
           </p>
         )}
         {lessonEnd && (
           <p className="text-xs text-slate-500 truncate" data-linker-source>
             {LINK_KIND_ICON.lesson} {lessonText(lessonEnd.id)} 에 잇습니다
+          </p>
+        )}
+        {progressEnd && (
+          <p className="text-xs text-slate-500 truncate" data-linker-source>
+            📘 {progressEnd.title} 에 잇습니다 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다
           </p>
         )}
         <div className="flex gap-2 border-b border-slate-200 pb-2">
@@ -340,7 +361,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
               picked.map((p) => {
                 const d = items[p];
                 const isLesson = !!parseLessonLink(p);
-                const kind: LinkerTab = isLesson ? 'lesson' : d?.kind === 'event' ? 'event' : d?.date ? 'journal' : 'memo';
+                const kind: LinkerTab = isLesson ? 'lesson' : d ? linkKindOf(d) : 'note';
                 return (
                   <span key={p} data-linker-picked={p} className="inline-flex items-center bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg text-xs text-blue-900 font-medium">
                     <span className="mr-1">{LINK_KIND_ICON[kind]}</span>

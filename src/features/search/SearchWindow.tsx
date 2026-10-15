@@ -38,13 +38,13 @@ const PAGE_SIZE = 50;
 const BADGES: Record<SearchKind, { text: string; className: string }> = {
   memo: { text: '메모', className: 'bg-amber-50 text-amber-700 border-amber-200' },
   event: { text: '일정', className: 'bg-blue-50 text-blue-700 border-blue-200' },
-  journal: { text: '기록', className: 'bg-purple-50 text-purple-700 border-purple-200' },
+  journal: { text: '메모', className: 'bg-purple-50 text-purple-700 border-purple-200' },
   lesson: { text: '수업', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   lessonNote: { text: '비고(준비물)', className: 'bg-orange-50 text-orange-700 border-orange-200' },
   evaluation: { text: '조사표', className: 'bg-teal-50 text-teal-700 border-teal-200' },
   attachment: { text: '첨부파일', className: 'bg-rose-50 text-rose-700 border-rose-200' },
 };
-const WHERE: Record<'memo' | 'event' | 'journal', string> = { memo: '메모', event: '일정', journal: '기록' };
+const WHERE: Record<'memo' | 'event' | 'journal', string> = { memo: '메모', event: '일정', journal: '메모' };
 
 /** 결과 한 줄 - 항목이거나 수업 칸 */
 type Row =
@@ -99,7 +99,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
     // 날짜 내림차순, 날짜를 모르는 메모는 맨 뒤 (같은 날은 항목 먼저 - 둘 다 이미 차례대로)
     // 그날 알림장·출결 카드는 '기록' 갈래 (라벨이 없다)
     const cardRows: Row[] =
-      labelId || !(kinds.size === 0 || kinds.has('journal')) ? [] : searchDayCards(dayCards, term, q.range).map((card) => ({ t: 'card', key: card.key, date: card.date, card }));
+      labelId || !(kinds.size === 0 || kinds.has('memo')) ? [] : searchDayCards(dayCards, term, q.range).map((card) => ({ t: 'card', key: card.key, date: card.date, card }));
     const evalRows: Row[] = labelId ? [] : searchEvals(evals, q).map((ev) => ({ t: 'eval', key: `eval:${ev.id}`, date: ev.date, ev }));
     const rows = [...itemRows, ...lessonRows, ...cardRows, ...evalRows];
     return rows
@@ -272,7 +272,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                       <div className="flex flex-wrap items-center gap-1.5 mb-1">
                         <span className={`px-2 py-0.5 rounded text-xs font-bold border ${BADGES.evaluation.className}`}>{BADGES.evaluation.text}</span>
                         <span className="text-xs font-bold text-slate-600">
-                          {ev.date} · {ev.period == null ? '기록' : `${ev.period}교시`} · {ev.classId}
+                          {ev.date} · {ev.period == null ? '메모 칸' : `${ev.period}교시`} · {ev.classId}
                           {ev.subject ? ` · ${ev.subject}` : ''}
                         </span>
                       </div>

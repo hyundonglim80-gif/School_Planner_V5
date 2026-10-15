@@ -1,4 +1,4 @@
-// 작년 이맘때 가져오기 - 일정은 글·라벨·속성만(완료·알림·링크·첨부·기한·묶음 빼고), 기록은 글·라벨·표, 첨부만 있는 기록은 못 고른다,
+// 작년 이맘때 가져오기 - 일정은 글·라벨·속성만(완료·알림·링크·첨부·기한·묶음 빼고), 메모는 글·라벨·표, 첨부만 있는 메모는 못 고른다,
 // 올해 같은 글은 건너뛴다(고른 것끼리도), 그날 맨 뒤 차례
 import { describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
@@ -21,7 +21,7 @@ let n = 0;
 const makeId = () => `new${++n}`;
 
 describe('작년 이맘때 가져오기', () => {
-  it('일정은 글·라벨·속성만, 기록은 글·라벨·표만 - 그날 맨 뒤', () => {
+  it('일정은 글·라벨·속성만, 메모는 글·라벨·표만 - 그날 맨 뒤', () => {
     n = 0;
     const plan = lastYearImportPlan('u_me', items, [{ item: items.ly1, toDate: TO }, { item: items.ly3, toDate: TO }], makeId);
     expect(plan.ops).toEqual([
@@ -29,7 +29,7 @@ describe('작년 이맘때 가져오기', () => {
       { type: 'create', at: { sid: 'u_me', coll: 'items', id: 'new2' }, data: { kind: 'note', date: TO, text: '상담 기록', labelIds: ['N1'], order: expect.any(String), tables: items.ly3.tables } },
     ]);
     expect((plan.ops[0] as unknown as { data: { order: string } }).data.order > 'a5').toBe(true);
-    expect(importedMessage(plan)).toBe('📥 작년 일정 1개 · 기록 1개를 올해로 가져왔습니다.');
+    expect(importedMessage(plan)).toBe('📥 작년 일정 1개 · 메모 1개를 올해로 가져왔습니다.');
   });
 
   it('올해 같은 글(앞뒤 공백 무시)·고른 것끼리 같은 글은 건너뛴다, 첨부만 있는 기록은 못 고른다', () => {

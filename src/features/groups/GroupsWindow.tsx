@@ -72,7 +72,7 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
     }
   };
   const remove = async () => {
-    if (!user || !window.confirm(`[${group.name}] 그룹을 지울까요?\n\n그룹의 일정·수업·기록·메모·조사표가 모두 영구히 지워지고, 구성원 모두 볼 수 없게 됩니다. 되돌릴 수 없습니다.`)) return;
+    if (!user || !window.confirm(`[${group.name}] 그룹을 지울까요?\n\n그룹의 일정·수업·메모·조사표가 모두 영구히 지워지고, 구성원 모두 볼 수 없게 됩니다. 되돌릴 수 없습니다.`)) return;
     setBusy('지우는 중…');
     try {
       await deleteGroup(user, group, setBusy);
@@ -180,7 +180,7 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
   return (
     <ModalShell isOpen onClose={close} raise={raise} width="lg" title="👥 공유 그룹" bare footer={<ModalCloseButton onClose={close} />}>
       <div data-groups-window>
-        <Section id="groups-mine" title="내 그룹" desc="그룹 공간을 고르면 모든 화면이 그 공간의 일정·수업·기록·메모·조사표를 보여 줍니다. 명렬표·출석부·학생 사진은 개인 공간에만 있습니다.">
+        <Section id="groups-mine" title="내 그룹" desc="그룹 공간을 고르면 모든 화면이 그 공간의 일정·수업·메모·조사표를 보여 줍니다. 명렬표·출석부·학생 사진은 개인 공간에만 있습니다.">
           {!loaded ? (
             <p className="text-xs text-slate-400">불러오는 중…</p>
           ) : groups.length === 0 ? (

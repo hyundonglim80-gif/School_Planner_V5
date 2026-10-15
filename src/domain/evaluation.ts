@@ -59,9 +59,9 @@ export interface EvalDoc {
 /** 조사표가 붙은 자리: 교시 글자 '3' 또는 'journal' (기록 칸) */
 export const evalPlaceOf = (ev: Pick<EvalDoc, 'period'>): string => (ev.period == null ? 'journal' : String(ev.period));
 
-/** 자리를 사람이 읽는 말로 ('3교시' / '기록') - 교시 이름이 있으면 그것 */
+/** 자리를 사람이 읽는 말로 ('3교시' / '메모 칸') - 교시 이름이 있으면 그것 */
 export function evalPlaceLabel(place: string, periodNames: readonly string[] = []): string {
-  if (place === 'journal') return '기록';
+  if (place === 'journal') return '메모 칸';
   return periodNames[Number(place) - 1] || `${place}교시`;
 }
 

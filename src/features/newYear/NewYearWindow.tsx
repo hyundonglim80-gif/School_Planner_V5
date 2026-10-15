@@ -143,7 +143,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
           </button>
         </div>
         <p className="leading-relaxed text-slate-600">
-          라벨·설정·교시·교사 유형은 <b>그대로</b> 씁니다. 지난 학년도 자료(일정·기록·학급·출석·조사표)도 그 자리에 남아 날짜를 옮기거나 명렬표에서 학년도를 골라 언제든 봅니다 - 옮기거나 지우지
+          라벨·설정·교시·교사 유형은 <b>그대로</b> 씁니다. 지난 학년도 자료(일정·메모·학급·출석·조사표)도 그 자리에 남아 날짜를 옮기거나 명렬표에서 학년도를 골라 언제든 봅니다 - 옮기거나 지우지
           않습니다. 아래 넷만 새로 정하세요.
         </p>
 

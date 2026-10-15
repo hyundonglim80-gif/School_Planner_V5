@@ -276,7 +276,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
           </section>
 
           <section data-seat-student-section="observe">
-            <div className={sectionTitle}>관찰 한 줄 → 오늘 기록 (개인)</div>
+            <div className={sectionTitle}>관찰 한 줄 → 오늘 메모 (개인)</div>
             <div className="flex items-center gap-1.5">
               <input
                 type="text"
@@ -300,7 +300,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                 disabled={!obs.trim()}
                 className="px-2.5 py-1 rounded-lg bg-slate-800 text-white font-bold disabled:opacity-40 cursor-pointer"
               >
-                기록에 남기기
+                메모로 남기기
               </button>
             </div>
             <ObservationPhrases onPick={(p) => observe(p)} />

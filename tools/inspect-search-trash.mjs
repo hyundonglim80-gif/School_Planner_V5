@@ -142,7 +142,7 @@ try {
   await page.locator(sel('trash-tab', 'memo')).click();
   await page.locator(sel('trash-pick-all')).check();
   r.check((await page.locator(`${sel('trash-pick')}:checked`).count()) >= 1, '전체 선택 = 보는 탭');
-  await page.locator(sel('trash-tab', 'journal')).click();
+  await page.locator(sel('trash-tab', 'event')).click();
   r.check(await waitFor(async () => (await page.locator(`${sel('trash-pick')}:checked`).count()) === 0), '탭을 바꾸면 고른 것이 풀린다');
   await page.locator(sel('trash-tab', 'all')).click();
   await page.locator(sel('trash-pick', 'event:insp_tr1')).check();
