@@ -19,7 +19,7 @@ import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
 import { showErrorToast, showErrorToastOnce, showToast } from '../../app/toast';
 import { useShortcutTitle } from '../../app/keys';
 import { fileIcon, formatFileSize, isImageAttachment } from '../../domain/attachments';
-import { continueOnEnter, toggleCheckAtCaret, toggleLinesPrefix } from '../../domain/checkLines';
+import { caretAfterCheck, checkGlyphLineAt, continueOnEnter, hasCheckLines, moveCheckLine, toggleCheckMoving, toggleLinesPrefix } from '../../domain/checkLines';
 import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { addNoteDate, removeNoteDate } from '../../domain/noteDates';
 import { applyMention, findMention, matchMentionStudents, studentIdsToSave, type Mention, type MentionCandidate } from '../../domain/studentTag';
@@ -42,6 +42,7 @@ import EntryTableView from './EntryTableView';
 import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
 import { hasContent, isKnownLabel, newNoteForm, noteFormOf, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
 import { StudentMentionList, StudentTagRow } from './StudentTags';
+import CheckLinesOverlay, { CHECK_TEXT_CLASS } from './CheckLinesOverlay';
 import { useClasses, useHubClass, type ClassItem } from '../class/classes';
 import type { NotePanelParams } from './open';
 
@@ -218,12 +219,20 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     e.preventDefault();
     setTextAndCaret(r.text, r.caret);
   };
+  // 줄 맨 앞 ☐/☑를 누르면 체크하기·풀기 - 그 줄을 무리 맨 아래로 옮긴다(P10-5 5b). 커서는 누른 자리 그대로(다음 줄을 이어 누를 수 있게)
   const onTextClick = (e: MouseEvent<HTMLTextAreaElement>) => {
     const el = e.currentTarget;
     if (el.selectionStart !== el.selectionEnd) return;
-    const next = toggleCheckAtCaret(el.value, el.selectionStart);
-    if (next !== null) setTextAndCaret(next, el.selectionStart);
+    const line = checkGlyphLineAt(el.value, el.selectionStart);
+    const r = line === null ? null : toggleCheckMoving(el.value, line);
+    if (r) setTextAndCaret(r.text, el.selectionStart);
   };
+  // 체크 줄 ▲▼ (5c) - 커서는 옮긴 줄로
+  const moveCheck = (line: number, step: -1 | 1) => {
+    const r = moveCheckLine(form.text, line, step);
+    if (r) setTextAndCaret(r.text, caretAfterCheck(r.text, r.line));
+  };
+  const checkMode = hasCheckLines(form.text);
   // 단축키 '체크리스트'(app/keys가 sp5-checklist로 알린다) - 커서가 이 칸의 글 칸에 있을 때만
   const checklistRef = useRef(toggleChecklist);
   useEffect(() => {
@@ -532,6 +541,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 </button>
               </div>
               <div className="relative">
+                {checkMode && <CheckLinesOverlay text={form.text} onMove={moveCheck} />}
                 <AutoTextarea
                   ref={textRef}
                   autoFocus
@@ -549,7 +559,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   onBlur={() => setMention(null)}
                   onPaste={onTextPaste}
                   placeholder={PLACEHOLDER}
-                  className="w-full min-h-[84px] p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 leading-relaxed placeholder-slate-400 text-sm"
+                  data-check-mode={checkMode || undefined}
+                  className={`block w-full min-h-[84px] p-4 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 leading-relaxed placeholder-slate-400 text-sm ${checkMode ? CHECK_TEXT_CLASS : ''}`}
                 />
                 {mention && <StudentMentionList query={mention.query} candidates={mentionList} activeIndex={mentionIndex} hasClasses={classes.length > 0} onPick={pickMention} />}
               </div>

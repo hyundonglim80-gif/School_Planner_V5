@@ -457,6 +457,10 @@ try {
     await q(sel('memo-new')).click();
     r.check(await has(sel('note-panel', 'new')), '+ 새 메모 → 새 메모 칸');
     r.check((await count(sel('note-date-chip'))) === 0 && (await count(sel('note-dates-empty'))) === 1, '+ 새 메모 = 날짜 없음');
+    await q(sel('note-text-input')).fill('☐ 점검 가\n☐ 점검 나');
+    r.check(await has(sel('check-row', 1)), '체크 줄 그림 (☐ 누르기 = 맨 아래로·줄긋기)');
+    r.check((await count(sel('check-down', 0))) === 1, '체크 줄 ▲▼');
+    await q(sel('note-text-input')).fill('');
   });
 
   await topic('memo-manage', async () => {

@@ -95,13 +95,83 @@ export function continueOnEnter(text: string, caret: number): { text: string; ca
 
 /** 쓰는 칸에서 체크 글자(줄 맨 앞 ☐/☑ 바로 위)를 누르면 바꾼 글. 그 자리가 아니면 null */
 export function toggleCheckAtCaret(text: string, caret: number): string | null {
+  const i = checkGlyphLineAt(text, caret);
+  return i === null ? null : toggleCheckLine(text, i);
+}
+
+// ── 쓰는 칸에서 체크 목록 고치기 (P10-5 사용자 의견 5b·5c - 글 차례를 실제로 바꾼다) ─────────────
+// 체크 목록 = 이어진 체크 줄 한 덩이(빈 줄·글 줄이 끊는다). 덩이 안에서 체크 안 한 줄이 위, 체크한 줄이 아래.
+// 체크하면 덩이 맨 아래로, 풀면 체크 안 한 줄들의 맨 아래로 옮긴다. 체크 줄이 아닌 줄(제목·문단)은 제자리.
+// (카드는 글을 바꾸지 않고 보이기만 아래로 모은다 - EntryCard)
+
+/** 쓰는 칸에서 누른 자리가 줄 맨 앞 체크 글자(☐/☑) 바로 위면 그 줄 번호, 아니면 null */
+export function checkGlyphLineAt(text: string, caret: number): number | null {
   const lines = text.split('\n');
   const i = lineIndexAt(text, caret);
   const m = /^([ \t]*)([☐☑])/.exec(lines[i] || '');
   if (!m) return null;
   const col = caret - lineStartOf(lines, i);
-  if (col < m[1].length || col > m[1].length + 1) return null;
-  return toggleCheckLine(text, i);
+  return col < m[1].length || col > m[1].length + 1 ? null : i;
+}
+
+/** i번째 줄이 든 체크 목록 덩이 [처음, 끝] (체크 줄이 아니면 null) */
+function checkRunOf(lines: readonly string[], i: number): [number, number] | null {
+  if (checkLineState(lines[i] ?? '') === null) return null;
+  let a = i;
+  let b = i;
+  while (a > 0 && checkLineState(lines[a - 1]) !== null) a--;
+  while (b < lines.length - 1 && checkLineState(lines[b + 1]) !== null) b++;
+  return [a, b];
+}
+
+/** 줄 하나를 from에서 to로 옮긴 줄 목록 (to = 옮긴 뒤 그 줄의 자리) */
+function moveLine(lines: readonly string[], from: number, to: number): string[] {
+  const out = [...lines];
+  const [line] = out.splice(from, 1);
+  out.splice(to, 0, line);
+  return out;
+}
+
+/**
+ * 쓰는 칸에서 체크하기·풀기: 글자를 바꾸고 그 줄을 옮긴다 - 체크하면 덩이 맨 아래, 풀면 체크 안 한 줄들의 맨 아래(없으면 덩이 맨 위).
+ * 체크 줄이 아니면 null. line = 옮긴 뒤 그 줄의 번호.
+ */
+export function toggleCheckMoving(text: string, lineIndex: number): { text: string; line: number } | null {
+  const toggled = toggleCheckLine(text, lineIndex);
+  if (toggled === null) return null;
+  const lines = toggled.split('\n');
+  const [a, b] = checkRunOf(lines, lineIndex)!;
+  let to: number;
+  if (checkLineState(lines[lineIndex]) === 'done') {
+    to = b;
+  } else {
+    // 그 줄을 뺀 덩이에서 마지막 체크 안 한 줄 바로 뒤
+    let lastOpen = -1;
+    for (let k = a; k <= b; k++) if (k !== lineIndex && checkLineState(lines[k]) === 'open') lastOpen = k;
+    to = lastOpen < 0 ? a : lastOpen < lineIndex ? lastOpen + 1 : lastOpen;
+  }
+  return { text: moveLine(lines, lineIndex, to).join('\n'), line: to };
+}
+
+/** ▲(-1)·▼(+1)로 옮길 수 있나 - 같은 덩이 안, 같은 무리(체크 안 함끼리·체크함끼리)의 옆 줄과만 */
+export function canMoveCheckLine(text: string, lineIndex: number, step: -1 | 1): boolean {
+  const lines = text.split('\n');
+  const st = checkLineState(lines[lineIndex] ?? '');
+  const next = lines[lineIndex + step];
+  return st !== null && next !== undefined && checkLineState(next) === st;
+}
+
+/** 체크 줄 ▲▼ - 옆 줄과 맞바꾼 글과 옮긴 뒤 줄 번호. 못 옮기면 null */
+export function moveCheckLine(text: string, lineIndex: number, step: -1 | 1): { text: string; line: number } | null {
+  if (!canMoveCheckLine(text, lineIndex, step)) return null;
+  return { text: moveLine(text.split('\n'), lineIndex, lineIndex + step).join('\n'), line: lineIndex + step };
+}
+
+/** 줄 번호 → 그 줄 체크 글자 뒤 글자 자리 (커서를 그 줄에 둘 때). 체크 줄이 아니면 줄 맨 앞 */
+export function caretAfterCheck(text: string, lineIndex: number): number {
+  const lines = text.split('\n');
+  const m = /^([ \t]*)([☐☑] ?)/.exec(lines[lineIndex] ?? '');
+  return lineStartOf(lines, lineIndex) + (m ? m[0].length : 0);
 }
 
 /** 체크 줄 셈 (카드 머리줄 '☑ 2/5'). 체크 줄이 없으면 total 0 */

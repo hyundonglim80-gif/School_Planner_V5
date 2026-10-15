@@ -3,6 +3,11 @@ import { checkLineState, hasCheckLines, toggleCheckLine, toggleLinesPrefix,
   continueOnEnter,
   toggleCheckAtCaret,
   checkCount,
+  toggleCheckMoving,
+  canMoveCheckLine,
+  moveCheckLine,
+  checkGlyphLineAt,
+  caretAfterCheck,
 } from './checkLines';
 
 describe('체크 줄 (☐ / ☑)', () => {
@@ -81,6 +86,43 @@ describe('toggleLinesPrefix · continueOnEnter · toggleCheckAtCaret · checkCou
     expect(toggleCheckAtCaret('가\n☐ 우유', 3)).toBe('가\n☑ 우유');
     expect(toggleCheckAtCaret('가\n☐ 우유', 5)).toBeNull();
     expect(toggleCheckAtCaret('가\n☐ 우유', 0)).toBeNull();
+  });
+
+  it('쓰는 칸 체크하기·풀기 = 글자를 바꾸고 줄을 옮긴다 (P10-5): 체크하면 덩이 맨 아래, 풀면 체크 안 한 줄들의 맨 아래', () => {
+    const text = '장보기\n☐ 우유\n☐ 빵\n☐ 달걀\n☑ 쌀\n\n메모 끝';
+    // 우유 체크 → 덩이 맨 아래(쌀 뒤), 제목·빈 줄·뒤 글은 제자리
+    expect(toggleCheckMoving(text, 1)).toEqual({ text: '장보기\n☐ 빵\n☐ 달걀\n☑ 쌀\n☑ 우유\n\n메모 끝', line: 4 });
+    // 쌀 풀기 → 체크 안 한 줄들(우유·빵·달걀)의 맨 아래
+    expect(toggleCheckMoving(text, 4)).toEqual({ text: '장보기\n☐ 우유\n☐ 빵\n☐ 달걀\n☐ 쌀\n\n메모 끝', line: 4 });
+    // 체크 안 한 줄이 없으면 덩이 맨 위로
+    expect(toggleCheckMoving('☑ 가\n☑ 나', 1)).toEqual({ text: '☐ 나\n☑ 가', line: 0 });
+    // 섞인 옛 글(Keep): 푼 줄은 마지막 체크 안 한 줄 바로 뒤
+    expect(toggleCheckMoving('☑ 가\n☐ 나\n☑ 다', 2)).toEqual({ text: '☑ 가\n☐ 나\n☐ 다', line: 2 });
+    expect(toggleCheckMoving('☐ 가\n☑ 나\n☐ 다\n☑ 라', 1)).toEqual({ text: '☐ 가\n☐ 다\n☐ 나\n☑ 라', line: 2 });
+    expect(toggleCheckMoving('☐ 가\n☑ 나\n☐ 다\n☑ 라', 0)).toEqual({ text: '☑ 나\n☐ 다\n☑ 라\n☑ 가', line: 3 });
+    // 글 줄이 끊은 다른 덩이로는 가지 않는다
+    expect(toggleCheckMoving('☐ 가\n☐ 나\n제목\n☐ 다', 0)).toEqual({ text: '☐ 나\n☑ 가\n제목\n☐ 다', line: 1 });
+    // 들여쓴 체크 줄도 체크 줄
+    expect(toggleCheckMoving('☐ 가\n  ☐ 나\n☐ 다', 1)).toEqual({ text: '☐ 가\n☐ 다\n  ☑ 나', line: 2 });
+    expect(toggleCheckMoving('보통 줄', 0)).toBeNull();
+  });
+
+  it('체크 줄 ▲▼ - 같은 덩이·같은 무리의 옆 줄과만 맞바꾼다', () => {
+    const text = '제목\n☐ 가\n☐ 나\n☑ 다\n☑ 라';
+    expect(canMoveCheckLine(text, 1, -1)).toBe(false); // 위는 제목
+    expect(canMoveCheckLine(text, 2, 1)).toBe(false); // 아래는 체크한 무리
+    expect(canMoveCheckLine(text, 4, 1)).toBe(false); // 끝
+    expect(canMoveCheckLine(text, 0, 1)).toBe(false); // 체크 줄이 아니다
+    expect(moveCheckLine(text, 1, 1)).toEqual({ text: '제목\n☐ 나\n☐ 가\n☑ 다\n☑ 라', line: 2 });
+    expect(moveCheckLine(text, 4, -1)).toEqual({ text: '제목\n☐ 가\n☐ 나\n☑ 라\n☑ 다', line: 3 });
+    expect(moveCheckLine(text, 2, 1)).toBeNull();
+  });
+
+  it('누른 자리가 체크 글자면 줄 번호, 그 줄 체크 글자 뒤 자리', () => {
+    expect(checkGlyphLineAt('가\n  ☐ 우유', 4)).toBe(1);
+    expect(checkGlyphLineAt('가\n  ☐ 우유', 7)).toBeNull();
+    expect(caretAfterCheck('가\n  ☐ 우유', 1)).toBe(6);
+    expect(caretAfterCheck('가\n보통', 1)).toBe(2);
   });
 
   it('셈: 체크한 것 / 체크 줄 모두', () => {

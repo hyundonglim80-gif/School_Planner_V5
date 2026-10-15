@@ -296,6 +296,29 @@ describe('체크리스트', () => {
     expect(textInput().value).toBe('☐ 우유\n');
   });
 
+  it('체크 줄이 있으면 줄긋기 그림·▲▼ (P10-5) - ☐ 누르기 = 체크하고 덩이 맨 아래로, ▲▼ = 같은 무리끼리', () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    type('장보기');
+    expect(q('[data-check-backdrop]')).toBeNull();
+    expect(textInput().dataset.checkMode).toBeUndefined();
+    type('장보기\n☐ 우유\n☐ 빵\n☑ 쌀');
+    expect(textInput().dataset.checkMode).toBe('true');
+    expect([...document.querySelectorAll<HTMLElement>('[data-check-row]')].map((r) => r.dataset.checkState)).toEqual(['open', 'open', 'done']);
+    // 우유의 ☐ 위를 누른다 → 체크하고 덩이 맨 아래로
+    textInput().setSelectionRange(4, 4);
+    fireEvent.click(textInput());
+    expect(textInput().value).toBe('장보기\n☐ 빵\n☑ 쌀\n☑ 우유');
+    // ▲▼: 빵은 체크 안 한 무리에 혼자라 못 옮기고, 우유는 쌀 위로
+    expect(q('[data-check-up="1"]')).toBeNull();
+    fireEvent.click(q('[data-check-up="3"]'));
+    expect(textInput().value).toBe('장보기\n☐ 빵\n☑ 우유\n☑ 쌀');
+    // 글 줄 위를 누르면 그대로
+    textInput().setSelectionRange(1, 1);
+    fireEvent.click(textInput());
+    expect(textInput().value).toBe('장보기\n☐ 빵\n☑ 우유\n☑ 쌀');
+  });
+
   it('단축키(sp5-checklist)는 커서가 글 칸에 있을 때만', () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY }} />);

@@ -4,7 +4,7 @@
 //   3) 🗑️ = 지운 표시 → 안내의 되돌리기.
 //   4) + 추가 → 새 기록 칸(맨 위 라벨·커서는 글 칸) → '#라벨' 미리 보기 → Ctrl+S = 새 문서 하나 + 새 라벨, 칸은 그 기록의 수정 칸('#' 줄은 떼고).
 //   5) 고치기 = 그 문서의 바뀐 칸만. + 날짜로 둘째 날 → dates 두 개, 그 날 메모 칸에도 · 메모 화면에 📅 칩 둘 · 칩 × 다 빼기 = date null, 안내의 되돌리기 = 원래대로.
-//   6) ☑ 체크리스트 단추·Enter 이어 쓰기, 칸의 ☐ 완료 = 곧바로 그 칸만. '+ 메모'는 없다(P10-3).
+//   6) ☑ 체크리스트 단추·Enter 이어 쓰기·☐ 누르기 = 체크하고 맨 아래로(줄긋기)·▲▼(P10-5), 칸의 ☐ 완료 = 곧바로 그 칸만. '+ 메모'는 없다(P10-3).
 //   8) 단축키 그날 새 메모(보는 날)·날짜 없는 새 메모.
 //   7) 쓰던 글 보관: 새 기록 칸에 적고 2초 → 새로고침 → 다시 열면 '저장하지 않은 글' → 되살리기, 버리기면 다시 묻지 않는다(IndexedDB sp5-drafts-{uid}).
 //
@@ -187,10 +187,31 @@ try {
   await input.press('Enter');
   await page.keyboard.type('우유');
   r.check((await input.inputValue()) === '☐ 점검 할 일\n☐ 우유', 'Enter → 다음 줄도 ☐');
+  // 쓰는 칸 체크리스트 (P10-5): ☐ 누르기 = 체크하고 덩이 맨 아래로·줄긋기, ▲▼ = 같은 무리끼리
+  await input.press('Enter');
+  await page.keyboard.type('빵');
+  const row = (i) => page.locator(sel('check-row', i));
+  r.check(await waitFor(row(1)), '체크 줄이 있으면 줄긋기 그림');
+  const glyph = await row(1).boundingBox();
+  await page.mouse.click(glyph.x + 4, glyph.y + glyph.height / 2);
+  r.check(await waitFor(async () => (await input.inputValue()) === '☐ 점검 할 일\n☐ 빵\n☑ 우유'), `☐ 누르기 → 체크하고 맨 아래로 (${JSON.stringify(await input.inputValue())})`);
+  r.check((await row(2).getAttribute('data-check-state')) === 'done', '체크한 줄 그림');
+  r.check((await row(2).locator('span').nth(1).evaluate((el) => getComputedStyle(el).textDecorationLine)) === 'line-through', '체크한 줄에 줄긋기');
+  // 그림과 글 칸의 줄이 겹친다 (같은 여백·같은 줄 높이 - 글 칸 위 테두리 + 위 여백 자리에 그림의 첫 줄)
+  const firstLineTop = await input.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return el.getBoundingClientRect().top + parseFloat(cs.borderTopWidth) + parseFloat(cs.paddingTop);
+  });
+  const row0 = await row(0).boundingBox();
+  r.check(Math.abs(row0.y - firstLineTop) <= 0.5, `그림의 첫 줄 = 글 칸 첫 줄 (${row0.y} / ${firstLineTop})`);
+  await page.locator(sel('check-down', 0)).click();
+  r.check(await waitFor(async () => (await input.inputValue()) === '☐ 빵\n☐ 점검 할 일\n☑ 우유'), '▼ = 체크 안 한 줄끼리 맞바꾸기');
+  r.check((await page.locator(sel('check-down', 1)).count()) === 0 || (await page.locator(sel('check-down', 1)).isDisabled()), '체크한 무리로는 못 내려간다');
+  if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT });
   before = await stamps();
   await page.locator(sel('note-flag', 'done')).click();
   r.check((await serverUntil(() => read(newId), (d) => d?.done === true))?.text === '점검 새 기록 (고침)', '칸의 ☐ 완료 = 곧바로 그 칸만 (쓰던 글은 저장하지 않는다)');
-  r.check((await input.inputValue()) === '☐ 점검 할 일\n☐ 우유', '쓰던 글은 칸에 그대로');
+  r.check((await input.inputValue()) === '☐ 빵\n☐ 점검 할 일\n☑ 우유', '쓰던 글은 칸에 그대로');
   await page.locator(sel('note-close')).click();
   r.check(await waitFor(async () => (await panel.count()) === 0), '닫기 → 칸이 닫힌다 (저장 없이)');
   r.check((await page.locator(sel('journal-add-memo')).count()) === 0, "하루 메모 칸에 '+ 메모'는 없다 (+ 추가 하나)");
