@@ -51,8 +51,39 @@ try {
   await admin.set(path, { state: 'failed', issue: 9999, url: 'javascript:alert(1)', note: '' });
   c('GitHub가 아닌 주소는 이어지지 않는다', await waitFor(async () => (await badge.getAttribute('data-entry-claude').catch(() => '')) === 'failed' && (await badge.getAttribute('href').catch(() => 'x')) === null, 8000));
 
+  await admin.set(path, { state: 'queued', issue: null, url: null, note: '' });
+  c('🤖 차례 기다림 (앞 요청 뒤 - 이슈 전이라 주소 없음)', await waitFor(async () => ((await badge.textContent().catch(() => '')) ?? '').includes('차례 기다림') && (await badge.getAttribute('href').catch(() => 'x')) === null, 8000));
+
   await admin.remove(path);
   c('지우면 사라진다', await waitFor(async () => (await page.locator(sel('entry-claude')).count()) === 0, 8000));
+
+  // 서버가 만든 'Claude요청' 라벨은 지우지 못한다 (라벨 관리 - 🔒, 이름 읽기만, 빈 라벨 정리에서 빠짐)
+  const labelId = 'inspectClaudeLabel01';
+  const labelPath = `spaces/${sid}/labels/${labelId}`;
+  undo.add(() => admin.remove(labelPath));
+  await setDoc(doc(db, 'spaces', sid, 'labels', labelId), {
+    kind: 'note',
+    name: 'Claude요청',
+    color: 'indigo',
+    parentId: null,
+    order: 'zz',
+    system: 'claudeRequest',
+    deletedAt: null,
+    v: 1,
+    createdAt: Date.now(),
+    updatedAt: serverTimestamp(),
+    authorId: uid,
+  });
+  await page.evaluate(() => window.sp5.openWindow('labels', { tab: 'note' }));
+  const row = page.locator(sel('label-row', labelId));
+  c('라벨 관리에 Claude요청 줄', await waitFor(row, 10000));
+  c('🔒 표시, ✕ 없음', (await row.locator(sel('label-locked')).count()) === 1 && (await row.locator(sel('label-delete')).count()) === 0);
+  c('이름 칸은 읽기만', (await row.locator(sel('label-name')).getAttribute('readonly')) !== null);
+  const prune = page.locator(sel('label-prune'));
+  if (await prune.isEnabled()) {
+    await prune.click();
+    c('빈 라벨 정리 목록에 없다', (await page.locator(sel('label-prune-item', labelId)).count()) === 0);
+  } else c('빈 라벨 정리 수에 넣지 않는다 (빈 라벨이 이것뿐)', true);
   c('콘솔 오류 없음', errors.length === 0, errors.join(' | '));
 } finally {
   await undo.run();

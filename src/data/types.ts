@@ -202,6 +202,8 @@ export interface Label extends Tracked {
   props?: LabelProps;
   /** V4에서 가져온 라벨 */
   src?: ImportSource;
+  /** 서버 함수가 만든 라벨 - 이름을 바꾸거나 지울 수 없다. 'claudeRequest' = 메모로 Claude 요청(P13, 정한 계정만) */
+  system?: 'claudeRequest';
 }
 
 // ───────────────────────── 4-4. 반복 ─────────────────────────

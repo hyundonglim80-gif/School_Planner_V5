@@ -108,3 +108,45 @@ export function isAllowedEmail(email, list) {
   const me = String(email ?? '').trim().toLowerCase();
   return me !== '' && allowed.includes(me);
 }
+
+// ───────────── 한 번에 하나 (10-16 사용자 질문 - 앞 요청이 끝나야 다음을 보낸다) ─────────────
+// 함수가 메모를 받으면 'queued'로 두고, 앞 요청이 GitHub에서 도는 동안(sending·sent·working)은 보내지 않는다.
+// 앞 요청이 합쳐지거나(merged - 배포는 따로 돈다) 끝나면 가장 먼저 기다린 것을 보낸다(그때의 메모 글로).
+
+/** 지금 GitHub에서 도는 상태 - 이것이 있으면 다음을 보내지 않는다 */
+export const BUSY_STATES = ['sending', 'sent', 'working'];
+
+/** 다음에 보낼 요청 id (도는 것이 있거나 기다리는 것이 없으면 null) - reqs = 열린 요청 [{ id, state, atMs }] */
+export function nextToDispatch(reqs) {
+  const list = reqs ?? [];
+  if (list.some((r) => BUSY_STATES.includes(r.state))) return null;
+  const queued = list.filter((r) => r.state === 'queued').sort((a, b) => (a.atMs ?? 0) - (b.atMs ?? 0) || String(a.id).localeCompare(String(b.id)));
+  return queued[0]?.id ?? null;
+}
+
+// ───────────── 'Claude요청' 라벨을 정한 계정에 (10-16 사용자 요청 - 지우지 못하게) ─────────────
+
+export const CLAUDE_LABEL_NAME = 'Claude요청';
+export const CLAUDE_LABEL_SYSTEM = 'claudeRequest';
+
+/** 맨 뒤 차례 값 (domain/order 모양 - 가장 큰 값 뒤에 글자 하나를 붙이면 그보다 크고 맞는 값이다) */
+export function orderAfterLast(orders) {
+  const live = (orders ?? []).filter((o) => typeof o === 'string' && o);
+  if (live.length === 0) return 'a0';
+  return live.reduce((a, b) => (b > a ? b : a)) + 'V';
+}
+
+/**
+ * 그 계정의 메모 라벨(지운 것도)을 보고 할 일 - null(이미 있음) | { action: 'flag'|'restore', id } | { action: 'create', order }.
+ * 이름이 같은 라벨을 사용자가 먼저 만들었으면 그것에 표시만 단다(새로 만들지 않는다).
+ */
+export function planClaudeLabel(labels) {
+  const notes = (labels ?? []).filter((l) => l && l.kind === 'note');
+  const live = notes.filter((l) => !l.deletedAt);
+  if (live.some((l) => l.system === CLAUDE_LABEL_SYSTEM)) return null;
+  const named = live.find((l) => isClaudeLabelName(l.name));
+  if (named) return { action: 'flag', id: named.id };
+  const gone = notes.find((l) => l.deletedAt && l.system === CLAUDE_LABEL_SYSTEM) ?? notes.find((l) => l.deletedAt && isClaudeLabelName(l.name));
+  if (gone) return { action: 'restore', id: gone.id };
+  return { action: 'create', order: orderAfterLast(live.map((l) => l.order)) };
+}

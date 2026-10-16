@@ -4,7 +4,8 @@
 //   2) v5SendDueAlarms  - 매분 pendingAt <= 지금인 칸을 골라 받는 사람의 기기 토큰(spaces/u_{uid}/pushTokens)으로 FCM을 보낸다.
 //   3) v5CleanupAlarms  - 하루 한 번 30일 지난 칸을 지운다.
 //   4) v5ClaudeRequest  - 개인 공간 메모에 'Claude요청' 라벨을 붙이면 GitHub 이슈를 만든다(10-16 - Claude가 고치고 배포, claudePlan.js·docs/CLAUDE-REQUEST.md).
-//                         진행은 v5SendDueAlarms가 매분 함께 본다(예약 작업을 늘리지 않는다 - 늘리면 돈이 든다).
+//                         한 번에 하나(앞 요청이 합쳐지거나 끝나야 다음) · 진행·다음 보내기·정한 계정의 'Claude요청' 라벨 챙기기는
+//                         v5SendDueAlarms가 매분 함께 한다(예약 작업을 늘리지 않는다 - 늘리면 돈이 든다).
 // 계산은 alarmPlan.js(순수 함수, alarmPlan.test.js). v5alarms는 규칙상 앱이 못 읽고 못 쓴다(이 함수들만, 관리자 권한).
 //
 // ⚠️ V4와 같은 Firebase 프로젝트다 - 함수 이름이 V4(alarmIndexUser·sendDueAlarms …)와 겹치면 서로 덮는다. 그래서 이름마다 v5를 붙인다.
@@ -23,11 +24,15 @@ import {
   FINAL_STATES,
   ISSUE_LABEL,
   REPO,
+  CLAUDE_LABEL_NAME,
+  CLAUDE_LABEL_SYSTEM,
   isAllowedEmail,
   isClaudeLabelName,
   issueOf,
   mergeShaOf,
   newLabelIds,
+  nextToDispatch,
+  planClaudeLabel,
   statusFromGithub,
 } from './claudePlan.js';
 
@@ -41,6 +46,8 @@ const ALARMS = 'v5alarms';
 // Claude 요청 - v5claude/{itemId} = { sid, issue, state, open, atMs } (함수만 - 규칙에 match가 없어 앱은 못 읽고 못 쓴다)
 //   앱이 보는 표시는 spaces/{sid}/claudeRequests/{itemId} = { state, issue, url, note, atMs } (개인 공간 - 그 사람이 읽는다)
 const CLAUDE = 'v5claude';
+// 함수만 쓰는 표시 (라벨 챙긴 때 - 규칙에 match 없음)
+const CLAUDE_META = 'v5claudeMeta';
 // GitHub 토큰(이 저장소만 - 이슈 쓰기·Actions 읽기)과 보내도 되는 계정 메일(쉼표로). 배포할 때 정한다(docs/CLAUDE-REQUEST.md).
 // 메일 목록은 코드에 적지 않는다 - 저장소가 공개다(배포가 functions/.env.<프로젝트>에 적는다, git 무시).
 const GITHUB_TOKEN = defineSecret('CLAUDE_GITHUB_TOKEN');
@@ -164,6 +171,13 @@ async function setClaudeState(sid, itemId, fields) {
   await batch.commit();
 }
 
+/** 그 메모에 살아 있는 'Claude요청' 라벨이 붙어 있나 */
+async function hasClaudeLabel(sid, labelIds) {
+  if (!Array.isArray(labelIds) || labelIds.length === 0) return false;
+  const labels = await Promise.all(labelIds.map((id) => db.collection('spaces').doc(sid).collection('labels').doc(id).get()));
+  return labels.some((l) => l.exists && !l.data().deletedAt && isClaudeLabelName(l.data().name));
+}
+
 export const v5ClaudeRequest = onDocumentWritten({ document: 'spaces/{sid}/items/{itemId}', secrets: [GITHUB_TOKEN] }, async (event) => {
   const { sid, itemId } = event.params;
   const before = event.data?.before?.exists ? event.data.before.data() : null;
@@ -171,8 +185,7 @@ export const v5ClaudeRequest = onDocumentWritten({ document: 'spaces/{sid}/items
   // 거의 모든 저장은 여기서 끝난다 - 라벨을 새로 붙인 개인 공간 메모만 (읽기 없음)
   const added = newLabelIds(sid, before, after);
   if (added.length === 0) return;
-  const labels = await Promise.all(added.map((id) => db.collection('spaces').doc(sid).collection('labels').doc(id).get()));
-  if (!labels.some((l) => l.exists && !l.data().deletedAt && isClaudeLabelName(l.data().name))) return;
+  if (!(await hasClaudeLabel(sid, added))) return;
   // 이 앱을 쓰는 다른 선생님은 보낼 수 없다 - 정한 계정만 (사용자 결정 10-16)
   const user = await getAuth()
     .getUser(sid.slice(2))
@@ -181,38 +194,71 @@ export const v5ClaudeRequest = onDocumentWritten({ document: 'spaces/{sid}/items
     logger.info('Claude 요청 건너뜀 - 정한 계정이 아님', { itemId });
     return;
   }
-  // 한 번만: 같은 메모가 아직 진행 중이면 다시 보내지 않는다(같은 저장이 두 번 들어와도)
+  // 줄에 세운다 - 같은 메모가 아직 줄에 있거나 도는 중이면 다시 넣지 않는다(같은 저장이 두 번 들어와도)
   const ref = db.collection(CLAUDE).doc(itemId);
   const atMs = Date.now();
-  const go = await db.runTransaction(async (tx) => {
+  const queued = await db.runTransaction(async (tx) => {
     const cur = await tx.get(ref);
     if (cur.exists && cur.data().open) return false;
-    tx.set(ref, { sid, state: 'sending', issue: null, open: true, atMs, updatedAt: atMs });
+    tx.set(ref, { sid, state: 'queued', issue: null, open: true, atMs, updatedAt: atMs });
     return true;
   });
-  if (!go) return;
-  try {
-    const { title, body } = issueOf(after.text, Array.isArray(after.attachments) ? after.attachments.length : 0);
-    // 라벨이 없으면 만든다(처음 한 번 - 이미 있으면 422)
-    await github('/labels', { method: 'POST', body: JSON.stringify({ name: ISSUE_LABEL, color: 'd97706', description: '앱 메모에서 온 Claude 요청' }) }).catch(
-      () => {},
-    );
-    const issue = await github('/issues', { method: 'POST', body: JSON.stringify({ title, body, labels: [ISSUE_LABEL] }) });
-    await setClaudeState(sid, itemId, { state: 'sent', issue: issue.number, url: issue.html_url, note: '', atMs });
-    logger.info('Claude 요청 보냄', { itemId, issue: issue.number });
-  } catch (err) {
-    await setClaudeState(sid, itemId, { state: 'failed', issue: null, url: null, note: '요청을 보내지 못했습니다.', atMs });
-    logger.error('Claude 요청 보내기 실패', { itemId, error: String(err?.message || err) });
-  }
+  if (!queued) return;
+  await setClaudeState(sid, itemId, { state: 'queued', issue: null, url: null, note: '', atMs });
+  logger.info('Claude 요청 줄에 섬', { itemId });
+  // 앞에 도는 것이 없으면 바로 보낸다 (있으면 매분 확인이 앞 요청이 끝난 뒤 보낸다)
+  await dispatchNext().catch((err) => logger.warn('Claude 요청 보내기 확인 실패', { error: String(err?.message || err) }));
 });
 
-/** 진행 중인 요청마다 GitHub를 읽어 상태를 맞춘다 (매분 - 진행 중인 것이 없으면 읽기 하나) */
+/**
+ * 한 번에 하나 (10-16): 도는 요청(sending·sent·working)이 없을 때만 가장 먼저 기다린 것을 보낸다.
+ * 고르기와 'sending' 표시는 한 트랜잭션 - 매분 확인과 메모 저장이 겹쳐도 둘을 보내지 않는다.
+ * 보낼 때의 메모 글로 보낸다. 그새 메모를 지웠거나 라벨을 뗐으면 보내지 않고 다음 것으로.
+ */
+async function dispatchNext() {
+  for (let tries = 0; tries < 5; tries++) {
+    const now = Date.now();
+    const picked = await db.runTransaction(async (tx) => {
+      const open = await tx.get(db.collection(CLAUDE).where('open', '==', true).limit(50));
+      const id = nextToDispatch(open.docs.map((d) => ({ id: d.id, ...d.data() })));
+      if (!id) return null;
+      const doc = open.docs.find((d) => d.id === id);
+      tx.update(doc.ref, { state: 'sending', atMs: now, updatedAt: now });
+      return { id, sid: doc.data().sid };
+    });
+    if (!picked) return;
+    const { id: itemId, sid } = picked;
+    const snap = await db.collection('spaces').doc(sid).collection('items').doc(itemId).get();
+    const item = snap.exists ? snap.data() : null;
+    if (!item || item.deletedAt || !String(item.text ?? '').trim() || !(await hasClaudeLabel(sid, item.labelIds))) {
+      await setClaudeState(sid, itemId, { state: 'nochange', issue: null, url: null, note: '보내기 전에 메모를 지우거나 라벨을 뗐습니다.', atMs: now });
+      continue;
+    }
+    try {
+      const { title, body } = issueOf(item.text, Array.isArray(item.attachments) ? item.attachments.length : 0);
+      // 라벨이 없으면 만든다(처음 한 번 - 이미 있으면 422)
+      await github('/labels', { method: 'POST', body: JSON.stringify({ name: ISSUE_LABEL, color: 'd97706', description: '앱 메모에서 온 Claude 요청' }) }).catch(
+        () => {},
+      );
+      const issue = await github('/issues', { method: 'POST', body: JSON.stringify({ title, body, labels: [ISSUE_LABEL] }) });
+      await setClaudeState(sid, itemId, { state: 'sent', issue: issue.number, url: issue.html_url, note: '', atMs: now });
+      logger.info('Claude 요청 보냄', { itemId, issue: issue.number });
+    } catch (err) {
+      await setClaudeState(sid, itemId, { state: 'failed', issue: null, url: null, note: '요청을 보내지 못했습니다.', atMs: now });
+      logger.error('Claude 요청 보내기 실패', { itemId, error: String(err?.message || err) });
+      continue;
+    }
+    return;
+  }
+}
+
+/** 매분 (v5SendDueAlarms 안): 도는 요청의 진행을 맞추고 → 라벨을 챙기고(한 시간에 한 번) → 줄의 다음 것을 보낸다 */
 async function checkClaudeRequests() {
-  const open = await db.collection(CLAUDE).where('open', '==', true).limit(10).get();
-  if (open.empty) return;
+  const open = await db.collection(CLAUDE).where('open', '==', true).limit(50).get();
   const now = Date.now();
   for (const doc of open.docs) {
     const req = doc.data();
+    if (req.state === 'queued') continue;
     if (!req.issue) {
       // 이슈를 만드는 사이 함수가 끊겼다 - 오래되면 실패로
       if (now - (req.atMs || 0) > 10 * 60 * 1000) await setClaudeState(req.sid, doc.id, { state: 'failed', note: '요청을 보내지 못했습니다.' });
@@ -233,4 +279,47 @@ async function checkClaudeRequests() {
       logger.warn('Claude 요청 읽기 실패', { itemId: doc.id, error: String(err?.message || err) });
     }
   }
+  await ensureClaudeLabels(now).catch((err) => logger.warn('Claude요청 라벨 챙기기 실패', { error: String(err?.message || err) }));
+  if (open.docs.some((d) => d.data().state === 'queued')) await dispatchNext();
+}
+
+/**
+ * 정한 계정마다 메모 라벨 'Claude요청'을 둔다 (10-16 사용자 요청 - 지우지 못하는 라벨, system: 'claudeRequest').
+ * 한 시간에 한 번(또는 메일 목록이 바뀌면) - 그 사이에는 표시 문서 하나만 읽는다. 지웠으면 되살리고, 같은 이름이 있으면 표시만 단다.
+ */
+async function ensureClaudeLabels(now) {
+  const emails = OWNER_EMAILS.value();
+  const metaRef = db.collection(CLAUDE_META).doc('labels');
+  const meta = (await metaRef.get()).data();
+  if (meta && meta.emails === emails && now - (meta.checkedAt || 0) < 60 * 60 * 1000) return;
+  const list = emails.split(',').map((e) => e.trim()).filter(Boolean);
+  for (const email of list) {
+    const user = await getAuth()
+      .getUserByEmail(email)
+      .catch(() => null);
+    // 아직 이 앱(같은 Firebase)에 한 번도 들어오지 않은 계정 - 다음 시간에 다시
+    if (!user) continue;
+    const col = db.collection('spaces').doc(`u_${user.uid}`).collection('labels');
+    const labels = (await col.where('kind', '==', 'note').get()).docs.map((d) => ({ id: d.id, ...d.data() }));
+    const plan = planClaudeLabel(labels);
+    if (!plan) continue;
+    const touch = { system: CLAUDE_LABEL_SYSTEM, updatedAt: FieldValue.serverTimestamp() };
+    if (plan.action === 'flag') await col.doc(plan.id).update(touch);
+    else if (plan.action === 'restore') await col.doc(plan.id).update({ ...touch, deletedAt: null, deletedBy: FieldValue.delete() });
+    else
+      await col.doc().set({
+        kind: 'note',
+        name: CLAUDE_LABEL_NAME,
+        color: 'indigo',
+        parentId: null,
+        order: plan.order,
+        ...touch,
+        v: 1,
+        createdAt: now,
+        authorId: user.uid,
+        deletedAt: null,
+      });
+    logger.info('Claude요청 라벨 챙김', { uid: user.uid, action: plan.action });
+  }
+  await metaRef.set({ emails, checkedAt: now });
 }
