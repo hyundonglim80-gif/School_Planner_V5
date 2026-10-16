@@ -34,6 +34,7 @@ import DraftOffer from '../../ui/DraftOffer';
 import { openImageViewer } from '../../ui/imageViewerStore';
 import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import SidePanelFrame from '../../ui/SidePanelFrame';
+import ClaudeAskButton from './ClaudeAskButton';
 import LabelPicker from '../labels/LabelPicker';
 import { orderAfter, orderBefore } from '../events/eventOps';
 import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite } from './actions';
@@ -725,15 +726,18 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
 
         <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50/50">
           {isEditing && item ? (
-            <button
-              type="button"
-              data-note-delete
-              onClick={() => void remove()}
-              disabled={saving}
-              className="px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
-            >
-              삭제
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                data-note-delete
+                onClick={() => void remove()}
+                disabled={saving}
+                className="px-4 py-2 text-sm font-semibold text-rose-600 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
+              >
+                삭제
+              </button>
+              {personal && <ClaudeAskButton sid={sid} item={item} dirty={!untouched || saving} />}
+            </div>
           ) : (
             <div />
           )}
