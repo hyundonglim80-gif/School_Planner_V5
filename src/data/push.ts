@@ -160,3 +160,21 @@ export async function refreshPushToken(uid: string): Promise<void> {
     console.warn('[push] 알림 푸시 토큰을 맞추지 못했습니다.', e);
   }
 }
+
+/**
+ * 앱을 닫았을 때 오는 기기 알림을 몇 초 동안 다시 울릴지 - 계정의 '알림 소리' 길이(초, -1 = 확인할 때까지)를 이 기기 캐시에 적어 둔다.
+ * 서비스 워커(public/sw.js push)가 읽어 그 길이만큼 3초마다 알림을 다시 띄운다(10-16 '알림은 뜨는데 알람이 안 울림' - 한 번 '띵'뿐이었다).
+ * 캐시 이름·열쇠는 sw.js와 같아야 한다. 못 적으면(시크릿 창 등) 서비스 워커는 기본 길이(10초)로.
+ */
+export const PUSH_PREFS_CACHE = 'sp5-prefs';
+export const ALARM_SOUND_PATH = '/__sp5prefs/alarm-sound';
+
+export async function shareAlarmSound(seconds: number): Promise<void> {
+  try {
+    if (typeof caches === 'undefined') return;
+    const cache = await caches.open(PUSH_PREFS_CACHE);
+    await cache.put(ALARM_SOUND_PATH, new Response(JSON.stringify({ seconds }), { headers: { 'content-type': 'application/json' } }));
+  } catch {
+    /* 기본 길이로 */
+  }
+}

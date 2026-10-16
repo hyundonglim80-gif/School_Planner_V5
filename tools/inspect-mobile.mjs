@@ -159,10 +159,15 @@ async function runSet(browser, { name, width, height, mobile, dark }) {
     await page.locator(sel('new', 'newEvent')).click();
     r.check(await waitFor(page.locator(sel('event-panel', 'new'))), '목록의 새 일정 = 새 일정 칸');
     await page.keyboard.press('Escape');
-    // 월간: 날짜를 누르면 아래에 그날 목록 + 수업 칩 (칸에는 그리지 않는다)
+    // 월간: 칸에 교시 둘씩 한 줄 수업 칩(10-16 사용 의견) + 날짜를 누르면 아래에 그날 목록
     await go(page, '#/month/2026-10');
     await waitFor(page.locator(sel('month-day', DAY)), 8000);
-    r.check((await page.locator(sel('month-lessons')).count()) === 0, '월간 칸에는 수업 칩을 그리지 않는다 (휴대폰)');
+    const cellLessons = page.locator(sel('month-lessons', DAY));
+    r.check(await waitFor(cellLessons, 6000), '월간 칸에도 수업 칩 (휴대폰 - 교시 둘씩)');
+    const chipBoxes = await cellLessons.locator(sel('month-lesson')).evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width));
+    r.check(chipBoxes.length === 6 && chipBoxes.every((w) => w >= 18), `교시 여섯, 칩 폭 18px 넘게 (${chipBoxes.map((w) => Math.round(w)).join(',')})`);
+    const firstText = ((await cellLessons.locator(sel('month-lesson', 1)).textContent()) ?? '').trim();
+    r.check(firstText.length > 0 && (await cellLessons.locator(sel('month-lesson', 1)).evaluate((e) => e.scrollWidth <= e.clientWidth + 1)), `첫 교시 과목이 칩 안에 보인다 ('${firstText}')`);
     await page.locator(sel('month-day', DAY)).click({ position: { x: 10, y: 10 } });
     const sheet = page.locator(sel('month-day-sheet', DAY));
     r.check(await waitFor(sheet), '날짜를 누르면 그날 목록');

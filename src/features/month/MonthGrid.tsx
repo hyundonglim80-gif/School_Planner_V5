@@ -3,7 +3,7 @@
 //   - 일정은 접지 않고 다 보인다(V4 - '+1개'로 줄이면 무엇인지 몰라 결국 들어가 봐야 한다).
 //   - 휴대폰(compact)은 칸 모양은 두고 안에 든 것만 줄인다: 라벨은 색 띠, 제목은 한 줄·칸 폭에 맞춘 글자, 일정·막대를 누르면 그날 목록.
 //   - 일정·막대 조각을 끌어 다른 날 칸에 놓으면 옮긴다(P5-3 - 마우스 화면만).
-//   - 수업 칩(P9-3 - V4 그대로): PC 칸의 날짜 줄 아래 교시마다 칩(누르면 그 교시 수정 칸). 휴대폰은 칸에 그리지 않고 그날 목록에(MonthDaySheet).
+//   - 수업 칩(P9-3 - V4 그대로): PC 칸의 날짜 줄 아래 교시마다 칩(누르면 그 교시 수정 칸). 휴대폰은 교시 둘씩 한 줄 작은 칩(LessonGrid - 10-16 사용 의견, V4는 칸에서 뺐다) + 그날 목록(MonthDaySheet).
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { labelColor } from '../../domain/labels';
@@ -18,7 +18,7 @@ import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
 import PeriodBar from './PeriodBar';
-import { LessonStrip } from '../lessons/CalendarLessons';
+import { LessonGrid, LessonStrip } from '../lessons/CalendarLessons';
 import type { LessonSubjects } from '../lessons/lessonSubjects';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
 
@@ -179,7 +179,12 @@ export default function MonthGrid(p: MonthGridProps) {
                           <span style={{ fontSize: fitToWidthFontSize(holiday) }}>{holiday}</span>
                         </div>
                       )}
-                      {!p.compact && p.lessonsOn && <LessonStrip date={date} subjects={p.lessonsOn(date) ?? []} tag="month" onOpen={p.onOpenLesson} />}
+                      {p.lessonsOn &&
+                        (p.compact ? (
+                          <LessonGrid date={date} subjects={p.lessonsOn(date) ?? []} tag="month" />
+                        ) : (
+                          <LessonStrip date={date} subjects={p.lessonsOn(date) ?? []} tag="month" onOpen={p.onOpenLesson} />
+                        ))}
                     </div>
                     {p.showEvents && (
                       <div className={`min-w-0 ${p.compact ? 'space-y-[2px]' : 'space-y-1'}`} style={{ gridRow: lanes + 2 }}>

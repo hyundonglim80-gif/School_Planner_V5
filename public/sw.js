@@ -188,19 +188,55 @@ self.addEventListener('push', (event) => {
         visible.forEach((c) => c.postMessage({ type: 'sp5-event-alarm', alarm: d }));
         return;
       }
-      await self.registration.showNotification('⏰ 일정 알림', {
+      const tag = `sp5-alarm-${d.id}`;
+      const options = {
         body: d.content || '예정된 일정이 있습니다.',
-        tag: `sp5-alarm-${d.id}`,
+        tag,
         renotify: true,
         requireInteraction: true,
         vibrate: [400, 200, 400, 200, 400],
         icon: `${self.registration.scope}icon-192.png`,
         badge: `${self.registration.scope}icon-192.png`,
         data: { url: self.registration.scope },
-      });
+      };
+      await self.registration.showNotification('⏰ 일정 알림', options);
+      // 알람처럼 - '알림 소리' 길이만큼 3초마다 같은 알림을 다시 울린다(renotify = 소리·떨림 다시, 10-16 '알림은 뜨는데 알람이 안 울림').
+      // 알림을 누르거나 지우면(알림이 없어지면), 앱을 열어 보고 있으면(앱 창이 울린다) 멈춘다.
+      const times = await alarmRepeatTimes();
+      for (let i = 1; i < times; i++) {
+        await new Promise((r) => setTimeout(r, ALARM_REPEAT_MS));
+        const open = await self.registration.getNotifications({ tag });
+        if (open.length === 0) break;
+        const now = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        if (now.some((c) => c.visibilityState === 'visible' && c.url.startsWith(self.registration.scope))) break;
+        await self.registration.showNotification('⏰ 일정 알림', options);
+      }
     })(),
   );
 });
+
+// 다시 울리는 간격·최대 (앱 안 알림 창과 같은 3초 - src/domain/eventAlarm CHIME_EVERY_MS. 서비스 워커는 한 일을 몇 분 넘게 붙잡지 못해 2분까지)
+const ALARM_REPEAT_MS = 3000;
+const ALARM_REPEAT_MAX = 40;
+// 앱이 적어 둔 계정의 '알림 소리' 길이(초) - src/data/push.ts shareAlarmSound와 같은 캐시·열쇠
+const PREFS_CACHE = 'sp5-prefs';
+const ALARM_SOUND_PATH = '/__sp5prefs/alarm-sound';
+
+/** 몇 번 울리나 (0초 = 한 번, -1 = 확인할 때까지 → 최대, 못 읽으면 기본 10초 = 3번) */
+async function alarmRepeatTimes() {
+  let seconds = 10;
+  try {
+    const res = await (await caches.open(PREFS_CACHE)).match(`${self.location.origin}${ALARM_SOUND_PATH}`);
+    if (res) {
+      const v = (await res.json()).seconds;
+      if (typeof v === 'number') seconds = v;
+    }
+  } catch {
+    /* 기본 길이 */
+  }
+  if (seconds < 0) return ALARM_REPEAT_MAX;
+  return Math.min(ALARM_REPEAT_MAX, Math.max(1, Math.round((seconds * 1000) / ALARM_REPEAT_MS)));
+}
 
 // 알림을 누르면 열려 있는 앱 창으로, 없으면 새로 연다
 self.addEventListener('notificationclick', (event) => {

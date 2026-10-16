@@ -117,6 +117,35 @@ try {
   await page.locator(sel('alarm-dismiss')).click({ force: true });
   await page.evaluate(async (tag) => (await (await navigator.serviceWorker.getRegistration())?.getNotifications({ tag }))?.forEach((n) => n.close()), `sp5-alarm-${ITEM}`);
 
+  // 10-16 사용 의견 '휴대폰 알림은 뜨는데 알람이 안 울림' - 앱을 닫았을 때 오는 알림이 한 번 '띵'뿐이었다
+  r.section("앱 창이 없으면 = 서비스 워커가 '알림 소리' 길이만큼 3초마다 다시 울린다");
+  const prefs = await page.evaluate(async () => {
+    const res = await (await caches.open('sp5-prefs')).match('/__sp5prefs/alarm-sound');
+    return res ? res.json() : null;
+  });
+  r.check(typeof prefs?.seconds === 'number', `앱이 계정의 알림 소리 길이를 서비스 워커 자리에 적어 둔다 (${JSON.stringify(prefs)})`);
+  // 길이를 10초(3번)로 두고 창을 떠난다 - 같은 출처 창이 없으면 서비스 워커가 OS 알림을 띄운다
+  await page.evaluate(async () => (await caches.open('sp5-prefs')).put('/__sp5prefs/alarm-sound', new Response(JSON.stringify({ seconds: 10 }))));
+  const sw = ctx.serviceWorkers().find((w) => w.url().startsWith(origin));
+  await page.goto('about:blank');
+  await cdp.send('ServiceWorker.deliverPushMessage', {
+    origin,
+    registrationId: reg.registrationId,
+    data: JSON.stringify({ data: { type: 'event-alarm', id: ITEM, sid, content: '반복점검 일정', time: `${TODAY}T${TIME}` } }),
+  });
+  const stampOf = () => sw?.evaluate(async (tag) => (await self.registration.getNotifications({ tag })).map((n) => n.timestamp)[0] ?? 0, `sp5-alarm-${ITEM}`);
+  r.check(!!sw && (await waitFor(async () => (await stampOf()) > 0, 8000)), 'OS 알림이 뜬다');
+  const shows = new Set();
+  for (let i = 0; i < 12; i++) {
+    shows.add(await stampOf());
+    await new Promise((res) => setTimeout(res, 1000));
+  }
+  shows.delete(0);
+  r.check(shows.size === 3, `10초 = 3번 띄운다 (같은 tag를 다시 - renotify, ${shows.size}번)`);
+  await sw?.evaluate(async (tag) => (await self.registration.getNotifications({ tag })).forEach((n) => n.close()), `sp5-alarm-${ITEM}`);
+  await page.goto(origin);
+  await page.locator('[data-session=signed-in]').waitFor({ timeout: 15000 });
+
   r.section('로그아웃하면 이 기기 토큰을 지운다');
   await page.locator(sel('account')).click();
   await page.locator(sel('logout')).click();

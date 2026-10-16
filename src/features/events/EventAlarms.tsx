@@ -8,11 +8,12 @@
 // - 서버 푸시(P8-2): 앱을 보고 있으면 서비스 워커가 'sp5-event-alarm'으로 넘겨 준다 - 같은 창·같은 소리(이 탭에서 한 번만).
 //   앱이 뜰 때 이 기기 알림 토큰을 맞춘다(data/push refreshPushToken).
 import { useEffect, useRef, useState } from 'react';
+import { useCommonSettings } from '../../app/prefs';
 import { soundAllowed, wakeAudioOnGesture } from '../../app/sound';
 import { dueAlarms } from '../../domain/eventAlarm';
 import { writeOp, writeOps } from '../../data/repo';
 import { useDocs } from '../../data/select';
-import { refreshPushToken } from '../../data/push';
+import { refreshPushToken, shareAlarmSound } from '../../data/push';
 import { useCurrentSpaceId, useSession } from '../../data/session';
 import EventAlarmPopup, { type RingingAlarm } from './EventAlarmPopup';
 import { itemPath } from './eventOps';
@@ -32,14 +33,17 @@ async function osNotify(alarms: RingingAlarm[], soundBlocked: boolean) {
   for (const a of alarms) {
     try {
       if (reg) {
+        // 서버 푸시(public/sw.js)와 같은 모양 - 같은 tag여도 다시 울리고(renotify) 휴대폰은 떤다 (TS 알림 칸 표에 둘이 없다)
         await reg.showNotification('⏰ 일정 알림', {
           body: a.text,
           tag: `sp5-alarm-${a.id}`,
+          renotify: true,
           requireInteraction: true,
+          vibrate: [400, 200, 400, 200, 400],
           icon: `${reg.scope}icon-192.png`,
           badge: `${reg.scope}icon-192.png`,
           data: { url: reg.scope },
-        });
+        } as NotificationOptions);
         continue;
       }
       const n = new Notification('⏰ 일정 알림', { body: a.text, tag: `sp5-alarm-${a.id}` });
@@ -70,6 +74,11 @@ export default function EventAlarms() {
   useEffect(() => {
     if (uid) void refreshPushToken(uid);
   }, [uid]);
+  // 앱을 닫았을 때 오는 기기 알림도 '알림 소리' 길이만큼 다시 울리게 - 서비스 워커가 읽을 자리에 적어 둔다
+  const alarmSound = useCommonSettings((s) => s.alarmSound);
+  useEffect(() => {
+    void shareAlarmSound(alarmSound);
+  }, [alarmSound]);
 
   useEffect(() => {
     if (!sid) return;

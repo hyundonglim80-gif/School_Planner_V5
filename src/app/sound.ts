@@ -21,15 +21,36 @@ export function audioContext(): AudioContext | null {
   }
 }
 
-/** 처음 누르거나 키를 칠 때 소리 장치를 깨운다. 돌려준 함수로 듣기를 그만둔다 */
+/**
+ * 누르거나 키를 칠 때마다 멈춘 소리 장치를 깨운다(처음 한 번만이 아니다 - 10-16 휴대폰에서 알림 창만 뜨고 소리가 없었다:
+ * 휴대폰은 앱을 뒤로 보냈다 오면 소리 장치를 다시 멈춘다). 화면이 다시 보일 때도 깨워 본다(설치한 앱은 누르지 않아도 풀리는 기기가 있다).
+ * 돌려준 함수로 듣기를 그만둔다.
+ */
 export function wakeAudioOnGesture(): () => void {
-  const wake = () => void audioContext()?.resume?.();
-  window.addEventListener('pointerdown', wake, { once: true });
-  window.addEventListener('keydown', wake, { once: true });
-  return () => {
-    window.removeEventListener('pointerdown', wake);
-    window.removeEventListener('keydown', wake);
+  const wake = () => {
+    const ctx = audioContext();
+    if (ctx && ctx.state !== 'running') void ctx.resume?.().catch(() => {});
   };
+  const onVisible = () => {
+    // 한 번도 만들지 않았으면 만들지 않는다 (누르기 전에 만든 장치는 막힌 채로 시작한다)
+    if (document.visibilityState === 'visible' && audio && audio.state !== 'running') void audio.resume?.().catch(() => {});
+  };
+  const GESTURES = ['pointerdown', 'touchend', 'click', 'keydown'] as const;
+  for (const g of GESTURES) window.addEventListener(g, wake, { capture: true, passive: true });
+  document.addEventListener('visibilitychange', onVisible);
+  return () => {
+    for (const g of GESTURES) window.removeEventListener(g, wake, { capture: true });
+    document.removeEventListener('visibilitychange', onVisible);
+  };
+}
+
+/** 휴대폰 떨림 (안드로이드 - 되지 않는 기기·브라우저는 조용히 넘어간다) */
+function vibrate(pattern: number[]) {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    /* 막혔다 */
+  }
 }
 
 /**
@@ -74,10 +95,11 @@ export function playBell() {
   notes.forEach((f, i) => tone(ctx, f, t0 + i * 0.55 + (i >= 4 ? 0.4 : 0), 1.1, 0.35));
 }
 
-/** 일정 알림 한 번 (삐삐삐 - 삐삐삐) */
+/** 일정 알림 한 번 (삐삐삐 - 삐삐삐) - 휴대폰은 함께 떤다 */
 export function playAlarmChime() {
   const w = window as unknown as AudioWindow;
   w.__spAlarmSoundCount = (w.__spAlarmSoundCount || 0) + 1;
+  vibrate([400, 150, 400, 150, 400]);
   const ctx = audioContext();
   if (!ctx) return;
   void ctx.resume?.();

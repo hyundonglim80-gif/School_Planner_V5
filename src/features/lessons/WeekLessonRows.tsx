@@ -2,7 +2,7 @@
 //   빈 교시도 같은 높이(h-7)의 자리. 교시를 누르면 'N교시 수정' 칸(features/lessons/LessonPanel). 🔗 n = 연결된 것.
 //   교과 모드는 반을 반 색 칩으로('5-2'), 과목은 작게. 오늘 카드는 지금 교시를 짚는다. 진도가 있으면 'k/n'(민 교시는 '밀림') 배지(P6-2).
 //   과목 뒤에 비고(준비물) 첫 줄을 남은 폭만큼 흐리게('…' - 마우스를 올리면 전체, P10-2). 과목이 없으면 비고가 그 자리에.
-//   ✎ = 그날만 바꾼 과목 - 과목이 보이는 줄만(비운 칸은 title에 '이날만 비움', P11-1 - 빈 칸에 ✎가 남았다).
+//   '바뀜' = 그날만 바꾼 과목(10-16 ✎에서 글자로) - 과목이 보이는 줄만(비운 칸은 title에 '이날만 비움', P11-1 - 빈 칸에 표시가 남았다).
 import { firstLine, type LessonDayView } from '../../domain/lessons';
 import { slotId, type ProgressMark } from '../../domain/progress';
 import { parseSlot, type ClassColorClasses } from '../../domain/teachingSlot';
@@ -79,8 +79,12 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
                 )}
               </span>
               {c?.changed && c.subject && (
-                <span data-week-lesson-changed className="shrink-0 text-xs font-black text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>
-                  ✎
+                <span
+                  data-week-lesson-changed
+                  className="shrink-0 text-2xs leading-none px-1 py-0.5 rounded font-bold border text-amber-700 bg-amber-50 border-amber-200"
+                  title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}
+                >
+                  바뀜
                 </span>
               )}
               {mark && (

@@ -184,7 +184,12 @@ async function syncItem(token: string, calId: string, sid: string, id: string): 
   if (item && on) {
     const period = isPeriod({ date: item.date, endDate: item.endDate ?? '' });
     const pi = item as Parameters<typeof periodDays>[0];
-    const carried = !period && isCarried(item, labelForwardOf(tree), today, useCommonSettings.getState().forwardDays);
+    // 오늘 칸에 따라오는 것만 오늘로 - 같은 글이 오늘에 이미 있어 따라오지 않는 것은 제 날짜에 (domain/forward carriedOf)
+    const forwardDays = useCommonSettings.getState().forwardDays;
+    const carried =
+      !period &&
+      isCarried(item, labelForwardOf(tree), today, forwardDays) &&
+      carriedOf([...itemsOfKind(docsNow('items', sid), 'event').filter((d) => d.id !== id), { ...item, id }], labelForwardOf(tree), today, forwardDays).some((d) => d.id === id);
     payloads = itemPayloads(item, {
       dates: period ? periodDays(pi, isHoliday) : [carried ? today : item.date!],
       position: period ? (d) => periodPosition(pi, d, isHoliday) : undefined,

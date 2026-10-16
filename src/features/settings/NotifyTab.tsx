@@ -88,7 +88,7 @@ function AlarmSoundChoices() {
     <div className="space-y-2">
       <Choices name="alarmSound" options={ALARM_SOUND_CHOICES} value={value} onChange={(v) => setCommonSetting('alarmSound', v)} />
       <p className="text-2xs text-slate-400">
-        3초마다 울리고, 알림 창의 <b>확인</b>이나 <b>🔇 소리 끄기</b>를 누르면 바로 멈춥니다. 앱을 닫았을 때 오는 기기 알림의 소리는 휴대폰·PC의 알림 설정을 따릅니다.
+        3초마다 울리고, 알림 창의 <b>확인</b>이나 <b>🔇 소리 끄기</b>를 누르면 바로 멈춥니다. 앱을 닫았을 때 오는 기기 알림도 이 길이만큼 3초마다 다시 울립니다(최대 2분, 알림을 누르거나 지우면 멈춤). 소리가 안 나면 휴대폰 설정 → 알림에서 크롬(또는 설치한 앱)의 소리와 무음·방해 금지 모드를 확인하세요.
       </p>
     </div>
   );

@@ -26,8 +26,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P11 끝(10-16)** - 사용 의견 ② 6가지: 주간 빈 칸 ✎ · 하루 카드 교시 시각 빼기 · 메모 화면 새 메모 맨 위 · '?' → 'Ctrl·Shift+누르기 = 여러 개' · 목록 줄 ▶/▼ 펴기 · 메모 링크 창 📘 진도표 탭.
-- '이어서' = **없음**(P0~P11 끝 - 새 요청을 기다린다). 부탁 없음.
+- **P12 끝(10-16)** - 사용 의견 ③ 4가지: 이월 같은 글은 오늘 칸에 하나(V4 겹침 규칙이 빠져 끝내도 같은 글이 따라왔다) · 수업 ✎ → '바뀜' · 앱을 닫았을 때 알림을 소리 길이만큼 다시·🔔 소리 켜기 · 휴대폰 월간 칸 수업 칩.
+- '이어서' = **없음**(P0~P12 끝). 부탁: 서비스 워커를 바꿨다 - 휴대폰 설치 앱은 완전히 닫았다 다시 열기(그래도 옛 판이면 지우고 크롬에서 다시 설치).
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -93,6 +93,9 @@
 - **`pkill -f <글자>`는 그 글자가 든 자기 명령 줄(셸)도 죽인다**(P7-3 - `pkill -f vite`로 Bash가 144로 끝났다). 에뮬레이터·개발 서버는 뒤에서(`run_in_background`) 켠다.
 - **클라우드 백그라운드 명령은 기본 30분에 꺼진다** - 에뮬레이터·개발 서버는 `run_in_background` + `timeout: 7200000`(최대 2시간, 그 뒤에도 꺼진다 - 다시 켜고 seed, P9-1). 점검이 갑자기 다 깨지면 먼저 8080·5175가 살아 있나.
 - 점검에서 칸을 닫는 `sp5.closeAllWindows()`는 저장 안 한 칸이 있으면 confirm으로 묻고 probe는 '아니오'라 **칸이 남는다** → 그때만 `dialogs.answer = true`(inspect-manual `closeAll`, P9-1).
+- **크기·자리만 재는 점검은 빈 글자도 통과한다** - 칩·배지를 새로 그리면 글자(`textContent`)가 있는지도 본다(P12-1 - 휴대폰 월간 칩이 빈 채 '칩 폭 22px·넘침 없음'을 통과, 그림으로 찾았다.
+  `parseSlot`은 반이 없으면 `cls: ''`라 `??`로는 과목으로 넘어가지 않는다 - `||`).
+- **사용자 보고가 재현되지 않으면 V4의 같은 기능 코드와 견준다**(P12-1 이월 - V5 경로는 모두 맞았고, V4 `runAutoForwarding`의 겹침 규칙이 빠져 있었다).
 - **점검이 개발 서버로 도는 동안 저장소 파일(.md 포함)을 고치지 않는다**(P10-5) - Tailwind가 다시 훑어 `index.css`·`Shell`이 HMR로 바뀌고 열린 칸이 사라져 점검이 틀린다. 문서는 점검 묶음 뒤에.
 - **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
 - **운영을 지우는 명령(`functions:delete`, `git push --delete`)은 Claude 자동 권한이 막는다**(10-14) - 사용자에게 한 줄 명령을 주고 VS Code 터미널에서 돌리게 한 뒤, 결과는 사용자가 보낸 화면으로 확인한다.
@@ -154,7 +157,7 @@
 - 일정·메모 머리줄: `▼ 제목 숫자 [+ 추가] ……… ⚙️`(라벨 설정은 오른쪽 끝). 메모 칸은 '📝 메모'(P10-3 - 옛 '📔 기록', '+ 메모' 없음), 라벨로 보기 칩 줄은 **접힌 채** 🏷️로 편다.
 - 일정은 **휴대폰 2열 카드, PC 1열**. 메모는 휴대폰 2열, PC 2~4열.
 - 수업 칸: 과목은 **굵고 크게**(PC 18px·휴대폰 16px, font-black), 과목이 있는 교시 카드는 왼쪽에 **교시 색 막대**. 카드에 **교시 시각은 적지 않는다**(P11-1 사용자 의견 - 수업 종에서만, title에만).
-- **✎ = 그날만 바꾼 과목**: 적힌 과목이 그날 시간표와 다르고 과목이 보이는 칸만(P11-1 - 비운 칸은 '수업 없음', 시간표를 고쳐 같아지면 사라진다). 하루·주간 같게.
+- **'바뀜' = 그날만 바꾼 과목**(주황 글자 배지 - P12-1 사용 의견: ✎는 휴대폰에서 뜻을 알 수 없었다): 적힌 과목이 그날 시간표와 다르고 과목이 보이는 칸만(P11-1 - 비운 칸은 '수업 없음', 시간표를 고쳐 같아지면 사라진다). 하루·주간 같게.
 - **수업 칸 = 과목 + '비고(준비물)' 한 칸**(P10-2 사용자 의견 2a - 수업 메모 칸 없음, 옛 메모는 비고 아래 줄에 이어 보인다) · 교과 모드 반 도구(🪑·🎯)·🙋 출결은 📊🔗✏️처럼 **마우스를 올렸을 때만**(적힌 것이 있으면 늘, 휴대폰은 늘), 수정 칸에도 같은 단추 · 주간 교시 줄은 과목 뒤에 비고 첫 줄 '…'.
 
 ### 메모 하나 + 날짜 링크 (P10-3 사용자 의견 1 - V4 '메모 ↔ 기록 = 날짜 칸'을 바꿈)
@@ -185,8 +188,11 @@
 - 메모 화면 **카드/목록**: 머리줄 🔍 왼쪽 그림 단추(메모 화면에서만 ☰/▦, 이 기기 기억 - P10-5 5e). 목록 줄 맨 앞 ▶/▼ = 그 줄 아래에 본문 펴기·접기(P11-1, 처음은 접힘).
   **메모 화면에서 쓴 새 메모는 맨 위**(P11-1 사용자 의견 - V4 그대로, 날짜 없는 메모 맨 앞 차례, ▲▼로 바꾼다. 하루 메모 칸 + 추가는 그날 목록 맨 뒤). 오른쪽 칸·클립보드 칸 위의 휠은 그 칸만(가운데 화면·'스크롤로 페이지 이동' 날짜 넘기기를 하지 않는다 - 6e).
 - **PC 머리줄 '＋ 새로' 없음**(P10-1 사용자 의견 6d - 칸마다 '+ 추가'·단축키, 휴대폰 둥근 ＋는 둔다) · **알림 소리 길이**는 환경설정 '알림'(한 번·10초(기본 - 3초마다 3번)·30초·1분·5분·확인할 때까지, 계정에 하나).
+  앱을 닫았을 때 오는 기기 알림도 그 길이만큼 3초마다 다시 울린다(서비스 워커, 최대 2분 - P12-1 사용 의견 '알림은 뜨는데 알람이 안 울림'). 소리가 막힌 알림 창은 **🔔 소리 켜기**.
+- **휴대폰 월간 칸에도 수업**(P12-1 사용 의견 - V4 ROADMAP 15는 칸에서 뺐다): 교시 둘씩 한 줄 작은 칩, 교과 모드는 반만('5-2'), 누르면 그날 목록.
 - **반복 = 끝 날 + 요일**(P10-1 10-14 사용자 의견 6b): '📆 끝 날 · 🔁 반복' 줄 하나 - 요일을 안 고르면 기간 하나, 고르면 그 요일만 반복(새 일정만), 격주·매월·매일은 '더 보기'.
 - **일정 완료 = 칩 앞에 ✓**(P10-1 10-14 사용자 의견): 끝낸 일정도 칩 색·글은 그대로(흑백·줄긋기 없음), 하루 카드의 ☐는 없앴다 - 라벨 칩을 누르면 완료, 라벨이 없으면 회색 ○ 칩.
+- **이월은 같은 글을 오늘 칸에 하나만**(V4 겹침 규칙 - P12-1 사용 의견 '완료했는데 이월이 된다'): 오늘 날짜에 같은 글이 있으면(끝낸 것도) 지난 것은 따라오지 않고, 같은 글끼리는 가장 이른 것 하나.
 - 일정 라벨 속성 '구글 캘린더' - 켠 라벨의 일정은 저장·완료·옮기기·지우기를 구글 캘린더에도. 저장할 때 로그인이 없으면 로그인 창을 묻는다.
 - 교사 유형은 시간표 창에서 고른다((초등) 담임 / 전담 / (중등) 전담 + 담임). 전담은 담임 도구(출석부·알림장)를 숨긴다. 수업 칸 글자는 '5-2 과학'.
 - 명렬표는 학급 화면 안(⋮에 없다). 수업 종은 하루 '수업' 옆. 링크 연결 창은 저장하면 닫힌다.
@@ -267,10 +273,10 @@
   `EventPanel.tsx`(일정 칸 - `[data-event-panel=new|edit]`·`[data-event-text-input|event-date|event-date-prev|next|event-move-note|event-due-input|event-alarm-open|event-attr|event-save|event-delete]`) ·
   `eventForm.ts`(순수 - 칸 ↔ 문서, 속성은 라벨과 다른 것만 `propsToStore`, 저장 = 바뀐 칸만 `editChanges`) · `eventOps.ts`(순수 - `reorderOps`·`doneChanges`·`orderAfter`·`itemPath`) ·
   `actions.ts`(`setEventDone`·`moveEventInList`·`createEvent`·`saveEvent`·`setEventAlarm`·`deleteEvent` - 되돌리기까지) · `EventAlarmWindow.tsx`(⏰ 시각 `[data-alarm-window|alarm-time|alarm-save|alarm-off]`) ·
-  `EventAlarms.tsx`(Shell에 하나 - 앱 안 알림, 20초마다 사본) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-dismiss]` - 소리 길이 = 계정 `common.alarmSound`(초, 0 한 번·-1 확인할 때까지, `eventAlarm.chimeCount` - P10-1)) · `QuickInputChips.tsx`(`[data-quick-chip]`) · `DueBadge.tsx`(`[data-due-badge]`) ·
+  `EventAlarms.tsx`(Shell에 하나 - 앱 안 알림, 20초마다 사본) · `EventAlarmPopup.tsx`(`[data-alarm-popup|alarm-item|alarm-mute|alarm-unmute(🔔 소리 켜기 - P12-1)|alarm-dismiss]` - 소리 길이 = 계정 `common.alarmSound`(초, 0 한 번·-1 확인할 때까지, `eventAlarm.chimeCount` - P10-1)) · `QuickInputChips.tsx`(`[data-quick-chip]`) · `DueBadge.tsx`(`[data-due-badge]`) ·
   `EventDoneChip.tsx`(완료 칩 한 곳 - 라벨 칩·라벨 없으면 회색 ○, 끝내면 칩 앞 ✓ `[data-event-done-chip=0|1]`(✓를 단 칩)·`[data-event-check]`, 좁은 자리는 `DoneMark` - 하루·주간·작년·월간·그날 목록·년간·학사력·링크 보기, P10-1) ·
   `shortcuts.ts`(`newEvent` = 단축키·휴대폰 둥근 ＋ → 보는 날의 새 일정, `recurring` = 끝 날 줄을 펴고 시작 날 요일을 고른 새 일정 칸, `forwarding` = 오늘로 가서 지난 일정 줄). 순수 셈 `domain/eventDue.ts`·`eventAlarm.ts`(`normalizeTimeInput`·`dueAlarms`)·`quickInput.ts`(V4 테스트째). 소리 `app/sound.ts`. 자동 높이 글 칸 `ui/AutoTextarea.tsx`.
-  - **이월(계산 - P3-3)**: `domain/forward.ts`(`forwardOn`·`isCarried`·`carriedOf`·`staleOf`·`carriedSince`) · `events/forward.ts`(`useCarried` = 오늘로 따라오는 일정·지난 일정, `usePastRow`·`staleCountNow`) · `ForwardMarks.tsx`(Shell - 처음 따라올 때 carrying 한 번, live에서만) ·
+  - **이월(계산 - P3-3)**: `domain/forward.ts`(`forwardOn`·`isCarried`·`carriedOf`(같은 글은 하나 - P12-1)·`staleOf`·`carriedSince`) · `events/forward.ts`(`useCarried` = 오늘로 따라오는 일정·지난 일정, `usePastRow`·`staleCountNow`) · `ForwardMarks.tsx`(Shell - 처음 따라올 때 carrying 한 번, live에서만) ·
     `eventOps.carriedDoneChanges`(오늘 칸에서 끝내면 오늘로) · 하루 `DayEvents`(오늘 것 아래 `[data-event-carried|event-since]`, 지난 날 `[data-event-away|event-to-today]`) · `day/DayPastEvents.tsx`('📥 지난 일정 N개' `[data-past-*]`) · `ui/useToday.ts`(자정에 바뀌는 오늘).
   - **기간·반복·묶음(P3-3)**: `domain/period.ts`(보이는 날·'(k/n)'·doneDates·skipDates·끝 날 당기기 - 공휴일은 `HolidayCheck`로 P5-3) · `domain/recur.ts`(규칙·날짜·이름) · `events/seriesOps.ts`(순수 - 만들기·묶음 고치기·지우기)·`series.ts`(`useSeriesOf`) ·
     일정 칸 '📆 끝 날 · 🔁 반복' 줄 하나 `[data-event-period-*|event-end|event-workdays|event-end-clear]` 안에 `RecurRow.tsx`(새 일정만 - 요일 칩 `[data-recur-day]`·▸ 더 보기 `[data-recur-more|recur-kind]`, `[data-event-recur-row=none|weekly|…]` - 요일을 안 고르면 기간, 고르면 그 요일만 반복, 끝나는 날 = 끝 날 칸, 셈 `domain/recur` `toggleWeekday`·`toggleKind` - P10-1)·`[data-event-series-info]` · `EventScopeWindow.tsx`(세 갈래 창 `[data-scope-window|scope-choice]`)·`EventDeleteChooser.tsx` · 카드 '(k/n)' `[data-event-period]`·🔁 `[data-event-series]`.
@@ -289,7 +295,7 @@
   설정 `common.teaching`(null = 안 고름)·`periods`·`terms`(app/prefs, 받았나 `useCommonLoaded`) · 사본 `MIRRORED` += timetables·lessonDays · 저장 도우미 `merge`(날짜 문서 - 없으면 만든다) ·
   `features/lessons/`(`useLessons`(`useLessonSource`·`useLessonsOn`·`useLessonsFor`) · `teaching.ts`(`useTeaching`·`updateTeaching`·`useTeachingClasses`·`useSlotPairOptions`·`useClassColorOf`) · `lessonOps`(순수 - 시간표와 같은 과목은 빼기·비우기·맞바꾸기)·`actions`(`saveLesson`·`clearLesson`·`swapLessons`) ·
   `DayLessons`(하루 칸 `[data-day-lessons|lesson-card|lesson-id|lesson-subject|lesson-changed|lesson-note|lessons-off|now-line|lesson-up|down|link|links|edit|prev|lesson-editor|lesson-subject-input|lesson-note-input|lesson-editor-tool=eval|attendance|seating|drawStudent|lesson-save|close|lessons-settings]` - 반 도구 `[data-class-tools|class-tool-btn]`는 hover, P10-2) ·
-  `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-subject|lesson-panel-note|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson|week-lesson-note|week-lesson-changed]`) · `CalendarLessons`(월간·년간 수업 칩 - `LessonStrip` PC·`LessonWraps` 휴대폰 `[data-month-lessons|month-lesson|year-lessons|year-lesson|sheet-lessons|sheet-lesson]`, P9-3)·`lessonSubjects`(순수 - 'X' = 수업 없음) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
+  `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-subject|lesson-panel-note|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson|week-lesson-note|week-lesson-changed]`) · `CalendarLessons`(월간·년간 수업 칩 - `LessonStrip` PC·`LessonWraps` 휴대폰 그날 목록·`LessonGrid` 휴대폰 월간 칸(P12-1) `[data-month-lessons|month-lesson|year-lessons|year-lesson|sheet-lessons|sheet-lesson]`, P9-3)·`lessonSubjects`(순수 - 'X' = 수업 없음) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
   시간표 창 `features/timetable/`(`TimetableWindow` 창 `timetable` `{ tab }` `[data-timetable-window|timetable-tab|timetable-save|timetable-dirty]` · `GridTab`(`[data-timetable-pick|add|name|from|to|quick|delete]`·`input[data-cell="행-열"]`) · `PeriodsTab`(`[data-period-name|start|end|period-fill-run]`) · `TermsTab`(`[data-terms="summer-from"…]`) · `TeachingTab`(`[data-teacher-preset|teaching-*|class-color|homeroom-*]`) · `timetableDraft`(순수) · `shortcuts`(`teachingMode`)).
   새 학년도 준비(P9-2): 순수 `domain/newYear.ts`(2/15~3/31 `newYearTarget`·할 것 `newYearState`·`parseRosterPaste`·`copiedTimetable`) · `features/newYear/`(`useNewYear`·`NewYearBanner`(Shell `[data-new-year-banner|new-year-open|new-year-dismiss]`) ·
   `NewYearWindow` 창 `newYear` `{ year }` `[data-new-year-window|new-year-step=classes|timetable|terms|teaching(data-done)|new-year-grade|num|names|create-class|copy-timetable|open-terms|set-homeroom|done]`) · 계정 `common.newYearDone` ·
@@ -347,8 +353,8 @@
   `features/gcal/`(`auto.ts` `useGcalAuto`(Shell - 쓰기 → 1.2초 → 큐 → 보내기, 이월은 이 기기 하루 한 번 `sp5-gcal-carried`, 라벨 끄면 보낸 것 맞춤)·`ensureGcalLogin`(일정 칸 저장 뒤)·`sendGcalNow` · 머리줄 `GcalPendingButton` `[data-gcal-pending=N]` ·
   `CalendarSyncSection`(백업 창 '보내기' 탭 - 단축키 '구글 캘린더로 보내기'가 그 탭을 연다 `[data-calendar-sync-window|cal-*]`)·`manual.ts`(창 밖에서 `useCalendarSync`·`rangeForScope`)). 점검 `tools/inspect-gcal.mjs`(35 - 캘린더 API 흉내). `select.docsNow`(훅 아닌 곳의 사본 읽기).
 - **서버 푸시 알림**(P8-2): 함수 `functions/`(codebase `v5`, Node 22, 서울 - `index.js` `v5AlarmIndex`(items 쓰기 → `v5alarms/{itemId}`)·`v5SendDueAlarms`(매분)·`v5CleanupAlarms`, 순수 `alarmPlan.js` + `node --test` = `npm run test:functions`, `firebase.json` functions) ·
-  `data/push.ts`(이 기기 FCM 토큰 `spaces/u_{uid}/pushTokens/{해시}` - `enablePush`·`disablePush`·`refreshPushToken`·`forgetPushOnLogout`, 이 기기 `sp5-push`) · 환경설정 '알림' 탭 `settings/NotifyTab.tsx`(알림 소리 `[data-choice=alarmSound:…]` · `[data-push-alarm|push-state|push-on|push-off]`) ·
-  `public/sw.js` push(보는 창이면 'sp5-event-alarm' 메시지, 아니면 OS 알림)·notificationclick · `EventAlarms`가 그 메시지로 울린다. 점검 `tools/inspect-push.mjs`(13 - CDP `ServiceWorker.deliverPushMessage`).
+  `data/push.ts`(이 기기 FCM 토큰 `spaces/u_{uid}/pushTokens/{해시}` - `enablePush`·`disablePush`·`refreshPushToken`·`forgetPushOnLogout`, 이 기기 `sp5-push` · 알림 소리 길이를 서비스 워커에 `shareAlarmSound` = 캐시 `sp5-prefs` - P12-1) · 환경설정 '알림' 탭 `settings/NotifyTab.tsx`(알림 소리 `[data-choice=alarmSound:…]` · `[data-push-alarm|push-state|push-on|push-off]`) ·
+  `public/sw.js` push(보는 창이면 'sp5-event-alarm' 메시지, 아니면 OS 알림 - 알림 소리 길이만큼 3초마다 다시·최대 2분 `alarmRepeatTimes`, P12-1)·notificationclick · `EventAlarms`가 그 메시지로 울린다. 점검 `tools/inspect-push.mjs`(13 - CDP `ServiceWorker.deliverPushMessage`).
 - **백업 · 가져오기 · 보내기**(P8-3 - 창 `backup` `{ tab: backup|import|send|tidy }` = ⋮ 자료, `features/backup/`): `BackupWindow`(`[data-backup-window=탭|backup-tab-btn|backup-panel]`) · `open.ts`(`openBackup`)·`shortcuts.ts`(calendar → '보내기') ·
   '백업' `BackupTab`(JSON = 순수 `domain/backup.ts` + `data/backup.ts` 서버 읽기·되살리기 없거나 지운 것만, CSV = V4 모양 `[data-backup-*|restore-*]`) · `AutoBackupSection`·`auto.ts`(드라이브 자동 백업 `useAutoBackupRunner` - PC·토큰 있을 때만, `common.autoBackup`·`settings/backupLog` `data/backupLog.ts`, `data/google/driveBackup.ts`, 순수 `domain/autoBackup.ts`)·`AutoBackupBanner`(Shell) ·
   '가져오기' `V4ImportSection` + `KeepImportSection`·`keep.ts`(순수 `domain/keepImport.ts`, 백업 탭에 넣은 Keep 파일은 `useKeepInbox`로) · '보내기' `gcal/CalendarSyncSection` + `SheetsSection`·`sheets.ts`(V5 시트 파일 `settings/sheets`, 순수 `domain/sheets.ts`, `data/google/sheets.ts`, 명렬표 '📊 시트' `class/rosterSheet.ts`) ·

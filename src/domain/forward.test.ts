@@ -57,6 +57,35 @@ describe('isCarried - 오늘로 따라오나', () => {
     const list = [ev({ text: 'a' }), ev({ text: 'b', done: true }), ev({ text: 'c', date: '2026-10-07' })];
     expect(carriedOf(list, labels, TODAY, 14).map((d) => d.text)).toEqual(['a', 'c']);
   });
+  it('오늘 날짜에 같은 글이 있으면(끝낸 것 포함) 따라오지 않는다 - V4 겹침 규칙(10-16 완료했는데 이월)', () => {
+    const list = [
+      ev({ text: '공문 제출', date: '2026-10-05' }),
+      ev({ text: ' 공문 제출 ', date: TODAY, done: true, carriedFrom: '2026-10-03' }),
+      ev({ text: '독서 기록', date: '2026-10-06' }),
+      ev({ text: '독서 기록', date: TODAY, labelIds: [] }),
+      ev({ text: '다른 일', date: '2026-10-06' }),
+      // 지운 것·메모는 오늘 목록이 아니다
+      ev({ text: '숙제 확인', date: '2026-10-06' }),
+      ev({ text: '숙제 확인', date: TODAY, deletedAt: { seconds: 1 } }),
+      ev({ text: '알림장', date: '2026-10-06' }),
+      ev({ kind: 'note', text: '알림장', date: TODAY }),
+    ];
+    expect(carriedOf(list, labels, TODAY, 14).map((d) => d.text)).toEqual(['다른 일', '숙제 확인', '알림장']);
+  });
+  it('따라올 것끼리 글이 같으면 처음 날이 가장 이른 것 하나만 (반복 일정의 지난 회차)', () => {
+    const list = [
+      { ...ev({ text: '출석 확인', date: '2026-10-07' }), id: 'a' },
+      { ...ev({ text: '출석 확인', date: '2026-10-05' }), id: 'b' },
+      { ...ev({ text: '출석 확인', date: '2026-10-06', carriedFrom: '2026-10-01' }), id: 'c' },
+      { ...ev({ text: '다른 일', date: '2026-10-07' }), id: 'd' },
+    ];
+    expect(carriedOf(list, labels, TODAY, 14).map((d) => d.id)).toEqual(['c', 'd']);
+  });
+  it('겹쳐 따라오지 않은 같은 글은 지난 일정 줄에도 없다', () => {
+    const list = [ev({ text: '출석 확인', date: '2026-10-05' }), ev({ text: '출석 확인', date: TODAY })];
+    expect(carriedOf(list, labels, TODAY, 14)).toEqual([]);
+    expect(staleOf(list, labels, TODAY, 14)).toEqual([]);
+  });
 });
 
 describe('carriedSince', () => {

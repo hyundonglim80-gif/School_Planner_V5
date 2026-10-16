@@ -140,7 +140,15 @@ describe('앱 안 일정 알림', () => {
     it('소리가 막혔으면(소리 장치 없음·깨우지 못함) 화면을 보고 있어도 서비스 워커로 OS 알림 - 같은 tag', async () => {
       await ring();
       expect(q('[data-alarm-popup]')).not.toBeNull();
-      expect(shown).toHaveBeenCalledWith('⏰ 일정 알림', expect.objectContaining({ body: '하나', tag: 'sp5-alarm-a' }));
+      expect(shown).toHaveBeenCalledWith('⏰ 일정 알림', expect.objectContaining({ body: '하나', tag: 'sp5-alarm-a', renotify: true }));
+      // 10-16 '알림은 뜨는데 알람이 안 울림' - 막혔으면 알림 창에 '🔔 소리 켜기' (누르면 바로 한 번 울리고 사라진다)
+      const unmute = q('[data-alarm-unmute]') as HTMLButtonElement | null;
+      expect(unmute).not.toBeNull();
+      const w = window as unknown as { __spAlarmSoundCount?: number };
+      const before = w.__spAlarmSoundCount ?? 0;
+      await act(async () => unmute!.click());
+      expect(w.__spAlarmSoundCount).toBe(before + 1);
+      expect(q('[data-alarm-unmute]')).toBeNull();
     });
 
     it('소리를 낼 수 있고 화면을 보고 있으면 OS 알림은 띄우지 않는다', async () => {
@@ -152,6 +160,7 @@ describe('앱 안 일정 알림', () => {
       await ring();
       expect(q('[data-alarm-popup]')).not.toBeNull();
       expect(shown).not.toHaveBeenCalled();
+      expect(q('[data-alarm-unmute]')).toBeNull();
     });
   });
 });

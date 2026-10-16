@@ -1,5 +1,5 @@
 // 하루 화면 ⏰ 수업 칸 (V4 features/day/DaySchedule.tsx). 교시마다 카드 - 과목 굵고 크게(PC 18px·휴대폰 16px), 과목이 있으면 왼쪽 교시 색 막대.
-//   - 수업 칸은 계산이다(domain/lessons): 그날 바꾼 칸(lessonDays) → 수업 없는 날 → 그 기간 시간표. '✎'는 그날만 바꾼 과목(과목이 보이는 칸만 - 비운 칸은 '수업 없음', P11-1).
+//   - 수업 칸은 계산이다(domain/lessons): 그날 바꾼 칸(lessonDays) → 수업 없는 날 → 그 기간 시간표. '바뀜'은 그날만 바꾼 과목(과목이 보이는 칸만 - 비운 칸은 '수업 없음', P11-1 · 10-16 ✎ → 글자 '바뀜' - 휴대폰은 title이 안 보여 뜻을 몰랐다).
 //   - 교시를 누르면 그 자리에서 고친다(과목·비고(준비물) - P10-2에 수업 메모와 준비물을 한 칸으로). 저장·Ctrl+S, 바깥을 누르면 고친 것을 저장하고 닫는다, 닫기·ESC는 저장 없이.
 //     고친 것은 lessonDays의 그 칸만(field path) - 시간표와 같은 과목은 적지 않는다(features/lessons/lessonOps).
 //   - 지금 몇 교시: 교시 시각(시간표 창 '교시')을 적어 두면 오늘은 '지금 · N분 남음' / '다음 · N분 뒤', 머리줄에 다음 교시와 비고 첫 줄.
@@ -541,8 +541,12 @@ export default function DayLessons({ date }: { date: string }) {
                           </button>
                         )}
                         {c.changed && c.subject && (
-                          <span data-lesson-changed className="shrink-0 text-xs font-black text-amber-600" title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}>
-                            ✎
+                          <span
+                            data-lesson-changed
+                            className="shrink-0 text-2xs font-bold rounded-full px-1.5 py-0.5 border text-amber-700 bg-amber-50 border-amber-200"
+                            title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}
+                          >
+                            바뀜
                           </span>
                         )}
                         {isNow && nowState?.kind === 'during' && (

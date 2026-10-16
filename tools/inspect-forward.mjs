@@ -184,6 +184,25 @@ try {
   r.check(await waitFor(async () => hashOf(page).startsWith(`#/day/${TODAY}`)), `오늘 하루 화면으로 (${hashOf(page)})`);
   r.check(await waitFor(page.locator(sel('past-list'))), '지난 일정 줄이 펴져 있다');
 
+  // 10-16 사용 의견 '라벨 칩으로 완료했는데 이월이 된다' - 같은 글이 여러 날에 있으면(반복 지난 회차·V4 남은 원본) 하나를 끝내도 다른 것이 따라왔다
+  r.section('같은 글은 오늘 칸에 하나만 (V4 겹침 규칙)');
+  for (const [id, data] of Object.entries({
+    insp_fwd1: { text: '점검 같은 글', date: daysAgo(4), labelIds: FW, order: 'Zy1' },
+    insp_fwd2: { text: '점검 같은 글', date: daysAgo(2), labelIds: FW, order: 'Zy2' },
+  })) {
+    await setDoc(itemRef(id), { kind: 'event', ...data, ...stamp });
+    undo.add(() => deleteDoc(itemRef(id)));
+  }
+  r.check(await waitFor(card('insp_fwd1'), 8000), '가장 이른 것이 따라온다');
+  r.check((await card('insp_fwd2').count()) === 0, '같은 글의 늦은 것은 오늘 칸에 없다');
+  await card('insp_fwd1').locator(sel('event-done-chip')).click();
+  const same = await serverUntil(() => read('insp_fwd1'), (d) => d?.done === true);
+  r.check(same?.date === TODAY, `끝내면 오늘로 (${same?.date})`);
+  await new Promise((res) => setTimeout(res, 1500));
+  r.check((await card('insp_fwd2').count()) === 0, '같은 글의 다른 것도 따라오지 않는다 (오늘에 같은 글이 있다)');
+  const other = await read('insp_fwd2');
+  r.check(other?.date === daysAgo(2) && !other.done && !other.carrying, '그것은 제 날짜에 그대로 - 쓰지 않는다');
+
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);

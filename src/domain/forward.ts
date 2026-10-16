@@ -7,6 +7,7 @@
 //   그리고 (date >= 오늘 - 이월 기간 또는 carrying).
 // - 이월 판단(V4 isForwardTarget과 같은 차례): 이 일정만 정한 값(props.forward) → 붙은 라벨(아는 라벨 하나라도 켰으면) →
 //   아는 라벨이 하나도 없으면 일정이 든 흔적(carrying - V4 '한 번 이월되던 것은 계속 이월한다').
+// - 같은 글은 오늘 칸에 하나만(V4 겹침 규칙 - carriedOf): 오늘 날짜에 같은 글이 있으면 데려오지 않고, 같은 글끼리는 가장 이른 것 하나.
 // - 쓰기는 두 번뿐: 처음 따라올 때 carrying 한 번(features/events/ForwardMarks - 이월 기간이 지나도 계속 따라오게),
 //   오늘 칸에서 끝낼 때 date = 오늘·carriedFrom = 처음 날(features/events/eventOps carriedDoneChanges).
 import { addDays } from './dateUtils';
@@ -52,9 +53,30 @@ export function isCarried(item: ForwardItem, labels: LabelForward, today: string
   return item.date >= forwardWindowStart(today, forwardDays) || !!item.carrying;
 }
 
-/** 오늘로 따라오는 일정 (주어진 차례 그대로) */
+/** 같은 일정으로 보는 글 (V4 eventContentOf 견주기 - 앞뒤 빈칸만 뗀다) */
+const sameTextKey = (item: Pick<ForwardItem, 'text'>) => item.text?.trim() ?? '';
+
+/**
+ * 오늘로 따라오는 일정 (주어진 차례 그대로).
+ * V4 runAutoForwarding의 겹침 규칙(10-16 사용 의견 - '완료했는데 이월이 된다'): 같은 글의 일정은 오늘 칸에 하나만.
+ * - 오늘 날짜에 같은 글의 일정이 이미 있으면(끝낸 것 포함) 따라오지 않는다 - 하나를 오늘 칸에서 끝내면 같은 글의 다른 것도 멈춘다.
+ * - 따라올 것끼리 글이 같으면 처음 날이 가장 이른 것 하나만 (반복 일정의 지난 회차·V4가 지난 날에 남겨 둔 같은 글).
+ * 따라오지 않은 같은 글은 제 날짜에 그대로 있다(지난 일정 줄에도 넣지 않는다 - staleOf는 isCarried로 거른다).
+ */
 export function carriedOf<T extends ForwardItem>(items: readonly T[], labels: LabelForward, today: string, forwardDays: number): T[] {
-  return items.filter((d) => isCarried(d, labels, today, forwardDays));
+  const list = items.filter((d) => isCarried(d, labels, today, forwardDays));
+  if (list.length === 0) return list;
+  const taken = new Set<string>();
+  for (const d of items) if (d.kind === 'event' && !d.deletedAt && d.date === today) taken.add(sameTextKey(d));
+  const keep = new Set<T>();
+  const earliest = list.map((d, i) => [d, i] as const).sort(([a, i], [b, j]) => carriedSince(a).localeCompare(carriedSince(b)) || i - j);
+  for (const [d] of earliest) {
+    const key = sameTextKey(d);
+    if (taken.has(key)) continue;
+    taken.add(key);
+    keep.add(d);
+  }
+  return list.filter((d) => keep.has(d));
 }
 
 /** '↪ 10/5부터'의 날 (끝냈다 푼 일정은 처음 날을 carriedFrom에 들고 있다) */

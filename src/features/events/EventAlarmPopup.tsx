@@ -2,9 +2,10 @@
 // 창 목록·오른쪽 칸에 서지 않는다 - 무엇을 하던 중이든 가운데를 덮어야 한다(V4 그대로).
 // 소리: 3초마다, 환경설정 '알림 소리' 길이만큼(한 번 · 10초 = 3번(기본 - V4 2026-10-08) · 30초 · 1분 · 5분 · 확인할 때까지 - P10-1).
 // 확인·'소리 끄기'를 누르면 바로 멈춘다.
+// 브라우저가 소리를 막았으면(휴대폰에서 앱을 막 열었거나 뒤에서 돌아옴 - 10-16 '알림은 뜨는데 알람이 안 울림') '🔔 소리 켜기'를 보인다 - 누르면 바로 울린다.
 import { useEffect, useState } from 'react';
 import { useCommonSettings } from '../../app/prefs';
-import { playAlarmChime } from '../../app/sound';
+import { audioContext, playAlarmChime, soundAllowed } from '../../app/sound';
 import { CHIME_EVERY_MS, chimeCount } from '../../domain/eventAlarm';
 import { useVisualViewport } from '../../ui/useVisualViewport';
 
@@ -22,19 +23,37 @@ export default function EventAlarmPopup({ alarms, onDismiss }: { alarms: Ringing
   const [mutedKey, setMutedKey] = useState('');
   const muted = !!ringKey && mutedKey === ringKey;
   const times = chimeCount(useCommonSettings((s) => s.alarmSound));
+  // 소리가 막혔나 (울리기 시작할 때 본다) - 막혔으면 '🔔 소리 켜기'
+  const [blockedKey, setBlockedKey] = useState('');
+  const blocked = !!ringKey && blockedKey === ringKey;
 
   useEffect(() => {
     if (!ringKey || muted) return;
+    let alive = true;
+    void soundAllowed().then((ok) => alive && !ok && setBlockedKey(ringKey));
     playAlarmChime();
-    if (times <= 1) return;
+    if (times <= 1)
+      return () => {
+        alive = false;
+      };
     let played = 1;
     const id = setInterval(() => {
       playAlarmChime();
       played += 1;
       if (played >= times) clearInterval(id);
     }, CHIME_EVERY_MS);
-    return () => clearInterval(id);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
   }, [ringKey, muted, times]);
+
+  /** 누른 김에 소리 장치를 깨우고 바로 한 번 (남은 회차는 그대로 이어 울린다) */
+  const unblock = () => {
+    void audioContext()?.resume?.().catch(() => {});
+    playAlarmChime();
+    setBlockedKey('');
+  };
 
   if (!isOpen) return null;
 
@@ -57,6 +76,16 @@ export default function EventAlarmPopup({ alarms, onDismiss }: { alarms: Ringing
             </div>
           ))}
         </div>
+        {blocked && !muted && (
+          <button
+            type="button"
+            data-alarm-unmute
+            onClick={unblock}
+            className="block mx-auto mb-3 px-5 py-2.5 text-lg font-black text-slate-900 bg-yellow-300 border-2 border-white rounded-xl hover:bg-yellow-200 cursor-pointer"
+          >
+            🔔 소리 켜기
+          </button>
+        )}
         {!muted && (
           <button
             type="button"
