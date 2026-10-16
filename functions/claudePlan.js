@@ -94,3 +94,17 @@ export function statusFromGithub({ issue, comments = [], runs = null, atMs, nowM
   if (labels.has('claude-working')) return { state: 'working', note: '' };
   return { state: 'sent', note: '' };
 }
+
+/**
+ * 보내도 되는 계정인가 - 정한 메일 목록(쉼표로) 안에 있을 때만 (사용자 결정 10-16 - 세 계정).
+ * 목록은 코드에 적지 않는다: 저장소가 공개라 배포 때 정하는 값(CLAUDE_OWNER_EMAILS, functions/.env - git 무시)으로.
+ * 목록이 비었으면 아무도 보내지 못한다.
+ */
+export function isAllowedEmail(email, list) {
+  const allowed = String(list ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  const me = String(email ?? '').trim().toLowerCase();
+  return me !== '' && allowed.includes(me);
+}

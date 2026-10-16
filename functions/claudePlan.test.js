@@ -56,3 +56,14 @@ test('상태 - 라벨·배포 결과·시간 초과', () => {
   assert.equal(statusFromGithub({ issue: issue([], 'closed') }).state, 'failed');
   assert.equal(statusFromGithub({ issue: issue(['claude-working']), atMs: at, nowMs: at + REQUEST_TIMEOUT_MS + 1 }).state, 'failed');
 });
+
+test('보내도 되는 계정 - 목록 안에서만, 대소문자·띄어쓰기는 보지 않는다', async () => {
+  const { isAllowedEmail } = await import('./claudePlan.js');
+  const list = ' a@x.com, B@x.com ,c@x.com';
+  assert.equal(isAllowedEmail('a@x.com', list), true);
+  assert.equal(isAllowedEmail('b@X.com', list), true);
+  assert.equal(isAllowedEmail('d@x.com', list), false);
+  assert.equal(isAllowedEmail('', list), false);
+  assert.equal(isAllowedEmail(null, list), false);
+  assert.equal(isAllowedEmail('a@x.com', ''), false);
+});
