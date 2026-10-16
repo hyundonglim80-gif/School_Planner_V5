@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**없음 - P0~P12 모두 끝(10-16).** 새 요청(사용 의견·버그)을 기다린다. 새 요청이 오면 6장에 `### P13` 절을 만들어 세션으로 나눈다(P10~P12처럼 코드와 견준 표부터).
+**P13-1 ■2 - 사용자 PC 설정 기다림**(메모로 Claude 요청 - `docs/CLAUDE-REQUEST.md` '처음 한 번 설정'). 코드는 다 올렸다(10-16). 새 요청이 오면 6장에 `### P14` 절을 만든다.
 P12 = 사용 의견 셋째 묶음 4가지(10-16) - 확인 결과와 조각은 6장 `### P12. 사용 의견 ③ 반영` 머리 표. main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다.
 
 ---
@@ -255,6 +255,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-15 | 클라우드 | P10-2 | P10-2 세션 끝 정리 | 단위 2325 · inspect-lessons·seating·evaluations·class·week·month-year·bell-guide·attendance·links·sheets·backup·search-trash 통과 · manual(MATCH 바뀐 주제 11) 통과 · ✎는 재현 안 됨(점검에 셋 더함) · 명렬표 번호 = no-spinner CSS 빠짐 |
 | 2026-10-15 | 클라우드 | P10-3 | P10-3 세션 끝 정리 | 단위 2337 · inspect-notes·memo·week·month-year·search-trash·backup·keep·student-record·links·perf 통과 · manual(MATCH 바뀐 주제 9) 통과 · teacher4 메모 화면(메모 2611) 다시 열기 0.6~1.1초(개발 서버) |
 | 2026-10-15 | 클라우드 | P10-4 | P10-4 세션 끝 정리 | 단위 2351 · inspect-links·progress·notes·memo·search-trash·student-record·lessons·labels·evaluations·week 통과 · manual(MATCH 없이 - 휴지통 탭 수를 고친 뒤 trash·search 다시) 통과 · ■3을 ■2보다 먼저 |
+| 2026-10-16 | 클라우드 | P13-1 | 메모로 Claude 요청 | 단위 2388 · 함수 시험 13 · inspect-claude-request 11 통과 · 함수·워크플로는 GitHub·운영 없이 시험할 수 없어 순수 셈 시험과 모듈 읽기만 - 사용자 설정 뒤 첫 요청으로 확인 |
 | 2026-10-16 | 영-전-3-현동림 PC | P12-1 | P12-1 세션 끝 정리 | 단위 2378 · inspect-forward·mobile·lessons·week·events·push·manual(MATCH 없이) 통과 · 이월 재현: 휴대폰 흉내로 오늘 칸·지난 날 칸·주간 칩 완료는 모두 정상 → V4와 견줘 겹침 규칙이 빠진 것을 찾음 · 휴대폰 월간 칩이 빈 글자로 섰는데 점검이 통과(칸 폭만 쟀다 - 글자도 보게 고침) |
 | 2026-10-16 | 영-전-3-현동림 PC | P11-1 | P11-1 세션 끝 정리 | 단위 2375 · inspect-lessons·week·memo·notes·attach·links·progress 통과 · manual MATCH 없이 통과(MATCH로 일부만 고르면 앞 주제가 열던 화면이 빠져 memo-write·links가 멈춘다 - 앱 버그 아님) · 10-15 ■3 도중 PC가 다시 켜져 에뮬레이터·dev를 다시 켬(JBR Java → V4 seed → V5 seed) · V5 seed에는 teacher 시간표가 없다(inspect-links가 점검 시간표를 심음) |
 | 2026-10-15 | 영-전-3-현동림 PC | P10-5 | P10-5 세션 끝 정리 · P10 단계 끝 | 단위 2368 · P10 단계 점검 28개 MATCH 없이 통과(scroll·notes·memo·attach·links·progress·events·groups·week·month-year·forward·gcal·settings·mobile·lessons·seating·evaluations·class·bell-guide·attendance·sheets·backup·search-trash·keep·student-record·labels·manual·perf - notes·memo·groups는 점검 중 문서를 고친 HMR·겹쳐 돌린 탓에 한 번 틀려 다시 돌려 통과) · perf 다시 열기 1.0초·검색 58~84ms(개발 서버) · 처음에 겹친 P10-4 ■1(클라우드가 먼저 합침)은 버림 · 6e 원인 = '스크롤로 페이지 이동'이 쓰는 칸 휠에도 날짜를 넘김 |
@@ -698,6 +699,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
     앱이 띄우는 OS 알림도 renotify·떨림. 소리 자체가 안 나면 휴대폰 알림 설정(크롬·설치한 앱 알림 소리, 무음·방해 금지) - 설명서·환경설정 안내에 적음. 점검 inspect-push(10초 = 세 번 띄움 - 서비스 워커 안 알림 timestamp로 셈).
   - **4 휴대폰 월간 수업**: V4는 세로 글자가 읽기 어려워 휴대폰 칸에서 뺐다(ROADMAP 15 - 사용자가 맡긴 Claude 권장). V5는 칸에 **교시 둘씩 한 줄** 작은 칩(`lessons/CalendarLessons` `LessonGrid` - 칩 22px라 두 글자 과목이 가로로,
     끝의 빈 교시는 그리지 않음, 교과 모드 '5-2 과학'은 반만 '5-2'). 칩을 누르면 칸을 누른 것(그날 목록) - 칩이 작아 교시를 겨누기 어렵다. 둘째 줄 '수업'을 끄면 칩도 없다.
+
+- **P13 메모로 Claude 요청**(10-16 사용자 요청 - 추가 요금 없음·완전 자동, 보낼 수 있는 계정 셋): 메모에 'Claude요청' 라벨 → 함수가 GitHub 이슈 → Actions에서 Claude(Pro 토큰)가 고침 → lint·테스트·빌드 → PR을 만들고 바로 합침 → 배포.
+  권장안이던 '합치기는 사람이 한 번'은 사용자가 고르지 않았다. 지키는 것: 정한 메일만(목록은 공개 코드가 아니라 배포 값)·개인 공간만·규칙/함수/워크플로 파일은 자동으로 올리지 않음·확인이 하나라도 실패하면 올리지 않음.
+  진행 확인은 새 예약 작업 대신 `v5SendDueAlarms` 안에서(Cloud Scheduler 작업이 늘면 돈이 든다). 처음 만들 때 클라우드 세션 Auto 모드의 자동 검사가 '위험한 자동 에이전트'로 막아 사용자가 모드를 바꾼 뒤 만들었다. 설정·자리 = `docs/CLAUDE-REQUEST.md`.
 
 ---
 
@@ -1540,3 +1545,13 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   **휴대폰 월간 수업 칩**(4 - `CalendarLessons` `LessonGrid`·`MonthGrid`). 설명서 알림·환경설정·월간 · 점검 push(다시 울림)·mobile(월간 칸 칩·글자)·events.
 - [x] ■3 문서(PLAN·DESIGN 5-1·PARITY·CLAUDE.md 5·7장) · 점검 manual(MATCH 없이) · 세션 끝 정리.
 **끝 조건**: 같은 글의 지난 일정은 오늘 칸에 하나만, 끝내면 함께 멈춤 · 수업 '바뀜' · 앱 창이 없을 때 알림이 길이만큼 다시 뜸 · 휴대폰 월간 칸에 과목 칩.
+
+### P13. 메모로 Claude 요청 (2026-10-16)
+
+사용자 요청: 메모를 저장하면 Claude에게 수정이 요청되고 코드 수정·배포가 저절로. 설정과 자리는 `docs/CLAUDE-REQUEST.md`.
+
+### P13-1. 함수·워크플로·메모 카드 표시
+**시작 조건**: 없음.
+- [x] ■1 순수 셈 `functions/claudePlan.js`(시험 7) · 함수 `v5ClaudeRequest`·`checkClaudeRequests`(`v5SendDueAlarms` 안) · 워크플로 `claude-request.yml` · 카드 `ClaudeRequestBadge` · 점검 claude-request(11) · 문서.
+- [ ] ■2 (사용자 - PC) 토큰 둘·비밀값·함수 배포(`docs/CLAUDE-REQUEST.md` 처음 한 번 설정) → 작은 요청으로 써 보기.
+**끝 조건**: 라벨을 붙인 메모 하나가 ✅ 배포됨까지.
