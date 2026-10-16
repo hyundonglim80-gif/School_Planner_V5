@@ -20,6 +20,7 @@ import { useSeatingShortcuts } from '../features/seating/open';
 import { useSearchFocusRunner } from '../features/search/focus';
 import { useTrashAutoEmpty } from '../features/trash/auto';
 import { useGcalAuto } from '../features/gcal/auto';
+import { useClaudeRequestsWatch } from '../data/claudeRequests';
 import { useWeekShortcuts } from '../features/week/prefs';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
@@ -77,6 +78,8 @@ export default function Shell() {
   useTrashAutoEmpty();
   // 구글 캘린더 자동 보내기 (P8-1)
   useGcalAuto();
+  // 메모로 보낸 Claude 요청의 진행 (메모 카드 표시 - 10-16)
+  useClaudeRequestsWatch();
   // 복사한 것 모으기 (왼쪽 📋 클립보드 칸 - 닫혀 있어도 모은다)
   useClipboardCapture();
 

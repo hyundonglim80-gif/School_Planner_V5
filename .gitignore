@@ -26,3 +26,6 @@ tools/report
 .agents/
 .claude/skills/
 skills-lock.json
+
+# 메모 요청 실행에서 Claude가 남기는 요약·커밋 글 (.github/workflows/claude-request.yml - 10-16)
+.claude-request/
