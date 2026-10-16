@@ -79,13 +79,24 @@ try {
   c('라벨 관리에 Claude요청 줄', await waitFor(row, 10000));
   c('🔒 표시, ✕ 없음', (await row.locator(sel('label-locked')).count()) === 1 && (await row.locator(sel('label-delete')).count()) === 0);
   c('이름 칸은 읽기만', (await row.locator(sel('label-name')).getAttribute('readonly')) !== null);
-  // 🤖 요청 단추 (저장으로는 보내지 않는다 - 잠긴 라벨이 붙은 메모에만, 누르면 claudeAskAt 하나)
+  // 🤖 요청 단추 = 메모 수정 칸 아래(삭제 옆) - 저장으로는 보내지 않는다, 잠긴 라벨이 저장된 메모에만, 한 번 보내면 진행 표시만(다시 요청 없음)
   await page.keyboard.press('Escape');
-  const ask = page.locator(`${sel('entry-card', id)} ${sel('entry-claude-ask')}`);
+  const ask = page.locator(sel('note-claude-ask'));
+  const openPanel = async () => {
+    await page.locator(sel('entry-card', id)).click();
+    await waitFor(page.locator(sel('note-panel', 'edit')), 8000);
+  };
+  await openPanel();
   c('라벨이 없는 메모에는 단추가 없다', (await ask.count()) === 0);
   await setDoc(doc(db, 'spaces', sid, 'items', id), { labelIds: [labelId], updatedAt: serverTimestamp() }, { merge: true });
-  c('잠긴 라벨이 붙으면 🤖 요청', await waitFor(ask, 8000));
+  c('잠긴 라벨이 붙으면 수정 칸에 🤖 요청', await waitFor(ask, 8000));
+  c('카드에는 단추가 없다', (await page.locator(`${sel('entry-card', id)} ${sel('note-claude-ask')}`).count()) === 0);
   c('저장만으로는 보내지 않는다 (claudeAskAt 없음)', !(await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt);
+  await page.locator(sel('note-text-input')).press('End');
+  await page.locator(sel('note-text-input')).type(' 더');
+  c('저장하지 않은 고침이 있으면 누를 수 없다', await waitFor(async () => await ask.isDisabled(), 4000));
+  await page.locator(sel('note-save')).click();
+  c('저장하면 누를 수 있다', await waitFor(async () => (await ask.count()) === 1 && (await ask.isEnabled()), 8000));
   dialogs.answer = false;
   await ask.click();
   await page.waitForTimeout(800);
@@ -93,11 +104,12 @@ try {
   dialogs.answer = true;
   await ask.click();
   c('예 = claudeAskAt 적음', await waitFor(async () => typeof (await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt === 'number', 8000));
-  c('메모 칸이 열리지 않는다 (카드 누르기와 따로)', (await page.locator(sel('note-panel')).count()) === 0);
-  await admin.set(path, { state: 'working', issue: 9999, url, note: '' });
-  c('도는 동안은 단추를 숨긴다', await waitFor(async () => (await ask.count()) === 0, 8000));
+  c('보낸 뒤 단추 대신 🤖 요청함', await waitFor(async () => (await ask.count()) === 0 && (await page.locator(sel('note-claude-asked')).count()) === 1, 8000));
   await admin.set(path, { state: 'failed', issue: 9999, url, note: '' });
-  c('끝나면 🤖 다시 요청', await waitFor(async () => ((await ask.textContent().catch(() => '')) ?? '').includes('다시 요청'), 8000));
+  c('끝나도 다시 요청 단추는 없다 - 수정 칸에 진행 표시', await waitFor(async () => (await ask.count()) === 0 && (await page.locator(`${sel('note-panel')} ${sel('entry-claude', 'failed')}`).count()) === 1, 8000));
+  c('카드에는 진행 표시 그대로', (await page.locator(`${sel('entry-card', id)} ${sel('entry-claude', 'failed')}`).count()) === 1);
+  dialogs.answer = true;
+  await page.keyboard.press('Escape');
   await admin.remove(path);
   await page.evaluate(() => window.sp5.openWindow('labels', { tab: 'note' }));
   await waitFor(row, 10000);

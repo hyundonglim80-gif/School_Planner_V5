@@ -6,7 +6,6 @@ import { checkCount } from '../../domain/checkLines';
 import { previewLine } from '../../domain/entryCollapse';
 import { labelColor } from '../../domain/labels';
 import type { ItemDoc } from '../events/eventOps';
-import ClaudeAskButton from '../notes/ClaudeAskButton';
 import ClaudeRequestBadge from '../notes/ClaudeRequestBadge';
 import EntryBody from '../notes/EntryBody';
 
@@ -107,7 +106,6 @@ export default function MemoListRow(props: Props) {
           })}
         </span>
         <ClaudeRequestBadge itemId={item.id} />
-        <ClaudeAskButton item={item} compact />
         {dates.length > 0 ? (
           <button
             type="button"
