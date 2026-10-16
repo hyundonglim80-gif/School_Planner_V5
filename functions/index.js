@@ -3,7 +3,7 @@
 //                         앱의 어느 저장 길로 써도(하루·주간·여러 개 고르기·끌어 옮기기·가져오기 …) 여기서 한 번에 잡힌다.
 //   2) v5SendDueAlarms  - 매분 pendingAt <= 지금인 칸을 골라 받는 사람의 기기 토큰(spaces/u_{uid}/pushTokens)으로 FCM을 보낸다.
 //   3) v5CleanupAlarms  - 하루 한 번 30일 지난 칸을 지운다.
-//   4) v5ClaudeRequest  - 개인 공간 메모에 'Claude요청' 라벨을 붙이면 GitHub 이슈를 만든다(10-16 - Claude가 고치고 배포, claudePlan.js·docs/CLAUDE-REQUEST.md).
+//   4) v5ClaudeRequest  - 'Claude요청' 라벨 메모의 🤖 요청 단추(claudeAskAt)를 누르면 줄에 세워 GitHub 이슈를 만든다(10-16 - Claude가 고치고 배포, claudePlan.js·docs/CLAUDE-REQUEST.md).
 //                         한 번에 하나(앞 요청이 합쳐지거나 끝나야 다음) · 진행·다음 보내기·정한 계정의 'Claude요청' 라벨 챙기기는
 //                         v5SendDueAlarms가 매분 함께 한다(예약 작업을 늘리지 않는다 - 늘리면 돈이 든다).
 // 계산은 alarmPlan.js(순수 함수, alarmPlan.test.js). v5alarms는 규칙상 앱이 못 읽고 못 쓴다(이 함수들만, 관리자 권한).
@@ -30,7 +30,7 @@ import {
   isClaudeLabelName,
   issueOf,
   mergeShaOf,
-  newLabelIds,
+  askedNow,
   nextToDispatch,
   planClaudeLabel,
   statusFromGithub,
@@ -182,10 +182,9 @@ export const v5ClaudeRequest = onDocumentWritten({ document: 'spaces/{sid}/items
   const { sid, itemId } = event.params;
   const before = event.data?.before?.exists ? event.data.before.data() : null;
   const after = event.data?.after?.exists ? event.data.after.data() : null;
-  // 거의 모든 저장은 여기서 끝난다 - 라벨을 새로 붙인 개인 공간 메모만 (읽기 없음)
-  const added = newLabelIds(sid, before, after);
-  if (added.length === 0) return;
-  if (!(await hasClaudeLabel(sid, added))) return;
+  // 거의 모든 저장은 여기서 끝난다 - '🤖 요청'을 누른 개인 공간 메모만 (읽기 없음 - 10-16: 저장으로는 보내지 않는다)
+  if (!askedNow(sid, before, after)) return;
+  if (!(await hasClaudeLabel(sid, after.labelIds))) return;
   // 이 앱을 쓰는 다른 선생님은 보낼 수 없다 - 정한 계정만 (사용자 결정 10-16)
   const user = await getAuth()
     .getUser(sid.slice(2))

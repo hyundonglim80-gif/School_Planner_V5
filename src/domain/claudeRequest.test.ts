@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { claudeBadge, readClaudeRequest } from './claudeRequest';
+import { claudeBadge, isClaudeRequestOpen, readClaudeRequest } from './claudeRequest';
 import { compareOrder, orderBetween } from './order';
 
 describe('Claude 요청 표시', () => {
@@ -13,6 +13,11 @@ describe('Claude 요청 표시', () => {
     expect(readClaudeRequest({ state: 'odd' })).toBeNull();
     expect(readClaudeRequest(null)).toBeNull();
     expect(readClaudeRequest({ state: 'sent', url: 'javascript:alert(1)' })?.url).toBeNull();
+  });
+
+  it('줄에 있거나 도는 동안은 열림 - 🤖 요청 단추를 숨긴다', () => {
+    for (const s of ['queued', 'sending', 'sent', 'working', 'merged'] as const) expect(isClaudeRequestOpen(s)).toBe(true);
+    for (const s of ['deployed', 'nochange', 'failed'] as const) expect(isClaudeRequestOpen(s)).toBe(false);
   });
 
   it('상태마다 글과 색', () => {

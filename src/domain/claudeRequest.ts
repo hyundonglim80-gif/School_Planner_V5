@@ -12,6 +12,11 @@ export interface ClaudeRequest {
 
 const STATES: readonly ClaudeRequestState[] = ['queued', 'sending', 'sent', 'working', 'merged', 'deployed', 'nochange', 'failed'];
 
+/** 줄에 있거나 도는 중 - '🤖 요청' 단추를 숨긴다 (합친 뒤 배포 중도 - 끝나면 '다시 요청') */
+export function isClaudeRequestOpen(state: ClaudeRequestState): boolean {
+  return state !== 'deployed' && state !== 'nochange' && state !== 'failed';
+}
+
 /** 서버 문서 → 표시할 것 (모양이 틀리면 null) */
 export function readClaudeRequest(raw: unknown): ClaudeRequest | null {
   if (!raw || typeof raw !== 'object') return null;

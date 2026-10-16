@@ -1,9 +1,10 @@
 # 메모로 Claude에게 고칠 것 보내기 (10-16 사용자 요청 - 완전 자동)
 
-앱 메모에 **`Claude요청`** 라벨을 붙여 저장하면, Claude가 코드를 고치고 확인한 뒤 **사람 확인 없이 합치고 실제 화면에 배포**한다.
+앱 메모에 **`Claude요청`** 라벨을 붙여 저장한 뒤 카드의 **🤖 요청**을 누르면, Claude가 코드를 고치고 확인한 뒤 **사람 확인 없이 합치고 실제 화면에 배포**한다.
+저장만으로는 보내지 않는다(10-16 사용자 요청 - 보낼 때를 사용자가 정한다).
 
 ```
-메모 저장(라벨 Claude요청) → 함수 v5ClaudeRequest → GitHub 이슈(라벨 claude-request)
+🤖 요청(메모의 claudeAskAt) → 함수 v5ClaudeRequest → 줄 → GitHub 이슈(라벨 claude-request)
   → .github/workflows/claude-request.yml: Claude가 고침 → lint·테스트·빌드 → PR 만들고 바로 합침
   → main CI → firebase-hosting-merge.yml 배포 → 메모 카드 ✅ 배포됨
 ```
@@ -12,7 +13,8 @@
 - **라벨은 저절로**(10-16): 정한 계정에는 메모 라벨 `Claude요청`이 저절로 생긴다(한 시간 안 - 매분 함수가 한 시간에 한 번 챙긴다). 라벨 관리에서 🔒 - 이름을 바꾸거나 지울 수 없고, 빈 라벨 정리에서도 빠진다. 다른 길로 지워져도 한 시간 안에 되살아난다.
 - **한 번에 하나**(10-16): 요청이 도는 동안(보냄·고치는 중) 들어온 요청은 🤖 차례 기다림 - 앞 요청이 합쳐지거나(배포 중) 끝나면 먼저 기다린 것부터 차례대로 보낸다(1분 안).
   보낼 때의 메모 글로 보낸다(기다리는 사이 고친 글이 간다). 기다리는 사이 메모를 지우거나 라벨을 떼면 보내지 않는다(🤖 바꾼 것 없음).
-- 같은 메모를 다시 보내려면 라벨을 떼었다 다시 붙여 저장한다(같은 메모를 고쳐 저장할 때마다 보내지 않는다).
+- **🤖 요청 단추**: 잠긴 `Claude요청` 라벨(정한 계정에만 생긴다)이 붙은 메모의 카드·메모 화면 목록 줄에. 누르면 묻고(바로 배포된다는 안내) 보낸다.
+  줄에 있거나 도는 동안은 숨고 진행 표시만, 끝나면 **🤖 다시 요청**(고친 메모를 다시 보낼 때).
 - 메모 첫 줄에 `#Claude요청`이라고 써도 라벨이 붙는다.
 
 ## 지키는 것
@@ -44,7 +46,7 @@
    $env:FUNCTIONS_DISCOVERY_TIMEOUT=60; npx.cmd firebase deploy --only functions:v5 --project schoolplannerv3
    ```
    `CLAUDE_OWNER_EMAILS`를 물으면 보낼 수 있는 메일을 쉼표로 한 줄에 넣는다.
-5. **써 보기** - 라벨 `Claude요청`은 함수가 한 시간 안에 만든다(바로 쓰려면 메모 첫 줄에 `#Claude요청`). 그 라벨을 작은 요청(예: "설명서 '메모' 주제 첫 줄에 '메모는 날짜 없이도 쓸 수 있습니다'를 더해 줘") 메모에 붙여 저장.
+5. **써 보기** - 라벨 `Claude요청`은 함수가 한 시간 안에 만든다(🔒가 붙어야 🤖 요청 단추가 나온다). 그 라벨을 작은 요청(예: "설명서 '메모' 주제 첫 줄에 '메모는 날짜 없이도 쓸 수 있습니다'를 더해 줘") 메모에 붙여 저장한 뒤 카드의 🤖 요청.
 
 토큰이 끝나면(1년) 1~3을 다시 하고, 4는 `secrets:set`만 다시 한다(그 뒤 함수가 새 값을 읽게 같은 배포 명령을 한 번 더).
 
@@ -59,5 +61,6 @@
 `functions/claudePlan.js`(순수 - 라벨 이름·새로 붙은 라벨·이슈 글·계정·상태 셈·한 번에 하나 `nextToDispatch`·라벨 챙기기 `planClaudeLabel`, `claudePlan.test.js`) ·
 `functions/index.js`(`v5ClaudeRequest` = 줄에 세우기 · `dispatchNext` = 트랜잭션으로 하나만 보내기 · `checkClaudeRequests` = 진행 → `ensureClaudeLabels`(한 시간에 한 번, 표시 `v5claudeMeta/labels`) → 다음 보내기, 함수 칸 `v5claude/{itemId}` - 규칙에 match 없음 = 앱은 못 읽음) ·
 라벨 표시 `labels.system = 'claudeRequest'`(라벨 관리 `[data-label-locked]` - 이름 읽기만·✕ 없음·빈 라벨 정리에서 뺌) ·
+🤖 요청 `notes/ClaudeAskButton`(`[data-entry-claude-ask]` - 카드·`memo/MemoListRow`) → `notes/actions.askClaude`(메모 `claudeAskAt` 하나) → 함수 `askedNow` ·
 앱이 보는 칸 `spaces/{sid}/claudeRequests/{itemId}`(`data/claudeRequests` Shell에 하나 · store `data/claudeRequestStore` · 순수 `domain/claudeRequest` · 카드 `notes/ClaudeRequestBadge` `[data-entry-claude=상태]`) ·
 워크플로 `.github/workflows/claude-request.yml` · 점검 `tools/inspect-claude-request.mjs`(카드 표시 - 함수·GitHub는 흉내 내지 않는다).
