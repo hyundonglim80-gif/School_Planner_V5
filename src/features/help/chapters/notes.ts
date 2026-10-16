@@ -6,7 +6,7 @@ const notes: HelpCategory = {
   id: 'notes',
   icon: '📝',
   title: '메모',
-  summary: '메모 하나에 날짜 링크 여러 개 - 하루 메모 칸·메모 화면, 구글 Keep 가져오기',
+  summary: '메모 하나에 날짜 링크 여러 개 - 하루 메모 칸·메모 화면, 구글 Keep 가져오기. 메모 첫 줄에 #라벨을 쓰면 그 라벨이 붙습니다.',
   topics: [
     {
       id: 'journal',
