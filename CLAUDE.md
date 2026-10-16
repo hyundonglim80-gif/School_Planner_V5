@@ -26,8 +26,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P13-1(10-16)** 메모로 Claude 요청(라벨 'Claude요청' → 이슈 → Actions에서 고치고 바로 합쳐 배포) - 코드는 main에. **부탁: PC 설정**(토큰 둘·비밀값·함수 배포 - `docs/CLAUDE-REQUEST.md`).
-- '이어서' = P13-1 ■2(사용자 설정 뒤 첫 요청 확인). P12 부탁도 그대로: 휴대폰 설치 앱은 완전히 닫았다 다시 열기.
+- **P13-1(10-16)** 메모로 Claude 요청 - 첫 요청 #36이 배포까지 됨. ■3 라벨 저절로(🔒)·한 번에 하나. **부탁: PC에서 함수 다시 배포**(`docs/CLAUDE-REQUEST.md` 4의 deploy 한 줄).
+- '이어서' = P13-1 ■4(함수 다시 배포 뒤 세 계정에 🔒 라벨·둘을 잇달아 보내 차례대로인지). P12 부탁도 그대로: 휴대폰 설치 앱은 완전히 닫았다 다시 열기.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -195,6 +195,7 @@
 - **이월은 같은 글을 오늘 칸에 하나만**(V4 겹침 규칙 - P12-1 사용 의견 '완료했는데 이월이 된다'): 오늘 날짜에 같은 글이 있으면(끝낸 것도) 지난 것은 따라오지 않고, 같은 글끼리는 가장 이른 것 하나.
 - **메모로 Claude 요청**(P13 10-16 사용자 결정 - 추가 요금 없음·**완전 자동**): 개인 공간 메모에 라벨 'Claude요청'을 새로 붙여 저장 → Claude가 고치고 확인을 통과하면 사람 확인 없이 합쳐 배포, 카드에 🤖 진행.
   보낼 수 있는 계정은 배포 값 `CLAUDE_OWNER_EMAILS`의 셋(공개 저장소라 코드에 적지 않는다) · 규칙·함수·워크플로 파일은 자동으로 올리지 않는다 · 요청 글은 공개 이슈. `docs/CLAUDE-REQUEST.md`.
+  그 셋에는 라벨 'Claude요청'이 저절로(함수가 만들고 되살린다 - 라벨 관리 🔒, 이름·지우기·빈 라벨 정리 막음) · **한 번에 하나**: 도는 동안 온 요청은 '🤖 차례 기다림' → 앞 것이 합쳐지면 먼저 온 것부터.
 - 일정 라벨 속성 '구글 캘린더' - 켠 라벨의 일정은 저장·완료·옮기기·지우기를 구글 캘린더에도. 저장할 때 로그인이 없으면 로그인 창을 묻는다.
 - 교사 유형은 시간표 창에서 고른다((초등) 담임 / 전담 / (중등) 전담 + 담임). 전담은 담임 도구(출석부·알림장)를 숨긴다. 수업 칸 글자는 '5-2 과학'.
 - 명렬표는 학급 화면 안(⋮에 없다). 수업 종은 하루 '수업' 옆. 링크 연결 창은 저장하면 닫힌다.
@@ -357,9 +358,10 @@
 - **서버 푸시 알림**(P8-2): 함수 `functions/`(codebase `v5`, Node 22, 서울 - `index.js` `v5AlarmIndex`(items 쓰기 → `v5alarms/{itemId}`)·`v5SendDueAlarms`(매분)·`v5CleanupAlarms`, 순수 `alarmPlan.js` + `node --test` = `npm run test:functions`, `firebase.json` functions) ·
   `data/push.ts`(이 기기 FCM 토큰 `spaces/u_{uid}/pushTokens/{해시}` - `enablePush`·`disablePush`·`refreshPushToken`·`forgetPushOnLogout`, 이 기기 `sp5-push` · 알림 소리 길이를 서비스 워커에 `shareAlarmSound` = 캐시 `sp5-prefs` - P12-1) · 환경설정 '알림' 탭 `settings/NotifyTab.tsx`(알림 소리 `[data-choice=alarmSound:…]` · `[data-push-alarm|push-state|push-on|push-off]`) ·
   `public/sw.js` push(보는 창이면 'sp5-event-alarm' 메시지, 아니면 OS 알림 - 알림 소리 길이만큼 3초마다 다시·최대 2분 `alarmRepeatTimes`, P12-1)·notificationclick · `EventAlarms`가 그 메시지로 울린다. 점검 `tools/inspect-push.mjs`(13 - CDP `ServiceWorker.deliverPushMessage`).
-- **메모로 Claude 요청**(P13 - `docs/CLAUDE-REQUEST.md`): 함수 `v5ClaudeRequest`(items 쓰기 → 라벨 'Claude요청'을 새로 붙인 개인 공간 메모 → 정한 메일만 → GitHub 이슈, 비밀값 `CLAUDE_GITHUB_TOKEN`)·
-  `checkClaudeRequests`(`v5SendDueAlarms` 안 - 이슈 라벨·배포 실행을 읽어 상태), 순수 `functions/claudePlan.js`, 함수 칸 `v5claude/{itemId}` · 앱 `spaces/{sid}/claudeRequests/{itemId}`(`data/claudeRequests` Shell·store `claudeRequestStore`·`domain/claudeRequest`·카드 `notes/ClaudeRequestBadge` `[data-entry-claude=상태]`) ·
-  워크플로 `.github/workflows/claude-request.yml`(라벨 claude-request → Claude(`CLAUDE_CODE_OAUTH_TOKEN`) → 확인 → PR·합침(`CLAUDE_REQUEST_GITHUB_TOKEN` - 그래야 main CI·배포가 돈다) → 라벨 claude-merged|nochange|failed). 점검 `tools/inspect-claude-request.mjs`(11).
+- **메모로 Claude 요청**(P13 - `docs/CLAUDE-REQUEST.md`): 함수 `v5ClaudeRequest`(items 쓰기 → 라벨 'Claude요청'을 새로 붙인 개인 공간 메모 → 정한 메일만 → 줄 `queued`)·`dispatchNext`(트랜잭션 - 도는 것이 없을 때 하나만 GitHub 이슈, 비밀값 `CLAUDE_GITHUB_TOKEN`)·
+  `checkClaudeRequests`(`v5SendDueAlarms` 안 - 이슈 라벨·배포 실행을 읽어 상태 → `ensureClaudeLabels` 한 시간에 한 번(`v5claudeMeta/labels`, 라벨 `system: 'claudeRequest'` - 라벨 관리 `[data-label-locked]`) → 다음 보내기), 순수 `functions/claudePlan.js`, 함수 칸 `v5claude/{itemId}` · 앱 `spaces/{sid}/claudeRequests/{itemId}`(`data/claudeRequests` Shell·store `claudeRequestStore`·`domain/claudeRequest`·카드 `notes/ClaudeRequestBadge` `[data-entry-claude=상태]`) ·
+  워크플로 `.github/workflows/claude-request.yml`(라벨 claude-request → Claude(`CLAUDE_CODE_OAUTH_TOKEN`) → 확인 → PR·합침(`CLAUDE_REQUEST_GITHUB_TOKEN` - 그래야 main CI·배포가 돈다) → 라벨 claude-merged|nochange|failed). 점검 `tools/inspect-claude-request.mjs`(16 - 카드 표시·🔒 라벨).
+  **함수를 손으로 돌려 보기**: `FIRESTORE_EMULATOR_HOST`·`FIREBASE_AUTH_EMULATOR_HOST`·`CLAUDE_OWNER_EMAILS`·`CLAUDE_GITHUB_TOKEN`을 env로, `globalThis.fetch`를 가짜 GitHub로 두고 `functions/index.js`를 import → `v5ClaudeRequest.run(event)`·`v5SendDueAlarms.run({})`(P13 ■3 - 함수 에뮬레이터 없이).
 - **백업 · 가져오기 · 보내기**(P8-3 - 창 `backup` `{ tab: backup|import|send|tidy }` = ⋮ 자료, `features/backup/`): `BackupWindow`(`[data-backup-window=탭|backup-tab-btn|backup-panel]`) · `open.ts`(`openBackup`)·`shortcuts.ts`(calendar → '보내기') ·
   '백업' `BackupTab`(JSON = 순수 `domain/backup.ts` + `data/backup.ts` 서버 읽기·되살리기 없거나 지운 것만, CSV = V4 모양 `[data-backup-*|restore-*]`) · `AutoBackupSection`·`auto.ts`(드라이브 자동 백업 `useAutoBackupRunner` - PC·토큰 있을 때만, `common.autoBackup`·`settings/backupLog` `data/backupLog.ts`, `data/google/driveBackup.ts`, 순수 `domain/autoBackup.ts`)·`AutoBackupBanner`(Shell) ·
   '가져오기' `V4ImportSection` + `KeepImportSection`·`keep.ts`(순수 `domain/keepImport.ts`, 백업 탭에 넣은 Keep 파일은 `useKeepInbox`로) · '보내기' `gcal/CalendarSyncSection` + `SheetsSection`·`sheets.ts`(V5 시트 파일 `settings/sheets`, 순수 `domain/sheets.ts`, `data/google/sheets.ts`, 명렬표 '📊 시트' `class/rosterSheet.ts`) ·

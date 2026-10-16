@@ -8,7 +8,10 @@
   → main CI → firebase-hosting-merge.yml 배포 → 메모 카드 ✅ 배포됨
 ```
 
-- 진행 표시(메모 카드): 🤖 보냄 → 🤖 고치는 중 → 🤖 배포 중 → ✅ 배포됨 / ❌ 실패 / 🤖 바꾼 것 없음. 누르면 GitHub 이슈(결과 글). 보통 10~30분.
+- 진행 표시(메모 카드): (🤖 차례 기다림) → 🤖 보냄 → 🤖 고치는 중 → 🤖 배포 중 → ✅ 배포됨 / ❌ 실패 / 🤖 바꾼 것 없음. 누르면 GitHub 이슈(결과 글). 보통 10~30분.
+- **라벨은 저절로**(10-16): 정한 계정에는 메모 라벨 `Claude요청`이 저절로 생긴다(한 시간 안 - 매분 함수가 한 시간에 한 번 챙긴다). 라벨 관리에서 🔒 - 이름을 바꾸거나 지울 수 없고, 빈 라벨 정리에서도 빠진다. 다른 길로 지워져도 한 시간 안에 되살아난다.
+- **한 번에 하나**(10-16): 요청이 도는 동안(보냄·고치는 중) 들어온 요청은 🤖 차례 기다림 - 앞 요청이 합쳐지거나(배포 중) 끝나면 먼저 기다린 것부터 차례대로 보낸다(1분 안).
+  보낼 때의 메모 글로 보낸다(기다리는 사이 고친 글이 간다). 기다리는 사이 메모를 지우거나 라벨을 떼면 보내지 않는다(🤖 바꾼 것 없음).
 - 같은 메모를 다시 보내려면 라벨을 떼었다 다시 붙여 저장한다(같은 메모를 고쳐 저장할 때마다 보내지 않는다).
 - 메모 첫 줄에 `#Claude요청`이라고 써도 라벨이 붙는다.
 
@@ -20,7 +23,7 @@
 - **자동으로 올리지 않는 파일**: `firestore.rules`·`functions/`·`.github/`·`firebase.json`·`.firebaserc` - PC에서 배포해야 해서. 고치면 실패로 끝나고 까닭을 남긴다.
 - **확인**: CI와 같은 것(lint·단위 테스트·함수 시험·빌드). 크롬 점검·에뮬레이터는 돌리지 않는다 - 하나라도 실패하면 올리지 않는다.
 - **돈**: 추가 요금 없음 - Claude는 Pro 구독 토큰(사용 한도를 함께 쓴다), Actions는 공개 저장소라 무료, 진행 확인은 이미 매분 도는 `v5SendDueAlarms` 안에서(예약 작업을 늘리지 않는다).
-- **한 번에 하나**: 워크플로 `concurrency`. 셋째 요청이 기다리던 둘째를 밀어내면 그 요청은 3시간 뒤 '실패(시간 초과)' - 라벨을 다시 붙인다.
+- **한 번에 하나**: 함수가 줄을 세워 앞 요청이 도는 동안 이슈를 만들지 않는다(워크플로 `concurrency`는 덧댄 것 - 이슈가 하나씩 오므로 밀려나는 일이 없다).
 
 ## 처음 한 번 설정 (PC)
 
@@ -41,7 +44,7 @@
    $env:FUNCTIONS_DISCOVERY_TIMEOUT=60; npx.cmd firebase deploy --only functions:v5 --project schoolplannerv3
    ```
    `CLAUDE_OWNER_EMAILS`를 물으면 보낼 수 있는 메일을 쉼표로 한 줄에 넣는다.
-5. **써 보기** - 메모 화면에서 라벨 `Claude요청`을 만들고, 작은 요청(예: "설명서 '메모' 주제 첫 줄에 '메모는 날짜 없이도 쓸 수 있습니다'를 더해 줘") 메모에 붙여 저장.
+5. **써 보기** - 라벨 `Claude요청`은 함수가 한 시간 안에 만든다(바로 쓰려면 메모 첫 줄에 `#Claude요청`). 그 라벨을 작은 요청(예: "설명서 '메모' 주제 첫 줄에 '메모는 날짜 없이도 쓸 수 있습니다'를 더해 줘") 메모에 붙여 저장.
 
 토큰이 끝나면(1년) 1~3을 다시 하고, 4는 `secrets:set`만 다시 한다(그 뒤 함수가 새 값을 읽게 같은 배포 명령을 한 번 더).
 
@@ -53,6 +56,8 @@
 
 ## 자리
 
-`functions/claudePlan.js`(순수 - 라벨 이름·새로 붙은 라벨·이슈 글·계정·상태 셈, `claudePlan.test.js`) · `functions/index.js`(`v5ClaudeRequest`·`checkClaudeRequests`, 함수 칸 `v5claude/{itemId}` - 규칙에 match 없음 = 앱은 못 읽음) ·
+`functions/claudePlan.js`(순수 - 라벨 이름·새로 붙은 라벨·이슈 글·계정·상태 셈·한 번에 하나 `nextToDispatch`·라벨 챙기기 `planClaudeLabel`, `claudePlan.test.js`) ·
+`functions/index.js`(`v5ClaudeRequest` = 줄에 세우기 · `dispatchNext` = 트랜잭션으로 하나만 보내기 · `checkClaudeRequests` = 진행 → `ensureClaudeLabels`(한 시간에 한 번, 표시 `v5claudeMeta/labels`) → 다음 보내기, 함수 칸 `v5claude/{itemId}` - 규칙에 match 없음 = 앱은 못 읽음) ·
+라벨 표시 `labels.system = 'claudeRequest'`(라벨 관리 `[data-label-locked]` - 이름 읽기만·✕ 없음·빈 라벨 정리에서 뺌) ·
 앱이 보는 칸 `spaces/{sid}/claudeRequests/{itemId}`(`data/claudeRequests` Shell에 하나 · store `data/claudeRequestStore` · 순수 `domain/claudeRequest` · 카드 `notes/ClaudeRequestBadge` `[data-entry-claude=상태]`) ·
 워크플로 `.github/workflows/claude-request.yml` · 점검 `tools/inspect-claude-request.mjs`(카드 표시 - 함수·GitHub는 흉내 내지 않는다).

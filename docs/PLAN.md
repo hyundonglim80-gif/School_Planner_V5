@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P13-1 ■2 - 사용자 PC 설정 기다림**(메모로 Claude 요청 - `docs/CLAUDE-REQUEST.md` '처음 한 번 설정'). 코드는 다 올렸다(10-16). 새 요청이 오면 6장에 `### P14` 절을 만든다.
+**P13-1 ■4 - 사용자 PC에서 함수 다시 배포 기다림**(■3 라벨 저절로·한 번에 하나 - `docs/CLAUDE-REQUEST.md`). 첫 요청은 ■2에서 배포까지 됐다(10-16). 새 요청이 오면 6장에 `### P14` 절을 만든다.
 P12 = 사용 의견 셋째 묶음 4가지(10-16) - 확인 결과와 조각은 6장 `### P12. 사용 의견 ③ 반영` 머리 표. main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다.
 
 ---
@@ -255,6 +255,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-15 | 클라우드 | P10-2 | P10-2 세션 끝 정리 | 단위 2325 · inspect-lessons·seating·evaluations·class·week·month-year·bell-guide·attendance·links·sheets·backup·search-trash 통과 · manual(MATCH 바뀐 주제 11) 통과 · ✎는 재현 안 됨(점검에 셋 더함) · 명렬표 번호 = no-spinner CSS 빠짐 |
 | 2026-10-15 | 클라우드 | P10-3 | P10-3 세션 끝 정리 | 단위 2337 · inspect-notes·memo·week·month-year·search-trash·backup·keep·student-record·links·perf 통과 · manual(MATCH 바뀐 주제 9) 통과 · teacher4 메모 화면(메모 2611) 다시 열기 0.6~1.1초(개발 서버) |
 | 2026-10-15 | 클라우드 | P10-4 | P10-4 세션 끝 정리 | 단위 2351 · inspect-links·progress·notes·memo·search-trash·student-record·lessons·labels·evaluations·week 통과 · manual(MATCH 없이 - 휴지통 탭 수를 고친 뒤 trash·search 다시) 통과 · ■3을 ■2보다 먼저 |
+| 2026-10-16 | 클라우드 | P13-1 ■3 | 라벨 저절로·한 번에 하나 | 단위 2389 · 함수 시험 15 · 함수 손 실행(에뮬레이터 + 가짜 GitHub) 통과 · inspect-claude-request 16·labels 통과 · 첫 요청 #36 → #37 합침·배포를 사용자가 확인 |
 | 2026-10-16 | 클라우드 | P13-1 | 메모로 Claude 요청 | 단위 2388 · 함수 시험 13 · inspect-claude-request 11 통과 · 함수·워크플로는 GitHub·운영 없이 시험할 수 없어 순수 셈 시험과 모듈 읽기만 - 사용자 설정 뒤 첫 요청으로 확인 |
 | 2026-10-16 | 영-전-3-현동림 PC | P12-1 | P12-1 세션 끝 정리 | 단위 2378 · inspect-forward·mobile·lessons·week·events·push·manual(MATCH 없이) 통과 · 이월 재현: 휴대폰 흉내로 오늘 칸·지난 날 칸·주간 칩 완료는 모두 정상 → V4와 견줘 겹침 규칙이 빠진 것을 찾음 · 휴대폰 월간 칩이 빈 글자로 섰는데 점검이 통과(칸 폭만 쟀다 - 글자도 보게 고침) |
 | 2026-10-16 | 영-전-3-현동림 PC | P11-1 | P11-1 세션 끝 정리 | 단위 2375 · inspect-lessons·week·memo·notes·attach·links·progress 통과 · manual MATCH 없이 통과(MATCH로 일부만 고르면 앞 주제가 열던 화면이 빠져 memo-write·links가 멈춘다 - 앱 버그 아님) · 10-15 ■3 도중 PC가 다시 켜져 에뮬레이터·dev를 다시 켬(JBR Java → V4 seed → V5 seed) · V5 seed에는 teacher 시간표가 없다(inspect-links가 점검 시간표를 심음) |
@@ -702,6 +703,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 
 - **P13 메모로 Claude 요청**(10-16 사용자 요청 - 추가 요금 없음·완전 자동, 보낼 수 있는 계정 셋): 메모에 'Claude요청' 라벨 → 함수가 GitHub 이슈 → Actions에서 Claude(Pro 토큰)가 고침 → lint·테스트·빌드 → PR을 만들고 바로 합침 → 배포.
   권장안이던 '합치기는 사람이 한 번'은 사용자가 고르지 않았다. 지키는 것: 정한 메일만(목록은 공개 코드가 아니라 배포 값)·개인 공간만·규칙/함수/워크플로 파일은 자동으로 올리지 않음·확인이 하나라도 실패하면 올리지 않음.
+  **■3(10-16 사용자 질문 '요청이 도는 동안 또 넣으면?')**: 처음 판은 워크플로 `concurrency`에만 기대 셋째 요청이 기다리던 둘째를 밀어냈다(GitHub는 기다림을 하나만 둔다) → 함수가 줄을 세워 하나씩 이슈를 만든다.
+  앞 요청이 '합침'이면 다음을 보낸다(배포는 hosting-live가 마지막 것만 - 둘째 합침이 첫째 배포를 취소해도 둘째 배포에 함께 올라가고 statusFromGithub가 cancelled = 배포됨으로 본다).
+  'Claude요청' 라벨은 메일을 앱이 모르므로(공개 코드에 적지 않는다) 함수가 만든다 - 표시 `system`으로 앱이 잠근다.
   진행 확인은 새 예약 작업 대신 `v5SendDueAlarms` 안에서(Cloud Scheduler 작업이 늘면 돈이 든다). 처음 만들 때 클라우드 세션 Auto 모드의 자동 검사가 '위험한 자동 에이전트'로 막아 사용자가 모드를 바꾼 뒤 만들었다. 설정·자리 = `docs/CLAUDE-REQUEST.md`.
 
 ---
@@ -1553,5 +1557,8 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 ### P13-1. 함수·워크플로·메모 카드 표시
 **시작 조건**: 없음.
 - [x] ■1 순수 셈 `functions/claudePlan.js`(시험 7) · 함수 `v5ClaudeRequest`·`checkClaudeRequests`(`v5SendDueAlarms` 안) · 워크플로 `claude-request.yml` · 카드 `ClaudeRequestBadge` · 점검 claude-request(11) · 문서.
-- [ ] ■2 (사용자 - PC) 토큰 둘·비밀값·함수 배포(`docs/CLAUDE-REQUEST.md` 처음 한 번 설정) → 작은 요청으로 써 보기.
-**끝 조건**: 라벨을 붙인 메모 하나가 ✅ 배포됨까지.
+- [x] ■2 (사용자 - PC) 토큰 둘·비밀값·함수 배포 → 첫 요청 #36이 고쳐져 #37로 합쳐지고 배포됨(10-16).
+- [x] ■3 (사용자 요청 10-16) 정한 계정에 'Claude요청' 라벨을 저절로·지우지 못하게(`ensureClaudeLabels`·`labels.system`·라벨 관리 🔒) · **한 번에 하나**(줄 `queued` → `dispatchNext` 트랜잭션, 🤖 차례 기다림) ·
+  함수를 에뮬레이터에서 손으로 돌려 봄(가짜 GitHub - 라벨 만들기·되살리기·셋을 잇달아 → 하나씩·보낼 때의 글·라벨을 떼면 보내지 않음) · 점검 claude-request(16)·labels.
+- [ ] ■4 (사용자 - PC) 함수 다시 배포(■3 - 줄 세우기·라벨 챙기기는 함수에 있다).
+**끝 조건**: 라벨을 붙인 메모 하나가 ✅ 배포됨까지(■2에서 됨) · 세 계정에 🔒 라벨 · 둘을 잇달아 보내면 차례대로.

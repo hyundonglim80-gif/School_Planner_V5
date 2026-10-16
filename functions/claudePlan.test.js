@@ -67,3 +67,26 @@ test('보내도 되는 계정 - 목록 안에서만, 대소문자·띄어쓰기�
   assert.equal(isAllowedEmail(null, list), false);
   assert.equal(isAllowedEmail('a@x.com', ''), false);
 });
+
+test('한 번에 하나 - 도는 것이 있으면 기다리고, 없으면 가장 먼저 기다린 것', async () => {
+  const { nextToDispatch } = await import('./claudePlan.js');
+  assert.equal(nextToDispatch([]), null);
+  assert.equal(nextToDispatch([{ id: 'a', state: 'queued', atMs: 2 }, { id: 'b', state: 'queued', atMs: 1 }]), 'b');
+  assert.equal(nextToDispatch([{ id: 'a', state: 'working', atMs: 1 }, { id: 'b', state: 'queued', atMs: 2 }]), null);
+  assert.equal(nextToDispatch([{ id: 'a', state: 'sending' }, { id: 'b', state: 'queued' }]), null);
+  // 합친 뒤(배포 중)에는 다음을 보낸다
+  assert.equal(nextToDispatch([{ id: 'a', state: 'merged', atMs: 1 }, { id: 'b', state: 'queued', atMs: 2 }]), 'b');
+});
+
+test('Claude요청 라벨 - 있으면 그대로, 같은 이름이면 표시만, 지웠으면 되살림, 없으면 맨 뒤에 새로', async () => {
+  const { planClaudeLabel, orderAfterLast } = await import('./claudePlan.js');
+  const l = (id, name, extra = {}) => ({ id, kind: 'note', name, order: 'a0', deletedAt: null, ...extra });
+  assert.equal(planClaudeLabel([l('x', 'Claude요청', { system: 'claudeRequest' })]), null);
+  assert.deepEqual(planClaudeLabel([l('x', '🤖 Claude 요청')]), { action: 'flag', id: 'x' });
+  assert.deepEqual(planClaudeLabel([l('x', 'Claude요청', { system: 'claudeRequest', deletedAt: 1 })]), { action: 'restore', id: 'x' });
+  assert.deepEqual(planClaudeLabel([l('x', 'Claude요청', { deletedAt: 1 })]), { action: 'restore', id: 'x' });
+  // 일정 라벨은 보지 않는다
+  assert.deepEqual(planClaudeLabel([{ ...l('e', 'Claude요청'), kind: 'event' }, l('m', '수업', { order: 'a1' })]), { action: 'create', order: 'a1V' });
+  assert.equal(orderAfterLast([]), 'a0');
+  assert.equal(orderAfterLast(['a0', 'a2', 'a1V']), 'a2V');
+});

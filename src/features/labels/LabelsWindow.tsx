@@ -207,7 +207,9 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
   // ── 항목 수·빈 라벨 정리 (사본에서 바로 센다) ──
   const counted = itemStatus === 'live';
   const usage = useMemo(() => labelUsageOf(items, noteParents), [items, noteParents]);
-  const emptyCount = counted ? noteRows.filter((r) => usageTotal(usage[r.id]) === 0).length : 0;
+  // 서버가 만든 라벨(Claude요청 - P13)은 지우지 못한다: 이름 칸은 읽기만, ✕ 대신 🔒, 빈 라벨 정리에서도 뺀다
+  const locked = useMemo(() => new Set(noteTree.list.filter((l) => l.system).map((l) => l.id)), [noteTree]);
+  const emptyCount = counted ? noteRows.filter((r) => usageTotal(usage[r.id]) === 0 && !locked.has(r.id)).length : 0;
   const [pruneList, setPruneList] = useState<{ id: string; checked: boolean }[] | null>(null);
   const nameOf = (id: string) => noteDraft.find((d) => d.id === id)?.name ?? '';
   const prune = async () => {
@@ -426,6 +428,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                           data-label-name
                           value={d.name}
                           aria-label="메모 라벨 이름"
+                          readOnly={locked.has(d.id)}
                           onChange={(e) => edit(d.id, { name: e.target.value })}
                           className="px-2 py-1 bg-white border border-slate-200 rounded text-xs font-bold text-slate-800 w-28 focus:outline-none focus:border-emerald-500"
                         />
@@ -460,7 +463,17 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                           </span>
                         )}
                       </div>
-                      <DeleteButton noun="메모" name={d.name} onDelete={() => removeRow(d.id)} />
+                      {locked.has(d.id) ? (
+                        <span
+                          data-label-locked
+                          title="앱이 만든 라벨이라 이름을 바꾸거나 지울 수 없습니다 (메모로 Claude 요청)"
+                          className="px-1.5 py-0.5 text-slate-400 shrink-0"
+                        >
+                          🔒
+                        </span>
+                      ) : (
+                        <DeleteButton noun="메모" name={d.name} onDelete={() => removeRow(d.id)} />
+                      )}
                     </div>
                   );
                 })}
@@ -472,7 +485,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                   type="button"
                   data-label-prune
                   disabled={emptyCount === 0}
-                  onClick={() => setPruneList(emptyLabelsOf(noteRows, usage))}
+                  onClick={() => setPruneList(emptyLabelsOf(noteRows, usage).filter((e) => !locked.has(e.id)))}
                   title={counted ? '메모·휴지통 어디에도 붙지 않은 라벨' : '항목을 다 받은 뒤에 셉니다'}
                   className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 disabled:opacity-50 border border-rose-200 rounded-lg font-bold text-rose-700 cursor-pointer"
                 >
