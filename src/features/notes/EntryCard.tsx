@@ -15,6 +15,7 @@ import { labelColor } from '../../domain/labels';
 import { attachmentImageSrc } from '../../data/google/drive';
 import { openImageViewer } from '../../ui/imageViewerStore';
 import type { ItemDoc } from '../events/eventOps';
+import ClaudeAskButton from './ClaudeAskButton';
 import ClaudeRequestBadge from './ClaudeRequestBadge';
 import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
@@ -229,6 +230,7 @@ export default function EntryCard(props: EntryCardProps) {
           )}
           {(item.studentIds?.length ?? 0) > 0 && <EntryStudents studentIds={item.studentIds ?? []} />}
           <ClaudeRequestBadge itemId={item.id} />
+          <ClaudeAskButton item={item} />
           {/* 이은 항목 - 누르면 📑 연결된 데이터 */}
           {links > 0 && (
             <button

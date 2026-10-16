@@ -29,7 +29,7 @@ try {
   });
   undo.add(() => admin.remove(`spaces/${sid}/items/${id}`));
 
-  const { page, errors } = await newPage(browser);
+  const { page, errors, dialogs } = await newPage(browser);
   await open(page, '#/memo');
   c('점검 메모 카드가 뜬다', await waitFor(page.locator(sel('entry-card', id)), 15000));
   const path = `spaces/${sid}/claudeRequests/${id}`;
@@ -79,6 +79,29 @@ try {
   c('라벨 관리에 Claude요청 줄', await waitFor(row, 10000));
   c('🔒 표시, ✕ 없음', (await row.locator(sel('label-locked')).count()) === 1 && (await row.locator(sel('label-delete')).count()) === 0);
   c('이름 칸은 읽기만', (await row.locator(sel('label-name')).getAttribute('readonly')) !== null);
+  // 🤖 요청 단추 (저장으로는 보내지 않는다 - 잠긴 라벨이 붙은 메모에만, 누르면 claudeAskAt 하나)
+  await page.keyboard.press('Escape');
+  const ask = page.locator(`${sel('entry-card', id)} ${sel('entry-claude-ask')}`);
+  c('라벨이 없는 메모에는 단추가 없다', (await ask.count()) === 0);
+  await setDoc(doc(db, 'spaces', sid, 'items', id), { labelIds: [labelId], updatedAt: serverTimestamp() }, { merge: true });
+  c('잠긴 라벨이 붙으면 🤖 요청', await waitFor(ask, 8000));
+  c('저장만으로는 보내지 않는다 (claudeAskAt 없음)', !(await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt);
+  dialogs.answer = false;
+  await ask.click();
+  await page.waitForTimeout(800);
+  c('묻는 창에서 아니오 = 보내지 않음', !(await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt);
+  dialogs.answer = true;
+  await ask.click();
+  c('예 = claudeAskAt 적음', await waitFor(async () => typeof (await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt === 'number', 8000));
+  c('메모 칸이 열리지 않는다 (카드 누르기와 따로)', (await page.locator(sel('note-panel')).count()) === 0);
+  await admin.set(path, { state: 'working', issue: 9999, url, note: '' });
+  c('도는 동안은 단추를 숨긴다', await waitFor(async () => (await ask.count()) === 0, 8000));
+  await admin.set(path, { state: 'failed', issue: 9999, url, note: '' });
+  c('끝나면 🤖 다시 요청', await waitFor(async () => ((await ask.textContent().catch(() => '')) ?? '').includes('다시 요청'), 8000));
+  await admin.remove(path);
+  await page.evaluate(() => window.sp5.openWindow('labels', { tab: 'note' }));
+  await waitFor(row, 10000);
+
   const prune = page.locator(sel('label-prune'));
   if (await prune.isEnabled()) {
     await prune.click();

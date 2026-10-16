@@ -1,6 +1,7 @@
 // 메모 쓰기 (하루 화면 메모 칸·메모 화면·쓰는 칸이 함께 쓴다 - P10-3부터 메모와 기록은 '메모' 하나, 날짜 링크로 그날 칸에). 저장 도우미(data/repo)로 적고 되돌리기를 남긴다(data/undo).
 // 실패는 저장 도우미가 안내하고 던진다 - 누른 단추에서 부르면 `.catch(() => {})`로 받는다(안내는 이미 나갔다).
 // 쓰기마다 문서 하나(원칙 1).
+import { showToast } from '../../app/toast';
 import { ensureLabelOps } from '../../data/labels';
 import { batch, newPath, patch, remove, writeOp, type WriteOp } from '../../data/repo';
 import type { LabelTree } from '../../data/select';
@@ -64,6 +65,15 @@ export async function setNoteDone(sid: string, item: ItemDoc, done: boolean): Pr
 export async function setNoteFavorite(sid: string, item: ItemDoc, favorite: boolean): Promise<void> {
   const undo = await patch(itemPath(sid, item.id), favoriteChanges(favorite), item, { fail: '즐겨찾기를 저장하지 못했습니다.' });
   recordUndo(sid, '', undo, { what: favorite ? '즐겨찾기' : '즐겨찾기 풀기', quiet: true });
+}
+
+/**
+ * '🤖 요청' - 이 메모를 Claude에게 보낸다 (P13 10-16 사용자 요청: 저장으로는 보내지 않고 사용자가 정한 때 단추로).
+ * 누른 때만 적는다 - 서버 함수가 이 값이 바뀐 것을 보고 줄에 세운다(보낼 때의 메모 글로). 되돌리기는 없다(이미 보냈다).
+ */
+export async function askClaude(sid: string, item: ItemDoc): Promise<void> {
+  await patch(itemPath(sid, item.id), { claudeAskAt: Date.now() }, item, { fail: 'Claude에게 보내지 못했습니다.' });
+  showToast('Claude에게 보냈습니다 - 카드에서 진행을 볼 수 있습니다.');
 }
 
 /** 보이는 목록에서 한 칸 앞·뒤로 (▲▼ - 즐겨찾기끼리, 나머지끼리). 옮긴 것의 order만 */

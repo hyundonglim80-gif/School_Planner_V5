@@ -1,25 +1,27 @@
 // claudePlan.js 시험 - `npm run test:functions`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isClaudeLabelName, issueOf, mergeShaOf, newLabelIds, resultNoteOf, statusFromGithub, REQUEST_TIMEOUT_MS } from './claudePlan.js';
+import { askedNow, isClaudeLabelName, issueOf, mergeShaOf, resultNoteOf, statusFromGithub, REQUEST_TIMEOUT_MS } from './claudePlan.js';
 
 test('라벨 이름 - 그림 글자·띄어쓰기·대소문자는 보지 않는다', () => {
   for (const n of ['Claude요청', 'claude 요청', '🤖 Claude요청', 'CLAUDE 요청']) assert.equal(isClaudeLabelName(n), true, n);
   for (const n of ['Claude', '요청', 'Claude요청함', '', null]) assert.equal(isClaudeLabelName(n), false, String(n));
 });
 
-test('새로 붙은 라벨만 - 개인 공간 메모, 글이 있을 때', () => {
-  const note = { kind: 'note', text: '고쳐 줘', labelIds: ['a', 'b'], deletedAt: null };
-  assert.deepEqual(newLabelIds('u_1', null, note), ['a', 'b']);
-  assert.deepEqual(newLabelIds('u_1', { ...note, labelIds: ['a'] }, note), ['b']);
-  assert.deepEqual(newLabelIds('u_1', note, { ...note, text: '더 고쳐 줘' }), []);
-  // 지웠던 메모를 되살리면 붙은 라벨이 다 새로
-  assert.deepEqual(newLabelIds('u_1', { ...note, deletedAt: 1 }, note), ['a', 'b']);
-  assert.deepEqual(newLabelIds('g_1', null, note), []);
-  assert.deepEqual(newLabelIds('u_1', null, { ...note, kind: 'event' }), []);
-  assert.deepEqual(newLabelIds('u_1', null, { ...note, deletedAt: 1 }), []);
-  assert.deepEqual(newLabelIds('u_1', null, { ...note, text: '  ' }), []);
-  assert.deepEqual(newLabelIds('u_1', note, null), []);
+test('요청 단추를 누른 쓰기만 - 저장(라벨 붙이기·글 고치기)으로는 보내지 않는다', () => {
+  const note = { kind: 'note', text: '고쳐 줘', labelIds: ['a'], deletedAt: null };
+  const asked = { ...note, claudeAskAt: 100 };
+  assert.equal(askedNow('u_1', null, note), false);
+  assert.equal(askedNow('u_1', { ...note, labelIds: [] }, note), false);
+  assert.equal(askedNow('u_1', note, asked), true);
+  assert.equal(askedNow('u_1', null, asked), true);
+  assert.equal(askedNow('u_1', asked, { ...asked, text: '더 고쳐 줘' }), false);
+  assert.equal(askedNow('u_1', asked, { ...asked, claudeAskAt: 200 }), true);
+  assert.equal(askedNow('g_1', note, asked), false);
+  assert.equal(askedNow('u_1', note, { ...asked, kind: 'event' }), false);
+  assert.equal(askedNow('u_1', note, { ...asked, deletedAt: 1 }), false);
+  assert.equal(askedNow('u_1', note, { ...asked, text: '  ' }), false);
+  assert.equal(askedNow('u_1', asked, null), false);
 });
 
 test('이슈 - 첫 줄 제목, 글만', () => {

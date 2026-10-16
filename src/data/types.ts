@@ -173,6 +173,8 @@ export interface Item extends Tracked {
   /** 학생 태그 '{classId}/{sid}' */
   studentIds?: string[];
   attachments?: Attachment[];
+  /** 메모로 Claude 요청 - '🤖 요청'을 누른 때(ms). 이 값이 바뀌면 서버 함수가 줄에 세운다 (P13, 'Claude요청' 라벨 메모만) */
+  claudeAskAt?: number;
   /** 이은 항목 id. 수업은 'lesson:{date}:{교시}' */
   linkIds?: string[];
   src?: ImportSource;

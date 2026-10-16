@@ -27,15 +27,14 @@ export function isClaudeLabelName(name) {
 }
 
 /**
- * 이번 저장에서 새로 붙은 라벨 id - 보낼지 볼 메모만(개인 공간·메모·지우지 않음·글이 있음).
- * 라벨을 새로 붙일 때만 보낸다(같은 메모를 고쳐 저장할 때마다 다시 보내지 않게 - 다시 보내려면 라벨을 떼었다 붙인다).
+ * 이번 쓰기가 '🤖 요청' 누르기인가 (10-16 사용자 요청 - 저장으로는 보내지 않고, 사용자가 정한 때 단추로).
+ * 앱이 메모의 claudeAskAt(누른 때 ms)만 바꿔 적는다 - 그 값이 새로 생기거나 바뀐 쓰기만. 개인 공간·메모·지우지 않음·글이 있음.
  */
-export function newLabelIds(sid, before, after) {
-  if (typeof sid !== 'string' || !sid.startsWith('u_')) return [];
-  if (!after || after.kind !== 'note' || after.deletedAt) return [];
-  if (!String(after.text ?? '').trim()) return [];
-  const had = new Set(before && !before.deletedAt && Array.isArray(before.labelIds) ? before.labelIds : []);
-  return (Array.isArray(after.labelIds) ? after.labelIds : []).filter((id) => typeof id === 'string' && !had.has(id));
+export function askedNow(sid, before, after) {
+  if (typeof sid !== 'string' || !sid.startsWith('u_')) return false;
+  if (!after || after.kind !== 'note' || after.deletedAt) return false;
+  if (!String(after.text ?? '').trim()) return false;
+  return typeof after.claudeAskAt === 'number' && after.claudeAskAt !== before?.claudeAskAt;
 }
 
 /** 이슈 제목·본문. 저장소가 공개라 메모 글만 보낸다(공간·계정 id·첨부는 보내지 않는다) */
