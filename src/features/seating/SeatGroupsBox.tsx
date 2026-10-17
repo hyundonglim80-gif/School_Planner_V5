@@ -63,7 +63,9 @@ type Draft = { name: string; groups: StudentGroup[]; mode: 'random' | 'seats' };
 export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, apart, chart, nameOf, onShown }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(() => readMemory()[classId] || null);
   const [draft, setDraft] = useState<Draft | null>(null);
-  const [count, setCount] = useState(() => defaultGroupCount(activeNums.length));
+  // 모둠 수 칸 - 치는 동안은 글자 그대로 두고(비워도 되게), 쓸 때·칸을 떠날 때 1~최대로 맞춘다
+  const [countText, setCountText] = useState(() => String(defaultGroupCount(activeNums.length)));
+  const count = Math.max(1, Math.min(MAX_GROUPS, Math.floor(Number(countText)) || 1));
   const [picked, setPicked] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -217,8 +219,9 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
             min={1}
             max={MAX_GROUPS}
             data-group-count
-            value={count}
-            onChange={(e) => setCount(Math.max(1, Math.min(MAX_GROUPS, Number(e.target.value) || 1)))}
+            value={countText}
+            onChange={(e) => setCountText(e.target.value)}
+            onBlur={() => setCountText(String(count))}
             aria-label="모둠 수"
             className="w-12 px-1.5 py-1 border border-slate-200 rounded-lg text-center font-bold"
           />
