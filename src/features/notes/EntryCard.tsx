@@ -16,6 +16,7 @@ import { attachmentImageSrc } from '../../data/google/drive';
 import { openImageViewer } from '../../ui/imageViewerStore';
 import type { ItemDoc } from '../events/eventOps';
 import ClaudeRequestBadge from './ClaudeRequestBadge';
+import { noteTitle, ownTitle } from '../../domain/noteTitle';
 import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
 
@@ -74,6 +75,7 @@ export default function EntryCard(props: EntryCardProps) {
   const links = (item.linkIds?.length ?? 0) + (props.moreLinks ?? 0);
   const checks = checkCount(body);
   const preview = previewLine(body);
+  const title = noteTitle(item);
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
   return (
@@ -317,7 +319,13 @@ export default function EntryCard(props: EntryCardProps) {
         </div>
       </div>
 
-      {collapsed && preview && (
+      {title && (
+        <p data-entry-title={ownTitle(item) ? 'own' : 'auto'} className={`text-sm font-extrabold truncate ${done ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+          {title}
+        </p>
+      )}
+
+      {collapsed && preview && preview !== title && (
         <p data-entry-preview className={`text-sm truncate leading-relaxed ${done ? 'line-through text-slate-400' : 'text-slate-500'}`}>
           {preview}
         </p>

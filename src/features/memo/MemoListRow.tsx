@@ -3,7 +3,7 @@
 // 카드(EntryCard)의 ▲▼는 목록에 없다 - 차례 바꾸기는 카드 보기에서.
 import { shortDateLabel } from '../../domain/dateUtils';
 import { checkCount } from '../../domain/checkLines';
-import { previewLine } from '../../domain/entryCollapse';
+import { noteTitle } from '../../domain/noteTitle';
 import { labelColor } from '../../domain/labels';
 import type { ItemDoc } from '../events/eventOps';
 import ClaudeRequestBadge from '../notes/ClaudeRequestBadge';
@@ -82,7 +82,7 @@ export default function MemoListRow(props: Props) {
           {item.favorite ? '★' : '☆'}
         </button>
         <span data-memo-row-text className={`flex-1 min-w-0 truncate text-sm ${done ? 'line-through text-slate-500' : 'text-slate-800'}`}>
-          {previewLine(item.text) || (files > 0 ? '(첨부)' : '(빈 메모)')}
+          {noteTitle(item) || (files > 0 ? '(첨부)' : '(빈 메모)')}
         </span>
         {checks.total > 0 && (
           <span className="text-2xs font-bold text-slate-500 shrink-0" title={`체크 목록 ${checks.total}개 가운데 ${checks.done}개 체크`}>

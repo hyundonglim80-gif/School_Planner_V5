@@ -25,11 +25,13 @@ import { deleteNote, deleteNotes, labelNotes, moveNoteInList, setNoteDone, setNo
 import EntryCard from '../notes/EntryCard';
 import MemoListRow from './MemoListRow';
 import { useMemoView } from './memoView';
+import type { MemoSortKey } from './memoSort';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useProgressNoteLinks } from '../links/useProgressLinks';
 import LabelFilterChips, { FILTER_HELP, FILTER_HINT, FilterChip } from '../notes/LabelFilterChips';
 import { setMemoFilter, useLabelFilters, type MemoFilter } from '../notes/labelFilter';
-import { canMoveNote, memoScreenOrder } from '../notes/noteOps';
+import { canMoveNote } from '../notes/noteOps';
+import { MEMO_SORT_OPTIONS, setMemoSortKey, sortMemos, toggleMemoSortDir, useMemoSort } from './memoSort';
 import { openNotePanel, useEditingNoteIds } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
 
@@ -146,7 +148,10 @@ export default function MemoScreen() {
   );
 
   const matches = (m: ItemDoc, f: MemoFilter) => (f === 'all' ? true : f === 'fav' ? !!m.favorite : matchLabels(m.labelIds, f, tree.parents));
-  const shown = memoScreenOrder(memos.filter((m) => matches(m, current)));
+  const sortKey = useMemoSort((s) => s.key);
+  const sortDir = useMemoSort((s) => s.dir);
+  const rankOf = new Map(tree.rows.map((r, i) => [r.id, i]));
+  const shown = sortMemos(memos.filter((m) => matches(m, current)), sortKey, sortDir, (id) => rankOf.get(id) ?? -1);
   const active = shown.filter((m) => !m.done);
   const done = shown.filter((m) => m.done);
   const allActive = memos.filter((m) => !m.done);
@@ -173,7 +178,7 @@ export default function MemoScreen() {
 
   const grid = (key: 'active' | 'done', list: ItemDoc[]) => {
     // ▲▼는 날짜 없는 메모끼리 (날짜 링크 메모는 날짜 차례)
-    const movable = list.filter((m) => noteDates(m).length === 0);
+    const movable = sortKey === 'manual' ? list.filter((m) => noteDates(m).length === 0) : [];
     const page = list.slice(0, limit[key]);
     return (
       <>
@@ -343,8 +348,37 @@ export default function MemoScreen() {
                 </div>
               )}
 
-              <div className="mb-2 sm:mb-3" data-memo-active={active.length}>
+              <div className="mb-2 sm:mb-3 flex items-center justify-between gap-2" data-memo-active={active.length}>
                 {sectionTitle('active', `진행 (${active.length})`, activeOpen, () => setActiveOpen(!activeOpen))}
+                {/* 정렬 - 이 기기 기억. '내 차례'가 아니면 ▲▼ 차례 바꾸기는 숨는다 */}
+                <div data-memo-sort-bar className="flex items-center gap-1 shrink-0">
+                  <select
+                    data-memo-sort={sortKey}
+                    value={sortKey}
+                    onChange={(e) => setMemoSortKey(e.target.value as MemoSortKey)}
+                    aria-label="메모 정렬 기준"
+                    title="정렬 기준 (이 기기에 기억합니다)"
+                    className="px-1.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 cursor-pointer"
+                  >
+                    {MEMO_SORT_OPTIONS.map((o) => (
+                      <option key={o.key} value={o.key}>
+                        정렬: {o.text}
+                      </option>
+                    ))}
+                  </select>
+                  {sortKey !== 'manual' && (
+                    <button
+                      type="button"
+                      data-memo-sort-dir={sortDir}
+                      onClick={toggleMemoSortDir}
+                      title={sortDir === 'asc' ? '오름차순 (누르면 내림차순)' : '내림차순 (누르면 오름차순)'}
+                      aria-label={sortDir === 'asc' ? '오름차순' : '내림차순'}
+                      className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    >
+                      {sortDir === 'asc' ? '▲' : '▼'}
+                    </button>
+                  )}
+                </div>
               </div>
               {activeOpen &&
                 (active.length > 0 ? (
