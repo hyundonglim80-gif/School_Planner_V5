@@ -46,4 +46,10 @@ describe('takeTrailingHashLabels', () => {
   it('빈 글', () => {
     expect(takeTrailingHashLabels('')).toEqual({ text: '', names: [] });
   });
+  it('쉼표·슬래시로 가른 #라벨', () => {
+    expect(takeTrailingHashLabels('글\n#AAA, #BBB/#CCC #DDD')).toEqual({
+      text: '글',
+      names: ['AAA', 'BBB', 'CCC', 'DDD'],
+    });
+  });
 });

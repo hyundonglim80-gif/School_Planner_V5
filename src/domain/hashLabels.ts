@@ -1,5 +1,5 @@
 // 메모·기록 글의 첫 줄·마지막 줄 '#라벨' (V4 lib/hashLabels.ts - 첫 줄은 V4 2026-10-07 사용자 요청) - 순수 셈.
-// 저장할 때 첫 줄이나 마지막 줄(비지 않은 줄)이 '#이름'들로만 되어 있으면(띄어쓰기로 여럿, 예 '#111 #555') 그 이름들을 라벨로 붙이고
+// 저장할 때 첫 줄이나 마지막 줄(비지 않은 줄)이 '#이름'들로만 되어 있으면(띄어쓰기·쉼표·슬래시로 여럿, 예 '#111 #555', '#111, #555/#777') 그 이름들을 라벨로 붙이고
 // 그 줄을 글에서 지운다 - 남겨 두면 칩으로 뗀 라벨이 다시 저장할 때 또 붙는다.
 // '#26040305'(숫자 8자리)는 학생 태그(V4 lib/studentTag)라 라벨로 보지 않고 그 줄에 남긴다.
 // 줄을 지우고 나서 글이 비면 그대로 둔다(글이 비면 안 되므로).
@@ -19,7 +19,8 @@ export interface HashLabelResult {
 
 /** 한 줄 → '#이름'들뿐이면 { names, keep(학생 태그) }, 아니면 null */
 function parseHashLine(line: string): { names: string[]; keep: string[] } | null {
-  const tokens = line.trim().split(/\s+/);
+  // 띄어쓰기·쉼표·슬래시로 가른다 ('#AAA, #BBB/#CCC')
+  const tokens = line.trim().split(/[\s,，、/]+/).filter(Boolean);
   if (!tokens.every((t) => t.startsWith('#'))) return null;
   const names: string[] = [];
   const keep: string[] = [];
