@@ -90,11 +90,13 @@ describe('새 라벨·기본 라벨', () => {
     if (p.type !== 'create' || c.type !== 'create') throw new Error();
     expect(p.data).toMatchObject({ name: 'AAA', parentId: null });
     expect(c.data).toMatchObject({ name: 'BBB', parentId: p.at.id });
-    expect(made.ids).toEqual([p.at.id, c.at.id]);
+    // 붙는 것은 하위뿐
+    expect(made.ids).toEqual([c.at.id]);
     // 상위가 이미 있으면 하위만 새로
     const again = ensureLabelOps('u_me', 'note', ['AAA-BBB'], [label('x', { name: 'AAA' })], { splitParent: true });
     expect(again.ops).toHaveLength(1);
-    expect(again.ids[0]).toBe('x');
+    expect(again.ids).toHaveLength(1);
+    expect(again.ids[0]).not.toBe('x');
     // 옵션이 없으면 이름 그대로
     expect(ensureLabelOps('u_me', 'note', ['AAA-BBB'], []).ops).toHaveLength(1);
   });
