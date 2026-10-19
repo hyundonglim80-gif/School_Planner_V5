@@ -6,7 +6,7 @@
 // - 지우기 = 지운 표시(휴지통에서 되살린다). 지운 상위의 하위는 고쳐 쓰지 않는다 - 맨 위 단계로 보이다가 상위를 되살리면 돌아온다(domain/labelTree).
 // - 이름은 같은 종류 안에서 겹치지 않게 저장 때 본다(labelNameProblem).
 // 쓰기 묶음(WriteOp)을 짓는 부분은 순수 함수라 서버 없이 시험한다. 적기·안내·되돌리기는 아래 save… 함수.
-import { cleanLabelName, DEFAULT_LABELS, labelProps } from '../domain/labels';
+import { cleanLabelName, DEFAULT_LABELS, labelProps, splitParentChild } from '../domain/labels';
 import { isOrderKey, orderBetween, ordersBetween, rekeyOrders } from '../domain/order';
 import { batch, newPath, writeOp, type Changes, type WriteOp } from './repo';
 import { recordUndo } from './undo';
@@ -79,22 +79,34 @@ export function ensureLabelOps(
   kind: ItemKind,
   names: readonly string[],
   live: readonly LabelDoc[],
+  opts: { splitParent?: boolean } = {},
 ): { ids: string[]; ops: WriteOp[] } {
   const byName = new Map(live.map((l) => [cleanLabelName(l.name), l.id]));
   const ids: string[] = [];
   const ops: WriteOp[] = [];
   let last = lastOrder(live);
-  for (const raw of names) {
-    const name = cleanLabelName(raw);
-    if (!name) continue;
+  const find = (name: string, parentId: string | null): string => {
     let id = byName.get(name);
     if (!id) {
       const at = newPath(sid, 'labels');
       last = orderBetween(last, null);
-      ops.push(writeOp.create(at, newLabelData(kind, { name, color: kind === 'event' ? 'blue' : 'green' }, last)));
+      ops.push(writeOp.create(at, newLabelData(kind, { name, color: kind === 'event' ? 'blue' : 'green', parentId }, last)));
       byName.set(name, at.id);
       id = at.id;
     }
+    return id;
+  };
+  for (const raw of names) {
+    const name = cleanLabelName(raw);
+    if (!name) continue;
+    const pair = splitParentChild(name);
+    // 'AAA-BBB' = 상위 AAA 아래 하위 BBB (그 이름의 라벨이 이미 있으면 그대로 그 라벨) - 메모 라벨만
+    if (opts.splitParent && kind === 'note' && pair && !byName.has(name)) {
+      const parent = find(pair.parent, null);
+      for (const id of [parent, find(pair.child, parent)]) if (!ids.includes(id)) ids.push(id);
+      continue;
+    }
+    const id = find(name, null);
     if (!ids.includes(id)) ids.push(id);
   }
   return { ids, ops };

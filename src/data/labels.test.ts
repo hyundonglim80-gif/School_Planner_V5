@@ -1,7 +1,7 @@
 // 라벨 쓰기 묶음 (순수) - 바뀐 칸만·옮긴 것만·지운 표시, 이름 검사, 기본 라벨. 그리고 고르기의 라벨 트리·라벨로 보기·붙은 수
 import { describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
-import { createLabelOp, defaultLabelOps, labelNameProblem, labelSaveOps, type LabelDraft } from './labels';
+import { createLabelOp, defaultLabelOps, ensureLabelOps, labelNameProblem, labelSaveOps, type LabelDraft } from './labels';
 import { itemsMatching, labelTreeOf, labelUsageOf, type Docs } from './select';
 import { DEFAULT_LABELS, labelProps } from '../domain/labels';
 import type { Stored } from './types';
@@ -81,6 +81,22 @@ describe('새 라벨·기본 라벨', () => {
     expect(op.data.props).toBeUndefined();
     const ev = createLabelOp('u_me', 'event', { name: '행사', color: 'red', parentId: 's' }, []).op;
     expect(ev).toMatchObject({ data: { kind: 'event', parentId: null, order: 'a0', props: labelProps({}) } });
+  });
+
+  it("'AAA-BBB'는 상위 AAA 아래 하위 BBB (있으면 그 라벨, 이름 그대로 있으면 그것)", () => {
+    const made = ensureLabelOps('u_me', 'note', ['AAA-BBB'], [], { splitParent: true });
+    expect(made.ops).toHaveLength(2);
+    const [p, c] = made.ops;
+    if (p.type !== 'create' || c.type !== 'create') throw new Error();
+    expect(p.data).toMatchObject({ name: 'AAA', parentId: null });
+    expect(c.data).toMatchObject({ name: 'BBB', parentId: p.at.id });
+    expect(made.ids).toEqual([p.at.id, c.at.id]);
+    // 상위가 이미 있으면 하위만 새로
+    const again = ensureLabelOps('u_me', 'note', ['AAA-BBB'], [label('x', { name: 'AAA' })], { splitParent: true });
+    expect(again.ops).toHaveLength(1);
+    expect(again.ids[0]).toBe('x');
+    // 옵션이 없으면 이름 그대로
+    expect(ensureLabelOps('u_me', 'note', ['AAA-BBB'], []).ops).toHaveLength(1);
   });
 
   it('기본 라벨은 정해 둔 id로 차례대로 (두 기기에서 함께 눌러도 겹치지 않는다)', () => {
