@@ -15,6 +15,8 @@ import type { Attachment, Editable, EntryTable, YMD } from '../../data/types';
 import type { ItemDoc } from '../events/eventOps';
 
 export interface NoteForm {
+  /** 제목 - 비우면 첫 줄이 제목으로 보인다 */
+  title: string;
   text: string;
   /** 날짜 링크 (차례대로) - 비면 날짜 없는 메모 */
   dates: YMD[];
@@ -37,6 +39,7 @@ export interface NoteForm {
 export function newNoteForm(date: YMD | null, tree: LabelTree, labelIds?: readonly string[], draftText = ''): NoteForm {
   const preset = labelIds?.filter((id) => tree.byId.has(id)) ?? [];
   return {
+    title: '',
     text: draftText,
     dates: date ? [date] : [],
     labelIds: preset.length > 0 ? preset : tree.defaultId ? [tree.defaultId] : [],
@@ -52,6 +55,7 @@ export function newNoteForm(date: YMD | null, tree: LabelTree, labelIds?: readon
 /** 저장된 항목 → 칸 */
 export function noteFormOf(item: ItemDoc): NoteForm {
   return {
+    title: item.title ?? '',
     text: item.text ?? '',
     dates: noteDates(item),
     labelIds: [...(item.labelIds ?? [])],
@@ -66,6 +70,7 @@ export function noteFormOf(item: ItemDoc): NoteForm {
 
 const keyOf = (f: NoteForm, isNew: boolean) =>
   JSON.stringify([
+    f.title.trim(),
     f.text.trim(),
     cleanDates(f.dates),
     f.labelIds,
@@ -111,6 +116,7 @@ export function createNoteData(form: NoteForm, text: string, labelIds: string[],
   return {
     kind: 'note',
     ...datesFields(form.dates),
+    ...(form.title.trim() ? { title: form.title.trim() } : {}),
     text,
     labelIds,
     order,
@@ -128,6 +134,7 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.
 export function noteEditChanges(item: ItemDoc, form: NoteForm, text: string, labelIds: string[]): Changes<'items'> {
   const out: Changes<'items'> = {};
   if (text !== (item.text ?? '')) out.text = text;
+  if (form.title.trim() !== (item.title ?? '')) out.title = form.title.trim() || undefined;
   if (!sameJson(labelIds, item.labelIds ?? [])) out.labelIds = labelIds;
   if (!sameJson(form.attachments, item.attachments ?? [])) out.attachments = form.attachments.length > 0 ? form.attachments : undefined;
   if (!sameJson(form.tables, item.tables ?? [])) out.tables = form.tables.length > 0 ? form.tables : undefined;
