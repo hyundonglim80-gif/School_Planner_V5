@@ -90,3 +90,12 @@ export const DEFAULT_LABELS: Readonly<Record<ItemKind, readonly DefaultLabel[]>>
 
 /** 라벨 이름 다듬기 (앞뒤 빈칸, 맨 앞 '#' - 쓰는 칸에서 '#회의'로 만든 것도 같은 이름) */
 export const cleanLabelName = (name: string) => name.trim().replace(/^#+/, '').trim();
+
+/** 'AAA-BBB' → 상위 AAA·하위 BBB (둘 다 비지 않을 때만) */
+export function splitParentChild(name: string): { parent: string; child: string } | null {
+  const at = name.indexOf('-');
+  if (at <= 0) return null;
+  const parent = cleanLabelName(name.slice(0, at));
+  const child = cleanLabelName(name.slice(at + 1));
+  return parent && child ? { parent, child } : null;
+}

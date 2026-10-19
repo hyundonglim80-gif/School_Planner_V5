@@ -23,7 +23,7 @@ export interface NoteSaved {
 /** '#라벨'·'+ 새 라벨' → 라벨 id (없는 이름은 새 라벨 - 항목과 한 묶음으로 적을 쓰기) */
 function labelsFor(sid: string, form: NoteForm, tree: LabelTree): { text: string; labelIds: string[]; ops: WriteOp[] } {
   const plan = savePlanOf(form);
-  const made = ensureLabelOps(sid, 'note', plan.names, tree.list);
+  const made = ensureLabelOps(sid, 'note', plan.names, tree.list, { splitParent: true });
   // 칸에 보이지 않는 라벨(지운 라벨)도 그대로 둔다 - 라벨을 되살리면 다시 붙어 보인다(손대지 않은 칸을 바꾸지 않는다)
   const labelIds = [...form.labelIds];
   for (const id of made.ids) if (!labelIds.includes(id)) labelIds.push(id);

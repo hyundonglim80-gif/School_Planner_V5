@@ -8,6 +8,7 @@
 // - 글은 앞뒤 빈칸만 다듬어 적는다(V4 그대로).
 // - 🧑‍🎓 학생(studentIds '{classId}/{sid}'): '@이름'·학생 고르기로 더하고 칩 ✕로 뺀다. 글에 적은 '#26040305'는 저장할 때 더한다(domain/studentTag - NotePanel).
 import { takeHashLabels } from '../../domain/hashLabels';
+import { splitParentChild } from '../../domain/labels';
 import type { Changes } from '../../data/repo/ops';
 import type { LabelTree } from '../../data/select';
 import { cleanDates, datesChanges, datesFields, noteDates } from '../../domain/noteDates';
@@ -108,7 +109,11 @@ export function savePlanOf(form: NoteForm): SavePlan {
 
 /** 라벨 이름 → 있는 라벨인가 ('#라벨' 미리 보기 - 새로 만들 이름은 '(새로 만듦)') */
 export function isKnownLabel(tree: LabelTree, name: string): boolean {
-  return tree.list.some((l) => l.name.trim() === name);
+  const has = (n: string) => tree.list.some((l) => l.name.trim() === n);
+  if (has(name)) return true;
+  // 'AAA-BBB' = 상위 AAA 아래 하위 BBB (저장 때 ensureLabelOps가 풀어 만든다)
+  const pair = splitParentChild(name);
+  return !!pair && has(pair.parent) && has(pair.child);
 }
 
 /** 새 항목 문서 (labelIds는 #라벨·새 라벨까지 합친 것) */
