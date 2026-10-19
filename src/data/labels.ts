@@ -103,7 +103,9 @@ export function ensureLabelOps(
     // 'AAA-BBB' = 상위 AAA 아래 하위 BBB (그 이름의 라벨이 이미 있으면 그대로 그 라벨) - 메모 라벨만
     if (opts.splitParent && kind === 'note' && pair && !byName.has(name)) {
       const parent = find(pair.parent, null);
-      for (const id of [parent, find(pair.child, parent)]) if (!ids.includes(id)) ids.push(id);
+      // 붙는 것은 하위뿐 - 상위는 트리로만 이어진다(상위를 따로 붙이지 않는다)
+      const child = find(pair.child, parent);
+      if (!ids.includes(child)) ids.push(child);
       continue;
     }
     const id = find(name, null);
