@@ -88,9 +88,9 @@ export function sameNoteForm(a: NoteForm, b: NoteForm, isNew: boolean): boolean 
   return keyOf(a, isNew) === keyOf(b, isNew);
 }
 
-/** 저장할 것이 있나 (글·첨부·표 가운데 하나) */
-export const hasContent = (f: Pick<NoteForm, 'text' | 'attachments' | 'tables'>) =>
-  !!f.text.trim() || f.attachments.length > 0 || f.tables.length > 0;
+/** 저장할 것이 있나 (글·제목·첨부·표 가운데 하나 - 제목만 남은 메모도 지우지 않는다) */
+export const hasContent = (f: Pick<NoteForm, 'text' | 'attachments' | 'tables'> & { title?: string }) =>
+  !!f.text.trim() || !!f.title?.trim() || f.attachments.length > 0 || f.tables.length > 0;
 
 export interface SavePlan {
   /** 적을 글 ('#라벨' 줄을 뗀 뒤 앞뒤 빈칸을 다듬은 것) */
@@ -101,7 +101,8 @@ export interface SavePlan {
 
 /** 저장 직전: 첫·마지막 줄 '#라벨'을 떼고 붙일 이름을 모은다 */
 export function savePlanOf(form: NoteForm): SavePlan {
-  const hash = takeHashLabels(form.text);
+  // 글 말고 남는 것(제목·첨부·표)이 있으면 글이 '#라벨' 한 줄뿐이어도 뗀다
+  const hash = takeHashLabels(form.text, { emptyOk: hasContent({ ...form, text: '' }) });
   const names = [...form.newLabels];
   for (const n of hash.names) if (!names.includes(n)) names.push(n);
   return { text: (hash.names.length > 0 ? hash.text : form.text).trim(), names };

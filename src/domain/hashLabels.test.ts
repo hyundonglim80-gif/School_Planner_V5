@@ -36,6 +36,12 @@ describe('takeTrailingHashLabels', () => {
     expect(takeTrailingHashLabels('#상담 #26040305\n내용')).toEqual({ text: '#26040305\n내용', names: ['상담'] });
     expect(takeTrailingHashLabels('오늘 #회의\n내용')).toEqual({ text: '오늘 #회의\n내용', names: [] });
   });
+  it('제목·첨부가 있으면(emptyOk) 그 줄 하나뿐이어도 라벨로, 글은 빈다 (10-19)', () => {
+    expect(takeHashLabels('#업무-출장', { emptyOk: true })).toEqual({ text: '', names: ['업무-출장'] });
+    expect(takeHashLabels('#업무\n#회의', { emptyOk: true })).toEqual({ text: '', names: ['업무', '회의'] });
+    expect(takeHashLabels('#26040305', { emptyOk: true })).toEqual({ text: '#26040305', names: [] });
+    expect(takeHashLabels('', { emptyOk: true })).toEqual({ text: '', names: [] });
+  });
   it('20자까지', () => {
     const r = takeTrailingHashLabels(`글\n#${'가'.repeat(25)}`);
     expect(r.names[0]).toHaveLength(20);

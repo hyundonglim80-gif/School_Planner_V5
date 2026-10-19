@@ -42,8 +42,9 @@ describe('새 칸', () => {
     expect(createNoteData(two, '글', [], 'a0')).toMatchObject({ date: '2026-10-08', dates: ['2026-10-08', '2026-10-09'] });
   });
 
-  it('저장할 것이 있나 = 글·첨부·표 가운데 하나', () => {
+  it('저장할 것이 있나 = 글·제목·첨부·표 가운데 하나', () => {
     expect(hasContent({ text: '  ', attachments: [], tables: [] })).toBe(false);
+    expect(hasContent({ text: '', title: '연수', attachments: [], tables: [] })).toBe(true);
     expect(hasContent({ text: '', attachments: [{ name: 'a', url: 'u', type: 'file' }], tables: [] })).toBe(true);
   });
 });
@@ -52,6 +53,13 @@ describe('#라벨·새 라벨', () => {
   it('첫·마지막 줄 #이름은 떼고 이름을 모은다 (새 라벨이 먼저, 겹치면 하나)', () => {
     const form = { ...newNoteForm(null, tree), text: '#회의\n오늘 할 일\n#학급 #새것', newLabels: ['새것', '따로'] };
     expect(savePlanOf(form)).toEqual({ text: '오늘 할 일', names: ['새것', '따로', '회의', '학급'] });
+  });
+  it('제목·첨부가 있으면 글이 #줄 하나뿐이어도 라벨로 (10-19 #업무-출장)', () => {
+    const base = { ...newNoteForm(null, tree), text: '#업무-출장' };
+    expect(savePlanOf({ ...base, title: '연수' })).toEqual({ text: '', names: ['업무-출장'] });
+    expect(savePlanOf({ ...base, attachments: [{ name: 'a', url: 'u', type: 'file' }] })).toEqual({ text: '', names: ['업무-출장'] });
+    // 글뿐이면 그대로 둔다 (지우면 빈 메모가 된다)
+    expect(savePlanOf(base)).toEqual({ text: '#업무-출장', names: [] });
   });
   it('#줄이 없으면 글은 앞뒤 빈칸만 다듬는다', () => {
     expect(savePlanOf({ ...newNoteForm(null, tree), text: '  글 #가운데 \n' })).toEqual({ text: '글 #가운데', names: [] });
