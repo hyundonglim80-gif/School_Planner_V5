@@ -83,6 +83,10 @@ jobs:
 
             끝에 두 파일을 쓴다(.claude-request/ 폴더 - 저장소에 올라가지 않는다):
             - .claude-request/summary.md : 무엇을 바꿨는지(또는 왜 바꾸지 않았는지) 한국어 쉬운 말 2~5줄. 선생님이 휴대폰 메모 카드에서 읽는다.
+              **바꾸지 않았어도 반드시 쓴다.** 첫 줄은 결론 한 문장(카드에는 앞 세 줄만 보인다) - 예 '바꾸지 않았습니다: 그 기능은 이미 명렬표 검색 탭에 있습니다.'
+              바꾸지 않았으면 그 까닭(이미 있다·규칙에 걸린다·요청이 모호하다 등)과, 다시 요청할 때 무엇을 더 적으면 되는지를 적는다.
+              여러 가지를 요청했으면 번호마다 한 줄씩(고침 / 그대로 + 까닭).
+              주소·파일 경로·코드 이름은 적지 않는다(선생님은 화면 이름으로 안다).
             - .claude-request/commit.txt : 커밋 메시지. 첫 줄은 'V5 메모 요청 #${{ github.event.issue.number }} - <무엇을>' (git log 모양대로), 필요하면 빈 줄 뒤에 자세히.
 
             요청 (이슈 #${{ github.event.issue.number }}):
@@ -151,10 +155,16 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           summary=""
-          [ -s .claude-request/summary.md ] && summary=$(head -c 1500 .claude-request/summary.md)
+          # 글자 수로 자른다(바이트로 자르면 한글이 깨진다) - 함수도 1000자까지 앱에 옮긴다
+          if [ -s .claude-request/summary.md ]; then
+            summary=$(node -e "process.stdout.write([...require('fs').readFileSync('.claude-request/summary.md','utf8')].slice(0,1000).join('').trim())" || true)
+          fi
+          tail=""
           if [ -n "$SHA" ]; then
             label=claude-merged
-            head="합쳤습니다 - 화면 배포는 몇 분 뒤. $PR_URL"
+            # 바꾼 것(summary)을 먼저 - 앱 카드에는 앞 세 줄만 보인다 (10-19)
+            head=""
+            tail="합쳤습니다 - 화면 배포는 몇 분 뒤. $PR_URL"
           elif [ "$JOB_STATUS" = "success" ] && [ "$CHANGED" = "false" ]; then
             label=claude-nochange
             head=""
@@ -168,7 +178,8 @@ jobs:
           {
             echo "<!-- sp5-result -->"
             [ -n "$head" ] && echo "$head"
-            [ -n "$summary" ] && { echo; echo "$summary"; }
+            [ -n "$summary" ] && { [ -n "$head" ] && echo; echo "$summary"; }
+            [ -n "$tail" ] && { echo; echo "$tail"; }
             [ -n "$SHA" ] && echo "<!-- sp5-merge-sha:$SHA -->"
             true # 위 줄이 거짓이어도 이 묶음은 성공 (bash -e)
           } > "$RUNNER_TEMP/result"

@@ -10,6 +10,9 @@
 ```
 
 - 진행 표시(메모 카드): (🤖 차례 기다림) → 🤖 보냄 → 🤖 고치는 중 → 🤖 배포 중 → ✅ 배포됨 / ❌ 실패 / 🤖 바꾼 것 없음. 누르면 GitHub 이슈(결과 글). 보통 10~30분.
+- **결과 글**(10-19 사용자 의견 - '바꾼 것 없음'만으로는 왜인지 몰랐다): 바꾼 것 또는 **바꾸지 않은 까닭**(이미 있다·규칙에 걸린다·요청이 모호하다 + 다시 요청할 때 더 적을 것)을
+  메모 카드 아래에 글로(세 줄까지 - 마우스를 올리면 전부), 메모 수정 칸·메모 화면 목록의 펼친 줄에는 전부. Claude가 `.claude-request/summary.md`에 쓰고(첫 줄이 결론),
+  워크플로가 이슈 결과 댓글로 → 함수가 1000자까지 옮긴다(주소·'합쳤습니다' 줄은 앱이 뺀다).
 - **라벨은 저절로**(10-16): 정한 계정에는 메모 라벨 `Claude요청`이 저절로 생긴다(한 시간 안 - 매분 함수가 한 시간에 한 번 챙긴다). 라벨 관리에서 🔒 - 이름을 바꾸거나 지울 수 없고, 빈 라벨 정리에서도 빠진다. 다른 길로 지워져도 한 시간 안에 되살아난다.
 - **한 번에 하나**(10-16): 요청이 도는 동안(보냄·고치는 중) 들어온 요청은 🤖 차례 기다림 - 앞 요청이 합쳐지거나(배포 중) 끝나면 먼저 기다린 것부터 차례대로 보낸다(1분 안).
   보낼 때의 메모 글로 보낸다(기다리는 사이 고친 글이 간다). 기다리는 사이 메모를 지우거나 라벨을 떼면 보내지 않는다(🤖 바꾼 것 없음).
@@ -62,5 +65,5 @@
 `functions/index.js`(`v5ClaudeRequest` = 줄에 세우기 · `dispatchNext` = 트랜잭션으로 하나만 보내기 · `checkClaudeRequests` = 진행 → `ensureClaudeLabels`(한 시간에 한 번, 표시 `v5claudeMeta/labels`) → 다음 보내기, 함수 칸 `v5claude/{itemId}` - 규칙에 match 없음 = 앱은 못 읽음) ·
 라벨 표시 `labels.system = 'claudeRequest'`(라벨 관리 `[data-label-locked]` - 이름 읽기만·✕ 없음·빈 라벨 정리에서 뺌) ·
 🤖 요청 `notes/ClaudeAskButton`(`[data-note-claude-ask]`·보낸 뒤 `[data-note-claude-asked]` - `notes/NotePanel` 아래) → `notes/actions.askClaude`(메모 `claudeAskAt` 하나) → 함수 `askedNow` · 진행 표시는 카드·`memo/MemoListRow`·수정 칸 ·
-앱이 보는 칸 `spaces/{sid}/claudeRequests/{itemId}`(`data/claudeRequests` Shell에 하나 · store `data/claudeRequestStore` · 순수 `domain/claudeRequest` · 카드 `notes/ClaudeRequestBadge` `[data-entry-claude=상태]`) ·
+앱이 보는 칸 `spaces/{sid}/claudeRequests/{itemId}`(`data/claudeRequests` Shell에 하나 · store `data/claudeRequestStore` · 순수 `domain/claudeRequest`(결과 글 `claudeNoteText`) · 카드 `notes/ClaudeRequestBadge` `[data-entry-claude=상태]` · 결과 글 `notes/ClaudeRequestNote` `[data-entry-claude-note=상태]`) ·
 워크플로 `.github/workflows/claude-request.yml` · 점검 `tools/inspect-claude-request.mjs`(카드 표시 - 함수·GitHub는 흉내 내지 않는다).

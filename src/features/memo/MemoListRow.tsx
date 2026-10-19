@@ -7,6 +7,7 @@ import { noteTitle } from '../../domain/noteTitle';
 import { labelColor } from '../../domain/labels';
 import type { ItemDoc } from '../events/eventOps';
 import ClaudeRequestBadge from '../notes/ClaudeRequestBadge';
+import ClaudeRequestNote from '../notes/ClaudeRequestNote';
 import EntryBody from '../notes/EntryBody';
 
 interface Props {
@@ -127,6 +128,7 @@ export default function MemoListRow(props: Props) {
       {expanded && (
         <div data-memo-row-body className="mt-2 pl-6 flex flex-col gap-2 min-w-0">
           <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} />
+          <ClaudeRequestNote itemId={item.id} />
         </div>
       )}
     </li>

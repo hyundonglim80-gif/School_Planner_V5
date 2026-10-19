@@ -16,6 +16,7 @@ import { attachmentImageSrc } from '../../data/google/drive';
 import { openImageViewer } from '../../ui/imageViewerStore';
 import type { ItemDoc } from '../events/eventOps';
 import ClaudeRequestBadge from './ClaudeRequestBadge';
+import ClaudeRequestNote from './ClaudeRequestNote';
 import { noteTitle, ownTitle } from '../../domain/noteTitle';
 import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
@@ -332,6 +333,8 @@ export default function EntryCard(props: EntryCardProps) {
       )}
 
       {!collapsed && <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} />}
+      {/* Claude 요청 결과 - 바꾼 것·바꾸지 않은 까닭 (10-19) */}
+      <ClaudeRequestNote itemId={item.id} short />
     </div>
   );
 }

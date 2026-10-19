@@ -47,6 +47,12 @@ try {
   await admin.set(path, { state: 'deployed', issue: 9999, url, note: '글자를 키웠습니다.' });
   c('✅ 배포됨으로 바뀐다', await waitFor(() => badge.getAttribute('data-entry-claude').then((s) => s === 'deployed').catch(() => false), 8000));
   c('결과 글이 title에', ((await badge.getAttribute('title')) ?? '').includes('글자를 키웠습니다.'));
+  // 결과 글은 카드 아래에도 글로 (10-19 사용자 의견 - '바꾼 것 없음'만으로는 왜인지 몰랐다)
+  const cardNote = page.locator(`${sel('entry-card', id)} ${sel('entry-claude-note')}`);
+  c('카드 아래 결과 글', await waitFor(async () => ((await cardNote.textContent().catch(() => '')) ?? '').includes('글자를 키웠습니다.'), 8000), await cardNote.textContent().catch(() => ''));
+  await admin.set(path, { state: 'nochange', issue: 9999, url, note: '바꾸지 않았습니다: 그 기능은 이미 있습니다.\n다시 요청할 때는 어느 화면인지 적어 주세요.' });
+  c('바꾼 것 없음 - 까닭이 카드에 글로', await waitFor(async () => (await cardNote.getAttribute('data-entry-claude-note').catch(() => '')) === 'nochange' && ((await cardNote.textContent()) ?? '').includes('이미 있습니다'), 8000), await cardNote.textContent().catch(() => ''));
+  c('까닭 글이 보인다 (높이)', ((await cardNote.boundingBox())?.height ?? 0) > 10);
 
   await admin.set(path, { state: 'failed', issue: 9999, url: 'javascript:alert(1)', note: '' });
   c('GitHub가 아닌 주소는 이어지지 않는다', await waitFor(async () => (await badge.getAttribute('data-entry-claude').catch(() => '')) === 'failed' && (await badge.getAttribute('href').catch(() => 'x')) === null, 8000));
@@ -105,8 +111,11 @@ try {
   await ask.click();
   c('예 = claudeAskAt 적음', await waitFor(async () => typeof (await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt === 'number', 8000));
   c('보낸 뒤 단추 대신 🤖 요청함', await waitFor(async () => (await ask.count()) === 0 && (await page.locator(sel('note-claude-asked')).count()) === 1, 8000));
-  await admin.set(path, { state: 'failed', issue: 9999, url, note: '' });
+  await admin.set(path, { state: 'failed', issue: 9999, url, note: '고치지 못했습니다(확인 실패 또는 오류) - 실행 기록 https://github.com/a/b/actions/runs/1\n\n테스트가 깨졌습니다.' });
   c('끝나도 다시 요청 단추는 없다 - 수정 칸에 진행 표시', await waitFor(async () => (await ask.count()) === 0 && (await page.locator(`${sel('note-panel')} ${sel('entry-claude', 'failed')}`).count()) === 1, 8000));
+  const panelNote = page.locator(`${sel('note-panel')} ${sel('entry-claude-note', 'failed')}`);
+  const panelText = (await panelNote.textContent().catch(() => '')) ?? '';
+  c('수정 칸에 결과 글 다 (주소는 빼고)', panelText.includes('테스트가 깨졌습니다.') && panelText.includes('고치지 못했습니다') && !panelText.includes('https'), panelText);
   c('카드에는 진행 표시 그대로', (await page.locator(`${sel('entry-card', id)} ${sel('entry-claude', 'failed')}`).count()) === 1);
   dialogs.answer = true;
   await page.keyboard.press('Escape');

@@ -48,15 +48,18 @@ export function issueOf(text, attachments = 0) {
   return { title, body: lines.join('\n') };
 }
 
-/** 마지막 결과 댓글의 글 (표시 아래 한 줄로 - 300자) */
+/** 결과 글 길이 - 앱 메모 카드·수정 칸에 글로 보인다 (10-19 - 300자는 까닭이 중간에 끊겼다) */
+export const RESULT_NOTE_MAX = 1000;
+
+/** 마지막 결과 댓글의 글 (바꾼 것·바꾸지 않은 까닭 - 넘치면 '…') */
 export function resultNoteOf(comments) {
   const last = [...(comments ?? [])].reverse().find((c) => String(c?.body ?? '').includes(RESULT_MARK));
   if (!last) return '';
-  return String(last.body)
+  const text = String(last.body)
     .replace(RESULT_MARK, '')
     .replace(/<!--[\s\S]*?-->/g, '')
-    .trim()
-    .slice(0, 300);
+    .trim();
+  return text.length > RESULT_NOTE_MAX ? `${text.slice(0, RESULT_NOTE_MAX - 1).trimEnd()}…` : text;
 }
 
 /** 합친 커밋 (워크플로가 댓글에 '<!-- sp5-merge-sha:… -->'로 남긴다) */
@@ -76,7 +79,7 @@ export function statusFromGithub({ issue, comments = [], runs = null, atMs, nowM
   const labels = new Set((issue?.labels ?? []).map((l) => (typeof l === 'string' ? l : l?.name)));
   const note = resultNoteOf(comments);
   if (labels.has('claude-failed')) return { state: 'failed', note: note || '고치지 못했습니다.' };
-  if (labels.has('claude-nochange')) return { state: 'nochange', note: note || '바꾼 것이 없습니다.' };
+  if (labels.has('claude-nochange')) return { state: 'nochange', note: note || '바꾼 것이 없습니다(Claude가 까닭을 남기지 않았습니다 - 표시를 눌러 실행 기록을 보세요).' };
   const late = typeof atMs === 'number' && typeof nowMs === 'number' && nowMs - atMs > REQUEST_TIMEOUT_MS;
   if (labels.has('claude-merged')) {
     const deploy = (runs ?? []).find((r) => r?.name === DEPLOY_WORKFLOW);
