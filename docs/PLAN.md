@@ -257,6 +257,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-15 | 클라우드 | P10-2 | P10-2 세션 끝 정리 | 단위 2325 · inspect-lessons·seating·evaluations·class·week·month-year·bell-guide·attendance·links·sheets·backup·search-trash 통과 · manual(MATCH 바뀐 주제 11) 통과 · ✎는 재현 안 됨(점검에 셋 더함) · 명렬표 번호 = no-spinner CSS 빠짐 |
 | 2026-10-15 | 클라우드 | P10-3 | P10-3 세션 끝 정리 | 단위 2337 · inspect-notes·memo·week·month-year·search-trash·backup·keep·student-record·links·perf 통과 · manual(MATCH 바뀐 주제 9) 통과 · teacher4 메모 화면(메모 2611) 다시 열기 0.6~1.1초(개발 서버) |
 | 2026-10-15 | 클라우드 | P10-4 | P10-4 세션 끝 정리 | 단위 2351 · inspect-links·progress·notes·memo·search-trash·student-record·lessons·labels·evaluations·week 통과 · manual(MATCH 없이 - 휴지통 탭 수를 고친 뒤 trash·search 다시) 통과 · ■3을 ■2보다 먼저 |
+| 2026-10-19 | 영-전-3-현동림 PC | #54 함수 배포 | 결과 글 1000자 함수 배포 | 배포할 것 확인: 화면은 #54까지 자동 배포됨 · 운영 규칙 = 파일(live-rules 같음) · 함수만 10-16 판 → 함수 시험 15 통과 → `--only functions:v5` 배포(넷 ACTIVE) · V4는 10-14 뒤 바뀐 것 없음 |
 | 2026-10-16 | 클라우드 | P13-1 | P13-1 세션 끝 정리 | main CI(lint·단위·함수 시험·빌드) 통과(#41) · ■4 함수 다시 배포를 사용자 계정 🔒 'Claude요청'으로 확인 · 다른 두 계정 🔒·잇달아 보내기는 사용자가 확인하지 않고 끝내기로 함(문제가 생기면 다시 요청) |
 | 2026-10-16 | 클라우드 | P13-1 ■3 | 라벨 저절로·한 번에 하나 | 단위 2389 · 함수 시험 15 · 함수 손 실행(에뮬레이터 + 가짜 GitHub) 통과 · inspect-claude-request 16·labels 통과 · 첫 요청 #36 → #37 합침·배포를 사용자가 확인 |
 | 2026-10-16 | 클라우드 | P13-1 | 메모로 Claude 요청 | 단위 2388 · 함수 시험 13 · inspect-claude-request 11 통과 · 함수·워크플로는 GitHub·운영 없이 시험할 수 없어 순수 셈 시험과 모듈 읽기만 - 사용자 설정 뒤 첫 요청으로 확인 |
