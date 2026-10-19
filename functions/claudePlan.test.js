@@ -1,7 +1,7 @@
 // claudePlan.js 시험 - `npm run test:functions`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { askedNow, isClaudeLabelName, issueOf, mergeShaOf, resultNoteOf, statusFromGithub, REQUEST_TIMEOUT_MS } from './claudePlan.js';
+import { askedNow, isClaudeLabelName, issueOf, mergeShaOf, resultNoteOf, statusFromGithub, REQUEST_TIMEOUT_MS, RESULT_NOTE_MAX } from './claudePlan.js';
 
 test('라벨 이름 - 그림 글자·띄어쓰기·대소문자는 보지 않는다', () => {
   for (const n of ['Claude요청', 'claude 요청', '🤖 Claude요청', 'CLAUDE 요청']) assert.equal(isClaudeLabelName(n), true, n);
@@ -37,6 +37,12 @@ test('댓글에서 결과 글·합친 커밋', () => {
   assert.equal(resultNoteOf(comments), '글자를 키웠습니다.');
   assert.equal(mergeShaOf(comments), 'abc1234def');
   assert.equal(mergeShaOf([{ body: '없음' }]), null);
+  // 까닭이 길어도 끊기지 않게 (10-19 - 300자는 짧았다), 넘치면 '…'
+  const long = '가'.repeat(400);
+  assert.equal(resultNoteOf([{ body: `<!-- sp5-result -->\n${long}` }]), long);
+  const over = resultNoteOf([{ body: `<!-- sp5-result -->\n${'나'.repeat(RESULT_NOTE_MAX + 50)}` }]);
+  assert.equal(over.length, RESULT_NOTE_MAX);
+  assert.ok(over.endsWith('…'));
 });
 
 test('상태 - 라벨·배포 결과·시간 초과', () => {

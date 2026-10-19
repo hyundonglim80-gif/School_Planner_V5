@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { claudeBadge, readClaudeRequest } from './claudeRequest';
+import { claudeBadge, claudeNoteText, readClaudeRequest } from './claudeRequest';
 import { compareOrder, orderBetween } from './order';
 
 describe('Claude 요청 표시', () => {
@@ -25,6 +25,23 @@ describe('Claude 요청 표시', () => {
       tone: 'bad',
       title: 'Claude 요청 #7 - 테스트 실패',
     });
+  });
+});
+
+describe('Claude 요청 결과 글 (10-19 - 바꾼 것 없음의 까닭)', () => {
+  const req = (state: 'nochange' | 'deployed' | 'failed', note: string) => ({ state, issue: 7, url: null, note });
+
+  it('까닭을 그대로 보인다', () => {
+    expect(claudeNoteText(req('nochange', '고치지 않았습니다. 이미 있습니다.\n다시 요청해 주세요.'))).toBe('고치지 않았습니다. 이미 있습니다.\n다시 요청해 주세요.');
+    expect(claudeNoteText(req('nochange', ''))).toBe('');
+  });
+
+  it('주소와 합쳤습니다 머리 줄은 뺀다 (예전 댓글 모양도)', () => {
+    expect(claudeNoteText(req('deployed', '합쳤습니다 - 화면 배포는 몇 분 뒤. https://github.com/a/b/pull/9\n\n글자를 키웠습니다.'))).toBe('글자를 키웠습니다.');
+    expect(claudeNoteText(req('deployed', '글자를 키웠습니다.\n\n합쳤습니다 - 화면 배포는 몇 분 뒤. https://github.com/a/b/pull/9'))).toBe('글자를 키웠습니다.');
+    expect(claudeNoteText(req('failed', '고치지 못했습니다(확인 실패 또는 오류) - 실행 기록 https://github.com/a/b/actions/runs/1'))).toBe(
+      '고치지 못했습니다(확인 실패 또는 오류)',
+    );
   });
 });
 

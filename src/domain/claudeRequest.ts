@@ -27,6 +27,21 @@ export function readClaudeRequest(raw: unknown): ClaudeRequest | null {
   };
 }
 
+/**
+ * 결과 글 - 바꾼 것 또는 바꾸지 않은 까닭 (10-19 사용자 의견 - '바꾼 것 없음'만으로는 왜인지 몰랐다).
+ * 워크플로 결과 댓글(함수가 옮겨 적은 note)에서 주소와 '합쳤습니다' 머리 줄은 뺀다 - 표시가 이미 말하고, 주소는 표시를 누르면 간다.
+ */
+export function claudeNoteText(r: ClaudeRequest): string {
+  return r.note
+    .replace(/\s*(?:-\s*)?(?:실행 기록\s*)?https?:\/\/\S+/g, '')
+    .split('\n')
+    .map((l) => l.trimEnd())
+    .filter((l) => !/^합쳤습니다 - 화면 배포는 몇 분 뒤\.?$/.test(l.trim()))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 /** 카드 표시 - 글·색·마우스를 올렸을 때 */
 export function claudeBadge(r: ClaudeRequest): { text: string; tone: 'wait' | 'ok' | 'bad'; title: string } {
   const text = {
