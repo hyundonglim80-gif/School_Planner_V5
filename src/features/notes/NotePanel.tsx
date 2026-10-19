@@ -316,7 +316,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   /** 저장한다. 저장했거나 저장할 것이 없으면 true */
   const save = async (): Promise<boolean> => {
     if (!hasContent(form)) {
-      // 글·첨부·표를 다 지우고 저장 = 그 메모 지우기(휴지통 + 되돌리기, 칸은 deleteNote가 닫는다 - P10-5 사용자 의견 5d).
+      // 제목·글·첨부·표를 다 지우고 저장 = 그 메모 지우기(휴지통 + 되돌리기, 칸은 deleteNote가 닫는다 - P10-5 사용자 의견 5d).
       // 새 칸이면 만들 것이 없다 - 닫는다
       if (!isEditing) {
         close();
