@@ -237,13 +237,13 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   // ── 표 붙여넣기·칸 고치기 ──
 
   /** 읽어 온 차시 목록으로 바꾼다 (붙여넣기·CSV 불러오기). 이미 목록이 있으면 먼저 묻는다 */
-  const replaceLessons = ({ lessons: parsed, repeated, numbered }: LessonParseInfo, how: '붙여 넣은' | '불러온') => {
+  const replaceLessons = ({ lessons: parsed, repeated }: LessonParseInfo, how: '붙여 넣은' | '불러온') => {
     if (!draft) return;
     const cur = cleanLessons(draft.lessons).length;
     if (cur > 0 && !window.confirm(`지금 차시 목록 ${cur}개를 ${how} ${parsed.length}개로 바꿀까요?`)) return;
     update({ lessons: parsed.map(withKey) });
     // 차시 칸의 숫자 = 그 내용을 몇 차시 동안 (2이면 같은 내용 2행)
-    const note = repeated > 0 ? ` 차시 칸의 숫자만큼 같은 내용을 ${repeated}행 더 넣었습니다.` : numbered ? ' 차시 칸이 1, 2, 3 … 차례 번호라 늘리지 않았습니다.' : '';
+    const note = repeated > 0 ? ` 차시 칸의 숫자만큼 같은 내용을 ${repeated}행 더 넣었습니다.` : '';
     showToast(`✅ ${parsed.length}차시를 ${how === '붙여 넣은' ? '붙여 넣었습니다' : '불러왔습니다'}.${note} 미리보기를 보고 💾 저장을 누르세요.`);
   };
 
