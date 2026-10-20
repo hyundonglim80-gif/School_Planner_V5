@@ -19,7 +19,6 @@ import {
   suppliesByPeriod,
   progressUntil,
   lessonPageLabel,
-  looksNumbered,
   parseLessonTableInfo,
   sanitizePlan,
   schoolYearEnd,
@@ -527,7 +526,6 @@ describe('차시 칸의 숫자만큼 같은 내용을 잇달아', () => {
       ['1', '다', ''],
     ]);
     expect(info.repeated).toBe(1);
-    expect(info.numbered).toBe(false);
     // 늘린 표를 다시 붙여 넣으면 그대로
     const again = tsv(['단원', '차시', '내용', '준비물'], ...info.lessons.map((l) => [l.unit, l.no, l.content, l.supplies]));
     expect(parseLessonTable(again)).toHaveLength(4);
@@ -540,19 +538,8 @@ describe('차시 칸의 숫자만큼 같은 내용을 잇달아', () => {
     expect(parseLessonTable(tsv(['차시', '내용'], ['40', '가']))).toHaveLength(10);
   });
 
-  it('옛 진도표처럼 차시 칸이 1, 2, 3 … 차례 번호면 늘리지 않는다 (단원마다 다시 1부터, 범위 포함)', () => {
-    const info = parseLessonTableInfo(
-      tsv(['단원', '차시', '내용'], ['1단원', '1', '가'], ['', '2', '나'], ['', '3~4', '다'], ['', '5', '라'], ['2단원', '1', '마'], ['', '2', '바'])
-    );
-    expect(info.numbered).toBe(true);
-    expect(info.lessons).toHaveLength(6);
-  });
-
-  it('차례 번호 판단: 셋 이상 이어지고 어긋나는 단원이 없어야', () => {
-    const L2 = (unit: string, no: string) => ({ unit, no });
-    expect(looksNumbered([L2('a', '1'), L2('a', '2'), L2('a', '3')])).toBe(true);
-    expect(looksNumbered([L2('a', '1'), L2('a', '2')])).toBe(false);
-    expect(looksNumbered([L2('a', '1'), L2('a', '1'), L2('a', '2'), L2('a', '1')])).toBe(false);
-    expect(looksNumbered([L2('a', '9'), L2('a', '10'), L2('a', '11'), L2('b', '12')])).toBe(true);
+  it('1, 2, 3 … 으로 적어도 숫자만큼 센다 (1 + 2 = 3차시)', () => {
+    expect(parseLessonTable(tsv(['차시', '내용'], ['1', '가'], ['2', '나']))).toHaveLength(3);
+    expect(parseLessonTable(tsv(['차시', '내용'], ['1', '가'], ['2', '나'], ['3', '다']))).toHaveLength(6);
   });
 });

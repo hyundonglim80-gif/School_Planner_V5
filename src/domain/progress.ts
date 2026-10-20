@@ -188,8 +188,6 @@ export interface LessonParseInfo {
   lessons: ProgressLesson[];
   /** 차시 칸의 숫자만큼 더 넣은 행 수 (0이면 늘린 것 없음) */
   repeated: number;
-  /** 차시 칸이 1, 2, 3 … 차례 번호로 보여 늘리지 않았다 (옛 진도표) */
-  numbered: boolean;
 }
 
 export function parseLessonTableInfo(text: string): LessonParseInfo {
@@ -205,56 +203,22 @@ const countOf = (no: string): number | null => {
   const m = /^(\d{1,3})\s*(차시)?$/.exec(no.trim());
   return m ? Number(m[1]) : null;
 };
-/** 범위 '5~6'의 끝 (차례 번호 판단용) */
-const rangeEnd = (no: string): [number, number] | null => {
-  const m = /^(\d{1,3})\s*[~\-–]\s*(\d{1,3})\s*(차시)?$/.exec(no.trim());
-  return m ? [Number(m[1]), Number(m[2])] : null;
-};
 
-/** 한 행을 몇 번 넣을까 - 차시 칸의 숫자(1~10). 차례 번호 표이거나 숫자가 아니면 1 */
+/** 한 행을 몇 번 넣을까 - 차시 칸의 숫자(1~10). 숫자가 아니면 1 */
 export const MAX_LESSON_REPEAT = 10;
-export function lessonRepeat(no: string, numbered: boolean): number {
-  if (numbered) return 1;
+export function lessonRepeat(no: string): number {
   const n = countOf(no);
   return n && n >= 1 ? Math.min(n, MAX_LESSON_REPEAT) : 1;
-}
-
-/**
- * 차시 칸이 차례 번호인가 (옛 진도표 1, 2, 3 …). 단원마다 숫자가 한 칸씩 늘어나고(범위 '3~4'는 4까지 쓴 것으로),
- * 그런 숫자가 셋 이상인 단원이 있고 어긋나는 단원이 없으면 차례 번호로 본다. 수를 적은 표(1, 1, 2, 1 …)는 어긋나서 '차시 수'다.
- */
-export function looksNumbered(lessons: Pick<ProgressLesson, 'unit' | 'no'>[]): boolean {
-  const byUnit = new Map<string, string[]>();
-  for (const l of lessons) {
-    if (!l.no.trim()) continue;
-    const list = byUnit.get(l.unit) || [];
-    list.push(l.no);
-    byUnit.set(l.unit, list);
-  }
-  let longRun = false;
-  for (const nos of byUnit.values()) {
-    let prev: number | null = null;
-    for (const no of nos) {
-      const r = rangeEnd(no);
-      const n = countOf(no);
-      const [from, to] = r || (n !== null ? [n, n] : [NaN, NaN]);
-      if (Number.isNaN(from)) return false;
-      if (prev !== null && from !== prev + 1) return false;
-      prev = to;
-    }
-    if (nos.length >= 3) longRun = true;
-  }
-  return longRun;
 }
 
 /** 칸으로 나뉜 표를 차시 목록으로 (붙여넣기·CSV가 함께 쓴다) */
 function parseLessonRows(grid: string[][]): LessonParseInfo {
   const rows = grid.filter((r) => r.some((c) => c !== ''));
-  if (rows.length === 0) return { lessons: [], repeated: 0, numbered: false };
+  if (rows.length === 0) return { lessons: [], repeated: 0 };
 
   const header = headerFields(rows[0]);
   const body = header ? rows.slice(1) : rows;
-  if (body.length === 0) return { lessons: [], repeated: 0, numbered: false };
+  if (body.length === 0) return { lessons: [], repeated: 0 };
   const fields = header || positionalFields(body);
 
   const read: ProgressLesson[] = [];
@@ -270,7 +234,6 @@ function parseLessonRows(grid: string[][]): LessonParseInfo {
   }
 
   // 차시 칸의 숫자만큼 같은 내용을 잇달아 넣는다. 뒤따르는 행의 차시 칸은 비운다 - 그 표를 다시 붙여 넣어도 또 늘지 않게.
-  const numbered = looksNumbered(read);
   const lessons: ProgressLesson[] = [];
   let repeated = 0;
   read.forEach((l, i) => {
@@ -281,12 +244,12 @@ function parseLessonRows(grid: string[][]): LessonParseInfo {
       if (!next || next.no.trim() || next.content !== l.content || next.unit !== l.unit) break;
       already++;
     }
-    const extra = Math.max(0, lessonRepeat(l.no, numbered) - 1 - already);
+    const extra = Math.max(0, lessonRepeat(l.no) - 1 - already);
     lessons.push(l);
     for (let k = 0; k < extra; k++) lessons.push({ ...l, no: '' });
     repeated += extra;
   });
-  return { lessons, repeated, numbered };
+  return { lessons, repeated };
 }
 
 // ── 세기 ───────────────────────────────────────────────────────────────
