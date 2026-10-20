@@ -4,7 +4,7 @@
 //     반을 하나 이하로 두면 그 모양 그대로 저장한다(draftTarget) - 과정으로 바꾸면 칸 견주기가 progressKey →
 //     normalizeSlotText로 바뀌어 옛 결과가 달라질 수 있다.
 import { formatDate } from '../../domain/dateUtils';
-import { isCourse, progressKey, type ProgressLesson, type ProgressPlan } from '../../domain/progress';
+import { isCourse, lessonRepeat, progressKey, type ProgressLesson, type ProgressPlan } from '../../domain/progress';
 import { formatSlot, parseSlot } from '../../domain/teachingSlot';
 import { newId } from '../../data/id';
 
@@ -106,6 +106,28 @@ export const sameAsSaved = (d: Draft, p: ProgressPlan) => {
   );
 };
 
+
+/**
+ * 차시 칸을 고친 행(row)을 그 숫자만큼 늘린다('2'면 같은 내용을 2행으로). 바로 뒤에 차시 칸이 빈 같은 내용 행이 이미 있으면 그만큼은 센다.
+ * 줄이지는 않는다(지우는 일은 행 삭제로). 늘어난 행은 새 행이고 차시 칸은 비운다. 바뀐 것이 없으면 같은 목록을 돌려준다.
+ */
+export function expandRowRepeat(lessons: DraftLesson[], row: number): DraftLesson[] {
+  const l = lessons[row];
+  if (!l || !l.content.trim()) return lessons;
+  const want = lessonRepeat(l.no);
+  let already = 0;
+  while (already + 1 < want) {
+    const next = lessons[row + 1 + already];
+    if (!next || next.no.trim() || next.content !== l.content || next.unit !== l.unit) break;
+    already++;
+  }
+  const extra = want - 1 - already;
+  if (extra <= 0) return lessons;
+  const copies = Array.from({ length: extra }, () => withKey({ ...trimLesson(l), no: '' }));
+  const next = [...lessons];
+  next.splice(row + 1 + already, 0, ...copies);
+  return next;
+}
 
 /** after 행 바로 아래(after가 -1이면 맨 위)에 빈 행을 넣은 새 목록과 그 행 번호 */
 export function insertRowAfter(lessons: DraftLesson[], after: number): { lessons: DraftLesson[]; at: number } {

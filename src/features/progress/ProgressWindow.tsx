@@ -42,6 +42,7 @@ import { deleteProgressPlan, saveProgressPlan, setProgressBump } from './actions
 import type { ProgressWindowParams } from './open';
 import {
   cleanLessons,
+  expandRowRepeat,
   draftForSlot,
   draftTarget,
   emptyLesson,
@@ -289,6 +290,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
 
   // 마지막으로 커서가 있던 칸 - '+ 행 추가'는 그 행 바로 아래에 넣는다. 다른 진도로 옮기면 잊는다
   const lastFocus = useRef<CellPos | null>(null);
+  const noAtFocus = useRef('');
   useEffect(() => {
     lastFocus.current = null;
   }, [draft?.id]);
@@ -752,8 +754,19 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           data-cell={`${r}-${c}`}
                           aria-label={`${r + 1}번째 행 ${f.label}`}
                           title={f.title}
-                          onFocus={() => (lastFocus.current = { row: r, col: c })}
+                          onFocus={() => {
+                            lastFocus.current = { row: r, col: c };
+                            noAtFocus.current = l.no;
+                          }}
                           onChange={(e) => setCell(r, f.key, e.target.value)}
+                          onBlur={
+                            f.key === 'no'
+                              ? () => {
+                                  // 칸을 고쳤을 때만 늘린다 - 옛 표의 1, 2, 3 … 차례 번호는 눌러 보기만 해서는 늘지 않게
+                                  if (noAtFocus.current !== l.no) setDraft((d) => (d ? { ...d, lessons: expandRowRepeat(d.lessons, r) } : d));
+                                }
+                              : undefined
+                          }
                           onKeyDown={(e) => handleCellKeyDown(e, r, c)}
                           onPaste={(e) => handleCellPaste(e, r, c)}
                           className="min-w-0 px-1.5 py-1 text-xs bg-white border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary"
