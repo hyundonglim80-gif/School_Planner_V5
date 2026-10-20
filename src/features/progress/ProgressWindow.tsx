@@ -82,6 +82,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   const terms = useCommonSettings((s) => s.terms);
   const { mode, isClassUnit } = useTeaching();
   const [draft, setDraft] = useState<Draft | null>(null);
+  const stateDraft = draft;
   // 과정 미리보기에서 보는 반
   const [previewClass, setPreviewClass] = useState<string>(params?.cls ?? '');
   const [saving, setSaving] = useState(false);
@@ -363,7 +364,21 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
 
   /** 저장 - 됐으면 true (🔗가 먼저 저장할 때 기다린다) */
   const handleSave = async (): Promise<boolean> => {
-    if (!sid || !draft || saving) return false;
+    if (!sid || !stateDraft || saving) return false;
+    // Ctrl+S처럼 차시 칸에 커서가 든 채 저장하면 blur가 오기 전이라 늘리기가 빠진다 - 여기서 먼저 늘린다
+    let draft = stateDraft;
+    const focus = lastFocus.current;
+    if (focus && FIELDS[focus.col]?.key === 'no' && document.activeElement?.getAttribute('data-cell') === `${focus.row}-${focus.col}`) {
+      const row = draft.lessons[focus.row];
+      if (row && noAtFocus.current !== row.no) {
+        const grown = expandRowRepeat(draft.lessons, focus.row);
+        if (grown !== draft.lessons) {
+          noAtFocus.current = row.no;
+          draft = { ...draft, lessons: grown };
+          setDraft(draft);
+        }
+      }
+    }
     const clean = cleanLessons(draft.lessons);
     const t = draftTarget(draft);
     const fail = (text: string) => {
