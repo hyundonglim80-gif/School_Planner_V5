@@ -4,6 +4,7 @@ import {
   draftForSlot,
   draftTarget,
   emptyLesson,
+  expandRowRepeat,
   insertRowAfter,
   lessonsToSave,
   newCourseDraft,
@@ -25,6 +26,20 @@ const plan = (extra: Partial<ProgressPlan>): ProgressPlan => ({
   lessons: [lesson('가'), lesson('나', '12~13')],
   bumps: [],
   ...extra,
+});
+
+describe('차시 칸을 고치면 행 늘리기', () => {
+  it('2면 같은 내용을 2행으로, 다시 해도 더 늘지 않는다', () => {
+    const rows = [withKey({ ...lesson('가'), no: '2' }), withKey(lesson('나'))];
+    const once = expandRowRepeat(rows, 0);
+    expect(once.map((l) => [l.content, l.no])).toEqual([['가', '2'], ['가', ''], ['나', '']]);
+    expect(expandRowRepeat(once, 0)).toBe(once);
+  });
+  it('숫자가 아니거나 1이면 그대로', () => {
+    const rows = [withKey({ ...lesson('가'), no: '1' }), withKey({ ...lesson('나'), no: '가' })];
+    expect(expandRowRepeat(rows, 0)).toBe(rows);
+    expect(expandRowRepeat(rows, 1)).toBe(rows);
+  });
 });
 
 describe('행 가운데 넣기', () => {
