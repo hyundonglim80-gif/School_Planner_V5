@@ -540,15 +540,6 @@ export default function DayLessons({ date }: { date: string }) {
                             {attSummary ? <span data-subject-att-chip>{attSummary}</span> : '🙋 출결'}
                           </button>
                         )}
-                        {c.changed && c.subject && (
-                          <span
-                            data-lesson-changed
-                            className="shrink-0 text-2xs font-bold rounded-full px-1.5 py-0.5 border text-amber-700 bg-amber-50 border-amber-200"
-                            title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}
-                          >
-                            바뀜
-                          </span>
-                        )}
                         {isNow && nowState?.kind === 'during' && (
                           <span className="shrink-0 text-2xs font-black text-white bg-primary rounded-full px-1.5 py-0.5">지금 · {nowState.minutesLeft}분 남음</span>
                         )}
