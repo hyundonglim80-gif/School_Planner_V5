@@ -83,7 +83,7 @@ describe('📘 진도표 탭 (P11-1 - 그 차시를 하는 날로)', () => {
   const plan = (id: string, key: string, lessons: ReturnType<typeof row>[], more: Record<string, unknown> = {}) =>
     ({ id, key, startDate: '2026-09-01', bumps: [], lessons, deletedAt: null, updatedAt: t, v: 1, createdAt: 0, authorId: 'me', ...more }) as unknown as Stored<'progress'>;
   const docs = { p1: plan('p1', '과학', [row('불'), row('물'), row('흙')]), p2: plan('p2', '국어', [row('시')]), p3: plan('p3', '사회', [row('땅')], { deletedAt: t }) };
-  const mark = (planId: string, index: number | null, more: Partial<ProgressMark> = {}): ProgressMark => ({ planId, key: '', index, total: 3, lesson: null, bumped: index === null, ...more });
+  const mark = (planId: string, index: number | null, more: Partial<ProgressMark> = {}): ProgressMark => ({ planId, key: '', index, total: 3, run: { k: 1, n: 1 }, lesson: null, bumped: index === null, ...more });
   const marks: Record<string, ProgressMark> = {
     '2026-10-06#2': mark('p1', 0),
     '2026-10-08#3': mark('p1', 1),

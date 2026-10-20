@@ -2,6 +2,7 @@ import { toCsv, decodeTextBytes } from './csv';
 import { PROGRESS_SAMPLE_ROWS } from './progressSample';
 import { describe, it, expect } from 'vitest';
 import {
+  lessonRun,
   computeProgress,
   courseStatus,
   courseTimelines,
@@ -541,5 +542,13 @@ describe('차시 칸의 숫자만큼 같은 내용을 잇달아', () => {
   it('1, 2, 3 … 으로 적어도 숫자만큼 센다 (1 + 2 = 3차시)', () => {
     expect(parseLessonTable(tsv(['차시', '내용'], ['1', '가'], ['2', '나']))).toHaveLength(3);
     expect(parseLessonTable(tsv(['차시', '내용'], ['1', '가'], ['2', '나'], ['3', '다']))).toHaveLength(6);
+  });
+
+  it('lessonRun: 같은 내용이 잇달면 1/3, 2/3, 3/3', () => {
+    const L = (content: string) => ({ unit: 'a', content });
+    const ls = [L('x'), L('x'), L('x'), L('y')];
+    expect(lessonRun(ls, 0)).toEqual({ k: 1, n: 3 });
+    expect(lessonRun(ls, 1)).toEqual({ k: 2, n: 3 });
+    expect(lessonRun(ls, 3)).toEqual({ k: 1, n: 1 });
   });
 });

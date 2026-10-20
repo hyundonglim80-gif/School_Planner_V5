@@ -17,6 +17,7 @@ import {
   courseStatus,
   courseTitle,
   isCourse,
+  lessonRun,
   parseLessonCsvInfo,
   parseLessonTableInfo,
   planKeys,
@@ -916,7 +917,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                       ) : (
                         <span className="flex-1 min-w-0 truncate">
                           <b className="tabular-nums">
-                            {(s.lesson ?? 0) + 1}/{lessons.length}차시
+                            {lessonRun(lessons, s.lesson ?? 0).k}/{lessonRun(lessons, s.lesson ?? 0).n}차시
                           </b>
                           {lesson?.content && ` · ${lesson.content}`}
                         </span>
