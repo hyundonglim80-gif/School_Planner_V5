@@ -31,10 +31,7 @@ export default function ClaudeAskButton({ sid, item, dirty }: { sid: string; ite
         data-note-claude-again={again ? '' : undefined}
         disabled={dirty}
         onClick={() => {
-          const msg = again
-            ? '메모 글을 고쳐 Claude에게 다시 요청할까요?\n고친 것은 확인(테스트·빌드)을 통과하면 바로 실제 화면에 배포됩니다.'
-            : '이 메모를 Claude에게 보낼까요?\n고친 것은 확인(테스트·빌드)을 통과하면 바로 실제 화면에 배포됩니다.';
-          if (!window.confirm(msg)) return;
+          // 확인 창 없이 바로 보낸다(10-20 사용자 요청 #76) - 누르는 것이 곧 보낼 때다.
           void askClaude(sid, item).catch(() => {});
         }}
         title={
