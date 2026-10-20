@@ -78,15 +78,6 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
                   </span>
                 )}
               </span>
-              {c?.changed && c.subject && (
-                <span
-                  data-week-lesson-changed
-                  className="shrink-0 text-2xs leading-none px-1 py-0.5 rounded font-bold border text-amber-700 bg-amber-50 border-amber-200"
-                  title={`이날만 바꾼 과목 (시간표: ${c.base || '수업 없음'})`}
-                >
-                  바뀜
-                </span>
-              )}
               {mark && (
                 <span
                   data-week-progress={mark.bumped ? 'bumped' : (mark.index ?? 0) + 1}
