@@ -352,6 +352,21 @@ export function lessonAt(
   return lesson ? { index: slot.lesson, lesson } : null;
 }
 
+/**
+ * 같은 내용(단원·내용이 같은 잇단 행)을 몇 차시 동안 하는지와 그중 몇 번째인지.
+ * 차시 칸 '3'으로 늘어난 3행은 1/3, 2/3, 3/3. 저장된 목록에서 계산하니 옛 진도도 그대로 따라온다.
+ */
+export function lessonRun(lessons: Pick<ProgressLesson, 'unit' | 'content'>[], index: number): { k: number; n: number } {
+  const l = lessons[index];
+  if (!l || !l.content.trim()) return { k: 1, n: 1 };
+  const same = (i: number) => lessons[i] && lessons[i].content === l.content && lessons[i].unit === l.unit;
+  let from = index;
+  while (from > 0 && same(from - 1)) from--;
+  let to = index;
+  while (to + 1 < lessons.length && same(to + 1)) to++;
+  return { k: index - from + 1, n: to - from + 1 };
+}
+
 /** 수업 칸에 겹쳐 보일 한 교시의 진도 */
 export interface ProgressMark {
   planId: string;
@@ -362,6 +377,8 @@ export interface ProgressMark {
   /** 차시 차례 (0부터). 민 교시면 null */
   index: number | null;
   total: number;
+  /** 같은 내용 안에서 몇 번째/몇 차시 (1/3, 2/3 …) */
+  run: { k: number; n: number };
   lesson: ProgressLesson | null;
   bumped: boolean;
 }
@@ -391,6 +408,7 @@ export function progressMarks(
           ...(cls ? { cls } : {}),
           index: s.lesson,
           total: plan.lessons.length,
+          run: s.lesson === null ? { k: 1, n: 1 } : lessonRun(plan.lessons, s.lesson),
           lesson: s.lesson === null ? null : plan.lessons[s.lesson],
           bumped: s.bumped,
         };

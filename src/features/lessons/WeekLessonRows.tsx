@@ -87,12 +87,12 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
                   title={
                     mark.bumped
                       ? `${mark.key} 진도 - 이 교시는 밀어서 차시가 없습니다`
-                      : `${mark.key} ${(mark.index ?? 0) + 1}/${mark.total}차시` +
+                      : `${mark.key} ${mark.run.k}/${mark.run.n}차시 (전체 ${(mark.index ?? 0) + 1}/${mark.total}차시)` +
                         (mark.lesson?.content ? ` · ${mark.lesson.content}` : '') +
                         (mark.lesson?.supplies ? ` · 준비물 ${mark.lesson.supplies}` : '')
                   }
                 >
-                  {mark.bumped ? '밀림' : `${(mark.index ?? 0) + 1}/${mark.total}`}
+                  {mark.bumped ? '밀림' : `${mark.run.k}/${mark.run.n}`}
                 </span>
               )}
               {links > 0 && (

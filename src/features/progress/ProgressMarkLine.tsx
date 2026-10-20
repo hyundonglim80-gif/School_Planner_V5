@@ -49,7 +49,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
   const n = (mark.index ?? 0) + 1;
   const title = mark.bumped
     ? `${mark.key} 진도 - 이 교시는 밀어서 차시가 없습니다 (누르면 진도 관리)`
-    : `${mark.key} 진도 ${n}/${mark.total}차시` +
+    : `${mark.key} 진도 ${mark.run.k}/${mark.run.n}차시 (전체 ${n}/${mark.total}차시)` +
       (lesson?.unit ? ` · ${lesson.unit}` : '') +
       (lesson?.content ? ` · ${lesson.content}` : '') +
       (page ? ` · 교과서 ${page}` : '') +
@@ -71,7 +71,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
           <span className="text-indigo-700">
             📘 {lesson?.unit && <span className="text-indigo-500">{lesson.unit} · </span>}
             <b className="tabular-nums">
-              {n}/{mark.total}차시
+              {mark.run.k}/{mark.run.n}차시
             </b>
             {lesson?.content && ` · ${lesson.content}`}
             {page && <span data-progress-page> · 📖 {page}</span>}
