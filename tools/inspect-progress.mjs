@@ -194,7 +194,7 @@ try {
   r.check(await waitFor(mark14.locator(sel('progress-links', 1)), 8000), '그 차시를 하는 수업 칸(수 1교시 2차시)에 🔗 1');
   const jr = page.locator(`${sel('day-journal', '2026-10-14')} ${sel('entry-card', 'insp_pgn')}`);
   r.check(await waitFor(jr), '그날 메모 칸에 그 메모');
-  r.check(((await jr.locator(sel('entry-from')).getAttribute('data-entry-from')) ?? '').startsWith('progress:'), '카드에 📘 진도 표시');
+  r.check((await jr.locator(sel('entry-from')).count()) === 0, '카드에 📘 진도 표시 없음 (연결 창에서 본다)');
   r.check((await jr.locator(sel('entry-links')).getAttribute('data-entry-links')) === '1', '메모 카드 🔗 1 (진도 차시 - 계산)');
   await mark14.locator(sel('progress-links')).click();
   const pv = page.locator(sel('link-viewer', `progress:${planId}:1`));

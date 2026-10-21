@@ -16,7 +16,6 @@ import EntryCard from './EntryCard';
 import DayCardView from '../day/DayCards';
 import { useDayCardsOn } from '../day/useDayCards';
 import { useDayNotes } from '../day/useDayNotes';
-import { noteFromLabel } from './dayNotes';
 import { canMoveNote, favoriteFirst, timeLabel } from './noteOps';
 import { openNotePanel, useShownNoteId, type DayNotesParams } from './open';
 
@@ -32,7 +31,6 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
   const rows = useDayNotes(date, sid);
   const dated = favoriteFirst(rows.filter((r) => r.dated).map((r) => r.item));
   const notes = [...dated, ...rows.filter((r) => !r.dated).map((r) => r.item)];
-  const fromOf = new Map(rows.map((r) => [r.item.id, r.from.map(noteFromLabel)]));
   const tree = useLabelTree('note', sid);
   const shownId = useShownNoteId(sid);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
@@ -83,7 +81,6 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
                 editing={shownId === item.id}
                 collapsed={isCollapsed}
                 onToggleCollapse={() => setCollapsed((p) => ({ ...p, [item.id]: !isCollapsed }))}
-                from={fromOf.get(item.id)}
                 dragProps={reorderDragProps(`note:window:${date}`, index, (f, t) => void moveNoteByDrag(sid, dated, f, t).catch(quiet))}
                 onMoveUp={canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
                 onMoveDown={canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}

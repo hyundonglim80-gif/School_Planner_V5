@@ -34,8 +34,6 @@ export interface EntryCardProps {
   /** 날짜 링크 칩 (메모 화면 - P10-3). 누르면 그날 하루 화면 */
   dates?: readonly string[];
   onOpenDate?: (date: string) => void;
-  /** 그날 칸에 온 길 - 이은 일정·수업·진도 (하루 메모 칸 - P10-4, 날짜 링크는 없음) */
-  from?: ReadonlyArray<{ key: string; text: string; title: string }>;
   /** 지금 쓰는 칸에서 고치는 항목 (파란 테두리) */
   editing?: boolean;
   collapsed: boolean;
@@ -211,16 +209,6 @@ export default function EntryCard(props: EntryCardProps) {
             >
               📅 {shortDateLabel(d)}
             </button>
-          ))}
-          {props.from?.map((f) => (
-            <span
-              key={f.key}
-              data-entry-from={f.key}
-              title={f.title}
-              className="px-1.5 py-0.5 rounded-md text-2xs font-bold bg-amber-50 border border-amber-200 text-amber-800 whitespace-nowrap"
-            >
-              {f.text}
-            </span>
           ))}
           {checks.total > 0 && (
             <span
