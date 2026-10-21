@@ -88,6 +88,38 @@ describe('AutoTextarea', () => {
     }
   });
 
+  it('재는 동안 부모 높이를 붙들고, 다 재면 되돌린다 (둘레 스크롤바가 사라져 넓은 폭으로 재지 않게)', async () => {
+    const seen: string[] = [];
+    const saved = {
+      sh: Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'scrollHeight'),
+      oh: Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight'),
+    };
+    Object.defineProperty(HTMLElement.prototype, 'offsetHeight', { configurable: true, get: () => 300 });
+    Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get(this: HTMLTextAreaElement) {
+        seen.push(this.parentElement?.style.minHeight ?? '');
+        return 40;
+      },
+    });
+    try {
+      render(
+        <div data-testid="parent" style={{ minHeight: '10px' }}>
+          <AutoTextarea value={'한 줄\n두 줄'} onChange={() => {}} placeholder="부모" />
+        </div>
+      );
+      const el = screen.getByPlaceholderText('부모') as HTMLTextAreaElement;
+      await waitFor(() => expect(el.style.height).toBe('40px'));
+      expect(seen.length).toBeGreaterThan(0);
+      expect(seen.every((h) => h === '300px')).toBe(true);
+      expect(screen.getByTestId('parent').style.minHeight).toBe('10px');
+    } finally {
+      if (saved.sh) Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', saved.sh);
+      if (saved.oh) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', saved.oh);
+      else delete (HTMLElement.prototype as { offsetHeight?: number }).offsetHeight;
+    }
+  });
+
   it('스크롤바가 생기지 않도록 overflow를 감춘다', () => {
     render(<Controlled initial="한 줄" />);
     const el = screen.getByPlaceholderText('내용');

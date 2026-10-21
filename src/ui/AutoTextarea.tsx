@@ -9,6 +9,7 @@
 //
 // 폭이 바뀌어도 다시 잰다(10-21 사용자 보고 - 긴 메모의 마지막 줄이 가려짐): 오른쪽 칸 폭 끌기·창 크기·글자 크기로 폭이 바뀌면
 // 줄바꿈이 늘어나는데, 글이 그대로라 높이를 다시 재지 않아 늘어난 줄만큼 아래가 잘렸다. 높이는 테두리까지 더한다(border-box).
+// 재는 동안에도 폭이 바뀌지 않게 부모 높이를 붙든다(줄인 칸 때문에 둘레 스크롤바가 잠깐 사라지면 넓은 폭으로 잰다).
 import { useCallback, useEffect, useRef, type Ref, type RefObject, type TextareaHTMLAttributes } from 'react';
 
 /** 스크롤해 둔 조상들과 그 자리 (창 스크롤 포함) */
@@ -103,8 +104,14 @@ export default function AutoTextarea({
     const el = ref.current;
     if (!el) return;
     const spots = scrollSpots(el);
+    // 재는 동안 부모 높이를 붙든다: 'auto'로 줄인 순간 둘레가 짧아져 오른쪽 줄 스크롤바가 사라지면 칸이 15px 넓어져
+    // 그 폭으로 재게 된다 - 스크롤바가 돌아오면 끝까지 찬 줄이 한 줄 더 접혀 마지막 줄이 가려졌다(10-21 사용자 보고)
+    const parent = el.parentElement;
+    const keep = parent?.style.minHeight ?? '';
+    if (parent) parent.style.minHeight = `${parent.offsetHeight}px`;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight + borderY(el)}px`;
+    if (parent) parent.style.minHeight = keep;
     for (const [n, top] of spots) n.scrollTop = top;
     el.scrollTop = 0;
     if (reveal) revealCaret(el);

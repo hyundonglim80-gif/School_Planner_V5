@@ -94,6 +94,8 @@
 - **`pkill -f <글자>`는 그 글자가 든 자기 명령 줄(셸)도 죽인다**(P7-3 - `pkill -f vite`로 Bash가 144로 끝났다). 에뮬레이터·개발 서버는 뒤에서(`run_in_background`) 켠다.
 - **클라우드 백그라운드 명령은 기본 30분에 꺼진다** - 에뮬레이터·개발 서버는 `run_in_background` + `timeout: 7200000`(최대 2시간, 그 뒤에도 꺼진다 - 다시 켜고 seed, P9-1). 점검이 갑자기 다 깨지면 먼저 8080·5175가 살아 있나.
 - 점검에서 칸을 닫는 `sp5.closeAllWindows()`는 저장 안 한 칸이 있으면 confirm으로 묻고 probe는 '아니오'라 **칸이 남는다** → 그때만 `dialogs.answer = true`(inspect-manual `closeAll`, P9-1).
+- **헤드리스 크롬은 스크롤바를 숨긴다**(`--hide-scrollbars`) - 스크롤바 폭(15px)이 관계된 것(칸 높이·줄바꿈)은 `chromium.launch({ ...browserOptions(), ignoreDefaultArgs: ['--hide-scrollbars'] })`로 본다
+  (10-21 - 글 칸이 높이를 재는 동안 오른쪽 줄 스크롤바가 사라져 넓은 폭으로 재, 끝까지 찬 마지막 줄이 가려졌다. 점검은 스크롤바가 없어 통과했다).
 - **크기·자리만 재는 점검은 빈 글자도 통과한다** - 칩·배지를 새로 그리면 글자(`textContent`)가 있는지도 본다(P12-1 - 휴대폰 월간 칩이 빈 채 '칩 폭 22px·넘침 없음'을 통과, 그림으로 찾았다.
   `parseSlot`은 반이 없으면 `cls: ''`라 `??`로는 과목으로 넘어가지 않는다 - `||`).
 - **사용자 보고가 재현되지 않으면 V4의 같은 기능 코드와 견준다**(P12-1 이월 - V5 경로는 모두 맞았고, V4 `runAutoForwarding`의 겹침 규칙이 빠져 있었다).
@@ -269,7 +271,7 @@
 - **공통 부품** `src/ui/`: `ModalShell.tsx`(창 껍데기, ✕ `[data-close]`) · `PopupFrame.tsx`(오른쪽 칸/배너/가운데 `[data-popup-frame]`) · `SidePanelFrame.tsx`(쓰는 칸 `[data-panel-frame]`) ·
   `sideColumn.ts`(오른쪽 줄·탭 차례 `useSideSlot`·`useDocked`) · `SideTabs.tsx`(`[data-side-tab]`·`[data-side-tab-close]`) · `useSaveKey.ts`(Ctrl+S 받기) · `ColumnResizer.tsx` ·
   `MiniCalendarPicker.tsx`(`[data-date-picker]`·`[data-picker-day]`) · `LinkPreviewCards.tsx`(글 안 주소 카드 `[data-link-preview]`) · 훅 `useMinWidth`·`useIsMobile`·`useMainWidth`·`useVisualViewport`·`useBodyScrollLock`·`useBackdropClose` ·
-  `AutoTextarea.tsx`(높이를 다시 잴 때 둘레 스크롤을 지키고 커서 줄을 보이게 - P10-5, 폭이 바뀌어도 다시 재고 테두리까지 더한다 - 10-21 긴 메모 마지막 줄 가려짐) · `containScroll.ts`(옆 칸 위 휠·밀기는 그 칸 안에서만 - 오른쪽 줄 `getSideColumn`·클립보드 칸, P10-5).
+  `AutoTextarea.tsx`(높이를 다시 잴 때 둘레 스크롤을 지키고 커서 줄을 보이게 - P10-5, 폭이 바뀌어도 다시 재고 테두리까지 더한다, 재는 동안 부모 높이를 붙든다 - 10-21 긴 메모 마지막 줄 가려짐) · `containScroll.ts`(옆 칸 위 휠·밀기는 그 칸 안에서만 - 오른쪽 줄 `getSideColumn`·클립보드 칸, P10-5).
   '스크롤로 페이지 이동'(`app/useGlobalGestures`)은 옆 칸(`#side-column`·`[data-clipboard-panel]`) 안의 휠·밀기를 무시한다(P10-5 - 쓰는 칸은 창 층이 아니라 날짜가 넘어갔다).
 - **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)·다시 세운 줄 `rekeyOrders`(옮긴 것만)) ·
   `labelTree.ts`(V4 트리를 id로 - `parentMapOf`·`orderByTree`·라벨로 보기 `matchLabels`·탐색기식 `clickFilterLabel`·`filterChipOrder`·`otherKey`) ·
