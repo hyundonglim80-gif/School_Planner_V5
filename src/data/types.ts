@@ -413,6 +413,8 @@ export interface Progress extends Tracked {
   lessons: ProgressLessonRow[];
   /** 민 교시 'YYYY-MM-DD#교시' */
   bumps: string[];
+  /** 차시 칸 = 차시 수로 저장한 진도 (10-21~, domain/progress isOrderPlan) */
+  noCount?: boolean;
   /** V4에서 가져온 진도 */
   src?: ImportSource;
 }

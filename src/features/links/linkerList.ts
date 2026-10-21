@@ -100,7 +100,7 @@ export function lessonCandidatesOf(src: LessonSource, range: { start: YMD; end: 
 }
 
 /**
- * 📘 진도표 탭 (메모에서 열 때 - P11-1): 범위 안에 하는 진도 차시(행). 날짜는 계산 - 수업 칸에 겹친 진도(progressMarks: '날짜#교시' → 진도의 몇째 행)를 뒤집어,
+ * 📘 진도표 탭 (메모에서 열 때 - P11-1): 범위 안에 하는 진도 차시(행). 날짜는 계산 - 수업 칸에 겹친 진도(progressMarks: '날짜#교시' → 진도의 몇째 행 row)를 뒤집어,
  * 그 행을 하는 교시 가운데 범위 안의 첫 교시. 과정(여러 반)이면 반마다 하는 날이 달라도 행 하나(링크는 행에 붙는다). 범위 안에 하는 날이 없는 행은 뺀다.
  * planIds를 주면 그 진도만, 키워드는 '3교시 · 과학 5차시 · 비유 표현' 글에서. 최근 날짜부터(다른 탭과 같게), 같은 날은 교시 차례.
  */
@@ -115,13 +115,13 @@ export function progressCandidatesOf(
   // 행 → 범위 안의 첫 교시
   const first = new Map<string, { date: YMD; period: number; planId: string; row: number }>();
   for (const [slot, m] of Object.entries(marks)) {
-    if (m.index === null || m.bumped) continue;
+    if (m.row === null || m.bumped) continue;
     const [date, p] = slot.split('#');
     if (date < range.start || date > range.end) continue;
-    const id = progressLinkId(m.planId, m.index);
+    const id = progressLinkId(m.planId, m.row);
     const period = Number(p);
     const had = first.get(id);
-    if (!had || date < had.date || (date === had.date && period < had.period)) first.set(id, { date, period, planId: m.planId, row: m.index });
+    if (!had || date < had.date || (date === had.date && period < had.period)) first.set(id, { date, period, planId: m.planId, row: m.row });
   }
   const out: (Candidate & { period: number })[] = [];
   for (const [id, f] of first) {

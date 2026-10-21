@@ -1,12 +1,13 @@
 // 진도 (V4 lib/progress.ts - V4 테스트째, 순수 함수만). V4 사용자 결정(2026-10-01)대로:
 //
 // - 단위는 '시간표 칸 글자'다. 과목 칸이 '국어'면 국어 하나, '3-2 국어'·'3-3 국어'면 반마다 따로(앞뒤 공백만 정리해 견준다).
-// - 차시 목록(단원·차시·내용·교과서·준비물)은 엑셀·한셀에서 표를 복사해 붙여 넣거나 CSV로 불러온다. 한 줄이 한 교시다.
+// - 차시 목록(단원·차시·내용·교과서·준비물)은 엑셀·한셀에서 표를 복사해 붙여 넣거나 CSV로 불러온다. 한 줄이 한 내용이고
+//   차시 칸의 수만큼 그 내용을 잇단 교시에 되풀이한다(lessonPeriods - 10-21 사용자: 행을 늘리지 않는다, 1차시 + 2차시 = 3차시).
 // - 시작일부터 그 글자가 적힌 교시를 날짜·교시 차례로 세어 k번째 교시 = k번째 차시. V5는 수업 칸을 **계산**한다(domain/lessons -
 //   기간별 시간표 + 그날 바꾼 칸) - 그 결과(subjectsBetween)를 입력으로 받는다. 수업이 없는 날(classOffReason)은 건너뛴다.
 // - 수업이 빠진 교시는 '밀기'(Planbook의 Bump): 그 교시는 차시를 받지 않고 뒤가 한 칸씩 밀린다. 되돌리면 다시 당겨진다.
 //
-// 저장(개인 공간): progress/{planId} = { key, subject?, classes?, startDate, lessons: [{unit, no, content, page, supplies}], bumps: ['YYYY-MM-DD#교시'] }
+// 저장(개인 공간): progress/{planId} = { key, subject?, classes?, startDate, lessons: [{unit, no, content, page, supplies}], bumps: ['YYYY-MM-DD#교시'], noCount? }
 // 과정(교과 모드): { …, subject: '과학', classes: ['5-1','5-2'] } - 차시 목록 하나를 여러 반이 반마다 따로 센다. 반 열쇠는 '5-1 과학'(planKeys)이고
 // 칸 글자는 정규화해 견준다(domain/teachingSlot). key에는 첫 열쇠를 채워 둔다. bumps는 과정 하나에 한 배열 - 같은 날·교시에 두 반을 가르칠 수 없으니
 // '날짜#교시'가 반마다 저절로 다르다. 수업 칸(lessonDays)에는 쓰지 않는다 - 화면에서만 겹쳐 보인다.
@@ -16,7 +17,7 @@ import { formatSlot, normalizeSlotText, parseSlot } from './teachingSlot';
 
 export interface ProgressLesson {
   unit: string;
-  /** 표에 적힌 차시 글자 그대로 ('5', '5~6' …). 없으면 '' */
+  /** 차시 칸 글자 그대로 - 그 내용을 몇 차시 동안 하는지('2' = 잇단 두 교시, lessonRepeat). 없으면 '' (1차시) */
   no: string;
   content: string;
   /** 교과서 쪽 ('12~15' 같은 글자 그대로, 19번 U2). 옛 문서에는 없다 - 빈 글자로 읽는다 */
@@ -39,6 +40,11 @@ export interface ProgressPlan {
   subject?: string;
   /** 과정(여러 반): 반 '5-2' 목록. 있으면 과정 */
   classes?: string[];
+  /**
+   * 차시 칸 = 차시 수로 저장한 진도 (10-21~ 진도 창이 저장하면 적는다). 없으면 옛 진도 - 1, 2, 3 … 차례 번호 표(isOrderNumbered)면
+   * 한 행 = 한 차시, 아니면 차시 칸의 수만큼.
+   */
+  noCount?: boolean;
 }
 
 type CourseFields = Partial<Pick<ProgressPlan, 'subject' | 'classes'>>;
@@ -173,7 +179,8 @@ function positionalFields(rows: string[][]): Array<Field | null> {
  *   (칸이 넷이면 옛 표 '단원 | 차시 | 내용 | 준비물' - 교과서 칸을 더하기 전의 표도 그대로 읽는다).
  * - 빈 줄은 뺀다. 단원 칸만 있는 줄은 단원 제목으로 보고 아래 차시들에 붙인다.
  * - 단원 칸이 비면 위 줄의 단원을 잇는다(엑셀에서 합친 칸은 첫 줄에만 글자가 온다).
- * - 차시 칸의 숫자는 그 내용을 몇 차시 동안 하는지다(2026-10-07 사용자가 정함): '2'면 같은 내용을 2행으로 넣는다(lessonRepeat).
+ * - 차시 칸의 숫자는 그 내용을 몇 차시 동안 하는지다(2026-10-07 사용자가 정함): '2'면 그 행을 잇단 두 교시에(lessonPeriods).
+ *   행은 늘리지 않는다(10-21) - 늘려 둔 표(차시 칸이 빈 같은 내용 행)를 붙여 넣으면 한 행으로 합친다.
  */
 export function parseLessonTable(text: string): ProgressLesson[] {
   return parseLessonTableInfo(text).lessons;
@@ -186,8 +193,8 @@ export function parseLessonCsv(text: string): ProgressLesson[] {
 
 export interface LessonParseInfo {
   lessons: ProgressLesson[];
-  /** 차시 칸의 숫자만큼 더 넣은 행 수 (0이면 늘린 것 없음) */
-  repeated: number;
+  /** 모두 몇 차시 (차시 칸의 수를 더한 것) */
+  periods: number;
 }
 
 export function parseLessonTableInfo(text: string): LessonParseInfo {
@@ -204,7 +211,7 @@ const countOf = (no: string): number | null => {
   return m ? Number(m[1]) : null;
 };
 
-/** 한 행을 몇 번 넣을까 - 차시 칸의 숫자(1~10). 숫자가 아니면 1 */
+/** 한 행을 몇 차시 동안 할까 - 차시 칸의 숫자(1~10). 숫자가 아니면 1 */
 export const MAX_LESSON_REPEAT = 10;
 export function lessonRepeat(no: string): number {
   const n = countOf(no);
@@ -212,26 +219,86 @@ export function lessonRepeat(no: string): number {
 }
 
 /**
- * 차시 칸이 1, 2, 3 … 차례 번호인 옛 표인가 (2026-10-07 '차시 칸 = 차시 수'로 정하기 전에 붙여 넣은 표 - 늘리지 않는다).
- * 범위('5~6')가 있거나, 숫자가 10을 넘거나, 숫자 행이 셋 이상이고 늘 커지면. '1, 2'처럼 둘뿐이면 차시 수다
- * (10-21 사용자 - 1차시 + 2차시 = 3차시).
+ * 차시 칸이 1, 2, 3 … 차례 번호인 옛 표인가 (2026-10-07 '차시 칸 = 차시 수'로 정하기 전에 붙여 넣은 표 - 한 행 = 한 차시).
+ * 범위('5~6')가 있거나, 10을 넘는 수가 있거나, 셋 이상인 모든 행이 하나씩 느는 번호면. 표시(noCount)가 있는 진도는 보지 않는다.
  */
-export function isOrderNumbered(lessons: Pick<ProgressLesson, 'no'>[]): boolean {
-  const nos = lessons.map((l) => l.no.trim()).filter(Boolean);
+export function isOrderNumbered(lessons: Pick<ProgressLesson, 'no' | 'content'>[]): boolean {
+  const rows = lessons.filter((l) => l.no.trim() || l.content.trim());
+  const nos = rows.map((l) => l.no.trim());
   if (nos.some((no) => /^\d{1,3}\s*[~\-–]\s*\d{1,3}\s*(차시)?$/.test(no))) return true;
-  const ns = nos.map(countOf).filter((n): n is number => n !== null);
-  if (ns.some((n) => n > MAX_LESSON_REPEAT)) return true;
-  return ns.length >= 3 && ns.every((n, i) => i === 0 || n > ns[i - 1]);
+  const ns = nos.map(countOf);
+  if (ns.some((n) => n !== null && n > MAX_LESSON_REPEAT)) return true;
+  return rows.length >= 3 && ns.every((n, i) => n !== null && (i === 0 || n === ns[i - 1]! + 1));
 }
+
+/** 이 진도를 한 행 = 한 차시로 세나 (차시 칸 = 차시 수 표시가 없는 옛 차례 번호 표) */
+export const isOrderPlan = (plan: Pick<ProgressPlan, 'lessons' | 'noCount'>) => !plan.noCount && isOrderNumbered(plan.lessons);
+
+/**
+ * 차시 칸을 늘려 저장하던 때(10-07~10-21)의 표: 차시 칸이 n인 행 바로 뒤에 차시 칸이 빈 같은 내용 행이 있으면 그 n차시 안의 행이다.
+ * 행 무리마다 [그 행, 뒤따르는 같은 내용 행 …] (원래 행 번호). 차례 번호 표(order)는 한 행씩.
+ */
+export function repeatGroups(lessons: Pick<ProgressLesson, 'unit' | 'no' | 'content'>[], order = false): number[][] {
+  const groups: number[][] = [];
+  for (let i = 0; i < lessons.length; i++) {
+    const l = lessons[i];
+    const group = [i];
+    const want = order || !l.content.trim() ? 1 : lessonRepeat(l.no);
+    while (group.length < want) {
+      const next = lessons[i + group.length];
+      if (!next || next.no.trim() || next.content !== l.content || next.unit !== l.unit) break;
+      group.push(i + group.length);
+    }
+    groups.push(group);
+    i += group.length - 1;
+  }
+  return groups;
+}
+
+/** 수업 한 교시에 하는 차시 - 몇째 행인가(row)와 같은 내용 안에서 몇 번째/몇 차시(k/n) */
+export interface LessonPeriod {
+  row: number;
+  k: number;
+  n: number;
+}
+
+/**
+ * 차시 목록 → 차시 하나하나 (10-21 사용자 - 행을 늘리지 않고 차시 칸의 수만큼 수업에 되풀이한다: 1차시 + 2차시 = 3차시).
+ * 늘려 저장한 옛 표는 그 행들이 그 차시들이다(repeatGroups - 이은 메모가 행마다 그대로). 차례 번호 표(order)는 한 행 = 한 차시.
+ * k/n은 같은 내용(단원·내용이 같은 잇단 차시) 안에서 센다.
+ */
+export function lessonPeriods(lessons: Pick<ProgressLesson, 'unit' | 'no' | 'content'>[], order = false): LessonPeriod[] {
+  const rows: number[] = [];
+  for (const group of repeatGroups(lessons, order)) {
+    const want = order ? 1 : lessonRepeat(lessons[group[0]].no);
+    for (let k = 0; k < Math.max(want, group.length); k++) rows.push(group[k] ?? group[0]);
+  }
+  const same = (a: number, b: number) => {
+    const x = lessons[rows[a]];
+    const y = lessons[rows[b]];
+    return !!x.content.trim() && x.content === y.content && x.unit === y.unit;
+  };
+  const out: LessonPeriod[] = [];
+  for (let i = 0; i < rows.length; ) {
+    let end = i + 1;
+    while (end < rows.length && same(i, end)) end++;
+    for (let p = i; p < end; p++) out.push({ row: rows[p], k: p - i + 1, n: end - i });
+    i = end;
+  }
+  return out;
+}
+
+/** 진도의 차시들 (표시가 없는 옛 차례 번호 표는 한 행 = 한 차시) */
+export const planPeriods = (plan: Pick<ProgressPlan, 'lessons' | 'noCount'>) => lessonPeriods(plan.lessons, isOrderPlan(plan));
 
 /** 칸으로 나뉜 표를 차시 목록으로 (붙여넣기·CSV가 함께 쓴다) */
 function parseLessonRows(grid: string[][]): LessonParseInfo {
   const rows = grid.filter((r) => r.some((c) => c !== ''));
-  if (rows.length === 0) return { lessons: [], repeated: 0 };
+  if (rows.length === 0) return { lessons: [], periods: 0 };
 
   const header = headerFields(rows[0]);
   const body = header ? rows.slice(1) : rows;
-  if (body.length === 0) return { lessons: [], repeated: 0 };
+  if (body.length === 0) return { lessons: [], periods: 0 };
   const fields = header || positionalFields(body);
 
   const read: ProgressLesson[] = [];
@@ -246,23 +313,9 @@ function parseLessonRows(grid: string[][]): LessonParseInfo {
     read.push({ ...lesson, unit });
   }
 
-  // 차시 칸의 숫자만큼 같은 내용을 잇달아 넣는다. 뒤따르는 행의 차시 칸은 비운다 - 그 표를 다시 붙여 넣어도 또 늘지 않게.
-  const lessons: ProgressLesson[] = [];
-  let repeated = 0;
-  read.forEach((l, i) => {
-    // 이미 늘려 둔 표(바로 뒤에 차시 칸이 빈 같은 내용 행)를 다시 붙여 넣으면 그 행들을 센다
-    let already = 0;
-    while (already + 1 < MAX_LESSON_REPEAT) {
-      const next = read[i + 1 + already];
-      if (!next || next.no.trim() || next.content !== l.content || next.unit !== l.unit) break;
-      already++;
-    }
-    const extra = Math.max(0, lessonRepeat(l.no) - 1 - already);
-    lessons.push(l);
-    for (let k = 0; k < extra; k++) lessons.push({ ...l, no: '' });
-    repeated += extra;
-  });
-  return { lessons, repeated };
+  // 행은 늘리지 않는다 - 차시 칸의 수만큼 수업에 되풀이한다(lessonPeriods). 늘려 둔 표를 붙여 넣으면 같은 내용 행을 하나로 합친다
+  const lessons = repeatGroups(read).map((g) => read[g[0]]);
+  return { lessons, periods: lessonPeriods(lessons).length };
 }
 
 // ── 세기 ───────────────────────────────────────────────────────────────
@@ -270,7 +323,7 @@ function parseLessonRows(grid: string[][]): LessonParseInfo {
 export interface ProgressSlot {
   date: string;
   period: string;
-  /** 이 교시에 하는 차시(lessons의 차례, 0부터). 민 교시면 null. 목록보다 크면 목록이 끝난 뒤다 */
+  /** 이 교시에 하는 차시(planPeriods의 차례, 0부터 - 행 번호는 그 차시의 row). 민 교시면 null. 차시 수보다 크면 목록이 끝난 뒤다 */
   lesson: number | null;
   bumped: boolean;
 }
@@ -290,7 +343,7 @@ export interface ProgressTimeline {
  * until: 이날부터는 세지 않는다 (같은 칸 글자의 다음 진도가 이어받는 날 - progressUntil).
  */
 export function computeProgress(
-  plan: Pick<ProgressPlan, 'key' | 'startDate' | 'lessons' | 'bumps'> & CourseFields,
+  plan: Pick<ProgressPlan, 'key' | 'startDate' | 'lessons' | 'bumps' | 'noCount'> & CourseFields,
   subjectsByDate: Record<string, Record<string, string>>,
   isOffDay: (date: string) => boolean = () => false,
   until?: string,
@@ -308,6 +361,7 @@ export function computeProgress(
   const dates = Object.keys(subjectsByDate)
     .filter((d) => d >= plan.startDate && (!until || d < until))
     .sort();
+  const total = planPeriods(plan).length;
   let next = 0;
   for (const date of dates) {
     const periods = subjectsByDate[date] || {};
@@ -320,7 +374,7 @@ export function computeProgress(
       const slot: ProgressSlot = { date, period, lesson: bumped ? null : next++, bumped };
       slots.push(slot);
       bySlot[slotId(date, period)] = slot;
-      if (slot.lesson === plan.lessons.length - 1) last = slot;
+      if (slot.lesson === total - 1) last = slot;
     }
   }
   return { slots, bySlot, last };
@@ -352,32 +406,17 @@ export function progressUntil(
   return until;
 }
 
-/** 그 교시에 하는 차시. 민 교시·목록 밖이면 null */
+/** 그 교시에 하는 차시(index = 몇째 차시, row = 몇째 행). 민 교시·목록 밖이면 null */
 export function lessonAt(
-  plan: Pick<ProgressPlan, 'lessons'>,
+  plan: Pick<ProgressPlan, 'lessons' | 'noCount'>,
   timeline: ProgressTimeline,
   date: string,
   period: string | number
-): { index: number; lesson: ProgressLesson } | null {
+): { index: number; row: number; lesson: ProgressLesson } | null {
   const slot = timeline.bySlot[slotId(date, period)];
   if (!slot || slot.lesson === null) return null;
-  const lesson = plan.lessons[slot.lesson];
-  return lesson ? { index: slot.lesson, lesson } : null;
-}
-
-/**
- * 같은 내용(단원·내용이 같은 잇단 행)을 몇 차시 동안 하는지와 그중 몇 번째인지.
- * 차시 칸 '3'으로 늘어난 3행은 1/3, 2/3, 3/3. 저장된 목록에서 계산하니 옛 진도도 그대로 따라온다.
- */
-export function lessonRun(lessons: Pick<ProgressLesson, 'unit' | 'content'>[], index: number): { k: number; n: number } {
-  const l = lessons[index];
-  if (!l || !l.content.trim()) return { k: 1, n: 1 };
-  const same = (i: number) => lessons[i] && lessons[i].content === l.content && lessons[i].unit === l.unit;
-  let from = index;
-  while (from > 0 && same(from - 1)) from--;
-  let to = index;
-  while (to + 1 < lessons.length && same(to + 1)) to++;
-  return { k: index - from + 1, n: to - from + 1 };
+  const at = planPeriods(plan)[slot.lesson];
+  return at ? { index: slot.lesson, row: at.row, lesson: plan.lessons[at.row] } : null;
 }
 
 /** 수업 칸에 겹쳐 보일 한 교시의 진도 */
@@ -389,6 +428,9 @@ export interface ProgressMark {
   cls?: string;
   /** 차시 차례 (0부터). 민 교시면 null */
   index: number | null;
+  /** 그 차시의 행 (lessons의 차례 - 이은 메모 `progress:{planId}:{row}`). 민 교시면 null */
+  row: number | null;
+  /** 모두 몇 차시 */
   total: number;
   /** 같은 내용 안에서 몇 번째/몇 차시 (1/3, 2/3 …) */
   run: { k: number; n: number };
@@ -409,20 +451,23 @@ export function progressMarks(
   for (const plan of plans) {
     if (plan.lessons.length === 0) continue;
     const course = isCourse(plan);
+    const periods = planPeriods(plan);
     // 과정은 반마다 따로 센다 - 목록이 끝나 멈추는 것도 반마다
     for (const key of planKeys(plan)) {
       const t = computeProgress(plan, subjectsByDate, isOffDay, progressUntil(plan, plans, key), key);
       const cls = course ? parseSlot(key).cls : undefined;
       for (const s of t.slots) {
-        if (s.lesson !== null && s.lesson >= plan.lessons.length) break; // 목록이 끝났다
+        if (s.lesson !== null && s.lesson >= periods.length) break; // 목록이 끝났다
+        const at = s.lesson === null ? null : periods[s.lesson];
         out[slotId(s.date, s.period)] = {
           planId: plan.id,
           key: course ? key : plan.key,
           ...(cls ? { cls } : {}),
           index: s.lesson,
-          total: plan.lessons.length,
-          run: s.lesson === null ? { k: 1, n: 1 } : lessonRun(plan.lessons, s.lesson),
-          lesson: s.lesson === null ? null : plan.lessons[s.lesson],
+          row: at ? at.row : null,
+          total: periods.length,
+          run: at ? { k: at.k, n: at.n } : { k: 1, n: 1 },
+          lesson: at ? plan.lessons[at.row] : null,
           bumped: s.bumped,
         };
       }
@@ -497,11 +542,11 @@ export interface CourseClassStatus {
  * (진도 관리 창의 '오늘까지 n차시'와 같다). behind는 가장 많이 한 반과의 차이 - 2 이상이면 화면이 '늦음'으로 칠한다.
  */
 export function courseStatus(
-  plan: Pick<ProgressPlan, 'key' | 'lessons'> & CourseFields,
+  plan: Pick<ProgressPlan, 'key' | 'lessons' | 'noCount'> & CourseFields,
   timelinesByKey: Record<string, ProgressTimeline>,
   today: string
 ): CourseClassStatus[] {
-  const total = plan.lessons.length;
+  const total = planPeriods(plan).length;
   const rows: CourseClassStatus[] = planKeys(plan).map((key) => {
     const slots = (timelinesByKey[key]?.slots || []).filter((s) => s.lesson !== null && s.lesson < total);
     const past = slots.filter((s) => s.date <= today);
@@ -584,6 +629,7 @@ export function sanitizePlan(id: string, raw: unknown): ProgressPlan {
     lessons,
     bumps: Array.isArray(r.bumps) ? r.bumps.filter((b): b is string => typeof b === 'string') : [],
     ...(course || {}),
+    ...(r.noCount === true ? { noCount: true } : {}),
   };
 }
 

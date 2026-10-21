@@ -78,13 +78,13 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
           </span>
         )}
       </button>
-      {!mark.bumped && sid && mark.index !== null && (lesson?.linkIds?.length ?? 0) > 0 && (
+      {!mark.bumped && sid && mark.row !== null && (lesson?.linkIds?.length ?? 0) > 0 && (
         <button
           type="button"
           data-progress-links={lesson!.linkIds!.length}
           onClick={(e) => {
             e.stopPropagation();
-            openLinkViewer({ sid, id: progressLinkId(mark.planId, mark.index!) });
+            openLinkViewer({ sid, id: progressLinkId(mark.planId, mark.row!) });
           }}
           className="shrink-0 bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 cursor-pointer"
           title={`이 차시에 이은 메모 ${lesson!.linkIds!.length}개`}
@@ -97,13 +97,13 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
           🎒 {lesson.supplies}
         </span>
       )}
-      {!mark.bumped && sid && mark.index !== null && (
+      {!mark.bumped && sid && mark.row !== null && (
         <button
           type="button"
           data-progress-link-add
           onClick={(e) => {
             e.stopPropagation();
-            openLinker({ sid, id: progressLinkId(mark.planId, mark.index!) });
+            openLinker({ sid, id: progressLinkId(mark.planId, mark.row!) });
           }}
           className={`ml-auto shrink-0 px-1 py-0.5 rounded text-slate-400 hover:text-yellow-700 hover:bg-yellow-50 transition-opacity ${alwaysShowAction ? '' : 'sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100'}`}
           title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다"
@@ -117,7 +117,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
         data-progress-bump={mark.bumped ? 'undo' : 'bump'}
         onClick={toggle}
         disabled={busy}
-        className={`${!mark.bumped && sid && mark.index !== null ? '' : 'ml-auto'} shrink-0 px-1.5 py-0.5 rounded border font-bold transition-opacity disabled:opacity-50 ${
+        className={`${!mark.bumped && sid && mark.row !== null ? '' : 'ml-auto'} shrink-0 px-1.5 py-0.5 rounded border font-bold transition-opacity disabled:opacity-50 ${
           mark.bumped
             ? 'text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100'
             : `text-slate-500 border-slate-200 bg-white hover:bg-slate-50 ${alwaysShowAction ? '' : 'sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100'}`

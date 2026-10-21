@@ -4,7 +4,7 @@
 //   교과 모드는 과정: 과목 하나 + 반(하나든 여럿이든), 차시 목록은 하나이고 반마다 제 수업 칸에서 따로 센다. 반별 현황표·반 탭·다음 수업 밀기.
 //   저장은 개인 공간 progress/{planId}(💾·Ctrl+S, 바뀐 칸만) · 밀기는 누르는 대로 · 🗑️ 지우기 = 휴지통.
 //   행마다 🔗 = 그 차시에 메모 잇기(P10-4 - 고치던 것이 있으면 먼저 저장, 진도 쪽 그 행에만 적는다) · 숫자 = 이은 메모 보기.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
@@ -17,11 +17,13 @@ import {
   courseStatus,
   courseTitle,
   isCourse,
-  lessonRun,
+  isOrderNumbered,
+  lessonPeriods,
   parseLessonCsvInfo,
   parseLessonTableInfo,
   planKeys,
   planLabel,
+  planPeriods,
   progressKey,
   progressUntil,
   schoolYearEnd,
@@ -45,13 +47,12 @@ import {
   draftForSlot,
   draftTarget,
   emptyLesson,
-  growMarked,
-  growRow,
   hasText,
   insertRowAfter,
   lessonsToSave,
   newCourseDraft,
   newDraft,
+  rowLinkIds,
   sameAsSaved,
   squeeze,
   toDraft,
@@ -65,7 +66,7 @@ import { openLinker, openLinkViewer } from '../links/open';
 
 const FIELDS: Array<{ key: LessonField; label: string; title?: string }> = [
   { key: 'unit', label: '단원' },
-  { key: 'no', label: '차시', title: '그 내용을 몇 차시 동안 하는지 (2 = 같은 내용 2행 - 행을 벗어나거나 저장하면 늘어납니다)' },
+  { key: 'no', label: '차시', title: '그 내용을 몇 차시 동안 하는지 (2 = 잇단 두 수업, 비우면 1)' },
   { key: 'content', label: '내용' },
   { key: 'page', label: '교과서', title: '교과서 쪽 (예: 12~15)' },
   { key: 'supplies', label: '준비물' },
@@ -83,7 +84,6 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   const terms = useCommonSettings((s) => s.terms);
   const { mode, isClassUnit } = useTeaching();
   const [draft, setDraft] = useState<Draft | null>(null);
-  const stateDraft = draft;
   // 과정 미리보기에서 보는 반
   const [previewClass, setPreviewClass] = useState<string>(params?.cls ?? '');
   const [saving, setSaving] = useState(false);
@@ -176,6 +176,9 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   }, [timetables, subjectsByDate]);
 
   const lessons = useMemo(() => cleanLessons(draft?.lessons || []), [draft?.lessons]);
+  // 차시 칸의 수만큼 되풀이한 차시들 (표시가 없는 옛 1, 2, 3 … 차례 번호 표는 한 행 = 한 차시)
+  const orderNo = !!draft && !draft.noCount && isOrderNumbered(lessons);
+  const periods = useMemo(() => lessonPeriods(lessons, orderNo), [lessons, orderNo]);
   // 세는 열쇠: 과목(칸 글자), 과정이면 보는 반의 '5-2 과학' (과목·반이 없으면 '')
   const key = !target ? '' : courseTarget ? (viewClass && target.subject ? formatSlot(viewClass, target.subject) : '') : target.key;
   const planRef =
@@ -186,14 +189,14 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   const bumps = saved?.bumps;
   const timeline = useMemo(() => {
     if (!planRef || !subjectsByDate || !key || !from) return null;
-    return computeProgress({ ...planRef, startDate: from, lessons, bumps: bumps || [] }, subjectsByDate, isOffDay, until, key);
+    return computeProgress({ ...planRef, startDate: from, lessons, bumps: bumps || [], noCount: draft!.noCount }, subjectsByDate, isOffDay, until, key);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, key, subjectsByDate, from, lessons, bumps, isOffDay, until]);
 
   // 과정: 반별 현황 - 반마다 따로 센 것을 한 표로. 오늘까지 한 차시, 다음 수업, 가장 앞선 반과의 차이
   const statusRows = useMemo(() => {
     if (!planRef || !courseTarget || !subjectsByDate || !from || lessons.length === 0 || !target!.subject) return [];
-    const plan = { ...planRef, startDate: from, lessons, bumps: bumps || [] };
+    const plan = { ...planRef, startDate: from, lessons, bumps: bumps || [], noCount: draft!.noCount };
     const timelines: Record<string, ProgressTimeline> = {};
     for (const k of planKeys(plan)) timelines[k] = computeProgress(plan, subjectsByDate, isOffDay, progressUntil(plan, plans, k), k);
     return courseStatus(plan, timelines, today);
@@ -241,14 +244,14 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   // ── 표 붙여넣기·칸 고치기 ──
 
   /** 읽어 온 차시 목록으로 바꾼다 (붙여넣기·CSV 불러오기). 이미 목록이 있으면 먼저 묻는다 */
-  const replaceLessons = ({ lessons: parsed, repeated }: LessonParseInfo, how: '붙여 넣은' | '불러온') => {
+  const replaceLessons = ({ lessons: parsed, periods: count }: LessonParseInfo, how: '붙여 넣은' | '불러온') => {
     if (!draft) return;
     const cur = cleanLessons(draft.lessons).length;
-    if (cur > 0 && !window.confirm(`지금 차시 목록 ${cur}개를 ${how} ${parsed.length}개로 바꿀까요?`)) return;
-    update({ lessons: parsed.map(withKey) });
-    // 차시 칸의 숫자 = 그 내용을 몇 차시 동안 (2이면 같은 내용 2행)
-    const note = repeated > 0 ? ` 차시 칸의 숫자만큼 같은 내용을 ${repeated}행 더 넣었습니다.` : '';
-    showToast(`✅ ${parsed.length}차시를 ${how === '붙여 넣은' ? '붙여 넣었습니다' : '불러왔습니다'}.${note} 미리보기를 보고 💾 저장을 누르세요.`);
+    if (cur > 0 && !window.confirm(`지금 차시 목록 ${cur}행을 ${how} ${parsed.length}행으로 바꿀까요?`)) return;
+    update({ lessons: parsed.map(withKey), noCount: true });
+    // 차시 칸의 숫자 = 그 내용을 몇 차시 동안 (행은 하나, 2이면 잇단 두 수업)
+    const what = count > parsed.length ? `${parsed.length}행 · ${count}차시` : `${count}차시`;
+    showToast(`✅ ${what}를 ${how === '붙여 넣은' ? '붙여 넣었습니다' : '불러왔습니다'}. 미리보기를 보고 💾 저장을 누르세요.`);
   };
 
   const handleTablePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
@@ -280,21 +283,8 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     }
   };
 
-  // 차시 칸을 고치면 그 행에 표시(_grow) - 행을 벗어나거나 저장할 때 그 숫자만큼 늘린다(내용을 나중에 적어도)
   const setCell = (row: number, field: LessonField, value: string) =>
-    setDraft((d) =>
-      d ? { ...d, lessons: d.lessons.map((l, i) => (i === row ? { ...l, [field]: value, ...(field === 'no' ? { _grow: true } : {}) } : l)) } : d,
-    );
-
-  /** 커서가 그 행 밖으로 나가면 차시 칸을 고친 그 행을 늘린다 (행 안의 🔗·삭제 단추로 가는 것은 행 안) */
-  const leaveRow = (e: React.FocusEvent<HTMLDivElement>, k: string) => {
-    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
-    setDraft((d) => {
-      if (!d) return d;
-      const grown = growRow(d.lessons, d.lessons.findIndex((l) => l._k === k));
-      return grown === d.lessons ? d : { ...d, lessons: grown };
-    });
-  };
+    setDraft((d) => (d ? { ...d, lessons: d.lessons.map((l, i) => (i === row ? { ...l, [field]: value } : l)) } : d));
 
   const focusCell = (pos: CellPos) => {
     const el = tableRef.current?.querySelector<HTMLInputElement>(`input[data-cell="${pos.row}-${pos.col}"]`);
@@ -308,13 +298,6 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   useEffect(() => {
     lastFocus.current = null;
   }, [draft?.id]);
-  // 위 행이 늘어 커서가 든 칸의 행 번호가 밀리면 따라간다
-  useLayoutEffect(() => {
-    const cell = tableRef.current?.contains(document.activeElement) ? document.activeElement?.getAttribute('data-cell') : null;
-    if (!cell) return;
-    const [row, col] = cell.split('-').map(Number);
-    lastFocus.current = { row, col };
-  }, [draft?.lessons]);
 
   /** after 행 바로 아래에 빈 행을 넣고 그 행의 col 칸에 커서. after가 없으면 마지막으로 커서가 있던 행(없었으면 맨 아래) */
   const addRow = (after?: number, col?: number) => {
@@ -373,7 +356,6 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
         const f = FIELDS[col + c];
         if (!f) return;
         next[i][f.key] = v;
-        if (f.key === 'no') next[i]._grow = true;
         last = { row: i, col: col + c };
       });
     });
@@ -385,14 +367,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
 
   /** 저장 - 됐으면 true (🔗가 먼저 저장할 때 기다린다) */
   const handleSave = async (): Promise<boolean> => {
-    if (!sid || !stateDraft || saving) return false;
-    // 차시 칸을 고친 행을 모두 늘린다 - Ctrl+S처럼 커서가 그 행에 든 채 저장해도
-    let draft = stateDraft;
-    const grown = growMarked(draft.lessons);
-    if (grown !== draft.lessons) {
-      draft = { ...draft, lessons: grown };
-      setDraft(draft);
-    }
+    if (!sid || !draft || saving) return false;
     const clean = cleanLessons(draft.lessons);
     const t = draftTarget(draft);
     const fail = (text: string) => {
@@ -406,8 +381,8 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     // 이은 메모는 지금 문서의 그 행에서 (창을 연 채 수업 칸에서 이은 것도 덮지 않게)
     const lessons = lessonsToSave(draft.lessons, savedDoc?.lessons);
     const next = t.classes
-      ? { id: draft.id, key: '', startDate: draft.startDate, lessons, subject: t.subject!, classes: t.classes }
-      : { id: draft.id, key: t.key, startDate: draft.startDate, lessons };
+      ? { id: draft.id, key: '', startDate: draft.startDate, lessons, noCount: draft.noCount, subject: t.subject!, classes: t.classes }
+      : { id: draft.id, key: t.key, startDate: draft.startDate, lessons, noCount: draft.noCount };
     // 같은 열쇠(과정이면 반마다)에 같은 시작일의 진도가 이미 있으면 둘이 같은 교시를 다툰다
     const mine = planKeys(next).map(normalizeSlotText);
     const clash = plans.find(
@@ -425,7 +400,6 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
         key: planKeys(next)[0],
         subject: t.subject ?? draft.subject,
         lessons: draft.lessons.filter(hasText).map((l, i) => ({ ...trimLesson(l), _k: l._k, _from: i })),
-        grown: undefined,
         // 반 없이(또는 옛 모양 그대로) 저장했으면 다음에도 그 글자로, 과정이 되었으면 과정으로
         legacyKey: draft.classes && !t.classes ? t.key : null,
       });
@@ -438,17 +412,15 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     }
   };
 
-  /** 그 행(차시)에 이은 메모 수 - 저장한 문서의 그 행 */
-  const rowLinks = (r: number) => {
-    const from = draft?.lessons[r]?._from;
-    return from === undefined ? 0 : (savedDoc?.lessons?.[from]?.linkIds?.length ?? 0);
-  };
+  /** 그 행(차시)에 이은 메모 수 - 저장한 문서의 그 행 (늘려 저장한 옛 표는 합친 행들까지) */
+  const rowLinks = (r: number) => (draft?.lessons[r] ? rowLinkIds(draft.lessons[r], savedDoc?.lessons).length : 0);
   /** 🔗 그 차시에 메모 잇기 - 고치던 것이 있으면 먼저 저장한다(행 차례가 문서와 같아지게) */
   const linkRow = async (r: number) => {
     if (!sid || !draft) return;
     const row = draft.lessons[r];
     if (!row || !hasText(row)) return showErrorToast('차시 내용을 먼저 적어 주세요.');
-    const index = draft.lessons.slice(0, r).filter(hasText).length;
+    // 고친 것이 없으면 문서의 그 행(늘려 저장한 옛 표는 문서 행 번호가 다르다), 고쳤으면 저장한 뒤의 행 차례
+    const index = !dirty && row._from !== undefined ? row._from : draft.lessons.slice(0, r).filter(hasText).length;
     if ((dirty || !savedDoc) && !(await handleSave())) return;
     openLinker({ sid, id: progressLinkId(draft.id, index) });
   };
@@ -483,18 +455,18 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     else if (timeline?.last)
       summary = (
         <>
-          마지막 <b>{lessons.length}차시</b>:{' '}
+          마지막 <b>{periods.length}차시</b>:{' '}
           <b>
             {shortDateLabel(timeline.last.date)} {timeline.last.period}교시
           </b>
-          {' · '}오늘까지 <b>{Math.min(doneCount, lessons.length)}차시</b>
+          {' · '}오늘까지 <b>{Math.min(doneCount, periods.length)}차시</b>
         </>
       );
     else {
       const taught = rows.filter((s) => s.lesson !== null).length;
       summary = (
         <>
-          {until ? `${shortDateLabel(until)} 전까지` : '이 학년도 안에'} '{key}' 수업이 <b>{taught}번</b>뿐이라 <b className="text-rose-600">{lessons.length - taught}차시가 남습니다</b>
+          {until ? `${shortDateLabel(until)} 전까지` : '이 학년도 안에'} '{key}' 수업이 <b>{taught}번</b>뿐이라 <b className="text-rose-600">{periods.length - taught}차시가 남습니다</b>
           {' · '}오늘까지 <b>{doneCount}차시</b>
         </>
       );
@@ -552,7 +524,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                   p.id === draft.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
                 }`}
-                title={`${p.startDate}부터 · ${p.lessons.length}차시`}
+                title={`${p.startDate}부터 · ${planPeriods(p).length}차시`}
               >
                 {isCourse(p) ? (
                   <>
@@ -561,7 +533,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                 ) : (
                   p.key
                 )}{' '}
-                <span className="font-medium opacity-75">{p.lessons.length}차시</span>
+                <span className="font-medium opacity-75">{planPeriods(p).length}차시</span>
               </button>
             ))}
             <button
@@ -728,8 +700,13 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
           <section className="space-y-2">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="text-xs font-black text-slate-700">
-                차시 목록 {lessons.length > 0 && `(${lessons.length})`}
-                <span className="ml-1.5 font-normal text-slate-400">한 행 = 한 차시</span>
+                차시 목록{' '}
+                {lessons.length > 0 && (
+                  <span data-progress-count={periods.length}>
+                    {periods.length > lessons.length ? `(${lessons.length}행 · ${periods.length}차시)` : `(${periods.length})`}
+                  </span>
+                )}
+                <span className="ml-1.5 font-normal text-slate-400">{orderNo ? '한 행 = 한 차시' : '차시 칸 = 그 내용을 몇 차시 동안 (비우면 1)'}</span>
               </h3>
               <div className="flex items-center gap-1">
                 <button
@@ -760,12 +737,21 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
               rows={2}
               data-progress-paste
               aria-label="차시 표 붙여넣기"
-              placeholder={"엑셀·한셀에서 '단원 | 차시 | 내용 | 교과서 | 준비물' 표를 복사해 여기를 누르고 Ctrl + V\n(차시 칸 2 = 같은 내용을 2차시 연속으로 넣습니다)"}
+              placeholder={"엑셀·한셀에서 '단원 | 차시 | 내용 | 교과서 | 준비물' 표를 복사해 여기를 누르고 Ctrl + V\n(차시 칸 2 = 그 내용을 잇단 두 수업에 - 행은 하나)"}
               className="w-full px-3 py-2 text-xs bg-indigo-50/40 border border-dashed border-indigo-300 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400 placeholder:text-indigo-400"
             />
-            {!!draft.grown && dirty && (
-              <div data-progress-grown={draft.grown} className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                차시 칸의 숫자만큼 같은 내용을 <b>{draft.grown}행</b> 더 넣었습니다. <b>💾 저장</b>을 누르면 수업 칸에 반영됩니다.
+            {orderNo && (
+              <div data-progress-order-no className="flex items-center gap-2 flex-wrap text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <span className="flex-1 min-w-0">차시 칸이 1, 2, 3 … 차례 번호인 옛 표라 <b>한 행 = 한 차시</b>로 셉니다.</span>
+                <button
+                  type="button"
+                  data-progress-count-no
+                  onClick={() => update({ noCount: true })}
+                  title="차시 칸의 숫자를 그 내용을 몇 차시 동안 하는지로 셉니다 (1, 2, 3 = 6차시)"
+                  className="shrink-0 px-2 py-0.5 font-bold bg-white hover:bg-amber-100 border border-amber-300 rounded-md cursor-pointer"
+                >
+                  차시 수로 세기
+                </button>
               </div>
             )}
             {draft.lessons.length > 0 && (
@@ -781,7 +767,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                 </div>
                 <div className="space-y-1 pr-0.5">
                   {draft.lessons.map((l, r) => (
-                    <div key={l._k} className={ROW_GRID} data-progress-row={r} onBlur={(e) => leaveRow(e, l._k)}>
+                    <div key={l._k} className={ROW_GRID} data-progress-row={r}>
                       {FIELDS.map((f, c) => (
                         <input
                           key={f.key}
@@ -938,7 +924,8 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
             {rows.length > 0 && lessons.length > 0 && (
               <ol ref={previewRef} className="max-h-72 overflow-y-auto divide-y divide-slate-100 border border-slate-100 rounded-lg" data-progress-rows={rows.length}>
                 {rows.map((s) => {
-                  const lesson = s.lesson !== null ? lessons[s.lesson] : null;
+                  const at = s.lesson !== null ? periods[s.lesson] : undefined;
+                  const lesson = at ? lessons[at.row] : null;
                   const past = s.date < today;
                   const upcoming = s === nextRow || (s.date === today && s.lesson !== null);
                   return (
@@ -956,7 +943,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                       ) : (
                         <span className="flex-1 min-w-0 truncate">
                           <b className="tabular-nums">
-                            {lessonRun(lessons, s.lesson ?? 0).k}/{lessonRun(lessons, s.lesson ?? 0).n}차시
+                            {at?.k ?? 1}/{at?.n ?? 1}차시
                           </b>
                           {lesson?.content && ` · ${lesson.content}`}
                         </span>

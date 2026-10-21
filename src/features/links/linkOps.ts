@@ -10,7 +10,7 @@ import { writeOp, type WriteOp } from '../../data/repo/ops';
 import type { Stored, YMD } from '../../data/types';
 import { itemPath, type ItemDoc } from '../events/eventOps';
 import { lessonDayPath } from '../lessons/lessonOps';
-import { planLabel, sanitizePlan } from '../../domain/progress';
+import { planLabel, planPeriods, sanitizePlan } from '../../domain/progress';
 
 export const LESSON_LINK_PREFIX = 'lesson:';
 
@@ -163,11 +163,12 @@ export function progressEndOf(id: string, docs: Readonly<Record<string, Stored<'
   return { id, planId: p.planId, row: p.row, linkIds: row.linkIds ?? [], title: progressRowTitle(plan, p.row), plan };
 }
 
-/** 진도 행 이름 '과학 5차시 · 비유 표현' (차시 = 행 차례 + 1 - 수업 칸의 'n/전체차시'와 같다) */
+/** 진도 행 이름 '과학 5차시 · 비유 표현' (차시 = 그 행의 첫 차시 - 차시 칸이 2인 앞 행은 두 차시, 수업 칸의 '전체 n차시'와 같다) */
 export function progressRowTitle(plan: Stored<'progress'>, row: number): string {
   const sane = sanitizePlan(plan.id, plan);
   const content = sane.lessons[row]?.content.trim();
-  return `${planLabel(sane)} ${row + 1}차시${content ? ` · ${content}` : ''}`;
+  const at = planPeriods(sane).findIndex((p) => p.row === row);
+  return `${planLabel(sane)} ${(at < 0 ? row : at) + 1}차시${content ? ` · ${content}` : ''}`;
 }
 
 /** 그 행의 linkIds를 바꾼 쓰기 (lessons 배열째 - 그 행 말고는 그대로) */

@@ -1,9 +1,10 @@
 // tools/inspect-progress.mjs - P6-2: 진도를 실제 크롬에서 본다.
-//   1) 하루 수업 칸 수정 → '📘 진도 만들기' = 그 칸 글자로 새 진도 → 시작일·표 붙여넣기(차시 칸 2 = 2행) → 미리보기 → 💾 = 문서 하나
+//   1) 하루 수업 칸 수정 → '📘 진도 만들기' = 그 칸 글자로 새 진도 → 시작일·표 붙여넣기(차시 칸 2 = 한 행이 두 차시) → 미리보기 → 💾 = 문서 하나
 //   2) 수업 칸 진도 줄(📘 k/n차시 · 📖 쪽 · 🎒 준비물) · 이 교시 밀기 = bumps 한 칸 · 되돌리기(안내) · 주간 k/n 배지 · 줄을 누르면 그 진도
 //   3) 진도 창: 칸 고치기 = 바뀐 칸만 · ESC 묻기 · Ctrl+Enter 행 · CSV 불러오기 · 예시 CSV 받기 · + 새 진도 · 지우기 = 휴지통 · ⋮·머리줄 📘 · 단축키
 //   4) 전담(teacher3 ?as=3): 과정(과목 + 여러 반) - 반마다 따로 세기·반별 현황표·다음 수업 밀기
 //   5) P10-4: 진도 행 🔗 = 그 차시에 메모 잇기(고치던 것은 먼저 저장) → 진도 쪽 그 행에만 · 그 차시를 하는 수업 칸 🔗 n · 그날 메모 칸(📘) · 끊기
+//   6) 10-21: 차시 칸 = 차시 수 - 행을 늘리지 않고 수업에 되풀이 · 늘려 저장한 옛 표는 한 행으로 · 표시 없는 옛 차례 번호 표는 한 행 = 한 차시
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-progress.mjs
 // 에뮬레이터 teacher·teacher3 계정의 시간표·수업 칸·진도를 비우고 심은 뒤 끝에 되돌린다.
@@ -88,10 +89,11 @@ try {
   r.check((await page.locator(sel('progress-key')).inputValue()) === '국어', '과목 = 그 칸 글자 (국어)');
   r.check((await page.locator(sel('progress-key-option')).count()) >= 2, '과목 고르기 = 시간표의 과목들');
   await page.locator(sel('progress-start')).fill('2026-10-12');
-  // 차시 칸 1, 2, 1 = 1행 + 2행 + 1행 (차시 수)
+  // 차시 칸 1, 2, 1 = 3행 · 4차시 (행은 늘리지 않는다 - 10-21)
   await pasteInto(page.locator(sel('progress-paste')), '1단원\t1\t시 읽기\t12~13\t색연필\n1단원\t2\t비유 표현\t14\t\n2단원\t1\t이야기\t20\t\n');
-  r.check(await waitFor(page.locator(sel('progress-table', 4))), "붙여넣기 = 표 4행 (차시 칸 '2'는 같은 내용 2행)");
-  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '1행 더' })), '안내: 차시 수만큼 더 넣었다');
+  r.check(await waitFor(page.locator(sel('progress-table', 3))), "붙여넣기 = 표 3행 (차시 칸 '2'도 한 행)");
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '3행 · 4차시' })), '안내: 3행 · 4차시');
+  r.check(await waitFor(page.locator(sel('progress-count', 4))), '표 위 (3행 · 4차시)');
   r.check(await waitFor(page.locator(sel('progress-rows', 4))), '미리보기 = 4교시 (월·수 1교시를 차례로)');
   const slots = await page.locator(`${win} [data-slot]`).evaluateAll((els) => els.map((e) => e.getAttribute('data-slot')));
   r.check(slots.join(',') === '2026-10-12#1,2026-10-14#1,2026-10-19#1,2026-10-21#1', `미리보기 교시 = 시간표의 국어 (${slots.join(',')})`);
@@ -99,7 +101,7 @@ try {
   await page.locator(sel('progress-save')).click();
   const plans1 = await serverUntil(() => liveDocs(A, 'progress'), (d) => d.length === 1);
   const p1 = plans1[0]?.data();
-  r.check(p1?.key === '국어' && p1.startDate === '2026-10-12' && p1.lessons?.length === 4 && Array.isArray(p1.bumps), '💾 저장 = 진도 문서 하나 (key·startDate·lessons·bumps)');
+  r.check(p1?.key === '국어' && p1.startDate === '2026-10-12' && p1.lessons?.length === 3 && Array.isArray(p1.bumps) && p1.noCount === true, '💾 저장 = 진도 문서 하나 (key·startDate·lessons 3행·bumps·noCount)');
   r.check(p1?.lessons?.[0]?.page === '12~13' && p1.lessons[0].supplies === '색연필', '교과서 쪽·준비물 칸');
   const planId = plans1[0]?.id;
   r.check(await waitFor(page.locator(sel('progress-plan', planId))), '진도 칩이 생긴다');
@@ -157,18 +159,18 @@ try {
   await page.waitForTimeout(300);
   r.check(dialogs.seen.length > 0 && (await page.locator(win).count()) === 1, 'ESC = 저장 안 한 것을 먼저 묻는다');
   // Ctrl+Enter = 그 아래 행
-  await cell('3-2').click();
+  await cell('2-2').click();
   await page.keyboard.press('Control+Enter');
-  r.check(await waitFor(page.locator(sel('progress-table', 5))), 'Ctrl+Enter = 아래에 행 추가');
-  r.check((await page.evaluate(() => document.activeElement?.getAttribute('data-cell'))) === '4-2', '새 행의 같은 칸으로');
+  r.check(await waitFor(page.locator(sel('progress-table', 4))), 'Ctrl+Enter = 아래에 행 추가');
+  r.check((await page.evaluate(() => document.activeElement?.getAttribute('data-cell'))) === '3-2', '새 행의 같은 칸으로');
   await page.keyboard.type('정리');
   await page.keyboard.press('Control+s');
-  const edited = await serverUntil(() => read(A.ref('progress', planId)), (d) => d?.lessons?.length === 5);
-  r.check(edited?.lessons?.[0]?.content === '시 소리 내어 읽기' && edited.lessons[4].content === '정리', 'Ctrl+S = 저장 (차시 목록)');
+  const edited = await serverUntil(() => read(A.ref('progress', planId)), (d) => d?.lessons?.length === 4);
+  r.check(edited?.lessons?.[0]?.content === '시 소리 내어 읽기' && edited.lessons[3].content === '정리', 'Ctrl+S = 저장 (차시 목록)');
   r.check(edited?.key === '국어' && edited.startDate === '2026-10-12', '다른 칸은 그대로');
   // 행 지우기
-  await page.locator(sel('progress-row-delete', 4)).click();
-  r.check(await waitFor(page.locator(sel('progress-table', 4))), '✕ = 행 지우기');
+  await page.locator(sel('progress-row-delete', 3)).click();
+  r.check(await waitFor(page.locator(sel('progress-table', 3))), '✕ = 행 지우기');
 
   r.section('차시에 메모 잇기 (P10-4)');
   await setDoc(A.ref('items', 'insp_pgn'), { kind: 'note', date: null, text: '점검진도 비유 활동지', labelIds: [], order: 'Zz9', authorId: uid, ...tracked });
@@ -177,7 +179,7 @@ try {
   await page.locator(sel('progress-row-link', 1)).click();
   const linker = page.locator(sel('linker', `progress:${planId}:1`));
   r.check(await waitFor(linker, 8000), '🔗 = 그 차시의 연결 창');
-  r.check((await serverUntil(() => read(A.ref('progress', planId)), (d) => d?.lessons?.length === 4))?.lessons?.length === 4, '고치던 것(행 지우기)은 먼저 저장');
+  r.check((await serverUntil(() => read(A.ref('progress', planId)), (d) => d?.lessons?.length === 3))?.lessons?.length === 3, '고치던 것(행 지우기)은 먼저 저장');
   r.check((await linker.locator(sel('linker-tab')).evaluateAll((els) => els.map((e) => e.dataset.linkerTab).join(','))) === 'note', '차시에서 열면 메모 탭만');
   await linker.locator(sel('linker-keyword')).fill('점검진도');
   await linker.locator(sel('linker-item', 'insp_pgn')).click();
@@ -254,8 +256,8 @@ try {
   await page.keyboard.press('Escape');
   await waitFor(async () => !(await page.locator(win).count()));
 
-  r.section('차시 칸 = 차시 수 (10-21 - 1차시 + 2차시 = 3차시)');
-  // 늘리지 않은 채 저장된 표 (차시 칸을 내용보다 먼저 적어 늘지 않았다) - 열면 숫자만큼 늘려 보이고, 저장하면 수업 칸에
+  r.section('차시 칸 = 차시 수 (10-21 - 1차시 + 2차시 = 3차시, 행은 늘리지 않는다)');
+  // 사용자 표: 왕복오래달리기 1 · 작은 공을 치고 받아요 2 (표시 없는 옛 문서 - 둘뿐이라 차시 수)
   await setDoc(A.ref('progress', 'insp_pgc'), {
     key: '수학',
     startDate: '2026-10-26',
@@ -272,33 +274,80 @@ try {
   await page.evaluate(() => window.sp5.openWindow('progress'));
   await waitFor(page.locator(sel('progress-plan', 'insp_pgc')), 8000);
   await page.locator(sel('progress-plan', 'insp_pgc')).click();
-  r.check(await waitFor(page.locator(`${win} ${sel('progress-table', 3)}`), 8000), "저장된 '1, 2' 표를 열면 3행");
-  r.check((await cell('2-2').inputValue()) === '작은 공을 치고 받아요' && (await cell('2-1').inputValue()) === '', '늘린 행 = 같은 내용, 차시 칸은 빈칸');
-  r.check(await waitFor(page.locator(sel('progress-grown', 1))), '안내: 1행 더 넣었다 · 저장하면 반영');
+  r.check(await waitFor(page.locator(`${win} ${sel('progress-table', 2)}`), 8000), "'1, 2' 표는 그대로 2행");
+  r.check(await waitFor(page.locator(sel('progress-count', 3))), '표 위 (2행 · 3차시)');
   r.check(await waitFor(page.locator(sel('progress-rows', 3))), '미리보기 = 3차시');
-  await page.locator(sel('progress-save')).click();
-  const pgc = await serverUntil(() => read(A.ref('progress', 'insp_pgc')), (d) => d?.lessons?.length === 3);
-  r.check(pgc?.lessons?.[2]?.content === '작은 공을 치고 받아요' && pgc.lessons[2].no === '' && pgc.lessons[2].page === '70-71', '💾 = 서버 3행');
-  r.check(await waitFor(async () => !(await page.locator(sel('progress-grown')).count())), '저장하면 안내가 사라진다');
-  // 새 행을 왼쪽부터: 차시 2 → 내용 → 다른 행으로 가면 같은 내용 2행
+  const pv3 = await page.locator(`${win} [data-slot]`).evaluateAll((els) => els.map((e) => e.textContent.replace(/\s+/g, ' ')));
+  r.check(pv3[1]?.includes('1/2차시 · 작은 공을 치고 받아요') && pv3[2]?.includes('2/2차시 · 작은 공을 치고 받아요'), `미리보기: 작은 공 1/2 · 2/2 (${pv3.join(' | ')})`);
+  r.check(!(await page.locator(sel('progress-save')).isEnabled()), '열어 보기만 하면 고친 것이 아니다 (💾 꺼짐)');
+  // 새 행: 차시 2를 내용보다 먼저 적어도 행은 하나, 미리보기는 2차시 더
   await page.locator(sel('progress-add-row')).click();
-  await waitFor(page.locator(sel('progress-table', 4)));
-  await cell('3-1').fill('2');
-  await cell('3-2').fill('공 던지기');
-  r.check((await page.locator(sel('progress-table', 4)).count()) === 1, '그 행에 있는 동안은 늘리지 않는다');
+  await waitFor(page.locator(sel('progress-table', 3)));
+  await cell('2-1').fill('2');
+  await cell('2-2').fill('공 던지기');
   await cell('0-2').click();
-  r.check(await waitFor(page.locator(sel('progress-table', 5))), '차시 칸을 내용보다 먼저 적어도 행을 벗어나면 2행');
-  r.check((await cell('4-2').inputValue()) === '공 던지기' && (await cell('4-1').inputValue()) === '', '늘린 행 = 같은 내용');
-  // 차시 칸에 커서가 든 채 Ctrl+S - 저장하면서 늘린다
-  await cell('0-1').fill('2');
+  r.check(await waitFor(page.locator(sel('progress-count', 5))), '차시 칸 2 = 행 하나 · 5차시');
+  r.check((await page.locator(sel('progress-table', 3)).count()) === 1, '행은 늘지 않는다 (3행)');
   await page.keyboard.press('Control+s');
-  const pgc2 = await serverUntil(() => read(A.ref('progress', 'insp_pgc')), (d) => d?.lessons?.length === 6);
-  r.check(pgc2?.lessons?.map((l) => l.content).join(',') === '왕복오래달리기,왕복오래달리기,작은 공을 치고 받아요,작은 공을 치고 받아요,공 던지기,공 던지기', 'Ctrl+S = 고친 차시 칸만큼 늘려 저장 (6행)');
+  const pgc = await serverUntil(() => read(A.ref('progress', 'insp_pgc')), (d) => d?.lessons?.length === 3 && d.noCount === true);
+  r.check(pgc?.lessons?.map((l) => `${l.no}:${l.content}`).join(',') === '1:왕복오래달리기,2:작은 공을 치고 받아요,2:공 던지기', `💾 = 서버 3행 + noCount (${pgc?.lessons?.map((l) => l.content)})`);
   await page.locator(`[data-popup-frame]:has(${win}) [data-close]`).click();
-  await go('#/day/2026-11-09');
-  const mark3 = card(2).locator(sel('progress-mark'));
-  r.check(await waitFor(async () => (await mark3.getAttribute('data-progress-mark').catch(() => null)) === '3', 8000), '수업 칸: 11/9 월 2교시 = 3차시');
-  r.check(((await mark3.textContent()) ?? '').includes('1/2차시'), '작은 공을 치고 받아요 1/2차시');
+  // 수업 칸: 10/26 왕복 · 11/2 작은 공 1/2 · 11/9 작은 공 2/2 · 11/16 공 던지기 1/2
+  const markOn = async (day, n, k, text) => {
+    await go(`#/day/${day}`);
+    const m = card(2).locator(sel('progress-mark'));
+    const ok = await waitFor(async () => (await m.getAttribute('data-progress-mark').catch(() => null)) === String(n), 8000);
+    const t = ((await m.textContent().catch(() => '')) ?? '').replace(/\s+/g, ' ');
+    r.check(ok && t.includes(`${k}차시`) && t.includes(text), `수업 칸 ${day} = ${n}차시 · ${k} ${text} (${t})`);
+  };
+  await markOn('2026-11-02', 2, '1/2', '작은 공을 치고 받아요');
+  await markOn('2026-11-09', 3, '2/2', '작은 공을 치고 받아요');
+  await markOn('2026-11-16', 4, '1/2', '공 던지기');
+
+  // 10-07~10-21에 늘려 저장한 표 - 세는 것은 같고, 창에서는 한 행으로 (고친 것 아님)
+  await setDoc(A.ref('progress', 'insp_pgc'), {
+    key: '수학',
+    startDate: '2026-10-26',
+    bumps: [],
+    lessons: [
+      { unit: '', no: '2', content: '줄넘기', page: '', supplies: '', linkIds: ['m_a'] },
+      { unit: '', no: '', content: '줄넘기', page: '', supplies: '', linkIds: ['m_b'] },
+      { unit: '', no: '1', content: '정리', page: '', supplies: '' },
+    ],
+    authorId: uid,
+    ...tracked,
+  });
+  await markOn('2026-11-02', 2, '2/2', '줄넘기');
+  await page.evaluate(() => window.sp5.openWindow('progress', { planId: 'insp_pgc' }));
+  await waitFor(page.locator(sel('progress-plan', 'insp_pgc')), 8000);
+  await page.locator(sel('progress-plan', 'insp_pgc')).click();
+  r.check(await waitFor(page.locator(`${win} ${sel('progress-table', 2)}`), 8000), '늘려 저장한 표를 열면 한 행으로 (2행)');
+  r.check(await waitFor(page.locator(sel('progress-count', 3))), '세는 것은 같다 (2행 · 3차시)');
+  r.check(!(await page.locator(sel('progress-save')).isEnabled()), '한 행으로 보인 것만으로는 고친 것이 아니다');
+  r.check((await page.locator(sel('progress-row-links', 2)).count()) === 1, '합친 행의 이은 메모 = 두 행 것 (2)');
+  await cell('1-2').fill('정리하기');
+  await page.keyboard.press('Control+s');
+  const merged = await serverUntil(() => read(A.ref('progress', 'insp_pgc')), (d) => d?.lessons?.length === 2);
+  r.check(merged?.lessons?.[0]?.linkIds?.join(',') === 'm_a,m_b' && merged.noCount === true, `고쳐 저장하면 한 행 + 이은 메모를 모은다 (${merged?.lessons?.[0]?.linkIds})`);
+
+  // 표시 없는 옛 1, 2, 3 … 차례 번호 표 - 한 행 = 한 차시, '차시 수로 세기'
+  await setDoc(A.ref('progress', 'insp_pgc'), {
+    key: '수학',
+    startDate: '2026-10-26',
+    bumps: [],
+    lessons: ['가', '나', '다'].map((content, i) => ({ unit: '', no: String(i + 1), content, page: '', supplies: '' })),
+    authorId: uid,
+    ...tracked,
+  });
+  await page.locator(sel('progress-plan')).first().click();
+  await page.locator(sel('progress-plan', 'insp_pgc')).click();
+  r.check(await waitFor(page.locator(sel('progress-order-no')), 8000), '차례 번호 표 = 안내 (한 행 = 한 차시)');
+  r.check(await waitFor(page.locator(sel('progress-rows', 3))), '미리보기 3차시');
+  await page.locator(sel('progress-count-no')).click();
+  r.check(await waitFor(page.locator(sel('progress-count', 6))), '차시 수로 세기 = 1 + 2 + 3 = 6차시');
+  await page.locator(sel('progress-save')).click();
+  r.check((await serverUntil(() => read(A.ref('progress', 'insp_pgc')), (d) => d?.noCount === true))?.noCount === true, '저장하면 noCount 표시');
+  await page.locator(`[data-popup-frame]:has(${win}) [data-close]`).click();
   await page.waitForTimeout(500);
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 

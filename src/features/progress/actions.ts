@@ -16,6 +16,8 @@ export interface PlanToSave {
   key: string;
   startDate: string;
   lessons: ProgressLesson[];
+  /** 차시 칸 = 차시 수 (10-21~ - 저장하면 표시를 적는다. 옛 1, 2, 3 … 차례 번호 표를 그대로 두면 false) */
+  noCount?: boolean;
   subject?: string;
   classes?: string[];
 }
@@ -38,7 +40,14 @@ export async function saveProgressPlan(sid: string, next: PlanToSave, before: St
   if (!before || before.deletedAt) {
     const undo = await create(
       progressPath(sid, next.id),
-      { key, ...(course ? { subject: (next.subject ?? '').trim(), classes: next.classes } : {}), startDate: next.startDate, lessons, bumps: [] },
+      {
+        key,
+        ...(course ? { subject: (next.subject ?? '').trim(), classes: next.classes } : {}),
+        startDate: next.startDate,
+        lessons,
+        bumps: [],
+        ...(next.noCount ? { noCount: true } : {}),
+      },
       { fail: '진도를 저장하지 못했습니다. 고친 것은 그대로 두었으니 다시 저장해 주세요.' },
     );
     recordUndo(sid, `✅ '${label}' 진도를 저장했습니다.`, undo, { what: '진도 저장' });
@@ -55,6 +64,7 @@ export async function saveProgressPlan(sid: string, next: PlanToSave, before: St
   }
   if (next.startDate !== before.startDate) changes.startDate = next.startDate;
   if (!same(lessons, before.lessons)) changes.lessons = lessons;
+  if (next.noCount && before.noCount !== true) changes.noCount = true;
   if (Object.keys(changes).length === 0) return false;
   const undo = await patch(progressPath(sid, next.id), changes as Changes<'progress'>, before, {
     fail: '진도를 저장하지 못했습니다. 고친 것은 그대로 두었으니 다시 저장해 주세요.',
