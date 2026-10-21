@@ -211,6 +211,19 @@ export function lessonRepeat(no: string): number {
   return n && n >= 1 ? Math.min(n, MAX_LESSON_REPEAT) : 1;
 }
 
+/**
+ * 차시 칸이 1, 2, 3 … 차례 번호인 옛 표인가 (2026-10-07 '차시 칸 = 차시 수'로 정하기 전에 붙여 넣은 표 - 늘리지 않는다).
+ * 범위('5~6')가 있거나, 숫자가 10을 넘거나, 숫자 행이 셋 이상이고 늘 커지면. '1, 2'처럼 둘뿐이면 차시 수다
+ * (10-21 사용자 - 1차시 + 2차시 = 3차시).
+ */
+export function isOrderNumbered(lessons: Pick<ProgressLesson, 'no'>[]): boolean {
+  const nos = lessons.map((l) => l.no.trim()).filter(Boolean);
+  if (nos.some((no) => /^\d{1,3}\s*[~\-–]\s*\d{1,3}\s*(차시)?$/.test(no))) return true;
+  const ns = nos.map(countOf).filter((n): n is number => n !== null);
+  if (ns.some((n) => n > MAX_LESSON_REPEAT)) return true;
+  return ns.length >= 3 && ns.every((n, i) => i === 0 || n > ns[i - 1]);
+}
+
 /** 칸으로 나뉜 표를 차시 목록으로 (붙여넣기·CSV가 함께 쓴다) */
 function parseLessonRows(grid: string[][]): LessonParseInfo {
   const rows = grid.filter((r) => r.some((c) => c !== ''));

@@ -4,7 +4,7 @@
 //   교과 모드는 과정: 과목 하나 + 반(하나든 여럿이든), 차시 목록은 하나이고 반마다 제 수업 칸에서 따로 센다. 반별 현황표·반 탭·다음 수업 밀기.
 //   저장은 개인 공간 progress/{planId}(💾·Ctrl+S, 바뀐 칸만) · 밀기는 누르는 대로 · 🗑️ 지우기 = 휴지통.
 //   행마다 🔗 = 그 차시에 메모 잇기(P10-4 - 고치던 것이 있으면 먼저 저장, 진도 쪽 그 행에만 적는다) · 숫자 = 이은 메모 보기.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
@@ -42,10 +42,11 @@ import { deleteProgressPlan, saveProgressPlan, setProgressBump } from './actions
 import type { ProgressWindowParams } from './open';
 import {
   cleanLessons,
-  expandRowRepeat,
   draftForSlot,
   draftTarget,
   emptyLesson,
+  growMarked,
+  growRow,
   hasText,
   insertRowAfter,
   lessonsToSave,
@@ -64,7 +65,7 @@ import { openLinker, openLinkViewer } from '../links/open';
 
 const FIELDS: Array<{ key: LessonField; label: string; title?: string }> = [
   { key: 'unit', label: '단원' },
-  { key: 'no', label: '차시' },
+  { key: 'no', label: '차시', title: '그 내용을 몇 차시 동안 하는지 (2 = 같은 내용 2행 - 행을 벗어나거나 저장하면 늘어납니다)' },
   { key: 'content', label: '내용' },
   { key: 'page', label: '교과서', title: '교과서 쪽 (예: 12~15)' },
   { key: 'supplies', label: '준비물' },
@@ -279,8 +280,21 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     }
   };
 
+  // 차시 칸을 고치면 그 행에 표시(_grow) - 행을 벗어나거나 저장할 때 그 숫자만큼 늘린다(내용을 나중에 적어도)
   const setCell = (row: number, field: LessonField, value: string) =>
-    setDraft((d) => (d ? { ...d, lessons: d.lessons.map((l, i) => (i === row ? { ...l, [field]: value } : l)) } : d));
+    setDraft((d) =>
+      d ? { ...d, lessons: d.lessons.map((l, i) => (i === row ? { ...l, [field]: value, ...(field === 'no' ? { _grow: true } : {}) } : l)) } : d,
+    );
+
+  /** 커서가 그 행 밖으로 나가면 차시 칸을 고친 그 행을 늘린다 (행 안의 🔗·삭제 단추로 가는 것은 행 안) */
+  const leaveRow = (e: React.FocusEvent<HTMLDivElement>, k: string) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setDraft((d) => {
+      if (!d) return d;
+      const grown = growRow(d.lessons, d.lessons.findIndex((l) => l._k === k));
+      return grown === d.lessons ? d : { ...d, lessons: grown };
+    });
+  };
 
   const focusCell = (pos: CellPos) => {
     const el = tableRef.current?.querySelector<HTMLInputElement>(`input[data-cell="${pos.row}-${pos.col}"]`);
@@ -291,10 +305,16 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
 
   // 마지막으로 커서가 있던 칸 - '+ 행 추가'는 그 행 바로 아래에 넣는다. 다른 진도로 옮기면 잊는다
   const lastFocus = useRef<CellPos | null>(null);
-  const noAtFocus = useRef('');
   useEffect(() => {
     lastFocus.current = null;
   }, [draft?.id]);
+  // 위 행이 늘어 커서가 든 칸의 행 번호가 밀리면 따라간다
+  useLayoutEffect(() => {
+    const cell = tableRef.current?.contains(document.activeElement) ? document.activeElement?.getAttribute('data-cell') : null;
+    if (!cell) return;
+    const [row, col] = cell.split('-').map(Number);
+    lastFocus.current = { row, col };
+  }, [draft?.lessons]);
 
   /** after 행 바로 아래에 빈 행을 넣고 그 행의 col 칸에 커서. after가 없으면 마지막으로 커서가 있던 행(없었으면 맨 아래) */
   const addRow = (after?: number, col?: number) => {
@@ -353,6 +373,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
         const f = FIELDS[col + c];
         if (!f) return;
         next[i][f.key] = v;
+        if (f.key === 'no') next[i]._grow = true;
         last = { row: i, col: col + c };
       });
     });
@@ -365,19 +386,12 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   /** 저장 - 됐으면 true (🔗가 먼저 저장할 때 기다린다) */
   const handleSave = async (): Promise<boolean> => {
     if (!sid || !stateDraft || saving) return false;
-    // Ctrl+S처럼 차시 칸에 커서가 든 채 저장하면 blur가 오기 전이라 늘리기가 빠진다 - 여기서 먼저 늘린다
+    // 차시 칸을 고친 행을 모두 늘린다 - Ctrl+S처럼 커서가 그 행에 든 채 저장해도
     let draft = stateDraft;
-    const focus = lastFocus.current;
-    if (focus && FIELDS[focus.col]?.key === 'no' && document.activeElement?.getAttribute('data-cell') === `${focus.row}-${focus.col}`) {
-      const row = draft.lessons[focus.row];
-      if (row && noAtFocus.current !== row.no) {
-        const grown = expandRowRepeat(draft.lessons, focus.row);
-        if (grown !== draft.lessons) {
-          noAtFocus.current = row.no;
-          draft = { ...draft, lessons: grown };
-          setDraft(draft);
-        }
-      }
+    const grown = growMarked(draft.lessons);
+    if (grown !== draft.lessons) {
+      draft = { ...draft, lessons: grown };
+      setDraft(draft);
     }
     const clean = cleanLessons(draft.lessons);
     const t = draftTarget(draft);
@@ -411,6 +425,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
         key: planKeys(next)[0],
         subject: t.subject ?? draft.subject,
         lessons: draft.lessons.filter(hasText).map((l, i) => ({ ...trimLesson(l), _k: l._k, _from: i })),
+        grown: undefined,
         // 반 없이(또는 옛 모양 그대로) 저장했으면 다음에도 그 글자로, 과정이 되었으면 과정으로
         legacyKey: draft.classes && !t.classes ? t.key : null,
       });
@@ -748,6 +763,11 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
               placeholder={"엑셀·한셀에서 '단원 | 차시 | 내용 | 교과서 | 준비물' 표를 복사해 여기를 누르고 Ctrl + V\n(차시 칸 2 = 같은 내용을 2차시 연속으로 넣습니다)"}
               className="w-full px-3 py-2 text-xs bg-indigo-50/40 border border-dashed border-indigo-300 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-indigo-400 placeholder:text-indigo-400"
             />
+            {!!draft.grown && dirty && (
+              <div data-progress-grown={draft.grown} className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                차시 칸의 숫자만큼 같은 내용을 <b>{draft.grown}행</b> 더 넣었습니다. <b>💾 저장</b>을 누르면 수업 칸에 반영됩니다.
+              </div>
+            )}
             {draft.lessons.length > 0 && (
               <div ref={tableRef} className="space-y-1" data-progress-table={draft.lessons.length}>
                 <div className={`${ROW_GRID} text-xs font-bold text-slate-500 px-0.5`}>
@@ -761,7 +781,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                 </div>
                 <div className="space-y-1 pr-0.5">
                   {draft.lessons.map((l, r) => (
-                    <div key={l._k} className={ROW_GRID} data-progress-row={r}>
+                    <div key={l._k} className={ROW_GRID} data-progress-row={r} onBlur={(e) => leaveRow(e, l._k)}>
                       {FIELDS.map((f, c) => (
                         <input
                           key={f.key}
@@ -771,17 +791,8 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           title={f.title}
                           onFocus={() => {
                             lastFocus.current = { row: r, col: c };
-                            noAtFocus.current = l.no;
                           }}
                           onChange={(e) => setCell(r, f.key, e.target.value)}
-                          onBlur={
-                            f.key === 'no'
-                              ? () => {
-                                  // 칸을 고쳤을 때만 늘린다 - 옛 표의 1, 2, 3 … 차례 번호는 눌러 보기만 해서는 늘지 않게
-                                  if (noAtFocus.current !== l.no) setDraft((d) => (d ? { ...d, lessons: expandRowRepeat(d.lessons, r) } : d));
-                                }
-                              : undefined
-                          }
                           onKeyDown={(e) => handleCellKeyDown(e, r, c)}
                           onPaste={(e) => handleCellPaste(e, r, c)}
                           className="min-w-0 px-1.5 py-1 text-xs bg-white border border-slate-200 rounded focus:outline-none focus:ring-1 focus:ring-primary"

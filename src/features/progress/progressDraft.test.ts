@@ -5,6 +5,8 @@ import {
   draftTarget,
   emptyLesson,
   expandRowRepeat,
+  growMarked,
+  growRow,
   insertRowAfter,
   lessonsToSave,
   newCourseDraft,
@@ -14,7 +16,7 @@ import {
   withKey,
   type Draft,
 } from './progressDraft';
-import { sanitizePlan, type ProgressPlan } from '../../domain/progress';
+import { isOrderNumbered, sanitizePlan, type ProgressPlan } from '../../domain/progress';
 
 // 진도 관리 창의 고치는 모양 (19번 U2)
 
@@ -39,6 +41,61 @@ describe('차시 칸을 고치면 행 늘리기', () => {
     const rows = [withKey({ ...lesson('가'), no: '1' }), withKey({ ...lesson('나'), no: '가' })];
     expect(expandRowRepeat(rows, 0)).toBe(rows);
     expect(expandRowRepeat(rows, 1)).toBe(rows);
+  });
+
+  // 10-21: 새 행을 왼쪽부터(단원 → 차시 → 내용) 적으면 차시 칸을 벗어날 때 내용이 없어 늘지 않았다
+  it('차시 칸을 내용보다 먼저 적어도 - 내용이 생긴 뒤 늘리고 표시를 뗀다', () => {
+    const typed = [{ ...withKey({ ...lesson(''), no: '2' }), _grow: true }];
+    expect(growRow(typed, 0)).toBe(typed); // 내용이 없으면 기다린다
+    const filled = [{ ...typed[0], content: '작은 공' }, withKey(lesson('다음'))];
+    const grown = growRow(filled, 0);
+    expect(grown.map((l) => [l.content, l.no])).toEqual([['작은 공', '2'], ['작은 공', ''], ['다음', '']]);
+    expect(grown[0]._grow).toBeUndefined();
+    expect(grown[0]._k).toBe(typed[0]._k);
+    expect(growRow(grown, 0)).toBe(grown);
+  });
+
+  it('저장 직전 - 차시 칸을 고친 행만 모두 (뒤 행 번호가 밀려도)', () => {
+    const rows = [
+      { ...withKey({ ...lesson('가'), no: '2' }), _grow: true },
+      withKey({ ...lesson('나'), no: '3' }), // 고치지 않은 행은 그대로
+      { ...withKey({ ...lesson('다'), no: '3' }), _grow: true },
+    ];
+    expect(growMarked(rows).map((l) => l.content)).toEqual(['가', '가', '나', '다', '다', '다']);
+  });
+
+  it("저장한 표를 열 때 - 차시 칸 '1, 2' = 1차시 + 2차시 = 3행, 이미 늘린 표·차례 번호 표는 그대로", () => {
+    const saved = plan({ lessons: [{ ...lesson('왕복오래달리기'), no: '1' }, { ...lesson('작은 공을 치고 받아요'), no: '2' }] });
+    const d = toDraft(saved, false);
+    expect(d.lessons.map((l) => [l.content, l.no, l._from])).toEqual([
+      ['왕복오래달리기', '1', 0],
+      ['작은 공을 치고 받아요', '2', 1],
+      ['작은 공을 치고 받아요', '', undefined],
+    ]);
+    expect(d.grown).toBe(1);
+    expect(sameAsSaved(d, saved)).toBe(false); // 저장해야 수업 칸에 반영
+    const again = plan({ lessons: lessonsToSave(d.lessons, saved.lessons) });
+    expect(toDraft(again, false).lessons).toHaveLength(3);
+    expect(toDraft(again, false).grown).toBeUndefined();
+    // 10-07 전에 붙여 넣은 1, 2, 3 … 차례 번호 표
+    const ordered = plan({ lessons: ['1', '2', '3', '4'].map((no, i) => ({ ...lesson(`내용${i}`), no })) });
+    expect(toDraft(ordered, false).lessons).toHaveLength(4);
+  });
+});
+
+describe('차시 칸이 차례 번호인 옛 표 (isOrderNumbered)', () => {
+  const nos = (...list: string[]) => list.map((no) => ({ no }));
+  it('셋 이상 늘 커지거나, 범위가 있거나, 10을 넘으면 차례 번호', () => {
+    expect(isOrderNumbered(nos('1', '2', '3'))).toBe(true);
+    expect(isOrderNumbered(nos('5', '', '6', '7'))).toBe(true);
+    expect(isOrderNumbered(nos('1', '2~3'))).toBe(true);
+    expect(isOrderNumbered(nos('11', '12'))).toBe(true);
+  });
+  it('둘뿐이거나 커지지 않으면 차시 수', () => {
+    expect(isOrderNumbered(nos('1', '2'))).toBe(false);
+    expect(isOrderNumbered(nos('1', '2', '1'))).toBe(false);
+    expect(isOrderNumbered(nos('2', '', '2', '2'))).toBe(false);
+    expect(isOrderNumbered(nos('', ''))).toBe(false);
   });
 });
 

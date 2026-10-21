@@ -4,7 +4,7 @@
 //     반을 하나 이하로 두면 그 모양 그대로 저장한다(draftTarget) - 과정으로 바꾸면 칸 견주기가 progressKey →
 //     normalizeSlotText로 바뀌어 옛 결과가 달라질 수 있다.
 import { formatDate } from '../../domain/dateUtils';
-import { isCourse, lessonRepeat, progressKey, type ProgressLesson, type ProgressPlan } from '../../domain/progress';
+import { isCourse, isOrderNumbered, lessonRepeat, progressKey, type ProgressLesson, type ProgressPlan } from '../../domain/progress';
 import { formatSlot, parseSlot } from '../../domain/teachingSlot';
 import { newId } from '../../data/id';
 
@@ -12,8 +12,10 @@ import { newId } from '../../data/id';
  * 고치는 중인 행 - _k는 React key (행을 가운데 넣어도 입력 중인 칸이 엉키지 않게). 저장할 때 뺀다.
  * _from = 저장한 진도에서 몇 번째 행이었나 - 이은 메모(linkIds)는 저장할 때 **지금 문서의 그 행**에서 가져온다
  * (창을 연 채 수업 칸에서 메모를 이어도 덮지 않게, P10-4). 새로 넣거나 붙여 넣은 행은 없다.
+ * _grow = 이 창에서 차시 칸을 고친 행 - 내용이 있으면 행을 벗어날 때·저장할 때 그 숫자만큼 늘린다(growRow).
+ * 차시 칸을 내용보다 먼저 적어도 늘어나게(10-21 - 차시 칸을 벗어날 때만 늘려 왼쪽부터 적은 새 행은 늘지 않았다).
  */
-export type DraftLesson = ProgressLesson & { _k: string; _from?: number };
+export type DraftLesson = ProgressLesson & { _k: string; _from?: number; _grow?: boolean };
 
 export interface Draft {
   id: string;
@@ -26,6 +28,8 @@ export interface Draft {
   classes: string[] | null;
   /** 교과 모드에서 연 옛 '칸 글자 하나' 진도(또는 반 없이 과목만 저장한 진도)의 그 글자. 반을 하나 이하로 두면 이 모양 그대로 저장 */
   legacyKey: string | null;
+  /** 열 때 차시 칸의 숫자만큼 더 넣은 행 수 (저장하면 0) - '저장하면 수업 칸에 반영' 안내 */
+  grown?: number;
 }
 
 let lessonSeq = 0;
@@ -52,9 +56,15 @@ export function lessonsToSave(lessons: readonly DraftLesson[], docLessons: reado
 }
 export const squeeze = (s: string) => s.trim().replace(/\s+/g, ' ');
 
-/** 저장한 진도 → 고치는 모양. 교과 모드면 옛 칸 글자 진도도 과목 + 반 칩으로('5-2 과학' → 과학 · 5-2, '창체' → 창체) */
+/**
+ * 저장한 진도 → 고치는 모양. 교과 모드면 옛 칸 글자 진도도 과목 + 반 칩으로('5-2 과학' → 과학 · 5-2, '창체' → 창체).
+ * 차시 칸의 숫자만큼 아직 늘지 않은 행은 늘려 연다(grown - 저장하면 수업 칸에 반영). 1, 2, 3 … 차례 번호인 옛 표는 그대로.
+ */
 export const toDraft = (p: ProgressPlan, classUnit: boolean): Draft => {
-  const base = { id: p.id, key: p.key, startDate: p.startDate, lessons: p.lessons.map((l, i) => ({ ...withKey(l), _from: i })) };
+  const rows = p.lessons.map((l, i) => ({ ...withKey(l), _from: i }));
+  const lessons = growCounts(rows);
+  const grown = lessons.length - rows.length;
+  const base = { id: p.id, key: p.key, startDate: p.startDate, lessons, ...(grown > 0 ? { grown } : {}) };
   if (isCourse(p)) return { ...base, subject: p.subject || '', classes: [...p.classes!], legacyKey: null };
   if (!classUnit) return { ...base, subject: '', classes: null, legacyKey: null };
   const slot = parseSlot(p.key);
@@ -126,6 +136,31 @@ export function expandRowRepeat(lessons: DraftLesson[], row: number): DraftLesso
   const copies = Array.from({ length: extra }, () => withKey({ ...trimLesson(l), no: '' }));
   const next = [...lessons];
   next.splice(row + 1 + already, 0, ...copies);
+  return next;
+}
+
+/** 차시 칸을 고친(_grow) 그 행을 늘리고 표시를 뗀다. 내용이 아직 없으면 표시를 두고 기다린다. 바뀐 것이 없으면 같은 목록 */
+export function growRow(lessons: DraftLesson[], row: number): DraftLesson[] {
+  const l = lessons[row];
+  if (!l?._grow || !l.content.trim()) return lessons;
+  const next = [...expandRowRepeat(lessons, row)];
+  const { _grow: _, ...rest } = l;
+  next[row] = rest;
+  return next;
+}
+
+/** 차시 칸을 고친 모든 행을 늘린다 (저장 직전). 뒤에서부터 - 늘린 행이 앞 행 번호를 밀지 않게 */
+export function growMarked(lessons: DraftLesson[]): DraftLesson[] {
+  let next = lessons;
+  for (let row = lessons.length - 1; row >= 0; row--) next = growRow(next, row);
+  return next;
+}
+
+/** 차시 칸의 숫자만큼 모든 행을 늘린다 (저장한 진도를 열 때). 1, 2, 3 … 차례 번호인 옛 표는 그대로 */
+export function growCounts(lessons: DraftLesson[]): DraftLesson[] {
+  if (isOrderNumbered(lessons)) return lessons;
+  let next = lessons;
+  for (let row = lessons.length - 1; row >= 0; row--) next = expandRowRepeat(next, row);
   return next;
 }
 
