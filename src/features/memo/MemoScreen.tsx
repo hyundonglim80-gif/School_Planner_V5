@@ -21,7 +21,8 @@ import { useCurrentSpaceId } from '../../data/session';
 import Masonry from '../../ui/Masonry';
 import { useIsMobile } from '../../ui/useIsMobile';
 import type { ItemDoc } from '../events/eventOps';
-import { deleteNote, deleteNotes, labelNotes, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
+import { reorderDragProps } from '../../ui/reorderDrag';
+import { deleteNote, deleteNotes, labelNotes, moveNoteByDrag, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
 import EntryCard from '../notes/EntryCard';
 import MemoListRow from './MemoListRow';
 import { useMemoView } from './memoView';
@@ -227,6 +228,7 @@ export default function MemoScreen() {
                   editing={shownId === m.id}
                   collapsed={isCollapsed}
                   onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [m.id]: !isCollapsed }))}
+                  dragProps={sid && i >= 0 ? reorderDragProps(`note:memo:${key}`, i, (f, t) => void moveNoteByDrag(sid, movable, f, t).catch(quiet)) : undefined}
                   onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => void moveNoteInList(sid, movable, i, -1).catch(quiet) : undefined}
                   onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => void moveNoteInList(sid, movable, i, 1).catch(quiet) : undefined}
                   onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}

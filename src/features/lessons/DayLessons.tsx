@@ -41,6 +41,7 @@ import { useFocusReveal } from '../search/focus';
 import { useClasses } from '../class/classes';
 import { openSubjectAttendanceCell } from '../subjectAttendance/open';
 import { openSeating } from '../seating/open';
+import { reorderDragProps } from '../../ui/reorderDrag';
 import { saveLesson, swapLessons } from './actions';
 import { isEdited } from './lessonOps';
 import SlotPairInput from './SlotPairInput';
@@ -461,6 +462,7 @@ export default function DayLessons({ date }: { date: string }) {
                 data-lesson-id={id}
                 data-now={isNow ? 'true' : isNext ? 'next' : undefined}
                 data-slot-color={slotColor?.name}
+                {...reorderDragProps(`lesson:${date}`, n, swap)}
                 onClick={() => startEdit(c)}
                 title={`${range ? `${range} · ` : ''}눌러서 고치기`}
                 className={`group relative ${hasDetails ? 'p-3.5' : 'px-3.5 py-2'} rounded-xl border border-slate-200/70 transition-all flex flex-col justify-between min-h-[40px] hover:border-primary/50 hover:bg-slate-50/50 cursor-pointer ${

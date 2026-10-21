@@ -10,7 +10,8 @@ import { itemLabels, useLabelTree } from '../../data/select';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useProgressNoteLinks } from '../links/useProgressLinks';
-import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from './actions';
+import { reorderDragProps } from '../../ui/reorderDrag';
+import { deleteNote, moveNoteByDrag, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from './actions';
 import EntryCard from './EntryCard';
 import DayCardView from '../day/DayCards';
 import { useDayCardsOn } from '../day/useDayCards';
@@ -83,6 +84,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
                 collapsed={isCollapsed}
                 onToggleCollapse={() => setCollapsed((p) => ({ ...p, [item.id]: !isCollapsed }))}
                 from={fromOf.get(item.id)}
+                dragProps={reorderDragProps(`note:window:${date}`, index, (f, t) => void moveNoteByDrag(sid, dated, f, t).catch(quiet))}
                 onMoveUp={canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
                 onMoveDown={canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                 onOpen={() => openNotePanel({ sid, date, id: item.id })}
