@@ -3,7 +3,7 @@
 // - 새로 쓰는 칸 = { sid, date } - date가 있으면 그날 기록, null이면 메모. 같은 공간·같은 자리의 새 칸이 열려 있으면 그 탭을 보인다.
 // - 수정 칸 = { sid, date, id } - 같은 항목이면 그 탭(자리는 보지 않는다 - 항목은 id로 찾는다, 원칙 2).
 // - 저장한 새 칸은 그 항목의 수정 칸이 된다(setParams로 id를 더한다 - 적은 것은 그대로 남는다). 메모·기록 모두 같은 칸이다(V4 EntryDrawer).
-import { closeWindow, getWindowDef, openWindow, useWindows } from '../../app/windows';
+import { closeWindow, getWindowDef, openWindow, useShownWindowPick, useWindows } from '../../app/windows';
 import { showToast } from '../../app/toast';
 import type { YMD } from '../../data/types';
 
@@ -45,28 +45,12 @@ export function closeNotePanelsFor(sid: string, id: string) {
   }
 }
 
-/** 지금 수정 칸이 열린 항목 id (카드를 파란 테두리로 짚는다) */
-export function useEditingNoteIds(sid: string | null): ReadonlySet<string> {
-  const key = useWindows((s) =>
-    s.windows
-      .filter((w) => w.id === NOTE_PANEL)
-      .map((w) => w.params as NotePanelParams)
-      .filter((p) => p.id && p.sid === sid)
-      .map((p) => p.id)
-      .join('\u0000'),
-  );
-  // 글자 열쇠로 받아 새 Set을 그릴 때마다 만들지 않는다 (같은 열쇠면 같은 Set)
-  return editingSet(key);
-}
-
-let lastKey = '';
-let lastSet: ReadonlySet<string> = new Set();
-function editingSet(key: string): ReadonlySet<string> {
-  if (key !== lastKey) {
-    lastKey = key;
-    lastSet = new Set(key ? key.split('\u0000') : []);
-  }
-  return lastSet;
+/** 오른쪽에 보이는 수정 칸의 항목 id (카드를 파란 테두리로 짚는다 - 탭으로 열려 있기만 한 것은 아니다, 10-21) */
+export function useShownNoteId(sid: string | null): string | null {
+  return useShownWindowPick((w) => {
+    const p = w.params as NotePanelParams;
+    return w.id === NOTE_PANEL && p.id && p.sid === sid ? p.id : null;
+  });
 }
 
 // ── 그날 기록 보기 (주간·월간·년간 날짜 옆 📝 n - 창 'dayNotes') ──

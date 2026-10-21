@@ -9,7 +9,7 @@
 //
 // 줄에 무엇이 서는지는 칸이 그려질 때 스스로 선다(useSideSlot) - 창 목록에 등록한 창도, 창 안에서 띄운 작은 창도 같은 줄이다.
 // 줄 위의 탭은 SideTabs.tsx.
-import { useEffect, useId, type CSSProperties } from 'react';
+import { createContext, useContext, useEffect, useId, type CSSProperties } from 'react';
 import { create } from 'zustand';
 import { containScroll } from './containScroll';
 import { useMinWidth } from './useMinWidth';
@@ -36,12 +36,28 @@ export const RIGHT_COLUMN_CSS_WIDTH = `min(var(--right-column-w, ${RIGHT_COLUMN_
 /**
  * 지금 오른쪽 줄에 선 칸들. 연 순서(먼저 연 것이 앞) = 탭 차례. 껍데기는 하나라도 있으면 화면을 줄인다.
  * active: 탭에서 보이는 칸 (없으면 맨 나중에 연 것)
+ * owners: 칸 id → 그 칸을 그린 창(창 목록의 key - SideOwnerContext). 창 밖에서 띄운 칸은 없다.
  */
-export const useSidePopups = create<{ order: string[]; active: string | null }>(() => ({ order: [], active: null }));
+export const useSidePopups = create<{ order: string[]; active: string | null; owners: Record<string, number> }>(() => ({
+  order: [],
+  active: null,
+  owners: {},
+}));
 
 /** 지금 보이는 칸 id (active가 줄에 없으면 맨 나중에 연 것) */
 export const activeOf = (s: { order: string[]; active: string | null }) =>
   s.active && s.order.includes(s.active) ? s.active : s.order[s.order.length - 1] ?? null;
+
+/** 이 칸을 그리는 창 (창 목록의 key - app/WindowHost가 건다). 창 안에서 띄운 작은 칸도 그 창의 것이다. */
+export const SideOwnerContext = createContext<number | null>(null);
+
+/** 오른쪽 줄에서 보이는 칸을 그린 창의 key. 줄이 비었으면 undefined, 창이 그린 칸이 아니면 null. */
+export function useShownSideOwner(): number | null | undefined {
+  return useSidePopups((s) => {
+    const id = activeOf(s);
+    return id === null ? undefined : s.owners[id] ?? null;
+  });
+}
 
 /** 탭을 눌러 그 칸을 보인다 */
 export function activateSideSlot(id: string) {
@@ -81,18 +97,27 @@ export interface SideSlot {
  */
 export function useSideSlot(active: boolean, raise?: number): SideSlot {
   const id = useId();
+  const owner = useContext(SideOwnerContext);
   useEffect(() => {
     if (!active) return;
     // 방금 연(다시 연) 칸이 보이는 탭이 된다
-    useSidePopups.setState((s) => ({ order: [...s.order.filter((x) => x !== id), id], active: id }));
+    useSidePopups.setState((s) => ({
+      order: [...s.order.filter((x) => x !== id), id],
+      active: id,
+      owners: owner === null ? s.owners : { ...s.owners, [id]: owner },
+    }));
     getSideColumn().scrollTop = 0;
     return () => {
       useSidePopups.setState((s) => {
         const order = s.order.filter((x) => x !== id);
-        return { order, active: s.active === id ? order[order.length - 1] ?? null : s.active };
+        return {
+          order,
+          active: s.active === id ? order[order.length - 1] ?? null : s.active,
+          owners: Object.fromEntries(Object.entries(s.owners).filter(([k]) => k !== id)),
+        };
       });
     };
-  }, [active, id, raise]);
+  }, [active, id, raise, owner]);
 
   const order = useSidePopups((s) => s.order);
   const shownId = useSidePopups(activeOf);

@@ -168,8 +168,9 @@ describe('하루 기록 칸', () => {
       ],
     });
     render(<DayJournal date={DAY} />);
-    // 고치는 기록은 짚는다
-    expect(q('[data-entry-card="a"]')!.className).toContain('ring-primary');
+    // 보이는 칸(오른쪽 줄이 비었으면 맨 나중에 연 것)의 기록 하나만 짚는다 - 열려 있기만 한 a는 아니다 (10-21)
+    expect(q('[data-entry-card="b"]')!.className).toContain('ring-primary');
+    expect(q('[data-entry-card="a"]')!.className).not.toContain('ring-primary');
     await act(async () => fireEvent.click(q('[data-entry-card="a"] [data-entry-delete]')!));
     expect(written.batches[0]).toEqual([{ type: 'remove', at: { sid: SID, coll: 'items', id: 'a' } }]);
     expect(q('[data-toast]')?.textContent).toContain('메모를 삭제했습니다');

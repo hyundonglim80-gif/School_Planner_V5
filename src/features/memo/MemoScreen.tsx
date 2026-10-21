@@ -32,7 +32,7 @@ import LabelFilterChips, { FILTER_HELP, FILTER_HINT, FilterChip } from '../notes
 import { setMemoFilter, useLabelFilters, type MemoFilter } from '../notes/labelFilter';
 import { canMoveNote } from '../notes/noteOps';
 import { MEMO_SORT_OPTIONS, setMemoSortKey, sortMemos, toggleMemoSortDir, useMemoSort } from './memoSort';
-import { openNotePanel, useEditingNoteIds } from '../notes/open';
+import { openNotePanel, useShownNoteId } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
@@ -82,7 +82,7 @@ export default function MemoScreen() {
   const tree = useLabelTree('note');
   const status = useMirrorStatus('items');
   const labelStatus = useMirrorStatus('labels');
-  const editing = useEditingNoteIds(sid);
+  const shownId = useShownNoteId(sid);
   const remembered = useLabelFilters((s) => s.memo);
   const loaded = status !== 'idle' && status !== 'loading';
   const isMobile = useIsMobile();
@@ -194,7 +194,7 @@ export default function MemoScreen() {
                   pathOf={pathOf}
                   dates={dates}
                   dateText={createdText(m.createdAt)}
-                  editing={editing.has(m.id)}
+                  editing={shownId === m.id}
                   expanded={!!rowOpen[m.id]}
                   onToggleExpand={() => setRowOpen((prev) => ({ ...prev, [m.id]: !prev[m.id] }))}
                   onToggleCheckLine={(idx, line) => (sid ? toggleNoteCheckLine(sid, m, idx, line) : Promise.resolve(false))}
@@ -224,7 +224,7 @@ export default function MemoScreen() {
                   dateText={createdText(m.createdAt)}
                   dates={dates}
                   onOpenDate={openDay}
-                  editing={editing.has(m.id)}
+                  editing={shownId === m.id}
                   collapsed={isCollapsed}
                   onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [m.id]: !isCollapsed }))}
                   onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => void moveNoteInList(sid, movable, i, -1).catch(quiet) : undefined}

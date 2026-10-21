@@ -29,7 +29,7 @@ import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi
 import EventDeleteChooser from '../events/EventDeleteChooser';
 import DayPastEvents from './DayPastEvents';
 import { openLinkViewer } from '../links/open';
-import { openEventPanel, useEditingEventIds } from '../events/open';
+import { openEventPanel, useShownEventId } from '../events/open';
 import { useFocusReveal } from '../search/focus';
 
 const NONE: readonly ItemDoc[] = [];
@@ -59,7 +59,7 @@ export default function DayEvents({ date }: { date: YMD }) {
   const count = events.length + follow.length;
   const tree = useLabelTree('event');
   const status = useMirrorStatus('items');
-  const editing = useEditingEventIds(sid);
+  const shownId = useShownEventId(sid);
   const [collapsed, setCollapsed] = useState(false);
   // 검색 결과로 이 날 일정을 짚으러 오면 접힌 칸을 편다
   useFocusReveal((t) => t.kind === 'event' && t.date === date, () => setCollapsed(false));
@@ -153,7 +153,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                   ev={ev}
                   day={date}
                   labels={itemLabels(tree, ev.labelIds)}
-                  editing={editing.has(ev.id)}
+                  editing={shownId === ev.id}
                   today={today}
                   first={idx === 0}
                   last={idx === events.length - 1}
@@ -177,7 +177,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                   ev={ev}
                   day={date}
                   labels={itemLabels(tree, ev.labelIds)}
-                  editing={editing.has(ev.id)}
+                  editing={shownId === ev.id}
                   today={today}
                   first={idx === 0}
                   last={idx === follow.length - 1}

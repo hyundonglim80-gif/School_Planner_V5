@@ -4,6 +4,7 @@
 //   3) 진행/완료 구역, ☐ 완료 = 완료 구역으로(문서 하나), 🗑️ 전체 비우기 = 한 묶음 + 되돌리기.
 //   4) + 새 메모 = 날짜 없는 칸(고른 라벨 미리) → 저장하면 메모 화면에.
 //   5) 하루 메모 칸 라벨로 보기: 접힘 → 🏷️로 펴기 → 전체·칩, 고르면 그 메모만.
+//   6) 파란 테두리 = 오른쪽 칸에 보이는 메모 하나 (다른 메모·탭을 고르면 옮겨 가고, 메모가 아닌 탭이면 없다 - 10-21).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-memo.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 메모·기록·라벨(insp_mm…)을 심고 끝에 지운다.
@@ -180,6 +181,25 @@ try {
   await page.goto(page.url().replace(/#.*$/, '#/memo'));
   await page.locator(sel('memo-view-toggle')).click();
   r.check(await waitFor(card('insp_mm1')), '▦ → 카드로');
+
+  // 10-21 사용자: 메모를 고르고 다른 메모를 고르면 앞 것의 테두리는 빠져야 한다 - 오른쪽에 보이는 것 하나만
+  r.section('파란 테두리 = 오른쪽 칸에 보이는 메모 하나 (10-21)');
+  await chip('all').click();
+  const ringed = () => page.locator(sel('entry-card')).evaluateAll((els) => els.filter((e) => e.className.includes('ring-primary')).map((e) => e.dataset.entryCard));
+  const onlyRing = async (ids) => waitFor(async () => JSON.stringify(await ringed()) === JSON.stringify(ids));
+  await card('insp_mm1').click();
+  r.check(await onlyRing(['insp_mm1']), 'mm1을 누르면 mm1만');
+  await card('insp_mm2').click();
+  r.check(await waitFor(page.locator(`${sel('note-panel', 'edit')}[data-note-id="insp_mm2"]`)), 'mm2 칸이 새 탭으로');
+  r.check(await onlyRing(['insp_mm2']), `mm2를 누르면 mm2만 - mm1 테두리는 빠진다 (${await ringed()})`);
+  await page.locator('[data-side-tab]').first().locator('button').first().click();
+  r.check(await onlyRing(['insp_mm1']), `탭으로 mm1을 보이면 mm1만 (${await ringed()})`);
+  await page.locator(sel('memo-labels-settings')).click();
+  r.check(await waitFor(page.locator(sel('labels-window'))), '라벨 관리 창이 탭으로');
+  r.check(await onlyRing([]), `메모가 아닌 탭이 보이면 아무것도 짚지 않는다 (${await ringed()})`);
+  await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await page.locator('[data-side-tab]').count()) === 0), 'ESC = 오른쪽 칸 모두 닫기');
+  r.check(await onlyRing([]), '닫으면 테두리 없음');
 
   r.section('하루 메모 칸 라벨로 보기 (칩 줄은 접혀 시작 - 🏷️로 편다, P10-3)');
   await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));

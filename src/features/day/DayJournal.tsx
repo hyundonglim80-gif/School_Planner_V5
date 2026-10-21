@@ -24,7 +24,7 @@ import { useProgressNoteLinks } from '../links/useProgressLinks';
 import LabelFilterChips, { FILTER_HELP, FILTER_HINT, FilterChip } from '../notes/LabelFilterChips';
 import { setJournalFilter, setJournalFilterOpen, useLabelFilters } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
-import { openNotePanel, useEditingNoteIds } from '../notes/open';
+import { openNotePanel, useShownNoteId } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
 import DayCardView from './DayCards';
 import { useDayCardsOn } from './useDayCards';
@@ -47,7 +47,7 @@ export default function DayJournal({ date }: { date: YMD }) {
   const notes = rows.map((r) => r.item);
   const tree = useLabelTree('note');
   const status = useMirrorStatus('items');
-  const editing = useEditingNoteIds(sid);
+  const shownId = useShownNoteId(sid);
   const [collapsed, setCollapsed] = useState(false);
   // 검색 결과로 이 날 메모를 짚으러 오면 접힌 칸을 편다 (라벨로 보기는 검색 창이 옮기기 전에 푼다)
   useFocusReveal((t) => t.kind === 'note' && t.date === date, () => setCollapsed(false));
@@ -200,7 +200,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                       labels={itemLabels(tree, item.labelIds)}
                       pathOf={pathOf}
                       dateText={timeLabel(item.createdAt)}
-                      editing={editing.has(item.id)}
+                      editing={shownId === item.id}
                       collapsed={isCollapsed}
                       onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [item.id]: !isCollapsed }))}
                       from={fromOf.get(item.id)}

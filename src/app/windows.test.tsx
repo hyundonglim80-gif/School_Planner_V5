@@ -6,7 +6,7 @@ import { useAppKeys } from './keys';
 import { setPopupStyle } from './layoutPrefs';
 import WindowHost from './WindowHost';
 import SideTabs from '../ui/SideTabs';
-import { closeAllWindows, openWindow, registerWindow, resetWindowsForTest, useWindows } from './windows';
+import { closeAllWindows, closeWindow, openWindow, registerWindow, resetWindowsForTest, useShownWindowPick, useWindows } from './windows';
 import { useSidePopups } from '../ui/sideColumn';
 
 // 오른쪽 줄 (V4 CLAUDE.md 5장): 한 줄에 탭, 숨은 탭도 적던 글째 살아 있다, 탭 ×는 그 칸 닫기,
@@ -94,6 +94,65 @@ describe('오른쪽 줄', () => {
     act(() => void openWindow('devPanel', { n: 1 }));
     expect(shownPanel()?.dataset.testPanel).toBe('1');
     expect(panels()[0].querySelector('textarea')!.value).toBe('첫 칸 글');
+  });
+
+  // 10-21 사용자: 메모 A를 연 뒤 B를 열면 A의 테두리는 빠져야 한다 - 카드는 보이는 탭의 항목 하나만 짚는다
+  it('보이는 창(useShownWindowPick)은 보이는 탭 하나 - 탭을 바꾸면 따라가고, 다른 창이 보이면 없다', async () => {
+    function Shown() {
+      const n = useShownWindowPick((w) => (w.id === 'devPanel' ? String((w.params as { n: number }).n) : null));
+      return <output data-shown={n ?? ''} />;
+    }
+    const shown = () => document.querySelector<HTMLElement>('[data-shown]')!.dataset.shown;
+    render(
+      <>
+        <Host />
+        <Shown />
+      </>,
+    );
+    act(() => void openWindow('devPanel', { n: 1 }));
+    await screen.findByRole('heading', { name: '시험 쓰는 칸 1' });
+    expect(shown()).toBe('1');
+    act(() => void openWindow('devPanel', { n: 2 }));
+    await screen.findByRole('heading', { name: '시험 쓰는 칸 2' });
+    expect(shown()).toBe('2');
+
+    // 탭을 눌러 첫 칸을 보이면 그것만
+    const tab1 = [...column().querySelectorAll<HTMLElement>('[data-side-tab]')][0];
+    act(() => tab1.querySelector('button')!.click());
+    expect(shownPanel()?.dataset.testPanel).toBe('1');
+    expect(shown()).toBe('1');
+    // 목록에서 둘째를 다시 열면 그것만
+    act(() => void openWindow('devPanel', { n: 2 }));
+    expect(shown()).toBe('2');
+    // 다른 창의 탭이 보이면 아무것도 짚지 않는다
+    act(() => void openWindow('devWindow'));
+    await screen.findByRole('heading', { name: '시험 창' });
+    expect(shown()).toBe('');
+    // 보이던 칸을 닫으면 남은 탭(맨 나중에 연 것)
+    act(() => void closeWindow(useWindows.getState().windows.find((w) => w.id === 'devWindow')!.key));
+    expect(shown()).toBe('2');
+  });
+
+  it('좁은 화면(덮는 배너)은 맨 나중에 연 창이 보이는 창', async () => {
+    wideScreen(false);
+    function Shown() {
+      const n = useShownWindowPick((w) => (w.id === 'devPanel' ? String((w.params as { n: number }).n) : null));
+      return <output data-shown={n ?? ''} />;
+    }
+    const shown = () => document.querySelector<HTMLElement>('[data-shown]')!.dataset.shown;
+    render(
+      <>
+        <Host />
+        <Shown />
+      </>,
+    );
+    act(() => {
+      openWindow('devPanel', { n: 1 });
+      openWindow('devPanel', { n: 2 });
+    });
+    expect(shown()).toBe('2');
+    act(() => void openWindow('devPanel', { n: 1 }));
+    expect(shown()).toBe('1');
   });
 
   it('탭 ×는 그 칸 하나만 닫는다', async () => {

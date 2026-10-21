@@ -17,7 +17,7 @@ import { useDayCardsOn } from '../day/useDayCards';
 import { useDayNotes } from '../day/useDayNotes';
 import { noteFromLabel } from './dayNotes';
 import { canMoveNote, favoriteFirst, timeLabel } from './noteOps';
-import { openNotePanel, useEditingNoteIds, type DayNotesParams } from './open';
+import { openNotePanel, useShownNoteId, type DayNotesParams } from './open';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -33,7 +33,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
   const notes = [...dated, ...rows.filter((r) => !r.dated).map((r) => r.item)];
   const fromOf = new Map(rows.map((r) => [r.item.id, r.from.map(noteFromLabel)]));
   const tree = useLabelTree('note', sid);
-  const editing = useEditingNoteIds(sid);
+  const shownId = useShownNoteId(sid);
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const pathOf = (id: string) => labelPath(id, tree.parents, (x) => tree.byId.get(x)?.name);
   // 그날 알림장·출결 (계산한 카드 - 누르면 원본 칸)
@@ -79,7 +79,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
                 labels={itemLabels(tree, item.labelIds)}
                 pathOf={pathOf}
                 dateText={timeLabel(item.createdAt)}
-                editing={editing.has(item.id)}
+                editing={shownId === item.id}
                 collapsed={isCollapsed}
                 onToggleCollapse={() => setCollapsed((p) => ({ ...p, [item.id]: !isCollapsed }))}
                 from={fromOf.get(item.id)}

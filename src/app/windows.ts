@@ -8,6 +8,7 @@
 // SidePanelFrame(쓰는 칸)으로 스스로 틀을 그린다 - 오른쪽 줄의 탭 차례·숨은 탭은 그 틀이 맡는다(ui/sideColumn).
 import type { ComponentType, LazyExoticComponent } from 'react';
 import { create } from 'zustand';
+import { useShownSideOwner } from '../ui/sideColumn';
 import { closeAllLayers } from './history';
 import { lazyWithReload } from './lazyWithReload';
 
@@ -106,6 +107,22 @@ export function openWindow(id: string, params?: unknown): number {
   }
   useWindows.setState((s) => ({ windows: [...s.windows, { key: now, id, params, openedAt: now, raisedAt: now }] }));
   return now;
+}
+
+/**
+ * 지금 보이는 창에서 글자 하나를 고른다 (pick - 없으면 null). 넓은 화면은 오른쪽 줄에서 보이는 탭을 그린 창,
+ * 줄이 비었으면(휴대폰 배너) 맨 나중에 연(다시 연) 창 = 맨 위. 카드의 파란 테두리가 이것 하나만 짚는다
+ * (10-21 사용자 - 탭으로 열려 있기만 한 항목은 짚지 않는다).
+ */
+export function useShownWindowPick(pick: (w: OpenWindow) => string | null): string | null {
+  const owner = useShownSideOwner();
+  return useWindows((s) => {
+    const w =
+      owner === undefined
+        ? s.windows.reduce<OpenWindow | undefined>((a, b) => (!a || b.raisedAt > a.raisedAt ? b : a), undefined)
+        : s.windows.find((x) => x.key === owner);
+    return w ? pick(w) : null;
+  });
 }
 
 /** 열린 창이 가리키는 것을 바꾼다 (WindowProps.setParams) */
