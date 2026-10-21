@@ -269,7 +269,7 @@
 - **공통 부품** `src/ui/`: `ModalShell.tsx`(창 껍데기, ✕ `[data-close]`) · `PopupFrame.tsx`(오른쪽 칸/배너/가운데 `[data-popup-frame]`) · `SidePanelFrame.tsx`(쓰는 칸 `[data-panel-frame]`) ·
   `sideColumn.ts`(오른쪽 줄·탭 차례 `useSideSlot`·`useDocked`) · `SideTabs.tsx`(`[data-side-tab]`·`[data-side-tab-close]`) · `useSaveKey.ts`(Ctrl+S 받기) · `ColumnResizer.tsx` ·
   `MiniCalendarPicker.tsx`(`[data-date-picker]`·`[data-picker-day]`) · `LinkPreviewCards.tsx`(글 안 주소 카드 `[data-link-preview]`) · 훅 `useMinWidth`·`useIsMobile`·`useMainWidth`·`useVisualViewport`·`useBodyScrollLock`·`useBackdropClose` ·
-  `AutoTextarea.tsx`(높이를 다시 잴 때 둘레 스크롤을 지키고 커서 줄을 보이게 - P10-5) · `containScroll.ts`(옆 칸 위 휠·밀기는 그 칸 안에서만 - 오른쪽 줄 `getSideColumn`·클립보드 칸, P10-5).
+  `AutoTextarea.tsx`(높이를 다시 잴 때 둘레 스크롤을 지키고 커서 줄을 보이게 - P10-5, 폭이 바뀌어도 다시 재고 테두리까지 더한다 - 10-21 긴 메모 마지막 줄 가려짐) · `containScroll.ts`(옆 칸 위 휠·밀기는 그 칸 안에서만 - 오른쪽 줄 `getSideColumn`·클립보드 칸, P10-5).
   '스크롤로 페이지 이동'(`app/useGlobalGestures`)은 옆 칸(`#side-column`·`[data-clipboard-panel]`) 안의 휠·밀기를 무시한다(P10-5 - 쓰는 칸은 창 층이 아니라 날짜가 넘어갔다).
 - **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)·다시 세운 줄 `rekeyOrders`(옮긴 것만)) ·
   `labelTree.ts`(V4 트리를 id로 - `parentMapOf`·`orderByTree`·라벨로 보기 `matchLabels`·탐색기식 `clickFilterLabel`·`filterChipOrder`·`otherKey`) ·

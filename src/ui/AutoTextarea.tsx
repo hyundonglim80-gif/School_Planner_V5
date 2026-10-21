@@ -6,6 +6,9 @@
 // 높이를 다시 잴 때 둘레 스크롤을 지킨다(P10-5 사용자 의견 5f): 'auto'로 줄이는 순간 칸이 짧아져 브라우저가 둘레(쓰는 칸·오른쪽 줄)의
 // 스크롤을 위로 당겨 놓았다 - 긴 메모 아래쪽에 쓰면 쓰는 곳이 화면 밖으로 밀려났다. 재기 전 자리를 적어 두었다 되돌리고,
 // 커서가 든 칸이면 커서 줄이 둘레 스크롤 상자 안에 보이게 한다(칸 자체는 overflow-hidden이라 브라우저가 둘레를 움직여 주지 않는다).
+//
+// 폭이 바뀌어도 다시 잰다(10-21 사용자 보고 - 긴 메모의 마지막 줄이 가려짐): 오른쪽 칸 폭 끌기·창 크기·글자 크기로 폭이 바뀌면
+// 줄바꿈이 늘어나는데, 글이 그대로라 높이를 다시 재지 않아 늘어난 줄만큼 아래가 잘렸다. 높이는 테두리까지 더한다(border-box).
 import { useCallback, useEffect, useRef, type Ref, type RefObject, type TextareaHTMLAttributes } from 'react';
 
 /** 스크롤해 둔 조상들과 그 자리 (창 스크롤 포함) */
@@ -62,7 +65,14 @@ function revealCaret(el: HTMLTextAreaElement) {
   else if (top - gap < view.top) box.scrollTop -= view.top - (top - gap);
 }
 
-type AutoTextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
+/** border-box 칸의 위아래 테두리 - scrollHeight(글 + 여백)에 더해야 마지막 줄이 테두리에 먹히지 않는다 */
+function borderY(el: HTMLElement): number {
+  const cs = getComputedStyle(el);
+  if (cs.boxSizing !== 'border-box') return 0;
+  return (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+}
+
+type AutoTextareaProps =TextareaHTMLAttributes<HTMLTextAreaElement> & {
   /**
    * 바깥에서 이 입력칸을 직접 집어야 할 때 쓴다 (초점을 되돌려 주는 자리 등).
    * 높이를 재려면 안에서도 같은 칸을 붙들고 있어야 하므로 둘 다에 매어 준다.
@@ -88,23 +98,44 @@ export default function AutoTextarea({
     [outerRef]
   );
 
-  const resize = useCallback(() => {
+  /** reveal: 커서 줄을 보이게 둘레를 움직인다 (쓰는 중일 때만 - 폭이 바뀐 것만으로는 움직이지 않는다) */
+  const resize = useCallback((reveal = true) => {
     const el = ref.current;
     if (!el) return;
     const spots = scrollSpots(el);
     el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
+    el.style.height = `${el.scrollHeight + borderY(el)}px`;
     for (const [n, top] of spots) n.scrollTop = top;
     el.scrollTop = 0;
-    revealCaret(el);
+    if (reveal) revealCaret(el);
   }, []);
 
   // 팝업 안에서는 마운트 직후 레이아웃이 아직 잡히지 않아 scrollHeight가 0으로
   // 나온다. 한 프레임 뒤에 재어야 처음부터 내용에 맞는 높이로 열린다.
   useEffect(() => {
-    const frame = requestAnimationFrame(resize);
+    const frame = requestAnimationFrame(() => resize());
     return () => cancelAnimationFrame(frame);
   }, [value, resize]);
+
+  // 폭이 바뀌면 줄바꿈이 달라진다 - 글이 그대로여도 다시 잰다. 높이만 바뀐 것(여기서 맞춘 것)은 넘긴다.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    let width = el.clientWidth;
+    let frame = 0;
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth === width) return;
+      width = el.clientWidth;
+      // 관찰 안에서 높이를 바꾸면 'ResizeObserver loop' 오류가 나므로 다음 프레임에
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => resize(false));
+    });
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      cancelAnimationFrame(frame);
+    };
+  }, [resize]);
 
   return (
     <textarea

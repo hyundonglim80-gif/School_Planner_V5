@@ -46,6 +46,48 @@ describe('AutoTextarea', () => {
     await waitFor(() => expect(grown.style.height).toBe('80px'));
   });
 
+  it('border-box 칸은 테두리까지 더한다 (마지막 줄이 테두리에 먹히지 않게)', async () => {
+    render(<AutoTextarea value={'한 줄\n두 줄'} onChange={() => {}} placeholder="테두리" style={{ boxSizing: 'border-box', border: '1px solid black' }} />);
+    const el = screen.getByPlaceholderText('테두리') as HTMLTextAreaElement;
+
+    await waitFor(() => expect(el.style.height).toBe('42px'));
+  });
+
+  it('폭이 바뀌면 글이 그대로여도 다시 잰다 (좁아져 늘어난 줄이 잘리지 않게)', async () => {
+    // 폭 300 미만이면 줄마다 두 줄로 접힌다고 친다
+    let width = 400;
+    const observers: ResizeObserverCallback[] = [];
+    const saved = { ro: globalThis.ResizeObserver, sh: Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'scrollHeight') };
+    globalThis.ResizeObserver = class {
+      constructor(cb: ResizeObserverCallback) {
+        observers.push(cb);
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+    Object.defineProperty(HTMLTextAreaElement.prototype, 'clientWidth', { configurable: true, get: () => width });
+    Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', {
+      configurable: true,
+      get(this: HTMLTextAreaElement) {
+        return (this.value || '').split('\n').length * 20 * (width < 300 ? 2 : 1);
+      },
+    });
+    try {
+      render(<AutoTextarea value={'한 줄\n두 줄\n세 줄'} onChange={() => {}} placeholder="폭" />);
+      const el = screen.getByPlaceholderText('폭') as HTMLTextAreaElement;
+      await waitFor(() => expect(el.style.height).toBe('60px'));
+
+      width = 250;
+      observers.forEach((cb) => cb([], {} as ResizeObserver));
+      await waitFor(() => expect(el.style.height).toBe('120px'));
+    } finally {
+      globalThis.ResizeObserver = saved.ro;
+      delete (HTMLTextAreaElement.prototype as { clientWidth?: number }).clientWidth;
+      if (saved.sh) Object.defineProperty(HTMLTextAreaElement.prototype, 'scrollHeight', saved.sh);
+    }
+  });
+
   it('스크롤바가 생기지 않도록 overflow를 감춘다', () => {
     render(<Controlled initial="한 줄" />);
     const el = screen.getByPlaceholderText('내용');
