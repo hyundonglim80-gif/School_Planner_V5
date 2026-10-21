@@ -1,4 +1,4 @@
-// 쓰는 칸의 라벨 고르기 (V4 EventDrawer '라벨 (다중 선택 가능)' · EntryDrawer '라벨 태그'). 여러 개 고른다.
+// 쓰는 칸의 라벨 고르기 (V4 EventDrawer '라벨' · EntryDrawer '라벨 태그'). 일정은 하나만, 메모·기록은 Ctrl+누르기로 여러 개.
 //
 // - 일정: 라벨 차례대로, 고른 칩은 라벨 색 + 테두리 고리.
 // - 메모·기록: 트리 차례(하위는 └), 고른 칩은 파랑. 마우스를 올리면 '상위 › 하위'.
@@ -31,7 +31,17 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
   const nameOf = (id: string) => tree.byId.get(id)?.name;
   const rows = kind === 'note' ? tree.rows : tree.list.map((l) => ({ id: l.id, depth: 0 as const }));
 
-  const toggle = (id: string) => onChange(selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]);
+  // 일정: 하나만(누르면 그 라벨로 바꾸고, 고른 하나를 다시 누르면 뗀다).
+  // 메모·기록: 그냥 누르기 = 그것만, Ctrl(맥은 ⌘) = 더하기·빼기.
+  const pick = (id: string, multi: boolean) => {
+    const has = selected.includes(id);
+    if (kind === 'note' && multi) {
+      onChange(has ? selected.filter((x) => x !== id) : [...selected, id]);
+      return;
+    }
+    if (kind === 'note' && newNames.length > 0) onNewNamesChange?.([]);
+    onChange(has && selected.length === 1 ? [] : [id]);
+  };
 
   const addNew = () => {
     const name = cleanLabelName(draft).slice(0, 20);
@@ -49,7 +59,7 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
   return (
     <div data-label-picker={kind} className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-500">라벨 (다중 선택 가능)</span>
+        <span className="text-xs font-bold text-slate-500">{kind === 'note' ? '라벨 (Ctrl+누르기 = 여러 개)' : '라벨'}</span>
         <button
           type="button"
           data-label-picker-settings
@@ -81,7 +91,7 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
               data-label-pick={id}
               aria-pressed={on}
               title={labelPath(id, tree.parents, nameOf)}
-              onClick={() => toggle(id)}
+              onClick={(e) => pick(id, e.ctrlKey || e.metaKey)}
               style={style}
               className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${cls}`}
             >
