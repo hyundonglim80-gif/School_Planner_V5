@@ -205,6 +205,7 @@
   보낼 수 있는 계정은 배포 값 `CLAUDE_OWNER_EMAILS`의 셋(공개 저장소라 코드에 적지 않는다) · 규칙·함수·워크플로 파일은 자동으로 올리지 않는다 · 요청 글은 공개 이슈. `docs/CLAUDE-REQUEST.md`.
   **결과 글**(10-19 사용자 의견): 바꾼 것·바꾸지 않은 까닭을 카드 아래 세 줄·수정 칸에 전부(옛날엔 '🤖 바꾼 것 없음' 표시뿐) - Claude가 summary 첫 줄에 결론, 함수가 1000자까지.
   그 셋에는 라벨 'Claude요청'이 저절로(함수가 만들고 되살린다 - 라벨 관리 🔒, 이름·지우기·빈 라벨 정리 막음) · **한 번에 하나**: 도는 동안 온 요청은 '🤖 차례 기다림' → 앞 것이 합쳐지면 먼저 온 것부터.
+- **✏️ 손글씨**(10-21 사용자 요청 - S펜): 메모 쓰는 칸 첨부 줄 📎 옆. 그린 것은 PNG 첨부(드라이브), 펜을 쓰면 손바닥은 그리지 않음, 펜 옆 단추 = 지우개, 닫아도 그리던 것은 그 칸에 남는다. 글자로 바꾸기는 휴대폰 기능('S펜으로 텍스트 변환').
 - 일정 라벨 속성 '구글 캘린더' - 켠 라벨의 일정은 저장·완료·옮기기·지우기를 구글 캘린더에도. 저장할 때 로그인이 없으면 로그인 창을 묻는다.
 - 교사 유형은 시간표 창에서 고른다((초등) 담임 / 전담 / (중등) 전담 + 담임). 전담은 담임 도구(출석부·알림장)를 숨긴다. 수업 칸 글자는 '5-2 과학'.
 - 명렬표는 학급 화면 안(⋮에 없다). 수업 종은 하루 '수업' 옆. 링크 연결 창은 저장하면 닫힌다.
@@ -397,6 +398,8 @@
   `EntryCard.tsx`(메모 카드 `[data-entry-card|entry-kind(journal = 날짜 있음)|entry-date-chip|entry-done|entry-favorite|entry-collapsed|entry-collapse|entry-up|entry-down|entry-complete|entry-favorite-toggle|entry-chip|entry-checks|entry-edit|entry-delete|entry-image|entry-images|check-line|check-done]`) ·
   `EntryBody.tsx`(카드 본문 - 그림·파일·글·체크 줄·주소 미리보기·표, 카드와 메모 화면 목록의 펼친 줄이 함께 - P11-1) ·
   `EntryTableView.tsx`(표 - 쓰는 칸은 칸 글자·행/열 `[data-note-table|cell|table-op]`, 카드는 compact `[data-entry-table]`) · `attach.ts`(📎·캡처 = 드라이브, 표 먼저 `pastedTable`) · `shortcuts.ts`(`newNote`·`newMemo`).
+  **✏️ 손글씨**(10-21): `HandwritingPad.tsx`(화면 가득 그림판 - portal·`useModalLayer`, ESC·Ctrl+Z는 capture에서 그림판만, `[data-note-handwriting(data-pen-dirty)|handwriting-pad(data-pen-count)|pen-canvas|pen-color|pen-size|pen-eraser|pen-undo|pen-clear|pen-done|pen-close|pen-hint]`,
+  ✓ 첨부 = 그린 둘레 PNG → `attach`(올라가면 쓰는 칸이 든 획을 비운다)) · 순수 `domain/handwriting`(`penWidth`·`acceptsPointer`(펜 뒤 손바닥 막기)·`isEraserPress`·`inkBounds`·`handwritingName`) · 점검 `tools/inspect-handwriting.mjs`(25).
   순수 셈 `domain/checkLines`·`entryCollapse`·`hashLabels`(V4 테스트째). 주소 → 링크 `ui/FormattedText.tsx`. **쓰던 글 보관** `data/drafts.ts`(`useDraft` - DB `sp5-drafts-{uid}`, 메모·기록·일정 칸, 로그아웃하면 지움) + `ui/DraftOffer.tsx`(`[data-draft-offer|draft-restore|draft-discard]`).
 - **설치(PWA)** `public/`: `manifest.json`(SP5 · share_target `/share-target`) · `sw.js`(문서는 네트워크 먼저·`/assets/`는 담아 둔 것 먼저·'sp5-precache' = 빌드의 `asset-manifest.json`대로 이 판을 담고 옛 판은 지움(`ignoreVary`)·공유받기 캐시 `sp5share-inbox`·푸시) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
   공유받기 `features/share/receive.ts`(`useShareReceiver` - Shell, 새 메모 칸 `draftText`·`draftFiles`) · 순수 `domain/share.ts` · 새 판 띠 `app/newBuild.ts`·`NewBuildBanner`(`[data-new-build]`). 점검 `tools/inspect-offline.mjs`(빌드 + preview 4175).

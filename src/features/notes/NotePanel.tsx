@@ -7,6 +7,7 @@
 // - 내용: ☑ 체크리스트(단추·단축키·Enter 이어 쓰기·☐ 누르기) · 첫·마지막 줄 '#라벨' 미리 보기 · 글 안 주소의 미리보기.
 // - 붙이기(P4-2 - attach.ts): 📎 파일 첨부·캡처 Ctrl+V = 드라이브에 원본으로, 엑셀 표 Ctrl+V = 표(그림보다 먼저) - 칸 글자·행/열 고치기.
 //   올리는 동안은 저장하지 않는다(올라간 것이 빠진 채 저장되지 않게).
+//   ✏️ 손글씨 = 화면 가득 그림판(HandwritingPad) - ✓ 첨부하면 PNG로 드라이브에 올려 붙인다. 그리던 것은 이 칸이 들고 있어 닫았다 열어도 이어진다.
 // - 라벨(여러 개, '+ 새 라벨') - 저장할 때 새 라벨과 항목을 한 묶음으로.
 // - 저장하면 칸은 닫히지 않고 그 항목의 수정 칸이 된다(V4 사용자 결정). 저장 = 바뀐 칸만, 문서 하나(+ 새 라벨).
 // - 저장이 안 되면 칸을 닫지 않는다. ESC는 저장 안 한 글이 있으면 먼저 묻는다, 좁은 화면 배경 = 저장하고 닫기.
@@ -47,6 +48,8 @@ import { hasContent, isKnownLabel, newNoteForm, noteFormOf, sameNoteForm, savePl
 import { StudentMentionList, StudentTagRow } from './StudentTags';
 import CheckLinesOverlay, { CHECK_TEXT_CLASS } from './CheckLinesOverlay';
 import { useClasses, useHubClass, type ClassItem } from '../class/classes';
+import { hasInk, type PenStroke } from '../../domain/handwriting';
+import HandwritingPad from './HandwritingPad';
 import type { NotePanelParams } from './open';
 
 const PLACEHOLDER = '자유롭게 생각을 적어 보세요...';
@@ -69,8 +72,12 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [flagBusy, setFlagBusy] = useState(false);
-  /** 드라이브에 올리는 중 (📎 파일 / 붙여넣은 캡처) */
-  const [uploading, setUploading] = useState<'files' | 'paste' | null>(null);
+  /** 드라이브에 올리는 중 (📎 파일 / 붙여넣은 캡처 / ✏️ 손글씨) */
+  const [uploading, setUploading] = useState<'files' | 'paste' | 'pen' | null>(null);
+  /** ✏️ 손글씨 그림판을 열었나 · 그리던 것 (첨부하면 비운다) */
+  const [penOpen, setPenOpen] = useState(false);
+  const [penStrokes, setPenStrokes] = useState<PenStroke[]>([]);
+  const penDirty = hasInk(penStrokes);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const { classes } = useClasses();
   const hubClass = useHubClass((s) => s.id);
@@ -262,15 +269,22 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   // 공유받은 파일 (P8-3 - 저장은 사용자가: 누르면 드라이브에 올려 첨부)
   const [sharedFiles, setSharedFiles] = useState<File[]>(() => (isEditing ? [] : (params.draftFiles ?? [])));
   // ─── 붙이기 (attach.ts) ───
-  const attach = async (files: File[], pasted: boolean) => {
-    if (files.length === 0) return;
-    setUploading(pasted ? 'paste' : 'files');
+  /** 올려 붙인 개수를 돌려준다 */
+  const attach = async (files: File[], pasted: boolean, from: 'files' | 'paste' | 'pen' = pasted ? 'paste' : 'files'): Promise<number> => {
+    if (files.length === 0) return 0;
+    setUploading(from);
     try {
       const added = await uploadAttachments(files, pasted);
       if (added.length > 0) setForm((f) => ({ ...f, attachments: [...f.attachments, ...added] }));
+      return added.length;
     } finally {
       setUploading(null);
     }
+  };
+  /** ✏️ 손글씨 ✓ 첨부 - 올라가면 그리던 것을 비운다(실패하면 남겨 다시 첨부할 수 있게) */
+  const attachHandwriting = async (file: File) => {
+    setPenOpen(false);
+    if ((await attach([file], false, 'pen')) > 0) setPenStrokes([]);
   };
   const onPickFiles = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
@@ -397,7 +411,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const unsaved = useRef<(() => boolean) | null>(null);
   useEffect(() => {
     // 고치던 메모를 다 지운 것도 저장하면 지워지니 묻는다
-    unsaved.current = () => !untouched && (hasContent(form) || isEditing);
+    unsaved.current = () => (!untouched && (hasContent(form) || isEditing)) || penDirty;
   });
   useEffect(() => registerUnsavedCheck(unsaved), []);
 
@@ -644,6 +658,11 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     ⏳ 붙여넣은 이미지 업로드 중...
                   </span>
                 )}
+                {uploading === 'pen' && (
+                  <span data-note-uploading="pen" className="text-xs font-bold text-primary">
+                    ⏳ 손글씨 업로드 중...
+                  </span>
+                )}
               </div>
               <div className="flex gap-2">
                 <label
@@ -658,6 +677,20 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   <span data-note-uploading={uploading === 'files' ? 'files' : undefined}>{uploading === 'files' ? '업로드 중...' : '파일 첨부'}</span>
                   <input type="file" multiple data-note-file-input onChange={onPickFiles} className="hidden" disabled={!!uploading} />
                 </label>
+                <button
+                  type="button"
+                  data-note-handwriting
+                  data-pen-dirty={penDirty ? '' : undefined}
+                  onClick={() => setPenOpen(true)}
+                  disabled={!!uploading}
+                  title={penDirty ? '그리던 손글씨를 이어 그립니다. ✓ 첨부를 누르면 그림으로 붙습니다.' : '펜·손가락으로 쓴 것을 그림으로 바꿔 붙입니다 (구글 드라이브 School_Planner 폴더)'}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed shadow-2xs disabled:opacity-60 disabled:cursor-wait ${
+                    penDirty ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300'
+                  }`}
+                >
+                  <span>✏️</span>
+                  <span>{penDirty ? '손글씨 (그리던 것)' : '손글씨'}</span>
+                </button>
                 <button
                   type="button"
                   data-note-link-add
@@ -784,6 +817,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
           </div>
         </div>
       </div>
+      {penOpen && <HandwritingPad strokes={penStrokes} onChange={setPenStrokes} onClose={() => setPenOpen(false)} onDone={(file) => void attachHandwriting(file)} />}
     </SidePanelFrame>
   );
 }
