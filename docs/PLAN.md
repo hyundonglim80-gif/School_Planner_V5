@@ -252,6 +252,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-09 | 클라우드(claude.ai/code) | P6-1 | P6-1 세션 끝 정리 | 단위 1469 · 자료 층(에뮬레이터) 26 · inspect-lessons 98(teacher·teacher3) · week·links·search-trash·shell·settings·events·notes·forward·import 둘·month-year·move-dday·groups 통과 · seed에 교사 유형(셋 다 - 띠가 다른 점검을 밀지 않게) · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P5-3 | P5-3 세션 끝 정리 | 단위 1227 · inspect-move-dday 41 · groups·week·month-year·multi·shell·import 둘·forward·events·settings 통과 · 같은 브랜치 → PR → Claude가 합침 |
 | 2026-10-08 | 클라우드(claude.ai/code) | P3-4 | P3-4 세션 끝 정리 | 단위 966 · 자료 층(에뮬레이터) 25 · inspect-import-items 23 · import-labels 통과 · P3 단계 점검 모두(events·notes·forward·groups·multi) 통과 · 브랜치 `ccr-df696f8d-16jecy`(합친 뒤 main에서 다시) → PR → Claude가 합침 · V4 seed를 에뮬레이터에 넣음 · 사용자 요청: P9-4까지 쉬지 않고 이어 가기 |
+| 2026-10-21 | 클라우드 | 손글씨 메모 | ✏️ 손글씨 그림판 | 단위 2439 · lint·빌드 · inspect-handwriting 25 통과(PC 1400 + 휴대폰 390 그림 한 번) · 실제 S펜(누르는 힘·옆 단추·손바닥)은 사용자 휴대폰에서 확인 부탁 |
 | 2026-10-14 | `C:\HDL` PC | P10 계획 | P10 계획 | 사용 의견 27가지를 코드와 견줌(월간 수업은 P9-3에서 넣음 - 확인만) · 세션 다섯으로 나눔 · 사용자 답 셋(✎ · 체크리스트는 쓰는 칸 · ＋ 새로는 PC 머리줄만) |
 | 2026-10-15 | `C:\HDL` PC | P10-1 | P10-1 세션 끝 정리 | 단위 2325 · inspect-events·week·month-year·groups·forward·gcal·notes·settings·mobile 통과 · manual(MATCH 바뀐 주제 10) 통과 · 이 PC V5에 `npm ci` 처음 · 에뮬레이터·dev는 V5에서 켬(V4 seed → V5 seed) |
 | 2026-10-15 | 클라우드 | P10-2 | P10-2 세션 끝 정리 | 단위 2325 · inspect-lessons·seating·evaluations·class·week·month-year·bell-guide·attendance·links·sheets·backup·search-trash 통과 · manual(MATCH 바뀐 주제 11) 통과 · ✎는 재현 안 됨(점검에 셋 더함) · 명렬표 번호 = no-spinner CSS 빠짐 |
@@ -713,6 +714,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   단추는 잠긴 라벨(`system`)이 붙은 메모에만 - 정한 계정에만 그 라벨이 있어 다른 사람에게는 나오지 않는다. 바로 실제 배포라 누를 때 한 번 묻는다.
   'Claude요청' 라벨은 메일을 앱이 모르므로(공개 코드에 적지 않는다) 함수가 만든다 - 표시 `system`으로 앱이 잠근다.
   진행 확인은 새 예약 작업 대신 `v5SendDueAlarms` 안에서(Cloud Scheduler 작업이 늘면 돈이 든다). 처음 만들 때 클라우드 세션 Auto 모드의 자동 검사가 '위험한 자동 에이전트'로 막아 사용자가 모드를 바꾼 뒤 만들었다. 설정·자리 = `docs/CLAUDE-REQUEST.md`.
+
+- **✏️ 손글씨 메모**(10-21 사용자 요청 - 갤럭시 S25 울트라 S펜·펜 태블릿): 메모 쓰는 칸 첨부 줄에 ✏️ 손글씨 → 화면 가득 그림판(`notes/HandwritingPad`, 셈 `domain/handwriting`).
+  권장안으로 고른 것: 그린 것은 **획 자료가 아니라 PNG 그림**으로 지금의 첨부 길(드라이브)에 붙인다 - 카드·크게 보기·휴지통·백업이 그대로이고, Firestore는 배열 안 배열을 받지 않고 문서 1MB 한도라 획 저장은 다시 고치기가 필요할 때 따로.
+  그린 둘레만 잘라 흰 바탕(어두운 화면에서도 보이게)·배율 최대 2(휴대폰 3~4배는 파일이 크다) · 펜은 누르는 힘으로 굵기, **펜을 쓰면 손가락(손바닥)은 그리지 않는다**, 펜 옆 단추(buttons 2)·펜 뒤 지우개(32) = 지우개 ·
+  ✕·ESC·뒤로가기는 그림판만 닫고 그리던 것은 쓰는 칸이 들고 있다(다시 열면 이어 그림, 첨부가 올라가면 비움, 저장 안 한 것으로 셈). 손글씨를 글자로 바꾸기는 웹(안드로이드 크롬)에 기능이 없고 AI API는 하지 않기로 했다 → 휴대폰 'S펜으로 텍스트 변환'.
+  설명서는 수정 멈춤(10-20)이라 고치지 않았다. 점검 `tools/inspect-handwriting.mjs`(25 - 펜은 CDP `pointerType: 'pen'`·force).
 
 ---
 
