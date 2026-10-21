@@ -57,11 +57,11 @@ describe('라벨 고르기', () => {
     expect(qa('[data-label-pick]').map((b) => b.dataset.labelPick)).toEqual(['e1', 'e2']);
     fireEvent.click(q('[data-label-pick="e2"]'));
     fireEvent.click(q('[data-label-pick="e1"]'));
-    expect(out().dataset.ids).toBe('e2,e1');
+    expect(out().dataset.ids).toBe('e1');
     expect(q('[data-label-pick="e1"]')).toHaveAttribute('aria-pressed', 'true');
     expect(q('[data-label-pick="e1"]').style.backgroundColor).not.toBe('');
-    fireEvent.click(q('[data-label-pick="e2"]'));
-    expect(out().dataset.ids).toBe('e1');
+    fireEvent.click(q('[data-label-pick="e1"]'));
+    expect(out().dataset.ids).toBe('');
     // 일정에는 '+ 새 라벨'이 없다 (V4 그대로)
     expect(document.querySelector('[data-label-pick-new]')).toBeNull();
   });
@@ -71,6 +71,18 @@ describe('라벨 고르기', () => {
     expect(qa('[data-label-pick]').map((b) => b.dataset.labelPick)).toEqual(['w', 's', 'a']);
     expect(q('[data-label-pick="a"]')).toHaveTextContent('└');
     expect(q('[data-label-pick="a"]')).toHaveAttribute('title', '학교 › A초');
+  });
+
+  it('메모: 그냥 누르면 하나만, Ctrl+누르면 여러 개', () => {
+    render(<Harness kind="note" />);
+    fireEvent.click(q('[data-label-pick="w"]'));
+    fireEvent.click(q('[data-label-pick="s"]'), { ctrlKey: true });
+    expect(out().dataset.ids).toBe('w,s');
+    fireEvent.click(q('[data-label-pick="a"]'));
+    expect(out().dataset.ids).toBe('a');
+    fireEvent.click(q('[data-label-pick="w"]'), { ctrlKey: true });
+    fireEvent.click(q('[data-label-pick="a"]'), { ctrlKey: true });
+    expect(out().dataset.ids).toBe('w');
   });
 
   it('새 라벨: 없는 이름은 저장 때 만들 이름으로, 있는 이름은 그 라벨을 고른다, 누르면 뺀다', () => {

@@ -135,9 +135,10 @@ describe('새 일정', () => {
     render(<Host initial={{ sid: SID, date: DAY }} />);
     fireEvent.click(q('[data-label-pick="fwd"]'));
     expect(q('[data-event-attr="forward"]')).toBeChecked();
-    expect(q('[data-event-attr="calendar"]')).toBeChecked(); // 달력 라벨도 그대로 붙어 있다
+    expect(q('[data-event-attr="calendar"]')).not.toBeChecked(); // 라벨은 하나만 - 달력 라벨은 빠진다
     fireEvent.click(q('[data-label-pick="cal"]'));
-    expect(q('[data-event-attr="calendar"]')).not.toBeChecked();
+    expect(q('[data-event-attr="calendar"]')).toBeChecked();
+    expect(q('[data-event-attr="forward"]')).not.toBeChecked();
   });
 
   it('빠른 입력 칩 - 누르기 전에는 바꾸지 않고, 모두 넣기 = 날짜·알림·라벨 (말은 글에서 뺀다, 시각은 둔다)', async () => {
