@@ -143,6 +143,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
                 onValueChange={(v) => set({ subject: v })}
                 classOptions={pairOptions.classes}
                 subjectOptions={pairOptions.subjects}
+                openOnFocus={false}
                 inputClassName="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary"
               />
             ) : (

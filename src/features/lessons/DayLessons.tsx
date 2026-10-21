@@ -414,6 +414,8 @@ export default function DayLessons({ date }: { date: string }) {
                         subjectOptions={pairOptions.subjects}
                         className="col-span-2"
                         inputClassName="w-full px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
+                        // 수업을 눌러 열자마자 목록이 뜨지 않게 - ▼·Alt+↓·글자 치기로 연다
+                        openOnFocus={false}
                         autoFocus
                       />
                     ) : (
