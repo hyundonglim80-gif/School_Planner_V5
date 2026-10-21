@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { acceptsPointer, handwritingName, hasInk, inkBounds, isEraserPress, penWidth, type PenStroke } from './handwriting';
+import { acceptsPointer, clampView, defaultPenColor, exportScale, handwritingName, hasInk, inkBounds, isEraserPress, panView, penWidth, pinchView, zoomAt, type PenStroke } from './handwriting';
 
 const stroke = (points: [number, number, number][], erase = false): PenStroke => ({ color: '#000', erase, points: points.map(([x, y, w]) => ({ x, y, w })) });
 
@@ -42,5 +42,42 @@ describe('손글씨 셈', () => {
 
   it('첨부 이름', () => {
     expect(handwritingName(new Date(2026, 9, 21, 9, 5, 7))).toBe('손글씨_20261021_090507.png');
+  });
+
+  it('처음 펜 색 = 화면과 반대 (어두운 화면은 흰색)', () => {
+    expect(defaultPenColor(true)).toBe('#ffffff');
+    expect(defaultPenColor(false)).toBe('#1e293b');
+  });
+
+  it('보는 자리는 종이 밖으로 나가지 않고 배율은 1~5', () => {
+    expect(clampView({ scale: 0.5, x: 10, y: 10 }, 400, 800)).toEqual({ scale: 1, x: 0, y: 0 });
+    expect(clampView({ scale: 2, x: 500, y: -5 }, 400, 800)).toEqual({ scale: 2, x: 200, y: 0 });
+    expect(clampView({ scale: 9, x: 0, y: 0 }, 400, 800).scale).toBe(5);
+  });
+
+  it('+ / − 는 화면 가운데를 그 자리에 둔 채', () => {
+    // 400×800 종이, 가운데 (200, 400)
+    const v = zoomAt({ scale: 1, x: 0, y: 0 }, 2, 200, 400, 400, 800);
+    expect(v).toEqual({ scale: 2, x: 100, y: 200 });
+    expect(zoomAt(v, 1, 200, 400, 400, 800)).toEqual({ scale: 1, x: 0, y: 0 });
+  });
+
+  it('두 손가락: 벌리면 커지고, 가운데 밑의 종이 자리는 손가락을 따라간다', () => {
+    const start = { scale: 1, x: 0, y: 0 };
+    const v = pinchView(start, { x: 100, y: 100 }, 100, { x: 100, y: 100 }, 200, 400, 800);
+    expect(v).toEqual({ scale: 2, x: 50, y: 50 });
+    // 두 배 상태에서 가운데를 왼쪽으로 40 옮기면 종이는 20만큼 오른쪽을 본다
+    expect(pinchView(v, { x: 100, y: 100 }, 100, { x: 60, y: 100 }, 100, 400, 800)).toEqual({ scale: 2, x: 70, y: 50 });
+  });
+
+  it('한 손가락으로 옮기기', () => {
+    expect(panView({ scale: 2, x: 100, y: 100 }, 40, -20, 400, 800)).toEqual({ scale: 2, x: 80, y: 110 });
+    expect(panView({ scale: 1, x: 0, y: 0 }, 40, 40, 400, 800)).toEqual({ scale: 1, x: 0, y: 0 });
+  });
+
+  it('그림 배율은 최대 3배, 긴 쪽 3000px 안', () => {
+    expect(exportScale(200, 100)).toBe(3);
+    expect(exportScale(1500, 600)).toBe(2);
+    expect(exportScale(5000, 10)).toBe(1);
   });
 });

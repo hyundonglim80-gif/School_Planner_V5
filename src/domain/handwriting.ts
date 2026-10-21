@@ -20,6 +20,7 @@ export interface PenStroke {
 /** 펜 색 (이름 = data-pen-color 값) */
 export const PEN_COLORS = [
   { id: 'black', label: '검정', value: '#1e293b' },
+  { id: 'white', label: '흰색', value: '#ffffff' },
   { id: 'blue', label: '파랑', value: '#2563eb' },
   { id: 'red', label: '빨강', value: '#dc2626' },
   { id: 'green', label: '초록', value: '#16a34a' },
@@ -34,6 +35,66 @@ export const PEN_SIZES = [
 
 /** 지우개 굵기 (CSS px) */
 export const ERASER_SIZE = 28;
+
+/** 처음 펜 색 - 그림판 바탕이 화면색이라 어두운 화면은 흰색, 밝은 화면은 검정 */
+export function defaultPenColor(dark: boolean): string {
+  return dark ? '#ffffff' : '#1e293b';
+}
+
+// ─── 크게·작게 보기 ───
+// 종이 = 그림판을 연 자리 크기(배율 1). 화면에는 종이의 (x, y)부터 배율 scale로 보인다: 화면 = (종이 − 시작) × scale.
+// 줄은 종이 자리로 적으므로 배율을 바꿔도 그린 것은 그대로다.
+
+/** 보는 자리 - 종이의 왼쪽 위 (x, y)부터 배율 scale */
+export interface PadView {
+  scale: number;
+  x: number;
+  y: number;
+}
+
+export const ZOOM_MIN = 1;
+export const ZOOM_MAX = 5;
+/** + / − 단추 한 번 */
+export const ZOOM_STEP = 1.25;
+export const VIEW_1: PadView = { scale: 1, x: 0, y: 0 };
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+
+/** 배율은 범위 안, 보는 자리는 종이 밖으로 나가지 않게 */
+export function clampView(v: PadView, w: number, h: number): PadView {
+  const scale = clamp(v.scale, ZOOM_MIN, ZOOM_MAX);
+  return { scale, x: clamp(v.x, 0, Math.max(0, w - w / scale)), y: clamp(v.y, 0, Math.max(0, h - h / scale)) };
+}
+
+/** 화면 자리 (cx, cy)를 그 자리에 둔 채 배율을 바꾼다 (+ / − 단추 = 화면 가운데, Ctrl+휠 = 마우스 자리) */
+export function zoomAt(v: PadView, scale: number, cx: number, cy: number, w: number, h: number): PadView {
+  const s = clamp(scale, ZOOM_MIN, ZOOM_MAX);
+  const px = v.x + cx / v.scale;
+  const py = v.y + cy / v.scale;
+  return clampView({ scale: s, x: px - cx / s, y: py - cy / s }, w, h);
+}
+
+/**
+ * 두 손가락 벌리기·오므리기·옮기기. 시작할 때의 보는 자리·두 손가락 가운데·거리 → 지금 가운데·거리.
+ * 시작 가운데 밑의 종이 자리가 지금 가운데 밑에 오게 한다.
+ */
+export function pinchView(start: PadView, c0: { x: number; y: number }, d0: number, c: { x: number; y: number }, d: number, w: number, h: number): PadView {
+  const s = clamp(start.scale * (d0 > 0 ? d / d0 : 1), ZOOM_MIN, ZOOM_MAX);
+  const px = start.x + c0.x / start.scale;
+  const py = start.y + c0.y / start.scale;
+  return clampView({ scale: s, x: px - c.x / s, y: py - c.y / s }, w, h);
+}
+
+/** 한 손가락으로 옮기기 (펜을 쓴 뒤 - 손가락은 그리지 않는다) · 휠 굴리기 */
+export function panView(start: PadView, dx: number, dy: number, w: number, h: number): PadView {
+  return clampView({ ...start, x: start.x - dx / start.scale, y: start.y - dy / start.scale }, w, h);
+}
+
+/** 그림으로 바꿀 때 배율 - 크게 보며 잘게 쓴 것도 보이게 최대 3배, 긴 쪽이 3000px를 넘지 않게 */
+export function exportScale(w: number, h: number): number {
+  const long = Math.max(w, h, 1);
+  return Math.max(1, Math.min(3, 3000 / long));
+}
 
 /**
  * 그 점의 굵기. 펜은 누르는 힘(0~1)에 따라 0.4배~1.6배, 힘을 모르면(0) 그대로.
