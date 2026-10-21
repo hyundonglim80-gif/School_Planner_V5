@@ -30,7 +30,6 @@ import { useFocusReveal } from '../search/focus';
 import DayCardView from './DayCards';
 import { useDayCardsOn } from './useDayCards';
 import { useDayNotes } from './useDayNotes';
-import { noteFromLabel } from '../notes/dayNotes';
 import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
 
@@ -66,7 +65,6 @@ export default function DayJournal({ date }: { date: YMD }) {
   const pass = (n: ItemDoc) => matchLabels(n.labelIds, filter, tree.parents);
   const dated = favoriteFirst(rows.filter((r) => r.dated && pass(r.item)).map((r) => r.item));
   const shown = [...dated, ...rows.filter((r) => !r.dated && pass(r.item)).map((r) => r.item)];
-  const fromOf = new Map(rows.map((r) => [r.item.id, r.from.map(noteFromLabel)]));
   // 그날 알림장·출결 (계산한 카드 - 라벨이 없어 라벨로 보기를 하면 숨긴다)
   const allCards = useDayCardsOn(date, sid);
   const cards = isEmptyFilter(filter) ? allCards : [];
@@ -204,7 +202,6 @@ export default function DayJournal({ date }: { date: YMD }) {
                       editing={shownId === item.id}
                       collapsed={isCollapsed}
                       onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [item.id]: !isCollapsed }))}
-                      from={fromOf.get(item.id)}
                       dragProps={sid ? reorderDragProps(`note:day:${date}`, index, (f, t) => void moveNoteByDrag(sid, dated, f, t).catch(quiet)) : undefined}
                       onMoveUp={sid && canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
                       onMoveDown={sid && canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}

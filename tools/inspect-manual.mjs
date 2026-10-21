@@ -437,7 +437,7 @@ try {
     const card = q(sel('entry-card', 'insp_man_n1'));
     r.check(await waitFor(card), '메모 카드');
     for (const s of ['entry-complete', 'entry-favorite-toggle', 'entry-table', 'entry-students']) r.check((await card.locator(sel(s)).count()) > 0, `카드 ${s}`);
-    r.check((await card.locator(sel('entry-from', 'event:insp_man_e1')).count()) === 1, '그날 일정에 이은 메모 = 카드에 📌 표시 (한 번만)');
+    r.check((await card.locator(sel('entry-from')).count()) === 0, '그날 일정에 이은 메모 = 카드에 이은 곳 표시 없음');
     const toggle = q(sel('journal-filter-toggle'));
     r.check((await toggle.count()) === 1, '제목 줄 🏷️ (라벨로 보기 펴기·접기)');
     if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();

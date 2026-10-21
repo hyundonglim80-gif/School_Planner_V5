@@ -160,11 +160,11 @@ try {
   const journal = page.locator(sel('day-journal', DAY));
   const inJournal = (id) => journal.locator(sel('entry-card', id));
   r.check(await waitFor(inJournal('insp_lkm'), 8000), '일정에 이은 다른 날 메모가 그날 칸에');
-  r.check((await inJournal('insp_lkm').locator(sel('entry-from')).getAttribute('data-entry-from')) === 'event:insp_lkf', '📌 일정 표시');
+  r.check((await inJournal('insp_lkm').locator(sel('entry-from')).count()) === 0, '이은 곳 표시는 카드에 없음 (연결 창에서 본다)');
   r.check(await waitFor(inJournal('insp_lkn')), '3교시에 이은 날짜 없는 메모도');
-  r.check((await inJournal('insp_lkn').locator(sel('entry-from')).getAttribute('data-entry-from')) === 'lesson:3', '🏫 3교시 표시');
+  r.check((await inJournal('insp_lkn').locator(sel('entry-from')).count()) === 0, '🏫 표시도 카드에 없음');
   r.check((await inJournal('insp_lkj').count()) === 1, '날짜 링크 + 일정에 이은 메모는 한 번만');
-  r.check((await inJournal('insp_lkj').locator(sel('entry-from', 'event:insp_lke')).count()) === 1, '그 메모에도 📌 표시');
+  r.check((await inJournal('insp_lkj').locator(sel('entry-from')).count()) === 0, '그 메모에도 카드 표시 없음');
   r.check(await inJournal('insp_lkm').locator(sel('entry-up')).isDisabled(), '이은 것으로만 온 메모는 ▲▼ 없음');
   const count = Number(await journal.locator(sel('journal-count')).getAttribute('data-journal-count'));
   r.check(count === (await journal.locator(sel('entry-card')).count()), `머리줄 수 = 카드 수 (${count})`);
