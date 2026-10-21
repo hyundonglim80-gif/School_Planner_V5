@@ -43,6 +43,8 @@ export interface EntryCardProps {
   /** 앞(▲)·뒤(▼)로. 옮길 수 없으면 주지 않는다 */
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  /** 끌어 놓아 순서 바꾸기 속성 (ui/reorderDrag - 마우스로 쓰는 화면에서만 온다) */
+  dragProps?: object;
   onOpen: () => void;
   /** 🔗 n - 이은 항목 보기 (links/LinkViewerWindow) */
   onOpenLinks?: () => void;
@@ -86,6 +88,7 @@ export default function EntryCard(props: EntryCardProps) {
       data-entry-done={done ? '1' : '0'}
       data-entry-favorite={favorite ? '1' : '0'}
       data-entry-collapsed={collapsed ? '1' : '0'}
+      {...props.dragProps}
       onClick={(e) => {
         stop(e);
         props.onOpen();

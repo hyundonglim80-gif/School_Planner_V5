@@ -19,6 +19,7 @@ import { periodPosition } from '../../domain/period';
 import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
+import { reorderDragProps } from '../../ui/reorderDrag';
 import { deleteEvent, moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
 import DueBadge from '../events/DueBadge';
 import EventDoneChip from '../events/EventDoneChip';
@@ -157,6 +158,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                   today={today}
                   first={idx === 0}
                   last={idx === events.length - 1}
+                  dragProps={reorderDragProps(`event:${date}`, idx, (f, t) => move(events, f, t), !multi.on)}
                   // 지난 날 칸: 오늘로 따라가는 일정은 흐리게 '→ 오늘로'
                   away={carried.ids.has(ev.id)}
                   picked={pickedHere.has(ev.id)}
@@ -181,6 +183,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                   today={today}
                   first={idx === 0}
                   last={idx === follow.length - 1}
+                  dragProps={reorderDragProps(`event-follow:${date}`, idx, (f, t) => move(follow, f, t), !multi.on)}
                   since={carriedSince(ev)}
                   picked={pickedHere.has(ev.id)}
                   onCardClick={(e) => cardClick(ev, e)}
@@ -243,6 +246,8 @@ interface EventCardProps {
   today: string;
   first: boolean;
   last: boolean;
+  /** 끌어 놓아 순서 바꾸기 속성 (ui/reorderDrag) */
+  dragProps?: object;
   /** 오늘로 따라오는 일정 - 처음 날 ('↪ 10/5부터') */
   since?: string;
   /** 지난 날 칸에서, 오늘로 따라간 일정 (흐리게 '→ 오늘로') */
@@ -260,7 +265,7 @@ interface EventCardProps {
 /** 길게 누르기 (손가락만 - 0.5초, 움직이면 그만) */
 const LONG_PRESS_MS = 500;
 
-function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpen, onOpenLinks, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
+function EventCard({ ev, day, dragProps, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpen, onOpenLinks, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
   const done = doneOn(ev, day);
   const press = useRef<{ timer: ReturnType<typeof setTimeout> | null; x: number; y: number; fired: boolean }>({ timer: null, x: 0, y: 0, fired: false });
   const cancelPress = () => {
@@ -279,6 +284,7 @@ function EventCard({ ev, day, picked, onCardClick, onLongPress, labels, editing,
       data-event-carried={since}
       data-event-away={away ? '1' : undefined}
       data-event-picked={picked ? '1' : undefined}
+      {...dragProps}
       onClick={(e) => {
         // 길게 눌러 고른 뒤 손을 떼면 click이 한 번 더 온다 - 그것은 넘긴다
         if (press.current.fired) {

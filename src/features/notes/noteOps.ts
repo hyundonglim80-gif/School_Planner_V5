@@ -41,6 +41,24 @@ export function noteMoveOps(sid: string, shown: readonly ItemDoc[], index: numbe
   return ops.length > 0 ? ops : null;
 }
 
+/**
+ * 끌어 놓기: 보이는 목록의 from 번째를 to 번째 자리로. ▲▼처럼 즐겨찾기끼리, 나머지끼리만(다르면 null).
+ * 같은 무리 안 차례로 바꿔 옮긴 것의 order만 고친다.
+ */
+export function noteDragOps(sid: string, shown: readonly ItemDoc[], from: number, to: number): WriteOp[] | null {
+  const a = shown[from];
+  const b = shown[to];
+  if (!a || !b || a.id === b.id || !!a.favorite !== !!b.favorite) return null;
+  const group = shown.filter((d) => !!d.favorite === !!a.favorite).sort(compareOrder);
+  const ops = reorderOps(
+    sid,
+    group,
+    group.findIndex((d) => d.id === a.id),
+    group.findIndex((d) => d.id === b.id),
+  );
+  return ops.length > 0 ? ops : null;
+}
+
 /** 앞·뒤로 옮길 수 있나 (▲▼ 단추를 흐리게) */
 export function canMoveNote(shown: readonly ItemDoc[], index: number, step: -1 | 1): boolean {
   const item = shown[index];

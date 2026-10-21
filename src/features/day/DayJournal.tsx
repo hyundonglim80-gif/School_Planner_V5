@@ -17,7 +17,8 @@ import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
 import { useMainWidth } from '../../ui/useMainWidth';
 import type { ItemDoc } from '../events/eventOps';
-import { deleteNote, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
+import { reorderDragProps } from '../../ui/reorderDrag';
+import { deleteNote, moveNoteByDrag, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
 import EntryCard from '../notes/EntryCard';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useProgressNoteLinks } from '../links/useProgressLinks';
@@ -204,6 +205,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                       collapsed={isCollapsed}
                       onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [item.id]: !isCollapsed }))}
                       from={fromOf.get(item.id)}
+                      dragProps={sid ? reorderDragProps(`note:day:${date}`, index, (f, t) => void moveNoteByDrag(sid, dated, f, t).catch(quiet)) : undefined}
                       onMoveUp={sid && canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
                       onMoveDown={sid && canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                       onOpen={() => openEdit(item)}

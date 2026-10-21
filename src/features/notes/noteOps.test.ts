@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ItemDoc } from '../events/eventOps';
-import { canMoveNote, checkLineChanges, favoriteChanges, favoriteFirst, memoScreenOrder, noteMoveOps } from './noteOps';
+import { canMoveNote, checkLineChanges, favoriteChanges, favoriteFirst, memoScreenOrder, noteDragOps, noteMoveOps } from './noteOps';
 
 const note = (id: string, order: string, more: Partial<ItemDoc> = {}): ItemDoc =>
   ({ id, order, kind: 'note', date: '2026-10-08', text: id, labelIds: [], ...more }) as unknown as ItemDoc;
@@ -59,5 +59,19 @@ describe('메모 셈', () => {
     expect(checkLineChanges(item, 2, '☑ 빵')).toEqual({ text: '장보기\n☐ 우유\n☐ 빵' });
     expect(checkLineChanges(item, 1, '☐ 두유')).toBeNull();
     expect(checkLineChanges(item, 0, '장보기')).toBeNull();
+  });
+});
+
+describe('끌어 놓아 순서 바꾸기', () => {
+  const shown = [note('a', 'a1'), note('b', 'a2'), note('c', 'a3'), note('f', 'a4', { favorite: true })];
+
+  it('같은 무리 안에서 끌어 놓은 자리로 옮긴다', () => {
+    const ops = noteDragOps('u_me', shown, 0, 2)!;
+    expect(orderAfterOps(shown, ops)).toEqual(['b', 'c', 'a', 'f']);
+  });
+
+  it('즐겨찾기와 나머지 사이·같은 자리는 옮기지 않는다', () => {
+    expect(noteDragOps('u_me', shown, 0, 3)).toBeNull();
+    expect(noteDragOps('u_me', shown, 1, 1)).toBeNull();
   });
 });

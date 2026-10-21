@@ -8,7 +8,7 @@ import type { LabelTree } from '../../data/select';
 import { recordUndo } from '../../data/undo';
 import { doneChanges, itemPath, type ItemDoc } from '../events/eventOps';
 import { createNoteData, noteEditChanges, savePlanOf, type NoteForm } from './noteForm';
-import { checkLineChanges, favoriteChanges, noteMoveOps } from './noteOps';
+import { checkLineChanges, favoriteChanges, noteDragOps, noteMoveOps } from './noteOps';
 import { closeNotePanelsFor } from './open';
 
 const KEEP = '적은 내용은 칸에 남아 있습니다.';
@@ -79,6 +79,14 @@ export async function askClaude(sid: string, item: ItemDoc): Promise<void> {
 /** 보이는 목록에서 한 칸 앞·뒤로 (▲▼ - 즐겨찾기끼리, 나머지끼리). 옮긴 것의 order만 */
 export async function moveNoteInList(sid: string, shown: readonly ItemDoc[], index: number, step: -1 | 1): Promise<void> {
   const ops = noteMoveOps(sid, shown, index, step);
+  if (!ops) return;
+  const undo = await batch(ops, { fail: '순서를 바꾸지 못했습니다.' });
+  recordUndo(sid, '', undo, { what: '순서 바꾸기', quiet: true });
+}
+
+/** 끌어 놓아 순서 바꾸기 (보이는 목록의 from 번째 → to 번째 자리). 옮긴 것의 order만 */
+export async function moveNoteByDrag(sid: string, shown: readonly ItemDoc[], from: number, to: number): Promise<void> {
+  const ops = noteDragOps(sid, shown, from, to);
   if (!ops) return;
   const undo = await batch(ops, { fail: '순서를 바꾸지 못했습니다.' });
   recordUndo(sid, '', undo, { what: '순서 바꾸기', quiet: true });
