@@ -62,7 +62,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
   const fromNote = !!source && linkKindOf(source) === 'note';
   const tabs: LinkerTab[] = fromProgress ? ['note'] : lessonEnd ? ITEM_TABS : [...ITEM_TABS, 'lesson', ...(fromNote ? (['progress'] as const) : [])];
 
-  const [tab, setTab] = useState<LinkerTab>(fromProgress ? 'note' : 'event');
+  const [tab, setTab] = useState<LinkerTab>(fromProgress || (source && !fromNote) ? 'note' : 'event');
   const [rangeKey, setRangeKey] = useState<RangeKey>('1week');
   const [custom, setCustom] = useState({ start: center, end: center });
   const [labelIds, setLabelIds] = useState<string[]>([]);
@@ -131,10 +131,10 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
     setPicked((p) => (p.includes(itemId) ? p.filter((x) => x !== itemId) : [...p, itemId]));
   };
 
-  // 새 메모는 날짜 없이 - 이으면 잇는 쪽(일정·수업)의 날 메모 칸에 저절로 보인다(P10-4 ■1)
+  // 일정에서 여는 새 메모는 그 일정의 날짜를 달고 열린다(칸에서 고칠 수 있다 - #90). 그 밖에는 날짜 없이 - 이으면 잇는 쪽 날 메모 칸에 저절로 보인다(P10-4 ■1)
   const makeNew = () => {
     const pickFor = pickToken.current;
-    if (tab === 'note') openNotePanel({ sid, date: null, pickFor });
+    if (tab === 'note') openNotePanel({ sid, date: source && !fromNote ? center : null, pickFor });
     else openEventPanel({ sid, date: center, pickFor });
   };
 

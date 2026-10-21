@@ -70,9 +70,8 @@ describe('🔗 링크 연결 창', () => {
   it('탭·범위(±1주일 - 그 항목의 날 둘레)·이미 이은 것은 연결됨·담고 저장 = 양쪽 한 묶음 + 닫기', async () => {
     seed();
     render(<LinkerWindow params={{ sid: SID, id: 'ev' }} close={close} raise={0} setParams={() => {}} />);
-    expect(qa('[data-linker-item]')).toHaveLength(0);
+    // 일정에서 열면 처음 탭은 메모 (#90)
     expect(qa('[data-linker-tab]').map((e) => e.dataset.linkerTab)).toEqual(['event', 'note', 'lesson']);
-    fireEvent.click(q('[data-linker-tab="note"]')!);
     // 메모 하나 (P10-4): 날짜 링크 메모와 날짜 없는 메모(만든 날)가 한 목록
     expect(qa('[data-linker-item]').map((e) => e.dataset.linkerItem)).toEqual(['j1', 'j2', 'm1']);
     expect((q('[data-linker-item="j1"]') as HTMLButtonElement).disabled).toBe(true);
@@ -107,13 +106,12 @@ describe('🔗 링크 연결 창', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
-  it("'+ 새 메모 만들어 연결' = 날짜 없는 새 메모 칸(쪽지 - 이으면 일정의 날 메모 칸에 보인다), 처음 저장하면 담긴다", () => {
+  it("'+ 새 메모 만들어 연결' = 그 일정의 날짜가 달린 새 메모 칸(#90, 칸에서 고칠 수 있다), 처음 저장하면 담긴다", () => {
     seed();
     render(<LinkerWindow params={{ sid: SID, id: 'ev' }} close={close} raise={0} setParams={() => {}} />);
-    fireEvent.click(q('[data-linker-tab="note"]')!);
     fireEvent.click(q('[data-linker-new="note"]')!);
     const p = opened.notes[0] as { sid: string; date: string | null; pickFor: string };
-    expect(p).toMatchObject({ sid: SID, date: null });
+    expect(p).toMatchObject({ sid: SID, date: '2026-10-08' });
     act(() => deliverLinkPick(p.pickFor, 'j3'));
     expect(q('[data-linker-picked="j3"]')).not.toBeNull();
     fireEvent.click(q('[data-linker-tab="event"]')!);
