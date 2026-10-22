@@ -159,7 +159,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
             )}
             {!mark && inPersonal && <ProgressCreateButton subject={subjectToSave(form.subject)} />}
           </div>
-          {mark && <ProgressMarkLine mark={mark} date={date} period={n} alwaysShowAction />}
+          {mark && <ProgressMarkLine mark={mark} date={date} period={n} alwaysShowAction wrap />}
           <div>
             <span className="block text-xs font-bold text-slate-500 mb-1">{isClassUnit ? '학년-반 · 과목' : '과목'}</span>
             {isClassUnit ? (
