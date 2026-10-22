@@ -37,6 +37,7 @@ import { formatSlot, normalizeSlotText } from '../../domain/teachingSlot';
 import { isLive, useDocs } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { downloadCsv } from '../../ui/download';
+import { reorderDragProps } from '../../ui/reorderDrag';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { useTeaching, useTeachingClasses } from '../lessons/teaching';
 import { cachedSubjects, offDayOf, useLessonSource } from '../lessons/useLessons';
@@ -48,8 +49,10 @@ import {
   draftTarget,
   emptyLesson,
   hasText,
+  duplicateRow,
   insertRowAfter,
   lessonsToSave,
+  moveRow,
   newCourseDraft,
   newDraft,
   rowLinkIds,
@@ -73,7 +76,7 @@ const FIELDS: Array<{ key: LessonField; label: string; title?: string }> = [
 ];
 const isDay = (s: string) => /^(20\d\d)-\d\d-\d\d$/.test(s);
 // 단원 | 차시 | 내용 | 교과서 | 준비물 | 삭제 - 오른쪽 칸에서도 내용 칸이 가장 넓게(비율로 나눈다)
-const ROW_GRID = 'grid grid-cols-[minmax(0,0.9fr)_2.25rem_minmax(0,2fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_2.5rem_1.25rem] gap-1';
+const ROW_GRID = 'grid grid-cols-[minmax(0,0.9fr)_2.25rem_minmax(0,2fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_2.5rem_5.5rem] gap-1';
 
 export default function ProgressWindow({ params, close, raise }: WindowProps<ProgressWindowParams | undefined>) {
   const { plans, loaded, sid } = useProgressPlans();
@@ -314,6 +317,21 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     const last = lastFocus.current;
     if (last && last.row > row) lastFocus.current = { ...last, row: last.row - 1 };
     update({ lessons: (draft?.lessons || []).filter((_, i) => i !== row) });
+  };
+
+  /** 행 순서 바꾸기 (▲▼·끌어 놓기) - 커서가 있던 행도 함께 따라간다 */
+  const moveRowTo = (from: number, to: number) => {
+    const last = lastFocus.current;
+    if (last && last.row === from) lastFocus.current = { ...last, row: to };
+    update({ lessons: moveRow(draft?.lessons || [], from, to) });
+  };
+
+  /** 행을 복사해 바로 아래에 넣는다 */
+  const copyRow = (row: number) => {
+    if (!draft) return;
+    const { lessons: next, at } = duplicateRow(draft.lessons, row);
+    update({ lessons: next });
+    requestAnimationFrame(() => focusCell({ row: at, col: lastFocus.current?.col ?? 2 }));
   };
 
   const handleCellKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, row: number, col: number) => {
@@ -767,7 +785,12 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                 </div>
                 <div className="space-y-1 pr-0.5">
                   {draft.lessons.map((l, r) => (
-                    <div key={l._k} className={ROW_GRID} data-progress-row={r}>
+                    <div
+                      key={l._k}
+                      className={ROW_GRID}
+                      data-progress-row={r}
+                      {...reorderDragProps(`progress-rows:${draft.id}`, r, moveRowTo)}
+                    >
                       {FIELDS.map((f, c) => (
                         <input
                           key={f.key}
@@ -808,16 +831,50 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           </button>
                         )}
                       </span>
-                      <button
-                        type="button"
-                        data-progress-row-delete={r}
-                        onClick={() => removeRow(r)}
-                        className="text-slate-300 hover:text-rose-500 text-xs cursor-pointer"
-                        title="행 삭제"
-                        aria-label={`${r + 1}번째 행 삭제`}
-                      >
-                        ✕
-                      </button>
+                      <span className="flex items-center justify-end gap-0.5">
+                        <button
+                          type="button"
+                          data-progress-row-up={r}
+                          disabled={r === 0}
+                          onClick={() => moveRowTo(r, r - 1)}
+                          className="text-slate-400 hover:text-primary disabled:opacity-30 disabled:cursor-default text-2xs cursor-pointer"
+                          title="한 칸 위로"
+                          aria-label={`${r + 1}번째 행 위로`}
+                        >
+                          ▲
+                        </button>
+                        <button
+                          type="button"
+                          data-progress-row-down={r}
+                          disabled={r === draft.lessons.length - 1}
+                          onClick={() => moveRowTo(r, r + 1)}
+                          className="text-slate-400 hover:text-primary disabled:opacity-30 disabled:cursor-default text-2xs cursor-pointer"
+                          title="한 칸 아래로"
+                          aria-label={`${r + 1}번째 행 아래로`}
+                        >
+                          ▼
+                        </button>
+                        <button
+                          type="button"
+                          data-progress-row-copy={r}
+                          onClick={() => copyRow(r)}
+                          className="text-slate-400 hover:text-primary text-xs cursor-pointer"
+                          title="이 행을 복사해 바로 아래에 넣기"
+                          aria-label={`${r + 1}번째 행 복사`}
+                        >
+                          ⧉
+                        </button>
+                        <button
+                          type="button"
+                          data-progress-row-delete={r}
+                          onClick={() => removeRow(r)}
+                          className="text-slate-300 hover:text-rose-500 text-xs cursor-pointer"
+                          title="행 삭제"
+                          aria-label={`${r + 1}번째 행 삭제`}
+                        >
+                          ✕
+                        </button>
+                      </span>
                     </div>
                   ))}
                 </div>

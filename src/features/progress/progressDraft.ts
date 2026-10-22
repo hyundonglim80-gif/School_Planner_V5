@@ -144,3 +144,22 @@ export function insertRowAfter(lessons: DraftLesson[], after: number): { lessons
   next.splice(at, 0, emptyLesson());
   return { lessons: next, at };
 }
+
+/** from 행을 to 자리로 옮긴 새 목록 (이은 메모는 행을 따라간다 - _from을 그대로 둔다). 자리가 같거나 밖이면 그대로 */
+export function moveRow(lessons: DraftLesson[], from: number, to: number): DraftLesson[] {
+  if (from === to || from < 0 || to < 0 || from >= lessons.length || to >= lessons.length) return lessons;
+  const next = [...lessons];
+  const [row] = next.splice(from, 1);
+  next.splice(to, 0, row);
+  return next;
+}
+
+/** row 행을 복사해 바로 아래에 넣은 새 목록과 새 행 번호 (글만 복사 - 이은 메모는 복사하지 않는다) */
+export function duplicateRow(lessons: DraftLesson[], row: number): { lessons: DraftLesson[]; at: number } {
+  if (row < 0 || row >= lessons.length) return { lessons, at: row };
+  const src = lessons[row];
+  const copy = withKey({ unit: src.unit, no: src.no, content: src.content, page: src.page, supplies: src.supplies });
+  const next = [...lessons];
+  next.splice(row + 1, 0, copy);
+  return { lessons: next, at: row + 1 };
+}
