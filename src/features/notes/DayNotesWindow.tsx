@@ -75,6 +75,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
               <EntryCard
                 key={item.id}
                 item={item}
+                fullTables
                 labels={itemLabels(tree, item.labelIds)}
                 pathOf={pathOf}
                 dateText={timeLabel(item.createdAt)}

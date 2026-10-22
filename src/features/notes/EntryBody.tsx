@@ -14,11 +14,13 @@ interface Props {
   item: ItemDoc;
   /** '☐ 우유' 줄을 누르면 그 줄의 체크 글자만 바꾼다 */
   onToggleCheckLine: (lineIndex: number, line: string) => Promise<unknown>;
+  /** 표를 칸 안에서 스크롤하지 않고 끝 행까지 모두 보인다 (오른쪽 칸 - 넘치면 칸 전체가 스크롤) */
+  fullTables?: boolean;
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
-export default function EntryBody({ item, onToggleCheckLine }: Props) {
+export default function EntryBody({ item, onToggleCheckLine, fullTables }: Props) {
   const body = item.text ?? '';
   const done = !!item.done;
   const attachments = (item.attachments ?? []).filter((a) => a && a.url);
@@ -157,7 +159,7 @@ export default function EntryBody({ item, onToggleCheckLine }: Props) {
       {body && <LinkPreviewCards text={body} />}
       {/* 붙인 표 - 작게 보기만 (고치기는 쓰는 칸에서) */}
       {tables.map((t) => (
-        <EntryTableView key={t.id} table={t} compact />
+        <EntryTableView key={t.id} table={t} compact fullHeight={fullTables} />
       ))}
     </>
   );
