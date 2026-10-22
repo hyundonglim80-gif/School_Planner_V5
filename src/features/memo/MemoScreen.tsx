@@ -187,9 +187,13 @@ export default function MemoScreen() {
           <ul data-memo-list={key} className="flex flex-col gap-1.5">
             {page.map((m) => {
               const dates = noteDates(m);
+              const i = movable.indexOf(m);
               return (
                 <MemoListRow
                   key={m.id}
+                  dragProps={sid && i >= 0 ? reorderDragProps(`note:memo:${key}`, i, (f, t) => void moveNoteByDrag(sid, movable, f, t).catch(quiet)) : undefined}
+                  onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => void moveNoteInList(sid, movable, i, -1).catch(quiet) : undefined}
+                  onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => void moveNoteInList(sid, movable, i, 1).catch(quiet) : undefined}
                   item={m}
                   labels={itemLabels(tree, m.labelIds)}
                   pathOf={pathOf}

@@ -1,6 +1,6 @@
 // 메모 화면 '목록' 보기의 한 줄 (P10-5 사용자 의견 5e) - ▶ 펴기 · ☐ 완료 · ★ · 첫 줄 · ☑ n/m · 라벨 칩 · 📅 날짜(없으면 쓴 날). 누르면 쓰는 칸.
 // ▶를 누르면 그 줄 아래에 카드와 같은 본문(EntryBody - 글·체크 줄·그림·첨부·표), ▼로 다시 한 줄(P11-1 사용자 의견 - 처음은 접힌 채).
-// 카드(EntryCard)의 ▲▼는 목록에 없다 - 차례 바꾸기는 카드 보기에서.
+// 차례 바꾸기는 카드와 같다 - ▲▼ 단추와 끌어 놓기(날짜 없는 메모끼리, 직접 정렬일 때).
 import { shortDateLabel } from '../../domain/dateUtils';
 import { checkCount } from '../../domain/checkLines';
 import { noteTitle } from '../../domain/noteTitle';
@@ -26,6 +26,10 @@ interface Props {
   onOpenDate: (date: string) => void;
   onToggleDone: () => void;
   onToggleFavorite: () => void;
+  /** 끌어 놓아 순서 바꾸기 속성 (ui/reorderDrag - 마우스 화면에서만 온다) */
+  dragProps?: object;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }
 
 export default function MemoListRow(props: Props) {
@@ -40,6 +44,7 @@ export default function MemoListRow(props: Props) {
       data-entry-done={done ? '1' : '0'}
       data-memo-row-expanded={expanded ? '1' : '0'}
       onClick={onOpen}
+      {...props.dragProps}
       className={`group px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
         editing ? 'border-primary ring-1 ring-primary bg-primary/5' : done ? 'bg-slate-50 border-slate-200 opacity-70 hover:border-slate-300' : 'bg-white border-slate-200/80 hover:border-slate-300'
       }`}
@@ -59,6 +64,36 @@ export default function MemoListRow(props: Props) {
         >
           {expanded ? '▼' : '▶'}
         </button>
+        <div className="flex items-center shrink-0">
+          <button
+            type="button"
+            data-entry-up
+            onClick={(e) => {
+              stop(e);
+              props.onMoveUp?.();
+            }}
+            disabled={!props.onMoveUp}
+            title="앞으로"
+            aria-label="앞으로"
+            className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs cursor-pointer"
+          >
+            ▲
+          </button>
+          <button
+            type="button"
+            data-entry-down
+            onClick={(e) => {
+              stop(e);
+              props.onMoveDown?.();
+            }}
+            disabled={!props.onMoveDown}
+            title="뒤로"
+            aria-label="뒤로"
+            className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs cursor-pointer"
+          >
+            ▼
+          </button>
+        </div>
         <input
           type="checkbox"
           checked={done}
