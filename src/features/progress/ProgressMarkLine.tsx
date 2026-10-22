@@ -20,9 +20,11 @@ interface Props {
   alwaysShowAction?: boolean;
   /** 내용·쪽수는 다른 줄(하루 수업 카드 첫 줄)에 보이니 빼고 단원·차시·준비물만 */
   hideContent?: boolean;
+  /** 생략하지 않고 줄을 바꿔 다 보인다 (수정 칸 - 아래 여유가 있다) */
+  wrap?: boolean;
 }
 
-export default function ProgressMarkLine({ mark, date, period, alwaysShowAction = false, hideContent = false }: Props) {
+export default function ProgressMarkLine({ mark, date, period, alwaysShowAction = false, hideContent = false, wrap = false }: Props) {
   const [busy, setBusy] = useState(false);
   const sid = usePersonalSpaceId();
   const docs = useDocs('progress', sid);
@@ -59,13 +61,13 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
       ' (누르면 진도 관리)';
 
   return (
-    <div data-progress-mark={mark.bumped ? 'bumped' : n} className="flex items-center gap-2 text-xs min-w-0">
+    <div data-progress-mark={mark.bumped ? 'bumped' : n} className={`flex gap-2 text-xs min-w-0 ${wrap ? 'flex-wrap items-start' : 'items-center'}`}>
       <button
         type="button"
         data-progress-mark-open
         onClick={openPlan}
         title={title}
-        className="min-w-0 truncate text-left underline decoration-dotted decoration-slate-300 underline-offset-2 hover:decoration-solid"
+        className={`min-w-0 ${wrap ? 'whitespace-normal break-words' : 'truncate'} text-left underline decoration-dotted decoration-slate-300 underline-offset-2 hover:decoration-solid`}
       >
         {mark.bumped ? (
           <span className="text-amber-700 font-bold">⏭ 밀림 · 이 교시는 차시 없음</span>
@@ -95,7 +97,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
         </button>
       )}
       {!mark.bumped && lesson?.supplies && (
-        <span data-progress-supplies className="shrink min-w-0 max-w-[40%] truncate text-amber-600 font-medium" title={`준비물: ${lesson.supplies}`}>
+        <span data-progress-supplies className={`min-w-0 text-amber-600 font-medium ${wrap ? 'whitespace-normal break-words' : 'shrink max-w-[40%] truncate'}`} title={`준비물: ${lesson.supplies}`}>
           🎒 {lesson.supplies}
         </span>
       )}
