@@ -15,7 +15,7 @@
     <script>
       try {
         var m = localStorage.getItem('sp5_theme');
-        if (m === 'dark' || (m !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        if (m === 'dark' || (m !== 'light' && m !== 'system') || (m === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
           document.documentElement.classList.add('dark');
         }
       } catch (e) {}
