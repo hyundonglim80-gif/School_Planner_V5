@@ -1,6 +1,7 @@
 // 하루 화면 ⏰ 수업 칸 (V4 features/day/DaySchedule.tsx). 교시마다 카드 - 과목 굵고 크게(PC 18px·휴대폰 16px), 과목이 있으면 왼쪽 교시 색 막대.
 //   - 수업 칸은 계산이다(domain/lessons): 그날 바꾼 칸(lessonDays) → 수업 없는 날 → 그 기간 시간표. '바뀜'은 그날만 바꾼 과목(과목이 보이는 칸만 - 비운 칸은 '수업 없음', P11-1 · 10-16 ✎ → 글자 '바뀜' - 휴대폰은 title이 안 보여 뜻을 몰랐다).
-//   - 교시를 누르면 그 자리에서 고친다(과목·비고(준비물) - P10-2에 수업 메모와 준비물을 한 칸으로). 저장·Ctrl+S, 바깥을 누르면 고친 것을 저장하고 닫는다, 닫기·ESC는 저장 없이.
+//   - 카드: 첫 줄 교시·반·과목·내용(쪽수), 둘째 줄 단원·차시·준비물(진도 줄), 셋째 줄 비고(10-22 사용자 의견).
+//   - 교시를 누르면 오른쪽 칸(LessonPanel)에서 고친다(과목·비고 - 일정·메모와 같게, 10-22 사용자 의견). 저장·Ctrl+S는 그 칸이 한다.
 //     고친 것은 lessonDays의 그 칸만(field path) - 시간표와 같은 과목은 적지 않는다(features/lessons/lessonOps).
 //   - 지금 몇 교시: 교시 시각(시간표 창 '교시')을 적어 두면 오늘은 '지금 · N분 남음' / '다음 · N분 뒤', 머리줄에 다음 교시와 비고 첫 줄.
 //     카드에는 교시 시각을 적지 않는다(P11-1 사용자 의견 - 수업 종 설정에서만 본다, 카드 title에만).
@@ -11,8 +12,7 @@
 //   - 🍚 급식·📚 학사(features/school - P6-3): 카드 아래, 환경설정 '우리 학교'를 골랐을 때만.
 // 교과 모드 칸의 🙋 = 그 반·그 교시 교과 출결(P7-2 - 개인 공간에서, 칸의 반이 그 학년도 명렬표에 있을 때). 교시 카드의 반 도구 = 🪑 자리표·🎯 뽑기(P7-3 - 그 반으로 연다).
 // 교시마다 📊n = 그 교시 조사표(P7-4). 반 도구·🙋·📊는 적힌 것(출결·조사표 수)이 없으면 마우스를 올려야 보인다(P10-2), 수정 칸에도 같은 단추 줄.
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type React from 'react';
+import { useMemo, useState } from 'react';
 import { setDate } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { listWindows, openWindow } from '../../app/windows';
@@ -25,27 +25,24 @@ import { normalizeSlotText, parseSlot, previousSlotOf } from '../../domain/teach
 import { useHolidayName } from '../../data/holidays';
 import { useDocs } from '../../data/select';
 import { useCurrentSpaceId, usePersonalSpaceId } from '../../data/session';
-import AutoTextarea from '../../ui/AutoTextarea';
 import { useClock } from '../../ui/useClock';
-import { isSaveKey } from '../../ui/useSaveKey';
 import { useToday } from '../../ui/useToday';
 import { lessonLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useClassBell } from '../bell/bell';
 import BellSettings from '../bell/BellSettings';
 import DayMeals from '../school/DayMeals';
-import ProgressMarkLine, { ProgressCreateButton } from '../progress/ProgressMarkLine';
+import ProgressMarkLine from '../progress/ProgressMarkLine';
 import { useProgressMarks } from '../progress/useProgress';
-import { slotId } from '../../domain/progress';
+import { lessonPageLabel, slotId } from '../../domain/progress';
 import { useFocusReveal } from '../search/focus';
 import { useClasses } from '../class/classes';
 import { openSubjectAttendanceCell } from '../subjectAttendance/open';
 import { openSeating } from '../seating/open';
 import { reorderDragProps } from '../../ui/reorderDrag';
-import { saveLesson, swapLessons } from './actions';
-import { isEdited } from './lessonOps';
-import SlotPairInput from './SlotPairInput';
-import { useClassColorOf, useSlotPairOptions, useTeaching } from './teaching';
+import { swapLessons } from './actions';
+import { openLessonPanel } from './open';
+import { useClassColorOf, useTeaching } from './teaching';
 import { cachedSubjects, useLessonSource } from './useLessons';
 import { evalCountsByPlace } from '../../domain/evaluation';
 import { useEvalsOn } from '../evaluations/evalData';
@@ -66,40 +63,8 @@ const PERIOD_ACCENTS = ['border-l-blue-400', 'border-l-emerald-400', 'border-l-a
 /** 마우스를 올렸을 때만 보이는 반 도구 (P10-2) - 휴대폰(sm 아래)은 마우스가 없으니 지금처럼 늘, 키보드로 오면 보인다.
  *  📊🔗✏️는 예전대로 휴대폰에서도 숨는다 - 휴대폰은 교시를 눌러 연 수정 칸에서 (그 줄에 모두 있다) */
 const HOVER_ONLY = 'sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100';
-/** 수정 칸의 도구 단추 (🔗 링크 추가와 같은 줄) */
-const editorToolClass = 'px-3 py-1.5 bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 rounded-xl text-xs font-bold transition-colors cursor-pointer';
-
 /** 지난 시간을 거슬러 찾는 날 수 */
 const PREV_LOOKBACK_DAYS = 60;
-
-interface Editing {
-  sid: string;
-  date: string;
-  n: number;
-  subject: string;
-  /** 비고(준비물) */
-  note: string;
-}
-
-/** 바깥을 누르면 (▼ 목록은 몸 밖에 붙지만 안으로 친다) */
-function useOutside(active: boolean, onOutside: () => void) {
-  const ref = useRef<HTMLDivElement>(null);
-  const cb = useRef(onOutside);
-  useEffect(() => {
-    cb.current = onOutside;
-  });
-  useEffect(() => {
-    if (!active) return;
-    const onDown = (e: MouseEvent) => {
-      const t = e.target as Element | null;
-      if (!ref.current || !t || ref.current.contains(t) || t.closest?.('[data-combobox-list]')) return;
-      cb.current();
-    };
-    document.addEventListener('mousedown', onDown);
-    return () => document.removeEventListener('mousedown', onDown);
-  }, [active]);
-  return ref;
-}
 
 export default function DayLessons({ date }: { date: string }) {
   const sid = useCurrentSpaceId();
@@ -115,14 +80,11 @@ export default function DayLessons({ date }: { date: string }) {
   const nowState = isToday ? periodStateAt(times, new Date(nowMs), view.cells.length) : null;
   const { isClassUnit, showHomeroomTools, preset, mode } = useTeaching();
   const classColorOf = useClassColorOf(date, sid);
-  const pairOptions = useSlotPairOptions(date, sid);
 
   const [collapsed, setCollapsed] = useState(false);
   // 수업 종 설정 - '⏰ 수업' 옆 🔔 단추로 펼친다 (V4 10-07 사용자 요청 - 시간표 창에서 옮김)
   const bell = useClassBell();
   const [bellOpen, setBellOpen] = useState(false);
-  const [editing, setEditing] = useState<Editing | null>(null);
-  const [saving, setSaving] = useState(false);
   useFocusReveal((t) => t.kind === 'lesson' && t.date === date, () => setCollapsed(false));
 
   // 교과 모드: 같은 반·과목의 바로 앞 수업 (그 수업에 적은 비고 첫 줄을 보인다)
@@ -140,51 +102,12 @@ export default function DayLessons({ date }: { date: string }) {
   // 🎯 뽑기(담임)의 학급: 교과 + 담임은 담임반, 담임은 학급 화면에서 고른 학급(자리표가 고른다)
   const homeroomClass = preset === 'subjectHomeroom' ? classes.find((k) => k.year === schoolYear && classLabelOf(k) === normalizeSlotText(mode.homeroomClass)) : undefined;
 
-  const subjectToSave = (text: string) => (isClassUnit ? normalizeSlotText(text) : text.trim());
   const cellOf = (n: number) => view.cells.find((c) => c.n === n);
-  const open = editing && editing.date === date && editing.sid === sid ? editing : null;
 
+  /** 교시를 누르면 오른쪽 칸에서 고친다 (일정·메모와 같게) - 칸을 연 순간의 공간·날짜에 저장 */
   const startEdit = (c: LessonCell) => {
     if (!sid) return;
-    setEditing({ sid, date, n: c.n, subject: c.subject, note: c.note });
-  };
-
-  /** 저장 - 칸을 연 순간의 공간·날짜에. 실패하면 칸을 닫지 않는다 */
-  const save = async (e: Editing): Promise<boolean> => {
-    if (saving) return false;
-    const cell = lessonsOn(e.date, src).cells.find((c) => c.n === e.n);
-    if (!cell) return false;
-    setSaving(true);
-    try {
-      await saveLesson(e.sid, e.date, e.date === date ? dayDoc : undefined, cell, { subject: subjectToSave(e.subject), note: e.note });
-      setEditing(null);
-      return true;
-    } catch {
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // 바깥을 누르면: 고친 것이 없으면 닫고, 있으면 저장하고 닫는다
-  const editRef = useOutside(!!open, () => {
-    if (!open || saving) return;
-    const cell = cellOf(open.n);
-    if (cell && isEdited(cell, { subject: subjectToSave(open.subject), note: open.note })) void save(open);
-    else setEditing(null);
-  });
-
-  const editorKeys = (e: React.KeyboardEvent) => {
-    if (!open) return;
-    if (isSaveKey(e.nativeEvent)) {
-      e.preventDefault();
-      e.stopPropagation();
-      void save(open);
-    } else if (e.key === 'Escape' && !e.nativeEvent.isComposing) {
-      // 고치던 칸만 닫는다 (오른쪽 줄까지 닫지 않게)
-      e.stopPropagation();
-      setEditing(null);
-    }
+    openLessonPanel({ sid, date, n: c.n });
   };
 
   const swap = (a: number, b: number) => {
@@ -333,121 +256,6 @@ export default function DayLessons({ date }: { date: string }) {
             const openAtt = () => slotClass && openSubjectAttendanceCell({ classId: slotClass.id, date, n, subject: slot?.subject });
             const openEval = () => sid && openEvaluation({ sid, date, place: String(n), slot: c.subject });
 
-            if (open && open.n === n) {
-              const set = (patch: Partial<Editing>) => setEditing({ ...open, ...patch });
-              return (
-                <div
-                  key={n}
-                  ref={editRef}
-                  data-lesson-editor={n}
-                  data-lesson-id={id}
-                  onKeyDown={editorKeys}
-                  className="p-4 rounded-xl border-2 border-primary bg-blue-50/20 shadow-xs flex flex-col gap-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className={`px-2.5 py-1 rounded-lg text-xs font-black border ${colorClass}`}>{name}</span>
-                    <div className="flex items-center gap-1">
-                      <button type="button" data-lesson-close onClick={() => setEditing(null)} disabled={saving} className="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer">
-                        닫기
-                      </button>
-                      <button type="button" data-lesson-save onClick={() => void save(open)} disabled={saving} className="px-3 py-1 bg-primary text-white text-xs font-bold rounded-lg hover:bg-blue-600 transition-colors shadow-xs cursor-pointer">
-                        {saving ? '저장 중...' : '저장'}
-                      </button>
-                    </div>
-                  </div>
-                  {/* 링크는 팝업을 열지 않고도 이 자리에서 붙인다 */}
-                  <div className="flex flex-wrap gap-1.5">
-                    <button
-                      type="button"
-                      data-lesson-editor-link
-                      onClick={() => sid && openLinker({ sid, id })}
-                      className="px-3 py-1.5 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                    >
-                      🔗 링크 추가
-                    </button>
-                    {linkCount > 0 && (
-                      <button
-                        type="button"
-                        data-lesson-editor-links
-                        onClick={() => sid && openLinkViewer({ sid, id })}
-                        className="px-3 py-1.5 bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        📑 연결된 링크 ({linkCount})
-                      </button>
-                    )}
-                    {/* 카드의 도구도 고치는 동안 그대로 (P10-2 - 수정 칸이 카드를 갈아 끼우며 사라졌다) */}
-                    {sid && (
-                      <button type="button" data-lesson-editor-tool="eval" onClick={openEval} className={editorToolClass}>
-                        📊 조사표{evalCount ? ` ${evalCount}` : ''}
-                      </button>
-                    )}
-                    {slotClass && (
-                      <>
-                        <button type="button" data-lesson-editor-tool="attendance" onClick={openAtt} className={editorToolClass} title={`${slot?.cls} ${n}교시 교과 출결`}>
-                          🙋 {attSummary || '출결'}
-                        </button>
-                        <button type="button" data-lesson-editor-tool="seating" onClick={() => openSeating({ classId: slotClass.id })} className={editorToolClass} title={`${slot?.cls} 자리표`}>
-                          🪑 자리표
-                        </button>
-                        <button
-                          type="button"
-                          data-lesson-editor-tool="drawStudent"
-                          onClick={() => openSeating({ classId: slotClass.id, draw: true })}
-                          className={editorToolClass}
-                          title={`${slot?.cls} 발표자 뽑기`}
-                        >
-                          🎯 뽑기
-                        </button>
-                      </>
-                    )}
-                    {/* 이 교시에 진도가 없으면 그 칸 글자로 진도 만들기 (개인 공간만 - 진도는 개인 수업으로 센다) */}
-                    {!marks[slotId(date, n)] && inPersonal && <ProgressCreateButton subject={subjectToSave(open.subject)} />}
-                  </div>
-                  {marks[slotId(date, n)] && <ProgressMarkLine mark={marks[slotId(date, n)]} date={date} period={n} alwaysShowAction />}
-                  <div className="grid grid-cols-3 gap-2">
-                    {isClassUnit ? (
-                      // 전담: 수업하는 학년-반 + 과목 두 칸. 저장은 '5-2 과학' 한 글자
-                      <SlotPairInput
-                        value={open.subject}
-                        onValueChange={(v) => set({ subject: v })}
-                        classOptions={pairOptions.classes}
-                        subjectOptions={pairOptions.subjects}
-                        className="col-span-2"
-                        inputClassName="w-full px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
-                        // 수업을 눌러 열자마자 목록이 뜨지 않게 - ▼·Alt+↓·글자 치기로 연다
-                        openOnFocus={false}
-                        autoFocus
-                      />
-                    ) : (
-                      <input
-                        type="text"
-                        data-lesson-subject-input
-                        value={open.subject}
-                        onChange={(e) => set({ subject: e.target.value })}
-                        placeholder="과목"
-                        aria-label="과목"
-                        className="col-span-1 px-3 py-1.5 text-xs font-bold bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary"
-                        autoFocus
-                      />
-                    )}
-                  </div>
-                  <AutoTextarea
-                    data-lesson-note-input
-                    value={open.note}
-                    onChange={(e) => set({ note: e.target.value })}
-                    placeholder="비고(준비물)..."
-                    aria-label="비고(준비물)"
-                    className="w-full min-h-[40px] p-2.5 text-xs bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-primary placeholder-slate-400 leading-relaxed"
-                  />
-                  {c.changed && (
-                    <p className="text-2xs text-slate-400" data-lesson-base>
-                      시간표: {c.base || '(수업 없음)'} - 과목을 이것으로 고치면 다시 시간표를 따릅니다.
-                    </p>
-                  )}
-                </div>
-              );
-            }
-
             // 빈 비고(준비물)는 그리지 않는다(비면 한 줄 카드 - 휴대폰에서도 아래 일정 칸이 금방 나온다)
             const isNow = nowState?.kind === 'during' && nowState.period === n;
             const isNext = (nowState?.kind === 'break' || nowState?.kind === 'before') && nowState.next === n;
@@ -522,6 +330,17 @@ export default function DayLessons({ date }: { date: string }) {
                             {c.subject || (
                               <span className="text-slate-300 font-normal" title={c.changed ? `이날만 비움 (시간표: ${c.base})` : undefined}>
                                 {view.off || c.changed ? '수업 없음' : '과목 미등록'}
+                              </span>
+                            )}
+                          </span>
+                        )}
+                        {/* 교사에게 가장 필요한 것 = 수업 내용·쪽수: 첫 줄에 교시/반/과목 다음으로 (진도 단원·준비물은 다음 줄) */}
+                        {mark && !mark.bumped && (mark.lesson?.content || lessonPageLabel(mark.lesson?.page)) && (
+                          <span data-lesson-content className="min-w-0 truncate text-sm sm:text-base font-extrabold text-indigo-700">
+                            {mark.lesson?.content}
+                            {lessonPageLabel(mark.lesson?.page) && (
+                              <span data-progress-page className="font-bold text-indigo-500">
+                                {mark.lesson?.content ? ' · ' : ''}📖 {lessonPageLabel(mark.lesson?.page)}
                               </span>
                             )}
                           </span>
@@ -656,14 +475,14 @@ export default function DayLessons({ date }: { date: string }) {
 
                     {mark && (
                       <div className={c.note ? 'mb-2' : ''}>
-                        <ProgressMarkLine mark={mark} date={date} period={n} />
+                        <ProgressMarkLine mark={mark} date={date} period={n} hideContent />
                       </div>
                     )}
 
-                    {/* 차례: 과목 / 진도 줄 / 비고(준비물) */}
+                    {/* 차례: 교시·반·과목·내용 / 단원·준비물(진도 줄) / 비고 */}
                     {c.note && (
                       <div className="flex flex-col text-xs" data-lesson-note>
-                        <span className="text-slate-400 text-xs mb-0.5">📌 비고(준비물)</span>
+                        <span className="text-slate-400 text-xs mb-0.5">📌 비고</span>
                         <p className="text-amber-700 font-medium whitespace-pre-wrap leading-relaxed">{c.note}</p>
                       </div>
                     )}

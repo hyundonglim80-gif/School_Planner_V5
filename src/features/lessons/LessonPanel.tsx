@@ -4,10 +4,14 @@
 //   저장·Ctrl+S, 좁은 화면에서 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
-import { shortDateLabel, weekdayOf, DAY_NAMES } from '../../domain/dateUtils';
+import { academicYearOf, shortDateLabel, weekdayOf, DAY_NAMES } from '../../domain/dateUtils';
+import { classLabelOf } from '../../domain/roster';
+import { useClasses } from '../class/classes';
+import { openSeating } from '../seating/open';
+import { openSubjectAttendanceCell } from '../subjectAttendance/open';
 import { lessonsOn } from '../../domain/lessons';
 import { periodLabel } from '../../domain/periodTimes';
-import { normalizeSlotText } from '../../domain/teachingSlot';
+import { normalizeSlotText, parseSlot } from '../../domain/teachingSlot';
 import { useCommonSettings } from '../../app/prefs';
 import { useDocs } from '../../data/select';
 import { usePersonalSpaceId } from '../../data/session';
@@ -26,6 +30,8 @@ import { useSlotPairOptions, useTeaching } from './teaching';
 import { useLessonSource } from './useLessons';
 import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
+
+const toolClass = 'px-3 py-1.5 bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 rounded-xl text-xs font-bold transition-colors cursor-pointer';
 
 export default function LessonPanel({ params, close, raise }: WindowProps<LessonPanelParams>) {
   const { sid, date, n } = params;
@@ -49,6 +55,12 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
   const subjectToSave = (text: string) => (isClassUnit ? normalizeSlotText(text) : text.trim());
   const edit: LessonEdit = { ...form, subject: subjectToSave(form.subject) };
   const changed = !!cell && isEdited(cell, edit);
+
+  // 교과 모드: 칸의 반이 그 학년도 명렬표에 있으면 그 반 도구 (개인 공간에서)
+  const { classes } = useClasses();
+  const slot = isClassUnit && form.subject ? parseSlot(form.subject) : null;
+  const schoolYear = academicYearOf(date);
+  const slotClass = slot?.cls && inPersonal ? classes.find((k) => k.year === schoolYear && classLabelOf(k) === slot.cls) : undefined;
 
   const unsaved = useRef<(() => boolean) | null>(null);
   useEffect(() => {
@@ -132,6 +144,19 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
             >
               📊 조사표{evalCount ? ` (${evalCount})` : ''}
             </button>
+            {slotClass && (
+              <>
+                <button type="button" data-lesson-panel-tool="attendance" onClick={() => openSubjectAttendanceCell({ classId: slotClass.id, date, n, subject: slot?.subject })} className={toolClass} title={`${slot?.cls} ${n}교시 교과 출결`}>
+                  🙋 출결
+                </button>
+                <button type="button" data-lesson-panel-tool="seating" onClick={() => openSeating({ classId: slotClass.id })} className={toolClass} title={`${slot?.cls} 자리표`}>
+                  🪑 자리표
+                </button>
+                <button type="button" data-lesson-panel-tool="drawStudent" onClick={() => openSeating({ classId: slotClass.id, draw: true })} className={toolClass} title={`${slot?.cls} 발표자 뽑기`}>
+                  🎯 뽑기
+                </button>
+              </>
+            )}
             {!mark && inPersonal && <ProgressCreateButton subject={subjectToSave(form.subject)} />}
           </div>
           {mark && <ProgressMarkLine mark={mark} date={date} period={n} alwaysShowAction />}
@@ -160,12 +185,12 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
             )}
           </div>
           <div>
-            <span className="block text-xs font-bold text-slate-500 mb-1">비고(준비물)</span>
+            <span className="block text-xs font-bold text-slate-500 mb-1">비고</span>
             <AutoTextarea
               data-lesson-panel-note
               value={form.note}
               onChange={(e) => set({ note: e.target.value })}
-              aria-label="비고(준비물)"
+              aria-label="비고"
               className="w-full min-h-[68px] px-3 py-2 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary"
             />
           </div>

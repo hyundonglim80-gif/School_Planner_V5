@@ -1,5 +1,5 @@
 // 수업 수정 칸 열기 (V4 DetailEditModal의 수업 갈래 'N교시 수정') - 주간 수업 줄·링크 보기·검색에서. 창 목록의 쓰는 칸 'lesson'.
-// 하루 화면은 카드 자리에서 바로 고친다(DayLessons). 같은 날·교시면 그 탭을 보인다.
+// 하루 화면도 교시를 누르면 이 칸(오른쪽 칸)에서 고친다(DayLessons). 같은 날·교시면 그 탭을 보인다.
 import { getWindowDef, openWindow } from '../../app/windows';
 import { showToast } from '../../app/toast';
 

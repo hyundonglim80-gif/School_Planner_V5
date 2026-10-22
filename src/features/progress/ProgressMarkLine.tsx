@@ -18,9 +18,11 @@ interface Props {
   period: number;
   /** 밀기 단추를 늘 보인다 (수정 칸). 아니면 PC에서는 마우스를 올렸을 때만 (밀린 교시의 되돌리기는 늘) */
   alwaysShowAction?: boolean;
+  /** 내용·쪽수는 다른 줄(하루 수업 카드 첫 줄)에 보이니 빼고 단원·차시·준비물만 */
+  hideContent?: boolean;
 }
 
-export default function ProgressMarkLine({ mark, date, period, alwaysShowAction = false }: Props) {
+export default function ProgressMarkLine({ mark, date, period, alwaysShowAction = false, hideContent = false }: Props) {
   const [busy, setBusy] = useState(false);
   const sid = usePersonalSpaceId();
   const docs = useDocs('progress', sid);
@@ -73,8 +75,8 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
             <b className="tabular-nums">
               {mark.run.k}/{mark.run.n}차시
             </b>
-            {lesson?.content && ` · ${lesson.content}`}
-            {page && <span data-progress-page> · 📖 {page}</span>}
+            {!hideContent && lesson?.content && ` · ${lesson.content}`}
+            {!hideContent && page && <span data-progress-page> · 📖 {page}</span>}
           </span>
         )}
       </button>
