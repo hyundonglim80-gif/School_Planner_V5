@@ -85,14 +85,16 @@ describe('행 순서 바꾸기·복사', () => {
     expect(moveRow(r, 1, 1)).toBe(r);
     expect(moveRow(r, 0, 9)).toBe(r);
   });
-  it('복사는 글만 바로 아래에 새 key로', () => {
+  it('복사는 글과 이은 메모 링크를 바로 아래에 새 key로', () => {
     const r = rows();
     r[1] = { ...r[1], _from: 1 };
     const { lessons, at } = duplicateRow(r, 1);
     expect(at).toBe(2);
     expect(lessons.map((l) => l.content)).toEqual(['가', '나', '나', '다']);
     expect(lessons[2]._k).not.toBe(r[1]._k);
-    expect(lessons[2]._from).toBeUndefined();
+    expect(lessons[2]._from).toBe(1);
+    const docRows = [lesson('가'), { ...lesson('나'), linkIds: ['n1'] }, lesson('다')];
+    expect(lessonsToSave(lessons, docRows).map((l) => l.linkIds)).toEqual([undefined, ['n1'], ['n1'], undefined]);
   });
 });
 

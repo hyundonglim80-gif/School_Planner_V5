@@ -154,11 +154,15 @@ export function moveRow(lessons: DraftLesson[], from: number, to: number): Draft
   return next;
 }
 
-/** row 행을 복사해 바로 아래에 넣은 새 목록과 새 행 번호 (글만 복사 - 이은 메모는 복사하지 않는다) */
+/** row 행을 복사해 바로 아래에 넣은 새 목록과 새 행 번호 (글과 이은 메모 링크를 함께 복사 - 같은 _from·_merged라 저장할 때 같은 링크가 붙는다) */
 export function duplicateRow(lessons: DraftLesson[], row: number): { lessons: DraftLesson[]; at: number } {
   if (row < 0 || row >= lessons.length) return { lessons, at: row };
   const src = lessons[row];
-  const copy = withKey({ unit: src.unit, no: src.no, content: src.content, page: src.page, supplies: src.supplies });
+  const copy: DraftLesson = {
+    ...withKey({ unit: src.unit, no: src.no, content: src.content, page: src.page, supplies: src.supplies }),
+    ...(src._from !== undefined ? { _from: src._from } : {}),
+    ...(src._merged ? { _merged: src._merged } : {}),
+  };
   const next = [...lessons];
   next.splice(row + 1, 0, copy);
   return { lessons: next, at: row + 1 };
