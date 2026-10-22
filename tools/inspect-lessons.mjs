@@ -180,52 +180,58 @@ try {
   await go('#/day/2026-10-12');
   await waitFor(async () => (await subjectOf(2)) === '수학', 8000);
   await lessonCard(2).click();
-  const editor = page.locator(sel('lesson-editor', 2));
-  r.check(await waitFor(editor), '교시를 누르면 그 자리에서 고친다');
-  await editor.locator(sel('lesson-subject-input')).fill('체육');
-  r.check(!(await editor.locator(sel('lesson-memo-input')).count()) && !(await editor.locator(sel('lesson-supplies-input')).count()), '비고(준비물)는 한 칸 (수업 메모 칸 없음)');
-  await editor.locator(sel('lesson-note-input')).fill('운동장\n줄넘기');
+  // 교시를 누르면 오른쪽 'N교시 수정' 칸 (10-22 #94 - 카드 자리에서 고치던 칸은 없앴다)
+  const editor = page.locator(sel('lesson-panel', 'lesson:2026-10-12:2'));
+  r.check(await waitFor(editor), "교시를 누르면 오른쪽 'N교시 수정' 칸");
+  await editor.locator(sel('lesson-panel-subject')).fill('체육');
+  r.check(!(await editor.locator(sel('lesson-memo-input')).count()) && (await editor.locator(sel('lesson-panel-note')).count()) === 1, '비고는 한 칸 (수업 메모 칸 없음)');
+  await editor.locator(sel('lesson-panel-note')).fill('운동장\n줄넘기');
   await page.keyboard.press('Control+s');
   const d1 = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['2']?.subject === '체육');
   r.check(d1?.periods?.['2']?.subject === '체육' && d1.periods['2'].supplies === '운동장\n줄넘기' && !('memo' in d1.periods['2']), 'Ctrl+S = lessonDays/날짜의 그 칸 (과목·비고 = supplies 한 칸)');
   r.check(Object.keys(d1?.periods ?? {}).join() === '2', '다른 교시는 적지 않는다 (시간표를 따른다)');
-  r.check(await waitFor(lessonCard(2).locator(sel('lesson-changed'))), "그날만 바꾼 과목은 '✎'");
-  r.check((await lessonCard(2).locator(sel('lesson-note')).textContent()).includes('📌 비고(준비물)운동장\n줄넘기'), '카드에 📌 비고(준비물) 한 칸');
+  r.check(await waitFor(async () => ((await lessonCard(2).locator(sel('lesson-note')).textContent()) ?? '').includes('📌 비고운동장\n줄넘기'), 6000), '카드에 📌 비고 한 칸 (#94 - 비고(준비물) → 비고)');
+  r.check(await waitFor(editor), '저장해도 칸은 열려 있다');
   // 시간표로 되돌리면 과목 칸이 빠진다
-  await lessonCard(2).click();
-  await editor.locator(sel('lesson-subject-input')).fill('수학');
-  await editor.locator(sel('lesson-save')).click();
+  await editor.locator(sel('lesson-panel-subject')).fill('수학');
+  await editor.locator(sel('lesson-panel-save')).click();
   const d2 = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['2'] && !('subject' in d.periods['2']));
   r.check(d2?.periods?.['2'] && !('subject' in d2.periods['2']) && d2.periods['2'].supplies === '운동장\n줄넘기', '시간표와 같은 과목 = 과목 칸을 뺀다 (비고는 남는다)');
-  // 바깥 누르기 = 저장, ESC = 그만두기
+  // 닫기 = 그 칸만, ESC = 저장하지 않고 닫기 (넓은 화면은 칸이 옆에 붙어 바깥 누르기로 닫지 않는다 - 일정·메모 칸과 같다)
+  await editor.locator(sel('lesson-panel-close')).click();
+  r.check(await waitFor(async () => !(await editor.count()), 3000), '닫기 = 그 칸을 닫는다');
   await lessonCard(3).click();
-  await page.locator(sel('lesson-editor', 3)).locator(sel('lesson-note-input')).fill('지도 그리기');
-  await page.locator('[data-day-events] h3').click();
-  r.check((await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.supplies === '지도 그리기'))?.periods?.['3']?.supplies === '지도 그리기', '바깥을 누르면 고친 것을 저장하고 닫는다');
-  await lessonCard(3).click();
-  await page.locator(sel('lesson-editor', 3)).locator(sel('lesson-note-input')).fill('버릴 글');
+  const editor3 = page.locator(sel('lesson-panel', 'lesson:2026-10-12:3'));
+  await editor3.locator(sel('lesson-panel-note')).fill('지도 그리기');
+  await page.keyboard.press('Control+s');
+  r.check((await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.supplies === '지도 그리기'))?.periods?.['3']?.supplies === '지도 그리기', '3교시 비고 저장');
+  await editor3.locator(sel('lesson-panel-note')).fill('버릴 글');
+  dialogs.answer = true;
   await page.keyboard.press('Escape');
-  r.check(!(await page.locator(sel('lesson-editor')).count()), 'ESC = 저장하지 않고 닫는다');
+  r.check(await waitFor(async () => !(await page.locator(sel('lesson-panel')).count()), 3000), 'ESC = 저장하지 않고 닫는다 (고친 것이 있으면 묻는다)');
+  dialogs.answer = false;
   r.check((await dayDoc('2026-10-12'))?.periods?.['3']?.supplies === '지도 그리기', 'ESC는 서버에 쓰지 않는다');
   // 옛 수업 메모(P10-2 전·V4 가져오기) - 비고 아래 줄에 이어 보이고, 고쳐 저장하면 supplies 한 칸으로 합친다
   const day12 = await dayDoc('2026-10-12');
   await setDoc(A.ref('lessonDays', '2026-10-12'), { periods: { 4: { supplies: '리코더', memo: '옛 메모' } }, updatedAt: serverTimestamp(), v: (day12?.v ?? 0) + 1 }, { merge: true });
   r.check(await waitFor(async () => ((await lessonCard(4).locator(sel('lesson-note')).textContent()) ?? '').includes('리코더\n옛 메모'), 8000), '옛 수업 메모 = 비고 아래 줄에 이어서');
   await lessonCard(4).click();
-  r.check((await page.locator(sel('lesson-editor', 4)).locator(sel('lesson-note-input')).inputValue()) === '리코더\n옛 메모', '수정 칸도 한 칸에 이어서');
-  await page.locator(sel('lesson-editor', 4)).locator(sel('lesson-note-input')).fill('리코더\n옛 메모 고침');
+  const editor4 = page.locator(sel('lesson-panel', 'lesson:2026-10-12:4'));
+  await waitFor(editor4);
+  r.check((await editor4.locator(sel('lesson-panel-note')).inputValue()) === '리코더\n옛 메모', '수정 칸도 한 칸에 이어서');
+  await editor4.locator(sel('lesson-panel-note')).fill('리코더\n옛 메모 고침');
   await page.keyboard.press('Control+s');
   const merged = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['4'] && !('memo' in d.periods['4']));
   r.check(merged?.periods?.['4']?.supplies === '리코더\n옛 메모 고침' && !('memo' in merged.periods['4']), '고쳐 저장 = supplies 한 칸에 합치고 memo는 지운다 (그 칸만)');
   await setDoc(A.ref('lessonDays', '2026-10-12'), { periods: { 4: deleteField() }, updatedAt: serverTimestamp(), v: ((await dayDoc('2026-10-12'))?.v ?? 0) + 1 }, { merge: true });
   r.check(await waitFor(async () => !(await lessonCard(4).locator(sel('lesson-note')).count()), 8000), '(점검 자료 4교시 걷음)');
+  await editor4.locator(sel('lesson-panel-close')).click();
   // ▲▼ 맞바꾸기
   await lessonCard(2).hover();
   await page.locator(sel('lesson-up', 2)).click();
   r.check(await waitFor(async () => (await subjectOf(1)) === '수학' && (await subjectOf(2)) === '도덕', 8000), '▲ = 위 교시와 맞바꾼다');
   const sw = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['1']?.subject === '수학');
   r.check(sw?.periods?.['1']?.supplies === '운동장\n줄넘기' && sw?.periods?.['2']?.subject === '도덕' && !sw?.periods?.['2']?.supplies, '과목·비고가 함께 옮겨 간다 (저마다 시간표와 견준다)');
-  r.check(await waitFor(async () => (await lessonCard(1).locator(sel('lesson-changed')).count()) === 1 && (await lessonCard(2).locator(sel('lesson-changed')).count()) === 1, 6000), '맞바꾼 두 교시 모두 ✎ (시간표와 과목이 다르다)');
   await toastUndo('맞바꿨습니다').click();
   r.check(await waitFor(async () => (await subjectOf(1)) === '도덕' && (await subjectOf(2)) === '수학', 8000), '안내의 되돌리기 = 제자리');
 
@@ -247,14 +253,10 @@ try {
   await panel.locator(sel('lesson-panel-save')).click();
   const pd = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.supplies === '지도 그리기\n색연필');
   r.check(pd?.periods?.['3']?.supplies === '지도 그리기\n색연필' && pd.periods['3'].subject === '미술', '수정 칸 저장 = 그 칸만 (과목·비고)');
-  r.check(await waitFor(weekRow('2026-10-12', 3).locator(sel('week-lesson-changed')), 6000), '주간 줄도 그날 바꾼 과목은 ✎');
   await panel.locator(sel('lesson-panel-clear')).click();
   const cleared = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.subject === '');
   r.check(cleared?.periods?.['3']?.subject === '' && !cleared.periods['3'].supplies, "삭제 = 그 교시 비우기 (과목 '' = 수업 없음)");
-  r.check(
-    await waitFor(async () => !(await weekRow('2026-10-12', 3).locator(sel('week-lesson-changed')).count()) && (await weekRow('2026-10-12', 3).getAttribute('title'))?.includes('이날만 비움'), 6000),
-    '비운 칸에는 ✎가 없다 (title에 이날만 비움 - P11-1)',
-  );
+  r.check(await waitFor(async () => (await weekRow('2026-10-12', 3).getAttribute('title'))?.includes('이날만 비움'), 6000), '비운 칸 = title에 이날만 비움 (P11-1)');
   await toastUndo('비웠습니다').click();
   r.check((await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['3']?.supplies === '지도 그리기\n색연필'))?.periods?.['3']?.supplies === '지도 그리기\n색연필', '되돌리기 = 그대로');
 
@@ -359,7 +361,7 @@ try {
   r.check(!!(await card3(1).getAttribute('data-slot-color')), '카드 막대 = 반 색');
   r.check(!(await card3(2).locator('[data-slot-class]').count()), "반이 없는 칸('창체')은 그대로");
   await card3(3).click();
-  const ed3 = p3.locator(sel('lesson-editor', 3));
+  const ed3 = p3.locator(sel('lesson-panel', 'lesson:2026-10-12:3'));
   r.check(await waitFor(ed3.locator(sel('slot-pair'))), '수정 칸 = 학년-반 + 과목 두 칸');
   await ed3.locator(sel('slot-class-input')).fill('502');
   await ed3.locator(sel('slot-subject-input')).click();
@@ -368,11 +370,10 @@ try {
   r.check(await waitFor(p3.locator(sel('combobox-list'))), '과목 칸에 ▼ 목록');
   await p3.keyboard.press('Escape');
   r.check(await waitFor(ed3), 'ESC는 목록만 닫는다');
-  await ed3.locator(sel('lesson-note-input')).fill('실험 못 끝냄');
+  await ed3.locator(sel('lesson-panel-note')).fill('실험 못 끝냄');
   await p3.keyboard.press('Control+s');
   const d3 = await serverUntil(() => read(B.ref('lessonDays', '2026-10-12')), (d) => d?.periods?.['3']?.subject === '5-2 과학');
   r.check(d3?.periods?.['3']?.subject === '5-2 과학', "저장 = 칸 글자 하나 '5-2 과학'");
-  r.check(await waitFor(card3(3).locator(sel('lesson-changed')), 6000), '교과 모드도 그날 바꾼 과목은 ✎');
   // 지난 시간 - 10/14(수) 1교시 5-2 과학의 바로 앞 = 10/12 3교시 (같은 날 늦은 교시가 더 가깝다)
   await p3.goto(p3.url().replace(/#.*$/, '#/day/2026-10-14'));
   const prev = p3.locator(`${sel('lesson-card', 1)} ${sel('lesson-prev')}`);

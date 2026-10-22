@@ -98,6 +98,8 @@
   (10-21 - 글 칸이 높이를 재는 동안 오른쪽 줄 스크롤바가 사라져 넓은 폭으로 재, 끝까지 찬 마지막 줄이 가려졌다. 점검은 스크롤바가 없어 통과했다).
 - **크기·자리만 재는 점검은 빈 글자도 통과한다** - 칩·배지를 새로 그리면 글자(`textContent`)가 있는지도 본다(P12-1 - 휴대폰 월간 칩이 빈 채 '칩 폭 22px·넘침 없음'을 통과, 그림으로 찾았다.
   `parseSlot`은 반이 없으면 `cls: ''`라 `??`로는 과목으로 넘어가지 않는다 - `||`).
+- **메모 요청(자동) 커밋은 크롬 점검을 돌리지 않는다**(lint·단위·빌드만) - 화면 자리를 바꾼 요청 뒤에 점검이 깨진 채 남는다
+  (10-22: #60 '바뀜'·#88 이은 곳 표시·#94 오른쪽 수정 칸 뒤 inspect-lessons·progress·seating·manual이 옛 `data-*`를 찾았다). PC에서 이어 할 때 그 요청이 건드린 화면의 점검부터 돌린다.
 - **사용자 보고가 재현되지 않으면 V4의 같은 기능 코드와 견준다**(P12-1 이월 - V5 경로는 모두 맞았고, V4 `runAutoForwarding`의 겹침 규칙이 빠져 있었다).
 - **점검이 개발 서버로 도는 동안 저장소 파일(.md 포함)을 고치지 않는다**(P10-5) - Tailwind가 다시 훑어 `index.css`·`Shell`이 HMR로 바뀌고 열린 칸이 사라져 점검이 틀린다. 문서는 점검 묶음 뒤에.
 - **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
@@ -161,21 +163,25 @@
 - 일정·메모 머리줄: `▼ 제목 숫자 [+ 추가] ……… ⚙️`(라벨 설정은 오른쪽 끝). 메모 칸은 '📝 메모'(P10-3 - 옛 '📔 기록', '+ 메모' 없음), 라벨로 보기 칩 줄은 **접힌 채** 🏷️로 편다.
 - 일정은 **휴대폰 2열 카드, PC 1열**. 메모는 휴대폰 2열, PC 2~4열.
 - 수업 칸: 과목은 **굵고 크게**(PC 18px·휴대폰 16px, font-black), 과목이 있는 교시 카드는 왼쪽에 **교시 색 막대**. 카드에 **교시 시각은 적지 않는다**(P11-1 사용자 의견 - 수업 종에서만, title에만).
-- **'바뀜' = 그날만 바꾼 과목**(주황 글자 배지 - P12-1 사용 의견: ✎는 휴대폰에서 뜻을 알 수 없었다): 적힌 과목이 그날 시간표와 다르고 과목이 보이는 칸만(P11-1 - 비운 칸은 '수업 없음', 시간표를 고쳐 같아지면 사라진다). 하루·주간 같게.
-- **수업 칸 = 과목 + '비고(준비물)' 한 칸**(P10-2 사용자 의견 2a - 수업 메모 칸 없음, 옛 메모는 비고 아래 줄에 이어 보인다) · 교과 모드 반 도구(🪑·🎯)·🙋 출결은 📊🔗✏️처럼 **마우스를 올렸을 때만**(적힌 것이 있으면 늘, 휴대폰은 늘), 수정 칸에도 같은 단추 · 주간 교시 줄은 과목 뒤에 비고 첫 줄 '…'.
+- **'바뀜' 칩은 없다**(10-20 메모 요청 #60 - 사용자가 지움, 옛 ✎ → '바뀜'). 그날만 바꾼 과목은 N교시 수정 칸 머리('이날만 바꾼 과목 (시간표: …)')와 title에만.
+- **수업 칸 = 과목 + '비고' 한 칸**(P10-2 사용자 의견 2a - 수업 메모 칸 없음, 옛 메모는 비고 아래 줄에 이어 보인다. 10-22 #94 '비고(준비물)' → '비고' - 검색 갈래·주간학습안내·지난 시간도) ·
+  **카드 차례 = 교시·반·과목·내용(📖 쪽) / 📘 단원·차시·🎒 준비물(진도 줄) / 📌 비고**(10-22 #94 - 교사에게 가장 필요한 것은 내용·쪽수) · **교시를 누르면 오른쪽 'N교시 수정' 칸**(#94 - 일정·메모와 같게, 카드 자리에서 고치던 칸은 없앴다) ·
+  교과 모드 반 도구(🪑·🎯)·🙋 출결은 📊🔗✏️처럼 **마우스를 올렸을 때만**(적힌 것이 있으면 늘, 휴대폰은 늘), N교시 수정 칸에도 같은 단추 · 주간 교시 줄은 과목 뒤에 비고 첫 줄 '…'.
+- **카드를 끌어 놓아 순서 바꾸기**(10-21 #81 - ▲▼에 더해): 일정·메모·수업 카드, 마우스 화면만(`pointer: fine` - 휴대폰은 ▲▼), 같은 무리 안에서, 수업은 두 교시 맞바꾸기 (`ui/reorderDrag`).
 
 ### 메모 하나 + 날짜 링크 (P10-3 사용자 의견 1 - V4 '메모 ↔ 기록 = 날짜 칸'을 바꿈)
 - 기록·메모 → **'메모' 하나**. 쓰는 칸 머리 '📅 날짜' = **날짜 칩 여러 개**(+ 날짜 = 작은 달력, × = 그 날 빼기) - 이은 날마다 하루 '📝 메모' 칸에, 메모 화면에는 늘(날짜 없는 메모 → 날짜 링크 메모 최근 날부터).
 - 하루 메모 칸 + 추가 = 그날 링크 하나로 새 메모. 카드 🗑️ = 메모 지우기(모든 날에서). **일정은 날짜 링크 없음**(라벨 속성·기간/반복 묶음 때문).
 - 자료: `dates`는 둘 이상일 때만, `date` = 가장 이른 날(옛 기록 = 날짜 하나인 메모, 자료 옮기기 없음). '📅 10/6에서'(fromDate)는 적지도 보이지도 않는다.
-- **그날 메모 칸에 이은 메모도**(P10-4 사용자 의견 2f·6c - 계산): 그날 일정(기간·이월)·수업 교시·진도 차시에 이은 메모가 겹치지 않게, 카드에 📌·🏫·📘. 진도 차시 링크는 **진도 쪽 그 행에만**(그 차시를 하는 모든 수업 칸에 🔗 n).
-- 링크 창 탭 = 📌 일정 · 📝 메모 · 🏫 수업 + **메모에서 열면 📘 진도표**(P11-1 사용자 의견 - 그 차시를 하는 날로 찾고 진도 칩으로 좁힌다, 저장은 진도 쪽 그 행에만), 메모 카드 🔗 링크 추가(마우스를 올리면). 화면 글자 '기록'은 '메모'로(학생 기록·출결 기록 등 다른 뜻은 남김, 시트·백업 CSV·캘린더의 '기록'은 자료 모양이라 그대로).
+- **그날 메모 칸에 이은 메모도**(P10-4 사용자 의견 2f·6c - 계산): 그날 일정(기간·이월)·수업 교시·진도 차시에 이은 메모가 겹치지 않게. 카드에는 이은 곳을 적지 않는다(10-22 #88 - 카드가 좁다, 🔗 n 연결 창에서 본다). 진도 차시 링크는 **진도 쪽 그 행에만**(그 차시를 하는 모든 수업 칸에 🔗 n).
+- 링크 창 탭 = 📌 일정 · 📝 메모 · 🏫 수업 + **메모에서 열면 📘 진도표**(P11-1 사용자 의견 - 그 차시를 하는 날로 찾고 진도 칩으로 좁힌다, 저장은 진도 쪽 그 행에만), 메모 카드 🔗 링크 추가(마우스를 올리면). **일정에서 연 연결 창은 📝 메모 탭이 먼저**, 거기서 '새 메모 만들어 연결'은 그 일정 날짜를 달고 연다(10-22 #90). 화면 글자 '기록'은 '메모'로(학생 기록·출결 기록 등 다른 뜻은 남김, 시트·백업 CSV·캘린더의 '기록'은 자료 모양이라 그대로).
 
 ### 라벨 상위/하위와 라벨로 보기
 - 메모·기록 라벨만 2단계 트리(일정 라벨은 뺀다). 메모·기록 라벨은 한 목록.
 - 라벨로 보기는 **여러 개** 고른다(하나라도 붙은 항목). **상위를 고르면 하위도 함께**, 하위 끝 가상 칩 **'기타'** = 하위 없이 상위만 붙은 항목. 하위는 화면을 열면 접혀 있다.
 - 칩 고르기는 **윈도우 탐색기처럼**: 그냥 누르기 = 하나만, Ctrl = 더하기·빼기, Shift = 범위, ESC = 모두 떼기(오른쪽 칸도 닫힘). 라벨을 더할 때 상위 라벨도 고른다.
 - 빈 라벨은 **저절로 지우지 않는다**(라벨 관리 '빈 라벨 정리 (N개)').
+- **쓰는 칸 라벨 고르기**(10-22 #92): 일정 라벨은 **하나만**(다른 라벨을 누르면 바꾸기 - 빠른 입력 #라벨·여러 개 고르기 라벨도 바꾸기) · 메모 라벨은 그냥 누르기 = 하나, **Ctrl+누르기 = 여러 개**.
 - 메모 화면 왼쪽 제목은 **'🏷️ 라벨 관리'**(누르면 라벨 관리 창 - P10-5 사용자 의견 5a, 옛 '📁 라벨로 보기'), 그 아래 칩과 하루 메모 칸 🏷️ 칩 줄의 이름은 '라벨로 보기' 그대로.
   칩 고르기 안내는 **보이는 글** 'Ctrl·Shift+누르기 = 여러 개'(P11-1 - 옛 '?'는 뜻을 몰랐다, PC만·마우스를 올리면 전부).
 
@@ -218,8 +224,9 @@
 
 - **P9-1부터 V5 설명서**(`src/features/help/chapters/*.ts`, 11장 68주제 - 차례는 `topics.ts`)가 명세다. 기능을 고치기 전에 그 주제 부분만 읽는다
   (`grep -rn "id: '<주제 id>'" src/features/help/chapters` - 주제 id는 `docs/PARITY.md`, 창 목록의 `help`). 대화 시작에 전부 읽지 않는다.
-- (멈춤 전 규칙) **동작·자리를 바꾸면 설명서도 같은 커밋에서** 고치고 `node tools/inspect-manual.mjs`(그 주제만 `MATCH=`)를 돌린다. 새 주제를 더하면 inspect-manual에도 한 묶음(모든 주제를 거쳤나 센다).
+- **동작·자리를 바꾸면 설명서도 같은 커밋에서** 고치고 `node tools/inspect-manual.mjs`(그 주제만 `MATCH=`)를 돌린다. 새 주제를 더하면 inspect-manual에도 한 묶음(모든 주제를 거쳤나 센다).
   바꿀 수 있는 값(단축키·이월 기간)은 자리표 `{key:…}`·`{lookback}`로만 - 키가 없는 기능은 '단축키 **이름**({key:…})' 꼴(시험이 지킨다).
+- 설명서 수정 멈춤(10-20 #64)은 10-22에 풀렸다(#96 + 이 PC 대화 - 멈춤 동안 바뀐 #60~#94·손글씨·끌기를 모두 반영). **메모로 Claude 요청**은 정한 세 계정만 보는 기능이라 설명서에 넣지 않는다.
 
 ## 7. V5 시스템 지도 (세션마다 채운다)
 
@@ -279,7 +286,7 @@
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) ·
   `entryTable.ts`(붙인 표 - V4 그대로: 붙여넣은 HTML 읽기·행/열·칸 서식) · `attachments.ts`(그림인가·파일 그림·크기·붙여넣은 이름·새 붙임) · `linkPreview.ts`(주소 → 카드) · `masonry.ts`(가장 짧은 열) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts` · `typeScale.ts` ·
   `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
-- **그날 메모 칸에 모이는 메모**(P10-4): 순수 `notes/dayNotes.ts`(`dayNoteSources` - 날짜 링크 → 일정 → 교시 → 진도, 겹치지 않게 · `noteFromLabel`) · `day/useDayNotes.ts`(하루 메모 칸·그날 메모 창이 함께) · 카드 `[data-entry-from=event:id|lesson:n|progress:n]`·`[data-entry-link-add]` ·
+- **그날 메모 칸에 모이는 메모**(P10-4): 순수 `notes/dayNotes.ts`(`dayNoteSources` - 날짜 링크 → 일정 → 교시 → 진도, 겹치지 않게 · `noteFromLabel`) · `day/useDayNotes.ts`(하루 메모 칸·그날 메모 창이 함께) · 카드 `[data-entry-link-add]`(이은 곳 표시 `entry-from`은 10-22 #88에 뺐다) ·
   진도 창 행 `[data-progress-row-link|progress-row-links]`·진도 줄 `[data-progress-links|progress-link-add]` · `progressDraft.lessonsToSave`(이은 메모는 지금 문서의 그 행 `_from`에서).
 - **하루 화면** `src/features/day/`: `DayScreen.tsx`(맨 위 교사 유형 띠, 수업(`lessons/DayLessons` - P6-1)·일정 7:5 - 본문 폭 720px, 아래 기록 칸) · `DayJournal.tsx`(메모 칸 - `▼ 📝 메모 N [+ 추가] 📊 🏷️ … ⚙️`(P10-3), 그 날짜 링크가 있는 메모·즐겨찾기 먼저·본문 폭 2~4열, `[data-day-journal|journal-count|journal-add|journal-filter-toggle|journal-filter|journal-collapse|journal-empty|journal-waiting]`) ·
   `DayEvents.tsx`(일정 칸 - `▼ 📅 일정 N [+ 추가] … ⚙️`, 카드 PC 1열·휴대폰 2열, `[data-day-events|event-card|event-done|event-complete|event-chip|event-alarm|event-links|event-up|event-down|event-edit|event-delete|event-add|event-count]`).
@@ -308,8 +315,8 @@
   `domain/teachingSlot`('5-2 과학' 읽기·반 색·지난 시간·가르치는 반)·`teachingMode`(교사 유형 셋)·`periodTimes`(교시 `PeriodDef`·지금 몇 교시·빠르게 채우기)·`gridNav`(표 칸·엑셀 붙여넣기)·`hangul`(초성)·`semester`(학년도마다 방학 `readTerms`·`isVacation`·`termSemesters`) ·
   설정 `common.teaching`(null = 안 고름)·`periods`·`terms`(app/prefs, 받았나 `useCommonLoaded`) · 사본 `MIRRORED` += timetables·lessonDays · 저장 도우미 `merge`(날짜 문서 - 없으면 만든다) ·
   `features/lessons/`(`useLessons`(`useLessonSource`·`useLessonsOn`·`useLessonsFor`) · `teaching.ts`(`useTeaching`·`updateTeaching`·`useTeachingClasses`·`useSlotPairOptions`·`useClassColorOf`) · `lessonOps`(순수 - 시간표와 같은 과목은 빼기·비우기·맞바꾸기)·`actions`(`saveLesson`·`clearLesson`·`swapLessons`) ·
-  `DayLessons`(하루 칸 `[data-day-lessons|lesson-card|lesson-id|lesson-subject|lesson-changed|lesson-note|lessons-off|now-line|lesson-up|down|link|links|edit|prev|lesson-editor|lesson-subject-input|lesson-note-input|lesson-editor-tool=eval|attendance|seating|drawStudent|lesson-save|close|lessons-settings]` - 반 도구 `[data-class-tools|class-tool-btn]`는 hover, P10-2) ·
-  `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` `[data-lesson-panel|lesson-panel-subject|lesson-panel-note|lesson-panel-*]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson|week-lesson-note|week-lesson-changed]`) · `CalendarLessons`(월간·년간 수업 칩 - `LessonStrip` PC·`LessonWraps` 휴대폰 그날 목록·`LessonGrid` 휴대폰 월간 칸(P12-1) `[data-month-lessons|month-lesson|year-lessons|year-lesson|sheet-lessons|sheet-lesson]`, P9-3)·`lessonSubjects`(순수 - 'X' = 수업 없음) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
+  `DayLessons`(하루 칸 `[data-day-lessons|lesson-card|lesson-id|lesson-subject|lesson-content(첫 줄 내용·쪽 - #94)|lesson-note|lessons-off|now-line|lesson-up|down|link|links|edit|prev|lessons-settings]` - 반 도구 `[data-class-tools|class-tool-btn]`는 hover, P10-2, 교시를 누르면 `LessonPanel` - #94) ·
+  `LessonPanel`(쓰는 칸 `lesson` `{ sid, date, n }` - 하루·주간·월간·년간·링크·검색 모두, `[data-lesson-panel=lesson:날짜:교시|lesson-panel-subject|note|link|links|evals|tool=attendance|seating|drawStudent|clear|close|save]`)·`open.ts` · `WeekLessonRows`(`[data-week-lessons|week-lesson|week-lesson-note]`) · `CalendarLessons`(월간·년간 수업 칩 - `LessonStrip` PC·`LessonWraps` 휴대폰 그날 목록·`LessonGrid` 휴대폰 월간 칸(P12-1) `[data-month-lessons|month-lesson|year-lessons|year-lesson|sheet-lessons|sheet-lesson]`, P9-3)·`lessonSubjects`(순수 - 'X' = 수업 없음) · `TeachingBanner`(`[data-teacher-mode-banner|banner-preset|banner-later]`) · `SlotCombobox`(▼ `[data-combobox-list|combobox-option]`)·`SlotPairInput`(`[data-slot-pair|slot-class-input|slot-subject-input]`)·`slotPair`) ·
   시간표 창 `features/timetable/`(`TimetableWindow` 창 `timetable` `{ tab }` `[data-timetable-window|timetable-tab|timetable-save|timetable-dirty]` · `GridTab`(`[data-timetable-pick|add|name|from|to|quick|delete]`·`input[data-cell="행-열"]`) · `PeriodsTab`(`[data-period-name|start|end|period-fill-run]`) · `TermsTab`(`[data-terms="summer-from"…]`) · `TeachingTab`(`[data-teacher-preset|teaching-*|class-color|homeroom-*]`) · `timetableDraft`(순수) · `shortcuts`(`teachingMode`)).
   새 학년도 준비(P9-2): 순수 `domain/newYear.ts`(2/15~3/31 `newYearTarget`·할 것 `newYearState`·`parseRosterPaste`·`copiedTimetable`) · `features/newYear/`(`useNewYear`·`NewYearBanner`(Shell `[data-new-year-banner|new-year-open|new-year-dismiss]`) ·
   `NewYearWindow` 창 `newYear` `{ year }` `[data-new-year-window|new-year-step=classes|timetable|terms|teaching(data-done)|new-year-grade|num|names|create-class|copy-timetable|open-terms|set-homeroom|done]`) · 계정 `common.newYearDone` ·
@@ -405,7 +412,7 @@
   공유받기 `features/share/receive.ts`(`useShareReceiver` - Shell, 새 메모 칸 `draftText`·`draftFiles`) · 순수 `domain/share.ts` · 새 판 띠 `app/newBuild.ts`·`NewBuildBanner`(`[data-new-build]`). 점검 `tools/inspect-offline.mjs`(빌드 + preview 4175).
 - **사용 설명서**(P9-1 - 창 `help` `{ topic? }` = ⋮ 설정·머리줄 ?·단축키 'help'): `features/help/`(`types.ts` 모양 · `topics.ts` 장 차례·자리표 풀기 `plainText`·`topicText`·`findHelpTopic` · `chapters/*.ts` 11장(start·views·events·lessons·notes·attachments·classroom·find·share·settings·trouble) ·
   `HelpWindow.tsx`(V4 HelpModal - 분류 → 기능 → 설명·사용 예·왼쪽 목차(접기 이 기기 `sp5-help-tree-hidden`)·찾기·단축키 표, `[data-help-window|help-home|help-search|help-results|help-category|help-topic|help-detail|help-example|help-link|help-key|help-lookback|help-related|help-prev|help-next|help-crumb-home|help-back|help-tree|help-tree-topic|help-tree-category|help-tree-fold|help-tree-all|help-tree-toggle|help-shortcuts|help-shortcut|help-shortcuts-open]`)) ·
-  시험 `topics.test`(링크·자리표·창의 `help` 주제가 있나)·`HelpWindow.test`(모든 항목을 그려 기호가 남지 않나). 점검 `tools/inspect-manual.mjs`(282 - 68주제마다 설명서가 말하는 자리).
+  시험 `topics.test`(링크·자리표·창의 `help` 주제가 있나)·`HelpWindow.test`(모든 항목을 그려 기호가 남지 않나). 점검 `tools/inspect-manual.mjs`(306 - 68주제마다 설명서가 말하는 자리).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`·`noUserActivation`(P9-3)·`newPage(…, { isMobile… })`) · `tools/inspect-mobile.mjs`(P9-3 휴대폰 390·다크 대비) · `tools/inspect-scroll.mjs`(P10-5 - 긴 메모 끝 커서 줄·쓰는 칸 표 세로 스크롤 없음·옆 칸 휠·'스크롤로 페이지 이동' 날짜 그대로, 끝에 설정을 끈다) · `tools/inspect-perf.mjs`(P9-3 성능 - 빌드 + preview, teacher4 `?as=4` 1만 항목, 앱이 센 서버 읽기 `window.__sp5Reads`(`mirror/server` - 에뮬레이터 빌드만), 결과 = DESIGN 11장) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
   `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·

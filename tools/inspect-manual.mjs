@@ -108,6 +108,9 @@ try {
   await plant(B, 'timetables', 'insp_man_tt', { name: '점검 전담', from: `${YEAR}-03-01`, to: `${YEAR + 1}-02-28`, grid: week('5-2 과학'), ...tracked(uid3) });
   await plant(A, 'labels', 'insp_man_el', { kind: 'event', name: '점검달력', color: 'blue', parentId: null, order: 'Zz1', props: { calendar: true }, ...tracked(uid) });
   await plant(A, 'labels', 'insp_man_nl', { kind: 'note', name: '점검기록', color: 'green', parentId: null, order: 'Zz1', ...tracked(uid) });
+  // 라벨 고르기(일정 하나만·메모 Ctrl = 여러 개 - #92)를 보려면 둘씩
+  await plant(A, 'labels', 'insp_man_el2', { kind: 'event', name: '점검행사', color: 'red', parentId: null, order: 'Zz2', ...tracked(uid) });
+  await plant(A, 'labels', 'insp_man_nl2', { kind: 'note', name: '점검업무', color: 'blue', parentId: null, order: 'Zz2', ...tracked(uid) });
   const item = (id, data) => plant(A, 'items', id, { order: 'Zz1', labelIds: [], ...data, ...tracked(uid) });
   await item('insp_man_e1', { kind: 'event', date: DAY, text: '설명서점검 일정', labelIds: ['insp_man_el'], time: '09:30', linkIds: ['insp_man_n1'] });
   await item('insp_man_e2', { kind: 'event', date: DAY, endDate: '2026-10-12', text: '설명서점검 기간', order: 'Zz2', workdays: true });
@@ -302,6 +305,14 @@ try {
     await q(sel('event-add')).click();
     await has(sel('event-panel', 'new'));
     r.check((await count(sel('label-picker'))) === 1 && (await count(sel('label-picker-settings'))) === 1, '라벨 줄 + ⚙️ 라벨 수정');
+    // 일정 라벨은 하나만 (#92) - 다른 라벨을 누르면 그 라벨로 바뀐다
+    const picks = q(sel('event-panel', 'new')).locator(sel('label-pick'));
+    if ((await picks.count()) >= 2) {
+      await picks.nth(0).click();
+      await picks.nth(1).click();
+      const pressed = await picks.evaluateAll((els) => els.filter((e) => e.getAttribute('aria-pressed') === 'true').map((e) => e.getAttribute('data-label-pick')));
+      r.check(pressed.length === 1 && pressed[0] === (await picks.nth(1).getAttribute('data-label-pick')), `라벨 하나만 - 다른 라벨을 누르면 그것으로 (${pressed.join()})`);
+    } else r.check(false, '일정 라벨이 둘 이상 있어야 본다');
   });
 
   await topic('event-attrs', async () => {
@@ -377,10 +388,12 @@ try {
     r.check(await waitFor(card), '교시 카드 (시간표에서 계산)');
     r.check((await q(sel('lesson-subject')).innerText()).includes('국어'), '과목 = 시간표 것');
     await card.click();
-    r.check(await has(sel('lesson-editor')), '교시를 누르면 그 자리에서 고친다');
-    r.check((await count(sel('lesson-note-input'))) === 1 && (await count(sel('lesson-memo-input'))) === 0, '과목 + 비고(준비물) 한 칸');
-    r.check((await count(sel('lesson-editor-link'))) === 1 && (await count(sel('lesson-editor-tool', 'eval'))) === 1, '수정 칸에도 🔗 링크 추가 · 📊 조사표');
+    r.check(await has(sel('lesson-panel')), "교시를 누르면 오른쪽 'N교시 수정' 칸 (#94)");
+    r.check((await count(sel('lesson-editor'))) === 0, '카드 자리에서 고치는 칸은 없다');
+    r.check((await count(sel('lesson-panel-subject'))) === 1 && (await count(sel('lesson-panel-note'))) === 1, '과목 + 비고 한 칸');
+    r.check((await count(sel('lesson-panel-link'))) === 1 && (await count(sel('lesson-panel-evals'))) === 1, '수정 칸에도 🔗 링크 추가 · 📊 조사표');
     await page.keyboard.press('Escape');
+    r.check(await waitFor(async () => (await count(sel('lesson-panel'))) === 0, 3000), 'ESC로 닫는다');
   });
 
   await topic('detail-popup', async () => {
@@ -438,6 +451,7 @@ try {
     r.check(await waitFor(card), '메모 카드');
     for (const s of ['entry-complete', 'entry-favorite-toggle', 'entry-table', 'entry-students']) r.check((await card.locator(sel(s)).count()) > 0, `카드 ${s}`);
     r.check((await card.locator(sel('entry-from')).count()) === 0, '그날 일정에 이은 메모 = 카드에 이은 곳 표시 없음');
+    r.check(((await card.getAttribute('data-reorder-card')) ?? '').startsWith('note:day:'), '마우스 화면 = 카드를 끌어 놓아 차례 바꾸기 (#81)');
     const toggle = q(sel('journal-filter-toggle'));
     r.check((await toggle.count()) === 1, '제목 줄 🏷️ (라벨로 보기 펴기·접기)');
     if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
@@ -464,6 +478,16 @@ try {
     r.check(await has(sel('check-row', 1)), '체크 줄 그림 (☐ 누르기 = 맨 아래로·줄긋기)');
     r.check((await count(sel('check-down', 0))) === 1, '체크 줄 ▲▼');
     await q(sel('note-text-input')).fill('');
+    // 메모 라벨: 그냥 누르기 = 하나, Ctrl + 누르기 = 여러 개 (#92)
+    const picks = q(sel('note-panel', 'new')).locator(sel('label-pick'));
+    if ((await picks.count()) >= 2) {
+      await picks.nth(0).click();
+      await picks.nth(1).click();
+      const one = await picks.evaluateAll((els) => els.filter((e) => e.getAttribute('aria-pressed') === 'true').length);
+      await picks.nth(0).click({ modifiers: ['Control'] });
+      const two = await picks.evaluateAll((els) => els.filter((e) => e.getAttribute('aria-pressed') === 'true').length);
+      r.check(one === 1 && two === 2, `메모 라벨 - 누르기 = 하나 (${one}), Ctrl + 누르기 = 여러 개 (${two})`);
+    } else r.check(false, '메모 라벨이 둘 이상 있어야 본다');
   });
 
   await topic('memo-manage', async () => {
@@ -532,6 +556,7 @@ try {
     await q(sel('event-link-add')).click();
     r.check(await has(sel('linker')), '🔗 링크 추가 → 새 데이터 연결하기');
     r.check((await count(sel('linker-tab'))) === 3 && (await count(sel('linker-tab', 'note'))) === 1 && (await count(sel('linker-save'))) === 1, '탭(일정·메모·수업)·연결 저장');
+    r.check((await q(sel('linker-tab', 'note')).getAttribute('aria-pressed')) === 'true', '일정에서 열면 📝 메모 탭이 먼저 (#90)');
   });
 
   await topic('link-viewer', async () => {

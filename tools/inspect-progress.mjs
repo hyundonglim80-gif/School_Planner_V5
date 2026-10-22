@@ -82,7 +82,7 @@ try {
   r.check(!(await card(1).locator(sel('progress-mark')).count()), '진도가 없으면 진도 줄도 없다');
   r.check((await page.locator(sel('lessons-tool', 'progress')).count()) === 1, '수업 머리줄에 📘 진도 관리');
   await card(1).click();
-  const ed = page.locator(sel('lesson-editor', 1));
+  const ed = page.locator(sel('lesson-panel', 'lesson:2026-10-12:1'));
   r.check(await waitFor(ed.locator(sel('progress-create'))), "수정 칸에 '📘 진도 만들기' (진도가 없는 교시)");
   await ed.locator(sel('progress-create')).click();
   r.check(await waitFor(page.locator(win)), '진도 관리 창이 열린다');
@@ -112,8 +112,11 @@ try {
   const mark1 = card(1).locator(sel('progress-mark'));
   r.check(await waitFor(mark1, 8000), '닫으면 수업 칸에 진도 줄');
   const m1 = (await mark1.textContent()) ?? '';
-  r.check((await mark1.getAttribute('data-progress-mark')) === '1' && m1.includes('1/1차시') && m1.includes('시 읽기'), `📘 1/1차시(같은 내용 안 차례 - #67) · 내용 (${m1})`);
-  r.check(m1.includes('📖 12~13쪽') && m1.includes('🎒 색연필'), '📖 교과서 쪽 · 🎒 준비물');
+  // 하루 카드: 내용·쪽수는 첫 줄 과목 옆, 진도 줄은 단원·차시·준비물만 (10-22 #94)
+  const c1 = (await card(1).locator(sel('lesson-content')).textContent().catch(() => '')) ?? '';
+  r.check((await mark1.getAttribute('data-progress-mark')) === '1' && m1.includes('1/1차시') && !m1.includes('시 읽기'), `📘 1/1차시(같은 내용 안 차례 - #67) (${m1})`);
+  r.check(c1.includes('시 읽기') && c1.includes('📖 12~13쪽'), `카드 첫 줄에 내용 · 📖 교과서 쪽 (${c1})`);
+  r.check(m1.includes('🎒 색연필'), '진도 줄에 🎒 준비물');
   r.check(!(await card(2).locator(sel('progress-mark')).count()), '진도가 없는 과목(수학)은 줄이 없다');
   await go('#/day/2026-10-14');
   r.check(await waitFor(async () => (await card(1).locator(sel('progress-mark')).getAttribute('data-progress-mark').catch(() => null)) === '2', 8000), '수 1교시 = 2차시');
@@ -132,7 +135,7 @@ try {
   r.check(await waitFor(async () => (await card(1).locator(sel('progress-mark')).getAttribute('data-progress-mark')) === '3'), '되돌리면 10/19 = 3차시');
   // 수정 칸에서도 진도 줄 (밀기 단추가 늘 보인다), 진도 만들기는 없다
   await card(1).click();
-  const ed19 = page.locator(sel('lesson-editor', 1));
+  const ed19 = page.locator(sel('lesson-panel', 'lesson:2026-10-19:1'));
   r.check(await waitFor(ed19.locator(sel('progress-mark'))), '수정 칸에도 진도 줄');
   r.check(!(await ed19.locator(sel('progress-create')).count()), '진도가 있는 교시는 진도 만들기가 없다');
   await page.keyboard.press('Escape');
@@ -297,7 +300,9 @@ try {
     await go(`#/day/${day}`);
     const m = card(2).locator(sel('progress-mark'));
     const ok = await waitFor(async () => (await m.getAttribute('data-progress-mark').catch(() => null)) === String(n), 8000);
-    const t = ((await m.textContent().catch(() => '')) ?? '').replace(/\s+/g, ' ');
+    // 하루 카드는 내용을 첫 줄(과목 옆)에, 진도 줄에는 단원·차시·준비물 (10-22 #94)
+    const content = (await card(2).locator(sel('lesson-content')).textContent().catch(() => '')) ?? '';
+    const t = `${content} ${(await m.textContent().catch(() => '')) ?? ''}`.replace(/\s+/g, ' ');
     r.check(ok && t.includes(`${k}차시`) && t.includes(text), `수업 칸 ${day} = ${n}차시 · ${k} ${text} (${t})`);
   };
   await markOn('2026-11-02', 2, '1/2', '작은 공을 치고 받아요');
@@ -359,7 +364,7 @@ try {
   await open(p3, '#/day/2026-10-12', { as: '3' });
   r.check(await waitFor(card3(1).locator('[data-slot-class]'), 8000), '전담 수업 칸');
   await card3(1).click();
-  const ed3 = p3.locator(sel('lesson-editor', 1));
+  const ed3 = p3.locator(sel('lesson-panel', 'lesson:2026-10-12:1'));
   await ed3.locator(sel('progress-create')).click();
   r.check(await waitFor(p3.locator(sel('course-form'))), '전담의 진도 만들기 = 과정 (과목 + 반)');
   r.check((await p3.locator(sel('progress-subject')).inputValue()) === '과학', '과목 = 과학');

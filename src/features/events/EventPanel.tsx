@@ -194,9 +194,9 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     const add = quick.labels.filter((l) => keys.includes(`label:${l.name}`));
     if (add.length > 0) {
       strips.push(...add.map((l) => l.match));
-      const ids = add.map((l) => labelIdOf(l.name)).filter((id): id is string => !!id && !next.labelIds.includes(id));
-      // 라벨을 고르면 그 라벨 속성을 따른다 (라벨 고르기와 같다)
-      if (ids.length > 0) next = withLabels(next, [...next.labelIds, ...ids]);
+      const ids = add.map((l) => labelIdOf(l.name)).filter((id): id is string => !!id);
+      // 일정 라벨은 하나만(#92) - 그 라벨로 바꾸고 그 라벨 속성을 따른다 (라벨 고르기와 같다)
+      if (ids.length > 0) next = withLabels(next, [ids[0]]);
     }
     let text = next.text;
     for (const m of [...strips].sort((a, b) => b.start - a.start)) text = stripMatch(text, m);

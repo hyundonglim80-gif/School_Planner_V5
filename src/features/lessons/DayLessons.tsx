@@ -466,7 +466,7 @@ export default function DayLessons({ date }: { date: string }) {
                           e.stopPropagation();
                           setDate(prev.date);
                         }}
-                        title={`지난 시간 비고(준비물) - 누르면 ${shortDateLabel(prev.date)}로 갑니다`}
+                        title={`지난 시간 비고 - 누르면 ${shortDateLabel(prev.date)}로 갑니다`}
                         className={`self-start max-w-full truncate text-left text-xs text-slate-500 hover:text-primary hover:underline cursor-pointer ${mark || c.note ? 'mb-1.5' : ''}`}
                       >
                         ⏪ 지난 시간 {shortDateLabel(prev.date)} {prev.period}교시: <span className="text-slate-700">{prevNote}</span>

@@ -338,19 +338,22 @@ try {
   r.check(await waitFor(async () => (await opacity(tools3.locator(sel('class-tool-btn', 'seating')))) === '0' && (await opacity(lessonCard3.locator(sel('subject-attendance', 3)))) === '0', 3000), '마우스를 올리기 전에는 🪑·🎯·🙋 숨김');
   await lessonCard3.hover();
   r.check(await waitFor(async () => (await opacity(tools3.locator(sel('class-tool-btn', 'seating')))) === '1' && (await opacity(lessonCard3.locator(sel('subject-attendance', 3)))) === '1', 3000), '마우스를 올리면 보인다');
-  // 수정 칸에도 같은 단추 (고치는 동안 사라지지 않게 - P10-2)
+  // 오른쪽 N교시 수정 칸에도 같은 단추 (고치는 동안 사라지지 않게 - P10-2, 10-22 #94 오른쪽 칸으로)
   await lessonCard3.click();
-  const ed = p3.page.locator(sel('lesson-editor', 3));
-  r.check(await waitFor(ed), '교시를 누르면 수정 칸');
+  const ed = p3.page.locator(sel('lesson-panel'));
+  r.check(await waitFor(ed), "교시를 누르면 오른쪽 'N교시 수정' 칸");
   r.check(
-    (await ed.locator(sel('lesson-editor-tool')).evaluateAll((els) => els.map((e) => e.getAttribute('data-lesson-editor-tool')).join())) === 'eval,attendance,seating,drawStudent',
+    (await ed.locator(sel('lesson-panel-evals')).count()) === 1 &&
+      (await ed.locator(sel('lesson-panel-tool')).evaluateAll((els) => els.map((e) => e.getAttribute('data-lesson-panel-tool')).join())) === 'attendance,seating,drawStudent',
     '수정 칸에 📊 조사표·🙋 출결·🪑 자리표·🎯 뽑기',
   );
-  await ed.locator(sel('lesson-editor-tool', 'seating')).click();
+  await ed.locator(sel('lesson-panel-tool', 'seating')).click();
   r.check(await waitFor(p3.page.locator(sel('seating-window', C3)), 8000), '수정 칸 🪑 = 그 반 자리표');
-  r.check(await waitFor(ed), '도구를 열어도 수정 칸은 그대로');
-  await ed.locator(sel('lesson-close')).click();
+  // 자리표도 오른쪽 칸의 탭 - 수정 칸은 숨은 탭으로 남고, 자리표를 닫으면 다시 보인다
+  r.check((await ed.count()) === 1, '도구를 열어도 수정 칸은 탭으로 남는다');
   await p3.page.locator(`[data-popup-frame]:has(${sel('seating-window', C3)}) [data-close]`).click();
+  r.check(await waitFor(ed), '자리표를 닫으면 수정 칸이 다시 보인다');
+  await ed.locator(sel('lesson-panel-close')).click();
   await lessonCard3.hover();
   await tools3.locator(sel('class-tool-btn', 'drawStudent')).click();
   const win3 = p3.page.locator(sel('seating-window', C3));

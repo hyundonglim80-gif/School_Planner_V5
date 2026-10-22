@@ -17,7 +17,7 @@ export const SEARCH_KINDS: ReadonlyArray<{ id: SearchKind; label: string }> = [
   { id: 'memo', label: '메모' },
   { id: 'event', label: '일정' },
   { id: 'lesson', label: '수업' },
-  { id: 'lessonNote', label: '비고(준비물)' },
+  { id: 'lessonNote', label: '비고' },
   { id: 'evaluation', label: '조사표' },
   // 첨부는 갈래가 아니라 '붙은 파일만 모아 보기' - 검색어를 비우고 이것만 고르면 그 기간의 파일이 한눈에 (V4)
   { id: 'attachment', label: '첨부파일' },

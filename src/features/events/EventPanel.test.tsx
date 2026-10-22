@@ -141,7 +141,7 @@ describe('새 일정', () => {
     expect(q('[data-event-attr="forward"]')).not.toBeChecked();
   });
 
-  it('빠른 입력 칩 - 누르기 전에는 바꾸지 않고, 모두 넣기 = 날짜·알림·라벨 (말은 글에서 뺀다, 시각은 둔다)', async () => {
+  it('빠른 입력 칩 - 누르기 전에는 바꾸지 않고, 모두 넣기 = 날짜·알림·라벨 (말은 글에서 뺀다, 시각은 둔다, 라벨은 그것 하나로 - #92)', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY }} />);
     type('내일 15:00 협의회 #이월');
@@ -153,9 +153,10 @@ describe('새 일정', () => {
     expect(textInput().value).toBe('15:00 협의회');
     expect(shown.params!.date).toBe('2026-10-09');
     expect(q('[data-label-pick="fwd"]')).toHaveAttribute('aria-pressed', 'true');
+    expect(q('[data-label-pick="cal"]')).toHaveAttribute('aria-pressed', 'false');
     expect(q('[data-event-alarm-open]').textContent).toContain('15:00');
     await save();
-    expect(created()).toMatchObject({ date: '2026-10-09', time: '15:00', labelIds: ['cal', 'fwd'], text: '15:00 협의회' });
+    expect(created()).toMatchObject({ date: '2026-10-09', time: '15:00', labelIds: ['fwd'], text: '15:00 협의회' });
   });
 
   it('비었으면 저장하지 않고, 적은 글이 있으면 저장 안 한 것으로 본다', () => {

@@ -40,7 +40,7 @@ const BADGES: Record<SearchKind, { text: string; className: string }> = {
   event: { text: '일정', className: 'bg-blue-50 text-blue-700 border-blue-200' },
   journal: { text: '메모', className: 'bg-purple-50 text-purple-700 border-purple-200' },
   lesson: { text: '수업', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  lessonNote: { text: '비고(준비물)', className: 'bg-orange-50 text-orange-700 border-orange-200' },
+  lessonNote: { text: '비고', className: 'bg-orange-50 text-orange-700 border-orange-200' },
   evaluation: { text: '조사표', className: 'bg-teal-50 text-teal-700 border-teal-200' },
   attachment: { text: '첨부파일', className: 'bg-rose-50 text-rose-700 border-rose-200' },
 };

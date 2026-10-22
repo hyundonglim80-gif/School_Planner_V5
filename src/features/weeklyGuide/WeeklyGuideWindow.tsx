@@ -130,7 +130,7 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
   const thisMonday = schoolWeekOf(today)[0];
   const nextMonday = shiftWeek(thisMonday, 1);
   const optionList: Array<readonly [keyof GuideOptions, string]> = [
-    ['note', '비고(준비물)'],
+    ['note', '비고'],
     ['notices', '알림장'],
   ];
 
