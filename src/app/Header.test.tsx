@@ -17,7 +17,7 @@ beforeEach(() => {
   setShortcutOverrides({});
   useNav.setState({ scope: 'day' });
   document.documentElement.classList.remove('dark');
-  localStorage.removeItem('sp5_theme');
+  localStorage.setItem('sp5_theme', 'light'); // 정하지 않으면 어둡게가 기본이라 밝게로 시작
 });
 
 const items = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('[data-menu-item]')].map((b) => b.dataset.menuItem);

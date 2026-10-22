@@ -2,6 +2,7 @@
 //
 // 화면 밝기 (ROADMAP 17 다크 모드). 밝게 / 어둡게 / 시스템 따라 - 이 기기에만 남긴다(PC는 밝게, 휴대폰은 밤에 어둡게처럼
 // 기기마다 다르게 쓰는 일이 많다). html에 dark 클래스를 붙이면 src/dark.css가 색 변수를 바꾼다.
+// 정하지 않았으면 어둡게가 기본이다(10-22 요청 #113).
 // 처음 그리기 전에 index.html의 작은 스크립트가 같은 규칙으로 먼저 붙인다(밝은 화면이 번쩍이지 않게) - 키 이름을 바꾸면 거기도.
 
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -11,9 +12,9 @@ export const THEME_CHANGED_EVENT = 'sp5-theme-changed';
 export function readThemeMode(): ThemeMode {
   try {
     const v = localStorage.getItem(THEME_KEY);
-    return v === 'light' || v === 'dark' ? v : 'system';
+    return v === 'light' || v === 'system' ? v : 'dark';
   } catch {
-    return 'system';
+    return 'dark';
   }
 }
 
@@ -33,8 +34,7 @@ export function applyTheme(mode: ThemeMode = readThemeMode()) {
 
 export function setThemeMode(mode: ThemeMode) {
   try {
-    if (mode === 'system') localStorage.removeItem(THEME_KEY);
-    else localStorage.setItem(THEME_KEY, mode);
+    localStorage.setItem(THEME_KEY, mode);
   } catch {
     /* 저장하지 못해도 이번에는 바뀐다 */
   }
