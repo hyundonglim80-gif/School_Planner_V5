@@ -61,27 +61,42 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
       ' (누르면 진도 관리)';
 
   return (
-    <div data-progress-mark={mark.bumped ? 'bumped' : n} className={`flex gap-2 text-xs min-w-0 ${wrap ? 'flex-wrap items-start' : 'items-center'}`}>
-      <button
-        type="button"
-        data-progress-mark-open
-        onClick={openPlan}
-        title={title}
-        className={`min-w-0 ${wrap ? 'whitespace-normal break-words' : 'truncate'} text-left underline decoration-dotted decoration-slate-300 underline-offset-2 hover:decoration-solid`}
-      >
-        {mark.bumped ? (
-          <span className="text-amber-700 font-bold">⏭ 밀림 · 이 교시는 차시 없음</span>
-        ) : (
-          <span className="text-indigo-700">
-            📘 {lesson?.unit && <span className="text-indigo-500">{lesson.unit} · </span>}
-            <b className="tabular-nums">
-              {mark.run.k}/{mark.run.n}차시
-            </b>
-            {!hideContent && lesson?.content && ` · ${lesson.content}`}
-            {!hideContent && page && <span data-progress-page> · 📖 {page}</span>}
+    <div data-progress-mark={mark.bumped ? 'bumped' : n} className="flex gap-2 text-sm min-w-0 items-start">
+      {/* 단원 · 차시 · 내용 · 준비물은 항목마다 줄을 바꿔 보인다 */}
+      <div className="flex-1 min-w-0 flex flex-col items-start gap-0.5">
+        <button
+          type="button"
+          data-progress-mark-open
+          onClick={openPlan}
+          title={title}
+          className="max-w-full text-left underline decoration-dotted decoration-slate-300 underline-offset-2 hover:decoration-solid"
+        >
+          {mark.bumped ? (
+            <span className="block text-amber-700 font-bold">⏭ 밀림 · 이 교시는 차시 없음</span>
+          ) : (
+            <>
+              {lesson?.unit && (
+                <span className={`block text-indigo-500 ${wrap ? 'whitespace-normal break-words' : 'truncate'}`}>📘 {lesson.unit}</span>
+              )}
+              <span className="block text-indigo-700">
+                {!lesson?.unit && '📘 '}
+                <b className="tabular-nums">
+                  {mark.run.k}/{mark.run.n}차시
+                </b>
+              </span>
+              {!hideContent && lesson?.content && (
+                <span className={`block text-indigo-700 ${wrap ? 'whitespace-normal break-words' : 'truncate'}`}>{lesson.content}</span>
+              )}
+              {!hideContent && page && <span data-progress-page className="block text-indigo-700">📖 {page}</span>}
+            </>
+          )}
+        </button>
+        {!mark.bumped && lesson?.supplies && (
+          <span data-progress-supplies className={`max-w-full text-amber-600 font-medium ${wrap ? 'whitespace-normal break-words' : 'truncate'}`} title={`준비물: ${lesson.supplies}`}>
+            🎒 {lesson.supplies}
           </span>
         )}
-      </button>
+      </div>
       {!mark.bumped && sid && mark.row !== null && (lesson?.linkIds?.length ?? 0) > 0 && (
         <button
           type="button"
@@ -95,11 +110,6 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
         >
           🔗 {lesson!.linkIds!.length}
         </button>
-      )}
-      {!mark.bumped && lesson?.supplies && (
-        <span data-progress-supplies className={`min-w-0 text-amber-600 font-medium ${wrap ? 'whitespace-normal break-words' : 'shrink max-w-[40%] truncate'}`} title={`준비물: ${lesson.supplies}`}>
-          🎒 {lesson.supplies}
-        </span>
       )}
       {!mark.bumped && sid && mark.row !== null && (
         <button
