@@ -4,7 +4,9 @@ import {
   draftForSlot,
   draftTarget,
   emptyLesson,
+  duplicateRow,
   insertRowAfter,
+  moveRow,
   lessonsToSave,
   newCourseDraft,
   newDraft,
@@ -70,6 +72,27 @@ describe('차시 칸 = 차시 수 (행은 늘리지 않는다)', () => {
   it('새 진도는 차시 칸 = 차시 수', () => {
     expect(newDraft().noCount).toBe(true);
     expect(newCourseDraft('과학').noCount).toBe(true);
+  });
+});
+
+describe('행 순서 바꾸기·복사', () => {
+  const rows = () => ['가', '나', '다'].map((c) => withKey(lesson(c)));
+  it('옮긴 행은 key를 지키고 자리만 바뀐다', () => {
+    const r = rows();
+    const next = moveRow(r, 0, 2);
+    expect(next.map((l) => l.content)).toEqual(['나', '다', '가']);
+    expect(next[2]._k).toBe(r[0]._k);
+    expect(moveRow(r, 1, 1)).toBe(r);
+    expect(moveRow(r, 0, 9)).toBe(r);
+  });
+  it('복사는 글만 바로 아래에 새 key로', () => {
+    const r = rows();
+    r[1] = { ...r[1], _from: 1 };
+    const { lessons, at } = duplicateRow(r, 1);
+    expect(at).toBe(2);
+    expect(lessons.map((l) => l.content)).toEqual(['가', '나', '나', '다']);
+    expect(lessons[2]._k).not.toBe(r[1]._k);
+    expect(lessons[2]._from).toBeUndefined();
   });
 });
 
