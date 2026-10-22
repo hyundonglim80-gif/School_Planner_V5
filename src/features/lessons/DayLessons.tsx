@@ -34,7 +34,7 @@ import BellSettings from '../bell/BellSettings';
 import DayMeals from '../school/DayMeals';
 import ProgressMarkLine from '../progress/ProgressMarkLine';
 import { useProgressMarks } from '../progress/useProgress';
-import { lessonPageLabel, slotId } from '../../domain/progress';
+import { slotId } from '../../domain/progress';
 import { useFocusReveal } from '../search/focus';
 import { useClasses } from '../class/classes';
 import { openSubjectAttendanceCell } from '../subjectAttendance/open';
@@ -335,14 +335,9 @@ export default function DayLessons({ date }: { date: string }) {
                           </span>
                         )}
                         {/* 교사에게 가장 필요한 것 = 수업 내용·쪽수: 첫 줄에 교시/반/과목 다음으로 (진도 단원·준비물은 다음 줄) */}
-                        {mark && !mark.bumped && (mark.lesson?.content || lessonPageLabel(mark.lesson?.page)) && (
+                        {mark && !mark.bumped && mark.lesson?.content && (
                           <span data-lesson-content className="min-w-0 truncate text-sm sm:text-base font-extrabold text-indigo-700">
-                            {mark.lesson?.content}
-                            {lessonPageLabel(mark.lesson?.page) && (
-                              <span data-progress-page className="font-bold text-indigo-500">
-                                {mark.lesson?.content ? ' · ' : ''}📖 {lessonPageLabel(mark.lesson?.page)}
-                              </span>
-                            )}
+                            {mark.lesson.content}
                           </span>
                         )}
                         {slotClass && (
