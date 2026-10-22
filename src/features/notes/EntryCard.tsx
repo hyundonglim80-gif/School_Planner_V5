@@ -55,6 +55,8 @@ export interface EntryCardProps {
   onDelete: () => void;
   /** '☐ 우유' 줄을 누르면 그 줄의 체크 글자만 바꾼다 */
   onToggleCheckLine: (lineIndex: number, line: string) => Promise<unknown>;
+  /** 표를 끝 행까지 모두 보인다 (오른쪽 칸) */
+  fullTables?: boolean;
 }
 
 export default function EntryCard(props: EntryCardProps) {
@@ -323,7 +325,7 @@ export default function EntryCard(props: EntryCardProps) {
         </p>
       )}
 
-      {!collapsed && <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} />}
+      {!collapsed && <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} fullTables={props.fullTables} />}
       {/* Claude 요청 결과 - 바꾼 것·바꾸지 않은 까닭 (10-19) */}
       <ClaudeRequestNote itemId={item.id} short />
     </div>
