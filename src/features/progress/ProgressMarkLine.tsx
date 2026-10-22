@@ -74,6 +74,22 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
           {mark.bumped ? (
             <span className="block text-amber-700 font-bold">⏭ 밀림 · 이 교시는 차시 없음</span>
           ) : (
+            hideContent ? (
+              // 하루 수업 카드: 단원 오른쪽에 '70-71쪽(2/2차시)' 한 줄 (같은 작은 글자)
+              <span className="flex items-baseline gap-2 min-w-0">
+                {lesson?.unit ? (
+                  <span className="min-w-0 truncate text-indigo-500">📘 {lesson.unit}</span>
+                ) : (
+                  <span className="text-indigo-500">📘</span>
+                )}
+                <span className="shrink-0 text-indigo-700 tabular-nums">
+                  {page && <span data-progress-page>{page}</span>}
+                  <b>
+                    ({mark.run.k}/{mark.run.n}차시)
+                  </b>
+                </span>
+              </span>
+            ) : (
             <>
               {lesson?.unit && (
                 <span className={`block text-indigo-500 ${wrap ? 'whitespace-normal break-words' : 'truncate'}`}>📘 {lesson.unit}</span>
@@ -89,6 +105,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
               )}
               {!hideContent && page && <span data-progress-page className="block text-indigo-700">📖 {page}</span>}
             </>
+            )
           )}
         </button>
         {!mark.bumped && lesson?.supplies && (
