@@ -23,12 +23,12 @@ beforeEach(() => {
 const items = (c: HTMLElement) => [...c.querySelectorAll<HTMLElement>('[data-menu-item]')].map((b) => b.dataset.menuItem);
 
 describe('⋮ 메뉴 (MENU.md 3-4)', () => {
-  it('4구역, 인쇄는 인쇄할 수 있는 화면(주간·년간)에서만', async () => {
+  it('4구역, 인쇄는 모든 화면에', async () => {
     const user = userEvent.setup();
     const { container } = render(<Header />);
     await user.click(container.querySelector('[data-more-menu]')!);
     expect([...container.querySelectorAll<HTMLElement>('[data-menu-section]')].map((s) => s.dataset.menuSection)).toEqual(['일정', '수업', '자료', '설정']);
-    expect(items(container)).toEqual(['labels', 'multiSelect', 'progress', 'timetable', 'backup', 'settings', 'help']);
+    expect(items(container)).toEqual(['labels', 'multiSelect', 'progress', 'timetable', 'backup', 'print', 'settings', 'help']);
 
     act(() => useNav.setState({ scope: 'week' }));
     expect(items(container)).toContain('print');
