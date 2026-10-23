@@ -4,6 +4,7 @@
 //   - 휴대폰: 날짜를 누르면 아래에 그날 목록(MonthDaySheet), 같은 날을 한 번 더 누르면 하루 화면.
 //   - 오늘 칸 data-today, 이번 주 줄 data-today-area (app/todayScroll).
 //   - 수업 칩(둘째 줄 '수업'): 계산한 수업 칸 - PC는 칸에, 휴대폰은 그날 목록에(V4 그대로).
+//   - printAt = 인쇄 창(features/print)의 쪽 하나 - 그 달을 PC 모양으로.
 import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { monthGridDates } from '../../domain/dateUtils';
@@ -33,10 +34,11 @@ const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
 };
 
-export default function MonthScreen() {
+export default function MonthScreen({ printAt }: { printAt?: string }) {
   const sid = useCurrentSpaceId();
   const evalCounts = useEvalCountsByDate(sid);
-  const date = useNav((s) => s.date);
+  const navDate = useNav((s) => s.date);
+  const date = printAt ?? navDate;
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
   const showClass = useNav((s) => s.showClass);
@@ -44,7 +46,7 @@ export default function MonthScreen() {
   const tree = useLabelTree('event', sid);
   const today = useToday();
   const multi = useMulti();
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile() && !printAt;
   const drop = useEventDrop(sid);
   const [scopeFor, setScopeFor] = useState<{ item: ItemDoc; day: string } | null>(null);
 

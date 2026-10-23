@@ -275,6 +275,18 @@ try {
     r.check((await count(sel('dday-title'))) === 1 && (await count(sel('dday-add'))) === 1, '새 D-Day 추가 칸');
   });
 
+  await topic('print', async () => {
+    await go(`#/week/${DAY}`, 'week');
+    await q(sel('more-menu')).click();
+    await q(sel('menu-item', 'print')).click();
+    r.check(await has(sel('print-window', 'week')), '⋮ 🖨️ 이 화면 인쇄 → 인쇄 창 (보던 화면 = 주간)');
+    for (const p of ['day', 'week', 'month', 'year']) r.check((await count(sel('print-page', p))) === 1, `화면: ${p}`);
+    r.check((await count(sel('print-from'))) === 1 && (await count(sel('print-to'))) === 1, '구간 📅 시작 ~ 📅 끝');
+    r.check((await count(sel('print-orient'))) === 2 && (await count(sel('print-fit'))) === 1, '용지 세로·가로 · 한 장에 맞추기');
+    r.check(await has('[data-print-sheet] [data-print-paper]'), '미리보기 쪽');
+    r.check((await count(sel('print-go'))) === 1, '🖨️ 인쇄 (N쪽)');
+  });
+
   // ════════ 3장 일정 ════════
   await go(`#/day/${DAY}`, 'day');
   await topic('event-add', async () => {

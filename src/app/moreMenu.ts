@@ -33,7 +33,7 @@ export const MORE_MENU: ReadonlyArray<{ section: MenuSection; items: MoreMenuIte
     section: '자료',
     items: [
       { id: 'backup', icon: '💾', label: '백업 · 가져오기 · 보내기' },
-      // 주간·년간은 전용 모양으로, 다른 화면은 브라우저 인쇄 (MENU.md 4장)
+      // 인쇄 창 - 하루·주간·월간·년간, 구간·용지 방향·미리보기 (MENU.md 4장, app/printScreen)
       { id: 'print', icon: '🖨️', label: '이 화면 인쇄' },
     ],
   },

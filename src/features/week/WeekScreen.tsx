@@ -1,13 +1,12 @@
 // 주간 화면 (V4 features/week/WeekScreen.tsx·WeekGrid.tsx). 한 주를 요일 카드로 - 날짜·◀▶는 둘째 줄(SecondRow).
 //   - 본문 폭이 1200px 이상이면 요일이 한 줄로 서고 아래에 다음 주도 한 줄. 읽는 범위는 늘 두 주 - 기기 사본에서 고르므로 폭이 바뀌어도 다시 읽지 않는다.
 //   - 🕰️ 작년 이맘때: 이번 주 줄의 카드 아래에 작년 학년도 같은 주 같은 요일(domain/lastYearWeek), 골라서 📥 올해로 가져오기.
-//   - 📰 주간학습안내(담임 - features/weeklyGuide)·인쇄(⋮·Ctrl+P = 이번 주 A4 가로 - app/printScreen)는 P6-3. 수업 줄은 P6-1(features/lessons/WeekLessonRows - 요일끼리 교시 줄 수가 같다), 끌어 옮기기·공휴일은 P5-3.
-import { useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+//   - 📰 주간학습안내(담임 - features/weeklyGuide)는 P6-3. 인쇄(⋮·Ctrl+P)는 인쇄 창(features/print)이 printAt으로 그 주만 그린다(단추 줄·다음 주·작년 없이). 수업 줄은 P6-1(features/lessons/WeekLessonRows - 요일끼리 교시 줄 수가 같다), 끌어 옮기기·공휴일은 P5-3.
+import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
-import { usePrintTarget } from '../../app/printScreen';
 import { openWindow } from '../../app/windows';
-import { addDays, todayStr, weekDates } from '../../domain/dateUtils';
+import { addDays, weekDates } from '../../domain/dateUtils';
 import { lastYearWeekOf } from '../../domain/lastYearWeek';
 import { periodStateAt, timesOf } from '../../domain/periodTimes';
 import { itemLabels, itemsOn, useDocs, useLabelTree } from '../../data/select';
@@ -45,14 +44,15 @@ const quiet = () => {
 const gridClass = (n: number) =>
   'grid grid-cols-2 @min-[720px]:grid-cols-3 ' + (n === 5 ? '@min-[1200px]:grid-cols-5' : '@min-[980px]:grid-cols-4 @min-[1200px]:grid-cols-7') + ' gap-2 sm:gap-3';
 
-export default function WeekScreen() {
+export default function WeekScreen({ printAt }: { printAt?: string }) {
   const sid = useCurrentSpaceId();
   const evalCounts = useEvalCountsByDate(sid);
-  const date = useNav((s) => s.date);
+  const navDate = useNav((s) => s.date);
+  const date = printAt ?? navDate;
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
   const showClass = useNav((s) => s.showClass);
-  const showLastYear = useShowLastYear((s) => s.on);
+  const showLastYear = useShowLastYear((s) => s.on) && !printAt;
   const items = useDocs('items', sid);
   const eventTree = useLabelTree('event', sid);
   const noteTree = useLabelTree('note', sid);
@@ -60,7 +60,7 @@ export default function WeekScreen() {
   const today = carried.today;
   const multi = useMulti();
   const drop = useEventDrop(sid);
-  const showNextWeek = useMainWidth() >= 1200;
+  const showNextWeek = useMainWidth() >= 1200 && !printAt;
   const [scopeFor, setScopeFor] = useState<{ item: ItemDoc; day: string } | null>(null);
 
   const thisWeek = useMemo(() => weekDates(date), [date]);
@@ -229,13 +229,7 @@ export default function WeekScreen() {
   const pickedCount = pickedKeys.size;
   const md = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}`;
 
-  // ⋮ '이 화면 인쇄'·Ctrl+P = 이번 주 칸을 A4 가로로 (V4 주간 🖨️)
-  const printRef = useRef<HTMLDivElement>(null);
-  usePrintTarget(() => {
-    const first = shownThis[0] ?? thisWeek[0];
-    const last = shownThis[shownThis.length - 1] ?? thisWeek[6];
-    return { node: printRef.current, opts: { title: `${first.slice(0, 4)}년 ${md(first)} ~ ${md(last)} 주간`, subtitle: `인쇄 ${todayStr()}`, landscape: true } };
-  });
+  if (printAt) return <div data-screen="week">{grid(shownThis, false)}</div>;
 
   return (
     <div data-screen="week" className="animate-fade-in pb-12">
@@ -301,7 +295,7 @@ export default function WeekScreen() {
 
       <div className="flex flex-col gap-4">
         {/* 날짜(둘째 줄)를 누르면 오늘로 - 오늘 카드가 없으면(주말을 감춘 토·일) 이번 주 (app/todayScroll) */}
-        <div ref={printRef} data-today-area={thisWeek.includes(today) ? 'true' : undefined} data-week-this>
+        <div data-today-area={thisWeek.includes(today) ? 'true' : undefined} data-week-this>
           {grid(shownThis, true)}
         </div>
         {showNextWeek && (

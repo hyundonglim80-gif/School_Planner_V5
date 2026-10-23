@@ -1,38 +1,20 @@
-// ⋮ '🖨️ 이 화면 인쇄'·Ctrl+P (MENU 4장 - V4 주간·년간 머리의 🖨️ 단추를 옮김). 인쇄할 수 있는 화면(주간 = 이번 주 A4 가로, 년간 = 학사력)이
-// 찍을 칸을 걸어 둔다. 걸린 것이 없으면(다른 화면·년간 자세히) 브라우저 인쇄. 창 안의 인쇄(주간학습안내 등)는 그 창에 그대로.
-import { useEffect, useRef } from 'react';
-import { printNode, type PrintOptions } from '../ui/print';
+// ⋮ '🖨️ 이 화면 인쇄'·Ctrl+P (MENU 4장) = 인쇄 창(features/print/PrintWindow). 창은 보는 화면(하루·주간·월간·년간 - 메모·학급은 하루)과
+// 보는 날로 열린다 - 거기서 화면·구간·용지 방향을 바꾸고 미리보기로 본 뒤 찍는다. 창 안의 인쇄(주간학습안내 등)는 그 창에 그대로.
+import { useEffect } from 'react';
+import { printPageOfScope } from '../domain/printPages';
+import type { PrintParams } from '../features/print/types';
 import { setShortcutAction } from './keys';
+import { useNav } from './nav';
+import { openWindow } from './windows';
 
-export type PrintTarget = () => { node: HTMLElement | null; opts: PrintOptions };
-
-let current: { get: () => PrintTarget | null } | null = null;
-
-/** 이 화면을 찍는 법을 건다 (null = 이 화면은 찍지 않는다). 화면이 사라지면 풀린다 */
-export function usePrintTarget(target: PrintTarget | null) {
-  const ref = useRef(target);
-  useEffect(() => {
-    ref.current = target;
-  });
-  const on = target !== null;
-  useEffect(() => {
-    if (!on) return;
-    const me = { get: () => ref.current };
-    current = me;
-    return () => {
-      if (current === me) current = null;
-    };
-  }, [on]);
-}
-
-/** 지금 화면을 찍는다 */
-export function printScreen() {
-  const made = current?.get()?.();
-  if (made?.node) printNode(made.node, made.opts);
-  else window.print();
+/** 인쇄 창을 지금 화면·날짜로 연다 (열려 있으면 그것으로 바꾼다) */
+export function openPrintWindow() {
+  const { scope, date } = useNav.getState();
+  const params: PrintParams = { page: printPageOfScope(scope), date, scope };
+  openWindow('print', params);
 }
 
 /** 껍데기에서 한 번 - 단축키 '이 화면 인쇄'(Ctrl+P)와 ⋮ 항목 */
 export function usePrintShortcut() {
-  useEffect(() => setShortcutAction('print', printScreen), []);
+  useEffect(() => setShortcutAction('print', openPrintWindow), []);
 }

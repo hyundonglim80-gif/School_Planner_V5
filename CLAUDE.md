@@ -6,7 +6,7 @@
 > 저장소 `hyundonglim80-gif/School_Planner_V5`. 계획·설계 문서는 `docs/`(PLAN·DESIGN·MENU·PARITY). P1-1(10-08)에 V4 저장소 `docs/V5/`에서 옮겨 왔다 - 이것이 정본.
 > **이 파일이 정본 기억**이다(10-14 P9-4 - V4는 '보관 - 고칠 때만', V4 화면에 'V5로 옮겼습니다' 띠, V4 알림 함수 넷은 10-14 지웠다).
 
-마지막 합침: 2026-10-19 (클라우드) - Claude 요청 결과 글 (처음 씀 10-08 영-전-3-현동림 PC)
+마지막 합침: 2026-10-23 (클라우드) - 인쇄 창 (처음 씀 10-08 영-전-3-현동림 PC)
 
 ---
 
@@ -222,7 +222,7 @@
 
 ## 6. 사용 설명서 = 기능 명세
 
-- **P9-1부터 V5 설명서**(`src/features/help/chapters/*.ts`, 11장 68주제 - 차례는 `topics.ts`)가 명세다. 기능을 고치기 전에 그 주제 부분만 읽는다
+- **P9-1부터 V5 설명서**(`src/features/help/chapters/*.ts`, 11장 70주제 - 차례는 `topics.ts`)가 명세다. 기능을 고치기 전에 그 주제 부분만 읽는다
   (`grep -rn "id: '<주제 id>'" src/features/help/chapters` - 주제 id는 `docs/PARITY.md`, 창 목록의 `help`). 대화 시작에 전부 읽지 않는다.
 - **동작·자리를 바꾸면 설명서도 같은 커밋에서** 고치고 `node tools/inspect-manual.mjs`(그 주제만 `MATCH=`)를 돌린다. 새 주제를 더하면 inspect-manual에도 한 묶음(모든 주제를 거쳤나 센다).
   바꿀 수 있는 값(단축키·이월 기간)은 자리표 `{key:…}`·`{lookback}`로만 - 키가 없는 기능은 '단축키 **이름**({key:…})' 꼴(시험이 지킨다).
@@ -329,7 +329,10 @@
   `ProgressMarkLine`(`[data-progress-mark=k|bumped|progress-mark-open|progress-page|progress-supplies|progress-bump=bump|undo]`, `ProgressCreateButton` `[data-progress-create]`)) · 주간 배지 `[data-week-progress]` · 시간표 창 `[data-timetable-progress]` · `ui/download.ts`(`downloadCsv`). 점검 `tools/inspect-progress.mjs`(66).
 - **수업 종·주간학습안내·인쇄**(P6-3): 순수 `domain/classBell.ts`·`weeklyGuide.ts`(`guideDaysOf` = 계산한 수업 칸) · 설정 `common.classBell` · `features/bell/`(`bell.ts` `useClassBell`·`saveClassBell`·`useBellMutedHere`(이 기기 `sp5-class-bell-muted`)·`useClassBellRunner`(Shell) · `BellSettings`) ·
   하루 머리줄 `[data-day-bell|day-bell-panel|day-bell-close]`·`[data-class-bell|bell-enabled|bell-on|bell-amount|bell-unit|bell-when|bell-weekdays|bell-here|bell-preview]` · 창 `weeklyGuide` `{ date? }`(`features/weeklyGuide/WeeklyGuideWindow` `[data-weekly-guide-window|guide-range|guide-prev|next|this|coming|guide-copy|guide-print|guide-title|guide-opt|guide-note-input|weekly-guide|guide-heading|guide-note|guide-row|guide-cell]`, 주간 `[data-week-guide]`(담임)) ·
-  인쇄 `ui/print.ts`(`printNode`·`preparePrint`·`#sp5-print-root` + index.css @media print, `data-print-hide`는 빼고 찍는다) · `app/printScreen.ts`(`usePrintTarget`(주간 이번 주·년간 학사력)·`printScreen`·`usePrintShortcut` = ⋮ 'print'·Ctrl+P). 점검 `tools/inspect-bell-guide.mjs`(48).
+  인쇄 `ui/print.ts`(`printNode`·`preparePrint`(여럿이면 쪽마다 `.sp5-print-page`)·`#sp5-print-root` + index.css @media print, `data-print-hide`는 빼고 찍는다) · `app/printScreen.ts`(`openPrintWindow`·`usePrintShortcut` = ⋮ 'print'·Ctrl+P → 인쇄 창). 점검 `tools/inspect-bell-guide.mjs`.
+- **🖨️ 인쇄 창**(10-23 사용자 요청): 창 `print` `{ page, date, scope }`(`features/print/PrintWindow` - 화면 하루·주간·월간·년간 `[data-print-page]`·구간 `[data-print-from|print-to|print-range|print-count]`(작은 달력)·용지 `[data-print-orient=portrait|landscape]`·`[data-print-fit]` 한 장에 맞추기(zoom)·
+  미리보기 `[data-print-preview]` 쪽 `[data-print-sheet=첫날(data-print-sheets|data-print-zoom)]` 안 `[data-print-paper]` = 진짜 화면 `printAt`(그 날짜로·단추 줄 없이)·`[data-print-go]`·메모·학급에서 `[data-print-as-is]`) ·
+  순수 `domain/printPages.ts`(`printPageStarts`·`printPageTitle`·`printRangeLabel`·`paperSizeMm`) · 쪽 모양·뺄 단추 `index.css` `[data-print-paper]` · 어두운 화면에서도 밝게 `dark.css`(`gen-dark-css`). 점검 `tools/inspect-print.mjs`(42).
 - **우리 학교(나이스)**(P6-3): `data/neis.ts`(학교 찾기·달마다 급식·학사일정 - 키 없이 5건씩 나눠 받기·6시간 담아 두기, `setNeisKeySource`) · `data/neisKey.ts`(`installNeisKey` - sharedConfig/neis 읽기만) · 순수 `domain/schoolSetting.ts` · 설정 `common.school` ·
   `features/school/`(`school.ts` `useSchool`·`saveSchool`·`saveSchoolGrade`·`useSchoolSchedule(달들)`·`useDayMeals` · `SchoolPicker`(환경설정 '학교' 탭 `[data-school-setting|school-name|school-change|school-clear|school-grade|school-query|school-search|school-results|school-result]`) ·
   `DayMeals`(`[data-day-meals|day-meal|day-school-events|day-school-event-open]`) · `SchoolEventName`(`[data-school-event=날짜]` - 주간 카드·월간 칸·월간 휴대폰 목록·년간 자세히, 학사력은 `monthSheetItems.schoolOf`) · 창 `schoolEvent` `{ date, items }`(`SchoolEventWindow` `[data-school-event-window|school-event-item|school-event-dday|school-event-to-event]`)) ·

@@ -3,13 +3,13 @@
 //     고른 보기는 이 기기에 남는다(year/prefs).
 //   - 열두 달을 한 판에 그리면 화면이 1초 넘게 굳는다(V4) - 세 달씩 프레임마다 나눠 그린다. 달 카드는 memo.
 //   - 자료는 기기 사본에서(그 학년도 범위). '달력' 속성을 켠 일정만(월간과 같은 calendarEvents).
+//   - printAt = 인쇄 창(features/print)의 쪽 하나 - 그 학년도 학사력을 한 번에(보기 단추 줄 없이).
 //   - 오늘 칸 data-today, 이번 달 data-today-area (app/todayScroll).
 //   - 자세히에서 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3). 공휴일·D-Day는 달 카드가 직접(data/holidays·설정). 인쇄(🖨️ 학사력 A4 가로)·학사일정은 P6-3.
 //   - 자세히의 수업 칩(둘째 줄 '수업' - V4 그대로): 계산한 수업 칸. 수업이 있는 날도 줄로 서고, 칩을 누르면 그 교시 수업 칸.
 //     달 카드에는 그 달 과목을 글(JSON)로 넘긴다 - 일정 하나만 바뀌어도 수업 칸 셈이 새로 나오지만, 글이 같으면 그 달은 다시 그리지 않는다.
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
-import { usePrintTarget } from '../../app/printScreen';
 import { academicYearOf, academicYearRange, addDays } from '../../domain/dateUtils';
 import { onPeriodDay } from '../../domain/period';
 import type { ShownPeriod } from '../../domain/periodBars';
@@ -87,15 +87,17 @@ function visiblePicks(months: readonly AcademicMonth[], cal: CalendarEvents, sho
   return out;
 }
 
-export default function YearScreen() {
+export default function YearScreen({ printAt }: { printAt?: string }) {
   const sid = useCurrentSpaceId();
   const evalCounts = useEvalCountsByDate(sid);
-  const date = useNav((s) => s.date);
+  const navDate = useNav((s) => s.date);
+  const date = printAt ?? navDate;
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
   const showClass = useNav((s) => s.showClass);
   const semesterFilter = useNav((s) => s.semesterFilter);
-  const view = useYearView((s) => s.view);
+  const shownView = useYearView((s) => s.view);
+  const view: YearView = printAt ? 'sheet' : shownView;
   const items = useDocs('items', sid);
   const tree = useLabelTree('event', sid);
   const status = useMirrorStatus('items');
@@ -133,9 +135,9 @@ export default function YearScreen() {
   // 세 달씩 나눠 그린다 - 학년도·학기·보기가 바뀌면 처음부터 (V4: 한 흐름 안에서 끝까지 걸어간다 - 둘로 나누면 서로 물려 멈췄다)
   const runKey = `${academicYear}|${semesterFilter}|${view}`;
   const [shown, setShown] = useState({ key: runKey, n: MONTHS_PER_FRAME });
-  let shownCount = shown.n;
+  let shownCount = printAt ? months.length : shown.n;
   if (shown.key !== runKey) {
-    shownCount = MONTHS_PER_FRAME;
+    shownCount = printAt ? months.length : MONTHS_PER_FRAME;
     setShown({ key: runKey, n: MONTHS_PER_FRAME });
   }
   useEffect(() => {
@@ -224,18 +226,11 @@ export default function YearScreen() {
   };
   const visible = months.slice(0, shownCount);
 
-  // ⋮ '이 화면 인쇄'·Ctrl+P = 학사력을 A4 가로로 (V4 년간 🖨️) - 자세히 보기는 브라우저 인쇄
-  const sheetRef = useRef<HTMLDivElement>(null);
-  usePrintTarget(
-    view === 'sheet'
-      ? () => ({ node: sheetRef.current, opts: { title: `${academicYear}학년도 학사력${semesterFilter === 'all' ? '' : ` (${semesterFilter}학기)`}`, landscape: true } })
-      : null,
-  );
   const waiting = (status === 'idle' || status === 'loading') && Object.keys(items).length === 0;
 
   return (
     <div data-screen="year" data-year={academicYear} className="animate-fade-in pb-12">
-      <div className="flex flex-wrap items-center gap-2 mb-3" data-print-hide>
+      <div className={`${printAt ? 'hidden' : 'flex'} flex-wrap items-center gap-2 mb-3`} data-print-hide>
         <div className="inline-flex bg-slate-100 p-0.5 rounded-xl gap-0.5" role="group" aria-label="년간 보기">
           {VIEWS.map(([v, label, hint]) => (
             <button
@@ -260,7 +255,7 @@ export default function YearScreen() {
           <p className="text-xs text-slate-400 font-medium">데이터를 불러오는 중...</p>
         </div>
       ) : view === 'sheet' ? (
-        <div ref={sheetRef} data-year-sheet className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 items-start">
+        <div data-year-sheet className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 items-start">
           {visible.map((m) => (
             <YearSheetMonth
               key={m.key}
