@@ -1,8 +1,9 @@
-// 인쇄 (V4 lib/print.ts). 화면의 한 부분만 A4로 찍는다 - ⋮ '🖨️ 이 화면 인쇄'·Ctrl+P(주간·년간 학사력)와 창 안의 인쇄(주간학습안내 등).
+// 인쇄 (V4 lib/print.ts). 화면의 한 부분만 A4로 찍는다 - 창 안의 인쇄(주간학습안내 등)와 ⋮ '🖨️ 이 화면 인쇄' 창(features/print - 미리보기 쪽들).
 //
 //   고른 요소를 복제해 body 바로 아래 #sp5-print-root에 넣고, 인쇄할 때는 그것만 보이게 한다(index.css의 @media print).
 //   팝업·오른쪽 칸 안의 표는 스크롤 상자·고정 위치 안에 있어 그대로 찍으면 잘린다 - 복제해서 펼친다.
 //   용지 방향은 그때마다 @page를 넣었다가 뺀다. 인쇄 창이 닫히면(afterprint) 치운다.
+//   여러 요소를 주면 하나씩 새 용지에서 시작한다(.sp5-print-page - 인쇄 창의 쪽들).
 //
 //   data-print-hide가 붙은 것은 빼고 찍는다(단추·거르개 등). 입력 칸은 적힌 값을 글로 바꿔 찍는다.
 
@@ -45,8 +46,16 @@ export function clearPrintRoot() {
   document.body.removeAttribute('data-printing');
 }
 
-/** 요소 하나를 찍을 준비를 한다 (복제·@page). 인쇄 창은 printNode가 연다 - 시험에서는 이것만 부른다 */
-export function preparePrint(node: HTMLElement, opts: PrintOptions = {}): HTMLElement {
+/** 복제해 찍을 모양으로 (입력 칸은 글로, 단추는 빼고) */
+function printCopy(node: HTMLElement): HTMLElement {
+  const clone = node.cloneNode(true) as HTMLElement;
+  freezeInputs(node, clone);
+  clone.querySelectorAll('[data-print-hide]').forEach((el) => el.remove());
+  return clone;
+}
+
+/** 요소(여럿이면 쪽마다 새 용지)를 찍을 준비를 한다 (복제·@page). 인쇄 창은 printNode가 연다 - 시험에서는 이것만 부른다 */
+export function preparePrint(node: HTMLElement | readonly HTMLElement[], opts: PrintOptions = {}): HTMLElement {
   clearPrintRoot();
   const root = document.createElement('div');
   root.id = PRINT_ROOT_ID;
@@ -62,10 +71,14 @@ export function preparePrint(node: HTMLElement, opts: PrintOptions = {}): HTMLEl
     p.textContent = opts.subtitle;
     root.appendChild(p);
   }
-  const clone = node.cloneNode(true) as HTMLElement;
-  freezeInputs(node, clone);
-  clone.querySelectorAll('[data-print-hide]').forEach((el) => el.remove());
-  root.appendChild(clone);
+  if (Array.isArray(node)) {
+    for (const one of node as readonly HTMLElement[]) {
+      const sheet = document.createElement('div');
+      sheet.className = 'sp5-print-page';
+      sheet.appendChild(printCopy(one));
+      root.appendChild(sheet);
+    }
+  } else root.appendChild(printCopy(node as HTMLElement));
   document.body.appendChild(root);
 
   const page = document.createElement('style');
@@ -76,8 +89,8 @@ export function preparePrint(node: HTMLElement, opts: PrintOptions = {}): HTMLEl
   return root;
 }
 
-/** 요소 하나를 A4로 인쇄한다 (인쇄 창에서 'PDF로 저장'도 된다) */
-export function printNode(node: HTMLElement, opts: PrintOptions = {}) {
+/** 요소(여럿이면 쪽마다 새 용지)를 A4로 인쇄한다 (인쇄 창에서 'PDF로 저장'도 된다) */
+export function printNode(node: HTMLElement | readonly HTMLElement[], opts: PrintOptions = {}) {
   preparePrint(node, opts);
   const done = () => {
     window.removeEventListener('afterprint', done);

@@ -5,6 +5,7 @@ import { DAY_NOTES, NOTE_PANEL, sameDayNotes, sameNotePanel, type DayNotesParams
 import { LESSON_PANEL, sameLessonPanel, type LessonPanelParams } from '../features/lessons/open';
 import type { WeeklyGuideParams } from '../features/weeklyGuide/WeeklyGuideWindow';
 import type { BackupParams } from '../features/backup/open';
+import type { PrintParams } from '../features/print/types';
 import type { HelpParams } from '../features/help/HelpWindow';
 import type { NewYearParams } from '../features/newYear/NewYearWindow';
 import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/open';
@@ -201,6 +202,17 @@ registerWindow<BackupParams | undefined>({
   kind: 'side',
   help: 'backup',
   load: () => import('../features/backup/BackupWindow'),
+});
+
+// ⋮ 자료 - 🖨️ 이 화면 인쇄 (10-23 사용자 요청) - 화면(하루·주간·월간·년간)·구간·용지 방향·미리보기. 단축키 'print'는 보던 화면·날짜로 연다(app/printScreen)
+registerWindow<PrintParams | undefined>({
+  id: 'print',
+  title: '인쇄',
+  icon: '🖨️',
+  menu: '자료',
+  kind: 'side',
+  help: 'print',
+  load: () => import('../features/print/PrintWindow'),
 });
 
 // 👥 공유 그룹 (P8-4) - 계정 칸·공간 고르기 끝 '그룹 관리…', 단축키 'group'(창 목록 id라 저절로 열린다)

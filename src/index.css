@@ -118,10 +118,12 @@
     color: #64748b;
     margin: 0 0 3mm;
   }
-  /* 주간 화면: 용지 폭과 상관없이 요일마다 한 열 (화면은 칸 폭에 따라 3~5열로 바뀐다) */
-  #sp5-print-root [data-week-grid] {
-    grid-template-columns: repeat(var(--week-cols, 5), minmax(0, 1fr)) !important;
-    gap: 2mm !important;
+  /* 인쇄 창의 쪽마다 새 용지 (features/print - 쪽 모양은 아래 [data-print-paper]) */
+  #sp5-print-root .sp5-print-page {
+    break-after: page;
+  }
+  #sp5-print-root .sp5-print-page:last-child {
+    break-after: auto;
   }
   #sp5-print-root [data-week-grid] > * {
     break-inside: avoid;
@@ -132,16 +134,8 @@
   #sp5-print-root tr {
     break-inside: avoid;
   }
-  /* 년간 학사력: 용지 폭과 상관없이 넉 달씩, 화면에서 접어 둔 목록 줄도 찍는다 */
-  #sp5-print-root [data-year-sheet] {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
-    gap: 2mm !important;
-  }
   #sp5-print-root [data-sheet-month] {
     break-inside: avoid;
-  }
-  #sp5-print-root [data-sheet-extra] {
-    display: list-item !important;
   }
   /* 출결 누계·조사표·평가 모아 보기 표는 화면에서 칸 선이 옅다 - 종이에는 칸마다 선 (주간학습안내 표는 제 선이 있다) */
   #sp5-print-root table:not([data-guide-table]) {
@@ -151,4 +145,61 @@
   #sp5-print-root table:not([data-guide-table]) td {
     border: 1px solid #94a3b8 !important;
   }
+}
+
+/* 인쇄 창의 쪽 (features/print/PrintWindow) - 미리보기와 찍는 것(복제본)이 같은 모양이다. 쪽 폭 = A4 찍히는 폭(@container).
+   어두운 화면에서도 종이처럼 밝게 - dark.css가 이 안의 색 변수를 밝은 값으로 되돌린다. */
+[data-print-paper] {
+  color: #0f172a;
+  background: #fff;
+}
+/* 찍을 때처럼 펼친다 (위 #sp5-print-root와 같게 - 미리보기도 접힌 높이·스크롤 없이) */
+[data-print-paper],
+[data-print-paper] * {
+  max-height: none !important;
+  overflow: visible !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+[data-print-paper] .sticky {
+  position: static !important;
+}
+[data-print-paper] [data-screen] {
+  padding-bottom: 0 !important;
+}
+/* 종이에 필요 없는 단추(추가·▲▼·고치기·지우기·도구·설정)와 지금 시각 줄은 미리보기에서도 뺀다 - 찍을 때는 [data-print-hide]째 복제에서 빠진다 */
+[data-print-paper] :is(
+    [data-print-hide],
+    [data-event-add], [data-event-up], [data-event-down], [data-event-edit], [data-event-delete], [data-event-labels-settings],
+    [data-journal-add], [data-journal-filter-toggle], [data-journal-filter], [data-journal-labels-settings], [data-filter-help],
+    [data-day-bell], [data-day-bell-panel], [data-lessons-tool], [data-lessons-settings], [data-now-line],
+    [data-lesson-up], [data-lesson-down], [data-lesson-edit], [data-lesson-link], [data-class-tools],
+    [data-entry-up], [data-entry-down], [data-entry-edit], [data-entry-delete], [data-entry-link-add], [data-entry-favorite-toggle],
+    [data-progress-create], [data-progress-link-add], [data-progress-bump], [data-month-add]
+  ) {
+  display: none !important;
+}
+[data-print-paper] .sp5-print-title,
+#sp5-print-root [data-print-paper] .sp5-print-title {
+  font-size: 15pt;
+  font-weight: 900;
+  margin: 0 0 3mm;
+}
+/* 주간: 쪽 폭과 상관없이 요일마다 한 열 (화면은 칸 폭에 따라 3~5열로 바뀐다) */
+[data-print-paper] [data-week-grid] {
+  grid-template-columns: repeat(var(--week-cols, 5), minmax(0, 1fr)) !important;
+  gap: 2mm !important;
+}
+/* 년간 학사력: 가로는 넉 달씩, 세로는 석 달씩. 화면에서 접어 둔 목록 줄도 찍는다 */
+[data-print-paper] [data-year-sheet] {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 2mm !important;
+}
+@container (max-width: 900px) {
+  [data-print-paper] [data-year-sheet] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+[data-print-paper] [data-sheet-extra] {
+  display: list-item !important;
 }

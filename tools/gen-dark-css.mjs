@@ -93,6 +93,18 @@ const whites = [
   ...[15, 25, 30].map((a) => `  html.dark .bg-white\\/${a}, html.dark .hover\\:bg-white\\/${a}:hover { background-color: rgb(255 255 255 / ${a / 100}); }`),
 ];
 
+// 인쇄 창의 쪽(features/print [data-print-paper])은 어두운 화면에서도 종이처럼 밝은 색 - 바꾼 변수를 원래 값으로 되돌린다
+const paper = [];
+paper.push(`    --color-white: #fff;`);
+paper.push(`    --color-bg-body: #f8fafc;`);
+paper.push(`    --color-bg-card: #ffffff;`);
+paper.push(`    --color-bg-hover: #f1f5f9;`);
+paper.push(`    --color-border: #cbd5e1;`);
+for (const n of [...NEUTRALS, ...HUES]) {
+  if (!orig[n]) continue;
+  for (const [s, v] of Object.entries(orig[n])) paper.push(`    --color-${n}-${s}: ${v};`);
+}
+
 const css = `/* src/dark.css - tools/gen-dark-css.mjs 가 만든다. 손으로 고치지 말고 그 스크립트를 고쳐 다시 돌린다. (ROADMAP 17) */
 @media screen {
   html.dark {
@@ -101,6 +113,10 @@ ${vars.join('\n')}
   }
   html.dark body {
     background-color: var(--color-bg-body);
+  }
+  html.dark [data-print-paper] {
+    color-scheme: light;
+${paper.join('\n')}
   }
 ${keep.join('\n')}
 ${whites.join('\n')}

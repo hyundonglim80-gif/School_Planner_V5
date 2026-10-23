@@ -23,6 +23,18 @@ describe('preparePrint', () => {
     expect(node.querySelector('[data-print-hide]')).not.toBeNull();
   });
 
+  it('여럿을 주면 쪽마다 .sp5-print-page 하나씩 (원본 차례대로)', () => {
+    const nodes = ['첫 쪽', '둘째 쪽'].map((t) => {
+      const n = document.createElement('div');
+      n.innerHTML = `<p>${t}</p><button data-print-hide>🖨️</button>`;
+      document.body.appendChild(n);
+      return n;
+    });
+    const root = preparePrint(nodes, { landscape: true });
+    const pages = [...root.querySelectorAll('.sp5-print-page')];
+    expect(pages.map((p) => p.textContent)).toEqual(['첫 쪽', '둘째 쪽']);
+  });
+
   it('두 번 부르면 앞 것을 치우고, 치우면 다 없어진다', () => {
     const node = document.createElement('div');
     document.body.appendChild(node);

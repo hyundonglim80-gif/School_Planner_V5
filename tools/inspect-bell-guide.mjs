@@ -1,7 +1,7 @@
 // tools/inspect-bell-guide.mjs - P6-3 ■1·■2: 수업 종·주간학습안내·이 화면 인쇄를 실제 크롬에서 본다.
 //   1) 하루 '⏰ 수업' 옆 🔕 종 → 설정 칸: 켜기 = 계정 설정 common.classBell, 시각을 고정한 창에서 교시 시작에 종(안내·소리 수), '이 기기에서 울리기' 끄면 조용
 //   2) 주간 '📰 주간학습안내'(담임) → 요일 × 교시 표(과목·비고(준비물) - 옛 수업 메모도 이어서)·알림장 줄, 넣을 것 끄기·주 넘기기·제목·알리는 말, 🖨️ 인쇄 = 그 표만 찍을 준비, 📋 표 복사, 단축키 = 다음 주
-//   3) ⋮ '🖨️ 이 화면 인쇄'·Ctrl+P: 주간 = 이번 주(A4 가로), 년간 학사력, 다른 화면에는 ⋮ 항목이 없다. 전담은 주간학습안내 단추가 없다.
+//   3) 전담은 주간학습안내 단추가 없다. (⋮ '🖨️ 이 화면 인쇄'·Ctrl+P = 인쇄 창은 tools/inspect-print.mjs - 10-23)
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-bell-guide.mjs
 // 에뮬레이터 teacher 계정의 시간표·수업 칸·계정 설정 common을 심고 끝에 되돌린다.
@@ -144,28 +144,6 @@ try {
   r.check(range === want, `단축키 = 다음 주 (${range})`);
   await page.keyboard.press('Escape');
 
-  r.section('🖨️ 이 화면 인쇄');
-  await page.locator(sel('more-menu')).click();
-  r.check(await waitFor(page.locator(sel('menu-item', 'print'))), '주간 ⋮에 이 화면 인쇄');
-  await page.locator(sel('menu-item', 'print')).click();
-  r.check((await page.evaluate(() => window.__printed)) === 2, '⋮ 인쇄 = 인쇄 창');
-  r.check((await page.locator('#sp5-print-root [data-week-grid]').count()) === 1, '찍을 것 = 이번 주 칸');
-  r.check((await page.locator('#sp5-print-root .sp5-print-title').textContent()) === '2026년 10.12 ~ 10.16 주간' || (await page.locator('#sp5-print-root .sp5-print-title').textContent()).startsWith('2026년 10.12 ~ 10.1'), '제목 = 그 주');
-  r.check((await page.locator('#sp5-print-root-page').textContent()).includes('landscape'), 'A4 가로');
-  r.check(!(await page.locator('#sp5-print-root [data-week-guide]').count()), '단추 줄은 찍지 않는다');
-  await page.keyboard.press('Control+p');
-  r.check((await page.evaluate(() => window.__printed)) === 3, 'Ctrl+P = 이 화면 인쇄');
-  await page.goto(page.url().replace(/#.*$/, '#/year/2026'));
-  await page.locator(sel('year-view', 'sheet')).click();
-  await waitFor(page.locator('[data-year-sheet] [data-sheet-month]'), 8000);
-  await page.keyboard.press('Control+p');
-  r.check((await page.evaluate(() => window.__printed)) === 4 && (await page.locator('#sp5-print-root [data-year-sheet]').count()) === 1, '년간 학사력 = 학사력 칸');
-  r.check((await page.locator('#sp5-print-root .sp5-print-title').textContent()).includes('학년도 학사력'), '제목 = 학년도 학사력');
-  await page.goto(page.url().replace(/#.*$/, '#/day/2026-10-12'));
-  await waitFor(page.locator(sel('day-lessons')), 8000);
-  await page.locator(sel('more-menu')).click();
-  r.check(!(await page.locator(sel('menu-item', 'print')).count()), '하루 화면 ⋮에는 없다');
-  await page.keyboard.press('Escape');
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 
   r.section('전담 (teacher3)');
