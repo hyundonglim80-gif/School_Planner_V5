@@ -81,3 +81,63 @@ export function paperSizeMm(landscape: boolean, marginMm: number): { width: numb
 
 /** mm → CSS px (인쇄는 1in = 96px) */
 export const mmToPx = (mm: number) => (mm * 96) / 25.4;
+
+// ── 인쇄 설정 (이 기기에 남긴다 - features/print/prefs) ──
+
+/** 가로 정렬 (쪽이 용지 폭보다 좁을 때 - 한 장에 맞추려 줄인 쪽) */
+export type PrintAlignX = 'left' | 'center' | 'right';
+/** 세로 정렬 (쪽이 한 장보다 짧을 때) */
+export type PrintAlignY = 'top' | 'middle' | 'bottom';
+
+export const ALIGN_X: ReadonlyArray<{ id: PrintAlignX; label: string }> = [
+  { id: 'left', label: '왼쪽' },
+  { id: 'center', label: '가운데' },
+  { id: 'right', label: '오른쪽' },
+];
+export const ALIGN_Y: ReadonlyArray<{ id: PrintAlignY; label: string }> = [
+  { id: 'top', label: '위' },
+  { id: 'middle', label: '가운데' },
+  { id: 'bottom', label: '아래' },
+];
+
+/** 여백 단추 (mm). 보통 = 8mm - 여백이 넓으면 찍히는 폭이 좁아져 칸이 그 폭에 맞춰 다시 선다(하루 세로는 10mm부터 수업·일정이 위아래로) */
+export const MARGIN_PRESETS: ReadonlyArray<{ label: string; mm: number }> = [
+  { label: '좁게', mm: 5 },
+  { label: '보통', mm: 8 },
+  { label: '넓게', mm: 15 },
+];
+export const MARGIN_MAX_MM = 30;
+
+export interface PrintPrefs {
+  /** 화면마다 용지 방향 */
+  landscape: Record<PrintPage, boolean>;
+  /** 한 장에 맞추기 */
+  fit: boolean;
+  marginMm: number;
+  alignX: PrintAlignX;
+  alignY: PrintAlignY;
+}
+
+export const DEFAULT_PRINT_PREFS: PrintPrefs = { landscape: DEFAULT_LANDSCAPE, fit: true, marginMm: 8, alignX: 'center', alignY: 'top' };
+
+/** 여백 칸에 친 값 → 0 ~ 30mm 정수 (숫자가 아니면 null) */
+export function cleanMargin(v: unknown): number | null {
+  const n = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' ? Number(v) : NaN;
+  if (!Number.isFinite(n)) return null;
+  return Math.min(MARGIN_MAX_MM, Math.max(0, Math.round(n)));
+}
+
+/** 남겨 둔 설정 읽기 - 모르는 값은 처음 값으로 */
+export function readPrintPrefs(raw: unknown): PrintPrefs {
+  const o = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  const ls = o.landscape && typeof o.landscape === 'object' ? (o.landscape as Record<string, unknown>) : {};
+  const landscape = { ...DEFAULT_LANDSCAPE };
+  for (const p of PRINT_PAGES) if (typeof ls[p.id] === 'boolean') landscape[p.id] = ls[p.id] as boolean;
+  return {
+    landscape,
+    fit: typeof o.fit === 'boolean' ? o.fit : DEFAULT_PRINT_PREFS.fit,
+    marginMm: cleanMargin(o.marginMm) ?? DEFAULT_PRINT_PREFS.marginMm,
+    alignX: ALIGN_X.some((a) => a.id === o.alignX) ? (o.alignX as PrintAlignX) : DEFAULT_PRINT_PREFS.alignX,
+    alignY: ALIGN_Y.some((a) => a.id === o.alignY) ? (o.alignY as PrintAlignY) : DEFAULT_PRINT_PREFS.alignY,
+  };
+}
