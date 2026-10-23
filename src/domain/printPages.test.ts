@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pageStart, paperSizeMm, printPageOfScope, printPageStarts, printPageTitle, printRangeLabel } from './printPages';
+import { cleanMargin, DEFAULT_PRINT_PREFS, pageStart, paperSizeMm, printPageOfScope, printPageStarts, printPageTitle, printRangeLabel, readPrintPrefs } from './printPages';
 
 describe('printPages', () => {
   it('보는 화면 → 처음 고른 쪽 (메모·학급은 하루)', () => {
@@ -38,5 +38,18 @@ describe('printPages', () => {
   it('A4 찍히는 칸 = 용지 - 여백 둘', () => {
     expect(paperSizeMm(true, 8)).toEqual({ width: 281, height: 194 });
     expect(paperSizeMm(false, 8)).toEqual({ width: 194, height: 281 });
+  });
+});
+
+describe('인쇄 설정', () => {
+  it('여백 칸 - 0 ~ 30mm 정수, 숫자가 아니면 null', () => {
+    expect([cleanMargin('12'), cleanMargin(7.6), cleanMargin(-3), cleanMargin('99'), cleanMargin(''), cleanMargin('가')]).toEqual([12, 8, 0, 30, null, null]);
+  });
+
+  it('남겨 둔 설정 - 모르는 값은 처음 값으로', () => {
+    expect(readPrintPrefs(null)).toEqual(DEFAULT_PRINT_PREFS);
+    const p = readPrintPrefs({ landscape: { day: true, week: 'x' }, fit: false, marginMm: 15, alignX: 'right', alignY: 'sideways' });
+    expect(p.landscape).toEqual({ day: true, week: true, month: true, year: true });
+    expect([p.fit, p.marginMm, p.alignX, p.alignY]).toEqual([false, 15, 'right', 'top']);
   });
 });

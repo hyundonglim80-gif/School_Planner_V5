@@ -1,15 +1,19 @@
 // 🖨️ 인쇄 창 (⋮ '이 화면 인쇄'·Ctrl+P - app/printScreen이 보는 화면·날짜로 연다). 10-23 사용자 요청:
 //   - 화면: 하루 / 주간 / 월간 / 년간 (처음은 보던 화면 - 메모·학급은 하루)
 //   - 구간: 시작 ~ 끝을 달력에서 (하루 = 날, 주간 = 고른 날이 든 주, 월간 = 달, 년간 = 학년도) - 쪽 셈은 domain/printPages
-//   - 용지: 세로 / 가로 (화면마다 따로 기억 - 처음은 하루 세로, 나머지 가로)
+//   - 용지: 세로 / 가로 (화면마다 - 처음은 하루 세로, 나머지 가로) · 여백(mm) · 정렬(가로 왼쪽·가운데·오른쪽 / 세로 위·가운데·아래) - 모두 이 기기에(prefs)
 //   - 미리보기: 쪽마다 진짜 화면(printAt)을 A4 찍히는 폭으로 그려 줄여 보인다. '한 장에 맞추기'(처음 켬)면 긴 쪽을 줄여 한 장에, 끄면 넘치는 곳은 점선(다음 장).
-//     🖨️ 인쇄는 미리보기의 쪽(data-print-paper)을 그대로 복제해 쪽마다 새 용지로 찍는다(ui/print) - 보이는 것 = 찍히는 것.
+//     🖨️ 인쇄는 미리보기의 쪽 틀(data-print-frame - 찍히는 칸 높이, 정렬은 flex)을 그대로 복제해 쪽마다 새 용지로 찍는다(ui/print) - 보이는 것 = 찍히는 것.
 //   어두운 화면에서도 쪽은 종이처럼 밝게(dark.css가 [data-print-paper] 안을 밝은 색으로 되돌린다).
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { useNav } from '../../app/nav';
 import type { WindowProps } from '../../app/windows';
 import {
-  DEFAULT_LANDSCAPE,
+  ALIGN_X,
+  ALIGN_Y,
+  cleanMargin,
+  MARGIN_MAX_MM,
+  MARGIN_PRESETS,
   mmToPx,
   pageStart,
   paperSizeMm,
@@ -17,6 +21,8 @@ import {
   printPageStarts,
   printPageTitle,
   printRangeLabel,
+  type PrintAlignX,
+  type PrintAlignY,
   type PrintPage,
 } from '../../domain/printPages';
 import { addDays, todayStr } from '../../domain/dateUtils';
@@ -27,9 +33,9 @@ import DayScreen from '../day/DayScreen';
 import MonthScreen from '../month/MonthScreen';
 import WeekScreen from '../week/WeekScreen';
 import YearScreen from '../year/YearScreen';
+import { usePrintPrefs } from './prefs';
 import type { PrintParams } from './types';
 
-const MARGIN_MM = 8;
 /** 한 장에 맞출 때 쓰는 높이 (찍히는 칸의 97%) */
 const FIT_SLACK = 0.97;
 
@@ -56,23 +62,32 @@ function unitDays(page: PrintPage, date: string): string[] | undefined {
   return Array.from({ length: 7 }, (_, i) => addDays(s, i));
 }
 
+const FLEX_X: Record<PrintAlignX, string> = { left: 'flex-start', center: 'center', right: 'flex-end' };
+const FLEX_Y: Record<PrintAlignY, string> = { top: 'flex-start', middle: 'center', bottom: 'flex-end' };
+
 const seg = (on: boolean) =>
   `px-3 py-1.5 text-xs font-bold border transition-all cursor-pointer first:rounded-l-lg last:rounded-r-lg -ml-px first:ml-0 ${
     on ? 'bg-primary text-white border-primary relative z-[1]' : 'bg-white text-slate-500 border-slate-200 hover:text-primary'
   }`;
 
 export default function PrintWindow({ params, close, raise }: WindowProps<PrintParams | undefined>) {
-  // 다시 열면(⋮·Ctrl+P) 그때 보던 화면·날짜로 (용지 방향은 화면마다 남는다)
+  // 다시 열면(⋮·Ctrl+P) 그때 보던 화면·날짜로 (용지·여백·정렬은 이 기기에 남는다)
   const [setup, setSetup] = useState<Setup>(() => setupOf(params));
   const [seenRaise, setSeenRaise] = useState(raise);
   if (seenRaise !== raise) {
     setSeenRaise(raise);
     setSetup(setupOf(params));
   }
-  const [landscape, setLandscape] = useState<Record<PrintPage, boolean>>(DEFAULT_LANDSCAPE);
-  const [fit, setFit] = useState(true);
+  const [prefs, setPrefs] = usePrintPrefs();
+  const { fit, marginMm, alignX, alignY } = prefs;
   const { page, from, to } = setup;
-  const isLandscape = landscape[page];
+  const isLandscape = prefs.landscape[page];
+  // 여백 칸에 치는 글 (다 지우고 다시 칠 수 있게 - 숫자가 되면 그때 바꾼다)
+  const [marginText, setMarginText] = useState(String(marginMm));
+  const setMargin = (mm: number) => {
+    setPrefs({ marginMm: mm });
+    setMarginText(String(mm));
+  };
   const showWeekend = useNav((s) => s.showWeekend);
   const semester = useNav((s) => s.semesterFilter);
 
@@ -95,14 +110,13 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
     return () => ro.disconnect();
   }, []);
 
-  const paper = paperSizeMm(isLandscape, MARGIN_MM);
-  const fullW = mmToPx(paper.width + MARGIN_MM * 2);
+  const fullW = mmToPx(isLandscape ? 297 : 210);
   // 미리보기 칸 안쪽 여백(p-3) 둘을 빼고 맞춘다
   const scale = avail > 24 ? Math.min(1, (avail - 24) / fullW) : 0.4;
 
   const print = () => {
-    const nodes = [...(previewRef.current?.querySelectorAll<HTMLElement>('[data-print-paper]') ?? [])];
-    if (nodes.length) printNode(nodes, { landscape: isLandscape, marginMm: MARGIN_MM });
+    const nodes = [...(previewRef.current?.querySelectorAll<HTMLElement>('[data-print-frame]') ?? [])];
+    if (nodes.length) printNode(nodes, { landscape: isLandscape, marginMm });
   };
   // 메모·학급 화면은 그 화면 그대로 브라우저 인쇄도 (#117 - 이 창이 생기기 전 모양)
   const asIs = params?.scope === 'memo' || params?.scope === 'class';
@@ -183,16 +197,71 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
                   ['landscape', true, '가로'],
                 ] as const
               ).map(([id, on, label]) => (
-                <button key={id} type="button" data-print-orient={id} aria-pressed={isLandscape === on} onClick={() => setLandscape((m) => ({ ...m, [page]: on }))} className={seg(isLandscape === on)}>
+                <button key={id} type="button" data-print-orient={id} aria-pressed={isLandscape === on} onClick={() => setPrefs({ landscape: { ...prefs.landscape, [page]: on } })} className={seg(isLandscape === on)}>
                   {label}
                 </button>
               ))}
             </div>
             <span className="text-slate-400">A4</span>
             <label className="ml-2 flex items-center gap-1.5 cursor-pointer" title="한 장을 넘는 쪽은 글자·칸을 줄여 한 장에 찍습니다 (끄면 넘는 만큼 다음 장으로)">
-              <input type="checkbox" data-print-fit checked={fit} onChange={(e) => setFit(e.target.checked)} className="accent-primary" />
+              <input type="checkbox" data-print-fit checked={fit} onChange={(e) => setPrefs({ fit: e.target.checked })} className="accent-primary" />
               <span className="font-bold text-slate-600">한 장에 맞추기</span>
             </label>
+          </div>
+
+          <span className="font-bold text-slate-500">여백</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex" role="group" aria-label="여백">
+              {MARGIN_PRESETS.map((m) => (
+                <button key={m.mm} type="button" data-print-margin={m.mm} aria-pressed={marginMm === m.mm} onClick={() => setMargin(m.mm)} className={seg(marginMm === m.mm)} title={`위·아래·왼쪽·오른쪽 ${m.mm}mm`}>
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <label className="flex items-center gap-1">
+              <input
+                type="number"
+                min={0}
+                max={MARGIN_MAX_MM}
+                step={1}
+                inputMode="numeric"
+                data-print-margin-input
+                value={marginText}
+                onChange={(e) => {
+                  setMarginText(e.target.value);
+                  const mm = cleanMargin(e.target.value);
+                  if (mm !== null) setPrefs({ marginMm: mm });
+                }}
+                onBlur={() => setMarginText(String(marginMm))}
+                aria-label="여백 (mm)"
+                className="w-14 px-2 py-1 rounded-lg border border-slate-200 bg-white text-right font-bold text-slate-700"
+              />
+              <span className="text-slate-400">mm (네 변 모두, 0~{MARGIN_MAX_MM})</span>
+            </label>
+          </div>
+
+          <span className="font-bold text-slate-500">정렬</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <span className="flex items-center gap-1.5" title="쪽이 용지 폭보다 좁을 때(한 장에 맞추려 줄인 쪽) 놓을 자리">
+              <span className="text-slate-400">가로</span>
+              <span className="flex" role="group" aria-label="가로 정렬">
+                {ALIGN_X.map((a) => (
+                  <button key={a.id} type="button" data-print-align-x={a.id} aria-pressed={alignX === a.id} onClick={() => setPrefs({ alignX: a.id })} className={seg(alignX === a.id)}>
+                    {a.label}
+                  </button>
+                ))}
+              </span>
+            </span>
+            <span className="flex items-center gap-1.5" title="쪽이 한 장보다 짧을 때 놓을 자리">
+              <span className="text-slate-400">세로</span>
+              <span className="flex" role="group" aria-label="세로 정렬">
+                {ALIGN_Y.map((a) => (
+                  <button key={a.id} type="button" data-print-align-y={a.id} aria-pressed={alignY === a.id} onClick={() => setPrefs({ alignY: a.id })} className={seg(alignY === a.id)}>
+                    {a.label}
+                  </button>
+                ))}
+              </span>
+            </span>
           </div>
         </div>
 
@@ -202,7 +271,7 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
         </div>
         <div ref={previewRef} data-print-preview className="flex flex-col items-center gap-4 rounded-xl bg-slate-100 p-3">
           {starts.map((start) => (
-            <PaperSheet key={`${page}:${start}`} page={page} start={start} title={titleOf(start)} landscape={isLandscape} scale={scale} fit={fit} />
+            <PaperSheet key={`${page}:${start}`} page={page} start={start} title={titleOf(start)} landscape={isLandscape} scale={scale} fit={fit} marginMm={marginMm} alignX={alignX} alignY={alignY} />
           ))}
         </div>
       </div>
@@ -210,15 +279,28 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
   );
 }
 
+interface SheetProps {
+  page: PrintPage;
+  start: string;
+  title: string;
+  landscape: boolean;
+  scale: number;
+  fit: boolean;
+  marginMm: number;
+  alignX: PrintAlignX;
+  alignY: PrintAlignY;
+}
+
 /**
- * 쪽 하나 - A4 찍히는 폭으로 그려 줄인다. fit이면 한 장 높이를 넘는 쪽을 CSS zoom으로 줄여 한 장에(zoom은 찍을 때도 자리를 줄인다 -
+ * 쪽 하나 - A4 찍히는 폭(용지 - 여백)으로 그려 줄인다. fit이면 한 장 높이를 넘는 쪽을 CSS zoom으로 줄여 한 장에(zoom은 찍을 때도 자리를 줄인다 -
  * transform은 찍을 때 장 나눔에 들지 않는다), 아니면 넘는 만큼 장을 늘려 점선으로 나눈다. offsetHeight는 zoom 앞의 높이다.
+ * 정렬: 한 장인 쪽은 틀(data-print-frame)이 찍히는 칸 높이(min-height - 찍을 때 몇 px 길어져도 밀려 올라가지 않게)인 flex라 그 안에서 놓인다.
  */
-function PaperSheet({ page, start, title, landscape, scale, fit }: { page: PrintPage; start: string; title: string; landscape: boolean; scale: number; fit: boolean }) {
-  const paper = paperSizeMm(landscape, MARGIN_MM);
+function PaperSheet({ page, start, title, landscape, scale, fit, marginMm, alignX, alignY }: SheetProps) {
+  const paper = paperSizeMm(landscape, marginMm);
   const w = mmToPx(paper.width);
   const h = mmToPx(paper.height);
-  const margin = mmToPx(MARGIN_MM);
+  const margin = mmToPx(marginMm);
   const paperRef = useRef<HTMLDivElement>(null);
   const [contentH, setContentH] = useState(h);
   useEffect(() => {
@@ -244,9 +326,14 @@ function PaperSheet({ page, start, title, landscape, scale, fit }: { page: Print
       style={{ width: (w + margin * 2) * scale, height: (sheets * h + margin * 2) * scale, background: '#fff' }}
     >
       <div inert className="absolute top-0 left-0 origin-top-left pointer-events-none select-none" style={{ width: w + margin * 2, padding: margin, transform: `scale(${scale})` }}>
-        <div ref={paperRef} data-print-paper className="@container" style={{ width: w, zoom }}>
-          <h1 className="sp5-print-title">{title}</h1>
-          <Screen printAt={start} />
+        <div
+          data-print-frame
+          style={{ width: w, minHeight: sheets === 1 ? h - 2 : undefined, display: 'flex', flexDirection: 'column', alignItems: FLEX_X[alignX], justifyContent: FLEX_Y[alignY] }}
+        >
+          <div ref={paperRef} data-print-paper className="@container shrink-0" style={{ width: w, zoom }}>
+            <h1 className="sp5-print-title">{title}</h1>
+            <Screen printAt={start} />
+          </div>
         </div>
       </div>
       {Array.from({ length: sheets - 1 }, (_, i) => (

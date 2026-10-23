@@ -2,7 +2,8 @@
 //   1) 주간에서 Ctrl+P = 인쇄 창이 그 주·가로로, 미리보기 쪽에 그 주 일정, 단추(+ 등)는 쪽에 없다, 어두운 화면에서도 쪽은 흰 바탕
 //   2) 화면 '하루' = 세로, 구간 끝을 달력에서 고르면 쪽이 늘고 🖨️ 인쇄 = 쪽마다 새 용지(.sp5-print-page)·A4 세로
 //   3) 한 장에 맞추기: 긴 날은 줄여 한 장(zoom) / 끄면 점선으로 여러 장
-//   4) 월간·년간 쪽, 가로·세로 바꾸기, 메모 화면에서 열면 하루 + '이 화면 그대로 인쇄'
+//   4) 여백(단추·mm 칸 = @page 여백·쪽 폭)·정렬(가로·세로) - 이 기기에 남는다
+//   5) 월간·년간 쪽, 가로·세로 바꾸기, 메모 화면에서 열면 하루 + '이 화면 그대로 인쇄'
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-print.mjs
 // 에뮬레이터 teacher 계정에 일정·메모를 심고 끝에 지운다.
@@ -85,6 +86,59 @@ try {
   r.check((await long.getAttribute('data-print-zoom')) === '1', '줄이지 않는다');
   await page.locator(sel('print-fit')).check();
 
+  r.section('여백·정렬');
+  const mmPx = (mm) => (mm * 96) / 25.4;
+  const frameW = async (start) => (await page.locator(`${sel('print-sheet', start)} [data-print-frame]`).evaluate((el) => el.offsetWidth));
+  r.check((await page.locator(sel('print-margin', 8)).getAttribute('aria-pressed')) === 'true', '처음 여백 = 보통 8mm');
+  r.check(Math.abs((await frameW('2026-10-12')) - mmPx(210 - 16)) < 1, '쪽 폭 = 용지 - 여백 둘 (194mm)');
+  await page.locator(sel('print-margin', 15)).click();
+  r.check(await waitFor(async () => Math.abs((await frameW('2026-10-12')) - mmPx(180)) < 1), '넓게 15mm → 쪽 폭 180mm');
+  r.check((await page.locator(sel('print-margin-input')).inputValue()) === '15', 'mm 칸도 15');
+  await page.locator(sel('print-margin-input')).fill('12');
+  r.check(await waitFor(async () => Math.abs((await frameW('2026-10-12')) - mmPx(186)) < 1), 'mm 칸에 12 → 쪽 폭 186mm');
+  r.check((await page.locator('[data-print-margin][aria-pressed="true"]').count()) === 0, '단추 셋은 고르지 않은 채');
+  await page.locator(sel('print-align-y', 'middle')).click();
+  await page.locator(sel('print-align-x', 'right')).click();
+  const place = async (start) =>
+    page.locator(sel('print-sheet', start)).evaluate((s) => {
+      const f = s.querySelector('[data-print-frame]').getBoundingClientRect();
+      const p = s.querySelector('[data-print-paper]').getBoundingClientRect();
+      return { left: p.left - f.left, right: f.right - p.right, top: p.top - f.top, bottom: f.bottom - p.bottom };
+    });
+  const short = await place('2026-10-13');
+  r.check(short.top > 10 && Math.abs(short.top - short.bottom) < 2, `세로 가운데 - 짧은 쪽은 위아래가 같게 (${Math.round(short.top)} / ${Math.round(short.bottom)})`);
+  const shrunk = await place('2026-10-14');
+  r.check(shrunk.left > 10 && shrunk.right < 1, `가로 오른쪽 - 줄인 쪽은 오른쪽에 (${Math.round(shrunk.left)} / ${Math.round(shrunk.right)})`);
+  await page.locator(sel('print-go')).click();
+  r.check((await page.locator('#sp5-print-root-page').textContent()).includes('margin: 12mm'), '찍을 때 @page 여백 12mm');
+  r.check((await page.locator('#sp5-print-root .sp5-print-page > [data-print-frame]').count()) === 3, '찍을 것 = 쪽 틀째 (정렬이 따라간다)');
+  await page.emulateMedia({ media: 'print' });
+  const printed = await page.locator('#sp5-print-root .sp5-print-page').nth(1).evaluate((pg) => {
+    const f = pg.querySelector('[data-print-frame]').getBoundingClientRect();
+    const p = pg.querySelector('[data-print-paper]').getBoundingClientRect();
+    return { top: p.top - f.top, bottom: f.bottom - p.bottom };
+  });
+  await page.emulateMedia({ media: 'screen' });
+  r.check(printed.top > 10 && Math.abs(printed.top - printed.bottom) < 3, `인쇄 모양에서도 세로 가운데 (${Math.round(printed.top)} / ${Math.round(printed.bottom)})`);
+  await page.reload();
+  await waitFor(page.locator(sel('session', 'signed-in')), 20000);
+  await page.keyboard.press('Control+p');
+  await waitFor(win, 8000);
+  r.check(
+    (await page.locator(sel('print-margin-input')).inputValue()) === '12' &&
+      (await page.locator(sel('print-align-x', 'right')).getAttribute('aria-pressed')) === 'true' &&
+      (await page.locator(sel('print-align-y', 'middle')).getAttribute('aria-pressed')) === 'true',
+    '다시 열어도 여백·정렬 그대로 (이 기기)',
+  );
+  await page.locator(sel('print-margin', 8)).click();
+  await page.locator(sel('print-align-x', 'center')).click();
+  await page.locator(sel('print-align-y', 'top')).click();
+  await page.evaluate(() => {
+    window.print = () => {
+      window.__printed = (window.__printed || 0) + 1;
+    };
+  });
+
   r.section('월간·년간');
   await page.locator(sel('print-page', 'month')).click();
   r.check(await waitFor(async () => (await page.locator(sel('print-sheet')).count()) === 1), '월간 = 그 달 한 쪽 (10/12 ~ 10/14)');
@@ -114,7 +168,7 @@ try {
   r.check(await waitFor(win), '⋮ 🖨️ 이 화면 인쇄 = 인쇄 창');
   r.check((await win.getAttribute('data-print-window')) === 'day', '메모 화면은 하루로');
   r.check((await page.locator(sel('print-as-is')).count()) === 1, "'이 화면 그대로 인쇄' 단추");
-  const before = await page.evaluate(() => window.__printed);
+  const before = await page.evaluate(() => window.__printed || 0);
   await page.locator(sel('print-as-is')).click();
   r.check(await waitFor(async () => (await page.evaluate(() => window.__printed)) === before + 1), '누르면 창을 닫고 브라우저 인쇄');
   r.check(!(await win.count()), '창은 닫혔다');

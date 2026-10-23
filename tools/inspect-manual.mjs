@@ -283,6 +283,8 @@ try {
     for (const p of ['day', 'week', 'month', 'year']) r.check((await count(sel('print-page', p))) === 1, `화면: ${p}`);
     r.check((await count(sel('print-from'))) === 1 && (await count(sel('print-to'))) === 1, '구간 📅 시작 ~ 📅 끝');
     r.check((await count(sel('print-orient'))) === 2 && (await count(sel('print-fit'))) === 1, '용지 세로·가로 · 한 장에 맞추기');
+    r.check((await count(sel('print-margin'))) === 3 && (await count(sel('print-margin-input'))) === 1, '여백 좁게·보통·넓게 · mm 칸');
+    r.check((await count(sel('print-align-x'))) === 3 && (await count(sel('print-align-y'))) === 3, '정렬 가로 셋 · 세로 셋');
     r.check(await has('[data-print-sheet] [data-print-paper]'), '미리보기 쪽');
     r.check((await count(sel('print-go'))) === 1, '🖨️ 인쇄 (N쪽)');
   });
