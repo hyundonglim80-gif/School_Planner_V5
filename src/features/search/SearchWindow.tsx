@@ -12,6 +12,7 @@ import { useCommonSettings } from '../../app/prefs';
 import type { WindowProps } from '../../app/windows';
 import { isEmptyFilter, matchLabels } from '../../domain/labelTree';
 import { labelColor } from '../../domain/labels';
+import { ownTitle } from '../../domain/noteTitle';
 import { academicYearOf } from '../../domain/dateUtils';
 import { scopeRange, SEARCH_KINDS, SEARCH_SCOPES, searchItems, searchEvals, searchLessons, type LessonHit, type SearchHit, type SearchKind, type SearchScope } from '../../domain/search';
 import { semesterConfigOf } from '../../domain/semester';
@@ -374,6 +375,11 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                             hit.file.name
                           )}
                         </div>
+                      )}
+                      {ownTitle(hit.item) && (
+                        <p data-search-hit-title className="text-xs font-extrabold text-slate-900 truncate">
+                          {ownTitle(hit.item)}
+                        </p>
                       )}
                       <p className="text-xs text-slate-800 whitespace-pre-wrap leading-relaxed line-clamp-3 break-words">{hit.item.text || '(글 없음)'}</p>
                     </div>

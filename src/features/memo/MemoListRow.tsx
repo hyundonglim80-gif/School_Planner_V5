@@ -3,7 +3,8 @@
 // 차례 바꾸기는 카드와 같다 - ▲▼ 단추와 끌어 놓기(날짜 없는 메모끼리, 직접 정렬일 때).
 import { shortDateLabel } from '../../domain/dateUtils';
 import { checkCount } from '../../domain/checkLines';
-import { noteTitle } from '../../domain/noteTitle';
+import { previewLine } from '../../domain/entryCollapse';
+import { ownTitle } from '../../domain/noteTitle';
 import { labelColor } from '../../domain/labels';
 import type { ItemDoc } from '../events/eventOps';
 import ClaudeRequestBadge from '../notes/ClaudeRequestBadge';
@@ -118,7 +119,14 @@ export default function MemoListRow(props: Props) {
           {item.favorite ? '★' : '☆'}
         </button>
         <span data-memo-row-text className={`flex-1 min-w-0 truncate text-sm ${done ? 'line-through text-slate-500' : 'text-slate-800'}`}>
-          {noteTitle(item) || (files > 0 ? '(첨부)' : '(빈 메모)')}
+          {/* 적은 제목은 굵게, 없으면 제목 자리 없이 첫 줄 (10-26) */}
+          {ownTitle(item) ? (
+            <strong data-memo-row-title className="font-extrabold">
+              {ownTitle(item)}
+            </strong>
+          ) : (
+            previewLine(item.text) || (files > 0 ? '(첨부)' : '(빈 메모)')
+          )}
         </span>
         {checks.total > 0 && (
           <span className="text-2xs font-bold text-slate-500 shrink-0" title={`체크 목록 ${checks.total}개 가운데 ${checks.done}개 체크`}>

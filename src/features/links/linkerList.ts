@@ -2,6 +2,7 @@
 import { academicYearOf, addDays, formatDate } from '../../domain/dateUtils';
 import { firstLine, lessonsOn, type LessonSource } from '../../domain/lessons';
 import { noteDates } from '../../domain/noteDates';
+import { ownTitle } from '../../domain/noteTitle';
 import { schoolYearSpan, semesterSpan, type SemesterConfig } from '../../domain/semester';
 import type { Docs } from '../../data/select';
 import type { YMD } from '../../data/types';
@@ -54,7 +55,9 @@ export function candidatesOf(
   const out: Candidate[] = [];
   for (const it of Object.values(items)) {
     if (it.deletedAt || it.id === opts.exclude || linkKindOf(it) !== kind) continue;
-    const text = it.text ?? '';
+    // 메모 제목은 첫 줄로 앞에 붙인다 - 목록은 첫 줄을 보이고 키워드는 제목도 본다 (10-26)
+    const title = ownTitle(it);
+    const text = title ? `${title}\n${it.text ?? ''}` : (it.text ?? '');
     if (!text.trim() && !(it.tables?.length || it.attachments?.length)) continue;
     let date: string;
     if (kind === 'note') {

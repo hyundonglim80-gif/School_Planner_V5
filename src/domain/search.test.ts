@@ -19,6 +19,17 @@ describe('검색', () => {
     expect(q('현장체험').map((h) => `${h.kind}:${h.key}:${h.date}`)).toEqual(['event:e1:2026-10-08', 'journal:j1:2026-10-07', 'memo:m1:2026-10-01', 'attachment:m1#0:2026-10-01', 'attachment:m1#1:2026-10-01']);
   });
 
+  it('메모 제목에서도 찾는다 (10-26 - 제목이 없으면 첫 줄은 글에 있다)', () => {
+    const notes: Searchable[] = [
+      { id: 't1', kind: 'note', date: null, title: '학부모 상담', text: '준비할 것' },
+      { id: 't2', kind: 'note', date: null, text: '학부모 상담 메모\n둘째 줄' },
+      { id: 't3', kind: 'note', date: null, title: '견학', text: '버스', attachments: [{ name: '명단.xlsx' }] },
+    ];
+    const find = (term: string, kinds: SearchKind[] = []) => searchItems(notes, { term, kinds: new Set(kinds), range: null }).map((h) => h.key);
+    expect(find('상담')).toEqual(['t1', 't2']);
+    expect(find('견학', ['attachment'])).toEqual(['t3#0']);
+  });
+
   it('갈래 고르기 - 첨부만이면 파일마다 (붙은 곳)', () => {
     const hits = q('', ['attachment']);
     expect(hits.map((h) => [h.key, h.file?.name, h.where])).toEqual([

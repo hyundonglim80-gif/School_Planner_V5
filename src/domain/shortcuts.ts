@@ -62,7 +62,8 @@ export type ShortcutId =
   | 'newNote'
   | 'newMemo'
   | 'print'
-  | 'undo';
+  | 'undo'
+  | 'closePanel';
 
 export interface ShortcutAction {
   id: ShortcutId;
@@ -93,6 +94,8 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'undo', label: '되돌리기 (글 칸 밖에서)', group: '쓰는 칸', def: b('Z', { ctrl: true }) },
   // 쓰는 칸(메모·기록) 글 칸에서 커서가 있는 줄 앞에 ☐ (19번 U9). 커서가 글 칸에 있을 때만 동작한다
   { id: 'checklist', label: '체크리스트 (쓰는 칸 줄 앞에 ☐)', group: '쓰는 칸', def: b('L', { ctrl: true, shift: true }) },
+  // 보고 있는 칸 하나만 닫기 (10-26 사용자 요청 - 탭의 ×와 같다, ESC는 모두). Ctrl+W는 브라우저가 탭을 닫아 Alt+W. 글 칸 안에서도 된다(Alt)
+  { id: 'closePanel', label: '보고 있는 칸 닫기 (오른쪽 칸의 탭 하나)', group: '쓰는 칸', def: b('W', { alt: true }) },
 
   { id: 'scopeDay', label: '하루 화면', group: '화면 이동', def: b('1', { shift: true }) },
   { id: 'scopeWeek', label: '주간 화면', group: '화면 이동', def: b('2', { shift: true }) },

@@ -17,7 +17,7 @@ import { openImageViewer } from '../../ui/imageViewerStore';
 import type { ItemDoc } from '../events/eventOps';
 import ClaudeRequestBadge from './ClaudeRequestBadge';
 import ClaudeRequestNote from './ClaudeRequestNote';
-import { noteTitle, ownTitle } from '../../domain/noteTitle';
+import { ownTitle } from '../../domain/noteTitle';
 import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
 
@@ -78,7 +78,8 @@ export default function EntryCard(props: EntryCardProps) {
   const links = (item.linkIds?.length ?? 0) + (props.moreLinks ?? 0);
   const checks = checkCount(body);
   const preview = previewLine(body);
-  const title = noteTitle(item);
+  // 제목은 적은 것만 - 없으면 제목 줄 없이 내용만 (10-26)
+  const title = ownTitle(item);
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
   return (
@@ -314,7 +315,7 @@ export default function EntryCard(props: EntryCardProps) {
       </div>
 
       {title && (
-        <p data-entry-title={ownTitle(item) ? 'own' : 'auto'} className={`text-sm font-extrabold truncate ${done ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+        <p data-entry-title className={`text-sm font-extrabold truncate ${done ? 'line-through text-slate-400' : 'text-slate-900'}`}>
           {title}
         </p>
       )}

@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { noteDates } from '../../domain/noteDates';
-import { noteTitle } from '../../domain/noteTitle';
+import { titleKey } from '../../domain/noteTitle';
 import type { ItemDoc } from '../events/eventOps';
 import { memoScreenOrder } from '../notes/noteOps';
 
@@ -50,7 +50,8 @@ export function sortMemos(list: readonly ItemDoc[], key: MemoSortKey, dir: MemoS
   const value: Record<Exclude<MemoSortKey, 'manual'>, (d: ItemDoc) => number | string> = {
     modified: modifiedMs,
     created: (d) => d.createdAt ?? 0,
-    title: (d) => noteTitle(d),
+    // 제목이 없으면 첫 줄로 (10-26)
+    title: (d) => titleKey(d),
     label: labelOf,
     date: (d) => noteDates(d).at(-1) ?? '',
     size: (d) => (d.text ?? '').length,

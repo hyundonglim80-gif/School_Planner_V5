@@ -233,6 +233,18 @@ export function isAnyLayerOpen(): boolean {
   return modalLayers().length > 0;
 }
 
+/** 맨 위 팝업 층 하나를 닫는다 (단축키 '보고 있는 칸 닫기' - 가운데 창·휴대폰 배너, 닫기 단추와 같다). 닫았으면 true */
+export function closeTopLayer(): boolean {
+  const top = modalLayers().at(-1);
+  if (!top) return false;
+  try {
+    top.close();
+  } catch (err) {
+    console.error('창 닫기 실패:', err);
+  }
+  return true;
+}
+
 /**
  * 팝업 층을 모두 닫는다 (배경 누르기, 그리고 ESC - 껍데기의 키 처리가 windows.closeAllWindows로 부른다).
  * 옆에 붙은 칸(뒤로가기만 받는 층)은 그대로.

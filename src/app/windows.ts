@@ -8,8 +8,8 @@
 // SidePanelFrame(쓰는 칸)으로 스스로 틀을 그린다 - 오른쪽 줄의 탭 차례·숨은 탭은 그 틀이 맡는다(ui/sideColumn).
 import type { ComponentType, LazyExoticComponent } from 'react';
 import { create } from 'zustand';
-import { useShownSideOwner } from '../ui/sideColumn';
-import { closeAllLayers } from './history';
+import { closeShownSideSlot, useShownSideOwner } from '../ui/sideColumn';
+import { closeAllLayers, closeTopLayer } from './history';
 import { lazyWithReload } from './lazyWithReload';
 
 /** ⋮ 메뉴 구역 (MENU.md 3-4) */
@@ -170,6 +170,14 @@ export function closeAllWindows(): boolean {
   closeAllLayers();
   useWindows.setState({ windows: [] });
   return true;
+}
+
+/**
+ * 보고 있는 칸 하나만 닫는다 (단축키 'closePanel' - 10-26 사용자 요청). 넓은 화면은 오른쪽 줄의 보이는 탭(탭 ×와 같다 - 저장하지 않고,
+ * 적던 글은 쓰던 글 보관에 남는다), 줄이 비었으면(가운데 창·휴대폰 배너) 맨 위 창. 닫은 것이 있으면 true.
+ */
+export function closeShownWindow(): boolean {
+  return closeShownSideSlot() || closeTopLayer();
 }
 
 /** 시험에서만 */

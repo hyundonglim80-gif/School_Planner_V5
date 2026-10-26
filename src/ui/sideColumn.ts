@@ -67,6 +67,20 @@ export function activateSideSlot(id: string) {
 
 let columnEl: HTMLElement | null = null;
 
+/** 칸 안의 닫기 단추를 누른다 (칸마다 닫는 일 - 저장 안 한 글 묻기 등 - 을 그대로 따른다). 단추는 [data-close]. 눌렀으면 true */
+export function closeSideSlot(id: string): boolean {
+  const el = getSideColumn().querySelector(`[data-side-slot="${CSS.escape(id)}"]`);
+  const btn = el?.querySelector<HTMLButtonElement>('[data-close]');
+  btn?.click();
+  return !!btn;
+}
+
+/** 오른쪽 줄에서 보이는 칸(탭) 하나를 닫는다 - 탭의 ×와 같다. 줄이 비었으면 false */
+export function closeShownSideSlot(): boolean {
+  const id = activeOf(useSidePopups.getState());
+  return id !== null && closeSideSlot(id);
+}
+
 /** 오른쪽 줄. 칸들이 여기에 그려진다(createPortal). 비어 있으면 보이지 않는다. */
 export function getSideColumn(): HTMLElement {
   if (columnEl && columnEl.isConnected) return columnEl;

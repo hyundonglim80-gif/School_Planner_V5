@@ -4,6 +4,7 @@
 //   - 영구 삭제의 드라이브 첨부 정리: V5에서 올린 파일만, 다른 항목(살아 있는 것·휴지통)이 같은 파일을 쓰면 남긴다.
 //     **V4에서 가져온 항목(src)의 첨부는 지우지 않는다** - V4가 같은 파일을 보고 있다(PLAN 5장 P5-4).
 import { driveFileIdOf } from '../../data/google/drive';
+import { ownTitle } from '../../domain/noteTitle';
 
 export type TrashKind = 'event' | 'journal' | 'memo' | 'label' | 'timetable' | 'progress' | 'class' | 'seating' | 'evaluation' | 'dday' | 'clip';
 export type TrashTab = 'all' | 'event' | 'journal' | 'memo' | 'clip' | 'etc';
@@ -39,6 +40,8 @@ interface ItemLike {
   kind: string;
   date?: string | null;
   endDate?: string;
+  /** 메모 제목 (적었을 때만) */
+  title?: string;
   text?: string;
   deletedAt?: unknown;
   deletedBy?: string;
@@ -79,7 +82,7 @@ export function trashEntries(src: {
     if (!it.deletedAt) continue;
     const kind: TrashKind = it.kind === 'event' ? 'event' : it.date ? 'journal' : 'memo';
     const when = it.date ? (it.endDate && it.endDate > it.date ? `${it.date} ~ ${md(it.endDate)}` : it.date) : undefined;
-    out.push({ key: `${kind}:${it.id}`, kind, id: it.id, text: it.text || (it.attachments?.length ? `📎 ${it.attachments[0].name ?? '첨부'}` : ''), when, deletedAt: deletedMs(it.deletedAt, now), byV4: it.deletedBy === 'v4-import' });
+    out.push({ key: `${kind}:${it.id}`, kind, id: it.id, text: [ownTitle(it), it.text].filter(Boolean).join(' · ') || (it.attachments?.length ? `📎 ${it.attachments[0].name ?? '첨부'}` : ''), when, deletedAt: deletedMs(it.deletedAt, now), byV4: it.deletedBy === 'v4-import' });
   }
   for (const l of Object.values(src.labels)) {
     if (!l.deletedAt) continue;

@@ -146,7 +146,7 @@ export interface Item extends Tracked {
   skipDates?: YMD[];
   /** 본문. 읽기·저장 길에서 바꾸지 않는다 */
   text: string;
-  /** 메모 제목 (적었을 때만). 없으면 본문 첫 줄의 앞 몇 글자를 보여 준다 - domain/noteTitle */
+  /** 메모 제목 (적었을 때만). 없으면 비워 둔다 - 정렬·검색처럼 제목이 기준이면 첫 줄을 쓴다(domain/noteTitle) */
   title?: string;
   labelIds: string[];
   done?: boolean;

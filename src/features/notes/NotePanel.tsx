@@ -23,7 +23,6 @@ import { fileIcon, formatFileSize, isImageAttachment } from '../../domain/attach
 import { caretAfterCheck, checkGlyphLineAt, continueOnEnter, hasCheckLines, moveCheckLine, toggleCheckMoving, toggleLinesPrefix } from '../../domain/checkLines';
 import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { addNoteDate, removeNoteDate } from '../../domain/noteDates';
-import { autoTitle } from '../../domain/noteTitle';
 import { applyMention, findMention, matchMentionStudents, studentIdsToSave, type Mention, type MentionCandidate } from '../../domain/studentTag';
 import { useDraft } from '../../data/drafts';
 import { attachmentImageSrc } from '../../data/google/drive';
@@ -554,7 +553,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 data-note-title-input
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                placeholder={autoTitle(form.text) || '제목 (비우면 첫 줄이 제목이 됩니다)'}
+                placeholder="제목 (비워 두어도 됩니다)"
                 maxLength={100}
                 className="block w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 text-sm font-bold placeholder-slate-400 placeholder:font-normal"
               />

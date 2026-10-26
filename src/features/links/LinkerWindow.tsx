@@ -14,6 +14,7 @@ import type { WindowProps } from '../../app/windows';
 import { labelColor } from '../../domain/labels';
 import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { lessonsOn } from '../../domain/lessons';
+import { titleKey } from '../../domain/noteTitle';
 import { semesterConfigOf } from '../../domain/semester';
 import { planLabel, sanitizePlan } from '../../domain/progress';
 import { isLive, useDocs, useLabelTree } from '../../data/select';
@@ -193,7 +194,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
       <div data-linker={id} className="flex flex-col gap-4">
         {source && (
           <p className="text-xs text-slate-500 truncate" data-linker-source>
-            {LINK_KIND_ICON[linkKindOf(source)]} {source.text.split('\n')[0] || '(내용 없음)'} 에 잇습니다
+            {LINK_KIND_ICON[linkKindOf(source)]} {titleKey(source) || '(내용 없음)'} 에 잇습니다
           </p>
         )}
         {lessonEnd && (
@@ -427,7 +428,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
                   <span key={p} data-linker-picked={p} className="inline-flex items-center bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg text-xs text-blue-900 font-medium">
                     <span className="mr-1">{LINK_KIND_ICON[kind]}</span>
                     <span className="max-w-[130px] truncate font-bold">
-                      {isLesson ? lessonText(p) : isProgress ? progressText(p) : d ? d.text.split('\n')[0] || '(표·첨부만)' : '불러오는 중…'}
+                      {isLesson ? lessonText(p) : isProgress ? progressText(p) : d ? titleKey(d) || '(표·첨부만)' : '불러오는 중…'}
                     </span>
                     <button
                       type="button"

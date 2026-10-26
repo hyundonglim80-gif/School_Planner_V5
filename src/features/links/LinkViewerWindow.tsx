@@ -12,6 +12,7 @@ import type { WindowProps } from '../../app/windows';
 import { fileIcon, isImageAttachment } from '../../domain/attachments';
 import { shortDateLabel } from '../../domain/dateUtils';
 import { noteDates } from '../../domain/noteDates';
+import { titleKey } from '../../domain/noteTitle';
 import { lessonsOn } from '../../domain/lessons';
 import { attachmentImageSrc } from '../../data/google/drive';
 import { useDocs, useMirrorStatus } from '../../data/select';
@@ -212,7 +213,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
       <div data-link-viewer={id} className="space-y-3">
         {source && (
           <p className="text-xs text-slate-500 truncate" data-link-viewer-source>
-            {LINK_KIND_ICON[linkKindOf(source)]} {source.text.split('\n')[0] || '(내용 없음)'} 에 이은 것
+            {LINK_KIND_ICON[linkKindOf(source)]} {titleKey(source) || '(내용 없음)'} 에 이은 것
           </p>
         )}
         {lessonEnd && (

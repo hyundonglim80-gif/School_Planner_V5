@@ -2,7 +2,7 @@
 //   - 갈래: 메모(날짜를 단 메모 'journal'도 - P10-4)·일정·수업·비고(준비물)(P6-1 - 계산한 수업 칸, searchLessons - P10-2에 수업 메모와 비고를 한 칸으로)·조사표(P7-4 - 제목·교과, searchEvals)·첨부파일. '전체'는 모두.
 //   - 기간: 전체 기간(처음 값 - 날짜 제한 없음)·학년도·1학기·2학기·해당 월·해당 주(월~금)·해당 일·직접 지정 - 보고 있는 날 기준.
 //     메모는 날짜 대신 만든 날로 거른다(만든 날을 모르면 남긴다 - V4). 기간 일정은 범위가 걸치면.
-//   - 검색어가 비면(또는 '*') 고른 기간의 모든 것(V4). 글·붙인 표의 칸 글을 본다(대소문자 무시).
+//   - 검색어가 비면(또는 '*') 고른 기간의 모든 것(V4). 메모 제목·글·붙인 표의 칸 글을 본다(대소문자 무시).
 //   - 첨부파일: 파일 이름이나 붙어 있는 글이 걸리면 파일마다 한 건.
 //   - 차례: 날짜 내림차순, 날짜를 모르는 메모는 맨 뒤.
 import { academicYearOf, addDays, formatDate, monthEnd, weekMonday } from './dateUtils';
@@ -73,6 +73,8 @@ export interface Searchable {
   /** 메모의 날짜 링크 (둘 이상일 때만 - domain/noteDates) */
   dates?: readonly string[];
   endDate?: string;
+  /** 메모 제목 (적었을 때만 - 없으면 첫 줄이 글 안에 있다, 10-26) */
+  title?: string;
   text?: string;
   createdAt?: number;
   tables?: ReadonlyArray<{ rows: ReadonlyArray<{ cells: ReadonlyArray<{ v?: string }> }> }>;
@@ -144,12 +146,13 @@ export function searchItems<T extends Searchable>(items: readonly T[], q: Search
     if (!kind) continue;
     const date = kind === 'memo' ? memoDate(it) : linkedDate(it, q.range);
     if (!inRange(it, date, q.range)) continue;
-    const body = `${it.text ?? ''}\n${tableText(it.tables)}`;
+    // 제목도 본다 - 제목이 없으면 첫 줄이 글 안에 있다 (10-26)
+    const body = `${it.title ?? ''}\n${it.text ?? ''}\n${tableText(it.tables)}`;
     if (want(kind) && match(body)) out.push({ key: it.id, kind, item: it, date });
     if (want('attachment'))
       (it.attachments ?? []).forEach((file, i) => {
         const name = String(file.name || '').trim() || '이름 없는 파일';
-        if (match(name) || match(it.text)) out.push({ key: `${it.id}#${i}`, kind: 'attachment', item: it, date, file: { name, url: file.url }, where: kind });
+        if (match(name) || match(it.text) || match(it.title)) out.push({ key: `${it.id}#${i}`, kind: 'attachment', item: it, date, file: { name, url: file.url }, where: kind });
       });
   }
   return out.sort((a, b) => (a.date && b.date ? b.date.localeCompare(a.date) : a.date ? -1 : b.date ? 1 : 0));

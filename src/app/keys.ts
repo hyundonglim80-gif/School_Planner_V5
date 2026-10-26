@@ -1,5 +1,5 @@
 // 껍데기의 키 처리 한 곳 (V4 Layout handleKeyDown·runShortcut).
-//   ESC    : 오른쪽 줄 전체(창·쓰는 칸)를 닫는다 - 저장 안 한 글이 있으면 먼저 묻는다.
+//   ESC    : 오른쪽 줄 전체(창·쓰는 칸)를 닫는다 - 저장 안 한 글이 있으면 먼저 묻는다. 보이는 탭 하나만은 단축키 closePanel(Alt+W).
 //   Ctrl+S : 브라우저 '다른 이름으로 저장'을 막는다. 저장은 커서가 든 칸·창이 받는다(ui/useSaveKey).
 //   그 밖  : 환경설정에서 바꿀 수 있는 단축키(domain/shortcuts). 키 조합은 거기서, 하는 일은 여기서(runShortcut).
 //            창을 여는 단축키는 창 목록의 같은 id 창을 연다 - 창을 등록하면 단축키도 저절로 선다.
@@ -20,7 +20,7 @@ import { isSaveKey } from '../ui/useSaveKey';
 import { showToast } from './toast';
 import { goToday, setScope, setToggle, stepDate, stepScope, useNav } from './nav';
 import { toggleThemeMode } from './theme';
-import { closeAllWindows, getWindowDef, openWindow } from './windows';
+import { closeAllWindows, closeShownWindow, getWindowDef, openWindow } from './windows';
 
 /** 기본값에서 바꾼 단축키만 (V4 shortcutOverrides). 이 기기 사본 - 계정(기기 종류마다)과는 app/prefs.ts가 맞춘다 */
 export const useShortcutOverrides = create<{ overrides: ShortcutOverrides }>()(
@@ -53,6 +53,10 @@ const ACTIONS: Partial<Record<ShortcutId, () => void>> = {
   print: () => window.print(),
   // 어둡게 ↔ 밝게 (V4 ROADMAP 17)
   toggleTheme: toggleThemeMode,
+  // 보고 있는 칸 하나만 닫기 (10-26 - ESC는 모두)
+  closePanel: () => {
+    closeShownWindow();
+  },
 };
 
 /** 이 단축키(·메뉴 항목)가 지금 할 일이 있나 - 아직 옮기지 않은 기능은 false */
