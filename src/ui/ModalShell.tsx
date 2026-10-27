@@ -3,8 +3,10 @@
 //
 //   - 위를 기준으로 붙고 아래로만 자란다. 탭을 바꿔 내용 높이가 달라져도 창의 위쪽 자리가 흔들리지 않는다.
 //   - 배경을 누르면 열린 창이 모두 닫힌다.
+//   - 오른쪽 줄에 붙으면 ✕ 왼쪽에 ↗(새 창으로 옮기기 - ui/PopoutButton).
 //   - 본문 스크롤을 잠근다 (화면 옆에 붙은 칸일 때는 왼쪽 화면을 함께 쓰므로 잠그지 않는다).
 import type { ReactNode } from 'react';
+import PopoutButton from './PopoutButton';
 import PopupFrame, { type ModalWidth } from './PopupFrame';
 
 export type { ModalWidth };
@@ -58,6 +60,7 @@ export default function ModalShell({
           <h2 className="text-base font-black text-slate-800 truncate">{title}</h2>
           <div className="flex items-center gap-2 shrink-0">
             {headerExtra}
+            <PopoutButton className="w-8 h-8 rounded-xl text-slate-400 hover:bg-slate-200 hover:text-slate-700" />
             <button
               type="button"
               data-close

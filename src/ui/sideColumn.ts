@@ -12,14 +12,16 @@
 import { createContext, useContext, useEffect, useId, type CSSProperties } from 'react';
 import { create } from 'zustand';
 import { containScroll } from './containScroll';
+import { POPOUT } from './popout';
 import { useMinWidth } from './useMinWidth';
 
 /** 이 폭 이상이면 오른쪽 칸을 화면 옆에 붙인다. 그보다 좁으면(휴대폰) 화면을 덮는 배너. */
 export const DOCK_MIN_WIDTH = 768;
 
-/** 넓은 화면이면 옆에 붙는다 */
+/** 넓은 화면이면 옆에 붙는다. 새 창으로 옮긴 창(ui/popout) 안에서는 늘 붙지 않는다 - 그 안에서 연 창은 가운데에 뜬다 */
 export function useDocked(): boolean {
-  return useMinWidth(DOCK_MIN_WIDTH);
+  const wide = useMinWidth(DOCK_MIN_WIDTH);
+  return wide && !POPOUT;
 }
 
 /**

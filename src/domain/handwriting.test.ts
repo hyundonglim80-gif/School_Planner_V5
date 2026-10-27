@@ -1,5 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { acceptsPointer, clampView, defaultPenColor, exportScale, handwritingName, hasInk, inkBounds, isEraserPress, panView, penWidth, pinchView, zoomAt, type PenStroke } from './handwriting';
+import {
+  acceptsPointer,
+  clampView,
+  defaultPenColor,
+  dragThumb,
+  exportScale,
+  handwritingName,
+  hasInk,
+  inkBounds,
+  isEraserPress,
+  panView,
+  PAPER_MAX_H,
+  paperHeight,
+  penWidth,
+  pinchView,
+  scrollThumb,
+  zoomAt,
+  type PenStroke,
+} from './handwriting';
 
 const stroke = (points: [number, number, number][], erase = false): PenStroke => ({ color: '#000', erase, points: points.map(([x, y, w]) => ({ x, y, w })) });
 
@@ -79,5 +97,37 @@ describe('손글씨 셈', () => {
     expect(exportScale(200, 100)).toBe(3);
     expect(exportScale(1500, 600)).toBe(2);
     expect(exportScale(5000, 10)).toBe(1);
+  });
+
+  it('아래로 길게 쓰기 - 종이는 그린 것 아래로 한 화면 더, 줄지 않고 끝이 있다 (10-28)', () => {
+    expect(paperHeight([], 600)).toBe(600);
+    // 맨 아래 점 500(+굵기 반 2) + 한 화면
+    expect(paperHeight([stroke([[10, 100, 4], [10, 500, 4]])], 600)).toBe(1102);
+    // 지우개 줄은 세지 않는다 · 앞 높이보다 줄지 않는다
+    expect(paperHeight([stroke([[10, 2000, 4]], true)], 600)).toBe(600);
+    expect(paperHeight([stroke([[10, 100, 4]])], 600, 1500)).toBe(1500);
+    expect(paperHeight([stroke([[10, 99999, 4]])], 600)).toBe(PAPER_MAX_H);
+  });
+
+  it('종이가 길면 배율 1에서도 아래로 옮긴다 (휠·두 손가락·한 손가락)', () => {
+    expect(panView({ scale: 1, x: 0, y: 0 }, 0, -300, 800, 600)).toEqual({ scale: 1, x: 0, y: 0 });
+    expect(panView({ scale: 1, x: 0, y: 0 }, 0, -300, 800, 600, 1500)).toEqual({ scale: 1, x: 0, y: 300 });
+    // 끝(종이 − 한 화면)을 넘지 않는다 · 옆으로는 배율 1이면 그대로
+    expect(panView({ scale: 1, x: 0, y: 800 }, -50, -300, 800, 600, 1500)).toEqual({ scale: 1, x: 0, y: 900 });
+    expect(clampView({ scale: 2, x: 0, y: 5000 }, 800, 600, 1500)).toEqual({ scale: 2, x: 0, y: 1200 });
+    expect(zoomAt({ scale: 1, x: 0, y: 900 }, 2, 400, 300, 800, 600, 1500).y).toBe(1050);
+  });
+
+  it('오른쪽 스크롤 막대 - 보이는 몫·자리, 끌면 그만큼 내려간다', () => {
+    expect(scrollThumb({ scale: 1, x: 0, y: 0 }, 600, 600)).toBeNull();
+    expect(scrollThumb({ scale: 1, x: 0, y: 0 }, 600, 1200)).toEqual({ top: 0, size: 300 });
+    expect(scrollThumb({ scale: 1, x: 0, y: 600 }, 600, 1200)).toEqual({ top: 300, size: 300 });
+    // 크게 보면 한 화면에 덜 보인다 · 막대는 너무 작지 않게
+    expect(scrollThumb({ scale: 2, x: 0, y: 0 }, 600, 600)?.size).toBe(300);
+    expect(scrollThumb({ scale: 1, x: 0, y: 0 }, 600, 8000)?.size).toBe(45);
+    // 막대 300px 중 남은 길 300px를 150 끌면 = 종이 남은 600의 절반
+    expect(dragThumb({ scale: 1, x: 0, y: 0 }, 150, 600, 1200, 800)).toEqual({ scale: 1, x: 0, y: 300 });
+    expect(dragThumb({ scale: 1, x: 0, y: 0 }, 9999, 600, 1200, 800).y).toBe(600);
+    expect(dragThumb({ scale: 1, x: 0, y: 0 }, 50, 600, 600, 800)).toEqual({ scale: 1, x: 0, y: 0 });
   });
 });

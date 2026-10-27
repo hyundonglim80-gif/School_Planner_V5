@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
-import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { decodeTextBytes } from '../../domain/csv';
 import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { isSingleCell, nextCell, parseClipboardGrid, type CellPos } from '../../domain/gridNav';
@@ -129,7 +129,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   useEffect(() => {
     unsaved.current = () => dirty;
   }, [dirty]);
-  useEffect(() => registerUnsavedCheck(unsaved), []);
+  useUnsavedCheck(unsaved);
 
   // 고치던 것을 버리고 다른 진도로 옮길 때만 묻는다
   const switchTo = (next: Draft) => {

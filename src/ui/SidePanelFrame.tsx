@@ -2,11 +2,15 @@
 //
 //   넓은 화면 : 화면 옆 오른쪽 줄에 붙는 칸. 팝업이 아니다 - 뒤 화면을 잠그지 않고, 팝업 층(배경 누르기로 모두 닫기)에도
 //              들지 않는다. 뒤로가기는 받는다(useBackLayer). ESC는 껍데기가 오른쪽 줄 전체를 닫는다(저장 안 한 글은 먼저 묻는다).
+//              머리 ↗(ui/PopoutButton)로 새 창으로 옮긴다(10-28).
 //   좁은 화면 : 어두운 배경 위로 오른쪽에서 뜬다. 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
+//   새 창     : 새 창으로 옮긴 그 칸은 창 가득 (ui/popout - 배경 없음).
 // 창 위치가 '가운데 창'이어도 쓰는 칸은 오른쪽에 붙는다(V4 그대로 - 글을 쓰며 왼쪽 화면을 본다).
-import { useRef, type ReactNode, type RefObject } from 'react';
+import { useContext, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useBackLayer, useModalLayer } from '../app/history';
+import { useWindowSave } from '../app/windows';
+import { POPOUT, PopoutTargetContext, WindowSlotContext } from './popout';
 import { getSideColumn, sideSlotProps, useDocked, useSideSlot } from './sideColumn';
 import { useBackdropClose } from './useBackdropClose';
 import { useBodyScrollLock } from './useBodyScrollLock';
@@ -28,9 +32,12 @@ interface SidePanelFrameProps {
 }
 
 export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaLabel, raise, children }: SidePanelFrameProps) {
+  const win = useContext(WindowSlotContext);
+  const fill = !!win?.fill;
   const docked = useDocked();
   const panelRef = useRef<HTMLElement | null>(null);
   useSaveKey(true, panelRef, onSave);
+  useWindowSave(win?.key, onSave);
   useBodyScrollLock(!docked);
   const vv = useVisualViewport(true);
   // 휴대폰(덮는 배너)에서도 다시 연 칸이 맨 앞으로 오게 층에 다시 선다
@@ -39,14 +46,30 @@ export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaL
   useBackLayer(docked, onClose);
   const slot = useSideSlot(docked, raise);
   const backdrop = useBackdropClose(onBackdropClose);
+  // 안쪽: 창 안에서 띄운 작은 창은 '그 창'이 아니다(null) · 머리 ↗는 오른쪽 줄에 붙은 창의 맨 바깥 틀에서만
+  const inner = (
+    <WindowSlotContext.Provider value={null}>
+      <PopoutTargetContext.Provider value={docked && win && !POPOUT ? win.key : null}>{children}</PopoutTargetContext.Provider>
+    </WindowSlotContext.Provider>
+  );
 
   if (docked) {
     const { className, style, 'data-side-slot': slotId } = sideSlotProps(slot);
     return createPortal(
       <aside ref={panelRef} aria-label={ariaLabel} data-panel-frame="side" className={className} style={style} data-side-slot={slotId}>
-        {children}
+        {inner}
       </aside>,
       getSideColumn(),
+    );
+  }
+
+  if (fill) {
+    return (
+      <div className="fixed inset-0 flex" style={{ zIndex }} data-panel-frame="window">
+        <aside ref={panelRef as RefObject<HTMLElement>} aria-label={ariaLabel} className="relative bg-white h-full w-full flex flex-col">
+          {inner}
+        </aside>
+      </div>
     );
   }
 
@@ -62,7 +85,7 @@ export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaL
         aria-label={ariaLabel}
         className="relative bg-white h-full w-full max-w-lg shadow-2xl z-10 flex flex-col"
       >
-        {children}
+        {inner}
       </aside>
     </div>
   );

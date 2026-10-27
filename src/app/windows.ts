@@ -6,9 +6,9 @@
 //
 // 열린 창은 store(useWindows)의 windows에 있다. 창 컴포넌트는 { params, close, raise }를 받아 ModalShell(창)이나
 // SidePanelFrame(쓰는 칸)으로 스스로 틀을 그린다 - 오른쪽 줄의 탭 차례·숨은 탭은 그 틀이 맡는다(ui/sideColumn).
-import type { ComponentType, LazyExoticComponent } from 'react';
+import { useContext, useEffect, useRef, type ComponentType, type LazyExoticComponent } from 'react';
 import { create } from 'zustand';
-import { closeShownSideSlot, useShownSideOwner } from '../ui/sideColumn';
+import { closeShownSideSlot, SideOwnerContext, useShownSideOwner } from '../ui/sideColumn';
 import { closeAllLayers, closeTopLayer } from './history';
 import { lazyWithReload } from './lazyWithReload';
 
@@ -137,26 +137,67 @@ export function closeWindow(key: number) {
 
 // ── 저장 안 한 글 ──
 
-const unsavedChecks = new Set<{ current: (() => boolean) | null }>();
+type UnsavedRef = { current: (() => boolean) | null };
+/** 확인 → 그 창(창 목록의 key - 창 밖에서 단 것은 null) */
+const unsavedChecks = new Map<UnsavedRef, number | null>();
 
-/** 창이 '저장 안 한 것이 있나'를 알린다 (열려 있는 동안). ESC로 모두 닫기 전에 본다. */
-export function registerUnsavedCheck(ref: { current: (() => boolean) | null }): () => void {
-  unsavedChecks.add(ref);
+/** 창이 '저장 안 한 것이 있나'를 알린다 (열려 있는 동안). ESC로 모두 닫기 전에 본다. owner = 그 창의 key (새 창으로 옮길 때 그 창만 본다) */
+export function registerUnsavedCheck(ref: UnsavedRef, owner: number | null = null): () => void {
+  unsavedChecks.set(ref, owner);
   return () => {
     unsavedChecks.delete(ref);
   };
 }
 
+/** 창 안에서 registerUnsavedCheck - 어느 창의 것인지 함께 적는다 */
+export function useUnsavedCheck(ref: UnsavedRef) {
+  const owner = useContext(SideOwnerContext);
+  useEffect(() => registerUnsavedCheck(ref, owner), [ref, owner]);
+}
+
+const isUnsaved = (ref: UnsavedRef) => {
+  try {
+    return !!ref.current?.();
+  } catch {
+    /* 확인을 못 하면 없는 것으로 */
+    return false;
+  }
+};
+
 /** 열린 창 가운데 저장 안 한 것이 있는가 */
 export function anyWindowUnsaved(): boolean {
-  for (const ref of unsavedChecks) {
-    try {
-      if (ref.current?.()) return true;
-    } catch {
-      /* 확인을 못 하면 없는 것으로 */
-    }
-  }
+  for (const ref of unsavedChecks.keys()) if (isUnsaved(ref)) return true;
   return false;
+}
+
+/** 그 창에 저장 안 한 것이 있는가 */
+export function windowUnsaved(key: number): boolean {
+  for (const [ref, owner] of unsavedChecks) if (owner === key && isUnsaved(ref)) return true;
+  return false;
+}
+
+// ── 창의 저장 (틀의 Ctrl+S와 같은 일 - 새 창으로 옮기기 전에 저장한다) ──
+
+const windowSaves = new Map<number, { current: (() => void) | undefined }>();
+
+/** 창의 맨 바깥 틀이 제 저장(Ctrl+S)을 그 창 key로 알린다 */
+export function useWindowSave(key: number | null | undefined, onSave: (() => void) | undefined) {
+  const ref = useRef(onSave);
+  useEffect(() => {
+    ref.current = onSave;
+  });
+  useEffect(() => {
+    if (key == null) return;
+    windowSaves.set(key, ref);
+    return () => {
+      if (windowSaves.get(key) === ref) windowSaves.delete(key);
+    };
+  }, [key]);
+}
+
+/** 그 창의 저장 (저장 단추가 없는 창이면 null) */
+export function windowSaveOf(key: number): (() => void) | null {
+  return windowSaves.get(key)?.current ?? null;
 }
 
 /**
@@ -185,5 +226,6 @@ export function resetWindowsForTest() {
   registry.clear();
   windowComponents.clear();
   unsavedChecks.clear();
+  windowSaves.clear();
   useWindows.setState({ windows: [] });
 }

@@ -295,6 +295,24 @@ describe('고치기', () => {
     expect(close).toHaveBeenCalled();
   });
 
+  it('🔗 링크 추가 - 빈 새 메모는 닫지 않고 글부터 적게 한다 (10-28 휴대폰 - 칸과 연결 창이 함께 사라졌다)', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    const before = written.batches.length;
+    await act(async () => fireEvent.click(q('[data-note-link-add]')));
+    expect(close).not.toHaveBeenCalled();
+    expect(written.batches.length).toBe(before);
+    expect(q('[data-note-panel]').getAttribute('data-note-panel')).toBe('new');
+    expect(q('[data-toast]').textContent).toContain('메모 내용을 먼저 적어 주세요');
+    expect(document.activeElement).toBe(textInput());
+    // 글을 적으면 먼저 저장하고(수정 칸이 된다) 연결 창으로
+    type('링크 걸 메모');
+    await act(async () => fireEvent.click(q('[data-note-link-add]')));
+    expect(close).not.toHaveBeenCalled();
+    expect(written.batches.length).toBe(before + 1);
+    expect(shown.params?.id).toBeTruthy();
+  });
+
   it('삭제 = 지운 표시, 지운 항목이면 안내만', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);

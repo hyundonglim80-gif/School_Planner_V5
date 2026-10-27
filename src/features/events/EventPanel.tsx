@@ -14,7 +14,7 @@
 // - 이 칸이 열린 동안 다른 기기에서 고친 것은, 손대기 전이면 따라간다(손댔으면 적던 것을 덮지 않는다).
 // - 쓰던 글은 2초 뒤 이 기기에 남긴다(data/drafts) - 다시 열면 '저장하지 않은 글이 있습니다 - 되살리기'.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { showToast } from '../../app/toast';
 import { addDays, daysBetween, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
@@ -27,6 +27,7 @@ import { useHolidayName } from '../../data/holidays';
 import { itemsOn, useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import AutoTextarea from '../../ui/AutoTextarea';
 import DraftOffer from '../../ui/DraftOffer';
+import PopoutButton from '../../ui/PopoutButton';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
 import { createEvent, createSeriesEvents, deleteEvent, saveEvent, saveSeriesEvents } from './actions';
@@ -393,7 +394,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   useEffect(() => {
     unsaved.current = () => !untouched && !!form.text.trim();
   });
-  useEffect(() => registerUnsavedCheck(unsaved), []);
+  useUnsavedCheck(unsaved);
 
   const title = isEditing ? '일정 수정' : '새 일정';
   const subtitle = useMemo(
@@ -416,6 +417,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
             <h3 className="text-lg font-bold text-slate-800">{title}</h3>
             <p className="text-xs font-bold text-primary mt-0.5 truncate">{subtitle}</p>
           </div>
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
           <button
             type="button"
             data-close

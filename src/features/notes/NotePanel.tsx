@@ -7,7 +7,7 @@
 // - 내용: ☑ 체크리스트(단추·단축키·Enter 이어 쓰기·☐ 누르기) · 첫·마지막 줄 '#라벨' 미리 보기 · 글 안 주소의 미리보기.
 // - 붙이기(P4-2 - attach.ts): 📎 파일 첨부·캡처 Ctrl+V = 드라이브에 원본으로, 엑셀 표 Ctrl+V = 표(그림보다 먼저) - 칸 글자·행/열 고치기.
 //   올리는 동안은 저장하지 않는다(올라간 것이 빠진 채 저장되지 않게).
-//   ✏️ 손글씨 = 화면 가득 그림판(HandwritingPad) - ✓ 첨부하면 PNG로 드라이브에 올려 붙인다. 그리던 것은 이 칸이 들고 있어 닫았다 열어도 이어진다.
+//   ✏️ 손글씨 = 화면 가득 그림판(HandwritingPad) - 💾 저장하면 PNG로 드라이브에 올려 붙이고 메모도 저장한다(10-28). 그리던 것은 이 칸이 들고 있어 닫았다 열어도 이어진다.
 // - 라벨(여러 개, '+ 새 라벨') - 저장할 때 새 라벨과 항목을 한 묶음으로.
 // - 저장하면 칸은 닫히지 않고 그 항목의 수정 칸이 된다(V4 사용자 결정). 저장 = 바뀐 칸만, 문서 하나(+ 새 라벨).
 // - 저장이 안 되면 칸을 닫지 않는다. ESC는 저장 안 한 글이 있으면 먼저 묻는다, 좁은 화면 배경 = 저장하고 닫기.
@@ -16,7 +16,7 @@
 // - 🧑‍🎓 학생(P7-1 - studentIds '{classId}/{sid}'): 글 칸에서 '@이름'(초성·번호도) → 목록 → 고르면 '@김지'가 이름으로 바뀌고 학생 칩이 붙는다.
 //   '+ 학생 고르기'로도, 칩 ✕로 뺀다. 글에 적은 '#26040305'(V4 태그)는 저장할 때 명렬표의 그 학생을 더한다(글은 그대로).
 import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type KeyboardEvent, type MouseEvent } from 'react';
-import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { showErrorToast, showErrorToastOnce, showToast } from '../../app/toast';
 import { useShortcutTitle } from '../../app/keys';
 import { fileIcon, formatFileSize, isImageAttachment } from '../../domain/attachments';
@@ -34,6 +34,7 @@ import { listKeyOf } from '../../ui/listKeys';
 import DraftOffer from '../../ui/DraftOffer';
 import { openImageViewer } from '../../ui/imageViewerStore';
 import LinkPreviewCards from '../../ui/LinkPreviewCards';
+import PopoutButton from '../../ui/PopoutButton';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import ClaudeAskButton from './ClaudeAskButton';
 import ClaudeRequestNote from './ClaudeRequestNote';
@@ -280,11 +281,23 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
       setUploading(null);
     }
   };
-  /** ✏️ 손글씨 ✓ 첨부 - 올라가면 그리던 것을 비운다(실패하면 남겨 다시 첨부할 수 있게) */
+  /** ✏️ 손글씨 💾 저장 - 올라가면 그리던 것을 비우고 메모를 저장한다(실패하면 남겨 다시 저장할 수 있게) */
+  const [saveAfterUpload, setSaveAfterUpload] = useState(false);
   const attachHandwriting = async (file: File) => {
     setPenOpen(false);
-    if ((await attach([file], false, 'pen')) > 0) setPenStrokes([]);
+    if ((await attach([file], false, 'pen')) > 0) {
+      setPenStrokes([]);
+      setSaveAfterUpload(true);
+    }
   };
+  // 붙인 그림이 칸(form)에 들어간 뒤에 저장한다 - 같은 박자에 부르면 save가 그림 없는 옛 form으로 저장한다
+  useEffect(() => {
+    if (!saveAfterUpload || uploading) return;
+    setSaveAfterUpload(false);
+    void save();
+    // save는 이 그리기의 것(form에 그림이 든)을 부른다
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [saveAfterUpload, uploading]);
   const onPickFiles = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files ? Array.from(e.target.files) : [];
     e.target.value = '';
@@ -318,6 +331,12 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const addLink = async () => {
     if (isEditing && params.id) {
       openLinker({ sid, id: params.id });
+      return;
+    }
+    // 빈 새 칸은 저장하면 닫힌다(만들 것이 없다) - 연결 창도 칸도 사라졌다(10-28 휴대폰 사용자 보고). 글부터 적게 한다
+    if (!hasContent(form)) {
+      showToast('메모 내용을 먼저 적어 주세요. 링크는 저장한 메모에 잇습니다.');
+      textRef.current?.focus();
       return;
     }
     if (await save()) {
@@ -412,7 +431,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     // 고치던 메모를 다 지운 것도 저장하면 지워지니 묻는다
     unsaved.current = () => (!untouched && (hasContent(form) || isEditing)) || penDirty;
   });
-  useEffect(() => registerUnsavedCheck(unsaved), []);
+  useUnsavedCheck(unsaved);
 
   const title = isEditing ? `${noun} 수정` : `새 ${noun}`;
   const subtitle = personal ? '개인' : '공유';
@@ -502,6 +521,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               </>
             )}
           </div>
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
           <button
             type="button"
             data-close
@@ -682,7 +702,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   data-pen-dirty={penDirty ? '' : undefined}
                   onClick={() => setPenOpen(true)}
                   disabled={!!uploading}
-                  title={penDirty ? '그리던 손글씨를 이어 그립니다. ✓ 첨부를 누르면 그림으로 붙습니다.' : '펜·손가락으로 쓴 것을 그림으로 바꿔 붙입니다 (구글 드라이브 School_Planner 폴더)'}
+                  title={penDirty ? '그리던 손글씨를 이어 그립니다. 💾 저장을 누르면 그림으로 붙고 메모가 저장됩니다.' : '펜·손가락으로 쓴 것을 그림으로 바꿔 붙입니다 (구글 드라이브 School_Planner 폴더)'}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed shadow-2xs disabled:opacity-60 disabled:cursor-wait ${
                     penDirty ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300'
                   }`}

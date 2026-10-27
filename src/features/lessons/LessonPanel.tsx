@@ -3,7 +3,7 @@
 //   칸은 그 교시의 **지금 내용**을 따라간다 - 연 채로 하루 화면이나 다른 기기에서 고치면 칸도 바뀐다(고치는 중이면 적던 것을 둔다 - V4 10-04).
 //   저장·Ctrl+S, 좁은 화면에서 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { academicYearOf, shortDateLabel } from '../../domain/dateUtils';
 import { classLabelOf } from '../../domain/roster';
 import { useClasses } from '../class/classes';
@@ -17,6 +17,7 @@ import { useDocs } from '../../data/select';
 import { usePersonalSpaceId } from '../../data/session';
 import { slotId } from '../../domain/progress';
 import AutoTextarea from '../../ui/AutoTextarea';
+import PopoutButton from '../../ui/PopoutButton';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import { lessonLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
@@ -66,7 +67,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
   useEffect(() => {
     unsaved.current = () => typed !== null && changed;
   });
-  useEffect(() => registerUnsavedCheck(unsaved), []);
+  useUnsavedCheck(unsaved);
 
   const save = async (): Promise<boolean> => {
     if (!cell || saving) return false;
@@ -116,6 +117,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
               {shortDateLabel(date)} 수업{cell?.changed ? ` · 이날만 바꾼 과목 (시간표: ${cell.base || '수업 없음'})` : ''}
             </p>
           </div>
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
           <button type="button" data-close title="닫기" onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
             ✕
           </button>

@@ -6,7 +6,7 @@
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type Ref } from 'react';
 import { showErrorToast, showToast } from '../../app/toast';
 import { canRun, setShortcutOverrides, useShortcutOverrides } from '../../app/keys';
-import { registerUnsavedCheck } from '../../app/windows';
+import { useUnsavedCheck } from '../../app/windows';
 import {
   bindingFromEvent,
   findConflicts,
@@ -154,7 +154,7 @@ export default function ShortcutsTab({
   useEffect(() => {
     unsaved.current = () => dirty;
   });
-  useEffect(() => registerUnsavedCheck(unsaved), []);
+  useUnsavedCheck(unsaved);
 
   useImperativeHandle(ref, () => ({
     save: () => {

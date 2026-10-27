@@ -2,11 +2,11 @@
 //   탭 넷: 👩‍🏫 교사 유형(누르는 즉시 저장) / 🗂️ 시간표(기간별 여러 장) / 🕘 교시(이름·시각) / 🏖️ 학기·방학.
 //   시간표·교시·학기는 고친 것만 들고 있다가 💾 저장(Ctrl+S) 한 번에 - 시간표는 문서마다(timetables), 교시·방학은 계정 설정(common).
 //   **'적용' 단추는 없다** - 시간표를 저장하면 그 기간의 날이 저절로 따라간다(domain/lessons). V4의 '⚡ 일괄 덮어쓰기'가 필요 없다.
-// 저장하지 않고 닫으면(ESC·✕) 먼저 묻는다(창 목록 registerUnsavedCheck).
+// 저장하지 않고 닫으면(ESC·✕) 먼저 묻는다(창 목록 useUnsavedCheck).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
-import { openWindow, registerUnsavedCheck, type WindowProps } from '../../app/windows';
+import { openWindow, useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { academicYearOf, todayStr } from '../../domain/dateUtils';
 import { timetableOn } from '../../domain/lessons';
 import { toMinutes, type PeriodDef } from '../../domain/periodTimes';
@@ -134,7 +134,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
   useEffect(() => {
     unsaved.current = () => dirty;
   }, [dirty]);
-  useEffect(() => registerUnsavedCheck(unsaved), []);
+  useUnsavedCheck(unsaved);
 
   const grids = list.map((t) => t.grid as SlotGrid);
   const pairOptions = useSlotPairOptions(undefined, sid, grids);

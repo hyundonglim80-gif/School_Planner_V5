@@ -29,6 +29,7 @@
 - **P13-1 끝(10-16)** 메모로 Claude 요청 - 끝 조건 모두 확인 - 세 계정 🔒 'Claude요청' · 잇달아 보내기 차례대로(#43 끝난 뒤 #45). 문제가 있으면 다시 요청.
 - **10-19 결과 글**(바꾸지 않은 까닭을 카드에) - 화면·워크플로·함수(1000자까지) 모두 배포 끝(함수는 10-19 PC에서 `--only functions:v5`).
 - 부탁(P12): 휴대폰 설치 앱은 완전히 닫았다 다시 열기.
+- 부탁(10-28): 실제 기기로 - 휴대폰 새 메모 🔗(빈 칸이면 안내)·S펜 손글씨 길게 쓰기·💾 저장, PC 오른쪽 칸 ↗ 새 창을 다른 모니터로.
 
 ## 작업 저장과 이어 하기 (요약 - 자세히는 `docs/PLAN.md` 0·1장)
 
@@ -100,6 +101,8 @@
   `parseSlot`은 반이 없으면 `cls: ''`라 `??`로는 과목으로 넘어가지 않는다 - `||`).
 - **메모 요청(자동) 커밋은 크롬 점검을 돌리지 않는다**(lint·단위·빌드만) - 화면 자리를 바꾼 요청 뒤에 점검이 깨진 채 남는다
   (10-22: #60 '바뀜'·#88 이은 곳 표시·#94 오른쪽 수정 칸 뒤 inspect-lessons·progress·seating·manual이 옛 `data-*`를 찾았다). PC에서 이어 할 때 그 요청이 건드린 화면의 점검부터 돌린다.
+- **처음 화면 밝기가 어둡게(#113)라 '밝은 화면'을 보는 점검은 `localStorage sp5_theme = light`를 심고 시작한다**(10-28 - inspect-handwriting 셋이 #113 뒤로 깨져 있었다).
+  **창을 닫게 하는 키(ESC)는 keydown 사이에 팝업이 닫혀 `keyboard.press`가 '닫혔다'로 실패한다** - `.catch(() => {})`로 누르고 닫힘은 `waitForEvent('close')`로 본다(inspect-popout).
 - **사용자 보고가 재현되지 않으면 V4의 같은 기능 코드와 견준다**(P12-1 이월 - V5 경로는 모두 맞았고, V4 `runAutoForwarding`의 겹침 규칙이 빠져 있었다).
 - **점검이 개발 서버로 도는 동안 저장소 파일(.md 포함)을 고치지 않는다**(P10-5) - Tailwind가 다시 훑어 `index.css`·`Shell`이 HMR로 바뀌고 열린 칸이 사라져 점검이 틀린다. 문서는 점검 묶음 뒤에.
 - **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
@@ -155,6 +158,8 @@
   Ctrl+S는 저장 단추가 있는 모든 곳에서 저장한다. 좁은 화면에서 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
 - 기록·메모를 여는 길은 모두 **하루·메모 화면과 같은 쓰는 칸**이다. 새 일정·기록·메모는 **저장한 뒤에도 적은 것이 남고** 그 항목의 수정 칸이 된다.
 - 새 창은 반드시 `ModalShell` 또는 `PopupFrame`(테스트가 지킨다).
+- **↗ 새 창으로 옮기기**(10-28 사용자 요청): 오른쪽 줄에 붙은 창·쓰는 칸 머리 ✕ 왼쪽 ↗ → 진짜 브라우저 팝업 창에 그 칸 하나만(앱을 `?popout=`로 따로 띄운다 - 다른 모니터로).
+  저장 안 한 것은 **먼저 저장하고** 옮긴다(저장 단추가 없는 창은 옮기지 않고 알림) · 오른쪽 칸에서는 그 탭이 빠진다 · 새 창의 그 칸을 닫으면 새 창도 닫힌다 · 그 안에서 연 창은 가운데 · PC만.
 
 ### 왼쪽 클립보드 칸
 - 왼쪽 가장자리 📋로 여닫는다. 최신 복사가 위, 누르면 글 쓰던 칸에 붙여넣기. **이 기기에만**(IndexedDB) - 계정에 올리지 않는다(비밀번호·캡처가 지나간다). 지우면 이 기기의 휴지통으로.
@@ -214,6 +219,8 @@
   그 셋에는 라벨 'Claude요청'이 저절로(함수가 만들고 되살린다 - 라벨 관리 🔒, 이름·지우기·빈 라벨 정리 막음) · **한 번에 하나**: 도는 동안 온 요청은 '🤖 차례 기다림' → 앞 것이 합쳐지면 먼저 온 것부터.
 - **✏️ 손글씨**(10-21 사용자 요청 - S펜): 메모 쓰는 칸 첨부 줄 📎 옆. 그린 것은 PNG 첨부(드라이브), 펜을 쓰면 손바닥은 그리지 않음, 펜 옆 단추 = 지우개, 닫아도 그리던 것은 그 칸에 남는다.
   **바탕 = 화면색**(어두운 화면은 어두운 바탕·처음 펜 흰색, 밝은 화면은 흰 바탕·검정 - 그림도 그 바탕으로), 펜 색에 흰색 · **크게·작게**(두 손가락·머리 − 100% + · 펜을 쓴 뒤 한 손가락 = 옮기기, 100~500%). 글자로 바꾸기는 휴대폰 기능('S펜으로 텍스트 변환').
+  **길게 쓰기**(10-28): 종이 = 그린 것 아래로 늘 한 화면 더(8000px까지) - 휠·두 손가락·오른쪽 막대로 내린다(100%에서도). 머리 첫 줄 글 단추 **닫기 · 💾 저장**(10-28 - 💾 저장·Ctrl+S = 그림 첨부 **+ 메모 저장**, 옛 ✓ 첨부는 첨부만이었다).
+- 새 메모의 🔗 링크 추가는 먼저 저장한다 - **빈 새 메모면 칸을 두고 '내용을 먼저 적어 주세요'**(10-28 - 빈 새 칸 저장은 칸을 닫아 연결 창과 함께 사라졌다).
 - 일정 라벨 속성 '구글 캘린더' - 켠 라벨의 일정은 저장·완료·옮기기·지우기를 구글 캘린더에도. 저장할 때 로그인이 없으면 로그인 창을 묻는다.
 - 교사 유형은 시간표 창에서 고른다((초등) 담임 / 전담 / (중등) 전담 + 담임). 전담은 담임 도구(출석부·알림장)를 숨긴다. 수업 칸 글자는 '5-2 과학'.
 - 명렬표는 학급 화면 안(⋮에 없다). 수업 종은 하루 '수업' 옆. 링크 연결 창은 저장하면 닫힌다.
@@ -282,6 +289,10 @@
   `MiniCalendarPicker.tsx`(`[data-date-picker]`·`[data-picker-day]`) · `LinkPreviewCards.tsx`(글 안 주소 카드 `[data-link-preview]`) · 훅 `useMinWidth`·`useIsMobile`·`useMainWidth`·`useVisualViewport`·`useBodyScrollLock`·`useBackdropClose` ·
   `AutoTextarea.tsx`(높이를 다시 잴 때 둘레 스크롤을 지키고 커서 줄을 보이게 - P10-5, 폭이 바뀌어도 다시 재고 테두리까지 더한다, 재는 동안 부모 높이를 붙든다 - 10-21 긴 메모 마지막 줄 가려짐) · `containScroll.ts`(옆 칸 위 휠·밀기는 그 칸 안에서만 - 오른쪽 줄 `getSideColumn`·클립보드 칸, P10-5).
   '스크롤로 페이지 이동'(`app/useGlobalGestures`)은 옆 칸(`#side-column`·`[data-clipboard-panel]`) 안의 휠·밀기를 무시한다(P10-5 - 쓰는 칸은 창 층이 아니라 날짜가 넘어갔다).
+- **↗ 새 창으로 옮기기**(10-28): `ui/popout.ts`(주소 `?popout=` 읽기·만들기 `readPopoutSpec`·`popoutUrl`(pickFor·파일 뺌) · 이 탭이 새 창인가 `POPOUT` · `WindowSlotContext`(WindowHost가 창의 맨 바깥 틀에만 - 틀이 안쪽은 null로)·`PopoutTargetContext`(옆에 붙은 틀만)) ·
+  `ui/PopoutButton.tsx`(`[data-popout-open]` - ModalShell 머리·쓰는 칸 여섯 ✕ 왼쪽) · `app/popout.ts`(`popOutWindow` - 빈 팝업 먼저 → `windowUnsaved`면 `windowSaveOf` 저장·기다림 → 주소로 보내고 탭 닫기) ·
+  `app/PopoutShell.tsx`(App이 `POPOUT`이면 Shell 대신 - 그 창 하나·`[data-popout=id]`, 창 가득 = 틀의 `fill` `[data-panel-frame|popup-frame=window]`, 닫히면 `window.close()`, 단축키는 `handleAppKeyDown(e, only)`) ·
+  `app/windows` `useUnsavedCheck`(창 key와 함께 - 옛 `registerUnsavedCheck` 부르던 열하나)·`useWindowSave`(틀이 Ctrl+S 저장을 창 key로) · `useDocked`는 새 창에서 늘 false. 점검 `tools/inspect-popout.mjs`(34 - 휴대폰 새 메모 🔗 포함).
 - **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)·다시 세운 줄 `rekeyOrders`(옮긴 것만)) ·
   `labelTree.ts`(V4 트리를 id로 - `parentMapOf`·`orderByTree`·라벨로 보기 `matchLabels`·탐색기식 `clickFilterLabel`·`filterChipOrder`·`otherKey`) ·
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) ·
@@ -410,7 +421,7 @@
   `EntryBody.tsx`(카드 본문 - 그림·파일·글·체크 줄·주소 미리보기·표, 카드와 메모 화면 목록의 펼친 줄이 함께 - P11-1) ·
   `EntryTableView.tsx`(표 - 쓰는 칸은 칸 글자·행/열 `[data-note-table|cell|table-op]`, 카드는 compact `[data-entry-table]`) · `attach.ts`(📎·캡처 = 드라이브, 표 먼저 `pastedTable`) · `shortcuts.ts`(`newNote`·`newMemo`).
   **✏️ 손글씨**(10-21): `HandwritingPad.tsx`(화면 가득 그림판 - portal·`useModalLayer`, ESC·Ctrl+Z는 capture에서 그림판만, `[data-note-handwriting(data-pen-dirty)|handwriting-pad(data-pen-count|data-pen-theme)|pen-board|pen-canvas|pen-color|pen-size|pen-eraser|pen-zoom-in|pen-zoom(=%)|pen-zoom-out|pen-undo|pen-clear|pen-done|pen-close|pen-hint]`,
-  ✓ 첨부 = 그린 둘레 PNG(바탕 = 그림판 화면색) → `attach`(올라가면 쓰는 칸이 든 획을 비운다)) · 순수 `domain/handwriting`(`penWidth`·`acceptsPointer`(펜 뒤 손바닥 막기)·`isEraserPress`·`inkBounds`·`handwritingName`·`defaultPenColor`·보는 자리 `PadView` `zoomAt`·`pinchView`·`panView`·`exportScale`) · 점검 `tools/inspect-handwriting.mjs`(47 - 두 손가락은 CDP `Input.dispatchTouchEvent`).
+  💾 저장 = 그린 둘레 PNG(바탕 = 그림판 화면색) → `attach`(올라가면 쓰는 칸이 든 획을 비우고 `saveAfterUpload`로 메모 저장 - 10-28), 오른쪽 막대 `[data-pen-scroll|pen-scroll-thumb]`) · 순수 `domain/handwriting`(`penWidth`·`acceptsPointer`(펜 뒤 손바닥 막기)·`isEraserPress`·`inkBounds`·`handwritingName`·`defaultPenColor`·보는 자리 `PadView` `zoomAt`·`pinchView`·`panView`(종이 높이 `paperH`까지)·종이 높이 `paperHeight`·막대 `scrollThumb`·`dragThumb`·`exportScale`) · 점검 `tools/inspect-handwriting.mjs`(두 손가락은 CDP `Input.dispatchTouchEvent`, 길게 쓰기·휴대폰 머리 - 밝은 화면으로 시작).
   순수 셈 `domain/checkLines`·`entryCollapse`·`hashLabels`(V4 테스트째). 주소 → 링크 `ui/FormattedText.tsx`. **쓰던 글 보관** `data/drafts.ts`(`useDraft` - DB `sp5-drafts-{uid}`, 메모·기록·일정 칸, 로그아웃하면 지움) + `ui/DraftOffer.tsx`(`[data-draft-offer|draft-restore|draft-discard]`).
 - **설치(PWA)** `public/`: `manifest.json`(SP5 · share_target `/share-target`) · `sw.js`(문서는 네트워크 먼저·`/assets/`는 담아 둔 것 먼저·'sp5-precache' = 빌드의 `asset-manifest.json`대로 이 판을 담고 옛 판은 지움(`ignoreVary`)·공유받기 캐시 `sp5share-inbox`·푸시) · 아이콘 PNG = `node tools/gen-icons.mjs`(favicon.svg에서).
   공유받기 `features/share/receive.ts`(`useShareReceiver` - Shell, 새 메모 칸 `draftText`·`draftFiles`) · 순수 `domain/share.ts` · 새 판 띠 `app/newBuild.ts`·`NewBuildBanner`(`[data-new-build]`). 점검 `tools/inspect-offline.mjs`(빌드 + preview 4175).

@@ -4,8 +4,9 @@
 //   - 펜 옆 단추(펜 뒤 지우개)를 누른 채 그으면 지우개. ↶ = 마지막 줄 지우기(Ctrl+Z), 🗑️ 모두 지우기.
 //   - 크게·작게 보기(10-21 사용자 요청): 두 손가락 벌리기·오므리기(옮기기도) · 머리 − 100% + (100%를 누르면 처음 크기) · PC Ctrl+휠·Ctrl+ +/−/0.
 //     펜을 쓴 뒤에는 한 손가락으로 옮긴다(휠도). 굵기는 화면에 보이는 대로 - 크게 보며 쓰면 그만큼 가는 줄로 적힌다.
-//   - ✓ 첨부 = 그린 둘레만 잘라 PNG로 → 쓰는 칸이 드라이브에 올려 첨부로 붙인다.
-//   - ✕·ESC·뒤로가기는 닫기만 한다 - 그리던 것은 쓰는 칸이 들고 있다가 다시 열면 이어 그린다(첨부하면 비운다).
+//   - 아래로 길게 쓰기(10-28 사용자 요청): 종이는 그린 것 아래로 늘 한 화면이 더 있다 - 휠·오른쪽 막대 끌기·두 손가락(펜을 쓴 뒤는 한 손가락)으로 내려 이어 쓴다.
+//   - 💾 저장(Ctrl+S) = 그린 둘레만 잘라 PNG로 → 쓰는 칸이 드라이브에 올려 첨부로 붙이고 메모도 저장한다(10-28 사용자 요청 - 옛 ✓ 첨부는 첨부만).
+//   - 닫기·ESC·뒤로가기는 닫기만 한다 - 그리던 것은 쓰는 칸이 들고 있다가 다시 열면 이어 그린다(저장하면 비운다).
 //   셈은 domain/handwriting.
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
@@ -24,8 +25,11 @@ import {
   panView,
   PEN_COLORS,
   PEN_SIZES,
+  paperHeight,
   penWidth,
   pinchView,
+  scrollThumb,
+  dragThumb,
   VIEW_1,
   ZOOM_MAX,
   ZOOM_MIN,
@@ -44,7 +48,7 @@ interface Props {
   /** 한 줄을 다 그을 때마다 - 쓰는 칸이 들고 있는다 */
   onChange: (strokes: PenStroke[]) => void;
   onClose: () => void;
-  /** ✓ 첨부 - 그린 것을 PNG 파일로 */
+  /** 💾 저장 - 그린 것을 PNG 파일로 (쓰는 칸이 첨부하고 메모를 저장한다) */
   onDone: (file: File) => void;
 }
 
@@ -57,7 +61,11 @@ let lastSize: number = PEN_SIZES[1].value;
 
 type Pt = { x: number; y: number };
 /** 손가락 둘 = 크게·작게·옮기기, 펜을 쓴 뒤의 손가락 하나 = 옮기기 */
-type Gesture = { kind: 'pinch'; ids: [number, number]; start: PadView; c0: Pt; d0: number } | { kind: 'pan'; id: number; start: PadView; p0: Pt };
+type Gesture =
+  | { kind: 'pinch'; ids: [number, number]; start: PadView; c0: Pt; d0: number }
+  | { kind: 'pan'; id: number; start: PadView; p0: Pt }
+  /** 오른쪽 스크롤 막대 끌기 (마우스·손가락·펜) */
+  | { kind: 'thumb'; id: number; start: PadView; y0: number };
 
 const isDark = () => document.documentElement.classList.contains('dark');
 const mid = (a: Pt, b: Pt): Pt => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
@@ -116,8 +124,12 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
   /** 화면에 닿아 있는 손가락 (캔버스 자리) */
   const touches = useRef(new Map<number, Pt>());
   const gesture = useRef<Gesture | null>(null);
-  /** 종이 크기 = 그림판 자리 (CSS px) */
+  /** 그림판 자리 (CSS px) - 종이 폭도 이것 */
   const area = useRef({ w: 0, h: 0, dpr: 1 });
+  /** 종이 높이 (domain paperHeight - 그린 것 아래로 한 화면 더) */
+  const paperH = useRef(0);
+  /** 오른쪽 스크롤 막대 (종이가 한 화면보다 길 때만) */
+  const [thumb, setThumb] = useState<{ top: number; size: number } | null>(null);
   const frame = useRef(0);
 
   useEffect(() => {
@@ -151,15 +163,26 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
     });
   };
   useEffect(() => () => cancelAnimationFrame(frame.current), []);
+  const showThumb = () => {
+    const t = scrollThumb(viewRef.current, area.current.h, paperH.current);
+    setThumb((old) => (old?.top === t?.top && old?.size === t?.size ? old : t));
+  };
   const setView = (v: PadView, soon = false) => {
-    viewRef.current = clampView(v, area.current.w, area.current.h);
+    viewRef.current = clampView(v, area.current.w, area.current.h, paperH.current);
     setScale(viewRef.current.scale);
+    showThumb();
     if (soon) repaintSoon();
     else repaint();
+  };
+  /** 그린 것에 맞춰 종이를 늘린다 (줄이지 않는다 - fresh면 처음부터) */
+  const growPaper = (fresh = false) => {
+    paperH.current = paperHeight(strokesRef.current, area.current.h, fresh ? 0 : paperH.current);
+    showThumb();
   };
   const commit = () => {
     setCount(strokesRef.current.length);
     onChange(strokesRef.current);
+    growPaper();
   };
 
   // 그림판 크기 = 보이는 자리 (휴대폰을 돌리면 다시 맞추고 다시 그린다)
@@ -177,7 +200,9 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
       canvas.height = Math.round(h * dpr);
       canvas.style.width = `${w}px`;
       canvas.style.height = `${h}px`;
-      viewRef.current = clampView(viewRef.current, w, h);
+      paperH.current = paperHeight(strokesRef.current, h, paperH.current);
+      viewRef.current = clampView(viewRef.current, w, h, paperH.current);
+      showThumb();
       repaint();
     };
     fit();
@@ -193,11 +218,12 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
     const { w, h } = area.current;
     const v = viewRef.current;
     const next = Math.abs(v.scale * factor - 1) < 0.01 ? 1 : v.scale * factor;
-    setView(zoomAt(v, next, w / 2, h / 2, w, h));
+    setView(zoomAt(v, next, w / 2, h / 2, w, h, paperH.current));
   };
-  const zoomReset = () => setView(VIEW_1);
+  /** 처음 크기 (내려 보던 자리는 그대로 - 긴 필기의 아래쪽에서 눌러도 그 자리에 있게) */
+  const zoomReset = () => setView({ scale: 1, x: 0, y: viewRef.current.y });
 
-  // PC: Ctrl+휠(노트북 터치패드 벌리기도) = 크게·작게, 휠 = 크게 본 종이 옮기기. React 휠은 막을 수 없어(passive) 직접 단다
+  // PC: Ctrl+휠(노트북 터치패드 벌리기도) = 크게·작게, 휠 = 종이 옮기기(아래로 길게 쓴 것·크게 본 것). React 휠은 막을 수 없어(passive) 직접 단다
   useEffect(() => {
     const box = boxRef.current;
     if (!box) return;
@@ -207,9 +233,9 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
       const v = viewRef.current;
       if (e.ctrlKey || e.metaKey) {
         const rect = box.getBoundingClientRect();
-        setView(zoomAt(v, v.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top, w, h), true);
-      } else if (v.scale > 1) {
-        setView(panView(v, -e.deltaX, -e.deltaY, w, h), true);
+        setView(zoomAt(v, v.scale * Math.exp(-e.deltaY * 0.01), e.clientX - rect.left, e.clientY - rect.top, w, h, paperH.current), true);
+      } else {
+        setView(panView(v, -e.deltaX, -e.deltaY, w, h, paperH.current), true);
       }
     };
     box.addEventListener('wheel', onWheel, { passive: false });
@@ -228,15 +254,16 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
     if (strokesRef.current.length === 0) return;
     if (!window.confirm('그린 것을 모두 지울까요?')) return;
     strokesRef.current = [];
-    repaint();
     commit();
+    growPaper(true);
+    setView(VIEW_1);
   };
 
-  // ESC = 닫기(그리던 것은 남는다), Ctrl+Z = 마지막 줄 지우기, Ctrl + / − / 0 = 크게·작게·처음 크기
-  //   앱 키 처리(window 거품 단계)·크롬 화면 확대보다 먼저 받아 멈춘다 (ui/ImageViewer와 같다)
-  const keyRef = useRef({ onClose, undo, zoomBy, zoomReset });
+  // ESC = 닫기(그리던 것은 남는다), Ctrl+S = 저장, Ctrl+Z = 마지막 줄 지우기, Ctrl + / − / 0 = 크게·작게·처음 크기
+  //   앱 키 처리(window 거품 단계)·쓰는 칸의 Ctrl+S·크롬 화면 확대보다 먼저 받아 멈춘다 (ui/ImageViewer와 같다)
+  const keyRef = useRef({ onClose, undo, zoomBy, zoomReset, done: () => {} });
   useEffect(() => {
-    keyRef.current = { onClose, undo, zoomBy, zoomReset };
+    keyRef.current = { onClose, undo, zoomBy, zoomReset, done };
   });
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -244,6 +271,7 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
       const k = keyRef.current;
       let run: (() => void) | null = null;
       if (e.key === 'Escape') run = k.onClose;
+      else if (ctrl && (e.code === 'KeyS' || e.key.toLowerCase() === 's')) run = e.repeat ? () => {} : k.done;
       else if (ctrl && !e.shiftKey && e.key.toLowerCase() === 'z') run = k.undo;
       else if (ctrl && (e.key === '=' || e.key === '+')) run = () => k.zoomBy(ZOOM_STEP);
       else if (ctrl && e.key === '-') run = () => k.zoomBy(1 / ZOOM_STEP);
@@ -301,6 +329,7 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
       if (touches.current.size >= 2) {
         // 손가락 둘 = 크게·작게·옮기기 (한 손가락으로 긋기 시작한 줄은 버린다)
         if (cur?.type === 'touch') dropActive();
+        if (gesture.current?.kind === 'thumb') return;
         const [a, b] = [...touches.current.entries()].slice(-2);
         gesture.current = { kind: 'pinch', ids: [a[0], b[0]], start: viewRef.current, c0: mid(a[1], b[1]), d0: dist(a[1], b[1]) };
         return;
@@ -343,12 +372,12 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
       if (g?.kind === 'pinch' && g.ids.includes(e.pointerId)) {
         const a = touches.current.get(g.ids[0]);
         const b = touches.current.get(g.ids[1]);
-        if (a && b) setView(pinchView(g.start, g.c0, g.d0, mid(a, b), dist(a, b), w, h), true);
+        if (a && b) setView(pinchView(g.start, g.c0, g.d0, mid(a, b), dist(a, b), w, h, paperH.current), true);
         return;
       }
       if (g?.kind === 'pan' && g.id === e.pointerId) {
         const p = local(e.nativeEvent);
-        setView(panView(g.start, p.x - g.p0.x, p.y - g.p0.y, w, h), true);
+        setView(panView(g.start, p.x - g.p0.x, p.y - g.p0.y, w, h, paperH.current), true);
         return;
       }
     }
@@ -387,8 +416,8 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
       showToast('그린 것이 없습니다.');
       return;
     }
-    const { w, h } = area.current;
-    const b = inkBounds(strokes, EXPORT_PAD, w, h);
+    const { w } = area.current;
+    const b = inkBounds(strokes, EXPORT_PAD, w, paperH.current);
     if (!b) {
       showToast('그린 것이 없습니다.');
       return;
@@ -423,6 +452,38 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
     }, 'image/png');
   };
 
+  // ─── 오른쪽 스크롤 막대 (마우스·손가락·펜 모두 끌어 내린다 - 마우스는 휠도) ───
+  const onThumbDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      // 이미 떨어진 손가락이면 붙들 것이 없다
+    }
+    gesture.current = { kind: 'thumb', id: e.pointerId, start: viewRef.current, y0: e.clientY };
+  };
+  const onThumbMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const g = gesture.current;
+    if (g?.kind !== 'thumb' || g.id !== e.pointerId) return;
+    const { w, h } = area.current;
+    setView(dragThumb(g.start, e.clientY - g.y0, h, paperH.current, w), true);
+  };
+  const onThumbEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const g = gesture.current;
+    if (g?.kind === 'thumb' && g.id === e.pointerId) gesture.current = null;
+  };
+  /** 막대 밖 길을 누르면 그쪽으로 한 화면씩 */
+  const onTrackDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget || !thumb) return;
+    e.preventDefault();
+    const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
+    const { w, h } = area.current;
+    const v = viewRef.current;
+    const step = h * 0.9;
+    setView(panView(v, 0, y < thumb.top ? step : -step, w, h, paperH.current));
+  };
+
   const tool = (on: boolean) => `px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer border transition-colors ${on ? 'bg-primary text-white border-primary' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'}`;
   const percent = Math.round(scale * 100);
 
@@ -436,66 +497,12 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
       role="dialog"
       aria-label="손글씨"
     >
-      <div className="shrink-0 flex flex-wrap items-center gap-1.5 px-3 py-2 bg-white border-b border-slate-200">
-        <button type="button" data-pen-close onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-slate-100 font-bold cursor-pointer" title="닫기 (그리던 것은 남습니다)" aria-label="손글씨 닫기">
-          ✕
-        </button>
-        <span className="text-sm font-black text-slate-800 mr-1">✏️ 손글씨</span>
-        <div className="flex items-center gap-1" role="group" aria-label="펜 색">
-          {PEN_COLORS.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              data-pen-color={c.id}
-              data-on={!eraser && color === c.value ? '' : undefined}
-              onClick={() => {
-                setColor(c.value);
-                setEraser(false);
-              }}
-              className={`w-7 h-7 rounded-full border-2 cursor-pointer ${!eraser && color === c.value ? 'border-primary ring-2 ring-primary/40' : 'border-slate-300'}`}
-              style={{ backgroundColor: c.value }}
-              title={`${c.label} 펜`}
-              aria-label={`${c.label} 펜`}
-            />
-          ))}
-        </div>
-        <div className="flex items-center gap-1" role="group" aria-label="펜 굵기">
-          {PEN_SIZES.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              data-pen-size={s.id}
-              data-on={!eraser && size === s.value ? '' : undefined}
-              onClick={() => {
-                setSize(s.value);
-                setEraser(false);
-              }}
-              className={tool(!eraser && size === s.value)}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-        <button type="button" data-pen-eraser data-on={eraser ? '' : undefined} onClick={() => setEraser((v) => !v)} className={tool(eraser)} title="지우개 - 펜 옆 단추를 누른 채 그어도 지웁니다">
-          🧽 지우개
-        </button>
-        <div className="flex items-center gap-0.5" role="group" aria-label="크게·작게 보기">
-          <button type="button" data-pen-zoom-out onClick={() => zoomBy(1 / ZOOM_STEP)} disabled={scale <= ZOOM_MIN} className={`${tool(false)} w-8 px-0 disabled:opacity-40`} title="작게 보기 (Ctrl+−)" aria-label="작게 보기">
-            −
-          </button>
-          <button type="button" data-pen-zoom={percent} onClick={zoomReset} className={`${tool(false)} w-14 px-0 tabular-nums`} title="처음 크기로 (Ctrl+0) · 두 손가락으로 벌리고 오므려도 됩니다">
-            {percent}%
-          </button>
-          <button type="button" data-pen-zoom-in onClick={() => zoomBy(ZOOM_STEP)} disabled={scale >= ZOOM_MAX} className={`${tool(false)} w-8 px-0 disabled:opacity-40`} title="크게 보기 (Ctrl++)" aria-label="크게 보기">
-            +
-          </button>
-        </div>
-        <div className="ml-auto flex items-center gap-1.5">
-          <button type="button" data-pen-undo onClick={undo} disabled={count === 0} className={`${tool(false)} disabled:opacity-40`} title="마지막 줄 지우기 (Ctrl+Z)">
-            ↶ 되돌리기
-          </button>
-          <button type="button" data-pen-clear onClick={clearAll} disabled={count === 0} className={`${tool(false)} disabled:opacity-40`} title="모두 지우기">
-            🗑️ 모두
+      {/* 머리: 이름 · 닫기 · 💾 저장 / 도구. 좁은 화면은 닫기·저장이 이름과 첫 줄에, 도구는 아랫줄 (10-28 - 저장·닫기가 도구 줄 끝에 묻혔다) */}
+      <div className="shrink-0 flex flex-wrap items-center gap-x-1.5 gap-y-2 px-3 py-2 bg-white border-b border-slate-200">
+        <span className="order-1 text-sm font-black text-slate-800 mr-1">✏️ 손글씨</span>
+        <div className="order-2 md:order-3 ml-auto flex items-center gap-1.5">
+          <button type="button" data-pen-close onClick={onClose} className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 cursor-pointer" title="닫기 - 그리던 것은 남습니다. 다시 열면 이어 그립니다">
+            닫기
           </button>
           <button
             type="button"
@@ -503,10 +510,69 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
             onClick={done}
             disabled={exporting}
             className="px-3.5 py-1.5 rounded-lg text-xs font-black text-white bg-primary hover:bg-blue-600 cursor-pointer disabled:opacity-50"
-            title="그린 것을 그림으로 바꿔 이 메모에 첨부합니다 (구글 드라이브)"
+            title="그린 것을 그림으로 바꿔 이 메모에 첨부하고 메모를 저장합니다 (구글 드라이브, Ctrl+S)"
           >
-            ✓ 첨부
+            💾 저장
           </button>
+        </div>
+        <div className="order-3 md:order-2 w-full md:w-auto md:flex-1 flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center gap-1" role="group" aria-label="펜 색">
+            {PEN_COLORS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                data-pen-color={c.id}
+                data-on={!eraser && color === c.value ? '' : undefined}
+                onClick={() => {
+                  setColor(c.value);
+                  setEraser(false);
+                }}
+                className={`w-7 h-7 rounded-full border-2 cursor-pointer ${!eraser && color === c.value ? 'border-primary ring-2 ring-primary/40' : 'border-slate-300'}`}
+                style={{ backgroundColor: c.value }}
+                title={`${c.label} 펜`}
+                aria-label={`${c.label} 펜`}
+              />
+            ))}
+          </div>
+          <div className="flex items-center gap-1" role="group" aria-label="펜 굵기">
+            {PEN_SIZES.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                data-pen-size={s.id}
+                data-on={!eraser && size === s.value ? '' : undefined}
+                onClick={() => {
+                  setSize(s.value);
+                  setEraser(false);
+                }}
+                className={tool(!eraser && size === s.value)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" data-pen-eraser data-on={eraser ? '' : undefined} onClick={() => setEraser((v) => !v)} className={tool(eraser)} title="지우개 - 펜 옆 단추를 누른 채 그어도 지웁니다">
+            🧽 지우개
+          </button>
+          <div className="flex items-center gap-0.5" role="group" aria-label="크게·작게 보기">
+            <button type="button" data-pen-zoom-out onClick={() => zoomBy(1 / ZOOM_STEP)} disabled={scale <= ZOOM_MIN} className={`${tool(false)} w-8 px-0 disabled:opacity-40`} title="작게 보기 (Ctrl+−)" aria-label="작게 보기">
+              −
+            </button>
+            <button type="button" data-pen-zoom={percent} onClick={zoomReset} className={`${tool(false)} w-14 px-0 tabular-nums`} title="처음 크기로 (Ctrl+0) · 두 손가락으로 벌리고 오므려도 됩니다">
+              {percent}%
+            </button>
+            <button type="button" data-pen-zoom-in onClick={() => zoomBy(ZOOM_STEP)} disabled={scale >= ZOOM_MAX} className={`${tool(false)} w-8 px-0 disabled:opacity-40`} title="크게 보기 (Ctrl++)" aria-label="크게 보기">
+              +
+            </button>
+          </div>
+          <div className="ml-auto flex items-center gap-1.5">
+            <button type="button" data-pen-undo onClick={undo} disabled={count === 0} className={`${tool(false)} disabled:opacity-40`} title="마지막 줄 지우기 (Ctrl+Z)">
+              ↶ 되돌리기
+            </button>
+            <button type="button" data-pen-clear onClick={clearAll} disabled={count === 0} className={`${tool(false)} disabled:opacity-40`} title="모두 지우기">
+              🗑️ 모두
+            </button>
+          </div>
         </div>
       </div>
       {/* 바탕 = 화면색 (bg-white는 어두운 화면에서 어두운 카드 색이 된다) */}
@@ -528,6 +594,23 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
             <br />
             펜으로 쓰면 손바닥은 그리지 않습니다 · 펜 옆 단추를 누른 채 그으면 지웁니다.
             <br />두 손가락으로 벌리고 오므리면 크게·작게 봅니다.
+            <br />
+            쓰고 나면 아래로 내려(휠·두 손가락·오른쪽 막대) 길게 이어 씁니다.
+          </div>
+        )}
+        {/* 종이가 한 화면보다 길면 오른쪽에 스크롤 막대 - 끌거나 길을 눌러 내린다 */}
+        {thumb && (
+          <div data-pen-scroll className="absolute top-0 right-0 bottom-0 w-5 z-10" style={{ touchAction: 'none' }} onPointerDown={onTrackDown}>
+            <div
+              data-pen-scroll-thumb
+              className="absolute right-1 w-2.5 rounded-full bg-slate-400/70 hover:bg-slate-500 cursor-grab active:cursor-grabbing"
+              style={{ top: thumb.top, height: thumb.size }}
+              onPointerDown={onThumbDown}
+              onPointerMove={onThumbMove}
+              onPointerUp={onThumbEnd}
+              onPointerCancel={onThumbEnd}
+              title="끌어 내리면 아래로 이어 씁니다 (휠·두 손가락으로도)"
+            />
           </div>
         )}
       </div>

@@ -10,6 +10,7 @@ import { shortDateLabel } from '../../domain/dateUtils';
 import { classLabelOf, isActive } from '../../domain/roster';
 import { SUBJECT_KINDS, SUBJECT_KIND_LABEL, periodSummary, readSubjectPeriods, subjectAttendanceDocId, type SubjectAttendanceKind, type SubjectMark } from '../../domain/subjectAttendance';
 import { normalizeSlotText, parseSlot } from '../../domain/teachingSlot';
+import PopoutButton from '../../ui/PopoutButton';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import { useClasses } from '../class/classes';
 import { useLessonsOn } from '../lessons/useLessons';
@@ -93,6 +94,7 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
           >
             📊 누계
           </button>
+          <PopoutButton />
           <button type="button" data-close title="닫기" onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
             ✕
           </button>

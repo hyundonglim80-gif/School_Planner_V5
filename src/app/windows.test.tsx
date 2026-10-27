@@ -1,12 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { resetHistoryForTest } from './history';
 import { useAppKeys } from './keys';
 import { setPopupStyle } from './layoutPrefs';
 import WindowHost from './WindowHost';
 import SideTabs from '../ui/SideTabs';
-import { closeAllWindows, closeWindow, openWindow, registerWindow, resetWindowsForTest, useShownWindowPick, useWindows } from './windows';
+import { closeAllWindows, closeWindow, openWindow, registerWindow, resetWindowsForTest, useShownWindowPick, useWindows, windowUnsaved } from './windows';
+import { popOutWindow } from './popout';
 import { useSidePopups } from '../ui/sideColumn';
 
 // 오른쪽 줄 (V4 CLAUDE.md 5장): 한 줄에 탭, 숨은 탭도 적던 글째 살아 있다, 탭 ×는 그 칸 닫기,
@@ -252,5 +253,65 @@ describe('창 위치', () => {
     act(() => void openWindow('devPanel', { n: 1 }));
     await screen.findByRole('heading', { name: '시험 쓰는 칸 1' });
     expect(document.querySelector('[data-panel-frame="banner"]')).not.toBeNull();
+  });
+});
+
+describe('새 창으로 옮기기 (10-28)', () => {
+  it('↗는 오른쪽 줄에 붙은 창에만 - 가운데 창·휴대폰 배너에는 없다', async () => {
+    const { unmount } = render(<Host />);
+    act(() => void openWindow('devWindow'));
+    await screen.findByRole('heading', { name: '시험 창' });
+    expect(document.querySelectorAll('[data-popout-open]')).toHaveLength(1);
+    unmount();
+    act(() => useWindows.setState({ windows: [] }));
+    setPopupStyle('center');
+    render(<Host />);
+    act(() => void openWindow('devWindow'));
+    await screen.findByRole('heading', { name: '시험 창' });
+    expect(document.querySelector('[data-popout-open]')).toBeNull();
+  });
+
+  it('저장 안 한 것은 그 창 것만 세고, 옮기기 전에 그 창을 저장한 뒤 새 창 주소로 보내고 탭을 닫는다', async () => {
+    const user = userEvent.setup();
+    render(<Host />);
+    let k1 = 0;
+    let k2 = 0;
+    act(() => {
+      k1 = openWindow('devPanel', { n: 1 });
+      k2 = openWindow('devPanel', { n: 2 });
+    });
+    await screen.findByRole('heading', { name: '시험 쓰는 칸 2' });
+    // 탭 1로 가서 적는다
+    await user.click(screen.getAllByRole('tab')[0].querySelector('button')!);
+    await user.type(panels()[0].querySelector('textarea')!, '옮길 글');
+    expect(windowUnsaved(k1)).toBe(true);
+    expect(windowUnsaved(k2)).toBe(false);
+
+    const replace = vi.fn();
+    const popup = { closed: false, close: vi.fn(), focus: vi.fn(), location: { replace }, document: { title: '', body: { style: {}, textContent: '' } } };
+    const open = vi.spyOn(window, 'open').mockReturnValue(popup as unknown as Window);
+    // 누른 그때 새 창을 열고 저장한다 - 저장이 칸에 들어간 뒤(다음 그리기) 옮긴다
+    let moving: Promise<void> = Promise.resolve();
+    act(() => void (moving = popOutWindow(k1)));
+    await waitFor(() => expect(replace).toHaveBeenCalledTimes(1));
+    await act(() => moving);
+    expect(open).toHaveBeenCalledTimes(1);
+    // (옮긴 것 = 저장이 들어가 탭 1에 저장 안 한 것이 없어진 뒤 - 아니면 8초 기다리다 그만둔다)
+    expect(open.mock.calls[0][2]).toMatch(/^popup=yes,width=\d+,height=\d+/);
+    const url = new URL(replace.mock.calls[0][0] as string);
+    expect(JSON.parse(url.searchParams.get('popout')!)).toEqual({ id: 'devPanel', params: { n: 1 } });
+    expect(popup.close).not.toHaveBeenCalled();
+    // 탭 1은 닫히고 2만 남는다
+    expect(useWindows.getState().windows.map((w) => w.key)).toEqual([k2]);
+  });
+
+  it('브라우저가 새 창을 막으면 그대로 둔다', async () => {
+    render(<Host />);
+    let k = 0;
+    act(() => void (k = openWindow('devPanel', { n: 1 })));
+    await screen.findByRole('heading', { name: '시험 쓰는 칸 1' });
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    await act(() => popOutWindow(k));
+    expect(useWindows.getState().windows.map((w) => w.key)).toEqual([k]);
   });
 });

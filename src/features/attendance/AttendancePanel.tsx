@@ -7,7 +7,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showErrorToastOnce } from '../../app/toast';
-import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { useDocs, useMirrorStatus } from '../../data/select';
 import {
   KINDS,
@@ -33,6 +33,7 @@ import { academicYearOf, addDays, shortDateLabel } from '../../domain/dateUtils'
 import { describeClass, isActive } from '../../domain/roster';
 import { normalizeSlotText } from '../../domain/teachingSlot';
 import { printNode } from '../../ui/print';
+import PopoutButton from '../../ui/PopoutButton';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import { rememberHubClass, useClasses, useHubClass } from '../class/classes';
 import { useTeaching } from '../lessons/teaching';
@@ -152,7 +153,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
   useEffect(() => {
     unsaved.current = () => dirty;
   });
-  useEffect(() => registerUnsavedCheck(unsaved), []);
+  useUnsavedCheck(unsaved);
 
   const [openNote, setOpenNote] = useState<string | null>(null);
   // 전출한 학생은 빼되, 그날 기록이 이미 있으면 보인다
@@ -181,6 +182,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
               {shortDateLabel(date)} 출결{cls ? ` · ${cls.grade}학년 ${cls.num}반` : ''} · 🔒 개인
             </p>
           </div>
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
           <button type="button" data-close title="닫기" onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
             ✕
           </button>

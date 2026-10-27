@@ -5,7 +5,7 @@
 //   연 채로 다른 기기에서 고친 것도 따라온다(적던 것이 있으면 덮지 않는다). 다른 날로 옮기면 적던 것은 그 날에 저장한다.
 import { useEffect, useRef, useState } from 'react';
 import { showErrorToast, showErrorToastOnce, showToast } from '../../app/toast';
-import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { loadMonthMeals } from '../../data/neis';
 import { itemsOn, useDocs } from '../../data/select';
 import { currentSpaceId, usePersonalSpaceId } from '../../data/session';
@@ -17,6 +17,7 @@ import { suppliesByPeriod } from '../../domain/progress';
 import { schoolYearSpan } from '../../domain/semester';
 import AutoTextarea from '../../ui/AutoTextarea';
 import { canShare, copyText, shareText } from '../../ui/shareText';
+import PopoutButton from '../../ui/PopoutButton';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import { doneOnDay } from '../events/eventOps';
 import { offDayOf, useLessonSource } from '../lessons/useLessons';
@@ -103,7 +104,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
   useEffect(() => {
     unsaved.current = () => dirty;
   });
-  useEffect(() => registerUnsavedCheck(unsaved), []);
+  useUnsavedCheck(unsaved);
 
   /** 다음 수업일 (주말·공휴일·방학·수업X 일정은 건너뜀) */
   const target = nextClassDay(date, offDayOf(src));
@@ -165,6 +166,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
               {shortDateLabel(date)} 알림장 · {personalSpace ? '🔒 개인' : '👥 공유'}
             </p>
           </div>
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
           <button type="button" data-close title="닫기" onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
             ✕
           </button>

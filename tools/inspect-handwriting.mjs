@@ -2,9 +2,11 @@
 //   1) ✏️ 손글씨 = 화면 가득 그림판. 마우스로 긋기 · 펜(CDP pointerType pen, 누르는 힘)으로 긋기 · 펜을 쓴 뒤의 손가락(손바닥)은 그리지 않는다 ·
 //      펜 옆 단추(오른쪽 단추)를 누른 채 = 지우개 · ↶ 되돌리기 · Ctrl+Z.
 //   2) ESC = 그림판만 닫고(쓰는 칸은 그대로) 그리던 것은 남는다 → 다시 열면 이어진다.
-//   3) ✓ 첨부 = '손글씨_….png'로 드라이브에(흉내) → 그림 첨부 → 저장하면 서버 문서의 attachments에.
+//   3) 💾 저장 = '손글씨_….png'로 드라이브에(흉내) → 그림 첨부 → 메모도 저장(서버 문서의 attachments에 - 10-28).
 //   4) 크게·작게(10-21): + / − · 100% = 처음 크기 · 두 손가락(CDP 터치) 벌리기 = 크게, 그어지지 않는다 · Ctrl+−/0 · 펜을 쓴 뒤 한 손가락 = 옮기기.
 //   5) 바탕 = 화면색(10-21): 밝은 화면 = 흰 바탕·검정 펜, 어두운 화면 = 어두운 바탕·흰 펜 - 올린 PNG의 바탕도.
+//   6) 아래로 길게 쓰기(10-28): 그으면 종이가 늘고 오른쪽 막대 · 휠 = 100%에서도 내려간다 · 막대 끌기 · 저장한 그림 = 한 화면보다 긴 것 다.
+//   7) 휴대폰 390(10-28): 머리 첫 줄에 닫기·💾 저장, 도구는 아랫줄 - 화면 안에.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-handwriting.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 메모('점검손글씨…')를 만들고 끝에 지운다.
@@ -74,6 +76,13 @@ const pngCorner = (page, b64) =>
     ctx.drawImage(bmp, 0, 0);
     return [...ctx.getImageData(0, 0, 1, 1).data.slice(0, 3)];
   }, b64);
+/** 올린 PNG의 [폭, 높이] */
+const pngSize = (page, b64) =>
+  page.evaluate(async (b64) => {
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const bmp = await createImageBitmap(new Blob([bytes], { type: 'image/png' }));
+    return [bmp.width, bmp.height];
+  }, b64);
 /** 그림판 잉크의 가운데 (캔버스 CSS px) - 크게 보기·옮기기를 잰다 */
 const inkCenter = (page) =>
   page.locator(sel('pen-canvas')).evaluate((el) => {
@@ -96,6 +105,8 @@ try {
   const { ctx, page, errors } = await newPage(browser);
   await mockGoogle(ctx);
   await ctx.addInitScript(() => sessionStorage.setItem('sp5-google-token', 'ok-token'));
+  // 밝은 화면에서 시작한다 (#113부터 처음 화면 밝기는 어둡게 - 어두운 화면은 아래에서 따로 본다)
+  await ctx.addInitScript(() => localStorage.setItem('sp5_theme', 'light'));
   const cdp = await ctx.newCDPSession(page);
   await open(page, `#/day/${DAY}`);
   await page.locator(sel('day-journal', DAY)).waitFor({ timeout: 8000 });
@@ -175,11 +186,16 @@ try {
   await page.locator(sel('note-handwriting')).click();
   r.check((await waitFor(pad)) && (await count()) === 1, `다시 열면 그리던 것이 이어진다 (${await count()})`);
 
-  r.section('✓ 첨부 → 저장');
-  await page.locator(sel('pen-done')).click();
+  r.section('💾 저장 = 첨부 + 메모 저장');
+  const doneBtn = page.locator(sel('pen-done'));
+  r.check((await doneBtn.textContent()).includes('저장') && (await page.locator(sel('pen-close')).textContent()).includes('닫기'), '머리에 글로 된 닫기 · 💾 저장');
+  await doneBtn.click();
   const img = panel.locator(sel('note-attachment-image'));
-  r.check(await waitFor(img, 8000), '✓ 첨부 = 그림 첨부가 붙는다');
-  r.check((await page.locator(sel('handwriting-pad')).count()) === 0, '첨부하면 그림판이 닫힌다');
+  r.check(await waitFor(img, 8000), '💾 저장 = 그림 첨부가 붙는다');
+  r.check((await page.locator(sel('handwriting-pad')).count()) === 0, '저장하면 그림판이 닫힌다');
+  const autoSaved = await serverUntil(madeHere, (docs) => docs.length === 1 && (docs[0].data().attachments ?? []).some((a) => /^손글씨_/.test(a.name)));
+  r.check(autoSaved.length === 1, '💾 저장 = 메모도 곧바로 저장 (서버 문서의 attachments에 손글씨 그림)');
+  r.check(await waitFor(page.locator(sel('note-panel', 'edit'))), '새 메모는 저장되어 수정 칸이 된다');
   const up = google.uploads[0];
   r.check(up && /^손글씨_\d{8}_\d{6}\.png$/.test(up.name) && up.mimeType === 'image/png', `이름 '손글씨_….png' · PNG (${up?.name})`);
   const lightBg = up?.png ? await pngCorner(page, up.png) : [];
@@ -252,6 +268,46 @@ try {
   const saved = await serverUntil(madeHere, (docs) => docs.length === 1 && (docs[0].data().attachments ?? []).some((a) => /^손글씨_/.test(a.name)));
   r.check(saved, '저장 = 서버 문서의 attachments에 손글씨 그림');
 
+  r.section('아래로 길게 쓰기 (10-28)');
+  await page.locator(sel('note-handwriting')).click();
+  await waitFor(pad);
+  r.check((await count()) === 0 && (await page.locator(sel('pen-scroll')).count()) === 0, '빈 종이 = 한 화면 (스크롤 막대 없음)');
+  const bb = await page.locator(sel('pen-canvas')).boundingBox();
+  const line = async (y) => {
+    await page.mouse.move(bb.x + 100, y);
+    await page.mouse.down();
+    await page.mouse.move(bb.x + 400, y, { steps: 10 });
+    await page.mouse.up();
+  };
+  const low = bb.y + bb.height - 60;
+  await line(low);
+  const thumbEl = page.locator(sel('pen-scroll-thumb'));
+  r.check(await waitFor(thumbEl, 2000), '그으면 종이가 아래로 늘고 오른쪽에 스크롤 막대');
+  const y0 = (await inkCenter(page))?.y;
+  await page.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2);
+  await page.mouse.wheel(0, 400);
+  await page.waitForTimeout(200);
+  const y1 = (await inkCenter(page))?.y;
+  r.check(y0 && y1 && Math.abs(y0 - y1 - 400) < 12, `휠 = 100%에서도 아래로 (잉크 ${Math.round(y0)} → ${Math.round(y1)})`);
+  r.check((await page.locator(sel('pen-zoom')).getAttribute('data-pen-zoom')) === '100', '배율은 그대로 100%');
+  await line(low);
+  r.check((await count()) === 2, '내려간 자리에 이어 쓴다');
+  const tb = await thumbEl.boundingBox();
+  await page.mouse.move(tb.x + tb.width / 2, tb.y + 4);
+  await page.mouse.down();
+  await page.mouse.move(tb.x + tb.width / 2, tb.y - 3000, { steps: 6 });
+  await page.mouse.up();
+  await page.waitForTimeout(200);
+  const y2 = (await inkCenter(page))?.y;
+  r.check(y2 && Math.abs(y2 - y0) < 12, `막대를 끌어 올리면 맨 위 (잉크 ${Math.round(y2)} ≈ ${Math.round(y0)})`);
+  const before2 = google.uploads.length;
+  await page.keyboard.press('Control+s');
+  await serverUntil(async () => google.uploads.length, (n) => n > before2, 8000);
+  const longUp = google.uploads[before2];
+  const dims = longUp?.png ? await pngSize(page, longUp.png) : null;
+  r.check(dims && dims[1] > dims[0], `Ctrl+S = 💾 저장 · 그림 = 두 줄 다 (가로 300 줄 둘이 400 떨어짐 → ${dims?.join('×')})`);
+  r.check(await pad.waitFor({ state: 'detached', timeout: 3000 }).then(() => true, () => false), '저장하면 그림판이 닫힌다');
+
   r.section('어두운 화면');
   await page.evaluate(() => document.documentElement.classList.add('dark'));
   await page.locator(sel('note-handwriting')).click();
@@ -278,6 +334,23 @@ try {
   await page.evaluate(() => document.documentElement.classList.remove('dark'));
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' / ')}`);
+
+  r.section('휴대폰 390 - 머리 첫 줄에 닫기·저장 (10-28)');
+  const m = await newPage(browser, { width: 390, height: 800, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  await open(m.page, `#/day/${DAY}`);
+  await m.page.locator(sel('day-journal', DAY)).waitFor({ timeout: 8000 });
+  await m.page.locator(sel('journal-add')).click();
+  await waitFor(m.page.locator(sel('note-panel')));
+  await m.page.locator(sel('note-handwriting')).click();
+  await waitFor(m.page.locator(sel('handwriting-pad')));
+  const mb = async (s) => m.page.locator(s).first().boundingBox();
+  const [mClose, mDone, mColor, mUndo] = [await mb(sel('pen-close')), await mb(sel('pen-done')), await mb(sel('pen-color', 'black')), await mb(sel('pen-undo'))];
+  r.check(mClose && mDone && mColor && mDone.y < mColor.y - 10 && Math.abs(mClose.y - mDone.y) < 4, `닫기·저장이 첫 줄, 도구는 아랫줄 (저장 y ${Math.round(mDone?.y)} · 펜 y ${Math.round(mColor?.y)})`);
+  r.check(mDone.x + mDone.width <= 390 && mUndo && mUndo.x + mUndo.width <= 390, `단추가 화면 안 (저장 오른쪽 ${Math.round(mDone.x + mDone.width)} · 되돌리기 ${Math.round(mUndo?.x + mUndo?.width)})`);
+  await m.page.screenshot({ path: process.env.SHOT_M || 'C:/Users/user/AppData/Local/Temp/handwriting-mobile.png' });
+  await m.page.locator(sel('pen-close')).click();
+  r.check(await m.page.locator(sel('handwriting-pad')).waitFor({ state: 'detached', timeout: 3000 }).then(() => true, () => false), '닫기 = 그림판만 닫는다');
+  r.check(m.errors.length === 0, `휴대폰 화면 오류 없음 ${m.errors.join(' / ')}`);
 } catch (e) {
   console.error(e);
   r.check(false, `점검 중 오류: ${e.message}`);

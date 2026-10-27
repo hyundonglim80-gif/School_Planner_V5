@@ -3,13 +3,17 @@
 //   side + 넓은 화면(768px 이상) : 쓰는 칸처럼 화면 오른쪽 줄에 선다(sideColumn). 뒤 화면을 어둡게 덮지 않고 스크롤도 잠그지 않는다.
 //   side + 좁은 화면(휴대폰)      : 어두운 배경 위로 오른쪽에서 뜨는 배너.
 //   center                       : 화면 가운데에 뜨는 창.
+//   새 창(ui/popout)              : 새 창으로 옮긴 그 창은 창 가득, 그 안에서 연 다른 창은 가운데.
+//   오른쪽 줄에 붙은 창은 머리 ↗(ModalShell → ui/PopoutButton)로 새 창으로 옮긴다(10-28).
 //
 // 어느 모양이든 창 층(app/history의 useModalLayer)에 똑같이 든다. 그래서 겹쳐 연 창의 순서, ESC로 모두 닫기,
 // 뒤로가기로 한 겹씩 닫기가 모양과 상관없이 그대로다.
-import { useRef, type ReactNode, type RefObject } from 'react';
+import { useContext, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useModalLayer } from '../app/history';
 import { useLayoutPrefs } from '../app/layoutPrefs';
+import { useWindowSave } from '../app/windows';
+import { POPOUT, PopoutTargetContext, WindowSlotContext } from './popout';
 import { getSideColumn, sideSlotProps, useDocked, useSideSlot } from './sideColumn';
 import { useBackdropClose } from './useBackdropClose';
 import { useBodyScrollLock } from './useBodyScrollLock';
@@ -58,7 +62,10 @@ export default function PopupFrame({
 }: PopupFrameProps) {
   const cardRef = useRef<HTMLElement | null>(null);
   useSaveKey(isOpen, cardRef, onSave);
-  const side = useLayoutPrefs((s) => s.popupStyle) !== 'center';
+  const win = useContext(WindowSlotContext);
+  useWindowSave(isOpen ? win?.key : null, onSave);
+  const fill = !!win?.fill;
+  const side = useLayoutPrefs((s) => s.popupStyle) !== 'center' && !POPOUT;
   const wide = useDocked();
   const docked = isOpen && side && wide;
 
@@ -70,6 +77,29 @@ export default function PopupFrame({
   const slot = useSideSlot(docked, raise);
 
   if (!isOpen) return null;
+
+  // 안쪽: 창 안에서 띄운 작은 창은 '그 창'이 아니다(null) · 머리 ↗는 오른쪽 줄에 붙은 창의 맨 바깥 틀에서만
+  const inner = (
+    <WindowSlotContext.Provider value={null}>
+      <PopoutTargetContext.Provider value={docked && win && !POPOUT ? win.key : null}>{children}</PopoutTargetContext.Provider>
+    </WindowSlotContext.Provider>
+  );
+
+  if (fill) {
+    return (
+      <div className="fixed inset-0 flex" style={{ zIndex }} data-popup-frame="window">
+        <div
+          ref={cardRef as RefObject<HTMLDivElement>}
+          role="dialog"
+          aria-label={ariaLabel}
+          data-popup-card
+          className="relative bg-white h-full w-full flex flex-col overflow-y-auto overscroll-contain"
+        >
+          {inner}
+        </div>
+      </div>
+    );
+  }
 
   if (docked) {
     const { className, style, 'data-side-slot': slotId } = sideSlotProps(slot);
@@ -84,7 +114,7 @@ export default function PopupFrame({
         className={className}
         style={style}
       >
-        {children}
+        {inner}
       </section>,
       getSideColumn(),
     );
@@ -105,7 +135,7 @@ export default function PopupFrame({
           data-popup-card
           className="relative bg-white h-full w-full max-w-lg shadow-2xl flex flex-col overflow-y-auto overscroll-contain"
         >
-          {children}
+          {inner}
         </div>
       </div>
     );
@@ -126,7 +156,7 @@ export default function PopupFrame({
         className={`bg-white w-full ${CENTER_WIDTH[width]} max-h-full rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden ${cardClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {children}
+        {inner}
       </div>
     </div>
   );

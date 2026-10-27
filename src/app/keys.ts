@@ -109,7 +109,8 @@ function isTypingTarget(t: EventTarget | null): boolean {
   return t.isContentEditable;
 }
 
-export function handleAppKeyDown(e: KeyboardEvent) {
+/** only = 이 단축키만 듣는다 (새 창으로 옮긴 창 - app/PopoutShell: 화면이 없어 화면·날짜 단축키는 할 일이 없다) */
+export function handleAppKeyDown(e: KeyboardEvent, only?: ReadonlySet<ShortcutId>) {
   if (isSaveKey(e)) {
     e.preventDefault();
     return;
@@ -124,6 +125,7 @@ export function handleAppKeyDown(e: KeyboardEvent) {
   const typing = isTypingTarget(e.target);
   const bindings = resolveBindings(useShortcutOverrides.getState().overrides);
   for (const action of SHORTCUT_ACTIONS) {
+    if (only && !only.has(action.id)) continue;
     const binding = bindings[action.id];
     if (!matchesEvent(binding, e, action)) continue;
     // 입력칸에 글자를 쓰는 중이면 수식키 없는 단축키는 무시한다. 되돌리기는 글 칸에서는 글 되돌리기가 먼저.

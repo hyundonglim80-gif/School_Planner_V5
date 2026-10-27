@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
-import { registerUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { useMirrorStatus } from '../../data/select';
 import { usePersonalSpaceId, useSession } from '../../data/session';
 import { shortDateLabel } from '../../domain/dateUtils';
@@ -90,7 +90,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
   useEffect(() => {
     unsaved.current = () => valuesDirty || metaDirty;
   }, [valuesDirty, metaDirty]);
-  useEffect(() => registerUnsavedCheck(unsaved), []);
+  useUnsavedCheck(unsaved);
 
   // 열 때 명단을 지금 명렬표와 맞춘다 (내 학급 명렬표가 있을 때만 - 조용히)
   const rosterOf = ev ? classes.find((c) => c.id === ev.classId) : undefined;
