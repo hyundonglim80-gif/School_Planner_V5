@@ -20,7 +20,9 @@ import { isSaveKey } from '../ui/useSaveKey';
 import { showToast } from './toast';
 import { goToday, setScope, setToggle, stepDate, stepScope, useNav } from './nav';
 import { toggleThemeMode } from './theme';
-import { closeAllWindows, closeShownWindow, getWindowDef, openWindow } from './windows';
+import { activeOf, useSidePopups } from '../ui/sideColumn';
+import { popOutWindow } from './popout';
+import { closeAllWindows, closeShownWindow, closeWindow, getWindowDef, openWindow, useWindows } from './windows';
 
 /** 기본값에서 바꾼 단축키만 (V4 shortcutOverrides). 이 기기 사본 - 계정(기기 종류마다)과는 app/prefs.ts가 맞춘다 */
 export const useShortcutOverrides = create<{ overrides: ShortcutOverrides }>()(
@@ -56,6 +58,20 @@ const ACTIONS: Partial<Record<ShortcutId, () => void>> = {
   // 보고 있는 칸 하나만 닫기 (10-26 - ESC는 모두)
   closePanel: () => {
     closeShownWindow();
+  },
+  // 휴지통 열기 / 닫기 - 열려 있으면 닫는다 (사용자 요청 #125)
+  trash: () => {
+    const open = useWindows.getState().windows.find((w) => w.id === 'trash');
+    if (open) closeWindow(open.key);
+    else openWindow('trash');
+  },
+  // 오른쪽 칸에서 보이는 탭 하나를 새 창으로 빼기 (#125 - 칸 머리 ↗와 같다). 창이 그린 칸일 때만
+  popOut: () => {
+    const side = useSidePopups.getState();
+    const id = activeOf(side);
+    const key = id === null ? undefined : side.owners[id];
+    if (key !== undefined) void popOutWindow(key);
+    else showToast('새 창으로 옮길 칸이 오른쪽에 없습니다.');
   },
 };
 

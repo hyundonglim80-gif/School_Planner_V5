@@ -63,7 +63,8 @@ export type ShortcutId =
   | 'newMemo'
   | 'print'
   | 'undo'
-  | 'closePanel';
+  | 'closePanel'
+  | 'popOut';
 
 export interface ShortcutAction {
   id: ShortcutId;
@@ -126,7 +127,9 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'clipboard', label: '클립보드 칸 열기 / 닫기', group: '메뉴 열기', def: b('') },
   { id: 'calendar', label: '구글 캘린더로 보내기 (백업 · 가져오기 · 보내기)', group: '메뉴 열기', def: b('') },
   { id: 'dday', label: 'D-Day 관리', group: '메뉴 열기', def: b('') },
-  { id: 'trash', label: '휴지통', group: '메뉴 열기', def: b('') },
+  // 보고 있는 칸을 새 창으로 빼기 (#125 - 칸 머리 ↗와 같다)
+  { id: 'popOut', label: '보고 있는 칸 새 창으로 빼기 (오른쪽 칸의 탭 하나)', group: '메뉴 열기', def: b('') },
+  { id: 'trash', label: '휴지통 열기 / 닫기', group: '메뉴 열기', def: b('') },
   { id: 'labels', label: '라벨 관리', group: '메뉴 열기', def: b('') },
   { id: 'recurring', label: '반복 일정 (새 일정 칸, 반복을 펴고)', group: '메뉴 열기', def: b('') },
   { id: 'forwarding', label: '지난 일정 오늘로 가져오기 (오늘 화면의 줄)', group: '메뉴 열기', def: b('') },
