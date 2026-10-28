@@ -123,6 +123,11 @@ try {
   await page.goto(page.url().replace(/#.*$/, '#/day/2026-09-10'));
   await page.locator(sel('header-trash')).click();
   r.check(await waitFor(page.locator(sel('trash-window'))), '🗑️ = 휴지통 창');
+  // 단축키 '휴지통 열기 / 닫기' (#125) - 열려 있으면 닫고, 닫혀 있으면 연다
+  await page.evaluate(() => window.sp5.runShortcut('trash'));
+  r.check(await waitFor(async () => (await page.locator(sel('trash-window')).count()) === 0), "단축키 '휴지통 열기 / 닫기' = 열려 있으면 닫는다");
+  await page.evaluate(() => window.sp5.runShortcut('trash'));
+  r.check(await waitFor(page.locator(sel('trash-window'))), '한 번 더 = 다시 연다');
   const row = (key) => page.locator(sel('trash-row', key));
   r.check(await waitFor(row('event:insp_tr1'), 8000), '지운 일정이 보인다');
   r.check((await row('memo:insp_tr2').locator(sel('trash-v4')).count()) === 1, "V4에서 지워진 것 = 'V4에서 지움'");

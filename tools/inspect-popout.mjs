@@ -91,6 +91,19 @@ try {
   const sGone = closed(sPopup);
   await sPopup.locator(sel('close')).first().click().catch(() => {});
   r.check(await sGone, '✕ = 새 창이 닫힌다');
+
+  r.section("단축키 '보고 있는 칸 새 창으로 빼기' (#125)");
+  await page.evaluate(() => window.sp5.openWindow('search'));
+  await waitFor(page.locator(`#side-column ${sel('popout-open')}`));
+  const [kPopup] = await Promise.all([ctx.waitForEvent('page', { timeout: 10000 }), page.evaluate(() => window.sp5.runShortcut('popOut'))]);
+  kPopup.on('pageerror', (e) => popupErrors.push(String(e)));
+  r.check(await waitFor(kPopup.locator(sel('popout', 'search')), 20000), '단축키 = 칸 머리 ↗와 같다 (보이는 탭이 새 창으로)');
+  r.check(await waitFor(async () => (await page.locator('#side-column > *').count()) === 0), '오른쪽 칸에서 빠진다');
+  const kGone = closed(kPopup);
+  await kPopup.locator(sel('close')).first().click().catch(() => {});
+  r.check(await kGone, '✕ = 새 창이 닫힌다');
+  await page.evaluate(() => window.sp5.runShortcut('popOut'));
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '옮길 칸' })), '오른쪽에 칸이 없으면 안내');
   r.check(errors.length === 0 && popupErrors.length === 0, `화면 오류 없음 ${[...errors, ...popupErrors].join(' / ')}`);
   await ctx.close();
 

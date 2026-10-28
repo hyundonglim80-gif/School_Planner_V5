@@ -1,4 +1,5 @@
-// 일정 완료 칩 (P10-1 - 사용자 의견 6a·2d): 완료한 일정은 칩 색·글을 그대로 두고 칩 앞에 ✓ (흑백·줄긋기를 없앴다 - 끝낸 것도 찾기 쉽게).
+// 일정 완료 칩 (P10-1 - 사용자 의견 6a·2d): 완료한 일정은 칩 색을 그대로 두고 칩 안에 ✓ (흑백·줄긋기를 없앴다 - 끝낸 것도 찾기 쉽게).
+//   라벨 칩은 글자를 줄여 ✓ 자리를 만들고 칩 크기는 완료 전과 같다 (10-29 메모 요청 #123·#127).
 // 하루·주간·월간·년간이 이 하나를 쓴다. 칩을 누르면 완료·풀기 (☐ 체크 칸은 없앴다).
 // - 라벨이 있으면 라벨 칩, 없으면 회색 작은 칩(완료 전 ○ → ✓ - 이 칩이 없으면 완료할 길이 없다).
 // - 여러 라벨이면 ✓는 첫 칩에만 (mark), 어느 칩을 눌러도 완료.
@@ -52,30 +53,45 @@ export default function EventDoneChip({ label, done, mark = true, onToggle, forw
       }
     : {};
   const check = done && mark;
+  // 눈에 띄게 초록 동그라미에 흰 ✓ (#123)
+  const checkMark = (
+    <span data-event-check className="inline-flex items-center justify-center w-[1.15em] h-[1.15em] rounded-full bg-emerald-600 text-white text-[0.75em] font-black leading-none shrink-0">
+      ✓
+    </span>
+  );
   return (
     <span
       {...data}
       {...act}
       data-event-done-chip={mark && onToggle ? (done ? '1' : '0') : undefined}
       aria-label={c ? undefined : done ? '완료 풀기' : '일정 완료'}
-      className={`inline-flex items-center gap-1 align-middle font-bold rounded shadow-2xs whitespace-nowrap ${onToggle ? 'cursor-pointer hover:brightness-95' : ''} ${className}`}
+      className={`relative inline-flex items-center gap-1 align-middle font-bold rounded shadow-2xs whitespace-nowrap ${onToggle ? 'cursor-pointer hover:brightness-95' : ''} ${className}`}
       style={
         c
           ? { backgroundColor: c.bg, color: c.text, border: '1px solid ' + c.border }
           : { backgroundColor: 'var(--color-slate-100)', color: 'var(--color-slate-500)', border: '1px solid var(--color-slate-200)' }
       }
     >
-      {/* ✓ 자리는 늘 잡아 둔다 - 완료해도 칩 크기가 그대로. 눈에 띄게 초록 동그라미에 흰 ✓ */}
-      {check ? (
-        <span data-event-check className="inline-flex items-center justify-center w-[1.15em] h-[1.15em] rounded-full bg-emerald-600 text-white text-[0.75em] font-black leading-none shrink-0">
-          ✓
-        </span>
+      {label ? (
+        check ? (
+          // 라벨 칩 완료 (#123·#127): 칩 크기는 원래 글자가 그대로 잡고(보이지 않게 - 글은 ::before라 textContent에 겹치지 않는다),
+          // 그 칩 안에 ✓와 줄인 글자를 겹쳐 그린다 - 완료 전후 칩 크기가 같다(여백까지 쓴다)
+          <>
+            <span aria-hidden data-ghost={label.name} className="invisible before:content-[attr(data-ghost)]" />
+            <span className="absolute inset-0 flex items-center justify-center gap-px px-px overflow-hidden">
+              {checkMark}
+              <span className="text-[0.75em] leading-none">{label.name}</span>
+            </span>
+          </>
+        ) : (
+          label.name
+        )
+      ) : check ? (
+        checkMark
       ) : (
-        mark &&
-        // 라벨 칩은 ✓ 자리를 미리 잡지 않는다 - 완료하면 글자를 줄여 그 자리를 만든다 (칩이 커지지 않게)
-        !label && <span className="inline-block w-[1.15em] h-[1.15em] text-[0.75em] shrink-0 rounded-full border-[1.5px] border-current opacity-70" />
+        // 라벨 없는 칩: 완료 전 ○ (✓와 같은 크기)
+        mark && <span className="inline-block w-[1.15em] h-[1.15em] text-[0.75em] shrink-0 rounded-full border-[1.5px] border-current opacity-70" />
       )}
-      {label && (check ? <span className="text-[0.8em] leading-none">{label.name}</span> : label.name)}
     </span>
   );
 }
