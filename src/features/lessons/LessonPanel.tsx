@@ -1,5 +1,6 @@
 // 수업 수정 칸 'N교시 수정' (V4 components/DetailEditModal.tsx 수업 갈래). 쓰는 칸 'lesson' = { sid, date, n }.
 //   과목(교과 모드는 학년-반 + 과목)·비고(준비물)(P10-2 - 수업 메모와 한 칸), 🔗 링크 추가·📑 연결된 링크, 📊 조사표(P7-4 - 그 교시), 📘 진도 줄·진도 만들기(개인 공간), 삭제 = 그 교시 비우기.
+//   ✕ 칸 비우기(10-29) = 칸의 글만 지운다(저장 전) - 다른 수업으로 바꿀 때.
 //   칸은 그 교시의 **지금 내용**을 따라간다 - 연 채로 하루 화면이나 다른 기기에서 고치면 칸도 바뀐다(고치는 중이면 적던 것을 둔다 - V4 10-04).
 //   저장·Ctrl+S, 좁은 화면에서 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -84,6 +85,14 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
     }
   };
 
+  // ✕ 칸 비우기 (10-29 메모 요청 #122·#123 - 수업을 바꿀 때 학년-반·과목·비고를 하나씩 지우지 않게): 칸에서만 지운다(저장 전 - 새로 적고 저장).
+  const fieldsRef = useRef<HTMLDivElement>(null);
+  const formEmpty = !form.subject.trim() && !form.note.trim();
+  const clearForm = () => {
+    setTyped({ subject: '', note: '' });
+    fieldsRef.current?.querySelector('input')?.focus();
+  };
+
   const remove = async () => {
     if (!cell || saving) return;
     setSaving(true);
@@ -162,8 +171,20 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
             {!mark && inPersonal && <ProgressCreateButton subject={subjectToSave(form.subject)} />}
           </div>
           {mark && <ProgressMarkLine mark={mark} date={date} period={n} alwaysShowAction wrap />}
-          <div>
-            <span className="block text-xs font-bold text-slate-500 mb-1">{isClassUnit ? '학년-반 · 과목' : '과목'}</span>
+          <div ref={fieldsRef}>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-bold text-slate-500">{isClassUnit ? '학년-반 · 과목' : '과목'}</span>
+              <button
+                type="button"
+                data-lesson-panel-reset
+                onClick={clearForm}
+                disabled={formEmpty}
+                title={`${isClassUnit ? '학년-반·과목' : '과목'}·비고를 한 번에 지웁니다 - 새로 적고 저장하세요`}
+                className="px-2 py-0.5 text-xs font-bold text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-slate-500"
+              >
+                ✕ 칸 비우기
+              </button>
+            </div>
             {isClassUnit ? (
               <SlotPairInput
                 value={form.subject}

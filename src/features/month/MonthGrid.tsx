@@ -226,7 +226,7 @@ export default function MonthGrid(p: MonthGridProps) {
                               ) : (
                                 done && <DoneMark className={p.compact ? 'mr-0.5' : ''} />
                               )}
-                              <span className="inline align-middle" style={p.compact ? { fontSize: fitToWidthFontSize(ev.text) } : undefined}>
+                              <span data-month-event-text className="inline align-middle" style={p.compact ? { fontSize: fitToWidthFontSize(ev.text) } : undefined}>
                                 {ev.text}
                               </span>
                               {links > 0 && !p.compact && (

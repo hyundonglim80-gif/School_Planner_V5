@@ -82,7 +82,8 @@ try {
   await cell('2026-10-06').locator(sel('month-event-chip', 'insp_my1')).click();
   r.check((await serverUntil(() => read('insp_my1'), (d) => !d?.done))?.done !== true, '한 번 더 = 완료 풀기');
 
-  await page.locator(sel('month-event', 'insp_my1')).click();
+  // 일정 글을 누른다 - 줄 가운데는 라벨 칩(= 완료)일 수 있다(#123 ✓ 자리를 늘 잡아 칩이 넓어졌다)
+  await page.locator(`${sel('month-event', 'insp_my1')} ${sel('month-event-text')}`).click();
   r.check(await waitFor(page.locator(sel('event-panel', 'edit'))), '일정 = 오른쪽 일정 칸');
   await page.keyboard.press('Escape');
   await bars('insp_my2').nth(1).locator(sel('period-cell', '2026-10-20')).click();
@@ -105,7 +106,7 @@ try {
   await page.locator(sel('toast')).filter({ hasText: '삭제' }).locator('[data-toast-action="되돌리기"]').click();
   r.check(!(await serverUntil(() => read('insp_my9'), (d) => !d?.deletedAt))?.deletedAt, '안내의 되돌리기 = 되살린다');
 
-  await page.locator(sel('month-event', 'insp_my1')).click({ modifiers: ['Control'] });
+  await page.locator(`${sel('month-event', 'insp_my1')} ${sel('month-event-text')}`).click({ modifiers: ['Control'] });
   r.check(await waitFor(page.locator(sel('event-picked', '1'))), 'Ctrl = 여러 개 고르기');
   r.check(await waitFor(page.locator(sel('multi-bar'))), '고르기 줄이 뜬다');
   await page.keyboard.press('Escape');

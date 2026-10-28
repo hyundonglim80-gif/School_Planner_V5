@@ -363,6 +363,16 @@ try {
   await card3(3).click();
   const ed3 = p3.locator(sel('lesson-panel', 'lesson:2026-10-12:3'));
   r.check(await waitFor(ed3.locator(sel('slot-pair'))), '수정 칸 = 학년-반 + 과목 두 칸');
+  // ✕ 칸 비우기 (10-29 메모 요청 #123) - 칸에서만 지운다(저장 전). 다음 줄들이 비운 칸에 새로 적고 저장한다
+  r.check(await ed3.locator(sel('lesson-panel-reset')).isDisabled(), '빈 칸이면 ✕ 칸 비우기는 쉰다');
+  await ed3.locator(sel('slot-class-input')).fill('6-1');
+  await ed3.locator(sel('slot-subject-input')).fill('체육');
+  await ed3.locator(sel('lesson-panel-note')).fill('줄넘기');
+  await ed3.locator(sel('lesson-panel-reset')).click();
+  const emptied = await Promise.all(['slot-class-input', 'slot-subject-input', 'lesson-panel-note'].map((k) => ed3.locator(sel(k)).inputValue()));
+  r.check(emptied.every((v) => v === ''), `✕ 칸 비우기 = 학년-반·과목·비고를 한 번에 (${emptied.join('|')})`);
+  r.check(await ed3.locator(sel('slot-class-input')).evaluate((el) => el === document.activeElement), '비운 뒤 커서는 학년-반 칸');
+  r.check(await waitFor(ed3), '비워도 칸은 열려 있다');
   await ed3.locator(sel('slot-class-input')).fill('502');
   await ed3.locator(sel('slot-subject-input')).click();
   r.check((await ed3.locator(sel('slot-class-input')).inputValue()) === '5-2', "'502' → '5-2' (칸을 떠나면)");

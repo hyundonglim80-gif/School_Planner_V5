@@ -169,7 +169,7 @@ try {
     r.check((await count(sel('view-toggle'))) === 3 && (await count(sel('date-label'))) === 1, '둘째 줄: 토글 셋·날짜');
     await q(sel('more-menu')).click();
     r.check((await count(sel('menu-section'))) === 4, '⋮ 네 구역');
-    r.check((await count(sel('menu-item'))) === 7, '⋮ 하루 화면에서 일곱 항목 (인쇄는 주간·년간에서만)');
+    r.check((await count(sel('menu-item'))) === 8, '⋮ 하루 화면에서 여덟 항목 (인쇄 창은 모든 화면에 - 10-23)');
     await page.keyboard.press('Escape');
   });
 
