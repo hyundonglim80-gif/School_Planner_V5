@@ -72,13 +72,10 @@ export default function EventDoneChip({ label, done, mark = true, onToggle, forw
         </span>
       ) : (
         mark &&
-        (label ? (
-          onToggle && <span aria-hidden className="inline-block w-[1.15em] h-[1.15em] text-[0.75em] shrink-0 invisible" />
-        ) : (
-          <span className="inline-block w-[1.15em] h-[1.15em] text-[0.75em] shrink-0 rounded-full border-[1.5px] border-current opacity-70" />
-        ))
+        // 라벨 칩은 ✓ 자리를 미리 잡지 않는다 - 완료하면 글자를 줄여 그 자리를 만든다 (칩이 커지지 않게)
+        !label && <span className="inline-block w-[1.15em] h-[1.15em] text-[0.75em] shrink-0 rounded-full border-[1.5px] border-current opacity-70" />
       )}
-      {label && label.name}
+      {label && (check ? <span className="text-[0.8em] leading-none">{label.name}</span> : label.name)}
     </span>
   );
 }
