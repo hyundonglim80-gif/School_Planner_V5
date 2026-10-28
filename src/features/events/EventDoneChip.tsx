@@ -65,12 +65,20 @@ export default function EventDoneChip({ label, done, mark = true, onToggle, forw
           : { backgroundColor: 'var(--color-slate-100)', color: 'var(--color-slate-500)', border: '1px solid var(--color-slate-200)' }
       }
     >
-      {check && (
-        <span data-event-check className="font-black leading-none">
+      {/* ✓ 자리는 늘 잡아 둔다 - 완료해도 칩 크기가 그대로. 눈에 띄게 초록 동그라미에 흰 ✓ */}
+      {check ? (
+        <span data-event-check className="inline-flex items-center justify-center w-[1.15em] h-[1.15em] rounded-full bg-emerald-600 text-white text-[0.75em] font-black leading-none shrink-0">
           ✓
         </span>
+      ) : (
+        mark &&
+        (label ? (
+          onToggle && <span aria-hidden className="inline-block w-[1.15em] h-[1.15em] text-[0.75em] shrink-0 invisible" />
+        ) : (
+          <span className="inline-block w-[1.15em] h-[1.15em] text-[0.75em] shrink-0 rounded-full border-[1.5px] border-current opacity-70" />
+        ))
       )}
-      {label ? label.name : !check && <span className="inline-block w-[0.7em] h-[0.7em] my-[0.15em] rounded-full border-[1.5px] border-current opacity-70" />}
+      {label && label.name}
     </span>
   );
 }
