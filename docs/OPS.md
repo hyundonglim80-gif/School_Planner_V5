@@ -13,6 +13,8 @@
 - 드라이브 자동 백업(앱)은 PC + 구글 권한 + **개인 공간만**이다. 이 백업은 서버 자료 전체(그룹 공간·휴대폰만 쓰는 사람·V3·V4)를 담는다. 예약 내보내기 함수는 두지 않는다(같은 일).
 - 값: 백업 저장 용량만큼(무료 할당 없음). Google Cloud 콘솔 → 결제 → 보고서 → 서비스 'Cloud Firestore'의 Backup 줄. 예산 알림은 결제 → 예산 및 알림.
 - PITR(7일 안 아무 시점)은 켜지 않았다(10-29 - ③을 고르지 않음).
+- **`(default)` 삭제 보호 켬**(10-29 사용자 - 무료): 데이터베이스를 통째로 지우는 명령이 막힌다. 끄는 것도 묻는다(`firestore:databases:update "(default)" --delete-protection DISABLED`).
+  연습 DB(`restore-drill`)는 보호를 켜지 않으니 그대로 지울 수 있다.
 
 ```
 npx firebase firestore:backups:schedules:list --project schoolplannerv3   # 일정 둘
