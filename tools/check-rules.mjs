@@ -366,6 +366,8 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
 
   const gs = 'g_rulecheck';
   const code = 'V5RULECHK';
+  const code2 = 'V5RULECK2';
+  const code3 = 'V5RULECK3';
   const group = {
     kind: 'group', name: '규칙 점검 그룹', ownerId: aUid, members: { [aUid]: 'owner' },
     inviteCode: code, createdAt: now(), updatedAt: now(), v: 1,
@@ -397,7 +399,7 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
     await getDocs(collection(X.db, 'spaceInvites'));
   });
 
-  console.log('\n[V5 참여] — 나만, member로만');
+  console.log('\n[V5 참여] — 나만, member로만, 지금 열린 코드를 joinCodes.<나>에 (P14-1)');
   await must('코드를 아는 사람은 초대 코드 하나를 읽는다', async () => {
     const d = await getDoc(invite(B, code));
     if (d.data()?.sid !== gs) throw new Error('초대 코드를 못 읽었다');
@@ -412,16 +414,28 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
     await getDocs(collection(X.db, 'spaces'));
   });
   await mustNot("스스로 'owner'로 참여한다", async () => {
-    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'owner' });
+    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'owner', [`joinCodes.${xUid}`]: code });
   });
   await mustNot('참여하면서 남도 함께 넣는다', async () => {
-    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'member', [`members.${bUid}`]: 'member' });
+    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'member', [`members.${bUid}`]: 'member', [`joinCodes.${xUid}`]: code });
   });
   await mustNot('참여하면서 그룹 이름도 바꾼다', async () => {
-    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'member', name: 'X가 바꿈' });
+    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'member', [`joinCodes.${xUid}`]: code, name: 'X가 바꿈' });
   });
-  await must('나만 member로 참여한다', async () => {
-    await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member', updatedAt: now() });
+  await mustNot('코드 없이 그룹 이름(sid)만 알고 참여한다', async () => {
+    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'member', updatedAt: now() });
+  });
+  await mustNot('틀린 코드로 참여한다', async () => {
+    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'member', [`joinCodes.${xUid}`]: 'WRONG1', updatedAt: now() });
+  });
+  await mustNot('참여하면서 남의 joinCodes 칸도 적는다', async () => {
+    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'member', [`joinCodes.${xUid}`]: code, [`joinCodes.${bUid}`]: code, updatedAt: now() });
+  });
+  await must('맞는 코드로 나만 member로 참여한다', async () => {
+    await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member', [`joinCodes.${bUid}`]: code, updatedAt: now() });
+  });
+  await mustNot('앞사람이 맞는 코드로 들어온 뒤 코드 없이 참여한다 (남은 joinCodes 값)', async () => {
+    await updateDoc(space(X, gs), { [`members.${xUid}`]: 'member', updatedAt: now() });
   });
   await must('참여한 뒤 그룹 문서를 읽는다', async () => {
     if (!(await getDoc(space(B, gs))).exists()) throw new Error('못 읽었다');
@@ -449,7 +463,32 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
     await deleteDoc(space(B, gs));
   });
 
-  console.log('\n[V5 나가기·초대 닫기]');
+  // 내보내기 (P14-1 ■2 - data/spaces removeMember): 주인 갈래로 members·joinCodes·people을 지우고 코드도 바꾼다
+  console.log('\n[V5 내보내기] — 주인만, 코드도 바꾼다');
+  await must('(준비) 구성원 이름 people/B', async () => {
+    await setDoc(doc(B.db, 'spaces', gs, 'people', bUid), { name: 'B', updatedAt: now(), v: 1 });
+  });
+  await must('주인이 구성원을 내보낸다 (members·joinCodes·people + 새 코드 한 묶음)', async () => {
+    const b = writeBatch(A.db);
+    b.update(space(A, gs), { [`members.${bUid}`]: deleteField(), [`joinCodes.${bUid}`]: deleteField(), inviteCode: code2, updatedAt: now() });
+    b.set(invite(A, code2), { sid: gs, ownerId: aUid });
+    b.delete(doc(A.db, 'spaces', gs, 'people', bUid));
+    await b.commit();
+  });
+  await must('주인이 옛 코드 문서를 지운다 (묶음 밖)', async () => {
+    await deleteDoc(invite(A, code));
+  });
+  await mustNot('내보낸 사람은 그룹 항목을 못 읽는다', async () => {
+    await getDoc(item(B, gs, 'rc_g1'));
+  });
+  await mustNot('내보낸 사람이 옛 코드로 다시 참여한다', async () => {
+    await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member', [`joinCodes.${bUid}`]: code, updatedAt: now() });
+  });
+  await must('내보낸 사람도 새 코드를 받으면 다시 참여한다', async () => {
+    await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member', [`joinCodes.${bUid}`]: code2, updatedAt: now() });
+  });
+
+  console.log('\n[V5 나가기·코드 바꾸기·초대 닫기]');
   await must('구성원이 나간다', async () => {
     await updateDoc(space(B, gs), { [`members.${bUid}`]: deleteField() });
   });
@@ -459,11 +498,30 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
   await mustNot('주인은 나가지 못한다', async () => {
     await updateDoc(space(A, gs), { [`members.${aUid}`]: deleteField() });
   });
+  await must('주인이 초대 코드를 바꾼다 (공간 inviteCode + 새 코드 한 묶음, 옛 코드 지우기)', async () => {
+    const b = writeBatch(A.db);
+    b.update(space(A, gs), { inviteCode: code3, updatedAt: now() });
+    b.set(invite(A, code3), { sid: gs, ownerId: aUid });
+    b.delete(invite(A, code2));
+    await b.commit();
+  });
+  await mustNot('코드가 바뀐 뒤 옛 코드로 참여한다', async () => {
+    await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member', [`joinCodes.${bUid}`]: code2, updatedAt: now() });
+  });
+  await mustNot('코드가 바뀐 뒤 나갈 때 남은 옛 코드 칸으로 참여한다', async () => {
+    await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member', updatedAt: now() });
+  });
+  await must('새 코드로는 참여한다', async () => {
+    await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member', [`joinCodes.${bUid}`]: code3, updatedAt: now() });
+  });
+  await must('구성원이 다시 나간다', async () => {
+    await updateDoc(space(B, gs), { [`members.${bUid}`]: deleteField(), updatedAt: now() });
+  });
   await must('주인이 초대를 닫는다 (inviteCode 지우기)', async () => {
     await updateDoc(space(A, gs), { inviteCode: deleteField() });
   });
-  await mustNot('초대가 닫히면 참여하지 못한다', async () => {
-    await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member' });
+  await mustNot('초대가 닫히면 코드를 적어도 참여하지 못한다', async () => {
+    await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member', [`joinCodes.${bUid}`]: code3, updatedAt: now() });
   });
 
   // V4 그룹 가져오기 (P8-4 ■2): V4 groups/{gid}의 구성원이 g_{gid}를 V4 주인·구성원 그대로 만든다
@@ -546,7 +604,7 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
     await deleteDoc(item(A, gs, 'rc_g2'));
   });
   await must('주인이 초대 코드를 지운다', async () => {
-    await deleteDoc(invite(A, code));
+    await deleteDoc(invite(A, code3));
   });
   await must('주인이 그룹을 지운다', async () => {
     await deleteDoc(space(A, gs));

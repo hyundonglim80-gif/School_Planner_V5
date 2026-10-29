@@ -1,11 +1,11 @@
 // 👥 공유 그룹 창 (V4 GroupModal - MENU 2-2: 계정 칸 '👥 공유 그룹'·공간 고르기 끝 '👥 그룹 관리…', 단축키 'group'). P8-4.
-// 내 그룹(초대 코드·구성원·열기·나가기/지우기) · 새 그룹 만들기 · 초대 코드로 참여 · V4 그룹 가져오기(■2 - V4GroupsSection).
+// 내 그룹(초대 코드·구성원·열기·나가기/지우기, 그룹장은 🔄 코드 바꾸기·🚫 초대 닫기·구성원 × 내보내기 - P14-1) · 새 그룹 만들기 · 초대 코드로 참여 · V4 그룹 가져오기(■2 - V4GroupsSection).
 import { useEffect, useState } from 'react';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import type { WindowProps } from '../../app/windows';
 import { useSession } from '../../data/session';
 import { setSpaceChoice, useMySpaces, type GroupSpace } from '../../data/spaceChoice';
-import { createGroup, deleteGroup, joinGroup, leaveGroup, openInvite, readPeople, writeMyName } from '../../data/spaces';
+import { closeInvite, createGroup, deleteGroup, joinGroup, leaveGroup, openInvite, readPeople, removeMember, rotateInvite, writeMyName } from '../../data/spaces';
 import { useCurrentSpaceId } from '../../data/session';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { Section } from '../settings/parts';
@@ -71,6 +71,43 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
       setBusy('');
     }
   };
+  // 주인만 (P14-1): 코드 바꾸기 · 초대 닫기 · 구성원 내보내기(코드도 바꾼다)
+  const rotateCode = async () => {
+    if (!user || !window.confirm('초대 코드를 바꿀까요? 옛 코드로는 더 들어오지 못합니다.')) return;
+    setBusy('바꾸는 중…');
+    try {
+      const code = await rotateInvite(user, group);
+      showToast(`🔄 초대 코드를 ${code}로 바꿨습니다.`);
+    } catch (e) {
+      showErrorToast(`초대 코드를 바꾸지 못했습니다. ${errText(e)}`, e);
+    } finally {
+      setBusy('');
+    }
+  };
+  const closeCode = async () => {
+    if (!user || !window.confirm('초대를 닫을까요? 지금 코드로는 더 들어오지 못합니다. 다시 열면 새 코드가 나옵니다.')) return;
+    setBusy('닫는 중…');
+    try {
+      await closeInvite(user, group);
+      showToast('🚫 초대를 닫았습니다.');
+    } catch (e) {
+      showErrorToast(`초대를 닫지 못했습니다. ${errText(e)}`, e);
+    } finally {
+      setBusy('');
+    }
+  };
+  const kick = async (id: string, name: string) => {
+    if (!user || !window.confirm(`${name} 선생님을 그룹에서 내보낼까요?${group.inviteCode ? ' 초대 코드도 새로 바뀝니다.' : ''}`)) return;
+    setBusy('내보내는 중…');
+    try {
+      await removeMember(user, group, id);
+      showToast(`👋 ${name} 선생님을 내보냈습니다.`);
+    } catch (e) {
+      showErrorToast(`내보내지 못했습니다. ${errText(e)}`, e);
+    } finally {
+      setBusy('');
+    }
+  };
   const remove = async () => {
     if (!user || !window.confirm(`[${group.name}] 그룹을 지울까요?\n\n그룹의 일정·수업·메모·조사표가 모두 영구히 지워지고, 구성원 모두 볼 수 없게 됩니다. 되돌릴 수 없습니다.`)) return;
     setBusy('지우는 중…');
@@ -105,8 +142,29 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
           </button>
         )}
       </div>
-      <p data-group-members={memberIds.length} className="text-xs text-slate-500">
-        구성원 {memberIds.length}명: {memberIds.map((id) => people[id]?.name || (id === uid ? '나' : '이름 없음')).join(', ')}
+      <p data-group-members={memberIds.length} className="flex flex-wrap items-center gap-1 text-xs text-slate-500">
+        <span>구성원 {memberIds.length}명:</span>
+        {memberIds.map((id) => {
+          const name = people[id]?.name || (id === uid ? '나' : '이름 없음');
+          return (
+            <span key={id} data-group-person={id} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+              {name}
+              {owner && id !== uid && (
+                <button
+                  type="button"
+                  data-group-remove-member={id}
+                  disabled={!!busy}
+                  onClick={() => void kick(id, name)}
+                  title={`${name} 선생님 내보내기`}
+                  aria-label={`${name} 선생님 내보내기`}
+                  className="px-0.5 font-bold text-slate-400 hover:text-red-600 disabled:opacity-50 cursor-pointer"
+                >
+                  ×
+                </button>
+              )}
+            </span>
+          );
+        })}
       </p>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         {group.inviteCode && (
@@ -118,6 +176,16 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
             <button type="button" data-group-copy onClick={() => void copy()} className="px-2 py-0.5 rounded border border-slate-300 font-bold hover:bg-slate-50 cursor-pointer">
               코드 복사
             </button>
+            {owner && (
+              <>
+                <button type="button" data-group-rotate-code disabled={!!busy} onClick={() => void rotateCode()} title="옛 코드로는 더 들어오지 못합니다" className="px-2 py-0.5 rounded border border-slate-300 font-bold hover:bg-slate-50 disabled:opacity-50 cursor-pointer">
+                  🔄 코드 바꾸기
+                </button>
+                <button type="button" data-group-close-code disabled={!!busy} onClick={() => void closeCode()} title="아무도 코드로 들어오지 못합니다" className="px-2 py-0.5 rounded border border-slate-300 font-bold hover:bg-slate-50 disabled:opacity-50 cursor-pointer">
+                  🚫 초대 닫기
+                </button>
+              </>
+            )}
           </>
         )}
         {owner && !group.inviteCode && (

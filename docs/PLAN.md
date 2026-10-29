@@ -28,8 +28,8 @@
 
 ## 지금 하는 일
 
-**P14-1 ■2** (10-29 계획) - 점검 뒤 손보기 여덟 세션의 첫째: 그룹 참여 = 낸 코드 확인. 6장 `### P14` 머리 표와 '모든 P14 세션에 같은 것'을 읽고 `### P14-1`로. 8번(`CLAUDE.md` 7장 → `docs/MAP.md`)은 10-29에 앞당겨 끝냈다.
-**■1은 `wip/P14-1` 브랜치**(규칙 배포 = ■2와 한 번에 - 5장): `git checkout wip/P14-1`에서 ■2 → main에 합쳐 푸시 → 화면 배포 끝 → 규칙 배포(■3).
+**P14-1 ■3** (10-29 계획) - 점검 뒤 손보기 여덟 세션의 첫째: 그룹 참여 = 낸 코드 확인. 6장 `### P14` 머리 표와 '모든 P14 세션에 같은 것'을 읽고 `### P14-1`로. 8번(`CLAUDE.md` 7장 → `docs/MAP.md`)은 10-29에 앞당겨 끝냈다.
+■1·■2는 main(10-29 `wip/P14-1`에서 합침) → 화면 배포 끝 → **운영 규칙 배포(■3 - 사용자 '한 번에' 허락)**가 아직이면 그것부터.
 차례는 사용자 번호대로 P14-1 → P14-8(사용자 10-29 "1번부터 모두 차례로"). main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
 
 ---
@@ -1697,7 +1697,9 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   `check-rules.mjs` [V5 참여]: must '맞는 코드로'(423을 joinCodes로) · mustNot '코드 없이 sid만으로'·'틀린 코드'·**'앞사람이 같은 코드로 들어온 뒤 코드 없이'**·'남의 joinCodes 칸'·'참여하며 다른 칸도' ·
   [나가기·초대 닫기](452-467): '닫힌 뒤에는 코드를 적어도 막힘'(465) · '코드가 바뀐 뒤 옛 코드는 막힘'·'새 코드로는 됨' · [V4 가져오기](519-521) '코드 없이 V4 구성원 참여'는 그대로 must.
   `npm run emu`(다른 창) → `npm run check:rules` 모두 · `npm run test:data` · 점검 share-groups·import-groups. V4 `firestore.rules`에 복사(커밋만).
-- [ ] ■2 **그룹 창: 🔄 코드 바꾸기 · 🚫 초대 닫기 · 구성원 내보내기**(주인만). spaces.ts:
+- [x] ■2 **그룹 창: 🔄 코드 바꾸기 · 🚫 초대 닫기 · 구성원 내보내기**(주인만). spaces.ts:
+  → 10-29: 옛 코드 문서 지우기는 **묶음 밖**(`dropInviteDoc` - 없는 문서 지우기는 규칙이 막아 묶음째 실패한다. 남아도 inviteCode가 바뀌어 못 들어온다) ·
+  구성원 칩 `data-group-person`(`group-member`는 자리표가 쓴다) · check-rules V5 91 · share-groups 43 · 단위 2493(설명서 전체 그리기 시험이 전체 실행에서 5초를 넘겨 20초로).
   `rotateInvite`(새 코드 `freeInviteCode` → 공간 `inviteCode` + `spaceInvites/{새}` 만들기 + `{옛}` 지우기, 한 묶음) · `closeInvite`(`inviteCode: deleteField()` + 옛 코드 지우기) ·
   `removeMember`(주인 자신은 안 됨 - `members.<uid>`·`joinCodes.<uid>` 지우기 + `people/{uid}` 지우기 + 코드 바꾸기, 한 묶음 - **내보내면 코드를 늘 바꾼다**). 나가기는 코드를 바꾸지 않는다(걱정되면 주인이 🔄).
   지금 규칙(주인 갈래 215-223·초대 279-288)으로 되는지 check-rules must 셋 + mustNot '내보낸 사람이 옛 코드로 다시'.

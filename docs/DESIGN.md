@@ -53,7 +53,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 
 ### 4-1. 공간
 
-`spaces/{sid}` = `{ kind: 'personal'|'group', name, ownerId, members: { [uid]: 'owner'|'member' }, inviteCode?, createdAt, updatedAt, v: 1 }`
+`spaces/{sid}` = `{ kind: 'personal'|'group', name, ownerId, members: { [uid]: 'owner'|'member' }, inviteCode?, joinCodes?: { [uid]: 낸 코드 }, createdAt, updatedAt, v: 1 }`
 
 - 개인 공간 id = `u_{uid}`(찾지 않고 바로 안다), 그룹 공간 = `g_{id}`.
 - **공간마다**(개인·그룹 같다): `items`, `labels`, `series`, `lessonDays`, `timetables`, `evaluations`, `notices`.
@@ -62,6 +62,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 - V4와 다른 점: **라벨이 공간 것**이다. 항목이 라벨을 id로 가리키므로 그룹 구성원이 같은 라벨 목록을 봐야 한다(개인 공간은 V4처럼 내 라벨).
 - 규칙(`firestore.rules` V5 블록, P1-2): 개인 공간 아래는 id `u_{uid}`만 본다(공간 문서가 없어도 된다 - 로그인하면 `ensurePersonalSpace`가 만든다).
   그룹은 `members`. **`inviteCode`가 있으면 초대가 열린 것** - 참여는 그때 나만 'member'로, 나가기는 나만, 주인은 나가지 못하고 그룹을 지운다.
+  참여할 때 낸 코드를 `joinCodes.<나>`에 적고 규칙이 그것 == 지금 `inviteCode`인지 본다(P14-1 - 전에는 sid만 알면 들어왔다. 칸 하나면 앞사람이 남긴 값으로 통과해 사람마다 칸).
   `spaceInvites/{code}`는 그 그룹 주인만 만든다. 개인 공간 문서는 지우지 못한다.
   V4 그룹에서 가져온 공간 `g_{V4 그룹 id}`는 V4 `groups/{gid}`의 구성원 누구나 V4 주인·구성원 그대로 만들고, V4 구성원이면 초대 코드 없이 'member'로 들어간다(P8-4 ■2).
 

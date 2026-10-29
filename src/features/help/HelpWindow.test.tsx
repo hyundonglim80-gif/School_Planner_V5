@@ -170,7 +170,8 @@ describe('사용 설명서 - 기능별 분류 → 세부 기능 → 설명·사�
     for (const n of qa('[data-help-lookback]')) expect(n).toHaveTextContent('21');
   });
 
-  it('모든 항목을 그렸을 때 꾸밈 기호·자리표가 글자로 남지 않는다 (굵은 글 안의 자리표도 푼다)', () => {
+  // 70여 주제를 모두 그린다 - 혼자 1.5초, 전체 시험을 함께 돌리면 5초(기본)를 넘겨 깨졌다(10-29) → 20초
+  it('모든 항목을 그렸을 때 꾸밈 기호·자리표가 글자로 남지 않는다 (굵은 글 안의 자리표도 푼다)', { timeout: 20000 }, () => {
     const left: string[] = [];
     for (const topic of ALL_HELP_TOPICS) {
       const { unmount } = open({ topic: topic.id });
