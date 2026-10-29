@@ -2,13 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { writeBatch } from 'firebase/firestore';
 import { BATCH_LIMIT, batch, create, newPath, patch, purge, remove, restore, writeOp, writeOps } from './index';
 import { ShownError } from '../../app/toast';
+import { resetPendingWritesForTest, usePendingWrites } from '../pendingWrites';
 import type { Item } from '../types';
 
 const fb = vi.hoisted(() => ({ auth: { currentUser: { uid: 'me' } as { uid: string } | null }, db: {} }));
 vi.mock('../firebase', () => fb);
 
 // 묶음 쓰기를 흉내 낸다 - 무엇을 어디에 적었나를 남긴다
-const written = vi.hoisted(() => ({ batches: [] as { kind: string; path: string; data?: unknown }[][], fail: null as Error | null }));
+const written = vi.hoisted(() => ({
+  batches: [] as { kind: string; path: string; data?: unknown }[][],
+  fail: null as Error | null,
+  /** 이것이 풀릴 때까지 서버가 받지 않는다 (끊긴 동안) */
+  hold: null as Promise<void> | null,
+}));
 vi.mock('firebase/firestore', () => ({
   doc: (_db: unknown, path: string) => ({ path }),
   serverTimestamp: () => 'SERVER_TIME',
@@ -20,6 +26,7 @@ vi.mock('firebase/firestore', () => ({
       update: (ref: { path: string }, data: unknown) => ops.push({ kind: 'update', path: ref.path, data }),
       delete: (ref: { path: string }) => ops.push({ kind: 'delete', path: ref.path }),
       commit: async () => {
+        if (written.hold) await written.hold;
         if (written.fail) throw written.fail;
         written.batches.push(ops);
       },
@@ -39,6 +46,8 @@ const note: Omit<Item, 'updatedAt' | 'v' | 'createdAt' | 'authorId' | 'deletedAt
 beforeEach(() => {
   written.batches = [];
   written.fail = null;
+  written.hold = null;
+  resetPendingWritesForTest();
   fb.auth.currentUser = { uid: 'me' };
   vi.mocked(writeBatch).mockClear();
   document.body.innerHTML = '';
@@ -123,5 +132,22 @@ describe('저장 도우미', () => {
   it('빈 묶음은 아무것도 적지 않는다', async () => {
     expect(await batch([])).toEqual([]);
     expect(writeBatch).not.toHaveBeenCalled();
+  });
+
+  it('서버가 받을 때까지 기다리는 쓰기로 센다 - 받으면·실패하면 뺀다 (P14-6 ■1 끊김 안내)', async () => {
+    let release!: () => void;
+    written.hold = new Promise<void>((r) => (release = r));
+    const first = create(at, note);
+    const second = patch(at, { text: '새 글' }, { text: '옛 글' });
+    expect(usePendingWrites.getState().count).toBe(2);
+    expect(usePendingWrites.getState().since).not.toBeNull();
+    release();
+    await Promise.all([first, second]);
+    expect(usePendingWrites.getState()).toEqual({ count: 0, since: null });
+
+    written.hold = null;
+    written.fail = Object.assign(new Error('denied'), { code: 'permission-denied' });
+    await expect(writeOps([writeOp.remove(at)])).rejects.toMatchObject({ code: 'permission-denied' });
+    expect(usePendingWrites.getState().count).toBe(0);
   });
 });

@@ -30,6 +30,8 @@ import AutoBackupBanner from '../features/backup/AutoBackupBanner';
 import NewYearBanner from '../features/newYear/NewYearBanner';
 import { useShareReceiver } from '../features/share/receive';
 import NewBuildBanner from './NewBuildBanner';
+import PendingWritesBanner from './PendingWritesBanner';
+import { usePendingWritesGuard } from './pendingWritesGuard';
 import ColumnResizer from '../ui/ColumnResizer';
 import ImageViewer from '../ui/ImageViewer';
 import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../ui/sideColumn';
@@ -47,7 +49,7 @@ import SecondRow from './SecondRow';
 import { useGlobalGestures } from './useGlobalGestures';
 import WindowHost from './WindowHost';
 import './windowList';
-import { closeAllWindows } from './windows';
+import { closeAllWindows, useWindows } from './windows';
 
 export default function Shell() {
   const scope = useNav((s) => s.scope);
@@ -82,12 +84,16 @@ export default function Shell() {
   useClaudeRequestsWatch();
   // 복사한 것 모으기 (왼쪽 📋 클립보드 칸 - 닫혀 있어도 모은다)
   useClipboardCapture();
+  // 서버가 아직 받지 않은 저장이 있으면 탭을 닫기 전에 묻는다 (P14-6 ■1 - 끊긴 동안 쓰기는 메모리에만)
+  usePendingWritesGuard();
 
   // 오른쪽 줄(창·쓰는 칸)이 하나라도 서 있으면 그 폭만큼 화면을 줄인다. 폭은 모든 칸이 같다.
   const rightOpen = useSidePopups((s) => s.order.length > 0);
   // 왼쪽 클립보드 칸이 화면 옆에 붙어 있으면 그 폭만큼 화면을 오른쪽으로 민다 (휴대폰은 위에 덮는다)
   const docked = useDocked();
   const leftOpen = useClipboardPanel((s) => s.open) && docked;
+  // 휴대폰은 창이 화면을 덮는다 - 그때 '저장을 기다립니다' 띠는 창 위에 뜬다
+  const windowCovers = useWindows((s) => s.windows.length > 0) && !docked;
   // 경계선을 끌어 바꾼 폭. 칸들은 body 아래에 그려지므로(createPortal) 문서 맨 위에 건다.
   const rightPanelWidth = useLayoutPrefs((s) => s.rightPanelWidth);
   const leftPanelWidth = useLayoutPrefs((s) => s.leftPanelWidth);
@@ -141,6 +147,8 @@ export default function Shell() {
       <header ref={headerRef} className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm px-4 py-3 border-b border-border shadow-xs flex flex-col gap-2.5">
         <Header />
         {!isDatelessScope(scope) && <SecondRow />}
+        {/* 📴 끊겨 저장을 기다림 - 앱을 닫지 마세요 (P14-6 ■1). 휴대폰에서 창이 덮으면 창 위에 */}
+        <PendingWritesBanner floating={windowCovers} />
       </header>
 
       {/* 아래 탭바에 내용이 가리지 않도록 아래 여백을 둔다 */}

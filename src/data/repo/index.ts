@@ -17,6 +17,7 @@ import { auth, db } from '../firebase';
 import { failWithToast } from '../../app/toast';
 import { newId } from '../id';
 import { beginLocalWrite, endLocalWrite } from '../mirror/store';
+import { beginPendingWrite } from '../pendingWrites';
 import type { DocOf, DocPath, Editable, SpaceCollection } from '../types';
 import {
   DELETE_FIELD,
@@ -117,6 +118,8 @@ export async function writeOps(ops: WriteOp[]): Promise<void> {
   const ctx = { uid, now: Date.now() };
   const noticed = observers.size ? noticeWrites(ops) : null;
   const local = beginLocalWrite(ops, ctx);
+  // 서버가 받을 때까지 센다 - 끊긴 동안 머리줄 안내·닫기 전 묻기(data/pendingWrites)
+  const pending = beginPendingWrite();
   try {
     for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
       const b = writeBatch(db);
@@ -131,10 +134,12 @@ export async function writeOps(ops: WriteOp[]): Promise<void> {
       await b.commit();
     }
   } catch (e) {
+    pending();
     endLocalWrite(local, false);
     noticed?.(false);
     throw e;
   }
+  pending();
   endLocalWrite(local, true);
   noticed?.(true);
 }

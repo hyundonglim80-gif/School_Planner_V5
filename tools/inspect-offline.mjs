@@ -4,8 +4,9 @@
 //   1) 서비스 워커가 이 판의 앱 파일을 모두 담는다 → 네트워크를 끊고 다시 열어도 화면과 기기 사본의 자료가 보인다
 //   2) 공유받기: '/share-target'에 POST(글·파일) → '/?share=…' → 새 메모 칸에 글 · 공유받은 파일 줄 · 주소에서 표시가 지워진다
 //   3) '/'의 첫 스크립트가 바뀌면 '새 판이 있습니다' 띠
-import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, SITE, waitFor } from './lib/probe.mjs';
+//   4) P14-6 ■1: 끊긴 채 저장 → 머리줄 '앱을 닫지 마세요 (n개)'·닫기 전에 묻기 → 이어지면 저절로 저장
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const undo = restorer();
@@ -96,6 +97,35 @@ try {
   r.check(await waitFor(page.locator(sel('note-panel', 'new')), 15000), '이어진 뒤 다시 누르면 새 메모 칸이 열린다 (새로고침 없이)');
   r.check(await waitFor(allCached, 30000), '이어지면 못 담은 파일을 마저 담는다');
   r.check(!(await reloaded()), '끝까지 새로고침 없음');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+
+  // P14-6 ■1 (10-30 사용자 휴대폰 ②): 끊긴 동안 쓰기는 메모리에만 - 앱을 닫으면 사라지므로 머리줄로 알리고 닫기 전에 묻는다
+  r.section('끊긴 채 저장 (서버가 받지 않은 쓰기)');
+  await page.locator(sel('journal-add')).click();
+  const note = page.locator(sel('note-panel', 'new'));
+  await note.waitFor({ timeout: 15000 });
+  await note.locator(sel('note-text-input')).fill('오프라인저장점검 1');
+  await ctx.setOffline(true);
+  await note.locator(sel('note-save')).click();
+  const pendingBar = page.locator(`header ${sel('pending-writes')}${sel('pending-offline')}`);
+  r.check(await waitFor(pendingBar, 8000), "끊긴 채 저장 → 머리줄 '📴 인터넷이 끊겨 저장을 기다립니다 - 앱을 닫지 마세요'");
+  const barText = (await pendingBar.textContent().catch(() => '')) ?? '';
+  r.check(/\(\d+개\)/.test(barText), `기다리는 수 (${barText})`);
+  r.check(((await note.locator(sel('note-save')).textContent()) ?? '').includes('저장 중'), "저장 단추는 '저장 중...'에 머문다 (서버가 받을 때까지)");
+  const asksBeforeLeave = () =>
+    page.evaluate(() => {
+      const e = new Event('beforeunload', { cancelable: true });
+      window.dispatchEvent(e);
+      return e.defaultPrevented;
+    });
+  r.check(await asksBeforeLeave(), '기다리는 저장이 있으면 탭을 닫기 전에 묻는다 (beforeunload)');
+  await ctx.setOffline(false);
+  r.check(await waitFor(page.locator('[data-toast]', { hasText: '기다리던 저장을 마쳤습니다' }), 30000), "이어지면 저절로 저장 → '✅ 기다리던 저장을 마쳤습니다'");
+  r.check((await page.locator(sel('pending-writes')).count()) === 0 && !(await asksBeforeLeave()), '띠를 거두고 더는 묻지 않는다');
+  const savedId = (await page.locator(sel('note-panel', 'edit')).getAttribute('data-note-id', { timeout: 10000 }).catch(() => '')) ?? '';
+  if (savedId) undo.add(() => deleteDoc(doc(em.db, 'spaces', sid, 'items', savedId)));
+  const savedSnap = savedId ? await serverUntil(() => getDoc(doc(em.db, 'spaces', sid, 'items', savedId)), (d) => d.exists() && d.data().text === '오프라인저장점검 1') : null;
+  r.check(!!savedSnap?.exists(), `서버에 그 메모 (${savedId})`);
   await page.evaluate(() => window.sp5.closeAllWindows());
 
   r.section('공유받기');
