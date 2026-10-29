@@ -20,6 +20,14 @@ vi.mock('../../data/mirror/sync', () => ({ resetMirror }));
 
 // 개발자 탭 '오류 기록'은 서버를 읽는다 - 창 시험에서는 빈 목록 (칸은 DevErrorsSection.test)
 vi.mock('../../data/errorReport', () => ({ loadErrorReports: vi.fn(async () => []), deleteErrorReports: vi.fn() }));
+// '공휴일'도 서버를 읽는다 - 빈 표 (칸은 DevHolidaysSection.test)
+vi.mock('../../data/govHolidays', () => ({
+  loadGovApiKey: vi.fn(async () => ''),
+  loadHolidayYearStatus: vi.fn(async (year: number) => ({ year, count: 0, updatedAt: 0, updatedBy: '' })),
+  fetchGovHolidays: vi.fn(),
+  saveGovApiKey: vi.fn(),
+  saveSharedHolidays: vi.fn(),
+}));
 
 const q = (s: string) => document.querySelector<HTMLElement>(s)!;
 const qa = (s: string) => [...document.querySelectorAll<HTMLElement>(s)];
@@ -55,6 +63,7 @@ describe('환경설정 창', () => {
     expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'notify', 'school', 'shortcuts', 'app', 'dev']);
     expect(q('[data-settings-panel="dev"]')).toBeVisible();
     expect(q('[data-dev-tab] [data-settings-section="dev-errors"]')).toBeInTheDocument();
+    expect(q('[data-dev-tab] [data-settings-section="dev-holidays"]')).toBeInTheDocument();
     useSession.setState({ loading: true, user: null });
   });
 

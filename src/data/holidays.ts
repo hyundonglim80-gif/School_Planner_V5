@@ -1,4 +1,4 @@
-// 공휴일 표 읽기 (V4 hooks/useGovHolidays.ts·lib/holidays.ts). 서버 `holidays/{연도}`는 모두가 같이 읽기만 한다(개발자가 V4 환경설정에서 받아 둔다).
+// 공휴일 표 읽기 (V4 hooks/useGovHolidays.ts·lib/holidays.ts). 서버 `holidays/{연도}`는 모두가 같이 읽기만 한다(개발자가 V5 환경설정 > 개발자(또는 V4)에서 받아 둔다 - data/govHolidays).
 //   - 해마다 한 번만 읽고 이 기기에 남긴다(`sp5-holidays` - 연결이 없어도 지난번 표로 그린다). 세션마다 한 번 다시 읽는다.
 //   - 화면이 그 해를 물으면(holidayName) 그때 읽기 시작한다 - 받으면 version이 올라 구독한 화면이 다시 그린다.
 //   - 개인 공휴일(settings/common.myHolidays - V3 표를 가져온 것)은 앱이 setMyHolidays로 넣는다.
@@ -72,6 +72,12 @@ export function requestHolidayYear(year: number): void {
       // 규칙이 막았거나 연결이 없다 - 공휴일 없이도(지난번 표로) 앱은 돈다
       console.warn(`holidays/${year}를 읽지 못했습니다.`, e);
     });
+}
+
+/** 그 해 표를 다시 읽는다 (개발자가 방금 받아 저장했을 때 - 이 기기 표도 바로 바뀌게) */
+export function refreshHolidayYear(year: number): void {
+  asked.delete(year);
+  requestHolidayYear(year);
 }
 
 /** 그날 공휴일 이름 (그 해 표가 아직 없으면 읽기 시작하고 지금은 고정 공휴일만) */

@@ -1779,7 +1779,7 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
   `docs/OPS.md` 새 파일(짧게): 일정·보관·확인 명령 · **복원 연습**(복원은 새 DB로만: `gcloud firestore databases restore --source-backup=projects/schoolplannerv3/locations/<위치>/backups/<id> --destination-database=restore-drill` →
   콘솔에서 문서 하나 찾기 → (default) 같은 경로로 옮기기 → `gcloud firestore databases delete --database=restore-drill`. **(default)를 통째로 덮지 않는다** - V3·V4·V5 모두의 자료) ·
   `CLAUDE.md`에 'docs/OPS.md' 한 줄 · 설명서 `share.ts` '☁️ 드라이브 자동 백업' 절에 "드라이브 자동 백업은 PC에서, 서버는 개발자가 따로 날마다 백업합니다(사고가 나면 개발자에게)".
-- [ ] ■2 **공휴일 받기**: `domain/holidays.ts` `parseRestDeInfo`(한 달 응답 → 날짜표, item이 하나면 배열이 아니다·`isHoliday` 'N' 빼기 - V4 govApi 37-46) + 시험 ·
+- [x] ■2 **공휴일 받기** (10-29 끝 - CORS 통과·키 오류 응답은 그 달 실패·같은 날 둘은 이름 잇기·받지 못한 달도 묻기, inspect-dev-holidays): `domain/holidays.ts` `parseRestDeInfo`(한 달 응답 → 날짜표, item이 하나면 배열이 아니다·`isHoliday` 'N' 빼기 - V4 govApi 37-46) + 시험 ·
   `data/govHolidays.ts` `fetchGovHolidays(year, key)`(공공데이터 특일정보 `getRestDeInfo` 12달, 실패한 달 수, 다 실패면 던짐) · `loadGovApiKey`/`saveGovApiKey`(`admin/config.govApiKey`, merge) ·
   `saveSharedHolidays(year, days)`(V4와 같은 모양 `{ year, days, updatedAt, updatedBy }` - **모양을 바꾸면 V4가 깨진다**) + 시험(fetch 가짜) ·
   DevTab '공휴일' 칸: 키(password·저장) · 올해·내년·내후년 줄('2027년 · 18건 · 10-29 받음 [다시 받기]' / '⚠️ 없음 [받기]') · 건수가 줄면 "지금 20건 → 받은 것 15건. 덮어쓸까요?" · 받은 뒤 이 기기 표를 다시 읽기 ·
