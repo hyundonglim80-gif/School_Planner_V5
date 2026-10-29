@@ -241,18 +241,18 @@ async function run() {
   });
 
   const v4 = { pass, fail };
-  await runV5({ A, B, X, aUid, bUid, xUid });
+  await runV5({ A, B, X, D, aUid, bUid, xUid });
 
   console.log(`\n───────── V4 ${v4.pass}개 통과 / ${v4.fail}개 실패 · V5 ${pass - v4.pass}개 통과 / ${fail - v4.fail}개 실패 ─────────`);
   for (const c of [A, B, X, C, D]) await deleteApp(c.app).catch(() => {});
   process.exit(fail === 0 ? 0 : 1);
 }
 
-// ─── V5: spaces · spaceInvites · v5alarms ─────────────────────────────
+// ─── V5: spaces · spaceInvites · v5alarms · v5Errors ─────────────────
 //
 // V4 쪽과 달리 '문서가 없으면 막힌 것으로 친다'를 쓰지 않는다. 읽기 시험은 문서가 있는 데서만
 // 하므로, 규칙이 열려 있으면 그대로 '그런데 됐다'가 나온다.
-async function runV5({ A, B, X, aUid, bUid, xUid }) {
+async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   const now = () => Date.now();
   const space = (c, sid) => doc(c.db, 'spaces', sid);
   const item = (c, sid, id) => doc(c.db, 'spaces', sid, 'items', id);
@@ -596,6 +596,61 @@ async function runV5({ A, B, X, aUid, bUid, xUid }) {
   });
   await mustNot('앱이 알림 큐에 쓴다', async () => {
     await setDoc(doc(A.db, 'v5alarms', 'rc_g1'), { pendingAt: now() });
+  });
+
+  console.log('\n[V5 v5Errors] — 제 오류는 만들기만, 읽기·지우기는 개발자 (P14-2)');
+  // src/data/errorReport.ts가 보내는 모양 (expireAt = 30일 뒤)
+  const report = (uid, extra = {}) => ({
+    kind: 'error', message: 'TypeError: x is undefined', stack: 'at f (A.tsx:1:2)', note: '', build: 'rc', scope: 'day',
+    device: 'pc', standalone: false, ua: 'rule-check', uid, at: serverTimestamp(), expireAt: new Date(now() + 30 * 86400000), ...extra,
+  });
+  const errDoc = (c, id) => doc(c.db, 'v5Errors', id);
+  await must('로그인한 사람이 제 오류를 보낸다', async () => {
+    await setDoc(errDoc(A, 'rc_e1'), report(aUid));
+  });
+  await mustNot('남의 uid로 보낸다', async () => {
+    await setDoc(errDoc(A, 'rc_e2'), report(bUid));
+  });
+  await mustNot('긴 문장 (301자)', async () => {
+    await setDoc(errDoc(A, 'rc_e3'), report(aUid, { message: 'x'.repeat(301) }));
+  });
+  await mustNot('긴 스택 (1501자)', async () => {
+    await setDoc(errDoc(A, 'rc_e3'), report(aUid, { stack: 'x'.repeat(1501) }));
+  });
+  await mustNot('모르는 칸 (메모 글)', async () => {
+    await setDoc(errDoc(A, 'rc_e3'), report(aUid, { text: '김철수 상담' }));
+  });
+  await mustNot('모르는 종류', async () => {
+    await setDoc(errDoc(A, 'rc_e3'), report(aUid, { kind: 'log' }));
+  });
+  await mustNot('서버 시각이 아닌 at', async () => {
+    await setDoc(errDoc(A, 'rc_e3'), report(aUid, { at: new Date() }));
+  });
+  await mustNot('먼 expireAt (40일 - TTL을 피해 오래 남기기)', async () => {
+    await setDoc(errDoc(A, 'rc_e3'), report(aUid, { expireAt: new Date(now() + 40 * 86400000) }));
+  });
+  await mustNot('칸을 빼고 보낸다 (stack 없이)', async () => {
+    const { stack: _s, ...rest } = report(aUid);
+    await setDoc(errDoc(A, 'rc_e3'), rest);
+  });
+  await mustNot('보낸 사람도 제 오류를 읽지 못한다', async () => {
+    await getDoc(errDoc(A, 'rc_e1'));
+  });
+  await mustNot('개발자 아닌 사람의 목록', async () => {
+    await getDocs(collection(B.db, 'v5Errors'));
+  });
+  await mustNot('보낸 오류를 고친다', async () => {
+    await updateDoc(errDoc(A, 'rc_e1'), { message: 'changed' });
+  });
+  await mustNot('개발자 아닌 사람이 지운다', async () => {
+    await deleteDoc(errDoc(A, 'rc_e1'));
+  });
+  await must('개발자가 목록을 읽는다', async () => {
+    const snap = await getDocs(collection(D.db, 'v5Errors'));
+    if (!snap.docs.some((d) => d.id === 'rc_e1')) throw new Error('보낸 오류가 목록에 없다');
+  });
+  await must('개발자가 지운다', async () => {
+    await deleteDoc(errDoc(D, 'rc_e1'));
   });
 
   console.log('\n[V5 정리]');

@@ -1731,9 +1731,10 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   → 10-29: 'toast'는 **오류를 함께 넘긴 안내만**(입력 확인 안내 '라벨이 이미 있습니다'는 고장이 아니다 - ■4) · 안내 글에 파일 이름·라벨 이름이 끼므로 scrubText가 **따옴표 안·파일 이름**도 지운다(코드 이름처럼 생긴 것 `(reading 'title')`은 둔다) ·
   주소 ?뒤(토큰)·숫자 섞인 20자+ id도 · 'toast' 문서의 message = 안내 글, note = 오류 이름·코드(오류 문장은 싣지 않는다) · 'react' note = 컴포넌트 스택 · `buildReport`(올릴 칸 셈)·`isNoise`(+ `Script error.`·ShownError) ·
   세션 기록 = sessionStorage(새로고침해도 같은 오류 한 번), 하루 = localStorage · `looksLikeStaleChunk`를 lazyWithReload와 함께 쓴다 · 시험 18.
-- [ ] ■3 **규칙** `match /v5Errors/{id}`: create = 로그인 · `uid == request.auth.uid` · `keys().hasOnly(['kind','message','stack','build','scope','device','standalone','ua','uid','at','expireAt','note'])` ·
+- [x] ■3 **규칙** `match /v5Errors/{id}`: create = 로그인 · `uid == request.auth.uid` · `keys().hasOnly(['kind','message','stack','build','scope','device','standalone','ua','uid','at','expireAt','note'])` ·
   kind ∈ error·rejection·react·toast · message ≤ 300 · stack ≤ 1500 · ua ≤ 200 · `at == request.time` · `expireAt < request.time + duration.value(32, 'd')` / read·delete = `isDeveloper()` / update 안 됨.
   check-rules: 내 uid 됨 · 남의 uid·긴 글·모르는 칸 막힘 · 개발자 아닌 읽기·목록 막힘 · 개발자 읽기·지우기 됨. **이 커밋은 배포하지 않는다.**
+  → 10-29: 칸 열둘 모두 있어야(hasOnly + hasAll) · note·build(40)·scope(40)·device(pc·mobile)·standalone(bool)도 본다 · check-rules V5 106(+15: 남의 uid·긴 문장·긴 스택·모르는 칸·모르는 종류·서버 시각 아닌 at·40일 expireAt·칸 빼기·보낸 사람 읽기·목록·고치기·지우기 = 막힘) · V4 복사.
 - [ ] ■4 **보내기** `data/errorReport.ts` `reportError(kind, err, note?)` - 로그인 안 함·DEV·에뮬레이터 빌드면 콘솔만, `addDoc` 바로(repo·되돌리기·사본을 거치지 않음), 실패는 조용히 버린다(돌고 도는 것 막기).
   칸: kind·message·stack·build(`__BUILD_ID__`)·scope(route의 화면 이름만 - 날짜·글 없음)·device·standalone·ua·uid·at(serverTimestamp)·expireAt(+30일). **메모·학생 글은 싣지 않는다**('toast'는 앱이 정한 안내 글과 `code`·`name`만).
   `startErrorReports()`(window error·unhandledrejection - main.tsx에서 한 번) · `createRoot(el, { onUncaughtError, onCaughtError })` · `toast.ts` `showErrorToast`에서 `reportError('toast', …)` ·
