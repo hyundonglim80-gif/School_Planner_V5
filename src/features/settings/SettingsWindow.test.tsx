@@ -8,6 +8,7 @@ import { handleAppKeyDown, setShortcutOverrides, useShortcutOverrides } from '..
 import { anyWindowUnsaved } from '../../app/windows';
 import { overridesFromBindings, resolveBindings } from '../../domain/shortcuts';
 import { useMirror } from '../../data/mirror/store';
+import { useSession } from '../../data/session';
 import SettingsWindow from './SettingsWindow';
 
 // 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
@@ -29,13 +30,29 @@ beforeEach(() => {
   setShortcutOverrides({});
 });
 
-const openSettings = (tab?: 'view' | 'school' | 'shortcuts' | 'app') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
+const openSettings = (tab?: 'view' | 'school' | 'shortcuts' | 'app' | 'dev') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
 
 describe('환경설정 창', () => {
   it('지금 있는 탭만 (보기·알림·학교·단축키·앱 - 가져오기는 백업 창으로) - 아직 옮기지 않은 기능의 탭은 숨긴다', () => {
     openSettings();
     expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'notify', 'school', 'shortcuts', 'app']);
     expect(q('[data-settings-tab="view"]')).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('개발자 탭은 개발자 계정에만 (일반 계정은 개발자 탭으로 열어도 보기 탭)', () => {
+    useSession.setState({ loading: false, user: { uid: 'u1', email: 'teacher@example.com', displayName: '', photoURL: '' } });
+    const plain = openSettings('dev');
+    expect(document.querySelector('[data-settings-tab="dev"]')).toBeNull();
+    expect(document.querySelector('[data-settings-panel="dev"]')).toBeNull();
+    expect(q('[data-settings-tab="view"]')).toHaveAttribute('aria-selected', 'true');
+    plain.unmount();
+
+    useSession.setState({ loading: false, user: { uid: 'u2', email: 'HyunDongLim80@gmail.com', displayName: '', photoURL: '' } });
+    openSettings('dev');
+    expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'notify', 'school', 'shortcuts', 'app', 'dev']);
+    expect(q('[data-settings-panel="dev"]')).toBeVisible();
+    expect(q('[data-dev-tab] [data-settings-section="dev-errors"]')).toBeInTheDocument();
+    useSession.setState({ loading: true, user: null });
   });
 
   it('학교: 이월 기간 - 1~60일, 적는 즉시 계정 설정에 (칸을 떠나면 범위로 맞춘다)', () => {

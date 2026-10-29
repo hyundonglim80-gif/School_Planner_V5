@@ -1,10 +1,13 @@
-// ⚙️ 환경설정 창 (MENU 3-6, V4 components/SettingsModal.tsx). 탭: 보기 · 알림 · 학교 · 단축키 · 앱 (+ 개발자 - 켜지 않음, V4 환경설정에서). 가져오기는 백업 창 탭(P8-3).
+// ⚙️ 환경설정 창 (MENU 3-6, V4 components/SettingsModal.tsx). 탭: 보기 · 알림 · 학교 · 단축키 · 앱 (+ 개발자 - 개발자 계정에만, P14-2). 가져오기는 백업 창 탭(P8-3).
 // 그 기능이 V5로 옮겨 오기 전에는 탭·칸을 숨긴다(빈 탭을 보이지 않는다) - 기능을 옮기는 세션이 아래 표의 ready를 켜고 칸을 더한다.
 // 계정에 PC·휴대폰 따로 올라가는 값이 대부분이다(app/prefs). 휴지통 자동 비우기·드라이브 백업·교시 이름은 그 기능 창 안으로 옮겼다(MENU 3-7).
 import { useCallback, useRef, useState } from 'react';
 import type { WindowProps } from '../../app/windows';
+import { useSession } from '../../data/session';
+import { isDeveloper } from '../../domain/developers';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import AppTab from './AppTab';
+import DevTab from './DevTab';
 import NotifyTab from './NotifyTab';
 import SchoolTab from './SchoolTab';
 import ShortcutsTab, { type ShortcutsTabHandle } from './ShortcutsTab';
@@ -12,7 +15,7 @@ import ViewTab from './ViewTab';
 
 export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' | 'dev';
 
-const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean }> = [
+const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean; dev?: true }> = [
   { id: 'view', label: '보기', ready: true },
   // 일정 알림(앱을 닫아도) - P8-2 서버 푸시
   { id: 'notify', label: '알림', ready: true },
@@ -20,21 +23,21 @@ const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean }> 
   { id: 'school', label: '학교', ready: true },
   { id: 'shortcuts', label: '단축키', ready: true },
   { id: 'app', label: '앱', ready: true },
-  // 개발자 계정만 - 공휴일 P5-3 · 나이스 키 P6-3 · 공유 그룹 점검 P8-4 (라벨 상태는 '앱' 탭 '이 기기 사본'이 맡는다 - P2-3,
+  // 개발자 계정만(P14-2) - 공휴일 받기 P14-3 · 오류 기록 P14-2 ■5 (나이스 키·공유 그룹 점검은 V4 그대로. 라벨 상태는 '앱' 탭 '이 기기 사본'이 맡는다 - P2-3,
   // V4 labelDiagnostics는 라벨 문서를 못 읽어 기본값으로 때웠는지를 가리던 것 - V5는 라벨이 문서마다라 그런 때우기가 없다)
-  { id: 'dev', label: '개발자', ready: false },
+  { id: 'dev', label: '개발자', ready: true, dev: true },
 ];
 
-const SETTINGS_TABS = TABS.filter((t) => t.ready);
-
 export default function SettingsWindow({ params, close, raise }: WindowProps<{ tab?: SettingsTabId } | undefined>) {
-  const first = SETTINGS_TABS.find((t) => t.id === params?.tab)?.id ?? 'view';
+  const developer = isDeveloper(useSession((s) => s.user?.email));
+  const shownTabs = TABS.filter((t) => t.ready && (!t.dev || developer));
+  const first = shownTabs.find((t) => t.id === params?.tab)?.id ?? 'view';
   const [tab, setTab] = useState<SettingsTabId>(first);
   // 열려 있는 창을 다른 탭으로 다시 열면(처음 로그인 띠의 '가져오기' 등) 그 탭으로
   const [askedTab, setAskedTab] = useState(params?.tab);
   if (params?.tab !== askedTab) {
     setAskedTab(params?.tab);
-    if (SETTINGS_TABS.some((t) => t.id === params?.tab)) setTab(params!.tab!);
+    if (shownTabs.some((t) => t.id === params?.tab)) setTab(params!.tab!);
   }
   const shortcuts = useRef<ShortcutsTabHandle | null>(null);
   const [status, setStatus] = useState({ dirty: false, conflict: null as string | null, saved: false });
@@ -86,7 +89,7 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
     >
       <div data-settings-window>
         <div role="tablist" className="flex gap-1 px-4 pt-3 border-b border-slate-100 sticky top-0 bg-white z-10">
-          {SETTINGS_TABS.map((t) => (
+          {shownTabs.map((t) => (
             <button
               key={t.id}
               type="button"
@@ -119,6 +122,11 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
         <div role="tabpanel" data-settings-panel="app" hidden={tab !== 'app'}>
           <AppTab />
         </div>
+        {developer && (
+          <div role="tabpanel" data-settings-panel="dev" hidden={tab !== 'dev'}>
+            <DevTab />
+          </div>
+        )}
       </div>
     </ModalShell>
   );

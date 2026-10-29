@@ -1720,9 +1720,11 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 **먼저 읽을 것**: `app/toast.ts` 1-130 · `main.tsx` · `app/lazyWithReload.ts` · `app/route.ts` 15-60 · `firestore.rules` 20-90(`isDeveloper` 28-34 = 이메일 셋 · holidays 65-71 · admin 73-78) · `tools/check-rules.mjs` 1-40·215-245 ·
 `features/settings/SettingsWindow.tsx` 1-40(개발자 탭 `ready: false` 23-25) · `AppTab.tsx` 60-80(`__BUILD_ID__`) · `tools/seed.mjs` 20-40 · V4 `src/lib/developers.ts`.
 **지금**: ErrorBoundary·`componentDidCatch`·`unhandledrejection`·`window.onerror`(파일 읽기 말고)·`createRoot` 오류 옵션이 없다. 개발자 가르기는 규칙에만(V5 src에 이메일 목록이 없다).
-- [ ] ■1 **개발자 탭 열기**: `domain/developers.ts`(`DEVELOPER_EMAILS` = 규칙 29-33과 같은 셋, `isDeveloper(email)` - V4 developers.ts 그대로) + 시험(대소문자·띄어쓰기·목록 밖) ·
+- [x] ■1 **개발자 탭 열기**: `domain/developers.ts`(`DEVELOPER_EMAILS` = 규칙 29-33과 같은 셋, `isDeveloper(email)` - V4 developers.ts 그대로) + 시험(대소문자·띄어쓰기·목록 밖) ·
   SettingsWindow가 개발자에게만 '개발자' 탭(`features/settings/DevTab.tsx` - '공휴일'·'오류 기록' 칸 자리) + `SettingsWindow.test.tsx` 두 경우 · 규칙 주석(28줄)이 가리키는 파일을 이것으로 ·
   `tools/seed.mjs`에 에뮬레이터 전용 5번째 계정(개발자 이메일 하나, `?as=5`) · 점검 settings(일반 계정은 탭 수 그대로).
+  → 10-29: 개발자 계정 = `hyundonglim80@gmail.com`(check-rules 개발자와 같은 메일, 에뮬레이터 안에서만) · `developers.test`가 규칙 목록과 같은지도 본다(`firestore.rules?raw`) ·
+  일반 계정이 `tab: 'dev'`로 열면 보기 탭 · 단위 2501 · settings 점검(개발자 탭 둘) 통과 · 규칙 주석만 바뀜 → V4 복사(배포는 ■6에서 함께).
 - [ ] ■2 **셈** `domain/errorReport.ts` + 시험: `scrubText`(이메일·긴 숫자·`users/…`·`spaces/…` → `…`, 300자) · `stackHead`(앞 8줄, 주소는 파일:줄, 1500자) ·
   `errorKey`·`shouldSend`(같은 오류는 세션에 한 번, 세션 10건·하루 30건 - `sp5-error-sent`, try/catch) · 버림: `ResizeObserver loop`·`chrome-extension://`·새 판 조각 404(lazyWithReload가 맡음)·`navigator.onLine === false` ·
   `groupErrors`(같은 message 묶기 - ■5용).

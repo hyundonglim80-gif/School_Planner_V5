@@ -11,13 +11,15 @@ export const USING_EMULATOR: boolean = __USE_EMULATOR__;
 
 /**
  * 점검용 계정. V4 seed(tools/seed.mjs)가 같은 값으로 만든다.
- * 주소에 ?as=2 를 붙이면 두 번째 계정(공유 그룹을 둘이서), ?as=3 은 교과 전담 계정, ?as=4 는 성능 점검 계정(1만 항목 - tools/inspect-perf가 만든다).
+ * 주소에 ?as=2 를 붙이면 두 번째 계정(공유 그룹을 둘이서), ?as=3 은 교과 전담 계정, ?as=4 는 성능 점검 계정(1만 항목 - tools/inspect-perf가 만든다),
+ * ?as=5 는 개발자 계정(환경설정 '개발자' 탭 - 메일은 domain/developers 목록의 하나, 에뮬레이터 안에서만).
  */
 export function emulatorEmail(search: string = window.location.search): string {
   const who = new URLSearchParams(search).get('as');
   if (who === '2') return 'teacher2@example.com';
   if (who === '3') return 'teacher3@example.com';
   if (who === '4') return 'teacher4@example.com';
+  if (who === '5') return 'hyundonglim80@gmail.com';
   return 'teacher@example.com';
 }
 

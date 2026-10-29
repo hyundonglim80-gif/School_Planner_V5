@@ -27,6 +27,8 @@ const ACCOUNTS = [
   { email: 'teacher2@example.com', note: '공유 그룹 둘째 사람 (?as=2)', teaching: HOMEROOM },
   { email: 'teacher3@example.com', note: '교과 전담 (?as=3)', teaching: SUBJECT_ONLY },
   { email: 'teacher4@example.com', note: '성능 점검 (?as=4) - 1만 항목은 tools/inspect-perf가 심는다', teaching: HOMEROOM },
+  // 에뮬레이터 안에서만 쓰는 개발자 계정(환경설정 '개발자' 탭·오류 기록 읽기 - P14-2). 메일은 규칙 isDeveloper 목록의 하나(check-rules도 같은 메일)
+  { email: 'hyundonglim80@gmail.com', note: '개발자 (?as=5)', teaching: HOMEROOM },
 ];
 
 const app = initializeApp({ projectId: 'schoolplannerv3', apiKey: 'fake-api-key' }, 'seed-v5');

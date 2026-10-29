@@ -5,6 +5,7 @@
 //   4) 시작 화면: 주소에 화면 없이 열면 그 화면, 새로고침은 보던 화면 그대로.
 //   5) 계정 칸: 사진을 누르면 이름·메일·로그아웃 (■3에서 더한다).
 //   6) 알림 소리 길이(P10-1): 계정(settings/common)에 올라가고 다른 창이 따라온다, 처음 값(10초)이면 문서에서 빠진다.
+//   7) 개발자 탭(P14-2): 개발자 계정(?as=5 - npm run seed)에만 보인다.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-settings.mjs
 // 에뮬레이터 teacher 계정의 V5 설정 문서(spaces/u_{uid}/settings/pc)를 쓴다 - 처음 것을 읽어 두고 끝에 되돌린다.
@@ -110,7 +111,17 @@ try {
   const out = await serverUntil(serverPc, (d) => d.fontScale === 'xl', 5000);
   r.check(out.fontScale === 'xl', `바꾸자마자 로그아웃해도 설정이 올라가 있다 (${out.fontScale})`);
 
-  r.check(a.errors.length + b.errors.length === 0, '화면 오류 없음', `화면 오류: ${[...a.errors, ...b.errors].join(' | ')}`);
+  r.section('개발자 탭 (P14-2 - 개발자 계정 ?as=5 에만)');
+  const d = await newPage(browser);
+  await open(d.page, '#/day/2026-10-08', { as: 5 });
+  await d.page.evaluate(() => window.sp5.openWindow('settings'));
+  await waitFor(d.page.locator(sel('settings-window')));
+  const devTabs = await d.page.locator(sel('settings-tab')).evaluateAll((els) => els.map((e) => e.dataset.settingsTab));
+  r.check(devTabs.join() === 'view,notify,school,shortcuts,app,dev', `개발자 계정은 개발자 탭까지 (${devTabs.join()})`);
+  await d.page.click(sel('settings-tab', 'dev'));
+  r.check(await waitFor(d.page.locator(sel('settings-section', 'dev-errors'))), '개발자 탭에 오류 기록 칸');
+
+  r.check(a.errors.length + b.errors.length + d.errors.length === 0, '화면 오류 없음', `화면 오류: ${[...a.errors, ...b.errors, ...d.errors].join(' | ')}`);
 } finally {
   await browser.close();
   // 창이 1초 뒤 올리는 것이 끝난 뒤에 되돌린다
