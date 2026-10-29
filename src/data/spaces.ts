@@ -1,4 +1,5 @@
-// 공유 그룹 공간 (P8-4 - V4 hooks/useGroups.ts, DESIGN 4-1). 목록 구독·만들기·초대 코드로 참여·나가기·지우기.
+// 공유 그룹 공간 (P8-4 - V4 hooks/useGroups.ts, DESIGN 4-1). 목록 구독·만들기·초대 코드로 참여·나가기·지우기
+// · 코드 바꾸기·초대 닫기·구성원 내보내기(P14-1 - 주인만).
 //
 // - 그룹 = `spaces/g_{id}` { kind: 'group', name, ownerId, members: { uid: 'owner'|'member' }, inviteCode } - V4는 groups/{id}의 배열이었다.
 // - 초대 코드 → 그룹은 `spaceInvites/{code}` { sid, ownerId } 한 건만 읽는다(목록으로 훑지 못한다 - V4 inviteCodes와 같은 까닭).
@@ -194,6 +195,58 @@ export async function openInvite(user: SessionUser, group: GroupSpace): Promise<
   b.set(doc(db, 'spaceInvites', code), { sid: group.id, ownerId: user.uid, createdAt: serverTimestamp() });
   await b.commit();
   return code;
+}
+
+/**
+ * 초대 코드 바꾸기 (주인만 - P14-1) - 새 코드를 열고(공간 + 코드 문서 한 묶음) 옛 코드 문서는 지운다. 옛 코드로는 더 들어오지 못한다
+ * (규칙이 joinCodes.<나> == 지금 inviteCode를 본다). 구성원 모두 코드를 보므로 코드가 새면 이것으로 막는다.
+ */
+export async function rotateInvite(user: SessionUser, group: GroupSpace): Promise<string> {
+  if (group.ownerId !== user.uid) throw new Error('초대 코드는 그룹장만 바꿉니다.');
+  const code = await freeInviteCode();
+  const b = writeBatch(db);
+  b.update(doc(db, 'spaces', group.id), { inviteCode: code, updatedAt: serverTimestamp() });
+  b.set(doc(db, 'spaceInvites', code), { sid: group.id, ownerId: user.uid, createdAt: serverTimestamp() });
+  await b.commit();
+  await dropInviteDoc(group.inviteCode);
+  return code;
+}
+
+/** 초대 닫기 (주인만) - inviteCode를 지우면 아무도 코드로 들어오지 못한다. 다시 열면 새 코드(openInvite) */
+export async function closeInvite(user: SessionUser, group: GroupSpace): Promise<void> {
+  if (group.ownerId !== user.uid) throw new Error('초대는 그룹장만 닫습니다.');
+  await updateDoc(doc(db, 'spaces', group.id), { inviteCode: deleteField(), updatedAt: serverTimestamp() });
+  await dropInviteDoc(group.inviteCode);
+}
+
+/**
+ * 구성원 내보내기 (주인만, 주인 자신은 안 됨) - members·joinCodes·이름(people)을 지우고 **초대 코드도 늘 바꾼다**
+ * (내보낸 사람도 옛 코드를 안다). 초대가 닫혀 있으면 닫힌 채로. 한 묶음.
+ * V4에서 가져온 그룹은 V4 그룹 구성원이면 코드 없이 다시 들어온다(규칙 isV4GroupMember) - V4 그룹에서도 빼야 한다.
+ */
+export async function removeMember(user: SessionUser, group: GroupSpace, uid: string): Promise<void> {
+  if (group.ownerId !== user.uid) throw new Error('구성원은 그룹장만 내보냅니다.');
+  if (uid === group.ownerId) throw new Error('그룹장은 내보낼 수 없습니다.');
+  const code = group.inviteCode ? await freeInviteCode() : null;
+  const b = writeBatch(db);
+  b.update(doc(db, 'spaces', group.id), {
+    [`members.${uid}`]: deleteField(),
+    [`joinCodes.${uid}`]: deleteField(),
+    ...(code ? { inviteCode: code } : {}),
+    updatedAt: serverTimestamp(),
+  });
+  if (code) b.set(doc(db, 'spaceInvites', code), { sid: group.id, ownerId: user.uid, createdAt: serverTimestamp() });
+  b.delete(doc(db, 'spaces', group.id, 'people', uid));
+  await b.commit();
+  if (code) await dropInviteDoc(group.inviteCode);
+}
+
+/**
+ * 옛 초대 코드 문서 지우기 - 묶음 밖에서, 실패해도 넘어간다(없는 문서 지우기는 규칙이 막아 묶음째 실패한다).
+ * 남아도 그 코드로는 들어오지 못한다(공간의 inviteCode가 바뀌었다) - 참여 창이 '코드가 바뀌었을 수 있습니다'로 알린다.
+ */
+async function dropInviteDoc(code: string | undefined): Promise<void> {
+  if (code) await deleteDoc(doc(db, 'spaceInvites', code)).catch((e: unknown) => console.warn('[spaces] 옛 초대 코드를 지우지 못했습니다.', e));
 }
 
 /** 구성원 이름 (그룹 관리 창 - 읽기만) */

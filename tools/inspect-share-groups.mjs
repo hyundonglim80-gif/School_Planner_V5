@@ -1,6 +1,7 @@
 // tools/inspect-share-groups.mjs - P8-4: 공유 그룹을 두 계정(teacher · teacher2 = ?as=2)으로 실제 크롬에서 본다.
 //   만들기(공간 문서·초대 코드·기본 라벨·이름) · 📂 공간 고르기 · 그룹에 쓴 일정 = 그룹 공간 · 초대 코드로 참여 · 서로의 글이 보인다 ·
 //   개인 공간으로 바꾸면 그룹 것이 안 보인다 · 나가기 · 그룹 지우기(아래 자료째)
+//   P14-1: 그룹장만 🔄 코드 바꾸기(옛 코드 문서 지움) · 구성원 × 내보내기(코드도 바뀜, 옛 코드로 못 들어옴) · 🚫 초대 닫기 → 🔑 다시 열기
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-share-groups.mjs
 import { collection, deleteDoc, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
@@ -94,6 +95,42 @@ try {
   await A.page.locator(sel('space-option', gid)).click();
   r.check(await waitFor(A.page.locator('[data-event-card]', { hasText: '공유점검 둘째 일정' }), 8000), '다시 그룹으로');
 
+  r.section('코드 바꾸기 · 내보내기 (그룹장만 - P14-1)');
+  const inviteOf = async (c) => (await getDoc(doc(em.db, 'spaceInvites', c))).data();
+  const groupDoc = async () => (await getDoc(doc(em.db, 'spaces', gid))).data();
+  await B.page.evaluate(() => window.sp5.openWindow('group'));
+  await B.page.locator(sel('group-row', gid)).waitFor({ timeout: 8000 });
+  r.check((await B.page.locator(sel('group-rotate-code')).count()) === 0 && (await B.page.locator(sel('group-remove-member')).count()) === 0, '구성원에게는 🔄·× 없음');
+  await B.page.evaluate(() => window.sp5.closeAllWindows());
+  await A.page.evaluate(() => window.sp5.openWindow('group'));
+  const rowA = (s, v) => A.page.locator(`${sel('group-row', gid)} ${sel(s, v)}`);
+  await rowA('group-rotate-code').click();
+  const code2 = (await serverUntil(groupDoc, (d) => d?.inviteCode && d.inviteCode !== g.inviteCode))?.inviteCode ?? '';
+  r.check(/^[A-Z2-9]{6}$/.test(code2) && code2 !== g.inviteCode, `🔄 코드 바꾸기 = 새 코드 (${g.inviteCode} → ${code2})`);
+  r.check(!(await serverUntil(() => inviteOf(g.inviteCode), (x) => !x)) && (await inviteOf(code2))?.sid === gid, '옛 코드 문서는 지우고 새 코드 → 그룹');
+  r.check(await waitFor(async () => ((await rowA('group-code-text').textContent()) ?? '') === code2, 5000), '창에 새 코드');
+  r.check(A.dialogs.seen.some((m) => m.includes('옛 코드로는')), '바꾸기 전에 묻는다');
+  r.check((await rowA('group-remove-member', uidA).count()) === 0, '그룹장 자신에게는 × 없음');
+  if (process.env.SHOT) await A.page.locator(sel('group-row', gid)).screenshot({ path: process.env.SHOT });
+  await rowA('group-remove-member', uidB).click();
+  const kicked = await serverUntil(groupDoc, (d) => d && !d.members?.[uidB]);
+  const code3 = kicked?.inviteCode ?? '';
+  r.check(kicked && !kicked.members?.[uidB] && !kicked.joinCodes?.[uidB], '× 내보내기 = members·joinCodes에서 빠진다');
+  r.check(!(await getDoc(doc(em.db, 'spaces', gid, 'people', uidB))).exists(), '구성원 이름(people)도 지운다');
+  r.check(/^[A-Z2-9]{6}$/.test(code3) && code3 !== code2 && !(await serverUntil(() => inviteOf(code2), (x) => !x)) && (await inviteOf(code3))?.sid === gid, `내보내면 코드도 바뀐다 (${code2} → ${code3})`);
+  r.check(A.dialogs.seen.some((m) => m.includes('내보낼까요? 초대 코드도 새로 바뀝니다')), '내보내기 전에 묻는다');
+  r.check(await waitFor(async () => (await B.page.locator('[data-space-select]').count()) === 0, 10000), '내보낸 사람 화면에서 그룹이 사라진다 (개인으로)');
+  await B.page.evaluate(() => window.sp5.openWindow('group'));
+  await B.page.locator(sel('group-join-code')).fill(code2);
+  await B.page.locator(sel('group-join')).click();
+  await B.page.waitForTimeout(1500);
+  r.check(!(await groupDoc())?.members?.[uidB], '내보낸 사람은 옛 코드로 다시 들어오지 못한다');
+  await B.page.locator(sel('group-join-code')).fill(code3);
+  await B.page.locator(sel('group-join')).click();
+  r.check((await serverUntil(groupDoc, (d) => d?.members?.[uidB] === 'member'))?.joinCodes?.[uidB] === code3, '새 코드로는 다시 들어온다 (joinCodes.<나> = 낸 코드)');
+  await B.page.evaluate(() => window.sp5.closeAllWindows());
+  await A.page.evaluate(() => window.sp5.closeAllWindows());
+
   r.section('나가기 · 지우기');
   await B.page.evaluate(() => window.sp5.openWindow('group'));
   await B.page.locator(`${sel('group-row', gid)} ${sel('group-leave')}`).click();
@@ -101,11 +138,20 @@ try {
   r.check(left && !left.members?.[uidB], 'teacher2 나가기 = members에서 빠진다');
   r.check(await waitFor(B.page.locator(sel('space-select', `u_${uidB}`)).or(B.page.locator(sel('groups-empty'))), 8000), '나가면 개인 공간으로');
   await A.page.evaluate(() => window.sp5.openWindow('group'));
+  // 🚫 초대 닫기 → 🔑 다시 열기 (새 코드) - 그다음 지우기가 그 코드도 지운다
+  await rowA('group-close-code').click();
+  const closed = await serverUntil(groupDoc, (d) => d && !d.inviteCode);
+  // 옛 코드 문서는 공간을 고친 뒤 따로 지운다(spaces dropInviteDoc) - 없어질 때까지 기다려 읽는다
+  r.check(closed && !closed.inviteCode && !(await serverUntil(() => inviteOf(code3), (x) => !x)), '🚫 초대 닫기 = inviteCode·코드 문서를 지운다');
+  r.check(await waitFor(rowA('group-make-code'), 5000), '닫으면 🔑 초대 코드 만들기');
+  await rowA('group-make-code').click();
+  const code4 = (await serverUntil(groupDoc, (d) => d?.inviteCode))?.inviteCode ?? '';
+  r.check(!!code4 && code4 !== code3 && (await inviteOf(code4))?.sid === gid, `다시 열면 새 코드 (${code4})`);
   await A.page.locator(`${sel('group-row', gid)} ${sel('group-delete')}`).click();
   // 없는 공간 문서는 규칙이 읽기를 막는다(resource가 없다) - 막히면 없는 것
   const gone = await serverUntil(async () => (await getDoc(doc(em.db, 'spaces', gid)).catch(() => null))?.exists() ?? false, (x) => !x, 15000);
   r.check(!gone, '그룹 지우기 = 공간 문서가 없어진다');
-  r.check(!(await getDoc(doc(em.db, 'spaceInvites', g.inviteCode))).exists(), '초대 코드도 지운다');
+  r.check(!(await getDoc(doc(em.db, 'spaceInvites', code4 || 'x'))).exists(), '초대 코드도 지운다');
   r.check(A.dialogs.seen.some((m) => m.includes('영구히 지워지고')), '지우기 전에 묻는다');
   r.check(await waitFor(async () => (await A.page.locator('[data-space-select]').count()) === 0, 8000), '그룹이 없어지면 📂 공간 고르기도 사라진다 (개인으로)');
   r.check(A.errors.length === 0 && B.errors.length === 0, `화면 오류 없음 ${[...A.errors, ...B.errors].join(' | ')}`);
