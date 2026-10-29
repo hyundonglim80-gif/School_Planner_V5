@@ -45,6 +45,10 @@ export function startInstall() {
       // 앱이 다 뜬 뒤 이 판의 앱 파일을 미리 담아 둔다(오프라인으로 열기 - P8-3). 처음 여는 동안의 받기와 겹치지 않게 조금 뒤에
       void navigator.serviceWorker.ready.then((reg) => window.setTimeout(() => reg.active?.postMessage({ type: 'sp5-precache' }), 3000));
     });
+    // 담는 도중에 끊겼으면 이어진 뒤 마저 담는다(담은 것은 건너뛴다 - 10-29 휴대폰: 다 담기 전에 끊겨 새 메모 칸이 없었다)
+    window.addEventListener('online', () => {
+      void navigator.serviceWorker.ready.then((reg) => reg.active?.postMessage({ type: 'sp5-precache' }));
+    });
   }
 }
 

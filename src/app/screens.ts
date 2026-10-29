@@ -1,5 +1,6 @@
-// 화면 여섯 (화면 탭·휴대폰 탭바·단축키 '화면 이동'이 이 목록을 읽는다). 화면은 처음 볼 때 싣는다.
+// 화면 여섯 (화면 탭·휴대폰 탭바·단축키 '화면 이동'이 이 목록을 읽는다). 화면은 처음 볼 때 싣는다(끊겨서 못 받으면 그 자리 안내 - OfflineScreen).
 import { lazyWithReload } from './lazyWithReload';
+import { OfflineScreen } from './OfflineChunk';
 import type { Scope } from './route';
 
 export interface ScreenDef {
@@ -22,10 +23,10 @@ export const SCREENS: readonly ScreenDef[] = [
 ];
 
 export const SCREEN_COMPONENTS: Record<Scope, ReturnType<typeof lazyWithReload>> = {
-  day: lazyWithReload(() => import('../features/day/DayScreen')),
-  week: lazyWithReload(() => import('../features/week/WeekScreen')),
-  month: lazyWithReload(() => import('../features/month/MonthScreen')),
-  year: lazyWithReload(() => import('../features/year/YearScreen')),
-  memo: lazyWithReload(() => import('../features/memo/MemoScreen')),
-  class: lazyWithReload(() => import('../features/class/ClassScreen')),
+  day: lazyWithReload(() => import('../features/day/DayScreen'), OfflineScreen),
+  week: lazyWithReload(() => import('../features/week/WeekScreen'), OfflineScreen),
+  month: lazyWithReload(() => import('../features/month/MonthScreen'), OfflineScreen),
+  year: lazyWithReload(() => import('../features/year/YearScreen'), OfflineScreen),
+  memo: lazyWithReload(() => import('../features/memo/MemoScreen'), OfflineScreen),
+  class: lazyWithReload(() => import('../features/class/ClassScreen'), OfflineScreen),
 };

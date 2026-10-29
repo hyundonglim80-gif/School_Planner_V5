@@ -50,15 +50,20 @@ async function precache() {
     const path = new URL(req.url).pathname;
     if (path.startsWith('/assets/') && !want.has(path)) await cache.delete(req);
   }
-  for (const path of want) {
-    if (!path.startsWith('/assets/') || (await cache.match(path, { ignoreVary: true }))) continue;
-    try {
-      const res = await fetch(path);
-      if (res.ok) await cache.put(path, res);
-    } catch {
-      // 다음에 다시 (오프라인이 되면 그때까지 담은 것으로)
+  const todo = [];
+  for (const path of want) if (path.startsWith('/assets/') && !(await cache.match(path, { ignoreVary: true }))) todo.push(path);
+  // 여섯씩 함께 받는다 - 하나씩이면 휴대폰에서 오래 걸려, 그 사이 끊기면 아직 못 담은 창이 열리지 않는다(10-29)
+  const next = async () => {
+    for (let path = todo.shift(); path; path = todo.shift()) {
+      try {
+        const res = await fetch(path);
+        if (res.ok) await cache.put(path, res);
+      } catch {
+        // 다음에 다시 (오프라인이 되면 그때까지 담은 것으로 - 이어지면 앱이 다시 부른다)
+      }
     }
-  }
+  };
+  await Promise.all(Array.from({ length: 6 }, next));
   // 첫 화면도 - 처음 연 문서는 서비스 워커가 서기 전에 받아 담기지 않았다
   try {
     const res = await fetch('/', { cache: 'reload' });

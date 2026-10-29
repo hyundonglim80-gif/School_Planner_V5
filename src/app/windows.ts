@@ -6,11 +6,12 @@
 //
 // 열린 창은 store(useWindows)의 windows에 있다. 창 컴포넌트는 { params, close, raise }를 받아 ModalShell(창)이나
 // SidePanelFrame(쓰는 칸)으로 스스로 틀을 그린다 - 오른쪽 줄의 탭 차례·숨은 탭은 그 틀이 맡는다(ui/sideColumn).
-import { useContext, useEffect, useRef, type ComponentType, type LazyExoticComponent } from 'react';
+import { useContext, useEffect, useRef, type ComponentType } from 'react';
 import { create } from 'zustand';
 import { closeShownSideSlot, SideOwnerContext, useShownSideOwner } from '../ui/sideColumn';
 import { closeAllLayers, closeTopLayer } from './history';
 import { lazyWithReload } from './lazyWithReload';
+import { OfflineWindow } from './OfflineChunk';
 
 /** ⋮ 메뉴 구역 (MENU.md 3-4) */
 export type MenuSection = '일정' | '수업' | '자료' | '설정';
@@ -66,12 +67,13 @@ export interface OpenWindow {
 
 const registry = new Map<string, WindowDef<never>>();
 /** 창 컴포넌트 (등록할 때 만들어 두고, 처음 열 때 싣는다) */
-export const windowComponents = new Map<string, LazyExoticComponent<ComponentType<WindowProps>>>();
+export const windowComponents = new Map<string, ComponentType<WindowProps>>();
 
 export function registerWindow<P>(def: WindowDef<P>) {
   if (registry.has(def.id)) throw new Error(`창 id가 겹칩니다: ${def.id}`);
   registry.set(def.id, def as unknown as WindowDef<never>);
-  windowComponents.set(def.id, lazyWithReload(def.load as unknown as () => Promise<{ default: ComponentType<WindowProps> }>));
+  // 끊겨서 못 받으면 안내하고 닫는다(OfflineWindow)
+  windowComponents.set(def.id, lazyWithReload(def.load as unknown as () => Promise<{ default: ComponentType<WindowProps> }>, OfflineWindow));
 }
 
 export function getWindowDef(id: string): WindowDef<unknown> | undefined {

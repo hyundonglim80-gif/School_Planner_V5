@@ -54,6 +54,50 @@ try {
   await page.evaluate(() => window.sp5.closeAllWindows());
   await ctx.setOffline(false);
 
+  // 10-29 휴대폰: 새 판으로 연 바로 뒤 다 담기 전에 비행기 모드 → 새 메모 '+ 추가'가 새로고침을 되풀이하다 '화면을 그리다 문제가 생겼습니다'
+  r.section('다 담기 전에 끊김 (받지 못한 창·화면)');
+  const allCached = () =>
+    page.evaluate(async (paths) => {
+      const c = await caches.open('sp5-app-v1');
+      for (const p of paths) if (!(await c.match(p, { ignoreVary: true }))) return false;
+      return true;
+    }, want);
+  await waitFor(allCached, 30000);
+  await ctx.setOffline(true);
+  const dropped = await page.evaluate(async () => {
+    // 화면이 받지 않은 파일은 아직 못 담은 것으로 (미리 담기가 덜 끝남)
+    const loaded = new Set(performance.getEntriesByType('resource').map((e) => new URL(e.name).pathname));
+    const c = await caches.open('sp5-app-v1');
+    const out = [];
+    for (const req of await c.keys()) {
+      const path = new URL(req.url).pathname;
+      if (path.startsWith('/assets/') && !loaded.has(path)) {
+        await c.delete(req);
+        out.push(path);
+      }
+    }
+    return out;
+  });
+  r.check(dropped.some((p) => p.includes('NotePanel')) && dropped.some((p) => p.includes('WeekScreen')), `메모 칸·주간 화면 파일을 캐시에서 뺐다 (${dropped.length}개)`);
+  // 새로고침하면 사라지는 표시 (# 뒤만 바꾸는 이동은 남는다)
+  await page.evaluate(() => (window.__noReload = true));
+  const reloaded = async () => !(await page.evaluate(() => window.__noReload === true));
+  await page.locator(sel('journal-add')).click();
+  r.check(await waitFor(page.locator('[data-toast="error"]', { hasText: '인터넷이 끊겨 이 칸을' }), 8000), "끊긴 채 '+ 추가' → '인터넷이 끊겨 이 칸을 아직 열 수 없습니다' 안내");
+  r.check((await page.locator(sel('note-panel')).count()) === 0 && (await page.locator(sel('app-crashed')).count()) === 0, '메모 칸은 닫히고 화면 전체 오류는 없다');
+  r.check(!(await reloaded()), '새로고침하지 않는다');
+  await page.evaluate((d) => (location.hash = `#/week/${d}`), DAY);
+  r.check(await waitFor(page.locator(sel('screen-offline')), 8000), '받지 못한 화면(주간)은 그 자리에 안내 · 머리줄은 그대로');
+  r.check(!(await reloaded()) && (await page.locator(sel('app-crashed')).count()) === 0, '여기서도 새로고침·화면 전체 오류 없음');
+  await ctx.setOffline(false);
+  r.check(await waitFor(page.locator(sel('week-grid')).first(), 15000), '인터넷이 이어지면 주간 화면이 저절로 열린다 (주간은 두 주라 칸이 둘)');
+  await page.evaluate((d) => (location.hash = `#/day/${d}`), DAY);
+  await page.locator(sel('journal-add')).click();
+  r.check(await waitFor(page.locator(sel('note-panel', 'new')), 15000), '이어진 뒤 다시 누르면 새 메모 칸이 열린다 (새로고침 없이)');
+  r.check(await waitFor(allCached, 30000), '이어지면 못 담은 파일을 마저 담는다');
+  r.check(!(await reloaded()), '끝까지 새로고침 없음');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+
   r.section('공유받기');
   await page.evaluate(() => {
     const form = document.createElement('form');
