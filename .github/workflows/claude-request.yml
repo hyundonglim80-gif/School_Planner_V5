@@ -73,6 +73,7 @@ jobs:
 
             규칙:
             - CLAUDE.md와 docs/DESIGN.md 10장 체크리스트를 따른다(한국어 주석·쉬운 말·동작을 바꾸면 사용 설명서(src/features/help/chapters)도 함께).
+            - 기능·파일 자리는 docs/MAP.md(시스템 지도)를 grep 해 그 줄만 읽어 찾는다 - 크니 통째로 읽지 않는다.
             - 이 실행에서는 하지 않는다: CLAUDE.md 0장(기억 합치기·git pull), 에뮬레이터·개발 서버·크롬 점검(tools/inspect-*) - 여기에는 없다.
             - git commit·push·PR은 하지 않는다 - 파일만 고친다. 워크플로가 올리고 합친다.
             - firestore.rules · functions/ · .github/ · firebase.json · .firebaserc는 고치지 않는다(PC에서 배포해야 한다 - 고치면 이 실행은 실패로 끝난다).

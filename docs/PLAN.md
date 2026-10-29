@@ -19,7 +19,7 @@
 1. `git pull` — V4 저장소, V5 저장소(있으면) 둘 다. 그리고 `git status` - 커밋하지 않은 변경이 있으면 이 기기에서 끊긴 조각이다(1-6).
 2. 아래 **지금 하는 일**과 `CLAUDE.md` **지금 상태**를 본다. `wip/…` 브랜치가 적혀 있으면 `git checkout <브랜치>`로 받는다.
 3. **그 세션 절만** 읽는다: `grep -n "^### P" PLAN.md`로 줄을 찾아 그 절만. 다른 세션 절은 읽지 않는다.
-   그 절의 **먼저 읽을 것**만 읽는다(큰 파일은 grep으로 그 부분만).
+   그 절의 **먼저 읽을 것**만 읽는다(큰 파일은 grep으로 그 부분만). 5장 결정 메모와 `docs/MAP.md`(시스템 지도)도 grep으로 그 줄만 - 통째로 읽지 않는다.
 4. 체크되지 않은 첫 조각(■)부터 한다. 조각마다 1-2 '조각 끝'.
 5. 조각을 다 하면 1-3 '세션 끝 정리' → 사용자에게 "P○-○ 끝. 새 대화에서 '이어서'". 다음 세션을 같은 대화에서 시작하지 않는다(긴 대화는 사용량을 많이 쓴다).
 6. **정해야 할 것이 나오면 권장안을 고르고** 5장 '결정 메모'에 까닭과 함께 적은 뒤 계속한다(2026-10-08 사용자: 권장대로).
@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P14-1** (10-29 계획) - 점검 뒤 손보기 여덟 세션의 첫째: 그룹 참여 = 낸 코드 확인. 6장 `### P14` 머리 표와 '모든 P14 세션에 같은 것'을 읽고 `### P14-1`로.
+**P14-1** (10-29 계획) - 점검 뒤 손보기 여덟 세션의 첫째: 그룹 참여 = 낸 코드 확인. 6장 `### P14` 머리 표와 '모든 P14 세션에 같은 것'을 읽고 `### P14-1`로. 8번(`CLAUDE.md` 7장 → `docs/MAP.md`)은 10-29에 앞당겨 끝냈다.
 차례는 사용자 번호대로 P14-1 → P14-8(사용자 10-29 "1번부터 모두 차례로"). main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
 
 ---
@@ -52,14 +52,14 @@
 - [ ] 그 세션 절의 **끝 조건**을 크롬 점검으로 확인(PC 1400px 크롬 하나)
 - [ ] `PARITY.md`에서 이 세션이 끝낸 줄 체크
 - [ ] 자료 모양·뼈대가 바뀌었으면 `DESIGN.md`, 자리가 바뀌었으면 `MENU.md`
-- [ ] `CLAUDE.md` 7장 시스템 지도에 새 파일·자리 한 줄씩
+- [ ] `docs/MAP.md`(시스템 지도)에 새 파일·자리 한 줄씩
 - [ ] `CLAUDE.md` 지금 상태: 이 세션 2줄 이하(끝난 것·사용자 부탁만). 지난 세션 줄은 지운다(대화마다 읽는 파일이라 짧게)
 - [ ] 이 파일: 3장 상태 `끝 (날짜)`, **지금 하는 일** = 다음 세션, 4장 세션 기록 한 줄
 - [ ] 커밋·푸시 → (클라우드면 PR → CI 통과 → 합치기, 1-7) → 사용자에게 "P○-○ 끝. 새 대화에서 '이어서'" (+ 👤 부탁이 있으면 함께)
 
 ### 1-4. 단계(P○) 끝 정리 (단계의 마지막 세션에 더한다)
 - 그 단계의 점검 스크립트를 모두 한 번(MATCH 없이).
-- `CLAUDE.md` 7장 지도를 그 단계 기준으로 다듬고, `DESIGN.md`와 코드가 맞는지 본다.
+- `docs/MAP.md`(시스템 지도)를 그 단계 기준으로 다듬고, `DESIGN.md`와 코드가 맞는지 본다.
 - 가져오기가 있는 단계면 👤 실제 계정으로 한 번 가져와 보기를 부탁한다(V4는 그대로 - V5에만 쓴다).
 - 3장 '단계 메모'에 V4와 달라진 점 한 줄.
 
@@ -104,7 +104,7 @@
 - 같은 버그를 두 번 고쳐도 되살아나면 멈추고 원인부터 적는다(V4 09-22 교훈 - 증상이 아니라 구조로 확인, 짐작으로 고치지 않는다).
 
 ### 1-9. 토큰 아끼기
-- 대화를 열면 `CLAUDE.md` + 이 파일 0장·지금 하는 일·그 세션 절만. `DESIGN`·`MENU`는 그 절이 가리키는 장만.
+- 대화를 열면 `CLAUDE.md` + 이 파일 0장·지금 하는 일·그 세션 절만. `DESIGN`·`MENU`는 그 절이 가리키는 장만. `MAP.md`는 grep으로 그 줄만(10-29 `CLAUDE.md` 7장에서 옮김 - 61KB).
 - V4 코드는 '먼저 읽을 것'에 적힌 파일만, 큰 파일은 grep으로 그 부분만. 확인은 바뀐 부분만(전체 점검은 단계 끝에만).
 
 ---
@@ -192,7 +192,7 @@
 | P14-2 | 오류 알림(`v5Errors`)·ErrorBoundary·개발자 탭 (항목 2) | 큼 | 높음 | 할 일 |
 | P14-3 | 서버 예약 백업·`docs/OPS.md` · 공휴일 받기를 V5 개발자 탭으로 (항목 3·4) | 중간 | 중간 | 할 일 |
 | P14-4 | 첨부 공개 알림 · 주 이름(목요일 ÷ 7) · 낡은 점검 둘·자동 요청이 점검도 고치게 (항목 5·6·7) | 작음 | 중간 | 할 일 |
-| P14-5 | `CLAUDE.md` 7장 → `docs/MAP.md` · 의존성 보안 판 · C: 정리 (항목 8·9) | 작음 | 낮음 | 할 일 |
+| P14-5 | `CLAUDE.md` 7장 → `docs/MAP.md`(■1 - 10-29 앞당겨 끝) · 의존성 보안 판 · C: 정리 (항목 8·9) | 작음 | 낮음 | 할 일(■2~■4) |
 | P14-6 | 동기화·두 기기·오프라인 저장 점검 (항목 10 ①) | 중간 | 높음 | 할 일 |
 | P14-7 | 일정 셈 점검 - 이월·기간·반복·공휴일 (항목 10 ②) | 중간 | 중간 | 할 일 |
 | P14-8 | 학급 셈 점검 - 출결·자리·평가·수업 칸·진도 (항목 10 ③) | 중간 | 중간 | 할 일 |
@@ -279,7 +279,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-22 | 영-전-3-현동림 PC | 설명서 반영 | 설명서 - 멈춤 동안 바뀐 것 모두 반영 | 커밋 #60~#96을 훑어 빠진 것: 끌어 놓기(#81)·이은 곳 표시 없앰(#88)·연결 창 메모 탭(#90)·일정 라벨 하나·메모 Ctrl(#92)·오른쪽 N교시 수정 칸·비고(#94)·주간 1/2(#67)·삭제 = 수업 없음 · #94 문구를 검색·주간학습안내·지난 시간에도 · 빠른 입력 #라벨도 하나로(#92) · 자동 요청 뒤 깨진 점검 넷(lessons·progress·seating·manual) 고침 · 단위 2446 · manual 306·lessons·progress·seating·links·events·notes·memo 통과 |
 | 2026-10-28 | 영-전-3-현동림 PC | 사용자 요청 넷 | ↗ 새 창·휴대폰 🔗·손글씨 길게·저장/닫기 | 단위 2488 · lint·빌드 · inspect-popout 34(새 창 = Playwright 팝업, 휴대폰 390) · handwriting(길게 쓰기·휴대폰 머리 더함 - #113 어두운 처음 화면으로 깨져 있던 밝은 화면 셋 고침) · shell·links·notes·manual(popups·attach·links) 통과 |
 | 2026-10-29 | 영-전-3-현동림 PC | 메모 요청 #123·#125·#127 뒤 | N교시 수정 ✕ 칸 비우기 · 완료 칩 크기 그대로(#127) · 깨진 점검 둘 | 단위 2488 · lint·빌드 · inspect-lessons(비우기 넷 더함)·events·week·month-year(일정 글을 누르게 고침)·forward·groups·gcal · manual 318(⋮ 여덟으로 고침) · #125 단축키 점검 더함(popout·search-trash) 통과 |
-| 2026-10-29 | 영-전-3-현동림 PC | P14 계획 | 점검 결과 → P14 여덟 세션 | 10-28 점검(18 에이전트 워크플로는 한도에 닿아 실패 → 직접: 단위 2488·자료 시험 30·크롬 점검 12개, 틀린 것은 낡은 점검 둘) · 10-29 읽기만 하는 에이전트 셋(37만 토큰·14분)으로 고칠 자리 확인 · 1번 설계의 구멍(칸 하나 `joinCode`는 앞사람 값으로 통과)을 찾아 사람마다 칸으로 · 문서만(코드 그대로) |
+| 2026-10-29 | 영-전-3-현동림 PC | P14 계획 | 점검 결과 → P14 여덟 세션 | 10-28 점검(18 에이전트 워크플로는 한도에 닿아 실패 → 직접: 단위 2488·자료 시험 30·크롬 점검 12개, 틀린 것은 낡은 점검 둘) · 10-29 읽기만 하는 에이전트 셋(37만 토큰·14분)으로 고칠 자리 확인 · 1번 설계의 구멍(칸 하나 `joinCode`는 앞사람 값으로 통과)을 찾아 사람마다 칸으로 · 사용자 '8번을 맨 앞으로' → 7장을 `docs/MAP.md`로(CLAUDE.md 102.5KB → 42.1KB) · 문서만(코드 그대로) |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -779,6 +779,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   짧은 라벨은 칩이 넓어지고(행사 32→39px) 높이는 줄었다(19→14) - '크기 그대로'(#123)가 아니었다.
   권장안: 칩 크기는 원래 라벨 글자가 잡고(보이지 않게 - `::before`라 textContent에 겹치지 않는다) **✓와 0.75배 글자를 칩 안(여백까지)에 겹쳐 그린다** → 하루·월간 모두 완료 전후 폭·높이가 같다(점검으로 잼).
   #125 단축키 둘(휴지통 열기/닫기·보고 있는 칸 새 창으로)은 inspect-search-trash·inspect-popout에 점검을 더했다.
+- **P14 점검 뒤 손보기**(10-29 계획 - 6장 `### P14`): 차례는 사용자 번호대로(사용자 "1번부터 모두 차례로"), 다만 **8번(`CLAUDE.md` 7장 → `docs/MAP.md`)은 사용자가 맨 앞으로** 당겨 계획 대화에서 끝냈다.
+  까닭: 7장 지도(61KB)가 대화마다·자동 요청마다 통째로 읽혀 Pro 사용 한도를 먹었다 - 지도는 파일을 찾을 때만 grep으로. 1번 설계는 사람마다 칸 `joinCodes.<uid>`(칸 하나는 앞사람 값으로 통과한다).
 
 ---
 
@@ -1494,7 +1496,7 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 
 ### P10-1. 일정 - 완료 표시·체크박스·반복 요일·＋ 새로·알림 소리 길이
 **시작 조건**: 없음(P9 끝). **의견**: 2d · 6a · 6b · 6d · 8.
-**먼저 읽을 것**: `CLAUDE.md` 7장 '일정'·'기간·반복·묶음' 줄 · `features/day/DayEvents.tsx` 380~430줄(☐·라벨 칩) · `features/events/EventPanel.tsx` 80~200줄(끝 날·반복 줄) ·
+**먼저 읽을 것**: `docs/MAP.md` '일정'·'기간·반복·묶음' 줄 · `features/day/DayEvents.tsx` 380~430줄(☐·라벨 칩) · `features/events/EventPanel.tsx` 80~200줄(끝 날·반복 줄) ·
 `features/events/RecurRow.tsx` · `domain/recur.ts` · 설명서 `chapters/events.ts`(완료·기간·반복·알림 주제) · `chapters/settings.ts`(알림 탭).
 - [x] ■1 **완료 = 라벨에 ✓**(6a) + **☐ 빼기**(2d): 완료한 일정은 칩 색·글을 그대로 두고 칩 앞에 ✓(흑백·줄긋기 없앰). 한 곳 부품으로 모은다(예 `events/EventDoneChip` - 칩·✓·누르면 완료).
   고칠 곳: 하루 `DayEvents` · 주간 `WeekDayCard`·`LastYearDay` · 월간 `MonthGrid`·`MonthDaySheet`·`PeriodBar` · 년간 `YearMonthCard`·`YearSheetMonth`(학사력) - 칩이 없는 좁은 자리는 글 앞 ✓.
@@ -1513,7 +1515,7 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 
 ### P10-2. 수업 칸 - 비고(준비물) 하나로·반 도구·✎·주간 비고·월간 확인·명렬표 번호
 **시작 조건**: 없음. **의견**: 2a · 2b · 2c · 2e · 3 · 4 · 7.
-**먼저 읽을 것**: `CLAUDE.md` 7장 '수업' 줄 · `features/lessons/DayLessons.tsx`(310~660줄 - 수정 칸·교시 카드) · `LessonPanel.tsx` · `WeekLessonRows.tsx` · `lessonOps.ts` · `domain/lessons.ts`(`changed`) ·
+**먼저 읽을 것**: `docs/MAP.md` '수업' 줄 · `features/lessons/DayLessons.tsx`(310~660줄 - 수정 칸·교시 카드) · `LessonPanel.tsx` · `WeekLessonRows.tsx` · `lessonOps.ts` · `domain/lessons.ts`(`changed`) ·
 설명서 `chapters/lessons.ts`(수업 칸·수업 수정 주제) · `chapters/classroom.ts`(명렬표).
 - [x] ■1 **'비고(준비물)' 한 칸**(2a): 자료는 `supplies` 하나를 그 칸으로 쓰고(권장), 옛 `memo`는 읽을 때 이어 붙여 보인다(`lessonNote(cell)` 한 곳 - `supplies` + 줄바꿈 + `memo`).
   그 칸을 고쳐 저장하면 합친 글을 `supplies`에 쓰고 `memo`를 지운다(그 칸만 - 한꺼번에 옮기지 않는다). 쓰는 곳: 하루 수정 칸·`LessonPanel`·카드('📌 비고(준비물)' 하나)·'⏪ 지난 시간'(지금 memo 첫 줄)·
@@ -1528,7 +1530,7 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 
 ### P10-3. 메모 하나로 ① - 날짜 링크·하루 '메모' 칸·메모 화면
 **시작 조건**: 없음(P10-1·2와 따로). **의견**: 1 · 2g · 2h · 2i.
-**먼저 읽을 것**: 5장 'P10' 결정 메모 · `CLAUDE.md` 7장 '메모·기록'·'메모 화면'·'자료 층' 줄 · `docs/DESIGN.md` 4장(항목 모양)·10장 체크리스트 · `features/notes/noteForm.ts`·`NotePanel.tsx`(머리 📅 날짜 칸) ·
+**먼저 읽을 것**: 5장 'P10' 결정 메모 · `docs/MAP.md` '메모·기록'·'메모 화면'·'자료 층' 줄 · `docs/DESIGN.md` 4장(항목 모양)·10장 체크리스트 · `features/notes/noteForm.ts`·`NotePanel.tsx`(머리 📅 날짜 칸) ·
 `features/day/DayJournal.tsx` · `features/memo/MemoScreen.tsx` · `data/select.ts`(`indexOf`·`itemsOn`·`memos`) · 설명서 `chapters/notes.ts`.
 - [x] ■1 **자료**: `Item.dates?: YMD[]`(메모의 날짜 링크 - 차례대로·겹침 없이), `date` = 가장 이른 날(없으면 null) - 저장 도우미에서 맞춘다. 순수 `noteDates(item)`(옛 기록은 `date` 하나).
   고르기: `notesOnDay(date)`(그 날짜 링크가 있는 메모 - 두 번째 뒤 날짜도 찾게 `indexOf`에 색인), `memos` = 모든 메모. `types.ts`·`DESIGN.md` 4장·단위 테스트.
@@ -1543,7 +1545,7 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 
 ### P10-4. 메모 하나로 ② - 이은 메모가 그날 칸에·진도 메모 링크·링크 창 하나로·'기록' 글자
 **시작 조건**: P10-3 끝. **의견**: 2f · 6c · 5g.
-**먼저 읽을 것**: 5장 'P10' 결정 메모 · `CLAUDE.md` 7장 '링크'·'진도' 줄 · `features/links/`(linkOps·LinkerWindow·LinkViewerWindow) · `domain/progress.ts`(`progressMarks`) · `features/progress/ProgressWindow.tsx`(행) ·
+**먼저 읽을 것**: 5장 'P10' 결정 메모 · `docs/MAP.md` '링크'·'진도' 줄 · `features/links/`(linkOps·LinkerWindow·LinkViewerWindow) · `domain/progress.ts`(`progressMarks`) · `features/progress/ProgressWindow.tsx`(행) ·
 `features/day/DayJournal.tsx`(P10-3 뒤 이름) · `features/notes/EntryCard.tsx`.
 - [x] ■1 **그날 '메모' 칸에 이은 메모**(2f): 그날 날짜 링크 + 그날 일정 칸에 보이는 일정(기간·이월 포함)의 `linkIds` + 그날 수업 칸(`lessonDays` `periods.n.linkIds`)의 메모를 **겹치지 않게** 모은다(계산 - 저장하지 않는다).
   카드에 어디서 왔는지 작은 표시(📌 일정 첫 글자·🏫 n교시·📘 진도 - 날짜 링크는 표시 없음). 순수 셈 `dayNoteSources(date)`로 단위 테스트.
@@ -1653,7 +1655,7 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 | 5 드라이브 첨부 공개 | 올리기 넷(첨부·캡처 / 손글씨 / Keep 그림 / 첨부 모으기)이 모두 `anyone` 읽기(data/google/drive.ts:106-112). 화면이 토큰 없는 `<img src>`라 공개여야 다른 기기·그룹·팝업·인쇄에서 보인다(V4 결정). 설명서에 '공개'라는 말이 없다 | P14-4 | V4 결정이라 묻기(권장 = 알리기만) |
 | 6 주 이름 | `dateLabel` 주(app/nav.ts:147)가 1일이 금·토인 달에 1주를 빼먹는다 - 2026~2028 중 10달(2027-01·05·10 …) | P14-4 | 없음 |
 | 7 낡은 점검 | inspect-progress:118(#111 쪽 자리) · inspect-claude-request:106-115(#76 묻는 창 없음·#69 다시 요청 - 코드로만 봄) · 자동 요청은 점검을 고치지 않는다 | P14-4 | 없음 |
-| 8 CLAUDE.md 무거움 | 102KB(약 5만 토큰) 중 7장 지도가 59%(61KB) - 대화마다·자동 요청마다 통째로 읽힌다 | P14-5 | 없음 |
+| 8 CLAUDE.md 무거움 | 102KB(약 5만 토큰) 중 7장 지도가 59%(61KB) - 대화마다·자동 요청마다 통째로 읽힌다 | P14-5 ■1 - **10-29 끝**(사용자: 맨 앞으로) | 없음 |
 | 9 가벼운 것 | functions body-parser·qs(`npm audit fix` - HTTP 함수가 없어 영향 작음) · 루트 19건은 개발 도구(화면에 안 실림 - `--force`는 firebase를 9로 내리니 금지) · C: 90% | P14-5 | 함수 배포는 묻기 · 👤 C: 정리 |
 | 10 깊이 못 본 곳 | 끊긴 동안 쓰기는 메모리에만(`memoryLocalCache`) - 쓰던 글 보관은 남지만 같은 칸을 다시 열어야 보인다. 두 기기 동시 고침·일정 셈·학급 셈 | P14-6~8 | 👤 휴대폰 오프라인 확인(P14-6 전) |
 
@@ -1785,12 +1787,11 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
 
 ### P14-5. 문서 가볍게 · 가벼운 것 (항목 8·9)
 **시작 조건**: 없음. **묻기**(■2 뒤): functions 보안 판 배포 - ① 권장: 다음에 함수를 배포할 때 같이(HTTP 함수가 없어 영향 거의 없음) / ② 지금 `--only functions:v5`.
-**먼저 읽을 것**: `CLAUDE.md` 0장·6장 끝·7장 머리**만**(7장 몸은 읽지 않고 줄 번호로 옮긴다) · `docs/PLAN.md` 17-30·50-65 · `claude-request.yml` 70-80 · `functions/package.json`. 10-28 감사 결과는 그 대화의 임시 폴더라 없다 - `npm audit`을 다시.
-- [ ] ■1 **7장 시스템 지도 → `docs/MAP.md`**: 7장 머리 다음 줄부터 끝까지(`grep -n '^## 7' CLAUDE.md`) 통째로 옮긴다(내용 그대로 - 머리 '# V5 시스템 지도' + "기능을 고치기 전에 grep으로 그 줄만. 세션 끝 정리에서 새 파일·자리를 한 줄씩") ·
-  CLAUDE.md 7장 = 두 줄("파일·자리를 찾을 때만 `grep -n '<기능>' docs/MAP.md`로 그 줄만 읽는다 - 통째로 읽지 않는다") · 참조 바꿈: `grep -n '7장' docs/PLAN.md`(1-3·1-4 정리 두 줄 + P10 '먼저 읽을 것' 넷 - 끝난 [x] 줄은 그대로) ·
-  PLAN 0장 3번에 '5장 결정 메모도 grep으로 그 줄만' · claude-request.yml 프롬프트 "파일 자리는 docs/MAP.md를 grep" · 확인 `grep -rn '7장 시스템 지도' CLAUDE.md docs .github`가 끝난 줄만 ·
-  `wc -c CLAUDE.md` ≈ 42KB(지금 102KB → 대화마다·자동 요청마다 2~3만 토큰 덜) · 1·2장은 손대지 않는다(V4와 같게) · 기기 기억에 '시스템 지도 = docs/MAP.md, grep으로만'.
-  PLAN 끝난 절 옮기기는 하지 않는다(PLAN은 이미 그 절만 grep으로 읽고, '5장'·'6장' 참조가 34곳).
+**먼저 읽을 것**: `functions/package.json` · `package.json`. 10-28 감사 결과는 그 대화의 임시 폴더라 없다 - `npm audit`을 다시.
+- [x] ■1 **7장 시스템 지도 → `docs/MAP.md`** - 10-29 P14 계획 대화에서 앞당겨 함(사용자: 8번을 맨 앞으로 - 뒤 대화가 가볍게 시작하게).
+  7장 몸을 그대로 옮김(diff 같음 - 머리 '# V5 시스템 지도' + grep으로만 읽기 안내) · CLAUDE.md 7장 = 안내 두 줄 · **102.5KB → 42.1KB** ·
+  참조 바꿈: PLAN 0장 3번(5장 결정 메모·MAP.md도 grep으로)·1-3·1-4·1-9·P10 '먼저 읽을 것' 넷(끝난 [x] 둘은 그대로) · claude-request.yml 프롬프트 한 줄 · 기기 기억.
+  1·2장은 손대지 않았다(V4와 같게). PLAN 끝난 절 옮기기는 하지 않는다(PLAN은 이미 그 절만 grep으로 읽고, '5장'·'6장' 참조가 34곳).
 - [ ] ■2 **functions** `npm audit fix`(force 없이 - body-parser 2.4·qs, lock만) → `npm run test:functions` → 커밋. 배포는 묻기대로.
 - [ ] ■3 **루트** `npm audit fix`(**`--force` 금지** - firebase를 9.14로 내린다) + `npm update`(작은 판) → 단위·tsc·lint·빌드 → 커밋(남는 것은 개발 도구와 grpc(Node 길 - dist에 없음)라 화면에 안 실린다고 메시지에).
   vite·vitest·oxlint가 다르게 굴면 그것만 되돌린다. firebase 13은 따로(나중).
