@@ -17,6 +17,8 @@ const RETRY_MS = 60_000;
 interface HolidayState {
   shared: Readonly<Record<number, HolidayTable>>;
   mine: HolidayTable;
+  /** 서버에 문서가 없던 해 (P14-3 - 개발자에게 '받기'를 알린다. 읽기 전·못 읽은 해는 없음으로 보지 않는다) */
+  missing: Readonly<Record<number, boolean>>;
   /** 표가 바뀔 때마다 오른다 (기억해 둔 셈을 다시 하라는 표지) */
   version: number;
 }
@@ -40,7 +42,7 @@ function writeCache(shared: Readonly<Record<number, HolidayTable>>) {
   }
 }
 
-export const useHolidayStore = create<HolidayState>(() => ({ shared: readCache(), mine: {}, version: 0 }));
+export const useHolidayStore = create<HolidayState>(() => ({ shared: readCache(), mine: {}, missing: {}, version: 0 }));
 
 const asked = new Map<number, number>();
 
@@ -61,12 +63,18 @@ export function requestHolidayYear(year: number): void {
   read
     .then((snap) => {
       asked.set(year, 0);
-      const days = snap.exists() ? readHolidayDoc(year, snap.data()) : {};
+      const missing = !snap.exists();
+      const days = missing ? {} : readHolidayDoc(year, snap.data());
       const s = useHolidayStore.getState();
-      if (JSON.stringify(s.shared[year] ?? null) === JSON.stringify(days)) return;
-      const shared = { ...s.shared, [year]: days };
-      writeCache(shared);
-      useHolidayStore.setState({ shared, version: s.version + 1 });
+      const sameDays = JSON.stringify(s.shared[year] ?? null) === JSON.stringify(days);
+      if (sameDays && !!s.missing[year] === missing) return;
+      const next: Partial<HolidayState> = { missing: { ...s.missing, [year]: missing } };
+      if (!sameDays) {
+        next.shared = { ...s.shared, [year]: days };
+        next.version = s.version + 1;
+        writeCache(next.shared);
+      }
+      useHolidayStore.setState(next);
     })
     .catch((e) => {
       // 규칙이 막았거나 연결이 없다 - 공휴일 없이도(지난번 표로) 앱은 돈다
@@ -108,8 +116,15 @@ export function useHolidayName(): (date: string) => string | undefined {
   return holidayName;
 }
 
+/** 서버에 표가 없는 해만 (그 해들을 읽기 시작한다 - 개발자 경고, P14-3) */
+export function useMissingHolidayYears(years: readonly number[]): number[] {
+  const missing = useHolidayStore((s) => s.missing);
+  for (const y of years) if (asked.get(y) !== 0) requestHolidayYear(y);
+  return years.filter((y) => missing[y]);
+}
+
 /** 시험: 받은 것을 잊는다 */
 export function resetHolidays() {
   asked.clear();
-  useHolidayStore.setState({ shared: {}, mine: {}, version: 0 });
+  useHolidayStore.setState({ shared: {}, mine: {}, missing: {}, version: 0 });
 }

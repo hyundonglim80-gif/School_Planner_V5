@@ -1784,7 +1784,7 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
   `saveSharedHolidays(year, days)`(V4와 같은 모양 `{ year, days, updatedAt, updatedBy }` - **모양을 바꾸면 V4가 깨진다**) + 시험(fetch 가짜) ·
   DevTab '공휴일' 칸: 키(password·저장) · 올해·내년·내후년 줄('2027년 · 18건 · 10-29 받음 [다시 받기]' / '⚠️ 없음 [받기]') · 건수가 줄면 "지금 20건 → 받은 것 15건. 덮어쓸까요?" · 받은 뒤 이 기기 표를 다시 읽기 ·
   주석 'V4 환경설정에서'(data/holidays.ts:1·domain/holidays.ts:1) → 'V5 환경설정 > 개발자(또는 V4)'. apis.data.go.kr이 V5 주소에서도 열리는지(CORS)를 여기서 본다.
-- [ ] ■3 **없음 표시**: `data/holidays.ts`가 문서 없음을 기억(`missing`) + `useHolidayMissing(year)` · `holidayYearsToWarn(today)`(9/1부터 내년) + 시험 ·
+- [x] ■3 **없음 표시** (10-29 끝 - `features/year/HolidayMissingNote`, 점검은 month-year가 아니라 inspect-dev-holidays 4묶음 - 표를 지웠다 되돌리는 곳이 거기): `data/holidays.ts`가 문서 없음을 기억(`missing`) + `useHolidayMissing(year)` · `holidayYearsToWarn(today)`(9/1부터 내년) + 시험 ·
   년간 화면에 개발자에게만 "⚠️ 2027년 공휴일 표가 없습니다 - 환경설정 > 개발자에서 받기"(누르면 탭) · 점검 month-year(일반 계정에는 줄이 없다).
 - [ ] ■4 5장 결정 두 줄(서버 백업 일정 · V4 없이 공휴일 받기) · 앞 결정 두 줄 고침 · 세션 끝 정리.
 **끝 조건**: `schedules list`에 둘 · 다음 날 READY 백업 · 복원 연습 한 번(문서 하나 되찾고 연습 DB 지움 - OPS.md에 날짜) · 운영 `holidays/2027` 있음 · V5 개발자 탭에서 2028 받기(에뮬레이터는 가짜 fetch) · 내년 표가 없으면 개발자에게만 경고.

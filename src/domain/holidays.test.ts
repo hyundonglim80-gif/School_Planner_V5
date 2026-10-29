@@ -1,6 +1,6 @@
 // 공휴일 이름 - 개인 → 공유 → 고정, 서버 문서 읽기
 import { describe, expect, it } from 'vitest';
-import { holidayNameIn, parseRestDeInfo, readHolidayDoc } from './holidays';
+import { holidayNameIn, holidayYearsToWarn, parseRestDeInfo, readHolidayDoc } from './holidays';
 
 const ok = (items: unknown) => ({ response: { header: { resultCode: '00', resultMsg: 'NORMAL SERVICE.' }, body: { items } } });
 
@@ -36,6 +36,13 @@ describe('공휴일', () => {
       ],
     });
     expect(parseRestDeInfo(may)).toEqual({ '2025-05-05': '어린이날·부처님오신날' });
+  });
+
+  it('표가 있어야 하는 해: 올해, 9/1부터 내년도', () => {
+    expect(holidayYearsToWarn('2026-08-31')).toEqual([2026]);
+    expect(holidayYearsToWarn('2026-09-01')).toEqual([2026, 2027]);
+    expect(holidayYearsToWarn('2026-12-31')).toEqual([2026, 2027]);
+    expect(holidayYearsToWarn('2027-01-01')).toEqual([2027]);
   });
 
   it('특일정보 오류 응답은 던진다 (그 달 실패)', () => {

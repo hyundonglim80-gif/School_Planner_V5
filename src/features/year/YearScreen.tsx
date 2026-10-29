@@ -5,7 +5,7 @@
 //   - 자료는 기기 사본에서(그 학년도 범위). '달력' 속성을 켠 일정만(월간과 같은 calendarEvents).
 //   - printAt = 인쇄 창(features/print)의 쪽 하나 - 그 학년도 학사력을 한 번에(보기 단추 줄 없이).
 //   - 오늘 칸 data-today, 이번 달 data-today-area (app/todayScroll).
-//   - 자세히에서 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3). 공휴일·D-Day는 달 카드가 직접(data/holidays·설정). 인쇄(🖨️ 학사력 A4 가로)·학사일정은 P6-3.
+//   - 자세히에서 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3). 공휴일·D-Day는 달 카드가 직접(data/holidays·설정). 공휴일 표가 없으면 개발자에게만 머리에 경고(HolidayMissingNote - P14-3). 인쇄(🖨️ 학사력 A4 가로)·학사일정은 P6-3.
 //   - 자세히의 수업 칩(둘째 줄 '수업' - V4 그대로): 계산한 수업 칸. 수업이 있는 날도 줄로 서고, 칩을 누르면 그 교시 수업 칸.
 //     달 카드에는 그 달 과목을 글(JSON)로 넘긴다 - 일정 하나만 바뀌어도 수업 칸 셈이 새로 나오지만, 글이 같으면 그 달은 다시 그리지 않는다.
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
@@ -28,6 +28,7 @@ import { openEventPanel } from '../events/open';
 import { openLinkViewer } from '../links/open';
 import { calendarEvents, type CalendarEvents } from '../month/calendarEvents';
 import { openDayNotes } from '../notes/open';
+import HolidayMissingNote from './HolidayMissingNote';
 import { setYearView, useYearView, type YearView } from './prefs';
 import YearMonthCard from './YearMonthCard';
 import YearSheetMonth from './YearSheetMonth';
@@ -248,6 +249,7 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
         </div>
         {view === 'sheet' && LEGEND}
       </div>
+      {!printAt && <HolidayMissingNote />}
 
       {waiting ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3" data-year-waiting>

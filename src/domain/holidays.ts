@@ -34,6 +34,12 @@ export function readHolidayDoc(year: number, data: unknown): Record<string, stri
   return out;
 }
 
+/** 서버에 공휴일 표가 있어야 하는 해 (P14-3) - 올해, 9월부터는 내년도(2학기에 다음 학년도 학사력·시간표를 짠다) */
+export function holidayYearsToWarn(today: string): number[] {
+  const y = Number(today.slice(0, 4));
+  return today.slice(5) >= '09-01' ? [y, y + 1] : [y];
+}
+
 /**
  * 공공데이터포털 특일정보 `getRestDeInfo` 한 달 응답(JSON) → 날짜표 (V4 lib/govApi). 쉬는 날(isHoliday 'Y')만.
  * item이 하나면 배열이 아니고, 그 달에 없으면 items가 빈 글자다. 같은 날 둘이면(어린이날·부처님오신날) 이름을 잇는다.
