@@ -2,7 +2,8 @@
 //
 // - 그룹 = `spaces/g_{id}` { kind: 'group', name, ownerId, members: { uid: 'owner'|'member' }, inviteCode } - V4는 groups/{id}의 배열이었다.
 // - 초대 코드 → 그룹은 `spaceInvites/{code}` { sid, ownerId } 한 건만 읽는다(목록으로 훑지 못한다 - V4 inviteCodes와 같은 까닭).
-// - 참여하는 사람은 아직 그룹 문서를 읽지 못한다 - 코드 문서로 sid를 알고 members.{나}만 넣는다(규칙이 그것만 허락한다).
+// - 참여하는 사람은 아직 그룹 문서를 읽지 못한다 - 코드 문서로 sid를 알고 members.{나}와 낸 코드 joinCodes.{나}만 넣는다
+//   (규칙이 그것만, 그 코드가 지금 inviteCode와 같을 때만 허락한다 - P14-1).
 // - 구성원 이름은 `people/{uid}`(그룹 공간 아래 - 참여할 때 내가 적는다). 공간 문서는 주인만 고치므로 거기 두지 않는다.
 // - 그룹 지우기는 주인만: 아래 자료를 먼저 비우고(Firestore는 하위 컬렉션을 함께 지우지 않는다 - V4 교훈) 공간 문서와 초대 코드를 지운다.
 // - V4 그룹 가져오기(■2): `g_{V4 그룹 id}`를 V4 주인·구성원 그대로 만든다(규칙이 V4 groups/{gid}.members로 본다 - 구성원 누구나).
@@ -74,7 +75,10 @@ export async function createGroup(user: SessionUser, name: string): Promise<stri
   return sid;
 }
 
-/** 초대 코드로 참여 - 코드 문서 한 건 → members.{나} = 'member'. 이미 들었으면 그 sid */
+/**
+ * 초대 코드로 참여 - 코드 문서 한 건 → members.{나} = 'member'. 이미 들었으면 그 sid.
+ * 낸 코드도 joinCodes.{나}에 적는다 - 규칙이 그것이 지금 열린 코드와 같은지 본다(P14-1 - 전에는 sid만 알면 들어왔다).
+ */
 export async function joinGroup(user: SessionUser, rawCode: string): Promise<string> {
   const code = cleanInviteCode(rawCode);
   if (!code) throw new Error('초대 코드를 적어 주세요.');
@@ -83,7 +87,7 @@ export async function joinGroup(user: SessionUser, rawCode: string): Promise<str
   if (!sid.startsWith('g_')) throw new Error('그 초대 코드의 그룹을 찾지 못했습니다. 코드를 다시 확인해 주세요.');
   if (useMySpaces.getState().groups.some((g) => g.id === sid)) return sid;
   try {
-    await updateDoc(doc(db, 'spaces', sid), { [`members.${user.uid}`]: 'member', updatedAt: serverTimestamp() });
+    await updateDoc(doc(db, 'spaces', sid), { [`members.${user.uid}`]: 'member', [`joinCodes.${user.uid}`]: code, updatedAt: serverTimestamp() });
   } catch (e) {
     console.error('[spaces] 그룹 참여 실패:', e);
     throw new Error('그룹에 참여하지 못했습니다. 초대가 닫혔거나 코드가 바뀌었을 수 있습니다.');
