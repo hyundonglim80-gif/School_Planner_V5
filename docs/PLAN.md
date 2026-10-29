@@ -1765,7 +1765,8 @@ V5 년간 2027년에 설(2/6~9 - 대체 포함)·부처님오신날(5/13)·추�
 공휴일 받기 도구 옮기기는 묻지 않는다 - 규칙·자료 모양이 V4와 같아 배포가 없고 V4 받기도 그대로 된다. 5장의 앞 결정 둘(`grep -n '공휴일 표를 받는\|해마다 공휴일' docs/PLAN.md`)을 바꾼다고 적는다.
 **먼저 읽을 것**: `features/backup/auto.ts` 1-20·55-90·128-170 · `data/holidays.ts`(140줄) · `domain/holidays.ts` 1-40 · `features/year/YearScreen.tsx` 머리줄 ·
 V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`components/SettingsModal.tsx` 61-80·290-320·560-590.
-- [ ] ■1 (묻고) 👤 Cloud Shell(Firebase/GCP 콘솔 오른쪽 위 >_ - 이 PC에는 gcloud가 없다). 깃발은 실행 전 `--help`로(10-29 문서로 본 것):
+- [x] ■1 **10-29 끝** - 사용자 ① 고름. Cloud Shell 없이 이 PC Firebase CLI(15.32)로 만들었다(`firestore:backups:schedules:create` - 명령·id는 `docs/OPS.md`). 남은 것: 다음 날 READY · 복원 연습(끝 조건).
+  (계획 때 적은 gcloud 길 - 아래는 참고로 남김) 👤 Cloud Shell(Firebase/GCP 콘솔 오른쪽 위 >_ - 이 PC에는 gcloud가 없다). 깃발은 실행 전 `--help`로(10-29 문서로 본 것):
   ```
   gcloud config set project schoolplannerv3
   gcloud firestore databases describe --database='(default)'      # 위치·PITR 상태
