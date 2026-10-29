@@ -141,10 +141,10 @@ export function dateLabel(scope: Scope, date: string): string {
     case 'day':
       return `${y}년 ${m}월 ${d}일 (${DAY_NAMES[weekdayOf(date)]})`;
     case 'week': {
-      // 그 주(월~일)의 목요일이 든 달의 몇째 주 - 달을 걸친 주는 날이 더 많은 달로 센다
+      // 그 주(월~일)의 목요일이 든 달의 몇째 주 - 달을 걸친 주는 날이 더 많은 달로 센다.
+      // 목요일이 1~7일인 주 = 1주 (P14-4 - 1일의 요일을 더하면 1일이 금·토인 달에 1주를 빼먹었다)
       const thu = parseDateStr(addDays(weekMonday(date), 3));
-      const firstWeekday = new Date(thu.getFullYear(), thu.getMonth(), 1).getDay();
-      const n = Math.ceil((thu.getDate() + firstWeekday) / 7);
+      const n = Math.ceil(thu.getDate() / 7);
       return `${thu.getFullYear()}년 ${thu.getMonth() + 1}월 ${n}주`;
     }
     case 'month':

@@ -80,4 +80,15 @@ describe('둘째 줄 날짜 글자', () => {
     expect(dateLabel('week', '2026-09-28')).toBe('2026년 10월 1주'); // 9/28 월 ~ 10/4 일, 목 = 10/1
     expect(dateLabel('week', '2026-10-04')).toBe('2026년 10월 1주');
   });
+
+  it('1일이 금·토요일인 달도 1주부터 (목요일이 1~7일인 주 = 1주 - P14-4)', () => {
+    expect(dateLabel('week', '2027-01-04')).toBe('2027년 1월 1주'); // 1/1 금
+    expect(dateLabel('week', '2027-05-03')).toBe('2027년 5월 1주'); // 5/1 토
+    expect(dateLabel('week', '2027-01-25')).toBe('2027년 1월 4주');
+    expect(dateLabel('week', '2027-03-01')).toBe('2027년 3월 1주');
+    expect(dateLabel('week', '2027-03-29')).toBe('2027년 4월 1주'); // 목 = 4/1
+    expect(dateLabel('week', '2027-04-26')).toBe('2027년 4월 5주');
+    expect(dateLabel('week', '2027-12-27')).toBe('2027년 12월 5주');
+    expect(dateLabel('week', '2028-12-25')).toBe('2028년 12월 4주');
+  });
 });
