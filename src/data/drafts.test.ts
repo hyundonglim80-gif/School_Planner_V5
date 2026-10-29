@@ -1,7 +1,7 @@
 // 쓰던 글 보관 - 적기·읽기·지우기·로그아웃 지우기, 훅: 손댄 동안 2초 뒤 적기·다시 열면 묻기·같으면 묻지 않고 지우기·저장하면 지우기·열쇠가 바뀌면 옮기기
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { deleteDraft, DRAFT_DELAY_MS, readDraft, resetDraftsForTest, useDraft, wipeDrafts, writeDraft } from './drafts';
+import { deleteDraft, DRAFT_DELAY_MS, listDrafts, onDraftsChange, readDraft, resetDraftsForTest, useDraft, wipeDrafts, writeDraft } from './drafts';
 import { useSession } from './session';
 
 vi.mock('./firebase', () => ({ auth: {}, db: {} }));
@@ -31,6 +31,23 @@ describe('보관 저장소', () => {
   it('계정마다 따로', async () => {
     await writeDraft(UID, 'k', 1);
     expect(await readDraft('other', 'k')).toBeNull();
+  });
+
+  it('남은 것 모두 - 최근 것부터, 적기·지우기를 알린다 (P14-6 ■1b 앱을 열 때 띠·창)', async () => {
+    const heard = vi.fn();
+    const off = onDraftsChange(heard);
+    await writeDraft(UID, 'note:u_me:new:memo', { text: '먼저' }, 10);
+    await writeDraft(UID, 'event:u_me:new:2026-10-30', { text: '나중' }, 20);
+    expect(await listDrafts(UID)).toEqual([
+      { key: 'event:u_me:new:2026-10-30', value: { text: '나중' }, savedAt: 20 },
+      { key: 'note:u_me:new:memo', value: { text: '먼저' }, savedAt: 10 },
+    ]);
+    await deleteDraft(UID, 'note:u_me:new:memo');
+    expect(heard).toHaveBeenCalledTimes(3);
+    off();
+    await deleteDraft(UID, 'event:u_me:new:2026-10-30');
+    expect(heard).toHaveBeenCalledTimes(3);
+    expect(await listDrafts(UID)).toEqual([]);
   });
 });
 

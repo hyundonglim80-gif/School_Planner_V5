@@ -193,6 +193,16 @@ registerWindow({
   load: () => import('../features/trash/TrashWindow'),
 });
 
+// 앱을 열 때 '📝 저장하지 않은 글 n개 - 보기' (P14-6 ■1b - 이 기기의 쓰던 글 보관, features/drafts)
+registerWindow({
+  id: 'drafts',
+  title: '저장하지 않은 글',
+  icon: '📝',
+  kind: 'side',
+  help: 'popups',
+  load: () => import('../features/drafts/DraftsWindow'),
+});
+
 // ⋮ 자료 - 💾 백업 · 가져오기 · 보내기 (P8-3) - 단축키 'backup', '구글 캘린더로 보내기'(calendar)는 '보내기' 탭(features/backup/shortcuts)
 registerWindow<BackupParams | undefined>({
   id: 'backup',

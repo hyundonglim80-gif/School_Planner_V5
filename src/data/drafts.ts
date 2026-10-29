@@ -5,6 +5,8 @@
 //   - 닫기·ESC로 버리고 닫아도 남는다 - 다시 열어 '버리기'로 지운다(잘못 닫은 글을 살리는 것이 이 기능이다).
 //   - 탭을 닫거나 화면이 꺼지는 때(pagehide)와 칸이 닫히는 때는 기다리던 것을 곧바로 적는다.
 //   - 로그아웃하면 그 계정의 보관을 지운다(wipeDrafts - 공용 PC에 학생 이야기가 남지 않게, 기기 사본과 같다).
+//   - 앱을 열 때 남은 것이 있으면 '📝 저장하지 않은 글 n개 - 보기'(listDrafts·onDraftsChange - features/drafts, P14-6 ■1b:
+//     끊긴 채 저장하고 앱을 닫으면 메모는 이 보관에만 남는다 - 같은 칸을 다시 열지 않으면 찾을 길이 없었다).
 // ⚠️ 여기가 고장 나도(없음·막힘) 칸은 그대로 쓴다 - 보관만 조용히 쉰다(콘솔에 한 번).
 import { useEffect, useRef, useState } from 'react';
 import { deleteDB, openDB, type IDBPDatabase, type IDBPObjectStore } from 'idb';
@@ -80,10 +82,30 @@ export async function readDraft<T>(uid: string, key: string): Promise<Draft<T> |
 
 export async function writeDraft(uid: string, key: string, value: unknown, now = Date.now()): Promise<void> {
   await run(uid, 'readwrite', (store) => store.put({ key, value, savedAt: now } satisfies DraftRow));
+  changed();
 }
 
 export async function deleteDraft(uid: string, key: string): Promise<void> {
   await run(uid, 'readwrite', (store) => store.delete(key));
+  changed();
+}
+
+/** 이 계정의 남은 쓰던 글 모두 - 최근 것부터 */
+export async function listDrafts(uid: string): Promise<Array<Draft<unknown> & { key: string }>> {
+  const rows = (await run(uid, 'readonly', (store) => store.getAll())) as DraftRow[] | undefined;
+  return (rows ?? []).map((r) => ({ key: r.key, value: r.value, savedAt: r.savedAt })).sort((a, b) => b.savedAt - a.savedAt);
+}
+
+/** 보관이 바뀌면(적기·지우기 - 이 탭에서) 알린다. 돌려준 함수 = 그만 듣기 */
+const listeners = new Set<() => void>();
+export function onDraftsChange(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
+function changed() {
+  for (const fn of listeners) fn();
 }
 
 /** 로그아웃 - 그 계정의 보관을 통째로 */
@@ -92,6 +114,7 @@ export async function wipeDrafts(uid: string): Promise<void> {
   db?.close();
   dbs.delete(uid);
   await deleteDB(draftsDbName(uid));
+  changed();
 }
 
 /** 시험에서 열어 둔 DB를 잊는다 */

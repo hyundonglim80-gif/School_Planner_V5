@@ -5,7 +5,8 @@
 //   2) 공유받기: '/share-target'에 POST(글·파일) → '/?share=…' → 새 메모 칸에 글 · 공유받은 파일 줄 · 주소에서 표시가 지워진다
 //   3) '/'의 첫 스크립트가 바뀌면 '새 판이 있습니다' 띠
 //   4) P14-6 ■1: 끊긴 채 저장 → 머리줄 '앱을 닫지 마세요 (n개)'·닫기 전에 묻기 → 이어지면 저절로 저장
-import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+//   5) P14-6 ■1b: 끊긴 채 저장하고 앱을 닫기 → 다시 열면 '📝 저장하지 않은 글 n개' → 보기 → 열기 → 되살리기 → 저장
+import { collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -172,6 +173,44 @@ try {
   r.check(await waitFor(page.locator(sel('new-build')), 10000), "'/'의 첫 스크립트가 바뀌면 '새 판이 있습니다' 띠");
   await ctx.unroute(SITE);
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
+
+  // P14-6 ■1b (10-30 사용자 휴대폰 ②): 끊긴 채 저장하고 앱을 닫으면 메모는 쓰던 글 보관에만 - 다시 열 때 찾게
+  r.section('끊긴 채 저장하고 앱을 닫기 → 다시 열기');
+  const TEXT2 = '오프라인저장점검 2';
+  const byText = () => getDocs(query(collection(em.db, 'spaces', sid, 'items'), where('text', '==', TEXT2)));
+  await page.evaluate((d) => (location.hash = `#/day/${d}`), DAY);
+  await page.locator(sel('journal-add')).click();
+  const note2 = page.locator(sel('note-panel', 'new'));
+  await note2.waitFor({ timeout: 15000 });
+  await note2.locator(sel('note-text-input')).fill(TEXT2);
+  await page.waitForTimeout(2500); // 쓰던 글 보관은 2초 뒤 적는다
+  await ctx.setOffline(true);
+  await note2.locator(sel('note-save')).click();
+  r.check(await waitFor(page.locator(sel('pending-writes')), 8000), "끊긴 채 저장 → '앱을 닫지 마세요' 띠");
+  await page.close(); // 앱을 밀어 닫기 (묻지 않고)
+  await ctx.setOffline(false);
+  const page2 = await ctx.newPage();
+  const errors2 = [];
+  page2.on('pageerror', (e) => errors2.push(String(e)));
+  await open(page2, `#/day/${DAY}`);
+  r.check((await byText()).empty, '서버에는 없다 (끊긴 쓰기는 메모리에만 있었다 - 사용자 휴대폰 ②)');
+  r.check(await waitFor(page2.locator(sel('drafts-banner')), 10000), "다시 열면 '📝 저장하지 않은 글 n개가 이 기기에 남아 있습니다'");
+  await page2.locator(sel('drafts-banner-open')).click();
+  const row = page2.locator(sel('drafts-row', `note:${sid}:new:${DAY}`));
+  r.check(await waitFor(row, 10000), `보기 → '저장하지 않은 글' 창에 그 글 (${((await row.textContent().catch(() => '')) ?? '').slice(0, 40)})`);
+  r.check((await page2.locator(sel('drafts-banner')).count()) === 0, '보기를 누르면 띠는 거둔다');
+  await row.locator(sel('drafts-row-open')).click();
+  const note3 = page2.locator(sel('note-panel', 'new'));
+  r.check(await waitFor(note3.locator(sel('draft-offer')), 10000), "열기 → 그 칸 맨 위 '📝 저장하지 않은 글이 있습니다 - 되살리기'");
+  await note3.locator(sel('draft-restore')).click();
+  r.check((await note3.locator(sel('note-text-input')).inputValue()) === TEXT2, '되살리기 → 글이 돌아온다');
+  await note3.locator(sel('note-save')).click();
+  const saved2 = await serverUntil(byText, (q) => !q.empty);
+  for (const d of saved2.docs) undo.add(() => deleteDoc(d.ref));
+  r.check(saved2.size === 1, `저장 → 서버에 그 메모 하나 (${saved2.size})`);
+  // 그 창은 메모 칸 뒤의 숨은 탭이라 보이지 않는다 - 있나만 센다
+  r.check(await waitFor(async () => (await page2.locator(sel('drafts-empty')).count()) === 1, 10000), "저장하면 보관에서 빠진다 ('저장하지 않은 글' 창이 빈다)");
+  r.check(errors2.length === 0, `화면 오류 없음 ${errors2.join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {

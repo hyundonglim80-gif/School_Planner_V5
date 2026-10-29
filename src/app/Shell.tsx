@@ -27,6 +27,7 @@ import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '.
 import ClipboardColumn from '../features/clipboard/ClipboardColumn';
 import ImportBanner from '../features/import/ImportBanner';
 import AutoBackupBanner from '../features/backup/AutoBackupBanner';
+import DraftsBanner from '../features/drafts/DraftsBanner';
 import NewYearBanner from '../features/newYear/NewYearBanner';
 import { useShareReceiver } from '../features/share/receive';
 import NewBuildBanner from './NewBuildBanner';
@@ -157,6 +158,8 @@ export default function Shell() {
         <NewBuildBanner />
         <ImportBanner />
         <AutoBackupBanner />
+        {/* 앱을 열 때 남은 쓰던 글 '📝 저장하지 않은 글 n개 - 보기' (P14-6 ■1b) */}
+        <DraftsBanner />
         <NewYearBanner />
         <MainWidthContext.Provider value={mainWidth}>
           <Suspense fallback={<p className="p-6 text-xs text-slate-400">불러오는 중…</p>}>

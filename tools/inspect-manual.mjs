@@ -776,6 +776,10 @@ try {
     await page.waitForTimeout(2500);
     await q(sel('note-close')).click();
     await waitFor(async () => (await count(sel('note-panel'))) === 0, 3000);
+    // P14-6 ■1b: 앱을 열 때 띠의 '보기' = 창 'drafts' - 남은 글 줄
+    await page.evaluate(() => window.sp5.openWindow('drafts'));
+    r.check(await waitFor(page.locator(sel('drafts-row')).filter({ hasText: '설명서점검 쓰던 글' }), 5000), "'📝 저장하지 않은 글' 창(앱을 열 때 띠의 보기)에 그 글");
+    await page.evaluate(() => window.sp5.closeAllWindows());
     await q(sel('journal-add')).click();
     r.check(await has(sel('draft-offer'), 5000), "다시 열면 '📝 저장하지 않은 글이 있습니다 - 되살리기 / 버리기'");
     if (await has(sel('draft-discard'), 1000)) await q(sel('draft-discard')).click();
