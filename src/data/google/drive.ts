@@ -104,7 +104,8 @@ async function uploadOnce(file: Blob, name: string, token: string): Promise<Driv
   const data = (await up.json()) as { id: string; name: string; webViewLink?: string };
 
   // '링크가 있는 사람은 볼 수 있음' - 기록·메모의 주소로 그림이 보이고 공유 공간의 다른 선생님도 연다.
-  // 실패해도 올리기는 된 것이다(그림이 안 보일 수는 있다).
+  // 화면은 토큰 없이 thumbnail 주소로 부르므로 비공개면 V5에서도 빈 그림이 된다(V4 결정 - V4 driveApi.ts:122).
+  // 10-29 P14-4 사용자 ①: 공개 그대로 + 쓰는 칸·설명서에 알림(PLAN 5장). 실패해도 올리기는 된 것이다(그림이 안 보일 수는 있다).
   await driveFetch(`https://www.googleapis.com/drive/v3/files/${data.id}/permissions`, token, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

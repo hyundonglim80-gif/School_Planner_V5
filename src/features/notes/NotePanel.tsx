@@ -690,7 +690,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-dashed border-slate-300 shadow-2xs ${
                     uploading ? 'opacity-60 cursor-wait' : 'cursor-pointer'
                   }`}
-                  title="파일을 골라 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 여러 개를 한 번에 골라도 됩니다."
+                  title="파일을 골라 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 여러 개를 한 번에 골라도 됩니다. 링크가 있는 사람은 볼 수 있습니다."
                 >
                   <span>{uploading === 'files' ? '⏳' : '📎'}</span>
                   <span data-note-uploading={uploading === 'files' ? 'files' : undefined}>{uploading === 'files' ? '업로드 중...' : '파일 첨부'}</span>
@@ -702,7 +702,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   data-pen-dirty={penDirty ? '' : undefined}
                   onClick={() => setPenOpen(true)}
                   disabled={!!uploading}
-                  title={penDirty ? '그리던 손글씨를 이어 그립니다. 💾 저장을 누르면 그림으로 붙고 메모가 저장됩니다.' : '펜·손가락으로 쓴 것을 그림으로 바꿔 붙입니다 (구글 드라이브 School_Planner 폴더)'}
+                  title={penDirty ? '그리던 손글씨를 이어 그립니다. 💾 저장을 누르면 그림으로 붙고 메모가 저장됩니다.' : '펜·손가락으로 쓴 것을 그림으로 바꿔 붙입니다 (구글 드라이브 School_Planner 폴더 - 링크가 있는 사람은 볼 수 있습니다)'}
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed shadow-2xs disabled:opacity-60 disabled:cursor-wait ${
                     penDirty ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300'
                   }`}
@@ -722,6 +722,10 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   <span>링크 추가</span>
                 </button>
               </div>
+              {/* 드라이브 첨부는 '링크가 있는 사람은 보기'로 올린다(drive.ts - V4 결정, P14-4 사용자 ①: 공개 그대로 + 알리기) */}
+              <p data-note-attach-public className="text-2xs text-slate-400">
+                📎·✏️ 올린 파일은 &apos;링크가 있는 사람은 보기&apos;로 열립니다. 학생 얼굴·성적처럼 퍼지면 안 되는 것은 올리지 마세요.
+              </p>
               {(item?.linkIds?.length ?? 0) > 0 && (
                 <button
                   type="button"

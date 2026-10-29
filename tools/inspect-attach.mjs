@@ -133,6 +133,8 @@ try {
   const up1 = google.uploads[0];
   r.check(up1 && /^붙여넣은_이미지_\d{8}_\d{6}\.png$/.test(up1.name) && up1.mimeType === 'image/png', `이름 '붙여넣은_이미지_…' (${up1?.name})`);
   r.check(up1?.parents?.[0] === 'FOLDER_SP' && google.permissions >= 1, 'School_Planner 폴더에 올리고 공개 읽기');
+  const pub = ((await panel.locator(sel('note-attach-public')).textContent().catch(() => '')) ?? '').trim();
+  r.check(pub.includes('링크가 있는 사람은 보기') && pub.includes('학생 얼굴'), `쓰는 칸에 공개 안내 (P14-4 ① - ${pub.slice(0, 40)})`);
   r.check(google.folderLookups === 1, `폴더는 한 번만 찾는다 (${google.folderLookups})`);
   await page.locator(sel('note-file-input')).setInputFiles([
     { name: '가정통신문.hwp', mimeType: 'application/x-hwp', buffer: Buffer.from('hwp') },

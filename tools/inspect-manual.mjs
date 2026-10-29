@@ -533,6 +533,7 @@ try {
   await topic('attach', async () => {
     await q(sel('entry-card', 'insp_man_n1')).locator(sel('entry-edit')).click();
     r.check(await has(sel('note-attach')), '쓰는 칸의 📎 파일 첨부');
+    r.check(await has(sel('note-attach-public')), "📎 아래 '링크가 있는 사람은 보기' 안내");
   });
 
   await topic('paste-table', async () => {
