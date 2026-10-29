@@ -34,6 +34,8 @@ export default function DevErrorsSection() {
   }, []);
 
   useEffect(() => {
+    // 탭을 열 때 서버(v5Errors)에서 한 번 읽는다
+    // oxlint-disable-next-line react/set-state-in-effect
     void load();
   }, [load]);
 
