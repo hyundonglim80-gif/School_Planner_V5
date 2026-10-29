@@ -28,8 +28,7 @@
 
 ## 지금 하는 일
 
-**P14-1 ■3** (10-29 계획) - 점검 뒤 손보기 여덟 세션의 첫째: 그룹 참여 = 낸 코드 확인. 6장 `### P14` 머리 표와 '모든 P14 세션에 같은 것'을 읽고 `### P14-1`로. 8번(`CLAUDE.md` 7장 → `docs/MAP.md`)은 10-29에 앞당겨 끝냈다.
-■1·■2는 main(10-29 `wip/P14-1`에서 합침) → 화면 배포 끝 → **운영 규칙 배포(■3 - 사용자 '한 번에' 허락)**가 아직이면 그것부터.
+**P14-2** - 점검 뒤 손보기 둘째: 오류 알림(`v5Errors`)·ErrorBoundary·개발자 탭. 6장 `### P14` 머리 표와 '모든 P14 세션에 같은 것'을 읽고 `### P14-2`로. P14-1은 10-29 끝(운영 규칙 배포함).
 차례는 사용자 번호대로 P14-1 → P14-8(사용자 10-29 "1번부터 모두 차례로"). main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
 
 ---
@@ -189,7 +188,7 @@
 | **P13 메모로 Claude 요청** (10-16) | | | | |
 | P13-1 | 함수·워크플로·메모 카드 표시·🔒 라벨 저절로·한 번에 하나·🤖 요청 단추 | 중간 | 중간 | 끝 (2026-10-16) |
 | **P14 점검 뒤 손보기** (10-29 계획) | | | | |
-| P14-1 | 그룹 참여 = 낸 코드 확인(`joinCodes.<uid>`)·코드 바꾸기·닫기·구성원 내보내기 (항목 1) | 중간 | 높음 | 할 일 |
+| P14-1 | 그룹 참여 = 낸 코드 확인(`joinCodes.<uid>`)·코드 바꾸기·닫기·구성원 내보내기 (항목 1) | 중간 | 높음 | 끝 (10-29) |
 | P14-2 | 오류 알림(`v5Errors`)·ErrorBoundary·개발자 탭 (항목 2) | 큼 | 높음 | 할 일 |
 | P14-3 | 서버 예약 백업·`docs/OPS.md` · 공휴일 받기를 V5 개발자 탭으로 (항목 3·4) | 중간 | 중간 | 할 일 |
 | P14-4 | 첨부 공개 알림 · 주 이름(목요일 ÷ 7) · 낡은 점검 둘·자동 요청이 점검도 고치게 (항목 5·6·7) | 작음 | 중간 | 할 일 |
@@ -281,6 +280,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-28 | 영-전-3-현동림 PC | 사용자 요청 넷 | ↗ 새 창·휴대폰 🔗·손글씨 길게·저장/닫기 | 단위 2488 · lint·빌드 · inspect-popout 34(새 창 = Playwright 팝업, 휴대폰 390) · handwriting(길게 쓰기·휴대폰 머리 더함 - #113 어두운 처음 화면으로 깨져 있던 밝은 화면 셋 고침) · shell·links·notes·manual(popups·attach·links) 통과 |
 | 2026-10-29 | 영-전-3-현동림 PC | 메모 요청 #123·#125·#127 뒤 | N교시 수정 ✕ 칸 비우기 · 완료 칩 크기 그대로(#127) · 깨진 점검 둘 | 단위 2488 · lint·빌드 · inspect-lessons(비우기 넷 더함)·events·week·month-year(일정 글을 누르게 고침)·forward·groups·gcal · manual 318(⋮ 여덟으로 고침) · #125 단축키 점검 더함(popout·search-trash) 통과 |
 | 2026-10-29 | 영-전-3-현동림 PC | P14 계획 | 점검 결과 → P14 여덟 세션 | 10-28 점검(18 에이전트 워크플로는 한도에 닿아 실패 → 직접: 단위 2488·자료 시험 30·크롬 점검 12개, 틀린 것은 낡은 점검 둘) · 10-29 읽기만 하는 에이전트 셋(37만 토큰·14분)으로 고칠 자리 확인 · 1번 설계의 구멍(칸 하나 `joinCode`는 앞사람 값으로 통과)을 찾아 사람마다 칸으로 · 사용자 '8번을 맨 앞으로' → 7장을 `docs/MAP.md`로(CLAUDE.md 102.5KB → 42.1KB) · 문서만(코드 그대로) |
+| 2026-10-29 | 영-전-3-현동림 PC | P14-1 | 합침 `6a6300b` + 규칙 배포 | ■1 규칙 `joinCodes.<나>` == inviteCode · ■2 그룹장 🔄·🚫·× 내보내기(코드도 바뀜) · check-rules V4 35 + V5 91 · test:data 30 · 단위 2493 · share-groups 43·import-groups·manual(groups) 통과 · 규칙 배포는 화면 배포 뒤 한 번에(사용자) · 👤 실제 사이트 둘째 계정 참여 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -1706,8 +1706,10 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   GroupsWindow: 주인 줄 `data-group-rotate-code`·`data-group-close-code`, 구성원 칩 `data-group-remove-member={uid}`. 확인 글 "○○ 선생님을 그룹에서 내보낼까요? 초대 코드도 새로 바뀝니다." · "초대 코드를 바꿀까요? 옛 코드로는 더 들어오지 못합니다."
   시험 `features/groups/GroupsWindow.test.tsx`(새로 - 주인에게만 단추, 나에게는 내보내기 없음) · 점검 share-groups(바꾸기 → 옛 코드 실패·새 코드 성공, 내보내기 → 상대 목록에서 사라짐) ·
   설명서 `share.ts` 20-24·48(바꾸기·닫기·내보내기 · "구성원 모두 코드를 봅니다 - 새면 🔄" · V4에서 온 그룹은 V4 그룹에서도 빼야 다시 못 들어온다).
-- [ ] ■3 (묻고) `node tools/live-rules.cjs` → `npx firebase deploy --only firestore:rules --project schoolplannerv3`(firestore.rules 17-18줄 · `CLAUDE.md` 배포 줄) →
+- [x] ■3 (묻고) `node tools/live-rules.cjs` → `npx firebase deploy --only firestore:rules --project schoolplannerv3`(firestore.rules 17-18줄 · `CLAUDE.md` 배포 줄) →
   실제 사이트에서 둘째 계정으로 코드 참여 한 번 · 바꾼 뒤 옛 코드는 "초대가 닫혔거나 코드가 바뀌었을 수 있습니다"(spaces.ts:89).
+  → 10-29 화면 배포(main CI·Hosting) 끝난 뒤 규칙 배포 · live-rules = 파일 · V4 복사 `fa3b5c7`. 운영 규칙은 배포 전 = 고치기 전 파일(ac01bd5)이었다 -
+  live-rules는 줄마다 견주어 줄을 넣으면 뒤가 다 밀려 보인다 → `--print`를 `git show <전>:firestore.rules`와 diff. 실제 사이트 둘째 계정 참여는 👤(구글 로그인).
 **끝 조건**: 코드 없이·틀린 코드·앞사람 코드 재사용·바뀐 옛 코드 = 거부, 맞는 코드·V4 구성원 = 허락(check-rules 전체 통과) · share-groups·import-groups·test:data 통과 · V4 규칙 = V5(줄바꿈 빼고) · 운영 배포 뒤 참여 한 번.
 **남는 것(일부러)**: V4에서 온 공간은 V4 `groups` 구성원이면 코드 없이 들어온다(232줄) - V5에서 내보내도 V4 그룹에 남으면 다시 들어온다(설명서 한 줄).
 
