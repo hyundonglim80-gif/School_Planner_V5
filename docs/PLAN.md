@@ -28,8 +28,8 @@
 
 ## 지금 하는 일
 
-**없음 - P13-1 끝(10-16).** 메모 🤖 요청이 문제를 낳거나 사용 의견이 오면 그때 새 세션. 새 요청이 오면 6장에 `### P14` 절을 만든다.
-P12 = 사용 의견 셋째 묶음 4가지(10-16) - 확인 결과와 조각은 6장 `### P12. 사용 의견 ③ 반영` 머리 표. main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다.
+**P14-1** (10-29 계획) - 점검 뒤 손보기 여덟 세션의 첫째: 그룹 참여 = 낸 코드 확인. 6장 `### P14` 머리 표와 '모든 P14 세션에 같은 것'을 읽고 `### P14-1`로.
+차례는 사용자 번호대로 P14-1 → P14-8(사용자 10-29 "1번부터 모두 차례로"). main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
 
 ---
 
@@ -187,6 +187,15 @@ P12 = 사용 의견 셋째 묶음 4가지(10-16) - 확인 결과와 조각은 6�
 | P12-1 | 이월 같은 글은 하나만·수업 ✎ → '바뀜'·휴대폰 알림 다시 울림·휴대폰 월간 수업 칩 | 작음 | 중간 | 끝 (2026-10-16) |
 | **P13 메모로 Claude 요청** (10-16) | | | | |
 | P13-1 | 함수·워크플로·메모 카드 표시·🔒 라벨 저절로·한 번에 하나·🤖 요청 단추 | 중간 | 중간 | 끝 (2026-10-16) |
+| **P14 점검 뒤 손보기** (10-29 계획) | | | | |
+| P14-1 | 그룹 참여 = 낸 코드 확인(`joinCodes.<uid>`)·코드 바꾸기·닫기·구성원 내보내기 (항목 1) | 중간 | 높음 | 할 일 |
+| P14-2 | 오류 알림(`v5Errors`)·ErrorBoundary·개발자 탭 (항목 2) | 큼 | 높음 | 할 일 |
+| P14-3 | 서버 예약 백업·`docs/OPS.md` · 공휴일 받기를 V5 개발자 탭으로 (항목 3·4) | 중간 | 중간 | 할 일 |
+| P14-4 | 첨부 공개 알림 · 주 이름(목요일 ÷ 7) · 낡은 점검 둘·자동 요청이 점검도 고치게 (항목 5·6·7) | 작음 | 중간 | 할 일 |
+| P14-5 | `CLAUDE.md` 7장 → `docs/MAP.md` · 의존성 보안 판 · C: 정리 (항목 8·9) | 작음 | 낮음 | 할 일 |
+| P14-6 | 동기화·두 기기·오프라인 저장 점검 (항목 10 ①) | 중간 | 높음 | 할 일 |
+| P14-7 | 일정 셈 점검 - 이월·기간·반복·공휴일 (항목 10 ②) | 중간 | 중간 | 할 일 |
+| P14-8 | 학급 셈 점검 - 출결·자리·평가·수업 칸·진도 (항목 10 ③) | 중간 | 중간 | 할 일 |
 
 **차례의 까닭**: 뼈대(P1)와 자료 층(P2)이 모든 화면의 바탕이다. 하루 화면(P3)이 가장 많이 쓰는 곳이라 먼저 하고, 가져오기를 단계마다 붙여
 P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6)이 달력(P5) 뒤인 까닭: 수업 칸은 주간에도 그려지므로 화면 틀이 먼저 있어야 한다.
@@ -270,6 +279,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-22 | 영-전-3-현동림 PC | 설명서 반영 | 설명서 - 멈춤 동안 바뀐 것 모두 반영 | 커밋 #60~#96을 훑어 빠진 것: 끌어 놓기(#81)·이은 곳 표시 없앰(#88)·연결 창 메모 탭(#90)·일정 라벨 하나·메모 Ctrl(#92)·오른쪽 N교시 수정 칸·비고(#94)·주간 1/2(#67)·삭제 = 수업 없음 · #94 문구를 검색·주간학습안내·지난 시간에도 · 빠른 입력 #라벨도 하나로(#92) · 자동 요청 뒤 깨진 점검 넷(lessons·progress·seating·manual) 고침 · 단위 2446 · manual 306·lessons·progress·seating·links·events·notes·memo 통과 |
 | 2026-10-28 | 영-전-3-현동림 PC | 사용자 요청 넷 | ↗ 새 창·휴대폰 🔗·손글씨 길게·저장/닫기 | 단위 2488 · lint·빌드 · inspect-popout 34(새 창 = Playwright 팝업, 휴대폰 390) · handwriting(길게 쓰기·휴대폰 머리 더함 - #113 어두운 처음 화면으로 깨져 있던 밝은 화면 셋 고침) · shell·links·notes·manual(popups·attach·links) 통과 |
 | 2026-10-29 | 영-전-3-현동림 PC | 메모 요청 #123·#125·#127 뒤 | N교시 수정 ✕ 칸 비우기 · 완료 칩 크기 그대로(#127) · 깨진 점검 둘 | 단위 2488 · lint·빌드 · inspect-lessons(비우기 넷 더함)·events·week·month-year(일정 글을 누르게 고침)·forward·groups·gcal · manual 318(⋮ 여덟으로 고침) · #125 단축키 점검 더함(popout·search-trash) 통과 |
+| 2026-10-29 | 영-전-3-현동림 PC | P14 계획 | 점검 결과 → P14 여덟 세션 | 10-28 점검(18 에이전트 워크플로는 한도에 닿아 실패 → 직접: 단위 2488·자료 시험 30·크롬 점검 12개, 틀린 것은 낡은 점검 둘) · 10-29 읽기만 하는 에이전트 셋(37만 토큰·14분)으로 고칠 자리 확인 · 1번 설계의 구멍(칸 하나 `joinCode`는 앞사람 값으로 통과)을 찾아 사람마다 칸으로 · 문서만(코드 그대로) |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -1627,3 +1637,186 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
 - [x] ■4 (사용자 - PC) 함수 다시 배포(■3·■5 - 줄 세우기·라벨 챙기기·단추로 보내기는 함수에 있다) → 10-16 라벨 관리에 🔒 'Claude요청'(잠금 표시는 함수만 적는다)으로 확인.
 **끝 조건**: 라벨을 붙인 메모 하나가 ✅ 배포됨까지(■2에서 됨) · 세 계정에 🔒 라벨 · 둘을 잇달아 보내면 차례대로. → 모두 확인(10-16 사용자 - 🔒 세 계정, #43이 끝난 뒤 #45가 보내짐).
 → **끝 (10-16)** - 사용자 계정 🔒 확인 뒤 사용자 결정으로 끝냄(나머지 둘은 쓰면서 보고, 문제가 있으면 다시 요청).
+
+### P14. 점검 뒤 손보기 (2026-10-29 계획)
+
+10-28~29 V5 점검(단위 2488 · 에뮬레이터 자료 시험 30 · tsc·lint·빌드 · 크롬 점검 12개 - 틀린 것은 낡은 점검 둘뿐)에서 찾은 미진한 점 9가지와 깊이 못 본 곳.
+사용자 말(10-29): "1번부터 모두 차례로 수정하게 계획을 작성하고 다른 대화에서 시작할 수 있게 해줘." → 차례는 사용자에게 보인 번호 그대로(P14-1 → P14-8).
+고칠 자리는 10-29에 코드로 확인했다(읽기만 하는 에이전트 셋). **줄 번호는 그날 것** - 고치기 전에 이름으로 grep 해서 맞춘다.
+
+| 항목 | 10-29 확인 결과 (코드) | 세션 | 묻기 · 👤 |
+|---|---|---|---|
+| 1 그룹 참여가 초대 코드를 보지 않음 | 규칙(`firestore.rules` 225-239)은 '열린 코드가 있나'만 본다 - `g_…`를 알면 코드 없이 들어온다. 코드 바꾸기·닫기·구성원 내보내기 화면이 없다(한 번 연 코드는 그룹을 지울 때까지) | P14-1 | 운영 규칙 배포 |
+| 2 오류 알림 없음 | ErrorBoundary·`window` error/unhandledrejection·React `onUncaughtError`가 없다. 저장 실패는 `showErrorToast`(app/toast.ts:79)의 콘솔뿐, 그리기 오류는 흰 화면 | P14-2 | 운영 규칙 배포 · TTL |
+| 3 서버 백업 없음 | 드라이브 자동 백업은 PC + 구글 토큰 + **개인 공간만**(features/backup/auto.ts:60·134·155). 휴대폰만 쓰는 동료·그룹 공간은 백업이 없다 | P14-3 | 돈 드는 설정 · 👤 Cloud Shell |
+| 4 2027 공휴일 | 설·추석·대체 공휴일은 `holidays/{연도}`(V4 개발자 설정에서만 받는다). 없으면 말없이 빈 표(data/holidays.ts:62) | P14-3 | 👤 지금 V4에서 2027 받기(1분). 옮기기는 묻지 않음 |
+| 5 드라이브 첨부 공개 | 올리기 넷(첨부·캡처 / 손글씨 / Keep 그림 / 첨부 모으기)이 모두 `anyone` 읽기(data/google/drive.ts:106-112). 화면이 토큰 없는 `<img src>`라 공개여야 다른 기기·그룹·팝업·인쇄에서 보인다(V4 결정). 설명서에 '공개'라는 말이 없다 | P14-4 | V4 결정이라 묻기(권장 = 알리기만) |
+| 6 주 이름 | `dateLabel` 주(app/nav.ts:147)가 1일이 금·토인 달에 1주를 빼먹는다 - 2026~2028 중 10달(2027-01·05·10 …) | P14-4 | 없음 |
+| 7 낡은 점검 | inspect-progress:118(#111 쪽 자리) · inspect-claude-request:106-115(#76 묻는 창 없음·#69 다시 요청 - 코드로만 봄) · 자동 요청은 점검을 고치지 않는다 | P14-4 | 없음 |
+| 8 CLAUDE.md 무거움 | 102KB(약 5만 토큰) 중 7장 지도가 59%(61KB) - 대화마다·자동 요청마다 통째로 읽힌다 | P14-5 | 없음 |
+| 9 가벼운 것 | functions body-parser·qs(`npm audit fix` - HTTP 함수가 없어 영향 작음) · 루트 19건은 개발 도구(화면에 안 실림 - `--force`는 firebase를 9로 내리니 금지) · C: 90% | P14-5 | 함수 배포는 묻기 · 👤 C: 정리 |
+| 10 깊이 못 본 곳 | 끊긴 동안 쓰기는 메모리에만(`memoryLocalCache`) - 쓰던 글 보관은 남지만 같은 칸을 다시 열어야 보인다. 두 기기 동시 고침·일정 셈·학급 셈 | P14-6~8 | 👤 휴대폰 오프라인 확인(P14-6 전) |
+
+**모든 P14 세션에 같은 것**: 세션 = 대화 하나, 조각마다 커밋·푸시(1-1) · 정할 것은 권장안 + 5장, '묻기'는 그 조각 앞에서 AskUserQuestion으로 ·
+설명서(`features/help/chapters/*`)를 같은 커밋에서 + `inspect-manual.mjs`(MATCH) · 바꾼 `data-*`·화면 글은 `grep -rn '<옛 이름>' tools/` · 에뮬레이터가 꺼져 있으면 켠다(`CLAUDE.md` 2장) ·
+**에이전트 워크플로를 쓰지 않는다**(2장 - 읽기·grep으로 직접) · 운영 규칙 배포 = `node tools/live-rules.cjs`로 운영 = 파일인지 먼저 보고, V4 저장소 `firestore.rules`에 복사(커밋만) · 세션 끝 정리 1-3.
+
+### P14-1. 그룹 참여 = 낸 코드 확인 · 코드 바꾸기·닫기·내보내기 (항목 1)
+**시작 조건**: 없음.
+**묻기**(■3 앞): 운영 규칙 배포(V3·V4·V5가 함께 쓰는 schoolplannerv3) - ① 권장: ■1·■2가 main에 올라 화면 배포가 끝난 직후 규칙 배포
+(그 몇 분과, 옛 화면을 연 채 둔 기기는 새로 열 때까지 코드 참여가 막힌다 - 참여는 드물다) / ② 두 번 배포(먼저 `joinCodes`를 허락만 → 화면 → 며칠 뒤 요구) / ③ 미루기. V3·V4는 spaces를 쓰지 않는다.
+**먼저 읽을 것**: `firestore.rules` 156-290(V5 블록) · `data/spaces.ts` 1-193 · `data/spaceChoice.ts` 55-70 · `features/groups/GroupsWindow.tsx` · `tools/check-rules.mjs` 1-70·366-535(V5 그룹·참여·V4 가져오기) ·
+`tools/inspect-share-groups.mjs` 1-111 · `tools/inspect-import-groups.mjs` 110-135 · `import/v4/group.emu.test.ts` · 설명서 `chapters/share.ts` 1-60.
+**지금**: `joinGroup`(spaces.ts:78-93)이 `spaceInvites/{code}`로 sid를 찾고 `members.<나>: 'member'`만 쓴다 - 낸 코드는 서버에 가지 않는다. 규칙은 `inviteCode != null || isV4GroupMember(sid)`만 본다.
+코드 문서는 get만 누구나·list 막힘(277-278), 코드 6자리 32글자. 구성원 모두가 창에서 코드를 본다(GroupsWindow 112-121) - 나간 사람도 코드를 알아 **규칙만 고치면 반쪽**이다(코드 바꾸기가 있어야 막힌다).
+- [ ] ■1 **규칙: 낸 코드가 지금 열린 코드와 같을 때만 참여** - 사람마다 칸 `joinCodes.<uid>`(지도)에 낸 코드를 적는다.
+  **칸 하나(`joinCode`)로는 안 된다**: `request.resource.data`는 고친 뒤 문서 전체라, 앞사람이 남긴 값이 지금 코드와 같으면 코드를 모르는 사람이 members만 써도 통과한다(`get(spaceInvites/<칸>)`으로 봐도 같다 - 10-29 계획 때 찾음).
+  그 밖의 사람 갈래(225-239)를 이렇게:
+  ```
+  && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'updatedAt', 'joinCodes'])
+  && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
+  && request.resource.data.get('joinCodes', {}).diff(resource.data.get('joinCodes', {})).affectedKeys().hasOnly([request.auth.uid])
+  && (
+    // 참여: 내 칸에 적은 코드 == 지금 열린 초대 코드 (V4 그룹 구성원은 코드 없이)
+    (((resource.data.get('inviteCode', null) != null
+        && request.resource.data.get('joinCodes', {}).get(request.auth.uid, null) == resource.data.inviteCode)
+      || isV4GroupMember(sid))
+      && !(request.auth.uid in resource.data.members)
+      && request.resource.data.members[request.auth.uid] == 'member')
+    // 나가기: 그대로
+    || (resource.data.members[request.auth.uid] == 'member' && !(request.auth.uid in request.resource.data.members))
+  )
+  ```
+  앱: `joinGroup` updateDoc에 `` [`joinCodes.${user.uid}`]: code `` 더하기, 머리 주석 한 줄. `ensureImportedGroup`(V4 구성원 참여, spaces.ts:161)은 그대로.
+  `check-rules.mjs` [V5 참여]: must '맞는 코드로'(423을 joinCodes로) · mustNot '코드 없이 sid만으로'·'틀린 코드'·**'앞사람이 같은 코드로 들어온 뒤 코드 없이'**·'남의 joinCodes 칸'·'참여하며 다른 칸도' ·
+  [나가기·초대 닫기](452-467): '닫힌 뒤에는 코드를 적어도 막힘'(465) · '코드가 바뀐 뒤 옛 코드는 막힘'·'새 코드로는 됨' · [V4 가져오기](519-521) '코드 없이 V4 구성원 참여'는 그대로 must.
+  `npm run emu`(다른 창) → `npm run check:rules` 모두 · `npm run test:data` · 점검 share-groups·import-groups. V4 `firestore.rules`에 복사(커밋만).
+- [ ] ■2 **그룹 창: 🔄 코드 바꾸기 · 🚫 초대 닫기 · 구성원 내보내기**(주인만). spaces.ts:
+  `rotateInvite`(새 코드 `freeInviteCode` → 공간 `inviteCode` + `spaceInvites/{새}` 만들기 + `{옛}` 지우기, 한 묶음) · `closeInvite`(`inviteCode: deleteField()` + 옛 코드 지우기) ·
+  `removeMember`(주인 자신은 안 됨 - `members.<uid>`·`joinCodes.<uid>` 지우기 + `people/{uid}` 지우기 + 코드 바꾸기, 한 묶음 - **내보내면 코드를 늘 바꾼다**). 나가기는 코드를 바꾸지 않는다(걱정되면 주인이 🔄).
+  지금 규칙(주인 갈래 215-223·초대 279-288)으로 되는지 check-rules must 셋 + mustNot '내보낸 사람이 옛 코드로 다시'.
+  GroupsWindow: 주인 줄 `data-group-rotate-code`·`data-group-close-code`, 구성원 칩 `data-group-remove-member={uid}`. 확인 글 "○○ 선생님을 그룹에서 내보낼까요? 초대 코드도 새로 바뀝니다." · "초대 코드를 바꿀까요? 옛 코드로는 더 들어오지 못합니다."
+  시험 `features/groups/GroupsWindow.test.tsx`(새로 - 주인에게만 단추, 나에게는 내보내기 없음) · 점검 share-groups(바꾸기 → 옛 코드 실패·새 코드 성공, 내보내기 → 상대 목록에서 사라짐) ·
+  설명서 `share.ts` 20-24·48(바꾸기·닫기·내보내기 · "구성원 모두 코드를 봅니다 - 새면 🔄" · V4에서 온 그룹은 V4 그룹에서도 빼야 다시 못 들어온다).
+- [ ] ■3 (묻고) `node tools/live-rules.cjs` → `npx firebase deploy --only firestore:rules --project schoolplannerv3`(firestore.rules 17-18줄 · `CLAUDE.md` 배포 줄) →
+  실제 사이트에서 둘째 계정으로 코드 참여 한 번 · 바꾼 뒤 옛 코드는 "초대가 닫혔거나 코드가 바뀌었을 수 있습니다"(spaces.ts:89).
+**끝 조건**: 코드 없이·틀린 코드·앞사람 코드 재사용·바뀐 옛 코드 = 거부, 맞는 코드·V4 구성원 = 허락(check-rules 전체 통과) · share-groups·import-groups·test:data 통과 · V4 규칙 = V5(줄바꿈 빼고) · 운영 배포 뒤 참여 한 번.
+**남는 것(일부러)**: V4에서 온 공간은 V4 `groups` 구성원이면 코드 없이 들어온다(232줄) - V5에서 내보내도 V4 그룹에 남으면 다시 들어온다(설명서 한 줄).
+
+### P14-2. 오류 알림 · 개발자 탭 (항목 2)
+**시작 조건**: 없음. 개발자 탭(■1)은 P14-3 공휴일도 쓴다.
+**묻기**(■6 앞): 운영 규칙 배포(새 컬렉션 `v5Errors`만 - 다른 경로는 그대로) + TTL 30일 - ① 권장: 배포 + TTL / ② 코드만 넣고 배포는 미룸(그동안 보고는 규칙에 막혀 조용히 버려진다).
+외부 서비스(Sentry)는 권하지 않는다(학교 기기 정보가 밖으로·새 계정·번들 수십 KB). callable 함수·GitHub 이슈도 안 함(규칙으로 되는 일 / 브라우저에 토큰을 못 둔다).
+**먼저 읽을 것**: `app/toast.ts` 1-130 · `main.tsx` · `app/lazyWithReload.ts` · `app/route.ts` 15-60 · `firestore.rules` 20-90(`isDeveloper` 28-34 = 이메일 셋 · holidays 65-71 · admin 73-78) · `tools/check-rules.mjs` 1-40·215-245 ·
+`features/settings/SettingsWindow.tsx` 1-40(개발자 탭 `ready: false` 23-25) · `AppTab.tsx` 60-80(`__BUILD_ID__`) · `tools/seed.mjs` 20-40 · V4 `src/lib/developers.ts`.
+**지금**: ErrorBoundary·`componentDidCatch`·`unhandledrejection`·`window.onerror`(파일 읽기 말고)·`createRoot` 오류 옵션이 없다. 개발자 가르기는 규칙에만(V5 src에 이메일 목록이 없다).
+- [ ] ■1 **개발자 탭 열기**: `domain/developers.ts`(`DEVELOPER_EMAILS` = 규칙 29-33과 같은 셋, `isDeveloper(email)` - V4 developers.ts 그대로) + 시험(대소문자·띄어쓰기·목록 밖) ·
+  SettingsWindow가 개발자에게만 '개발자' 탭(`features/settings/DevTab.tsx` - '공휴일'·'오류 기록' 칸 자리) + `SettingsWindow.test.tsx` 두 경우 · 규칙 주석(28줄)이 가리키는 파일을 이것으로 ·
+  `tools/seed.mjs`에 에뮬레이터 전용 5번째 계정(개발자 이메일 하나, `?as=5`) · 점검 settings(일반 계정은 탭 수 그대로).
+- [ ] ■2 **셈** `domain/errorReport.ts` + 시험: `scrubText`(이메일·긴 숫자·`users/…`·`spaces/…` → `…`, 300자) · `stackHead`(앞 8줄, 주소는 파일:줄, 1500자) ·
+  `errorKey`·`shouldSend`(같은 오류는 세션에 한 번, 세션 10건·하루 30건 - `sp5-error-sent`, try/catch) · 버림: `ResizeObserver loop`·`chrome-extension://`·새 판 조각 404(lazyWithReload가 맡음)·`navigator.onLine === false` ·
+  `groupErrors`(같은 message 묶기 - ■5용).
+- [ ] ■3 **규칙** `match /v5Errors/{id}`: create = 로그인 · `uid == request.auth.uid` · `keys().hasOnly(['kind','message','stack','build','scope','device','standalone','ua','uid','at','expireAt','note'])` ·
+  kind ∈ error·rejection·react·toast · message ≤ 300 · stack ≤ 1500 · ua ≤ 200 · `at == request.time` · `expireAt < request.time + duration.value(32, 'd')` / read·delete = `isDeveloper()` / update 안 됨.
+  check-rules: 내 uid 됨 · 남의 uid·긴 글·모르는 칸 막힘 · 개발자 아닌 읽기·목록 막힘 · 개발자 읽기·지우기 됨. **이 커밋은 배포하지 않는다.**
+- [ ] ■4 **보내기** `data/errorReport.ts` `reportError(kind, err, note?)` - 로그인 안 함·DEV·에뮬레이터 빌드면 콘솔만, `addDoc` 바로(repo·되돌리기·사본을 거치지 않음), 실패는 조용히 버린다(돌고 도는 것 막기).
+  칸: kind·message·stack·build(`__BUILD_ID__`)·scope(route의 화면 이름만 - 날짜·글 없음)·device·standalone·ua·uid·at(serverTimestamp)·expireAt(+30일). **메모·학생 글은 싣지 않는다**('toast'는 앱이 정한 안내 글과 `code`·`name`만).
+  `startErrorReports()`(window error·unhandledrejection - main.tsx에서 한 번) · `createRoot(el, { onUncaughtError, onCaughtError })` · `toast.ts` `showErrorToast`에서 `reportError('toast', …)` ·
+  `ui/ErrorBoundary.tsx`(앱 바깥 하나 - 흰 화면 대신 "문제가 생겼습니다 [새로고침]" + 판 이름). 시험 `data/errorReport.test.ts`·`ui/ErrorBoundary.test.tsx` · 자료 시험 `data/errorReport.emu.test.ts`(만들기 됨·읽기 막힘 - `npm run test:data`) ·
+  설명서 `chapters/trouble.ts` 한 절("오류가 나면 글 내용 없이 오류 문장·판·기기만 개발자에게 갑니다").
+- [ ] ■5 **개발자 탭 '오류 기록'** `features/settings/DevErrorsSection.tsx`: 최근 50건 `orderBy('at','desc')`, 같은 message 묶음(건수·마지막 시각·판·기기), 누르면 stack, [모두 지우기] + 시험 · 크롬은 `?as=5`로 한 번.
+- [ ] ■6 (묻고) `live-rules` → 규칙 배포 → 👤 TTL: 콘솔 Firestore > TTL > 정책 만들기(컬렉션 그룹 `v5Errors`, 필드 `expireAt`) - 이 PC에는 gcloud가 없다 · 실제 사이트에서 오류 하나가 개발자 탭에 오는지 · 5장에 기록.
+**끝 조건**: 오류 하나 = 문서 하나, 같은 오류를 다시 내도 늘지 않는다 · 문서에 글·이메일 없음(시험) · 개발자 아닌 계정은 못 읽는다(check-rules) · 그리기 오류에 안내 화면 · 개발자 탭에서 보고 지운다.
+**크기**: 큼(조각 여섯) - 끊기면 다음 대화에서 '이어서'. 쓰기 폭주는 상한(세션 10·하루 30)과 '보고 실패는 버림'으로 막는다.
+
+### P14-3. 서버 예약 백업 · 공휴일 받기를 V5로 (항목 3·4)
+**시작 조건**: P14-2 ■1(개발자 탭). **👤 먼저**(코드 전에 - 지금 해도 된다): V4 사이트 → 환경설정 → 개발자 설정 - 공휴일 → **2027년 [받기]**(1분, 15건 안팎) →
+V5 년간 2027년에 설(2/6~9 - 대체 포함)·부처님오신날(5/13)·추석(9/14~16)이 빨갛게 보이는지(새로고침).
+**묻기**(■1 앞): 서버 예약 백업 켜기(돈이 조금 듭니다 - 백업 저장 용량 값, 무료 할당 없음) - ① 권장: 매일 7일 보관 + 매주(일) 8주 보관(그룹 공간·휴대폰 사용자까지, V3·V4·V5 한 DB) /
+② 매주 14주만 / ③ PITR(7일 안 아무 시점)까지 / ④ 안 함. 이미 켜 두었는지 먼저 본다(아래 `schedules list`). 예약 내보내기 함수는 안 함(예약 백업이 같은 일을 코드 없이).
+공휴일 받기 도구 옮기기는 묻지 않는다 - 규칙·자료 모양이 V4와 같아 배포가 없고 V4 받기도 그대로 된다. 5장의 앞 결정 둘(`grep -n '공휴일 표를 받는\|해마다 공휴일' docs/PLAN.md`)을 바꾼다고 적는다.
+**먼저 읽을 것**: `features/backup/auto.ts` 1-20·55-90·128-170 · `data/holidays.ts`(140줄) · `domain/holidays.ts` 1-40 · `features/year/YearScreen.tsx` 머리줄 ·
+V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`components/SettingsModal.tsx` 61-80·290-320·560-590.
+- [ ] ■1 (묻고) 👤 Cloud Shell(Firebase/GCP 콘솔 오른쪽 위 >_ - 이 PC에는 gcloud가 없다). 깃발은 실행 전 `--help`로(10-29 문서로 본 것):
+  ```
+  gcloud config set project schoolplannerv3
+  gcloud firestore databases describe --database='(default)'      # 위치·PITR 상태
+  gcloud firestore backups schedules list --database='(default)'  # 이미 있나
+  gcloud firestore backups schedules create --database='(default)' --recurrence=daily --retention=7d
+  gcloud firestore backups schedules create --database='(default)' --recurrence=weekly --day-of-week=SUN --retention=8w
+  gcloud firestore backups list                                    # 다음 날 READY
+  ```
+  (콘솔로도 - Firestore > (default) > 재해 복구.) 값은 결제 > 보고서 'Cloud Firestore'의 'Backup' 줄, 예산 알림도 하나.
+  `docs/OPS.md` 새 파일(짧게): 일정·보관·확인 명령 · **복원 연습**(복원은 새 DB로만: `gcloud firestore databases restore --source-backup=projects/schoolplannerv3/locations/<위치>/backups/<id> --destination-database=restore-drill` →
+  콘솔에서 문서 하나 찾기 → (default) 같은 경로로 옮기기 → `gcloud firestore databases delete --database=restore-drill`. **(default)를 통째로 덮지 않는다** - V3·V4·V5 모두의 자료) ·
+  `CLAUDE.md`에 'docs/OPS.md' 한 줄 · 설명서 `share.ts` '☁️ 드라이브 자동 백업' 절에 "드라이브 자동 백업은 PC에서, 서버는 개발자가 따로 날마다 백업합니다(사고가 나면 개발자에게)".
+- [ ] ■2 **공휴일 받기**: `domain/holidays.ts` `parseRestDeInfo`(한 달 응답 → 날짜표, item이 하나면 배열이 아니다·`isHoliday` 'N' 빼기 - V4 govApi 37-46) + 시험 ·
+  `data/govHolidays.ts` `fetchGovHolidays(year, key)`(공공데이터 특일정보 `getRestDeInfo` 12달, 실패한 달 수, 다 실패면 던짐) · `loadGovApiKey`/`saveGovApiKey`(`admin/config.govApiKey`, merge) ·
+  `saveSharedHolidays(year, days)`(V4와 같은 모양 `{ year, days, updatedAt, updatedBy }` - **모양을 바꾸면 V4가 깨진다**) + 시험(fetch 가짜) ·
+  DevTab '공휴일' 칸: 키(password·저장) · 올해·내년·내후년 줄('2027년 · 18건 · 10-29 받음 [다시 받기]' / '⚠️ 없음 [받기]') · 건수가 줄면 "지금 20건 → 받은 것 15건. 덮어쓸까요?" · 받은 뒤 이 기기 표를 다시 읽기 ·
+  주석 'V4 환경설정에서'(data/holidays.ts:1·domain/holidays.ts:1) → 'V5 환경설정 > 개발자(또는 V4)'. apis.data.go.kr이 V5 주소에서도 열리는지(CORS)를 여기서 본다.
+- [ ] ■3 **없음 표시**: `data/holidays.ts`가 문서 없음을 기억(`missing`) + `useHolidayMissing(year)` · `holidayYearsToWarn(today)`(9/1부터 내년) + 시험 ·
+  년간 화면에 개발자에게만 "⚠️ 2027년 공휴일 표가 없습니다 - 환경설정 > 개발자에서 받기"(누르면 탭) · 점검 month-year(일반 계정에는 줄이 없다).
+- [ ] ■4 5장 결정 두 줄(서버 백업 일정 · V4 없이 공휴일 받기) · 앞 결정 두 줄 고침 · 세션 끝 정리.
+**끝 조건**: `schedules list`에 둘 · 다음 날 READY 백업 · 복원 연습 한 번(문서 하나 되찾고 연습 DB 지움 - OPS.md에 날짜) · 운영 `holidays/2027` 있음 · V5 개발자 탭에서 2028 받기(에뮬레이터는 가짜 fetch) · 내년 표가 없으면 개발자에게만 경고.
+**2027 표가 들어오면 다시 볼 곳**: 수업 칸·차시 세기(`features/lessons/useLessons.ts`) · 주말·공휴일 빼기 기간(`domain/period.ts`) · 구글 캘린더(`features/gcal/auto.ts`) - 2027년 3월 기준으로 한 번.
+
+### P14-4. 첨부 공개 알림 · 주 이름 · 낡은 점검 (항목 5·6·7)
+**시작 조건**: 없음.
+**묻기**(■1 앞): 드라이브 첨부 공개 - V4 결정(V4 `src/lib/driveApi.ts`:122 "그래야 주소로 이미지가 보이고 공유 그룹의 다른 선생님도 열 수 있다") -
+① 권장: 공개 그대로 + 올리는 칸·설명서에 알림(다른 기기·그룹·팝업·인쇄가 지금처럼, 주소는 무작위 33자라 찾아 들어올 수 없다, 학생 사진은 이미 비공개) /
+② ① + '개인 공간 첨부는 나만 보기' 설정(기본 꺼짐 - 토큰으로 받아 IndexedDB, 학생 사진 캐시를 떼어 함께 씀. 큼(8파일), 로그인 안 된 기기·인쇄·팝업에서 빈 그림 → 고르면 따로 세션) /
+③ 이미 올린 파일까지 공개 거두기(실제 자료 변경 - V3·V4 화면과 그룹 동료에게서 그림이 사라진다, 권하지 않음). 그룹 구성원에게만 나누기는 안 된다(구성원 이메일이 없고, 받은 쪽 drive.file 토큰으로는 남의 파일을 못 받는다).
+①은 화면 글뿐이라 답을 기다리는 동안 ■2부터 해도 된다.
+**먼저 읽을 것**: `data/google/drive.ts`(124줄) · `features/notes/NotePanel.tsx` 684-780 · 설명서 `chapters/attachments.ts` 1-45(+ grep '손글씨') · `app/nav.ts` 137-157 · `app/nav.test.ts` 70-82 · `chapters/views.ts` 60-70 ·
+`tools/inspect-progress.mjs` 1-5·85-130 · `features/progress/ProgressMarkLine.tsx` 60-95 · `tools/inspect-claude-request.mjs` 85-125 · `features/notes/ClaudeAskButton.tsx` · `.github/workflows/claude-request.yml` 60-90 · `docs/CLAUDE-REQUEST.md` 25-35.
+- [ ] ■1 **첨부 공개 알림**(①): NotePanel 📎·✏️ 줄 아래 `<p data-note-attach-public>` "📎 올린 파일·손글씨는 '링크가 있는 사람은 보기'로 열립니다. 학생 얼굴·성적처럼 퍼지면 안 되는 것은 올리지 마세요." · 📎·✏️ title에 반 줄 ·
+  drive.ts:106 주석 "V4 결정(V4 driveApi.ts:122) - PLAN P14 항목 5" · 설명서 attachments.ts 28줄 뒤 + 손글씨 절 한 줄('학생 사진은 비공개') · 점검 attach(안내 보임)·handwriting·manual(MATCH).
+- [ ] ■2 **주 이름 = 목요일 날짜 ÷ 7 올림**: nav.ts `n = Math.ceil(thu.getDate() / 7)`(firstWeekday 줄 지움, 주석 '목요일이 1~7일인 주 = 1주') ·
+  nav.test.ts '1일이 금·토요일인 달도 1주부터': 2027-01-04 → '2027년 1월 1주' · 2027-05-03 → '2027년 5월 1주' · 2027-01-25 → '1월 4주' · 2027-03-01 → '3월 1주' · 2027-03-29 → '4월 1주' · 2027-04-26 → '4월 5주' · 2027-12-27 → '12월 5주' · 2028-12-25 → '12월 4주' · 옛 시험은 그대로 통과 ·
+  설명서 views.ts 66줄 뒤 "달을 걸친 주는 목요일이 든 달로 셉니다 - 그 달 첫 목요일이 든 주가 1주". 주 이름을 읽는 점검은 없다(인쇄 제목은 날짜, '작년 이맘때'는 학년도 주 - 그대로). V4(Layout.tsx:656)는 그대로 둔다(보관 - 5장 한 줄).
+- [ ] ■3 **낡은 점검 둘**: inspect-progress 117-118 - 첫 줄은 내용만(`!c1.includes('쪽')`), 쪽은 진도 줄 `data-progress-page` '12~13쪽' + '📘 1단원'·'12~13쪽(1/1차시)'(#111), 주석 3·115줄도 ·
+  inspect-claude-request 106-115 - 묻는 창 없이 바로 보낸다(#76 - `dialogs.seen` 0) · 끝난 요청은 '🤖 다시 요청'(`note-claude-again`, #69). 둘 다 돌려 끝까지 통과(claude-request 120줄 뒤도).
+  덤: 색을 읽는 점검이 어두운 처음 화면(#113)에서 깨지면 `tools/lib/probe.mjs` `newPage`에 `sp5_theme = light` 기본(mobile·handwriting은 자기 값). 10-28·29에 돌린 점검은 통과했으니 깨질 때만.
+- [ ] ■4 **자동 요청이 점검도 고치게**: `claude-request.yml` 프롬프트 규칙 한 줄 "화면 글·`data-*` 이름·자리를 바꾸면 `grep -rn '<옛 글·이름>' tools/`로 찾아 그 점검 줄도 같은 커밋에서 고친다(돌리지는 않는다). 고친 점검은 commit.txt 끝에 '점검 고침: …'" ·
+  `docs/CLAUDE-REQUEST.md` 29줄 근처 · `CLAUDE.md` 2장 '메모 요청(자동) 커밋' 줄에 "'점검 고침:'이 적힌 자동 커밋 뒤에는 그 점검부터"(2장이라 V4 `CLAUDE.md`에도). Grep은 이미 allowedTools(69줄) - 새 권한 없음.
+  Actions에서 크롬 점검은 하지 않는다(공개 저장소라 분은 무료지만 에뮬레이터·V4 seed·dev 서버가 들고 한 번에 수십 분 - 5장 한 줄).
+**끝 조건**: 쓰는 칸 공개 안내 · 설명서 두 곳 · 2027-01-04 주 = '1월 1주'(시험) · inspect-progress·claude-request 통과 · 프롬프트에 점검 규칙.
+
+### P14-5. 문서 가볍게 · 가벼운 것 (항목 8·9)
+**시작 조건**: 없음. **묻기**(■2 뒤): functions 보안 판 배포 - ① 권장: 다음에 함수를 배포할 때 같이(HTTP 함수가 없어 영향 거의 없음) / ② 지금 `--only functions:v5`.
+**먼저 읽을 것**: `CLAUDE.md` 0장·6장 끝·7장 머리**만**(7장 몸은 읽지 않고 줄 번호로 옮긴다) · `docs/PLAN.md` 17-30·50-65 · `claude-request.yml` 70-80 · `functions/package.json`. 10-28 감사 결과는 그 대화의 임시 폴더라 없다 - `npm audit`을 다시.
+- [ ] ■1 **7장 시스템 지도 → `docs/MAP.md`**: 7장 머리 다음 줄부터 끝까지(`grep -n '^## 7' CLAUDE.md`) 통째로 옮긴다(내용 그대로 - 머리 '# V5 시스템 지도' + "기능을 고치기 전에 grep으로 그 줄만. 세션 끝 정리에서 새 파일·자리를 한 줄씩") ·
+  CLAUDE.md 7장 = 두 줄("파일·자리를 찾을 때만 `grep -n '<기능>' docs/MAP.md`로 그 줄만 읽는다 - 통째로 읽지 않는다") · 참조 바꿈: `grep -n '7장' docs/PLAN.md`(1-3·1-4 정리 두 줄 + P10 '먼저 읽을 것' 넷 - 끝난 [x] 줄은 그대로) ·
+  PLAN 0장 3번에 '5장 결정 메모도 grep으로 그 줄만' · claude-request.yml 프롬프트 "파일 자리는 docs/MAP.md를 grep" · 확인 `grep -rn '7장 시스템 지도' CLAUDE.md docs .github`가 끝난 줄만 ·
+  `wc -c CLAUDE.md` ≈ 42KB(지금 102KB → 대화마다·자동 요청마다 2~3만 토큰 덜) · 1·2장은 손대지 않는다(V4와 같게) · 기기 기억에 '시스템 지도 = docs/MAP.md, grep으로만'.
+  PLAN 끝난 절 옮기기는 하지 않는다(PLAN은 이미 그 절만 grep으로 읽고, '5장'·'6장' 참조가 34곳).
+- [ ] ■2 **functions** `npm audit fix`(force 없이 - body-parser 2.4·qs, lock만) → `npm run test:functions` → 커밋. 배포는 묻기대로.
+- [ ] ■3 **루트** `npm audit fix`(**`--force` 금지** - firebase를 9.14로 내린다) + `npm update`(작은 판) → 단위·tsc·lint·빌드 → 커밋(남는 것은 개발 도구와 grpc(Node 길 - dist에 없음)라 화면에 안 실린다고 메시지에).
+  vite·vitest·oxlint가 다르게 굴면 그것만 되돌린다. firebase 13은 따로(나중).
+- [ ] ■4 👤 C: 정리(VS Code 터미널): `npm cache clean --force`(2.6GB) · Windows 설정 > 저장소 > 임시 파일 · Android Studio Device Manager에서 안 쓰는 에뮬레이터 이미지(`~/.android` 6GB) - **Android Studio는 지우지 않는다**(에뮬레이터 Java = 그 JBR).
+**끝 조건**: CLAUDE.md ≈ 42KB·깨진 참조 없음 · functions `npm audit` 0 · 루트는 force가 필요한 것만 · C: 남은 자리가 늘었다.
+
+### P14-6. 동기화·두 기기·오프라인 저장 점검 (항목 10 - ①)
+**시작 조건**: 👤 아래 (a) 결과. 없으면 (a)를 부탁하고 ■2부터.
+**지금**(10-29 훑기): Firestore = `memoryLocalCache`(data/firebase.ts:27·34 - V4 09-22 교훈으로 기기 저장소를 안 쓴다) · 쓰기 = `writeOps`(data/repo/index.ts:113-138) 화면에 먼저 → `await b.commit()` → 서버가 받아야 풀린다 - **끊긴 동안 쓰기는 메모리에만** ·
+메모·일정 칸은 서버가 받은 뒤에야 `draft.clear()`(NotePanel 375·389 · EventPanel 311) - 쓰던 글은 2초마다·탭을 닫을 때 `sp5-drafts-{uid}`(data/drafts.ts)에 남지만 **같은 칸을 다시 열어야** '되살리기'가 뜬다 ·
+끊긴 동안 저장 단추는 '저장 중...'에 머물고 끊김 안내가 없다 · 닫기 전에 묻기는 새 창(PopoutShell 47-56)뿐 · inspect-offline은 끊긴 채 **쓰기**를 보지 않는다.
+(a) 👤 휴대폰 설치 앱(5분): 비행기 모드 → 오늘 새 메모 '오프라인 시험 1' 💾 → 단추 모양 보기 → 앱을 밀어 닫기 → 비행기 모드 끄고 다시 열기.
+  ① 카드가 있다 = 문제 없음 / ② 카드는 없고 오늘 새 메모 칸을 다시 열면 '되살리기' = 안 잃지만 찾기 어렵다 / ③ 둘 다 없다 = **잃는다**. 고친 메모로 한 번 더 · PC 크롬(와이파이 끄기)도.
+- [ ] ■1 (a) 결과에 따라: 끊김 안내(`writeOps`가 기다리는 쓰기 수 - `navigator.onLine === false`이거나 3초 넘으면 머리줄 "📴 인터넷이 끊겨 저장을 기다립니다 - 앱을 닫지 마세요 (n개)") ·
+  큰 창에도 `beforeunload`(기다리는 쓰기·저장 안 한 칸 - 휴대폰은 보험) · 앱을 열 때 남은 쓰던 글 'n개 - 보기' · (③이면) 수업 칸·진도 창도 같은 보관을 쓰는지.
+  **저장 실패는 던진다**(V4 교훈) - 세는 코드가 저장을 늦추거나 실패를 삼키지 않게. 시험 repo·drafts · 점검 inspect-offline에 '끊긴 채 저장 → 닫기 → 다시 열기 → 되살리기'(빌드 + preview 4175).
+- [ ] ■2 두 기기 동시 고침: `data/mirror/sync.ts`·`store.ts`·`repo/index.ts` 60-140 → 같은 메모를 두 창(같은 계정)에서 저장하면 나중 것이 이기나(칸 단위인가 통째인가) · 하루 수업 칸(lessonDays - 한 문서에 교시 여럿)을 두 기기가 다른 교시로 고칠 때 한쪽이 지워지지 않나(V4 '하루 통째 배열' 교훈) ·
+  시계가 틀린 기기(구독 커서 -1분) · 지운 것 되살리기 경합. 점검 mirror·data·offline·pwa·lessons + 새 묶음(두 창 동시 저장). 고칠 것은 이 절에 조각으로 더한다.
+**끝 조건**: (a) 결과가 5장에 · 고칠 것 목록(또는 '없음')과 고친 것.
+
+### P14-7. 일정 셈 점검 - 이월·기간·반복·공휴일 (항목 10 - ②)
+**읽을 것**: `domain/forward.ts`·`period.ts`·`periodBars.ts`·`recur.ts`·`eventDue.ts`·`holidays.ts`·`semester.ts`와 그 시험.
+**볼 것**: 달·해를 넘는 기간 · 2월 29일·31일 반복 · 주말을 감춘 주간의 기간 막대 · 이월이 방학·공휴일을 건너뛰나 · 공휴일 표가 없을 때 · 학년도 경계(2월 말 ↔ 3월). 경계 날짜(2027-02-28/03-01 · 2028-02-29 · 12-31 → 1-1) 단위 시험을 더한다.
+**점검**: events·forward·week·month-year·move-dday·new-year·neis(3~4개씩). 고칠 것이 나오면 이 절에 조각으로.
+
+### P14-8. 학급 셈 점검 - 출결·자리·평가·수업 칸·진도 (항목 10 - ③)
+**읽을 것**: `domain/attendance.ts`·`subjectAttendance.ts`·`seating.ts`·`evaluation.ts`·`roster.ts`·`studentRecord.ts`·`lessons.ts`·`progress.ts`.
+**볼 것**: 전학·번호가 바뀐 학생의 출결·평가가 따라가나(sid) · 학기·학년도 넘김 · 자리 바꾸기(떨어뜨릴 짝) · 평가 집계 반올림 · 진도 차시 수·밀기·기간별 시간표가 겹칠 때.
+**점검**: attendance·seating·evaluations·class·student-record·lessons·progress·bell-guide. 고칠 것이 나오면 이 절에 조각으로.
