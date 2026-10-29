@@ -1,8 +1,8 @@
-// 오류 알림 보내기 (P14-2). 사용자 화면에서 난 오류를 `v5Errors`에 문서 하나로 남긴다 - 개발자가 환경설정 '개발자' 탭에서 본다(■5).
+// 오류 알림 보내기 (P14-2). 사용자 화면에서 난 오류를 `v5Errors`에 문서 하나로 남긴다 - 개발자가 환경설정 '개발자' 탭에서 본다(아래 load·delete).
 //   - 무엇을 싣나·무엇을 버리나·몇 번까지는 domain/errorReport. 메모·학생 글은 싣지 않는다('toast'는 앱이 띄운 안내 글 + 오류 이름·코드).
 //   - 저장 도우미(repo)·되돌리기·기기 사본을 거치지 않고 addDoc 하나. 보내기가 실패하면 조용히 버린다(오류 알림이 또 오류를 부르지 않게).
 //   - 로그인하지 않았으면·개발 서버·에뮬레이터 빌드면 보내지 않는다(콘솔에는 원래대로 남는다) - 점검은 enableErrorReports(true)로 켠다.
-import { addDoc, collection, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { addDoc, collection, doc, getDocs, limit, orderBy, query, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
 import type { ErrorInfo } from 'react';
 import { db } from './firebase';
 import { USING_EMULATOR } from './emulator';
@@ -21,6 +21,7 @@ import {
   shouldSend,
   type DaySent,
   type ErrorKind,
+  type ErrorReportDoc,
   type SessionSent,
 } from '../domain/errorReport';
 
@@ -128,6 +129,38 @@ export function startErrorReports() {
 /** React 그리기 오류 (main.tsx createRoot의 onCaughtError·onUncaughtError) */
 export function reportReactError(error: unknown, info: Pick<ErrorInfo, 'componentStack'>) {
   void reportError('react', error, { componentStack: info.componentStack ?? undefined });
+}
+
+// ── 개발자 탭 '오류 기록'(■5) - 규칙이 개발자에게만 읽기·지우기를 허락한다. 기기 사본(MIRRORED)에 넣지 않고 누를 때 한 번 읽는다 ──
+
+/** 최근 오류 (늦은 것부터) */
+export async function loadErrorReports(max = 50): Promise<ErrorReportDoc[]> {
+  const snap = await getDocs(query(collection(db, 'v5Errors'), orderBy('at', 'desc'), limit(max)));
+  return snap.docs.map((d) => {
+    const v = d.data();
+    return {
+      id: d.id,
+      kind: v.kind,
+      message: String(v.message ?? ''),
+      stack: String(v.stack ?? ''),
+      note: String(v.note ?? ''),
+      build: String(v.build ?? ''),
+      scope: String(v.scope ?? ''),
+      device: v.device === 'mobile' ? 'mobile' : 'pc',
+      standalone: v.standalone === true,
+      ua: String(v.ua ?? ''),
+      at: v.at instanceof Timestamp ? v.at.toMillis() : 0,
+    };
+  });
+}
+
+/** 오류 기록 지우기 (한 묶음 500개까지 - 읽는 것이 50개라 한 번) */
+export async function deleteErrorReports(ids: readonly string[]): Promise<void> {
+  for (let i = 0; i < ids.length; i += 500) {
+    const b = writeBatch(db);
+    for (const id of ids.slice(i, i + 500)) b.delete(doc(db, 'v5Errors', id));
+    await b.commit();
+  }
 }
 
 /** 시험용 - 보낸 기록·시작 표시를 비운다 */

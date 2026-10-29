@@ -18,6 +18,9 @@ vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }))
 const resetMirror = vi.hoisted(() => vi.fn(() => Promise.resolve()));
 vi.mock('../../data/mirror/sync', () => ({ resetMirror }));
 
+// 개발자 탭 '오류 기록'은 서버를 읽는다 - 창 시험에서는 빈 목록 (칸은 DevErrorsSection.test)
+vi.mock('../../data/errorReport', () => ({ loadErrorReports: vi.fn(async () => []), deleteErrorReports: vi.fn() }));
+
 const q = (s: string) => document.querySelector<HTMLElement>(s)!;
 const qa = (s: string) => [...document.querySelectorAll<HTMLElement>(s)];
 

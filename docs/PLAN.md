@@ -1744,7 +1744,9 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   toast는 Firebase를 부르지 않게 `setErrorToastReporter`로 거꾸로 받는다(session → toast 고리 막기) · **스택은 자리 줄(at …·@)만** - 크롬 첫 줄이 오류 문장을 되풀이해 'toast'에서 뺀 문장이 실렸다(시험이 잡음) ·
   createRoot `onCaughtError`·`onUncaughtError`가 콘솔 + 알림(기본 동작을 바꾸므로 console.error를 직접) · 설명서는 새 주제 대신 trouble-save 표 한 줄 + 알림 글(주제 수 그대로) ·
   단위 2536 · test:data 33(+3) · manual trouble·settings 점검 통과 · 크롬에서 실제로 보내지는지는 ■5 점검(`enableErrorReports(true)`)에서.
-- [ ] ■5 **개발자 탭 '오류 기록'** `features/settings/DevErrorsSection.tsx`: 최근 50건 `orderBy('at','desc')`, 같은 message 묶음(건수·마지막 시각·판·기기), 누르면 stack, [모두 지우기] + 시험 · 크롬은 `?as=5`로 한 번.
+- [x] ■5 **개발자 탭 '오류 기록'** `features/settings/DevErrorsSection.tsx`: 최근 50건 `orderBy('at','desc')`, 같은 message 묶음(건수·마지막 시각·판·기기), 누르면 stack, [모두 지우기] + 시험 · 크롬은 `?as=5`로 한 번.
+  → 10-29: 읽기·지우기는 `data/errorReport` `loadErrorReports`·`deleteErrorReports`(기기 사본에 넣지 않고 볼 때 한 번) · 개발자 탭은 **볼 때만 그린다**(창을 열 때마다 50건 읽지 않게) ·
+  시험 DevErrorsSection 4 · 단위 2542 · 새 점검 `tools/inspect-dev-errors.mjs`(teacher 화면 오류·안내 → 문서 둘(같은 오류 두 번·입력 확인 안내 빠짐), 글·메일 없음 → ?as=5 개발자 탭 묶음 둘·스택·모두 지우기) 통과.
 - [ ] ■6 (묻고) `live-rules` → 규칙 배포 → 👤 TTL: 콘솔 Firestore > TTL > 정책 만들기(컬렉션 그룹 `v5Errors`, 필드 `expireAt`) - 이 PC에는 gcloud가 없다 · 실제 사이트에서 오류 하나가 개발자 탭에 오는지 · 5장에 기록.
 **끝 조건**: 오류 하나 = 문서 하나, 같은 오류를 다시 내도 늘지 않는다 · 문서에 글·이메일 없음(시험) · 개발자 아닌 계정은 못 읽는다(check-rules) · 그리기 오류에 안내 화면 · 개발자 탭에서 보고 지운다.
 **크기**: 큼(조각 여섯) - 끊기면 다음 대화에서 '이어서'. 쓰기 폭주는 상한(세션 10·하루 30)과 '보고 실패는 버림'으로 막는다.

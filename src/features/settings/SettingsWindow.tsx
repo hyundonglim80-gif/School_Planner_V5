@@ -122,8 +122,9 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
         <div role="tabpanel" data-settings-panel="app" hidden={tab !== 'app'}>
           <AppTab />
         </div>
-        {developer && (
-          <div role="tabpanel" data-settings-panel="dev" hidden={tab !== 'dev'}>
+        {/* 개발자 탭은 볼 때만 그린다 - 오류 기록을 그때 읽는다(고치던 것이 없다) */}
+        {developer && tab === 'dev' && (
+          <div role="tabpanel" data-settings-panel="dev">
             <DevTab />
           </div>
         )}
