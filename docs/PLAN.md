@@ -28,7 +28,7 @@
 
 ## 지금 하는 일
 
-**P14-5 ■2** - 점검 뒤 손보기 다섯째: 의존성 보안 판(functions·루트 `npm audit fix` - force 금지) · 👤 C: 정리. 6장 `### P14` 머리 표와 '모든 P14 세션에 같은 것'을 읽고 `### P14-5`로 (■1 `docs/MAP.md`는 10-29 끝, 함수 배포는 ■2 뒤 묻기).
+**P14-5 ■3** - 점검 뒤 손보기 다섯째: 루트 의존성 보안 판(`npm audit fix` - force 금지) · 👤 C: 정리. 6장 `### P14` 머리 표와 '모든 P14 세션에 같은 것'을 읽고 `### P14-5`로 (■1 `docs/MAP.md`·■2 functions 보안 판은 10-29 끝, 함수 배포는 묻기).
 P14-4는 10-29 끝(첨부 공개 알림·주 이름·낡은 점검 둘·자동 요청이 점검도 고침 - 첨부는 사용자 ③ → 설명 듣고 ①로 다시 고름, P14-9 취소).
 차례는 사용자 번호대로 P14-1 → P14-8(사용자 10-29 "1번부터 모두 차례로"). main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
 
@@ -1837,7 +1837,8 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
   7장 몸을 그대로 옮김(diff 같음 - 머리 '# V5 시스템 지도' + grep으로만 읽기 안내) · CLAUDE.md 7장 = 안내 두 줄 · **102.5KB → 42.1KB** ·
   참조 바꿈: PLAN 0장 3번(5장 결정 메모·MAP.md도 grep으로)·1-3·1-4·1-9·P10 '먼저 읽을 것' 넷(끝난 [x] 둘은 그대로) · claude-request.yml 프롬프트 한 줄 · 기기 기억.
   1·2장은 손대지 않았다(V4와 같게). PLAN 끝난 절 옮기기는 하지 않는다(PLAN은 이미 그 절만 grep으로 읽고, '5장'·'6장' 참조가 34곳).
-- [ ] ■2 **functions** `npm audit fix`(force 없이 - body-parser 2.4·qs, lock만) → `npm run test:functions` → 커밋. 배포는 묻기대로.
+- [x] ■2 **functions** `npm audit fix`(force 없이 - body-parser 2.4·qs, lock만) → `npm run test:functions` → 커밋. 배포는 묻기대로.
+  10-29: body-parser 2.3.0 → 2.4.0 · qs 6.16.0 → 6.17.1(lock 18줄) · `npm audit` 0 · 함수 시험 15 통과.
 - [ ] ■3 **루트** `npm audit fix`(**`--force` 금지** - firebase를 9.14로 내린다) + `npm update`(작은 판) → 단위·tsc·lint·빌드 → 커밋(남는 것은 개발 도구와 grpc(Node 길 - dist에 없음)라 화면에 안 실린다고 메시지에).
   vite·vitest·oxlint가 다르게 굴면 그것만 되돌린다. firebase 13은 따로(나중).
 - [ ] ■4 👤 C: 정리(VS Code 터미널): `npm cache clean --force`(2.6GB) · Windows 설정 > 저장소 > 임시 파일 · Android Studio Device Manager에서 안 쓰는 에뮬레이터 이미지(`~/.android` 6GB) - **Android Studio는 지우지 않는다**(에뮬레이터 Java = 그 JBR).
