@@ -1,6 +1,6 @@
 // tools/inspect-progress.mjs - P6-2: 진도를 실제 크롬에서 본다.
 //   1) 하루 수업 칸 수정 → '📘 진도 만들기' = 그 칸 글자로 새 진도 → 시작일·표 붙여넣기(차시 칸 2 = 한 행이 두 차시) → 미리보기 → 💾 = 문서 하나
-//   2) 수업 칸 진도 줄(📘 k/n차시 · 📖 쪽 · 🎒 준비물) · 이 교시 밀기 = bumps 한 칸 · 되돌리기(안내) · 주간 k/n 배지 · 줄을 누르면 그 진도
+//   2) 수업 칸 진도 줄(📘 단원 · 쪽(k/n차시) · 🎒 준비물 - #111) · 이 교시 밀기 = bumps 한 칸 · 되돌리기(안내) · 주간 k/n 배지 · 줄을 누르면 그 진도
 //   3) 진도 창: 칸 고치기 = 바뀐 칸만 · ESC 묻기 · Ctrl+Enter 행 · CSV 불러오기 · 예시 CSV 받기 · + 새 진도 · 지우기 = 휴지통 · ⋮·머리줄 📘 · 단축키
 //   4) 전담(teacher3 ?as=3): 과정(과목 + 여러 반) - 반마다 따로 세기·반별 현황표·다음 수업 밀기
 //   5) P10-4: 진도 행 🔗 = 그 차시에 메모 잇기(고치던 것은 먼저 저장) → 진도 쪽 그 행에만 · 그 차시를 하는 수업 칸 🔗 n · 그날 메모 칸(📘) · 끊기
@@ -112,10 +112,12 @@ try {
   const mark1 = card(1).locator(sel('progress-mark'));
   r.check(await waitFor(mark1, 8000), '닫으면 수업 칸에 진도 줄');
   const m1 = (await mark1.textContent()) ?? '';
-  // 하루 카드: 내용·쪽수는 첫 줄 과목 옆, 진도 줄은 단원·차시·준비물만 (10-22 #94)
+  // 하루 카드: 내용은 첫 줄 과목 옆(10-22 #94), 쪽은 진도 줄 단원 오른쪽 '12~13쪽(1/1차시)' (10-29 #111)
   const c1 = (await card(1).locator(sel('lesson-content')).textContent().catch(() => '')) ?? '';
   r.check((await mark1.getAttribute('data-progress-mark')) === '1' && m1.includes('1/1차시') && !m1.includes('시 읽기'), `📘 1/1차시(같은 내용 안 차례 - #67) (${m1})`);
-  r.check(c1.includes('시 읽기') && c1.includes('📖 12~13쪽'), `카드 첫 줄에 내용 · 📖 교과서 쪽 (${c1})`);
+  r.check(c1.includes('시 읽기') && !c1.includes('쪽'), `카드 첫 줄에 내용만 (${c1})`);
+  const pg1 = (await mark1.locator(sel('progress-page')).textContent().catch(() => '')) ?? '';
+  r.check(pg1 === '12~13쪽' && m1.includes('📘 1단원') && m1.includes('12~13쪽(1/1차시)'), `진도 줄 = 📘 단원 · 쪽(차시) (#111 - ${m1})`);
   r.check(m1.includes('🎒 색연필'), '진도 줄에 🎒 준비물');
   r.check(!(await card(2).locator(sel('progress-mark')).count()), '진도가 없는 과목(수학)은 줄이 없다');
   await go('#/day/2026-10-14');

@@ -85,7 +85,8 @@ try {
   c('라벨 관리에 Claude요청 줄', await waitFor(row, 10000));
   c('🔒 표시, ✕ 없음', (await row.locator(sel('label-locked')).count()) === 1 && (await row.locator(sel('label-delete')).count()) === 0);
   c('이름 칸은 읽기만', (await row.locator(sel('label-name')).getAttribute('readonly')) !== null);
-  // 🤖 요청 단추 = 메모 수정 칸 아래(삭제 옆) - 저장으로는 보내지 않는다, 잠긴 라벨이 저장된 메모에만, 한 번 보내면 진행 표시만(다시 요청 없음)
+  // 🤖 요청 단추 = 메모 수정 칸 아래(삭제 옆) - 저장으로는 보내지 않는다, 잠긴 라벨이 저장된 메모에만, 묻지 않고 곧바로 보낸다(#76),
+  // 도는 동안은 진행 표시만, 끝나면 '🤖 다시 요청'(#69)
   await page.keyboard.press('Escape');
   const ask = page.locator(sel('note-claude-ask'));
   const openPanel = async () => {
@@ -103,16 +104,23 @@ try {
   c('저장하지 않은 고침이 있으면 누를 수 없다', await waitFor(async () => await ask.isDisabled(), 4000));
   await page.locator(sel('note-save')).click();
   c('저장하면 누를 수 있다', await waitFor(async () => (await ask.count()) === 1 && (await ask.isEnabled()), 8000));
-  dialogs.answer = false;
+  const seen0 = dialogs.seen.length;
   await ask.click();
-  await page.waitForTimeout(800);
-  c('묻는 창에서 아니오 = 보내지 않음', !(await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt);
-  dialogs.answer = true;
-  await ask.click();
-  c('예 = claudeAskAt 적음', await waitFor(async () => typeof (await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt === 'number', 8000));
+  c(
+    '누르면 묻지 않고 곧바로 claudeAskAt 적음 (#76)',
+    (await waitFor(async () => typeof (await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt === 'number', 8000)) && dialogs.seen.length === seen0,
+    dialogs.seen.slice(seen0).join(' | '),
+  );
   c('보낸 뒤 단추 대신 🤖 요청함', await waitFor(async () => (await ask.count()) === 0 && (await page.locator(sel('note-claude-asked')).count()) === 1, 8000));
   await admin.set(path, { state: 'failed', issue: 9999, url, note: '고치지 못했습니다(확인 실패 또는 오류) - 실행 기록 https://github.com/a/b/actions/runs/1\n\n테스트가 깨졌습니다.' });
-  c('끝나도 다시 요청 단추는 없다 - 수정 칸에 진행 표시', await waitFor(async () => (await ask.count()) === 0 && (await page.locator(`${sel('note-panel')} ${sel('entry-claude', 'failed')}`).count()) === 1, 8000));
+  const again = page.locator(sel('note-claude-again'));
+  c(
+    '끝나면 수정 칸에 진행 표시 + 🤖 다시 요청 (#69)',
+    await waitFor(
+      async () => (await again.count()) === 1 && ((await again.textContent()) ?? '').includes('다시 요청') && (await page.locator(`${sel('note-panel')} ${sel('entry-claude', 'failed')}`).count()) === 1,
+      8000,
+    ),
+  );
   const panelNote = page.locator(`${sel('note-panel')} ${sel('entry-claude-note', 'failed')}`);
   const panelText = (await panelNote.textContent().catch(() => '')) ?? '';
   c('수정 칸에 결과 글 다 (주소는 빼고)', panelText.includes('테스트가 깨졌습니다.') && panelText.includes('고치지 못했습니다') && !panelText.includes('https'), panelText);
