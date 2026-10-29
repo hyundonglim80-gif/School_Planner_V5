@@ -35,7 +35,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
   공휴일 `holidays/{year}`를 그대로 쓴다. 무엇보다 **드라이브 `drive.file` 권한이 구글 클라우드 프로젝트(번호)에 묶여 있어**,
   같은 프로젝트에 있어야 V4가 올린 첨부·학생 사진·백업 파일을 V5가 그대로 연다.
 - **Firestore는 `(default)` 데이터베이스.** 이름 붙인 데이터베이스는 따로 떼기는 좋지만 무료 사용량이 없다.
-  V5 컬렉션은 V3·V4가 쓰지 않는 이름: `spaces`, `spaceInvites`, `v5alarms`.
+  V5 컬렉션은 V3·V4가 쓰지 않는 이름: `spaces`, `spaceInvites`, `v5alarms`, `v5Errors`.
 - **규칙 파일은 하나다.** 기본 데이터베이스의 규칙은 한 벌이라 V5가 규칙을 배포하면 V3·V4 규칙도 그것으로 바뀐다.
   그래서 **V5 저장소 `firestore.rules` = V4 규칙 전부 + V5 블록**이고, P1-2부터 이것이 정본이다.
   V4 `firestore.rules`는 같은 내용의 복사본으로 두고 맨 위에 '정본은 V5 저장소'라고 적는다.
@@ -175,6 +175,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - `pushTokens/{id}`: V4 `v4_pushTokens` 모양. `gcalQueue/{itemId}`: `{ at, fails }`(V4는 날짜 큐 - V5는 항목 큐). 기기 사본에 넣지 않고 바로 구독한다(보낸 것을 지운다 - P8-1 `data/gcalQueue.ts`). 구글 일정 표시는 V4 그대로 + `sp_item`(V5 id)·`sp_auto`.
 - `spaceInvites/{code}`: `{ sid, ownerId }` — 코드를 아는 사람만 하나 읽기(목록 막음).
 - `v5alarms/{itemId}`: 함수만 읽고 쓴다(규칙에 없어 앱은 막힘). V4 `v4_alarms`를 항목 하나 단위로 - `{ sid, itemId, time, atMs, content, recipients, sent, pendingAt, updatedAt }`(P8-2 `functions/` - 함수 이름 `v5AlarmIndex`·`v5SendDueAlarms`·`v5CleanupAlarms`).
+- `v5Errors/{자동 id}`: 오류 알림(P14-2 `data/errorReport.ts`) - `{ kind(error·rejection·react·toast), message, stack, note, build, scope, device, standalone, ua, uid, at, expireAt }`.
+  로그인한 사람은 제 것을 만들기만(칸 열둘·길이 - `domain/errorReport` LIMITS = 규칙), 읽기·지우기는 개발자만, 고치기 없음. 글 내용은 앱이 지운 뒤 보낸다. TTL(expireAt)이 30일 뒤 지운다. 기기 사본에 넣지 않는다.
 - 공유 자료 `holidays/{year}`, `sharedConfig/neis`는 V4와 같이 읽기만.
 
 ### 4-10. 서버에 묻는 쿼리

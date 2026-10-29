@@ -12,7 +12,7 @@
   로그인 화면 / 로그인하면 'SP5' `[data-session=signed-in]`, 빌드 번호 `[data-build-id]`). 글자·간격 단계(`@theme`)는 `src/index.css`(V4 앞부분).
 - **서버·규칙**: `firebase.json`(에뮬레이터 auth 9099·firestore 8080·ui 4000 · hosting 사이트 `schoolplanner-v5` = https://schoolplanner-v5.web.app, `dist`, 첫 주소·sw·manifest no-cache) · `.firebaserc` · `firestore.rules`(**정본** - V4 규칙 전부 + V5 블록, V4 저장소 것은 복사본) ·
   `tools/check-rules.mjs`(V4 35 + V5 76 - items·labels 모양·V4 그룹 가져오기 갈래 포함) · `tools/live-rules.cjs`(운영 규칙 = 파일인지, 읽기만) · `tools/seed.mjs`(V4 seed 계정의 V5 개인 공간 - 계정이 없으면 만든다) · `tools/inspect-login.mjs`(크롬: 로그인·개인 공간·Firestore IndexedDB 없음).
-- **자료 층** `src/data/`: `firebase.ts`(앱 이름 SchoolPlannerV5, memoryLocalCache, googleProvider 범위) · `emulator.ts`(`?as=2|3`) ·
+- **자료 층** `src/data/`: `firebase.ts`(앱 이름 SchoolPlannerV5, memoryLocalCache, googleProvider 범위) · `emulator.ts`(`?as=2|3|4|5` - 5 = 개발자 계정) ·
   `session.ts`(로그인 store `useSession` - 구독 하나) · `space.ts`(`personalSpaceId`·`ensurePersonalSpace`) ·
   `settingsSync.ts`(설정 문서 하나 맞추기 `startSettingsSync` - 구독 하나·1초 뒤·받기 전엔 안 올림, `settingsPort` = `spaces/u_{uid}/settings/{common|pc|mobile}`, 적기는 `writeOps`) ·
   `types.ts`(자료 모양 = DESIGN 4장, 컬렉션 표 `SpaceCollections`·`Editable<C>`·`DocPath`) · `id.ts`(`newId` 20자) ·
@@ -34,7 +34,10 @@
   `[data-label-tab|row|name|color|prop|parent|up|down|delete|save|add|new-name|new-parent|usage|prune|prune-item|prune-confirm|recover|defaults]`) · `ColorPicker.tsx`(`[data-color-option]`) ·
   `LabelChip.tsx`(`LabelChip`·`LabelChips` `[data-label-chip]`) · `LabelPicker.tsx`(쓰는 칸 - `[data-label-picker|pick|pick-new|pick-new-input|pick-pending|picker-settings]`).
 - **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 보기·알림·학교·단축키·앱(가져오기는 P8-3에서 백업 창으로), `{ tab }`로 열기 - 열린 창도 그 탭으로) · `ViewTab`(누르는 즉시) · `SchoolTab`(이월 기간 `[data-forward-days]` - common.forwardDays) ·
-  `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·이 기기 사본 `[data-mirror-state|count|reset]`·빌드 번호) · `parts`(Section·ToggleRow·Choices).
+  `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·이 기기 사본 `[data-mirror-state|count|reset]`·빌드 번호) · `parts`(Section·ToggleRow·Choices) ·
+  `DevTab`(개발자 계정에만 - `domain/developers` `isDeveloper` = 규칙 목록, 볼 때만 그린다 `[data-dev-tab]`) · `DevErrorsSection`(오류 기록 - `[data-error-group|toggle|count|detail|stack]`·`[data-errors-total|reload|clear|empty|failed]`).
+- **오류 알림**(P14-2): `domain/errorReport.ts`(scrubText·stackHead·buildReport·isNoise·shouldSend·groupErrors·looksLikeStaleChunk) · `data/errorReport.ts`(`reportError`·`startErrorReports`(main.tsx)·`reportReactError`(createRoot onCaughtError·onUncaughtError)·
+  load·delete, 개발·에뮬레이터 빌드는 꺼짐 - 점검은 `enableErrorReports(true)`) · `ui/ErrorBoundary.tsx`(`[data-app-crashed]`·`[data-app-reload]`) · toast `setErrorToastReporter`(오류를 넘긴 안내만).
   `[data-settings-tab|panel|toggle]`·`[data-choice="이름:값"]`·`[data-shortcut-row|key|save|reset]`·`[data-install-pwa=ready|guide]`.
 - **껍데기** `src/app/`: `App.tsx`(로그인 상태 → `Shell`) · `Shell.tsx`(틀: 머리줄·본문·탭바·창·오른쪽 줄 ▶·폭 끌기) · `Header.tsx`(첫 줄 - ⏳·🗑️·🔍·화면 탭·?·⋮·사진 - PC '＋ 새로'는 P10-1에서 뺐다, 휴대폰 둥근 ＋ `[data-new-fab]`만,
   `[data-header-*]`·`[data-scope-tab]`·`[data-more-menu]`·`[data-menu-item]`·`[data-new]`) · `SecondRow.tsx`(토글·◀ 날짜 ▶·📅·학기 칩, `[data-date-prev|next|label]`·`[data-view-toggle]`) ·
@@ -194,7 +197,7 @@
   시험 `topics.test`(링크·자리표·창의 `help` 주제가 있나)·`HelpWindow.test`(모든 항목을 그려 기호가 남지 않나). 점검 `tools/inspect-manual.mjs`(306 - 68주제마다 설명서가 말하는 자리).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`·`noUserActivation`(P9-3)·`newPage(…, { isMobile… })`) · `tools/inspect-mobile.mjs`(P9-3 휴대폰 390·다크 대비) · `tools/inspect-scroll.mjs`(P10-5 - 긴 메모 끝 커서 줄·쓰는 칸 표 세로 스크롤 없음·옆 칸 휠·'스크롤로 페이지 이동' 날짜 그대로, 끝에 설정을 끈다) · `tools/inspect-perf.mjs`(P9-3 성능 - 빌드 + preview, teacher4 `?as=4` 1만 항목, 앱이 센 서버 읽기 `window.__sp5Reads`(`mirror/server` - 에뮬레이터 빌드만), 결과 = DESIGN 11장) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
-  `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
+  `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기·개발자 탭 `?as=5`) · `tools/inspect-dev-errors.mjs`(P14-2: 화면 오류 → v5Errors → 개발자 탭 묶음·지우기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
   `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움) ·
   `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기) ·
   `tools/inspect-import-labels.mjs`(P2-4: 띠 → 가져오기 → V5 라벨·설정 = V4·두 번째는 바뀐 것 0·띠 닫기, V4 문서를 고쳐 심고 되돌린다). seed는 계정마다 띠 닫음을 심는다.
