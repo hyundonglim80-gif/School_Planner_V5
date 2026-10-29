@@ -11,17 +11,9 @@
 // 무한 새로고침을 막으려고 표시를 남긴다. 표시가 있는데 또 실패하면
 // 새로고침으로 풀리는 문제가 아니므로 그대로 오류를 올린다.
 import { lazy, type ComponentType } from 'react';
+import { looksLikeStaleChunk } from '../domain/errorReport';
 
 const RELOAD_MARK = 'sp5-chunk-reloaded';
-
-function looksLikeStaleChunk(err: unknown): boolean {
-  const msg = String((err as any)?.message || err || '');
-  return (
-    msg.includes('Failed to fetch dynamically imported module') ||
-    msg.includes('error loading dynamically imported module') ||
-    msg.includes('Importing a module script failed')
-  );
-}
 
 export function lazyWithReload<T extends ComponentType<any>>(
   load: () => Promise<{ default: T }>
@@ -37,7 +29,8 @@ export function lazyWithReload<T extends ComponentType<any>>(
       }
       return mod;
     } catch (err) {
-      if (!looksLikeStaleChunk(err)) throw err;
+      // 같은 문장 셈을 오류 알림(P14-2)도 쓴다 - 이 오류는 알리지 않는다
+      if (!looksLikeStaleChunk(String((err as any)?.message || err || ''))) throw err;
 
       let already = false;
       try {

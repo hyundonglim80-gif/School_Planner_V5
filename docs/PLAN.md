@@ -1725,9 +1725,12 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   `tools/seed.mjs`에 에뮬레이터 전용 5번째 계정(개발자 이메일 하나, `?as=5`) · 점검 settings(일반 계정은 탭 수 그대로).
   → 10-29: 개발자 계정 = `hyundonglim80@gmail.com`(check-rules 개발자와 같은 메일, 에뮬레이터 안에서만) · `developers.test`가 규칙 목록과 같은지도 본다(`firestore.rules?raw`) ·
   일반 계정이 `tab: 'dev'`로 열면 보기 탭 · 단위 2501 · settings 점검(개발자 탭 둘) 통과 · 규칙 주석만 바뀜 → V4 복사(배포는 ■6에서 함께).
-- [ ] ■2 **셈** `domain/errorReport.ts` + 시험: `scrubText`(이메일·긴 숫자·`users/…`·`spaces/…` → `…`, 300자) · `stackHead`(앞 8줄, 주소는 파일:줄, 1500자) ·
+- [x] ■2 **셈** `domain/errorReport.ts` + 시험: `scrubText`(이메일·긴 숫자·`users/…`·`spaces/…` → `…`, 300자) · `stackHead`(앞 8줄, 주소는 파일:줄, 1500자) ·
   `errorKey`·`shouldSend`(같은 오류는 세션에 한 번, 세션 10건·하루 30건 - `sp5-error-sent`, try/catch) · 버림: `ResizeObserver loop`·`chrome-extension://`·새 판 조각 404(lazyWithReload가 맡음)·`navigator.onLine === false` ·
   `groupErrors`(같은 message 묶기 - ■5용).
+  → 10-29: 'toast'는 **오류를 함께 넘긴 안내만**(입력 확인 안내 '라벨이 이미 있습니다'는 고장이 아니다 - ■4) · 안내 글에 파일 이름·라벨 이름이 끼므로 scrubText가 **따옴표 안·파일 이름**도 지운다(코드 이름처럼 생긴 것 `(reading 'title')`은 둔다) ·
+  주소 ?뒤(토큰)·숫자 섞인 20자+ id도 · 'toast' 문서의 message = 안내 글, note = 오류 이름·코드(오류 문장은 싣지 않는다) · 'react' note = 컴포넌트 스택 · `buildReport`(올릴 칸 셈)·`isNoise`(+ `Script error.`·ShownError) ·
+  세션 기록 = sessionStorage(새로고침해도 같은 오류 한 번), 하루 = localStorage · `looksLikeStaleChunk`를 lazyWithReload와 함께 쓴다 · 시험 18.
 - [ ] ■3 **규칙** `match /v5Errors/{id}`: create = 로그인 · `uid == request.auth.uid` · `keys().hasOnly(['kind','message','stack','build','scope','device','standalone','ua','uid','at','expireAt','note'])` ·
   kind ∈ error·rejection·react·toast · message ≤ 300 · stack ≤ 1500 · ua ≤ 200 · `at == request.time` · `expireAt < request.time + duration.value(32, 'd')` / read·delete = `isDeveloper()` / update 안 됨.
   check-rules: 내 uid 됨 · 남의 uid·긴 글·모르는 칸 막힘 · 개발자 아닌 읽기·목록 막힘 · 개발자 읽기·지우기 됨. **이 커밋은 배포하지 않는다.**
