@@ -75,9 +75,26 @@ export function showToast(message: string, duration = 2500, type: 'info' | 'erro
   }
 }
 
-/** 사용자가 꼭 알아야 하는 실패를 띄운다. ❌ 표시를 붙여 빛깔을 못 가려도 성공과 갈리게 한다(V4). */
+let errorToastReporter: ((message: string, error: unknown) => void) | null = null;
+
+/** 오류 알림(data/errorReport - P14-2)이 앱을 열 때 붙인다. 이 파일이 Firebase를 부르지 않게 거꾸로 받는다. */
+export function setErrorToastReporter(report: ((message: string, error: unknown) => void) | null) {
+  errorToastReporter = report;
+}
+
+/**
+ * 사용자가 꼭 알아야 하는 실패를 띄운다. ❌ 표시를 붙여 빛깔을 못 가려도 성공과 갈리게 한다(V4).
+ * 오류(error)를 함께 넘긴 실패만 개발자에게 알린다 - 입력 확인 안내('라벨이 이미 있습니다')는 고장이 아니다.
+ */
 export function showErrorToast(message: string, error?: unknown) {
   if (error) console.error(message, error);
+  if (error && errorToastReporter) {
+    try {
+      errorToastReporter(message, error);
+    } catch {
+      /* 알림이 안내를 막지 않게 */
+    }
+  }
   // ⚠️는 두 글자(⚠ + 모양 고르기 U+FE0F)라 [ ] 안에 넣지 않고 | 로 고른다.
   const marked = /^(✅|❌|⚠️)/u.test(message.trim()) ? message : `❌ ${message}`;
   showToast(marked, 4000, 'error');

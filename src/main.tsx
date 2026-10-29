@@ -14,7 +14,11 @@ import { undoLast, watchUndoOwner } from './data/undo'
 import { setShortcutAction } from './app/keys'
 import { useCommonSettings } from './app/prefs'
 import { finishRedirectLogin } from './features/auth/login'
+import { reportReactError, startErrorReports } from './data/errorReport'
+import ErrorBoundary from './ui/ErrorBoundary'
 
+// 오류 알림(P14-2): 잡지 못한 오류·약속 거절·오류 안내를 개발자에게 (글 내용 없이 - data/errorReport). 다른 시작보다 먼저
+startErrorReports()
 // 로그인 상태 구독은 앱 전체에 하나.
 watchSession()
 // 주말 빼기 기간·달력 색이 공휴일 표를 쓴다 (data/holidays)
@@ -37,8 +41,20 @@ watchUndoOwner()
 // 앱으로 설치 - 서비스 워커 등록, 크롬의 설치 이벤트는 화면보다 먼저 올 수 있어 여기서 듣는다
 startInstall()
 
-createRoot(document.getElementById('root')!).render(
+// 그리기 오류: 바깥 경계(ErrorBoundary)가 흰 화면 대신 안내를 보이고, 잡은 오류는 onCaughtError로 알린다
+createRoot(document.getElementById('root')!, {
+  onCaughtError: (error, info) => {
+    console.error(error)
+    reportReactError(error, info)
+  },
+  onUncaughtError: (error, info) => {
+    console.error(error)
+    reportReactError(error, info)
+  },
+}).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )

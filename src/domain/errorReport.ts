@@ -38,13 +38,16 @@ export function scrubText(text: string, max: number = LIMITS.message): string {
   return cut(s, max);
 }
 
-/** 스택 앞 8줄 - 주소는 파일:줄:칸만, 줄마다 scrubText (1500자) */
+/**
+ * 스택 앞 8줄 - 주소는 파일:줄:칸만, 줄마다 scrubText (1500자).
+ * 자리 줄(at …·이름@주소)만 둔다 - 크롬 스택 첫 줄은 오류 문장을 되풀이해, 'toast'에서 빼 둔 오류 문장이 스택으로 실린다.
+ */
 export function stackHead(stack: string | undefined | null): string {
   if (!stack) return '';
   const lines = stack
     .split('\n')
     .map((l) => l.trim())
-    .filter(Boolean)
+    .filter((l) => /^at\s/.test(l) || /^[^\s]*@\S/.test(l))
     .slice(0, STACK_LINES)
     .map((l) => scrubText(l.replace(/(?:blob:)?(?:https?|file|webpack|chrome-extension):\/\/[^\s)]*\/([^/\s)?#]+?)(?:[?#][^\s):]*)?(:\d+(?::\d+)?)?(?=[\s)]|$)/g, '$1$2'), 300));
   return cut(lines.join('\n'), LIMITS.stack);

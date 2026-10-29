@@ -57,14 +57,16 @@ describe('stackHead - 앞 8줄, 주소는 파일:줄', () => {
     ].join('\n');
     const head = stackHead(chrome).split('\n');
     expect(head).toHaveLength(8);
-    expect(head[1]).toBe('at render (DayView.tsx:42:7)');
-    expect(head[2]).toBe('at index-BwZ9B8To.js:1:234567');
+    // 첫 줄(오류 문장)은 빼고 자리 줄만
+    expect(head[0]).toBe('at render (DayView.tsx:42:7)');
+    expect(head[1]).toBe('at index-BwZ9B8To.js:1:234567');
     expect(stackHead('render@http://localhost:5175/src/App.tsx:3:9\n@blob:http://x/abc:1:1')).toBe('render@App.tsx:3:9\n@abc:1:1');
   });
 
   it('빈 스택은 빈 글, 1500자에서 자른다', () => {
     expect(stackHead(undefined)).toBe('');
-    expect(stackHead(Array.from({ length: 8 }, () => 'a'.repeat(250)).join('\n')).length).toBeLessThanOrEqual(LIMITS.stack);
+    expect(stackHead(Array.from({ length: 8 }, () => `at ${'a'.repeat(250)}`).join('\n')).length).toBeLessThanOrEqual(LIMITS.stack);
+    expect(stackHead('Error: 김철수 메모\n    at f (A.tsx:1:2)')).toBe('at f (A.tsx:1:2)');
   });
 });
 

@@ -1735,11 +1735,15 @@ v4_subjectAttendance·photoQuiz·v4_observationPhrases - ARCHITECTURE 3장 표).
   kind ∈ error·rejection·react·toast · message ≤ 300 · stack ≤ 1500 · ua ≤ 200 · `at == request.time` · `expireAt < request.time + duration.value(32, 'd')` / read·delete = `isDeveloper()` / update 안 됨.
   check-rules: 내 uid 됨 · 남의 uid·긴 글·모르는 칸 막힘 · 개발자 아닌 읽기·목록 막힘 · 개발자 읽기·지우기 됨. **이 커밋은 배포하지 않는다.**
   → 10-29: 칸 열둘 모두 있어야(hasOnly + hasAll) · note·build(40)·scope(40)·device(pc·mobile)·standalone(bool)도 본다 · check-rules V5 106(+15: 남의 uid·긴 문장·긴 스택·모르는 칸·모르는 종류·서버 시각 아닌 at·40일 expireAt·칸 빼기·보낸 사람 읽기·목록·고치기·지우기 = 막힘) · V4 복사.
-- [ ] ■4 **보내기** `data/errorReport.ts` `reportError(kind, err, note?)` - 로그인 안 함·DEV·에뮬레이터 빌드면 콘솔만, `addDoc` 바로(repo·되돌리기·사본을 거치지 않음), 실패는 조용히 버린다(돌고 도는 것 막기).
+- [x] ■4 **보내기** `data/errorReport.ts` `reportError(kind, err, note?)` - 로그인 안 함·DEV·에뮬레이터 빌드면 콘솔만, `addDoc` 바로(repo·되돌리기·사본을 거치지 않음), 실패는 조용히 버린다(돌고 도는 것 막기).
   칸: kind·message·stack·build(`__BUILD_ID__`)·scope(route의 화면 이름만 - 날짜·글 없음)·device·standalone·ua·uid·at(serverTimestamp)·expireAt(+30일). **메모·학생 글은 싣지 않는다**('toast'는 앱이 정한 안내 글과 `code`·`name`만).
   `startErrorReports()`(window error·unhandledrejection - main.tsx에서 한 번) · `createRoot(el, { onUncaughtError, onCaughtError })` · `toast.ts` `showErrorToast`에서 `reportError('toast', …)` ·
   `ui/ErrorBoundary.tsx`(앱 바깥 하나 - 흰 화면 대신 "문제가 생겼습니다 [새로고침]" + 판 이름). 시험 `data/errorReport.test.ts`·`ui/ErrorBoundary.test.tsx` · 자료 시험 `data/errorReport.emu.test.ts`(만들기 됨·읽기 막힘 - `npm run test:data`) ·
   설명서 `chapters/trouble.ts` 한 절("오류가 나면 글 내용 없이 오류 문장·판·기기만 개발자에게 갑니다").
+  → 10-29: **규칙을 먼저 배포**(사용자 ① - v5Errors만 더해 옛 화면에 영향 없음, live-rules = P14-1 배포 파일이었다) → 화면은 main으로 곧바로(wip 없이) ·
+  toast는 Firebase를 부르지 않게 `setErrorToastReporter`로 거꾸로 받는다(session → toast 고리 막기) · **스택은 자리 줄(at …·@)만** - 크롬 첫 줄이 오류 문장을 되풀이해 'toast'에서 뺀 문장이 실렸다(시험이 잡음) ·
+  createRoot `onCaughtError`·`onUncaughtError`가 콘솔 + 알림(기본 동작을 바꾸므로 console.error를 직접) · 설명서는 새 주제 대신 trouble-save 표 한 줄 + 알림 글(주제 수 그대로) ·
+  단위 2536 · test:data 33(+3) · manual trouble·settings 점검 통과 · 크롬에서 실제로 보내지는지는 ■5 점검(`enableErrorReports(true)`)에서.
 - [ ] ■5 **개발자 탭 '오류 기록'** `features/settings/DevErrorsSection.tsx`: 최근 50건 `orderBy('at','desc')`, 같은 message 묶음(건수·마지막 시각·판·기기), 누르면 stack, [모두 지우기] + 시험 · 크롬은 `?as=5`로 한 번.
 - [ ] ■6 (묻고) `live-rules` → 규칙 배포 → 👤 TTL: 콘솔 Firestore > TTL > 정책 만들기(컬렉션 그룹 `v5Errors`, 필드 `expireAt`) - 이 PC에는 gcloud가 없다 · 실제 사이트에서 오류 하나가 개발자 탭에 오는지 · 5장에 기록.
 **끝 조건**: 오류 하나 = 문서 하나, 같은 오류를 다시 내도 늘지 않는다 · 문서에 글·이메일 없음(시험) · 개발자 아닌 계정은 못 읽는다(check-rules) · 그리기 오류에 안내 화면 · 개발자 탭에서 보고 지운다.
