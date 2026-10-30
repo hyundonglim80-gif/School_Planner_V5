@@ -341,6 +341,8 @@ export interface ProgressTimeline {
  * 시작일부터 그 칸 글자가 적힌 교시를 차례로 세어 차시를 붙인다.
  * subjectsByDate: 날짜 → (교시 → 과목 글자) - domain/lessons subjectsBetween. isOffDay: 수업이 없는 날(classOffReason).
  * until: 이날부터는 세지 않는다 (같은 칸 글자의 다음 진도가 이어받는 날 - progressUntil).
+ * 시작일이 든 **학년도 안에서만** 센다(P14-8 - 진도 창은 그 학년도만 셌는데 수업 칸 겹침은 해를 넘어 세어,
+ * 다 못 끝낸 작년 진도가 새 학년도 같은 과목·반 칸에 이어 나왔다. V4도 같았다).
  */
 export function computeProgress(
   plan: Pick<ProgressPlan, 'key' | 'startDate' | 'lessons' | 'bumps' | 'noCount'> & CourseFields,
@@ -358,8 +360,9 @@ export function computeProgress(
   let last: ProgressSlot | null = null;
   if (!key || !plan.startDate) return { slots, bySlot, last };
 
+  const yearEnd = schoolYearEnd(plan.startDate);
   const dates = Object.keys(subjectsByDate)
-    .filter((d) => d >= plan.startDate && (!until || d < until))
+    .filter((d) => d >= plan.startDate && d <= yearEnd && (!until || d < until))
     .sort();
   const total = planPeriods(plan).length;
   let next = 0;
