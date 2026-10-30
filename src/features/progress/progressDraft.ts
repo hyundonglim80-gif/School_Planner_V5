@@ -122,6 +122,61 @@ export function draftTarget(d: Draft): { key: string; subject?: string; classes?
   return { key: '', subject, classes: d.classes };
 }
 
+/**
+ * 진도를 고치는 묶음 (P14-6 ■4 - 두 기기). 창은 묶음마다 '손댔나'를 연 때(base)와 견주고,
+ * 손대지 않은 묶음은 다른 기기가 고친 것을 따라가며, 저장은 이 기기가 바꾼 묶음만 적는다.
+ * 차시 목록은 배열 통째 한 묶음이다(행 단위로 나누지 않는다 - 같은 표를 두 기기가 함께 고치는 일은 드물다).
+ */
+export type PlanPart = 'target' | 'startDate' | 'lessons' | 'noCount';
+const PARTS: PlanPart[] = ['target', 'startDate', 'lessons', 'noCount'];
+const rawRow = (l: ProgressLesson) => [l.unit, l.no, l.content, l.page, l.supplies];
+/** 손댔나를 볼 모양 - 적은 그대로(빈 행·공백도 손댄 것 - 넣은 빈 행이 따라가기로 사라지지 않게) */
+const rawPart = (d: Draft, p: PlanPart): unknown =>
+  p === 'target'
+    ? [d.key, d.subject, d.classes, d.legacyKey]
+    : p === 'startDate'
+      ? d.startDate
+      : p === 'lessons'
+        ? d.lessons.map(rawRow)
+        : d.noCount;
+/** 저장할 것이 다른가를 볼 모양 - 저장하는 모양으로(공백·빈 행은 같다) */
+const savedPart = (d: Draft, p: PlanPart): unknown =>
+  p === 'target' ? draftTarget(d) : p === 'lessons' ? cleanLessons(d.lessons) : rawPart(d, p);
+const sameJson = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+/** base(연 때·저장한 때)와 견줘 이 기기가 바꾼 묶음 - 저장은 이것만 적는다 */
+export function editedParts(base: Draft, d: Draft): Set<PlanPart> {
+  return new Set(PARTS.filter((p) => !sameJson(savedPart(d, p), savedPart(base, p))));
+}
+
+/** 이 기기도 바꾼 차시 목록을 다른 기기가 그새 바꿨나 (live = 지금 서버 판의 toDraft) - 덮기 전에 묻는다 */
+export const lessonsClash = (base: Draft, live: Draft, edited: ReadonlySet<PlanPart>) =>
+  edited.has('lessons') && !sameJson(savedPart(live, 'lessons'), savedPart(base, 'lessons'));
+
+/**
+ * 손대지 않은 묶음은 지금 서버 판(live = toDraft)을 따라간다 - 초안과 base를 함께 바꾼다. 따라갈 것이 없으면 null.
+ * 손댄 묶음은 적던 그대로(base도 그대로 - 저장할 때 lessonsClash가 견준다). 행 key(_k)는 자리마다 그대로 두어 칸이 엉키지 않게.
+ */
+export function followSaved(draft: Draft, base: Draft, live: Draft): { draft: Draft; base: Draft } | null {
+  let d = draft;
+  let b = base;
+  for (const p of PARTS) {
+    if (!sameJson(rawPart(draft, p), rawPart(base, p))) continue;
+    if (sameJson(savedPart(live, p), savedPart(base, p))) continue;
+    const take: Partial<Draft> =
+      p === 'target'
+        ? { key: live.key, subject: live.subject, classes: live.classes, legacyKey: live.legacyKey }
+        : p === 'startDate'
+          ? { startDate: live.startDate }
+          : p === 'lessons'
+            ? { lessons: live.lessons.map((l, i) => ({ ...l, _k: draft.lessons[i]?._k ?? l._k })) }
+            : { noCount: live.noCount };
+    d = { ...d, ...take };
+    b = { ...b, ...take };
+  }
+  return d === draft ? null : { draft: d, base: b };
+}
+
 /** 저장한 것과 같은가 - 늘려 저장한 옛 표를 한 행으로 보인 것만으로는 고친 것이 아니다 */
 export const sameAsSaved = (d: Draft, p: ProgressPlan) => {
   const t = draftTarget(d);

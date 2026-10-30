@@ -4,6 +4,7 @@
 //   교과 모드는 과정: 과목 하나 + 반(하나든 여럿이든), 차시 목록은 하나이고 반마다 제 수업 칸에서 따로 센다. 반별 현황표·반 탭·다음 수업 밀기.
 //   저장은 개인 공간 progress/{planId}(💾·Ctrl+S, 바뀐 칸만) · 밀기는 누르는 대로 · 🗑️ 지우기 = 휴지통.
 //   행마다 🔗 = 그 차시에 메모 잇기(P10-4 - 고치던 것이 있으면 먼저 저장, 진도 쪽 그 행에만 적는다) · 숫자 = 이은 메모 보기.
+//   두 기기(P14-6 ■4): 손대지 않은 묶음(반·과목·시작일·차시 목록)은 다른 기기가 고친 것을 따라가고, 저장은 이 기기가 바꾼 묶음만.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useCommonSettings } from '../../app/prefs';
@@ -47,10 +48,13 @@ import {
   cleanLessons,
   draftForSlot,
   draftTarget,
+  editedParts,
   emptyLesson,
+  followSaved,
   hasText,
   duplicateRow,
   insertRowAfter,
+  lessonsClash,
   lessonsToSave,
   moveRow,
   newCourseDraft,
@@ -75,6 +79,9 @@ const FIELDS: Array<{ key: LessonField; label: string; title?: string }> = [
   { key: 'supplies', label: '준비물' },
 ];
 const isDay = (s: string) => /^(20\d\d)-\d\d-\d\d$/.test(s);
+/** 이 창에서 차시 목록을 고치는 동안 다른 기기가 같은 표의 차시 목록을 바꿨을 때 (P14-6 ■4) */
+const CLASH_ASK =
+  '이 창에서 고치는 동안 다른 기기에서 이 진도의 차시 목록을 바꿨습니다.\n\n확인 = 내가 고친 차시 목록으로 덮어 저장\n취소 = 저장하지 않음 (고친 것은 창에 그대로 - 창을 닫고 다시 열면 다른 기기의 목록이 보입니다)';
 // 단원 | 차시 | 내용 | 교과서 | 준비물 | 삭제 - 오른쪽 칸에서도 내용 칸이 가장 넓게(비율로 나눈다)
 const ROW_GRID = 'grid grid-cols-[minmax(0,0.9fr)_2.25rem_minmax(0,2fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_2.5rem_5.5rem] gap-1';
 
@@ -87,6 +94,12 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   const terms = useCommonSettings((s) => s.terms);
   const { mode, isClassUnit } = useTeaching();
   const [draft, setDraft] = useState<Draft | null>(null);
+  /** 연 때(또는 저장한 때·따라간 때)의 초안 - 묶음마다 '손댔나'를 이것과 견준다 (P14-6 ■4) */
+  const [base, setBase] = useState<Draft | null>(null);
+  const openDraft = (d: Draft) => {
+    setDraft(d);
+    setBase(d);
+  };
   // 과정 미리보기에서 보는 반
   const [previewClass, setPreviewClass] = useState<string>(params?.cls ?? '');
   const [saving, setSaving] = useState(false);
@@ -107,11 +120,19 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   // 처음: 부른 것 → 첫 진도 → 새 진도 (교과 모드면 옛 진도도 과목 + 반으로 연다)
   if (!draft && loaded) {
     const first = wantedDraft(params) ?? (plans[0] ? toDraft(plans[0], isClassUnit) : freshDraft());
-    setDraft(first);
+    openDraft(first);
   }
 
   const saved = draft ? plans.find((p) => p.id === draft.id) : undefined;
   const savedDoc = draft && docs[draft.id] && isLive(docs[draft.id]) ? docs[draft.id] : undefined;
+  // 손대지 않은 묶음은 다른 기기가 고친 것을 따라간다 - 손대기 전에 '고침'이 되어 저장이 옛 표로 덮지 않게 (P14-6 ■4)
+  if (draft && base && saved && !sameAsSaved(draft, saved)) {
+    const followed = followSaved(draft, base, toDraft(saved, isClassUnit));
+    if (followed) {
+      setDraft(followed.draft);
+      setBase(followed.base);
+    }
+  }
   // 과목 + 반 칩으로 고치나 (교과 모드, 또는 초등 담임이 연 과정)
   const courseDraft = !!draft?.classes;
   const target = draft ? draftTarget(draft) : null;
@@ -134,7 +155,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   // 고치던 것을 버리고 다른 진도로 옮길 때만 묻는다
   const switchTo = (next: Draft) => {
     if (dirty && !window.confirm('고치던 진도를 저장하지 않고 옮길까요?')) return;
-    setDraft(next);
+    openDraft(next);
   };
 
   // 열린 채로 다시 부르면(다른 교시의 진도 줄·진도 만들기) 그리로 (과정이면 그 반 탭으로)
@@ -410,17 +431,22 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
         (t.classes || isCourse(p) ? planKeys(p).some((k) => mine.includes(normalizeSlotText(k))) : p.key === next.key),
     );
     if (clash) return fail(`'${planLabel(clash)}' 진도가 같은 반·시작일로 이미 있습니다.`);
+    // 이 기기가 바꾼 묶음만 적는다 - 다른 기기가 그새 차시 목록을 고쳤으면 덮기 전에 묻는다 (P14-6 ■4)
+    const edited = base ? editedParts(base, draft) : undefined;
+    if (saved && base && edited && lessonsClash(base, toDraft(saved, isClassUnit), edited) && !window.confirm(CLASH_ASK)) return false;
     setSaving(true);
     try {
-      await saveProgressPlan(sid, next, savedDoc);
-      setDraft({
+      await saveProgressPlan(sid, next, savedDoc, edited);
+      const after: Draft = {
         ...draft,
         key: planKeys(next)[0],
         subject: t.subject ?? draft.subject,
-        lessons: draft.lessons.filter(hasText).map((l, i) => ({ ...trimLesson(l), _k: l._k, _from: i })),
+        // 차시 목록을 적었으면 문서의 행 차례로 (적지 않았으면 그대로 - 늘려 저장한 옛 표는 문서 행 번호가 다르다)
+        lessons: edited?.has('lessons') === false ? draft.lessons : draft.lessons.filter(hasText).map((l, i) => ({ ...trimLesson(l), _k: l._k, _from: i })),
         // 반 없이(또는 옛 모양 그대로) 저장했으면 다음에도 그 글자로, 과정이 되었으면 과정으로
         legacyKey: draft.classes && !t.classes ? t.key : null,
-      });
+      };
+      openDraft(after);
       return true;
     } catch {
       // 안내는 저장 도우미가 했다 - 고친 것은 그대로
@@ -437,8 +463,9 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     if (!sid || !draft) return;
     const row = draft.lessons[r];
     if (!row || !hasText(row)) return showErrorToast('차시 내용을 먼저 적어 주세요.');
-    // 고친 것이 없으면 문서의 그 행(늘려 저장한 옛 표는 문서 행 번호가 다르다), 고쳤으면 저장한 뒤의 행 차례
-    const index = !dirty && row._from !== undefined ? row._from : draft.lessons.slice(0, r).filter(hasText).length;
+    // 차시 목록을 고치지 않았으면 문서의 그 행(늘려 저장한 옛 표는 문서 행 번호가 다르다), 고쳤으면 저장한 뒤의 행 차례
+    const lessonsEdited = !savedDoc || !base || editedParts(base, draft).has('lessons');
+    const index = !lessonsEdited && row._from !== undefined ? row._from : draft.lessons.slice(0, r).filter(hasText).length;
     if ((dirty || !savedDoc) && !(await handleSave())) return;
     openLinker({ sid, id: progressLinkId(draft.id, index) });
   };
@@ -448,7 +475,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     try {
       await deleteProgressPlan(sid, savedDoc);
       const rest = plans.filter((p) => p.id !== savedDoc.id);
-      setDraft(rest[0] ? toDraft(rest[0], isClassUnit) : freshDraft());
+      openDraft(rest[0] ? toDraft(rest[0], isClassUnit) : freshDraft());
     } catch {
       // 안내는 저장 도우미가 했다
     }

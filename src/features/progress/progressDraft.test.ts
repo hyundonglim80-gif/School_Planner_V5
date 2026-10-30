@@ -3,9 +3,12 @@ import {
   cleanLessons,
   draftForSlot,
   draftTarget,
+  editedParts,
   emptyLesson,
+  followSaved,
   duplicateRow,
   insertRowAfter,
+  lessonsClash,
   moveRow,
   lessonsToSave,
   newCourseDraft,
@@ -215,5 +218,66 @@ describe('차시에 이은 메모 (P10-4)', () => {
       ['나', ['m1']],
     ]);
     expect(lessonsToSave(lessons.filter((l) => l.content !== '나'), doc).map((l) => l.linkIds)).toEqual([undefined, ['m9']]);
+  });
+});
+
+// P14-6 ■4 두 기기: 손대지 않은 묶음은 다른 기기가 고친 것을 따라가고, 저장은 이 기기가 바꾼 묶음만
+describe('두 기기 - 진도 창 (P14-6 ■4)', () => {
+  const saved = plan({ key: '국어' });
+
+  it('손대기 전: 다른 기기가 시작일·차시 목록을 고치면 따라간다 (고침이 되지 않는다) - 행 key는 자리마다 그대로', () => {
+    const d = toDraft(saved, false);
+    const theirs = plan({ key: '국어', startDate: '2026-09-08', lessons: [lesson('가'), lesson('나', '12~13'), lesson('다')] });
+    const f = followSaved(d, d, toDraft(theirs, false))!;
+    expect(f.draft.startDate).toBe('2026-09-08');
+    expect(f.draft.lessons.map((l) => l.content)).toEqual(['가', '나', '다']);
+    expect(f.draft.lessons.slice(0, 2).map((l) => l._k)).toEqual(d.lessons.map((l) => l._k));
+    expect(sameAsSaved(f.draft, theirs)).toBe(true);
+    expect(editedParts(f.base, f.draft).size).toBe(0);
+    // 따라간 뒤에는 따라갈 것이 없다 (그리기마다 되풀이하지 않는다)
+    expect(followSaved(f.draft, f.base, toDraft(theirs, false))).toBeNull();
+  });
+
+  it('차시 목록을 고치는 중: 다른 기기의 시작일은 따라가고 목록은 적던 그대로 - 저장은 목록만', () => {
+    const base = toDraft(saved, false);
+    const mine: Draft = { ...base, lessons: base.lessons.map((l, i) => (i === 0 ? { ...l, content: '가2' } : l)) };
+    const theirs = plan({ key: '국어', startDate: '2026-09-08' });
+    const f = followSaved(mine, base, toDraft(theirs, false))!;
+    expect(f.draft.startDate).toBe('2026-09-08');
+    expect(f.draft.lessons.map((l) => l.content)).toEqual(['가2', '나']);
+    expect([...editedParts(f.base, f.draft)]).toEqual(['lessons']);
+    expect(lessonsClash(f.base, toDraft(theirs, false), editedParts(f.base, f.draft))).toBe(false);
+  });
+
+  it('같은 차시 목록을 둘 다 고쳤으면 묻는다 (이 기기가 목록을 안 고쳤으면 묻지 않는다)', () => {
+    const base = toDraft(saved, false);
+    const mine: Draft = { ...base, lessons: [...base.lessons, withKey(lesson('내 행'))] };
+    const theirs = toDraft(plan({ key: '국어', lessons: [lesson('가'), lesson('남의 행')] }), false);
+    expect(lessonsClash(base, theirs, editedParts(base, mine))).toBe(true);
+    const onlyDate: Draft = { ...base, startDate: '2026-09-15' };
+    expect(lessonsClash(base, theirs, editedParts(base, onlyDate))).toBe(false);
+    // 이은 메모만 바뀐 것(수업 칸에서 메모 잇기)은 목록을 고친 것이 아니다
+    const linked = toDraft(sanitizePlan('p1', { key: '국어', startDate: '2026-09-01', lessons: [{ ...lesson('가'), linkIds: ['m1'] }, lesson('나', '12~13')], bumps: [] }), false);
+    expect(lessonsClash(base, linked, editedParts(base, mine))).toBe(false);
+  });
+
+  it('빈 행만 넣은 것은 저장할 고침이 아니지만 따라가기로 지우지 않는다', () => {
+    const base = toDraft(saved, false);
+    const { lessons } = insertRowAfter(base.lessons, 1);
+    const mine: Draft = { ...base, lessons };
+    expect(editedParts(base, mine).size).toBe(0);
+    const theirs = plan({ key: '국어', lessons: [lesson('가'), lesson('바뀜')] });
+    const f = followSaved(mine, base, toDraft(theirs, false));
+    expect(f).toBeNull();
+  });
+
+  it('과정: 다른 기기가 반을 더하면 따라가고, 이 기기가 반을 고르는 중이면 그대로', () => {
+    const course = plan({ key: '', subject: '과학', classes: ['5-2'] });
+    const base = toDraft(course, true);
+    const theirs = toDraft(plan({ key: '', subject: '과학', classes: ['5-2', '5-3'] }), true);
+    expect(followSaved(base, base, theirs)!.draft.classes).toEqual(['5-2', '5-3']);
+    const mine: Draft = { ...base, classes: ['5-2', '5-4'] };
+    expect(followSaved(mine, base, theirs)).toBeNull();
+    expect([...editedParts(base, mine)]).toEqual(['target']);
   });
 });

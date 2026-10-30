@@ -3,6 +3,8 @@
 //   1) 메모: A가 글을 고치는 동안 B가 제목을 달아 저장 → A 저장 = A의 글 + B의 제목 (B의 제목을 되돌리지 않는다)
 //   2) 메모: 같은 글을 둘 다 고침 → A 저장 때 묻는다 · 아니오 = 적지 않음(서버는 B 글) · 예 = A 글로 덮기
 //   3) 수업 칸: A가 비고를 고치는 동안 B가 같은 교시 과목을 바꿈 → A 저장 = B의 과목 + A의 비고
+//   4) 진도 창(■4): 손대기 전에는 B가 고친 시작일을 따라간다(💾가 켜지지 않는다) · A가 차시를 고치는 동안 B가 시작일 → A 저장 = A의 차시 + B의 시작일 ·
+//      같은 차시 목록을 둘 다 고침 → 묻는다 · 아니오 = 적지 않음 · 예 = A 목록으로 덮기
 import { deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
@@ -16,6 +18,7 @@ const DAY = '2026-10-14';
 const N = 3;
 const noteRef = doc(em.db, 'spaces', sid, 'items', 'inspTwoDev');
 const dayRef = doc(em.db, 'spaces', sid, 'lessonDays', DAY);
+const pgRef = doc(em.db, 'spaces', sid, 'progress', 'inspTwoDevPg');
 const read = async (ref) => (await getDoc(ref)).data();
 
 try {
@@ -88,6 +91,59 @@ try {
   const d1 = await serverUntil(() => read(dayRef), (d) => d?.periods?.[N]?.supplies === 'A의 비고');
   r.check(d1?.periods?.[N]?.subject === 'B과목' && d1?.periods?.[N]?.supplies === 'A의 비고', `A 저장 = B의 과목 + A의 비고 (과목: ${d1?.periods?.[N]?.subject ?? '없음'})`);
   for (const p of [A, B]) await p.page.evaluate(() => window.sp5.closeAllWindows());
+
+  r.section('진도 창 - 손대기 전에는 다른 기기 고침을 따라간다');
+  const L = (content) => ({ unit: '1. 점검', no: '', content, page: '', supplies: '' });
+  await setDoc(pgRef, { key: '두기기국어', startDate: '2026-09-01', lessons: [L('가'), L('나')], bumps: [], noCount: true, createdAt: Date.now(), authorId: uid, deletedAt: null, v: 1, updatedAt: serverTimestamp() });
+  undo.add(() => deleteDoc(pgRef));
+  const openPlan = (p) => p.page.evaluate(() => window.sp5.openWindow('progress', { planId: 'inspTwoDevPg', at: Date.now() }));
+  const pg = (p) => p.page.locator(sel('progress-window', 'inspTwoDevPg'));
+  const start = (p) => pg(p).locator(sel('progress-start'));
+  const cell = (p, row) => pg(p).locator(sel('cell', `${row}-2`));
+  // 저장 단추는 창 아래줄(본문 상자 밖) - 창 하나만 연 채로 page에서
+  const pgSave = (p) => p.page.locator(sel('progress-save'));
+  for (const p of [A, B]) {
+    await openPlan(p);
+    await waitFor(async () => (await start(p).inputValue().catch(() => '')) === '2026-09-01', 15000);
+  }
+  await start(B).fill('2026-09-08');
+  await pgSave(B).click();
+  await serverUntil(() => read(pgRef), (d) => d?.startDate === '2026-09-08');
+  r.check(await waitFor(async () => (await start(A).inputValue()) === '2026-09-08', 10000), 'A 창의 시작일이 B가 고친 날로 바뀐다 (손대지 않았으면 따라간다)');
+  r.check(await pgSave(A).isDisabled(), 'A의 💾는 꺼진 채 (다른 기기 고침은 고친 것이 아니다 - 닫아도 묻지 않는다)');
+
+  r.section('진도 창 - 다른 묶음을 함께 고침');
+  const asked = A.dialogs.seen.length;
+  await cell(A, 0).fill('가 A');
+  await start(B).fill('2026-09-15');
+  await pgSave(B).click();
+  await serverUntil(() => read(pgRef), (d) => d?.startDate === '2026-09-15');
+  r.check(await waitFor(async () => (await start(A).inputValue()) === '2026-09-15', 10000), 'A가 차시를 고치는 중에도 손대지 않은 시작일은 따라간다');
+  await pgSave(A).click();
+  const p1 = await serverUntil(() => read(pgRef), (d) => d?.lessons?.[0]?.content === '가 A');
+  r.check(p1?.startDate === '2026-09-15' && p1?.lessons?.[0]?.content === '가 A', `A 저장 = A의 차시 + B의 시작일 (시작일: ${p1?.startDate})`);
+  r.check(A.dialogs.seen.length === asked, '다른 묶음만 겹치면 묻지 않는다');
+
+  r.section('진도 창 - 같은 차시 목록을 함께 고침');
+  r.check(await waitFor(async () => (await cell(B, 0).inputValue()) === '가 A', 10000), 'B 창의 차시 목록이 A가 고친 것으로 (손대지 않았으면 따라간다)');
+  await cell(A, 1).fill('나 A');
+  await cell(B, 1).fill('나 B');
+  await pgSave(B).click();
+  await serverUntil(() => read(pgRef), (d) => d?.lessons?.[1]?.content === '나 B');
+  A.dialogs.answer = false;
+  await pgSave(A).click();
+  r.check(await waitFor(async () => A.dialogs.seen.some((m) => m.includes('다른 기기에서 이 진도의 차시 목록을 바꿨습니다')), 5000), 'A 저장 → "다른 기기에서 이 진도의 차시 목록을 바꿨습니다" 묻기');
+  await new Promise((res) => setTimeout(res, 1000));
+  r.check((await read(pgRef))?.lessons?.[1]?.content === '나 B', '아니오 = 적지 않는다 (서버는 B의 목록)');
+  r.check((await cell(A, 1).inputValue()) === '나 A', '아니오 = A의 창은 고친 그대로');
+  A.dialogs.answer = true;
+  await pgSave(A).click();
+  const p2 = await serverUntil(() => read(pgRef), (d) => d?.lessons?.[1]?.content === '나 A');
+  r.check(p2?.lessons?.[1]?.content === '나 A' && p2?.startDate === '2026-09-15', '예 = A의 목록으로 덮는다 (시작일은 그대로)');
+  for (const p of [A, B]) {
+    p.dialogs.answer = true;
+    await p.page.evaluate(() => window.sp5.closeAllWindows());
+  }
   r.check(A.errors.length === 0 && B.errors.length === 0, `화면 오류 없음 ${[...A.errors, ...B.errors].join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);

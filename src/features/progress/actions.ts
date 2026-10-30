@@ -1,5 +1,6 @@
 // 진도 저장 (저장 도우미 + 안내의 되돌리기). 개인 공간 progress/{planId}.
 //   저장 = 바뀐 칸만(칸 글자·과목·반·시작일·차시 목록) - 밀기(bumps)는 건드리지 않는다(다른 기기에서 민 것을 덮지 않게, V4 그대로).
+//   창은 이 기기가 바꾼 묶음(only)만 넘긴다 - 그새 다른 기기가 고친 묶음을 옛 값으로 되돌리지 않게(P14-6 ■4).
 //   밀기 = bumps 한 칸 더하기·빼기(누르는 대로 바로) · 지우기 = 지운 표시(휴지통 '기타'에 '진도').
 import { create, patch, remove } from '../../data/repo';
 import type { Changes } from '../../data/repo/ops';
@@ -7,6 +8,7 @@ import type { DocPath, Stored } from '../../data/types';
 import { recordUndo } from '../../data/undo';
 import { shortDateLabel } from '../../domain/dateUtils';
 import { isCourse, planKeys, planLabel, toggleBump, type ProgressLesson } from '../../domain/progress';
+import type { PlanPart } from './progressDraft';
 
 export const progressPath = (sid: string, id: string): DocPath<'progress'> => ({ sid, coll: 'progress', id });
 
@@ -24,8 +26,16 @@ export interface PlanToSave {
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
-/** 진도 저장 - 새것은 만들고, 있던 것은 바뀐 칸만. 바뀐 것이 없으면 false */
-export async function saveProgressPlan(sid: string, next: PlanToSave, before: Stored<'progress'> | undefined): Promise<boolean> {
+/**
+ * 진도 저장 - 새것은 만들고, 있던 것은 바뀐 칸만. 바뀐 것이 없으면 false.
+ * only = 이 기기가 바꾼 묶음(없으면 모두) - 그 밖의 칸은 지금 서버 판 그대로. '차시 수로 세기' 표시는 켜기만 하므로 늘 적는다.
+ */
+export async function saveProgressPlan(
+  sid: string,
+  next: PlanToSave,
+  before: Stored<'progress'> | undefined,
+  only?: ReadonlySet<PlanPart>,
+): Promise<boolean> {
   const course = isCourse(next);
   const key = course ? planKeys(next)[0] : next.key.trim();
   const lessons = next.lessons.map((l) => ({
@@ -53,17 +63,20 @@ export async function saveProgressPlan(sid: string, next: PlanToSave, before: St
     recordUndo(sid, `✅ '${label}' 진도를 저장했습니다.`, undo, { what: '진도 저장' });
     return true;
   }
+  const want = (part: PlanPart) => !only || only.has(part);
   const changes: Record<string, unknown> = {};
-  if (key !== before.key) changes.key = key;
-  if (course) {
-    if ((next.subject ?? '').trim() !== (before.subject ?? '')) changes.subject = (next.subject ?? '').trim();
-    if (!same(next.classes, before.classes)) changes.classes = next.classes;
-  } else {
-    if (before.subject !== undefined) changes.subject = undefined;
-    if (before.classes !== undefined) changes.classes = undefined;
+  if (want('target')) {
+    if (key !== before.key) changes.key = key;
+    if (course) {
+      if ((next.subject ?? '').trim() !== (before.subject ?? '')) changes.subject = (next.subject ?? '').trim();
+      if (!same(next.classes, before.classes)) changes.classes = next.classes;
+    } else {
+      if (before.subject !== undefined) changes.subject = undefined;
+      if (before.classes !== undefined) changes.classes = undefined;
+    }
   }
-  if (next.startDate !== before.startDate) changes.startDate = next.startDate;
-  if (!same(lessons, before.lessons)) changes.lessons = lessons;
+  if (want('startDate') && next.startDate !== before.startDate) changes.startDate = next.startDate;
+  if (want('lessons') && !same(lessons, before.lessons)) changes.lessons = lessons;
   if (next.noCount && before.noCount !== true) changes.noCount = true;
   if (Object.keys(changes).length === 0) return false;
   const undo = await patch(progressPath(sid, next.id), changes as Changes<'progress'>, before, {
