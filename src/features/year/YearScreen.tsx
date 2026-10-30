@@ -22,7 +22,7 @@ import { deleteEvent, setEventDone } from '../events/actions';
 import EventDeleteChooser from '../events/EventDeleteChooser';
 import { useEventDrop } from '../events/drag';
 import EventMoveChooser from '../events/EventMoveChooser';
-import { doneOnDay, isGrouped, type ItemDoc } from '../events/eventOps';
+import { doneAll, doneOnDay, isGrouped, type ItemDoc } from '../events/eventOps';
 import { pickKey, pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
 import { openEventPanel } from '../events/open';
 import { openLinkViewer } from '../links/open';
@@ -214,6 +214,11 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
     const s = latest.current.sid;
     if (s) void setEventDone(s, ev, !doneOnDay(ev, d), { day: d }).catch(quiet);
   }, []);
+  // 기간 줄의 라벨 칩 = 기간 전체 (day 없이 - 날마다 끝낸 표시도 걷는다)
+  const togglePeriodDone = useCallback((ev: ItemDoc) => {
+    const s = latest.current.sid;
+    if (s) void setEventDone(s, ev, !doneAll(ev)).catch(quiet);
+  }, []);
   const remove = useCallback((ev: ItemDoc, d: string) => {
     const s = latest.current.sid;
     if (!s) return;
@@ -305,6 +310,7 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
                 onEventClick={eventClick}
                 onPeriodClick={periodClick}
                 onToggleDone={toggleDone}
+                onTogglePeriodDone={togglePeriodDone}
                 onDelete={remove}
                 onOpenLinks={openLinks}
                 dropHandlers={drop.handlers}

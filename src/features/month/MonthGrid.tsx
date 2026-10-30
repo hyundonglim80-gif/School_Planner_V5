@@ -58,6 +58,8 @@ export interface MonthGridProps {
   onOpenNotes: (date: string) => void;
   onEventClick: (ev: ItemDoc, date: string, e: ReactMouseEvent) => void;
   onToggleDone: (ev: ItemDoc, date: string) => void;
+  /** 기간 막대의 라벨 칩 = 기간 전체 완료·풀기 (10-30) */
+  onTogglePeriodDone: (ev: ItemDoc) => void;
   onDelete: (ev: ItemDoc, date: string) => void;
   onOpenLinks: (ev: ItemDoc) => void;
   /** 그날 교시마다 과목 (둘째 줄 '수업'을 끄면 넘기지 않는다) */
@@ -272,14 +274,14 @@ export default function MonthGrid(p: MonthGridProps) {
                   <PeriodBar
                     key={`${bar.item.id}@${bar.start}`}
                     bar={bar}
-                    labelName={label?.name ?? ''}
-                    labelColor={label ? labelColor(label.color) : null}
+                    label={label ?? null}
                     compact={p.compact}
                     multiOn={p.multiOn}
                     picked={(cell: BarCell) => p.pickedOn(cell.date).has(bar.item.id)}
                     isCurrentMonth={(d) => d.startsWith(p.month)}
                     onOpen={(cell, e) => p.onEventClick(bar.item, cell.date, e)}
                     onOpenLinks={() => p.onOpenLinks(bar.item)}
+                    onToggleDone={p.multiOn ? undefined : () => p.onTogglePeriodDone(bar.item)}
                     drag={p.drop && !p.compact ? { enabled: p.drop.dragEnabled, onEnd: p.drop.onDragEnd } : undefined}
                     style={{ gridColumn: `${bar.start + 1} / span ${bar.len}`, gridRow: bar.lane + 2 }}
                   />

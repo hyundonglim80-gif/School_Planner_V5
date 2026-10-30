@@ -17,7 +17,7 @@ import { deleteEvent, setEventDone } from '../events/actions';
 import EventDeleteChooser from '../events/EventDeleteChooser';
 import { useEventDrop } from '../events/drag';
 import EventMoveChooser from '../events/EventMoveChooser';
-import { doneOnDay, isGrouped, type ItemDoc } from '../events/eventOps';
+import { doneAll, doneOnDay, isGrouped, type ItemDoc } from '../events/eventOps';
 import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
 import { openEventPanel } from '../events/open';
 import { openLinkViewer } from '../links/open';
@@ -92,6 +92,8 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
     else if (sid) openEventPanel({ sid, date: day, id: ev.id });
   };
   const toggleDone = (ev: ItemDoc, day: string) => sid && void setEventDone(sid, ev, !doneOnDay(ev, day), { day }).catch(quiet);
+  // 기간 막대의 라벨 칩 = 기간 전체 (day 없이 - 날마다 끝낸 표시도 걷는다)
+  const togglePeriodDone = (ev: ItemDoc) => sid && void setEventDone(sid, ev, !doneAll(ev)).catch(quiet);
   const remove = (ev: ItemDoc, day: string) => {
     if (!sid) return;
     if (isGrouped(ev)) setScopeFor({ item: ev, day });
@@ -126,6 +128,7 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
         onOpenNotes={(d) => sid && openDayNotes({ sid, date: d })}
         onEventClick={eventClick}
         onToggleDone={toggleDone}
+        onTogglePeriodDone={togglePeriodDone}
         onDelete={remove}
         onOpenLinks={(ev) => sid && openLinkViewer({ sid, id: ev.id })}
         drop={{ handlers: drop.handlers, overDate: drop.overDate, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}

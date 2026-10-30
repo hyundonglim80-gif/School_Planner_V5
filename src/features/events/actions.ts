@@ -4,7 +4,7 @@
 import { showToast } from '../../app/toast';
 import { daysBetween, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { ordersBetween } from '../../domain/order';
-import { cutFromChanges, isPeriod, periodDoneChanges, skipDayChanges } from '../../domain/period';
+import { cutFromChanges, isPeriod, periodAllDoneChanges, periodDoneChanges, skipDayChanges } from '../../domain/period';
 import { ruleLabel, type SeriesRuleShape } from '../../domain/recur';
 import { batch, create, editedOnly, newPath, patch, remove, writeOp, type Changes, type WriteOp } from '../../data/repo';
 import type { LabelTree } from '../../data/select';
@@ -24,15 +24,17 @@ const PLACE_KEYS = ['endDate', 'skipDates', 'doneDates'] as const;
 export interface DoneOptions {
   /** 오늘 칸에서 따라오던 일정을 끝낼 때 - 그날로 옮겨 적는다(eventOps carriedDoneChanges, 되돌리면 제자리로) */
   carried?: { today: string; order: string };
-  /** 기간 일정은 그날만 (doneDates - domain/period) */
+  /** 기간 일정은 그날만 (doneDates - domain/period). 없으면 기간 전체(월간 막대·년간 기간 줄의 라벨 칩 - 날마다 끝낸 표시도 걷는다) */
   day?: string;
 }
 
 /** 완료 / 완료 풀기 (☐·라벨 칩). 안내 없이 Ctrl+Z 더미에만 - V4도 안내를 띄우지 않았다. */
 export async function setEventDone(sid: string, item: ItemDoc, done: boolean, opts: DoneOptions = {}): Promise<void> {
   const changes = (
-    opts.day && isPeriod(item)
-      ? periodDoneChanges(item, opts.day, done)
+    isPeriod(item)
+      ? opts.day
+        ? periodDoneChanges(item, opts.day, done)
+        : periodAllDoneChanges(item, done)
       : done && opts.carried
         ? carriedDoneChanges(item, opts.carried.today, opts.carried.order)
         : doneChanges(done)

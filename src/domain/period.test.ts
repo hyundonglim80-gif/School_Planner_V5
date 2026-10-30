@@ -3,6 +3,8 @@ import {
   cutFromChanges,
   isPeriod,
   onPeriodDay,
+  periodAllDone,
+  periodAllDoneChanges,
   periodDays,
   periodDoneChanges,
   periodDoneOn,
@@ -60,6 +62,25 @@ describe('기간 - 날마다 완료', () => {
   });
   it('풀어서 하나도 안 남으면 doneDates를 걷는다', () => {
     expect(periodDoneChanges({ ...exam, doneDates: ['2026-10-14'] }, '2026-10-14', false, 9)).toEqual({ doneDates: undefined });
+  });
+});
+
+describe('기간 - 전체 완료 (월간 막대·년간 기간 줄 라벨 칩, 10-30)', () => {
+  it('done이거나 보이는 날을 모두 doneDates로 끝냈으면 전체 완료', () => {
+    expect(periodAllDone(exam)).toBe(false);
+    expect(periodAllDone({ ...exam, done: true })).toBe(true);
+    expect(periodAllDone({ ...exam, doneDates: ['2026-10-14', '2026-10-15'] })).toBe(false);
+    // 옛 자료: done 없이 보이는 날(주말 뺀 다섯 날)을 모두 채운 것
+    expect(periodAllDone({ ...exam, doneDates: ['2026-10-14', '2026-10-15', '2026-10-16', '2026-10-19', '2026-10-20'] })).toBe(true);
+  });
+  it('끝내기 = done, 날마다 끝낸 표시는 걷는다', () => {
+    expect(periodAllDoneChanges(exam, true, 9)).toEqual({ done: true, doneAt: 9 });
+    expect(periodAllDoneChanges({ ...exam, doneDates: ['2026-10-14'] }, true, 9)).toEqual({ done: true, doneAt: 9, doneDates: undefined });
+  });
+  it('풀기 = 모든 날이 풀린다 (전에 끝낸 날도)', () => {
+    expect(periodAllDoneChanges({ ...exam, done: true }, false, 9)).toEqual({ done: false, doneAt: undefined });
+    const old = { ...exam, doneDates: ['2026-10-14', '2026-10-15', '2026-10-16', '2026-10-19', '2026-10-20'] };
+    expect(periodAllDoneChanges(old, false, 9)).toEqual({ done: false, doneAt: undefined, doneDates: undefined });
   });
 });
 

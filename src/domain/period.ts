@@ -112,6 +112,25 @@ export function periodDoneChanges(item: PeriodItem, date: string, done: boolean,
   return out;
 }
 
+/** 기간 전체를 끝냈나 (done, 또는 보이는 날을 모두 doneDates로 - 옛 자료는 done 없이 날만 채운 것이 있다) */
+export function periodAllDone(item: PeriodItem, isHoliday: HolidayCheck = noHoliday): boolean {
+  if (item.done) return true;
+  const marked = item.doneDates;
+  if (!marked?.length) return false;
+  const days = periodDays(item, isHoliday);
+  return days.length > 0 && days.every((d) => marked.includes(d));
+}
+
+/**
+ * 기간 전체 완료·풀기 (월간 막대·년간 기간 줄의 라벨 칩 - 10-30 사용자 보고). 날마다 끝낸 표시(doneDates)도 걷는다 -
+ * 풀면 모든 날이 풀린다(남겨 두면 다 끝냈다가 풀어도 전에 끝낸 날만 ✓로 되살아난다).
+ */
+export function periodAllDoneChanges(item: PeriodItem, done: boolean, now = Date.now()): Fields {
+  const out: Fields = done ? { done: true, doneAt: now } : { done: false, doneAt: undefined };
+  if (item.doneDates) out.doneDates = undefined;
+  return out;
+}
+
 /** '이 날만 지우기' = 그날을 skipDates에 (남는 날이 없으면 null - 항목을 지운다) */
 export function skipDayChanges(item: PeriodItem, date: string, isHoliday: HolidayCheck = noHoliday): Fields | null {
   const left = periodDays(item, isHoliday).filter((d) => d !== date);

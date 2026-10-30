@@ -1,11 +1,11 @@
 // tools/inspect-month-year.mjs - P5-2: 월간·년간·오늘로를 실제 크롬에서 본다.
 //   1) 월간: 한 주 한 줄, 하루짜리는 칸에, 기간은 막대(주마다 나뉘고 '1~2/5'·'3~5/5', 주말·공휴일 빼기), '달력'을 끈 일정은 없다,
-//      라벨 칩 = 완료(문서 하나), 일정 = 오른쪽 일정 칸, 막대 조각 = 그날 일정 칸, + = 새 일정 칸, 📝 n = 그날 기록 창,
+//      라벨 칩 = 완료(문서 하나), 일정 = 오른쪽 일정 칸, 막대 조각 = 그날 일정 칸, 막대 라벨 칩 = 기간 전체 완료·풀기(10-30), + = 새 일정 칸, 📝 n = 그날 기록 창,
 //      ✕ = 지운 표시 + 되돌리기, Ctrl = 여러 개 고르기, 주말 끄기 = 다섯 칸, 칸 빈 곳 = 하루 화면, 다음 달은 막대가 ◂로 이어진다.
 //      (10월에는 고정 공휴일 개천절 3일·한글날 9일이 있다 - 자세히는 공휴일 날도 줄로 그린다)
 //   2) 년간 학사력: 열두 달, 점(하루짜리)·가는 막대(기간), 달 아래 목록(기간은 처음 날 한 번 '~10.14'), 목록 = 일정 칸,
 //      날짜 = 하루 화면, 달 이름 = 월간, 학기 칩 = 여섯 달씩.
-//   3) 년간 자세히: 일정이 있는 날만, 기간은 처음 날 한 번 '(1~5/5)', 칩 = 완료, 📝 n, + 일정, Ctrl로 기간 = 그 달의 날 모두 고르기,
+//   3) 년간 자세히: 일정이 있는 날만, 기간은 처음 날 한 번 '(1~5/5)', 칩 = 완료(기간 줄 칩 = 기간 전체), 📝 n, + 일정, Ctrl로 기간 = 그 달의 날 모두 고르기,
 //      고른 보기는 이 기기에 남는다(새로고침 뒤에도).
 //   4) 오늘로: 다른 학년도에서 둘째 줄 날짜를 누르면 오늘의 학년도로 가서 오늘 칸이 화면 안에.
 //
@@ -35,7 +35,8 @@ const stamp = { deletedAt: null, updatedAt: serverTimestamp(), v: 1, createdAt: 
 const ITEMS = {
   insp_my1: { kind: 'event', date: '2026-10-06', text: '점검달력 상담', labelIds: ['insp_myl'], order: 'Zz1' },
   // 목 10.15 ~ 수 10.21, 주말 빼기 = 5일 (15·16 / 19·20·21) - 공휴일이 끼지 않는 주 (10.9 한글날은 빠진다 - P5-3)
-  insp_my2: { kind: 'event', date: '2026-10-15', endDate: '2026-10-21', workdays: true, text: '점검달력 수학여행 준비', labelIds: [], order: 'Zz2' },
+  //   라벨 + 첫날만 끝냄 - 막대의 라벨 칩 = 기간 전체 완료, 풀면 첫날 표시도 걷힌다 (10-30 사용자 보고)
+  insp_my2: { kind: 'event', date: '2026-10-15', endDate: '2026-10-21', workdays: true, text: '점검달력 수학여행 준비', labelIds: ['insp_myl'], doneDates: ['2026-10-15'], order: 'Zz2' },
   // 10.29 ~ 11.3 = 6일 (다음 달로 이어진다)
   insp_my3: { kind: 'event', date: '2026-10-29', endDate: '2026-11-03', text: '점검달력 중간고사', labelIds: [], order: 'Zz3' },
   // 토 10.24 ~ 일 10.25, 주말 빼기 - 모두 쉬는 날이라 빼지 않는다 (P14-7 - 옛 셈은 0일이라 어디에도 보이지 않았다)
@@ -94,6 +95,22 @@ try {
   await bars('insp_my2').nth(1).locator(sel('period-cell', '2026-10-20')).click();
   r.check(await waitFor(page.locator(sel('event-panel', 'edit'))), '막대 조각 = 그 일정 칸');
   await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await page.locator(sel('event-panel')).count()) === 0), '일정 칸 닫힘');
+  // 막대의 라벨 칩 = 기간 전체 완료 (10-30 사용자 보고 - 칩이 누르기를 아래 조각으로 흘려보내 일정 칸만 열렸다)
+  r.check((await bars('insp_my2').first().locator('[data-period-cell-done="1"]').count()) === 1, '첫날만 끝낸 기간 = 그 조각에만 ✓');
+  await bars('insp_my2').nth(1).locator(sel('period-bar-chip', 'insp_my2')).click();
+  const whole = await serverUntil(() => read('insp_my2'), (d) => d?.done === true);
+  r.check(whole?.done === true && !whole?.doneDates, `막대 칩 = 기간 전체 완료 (서버 done, 날마다 표시는 걷음 - ${JSON.stringify(whole?.doneDates ?? null)})`);
+  r.check(
+    await waitFor(async () => (await bars('insp_my2').evaluateAll((els) => els.map((e) => e.getAttribute('data-period-bar-done')))).join() === '1,1'),
+    '두 주 막대 모두 완료로',
+  );
+  r.check((await page.locator(`${sel('period-bar-chip', 'insp_my2')}[data-event-done-chip="1"]`).count()) === 2 && (await bars('insp_my2').first().locator(sel('event-check')).count()) === 1, '칩에 ✓');
+  r.check((await page.locator(sel('event-panel')).count()) === 0, '칩은 일정 칸을 열지 않는다');
+  await bars('insp_my2').first().locator(sel('period-bar-chip', 'insp_my2')).click();
+  const undone = await serverUntil(() => read('insp_my2'), (d) => !d?.done);
+  r.check(undone?.done !== true && !undone?.doneDates, '한 번 더 = 기간 전체 풀기 (첫날 표시도 걷힘)');
+  r.check(await waitFor(async () => (await page.locator('[data-period-bar="insp_my2"] [data-period-cell-done="1"]').count()) === 0), '풀면 조각 ✓도 없다');
   await cell('2026-10-14').hover();
   await cell('2026-10-14').locator(sel('month-add')).click();
   r.check(await waitFor(page.locator(sel('event-panel', 'new'))), '+ = 새 일정 칸');
@@ -199,13 +216,20 @@ try {
   r.check((await serverUntil(() => read('insp_my1'), (d) => d?.done === true))?.done === true, '칩 = 완료 (서버)');
   await card('2026-10').locator(sel('year-event-chip', 'insp_my1')).click();
   await serverUntil(() => read('insp_my1'), (d) => !d?.done);
+  // 기간 줄의 라벨 칩 = 기간 전체 (10-30 - P10-1은 보기만이었다)
+  await card('2026-10').locator(sel('year-period-chip', 'insp_my2')).click();
+  r.check((await serverUntil(() => read('insp_my2'), (d) => d?.done === true))?.done === true, '기간 줄 칩 = 기간 전체 완료 (서버)');
+  r.check(await waitFor(async () => (await card('2026-10').locator(sel('year-period', 'insp_my2')).getAttribute('data-year-period-done')) === '1'), '기간 줄 완료로');
+  await card('2026-10').locator(sel('year-period-chip', 'insp_my2')).click();
+  r.check((await serverUntil(() => read('insp_my2'), (d) => !d?.done))?.done !== true, '한 번 더 = 기간 전체 풀기');
   await card('2026-10').locator(sel('year-notes')).click();
   r.check(await waitFor(page.locator(sel('day-notes', '2026-10-15'))), '📝 1 = 그날 기록 창');
   await page.keyboard.press('Escape');
   await card('2026-10').locator(sel('year-add', '2026-10-21')).click();
   r.check(await waitFor(page.locator(sel('event-panel', 'new'))) && (await page.locator(sel('event-date')).inputValue()) === '2026-10-21', '+ 일정 = 그날 새 일정 칸');
   await page.keyboard.press('Escape');
-  await card('2026-10').locator(sel('year-period', 'insp_my2')).click({ modifiers: ['Control'] });
+  // 줄 가운데가 아니라 범위 글을 누른다 (칩 = 완료)
+  await card('2026-10').locator(`${sel('year-period', 'insp_my2')} ${sel('year-period-range')}`).click({ modifiers: ['Control'] });
   r.check(await waitFor(async () => (await page.locator(sel('multi-bar')).getAttribute('data-multi-bar')) === '5'), 'Ctrl로 기간 = 그 달의 날 모두 (5)');
   await page.keyboard.press('Escape');
   await page.reload();

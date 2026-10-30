@@ -20,7 +20,7 @@ import { useHolidayName } from '../../data/holidays';
 import HolidayName from '../../ui/HolidayName';
 import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
-import { doneOnDay, type ItemDoc } from '../events/eventOps';
+import { doneAll, doneOnDay, type ItemDoc } from '../events/eventOps';
 import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
 import type { CalendarEvents } from '../month/calendarEvents';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
@@ -54,6 +54,8 @@ interface Props {
   onEventClick: (ev: ItemDoc, date: string, e: ReactMouseEvent) => void;
   onPeriodClick: (p: ShownPeriod<ItemDoc>, e: ReactMouseEvent) => void;
   onToggleDone: (ev: ItemDoc, date: string) => void;
+  /** 기간 줄의 라벨 칩 = 기간 전체 완료·풀기 (10-30) */
+  onTogglePeriodDone: (ev: ItemDoc) => void;
   onDelete: (ev: ItemDoc, date: string) => void;
   onOpenLinks: (ev: ItemDoc) => void;
   /** 끌어 옮기기 - handlers·onDragEnd는 늘 같은 함수, overDate는 이 달 것일 때만 (다른 달은 다시 그리지 않는다) */
@@ -123,7 +125,8 @@ function YearMonthCard(p: Props) {
     const ev = sp.item;
     const label = firstLabel(ev);
     const c = label ? labelColor(label.color) : null;
-    const allDone = sp.cells.every((cell) => doneOnDay(ev, cell.date));
+    // 기간 전체를 끝냈나 (칩의 ✓ = 기간 전체 - 이 달 날만 다 끝낸 것은 하루·주간에서 보인다)
+    const allDone = doneAll(ev);
     const anyPicked = sp.cells.some((cell) => isPicked(ev.id, cell.date));
     const allPicked = sp.cells.every((cell) => isPicked(ev.id, cell.date));
     const range = periodRangeLabel(sp.cells);
@@ -146,8 +149,15 @@ function YearMonthCard(p: Props) {
         title={`${ev.text} (${indexLabel}) · ${range}${sp.startsPeriod ? '' : ' · 앞 달에서 이어짐'}${sp.endsPeriod ? '' : ' · 다음 달로 이어짐'} - 누르면 고치기`}
       >
         {p.multiOn && <input type="checkbox" checked={allPicked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
-        {/* 기간 일정은 날마다 끝내므로 여기서는 보기만 - 다 끝냈으면 칩 앞에 ✓ (P10-1) */}
-        <EventDoneChip label={label ?? null} done={allDone} className="mr-1.5 text-2xs px-1.5 py-0.5" />
+        {/* 라벨 칩 = 기간 전체 완료·풀기, 다 끝냈으면 칩에 ✓ (10-30 사용자 보고 - P10-1은 보기만이었다. 하루만은 하루·주간에서). 여러 개 고르는 동안은 보기만 */}
+        <EventDoneChip
+          label={label ?? null}
+          done={allDone}
+          onToggle={p.multiOn ? undefined : () => p.onTogglePeriodDone(ev)}
+          whole
+          className="mr-1.5 text-2xs px-1.5 py-0.5"
+          data={{ 'data-year-period-chip': ev.id }}
+        />
         <span className="inline align-middle">{ev.text}</span>
         <span data-year-period-range className="inline-block align-middle ml-1.5 text-2xs font-semibold text-slate-500 whitespace-nowrap">
           {sp.startsPeriod ? '' : '◂ '}📆 {range} ({indexLabel}){sp.endsPeriod ? '' : ' ▸'}
