@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DELETE_FIELD, failMessage, nestPaths, SERVER_TIME, toWrite, undoOf, undoOfAll, valueAt, writeOp, type WriteOp } from './ops';
+import { DELETE_FIELD, editedOnly, failMessage, nestPaths, SERVER_TIME, toWrite, undoOf, undoOfAll, valueAt, writeOp, type WriteOp } from './ops';
 import type { DocPath, Item } from '../types';
 
 const at: DocPath<'items'> = { sid: 'u_me', coll: 'items', id: 'abc' };
@@ -190,3 +190,22 @@ describe('그 밖', () => {
   });
 });
 
+describe('editedOnly - 두 기기 (P14-6 ■3): 이 기기가 바꾼 칸만', () => {
+  it('form·base로 만든 바뀐 칸이 같으면(손대지 않은 칸) 뺀다', () => {
+    // 지금 서버 판: 다른 기기가 time을 14:00으로 바꿈. 이 기기는 text만 고침(time은 연 때 09:30 그대로)
+    const fromForm = { text: '새 글', time: '09:30' };
+    const fromBase = { time: '09:30' };
+    expect(editedOnly(fromForm, fromBase)).toEqual({ text: '새 글' });
+  });
+
+  it('칸 지우기(undefined)는 base도 지울 때만 같다', () => {
+    expect(editedOnly({ due: undefined }, {})).toEqual({ due: undefined });
+    expect(editedOnly({ due: undefined }, { due: undefined })).toEqual({});
+    expect(editedOnly({ due: undefined }, { due: '2026-10-30' })).toEqual({ due: undefined });
+  });
+
+  it('배열·객체는 모양으로 견준다', () => {
+    expect(editedOnly({ labelIds: ['a'] }, { labelIds: ['a'] })).toEqual({});
+    expect(editedOnly({ labelIds: ['a', 'b'] }, { labelIds: ['a'] })).toEqual({ labelIds: ['a', 'b'] });
+  });
+});

@@ -52,8 +52,14 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
   const live: LessonEdit = { subject: cell?.subject ?? '', note: cell?.note ?? '' };
   // 고치기 시작하면 적던 것을 들고, 아니면 지금 내용을 따라간다
   const [typed, setTyped] = useState<LessonEdit | null>(null);
+  /** 고치기 시작한 때의 내용 - 저장은 이 기기가 바꾼 칸만(P14-6 ■3: 그새 다른 기기가 고친 과목·비고를 되돌리지 않게) */
+  const [typedFrom, setTypedFrom] = useState<LessonEdit | null>(null);
   const form = typed ?? live;
-  const set = (patch: Partial<LessonEdit>) => setTyped({ ...form, ...patch });
+  const startTyping = (next: LessonEdit) => {
+    if (typed === null) setTypedFrom(live);
+    setTyped(next);
+  };
+  const set = (patch: Partial<LessonEdit>) => startTyping({ ...form, ...patch });
   const subjectToSave = (text: string) => (isClassUnit ? normalizeSlotText(text) : text.trim());
   const edit: LessonEdit = { ...form, subject: subjectToSave(form.subject) };
   const changed = !!cell && isEdited(cell, edit);
@@ -74,9 +80,16 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
     if (!cell || saving) return false;
     setSaving(true);
     try {
-      await saveLesson(sid, date, dayDoc, cell, edit);
+      // 손대지 않은 칸은 지금 서버 판 그대로 (P14-6 ■3)
+      const from = typedFrom ?? live;
+      const mine: LessonEdit = {
+        subject: edit.subject !== subjectToSave(from.subject) ? edit.subject : cell.subject,
+        note: edit.note.trim() !== from.note.trim() ? edit.note : cell.note,
+      };
+      await saveLesson(sid, date, dayDoc, cell, mine);
       // 저장한 모양을 칸에도 (적은 '403과학'이 아니라 '4-3 과학') - 이제 지금 내용을 따라간다
       setTyped(null);
+      setTypedFrom(null);
       return true;
     } catch {
       return false;
@@ -89,7 +102,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
   const fieldsRef = useRef<HTMLDivElement>(null);
   const formEmpty = !form.subject.trim() && !form.note.trim();
   const clearForm = () => {
-    setTyped({ subject: '', note: '' });
+    startTyping({ subject: '', note: '' });
     fieldsRef.current?.querySelector('input')?.focus();
   };
 

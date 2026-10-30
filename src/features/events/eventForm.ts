@@ -140,6 +140,10 @@ function periodFields(form: EventForm): Partial<Editable<'items'>> {
 
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
+/** 이 기기도 바꾼 일정 글을 다른 기기가 그새 바꿨나 (theirs = 지금 서버 판) - 덮기 전에 묻는다 (P14-6 ■3) */
+export const eventTextClash = (base: EventForm, theirs: EventForm, form: EventForm) =>
+  form.text.trim() !== base.text.trim() && theirs.text.trim() !== base.text.trim();
+
 /** 고친 일정 → 바뀐 칸만. 바뀐 것이 없으면 빈 객체 */
 export function editChanges(item: ItemDoc, form: EventForm, tree: LabelTree): Changes<'items'> {
   const out: Changes<'items'> = {};

@@ -6,7 +6,7 @@ import { daysBetween, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { ordersBetween } from '../../domain/order';
 import { cutFromChanges, isPeriod, periodDoneChanges, skipDayChanges } from '../../domain/period';
 import { ruleLabel, type SeriesRuleShape } from '../../domain/recur';
-import { batch, create, newPath, patch, remove, writeOp, type Changes, type WriteOp } from '../../data/repo';
+import { batch, create, editedOnly, newPath, patch, remove, writeOp, type Changes, type WriteOp } from '../../data/repo';
 import type { LabelTree } from '../../data/select';
 import { recordUndo } from '../../data/undo';
 import { createData, editChanges, effectiveAttrs, type EventForm } from './eventForm';
@@ -63,8 +63,9 @@ export async function createEvent(sid: string, form: EventForm, tree: LabelTree,
  * 고친 일정 저장 = 바뀐 칸만. 날짜를 바꿨으면 옮기기 - 안내의 되돌리기는 **날짜만** 원래대로(함께 고친 내용은 그대로 - V4).
  * 바뀐 것이 없으면 false (쓰지 않는다).
  */
-export async function saveEvent(sid: string, item: ItemDoc, form: EventForm, tree: LabelTree): Promise<boolean> {
-  const changes = editChanges(item, form, tree);
+export async function saveEvent(sid: string, item: ItemDoc, form: EventForm, tree: LabelTree, base?: EventForm): Promise<boolean> {
+  // base = 칸을 연 때의 글 - 있으면 이 기기가 바꾼 칸만 적는다(P14-6 ■3 - 다른 기기가 그새 고친 칸을 되돌리지 않게)
+  const changes = base ? editedOnly(editChanges(item, form, tree), editChanges(item, base, tree)) : editChanges(item, form, tree);
   if (Object.keys(changes).length === 0) return false;
   const at = itemPath(sid, item.id);
   const to = changes.date;

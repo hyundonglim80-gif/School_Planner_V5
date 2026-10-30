@@ -233,6 +233,28 @@ describe('고치기', () => {
     expect(textInput().value).toBe('내가 적는 중');
   });
 
+  it('두 기기 (P14-6 ■3): 손대는 동안 다른 기기가 시각을 바꿨으면 저장은 내가 바꾼 글만 - 시각을 되돌리지 않는다', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'e1' }} />);
+    type('협의회 (장소 바뀜)');
+    act(() => applyBase(SID, 'items', new Map([['e1', { ...ev1, time: '14:00' }]])));
+    await save();
+    expect((lastOps()[0] as { changes: Record<string, unknown> }).changes).toEqual({ text: '협의회 (장소 바뀜)' });
+  });
+
+  it('두 기기: 같은 글을 다른 기기도 바꿨으면 묻고, 취소면 적지 않는다', async () => {
+    const ask = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'e1' }} />);
+    type('내 글');
+    act(() => applyBase(SID, 'items', new Map([['e1', { ...ev1, text: '휴대폰 글' }]])));
+    const before = written.batches.length;
+    await save();
+    expect(ask).toHaveBeenCalledTimes(1);
+    expect(written.batches.length).toBe(before);
+    ask.mockRestore();
+  });
+
   it('삭제 = 지운 표시 하나', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY, id: 'e1' }} />);

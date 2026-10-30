@@ -39,11 +39,15 @@ import { useCarried } from './forward';
 import DueBadge from './DueBadge';
 import EventAlarmWindow from './EventAlarmWindow';
 import EventDeleteChooser from './EventDeleteChooser';
-import { editChanges, effectiveAttrs, formOf, newForm, periodOf, sameForm, withAttr, withLabels, withStartDate, type AttrKey, type EventForm } from './eventForm';
+import { editChanges, effectiveAttrs, eventTextClash, formOf, newForm, periodOf, sameForm, withAttr, withLabels, withStartDate, type AttrKey, type EventForm } from './eventForm';
 import { isGrouped, orderAfter } from './eventOps';
 import type { EventPanelParams } from './open';
 import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
 import QuickInputChips, { type QuickChip } from './QuickInputChips';
+
+/** 이 칸을 고치는 동안 다른 기기가 같은 일정 글을 바꿨을 때 (P14-6 ■3) */
+const CLASH_ASK =
+  '이 칸을 고치는 동안 다른 기기에서 이 일정의 글을 바꿨습니다.\n\n확인 = 내가 적은 글로 덮어 저장\n취소 = 저장하지 않음 (적은 글은 칸에 그대로 - 칸을 닫고 다시 열면 다른 기기의 글이 보입니다)';
 
 /** 빠른 입력 칩 글자 */
 const quickLabels = {
@@ -329,7 +333,9 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
           showToast('일정을 찾지 못했습니다. 그 사이 지워졌을 수 있습니다.');
           return false;
         }
-        const wrote = await saveEvent(sid, item, form, tree);
+        // 이 기기가 바꾼 칸만 적는다 - 다른 기기가 그새 같은 글을 고쳤으면 덮기 전에 묻는다 (P14-6 ■3)
+        if (eventTextClash(base, formOf(item), form) && !window.confirm(CLASH_ASK)) return false;
+        const wrote = await saveEvent(sid, item, form, tree, base);
         draft.clear();
         setBase(form);
         if (!wrote) showToast('바뀐 것이 없습니다.');
@@ -352,7 +358,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     savingRef.current = true;
     setSaving(true);
     try {
-      const wrote = scope === 'only' ? await saveEvent(sid, item, form, tree) : await saveSeriesEvents(sid, item, form, tree, scope, seriesInfo?.list ?? [item], seriesInfo?.series);
+      const wrote = scope === 'only' ? await saveEvent(sid, item, form, tree, before) : await saveSeriesEvents(sid, item, form, tree, scope, seriesInfo?.list ?? [item], seriesInfo?.series);
       draft.clear();
       setBase(form);
       if (!wrote) showToast('바뀐 것이 없습니다.');

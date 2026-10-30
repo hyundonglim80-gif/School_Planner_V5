@@ -44,7 +44,7 @@ import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite } from '
 import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
 import EntryTableView from './EntryTableView';
 import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
-import { hasContent, isKnownLabel, newNoteForm, noteFormOf, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
+import { hasContent, isKnownLabel, newNoteForm, noteEditedKeys, noteFormOf, noteTextClash, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
 import { StudentMentionList, StudentTagRow } from './StudentTags';
 import CheckLinesOverlay, { CHECK_TEXT_CLASS } from './CheckLinesOverlay';
 import { useClasses, useHubClass, type ClassItem } from '../class/classes';
@@ -54,6 +54,9 @@ import type { NotePanelParams } from './open';
 
 const PLACEHOLDER = '자유롭게 생각을 적어 보세요...';
 const noun = '메모';
+/** 이 칸을 고치는 동안 다른 기기가 같은 글(글·제목)을 바꿨을 때 (P14-6 ■3) */
+const CLASH_ASK =
+  '이 칸을 고치는 동안 다른 기기에서 이 메모의 글을 바꿨습니다.\n\n확인 = 내가 적은 글로 덮어 저장\n취소 = 저장하지 않음 (적은 글은 칸에 그대로 - 칸을 닫고 다시 열면 다른 기기의 글이 보입니다)';
 
 export default function NotePanel({ params, close, raise, setParams }: WindowProps<NotePanelParams>) {
   const { sid } = params;
@@ -386,7 +389,10 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
           showToast('메모를 찾지 못했습니다. 그 사이 지워졌을 수 있습니다.');
           return false;
         }
-        const saved = await saveNote(sid, item, toSave, tree);
+        // 이 기기가 바꾼 칸만 적는다 - 다른 기기가 그새 같은 글을 고쳤으면 덮기 전에 묻는다 (P14-6 ■3)
+        const edited = noteEditedKeys(base, toSave);
+        if (noteTextClash(base, noteFormOf(item), edited) && !window.confirm(CLASH_ASK)) return false;
+        const saved = await saveNote(sid, item, toSave, tree, edited);
         draft.clear();
         const next = saved ? { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] } : toSave;
         setForm(next);

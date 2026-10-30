@@ -33,7 +33,7 @@ import {
   type WriteOp,
 } from './ops';
 
-export { writeOp, type Changes, type Undo, type WriteOp } from './ops';
+export { editedOnly, writeOp, type Changes, type Undo, type WriteOp } from './ops';
 
 /** 한 묶음에 넣을 수 있는 쓰기 수 (Firestore 한도). 넘으면 나눠 적는다 - 그때는 묶음마다만 한꺼번에 */
 export const BATCH_LIMIT = 500;

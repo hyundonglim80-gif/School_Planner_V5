@@ -137,7 +137,7 @@ export function createNoteData(form: NoteForm, text: string, labelIds: string[],
 const sameJson = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 /** 고친 항목 → 바뀐 칸만. 바뀐 것이 없으면 빈 객체. 날짜 링크는 domain/noteDates datesChanges(date·dates) */
-export function noteEditChanges(item: ItemDoc, form: NoteForm, text: string, labelIds: string[]): Changes<'items'> {
+export function noteEditChanges(item: ItemDoc, form: NoteForm, text: string, labelIds: string[], only?: ReadonlySet<string>): Changes<'items'> {
   const out: Changes<'items'> = {};
   if (text !== (item.text ?? '')) out.text = text;
   if (form.title.trim() !== (item.title ?? '')) out.title = form.title.trim() || undefined;
@@ -146,5 +146,31 @@ export function noteEditChanges(item: ItemDoc, form: NoteForm, text: string, lab
   if (!sameJson(form.tables, item.tables ?? [])) out.tables = form.tables.length > 0 ? form.tables : undefined;
   if (!sameJson(form.studentIds, item.studentIds ?? [])) out.studentIds = form.studentIds.length > 0 ? form.studentIds : undefined;
   Object.assign(out, datesChanges(item, form.dates));
-  return out;
+  // 이 기기가 바꾼 칸만 (P14-6 ■3) - 값이 undefined(칸 지우기)인 것도 남긴다
+  return only ? (Object.fromEntries(Object.entries(out).filter(([k]) => only.has(k))) as Changes<'items'>) : out;
+}
+
+/**
+ * 칸을 연 때(또는 마지막으로 저장한 때 - base)와 견줘 **이 기기가 바꾼** 항목 칸 (P14-6 ■3 - 두 기기).
+ * 저장은 이 칸만 적는다 - 손대는 동안 다른 기기가 고친 칸(제목·라벨·날짜 …)을 옛 값으로 되돌리지 않게.
+ * ('#라벨' 줄·'+ 새 라벨'로 붙는 라벨은 saveNote가 더한다)
+ */
+export function noteEditedKeys(base: NoteForm, form: NoteForm): Set<string> {
+  const keys = new Set<string>();
+  if (form.text !== base.text) keys.add('text');
+  if (form.title.trim() !== base.title.trim()) keys.add('title');
+  if (!sameJson(form.labelIds, base.labelIds)) keys.add('labelIds');
+  if (!sameJson(form.attachments, base.attachments)) keys.add('attachments');
+  if (!sameJson(form.tables, base.tables)) keys.add('tables');
+  if (!sameJson(form.studentIds, base.studentIds)) keys.add('studentIds');
+  if (!sameJson(form.dates, base.dates)) {
+    keys.add('date');
+    keys.add('dates');
+  }
+  return keys;
+}
+
+/** 이 기기도 바꾼 글 칸(글·제목)을 다른 기기가 그새 바꿨나 (theirs = 지금 서버 판) - 덮기 전에 묻는다 (P14-6 ■3) */
+export function noteTextClash(base: NoteForm, theirs: NoteForm, edited: ReadonlySet<string>): boolean {
+  return (edited.has('text') && theirs.text !== base.text) || (edited.has('title') && theirs.title.trim() !== base.title.trim());
 }

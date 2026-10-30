@@ -191,6 +191,19 @@ export function toWrite(op: WriteOp, ctx: WriteContext): Write {
   }
 }
 
+/**
+ * 두 기기 (P14-6 ■3): 이 기기가 바꾼 칸만. '지금 서버 판과 견줘 바뀐 칸'을 만드는 함수를 칸의 글(form)과 칸을 연 때의 글(base)로 두 번 불러 견준다 -
+ * 손대지 않은 칸은 두 결과가 같다(다른 기기가 그새 바꾼 칸이면 둘 다 옛 값을 적으려 한다 → 뺀다). 다른 칸만 남긴다.
+ * undefined(칸 지우기)는 undefined끼리만 같다.
+ */
+export function editedOnly<T extends object>(fromForm: T, fromBase: T): T {
+  const base = fromBase as Record<string, unknown>;
+  const same = (a: unknown, b: unknown) => a === b || (a !== undefined && b !== undefined && JSON.stringify(a) === JSON.stringify(b));
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(fromForm)) if (!Object.hasOwn(base, k) || !same(base[k], v)) out[k] = v;
+  return out as T;
+}
+
 /** 실패 안내 (부르는 쪽이 따로 주지 않으면). 여럿이면 첫 쓰기로 */
 export function failMessage(ops: WriteOp[]): string {
   switch (ops[0]?.type) {

@@ -271,6 +271,44 @@ describe('고치기', () => {
     expect(anyWindowUnsaved()).toBe(true);
   });
 
+  it('두 기기 (P14-6 ■3): 손대는 동안 다른 기기가 제목·라벨을 바꿨으면 저장은 내가 바꾼 글만 - 그것을 되돌리지 않는다', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+    type('내가 고친 글');
+    act(() => applyBase(SID, 'items', new Map([['n1', { ...n1, title: '휴대폰 제목', labelIds: ['L1'] }]])));
+    await save();
+    const op = lastOps()[0] as { type: string; changes: Record<string, unknown> };
+    expect(op.type).toBe('patch');
+    expect(op.changes).toEqual({ text: '내가 고친 글' });
+  });
+
+  it('두 기기: 같은 글을 다른 기기도 바꿨으면 묻는다 - 취소 = 저장하지 않고 칸 그대로, 확인 = 내 글로 덮기', async () => {
+    const ask = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true);
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+    type('내 글');
+    act(() => applyBase(SID, 'items', new Map([['n1', { ...n1, text: '휴대폰 글' }]])));
+    await save();
+    expect(ask).toHaveBeenCalledTimes(1);
+    expect(written.batches).toHaveLength(0);
+    expect(textInput().value).toBe('내 글');
+    await save();
+    expect(ask).toHaveBeenCalledTimes(2);
+    expect((lastOps()[0] as { changes: Record<string, unknown> }).changes).toEqual({ text: '내 글' });
+    ask.mockRestore();
+  });
+
+  it('두 기기: 다른 기기가 다른 칸만 바꿨으면 묻지 않는다', async () => {
+    const ask = vi.spyOn(window, 'confirm');
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+    type('내 글');
+    act(() => applyBase(SID, 'items', new Map([['n1', { ...n1, title: '휴대폰 제목' }]])));
+    await save();
+    expect(ask).not.toHaveBeenCalled();
+    ask.mockRestore();
+  });
+
   it('내용을 다 지우고 저장 = 그 메모 지우기 (P10-5) - 휴지통 + 되돌리기 안내, 새 칸이면 만들지 않고 닫는다', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);

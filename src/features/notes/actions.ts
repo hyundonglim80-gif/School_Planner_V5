@@ -42,9 +42,11 @@ export async function createNote(sid: string, form: NoteForm, tree: LabelTree, o
 }
 
 /** 고친 메모 저장 = 바뀐 칸만(새 라벨과 한 묶음 - 날짜 링크도 칸 하나처럼). 바뀐 것이 없으면 null (쓰지 않는다) */
-export async function saveNote(sid: string, item: ItemDoc, form: NoteForm, tree: LabelTree): Promise<NoteSaved | null> {
+export async function saveNote(sid: string, item: ItemDoc, form: NoteForm, tree: LabelTree, edited?: ReadonlySet<string>): Promise<NoteSaved | null> {
   const { text, labelIds, ops } = labelsFor(sid, form, tree);
-  const changes = noteEditChanges(item, form, text, labelIds);
+  // edited = 이 기기가 바꾼 칸만(P14-6 ■3 - noteEditedKeys). '#라벨' 줄·'+ 새 라벨'로 라벨이 붙으면 라벨도 바꾼 것
+  const only = edited && labelIds.length > form.labelIds.length ? new Set([...edited, 'labelIds']) : edited;
+  const changes = noteEditChanges(item, form, text, labelIds, only);
   if (Object.keys(changes).length === 0 && ops.length === 0) return null;
   const at = itemPath(sid, item.id);
   const writes = Object.keys(changes).length > 0 ? [...ops, writeOp.patch(at, changes, item)] : ops;
