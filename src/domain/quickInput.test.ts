@@ -34,6 +34,14 @@ describe('날짜', () => {
     expect(p('9/20 정리').date?.date).toBe('2026-09-20');
     expect(p('2/30').date).toBeUndefined();
   });
+  it('2/29 - 올해에 없으면(평년) 내년 윤일, 둘 다 없으면 날짜가 아니다 (P14-7)', () => {
+    expect(parseQuickInput('2/29 윤일 행사', '2027-11-10').date?.date).toBe('2028-02-29');
+    expect(parseQuickInput('2월 29일', '2027-03-05').date?.date).toBe('2028-02-29');
+    expect(parseQuickInput('2/29', '2028-01-10').date?.date).toBe('2028-02-29');
+    expect(p('2/29').date).toBeUndefined();
+    expect(parseQuickInput('12/31 종업', '2026-12-30').date?.date).toBe('2026-12-31');
+    expect(parseQuickInput('1/2', '2026-12-31').date?.date).toBe('2027-01-02');
+  });
 
   it('(1/3) 기간 표시·분수는 날짜가 아니다', () => {
     expect(p('기말고사 (1/3)').date).toBeUndefined();

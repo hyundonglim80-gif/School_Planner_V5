@@ -42,6 +42,9 @@ describe('기간', () => {
     // 주말 빼기가 아니면 주말에 놓이는 날을 센다: 10/9(금)~10/11(일) → 이틀 뒤 10/11(일)~10/13(화)
     const q = ev('q', { date: '2026-10-09', endDate: '2026-10-11' });
     expect(periodMovePreview(q, 2)).toMatchObject({ count: 3, offDays: 1, daysAfter: 3 });
+    // 주말 빼기 월~화를 토~일로: 모두 쉬는 날이라 빼지 않는다 - 두 날 모두 주말에 놓인다 (P14-7)
+    const r = ev('r', { date: '2026-10-26', endDate: '2026-10-27', workdays: true });
+    expect(periodMovePreview(r, 5)).toMatchObject({ count: 2, offDays: 2, daysAfter: 2 });
   });
 });
 

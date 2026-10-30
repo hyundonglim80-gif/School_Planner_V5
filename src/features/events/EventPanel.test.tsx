@@ -395,6 +395,29 @@ describe('반복 (끝 날 줄의 요일 - P10-1)', () => {
     expect(q('[data-event-recur-row]').dataset.eventRecurRow).toBe('none');
   });
 
+  it('매월 29~31일·다섯째 주는 없는 달을 건너뛴다고 알린다 (P14-7)', () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: '2026-10-14' }} />);
+    fireEvent.click(q('[data-event-period-open]'));
+    fireEvent.click(q('[data-recur-more]'));
+    fireEvent.click(q('[data-recur-kind="monthDay"]'));
+    expect(document.querySelector('[data-recur-skip-note]')).toBeNull();
+    fireEvent.click(q('[data-recur-mday="31"]'));
+    fireEvent.click(q('[data-recur-mday="30"]'));
+    expect(q('[data-recur-skip-note]').textContent).toBe('30·31일이 없는 달은 건너뜁니다.');
+    fireEvent.click(q('[data-recur-kind="monthWeek"]'));
+    expect(document.querySelector('[data-recur-skip-note]')).toBeNull();
+    fireEvent.change(q('[data-recur-week]'), { target: { value: '5' } });
+    expect(q('[data-recur-skip-note]').textContent).toBe('다섯째 주가 없는 달은 건너뜁니다.');
+  });
+
+  it('주말 빼기 토~일 기간은 0일이 아니라 이틀 (모두 쉬는 날이라 빼지 않는다 - P14-7)', () => {
+    seed(new Map([['p', { ...ev1, date: '2026-10-31', endDate: '2026-11-01', workdays: true }]]));
+    render(<Host initial={{ sid: SID, date: '2026-10-31', id: 'p' }} />);
+    expect(q('[data-event-period-count]').dataset.eventPeriodCount).toBe('2');
+    expect(q('[data-event-period-count]').textContent).toContain('모두 쉬는 날이라 빼지 않습니다');
+  });
+
   it('고치는 일정의 끝 날 줄에는 요일 칩이 없다 (반복은 새 일정에서)', () => {
     seed(new Map([['p', { ...ev1, date: '2026-10-14', endDate: '2026-10-20', workdays: true }]]));
     render(<Host initial={{ sid: SID, date: '2026-10-14', id: 'p' }} />);

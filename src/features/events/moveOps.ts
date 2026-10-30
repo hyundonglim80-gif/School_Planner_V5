@@ -5,7 +5,7 @@
 //   기간 통째로 = 같은 날 수만큼(끝 날·뺀 날·끝낸 날도 함께). '이 날부터'는 없다(기간이 두 문서로 갈라진다 - PLAN 5장 P5-3).
 // - 반복(문서 여럿 - DESIGN 4-4): 이 날만 = 그 항목 · 이 날부터·전부 = 고른 항목을 같은 날 수만큼(V4 GroupMoveModal).
 import { addDays, daysBetween } from '../../domain/dateUtils';
-import { isPeriod, offDay, periodDays, shiftDates, type HolidayCheck } from '../../domain/period';
+import { isPeriod, offDay, periodDays, shiftDates, skipsOffDays, type HolidayCheck } from '../../domain/period';
 import { writeOp, type Changes, type WriteOp } from '../../data/repo/ops';
 import type { LabelTree } from '../../data/select';
 import { effectiveAttrs } from './eventForm';
@@ -52,12 +52,14 @@ export function periodMovePreview(item: ItemDoc, days: number, isHoliday?: Holid
   const start = item.date!;
   const end = item.endDate ?? start;
   const to: [string, string] = [addDays(start, days), addDays(end, days)];
-  const after = periodDays({ ...item, date: to[0], endDate: to[1], skipDates: shiftDates(item.skipDates, days) }, isHoliday);
+  const moved = { ...item, date: to[0], endDate: to[1], skipDates: shiftDates(item.skipDates, days) };
+  const after = periodDays(moved, isHoliday);
   return {
     count: list.length,
     from: [start, end],
     to,
-    offDays: item.workdays ? 0 : after.filter((d) => offDay(d, isHoliday)).length,
+    // 주말 빼기라도 옮긴 곳이 모두 쉬는 날이면 빼지 않으니 센다 (domain/period skipsOffDays)
+    offDays: skipsOffDays(moved, isHoliday) ? 0 : after.filter((d) => offDay(d, isHoliday)).length,
     daysAfter: after.length,
   };
 }

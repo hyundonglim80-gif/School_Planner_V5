@@ -38,6 +38,8 @@ const ITEMS = {
   insp_my2: { kind: 'event', date: '2026-10-15', endDate: '2026-10-21', workdays: true, text: '점검달력 수학여행 준비', labelIds: [], order: 'Zz2' },
   // 10.29 ~ 11.3 = 6일 (다음 달로 이어진다)
   insp_my3: { kind: 'event', date: '2026-10-29', endDate: '2026-11-03', text: '점검달력 중간고사', labelIds: [], order: 'Zz3' },
+  // 토 10.24 ~ 일 10.25, 주말 빼기 - 모두 쉬는 날이라 빼지 않는다 (P14-7 - 옛 셈은 0일이라 어디에도 보이지 않았다)
+  insp_my6: { kind: 'event', date: '2026-10-24', endDate: '2026-10-25', workdays: true, text: '점검달력 주말 캠프', labelIds: [], order: 'Zz2' },
   insp_my4: { kind: 'event', date: '2026-10-07', text: '점검달력 숨김', labelIds: ['insp_myh'], order: 'Zz1' },
   insp_my5: { kind: 'note', date: '2026-10-15', text: '점검달력 기록', labelIds: [], order: 'Zz1' },
   insp_my9: { kind: 'event', date: '2026-10-21', text: '점검달력 지울 일정', labelIds: [], order: 'Zz1' },
@@ -73,6 +75,9 @@ try {
   const barTexts = await bars('insp_my2').allTextContents();
   r.check(barTexts[0].includes('1~2/5') && barTexts[1].includes('3~5/5'), `막대마다 며칠째 (${barTexts.map((t) => t.match(/\d~\d\/\d/)?.[0]).join(', ')})`);
   r.check((await bars('insp_my2').first().locator(sel('period-cell')).count()) === 2, '주말을 빼고 (첫 막대 = 목·금 두 조각)');
+  const campBars = await bars('insp_my6').allTextContents();
+  // 월간 줄은 일요일부터라 토·일이 두 줄에 하나씩
+  r.check(campBars.length === 2 && campBars[0].includes('1/2') && campBars[1].includes('2/2'), `주말 빼기 토~일 기간은 그대로 이틀 (${campBars.join(' | ')})`);
   r.check((await page.locator(sel('month-event', 'insp_my4')).count()) === 0, "'달력'을 끈 라벨의 일정은 올리지 않는다");
   r.check((await cell('2026-10-15').locator(sel('month-notes')).getAttribute('data-month-notes')) === '1', '📝 1 (그날 기록 수)');
 
@@ -188,6 +193,7 @@ try {
   await page.keyboard.press('Escape');
   r.check((await card('2026-10').locator(sel('year-period', 'insp_my2')).count()) === 1, '기간은 처음 날 한 번');
   r.check((await card('2026-10').locator(`${sel('year-period', 'insp_my2')} ${sel('year-period-range')}`).textContent()).includes('(1~5/5)'), '기간 범위 (1~5/5)');
+  r.check((await card('2026-10').locator(`${sel('year-period', 'insp_my6')} ${sel('year-period-range')}`).textContent()).includes('(1~2/2)'), '주말 빼기 토~일 기간도 (1~2/2)');
   r.check((await card('2026-11').locator(`${sel('year-period', 'insp_my3')} ${sel('year-period-range')}`).textContent()).includes('◂'), '다음 달 카드에 ◂ 이어짐');
   await card('2026-10').locator(sel('year-event-chip', 'insp_my1')).click();
   r.check((await serverUntil(() => read('insp_my1'), (d) => d?.done === true))?.done === true, '칩 = 완료 (서버)');

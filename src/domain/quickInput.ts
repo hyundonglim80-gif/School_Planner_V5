@@ -52,12 +52,11 @@ function makeDate(y: number, m: number, d: number): Date | null {
   return dt.getMonth() === m - 1 && dt.getDate() === d ? dt : null;
 }
 
-/** 월/일만 적었으면 올해, 두 달 넘게 지난 날이면 내년 (12월에 '1/5'라고 적는 경우) */
+/** 월/일만 적었으면 올해, 두 달 넘게 지난 날이면 내년 (12월에 '1/5'라고 적는 경우). 올해에 없는 날(평년의 2/29)도 내년 (P14-7) */
 function inferYear(base: Date, m: number, d: number): Date | null {
   const dt = makeDate(base.getFullYear(), m, d);
-  if (!dt) return null;
-  if (dt.getTime() < addDaysTo(base, -60).getTime()) return makeDate(base.getFullYear() + 1, m, d);
-  return dt;
+  if (dt && dt.getTime() >= addDaysTo(base, -60).getTime()) return dt;
+  return makeDate(base.getFullYear() + 1, m, d);
 }
 
 /** 월요일 시작 주에서 그 요일 (weekOffset 0 = 이번 주) */

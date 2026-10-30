@@ -29,6 +29,9 @@ export default function RecurRow({ start, end, recur, onChange }: { start: strin
   const dates = on ? recurFormDates(start, { ...recur, until: end }) : [];
   const tooMany = dates.length > MAX_SERIES_ITEMS;
   const toggleMonthDay = (d: number) => set({ monthDays: recur.monthDays.includes(d) ? recur.monthDays.filter((x) => x !== d) : [...recur.monthDays, d] });
+  // 없는 달은 말없이 건너뛴다(V4 그대로) - 29~31일·다섯째 주는 미리 알린다 (P14-7)
+  const lateDays = recur.kind === 'monthDay' ? [...recur.monthDays].filter((d) => d >= 29).sort((a, b) => a - b) : [];
+  const skipNote = lateDays.length ? `${lateDays.join('·')}일이 없는 달은 건너뜁니다.` : recur.kind === 'monthWeek' && recur.monthWeek === 5 ? '다섯째 주가 없는 달은 건너뜁니다.' : '';
 
   return (
     <div data-event-recur-row={recur.kind} className="bg-purple-50/50 border border-purple-100 p-2.5 rounded-xl space-y-2">
@@ -104,6 +107,11 @@ export default function RecurRow({ start, end, recur, onChange }: { start: strin
               : dates.length === 0
                 ? '반복 조건에 맞는 날이 없습니다.'
                 : `🔁 ${dates.length}개 · ${shortDateLabel(dates[0])} ~ ${shortDateLabel(dates[dates.length - 1])} (저장하면 날마다 하나씩 - 묶여 있어 지울 때 '이 날부터'를 고를 수 있습니다)`}
+          {skipNote && (
+            <span data-recur-skip-note className="block text-amber-700 font-semibold">
+              {skipNote}
+            </span>
+          )}
         </p>
       )}
     </div>

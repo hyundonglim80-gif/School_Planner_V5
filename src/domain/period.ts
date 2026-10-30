@@ -40,11 +40,24 @@ export const isWeekend = (date: string) => {
 /** 기간 안의 그날이 쉬는 날이라 빠지나 (workdays일 때 주말·공휴일) */
 export const offDay = (date: string, isHoliday: HolidayCheck = noHoliday) => isWeekend(date) || isHoliday(date);
 
+/**
+ * 주말·공휴일 빼기가 이 기간에 걸리나 - 범위가 모두 쉬는 날(토~일 기간·연휴)이면 빼지 않는다 (P14-7).
+ * 새 일정은 빼기가 기본 켬이라 '주말 캠프 토~일'이 0일이 되어 어느 화면에도 보이지 않았다(V4는 저장을 막았다).
+ * 저장한 뒤 공휴일 표가 와서 모두 쉬는 날이 된 기간·옮긴 기간도 같다. 뺀 날(skipDates)은 보지 않는다 - 지운 날 때문에 주말이 살아나지 않게.
+ */
+export function skipsOffDays(item: PeriodItem, isHoliday: HolidayCheck = noHoliday): boolean {
+  if (!item.workdays || !item.date || !item.endDate) return false;
+  const n = Math.min(daysBetween(item.date, item.endDate), MAX_PERIOD_DAYS * 2);
+  for (let i = 0; i <= n; i++) if (!offDay(addDays(item.date, i), isHoliday)) return true;
+  return false;
+}
+
 /** 그날 이 기간 일정이 보이나 (범위 안 · 뺀 날 아님 · workdays면 쉬는 날 아님) */
 export function onPeriodDay(item: PeriodItem, date: string, isHoliday: HolidayCheck = noHoliday): boolean {
   if (!item.date || !item.endDate || date < item.date || date > item.endDate) return false;
   if (item.skipDates?.includes(date)) return false;
-  return !(item.workdays && offDay(date, isHoliday));
+  // 쉬는 날일 때만 범위를 훑는다 (평일은 곧바로 - 화면이 날마다 부른다)
+  return !(item.workdays && offDay(date, isHoliday) && skipsOffDays(item, isHoliday));
 }
 
 /** 이 기간 일정이 보이는 날 (차례대로) */
@@ -60,12 +73,13 @@ export function periodDays(item: PeriodItem, isHoliday: HolidayCheck = noHoliday
   return out;
 }
 
-/** 날짜 범위의 날 수 (끝 날을 고를 때 'N일 (주말 M일 빼고)') */
-export function spanCount(start: string, end: string, workdays: boolean, isHoliday: HolidayCheck = noHoliday): { days: number; off: number } {
+/** 날짜 범위의 날 수 (끝 날을 고를 때 'N일 (주말 M일 빼고)'). 모두 쉬는 날이면 빼지 않는다(allOff - skipsOffDays) */
+export function spanCount(start: string, end: string, workdays: boolean, isHoliday: HolidayCheck = noHoliday): { days: number; off: number; allOff?: boolean } {
   if (!start || !end || end < start) return { days: 0, off: 0 };
   const total = daysBetween(start, end) + 1;
   let off = 0;
   if (workdays) for (let i = 0; i < total; i++) if (offDay(addDays(start, i), isHoliday)) off++;
+  if (workdays && off === total && total > 1) return { days: total, off: 0, allOff: true };
   return { days: total - off, off };
 }
 

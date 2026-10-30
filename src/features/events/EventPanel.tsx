@@ -555,7 +555,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                     <p data-event-period-count={span.days} className={`text-2xs ${periodTooLong ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
                       {periodTooLong
                         ? `기간은 ${MAX_PERIOD_DAYS}일까지 정할 수 있습니다.`
-                        : `${span.days}일${span.off ? ` (주말·공휴일 ${span.off}일 빼고)` : ''}${period.skipDates.length ? ` · 뺀 날 ${period.skipDates.length}일` : ''} - 날마다 '(2/${span.days})'처럼 보입니다.`}
+                        : `${span.days}일${span.off ? ` (주말·공휴일 ${span.off}일 빼고)` : span.allOff ? ' (모두 쉬는 날이라 빼지 않습니다)' : ''}${period.skipDates.length ? ` · 뺀 날 ${period.skipDates.length}일` : ''} - 날마다 '(2/${span.days})'처럼 보입니다.`}
                       {!periodTooLong && skippedHolidays.length > 0 && (
                         <span data-event-period-holidays className="block text-red-500 font-semibold">
                           🎌 빠지는 공휴일: {skippedHolidays.join(', ')}

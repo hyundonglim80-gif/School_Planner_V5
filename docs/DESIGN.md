@@ -204,6 +204,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 ### 5-3. 기간 일정
 항목 하나(`date`~`endDate`). 보이는 날 = 범위 안 · `skipDates` 아님 · `workdays`면 주말·공휴일 아님(`domain/period` - 공휴일은 P5-3이 넣는다, 그 전에는 주말만).
+범위가 모두 쉬는 날이면(토~일 기간·연휴) `workdays`를 보지 않는다(`skipsOffDays` - P14-7, 0일이 되어 사라지지 않게).
 날마다의 '(2/5)'는 보이는 날로 센다. 월간·년간 막대는 이 범위를 그대로 그린다.
 '이 날만 지우기' = 그날을 `skipDates`에(P3-3 - 처음 설계의 '두 항목으로 나누기' 대신: 한 문서로 남아 '(k/n)'이 이어지고, V4에서 가져온 기간의 빈 날도 그대로 옮긴다),
 '이 날부터' = 끝 날을 그 앞의 마지막 날로 당기기(하루만 남으면 하루짜리), '전부' = 항목 지우기. 날마다 완료는 `doneDates`(모든 날을 끝내면 `done`).
