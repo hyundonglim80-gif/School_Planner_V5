@@ -48,6 +48,7 @@ import { evalCountsByPlace } from '../../domain/evaluation';
 import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
 import { shortcutTarget } from '../../ui/shortcutTarget';
+import { isShortcutId } from '../../domain/shortcuts';
 
 const PERIOD_COLORS = [
   'bg-blue-50 text-blue-700 border-blue-200',
@@ -185,6 +186,7 @@ export default function DayLessons({ date }: { date: string }) {
                 key={d.id}
                 type="button"
                 data-lessons-tool={d.id}
+                {...(isShortcutId(d.id) ? shortcutTarget(d.id) : {})}
                 onClick={() => openWindow(d.id, { date, ...(sid ? { sid } : {}) })}
                 className="whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
               >
@@ -195,6 +197,7 @@ export default function DayLessons({ date }: { date: string }) {
             <button
               type="button"
               data-lessons-tool="drawStudent"
+              {...shortcutTarget('drawStudent')}
               onClick={() => openSeating({ draw: true, classId: homeroomClass?.id })}
               title="발표자 뽑기 - 자리표가 뽑기 칸을 펴서 열립니다"
               className="whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"

@@ -19,6 +19,9 @@ function setup() {
       <button type="button" data-plain>
         아무 단추
       </button>
+      <button type="button" data-opener aria-expanded={false}>
+        ⋮
+      </button>
       <p data-text>그냥 글</p>
       <ShortcutRecordBar />
     </>,
@@ -50,9 +53,11 @@ describe('단축키 설정 띠 (P18-1)', () => {
     expect(q('[data-shortcut-record-done]')).toBeDisabled();
   });
 
-  it('표시된 단추(안쪽 글자를 눌러도) = 그 기능을 고른다 · 표시 없는 단추 = 만들 수 없다 · 그냥 글은 아무 일 없음', () => {
+  it('표시된 단추(안쪽 글자를 눌러도) = 그 기능을 고른다 · 표시 없는 단추 = 만들 수 없다 · 펴는 단추·그냥 글은 아무 일 없음', () => {
     setup();
     act(() => startShortcutRecord());
+    fireEvent.click(q('[data-opener]'));
+    expect(q('[data-shortcut-record-miss]')).toBeNull();
     fireEvent.click(q('[data-plain]'));
     expect(q('[data-shortcut-record-miss]')).not.toBeNull();
     fireEvent.click(q('[data-inner]'));

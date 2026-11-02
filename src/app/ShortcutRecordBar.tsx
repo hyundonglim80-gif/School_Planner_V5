@@ -90,7 +90,7 @@ export default function ShortcutRecordBar() {
     <div
       data-shortcut-record={stage}
       role="status"
-      className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[99500] w-[min(56rem,calc(100vw-2rem))] flex flex-wrap items-center gap-2 bg-white text-slate-800 px-4 py-2.5 rounded-2xl shadow-2xl border-2 border-violet-300"
+      className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[99500] w-max max-w-[calc(100vw-2rem)] flex flex-wrap items-center gap-2 bg-white text-slate-800 px-4 py-2.5 rounded-2xl shadow-2xl border-2 border-violet-300"
     >
       <span className="text-sm font-black text-violet-700 shrink-0">⌨️ 단축키 설정</span>
       {body}

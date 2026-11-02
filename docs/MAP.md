@@ -34,7 +34,7 @@
   `[data-label-tab|row|name|color|prop|parent|up|down|delete|save|add|new-name|new-parent|usage|prune|prune-item|prune-confirm|recover|defaults]`) · `ColorPicker.tsx`(`[data-color-option]`) ·
   `LabelChip.tsx`(`LabelChip`·`LabelChips` `[data-label-chip]`) · `LabelPicker.tsx`(쓰는 칸 - `[data-label-picker|pick|pick-new|pick-new-input|pick-pending|picker-settings]`).
 - **환경설정** `src/features/settings/`: `SettingsWindow.tsx`(창 목록 `settings`, 탭 표 `ready` - 보기·알림·학교·단축키·앱(가져오기는 P8-3에서 백업 창으로), `{ tab }`로 열기 - 열린 창도 그 탭으로) · `ViewTab`(누르는 즉시) · `SchoolTab`(이월 기간 `[data-forward-days]` - common.forwardDays) ·
-  `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기) · `AppTab`(📱 앱으로 설치·이 기기 사본 `[data-mirror-state|count|reset]`·빌드 번호) · `parts`(Section·ToggleRow·Choices) ·
+  `ShortcutsTab`(V4 ShortcutModal - 저장·겹침 막기·ESC 때 묻기 · 맨 위 '⌨️ 단축키 설정' `[data-shortcut-record-start]` PC만 · `{ focus }` = 그 줄 짚기 `[data-shortcut-row-focus]`) · `AppTab`(📱 앱으로 설치·이 기기 사본 `[data-mirror-state|count|reset]`·빌드 번호) · `parts`(Section·ToggleRow·Choices) ·
   `DevTab`(개발자 계정에만 - `domain/developers` `isDeveloper` = 규칙 목록, 볼 때만 그린다 `[data-dev-tab]`) · `DevErrorsSection`(오류 기록 - `[data-error-group|toggle|count|detail|stack]`·`[data-errors-total|reload|clear|empty|failed]`) ·
   `DevHolidaysSection`(공휴일 받기 P14-3 - `[data-dev-holidays-key|key-save|failed]`·`[data-dev-holiday-year|fetch]`, 자료 `data/govHolidays`).
 - **오류 알림**(P14-2): `domain/errorReport.ts`(scrubText·stackHead·buildReport·isNoise·shouldSend·groupErrors·looksLikeStaleChunk) · `data/errorReport.ts`(`reportError`·`startErrorReports`(main.tsx)·`reportReactError`(createRoot onCaughtError·onUncaughtError)·
@@ -47,6 +47,7 @@
   `history.ts`(브라우저 기록 한 곳: 주소 맞물리기 `startRouting` + 창 층 `useModalLayer`·`useBackLayer`·`closeAllLayers`, 뒤로가기 표지판) ·
   `windows.ts`(창 목록 `registerWindow`·`openWindow`·`setWindowParams`(창의 `setParams`)·`closeAllWindows`·`registerUnsavedCheck`) · `windowList.ts`(창 등록 한 곳 - 창을 만드는 세션이 한 줄씩) · `WindowHost.tsx` ·
   `moreMenu.ts`(⋮ 4구역 8항목 표) · `keys.ts`(키 처리 한 곳 `runShortcut`·`setShortcutAction`·`runFromButton`·`useShortcutTitle`, 바꾼 키 `sp5-shortcuts`) ·
+  `shortcutRecord.ts`·`ShortcutRecordBar.tsx`(P18-1 눌러서 정하기 - 고르기 = document capture로 `[data-shortcut-target]`(단추에 `ui/shortcutTarget`), 키 = window capture, ESC 취소, 저장 = `domain/shortcuts` `assignBinding` → 환경설정 `{ tab: 'shortcuts', focus }` · 띠 `[data-shortcut-record=pick|key]`·body `data-shortcut-recording` 점선 = index.css) ·
   `layoutPrefs.ts`(창 위치·글자 크기·줄 폭 `sp5-layout`) · `prefs.ts`(어느 설정을 어느 문서에 - `DEVICE_PREFS`·`COMMON_SETTINGS`·`useCommonSettings`·`usePrefsSync`·`stopPrefsSync`,
   값은 nav·layoutPrefs·keys store 그대로, 사본 주인 `sp5-settings-owner`) · `install.ts`(sw 등록·설치 이벤트 `installApp`·`useInstall`) · `theme.ts`(화면 밝기 `sp5_theme` - `index.html` 스크립트와 같은 규칙) · `todayScroll.ts` · `useGlobalGestures.ts` · `lazyWithReload.ts` ·
   `toast.ts`(`showToast`·`showErrorToast`·`failWithToast`·`ShownError`·`showToastAfterReload` - 안내 `[data-toast]`). 다크 색표 `src/dark.css` = `node tools/gen-dark-css.mjs`.
@@ -213,7 +214,7 @@
   시험 `topics.test`(링크·자리표·창의 `help` 주제가 있나)·`HelpWindow.test`(모든 항목을 그려 기호가 남지 않나). 점검 `tools/inspect-manual.mjs`(306 - 68주제마다 설명서가 말하는 자리).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`·`noUserActivation`(P9-3)·`newPage(…, { isMobile… })`) · `tools/inspect-mobile.mjs`(P9-3 휴대폰 390·다크 대비) · `tools/inspect-scroll.mjs`(P10-5 - 긴 메모 끝 커서 줄·쓰는 칸 표 세로 스크롤 없음·옆 칸 휠·'스크롤로 페이지 이동' 날짜 그대로, 끝에 설정을 끈다) · `tools/inspect-perf.mjs`(P9-3 성능 - 빌드 + preview, teacher4 `?as=4` 1만 항목, 앱이 센 서버 읽기 `window.__sp5Reads`(`mirror/server` - 에뮬레이터 빌드만), 결과 = DESIGN 11장) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
-  `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기·개발자 탭 `?as=5`) · `tools/inspect-dev-errors.mjs`(P14-2: 화면 오류 → v5Errors → 개발자 탭 묶음·지우기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
+  `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기·개발자 탭 `?as=5`) · `tools/inspect-shortcut-record.mjs`(P18-1: 눌러서 정하기 - 띠·점선·⋮ → 시간표·키는 앱으로 안 감·계정·탭 줄·그 키로 열림·메뉴·설명서·겹친 키 빼기·ESC) · `tools/inspect-dev-errors.mjs`(P14-2: 화면 오류 → v5Errors → 개발자 탭 묶음·지우기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
   `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움) ·
   `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기) ·
   `tools/inspect-import-labels.mjs`(P2-4: 띠 → 가져오기 → V5 라벨·설정 = V4·두 번째는 바뀐 것 0·띠 닫기, V4 문서를 고쳐 심고 되돌린다). seed는 계정마다 띠 닫음을 심는다.

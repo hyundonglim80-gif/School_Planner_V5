@@ -766,6 +766,7 @@ try {
     await win('settings', { tab: 'shortcuts' });
     r.check(await waitFor(async () => (await count(sel('shortcut-row'))) > 40, 5000), "환경설정 '단축키' 탭 - 기능마다 키");
     r.check((await count(sel('shortcut-reset'))) === 1, '기본값으로');
+    r.check((await count(sel('shortcut-record-start'))) === 1, "맨 위 '⌨️ 단축키 설정' - 눌러서 정하기 (PC, 흐름은 inspect-shortcut-record)");
   });
 
   // ════════ 11장 문제 해결 ════════

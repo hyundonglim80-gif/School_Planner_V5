@@ -62,6 +62,8 @@ export function repick() {
 
 /** 누르면 버튼처럼 동작하는 것 - 고를 수 없는 것을 눌렀다고 알릴 자리 */
 const PRESSABLE = 'button, a[href], [role="button"], [role="tab"], [role="menuitem"], input, select, label, summary';
+/** 메뉴·칸을 펴는 단추(⋮·계정 사진·🔔 종) - 찾아 들어가는 길이라 '만들 수 없다'고 나무라지 않는다 */
+const OPENER = '[aria-expanded], [aria-haspopup]';
 
 /** document capture - 누른 단추가 무엇인지 본다. 누르기는 막지 않는다(메뉴를 찾아 들어가야 한다). */
 export function onRecordClick(e: MouseEvent) {
@@ -70,7 +72,7 @@ export function onRecordClick(e: MouseEvent) {
   if (!t || t.closest('[data-shortcut-record]')) return;
   const id = t.closest<HTMLElement>('[data-shortcut-target]')?.dataset.shortcutTarget;
   if (id && isShortcutId(id)) useShortcutRecord.setState({ picked: id, miss: false });
-  else if (t.closest(PRESSABLE)) useShortcutRecord.setState({ miss: true });
+  else if (t.closest(PRESSABLE) && !t.closest(OPENER)) useShortcutRecord.setState({ miss: true });
 }
 
 /** window capture - 앱 단축키(app/keys)·창의 ESC보다 먼저 받는다 */
