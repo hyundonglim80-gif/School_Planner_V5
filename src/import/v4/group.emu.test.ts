@@ -53,6 +53,26 @@ async function clean() {
   for (const id of ['labels']) await deleteDoc(doc(db, 'users', uid, 'settings', id));
 }
 
+// 규칙을 건너뛰는 에뮬레이터 관리자 쓰기(REST + 'Bearer owner'). P15-1부터 V4 그룹장은 남을 넣지 못한다 -
+// 동료가 이미 든 V4 그룹(규칙이 바뀌기 전부터 있던 것)은 이렇게만 심는다.
+type Plain = string | number | Plain[] | { [k: string]: Plain };
+const toValue = (v: Plain): object =>
+  typeof v === 'string'
+    ? { stringValue: v }
+    : typeof v === 'number'
+      ? { integerValue: String(v) }
+      : Array.isArray(v)
+        ? { arrayValue: { values: v.map(toValue) } }
+        : { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, toValue(x)])) } };
+async function plantAsAdmin(path: string, data: { [k: string]: Plain }) {
+  const res = await fetch(`http://127.0.0.1:8080/v1/projects/schoolplannerv3/databases/(default)/documents/${path}`, {
+    method: 'PATCH',
+    headers: { Authorization: 'Bearer owner', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields: Object.fromEntries(Object.entries(data).map(([k, x]) => [k, toValue(x)])) }),
+  });
+  if (!res.ok) throw new Error(`관리자 쓰기 실패 ${res.status}: ${await res.text()}`);
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Row = Record<string, any> & { id: string };
 const rows = async (coll: string): Promise<Row[]> => {
@@ -92,7 +112,7 @@ describe('V4 그룹 가져오기 (에뮬레이터)', () => {
       journalLabels: [{ id: 'j_1', name: '회의록', color: 'green' }],
       memoLabels: ['개인 메모'],
     });
-    await setDoc(doc(db, 'groups', GID), {
+    await plantAsAdmin(`groups/${GID}`, {
       name: '4학년 협의회', ownerId: uid, ownerName: '그룹장', inviteCode: 'V4GEMU', members: [uid, OTHER],
       memberDetails: { [OTHER]: { name: '동료 선생님', joinedAt: 1 } }, createdAt: 1,
     });

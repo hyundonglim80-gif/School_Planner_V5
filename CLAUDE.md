@@ -26,7 +26,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P15(쪽지) P15-1 ■0 설계 확정**(11-02 - `docs/PLAN.md` 6장 P15 절): '이어서' = P15-1 ■1 규칙 + check-rules. ■4 운영 규칙 배포는 물어서.
+- **P15(쪽지) P15-1 ■0 설계·■1 규칙 끝**(11-02 - `docs/PLAN.md` 6장 P15 절): '이어서' = P15-1 ■2 domain/data mail. ■4 운영 규칙 배포는 물어서(그 전에는 운영에 쪽지 규칙 없음).
 - 부탁(P14-5): VS Code 터미널에서 C: 정리(11-02 89%) - `npm cache clean --force` · Windows 설정 > 저장소 > 임시 파일 · Android Studio Device Manager의 안 쓰는 에뮬레이터 이미지(**Android Studio는 지우지 않는다** - 에뮬레이터 Java). functions 보안 판은 다음 함수 배포 때 저절로.
 - 부탁(P14-3): 내일 이후 `npx.cmd firebase firestore:backups:list` 에 READY 백업 · 복원 연습 한 번(`docs/OPS.md` - 다음 대화에서 Claude와 함께, 연습 DB 지우기는 터미널) · 결제 → 예산 및 알림 하나.
 - 부탁(P14-2): (TTL `v5Errors.expireAt`은 10-30 `firestore:indexes`로 이미 켜진 것을 확인) 실제 사이트 환경설정 '개발자' 탭 '오류 기록'이 열리는지(지금은 비어 있어야 정상).
@@ -76,6 +76,7 @@
   - 정한 날(`DAY`)에 심는 점검은 **날이 지나면 깨질 수 있다**: 이월 라벨 일정은 그날이 지나면 오늘로 따라와 ForwardMarks가 `carrying`을 한 번 쓴다 - '바뀐 문서 하나'를 세는 점검이면 `carrying: true`로 심는다(P8-2 inspect-events).
   - Playwright `route.fulfill` 흉내 응답은 **CORS를 보지 않는다** - 막힌 내려받기(버킷 CORS)는 `route.abort('failed')`로 흉내 낸다(P8-3 첨부 모으기). 컨테이너 Chromium은 한글 내려받기 이름을 'download'로 바꾼다(이름은 PC에서).
   - 서비스 워커·오프라인은 개발 서버가 아니라 **빌드 + preview(4175)**로 본다(`SITE=http://localhost:4175/` - inspect-offline). 응답이 `Vary: Origin`이라 캐시 짝 찾기는 `ignoreVary`(P8-3).
+  - **그룹 구성원은 스스로만 들어온다**(P15-1 규칙 - V5 spaces·V4 groups 모두 주인이 남을 넣지 못한다): 동료가 든 그룹은 그 계정이 스스로 참여해 심거나, 옛 자료 흉내는 에뮬레이터 관리자 쓰기(REST `Bearer owner` - `group.emu.test` `plantAsAdmin`).
   - 지운(없는) 공간 문서는 규칙이 읽기를 막는다(`resource`가 없어 members를 못 본다) - 점검에서 '없어졌나'는 읽기 거부도 없음으로 센다(P8-4 inspect-share-groups).
   - **계정에 올라가는 설정은 기기 저장소만 바꿔서 시험하지 않는다** - 다시 열면 계정 값이 이긴다. 계정 문서로 바꾸고 끝에 걷는다(P4-1 - inspect-shell이 '가운데 창'을 계정에 남겨 다른 점검이 깨졌다).
 - **오늘에 따라 고르는 것(이월·지난 일정)의 단위 테스트는 날짜를 고정**한다: `vi.useFakeTimers({ toFake: ['Date'] })` + `vi.setSystemTime(…)`, 끝에 `vi.useRealTimers()`(P3-3 - 고정하지 않으면 다음 날 시험이 깨진다).

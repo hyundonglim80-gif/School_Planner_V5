@@ -12,8 +12,10 @@ const r = report();
 const undo = restorer();
 const em = emulator();
 const uidA = await em.signIn('teacher@example.com');
-const uidB = await emulator('inspectB').signIn('teacher2@example.com');
-const uidC = await emulator('inspectC').signIn('teacher3@example.com');
+const emB = emulator('inspectB');
+const uidB = await emB.signIn('teacher2@example.com');
+const emC = emulator('inspectC');
+const uidC = await emC.signIn('teacher3@example.com');
 const browser = await launch();
 const DAY = '2027-10-11';
 const GID = 'v4InspectGroup1';
@@ -47,10 +49,12 @@ const changedIn = async (page) =>
 
 try {
   await cleanAll();
-  // V4 그룹 심기 (teacher = 주인 - V4 규칙대로)
+  // V4 그룹 심기 (teacher = 주인이 혼자 만들고 teacher2가 스스로 든다 - 규칙대로, P15-1부터 주인은 남을 넣지 못한다)
   await setDoc(doc(em.db, 'groups', GID), {
-    name: NAME, ownerId: uidA, ownerName: '선생님A', inviteCode: 'V4INSP', members: [uidA, uidB],
-    memberDetails: { [uidB]: { name: '둘째 선생님', joinedAt: 1, photoURL: '' } }, createdAt: Date.now(),
+    name: NAME, ownerId: uidA, ownerName: '선생님A', inviteCode: 'V4INSP', members: [uidA], createdAt: Date.now(),
+  });
+  await updateDoc(doc(emB.db, 'groups', GID), {
+    members: arrayUnion(uidB), [`memberDetails.${uidB}`]: { name: '둘째 선생님', joinedAt: 1, photoURL: '' },
   });
   await setDoc(doc(em.db, 'groups', GID, 'events', DAY), {
     eventList: [
@@ -119,7 +123,7 @@ try {
   await A.page.evaluate(() => window.sp5.closeAllWindows());
 
   r.section('V4에 나중에 든 teacher3 - 초대 코드 없이 구성원으로');
-  await updateDoc(doc(em.db, 'groups', GID), { members: arrayUnion(uidC) });
+  await updateDoc(doc(emC.db, 'groups', GID), { members: arrayUnion(uidC) });
   const C = await newPage(browser);
   await open(C.page, `#/day/${DAY}`, { as: '3' });
   await C.page.evaluate(() => window.sp5.openWindow('group'));

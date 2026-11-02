@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P15-1 ■1**(쪽지 규칙 + check-rules): ■0(11-02)에 설계를 정했다 - 6장 P15 절 '설계 (■0 확정)'·5장 'P15 …' 줄들. 코드 읽기 결과 `docs/P15-facts.md`(10-30 줄 번호).
+**P15-1 ■2**(`domain/mail.ts`·`data/mail.ts` + 자료 시험): ■1 규칙은 11-02 끝(check-rules 통과, 운영 배포는 ■4에서 물어서). ■0(11-02)에 설계를 정했다 - 6장 P15 절 '설계 (■0 확정)'·5장 'P15 …' 줄들. 코드 읽기 결과 `docs/P15-facts.md`(10-30 줄 번호).
 11-02 사용자: 앞으로 V5만 쓴다 - V3·V4 동작은 묻지 않는다(`CLAUDE.md` 1장).
 P14(점검 뒤 손보기)는 10-30 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁뿐(P14-9 첨부 비공개는 취소).
 main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
@@ -2021,10 +2021,12 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
 **먼저 읽을 것**: `docs/P15-facts.md`('서버·자료·규칙') · `firestore.rules` groups 97-141·spaces 188-251·v5Errors 304-323 · `tools/check-rules.mjs`(V5 그룹 마디·v5Errors·정리) · `data/errorReport.ts`·`data/errorReport.emu.test.ts`(자료 시험 꼴) ·
 `data/spaces.ts`(readPeople·writeMyName) · `data/pendingWrites.ts` · `functions/index.js`(tokensOf·v5SendDueAlarms 보내기)·`functions/alarmPlan.js`(pushData·isDeadTokenError) · `docs/DESIGN.md` 3장 38행·4-9·4-10.
 - [x] ■0 **코드 확인·설계 확정**(11-02 - 에뮬레이터로 get 한도·글 길이, 앱의 구성원 쓰기 grep) - 이 절·5장(문서만).
-- [ ] ■1 **규칙** `match /v5Mail/{owner}/mailIn/{id}`·`/mailSent/{id}` + 구성원 넣기 막기(V5 spaces 주인 갈래·V4 groups) + check-rules [V5 쪽지]·[구성원 넣기]. V4 저장소에 복사하지 않는다(11-02).
+- [x] ■1 **규칙** `match /v5Mail/{owner}/mailIn/{id}`·`/mailSent/{id}` + 구성원 넣기 막기(V5 spaces 주인 갈래·V4 groups) + check-rules [V5 쪽지]·[구성원 넣기]. V4 저장소에 복사하지 않는다(11-02).
   must: 같은 그룹 구성원에게 · 여럿에게(같은 그룹, 받는 사람 30명 한 묶음 - 같은 get) · 한글 2000자 · 주인이 읽기·목록·안 읽은 것 쿼리·읽음(두 번)·지우기 · 내 보낸 사본 읽기·지우기 · 주인이 구성원 내보내기(그대로) · 참여·나가기(그대로).
   mustNot: 그룹 밖 사람에게 · from을 남으로 · 받는 사람이 to에 없음 · 나에게 · 51명 · 남의 mailIn·mailSent 읽기·목록 · 받은 사람이 글 고치기 · 남의 readAt · readAt을 기기 시각으로 · 2001자 · 모르는 칸 · at을 기기 시각으로 · readAt을 적은 채 만들기 ·
   개인 공간 sid · '/'가 든 sid · groupName 위조 · 구성원이 아닌 사본 받는 사람 · 사본 고치기 · 그룹장이 남을 구성원으로 넣기(V5) · V4 그룹을 남과 함께 만들기 · V4 그룹장이 남 넣기.
+  → 11-02 check-rules V4 38 · V5 158(쪽지 52 - 50명 한 묶음 통과·51명 거부, 보낸 사본 없이 받는 쪽만 = 거부(`existsAfter`), 나간 사람에게·나간 사람이 = 거부).
+  남을 넣던 시험 둘을 고침: `inspect-import-groups`(B·C가 스스로 든다)·`import/v4/group.emu.test`(동료가 든 옛 V4 그룹 = 관리자 쓰기 `plantAsAdmin`) - 둘 다·share-groups·test:data 통과.
 - [ ] ■2 `domain/mail.ts`(순수 - 받는 사람 거르기·글 자르기·이름 잇기·알림 글·?mail= has/strip) + 시험 · `data/mailStore.ts`(Firebase 없음) · `data/mail.ts`(보내기 한 묶음 · 안 읽은 것 듣기 · 목록 30 · 읽음 · 지우기)
   + `data/mail.emu.test.ts`(test:data - A→B 보내기·B 안 읽음 1·읽음·지우기·A 사본).
 - [ ] ■3 함수 `v5MailPush` + `functions/mailPlan.js` + `mailPlan.test.js`(키·바이트·자르기) · test:functions 두 곳에 더하기 · 함수 손 시험(MAP '서버 푸시 알림'의 .run(event) 꼴 - 에뮬레이터 토큰으로 보내기 앞까지). 배포는 P15-2 끝.
