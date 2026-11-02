@@ -9,13 +9,16 @@
 // - 문서에는 자리 `id`가 붙어 있다 - 저장 도우미에 그대로 넘겨도 id는 적지 않는다(repo/ops).
 // - 계산하는 것(이월·수업 칸·기간 일정의 '(2/5)')은 여기에 없다 - 그 기능을 옮기는 세션이 이 위에 짓는다(DESIGN 5장).
 import { useMemo } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { compareOrder } from '../domain/order';
 import { isPeriod as spansDays, onPeriodDay } from '../domain/period';
 import { noteDates } from '../domain/noteDates';
 import { matchLabels, orderByTree, parentMapOf, type LabelFilter, type ParentMap, type TreeRow } from '../domain/labelTree';
 import { collKey, EMPTY_DOCS, useMirror, type MirrorStatus } from './mirror/store';
 import { useHolidayStore } from './holidays';
-import { useCurrentSpaceId } from './session';
+import { useCurrentSpaceId, useSession } from './session';
+import { overlaySpaces, useMySpaces, useSpaceOverlay } from './spaceChoice';
+import { spaceColor } from '../domain/spaceColor';
 import type { ItemKind, SpaceCollection, Stored, YMD } from './types';
 
 export type Docs<C extends SpaceCollection> = Readonly<Record<string, Stored<C>>>;
@@ -318,4 +321,43 @@ export function useTrash<C extends SpaceCollection>(coll: C, sid?: string | null
 export function useAllNotes(sid?: string | null): ItemDoc[] {
   const items = useDocs('items', sid);
   return useMemo(() => allNotes(items), [items]);
+}
+
+/** 겹쳐 보는 공간 하나 (P17-2) - 화면이 이 재료로 그 공간 일정을 셈한다(라벨은 그 공간 트리 - 기본 라벨 id가 공간마다 같다) */
+export interface OverlaySpace {
+  sid: string;
+  /** '개인' 또는 그룹 이름 */
+  name: string;
+  /** 점 빛깔 (domain/spaceColor) */
+  color: string;
+  items: Docs<'items'>;
+  /** 그 공간의 일정 라벨 트리 */
+  tree: LabelTree;
+}
+
+const NO_OVERLAY: readonly OverlaySpace[] = [];
+
+/**
+ * 지금 겹쳐 보는 공간들 (칩 차례). 기기 사본이 이미 모든 공간을 받는다 - 서버 읽기는 늘지 않는다.
+ * 사본 store를 고르개 하나로 읽는다(공간 수만큼 훅을 부르지 않는다) - 재료가 같으면 같은 배열.
+ */
+export function useOverlaySpaces(): readonly OverlaySpace[] {
+  const uid = useSession((s) => s.user?.uid);
+  const overlay = useSpaceOverlay();
+  const mine = useMySpaces();
+  const main = useCurrentSpaceId();
+  const sids = useMemo(() => (uid ? overlaySpaces(uid, overlay, mine, main) : []), [uid, overlay, mine, main]);
+  const docs = useMirror(
+    useShallow((s) => sids.flatMap((sid) => [s.colls[collKey(sid, 'items')]?.docs ?? EMPTY_DOCS, s.colls[collKey(sid, 'labels')]?.docs ?? EMPTY_DOCS])),
+  );
+  return useMemo(() => {
+    if (sids.length === 0) return NO_OVERLAY;
+    return sids.map((sid, i) => ({
+      sid,
+      name: sid.startsWith('g_') ? (mine.groups.find((g) => g.id === sid)?.name ?? '그룹') : '개인',
+      color: spaceColor(sid),
+      items: docs[i * 2] as unknown as Docs<'items'>,
+      tree: labelTreeOf(docs[i * 2 + 1] as unknown as Docs<'labels'>, 'event'),
+    }));
+  }, [sids, docs, mine.groups]);
 }

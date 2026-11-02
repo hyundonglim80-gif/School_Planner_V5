@@ -16,10 +16,12 @@ import {
   useItemsWithLabels,
   useMemos,
   useMirrorStatus,
+  useOverlaySpaces,
   type Docs,
 } from './select';
 import { applyBase, resetMirrorStore, setStatus, trackColl } from './mirror/store';
 import { useSession } from './session';
+import { toggleOverlay, useMySpaces, useSpaceChoice, useSpaceOverlay } from './spaceChoice';
 import type { Stored } from './types';
 
 // 지금 공간은 로그인 store에서 - Firebase는 띄우지 않는다
@@ -148,5 +150,51 @@ describe('훅 (지금 공간 = 개인 공간)', () => {
       setStatus('u_me', 'items', 'live');
     });
     expect(h.result.current).toBe('live');
+  });
+});
+
+describe('겹쳐 보는 공간의 재료 (P17-2)', () => {
+  afterEach(() => {
+    resetMirrorStore();
+    useSession.setState({ loading: false, user: null });
+    useSpaceChoice.setState({ uid: null, sid: null, known: [] });
+    useSpaceOverlay.setState({ uid: null, sids: [] });
+    useMySpaces.setState({ groups: [], loaded: false });
+  });
+  const label = (id: string, name: string) =>
+    ({ id, kind: 'event', name, color: 'red', order: 'a0', deletedAt: null, updatedAt: t(1), v: 1, createdAt: 0, authorId: 'me' }) as unknown as Stored<'labels'>;
+  const put = (sid: string, coll: 'items' | 'labels', list: { id: string }[]) => {
+    trackColl(sid, coll);
+    applyBase(sid, coll, new Map(list.map((d) => [d.id, { ...d, id: undefined }])));
+  };
+
+  it('공간마다 그 공간 일정·라벨 트리(같은 기본 라벨 id라도 따로) · 주 공간은 빼고 · 같은 재료면 같은 배열', () => {
+    useSession.setState({ loading: false, user: { uid: 'me', email: '', displayName: '', photoURL: '' } });
+    useMySpaces.setState({ groups: [{ id: 'g_a', name: '3학년', ownerId: 'me', members: {} }], loaded: true });
+    act(() => {
+      put('u_me', 'items', [item('mine', { date: '2026-10-08' })]);
+      put('u_me', 'labels', [label('dflt_e1', '달력')]);
+      put('g_a', 'items', [item('ga', { date: '2026-10-08' }), item('gone', { date: '2026-10-08', deletedAt: t(9) })]);
+      put('g_a', 'labels', [label('dflt_e1', '학년 행사')]);
+    });
+    const h = renderHook(() => useOverlaySpaces());
+    expect(h.result.current).toEqual([]);
+    act(() => {
+      toggleOverlay('me', 'g_a');
+      toggleOverlay('me', 'u_me');
+    });
+    // 주 공간(개인)은 겹치지 않는다
+    expect(h.result.current.map((o) => [o.sid, o.name])).toEqual([['g_a', '3학년']]);
+    const [ga] = h.result.current;
+    expect(ga.color).toMatch(/^#/);
+    expect(ids(itemsOn(ga.items, '2026-10-08', 'event'))).toEqual(['ga']);
+    expect(ga.tree.byId.get('dflt_e1')?.name).toBe('학년 행사');
+    const before = h.result.current;
+    h.rerender();
+    expect(h.result.current).toBe(before);
+    // 그룹을 주 공간으로 고르면 개인이 겹친다
+    act(() => useSpaceChoice.setState({ uid: 'me', sid: 'g_a' }));
+    expect(h.result.current.map((o) => [o.sid, o.name])).toEqual([['u_me', '개인']]);
+    expect(h.result.current[0].tree.byId.get('dflt_e1')?.name).toBe('달력');
   });
 });

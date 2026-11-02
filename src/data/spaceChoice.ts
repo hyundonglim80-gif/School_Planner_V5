@@ -47,6 +47,47 @@ export function chooseSpace(uid: string, choice: SpaceChoice, mine: { groups: Gr
 export function setSpaceChoice(uid: string, sid: string | null) {
   const c = useSpaceChoice.getState();
   useSpaceChoice.setState({ uid, sid: sid && sid.startsWith('g_') ? sid : null, known: c.uid === uid ? c.known : [] });
+  // 주 공간이 된 공간은 겹쳐 보기에서 빠진다 (메모·학급 화면 📂로 골라도)
+  const o = useSpaceOverlay.getState();
+  const main = sid && sid.startsWith('g_') ? sid : `u_${uid}`;
+  if (o.uid === uid && o.sids.includes(main)) useSpaceOverlay.setState({ sids: o.sids.filter((s) => s !== main) });
+}
+
+/**
+ * 겹쳐 보는 공간 (P17-2 - 둘째 줄 공간 칩 Ctrl·길게 누르기). 일정만, 하루·주간·월간·년간에 주 공간 것 뒤에 그린다.
+ * 이 기기에, 계정마다(고른 공간 sp5-space와 같다 - 기기마다 보는 공간이 다를 수 있다). 개인 공간은 `u_…` 그대로 적는다.
+ */
+interface SpaceOverlay {
+  uid: string | null;
+  sids: string[];
+}
+export const useSpaceOverlay = create<SpaceOverlay>()(persist((): SpaceOverlay => ({ uid: null, sids: [] }), { name: 'sp5-space-overlay' }));
+
+/**
+ * 지금 겹쳐 보는 공간 - 주 공간·나간(지운) 그룹·다른 계정 것은 뺀다. 차례는 칩 차례(개인 → 내 그룹 목록 차례).
+ * 목록을 받기 전에는 적어 둔 그룹을 믿는다(chooseSpace와 같다 - 사본에 없으면 그릴 것도 없다).
+ */
+export function overlaySpaces(uid: string, overlay: SpaceOverlay, mine: { groups: GroupSpace[]; loaded: boolean }, main: string | null): string[] {
+  if (overlay.uid !== uid) return [];
+  const personal = `u_${uid}`;
+  const groupAt = (sid: string) => mine.groups.findIndex((g) => g.id === sid);
+  const ok = (sid: string) => sid !== main && (sid === personal || (sid.startsWith('g_') && (!mine.loaded || groupAt(sid) >= 0)));
+  // 목록에 아직 없는 그룹(받기 전)은 뒤로
+  const rank = (sid: string) => (sid === personal ? -1 : groupAt(sid) >= 0 ? groupAt(sid) : mine.groups.length);
+  return overlay.sids.filter((sid, i, all) => ok(sid) && all.indexOf(sid) === i).sort((a, b) => rank(a) - rank(b));
+}
+
+/** 겹쳐 보기 더하기·빼기 (Ctrl·Shift·길게 누르기 - 주 공간은 화면이 막는다) */
+export function toggleOverlay(uid: string, sid: string) {
+  const o = useSpaceOverlay.getState();
+  const sids = o.uid === uid ? o.sids : [];
+  useSpaceOverlay.setState({ uid, sids: sids.includes(sid) ? sids.filter((s) => s !== sid) : [...sids, sid] });
+}
+
+/** 겹쳐 보기를 모두 끈다 (칩 그냥 누르기 = 그 공간 하나 - 라벨 칩 탐색기식) */
+export function clearOverlay(uid: string) {
+  const o = useSpaceOverlay.getState();
+  if (o.uid !== uid || o.sids.length > 0) useSpaceOverlay.setState({ uid, sids: [] });
 }
 
 /** 받은 그룹 목록을 기억한다 (다른 계정이었으면 고른 것도 비운다) */

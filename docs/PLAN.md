@@ -2169,7 +2169,7 @@ Claude 의견(방향 좋음 · 일정만 '겹쳐 보기' 1단계 · 칩은 날�
   아래 칸들(WeekDayCard·MonthGrid·MonthDaySheet·YearMonthCard·YearSheetMonth)은 일만 받는 콜백(`onEventClick(ev, …)`)과 `labelsOf(ev)`(년간 둘은 `tree`)를 받는다 → 화면이 `spaceOf(ev)`로 sid·트리를 골라 넘기고, 년간 둘은 `tree` 대신 `labelsOf`로 바꾼다(memo가 살게 useCallback).
   여러 개 고르기 `visiblePicks`·Shift 범위는 주 공간 목록만 받게 그대로 둔다. 끌기는 `eventDragProps(ev, day, enabled)`의 enabled를 겹친 것에 false. 파란 테두리 `useShownEventId(sid)`는 sid를 받는다 - 겹친 공간마다 부르지 않고 열린 일정 칸의 `{ sid, id }`를 한 번 읽는 훅을 더한다.
   길게 누르기는 `day/DayEvents.tsx` EventCard 하나뿐(손가락만·0.5초·10px 움직이면 그만·뒤따르는 click 넘기기·contextmenu 막기) → `ui/longPress.ts`로 꺼내 칩과 카드가 함께 쓴다.
-- [ ] ■1 자료·셈 - `data/spaceChoice.ts` 겹친 공간 store(`sp5-space-overlay` uid마다 · `toggleOverlay` · 순수 `overlaySpaces(choice, mine, main)` - 주 공간·나간 그룹 거르기) ·
+- [x] ■1 자료·셈 - `data/spaceChoice.ts` 겹친 공간 store(`sp5-space-overlay` uid마다 · `toggleOverlay` · 순수 `overlaySpaces(choice, mine, main)` - 주 공간·나간 그룹 거르기) ·
   `domain/spaceColor.ts`(`spaceColor(sid)` - 개인 고정·그룹 해시 팔레트, 밝게·어둡게 둘 다 읽히게) · `data/select.ts` `useOverlaySpaces()` → `[{ sid, name, color, items, tree }]`(■0 - 화면마다 셈이 달라 일정 목록이 아니라 재료를 준다)
   (useMirror에서 여러 키를 selector 하나로(`useShallow`) - 훅을 공간 수만큼 부르지 않는다 · 같은 재료면 같은 객체 - CLAUDE.md 4장) + 시험(공간 둘 흉내 · 지운 것 빼기 · 같은 참조 · 주 공간 빼기).
 - [ ] ■2 칩 Ctrl·길게 누르기 + 하루 화면 - `SpaceChips` 겹친 칩(테두리·✓·색 점, 주 공간은 Ctrl 안 들음, PC 흐린 글) · `DayEvents` 주 공간 아래 공간마다 구분 줄 `[data-overlay-group=sid]` + 카드 `[data-event-space=sid]`

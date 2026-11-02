@@ -1,5 +1,17 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { chooseSpace, cleanInviteCode, inviteCodeOf, knownGroupsOf, rememberGroups, setSpaceChoice, useSpaceChoice } from './spaceChoice';
+import {
+  chooseSpace,
+  cleanInviteCode,
+  clearOverlay,
+  inviteCodeOf,
+  knownGroupsOf,
+  overlaySpaces,
+  rememberGroups,
+  setSpaceChoice,
+  toggleOverlay,
+  useSpaceChoice,
+  useSpaceOverlay,
+} from './spaceChoice';
 
 const g = (id: string) => ({ id, name: id, ownerId: 'o', members: {} });
 
@@ -32,5 +44,43 @@ describe('지금 공간 고르기 (P8-4)', () => {
     const code = inviteCodeOf(() => (i++ % 10) / 10);
     expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
     expect(cleanInviteCode(' ab c12 ')).toBe('ABC12');
+  });
+});
+
+describe('겹쳐 보는 공간 (P17-2)', () => {
+  afterEach(() => {
+    useSpaceChoice.setState({ uid: null, sid: null, known: [] });
+    useSpaceOverlay.setState({ uid: null, sids: [] });
+  });
+  const mine = { groups: [g('g_a'), g('g_b')], loaded: true };
+
+  it('주 공간·나간 그룹·다른 계정 것은 빼고, 칩 차례(개인 → 그룹 목록 차례)로', () => {
+    const o = { uid: 'u1', sids: ['g_b', 'g_gone', 'u_u1', 'g_a', 'g_b'] };
+    expect(overlaySpaces('u1', o, mine, 'g_a')).toEqual(['u_u1', 'g_b']);
+    expect(overlaySpaces('u1', o, mine, 'u_u1')).toEqual(['g_a', 'g_b']);
+    expect(overlaySpaces('u2', o, mine, 'u_u2')).toEqual([]);
+  });
+  it('목록을 받기 전에는 적어 둔 그룹을 믿는다 (모르는 그룹은 뒤로)', () => {
+    const o = { uid: 'u1', sids: ['g_x', 'g_b'] };
+    expect(overlaySpaces('u1', o, { groups: [g('g_b')], loaded: false }, 'u_u1')).toEqual(['g_b', 'g_x']);
+  });
+  it('더하기·빼기 · 다른 계정이었으면 새로 · 모두 끄기', () => {
+    toggleOverlay('u1', 'g_a');
+    toggleOverlay('u1', 'g_b');
+    expect(useSpaceOverlay.getState()).toMatchObject({ uid: 'u1', sids: ['g_a', 'g_b'] });
+    toggleOverlay('u1', 'g_a');
+    expect(useSpaceOverlay.getState().sids).toEqual(['g_b']);
+    toggleOverlay('u2', 'g_c');
+    expect(useSpaceOverlay.getState()).toMatchObject({ uid: 'u2', sids: ['g_c'] });
+    clearOverlay('u2');
+    expect(useSpaceOverlay.getState().sids).toEqual([]);
+  });
+  it('주 공간으로 고르면 겹친 것에서 빠진다 (📂로 골라도)', () => {
+    toggleOverlay('u1', 'g_a');
+    toggleOverlay('u1', 'u_u1');
+    setSpaceChoice('u1', 'g_a');
+    expect(useSpaceOverlay.getState().sids).toEqual(['u_u1']);
+    setSpaceChoice('u1', null);
+    expect(useSpaceOverlay.getState().sids).toEqual([]);
   });
 });
