@@ -1,16 +1,20 @@
-// ✉ 쪽지 창 (P15-2 ■1 - PLAN 6장 P15 '화면'). 오른쪽 칸 창 'mail' - 탭: 📥 받은 쪽지 · 📤 보낸 쪽지.
+// ✉ 쪽지 창 (P15-2 ■1·■2 - PLAN 6장 P15 '화면'). 오른쪽 칸 창 'mail' - 탭: 📥 받은 쪽지 · 📤 보낸 쪽지 · ✏️ 쓰기(MailCompose).
 //   목록은 창을 열 때 서버에서 30개씩(기기 사본·백업 없음 - data/mail), 끊긴 채 비어 보이면 '인터넷이 필요합니다'.
 //   안 읽은 쪽지는 굵게·점 - 펼치면 읽음. 지우기 = 바로 숨기고 7초 '되돌리기'(features/mail/actions).
-//   창이 열린 동안 새 쪽지가 오면(머리줄 안 읽은 수가 늘면) 첫 쪽을 다시 받아 위에 더한다.
+//   창이 열린 동안 새 쪽지가 오면(머리줄 안 읽은 수가 늘면) 첫 쪽을 다시 받아 위에 더한다. 보내면 보낸 쪽지 탭으로(첫 쪽을 다시).
+//   ↩ 답장 = 쓰기 탭에 그 사람·그 그룹 - 나와 그 사람이 지금 그 그룹 구성원일 때만(규칙이 막는다).
 import { useEffect, useRef, useState } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import type { WindowProps } from '../../app/windows';
+import { showToast } from '../../app/toast';
 import { loadInbox, loadSent, markRead } from '../../data/mail';
 import { useMailStore } from '../../data/mailStore';
 import { useSession } from '../../data/session';
-import { mailPreview, mailWhen, unreadLabel, type MailBox, type MailIn, type MailSent } from '../../domain/mail';
+import { useMySpaces } from '../../data/spaceChoice';
+import { mailPreview, mailWhen, replyQuote, unreadLabel, type MailBox, type MailIn, type MailSent } from '../../domain/mail';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { removeMail, useHiddenMail } from './actions';
+import MailCompose, { type ComposeAsk } from './MailCompose';
 import type { MailParams, MailTabId } from './open';
 
 type Item = MailIn | MailSent;
@@ -28,7 +32,16 @@ const fetchPage = (uid: string, box: MailBox, after: QueryDocumentSnapshot | nul
 /** 앞에 없던 것만 잇는다 (같은 쪽지를 두 번 받지 않게) */
 const merge = (a: Item[], b: Item[]) => [...a, ...b.filter((x) => !a.some((y) => y.id === x.id))];
 
-function MailRow({ m, now, open, onToggle, onDelete }: { m: Item; now: number; open: boolean; onToggle: () => void; onDelete: () => void }) {
+interface RowProps {
+  m: Item;
+  now: number;
+  open: boolean;
+  onToggle: () => void;
+  onDelete: () => void;
+  onReply?: (m: MailIn) => void;
+}
+
+function MailRow({ m, now, open, onToggle, onDelete, onReply }: RowProps) {
   const inbox = isIn(m);
   const unread = inbox && m.readAt === null;
   const who = inbox ? m.fromName : `→ ${m.toNames || '받는 사람 없음'}`;
@@ -55,7 +68,12 @@ function MailRow({ m, now, open, onToggle, onDelete }: { m: Item; now: number; o
             {m.text}
           </p>
           <p className="text-2xs text-slate-400">받는 사람 {m.toNames}</p>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-1">
+            {inbox && onReply && (
+              <button type="button" data-mail-reply={m.id} onClick={() => onReply(m)} className="rounded-lg px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 cursor-pointer">
+                ↩ 답장
+              </button>
+            )}
             <button type="button" data-mail-delete={m.id} onClick={onDelete} className="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 hover:bg-red-50 hover:text-red-600 cursor-pointer">
               🗑️ 지우기
             </button>
@@ -66,7 +84,16 @@ function MailRow({ m, now, open, onToggle, onDelete }: { m: Item; now: number; o
   );
 }
 
-function MailList({ box, active, focus }: { box: MailBox; active: boolean; focus?: { id: string } }) {
+interface ListProps {
+  box: MailBox;
+  active: boolean;
+  focus?: { id: string };
+  /** 늘면 첫 쪽을 다시 받는다 (보낸 뒤 - 보낸 쪽지) */
+  bump?: number;
+  onReply?: (m: MailIn) => void;
+}
+
+function MailList({ box, active, focus, bump = 0, onReply }: ListProps) {
   const uid = useSession((s) => s.user?.uid ?? null);
   const hidden = useHiddenMail((s) => s.ids);
   const unread = useMailStore((s) => s.unread);
@@ -115,7 +142,7 @@ function MailList({ box, active, focus }: { box: MailBox; active: boolean; focus
   const refreshTop = () => {
     if (!uid) return;
     const my = ++seq.current;
-    loadInbox(uid)
+    fetchPage(uid, box, null)
       .then((p) => {
         if (my !== seq.current) return;
         setPage((prev) => (prev && prev.items.length ? { ...prev, items: merge(p.items, prev.items) } : p));
@@ -129,6 +156,10 @@ function MailList({ box, active, focus }: { box: MailBox; active: boolean; focus
     if (box === 'in' && page && unread > was) refreshTop();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 수가 늘 때만
   }, [unread]);
+  useEffect(() => {
+    if (bump && page) refreshTop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 보낸 뒤만
+  }, [bump]);
 
   const toggle = (m: Item) => {
     if (open === m.id) {
@@ -200,6 +231,7 @@ function MailList({ box, active, focus }: { box: MailBox; active: boolean; focus
                   now={now}
                   open={open === m.id}
                   onToggle={() => toggle(m)}
+                  onReply={onReply}
                   onDelete={() => {
                     if (!uid) return;
                     setOpen(null);
@@ -229,12 +261,19 @@ function MailList({ box, active, focus }: { box: MailBox; active: boolean; focus
 const TABS: ReadonlyArray<{ id: MailTabId; label: string }> = [
   { id: 'in', label: '📥 받은 쪽지' },
   { id: 'sent', label: '📤 보낸 쪽지' },
+  { id: 'write', label: '✏️ 쓰기' },
 ];
+
+/** 쓰기 탭을 채울 것 (그룹 창 구성원 칩 ✉ - 열 때마다 새 객체) */
+const askOf = (p: MailParams | undefined): ComposeAsk | undefined => (p?.tab === 'write' && (p.sid || p.to) ? { sid: p.sid, to: p.to } : undefined);
 
 export default function MailWindow({ params, close, raise }: WindowProps<MailParams | undefined>) {
   const [tab, setTab] = useState<MailTabId>(params?.tab ?? 'in');
   const [focus, setFocus] = useState(params?.id ? { id: params.id } : undefined);
+  const [ask, setAsk] = useState(() => askOf(params));
+  const [sentBump, setSentBump] = useState(0);
   const unread = useMailStore((s) => s.unread);
+  const { groups } = useMySpaces();
   // 열린 창을 다시 열면 그 탭·쪽지로 (BackupWindow 본보기 - openWindow는 열 때마다 새 params)
   const [asked, setAsked] = useState(params);
   if (params !== asked) {
@@ -242,8 +281,30 @@ export default function MailWindow({ params, close, raise }: WindowProps<MailPar
     if (params?.id) {
       setTab('in');
       setFocus({ id: params.id });
-    } else if (params?.tab) setTab(params.tab);
+    } else if (params?.tab) {
+      setTab(params.tab);
+      const next = askOf(params);
+      if (next) setAsk(next);
+    }
   }
+  // 쓰기 탭은 처음 열 때 그린다 (구성원 이름 읽기) - 그 뒤로는 숨기기만(적던 글이 남게)
+  const [composing, setComposing] = useState(tab === 'write');
+  if (tab === 'write' && !composing) setComposing(true);
+
+  const reply = (m: MailIn) => {
+    const g = groups.find((x) => x.id === m.sid);
+    const role = g?.members[m.from];
+    if (!g || (role !== 'owner' && role !== 'member')) {
+      showToast(g ? `${m.fromName} 선생님이 그 그룹에 없어 답장할 수 없습니다.` : `그 그룹(${m.groupName})에 들어 있지 않아 답장할 수 없습니다.`, 4000);
+      return;
+    }
+    setAsk({ sid: m.sid, to: [m.from], replyTo: m.id, quote: replyQuote(m.text) });
+    setTab('write');
+  };
+  const sent = () => {
+    setSentBump((n) => n + 1);
+    setTab('sent');
+  };
 
   return (
     <ModalShell isOpen onClose={close} raise={raise} width="lg" title="✉ 쪽지" bare footer={<ModalCloseButton onClose={close} />}>
@@ -272,10 +333,13 @@ export default function MailWindow({ params, close, raise }: WindowProps<MailPar
         </div>
         <p className="px-4 pt-3 text-2xs text-slate-400">같은 그룹 선생님과 주고받는 쪽지입니다. 1년이 지나면 저절로 지워집니다.</p>
         <div role="tabpanel" data-mail-panel="in" hidden={tab !== 'in'}>
-          <MailList box="in" active={tab === 'in'} focus={focus} />
+          <MailList box="in" active={tab === 'in'} focus={focus} onReply={reply} />
         </div>
         <div role="tabpanel" data-mail-panel="sent" hidden={tab !== 'sent'}>
-          <MailList box="sent" active={tab === 'sent'} />
+          <MailList box="sent" active={tab === 'sent'} bump={sentBump} />
+        </div>
+        <div role="tabpanel" data-mail-panel="write" hidden={tab !== 'write'}>
+          {composing && <MailCompose ask={ask} onSent={sent} />}
         </div>
       </div>
     </ModalShell>

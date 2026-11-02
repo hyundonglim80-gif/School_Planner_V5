@@ -24,6 +24,9 @@ const spaces = vi.hoisted(() => ({
   importedGroupSid: (id: string) => `g_${id}`,
 }));
 vi.mock('../../data/spaces', () => spaces);
+// 쪽지 창은 창 목록에 등록하지 않았다 - 여는 것만 본다
+const mail = vi.hoisted(() => ({ openMail: vi.fn() }));
+vi.mock('../mail/open', () => mail);
 // V4 그룹 가져오기 칸은 V4 자리를 읽는다 - 이 시험과 상관없다
 vi.mock('./V4GroupsSection', () => ({ default: () => null }));
 
@@ -109,5 +112,13 @@ describe('공유 그룹 창 - 그룹장 도구 (P14-1)', () => {
     const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     fireEvent.click(q('[data-group-remove-member="u2"]')!);
     expect(confirm.mock.calls[0][0]).toBe('이구성 선생님을 그룹에서 내보낼까요?');
+  });
+
+  it('구성원 칩 ✉ = 나 말고 모두(그룹장·구성원), 누르면 그 사람에게 쪽지 쓰기 (P15-2 ■2)', async () => {
+    signIn('u2');
+    await openWith(group());
+    expect(qa('[data-group-mail]').map((b) => b.dataset.groupMail)).toEqual(['u1']);
+    fireEvent.click(q('[data-group-mail="u1"]')!);
+    expect(mail.openMail).toHaveBeenCalledWith({ tab: 'write', sid: 'g_t1', to: ['u1'] });
   });
 });

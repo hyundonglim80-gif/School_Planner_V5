@@ -1,6 +1,8 @@
 // tools/inspect-mail.mjs - P15-2: ✉ 쪽지를 실제 크롬에서 본다 (teacher = A 화면, teacher2 = B는 서버로 보낸다).
 //   ■1 쪽지 창: 받은 쪽지 30개씩·더 보기 · 안 읽음(data-mail-read=no) · 펼치면 읽음(서버 readAt) · 지우기 = 바로 숨김 + 되돌리기 ·
 //      7초 뒤 진짜 지우기 · 보낸 쪽지 탭 · 끊기면 '인터넷이 필요합니다' + 다시 받기
+//   ■2 쓰기: 그룹 → 구성원 칩(나 빼고·이름) → 받는 사람 없으면 안내 · Ctrl+S는 보내지 않음 · Ctrl+Enter = 보내기(받는 쪽 칸·사본) → 보낸 탭 ·
+//      ↩ 답장(replyTo) · 쓰던 글 보관(되살리기, 앱 위 띠에는 없음) · 그룹 창 구성원 ✉ · 끊긴 채 보내기 = 기다리는 저장 띠 → 연결되면 간다
 //
 //   그룹은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, CLAUDE.md 2장). 쪽지는 각 계정 클라이언트로(서버 시각·규칙 통과).
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-mail.mjs
@@ -123,6 +125,85 @@ try {
   await page.waitForTimeout(1500);
   await page.locator(sel('mail-retry')).first().click();
   r.check(await waitFor(async () => (await page.locator(sel('mail-offline')).count()) === 0 && (await rows('in').count()) > 0, 15000), '다시 받기 → 목록');
+
+  r.section('■2 쓰기');
+  const inboxB = async () => (await getDocs(collection(emB.db, 'v5Mail', uidB, 'mailIn'))).docs.map((d) => ({ id: d.id, ...d.data() }));
+  const before = (await inboxB()).length;
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.openWindow('mail', { tab: 'write' }));
+  r.check(await waitFor(page.locator(sel('mail-compose')), 8000), '✏️ 쓰기 탭');
+  await page.locator(sel('mail-group')).selectOption(SID);
+  r.check(await waitFor(page.locator(sel('mail-to', uidB)), 5000), '그룹을 고르면 구성원 칩 (나 빼고)');
+  r.check((await page.locator(sel('mail-to', uidA)).count()) === 0, '내 칩은 없다');
+  r.check(await waitFor(async () => ((await page.locator(sel('mail-to', uidB)).textContent()) ?? '').includes('이점검'), 5000), '칩 = 구성원 이름 (people)');
+  const box = page.locator(sel('mail-text-input'));
+  await box.fill('보내기 점검 - 첫 줄\n둘째 줄');
+  await page.locator(sel('mail-send')).click();
+  r.check(await waitFor(page.locator(sel('toast'), { hasText: '받는 사람을 골라' }), 3000), '받는 사람 없이 보내면 안내');
+  await page.locator(sel('mail-to', uidB)).click();
+  r.check((await page.locator(sel('mail-to', uidB)).getAttribute('aria-pressed')) === 'true', '칩을 누르면 고름');
+  await box.press('Control+s');
+  await page.waitForTimeout(1500);
+  r.check((await inboxB()).length === before && (await box.inputValue()).includes('보내기 점검'), 'Ctrl+S는 보내지 않는다 (글 그대로)');
+  await box.press('Control+Enter');
+  const got = await serverUntil(inboxB, (l) => l.some((x) => x.text === '보내기 점검 - 첫 줄\n둘째 줄'), 10000);
+  const m1 = got.find((x) => x.text === '보내기 점검 - 첫 줄\n둘째 줄');
+  r.check(!!m1, 'Ctrl+Enter = 보내기 → B 받은 쪽지');
+  r.check(m1?.from === uidA && m1?.fromName === '김점검' && m1?.toNames === '이점검' && m1?.sid === SID && m1?.groupName === GROUP && m1?.readAt === null && m1?.replyTo === null, '받는 쪽 칸 (보낸 사람 이름 = 그룹 people 이름)');
+  r.check(!!m1 && (await getDoc(doc(em.db, 'v5Mail', uidA, 'mailSent', m1.id))).exists(), '내 보낸 사본 (같은 id)');
+  r.check(await waitFor(page.locator(sel('mail-window', 'sent')), 5000), '보내면 보낸 쪽지 탭으로');
+  r.check(await waitFor(async () => ((await rows('sent').first().getAttribute('data-mail-row')) ?? '') === m1?.id, 8000), '보낸 쪽지 맨 위에 방금 것');
+  await page.locator(sel('mail-tab-btn', 'write')).click();
+  r.check((await box.inputValue()) === '', '보낸 뒤 글 칸은 빈다');
+
+  r.section('■2 답장');
+  await page.locator(sel('mail-tab-btn', 'in')).click();
+  const top = page.locator(sel('mail-row', newest));
+  await top.locator(sel('mail-open')).click();
+  await top.locator(sel('mail-reply')).click();
+  r.check(await waitFor(page.locator(sel('mail-reply-to', newest)), 3000), '↩ 답장 → 쓰기 탭에 답장 표시');
+  r.check((await page.locator(sel('mail-to', uidB)).getAttribute('aria-pressed')) === 'true' && (await page.locator(sel('mail-to')).count()) >= 1, '받는 사람 = 보낸 선생님');
+  await box.fill('답장 점검');
+  await page.locator(sel('mail-send')).click();
+  const rep = (await serverUntil(inboxB, (l) => l.some((x) => x.text === '답장 점검'), 10000)).find((x) => x.text === '답장 점검');
+  r.check(rep?.replyTo === newest, '답장 = replyTo (받은 쪽지 id)');
+
+  r.section('■2 쓰던 글 보관');
+  await page.locator(sel('mail-tab-btn', 'write')).click();
+  await box.fill('보관 점검 글');
+  await page.waitForTimeout(2600);
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.openWindow('mail', { tab: 'write' }));
+  r.check(await waitFor(page.locator(sel('draft-offer')), 5000), "다시 열면 '저장하지 않은 글이 있습니다'");
+  await page.locator(sel('draft-restore')).click();
+  r.check((await box.inputValue()) === '보관 점검 글', '되살리기 → 글');
+  await box.fill('');
+  // 보관에는 아직 남아 있다(되살린 뒤 비웠을 뿐) - 앱을 다시 열어도 띠에는 나오지 않는다
+  await page.reload();
+  await page.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+  await page.waitForTimeout(2500);
+  r.check((await page.locator(sel('drafts-banner')).count()) === 0, "앱 위 '저장하지 않은 글' 띠에는 넣지 않는다 (다시 열어 봄)");
+
+  r.section('■2 그룹 창 구성원 ✉');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.openWindow('group'));
+  const chip = page.locator(`${sel('group-row', SID)} ${sel('group-mail', uidB)}`);
+  r.check(await waitFor(chip, 8000), '구성원 칩에 ✉ (나 말고)');
+  r.check((await page.locator(`${sel('group-row', SID)} ${sel('group-mail', uidA)}`).count()) === 0, '내 칩에는 없다');
+  await chip.click();
+  r.check(await waitFor(page.locator(sel('mail-compose')), 5000), '✉ → 쪽지 쓰기');
+  r.check((await page.locator(sel('mail-group')).inputValue()) === SID && (await page.locator(sel('mail-to', uidB)).getAttribute('aria-pressed')) === 'true', '그 그룹·그 사람이 골라져 있다');
+
+  r.section('■2 끊긴 채 보내기');
+  await box.fill('끊김 점검');
+  await A.ctx.setOffline(true);
+  await page.locator(sel('mail-send')).click();
+  r.check(await waitFor(page.locator(sel('pending-writes')), 5000), "끊기면 '저장을 기다립니다' 띠");
+  r.check(((await page.locator(sel('mail-send')).textContent()) ?? '').includes('보내는 중'), '단추는 보내는 중…');
+  await A.ctx.setOffline(false);
+  const off = await serverUntil(inboxB, (l) => l.some((x) => x.text === '끊김 점검'), 20000);
+  r.check(off.some((x) => x.text === '끊김 점검'), '연결되면 간다');
+  r.check(await waitFor(async () => (await page.locator(sel('pending-writes')).count()) === 0, 8000), '띠가 사라진다');
 
   r.check(A.errors.length === 0, `페이지 오류 없음 ${A.errors.slice(0, 2).join(' / ')}`);
 } catch (e) {
