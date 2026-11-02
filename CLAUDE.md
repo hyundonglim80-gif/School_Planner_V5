@@ -26,7 +26,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P15 쪽지 끝**(11-02 - 화면 main·함수 v5MailPush 배포). 부탁(P15): 콘솔 Firestore > TTL에 정책 둘(컬렉션 그룹 `mailIn`·`mailSent`, 칸 `expireAt`) · 두 계정(하나는 휴대폰)으로 쪽지 한 통·앱 닫고 푸시 · 설치 앱은 완전히 닫았다 열기(sw.js 바뀜).
+- **P15 쪽지 끝**(11-02 - 화면 main·함수 v5MailPush 배포). TTL 둘은 11-02 CLI로 켬. 부탁(P15): 두 계정(하나는 휴대폰)으로 쪽지 한 통·앱 닫고 푸시 · 설치 앱은 완전히 닫았다 열기(sw.js 바뀜).
 - 부탁(P14-5): VS Code 터미널에서 C: 정리(11-02 89%) - `npm cache clean --force` · Windows 설정 > 저장소 > 임시 파일 · Android Studio Device Manager의 안 쓰는 에뮬레이터 이미지(**Android Studio는 지우지 않는다** - 에뮬레이터 Java). (functions 보안 판은 11-02 함수 배포에 실렸다.)
 - 부탁(P14-3): 내일 이후 `npx.cmd firebase firestore:backups:list` 에 READY 백업 · 복원 연습 한 번(`docs/OPS.md` - 다음 대화에서 Claude와 함께, 연습 DB 지우기는 터미널) · 결제 → 예산 및 알림 하나.
 - 부탁(P14-2): (TTL `v5Errors.expireAt`은 10-30 `firestore:indexes`로 이미 켜진 것을 확인) 실제 사이트 환경설정 '개발자' 탭 '오류 기록'이 열리는지(지금은 비어 있어야 정상).
@@ -145,6 +145,7 @@
   - **기기 사본**(P2-2): 받은 것은 메모리 먼저·사본은 뒤따라, 사본이 고장 나면 그 탭은 메모리로만(다시 열지 않는다). 구독은 내가 쓰는 동안 그 문서를 '빠짐'으로 준다 -
     영구 지우기로 믿지 않는다. **에뮬레이터는 색인을 보지 않는다** - 서버 쿼리는 칸 하나로 짓는다.
   - **구독이 `metadata.fromCache`로 '서버에서 받음'을 기다리면 `includeMetadataChanges: true`**(P15-1 쪽지 - 메모리에 있던 것과 서버 것이 같으면 '확인됨'만 바뀌어 다시 오지 않는다).
+  - **TTL 정책은 `firestore.indexes.json`(fieldOverrides `ttl: true`)이 정본** - `npx firebase deploy --only firestore:indexes`(11-02 P15 - 콘솔 TTL 목록은 문서가 있는 컬렉션만 보여 새 컬렉션은 고를 수 없었다). 운영 복합 색인은 0개 - 파일과 운영이 같은지 `firebase firestore:indexes`로 먼저 본다.
   - **서버 예약 백업**(10-29 P14-3 - 매일 7일 + 매주 일요일 8주)·되찾기는 `docs/OPS.md`. 복원은 새 데이터베이스로만 - `(default)`를 덮지 않는다(V3·V4·V5 모두의 자료).
 
 ## 4. V4에서 배운 것 중 V5에도 남는 것

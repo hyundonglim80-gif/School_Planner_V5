@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**없음** - P15 쪽지는 11-02 끝(화면·함수 배포). 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁(쪽지 TTL 둘·두 계정 확인). 새 요청이 오면 3장에 단계를 더한다.
+**없음** - P15 쪽지는 11-02 끝(화면·함수 배포). 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁(쪽지 두 계정 확인 - TTL은 11-02 CLI로 켬). 새 요청이 오면 3장에 단계를 더한다.
 11-02 사용자: 앞으로 V5만 쓴다 - V3·V4 동작은 묻지 않는다(`CLAUDE.md` 1장).
 P14(점검 뒤 손보기)는 10-30 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁뿐(P14-9 첨부 비공개는 취소).
 main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
@@ -202,7 +202,7 @@ main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 
 | P14-9 | 개인 공간 첨부 비공개 - 그림 받기 길(토큰·IndexedDB)·새로 올리기·이미 올린 것 거두기 (항목 5 - 사용자 ③) | 큼 | 중간 | **취소** (10-29 사용자 ①로 다시 고름) |
 | **P15 쪽지** (10-30 계획 · 11-02 설계 확정) | | | | |
 | P15-1 | 쪽지 자료·규칙·푸시 함수 (■0 설계 확정 11-02) | 중간 | 높음 | 끝 (11-02) |
-| P15-2 | 쪽지 화면: 쪽지함·쓰기·답장·머리줄 ✉·설명서·점검 | 중간 | 중간 | 끝 (11-02 - 👤 TTL 둘·두 계정 확인 남음) |
+| P15-2 | 쪽지 화면: 쪽지함·쓰기·답장·머리줄 ✉·설명서·점검 | 중간 | 중간 | 끝 (11-02 - 👤 두 계정 확인 남음) |
 
 **차례의 까닭**: 뼈대(P1)와 자료 층(P2)이 모든 화면의 바탕이다. 하루 화면(P3)이 가장 많이 쓰는 곳이라 먼저 하고, 가져오기를 단계마다 붙여
 P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6)이 달력(P5) 뒤인 까닭: 수업 칸은 주간에도 그려지므로 화면 틀이 먼저 있어야 한다.
@@ -2063,5 +2063,5 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
   휴대폰 390 머리줄(✉ 99+ 밝게·어둡게 - 넘침 0, 머리줄 높이 그대로, 누르면 창) · inspect-share-groups 통과 · DESIGN 4-9 화면 두 줄 · MAP '쪽지' 화면 줄 · PARITY 'V5에서 새로' 줄 · P15-facts 지움.
 - [x] ■5 (묻고) 함수 배포 · 👤 TTL 정책 둘(콘솔 Firestore > TTL - 컬렉션 그룹 `mailIn`·`mailSent`, 칸 `expireAt`) · 👤 실제 사이트에서 두 계정(하나는 휴대폰)으로 쪽지·푸시 한 번.
   → 11-02 사용자 '지금 배포' → `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:v5` - v5MailPush 만들기 + 넷 고침(P14-5 의존성 판도), functions:list 다섯 ACTIVE, v5SendDueAlarms 매분·v5ClaudeRequest 오류 없음.
-  TTL은 `firestore:indexes`에 v5Errors만 - 👤 콘솔에서 mailIn·mailSent 둘(CLAUDE.md 지금 상태). 세션 끝: manual 전체 323 · 단위 2697 · inspect-mail 76 · share-groups 통과.
+  TTL: 사용자 '콘솔 목록에 mailIn·mailSent가 없음'(운영에 쪽지 문서가 아직 없어서) → 사용자 'Claude가 지금 켜기' → `firestore.indexes.json`(색인 0 + v5Errors·mailIn·mailSent TTL) + firebase.json `indexes` → `deploy --only firestore:indexes` → 운영 셋 다 ttl, 규칙 그대로(live-rules 같다). 세션 끝: manual 전체 323 · 단위 2697 · inspect-mail 76 · share-groups 통과.
 **끝 조건**: inspect-mail · share-groups · manual 통과 · 함수 배포 · 👤 확인.
