@@ -896,6 +896,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P17 겹친 공간 기억 = 이 기기**(권장안): 고른 공간(`sp5-space`)이 이미 이 기기에만이다(휴대폰·PC가 다른 공간을 볼 수 있다 - share 설명서). 같은 곳(`sp5-space-overlay`, uid마다).
   계정 설정에 올리면 다른 기기의 주 공간과 엇갈린다. 그룹을 나가거나 지워지면 저절로 빠지고, 주 공간으로 고른 공간은 겹친 것에서 빠진다.
 - **P17 공간 색 = sid로 셈**(권장안 - 원칙 넷째 '계산할 수 있는 것은 저장하지 않는다'): 개인 = 정한 한 색, 그룹 = 팔레트에서 sid 해시. 공간 문서에 색 칸을 더하면 규칙(hasOnly)·배포가 는다 - 그룹 색 고르기는 요청이 오면.
+- **P17-2 겹친 일정 = 그 공간 라벨 트리로 셈**(■0 코드 확인): 기본 라벨 id(`dflt_e1~5`)가 모든 공간에 같아 트리를 합치면 그룹에서 이름·색·'달력'을 바꾼 기본 라벨이 개인 것으로 보인다.
+  어느 공간 것인지는 항목 객체로 찾는다(`Map<ItemDoc, 공간>`). 겹친 일정을 Ctrl·Shift와 함께 눌러도 고르기에 들지 않고 그 공간 칸이 열린다(고르는 동안은 눌러도 아무 일 없음 - 고를 수 없는 것을 열면 고르기가 끊긴다).
 ---
 
 ## 6. 세션별 내용
@@ -2160,10 +2162,16 @@ Claude 의견(방향 좋음 · 일정만 '겹쳐 보기' 1단계 · 칩은 날�
 **시작 조건**: P17-1 끝(칩 줄에 Ctrl·길게 누르기를 단다). **묻기**: 없음.
 **먼저 읽을 것**: 이 P17 절 · `data/select.ts` 246~321 · `data/mirror/store.ts`(`collKey`·colls) · `domain/labelTree.ts` `clickFilterLabel` · 일정 그리는 네 곳(위 '확인한 코드')의 일정 부분만 · `events/drag.ts` 80~100 ·
 `events/multi.ts`(길게 누르기) · `events/EventPanel.tsx` 400~415 · 설명서 events·share 그 주제만.
-- [ ] ■0 코드 확인(30분, 문서만) - 네 화면이 일정 목록을 어디서 받아 어디서 그리는지 · `calendarEvents`·주간·년간 셈이 순수인지(겹친 것을 '뒤에 붙이기'로 될지) · 길게 누르기 관례. 계획과 다르면 이 절·5장을 고친다.
+- [x] ■0 코드 확인(30분, 문서만) - 네 화면이 일정 목록을 어디서 받아 어디서 그리는지 · `calendarEvents`·주간·년간 셈이 순수인지(겹친 것을 '뒤에 붙이기'로 될지) · 길게 누르기 관례. 계획과 다르면 이 절·5장을 고친다.
+  → 11-02: 네 화면 모두 `useDocs('items', sid)`(하루는 `useItemsOn`) + `useLabelTree('event', sid)`를 받아 순수 셈(`itemsOn`·`calendarEvents(items, from, to, tree)`)으로 고른다 - 공간마다 같은 셈을 한 번 더 하고 뒤에 붙이면 된다.
+  **계획과 다른 것**: 기본 라벨 id가 공간마다 같다(`domain/labels` `dflt_e1~5` - 그룹을 만들 때 `defaultLabelOps`가 같은 id로 둔다) → 라벨 트리를 하나로 합치지 못한다. 겹친 일정의 라벨 칩 색·'달력' 속성(`onCalendar`)은 **그 공간 트리로** 셈한다.
+  항목 id는 공간끼리 겹치지 않는다(`newId` 무작위·`v4id`는 공간을 넣어 셈) - 그래도 '어느 공간 것인가'는 id가 아니라 **항목 객체로 찾는다**(`Map<ItemDoc, 공간>` - 셈이 같은 객체를 돌려준다).
+  아래 칸들(WeekDayCard·MonthGrid·MonthDaySheet·YearMonthCard·YearSheetMonth)은 일만 받는 콜백(`onEventClick(ev, …)`)과 `labelsOf(ev)`(년간 둘은 `tree`)를 받는다 → 화면이 `spaceOf(ev)`로 sid·트리를 골라 넘기고, 년간 둘은 `tree` 대신 `labelsOf`로 바꾼다(memo가 살게 useCallback).
+  여러 개 고르기 `visiblePicks`·Shift 범위는 주 공간 목록만 받게 그대로 둔다. 끌기는 `eventDragProps(ev, day, enabled)`의 enabled를 겹친 것에 false. 파란 테두리 `useShownEventId(sid)`는 sid를 받는다 - 겹친 공간마다 부르지 않고 열린 일정 칸의 `{ sid, id }`를 한 번 읽는 훅을 더한다.
+  길게 누르기는 `day/DayEvents.tsx` EventCard 하나뿐(손가락만·0.5초·10px 움직이면 그만·뒤따르는 click 넘기기·contextmenu 막기) → `ui/longPress.ts`로 꺼내 칩과 카드가 함께 쓴다.
 - [ ] ■1 자료·셈 - `data/spaceChoice.ts` 겹친 공간 store(`sp5-space-overlay` uid마다 · `toggleOverlay` · 순수 `overlaySpaces(choice, mine, main)` - 주 공간·나간 그룹 거르기) ·
-  `domain/spaceColor.ts`(`spaceColor(sid)` - 개인 고정·그룹 해시 팔레트, 밝게·어둡게 둘 다 읽히게) · `data/select.ts` `useOverlayEvents(from, to)` → `[{ sid, name, color, events, tree }]`
-  (useMirror에서 여러 키를 selector 하나로 - 훅을 공간 수만큼 부르지 않는다 · 같은 재료면 같은 객체 - CLAUDE.md 4장) + 시험(공간 둘 흉내 · 지운 것 빼기 · 같은 참조 · 주 공간 빼기).
+  `domain/spaceColor.ts`(`spaceColor(sid)` - 개인 고정·그룹 해시 팔레트, 밝게·어둡게 둘 다 읽히게) · `data/select.ts` `useOverlaySpaces()` → `[{ sid, name, color, items, tree }]`(■0 - 화면마다 셈이 달라 일정 목록이 아니라 재료를 준다)
+  (useMirror에서 여러 키를 selector 하나로(`useShallow`) - 훅을 공간 수만큼 부르지 않는다 · 같은 재료면 같은 객체 - CLAUDE.md 4장) + 시험(공간 둘 흉내 · 지운 것 빼기 · 같은 참조 · 주 공간 빼기).
 - [ ] ■2 칩 Ctrl·길게 누르기 + 하루 화면 - `SpaceChips` 겹친 칩(테두리·✓·색 점, 주 공간은 Ctrl 안 들음, PC 흐린 글) · `DayEvents` 주 공간 아래 공간마다 구분 줄 `[data-overlay-group=sid]` + 카드 `[data-event-space=sid]`
   (누르기 = 그 공간 칸 · 완료 = 그 공간 · 끌기·▲▼·고르기 없음 · 파란 테두리 = 그 공간 `useShownEventId`) · 새 일정 칸 머리 공간 색 칩. 메모·학급 화면 📂 드롭다운은 주 공간만 고른다(겹친 것은 보이지도 바꾸지도 않고 이 기기 기억에 남아 달력 화면에 돌아오면 그대로 - 📂로 겹친 공간을 고르면 주 공간이 되고 겹친 것에서 빠진다). 시험(칩 클릭 규칙 · DayEvents 겹친 줄 · 📂로 고르기).
 - [ ] ■3 주간·월간·년간 - 칸마다 주 공간 뒤에 겹친 일정(기간 막대 포함, 휴대폰 월간 그날 목록도) · 끌기·고르기 목록(`visiblePicks` 등)에서 빼기 · 인쇄는 보이는 그대로.
