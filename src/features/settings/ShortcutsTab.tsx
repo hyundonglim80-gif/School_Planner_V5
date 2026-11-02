@@ -4,23 +4,28 @@
 // 엉뚱한 기능이 돈다. '저장'은 겹치는 키가 있으면 막는다. 저장해도 창은 닫히지 않는다. 탭을 바꿔도 고치던 것은 남고,
 // ESC로 모두 닫을 때는 먼저 묻는다(창 목록의 저장 안 한 글 묻기).
 // '⌨️ 단축키 설정'(P18-1 - PC만) = 메뉴·단추를 눌러 기능을 고르고 키를 누르는 길(app/shortcutRecord). 끝나면 이 탭이 그 줄을 짚는다(focusId).
+// '내가 만든 단축키'(P18-2) = 창 안 탭 키 - 키를 준 탭만 보인다(더하기는 '⌨️ 단축키 설정'으로만, 키를 비우고 저장하면 빠진다 - PLAN 5장).
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type Ref } from 'react';
 import { showErrorToast, showToast } from '../../app/toast';
-import { canRun, setShortcutOverrides, useShortcutOverrides } from '../../app/keys';
+import { canRun, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from '../../app/keys';
 import { detectDeviceKind } from '../../app/prefs';
-import { shortcutLabel } from '../../app/tabShortcuts';
+import { shortcutLabel, TAB_SHORTCUTS } from '../../app/tabShortcuts';
 import { useUnsavedCheck } from '../../app/windows';
 import {
   bindingFromEvent,
+  compactTabBindings,
   findConflicts,
   FIXED_SHORTCUTS,
   isModifierOnly,
+  isTabShortcutId,
   overridesFromBindings,
   resolveBindings,
   SHORTCUT_ACTIONS,
-  type Binding,
+  tabBindingsKey,
   type AnyShortcutId,
+  type Binding,
   type ShortcutId,
+  type TabBindings,
 } from '../../domain/shortcuts';
 
 /** 입력칸에 보여줄 글자. 화살표처럼 이름이 긴 키는 기호로 */
@@ -59,7 +64,7 @@ function ShortcutRow({
   focused,
   onChange,
 }: {
-  id: ShortcutId;
+  id: AnyShortcutId;
   label: string;
   binding: Binding;
   conflicted: boolean;
@@ -93,8 +98,8 @@ function ShortcutRow({
     // 누른 대로 수식키까지 같이 채운다. 체크로 따로 손봐도 된다.
     onChange(bindingFromEvent(native));
   };
-  // 아직 V5로 옮기지 않은 기능도 키는 정해 둘 수 있다(옮기면 그 키로 선다) - 흐리게
-  const ready = canRun(id);
+  // 아직 V5로 옮기지 않은 기능도 키는 정해 둘 수 있다(옮기면 그 키로 선다) - 흐리게. 창 안 탭은 있는 창만 목록에 있다
+  const ready = isTabShortcutId(id) || canRun(id);
 
   return (
     <div
@@ -153,7 +158,10 @@ export default function ShortcutsTab({
   onStartRecord: () => void;
 }) {
   const stored = useShortcutOverrides((s) => s.overrides);
+  const storedTabs = useShortcutOverrides((s) => s.tabs);
   const [draft, setDraft] = useState<Bindings>(() => resolveBindings(stored));
+  // 창 안 탭 키 (P18-2) - 비운 줄은 빈 키로 남겨 두었다가 저장할 때 뺀다(줄이 손 밑에서 사라지지 않게)
+  const [tabDraft, setTabDraft] = useState<TabBindings>(() => storedTabs);
   const [saved, setSaved] = useState(false);
   // 마지막으로 맞춘 저장값. 고치지 않은 채로 다른 기기에서 바뀌면 따라간다(고치던 중이면 그대로 둔다).
   const base = useRef(resolveBindings(stored));
@@ -164,11 +172,19 @@ export default function ShortcutsTab({
     setDraft((d) => (keyOf(d) === prev ? next : d));
     base.current = next;
   }, [stored]);
+  const baseTabs = useRef(storedTabs);
+  useEffect(() => {
+    const prev = tabBindingsKey(baseTabs.current);
+    setTabDraft((d) => (tabBindingsKey(d) === prev ? storedTabs : d));
+    baseTabs.current = storedTabs;
+  }, [storedTabs]);
 
-  const conflicts = useMemo(() => findConflicts(draft), [draft]);
-  const conflicted = useMemo(() => new Set(conflicts.flat()), [conflicts]);
-  const dirty = keyOf(draft) !== keyOf(resolveBindings(stored));
+  const conflicts = useMemo(() => findConflicts(draft, compactTabBindings(tabDraft)), [draft, tabDraft]);
+  const conflicted = useMemo(() => new Set<AnyShortcutId>(conflicts.flat()), [conflicts]);
+  const dirty = keyOf(draft) !== keyOf(resolveBindings(stored)) || tabBindingsKey(tabDraft) !== tabBindingsKey(storedTabs);
   const conflict = conflicts.length > 0 ? `${shortcutLabel(conflicts[0][0])} / ${shortcutLabel(conflicts[0][1])}` : null;
+  // 보이는 탭 줄 = 저장된 것 + 고치는 중인 것 (탭 목록 차례)
+  const tabRows = TAB_SHORTCUTS.filter((t) => storedTabs[t.id] || tabDraft[t.id]);
 
   useEffect(() => onStatus({ dirty, conflict, saved }), [dirty, conflict, saved, onStatus]);
 
@@ -179,16 +195,25 @@ export default function ShortcutsTab({
   });
   useUnsavedCheck(unsaved);
 
+  const store = () => {
+    const tabs = compactTabBindings(tabDraft);
+    setShortcutOverrides(overridesFromBindings(draft));
+    setTabShortcuts(tabs);
+    setTabDraft(tabs);
+  };
+
   useImperativeHandle(ref, () => ({
     save: () => {
-      // 키가 비어 있는 것은 '쓰지 않음'이다. 막지 않는다.
+      // 키가 비어 있는 것은 '쓰지 않음'이다. 막지 않는다. (창 안 탭은 빠진다)
       if (conflict) return showErrorToast(`같은 조합을 두 기능이 쓰고 있습니다: ${conflict}`);
-      setShortcutOverrides(overridesFromBindings(draft));
+      store();
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     },
     reset: () => {
       setDraft(resolveBindings());
+      // 창 안 탭은 기본값이 없다 - 모두 비운다(저장하면 빠진다)
+      setTabDraft(Object.fromEntries(tabRows.map((t) => [t.id, { ctrl: false, alt: false, shift: false, key: '' }])));
       showToast("기본값으로 되돌렸습니다. '저장'을 눌러야 적용됩니다.");
     },
   }));
@@ -200,7 +225,7 @@ export default function ShortcutsTab({
     if (dirty) {
       if (!window.confirm('고치던 단축키를 먼저 저장하고 시작할까요?')) return;
       if (conflict) return showErrorToast(`같은 조합을 두 기능이 쓰고 있습니다: ${conflict}`);
-      setShortcutOverrides(overridesFromBindings(draft));
+      store();
     }
     onStartRecord();
   };
@@ -258,6 +283,35 @@ export default function ShortcutsTab({
           </div>
         </div>
       ))}
+
+      {/* 내가 만든 단축키 (P18-2 - 창 안 탭). 휴대폰은 더할 길이 없어 있을 때만 */}
+      {(pc || tabRows.length > 0) && (
+        <div className="px-5 py-4 border-b border-slate-100" data-shortcut-tabs>
+          <h3 className="text-sm font-black text-slate-800 mb-0.5">내가 만든 단축키 (창 안 탭)</h3>
+          <p className="text-xs text-slate-400 mb-2">
+            창 안의 탭(예: 환경설정 → 알림)은 맨 위 <strong className="text-slate-500">⌨️ 단축키 설정</strong>으로 그 탭을 눌러 더합니다. 키를 비우고 저장하면 빠집니다.
+          </p>
+          {tabRows.length === 0 ? (
+            <p data-shortcut-tabs-empty className="text-xs text-slate-400 rounded-xl border border-dashed border-slate-200 p-2.5">
+              아직 없습니다.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {tabRows.map((t) => (
+                <ShortcutRow
+                  key={t.id}
+                  id={t.id}
+                  label={t.label}
+                  binding={tabDraft[t.id] || { ctrl: false, alt: false, shift: false, key: '' }}
+                  conflicted={conflicted.has(t.id)}
+                  focused={focusId === t.id}
+                  onChange={(b) => setTabDraft((prev) => ({ ...prev, [t.id]: b }))}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 바꾸지 않는 것들. 목록에서 빠지면 "없는 기능"으로 보이므로 까닭과 함께 보여 준다 */}
       <div className="px-5 py-4">

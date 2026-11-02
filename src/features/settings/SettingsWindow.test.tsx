@@ -4,7 +4,7 @@ import { resetHistoryForTest } from '../../app/history';
 import { setPopupStyle, useLayoutPrefs } from '../../app/layoutPrefs';
 import { useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
-import { handleAppKeyDown, setShortcutOverrides, useShortcutOverrides } from '../../app/keys';
+import { handleAppKeyDown, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from '../../app/keys';
 import { anyWindowUnsaved } from '../../app/windows';
 import { overridesFromBindings, resolveBindings } from '../../domain/shortcuts';
 import { useMirror } from '../../data/mirror/store';
@@ -40,6 +40,7 @@ beforeEach(() => {
   useLayoutPrefs.setState({ fontScale: 'md' });
   useNav.setState({ showWeekend: true, startupScope: 'last' });
   setShortcutOverrides({});
+  setTabShortcuts({});
 });
 
 const openSettings = (tab?: 'view' | 'school' | 'shortcuts' | 'app' | 'dev') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
@@ -190,6 +191,48 @@ describe('환경설정 창', () => {
     expect(q('[data-shortcut-row="timetable"]')).toHaveAttribute('data-shortcut-row-focus');
     expect(q('[data-shortcut-row="timetable"]')).toHaveClass('search-focus');
     expect(q('[data-shortcut-row="help"]')).not.toHaveAttribute('data-shortcut-row-focus');
+  });
+
+  it("내가 만든 단축키 (P18-2): 키를 준 탭만 · 없으면 '아직 없습니다' · 눌러서 정한 뒤 열면 그 줄", () => {
+    const first = openSettings('shortcuts');
+    expect(q('[data-shortcut-tabs-empty]')).toBeInTheDocument();
+    first.unmount();
+    setTabShortcuts({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } });
+    render(<SettingsWindow params={{ tab: 'shortcuts', focus: 'settings:notify' }} close={vi.fn()} raise={0} setParams={vi.fn()} />);
+    expect(qa('[data-shortcut-tabs] [data-shortcut-row]').map((r) => r.dataset.shortcutRow)).toEqual(['settings:notify']);
+    expect(q('[data-shortcut-row="settings:notify"]')).toHaveTextContent('환경설정 → 알림');
+    expect(q('[data-shortcut-row="settings:notify"] [data-shortcut-key]')).toHaveValue('N');
+    expect(q('[data-shortcut-row="settings:notify"]')).toHaveAttribute('data-shortcut-row-focus');
+  });
+
+  it('내가 만든 단축키: 키를 바꿔 저장 · 기능과 겹치면 막는다 · 비우고 저장하면 빠진다', () => {
+    setTabShortcuts({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } });
+    openSettings('shortcuts');
+    const input = () => q('[data-shortcut-row="settings:notify"] [data-shortcut-key]');
+    fireEvent.keyDown(input(), { key: 'f', code: 'KeyF', ctrlKey: true });
+    expect(q('[data-shortcut-row="search"]')).toHaveAttribute('data-conflict');
+    fireEvent.click(q('[data-shortcut-save]'));
+    expect(useShortcutOverrides.getState().tabs['settings:notify']?.key).toBe('N');
+    fireEvent.keyDown(input(), { key: 'm', code: 'KeyM', ctrlKey: true, altKey: true });
+    expect(anyWindowUnsaved()).toBe(true);
+    fireEvent.click(q('[data-shortcut-save]'));
+    expect(useShortcutOverrides.getState().tabs).toEqual({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'M' } });
+    // 비우면 줄은 남아 있다가 저장하면 빠진다
+    fireEvent.keyDown(input(), { key: 'Backspace', code: 'Backspace' });
+    expect(input()).toHaveValue('');
+    fireEvent.click(q('[data-shortcut-save]'));
+    expect(useShortcutOverrides.getState().tabs).toEqual({});
+    expect(document.querySelector('[data-shortcut-row="settings:notify"]')).toBeNull();
+    expect(q('[data-shortcut-tabs-empty]')).toBeInTheDocument();
+  });
+
+  it('기본값으로 → 저장하면 창 안 탭 키도 빠진다 · 다른 기기에서 더한 탭도 따라온다', () => {
+    openSettings('shortcuts');
+    act(() => setTabShortcuts({ 'backup:import': { ctrl: false, alt: true, shift: false, key: 'I' } }));
+    expect(q('[data-shortcut-row="backup:import"] [data-shortcut-key]')).toHaveValue('I');
+    fireEvent.click(q('[data-shortcut-reset]'));
+    fireEvent.click(q('[data-shortcut-save]'));
+    expect(useShortcutOverrides.getState().tabs).toEqual({});
   });
 
   it('고치지 않은 채로 다른 기기에서 키가 바뀌면 따라간다', () => {

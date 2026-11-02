@@ -10,6 +10,7 @@ import CollectSection from './CollectSection';
 import KeepImportSection from './KeepImportSection';
 import SheetsSection from './SheetsSection';
 import V4ImportSection from './V4ImportSection';
+import { useTabTarget } from '../../app/keys';
 
 const TABS: ReadonlyArray<{ id: BackupTabId; label: string }> = [
   { id: 'backup', label: '💾 백업' },
@@ -19,6 +20,8 @@ const TABS: ReadonlyArray<{ id: BackupTabId; label: string }> = [
 ];
 
 export default function BackupWindow({ params, close, raise }: WindowProps<BackupParams | undefined>) {
+  // 창 안 탭 단축키(P18-2) - 단축키 설정이 고르는 표시 + 키가 있으면 툴팁
+  const tabTarget = useTabTarget();
   const [tab, setTab] = useState<BackupTabId>(params?.tab ?? 'backup');
   // 열린 창을 탭을 정해 다시 열면 그 탭으로 (단축키 '구글 캘린더로 보내기', 백업 탭에 넣은 Keep 파일 등).
   // 같은 탭으로 다시 열어도(그새 다른 탭을 눌렀어도) 넘어가게 탭 이름이 아니라 params를 견준다 - openWindow는 열 때마다 새 params
@@ -37,6 +40,7 @@ export default function BackupWindow({ params, close, raise }: WindowProps<Backu
               type="button"
               role="tab"
               data-backup-tab-btn={t.id}
+              {...tabTarget('backup', t.id)}
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
               className={`px-3 py-2 -mb-px text-sm font-bold border-b-2 transition-colors cursor-pointer ${

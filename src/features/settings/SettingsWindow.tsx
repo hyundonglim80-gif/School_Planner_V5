@@ -14,6 +14,7 @@ import ShortcutsTab, { type ShortcutsTabHandle } from './ShortcutsTab';
 import { startShortcutRecord } from '../../app/shortcutRecord';
 import type { AnyShortcutId } from '../../domain/shortcuts';
 import ViewTab from './ViewTab';
+import { useTabTarget } from '../../app/keys';
 
 export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' | 'dev';
 
@@ -31,6 +32,8 @@ const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean; de
 ];
 
 export default function SettingsWindow({ params, close, raise }: WindowProps<{ tab?: SettingsTabId; focus?: AnyShortcutId } | undefined>) {
+  // 창 안 탭 단축키(P18-2) - 단축키 설정이 고르는 표시 + 키가 있으면 툴팁
+  const tabTarget = useTabTarget();
   const developer = isDeveloper(useSession((s) => s.user?.email));
   const shownTabs = TABS.filter((t) => t.ready && (!t.dev || developer));
   const first = shownTabs.find((t) => t.id === params?.tab)?.id ?? 'view';
@@ -98,6 +101,7 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
               type="button"
               role="tab"
               data-settings-tab={t.id}
+              {...tabTarget('settings', t.id)}
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
               className={`px-3 py-2 -mb-px text-sm font-bold border-b-2 transition-colors cursor-pointer ${

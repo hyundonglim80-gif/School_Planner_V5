@@ -62,3 +62,25 @@ describe('창 안 탭 열기', () => {
     expect(runTabShortcut('settings:nope')).toBe(false);
   });
 });
+
+// 창 파일 (Vite ?raw - windowConventions.test 본보기)
+const sources = import.meta.glob(['../features/**/*Window.tsx', '../features/**/*Panel.tsx'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+const FILE_OF: Record<string, string> = {
+  settings: 'settings/SettingsWindow',
+  backup: 'backup/BackupWindow',
+  mail: 'mail/MailWindow',
+  timetable: 'timetable/TimetableWindow',
+  labels: 'labels/LabelsWindow',
+  trash: 'trash/TrashWindow',
+  attendance: 'attendance/AttendancePanel',
+  notices: 'notices/NoticePanel',
+};
+
+describe('탭 단추 표시', () => {
+  it.each([...new Set(TAB_SHORTCUTS.map((t) => t.window))])('%s 창의 탭 단추가 useTabTarget으로 표시를 단다', (win) => {
+    const src = sources[`../features/${FILE_OF[win]}.tsx`];
+    expect(src, win).toBeDefined();
+    expect(src).toContain('useTabTarget()');
+    expect(src).toContain(`{...tabTarget('${win}', `);
+  });
+});

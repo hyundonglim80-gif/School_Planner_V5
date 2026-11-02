@@ -40,6 +40,7 @@ import { useTeaching } from '../lessons/teaching';
 import { saveAttendance } from './actions';
 import { pickAttendanceClass } from './attendanceClass';
 import type { AttendancePanelParams, AttendanceTab } from './open';
+import { useTabTarget } from '../../app/keys';
 
 /** 고친 뒤 이만큼 손을 떼면 저장 (V4 UX-AUDIT C4 - 결석 한 번 누르고 저장까지 3번이던 것을 2번으로) */
 const AUTO_SAVE_MS = 2500;
@@ -58,6 +59,8 @@ const sameMarks = (a: AttendanceMarks, b: AttendanceMarks) => {
 };
 
 export default function AttendancePanel({ params, close, raise }: WindowProps<AttendancePanelParams>) {
+  // 창 안 탭 단축키(P18-2) - 단축키 설정이 고르는 표시 + 키가 있으면 툴팁
+  const tabTarget = useTabTarget();
   const { classes, sid } = useClasses();
   const docs = useDocs('attendance', sid);
   const status = useMirrorStatus('attendance', sid);
@@ -201,6 +204,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                   key={id}
                   type="button"
                   data-attendance-tab={id}
+                  {...tabTarget('attendance', id)}
                   onClick={() => setTab(id)}
                   aria-pressed={tab === id}
                   className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${tab === id ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}

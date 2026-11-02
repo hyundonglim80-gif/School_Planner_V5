@@ -25,6 +25,7 @@ import { useProgressMarks } from '../progress/useProgress';
 import { useSchool } from '../school/school';
 import { saveNotice } from './actions';
 import type { NoticePanelParams, NoticeTab } from './open';
+import { useTabTarget } from '../../app/keys';
 
 type ListRange = 'month' | '30days' | 'year';
 
@@ -36,6 +37,8 @@ interface Draft {
 const shareNotice = (date: string, lines: string[]) => void shareText(`${shortDateLabel(date)} 알림장`, noticeMessage(date, lines));
 
 export default function NoticePanel({ params, close, raise }: WindowProps<NoticePanelParams>) {
+  // 창 안 탭 단축키(P18-2) - 단축키 설정이 고르는 표시 + 키가 있으면 툴팁
+  const tabTarget = useTabTarget();
   // 칸을 연 순간의 공간에 저장한다 (지금 보는 공간이 아니라)
   const [sid] = useState(() => params.sid ?? currentSpaceId() ?? '');
   const personal = usePersonalSpaceId();
@@ -183,6 +186,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                 key={id}
                 type="button"
                 data-notice-tab={id}
+                {...tabTarget('notices', id)}
                 onClick={() => setTab(id)}
                 aria-pressed={tab === id}
                 className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${tab === id ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}

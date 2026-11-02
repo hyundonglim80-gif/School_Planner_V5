@@ -13,6 +13,7 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { purgeEntries, restoreEntries } from './actions';
 import { useTrashDocs } from './useTrashDocs';
 import { expiredOf, KIND_LABEL, TRASH_TABS, tabOf, trashEntries, type TrashEntry, type TrashTab } from './trashList';
+import { useTabTarget } from '../../app/keys';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -20,6 +21,8 @@ const quiet = () => {
 const when = (ms: number) => new Date(ms).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?: TrashTab } | undefined>) {
+  // 창 안 탭 단축키(P18-2) - 단축키 설정이 고르는 표시 + 키가 있으면 툴팁
+  const tabTarget = useTabTarget();
   const sid = useCurrentSpaceId();
   const docs = useTrashDocs(sid);
   const ddays = useCommonSettings((s) => s.ddays);
@@ -135,6 +138,7 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
                 type="button"
                 role="tab"
                 data-trash-tab={t.key}
+                {...tabTarget('trash', t.key)}
                 aria-selected={active}
                 onClick={() => {
                   setTab(t.key);

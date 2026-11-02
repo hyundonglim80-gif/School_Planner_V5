@@ -34,6 +34,7 @@ import { currentSpaceId } from '../../data/session';
 import type { ItemKind, LabelProps } from '../../data/types';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import ColorPicker from './ColorPicker';
+import { useTabTarget } from '../../app/keys';
 
 export interface LabelsWindowParams {
   /** 처음 볼 탭 (각 칸의 ⚙️에서 그 탭으로) */
@@ -88,6 +89,8 @@ function moveSibling<T extends { id: string }>(list: T[], id: string, dir: 'up' 
 const KIND_NOUN: Record<ItemKind, string> = { event: '일정', note: '메모' };
 
 export default function LabelsWindow({ params, close, raise }: WindowProps<LabelsWindowParams | undefined>) {
+  // 창 안 탭 단축키(P18-2) - 단축키 설정이 고르는 표시 + 키가 있으면 툴팁
+  const tabTarget = useTabTarget();
   // 칸을 연 순간의 공간 (V4 규칙)
   const [sid] = useState(() => currentSpaceId());
   const [tab, setTab] = useState<ItemKind>(params?.tab ?? 'event');
@@ -291,6 +294,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
               type="button"
               role="tab"
               data-label-tab={k}
+              {...tabTarget('labels', k)}
               aria-selected={tab === k}
               onClick={() => setTab(k)}
               className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${

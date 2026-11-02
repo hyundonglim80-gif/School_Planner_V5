@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import ShortcutRecordBar from './ShortcutRecordBar';
 import { startShortcutRecord, useShortcutRecord } from './shortcutRecord';
-import { setShortcutOverrides, useShortcutOverrides } from './keys';
+import { setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
 import { registerWindow, resetWindowsForTest, useWindows } from './windows';
 import { shortcutTarget } from '../ui/shortcutTarget';
 
@@ -40,6 +40,7 @@ beforeEach(() => {
   resetWindowsForTest();
   registerWindow({ id: 'settings', title: '환경설정', icon: '⚙️', kind: 'side', load: () => import('../features/dev/TestWindow') });
   setShortcutOverrides({});
+  setTabShortcuts({});
   useShortcutRecord.setState({ stage: 'off', picked: null, miss: false, binding: null });
 });
 
@@ -131,5 +132,61 @@ describe('단축키 설정 띠 (P18-1)', () => {
     expect(useShortcutOverrides.getState().overrides).toEqual({});
     window.removeEventListener('keydown', app);
     expect(screen.queryByText('완료')).toBeNull();
+  });
+});
+
+describe('창 안 탭 고르기 (P18-2)', () => {
+  function setupTabs() {
+    render(
+      <>
+        <button type="button" role="tab" data-shortcut-target="settings:notify">
+          알림
+        </button>
+        <button type="button" role="tab" data-shortcut-target="settings:nope">
+          없는 탭
+        </button>
+        <ShortcutRecordBar />
+      </>,
+    );
+  }
+
+  it("탭 단추 = '창 → 탭'을 고른다 · 목록에 없는 탭은 만들 수 없다", () => {
+    setupTabs();
+    act(() => startShortcutRecord());
+    fireEvent.click(screen.getByText('없는 탭'));
+    expect(q('[data-shortcut-record-miss]')).not.toBeNull();
+    fireEvent.click(screen.getByText('알림'));
+    expect(q('[data-shortcut-record-picked="settings:notify"]')).toHaveTextContent('환경설정 → 알림');
+  });
+
+  it('키 → 저장 = 창 안 탭 키 · 같은 키를 쓰던 기능에서는 뺀다 · 환경설정 단축키 탭을 그 줄로', () => {
+    setupTabs();
+    act(() => startShortcutRecord());
+    fireEvent.click(screen.getByText('알림'));
+    fireEvent.click(q('[data-shortcut-record-done]'));
+    expect(q('[data-shortcut-record="key"]')).toHaveTextContent("'환경설정 → 알림'에 줄 키를 누르세요");
+    expect(q('[data-shortcut-record="key"]')).toHaveTextContent('지금: 없음');
+    pressKey({ key: 'f', code: 'KeyF', ctrlKey: true });
+    expect(q('[data-shortcut-record-conflict]')).toHaveTextContent('검색 열기');
+    pressKey({ key: 'n', code: 'KeyN', ctrlKey: true, altKey: true });
+    expect(q('[data-shortcut-record-key]')).toHaveTextContent('Ctrl + Alt + N');
+    fireEvent.click(q('[data-shortcut-record-save]'));
+    expect(useShortcutOverrides.getState().tabs).toEqual({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } });
+    expect(useShortcutOverrides.getState().overrides).toEqual({});
+    const win = useWindows.getState().windows.find((w) => w.id === 'settings');
+    expect(win?.params).toEqual({ tab: 'shortcuts', focus: 'settings:notify' });
+  });
+
+  it('기능에 탭이 쓰던 키를 주면 탭은 목록에서 빠진다', () => {
+    setTabShortcuts({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } });
+    setup();
+    act(() => startShortcutRecord());
+    fireEvent.click(q('[data-inner]'));
+    fireEvent.click(q('[data-shortcut-record-done]'));
+    pressKey({ key: 'n', code: 'KeyN', ctrlKey: true, altKey: true });
+    expect(q('[data-shortcut-record-conflict]')).toHaveTextContent('환경설정 → 알림');
+    fireEvent.click(q('[data-shortcut-record-save]'));
+    expect(useShortcutOverrides.getState().tabs).toEqual({});
+    expect(useShortcutOverrides.getState().overrides.timetable?.key).toBe('N');
   });
 });

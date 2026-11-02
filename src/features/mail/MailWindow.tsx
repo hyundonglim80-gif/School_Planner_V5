@@ -18,6 +18,7 @@ import { removeMail, useHiddenMail } from './actions';
 import MailAttachments from './MailAttachments';
 import MailCompose, { type ComposeAsk } from './MailCompose';
 import type { MailParams, MailTabId } from './open';
+import { useTabTarget } from '../../app/keys';
 
 type Item = MailIn | MailSent;
 const isIn = (m: Item): m is MailIn => 'from' in m;
@@ -278,6 +279,8 @@ const TABS: ReadonlyArray<{ id: MailTabId; label: string }> = [
 const askOf = (p: MailParams | undefined): ComposeAsk | undefined => (p?.tab === 'write' && (p.sid || p.to) ? { sid: p.sid, to: p.to } : undefined);
 
 export default function MailWindow({ params, close, raise }: WindowProps<MailParams | undefined>) {
+  // 창 안 탭 단축키(P18-2) - 단축키 설정이 고르는 표시 + 키가 있으면 툴팁
+  const tabTarget = useTabTarget();
   const [tab, setTab] = useState<MailTabId>(params?.tab ?? 'in');
   const [focus, setFocus] = useState(params?.id ? { id: params.id } : undefined);
   const [ask, setAsk] = useState(() => askOf(params));
@@ -326,6 +329,7 @@ export default function MailWindow({ params, close, raise }: WindowProps<MailPar
               type="button"
               role="tab"
               data-mail-tab-btn={t.id}
+              {...tabTarget('mail', t.id)}
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
               className={`-mb-px flex items-center gap-1 border-b-2 px-3 py-2 text-sm font-bold transition-colors cursor-pointer ${

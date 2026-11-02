@@ -26,6 +26,7 @@ import TeachingTab from './TeachingTab';
 import TermsTab from './TermsTab';
 import { draftOf, draftProblem, firstTimetable, timetableOps, type TimetableDraft } from './timetableDraft';
 import { shortcutTarget } from '../../ui/shortcutTarget';
+import { useTabTarget } from '../../app/keys';
 
 export type TimetableTab = 'teaching' | 'grid' | 'periods' | 'terms';
 
@@ -81,6 +82,8 @@ function cleanTerms(terms: SchoolTerms): SchoolTerms {
 export type TimetableParams = { tab?: TimetableTab; pick?: string; termsYear?: number };
 
 export default function TimetableWindow({ params, close, raise }: WindowProps<TimetableParams | undefined>) {
+  // 창 안 탭 단축키(P18-2) - 단축키 설정이 고르는 표시 + 키가 있으면 툴팁
+  const tabTarget = useTabTarget();
   const [tab, setTab] = useState<TimetableTab>(params?.tab ?? 'grid');
   const [picked, setPicked] = useState<string | null>(params?.pick ?? null);
 
@@ -265,6 +268,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
               role="tab"
               aria-selected={tab === t.id}
               data-timetable-tab={t.id}
+              {...tabTarget('timetable', t.id)}
               onClick={() => setTab(t.id)}
               className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
                 tab === t.id ? 'bg-blue-50 text-blue-700 border border-blue-300' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent'
