@@ -26,8 +26,8 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P15-1 끝**(11-02 - 쪽지 규칙·자료 층·푸시 함수 코드, 운영 규칙 배포됨 - 그룹장이 남을 넣는 길도 막힘). P15-2 ■1~■4 쪽지 화면·설명서 끝(11-02 - sw.js 바뀜). '이어서' = P15-2 ■5 함수 배포(묻기)·👤 TTL·두 계정 확인. 함수 배포는 P15-2 ■5(물어서).
-- 부탁(P14-5): VS Code 터미널에서 C: 정리(11-02 89%) - `npm cache clean --force` · Windows 설정 > 저장소 > 임시 파일 · Android Studio Device Manager의 안 쓰는 에뮬레이터 이미지(**Android Studio는 지우지 않는다** - 에뮬레이터 Java). functions 보안 판은 다음 함수 배포 때 저절로.
+- **P15 쪽지 끝**(11-02 - 화면 main·함수 v5MailPush 배포). 부탁(P15): 콘솔 Firestore > TTL에 정책 둘(컬렉션 그룹 `mailIn`·`mailSent`, 칸 `expireAt`) · 두 계정(하나는 휴대폰)으로 쪽지 한 통·앱 닫고 푸시 · 설치 앱은 완전히 닫았다 열기(sw.js 바뀜).
+- 부탁(P14-5): VS Code 터미널에서 C: 정리(11-02 89%) - `npm cache clean --force` · Windows 설정 > 저장소 > 임시 파일 · Android Studio Device Manager의 안 쓰는 에뮬레이터 이미지(**Android Studio는 지우지 않는다** - 에뮬레이터 Java). (functions 보안 판은 11-02 함수 배포에 실렸다.)
 - 부탁(P14-3): 내일 이후 `npx.cmd firebase firestore:backups:list` 에 READY 백업 · 복원 연습 한 번(`docs/OPS.md` - 다음 대화에서 Claude와 함께, 연습 DB 지우기는 터미널) · 결제 → 예산 및 알림 하나.
 - 부탁(P14-2): (TTL `v5Errors.expireAt`은 10-30 `firestore:indexes`로 이미 켜진 것을 확인) 실제 사이트 환경설정 '개발자' 탭 '오류 기록'이 열리는지(지금은 비어 있어야 정상).
 - 부탁(P14-1): 실제 사이트에서 둘째 계정으로 그룹 초대 코드 참여 한 번 · 그룹장 🔄 코드 바꾸기 뒤 옛 코드는 막히는지(2분). 옛 화면을 열어 둔 기기는 새로 열어야 참여된다.
@@ -117,6 +117,7 @@
 - **사용자 보고가 재현되지 않으면 V4의 같은 기능 코드와 견준다**(P12-1 이월 - V5 경로는 모두 맞았고, V4 `runAutoForwarding`의 겹침 규칙이 빠져 있었다).
 - **점검이 개발 서버로 도는 동안 저장소 파일(.md 포함)을 고치지 않는다**(P10-5) - Tailwind가 다시 훑어 `index.css`·`Shell`이 HMR로 바뀌고 열린 칸이 사라져 점검이 틀린다. 문서는 점검 묶음 뒤에.
 - **크롬 점검은 하나씩 차례로 돌린다**(P14-7 - 셋을 한꺼번에 돌리면 hover·기다림이 '요소가 멈추지 않음'으로 틀렸다, 하나씩은 통과).
+- **Shell에 서버 구독 훅을 더하면 `App.test`에 그 data 모듈 흉내**(P15-2 - db가 `{}`라 `collection()`이 던져 껍데기 시험이 깨졌다) · **점검이 `about:blank`로 가면(서비스 워커 푸시) `addInitScript`의 localStorage가 SecurityError** - try로 감싼다.
 - **확인과 커밋을 한 줄에 잇지 않는다**(P3-2): `npx tsc -b && … ; git commit`은 앞이 실패해도 커밋한다, `grep -c`는 0이면 실패로 끝나 `&&` 사슬을 멈춘다. 확인 결과를 본 뒤 커밋한다.
 - **운영을 지우는 명령(`functions:delete`, `git push --delete`)은 Claude 자동 권한이 막는다**(10-14) - 사용자에게 한 줄 명령을 주고 VS Code 터미널에서 돌리게 한 뒤, 결과는 사용자가 보낸 화면으로 확인한다.
   VS Code 터미널(PowerShell)은 `npx`가 실행 정책에 막힌다(`npx.ps1` 보안 오류) → **`npx.cmd`**로. `firebase login`은 `!`로는 안 된다(브라우저·질문) - 터미널에서.
