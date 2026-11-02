@@ -29,6 +29,7 @@
 
 ## 지금 하는 일
 
+**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). 다음 = **P19-1 ■0**(에뮬레이터로 규칙·쿼리 확인 - 문서만). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
 **P18-2 창 안 탭 단축키 끝**(11-02 main - '⌨️ 단축키 설정' 띠에서 창 안의 탭을 누르면 '창 → 탭' · 키 = 그 창을 그 탭으로 · 단축키 탭·설명서 '내가 만든 단축키'). P18 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터. 배포·👤 부탁 없음.
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
 P17 공간 칩 · 일정 겹쳐 보기는 11-02 끝(P17-1 칩 줄 · P17-2 Ctrl·길게 누르기 겹쳐 보기).
@@ -214,6 +215,11 @@ main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 
 | **P18 단축키 설정 - 눌러서 고르기** (11-02 사용자 요청) | | | | |
 | P18-1 | 단축키 탭 '⌨️ 단축키 설정' → 완료 띠 → 메뉴·단추를 눌러 기능 고르기 → 완료 → 키 누르기 → 저장(겹치면 다른 기능에서 뺌) · 지금 52가지 기능의 단추에 표시 · 설명서·점검 | 중간 | 중간 | 끝 (11-02) |
 | P18-2 | 창 안의 탭까지 - '환경설정 → 알림' 같은 대상 = 창 + 탭(`settings:notify`), 기기 설정 칸 `tabShortcuts` · 단축키 탭·설명서 '내가 만든 단축키' | 중간 | 낮음 | 끝 (11-02) |
+| **P19 대화(채팅)** (11-03 사용자 요청 · 계획) | | | | |
+| P19-1 | 대화 자료·규칙·푸시 함수 - 그룹 방 `v5Chat/{sid}/chatRooms`·1:1 `v5Dm`·글 `chatMsgs`·내 읽음 `v5ChatReads` · check-rules · 운영 규칙·TTL 배포 | 중간 | 높음 | 계획 (■0부터) |
+| P19-2 | 대화 화면 ① - 💬 대화 창(목록·방)·보내기(Enter)·📎·읽음·1:1 '1'·머리줄 💬 n·여는 길·inspect-chat | 큼 | 중간 | |
+| P19-3 | 대화 알림 - 푸시(방마다 알림 하나를 바꾼다)·🔕 방마다·?chat=·설명서·함수 배포 | 중간 | 중간 | |
+| P19-4 | 고른 사람 방(만들기·사람 더하기·나가기·이름) · 내 글 지우기 | 중간 | 낮음 | |
 
 **차례의 까닭**: 뼈대(P1)와 자료 층(P2)이 모든 화면의 바탕이다. 하루 화면(P3)이 가장 많이 쓰는 곳이라 먼저 하고, 가져오기를 단계마다 붙여
 P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6)이 달력(P5) 뒤인 까닭: 수업 칸은 주간에도 그려지므로 화면 틀이 먼저 있어야 한다.
@@ -325,6 +331,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-11-02 | 영-전-3-현동림 PC | P17-2 후속 | 겹친 칩·일정 = 공간 색 배경 (사용자 '✓·색 점 대신 배경 색') | `domain/spaceColor` `spaceTone`(Tailwind 색 변수 - 다크 모드도) · `SpaceDot` 걷음 · 칩·하루 카드·구분 줄 이름·주간·월간(칸·막대·휴대폰 목록)·년간(자세히·학사력 줄)·칸 머리 칩 · 단위 2737 · inspect-space-overlay(배경색 비교·다크 모드 어둡기)·week·month-year 통과 |
 | 2026-11-02 | 영-전-3-현동림 PC | P18 계획 + P18-1 | 단축키 설정 - 눌러서 고르기 ■1~■3 main (`c81f3b8`~) | 사용자 '단축키 추가 방식 변경 - 고려할 점' → 의견(기능 id로 기억·누른 것은 동작·창 안 탭은 2차) → '진행해줘' · ■1 `assignBinding`·띠·`shortcutRecord`(+ 고침: ↑/↓ 짝 토글이 다른 기능의 같은 화살표와 겹침으로 안 잡혔다) · ■2 단추 표시 38곳·단축키 탭 단추·줄 짚기 · ■3 설명서·inspect-shortcut-record 40·settings·manual 통과 · 단위 2759 |
 | 2026-11-02 | 영-전-3-현동림 PC | P18-2 | 창 안 탭 단축키 ■1~■3 main (`bcfa74e`~) | 사용자 'p18-2 작업해줘'(+ 확인 부탁은 '오류를 발견하면 그때 요청' - CLAUDE.md 1장) · 결정 둘('창:탭' id + 기기 칸 tabShortcuts · 목록·설명서는 키를 준 탭만) · ■1 domain·`app/tabShortcuts` 탭 24·키 처리·prefs + 고침: 환경설정·출석부·알림장은 같은 탭으로 다시 열면 안 넘어갔다 · 휴지통 { tab } · ■2 창 8곳 탭 단추·'내가 만든 단축키' · ■3 설명서·inspect-shortcut-record 58·settings·manual(MATCH=shortcuts) 통과 · 설명서 단축키 표 글자 끊김(break-keep) · 단위 2796 |
+| 2026-11-03 | 영-전-3-현동림 PC | P19 계획 | 대화(채팅) 계획 · 문서만 | 사용자 '쪽지를 연속적으로 쌓으면 채팅? 1:1·단체 채팅 계획' → 쪽지 코드·규칙·함수 읽기 → '방 + 함께 보는 글'(쪽지는 그대로) · 세션 넷(P19-1~4) · 5장 결정 일곱 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -928,6 +935,22 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P18-2 목록·설명서에는 키를 준 탭만**(권장안): 탭 24가지를 모두 늘어놓으면 단축키 탭이 두 배로 길어진다. 단축키 탭 '내가 만든 단축키' 묶음 = 키를 준 탭만(키 칸으로 바꾸기·Backspace로 비우고 저장 = 빠짐),
   더하기는 '⌨️ 단축키 설정'으로만. 설명서 단축키 표도 같은 묶음(없으면 '없음'). '기본값으로'는 이것도 비운다(기본값 = 없음).
   키로 열면 그 창을 그 탭으로 - 이미 열려 그새 다른 탭을 눌렀어도 넘어간다(창은 탭 이름이 아니라 다시 연 params를 견준다 - BackupWindow 본보기).
+- **P19 대화 = 쪽지를 이어 쌓지 않고 '방 + 함께 보는 글'**(11-03 사용자 '쪽지를 연속적으로 쌓으면 채팅이 되지 않을까 - 1:1·단체 계획' → 권장안): 쪽지(받는 사람마다 한 장)로 대화를 쌓으면
+  ① 단체 글 하나 = 쓰기 N+1(20명 = 21, 방이면 2) ② 나중에 든 사람·새로 연 기기는 지난 대화를 못 본다(받는 사람에게만 복사) ③ 한 사람과 주고받은 것을 차례로 모으려면 받은·보낸 두 상자를 사람·시각으로 묻는다 = 복합 색인(운영 색인 0개를 지켜 왔다)
+  ④ 읽음이 쪽지마다(N장 고치기). 쪽지에서 가져오는 것 = 같은 그룹 구성원 규칙·한 묶음 보내기·푸시 함수 꼴·sw.js 갈래·📎 첨부(P16)·머리줄 숫자 단추·1년 TTL. **쪽지는 그대로 둔다**.
+- **P19 범위 = 같은 그룹 안(P15 까닭 그대로), 방 셋**: 그룹 전체(그룹마다 하나·만들지 않아도 있다) · 1:1 · 고른 사람 방(한 그룹 안 ≤ 50 - P19-4). 그룹 밖 선생님·학생·학부모와는 하지 않는다(5장 '하지 않기로 한 것').
+  **1:1은 그룹마다가 아니라 두 사람에 하나**(권장안 - 학교 전체·학년 그룹을 함께 든 동료와 1:1이 둘이면 헷갈린다. Slack처럼 그룹마다 따로 두는 길은 규칙이 쉽지만 고르지 않았다):
+  방이 '함께 든 그룹'(sid)을 들고, 보낼 때 두 사람이 그 그룹 구성원인지 본다 - 그 그룹을 나가면 함께 든 다른 그룹으로 옮겨 계속, 없으면 읽기만(쪽지 받은 것이 남듯).
+- **P19 자리 = `spaces` 아래가 아니라 `v5Chat/{sid}/chatRooms/…`·`v5Dm/…`**(권장안): `spaces/{sid}/{sub}/{document=**}` 묶음 규칙은 구성원이면 무엇이든 써서 남의 글을 고치고 지울 수 있다(같은 문서에 맞는 match는 하나만 허락해도 된다) -
+  거기에 빼기를 넣으면 지금 자료 규칙을 건드린다. `v5Chat/{sid}`는 경로에 sid가 있어 목록 쿼리에서도 `canUseSpace(sid)`가 된다. 규칙은 더하기만 → 규칙 먼저 배포, 화면은 main.
+  기기 사본(`GROUP_MIRRORED`)·JSON 백업·그룹 지우기 단계에 넣지 않는다 - 그룹을 지우면 규칙이 곧바로 막고(공간 문서가 없다) 1년 TTL이 지운다(쪽지와 같다 - 설명서에 적는다). 글 상자 이름은 두 곳 모두 `chatMsgs`(TTL·셈·화면 하나).
+- **P19 읽음 = 그룹 방은 나만 보는 `v5ChatReads/{uid}`, 1:1은 방 문서 `reads`**(권장안): 모두의 읽음을 방 문서에 두면 20명 방에서 글 하나에 읽음 쓰기 20 × 방을 듣는 사람 20 = 읽기 400.
+  그래서 그룹 방 '읽은 사람 수'는 하지 않는다(요청이 있으면 글을 눌러 그때 읽기). 1:1 '1'은 둘뿐이라 방 문서로. 머리줄 💬 n = **안 읽은 방 수**(글 수는 글이 올 때마다 방마다 세야 한다 - 방 목록 안에서만 `getCountFromServer`).
+- **P19 대화 창은 쪽지 창과 따로**(권장안): 쪽지 = 한 번 보내는 알림·부탁(받은 사람마다 읽음·답장), 대화 = 주고받기. 쪽지 창의 탭으로 넣으면 받은·보낸·쓰기 탭과 탭 단축키(P18-2 `mail:in` 등)가 엉킨다.
+  머리줄은 ✉·💬 둘 - P15-2 휴대폰 390에서 ✉ 99+를 넣고 넘침 0이었다, P19-2 ■4에서 다시 잰다(넘치면 이 줄을 고친다).
+- **P19 Enter = 보내기(PC), Shift+Enter = 줄 바꿈**(권장안 - 메신저 관례, 쪽지는 긴 글이라 Ctrl+Enter 그대로). 휴대폰 화면 자판 Enter = 줄 바꿈, ➤로 보낸다. Ctrl+S·배경 누르기·↗는 보내지 않는다(P15 까닭).
+- **P19 알림 = 방마다 알림 하나를 소리 없이 바꾼다 · 🔕 방마다**(권장안): 단체방 글마다 울리면 결국 알림을 끈다. sw.js `tag: sp5-chat-<방>`(처음 한 번만 울리고 뒤 글은 그 알림을 바꾼다) ·
+  알림 글은 보낸 사람·방 이름만(P15 - 잠금 화면에 학생 이야기). 🔕는 방 문서 `muted.<나>` - 함수가 방 문서 하나로 거른다(사람마다 설정 문서를 읽으면 글 하나에 읽기 N).
 ---
 
 ## 6. 세션별 내용
@@ -2264,3 +2287,97 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   → 11-02: 설명서 settings 'shortcuts-edit' '창 안의 탭을 키로 열기' 절·예시 + 'settings' 표 · 단축키 표 `[data-help-shortcut-tabs]`(없으면 `-empty`) · 그림으로 본 뒤 고침: 설명서 단축키 표 이름이 글자마다 끊겼다 → `break-keep` ·
   inspect-shortcut-record 58(환경설정 → 알림·휴지통 → 메모·같은 탭으로 다시·툴팁·설명서 표·비우고 저장) · inspect-manual shortcuts·shortcuts-edit 두 줄 · settings 통과 · MENU 3-8·MAP·PARITY·DESIGN 4-8.
 **끝 조건**: 단위 · inspect-shortcut-record · settings · manual 통과.
+
+### P19. 대화(채팅) - 1:1 · 그룹 전체 · 고른 사람 방 (2026-11-03 계획)
+사용자 말(11-03): "v5에서 쪽지보내고 받는 기능을 연속적으로 쌓으면 채팅 기능이 구현되지 않을까 생각하는데. 그러면 단체 채팅도 가능할 거고. 1:1 채팅 및 단체 채팅 기능 구현 계획을 작성해줘."
+결정과 까닭은 5장 'P19 …' 일곱 줄. **묻기**: P19-1 ■4 운영 규칙·TTL 배포 · P19-3 ■4 함수 배포. 그 밖은 조각마다 main.
+
+**쪽지를 이어 쌓으면? (계획 대화의 답 - 5장 'P19 대화 = …')**
+- 쪽지에서 그대로 가져온다: 같은 그룹 구성원 확인(규칙 `get(spaces/sid)`) · 그룹장이 남을 넣지 못함(P15-1) · 한 묶음 보내기 + `beginPendingWrite`·`failWithToast` · 푸시 함수 꼴(`tokensOf`·`sendEachForMulticast`·죽은 토큰) ·
+  sw.js 갈래·notificationclick·`?mail=` 본보기 · 📎 첨부·캡처 Ctrl+V(P16) · 머리줄 숫자 단추 · 1년 TTL · 끊기면 '인터넷이 필요합니다'.
+- 저장 모양만 바꾼다: 받는 사람마다 한 장(쪽지) → **방 문서 하나 + 그 아래 글(`chatMsgs`)을 구성원이 함께 읽는다**. 단체 글 하나 = 쓰기 2(쪽지 꼴이면 N+1) · 나중에 든 사람도 지난 글을 본다 · 한 쿼리로 차례대로 · 읽음은 방마다 하나.
+
+**설계 (권장안 - P19-1 ■0에서 에뮬레이터로 확정)**
+- 방 셋: ① **그룹 전체**(roomId `all` - 그룹마다 하나, 첫 글이 방 문서를 만든다. 구성원 = 지금 그 그룹 구성원: 새로 든 사람은 지난 글도 보고, 나간·내보낸 사람은 곧바로 못 읽는다)
+  ② **1:1**(두 사람에 하나 - 그룹이 둘 겹쳐도 하나. 방이 함께 든 그룹 sid를 든다) ③ **고른 사람 방**(P19-4 - 한 그룹 안에서 고른 사람 ≤ 50 + 이름, 아무 구성원이나 그 그룹 사람을 더하고, 빼기는 나만 = 나가기).
+  글 = 2000자 + 📎 10개(쪽지와 같다) · 1년 뒤 저절로 지움 · 기기 사본·JSON 백업에 넣지 않는다.
+- 자료(상자 이름은 DB 전체에서 고유하게 - TTL 정책이 컬렉션 그룹 이름마다):
+  그룹 방 `v5Chat/{sid}/chatRooms/{roomId}`(`all` | `r_{newId}`) · 1:1 방 `v5Dm/{pairId}`(`d_` + 두 uid를 작은 것부터 `_`로) · 글은 두 곳 모두 그 아래 `chatMsgs/{id}`. `v5Chat/{sid}` 문서 자신은 만들지 않는다.
+  방 `{ kind: 'all'|'room'|'dm', name?(room ≤ 40), members?(room·dm {uid: true}), sid?(dm), names?(dm {uid: 이름}), lastId, lastAt, lastFrom, lastFromName, lastText(≤ 80 - 첨부만이면 '📎 n'), muted: {uid: true}, reads?(dm {uid: 서버 시각}), expireAt, v: 1 }`
+  - 방 expireAt = 마지막 글 + 1년(글마다 늘린다 - 1년 조용한 방은 저절로 사라진다).
+  글 `{ from, fromName(≤ 40), text(≤ 2000), attachments?(1~10), at, expireAt, v: 1 }`(+ P19-4 `deletedAt`) · 내 읽음(그룹 방) `v5ChatReads/{uid}` = `{ rooms: { '<sid>~<roomId>': 서버 시각 } }` - 나만 읽고 쓴다.
+- 규칙(`firestore.rules` v5Mail 뒤 - 더하기만, `spaces/{sid}/{sub}` 묶음 규칙은 건드리지 않는다):
+  그룹 방·글 읽기 = `canUseSpace(sid)`(경로의 sid) + (`all`이거나 `members.<나>`) · 방 목록은 `where('members.<나>','==',true)`(all은 따로 get) ·
+  글 만들기 = 읽을 수 있음 + from == 나 · 모양·길이 · `at == request.time` · 같은 묶음에서 방 `lastId` == 이 id(`getAfter` - 미리 보기·안 읽음이 늘 맞게) ·
+  방 고치기 = 보내기 칸(last*·expireAt, lastFrom == 나, lastAt == request.time, 글이 함께 - `existsAfter`) | `muted.<나>`만 | (room) 이름·사람 더하기(공간 구성원만)·나 빼기 | (dm) `reads.<나>` == request.time·`names.<나>`·sid 옮기기(두 사람 모두 새 그룹 구성원) · 지우기 없음(TTL) ·
+  1:1 읽기 = `members.<나>` · 1:1 만들기·보내기 = pairId 모양(`'d_' + a + '_' + b`, a < b) + 두 사람 모두 지금 방 sid 그룹 구성원 · `v5ChatReads/{uid}` = 주인만, 고치기는 한 칸·서버 시각.
+- 받기(Shell 하나 `useChatWatch` - 새 창 PopoutShell은 하지 않는다): 든 그룹마다 `chatRooms/all` 문서 + `chatRooms where members.<나> == true` · `v5Dm where members.<나> == true` · `v5ChatReads/{나}` → store 방 목록 · 안 읽은 방 = lastAt > 내 읽음 && lastFrom ≠ 나.
+  내 읽음이 없는 방은 처음 본 때를 읽음으로 적는다(그룹에 막 든 사람에게 지난 글이 모두 안 읽음으로 뜨지 않게).
+  방을 열면 그 방 `chatMsgs orderBy('at','desc').limit(50)` 듣기 + 위로 올리면 50개씩 더(startAfter) · 목록의 안 읽은 수 = 안 읽은 방만 `getCountFromServer(where('at','>', 내 읽음))`(방마다 읽기 1, 99+). 쿼리는 모두 칸 하나(운영 색인 0개 그대로).
+- 보내기: `data/chat.ts` writeBatch(글 + 방 문서 merge - 첫 글이면 방 만들기 칸도) · `beginPendingWrite`·`failWithToast`(글 칸 그대로) · 1:1은 보내기 직전 `useMySpaces`로 함께 든 그룹을 다시 본다(없으면 '함께 든 그룹이 없어 보낼 수 없습니다').
+  PC Enter = 보내기·Shift+Enter = 줄 바꿈 · 휴대폰 ➤ · Ctrl+S·배경 누르기·↗는 보내지 않는다 · 쓰던 글 `useDraft('chat:<방>')` · 📎·캡처 = 쪽지(P16) 부품을 나눠 쓴다.
+- 읽음: 그 방이 보이는 동안 새 글이 오면 2초 모아 한 번 적는다(그룹 방 = `v5ChatReads` 한 칸, 1:1 = 방 `reads.<나>`). 1:1 내 글 중 상대가 아직 안 읽은 것에 '1'. 그룹 방은 읽은 사람 수 없음.
+- 푸시: 함수 `v5ChatPush`(`v5Chat/{sid}/chatRooms/{room}/chatMsgs/{id}`)·`v5DmPush`(`v5Dm/{pair}/chatMsgs/{id}`)가 셈 하나(`functions/chatPlan.js`)를 쓴다 -
+  받는 사람 = (all: 공간 구성원 · room: 방 구성원 ∩ 공간 구성원 · dm: 상대) − 보낸 사람 − muted → `tokensOf` → `sendEachForMulticast`. data `{ type: 'chat', room, sender, title }`(글 없음).
+  sw.js 'chat' 갈래: 보는 앱 창이 있으면 없음 · 없으면 `tag: sp5-chat-<방>`(같은 방 새 글은 알림 하나를 소리 없이 바꾼다) · 누르면 그 방(`?chat=`·'sp5-open-chat' - ?mail= 본보기).
+- 화면: 오른쪽 칸 창 `chat`('💬 대화' - side, ↗ 됨) · 쪽지 창과 따로.
+  목록 = 1:1 묶음(상대 이름 · 함께 든 그룹 흐리게) + 그룹마다 '👥 그룹A' 묶음(그룹 전체 · 고른 사람 방) · 줄 = 이름 · 마지막 글 앞부분 · 시각 · 안 읽은 수 · 🔕 · '+ 새 대화'(그룹 → 사람 하나 = 1:1, 여럿 = 고른 사람 방(P19-4)).
+  방 = 머리 ← 목록 · 방 이름 · 🔕 · ⋮(구성원 보기 · (room) 이름·사람 더하기·나가기) · 글 줄(날짜 나눔 줄 · 남의 글 왼쪽 이름 + 글 · 내 글 오른쪽 · 잇단 글은 이름 한 번 · 시각 · 보내는 중 · 1:1 '1') · 아래 글 칸 + 📎 + ➤.
+  처음 열면 맨 아래, 위로 올리면 더 받기, 위를 보는 동안 온 새 글은 '↓ 새 글' 단추.
+  여는 길 = 머리줄 💬 n(✉ 뒤 - 든 그룹이 있으면 늘, n = 안 읽은 방 수) · 계정 칸 '💬 대화' · 그룹 창 '💬 그룹 대화' + 구성원 칩 💬(1:1) · 받은 쪽지 펼침 '💬 대화로'(보낸 사람과 1:1) · 단축키 id `chat`(키 없음) · 푸시. ⋮에는 넣지 않는다(4구역 8항목).
+  새 글 안내 = 그 방이 보이면 없음, 아니면 '💬 이름: 앞부분 [보기]'(400ms 모아 'n개') - 🔕 방은 안내 없음(안 읽은 수에는 든다).
+- 하지 않는 것(처음): 그룹 밖 사람 · 학생·학부모 · 입력 중 표시 · 글 고치기 · 반응 이모지 · 공지 고정 · 대화 검색 · 그룹 방 읽은 사람 수 · 음성·영상. 쪽지 화면·자료는 바꾸지 않는다('💬 대화로' 단추 하나만).
+- 돈(V3·V4·V5 함께 무료 한도 - 쓰기 2만·읽기 5만/일, 함수 200만/월): 글 하나 = 쓰기 2 + 규칙 읽기 2~3 + 앱을 연 구성원마다 읽기 1(방 문서) + 그 방을 보는 사람마다 1 + 함수 1번(받는 사람마다 토큰 읽기 1).
+  20명 그룹이 하루 200글 ≈ 쓰기 1천(읽음 포함)·읽기 1만 5천 - 한도 안. 바쁜 그룹이 여럿이면 읽기 한도에 가까워질 수 있다 → P19-3 ■4에서 사용량을 한 번 본다(넘어도 Blaze 요금 - 읽기 10만 건에 100원 안팎).
+
+**계획 대화에서 확인한 코드 (11-03 - 새 세션이 다시 찾지 않게)**
+- 쪽지 자료 층 `data/mail.ts`(151행 - `sendMail` 한 묶음·`loadPage` 30개씩·`watchUnread` includeMetadataChanges·`useMailWatch`) · 셈 `domain/mail.ts`(MAIL_LIMITS·`mailDocs`·`readMailAttachments` https만) · store `data/mailStore.ts`.
+- 규칙 `firestore.rules`: `isSpaceMember`(172)·`canUseSpace(sid)`(258) · 공간 아래 묶음 `match /spaces/{sid}/{sub}/{document=**}`(277 - 구성원이면 읽기·쓰기·지우기 모두 - 대화를 여기 두지 않는 까닭) · 쪽지 `mailSpace`·`validMail`·mailIn/mailSent(328~389 - 대화 규칙은 이 뒤에).
+- 함수 `functions/index.js` `tokensOf`(81 - `spaces/u_{uid}/pushTokens`)·`v5MailPush`(138~) · `functions/mailPlan.js`(chunks·isDeadMailToken·mailPushData) + test · `firestore.indexes.json`(TTL fieldOverrides 셋 - v5Errors·mailIn·mailSent).
+- 화면 `features/mail/`: open.ts(Firebase 없이 - windowConventions) · MailWindow 361 · MailCompose 303(📎·Ctrl+V·쓰던 글) · MailAttachments · MailHeaderButton(든 그룹·안 읽은 수) · receive.ts(Shell 훅·?mail=·'sp5-open-mail') · actions.ts.
+  머리줄 `app/Header.tsx`(머리 주석 1~5행 · 83행 ✉ · 311행 계정 칸 `data-account-mail`) · 그룹 창 `features/groups/GroupsWindow.tsx` 157(`data-group-mail`) · `public/sw.js` 187(push 'mail')·250~282(showMailNotice·notificationclick).
+
+### P19-1. 대화 자료·규칙·푸시 함수
+**시작 조건**: 없음. **묻기**: ■4 운영 규칙 + TTL 배포(더하기만 - 규칙을 먼저, 화면은 P19-2부터 main). 함수 배포는 P19-3 끝(sw.js 'chat' 갈래가 먼저 퍼져야 한다).
+**먼저 읽을 것**: 이 P19 절 · 5장 'P15'·'P19' · `firestore.rules` 172·258~281(isSpaceMember·canUseSpace·묶음 규칙)·328~389 · `tools/check-rules.mjs`([V5 쪽지] 묶음) · `data/mail.ts`·`data/mail.emu.test.ts` · `domain/mail.ts` ·
+`functions/index.js` 81·138~ · `functions/mailPlan.js`(+ test) · `docs/DESIGN.md` 4-9·4-10.
+- [ ] ■0 **코드 확인·설계 확정**(에뮬레이터, 문서만): `where('members.<uid>','==',true)` 목록이 규칙을 지나나(spaces는 `in`) · `getCountFromServer`가 get() 든 규칙을 지나나 · 1:1 id 글자 견주기(a < b) ·
+  글 + 방 merge 한 묶음의 `getAfter`·`existsAfter`(방 ↔ 글) · 둘이 함께 첫 글을 보내도 되나(방 만들기 겹침 - 만들기 칸을 줄인다) · 요청 하나의 get 수 · `v5ChatReads` 한 칸 고치기 · 첨부 부품을 `features/mail` 밖으로 옮길지. 다르면 이 절·5장을 고친다.
+- [ ] ■1 **규칙** `v5Chat/{sid}/chatRooms/{roomId}`(+ `chatMsgs`) · `v5Dm/{pairId}`(+ `chatMsgs`) · `v5ChatReads/{uid}` - 고른 사람 방·글 지우기(`deletedAt`)까지 한 번에(배포 한 번) + check-rules [V5 대화].
+  must: 그룹 전체 방 첫 글·이어 쓰기(둘이 함께) · 50명 방 · 1:1 만들기·보내기·읽음 · 그룹을 옮긴 1:1 · 고른 사람 방 만들기·더하기·나가기·이름 · 🔕 · 내 글 지우기 · 내 읽음 · 목록 쿼리 셋 · 수 세기.
+  mustNot: 그룹 밖 사람의 읽기·목록·쓰기 · 나간·내보낸 사람이 그룹 방 읽기 · from 위조 · 기기 시각 · 2001자 · 첨부 11 · 글 없이 방 미리 보기만 고치기 · 남의 muted·reads·names · 남을 방에서 빼기 · 그룹 밖 사람 더하기 ·
+  1:1 id 위조(순서 바꿈·세 사람) · 함께 든 그룹이 아닌 sid · 남의 글 지우기·고치기 · 남의 v5ChatReads.
+- [ ] ■2 `domain/chat.ts`(순수 - 방 키·1:1 id·미리 보기 글·안 읽은 방 셈·'1' 셈·날짜 나눔·잇단 글 묶기·`?chat=` has/strip) + 시험 · `data/chatStore.ts`(Firebase 없음) ·
+  `data/chat.ts`(보내기 한 묶음 · 방 목록 듣기 · 방 글 듣기 + 더 받기 · 읽음 · 안 읽은 수 · 🔕) + `data/chat.emu.test.ts`(test:data - A→그룹 방·B 안 읽음 1·읽음·1:1·나간 사람 막힘).
+- [ ] ■3 함수 `v5ChatPush`·`v5DmPush` + `functions/chatPlan.js` + `chatPlan.test.js`(받는 사람·muted·data 키·이름 자르기) · test:functions 두 곳에 더하기 · 손 시험(.run(event) - P15-1 ■3 꼴). 배포는 P19-3 끝.
+- [ ] ■4 (묻고) 운영 규칙 배포(먼저 `node tools/live-rules.cjs --print`와 ■1 앞 파일 diff) + `firestore.indexes.json` TTL 셋(`chatRooms`·`chatMsgs`·`v5Dm` - `expireAt`) `deploy --only firestore:indexes`.
+**끝 조건**: check-rules 전체 · test:data · 단위 · 함수 시험 통과 · 운영 규칙·TTL 배포.
+
+### P19-2. 대화 화면 ① - 💬 대화 창·보내기·읽음·머리줄 (1:1 · 그룹 전체)
+**시작 조건**: P19-1 ■4(운영 규칙) - 화면이 규칙보다 먼저 나가면 보내기가 모두 막힌다. **묻기**: 없음(조각마다 main).
+**먼저 읽을 것**: 이 P19 절 · `features/mail/` 모두 · `app/windowList.ts` · `app/Header.tsx` · `features/groups/GroupsWindow.tsx`(+ test) · `data/drafts.ts` · `app/toast.ts` · `notes/attach` · 설명서 share 'mail' · `tools/inspect-mail.mjs`(두 계정 꼴) · `docs/MENU.md` 3-1·3-5·3-8.
+- [ ] ■1 창 `chat`(`features/chat/` - open.ts는 Firebase 없이) 목록(1:1 · 그룹마다 묶음 · 안 읽은 수 · 미리 보기 · 시각) + 방(글 줄 · 날짜 나눔 · 잇단 글 · 50개씩 더 · '↓ 새 글' · 인터넷 없음) `data-chat-*` + 설명서 주제 'chat' 뼈대(창 help 시험 - 같은 커밋).
+- [ ] ■2 보내기(PC Enter / Shift+Enter · 휴대폰 ➤ · 보내는 중 · 실패하면 글 그대로 · 쓰던 글 · 📎·캡처 Ctrl+V) · '+ 새 대화'(그룹 → 사람 하나 = 1:1) · 1:1 그룹 옮기기 · 시험.
+- [ ] ■3 읽음(보이는 동안 2초 모아) · 1:1 '1' · Shell `useChatWatch`(store - 방 목록·안 읽은 방) · 머리줄 💬 n(`data-header-chat`) · 계정 칸 '💬 대화' · 단축키 id `chat` · 새 글 안내 ·
+  그룹 창 '💬 그룹 대화'·구성원 칩 💬 · 받은 쪽지 펼침 '💬 대화로' · Header.test · App.test에 data/chat 흉내(CLAUDE.md 2장 - Shell에 구독 훅을 더하면).
+- [ ] ■4 `tools/inspect-chat.mjs`(새 - 계정 셋: 그룹 방 A→B·C · B 💬 1 · 열면 읽음 · 1:1 A↔B · '1' 사라짐 · Enter·Shift+Enter · 📎 흉내 · 위로 올려 더 받기 · 내보낸 C는 그룹 방을 못 읽음) ·
+  PC 1400 + 휴대폰 390 한 번(머리줄 ✉·💬 넘침 0 · 방 글 칸이 화면 아래 · 그림으로) · 설명서 'chat' · 세션 끝 정리(1-3).
+**끝 조건**: 단위 · test:data · inspect-chat · inspect-mail · manual(MATCH=chat) 통과 · 390 한 번.
+
+### P19-3. 대화 알림 - 푸시·🔕·?chat= · 함수 배포
+**시작 조건**: P19-2 끝. **묻기**: ■4 함수 배포 `--only functions:v5`.
+**먼저 읽을 것**: 이 P19 절 · `public/sw.js` 180~195·250~285 · `features/mail/receive.ts` · `domain/mail.ts` mailParamOf·stripMailParam · 설명서 settings 알림·share 'mail'·'chat'.
+- [ ] ■1 sw.js 'chat' 갈래(보는 창이 있으면 없음 · 방마다 tag · 같은 방은 소리 없이 바꾸기) + notificationclick('sp5-open-chat' / `?chat=`) · `features/chat/receive.ts`(?chat= 받기·sw 메시지) + 시험.
+- [ ] ■2 🔕 방마다 알림 끄기(방 머리·목록 줄) - 함수가 거르고 새 글 안내도 없음, 안 읽은 수에는 든다 · 환경설정 알림 탭 글 '일정 알림·쪽지·대화'.
+- [ ] ■3 설명서(share 'chat' - 그룹 구성원끼리만 · 서버에 저장되어 관리자가 볼 수 있다 · 학생 개인정보는 줄여 쓰기 · 1년 · 백업 없음 · 쪽지와 다른 점 · start 'layout'·'mobile' 머리줄 💬) ·
+  inspect-chat에 푸시 흉내(CDP - inspect-mail 꼴)·🔕 · MENU 3-1·3-5·3-8 · DESIGN 4-9·4-10 · MAP · PARITY 'V5에서 새로'.
+- [ ] ■4 (묻고) 함수 배포 → `functions:list` · 로그 · Firebase 콘솔 사용량(읽기·쓰기 하루치)을 한 번 본다 · 세션 끝 정리.
+**끝 조건**: inspect-chat · inspect-mail · manual 통과 · 함수 배포.
+
+### P19-4. 고른 사람 방 · 내 글 지우기
+**시작 조건**: P19-3 끝(규칙은 P19-1에 이미 있다). **묻기**: 없음.
+**먼저 읽을 것**: 이 P19 절 · `features/chat/` · `data/chat.ts` · check-rules [V5 대화] 고른 사람 방·지우기 줄.
+- [ ] ■1 '+ 새 대화'에서 여럿 = 고른 사람 방(이름 - 비우면 사람 이름 셋 '…') · 방 ⋮ 구성원 보기·사람 더하기(그 그룹 사람)·이름 바꾸기·나가기(묻기) · 그룹을 나간 사람은 구성원 목록에서 흐리게 '그룹을 나감'.
+- [ ] ■2 내 글 지우기(마우스를 올리면 ⋯ · 휴대폰 길게 누르기 → 묻기) = 모두에게 '지운 글'(`deletedAt` - 자리는 남는다) · 마지막 글이면 방 미리 보기도 '지운 글'.
+- [ ] ■3 inspect-chat 고른 사람 방·지우기 묶음 · 설명서 · 세션·단계 끝 정리(1-3·1-4 - 3장 단계 메모 한 줄).
+**끝 조건**: 단위 · test:data · inspect-chat · manual 통과.
