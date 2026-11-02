@@ -6,6 +6,8 @@
 //   4) v5ClaudeRequest  - 'Claude요청' 라벨 메모의 🤖 요청 단추(claudeAskAt)를 누르면 줄에 세워 GitHub 이슈를 만든다(10-16 - Claude가 고치고 배포, claudePlan.js·docs/CLAUDE-REQUEST.md).
 //                         한 번에 하나(앞 요청이 합쳐지거나 끝나야 다음) · 진행·다음 보내기·정한 계정의 'Claude요청' 라벨 챙기기는
 //                         v5SendDueAlarms가 매분 함께 한다(예약 작업을 늘리지 않는다 - 늘리면 돈이 든다).
+//   5) v5MailPush       - 쪽지 사본(v5Mail/{보낸 uid}/mailSent/{id})이 생기면 받는 사람 기기에 '✉ 보낸 사람 · 그룹'을 알린다(P15 - mailPlan.js).
+//                         쪽지 하나 = 실행 한 번(받는 쪽마다가 아니다). 쪽지 쓰기는 앱이 규칙을 지나 한 묶음으로 한다 - 이 함수가 꺼져도 쪽지는 간다.
 // 계산은 alarmPlan.js(순수 함수, alarmPlan.test.js). v5alarms는 규칙상 앱이 못 읽고 못 쓴다(이 함수들만, 관리자 권한).
 //
 // ⚠️ V4와 같은 Firebase 프로젝트다 - 함수 이름이 V4(alarmIndexUser·sendDueAlarms …)와 겹치면 서로 덮는다. 그래서 이름마다 v5를 붙인다.
@@ -15,7 +17,7 @@ import { initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
-import { onDocumentWritten } from 'firebase-functions/v2/firestore';
+import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { defineSecret, defineString } from 'firebase-functions/params';
 import { setGlobalOptions, logger } from 'firebase-functions/v2';
@@ -35,6 +37,7 @@ import {
   planClaudeLabel,
   statusFromGithub,
 } from './claudePlan.js';
+import { chunks, isDeadMailToken, mailPushData, mailRecipients } from './mailPlan.js';
 
 // Firestore 위치와 같은 지역 (V4와 같다)
 const REGION = 'asia-northeast3';
@@ -128,6 +131,48 @@ async function sendDueAlarms() {
     logger.info('알림 보냄', { id: doc.id, tokens: tokens.length, ok: res.successCount, fail: res.failureCount, removed: dead.length, errors });
   }
 }
+
+// 쪽지 알림 (P15-1 ■3). 앱이 받는 쪽(mailIn)과 사본(mailSent)을 한 묶음으로 쓰므로 사본이 생기면 받는 쪽도 있다 -
+// 그래도 받는 쪽 문서가 정말 있는 사람에게만 보낸다(그새 지웠거나 모양이 다르면 알리지 않는다). 보낸 사람 이름은 받는 쪽 문서에만 있다.
+// 쪽지 글은 싣지 않는다 - 보낸 사람·그룹 이름만(mailPlan.js). 다시 시도하지 않는다(두 번 알리지 않게 - 놓치면 앱을 열 때 머리줄 ✉ n).
+export const v5MailPush = onDocumentCreated({ document: 'v5Mail/{from}/mailSent/{id}', retry: false }, async (event) => {
+  const { from, id } = event.params;
+  const sent = event.data?.data();
+  if (!sent) return;
+  const to = mailRecipients(sent.to, from);
+  const inboxes = await Promise.all(to.map((uid) => db.collection('v5Mail').doc(uid).collection('mailIn').doc(id).get()));
+  const got = inboxes.filter((s) => s.exists && s.data().from === from);
+  if (got.length === 0) {
+    logger.info('쪽지 알림 건너뜀 - 받는 쪽 없음', { id, to: to.length });
+    return;
+  }
+  const data = mailPushData({ id, sid: sent.sid, senderName: got[0].data().fromName, groupName: sent.groupName });
+  const tokens = (await Promise.all(got.map((s) => tokensOf(s.ref.parent.parent.id)))).flat();
+  if (tokens.length === 0) {
+    logger.info('쪽지 알림 건너뜀 - 받는 사람 기기 토큰 없음', { id, to: got.length });
+    return;
+  }
+  const messaging = getMessaging();
+  let ok = 0;
+  const dead = [];
+  const errors = [];
+  for (const part of chunks(tokens)) {
+    const res = await messaging.sendEachForMulticast({
+      tokens: part.map((t) => t.token),
+      data,
+      webpush: { headers: { Urgency: 'high', TTL: '86400' } },
+      android: { priority: 'high', ttl: 86400 * 1000 },
+    });
+    ok += res.successCount;
+    res.responses.forEach((r, i) => {
+      if (r.success) return;
+      errors.push(r.error?.code || 'unknown');
+      if (isDeadMailToken(r.error?.code)) dead.push(part[i].ref);
+    });
+  }
+  await Promise.all(dead.map((ref) => ref.delete().catch(() => {})));
+  logger.info('쪽지 알림 보냄', { id, to: got.length, tokens: tokens.length, ok, removed: dead.length, errors });
+});
 
 // 오래된 칸 정리 (알림 시각이 30일 넘게 지난 것) - 하루 한 번
 export const v5CleanupAlarms = onSchedule({ schedule: 'every day 04:10', timeZone: 'Asia/Seoul', retryCount: 0 }, async () => {

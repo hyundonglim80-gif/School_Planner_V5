@@ -77,13 +77,17 @@ export function touchesAlarm(before, after) {
   return key(before) !== key(after);
 }
 
+/** 알림 글은 200자까지 - FCM data는 4KB에서 invalid-argument로 거절하고, 아래 isDeadTokenError가 그것으로 토큰을 지운다(P15-1 ■3) */
+export const CONTENT_MAX = 200;
+
 /** 푸시에 실을 값 (FCM data는 글자만 받는다) */
 export function pushData(alarm) {
+  const content = String(alarm.content || '');
   return {
     type: 'event-alarm',
     id: String(alarm.itemId || ''),
     sid: String(alarm.sid || ''),
-    content: String(alarm.content || ''),
+    content: content.length > CONTENT_MAX ? `${content.slice(0, CONTENT_MAX - 1)}…` : content,
     time: String(alarm.time || ''),
   };
 }

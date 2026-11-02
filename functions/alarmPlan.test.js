@@ -63,6 +63,10 @@ test('알림에 닿은 쓰기만 본다 (순서·라벨만 바꾼 저장은 건�
 
 test('푸시 값은 글자만 · 죽은 토큰 오류', () => {
   assert.deepEqual(pushData({ itemId: 'i1', sid: 'u_a', content: '협의회', time: '2026-10-08T09:30' }), { type: 'event-alarm', id: 'i1', sid: 'u_a', content: '협의회', time: '2026-10-08T09:30' });
+  // 긴 글은 200자 - 4KB를 넘으면 FCM이 거절하고 그 오류로 토큰이 지워진다(P15-1 ■3)
+  const long = pushData({ itemId: 'i2', content: '가'.repeat(3000) });
+  assert.equal(long.content.length, 200);
+  assert.ok(Buffer.byteLength(JSON.stringify(long)) < 1024);
   assert.equal(isDeadTokenError('messaging/registration-token-not-registered'), true);
   assert.equal(isDeadTokenError('messaging/internal-error'), false);
 });

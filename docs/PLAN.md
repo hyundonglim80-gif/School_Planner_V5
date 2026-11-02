@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P15-1 ■3**(함수 `v5MailPush` + `functions/mailPlan.js` + 시험 - 배포는 P15-2 끝): ■1 규칙·■2 자료 층은 11-02 끝(운영 규칙 배포는 ■4에서 물어서). ■0(11-02)에 설계를 정했다 - 6장 P15 절 '설계 (■0 확정)'·5장 'P15 …' 줄들. 코드 읽기 결과 `docs/P15-facts.md`(10-30 줄 번호).
+**P15-1 ■4**(묻고 운영 규칙 배포 → P15-1 끝): ■1 규칙·■2 자료 층·■3 함수 코드는 11-02 끝(함수 배포는 P15-2 끝 - sw.js 'mail' 갈래가 먼저). ■0(11-02)에 설계를 정했다 - 6장 P15 절 '설계 (■0 확정)'·5장 'P15 …' 줄들. 코드 읽기 결과 `docs/P15-facts.md`(10-30 줄 번호).
 11-02 사용자: 앞으로 V5만 쓴다 - V3·V4 동작은 묻지 않는다(`CLAUDE.md` 1장).
 P14(점검 뒤 손보기)는 10-30 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁뿐(P14-9 첨부 비공개는 취소).
 main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
@@ -2031,7 +2031,9 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
   + `data/mail.emu.test.ts`(test:data - A→B 보내기·B 안 읽음 1·읽음·지우기·A 사본).
   → 11-02 domain 시험 9 · emu 4(새 쪽지 onNew는 보내는 A를 따로 띄운 앱으로) · 단위 2678 · test:data 37. 안 읽은 것 듣기는 `includeMetadataChanges: true`
   (메모리에 있던 것과 서버 것이 같으면 '서버에서 확인됨'만 바뀌어 다시 오지 않아 `ready`가 서지 않았다). 그룹 이름은 자르지 않는다 - 규칙이 공간 이름과 같은지 본다(이름이 빈 공간만 60자).
-- [ ] ■3 함수 `v5MailPush` + `functions/mailPlan.js` + `mailPlan.test.js`(키·바이트·자르기) · test:functions 두 곳에 더하기 · 함수 손 시험(MAP '서버 푸시 알림'의 .run(event) 꼴 - 에뮬레이터 토큰으로 보내기 앞까지). 배포는 P15-2 끝.
+- [x] ■3 함수 `v5MailPush` + `functions/mailPlan.js` + `mailPlan.test.js`(키·바이트·자르기) · test:functions 두 곳에 더하기 · 함수 손 시험(MAP '서버 푸시 알림'의 .run(event) 꼴 - 에뮬레이터 토큰으로 보내기 앞까지). 배포는 P15-2 끝.
+  → 11-02 함수 시험 20 통과 · 손 시험(에뮬레이터 + `Messaging.prototype.sendEachForMulticast` 가짜): 받는 쪽 문서가 있는 사람만, data = type·id·sid·sender·group(글 없음), 죽은 토큰만 지움, 받는 쪽이 없으면 보내지 않음.
+  함께: **일정 알림 `pushData` 글도 200자로**(`alarmPlan.js CONTENT_MAX`) - 긴 일정 글이 4KB를 넘으면 FCM `invalid-argument` → `isDeadTokenError`가 그 기기 토큰을 지워 알림이 끊길 수 있었다. 쪽지 길은 `invalid-argument`로 토큰을 지우지 않는다.
 - [ ] ■4 (묻고) 운영 규칙 배포 - 먼저 `node tools/live-rules.cjs --print`와 `git show <■1 앞>:firestore.rules` diff(운영 = 파일인지).
 **끝 조건**: check-rules 전체 · test:data · 단위 · 함수 시험 통과 · 운영 규칙 배포.
 
