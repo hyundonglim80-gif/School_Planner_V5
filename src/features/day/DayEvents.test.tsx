@@ -8,6 +8,8 @@ import { useWindows } from '../../app/windows';
 import { setPastRowOpen } from '../events/forward';
 import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
+import { useMySpaces, useSpaceChoice, useSpaceOverlay } from '../../data/spaceChoice';
+import { useMulti } from '../events/multi';
 import { undoCount } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
 import DayEvents from './DayEvents';
@@ -360,5 +362,90 @@ describe('기간 일정 (한 문서 - DESIGN 5-3)', () => {
     fireEvent.click(q('[data-event-card="p"] [data-event-delete]')!);
     await act(async () => fireEvent.click(q('[data-scope-choice="after"]')!));
     expect(written.batches[0][0]).toMatchObject({ changes: { endDate: '2026-10-09' } });
+  });
+});
+
+describe('겹쳐 보기 (P17-2)', () => {
+  const GA = 'g_a';
+  // 같은 라벨 id(기본 라벨처럼)지만 그룹에서는 이름이 다르다 - 그 공간 트리로 그린다
+  const gLabels = new Map<string, Record<string, unknown>>([['L1', { ...base, kind: 'event', name: '학년 행사', color: 'purple', parentId: null, order: 'a0' }]]);
+  const gItems = new Map<string, Record<string, unknown>>([
+    ['g1', { ...base, kind: 'event', date: DAY, text: '그룹 일정', labelIds: ['L1'], order: 'a0' }],
+    ['g2', { ...base, kind: 'event', date: '2026-10-09', text: '다른 날', labelIds: [], order: 'a0' }],
+  ]);
+  beforeEach(() => {
+    seed();
+    for (const [coll, d] of [
+      ['labels', gLabels],
+      ['items', gItems],
+    ] as const) {
+      trackColl(GA, coll);
+      applyBase(GA, coll, d);
+      setStatus(GA, coll, 'live');
+    }
+    useMySpaces.setState({ groups: [{ id: GA, name: '3학년', ownerId: 'me', members: {} }], loaded: true });
+    useSpaceChoice.setState({ uid: 'me', sid: null, known: [] });
+    useSpaceOverlay.setState({ uid: 'me', sids: [GA] });
+  });
+  afterEach(() => {
+    useSpaceOverlay.setState({ uid: null, sids: [] });
+    useMySpaces.setState({ groups: [], loaded: false });
+    useMulti.setState({ on: false, picks: [], anchor: null });
+  });
+
+  it('주 공간 것 아래에 공간마다 구분 줄 + 그 공간 그날 일정 (그 공간 라벨 · 머리 수는 주 공간 것만)', () => {
+    render(<DayEvents date={DAY} />);
+    expect(cards()).toEqual(['a', 'b', 'c', 'g1']);
+    expect(q('[data-event-count]')!.dataset.eventCount).toBe('3');
+    const group = q(`[data-overlay-group="${GA}"]`)!;
+    expect(group.querySelector('[data-overlay-name]')!.textContent).toBe('👥 3학년');
+    expect(group.querySelector<HTMLElement>('[data-overlay-count]')!.dataset.overlayCount).toBe('1');
+    const card = q('[data-event-card="g1"]')!;
+    expect(card.dataset.eventSpace).toBe(GA);
+    expect(card.querySelector(`[data-event-space-dot="${GA}"]`)).not.toBeNull();
+    expect(card.textContent).toContain('학년 행사');
+    // 순서 바꾸기·지우기는 없다
+    expect(card.querySelector('[data-event-up]')).toBeNull();
+    expect(card.querySelector('[data-event-delete]')).toBeNull();
+    expect(card.getAttribute('draggable')).toBeNull();
+    expect(q('[data-event-card="a"]')!.dataset.eventSpace).toBeUndefined();
+  });
+
+  it('누르기 = 그 공간 칸 (Ctrl이어도 고르기에 들지 않는다) · 라벨 칩 = 그 공간에 완료 · 그 칸이 열리면 짚는다', async () => {
+    render(<DayEvents date={DAY} />);
+    fireEvent.click(q('[data-event-card="g1"] [data-event-text]')!, { ctrlKey: true });
+    expect(opened.calls.at(-1)).toEqual({ sid: GA, date: DAY, id: 'g1' });
+    expect(useMulti.getState().on).toBe(false);
+    await act(async () => fireEvent.click(q('[data-event-card="g1"] [data-event-chip]')!));
+    expect(written.batches.at(-1)!.map((o) => [o.at.sid, o.at.id])).toEqual([[GA, 'g1']]);
+    act(() => useWindows.setState({ windows: [{ key: 1, id: 'event', params: { sid: GA, date: DAY, id: 'g1' }, openedAt: 1, raisedAt: 1 }] }));
+    expect(q('[data-event-card="g1"]')!.className).toContain('ring-primary');
+  });
+
+  it('여러 개 고르는 동안 겹친 일정은 눌러도 아무 일 없다', () => {
+    render(<DayEvents date={DAY} />);
+    fireEvent.click(q('[data-event-card="a"]')!, { ctrlKey: true });
+    expect(useMulti.getState().on).toBe(true);
+    const before = opened.calls.length;
+    fireEvent.click(q('[data-event-card="g1"]')!);
+    expect(opened.calls.length).toBe(before);
+    expect(useMulti.getState().picks.map((p) => p.id)).toEqual(['a']);
+  });
+
+  it('주 공간 일정이 없어도 겹친 것은 보인다 (비었다는 글 없이)', () => {
+    resetMirrorStore();
+    seed('live', new Map());
+    for (const [coll, d] of [
+      ['labels', gLabels],
+      ['items', gItems],
+    ] as const) {
+      trackColl(GA, coll);
+      applyBase(GA, coll, d);
+      setStatus(GA, coll, 'live');
+    }
+    render(<DayEvents date={DAY} />);
+    expect(cards()).toEqual(['g1']);
+    expect(q('[data-event-empty]')).toBeNull();
+    expect(q('[data-event-count]')!.dataset.eventCount).toBe('0');
   });
 });

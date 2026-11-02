@@ -24,7 +24,9 @@ import { MAX_SERIES_ITEMS, recurFormDates, recurFormFor, ruleLabel, ruleOf, type
 import { parseQuickInput, stripMatch, type QuickMatch } from '../../domain/quickInput';
 import { useDraft } from '../../data/drafts';
 import { useHolidayName } from '../../data/holidays';
-import { itemsOn, useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
+import { itemsOn, useDocs, useItemsOn, useLabelTree, useMirrorStatus, useOverlaySpaceIds } from '../../data/select';
+import { useMySpaces } from '../../data/spaceChoice';
+import { spaceColor } from '../../domain/spaceColor';
 import AutoTextarea from '../../ui/AutoTextarea';
 import DraftOffer from '../../ui/DraftOffer';
 import PopoutButton from '../../ui/PopoutButton';
@@ -403,10 +405,13 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   useUnsavedCheck(unsaved);
 
   const title = isEditing ? '일정 수정' : '새 일정';
+  // 겹쳐 보는 동안에는 '· 개인/공유' 대신 공간 색 칩 - 어느 공간에 들어가는지 보이게 (P17-2)
+  const overlayOn = useOverlaySpaceIds().length > 0;
+  const groupName = useMySpaces((s) => s.groups.find((g) => g.id === sid)?.name);
   const subtitle = useMemo(
     () =>
-      `${period.endDate ? `${shortDateLabel(form.date)}~${shortDateLabel(period.endDate)} ${recurOn ? '반복' : '기간'}` : `${shortDateLabel(form.date)}${recurOn ? ' 반복' : ''}`} 일정 · ${personal ? '개인' : '공유'}`,
-    [form.date, period.endDate, recurOn, personal],
+      `${period.endDate ? `${shortDateLabel(form.date)}~${shortDateLabel(period.endDate)} ${recurOn ? '반복' : '기간'}` : `${shortDateLabel(form.date)}${recurOn ? ' 반복' : ''}`} 일정${overlayOn ? '' : ` · ${personal ? '개인' : '공유'}`}`,
+    [form.date, period.endDate, recurOn, personal, overlayOn],
   );
 
   return (
@@ -421,7 +426,19 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <div className="min-w-0">
             <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-            <p className="text-xs font-bold text-primary mt-0.5 truncate">{subtitle}</p>
+            <p className="text-xs font-bold text-primary mt-0.5 truncate">
+              {subtitle}
+              {overlayOn && (
+                <span
+                  data-event-panel-space={sid}
+                  className="inline-flex items-center gap-1 ml-1.5 px-1.5 py-px rounded-md border bg-white text-slate-700 align-middle"
+                  style={{ borderColor: spaceColor(sid) }}
+                >
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: spaceColor(sid) }} aria-hidden />
+                  {personal ? '🔒 개인' : `👥 공유 · ${groupName ?? '그룹'}`}
+                </span>
+              )}
+            </p>
           </div>
           <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
           <button

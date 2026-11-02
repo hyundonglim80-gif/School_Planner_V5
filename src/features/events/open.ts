@@ -49,3 +49,12 @@ export function useShownEventId(sid: string | null): string | null {
     return w.id === EVENT_PANEL && p.id && p.sid === sid ? p.id : null;
   });
 }
+
+/** 오른쪽에 보이는 수정 칸의 '공간/일정 id' (겹쳐 본 다른 공간 일정을 짚는다 - P17-2) */
+export const shownEventKey = (sid: string, id: string) => `${sid}/${id}`;
+export function useShownEventKey(): string | null {
+  return useShownWindowPick((w) => {
+    const p = w.params as EventPanelParams;
+    return w.id === EVENT_PANEL && p.id ? shownEventKey(p.sid, p.id) : null;
+  });
+}

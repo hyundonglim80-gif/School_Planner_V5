@@ -9,6 +9,7 @@ import { setPopupStyle } from '../../app/layoutPrefs';
 import { anyWindowUnsaved } from '../../app/windows';
 import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
+import { useMySpaces, useSpaceChoice, useSpaceOverlay } from '../../data/spaceChoice';
 import { clearUndo, undoLast } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
 import EventPanel from './EventPanel';
@@ -486,5 +487,33 @@ describe('반복 (끝 날 줄의 요일 - P10-1)', () => {
       await act(async () => fireEvent.click(q('[data-scope-choice="all"]')));
       expect(lastOps().map((o) => `${o.type}:${o.at.id}`)).toEqual(['remove:a', 'remove:b', 'remove:c', 'remove:s1']);
     });
+  });
+});
+
+describe('겹쳐 보기 중 칸 머리 (P17-2)', () => {
+  afterEach(() => {
+    useSpaceOverlay.setState({ uid: null, sids: [] });
+    useSpaceChoice.setState({ uid: null, sid: null, known: [] });
+    useMySpaces.setState({ groups: [], loaded: false });
+  });
+  it("겹쳐 보지 않으면 '· 개인' 글자, 겹쳐 보면 그 칸 공간의 색 칩 (새 일정은 주 공간)", () => {
+    seed();
+    useMySpaces.setState({ groups: [{ id: 'g_a', name: '협의회', ownerId: 'me', members: {} }], loaded: true });
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    expect(q('[data-event-panel]').textContent).toContain('일정 · 개인');
+    expect(document.querySelector('[data-event-panel-space]')).toBeNull();
+    act(() => useSpaceOverlay.setState({ uid: 'me', sids: ['g_a'] }));
+    expect(q('[data-event-panel-space]').dataset.eventPanelSpace).toBe(SID);
+    expect(q('[data-event-panel-space]').textContent).toBe('🔒 개인');
+    expect(q('[data-event-panel]').textContent).not.toContain('일정 · 개인');
+  });
+  it('그룹 칸은 👥 공유 · 그룹 이름 (그룹이 주 공간, 개인을 겹쳐 볼 때)', () => {
+    useMySpaces.setState({ groups: [{ id: 'g_a', name: '협의회', ownerId: 'me', members: {} }], loaded: true });
+    useSpaceChoice.setState({ uid: 'me', sid: 'g_a', known: [] });
+    useSpaceOverlay.setState({ uid: 'me', sids: ['u_me'] });
+    trackColl('g_a', 'items');
+    setStatus('g_a', 'items', 'live');
+    render(<Host initial={{ sid: 'g_a', date: DAY }} />);
+    expect(q('[data-event-panel-space]').textContent).toBe('👥 공유 · 협의회');
   });
 });

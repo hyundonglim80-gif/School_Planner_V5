@@ -336,17 +336,27 @@ export interface OverlaySpace {
 }
 
 const NO_OVERLAY: readonly OverlaySpace[] = [];
+const NO_SIDS: readonly string[] = [];
+
+/** 지금 겹쳐 보는 공간 id (칩 차례 - 주 공간·나간 그룹은 뺀다, data/spaceChoice overlaySpaces) */
+export function useOverlaySpaceIds(): readonly string[] {
+  const uid = useSession((s) => s.user?.uid);
+  const overlay = useSpaceOverlay();
+  const mine = useMySpaces();
+  const main = useCurrentSpaceId();
+  return useMemo(() => {
+    const sids = uid ? overlaySpaces(uid, overlay, mine, main) : [];
+    return sids.length ? sids : NO_SIDS;
+  }, [uid, overlay, mine, main]);
+}
 
 /**
  * 지금 겹쳐 보는 공간들 (칩 차례). 기기 사본이 이미 모든 공간을 받는다 - 서버 읽기는 늘지 않는다.
  * 사본 store를 고르개 하나로 읽는다(공간 수만큼 훅을 부르지 않는다) - 재료가 같으면 같은 배열.
  */
 export function useOverlaySpaces(): readonly OverlaySpace[] {
-  const uid = useSession((s) => s.user?.uid);
-  const overlay = useSpaceOverlay();
+  const sids = useOverlaySpaceIds();
   const mine = useMySpaces();
-  const main = useCurrentSpaceId();
-  const sids = useMemo(() => (uid ? overlaySpaces(uid, overlay, mine, main) : []), [uid, overlay, mine, main]);
   const docs = useMirror(
     useShallow((s) => sids.flatMap((sid) => [s.colls[collKey(sid, 'items')]?.docs ?? EMPTY_DOCS, s.colls[collKey(sid, 'labels')]?.docs ?? EMPTY_DOCS])),
   );
@@ -360,4 +370,15 @@ export function useOverlaySpaces(): readonly OverlaySpace[] {
       tree: labelTreeOf(docs[i * 2 + 1] as unknown as Docs<'labels'>, 'event'),
     }));
   }, [sids, docs, mine.groups]);
+}
+
+/** 겹친 공간마다 그날 일정 (하루 화면 - 그날 일정이 없는 공간은 뺀다) */
+export function useOverlayEventsOn(date: YMD): readonly { space: OverlaySpace; events: ItemDoc[] }[] {
+  const spaces = useOverlaySpaces();
+  // 공휴일 표가 들어오면 주말 빼기 기간이 그날 빠질 수 있다 - 다시 고른다 (useItemsOn과 같다)
+  const holidays = useHolidayStore((s) => s.version);
+  return useMemo(() => {
+    void holidays;
+    return spaces.map((space) => ({ space, events: itemsOn(space.items, date, 'event') })).filter((x) => x.events.length > 0);
+  }, [spaces, date, holidays]);
 }

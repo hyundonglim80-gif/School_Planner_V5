@@ -8,7 +8,7 @@ import { registerWindow, resetWindowsForTest, useWindows } from './windows';
 import * as toast from './toast';
 import { useSession } from '../data/session';
 import { useMailStore } from '../data/mailStore';
-import { useMySpaces } from '../data/spaceChoice';
+import { useMySpaces, useSpaceChoice, useSpaceOverlay } from '../data/spaceChoice';
 import { logout } from '../features/auth/login';
 
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
@@ -99,6 +99,21 @@ describe('📂 공간 고르기 (P17-1 - 메모·학급 화면만)', () => {
     }
     act(() => useMySpaces.setState({ groups: [], loaded: true }));
     expect(container.querySelector('[data-space-select]')).toBeNull();
+  });
+  it('📂는 주 공간만 고른다 - 겹쳐 보던 공간을 고르면 주 공간이 되고 겹친 것에서 빠진다, 다른 것은 기억에 그대로 (P17-2)', async () => {
+    const user = userEvent.setup();
+    useSession.setState({ loading: false, user: { uid: 'u1', email: 't@example.com', displayName: '김선생', photoURL: '' } });
+    useSpaceChoice.setState({ uid: 'u1', sid: null, known: [] });
+    useMySpaces.setState({ groups: [{ id: 'g_1', name: '협의회', ownerId: 'u1', members: {} }, { id: 'g_2', name: '5학년', ownerId: 'u1', members: {} }], loaded: true });
+    useSpaceOverlay.setState({ uid: 'u1', sids: ['g_1', 'g_2'] });
+    useNav.setState({ scope: 'memo' });
+    const { container } = render(<Header />);
+    await user.click(container.querySelector('[data-space-select]')!);
+    await user.click(container.querySelector('[data-space-option="g_1"]')!);
+    expect(useSpaceChoice.getState().sid).toBe('g_1');
+    expect(useSpaceOverlay.getState().sids).toEqual(['g_2']);
+    useSpaceOverlay.setState({ uid: null, sids: [] });
+    useSpaceChoice.setState({ uid: null, sid: null, known: [] });
   });
 });
 

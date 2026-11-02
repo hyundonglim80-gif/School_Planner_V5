@@ -2172,8 +2172,11 @@ Claude 의견(방향 좋음 · 일정만 '겹쳐 보기' 1단계 · 칩은 날�
 - [x] ■1 자료·셈 - `data/spaceChoice.ts` 겹친 공간 store(`sp5-space-overlay` uid마다 · `toggleOverlay` · 순수 `overlaySpaces(choice, mine, main)` - 주 공간·나간 그룹 거르기) ·
   `domain/spaceColor.ts`(`spaceColor(sid)` - 개인 고정·그룹 해시 팔레트, 밝게·어둡게 둘 다 읽히게) · `data/select.ts` `useOverlaySpaces()` → `[{ sid, name, color, items, tree }]`(■0 - 화면마다 셈이 달라 일정 목록이 아니라 재료를 준다)
   (useMirror에서 여러 키를 selector 하나로(`useShallow`) - 훅을 공간 수만큼 부르지 않는다 · 같은 재료면 같은 객체 - CLAUDE.md 4장) + 시험(공간 둘 흉내 · 지운 것 빼기 · 같은 참조 · 주 공간 빼기).
-- [ ] ■2 칩 Ctrl·길게 누르기 + 하루 화면 - `SpaceChips` 겹친 칩(테두리·✓·색 점, 주 공간은 Ctrl 안 들음, PC 흐린 글) · `DayEvents` 주 공간 아래 공간마다 구분 줄 `[data-overlay-group=sid]` + 카드 `[data-event-space=sid]`
+- [x] ■2 칩 Ctrl·길게 누르기 + 하루 화면 - `SpaceChips` 겹친 칩(테두리·✓·색 점, 주 공간은 Ctrl 안 들음, PC 흐린 글) · `DayEvents` 주 공간 아래 공간마다 구분 줄 `[data-overlay-group=sid]` + 카드 `[data-event-space=sid]`
   (누르기 = 그 공간 칸 · 완료 = 그 공간 · 끌기·▲▼·고르기 없음 · 파란 테두리 = 그 공간 `useShownEventId`) · 새 일정 칸 머리 공간 색 칩. 메모·학급 화면 📂 드롭다운은 주 공간만 고른다(겹친 것은 보이지도 바꾸지도 않고 이 기기 기억에 남아 달력 화면에 돌아오면 그대로 - 📂로 겹친 공간을 고르면 주 공간이 되고 겹친 것에서 빠진다). 시험(칩 클릭 규칙 · DayEvents 겹친 줄 · 📂로 고르기).
+  → 11-02: 그냥 누르기 = 그 공간 하나(겹쳐 보기도 끔 - 라벨 칩 탐색기식) · Ctrl·Shift·⌘·길게 누르기 = 더하기·빼기 · aria-pressed는 주 공간 칩만(겹친 칩 = `data-space-overlay`) · PC 흐린 글은 xl(1280) 이상만.
+  겹친 카드는 ▲▼ 자리에 색 점(`data-event-space-dot`) · 🗑️ 없음 · ⏰ = 그 공간 칸 · 짚기는 `useShownEventKey`(sid/id) · 칸 머리는 겹쳐 보는 동안만 '· 개인/공유' 대신 색 칩 `[data-event-panel-space]`('🔒 개인' / '👥 공유 · 이름').
+  길게 누르기 `ui/longPress.ts`(EventCard도 옮김). 단위 2733 · events·share-groups 통과 · 임시 점검(1400·390, 27항목 - ■4에서 inspect-space-overlay로) 통과.
 - [ ] ■3 주간·월간·년간 - 칸마다 주 공간 뒤에 겹친 일정(기간 막대 포함, 휴대폰 월간 그날 목록도) · 끌기·고르기 목록(`visiblePicks` 등)에서 빼기 · 인쇄는 보이는 그대로.
 - [ ] ■4 설명서(events·share - '겹쳐 보기': Ctrl·길게 누르기, 일정만, 누르면 그 공간 칸, 새 일정은 채운 칩 공간, 이 기기에 기억) ·
   `tools/inspect-space-overlay.mjs`(새 - 계정 하나가 그룹 주인: 개인 일정·그룹 일정(기간 하나 포함) 심기 → Ctrl 겹치기 → 하루·주간·월간·년간에 둘 다·색 점·글자 · 그룹 일정 누르기 = 칸 머리 '공유' ·

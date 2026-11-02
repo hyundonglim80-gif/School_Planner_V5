@@ -8,17 +8,20 @@
 //   지난 날 칸에서는 그 일정을 흐리게 '→ 오늘로'(누르면 오늘). 오늘 칸에서 끝내면 그날로 옮겨 적는다(eventOps carriedDoneChanges).
 // - 여러 개 고르기(features/events/multi): Ctrl+누르기·Shift 범위·휴대폰 길게 누르기로 바로 시작, 고르는 동안 누르면 고르기·풀기(V4 그대로).
 // - 쓰기마다 문서 하나, 되돌리기는 Ctrl+Z(완료·순서는 안내 없이 - V4도 띄우지 않았다).
+// - 겹쳐 보기(P17-2 - 둘째 줄 공간 칩 Ctrl·길게 누르기): 주 공간 것 아래에 공간마다 구분 줄 '● 👥 그룹A n' + 그 공간 일정(그 공간 라벨 트리로).
+//   누르기 = 그 공간 칸 · 라벨 칩 = 그 공간에 완료. ▲▼·끌기·고르기·🗑️·이월은 없다(주 공간 것만). 머리 수(data-event-count)는 주 공간 것만.
 // 새로 쓰고 고치는 칸은 여기 없다 - 오른쪽 일정 칸(EventPanel) 하나로 어느 화면에서나 같게 (V4 그대로).
-import { useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
+import { useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { goToday } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { openWindow } from '../../app/windows';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
 import { periodPosition } from '../../domain/period';
-import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
+import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus, useOverlayEventsOn, type OverlaySpace } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
+import { useLongPress } from '../../ui/longPress';
 import { reorderDragProps } from '../../ui/reorderDrag';
 import { deleteEvent, moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
 import DueBadge from '../events/DueBadge';
@@ -30,7 +33,7 @@ import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi
 import EventDeleteChooser from '../events/EventDeleteChooser';
 import DayPastEvents from './DayPastEvents';
 import { openLinkViewer } from '../links/open';
-import { openEventPanel, useShownEventId } from '../events/open';
+import { openEventPanel, shownEventKey, useShownEventId, useShownEventKey } from '../events/open';
 import { useFocusReveal } from '../search/focus';
 
 const NONE: readonly ItemDoc[] = [];
@@ -48,6 +51,30 @@ function lastOrderOf(list: readonly ItemDoc[]): string | null {
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
 };
+const nothing = () => {};
+
+/** 겹쳐 보는 공간 하나의 구분 줄 '● 👥 그룹A 2 ----' + 그 공간 카드 (휴대폰 2열에서도 줄은 한 줄을 다 쓴다) */
+function OverlayGroup({ space, count, children }: { space: OverlaySpace; count: number; children: ReactNode }) {
+  return (
+    <>
+      <div
+        data-overlay-group={space.sid}
+        title={`겹쳐 보는 공간 - 누르면 ${space.name} 공간에서 고칩니다`}
+        className="col-span-2 sm:col-span-1 flex items-center gap-1.5 pt-1.5 text-2xs font-bold text-slate-500 min-w-0"
+      >
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: space.color }} aria-hidden />
+        <span data-overlay-name className="truncate">
+          {space.sid.startsWith('g_') ? '👥' : '🔒'} {space.name}
+        </span>
+        <span data-overlay-count={count} className="px-1.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
+          {count}
+        </span>
+        <span className="flex-1 border-t border-dashed border-slate-200" />
+      </div>
+      {children}
+    </>
+  );
+}
 
 export default function DayEvents({ date }: { date: YMD }) {
   const sid = useCurrentSpaceId();
@@ -61,16 +88,23 @@ export default function DayEvents({ date }: { date: YMD }) {
   const tree = useLabelTree('event');
   const status = useMirrorStatus('items');
   const shownId = useShownEventId(sid);
+  // 겹쳐 보는 다른 공간의 그날 일정 (P17-2 - 주 공간 것 아래에 공간마다 구분 줄, 수에는 넣지 않는다)
+  const overlays = useOverlayEventsOn(date);
+  const overlayCount = overlays.reduce((n, o) => n + o.events.length, 0);
+  const shownKey = useShownEventKey();
   const [collapsed, setCollapsed] = useState(false);
   // 검색 결과로 이 날 일정을 짚으러 오면 접힌 칸을 편다
   useFocusReveal((t) => t.kind === 'event' && t.date === date, () => setCollapsed(false));
   // ⏰ 표시를 누르면 알림 시각 창 (여기서는 누르는 즉시 저장 - V4 그대로)
   const [alarmFor, setAlarmFor] = useState<ItemDoc | null>(null);
   // 사본도 서버 소식도 아직 없으면 '없다' 대신 받는 중이라고 한다
-  const waiting = count === 0 && (status === 'idle' || status === 'loading');
+  const waiting = count === 0 && overlayCount === 0 && (status === 'idle' || status === 'loading');
 
   const openCreate = () => sid && openEventPanel({ sid, date });
   const openEdit = (ev: ItemDoc) => sid && openEventPanel({ sid, date, id: ev.id });
+  // 겹친 일정 = 보기·열기·완료만 (그 공간 칸에서 고친다 - 고르기·끌기·순서·지우기는 주 공간 것만, PLAN 5장 P17)
+  const openOverlay = (space: OverlaySpace, ev: ItemDoc) => openEventPanel({ sid: space.sid, date, id: ev.id });
+  const toggleOverlayDone = (space: OverlaySpace, ev: ItemDoc) => void setEventDone(space.sid, ev, !doneOn(ev, date), { day: date }).catch(quiet);
   // 여러 개 고르기: 고르는 동안이거나 Ctrl·Shift와 함께 누르면 고른다 (아니면 수정 칸)
   const multi = useMulti();
   const pickedHere = new Set(multi.picks.filter((p) => p.day === date).map((p) => p.id));
@@ -145,8 +179,8 @@ export default function DayEvents({ date }: { date: YMD }) {
 
       {!collapsed && (
         // 카드. 휴대폰은 2열, PC(sm 이상)는 1열
-        <div className={`flex-1 overflow-y-auto pr-1 min-h-[110px] ${count > 0 ? 'grid grid-cols-2 sm:grid-cols-1 gap-2 content-start' : ''}`}>
-          {count > 0 ? (
+        <div className={`flex-1 overflow-y-auto pr-1 min-h-[110px] ${count + overlayCount > 0 ? 'grid grid-cols-2 sm:grid-cols-1 gap-2 content-start' : ''}`}>
+          {count + overlayCount > 0 ? (
             <>
               {events.map((ev, idx) => (
                 <EventCard
@@ -197,6 +231,33 @@ export default function DayEvents({ date }: { date: YMD }) {
                   onDown={() => move(follow, idx, idx + 1)}
                 />
               ))}
+              {overlays.map(({ space, events: list }) => (
+                <OverlayGroup key={space.sid} space={space} count={list.length}>
+                  {list.map((ev) => (
+                    <EventCard
+                      key={`${space.sid}/${ev.id}`}
+                      ev={ev}
+                      day={date}
+                      labels={itemLabels(space.tree, ev.labelIds)}
+                      editing={shownKey === shownEventKey(space.sid, ev.id)}
+                      today={today}
+                      first
+                      last
+                      overlay={space}
+                      onCardClick={() => !multi.on && openOverlay(space, ev)}
+                      onLongPress={nothing}
+                      onOpen={() => openOverlay(space, ev)}
+                      onOpenLinks={() => openLinkViewer({ sid: space.sid, id: ev.id })}
+                      // 알림 시각도 그 공간 칸에서
+                      onAlarm={() => openOverlay(space, ev)}
+                      onDelete={nothing}
+                      onToggle={() => toggleOverlayDone(space, ev)}
+                      onUp={nothing}
+                      onDown={nothing}
+                    />
+                  ))}
+                </OverlayGroup>
+              ))}
             </>
           ) : waiting ? (
             <p data-event-waiting className="py-10 text-center text-xs text-slate-400">
@@ -233,6 +294,8 @@ export default function DayEvents({ date }: { date: YMD }) {
 
 interface EventCardProps {
   ev: ItemDoc;
+  /** 겹쳐 보는 다른 공간의 일정 (P17-2) - 공간 색 점, ▲▼·🗑️·끌기 없음 */
+  overlay?: OverlaySpace;
   /** 여러 개 고르기로 골랐나 */
   picked?: boolean;
   /** 카드를 누름 (여러 개 고르기면 고르기, 아니면 수정 칸) */
@@ -262,16 +325,10 @@ interface EventCardProps {
   onDown: () => void;
 }
 
-/** 길게 누르기 (손가락만 - 0.5초, 움직이면 그만) */
-const LONG_PRESS_MS = 500;
-
-function EventCard({ ev, day, dragProps, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpen, onOpenLinks, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
+function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpen, onOpenLinks, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
   const done = doneOn(ev, day);
-  const press = useRef<{ timer: ReturnType<typeof setTimeout> | null; x: number; y: number; fired: boolean }>({ timer: null, x: 0, y: 0, fired: false });
-  const cancelPress = () => {
-    if (press.current.timer) clearTimeout(press.current.timer);
-    press.current.timer = null;
-  };
+  // 휴대폰 길게 누르기 = 여러 개 고르기 시작 (ui/longPress)
+  const longPress = useLongPress(onLongPress);
   // 기간 일정의 그날 차례 '(2/5)' - 글에 적지 않고 센다 (DESIGN 5-3)
   const pos = periodPosition(ev, day);
   const links = ev.linkIds?.length ?? 0;
@@ -284,39 +341,15 @@ function EventCard({ ev, day, dragProps, picked, onCardClick, onLongPress, label
       data-event-carried={since}
       data-event-away={away ? '1' : undefined}
       data-event-picked={picked ? '1' : undefined}
+      data-event-space={overlay?.sid}
       {...dragProps}
+      {...longPress.handlers}
       onClick={(e) => {
         // 길게 눌러 고른 뒤 손을 떼면 click이 한 번 더 온다 - 그것은 넘긴다
-        if (press.current.fired) {
-          press.current.fired = false;
-          return;
-        }
+        if (longPress.consumed()) return;
         onCardClick(e);
       }}
-      onPointerDown={(e) => {
-        if (e.pointerType !== 'touch') return;
-        cancelPress();
-        press.current = {
-          x: e.clientX,
-          y: e.clientY,
-          fired: false,
-          timer: setTimeout(() => {
-            press.current.fired = true;
-            press.current.timer = null;
-            onLongPress();
-          }, LONG_PRESS_MS),
-        };
-      }}
-      onPointerMove={(e) => {
-        if (press.current.timer && Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y) > 10) cancelPress();
-      }}
-      onPointerUp={cancelPress}
-      onPointerCancel={cancelPress}
-      onContextMenu={(e) => {
-        // 길게 누르기에 뜨는 휴대폰 메뉴를 막는다
-        if (press.current.fired) e.preventDefault();
-      }}
-      title="클릭하여 오른쪽 칸에서 수정 (Ctrl·Shift와 함께 누르면 여러 개 고르기)"
+      title={overlay ? `${overlay.name} 공간 일정 - 클릭하여 오른쪽 칸에서 수정 (겹쳐 보기)` : '클릭하여 오른쪽 칸에서 수정 (Ctrl·Shift와 함께 누르면 여러 개 고르기)'}
       className={`group flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-2xs transition-all cursor-pointer min-w-0 select-none sm:select-auto ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
         picked
           ? 'border-primary ring-2 ring-primary bg-blue-50 text-slate-800'
@@ -328,36 +361,46 @@ function EventCard({ ev, day, dragProps, picked, onCardClick, onLongPress, label
       {/* 휴대폰(2열 카드): 위 줄에 순서 바꾸기 · 수정, 아래에 내용. PC(1열): 한 줄 - 왼쪽 ▲▼(세로), 가운데 내용, 오른쪽 수정.
           PC에서는 이 줄 틀을 없는 셈 치고(sm:contents) 순서(order)로 자리를 잡는다 (V4 그대로). */}
       <div className="flex items-center justify-between -mt-0.5 sm:contents">
-        <div className="flex items-center gap-0.5 shrink-0 sm:flex-col sm:order-1 sm:mt-0.5">
-          <button
-            type="button"
-            data-event-up
-            onClick={(e) => {
-              stop(e);
-              if (!first) onUp();
-            }}
-            disabled={first}
-            title="위로"
-            aria-label="위로"
-            className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs"
-          >
-            ▲
-          </button>
-          <button
-            type="button"
-            data-event-down
-            onClick={(e) => {
-              stop(e);
-              if (!last) onDown();
-            }}
-            disabled={last}
-            title="아래로"
-            aria-label="아래로"
-            className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs"
-          >
-            ▼
-          </button>
-        </div>
+        {/* 겹친 일정은 ▲▼ 자리에 공간 색 점 (순서는 공간마다라 섞어 바꾸지 않는다) */}
+        {overlay ? (
+          <span
+            data-event-space-dot={overlay.sid}
+            title={`${overlay.sid.startsWith('g_') ? '👥' : '🔒'} ${overlay.name}`}
+            className="w-2.5 h-2.5 rounded-full shrink-0 sm:order-1 sm:mt-1.5 sm:mx-1"
+            style={{ backgroundColor: overlay.color }}
+          />
+        ) : (
+          <div className="flex items-center gap-0.5 shrink-0 sm:flex-col sm:order-1 sm:mt-0.5">
+            <button
+              type="button"
+              data-event-up
+              onClick={(e) => {
+                stop(e);
+                if (!first) onUp();
+              }}
+              disabled={first}
+              title="위로"
+              aria-label="위로"
+              className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs"
+            >
+              ▲
+            </button>
+            <button
+              type="button"
+              data-event-down
+              onClick={(e) => {
+                stop(e);
+                if (!last) onDown();
+              }}
+              disabled={last}
+              title="아래로"
+              aria-label="아래로"
+              className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs"
+            >
+              ▼
+            </button>
+          </div>
+        )}
         {/* 마우스를 올리면 나오는 ✏️ 수정 · 🗑️ 삭제 (V4 EventItemActions - 확인 창 없이 지우고 안내의 되돌리기로 돌아온다) */}
         <span className="shrink-0 sm:order-3 inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -373,19 +416,21 @@ function EventCard({ ev, day, dragProps, picked, onCardClick, onLongPress, label
           >
             ✏️
           </button>
-          <button
-            type="button"
-            data-event-delete
-            onClick={(e) => {
-              stop(e);
-              onDelete();
-            }}
-            className="px-1 text-2xs leading-none text-slate-400 hover:text-red-500 cursor-pointer"
-            title="일정 삭제"
-            aria-label="일정 삭제"
-          >
-            🗑️
-          </button>
+          {!overlay && (
+            <button
+              type="button"
+              data-event-delete
+              onClick={(e) => {
+                stop(e);
+                onDelete();
+              }}
+              className="px-1 text-2xs leading-none text-slate-400 hover:text-red-500 cursor-pointer"
+              title="일정 삭제"
+              aria-label="일정 삭제"
+            >
+              🗑️
+            </button>
+          )}
         </span>
       </div>
 
