@@ -1,6 +1,7 @@
 // 머리줄 첫 줄 (MENU.md 3-1, V4 Layout 머리줄).
-//   PC     : SP5 · ⏳ D-Day · 🗑️ 휴지통 … ＋ 새로 · 🔍 검색 · [화면 탭] · (📂 공간) | ? · ⋮ · 사진
-//   휴대폰 : SP5 · ⏳ · 🗑️ … 🔍 · (📂) | ? · ⋮ · 사진   (화면 탭은 아래 탭바, ＋는 탭바 위 둥근 단추)
+//   PC     : SP5 · ⏳ D-Day · 🗑️ 휴지통 · (✉ 쪽지 n) … ＋ 새로 · 🔍 검색 · [화면 탭] · (📂 공간) | ? · ⋮ · 사진
+//   휴대폰 : SP5 · ⏳ · 🗑️ · (✉ n) … 🔍 · (📂) | ? · ⋮ · 사진   (화면 탭은 아래 탭바, ＋는 탭바 위 둥근 단추)
+//   ✉ 쪽지는 든 그룹이 있을 때(또는 안 읽은 쪽지가 있을 때 - P15-2).
 // 단추는 단축키 id로 일을 부탁한다(keys.runShortcut) - 창이 들어오면 저절로 열린다.
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -10,6 +11,9 @@ import { useCurrentSpaceId, useSession } from '../data/session';
 import { setSpaceChoice, useMySpaces } from '../data/spaceChoice';
 import { logout } from '../features/auth/login';
 import GcalPendingButton from '../features/gcal/GcalPendingButton';
+import MailHeaderButton from '../features/mail/MailHeaderButton';
+import { useMailStore } from '../data/mailStore';
+import { unreadLabel } from '../domain/mail';
 import { canRun, runFromButton, useShortcutOverrides, useShortcutTitle } from './keys';
 import { MORE_MENU } from './moreMenu';
 import { useCommonSettings } from './prefs';
@@ -70,6 +74,8 @@ export default function Header() {
             <span>🗑️</span>
             <span className="hidden sm:inline">휴지통</span>
           </button>
+          {/* ✉ 쪽지 n (든 그룹이 있을 때 - P15-2) */}
+          <MailHeaderButton className={HEAD_BTN} />
           {/* 📅 못 보낸 일정 N (구글 캘린더 - 있을 때만, P8-1) */}
           <GcalPendingButton className={HEAD_BTN} />
         </div>
@@ -250,6 +256,7 @@ function AccountMenu({ title }: { title: string }) {
   const { open, setOpen, ref } = useDropdown();
   const user = useSession((s) => s.user);
   const groupCount = useMySpaces((s) => s.groups.length);
+  const unread = useMailStore((s) => s.unread);
   return (
     <div className="relative" ref={ref}>
       <button
@@ -288,6 +295,18 @@ function AccountMenu({ title }: { title: string }) {
             >
               <span>👥</span> 공유 그룹
               {groupCount > 0 && <span className="ml-auto text-2xs text-slate-400">{groupCount}개</span>}
+            </button>
+            <button
+              type="button"
+              data-account-mail
+              onClick={() => {
+                setOpen(false);
+                runFromButton('mail');
+              }}
+              className="w-full px-4 py-2 text-left font-bold flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer"
+            >
+              <span>✉</span> 쪽지
+              {unread > 0 && <span className="ml-auto text-2xs font-black text-primary">안 읽음 {unreadLabel(unread)}</span>}
             </button>
             <button
               type="button"

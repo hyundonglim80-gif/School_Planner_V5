@@ -3,11 +3,13 @@
 //      7초 뒤 진짜 지우기 · 보낸 쪽지 탭 · 끊기면 '인터넷이 필요합니다' + 다시 받기
 //   ■2 쓰기: 그룹 → 구성원 칩(나 빼고·이름) → 받는 사람 없으면 안내 · Ctrl+S는 보내지 않음 · Ctrl+Enter = 보내기(받는 쪽 칸·사본) → 보낸 탭 ·
 //      ↩ 답장(replyTo) · 쓰던 글 보관(되살리기, 앱 위 띠에는 없음) · 그룹 창 구성원 ✉ · 끊긴 채 보내기 = 기다리는 저장 띠 → 연결되면 간다
+//   ■3 받기: 머리줄 ✉ n = 안 읽은 수 · 새 쪽지 안내 '보기' → 그 쪽지 · 쪽지 창이 보이면 안내 없이 목록에 · 계정 칸·단축키 ·
+//      ?mail=<id>(푸시를 눌러 연 앱) · 서비스 워커 'mail' 푸시(보는 창이 있으면 없음 · 없으면 OS 알림 하나) · 알림 누름 → 열린 앱이 그 쪽지
 //
 //   그룹은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, CLAUDE.md 2장). 쪽지는 각 계정 클라이언트로(서버 시각·규칙 통과).
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-mail.mjs
-import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
-import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, where, writeBatch } from 'firebase/firestore';
+import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const undo = restorer();
@@ -38,7 +40,11 @@ async function send(e, from, fromName, to, text) {
   return id;
 }
 
+const tokensA = async () => (await getDocs(collection(em.db, 'spaces', `u_${uidA}`, 'pushTokens'))).docs.map((d) => d.id);
+const tokensBefore = await tokensA();
 undo.add(async () => {
+  // 알림을 허용한 점검 창이 올린 토큰 (inspect-push처럼)
+  for (const t of await tokensA()) if (!tokensBefore.includes(t)) await deleteDoc(doc(em.db, 'spaces', `u_${uidA}`, 'pushTokens', t));
   await emptyBoxes(em, uidA);
   await emptyBoxes(emB, uidB);
   for (const uid of [uidA, uidB]) await admin.remove(`spaces/${SID}/people/${uid}`);
@@ -61,7 +67,14 @@ try {
   const A = await newPage(browser);
   A.dialogs.answer = true;
   const page = A.page;
-  await page.addInitScript(() => localStorage.setItem('sp5_theme', 'light'));
+  // about:blank(서비스 워커 점검)에서는 저장소가 막힌다
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem('sp5_theme', 'light');
+    } catch {
+      /* about:blank */
+    }
+  });
   await open(page, `#/day/${DAY}`);
   const rows = (box) => page.locator(`${sel('mail-list', box)} ${sel('mail-row')}`);
 
@@ -204,6 +217,80 @@ try {
   const off = await serverUntil(inboxB, (l) => l.some((x) => x.text === '끊김 점검'), 20000);
   r.check(off.some((x) => x.text === '끊김 점검'), '연결되면 간다');
   r.check(await waitFor(async () => (await page.locator(sel('pending-writes')).count()) === 0, 8000), '띠가 사라진다');
+
+  r.section('■3 머리줄 ✉ · 새 쪽지 안내');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  const unreadA = async () => (await getDocs(query(collection(em.db, 'v5Mail', uidA, 'mailIn'), where('readAt', '==', null)))).size;
+  const head = page.locator(sel('header-mail'));
+  r.check(await waitFor(head, 8000), '든 그룹이 있으면 머리줄 ✉');
+  const n0 = await unreadA();
+  r.check(await waitFor(async () => (await head.getAttribute('data-header-mail')) === String(n0), 8000), `✉ n = 안 읽은 쪽지 수 (${n0})`);
+  const fresh = await send(emB, uidB, '이점검', uidA, '새 쪽지 안내 점검');
+  const notice = page.locator(sel('toast'), { hasText: '이점검 선생님의 쪽지' });
+  r.check(await waitFor(notice, 8000), "새 쪽지 → 안내 '✉ 이점검 선생님의 쪽지'");
+  r.check(await waitFor(async () => (await head.getAttribute('data-header-mail')) === String(n0 + 1), 5000), '✉ n이 하나 는다');
+  await notice.locator(sel('toast-action', '보기')).click();
+  r.check(await waitFor(page.locator(sel('mail-row', fresh)).locator(sel('mail-body')), 8000), "안내 '보기' → 쪽지 창에 그 쪽지가 펼쳐진다");
+  r.check(await waitFor(async () => (await head.getAttribute('data-header-mail')) === String(n0), 8000), '펼치면(읽음) ✉ n이 준다');
+
+  r.section('■3 쪽지 창이 보이면 안내 없이 목록에');
+  await page.waitForTimeout(800);
+  const fresh2 = await send(emB, uidB, '이점검', uidA, '창 보는 중 점검');
+  r.check(await waitFor(page.locator(sel('mail-row', fresh2)), 8000), '보는 쪽지 창 맨 위에 더해진다');
+  r.check(((await rows('in').first().getAttribute('data-mail-row')) ?? '') === fresh2, '맨 위');
+  r.check(await waitFor(page.locator(sel('mail-unread-count')), 3000), '받은 쪽지 탭에 안 읽은 수');
+  await page.waitForTimeout(1000);
+  r.check((await notice.count()) === 0, '안내는 띄우지 않는다');
+
+  r.section('■3 계정 칸 · 단축키');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.locator(sel('account')).click();
+  await page.locator(sel('account-mail')).click();
+  r.check(await waitFor(page.locator(sel('mail-window')), 5000), "계정 칸 '✉ 쪽지' → 쪽지 창");
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.runShortcut('mail'));
+  r.check(await waitFor(page.locator(sel('mail-window')), 5000), "단축키 '쪽지'(mail) → 쪽지 창");
+  await page.evaluate(() => window.sp5.closeAllWindows());
+
+  r.section('■3 ?mail= (푸시 알림을 눌러 연 앱)');
+  const fresh3 = await send(emB, uidB, '이점검', uidA, '주소 점검');
+  const C = await newPage(browser);
+  await open(C.page, `?mail=${fresh3}#/day/${DAY}`);
+  r.check(await waitFor(C.page.locator(sel('mail-row', fresh3)).locator(sel('mail-body')), 10000), '?mail= → 쪽지 창에 그 쪽지가 펼쳐진다');
+  r.check(!new URL(C.page.url()).searchParams.has('mail') && new URL(C.page.url()).hash.startsWith('#/day/'), '주소에서 ?mail=만 지운다 (# 뒤는 그대로)');
+  r.check(C.errors.length === 0, `새 창 페이지 오류 없음 ${C.errors.slice(0, 2).join(' / ')}`);
+  await C.ctx.close();
+
+  r.section("■3 서비스 워커 'mail' 푸시");
+  const origin = new URL(SITE).origin;
+  await A.ctx.grantPermissions(['notifications'], { origin });
+  const cdp = await A.ctx.newCDPSession(page);
+  const regs = [];
+  cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => regs.push(...e.registrations.filter((x) => !x.isDeleted)));
+  await cdp.send('ServiceWorker.enable');
+  r.check(await waitFor(() => regs.length > 0, 10000), '서비스 워커가 등록돼 있다');
+  const reg = regs.find((x) => x.scopeURL.startsWith(origin)) ?? regs[0];
+  const push = (id) =>
+    cdp.send('ServiceWorker.deliverPushMessage', { origin, registrationId: reg.registrationId, data: JSON.stringify({ data: { type: 'mail', id, sid: SID, sender: '이점검', group: GROUP } }) });
+  const sw = A.ctx.serviceWorkers().find((w) => w.url().startsWith(origin));
+  const osNotes = (tag) => sw.evaluate(async (t) => (await self.registration.getNotifications({ tag: t })).map((n) => ({ title: n.title, body: n.body, data: n.data })), tag);
+  await push(fresh3);
+  await page.waitForTimeout(1500);
+  r.check(!!sw && (await osNotes(`sp5-mail-${fresh3}`)).length === 0, '보는 앱 창이 있으면 OS 알림을 띄우지 않는다 (앱 구독이 안내)');
+  await page.goto('about:blank');
+  await push(fresh3);
+  r.check(await waitFor(async () => (await osNotes(`sp5-mail-${fresh3}`)).length === 1, 8000), '앱 창이 없으면 OS 알림 하나');
+  const note = (await osNotes(`sp5-mail-${fresh3}`))[0];
+  r.check(note?.title === '✉ 쪽지 - 이점검' && note?.body === `👥 ${GROUP}` && note?.data?.mail === fresh3, `알림 = 보낸 사람 · 그룹 (글 없음) ${JSON.stringify(note)}`);
+  // 열린 앱 창이 있을 때 알림을 누름 = 그 창에 'sp5-open-mail' (진짜 누르기는 CDP로 못 한다 - 같은 알림으로 notificationclick을 흉내)
+  await open(page, `#/day/${DAY}`);
+  await page.waitForTimeout(1000);
+  await sw.evaluate(async (tag) => {
+    const [n] = await self.registration.getNotifications({ tag });
+    self.dispatchEvent(new NotificationEvent('notificationclick', { notification: n }));
+  }, `sp5-mail-${fresh3}`);
+  r.check(await waitFor(page.locator(sel('mail-row', fresh3)).locator(sel('mail-body')), 8000), '알림을 누르면 열린 앱 창에 그 쪽지가 펼쳐진다');
+  r.check(await waitFor(async () => (await osNotes(`sp5-mail-${fresh3}`)).length === 0, 5000), '누른 알림은 닫힌다');
 
   r.check(A.errors.length === 0, `페이지 오류 없음 ${A.errors.slice(0, 2).join(' / ')}`);
 } catch (e) {

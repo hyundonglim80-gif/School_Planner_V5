@@ -1,4 +1,4 @@
-// sw.js - School Planner V5 서비스 워커 (P1-4 앱으로 설치 + P8-2 서버 푸시 알림 + P8-3 공유받기·오프라인 앱).
+// sw.js - School Planner V5 서비스 워커 (P1-4 앱으로 설치 + P8-2 서버 푸시 알림 + P8-3 공유받기·오프라인 앱 + P15-2 쪽지 푸시).
 //
 // 오프라인 앱(P8-3 - V4 sw.js와 같은 갈래):
 //   - 화면 문서(navigate)는 **네트워크 먼저**(cache: 'reload' - 오래된 index.html이 새 판을 가리지 않게), 안 되면 담아 둔 '/'.
@@ -184,6 +184,10 @@ self.addEventListener('push', (event) => {
     msg = {};
   }
   const d = (msg && msg.data) || msg || {};
+  if (d.type === 'mail') {
+    event.waitUntil(showMailNotice(d));
+    return;
+  }
   if (d.type !== 'event-alarm') return;
   event.waitUntil(
     (async () => {
@@ -243,16 +247,39 @@ async function alarmRepeatTimes() {
   return Math.min(ALARM_REPEAT_MAX, Math.max(1, Math.round((seconds * 1000) / ALARM_REPEAT_MS)));
 }
 
-// 알림을 누르면 열려 있는 앱 창으로, 없으면 새로 연다
+// 쪽지 서버 푸시 (P15-2 - functions/index.js v5MailPush, data = { type: 'mail', id, sid, sender, group } - 쪽지 글은 없다).
+// 앱 화면을 보고 있는 창이 있으면 아무것도 하지 않는다(앱의 안 읽은 쪽지 구독이 '새 쪽지' 안내를 띄운다 - 두 번 뜨지 않게).
+// 없으면 알림 하나(다시 울리지 않는다 - 일정 알림과 다르다). 누르면 앱의 쪽지 창 → 그 쪽지(notificationclick).
+async function showMailNotice(d) {
+  const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  if (wins.some((c) => c.visibilityState === 'visible' && c.url.startsWith(self.registration.scope))) return;
+  await self.registration.showNotification(`✉ 쪽지 - ${d.sender || '선생님'}`, {
+    body: d.group ? `👥 ${d.group}` : '새 쪽지가 왔습니다.',
+    tag: `sp5-mail-${d.id}`,
+    icon: `${self.registration.scope}icon-192.png`,
+    badge: `${self.registration.scope}icon-192.png`,
+    data: { url: self.registration.scope, mail: String(d.id || '') },
+  });
+}
+
+// 알림을 누르면 열려 있는 앱 창으로, 없으면 새로 연다.
+// 쪽지 알림은 그 쪽지를 펼친다: 열린 앱 창(?popout= 새 창 말고)에 'sp5-open-mail'을 보내고(src/features/mail/receive),
+// 없으면 '/?mail=<id>'로 연다 - 앱이 로그인한 뒤 주소에서 꺼내 쪽지 창을 연다.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || self.registration.scope;
+  const data = event.notification.data || {};
+  const url = data.url || self.registration.scope;
+  const mail = typeof data.mail === 'string' && /^[A-Za-z0-9]{1,40}$/.test(data.mail) ? data.mail : '';
   event.waitUntil(
     (async () => {
       const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      const mine = wins.find((c) => c.url.startsWith(self.registration.scope));
-      if (mine) return mine.focus();
-      return self.clients.openWindow(url);
+      const app = (c) => c.url.startsWith(self.registration.scope) && !new URL(c.url).searchParams.has('popout');
+      const mine = (mail && wins.find(app)) || wins.find((c) => c.url.startsWith(self.registration.scope));
+      if (mine) {
+        if (mail) mine.postMessage({ type: 'sp5-open-mail', id: mail });
+        return mine.focus();
+      }
+      return self.clients.openWindow(mail ? `${self.registration.scope}?mail=${mail}` : url);
     })(),
   );
 });

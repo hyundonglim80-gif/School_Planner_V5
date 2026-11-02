@@ -64,7 +64,8 @@ export type ShortcutId =
   | 'print'
   | 'undo'
   | 'closePanel'
-  | 'popOut';
+  | 'popOut'
+  | 'mail';
 
 export interface ShortcutAction {
   id: ShortcutId;
@@ -142,6 +143,8 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'drawStudent', label: '발표자 뽑기 (자리표)', group: '메뉴 열기', def: b('') },
   { id: 'evalOverview', label: '조사표 모아 보기', group: '메뉴 열기', def: b('') },
   { id: 'group', label: '공유 그룹 (계정 칸)', group: '메뉴 열기', def: b('') },
+  // ✉ 쪽지 (P15-2 - 머리줄 ✉와 같다)
+  { id: 'mail', label: '쪽지 (같은 그룹 선생님)', group: '메뉴 열기', def: b('') },
   { id: 'timetable', label: '시간표', group: '메뉴 열기', def: b('') },
   { id: 'progress', label: '진도 관리', group: '메뉴 열기', def: b('') },
   { id: 'weeklyGuide', label: '주간학습안내', group: '메뉴 열기', def: b('') },

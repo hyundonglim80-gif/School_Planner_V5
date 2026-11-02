@@ -7,6 +7,8 @@ import { useNav } from './nav';
 import { registerWindow, resetWindowsForTest, useWindows } from './windows';
 import * as toast from './toast';
 import { useSession } from '../data/session';
+import { useMailStore } from '../data/mailStore';
+import { useMySpaces } from '../data/spaceChoice';
 import { logout } from '../features/auth/login';
 
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
@@ -109,5 +111,29 @@ describe('계정 칸 (MENU.md 3-5)', () => {
     await user.click(container.querySelector('[data-logout]')!);
     expect(logout).toHaveBeenCalledTimes(1);
     expect(container.querySelector('[data-account-panel]')).toBeNull();
+  });
+});
+
+describe('머리줄 ✉ 쪽지 (P15-2 ■3)', () => {
+  it('든 그룹이 없으면 없다 · 있으면 늘 · 안 읽은 수(100부터 99+) · 그룹을 나와도 안 읽은 것이 있으면', () => {
+    const group = { id: 'g_1', name: '협의회', ownerId: 'u1', members: { u1: 'owner' as const } };
+    act(() => {
+      useMySpaces.setState({ groups: [], loaded: true });
+      useMailStore.setState({ unread: 0, ready: true });
+    });
+    const { container } = render(<Header />);
+    const btn = () => container.querySelector<HTMLElement>('[data-header-mail]');
+    expect(btn()).toBeNull();
+    act(() => useMySpaces.setState({ groups: [group], loaded: true }));
+    expect(btn()?.dataset.headerMail).toBe('0');
+    expect(container.querySelector('[data-header-mail-count]')).toBeNull();
+    act(() => useMailStore.setState({ unread: 3, ready: true }));
+    expect(container.querySelector('[data-header-mail-count]')).toHaveTextContent('3');
+    expect(btn()?.getAttribute('aria-label')).toBe('쪽지 - 안 읽은 쪽지 3개');
+    act(() => useMailStore.setState({ unread: 100, ready: true }));
+    expect(container.querySelector('[data-header-mail-count]')).toHaveTextContent('99+');
+    act(() => useMySpaces.setState({ groups: [], loaded: true }));
+    expect(btn()).not.toBeNull();
+    act(() => useMailStore.setState({ unread: 0, ready: false }));
   });
 });

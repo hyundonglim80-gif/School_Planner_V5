@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P15-2 ■3**(머리줄 ✉ n·계정 칸·단축키·새 쪽지 안내·sw.js 'mail'·?mail= - ■1 쪽지 창·■2 쓰기·답장은 11-02 끝): P15-1(규칙·자료 층·함수 코드)은 11-02 끝, 운영 규칙 배포됨. 함수 배포는 P15-2 ■5(sw.js 'mail' 갈래가 먼저 퍼져야 한다 - 물어서). ■0(11-02)에 설계를 정했다 - 6장 P15 절 '설계 (■0 확정)'·5장 'P15 …' 줄들. 코드 읽기 결과 `docs/P15-facts.md`(10-30 줄 번호).
+**P15-2 ■4**(설명서 다듬기·inspect-mobile 390 머리줄·DESIGN·MAP·PARITY·P15-facts 지우기 - ■1~■3 화면은 11-02 끝): P15-1(규칙·자료 층·함수 코드)은 11-02 끝, 운영 규칙 배포됨. 함수 배포는 P15-2 ■5(sw.js 'mail' 갈래가 먼저 퍼져야 한다 - 물어서). ■0(11-02)에 설계를 정했다 - 6장 P15 절 '설계 (■0 확정)'·5장 'P15 …' 줄들. 코드 읽기 결과 `docs/P15-facts.md`(10-30 줄 번호).
 11-02 사용자: 앞으로 V5만 쓴다 - V3·V4 동작은 묻지 않는다(`CLAUDE.md` 1장).
 P14(점검 뒤 손보기)는 10-30 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁뿐(P14-9 첨부 비공개는 취소).
 main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
@@ -2050,7 +2050,10 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
 - [x] ■2 **쓰기·답장**(그룹 → 구성원 칩 여럿 → 글 → 보내기·Ctrl+Enter, 끊기면 기다리는 저장 띠, 쓰던 글 useDraft) · 그룹 창 구성원 칩 ✉ · 그룹이 없으면 안내.
   → 11-02 `features/mail/MailCompose.tsx`(쪽지 창 '✏️ 쓰기' 탭 - 처음 열 때 그린다, <form>·onSave 없음) · ↩ 답장(나·그 사람이 지금 구성원일 때만) · 보내면 보낸 탭(첫 쪽 다시) ·
   쓰던 글 `mail:compose` 하나(답장·✉로 열 때 쓰던 글이 있으면 묻는다) · 그룹 창 칩 ✉(`data-group-mail` + 시험) · 설명서 '쓰기 · 답장' · inspect-mail ■2 25항목(모두 54) 통과.
-- [ ] ■3 **머리줄 ✉ n** · 계정 칸 '✉ 쪽지' · 단축키 id `mail` · 새 쪽지 안내 한 번 · `sw.js` 'mail' 갈래 + notificationclick · ?mail= 받기 · 환경설정 알림 탭 글 '일정 알림·쪽지'.
+- [x] ■3 **머리줄 ✉ n** · 계정 칸 '✉ 쪽지' · 단축키 id `mail` · 새 쪽지 안내 한 번 · `sw.js` 'mail' 갈래 + notificationclick · ?mail= 받기 · 환경설정 알림 탭 글 '일정 알림·쪽지'.
+  → 11-02 `features/mail/MailHeaderButton`(든 그룹이 있거나 안 읽은 것이 있으면 · `data-header-mail`)·`receive.ts`(Shell `useMailReceiver` - 구독 + 안내 '보기'(쪽지 창이 보이면 없음, 400ms 모아 'n통') · ?mail= · sw 메시지 'sp5-open-mail') ·
+  계정 칸 `data-account-mail` · 단축키 `mail` · sw.js 'mail' 갈래(보는 창이 있으면 없음, 다시 울림 없음) + notificationclick(?popout= 아닌 창에 메시지, 없으면 ?mail=) · 알림 탭 '일정 알림·쪽지' ·
+  설명서 start 'layout'·'mobile'·settings·events + mail 여는 길 · MENU 3-1·3-5·3-6·3-8 · Header.test ✉ · App.test에 data/mail 흉내 · inspect-mail ■3 22항목(모두 76) · manual 5주제 통과.
 - [ ] ■4 **설명서**(share 장 'mail' - 그룹 구성원끼리만 · 서버에 저장되어 관리자가 볼 수 있다 · 학생 개인정보는 줄여 쓰기 · 1년 뒤 지워짐(하루쯤 늦을 수 있다) · 백업 파일에는 없다, 머리줄을 바꿨으니 start.ts 'layout'·'mobile'도) ·
   `tools/inspect-mail.mjs`(두 계정: A→B · B ✉ 1 · 펼침 = 읽음 · 답장 · 지우기·되돌리기 · 푸시 흉내 → 쪽지 창) · manual(MATCH=mail) · inspect-mobile 390 머리줄 한 번 · DESIGN 3·4장 · MAP · MENU · PARITY 'V5에서 새로' · `docs/P15-facts.md` 지우기.
 - [ ] ■5 (묻고) 함수 배포 · 👤 TTL 정책 둘(콘솔 Firestore > TTL - 컬렉션 그룹 `mailIn`·`mailSent`, 칸 `expireAt`) · 👤 실제 사이트에서 두 계정(하나는 휴대폰)으로 쪽지·푸시 한 번.
