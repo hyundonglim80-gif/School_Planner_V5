@@ -29,8 +29,8 @@
 
 ## 지금 하는 일
 
-**P15-1 ■0**(쪽지 - 10-30 계획 · **초안**): 6장 P15 절의 '■0에서 확인할 것'을 코드·에뮬레이터로 답하고 설계를 정한 뒤 ■1부터.
-계획 대화의 코드 확인(읽기 에이전트 둘 + 설계 반박 하나)은 사용량 한도로 반박 앞에서 멈췄다 - 읽기 결과는 `docs/P15-facts.md`(확인 전).
+**P15-1 ■1**(쪽지 규칙 + check-rules): ■0(11-02)에 설계를 정했다 - 6장 P15 절 '설계 (■0 확정)'·5장 'P15 …' 줄들. 코드 읽기 결과 `docs/P15-facts.md`(10-30 줄 번호).
+11-02 사용자: 앞으로 V5만 쓴다 - V3·V4 동작은 묻지 않는다(`CLAUDE.md` 1장).
 P14(점검 뒤 손보기)는 10-30 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁뿐(P14-9 첨부 비공개는 취소).
 main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
 
@@ -200,8 +200,8 @@ main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 
 | P14-7 | 일정 셈 점검 - 이월·기간·반복·공휴일 (항목 10 ②) | 중간 | 중간 | 끝 (10-30) |
 | P14-8 | 학급 셈 점검 - 출결·자리·평가·수업 칸·진도 (항목 10 ③) + 사용자 보고 월간 기간 막대 칩 완료 (항목 11) | 중간 | 중간 | 끝 (10-30) |
 | P14-9 | 개인 공간 첨부 비공개 - 그림 받기 길(토큰·IndexedDB)·새로 올리기·이미 올린 것 거두기 (항목 5 - 사용자 ③) | 큼 | 중간 | **취소** (10-29 사용자 ①로 다시 고름) |
-| **P15 쪽지** (10-30 계획 - 초안) | | | | |
-| P15-1 | 쪽지 자료·규칙·푸시 함수 (■0 코드 확인·설계 확정부터) | 중간 | 높음 | 아직 |
+| **P15 쪽지** (10-30 계획 · 11-02 설계 확정) | | | | |
+| P15-1 | 쪽지 자료·규칙·푸시 함수 (■0 설계 확정 11-02) | 중간 | 높음 | 하는 중 |
 | P15-2 | 쪽지 화면: 쪽지함·쓰기·답장·머리줄 ✉·설명서·점검 | 중간 | 중간 | 아직 |
 
 **차례의 까닭**: 뼈대(P1)와 자료 층(P2)이 모든 화면의 바탕이다. 하루 화면(P3)이 가장 많이 쓰는 곳이라 먼저 하고, 가져오기를 단계마다 붙여
@@ -299,6 +299,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-10-30 | 영-전-3-현동림 PC | P14-7 | ■1 main | 일정 셈 훑기 + 경계 날짜 시험 `calendarEdges` 18(모두 통과 - 셈은 맞았다) · 고칠 것 = 주말 빼기 토~일 기간이 0일로 사라짐(`skipsOffDays`) · 빠른 입력 2/29 · 29~31일·다섯째 주 알림 · 단위 2644 · events·forward·week·month-year(+주말 캠프)·move-dday·new-year·neis·manual 통과 |
 | 2026-10-30 | 영-전-3-현동림 PC | P14-6 | ■1~■4 main (`44f5b07`~) | ■1 끊김 띠·닫기 전 묻기 · ■1b 열 때 '저장하지 않은 글 n개' · ■2 두 기기 훑기(고칠 것 = 저장이 지금 판과 견줌) · ■3 메모·일정·수업 칸 · ■4 진도 창 = 이 기기가 바꾼 칸만 + 같은 글이면 묻기 · 단위 2623 · inspect-two-devices 25(옛 코드 = 13개 틀림)·offline·progress 통과 |
 | 2026-10-30 | 영-전-3-현동림 PC | P15 계획 | 쪽지 계획(초안) · `docs/P15-facts.md` | 사용자 '쪽지 노력·비용?' → 세션 둘·무료 한도 안 → '계획 작성' · 읽기 에이전트 둘(끝) + 설계 반박 하나(사용량 한도로 멈춤) → 초안 + P15-1 ■0(코드 확인·설계 확정) · 문서만 |
+| 2026-11-02 | 영-전-3-현동림 PC | P15-1 ■0 | 쪽지 설계 확정 | 사용자 'V5만 쓴다 - 이전 버전 무시' · 에뮬레이터: 묶음 get 서로 다른 문서 20개까지·같은 문서는 한 번, size() = 글자 수 · 그룹장 남 넣기 막기 · 상자 mailIn/mailSent · 푸시는 사본에 함수 하나 · 지우기 = 늦춰 지우기 · 문서만 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -845,11 +846,21 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   하루만 끝내기는 하루·주간 카드 칩(그대로). 전체를 풀면 날마다 끝낸 표시(doneDates)도 걷는다 - 남기면 다 끝냈다 풀었을 때 전에 끝낸 날만 ✓로 되살아난다(되돌리기 Ctrl+Z는 그 표시째 되돌린다).
   휴대폰 월간(compact)은 칩이 없어 막대 → 그날 목록의 칩(그날만) 그대로.
 - **P14-5 루트는 force 없이 9건 남김**(권장안): 남은 것은 모두 `--force`가 필요하다 - grpc-js(firebase의 Node 길 - 화면 묶음에 없음)·opentelemetry·uuid(firebase-tools). force는 firebase를 9로 내린다. firebase 13·typescript 7·@types/node 26은 큰 판이라 따로(나중).
-- **P15 쪽지 범위 = 같은 그룹 구성원끼리만**(10-30 권장안 - 초안, ■0에서 확정): 아무 선생님에게(이메일로 찾기) 보내려면 전체 사용자 목록이 있어야 해 이메일이 드러나고 스팸을 막기 어렵다(일이 1.5~2배). 그룹은 초대 코드로 이미 서로 아는 사람들이다.
-- **P15 쪽지 자료 = 받는 사람마다 한 장 + 보낸 사본, 복합 색인 없이**(초안): 한 문서에 받는 사람 배열이면 '받은 쪽지'에 `array-contains` + 시각 차례 복합 색인이 필요하다 - V5에는 색인 파일이 없고 V3·V4와 같은 프로젝트라 색인 배포를 늘리지 않는다.
-  사람마다 한 장이면 규칙이 '주인만'으로 단순하고 읽음·지우기가 내 것만 바꾼다.
-- **P15 쪽지 쓰기는 앱이, 함수는 푸시만**(초안): 앱이 규칙 확인을 받아 한 묶음으로 쓴다(check-rules로 시험, 함수가 꺼져도 쪽지는 간다) - 함수 배포는 드물고 물어야 한다.
-
+- **P15 쪽지 범위 = 같은 그룹 구성원끼리만**(10-30 권장안 → 11-02 ■0 확정): 아무 선생님에게(이메일로 찾기) 보내려면 전체 사용자 목록이 있어야 해 이메일이 드러나고 스팸을 막기 어렵다(일이 1.5~2배).
+  '같은 그룹 = 스스로 들어온 사람'이 규칙으로 서게 **그룹장이 남을 구성원으로 넣는 길을 막는다**(■0에서 찾음 - V5 주인 갈래·V4 groups 만들기·주인 고치기가 남의 uid를 넣을 수 있었고, V4 groups → V5 가져오기 갈래로 이어졌다).
+  앱은 V5·V4 모두 그런 쓰기가 없다(grep - V5 `createGroup` 나 혼자·`removeMember` 빼기만, V4 `useGroups` `members: [user.uid]`) → 깨지는 화면 없음. V4 규칙 고침은 11-02 사용자 'V5만 쓴다'로 묻지 않는다.
+- **P15 쪽지 자료 = 받는 사람마다 한 장 + 보낸 사본, 복합 색인 없이**(초안 그대로): 한 문서에 받는 사람 배열이면 '받은 쪽지'에 `array-contains` + 시각 차례 복합 색인이 필요하다 - V5에는 색인 파일이 없고 V3·V4와 같은 프로젝트라 색인 배포를 늘리지 않는다.
+  사람마다 한 장이면 규칙이 '주인만'으로 단순하고 읽음·지우기가 내 것만 바꾼다. 하위 컬렉션 이름은 **`mailIn`·`mailSent`**(DB 전체에서 고유 - TTL 정책은 컬렉션 그룹 이름마다라 `inbox`·`sent` 같은 흔한 이름은 앞으로 다른 것에도 걸린다).
+- **P15 쪽지 쓰기는 앱이 한 묶음으로, 함수는 푸시만**(■0 확정): 에뮬레이터로 확인(11-02) - 한 묶음의 규칙 `get()`은 **서로 다른 문서 20개까지**(21개부터 거부), **같은 문서를 되풀이해 읽는 것은 한 번**(같은 그룹 문서 40번 통과).
+  쪽지는 받는 사람이 몇이든 같은 그룹 문서 하나만 읽으므로 한 묶음에 된다(받는 사람 상한 50 - 규칙). 함수로 나눠 쓰면 함수가 꺼진 동안 쪽지가 가지 않고 에뮬레이터로 볼 수 없다.
+- **P15 규칙 글 길이 = 글자 수**(■0 확인 - 11-02 에뮬레이터): `string.size()`는 바이트가 아니라 UTF-16 칸 수 - 한글 300자 통과·301자 거부, 이모지는 2칸(앱 `.length`와 같다). 그래서 앱 `text.length <= 2000`과 규칙 `size() <= 2000`이 같은 뜻.
+- **P15 지우기 = 바로 숨기고 7초 '되돌리기' 안내, 안내가 닫히면 진짜 지우기**(■0 권장안): 초안 규칙으로는 지운 것을 다시 만들 수 없고(만들기 = 보내는 사람만), 다시 만들기를 열면 함수 푸시가 또 돈다.
+  지운 표시(deletedAt)는 목록 30개씩 받기에 거르기가 끼어(복합 색인 없이) 쪽 수가 줄어든다. 7초 안에 앱을 닫으면 지워지지 않고 남는다(잃는 쪽이 아님).
+- **P15 푸시 = 보낸 사본(`mailSent`) 만들기에 함수 하나**(■0 권장안 - 초안은 받는 쪽마다): 쪽지 하나 = 실행 한 번, 받는 사람 토큰을 모아 한 번에 보낸다. 사본은 받는 쪽과 한 묶음이라 사본이 있으면 받는 쪽도 있다.
+  알림 글 = **보낸 사람 · 그룹 이름만**(쪽지 글은 싣지 않는다 - 잠금 화면에 학생 이야기가 보일 수 있고 FCM 4KB). data 키는 `sender`(FCM은 `from`을 막는다). 쪽지 길에서는 `invalid-argument`를 죽은 토큰으로 지우지 않는다(일정 알림까지 끊긴다).
+  '쪽지 알림만 끄기'는 처음에 없다 - 일정 알림과 같은 기기 켜기(환경설정 알림 탭 글을 '일정 알림·쪽지'로).
+- **P15 쓰기는 쪽지 창 안('✉ 쪽지' 탭 받은·보낸·쓰기), 보내기는 단추·Ctrl+Enter만**(■0 권장안): 따로 쓰는 칸(panel)이면 배경 누르기·Ctrl+S·↗가 저장 관례대로 '보내기'가 된다.
+  쓰던 글은 `useDraft('mail:…')`로 이 기기에(닫기·↗ 새 창·배경 누르기에도 남는다), '저장하지 않은 글' 띠에는 넣지 않는다(메모·일정만).
 ---
 
 ## 6. 세션별 내용
@@ -1974,56 +1985,61 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
   점검 attach(개인 = permissions를 부르지 않음·그룹 = 부름 - route로 셈, 비공개 그림 onError → 토큰 받기 흉내)·handwriting·manual(MATCH).
 **끝 조건**: 개인 공간에 올린 그림이 공개 권한 없이 올라가고 V5 PC·새 창·인쇄에서 보인다 · 그룹 공간은 지금처럼 · 거두기가 개인 것만 거둔다 · 설명서.
 
-### P15. 쪽지 - 같은 그룹 구성원끼리 (2026-10-30 계획 - 초안)
+### P15. 쪽지 - 같은 그룹 구성원끼리 (2026-10-30 계획 → 11-02 ■0 확정)
 
 사용자 말(10-30): "v5에서 사용자간에 쪽지(메시지)를 보내는 기능을 구현하는 것은 어느정도 노력과 비용이 들 것으로 예상해?" → 답(세션 둘 · 돈은 무료 한도 안) →
-"먼저 계획을 작성하고 새로운 대화에서 시작할 수 있도록 해줘."
-**초안이다**: 계획 대화의 코드 확인(읽기 에이전트 둘 + 설계 반박 하나)에서 읽기 둘만 끝나고 반박은 사용량 한도로 멈췄다. 읽기 결과는 `docs/P15-facts.md`(확인 전 · 줄 번호는 10-30 것).
-그래서 P15-1 ■0에서 아래 '■0에서 확인할 것'을 코드·에뮬레이터로 답하고 이 절과 5장을 고친 뒤 ■1부터 한다. ■0은 직접 읽기로(에이전트 워크플로 없이 - 사용량).
+"먼저 계획을 작성하고 새로운 대화에서 시작할 수 있도록 해줘." 11-02 ■0: "앞으로 v5만 이용할 계획이여서 이전 버전은 무시해도 돼".
+코드 읽기 결과는 `docs/P15-facts.md`(10-30 줄 번호 - 쓰기 전에 이름으로 grep). 결정과 까닭은 5장 'P15 …' 줄들.
 
-**설계 초안**
-- 범위: 같은 그룹(V5 공간 `g_…`) 구성원끼리만 - 전체 사용자 목록·이메일 찾기 없음. 글만(≤ 2000자) · 여럿에게(한 그룹 안) · 답장 · 받은/보낸 목록 · 안 읽음 수 · 휴대폰 푸시 · 내 목록에서 지우기 · 1년 뒤 저절로 지움(TTL).
-- 자료(받는 사람마다 한 장): `v5Mail/{받는 uid}/inbox/{id}` + 보낸 사람 사본 `v5Mail/{보낸 uid}/sent/{id}` - 같은 id, 한 묶음 쓰기(writeBatch).
-  inbox `{ from, fromName, sid, groupName, to[], text, at(서버 시각), readAt(null), replyTo, expireAt, v }` · sent `{ to[], toNames, sid, groupName, text, at, replyTo, expireAt, v }`.
-  **복합 색인을 만들지 않는다**(V5에 `firestore.indexes.json` 없음 · V3·V4와 같은 프로젝트): 목록 = `orderBy('at','desc').limit(30)`, 안 읽음 = `where('readAt','==',null)`만.
-- 규칙: inbox - 읽기·지우기 = 주인 · 고치기 = 주인이 readAt만(null → request.time) · 만들기 = from == 나 · `sid`가 `g_…` · 나와 주인 모두 `get(spaces/sid)` 구성원 · 칸 hasOnly·글 길이·`at == request.time`·expireAt 범위(v5Errors 꼴) · 주인 ∈ to.
-  sent - 주인만 만들기·읽기·지우기, 고치기 없음 · 받는 사람 모두 그 공간 구성원(`members.keys().hasAll(to)`).
-- 받기: 앱을 열면 안 읽은 것만 듣기(머리줄 ✉ n · 새 쪽지 안내) · 쪽지함을 열 때만 목록 30개씩. 쪽지는 기기 사본(mirror)에 넣지 않는다 - 쪽지함은 인터넷이 있어야 한다.
-- 푸시: 함수 `v5MailPush` = `onDocumentCreated('v5Mail/{uid}/inbox/{id}')` → 기존 `tokensOf` → `sendEachForMulticast`. 알림을 누르면 쪽지함.
-- 화면: 오른쪽 칸 '✉ 쪽지'(받은·보낸 - 안 읽음 굵게, 펼치면 읽음) · 쓰기(그룹 → 구성원 여럿 → 글) · 답장(같은 그룹으로) · 머리줄 ✉ n · 그룹 창 구성원 칩 ✉ · 설명서 share 장 '쪽지'.
-- 돈(10-30 셈): 200명 × 하루 5통이면 쓰기 1,000/일(무료 2만) · 읽기는 안 읽은 것만 들어 수천/일(무료 5만 - 앱 전체와 같이 센다) · 함수 월 6천 번(무료 200만) · FCM 무료. 넘어도 월 몇백 원~천 원대.
-
-**■0에서 확인할 것**
-1. 한 묶음에 inbox 여럿: 규칙 `get()` 한도(묶음 20회 - 같은 문서를 다시 읽는 것은 세지 않나?) → 에뮬레이터로 30명 그룹에 보내 보기. 넘으면 묶음을 나누거나 받는 사람 수를 줄인다.
-2. `fromName` 위조: `spaces/{sid}/people/{from}.name`과 견주기(get 하나 더) vs 읽을 때 이름 찾기 - V4에서 가져온 구성원은 people 문서가 없을 수 있다.
-3. 내 목록에서 지우기: 진짜 지우기(되돌리기는 늦춰 지우기?) vs 숨김 표시(목록 거르기에 복합 색인이 생기지 않게) - 앱의 '묻지 않고 되돌리기'와 맞게.
-4. 그룹을 나가거나 내보내진 뒤 · 그룹을 지운 뒤: 받은 쪽지는 남고, 답장은 막히고(안내), 받는 사람 고르기에서 빠진다.
-5. `public/sw.js`가 푸시 data의 어느 칸을 쓰고 누르면 어디를 여는지 → 쪽지함 여는 주소 · 앱이 열려 있으면 두 번 알리지 않기 · 쪽지 알림 끄기(계정 설정을 함수가 읽나 - 처음에는 없이).
-6. TTL은 컬렉션 그룹 이름 단위 - V3·V4·V5에 `inbox`·`sent` 이름이 있는지 grep, 겹치면 `v5MailIn`·`v5MailOut`.
-7. 기기 사본·JSON 백업·로그아웃 정리가 새 컬렉션을 알아야 하나 · 서버 예약 백업에는 저절로 든다.
-8. 나눠 쓰기를 앱(규칙 확인 - check-rules로 시험, 함수가 꺼져도 쪽지는 간다)에서 할지 함수에서 할지 - 권장 = 앱, 함수는 푸시만(5장).
-9. 세션 둘로 되는지(단위·check-rules·점검·설명서·MAP/DESIGN/MENU까지) - 넘치면 P15-3으로 나눈다. 조각마다 main에 올려도 되게(화면이 규칙보다 먼저 나가지 않게).
+**설계 (■0 확정)**
+- 범위: 같은 그룹(`g_…`) 구성원끼리만 · 글만(≤ 2000자) · 여럿에게(한 그룹 안, ≤ 50명, 나 빼고) · 답장(보낸 사람에게, 같은 그룹) · 받은/보낸 목록 · 안 읽음 수 · 휴대폰 푸시 · 내 목록에서 지우기 · 1년 뒤 저절로 지움(TTL).
+- 자료: `v5Mail/{받는 uid}/mailIn/{id}` + 보낸 사본 `v5Mail/{보낸 uid}/mailSent/{id}` - 같은 id(`newId`), 한 묶음(writeBatch). `v5Mail/{uid}` 문서 자신은 만들지 않는다.
+  mailIn `{ from, fromName, sid, groupName, to[], toNames, text, at, readAt: null, replyTo: null|id, expireAt, v: 1 }` · mailSent `{ to[], toNames, sid, groupName, text, at, replyTo, expireAt, v: 1 }`.
+  `toNames` = 받는 사람 이름을 ', '로 이은 글 하나(≤ 600 - 규칙이 목록 안 글 길이는 못 본다), `fromName` ≤ 40, `at` = 서버 시각, `expireAt` = 지금 + 365일(규칙 < request.time + 370일).
+  `readAt: null`·`replyTo: null`은 칸째 적는다(`== null` 쿼리·hasAll - `ignoreUndefinedProperties`라 undefined면 칸이 빠진다).
+- 규칙(`firestore.rules` v5Errors 뒤 - 상자마다 match 따로):
+  mailIn 만들기 = `from == 나` · `sid.matches('g_[A-Za-z0-9]+')` · `get(spaces/sid)` 하나로 나·주인(받는 사람)·to 모두 구성원(`members.keys().hasAll(to)`) · 주인 ∈ to · 나 ∉ to · `to.size() <= 50` · groupName == 그 공간 이름 · hasOnly/hasAll · 글 길이 · `at == request.time` · readAt == null · expireAt 범위 · v == 1.
+  mailIn 읽기(get·list)·지우기 = 주인 · 고치기 = 주인이 readAt만, 값 == request.time(두 기기가 함께 펼쳐도 거부 없게 - 이미 읽은 것도 다시 적기 허락).
+  mailSent 만들기 = 주인 == 나 + mailIn과 같은 구성원·모양 확인(같은 get) · 읽기·지우기 = 주인 · 고치기 없음.
+  **구성원 넣기 막기**: V5 `spaces` 주인 갈래는 구성원을 빼기만(`resource.data.members.keys().hasAll(request.resource.data.members.keys())`), V4 `groups` 만들기는 `members == [나]`, V4 주인 고치기는 members가 줄거나 그대로만.
+- 받기: 앱(큰 창 Shell만 - 새 창 PopoutShell은 하지 않는다)이 `mailIn where('readAt','==',null).limit(100)`을 듣는다 → 머리줄 ✉ n('99+') · 첫 받기 뒤 `docChanges` 'added'만 새 쪽지 안내(쪽지 창이 보이면 안 띄움).
+  쪽지 창은 열 때만 `orderBy('at','desc').limit(30)` + 더 보기(startAfter). 기기 사본(mirror)·JSON 백업에 넣지 않는다 - 끊긴 채 비어 보이면(fromCache) '인터넷이 필요합니다'. uid로 구독하고 uid가 바뀌면 store를 비운다(창 목록은 로그아웃에도 남는다).
+- 보내기: `data/mail.ts`가 writeBatch(받는 사람마다 mailIn + mailSent 하나) - repo를 못 쓰니 `beginPendingWrite`를 직접(끊기면 '저장을 기다립니다' 띠), 실패는 `failWithToast`(칸 그대로).
+  보내기 직전 `useMySpaces` 구성원으로 다시 거른다(나간 사람이 있으면 묶음 전체가 거부되므로 - 안내 '그룹을 나간 사람이 있습니다'). 답장은 나·그 사람 모두 지금 구성원일 때만(아니면 안내).
+- 푸시: 함수 `v5MailPush` = `onDocumentCreated('v5Mail/{uid}/mailSent/{id}')` → 받는 사람마다 `tokensOf` → 모아서 `sendEachForMulticast`(500개씩). data `{ type: 'mail', id, sid, sender, group }`(글자만, 쪽지 글 없음).
+  죽은 토큰은 not-registered·invalid-registration-token만 지운다. 순수 셈 `functions/mailPlan.js`(pushData·이름 자르기) + `mailPlan.test.js`(package.json test:functions·functions/package.json test에 더한다).
+  `public/sw.js` push 'mail' 갈래: 보이는 앱 창이 있으면 아무것도 하지 않는다(앱 구독이 안내) · 없으면 `showNotification('✉ 쪽지 - 보낸 사람', { body: 그룹, tag: sp5-mail-<id> })`(다시 울림 없음).
+  notificationclick: ?popout= 아닌 앱 창이 있으면 focus + postMessage({ type: 'sp5-open-mail', id }), 없으면 `scope + '?mail=<id>'`로 연다 → Shell 훅이 읽고 주소에서 지운다(?share= 본보기 - domain에 has/strip 순수 함수 + 시험).
+- 화면: 오른쪽 칸 창 `mail`('✉ 쪽지', side - 위에 받은 · 보낸 · ✏️ 쓰기). 안 읽음 굵게, 펼치면 읽음 · 지우기 = 바로 숨기고 7초 '되돌리기'(Ctrl+Z 아님 - undo 더미는 spaces 경로만), 안내가 닫히면 진짜 지우기.
+  쓰기 = 그룹 고르기 → 구성원 칩 여럿(+ 모두) → 글 → **보내기 단추·Ctrl+Enter만**(Ctrl+S·배경 누르기·↗는 보내지 않는다 - 쓰던 글은 `useDraft('mail:…')`) · 그룹이 없으면 '그룹에 들어가면 쪽지를 보낼 수 있습니다'.
+  여는 길: 머리줄 ✉(든 그룹이 있으면 늘, 🗑️ 뒤 - `data-header-mail`) · 계정 칸 '✉ 쪽지' 줄 · 그룹 창 구성원 칩 ✉(나 말고 - 쓰기 `{ sid, to: [id] }`) · 단축키 id `mail`(키 없음) · 푸시. ⋮ 메뉴에는 넣지 않는다(시험 셋이 4구역 8항목을 본다).
+- 돈: 쪽지 한 통 = 쓰기 N+1 · 함수 1번(받는 쪽마다가 아님) · 읽음 N. 무료 한도(V3·V4·V5 함께 - 쓰기 2만·읽기 5만/일, 함수 200만/월) 안.
 
 ### P15-1. 쪽지 자료·규칙·푸시 함수
 **시작 조건**: 없음.
-**묻기**: ■3 운영 규칙 배포(화면 P15-2보다 먼저 - V3·V4는 `v5Mail`을 쓰지 않는다) · ■4 함수 배포 `--only functions:v5`(P14-5 보안 판도 함께 실린다).
-**먼저 읽을 것**: `docs/P15-facts.md` · `firestore.rules` 156-338(V5 블록·v5Errors 꼴) · `data/spaces.ts`(people 55·memberNames 131·176) · `functions/index.js` 56-131(v5AlarmIndex·v5SendDueAlarms·tokensOf·pushData) ·
-`public/sw.js` · `data/push.ts` · `tools/check-rules.mjs`(V5 그룹 부분) · `data/errorReport.emu.test.ts`(자료 시험 꼴) · `docs/DESIGN.md` 4-9.
-- [ ] ■0 **코드 확인·설계 확정**: 위 '■0에서 확인할 것' 1~9에 답하고 이 절·5장을 고친다(문서만 커밋).
-- [ ] ■1 **규칙** `match /v5Mail/{owner}/inbox/{id}`·`/sent/{id}` + check-rules [V5 쪽지] + V4 `firestore.rules` 복사(커밋만).
-  must: 같은 그룹 구성원에게 · 여럿에게(같은 그룹) · 주인이 읽기·목록·읽음·지우기 · 내 보낸 사본 읽기.
-  mustNot: 그룹 밖 사람에게 · from을 남으로 · 남의 inbox 읽기·목록 · 받은 사람이 글 고치기 · 남의 readAt · 보낸 사람이 받은 쪽 고치기 · 2000자 넘게 · 모르는 칸 · at을 기기 시각으로 · 개인 공간 sid · 구성원이 아닌 sent 받는 사람.
-- [ ] ■2 `domain/mail.ts`(순수 - 받는 사람 셈·글 자르기·묶음 나누기·알림 글) + 시험 · `data/mail.ts`(보내기 한 묶음 · 안 읽은 것 듣기 · 목록 30 · 읽음 · 지우기) + `data/mail.emu.test.ts`(test:data).
-- [ ] ■3 (묻고) 운영 규칙 배포 - `node tools/live-rules.cjs`로 운영 = 파일인지 먼저.
-- [ ] ■4 함수 `v5MailPush` + 순수 셈 `functions/mailPlan.js`(알림 글 - 보낸 사람·앞 80자) + 시험 · `sw.js` 누르면 쪽지함 · (묻고) 함수 배포.
+**묻기**: ■4 운영 규칙 배포(화면 P15-2보다 먼저 - 새 컬렉션 + 구성원 넣기 막기. 앱은 남을 넣지 않으므로 옛 화면도 그대로 된다). 함수 배포는 P15-2 끝(sw.js 'mail' 갈래가 먼저 퍼져야 한다).
+**먼저 읽을 것**: `docs/P15-facts.md`('서버·자료·규칙') · `firestore.rules` groups 97-141·spaces 188-251·v5Errors 304-323 · `tools/check-rules.mjs`(V5 그룹 마디·v5Errors·정리) · `data/errorReport.ts`·`data/errorReport.emu.test.ts`(자료 시험 꼴) ·
+`data/spaces.ts`(readPeople·writeMyName) · `data/pendingWrites.ts` · `functions/index.js`(tokensOf·v5SendDueAlarms 보내기)·`functions/alarmPlan.js`(pushData·isDeadTokenError) · `docs/DESIGN.md` 3장 38행·4-9·4-10.
+- [x] ■0 **코드 확인·설계 확정**(11-02 - 에뮬레이터로 get 한도·글 길이, 앱의 구성원 쓰기 grep) - 이 절·5장(문서만).
+- [ ] ■1 **규칙** `match /v5Mail/{owner}/mailIn/{id}`·`/mailSent/{id}` + 구성원 넣기 막기(V5 spaces 주인 갈래·V4 groups) + check-rules [V5 쪽지]·[구성원 넣기]. V4 저장소에 복사하지 않는다(11-02).
+  must: 같은 그룹 구성원에게 · 여럿에게(같은 그룹, 받는 사람 30명 한 묶음 - 같은 get) · 한글 2000자 · 주인이 읽기·목록·안 읽은 것 쿼리·읽음(두 번)·지우기 · 내 보낸 사본 읽기·지우기 · 주인이 구성원 내보내기(그대로) · 참여·나가기(그대로).
+  mustNot: 그룹 밖 사람에게 · from을 남으로 · 받는 사람이 to에 없음 · 나에게 · 51명 · 남의 mailIn·mailSent 읽기·목록 · 받은 사람이 글 고치기 · 남의 readAt · readAt을 기기 시각으로 · 2001자 · 모르는 칸 · at을 기기 시각으로 · readAt을 적은 채 만들기 ·
+  개인 공간 sid · '/'가 든 sid · groupName 위조 · 구성원이 아닌 사본 받는 사람 · 사본 고치기 · 그룹장이 남을 구성원으로 넣기(V5) · V4 그룹을 남과 함께 만들기 · V4 그룹장이 남 넣기.
+- [ ] ■2 `domain/mail.ts`(순수 - 받는 사람 거르기·글 자르기·이름 잇기·알림 글·?mail= has/strip) + 시험 · `data/mailStore.ts`(Firebase 없음) · `data/mail.ts`(보내기 한 묶음 · 안 읽은 것 듣기 · 목록 30 · 읽음 · 지우기)
+  + `data/mail.emu.test.ts`(test:data - A→B 보내기·B 안 읽음 1·읽음·지우기·A 사본).
+- [ ] ■3 함수 `v5MailPush` + `functions/mailPlan.js` + `mailPlan.test.js`(키·바이트·자르기) · test:functions 두 곳에 더하기 · 함수 손 시험(MAP '서버 푸시 알림'의 .run(event) 꼴 - 에뮬레이터 토큰으로 보내기 앞까지). 배포는 P15-2 끝.
+- [ ] ■4 (묻고) 운영 규칙 배포 - 먼저 `node tools/live-rules.cjs --print`와 `git show <■1 앞>:firestore.rules` diff(운영 = 파일인지).
 **끝 조건**: check-rules 전체 · test:data · 단위 · 함수 시험 통과 · 운영 규칙 배포.
 
 ### P15-2. 쪽지 화면
-**시작 조건**: P15-1 ■3(운영 규칙 배포) - 화면이 규칙보다 먼저 나가면 보내기가 모두 막힌다.
-**먼저 읽을 것**: `docs/P15-facts.md`(화면 쪽) · `app/windows.ts`·`app/windowList.ts`(창 등록) · 머리줄 · `features/groups/GroupsWindow.tsx` · `data/spaceChoice.ts` · `app/toast.ts`·`data/undo.ts` ·
-`features/help/topics.ts`·`chapters/share.ts` · `tools/inspect-share-groups.mjs`(두 계정) · `docs/MENU.md`.
-- [ ] ■1 **쪽지함 창**(오른쪽 칸 '✉ 쪽지' - 받은·보낸, 안 읽음 굵게, 펼치면 읽음, 지우기 + 되돌리기, 30개씩 더 보기) `data-mail-*`.
-- [ ] ■2 **쓰기·답장**(그룹 → 구성원 여럿 → 글 → 보내기, 끊겼으면 기다리는 저장 띠) · 그룹 창 구성원 칩 ✉ · 그룹이 없으면 '그룹에 들어가면 쪽지를 보낼 수 있습니다'.
-- [ ] ■3 **머리줄 ✉ n** · 새 쪽지 안내 한 번 · 푸시를 눌러 열면 쪽지함.
-- [ ] ■4 **설명서**(share 장 '쪽지' - 그룹 구성원끼리만 · 서버에 저장되어 관리자가 볼 수 있다 · 학생 개인정보는 줄여 쓰기 · 1년 뒤 지워짐) · `tools/inspect-mail.mjs`(두 계정: A→B · B ✉ 1 · 읽음 · 답장 · 지우기) · manual(MATCH) · DESIGN 4장 · MAP · MENU · `docs/P15-facts.md` 지우기.
-**끝 조건**: inspect-mail · share-groups · manual 통과 · 👤 실제 사이트에서 두 계정(하나는 휴대폰)으로 쪽지·푸시 한 번 · 👤 TTL 정책(inbox·sent의 expireAt).
+**시작 조건**: P15-1 ■4(운영 규칙 배포) - 화면이 규칙보다 먼저 나가면 보내기가 모두 막힌다.
+**묻기**: ■5 함수 배포 `--only functions:v5`(P14-5에서 미룬 의존성 판도 함께 실린다 - 배포 뒤 v5SendDueAlarms·v5ClaudeRequest 로그 확인).
+**먼저 읽을 것**: `docs/P15-facts.md`('화면·앱') · `app/windowList.ts`(창 등록) · `app/Header.tsx` · `features/groups/GroupsWindow.tsx`(+ test) · `data/spaceChoice.ts` · `app/toast.ts` · `data/drafts.ts` ·
+`features/gcal/GcalPendingButton.tsx`(머리줄 숫자 단추) · `features/share/receive.ts`(?share= 본보기) · `public/sw.js` push·notificationclick · `features/help/topics.ts`·`chapters/share.ts` · `tools/inspect-share-groups.mjs`(두 계정) · `docs/MENU.md` 3-1·3-5·3-8.
+- [ ] ■1 **쪽지 창**(`features/mail/` - open.ts는 Firebase 없이, 오른쪽 칸 '✉ 쪽지' 받은·보낸, 안 읽음 굵게, 펼치면 읽음, 지우기 + 7초 되돌리기, 30개씩 더 보기, 인터넷 없음 안내) `data-mail-*` + 설명서 주제 'mail' 뼈대(창 help 시험 - 같은 커밋).
+- [ ] ■2 **쓰기·답장**(그룹 → 구성원 칩 여럿 → 글 → 보내기·Ctrl+Enter, 끊기면 기다리는 저장 띠, 쓰던 글 useDraft) · 그룹 창 구성원 칩 ✉ · 그룹이 없으면 안내.
+- [ ] ■3 **머리줄 ✉ n** · 계정 칸 '✉ 쪽지' · 단축키 id `mail` · 새 쪽지 안내 한 번 · `sw.js` 'mail' 갈래 + notificationclick · ?mail= 받기 · 환경설정 알림 탭 글 '일정 알림·쪽지'.
+- [ ] ■4 **설명서**(share 장 'mail' - 그룹 구성원끼리만 · 서버에 저장되어 관리자가 볼 수 있다 · 학생 개인정보는 줄여 쓰기 · 1년 뒤 지워짐(하루쯤 늦을 수 있다) · 백업 파일에는 없다, 머리줄을 바꿨으니 start.ts 'layout'·'mobile'도) ·
+  `tools/inspect-mail.mjs`(두 계정: A→B · B ✉ 1 · 펼침 = 읽음 · 답장 · 지우기·되돌리기 · 푸시 흉내 → 쪽지 창) · manual(MATCH=mail) · inspect-mobile 390 머리줄 한 번 · DESIGN 3·4장 · MAP · MENU · PARITY 'V5에서 새로' · `docs/P15-facts.md` 지우기.
+- [ ] ■5 (묻고) 함수 배포 · 👤 TTL 정책 둘(콘솔 Firestore > TTL - 컬렉션 그룹 `mailIn`·`mailSent`, 칸 `expireAt`) · 👤 실제 사이트에서 두 계정(하나는 휴대폰)으로 쪽지·푸시 한 번.
+**끝 조건**: inspect-mail · share-groups · manual 통과 · 함수 배포 · 👤 확인.
