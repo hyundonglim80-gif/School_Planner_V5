@@ -343,7 +343,7 @@ service cloud.firestore {
         && !(request.auth.uid in d.to)
         && d.toNames is string && d.toNames.size() <= 600
         && d.text is string && d.text.size() >= 1 && d.text.size() <= 2000
-        && d.groupName is string && d.groupName.size() <= 60
+        && d.groupName is string
         && d.at == request.time
         && (d.replyTo == null || (d.replyTo is string && d.replyTo.size() <= 40))
         && d.expireAt is timestamp && d.expireAt < request.time + duration.value(370, 'd')
@@ -351,7 +351,9 @@ service cloud.firestore {
         && mailSpace(d.sid).kind == 'group'
         && mailSpace(d.sid).members.get(request.auth.uid, null) in ['owner', 'member']
         && mailSpace(d.sid).members.keys().hasAll(d.to)
-        && (d.groupName == mailSpace(d.sid).get('name', '') || mailSpace(d.sid).get('name', '') == '');
+        // 그룹 이름 = 그 공간 이름(꾸미지 못한다). 이름이 빈 공간만 앱이 보이는 이름('공유 그룹' 등 60자까지)
+        && (d.groupName == mailSpace(d.sid).get('name', '')
+          || (mailSpace(d.sid).get('name', '') == '' && d.groupName.size() <= 60));
     }
 
     match /v5Mail/{owner}/mailIn/{id} {
