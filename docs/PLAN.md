@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). ■0 설계 확정 끝(11-03). 다음 = **P19-1 ■1**(규칙 + check-rules [V5 대화]). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
+**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). ■0 설계 확정·■1 규칙 + check-rules 끝(11-03). 다음 = **P19-1 ■2**(domain/chat · data/chatStore · data/chat + emu 시험). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
 **P18-2 창 안 탭 단축키 끝**(11-02 main - '⌨️ 단축키 설정' 띠에서 창 안의 탭을 누르면 '창 → 탭' · 키 = 그 창을 그 탭으로 · 단축키 탭·설명서 '내가 만든 단축키'). P18 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터. 배포·👤 부탁 없음.
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
 P17 공간 칩 · 일정 겹쳐 보기는 11-02 끝(P17-1 칩 줄 · P17-2 Ctrl·길게 누르기 겹쳐 보기).
@@ -2358,10 +2358,12 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 - [x] ■0 **코드 확인·설계 확정**(에뮬레이터, 문서만): `where('members.<uid>','==',true)` 목록이 규칙을 지나나(spaces는 `in`) · `getCountFromServer`가 get() 든 규칙을 지나나 · 1:1 id 글자 견주기(a < b) ·
   글 + 방 merge 한 묶음의 `getAfter`·`existsAfter`(방 ↔ 글) · 둘이 함께 첫 글을 보내도 되나(방 만들기 겹침 - 만들기 칸을 줄인다) · 요청 하나의 get 수 · `v5ChatReads` 한 칸 고치기 · 첨부 부품을 `features/mail` 밖으로 옮길지. 다르면 이 절·5장을 고친다.
   → 11-03 위 '■0 확인'(초안 규칙 70가지 - 모두 설계대로, 다른 것: `existsAfter` → `getAfter(글).at`, v5ChatReads 값 검사 없음, 보내기 모양 셋, 나간 사람의 켜 둔 듣기는 다음 글에서 끊김). 5장 'P19 ■0'.
-- [ ] ■1 **규칙** `v5Chat/{sid}/chatRooms/{roomId}`(+ `chatMsgs`) · `v5Dm/{pairId}`(+ `chatMsgs`) · `v5ChatReads/{uid}` - 고른 사람 방·글 지우기(`deletedAt`)까지 한 번에(배포 한 번) + check-rules [V5 대화].
+- [x] ■1 **규칙** `v5Chat/{sid}/chatRooms/{roomId}`(+ `chatMsgs`) · `v5Dm/{pairId}`(+ `chatMsgs`) · `v5ChatReads/{uid}` - 고른 사람 방·글 지우기(`deletedAt`)까지 한 번에(배포 한 번) + check-rules [V5 대화].
   must: 그룹 전체 방 첫 글·이어 쓰기(둘이 함께) · 50명 방 · 1:1 만들기·보내기·읽음 · 그룹을 옮긴 1:1 · 고른 사람 방 만들기·더하기·나가기·이름 · 🔕 · 내 글 지우기 · 내 읽음 · 목록 쿼리 셋 · 수 세기.
   mustNot: 그룹 밖 사람의 읽기·목록·쓰기 · 나간·내보낸 사람이 그룹 방 읽기 · from 위조 · 기기 시각 · 2001자 · 첨부 11 · 글 없이 방 미리 보기만 고치기 · 남의 muted·reads·names · 남을 방에서 빼기 · 그룹 밖 사람 더하기 ·
   1:1 id 위조(순서 바꿈·세 사람) · 함께 든 그룹이 아닌 sid · 남의 글 지우기·고치기 · 남의 v5ChatReads.
+  → 11-03 `firestore.rules` 대화 블록(쪽지 뒤 - 더하기만) · check-rules `runChat` 124가지(+ 방 expireAt 360~370일 - 짧게 적어 남의 방을 TTL로 지우지 못하게 · 내 글 지우기 = deletedAt + 빈 글 + 첨부 빼기, 마지막 글이면 같은 묶음에서 방 lastText '' ·
+  정리는 관리자 지우기) · 전체 V4 38·V5 289 통과, 두 번 돌려도 같다. 고침: '기기 시각' 시험 6곳 `deviceTime()`(5초 앞) - 에뮬레이터 request.time이 밀리초라 `new Date()`가 20번에 한 번 같은 밀리초로 통과했다.
 - [ ] ■2 `domain/chat.ts`(순수 - 방 키·1:1 id·미리 보기 글·안 읽은 방 셈·'1' 셈·날짜 나눔·잇단 글 묶기·`?chat=` has/strip) + 시험 · `data/chatStore.ts`(Firebase 없음) ·
   `data/chat.ts`(보내기 한 묶음 · 방 목록 듣기 · 방 글 듣기 + 더 받기 · 읽음 · 안 읽은 수 · 🔕) + `data/chat.emu.test.ts`(test:data - A→그룹 방·B 안 읽음 1·읽음·1:1·나간 사람 막힘).
 - [ ] ■3 함수 `v5ChatPush`·`v5DmPush` + `functions/chatPlan.js` + `chatPlan.test.js`(받는 사람·muted·data 키·이름 자르기) · test:functions 두 곳에 더하기 · 손 시험(.run(event) - P15-1 ■3 꼴). 배포는 P19-3 끝.

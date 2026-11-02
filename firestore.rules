@@ -387,6 +387,193 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    // 대화(P19 - src/data/chat.ts). 같은 그룹 구성원끼리 - 방 문서 하나 + 그 아래 글(chatMsgs)을 구성원이 함께 읽는다.
+    //   그룹 방 v5Chat/{sid}/chatRooms/{roomId}: 'all' = 그룹 전체(지금 구성원 모두) · 'r_…' = 고른 사람 방(members).
+    //   1:1 방 v5Dm/{pairId}: 'd_' + 두 uid를 작은 것부터 '_'로 - 함께 든 그룹 sid를 들고, 보낼 때 두 사람이 그 그룹 구성원인지 본다.
+    //   내 읽음(그룹 방) v5ChatReads/{uid}: { rooms: { '<sid>~<roomId>': 서버 시각 } } - 나만.
+    // 글 하나 = 글 + 방 미리 보기(last*) 한 묶음 - 글은 방 lastId가 자기인지, 방은 그 글이 이 요청에서 쓰였는지(at == request.time) 서로 본다.
+    // 칸과 길이는 src/domain/chat.ts CHAT_LIMITS와 같게. expireAt은 TTL 정책(컬렉션 그룹 chatRooms·chatMsgs·v5Dm)이 지운다(1년 - 방은 글마다 늘어난다).
+    // 지우기 규칙은 없다(TTL) - 내 글 지우기는 '지운 글'(deletedAt + 빈 글)로 고치기. v5Chat/{sid} 문서 자신과 다른 하위 컬렉션은 막힌다(match 없음).
+    // ⚠️ 경로에 글자를 이을 때 '/'가 든 글자를 $( )에 넣으면 한 칸이 된다 → path('…' + …)(P19-1 ■0).
+
+    // 그룹 sid(경로 값)의 지금 구성원인가 - canUseSpace에서 개인 공간 갈래를 뺀 것
+    function chatGroupOk(sid) {
+      return signedIn() && sid.matches('g_[A-Za-z0-9]+')
+        && isSpaceMember(get(/databases/$(database)/documents/spaces/$(sid)).data);
+    }
+
+    // 글 모양 - 첨부는 쪽지(P16)와 같다(있을 때만 1~10개, 있으면 글은 비어도 된다)
+    function validChatMsg(d) {
+      return d.keys().hasOnly(['from', 'fromName', 'text', 'attachments', 'at', 'expireAt', 'v'])
+        && d.keys().hasAll(['from', 'fromName', 'text', 'at', 'expireAt', 'v'])
+        && d.from == request.auth.uid
+        && d.fromName is string && d.fromName.size() <= 40
+        && d.text is string && d.text.size() <= 2000
+        && (d.text.size() >= 1 || 'attachments' in d)
+        && (!('attachments' in d) || (d.attachments is list && d.attachments.size() >= 1 && d.attachments.size() <= 10))
+        && d.at == request.time
+        && d.expireAt is timestamp && d.expireAt < request.time + duration.value(370, 'd')
+        && d.v == 1;
+    }
+
+    // 방 미리 보기 칸(r = 쓴 뒤 방) - 이 요청에서 내가 쓴 글 msgs/{lastId}가 함께 있다(옛 글 id로 미리 보기만 꾸미지 못한다).
+    // expireAt은 1년 안팎 - 짧게 적어 남의 방을 TTL로 지우지 못한다.
+    function chatLastOk(r, msgs) {
+      return r.lastId is string
+        && r.lastAt == request.time
+        && r.lastFrom == request.auth.uid
+        && r.lastFromName is string && r.lastFromName.size() <= 40
+        && r.lastText is string && r.lastText.size() <= 80
+        && r.expireAt is timestamp
+        && r.expireAt > request.time + duration.value(360, 'd')
+        && r.expireAt < request.time + duration.value(370, 'd')
+        && getAfter(path('/databases/' + database + '/documents/' + msgs + '/' + r.lastId)).data.at == request.time;
+    }
+
+    // 내 글을 '지운 글'로 - 마지막 글이면 같은 묶음에서 방 미리 보기도 빈 글로(아래 chatLastCleared)
+    function chatMsgCleared() {
+      return resource.data.from == request.auth.uid
+        && !('deletedAt' in resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deletedAt', 'text', 'attachments'])
+        && request.resource.data.deletedAt == request.time
+        && request.resource.data.text == ''
+        && !('attachments' in request.resource.data);
+    }
+    function chatLastCleared(msgs) {
+      return chatOnly(['lastText'])
+        && request.resource.data.lastText == ''
+        && resource.data.lastFrom == request.auth.uid
+        && getAfter(path('/databases/' + database + '/documents/' + msgs + '/' + resource.data.lastId)).data.get('deletedAt', null) == request.time;
+    }
+
+    function chatOnly(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+    // 맵 칸(muted·reads·names)에서 내 칸만 바뀐다
+    function chatMineOnly(field) {
+      return request.resource.data.get(field, {}).diff(resource.data.get(field, {})).affectedKeys().hasOnly([request.auth.uid]);
+    }
+    function chatLastKeys() {
+      return ['lastId', 'lastAt', 'lastFrom', 'lastFromName', 'lastText', 'expireAt'];
+    }
+
+    match /v5Chat/{sid}/chatRooms/{roomId} {
+      // all은 구성원이면(없는 방도 get = 없음), 고른 사람 방은 그 방 사람만. 목록은 where('members.<나>', '==', true)로만.
+      allow get: if chatGroupOk(sid) && (roomId == 'all' || resource.data.members[request.auth.uid] == true);
+      allow list: if chatGroupOk(sid) && resource.data.members[request.auth.uid] == true;
+      // 첫 글과 함께 만든다. all = 늘 같은 모양(둘이 함께 첫 글을 보내면 하나는 고치기로 지나간다), 고른 사람 방 = 이름·사람(그 그룹 구성원 2~50)
+      allow create: if chatGroupOk(sid)
+        && request.resource.data.v == 1
+        && chatLastOk(request.resource.data, 'v5Chat/' + sid + '/chatRooms/' + roomId + '/chatMsgs')
+        && ((roomId == 'all' && request.resource.data.kind == 'all'
+              && request.resource.data.keys().hasOnly(['kind', 'lastId', 'lastAt', 'lastFrom', 'lastFromName', 'lastText', 'expireAt', 'v']))
+          || (roomId.matches('r_[A-Za-z0-9]+') && request.resource.data.kind == 'room'
+              && request.resource.data.keys().hasOnly(['kind', 'name', 'members', 'lastId', 'lastAt', 'lastFrom', 'lastFromName', 'lastText', 'expireAt', 'v'])
+              && request.resource.data.name is string && request.resource.data.name.size() <= 40
+              && request.resource.data.members is map
+              && request.resource.data.members.size() >= 2 && request.resource.data.members.size() <= 50
+              && request.resource.data.members[request.auth.uid] == true
+              && get(/databases/$(database)/documents/spaces/$(sid)).data.members.keys().hasAll(request.resource.data.members.keys())));
+      // 보내기 · 🔕 내 칸 · 내 글 지우기의 미리 보기 · (고른 사람 방) 이름 · 그 그룹 사람 더하기 · 나 빼기(나가기). 남을 빼지 못한다.
+      allow update: if chatGroupOk(sid)
+        && (roomId == 'all' || resource.data.members[request.auth.uid] == true)
+        && (
+          (chatOnly(chatLastKeys()) && chatLastOk(request.resource.data, 'v5Chat/' + sid + '/chatRooms/' + roomId + '/chatMsgs'))
+          || (chatOnly(['muted']) && chatMineOnly('muted'))
+          || chatLastCleared('v5Chat/' + sid + '/chatRooms/' + roomId + '/chatMsgs')
+          || (resource.data.kind == 'room' && chatOnly(['name'])
+            && request.resource.data.name is string && request.resource.data.name.size() <= 40)
+          || (resource.data.kind == 'room' && chatOnly(['members'])
+            && request.resource.data.members.size() <= 50
+            && request.resource.data.members.diff(resource.data.members).removedKeys().size() == 0
+            && request.resource.data.members.diff(resource.data.members).changedKeys().size() == 0
+            && get(/databases/$(database)/documents/spaces/$(sid)).data.members.keys().toSet()
+              .hasAll(request.resource.data.members.diff(resource.data.members).addedKeys()))
+          || (resource.data.kind == 'room' && chatOnly(['members'])
+            && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid])
+            && !(request.auth.uid in request.resource.data.members))
+        );
+      allow delete: if false;
+
+      match /chatMsgs/{mid} {
+        allow read: if chatGroupOk(sid)
+          && (roomId == 'all' || get(/databases/$(database)/documents/v5Chat/$(sid)/chatRooms/$(roomId)).data.members[request.auth.uid] == true);
+        // 방 쪽 규칙이 같은 묶음의 방 고치기(사람·미리 보기)를 본다 - 여기서는 그 방 lastId가 이 글인지만
+        allow create: if chatGroupOk(sid)
+          && validChatMsg(request.resource.data)
+          && getAfter(/databases/$(database)/documents/v5Chat/$(sid)/chatRooms/$(roomId)).data.lastId == mid
+          && getAfter(/databases/$(database)/documents/v5Chat/$(sid)/chatRooms/$(roomId)).data.lastAt == request.time;
+        allow update: if chatGroupOk(sid)
+          && (roomId == 'all' || get(/databases/$(database)/documents/v5Chat/$(sid)/chatRooms/$(roomId)).data.members[request.auth.uid] == true)
+          && chatMsgCleared();
+        allow delete: if false;
+      }
+    }
+
+    // 1:1 방 id = 'd_' + 작은 uid + '_' + 큰 uid, 나는 그 둘 중 하나, members는 그 둘만 true
+    function dmPairOk(pairId, members) {
+      let p = pairId.split('_');
+      return p.size() == 3 && p[0] == 'd' && p[1] < p[2]
+        && (p[1] == request.auth.uid || p[2] == request.auth.uid)
+        && members is map && members.size() == 2 && members.keys().hasOnly([p[1], p[2]])
+        && members[p[1]] == true && members[p[2]] == true;
+    }
+    // 방이 든 그룹 sid(문서 칸 값 - 모양부터)에 두 사람 모두 지금 구성원이다
+    function dmGroupOk(d) {
+      return d.sid is string && d.sid.matches('g_[A-Za-z0-9]+')
+        && get(/databases/$(database)/documents/spaces/$(d.sid)).data.kind == 'group'
+        && get(/databases/$(database)/documents/spaces/$(d.sid)).data.members.keys().hasAll(d.members.keys());
+    }
+
+    match /v5Dm/{pairId} {
+      // 두 사람만 - 그룹을 나가도 지난 글은 읽는다(쪽지 받은 것이 남듯). 보내기는 함께 든 그룹이 있을 때만.
+      allow get, list: if signedIn() && resource.data.members[request.auth.uid] == true;
+      // 만들기와 보내기가 같은 모양(names는 내 칸만) - 둘이 함께 첫 글을 보내도 하나는 고치기로 지나간다
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['kind', 'members', 'sid', 'names', 'lastId', 'lastAt', 'lastFrom', 'lastFromName', 'lastText', 'expireAt', 'v'])
+        && request.resource.data.kind == 'dm' && request.resource.data.v == 1
+        && dmPairOk(pairId, request.resource.data.members)
+        && request.resource.data.names is map
+        && request.resource.data.names.keys().hasOnly([request.auth.uid])
+        && request.resource.data.names[request.auth.uid] is string && request.resource.data.names[request.auth.uid].size() <= 40
+        && dmGroupOk(request.resource.data)
+        && chatLastOk(request.resource.data, 'v5Dm/' + pairId + '/chatMsgs');
+      // 보내기(함께 든 다른 그룹으로 sid 옮기기·내 이름 포함) · 🔕 내 칸 · 읽음 내 칸(서버 시각) · 내 글 지우기의 미리 보기
+      allow update: if signedIn() && resource.data.members[request.auth.uid] == true
+        && (
+          (chatOnly(['lastId', 'lastAt', 'lastFrom', 'lastFromName', 'lastText', 'expireAt', 'sid', 'names'])
+            && chatMineOnly('names')
+            && request.resource.data.names[request.auth.uid] is string && request.resource.data.names[request.auth.uid].size() <= 40
+            && dmGroupOk(request.resource.data)
+            && chatLastOk(request.resource.data, 'v5Dm/' + pairId + '/chatMsgs'))
+          || (chatOnly(['muted']) && chatMineOnly('muted'))
+          || (chatOnly(['reads']) && chatMineOnly('reads') && request.resource.data.reads[request.auth.uid] == request.time)
+          || chatLastCleared('v5Dm/' + pairId + '/chatMsgs')
+        );
+      allow delete: if false;
+
+      match /chatMsgs/{mid} {
+        allow read: if signedIn() && get(/databases/$(database)/documents/v5Dm/$(pairId)).data.members[request.auth.uid] == true;
+        allow create: if signedIn()
+          && validChatMsg(request.resource.data)
+          && getAfter(/databases/$(database)/documents/v5Dm/$(pairId)).data.members[request.auth.uid] == true
+          && getAfter(/databases/$(database)/documents/v5Dm/$(pairId)).data.lastId == mid
+          && getAfter(/databases/$(database)/documents/v5Dm/$(pairId)).data.lastAt == request.time;
+        allow update: if signedIn()
+          && get(/databases/$(database)/documents/v5Dm/$(pairId)).data.members[request.auth.uid] == true
+          && chatMsgCleared();
+        allow delete: if false;
+      }
+    }
+
+    // 내 읽음(그룹 방) - 나만 읽고 쓴다. 바뀐 칸 값이 서버 시각인지는 규칙이 보지 못한다(Set에서 꺼낼 수 없다 - 나만 보는 것이라 둔다).
+    match /v5ChatReads/{uid} {
+      allow read, delete: if signedIn() && request.auth.uid == uid;
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['rooms', 'v'])
+        && request.resource.data.rooms is map && request.resource.data.rooms.size() <= 2000;
+    }
+
   }
 }
 

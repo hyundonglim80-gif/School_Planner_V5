@@ -14,6 +14,7 @@ import { initializeApp, deleteApp } from 'firebase/app';
 import {
   getFirestore, connectFirestoreEmulator, doc, setDoc, getDoc, getDocs, updateDoc,
   deleteDoc, collection, query, where, orderBy, limit, arrayUnion, arrayRemove, deleteField, writeBatch, serverTimestamp,
+  getCountFromServer, FieldPath,
 } from 'firebase/firestore';
 import {
   getAuth, connectAuthEmulator, signInWithEmailAndPassword, createUserWithEmailAndPassword,
@@ -62,6 +63,9 @@ async function mustNot(what, fn) {
     else fail++;
   }
 }
+
+// '기기 시각' 시험 값 - 지금보다 5초 앞. 에뮬레이터 request.time은 밀리초까지라 같은 PC에서 new Date()가 20번에 한 번쯤 같은 밀리초에 떨어져 통과한다(P19-1 ■1)
+const deviceTime = () => new Date(Date.now() - 5000);
 
 const p2 = (n) => String(n).padStart(2, '0');
 const t = new Date();
@@ -259,7 +263,7 @@ async function run() {
   process.exit(fail === 0 ? 0 : 1);
 }
 
-// ─── V5: spaces · spaceInvites · v5alarms · v5Errors · v5Mail ─────────
+// ─── V5: spaces · spaceInvites · v5alarms · v5Errors · v5Mail · 대화(runChat) ─
 //
 // V4 쪽과 달리 '문서가 없으면 막힌 것으로 친다'를 쓰지 않는다. 읽기 시험은 문서가 있는 데서만
 // 하므로, 규칙이 열려 있으면 그대로 '그런데 됐다'가 나온다.
@@ -636,7 +640,7 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
     await setDoc(errDoc(A, 'rc_e3'), report(aUid, { kind: 'log' }));
   });
   await mustNot('서버 시각이 아닌 at', async () => {
-    await setDoc(errDoc(A, 'rc_e3'), report(aUid, { at: new Date() }));
+    await setDoc(errDoc(A, 'rc_e3'), report(aUid, { at: deviceTime() }));
   });
   await mustNot('먼 expireAt (40일 - TTL을 피해 오래 남기기)', async () => {
     await setDoc(errDoc(A, 'rc_e3'), report(aUid, { expireAt: new Date(now() + 40 * 86400000) }));
@@ -754,7 +758,7 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   await mustNot('B가 받은 쪽지 첨부를 고친다', () => updateDoc(inbox(B, bUid, m4), { attachments: atts(1) }));
   await mustNot('모르는 칸', () => send(A, aUid, mx, [bUid], { inExtra: { secret: '김철수' } }));
   await mustNot('칸을 뺀다 (replyTo 없이 - undefined는 칸째 빠진다)', () => send(A, aUid, mx, [bUid], { drop: 'replyTo' }));
-  await mustNot('at을 기기 시각으로', () => send(A, aUid, mx, [bUid], { both: { at: new Date() } }));
+  await mustNot('at을 기기 시각으로', () => send(A, aUid, mx, [bUid], { both: { at: deviceTime() } }));
   await mustNot('읽음을 적은 채 만든다', () => send(A, aUid, mx, [bUid], { inExtra: { readAt: serverTimestamp() } }));
   await mustNot('먼 expireAt (400일 - TTL을 피해 오래 남기기)', () => send(A, aUid, mx, [bUid], { both: { expireAt: new Date(now() + 400 * 86400000) } }));
   await mustNot('개인 공간을 sid로', () => send(A, aUid, mx, [bUid], { both: { sid: `u_${aUid}` } }));
@@ -768,7 +772,7 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   await mustNot('B가 받은 쪽지 글을 고친다', () => updateDoc(inbox(B, bUid, m2), { text: '바꿈' }));
   await mustNot('B가 읽음과 함께 보낸 사람도 고친다', () => updateDoc(inbox(B, bUid, m2), { readAt: serverTimestamp(), fromName: '교감' }));
   await mustNot('C가 B의 읽음을 적는다', () => updateDoc(inbox(C, bUid, m2), { readAt: serverTimestamp() }));
-  await mustNot('읽음을 기기 시각으로', () => updateDoc(inbox(B, bUid, m2), { readAt: new Date() }));
+  await mustNot('읽음을 기기 시각으로', () => updateDoc(inbox(B, bUid, m2), { readAt: deviceTime() }));
   await mustNot('A가 보낸 사본을 고친다', () => updateDoc(sentBox(A, aUid, m2), { text: '바꿈' }));
   await mustNot('v5Mail/{나} 문서 자신에 쓴다', () => setDoc(doc(B.db, 'v5Mail', bUid), { x: 1 }));
   await mustNot('v5Mail/{나} 아래 다른 상자에 쓴다', () => setDoc(doc(B.db, 'v5Mail', bUid, 'other', 'x'), { x: 1 }));
@@ -812,6 +816,7 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
     await deleteDoc(invite(A, mcode));
     await deleteDoc(space(A, ms));
   });
+  await runChat({ A, B, C, X, J, aUid, bUid, cUid, xUid, group, space, invite, now });
   await deleteApp(J.app).catch(() => {});
 
   console.log('\n[V5 정리]');
@@ -824,6 +829,310 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   });
   await must('주인이 그룹을 지운다', async () => {
     await deleteDoc(space(A, gs));
+  });
+}
+
+// ─── V5 대화 (P19-1 - src/data/chat.ts) ─────────────────────────────
+// 그룹 방 v5Chat/{sid}/chatRooms/{all | r_…} · 1:1 v5Dm/{d_작은uid_큰uid} · 글은 그 아래 chatMsgs · 내 읽음 v5ChatReads/{uid}.
+// 글 + 방 미리 보기를 한 묶음으로 쓴다(앱이 하는 대로). 대화는 지우기 규칙이 없어(TTL) 정리는 에뮬레이터 관리자 지우기('Bearer owner').
+async function runChat({ A, B, C, X, J, aUid, bUid, cUid, xUid, group, space, invite, now }) {
+  console.log('\n[V5 대화] — 같은 그룹 구성원끼리, 방 + 함께 보는 글 (P19-1)');
+  const rid = now().toString(36);
+  const made = []; // 관리자가 끝에 지울 경로
+  const adminRemove = (path) =>
+    fetch(`http://127.0.0.1:8080/v1/projects/schoolplannerv3/databases/(default)/documents/${path}`, { method: 'DELETE', headers: { Authorization: 'Bearer owner' } });
+  const g1 = `g_rcchat${rid}`; // A 주인 + B·C
+  const g2 = `g_rcchatb${rid}`; // A 주인 + B
+  const code1 = `CH1${rid}`.toUpperCase();
+  const code2 = `CH2${rid}`.toUpperCase();
+  const room = (c, sid, r) => doc(c.db, 'v5Chat', sid, 'chatRooms', r);
+  const msgs = (c, sid, r) => collection(c.db, 'v5Chat', sid, 'chatRooms', r, 'chatMsgs');
+  const [lo, hi] = [aUid, bUid].sort();
+  const pair = `d_${lo}_${hi}`;
+  const dm = (c, p) => doc(c.db, 'v5Dm', p);
+  const dmMsgs = (c, p) => collection(c.db, 'v5Dm', p, 'chatMsgs');
+  const reads = (c, uid) => doc(c.db, 'v5ChatReads', uid);
+  const exp = (days = 365) => new Date(now() + days * 86400000);
+  const att = (i) => ({ name: `캡처${i}.png`, url: `https://drive.google.com/thumbnail?id=D${i}&sz=w1000`, type: 'image/png', driveId: `D${i}` });
+  const atts = (n) => Array.from({ length: n }, (_, i) => att(i));
+  const msgOf = (from, text, extra = {}) => ({ from, fromName: '김선생', text, at: serverTimestamp(), expireAt: exp(), v: 1, ...extra });
+  const lastOf = (from, id, text) => ({ lastId: id, lastAt: serverTimestamp(), lastFrom: from, lastFromName: '김선생', lastText: text.slice(0, 80), expireAt: exp() });
+  let seq = 0;
+  const newMid = () => `cm${rid}${seq++}`;
+  // 앱이 하는 대로 한 묶음. noRoom = 방 고치기 없이 글만, noMsg = 글 없이 방만, lastId = 방에 적을 글 id(기본 이 글)
+  const sendTo = async (c, uid, msgsRef, roomRef, text, roomShape, { msgExtra = {}, roomExtra = {}, noRoom = false, noMsg = false, lastId } = {}) => {
+    const id = newMid();
+    const b = writeBatch(c.db);
+    if (!noMsg) b.set(doc(msgsRef, id), msgOf(uid, text, msgExtra));
+    if (!noRoom) b.set(roomRef, { ...roomShape, ...lastOf(uid, lastId ?? id, text), ...roomExtra }, { merge: true });
+    await b.commit();
+    if (!noMsg) made.push(`${msgsRef.path}/${id}`);
+    return id;
+  };
+  // 그룹 전체 방 - 늘 같은 모양 (만들기·고치기)
+  const sendAll = (c, uid, sid, text, opt) => sendTo(c, uid, msgs(c, sid, 'all'), room(c, sid, 'all'), text, { kind: 'all', v: 1 }, opt);
+  // 고른 사람 방 - 만든 뒤에는 last*만
+  const sendRoom = (c, uid, sid, r, text, opt) => sendTo(c, uid, msgs(c, sid, r), room(c, sid, r), text, {}, opt);
+  const makeRoom = async (c, uid, sid, r, members, name = '학년 부장') => {
+    const id = newMid();
+    const b = writeBatch(c.db);
+    b.set(doc(msgs(c, sid, r), id), msgOf(uid, '방을 만들었습니다'));
+    b.set(room(c, sid, r), { kind: 'room', name, members: Object.fromEntries(members.map((u) => [u, true])), ...lastOf(uid, id, '방을 만들었습니다'), v: 1 });
+    await b.commit();
+    made.push(`v5Chat/${sid}/chatRooms/${r}/chatMsgs/${id}`, `v5Chat/${sid}/chatRooms/${r}`);
+  };
+  // 1:1 - 늘 같은 모양 (names는 내 칸만)
+  const sendDm = (c, uid, p, other, sid, text, opt = {}) =>
+    sendTo(c, uid, dmMsgs(c, p), dm(c, p), text, { kind: 'dm', members: { [uid]: true, [other]: true }, sid, names: { [uid]: '김선생' }, v: 1 }, opt);
+  const count = async (q) => (await getCountFromServer(q)).data().count;
+
+  await adminRemove(`v5Dm/${pair}`); // 지난 실행이 남긴 1:1 방 (지우기 규칙이 없다)
+  await must('(준비) 대화 그룹1 A + B·C, 그룹2 A + B (코드로 스스로)', async () => {
+    for (const [sid, code, who] of [[g1, code1, [[B, bUid], [C, cUid]]], [g2, code2, [[B, bUid]]]]) {
+      const b = writeBatch(A.db);
+      b.set(space(A, sid), { ...group, name: `대화 점검 ${sid.slice(-4)}`, inviteCode: code });
+      b.set(invite(A, code), { sid, ownerId: aUid });
+      await b.commit();
+      for (const [c, uid] of who) await updateDoc(space(c, sid), { [`members.${uid}`]: 'member', [`joinCodes.${uid}`]: code, updatedAt: now() });
+    }
+    made.push(`v5Chat/${g1}/chatRooms/all`, `v5Chat/${g2}/chatRooms/all`);
+  });
+
+  console.log('  · 그룹 전체 방');
+  await must('없는 all 방 get = 없음 (구성원 - 듣기를 미리 건다)', async () => {
+    if ((await getDoc(room(B, g1, 'all'))).exists()) throw new Error('있다');
+  });
+  await must('A 첫 글 (all 방 만들기 + 글 한 묶음)', () => sendAll(A, aUid, g1, '안녕하세요'));
+  const t0 = now();
+  await must('B 이어 쓰기 (같은 모양 merge = 고치기)', () => sendAll(B, bUid, g1, '네 반갑습니다'));
+  await must('둘이 함께 첫 글 (그룹2 - 만들기 겹침)', async () => {
+    const r = await Promise.allSettled([sendAll(A, aUid, g2, '동시 A'), sendAll(B, bUid, g2, '동시 B')]);
+    const bad = r.filter((x) => x.status === 'rejected');
+    if (bad.length) throw new Error(bad.map((x) => x.reason.code || x.reason.message).join(','));
+  });
+  await must('첨부 둘과 함께', () => sendAll(A, aUid, g1, '자료입니다', { msgExtra: { attachments: atts(2) } }));
+  await must('글 없이 첨부만 · 10개', () => sendAll(A, aUid, g1, '', { msgExtra: { attachments: atts(10) }, roomExtra: { lastText: '📎 10' } }));
+  await must('C가 all 방을 읽는다', async () => {
+    if (!(await getDoc(room(C, g1, 'all'))).data()?.lastText) throw new Error('미리 보기가 없다');
+  });
+  await must('C 최근 글 50개 (orderBy at desc limit 50)', async () => {
+    if ((await getDocs(query(msgs(C, g1, 'all'), orderBy('at', 'desc'), limit(50)))).size < 4) throw new Error('글이 모자란다');
+  });
+  await must('C 안 읽은 수 (getCountFromServer where at > 내 읽음)', async () => {
+    if ((await count(query(msgs(C, g1, 'all'), where('at', '>', new Date(t0 - 60000))))) < 4) throw new Error('수가 모자란다');
+  });
+  await mustNot('X(그룹 밖)가 all 방 get', () => getDoc(room(X, g1, 'all')));
+  await mustNot('X가 글 목록', () => getDocs(query(msgs(X, g1, 'all'), limit(5))));
+  await mustNot('X가 수 세기', () => getCountFromServer(msgs(X, g1, 'all')));
+  await mustNot('X가 보낸다', () => sendAll(X, xUid, g1, '끼어들기'));
+  await mustNot('from을 남(B)으로', () => sendAll(A, aUid, g1, '위조', { msgExtra: { from: bUid } }));
+  await mustNot('lastFrom을 남(B)으로', () => sendAll(A, aUid, g1, '위조', { roomExtra: { lastFrom: bUid } }));
+  await mustNot('at을 기기 시각으로', () => sendAll(A, aUid, g1, '시각', { msgExtra: { at: deviceTime() } }));
+  await mustNot('lastAt을 기기 시각으로', () => sendAll(A, aUid, g1, '시각', { roomExtra: { lastAt: deviceTime() } }));
+  await mustNot('2001자', () => sendAll(A, aUid, g1, '가'.repeat(2001)));
+  await mustNot('빈 글', () => sendAll(A, aUid, g1, ''));
+  await mustNot('첨부 11개', () => sendAll(A, aUid, g1, 'x', { msgExtra: { attachments: atts(11) } }));
+  await mustNot('빈 첨부 목록', () => sendAll(A, aUid, g1, '', { msgExtra: { attachments: [] } }));
+  await mustNot('모르는 칸 (글)', () => sendAll(A, aUid, g1, 'x', { msgExtra: { secret: '김철수' } }));
+  await mustNot('모르는 칸 (방)', () => sendAll(A, aUid, g1, 'x', { roomExtra: { pinned: 'x' } }));
+  await mustNot('미리 보기 81자', () => sendAll(A, aUid, g1, 'x', { roomExtra: { lastText: '가'.repeat(81) } }));
+  await mustNot('먼 expireAt (400일 - TTL을 피해 오래 남기기)', () => sendAll(A, aUid, g1, 'x', { msgExtra: { expireAt: exp(400) } }));
+  await mustNot('방 expireAt을 가깝게 (30일 - 남의 방을 TTL로 지우기)', () => sendAll(A, aUid, g1, 'x', { roomExtra: { expireAt: exp(30) } }));
+  await mustNot('방 고치기 없이 글만', () => sendAll(A, aUid, g1, '글만', { noRoom: true }));
+  await mustNot('글 없이 방 미리 보기만', () => sendAll(A, aUid, g1, '미리 보기만', { noMsg: true }));
+  let oldId;
+  await must('(준비) A 글 하나', async () => { oldId = await sendAll(A, aUid, g1, '옛 글'); });
+  await mustNot('옛 글 id로 미리 보기만 꾸민다', () => sendAll(A, aUid, g1, '꾸민 미리 보기', { noMsg: true, lastId: oldId }));
+  await mustNot('방 lastId가 함께 쓴 글이 아니다', () => sendAll(A, aUid, g1, 'x', { lastId: oldId }));
+  await mustNot('남의 글을 고친다 (A가 B 글)', async () => {
+    const s = await getDocs(query(msgs(A, g1, 'all'), where('from', '==', bUid), limit(1)));
+    await updateDoc(s.docs[0].ref, { text: '바꿈' });
+  });
+  await mustNot('내 글을 지우기 말고 고친다', () => updateDoc(doc(msgs(A, g1, 'all'), oldId), { text: '고침' }));
+  await mustNot('글을 진짜 지운다', () => deleteDoc(doc(msgs(A, g1, 'all'), oldId)));
+  await mustNot('방을 지운다', () => deleteDoc(room(A, g1, 'all')));
+  await mustNot('개인 공간 u_ 방', () => sendAll(A, aUid, `u_${aUid}`, '개인'));
+  await mustNot('v5Chat/{sid} 문서 자신에 쓴다', () => setDoc(doc(A.db, 'v5Chat', g1), { x: 1 }));
+  await mustNot('v5Chat/{sid} 아래 다른 상자에 쓴다', () => setDoc(doc(A.db, 'v5Chat', g1, 'other', 'x'), { x: 1 }));
+
+  console.log('  · 🔕 방마다');
+  await must('B가 muted.<B>', () => updateDoc(room(B, g1, 'all'), { [`muted.${bUid}`]: true }));
+  await mustNot('B가 muted.<C>', () => updateDoc(room(B, g1, 'all'), { [`muted.${cUid}`]: true }));
+  await must('A가 보내도 B의 🔕는 그대로 (보내기에 muted 없음)', async () => {
+    await sendAll(A, aUid, g1, '알림 끈 뒤');
+    if ((await getDoc(room(B, g1, 'all'))).data().muted?.[bUid] !== true) throw new Error('🔕가 사라졌다');
+  });
+  await must('B가 🔕 풀기 (deleteField)', () => updateDoc(room(B, g1, 'all'), { [`muted.${bUid}`]: deleteField() }));
+  await mustNot('보내기에 남의 🔕를 섞는다', () => sendAll(A, aUid, g1, 'x', { roomExtra: { muted: { [bUid]: true } } }));
+
+  console.log('  · 고른 사람 방 (P19-4)');
+  const r1 = `r_${rid}a`;
+  await must('A가 방 만들기 {A,B} + 첫 글', () => makeRoom(A, aUid, g1, r1, [aUid, bUid]));
+  await must('B 방 목록 where(members.<B> == true)', async () => {
+    const s = await getDocs(query(collection(B.db, 'v5Chat', g1, 'chatRooms'), where(`members.${bUid}`, '==', true)));
+    if (!s.docs.some((d) => d.id === r1)) throw new Error('방이 목록에 없다');
+  });
+  await mustNot('B 방 목록 where 없이', () => getDocs(collection(B.db, 'v5Chat', g1, 'chatRooms')));
+  await mustNot('C가 남의 uid로 방 목록 (where members.<B>)', () => getDocs(query(collection(C.db, 'v5Chat', g1, 'chatRooms'), where(`members.${bUid}`, '==', true))));
+  await mustNot('방에 없는 C가 방 get', () => getDoc(room(C, g1, r1)));
+  await mustNot('방에 없는 C가 글 목록', () => getDocs(msgs(C, g1, r1)));
+  await mustNot('방에 없는 C가 수 세기', () => getCountFromServer(msgs(C, g1, r1)));
+  await must('B 이어 쓰기 (last*만)', () => sendRoom(B, bUid, g1, r1, '네'));
+  await mustNot('방에 없는 C가 보낸다', () => sendRoom(C, cUid, g1, r1, '끼어들기'));
+  await mustNot('그룹 밖 X를 더한다', () => updateDoc(room(B, g1, r1), { [`members.${xUid}`]: true }));
+  await must('B가 그룹 사람 C를 더한다', () => updateDoc(room(B, g1, r1), { [`members.${cUid}`]: true }));
+  await must('더한 C는 지난 글도 읽는다', async () => {
+    if ((await getDocs(msgs(C, g1, r1))).size < 2) throw new Error('지난 글이 없다');
+  });
+  await must('B 이름 바꾸기', () => updateDoc(room(B, g1, r1), { name: '부장 셋' }));
+  await mustNot('이름 41자', () => updateDoc(room(B, g1, r1), { name: '가'.repeat(41) }));
+  await mustNot('B가 A를 뺀다', () => updateDoc(room(B, g1, r1), { [`members.${aUid}`]: deleteField() }));
+  await mustNot('B가 이름과 사람을 함께 고친다 (C 빼기)', () => updateDoc(room(B, g1, r1), { name: 'x', [`members.${cUid}`]: deleteField() }));
+  await must('C 나가기 (나 빼기)', () => updateDoc(room(C, g1, r1), { [`members.${cUid}`]: deleteField() }));
+  await mustNot('나간 C가 글 목록', () => getDocs(msgs(C, g1, r1)));
+  await mustNot('나간 C가 스스로 다시 들어온다', () => updateDoc(room(C, g1, r1), { [`members.${cUid}`]: true }));
+  await mustNot('그룹 밖 X를 넣어 방을 만든다', () => makeRoom(A, aUid, g1, `r_${rid}x`, [aUid, xUid]));
+  await mustNot('나만 든 방을 만든다', () => makeRoom(A, aUid, g1, `r_${rid}x`, [aUid]));
+  await mustNot('나를 빼고 남끼리 방을 만든다', () => makeRoom(A, aUid, g1, `r_${rid}x`, [bUid, cUid]));
+  await mustNot("all이 아닌 이름의 그룹 전체 방 ('r_' 모양 아님)", () => sendTo(A, aUid, msgs(A, g1, 'x1'), room(A, g1, 'x1'), 'x', { kind: 'all', v: 1 }));
+  await mustNot('all 방에 이름을 붙인다', () => updateDoc(room(A, g1, 'all'), { name: '바꿈' }));
+
+  console.log('  · 50명 방');
+  const joiners = [];
+  await must('(준비) 48명이 그룹1에 코드로 들어온다 (A·B·C와 함께 51명)', async () => {
+    for (let i = 0; i < 48; i++) {
+      const uid = await login(J, `rc-mail-${i}@example.com`);
+      await updateDoc(space(J, g1), { [`members.${uid}`]: 'member', [`joinCodes.${uid}`]: code1, updatedAt: now() });
+      joiners.push(uid);
+    }
+  });
+  await must('50명 방 (A·B + 48)', () => makeRoom(A, aUid, g1, `r_${rid}f`, [aUid, bUid, ...joiners]));
+  await mustNot('51명 방', () => makeRoom(A, aUid, g1, `r_${rid}x`, [aUid, bUid, cUid, ...joiners]));
+  await mustNot('50명 방에 한 사람 더 (C)', () => updateDoc(room(A, g1, `r_${rid}f`), { [`members.${cUid}`]: true }));
+  await must('(정리) 48명이 그룹1을 나간다', async () => {
+    for (let i = 0; i < 48; i++) {
+      const uid = await login(J, `rc-mail-${i}@example.com`);
+      await updateDoc(space(J, g1), { [`members.${uid}`]: deleteField(), updatedAt: now() });
+    }
+  });
+
+  console.log('  · 내 글 지우기 (P19-4 - 모두에게 지운 글)');
+  let bLast, bMid;
+  await must('(준비) B가 방에 글 둘', async () => {
+    bMid = await sendRoom(B, bUid, g1, r1, '지울 글 하나');
+    bLast = await sendRoom(B, bUid, g1, r1, '지울 마지막 글');
+  });
+  const clear = { deletedAt: serverTimestamp(), text: '', attachments: deleteField() };
+  await must('B가 마지막이 아닌 내 글을 지운다 (글만)', () => updateDoc(doc(msgs(B, g1, r1), bMid), clear));
+  await must('B가 마지막 글을 지운다 (글 + 방 미리 보기 빈 글 한 묶음)', async () => {
+    const b = writeBatch(B.db);
+    b.update(doc(msgs(B, g1, r1), bLast), clear);
+    b.update(room(B, g1, r1), { lastText: '' });
+    await b.commit();
+  });
+  await mustNot('지운 글을 또 지운다', () => updateDoc(doc(msgs(B, g1, r1), bLast), clear));
+  await mustNot('A가 B의 글을 지운다', () => updateDoc(doc(msgs(A, g1, r1), bMid), clear));
+  await mustNot('지우며 글을 남긴다', async () => {
+    const id = await sendRoom(B, bUid, g1, r1, '남길 글');
+    await updateDoc(doc(msgs(B, g1, r1), id), { deletedAt: serverTimestamp(), text: '남김' });
+  });
+  await mustNot('글을 지우지 않고 미리 보기만 빈 글로', () => updateDoc(room(B, g1, r1), { lastText: '' }));
+  await must('첨부 글 지우기 (첨부 칸째 빼기 - all 방)', async () => {
+    const id = await sendAll(B, bUid, g1, '그림', { msgExtra: { attachments: atts(1) } });
+    await updateDoc(doc(msgs(B, g1, 'all'), id), clear);
+  });
+
+  console.log('  · 1:1');
+  await must(`id 글자 견주기 (작은 uid가 앞)`, async () => {
+    if (!(lo < hi)) throw new Error('견주기가 거꾸로');
+  });
+  await must('A가 1:1 첫 글 (방 만들기 - names는 내 칸만)', () => sendDm(A, aUid, pair, bUid, g1, '1:1 안녕'));
+  made.push(`v5Dm/${pair}`);
+  await must('B 1:1 목록 where(members.<B> == true)', async () => {
+    const s = await getDocs(query(collection(B.db, 'v5Dm'), where(`members.${bUid}`, '==', true)));
+    if (!s.docs.some((d) => d.id === pair)) throw new Error('방이 목록에 없다');
+  });
+  await must('B 답장 (names.<B> 더하기)', () => sendDm(B, bUid, pair, aUid, g1, '1:1 답'));
+  await must('B 읽음 reads.<B> = 서버 시각', () => updateDoc(dm(B, pair), { [`reads.${bUid}`]: serverTimestamp() }));
+  await must('B 1:1 안 읽은 수', async () => count(query(dmMsgs(B, pair), where('at', '>', new Date(t0 - 60000)))));
+  await must('A 1:1 🔕', () => updateDoc(dm(A, pair), { [`muted.${aUid}`]: true }));
+  await must('A가 내 1:1 글을 지운다', async () => {
+    const id = await sendDm(A, aUid, pair, bUid, g1, '지울 1:1');
+    const b = writeBatch(A.db);
+    b.update(doc(dmMsgs(A, pair), id), clear);
+    b.update(dm(A, pair), { lastText: '' });
+    await b.commit();
+  });
+  await mustNot('B 읽음을 기기 시각으로', () => updateDoc(dm(B, pair), { [`reads.${bUid}`]: deviceTime() }));
+  await mustNot('B가 reads.<A>', () => updateDoc(dm(B, pair), { [`reads.${aUid}`]: serverTimestamp() }));
+  await mustNot('B가 muted.<A>를 푼다', () => updateDoc(dm(B, pair), { [`muted.${aUid}`]: deleteField() }));
+  await mustNot('B가 보내며 names.<A>를 바꾼다', () => sendDm(B, bUid, pair, aUid, g1, 'n', { roomExtra: { names: { [aUid]: '바꿈' } } }));
+  await mustNot('X가 1:1 get', () => getDoc(dm(X, pair)));
+  await mustNot('X가 1:1 글', () => getDocs(dmMsgs(X, pair)));
+  await mustNot('X가 남의 uid로 1:1 목록', () => getDocs(query(collection(X.db, 'v5Dm'), where(`members.${bUid}`, '==', true))));
+  await mustNot('X가 1:1에 보낸다', () => sendDm(X, xUid, pair, bUid, g1, '끼어들기', { roomExtra: { members: { [aUid]: true, [bUid]: true }, names: { [xUid]: 'X' } } }));
+  await mustNot('id 순서 바꿈', () => sendDm(A, aUid, `d_${hi}_${lo}`, bUid, g1, 'x'));
+  await mustNot('세 사람 id', () => sendDm(A, aUid, `d_${lo}_${hi}_${cUid}`, bUid, g1, 'x'));
+  await mustNot('남끼리 1:1 (A가 B·C 방을 만든다)', () => {
+    const [l, h] = [bUid, cUid].sort();
+    return sendDm(A, aUid, `d_${l}_${h}`, cUid, g1, 'x', { roomExtra: { members: { [bUid]: true, [cUid]: true } } });
+  });
+  await mustNot('만들 때 상대 이름까지 적는다 (A↔C)', () => {
+    const [l, h] = [aUid, cUid].sort();
+    return sendDm(A, aUid, `d_${l}_${h}`, cUid, g1, 'x', { roomExtra: { names: { [aUid]: '김선생', [cUid]: '박선생' } } });
+  });
+  await mustNot('함께 든 그룹이 아닌 sid (C는 그룹2에 없다)', () => {
+    const [l, h] = [aUid, cUid].sort();
+    return sendDm(A, aUid, `d_${l}_${h}`, cUid, g2, 'x');
+  });
+  await mustNot('그룹 밖 X와 1:1', () => {
+    const [l, h] = [aUid, xUid].sort();
+    return sendDm(A, aUid, `d_${l}_${h}`, xUid, g1, 'x');
+  });
+
+  console.log('  · 내 읽음 (그룹 방)');
+  await must("setDoc merge { rooms: { '<sid>~all': 서버 시각 } }", () => setDoc(reads(B, bUid), { rooms: { [`${g1}~all`]: serverTimestamp() }, v: 1 }, { merge: true }));
+  await must('둘째 칸 FieldPath(rooms, <sid>~<방>) - 첫 칸이 남는다', async () => {
+    await updateDoc(reads(B, bUid), new FieldPath('rooms', `${g1}~${r1}`), serverTimestamp());
+    if (!(await getDoc(reads(B, bUid))).data().rooms[`${g1}~all`]) throw new Error('첫 칸이 사라졌다');
+  });
+  await mustNot('A가 B의 읽음을 읽는다', () => getDoc(reads(A, bUid)));
+  await mustNot('A가 B의 읽음에 쓴다', () => setDoc(reads(A, bUid), { rooms: { [`${g1}~all`]: serverTimestamp() }, v: 1 }, { merge: true }));
+  await mustNot('모르는 칸', () => setDoc(reads(B, bUid), { other: 1 }, { merge: true }));
+
+  console.log('  · 나간·내보낸 사람');
+  await must('(준비) C가 그룹1을 나간다', () => updateDoc(space(C, g1), { [`members.${cUid}`]: deleteField(), updatedAt: now() }));
+  await mustNot('나간 C가 all 방 get', () => getDoc(room(C, g1, 'all')));
+  await mustNot('나간 C가 all 글 목록', () => getDocs(query(msgs(C, g1, 'all'), limit(5))));
+  await mustNot('나간 C가 수 세기', () => getCountFromServer(msgs(C, g1, 'all')));
+  await mustNot('나간 C가 보낸다', () => sendAll(C, cUid, g1, '나간 뒤'));
+  await mustNot('나간 C가 🔕', () => updateDoc(room(C, g1, 'all'), { [`muted.${cUid}`]: true }));
+  await must('(준비) B가 그룹1을 나간다', () => updateDoc(space(B, g1), { [`members.${bUid}`]: deleteField(), updatedAt: now() }));
+  await mustNot('그룹1을 나간 B에게 그룹1로 1:1', () => sendDm(A, aUid, pair, bUid, g1, '그룹1로'));
+  await must('함께 든 그룹2로 sid를 옮겨 1:1', () => sendDm(A, aUid, pair, bUid, g2, '그룹2로'));
+  await must('(준비) 주인 A가 그룹2에서 B를 내보낸다 (members·joinCodes + 새 코드)', async () => {
+    const code3 = `CH3${rid}`.toUpperCase();
+    const b = writeBatch(A.db);
+    b.update(space(A, g2), { [`members.${bUid}`]: deleteField(), [`joinCodes.${bUid}`]: deleteField(), inviteCode: code3, updatedAt: now() });
+    b.set(invite(A, code3), { sid: g2, ownerId: aUid });
+    await b.commit();
+    made.push(`spaceInvites/${code3}`);
+  });
+  await mustNot('내보낸 B가 그룹2 all 방 get', () => getDoc(room(B, g2, 'all')));
+  await mustNot('내보낸 B가 그룹2 글 목록', () => getDocs(query(msgs(B, g2, 'all'), limit(5))));
+  await mustNot('함께 든 그룹이 없는 1:1에 보낸다 (A→B)', () => sendDm(A, aUid, pair, bUid, g2, 'x'));
+  await mustNot('함께 든 그룹이 없는 1:1에 보낸다 (B→A)', () => sendDm(B, bUid, pair, aUid, g2, 'x'));
+  await must('함께 든 그룹이 없어도 1:1 지난 글은 읽는다', async () => {
+    if ((await getDocs(dmMsgs(B, pair))).size < 3) throw new Error('지난 글이 없다');
+  });
+
+  await must('(정리) 대화 문서(관리자)·읽음·그룹·코드를 지운다', async () => {
+    for (const p of made) await adminRemove(p);
+    await deleteDoc(reads(B, bUid));
+    for (const [sid, code] of [[g1, code1], [g2, code2]]) {
+      await deleteDoc(invite(A, code));
+      await deleteDoc(space(A, sid));
+    }
   });
 }
 
