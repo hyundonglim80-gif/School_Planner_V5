@@ -10,6 +10,7 @@ import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mi
 import { useSession } from '../../data/session';
 import { useMySpaces, useSpaceChoice, useSpaceOverlay } from '../../data/spaceChoice';
 import { useMulti } from '../events/multi';
+import { spaceHue } from '../../domain/spaceColor';
 import { undoCount } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
 import DayEvents from './DayEvents';
@@ -402,7 +403,10 @@ describe('겹쳐 보기 (P17-2)', () => {
     expect(group.querySelector<HTMLElement>('[data-overlay-count]')!.dataset.overlayCount).toBe('1');
     const card = q('[data-event-card="g1"]')!;
     expect(card.dataset.eventSpace).toBe(GA);
-    expect(card.querySelector(`[data-event-space-dot="${GA}"]`)).not.toBeNull();
+    // 공간 색 배경 (✓·점 대신 - 11-02 사용자), 주 공간 카드는 그대로
+    expect(card.getAttribute('style')).toContain(`--color-${spaceHue(GA)}-100`);
+    expect(q('[data-event-card="a"]')!.getAttribute('style')).toBeNull();
+    expect(group.querySelector('[data-overlay-name]')!.getAttribute('style')).toContain(`--color-${spaceHue(GA)}-100`);
     expect(card.textContent).toContain('학년 행사');
     // 순서 바꾸기·지우기는 없다
     expect(card.querySelector('[data-event-up]')).toBeNull();

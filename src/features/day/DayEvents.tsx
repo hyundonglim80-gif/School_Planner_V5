@@ -8,7 +8,7 @@
 //   지난 날 칸에서는 그 일정을 흐리게 '→ 오늘로'(누르면 오늘). 오늘 칸에서 끝내면 그날로 옮겨 적는다(eventOps carriedDoneChanges).
 // - 여러 개 고르기(features/events/multi): Ctrl+누르기·Shift 범위·휴대폰 길게 누르기로 바로 시작, 고르는 동안 누르면 고르기·풀기(V4 그대로).
 // - 쓰기마다 문서 하나, 되돌리기는 Ctrl+Z(완료·순서는 안내 없이 - V4도 띄우지 않았다).
-// - 겹쳐 보기(P17-2 - 둘째 줄 공간 칩 Ctrl·길게 누르기): 주 공간 것 아래에 공간마다 구분 줄 '● 👥 그룹A n' + 그 공간 일정(그 공간 라벨 트리로).
+// - 겹쳐 보기(P17-2 - 둘째 줄 공간 칩 Ctrl·길게 누르기): 주 공간 것 아래에 공간마다 구분 줄 '👥 그룹A n' + 그 공간 일정(그 공간 라벨 트리로, 카드 = 공간 색 배경).
 //   누르기 = 그 공간 칸 · 라벨 칩 = 그 공간에 완료. ▲▼·끌기·고르기·🗑️·이월은 없다(주 공간 것만). 머리 수(data-event-count)는 주 공간 것만.
 // 새로 쓰고 고치는 칸은 여기 없다 - 오른쪽 일정 칸(EventPanel) 하나로 어느 화면에서나 같게 (V4 그대로).
 import { useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
@@ -54,7 +54,7 @@ const quiet = () => {
 };
 const nothing = () => {};
 
-/** 겹쳐 보는 공간 하나의 구분 줄 '● 👥 그룹A 2 ----' + 그 공간 카드 (휴대폰 2열에서도 줄은 한 줄을 다 쓴다) */
+/** 겹쳐 보는 공간 하나의 구분 줄 '👥 그룹A 2 ----'(이름은 공간 색 배경 - 카드와 같은 색) + 그 공간 카드 (휴대폰 2열에서도 줄은 한 줄을 다 쓴다) */
 function OverlayGroup({ space, count, children }: { space: OverlaySpace; count: number; children: ReactNode }) {
   return (
     <>
@@ -63,8 +63,7 @@ function OverlayGroup({ space, count, children }: { space: OverlaySpace; count: 
         title={`겹쳐 보는 공간 - 누르면 ${space.name} 공간에서 고칩니다`}
         className="col-span-2 sm:col-span-1 flex items-center gap-1.5 pt-1.5 text-2xs font-bold text-slate-500 min-w-0"
       >
-        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: space.color }} aria-hidden />
-        <span data-overlay-name className="truncate">
+        <span data-overlay-name className="truncate px-1.5 py-0.5 rounded-md border text-slate-600" style={space.tone}>
           {spaceTitle(space)}
         </span>
         <span data-overlay-count={count} className="px-1.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
@@ -295,7 +294,7 @@ export default function DayEvents({ date }: { date: YMD }) {
 
 interface EventCardProps {
   ev: ItemDoc;
-  /** 겹쳐 보는 다른 공간의 일정 (P17-2) - 공간 색 점, ▲▼·🗑️·끌기 없음 */
+  /** 겹쳐 보는 다른 공간의 일정 (P17-2) - 공간 색 배경, ▲▼·🗑️·끌기 없음 */
   overlay?: OverlaySpace;
   /** 여러 개 고르기로 골랐나 */
   picked?: boolean;
@@ -343,6 +342,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
       data-event-away={away ? '1' : undefined}
       data-event-picked={picked ? '1' : undefined}
       data-event-space={overlay?.sid}
+      style={overlay?.tone}
       {...dragProps}
       {...longPress.handlers}
       onClick={(e) => {
@@ -362,14 +362,9 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
       {/* 휴대폰(2열 카드): 위 줄에 순서 바꾸기 · 수정, 아래에 내용. PC(1열): 한 줄 - 왼쪽 ▲▼(세로), 가운데 내용, 오른쪽 수정.
           PC에서는 이 줄 틀을 없는 셈 치고(sm:contents) 순서(order)로 자리를 잡는다 (V4 그대로). */}
       <div className="flex items-center justify-between -mt-0.5 sm:contents">
-        {/* 겹친 일정은 ▲▼ 자리에 공간 색 점 (순서는 공간마다라 섞어 바꾸지 않는다) */}
+        {/* 겹친 일정은 ▲▼ 자리를 비워 둔다 (순서는 공간마다라 섞어 바꾸지 않는다 - 글 줄은 위 카드와 맞춘다) */}
         {overlay ? (
-          <span
-            data-event-space-dot={overlay.sid}
-            title={spaceTitle(overlay)}
-            className="w-2.5 h-2.5 rounded-full shrink-0 sm:order-1 sm:mt-1.5 sm:mx-1"
-            style={{ backgroundColor: overlay.color }}
-          />
+          <span aria-hidden className="w-4 shrink-0 sm:order-1" />
         ) : (
           <div className="flex items-center gap-0.5 shrink-0 sm:flex-col sm:order-1 sm:mt-0.5">
             <button

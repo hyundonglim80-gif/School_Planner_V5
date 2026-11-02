@@ -2,7 +2,7 @@
 //   머리: 요일 · 날짜(토 파랑·일 빨강) · 📝 기록 수(누르면 그날 기록 창 - 하루 화면으로 가지 않는다).
 //   수업: 교시 줄(features/lessons/WeekLessonRows - P6-1) - 누르면 'N교시 수정' 칸.
 //   일정: 라벨 칩 누르기 = 완료, 글 누르기 = 오른쪽 일정 칸, 마우스를 올리면 ✕, 🔗 n = 연결된 데이터. 오늘 카드에는 이월로 따라오는 일정도(↪).
-//   겹쳐 보기(P17-2): 겹친 공간 일정은 이월 뒤에 색 점과 함께(끌기·✕·고르기 없음 - 누르기·완료는 부르는 쪽이 그 공간으로).
+//   겹쳐 보기(P17-2): 겹친 공간 일정은 이월 뒤에 공간 색 배경으로(끌기·✕·고르기 없음 - 누르기·완료는 부르는 쪽이 그 공간으로).
 //   카드 빈 곳 = 그날 하루 화면. + = 그날 새 일정. 일정을 끌어 다른 요일 카드에 놓으면 옮긴다(P5-3 - 마우스 화면만).
 import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
@@ -11,7 +11,6 @@ import { periodPosition } from '../../domain/period';
 import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
 import type { LabelDoc, OverlaySpace } from '../../data/select';
 import DueBadge from '../events/DueBadge';
-import SpaceDot from '../events/SpaceDot';
 import { spaceTitle } from '../../domain/spaceColor';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
 import { useHolidayName } from '../../data/holidays';
@@ -98,6 +97,7 @@ function EventChip({
       data-week-carried={carried ? '1' : undefined}
       data-event-picked={picked ? '1' : undefined}
       data-event-space={space?.sid}
+      style={space?.tone}
       {...eventDragProps(ev, day, !space && !!drag?.enabled, drag?.onEnd)}
       onClick={(e) => {
         stop(e);
@@ -117,7 +117,6 @@ function EventChip({
       }`}
     >
       {multiOn && !space && <input type="checkbox" checked={picked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
-      {space && <SpaceDot space={space} />}
       {carried && (
         <span className="inline-block align-middle mr-1 text-2xs font-bold text-amber-700" title="지난 날에서 이월로 따라오는 일정">
           ↪

@@ -16,7 +16,6 @@ import { useHolidayName } from '../../data/holidays';
 import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import { DoneMark } from '../events/EventDoneChip';
-import SpaceDot from '../events/SpaceDot';
 import type { CalendarEvents } from '../month/calendarEvents';
 
 interface Props {
@@ -172,6 +171,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                   data-sheet-item={it.kind}
                   data-sheet-item-id={it.item?.id}
                   data-event-space={space?.sid}
+                  style={space?.tone}
                   onClick={() => openItem(it)}
                   className="w-full flex items-start gap-1.5 text-left text-2xs leading-snug rounded hover:bg-slate-50 px-0.5 cursor-pointer"
                   title={it.item ? '누르면 오른쪽 칸에서 고치기' : '그날 하루 화면'}
@@ -197,7 +197,6 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                             : 'text-slate-700 font-medium'
                     }`}
                   >
-                    {space && <SpaceDot space={space} className="w-1.5 h-1.5 mr-0.5" />}
                     {/* 끝낸 일정은 글 앞에 ✓ (P10-1 - 색은 그대로) */}
                     {it.done && <DoneMark className="!mr-0.5" />}
                     {it.kind === 'dday' && '🎯 '}

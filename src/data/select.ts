@@ -18,7 +18,7 @@ import { collKey, EMPTY_DOCS, useMirror, type MirrorStatus } from './mirror/stor
 import { useHolidayStore } from './holidays';
 import { useCurrentSpaceId, useSession } from './session';
 import { overlaySpaces, useMySpaces, useSpaceOverlay } from './spaceChoice';
-import { spaceColor } from '../domain/spaceColor';
+import { spaceTone, type SpaceTone } from '../domain/spaceColor';
 import type { ItemKind, SpaceCollection, Stored, YMD } from './types';
 
 export type Docs<C extends SpaceCollection> = Readonly<Record<string, Stored<C>>>;
@@ -331,8 +331,8 @@ export interface OverlaySpace {
   sid: string;
   /** '개인' 또는 그룹 이름 */
   name: string;
-  /** 점 빛깔 (domain/spaceColor) */
-  color: string;
+  /** 겹친 것의 배경·테두리 (domain/spaceColor - style에 그대로) */
+  tone: SpaceTone;
   items: Docs<'items'>;
   /** 그 공간의 일정 라벨 트리 */
   tree: LabelTree;
@@ -368,7 +368,7 @@ export function useOverlaySpaces(): readonly OverlaySpace[] {
     return sids.map((sid, i) => ({
       sid,
       name: sid.startsWith('g_') ? (mine.groups.find((g) => g.id === sid)?.name ?? '그룹') : '개인',
-      color: spaceColor(sid),
+      tone: spaceTone(sid),
       items: docs[i * 2] as unknown as Docs<'items'>,
       tree: labelTreeOf(docs[i * 2 + 1] as unknown as Docs<'labels'>, 'event'),
     }));

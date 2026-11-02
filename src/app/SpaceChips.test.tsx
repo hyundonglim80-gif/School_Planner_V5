@@ -7,6 +7,7 @@ import { useNav } from './nav';
 import * as keys from './keys';
 import { useSession } from '../data/session';
 import { useMySpaces, useSpaceChoice, useSpaceOverlay } from '../data/spaceChoice';
+import { spaceHue } from '../domain/spaceColor';
 
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 
@@ -76,14 +77,16 @@ describe('겹쳐 보기 칩 (P17-2)', () => {
   const chip = (c: HTMLElement, sid: string) => c.querySelector<HTMLElement>(`[data-space-chip="${sid}"]`)!;
   beforeEach(() => useMySpaces.setState({ groups: [group('g_a', '협의회'), group('g_b', '5학년')], loaded: true }));
 
-  it('Ctrl·Shift+누르기 = 더하기·빼기 (✓·색 점, aria-pressed는 주 공간만) · 주 공간 칩에는 듣지 않는다', () => {
+  it('Ctrl·Shift+누르기 = 더하기·빼기 (공간 색 배경, aria-pressed는 주 공간만) · 주 공간 칩에는 듣지 않는다', () => {
     const { container } = render(<SpaceChips />);
     fireEvent.click(chip(container, 'g_a'), { ctrlKey: true });
     fireEvent.click(chip(container, 'g_b'), { shiftKey: true });
     expect(overlaid(container)).toEqual(['g_a', 'g_b']);
     expect(pressed(container)).toEqual(['u_u1']);
-    expect(chip(container, 'g_a').textContent).toBe('✓👥 협의회');
-    expect(chip(container, 'g_a').querySelector('[data-space-dot]')).not.toBeNull();
+    // ✓·점 없이 글자는 그대로, 배경·테두리 = 그 공간 색 (다크 모드가 바꾸는 색 변수 - 11-02 사용자)
+    expect(chip(container, 'g_a').textContent).toBe('👥 협의회');
+    expect(chip(container, 'g_a').getAttribute('style')).toContain(`--color-${spaceHue('g_a')}-100`);
+    expect(chip(container, 'u_u1').getAttribute('style')).toBeNull();
     fireEvent.click(chip(container, 'u_u1'), { ctrlKey: true });
     expect(overlaid(container)).toEqual(['g_a', 'g_b']);
     expect(useSpaceChoice.getState().sid).toBeNull();

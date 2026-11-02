@@ -26,7 +26,7 @@ import { useDraft } from '../../data/drafts';
 import { useHolidayName } from '../../data/holidays';
 import { itemsOn, useDocs, useItemsOn, useLabelTree, useMirrorStatus, useOverlaySpaceIds } from '../../data/select';
 import { useMySpaces } from '../../data/spaceChoice';
-import { spaceColor } from '../../domain/spaceColor';
+import { spaceTone } from '../../domain/spaceColor';
 import AutoTextarea from '../../ui/AutoTextarea';
 import DraftOffer from '../../ui/DraftOffer';
 import PopoutButton from '../../ui/PopoutButton';
@@ -405,7 +405,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   useUnsavedCheck(unsaved);
 
   const title = isEditing ? '일정 수정' : '새 일정';
-  // 겹쳐 보는 동안에는 '· 개인/공유' 대신 공간 색 칩 - 어느 공간에 들어가는지 보이게 (P17-2)
+  // 겹쳐 보는 동안에는 '· 개인/공유' 대신 공간 색 배경 칩 - 어느 공간에 들어가는지 보이게 (P17-2)
   const overlayOn = useOverlaySpaceIds().length > 0;
   const groupName = useMySpaces((s) => s.groups.find((g) => g.id === sid)?.name);
   const subtitle = useMemo(
@@ -429,12 +429,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
             <p className="text-xs font-bold text-primary mt-0.5 truncate">
               {subtitle}
               {overlayOn && (
-                <span
-                  data-event-panel-space={sid}
-                  className="inline-flex items-center gap-1 ml-1.5 px-1.5 py-px rounded-md border bg-white text-slate-700 align-middle"
-                  style={{ borderColor: spaceColor(sid) }}
-                >
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: spaceColor(sid) }} aria-hidden />
+                <span data-event-panel-space={sid} className="inline-block ml-1.5 px-1.5 py-px rounded-md border text-slate-700 align-middle" style={spaceTone(sid)}>
                   {personal ? '🔒 개인' : `👥 공유 · ${groupName ?? '그룹'}`}
                 </span>
               )}

@@ -1,13 +1,14 @@
 // 공간 칩 줄 (P17-1 - MENU.md 3-2): 둘째 줄 ◀ 날짜 ▶ 오른쪽에 🔒 개인 · 👥 그룹들 · ⚙️(그룹 관리).
 // 그냥 누르기 = 그 공간 하나를 본다(주 공간 - 이 기기에, data/spaceChoice. 겹쳐 보기는 끈다 - 라벨 칩 탐색기식). 하루·주간·월간·년간 화면만 -
 // 둘째 줄이 없는 메모·학급 화면은 머리줄 📂 드롭다운(Header SpaceSelect). 둘이 한 화면에 함께 나오지 않는다.
-// 겹쳐 보기(P17-2): Ctrl·Shift+누르기(휴대폰 길게 누르기) = 그 공간 일정을 주 공간 것 뒤에 더하기·빼기(공간 색 점·✓). 주 공간 칩에는 듣지 않는다.
+// 겹쳐 보기(P17-2): Ctrl·Shift+누르기(휴대폰 길게 누르기) = 그 공간 일정을 주 공간 것 뒤에 더하기·빼기. 주 공간 칩에는 듣지 않는다.
+//   겹친 칩과 겹친 일정은 공간 색 배경으로 구분한다(11-02 사용자 - 처음의 ✓·색 점 대신, domain/spaceColor).
 //   aria-pressed는 주 공간 칩만(점검이 '보는 공간'을 찾는다) - 겹친 칩은 data-space-overlay.
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { useOverlaySpaceIds } from '../data/select';
 import { useCurrentSpaceId, useSession, useSpacePickerShown } from '../data/session';
 import { clearOverlay, setSpaceChoice, toggleOverlay, useMySpaces } from '../data/spaceChoice';
-import { spaceColor } from '../domain/spaceColor';
+import { spaceTone } from '../domain/spaceColor';
 import { useLongPress } from '../ui/longPress';
 import { runFromButton } from './keys';
 
@@ -65,7 +66,6 @@ export default function SpaceChips() {
 
 function SpaceChip({ chip: c, main, overlaid, onPick, onToggle }: { chip: Chip; main: boolean; overlaid: boolean; onPick: () => void; onToggle: () => void }) {
   const longPress = useLongPress(onToggle);
-  const color = spaceColor(c.sid);
   const look = main
     ? `font-black shadow-xs ${c.group ? 'bg-amber-100 border-amber-400 text-amber-800' : 'bg-slate-100 border-slate-400 text-slate-800'}`
     : overlaid
@@ -86,18 +86,10 @@ function SpaceChip({ chip: c, main, overlaid, onPick, onToggle }: { chip: Chip; 
       {...longPress.handlers}
       onClick={click}
       title={`${c.title} - 누르면 이 공간만 보기 · ${how}`}
-      style={overlaid ? { borderColor: color } : undefined}
+      style={overlaid ? spaceTone(c.sid) : undefined}
       className={`${CHIP} ${look} select-none`}
     >
-      <span className="flex items-center gap-1">
-        {overlaid && (
-          <>
-            <span aria-hidden>✓</span>
-            <span data-space-dot className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-          </>
-        )}
-        <span className="truncate min-w-0 max-w-32">{c.text}</span>
-      </span>
+      <span className="block truncate max-w-32">{c.text}</span>
     </button>
   );
 }

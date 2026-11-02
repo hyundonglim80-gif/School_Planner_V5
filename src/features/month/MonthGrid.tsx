@@ -18,7 +18,6 @@ import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
 import PeriodBar from './PeriodBar';
-import SpaceDot from '../events/SpaceDot';
 import { spaceTitle } from '../../domain/spaceColor';
 import { LessonGrid, LessonStrip } from '../lessons/CalendarLessons';
 import type { LessonSubjects } from '../lessons/lessonSubjects';
@@ -53,7 +52,7 @@ export interface MonthGridProps {
   /** 조사표 창을 열 공간 */
   sid?: string | null;
   labelsOf: (ev: ItemDoc) => LabelDoc[];
-  /** 겹쳐 본 다른 공간 일정이면 그 공간 (P17-2 - 색 점, 끌기·✕·고르기 없음) */
+  /** 겹쳐 본 다른 공간 일정이면 그 공간 (P17-2 - 공간 색 배경, 끌기·✕·고르기 없음) */
   spaceOf?: (ev: ItemDoc) => OverlaySpace | undefined;
   pickedOn: (date: string) => ReadonlySet<string>;
   multiOn: boolean;
@@ -213,14 +212,13 @@ export default function MonthGrid(p: MonthGridProps) {
                                 stop(e);
                                 p.onEventClick(ev, date, e);
                               }}
-                              style={p.compact && c ? { borderLeftWidth: '3px', borderLeftColor: c.border } : undefined}
+                              style={{ ...space?.tone, ...(p.compact && c ? { borderLeftWidth: '3px', borderLeftColor: c.border } : {}) }}
                               title={space ? `${spaceTitle(space)} 일정 - 누르면 오른쪽 칸에서 고치기` : '누르면 오른쪽 칸에서 고치기'}
                               className={`group/ev relative rounded text-2xs font-medium leading-tight transition-all border block hover:shadow-sm cursor-pointer ${
                                 p.compact ? 'px-1 py-[1px] truncate whitespace-nowrap [container-type:inline-size]' : 'px-1.5 py-0.5 break-words'
-                              } ${isPicked ? 'bg-primary/10 border-primary text-primary' : 'bg-blue-50 text-blue-800 border-blue-100'}`}
+                              } ${isPicked ? 'bg-primary/10 border-primary text-primary' : space ? 'text-slate-800' : 'bg-blue-50 text-blue-800 border-blue-100'}`}
                             >
                               {p.multiOn && !space && <input type="checkbox" checked={isPicked} readOnly tabIndex={-1} className="inline-block align-middle mr-1 pointer-events-none" />}
-                              {space && <SpaceDot space={space} className={p.compact ? 'w-1.5 h-1.5 mr-0.5' : ''} />}
                               {/* 휴대폰은 라벨 이름 대신 왼쪽 색 띠 (이름이 칸의 절반을 먹었다 - V4). 칩 = 완료, 끝내면 칩 앞에 ✓ (P10-1).
                                   칩이 없는 자리(휴대폰·여러 개 고르기)는 글 앞에 ✓만 */}
                               {!p.multiOn && !p.compact ? (

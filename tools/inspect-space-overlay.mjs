@@ -1,6 +1,7 @@
 // tools/inspect-space-overlay.mjs - P17-2 일정 겹쳐 보기: 둘째 줄 공간 칩 Ctrl+누르기(휴대폰 길게 누르기)로 다른 공간 일정을 주 공간 것 뒤에.
 //   계정 하나(teacher)가 그룹을 만들고 개인·그룹에 일정(그룹은 기간 하나 + 그룹에만 있는 라벨) → Ctrl 겹치기 →
-//   하루(구분 줄·색 점·머리 수는 주 공간 것)·주간·월간(칸·막대)·년간(자세히·학사력)에 둘 다 · 그룹 일정 누르기 = 그 공간 칸(칸 머리 색 칩·'공유') ·
+//   하루(구분 줄·공간 색 배경·머리 수는 주 공간 것)·주간·월간(칸·막대)·년간(자세히·학사력)에 둘 다 · 그룹 일정 누르기 = 그 공간 칸(칸 머리 색 칩·'공유') ·
+//   겹친 칩·겹친 일정은 공간 색 배경(11-02 사용자 - ✓·색 점 대신, 다크 모드에서도 어둡게) ·
 //   완료 → 그 공간 문서 · 새 일정 = 주 공간 문서 · 겹친 것은 끌리지 않고 고르기에 들지 않음 · 다시 열어도 기억 · 그냥 누르기 = 끔 ·
 //   휴대폰 390 길게 누르기·넘침 · 그룹이 없어지면 빠짐 · 끝에 심은 것 걷기.
 //
@@ -51,6 +52,22 @@ async function addEvent(page, sid, text) {
   await page.evaluate(() => window.sp5.closeAllWindows());
 }
 const go = (page, hash) => page.evaluate((h) => (location.hash = h), hash);
+/** 실제로 칠해진 배경색 (공간 색 배경이 보통 것과 다른지) - 칩·카드의 transition을 끝낸 뒤 읽는다(도중 값은 흰색에 가깝다) */
+const bgOf = (loc) =>
+  loc.first().evaluate((el) => {
+    for (const a of el.getAnimations()) a.finish();
+    return getComputedStyle(el).backgroundColor;
+  });
+/** 어두운 색인가 (sRGB 밝기 - 다크 모드에서 공간 배경이 밝게 튀지 않는지) */
+const isDark = (loc) =>
+  loc.first().evaluate((el) => {
+    for (const a of el.getAnimations()) a.finish();
+    const c = document.createElement('canvas').getContext('2d');
+    c.fillStyle = getComputedStyle(el).backgroundColor;
+    c.fillRect(0, 0, 1, 1);
+    const [r, g, b] = c.getImageData(0, 0, 1, 1).data;
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 110;
+  });
 
 try {
   const A = await newPage(browser);
@@ -83,8 +100,9 @@ try {
   await A.page.locator(sel('space-chip', gid)).click({ modifiers: ['Control'] });
   r.check(await waitFor(A.page.locator(`${sel('space-chip', gid)}[data-space-overlay="1"]`), 5000), '그룹 칩 = 겹침');
   r.check((await A.page.locator(`${sel('space-chip', PERSONAL)}[aria-pressed="true"]`).count()) === 1, '주 공간은 개인 그대로 (aria-pressed)');
-  r.check(((await A.page.locator(sel('space-chip', gid)).textContent()) ?? '').includes('✓'), '겹친 칩 글자에 ✓');
-  r.check((await A.page.locator(`${sel('space-chip', gid)} [data-space-dot]`).count()) === 1, '겹친 칩에 색 점');
+  const chipBg = await bgOf(A.page.locator(sel('space-chip', gid)));
+  r.check(chipBg !== (await bgOf(A.page.locator(sel('space-chip-manage')))) && chipBg !== (await bgOf(A.page.locator(sel('space-chip', PERSONAL)))), `겹친 칩 = 공간 색 배경 (${chipBg} - 안 고른 칩·주 공간 칩과 다르다)`);
+  r.check(((await A.page.locator(sel('space-chip', gid)).textContent()) ?? '') === `👥 ${NAME}`, '겹친 칩 글자는 그대로 (✓·점 없음)');
   r.check(((await A.page.locator(sel('space-overlay-hint')).textContent()) ?? '').includes('겹쳐 보기'), 'PC 흐린 글 (Ctrl+누르기 = 겹쳐 보기)');
 
   r.section('하루 화면');
@@ -93,7 +111,11 @@ try {
   r.check(((await group.locator(sel('overlay-name')).textContent()) ?? '').includes(NAME), '구분 줄에 그룹 이름');
   const card = A.page.locator(`[data-event-card][data-event-space="${gid}"]`).filter({ hasText: '겹침점검 그룹 일정' });
   r.check((await card.count()) === 1, '그룹 일정 카드');
-  r.check((await card.locator(sel('event-space-dot', gid)).count()) === 1, '카드에 색 점');
+  const mainCard = A.page.locator('[data-event-card]:not([data-event-space])').filter({ hasText: '겹침점검 개인 일정' });
+  const cardBg = await bgOf(card);
+  r.check(cardBg !== (await bgOf(mainCard)), `카드 = 공간 색 배경 (${cardBg} - 주 공간 카드와 다르다)`);
+  r.check(cardBg === chipBg, '카드와 칩이 같은 공간 색');
+  r.check((await bgOf(group.locator(sel('overlay-name')))) === chipBg, '구분 줄 이름도 같은 공간 색');
   r.check((await card.locator('[data-event-up], [data-event-delete]').count()) === 0 && (await card.getAttribute('draggable')) !== 'true', '▲▼·🗑️·끌기 없음');
   r.check((await A.page.locator(sel('event-count')).getAttribute('data-event-count')) === countBefore, `머리 수는 주 공간 것 그대로 (${countBefore})`);
   r.check((await A.page.locator('[data-event-card]:not([data-event-space])').filter({ hasText: '겹침점검 개인 일정' }).count()) === 1, '개인 일정도 그대로');
@@ -103,6 +125,11 @@ try {
   });
   r.check(overflow === 0, `둘째 줄 넘침 0 (${overflow})`);
   await shot(A.page, 'overlay-day-1400');
+  // 다크 모드 - 색 변수를 바꿔 끼우므로 공간 배경도 어두운 빛깔로
+  await A.page.evaluate(() => document.documentElement.classList.add('dark'));
+  r.check((await isDark(card)) && (await isDark(A.page.locator(sel('space-chip', gid)))), '다크 모드에서 공간 배경도 어둡다 (밝게 튀지 않는다)');
+  await shot(A.page, 'overlay-day-1400-dark');
+  await A.page.evaluate(() => document.documentElement.classList.remove('dark'));
 
   r.section('누르기·완료·새 일정');
   await card.locator(sel('event-text')).click({ modifiers: ['Control'] });
@@ -130,7 +157,8 @@ try {
   await go(A.page, `#/week/${DAY}`);
   const wk = A.page.locator(`${sel('week-day', DAY)} ${gq('[data-week-event]')}`).filter({ hasText: '겹침점검 그룹 일정' });
   r.check(await waitFor(wk, 8000), '그날 카드에 그룹 일정');
-  r.check((await wk.locator(sel('event-space-dot', gid)).count()) === 1 && (await wk.locator('[data-week-event-delete]').count()) === 0, '색 점 · ✕ 없음');
+  const wkMain = A.page.locator(`${sel('week-day', DAY)} [data-week-event]:not([data-event-space])`).first();
+  r.check((await bgOf(wk)) !== (await bgOf(wkMain)) && (await wk.locator('[data-week-event-delete]').count()) === 0, '공간 색 배경 (주 공간 칩과 다르다) · ✕ 없음');
   r.check((await wk.getAttribute('draggable')) !== 'true', '끌리지 않는다');
   r.check((await A.page.locator(`${sel('week-day', DAY)} [data-week-count]`).getAttribute('data-week-count')) === '2', '요일 수는 주 공간 것만 (2)');
   const wp = A.page.locator(`${sel('week-day', '2027-10-07')} ${gq('[data-week-event]')}`).filter({ hasText: '겹침점검 그룹 기간' });
@@ -144,9 +172,11 @@ try {
   await go(A.page, `#/month/${DAY.slice(0, 7)}`);
   const me = A.page.locator(`${sel('month-day', DAY)} ${gq('[data-month-event]')}`);
   r.check(await waitFor(me, 8000), '그날 칸에 그룹 일정');
-  r.check((await me.locator(sel('event-space-dot', gid)).count()) === 1 && (await me.getAttribute('draggable')) !== 'true', '색 점 · 끌리지 않는다');
+  const meMain = A.page.locator(`${sel('month-day', DAY)} [data-month-event]:not([data-event-space])`).first();
+  r.check((await bgOf(me)) !== (await bgOf(meMain)) && (await me.getAttribute('draggable')) !== 'true', '공간 색 배경 (주 공간 것과 다르다) · 끌리지 않는다');
   const bar = A.page.locator(gq('[data-period-bar]')).first();
   r.check((await bar.count()) === 1 && ((await bar.textContent()) ?? '').includes('겹침그룹라벨'), '그룹 기간 막대 · 그 공간 라벨');
+  r.check((await bgOf(bar.locator(sel('period-cell')))) === cardBg, '막대 바탕 = 공간 색');
   r.check((await A.page.locator(`${sel('month-day', DAY)} [data-month-event]:not([data-event-space])`).filter({ hasText: '겹침점검 개인 일정' }).count()) === 1, '개인 일정도');
   await shot(A.page, 'overlay-month-1400');
   await me.locator(sel('month-event-text')).click();

@@ -2,6 +2,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
 import { labelTreeOf, type Docs } from '../../data/select';
+import { spaceTone } from '../../domain/spaceColor';
 import { calendarEvents } from './calendarEvents';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
@@ -47,7 +48,7 @@ describe('겹쳐 보기 (P17-2)', () => {
     g2: { id: 'g2', ...base, kind: 'event', date: '2026-10-06', text: '그룹에서는 달력 끈 라벨', labelIds: ['on'], order: 'a1' },
     g3: { id: 'g3', ...base, kind: 'event', date: '2026-10-05', endDate: '2026-10-08', text: '그룹 기간', order: 'a2' },
   } as unknown as Docs<'items'>;
-  const space = { sid: 'g_a', name: '3학년', color: '#f59e0b', items: gItems, tree: labelTreeOf(gLabels, 'event') };
+  const space = { sid: 'g_a', name: '3학년', tone: spaceTone('g_a'), items: gItems, tree: labelTreeOf(gLabels, 'event') };
 
   it('겹친 공간 것은 그 공간 트리로 골라 주 공간 것 뒤에 (그날 목록·기간 모두), spaceOf = 항목 → 공간', () => {
     const cal = calendarEvents(items, '2026-09-27', '2026-10-31', labelTreeOf(labels, 'event'), [space]);

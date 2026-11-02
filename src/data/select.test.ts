@@ -186,7 +186,7 @@ describe('겹쳐 보는 공간의 재료 (P17-2)', () => {
     // 주 공간(개인)은 겹치지 않는다
     expect(h.result.current.map((o) => [o.sid, o.name])).toEqual([['g_a', '3학년']]);
     const [ga] = h.result.current;
-    expect(ga.color).toMatch(/^#/);
+    expect(ga.tone.backgroundColor).toMatch(/^var\(--color-/);
     expect(ids(itemsOn(ga.items, '2026-10-08', 'event'))).toEqual(['ga']);
     expect(ga.tree.byId.get('dflt_e1')?.name).toBe('학년 행사');
     const before = h.result.current;

@@ -8,12 +8,11 @@ import { periodIndexLabel, periodRangeLabel, type BarCell, type WeekBar } from '
 import type { LabelDoc, OverlaySpace } from '../../data/select';
 import { eventDragProps } from '../events/drag';
 import EventDoneChip from '../events/EventDoneChip';
-import SpaceDot from '../events/SpaceDot';
 import { doneAll, doneOnDay, type ItemDoc } from '../events/eventOps';
 
 interface Props {
   bar: WeekBar<ItemDoc>;
-  /** 겹쳐 본 다른 공간 일정이면 그 공간 (P17-2 - 글 앞 색 점, 끌기 없음은 부르는 쪽이) */
+  /** 겹쳐 본 다른 공간 일정이면 그 공간 (P17-2 - 막대 바탕·테두리 = 공간 색, 라벨은 칩 글자로. 끌기 없음은 부르는 쪽이) */
   space?: OverlaySpace;
   label: LabelDoc | null;
   compact: boolean;
@@ -36,7 +35,9 @@ const DEFAULT_COLOR = { bg: '#dbeafe', text: '#1e3a8a', border: '#bfdbfe' };
 
 export default function PeriodBar({ bar, space, label, compact, multiOn, picked, isCurrentMonth, onOpen, onOpenLinks, onToggleDone, style, drag }: Props) {
   const labelName = label?.name ?? '';
-  const color = (label && labelColor(label.color)) || DEFAULT_COLOR;
+  const labelTone = (label && labelColor(label.color)) || DEFAULT_COLOR;
+  // 겹친 공간 막대는 공간 색 (글자는 slate 변수 - 다크 모드가 바꾼다)
+  const color = space ? { bg: space.tone.backgroundColor, border: space.tone.borderColor, text: 'var(--color-slate-800, #1e293b)' } : labelTone;
   const ev = bar.item;
   const doneAt = (date: string) => doneOnDay(ev, date);
   // 기간 전체를 끝냈나 (칩의 ✓ - 이 주 조각만 다 끝낸 것은 조각마다 ✓)
@@ -100,7 +101,6 @@ export default function PeriodBar({ bar, space, label, compact, multiOn, picked,
         style={{ color: color.text }}
       >
         {!bar.startsPeriod && <span className="shrink-0 opacity-60">◂</span>}
-        {space && <SpaceDot space={space} className={compact ? 'w-1.5 h-1.5 mr-0' : 'mr-0'} />}
         {!compact && (
           <EventDoneChip
             label={label}
