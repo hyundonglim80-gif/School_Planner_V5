@@ -97,7 +97,7 @@ try {
   r.check(evals.length === 1 && evals[0].authorId === uidA && evals[0].classId === '2027-5-2', '조사표 (만든 사람 그대로)');
   const people = Object.fromEntries((await v5('people')).map((p) => [p.id, p.name]));
   r.check(!!people[uidB] && people[uidA] === '선생님A', `구성원 이름 (나 + V4 그룹장 이름 '${people[uidA]}')`);
-  r.check(await waitFor(B.page.locator(sel('space-select', SID)), 8000), '가져오면 그 그룹을 본다');
+  r.check(await waitFor(B.page.locator(`${sel('space-chip', SID)}[aria-pressed="true"]`), 8000), '가져오면 그 그룹을 본다 (둘째 줄 공간 칩)');
   r.check((await rowB.getAttribute('data-v4-group-state')) === 'imported', '줄이 imported로');
   r.check((await B.page.locator(`${sel('group-row', SID)} ${sel('group-role', 'member')}`).count()) === 1 && (await B.page.locator(sel('group-make-code')).count()) === 0, '내 그룹 줄 = 구성원 (초대 코드 만들기 없음)');
   await B.page.evaluate(() => window.sp5.closeAllWindows());

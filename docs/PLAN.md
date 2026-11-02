@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P17-1 공간 칩 줄**(11-02 계획 - 6장 'P17' 절을 먼저) - ■1 끝(11-02 - 칩·📂는 메모·학급만, 보이기 조건 `data/session` `useSpacePickerShown`). '이어서' = P17-1 ■2(점검)부터. 그다음 P17-2(일정 겹쳐 보기). 배포·👤 부탁 없음(화면만).
+**P17-1 공간 칩 줄**(11-02 계획 - 6장 'P17' 절을 먼저) - ■1 끝(11-02 - 칩·📂는 메모·학급만, 보이기 조건 `data/session` `useSpacePickerShown`). ■2 점검 끝. '이어서' = P17-1 ■3(설명서·MENU·MAP·세션 끝 정리)부터. 그다음 P17-2(일정 겹쳐 보기). 배포·👤 부탁 없음(화면만).
 P16 쪽지 첨부·P15 쪽지는 11-02 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁(쪽지 두 계정 확인 - 첨부도 함께).
 11-02 사용자: 앞으로 V5만 쓴다 - V3·V4 동작은 묻지 않는다(`CLAUDE.md` 1장).
 P14(점검 뒤 손보기)는 10-30 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁뿐(P14-9 첨부 비공개는 취소).
@@ -2148,8 +2148,9 @@ Claude 의견(방향 좋음 · 일정만 '겹쳐 보기' 1단계 · 칩은 날�
   둘째 줄 날짜 이동 묶음 오른쪽(PC) · 좁은 폭은 아랫줄(`order-3 w-full` - 년간 학기 칩과 한 줄) · 긴 그룹 이름은 칩마다 `max-w-32 truncate` + title.
   머리줄 `SpaceSelect`는 **메모·학급 화면에서만**(`isDatelessScope(scope)` - 모양·자리·`data-space-select|space-list|space-option|space-manage`는 지금 그대로, Header 머리 주석에 '메모·학급 화면만').
   시험: `SpaceChips.test.tsx`(그룹 없음 = 없음 · 누르면 `setSpaceChoice` · 지금 공간 `aria-pressed` · ⚙️) · `Header.test`(📂 = 메모·학급 화면에만, 하루 화면에는 없음).
-- [ ] ■2 점검 - `inspect-share-groups`·`inspect-import-groups`가 📂를 누르는 곳이 어느 화면인지 보고: 하루·주간·월간·년간이면 `space-chip`(보는 공간 = `[data-space-chip=sid][aria-pressed=true]`)으로, 메모·학급이면 `space-select` 그대로 · 둘 다 통과 ·
+- [x] ■2 점검 - `inspect-share-groups`·`inspect-import-groups`가 📂를 누르는 곳이 어느 화면인지 보고: 하루·주간·월간·년간이면 `space-chip`(보는 공간 = `[data-space-chip=sid][aria-pressed=true]`)으로, 메모·학급이면 `space-select` 그대로 · 둘 다 통과 ·
   PC 1400 + **휴대폰 390 한 번**(자리가 바뀌므로 - 하루·주간·년간(학기 칩과 함께): 넘침 0, 칩 글자 있음(CLAUDE.md 2장 '빈 글자') · 메모·학급: 📂 그대로 · 화면을 오가도 고른 공간이 같은가).
+  → 11-02: 둘 다 하루 화면이라 칩으로(share-groups 63항목 - 칩 글자·⚙️·메모 화면 📂·화면을 오가도 같은 공간 더함, import-groups 통과). 임시 점검 1400·390(그룹 둘·긴 이름): 네 화면 넘침 0·칩 글자·학기 칩과 ◀ 안 겹침, 메모·학급 📂 = 고른 공간, 휴대폰 년간은 긴 이름이면 칩이 두 줄.
 - [ ] ■3 설명서(share 'groups' 등의 '맨 위 📂 공간' → '하루·주간·월간·년간은 둘째 줄 공간 칩, 메모·학급 화면은 맨 위 📂', start 'layout'·'mobile') · MENU 3-1(📂 = 메모·학급 화면만)·3-2(공간 칩) · MAP 공유 그룹 줄 ·
   inspect-manual(MATCH=groups·layout·mobile) · 세션 끝 정리(1-3).
 **끝 조건**: 단위 · share-groups · import-groups · manual 통과 · 390 한 번.
