@@ -29,7 +29,8 @@
 
 ## 지금 하는 일
 
-**없음** - P16 쪽지 첨부는 11-02 끝(규칙 배포·화면 main). P15 쪽지도 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁(쪽지 두 계정 확인 - 첨부도 함께). 새 요청이 오면 3장에 단계를 더한다.
+**P17-1 공간 칩 줄**(11-02 계획 - 6장 'P17' 절을 먼저) - 새 대화에서 '이어서' = P17-1 ■1부터. 그다음 P17-2(일정 겹쳐 보기). 배포·👤 부탁 없음(화면만).
+P16 쪽지 첨부·P15 쪽지는 11-02 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁(쪽지 두 계정 확인 - 첨부도 함께).
 11-02 사용자: 앞으로 V5만 쓴다 - V3·V4 동작은 묻지 않는다(`CLAUDE.md` 1장).
 P14(점검 뒤 손보기)는 10-30 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁뿐(P14-9 첨부 비공개는 취소).
 main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
@@ -205,6 +206,9 @@ main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 
 | P15-2 | 쪽지 화면: 쪽지함·쓰기·답장·머리줄 ✉·설명서·점검 | 중간 | 중간 | 끝 (11-02 - 👤 두 계정 확인 남음) |
 | **P16 쪽지 첨부** (11-02 사용자 요청) | | | | |
 | P16-1 | 쪽지에 📎 파일 첨부·캡처 Ctrl+V (메모처럼) - 규칙 `attachments`·쓰기·보기·설명서·점검 | 작음 | 중간 | 끝 (11-02) |
+| **P17 공간 칩 · 일정 겹쳐 보기** (11-02 사용자 요청 · 계획) | | | | |
+| P17-1 | 공간 고르기를 둘째 줄 칩으로 - 머리줄 📂 드롭다운 → 날짜 이동 오른쪽 `🔒 개인 · 👥 그룹들 · ⚙️`, 메모·학급 화면은 칩만 있는 둘째 줄 · 점검·설명서 | 작음 | 중간 | **다음** |
+| P17-2 | 일정 겹쳐 보기 - Ctrl(휴대폰 길게 누르기)로 다른 공간 일정을 하루·주간·월간·년간에 겹쳐(공간 색 점) · 누르면 그 공간 칸 · 새 일정은 주 공간 | 중간 | 높음 | |
 
 **차례의 까닭**: 뼈대(P1)와 자료 층(P2)이 모든 화면의 바탕이다. 하루 화면(P3)이 가장 많이 쓰는 곳이라 먼저 하고, 가져오기를 단계마다 붙여
 P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6)이 달력(P5) 뒤인 까닭: 수업 칸은 주간에도 그려지므로 화면 틀이 먼저 있어야 한다.
@@ -308,6 +312,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-11-02 | 영-전-3-현동림 PC | P15-1 | 쪽지 규칙·자료 층·푸시 함수 코드 · 운영 규칙 배포 | ■1 규칙(+ 그룹장 남 넣기 막기) check-rules V4 38·V5 158 · ■2 domain/data mail(시험 9·emu 4) · ■3 v5MailPush + 일정 알림 글 200자 · ■4 운영 규칙 배포(사용자 '지금') · 함수 배포는 P15-2 끝 |
 | 2026-11-02 | 영-전-3-현동림 PC | P16-1 | 쪽지 첨부 (사용자 '첨부파일과 캡처 이미지를 메모처럼') | 규칙 `attachments`(check-rules V5 165) · domain 시험 14 · 쓰기 📎·Ctrl+V·✕·보관 · 보기(그림 크게 보기·파일 링크·https만) · 설명서 mail·attach·paste-image · inspect-mail 105 · 운영 규칙 배포 |
 | 2026-11-02 | 영-전-3-현동림 PC | P15-2 | 쪽지 화면 ■1~■4 main (`d9361a8`~) · 함수 배포 | ■1 쪽지 창(받은·보낸·지우기 7초 되돌리기) · ■2 쓰기·답장·그룹 창 ✉ · ■3 머리줄 ✉ n·새 쪽지 안내·sw.js 'mail'·?mail= · ■4 설명서·문서 · ■5 사용자 '지금 배포' → v5MailPush · inspect-mail 76 · 👤 TTL·두 계정 남음 |
+| 2026-11-02 | 영-전-3-현동림 PC | P17 계획 | 공간 칩·일정 겹쳐 보기 계획 · 문서만 | 사용자 '📂 드롭다운을 둘째 줄 칩으로 · 개인·공유 일정 겹쳐 보기?' → 의견(일정만 1단계·새 일정은 고른 공간) → '의견을 반영해 계획' · 코드 확인: 사본이 이미 모든 공간을 받는다(읽기·배포 늘지 않음 - 지난 의견 (1) 고침) · P17-1 칩 줄 · P17-2 겹쳐 보기 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -875,6 +880,20 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P16 쪽지 자료 = `attachments` 목록 칸, 있을 때만**(권장안): 두 상자 모두 같은 목록(메모 `Attachment` 모양 - 아는 칸만). 규칙은 hasOnly에 더하고 hasAll에는 넣지 않는다(첨부 없는 쪽지는 P15 모양 그대로 - 옛 화면도 그대로 된다),
   있으면 목록 1~10개, **첨부가 있으면 글은 비어도 된다**(캡처만 보내기). 규칙은 목록 안 칸을 보지 못한다 → 앱이 읽을 때 이름·`https://` 주소가 있는 것만(남이 쓴 문서 - `javascript:` 주소를 걸지 않게, `readMailAttachments`).
   규칙이 더하기만이라 **규칙을 먼저 배포**하고 화면은 main으로(CLAUDE.md 2장 - 옛 화면은 attachments를 쓰지 않는다).
+- **P17 범위 = 일정만 겹쳐 보기(1단계), 새 일정은 주 공간**(11-02 사용자 '너의 의견을 반영해서 … 작업 계획' → 계획 대화 권장안): 메모·수업·이월·라벨은 공간마다 따로 쓰는 것이 많아(라벨 관리·체크리스트·진도 링크·이월 '같은 글 하나')
+  겹치면 '어디에 저장되나'가 화면마다 달라진다. 일정은 쓰는 칸이 이미 sid를 들고 열려(`openEventPanel({ sid })`) '그 일정의 공간에서 고치기'가 그대로 된다.
+  지난 의견의 걱정 (1) '여러 공간을 구독 = 읽기·사본이 는다'는 **틀렸다**(계획 대화 코드 확인) - 기기 사본이 이미 개인 + 든 그룹 모두를 늘 받는다(`mirror/sync.ts` `setSpaces`). 겹쳐 보기는 돈·배포가 없다.
+- **P17 칩 고르기 = 라벨 칩 탐색기식**(권장안 - 사용자 '라벨칩과 같이'): **그냥 누르기 = 그 공간 하나(주 공간)**, **Ctrl+누르기(휴대폰 길게 누르기) = 겹쳐 보기 더하기·빼기**(Shift = Ctrl - 공간이 몇 개뿐).
+  그냥 누르기가 지금 📂 바꾸기와 같아 겹쳐 보기를 모르는 사람에게는 달라지는 것이 없다. 휴대폰은 Ctrl이 없어 일정 여러 개 고르기와 같은 길게 누르기(`events/multi.ts` 관례).
+  주 공간(채운 칩) = 새 일정·메모·수업이 들어가는 곳 = 지금 `currentSpaceId` 그대로(쓰는 곳 33곳을 고치지 않는다). 주 공간 칩에는 Ctrl이 듣지 않는다(빼면 주 공간이 없다).
+  PC는 칩 끝에 흐린 보이는 글 'Ctrl+누르기 = 겹쳐 보기'(P11-1 - 라벨 칩 '?'는 뜻을 몰랐다), 휴대폰은 설명서.
+- **P17 겹친 일정은 보기·열기·완료만**(권장안): 끌어 옮기기·▲▼·끌어 순서·여러 개 고르기·'→ 오늘로'·이월은 주 공간 것만. 순서 값(order)은 공간마다라 섞으면 뜻이 없고,
+  여러 개 고르기·끌기는 공간이 다른 문서를 한 번에 써 되돌리기 더미(공간마다 20)가 갈린다. 이월 겹치기는 쓰다가 원하면 다음 단계.
+- **P17 메모·학급 화면 = 칩만 있는 둘째 줄**(권장안): 두 화면에는 둘째 줄이 없어(MENU 3-2) 칩을 둘째 줄로만 옮기면 그 화면에서 공간을 바꿀 곳이 없어진다.
+  머리줄에 📂를 남기면 화면마다 자리가 달라진다. 든 그룹이 없는 사람은 두 화면이 지금 그대로(칩 줄 없음). 그 두 화면에서 겹친 칩은 흐리게(title '일정 화면에서만 겹쳐 봅니다').
+- **P17 겹친 공간 기억 = 이 기기**(권장안): 고른 공간(`sp5-space`)이 이미 이 기기에만이다(휴대폰·PC가 다른 공간을 볼 수 있다 - share 설명서). 같은 곳(`sp5-space-overlay`, uid마다).
+  계정 설정에 올리면 다른 기기의 주 공간과 엇갈린다. 그룹을 나가거나 지워지면 저절로 빠지고, 주 공간으로 고른 공간은 겹친 것에서 빠진다.
+- **P17 공간 색 = sid로 셈**(권장안 - 원칙 넷째 '계산할 수 있는 것은 저장하지 않는다'): 개인 = 정한 한 색, 그룹 = 팔레트에서 sid 해시. 공간 문서에 색 칸을 더하면 규칙(hasOnly)·배포가 는다 - 그룹 색 고르기는 요청이 오면.
 ---
 
 ## 6. 세션별 내용
@@ -2087,3 +2106,63 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
   에뮬레이터가 고친 `firestore.rules`를 다시 읽지 않았다(첨부 must 둘이 '막혔다') → REST로 넣고 통과(CLAUDE.md 2장).
   운영: live-rules = HEAD 파일(줄 끝만 다름) 확인 → 사용자 '지금 배포' → `deploy --only firestore:rules`(ruleset b47cb735…) → live-rules '같다' → 화면 main.
 **끝 조건**: check-rules · 단위 · inspect-mail · manual 통과 · 운영 규칙 배포.
+
+### P17. 공간 칩 · 일정 겹쳐 보기 (2026-11-02 계획)
+사용자 말(11-02): "현재 학급 메뉴 버튼 오른쪽에 위치한 개인공간과 공유그룹 공간을 선택하는 드롭다운 버튼을 한 줄 내려서 두번째 줄의 날짜 이동 버튼 오른쪽에 위치시키고
+드롭다운 버튼이 아니라 개인/공유그룹을 라벨칩과 같이 선택을 할 수 있게 해서 개인 일정과 공유 일정을 동시에 겹쳐서 볼 수도 있게 할 수 있을까?" →
+Claude 의견(방향 좋음 · 일정만 '겹쳐 보기' 1단계 · 칩은 날짜 이동 오른쪽 · 새 일정은 지금 고른 공간) → "이 대화에서 너의 의견을 반영해서 새 대화에서 작업을 시작할 수 있게 수행할 작업 계획을 작성해줘."
+결정과 까닭은 5장 'P17 …' 줄들. 배포(규칙·함수)·돈 드는 설정·실제 자료 바꾸기가 없다 → 묻는 것 없음, 조각마다 main.
+
+**계획 대화에서 확인한 코드 (11-02 - 새 세션이 다시 찾지 않게)**
+- 기기 사본은 이미 **개인 + 든 그룹 모두**를 늘 받는다: `data/mirror/sync.ts` `useMirrorSync` → `setSpaces([개인, ...그룹])`, 그룹은 `GROUP_MIRRORED`(items·labels·series·timetables·lessonDays·notices·evaluations).
+  → 겹쳐 보기는 **서버 읽기·구독이 늘지 않는다**. 고르기 층과 화면만 바뀐다.
+- 지금 공간 = `data/session` `currentSpaceId`·`useCurrentSpaceId`(이 기기 `sp5-space` - `data/spaceChoice` `useSpaceChoice`·`setSpaceChoice`·`chooseSpace`·`useMySpaces`), 화면에서 쓰는 곳 33곳 → 그대로 **주 공간**.
+- 고르기는 공간마다 따로: `data/select` `useDocs(coll, sid)`·`useLabelTree('event', sid)`(246~321행). 일정 칸 `openEventPanel({ sid, date, id })`는 sid를 받고 칸 머리에 '· 개인/공유'(`events/EventPanel.tsx` 408행), 완료 `setEventDone(sid, …)`도 sid.
+- 반복은 항목으로 펼쳐 저장(`seriesId`) → 겹쳐 그리기는 items만 읽으면 된다(series는 그 공간 칸에서 고칠 때만).
+- 일정을 그리는 곳: 하루 `day/DayEvents.tsx` 54행(`useItemsOn(date, 'event')` - 지금 공간) · 주간 `week/WeekScreen.tsx` 56행 · 월간 `month/MonthScreen.tsx` 45행(`calendarEvents(items, from, to, tree)`, `visiblePicks`·`eventClick` 84~93행) · 년간 `year/YearScreen.tsx` 102행.
+  끌어 옮기기 `events/drag.ts` `useEventDrop(sid)` · 여러 개 고르기 `events/multi.ts`·`MultiSelectBar.tsx`(sid 하나, 길게 누르기) · 이월 `events/forward.ts` `useCarried(sid)` · 파란 테두리 `useShownEventId(sid)`.
+- 머리줄 📂 = `app/Header.tsx` `SpaceSelect`(333행 - `[data-space-select|space-list|space-option|space-manage]`, 머리 주석 2~3행) · 둘째 줄 = `app/SecondRow.tsx`(메모·학급 화면에는 없다 - `app/Shell.tsx` 153행 `isDatelessScope`).
+  라벨 칩 고르기 = `notes/LabelFilterChips.tsx`(`FilterChip`) + `domain/labelTree` `clickFilterLabel`.
+- 📂를 찾는 것: 점검 `tools/inspect-share-groups.mjs`(45·59·78·86행)·`tools/inspect-import-groups.mjs` · 시험 `app/Header.test.tsx` · 설명서 `chapters/share.ts`(19·22·42·52·59·274행)·`chapters/start.ts`(28·69행) · `docs/MENU.md` 3-1·3-2.
+
+**설계 (권장안 - 5장)**
+- 자리: 둘째 줄 ◀ 날짜 📅 ▶ **오른쪽**에 공간 칩 `🔒 개인 · 👥 그룹A · 👥 그룹B · ⚙️`(⚙️ = 그룹 관리 - 지금 📂 목록 끝 '👥 그룹 관리…'). 든 그룹이 없으면 칩 줄 없음(지금 📂처럼). 머리줄 📂는 없앤다.
+  좁은 폭은 년간 학기 칩처럼 아랫줄로(토글·날짜 이동만으로 360px가 찬다 - SecondRow 주석). 메모·학급 화면 = **칩만 있는 둘째 줄**(그룹이 있을 때만).
+- 고르기: **그냥 누르기 = 그 공간 하나(주 공간 - 지금 📂 바꾸기와 같은 일)** · **Ctrl+누르기(휴대폰 길게 누르기) = 겹쳐 보기 더하기·빼기**(P17-2). 주 공간 칩에는 Ctrl이 듣지 않는다.
+  칩 모양: 주 공간 = 채운 칩(지금 📂 색 - 개인 slate·그룹 amber) · 겹친 칩 = 테두리 + ✓ + 공간 색 점 · 안 고른 칩 = 흐림. PC는 칩 끝 흐린 글 'Ctrl+누르기 = 겹쳐 보기'.
+- 겹쳐 보기 범위 = **일정만, 하루·주간·월간·년간만**. 메모·수업·이월·라벨 관리·검색·⏰ 앱 안 알림·D-Day·백업은 주 공간 하나 그대로. 숨기기 토글 '일정'은 겹친 일정도 숨긴다.
+- 겹친 일정 표시: 칩 앞 **공간 색 점** + title '👥 그룹 이름'(공간 색 = sid로 셈). 하루 일정 칸 = 주 공간 일정(지금 그대로 - 순서·끌기) **아래**에 겹친 공간마다 작은 구분 줄 '👥 그룹A n' + 그 공간 일정.
+  주간·월간·년간 칸 = 주 공간 것 뒤에. 머리 숫자 `data-event-count` = 주 공간 것 그대로(겹친 수는 구분 줄에).
+- 겹친 일정 누르기 = **그 일정의 공간으로** 수정 칸(칸을 연 순간의 공간에 저장 - CLAUDE.md 4장 그대로) · 라벨 칩 완료 = 그 공간에(막대 칩 = 기간 전체 규칙 그대로).
+  끌어 옮기기·▲▼·끌어 순서·여러 개 고르기·'→ 오늘로'·이월 = 주 공간 것만(겹친 것은 끌리지 않고 Ctrl 고르기에 들지 않는다).
+- 새 일정(+ 추가·칸 두 번 누르기·빠른 입력) = **주 공간**(지금 그대로). 겹쳐 보는 동안에는 새 일정 칸 머리의 공간 글자('· 개인/공유')를 공간 색 칩으로 - 어디에 들어가는지 보이게.
+- 기억 = 이 기기 `sp5-space-overlay`(uid마다). 나간·지운 그룹은 `useMySpaces`로 걸러 빠지고, 주 공간으로 고른 공간은 겹친 것에서 빠진다.
+
+### P17-1. 공간 칩 줄 - 📂 드롭다운을 둘째 줄 칩으로
+**시작 조건**: 없음. **묻기**: 없음(화면만 - 조각마다 main).
+**먼저 읽을 것**: 이 P17 절 · `app/Header.tsx`(머리 주석·`SpaceSelect` 333~386) · `app/SecondRow.tsx` · `app/Shell.tsx` 150~155 · `data/spaceChoice.ts` · `notes/LabelFilterChips.tsx`(`FilterChip` 모양만) · `app/Header.test.tsx` ·
+`tools/inspect-share-groups.mjs` 40~95 · `tools/inspect-import-groups.mjs`(space-select grep) · 설명서 share·start 그 주제만 · `docs/MENU.md` 3-1·3-2.
+- [ ] ■1 `app/SpaceChips.tsx`(새) - `🔒 개인 · 👥 그룹들 · ⚙️`, 그냥 누르기 = `setSpaceChoice`, ⚙️ = `runFromButton('group')`. `[data-space-chips]`·`[data-space-chip=sid][aria-pressed]`·`[data-space-manage]`(옛 이름과 겹치지 않게 `space-select` 등은 지운다).
+  둘째 줄 날짜 이동 묶음 오른쪽(PC) · 좁은 폭은 아랫줄(`order-3 w-full` - 년간 학기 칩과 한 줄) · 메모·학급 화면 = 칩만 있는 둘째 줄(`Shell` - 그룹이 있을 때만) · 머리줄 `SpaceSelect` 지우기(Header 머리 주석도) ·
+  긴 그룹 이름은 칩마다 `max-w-32 truncate` + title. 시험: `SpaceChips.test.tsx`(그룹 없음 = 없음 · 누르면 `setSpaceChoice` · 지금 공간 `aria-pressed` · ⚙️) · `Header.test` 📂 기대 걷기.
+- [ ] ■2 점검 - `inspect-share-groups`·`inspect-import-groups`의 `space-select`/`space-option` → `space-chip`(보는 공간 = `[data-space-chip=sid][aria-pressed=true]`) · 둘 다 통과 ·
+  PC 1400 + **휴대폰 390 한 번**(자리가 바뀌므로 - 하루·주간·년간(학기 칩과 함께)·메모·학급: 넘침 0, 칩 글자 있음(CLAUDE.md 2장 '빈 글자'), 머리줄 한 줄 줄었나).
+- [ ] ■3 설명서(share 'groups' 등의 '맨 위 📂 공간' → '둘째 줄 공간 칩', start 'layout'·'mobile') · MENU 3-1(📂 빼기)·3-2(공간 칩 · 메모·학급 화면도) · MAP 공유 그룹 줄 · inspect-manual(MATCH=groups·layout·mobile) · 세션 끝 정리(1-3).
+**끝 조건**: 단위 · share-groups · import-groups · manual 통과 · 390 한 번.
+
+### P17-2. 일정 겹쳐 보기
+**시작 조건**: P17-1 끝(칩 줄에 Ctrl·길게 누르기를 단다). **묻기**: 없음.
+**먼저 읽을 것**: 이 P17 절 · `data/select.ts` 246~321 · `data/mirror/store.ts`(`collKey`·colls) · `domain/labelTree.ts` `clickFilterLabel` · 일정 그리는 네 곳(위 '확인한 코드')의 일정 부분만 · `events/drag.ts` 80~100 ·
+`events/multi.ts`(길게 누르기) · `events/EventPanel.tsx` 400~415 · 설명서 events·share 그 주제만.
+- [ ] ■0 코드 확인(30분, 문서만) - 네 화면이 일정 목록을 어디서 받아 어디서 그리는지 · `calendarEvents`·주간·년간 셈이 순수인지(겹친 것을 '뒤에 붙이기'로 될지) · 길게 누르기 관례. 계획과 다르면 이 절·5장을 고친다.
+- [ ] ■1 자료·셈 - `data/spaceChoice.ts` 겹친 공간 store(`sp5-space-overlay` uid마다 · `toggleOverlay` · 순수 `overlaySpaces(choice, mine, main)` - 주 공간·나간 그룹 거르기) ·
+  `domain/spaceColor.ts`(`spaceColor(sid)` - 개인 고정·그룹 해시 팔레트, 밝게·어둡게 둘 다 읽히게) · `data/select.ts` `useOverlayEvents(from, to)` → `[{ sid, name, color, events, tree }]`
+  (useMirror에서 여러 키를 selector 하나로 - 훅을 공간 수만큼 부르지 않는다 · 같은 재료면 같은 객체 - CLAUDE.md 4장) + 시험(공간 둘 흉내 · 지운 것 빼기 · 같은 참조 · 주 공간 빼기).
+- [ ] ■2 칩 Ctrl·길게 누르기 + 하루 화면 - `SpaceChips` 겹친 칩(테두리·✓·색 점, 주 공간은 Ctrl 안 들음, PC 흐린 글) · `DayEvents` 주 공간 아래 공간마다 구분 줄 `[data-overlay-group=sid]` + 카드 `[data-event-space=sid]`
+  (누르기 = 그 공간 칸 · 완료 = 그 공간 · 끌기·▲▼·고르기 없음 · 파란 테두리 = 그 공간 `useShownEventId`) · 새 일정 칸 머리 공간 색 칩 · 메모·학급 화면은 겹친 칩 흐리게. 시험(칩 클릭 규칙 · DayEvents 겹친 줄).
+- [ ] ■3 주간·월간·년간 - 칸마다 주 공간 뒤에 겹친 일정(기간 막대 포함, 휴대폰 월간 그날 목록도) · 끌기·고르기 목록(`visiblePicks` 등)에서 빼기 · 인쇄는 보이는 그대로.
+- [ ] ■4 설명서(events·share - '겹쳐 보기': Ctrl·길게 누르기, 일정만, 누르면 그 공간 칸, 새 일정은 채운 칩 공간, 이 기기에 기억) ·
+  `tools/inspect-space-overlay.mjs`(새 - 계정 하나가 그룹 주인: 개인 일정·그룹 일정(기간 하나 포함) 심기 → Ctrl 겹치기 → 하루·주간·월간·년간에 둘 다·색 점·글자 · 그룹 일정 누르기 = 칸 머리 '공유' ·
+  완료 → 그 공간 문서 · 새 일정 = 주 공간 문서 · 겹친 것은 끌리지 않음 · 다시 열어도 기억 · 그룹 빼기 흉내 = 빠짐 · 끝에 심은 것 걷기) ·
+  inspect-events·week·month-year·share-groups·manual 한 번씩(하나씩 차례로) · DESIGN 4-1('겹쳐 보기 = 화면만, 자료 없음')·MENU 3-2·MAP·PARITY 'V5에서 새로' · 세션·단계 끝 정리(1-3·1-4).
+**끝 조건**: 단위 · inspect-space-overlay · events · week · month-year · share-groups · manual 통과.
