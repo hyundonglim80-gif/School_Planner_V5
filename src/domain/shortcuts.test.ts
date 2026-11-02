@@ -15,7 +15,15 @@ import {
   worksWhileTyping,
   isShortcutId,
   overridesFromBindings,
+  readTabBindings,
+  compactTabBindings,
+  tabBindingsKey,
+  isTabShortcutId,
+  allBindings,
+  bindingOf,
+  formatAnyBinding,
   type Binding,
+  type TabShortcutId,
 } from './shortcuts';
 
 const ev = (over: Partial<KeyboardEvent> = {}) =>
@@ -264,5 +272,87 @@ describe('눌러서 정하기 (P18)', () => {
   it('isShortcutId - 목록에 있는 id만', () => {
     expect(isShortcutId('timetable')).toBe(true);
     expect(isShortcutId('commandPalette')).toBe(false);
+  });
+});
+
+describe('창 안 탭 키 (P18-2)', () => {
+  const key = (k: string, mods: Partial<Binding> = {}): Binding => ({ ctrl: false, alt: false, shift: false, ...mods, key: k });
+  const known = (id: TabShortcutId) => id === 'settings:notify' || id === 'backup:import';
+
+  it("'창:탭' id는 단축키 id와 갈린다", () => {
+    expect(isTabShortcutId('settings:notify')).toBe(true);
+    expect(isTabShortcutId('settings')).toBe(false);
+    expect(isTabShortcutId('a:b:c')).toBe(false);
+    expect(SHORTCUT_ACTIONS.some((a) => isTabShortcutId(a.id))).toBe(false);
+  });
+
+  it('읽을 때 모르는 탭·빈 키·틀린 모양은 버린다, 통째로 틀리면 undefined', () => {
+    expect(
+      readTabBindings(
+        {
+          'settings:notify': key('N', { ctrl: true, alt: true }),
+          'backup:import': key(''),
+          'trash:all': key('T', { alt: true }),
+          help: key('H', { alt: true }),
+          'backup:tidy': { key: 'X' },
+        },
+        known,
+      ),
+    ).toEqual({ 'settings:notify': key('N', { ctrl: true, alt: true }) });
+    expect(readTabBindings([], known)).toBeUndefined();
+    expect(readTabBindings('x', known)).toBeUndefined();
+  });
+
+  it('빈 키는 빠지고, 견줄 때 적힌 차례는 상관없다', () => {
+    const a = { 'settings:notify': key('N', { alt: true }), 'backup:import': key('') };
+    expect(compactTabBindings(a)).toEqual({ 'settings:notify': key('N', { alt: true }) });
+    const b = { 'backup:import': key('I', { alt: true }), 'settings:notify': key('N', { alt: true }) };
+    const c = { 'settings:notify': key('N', { alt: true }), 'backup:import': key('I', { alt: true }) };
+    expect(tabBindingsKey(b)).toBe(tabBindingsKey(c));
+    expect(tabBindingsKey(a)).not.toBe(tabBindingsKey(c));
+  });
+
+  it('기능 다음에 탭 - 기능이 먼저 키를 가져간다(키 처리 차례)', () => {
+    const all = allBindings(resolveBindings(), { 'settings:notify': key('N', { alt: true }) });
+    expect(all.at(-1)).toEqual({ id: 'settings:notify', binding: key('N', { alt: true }) });
+    expect(all.slice(0, SHORTCUT_ACTIONS.length).map((x) => x.id)).toEqual(SHORTCUT_ACTIONS.map((a) => a.id));
+  });
+
+  it('기능과 탭이 같은 조합이면 겹침이다', () => {
+    expect(findConflicts(resolveBindings(), { 'settings:notify': key('F', { ctrl: true }) })).toEqual([['search', 'settings:notify']]);
+    expect(findConflicts(resolveBindings(), { 'settings:notify': key('N', { alt: true }), 'backup:import': key('N', { alt: true }) })).toEqual([
+      ['backup:import', 'settings:notify'],
+    ]);
+    expect(findConflicts(resolveBindings(), { 'settings:notify': key('N', { alt: true }) })).toEqual([]);
+  });
+
+  it('탭에 키를 주면 그 키를 쓰던 기능·탭에서 뺀다', () => {
+    const tabs = { 'backup:import': key('N', { alt: true }) };
+    const r = assignBinding(resolveBindings(), 'settings:notify', key('N', { alt: true }), tabs);
+    expect(r.tabs).toEqual({ 'settings:notify': key('N', { alt: true }) });
+    expect(r.cleared).toEqual(['backup:import']);
+    const r2 = assignBinding(resolveBindings(), 'settings:notify', key('F', { ctrl: true }));
+    expect(r2.cleared).toEqual(['search']);
+    expect(r2.bindings.search.key).toBe('');
+    // 넘긴 것은 고치지 않는다
+    expect(tabs).toEqual({ 'backup:import': key('N', { alt: true }) });
+  });
+
+  it('기능에 키를 주면 그 키를 쓰던 탭은 빠진다 · 탭에 빈 키 = 빠짐', () => {
+    const r = assignBinding(resolveBindings(), 'timetable', key('N', { alt: true }), { 'settings:notify': key('N', { alt: true }) });
+    expect(r.tabs).toEqual({});
+    expect(r.cleared).toEqual(['settings:notify']);
+    expect(r.bindings.timetable).toEqual(key('N', { alt: true }));
+    const gone = assignBinding(resolveBindings(), 'settings:notify', key(''), { 'settings:notify': key('N', { alt: true }) });
+    expect(gone.tabs).toEqual({});
+    expect(gone.cleared).toEqual([]);
+  });
+
+  it('지금 키 · 보이는 글', () => {
+    expect(bindingOf('settings:notify', resolveBindings())).toEqual(key(''));
+    expect(bindingOf('settings:notify', resolveBindings(), { 'settings:notify': key('N', { alt: true }) })).toEqual(key('N', { alt: true }));
+    expect(bindingOf('search', resolveBindings())).toEqual(key('F', { ctrl: true }));
+    expect(formatAnyBinding('settings:notify', key('N', { ctrl: true, alt: true }))).toBe('Ctrl + Alt + N');
+    expect(formatAnyBinding('toggleWeekend', key('ArrowUp', { shift: true }))).toBe('Shift + ↑ / ↓');
   });
 });

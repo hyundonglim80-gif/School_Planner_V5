@@ -12,7 +12,7 @@ import NotifyTab from './NotifyTab';
 import SchoolTab from './SchoolTab';
 import ShortcutsTab, { type ShortcutsTabHandle } from './ShortcutsTab';
 import { startShortcutRecord } from '../../app/shortcutRecord';
-import type { ShortcutId } from '../../domain/shortcuts';
+import type { AnyShortcutId } from '../../domain/shortcuts';
 import ViewTab from './ViewTab';
 
 export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' | 'dev';
@@ -30,15 +30,16 @@ const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean; de
   { id: 'dev', label: '개발자', ready: true, dev: true },
 ];
 
-export default function SettingsWindow({ params, close, raise }: WindowProps<{ tab?: SettingsTabId; focus?: ShortcutId } | undefined>) {
+export default function SettingsWindow({ params, close, raise }: WindowProps<{ tab?: SettingsTabId; focus?: AnyShortcutId } | undefined>) {
   const developer = isDeveloper(useSession((s) => s.user?.email));
   const shownTabs = TABS.filter((t) => t.ready && (!t.dev || developer));
   const first = shownTabs.find((t) => t.id === params?.tab)?.id ?? 'view';
   const [tab, setTab] = useState<SettingsTabId>(first);
-  // 열려 있는 창을 다른 탭으로 다시 열면(처음 로그인 띠의 '가져오기' 등) 그 탭으로
-  const [askedTab, setAskedTab] = useState(params?.tab);
-  if (params?.tab !== askedTab) {
-    setAskedTab(params?.tab);
+  // 열려 있는 창을 탭을 정해 다시 열면(창 안 탭 단축키 P18-2·단축키 설정 끝 등) 그 탭으로.
+  // 같은 탭으로 다시 열어도(그새 다른 탭을 눌렀어도) 넘어가게 탭 이름이 아니라 params를 견준다(BackupWindow 본보기)
+  const [asked, setAsked] = useState(params);
+  if (params !== asked) {
+    setAsked(params);
     if (shownTabs.some((t) => t.id === params?.tab)) setTab(params!.tab!);
   }
   const shortcuts = useRef<ShortcutsTabHandle | null>(null);

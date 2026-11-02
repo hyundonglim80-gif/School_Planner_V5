@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { formatActionBinding, SHORTCUT_ACTIONS } from '../domain/shortcuts';
-import { handleAppKeyDown, runShortcut, setShortcutAction, setShortcutOverrides } from './keys';
+import { handleAppKeyDown, runShortcut, setShortcutAction, setShortcutOverrides, setTabShortcuts } from './keys';
 import { useNav } from './nav';
 import { registerWindow, resetWindowsForTest, useWindows } from './windows';
 
@@ -14,6 +14,7 @@ const press = (init: KeyboardEventInit, target: EventTarget = document.body) => 
 beforeEach(() => {
   resetWindowsForTest();
   setShortcutOverrides({});
+  setTabShortcuts({});
   useNav.setState({ scope: 'day', date: '2026-10-08', showWeekend: true, showEvents: true, showClass: true });
 });
 
@@ -115,5 +116,40 @@ describe('단축키는 한 곳에서만 정한다', () => {
   it('둘째 줄 토글 셋은 단축키 설정을 따른다', () => {
     const row = files.find(([p]) => p.endsWith('/SecondRow.tsx'))![1];
     for (const id of ['toggleWeekend', 'toggleEvents', 'toggleClass', 'datePrev', 'dateNext', 'dateToday']) expect(row).toContain(`'${id}'`);
+  });
+});
+
+describe('창 안 탭 키 (P18-2)', () => {
+  const settings = () => registerWindow({ id: 'settings', title: '환경설정', icon: '⚙️', kind: 'side', load: () => import('../features/dev/TestWindow') });
+
+  it('키를 누르면 그 창을 그 탭으로 연다', () => {
+    settings();
+    setTabShortcuts({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } });
+    const e = press({ key: 'n', code: 'KeyN', ctrlKey: true, altKey: true });
+    expect(e.defaultPrevented).toBe(true);
+    expect(useWindows.getState().windows.map((w) => [w.id, w.params])).toEqual([['settings', { tab: 'notify' }]]);
+  });
+
+  it('Ctrl·Alt 없는 탭 키는 글 칸 안에서 듣지 않는다', () => {
+    settings();
+    setTabShortcuts({ 'settings:notify': { ctrl: false, alt: false, shift: true, key: 'N' } });
+    press({ key: 'N', code: 'KeyN', shiftKey: true }, document.createElement('input'));
+    expect(useWindows.getState().windows).toEqual([]);
+    press({ key: 'N', code: 'KeyN', shiftKey: true });
+    expect(useWindows.getState().windows).toHaveLength(1);
+  });
+
+  it('새 창으로 옮긴 창(only)에서는 탭 키를 듣지 않는다', () => {
+    settings();
+    setTabShortcuts({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } });
+    const e = new KeyboardEvent('keydown', { key: 'n', code: 'KeyN', ctrlKey: true, altKey: true, cancelable: true });
+    handleAppKeyDown(e, new Set(['closePanel']));
+    expect(useWindows.getState().windows).toEqual([]);
+  });
+
+  it('등록하지 않은 창의 탭이면 브라우저 기본 동작을 막지 않는다', () => {
+    setTabShortcuts({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } });
+    const e = press({ key: 'n', code: 'KeyN', ctrlKey: true, altKey: true });
+    expect(e.defaultPrevented).toBe(false);
   });
 });

@@ -3,6 +3,7 @@
 //   이미 열려 있으면 그 탭을 보이고 날짜·학급을 바꾼다(적던 것은 먼저 저장 - AttendancePanel).
 import { useEffect } from 'react';
 import { setShortcutAction } from '../../app/keys';
+import { setTabOpener } from '../../app/tabShortcuts';
 import { useNav } from '../../app/nav';
 import { getWindowDef, openWindow } from '../../app/windows';
 import { showToast } from '../../app/toast';
@@ -26,7 +27,8 @@ export function openAttendance(params: AttendancePanelParams) {
   openWindow(ATTENDANCE_PANEL, params);
 }
 
-/** 껍데기에서 한 번 - 단축키 '출석부' = 보는 날 */
+/** 껍데기에서 한 번 - 단축키 '출석부' = 보는 날 · 창 안 탭 단축키(P18-2 '출석부 → 누계' 등) = 보는 날 그 탭 */
 export function useAttendanceShortcuts() {
   useEffect(() => setShortcutAction('attendance', () => openAttendance({ date: useNav.getState().date })), []);
+  useEffect(() => setTabOpener(ATTENDANCE_PANEL, (tab) => openAttendance({ date: useNav.getState().date, tab: tab as AttendanceTab })), []);
 }

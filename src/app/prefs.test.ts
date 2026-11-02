@@ -21,7 +21,7 @@ const binding = (docId: string) => started.find((s) => s.docId === docId)!.bindi
 function resetStores() {
   useLayoutPrefs.setState({ fontScale: 'md', popupStyle: 'side' });
   useNav.setState({ showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', enableScrollNav: false, startupScope: 'last' });
-  useShortcutOverrides.setState({ overrides: {} });
+  useShortcutOverrides.setState({ overrides: {}, tabs: {} });
   useCommonSettings.setState({ forwardDays: 14 });
 }
 
@@ -54,6 +54,18 @@ describe('설정 문서 나누기', () => {
       startupScope: 'week',
       shortcutOverrides: { help: { ctrl: true, alt: true, shift: false, key: 'H' } },
     });
+  });
+
+  it('창 안 탭 키(P18-2)는 따로 칸 tabShortcuts - 모르는 탭·빈 키는 받을 때 버린다', () => {
+    startPrefsSync('u1');
+    useShortcutOverrides.setState({ tabs: { 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } } });
+    expect(binding('pc').local()).toEqual({ tabShortcuts: { 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } } });
+    binding('pc').apply({
+      tabShortcuts: { 'backup:import': { ctrl: false, alt: true, shift: false, key: 'I' }, 'settings:zzz': { ctrl: false, alt: true, shift: false, key: 'Z' }, 'mail:in': { ctrl: false, alt: true, shift: false, key: '' } },
+    });
+    expect(useShortcutOverrides.getState().tabs).toEqual({ 'backup:import': { ctrl: false, alt: true, shift: false, key: 'I' } });
+    binding('pc').apply({});
+    expect(useShortcutOverrides.getState().tabs).toEqual({});
   });
 
   it('지금 보는 화면·날짜는 설정이 아니다 (바꿔도 적을 것이 없다)', () => {

@@ -8,17 +8,18 @@ import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Keyboar
 import { showErrorToast, showToast } from '../../app/toast';
 import { canRun, setShortcutOverrides, useShortcutOverrides } from '../../app/keys';
 import { detectDeviceKind } from '../../app/prefs';
+import { shortcutLabel } from '../../app/tabShortcuts';
 import { useUnsavedCheck } from '../../app/windows';
 import {
   bindingFromEvent,
   findConflicts,
   FIXED_SHORTCUTS,
   isModifierOnly,
-  labelOf,
   overridesFromBindings,
   resolveBindings,
   SHORTCUT_ACTIONS,
   type Binding,
+  type AnyShortcutId,
   type ShortcutId,
 } from '../../domain/shortcuts';
 
@@ -147,7 +148,7 @@ export default function ShortcutsTab({
 }: {
   ref: Ref<ShortcutsTabHandle>;
   onStatus: (s: { dirty: boolean; conflict: string | null; saved: boolean }) => void;
-  focusId?: ShortcutId;
+  focusId?: AnyShortcutId;
   /** 환경설정 창을 닫고 단축키 설정(눌러서 고르기)을 시작한다 */
   onStartRecord: () => void;
 }) {
@@ -167,7 +168,7 @@ export default function ShortcutsTab({
   const conflicts = useMemo(() => findConflicts(draft), [draft]);
   const conflicted = useMemo(() => new Set(conflicts.flat()), [conflicts]);
   const dirty = keyOf(draft) !== keyOf(resolveBindings(stored));
-  const conflict = conflicts.length > 0 ? `${labelOf(conflicts[0][0])} / ${labelOf(conflicts[0][1])}` : null;
+  const conflict = conflicts.length > 0 ? `${shortcutLabel(conflicts[0][0])} / ${shortcutLabel(conflicts[0][1])}` : null;
 
   useEffect(() => onStatus({ dirty, conflict, saved }), [dirty, conflict, saved, onStatus]);
 

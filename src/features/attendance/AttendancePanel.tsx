@@ -130,11 +130,11 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
     if (draft && draft.key !== docId) void saveRef.current(draft);
   }, [draft, docId]);
 
-  // 다시 열면(다른 날·학급으로) 따라간다 - 적던 것은 위에서 저장한다
-  const paramKey = `${params.date}|${params.classId ?? ''}|${params.tab ?? ''}`;
-  const [seenParams, setSeenParams] = useState(paramKey);
-  if (paramKey !== seenParams) {
-    setSeenParams(paramKey);
+  // 다시 열면(다른 날·학급·탭으로) 따라간다 - 적던 것은 위에서 저장한다.
+  // 같은 날·탭으로 다시 열어도(그새 다른 탭을 눌렀어도 - 창 안 탭 단축키 P18-2) 넘어가게 글자가 아니라 params를 견준다(openWindow는 열 때마다 새 params)
+  const [seenParams, setSeenParams] = useState(params);
+  if (params !== seenParams) {
+    setSeenParams(params);
     setDate(params.date);
     if (params.classId) setChosen(params.classId);
     if (params.tab) setTab(params.tab);

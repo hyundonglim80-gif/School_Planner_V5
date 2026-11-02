@@ -67,6 +67,18 @@ export type ShortcutId =
   | 'popOut'
   | 'mail';
 
+/**
+ * 창 안의 탭 (P18-2): '<창 id>:<탭 id>' (예 'settings:notify' = 환경설정 알림 탭). 단축키 id에는 ':'가 없어 갈린다.
+ * 어떤 탭이 있는지는 app/tabShortcuts(창의 탭 타입으로 적는다) - 여기는 키 다루기만.
+ */
+export type TabShortcutId = `${string}:${string}`;
+/** 키를 줄 수 있는 것 = 기능(단축키 목록) + 창 안 탭 */
+export type AnyShortcutId = ShortcutId | TabShortcutId;
+/** 창 안 탭 키 - 키를 준 탭만 적는다(기본값이 없다) */
+export type TabBindings = Partial<Record<TabShortcutId, Binding>>;
+
+export const isTabShortcutId = (id: string): id is TabShortcutId => /^[A-Za-z]+:[A-Za-z]+$/.test(id);
+
 export interface ShortcutAction {
   id: ShortcutId;
   label: string;
@@ -296,46 +308,83 @@ export function readShortcutOverrides(v: unknown): ShortcutOverrides | undefined
   const known = new Set<string>(SHORTCUT_ACTIONS.map((a) => a.id));
   const out: ShortcutOverrides = {};
   for (const [id, raw] of Object.entries(v as Record<string, unknown>)) {
-    const k = raw as Record<string, unknown> | null;
-    if (
-      known.has(id) &&
-      k &&
-      typeof k === 'object' &&
-      typeof k.key === 'string' &&
-      typeof k.ctrl === 'boolean' &&
-      typeof k.alt === 'boolean' &&
-      typeof k.shift === 'boolean'
-    ) {
-      out[id as ShortcutId] = { ctrl: k.ctrl, alt: k.alt, shift: k.shift, key: k.key };
-    }
+    const k = readBinding(raw);
+    if (known.has(id) && k) out[id as ShortcutId] = k;
   }
   return out;
+}
+
+function readBinding(raw: unknown): Binding | null {
+  const k = raw as Record<string, unknown> | null;
+  if (!k || typeof k !== 'object' || typeof k.key !== 'string' || typeof k.ctrl !== 'boolean' || typeof k.alt !== 'boolean' || typeof k.shift !== 'boolean') return null;
+  return { ctrl: k.ctrl, alt: k.alt, shift: k.shift, key: k.key };
+}
+
+/** 계정 설정 문서의 창 안 탭 키(P18-2) → 믿을 만한 것만. known = 지금 있는 탭인가(없어진 탭·모양이 틀린 키·빈 키는 뺀다). 통째로 틀리면 undefined. */
+export function readTabBindings(v: unknown, known: (id: TabShortcutId) => boolean): TabBindings | undefined {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const out: TabBindings = {};
+  for (const [id, raw] of Object.entries(v as Record<string, unknown>)) {
+    const k = readBinding(raw);
+    if (k && k.key && isTabShortcutId(id) && known(id)) out[id] = k;
+  }
+  return out;
+}
+
+/** 빈 키를 뺀다 (목록에서 비운 탭 = 빠짐) */
+export function compactTabBindings(tabs: TabBindings): TabBindings {
+  const out: TabBindings = {};
+  for (const [id, k] of Object.entries(tabs) as Array<[TabShortcutId, Binding | undefined]>) if (k?.key) out[id] = k;
+  return out;
+}
+
+/** 견주기용 - 적힌 차례와 빈 키에 상관없이 같으면 같은 글 */
+export function tabBindingsKey(tabs: TabBindings): string {
+  const c = compactTabBindings(tabs);
+  return JSON.stringify((Object.keys(c) as TabShortcutId[]).sort().map((id) => [id, c[id]]));
 }
 
 /**
  * 이 조합이 차지하는 자리들 ('CA|T'). 키가 없으면 없음.
  * ↑ 와 ↓ 를 같이 받는 기능은 두 방향을 모두 차지한다 - Shift+↑ 주말 토글이 있으면 다른 기능의 Shift+↓도 겹친다(먼저 적힌 토글이 키를 가져간다).
  */
-function slotsOf(action: ShortcutAction, binding: Binding | undefined): string[] {
+function slotsOf(action: ShortcutAction | undefined, binding: Binding | undefined): string[] {
   if (!binding || !binding.key) return [];
   const mods = `${binding.ctrl ? 'C' : ''}${binding.alt ? 'A' : ''}${binding.shift ? 'S' : ''}|`;
-  if (action.pairArrows && (binding.key === 'ArrowUp' || binding.key === 'ArrowDown')) return [`${mods}ArrowUp`, `${mods}ArrowDown`];
+  if (action?.pairArrows && (binding.key === 'ArrowUp' || binding.key === 'ArrowDown')) return [`${mods}ArrowUp`, `${mods}ArrowDown`];
   return [mods + binding.key];
 }
 
-/** 같은 조합을 쓰는 기능이 있으면 그 쌍을 돌려준다 */
-export function findConflicts(bindings: Record<ShortcutId, Binding>): Array<[ShortcutId, ShortcutId]> {
-  const slots = new Map<string, ShortcutId>();
-  const conflicts: Array<[ShortcutId, ShortcutId]> = [];
+export interface BindingEntry {
+  id: AnyShortcutId;
+  /** 기능이면 그 줄 (창 안 탭은 없음) */
+  action?: ShortcutAction;
+  binding: Binding;
+}
 
-  for (const action of SHORTCUT_ACTIONS) {
-    const met = new Set<ShortcutId>();
-    for (const slot of slotsOf(action, bindings[action.id])) {
+/** 키를 줄 수 있는 것 모두 - 기능(목록 차례) 다음 창 안 탭(id 차례). 키 처리(app/keys)도 이 차례로 본다(먼저 것이 키를 가져간다) */
+export function allBindings(bindings: Record<ShortcutId, Binding>, tabs: TabBindings = {}): BindingEntry[] {
+  const out: BindingEntry[] = SHORTCUT_ACTIONS.map((action) => ({ id: action.id, action, binding: bindings[action.id] }));
+  for (const id of (Object.keys(tabs) as TabShortcutId[]).sort()) {
+    const binding = tabs[id];
+    if (binding?.key) out.push({ id, binding });
+  }
+  return out;
+}
+
+/** 같은 조합을 쓰는 기능(·창 안 탭)이 있으면 그 쌍을 돌려준다 */
+export function findConflicts(bindings: Record<ShortcutId, Binding>, tabs: TabBindings = {}): Array<[AnyShortcutId, AnyShortcutId]> {
+  const slots = new Map<string, AnyShortcutId>();
+  const conflicts: Array<[AnyShortcutId, AnyShortcutId]> = [];
+
+  for (const { id, action, binding } of allBindings(bindings, tabs)) {
+    const met = new Set<AnyShortcutId>();
+    for (const slot of slotsOf(action, binding)) {
       const taken = slots.get(slot);
-      if (!taken) slots.set(slot, action.id);
+      if (!taken) slots.set(slot, id);
       else if (!met.has(taken)) {
         met.add(taken);
-        conflicts.push([taken, action.id]);
+        conflicts.push([taken, id]);
       }
     }
   }
@@ -349,26 +398,36 @@ export function isShortcutId(id: string): id is ShortcutId {
 }
 
 /**
- * 한 기능에 키를 준다. 같은 자리(조합)를 쓰던 다른 기능은 그 키를 뺀다(없음) - 뺀 기능 목록도 돌려준다.
+ * 한 기능(·창 안 탭)에 키를 준다. 같은 자리(조합)를 쓰던 다른 것은 그 키를 뺀다(기능 = 없음, 탭 = 목록에서 빠짐) - 뺀 것 목록도 돌려준다.
  * 목록(단축키 탭)은 겹치면 저장을 막지만, 눌러서 정할 때는 '이 키를 여기에'가 뜻이 분명하다(PLAN 5장 P18).
- * 키가 빈 조합을 주면 그 기능의 단축키를 지운다.
+ * 키가 빈 조합을 주면 그것의 단축키를 지운다.
  */
 export function assignBinding(
   bindings: Record<ShortcutId, Binding>,
-  id: ShortcutId,
+  id: AnyShortcutId,
   binding: Binding,
-): { bindings: Record<ShortcutId, Binding>; cleared: ShortcutId[] } {
-  const next = { ...bindings, [id]: binding };
-  const action = SHORTCUT_ACTIONS.find((a) => a.id === id);
-  const mine = new Set(action ? slotsOf(action, binding) : []);
-  const cleared: ShortcutId[] = [];
-  if (mine.size === 0) return { bindings: next, cleared };
-  for (const other of SHORTCUT_ACTIONS) {
-    if (other.id === id || !slotsOf(other, next[other.id]).some((s) => mine.has(s))) continue;
-    next[other.id] = b('');
+  tabs: TabBindings = {},
+): { bindings: Record<ShortcutId, Binding>; tabs: TabBindings; cleared: AnyShortcutId[] } {
+  const next = { ...bindings };
+  const nextTabs: TabBindings = { ...tabs };
+  let action: ShortcutAction | undefined;
+  if (isTabShortcutId(id)) {
+    if (binding.key) nextTabs[id] = binding;
+    else delete nextTabs[id];
+  } else {
+    next[id] = binding;
+    action = SHORTCUT_ACTIONS.find((a) => a.id === id);
+  }
+  const mine = new Set(slotsOf(action, binding));
+  const cleared: AnyShortcutId[] = [];
+  if (mine.size === 0) return { bindings: next, tabs: nextTabs, cleared };
+  for (const other of allBindings(next, nextTabs)) {
+    if (other.id === id || !slotsOf(other.action, other.binding).some((s) => mine.has(s))) continue;
+    if (isTabShortcutId(other.id)) delete nextTabs[other.id];
+    else next[other.id] = b('');
     cleared.push(other.id);
   }
-  return { bindings: next, cleared };
+  return { bindings: next, tabs: nextTabs, cleared };
 }
 
 /** 눌러서 정할 때 받지 않는 키 - 까닭 글. 받을 수 있으면 null (ESC는 기록 취소라 여기까지 오지 않는다) */
@@ -385,4 +444,15 @@ export function worksWhileTyping(binding: Binding): boolean {
 
 export function labelOf(id: ShortcutId): string {
   return SHORTCUT_ACTIONS.find((a) => a.id === id)?.label || id;
+}
+
+/** 그것의 지금 키 (창 안 탭은 없으면 빈 키) */
+export function bindingOf(id: AnyShortcutId, bindings: Record<ShortcutId, Binding>, tabs: TabBindings = {}): Binding {
+  return isTabShortcutId(id) ? tabs[id] || b('') : bindings[id];
+}
+
+/** 화면에 보여줄 키 - 기능은 ↑/↓ 짝까지(formatActionBinding), 창 안 탭은 그대로 */
+export function formatAnyBinding(id: AnyShortcutId, binding: Binding): string {
+  const action = isTabShortcutId(id) ? undefined : SHORTCUT_ACTIONS.find((a) => a.id === id);
+  return action ? formatActionBinding(action, binding) : formatBinding(binding);
 }

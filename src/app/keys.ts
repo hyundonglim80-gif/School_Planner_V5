@@ -8,13 +8,18 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
+  allBindings,
   formatActionBinding,
+  formatBinding,
   isModifierOnly,
+  isTabShortcutId,
   matchesEvent,
   resolveBindings,
   SHORTCUT_ACTIONS,
+  type AnyShortcutId,
   type ShortcutId,
   type ShortcutOverrides,
+  type TabBindings,
 } from '../domain/shortcuts';
 import { isSaveKey } from '../ui/useSaveKey';
 import { showToast } from './toast';
@@ -23,14 +28,22 @@ import { toggleThemeMode } from './theme';
 import { activeOf, useSidePopups } from '../ui/sideColumn';
 import { popOutWindow } from './popout';
 import { closeAllWindows, closeShownWindow, closeWindow, getWindowDef, openWindow, useWindows } from './windows';
+import { runTabShortcut, tabTargetOf } from './tabShortcuts';
 
-/** 기본값에서 바꾼 단축키만 (V4 shortcutOverrides). 이 기기 사본 - 계정(기기 종류마다)과는 app/prefs.ts가 맞춘다 */
-export const useShortcutOverrides = create<{ overrides: ShortcutOverrides }>()(
-  persist(() => ({ overrides: {} as ShortcutOverrides }), { name: 'sp5-shortcuts' }),
+/**
+ * 기본값에서 바꾼 단축키만 (V4 shortcutOverrides) + 창 안 탭 키(tabs - P18-2, 키를 준 탭만).
+ * 이 기기 사본 - 계정(기기 종류마다)과는 app/prefs.ts가 맞춘다
+ */
+export const useShortcutOverrides = create<{ overrides: ShortcutOverrides; tabs: TabBindings }>()(
+  persist(() => ({ overrides: {} as ShortcutOverrides, tabs: {} as TabBindings }), { name: 'sp5-shortcuts' }),
 );
 
 export function setShortcutOverrides(overrides: ShortcutOverrides) {
   useShortcutOverrides.setState({ overrides });
+}
+
+export function setTabShortcuts(tabs: TabBindings) {
+  useShortcutOverrides.setState({ tabs });
 }
 
 /** 창이 아닌 단축키가 하는 일. 없는 기능(아직 옮기지 않은 것)은 false - 브라우저 기본 동작을 막지 않는다. */
@@ -139,14 +152,14 @@ export function handleAppKeyDown(e: KeyboardEvent, only?: ReadonlySet<ShortcutId
   }
   if (isModifierOnly(e) || e.isComposing) return;
   const typing = isTypingTarget(e.target);
-  const bindings = resolveBindings(useShortcutOverrides.getState().overrides);
-  for (const action of SHORTCUT_ACTIONS) {
-    if (only && !only.has(action.id)) continue;
-    const binding = bindings[action.id];
+  const { overrides, tabs } = useShortcutOverrides.getState();
+  // 창 안 탭(P18-2)은 새 창으로 옮긴 창에서는 듣지 않는다 - 그 창에는 다른 창이 없다
+  for (const { id, action, binding } of allBindings(resolveBindings(overrides), only ? {} : tabs)) {
+    if (only && !only.has(id as ShortcutId)) continue;
     if (!matchesEvent(binding, e, action)) continue;
     // 입력칸에 글자를 쓰는 중이면 수식키 없는 단축키는 무시한다. 되돌리기는 글 칸에서는 글 되돌리기가 먼저.
-    if (typing && ((!binding.ctrl && !binding.alt) || action.id === 'undo')) continue;
-    if (runShortcut(action.id)) e.preventDefault();
+    if (typing && ((!binding.ctrl && !binding.alt) || id === 'undo')) continue;
+    if (isTabShortcutId(id) ? runTabShortcut(id) : runShortcut(id)) e.preventDefault();
     return;
   }
 }
@@ -168,5 +181,22 @@ export function useShortcutTitle(): (text: string, id: ShortcutId) => string {
   return (text, id) => {
     const action = SHORTCUT_ACTIONS.find((a) => a.id === id)!;
     return bindings[id].key ? `${text} (단축키: ${formatActionBinding(action, bindings[id])})` : text;
+  };
+}
+
+/**
+ * 창 안 탭 단추에 펼칠 것 (P18-2): 단축키 설정이 고르는 표시(data-shortcut-target) + 키가 있으면 툴팁.
+ * 고를 수 없는 탭은 빈 것. 같은 일을 하는 단축키가 있는 탭(백업 '보내기' 등)은 그 단축키(app/tabShortcuts ALIAS).
+ */
+export function useTabTarget(): (window: string, tab: string) => { 'data-shortcut-target'?: AnyShortcutId; title?: string } {
+  const { overrides, tabs } = useShortcutOverrides();
+  const bindings = resolveBindings(overrides);
+  return (window, tab) => {
+    const id = tabTargetOf(window, tab);
+    if (!id) return {};
+    const key = isTabShortcutId(id) ? tabs[id] : bindings[id];
+    if (!key?.key) return { 'data-shortcut-target': id };
+    const action = isTabShortcutId(id) ? undefined : SHORTCUT_ACTIONS.find((a) => a.id === id);
+    return { 'data-shortcut-target': id, title: `단축키: ${action ? formatActionBinding(action, key) : formatBinding(key)}` };
   };
 }

@@ -99,6 +99,14 @@ describe('환경설정 창', () => {
     expect(q('[data-settings-tab="app"]')).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('같은 탭으로 다시 열어도 그새 다른 탭을 눌렀으면 그 탭으로 (창 안 탭 단축키 P18-2 - 열 때마다 새 params)', () => {
+    const { rerender } = render(<SettingsWindow params={{ tab: 'notify' }} close={vi.fn()} raise={0} setParams={vi.fn()} />);
+    fireEvent.click(q('[data-settings-tab="view"]'));
+    expect(q('[data-settings-panel="view"]')).toBeVisible();
+    rerender(<SettingsWindow params={{ tab: 'notify' }} close={vi.fn()} raise={1} setParams={vi.fn()} />);
+    expect(q('[data-settings-panel="notify"]')).toBeVisible();
+  });
+
   it('보기: 누르는 즉시 바뀐다 (저장 단추가 없다)', () => {
     openSettings();
     fireEvent.click(q('[data-settings-toggle="showWeekend"]'));

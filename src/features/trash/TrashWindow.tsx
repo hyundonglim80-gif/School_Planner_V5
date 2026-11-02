@@ -19,15 +19,24 @@ const quiet = () => {
 };
 const when = (ms: number) => new Date(ms).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
-export default function TrashWindow({ close, raise }: WindowProps) {
+export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?: TrashTab } | undefined>) {
   const sid = useCurrentSpaceId();
   const docs = useTrashDocs(sid);
   const ddays = useCommonSettings((s) => s.ddays);
   const trashDays = useCommonSettings((s) => s.trashDays);
   const clips = useClipboard((s) => s.trash);
   const entries = useMemo(() => trashEntries({ ...docs, ddays, clips }), [docs, ddays, clips]);
-  const [tab, setTab] = useState<TrashTab>('all');
+  const [tab, setTab] = useState<TrashTab>(params?.tab ?? 'all');
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  // 탭을 정해 다시 열면 그 탭으로 (창 안 탭 단축키 P18-2 - BackupWindow 본보기, 같은 탭이어도 params가 새것). 고른 것은 탭 단추처럼 푼다
+  const [asked, setAsked] = useState(params);
+  if (params !== asked) {
+    setAsked(params);
+    if (params?.tab && params.tab !== tab) {
+      setTab(params.tab);
+      setPicked(new Set());
+    }
+  }
   const [busy, setBusy] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 

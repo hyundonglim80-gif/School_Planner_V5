@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P18-2 창 안 탭 단축키 - ■1부터**(11-02 사용자 'p18-2 작업해줘'). 절은 6장 'P18-2'. 배포·👤 부탁 없음(설정 문서에 칸 하나 - 규칙은 칸을 막지 않는다).
+**P18-2 창 안 탭 단축키 - ■2부터**(11-02 사용자 'p18-2 작업해줘'). 절은 6장 'P18-2'. 배포·👤 부탁 없음(설정 문서에 칸 하나 - 규칙은 칸을 막지 않는다).
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
 P17 공간 칩 · 일정 겹쳐 보기는 11-02 끝(P17-1 칩 줄 · P17-2 Ctrl·길게 누르기 겹쳐 보기).
 P16 쪽지 첨부·P15 쪽지는 11-02 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁(쪽지 두 계정 확인 - 첨부도 함께).
@@ -2250,9 +2250,11 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 **먼저 읽을 것**: 이 절 · 5장 'P18'·'P18-2' · `domain/shortcuts.ts` · `app/keys.ts` · `app/shortcutRecord.ts`·`ShortcutRecordBar.tsx` · `settings/ShortcutsTab.tsx` · 설명서 settings 'shortcuts-edit'·help 단축키 표.
 **확인한 코드 (11-02)**: 탭을 params로 받는 창 = 환경설정(`tab` - 탭 이름을 견줘 **같은 탭으로 다시 열면 안 넘어간다**)·백업·쪽지·시간표(params를 견줌 - 됨)·라벨 관리(raise - 됨)·
   출석부·알림장(날·탭 글자를 견줌 - 같은 탭이면 안 넘어간다) · 휴지통은 탭 params가 없다. 출석부 = { date }, 알림장 = { sid, date }가 있어야 열린다(features/*/open).
-- [ ] ■1 자료·실행 - `domain/shortcuts` `TabShortcutId`·`AnyShortcutId`·`TabBindings`·`readTabBindings` · `findConflicts`·`assignBinding`이 탭 키까지(겹치면 뺀다) + 시험 ·
+- [x] ■1 자료·실행 - `domain/shortcuts` `TabShortcutId`·`AnyShortcutId`·`TabBindings`·`readTabBindings` · `findConflicts`·`assignBinding`이 탭 키까지(겹치면 뺀다) + 시험 ·
   `app/tabShortcuts.ts`(탭 목록 - 창·탭 id는 그 창의 탭 타입으로 · `runTabShortcut` · 출석부·알림장은 여는 길을 따로) · keys store `tabs` + 키 처리(새 창으로 옮긴 창에서는 듣지 않음) ·
   prefs 기기 칸 `tabShortcuts` · 환경설정·출석부·알림장 '같은 탭으로 다시 열기' 고침 · 휴지통 `{ tab }` · 시험.
+  → 11-02: `app/tabShortcuts.ts` 탭 24(환경설정 5·백업 3·쪽지 3·시간표 3·라벨 2·휴지통 5·출석부 2·알림장 1) + ALIAS 셋 · `allBindings`(기능 다음 탭 - 키 처리 차례) · `useTabTarget`(■2가 단추에) ·
+  `setTabOpener`(출석부·알림장 = 보는 날·지금 공간) · 시험 domain 8·tabShortcuts 7·keys 4·prefs 1·settings 1 · 단위 2782.
 - [ ] ■2 고르기·목록 - 탭 단추에 `shortcutTarget`(+ 키가 있으면 툴팁) · 띠·저장이 탭도 · 단축키 탭 '내가 만든 단축키'(키 칸·짚기·겹침·저장·기본값) · 시험 settings·띠.
 - [ ] ■3 설명서('shortcuts-edit' 창 안 탭 절·예시 + 단축키 표 '내가 만든 단축키') · `tools/inspect-shortcut-record.mjs`에 탭(⋮ → 환경설정 → 알림 → 완료 → 키 → 저장 → 다른 탭에서 키 = 알림 탭 ·
   단축키 탭 줄·설명서 표·비우고 저장 = 빠짐) · settings·manual · MENU 3-8·MAP·PARITY · 세션 끝 정리(1-3).

@@ -11,7 +11,7 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEFAULT_FONT_SCALE, FONT_SCALES, type FontScale } from '../domain/fontScale';
-import { readShortcutOverrides, type ShortcutOverrides } from '../domain/shortcuts';
+import { readShortcutOverrides, readTabBindings, type ShortcutOverrides, type TabBindings } from '../domain/shortcuts';
 import { readDDayList, type DDay } from '../domain/dday';
 import { DEFAULT_PERIODS, readPeriods, type PeriodDef } from '../domain/periodTimes';
 import { readTerms, type SchoolTerms } from '../domain/semester';
@@ -33,7 +33,8 @@ import {
 } from '../domain/settings';
 import { settingsPort, startSettingsSync, type SettingsBinding } from '../data/settingsSync';
 import { setFontScale, useLayoutPrefs, type PopupStyle } from './layoutPrefs';
-import { setShortcutOverrides, useShortcutOverrides } from './keys';
+import { setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
+import { isKnownTabShortcut } from './tabShortcuts';
 import { useNav, type SemesterFilter, type StartupScope, STARTUP_SCOPES } from './nav';
 
 export type DeviceKind = 'pc' | 'mobile';
@@ -58,6 +59,8 @@ export interface DevicePrefs {
   popupStyle: PopupStyle;
   startupScope: StartupScope;
   shortcutOverrides: ShortcutOverrides;
+  /** 창 안 탭 키 (P18-2 - 키를 준 탭만). shortcutOverrides와 칸을 나눈다 - 옛 판은 모르는 칸을 읽지 않는다 */
+  tabShortcuts: TabBindings;
   showWeekend: boolean;
   showEvents: boolean;
   showClass: boolean;
@@ -66,6 +69,7 @@ export interface DevicePrefs {
 }
 
 const overridesField: SettingField<ShortcutOverrides> = { def: {}, read: readShortcutOverrides };
+const tabShortcutsField: SettingField<TabBindings> = { def: {}, read: (v) => readTabBindings(v, isKnownTabShortcut) };
 
 export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   fontScale: oneOfField<FontScale>(
@@ -75,6 +79,7 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   popupStyle: oneOfField<PopupStyle>('side', ['side', 'center']),
   startupScope: oneOfField<StartupScope>('last', STARTUP_SCOPES),
   shortcutOverrides: overridesField,
+  tabShortcuts: tabShortcutsField,
   showWeekend: boolField(true),
   showEvents: boolField(true),
   showClass: boolField(true),
@@ -90,6 +95,7 @@ function currentDevicePrefs(): DevicePrefs {
     popupStyle,
     startupScope,
     shortcutOverrides: useShortcutOverrides.getState().overrides,
+    tabShortcuts: useShortcutOverrides.getState().tabs,
     showWeekend,
     showEvents,
     showClass,
@@ -103,6 +109,7 @@ function applyDevicePrefs(p: DevicePrefs) {
   if (p.fontScale !== now.fontScale) setFontScale(p.fontScale);
   if (p.popupStyle !== now.popupStyle) useLayoutPrefs.setState({ popupStyle: p.popupStyle });
   if (JSON.stringify(p.shortcutOverrides) !== JSON.stringify(now.shortcutOverrides)) setShortcutOverrides(p.shortcutOverrides);
+  if (JSON.stringify(p.tabShortcuts) !== JSON.stringify(now.tabShortcuts)) setTabShortcuts(p.tabShortcuts);
   const navKeys = ['startupScope', 'showWeekend', 'showEvents', 'showClass', 'semesterFilter', 'enableScrollNav'] as const;
   const navChanges = Object.fromEntries(navKeys.filter((k) => p[k] !== now[k]).map((k) => [k, p[k]]));
   if (Object.keys(navChanges).length > 0) useNav.setState(navChanges);
