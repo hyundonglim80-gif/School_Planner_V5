@@ -32,6 +32,7 @@ import { useDayCardsOn } from './useDayCards';
 import { useDayNotes } from './useDayNotes';
 import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
+import { shortcutTarget } from '../../ui/shortcutTarget';
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -107,6 +108,7 @@ export default function DayJournal({ date }: { date: YMD }) {
               <button
                 type="button"
                 data-journal-add
+                {...shortcutTarget('newNote')}
                 onClick={openCreate}
                 aria-label="메모 추가"
                 title="이 날의 메모 추가 (오른쪽 칸) - 쓰는 칸의 📅 날짜로 다른 날도 이을 수 있습니다"
@@ -168,6 +170,7 @@ export default function DayJournal({ date }: { date: YMD }) {
           <button
             type="button"
             data-journal-labels-settings
+            {...shortcutTarget('labels')}
             onClick={() => openWindow('labels', { tab: 'note' })}
             className="ml-auto w-7 h-7 flex items-center justify-center rounded-md text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
             title="메모 라벨 설정"

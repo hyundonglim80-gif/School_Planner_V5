@@ -36,6 +36,7 @@ import DayPastEvents from './DayPastEvents';
 import { openLinkViewer } from '../links/open';
 import { openEventPanel, shownEventKey, useShownEventId, useShownEventKey } from '../events/open';
 import { useFocusReveal } from '../search/focus';
+import { shortcutTarget } from '../../ui/shortcutTarget';
 
 const NONE: readonly ItemDoc[] = [];
 
@@ -156,6 +157,7 @@ export default function DayEvents({ date }: { date: YMD }) {
             <button
               type="button"
               data-event-add
+              {...shortcutTarget('newEvent')}
               onClick={openCreate}
               aria-label="일정 추가"
               title="일정 추가 (오른쪽 칸)"
@@ -168,6 +170,7 @@ export default function DayEvents({ date }: { date: YMD }) {
         <button
           type="button"
           data-event-labels-settings
+          {...shortcutTarget('labels')}
           onClick={() => openWindow('labels', { tab: 'event' })}
           className="w-7 h-7 flex items-center justify-center rounded-md text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           title="일정 라벨 설정"

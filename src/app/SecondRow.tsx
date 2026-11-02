@@ -7,6 +7,7 @@ import { useCommonSettings } from './prefs';
 import SpaceChips from './SpaceChips';
 import { useSpacePickerShown } from '../data/session';
 import { dateLabel, goToday, setDate, setSemesterFilter, setToggle, stepDate, useNav, type SemesterFilter } from './nav';
+import { shortcutTarget } from '../ui/shortcutTarget';
 
 const VIEW_TOGGLES = [
   { key: 'showWeekend', label: '주말', shortcut: 'toggleWeekend' },
@@ -79,6 +80,7 @@ export default function SecondRow() {
               key={t.key}
               type="button"
               data-view-toggle={t.key}
+              {...shortcutTarget(t.shortcut)}
               aria-pressed={on}
               onClick={() => setToggle(t.key, !on)}
               title={withShortcut(`${t.label} ${on ? '숨기기' : '보이기'}`, t.shortcut)}
@@ -97,6 +99,7 @@ export default function SecondRow() {
         <button
           type="button"
           data-date-prev
+          {...shortcutTarget('datePrev')}
           onClick={() => stepDate(-1)}
           className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs sm:text-sm transition-all shadow-2xs cursor-pointer"
           title={withShortcut('이전 날짜', 'datePrev')}
@@ -107,6 +110,7 @@ export default function SecondRow() {
           <button
             type="button"
             data-date-label
+            {...shortcutTarget('dateToday')}
             onClick={goToday}
             className="text-sm sm:text-base font-extrabold text-slate-800 hover:text-primary transition-colors cursor-pointer select-none text-center whitespace-nowrap px-1"
             title={withShortcut('오늘 날짜로 돌아가기', 'dateToday')}
@@ -120,6 +124,7 @@ export default function SecondRow() {
           <button
             type="button"
             data-date-dday
+            {...shortcutTarget('dday')}
             onClick={() => runFromButton('dday')}
             title={`${dayDDay.title} (${dayDDay.date})까지, 지금 보고 있는 날 기준`}
             className="px-2 py-0.5 rounded-full text-2xs sm:text-xs font-bold bg-rose-50 text-rose-600 border border-rose-100 whitespace-nowrap shrink-0 cursor-pointer hover:bg-rose-100 transition-colors"
@@ -130,6 +135,7 @@ export default function SecondRow() {
         <button
           type="button"
           data-date-next
+          {...shortcutTarget('dateNext')}
           onClick={() => stepDate(1)}
           className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs sm:text-sm transition-all shadow-2xs cursor-pointer"
           title={withShortcut('다음 날짜', 'dateNext')}

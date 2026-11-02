@@ -3,6 +3,7 @@
 import { useContext } from 'react';
 import { popOutWindow } from '../app/popout';
 import { PopoutTargetContext } from './popout';
+import { shortcutTarget } from './shortcutTarget';
 
 export default function PopoutButton({ className = 'w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100' }: { className?: string }) {
   const key = useContext(PopoutTargetContext);
@@ -11,6 +12,7 @@ export default function PopoutButton({ className = 'w-8 h-8 rounded-full text-sl
     <button
       type="button"
       data-popout-open
+      {...shortcutTarget('popOut')}
       onClick={() => void popOutWindow(key)}
       title="새 창으로 옮기기 - 화면 밖(다른 모니터)에 따로 둡니다. 저장하지 않은 것은 먼저 저장합니다"
       aria-label="새 창으로 옮기기"

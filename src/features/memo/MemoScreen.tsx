@@ -35,6 +35,7 @@ import { canMoveNote } from '../notes/noteOps';
 import { MEMO_SORT_OPTIONS, setMemoSortKey, sortMemos, toggleMemoSortDir, useMemoSort } from './memoSort';
 import { openNotePanel, useShownNoteId } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
+import { shortcutTarget } from '../../ui/shortcutTarget';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
 const FALLBACK_LABEL = '메모';
@@ -297,6 +298,7 @@ export default function MemoScreen() {
           <button
             type="button"
             data-memo-new
+            {...shortcutTarget('newMemo')}
             onClick={openCreate}
             className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 sm:py-2.5 bg-primary hover:bg-blue-600 active:scale-98 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0"
             title="새 메모 쓰기 (오른쪽 칸)"
@@ -314,6 +316,7 @@ export default function MemoScreen() {
               <button
                 type="button"
                 data-memo-labels-settings
+                {...shortcutTarget('labels')}
                 onClick={() => openWindow('labels', { tab: 'note' })}
                 className="flex items-center gap-1 px-1 -mx-1 rounded-md hover:bg-slate-100 hover:text-blue-900 cursor-pointer min-w-0"
                 title="메모 라벨 관리 (이름·색·상위 라벨·차례)"

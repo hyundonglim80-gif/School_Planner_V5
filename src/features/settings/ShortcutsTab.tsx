@@ -3,9 +3,11 @@
 // 다른 탭과 달리 '저장'을 눌러야 바뀐다 - 키를 하나씩 바꾸는 동안 두 기능이 같은 키를 잠깐 쓰게 되는데, 그때마다 바로 바뀌면
 // 엉뚱한 기능이 돈다. '저장'은 겹치는 키가 있으면 막는다. 저장해도 창은 닫히지 않는다. 탭을 바꿔도 고치던 것은 남고,
 // ESC로 모두 닫을 때는 먼저 묻는다(창 목록의 저장 안 한 글 묻기).
+// '⌨️ 단축키 설정'(P18-1 - PC만) = 메뉴·단추를 눌러 기능을 고르고 키를 누르는 길(app/shortcutRecord). 끝나면 이 탭이 그 줄을 짚는다(focusId).
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type Ref } from 'react';
 import { showErrorToast, showToast } from '../../app/toast';
 import { canRun, setShortcutOverrides, useShortcutOverrides } from '../../app/keys';
+import { detectDeviceKind } from '../../app/prefs';
 import { useUnsavedCheck } from '../../app/windows';
 import {
   bindingFromEvent,
@@ -53,14 +55,27 @@ function ShortcutRow({
   label,
   binding,
   conflicted,
+  focused,
   onChange,
 }: {
   id: ShortcutId;
   label: string;
   binding: Binding;
   conflicted: boolean;
+  /** 방금 눌러서 정한 줄 - 보이게 옮기고 잠깐 짚는다 */
+  focused: boolean;
   onChange: (b: Binding) => void;
 }) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = rowRef.current;
+    if (!focused || !el) return;
+    // 검색으로 간 카드처럼 잠깐 짚는다(features/search/focus의 .search-focus)
+    el.scrollIntoView?.({ block: 'center' });
+    el.classList.add('search-focus');
+    const t = window.setTimeout(() => el.classList.remove('search-focus'), 2600);
+    return () => window.clearTimeout(t);
+  }, [focused]);
   // 칸을 누르고 키를 누르면 그 키가 들어간다. 화살표·Space처럼 글자가 없는 키도 있어 글자 대신 눌린 키를 잡는다.
   const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Tab') return; // 다음 칸으로 넘어가기는 막지 않는다
@@ -82,8 +97,10 @@ function ShortcutRow({
 
   return (
     <div
+      ref={rowRef}
       data-shortcut-row={id}
       data-conflict={conflicted || undefined}
+      data-shortcut-row-focus={focused || undefined}
       className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border p-2.5 ${
         conflicted ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100'
       }`}
@@ -125,9 +142,14 @@ export interface ShortcutsTabHandle {
 export default function ShortcutsTab({
   ref,
   onStatus,
+  focusId,
+  onStartRecord,
 }: {
   ref: Ref<ShortcutsTabHandle>;
   onStatus: (s: { dirty: boolean; conflict: string | null; saved: boolean }) => void;
+  focusId?: ShortcutId;
+  /** 환경설정 창을 닫고 단축키 설정(눌러서 고르기)을 시작한다 */
+  onStartRecord: () => void;
 }) {
   const stored = useShortcutOverrides((s) => s.overrides);
   const [draft, setDraft] = useState<Bindings>(() => resolveBindings(stored));
@@ -170,6 +192,18 @@ export default function ShortcutsTab({
     },
   }));
 
+  // 눌러서 정하기는 키보드가 있는 PC만 (휴대폰 단축키는 따로 저장된다 - 단추를 숨긴다)
+  const [pc] = useState(() => detectDeviceKind() === 'pc');
+  const startRecord = () => {
+    // 고치던 것과 엇갈리지 않게 먼저 저장한다(PLAN 5장 P18)
+    if (dirty) {
+      if (!window.confirm('고치던 단축키를 먼저 저장하고 시작할까요?')) return;
+      if (conflict) return showErrorToast(`같은 조합을 두 기능이 쓰고 있습니다: ${conflict}`);
+      setShortcutOverrides(overridesFromBindings(draft));
+    }
+    onStartRecord();
+  };
+
   const groups = useMemo(() => {
     const out: Record<string, typeof SHORTCUT_ACTIONS> = {};
     for (const action of SHORTCUT_ACTIONS) (out[action.group] ||= []).push(action);
@@ -179,6 +213,21 @@ export default function ShortcutsTab({
   return (
     <div>
       <div className="px-5 py-3 border-b border-slate-100">
+        {pc && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2.5">
+            <button
+              type="button"
+              data-shortcut-record-start
+              onClick={startRecord}
+              className="px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+            >
+              ⌨️ 단축키 설정
+            </button>
+            <span className="text-xs text-slate-500">
+              메뉴·단추를 <strong className="text-slate-700">직접 눌러</strong> 고른 뒤 키를 누르면 바로 저장됩니다.
+            </span>
+          </div>
+        )}
         <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3 text-xs text-slate-600 leading-relaxed">
           키 칸을 누른 뒤 <strong className="text-slate-800">원하는 키를 그대로 누르면</strong> 들어갑니다. 글자·숫자·기호는 물론 화살표나 Space도
           됩니다. Ctrl / Alt / Shift는 체크로 켜고 끕니다.
@@ -201,6 +250,7 @@ export default function ShortcutsTab({
                 label={action.label}
                 binding={draft[action.id]}
                 conflicted={conflicted.has(action.id)}
+                focused={focusId === action.id}
                 onChange={(b) => setDraft((prev) => ({ ...prev, [action.id]: b }))}
               />
             ))}

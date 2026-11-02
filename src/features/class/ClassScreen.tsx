@@ -26,6 +26,7 @@ import { CLASS_TOOLS, type ClassTool } from './tools';
 import { openClassRoster, setClassView, useClassView } from './view';
 import { isDirty, useRosterDraft } from './rosterDraft';
 import { openStudentRecord } from '../studentRecord/open';
+import { shortcutTarget } from '../../ui/shortcutTarget';
 
 /** 학급 화면의 사진 보기 켬/끔 - 이 기기에만 (명렬표 관리의 sp5-roster-photos와 따로 - V4) */
 const PHOTOS_KEY = 'sp5-class-photos';
@@ -154,6 +155,7 @@ function ClassHub() {
         <button
           type="button"
           data-class-today={todayRows.length}
+          {...shortcutTarget('attendance')}
           onClick={() => openTool('attendance')}
           className="text-left bg-white border border-slate-200 rounded-2xl px-4 py-3 hover:bg-slate-50 flex flex-wrap items-center gap-x-3 gap-y-1 cursor-pointer"
         >
@@ -181,6 +183,7 @@ function ClassHub() {
             key={t.id}
             type="button"
             data-class-tool={t.id}
+            {...shortcutTarget(t.id)}
             onClick={() => openTool(t.id)}
             className="text-left bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 hover:border-primary/50 hover:shadow-sm transition-all flex flex-col gap-1 cursor-pointer"
           >
@@ -309,7 +312,7 @@ export default function ClassScreen() {
         <button type="button" role="tab" aria-selected={view === 'hub'} data-class-mode="hub" onClick={() => setClassView('hub')} className={item(view === 'hub')}>
           🏫 학급 도구
         </button>
-        <button type="button" role="tab" aria-selected={view === 'roster'} data-class-mode="roster" onClick={() => openClassRoster()} className={item(view === 'roster')}>
+        <button type="button" role="tab" aria-selected={view === 'roster'} data-class-mode="roster" {...shortcutTarget('roster')} onClick={() => openClassRoster()} className={item(view === 'roster')}>
           🧑‍🤝‍🧑 명렬표 (관리 · 검색 · 암기){dirty && <span className="ml-1 text-amber-600" title="저장하지 않은 것이 있습니다">●</span>}
         </button>
       </div>

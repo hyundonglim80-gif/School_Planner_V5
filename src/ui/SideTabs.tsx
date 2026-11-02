@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { activateSideSlot, activeOf, closeSideSlot, getSideColumn, useSidePopups } from './sideColumn';
+import { shortcutTarget } from './shortcutTarget';
 
 /** 칸의 탭 이름: 칸 이름(aria-label·제목) + 쓰던 글 첫 줄 */
 function slotTitle(el: Element | null): string {
@@ -76,6 +77,7 @@ export default function SideTabs() {
               aria-label="탭 닫기"
               title="이 칸 닫기"
               data-side-tab-close
+              {...shortcutTarget('closePanel')}
               onClick={() => closeSideSlot(id)}
               className="px-1.5 py-1 text-slate-400 hover:text-rose-600"
             >

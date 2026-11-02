@@ -24,6 +24,7 @@ import { SCREENS } from './screens';
 import { isDatelessScope } from './route';
 import { formatActionBinding, resolveBindings, SHORTCUT_ACTIONS } from '../domain/shortcuts';
 import { useToday } from '../ui/useToday';
+import { shortcutTarget } from '../ui/shortcutTarget';
 
 /** 머리줄 작은 단추 (V4 모양) */
 const HEAD_BTN =
@@ -48,6 +49,7 @@ export default function Header() {
           <button
             type="button"
             data-header-dday
+            {...shortcutTarget('dday')}
             onClick={() => runFromButton('dday')}
             className={`${HEAD_BTN} bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80`}
             title={withShortcut('학사 D-Day 관리', 'dday')}
@@ -68,6 +70,7 @@ export default function Header() {
           <button
             type="button"
             data-header-trash
+            {...shortcutTarget('trash')}
             onClick={() => runFromButton('trash')}
             className={`${HEAD_BTN} bg-slate-100 hover:bg-slate-200 text-slate-600`}
             title={withShortcut('휴지통', 'trash')}
@@ -89,6 +92,7 @@ export default function Header() {
           <button
             type="button"
             data-header-search
+            {...shortcutTarget('search')}
             onClick={() => runFromButton('search')}
             className={`${HEAD_BTN} bg-slate-100 hover:bg-slate-200 text-slate-600 shadow-none`}
             title={withShortcut('검색', 'search')}
@@ -103,6 +107,7 @@ export default function Header() {
                 key={s.id}
                 type="button"
                 data-scope-tab={s.id}
+                {...shortcutTarget(s.shortcut)}
                 aria-pressed={scope === s.id}
                 onClick={() => setScope(s.id)}
                 title={withShortcut(`${s.label} 화면`, s.shortcut)}
@@ -124,6 +129,7 @@ export default function Header() {
         <button
           type="button"
           data-header-help
+          {...shortcutTarget('help')}
           onClick={() => runFromButton('help')}
           className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-md sm:rounded-xl text-xs sm:text-sm transition-colors"
           title={withShortcut('사용 설명서', 'help')}
@@ -186,6 +192,7 @@ function NewItems({ close }: { close: () => void }) {
           key={it.id}
           type="button"
           data-new={it.id}
+          {...shortcutTarget(it.id)}
           onClick={() => {
             close();
             runFromButton(it.id);
@@ -289,6 +296,7 @@ function AccountMenu({ title }: { title: string }) {
             <button
               type="button"
               data-account-groups
+              {...shortcutTarget('group')}
               onClick={() => {
                 setOpen(false);
                 runFromButton('group');
@@ -301,6 +309,7 @@ function AccountMenu({ title }: { title: string }) {
             <button
               type="button"
               data-account-mail
+              {...shortcutTarget('mail')}
               onClick={() => {
                 setOpen(false);
                 runFromButton('mail');
@@ -372,6 +381,7 @@ function SpaceSelect() {
             <button
               type="button"
               data-space-manage
+              {...shortcutTarget('group')}
               onClick={() => {
                 setOpen(false);
                 runFromButton('group');
@@ -415,6 +425,7 @@ function MoreMenu() {
                     key={item.id}
                     type="button"
                     data-menu-item={item.id}
+                    {...shortcutTarget(item.id)}
                     onClick={() => {
                       setOpen(false);
                       runFromButton(item.id);

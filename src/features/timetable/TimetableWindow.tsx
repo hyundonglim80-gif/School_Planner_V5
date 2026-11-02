@@ -25,6 +25,7 @@ import PeriodsTab from './PeriodsTab';
 import TeachingTab from './TeachingTab';
 import TermsTab from './TermsTab';
 import { draftOf, draftProblem, firstTimetable, timetableOps, type TimetableDraft } from './timetableDraft';
+import { shortcutTarget } from '../../ui/shortcutTarget';
 
 export type TimetableTab = 'teaching' | 'grid' | 'periods' | 'terms';
 
@@ -226,6 +227,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
           <button
             type="button"
             data-timetable-progress
+            {...shortcutTarget('progress')}
             onClick={() => openProgress()}
             title="과목마다 차시 목록을 붙여 넣고 시간표를 따라 몇 차시인지 봅니다"
             className="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"

@@ -4,6 +4,7 @@ import { runFromButton, useShortcutTitle } from '../../app/keys';
 import { useMailStore } from '../../data/mailStore';
 import { useMySpaces } from '../../data/spaceChoice';
 import { unreadLabel } from '../../domain/mail';
+import { shortcutTarget } from '../../ui/shortcutTarget';
 
 export default function MailHeaderButton({ className }: { className: string }) {
   const unread = useMailStore((s) => s.unread);
@@ -15,6 +16,7 @@ export default function MailHeaderButton({ className }: { className: string }) {
     <button
       type="button"
       data-header-mail={unread}
+      {...shortcutTarget('mail')}
       onClick={() => runFromButton('mail')}
       className={`${className} ${unread ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'}`}
       title={withShortcut(label, 'mail')}

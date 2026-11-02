@@ -12,6 +12,7 @@ import { containScroll } from '../../ui/containScroll';
 import { useDocked } from '../../ui/sideColumn';
 import { LEFT_COLUMN_CSS_WIDTH, setClipboardOpen, toggleClipboard, useClipboardPanel } from './capture';
 import { pasteClip } from './paste';
+import { shortcutTarget } from '../../ui/shortcutTarget';
 
 function timeLabel(ms: number) {
   const d = new Date(ms);
@@ -105,6 +106,7 @@ export default function ClipboardColumn() {
     <button
       type="button"
       data-clipboard-toggle={open ? 'open' : 'closed'}
+      {...shortcutTarget('clipboard')}
       onMouseDown={(e) => e.preventDefault()}
       onClick={toggleClipboard}
       title={withShortcut(open ? '클립보드 닫기' : '클립보드 열기 (복사한 것 모아 보기)', 'clipboard')}

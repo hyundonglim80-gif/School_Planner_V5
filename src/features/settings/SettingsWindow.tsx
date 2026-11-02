@@ -11,6 +11,8 @@ import DevTab from './DevTab';
 import NotifyTab from './NotifyTab';
 import SchoolTab from './SchoolTab';
 import ShortcutsTab, { type ShortcutsTabHandle } from './ShortcutsTab';
+import { startShortcutRecord } from '../../app/shortcutRecord';
+import type { ShortcutId } from '../../domain/shortcuts';
 import ViewTab from './ViewTab';
 
 export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' | 'dev';
@@ -28,7 +30,7 @@ const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean; de
   { id: 'dev', label: '개발자', ready: true, dev: true },
 ];
 
-export default function SettingsWindow({ params, close, raise }: WindowProps<{ tab?: SettingsTabId } | undefined>) {
+export default function SettingsWindow({ params, close, raise }: WindowProps<{ tab?: SettingsTabId; focus?: ShortcutId } | undefined>) {
   const developer = isDeveloper(useSession((s) => s.user?.email));
   const shownTabs = TABS.filter((t) => t.ready && (!t.dev || developer));
   const first = shownTabs.find((t) => t.id === params?.tab)?.id ?? 'view';
@@ -117,7 +119,15 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
           <SchoolTab />
         </div>
         <div role="tabpanel" data-settings-panel="shortcuts" hidden={tab !== 'shortcuts'}>
-          <ShortcutsTab ref={shortcuts} onStatus={onStatus} />
+          <ShortcutsTab
+            ref={shortcuts}
+            onStatus={onStatus}
+            focusId={params?.focus}
+            onStartRecord={() => {
+              close();
+              startShortcutRecord();
+            }}
+          />
         </div>
         <div role="tabpanel" data-settings-panel="app" hidden={tab !== 'app'}>
           <AppTab />

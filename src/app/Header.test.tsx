@@ -36,6 +36,16 @@ describe('⋮ 메뉴 (MENU.md 3-4)', () => {
     expect(items(container)).toContain('print');
   });
 
+  it('⋮ 항목·머리줄 단추 = 단축키 설정이 고를 수 있는 단추 (data-shortcut-target = 그 기능, P18-1)', async () => {
+    const user = userEvent.setup();
+    const { container } = render(<Header />);
+    await user.click(container.querySelector('[data-more-menu]')!);
+    for (const b of container.querySelectorAll<HTMLElement>('[data-menu-item]')) expect(b.dataset.shortcutTarget).toBe(b.dataset.menuItem);
+    expect(container.querySelector<HTMLElement>('[data-header-help]')!.dataset.shortcutTarget).toBe('help');
+    expect(container.querySelector<HTMLElement>('[data-scope-tab="week"]')!.dataset.shortcutTarget).toBe('scopeWeek');
+    expect(container.querySelector<HTMLElement>('[data-more-menu]')!.dataset.shortcutTarget).toBeUndefined();
+  });
+
   it('아직 옮기지 않은 기능은 누르면 안내, 창이 들어오면 그 창을 연다', async () => {
     const user = userEvent.setup();
     const shown = vi.spyOn(toast, 'showToast');

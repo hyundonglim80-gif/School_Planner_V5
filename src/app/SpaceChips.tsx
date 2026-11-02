@@ -11,6 +11,7 @@ import { clearOverlay, setSpaceChoice, toggleOverlay, useMySpaces } from '../dat
 import { spaceTone } from '../domain/spaceColor';
 import { useLongPress } from '../ui/longPress';
 import { runFromButton } from './keys';
+import { shortcutTarget } from '../ui/shortcutTarget';
 
 const CHIP = 'px-1.5 py-0.5 text-2xs sm:px-3 sm:py-1 sm:text-xs rounded-lg border transition-all whitespace-nowrap cursor-pointer';
 
@@ -49,6 +50,7 @@ export default function SpaceChips() {
       <button
         type="button"
         data-space-chip-manage
+        {...shortcutTarget('group')}
         onClick={() => runFromButton('group')}
         title="공유 그룹 관리"
         aria-label="공유 그룹 관리"

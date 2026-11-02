@@ -47,6 +47,7 @@ import { cachedSubjects, useLessonSource } from './useLessons';
 import { evalCountsByPlace } from '../../domain/evaluation';
 import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
+import { shortcutTarget } from '../../ui/shortcutTarget';
 
 const PERIOD_COLORS = [
   'bg-blue-50 text-blue-700 border-blue-200',
@@ -212,6 +213,7 @@ export default function DayLessons({ date }: { date: string }) {
             <button
               type="button"
               data-lessons-settings
+              {...shortcutTarget('timetable')}
               onClick={() => openWindow('timetable')}
               className="shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
               title="시간표 설정 (시간표·교시·학기·교사 유형)"

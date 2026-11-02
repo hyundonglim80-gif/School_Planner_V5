@@ -10,6 +10,7 @@ import { overridesFromBindings, resolveBindings } from '../../domain/shortcuts';
 import { useMirror } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
 import SettingsWindow from './SettingsWindow';
+import { cancelShortcutRecord, useShortcutRecord } from '../../app/shortcutRecord';
 
 // 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
@@ -157,6 +158,30 @@ describe('환경설정 창', () => {
     fireEvent.click(q('[data-shortcut-reset]'));
     fireEvent.click(q('[data-shortcut-save]'));
     expect(useShortcutOverrides.getState().overrides).toEqual({});
+  });
+
+  it('⌨️ 단축키 설정 (P18-1) = 창을 닫고 눌러서 고르기 시작 · 고치던 것은 먼저 묻고 저장', () => {
+    const close = vi.fn();
+    render(<SettingsWindow params={{ tab: 'shortcuts' }} close={close} raise={0} setParams={vi.fn()} />);
+    fireEvent.keyDown(q('[data-shortcut-row="help"] [data-shortcut-key]'), { key: 'h', code: 'KeyH', ctrlKey: true, altKey: true });
+    const ask = vi.spyOn(window, 'confirm').mockReturnValueOnce(false);
+    fireEvent.click(q('[data-shortcut-record-start]'));
+    expect(close).not.toHaveBeenCalled();
+    expect(useShortcutRecord.getState().stage).toBe('off');
+    ask.mockReturnValueOnce(true);
+    fireEvent.click(q('[data-shortcut-record-start]'));
+    expect(useShortcutOverrides.getState().overrides).toHaveProperty('help');
+    expect(close).toHaveBeenCalled();
+    expect(useShortcutRecord.getState().stage).toBe('pick');
+    ask.mockRestore();
+    act(() => cancelShortcutRecord());
+  });
+
+  it('눌러서 정한 뒤 열면(focus) 그 줄을 짚는다', () => {
+    render(<SettingsWindow params={{ tab: 'shortcuts', focus: 'timetable' }} close={vi.fn()} raise={0} setParams={vi.fn()} />);
+    expect(q('[data-shortcut-row="timetable"]')).toHaveAttribute('data-shortcut-row-focus');
+    expect(q('[data-shortcut-row="timetable"]')).toHaveClass('search-focus');
+    expect(q('[data-shortcut-row="help"]')).not.toHaveAttribute('data-shortcut-row-focus');
   });
 
   it('고치지 않은 채로 다른 기기에서 키가 바뀌면 따라간다', () => {

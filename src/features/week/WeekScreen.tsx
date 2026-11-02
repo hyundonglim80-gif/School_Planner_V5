@@ -36,6 +36,7 @@ import LastYearDay from './LastYearDay';
 import { toggleLastYear, useShowLastYear } from './prefs';
 import WeekDayCard from './WeekDayCard';
 import { useEvalCountsByDate } from '../evaluations/evalData';
+import { shortcutTarget } from '../../ui/shortcutTarget';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -306,6 +307,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
           <button
             type="button"
             data-week-guide
+            {...shortcutTarget('weeklyGuide')}
             onClick={() => openWindow('weeklyGuide', { date: shownThis[0] ?? thisWeek[0] })}
             title="보고 있는 주의 주간학습안내(요일 × 교시 + 준비물)를 만듭니다"
             className="px-2.5 py-1 rounded-lg text-xs font-bold border bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-700 whitespace-nowrap cursor-pointer"
@@ -316,6 +318,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
         <button
           type="button"
           data-last-year-toggle
+          {...shortcutTarget('lastYear')}
           aria-pressed={showLastYear}
           onClick={toggleLastYear}
           title={showLastYear ? '작년 이맘때 숨기기' : '작년 학년도 같은 주의 일정·메모를 요일 카드 아래에 흐리게 보기'}
