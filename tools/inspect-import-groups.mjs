@@ -95,7 +95,8 @@ try {
   r.check((await getDoc(doc(em.db, 'spaces', SID, 'notices', DAY))).data()?.lines?.[0] === '그룹 알림장 줄', '알림장');
   const evals = await v5('evaluations');
   r.check(evals.length === 1 && evals[0].authorId === uidA && evals[0].classId === '2027-5-2', '조사표 (만든 사람 그대로)');
-  const people = Object.fromEntries((await v5('people')).map((p) => [p.id, p.name]));
+  // 구성원 이름은 결과 표 뒤에 써질 수 있다 - 기다려 읽는다 (11-02 한 번 'undefined'로 틀렸다, 다시 돌리면 통과)
+  const people = await serverUntil(async () => Object.fromEntries((await v5('people')).map((p) => [p.id, p.name])), (m) => !!m[uidB] && !!m[uidA], 10000);
   r.check(!!people[uidB] && people[uidA] === '선생님A', `구성원 이름 (나 + V4 그룹장 이름 '${people[uidA]}')`);
   r.check(await waitFor(B.page.locator(`${sel('space-chip', SID)}[aria-pressed="true"]`), 8000), '가져오면 그 그룹을 본다 (둘째 줄 공간 칩)');
   r.check((await rowB.getAttribute('data-v4-group-state')) === 'imported', '줄이 imported로');

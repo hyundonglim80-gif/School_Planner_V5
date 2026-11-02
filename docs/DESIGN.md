@@ -60,6 +60,10 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 - **개인 공간에만**(V4처럼 늘 개인): `classes`, `attendance`, `subjectAttendance`, `seating`, `classHub`, `quiz`, `progress`,
   `settings`, `pushTokens`, `gcalQueue`.
 - V4와 다른 점: **라벨이 공간 것**이다. 항목이 라벨을 id로 가리키므로 그룹 구성원이 같은 라벨 목록을 봐야 한다(개인 공간은 V4처럼 내 라벨).
+  기본 라벨 id(`dflt_e1~5`·`dflt_n1~6`)는 **모든 공간에 같다** - 공간을 섞어 그릴 때 라벨 트리를 합치지 않는다(P17-2).
+- **일정 겹쳐 보기(P17-2) = 화면만, 자료 없음**: 기기 사본이 이미 개인 + 든 그룹 모두를 받으므로 서버 읽기·규칙이 늘지 않는다. 고른 공간(`sp5-space`, 주 공간)과
+  겹친 공간(`sp5-space-overlay`)은 이 기기에만(계정마다). 겹친 일정은 그 공간 라벨 트리로 고르고 그리며(`data/select` `useOverlaySpaces`·`month/calendarEvents` `spaceOf`),
+  누르기·완료는 그 공간에 쓴다(쓰는 칸 = 연 공간 - 원칙 그대로). 새 항목·메모·수업·이월은 주 공간 하나.
 - 규칙(`firestore.rules` V5 블록, P1-2): 개인 공간 아래는 id `u_{uid}`만 본다(공간 문서가 없어도 된다 - 로그인하면 `ensurePersonalSpace`가 만든다).
   그룹은 `members`. **`inviteCode`가 있으면 초대가 열린 것** - 참여는 그때 나만 'member'로, 나가기는 나만, 주인은 나가지 못하고 그룹을 지운다.
   참여할 때 낸 코드를 `joinCodes.<나>`에 적고 규칙이 그것 == 지금 `inviteCode`인지 본다(P14-1 - 전에는 sid만 알면 들어왔다. 칸 하나면 앞사람이 남긴 값으로 통과해 사람마다 칸).
