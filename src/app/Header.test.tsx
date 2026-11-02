@@ -84,6 +84,24 @@ describe('머리줄', () => {
   });
 });
 
+describe('📂 공간 고르기 (P17-1 - 메모·학급 화면만)', () => {
+  it('든 그룹이 있어도 하루·주간·월간·년간에는 없고(둘째 줄 공간 칩) 메모·학급에만', () => {
+    useSession.setState({ loading: false, user: { uid: 'u1', email: 't@example.com', displayName: '김선생', photoURL: '' } });
+    act(() => useMySpaces.setState({ groups: [{ id: 'g_1', name: '협의회', ownerId: 'u1', members: { u1: 'owner' } }], loaded: true }));
+    const { container } = render(<Header />);
+    for (const scope of ['day', 'week', 'month', 'year'] as const) {
+      act(() => useNav.setState({ scope }));
+      expect(container.querySelector('[data-space-select]'), scope).toBeNull();
+    }
+    for (const scope of ['memo', 'class'] as const) {
+      act(() => useNav.setState({ scope }));
+      expect(container.querySelector('[data-space-select]'), scope).not.toBeNull();
+    }
+    act(() => useMySpaces.setState({ groups: [], loaded: true }));
+    expect(container.querySelector('[data-space-select]')).toBeNull();
+  });
+});
+
 describe('어둡게 / 밝게 (단축키 toggleTheme)', () => {
   it('정한 키로 바꾼다 - html.dark', () => {
     setShortcutOverrides({ toggleTheme: { ctrl: true, alt: true, shift: false, key: 'D' } });

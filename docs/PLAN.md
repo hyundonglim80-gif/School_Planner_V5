@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P17-1 공간 칩 줄**(11-02 계획 - 6장 'P17' 절을 먼저) - 새 대화에서 '이어서' = P17-1 ■1부터. 그다음 P17-2(일정 겹쳐 보기). 배포·👤 부탁 없음(화면만).
+**P17-1 공간 칩 줄**(11-02 계획 - 6장 'P17' 절을 먼저) - ■1 끝(11-02 - 칩·📂는 메모·학급만, 보이기 조건 `data/session` `useSpacePickerShown`). '이어서' = P17-1 ■2(점검)부터. 그다음 P17-2(일정 겹쳐 보기). 배포·👤 부탁 없음(화면만).
 P16 쪽지 첨부·P15 쪽지는 11-02 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁(쪽지 두 계정 확인 - 첨부도 함께).
 11-02 사용자: 앞으로 V5만 쓴다 - V3·V4 동작은 묻지 않는다(`CLAUDE.md` 1장).
 P14(점검 뒤 손보기)는 10-30 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁뿐(P14-9 첨부 비공개는 취소).
@@ -2144,7 +2144,7 @@ Claude 의견(방향 좋음 · 일정만 '겹쳐 보기' 1단계 · 칩은 날�
 **시작 조건**: 없음. **묻기**: 없음(화면만 - 조각마다 main).
 **먼저 읽을 것**: 이 P17 절 · `app/Header.tsx`(머리 주석·`SpaceSelect` 333~386) · `app/SecondRow.tsx` · `app/Shell.tsx` 150~155 · `data/spaceChoice.ts` · `notes/LabelFilterChips.tsx`(`FilterChip` 모양만) · `app/Header.test.tsx` ·
 `tools/inspect-share-groups.mjs` 40~95 · `tools/inspect-import-groups.mjs`(space-select grep) · 설명서 share·start 그 주제만 · `docs/MENU.md` 3-1·3-2.
-- [ ] ■1 `app/SpaceChips.tsx`(새) - `🔒 개인 · 👥 그룹들 · ⚙️`, 그냥 누르기 = `setSpaceChoice`, ⚙️ = `runFromButton('group')`. `[data-space-chips]`·`[data-space-chip=sid][aria-pressed]`·`[data-space-chip-manage]`(📂 목록의 `space-manage`와 이름을 나눈다 - CLAUDE.md 2장 '같은 `data-*` 두 곳').
+- [x] ■1 `app/SpaceChips.tsx`(새) - `🔒 개인 · 👥 그룹들 · ⚙️`, 그냥 누르기 = `setSpaceChoice`, ⚙️ = `runFromButton('group')`. `[data-space-chips]`·`[data-space-chip=sid][aria-pressed]`·`[data-space-chip-manage]`(📂 목록의 `space-manage`와 이름을 나눈다 - CLAUDE.md 2장 '같은 `data-*` 두 곳').
   둘째 줄 날짜 이동 묶음 오른쪽(PC) · 좁은 폭은 아랫줄(`order-3 w-full` - 년간 학기 칩과 한 줄) · 긴 그룹 이름은 칩마다 `max-w-32 truncate` + title.
   머리줄 `SpaceSelect`는 **메모·학급 화면에서만**(`isDatelessScope(scope)` - 모양·자리·`data-space-select|space-list|space-option|space-manage`는 지금 그대로, Header 머리 주석에 '메모·학급 화면만').
   시험: `SpaceChips.test.tsx`(그룹 없음 = 없음 · 누르면 `setSpaceChoice` · 지금 공간 `aria-pressed` · ⚙️) · `Header.test`(📂 = 메모·학급 화면에만, 하루 화면에는 없음).

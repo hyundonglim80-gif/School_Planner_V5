@@ -1,9 +1,11 @@
-// 머리줄 둘째 줄 (MENU.md 3-2 - 메모·학급 화면에는 없다). V4 그대로.
+// 머리줄 둘째 줄 (MENU.md 3-2 - 메모·학급 화면에는 없다). V4 그대로 + 오른쪽 공간 칩(P17-1).
 import MiniCalendarPicker from '../ui/MiniCalendarPicker';
 import { ddayText, primaryDDay } from '../domain/dday';
 import { useToday } from '../ui/useToday';
 import { runFromButton, useShortcutTitle } from './keys';
 import { useCommonSettings } from './prefs';
+import SpaceChips from './SpaceChips';
+import { useSpacePickerShown } from '../data/session';
 import { dateLabel, goToday, setDate, setSemesterFilter, setToggle, stepDate, useNav, type SemesterFilter } from './nav';
 
 const VIEW_TOGGLES = [
@@ -19,8 +21,9 @@ const SEMESTERS: Array<{ id: SemesterFilter; label: string }> = [
 ];
 
 /**
- * 둘째 줄 (메모·학급 화면에는 없다) - V4 그대로: 년간 학기 칩 · 토글(주말·일정·수업) · ◀ 날짜(누르면 오늘) 📅 · D-Day · ▶
+ * 둘째 줄 (메모·학급 화면에는 없다) - V4 그대로: 년간 학기 칩 · 토글(주말·일정·수업) · ◀ 날짜(누르면 오늘) 📅 · D-Day · ▶ · 공간 칩(든 그룹이 있을 때 - P17-1)
  * ⚠️ 좁은 화면에서는 줄을 바꾼다. 한 줄에 밀어 넣었더니 년간의 '2학기' 칩 위에 '◀'가 올라앉아 2학기를 누르면 이전 학년도로 넘어갔다(V4).
+ *    아랫줄 = 학기 칩 · 공간 칩 한 줄(넓은 화면은 그 묶음을 풀어(contents) 학기 칩은 맨 앞, 공간 칩은 맨 뒤).
  */
 export default function SecondRow() {
   const nav = useNav();
@@ -28,31 +31,42 @@ export default function SecondRow() {
   const today = useToday();
   const primary = useCommonSettings((st) => primaryDDay({ list: st.ddays, pick: st.ddayPick }));
   const dayDDay = nav.scope === 'day' && nav.date !== today ? primary : null;
+  const chips = useSpacePickerShown();
+  const isYear = nav.scope === 'year';
 
   return (
     <div
       data-second-row
       className="flex flex-wrap sm:flex-nowrap items-center justify-between border-t border-dashed border-slate-200 pt-2.5 mt-0.5 max-w-7xl mx-auto w-full gap-2 sm:overflow-x-auto"
     >
-      {/* 년간 학기 칩 - 좁은 화면에서는 아랫줄로 (토글·날짜 이동만으로 360px가 꽉 찬다) */}
-      {nav.scope === 'year' && (
-        <div className="order-3 w-full sm:order-1 sm:w-auto flex-none">
-          <div className="inline-flex bg-slate-100 p-0.5 rounded-xl gap-0.5">
-            {SEMESTERS.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                data-semester={s.id}
-                aria-pressed={nav.semesterFilter === s.id}
-                onClick={() => setSemesterFilter(s.id)}
-                className={`px-1.5 py-0.5 text-2xs sm:px-2 sm:py-1 sm:text-xs rounded-lg font-bold whitespace-nowrap transition-all ${
-                  nav.semesterFilter === s.id ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+      {/* 년간 학기 칩 · 공간 칩 - 좁은 화면에서는 아랫줄로 (토글·날짜 이동만으로 360px가 꽉 찬다) */}
+      {(isYear || chips) && (
+        <div className="order-3 w-full flex items-center gap-2 sm:contents">
+          {isYear && (
+            <div className="flex-none sm:order-1">
+              <div className="inline-flex bg-slate-100 p-0.5 rounded-xl gap-0.5">
+                {SEMESTERS.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    data-semester={s.id}
+                    aria-pressed={nav.semesterFilter === s.id}
+                    onClick={() => setSemesterFilter(s.id)}
+                    className={`px-1.5 py-0.5 text-2xs sm:px-2 sm:py-1 sm:text-xs rounded-lg font-bold whitespace-nowrap transition-all ${
+                      nav.semesterFilter === s.id ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {chips && (
+            <div className="min-w-0 ml-auto sm:order-4 sm:flex-none">
+              <SpaceChips />
+            </div>
+          )}
         </div>
       )}
 

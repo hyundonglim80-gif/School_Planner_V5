@@ -42,6 +42,14 @@ export function useCurrentSpaceId(): string | null {
   return uid ? chooseSpace(uid, choice, mine) : null;
 }
 
+/** 공간 고르기(둘째 줄 공간 칩·메모·학급 화면 📂)를 보이나 - 든 그룹이 있을 때(또는 그룹을 보고 있을 때 - P17-1) */
+export function useSpacePickerShown(): boolean {
+  const uid = useSession((s) => s.user?.uid);
+  const hasGroups = useMySpaces((s) => s.groups.length > 0);
+  const current = useCurrentSpaceId();
+  return !!uid && (hasGroups || !!current?.startsWith('g_'));
+}
+
 /** 개인 공간 (진도·학급처럼 개인 공간에만 있는 것 - 그룹 공간을 보고 있어도 여기) */
 export function usePersonalSpaceId(): string | null {
   const uid = useSession((s) => s.user?.uid);

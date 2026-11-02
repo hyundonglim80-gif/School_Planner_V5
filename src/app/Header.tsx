@@ -1,13 +1,14 @@
 // 머리줄 첫 줄 (MENU.md 3-1, V4 Layout 머리줄).
 //   PC     : SP5 · ⏳ D-Day · 🗑️ 휴지통 · (✉ 쪽지 n) … ＋ 새로 · 🔍 검색 · [화면 탭] · (📂 공간) | ? · ⋮ · 사진
 //   휴대폰 : SP5 · ⏳ · 🗑️ · (✉ n) … 🔍 · (📂) | ? · ⋮ · 사진   (화면 탭은 아래 탭바, ＋는 탭바 위 둥근 단추)
+//   📂 공간은 메모·학급 화면만(둘째 줄이 없는 화면) - 하루·주간·월간·년간은 둘째 줄 공간 칩(SpaceChips - P17-1).
 //   ✉ 쪽지는 든 그룹이 있을 때(또는 안 읽은 쪽지가 있을 때 - P15-2).
 // 단추는 단축키 id로 일을 부탁한다(keys.runShortcut) - 창이 들어오면 저절로 열린다.
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ddayText, primaryDDay } from '../domain/dday';
 import type { ShortcutId } from '../domain/shortcuts';
-import { useCurrentSpaceId, useSession } from '../data/session';
+import { useCurrentSpaceId, useSession, useSpacePickerShown } from '../data/session';
 import { setSpaceChoice, useMySpaces } from '../data/spaceChoice';
 import { logout } from '../features/auth/login';
 import GcalPendingButton from '../features/gcal/GcalPendingButton';
@@ -20,6 +21,7 @@ import { useCommonSettings } from './prefs';
 import { setScope, useNav } from './nav';
 import { toggleMemoView, useMemoView } from '../features/memo/memoView';
 import { SCREENS } from './screens';
+import { isDatelessScope } from './route';
 import { formatActionBinding, resolveBindings, SHORTCUT_ACTIONS } from '../domain/shortcuts';
 import { useToday } from '../ui/useToday';
 
@@ -112,8 +114,8 @@ export default function Header() {
               </button>
             ))}
           </div>
-          {/* 📂 공간 고르기 (공유 그룹이 있을 때 - P8-4) */}
-          <SpaceSelect />
+          {/* 📂 공간 고르기 (공유 그룹이 있을 때 - P8-4). 메모·학급 화면만 - 다른 화면은 둘째 줄 공간 칩(P17-1) */}
+          {isDatelessScope(scope) && <SpaceSelect />}
         </div>
       </div>
 
@@ -328,14 +330,15 @@ function AccountMenu({ title }: { title: string }) {
 
 /**
  * 📂 공간 고르기 (P8-4 - V4 '📂 공간 선택'). 든 그룹이 있을 때만(또는 그룹을 보고 있을 때). 고른 것은 이 기기에(data/spaceChoice).
- * 목록 끝 '👥 그룹 관리…' = 공유 그룹 창.
+ * 목록 끝 '👥 그룹 관리…' = 공유 그룹 창. 메모·학급 화면만(P17-1 사용자 - 다른 화면은 둘째 줄 공간 칩).
  */
 function SpaceSelect() {
   const { open, setOpen, ref } = useDropdown();
+  const shown = useSpacePickerShown();
   const uid = useSession((s) => s.user?.uid);
   const groups = useMySpaces((s) => s.groups);
   const current = useCurrentSpaceId();
-  if (!uid || (groups.length === 0 && !current?.startsWith('g_'))) return null;
+  if (!shown || !uid) return null;
   const now = groups.find((g) => g.id === current);
   const pick = (sid: string | null) => {
     setOpen(false);
