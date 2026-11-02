@@ -46,7 +46,8 @@
   `route.ts`(주소 ↔ 화면, 순수) · `nav.ts`(화면·날짜·토글 store `useNav` - 'YYYY-MM-DD', `stepDate`·`goToday`·`dateLabel`) ·
   `history.ts`(브라우저 기록 한 곳: 주소 맞물리기 `startRouting` + 창 층 `useModalLayer`·`useBackLayer`·`closeAllLayers`, 뒤로가기 표지판) ·
   `windows.ts`(창 목록 `registerWindow`·`openWindow`·`setWindowParams`(창의 `setParams`)·`closeAllWindows`·`registerUnsavedCheck`) · `windowList.ts`(창 등록 한 곳 - 창을 만드는 세션이 한 줄씩) · `WindowHost.tsx` ·
-  `moreMenu.ts`(⋮ 4구역 8항목 표) · `keys.ts`(키 처리 한 곳 `runShortcut`·`setShortcutAction`·`runFromButton`·`useShortcutTitle`, 바꾼 키 `sp5-shortcuts`) ·
+  `moreMenu.ts`(⋮ 4구역 8항목 표) · `keys.ts`(키 처리 한 곳 `runShortcut`·`setShortcutAction`·`runFromButton`·`useShortcutTitle`·`useTabTarget`(탭 단추 표시·툴팁), 바꾼 키 `sp5-shortcuts` = { overrides, tabs }) ·
+  `tabShortcuts.ts`(P18-2 창 안 탭 목록 `TAB_SHORTCUTS`('창:탭' - 창의 탭 타입으로)·ALIAS·`runTabShortcut`·`setTabOpener`(출석부·알림장)·`shortcutLabel`, 키 = 기기 칸 `tabShortcuts`) ·
   `shortcutRecord.ts`·`ShortcutRecordBar.tsx`(P18-1 눌러서 정하기 - 고르기 = document capture로 `[data-shortcut-target]`(단추에 `ui/shortcutTarget`), 키 = window capture, ESC 취소, 저장 = `domain/shortcuts` `assignBinding` → 환경설정 `{ tab: 'shortcuts', focus }` · 띠 `[data-shortcut-record=pick|key]`·body `data-shortcut-recording` 점선 = index.css) ·
   `layoutPrefs.ts`(창 위치·글자 크기·줄 폭 `sp5-layout`) · `prefs.ts`(어느 설정을 어느 문서에 - `DEVICE_PREFS`·`COMMON_SETTINGS`·`useCommonSettings`·`usePrefsSync`·`stopPrefsSync`,
   값은 nav·layoutPrefs·keys store 그대로, 사본 주인 `sp5-settings-owner`) · `install.ts`(sw 등록·설치 이벤트 `installApp`·`useInstall`) · `theme.ts`(화면 밝기 `sp5_theme` - `index.html` 스크립트와 같은 규칙) · `todayScroll.ts` · `useGlobalGestures.ts` · `lazyWithReload.ts` ·
@@ -214,7 +215,7 @@
   시험 `topics.test`(링크·자리표·창의 `help` 주제가 있나)·`HelpWindow.test`(모든 항목을 그려 기호가 남지 않나). 점검 `tools/inspect-manual.mjs`(306 - 68주제마다 설명서가 말하는 자리).
 - **점검용 창** `src/features/dev/`(`TestWindow`·`TestPanel` - 개발·에뮬레이터 빌드에만, `window.sp5.openWindow('devPanel', { n })`).
 - **점검** `tools/lib/probe.mjs`(크롬 1400px·`browserOptions`(PC 크롬 / 컨테이너 Chromium)·`sel()`·`waitFor`·`serverUntil`·`emulator()`·`restorer()`·`noUserActivation`(P9-3)·`newPage(…, { isMobile… })`) · `tools/inspect-mobile.mjs`(P9-3 휴대폰 390·다크 대비) · `tools/inspect-scroll.mjs`(P10-5 - 긴 메모 끝 커서 줄·쓰는 칸 표 세로 스크롤 없음·옆 칸 휠·'스크롤로 페이지 이동' 날짜 그대로, 끝에 설정을 끈다) · `tools/inspect-perf.mjs`(P9-3 성능 - 빌드 + preview, teacher4 `?as=4` 1만 항목, 앱이 센 서버 읽기 `window.__sp5Reads`(`mirror/server` - 에뮬레이터 빌드만), 결과 = DESIGN 11장) · `tools/inspect-shell.mjs`(P1-3 끝 조건) · `tools/inspect-login.mjs` ·
-  `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기·개발자 탭 `?as=5`) · `tools/inspect-shortcut-record.mjs`(P18-1: 눌러서 정하기 - 띠·점선·⋮ → 시간표·키는 앱으로 안 감·계정·탭 줄·그 키로 열림·메뉴·설명서·겹친 키 빼기·ESC) · `tools/inspect-dev-errors.mjs`(P14-2: 화면 오류 → v5Errors → 개발자 탭 묶음·지우기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
+  `tools/inspect-settings.mjs`(P1-4: 설정이 다른 창으로·단축키·시작 화면·계정 칸·로그아웃 전 올리기·개발자 탭 `?as=5`) · `tools/inspect-shortcut-record.mjs`(P18-1: 눌러서 정하기 - 띠·점선·⋮ → 시간표·키는 앱으로 안 감·계정·탭 줄·그 키로 열림·메뉴·설명서·겹친 키 빼기·ESC · P18-2: 환경설정 → 알림 탭·휴지통 → 메모 탭·같은 탭으로 다시·툴팁·설명서 표·비우고 저장) · `tools/inspect-dev-errors.mjs`(P14-2: 화면 오류 → v5Errors → 개발자 탭 묶음·지우기) · `tools/inspect-pwa.mjs`(임시 프로필 - 설치 오류 0·설치 창) ·
   `tools/inspect-data.mjs`(P2-1: 앱 모듈로 저장 도우미·안내 되돌리기·Ctrl+Z) · `tools/inspect-mirror.mjs`(P2-2: 서버를 막고 사본으로 먼저·다른 탭/기기 2초·IndexedDB 지움/막힘에도 서버 자료·다시 받기·로그아웃 지움) ·
   `tools/inspect-labels.mjs`(P2-3: 라벨 관리 창 - 이름 바꾸기 = 서버 문서 하나·다른 기기 고침이 들어옴·ESC 묻기·붙은 수·빈 라벨 정리·추가·되돌리기) ·
   `tools/inspect-import-labels.mjs`(P2-4: 띠 → 가져오기 → V5 라벨·설정 = V4·두 번째는 바뀐 것 0·띠 닫기, V4 문서를 고쳐 심고 되돌린다). seed는 계정마다 띠 닫음을 심는다.

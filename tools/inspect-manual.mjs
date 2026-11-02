@@ -760,6 +760,7 @@ try {
   await topic('shortcuts', async () => {
     await win('help', { topic: 'shortcuts' });
     r.check(await has(sel('help-shortcuts')), '설명서의 단축키 표 (지금 설정값)');
+    r.check(await has(sel('help-shortcut-tabs')), "표의 '내가 만든 단축키 (창 안 탭)' 묶음 (P18-2 - 키를 준 탭만, 없으면 '없음')");
   });
 
   await topic('shortcuts-edit', async () => {
@@ -767,6 +768,8 @@ try {
     r.check(await waitFor(async () => (await count(sel('shortcut-row'))) > 40, 5000), "환경설정 '단축키' 탭 - 기능마다 키");
     r.check((await count(sel('shortcut-reset'))) === 1, '기본값으로');
     r.check((await count(sel('shortcut-record-start'))) === 1, "맨 위 '⌨️ 단축키 설정' - 눌러서 정하기 (PC, 흐름은 inspect-shortcut-record)");
+    r.check((await count(sel('shortcut-tabs'))) === 1, "'내가 만든 단축키 (창 안 탭)' 묶음 (P18-2)");
+    r.check((await count(`${sel('settings-tab', 'notify')}${sel('shortcut-target', 'settings:notify')}`)) === 1, '창 안의 탭(환경설정 → 알림)도 고를 수 있다 - 탭 단추에 표시');
   });
 
   // ════════ 11장 문제 해결 ════════

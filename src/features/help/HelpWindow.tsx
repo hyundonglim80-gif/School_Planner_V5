@@ -8,7 +8,8 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type R
 import { useShortcutOverrides } from '../../app/keys';
 import { useCommonSettings } from '../../app/prefs';
 import type { WindowProps } from '../../app/windows';
-import { FIXED_SHORTCUTS, formatActionBinding, resolveBindings, SHORTCUT_ACTIONS, type ShortcutId } from '../../domain/shortcuts';
+import { FIXED_SHORTCUTS, formatActionBinding, formatBinding, resolveBindings, SHORTCUT_ACTIONS, type ShortcutId } from '../../domain/shortcuts';
+import { TAB_SHORTCUTS } from '../../app/tabShortcuts';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import {
   ALL_HELP_TOPICS,
@@ -66,6 +67,8 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
   // 단축키도 마찬가지다. 여기 적어두면 환경설정에서 바꿨을 때 설명서가 거짓말을 한다.
   const overrides = useShortcutOverrides((s) => s.overrides);
   const bindings = useMemo(() => resolveBindings(overrides), [overrides]);
+  // 창 안 탭 키 (P18-2) - 키를 준 탭만
+  const tabKeys = useShortcutOverrides((s) => s.tabs);
 
   const values: HelpValues = useMemo(
     () => ({
@@ -244,7 +247,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                   data-help-shortcut={action.id}
                   className="px-2.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-2"
                 >
-                  <span className="text-slate-600 min-w-0">{action.label}</span>
+                  <span className="text-slate-600 min-w-0 break-keep">{action.label}</span>
                   <kbd
                     className={`px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-2xs ${
                       bindings[action.id].key ? '' : 'text-slate-300'
@@ -257,6 +260,27 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
             </div>
           </div>
         ))}
+        <div data-help-shortcut-tabs>
+          <div className="text-xs font-bold text-slate-500 mb-1.5">내가 만든 단축키 (창 안 탭)</div>
+          {TAB_SHORTCUTS.some((t) => tabKeys[t.id]) ? (
+            <div className="grid grid-cols-1 @min-[480px]:grid-cols-2 gap-1.5">
+              {TAB_SHORTCUTS.filter((t) => tabKeys[t.id]).map((t) => (
+                <div
+                  key={t.id}
+                  data-help-shortcut={t.id}
+                  className="px-2.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-2"
+                >
+                  <span className="text-slate-600 min-w-0 break-keep">{t.label}</span>
+                  <kbd className="px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-2xs">{formatBinding(tabKeys[t.id]!)}</kbd>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p data-help-shortcut-tabs-empty className="text-slate-400">
+              없음 - 환경설정 단축키 탭의 ⌨️ 단축키 설정으로 창 안의 탭(예: 환경설정 → 알림)을 눌러 만듭니다.
+            </p>
+          )}
+        </div>
         <div>
           <div className="text-xs font-bold text-slate-500 mb-1.5">고정 (바꿀 수 없음)</div>
           <div className="grid grid-cols-1 @min-[480px]:grid-cols-2 gap-1.5">
@@ -265,7 +289,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                 key={fixed.label}
                 className="px-2.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-2"
               >
-                <span className="text-slate-600 min-w-0">{fixed.label}</span>
+                <span className="text-slate-600 min-w-0 break-keep">{fixed.label}</span>
                 <kbd className="px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-2xs">{fixed.keys}</kbd>
               </div>
             ))}
