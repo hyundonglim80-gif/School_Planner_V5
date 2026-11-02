@@ -7,6 +7,8 @@
 export interface ToastAction {
   label: string;
   run: () => void;
+  /** 단추를 누르지 않고 안내가 닫히면 (쪽지 지우기 - 7초 '되돌리기'가 지나면 진짜 지운다, P15-2) */
+  expire?: () => void;
 }
 
 const CONTAINER_ID = 'sp5-toast-container';
@@ -49,7 +51,13 @@ export function showToast(message: string, duration = 2500, type: 'info' | 'erro
     toastEl.classList.add('translate-y-2', 'opacity-0');
     setTimeout(() => toastEl.remove(), 300);
   };
-  let timer = setTimeout(dismiss, duration);
+  // 시간이 다 되어 닫힌 것 (단추를 누른 것이 아니다)
+  const expire = () => {
+    if (closed) return;
+    dismiss();
+    action?.expire?.();
+  };
+  let timer = setTimeout(expire, duration);
 
   if (action) {
     const btn = document.createElement('button');
@@ -70,7 +78,7 @@ export function showToast(message: string, duration = 2500, type: 'info' | 'erro
     toastEl.addEventListener('mouseenter', () => clearTimeout(timer));
     toastEl.addEventListener('mouseleave', () => {
       clearTimeout(timer);
-      if (!closed) timer = setTimeout(dismiss, 2000);
+      if (!closed) timer = setTimeout(expire, 2000);
     });
   }
 }

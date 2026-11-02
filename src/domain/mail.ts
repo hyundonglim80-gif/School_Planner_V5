@@ -134,10 +134,25 @@ export function newMailNotice(m: Pick<MailIn, 'fromName' | 'groupName'>): string
   return `✉ ${m.fromName} 선생님의 쪽지${m.groupName ? ` (${m.groupName})` : ''}`;
 }
 
+/** 쪽지 창 줄의 시각 - 오늘이면 '오후 3:05', 올해면 '11/2 오후 3:05', 그 전이면 '2025/11/2'. null = 내가 막 보내 서버가 아직 받지 않음 */
+export function mailWhen(at: number | null, now: number): string {
+  if (at === null) return '보내는 중…';
+  const d = new Date(at);
+  const n = new Date(now);
+  const time = d.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
+  if (d.toDateString() === n.toDateString()) return time;
+  if (d.getFullYear() === n.getFullYear()) return `${d.getMonth() + 1}/${d.getDate()} ${time}`;
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+/** 쪽지 창 줄에 보일 글 - 빈 줄을 건너뛴 첫 줄 */
+export function mailPreview(text: string): string {
+  return (text.split('\n').find((l) => l.trim()) ?? '').trim();
+}
+
 /** 답장 글 머리 - 받은 글 첫 줄을 짧게 */
 export function replyQuote(text: string, max = 40): string {
-  const first = text.split('\n').find((l) => l.trim()) ?? '';
-  return cut(first.trim(), max);
+  return cut(mailPreview(text), max);
 }
 
 // 푸시 알림을 눌러 앱을 열 때 주소 ?mail=<id> (public/sw.js notificationclick) - ?share= 본보기(domain/share)

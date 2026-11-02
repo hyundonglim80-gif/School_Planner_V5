@@ -4,7 +4,9 @@ import {
   mailDocs,
   mailExpireAt,
   mailParamOf,
+  mailPreview,
   mailTextError,
+  mailWhen,
   MAIL_KEEP_DAYS,
   MAIL_LIMITS,
   newMailNotice,
@@ -83,6 +85,19 @@ describe('쪽지 셈', () => {
     expect(newMailNotice({ fromName: '김', groupName: '4학년' })).toBe('✉ 김 선생님의 쪽지 (4학년)');
     expect(replyQuote('\n  첫 줄입니다  \n둘째')).toBe('첫 줄입니다');
     expect(replyQuote('가'.repeat(50), 10)).toBe(`${'가'.repeat(9)}…`);
+  });
+
+  it('쪽지 창 줄 - 시각(오늘·올해·그 전·보내는 중)과 첫 줄', () => {
+    const now = new Date(2026, 10, 2, 15, 0).getTime();
+    const time = (d: Date) => d.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
+    const today = new Date(2026, 10, 2, 9, 5);
+    expect(mailWhen(today.getTime(), now)).toBe(time(today));
+    const before = new Date(2026, 9, 30, 9, 5);
+    expect(mailWhen(before.getTime(), now)).toBe(`10/30 ${time(before)}`);
+    expect(mailWhen(new Date(2025, 10, 2).getTime(), now)).toBe('2025/11/2');
+    expect(mailWhen(null, now)).toBe('보내는 중…');
+    expect(mailPreview('\n\n  안녕하세요  \n둘째')).toBe('안녕하세요');
+    expect(mailPreview('')).toBe('');
   });
 
   it('?mail= 주소 - 읽기·지우기 (다른 값과 # 뒤는 둔다)', () => {

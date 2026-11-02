@@ -715,6 +715,14 @@ try {
     r.check(await has(sel('v4-groups')), 'V4 그룹 가져오기');
   });
 
+  // 쪽지 (P15-2) - 주고받기는 tools/inspect-mail.mjs(두 계정)
+  await topic('mail', async () => {
+    await win('mail');
+    r.check(await has(sel('mail-window', 'in')), '✉ 쪽지 창 - 받은 쪽지 탭');
+    await q(sel('mail-tab-btn', 'sent')).click();
+    r.check(await has(sel('mail-window', 'sent')), '보낸 쪽지 탭');
+  });
+
   await topic('calendar-sync', async () => {
     await shortcut('calendar');
     r.check(await has(sel('backup-window', 'send')), "단축키 '구글 캘린더로 보내기' = 백업 창 '보내기' 탭");

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { failWithToast, showErrorToast, showErrorToastOnce, ShownError } from './toast';
+import { failWithToast, showErrorToast, showErrorToastOnce, showToast, ShownError } from './toast';
 
 const toasts = () => [...document.querySelectorAll('[data-toast]')].map((el) => el.textContent);
 
@@ -36,5 +36,27 @@ describe('안내(toast)', () => {
     expect(toasts()).toEqual([]);
     showErrorToastOnce('처음 알림', new Error('x'));
     expect(toasts()).toEqual(['❌ 처음 알림']);
+  });
+
+  it('단추 안내: 시간이 지나 닫히면 expire, 단추를 누르면 run만 (쪽지 지우기 - P15-2)', () => {
+    vi.useFakeTimers();
+    try {
+      const a = { run: vi.fn(), expire: vi.fn() };
+      showToast('지웠습니다', 7000, 'info', { label: '되돌리기', ...a });
+      vi.advanceTimersByTime(6999);
+      expect(a.expire).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+      expect(a.expire).toHaveBeenCalledTimes(1);
+      expect(a.run).not.toHaveBeenCalled();
+
+      const b = { run: vi.fn(), expire: vi.fn() };
+      showToast('지웠습니다', 7000, 'info', { label: '되돌리기', ...b });
+      document.querySelectorAll<HTMLButtonElement>('[data-toast-action]')[1].click();
+      vi.advanceTimersByTime(10_000);
+      expect(b.run).toHaveBeenCalledTimes(1);
+      expect(b.expire).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

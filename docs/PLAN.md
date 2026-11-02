@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P15-2 ■1**(쪽지 화면 - 쪽지 창): P15-1(규칙·자료 층·함수 코드)은 11-02 끝, 운영 규칙 배포됨. 함수 배포는 P15-2 ■5(sw.js 'mail' 갈래가 먼저 퍼져야 한다 - 물어서). ■0(11-02)에 설계를 정했다 - 6장 P15 절 '설계 (■0 확정)'·5장 'P15 …' 줄들. 코드 읽기 결과 `docs/P15-facts.md`(10-30 줄 번호).
+**P15-2 ■2**(쓰기·답장 - ■1 쪽지 창은 11-02 끝): P15-1(규칙·자료 층·함수 코드)은 11-02 끝, 운영 규칙 배포됨. 함수 배포는 P15-2 ■5(sw.js 'mail' 갈래가 먼저 퍼져야 한다 - 물어서). ■0(11-02)에 설계를 정했다 - 6장 P15 절 '설계 (■0 확정)'·5장 'P15 …' 줄들. 코드 읽기 결과 `docs/P15-facts.md`(10-30 줄 번호).
 11-02 사용자: 앞으로 V5만 쓴다 - V3·V4 동작은 묻지 않는다(`CLAUDE.md` 1장).
 P14(점검 뒤 손보기)는 10-30 끝 - 남은 것은 `CLAUDE.md` 지금 상태의 👤 부탁뿐(P14-9 첨부 비공개는 취소).
 main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 올린다. 메모 🤖 요청(자동)은 그대로 돈다 - 도중에 요청 커밋이 끼면 `git pull` 뒤 이어서.
@@ -2044,7 +2044,9 @@ V4 `src/lib/govApi.ts`(64줄)·`adminConfig.ts`(35줄)·`holidays.ts` 30-55·`co
 **묻기**: ■5 함수 배포 `--only functions:v5`(P14-5에서 미룬 의존성 판도 함께 실린다 - 배포 뒤 v5SendDueAlarms·v5ClaudeRequest 로그 확인).
 **먼저 읽을 것**: `docs/P15-facts.md`('화면·앱') · `app/windowList.ts`(창 등록) · `app/Header.tsx` · `features/groups/GroupsWindow.tsx`(+ test) · `data/spaceChoice.ts` · `app/toast.ts` · `data/drafts.ts` ·
 `features/gcal/GcalPendingButton.tsx`(머리줄 숫자 단추) · `features/share/receive.ts`(?share= 본보기) · `public/sw.js` push·notificationclick · `features/help/topics.ts`·`chapters/share.ts` · `tools/inspect-share-groups.mjs`(두 계정) · `docs/MENU.md` 3-1·3-5·3-8.
-- [ ] ■1 **쪽지 창**(`features/mail/` - open.ts는 Firebase 없이, 오른쪽 칸 '✉ 쪽지' 받은·보낸, 안 읽음 굵게, 펼치면 읽음, 지우기 + 7초 되돌리기, 30개씩 더 보기, 인터넷 없음 안내) `data-mail-*` + 설명서 주제 'mail' 뼈대(창 help 시험 - 같은 커밋).
+- [x] ■1 **쪽지 창**(`features/mail/` - open.ts는 Firebase 없이, 오른쪽 칸 '✉ 쪽지' 받은·보낸, 안 읽음 굵게, 펼치면 읽음, 지우기 + 7초 되돌리기, 30개씩 더 보기, 인터넷 없음 안내) `data-mail-*` + 설명서 주제 'mail' 뼈대(창 help 시험 - 같은 커밋).
+  → 11-02 `features/mail/`(open·MailWindow·actions) · 창 'mail'(help 'mail') · 안내 `ToastAction.expire`(단추 없이 닫히면 - 시험) · domain `mailWhen`·`mailPreview` · 설명서 share 'mail' 뼈대 + inspect-manual topic('mail').
+  `tools/inspect-mail.mjs` ■1 29항목 통과(그룹은 관리자 쓰기 B 주인·A 구성원, 쪽지는 각 계정 클라이언트로 32통). 창이 열린 동안 안 읽은 수가 늘면 첫 쪽을 다시 받아 위에 더한다(수는 ■3 Shell 훅부터).
 - [ ] ■2 **쓰기·답장**(그룹 → 구성원 칩 여럿 → 글 → 보내기·Ctrl+Enter, 끊기면 기다리는 저장 띠, 쓰던 글 useDraft) · 그룹 창 구성원 칩 ✉ · 그룹이 없으면 안내.
 - [ ] ■3 **머리줄 ✉ n** · 계정 칸 '✉ 쪽지' · 단축키 id `mail` · 새 쪽지 안내 한 번 · `sw.js` 'mail' 갈래 + notificationclick · ?mail= 받기 · 환경설정 알림 탭 글 '일정 알림·쪽지'.
 - [ ] ■4 **설명서**(share 장 'mail' - 그룹 구성원끼리만 · 서버에 저장되어 관리자가 볼 수 있다 · 학생 개인정보는 줄여 쓰기 · 1년 뒤 지워짐(하루쯤 늦을 수 있다) · 백업 파일에는 없다, 머리줄을 바꿨으니 start.ts 'layout'·'mobile'도) ·
