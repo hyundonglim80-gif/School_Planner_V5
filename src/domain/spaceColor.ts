@@ -20,3 +20,6 @@ export function spaceColor(sid: string): string {
   if (!sid.startsWith('g_')) return PERSONAL_SPACE_COLOR;
   return GROUP_SPACE_COLORS[hash(sid) % GROUP_SPACE_COLORS.length];
 }
+
+/** 공간 이름 글자 '🔒 개인' · '👥 그룹 이름' (겹친 일정의 점·구분 줄 title) */
+export const spaceTitle = (space: { sid: string; name: string }) => `${space.sid.startsWith('g_') ? '👥' : '🔒'} ${space.name}`;

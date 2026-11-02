@@ -265,6 +265,9 @@ export function useMirrorStatus(coll: SpaceCollection, sid?: string | null): Mir
   return useMirror((s) => s.colls[key]?.status ?? 'idle');
 }
 
+/** 공휴일 표의 판 (주말 빼기 기간이 그날 빠질 수 있어 날짜로 고르는 셈이 함께 본다) */
+export const useHolidayVersion = () => useHolidayStore((s) => s.version);
+
 export function useItemsOn(date: YMD, kind?: ItemKind, sid?: string | null): ItemDoc[] {
   const items = useDocs('items', sid);
   // 공휴일 표가 들어오면 주말 빼기 기간이 그날 빠질 수 있다 - 다시 고른다

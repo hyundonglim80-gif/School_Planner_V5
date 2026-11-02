@@ -5,11 +5,12 @@
 //   - 오늘 칸 data-today, 이번 주 줄 data-today-area (app/todayScroll).
 //   - 수업 칩(둘째 줄 '수업'): 계산한 수업 칸 - PC는 칸에, 휴대폰은 그날 목록에(V4 그대로).
 //   - printAt = 인쇄 창(features/print)의 쪽 하나 - 그 달을 PC 모양으로.
+//   - 겹쳐 보기(P17-2): 겹친 공간 일정도 칸·막대에 주 공간 것 뒤에(색 점) - 누르면 그 공간 칸, 칩 = 그 공간에 완료. 끌기·✕·고르기는 주 공간 것만.
 import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { monthGridDates } from '../../domain/dateUtils';
 import { onPeriodDay } from '../../domain/period';
-import { itemLabels, itemsOn, useDocs, useLabelTree } from '../../data/select';
+import { itemLabels, itemsOn, useDocs, useLabelTree, useOverlaySpaces } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { useIsMobile } from '../../ui/useIsMobile';
 import { useToday } from '../../ui/useToday';
@@ -44,6 +45,7 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
   const showClass = useNav((s) => s.showClass);
   const items = useDocs('items', sid);
   const tree = useLabelTree('event', sid);
+  const overlays = useOverlaySpaces();
   const today = useToday();
   const multi = useMulti();
   const isMobile = useIsMobile() && !printAt;
@@ -54,8 +56,12 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
   const month = Number(date.slice(5, 7));
   const monthKey = date.slice(0, 7);
   const dates = useMemo(() => monthGridDates(year, month), [year, month]);
-  const cal = useMemo(() => calendarEvents(items, dates[0], dates[dates.length - 1], tree), [items, dates, tree]);
+  const cal = useMemo(() => calendarEvents(items, dates[0], dates[dates.length - 1], tree, overlays), [items, dates, tree, overlays]);
   const eventsOn = (d: string) => cal.byDate.get(d) ?? [];
+  // 겹친 일정은 그 공간에서 열고 끝낸다 (라벨도 그 공간 트리)
+  const spaceOf = (ev: ItemDoc) => cal.spaceOf.get(ev);
+  const sidOf = (ev: ItemDoc) => spaceOf(ev)?.sid ?? sid;
+  const labelsOf = (ev: ItemDoc) => itemLabels(spaceOf(ev)?.tree ?? tree, ev.labelIds);
   // 수업 칸 (끄면 셈하지 않는다)
   const lessons = useLessonsFor(showClass && sid ? dates : [], sid);
   const lessonsOn = (d: string) => lessonSubjects(lessons[d]);
@@ -82,18 +88,34 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
   };
 
   const visiblePicks = (): EventPick[] =>
-    dates.flatMap((d) => [...eventsOn(d), ...cal.periods.filter((p) => onPeriodDay(p, d))].map((ev) => ({ id: ev.id, day: d })));
+    dates.flatMap((d) =>
+      [...eventsOn(d), ...cal.periods.filter((p) => onPeriodDay(p, d))].filter((ev) => !spaceOf(ev)).map((ev) => ({ id: ev.id, day: d })),
+    );
   const eventClick = (ev: ItemDoc, day: string, e: ReactMouseEvent) => {
     const p = { id: ev.id, day };
+    const space = spaceOf(ev);
+    // 겹친 일정은 고르기에 들지 않는다 - 고르는 동안은 눌러도 아무 일 없음 (PLAN 5장 P17-2)
+    if (space) {
+      if (multi.on) return;
+      if (isMobile) selectDate(day);
+      else openEventPanel({ sid: space.sid, date: day, id: ev.id });
+      return;
+    }
     if (e.shiftKey) pickRange(visiblePicks(), p);
     else if (multi.on || e.ctrlKey || e.metaKey) togglePick(p);
     // 휴대폰: 칸 안 일정은 작아 겨누기 어렵다 - 그날 목록을 연다 (V4 ROADMAP 15)
     else if (isMobile) selectDate(day);
     else if (sid) openEventPanel({ sid, date: day, id: ev.id });
   };
-  const toggleDone = (ev: ItemDoc, day: string) => sid && void setEventDone(sid, ev, !doneOnDay(ev, day), { day }).catch(quiet);
+  const toggleDone = (ev: ItemDoc, day: string) => {
+    const s = sidOf(ev);
+    if (s) void setEventDone(s, ev, !doneOnDay(ev, day), { day }).catch(quiet);
+  };
   // 기간 막대의 라벨 칩 = 기간 전체 (day 없이 - 날마다 끝낸 표시도 걷는다)
-  const togglePeriodDone = (ev: ItemDoc) => sid && void setEventDone(sid, ev, !doneAll(ev)).catch(quiet);
+  const togglePeriodDone = (ev: ItemDoc) => {
+    const s = sidOf(ev);
+    if (s) void setEventDone(s, ev, !doneAll(ev)).catch(quiet);
+  };
   const remove = (ev: ItemDoc, day: string) => {
     if (!sid) return;
     if (isGrouped(ev)) setScopeFor({ item: ev, day });
@@ -101,7 +123,7 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
   };
 
   const sheetEvents = sheetDate ? [...eventsOn(sheetDate), ...cal.periods.filter((p) => onPeriodDay(p, sheetDate))] : [];
-  const sheetHidden = sheetDate ? itemsOn(items, sheetDate, 'event').length - sheetEvents.length : 0;
+  const sheetHidden = sheetDate ? itemsOn(items, sheetDate, 'event').length - sheetEvents.filter((ev) => !spaceOf(ev)).length : 0;
 
   return (
     <div data-screen="month" className={`animate-fade-in ${sheetDate ? 'pb-[48vh]' : 'pb-12'}`}>
@@ -120,7 +142,8 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
         lessonsOn={showClass ? lessonsOn : undefined}
         onOpenLesson={openLesson}
         sid={sid}
-        labelsOf={(ev) => itemLabels(tree, ev.labelIds)}
+        labelsOf={labelsOf}
+        spaceOf={spaceOf}
         pickedOn={(d) => new Set(multi.picks.filter((p) => p.day === d).map((p) => p.id))}
         multiOn={multi.on}
         onSelectDate={selectDate}
@@ -130,7 +153,10 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
         onToggleDone={toggleDone}
         onTogglePeriodDone={togglePeriodDone}
         onDelete={remove}
-        onOpenLinks={(ev) => sid && openLinkViewer({ sid, id: ev.id })}
+        onOpenLinks={(ev) => {
+          const s = sidOf(ev);
+          if (s) openLinkViewer({ sid: s, id: ev.id });
+        }}
         drop={{ handlers: drop.handlers, overDate: drop.overDate, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}
       />
       {isMobile && sheetDate && (
@@ -140,11 +166,15 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
           hiddenCount={sheetHidden}
           showEvents={showEvents}
           lessons={showClass ? lessonsOn(sheetDate) : []}
-          labelsOf={(ev) => itemLabels(tree, ev.labelIds)}
+          labelsOf={labelsOf}
+          spaceOf={spaceOf}
           onClose={() => setSheetDate(null)}
           onGoDay={() => goDay(sheetDate)}
           onAdd={() => sid && openEventPanel({ sid, date: sheetDate })}
-          onOpenEvent={(ev) => sid && openEventPanel({ sid, date: sheetDate, id: ev.id })}
+          onOpenEvent={(ev) => {
+            const s = sidOf(ev);
+            if (s) openEventPanel({ sid: s, date: sheetDate, id: ev.id });
+          }}
           onToggleDone={multi.on ? undefined : (ev) => toggleDone(ev, sheetDate)}
         />
       )}

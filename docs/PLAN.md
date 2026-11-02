@@ -2177,7 +2177,11 @@ Claude 의견(방향 좋음 · 일정만 '겹쳐 보기' 1단계 · 칩은 날�
   → 11-02: 그냥 누르기 = 그 공간 하나(겹쳐 보기도 끔 - 라벨 칩 탐색기식) · Ctrl·Shift·⌘·길게 누르기 = 더하기·빼기 · aria-pressed는 주 공간 칩만(겹친 칩 = `data-space-overlay`) · PC 흐린 글은 xl(1280) 이상만.
   겹친 카드는 ▲▼ 자리에 색 점(`data-event-space-dot`) · 🗑️ 없음 · ⏰ = 그 공간 칸 · 짚기는 `useShownEventKey`(sid/id) · 칸 머리는 겹쳐 보는 동안만 '· 개인/공유' 대신 색 칩 `[data-event-panel-space]`('🔒 개인' / '👥 공유 · 이름').
   길게 누르기 `ui/longPress.ts`(EventCard도 옮김). 단위 2733 · events·share-groups 통과 · 임시 점검(1400·390, 27항목 - ■4에서 inspect-space-overlay로) 통과.
-- [ ] ■3 주간·월간·년간 - 칸마다 주 공간 뒤에 겹친 일정(기간 막대 포함, 휴대폰 월간 그날 목록도) · 끌기·고르기 목록(`visiblePicks` 등)에서 빼기 · 인쇄는 보이는 그대로.
+- [x] ■3 주간·월간·년간 - 칸마다 주 공간 뒤에 겹친 일정(기간 막대 포함, 휴대폰 월간 그날 목록도) · 끌기·고르기 목록(`visiblePicks` 등)에서 빼기 · 인쇄는 보이는 그대로.
+  → 11-02: `calendarEvents(items, from, to, tree, overlays)`가 겹친 공간 것을 그 공간 트리로 골라 뒤에 붙이고 `spaceOf`(항목 객체 → 공간)를 함께 준다(월간·년간). 주간은 화면이 두 주를 공간마다 `itemsOn`.
+  아래 칸(WeekDayCard 이월 뒤 `overlay`·MonthGrid·PeriodBar·MonthDaySheet·YearMonthCard·YearSheetMonth)은 `data-event-space` + `SpaceDot`(`data-event-space-dot`), 끌기·✕·고르기 체크 없음. 년간 칸은 `tree`를 그대로 두고 `cal.spaceOf`로 그 공간 트리(memo 그대로).
+  화면은 누르기·완료·🔗를 그 공간으로(`sidOf`), 고르는 동안 겹친 것을 누르면 아무 일 없음, Shift 범위 `visiblePicks`는 주 공간 것만, 휴대폰 월간 '숨긴 n개'는 주 공간 것만 센다. 인쇄는 같은 화면이라 보이는 그대로.
+  단위 2737 · week·month-year 통과 · 임시 점검에 주간·월간·년간(자세히·학사력)·휴대폰 월간 목록 더해 통과(그림 4장).
 - [ ] ■4 설명서(events·share - '겹쳐 보기': Ctrl·길게 누르기, 일정만, 누르면 그 공간 칸, 새 일정은 채운 칩 공간, 이 기기에 기억) ·
   `tools/inspect-space-overlay.mjs`(새 - 계정 하나가 그룹 주인: 개인 일정·그룹 일정(기간 하나 포함) 심기 → Ctrl 겹치기 → 하루·주간·월간·년간에 둘 다·색 점·글자 · 그룹 일정 누르기 = 칸 머리 '공유' ·
   완료 → 그 공간 문서 · 새 일정 = 주 공간 문서 · 겹친 것은 끌리지 않음 · 다시 열어도 기억 · 그룹 빼기 흉내 = 빠짐 · 끝에 심은 것 걷기) ·

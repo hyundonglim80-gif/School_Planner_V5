@@ -18,6 +18,7 @@ import { openWindow } from '../../app/windows';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
 import { periodPosition } from '../../domain/period';
+import { spaceTitle } from '../../domain/spaceColor';
 import { itemLabels, useItemsOn, useLabelTree, useMirrorStatus, useOverlayEventsOn, type OverlaySpace } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
@@ -64,7 +65,7 @@ function OverlayGroup({ space, count, children }: { space: OverlaySpace; count: 
       >
         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: space.color }} aria-hidden />
         <span data-overlay-name className="truncate">
-          {space.sid.startsWith('g_') ? '👥' : '🔒'} {space.name}
+          {spaceTitle(space)}
         </span>
         <span data-overlay-count={count} className="px-1.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
           {count}
@@ -365,7 +366,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
         {overlay ? (
           <span
             data-event-space-dot={overlay.sid}
-            title={`${overlay.sid.startsWith('g_') ? '👥' : '🔒'} ${overlay.name}`}
+            title={spaceTitle(overlay)}
             className="w-2.5 h-2.5 rounded-full shrink-0 sm:order-1 sm:mt-1.5 sm:mx-1"
             style={{ backgroundColor: overlay.color }}
           />

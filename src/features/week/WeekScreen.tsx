@@ -1,6 +1,7 @@
 // 주간 화면 (V4 features/week/WeekScreen.tsx·WeekGrid.tsx). 한 주를 요일 카드로 - 날짜·◀▶는 둘째 줄(SecondRow).
 //   - 본문 폭이 1200px 이상이면 요일이 한 줄로 서고 아래에 다음 주도 한 줄. 읽는 범위는 늘 두 주 - 기기 사본에서 고르므로 폭이 바뀌어도 다시 읽지 않는다.
 //   - 🕰️ 작년 이맘때: 이번 주 줄의 카드 아래에 작년 학년도 같은 주 같은 요일(domain/lastYearWeek), 골라서 📥 올해로 가져오기.
+//   - 겹쳐 보기(P17-2): 요일 카드마다 주 공간 것(이월 포함) 뒤에 겹친 공간 그날 일정(그 공간 라벨 트리·색 점) - 누르면 그 공간 칸, 칩 = 그 공간에 완료. 끌기·✕·고르기는 주 공간 것만.
 //   - 📰 주간학습안내(담임 - features/weeklyGuide)는 P6-3. 인쇄(⋮·Ctrl+P)는 인쇄 창(features/print)이 printAt으로 그 주만 그린다(단추 줄·다음 주·작년 없이). 수업 줄은 P6-1(features/lessons/WeekLessonRows - 요일끼리 교시 줄 수가 같다), 끌어 옮기기·공휴일은 P5-3.
 import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
@@ -9,7 +10,7 @@ import { openWindow } from '../../app/windows';
 import { addDays, weekDates } from '../../domain/dateUtils';
 import { lastYearWeekOf } from '../../domain/lastYearWeek';
 import { periodStateAt, timesOf } from '../../domain/periodTimes';
-import { itemLabels, itemsOn, useDocs, useLabelTree } from '../../data/select';
+import { itemLabels, itemsOn, useDocs, useHolidayVersion, useLabelTree, useOverlaySpaces, type OverlaySpace } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { useClock } from '../../ui/useClock';
 import { useMainWidth } from '../../ui/useMainWidth';
@@ -58,6 +59,8 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
   const noteTree = useLabelTree('note', sid);
   const carried = useCarried(sid);
   const today = carried.today;
+  const overlays = useOverlaySpaces();
+  const holidays = useHolidayVersion();
   const multi = useMulti();
   const drop = useEventDrop(sid);
   const showNextWeek = useMainWidth() >= 1200 && !printAt;
@@ -110,6 +113,21 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
   const [importing, setImporting] = useState(false);
 
   const eventsOf = (day: string) => itemsOn(items, day, 'event');
+  // 겹친 공간 그날 일정 (두 주 - 공간마다 그 공간 문서에서) + 항목 → 공간
+  const overlayWeek = useMemo(() => {
+    void holidays;
+    const byDay = new Map<string, ItemDoc[]>();
+    const spaceOf = new Map<ItemDoc, OverlaySpace>();
+    for (const o of overlays)
+      for (const day of allDays)
+        for (const ev of itemsOn(o.items, day, 'event')) {
+          spaceOf.set(ev, o);
+          byDay.set(day, [...(byDay.get(day) ?? []), ev]);
+        }
+    return { byDay, spaceOf };
+  }, [overlays, allDays, holidays]);
+  const spaceOf = (ev: ItemDoc) => overlayWeek.spaceOf.get(ev);
+  const sidOf = (ev: ItemDoc) => spaceOf(ev)?.sid ?? sid;
   const lastYearOf = (day: string) => {
     const from = lastYear?.dateMap[day];
     if (!from) return null;
@@ -155,11 +173,22 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
   const visiblePicks = (days: string[]): EventPick[] => days.flatMap((d) => eventsOf(d).map((ev) => ({ id: ev.id, day: d })));
   const eventClick = (ev: ItemDoc, day: string, days: string[], e: ReactMouseEvent) => {
     const p = { id: ev.id, day };
+    const space = spaceOf(ev);
+    // 겹친 일정은 고르기에 들지 않는다 - 고르는 동안은 눌러도 아무 일 없음
+    if (space) {
+      if (!multi.on) openEventPanel({ sid: space.sid, date: day, id: ev.id });
+      return;
+    }
     if (e.shiftKey) pickRange(visiblePicks(days), p);
     else if (multi.on || e.ctrlKey || e.metaKey) togglePick(p);
     else if (sid) openEventPanel({ sid, date: day, id: ev.id });
   };
   const toggleDone = (ev: ItemDoc, day: string, isCarried: boolean) => {
+    const space = spaceOf(ev);
+    if (space) {
+      void setEventDone(space.sid, ev, !doneOnDay(ev, day), { day }).catch(quiet);
+      return;
+    }
     if (!sid) return;
     // 따라오던 일정을 오늘 칸에서 끝내면 오늘로 옮겨 적는다 (하루 화면과 같다)
     if (isCarried) void setEventDone(sid, ev, true, { carried: { today, order: orderAfter(eventsOf(today)) } }).catch(quiet);
@@ -185,12 +214,14 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
               today={today}
               events={eventsOf(day)}
               carried={day === today ? carried.list : undefined}
+              overlay={overlayWeek.byDay.get(day)}
+              spaceOf={spaceOf}
               noteCount={itemsOn(items, day, 'note').length}
               evalCount={evalCounts[day] ?? 0}
               sid={sid}
               showEvents={showEvents}
               lessons={lessonRows(day, rows)}
-              labelsOf={(ev) => itemLabels(eventTree, ev.labelIds)}
+              labelsOf={(ev) => itemLabels(spaceOf(ev)?.tree ?? eventTree, ev.labelIds)}
               pickedIds={pickedHere}
               multiOn={multi.on}
               onOpenDay={() => {
@@ -202,7 +233,10 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
               onEventClick={(ev, e) => eventClick(ev, day, days, e)}
               onToggleDone={(ev, isCarried) => toggleDone(ev, day, isCarried)}
               onDelete={(ev) => remove(ev, day)}
-              onOpenLinks={(ev) => sid && openLinkViewer({ sid, id: ev.id })}
+              onOpenLinks={(ev) => {
+                const s = sidOf(ev);
+                if (s) openLinkViewer({ sid: s, id: ev.id });
+              }}
               drop={{ handlers: drop.handlers, over: drop.overDate === day, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}
               lastYear={
                 ly && (

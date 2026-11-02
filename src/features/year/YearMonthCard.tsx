@@ -6,6 +6,7 @@
 //   - 휴대폰: 이번 달만 펼치고 나머지는 머리글만(접은 달은 날을 그리지 않는다 - V4 그대로), 펼친 달은 두 칸을 다 쓴다.
 //   - 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3 - 그리는 날에만 놓을 수 있다, V4 그대로). 학사일정은 P6-3.
 //   - 수업 칩(둘째 줄 '수업' - V4 그대로): 수업이 있는 날도 줄로 선다. PC는 교시마다 같은 폭의 띠, 휴대폰은 든 교시만 번호와 칩. 누르면 그 교시 수업 칸.
+//   - 겹쳐 보기(P17-2): 겹친 공간 일정도 주 공간 것 뒤에 색 점과 함께(cal.spaceOf - 그 공간 라벨 트리) - 끌기·✕·고르기 없음, 누르기·완료는 부르는 쪽이 그 공간으로.
 //   달 카드는 React.memo - 바뀐 달만 다시 그린다(V4 - 열두 달 요소가 11,000개였다).
 import { memo, type MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_NAMES } from '../../domain/dateUtils';
@@ -22,6 +23,8 @@ import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
 import { doneAll, doneOnDay, type ItemDoc } from '../events/eventOps';
 import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
+import SpaceDot from '../events/SpaceDot';
+import { spaceTitle } from '../../domain/spaceColor';
 import type { CalendarEvents } from '../month/calendarEvents';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
 import { LessonStrip, LessonWraps } from '../lessons/CalendarLessons';
@@ -118,11 +121,12 @@ function YearMonthCard(p: Props) {
   const lessonsOn: Readonly<Record<string, readonly string[]>> = p.lessons ? JSON.parse(p.lessons) : {};
   // 그릴 날 = 일정이 있는 날·공휴일·학사일정·수업이 있는 날
   const activeDays = dates.filter((d) => eventsOn(d).length > 0 || startsOn.has(d) || !!holidayOf(d) || !!schoolEvents[d] || !!lessonsOn[d]);
-  const firstLabel = (ev: ItemDoc) => itemLabels(p.tree, ev.labelIds)[0];
+  const firstLabel = (ev: ItemDoc) => itemLabels(p.cal.spaceOf.get(ev)?.tree ?? p.tree, ev.labelIds)[0];
   const isPicked = (id: string, d: string) => p.picked.has(`${id}|${d}`);
 
   const renderPeriod = (sp: ShownPeriod<ItemDoc>) => {
     const ev = sp.item;
+    const space = p.cal.spaceOf.get(ev);
     const label = firstLabel(ev);
     const c = label ? labelColor(label.color) : null;
     // 기간 전체를 끝냈나 (칩의 ✓ = 기간 전체 - 이 달 날만 다 끝낸 것은 하루·주간에서 보인다)
@@ -133,11 +137,12 @@ function YearMonthCard(p: Props) {
     const indexLabel = periodIndexLabel(sp.cells, sp.total);
     return (
       <div
-        key={`period-${ev.id}`}
+        key={`period-${space?.sid ?? ''}${ev.id}`}
         data-year-period={ev.id}
         data-year-period-done={allDone ? '1' : '0'}
         data-event-picked={anyPicked ? '1' : undefined}
-        {...eventDragProps(ev, sp.cells[0].date, p.dragEnabled, p.onDragEnd)}
+        data-event-space={space?.sid}
+        {...eventDragProps(ev, sp.cells[0].date, !space && p.dragEnabled, p.onDragEnd)}
         onClick={(e) => {
           stop(e);
           p.onPeriodClick(sp, e);
@@ -146,9 +151,10 @@ function YearMonthCard(p: Props) {
           anyPicked ? 'bg-primary/10 border-primary text-primary' : 'bg-blue-50/60 border-blue-100 text-slate-700 font-medium'
         }`}
         style={anyPicked ? undefined : { borderLeftColor: c?.border || '#93c5fd' }}
-        title={`${ev.text} (${indexLabel}) · ${range}${sp.startsPeriod ? '' : ' · 앞 달에서 이어짐'}${sp.endsPeriod ? '' : ' · 다음 달로 이어짐'} - 누르면 고치기`}
+        title={`${space ? `${spaceTitle(space)} 일정 · ` : ''}${ev.text} (${indexLabel}) · ${range}${sp.startsPeriod ? '' : ' · 앞 달에서 이어짐'}${sp.endsPeriod ? '' : ' · 다음 달로 이어짐'} - 누르면 고치기`}
       >
-        {p.multiOn && <input type="checkbox" checked={allPicked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
+        {p.multiOn && !space && <input type="checkbox" checked={allPicked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
+        {space && <SpaceDot space={space} />}
         {/* 라벨 칩 = 기간 전체 완료·풀기, 다 끝냈으면 칩에 ✓ (10-30 사용자 보고 - P10-1은 보기만이었다. 하루만은 하루·주간에서). 여러 개 고르는 동안은 보기만 */}
         <EventDoneChip
           label={label ?? null}
@@ -163,22 +169,24 @@ function YearMonthCard(p: Props) {
           {sp.startsPeriod ? '' : '◂ '}📆 {range} ({indexLabel}){sp.endsPeriod ? '' : ' ▸'}
         </span>
         <LinksButton ev={ev} onOpen={p.onOpenLinks} />
-        {!p.multiOn && <DeleteButton onDelete={() => p.onDelete(ev, sp.cells[0].date)} />}
+        {!p.multiOn && !space && <DeleteButton onDelete={() => p.onDelete(ev, sp.cells[0].date)} />}
       </div>
     );
   };
 
   const renderEvent = (ev: ItemDoc, d: string) => {
+    const space = p.cal.spaceOf.get(ev);
     const label = firstLabel(ev);
     const done = doneOnDay(ev, d);
     const picked = isPicked(ev.id, d);
     return (
       <div
-        key={ev.id}
+        key={space ? `${space.sid}/${ev.id}` : ev.id}
         data-year-event={ev.id}
         data-year-event-done={done ? '1' : '0'}
         data-event-picked={picked ? '1' : undefined}
-        {...eventDragProps(ev, d, p.dragEnabled, p.onDragEnd)}
+        data-event-space={space?.sid}
+        {...eventDragProps(ev, d, !space && p.dragEnabled, p.onDragEnd)}
         onClick={(e) => {
           stop(e);
           p.onEventClick(ev, d, e);
@@ -186,9 +194,10 @@ function YearMonthCard(p: Props) {
         className={`group/ev relative px-1.5 py-1 rounded-lg ${BODY_TEXT.month} leading-snug transition-all border block hover:shadow-sm cursor-pointer break-words ${
           picked ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-slate-200 text-slate-700 font-medium'
         }`}
-        title="누르면 오른쪽 칸에서 고치기"
+        title={space ? `${spaceTitle(space)} 일정 - 누르면 오른쪽 칸에서 고치기` : '누르면 오른쪽 칸에서 고치기'}
       >
-        {p.multiOn && <input type="checkbox" checked={picked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
+        {p.multiOn && !space && <input type="checkbox" checked={picked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
+        {space && <SpaceDot space={space} />}
         {/* 라벨 칩 = 완료, 끝내면 칩 앞에 ✓ (P10-1 - 라벨이 없으면 회색 ○ 칩). 여러 개 고르는 동안은 ✓만 */}
         {p.multiOn ? (
           done && <DoneMark />
@@ -204,7 +213,7 @@ function YearMonthCard(p: Props) {
         )}
         <span className="inline align-middle">{ev.text}</span>
         <LinksButton ev={ev} onOpen={p.onOpenLinks} />
-        {!p.multiOn && <DeleteButton onDelete={() => p.onDelete(ev, d)} />}
+        {!p.multiOn && !space && <DeleteButton onDelete={() => p.onDelete(ev, d)} />}
       </div>
     );
   };

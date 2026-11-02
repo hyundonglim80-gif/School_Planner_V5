@@ -8,7 +8,8 @@ import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
 import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
 import EventDoneChip from '../events/EventDoneChip';
-import type { LabelDoc } from '../../data/select';
+import SpaceDot from '../events/SpaceDot';
+import type { LabelDoc, OverlaySpace } from '../../data/select';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import { LessonWraps } from '../lessons/CalendarLessons';
 import { hasLessons, type LessonSubjects } from '../lessons/lessonSubjects';
@@ -23,6 +24,8 @@ interface Props {
   /** 그날 교시마다 과목 (둘째 줄 '수업'을 끄면 빈 것) */
   lessons: LessonSubjects;
   labelsOf: (ev: ItemDoc) => LabelDoc[];
+  /** 겹쳐 본 다른 공간 일정이면 그 공간 (P17-2 - 색 점) */
+  spaceOf?: (ev: ItemDoc) => OverlaySpace | undefined;
   onClose: () => void;
   onGoDay: () => void;
   onAdd: () => void;
@@ -31,7 +34,7 @@ interface Props {
   onToggleDone?: (ev: ItemDoc) => void;
 }
 
-export default function MonthDaySheet({ date, events, hiddenCount, showEvents, lessons, labelsOf, onClose, onGoDay, onAdd, onOpenEvent, onToggleDone }: Props) {
+export default function MonthDaySheet({ date, events, hiddenCount, showEvents, lessons, labelsOf, spaceOf, onClose, onGoDay, onAdd, onOpenEvent, onToggleDone }: Props) {
   // 아래 탭바 바로 위에 붙는다 (탭바 높이는 기기 안전 여백에 따라 달라 재서 쓴다)
   const [tabBarHeight, setTabBarHeight] = useState(0);
   useLayoutEffect(() => {
@@ -79,14 +82,17 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
               const label = labelsOf(ev)[0];
               const done = doneOnDay(ev, date);
               const links = ev.linkIds?.length ?? 0;
+              const space = spaceOf?.(ev);
               return (
-                <li key={ev.id}>
+                <li key={space ? `${space.sid}/${ev.id}` : ev.id}>
                   <button
                     type="button"
                     data-sheet-event={ev.id}
+                    data-event-space={space?.sid}
                     onClick={() => onOpenEvent(ev)}
                     className="w-full text-left flex items-start gap-1.5 px-2 py-1.5 rounded-lg border text-sm leading-snug cursor-pointer bg-white border-slate-200 text-slate-800"
                   >
+                    {space && <SpaceDot space={space} className="mt-1.5 mr-0" />}
                     {/* 감싼 것이 <button>이라 칩은 span(role=button) - 누르면 일정을 열지 않고 완료만 뒤집는다. 끝내면 칩 앞에 ✓ (P10-1) */}
                     <EventDoneChip
                       label={label ?? null}

@@ -36,3 +36,31 @@ describe('달력 일정', () => {
     expect(calendarEvents(items, '2026-10-03', '2026-10-31', labelTreeOf(labels, 'event')).periods).toEqual([]);
   });
 });
+
+describe('겹쳐 보기 (P17-2)', () => {
+  // 그룹의 'on' 라벨은 같은 id(기본 라벨처럼)지만 달력을 껐다 - 그 공간 트리로 고른다
+  const gLabels = {
+    on: { id: 'on', ...base, kind: 'event', name: '그룹 학사', color: 'purple', parentId: null, order: 'a0', props: { calendar: false } },
+  } as unknown as Docs<'labels'>;
+  const gItems = {
+    g1: { id: 'g1', ...base, kind: 'event', date: '2026-10-06', text: '그룹 하루', order: 'a0' },
+    g2: { id: 'g2', ...base, kind: 'event', date: '2026-10-06', text: '그룹에서는 달력 끈 라벨', labelIds: ['on'], order: 'a1' },
+    g3: { id: 'g3', ...base, kind: 'event', date: '2026-10-05', endDate: '2026-10-08', text: '그룹 기간', order: 'a2' },
+  } as unknown as Docs<'items'>;
+  const space = { sid: 'g_a', name: '3학년', color: '#f59e0b', items: gItems, tree: labelTreeOf(gLabels, 'event') };
+
+  it('겹친 공간 것은 그 공간 트리로 골라 주 공간 것 뒤에 (그날 목록·기간 모두), spaceOf = 항목 → 공간', () => {
+    const cal = calendarEvents(items, '2026-09-27', '2026-10-31', labelTreeOf(labels, 'event'), [space]);
+    expect(cal.byDate.get('2026-10-06')!.map((d) => d.id)).toEqual(['a', 'c', 'g1']);
+    expect(cal.periods.map((d) => d.id)).toEqual(['d', 'g3']);
+    const g1 = cal.byDate.get('2026-10-06')![2];
+    expect(cal.spaceOf.get(g1)).toBe(space);
+    expect(cal.spaceOf.get(cal.byDate.get('2026-10-06')![0])).toBeUndefined();
+    expect(cal.spaceOf.size).toBe(2);
+  });
+
+  it('겹친 공간이 없으면 빈 표 (전과 같다)', () => {
+    const cal = calendarEvents(items, '2026-09-27', '2026-10-31', labelTreeOf(labels, 'event'));
+    expect(cal.spaceOf.size).toBe(0);
+  });
+});

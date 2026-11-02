@@ -2,14 +2,17 @@
 //   머리: 요일 · 날짜(토 파랑·일 빨강) · 📝 기록 수(누르면 그날 기록 창 - 하루 화면으로 가지 않는다).
 //   수업: 교시 줄(features/lessons/WeekLessonRows - P6-1) - 누르면 'N교시 수정' 칸.
 //   일정: 라벨 칩 누르기 = 완료, 글 누르기 = 오른쪽 일정 칸, 마우스를 올리면 ✕, 🔗 n = 연결된 데이터. 오늘 카드에는 이월로 따라오는 일정도(↪).
+//   겹쳐 보기(P17-2): 겹친 공간 일정은 이월 뒤에 색 점과 함께(끌기·✕·고르기 없음 - 누르기·완료는 부르는 쪽이 그 공간으로).
 //   카드 빈 곳 = 그날 하루 화면. + = 그날 새 일정. 일정을 끌어 다른 요일 카드에 놓으면 옮긴다(P5-3 - 마우스 화면만).
 import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
 import { periodPosition } from '../../domain/period';
 import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
-import type { LabelDoc } from '../../data/select';
+import type { LabelDoc, OverlaySpace } from '../../data/select';
 import DueBadge from '../events/DueBadge';
+import SpaceDot from '../events/SpaceDot';
+import { spaceTitle } from '../../domain/spaceColor';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
 import { useHolidayName } from '../../data/holidays';
 import HolidayName from '../../ui/HolidayName';
@@ -24,6 +27,10 @@ export interface WeekDayCardProps {
   events: readonly ItemDoc[];
   /** 오늘 카드에만 - 이월로 따라오는 일정 */
   carried?: readonly ItemDoc[];
+  /** 겹쳐 본 다른 공간의 그날 일정 (P17-2 - 수에 넣지 않는다) */
+  overlay?: readonly ItemDoc[];
+  /** 겹친 일정 → 그 공간 */
+  spaceOf?: (ev: ItemDoc) => OverlaySpace | undefined;
   /** 그날 기록 수 */
   noteCount: number;
   /** 그날 조사표 수 (📊 n - P7-4) */
@@ -53,6 +60,7 @@ const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 function EventChip({
   ev,
+  space,
   day,
   today,
   labels,
@@ -67,6 +75,7 @@ function EventChip({
 }: {
   drag?: { enabled: boolean; onEnd: () => void };
   ev: ItemDoc;
+  space?: OverlaySpace;
   day: string;
   today: string;
   labels: LabelDoc[];
@@ -88,12 +97,17 @@ function EventChip({
       data-week-event-done={done ? '1' : '0'}
       data-week-carried={carried ? '1' : undefined}
       data-event-picked={picked ? '1' : undefined}
-      {...eventDragProps(ev, day, !!drag?.enabled, drag?.onEnd)}
+      data-event-space={space?.sid}
+      {...eventDragProps(ev, day, !space && !!drag?.enabled, drag?.onEnd)}
       onClick={(e) => {
         stop(e);
         onClick(e);
       }}
-      title={`누르면 오른쪽 칸에서 고치기 (Ctrl·Shift와 함께 누르면 여러 개 고르기)${drag?.enabled ? ' · 끌어서 다른 날로 옮기기' : ''}`}
+      title={
+        space
+          ? `${spaceTitle(space)} 일정 - 누르면 오른쪽 칸에서 고치기 (겹쳐 보기)`
+          : `누르면 오른쪽 칸에서 고치기 (Ctrl·Shift와 함께 누르면 여러 개 고르기)${drag?.enabled ? ' · 끌어서 다른 날로 옮기기' : ''}`
+      }
       className={`group relative px-2 py-1.5 rounded-lg text-xs leading-snug transition-all border block hover:shadow-sm cursor-pointer break-words ${
         picked
           ? 'bg-primary/10 border-primary text-primary'
@@ -102,7 +116,8 @@ function EventChip({
               : 'bg-blue-50/60 border-blue-100 text-slate-800 font-medium'
       }`}
     >
-      {multiOn && <input type="checkbox" checked={picked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
+      {multiOn && !space && <input type="checkbox" checked={picked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
+      {space && <SpaceDot space={space} />}
       {carried && (
         <span className="inline-block align-middle mr-1 text-2xs font-bold text-amber-700" title="지난 날에서 이월로 따라오는 일정">
           ↪
@@ -138,7 +153,7 @@ function EventChip({
           🔗 {links}
         </button>
       )}
-      {!multiOn && (
+      {!multiOn && !space && (
         <button
           type="button"
           data-week-event-delete={ev.id}
@@ -159,7 +174,7 @@ function EventChip({
 }
 
 export default function WeekDayCard(props: WeekDayCardProps) {
-  const { date, today, events, carried = [], noteCount, showEvents } = props;
+  const { date, today, events, carried = [], overlay = [], noteCount, showEvents } = props;
   const holiday = useHolidayName()(date);
   // 우리 학교 학사일정 (P6-3 - 나이스, 학교·달마다 담아 둔다)
   const { byDate: schoolEvents } = useSchoolSchedule([date.slice(0, 7)]);
@@ -238,7 +253,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
               </button>
             </div>
           </div>
-          {count > 0 ? (
+          {count + overlay.length > 0 ? (
             <div className="space-y-1.5">
               {[...events.map((ev) => [ev, false] as const), ...carried.map((ev) => [ev, true] as const)].map(([ev, isCarried]) => (
                 <EventChip
@@ -257,6 +272,26 @@ export default function WeekDayCard(props: WeekDayCardProps) {
                   drag={props.drop ? { enabled: props.drop.dragEnabled, onEnd: props.drop.onDragEnd } : undefined}
                 />
               ))}
+              {overlay.map((ev) => {
+                const space = props.spaceOf?.(ev);
+                return (
+                  <EventChip
+                    key={`${space?.sid ?? ''}/${ev.id}`}
+                    ev={ev}
+                    space={space}
+                    day={date}
+                    today={today}
+                    labels={props.labelsOf(ev)}
+                    picked={false}
+                    multiOn={props.multiOn}
+                    carried={false}
+                    onClick={(e) => props.onEventClick(ev, e)}
+                    onToggle={() => props.onToggleDone(ev, false)}
+                    onDelete={() => {}}
+                    onLinks={() => props.onOpenLinks(ev)}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="text-xs text-slate-300 py-1 pl-1">일정이 없습니다.</div>

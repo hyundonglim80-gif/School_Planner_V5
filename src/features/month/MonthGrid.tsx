@@ -9,7 +9,7 @@ import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { labelColor } from '../../domain/labels';
 import { layoutWeekBars, type BarCell } from '../../domain/periodBars';
 import { fitToWidthFontSize } from '../../domain/typeScale';
-import type { LabelDoc } from '../../data/select';
+import type { LabelDoc, OverlaySpace } from '../../data/select';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
 import { useHolidayName } from '../../data/holidays';
 import HolidayName from '../../ui/HolidayName';
@@ -18,6 +18,8 @@ import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
 import PeriodBar from './PeriodBar';
+import SpaceDot from '../events/SpaceDot';
+import { spaceTitle } from '../../domain/spaceColor';
 import { LessonGrid, LessonStrip } from '../lessons/CalendarLessons';
 import type { LessonSubjects } from '../lessons/lessonSubjects';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
@@ -51,6 +53,8 @@ export interface MonthGridProps {
   /** 조사표 창을 열 공간 */
   sid?: string | null;
   labelsOf: (ev: ItemDoc) => LabelDoc[];
+  /** 겹쳐 본 다른 공간 일정이면 그 공간 (P17-2 - 색 점, 끌기·✕·고르기 없음) */
+  spaceOf?: (ev: ItemDoc) => OverlaySpace | undefined;
   pickedOn: (date: string) => ReadonlySet<string>;
   multiOn: boolean;
   onSelectDate: (date: string) => void;
@@ -191,6 +195,7 @@ export default function MonthGrid(p: MonthGridProps) {
                     {p.showEvents && (
                       <div className={`min-w-0 ${p.compact ? 'space-y-[2px]' : 'space-y-1'}`} style={{ gridRow: lanes + 2 }}>
                         {p.eventsOn(date).map((ev) => {
+                          const space = p.spaceOf?.(ev);
                           const label = p.labelsOf(ev)[0];
                           const c = label ? labelColor(label.color) : null;
                           const done = doneOnDay(ev, date);
@@ -198,22 +203,24 @@ export default function MonthGrid(p: MonthGridProps) {
                           const isPicked = picked.has(ev.id);
                           return (
                             <div
-                              key={ev.id}
+                              key={space ? `${space.sid}/${ev.id}` : ev.id}
                               data-month-event={ev.id}
                               data-month-event-done={done ? '1' : '0'}
                               data-event-picked={isPicked ? '1' : undefined}
-                              {...eventDragProps(ev, date, !!p.drop?.dragEnabled && !p.compact, p.drop?.onDragEnd)}
+                              data-event-space={space?.sid}
+                              {...eventDragProps(ev, date, !space && !!p.drop?.dragEnabled && !p.compact, p.drop?.onDragEnd)}
                               onClick={(e) => {
                                 stop(e);
                                 p.onEventClick(ev, date, e);
                               }}
                               style={p.compact && c ? { borderLeftWidth: '3px', borderLeftColor: c.border } : undefined}
-                              title="누르면 오른쪽 칸에서 고치기"
+                              title={space ? `${spaceTitle(space)} 일정 - 누르면 오른쪽 칸에서 고치기` : '누르면 오른쪽 칸에서 고치기'}
                               className={`group/ev relative rounded text-2xs font-medium leading-tight transition-all border block hover:shadow-sm cursor-pointer ${
                                 p.compact ? 'px-1 py-[1px] truncate whitespace-nowrap [container-type:inline-size]' : 'px-1.5 py-0.5 break-words'
                               } ${isPicked ? 'bg-primary/10 border-primary text-primary' : 'bg-blue-50 text-blue-800 border-blue-100'}`}
                             >
-                              {p.multiOn && <input type="checkbox" checked={isPicked} readOnly tabIndex={-1} className="inline-block align-middle mr-1 pointer-events-none" />}
+                              {p.multiOn && !space && <input type="checkbox" checked={isPicked} readOnly tabIndex={-1} className="inline-block align-middle mr-1 pointer-events-none" />}
+                              {space && <SpaceDot space={space} className={p.compact ? 'w-1.5 h-1.5 mr-0.5' : ''} />}
                               {/* 휴대폰은 라벨 이름 대신 왼쪽 색 띠 (이름이 칸의 절반을 먹었다 - V4). 칩 = 완료, 끝내면 칩 앞에 ✓ (P10-1).
                                   칩이 없는 자리(휴대폰·여러 개 고르기)는 글 앞에 ✓만 */}
                               {!p.multiOn && !p.compact ? (
@@ -245,7 +252,7 @@ export default function MonthGrid(p: MonthGridProps) {
                                   🔗 {links}
                                 </button>
                               )}
-                              {!p.multiOn && !p.compact && (
+                              {!p.multiOn && !p.compact && !space && (
                                 <button
                                   type="button"
                                   data-month-event-delete={ev.id}
@@ -270,10 +277,12 @@ export default function MonthGrid(p: MonthGridProps) {
               })}
               {layout.bars.map((bar) => {
                 const label = p.labelsOf(bar.item)[0];
+                const space = p.spaceOf?.(bar.item);
                 return (
                   <PeriodBar
-                    key={`${bar.item.id}@${bar.start}`}
+                    key={`${space?.sid ?? ''}/${bar.item.id}@${bar.start}`}
                     bar={bar}
+                    space={space}
                     label={label ?? null}
                     compact={p.compact}
                     multiOn={p.multiOn}
@@ -282,7 +291,7 @@ export default function MonthGrid(p: MonthGridProps) {
                     onOpen={(cell, e) => p.onEventClick(bar.item, cell.date, e)}
                     onOpenLinks={() => p.onOpenLinks(bar.item)}
                     onToggleDone={p.multiOn ? undefined : () => p.onTogglePeriodDone(bar.item)}
-                    drag={p.drop && !p.compact ? { enabled: p.drop.dragEnabled, onEnd: p.drop.onDragEnd } : undefined}
+                    drag={p.drop && !p.compact && !space ? { enabled: p.drop.dragEnabled, onEnd: p.drop.onDragEnd } : undefined}
                     style={{ gridColumn: `${bar.start + 1} / span ${bar.len}`, gridRow: bar.lane + 2 }}
                   />
                 );

@@ -14,7 +14,7 @@ import { academicYearOf, academicYearRange, addDays } from '../../domain/dateUti
 import { onPeriodDay } from '../../domain/period';
 import type { ShownPeriod } from '../../domain/periodBars';
 import { academicMonths, monthWeeks, type AcademicMonth } from '../../domain/yearSheet';
-import { noteDaysBetween, useDocs, useLabelTree, useMirrorStatus } from '../../data/select';
+import { noteDaysBetween, useDocs, useLabelTree, useMirrorStatus, useOverlaySpaces } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { useIsMobile } from '../../ui/useIsMobile';
 import { useToday } from '../../ui/useToday';
@@ -79,12 +79,13 @@ const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
 };
 
-/** 그 달에 보이는 일정 (Shift 범위 고르기의 차례 - 날짜 차례, 그날은 기간 → 일정) */
+/** 그 달에 보이는 일정 (Shift 범위 고르기의 차례 - 날짜 차례, 그날은 기간 → 일정. 겹친 공간 것은 고르지 않는다) */
 function visiblePicks(months: readonly AcademicMonth[], cal: CalendarEvents, showWeekend: boolean): EventPick[] {
   const out: EventPick[] = [];
   for (const m of months)
     for (const d of monthWeeks(m.year, m.month, showWeekend).flat())
-      if (d) for (const ev of [...cal.periods.filter((p) => onPeriodDay(p, d)), ...(cal.byDate.get(d) ?? [])]) out.push({ id: ev.id, day: d });
+      if (d)
+        for (const ev of [...cal.periods.filter((p) => onPeriodDay(p, d)), ...(cal.byDate.get(d) ?? [])]) if (!cal.spaceOf.has(ev)) out.push({ id: ev.id, day: d });
   return out;
 }
 
@@ -101,6 +102,8 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
   const view: YearView = printAt ? 'sheet' : shownView;
   const items = useDocs('items', sid);
   const tree = useLabelTree('event', sid);
+  // 겹쳐 보기(P17-2) - 겹친 공간 일정도 달력에(주 공간 것 뒤에, cal.spaceOf). 누르기·완료·🔗는 그 공간으로, 끌기·✕·고르기는 주 공간 것만
+  const overlays = useOverlaySpaces();
   const status = useMirrorStatus('items');
   const today = useToday();
   const multi = useMulti();
@@ -111,7 +114,7 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
   const academicYear = academicYearOf(date);
   const [from, to] = academicYearRange(academicYear);
   const months = useMemo(() => academicMonths(academicYear).filter((m) => semesterFilter === 'all' || m.semester === semesterFilter), [academicYear, semesterFilter]);
-  const cal = useMemo(() => calendarEvents(items, from, to, tree), [items, from, to, tree]);
+  const cal = useMemo(() => calendarEvents(items, from, to, tree, overlays), [items, from, to, tree, overlays]);
   const noteCounts = useMemo(() => {
     const map = new Map<string, number>();
     for (const { date: d } of noteDaysBetween(items, from, to)) map.set(d, (map.get(d) ?? 0) + 1);
@@ -166,10 +169,15 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
     setDate(cur.startsWith(m.key) ? cur : `${m.key}-01`);
     setScope('month');
   }, []);
-  const openEvent = useCallback((ev: ItemDoc, d: string) => {
-    const s = latest.current.sid;
-    if (s) openEventPanel({ sid: s, date: d, id: ev.id });
-  }, []);
+  /** 그 일정의 공간 (겹친 것은 그 공간, 아니면 주 공간) */
+  const sidOf = useCallback((ev: ItemDoc) => latest.current.cal.spaceOf.get(ev)?.sid ?? latest.current.sid, []);
+  const openEvent = useCallback(
+    (ev: ItemDoc, d: string) => {
+      const s = sidOf(ev);
+      if (s) openEventPanel({ sid: s, date: d, id: ev.id });
+    },
+    [sidOf],
+  );
   const addEvent = useCallback((d: string) => {
     const s = latest.current.sid;
     if (s) openEventPanel({ sid: s, date: d });
@@ -178,10 +186,13 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
     const s = latest.current.sid;
     if (s) openDayNotes({ sid: s, date: d });
   }, []);
-  const openLinks = useCallback((ev: ItemDoc) => {
-    const s = latest.current.sid;
-    if (s) openLinkViewer({ sid: s, id: ev.id });
-  }, []);
+  const openLinks = useCallback(
+    (ev: ItemDoc) => {
+      const s = sidOf(ev);
+      if (s) openLinkViewer({ sid: s, id: ev.id });
+    },
+    [sidOf],
+  );
   const openLesson = useCallback((d: string, n: number) => {
     const s = latest.current.sid;
     if (s) openLessonPanel({ sid: s, date: d, n });
@@ -190,6 +201,11 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
     (ev: ItemDoc, d: string, e: ReactMouseEvent) => {
       const p = { id: ev.id, day: d };
       const { months: ms, cal: c, showWeekend: wk } = latest.current;
+      // 겹친 일정은 고르기에 들지 않는다 - 고르는 동안은 눌러도 아무 일 없음
+      if (c.spaceOf.has(ev)) {
+        if (!useMulti.getState().on) openEvent(ev, d);
+        return;
+      }
       if (e.shiftKey) pickRange(visiblePicks(ms, c, wk), p);
       else if (useMulti.getState().on || e.ctrlKey || e.metaKey) togglePick(p);
       else openEvent(ev, d);
@@ -200,6 +216,10 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
   const periodClick = useCallback(
     (sp: ShownPeriod<ItemDoc>, e: ReactMouseEvent) => {
       const s = useMulti.getState();
+      if (latest.current.cal.spaceOf.has(sp.item)) {
+        if (!s.on) openEvent(sp.item, sp.cells[0].date);
+        return;
+      }
       if (!(s.on || e.ctrlKey || e.metaKey || e.shiftKey)) {
         openEvent(sp.item, sp.cells[0].date);
         return;
@@ -210,15 +230,21 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
     },
     [openEvent],
   );
-  const toggleDone = useCallback((ev: ItemDoc, d: string) => {
-    const s = latest.current.sid;
-    if (s) void setEventDone(s, ev, !doneOnDay(ev, d), { day: d }).catch(quiet);
-  }, []);
+  const toggleDone = useCallback(
+    (ev: ItemDoc, d: string) => {
+      const s = sidOf(ev);
+      if (s) void setEventDone(s, ev, !doneOnDay(ev, d), { day: d }).catch(quiet);
+    },
+    [sidOf],
+  );
   // 기간 줄의 라벨 칩 = 기간 전체 (day 없이 - 날마다 끝낸 표시도 걷는다)
-  const togglePeriodDone = useCallback((ev: ItemDoc) => {
-    const s = latest.current.sid;
-    if (s) void setEventDone(s, ev, !doneAll(ev)).catch(quiet);
-  }, []);
+  const togglePeriodDone = useCallback(
+    (ev: ItemDoc) => {
+      const s = sidOf(ev);
+      if (s) void setEventDone(s, ev, !doneAll(ev)).catch(quiet);
+    },
+    [sidOf],
+  );
   const remove = useCallback((ev: ItemDoc, d: string) => {
     const s = latest.current.sid;
     if (!s) return;

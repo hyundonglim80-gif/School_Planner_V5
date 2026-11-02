@@ -5,13 +5,16 @@
 import type { CSSProperties, MouseEvent as ReactMouseEvent } from 'react';
 import { labelColor } from '../../domain/labels';
 import { periodIndexLabel, periodRangeLabel, type BarCell, type WeekBar } from '../../domain/periodBars';
-import type { LabelDoc } from '../../data/select';
+import type { LabelDoc, OverlaySpace } from '../../data/select';
 import { eventDragProps } from '../events/drag';
 import EventDoneChip from '../events/EventDoneChip';
+import SpaceDot from '../events/SpaceDot';
 import { doneAll, doneOnDay, type ItemDoc } from '../events/eventOps';
 
 interface Props {
   bar: WeekBar<ItemDoc>;
+  /** 겹쳐 본 다른 공간 일정이면 그 공간 (P17-2 - 글 앞 색 점, 끌기 없음은 부르는 쪽이) */
+  space?: OverlaySpace;
   label: LabelDoc | null;
   compact: boolean;
   multiOn: boolean;
@@ -31,7 +34,7 @@ interface Props {
 /** 라벨이 없을 때의 막대 빛깔 (보통 일정 칩보다 한 단계 짙게 - 칸 바탕과 갈리게) */
 const DEFAULT_COLOR = { bg: '#dbeafe', text: '#1e3a8a', border: '#bfdbfe' };
 
-export default function PeriodBar({ bar, label, compact, multiOn, picked, isCurrentMonth, onOpen, onOpenLinks, onToggleDone, style, drag }: Props) {
+export default function PeriodBar({ bar, space, label, compact, multiOn, picked, isCurrentMonth, onOpen, onOpenLinks, onToggleDone, style, drag }: Props) {
   const labelName = label?.name ?? '';
   const color = (label && labelColor(label.color)) || DEFAULT_COLOR;
   const ev = bar.item;
@@ -47,6 +50,7 @@ export default function PeriodBar({ bar, label, compact, multiOn, picked, isCurr
     <div
       data-period-bar={ev.id}
       data-period-bar-done={allDone ? '1' : '0'}
+      data-event-space={space?.sid}
       className={`relative z-10 min-w-0 self-start ${compact ? 'h-[14px]' : ''}`}
       style={{
         ...style,
@@ -96,6 +100,7 @@ export default function PeriodBar({ bar, label, compact, multiOn, picked, isCurr
         style={{ color: color.text }}
       >
         {!bar.startsPeriod && <span className="shrink-0 opacity-60">◂</span>}
+        {space && <SpaceDot space={space} className={compact ? 'w-1.5 h-1.5 mr-0' : 'mr-0'} />}
         {!compact && (
           <EventDoneChip
             label={label}
