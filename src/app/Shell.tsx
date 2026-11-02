@@ -33,6 +33,7 @@ import NewYearBanner from '../features/newYear/NewYearBanner';
 import { useShareReceiver } from '../features/share/receive';
 import NewBuildBanner from './NewBuildBanner';
 import PendingWritesBanner from './PendingWritesBanner';
+import ShortcutRecordBar from './ShortcutRecordBar';
 import { usePendingWritesGuard } from './pendingWritesGuard';
 import ColumnResizer from '../ui/ColumnResizer';
 import ImageViewer from '../ui/ImageViewer';
@@ -188,6 +189,8 @@ export default function Shell() {
       <ImageViewer />
       {/* 여러 개 고르기 - 고르는 동안 화면 아래 동작 줄 */}
       <MultiSelectBar />
+      {/* ⌨️ 단축키 설정 - 메뉴·단추를 눌러 고르는 동안 아래 띠 (P18-1) */}
+      <ShortcutRecordBar />
       {/* 오른쪽 칸이 둘 이상이면 위에 탭 (V4 2026-10-07) */}
       <SideTabs />
       {rightOpen && <ColumnResizer side="right" width={RIGHT_COLUMN_CSS_WIDTH} />}

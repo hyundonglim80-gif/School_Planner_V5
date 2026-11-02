@@ -10,6 +10,11 @@ import {
   resolveBindings,
   findConflicts,
   isModifierOnly,
+  assignBinding,
+  recordKeyIssue,
+  worksWhileTyping,
+  isShortcutId,
+  overridesFromBindings,
   type Binding,
 } from './shortcuts';
 
@@ -202,5 +207,62 @@ describe('지운 기능의 저장된 키 (19번 U4 명령 창)', () => {
     const bindings = resolveBindings({ commandPalette: { key: 'K', ctrl: true } } as never);
     expect(Object.keys(bindings)).not.toContain('commandPalette');
     expect(Object.values(bindings).some((b) => b.key === 'K' && b.ctrl && !b.shift && !b.alt)).toBe(false);
+  });
+});
+
+describe('눌러서 정하기 (P18)', () => {
+  const key = (k: string, mods: Partial<Binding> = {}): Binding => ({ ctrl: false, alt: false, shift: false, ...mods, key: k });
+
+  it('키가 없던 기능에 키를 준다 - 겹친 것이 없으면 다른 기능은 그대로', () => {
+    const { bindings, cleared } = assignBinding(resolveBindings(), 'timetable', key('T', { ctrl: true, alt: true }));
+    expect(bindings.timetable).toEqual(key('T', { ctrl: true, alt: true }));
+    expect(cleared).toEqual([]);
+    expect(overridesFromBindings(bindings)).toEqual({ timetable: key('T', { ctrl: true, alt: true }) });
+  });
+
+  it('다른 기능이 쓰던 키면 그 기능에서 뺀다 (기본값이 있던 것은 없음으로 남는다)', () => {
+    const { bindings, cleared } = assignBinding(resolveBindings(), 'timetable', key('F', { ctrl: true }));
+    expect(cleared).toEqual(['search']);
+    expect(bindings.search.key).toBe('');
+    expect(findConflicts(bindings)).toEqual([]);
+    expect(overridesFromBindings(bindings)).toEqual({ timetable: key('F', { ctrl: true }), search: key('') });
+  });
+
+  it('↑/↓ 짝 기능: Shift+↓를 다른 기능에 주면 Shift+↑ 주말 토글에서 뺀다', () => {
+    const { cleared } = assignBinding(resolveBindings(), 'trash', key('ArrowUp', { shift: true }));
+    expect(cleared).toEqual(['toggleWeekend']);
+    const pair = assignBinding(resolveBindings(), 'toggleEvents', key('ArrowDown', { shift: true }));
+    expect(pair.cleared).toEqual(['toggleWeekend']);
+  });
+
+  it('제 키를 다시 주면 아무것도 빼지 않는다 · 빈 키 = 그 기능 단축키 지우기', () => {
+    expect(assignBinding(resolveBindings(), 'search', key('F', { ctrl: true })).cleared).toEqual([]);
+    const { bindings, cleared } = assignBinding(resolveBindings(), 'search', key(''));
+    expect(cleared).toEqual([]);
+    expect(bindings.search.key).toBe('');
+  });
+
+  it('Ctrl+S·ESC는 받지 않는다, 나머지는 받는다', () => {
+    expect(recordKeyIssue(key('S', { ctrl: true }))).toMatch(/저장/);
+    expect(recordKeyIssue(key('Escape'))).toMatch(/ESC/);
+    expect(recordKeyIssue(key('S', { ctrl: true, shift: true }))).toBeNull();
+    expect(recordKeyIssue(key('T', { alt: true }))).toBeNull();
+  });
+
+  it('Ctrl·Alt 없는 키는 글 칸 안에서 듣지 않는다고 알린다', () => {
+    expect(worksWhileTyping(key('T'))).toBe(false);
+    expect(worksWhileTyping(key('T', { shift: true }))).toBe(false);
+    expect(worksWhileTyping(key('T', { alt: true }))).toBe(true);
+    expect(worksWhileTyping(key(''))).toBe(true);
+  });
+
+  it('↑/↓ 짝 토글과 다른 기능의 같은 화살표는 겹침이다 (목록 탭도 막는다 - 먼저 적힌 토글이 키를 가져간다)', () => {
+    const bindings = { ...resolveBindings(), trash: key('ArrowDown', { shift: true }) };
+    expect(findConflicts(bindings)).toEqual([['toggleWeekend', 'trash']]);
+  });
+
+  it('isShortcutId - 목록에 있는 id만', () => {
+    expect(isShortcutId('timetable')).toBe(true);
+    expect(isShortcutId('commandPalette')).toBe(false);
   });
 });

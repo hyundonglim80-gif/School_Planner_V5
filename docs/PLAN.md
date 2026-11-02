@@ -2223,8 +2223,10 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 
 ### P18-1. 단축키 설정 - 눌러서 고르기 (1차: 지금 기능)
 **먼저 읽을 것**: 이 절 · 5장 'P18' · `domain/shortcuts.ts` · `app/keys.ts` · `settings/ShortcutsTab.tsx`·`SettingsWindow.tsx` · 설명서 settings 'shortcuts'·'shortcuts-edit'.
-- [ ] ■1 자료·띠 - `domain/shortcuts` `assignBinding`(그 기능에 키 + 겹친 기능에서 빼기, 뺀 id 목록)·`recordKeyIssue`(고정 키) + 시험 · `app/shortcutRecord.ts`(기록 store: 끔·고르기·키 · 누르기는 document capture에서 `[data-shortcut-target]` 찾기 ·
+- [x] ■1 자료·띠 - `domain/shortcuts` `assignBinding`(그 기능에 키 + 겹친 기능에서 빼기, 뺀 id 목록)·`recordKeyIssue`(고정 키) + 시험 · `app/shortcutRecord.ts`(기록 store: 끔·고르기·키 · 누르기는 document capture에서 `[data-shortcut-target]` 찾기 ·
   ESC·키는 window capture에서 먼저) · `app/ShortcutRecordBar.tsx`(body portal - '고른 것'·완료·취소 → 키 칸·저장·다시 고르기 `[data-shortcut-record=bar|picked|miss|done|cancel|key|save|repick|note]`) · Shell에 띠 · `ui/shortcutTarget.ts` · 시험.
+  → 11-02: 띠 `[data-shortcut-record=pick|key]` + `-picked|miss|done|cancel|key|issue|conflict|typing|save|repick` (z 99500 - 창 위·⏰ 알림·안내 아래, 화면 아래 bottom-20) · body `data-shortcut-recording` · 키 단계는 초점을 비운다(Space·Enter가 단추를 누르지 않게).
+  **고친 것**: ↑/↓ 짝 토글(Shift+↑ 주말)과 다른 기능의 Shift+↓가 겹침으로 안 잡혔다(토글이 키를 가져가 그 기능은 안 돌았다) - 짝 토글은 두 화살표 자리를 모두 차지(`slotsOf`, 목록 탭도). 단위 shortcuts 43·띠 5.
 - [ ] ■2 단추에 표시 + 단축키 탭 - 위 '단추 → 기능' 모두 `{...shortcutTarget(id)}` · 기록 중 점선 테두리(index.css `[data-shortcut-recording] [data-shortcut-target]`) · 단축키 탭 머리 '⌨️ 단축키 설정'(PC만, 고치던 것이 있으면 묻기, 환경설정 창 닫고 시작) ·
   끝나면 환경설정 단축키 탭 + 그 줄 짚기(`{ tab: 'shortcuts', focus: id }`).
 - [ ] ■3 설명서(settings 'shortcuts-edit' 눌러서 정하기 + 예시)·`tools/inspect-shortcut-record.mjs`(새 - ⋮ → 시간표 → 완료 → Ctrl+Alt+T → 저장 → 키로 열림·탭 줄·설명서 표·겹친 키 빼기·못 거는 단추·ESC 취소·끝에 되돌리기) ·

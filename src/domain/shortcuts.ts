@@ -312,27 +312,75 @@ export function readShortcutOverrides(v: unknown): ShortcutOverrides | undefined
   return out;
 }
 
+/**
+ * 이 조합이 차지하는 자리들 ('CA|T'). 키가 없으면 없음.
+ * ↑ 와 ↓ 를 같이 받는 기능은 두 방향을 모두 차지한다 - Shift+↑ 주말 토글이 있으면 다른 기능의 Shift+↓도 겹친다(먼저 적힌 토글이 키를 가져간다).
+ */
+function slotsOf(action: ShortcutAction, binding: Binding | undefined): string[] {
+  if (!binding || !binding.key) return [];
+  const mods = `${binding.ctrl ? 'C' : ''}${binding.alt ? 'A' : ''}${binding.shift ? 'S' : ''}|`;
+  if (action.pairArrows && (binding.key === 'ArrowUp' || binding.key === 'ArrowDown')) return [`${mods}ArrowUp`, `${mods}ArrowDown`];
+  return [mods + binding.key];
+}
+
 /** 같은 조합을 쓰는 기능이 있으면 그 쌍을 돌려준다 */
 export function findConflicts(bindings: Record<ShortcutId, Binding>): Array<[ShortcutId, ShortcutId]> {
   const slots = new Map<string, ShortcutId>();
   const conflicts: Array<[ShortcutId, ShortcutId]> = [];
 
   for (const action of SHORTCUT_ACTIONS) {
-    const binding = bindings[action.id];
-    if (!binding || !binding.key) continue;
-
-    // ↑ 와 ↓ 를 같이 받는 기능은 두 방향을 한 자리로 본다
-    const key =
-      action.pairArrows && (binding.key === 'ArrowUp' || binding.key === 'ArrowDown')
-        ? 'Arrow↕'
-        : binding.key;
-    const slot = `${binding.ctrl ? 'C' : ''}${binding.alt ? 'A' : ''}${binding.shift ? 'S' : ''}|${key}`;
-
-    const taken = slots.get(slot);
-    if (taken) conflicts.push([taken, action.id]);
-    else slots.set(slot, action.id);
+    const met = new Set<ShortcutId>();
+    for (const slot of slotsOf(action, bindings[action.id])) {
+      const taken = slots.get(slot);
+      if (!taken) slots.set(slot, action.id);
+      else if (!met.has(taken)) {
+        met.add(taken);
+        conflicts.push([taken, action.id]);
+      }
+    }
   }
   return conflicts;
+}
+
+// ── 눌러서 정하기 (P18 - 메뉴·단추를 눌러 기능을 고르고 키를 누른다) ─────────
+
+export function isShortcutId(id: string): id is ShortcutId {
+  return SHORTCUT_ACTIONS.some((a) => a.id === id);
+}
+
+/**
+ * 한 기능에 키를 준다. 같은 자리(조합)를 쓰던 다른 기능은 그 키를 뺀다(없음) - 뺀 기능 목록도 돌려준다.
+ * 목록(단축키 탭)은 겹치면 저장을 막지만, 눌러서 정할 때는 '이 키를 여기에'가 뜻이 분명하다(PLAN 5장 P18).
+ * 키가 빈 조합을 주면 그 기능의 단축키를 지운다.
+ */
+export function assignBinding(
+  bindings: Record<ShortcutId, Binding>,
+  id: ShortcutId,
+  binding: Binding,
+): { bindings: Record<ShortcutId, Binding>; cleared: ShortcutId[] } {
+  const next = { ...bindings, [id]: binding };
+  const action = SHORTCUT_ACTIONS.find((a) => a.id === id);
+  const mine = new Set(action ? slotsOf(action, binding) : []);
+  const cleared: ShortcutId[] = [];
+  if (mine.size === 0) return { bindings: next, cleared };
+  for (const other of SHORTCUT_ACTIONS) {
+    if (other.id === id || !slotsOf(other, next[other.id]).some((s) => mine.has(s))) continue;
+    next[other.id] = b('');
+    cleared.push(other.id);
+  }
+  return { bindings: next, cleared };
+}
+
+/** 눌러서 정할 때 받지 않는 키 - 까닭 글. 받을 수 있으면 null (ESC는 기록 취소라 여기까지 오지 않는다) */
+export function recordKeyIssue(binding: Binding): string | null {
+  if (binding.key === 'S' && binding.ctrl && !binding.alt && !binding.shift) return 'Ctrl + S는 저장 키라 쓸 수 없습니다.';
+  if (binding.key === 'Escape') return 'ESC는 바꿀 수 없는 키입니다.';
+  return null;
+}
+
+/** 글 칸 안에서도 동작하는 조합인가 - Ctrl·Alt가 없으면 글을 칠 때는 듣지 않는다(app/keys) */
+export function worksWhileTyping(binding: Binding): boolean {
+  return !binding.key || binding.ctrl || binding.alt;
 }
 
 export function labelOf(id: ShortcutId): string {

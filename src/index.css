@@ -78,6 +78,16 @@
   scroll-margin-top: calc(var(--app-header-h, 64px) + 16px);
 }
 
+/* ⌨️ 단축키 설정 - 고르는 동안 고를 수 있는 단추에 점선 테두리 (P18-1, app/ShortcutRecordBar). 테두리는 안쪽에 - 묶음의 overflow-hidden에 잘리지 않게 */
+body[data-shortcut-recording='pick'] [data-shortcut-target] {
+  outline: 2px dashed var(--color-violet-400);
+  outline-offset: -2px;
+}
+body[data-shortcut-recording='pick'] [data-shortcut-target]:hover {
+  outline-style: solid;
+  outline-color: var(--color-violet-600);
+}
+
 /* ── 인쇄 (V4 그대로 - ui/print) ──────────────────────────────────────
    찍을 부분을 복제해 body 바로 아래 #sp5-print-root에 넣고, 인쇄할 때는 그것만 보인다.
    스크롤 상자·높이 제한·붙박이(sticky)는 펼쳐서 잘리지 않게 한다. 색은 그대로 찍는다(라벨 칩·교시 색). */
