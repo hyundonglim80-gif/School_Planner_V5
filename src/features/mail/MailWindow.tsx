@@ -3,6 +3,7 @@
 //   안 읽은 쪽지는 굵게·점 - 펼치면 읽음. 지우기 = 바로 숨기고 7초 '되돌리기'(features/mail/actions).
 //   창이 열린 동안 새 쪽지가 오면(머리줄 안 읽은 수가 늘면) 첫 쪽을 다시 받아 위에 더한다. 보내면 보낸 쪽지 탭으로(첫 쪽을 다시).
 //   ↩ 답장 = 쓰기 탭에 그 사람·그 그룹 - 나와 그 사람이 지금 그 그룹 구성원일 때만(규칙이 막는다).
+//   첨부(P16): 접힌 줄은 📎 n(글이 없으면 '🖼️ 그림 n'), 펼치면 글 아래 그림·파일(MailAttachments).
 import { useEffect, useRef, useState } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import type { WindowProps } from '../../app/windows';
@@ -11,9 +12,10 @@ import { loadInbox, loadSent, markRead } from '../../data/mail';
 import { useMailStore } from '../../data/mailStore';
 import { useSession } from '../../data/session';
 import { useMySpaces } from '../../data/spaceChoice';
-import { mailPreview, mailWhen, replyQuote, unreadLabel, type MailBox, type MailIn, type MailSent } from '../../domain/mail';
+import { mailFilesLabel, mailPreview, mailWhen, replyQuote, unreadLabel, type MailBox, type MailIn, type MailSent } from '../../domain/mail';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { removeMail, useHiddenMail } from './actions';
+import MailAttachments from './MailAttachments';
 import MailCompose, { type ComposeAsk } from './MailCompose';
 import type { MailParams, MailTabId } from './open';
 
@@ -57,16 +59,24 @@ function MailRow({ m, now, open, onToggle, onDelete, onReply }: RowProps) {
           <span className="flex items-baseline gap-1.5">
             <span className={`truncate text-sm ${unread ? 'font-black text-slate-900' : 'font-semibold text-slate-700'}`}>{who}</span>
             {m.groupName && <span className="shrink-0 truncate text-2xs text-slate-400">👥 {m.groupName}</span>}
+            {m.attachments.length > 0 && (
+              <span data-mail-files={m.attachments.length} title={mailFilesLabel(m.attachments)} className="shrink-0 text-2xs text-slate-500">
+                📎 {m.attachments.length}
+              </span>
+            )}
             <span className="ml-auto shrink-0 text-2xs text-slate-400">{mailWhen(m.at, now)}</span>
           </span>
-          {!open && <span className={`block truncate text-xs ${unread ? 'font-bold text-slate-800' : 'text-slate-500'}`}>{mailPreview(m.text)}</span>}
+          {!open && <span className={`block truncate text-xs ${unread ? 'font-bold text-slate-800' : 'text-slate-500'}`}>{mailPreview(m.text, m.attachments)}</span>}
         </span>
       </button>
       {open && (
         <div data-mail-body className="space-y-2 px-3 pb-3 pl-7">
-          <p data-mail-text className="whitespace-pre-wrap break-words text-sm text-slate-800">
-            {m.text}
-          </p>
+          {m.text && (
+            <p data-mail-text className="whitespace-pre-wrap break-words text-sm text-slate-800">
+              {m.text}
+            </p>
+          )}
+          <MailAttachments items={m.attachments} />
           <p className="text-2xs text-slate-400">받는 사람 {m.toNames}</p>
           <div className="flex justify-end gap-1">
             {inbox && onReply && (
@@ -298,7 +308,7 @@ export default function MailWindow({ params, close, raise }: WindowProps<MailPar
       showToast(g ? `${m.fromName} 선생님이 그 그룹에 없어 답장할 수 없습니다.` : `그 그룹(${m.groupName})에 들어 있지 않아 답장할 수 없습니다.`, 4000);
       return;
     }
-    setAsk({ sid: m.sid, to: [m.from], replyTo: m.id, quote: replyQuote(m.text) });
+    setAsk({ sid: m.sid, to: [m.from], replyTo: m.id, quote: replyQuote(m.text, 40, m.attachments) });
     setTab('write');
   };
   const sent = () => {

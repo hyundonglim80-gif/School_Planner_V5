@@ -178,7 +178,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - `v5Errors/{자동 id}`: 오류 알림(P14-2 `data/errorReport.ts`) - `{ kind(error·rejection·react·toast), message, stack, note, build, scope, device, standalone, ua, uid, at, expireAt }`.
   로그인한 사람은 제 것을 만들기만(칸 열둘·길이 - `domain/errorReport` LIMITS = 규칙), 읽기·지우기는 개발자만, 고치기 없음. 글 내용은 앱이 지운 뒤 보낸다. TTL(expireAt)이 30일 뒤 지운다. 기기 사본에 넣지 않는다.
 - `v5Mail/{uid}/mailIn/{id}`·`v5Mail/{uid}/mailSent/{id}`: 쪽지(P15 - 같은 그룹 구성원끼리, `data/mail.ts`·셈 `domain/mail.ts`). 받는 사람마다 mailIn 한 장 + 보낸 사람 사본 하나를 같은 id로 한 묶음.
-  mailIn `{ from, fromName, sid, groupName, to[], toNames, text, at, readAt, replyTo, expireAt, v }` · mailSent는 from·fromName·readAt 없이. 규칙: 만들기 = 나·받는 사람 모두 그 공간 구성원(`get(spaces/sid)` 하나 -
+  mailIn `{ from, fromName, sid, groupName, to[], toNames, text, at, readAt, replyTo, attachments?, expireAt, v }` · mailSent는 from·fromName·readAt 없이.
+  `attachments`(P16) = 보낸 사람 드라이브의 붙임 목록(메모 `Attachment` 모양) - 있을 때만 칸째 1~10개, 있으면 글은 비어도 된다. 규칙은 목록 안을 못 보므로 읽을 때 https 주소만(`readMailAttachments`). 규칙: 만들기 = 나·받는 사람 모두 그 공간 구성원(`get(spaces/sid)` 하나 -
   묶음 안 같은 문서 get은 한 번으로 센다, 서로 다른 문서는 20개까지) · 받는 사람 ≤ 50 · 글 ≤ 2000(글자 칸 수) · 그룹 이름 = 공간 이름 · `at == request.time` · mailIn은 같은 id 사본이 함께(`existsAfter`) ·
   읽기·지우기 = 주인 · 고치기 = 주인이 readAt만(서버 시각). TTL(expireAt 1년 - `firestore.indexes.json` fieldOverrides, 11-02 CLI 배포). 기기 사본·JSON 백업에 넣지 않는다(쪽지 창은 인터넷이 있어야). 푸시는 함수 `v5MailPush`(사본 만들기 → 보낸 사람·그룹만, 글 없음).
   화면(P15-2): 오른쪽 칸 창 `mail` 하나(받은·보낸·쓰기 탭 - 쓰기는 따로 쓰는 칸이 아니다: 보내기는 단추·Ctrl+Enter만, Ctrl+S·배경 누르기·↗는 보내지 않는다). 지우기 = 숨기고 7초 '되돌리기' 안내가 닫히면 진짜 지우기(지운 표시 없음 - 받은 것은 다시 만들 수 없다).

@@ -5,6 +5,8 @@
 //      ↩ 답장(replyTo) · 쓰던 글 보관(되살리기, 앱 위 띠에는 없음) · 그룹 창 구성원 ✉ · 끊긴 채 보내기 = 기다리는 저장 띠 → 연결되면 간다
 //   ■3 받기: 머리줄 ✉ n = 안 읽은 수 · 새 쪽지 안내 '보기' → 그 쪽지 · 쪽지 창이 보이면 안내 없이 목록에 · 계정 칸·단축키 ·
 //      ?mail=<id>(푸시를 눌러 연 앱) · 서비스 워커 'mail' 푸시(보는 창이 있으면 없음 · 없으면 OS 알림 하나) · 알림 누름 → 열린 앱이 그 쪽지
+//   P16 첨부: 캡처 Ctrl+V·📎 파일 = 드라이브(page.route 흉내 - inspect-attach) · 엑셀 표는 올리지 않음 · ✕ 빼기 · 쓰던 글 보관에 첨부 · 첨부만 보내기(글 없이) ·
+//      줄 📎 n·첫 줄 대신 '🖼️ 그림 1' · 펼치면 그림(크게 보기)·파일 링크 · https 아닌 주소는 보이지 않는다
 //
 //   그룹은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, CLAUDE.md 2장). 쪽지는 각 계정 클라이언트로(서버 시각·규칙 통과).
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-mail.mjs
@@ -30,15 +32,63 @@ async function emptyBoxes(e, uid) {
 }
 
 /** from 계정이 to에게 한 통 (앱 data/mail sendMail과 같은 모양 - 받는 쪽 + 보낸 사본 한 묶음) */
-async function send(e, from, fromName, to, text) {
+async function send(e, from, fromName, to, text, extra = {}) {
   const id = doc(collection(e.db, 'x')).id;
-  const common = { sid: SID, groupName: GROUP, to: [to], toNames: to === uidA ? '김점검' : '이점검', text, at: serverTimestamp(), replyTo: null, expireAt: Timestamp.fromMillis(Date.now() + 365 * 86_400_000), v: 1 };
+  const common = { sid: SID, groupName: GROUP, to: [to], toNames: to === uidA ? '김점검' : '이점검', text, at: serverTimestamp(), replyTo: null, expireAt: Timestamp.fromMillis(Date.now() + 365 * 86_400_000), v: 1, ...extra };
   const b = writeBatch(e.db);
   b.set(doc(e.db, 'v5Mail', to, 'mailIn', id), { from, fromName, ...common, readAt: null });
   b.set(doc(e.db, 'v5Mail', from, 'mailSent', id), common);
   await b.commit();
   return id;
 }
+
+// ── 구글 흉내 (inspect-attach와 같게 - 토큰은 살아 있는 것) ──
+const google = { uploads: [] };
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*', 'Access-Control-Expose-Headers': 'Location' };
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+async function mockGoogle(ctx) {
+  await ctx.route(/oauth2\.googleapis\.com\/tokeninfo/, (route) => route.fulfill({ status: 200, headers: CORS, json: { expires_in: 3000 } }));
+  await ctx.route(/www\.googleapis\.com\/(upload\/)?drive\/v3\/files/, async (route) => {
+    const req = route.request();
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
+    const url = req.url();
+    if (url.includes('/permissions')) return route.fulfill({ status: 200, headers: CORS, json: { id: 'anyone' } });
+    if (url.includes('uploadType=resumable')) {
+      const meta = JSON.parse(req.postData() || '{}');
+      google.uploads.push({ name: meta.name, mimeType: meta.mimeType });
+      return route.fulfill({ status: 200, headers: { ...CORS, Location: `https://upload.mock.test/s/${google.uploads.length}` }, body: '' });
+    }
+    if (req.method() === 'GET' && url.includes('q=')) return route.fulfill({ status: 200, headers: CORS, json: { files: [{ id: 'FOLDER_SP' }] } });
+    return route.fulfill({ status: 404, headers: CORS, json: {} });
+  });
+  await ctx.route(/upload\.mock\.test\/s\/(\d+)/, (route) => {
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
+    const n = route.request().url().split('/').pop();
+    const up = google.uploads[Number(n) - 1];
+    return route.fulfill({ status: 200, headers: CORS, json: { id: `MAILDRIVE${n}`, name: up?.name, webViewLink: `https://drive.google.com/file/d/MAILDRIVE${n}/view` } });
+  });
+  await ctx.route(/drive\.google\.com\/thumbnail/, (route) => route.fulfill({ status: 200, headers: { ...CORS, 'Content-Type': 'image/png' }, body: PNG }));
+}
+
+/** 쪽지 글 칸에 붙여넣기 (html·그림 파일) - 크롬의 진짜 붙여넣기처럼 ClipboardEvent */
+const pasteInto = (page, { html = '', image = false } = {}) =>
+  page.locator(sel('mail-text-input')).evaluate(
+    async (el, { html, image }) => {
+      const dt = new DataTransfer();
+      if (html) dt.setData('text/html', html);
+      if (image) {
+        const c = document.createElement('canvas');
+        c.width = 4;
+        c.height = 3;
+        c.getContext('2d').fillRect(0, 0, 4, 3);
+        const blob = await new Promise((res) => c.toBlob(res, 'image/png'));
+        dt.items.add(new File([blob], 'image.png', { type: 'image/png' }));
+      }
+      el.focus();
+      el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    },
+    { html, image },
+  );
 
 const tokensA = async () => (await getDocs(collection(em.db, 'spaces', `u_${uidA}`, 'pushTokens'))).docs.map((d) => d.id);
 const tokensBefore = await tokensA();
@@ -67,6 +117,14 @@ try {
   const A = await newPage(browser);
   A.dialogs.answer = true;
   const page = A.page;
+  await mockGoogle(A.ctx);
+  await A.ctx.addInitScript(() => {
+    try {
+      sessionStorage.setItem('sp5-google-token', 'live-token');
+    } catch {
+      /* about:blank */
+    }
+  });
   // about:blank(서비스 워커 점검)에서는 저장소가 막힌다
   await page.addInitScript(() => {
     try {
@@ -217,6 +275,91 @@ try {
   const off = await serverUntil(inboxB, (l) => l.some((x) => x.text === '끊김 점검'), 20000);
   r.check(off.some((x) => x.text === '끊김 점검'), '연결되면 간다');
   r.check(await waitFor(async () => (await page.locator(sel('pending-writes')).count()) === 0, 8000), '띠가 사라진다');
+
+  r.section('P16 첨부 - 캡처 붙여넣기 · 📎 파일 · 빼기');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.openWindow('mail', { tab: 'write' }));
+  await waitFor(page.locator(sel('mail-compose')), 8000);
+  await page.locator(sel('mail-group')).selectOption(SID);
+  await waitFor(page.locator(sel('mail-to', uidB)), 5000);
+  if ((await page.locator(sel('mail-to', uidB)).getAttribute('aria-pressed')) !== 'true') await page.locator(sel('mail-to', uidB)).click();
+  await box.fill('');
+  r.check(await waitFor(page.locator(sel('mail-attach-public')), 3000), "첨부 안내 '링크가 있는 사람은 보기'");
+  const up0 = google.uploads.length;
+  await pasteInto(page, { image: true });
+  const att = page.locator(`${sel('mail-compose')} ${sel('mail-attachment')}`);
+  r.check(await waitFor(async () => (await att.count()) === 1, 8000), '캡처 Ctrl+V → 그림 첨부 하나');
+  r.check(google.uploads.length === up0 + 1 && /^붙여넣은_이미지_\d{8}_\d{6}\.png$/.test(google.uploads.at(-1)?.name ?? ''), `드라이브에 '붙여넣은_이미지_…png' (${google.uploads.at(-1)?.name})`);
+  r.check((await page.locator(`${sel('mail-compose')} ${sel('mail-attachment-image')} img`).count()) === 1, '그림은 크게 보인다');
+  await pasteInto(page, { image: true, html: '<table><tr><td>이름</td><td>점수</td></tr><tr><td>가</td><td>90</td></tr></table>' });
+  await page.waitForTimeout(800);
+  r.check(google.uploads.length === up0 + 1 && (await att.count()) === 1, '엑셀 표 붙여넣기는 그림으로 올리지 않는다 (글자 그대로)');
+  await page.locator(sel('mail-file-input')).setInputFiles([
+    { name: '안내문.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 점검') },
+    { name: '뺄파일.txt', mimeType: 'text/plain', buffer: Buffer.from('x') },
+  ]);
+  r.check(await waitFor(async () => (await att.count()) === 3, 8000), '📎 파일 첨부 둘 → 셋');
+  r.check(((await page.locator(sel('mail-attach')).textContent()) ?? '').includes('3개'), "단추에 '파일 첨부 (3개)'");
+  await page.locator(sel('mail-attachment', '뺄파일.txt')).locator(sel('mail-attachment-remove')).click();
+  r.check(await waitFor(async () => (await att.count()) === 2, 3000), '✕ → 그 첨부만 빠진다');
+
+  r.section('P16 첨부 - 쓰던 글 보관 · 첨부만 보내기');
+  await page.waitForTimeout(2600);
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.openWindow('mail', { tab: 'write' }));
+  r.check(await waitFor(page.locator(sel('draft-offer')), 5000), '글 없이 첨부만 있어도 보관 → 되살리기 띠');
+  await page.locator(sel('draft-restore')).click();
+  r.check(await waitFor(async () => (await att.count()) === 2, 3000), '되살리기 → 첨부 둘');
+  const beforeAtt = (await inboxB()).length;
+  await page.locator(sel('mail-send')).click();
+  const withAtt = await serverUntil(inboxB, (l) => l.length > beforeAtt && l.some((x) => Array.isArray(x.attachments)), 10000);
+  const ma = withAtt.find((x) => Array.isArray(x.attachments) && x.text === '');
+  r.check(!!ma, '글 없이 첨부만 보낸다 → B 받은 쪽지');
+  r.check(
+    ma?.attachments?.length === 2 &&
+      ma.attachments[0].type === 'image/png' &&
+      ma.attachments[0].url.startsWith('https://drive.google.com/') &&
+      !!ma.attachments[0].driveId &&
+      ma.attachments[1].name === '안내문.pdf' &&
+      ma.attachments[1].type === 'application/pdf',
+    `첨부 칸 = 그림(드라이브 주소·id) + 파일 ${JSON.stringify(ma?.attachments?.map((a) => a.name))}`,
+  );
+  r.check(!!ma && Array.isArray((await getDoc(doc(em.db, 'v5Mail', uidA, 'mailSent', ma.id))).data()?.attachments), '보낸 사본에도 첨부');
+  r.check(await waitFor(async () => ((await rows('sent').first().getAttribute('data-mail-row')) ?? '') === ma?.id, 8000), '보낸 쪽지 맨 위');
+  const sentTop = rows('sent').first();
+  r.check((await sentTop.locator(sel('mail-files')).getAttribute('data-mail-files')) === '2', '줄에 📎 2');
+  r.check(((await sentTop.textContent()) ?? '').includes('🖼️ 그림 1 · 📎 파일 1'), "글이 없으면 첫 줄 자리에 '🖼️ 그림 1 · 📎 파일 1'");
+
+  r.section('P16 첨부 - 받은 쪽지에서 보기');
+  const PIC = { id: 'file_p', name: '받은캡처.png', url: 'https://drive.google.com/thumbnail?id=RECV1&sz=w1000', type: 'image/png', size: 2048, driveId: 'RECV1' };
+  const DOCF = { id: 'file_d', name: '회의록.hwp', url: 'https://drive.google.com/uc?id=RECV2&export=download', type: 'application/x-hwp', size: 4096, driveId: 'RECV2' };
+  const BAD = { name: '수상한.png', url: 'javascript:alert(1)', type: 'image/png' };
+  const headCount = async () => Number(await page.locator(sel('header-mail')).getAttribute('data-header-mail'));
+  const h0 = await headCount();
+  const withFiles = await send(emB, uidB, '이점검', uidA, '자료 보냅니다', { attachments: [PIC, DOCF, BAD] });
+  // 안 읽은 쪽지 구독이 받고(✉ n+1) 안내 모으기(400ms)가 끝날 때까지 창을 보인 채 둔다 - 그 전에 창을 닫으면 ■3에서 이 쪽지 안내가 늦게 뜬다
+  await waitFor(async () => (await headCount()) === h0 + 1, 8000);
+  await page.waitForTimeout(600);
+  await page.locator(sel('mail-tab-btn', 'in')).click();
+  const fr = page.locator(sel('mail-row', withFiles));
+  r.check(await waitFor(fr, 10000), '첨부 쪽지가 받은 쪽지에');
+  r.check((await fr.locator(sel('mail-files')).getAttribute('data-mail-files')) === '2', '줄에 📎 2 (https 아닌 주소는 셈에서도 빠진다)');
+  await fr.locator(sel('mail-open')).click();
+  r.check(await waitFor(fr.locator(sel('mail-attachment-image')), 3000), '펼치면 그림');
+  r.check((await fr.locator(sel('mail-attachment', '수상한.png')).count()) === 0, 'javascript: 주소 첨부는 보이지 않는다');
+  const link = fr.locator(`${sel('mail-attachment', '회의록.hwp')} a`);
+  r.check((await link.getAttribute('href')) === DOCF.url && (await link.getAttribute('target')) === '_blank', '파일 = 이름 링크 (새 탭)');
+  r.check((await fr.locator(sel('mail-attachment-remove')).count()) === 0, '받은 쪽지에는 ✕가 없다');
+  await fr.locator(sel('mail-attachment-view')).click();
+  const viewer = page.locator(sel('image-viewer'));
+  r.check(await waitFor(viewer, 3000), '그림을 누르면 크게 보기');
+  r.check(((await viewer.locator(sel('image-viewer-title')).textContent()) ?? '').includes('받은캡처.png'), '크게 보기 = 그 그림');
+  await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await viewer.count()) === 0, 3000), 'ESC → 크게 보기만 닫힌다');
+  r.check((await fr.locator(sel('mail-body')).count()) === 1, '쪽지 창은 그대로');
+  await fr.locator(sel('mail-reply')).click();
+  r.check(await waitFor(page.locator(sel('mail-reply-to', withFiles)), 3000), '첨부 쪽지에도 ↩ 답장');
+  await page.evaluate(() => window.sp5.closeAllWindows());
 
   r.section('■3 머리줄 ✉ · 새 쪽지 안내');
   await page.evaluate(() => window.sp5.closeAllWindows());

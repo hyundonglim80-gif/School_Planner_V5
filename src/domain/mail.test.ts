@@ -3,6 +3,7 @@ import {
   joinNames,
   mailDocs,
   mailExpireAt,
+  mailFilesLabel,
   mailParamOf,
   mailPreview,
   mailTextError,
@@ -10,6 +11,7 @@ import {
   MAIL_KEEP_DAYS,
   MAIL_LIMITS,
   newMailNotice,
+  readMailAttachments,
   readMailIn,
   readMailSent,
   recipientsOf,
@@ -20,11 +22,51 @@ import {
 
 describe('쪽지 셈', () => {
   it('글 확인 - 빈 글·2000자 넘음 (글자 칸 수 = 규칙과 같게)', () => {
-    expect(mailTextError('  \n ')).toMatch(/적어/);
+    expect(mailTextError('  \n ')).toMatch(/적거나/);
     expect(mailTextError('가'.repeat(MAIL_LIMITS.text))).toBeNull();
     expect(mailTextError('가'.repeat(MAIL_LIMITS.text + 1))).toMatch(/2000자/);
     // 이모지는 두 칸 - 규칙 size()도 그렇게 센다(P15-1 ■0)
     expect(mailTextError('😀'.repeat(1001))).toMatch(/2002자/);
+  });
+
+  it('첨부 - 있으면 글은 비어도 되고, 10개까지 (P16)', () => {
+    expect(mailTextError('', 1)).toBeNull();
+    expect(mailTextError('  ', 0)).toMatch(/적거나 파일/);
+    expect(mailTextError('글', MAIL_LIMITS.attachments)).toBeNull();
+    expect(mailTextError('글', MAIL_LIMITS.attachments + 1)).toMatch(/10개까지/);
+  });
+
+  it('첨부 문서 칸 - 있을 때만, 아는 칸만 (undefined 빼기)', () => {
+    const base = { from: 'a', fromName: '김', sid: 'g_x', groupName: 'G', to: ['b'], names: {}, text: '' };
+    expect('attachments' in mailDocs(base, 0, 0).inbox).toBe(false);
+    expect('attachments' in mailDocs({ ...base, attachments: [] }, 0, 0).sent).toBe(false);
+    const att = { id: 'file_1', name: '캡처.png', url: 'https://drive.google.com/thumbnail?id=D1', type: 'image/png', size: 10, driveId: 'D1' };
+    const odd = { name: 'a.pdf', url: 'https://x.test/a', type: '', size: undefined, driveId: undefined, extra: 1 } as unknown as typeof att;
+    const { inbox, sent } = mailDocs({ ...base, attachments: [att, odd] }, 0, 0);
+    expect(inbox.attachments).toEqual([att, { name: 'a.pdf', url: 'https://x.test/a', type: 'application/octet-stream' }]);
+    expect(sent.attachments).toEqual(inbox.attachments);
+  });
+
+  it('받은 첨부 읽기 - https 주소·이름이 있는 것만, 10개까지 (남이 쓴 문서)', () => {
+    const ok = { name: '안내.pdf', url: 'https://drive.google.com/uc?id=D2', type: 'application/pdf', size: 5, driveId: 'D2' };
+    expect(readMailAttachments(undefined)).toEqual([]);
+    expect(readMailAttachments('x')).toEqual([]);
+    expect(
+      readMailAttachments([ok, { name: 'x', url: 'javascript:alert(1)' }, { name: '', url: 'https://a.test' }, { url: 'https://a.test' }, null, 3, { name: 'h', url: 'http://a.test' }]),
+    ).toEqual([ok]);
+    expect(readMailAttachments([{ name: 'n', url: 'https://a.test', driveId: '../x', size: '3' }])).toEqual([{ name: 'n', url: 'https://a.test', type: 'application/octet-stream' }]);
+    expect(readMailAttachments(Array.from({ length: 12 }, () => ok))).toHaveLength(MAIL_LIMITS.attachments);
+  });
+
+  it('첨부 한 마디 · 글 없는 쪽지의 줄·답장 머리', () => {
+    const pic = { name: '캡처.png', url: 'https://a.test/1', type: 'image/png' };
+    const pdf = { name: '안내.pdf', url: 'https://a.test/2', type: 'application/pdf' };
+    expect(mailFilesLabel([])).toBe('');
+    expect(mailFilesLabel([pic, pic, pdf])).toBe('🖼️ 그림 2 · 📎 파일 1');
+    expect(mailFilesLabel([pdf])).toBe('📎 파일 1');
+    expect(mailPreview('', [pic])).toBe('🖼️ 그림 1');
+    expect(mailPreview('첫 줄', [pic])).toBe('첫 줄');
+    expect(replyQuote('', 40, [pdf])).toBe('📎 파일 1');
   });
 
   it('받는 사람 - 겹침·나 빼기, 지금 구성원만 (나간 사람은 gone)', () => {
@@ -69,7 +111,7 @@ describe('쪽지 셈', () => {
   it('서버 문서 읽기 - Timestamp·빠진 칸', () => {
     const ts = (ms: number) => ({ toMillis: () => ms });
     expect(readMailIn('m1', { from: 'a', fromName: '김', sid: 'g_x', groupName: 'G', to: ['b', 3], toNames: '이', text: 't', at: ts(5), readAt: null, replyTo: null })).toEqual({
-      id: 'm1', from: 'a', fromName: '김', sid: 'g_x', groupName: 'G', to: ['b'], toNames: '이', text: 't', at: 5, readAt: null, replyTo: null,
+      id: 'm1', from: 'a', fromName: '김', sid: 'g_x', groupName: 'G', to: ['b'], toNames: '이', text: 't', at: 5, readAt: null, replyTo: null, attachments: [],
     });
     // 막 보내 서버 시각이 아직 없는 사본
     expect(readMailSent('m2', { to: ['b'], at: null, replyTo: 'm1' })).toMatchObject({ at: null, replyTo: 'm1', text: '' });

@@ -342,7 +342,11 @@ service cloud.firestore {
         && d.to is list && d.to.size() >= 1 && d.to.size() <= 50
         && !(request.auth.uid in d.to)
         && d.toNames is string && d.toNames.size() <= 600
-        && d.text is string && d.text.size() >= 1 && d.text.size() <= 2000
+        && d.text is string && d.text.size() <= 2000
+        // 첨부(P16 - 보낸 사람 드라이브의 붙임 목록)는 있을 때만, 1~10개. 첨부가 있으면 글은 비어도 된다.
+        // 목록 안 칸은 규칙이 보지 못한다 - 앱이 읽을 때 https 주소만 받는다(domain/mail readMailAttachments).
+        && (d.text.size() >= 1 || 'attachments' in d)
+        && (!('attachments' in d) || (d.attachments is list && d.attachments.size() >= 1 && d.attachments.size() <= 10))
         && d.groupName is string
         && d.at == request.time
         && (d.replyTo == null || (d.replyTo is string && d.replyTo.size() <= 40))
@@ -359,7 +363,7 @@ service cloud.firestore {
     match /v5Mail/{owner}/mailIn/{id} {
       // 보내는 사람이 만든다: from = 나, 이 상자 주인은 받는 사람 중 하나, 같은 id의 내 사본이 같은 묶음에 있다.
       allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['from', 'fromName', 'sid', 'groupName', 'to', 'toNames', 'text', 'at', 'readAt', 'replyTo', 'expireAt', 'v'])
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'sid', 'groupName', 'to', 'toNames', 'text', 'at', 'readAt', 'replyTo', 'attachments', 'expireAt', 'v'])
         && request.resource.data.keys().hasAll(['from', 'fromName', 'sid', 'groupName', 'to', 'toNames', 'text', 'at', 'readAt', 'replyTo', 'expireAt', 'v'])
         && request.resource.data.from == request.auth.uid
         && owner in request.resource.data.to
@@ -376,7 +380,7 @@ service cloud.firestore {
 
     match /v5Mail/{owner}/mailSent/{id} {
       allow create: if signedIn() && request.auth.uid == owner
-        && request.resource.data.keys().hasOnly(['sid', 'groupName', 'to', 'toNames', 'text', 'at', 'replyTo', 'expireAt', 'v'])
+        && request.resource.data.keys().hasOnly(['sid', 'groupName', 'to', 'toNames', 'text', 'at', 'replyTo', 'attachments', 'expireAt', 'v'])
         && request.resource.data.keys().hasAll(['sid', 'groupName', 'to', 'toNames', 'text', 'at', 'replyTo', 'expireAt', 'v'])
         && validMail(request.resource.data);
       allow get, list, delete: if signedIn() && request.auth.uid == owner;

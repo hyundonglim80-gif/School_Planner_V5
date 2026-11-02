@@ -2,9 +2,13 @@
 //   - 자료: 받는 사람마다 v5Mail/{그 사람}/mailIn/{id} 한 장 + 보낸 사람 사본 v5Mail/{나}/mailSent/{id} - 같은 id, 한 묶음.
 //   - 칸과 길이는 규칙과 같게(MAIL_LIMITS). 글 길이는 규칙도 글자 칸 수(UTF-16 - 이모지는 2)로 센다(P15-1 ■0 에뮬레이터).
 //   - 받는 사람은 보내기 직전에 지금 구성원으로 다시 거른다 - 나간 사람이 하나라도 있으면 규칙이 묶음 전체를 막는다.
+//   - 첨부(P16 - 메모처럼 📎·캡처): 보낸 사람 드라이브에 올린 붙임 목록 `attachments`(있을 때만 칸째, 10개까지). 첨부가 있으면 글은 비어도 된다.
+//     규칙은 목록 안 칸을 보지 못하므로 읽을 때 https 주소인 것만 받는다(남이 쓴 문서 - javascript: 주소 등을 걸지 않게).
+import type { Attachment } from '../data/types';
+import { isImageAttachment } from './attachments';
 
 /** 칸마다 가장 긴 것 - 규칙(firestore.rules `v5Mail`)과 같게. 그룹 이름은 공간 이름 그대로(이름이 빈 공간만 60자) */
-export const MAIL_LIMITS = { text: 2000, to: 50, toNames: 600, fromName: 40, groupName: 60 } as const;
+export const MAIL_LIMITS = { text: 2000, to: 50, toNames: 600, fromName: 40, groupName: 60, attachments: 10 } as const;
 /** 1년 뒤 TTL 정책이 지운다(규칙은 370일 안) */
 export const MAIL_KEEP_DAYS = 365;
 /** 쪽지 창이 한 번에 받는 수 */
@@ -28,6 +32,8 @@ export interface MailIn {
   at: number | null;
   readAt: number | null;
   replyTo: string | null;
+  /** 붙임 (보낸 사람 드라이브 - 없으면 빈 목록) */
+  attachments: Attachment[];
 }
 
 /** 보낸 쪽지 사본 (mailSent) */
@@ -44,15 +50,29 @@ export interface OutgoingMail {
   names: Record<string, string>;
   text: string;
   replyTo?: string | null;
+  attachments?: readonly Attachment[];
 }
 
 const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 
-/** 글이 보낼 수 있는 것인가 - 안 되면 안내 글 */
-export function mailTextError(text: string): string | null {
-  if (!text.trim()) return '보낼 글을 적어 주세요.';
+/** 글·첨부가 보낼 수 있는 것인가 - 안 되면 안내 글. 첨부가 있으면 글은 비어도 된다 */
+export function mailTextError(text: string, files = 0): string | null {
+  if (!text.trim() && files === 0) return '보낼 글을 적거나 파일을 붙여 주세요.';
   if (text.length > MAIL_LIMITS.text) return `쪽지는 ${MAIL_LIMITS.text}자까지 보낼 수 있습니다 (지금 ${text.length}자).`;
+  if (files > MAIL_LIMITS.attachments) return `첨부는 한 통에 ${MAIL_LIMITS.attachments}개까지 보낼 수 있습니다 (지금 ${files}개).`;
   return null;
+}
+
+/** 문서에 적을 붙임 - 아는 칸만, 값이 없는 칸은 빼고(undefined 칸 하나로 저장이 통째로 막히던 V4) */
+function cleanAttachment(a: Attachment): Attachment {
+  return {
+    ...(a.id ? { id: a.id } : {}),
+    name: a.name,
+    url: a.url,
+    type: a.type || 'application/octet-stream',
+    ...(typeof a.size === 'number' ? { size: a.size } : {}),
+    ...(a.driveId ? { driveId: a.driveId } : {}),
+  };
 }
 
 /**
@@ -92,6 +112,8 @@ export function mailDocs<A, E>(m: OutgoingMail, at: A, expireAt: E) {
     text: m.text,
     at,
     replyTo: m.replyTo ?? null,
+    // 붙임이 있을 때만 칸째(첨부 없는 쪽지는 P15 모양 그대로)
+    ...(m.attachments?.length ? { attachments: m.attachments.map(cleanAttachment) } : {}),
     expireAt,
     v: 1 as const,
   };
@@ -107,6 +129,28 @@ const millis = (v: unknown): number | null =>
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 const strs = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
 
+/** 받은 붙임 - 이름과 https 주소가 있는 것만(규칙이 못 보는 목록 안을 여기서 거른다), 10개까지 */
+export function readMailAttachments(v: unknown): Attachment[] {
+  if (!Array.isArray(v)) return [];
+  const out: Attachment[] = [];
+  for (const x of v) {
+    if (!x || typeof x !== 'object') continue;
+    const a = x as Record<string, unknown>;
+    const url = str(a.url);
+    if (!str(a.name) || !/^https:\/\//i.test(url)) continue;
+    out.push({
+      ...(str(a.id) ? { id: str(a.id) } : {}),
+      name: str(a.name).slice(0, 200),
+      url,
+      type: str(a.type) || 'application/octet-stream',
+      ...(typeof a.size === 'number' ? { size: a.size } : {}),
+      ...(/^[\w-]+$/.test(str(a.driveId)) ? { driveId: str(a.driveId) } : {}),
+    });
+    if (out.length === MAIL_LIMITS.attachments) break;
+  }
+  return out;
+}
+
 export function readMailSent(id: string, d: Record<string, unknown>): MailSent {
   return {
     id,
@@ -117,6 +161,7 @@ export function readMailSent(id: string, d: Record<string, unknown>): MailSent {
     text: str(d.text),
     at: millis(d.at),
     replyTo: typeof d.replyTo === 'string' && d.replyTo ? d.replyTo : null,
+    attachments: readMailAttachments(d.attachments),
   };
 }
 
@@ -145,14 +190,21 @@ export function mailWhen(at: number | null, now: number): string {
   return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-/** 쪽지 창 줄에 보일 글 - 빈 줄을 건너뛴 첫 줄 */
-export function mailPreview(text: string): string {
-  return (text.split('\n').find((l) => l.trim()) ?? '').trim();
+/** 붙임 수를 한 마디로 - '🖼️ 그림 2 · 📎 파일 1' (없으면 빈 글) */
+export function mailFilesLabel(attachments: readonly Attachment[]): string {
+  const images = attachments.filter(isImageAttachment).length;
+  const files = attachments.length - images;
+  return [images ? `🖼️ 그림 ${images}` : '', files ? `📎 파일 ${files}` : ''].filter(Boolean).join(' · ');
 }
 
-/** 답장 글 머리 - 받은 글 첫 줄을 짧게 */
-export function replyQuote(text: string, max = 40): string {
-  return cut(mailPreview(text), max);
+/** 쪽지 창 줄에 보일 글 - 빈 줄을 건너뛴 첫 줄. 글이 없으면(첨부만) 붙임 수 */
+export function mailPreview(text: string, attachments: readonly Attachment[] = []): string {
+  return (text.split('\n').find((l) => l.trim()) ?? '').trim() || mailFilesLabel(attachments);
+}
+
+/** 답장 글 머리 - 받은 글 첫 줄을 짧게 (글이 없으면 붙임 수) */
+export function replyQuote(text: string, max = 40, attachments: readonly Attachment[] = []): string {
+  return cut(mailPreview(text, attachments), max);
 }
 
 // 푸시 알림을 눌러 앱을 열 때 주소 ?mail=<id> (public/sw.js notificationclick) - ?share= 본보기(domain/share)

@@ -696,6 +696,8 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   const m1 = `m1_${rid}`;
   const m2 = `m2_${rid}`;
   const m3 = `m3_${rid}`;
+  const m4 = `m4_${rid}`; // 첨부와 함께 (P16)
+  const m5 = `m5_${rid}`; // 첨부만 (P16)
   const r1 = `r1_${rid}`;
   const mx = `mx_${rid}`; // 막혀야 하는 시도들 - 막히면 아무것도 남지 않는다
 
@@ -710,6 +712,11 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   await must('A가 B에게 (B 받은 쪽지 + A 보낸 사본 한 묶음)', () => send(A, aUid, m1, [bUid]));
   await must('A가 B·C 둘에게', () => send(A, aUid, m2, [bUid, cUid]));
   await must('한글 2000자', () => send(A, aUid, m3, [bUid], { both: { text: '가'.repeat(2000) } }));
+  // 첨부(P16) - 보낸 사람 드라이브의 붙임 목록, 있을 때만 칸째 1~10개
+  const att = (i) => ({ id: `file_${i}`, name: `캡처${i}.png`, url: `https://drive.google.com/thumbnail?id=D${i}&sz=w1000`, type: 'image/png', size: 1234, driveId: `D${i}` });
+  const atts = (n) => Array.from({ length: n }, (_, i) => att(i));
+  await must('첨부 둘과 함께 (attachments)', () => send(A, aUid, m4, [bUid], { both: { attachments: atts(2) } }));
+  await must('글 없이 첨부만 · 10개', () => send(A, aUid, m5, [bUid], { both: { text: '', attachments: atts(10) } }));
   await must('B가 받은 쪽지 목록을 읽는다', async () => {
     const s = await getDocs(collection(B.db, 'v5Mail', bUid, 'mailIn'));
     if (!s.docs.some((d) => d.id === m1)) throw new Error('받은 쪽지가 없다');
@@ -740,6 +747,11 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   await mustNot('남(B)의 보낸 사본을 만든다', () => setDoc(sentBox(A, bUid, mx), sentOf([cUid])));
   await mustNot('2001자', () => send(A, aUid, mx, [bUid], { both: { text: '가'.repeat(2001) } }));
   await mustNot('빈 글', () => send(A, aUid, mx, [bUid], { both: { text: '' } }));
+  await mustNot('첨부 11개', () => send(A, aUid, mx, [bUid], { both: { attachments: atts(11) } }));
+  await mustNot('빈 첨부 목록', () => send(A, aUid, mx, [bUid], { both: { attachments: [] } }));
+  await mustNot('빈 글 + 빈 첨부 목록', () => send(A, aUid, mx, [bUid], { both: { text: '', attachments: [] } }));
+  await mustNot('첨부가 목록이 아니다', () => send(A, aUid, mx, [bUid], { both: { attachments: 'https://example.com/x' } }));
+  await mustNot('B가 받은 쪽지 첨부를 고친다', () => updateDoc(inbox(B, bUid, m4), { attachments: atts(1) }));
   await mustNot('모르는 칸', () => send(A, aUid, mx, [bUid], { inExtra: { secret: '김철수' } }));
   await mustNot('칸을 뺀다 (replyTo 없이 - undefined는 칸째 빠진다)', () => send(A, aUid, mx, [bUid], { drop: 'replyTo' }));
   await mustNot('at을 기기 시각으로', () => send(A, aUid, mx, [bUid], { both: { at: new Date() } }));
@@ -792,11 +804,11 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   });
 
   await must('(정리) 쪽지·쪽지 그룹을 지운다', async () => {
-    for (const id of [m2, m3]) await deleteDoc(inbox(B, bUid, id));
+    for (const id of [m2, m3, m4, m5]) await deleteDoc(inbox(B, bUid, id));
     await deleteDoc(inbox(B, bUid, m50));
     await deleteDoc(sentBox(B, bUid, r1));
     await deleteDoc(inbox(A, aUid, r1));
-    for (const id of [m2, m3, m50]) await deleteDoc(sentBox(A, aUid, id));
+    for (const id of [m2, m3, m4, m5, m50]) await deleteDoc(sentBox(A, aUid, id));
     await deleteDoc(invite(A, mcode));
     await deleteDoc(space(A, ms));
   });

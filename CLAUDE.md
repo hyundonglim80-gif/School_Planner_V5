@@ -27,6 +27,7 @@
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
 - **P15 쪽지 끝**(11-02 - 화면 main·함수 v5MailPush 배포). TTL 둘은 11-02 CLI로 켬. 부탁(P15): 두 계정(하나는 휴대폰)으로 쪽지 한 통·앱 닫고 푸시 · 설치 앱은 완전히 닫았다 열기(sw.js 바뀜).
+- **P16 쪽지 첨부 끝**(11-02 - 규칙 배포·화면 main). 부탁(P16): 위 두 계정 확인 때 캡처 Ctrl+V 한 장·📎 파일 하나도 보내 받은 쪽에서 그림·파일이 열리나.
 - 부탁(P14-5): VS Code 터미널에서 C: 정리(11-02 89%) - `npm cache clean --force` · Windows 설정 > 저장소 > 임시 파일 · Android Studio Device Manager의 안 쓰는 에뮬레이터 이미지(**Android Studio는 지우지 않는다** - 에뮬레이터 Java). (functions 보안 판은 11-02 함수 배포에 실렸다.)
 - 부탁(P14-3): 내일 이후 `npx.cmd firebase firestore:backups:list` 에 READY 백업 · 복원 연습 한 번(`docs/OPS.md` - 다음 대화에서 Claude와 함께, 연습 DB 지우기는 터미널) · 결제 → 예산 및 알림 하나.
 - 부탁(P14-2): (TTL `v5Errors.expireAt`은 10-30 `firestore:indexes`로 이미 켜진 것을 확인) 실제 사이트 환경설정 '개발자' 탭 '오류 기록'이 열리는지(지금은 비어 있어야 정상).
@@ -130,6 +131,8 @@
 - 클라우드 세션(claude.ai/code): `docs/PLAN.md` 1-7(세션 브랜치 푸시 → PR, 준비 순서, Chromium, V4 받기). 운영 규칙·함수 배포는 PC에서(묻고).
   **PR은 CI가 통과하면 Claude가 곧바로 합친다 → main CI 뒤 화면이 저절로 배포된다**(사용자 결정 10-08 "앞으로는 자동으로 합치고 배포해" - 묻지 않는다, CI가 실패하면 고친 뒤에).
   컨테이너 에뮬레이터는 켜 둔 채 `firestore.rules`를 고치면 죽고 Firestore java만 포트를 쥔다 → 그 java를 끄고 `npm run emu`를 다시(P2-1).
+  **PC 에뮬레이터는 고친 `firestore.rules`를 다시 읽지 않을 때가 있다**(P16-1 - 새 칸을 허락했는데 check-rules가 '막혔다') → 의심되면 REST로 넣는다:
+  `PUT http://127.0.0.1:8080/emulator/v1/projects/schoolplannerv3:securityRules` 본문 `{ rules: { files: [{ name: 'firestore.rules', content }] } }`(node fetch 한 줄).
 
 ## 3. V5 규칙 (자세히는 `docs/DESIGN.md`)
 
