@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). 다음 = **P19-1 ■0**(에뮬레이터로 규칙·쿼리 확인 - 문서만). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
+**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). ■0 설계 확정 끝(11-03). 다음 = **P19-1 ■1**(규칙 + check-rules [V5 대화]). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
 **P18-2 창 안 탭 단축키 끝**(11-02 main - '⌨️ 단축키 설정' 띠에서 창 안의 탭을 누르면 '창 → 탭' · 키 = 그 창을 그 탭으로 · 단축키 탭·설명서 '내가 만든 단축키'). P18 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터. 배포·👤 부탁 없음.
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
 P17 공간 칩 · 일정 겹쳐 보기는 11-02 끝(P17-1 칩 줄 · P17-2 Ctrl·길게 누르기 겹쳐 보기).
@@ -216,7 +216,7 @@ main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 
 | P18-1 | 단축키 탭 '⌨️ 단축키 설정' → 완료 띠 → 메뉴·단추를 눌러 기능 고르기 → 완료 → 키 누르기 → 저장(겹치면 다른 기능에서 뺌) · 지금 52가지 기능의 단추에 표시 · 설명서·점검 | 중간 | 중간 | 끝 (11-02) |
 | P18-2 | 창 안의 탭까지 - '환경설정 → 알림' 같은 대상 = 창 + 탭(`settings:notify`), 기기 설정 칸 `tabShortcuts` · 단축키 탭·설명서 '내가 만든 단축키' | 중간 | 낮음 | 끝 (11-02) |
 | **P19 대화(채팅)** (11-03 사용자 요청 · 계획) | | | | |
-| P19-1 | 대화 자료·규칙·푸시 함수 - 그룹 방 `v5Chat/{sid}/chatRooms`·1:1 `v5Dm`·글 `chatMsgs`·내 읽음 `v5ChatReads` · check-rules · 운영 규칙·TTL 배포 | 중간 | 높음 | 계획 (■0부터) |
+| P19-1 | 대화 자료·규칙·푸시 함수 - 그룹 방 `v5Chat/{sid}/chatRooms`·1:1 `v5Dm`·글 `chatMsgs`·내 읽음 `v5ChatReads` · check-rules · 운영 규칙·TTL 배포 | 중간 | 높음 | ■0 끝 (11-03) |
 | P19-2 | 대화 화면 ① - 💬 대화 창(목록·방)·보내기(Enter)·📎·읽음·1:1 '1'·머리줄 💬 n·여는 길·inspect-chat | 큼 | 중간 | |
 | P19-3 | 대화 알림 - 푸시(방마다 알림 하나를 바꾼다)·🔕 방마다·?chat=·설명서·함수 배포 | 중간 | 중간 | |
 | P19-4 | 고른 사람 방(만들기·사람 더하기·나가기·이름) · 내 글 지우기 | 중간 | 낮음 | |
@@ -951,6 +951,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P19 Enter = 보내기(PC), Shift+Enter = 줄 바꿈**(권장안 - 메신저 관례, 쪽지는 긴 글이라 Ctrl+Enter 그대로). 휴대폰 화면 자판 Enter = 줄 바꿈, ➤로 보낸다. Ctrl+S·배경 누르기·↗는 보내지 않는다(P15 까닭).
 - **P19 알림 = 방마다 알림 하나를 소리 없이 바꾼다 · 🔕 방마다**(권장안): 단체방 글마다 울리면 결국 알림을 끈다. sw.js `tag: sp5-chat-<방>`(처음 한 번만 울리고 뒤 글은 그 알림을 바꾼다) ·
   알림 글은 보낸 사람·방 이름만(P15 - 잠금 화면에 학생 이야기). 🔕는 방 문서 `muted.<나>` - 함수가 방 문서 하나로 거른다(사람마다 설정 문서를 읽으면 글 하나에 읽기 N).
+- **P19 ■0 확정**(11-03 에뮬레이터 - 6장 P19 '■0 확인'): 설계 그대로 된다. 바꾼 것 넷 - ① 방 미리 보기 고치기는 `existsAfter(글)` 대신 `getAfter(글).at == request.time`(옛 글 id로 미리 보기만 꾸미는 것을 막는다)
+  ② 보내기 모양 = all 늘 같은 모양(둘이 함께 첫 글이 된다) · dm 늘 같은 모양 + `names`는 내 것만(만들기·고치기 갈래가 없어 겹쳐도 된다) · room 만들 때만 name·members ③ `v5ChatReads` 값이 서버 시각인지는 못 본다(나만 보는 것 - 주인만·칸 수만)
+  ④ 붙임 목록 부품은 `features/notes/SharedAttachments`로(`ui/`는 `data/`를 부르지 않는다), 셈은 `domain/attachments`로. 나간 사람의 켜 둔 듣기는 다음 글에서 permission-denied - 앱은 그 오류로 방을 뺀다.
 ---
 
 ## 6. 세션별 내용
@@ -2297,7 +2300,7 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   sw.js 갈래·notificationclick·`?mail=` 본보기 · 📎 첨부·캡처 Ctrl+V(P16) · 머리줄 숫자 단추 · 1년 TTL · 끊기면 '인터넷이 필요합니다'.
 - 저장 모양만 바꾼다: 받는 사람마다 한 장(쪽지) → **방 문서 하나 + 그 아래 글(`chatMsgs`)을 구성원이 함께 읽는다**. 단체 글 하나 = 쓰기 2(쪽지 꼴이면 N+1) · 나중에 든 사람도 지난 글을 본다 · 한 쿼리로 차례대로 · 읽음은 방마다 하나.
 
-**설계 (권장안 - P19-1 ■0에서 에뮬레이터로 확정)**
+**설계 (권장안 → P19-1 ■0 11-03 에뮬레이터로 확정 - 아래 '■0 확인')**
 - 방 셋: ① **그룹 전체**(roomId `all` - 그룹마다 하나, 첫 글이 방 문서를 만든다. 구성원 = 지금 그 그룹 구성원: 새로 든 사람은 지난 글도 보고, 나간·내보낸 사람은 곧바로 못 읽는다)
   ② **1:1**(두 사람에 하나 - 그룹이 둘 겹쳐도 하나. 방이 함께 든 그룹 sid를 든다) ③ **고른 사람 방**(P19-4 - 한 그룹 안에서 고른 사람 ≤ 50 + 이름, 아무 구성원이나 그 그룹 사람을 더하고, 빼기는 나만 = 나가기).
   글 = 2000자 + 📎 10개(쪽지와 같다) · 1년 뒤 저절로 지움 · 기기 사본·JSON 백업에 넣지 않는다.
@@ -2309,13 +2312,13 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 - 규칙(`firestore.rules` v5Mail 뒤 - 더하기만, `spaces/{sid}/{sub}` 묶음 규칙은 건드리지 않는다):
   그룹 방·글 읽기 = `canUseSpace(sid)`(경로의 sid) + (`all`이거나 `members.<나>`) · 방 목록은 `where('members.<나>','==',true)`(all은 따로 get) ·
   글 만들기 = 읽을 수 있음 + from == 나 · 모양·길이 · `at == request.time` · 같은 묶음에서 방 `lastId` == 이 id(`getAfter` - 미리 보기·안 읽음이 늘 맞게) ·
-  방 고치기 = 보내기 칸(last*·expireAt, lastFrom == 나, lastAt == request.time, 글이 함께 - `existsAfter`) | `muted.<나>`만 | (room) 이름·사람 더하기(공간 구성원만)·나 빼기 | (dm) `reads.<나>` == request.time·`names.<나>`·sid 옮기기(두 사람 모두 새 그룹 구성원) · 지우기 없음(TTL) ·
-  1:1 읽기 = `members.<나>` · 1:1 만들기·보내기 = pairId 모양(`'d_' + a + '_' + b`, a < b) + 두 사람 모두 지금 방 sid 그룹 구성원 · `v5ChatReads/{uid}` = 주인만, 고치기는 한 칸·서버 시각.
+  방 고치기 = 보내기 칸(last*·expireAt, lastFrom == 나, lastAt == request.time, 글이 함께 - `getAfter(글 lastId).at == request.time`(옛 글 id로 미리 보기만 꾸미기 막기)) | `muted.<나>`만 | (room) 이름·사람 더하기(공간 구성원만)·나 빼기 | (dm) `reads.<나>` == request.time·`names.<나>`·sid 옮기기(두 사람 모두 새 그룹 구성원) · 지우기 없음(TTL) ·
+  1:1 읽기 = `members.<나>` · 1:1 만들기·보내기 = pairId 모양(`'d_' + a + '_' + b`, a < b) + 두 사람 모두 지금 방 sid 그룹 구성원 · `v5ChatReads/{uid}` = 주인만 · 칸 `rooms`·`v`만 · rooms ≤ 2000칸(바뀐 칸의 값이 서버 시각인지는 규칙이 못 본다 - Set에 꺼내기가 없다, 나만 보는 것이라 둔다).
 - 받기(Shell 하나 `useChatWatch` - 새 창 PopoutShell은 하지 않는다): 든 그룹마다 `chatRooms/all` 문서 + `chatRooms where members.<나> == true` · `v5Dm where members.<나> == true` · `v5ChatReads/{나}` → store 방 목록 · 안 읽은 방 = lastAt > 내 읽음 && lastFrom ≠ 나.
   내 읽음이 없는 방은 처음 본 때를 읽음으로 적는다(그룹에 막 든 사람에게 지난 글이 모두 안 읽음으로 뜨지 않게).
   방을 열면 그 방 `chatMsgs orderBy('at','desc').limit(50)` 듣기 + 위로 올리면 50개씩 더(startAfter) · 목록의 안 읽은 수 = 안 읽은 방만 `getCountFromServer(where('at','>', 내 읽음))`(방마다 읽기 1, 99+). 쿼리는 모두 칸 하나(운영 색인 0개 그대로).
-- 보내기: `data/chat.ts` writeBatch(글 + 방 문서 merge - 첫 글이면 방 만들기 칸도) · `beginPendingWrite`·`failWithToast`(글 칸 그대로) · 1:1은 보내기 직전 `useMySpaces`로 함께 든 그룹을 다시 본다(없으면 '함께 든 그룹이 없어 보낼 수 없습니다').
-  PC Enter = 보내기·Shift+Enter = 줄 바꿈 · 휴대폰 ➤ · Ctrl+S·배경 누르기·↗는 보내지 않는다 · 쓰던 글 `useDraft('chat:<방>')` · 📎·캡처 = 쪽지(P16) 부품을 나눠 쓴다.
+- 보내기: `data/chat.ts` writeBatch(글 + 방 문서 merge - all = 늘 `{kind, last*, expireAt, v}`(만들기·고치기가 같은 모양 → 둘이 함께 첫 글도 된다) · room = 만들 때만 `name·members`, 뒤로는 last*만 · dm = 늘 `{kind, members, sid, names: {나: 이름}, last*, expireAt, v}`(상대 이름은 함께 든 그룹 사람 목록에서, 없으면 `names`) · `muted`는 보내지 않는다) · `beginPendingWrite`·`failWithToast`(글 칸 그대로) · 1:1은 보내기 직전 `useMySpaces`로 함께 든 그룹을 다시 본다(없으면 '함께 든 그룹이 없어 보낼 수 없습니다').
+  PC Enter = 보내기·Shift+Enter = 줄 바꿈 · 휴대폰 ➤ · Ctrl+S·배경 누르기·↗는 보내지 않는다 · 쓰던 글 `useDraft('chat:<방>')` · 📎·캡처 = 쪽지(P16) 부품을 나눠 쓴다(올리기 `notes/attach` 그대로 · 붙임 목록 `mail/MailAttachments` → `notes/SharedAttachments`(P19-2 ■2) · `cleanAttachment`·`readMailAttachments` → `domain/attachments`(P19-1 ■2) - `ui/`는 `data/`를 부르지 않는다).
 - 읽음: 그 방이 보이는 동안 새 글이 오면 2초 모아 한 번 적는다(그룹 방 = `v5ChatReads` 한 칸, 1:1 = 방 `reads.<나>`). 1:1 내 글 중 상대가 아직 안 읽은 것에 '1'. 그룹 방은 읽은 사람 수 없음.
 - 푸시: 함수 `v5ChatPush`(`v5Chat/{sid}/chatRooms/{room}/chatMsgs/{id}`)·`v5DmPush`(`v5Dm/{pair}/chatMsgs/{id}`)가 셈 하나(`functions/chatPlan.js`)를 쓴다 -
   받는 사람 = (all: 공간 구성원 · room: 방 구성원 ∩ 공간 구성원 · dm: 상대) − 보낸 사람 − muted → `tokensOf` → `sendEachForMulticast`. data `{ type: 'chat', room, sender, title }`(글 없음).
@@ -2330,6 +2333,17 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 - 돈(V3·V4·V5 함께 무료 한도 - 쓰기 2만·읽기 5만/일, 함수 200만/월): 글 하나 = 쓰기 2 + 규칙 읽기 2~3 + 앱을 연 구성원마다 읽기 1(방 문서) + 그 방을 보는 사람마다 1 + 함수 1번(받는 사람마다 토큰 읽기 1).
   20명 그룹이 하루 200글 ≈ 쓰기 1천(읽음 포함)·읽기 1만 5천 - 한도 안. 바쁜 그룹이 여럿이면 읽기 한도에 가까워질 수 있다 → P19-3 ■4에서 사용량을 한 번 본다(넘어도 Blaze 요금 - 읽기 10만 건에 100원 안팎).
 
+**■0 확인 (11-03 에뮬레이터 - 초안 규칙을 REST로 올려 70가지, ■1 규칙의 바탕)**
+- 된다: 방 목록 `where('members.<나>','==',true)`(where 없이·남의 uid로는 막힘) · `getCountFromServer`(규칙에 get()이 있어도 - 그룹 방·room·1:1) · 1:1 id 글자 견주기 `p[1] < p[2]`(`pairId.split('_')`) ·
+  글 + 방 한 묶음의 `getAfter`(서로) · **둘이 함께 첫 글**(all 같은 모양 merge - 하나는 만들기·하나는 고치기로 둘 다 통과) · 없는 all 방 get = 없음(구성원 - 듣기를 미리 걸어도 된다) · 요청 하나의 서로 다른 get = 3(그룹·방·글).
+  `muted.<나>` updateDoc·deleteField · merge 보내기에 muted가 없으면 그대로 · 그룹1을 나간 1:1은 sid를 그룹2로 옮겨 계속, 지난 글은 읽힌다.
+- 규칙 쓰는 법 둘: ① `/databases/$(database)/documents/$(글자)`의 `$( )`에 '/'가 든 글자를 넣으면 **한 칸**이 된다(없는 문서 → Null value error) → `path('/databases/' + database + '/documents/' + … )`.
+  ② `map.keys()`는 list, `diff().addedKeys()`는 set → `keys().toSet().hasAll(addedKeys())`(list.hasAll(set)은 오류).
+- **그룹을 나간·내보낸 사람의 켜 둔 듣기**: 나간 순간에는 끊기지 않고(규칙의 get 문서가 바뀌어도 다시 보지 않는다) **그 방에 다음 글이 오면 permission-denied로 끊긴다 - 새 글은 받지 않는다**.
+  → 앱은 방·글 듣기 오류(permission-denied)를 받으면 그 방을 목록에서 빼고 열린 방은 '이 대화를 볼 수 없습니다'. 켜 둔 듣기가 있으면 `getDocFromServer`도 그 듣기 것을 돌려준다 - 점검의 '나간 사람 막힘'은 듣기 없는 계정으로.
+- 내 읽음 칸 이름 `'<sid>~<roomId>'`: `setDoc(merge)` 안 map 키·`new FieldPath('rooms', 키)`는 되고, 글자 경로 `'rooms.g_…~all'`은 SDK가 막는다('~' 금지) → `setDoc(ref, { rooms: { [키]: serverTimestamp() }, v: 1 }, { merge: true })`.
+- 1:1 방은 지우기 규칙이 없다 - 같은 계정으로 다시 돌리는 check-rules는 지난 실행의 방이 남아 '만들기'가 '고치기'가 된다 → 점검은 늘 같은 보내기 모양(위 '보내기')이라 괜찮고, 정리는 에뮬레이터 관리자 지우기(`Bearer owner`).
+
 **계획 대화에서 확인한 코드 (11-03 - 새 세션이 다시 찾지 않게)**
 - 쪽지 자료 층 `data/mail.ts`(151행 - `sendMail` 한 묶음·`loadPage` 30개씩·`watchUnread` includeMetadataChanges·`useMailWatch`) · 셈 `domain/mail.ts`(MAIL_LIMITS·`mailDocs`·`readMailAttachments` https만) · store `data/mailStore.ts`.
 - 규칙 `firestore.rules`: `isSpaceMember`(172)·`canUseSpace(sid)`(258) · 공간 아래 묶음 `match /spaces/{sid}/{sub}/{document=**}`(277 - 구성원이면 읽기·쓰기·지우기 모두 - 대화를 여기 두지 않는 까닭) · 쪽지 `mailSpace`·`validMail`·mailIn/mailSent(328~389 - 대화 규칙은 이 뒤에).
@@ -2341,8 +2355,9 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 **시작 조건**: 없음. **묻기**: ■4 운영 규칙 + TTL 배포(더하기만 - 규칙을 먼저, 화면은 P19-2부터 main). 함수 배포는 P19-3 끝(sw.js 'chat' 갈래가 먼저 퍼져야 한다).
 **먼저 읽을 것**: 이 P19 절 · 5장 'P15'·'P19' · `firestore.rules` 172·258~281(isSpaceMember·canUseSpace·묶음 규칙)·328~389 · `tools/check-rules.mjs`([V5 쪽지] 묶음) · `data/mail.ts`·`data/mail.emu.test.ts` · `domain/mail.ts` ·
 `functions/index.js` 81·138~ · `functions/mailPlan.js`(+ test) · `docs/DESIGN.md` 4-9·4-10.
-- [ ] ■0 **코드 확인·설계 확정**(에뮬레이터, 문서만): `where('members.<uid>','==',true)` 목록이 규칙을 지나나(spaces는 `in`) · `getCountFromServer`가 get() 든 규칙을 지나나 · 1:1 id 글자 견주기(a < b) ·
+- [x] ■0 **코드 확인·설계 확정**(에뮬레이터, 문서만): `where('members.<uid>','==',true)` 목록이 규칙을 지나나(spaces는 `in`) · `getCountFromServer`가 get() 든 규칙을 지나나 · 1:1 id 글자 견주기(a < b) ·
   글 + 방 merge 한 묶음의 `getAfter`·`existsAfter`(방 ↔ 글) · 둘이 함께 첫 글을 보내도 되나(방 만들기 겹침 - 만들기 칸을 줄인다) · 요청 하나의 get 수 · `v5ChatReads` 한 칸 고치기 · 첨부 부품을 `features/mail` 밖으로 옮길지. 다르면 이 절·5장을 고친다.
+  → 11-03 위 '■0 확인'(초안 규칙 70가지 - 모두 설계대로, 다른 것: `existsAfter` → `getAfter(글).at`, v5ChatReads 값 검사 없음, 보내기 모양 셋, 나간 사람의 켜 둔 듣기는 다음 글에서 끊김). 5장 'P19 ■0'.
 - [ ] ■1 **규칙** `v5Chat/{sid}/chatRooms/{roomId}`(+ `chatMsgs`) · `v5Dm/{pairId}`(+ `chatMsgs`) · `v5ChatReads/{uid}` - 고른 사람 방·글 지우기(`deletedAt`)까지 한 번에(배포 한 번) + check-rules [V5 대화].
   must: 그룹 전체 방 첫 글·이어 쓰기(둘이 함께) · 50명 방 · 1:1 만들기·보내기·읽음 · 그룹을 옮긴 1:1 · 고른 사람 방 만들기·더하기·나가기·이름 · 🔕 · 내 글 지우기 · 내 읽음 · 목록 쿼리 셋 · 수 세기.
   mustNot: 그룹 밖 사람의 읽기·목록·쓰기 · 나간·내보낸 사람이 그룹 방 읽기 · from 위조 · 기기 시각 · 2001자 · 첨부 11 · 글 없이 방 미리 보기만 고치기 · 남의 muted·reads·names · 남을 방에서 빼기 · 그룹 밖 사람 더하기 ·
