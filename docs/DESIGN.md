@@ -195,6 +195,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   글 `{ from, fromName, text(≤ 2000), attachments?(1~10), at, expireAt, v }` (+ 지운 글 `deletedAt`·빈 글). 글 하나 = 글 + 방 미리 보기 한 묶음 - 글은 방 lastId가 자기인지, 방은 그 글이 이 요청에서 쓰였는지(`getAfter(글).at == request.time`) 서로 본다.
   그룹 전체·1:1은 늘 같은 보내기 모양(만들기·고치기 - 둘이 함께 첫 글도 된다), 고른 사람 방은 만들 때만 name·members. 지우기 규칙 없음(TTL 1년 - 방은 글마다 늘어난다, 규칙이 방 expireAt 360~370일만 받아 남의 방을 짧게 적어 지우지 못한다).
   안 읽은 방 = 마지막 글이 남의 것이고 내 읽음 뒤(칸이 없으면 안 읽음 - 새로 든 사람은 참여할 때 `markChatJoined`). 그룹을 나간·내보낸 사람의 켜 둔 듣기는 그 방에 다음 글이 오면 permission-denied로 끊긴다(앱이 방을 뺀다).
+  푸시(P19-3): 함수 `v5ChatPush`·`v5DmPush`가 방의 마지막 글만(보낸 사람·🔕 `muted.<uid>` 빼고) data `{ type: 'chat', room(방 키), sender, title }`(글 없음) → `public/sw.js` 방마다 OS 알림 하나(tag `sp5-chat-<방 키>` -
+  같은 방 새 글은 소리 없이 바꾸기 '새 글 n개', 앞 알림 data.count) · 보는 큰 앱 창이 있으면 없음 · 누르면 'sp5-open-chat'/`?chat=` · 앱에서 그 방을 보면 그 알림을 닫는다.
   기기 사본·JSON 백업·그룹 지우기 단계에 넣지 않는다(그룹을 지우면 규칙이 곧바로 막고 TTL이 지운다). 푸시는 함수 `v5ChatPush`·`v5DmPush`(방의 마지막 글만 · 보낸 사람·🔕 빼고 · 보낸 사람·방 이름만, 글 없음).
 - 공유 자료 `holidays/{year}`, `sharedConfig/neis`는 V4와 같이 읽기만.
 
