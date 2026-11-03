@@ -193,7 +193,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   1:1 `v5Dm/{d_작은uid_큰uid}`(두 사람에 하나 - 함께 든 그룹 sid를 들고 보낼 때 두 사람이 그 그룹 구성원인지 본다) · 글은 두 곳 모두 그 아래 `chatMsgs/{id}` · 내 읽음(그룹 방) `v5ChatReads/{uid}` `{ rooms: { '<sid>~<roomId>': 서버 시각 }, v }`.
   방 `{ kind, name?(room ≤ 40), members?(room 2~50·dm {uid: true}), sid?·names?(dm - 내 칸만 적는다), lastId, lastAt, lastFrom, lastFromName, lastText(≤ 80 - 첨부만이면 '📎 n'), muted?{uid: true}, reads?(dm), expireAt, v }` ·
   글 `{ from, fromName, text(≤ 2000), attachments?(1~10), at, expireAt, v }` (+ 지운 글 `deletedAt`·빈 글). 글 하나 = 글 + 방 미리 보기 한 묶음 - 글은 방 lastId가 자기인지, 방은 그 글이 이 요청에서 쓰였는지(`getAfter(글).at == request.time`) 서로 본다.
-  그룹 전체·1:1은 늘 같은 보내기 모양(만들기·고치기 - 둘이 함께 첫 글도 된다), 고른 사람 방은 만들 때만 name·members. 지우기 규칙 없음(TTL 1년 - 방은 글마다 늘어난다, 규칙이 방 expireAt 360~370일만 받아 남의 방을 짧게 적어 지우지 못한다).
+  그룹 전체·1:1은 늘 같은 보내기 모양(만들기·고치기 - 둘이 함께 첫 글도 된다), 고른 사람 방은 만들 때만 name·members(P19-4 - 첫 글과 한 묶음, 비운 이름은 사람 이름 셋을 적는다).
+  고른 사람 방 고치기(P19-4 - 방 사람 누구나): 이름 · 그 그룹 사람 더하기(50명까지) · 나 빼기(나가기 - 남은 빼지 못한다). 내 글 지우기 = 글 `deletedAt`·빈 글·첨부 빼기 + 마지막 글이면 방 `lastText` 빈 글 한 묶음. 지우기 규칙 없음(TTL 1년 - 방은 글마다 늘어난다, 규칙이 방 expireAt 360~370일만 받아 남의 방을 짧게 적어 지우지 못한다).
   안 읽은 방 = 마지막 글이 남의 것이고 내 읽음 뒤(칸이 없으면 안 읽음 - 새로 든 사람은 참여할 때 `markChatJoined`). 그룹을 나간·내보낸 사람의 켜 둔 듣기는 그 방에 다음 글이 오면 permission-denied로 끊긴다(앱이 방을 뺀다).
   푸시(P19-3): 함수 `v5ChatPush`·`v5DmPush`가 방의 마지막 글만(보낸 사람·🔕 `muted.<uid>` 빼고) data `{ type: 'chat', room(방 키), sender, title }`(글 없음) → `public/sw.js` 방마다 OS 알림 하나(tag `sp5-chat-<방 키>` -
   같은 방 새 글은 소리 없이 바꾸기 '새 글 n개', 앞 알림 data.count) · 보는 큰 앱 창이 있으면 없음 · 누르면 'sp5-open-chat'/`?chat=` · 앱에서 그 방을 보면 그 알림을 닫는다.
