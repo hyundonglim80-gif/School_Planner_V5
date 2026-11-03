@@ -189,6 +189,13 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   화면(P15-2): 오른쪽 칸 창 `mail` 하나(받은·보낸·쓰기 탭 - 쓰기는 따로 쓰는 칸이 아니다: 보내기는 단추·Ctrl+Enter만, Ctrl+S·배경 누르기·↗는 보내지 않는다). 지우기 = 숨기고 7초 '되돌리기' 안내가 닫히면 진짜 지우기(지운 표시 없음 - 받은 것은 다시 만들 수 없다).
   안 읽은 구독·새 쪽지 안내·?mail=은 Shell(큰 창)에만. 서비스 워커는 보는 앱 창이 있으면 알림을 띄우지 않는다(앱 안내와 두 번 뜨지 않게).
   **그룹 구성원은 스스로만 들어온다**(P15-1 규칙): V5 `spaces` 주인 갈래는 구성원을 빼기만, V4 `groups`는 만들 때 `[나]`·주인은 빼기만 - 동의 없이 그룹에 넣어 쪽지를 보내지 못하게.
+- 대화(P19 - 같은 그룹 구성원끼리 '방 하나 + 그 아래 글을 함께 읽기', `data/chat.ts`·셈 `domain/chat.ts`, 결정은 PLAN 5장 'P19'): 그룹 방 `v5Chat/{sid}/chatRooms/{all | r_…}`(all = 그룹 전체 - 지금 구성원 모두, r_ = 고른 사람 방) ·
+  1:1 `v5Dm/{d_작은uid_큰uid}`(두 사람에 하나 - 함께 든 그룹 sid를 들고 보낼 때 두 사람이 그 그룹 구성원인지 본다) · 글은 두 곳 모두 그 아래 `chatMsgs/{id}` · 내 읽음(그룹 방) `v5ChatReads/{uid}` `{ rooms: { '<sid>~<roomId>': 서버 시각 }, v }`.
+  방 `{ kind, name?(room ≤ 40), members?(room 2~50·dm {uid: true}), sid?·names?(dm - 내 칸만 적는다), lastId, lastAt, lastFrom, lastFromName, lastText(≤ 80 - 첨부만이면 '📎 n'), muted?{uid: true}, reads?(dm), expireAt, v }` ·
+  글 `{ from, fromName, text(≤ 2000), attachments?(1~10), at, expireAt, v }` (+ 지운 글 `deletedAt`·빈 글). 글 하나 = 글 + 방 미리 보기 한 묶음 - 글은 방 lastId가 자기인지, 방은 그 글이 이 요청에서 쓰였는지(`getAfter(글).at == request.time`) 서로 본다.
+  그룹 전체·1:1은 늘 같은 보내기 모양(만들기·고치기 - 둘이 함께 첫 글도 된다), 고른 사람 방은 만들 때만 name·members. 지우기 규칙 없음(TTL 1년 - 방은 글마다 늘어난다, 규칙이 방 expireAt 360~370일만 받아 남의 방을 짧게 적어 지우지 못한다).
+  안 읽은 방 = 마지막 글이 남의 것이고 내 읽음 뒤(칸이 없으면 안 읽음 - 새로 든 사람은 참여할 때 `markChatJoined`). 그룹을 나간·내보낸 사람의 켜 둔 듣기는 그 방에 다음 글이 오면 permission-denied로 끊긴다(앱이 방을 뺀다).
+  기기 사본·JSON 백업·그룹 지우기 단계에 넣지 않는다(그룹을 지우면 규칙이 곧바로 막고 TTL이 지운다). 푸시는 함수 `v5ChatPush`·`v5DmPush`(방의 마지막 글만 · 보낸 사람·🔕 빼고 · 보낸 사람·방 이름만, 글 없음).
 - 공유 자료 `holidays/{year}`, `sharedConfig/neis`는 V4와 같이 읽기만.
 
 ### 4-10. 서버에 묻는 쿼리
@@ -196,6 +203,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 화면은 기기 사본에서 고르므로 서버 쿼리는 칸 하나짜리뿐이다(복합 색인이 필요 없다): 구독 `updatedAt > 커서 - 1분` · 처음 받기 `orderBy('updatedAt')` 쪽 나눠 ·
 처음 받기에서 먼저 `date >= 학년도 첫날` · 하루 한 번 견주기 `deletedAt != null`(P2-2 `data/mirror/server.ts`). 함수의 `v5alarms`도 칸 하나(`pendingAt`).
 쪽지(P15)도 칸 하나씩: 안 읽은 것 `mailIn where('readAt','==',null).limit(100)`(includeMetadataChanges) · 목록 `orderBy('at','desc').limit(30)` + startAfter.
+대화(P19)도 칸 하나씩: 방 목록 `chatRooms·v5Dm where('members.<나>','==',true)`(규칙이 남의 uid로 묻는 것을 막는다) + 그룹마다 `chatRooms/all` 문서 · 방 글 `orderBy('at','desc').limit(50)` + startAfter ·
+안 읽은 수 `getCountFromServer(where('at','>', 내 읽음).limit(100))`(규칙에 get()이 있어도 된다 - P19-1 ■0).
 ⚠️ 에뮬레이터는 색인을 보지 않는다 - 새 쿼리는 칸 하나로 짓고, 둘 이상이면 운영에서 색인이 필요한지 먼저 본다.
 
 ## 5. 계산 규칙 (저장하지 않는 것)

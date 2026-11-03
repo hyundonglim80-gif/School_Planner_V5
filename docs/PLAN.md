@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). ■0 설계 확정·■1 규칙·■2 자료 층·■3 함수 코드 끝(11-03). 다음 = **P19-1 ■4**(묻고: 운영 규칙 + TTL 배포). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
+**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). **P19-1 끝**(11-03 - 규칙·자료 층·함수 코드, 운영 규칙·TTL 배포). 다음 = **P19-2 ■1**(💬 대화 창 - 목록·방). 묻기: P19-3 ■4 함수 배포. 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
 **P18-2 창 안 탭 단축키 끝**(11-02 main - '⌨️ 단축키 설정' 띠에서 창 안의 탭을 누르면 '창 → 탭' · 키 = 그 창을 그 탭으로 · 단축키 탭·설명서 '내가 만든 단축키'). P18 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터. 배포·👤 부탁 없음.
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
 P17 공간 칩 · 일정 겹쳐 보기는 11-02 끝(P17-1 칩 줄 · P17-2 Ctrl·길게 누르기 겹쳐 보기).
@@ -216,7 +216,7 @@ main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 
 | P18-1 | 단축키 탭 '⌨️ 단축키 설정' → 완료 띠 → 메뉴·단추를 눌러 기능 고르기 → 완료 → 키 누르기 → 저장(겹치면 다른 기능에서 뺌) · 지금 52가지 기능의 단추에 표시 · 설명서·점검 | 중간 | 중간 | 끝 (11-02) |
 | P18-2 | 창 안의 탭까지 - '환경설정 → 알림' 같은 대상 = 창 + 탭(`settings:notify`), 기기 설정 칸 `tabShortcuts` · 단축키 탭·설명서 '내가 만든 단축키' | 중간 | 낮음 | 끝 (11-02) |
 | **P19 대화(채팅)** (11-03 사용자 요청 · 계획) | | | | |
-| P19-1 | 대화 자료·규칙·푸시 함수 - 그룹 방 `v5Chat/{sid}/chatRooms`·1:1 `v5Dm`·글 `chatMsgs`·내 읽음 `v5ChatReads` · check-rules · 운영 규칙·TTL 배포 | 중간 | 높음 | ■0 끝 (11-03) |
+| P19-1 | 대화 자료·규칙·푸시 함수 - 그룹 방 `v5Chat/{sid}/chatRooms`·1:1 `v5Dm`·글 `chatMsgs`·내 읽음 `v5ChatReads` · check-rules · 운영 규칙·TTL 배포 | 중간 | 높음 | 끝 (11-03) |
 | P19-2 | 대화 화면 ① - 💬 대화 창(목록·방)·보내기(Enter)·📎·읽음·1:1 '1'·머리줄 💬 n·여는 길·inspect-chat | 큼 | 중간 | |
 | P19-3 | 대화 알림 - 푸시(방마다 알림 하나를 바꾼다)·🔕 방마다·?chat=·설명서·함수 배포 | 중간 | 중간 | |
 | P19-4 | 고른 사람 방(만들기·사람 더하기·나가기·이름) · 내 글 지우기 | 중간 | 낮음 | |
@@ -332,6 +332,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-11-02 | 영-전-3-현동림 PC | P18 계획 + P18-1 | 단축키 설정 - 눌러서 고르기 ■1~■3 main (`c81f3b8`~) | 사용자 '단축키 추가 방식 변경 - 고려할 점' → 의견(기능 id로 기억·누른 것은 동작·창 안 탭은 2차) → '진행해줘' · ■1 `assignBinding`·띠·`shortcutRecord`(+ 고침: ↑/↓ 짝 토글이 다른 기능의 같은 화살표와 겹침으로 안 잡혔다) · ■2 단추 표시 38곳·단축키 탭 단추·줄 짚기 · ■3 설명서·inspect-shortcut-record 40·settings·manual 통과 · 단위 2759 |
 | 2026-11-02 | 영-전-3-현동림 PC | P18-2 | 창 안 탭 단축키 ■1~■3 main (`bcfa74e`~) | 사용자 'p18-2 작업해줘'(+ 확인 부탁은 '오류를 발견하면 그때 요청' - CLAUDE.md 1장) · 결정 둘('창:탭' id + 기기 칸 tabShortcuts · 목록·설명서는 키를 준 탭만) · ■1 domain·`app/tabShortcuts` 탭 24·키 처리·prefs + 고침: 환경설정·출석부·알림장은 같은 탭으로 다시 열면 안 넘어갔다 · 휴지통 { tab } · ■2 창 8곳 탭 단추·'내가 만든 단축키' · ■3 설명서·inspect-shortcut-record 58·settings·manual(MATCH=shortcuts) 통과 · 설명서 단축키 표 글자 끊김(break-keep) · 단위 2796 |
 | 2026-11-03 | 영-전-3-현동림 PC | P19 계획 | 대화(채팅) 계획 · 문서만 | 사용자 '쪽지를 연속적으로 쌓으면 채팅? 1:1·단체 채팅 계획' → 쪽지 코드·규칙·함수 읽기 → '방 + 함께 보는 글'(쪽지는 그대로) · 세션 넷(P19-1~4) · 5장 결정 일곱 |
+| 2026-11-03 | 영-전-3-현동림 PC | P19-1 | 대화 규칙·자료 층·푸시 함수 · 운영 규칙·TTL 배포 | ■0 초안 규칙 70가지(설계 확정 - path()·toSet·나간 사람 듣기) · ■1 규칙 + check-rules runChat 124(V5 289) · ■2 domain/chat·data/chat(+ emu 7) · ■3 v5ChatPush·v5DmPush(마지막 글만) · ■4 사용자 '지금 배포' - 규칙·TTL 셋 |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -2377,7 +2378,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   → 11-03 `chatPlan`(chatRecipients - all = 지금 구성원·room = 방 사람 ∩ 구성원·dm = 상대, 보낸 사람·🔕 빼기 · chatTitle · chatPushData type·room·sender·title(글 없음) · isLastMsg) + 시험 6 (test:functions 26) ·
   index.js `pushChat` 하나로 두 함수 + 보내기 도우미 `multicast`(v5MailPush도 이것으로 - 같은 동작) · **방의 마지막 글이 아니면 건너뛴다**(잇단 글은 뒤 글이 알린다 - 함수 차례가 바뀌어도 마지막 글은 늘 알린다) ·
   손 시험(에뮬레이터 관리자로 심고 `.run(event)`, `Messaging.prototype.sendEachForMulticast` 가짜): 뒤 글 있음 = 건너뜀 · 🔕·보낸 사람 빠짐 · 방 사람 중 그룹 밖 빠짐 · 1:1 상대만 · data에 글 없음 · not-registered 토큰만 지움 · 토큰 없으면 건너뜀.
-- [ ] ■4 (묻고) 운영 규칙 배포(먼저 `node tools/live-rules.cjs --print`와 ■1 앞 파일 diff) + `firestore.indexes.json` TTL 셋(`chatRooms`·`chatMsgs`·`v5Dm` - `expireAt`) `deploy --only firestore:indexes`.
+- [x] ■4 (묻고) 운영 규칙 배포(먼저 `node tools/live-rules.cjs --print`와 ■1 앞 파일 diff) + `firestore.indexes.json` TTL 셋(`chatRooms`·`chatMsgs`·`v5Dm` - `expireAt`) `deploy --only firestore:indexes`.
+  → 11-03 운영 = ■1 앞 파일(f314421 - 같음) → 사용자 '지금 배포' → 규칙 배포(ruleset 924b2ae2…) → live-rules '같다' · TTL 셋 더해 `deploy --only firestore:indexes` → 운영 TTL 여섯(chatMsgs·chatRooms·mailIn·mailSent·v5Dm·v5Errors)·복합 색인 0. P19-1 끝.
 **끝 조건**: check-rules 전체 · test:data · 단위 · 함수 시험 통과 · 운영 규칙·TTL 배포.
 
 ### P19-2. 대화 화면 ① - 💬 대화 창·보내기·읽음·머리줄 (1:1 · 그룹 전체)
