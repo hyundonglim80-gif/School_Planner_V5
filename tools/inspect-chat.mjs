@@ -14,11 +14,12 @@
 //      ⋮ 구성원 · 이름 바꾸기 · 그룹을 나간 사람 흐리게 · 나간 사람 다시 더하기 · 나가기(묻기 → 목록에서 빠짐)). teacher3 = C(그룹 구성원만 - 화면 없음)
 //   P19-4 ■2 내 글 지우기(마우스를 올리면 🗑️ · 묻기 '아니오' = 그대로 · '예' = 모두에게 '지운 글'·서버 빈 글 + deletedAt·방 미리 보기 빈 글 → 목록 '나: 지운 글' ·
 //      남의 글에는 🗑️ 없음 · 휴대폰은 🗑️ 없이 길게 누르기 → 묻기 → '지운 글')
+//   P21 윈도우 파일 끌어다 놓기(CDP 진짜 끌기): 방 머리·글 칸 위 어디서나 덮개(글은 보이는 자리에) · 놓으면 글 칸에 첨부
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
 //   대화는 지우기 규칙이 없다 - 끝에 관리자 지우기. npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-chat.mjs
 import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
-import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
+import { emulator, emulatorAdmin, fileDrag, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const undo = restorer();
@@ -373,6 +374,26 @@ try {
   r.check(await waitFor(picRow, 5000), '방에 그림 글');
   const roomPic = await serverUntil(async () => (await getDoc(doc(em.db, 'v5Chat', SID, 'chatRooms', 'all'))).data(), (d) => d?.lastText === '📎 1');
   r.check(roomPic?.lastText === '📎 1', "글 없는 첨부 = 방 미리 보기 '📎 1'");
+
+  r.section('P21 윈도우 파일 끌어다 놓기');
+  const chatDrag = await fileDrag(A.ctx, page, ['놓은파일.txt']);
+  const chatCover = page.locator(`${sel('chat-room-view')} ${sel('file-drop-over')}`);
+  await chatDrag.over(page.locator(sel('chat-room-title')));
+  r.check(await waitFor(chatCover), '방 머리 위로 끌어도 덮개');
+  await chatDrag.over(page.locator(sel('chat-input')));
+  r.check((await chatCover.count()) === 1, '글 칸 위로 옮겨도 그대로');
+  // 글이 많으면 덮개가 보이는 자리보다 길다 - 글은 보이는 자리 안에
+  const coverLabel = await chatCover.locator('span').boundingBox();
+  const seenRoom = await page.locator(sel('chat-room-view')).evaluate((el) => {
+    const b = el.closest('[data-scroll-lock]').getBoundingClientRect();
+    return { top: b.top, bottom: b.bottom, roomHeight: el.getBoundingClientRect().height };
+  });
+  r.check(coverLabel.y > seenRoom.top && coverLabel.y + coverLabel.height < seenRoom.bottom, `덮개 글이 보이는 자리에 (글 y ${Math.round(coverLabel.y)} · 보이는 자리 ${Math.round(seenRoom.top)}~${Math.round(seenRoom.bottom)} · 방 높이 ${Math.round(seenRoom.roomHeight)})`);
+  await chatDrag.drop();
+  r.check(await waitFor(page.locator(sel('chat-file', '놓은파일.txt')), 8000), '놓으면 글 칸에 첨부');
+  r.check((await page.locator(sel('chat-input')).inputValue()) === '' && (await chatCover.count()) === 0, '글 칸에 파일 이름이 들어가지 않고 덮개를 걷는다');
+  await page.locator(sel('chat-file-remove')).click();
+  await waitFor(async () => (await page.locator(sel('chat-files')).count()) === 0, 3000);
 
   r.section('■2 + 새 대화 → 새 1:1');
   await wipe(`v5Dm/${PAIR}/chatMsgs`);

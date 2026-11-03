@@ -1,9 +1,11 @@
 // 💬 대화 글 칸 (P19-2 ■2) - Enter 보내기 · Shift+Enter 줄 바꿈 · 한글 짜는 중 Enter · 휴대폰 자판 Enter · 보내지 못하면 글 그대로 · 쓰던 글 채우기
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createRef } from 'react';
 import { act, cleanup, fireEvent, render, waitFor } from '@testing-library/react';
 import { readDraft, resetDraftsForTest, wipeDrafts, writeDraft } from '../../data/drafts';
 import { useSession } from '../../data/session';
-import ChatComposer from './ChatComposer';
+import { uploadAttachments } from '../notes/attach';
+import ChatComposer, { type ChatComposerHandle } from './ChatComposer';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 vi.mock('../notes/attach', () => ({ uploadAttachments: vi.fn(async () => []), extractImageFiles: () => [], pastedTable: () => false }));
@@ -35,6 +37,22 @@ afterAll(async () => {
 });
 
 describe('대화 글 칸', () => {
+  it('방에 놓은 파일 = 📎와 같이 올린다 - 올리는 동안 또 놓으면 올리지 않는다', async () => {
+    let finish: (added: []) => void = () => {};
+    vi.mocked(uploadAttachments).mockClear();
+    vi.mocked(uploadAttachments).mockImplementationOnce(() => new Promise((r) => (finish = r)));
+    const ref = createRef<ChatComposerHandle>();
+    render(<ChatComposer ref={ref} roomKey={KEY} onSend={vi.fn(async () => true)} />);
+    const file = new File(['a'], 'a.txt');
+    act(() => ref.current!.attach([file]));
+    expect(document.querySelector('[data-chat-uploading="files"]')).not.toBeNull();
+    act(() => ref.current!.attach([file]));
+    expect(uploadAttachments).toHaveBeenCalledTimes(1);
+    expect(uploadAttachments).toHaveBeenCalledWith([file], false);
+    await act(async () => finish([]));
+    expect(document.querySelector('[data-chat-uploading]')).toBeNull();
+  });
+
   it('Enter = 보내기(칸을 곧바로 비운다) · Shift+Enter·빈 글은 보내지 않는다', async () => {
     const onSend = vi.fn(async () => true);
     render(<ChatComposer roomKey={KEY} onSend={onSend} />);

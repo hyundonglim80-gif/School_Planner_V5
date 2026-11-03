@@ -4,13 +4,14 @@
 //   - Ctrl+S·배경 누르기·↗ 새 창은 보내지 않는다(쪽지와 같다 - <form>·onSave를 쓰지 않는다).
 //   - 보내면 글 칸을 곧바로 비운다(글은 방에 '보내는 중…'으로 먼저 보인다). 보내지 못하면 글·첨부를 칸에 되돌린다(그 사이에 새로 쓴 것이 없으면).
 //   - 쓰던 글은 이 기기에(useDraft 'chat:<방 키>' - 앱 위 '저장하지 않은 글' 띠에는 들지 않는다). 방을 다시 열면 묻지 않고 칸에 채운다(메신저처럼).
-//   - 📎 파일·글 칸에 캡처 Ctrl+V = 내 구글 드라이브에 올려 붙임(notes/attach - 쪽지·메모와 같은 길). 올리는 동안은 보내지 않는다. 첨부가 있으면 글은 비어도 된다.
-import { useEffect, useLayoutEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type KeyboardEvent, type ReactNode } from 'react';
+//   - 📎 파일·방에 끌어다 놓기(P21-1 - 방이 받아 ref의 attach로 건넨다)·글 칸에 캡처 Ctrl+V = 내 구글 드라이브에 올려 붙임(notes/attach - 쪽지·메모와 같은 길). 올리는 동안은 보내지 않는다. 첨부가 있으면 글은 비어도 된다.
+import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import { showToast } from '../../app/toast';
 import { useDraft } from '../../data/drafts';
 import type { Attachment } from '../../data/types';
 import { CHAT_LIMITS, chatTextError } from '../../domain/chat';
 import { isImageAttachment } from '../../domain/attachments';
+import { DROP_BUSY_TEXT } from '../../ui/fileDrop';
 import { extractImageFiles, pastedTable, uploadAttachments } from '../notes/attach';
 
 interface ChatDraft {
@@ -24,7 +25,13 @@ const MAX_INPUT_PX = 160;
 /** 휴대폰 화면 자판 - Enter = 줄 바꿈, ➤로 보낸다 */
 const touchScreen = () => typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
 
+/** 방에 놓은 파일을 건네받는다 */
+export interface ChatComposerHandle {
+  attach: (files: File[]) => void;
+}
+
 interface Props {
+  ref?: Ref<ChatComposerHandle>;
   roomKey: string;
   /** 보낸다 - 보냈으면 true. 보내지 못한 안내는 부르는 쪽이 한다 */
   onSend: (text: string, attachments: Attachment[]) => Promise<boolean>;
@@ -33,7 +40,7 @@ interface Props {
   disabled?: boolean;
 }
 
-export default function ChatComposer({ roomKey, onSend, above, disabled }: Props) {
+export default function ChatComposer({ ref, roomKey, onSend, above, disabled }: Props) {
   const [text, setText] = useState('');
   const [files, setFiles] = useState<Attachment[]>([]);
   /** 드라이브에 올리는 중 (📎 파일 / 붙여넣은 캡처) */
@@ -86,6 +93,12 @@ export default function ChatComposer({ roomKey, onSend, above, disabled }: Props
     e.target.value = '';
     void attach(picked, false);
   };
+  useImperativeHandle(ref, () => ({
+    attach: (picked) => {
+      if (uploading) showToast(DROP_BUSY_TEXT);
+      else void attach(picked, false);
+    },
+  }));
   /** 캡처 그림만 올린다 - 표(엑셀은 그 범위 그림도 함께 복사한다)·글자는 그대로 글 칸에 */
   const onPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     if (pastedTable(e.clipboardData)) return;
@@ -163,7 +176,7 @@ export default function ChatComposer({ roomKey, onSend, above, disabled }: Props
         <label
           data-chat-attach
           aria-disabled={!!uploading}
-          title="파일 첨부 - 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 링크가 있는 사람은 볼 수 있습니다. 캡처는 글 칸에 Ctrl+V."
+          title="파일 첨부 - 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 링크가 있는 사람은 볼 수 있습니다. 윈도우 파일은 방에 끌어다 놓아도 되고, 캡처는 글 칸에 Ctrl+V."
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg hover:bg-slate-100 ${uploading ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
         >
           📎

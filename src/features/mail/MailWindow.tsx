@@ -332,7 +332,7 @@ export default function MailWindow({ params, close, raise }: WindowProps<MailPar
 
   return (
     <ModalShell isOpen onClose={close} raise={raise} width="lg" title="✉ 쪽지" bare footer={<ModalCloseButton onClose={close} />}>
-      <div data-mail-window={tab}>
+      <div data-mail-window={tab} className="flex min-h-full flex-col">
         <div role="tablist" className="sticky top-0 z-10 flex gap-1 border-b border-slate-100 bg-white px-4 pt-3">
           {TABS.map((t) => (
             <button
@@ -363,7 +363,8 @@ export default function MailWindow({ params, close, raise }: WindowProps<MailPar
         <div role="tabpanel" data-mail-panel="sent" hidden={tab !== 'sent'}>
           <MailList box="sent" active={tab === 'sent'} bump={sentBump} />
         </div>
-        <div role="tabpanel" data-mail-panel="write" hidden={tab !== 'write'}>
+        {/* 쓰기 칸이 창 아래까지 - 파일을 빈 곳에 놓아도 받는다 (P21-1) */}
+        <div role="tabpanel" data-mail-panel="write" hidden={tab !== 'write'} className={tab === 'write' ? 'flex flex-1 flex-col' : undefined}>
           {composing && <MailCompose ask={ask} onSent={sent} />}
         </div>
       </div>

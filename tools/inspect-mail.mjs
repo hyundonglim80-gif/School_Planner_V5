@@ -7,11 +7,12 @@
 //      ?mail=<id>(푸시를 눌러 연 앱) · 서비스 워커 'mail' 푸시(보는 창이 있으면 없음 · 없으면 OS 알림 하나) · 알림 누름 → 열린 앱이 그 쪽지
 //   P16 첨부: 캡처 Ctrl+V·📎 파일 = 드라이브(page.route 흉내 - inspect-attach) · 엑셀 표는 올리지 않음 · ✕ 빼기 · 쓰던 글 보관에 첨부 · 첨부만 보내기(글 없이) ·
 //      줄 📎 n·첫 줄 대신 '🖼️ 그림 1' · 펼치면 그림(크게 보기)·파일 링크 · https 아닌 주소는 보이지 않는다
+//   P21 윈도우 파일 끌어다 놓기(CDP 진짜 끌기): 쓰기 칸 덮개 · 놓으면 📎와 같이
 //
 //   그룹은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, CLAUDE.md 2장). 쪽지는 각 계정 클라이언트로(서버 시각·규칙 통과).
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-mail.mjs
 import { collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, where, writeBatch } from 'firebase/firestore';
-import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
+import { emulator, emulatorAdmin, fileDrag, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const undo = restorer();
@@ -302,6 +303,20 @@ try {
   r.check(((await page.locator(sel('mail-attach')).textContent()) ?? '').includes('3개'), "단추에 '파일 첨부 (3개)'");
   await page.locator(sel('mail-attachment', '뺄파일.txt')).locator(sel('mail-attachment-remove')).click();
   r.check(await waitFor(async () => (await att.count()) === 2, 3000), '✕ → 그 첨부만 빠진다');
+
+  r.section('P21 윈도우 파일 끌어다 놓기');
+  const mailDrag = await fileDrag(A.ctx, page, ['놓은파일.txt']);
+  await mailDrag.over(box);
+  const mailCover = page.locator(`${sel('mail-compose')} ${sel('file-drop-over')}`);
+  r.check(await waitFor(mailCover), '쓰기 칸 위로 끌면 덮개');
+  const mailCoverBox = await mailCover.boundingBox();
+  const mailBottom = await page.locator(sel('mail-compose')).evaluate((el) => el.closest('[data-scroll-lock]').getBoundingClientRect().bottom);
+  r.check(mailCoverBox.y + mailCoverBox.height >= mailBottom - 2, `덮개가 창 아래까지 - 빈 곳에 놓아도 받는다 (덮개 끝 ${Math.round(mailCoverBox.y + mailCoverBox.height)} · 창 끝 ${Math.round(mailBottom)})`);
+  await mailDrag.drop();
+  r.check(await waitFor(page.locator(sel('mail-attachment', '놓은파일.txt')), 8000), '놓으면 📎와 같이 붙는다');
+  r.check((await box.inputValue()) === '' && (await page.locator(sel('file-drop-over')).count()) === 0, '글 칸에 파일 이름이 들어가지 않고 덮개를 걷는다');
+  await page.locator(sel('mail-attachment', '놓은파일.txt')).locator(sel('mail-attachment-remove')).click();
+  await waitFor(async () => (await att.count()) === 2, 3000);
 
   r.section('P16 첨부 - 쓰던 글 보관 · 첨부만 보내기');
   await page.waitForTimeout(2600);

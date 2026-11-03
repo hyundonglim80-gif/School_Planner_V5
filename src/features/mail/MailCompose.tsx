@@ -2,7 +2,7 @@
 //   Ctrl+S·배경 누르기·↗ 새 창은 보내지 않는다(PLAN 5장 'P15 쓰기') - <form>·onSave를 쓰지 않는다. 쓰던 글은 이 기기에(useDraft 'mail:compose' -
 //   닫기·↗·배경 누르기에도 남고 다시 열면 '되살리기', '저장하지 않은 글' 띠에는 넣지 않는다).
 //   받는 사람은 보내기 직전 지금 구성원으로 다시 거른다(나간 사람이 하나라도 있으면 규칙이 묶음 전체를 막는다). 끊기면 '저장을 기다립니다' 띠(data/mail).
-//   첨부(P16 - 메모처럼): 📎 파일 첨부·글 칸에 캡처 Ctrl+V = 내 구글 드라이브에 올려 붙임(notes/attach). 엑셀 표는 글자 그대로 붙는다(그림으로 올리지 않는다).
+//   첨부(P16 - 메모처럼): 📎 파일 첨부·윈도우 파일 끌어다 놓기(P21-1 - 쓰기 칸 어디든)·글 칸에 캡처 Ctrl+V = 내 구글 드라이브에 올려 붙임(notes/attach). 엑셀 표는 글자 그대로 붙는다(그림으로 올리지 않는다).
 //   올리는 동안은 보내지 않는다. 첨부가 있으면 글은 비어도 된다. 쓰던 글 보관에 첨부도 함께(올린 것은 드라이브에 있다).
 import { useEffect, useRef, useState, type ChangeEvent, type ClipboardEvent } from 'react';
 import { showToast, ShownError, showErrorToast } from '../../app/toast';
@@ -15,6 +15,8 @@ import { readPeople } from '../../data/spaces';
 import type { Attachment } from '../../data/types';
 import { MAIL_LIMITS, mailTextError, recipientsOf } from '../../domain/mail';
 import DraftOffer from '../../ui/DraftOffer';
+import FileDropCover from '../../ui/FileDropCover';
+import { DROP_BUSY_TEXT, useFileDrop } from '../../ui/fileDrop';
 import { extractImageFiles, pastedTable, uploadAttachments } from '../notes/attach';
 import SharedAttachments from '../notes/SharedAttachments';
 
@@ -108,6 +110,10 @@ export default function MailCompose({ ask, onSent }: { ask?: ComposeAsk; onSent:
     e.target.value = '';
     void attach(files, false);
   };
+  const fileDrop = useFileDrop((files) => {
+    if (uploading) showToast(DROP_BUSY_TEXT);
+    else void attach(files, false);
+  });
   /** 캡처 그림만 올린다 - 표(엑셀은 그 범위 그림도 함께 복사한다)·글자는 그대로 글 칸에 */
   const onTextPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     if (pastedTable(e.clipboardData)) return;
@@ -180,7 +186,8 @@ export default function MailCompose({ ask, onSent }: { ask?: ComposeAsk; onSent:
   }
 
   return (
-    <div data-mail-compose className="flex flex-col gap-3 p-4 text-sm">
+    <div data-mail-compose className="relative flex flex-1 flex-col gap-3 p-4 text-sm" {...fileDrop.dropProps}>
+      {fileDrop.over && <FileDropCover />}
       {/* 첨부가 생기기 전(P15)의 보관에는 attachments가 없다 */}
       {draft.offer && <DraftOffer savedAt={draft.offer.savedAt} onRestore={() => setC({ ...EMPTY, ...draft.take() })} onDiscard={draft.discard} />}
       <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
@@ -265,7 +272,7 @@ export default function MailCompose({ ask, onSent }: { ask?: ComposeAsk; onSent:
           className={`flex items-center justify-center gap-2 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-dashed border-slate-300 shadow-2xs ${
             uploading ? 'opacity-60 cursor-wait' : 'cursor-pointer'
           }`}
-          title="파일을 골라 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 여러 개를 한 번에 골라도 됩니다. 링크가 있는 사람은 볼 수 있습니다."
+          title="파일을 골라 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 여러 개를 한 번에 골라도 되고, 윈도우 파일을 이 칸에 끌어다 놓아도 됩니다. 링크가 있는 사람은 볼 수 있습니다."
         >
           <span>{uploading === 'files' ? '⏳' : '📎'}</span>
           <span data-mail-uploading={uploading === 'files' ? 'files' : undefined}>{uploading === 'files' ? '업로드 중...' : `파일 첨부${c.attachments.length ? ` (${c.attachments.length}개)` : ''}`}</span>

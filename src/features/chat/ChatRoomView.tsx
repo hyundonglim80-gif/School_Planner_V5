@@ -39,7 +39,9 @@ import {
   type ChatMsg,
   type ChatTarget,
 } from '../../domain/chat';
-import ChatComposer from './ChatComposer';
+import FileDropCover from '../../ui/FileDropCover';
+import { useFileDrop } from '../../ui/fileDrop';
+import ChatComposer, { type ChatComposerHandle } from './ChatComposer';
 import ChatMsgRow from './ChatMsgRow';
 import type { RoomCreate } from './NewChat';
 import RoomInfo from './RoomInfo';
@@ -330,6 +332,9 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
     );
 
   const canWrite = !!ref && status !== 'denied';
+  // 윈도우 파일을 방 어디에 놓아도 글 칸의 📎와 같다 (P21-1)
+  const composer = useRef<ChatComposerHandle>(null);
+  const fileDrop = useFileDrop((files) => composer.current?.attach(files), { disabled: !canWrite });
 
   // ─── 🔕 이 방 알림 (P19-3 ■2) - 푸시 함수가 거르고 앱 안내도 없다, 안 읽은 수에는 든다. 방 문서가 생긴 뒤에만(규칙 - 내 칸 고치기) ───
   const muted = !!room?.muted.includes(uid);
@@ -340,7 +345,8 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
   };
 
   return (
-    <div ref={rootRef} data-chat-room-view={roomKey} data-chat-status={status} className="relative flex flex-1 flex-col">
+    <div ref={rootRef} data-chat-room-view={roomKey} data-chat-status={status} className="relative flex flex-1 flex-col" {...fileDrop.dropProps}>
+      {fileDrop.over && <FileDropCover />}
       {/* 머리와 ⋮ 방 정보는 함께 위에 붙는다 - 방은 맨 아래에서 시작한다 */}
       <div className="sticky top-0 z-10">
       <div className="flex items-center gap-2 border-b border-slate-100 bg-white px-3 py-2">
@@ -400,6 +406,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
       <div className="flex-1">{body}</div>
       {canWrite && (
         <ChatComposer
+          ref={composer}
           roomKey={roomKey}
           onSend={send}
           above={
