@@ -13,11 +13,12 @@
 //   - 그룹을 나갔거나 방에서 빠지면 듣기가 permission-denied로 끊긴다(P19-1 ■0) → '이 대화를 볼 수 없습니다'.
 //   - 대화는 서버에만 있다(기기 사본·백업 없음) - 끊긴 채 열면 '인터넷이 필요합니다'.
 //   - 이 방이 보이면 이 방의 OS 알림(푸시 - P19-3 ■1)을 닫는다(view closeChatNotices).
+//   - 방 머리 🔔/🔕(P19-3 ■2) = 이 방 알림 끄기·켜기(방 muted.<나>) - 방 문서가 있을 때만(글이 없는 그룹 전체·새 1:1은 없음).
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { useShownWindowPick } from '../../app/windows';
-import { loadOlderMsgs, markRoomRead, sendChat, watchRoomMsgs, type ChatPage } from '../../data/chat';
+import { loadOlderMsgs, markRoomRead, sendChat, setRoomMuted, watchRoomMsgs, type ChatPage } from '../../data/chat';
 import { useChatStore } from '../../data/chatStore';
 import { useSession } from '../../data/session';
 import type { GroupSpace } from '../../data/spaceChoice';
@@ -340,6 +341,14 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
 
   const canWrite = !!ref && status !== 'denied';
 
+  // ─── 🔕 이 방 알림 (P19-3 ■2) - 푸시 함수가 거르고 앱 안내도 없다, 안 읽은 수에는 든다. 방 문서가 생긴 뒤에만(규칙 - 내 칸 고치기) ───
+  const muted = !!room?.muted.includes(uid);
+  const toggleMute = () => {
+    if (!ref) return;
+    void setRoomMuted(uid, ref, !muted);
+    showToast(muted ? '🔔 이 대화의 알림을 켰습니다.' : '🔕 이 대화의 알림을 껐습니다. 새 글은 맨 위 💬 수로만 보입니다.');
+  };
+
   return (
     <div ref={rootRef} data-chat-room-view={roomKey} data-chat-status={status} className="relative flex flex-1 flex-col">
       <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-100 bg-white px-3 py-2">
@@ -350,6 +359,18 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
           {title}
         </span>
         {sub && <span className="min-w-0 shrink truncate text-2xs text-slate-400">{sub}</span>}
+        {room && canWrite && (
+          <button
+            type="button"
+            data-chat-mute={muted ? 'on' : 'off'}
+            onClick={toggleMute}
+            title={muted ? '이 대화 알림 켜기' : '이 대화 알림 끄기'}
+            aria-label={muted ? '이 대화 알림 켜기' : '이 대화 알림 끄기'}
+            className={`ml-auto shrink-0 rounded-lg px-2 py-1 text-sm hover:bg-slate-100 cursor-pointer ${muted ? '' : 'opacity-60 hover:opacity-100'}`}
+          >
+            {muted ? '🔕' : '🔔'}
+          </button>
+        )}
       </div>
       {status === 'offline' && (
         <p data-chat-offline className="mx-3 mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">

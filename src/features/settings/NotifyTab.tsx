@@ -1,4 +1,4 @@
-// 환경설정 '알림' 탭 (P8-2): 일정 알림·쪽지(앱을 닫아도) - 이 기기에서 서버 푸시를 켜고 끈다(V4 PushAlarmPanel). 쪽지 푸시도 같은 기기 토큰(P15-2).
+// 환경설정 '알림' 탭 (P8-2): 일정 알림·쪽지·대화(앱을 닫아도) - 이 기기에서 서버 푸시를 켜고 끈다(V4 PushAlarmPanel). 쪽지(P15-2)·대화(P19-3) 푸시도 같은 기기 토큰.
 // 휴대폰은 허용을 묻는 창을 '누른 직후'에만 띄우므로 켜기는 반드시 이 단추에서 한다.
 // 알림 소리 길이(P10-1) - 앱 안 ⏰ 알림 창의 소리, 계정에 하나(기기마다 같다).
 import { useEffect, useState } from 'react';
@@ -32,7 +32,7 @@ function PushAlarmPanel() {
     setBusy(true);
     try {
       await enablePush();
-      showToast('이 기기에서 일정 알림·쪽지를 받습니다. 앱을 닫아도 알려 줍니다.');
+      showToast('이 기기에서 일정 알림·쪽지·대화를 받습니다. 앱을 닫아도 알려 줍니다.');
     } catch (e) {
       showErrorToast(e instanceof Error ? e.message : '알림을 켜지 못했습니다.', e);
     } finally {
@@ -44,7 +44,7 @@ function PushAlarmPanel() {
     setBusy(true);
     try {
       await disablePush();
-      showToast('이 기기에서는 앱을 닫았을 때의 일정 알림·쪽지를 받지 않습니다.');
+      showToast('이 기기에서는 앱을 닫았을 때의 일정 알림·쪽지·대화를 받지 않습니다.');
     } finally {
       setState(await readPushState());
       setBusy(false);
@@ -106,8 +106,8 @@ export default function NotifyTab() {
       </Section>
       <Section
         id="push"
-        title="일정 알림·쪽지 (앱을 닫아도)"
-        desc="켜 두면 일정에 건 ⏰ 알림 시각과 새 ✉ 쪽지가 왔을 때 앱을 닫아 두었어도 이 기기(휴대폰·PC)에 알림이 옵니다(쪽지 알림에는 보낸 사람·그룹만 - 글은 앱에서). 앱을 보고 있으면 앱 안에서 알려 줍니다. 기기마다 따로 켭니다 - 휴대폰은 휴대폰에서 이 단추를 눌러 주세요."
+        title="일정 알림·쪽지·대화 (앱을 닫아도)"
+        desc="켜 두면 일정에 건 ⏰ 알림 시각과 새 ✉ 쪽지·💬 대화 글이 왔을 때 앱을 닫아 두었어도 이 기기(휴대폰·PC)에 알림이 옵니다(쪽지·대화 알림에는 보낸 사람·그룹만 - 글은 앱에서, 대화는 방마다 알림 하나 · 🔕 끈 방은 빼고). 앱을 보고 있으면 앱 안에서 알려 줍니다. 기기마다 따로 켭니다 - 휴대폰은 휴대폰에서 이 단추를 눌러 주세요."
       >
         <PushAlarmPanel />
       </Section>

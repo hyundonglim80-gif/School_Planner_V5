@@ -9,6 +9,7 @@
 //   ■4 휴대폰 390(머리줄 ✉·💬 넘침 0 · 글 칸이 화면 아래 · 자판 Enter = 줄 바꿈 · ➤) · 그룹에서 빠진 사람(관리자 쓰기)은 다음 글에서 '볼 수 없음'·목록·💬에서 빠진다
 //   P19-3 ■1 ?chat=(그 방 · 주소에서 지움) · 서비스 워커 'chat' 푸시(보는 앱 창이 있으면 없음 · 방마다 알림 하나 · 같은 방은 바꾸기 '새 글 n개' ·
 //      1:1 = 보낸 사람 제목 · 모양이 아닌 방 키는 없음 · 알림 누르기 → 열린 창에 그 방 · 앱에서 그 방을 보면 그 알림이 닫힘)
+//   P19-3 ■2 🔕(방 머리 🔔 → 서버 muted.<나> · 목록 줄 🔕 · 끈 방 새 글은 안내 없음·💬 n에는 듦 · 다시 누르면 켜기)
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
 //   대화는 지우기 규칙이 없다 - 끝에 관리자 지우기. npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-chat.mjs
@@ -517,6 +518,32 @@ try {
     await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
     r.check(await waitFor(page.locator(sel('chat-room-view', ALL_KEY)), 5000), '그룹 방으로');
     r.check(await waitFor(async () => (await osNotes(allTag)).length === 0, 5000), '앱에서 그 방을 보면 그 방의 OS 알림이 닫힌다');
+    await page.evaluate(() => window.sp5.closeAllWindows());
+  }
+
+  r.section('P19-3 ■2 🔕 이 방 알림 끄기');
+  {
+    const roomMuted = async () => (await getDoc(doc(em.db, 'v5Chat', SID, 'chatRooms', 'all'))).data()?.muted?.[uidA] === true;
+    await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
+    const mute = page.locator(sel('chat-mute'));
+    r.check((await waitFor(mute, 5000)) && (await mute.getAttribute('data-chat-mute')) === 'off', '방 머리 🔔 (알림 켜짐)');
+    await mute.click();
+    r.check(await serverUntil(roomMuted, (v) => v, 8000), '🔔 누르기 → 방 muted.<나> (서버)');
+    r.check((await mute.getAttribute('data-chat-mute')) === 'on' && (await mute.textContent()) === '🔕', '머리 🔕');
+    r.check(await waitFor(page.locator(sel('toast'), { hasText: '이 대화의 알림을 껐습니다' }), 3000), "안내 '🔕 이 대화의 알림을 껐습니다'");
+    await page.locator(sel('chat-back')).click();
+    r.check(await waitFor(page.locator(`${sel('chat-room', ALL_KEY)} ${sel('chat-muted')}`), 5000), '목록 줄에 🔕');
+    await page.evaluate(() => window.sp5.closeAllWindows());
+    await page.waitForTimeout(500);
+    await sendAsB('끈 방 글');
+    r.check(await waitFor(async () => (await head.getAttribute('data-header-chat')) === '1', 8000), '끈 방의 새 글도 안 읽은 수에는 든다 (💬 1)');
+    await page.waitForTimeout(1500);
+    r.check((await page.locator(sel('toast'), { hasText: '끈 방 글' }).count()) === 0, '끈 방의 새 글은 앱 안내가 없다');
+    await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
+    await mute.click();
+    r.check((await serverUntil(roomMuted, (v) => !v, 8000)) === false, '다시 누르기 → 켜기 (서버 muted.<나> 지움)');
+    r.check((await mute.getAttribute('data-chat-mute')) === 'off', '머리 🔔');
+    r.check(await waitFor(async () => (await head.getAttribute('data-header-chat')) === '0', 5000), '열면 읽음 → 💬 0');
     await page.evaluate(() => window.sp5.closeAllWindows());
   }
 
