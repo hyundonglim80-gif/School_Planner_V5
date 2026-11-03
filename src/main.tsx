@@ -17,6 +17,7 @@ import { useCommonSettings } from './app/prefs'
 import { finishRedirectLogin } from './features/auth/login'
 import { reportReactError, startErrorReports } from './data/errorReport'
 import ErrorBoundary from './ui/ErrorBoundary'
+import { guardWindowFileDrop } from './ui/fileDrop'
 
 // 오류 알림(P14-2): 잡지 못한 오류·약속 거절·오류 안내를 개발자에게 (글 내용 없이 - data/errorReport). 다른 시작보다 먼저
 startErrorReports()
@@ -41,6 +42,8 @@ flushPendingToast()
 // 되돌리기 Ctrl+Z(글 칸 밖에서) - 지금 공간의 마지막 쓰기. 로그인한 사람이 바뀌면 더미를 비운다
 setShortcutAction('undo', () => void undoLast())
 watchUndoOwner()
+// 놓는 칸 밖에 떨어뜨린 파일을 브라우저가 열어 쓰던 글을 잃지 않게 (P21-1)
+guardWindowFileDrop()
 // 앱으로 설치 - 서비스 워커 등록, 크롬의 설치 이벤트는 화면보다 먼저 올 수 있어 여기서 듣는다
 startInstall()
 

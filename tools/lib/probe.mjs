@@ -10,7 +10,9 @@
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-<무엇>.mjs   (SITE=… 로 다른 주소)
 // ⚠️ 에뮬레이터만 건드린다. 운영 자료와는 아무 상관이 없다.
 import { chromium } from 'playwright';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getAuth, connectAuthEmulator, signInWithEmailAndPassword } from 'firebase/auth';
@@ -170,6 +172,58 @@ export async function noUserActivation(page, off = true) {
     if (off) Object.defineProperty(navigator, 'userActivation', { configurable: true, value: { isActive: false, hasBeenActive: true } });
     else delete navigator.userActivation;
   }, off);
+}
+
+/**
+ * 윈도우 파일 끌기 (P21-1) - CDP로 크롬에 진짜 파일 끌기를 넣는다. 놓는 자리 찾기·dataTransfer·폴더가 모두 진짜다
+ * (DragEvent 흉내는 폴더를 못 만들고, 덮개가 마우스를 가로막아도 모른다). names 끝이 '/'면 폴더. 끝난 뒤 걷을 것은 임시 폴더뿐이라 두어도 된다.
+ * 칸 밖에 놓아도 CDP는 브라우저가 파일을 여는 데까지 가지 않는다(지킴이 없어도 주소가 그대로) - 창 지킴은 watch()의 dragover로 본다.
+ */
+export async function fileDrag(ctx, page, names) {
+  const dir = mkdtempSync(join(tmpdir(), 'sp5-drop-'));
+  const files = names.map((name) => {
+    const path = join(dir, name.replace(/\/$/, ''));
+    if (name.endsWith('/')) mkdirSync(path);
+    else writeFileSync(path, 'x');
+    return path;
+  });
+  const cdp = await ctx.newCDPSession(page);
+  const data = { items: [], files, dragOperationsMask: 1 };
+  const send = (type, at) => cdp.send('Input.dispatchDragEvent', { type, ...at, data });
+  const middle = async (target) => {
+    const b = await target.boundingBox();
+    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+  };
+  let at = null;
+  return {
+    /** 그 자리로 끌어 온다 (놓지 않는다) */
+    async over(target) {
+      const next = await middle(target);
+      if (!at) await send('dragEnter', next);
+      // 새 요소로 넘어가는 박자에 크롬은 enter·leave만 낸다 - 두 번째가 그 자리의 dragover다
+      await send('dragOver', next);
+      await send('dragOver', next);
+      at = next;
+    },
+    async drop() {
+      await send('drop', at);
+      at = null;
+    },
+    /** 놓지 않고 그만둔다 (ESC·창 밖으로) */
+    async cancel() {
+      await send('dragCancel', at);
+      at = null;
+    },
+    /** 마지막 dragover를 창이 어떻게 받았나 - over 앞에 부른다. read() = { prevented, effect } */
+    async watch() {
+      await page.evaluate(() => {
+        window.addEventListener('dragover', (e) => {
+          window.__lastDragOver = { prevented: e.defaultPrevented, effect: e.dataTransfer.dropEffect };
+        });
+      });
+      return () => page.evaluate(() => window.__lastDragOver);
+    },
+  };
 }
 
 /**

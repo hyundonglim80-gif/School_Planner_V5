@@ -5,7 +5,7 @@
 //   날짜 칩 여러 개(+ 날짜 = 작은 달력, 칩 × = 그 날짜 빼기) - 그 날마다 하루 '메모' 칸에 보인다. 다 빼면 메모 화면에만(domain/noteDates).
 //   하루 '메모' 칸에서 + 추가 = 그 날짜 링크 하나로 새 메모.
 // - 내용: ☑ 체크리스트(단추·단축키·Enter 이어 쓰기·☐ 누르기) · 첫·마지막 줄 '#라벨' 미리 보기 · 글 안 주소의 미리보기.
-// - 붙이기(P4-2 - attach.ts): 📎 파일 첨부·캡처 Ctrl+V = 드라이브에 원본으로, 엑셀 표 Ctrl+V = 표(그림보다 먼저) - 칸 글자·행/열 고치기.
+// - 붙이기(P4-2 - attach.ts): 📎 파일 첨부·윈도우 파일 끌어다 놓기(P21-1 - 칸 어디든)·캡처 Ctrl+V = 드라이브에 원본으로, 엑셀 표 Ctrl+V = 표(그림보다 먼저) - 칸 글자·행/열 고치기.
 //   올리는 동안은 저장하지 않는다(올라간 것이 빠진 채 저장되지 않게).
 //   ✏️ 손글씨 = 화면 가득 그림판(HandwritingPad) - 💾 저장하면 PNG로 드라이브에 올려 붙이고 메모도 저장한다(10-28). 그리던 것은 이 칸이 들고 있어 닫았다 열어도 이어진다.
 // - 라벨(여러 개, '+ 새 라벨') - 저장할 때 새 라벨과 항목을 한 묶음으로.
@@ -32,6 +32,8 @@ import MiniCalendarPicker from '../../ui/MiniCalendarPicker';
 import AutoTextarea from '../../ui/AutoTextarea';
 import { listKeyOf } from '../../ui/listKeys';
 import DraftOffer from '../../ui/DraftOffer';
+import FileDropCover from '../../ui/FileDropCover';
+import { DROP_BUSY_TEXT, useFileDrop } from '../../ui/fileDrop';
 import { openImageViewer } from '../../ui/imageViewerStore';
 import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import PopoutButton from '../../ui/PopoutButton';
@@ -306,6 +308,14 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     e.target.value = '';
     void attach(files, false);
   };
+  // 윈도우 파일을 칸 어디에 놓아도 📎와 같다 (P21-1)
+  const fileDrop = useFileDrop(
+    (files) => {
+      if (uploading) showToast(DROP_BUSY_TEXT);
+      else void attach(files, false);
+    },
+    { disabled: isEditing && !item },
+  );
   /** 표가 먼저(엑셀은 그림도 함께 복사한다), 그다음 캡처 그림, 나머지(글자)는 그대로 */
   const onTextPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     const table = pastedTable(e.clipboardData);
@@ -450,7 +460,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
       onSave={() => void save()}
       raise={raise}
     >
-      <div data-note-panel={isEditing ? 'edit' : 'new'} data-note-id={params.id ?? ''} data-note-dates={form.dates.join(',')} className="flex flex-col h-full min-h-0">
+      <div data-note-panel={isEditing ? 'edit' : 'new'} data-note-id={params.id ?? ''} data-note-dates={form.dates.join(',')} className="relative flex flex-col h-full min-h-0" {...fileDrop.dropProps}>
+        {fileDrop.over && <FileDropCover />}
         <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100">
           <div className="min-w-0">
             <h3 className="text-lg font-bold text-slate-800">{title}</h3>
@@ -696,7 +707,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   className={`flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-dashed border-slate-300 shadow-2xs ${
                     uploading ? 'opacity-60 cursor-wait' : 'cursor-pointer'
                   }`}
-                  title="파일을 골라 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 여러 개를 한 번에 골라도 됩니다. 링크가 있는 사람은 볼 수 있습니다."
+                  title="파일을 골라 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 여러 개를 한 번에 골라도 되고, 윈도우 파일을 이 칸에 끌어다 놓아도 됩니다. 링크가 있는 사람은 볼 수 있습니다."
                 >
                   <span>{uploading === 'files' ? '⏳' : '📎'}</span>
                   <span data-note-uploading={uploading === 'files' ? 'files' : undefined}>{uploading === 'files' ? '업로드 중...' : '파일 첨부'}</span>

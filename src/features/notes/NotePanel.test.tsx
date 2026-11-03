@@ -486,6 +486,24 @@ describe('붙이기 (P4-2)', () => {
     upload.release = null;
   });
 
+  it('윈도우 파일을 칸에 놓으면 📎와 같이 올린다 - 올리는 동안 또 놓으면 안내만', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    const panel = q('[data-note-panel]');
+    const dropped = (name: string) => ({ types: ['Files'], items: [{ kind: 'file', getAsFile: () => new File(['a'], name), webkitGetAsEntry: () => null }] });
+    fireEvent.dragEnter(q('[data-note-text-input]'), { dataTransfer: dropped('수업안.hwp') });
+    expect(q('[data-file-drop-over]')).not.toBeNull();
+    fireEvent.drop(q('[data-note-text-input]'), { dataTransfer: dropped('수업안.hwp') });
+    expect(document.querySelector('[data-file-drop-over]')).toBeNull();
+    await waitFor(() => expect(upload.release).not.toBeNull());
+    expect(q('[data-note-uploading="files"]')).not.toBeNull();
+    fireEvent.drop(panel, { dataTransfer: dropped('두번째.hwp') });
+    await act(async () => upload.release!());
+    await waitFor(() => expect(document.querySelector('[data-note-attachment="수업안.hwp"]')).not.toBeNull());
+    expect(document.querySelector('[data-note-attachment="두번째.hwp"]')).toBeNull();
+    upload.release = null;
+  });
+
   it('📎 파일 첨부 = 고른 파일을 올려 목록에, ✕ = 빼기', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY }} />);

@@ -69,6 +69,7 @@
   - 창을 닫은 바로 뒤 주소를 바꾸면 창 층의 뒤로가기가 주소를 되돌릴 수 있다 → 그 화면이 뜰 때까지 다시 간다(`inspect-groups` `go()` - P3-3). 서버를 읽어 셀 때 지운 표시(`deletedAt`)를 빼는지 본다.
   - 같은 `data-*` 이름을 두 곳(카드 표시·칸 안내)에 쓰지 않는다 - Playwright가 둘을 찾아 멈춘다(P3-3 `event-series`/`event-series-info`).
   - `ModalShell`의 `headerExtra`·`footer` 단추(저장·삭제·+ 새로)는 창 본문의 `data-*` 상자 밖에 그려진다 - 본문 상자로 좁혀 찾지 말고 page에서(그 창 하나만 연 채로 - P7-4).
+  - **파일 끌기는 `fileDrag`(probe - CDP `Input.dispatchDragEvent`)로 본다**(P21-1): 놓는 자리·폴더까지 진짜다(`DragEvent` 흉내는 `webkitGetAsEntry`가 null). 다만 칸 밖에 놓아도 CDP는 브라우저가 파일을 여는 데까지 가지 않는다 - 지킴은 주소가 아니라 dragover의 `defaultPrevented`·`dropEffect`로 본다. 크롬은 새 요소로 넘어가는 박자에 enter·leave만 내고 dragover를 내지 않는다.
   - 정한 날(`DAY`)에 심는 점검은 **날이 지나면 깨질 수 있다**: 이월 라벨 일정은 그날이 지나면 오늘로 따라와 ForwardMarks가 `carrying`을 한 번 쓴다 - '바뀐 문서 하나'를 세는 점검이면 `carrying: true`로 심는다(P8-2 inspect-events).
   - Playwright `route.fulfill` 흉내 응답은 **CORS를 보지 않는다** - 막힌 내려받기(버킷 CORS)는 `route.abort('failed')`로 흉내 낸다(P8-3 첨부 모으기). 컨테이너 Chromium은 한글 내려받기 이름을 'download'로 바꾼다(이름은 PC에서).
   - 서비스 워커·오프라인은 개발 서버가 아니라 **빌드 + preview(4175)**로 본다(`SITE=http://localhost:4175/` - inspect-offline). 응답이 `Vary: Origin`이라 캐시 짝 찾기는 `ignoreVary`(P8-3).

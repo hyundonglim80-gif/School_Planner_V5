@@ -6,11 +6,12 @@
 //      올리는 동안 저장하지 않는다. 엑셀 표 붙여넣기 = 표(함께 온 그림은 올리지 않는다) → 칸 글자 고치기·행 넣기.
 //   3) 저장 = 서버 문서 하나에 attachments(driveId·thumbnail 주소)·tables. 카드: 그림·표·주소 미리보기, 그림 누르기 = 크게 보기(넘기기·ESC는 사진 창만).
 //   4) 클립보드 칸: 📋 열기·Ctrl+C 한 글자가 모인다·누르면 글 쓰던 칸에·⤓ 가져오기(밖에서 복사한 글자·캡처 그림)·그림 누르기 = 올려 붙임·✕ = 휴지통·폭 끌기.
+//   5) 윈도우 파일 끌어다 놓기(P21-1 - CDP 진짜 끌기): 칸 위 덮개·놓으면 📎와 같이·글 칸에 이름이 들지 않는다·폴더는 빼고 안내·칸 밖은 🚫(브라우저가 열지 않는다)·손글씨 판 위도 받지 않는다.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-attach.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 기록('점검첨부…')을 만들고 끝에 지운다.
 import { collection, deleteDoc, getDocs } from 'firebase/firestore';
-import { emulator, launch, newPage, noUserActivation, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, fileDrag, launch, newPage, noUserActivation, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -263,8 +264,57 @@ try {
   r.check(w1 > w0 + 60 && Math.abs(w2 - w0) < 2, `폭 끌기 ${Math.round(w0)} → ${Math.round(w1)}, 두 번 누르면 ${Math.round(w2)}`);
   await page.locator(sel('clipboard-toggle')).click();
   r.check((await column.count()) === 0, '◀ = 닫기');
-
   await page.keyboard.press('Escape');
+
+  r.section('윈도우 파일 끌어다 놓기 (P21-1)');
+  await page.locator(sel('journal-add')).click();
+  // 앞 묶음의 칸이 탭으로 남아 있다 - 새 칸만
+  const dropPanel = page.locator(sel('note-panel', 'new'));
+  await waitFor(dropPanel);
+  await page.keyboard.type('점검첨부 놓기');
+  const noteText = dropPanel.locator(sel('note-text-input'));
+  const cover = dropPanel.locator(sel('file-drop-over'));
+  const uploadsBefore = google.uploads.length;
+  const drag = await fileDrag(ctx, page, ['수업안.hwp', '자료.pdf']);
+  const lastOver = await drag.watch();
+  await drag.over(noteText);
+  r.check(await waitFor(cover), '끌어 오면 칸 위에 덮개');
+  r.check(((await cover.textContent()) ?? '').includes('여기에 놓으면 첨부'), `덮개 글 (${await cover.textContent()})`);
+  let seen = await lastOver();
+  r.check(seen?.prevented && seen?.effect === 'copy', `칸 위 마우스 = 복사 (${JSON.stringify(seen)})`);
+  // 덮개가 칸 전체에, 머리줄·저장 줄 위로 옮겨도 그대로 (자식을 지나도 깜빡이지 않는다)
+  const [coverBox, panelBox] = [await cover.boundingBox(), await dropPanel.boundingBox()];
+  r.check(Math.abs(coverBox.height - panelBox.height) < 2 && Math.abs(coverBox.width - panelBox.width) < 2, `덮개 = 칸 전체 (${Math.round(coverBox.width)}×${Math.round(coverBox.height)})`);
+  await drag.over(dropPanel.locator(sel('note-save')));
+  r.check((await cover.count()) === 1, '저장 줄 위에서도 덮개');
+  await drag.over(page.locator(sel('day-journal', DAY)));
+  r.check(await waitFor(async () => (await cover.count()) === 0), '칸을 벗어나면 덮개를 걷는다');
+  seen = await lastOver();
+  r.check(seen?.prevented && seen?.effect === 'none', `칸 밖 = 브라우저가 열지 않고 마우스 🚫 (${JSON.stringify(seen)})`);
+  await drag.over(noteText);
+  await waitFor(cover);
+  await drag.drop();
+  r.check(await waitFor(dropPanel.locator(sel('note-attachment', '수업안.hwp')), 8000), '놓으면 📎와 같이 올라간다');
+  r.check(await waitFor(dropPanel.locator(sel('note-attachment', '자료.pdf')), 8000), '여러 개도');
+  r.check(google.uploads.length === uploadsBefore + 2 && (await cover.count()) === 0, `올린 수 ${google.uploads.length - uploadsBefore}, 덮개 걷힘`);
+  r.check((await noteText.inputValue()) === '점검첨부 놓기', '글 칸에 파일 이름이 들어가지 않는다');
+  const folder = await fileDrag(ctx, page, ['폴더/', '하나.txt']);
+  await folder.over(noteText);
+  await folder.drop();
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '폴더는 첨부할 수 없습니다' })), '폴더는 빼고 안내');
+  r.check(await waitFor(dropPanel.locator(sel('note-attachment', '하나.txt')), 8000) && (await dropPanel.locator(sel('note-attachment', '폴더')).count()) === 0, '함께 놓은 파일은 올라간다');
+  await dropPanel.locator(sel('note-handwriting')).click();
+  const pad = page.locator(sel('handwriting-pad'));
+  await waitFor(pad);
+  const onPad = await fileDrag(ctx, page, ['판.txt']);
+  await onPad.over(pad);
+  r.check((await page.locator(sel('file-drop-over')).count()) === 0, '손글씨 판 위는 받지 않는다');
+  await onPad.cancel();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Control+s');
+  await waitFor(async () => (await dropPanel.count()) === 0, 8000);
+  await page.keyboard.press('Escape');
+
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
   // 점검이 남긴 클립보드 목록을 지운다 (이 프로필은 끝나면 사라지지만 같은 계정의 다른 점검에 섞이지 않게)
   await page.evaluate((u) => new Promise((res) => {
