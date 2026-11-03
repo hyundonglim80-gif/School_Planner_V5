@@ -12,6 +12,7 @@ vi.mock('../data/mirror/sync', () => ({ useMirrorSync }));
 vi.mock('../data/gcalQueue', () => ({ watchGcalQueue: () => () => {} }));
 vi.mock('../data/claudeRequests', () => ({ useClaudeRequestsWatch: () => {} }));
 vi.mock('../data/mail', () => ({ useMailWatch: () => {} }));
+vi.mock('../data/chat', () => ({ useChatWatch: () => {} }));
 vi.mock('../data/spaces', () => ({ useMySpacesWatch: () => {} }));
 vi.mock('../data/backupLog', () => ({ BACKUP_LOG_ID: 'backupLog', watchBackupLog: () => () => {} }));
 

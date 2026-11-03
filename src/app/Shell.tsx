@@ -22,6 +22,7 @@ import { useTrashAutoEmpty } from '../features/trash/auto';
 import { useGcalAuto } from '../features/gcal/auto';
 import { useClaudeRequestsWatch } from '../data/claudeRequests';
 import { useMailReceiver } from '../features/mail/receive';
+import { useChatReceiver } from '../features/chat/receive';
 import { useWeekShortcuts } from '../features/week/prefs';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
@@ -87,6 +88,8 @@ export default function Shell() {
   useClaudeRequestsWatch();
   // ✉ 쪽지 - 안 읽은 수(머리줄)·새 쪽지 안내·푸시 알림으로 연 쪽지 (P15-2 - 새 창은 하지 않는다)
   useMailReceiver();
+  // 💬 대화 - 내가 든 방 듣기 → 대화 창 목록 (P19-2 - 새 창은 대화 창이 스스로)
+  useChatReceiver();
   // 복사한 것 모으기 (왼쪽 📋 클립보드 칸 - 닫혀 있어도 모은다)
   useClipboardCapture();
   // 서버가 아직 받지 않은 저장이 있으면 탭을 닫기 전에 묻는다 (P14-6 ■1 - 끊긴 동안 쓰기는 메모리에만)

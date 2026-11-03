@@ -233,6 +233,50 @@ export function sortRooms(rooms: readonly ChatRoom[]): ChatRoom[] {
   return [...rooms].sort((a, b) => at(b) - at(a) || a.key.localeCompare(b.key));
 }
 
+/** 대화 창 목록 묶음 - 1:1 묶음 + 그룹마다(그룹 전체 · 고른 사람 방) */
+export interface ChatSections {
+  dms: ChatRoom[];
+  groups: { sid: string; name: string; all: ChatRoom | null; rooms: ChatRoom[] }[];
+}
+
+/**
+ * 목록을 묶는다. 그룹 전체 방은 첫 글이 오기 전에도 그룹마다 한 줄(all null - 눌러서 첫 글을 쓴다).
+ * 내가 든 그룹 것만(나간 그룹의 방은 듣기가 끊길 때까지 store에 남는다), 1:1은 함께 든 그룹이 없어도 보인다(지난 글을 읽는다).
+ */
+export function chatSections(rooms: readonly ChatRoom[], groups: readonly { id: string; name: string }[]): ChatSections {
+  const sorted = sortRooms(rooms);
+  return {
+    dms: sorted.filter((r) => r.kind === 'dm'),
+    groups: [...groups]
+      .sort((a, b) => a.name.localeCompare(b.name, 'ko') || a.id.localeCompare(b.id))
+      .map((g) => ({
+        sid: g.id,
+        name: g.name,
+        all: sorted.find((r) => r.kind === 'all' && r.sid === g.id) ?? null,
+        rooms: sorted.filter((r) => r.kind === 'room' && r.sid === g.id),
+      })),
+  };
+}
+
+/** 목록 줄의 마지막 글 - 그룹 방은 '이름: 글', 내 글은 '나: 글'. 마지막 글을 지웠으면 '지운 글', 글이 없으면 빈 글 */
+export function roomPreview(room: ChatRoom, me: string): string {
+  if (!room.lastId) return '';
+  const text = room.lastText || '지운 글';
+  if (room.lastFrom === me) return `나: ${text}`;
+  return room.kind === 'dm' ? text : `${room.lastFromName}: ${text}`;
+}
+
+/**
+ * 받은 글을 잇는다 - 같은 id는 뒤(b) 것으로, 차례는 보낸 시각(보내는 중인 글은 맨 뒤). 방 듣기는 최근 50개뿐이라
+ * 지난 글이 듣기 창 밖으로 밀려도 화면에는 남게 받은 것을 모두 모은다.
+ */
+export function mergeMsgs(a: readonly ChatMsg[], b: readonly ChatMsg[]): ChatMsg[] {
+  const byId = new Map<string, ChatMsg>();
+  for (const m of [...a, ...b]) byId.set(m.id, m);
+  const at = (m: ChatMsg) => m.at ?? Number.MAX_SAFE_INTEGER;
+  return [...byId.values()].sort((x, y) => at(x) - at(y) || x.id.localeCompare(y.id));
+}
+
 /** 1:1 내 글 옆 '1' - 상대가 아직 안 읽었다(그룹 방은 읽은 사람 수를 세지 않는다) */
 export function unseenByOther(room: ChatRoom, me: string, msg: ChatMsg): boolean {
   if (room.kind !== 'dm' || msg.from !== me || msg.deleted) return false;
@@ -247,11 +291,12 @@ export const chatCountLabel = (n: number) => (n > CHAT_COUNT_MAX ? `${CHAT_COUNT
 /** 이만큼 안에 같은 사람이 잇달아 쓴 글은 이름을 한 번만 */
 export const CHAT_RUN_MS = 5 * 60_000;
 
-/** 글 줄 - day = 이 글 앞에 날짜 나눔 줄(그날 첫 글), head = 이름을 보인다(잇단 글의 첫 글) */
+/** 글 줄 - day = 이 글 앞에 날짜 나눔 줄(그날 첫 글), head = 이름을 보인다(잇단 글의 첫 글), time = 시각을 보인다(잇단 글의 같은 분 마지막 글) */
 export interface ChatRow {
   msg: ChatMsg;
   day: string | null;
   head: boolean;
+  time: boolean;
 }
 
 const dayKey = (at: number) => new Date(at).toDateString();
@@ -272,14 +317,22 @@ export function chatTime(at: number | null): string {
  */
 export function chatRows(msgs: readonly ChatMsg[], now = Date.now()): ChatRow[] {
   const rows: ChatRow[] = [];
+  const ats: number[] = [];
   let prev: { from: string; at: number; day: string } | null = null;
   for (const msg of msgs) {
     const at: number = msg.at ?? prev?.at ?? now;
     const day = dayKey(at);
     const newDay = !prev || prev.day !== day;
     const head = newDay || prev!.from !== msg.from || at - prev!.at > CHAT_RUN_MS;
-    rows.push({ msg, day: newDay ? chatDayLabel(at) : null, head });
+    rows.push({ msg, day: newDay ? chatDayLabel(at) : null, head, time: true });
+    ats.push(at);
     prev = { from: msg.from, at, day };
+  }
+  // 다음 글이 같은 잇단 글이고 같은 분이면 시각은 그 뒤 글에만 (보내는 중인 글은 늘 '보내는 중…')
+  const minute = (at: number) => Math.floor(at / 60_000);
+  for (let i = 0; i < rows.length - 1; i++) {
+    const next = rows[i + 1];
+    if (!next.head && rows[i].msg.at !== null && next.msg.at !== null && minute(ats[i]) === minute(ats[i + 1])) rows[i].time = false;
   }
   return rows;
 }

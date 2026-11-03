@@ -7,11 +7,13 @@ import {
   chatParamOf,
   chatPreview,
   chatRows,
+  chatSections,
   chatSendDocs,
   chatTextError,
   dmOtherOf,
   dmPairId,
   isRoomUnread,
+  mergeMsgs,
   msgsPath,
   myReadOf,
   parseRoomKey,
@@ -20,6 +22,7 @@ import {
   refOf,
   roomKey,
   roomPath,
+  roomPreview,
   sortRooms,
   stripChatParam,
   unreadRoomKeys,
@@ -213,6 +216,52 @@ describe('글 줄 - 날짜 나눔·잇단 글', () => {
     const rows = chatRows([msg({ id: '1', at: day1 }), msg({ id: '2', at: null })], day2);
     expect(rows[1]).toMatchObject({ day: null, head: false });
     expect(chatRows([msg({ at: null })], day2)[0].day).toContain('11월 4일');
+  });
+
+  it('시각은 잇단 글의 같은 분 마지막 글에만 - 다른 사람·다른 분·보내는 중은 따로', () => {
+    const rows = chatRows([
+      msg({ id: '1', from: 'a', at: day1 }),
+      msg({ id: '2', from: 'a', at: day1 + 10_000 }),
+      msg({ id: '3', from: 'a', at: day1 + 70_000 }),
+      msg({ id: '4', from: 'b', at: day1 + 71_000 }),
+      msg({ id: '5', from: 'b', at: day1 + 72_000 }),
+      msg({ id: '6', from: 'b', at: null }),
+    ]);
+    expect(rows.map((r) => r.time)).toEqual([false, true, true, false, true, true]);
+  });
+});
+
+describe('대화 창 목록', () => {
+  const me = 'a';
+  it('1:1 묶음 + 그룹마다(이름 차례) - 그룹 전체는 글이 없어도 한 줄, 나간 그룹 방은 빠진다', () => {
+    const all = room({ key: 'g_B~all', sid: 'g_B', lastAt: 5 });
+    const r1 = room({ key: 'g_B~r_1', kind: 'room', sid: 'g_B', name: '방', lastAt: 9 });
+    const old = room({ key: 'g_Z~all', sid: 'g_Z' });
+    const d1 = room({ key: 'd_a_b', kind: 'dm', sid: 'g_B', lastAt: 3 });
+    const d2 = room({ key: 'd_a_c', kind: 'dm', sid: 'g_Q', lastAt: 7 });
+    const s = chatSections([all, r1, old, d1, d2], [
+      { id: 'g_B', name: '나 그룹' },
+      { id: 'g_A', name: '가 그룹' },
+    ]);
+    expect(s.dms.map((r) => r.key)).toEqual(['d_a_c', 'd_a_b']);
+    expect(s.groups.map((g) => [g.sid, g.all?.key ?? null, g.rooms.map((r) => r.key)])).toEqual([
+      ['g_A', null, []],
+      ['g_B', 'g_B~all', ['g_B~r_1']],
+    ]);
+  });
+
+  it("마지막 글 - 그룹 방 '이름: 글' · 내 글 '나: ' · 지운 글 · 글 없음", () => {
+    expect(roomPreview(room({ lastFromName: '이점검', lastText: '안녕' }), me)).toBe('이점검: 안녕');
+    expect(roomPreview(room({ kind: 'dm', key: 'd_a_b', lastText: '안녕' }), me)).toBe('안녕');
+    expect(roomPreview(room({ lastFrom: me, lastText: '📎 2' }), me)).toBe('나: 📎 2');
+    expect(roomPreview(room({ lastText: '' }), me)).toBe('B: 지운 글');
+    expect(roomPreview(room({ lastId: null, lastText: '' }), me)).toBe('');
+  });
+
+  it('받은 글 잇기 - 같은 id는 새 것, 시각 차례, 보내는 중은 맨 뒤', () => {
+    const merged = mergeMsgs([msg({ id: 'x', at: 2 }), msg({ id: 'y', at: 1 })], [msg({ id: 'p', at: null }), msg({ id: 'x', at: 3, text: '새' }), msg({ id: 'z', at: 0 })]);
+    expect(merged.map((m) => m.id)).toEqual(['z', 'y', 'x', 'p']);
+    expect(merged.find((m) => m.id === 'x')?.text).toBe('새');
   });
 });
 
