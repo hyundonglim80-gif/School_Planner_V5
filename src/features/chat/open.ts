@@ -8,6 +8,8 @@ export const CHAT_WINDOW = 'chat';
 export interface ChatParams {
   /** 그 방을 연다 (방 키 - 그룹 방 '<sid>~<roomId>', 1:1 = pairId). 없으면 목록 */
   room?: string;
+  /** 1:1을 연 곳의 그룹 (그룹 창 구성원 칩 💬) - 방이 아직 없으면 그 그룹에 만든다 */
+  sid?: string;
 }
 
 export function openChat(params: ChatParams = {}) {

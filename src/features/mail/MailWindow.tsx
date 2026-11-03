@@ -3,7 +3,7 @@
 //   안 읽은 쪽지는 굵게·점 - 펼치면 읽음. 지우기 = 바로 숨기고 7초 '되돌리기'(features/mail/actions).
 //   창이 열린 동안 새 쪽지가 오면(머리줄 안 읽은 수가 늘면) 첫 쪽을 다시 받아 위에 더한다. 보내면 보낸 쪽지 탭으로(첫 쪽을 다시).
 //   ↩ 답장 = 쓰기 탭에 그 사람·그 그룹 - 나와 그 사람이 지금 그 그룹 구성원일 때만(규칙이 막는다).
-//   첨부(P16): 접힌 줄은 📎 n(글이 없으면 '🖼️ 그림 n'), 펼치면 글 아래 그림·파일(MailAttachments).
+//   첨부(P16): 접힌 줄은 📎 n(글이 없으면 '🖼️ 그림 n'), 펼치면 글 아래 그림·파일(notes/SharedAttachments).
 import { useEffect, useRef, useState } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import type { WindowProps } from '../../app/windows';
@@ -15,7 +15,7 @@ import { useMySpaces } from '../../data/spaceChoice';
 import { mailFilesLabel, mailPreview, mailWhen, replyQuote, unreadLabel, type MailBox, type MailIn, type MailSent } from '../../domain/mail';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { removeMail, useHiddenMail } from './actions';
-import MailAttachments from './MailAttachments';
+import SharedAttachments from '../notes/SharedAttachments';
 import MailCompose, { type ComposeAsk } from './MailCompose';
 import type { MailParams, MailTabId } from './open';
 import { useTabTarget } from '../../app/keys';
@@ -77,7 +77,7 @@ function MailRow({ m, now, open, onToggle, onDelete, onReply }: RowProps) {
               {m.text}
             </p>
           )}
-          <MailAttachments items={m.attachments} />
+          <SharedAttachments items={m.attachments} />
           <p className="text-2xs text-slate-400">받는 사람 {m.toNames}</p>
           <div className="flex justify-end gap-1">
             {inbox && onReply && (

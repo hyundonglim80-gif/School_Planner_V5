@@ -1,19 +1,29 @@
-// 💬 대화 창의 방 하나 (P19-2 ■1 - PLAN 6장 P19 '화면'). 글 줄: 날짜 나눔 줄 · 남의 글 왼쪽(잇단 글은 이름 한 번) · 내 글 오른쪽 · 시각 · 1:1 '1'.
+// 💬 대화 창의 방 하나 (P19-2 ■1·■2 - PLAN 6장 P19 '화면'). 글 줄: 날짜 나눔 줄 · 남의 글 왼쪽(잇단 글은 이름 한 번) · 내 글 오른쪽 · 시각 · 1:1 '1'. 아래 글 칸(ChatComposer).
 //   - 방을 열면 최근 50개를 듣고(data/chat watchRoomMsgs) 맨 아래에서 시작한다. 위로 올리면(또는 '이전 글 더 보기') 50개씩 더.
-//     받은 글은 모두 모은다(mergeMsgs) - 듣기는 최근 50개뿐이라 새 글이 오면 지난 글이 듣기 밖으로 밀린다.
+//     듣기는 최근 50개뿐이라 새 글이 오면 지난 글이 듣기 밖으로 밀린다 - 밀린 글·위로 올려 받은 글은 따로 둔다(kept).
+//     듣기에서 그냥 빠진 글(보내지 못해 되돌린 내 글)은 지운다 - 모두 모으면 '보내는 중…'으로 남는다.
 //   - 스크롤은 창 본문(ModalShell의 data-scroll-lock)이 한다. 맨 아래를 보고 있으면 새 글을 따라 내려가고,
 //     위를 보는 동안 남의 새 글이 오면 '↓ 새 글' 단추. 내가 보낸 글은 늘 맨 아래로.
+//   - 보내기(■2): 그룹 방 = 경로의 그룹(나갔으면 보내지 않는다) · 1:1 = 보내기 직전 함께 든 그룹을 다시 고른다(dmSidOf - 방이 든 그룹을
+//     둘 중 하나가 나갔으면 함께 든 다른 그룹으로 옮긴다, 없으면 '함께 든 그룹이 없어 보낼 수 없습니다'). 보내는 이름 = 그 그룹 구성원 이름.
+//   - 새 1:1(방 문서가 아직 없음)은 듣지 않는다 - 규칙이 방 문서의 members로 글 읽기를 보므로 없는 방의 듣기는 permission-denied.
+//     첫 글이 서버에 닿은 뒤(또는 상대가 먼저 보내 방이 생기면) 듣는다.
 //   - 그룹을 나갔거나 방에서 빠지면 듣기가 permission-denied로 끊긴다(P19-1 ■0) → '이 대화를 볼 수 없습니다'.
 //   - 대화는 서버에만 있다(기기 사본·백업 없음) - 끊긴 채 열면 '인터넷이 필요합니다'.
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
-import { showToast } from '../../app/toast';
-import { loadOlderMsgs, watchRoomMsgs } from '../../data/chat';
+import { showErrorToast, showToast, ShownError } from '../../app/toast';
+import { loadOlderMsgs, sendChat, watchRoomMsgs, type ChatPage } from '../../data/chat';
 import { useChatStore } from '../../data/chatStore';
-import { chatRows, chatTime, mergeMsgs, parseRoomKey, unseenByOther, type ChatMsg } from '../../domain/chat';
-import MailAttachments from '../mail/MailAttachments';
+import { useSession } from '../../data/session';
+import type { GroupSpace } from '../../data/spaceChoice';
+import type { Attachment } from '../../data/types';
+import { chatRows, chatTime, CHAT_PAGE, dmOtherOf, dmSidOf, mergeMsgs, parseRoomKey, unseenByOther, type ChatMsg, type ChatTarget } from '../../domain/chat';
+import SharedAttachments from '../notes/SharedAttachments';
+import ChatComposer from './ChatComposer';
+import type { GroupPeople } from './people';
 
-type Status = 'loading' | 'ok' | 'offline' | 'denied' | 'failed';
+type Status = 'loading' | 'ok' | 'offline' | 'denied' | 'failed' | 'new';
 
 /** 아래에서 이만큼 안이면 '맨 아래를 보고 있다' */
 const BOTTOM_PX = 60;
@@ -26,16 +36,29 @@ interface Props {
   /** 방 머리 - 이름 · 흐린 덧말(1:1 함께 든 그룹·방 사람 수) */
   title: string;
   sub?: string;
+  groups: readonly GroupSpace[];
+  people: GroupPeople;
+  /** 1:1을 연 곳의 그룹 ('+ 새 대화'·그룹 창) - 방이 없을 때 그 그룹에 만든다 */
+  hintSid?: string;
   onBack: () => void;
 }
 
-export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props) {
+export default function ChatRoomView({ roomKey, uid, title, sub, groups, people, hintSid, onBack }: Props) {
   const ref = useMemo(() => parseRoomKey(roomKey), [roomKey]);
   const room = useChatStore((s) => s.rooms[roomKey]);
-  const [msgs, setMsgs] = useState<ChatMsg[]>([]);
+  const user = useSession((s) => s.user);
+  /** 지금 듣는 최근 글 (오래된 것부터) */
+  const [page, setPage] = useState<ChatMsg[]>([]);
+  /** 듣기 밖의 글 - 위로 올려 받은 것 · 듣기에서 밀려난 것 */
+  const [kept, setKept] = useState<ChatMsg[]>([]);
+  const msgs = useMemo(() => mergeMsgs(kept, page), [kept, page]);
   /** 더 오래된 글을 받을 자리 - undefined = 서버에서 아직 받지 않음, null = 더 없음 */
   const [cursor, setCursor] = useState<QueryDocumentSnapshot | null | undefined>(undefined);
-  const [status, setStatus] = useState<Status>('loading');
+  // 새 1:1 = 서버에서 방 목록을 받았는데 이 방이 없다(연 때 한 번 본다)
+  const [isNew] = useState(() => ref?.kind === 'dm' && useChatStore.getState().ready && !useChatStore.getState().rooms[roomKey]);
+  const [firstSent, setFirstSent] = useState(false);
+  const listen = !!ref && (!isNew || firstSent || (!!room && room.lastFrom !== uid));
+  const [status, setStatus] = useState<Status>(listen ? 'loading' : 'new');
   const [busy, setBusy] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [retry, setRetry] = useState(0);
@@ -46,6 +69,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props
   /** 지난 글을 받기 전 '아래에서 잰 자리' - 받은 뒤 같은 글이 같은 자리에 오게 */
   const anchor = useRef<number | null>(null);
   const lastId = useRef<string | null | undefined>(undefined);
+  const pageRef = useRef<ChatMsg[]>([]);
   const live = useRef({ cursor, busy });
   useEffect(() => {
     live.current = { cursor, busy };
@@ -53,20 +77,25 @@ export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props
 
   // 방 글 듣기 (방마다 새로 그린다 - ChatWindow가 key={방 키})
   useEffect(() => {
-    if (!ref) return;
-    return watchRoomMsgs(
-      ref,
-      (p) => {
-        setMsgs((prev) => mergeMsgs(prev, p.msgs));
-        if (!p.offline) setCursor((c) => (c === undefined ? p.cursor : c));
-        setStatus((s) => (!p.offline ? 'ok' : s === 'ok' ? 'ok' : 'offline'));
-      },
-      (e) => {
-        console.warn('[chat] 대화를 받지 못했습니다.', e);
-        setStatus((e as { code?: string })?.code === 'permission-denied' ? 'denied' : 'failed');
-      },
-    );
-  }, [ref, retry]);
+    if (!ref || !listen) return;
+    const onPage = (p: ChatPage) => {
+      // 듣기 밖으로 밀린 글(가장 오래된 것보다 앞)은 따로 둔다 - 듣기에서 그냥 빠진 글은 버린다
+      const oldest = p.msgs.find((m) => m.at !== null)?.at;
+      const pushed =
+        p.msgs.length >= CHAT_PAGE && oldest !== undefined && oldest !== null
+          ? pageRef.current.filter((m) => m.at !== null && m.at <= oldest && !p.msgs.some((x) => x.id === m.id))
+          : [];
+      pageRef.current = p.msgs;
+      if (pushed.length) setKept((k) => mergeMsgs(k, pushed));
+      setPage(p.msgs);
+      if (!p.offline) setCursor((c) => (c === undefined ? p.cursor : c));
+      setStatus((s) => (!p.offline ? 'ok' : s === 'ok' ? 'ok' : 'offline'));
+    };
+    return watchRoomMsgs(ref, onPage, (e) => {
+      console.warn('[chat] 대화를 받지 못했습니다.', e);
+      setStatus((e as { code?: string })?.code === 'permission-denied' ? 'denied' : 'failed');
+    });
+  }, [ref, retry, listen]);
 
   const loadMore = async () => {
     const { cursor: c, busy: b } = live.current;
@@ -77,7 +106,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props
     try {
       const p = await loadOlderMsgs(ref, c);
       anchor.current = el ? el.scrollHeight - el.scrollTop : null;
-      setMsgs((prev) => mergeMsgs(p.msgs, prev));
+      setKept((k) => mergeMsgs(p.msgs, k));
       setCursor(p.cursor);
     } catch (e) {
       console.warn('[chat] 지난 글을 받지 못했습니다.', e);
@@ -101,7 +130,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props
       if (el.scrollTop < TOP_PX && live.current.cursor) void loadMoreRef.current();
     };
     el.addEventListener('scroll', onScroll, { passive: true });
-    // 그림이 늦게 떠 높이가 늘어도 맨 아래를 보던 채로
+    // 그림이 늦게 떠·글 칸이 늘어 높이가 바뀌어도 맨 아래를 보던 채로
     const list = rootRef.current;
     const ro = typeof ResizeObserver === 'undefined' || !list ? null : new ResizeObserver(() => atBottom.current && (el.scrollTop = el.scrollHeight));
     if (ro && list) ro.observe(list);
@@ -139,6 +168,37 @@ export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props
     setShowNew(false);
   };
 
+  // ─── 보내기 ───
+  const other = ref?.kind === 'dm' ? dmOtherOf(ref.pairId, uid) : null;
+  const send = async (text: string, attachments: Attachment[]): Promise<boolean> => {
+    if (!ref || !user) return false;
+    let target: ChatTarget;
+    if (ref.kind === 'dm') {
+      const sid = other ? dmSidOf([room?.sid, hintSid], uid, other, groups) : null;
+      if (!other || !sid) {
+        showToast('함께 든 그룹이 없어 보낼 수 없습니다.', 4000);
+        return false;
+      }
+      target = { kind: 'dm', pairId: ref.pairId, other, sid };
+    } else {
+      if (!groups.some((g) => g.id === ref.sid)) {
+        showToast('그룹을 나가 이 대화에 보낼 수 없습니다.', 4000);
+        return false;
+      }
+      target = ref.kind === 'all' ? { kind: 'all', sid: ref.sid } : { kind: 'room', sid: ref.sid, roomId: ref.roomId };
+    }
+    const fromName = people[target.sid]?.[uid] || user.displayName || user.email || '선생님';
+    try {
+      await sendChat(target, { from: uid, fromName, text, attachments });
+      if (isNew && !firstSent) setFirstSent(true);
+      return true;
+    } catch (e) {
+      // 안내는 sendChat이 (failWithToast) - 글은 칸에 되돌린다(ChatComposer)
+      if (!(e instanceof ShownError)) showErrorToast('보내지 못했습니다.', e);
+      return false;
+    }
+  };
+
   const rows = useMemo(() => chatRows(msgs), [msgs]);
 
   let body: ReactNode;
@@ -166,8 +226,8 @@ export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props
       status === 'loading' ? (
         <p className="py-8 text-center text-xs text-slate-400">불러오는 중…</p>
       ) : status === 'offline' ? null : (
-        <p data-chat-empty className="py-8 text-center text-xs text-slate-400">
-          아직 글이 없습니다.
+        <p data-chat-empty={status === 'new' ? 'new' : 'room'} className="py-8 text-center text-xs text-slate-400">
+          {status === 'new' ? '첫 글을 보내 대화를 시작해 보세요.' : '아직 글이 없습니다. 첫 글을 보내 보세요.'}
         </p>
       );
   else
@@ -204,7 +264,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props
                       )}
                       {msg.attachments.length > 0 && (
                         <div className="w-60 max-w-full">
-                          <MailAttachments items={msg.attachments} />
+                          <SharedAttachments kind="chat" items={msg.attachments} />
                         </div>
                       )}
                     </div>
@@ -225,8 +285,10 @@ export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props
       </ol>
     );
 
+  const canWrite = !!ref && status !== 'denied';
+
   return (
-    <div ref={rootRef} data-chat-room-view={roomKey} className="relative flex flex-1 flex-col">
+    <div ref={rootRef} data-chat-room-view={roomKey} data-chat-status={status} className="relative flex flex-1 flex-col">
       <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-100 bg-white px-3 py-2">
         <button type="button" data-chat-back onClick={onBack} className="shrink-0 rounded-lg px-2 py-1 text-sm font-bold text-slate-500 hover:bg-slate-100 cursor-pointer">
           ← 목록
@@ -253,15 +315,18 @@ export default function ChatRoomView({ roomKey, uid, title, sub, onBack }: Props
         </button>
       )}
       <div className="flex-1">{body}</div>
-      {showNew && (
-        <button
-          type="button"
-          data-chat-new
-          onClick={toBottom}
-          className="sticky bottom-3 mx-auto mb-1 rounded-full bg-primary px-3 py-1 text-xs font-bold text-white shadow-lg hover:bg-primary/90 cursor-pointer"
-        >
-          ↓ 새 글
-        </button>
+      {canWrite && (
+        <ChatComposer
+          roomKey={roomKey}
+          onSend={send}
+          above={
+            showNew && (
+              <button type="button" data-chat-new onClick={toBottom} className="whitespace-nowrap rounded-full bg-primary px-3 py-1 text-xs font-bold text-white shadow-lg hover:bg-primary/90 cursor-pointer">
+                ↓ 새 글
+              </button>
+            )
+          }
+        />
       )}
     </div>
   );

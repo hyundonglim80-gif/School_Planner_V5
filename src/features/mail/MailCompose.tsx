@@ -16,7 +16,7 @@ import type { Attachment } from '../../data/types';
 import { MAIL_LIMITS, mailTextError, recipientsOf } from '../../domain/mail';
 import DraftOffer from '../../ui/DraftOffer';
 import { extractImageFiles, pastedTable, uploadAttachments } from '../notes/attach';
-import MailAttachments from './MailAttachments';
+import SharedAttachments from '../notes/SharedAttachments';
 
 /** 쓰는 쪽지 (쓰던 글 보관에 이 모양 그대로) */
 export interface Compose {
@@ -276,7 +276,7 @@ export default function MailCompose({ ask, onSent }: { ask?: ComposeAsk; onSent:
             ⏳ 붙여넣은 이미지 업로드 중...
           </p>
         )}
-        <MailAttachments items={c.attachments} onRemove={(idx) => set({ attachments: c.attachments.filter((_, i) => i !== idx) })} />
+        <SharedAttachments items={c.attachments} onRemove={(idx) => set({ attachments: c.attachments.filter((_, i) => i !== idx) })} />
         {/* 드라이브 첨부는 '링크가 있는 사람은 보기'로 올린다(drive.ts - 메모와 같은 안내) */}
         <p data-mail-attach-public className="text-2xs text-slate-400">
           📎 올린 파일은 내 구글 드라이브에 남고 &apos;링크가 있는 사람은 보기&apos;로 열립니다. 학생 얼굴·성적처럼 퍼지면 안 되는 것은 올리지 마세요.

@@ -2,11 +2,13 @@
 //   ■1 대화 창: 목록(1:1 묶음 · 그룹 묶음의 그룹 전체 · 안 읽음 굵게 + 수 · 마지막 글 '이름: 글') · 방(최근 50개 · 맨 아래에서 시작 ·
 //      날짜 나눔 줄 · 잇단 글은 이름 한 번 · 내 글 오른쪽 · 위로 올리면 50개씩 더(자리 그대로) · 위를 보는 동안 새 글 = '↓ 새 글' ·
 //      맨 아래면 따라 내려감) · 1:1 '1'(상대가 읽기 전 내 글) · ← 목록 · 끊긴 채 열면 '인터넷이 필요합니다' → 이어지면 글
+//   ■2 보내기: Enter = 보내기(칸이 비고 서버 글·방 미리 보기) · Shift+Enter 줄 바꿈 · Ctrl+S는 보내지 않음 · 쓰던 글은 닫았다 열면 칸에 ·
+//      캡처 Ctrl+V = 드라이브(흉내) → 첨부만 보내기('📎 1') · '+ 새 대화' → 사람 = 새 1:1(방 문서는 첫 글이) · 1:1 그룹 옮기기(방 그룹을 나가면 함께 든 그룹으로)
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
 //   대화는 지우기 규칙이 없다 - 끝에 관리자 지우기. npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-chat.mjs
-import { doc, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
-import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, waitFor } from './lib/probe.mjs';
+import { collection, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, where, writeBatch } from 'firebase/firestore';
+import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const undo = restorer();
@@ -76,6 +78,55 @@ async function sendAsB(text) {
   return id;
 }
 const collectionRef = () => doc(emB.db, 'x', 'y').parent;
+
+/** 관리자로 칸 하나만 고친다 (updateMask) */
+async function patchField(path, field, value) {
+  const res = await fetch(`${BASE}/${path}?updateMask.fieldPaths=${field}`, { method: 'PATCH', headers: HEADERS, body: JSON.stringify({ fields: { [field]: val(value) } }) });
+  if (!res.ok) throw new Error(`관리자 고치기 실패 ${path}.${field}: ${res.status}`);
+}
+/** A가 볼 수 있는 그룹 전체 방 글 가운데 그 글 (서버) */
+const serverMsg = async (text) => (await getDocs(query(collection(em.db, 'v5Chat', SID, 'chatRooms', 'all', 'chatMsgs'), where('text', '==', text)))).docs[0]?.data();
+
+// ── 구글 흉내 (inspect-mail과 같게 - 토큰은 살아 있는 것) ──
+const google = { uploads: [] };
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*', 'Access-Control-Expose-Headers': 'Location' };
+const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+async function mockGoogle(ctx) {
+  await ctx.route(/oauth2\.googleapis\.com\/tokeninfo/, (route) => route.fulfill({ status: 200, headers: CORS, json: { expires_in: 3000 } }));
+  await ctx.route(/www\.googleapis\.com\/(upload\/)?drive\/v3\/files/, async (route) => {
+    const req = route.request();
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
+    const url = req.url();
+    if (url.includes('/permissions')) return route.fulfill({ status: 200, headers: CORS, json: { id: 'anyone' } });
+    if (url.includes('uploadType=resumable')) {
+      const meta = JSON.parse(req.postData() || '{}');
+      google.uploads.push({ name: meta.name, mimeType: meta.mimeType });
+      return route.fulfill({ status: 200, headers: { ...CORS, Location: `https://upload.mock.test/s/${google.uploads.length}` }, body: '' });
+    }
+    if (req.method() === 'GET' && url.includes('q=')) return route.fulfill({ status: 200, headers: CORS, json: { files: [{ id: 'FOLDER_SP' }] } });
+    return route.fulfill({ status: 404, headers: CORS, json: {} });
+  });
+  await ctx.route(/upload\.mock\.test\/s\/(\d+)/, (route) => {
+    if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
+    const n = route.request().url().split('/').pop();
+    const up = google.uploads[Number(n) - 1];
+    return route.fulfill({ status: 200, headers: CORS, json: { id: `CHATDRIVE${n}`, name: up?.name, webViewLink: `https://drive.google.com/file/d/CHATDRIVE${n}/view` } });
+  });
+  await ctx.route(/drive\.google\.com\/thumbnail/, (route) => route.fulfill({ status: 200, headers: { ...CORS, 'Content-Type': 'image/png' }, body: PNG }));
+}
+/** 글 칸에 캡처 붙여넣기 - 크롬의 진짜 붙여넣기처럼 ClipboardEvent */
+const pasteImage = (page) =>
+  page.locator(sel('chat-input')).evaluate(async (el) => {
+    const dt = new DataTransfer();
+    const c = document.createElement('canvas');
+    c.width = 4;
+    c.height = 3;
+    c.getContext('2d').fillRect(0, 0, 4, 3);
+    const blob = await new Promise((res) => c.toBlob(res, 'image/png'));
+    dt.items.add(new File([blob], 'image.png', { type: 'image/png' }));
+    el.focus();
+    el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+  });
 
 /** 방 본문 스크롤(창 본문) - 맨 아래인가 · 위로 */
 const scrollState = (page) =>
@@ -168,6 +219,14 @@ try {
 
   const A = await newPage(browser);
   const page = A.page;
+  await mockGoogle(A.ctx);
+  await A.ctx.addInitScript(() => {
+    try {
+      sessionStorage.setItem('sp5-google-token', 'live-token');
+    } catch {
+      /* about:blank */
+    }
+  });
   await page.addInitScript(() => {
     try {
       localStorage.setItem('sp5_theme', 'light');
@@ -250,6 +309,78 @@ try {
   r.check(await waitFor(page.locator(sel('chat-offline')), 15000), "끊긴 채 열면 '인터넷이 필요합니다'");
   await A.ctx.setOffline(false);
   r.check(await waitFor(async () => (await page.locator(sel('chat-offline')).count()) === 0 && (await page.locator(sel('chat-msg')).count()) >= 50, 20000), '이어지면 글이 뜬다');
+
+  r.section('■2 보내기');
+  const box = page.locator(sel('chat-input'));
+  await box.click();
+  await box.fill('보내기 점검');
+  await box.press('Enter');
+  r.check(await waitFor(async () => (await box.inputValue()) === '', 2000), 'Enter → 칸이 곧바로 빈다');
+  const sentRow = page.locator(`${sel('chat-mine', 'yes')}:has-text("보내기 점검")`);
+  r.check(await waitFor(sentRow, 5000), '내 글이 오른쪽에');
+  const s1 = await serverUntil(() => serverMsg('보내기 점검'), (d) => !!d);
+  r.check(s1?.from === uidA && s1?.fromName === '김점검', `서버 글 - 보낸 사람·그룹 이름 (${s1?.fromName})`);
+  const roomAfter = await serverUntil(async () => (await getDoc(doc(em.db, 'v5Chat', SID, 'chatRooms', 'all'))).data(), (d) => d?.lastText === '보내기 점검');
+  r.check(roomAfter?.lastText === '보내기 점검' && roomAfter?.lastFrom === uidA, '방 미리 보기도 같은 묶음');
+  r.check(await waitFor(async () => (await scrollState(page)).gap < 5, 3000), '보내면 맨 아래');
+
+  await box.fill('첫 줄');
+  await box.press('Shift+Enter');
+  await box.pressSequentially('둘째 줄');
+  r.check((await box.inputValue()) === '첫 줄\n둘째 줄', `Shift+Enter = 줄 바꿈 (${JSON.stringify(await box.inputValue())})`);
+  await box.press('Enter');
+  r.check(!!(await serverUntil(() => serverMsg('첫 줄\n둘째 줄'), (d) => !!d)), '두 줄 글 그대로 보낸다');
+
+  await box.fill('저장 키 점검');
+  await box.press('Control+s');
+  await page.waitForTimeout(1500);
+  r.check((await box.inputValue()) === '저장 키 점검' && !(await serverMsg('저장 키 점검')), 'Ctrl+S는 보내지 않는다');
+
+  r.section('■2 쓰던 글');
+  await page.waitForTimeout(2600);
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
+  r.check(await waitFor(async () => (await page.locator(sel('chat-input')).inputValue()) === '저장 키 점검', 5000), '닫았다 다시 열면 쓰던 글이 칸에');
+  await page.locator(sel('chat-input')).fill('');
+
+  r.section('■2 캡처 붙이기 · 첨부만 보내기');
+  await pasteImage(page);
+  r.check(await waitFor(page.locator(sel('chat-files', 1)), 8000), `캡처 Ctrl+V → 드라이브에 올려 붙임 (${google.uploads.length}번 올림)`);
+  r.check((await page.locator(sel('chat-send')).isEnabled()) === true, '첨부만 있어도 ➤');
+  await page.locator(sel('chat-input')).press('Enter');
+  r.check(await waitFor(async () => (await page.locator(sel('chat-files')).count()) === 0, 3000), '보내면 첨부 줄이 빈다');
+  const picRow = page.locator(`${sel('chat-mine', 'yes')} ${sel('chat-attachments', 1)}`).last();
+  r.check(await waitFor(picRow, 5000), '방에 그림 글');
+  const roomPic = await serverUntil(async () => (await getDoc(doc(em.db, 'v5Chat', SID, 'chatRooms', 'all'))).data(), (d) => d?.lastText === '📎 1');
+  r.check(roomPic?.lastText === '📎 1', "글 없는 첨부 = 방 미리 보기 '📎 1'");
+
+  r.section('■2 + 새 대화 → 새 1:1');
+  await wipe(`v5Dm/${PAIR}/chatMsgs`);
+  await admin.remove(`v5Dm/${PAIR}`);
+  await page.locator(sel('chat-back')).click();
+  r.check(await waitFor(async () => (await page.locator(sel('chat-room', PAIR)).count()) === 0, 8000), '지운 1:1은 목록에서 빠진다');
+  await page.locator(sel('chat-new-open')).click();
+  r.check(await waitFor(page.locator(sel('chat-new-picker')), 3000), '+ 새 대화 → 고르기');
+  r.check((await page.locator(sel('chat-new-person', uidA)).count()) === 0 && (await page.locator(sel('chat-new-person', uidB)).count()) === 1, '나는 빼고 그룹 사람');
+  await page.locator(sel('chat-new-person', uidB)).click();
+  r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 3000), '사람을 누르면 그 사람과의 1:1');
+  r.check((await page.locator(sel('chat-status', 'new')).count()) === 1 && (await page.locator(sel('chat-empty', 'new')).count()) === 1, "방이 없으면 듣지 않고 '첫 글을 보내…'");
+  await page.locator(sel('chat-input')).fill('새 1:1 첫 글');
+  await page.locator(sel('chat-input')).press('Enter');
+  const dmDoc = await serverUntil(() => admin.get(`v5Dm/${PAIR}`), (d) => d?.lastText === '새 1:1 첫 글');
+  r.check(dmDoc?.sid === SID && dmDoc?.members?.[uidA] === true && dmDoc?.members?.[uidB] === true, `첫 글이 방을 만든다 (sid ${dmDoc?.sid})`);
+  r.check(await waitFor(page.locator(`${sel('chat-mine', 'yes')}:has-text("새 1:1 첫 글")`), 8000), '서버에 닿은 뒤 듣기 → 내 글');
+  r.check((await page.locator(sel('chat-notice', 'denied')).count()) === 0, '볼 수 없음 없음');
+
+  r.section('■2 1:1 그룹 옮기기');
+  await patchField(`v5Dm/${PAIR}`, 'sid', 'g_chatprobegone');
+  await page.locator(sel('chat-back')).click();
+  r.check(await waitFor(page.locator(sel('chat-room', PAIR)), 5000), '목록 1:1 줄');
+  await page.locator(sel('chat-room', PAIR)).click();
+  await page.locator(sel('chat-input')).fill('그룹 옮긴 글');
+  await page.locator(sel('chat-input')).press('Enter');
+  const moved = await serverUntil(() => admin.get(`v5Dm/${PAIR}`), (d) => d?.lastText === '그룹 옮긴 글');
+  r.check(moved?.sid === SID, `방 그룹을 나갔으면 함께 든 그룹으로 옮겨 보낸다 (sid ${moved?.sid})`);
 
   r.check(A.errors.length === 0, `페이지 오류 없음 ${A.errors.slice(0, 2).join(' / ')}`);
 } catch (e) {

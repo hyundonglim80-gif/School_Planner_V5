@@ -3,7 +3,7 @@
 //   - 방 목록은 Shell의 듣기(features/chat/receive)가 채운 store를 읽는다. 새 창(↗)으로 옮긴 대화 창은 Shell이 없어 스스로 듣는다.
 //   - 그룹 전체 방은 첫 글이 오기 전에도 그룹마다 한 줄(누르면 빈 방 - 첫 글을 쓴다).
 //   - 안 읽은 수 = 안 읽은 방만 서버에서 센다(방마다 읽기 1 - data/chat countUnread, 99+). 마지막 글이 바뀌면 다시.
-//   줄을 누르면 방(ChatRoomView), 방 머리 '← 목록'으로 돌아온다.
+//   줄을 누르면 방(ChatRoomView), 방 머리 '← 목록'으로 돌아온다. '+ 새 대화'(NewChat) = 그룹 → 사람 = 1:1.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { openWindow, type WindowProps } from '../../app/windows';
 import { countUnread, useChatWatch } from '../../data/chat';
@@ -15,6 +15,7 @@ import { mailWhen } from '../../domain/mail';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { POPOUT } from '../../ui/popout';
 import ChatRoomView from './ChatRoomView';
+import NewChat from './NewChat';
 import type { ChatParams } from './open';
 import { personName, useGroupPeople, type GroupPeople } from './people';
 
@@ -122,7 +123,8 @@ function RoomRow({ roomKey, icon, name, sub, room, me, now, unread, count, onOpe
   );
 }
 
-function ChatList({ me, groups, people, onOpen }: { me: string; groups: readonly GroupSpace[]; people: GroupPeople; onOpen: (key: string) => void }) {
+function ChatList({ me, groups, people, onOpen }: { me: string; groups: readonly GroupSpace[]; people: GroupPeople; onOpen: (key: string, sid?: string) => void }) {
+  const [picking, setPicking] = useState(false);
   const roomsMap = useChatStore((s) => s.rooms);
   const reads = useChatStore((s) => s.reads);
   const ready = useChatStore((s) => s.ready);
@@ -171,6 +173,19 @@ function ChatList({ me, groups, people, onOpen }: { me: string; groups: readonly
           📴 인터넷에 연결되어 있지 않아 대화를 받지 못했습니다. 대화는 서버에만 있어 인터넷이 필요합니다.
         </p>
       )}
+      {groups.length > 0 &&
+        (picking ? (
+          <NewChat me={me} groups={groups} people={people} onPick={onOpen} onClose={() => setPicking(false)} />
+        ) : (
+          <button
+            type="button"
+            data-chat-new-open
+            onClick={() => setPicking(true)}
+            className="self-end rounded-lg px-2.5 py-1 text-xs font-bold text-primary hover:bg-primary/5 cursor-pointer"
+          >
+            + 새 대화
+          </button>
+        ))}
       <section data-chat-section="dm">
         <h3 className="px-3 pb-1 text-2xs font-black text-slate-400">👤 1:1 대화</h3>
         {sections.dms.length > 0 ? (
@@ -204,12 +219,18 @@ export default function ChatWindow({ params, close, raise }: WindowProps<ChatPar
   const groups = useMySpaces((s) => s.groups);
   const people = useGroupPeople(groups.map((g) => g.id));
   const [open, setOpen] = useState<string | null>(params?.room ?? null);
+  /** 1:1을 연 곳의 그룹 - 방이 없을 때 그 그룹에 만든다 */
+  const [hint, setHint] = useState(params?.sid);
+  const openRoom = (key: string, sid?: string) => {
+    setOpen(key);
+    setHint(sid);
+  };
   const room = useChatStore((s) => (open ? s.rooms[open] : undefined));
   // 열린 창을 다시 열면 그 방으로 (MailWindow 본보기 - openWindow는 열 때마다 새 params)
   const [asked, setAsked] = useState(params);
   if (params !== asked) {
     setAsked(params);
-    if (params?.room) setOpen(params.room);
+    if (params?.room) openRoom(params.room, params.sid);
   }
   // 계정이 바뀌면 목록으로 (창 목록은 로그아웃에도 남는다)
   const [shownFor, setShownFor] = useState(uid);
@@ -226,9 +247,9 @@ export default function ChatWindow({ params, close, raise }: WindowProps<ChatPar
         {!uid ? (
           <p className="py-6 text-center text-xs text-slate-400">로그인하면 대화를 볼 수 있습니다.</p>
         ) : open && head ? (
-          <ChatRoomView key={open} roomKey={open} uid={uid} title={head.title} sub={head.sub} onBack={() => setOpen(null)} />
+          <ChatRoomView key={open} roomKey={open} uid={uid} title={head.title} sub={head.sub} groups={groups} people={people} hintSid={hint} onBack={() => setOpen(null)} />
         ) : (
-          <ChatList me={uid} groups={groups} people={people} onOpen={setOpen} />
+          <ChatList me={uid} groups={groups} people={people} onOpen={openRoom} />
         )}
       </div>
     </ModalShell>

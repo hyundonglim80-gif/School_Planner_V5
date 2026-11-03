@@ -11,6 +11,7 @@ import {
   chatSendDocs,
   chatTextError,
   dmOtherOf,
+  dmSidOf,
   dmPairId,
   isRoomUnread,
   mergeMsgs,
@@ -228,6 +229,20 @@ describe('글 줄 - 날짜 나눔·잇단 글', () => {
       msg({ id: '6', from: 'b', at: null }),
     ]);
     expect(rows.map((r) => r.time)).toEqual([false, true, true, false, true, true]);
+  });
+});
+
+describe('1:1 방 그룹 고르기', () => {
+  const g = (id: string, name: string, ...uids: string[]) => ({ id, name, members: Object.fromEntries(uids.map((u) => [u, 'member'])) });
+  const groups = [g('g_C', '다 그룹', 'a', 'b'), g('g_B', '나 그룹', 'a', 'b'), g('g_A', '가 그룹', 'a'), g('g_D', '라 그룹', 'b')];
+  it('방이 든 그룹이 둘 다 든 그룹이면 그대로 · 아니면 연 곳 · 아니면 함께 든 그룹 이름 차례 첫 것', () => {
+    expect(dmSidOf(['g_C', 'g_B'], 'a', 'b', groups)).toBe('g_C');
+    expect(dmSidOf(['g_A', 'g_C'], 'a', 'b', groups)).toBe('g_C');
+    expect(dmSidOf(['g_gone', undefined], 'a', 'b', groups)).toBe('g_B');
+  });
+  it('함께 든 그룹이 없으면 null', () => {
+    expect(dmSidOf([], 'a', 'x', groups)).toBeNull();
+    expect(dmSidOf(['g_A'], 'a', 'b', [groups[2], groups[3]])).toBeNull();
   });
 });
 

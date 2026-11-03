@@ -51,6 +51,21 @@ export function dmOtherOf(pairId: string, me: string): string | null {
   return d[1] === me ? d[2] : d[2] === me ? d[1] : null;
 }
 
+/**
+ * 1:1 방이 들 그룹 - 보내기 직전에 고른다(규칙이 두 사람 모두 그 그룹 구성원인지 본다). 앞에서부터 둘 다 든 그룹이면 그것
+ * (방이 든 그룹 · 연 곳의 그룹), 없으면 함께 든 그룹 가운데 이름 차례 첫 것 = 그룹 옮기기, 그것도 없으면 null(보낼 수 없다).
+ */
+export function dmSidOf(
+  prefer: readonly (string | undefined)[],
+  me: string,
+  other: string,
+  groups: readonly { id: string; name: string; members: Readonly<Record<string, unknown>> }[],
+): string | null {
+  const common = groups.filter((g) => g.members[me] && g.members[other]);
+  for (const sid of prefer) if (sid && common.some((g) => g.id === sid)) return sid;
+  return [...common].sort((a, b) => a.name.localeCompare(b.name, 'ko') || a.id.localeCompare(b.id))[0]?.id ?? null;
+}
+
 /** 방 (방 문서 → 앱 모양) */
 export interface ChatRoom {
   key: string;
