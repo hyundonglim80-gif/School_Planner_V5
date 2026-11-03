@@ -10,6 +10,8 @@ import {
   chatRows,
   chatSections,
   chatSendDocs,
+  cleanRoomName,
+  defaultRoomName,
   chatTextError,
   dmOtherOf,
   dmSidOf,
@@ -113,6 +115,14 @@ describe('대화 보내기 문서', () => {
     const next = chatSendDocs({ kind: 'room', sid: 'g_G', roomId: 'r_1' }, m, 'M2', 'AT', 'EXP');
     expect(next.merge).toBe(true);
     expect(Object.keys(next.room).sort()).toEqual(['expireAt', 'lastAt', 'lastFrom', 'lastFromName', 'lastId', 'lastText']);
+  });
+
+  it("고른 사람 방 이름 - 비우면 사람 이름 셋(넘으면 '…') · 40자", () => {
+    expect(defaultRoomName(['김', '이'])).toBe('김, 이');
+    expect(defaultRoomName(['김', '이', '박'])).toBe('김, 이, 박');
+    expect(defaultRoomName(['김', '이', '박', '최'])).toBe('김, 이, 박…');
+    expect(defaultRoomName(['가'.repeat(30), '나'.repeat(30)])).toHaveLength(CHAT_LIMITS.roomName);
+    expect(cleanRoomName('  학년 부장 ')).toBe('학년 부장');
   });
 
   it('첨부는 있을 때만 칸째 · 아는 칸만 · 미리 보기 📎 n', () => {

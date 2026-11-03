@@ -3,7 +3,7 @@
 //   - 방 목록은 Shell의 듣기(features/chat/receive)가 채운 store를 읽는다. 새 창(↗)으로 옮긴 대화 창은 Shell이 없어 스스로 듣는다.
 //   - 그룹 전체 방은 첫 글이 오기 전에도 그룹마다 한 줄(누르면 빈 방 - 첫 글을 쓴다).
 //   - 안 읽은 수 = 안 읽은 방만 서버에서 센다(방마다 읽기 1 - data/chat countUnread, 99+). 마지막 글이 바뀌면 다시.
-//   줄을 누르면 방(ChatRoomView), 방 머리 '← 목록'으로 돌아온다. '+ 새 대화'(NewChat) = 그룹 → 사람 = 1:1.
+//   줄을 누르면 방(ChatRoomView), 방 머리 '← 목록'으로 돌아온다. '+ 새 대화'(NewChat) = 그룹 → 사람 하나 = 1:1, 여럿 = 고른 사람 방(P19-4 - 첫 글이 방을 만든다).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { openWindow, type WindowProps } from '../../app/windows';
 import { countUnread, useChatWatch } from '../../data/chat';
@@ -15,7 +15,7 @@ import { mailWhen } from '../../domain/mail';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { POPOUT } from '../../ui/popout';
 import ChatRoomView from './ChatRoomView';
-import NewChat from './NewChat';
+import NewChat, { type RoomCreate } from './NewChat';
 import { useChatView } from './view';
 import type { ChatParams } from './open';
 import { personName, useGroupPeople, type GroupPeople } from './people';
@@ -27,7 +27,14 @@ const useWatchInPopout: () => void = POPOUT ? () => useChatWatch() : () => {};
 const commonGroups = (groups: readonly GroupSpace[], me: string, other: string) => groups.filter((g) => g.members[me] && g.members[other]).map((g) => g.name);
 
 /** 방 이름과 흐린 덧말 */
-function roomTitle(key: string, room: ChatRoom | undefined, me: string, groups: readonly GroupSpace[], people: GroupPeople): { title: string; sub?: string } {
+function roomTitle(
+  key: string,
+  room: ChatRoom | undefined,
+  me: string,
+  groups: readonly GroupSpace[],
+  people: GroupPeople,
+  create?: RoomCreate,
+): { title: string; sub?: string } {
   const ref = parseRoomKey(key);
   if (!ref) return { title: '대화' };
   if (ref.kind === 'dm') {
@@ -37,7 +44,7 @@ function roomTitle(key: string, room: ChatRoom | undefined, me: string, groups: 
   }
   const groupName = groups.find((g) => g.id === ref.sid)?.name ?? '나간 그룹';
   if (ref.kind === 'all') return { title: `👥 ${groupName} 전체` };
-  return { title: `💬 ${room?.name || '이름 없는 방'}`, sub: `${groupName} · ${room?.members.length ?? 0}명` };
+  return { title: `💬 ${room?.name || create?.name || '이름 없는 방'}`, sub: `${groupName} · ${room?.members.length ?? create?.members.length ?? 0}명` };
 }
 
 /** 안 읽은 방의 글 수 - 방 키 → 수 (센 것만) */
@@ -124,7 +131,17 @@ function RoomRow({ roomKey, icon, name, sub, room, me, now, unread, count, onOpe
   );
 }
 
-function ChatList({ me, groups, people, onOpen }: { me: string; groups: readonly GroupSpace[]; people: GroupPeople; onOpen: (key: string, sid?: string) => void }) {
+function ChatList({
+  me,
+  groups,
+  people,
+  onOpen,
+}: {
+  me: string;
+  groups: readonly GroupSpace[];
+  people: GroupPeople;
+  onOpen: (key: string, sid?: string, create?: RoomCreate) => void;
+}) {
   const [picking, setPicking] = useState(false);
   const roomsMap = useChatStore((s) => s.rooms);
   const reads = useChatStore((s) => s.reads);
@@ -222,9 +239,12 @@ export default function ChatWindow({ params, close, raise }: WindowProps<ChatPar
   const [open, setOpen] = useState<string | null>(params?.room ?? null);
   /** 1:1을 연 곳의 그룹 - 방이 없을 때 그 그룹에 만든다 */
   const [hint, setHint] = useState(params?.sid);
-  const openRoom = (key: string, sid?: string) => {
+  /** '+ 새 대화'로 고른 새 방 - 첫 글이 그 이름·사람으로 만든다 */
+  const [create, setCreate] = useState<{ key: string; create: RoomCreate } | null>(null);
+  const openRoom = (key: string, sid?: string, made?: RoomCreate) => {
     setOpen(key);
     setHint(sid);
+    setCreate(made ? { key, create: made } : null);
   };
   const room = useChatStore((s) => (open ? s.rooms[open] : undefined));
   // 열린 창을 다시 열면 그 방으로 (MailWindow 본보기 - openWindow는 열 때마다 새 params)
@@ -246,7 +266,8 @@ export default function ChatWindow({ params, close, raise }: WindowProps<ChatPar
     return () => useChatView.setState({ room: null });
   }, [open]);
 
-  const head = open && uid ? roomTitle(open, room, uid, groups, people) : null;
+  const making = create && create.key === open ? create.create : undefined;
+  const head = open && uid ? roomTitle(open, room, uid, groups, people, making) : null;
 
   return (
     <ModalShell isOpen onClose={close} raise={raise} width="lg" title="💬 대화" bare footer={open ? undefined : <ModalCloseButton onClose={close} />}>
@@ -254,7 +275,18 @@ export default function ChatWindow({ params, close, raise }: WindowProps<ChatPar
         {!uid ? (
           <p className="py-6 text-center text-xs text-slate-400">로그인하면 대화를 볼 수 있습니다.</p>
         ) : open && head ? (
-          <ChatRoomView key={open} roomKey={open} uid={uid} title={head.title} sub={head.sub} groups={groups} people={people} hintSid={hint} onBack={() => setOpen(null)} />
+          <ChatRoomView
+            key={open}
+            roomKey={open}
+            uid={uid}
+            title={head.title}
+            sub={head.sub}
+            groups={groups}
+            people={people}
+            hintSid={hint}
+            create={making}
+            onBack={() => setOpen(null)}
+          />
         ) : (
           <ChatList me={uid} groups={groups} people={people} onOpen={openRoom} />
         )}

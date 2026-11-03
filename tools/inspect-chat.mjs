@@ -10,10 +10,12 @@
 //   P19-3 ■1 ?chat=(그 방 · 주소에서 지움) · 서비스 워커 'chat' 푸시(보는 앱 창이 있으면 없음 · 방마다 알림 하나 · 같은 방은 바꾸기 '새 글 n개' ·
 //      1:1 = 보낸 사람 제목 · 모양이 아닌 방 키는 없음 · 알림 누르기 → 열린 창에 그 방 · 앱에서 그 방을 보면 그 알림이 닫힘)
 //   P19-3 ■2 🔕(방 머리 🔔 → 서버 muted.<나> · 목록 줄 🔕 · 끈 방 새 글은 안내 없음·💬 n에는 듦 · 다시 누르면 켜기)
+//   P19-4 ■1 고른 사람 방('+ 새 대화' 둘 = 방 만들기 3명 · 비운 이름 = 사람 이름 셋 · 첫 글 전 방 문서 없음 · 첫 글이 이름·사람으로 만들고 잇단 둘째 글도 ·
+//      ⋮ 구성원 · 이름 바꾸기 · 그룹을 나간 사람 흐리게 · 나간 사람 다시 더하기 · 나가기(묻기 → 목록에서 빠짐)). teacher3 = C(그룹 구성원만 - 화면 없음)
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
 //   대화는 지우기 규칙이 없다 - 끝에 관리자 지우기. npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-chat.mjs
-import { collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -22,6 +24,8 @@ const em = emulator();
 const uidA = await em.signIn('teacher@example.com');
 const emB = emulator('inspectB');
 const uidB = await emB.signIn('teacher2@example.com');
+const emC = emulator('inspectC');
+const uidC = await emC.signIn('teacher3@example.com');
 const admin = emulatorAdmin();
 const browser = await launch();
 const DAY = '2027-10-04';
@@ -61,9 +65,16 @@ async function wipe(collectionPath) {
     for (const d of docs) await fetch(`http://127.0.0.1:8080/v1/${d.name}`, { method: 'DELETE', headers: HEADERS });
   }
 }
+/** 이 그룹의 방(그룹 전체·고른 사람 방)과 글을 모두 지운다 (관리자) */
+async function wipeRooms() {
+  const res = await fetch(`${BASE}/v5Chat/${SID}/chatRooms?pageSize=300`, { headers: HEADERS });
+  for (const d of (await res.json()).documents ?? []) {
+    await wipe(`${d.name.split('/documents/')[1]}/chatMsgs`);
+    await fetch(`http://127.0.0.1:8080/v1/${d.name}`, { method: 'DELETE', headers: HEADERS });
+  }
+}
 async function cleanAll() {
-  await wipe(`v5Chat/${SID}/chatRooms/all/chatMsgs`);
-  await admin.remove(`v5Chat/${SID}/chatRooms/all`);
+  await wipeRooms();
   await wipe(`v5Dm/${PAIR}/chatMsgs`);
   await admin.remove(`v5Dm/${PAIR}`);
   await admin.remove(`v5ChatReads/${uidA}`);
@@ -158,16 +169,17 @@ const inView = (page, id) =>
 
 undo.add(async () => {
   await cleanAll();
-  for (const uid of [uidA, uidB]) await admin.remove(`spaces/${SID}/people/${uid}`);
+  for (const uid of [uidA, uidB, uidC]) await admin.remove(`spaces/${SID}/people/${uid}`);
   await admin.remove(`spaces/${SID}`);
 });
 
 try {
   // ── 심기: 그룹(B 주인·A 구성원) · 그룹 전체 방 지난 글 62(그제 10 · 어제 52, 7번째마다 A) · 1:1 셋(B는 둘째까지 읽음) ──
   await cleanAll();
-  await admin.set(`spaces/${SID}`, { kind: 'group', name: GROUP, ownerId: uidB, members: { [uidA]: 'member', [uidB]: 'owner' } });
+  await admin.set(`spaces/${SID}`, { kind: 'group', name: GROUP, ownerId: uidB, members: { [uidA]: 'member', [uidB]: 'owner', [uidC]: 'member' } });
   await admin.set(`spaces/${SID}/people/${uidA}`, { name: '김점검' });
   await admin.set(`spaces/${SID}/people/${uidB}`, { name: '이점검' });
+  await admin.set(`spaces/${SID}/people/${uidC}`, { name: '박점검' });
   const day = (back, h) => {
     const d = new Date();
     d.setDate(d.getDate() - back);
@@ -369,7 +381,9 @@ try {
   r.check(await waitFor(page.locator(sel('chat-new-picker')), 3000), '+ 새 대화 → 고르기');
   r.check((await page.locator(sel('chat-new-person', uidA)).count()) === 0 && (await page.locator(sel('chat-new-person', uidB)).count()) === 1, '나는 빼고 그룹 사람');
   await page.locator(sel('chat-new-person', uidB)).click();
-  r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 3000), '사람을 누르면 그 사람과의 1:1');
+  r.check((await page.locator(sel('chat-new-person', uidB)).getAttribute('data-picked')) === 'yes' && (await page.locator(sel('chat-new-start')).getAttribute('data-chat-new-start')) === 'dm', "사람 하나를 고르면 '1:1 대화'");
+  await page.locator(sel('chat-new-start')).click();
+  r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 3000), '시작 → 그 사람과의 1:1');
   r.check((await page.locator(sel('chat-status', 'new')).count()) === 1 && (await page.locator(sel('chat-empty', 'new')).count()) === 1, "방이 없으면 듣지 않고 '첫 글을 보내…'");
   await page.locator(sel('chat-input')).fill('새 1:1 첫 글');
   await page.locator(sel('chat-input')).press('Enter');
@@ -544,6 +558,80 @@ try {
     r.check((await serverUntil(roomMuted, (v) => !v, 8000)) === false, '다시 누르기 → 켜기 (서버 muted.<나> 지움)');
     r.check((await mute.getAttribute('data-chat-mute')) === 'off', '머리 🔔');
     r.check(await waitFor(async () => (await head.getAttribute('data-header-chat')) === '0', 5000), '열면 읽음 → 💬 0');
+    await page.evaluate(() => window.sp5.closeAllWindows());
+  }
+
+  r.section('P19-4 ■1 고른 사람 방 - 만들기');
+  {
+    await page.evaluate(() => window.sp5.closeAllWindows());
+    await page.evaluate(() => window.sp5.openWindow('chat'));
+    await page.locator(sel('chat-new-open')).click();
+    await page.locator(sel('chat-new-person', uidB)).click();
+    await page.locator(sel('chat-new-person', uidC)).click();
+    const start = page.locator(sel('chat-new-start'));
+    r.check((await start.getAttribute('data-chat-new-start')) === 'room' && (await start.textContent()).includes('3명'), `둘을 고르면 '방 만들기 (3명)' (${await start.textContent()})`);
+    const nameBox = page.locator(sel('chat-new-name'));
+    const ph = (await nameBox.getAttribute('placeholder')) ?? '';
+    r.check(ph.includes('김점검, 박점검, 이점검'), `이름을 비우면 사람 이름 셋 (${ph})`);
+    await nameBox.fill('점검 방');
+    await shot(page, 'new-room');
+    await start.click();
+    const view = page.locator(sel('chat-room-view'));
+    r.check(await waitFor(view, 3000), '방 만들기 → 그 방');
+    const key = (await view.getAttribute('data-chat-room-view')) ?? '';
+    const roomId = key.split('~')[1] ?? '';
+    const roomPath = `v5Chat/${SID}/chatRooms/${roomId}`;
+    r.check(key.startsWith(`${SID}~r_`), `새 방 키 ${key}`);
+    r.check((await page.locator(sel('chat-status', 'new')).count()) === 1 && (await page.locator(sel('chat-room-title')).textContent()).includes('점검 방'), '첫 글 전 = 듣지 않고 머리에 방 이름');
+    r.check(!(await admin.get(roomPath)), '첫 글 전에는 방 문서가 없다');
+    await page.locator(sel('chat-room-menu')).click();
+    r.check((await waitFor(page.locator(sel('chat-room-info')), 2000)) && (await page.locator(sel('chat-member')).count()) === 3, '⋮ = 구성원 셋 (첫 글 전)');
+    r.check((await page.locator(sel('chat-leave')).count()) === 0 && (await page.locator(sel('chat-room-name')).count()) === 0, '첫 글 전에는 이름·나가기 없음');
+    await page.locator(sel('chat-room-menu')).click();
+    await page.locator(sel('chat-input')).fill('방 첫 글');
+    await page.locator(sel('chat-input')).press('Enter');
+    await page.locator(sel('chat-input')).fill('방 둘째 글');
+    await page.locator(sel('chat-input')).press('Enter');
+    const made = await serverUntil(() => admin.get(roomPath), (d) => d?.lastText === '방 둘째 글');
+    r.check(
+      made?.kind === 'room' && made?.name === '점검 방' && Object.keys(made?.members ?? {}).sort().join() === [uidA, uidB, uidC].sort().join(),
+      `첫 글이 이름·사람 셋으로 방을 만들고 잇단 둘째 글도 간다 (${made?.name} · ${Object.keys(made?.members ?? {}).length}명 · ${made?.lastText})`,
+    );
+    r.check(await waitFor(page.locator(`${sel('chat-mine', 'yes')}:has-text("방 둘째 글")`), 8000), '방 글이 보인다 (듣기)');
+    await page.locator(sel('chat-back')).click();
+    r.check(await waitFor(page.locator(`${sel('chat-section', SID)} ${sel('chat-room', key)}`), 5000), '목록 그룹 묶음에 방 줄');
+
+    r.section('P19-4 ■1 ⋮ 이름 · 그룹을 나간 사람 · 더하기 · 나가기');
+    await page.locator(sel('chat-room', key)).click();
+    await page.locator(sel('chat-room-menu')).click();
+    const nameInput = page.locator(sel('chat-room-name'));
+    r.check((await waitFor(nameInput, 5000)) && (await nameInput.inputValue()) === '점검 방', '⋮ 이름 칸 = 지금 이름');
+    await nameInput.fill('점검 방 2');
+    await page.locator(sel('chat-room-rename')).click();
+    r.check((await serverUntil(async () => (await admin.get(roomPath))?.name, (n) => n === '점검 방 2', 8000)) === '점검 방 2', '이름 바꾸기 (서버)');
+    r.check(await waitFor(async () => (await page.locator(sel('chat-room-title')).textContent()).includes('점검 방 2'), 3000), '머리 이름도 바뀐다');
+    r.check((await page.locator(sel('chat-add-none')).count()) === 1, '그룹 사람이 모두 방에 있으면 더할 사람 없음');
+    await shot(page, 'room-info');
+    await admin.set(`spaces/${SID}`, { kind: 'group', name: GROUP, ownerId: uidB, members: { [uidA]: 'member', [uidB]: 'owner' } });
+    r.check(await waitFor(async () => (await page.locator(sel('chat-member', uidC)).getAttribute('data-chat-member-left')) === 'yes', 8000), "그룹을 나간 C = 흐리게 '그룹을 나감'");
+    r.check((await page.locator(sel('chat-member', uidC)).textContent()).includes('박점검'), '나간 사람 이름도 보인다');
+    await admin.set(`spaces/${SID}`, { kind: 'group', name: GROUP, ownerId: uidB, members: { [uidA]: 'member', [uidB]: 'owner', [uidC]: 'member' } });
+    r.check(await waitFor(async () => (await page.locator(sel('chat-member', uidC)).getAttribute('data-chat-member-left')) === 'no', 8000), '다시 들면 흐림이 풀린다');
+    await updateDoc(doc(emB.db, 'v5Chat', SID, 'chatRooms', roomId), { [`members.${uidB}`]: deleteField() });
+    r.check(await waitFor(page.locator(sel('chat-add-person', uidB)), 8000), 'B가 방을 나가면 ⋮ 더하기에 B');
+    r.check((await page.locator(sel('chat-member')).count()) === 2, '구성원은 둘');
+    await page.locator(sel('chat-add-person', uidB)).click();
+    await page.locator(sel('chat-add-save')).click();
+    r.check((await serverUntil(async () => (await admin.get(roomPath))?.members?.[uidB], (v) => v === true, 8000)) === true, 'B 다시 더하기 (서버)');
+    r.check(await waitFor(async () => (await page.locator(sel('chat-member')).count()) === 3, 5000), '구성원 셋');
+    A.dialogs.answer = true;
+    await page.locator(sel('chat-leave')).click();
+    A.dialogs.answer = false;
+    r.check(A.dialogs.seen.some((m) => m.includes('나갈까요')), '나가기는 묻는다');
+    r.check(await waitFor(page.locator(sel('chat-window', 'list')), 3000), '나가면 목록으로');
+    r.check(await waitFor(async () => (await page.locator(sel('chat-room', key)).count()) === 0, 8000), '목록에서 그 방이 빠진다');
+    const after = await serverUntil(() => admin.get(roomPath), (d) => d && !d.members?.[uidA]);
+    r.check(!after?.members?.[uidA] && after?.members?.[uidB] === true && after?.members?.[uidC] === true, '서버 - 나만 빠지고 남은 그대로');
     await page.evaluate(() => window.sp5.closeAllWindows());
   }
 

@@ -180,6 +180,15 @@ export function chatPreview(text: string, files = 0): string {
   return line ? cut(line, CHAT_LIMITS.lastText) : files ? `📎 ${files}` : '';
 }
 
+/** 고른 사람 방 이름 - 앞뒤 빈칸을 떼고 40자까지 */
+export const cleanRoomName = (name: string) => cut(name.trim(), CHAT_LIMITS.roomName);
+
+/** 고른 사람 방 이름을 비웠을 때 (P19-4) - 사람 이름 셋, 넘으면 '…' (방 문서에 적는다 - 푸시 제목·새 글 안내도 이 이름) */
+export function defaultRoomName(names: readonly string[]): string {
+  const shown = names.slice(0, 3).join(', ');
+  return cleanRoomName(names.length > 3 ? `${shown}…` : shown);
+}
+
 /** 지울 날(ms) */
 export const chatExpireAt = (now: number) => now + CHAT_KEEP_DAYS * 86_400_000;
 
@@ -223,7 +232,7 @@ export function chatSendDocs<A, E>(t: ChatTarget, m: OutgoingChat, id: string, a
   }
   if (!t.create) return { msg, room: last, merge: true };
   const members = Object.fromEntries([...new Set([m.from, ...t.create.members])].map((uid) => [uid, true]));
-  return { msg, room: { kind: 'room' as const, name: cut(t.create.name.trim(), CHAT_LIMITS.roomName), members, ...last, v: 1 as const }, merge: false };
+  return { msg, room: { kind: 'room' as const, name: cleanRoomName(t.create.name), members, ...last, v: 1 as const }, merge: false };
 }
 
 /** 내 읽음 시각 - 1:1은 방 reads, 그룹 방은 내 읽음 문서(v5ChatReads rooms) */

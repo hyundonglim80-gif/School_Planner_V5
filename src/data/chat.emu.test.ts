@@ -1,6 +1,7 @@
 // 대화 자료 시험 (에뮬레이터 - `npm run emu` 뒤 `npm run test:data`, P19-1 ■2).
 // 앱 자료 층(data/chat)이 쓰는 모양을 규칙(firestore.rules v5Chat·v5Dm·v5ChatReads)이 받는지: A가 그룹을 만들고 B가 코드로 든 뒤
-// A → 그룹 전체 방 · B 안 읽음 → 수 1 → 읽음 · B → A 1:1 · A 읽음 → B 글 '1' 사라짐 · 50개씩 받기 · 새 글 onNew · 🔕 · 그룹 밖 X는 막힘 · 나간 B는 그룹 방이 빠진다.
+// A → 그룹 전체 방 · B 안 읽음 → 수 1 → 읽음 · B → A 1:1 · A 읽음 → B 글 '1' 사라짐 · 50개씩 받기 · 새 글 onNew · 🔕 · 그룹 밖 X는 막힘 ·
+// 고른 사람 방(P19-4 - 첫 글이 만들기 · 이름 · 그룹 밖 사람 더하기 막힘 · 나가기) · 나간 B는 그룹 방이 빠진다.
 // 점검 전용 계정(chattest-a@·chattest-b@ / chattest-x@)에만 쓰고 끝에 지운다(대화는 지우기 규칙이 없다 - 에뮬레이터 관리자 'Bearer owner').
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
@@ -11,7 +12,21 @@ import { app, auth, db } from './firebase';
 import { useSession, type SessionUser } from './session';
 import { useMySpaces } from './spaceChoice';
 import { createGroup, deleteGroup, joinGroup, leaveGroup } from './spaces';
-import { countUnread, loadOlderMsgs, markChatJoined, markRoomRead, sendChat, setRoomMuted, watchChatRooms, watchRoomMsgs, type ChatPage } from './chat';
+import {
+  addRoomMembers,
+  countUnread,
+  leaveRoom,
+  loadOlderMsgs,
+  markChatJoined,
+  markRoomRead,
+  newRoomId,
+  renameRoom,
+  sendChat,
+  setRoomMuted,
+  watchChatRooms,
+  watchRoomMsgs,
+  type ChatPage,
+} from './chat';
 import { useChatStore } from './chatStore';
 import { usePendingWrites } from './pendingWrites';
 
@@ -202,6 +217,32 @@ describe('대화 (에뮬레이터)', () => {
       await terminate(odb);
       await deleteApp(other);
     }
+  });
+
+  it('고른 사람 방 - 첫 글이 이름·사람으로 만든다 · B 이름 바꾸기 · 그룹 밖 X 더하기 막힘 · B 나가기 = 목록에서 빠짐', async () => {
+    await signInAs('a');
+    const roomId = newRoomId();
+    const ref: ChatRoomRef = { kind: 'room', sid, roomId };
+    made.push(`v5Chat/${sid}/chatRooms/${roomId}`);
+    track(ref, await sendChat({ kind: 'room', sid, roomId, create: { name: '학년 부장', members: [users.a.uid, users.b.uid] } }, said('a', '방 첫 글')));
+    expect((await getDoc(doc(db, 'v5Chat', sid, 'chatRooms', roomId))).data()).toMatchObject({ kind: 'room', name: '학년 부장', members: { [users.a.uid]: true, [users.b.uid]: true } });
+    // 둘째 글은 last*만 (방을 다시 만들지 않는다)
+    track(ref, await sendChat({ kind: 'room', sid, roomId }, said('a', '둘째')));
+    const b = await signInAs('b');
+    await watching(b.uid, async () => {
+      await vi.waitFor(() => expect(useChatStore.getState().rooms[roomKey(ref)]?.lastText).toBe('둘째'), { timeout: 10_000 });
+      await renameRoom(ref, '  학년 부장 모임  ');
+      await vi.waitFor(() => expect(useChatStore.getState().rooms[roomKey(ref)]?.name).toBe('학년 부장 모임'), { timeout: 10_000 });
+      await expect(addRoomMembers(ref, [users.x.uid])).rejects.toThrow(/더하지 못했습니다/);
+      expect(usePendingWrites.getState().count).toBe(0);
+      await leaveRoom(b.uid, ref);
+      await vi.waitFor(() => expect(useChatStore.getState().rooms[roomKey(ref)]).toBeUndefined(), { timeout: 10_000 });
+    });
+    await expect(sendChat({ kind: 'room', sid, roomId }, said('b', '나간 뒤'))).rejects.toThrow(/빠졌습니다/);
+    // A가 B를 다시 더한다 (그룹 사람 - 방 사람 누구나)
+    await signInAs('a');
+    await addRoomMembers(ref, [users.b.uid]);
+    expect((await getDoc(doc(db, 'v5Chat', sid, 'chatRooms', roomId))).data()?.members).toEqual({ [users.a.uid]: true, [users.b.uid]: true });
   });
 
   it('그룹을 나간 B - 그룹 방은 빠지고 1:1 지난 글은 남는다 · 들 때 읽음 적기', async () => {

@@ -14,6 +14,8 @@
 //   - 대화는 서버에만 있다(기기 사본·백업 없음) - 끊긴 채 열면 '인터넷이 필요합니다'.
 //   - 이 방이 보이면 이 방의 OS 알림(푸시 - P19-3 ■1)을 닫는다(view closeChatNotices).
 //   - 방 머리 🔔/🔕(P19-3 ■2) = 이 방 알림 끄기·켜기(방 muted.<나>) - 방 문서가 있을 때만(글이 없는 그룹 전체·새 1:1은 없음).
+//   - 방 머리 ⋮(P19-4 ■1) = 방 정보(RoomInfo - 구성원 · 고른 사람 방 이름·사람 더하기·나가기).
+//   - 새 고른 사람 방('+ 새 대화'에서 여럿 - create)은 1:1처럼 첫 글이 방 문서를 만든다(그 이름·사람 - 첫 보내기에만 싣는다).
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
@@ -39,6 +41,8 @@ import {
 } from '../../domain/chat';
 import SharedAttachments from '../notes/SharedAttachments';
 import ChatComposer from './ChatComposer';
+import type { RoomCreate } from './NewChat';
+import RoomInfo from './RoomInfo';
 import { CHAT_WINDOW } from './open';
 import { closeChatNotices } from './view';
 import type { GroupPeople } from './people';
@@ -62,10 +66,12 @@ interface Props {
   people: GroupPeople;
   /** 1:1을 연 곳의 그룹 ('+ 새 대화'·그룹 창) - 방이 없을 때 그 그룹에 만든다 */
   hintSid?: string;
+  /** 새 고른 사람 방 - 첫 글이 이 이름·사람으로 방을 만든다 */
+  create?: RoomCreate;
   onBack: () => void;
 }
 
-export default function ChatRoomView({ roomKey, uid, title, sub, groups, people, hintSid, onBack }: Props) {
+export default function ChatRoomView({ roomKey, uid, title, sub, groups, people, hintSid, create, onBack }: Props) {
   const ref = useMemo(() => parseRoomKey(roomKey), [roomKey]);
   const room = useChatStore((s) => s.rooms[roomKey]);
   const user = useSession((s) => s.user);
@@ -76,8 +82,14 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
   const msgs = useMemo(() => mergeMsgs(kept, page), [kept, page]);
   /** 더 오래된 글을 받을 자리 - undefined = 서버에서 아직 받지 않음, null = 더 없음 */
   const [cursor, setCursor] = useState<QueryDocumentSnapshot | null | undefined>(undefined);
-  // 새 1:1 = 서버에서 방 목록을 받았는데 이 방이 없다(연 때 한 번 본다)
-  const [isNew] = useState(() => ref?.kind === 'dm' && useChatStore.getState().ready && !useChatStore.getState().rooms[roomKey]);
+  // 새 1:1 = 서버에서 방 목록을 받았는데 이 방이 없다 · 새 고른 사람 방 = '+ 새 대화'에서 막 고른 방(연 때 한 번 본다)
+  const [isNew] = useState(() => {
+    const s = useChatStore.getState();
+    return !s.rooms[roomKey] && ((ref?.kind === 'dm' && s.ready) || (ref?.kind === 'room' && !!create));
+  });
+  /** 새 고른 사람 방을 만드는 첫 글을 보냈다 (보내는 중 포함 - 잇달아 보낸 둘째 글이 방을 다시 만들지 않게) */
+  const creating = useRef(false);
+  const [info, setInfo] = useState(false);
   const [firstSent, setFirstSent] = useState(false);
   const listen = !!ref && (!isNew || firstSent || (!!room && room.lastFrom !== uid));
   const [status, setStatus] = useState<Status>(listen ? 'loading' : 'new');
@@ -239,7 +251,9 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
         showToast('그룹을 나가 이 대화에 보낼 수 없습니다.', 4000);
         return false;
       }
-      target = ref.kind === 'all' ? { kind: 'all', sid: ref.sid } : { kind: 'room', sid: ref.sid, roomId: ref.roomId };
+      const make = ref.kind === 'room' && isNew && create && !creating.current && !room ? create : undefined;
+      if (make) creating.current = true;
+      target = ref.kind === 'all' ? { kind: 'all', sid: ref.sid } : { kind: 'room', sid: ref.sid, roomId: ref.roomId, create: make };
     }
     const fromName = people[target.sid]?.[uid] || user.displayName || user.email || '선생님';
     try {
@@ -247,6 +261,8 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
       if (isNew && !firstSent) setFirstSent(true);
       return true;
     } catch (e) {
+      // 방을 만들지 못했으면 다음 글이 다시 만든다
+      if (target.kind === 'room' && target.create) creating.current = false;
       // 안내는 sendChat이 (failWithToast) - 글은 칸에 되돌린다(ChatComposer)
       if (!(e instanceof ShownError)) showErrorToast('보내지 못했습니다.', e);
       return false;
@@ -351,7 +367,9 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
 
   return (
     <div ref={rootRef} data-chat-room-view={roomKey} data-chat-status={status} className="relative flex flex-1 flex-col">
-      <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-slate-100 bg-white px-3 py-2">
+      {/* 머리와 ⋮ 방 정보는 함께 위에 붙는다 - 방은 맨 아래에서 시작한다 */}
+      <div className="sticky top-0 z-10">
+      <div className="flex items-center gap-2 border-b border-slate-100 bg-white px-3 py-2">
         <button type="button" data-chat-back onClick={onBack} className="shrink-0 rounded-lg px-2 py-1 text-sm font-bold text-slate-500 hover:bg-slate-100 cursor-pointer">
           ← 목록
         </button>
@@ -371,6 +389,23 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
             {muted ? '🔕' : '🔔'}
           </button>
         )}
+        {ref && canWrite && (
+          <button
+            type="button"
+            data-chat-room-menu={info ? 'open' : 'closed'}
+            onClick={() => setInfo((v) => !v)}
+            title="방 정보 (구성원·이름·사람 더하기·나가기)"
+            aria-label="방 정보"
+            aria-expanded={info}
+            className={`${room ? '' : 'ml-auto'} shrink-0 rounded-lg px-2 py-1 text-sm font-black hover:bg-slate-100 cursor-pointer ${info ? 'bg-slate-100 text-slate-800' : 'text-slate-500'}`}
+          >
+            ⋮
+          </button>
+        )}
+      </div>
+      {ref && canWrite && info && (
+        <RoomInfo roomRef={ref} room={room} pendingMembers={create?.members} uid={uid} groups={groups} people={people} msgs={msgs} onLeft={onBack} />
+      )}
       </div>
       {status === 'offline' && (
         <p data-chat-offline className="mx-3 mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">

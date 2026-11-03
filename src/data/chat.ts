@@ -31,6 +31,7 @@ import {
   CHAT_PAGE,
   chatExpireAt,
   chatSendDocs,
+  cleanRoomName,
   msgsPath,
   readChatMsg,
   readChatRoom,
@@ -158,6 +159,28 @@ export async function setRoomMuted(uid: string, ref: ChatRoomRef, muted: boolean
     done();
   }
 }
+
+/** 방 문서 고치기 - 끊긴 동안 '저장을 기다립니다' 띠, 실패는 안내하고 던진다 */
+async function updateRoom(ref: ChatRoomRef, data: Record<string, unknown>, fail: string): Promise<void> {
+  const done = beginPendingWrite();
+  try {
+    await updateDoc(roomDoc(ref), data);
+  } catch (e) {
+    failWithToast(fail, e);
+  } finally {
+    done();
+  }
+}
+
+/** 고른 사람 방 이름 바꾸기 (P19-4 - 방 사람 누구나) */
+export const renameRoom = (ref: ChatRoomRef, name: string) => updateRoom(ref, { name: cleanRoomName(name) }, '방 이름을 바꾸지 못했습니다.');
+
+/** 고른 사람 방에 그 그룹 사람 더하기 (P19-4 - 방 사람 누구나, 남을 빼지는 못한다. 50명까지는 부르는 쪽이 본다) */
+export const addRoomMembers = (ref: ChatRoomRef, uids: readonly string[]) =>
+  updateRoom(ref, Object.fromEntries(uids.map((u) => [`members.${u}`, true])), '사람을 더하지 못했습니다.');
+
+/** 고른 사람 방 나가기 (P19-4 - 나만 뺀다. 다시 들려면 방 사람이 더해 주어야 한다) */
+export const leaveRoom = (uid: string, ref: ChatRoomRef) => updateRoom(ref, { [`members.${uid}`]: deleteField() }, '방에서 나가지 못했습니다.');
 
 /**
  * 내가 든 방을 듣는다 → store. sids = 지금 든 그룹(바뀌면 부르는 쪽이 다시 건다).
