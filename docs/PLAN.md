@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). ■0 설계 확정·■1 규칙 + check-rules 끝(11-03). 다음 = **P19-1 ■2**(domain/chat · data/chatStore · data/chat + emu 시험). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
+**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). ■0 설계 확정·■1 규칙·■2 자료 층 끝(11-03). 다음 = **P19-1 ■3**(함수 v5ChatPush·v5DmPush + chatPlan - 배포는 P19-3 끝). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
 **P18-2 창 안 탭 단축키 끝**(11-02 main - '⌨️ 단축키 설정' 띠에서 창 안의 탭을 누르면 '창 → 탭' · 키 = 그 창을 그 탭으로 · 단축키 탭·설명서 '내가 만든 단축키'). P18 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터. 배포·👤 부탁 없음.
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
 P17 공간 칩 · 일정 겹쳐 보기는 11-02 끝(P17-1 칩 줄 · P17-2 Ctrl·길게 누르기 겹쳐 보기).
@@ -954,6 +954,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P19 ■0 확정**(11-03 에뮬레이터 - 6장 P19 '■0 확인'): 설계 그대로 된다. 바꾼 것 넷 - ① 방 미리 보기 고치기는 `existsAfter(글)` 대신 `getAfter(글).at == request.time`(옛 글 id로 미리 보기만 꾸미는 것을 막는다)
   ② 보내기 모양 = all 늘 같은 모양(둘이 함께 첫 글이 된다) · dm 늘 같은 모양 + `names`는 내 것만(만들기·고치기 갈래가 없어 겹쳐도 된다) · room 만들 때만 name·members ③ `v5ChatReads` 값이 서버 시각인지는 못 본다(나만 보는 것 - 주인만·칸 수만)
   ④ 붙임 목록 부품은 `features/notes/SharedAttachments`로(`ui/`는 `data/`를 부르지 않는다), 셈은 `domain/attachments`로. 나간 사람의 켜 둔 듣기는 다음 글에서 permission-denied - 앱은 그 오류로 방을 뺀다.
+- **P19 ■2 안 읽음 = 읽음 칸이 없으면 안 읽음, 새로 든 사람은 참여할 때 그룹 전체 방 읽음을 적는다**(권장안 - 계획의 '처음 본 때를 읽음으로'를 바꿈): 처음 본 때를 읽음으로 적으면
+  앱을 닫아 둔 동안 온 첫 그룹 대화(방 문서가 처음 생긴 것)가 열자마자 읽음이 되어 아무도 모른다. 참여 때 적으면 지난 글만 읽음이 된다. P19 전에 든 사람은 칸이 없어 첫 글부터 안 읽음(맞다).
+  고른 사람 방에 더해진 사람은 지난 글이 모두 안 읽음(99+까지) - 누가 그 대화를 보라고 넣은 것이라 둔다.
 ---
 
 ## 6. 세션별 내용
@@ -2364,8 +2367,12 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   1:1 id 위조(순서 바꿈·세 사람) · 함께 든 그룹이 아닌 sid · 남의 글 지우기·고치기 · 남의 v5ChatReads.
   → 11-03 `firestore.rules` 대화 블록(쪽지 뒤 - 더하기만) · check-rules `runChat` 124가지(+ 방 expireAt 360~370일 - 짧게 적어 남의 방을 TTL로 지우지 못하게 · 내 글 지우기 = deletedAt + 빈 글 + 첨부 빼기, 마지막 글이면 같은 묶음에서 방 lastText '' ·
   정리는 관리자 지우기) · 전체 V4 38·V5 289 통과, 두 번 돌려도 같다. 고침: '기기 시각' 시험 6곳 `deviceTime()`(5초 앞) - 에뮬레이터 request.time이 밀리초라 `new Date()`가 20번에 한 번 같은 밀리초로 통과했다.
-- [ ] ■2 `domain/chat.ts`(순수 - 방 키·1:1 id·미리 보기 글·안 읽은 방 셈·'1' 셈·날짜 나눔·잇단 글 묶기·`?chat=` has/strip) + 시험 · `data/chatStore.ts`(Firebase 없음) ·
+- [x] ■2 `domain/chat.ts`(순수 - 방 키·1:1 id·미리 보기 글·안 읽은 방 셈·'1' 셈·날짜 나눔·잇단 글 묶기·`?chat=` has/strip) + 시험 · `data/chatStore.ts`(Firebase 없음) ·
   `data/chat.ts`(보내기 한 묶음 · 방 목록 듣기 · 방 글 듣기 + 더 받기 · 읽음 · 안 읽은 수 · 🔕) + `data/chat.emu.test.ts`(test:data - A→그룹 방·B 안 읽음 1·읽음·1:1·나간 사람 막힘).
+  → 11-03 `domain/chat`(방 키·1:1 id·`chatSendDocs` 모양 셋·미리 보기·안 읽은 방·'1'·`chatRows` 날짜 나눔·잇단 글 5분·`?chat=`) + 시험 22 · `data/chatStore` · `data/chat`(`sendChat`·`watchChatRooms`(+ onNew·나간 그룹은 듣기 오류로 뺀다)·
+  `useChatWatch`(든 그룹이 바뀌면 다시 건다)·`watchRoomMsgs`·`loadOlderMsgs`·`countUnread`(limit 100)·`markRoomRead`·`markChatJoined`·`setRoomMuted` - 방·읽음 문서는 `serverTimestamps: 'estimate'`(읽음을 적은 순간 안 읽음이 사라지게)) ·
+  `chat.emu.test` 7(그룹 방·X 막힘·안 읽음 → 읽음·🔕·1:1 '1'·50개씩·onNew·나간 B) · 붙임 셈 `cleanAttachment`·`readSharedAttachments` → `domain/attachments`. 단위 2824 · test:data 44 · 빌드.
+  **안 읽음 = 읽음 칸이 없으면 안 읽음**(5장 'P19 ■2') - 새로 든 사람은 참여할 때 `markChatJoined`(P19-2 ■3에서 `joinGroup` 뒤에 부른다 - 운영 규칙이 먼저 나가야 한다).
 - [ ] ■3 함수 `v5ChatPush`·`v5DmPush` + `functions/chatPlan.js` + `chatPlan.test.js`(받는 사람·muted·data 키·이름 자르기) · test:functions 두 곳에 더하기 · 손 시험(.run(event) - P15-1 ■3 꼴). 배포는 P19-3 끝.
 - [ ] ■4 (묻고) 운영 규칙 배포(먼저 `node tools/live-rules.cjs --print`와 ■1 앞 파일 diff) + `firestore.indexes.json` TTL 셋(`chatRooms`·`chatMsgs`·`v5Dm` - `expireAt`) `deploy --only firestore:indexes`.
 **끝 조건**: check-rules 전체 · test:data · 단위 · 함수 시험 통과 · 운영 규칙·TTL 배포.
@@ -2375,7 +2382,7 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 **먼저 읽을 것**: 이 P19 절 · `features/mail/` 모두 · `app/windowList.ts` · `app/Header.tsx` · `features/groups/GroupsWindow.tsx`(+ test) · `data/drafts.ts` · `app/toast.ts` · `notes/attach` · 설명서 share 'mail' · `tools/inspect-mail.mjs`(두 계정 꼴) · `docs/MENU.md` 3-1·3-5·3-8.
 - [ ] ■1 창 `chat`(`features/chat/` - open.ts는 Firebase 없이) 목록(1:1 · 그룹마다 묶음 · 안 읽은 수 · 미리 보기 · 시각) + 방(글 줄 · 날짜 나눔 · 잇단 글 · 50개씩 더 · '↓ 새 글' · 인터넷 없음) `data-chat-*` + 설명서 주제 'chat' 뼈대(창 help 시험 - 같은 커밋).
 - [ ] ■2 보내기(PC Enter / Shift+Enter · 휴대폰 ➤ · 보내는 중 · 실패하면 글 그대로 · 쓰던 글 · 📎·캡처 Ctrl+V) · '+ 새 대화'(그룹 → 사람 하나 = 1:1) · 1:1 그룹 옮기기 · 시험.
-- [ ] ■3 읽음(보이는 동안 2초 모아) · 1:1 '1' · Shell `useChatWatch`(store - 방 목록·안 읽은 방) · 머리줄 💬 n(`data-header-chat`) · 계정 칸 '💬 대화' · 단축키 id `chat` · 새 글 안내 ·
+- [ ] ■3 읽음(보이는 동안 2초 모아) · 1:1 '1' · Shell `useChatWatch`(store - 방 목록·안 읽은 방) · `joinGroup` 뒤 `markChatJoined`(실패해도 참여는 된다) · 머리줄 💬 n(`data-header-chat`) · 계정 칸 '💬 대화' · 단축키 id `chat` · 새 글 안내 ·
   그룹 창 '💬 그룹 대화'·구성원 칩 💬 · 받은 쪽지 펼침 '💬 대화로' · Header.test · App.test에 data/chat 흉내(CLAUDE.md 2장 - Shell에 구독 훅을 더하면).
 - [ ] ■4 `tools/inspect-chat.mjs`(새 - 계정 셋: 그룹 방 A→B·C · B 💬 1 · 열면 읽음 · 1:1 A↔B · '1' 사라짐 · Enter·Shift+Enter · 📎 흉내 · 위로 올려 더 받기 · 내보낸 C는 그룹 방을 못 읽음) ·
   PC 1400 + 휴대폰 390 한 번(머리줄 ✉·💬 넘침 0 · 방 글 칸이 화면 아래 · 그림으로) · 설명서 'chat' · 세션 끝 정리(1-3).

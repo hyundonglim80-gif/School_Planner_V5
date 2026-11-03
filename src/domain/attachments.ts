@@ -74,3 +74,40 @@ export function makeAttachment(file: { name: string; type?: string; size?: numbe
     ...(driveId ? { driveId } : {}),
   };
 }
+
+// ─── 남과 함께 보는 붙임 (쪽지 P16·대화 P19) - 보낸 사람 드라이브의 붙임 목록을 서버 문서에 싣는다 ───
+
+/** 문서에 적을 붙임 - 아는 칸만, 값이 없는 칸은 빼고(undefined 칸 하나로 저장이 통째로 막히던 V4) */
+export function cleanAttachment(a: Attachment): Attachment {
+  return {
+    ...(a.id ? { id: a.id } : {}),
+    name: a.name,
+    url: a.url,
+    type: a.type || 'application/octet-stream',
+    ...(typeof a.size === 'number' ? { size: a.size } : {}),
+    ...(a.driveId ? { driveId: a.driveId } : {}),
+  };
+}
+
+/** 남이 쓴 문서의 붙임 - 이름과 https 주소가 있는 것만(규칙이 못 보는 목록 안을 여기서 거른다 - javascript: 주소 등), max개까지 */
+export function readSharedAttachments(v: unknown, max: number): Attachment[] {
+  if (!Array.isArray(v)) return [];
+  const str = (x: unknown) => (typeof x === 'string' ? x : '');
+  const out: Attachment[] = [];
+  for (const x of v) {
+    if (!x || typeof x !== 'object') continue;
+    const a = x as Record<string, unknown>;
+    const url = str(a.url);
+    if (!str(a.name) || !/^https:\/\//i.test(url)) continue;
+    out.push({
+      ...(str(a.id) ? { id: str(a.id) } : {}),
+      name: str(a.name).slice(0, 200),
+      url,
+      type: str(a.type) || 'application/octet-stream',
+      ...(typeof a.size === 'number' ? { size: a.size } : {}),
+      ...(/^[\w-]+$/.test(str(a.driveId)) ? { driveId: str(a.driveId) } : {}),
+    });
+    if (out.length === max) break;
+  }
+  return out;
+}

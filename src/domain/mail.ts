@@ -5,7 +5,7 @@
 //   - 첨부(P16 - 메모처럼 📎·캡처): 보낸 사람 드라이브에 올린 붙임 목록 `attachments`(있을 때만 칸째, 10개까지). 첨부가 있으면 글은 비어도 된다.
 //     규칙은 목록 안 칸을 보지 못하므로 읽을 때 https 주소인 것만 받는다(남이 쓴 문서 - javascript: 주소 등을 걸지 않게).
 import type { Attachment } from '../data/types';
-import { isImageAttachment } from './attachments';
+import { cleanAttachment, isImageAttachment, readSharedAttachments } from './attachments';
 
 /** 칸마다 가장 긴 것 - 규칙(firestore.rules `v5Mail`)과 같게. 그룹 이름은 공간 이름 그대로(이름이 빈 공간만 60자) */
 export const MAIL_LIMITS = { text: 2000, to: 50, toNames: 600, fromName: 40, groupName: 60, attachments: 10 } as const;
@@ -63,18 +63,6 @@ export function mailTextError(text: string, files = 0): string | null {
   return null;
 }
 
-/** 문서에 적을 붙임 - 아는 칸만, 값이 없는 칸은 빼고(undefined 칸 하나로 저장이 통째로 막히던 V4) */
-function cleanAttachment(a: Attachment): Attachment {
-  return {
-    ...(a.id ? { id: a.id } : {}),
-    name: a.name,
-    url: a.url,
-    type: a.type || 'application/octet-stream',
-    ...(typeof a.size === 'number' ? { size: a.size } : {}),
-    ...(a.driveId ? { driveId: a.driveId } : {}),
-  };
-}
-
 /**
  * 받는 사람을 지금 구성원으로 거른다 - 겹침·나·구성원이 아닌 사람을 뺀다.
  * gone = 고른 사람 중 지금 그 그룹에 없는 사람(안내용).
@@ -129,27 +117,8 @@ const millis = (v: unknown): number | null =>
 const str = (v: unknown) => (typeof v === 'string' ? v : '');
 const strs = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
 
-/** 받은 붙임 - 이름과 https 주소가 있는 것만(규칙이 못 보는 목록 안을 여기서 거른다), 10개까지 */
-export function readMailAttachments(v: unknown): Attachment[] {
-  if (!Array.isArray(v)) return [];
-  const out: Attachment[] = [];
-  for (const x of v) {
-    if (!x || typeof x !== 'object') continue;
-    const a = x as Record<string, unknown>;
-    const url = str(a.url);
-    if (!str(a.name) || !/^https:\/\//i.test(url)) continue;
-    out.push({
-      ...(str(a.id) ? { id: str(a.id) } : {}),
-      name: str(a.name).slice(0, 200),
-      url,
-      type: str(a.type) || 'application/octet-stream',
-      ...(typeof a.size === 'number' ? { size: a.size } : {}),
-      ...(/^[\w-]+$/.test(str(a.driveId)) ? { driveId: str(a.driveId) } : {}),
-    });
-    if (out.length === MAIL_LIMITS.attachments) break;
-  }
-  return out;
-}
+/** 받은 붙임 - 이름과 https 주소가 있는 것만, 10개까지 (domain/attachments - 대화와 같은 셈) */
+export const readMailAttachments = (v: unknown): Attachment[] => readSharedAttachments(v, MAIL_LIMITS.attachments);
 
 export function readMailSent(id: string, d: Record<string, unknown>): MailSent {
   return {
