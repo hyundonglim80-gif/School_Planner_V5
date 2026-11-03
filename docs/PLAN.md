@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). ■0 설계 확정·■1 규칙·■2 자료 층 끝(11-03). 다음 = **P19-1 ■3**(함수 v5ChatPush·v5DmPush + chatPlan - 배포는 P19-3 끝). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
+**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). ■0 설계 확정·■1 규칙·■2 자료 층·■3 함수 코드 끝(11-03). 다음 = **P19-1 ■4**(묻고: 운영 규칙 + TTL 배포). 묻기: P19-1 ■4 운영 규칙·TTL 배포, P19-3 ■4 함수 배포.
 **P18-2 창 안 탭 단축키 끝**(11-02 main - '⌨️ 단축키 설정' 띠에서 창 안의 탭을 누르면 '창 → 탭' · 키 = 그 창을 그 탭으로 · 단축키 탭·설명서 '내가 만든 단축키'). P18 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터. 배포·👤 부탁 없음.
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
 P17 공간 칩 · 일정 겹쳐 보기는 11-02 끝(P17-1 칩 줄 · P17-2 Ctrl·길게 누르기 겹쳐 보기).
@@ -2373,7 +2373,10 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   `useChatWatch`(든 그룹이 바뀌면 다시 건다)·`watchRoomMsgs`·`loadOlderMsgs`·`countUnread`(limit 100)·`markRoomRead`·`markChatJoined`·`setRoomMuted` - 방·읽음 문서는 `serverTimestamps: 'estimate'`(읽음을 적은 순간 안 읽음이 사라지게)) ·
   `chat.emu.test` 7(그룹 방·X 막힘·안 읽음 → 읽음·🔕·1:1 '1'·50개씩·onNew·나간 B) · 붙임 셈 `cleanAttachment`·`readSharedAttachments` → `domain/attachments`. 단위 2824 · test:data 44 · 빌드.
   **안 읽음 = 읽음 칸이 없으면 안 읽음**(5장 'P19 ■2') - 새로 든 사람은 참여할 때 `markChatJoined`(P19-2 ■3에서 `joinGroup` 뒤에 부른다 - 운영 규칙이 먼저 나가야 한다).
-- [ ] ■3 함수 `v5ChatPush`·`v5DmPush` + `functions/chatPlan.js` + `chatPlan.test.js`(받는 사람·muted·data 키·이름 자르기) · test:functions 두 곳에 더하기 · 손 시험(.run(event) - P15-1 ■3 꼴). 배포는 P19-3 끝.
+- [x] ■3 함수 `v5ChatPush`·`v5DmPush` + `functions/chatPlan.js` + `chatPlan.test.js`(받는 사람·muted·data 키·이름 자르기) · test:functions 두 곳에 더하기 · 손 시험(.run(event) - P15-1 ■3 꼴). 배포는 P19-3 끝.
+  → 11-03 `chatPlan`(chatRecipients - all = 지금 구성원·room = 방 사람 ∩ 구성원·dm = 상대, 보낸 사람·🔕 빼기 · chatTitle · chatPushData type·room·sender·title(글 없음) · isLastMsg) + 시험 6 (test:functions 26) ·
+  index.js `pushChat` 하나로 두 함수 + 보내기 도우미 `multicast`(v5MailPush도 이것으로 - 같은 동작) · **방의 마지막 글이 아니면 건너뛴다**(잇단 글은 뒤 글이 알린다 - 함수 차례가 바뀌어도 마지막 글은 늘 알린다) ·
+  손 시험(에뮬레이터 관리자로 심고 `.run(event)`, `Messaging.prototype.sendEachForMulticast` 가짜): 뒤 글 있음 = 건너뜀 · 🔕·보낸 사람 빠짐 · 방 사람 중 그룹 밖 빠짐 · 1:1 상대만 · data에 글 없음 · not-registered 토큰만 지움 · 토큰 없으면 건너뜀.
 - [ ] ■4 (묻고) 운영 규칙 배포(먼저 `node tools/live-rules.cjs --print`와 ■1 앞 파일 diff) + `firestore.indexes.json` TTL 셋(`chatRooms`·`chatMsgs`·`v5Dm` - `expireAt`) `deploy --only firestore:indexes`.
 **끝 조건**: check-rules 전체 · test:data · 단위 · 함수 시험 통과 · 운영 규칙·TTL 배포.
 

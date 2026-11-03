@@ -8,6 +8,9 @@
 //                         v5SendDueAlarms가 매분 함께 한다(예약 작업을 늘리지 않는다 - 늘리면 돈이 든다).
 //   5) v5MailPush       - 쪽지 사본(v5Mail/{보낸 uid}/mailSent/{id})이 생기면 받는 사람 기기에 '✉ 보낸 사람 · 그룹'을 알린다(P15 - mailPlan.js).
 //                         쪽지 하나 = 실행 한 번(받는 쪽마다가 아니다). 쪽지 쓰기는 앱이 규칙을 지나 한 묶음으로 한다 - 이 함수가 꺼져도 쪽지는 간다.
+//   6) v5ChatPush       - 그룹 대화 글(v5Chat/{sid}/chatRooms/{all | r_…}/chatMsgs/{id})이 생기면 방 사람 기기에 '💬 보낸 사람 · 방 이름'을 알린다(P19 - chatPlan.js).
+//   7) v5DmPush         - 1:1 글(v5Dm/{pairId}/chatMsgs/{id})이 생기면 상대 기기에. 둘 다 🔕인 사람은 빼고, 방의 마지막 글만 알린다(잇단 글은 뒤 글이).
+//                         같은 방 새 글은 앱 sw.js가 알림 하나를 소리 없이 바꾼다. 대화 쓰기도 앱이 규칙을 지나 한 묶음으로 - 이 함수가 꺼져도 글은 간다.
 // 계산은 alarmPlan.js(순수 함수, alarmPlan.test.js). v5alarms는 규칙상 앱이 못 읽고 못 쓴다(이 함수들만, 관리자 권한).
 //
 // ⚠️ V4와 같은 Firebase 프로젝트다 - 함수 이름이 V4(alarmIndexUser·sendDueAlarms …)와 겹치면 서로 덮는다. 그래서 이름마다 v5를 붙인다.
@@ -38,6 +41,7 @@ import {
   statusFromGithub,
 } from './claudePlan.js';
 import { chunks, isDeadMailToken, mailPushData, mailRecipients } from './mailPlan.js';
+import { chatPushData, chatRecipients, chatTitle, isLastMsg } from './chatPlan.js';
 
 // Firestore 위치와 같은 지역 (V4와 같다)
 const REGION = 'asia-northeast3';
@@ -152,6 +156,15 @@ export const v5MailPush = onDocumentCreated({ document: 'v5Mail/{from}/mailSent/
     logger.info('쪽지 알림 건너뜀 - 받는 사람 기기 토큰 없음', { id, to: got.length });
     return;
   }
+  const { ok, dead, errors } = await multicast(tokens, data);
+  logger.info('쪽지 알림 보냄', { id, to: got.length, tokens: tokens.length, ok, removed: dead, errors });
+});
+
+/**
+ * 쪽지·대화 푸시 - 토큰 500개씩 보내고 앱을 지웠거나 알림을 끈 기기 토큰만 지운다(invalid-argument는 두기 - mailPlan isDeadMailToken).
+ * 글자 data만 싣는다(sw.js가 알림을 그린다). 돌려주는 것 = 받은 수·지운 토큰 수·오류 코드.
+ */
+async function multicast(tokens, data) {
   const messaging = getMessaging();
   let ok = 0;
   const dead = [];
@@ -171,7 +184,51 @@ export const v5MailPush = onDocumentCreated({ document: 'v5Mail/{from}/mailSent/
     });
   }
   await Promise.all(dead.map((ref) => ref.delete().catch(() => {})));
-  logger.info('쪽지 알림 보냄', { id, to: got.length, tokens: tokens.length, ok, removed: dead.length, errors });
+  return { ok, dead: dead.length, errors };
+}
+
+// 대화 알림 (P19-1 ■3). 받는 사람 = 방 문서·그룹 문서로 셈(chatPlan.js) - 사람마다 설정을 읽지 않는다(🔕는 방 muted).
+// 방의 마지막 글이 아니면 건너뛴다(뒤 글의 실행이 알린다 - 잇단 글마다 울리지 않게). 다시 시도하지 않는다(놓치면 앱을 열 때 머리줄 💬 n).
+async function pushChat({ label, roomKey, kind, id, msg, room, spaceMembers, groupName }) {
+  if (!msg || !room) {
+    logger.info(`${label} 건너뜀 - 글·방 없음`, { roomKey, id });
+    return;
+  }
+  if (!isLastMsg(room, id)) {
+    logger.info(`${label} 건너뜀 - 뒤 글이 있다`, { roomKey, id });
+    return;
+  }
+  const to = chatRecipients({ kind, spaceMembers, roomMembers: room.members, muted: room.muted, from: msg.from });
+  const tokens = (await Promise.all(to.map((uid) => tokensOf(uid)))).flat();
+  if (tokens.length === 0) {
+    logger.info(`${label} 건너뜀 - 받는 사람 기기 토큰 없음`, { roomKey, id, to: to.length });
+    return;
+  }
+  const data = chatPushData({ room: roomKey, senderName: msg.fromName, title: chatTitle({ kind, groupName, roomName: room.name }) });
+  const { ok, dead, errors } = await multicast(tokens, data);
+  logger.info(`${label} 보냄`, { roomKey, id, to: to.length, tokens: tokens.length, ok, removed: dead, errors });
+}
+
+export const v5ChatPush = onDocumentCreated({ document: 'v5Chat/{sid}/chatRooms/{roomId}/chatMsgs/{id}', retry: false }, async (event) => {
+  const { sid, roomId, id } = event.params;
+  const [space, room] = await Promise.all([db.collection('spaces').doc(sid).get(), db.collection('v5Chat').doc(sid).collection('chatRooms').doc(roomId).get()]);
+  const s = space.data();
+  await pushChat({
+    label: '대화 알림',
+    roomKey: `${sid}~${roomId}`,
+    kind: roomId === 'all' ? 'all' : 'room',
+    id,
+    msg: event.data?.data(),
+    room: room.data(),
+    spaceMembers: s?.kind === 'group' ? s.members : {},
+    groupName: s?.name,
+  });
+});
+
+export const v5DmPush = onDocumentCreated({ document: 'v5Dm/{pairId}/chatMsgs/{id}', retry: false }, async (event) => {
+  const { pairId, id } = event.params;
+  const room = await db.collection('v5Dm').doc(pairId).get();
+  await pushChat({ label: '1:1 알림', roomKey: pairId, kind: 'dm', id, msg: event.data?.data(), room: room.data() });
 });
 
 // 오래된 칸 정리 (알림 시각이 30일 넘게 지난 것) - 하루 한 번
