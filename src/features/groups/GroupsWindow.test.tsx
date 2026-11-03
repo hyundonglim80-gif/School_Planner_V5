@@ -27,6 +27,10 @@ vi.mock('../../data/spaces', () => spaces);
 // 쪽지 창은 창 목록에 등록하지 않았다 - 여는 것만 본다
 const mail = vi.hoisted(() => ({ openMail: vi.fn() }));
 vi.mock('../mail/open', () => mail);
+// 대화도 (P19-2 ■3) - 창 열기·참여 때 읽음 적기만 본다
+const chat = vi.hoisted(() => ({ openChat: vi.fn(), markChatJoined: vi.fn(() => Promise.resolve()) }));
+vi.mock('../chat/open', () => ({ openChat: chat.openChat }));
+vi.mock('../../data/chat', () => ({ markChatJoined: chat.markChatJoined }));
 // V4 그룹 가져오기 칸은 V4 자리를 읽는다 - 이 시험과 상관없다
 vi.mock('./V4GroupsSection', () => ({ default: () => null }));
 
@@ -120,5 +124,26 @@ describe('공유 그룹 창 - 그룹장 도구 (P14-1)', () => {
     expect(qa('[data-group-mail]').map((b) => b.dataset.groupMail)).toEqual(['u1']);
     fireEvent.click(q('[data-group-mail="u1"]')!);
     expect(mail.openMail).toHaveBeenCalledWith({ tab: 'write', sid: 'g_t1', to: ['u1'] });
+  });
+
+  it("💬 그룹 대화 = 그룹 전체 방 · 구성원 칩 💬 = 그 사람과 1:1 (연 그룹과 함께) (P19-2 ■3)", async () => {
+    signIn('u2');
+    await openWith(group());
+    fireEvent.click(q('[data-group-chat="g_t1"]')!);
+    expect(chat.openChat).toHaveBeenLastCalledWith({ room: 'g_t1~all' });
+    expect(qa('[data-group-dm]').map((b) => b.dataset.groupDm)).toEqual(['u1']);
+    fireEvent.click(q('[data-group-dm="u1"]')!);
+    expect(chat.openChat).toHaveBeenLastCalledWith({ room: 'd_u1_u2', sid: 'g_t1' });
+  });
+
+  it('초대 코드로 들면 그 그룹 전체 방의 지난 글을 읽음으로 (P19-2 ■3)', async () => {
+    signIn('u3');
+    spaces.joinGroup.mockResolvedValueOnce('g_new' as never);
+    await openWith(group());
+    fireEvent.change(q('[data-group-join-code]')!, { target: { value: 'XYZ234' } });
+    await act(async () => {
+      fireEvent.click(q('[data-group-join]')!);
+    });
+    expect(chat.markChatJoined).toHaveBeenCalledWith('u3', 'g_new');
   });
 });

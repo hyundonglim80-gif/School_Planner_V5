@@ -1,6 +1,7 @@
 // 👥 공유 그룹 창 (V4 GroupModal - MENU 2-2: 계정 칸 '👥 공유 그룹'·공간 고르기 끝 '👥 그룹 관리…', 단축키 'group'). P8-4.
 // 내 그룹(초대 코드·구성원·열기·나가기/지우기, 그룹장은 🔄 코드 바꾸기·🚫 초대 닫기·구성원 × 내보내기 - P14-1) · 새 그룹 만들기 · 초대 코드로 참여 · V4 그룹 가져오기(■2 - V4GroupsSection).
-// 구성원 칩 ✉(나 말고) = 그 사람에게 쪽지 쓰기(P15-2 ■2 - 쪽지 창 '쓰기' 탭).
+// 구성원 칩 ✉(나 말고) = 그 사람에게 쪽지 쓰기(P15-2 ■2 - 쪽지 창 '쓰기' 탭) · 💬 = 그 사람과 1:1 대화 · 그룹 머리 '💬 그룹 대화' = 그룹 전체 방(P19-2 ■3).
+// 초대 코드로 들면 그 그룹 전체 방의 지난 글을 읽은 것으로 적는다(markChatJoined - 실패해도 참여는 된다, PLAN 5장 'P19 ■2 안 읽음').
 import { useEffect, useState } from 'react';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import type { WindowProps } from '../../app/windows';
@@ -9,6 +10,9 @@ import { setSpaceChoice, useMySpaces, type GroupSpace } from '../../data/spaceCh
 import { closeInvite, createGroup, deleteGroup, joinGroup, leaveGroup, openInvite, readPeople, removeMember, rotateInvite, writeMyName } from '../../data/spaces';
 import { useCurrentSpaceId } from '../../data/session';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
+import { markChatJoined } from '../../data/chat';
+import { dmPairId } from '../../domain/chat';
+import { openChat } from '../chat/open';
 import { openMail } from '../mail/open';
 import { Section } from '../settings/parts';
 import V4GroupsSection from './V4GroupsSection';
@@ -131,6 +135,14 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
         <span data-group-role={owner ? 'owner' : 'member'} className="text-2xs font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
           {owner ? '그룹장' : '구성원'}
         </span>
+        <button
+          type="button"
+          data-group-chat={group.id}
+          onClick={() => openChat({ room: `${group.id}~all` })}
+          className="shrink-0 rounded-lg px-1.5 py-0.5 text-2xs font-bold text-primary hover:bg-primary/10 cursor-pointer"
+        >
+          💬 그룹 대화
+        </button>
         {current ? (
           <span className="ml-auto text-2xs font-bold text-primary">지금 보는 공간</span>
         ) : (
@@ -161,6 +173,18 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
                   className="px-0.5 text-slate-400 hover:text-primary cursor-pointer"
                 >
                   ✉
+                </button>
+              )}
+              {id !== uid && (
+                <button
+                  type="button"
+                  data-group-dm={id}
+                  onClick={() => openChat({ room: dmPairId(uid, id), sid: group.id })}
+                  title={`${name} 선생님과 1:1 대화`}
+                  aria-label={`${name} 선생님과 1:1 대화`}
+                  className="px-0.5 text-slate-400 hover:text-primary cursor-pointer"
+                >
+                  💬
                 </button>
               )}
               {owner && id !== uid && (
@@ -249,6 +273,8 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
     setBusy('join');
     try {
       const sid = await joinGroup(user, code);
+      // 지난 그룹 대화는 읽은 것으로 (실패해도 참여는 된다 - markRoomRead가 삼킨다)
+      void markChatJoined(user.uid, sid);
       setCode('');
       setSpaceChoice(user.uid, sid);
       showToast('👥 그룹에 들어왔습니다. 맨 위 📂 공간에서 개인 ↔ 그룹을 바꿉니다.');

@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). **P19-1 끝**(11-03 - 규칙·자료 층·함수 코드, 운영 규칙·TTL 배포). **P19-2 ■1·■2 끝**(11-03 - 💬 대화 창 목록·방·보내기·'+ 새 대화', 여는 단추는 아직 없음 - ■3). 다음 = **P19-2 ■3**(읽음·머리줄 💬 n·여는 길). 묻기: P19-3 ■4 함수 배포.
+**P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). **P19-1 끝**(11-03 - 규칙·자료 층·함수 코드, 운영 규칙·TTL 배포). **P19-2 ■1~■3 끝**(11-03 - 💬 대화 창 목록·방·보내기·'+ 새 대화'·읽음·머리줄 💬 n·여는 길). 다음 = **P19-2 ■4**(390 확인·세션 끝 정리). 묻기: P19-3 ■4 함수 배포.
 **P18-2 창 안 탭 단축키 끝**(11-02 main - '⌨️ 단축키 설정' 띠에서 창 안의 탭을 누르면 '창 → 탭' · 키 = 그 창을 그 탭으로 · 단축키 탭·설명서 '내가 만든 단축키'). P18 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터. 배포·👤 부탁 없음.
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
 P17 공간 칩 · 일정 겹쳐 보기는 11-02 끝(P17-1 칩 줄 · P17-2 Ctrl·길게 누르기 겹쳐 보기).
@@ -2405,8 +2405,13 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   [방 그룹, 연 곳] → 함께 든 그룹 이름 차례, 없으면 안내 · 이름 = 그 그룹 people) · **새 1:1은 첫 글이 서버에 닿을 때까지 듣지 않는다**(5장) · 듣기 밖으로 밀린 글만 따로 두고 빠진 글은 버린다(되돌린 내 글) ·
   `NewChat`('+ 새 대화' - 지금 공간 그룹 먼저 · 나 빼고 이름 차례) · ChatParams `sid`(연 곳) · `MailAttachments` → `notes/SharedAttachments`(kind로 data-mail-·data-chat-) · 설명서 '보내기 · 새 대화' ·
   inspect-chat ■2(Enter·Shift+Enter·Ctrl+S·쓰던 글·캡처 → '📎 1'·새 1:1·그룹 옮기기 - 전체 통과) · inspect-mail 통과 · 단위 2852.
-- [ ] ■3 읽음(보이는 동안 2초 모아) · 1:1 '1'(그리기는 ■1에) · ~~Shell `useChatWatch`~~(■1에 했다 - 여기서는 `receive.ts`에 새 글 안내만) · `joinGroup` 뒤 `markChatJoined`(실패해도 참여는 된다) · 머리줄 💬 n(`data-header-chat`) · 계정 칸 '💬 대화' · 단축키 id `chat` · 새 글 안내 ·
+- [x] ■3 읽음(보이는 동안 2초 모아) · 1:1 '1'(그리기는 ■1에) · ~~Shell `useChatWatch`~~(■1에 했다 - 여기서는 `receive.ts`에 새 글 안내만) · `joinGroup` 뒤 `markChatJoined`(실패해도 참여는 된다) · 머리줄 💬 n(`data-header-chat`) · 계정 칸 '💬 대화' · 단축키 id `chat` · 새 글 안내 ·
   그룹 창 '💬 그룹 대화'·구성원 칩 💬 · 받은 쪽지 펼침 '💬 대화로' · Header.test · App.test에 data/chat 흉내(CLAUDE.md 2장 - Shell에 구독 훅을 더하면).
+  → 11-03 읽음 = `ChatRoomView`(그 방이 보이는 동안 - `useShownWindowPick` 대화 창 + 화면 켜짐 · 안 읽음이면 연 때 곧바로, 뒤로는 2초 모아 · **모으는 동안 방을 떠나거나 창이 가려지면 그때 적는다** -
+  inspect-chat이 찾았다: ← 목록을 2초 안에 누르면 본 글이 안 읽음으로 남았다) · 단축키 `chat`(domain/shortcuts) · `ChatHeaderButton`(✉ 뒤 `data-header-chat` - n = `unreadRoomCount` 든 그룹 방 + 1:1, 🔕도 셈) + `unread.ts` ·
+  계정 칸 `data-account-chat` · 그룹 창 `data-group-chat`(그룹 전체 방)·`data-group-dm`(1:1, 연 그룹) · 가입 뒤 `markChatJoined` · 받은 쪽지 `data-mail-chat` '💬 대화로' ·
+  새 글 안내 `receive.ts`(400ms 모아 · 🔕·보이는 방(또는 목록)은 없음 · `chatNotice` '💬 이름 (그룹): 글' · 보기 → 그 방) + `view.ts`(창이 그린 방) · 설명서 chat(여는 길·읽음·안내)·mail·groups·layout ·
+  Header.test·GroupsWindow.test·domain 시험 · inspect-chat ■3(읽음 문서·💬 n·안내 → 그 방·보는 방 안내 없음·2초 모아 읽음·'1' 사라짐·여는 길 다섯) 전체 통과 · manual 넷 통과 · 단위 2863.
 - [ ] ■4 `tools/inspect-chat.mjs`(새 - 계정 셋: 그룹 방 A→B·C · B 💬 1 · 열면 읽음 · 1:1 A↔B · '1' 사라짐 · Enter·Shift+Enter · 📎 흉내 · 위로 올려 더 받기 · 내보낸 C는 그룹 방을 못 읽음) ·
   PC 1400 + 휴대폰 390 한 번(머리줄 ✉·💬 넘침 0 · 방 글 칸이 화면 아래 · 그림으로) · 설명서 'chat' · 세션 끝 정리(1-3).
 **끝 조건**: 단위 · test:data · inspect-chat · inspect-mail · manual(MATCH=chat) 통과 · 390 한 번.

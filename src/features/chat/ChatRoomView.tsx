@@ -8,19 +8,36 @@
 //     둘 중 하나가 나갔으면 함께 든 다른 그룹으로 옮긴다, 없으면 '함께 든 그룹이 없어 보낼 수 없습니다'). 보내는 이름 = 그 그룹 구성원 이름.
 //   - 새 1:1(방 문서가 아직 없음)은 듣지 않는다 - 규칙이 방 문서의 members로 글 읽기를 보므로 없는 방의 듣기는 permission-denied.
 //     첫 글이 서버에 닿은 뒤(또는 상대가 먼저 보내 방이 생기면) 듣는다.
+//   - 읽음(■3): 이 방이 보이는 동안(대화 창이 보이는 탭·맨 위 창이고 앱 화면이 켜져 있음) 안 읽은 글이 있으면 적는다 - 연 때는 곧바로,
+//     그 뒤 새 글은 2초 모아 한 번, 모으는 동안 방을 떠나거나 창이 가려지면 그때(data/chat markRoomRead - 그룹 방 = 내 읽음 문서 한 칸, 1:1 = 방 reads.<나>).
 //   - 그룹을 나갔거나 방에서 빠지면 듣기가 permission-denied로 끊긴다(P19-1 ■0) → '이 대화를 볼 수 없습니다'.
 //   - 대화는 서버에만 있다(기기 사본·백업 없음) - 끊긴 채 열면 '인터넷이 필요합니다'.
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
-import { loadOlderMsgs, sendChat, watchRoomMsgs, type ChatPage } from '../../data/chat';
+import { useShownWindowPick } from '../../app/windows';
+import { loadOlderMsgs, markRoomRead, sendChat, watchRoomMsgs, type ChatPage } from '../../data/chat';
 import { useChatStore } from '../../data/chatStore';
 import { useSession } from '../../data/session';
 import type { GroupSpace } from '../../data/spaceChoice';
 import type { Attachment } from '../../data/types';
-import { chatRows, chatTime, CHAT_PAGE, dmOtherOf, dmSidOf, mergeMsgs, parseRoomKey, unseenByOther, type ChatMsg, type ChatTarget } from '../../domain/chat';
+import {
+  chatRows,
+  chatTime,
+  CHAT_PAGE,
+  dmOtherOf,
+  dmSidOf,
+  isRoomUnread,
+  mergeMsgs,
+  myReadOf,
+  parseRoomKey,
+  unseenByOther,
+  type ChatMsg,
+  type ChatTarget,
+} from '../../domain/chat';
 import SharedAttachments from '../notes/SharedAttachments';
 import ChatComposer from './ChatComposer';
+import { CHAT_WINDOW } from './open';
 import type { GroupPeople } from './people';
 
 type Status = 'loading' | 'ok' | 'offline' | 'denied' | 'failed' | 'new';
@@ -29,6 +46,8 @@ type Status = 'loading' | 'ok' | 'offline' | 'denied' | 'failed' | 'new';
 const BOTTOM_PX = 60;
 /** 위에서 이만큼 안으로 올리면 지난 글을 더 받는다 */
 const TOP_PX = 80;
+/** 보는 동안 온 새 글의 읽음은 이만큼 모아 한 번 적는다 */
+const READ_GATHER_MS = 2000;
 
 interface Props {
   roomKey: string;
@@ -161,6 +180,34 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
       setShowNew(false);
     } else setShowNew(true);
   }, [msgs, uid]);
+
+  // ─── 읽음 ───
+  const reads = useChatStore((s) => s.reads);
+  const unread = !!room && isRoomUnread(room, uid, myReadOf(room, uid, reads));
+  const shown = useShownWindowPick((w) => (w.id === CHAT_WINDOW ? 'chat' : null)) === 'chat';
+  const [visible, setVisible] = useState(() => document.visibilityState === 'visible');
+  useEffect(() => {
+    const on = () => setVisible(document.visibilityState === 'visible');
+    document.addEventListener('visibilitychange', on);
+    return () => document.removeEventListener('visibilitychange', on);
+  }, []);
+  const markedOnce = useRef(false);
+  useEffect(() => {
+    if (!ref || !unread || !shown || !visible || status !== 'ok') return;
+    let done = false;
+    const mark = () => {
+      if (done) return;
+      done = true;
+      markedOnce.current = true;
+      void markRoomRead(uid, ref);
+    };
+    const t = setTimeout(mark, markedOnce.current ? READ_GATHER_MS : 0);
+    // 모으는 동안 방을 떠나거나(← 목록·창 닫기) 창이 가려지면 그때 적는다 - 본 글이 목록에서 안 읽음으로 남지 않게
+    return () => {
+      clearTimeout(t);
+      mark();
+    };
+  }, [ref, uid, unread, shown, visible, status]);
 
   const toBottom = () => {
     const el = scroller();

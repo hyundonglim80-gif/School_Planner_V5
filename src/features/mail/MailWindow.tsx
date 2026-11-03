@@ -4,6 +4,7 @@
 //   창이 열린 동안 새 쪽지가 오면(머리줄 안 읽은 수가 늘면) 첫 쪽을 다시 받아 위에 더한다. 보내면 보낸 쪽지 탭으로(첫 쪽을 다시).
 //   ↩ 답장 = 쓰기 탭에 그 사람·그 그룹 - 나와 그 사람이 지금 그 그룹 구성원일 때만(규칙이 막는다).
 //   첨부(P16): 접힌 줄은 📎 n(글이 없으면 '🖼️ 그림 n'), 펼치면 글 아래 그림·파일(notes/SharedAttachments).
+//   💬 대화로(P19-2 ■3) = 받은 쪽지의 보낸 사람과 1:1 대화(그 쪽지의 그룹을 연 곳으로).
 import { useEffect, useRef, useState } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import type { WindowProps } from '../../app/windows';
@@ -19,6 +20,8 @@ import SharedAttachments from '../notes/SharedAttachments';
 import MailCompose, { type ComposeAsk } from './MailCompose';
 import type { MailParams, MailTabId } from './open';
 import { useTabTarget } from '../../app/keys';
+import { dmPairId } from '../../domain/chat';
+import { openChat } from '../chat/open';
 
 type Item = MailIn | MailSent;
 const isIn = (m: Item): m is MailIn => 'from' in m;
@@ -42,9 +45,11 @@ interface RowProps {
   onToggle: () => void;
   onDelete: () => void;
   onReply?: (m: MailIn) => void;
+  /** 💬 대화로 - 보낸 사람과 1:1 (받은 쪽지만) */
+  onChat?: (m: MailIn) => void;
 }
 
-function MailRow({ m, now, open, onToggle, onDelete, onReply }: RowProps) {
+function MailRow({ m, now, open, onToggle, onDelete, onReply, onChat }: RowProps) {
   const inbox = isIn(m);
   const unread = inbox && m.readAt === null;
   const who = inbox ? m.fromName : `→ ${m.toNames || '받는 사람 없음'}`;
@@ -83,6 +88,11 @@ function MailRow({ m, now, open, onToggle, onDelete, onReply }: RowProps) {
             {inbox && onReply && (
               <button type="button" data-mail-reply={m.id} onClick={() => onReply(m)} className="rounded-lg px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 cursor-pointer">
                 ↩ 답장
+              </button>
+            )}
+            {inbox && onChat && (
+              <button type="button" data-mail-chat={m.id} onClick={() => onChat(m)} className="rounded-lg px-2 py-1 text-xs font-bold text-primary hover:bg-primary/10 cursor-pointer">
+                💬 대화로
               </button>
             )}
             <button type="button" data-mail-delete={m.id} onClick={onDelete} className="rounded-lg px-2 py-1 text-xs font-bold text-slate-500 hover:bg-red-50 hover:text-red-600 cursor-pointer">
@@ -243,6 +253,7 @@ function MailList({ box, active, focus, bump = 0, onReply }: ListProps) {
                   open={open === m.id}
                   onToggle={() => toggle(m)}
                   onReply={onReply}
+                  onChat={uid ? (x) => openChat({ room: dmPairId(uid, x.from), sid: x.sid }) : undefined}
                   onDelete={() => {
                     if (!uid) return;
                     setOpen(null);

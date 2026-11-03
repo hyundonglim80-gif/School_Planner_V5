@@ -65,7 +65,8 @@ export type ShortcutId =
   | 'undo'
   | 'closePanel'
   | 'popOut'
-  | 'mail';
+  | 'mail'
+  | 'chat';
 
 /**
  * 창 안의 탭 (P18-2): '<창 id>:<탭 id>' (예 'settings:notify' = 환경설정 알림 탭). 단축키 id에는 ':'가 없어 갈린다.
@@ -157,6 +158,8 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'group', label: '공유 그룹 (계정 칸)', group: '메뉴 열기', def: b('') },
   // ✉ 쪽지 (P15-2 - 머리줄 ✉와 같다)
   { id: 'mail', label: '쪽지 (같은 그룹 선생님)', group: '메뉴 열기', def: b('') },
+  // 💬 대화 (P19-2 - 머리줄 💬와 같다)
+  { id: 'chat', label: '대화 (같은 그룹 선생님)', group: '메뉴 열기', def: b('') },
   { id: 'timetable', label: '시간표', group: '메뉴 열기', def: b('') },
   { id: 'progress', label: '진도 관리', group: '메뉴 열기', def: b('') },
   { id: 'weeklyGuide', label: '주간학습안내', group: '메뉴 열기', def: b('') },

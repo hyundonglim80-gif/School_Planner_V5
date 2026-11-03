@@ -4,10 +4,12 @@
 //      맨 아래면 따라 내려감) · 1:1 '1'(상대가 읽기 전 내 글) · ← 목록 · 끊긴 채 열면 '인터넷이 필요합니다' → 이어지면 글
 //   ■2 보내기: Enter = 보내기(칸이 비고 서버 글·방 미리 보기) · Shift+Enter 줄 바꿈 · Ctrl+S는 보내지 않음 · 쓰던 글은 닫았다 열면 칸에 ·
 //      캡처 Ctrl+V = 드라이브(흉내) → 첨부만 보내기('📎 1') · '+ 새 대화' → 사람 = 새 1:1(방 문서는 첫 글이) · 1:1 그룹 옮기기(방 그룹을 나가면 함께 든 그룹으로)
+//   ■3 읽음·여는 길: 본 방은 읽음(내 읽음 문서) · 머리줄 💬 n · 새 글 안내 '보기' → 그 방 · 보는 방은 안내 없이 2초 모아 읽음 · 상대가 읽으면 '1'이 사라짐 ·
+//      계정 칸 · 단축키 chat · 머리줄 💬 · 그룹 창 '💬 그룹 대화'·구성원 💬 · 받은 쪽지 '💬 대화로'
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
 //   대화는 지우기 규칙이 없다 - 끝에 관리자 지우기. npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-chat.mjs
-import { collection, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -295,7 +297,7 @@ try {
   r.section("■1 1:1 '1' · ← 목록");
   await page.locator(sel('chat-back')).click();
   r.check(await waitFor(page.locator(sel('chat-window', 'list')), 3000), '← 목록');
-  r.check(await waitFor(allRow.locator(sel('chat-unread-count', OLD + 2)), 8000), `새 글 둘을 더해 다시 셈 (${OLD + 2})`);
+  r.check(await waitFor(async () => (await allRow.getAttribute('data-chat-unread')) === 'no', 8000), '방을 본 동안 온 글까지 읽음 → 목록 줄 안 읽음 아님');
   await dmRow.click();
   r.check(await waitFor(page.locator(sel('chat-msgs', 3)), 8000), '1:1 방 - 글 셋');
   r.check(((await page.locator(sel('chat-room-title')).textContent()) ?? '').includes('이점검'), '방 머리 = 상대 이름');
@@ -381,6 +383,73 @@ try {
   await page.locator(sel('chat-input')).press('Enter');
   const moved = await serverUntil(() => admin.get(`v5Dm/${PAIR}`), (d) => d?.lastText === '그룹 옮긴 글');
   r.check(moved?.sid === SID, `방 그룹을 나갔으면 함께 든 그룹으로 옮겨 보낸다 (sid ${moved?.sid})`);
+
+  r.section('■3 머리줄 💬 · 읽음 · 새 글 안내');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  const head = page.locator(sel('header-chat'));
+  r.check(await waitFor(head, 5000), '든 그룹이 있으면 머리줄 💬');
+  r.check(await waitFor(async () => (await head.getAttribute('data-header-chat')) === '0', 8000), `본 방은 읽음 → 💬 0 (${await head.getAttribute('data-header-chat')})`);
+  const myReads = async () => (await getDoc(doc(em.db, 'v5ChatReads', uidA))).data()?.rooms?.[ALL_KEY];
+  r.check(!!(await myReads()), '그룹 방 읽음 = 내 읽음 문서 한 칸 (서버 시각)');
+  const n3 = await sendAsB('안내 점검 글');
+  const notice = page.locator(sel('toast'), { hasText: `이점검 (${GROUP}): 안내 점검 글` });
+  r.check(await waitFor(notice, 8000), `새 글 → 안내 '💬 이점검 (${GROUP}): …'`);
+  r.check(await waitFor(async () => (await head.getAttribute('data-header-chat')) === '1', 5000), '💬 1');
+  await notice.locator(sel('toast-action', '보기')).click();
+  r.check(await waitFor(page.locator(sel('chat-msg', n3)), 8000), "안내 '보기' → 그 방, 그 글");
+  r.check(await waitFor(async () => (await head.getAttribute('data-header-chat')) === '0', 5000), '열면 곧바로 읽음 → 💬 0');
+  await page.waitForTimeout(800);
+  const readBefore = (await myReads())?.toMillis?.() ?? 0;
+  const n4 = await sendAsB('보는 중 온 글');
+  r.check(await waitFor(page.locator(sel('chat-msg', n4)), 8000), '보는 방에 새 글');
+  await page.waitForTimeout(1200);
+  r.check((await page.locator(sel('toast'), { hasText: '보는 중 온 글' }).count()) === 0, '보는 방의 새 글은 안내 없음');
+  const readAfter = await serverUntil(async () => (await myReads())?.toMillis?.() ?? 0, (t) => t > readBefore, 8000);
+  r.check(readAfter > readBefore, '보는 동안 온 글은 2초 모아 읽음');
+  r.check((await head.getAttribute('data-header-chat')) === '0', '💬 0 그대로');
+
+  r.section("■3 1:1 '1'이 사라진다");
+  await page.locator(sel('chat-back')).click();
+  await page.locator(sel('chat-room', PAIR)).click();
+  const lastMine = page.locator(`${sel('chat-mine', 'yes')}:has-text("그룹 옮긴 글")`);
+  r.check(await waitFor(lastMine.locator(sel('chat-unseen')), 5000), "상대가 읽기 전 '1'");
+  await updateDoc(doc(emB.db, 'v5Dm', PAIR), { [`reads.${uidB}`]: serverTimestamp() });
+  r.check(await waitFor(async () => (await lastMine.locator(sel('chat-unseen')).count()) === 0, 8000), "상대가 읽으면 '1'이 사라진다");
+
+  r.section('■3 여는 길 - 계정 칸 · 단축키 · 그룹 창 · 받은 쪽지');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.locator(sel('account')).click();
+  await page.locator(sel('account-chat')).click();
+  r.check(await waitFor(page.locator(sel('chat-window', 'list')), 5000), "계정 칸 '💬 대화' → 대화 창");
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.runShortcut('chat'));
+  r.check(await waitFor(page.locator(sel('chat-window')), 5000), "단축키 '대화'(chat) → 대화 창");
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await head.click();
+  r.check(await waitFor(page.locator(sel('chat-window')), 5000), '머리줄 💬 → 대화 창');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.openWindow('group'));
+  await page.locator(sel('group-chat', SID)).click();
+  r.check(await waitFor(page.locator(sel('chat-room-view', ALL_KEY)), 5000), "그룹 창 '💬 그룹 대화' → 그룹 전체 방");
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.openWindow('group'));
+  await page.locator(`${sel('group-row', SID)} ${sel('group-dm', uidB)}`).click();
+  r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 5000), '그룹 창 구성원 💬 → 그 사람과 1:1');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  const mailId = doc(collectionRef()).id;
+  const mailCommon = { sid: SID, groupName: GROUP, to: [uidA], toNames: '김점검', text: '대화로 점검 쪽지', at: serverTimestamp(), replyTo: null, expireAt: Timestamp.fromMillis(Date.now() + YEAR), v: 1 };
+  const mb = writeBatch(emB.db);
+  mb.set(doc(emB.db, 'v5Mail', uidA, 'mailIn', mailId), { from: uidB, fromName: '이점검', ...mailCommon, readAt: null });
+  mb.set(doc(emB.db, 'v5Mail', uidB, 'mailSent', mailId), mailCommon);
+  await mb.commit();
+  undo.add(async () => {
+    await deleteDoc(doc(em.db, 'v5Mail', uidA, 'mailIn', mailId)).catch(() => {});
+    await deleteDoc(doc(emB.db, 'v5Mail', uidB, 'mailSent', mailId)).catch(() => {});
+  });
+  await page.evaluate((id) => window.sp5.openWindow('mail', { id }), mailId);
+  r.check(await waitFor(page.locator(sel('mail-chat', mailId)), 8000), "받은 쪽지 펼침에 '💬 대화로'");
+  await page.locator(sel('mail-chat', mailId)).click();
+  r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 5000), "'💬 대화로' → 보낸 사람과 1:1");
 
   r.check(A.errors.length === 0, `페이지 오류 없음 ${A.errors.slice(0, 2).join(' / ')}`);
 } catch (e) {

@@ -16,6 +16,7 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { POPOUT } from '../../ui/popout';
 import ChatRoomView from './ChatRoomView';
 import NewChat from './NewChat';
+import { useChatView } from './view';
 import type { ChatParams } from './open';
 import { personName, useGroupPeople, type GroupPeople } from './people';
 
@@ -238,6 +239,12 @@ export default function ChatWindow({ params, close, raise }: WindowProps<ChatPar
     setShownFor(uid);
     setOpen(null);
   }
+
+  // 새 글 안내가 보는 것 - 지금 그린 방(목록이면 '')
+  useEffect(() => {
+    useChatView.setState({ room: open ?? '' });
+    return () => useChatView.setState({ room: null });
+  }, [open]);
 
   const head = open && uid ? roomTitle(open, room, uid, groups, people) : null;
 

@@ -8,6 +8,7 @@ import { registerWindow, resetWindowsForTest, useWindows } from './windows';
 import * as toast from './toast';
 import { useSession } from '../data/session';
 import { useMailStore } from '../data/mailStore';
+import { useChatStore } from '../data/chatStore';
 import { useMySpaces, useSpaceChoice, useSpaceOverlay } from '../data/spaceChoice';
 import { logout } from '../features/auth/login';
 
@@ -178,5 +179,34 @@ describe('머리줄 ✉ 쪽지 (P15-2 ■3)', () => {
     act(() => useMySpaces.setState({ groups: [], loaded: true }));
     expect(btn()).not.toBeNull();
     act(() => useMailStore.setState({ unread: 0, ready: false }));
+  });
+});
+
+describe('머리줄 💬 대화 (P19-2 ■3)', () => {
+  it('든 그룹이 없으면 없다 · 있으면 늘 · 안 읽은 방 수(나간 그룹 방은 빼고) · 그룹을 나와도 안 읽은 1:1이 있으면', () => {
+    const group = { id: 'g_1', name: '협의회', ownerId: 'u1', members: { u1: 'owner' as const } };
+    const room = (key: string, kind: 'all' | 'dm', sid: string) => ({
+      key, kind, sid, name: '', members: [], names: {}, lastId: 'm', lastAt: 1000, lastFrom: 'u2', lastFromName: '이', lastText: '안녕', muted: [], reads: {},
+    });
+    act(() => {
+      useMySpaces.setState({ groups: [], loaded: true });
+      useChatStore.setState({ rooms: {}, reads: {}, ready: true });
+    });
+    const { container } = render(<Header />);
+    const btn = () => container.querySelector<HTMLElement>('[data-header-chat]');
+    expect(btn()).toBeNull();
+    act(() => useMySpaces.setState({ groups: [group], loaded: true }));
+    expect(btn()?.dataset.headerChat).toBe('0');
+    act(() => useChatStore.setState({ rooms: { 'g_1~all': room('g_1~all', 'all', 'g_1'), 'g_9~all': room('g_9~all', 'all', 'g_9') }, reads: {}, ready: true }));
+    expect(container.querySelector('[data-header-chat-count]')).toHaveTextContent('1');
+    expect(btn()?.getAttribute('aria-label')).toBe('대화 - 안 읽은 대화 1개');
+    act(() => useChatStore.setState({ reads: { 'g_1~all': 2000 } }));
+    expect(container.querySelector('[data-header-chat-count]')).toBeNull();
+    act(() => {
+      useMySpaces.setState({ groups: [], loaded: true });
+      useChatStore.setState({ rooms: { d_u1_u2: room('d_u1_u2', 'dm', 'g_1') } });
+    });
+    expect(btn()?.dataset.headerChat).toBe('1');
+    act(() => useChatStore.setState({ rooms: {}, reads: {}, ready: false }));
   });
 });

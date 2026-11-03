@@ -242,6 +242,21 @@ export function unreadRoomKeys(rooms: readonly ChatRoom[], me: string, groupRead
   return rooms.filter((r) => isRoomUnread(r, me, myReadOf(r, me, groupReads))).map((r) => r.key);
 }
 
+/** 머리줄 💬 n - 안 읽은 방 수. 그룹 방은 지금 든 그룹 것만(나간 그룹의 방은 듣기가 끊길 때까지 store에 남는다), 1:1은 모두. 🔕 방도 센다 */
+export function unreadRoomCount(rooms: readonly ChatRoom[], me: string, groupReads: Readonly<Record<string, number>>, groupIds: readonly string[]): number {
+  return unreadRoomKeys(
+    rooms.filter((r) => r.kind === 'dm' || groupIds.includes(r.sid)),
+    me,
+    groupReads,
+  ).length;
+}
+
+/** 새 글 안내 - '💬 이점검: 안녕' · 그룹 방은 '💬 이점검 (4학년 협의회): 안녕' · 고른 사람 방은 방 이름 */
+export function chatNotice(room: ChatRoom, groupName: string): string {
+  const where = room.kind === 'all' ? groupName : room.kind === 'room' ? room.name || groupName : '';
+  return `💬 ${room.lastFromName}${where ? ` (${where})` : ''}: ${room.lastText || '지운 글'}`;
+}
+
 /** 방 목록 차례 - 마지막 글이 최근인 방부터(막 보낸 방 = 맨 위) */
 export function sortRooms(rooms: readonly ChatRoom[]): ChatRoom[] {
   const at = (r: ChatRoom) => r.lastAt ?? Number.MAX_SAFE_INTEGER;

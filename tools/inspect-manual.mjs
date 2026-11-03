@@ -725,8 +725,8 @@ try {
 
   // 대화 (P19-2) - 주고받기·방은 tools/inspect-chat.mjs(두 계정)
   await topic('chat', async () => {
-    await win('chat');
-    r.check(await has(sel('chat-window', 'list')), '💬 대화 창 - 목록');
+    await shortcut('chat');
+    r.check(await has(sel('chat-window', 'list')), "단축키 '대화' → 💬 대화 창 - 목록");
     r.check((await count(sel('chat-list'))) + (await count(sel('chat-no-group'))) === 1, '1:1·그룹 묶음 목록 (그룹이 없으면 👥 공유 그룹 안내)');
   });
 

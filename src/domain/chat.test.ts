@@ -4,6 +4,7 @@ import {
   CHAT_RUN_MS,
   chatCountLabel,
   chatExpireAt,
+  chatNotice,
   chatParamOf,
   chatPreview,
   chatRows,
@@ -26,6 +27,7 @@ import {
   roomPreview,
   sortRooms,
   stripChatParam,
+  unreadRoomCount,
   unreadRoomKeys,
   unseenByOther,
   type ChatMsg,
@@ -229,6 +231,25 @@ describe('글 줄 - 날짜 나눔·잇단 글', () => {
       msg({ id: '6', from: 'b', at: null }),
     ]);
     expect(rows.map((r) => r.time)).toEqual([false, true, true, false, true, true]);
+  });
+});
+
+describe('머리줄 💬 n · 새 글 안내', () => {
+  it('안 읽은 방 수 - 나간 그룹 방은 빼고 1:1은 모두, 🔕도 센다', () => {
+    const rooms = [
+      room({ key: 'g_G~all', sid: 'g_G' }),
+      room({ key: 'g_G~r_1', kind: 'room', sid: 'g_G', muted: ['a'] }),
+      room({ key: 'g_OLD~all', sid: 'g_OLD' }),
+      room({ key: 'd_a_b', kind: 'dm', sid: 'g_OLD' }),
+      room({ key: 'g_G~r_2', kind: 'room', sid: 'g_G', lastFrom: 'a' }),
+    ];
+    expect(unreadRoomCount(rooms, 'a', {}, ['g_G'])).toBe(3);
+    expect(unreadRoomCount(rooms, 'a', { 'g_G~all': 2000 }, ['g_G'])).toBe(2);
+  });
+  it('안내 글 - 그룹 방은 그룹 이름, 고른 사람 방은 방 이름, 1:1은 이름만', () => {
+    expect(chatNotice(room({ lastFromName: '이점검', lastText: '안녕' }), '협의회')).toBe('💬 이점검 (협의회): 안녕');
+    expect(chatNotice(room({ kind: 'room', name: '체육', lastFromName: '이점검', lastText: '📎 1' }), '협의회')).toBe('💬 이점검 (체육): 📎 1');
+    expect(chatNotice(room({ kind: 'dm', key: 'd_a_b', lastFromName: '이점검', lastText: '네' }), '협의회')).toBe('💬 이점검: 네');
   });
 });
 
