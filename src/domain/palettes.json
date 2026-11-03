@@ -7,6 +7,52 @@
       "emoji": "🌲",
       "accent": { "hue": 135, "chroma": 1 },
       "neutral": { "hue": 150, "chroma": 0.7 }
+    },
+    {
+      "id": "cherry",
+      "name": "벚꽃",
+      "emoji": "🌸",
+      "accent": { "hue": 340, "chroma": 1 },
+      "neutral": { "hue": 345, "chroma": 0.5 }
+    },
+    {
+      "id": "lavender",
+      "name": "라벤더",
+      "emoji": "💜",
+      "accent": { "hue": 300, "chroma": 0.5 },
+      "neutral": { "hue": 300, "chroma": 0.6 }
+    },
+    {
+      "id": "calm",
+      "name": "차분한 회색",
+      "emoji": "🌫️",
+      "accent": { "hue": 250, "chroma": 0.3 },
+      "neutral": { "hue": 250, "chroma": 0.35 }
+    },
+    {
+      "id": "pastel",
+      "name": "파스텔",
+      "emoji": "🍦",
+      "accent": { "hue": 275, "chroma": 0.55 },
+      "neutral": { "hue": 85, "chroma": 0.6 },
+      "body": "oklch(97.5% 0.014 85)"
+    },
+    {
+      "id": "paper",
+      "name": "종이",
+      "emoji": "📜",
+      "accent": { "hue": 55, "chroma": 0.35 },
+      "neutral": { "hue": 70, "chroma": 0.9 },
+      "body": "oklch(97.3% 0.02 85)"
+    },
+    {
+      "id": "cyber",
+      "name": "사이버",
+      "emoji": "🌃",
+      "accent": { "hue": 330, "chroma": 1 },
+      "neutral": { "hue": 200, "chroma": 1.2 },
+      "darkSurfaceL": 0.18,
+      "darkBodyL": 0.13
     }
   ]
 }

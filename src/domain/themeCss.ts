@@ -185,9 +185,9 @@ export interface PaletteDef {
   accent?: { hue: number; chroma: number };
   /** 회색(slate)·어두운 바탕의 빛깔 - 밝기 그대로, 채도에 chroma를 곱한다 */
   neutral?: { hue: number; chroma: number };
-  /** 밝게: 화면 바탕·카드(bg-white) 바탕 'oklch(...)' (없으면 물들인 slate-50·흰색) */
+  /** 밝게: 화면 바탕 'oklch(...)' (없으면 물들인 slate-50). 카드(bg-white)는 늘 흰색 - --color-white를 바꾸면 흰 글자를 되돌리는
+   *  규칙이 sm:text-current 같은 것까지 이겨 밝은 칩에 흰 글자가 찍혔다(P20-1 ■3 종이 - 즐겨찾기 칩 숫자 대비 1) */
   body?: string;
-  card?: string;
   /** 어둡게: 카드·화면 바탕 밝기 (0~1, 없으면 기본 23%·18%) */
   darkSurfaceL?: number;
   darkBodyL?: number;
@@ -265,7 +265,7 @@ export function paletteColors(p: PaletteDef, dark: boolean): { accent: Lch; body
   return {
     accent,
     body: p.body ? parseOklch(p.body) : p.neutral ? tint(SLATE_50, p) : hexLch(LIGHT_BASE.body),
-    card: p.card ? parseOklch(p.card) : hexLch(LIGHT_BASE.card),
+    card: hexLch(LIGHT_BASE.card),
   };
 }
 
@@ -287,10 +287,6 @@ function paletteBlock(orig: ColorTable, p: PaletteDef): string {
   const lv: string[] = [];
   lv.push(`    --color-primary: ${lchCss(accentPrimary(p))};`);
   lv.push(`    --color-bg-body: ${lchCss(light.body)};`);
-  if (p.card) {
-    lv.push(`    --color-white: ${p.card};`);
-    lv.push(`    --color-bg-card: ${p.card};`);
-  }
   if (p.neutral) {
     lv.push(`    --color-bg-hover: ${lchCss(tint(orig.slate['100'], p))};`);
     lv.push(`    --color-border: ${lchCss(tint(orig.slate['300'], p))};`);
@@ -338,7 +334,7 @@ ${lv.join('\n')}
 ${dv.join('\n')}
   }
 ${keep.join('\n')}
-${p.card ? `${whiteRules(sel).join('\n')}\n` : ''}`;
+`;
 }
 
 export function buildThemeCss(themeCss: string, file: PaletteFile): string {
