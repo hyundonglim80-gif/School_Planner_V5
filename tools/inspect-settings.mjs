@@ -6,6 +6,8 @@
 //   5) 계정 칸: 사진을 누르면 이름·메일·로그아웃 (■3에서 더한다).
 //   6) 알림 소리 길이(P10-1): 계정(settings/common)에 올라가고 다른 창이 따라온다, 처음 값(10초)이면 문서에서 빠진다.
 //   7) 개발자 탭(P14-2): 개발자 계정(?as=5 - npm run seed)에만 보인다.
+//   8) 색 테마(P20-1): 보기 탭 견본 칩 → 곧바로 html data-palette·상태 표시줄 빛깔 → settings/common → 다른 기기·같은 기기의 다른 창(↗ 새 창)이 따라온다 ·
+//      앱이 뜨기 전(index.html 스크립트)에 붙인다 · 기본으로 되돌리면 떼고 문서에서 빠진다.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-settings.mjs
 // 에뮬레이터 teacher 계정의 V5 설정 문서(spaces/u_{uid}/settings/pc)를 쓴다 - 처음 것을 읽어 두고 끝에 되돌린다.
@@ -94,6 +96,35 @@ try {
   await a.page.reload();
   await a.page.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
   r.check(await waitFor(a.page.locator(sel('screen', 'week'))), '새로고침은 보던 화면(주간) 그대로');
+
+  r.section('색 테마 (P20-1)');
+  const palOf = (p) => p.evaluate(() => document.documentElement.getAttribute('data-palette'));
+  const twin = await a.ctx.newPage(); // 같은 기기의 다른 창 (↗ 새 창처럼 - 같은 기기 저장소)
+  await open(twin, '#/day/2026-10-08');
+  await a.page.evaluate(() => window.sp5.openWindow('settings'));
+  await waitFor(a.page.locator(sel('settings-window')));
+  await a.page.click(sel('palette-pick', 'forest'));
+  r.check((await palOf(a.page)) === 'forest', '누르는 즉시 화면에 (html data-palette)');
+  r.check((await a.page.getAttribute(sel('palette-pick', 'forest'), 'aria-pressed')) === 'true', '고른 칩이 눌린 것');
+  const meta = await a.page.evaluate(() => document.querySelector('meta[name="theme-color"]').content);
+  r.check(meta !== '#2563eb' && meta !== '#0f1522', `상태 표시줄 빛깔도 테마 (${meta})`);
+  const pal = await serverUntil(serverCommon, (d) => d.palette === 'forest');
+  r.check(pal.palette === 'forest', 'settings/common에 올라간다');
+  r.check(await waitFor(async () => (await palOf(b.page)) === 'forest', 8000), '다른 기기(같은 계정)도 따라온다');
+  r.check(await waitFor(async () => (await palOf(twin)) === 'forest', 3000), '같은 기기의 다른 창(↗ 새 창)도 곧바로 (storage)');
+  // 처음 그리기: 앱 모듈을 막아도 index.html 스크립트가 붙인다 (기본 파랑이 번쩍이지 않게)
+  const bare = await a.ctx.newPage();
+  await bare.route(/\/src\/main\.tsx/, (route) => route.abort());
+  await bare.goto(SITE);
+  r.check((await palOf(bare)) === 'forest', '앱이 뜨기 전(index.html 스크립트)에 붙인다');
+  await bare.close();
+  await a.page.click(sel('palette-pick', 'default'));
+  r.check((await palOf(a.page)) === null, '기본으로 되돌리면 뗀다');
+  const palBack = await serverUntil(serverCommon, (d) => d.palette === undefined);
+  r.check(palBack.palette === undefined, '기본은 문서에서 빠진다');
+  r.check(await waitFor(async () => (await palOf(twin)) === null, 3000), '다른 창도 기본으로');
+  await twin.close();
+  await a.page.keyboard.press('Escape');
 
   r.section('계정 칸');
   await a.page.click(sel('account'));

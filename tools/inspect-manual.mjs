@@ -760,6 +760,7 @@ try {
   await topic('settings', async () => {
     await q(sel('more-menu')).click();
     await q(sel('menu-item', 'settings')).click();
+    await has(sel('settings-tab', 'view')); // 창은 열 때 싣는다 - 뜬 뒤에 센다
     const tabs = await page.locator(sel('settings-tab')).evaluateAll((els) => els.map((e) => e.getAttribute('data-settings-tab')));
     r.check(tabs.join(',') === 'view,notify,school,shortcuts,app', `탭 다섯 (${tabs.join('·')})`);
   });

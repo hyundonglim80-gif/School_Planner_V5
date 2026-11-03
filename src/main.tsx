@@ -4,6 +4,7 @@ import './index.css'
 import './theme.css'
 import App from './app/App.tsx'
 import { applyTheme, watchSystemTheme } from './app/theme'
+import { watchPalette } from './app/palette'
 import { startInstall } from './app/install'
 import { flushPendingToast } from './app/toast'
 import { auth } from './data/firebase'
@@ -33,6 +34,8 @@ autoSignIn(auth)
 // 화면 밝기 (index.html이 먼저 붙인 것을 이어받고, '시스템 따라'면 기기 설정을 따라간다)
 applyTheme()
 watchSystemTheme()
+// 색 테마 (계정 값을 따르고, 받으면 이 기기 사본·화면을 바꾼다 - P20-1)
+watchPalette()
 // 새로고침 앞에서 맡겨 둔 안내 (백업 복원 등)
 flushPendingToast()
 // 되돌리기 Ctrl+Z(글 칸 밖에서) - 지금 공간의 마지막 쓰기. 로그인한 사람이 바뀌면 더미를 비운다

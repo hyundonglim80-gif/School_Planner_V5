@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P20 테마 계획**(11-03 - 6장 'P20' 절, 결정은 5장 'P20 …'). **P20-1 ■0 끝**(11-03 - P20 절 'P20-1 ■0 확인 결과'). **P20-1 ■1 끝**(11-03 - theme.css·cobalt·기본·숲). 다음 = **P20-1 ■2**(app/palette.ts 적용·저장 · index.html `sp5_palette` · prefs common `palette` · ↗ 새 창 storage · ViewTab 🎨 색 테마). 세션 셋: P20-1 색 테마 8개 · P20-2 보기 쉽게(고대비·색약 배려·부드러운 어둡게) · P20-3 꾸미기(계절·동물 그림). 배포·👤 부탁 없음(서버·규칙·함수를 바꾸지 않는다).
+**P20 테마 계획**(11-03 - 6장 'P20' 절, 결정은 5장 'P20 …'). **P20-1 ■0 끝**(11-03 - P20 절 'P20-1 ■0 확인 결과'). **P20-1 ■1·■2 끝**(11-03 - theme.css·cobalt·기본·숲 · 적용·저장·보기 탭 🎨 색 테마). 다음 = **P20-1 ■3**(나머지 여섯 테마 값 · tools/inspect-theme.mjs 16벌 대비). 세션 셋: P20-1 색 테마 8개 · P20-2 보기 쉽게(고대비·색약 배려·부드러운 어둡게) · P20-3 꾸미기(계절·동물 그림). 배포·👤 부탁 없음(서버·규칙·함수를 바꾸지 않는다).
 **P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). **P19-1 끝**(11-03 - 규칙·자료 층·함수 코드, 운영 규칙·TTL 배포). **P19-2 끝**(11-03 - 💬 대화 창 목록·방·보내기·'+ 새 대화'·읽음·머리줄 💬 n·여는 길). **P19-3 끝**(11-03 - sw.js 'chat' 갈래·?chat=·알림 누르기 · 방 머리 🔔/🔕 · 설명서 · 함수 v5ChatPush·v5DmPush 배포). **P19-4 끝**(11-03 - '+ 새 대화' 고르기·방 만들기·⋮ 구성원·이름·더하기·나가기 · 내 글 지우기 🗑️·길게 누르기). **P19 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터.** 배포·👤 부탁 없음(규칙·함수는 P19-1·P19-3에 나가 있다).
 **P18-2 창 안 탭 단축키 끝**(11-02 main - '⌨️ 단축키 설정' 띠에서 창 안의 탭을 누르면 '창 → 탭' · 키 = 그 창을 그 탭으로 · 단축키 탭·설명서 '내가 만든 단축키'). P18 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터. 배포·👤 부탁 없음.
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
@@ -2599,8 +2599,11 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   뜻 파랑 15곳 → `cobalt`(index.css @theme 11단 + 어두운 값) · `spaceTone` `--sp-*` · 테마 둘(기본·숲)로 길을 연다(data-palette를 손으로 붙여 크롬에서 본다) · DESIGN·MAP의 dark.css 줄 고침.
   → 11-03: TS로 옮긴 생성기 = 옛 dark.css diff 0(줄 끝만 CRLF) → 옅은 단계 섞기를 `var(--sp5-dark-surface)`로(크롬에서 기본 밝게·어둡게·인쇄 쪽 변수 247개 계산값이 옛것과 모두 같음) ·
     숲 = 강조 H 135 · 회색 H 150 × 0.7(110은 어둡게가 올리브·갈색) · 공간 색 emerald→cobalt·lime→pink · 강조는 흰 글자 4.5:1까지 밝기를 낮춘다 · 시험 themeCss(파일=JSON·ΔE·대비·sRGB)·palette · DESIGN 7-5·10장 11 · MAP.
-- [ ] ■2 적용·저장: `app/palette.ts`(applyPalette·data-palette·theme-color·바뀜 이벤트) · index.html 스크립트 `sp5_palette` · prefs common `palette`(oneOfField - 받으면 applyPalette) · ↗ 새 창 맞추기 ·
+- [x] ■2 적용·저장: `app/palette.ts`(applyPalette·data-palette·theme-color·바뀜 이벤트) · index.html 스크립트 `sp5_palette` · prefs common `palette`(oneOfField - 받으면 applyPalette) · ↗ 새 창 맞추기 ·
   ViewTab '🎨 색 테마' 견본 칩(`data-palette-pick`) + 탭 안내('색 테마는 PC·휴대폰 같게') · 시험(prefs·ViewTab·palette).
+  → 11-03: 이 기기 사본 읽기·상태 표시줄 빛깔은 `app/theme`(`readPaletteId`·`updateThemeColor` - 단축키 keys가 theme.ts를 부르므로 계정 설정을 끌어오지 않게), 고르기·맞추기는 `app/palette`(`applyPalette`·`setPalette`·`watchPalette`) ·
+    common `palette`는 모르는 id도 그대로 둔다(새 테마를 고른 계정을 옛 앱이 기본으로 되돌려 올리지 않게 - 그리기만 기본) · 밝기·테마 둘 다 storage 이벤트로 다른 창(↗ 새 창)을 맞춘다 ·
+    inspect-settings '색 테마' 묶음(즉시·common·다른 기기·같은 기기 다른 창·앱 모듈을 막아도 index.html이 붙임·기본이면 문서에서 빠짐) 통과.
 - [ ] ■3 나머지 여섯(벚꽃·라벤더·차분한 회색·파스텔·종이·사이버) 값 · **`tools/inspect-theme.mjs`**(새 - 테마 8 × 밝게/어둡게: 화면 넷(하루·주간·월간·메모) + 창 둘(환경설정·일정 칸)에서 글자 대비 4.5 · 흰 글자 on 강조 4.5 ·
   뜻 색 칩(이월·완료·삭제)·겹친 공간 색이 강조와 구별되나 · 인쇄 쪽 = 기본 · `SHOTS=`면 그림) - 떨어지는 값은 palettes.json을 고쳐 다시.
 - [ ] ■4 설명서 settings '보기'(🎨 색 테마 - 계정에, PC·휴대폰 같게) · start(처음 할 일 한 줄) · MENU 3-6 · DESIGN 4-8(common palette)·175 · MAP · PARITY(V4에 없던 것) · inspect-settings·manual(MATCH=settings) · 세션 끝 정리(1-3).

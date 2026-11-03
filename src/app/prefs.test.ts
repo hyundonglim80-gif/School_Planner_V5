@@ -95,6 +95,18 @@ describe('설정 문서 나누기', () => {
     expect(binding('common').local()).toEqual({ forwardDays: 60 });
   });
 
+  it('common: 색 테마(P20-1)는 계정에 하나 - 모르는 id(새 테마)도 그대로 두고, 이상한 값만 기본', () => {
+    startPrefsSync('u1');
+    binding('common').apply({ palette: 'forest' });
+    expect(useCommonSettings.getState().palette).toBe('forest');
+    expect(binding('common').local()).toEqual({ palette: 'forest' });
+    binding('common').apply({ palette: 'aurora' });
+    expect(useCommonSettings.getState().palette).toBe('aurora');
+    binding('common').apply({ palette: 'Bad id!' });
+    expect(useCommonSettings.getState().palette).toBe('default');
+    expect(binding('common').local()).toEqual({});
+  });
+
   it('시작 화면 고르기에는 마지막 화면 + 화면 여섯', () => {
     expect(STARTUP_SCOPES).toEqual(['last', ...SCOPES]);
   });

@@ -120,6 +120,17 @@ describe('환경설정 창', () => {
     expect(document.querySelector('[data-shortcut-save]')).toBeNull();
   });
 
+  it('보기 🎨 색 테마(P20-1): 견본 칩을 누르면 계정 값이 바뀌고 그 칩이 눌린 것', () => {
+    useCommonSettings.setState({ palette: 'default' });
+    openSettings();
+    expect(q('[data-palette-pick="default"]').getAttribute('aria-pressed')).toBe('true');
+    fireEvent.click(q('[data-palette-pick="forest"]'));
+    expect(useCommonSettings.getState().palette).toBe('forest');
+    expect(q('[data-palette-pick="forest"]').getAttribute('aria-pressed')).toBe('true');
+    expect(q('[data-palette-pick="default"]').getAttribute('aria-pressed')).toBe('false');
+    act(() => useCommonSettings.setState({ palette: 'default' }));
+  });
+
   it('단축키: 키 칸을 누르고 키를 누르면 들어가고, 저장해야 바뀐다', () => {
     openSettings('shortcuts');
     const input = q('[data-shortcut-row="help"] [data-shortcut-key]');

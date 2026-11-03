@@ -5,12 +5,13 @@
 //   pc / mobile : 기기 종류마다. 휴대폰에서 글자를 키우거나 주말을 감춘 것이 PC까지 따라오면 곤란하다(V4).
 //   common      : 계정에 하나. 그 기능을 옮기는 세션이 칸을 더한다(이월 기간 P3-3, 교사 유형 P6-1 …).
 //
-// 넣지 않는 것: 지금 보는 화면·날짜(설정이 아니라 '어디까지 봤나'), 화면 밝기(기기마다 다르게 쓴다 - V4 그대로),
+// 넣지 않는 것: 지금 보는 화면·날짜(설정이 아니라 '어디까지 봤나'), 화면 밝기(기기마다 다르게 쓴다 - V4 그대로. 색 테마는 common - P20-1),
 // 오른쪽 칸 폭(이 기기 화면 크기에 따른다).
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEFAULT_FONT_SCALE, FONT_SCALES, type FontScale } from '../domain/fontScale';
+import { DEFAULT_PALETTE } from '../domain/palette';
 import { readShortcutOverrides, readTabBindings, type ShortcutOverrides, type TabBindings } from '../domain/shortcuts';
 import { readDDayList, type DDay } from '../domain/dday';
 import { DEFAULT_PERIODS, readPeriods, type PeriodDef } from '../domain/periodTimes';
@@ -157,6 +158,8 @@ export interface CommonSettings {
   newYearDone: number;
   /** 앱 안 ⏰ 알림 소리 길이(초 - 0 = 한 번, -1 = 확인할 때까지, 기본 10초 = 3초마다 3번 - P10-1). 기기 알림(서버 푸시) 소리는 기기가 정한다 */
   alarmSound: number;
+  /** 색 테마 id (P20-1 - domain/palettes.json, PC·휴대폰 같게). 화면에 입히는 것은 app/palette(모르는 id는 기본으로 그린다) */
+  palette: string;
 }
 
 export interface PhotoFolderConfig {
@@ -212,6 +215,8 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   autoBackup: customField<AutoBackupSettings>(DEFAULT_AUTO_BACKUP, sanitizeAutoBackup),
   newYearDone: intField(0, 0, 9999),
   alarmSound: oneOfField<number>(DEFAULT_ALARM_SOUND, ALARM_SOUND_SECONDS),
+  // 모르는 id도 그대로 둔다 - 새 테마를 고른 계정을 옛 앱(새 테마를 모른다)이 기본으로 되돌려 올리지 않게
+  palette: customField<string>(DEFAULT_PALETTE, (v) => (typeof v === 'string' && /^[a-z]{1,20}$/.test(v) ? v : undefined)),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */

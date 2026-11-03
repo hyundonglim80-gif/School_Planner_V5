@@ -1,11 +1,14 @@
 // 환경설정 '보기' 탭 (MENU 3-6). 모두 누르는 즉시 바뀐다 - V4는 글자 크기·창 위치·화면 밝기만 즉시, 나머지는 '저장'을 기다렸다.
-// 화면 밝기 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
+// 화면 밝기(이 기기에만)·색 테마(계정에 하나 - PC·휴대폰 같게, P20-1) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
 import { useEffect, useState } from 'react';
 import { FONT_SCALES } from '../../domain/fontScale';
 import { setFontScale, setPopupStyle, useLayoutPrefs, type PopupStyle } from '../../app/layoutPrefs';
 import { setEnableScrollNav, setStartupScope, setToggle, useNav, type StartupScope } from '../../app/nav';
 import { SCREENS } from '../../app/screens';
-import { readThemeMode, setThemeMode, THEME_CHANGED_EVENT, type ThemeMode } from '../../app/theme';
+import { isDarkMode, readThemeMode, setThemeMode, THEME_CHANGED_EVENT, type ThemeMode } from '../../app/theme';
+import { setPalette } from '../../app/palette';
+import { useCommonSettings } from '../../app/prefs';
+import { PALETTES, paletteSwatch, sanitizePalette } from '../../domain/palette';
 import { useShortcutTitle } from '../../app/keys';
 import { Choices, Section, ToggleRow } from './parts';
 
@@ -36,11 +39,13 @@ export default function ViewTab() {
     return () => window.removeEventListener(THEME_CHANGED_EVENT, onChange);
   }, []);
   const withKey = useShortcutTitle();
+  const palette = sanitizePalette(useCommonSettings((s) => s.palette));
+  const dark = isDarkMode(themeMode);
 
   return (
     <div>
       <p className="px-5 pt-4 text-xs text-slate-500 leading-relaxed">
-        이 탭은 고르는 즉시 바뀌고, <strong className="text-slate-700">PC와 휴대폰을 따로</strong> 계정에 저장합니다(화면 밝기는 이 기기에만).
+        이 탭은 고르는 즉시 바뀌고, <strong className="text-slate-700">PC와 휴대폰을 따로</strong> 계정에 저장합니다(화면 밝기는 이 기기에만, 색 테마는 PC·휴대폰 같게).
       </p>
 
       <Section id="display" title="화면 표시" desc="둘째 줄의 주말 / 일정 / 수업 단추와 같은 값입니다.">
@@ -96,6 +101,37 @@ export default function ViewTab() {
           onChange={setThemeMode}
           options={THEME_OPTIONS}
         />
+      </Section>
+
+      {/* 견본 = 그 테마의 바탕 네모 + 강조 동그라미 (지금 밝기의 것) - 누르는 즉시 바뀐다 */}
+      <Section
+        id="palette"
+        title="🎨 색 테마"
+        desc="단추·고른 칸의 강조색과 바탕 빛깔을 바꿉니다. 계정에 저장해 PC와 휴대폰이 같은 테마이고, 화면 밝기와 따로 고릅니다. 토요일 파랑·이월·완료·라벨 색은 그대로, 인쇄는 늘 기본 색입니다."
+      >
+        <div className="flex flex-wrap gap-1.5">
+          {PALETTES.map((p) => {
+            const sw = paletteSwatch(p.id, dark);
+            const on = p.id === palette;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                data-palette-pick={p.id}
+                aria-pressed={on}
+                onClick={() => setPalette(p.id)}
+                className={`flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  on ? 'border-primary ring-2 ring-primary/30 text-slate-800' : 'border-slate-200 text-slate-500 hover:border-slate-400'
+                }`}
+              >
+                <span aria-hidden className="relative w-7 h-5 shrink-0 rounded border border-slate-300" style={{ background: sw.body }}>
+                  <span className="absolute right-0.5 bottom-0.5 w-3 h-3 rounded-full" style={{ background: sw.accent }} />
+                </span>
+                {p.emoji} {p.name}
+              </button>
+            );
+          })}
+        </div>
       </Section>
 
       <Section
