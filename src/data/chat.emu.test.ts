@@ -1,7 +1,7 @@
 // 대화 자료 시험 (에뮬레이터 - `npm run emu` 뒤 `npm run test:data`, P19-1 ■2).
 // 앱 자료 층(data/chat)이 쓰는 모양을 규칙(firestore.rules v5Chat·v5Dm·v5ChatReads)이 받는지: A가 그룹을 만들고 B가 코드로 든 뒤
 // A → 그룹 전체 방 · B 안 읽음 → 수 1 → 읽음 · B → A 1:1 · A 읽음 → B 글 '1' 사라짐 · 50개씩 받기 · 새 글 onNew · 🔕 · 그룹 밖 X는 막힘 ·
-// 고른 사람 방(P19-4 - 첫 글이 만들기 · 이름 · 그룹 밖 사람 더하기 막힘 · 나가기) · 나간 B는 그룹 방이 빠진다.
+// 고른 사람 방(P19-4 - 첫 글이 만들기 · 이름 · 그룹 밖 사람 더하기 막힘 · 나가기) · 내 글 지우기(마지막 글이면 미리 보기도 · 남의 글은 막힘) · 나간 B는 그룹 방이 빠진다.
 // 점검 전용 계정(chattest-a@·chattest-b@ / chattest-x@)에만 쓰고 끝에 지운다(대화는 지우기 규칙이 없다 - 에뮬레이터 관리자 'Bearer owner').
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, signOut } from 'firebase/auth';
@@ -15,6 +15,7 @@ import { createGroup, deleteGroup, joinGroup, leaveGroup } from './spaces';
 import {
   addRoomMembers,
   countUnread,
+  deleteChatMsg,
   leaveRoom,
   loadOlderMsgs,
   markChatJoined,
@@ -243,6 +244,34 @@ describe('대화 (에뮬레이터)', () => {
     await signInAs('a');
     await addRoomMembers(ref, [users.b.uid]);
     expect((await getDoc(doc(db, 'v5Chat', sid, 'chatRooms', roomId))).data()?.members).toEqual({ [users.a.uid]: true, [users.b.uid]: true });
+  });
+
+  it("내 글 지우기 - '지운 글'(빈 글·첨부 없음) · 마지막 글이면 방 미리 보기도 빈 글 · 남의 글은 막힘", async () => {
+    await signInAs('a');
+    const att = { id: 'f1', name: '그림.png', url: 'https://drive.google.com/x', type: 'image/png', driveId: 'D1' };
+    const first = await sendChat({ kind: 'all', sid }, said('a', '지울 앞 글'));
+    track(all(), first);
+    const last = await sendChat({ kind: 'all', sid }, { ...said('a', '지울 마지막 글'), attachments: [att] });
+    track(all(), last);
+    // 앞 글 - 방 미리 보기는 그대로
+    await deleteChatMsg(users.a.uid, all(), first, { lastId: last, lastFrom: users.a.uid });
+    const m1 = (await getDoc(doc(db, 'v5Chat', sid, 'chatRooms', 'all', 'chatMsgs', first))).data()!;
+    expect(m1.text).toBe('');
+    expect(m1.deletedAt).toBeInstanceOf(Timestamp);
+    expect((await getDoc(doc(db, 'v5Chat', sid, 'chatRooms', 'all'))).data()?.lastText).toBe('지울 마지막 글');
+    // 마지막 글(첨부) - 방 미리 보기도
+    await deleteChatMsg(users.a.uid, all(), last, { lastId: last, lastFrom: users.a.uid });
+    const m2 = (await getDoc(doc(db, 'v5Chat', sid, 'chatRooms', 'all', 'chatMsgs', last))).data()!;
+    expect('attachments' in m2).toBe(false);
+    expect((await getDoc(doc(db, 'v5Chat', sid, 'chatRooms', 'all'))).data()).toMatchObject({ lastId: last, lastText: '' });
+    // 두 번 지우기·남의 글 지우기는 막힌다
+    await expect(deleteChatMsg(users.a.uid, all(), last, undefined)).rejects.toThrow(/지우지 못했습니다/);
+    await signInAs('b');
+    const mine = await sendChat({ kind: 'all', sid }, said('b', 'B 글'));
+    track(all(), mine);
+    await signInAs('a');
+    await expect(deleteChatMsg(users.a.uid, all(), mine, undefined)).rejects.toThrow(/지우지 못했습니다/);
+    expect(usePendingWrites.getState().count).toBe(0);
   });
 
   it('그룹을 나간 B - 그룹 방은 빠지고 1:1 지난 글은 남는다 · 들 때 읽음 적기', async () => {

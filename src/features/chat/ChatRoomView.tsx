@@ -15,19 +15,19 @@
 //   - 이 방이 보이면 이 방의 OS 알림(푸시 - P19-3 ■1)을 닫는다(view closeChatNotices).
 //   - 방 머리 🔔/🔕(P19-3 ■2) = 이 방 알림 끄기·켜기(방 muted.<나>) - 방 문서가 있을 때만(글이 없는 그룹 전체·새 1:1은 없음).
 //   - 방 머리 ⋮(P19-4 ■1) = 방 정보(RoomInfo - 구성원 · 고른 사람 방 이름·사람 더하기·나가기).
+//   - 글 줄은 ChatMsgRow - 내 글 지우기(P19-4 ■2 - 마우스를 올리면 🗑️ · 휴대폰 길게 누르기 → 묻기 → '지운 글').
 //   - 새 고른 사람 방('+ 새 대화'에서 여럿 - create)은 1:1처럼 첫 글이 방 문서를 만든다(그 이름·사람 - 첫 보내기에만 싣는다).
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { useShownWindowPick } from '../../app/windows';
-import { loadOlderMsgs, markRoomRead, sendChat, setRoomMuted, watchRoomMsgs, type ChatPage } from '../../data/chat';
+import { deleteChatMsg, loadOlderMsgs, markRoomRead, sendChat, setRoomMuted, watchRoomMsgs, type ChatPage } from '../../data/chat';
 import { useChatStore } from '../../data/chatStore';
 import { useSession } from '../../data/session';
 import type { GroupSpace } from '../../data/spaceChoice';
 import type { Attachment } from '../../data/types';
 import {
   chatRows,
-  chatTime,
   CHAT_PAGE,
   dmOtherOf,
   dmSidOf,
@@ -39,8 +39,8 @@ import {
   type ChatMsg,
   type ChatTarget,
 } from '../../domain/chat';
-import SharedAttachments from '../notes/SharedAttachments';
 import ChatComposer from './ChatComposer';
+import ChatMsgRow from './ChatMsgRow';
 import type { RoomCreate } from './NewChat';
 import RoomInfo from './RoomInfo';
 import { CHAT_WINDOW } from './open';
@@ -271,6 +271,15 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
 
   const rows = useMemo(() => chatRows(msgs), [msgs]);
 
+  // ─── 내 글 지우기 (P19-4 ■2) - 묻고, 기다리지 않는다(끊긴 동안도 곧바로 '지운 글' · 실패는 data/chat이 안내) ───
+  const removeMsg = (msg: ChatMsg) => {
+    if (!ref || !window.confirm("이 글을 지울까요? 이 방 모두에게 '지운 글'로 보이고 되돌릴 수 없습니다.")) return;
+    deleteChatMsg(uid, ref, msg.id, room)
+      // 위로 올려 받은 글(듣기 밖)은 듣기가 바꿔 주지 않는다 - 서버에 닿은 뒤 여기서
+      .then(() => setKept((k) => k.map((m) => (m.id === msg.id ? { ...m, text: '', attachments: [], deleted: true } : m))))
+      .catch(() => {});
+  };
+
   let body: ReactNode;
   if (!ref) body = <Notice data="missing">이 대화를 찾을 수 없습니다.</Notice>;
   else if (status === 'denied') body = <Notice data="denied">이 대화를 볼 수 없습니다. 그룹을 나갔거나 이 대화에서 빠졌습니다.</Notice>;
@@ -313,42 +322,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
                   <span className="rounded-full bg-slate-100 px-2.5 py-0.5">{day}</span>
                 </li>
               )}
-              <li data-chat-msg={msg.id} data-chat-mine={mine ? 'yes' : 'no'} className={`flex ${mine ? 'justify-end' : 'justify-start'} ${head ? 'mt-2' : 'mt-0.5'}`}>
-                <div className={`flex min-w-0 max-w-[85%] flex-col ${mine ? 'items-end' : 'items-start'}`}>
-                  {!mine && head && (
-                    <span data-chat-name className="mb-0.5 px-1 text-2xs font-bold text-slate-500">
-                      {msg.fromName}
-                    </span>
-                  )}
-                  <div className={`flex min-w-0 items-end gap-1 ${mine ? 'flex-row-reverse' : ''}`}>
-                    <div className="flex min-w-0 flex-col gap-1">
-                      {(msg.text || msg.deleted) && (
-                        <p
-                          data-chat-text
-                          className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-1.5 text-sm ${
-                            msg.deleted ? 'italic text-slate-400 bg-slate-50 border border-slate-200' : mine ? 'bg-primary text-white' : 'bg-slate-100 text-slate-800'
-                          }`}
-                        >
-                          {msg.deleted ? '지운 글' : msg.text}
-                        </p>
-                      )}
-                      {msg.attachments.length > 0 && (
-                        <div className="w-60 max-w-full">
-                          <SharedAttachments kind="chat" items={msg.attachments} />
-                        </div>
-                      )}
-                    </div>
-                    <span className={`flex shrink-0 flex-col text-[10px] leading-tight text-slate-400 ${mine ? 'items-end' : 'items-start'}`}>
-                      {unseen && (
-                        <span data-chat-unseen className="font-black text-amber-500" title="상대가 아직 읽지 않았습니다">
-                          1
-                        </span>
-                      )}
-                      {time && <span data-chat-time>{chatTime(msg.at)}</span>}
-                    </span>
-                  </div>
-                </div>
-              </li>
+              <ChatMsgRow msg={msg} mine={mine} head={head} time={time} unseen={unseen} onDelete={mine ? removeMsg : undefined} />
             </Fragment>
           );
         })}

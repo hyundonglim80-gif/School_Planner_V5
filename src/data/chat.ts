@@ -183,6 +183,25 @@ export const addRoomMembers = (ref: ChatRoomRef, uids: readonly string[]) =>
 export const leaveRoom = (uid: string, ref: ChatRoomRef) => updateRoom(ref, { [`members.${uid}`]: deleteField() }, '방에서 나가지 못했습니다.');
 
 /**
+ * 내 글 지우기 (P19-4 ■2) - 글은 남기고 '지운 글'로(deletedAt + 빈 글·첨부 없음 - 모두에게 그 자리에 '지운 글').
+ * 방의 마지막 글이면 같은 묶음에서 방 미리 보기도 빈 글로(규칙이 서로 본다 - 목록·안내 '지운 글'). room = 지금 아는 방(마지막 글 견주기).
+ * 그 사이에 새 글이 와 마지막 글이 바뀌었으면 규칙이 막는다 - 안내하고 던진다(다시 하면 새 방으로 간다).
+ */
+export async function deleteChatMsg(uid: string, ref: ChatRoomRef, msgId: string, room: { lastId: string | null; lastFrom: string } | undefined): Promise<void> {
+  const b = writeBatch(db);
+  b.update(doc(msgsOf(ref), msgId), { deletedAt: serverTimestamp(), text: '', attachments: deleteField() });
+  if (room?.lastId === msgId && room.lastFrom === uid) b.update(roomDoc(ref), { lastText: '' });
+  const done = beginPendingWrite();
+  try {
+    await b.commit();
+  } catch (e) {
+    failWithToast('글을 지우지 못했습니다. 다시 해 보세요.', e);
+  } finally {
+    done();
+  }
+}
+
+/**
  * 내가 든 방을 듣는다 → store. sids = 지금 든 그룹(바뀌면 부르는 쪽이 다시 건다).
  * onNew = 앱을 연 뒤 남이 쓴 새 글이 온 방(처음 받은 것·끊긴 채 받은 것은 빼고). 돌려준 함수로 끊으면 store를 비운다.
  */

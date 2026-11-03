@@ -12,6 +12,8 @@
 //   P19-3 ■2 🔕(방 머리 🔔 → 서버 muted.<나> · 목록 줄 🔕 · 끈 방 새 글은 안내 없음·💬 n에는 듦 · 다시 누르면 켜기)
 //   P19-4 ■1 고른 사람 방('+ 새 대화' 둘 = 방 만들기 3명 · 비운 이름 = 사람 이름 셋 · 첫 글 전 방 문서 없음 · 첫 글이 이름·사람으로 만들고 잇단 둘째 글도 ·
 //      ⋮ 구성원 · 이름 바꾸기 · 그룹을 나간 사람 흐리게 · 나간 사람 다시 더하기 · 나가기(묻기 → 목록에서 빠짐)). teacher3 = C(그룹 구성원만 - 화면 없음)
+//   P19-4 ■2 내 글 지우기(마우스를 올리면 🗑️ · 묻기 '아니오' = 그대로 · '예' = 모두에게 '지운 글'·서버 빈 글 + deletedAt·방 미리 보기 빈 글 → 목록 '나: 지운 글' ·
+//      남의 글에는 🗑️ 없음 · 휴대폰은 🗑️ 없이 길게 누르기 → 묻기 → '지운 글')
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
 //   대화는 지우기 규칙이 없다 - 끝에 관리자 지우기. npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-chat.mjs
@@ -635,6 +637,45 @@ try {
     await page.evaluate(() => window.sp5.closeAllWindows());
   }
 
+  r.section('P19-4 ■2 내 글 지우기');
+  {
+    await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
+    await page.locator(sel('chat-input')).fill('지울 글');
+    await page.locator(sel('chat-input')).press('Enter');
+    const mineRow = page.locator(`${sel('chat-mine', 'yes')}:has-text("지울 글")`).last();
+    await waitFor(mineRow, 8000);
+    const id = (await mineRow.getAttribute('data-chat-msg')) ?? '';
+    const del = page.locator(sel('chat-delete', id));
+    r.check(await waitFor(del, 8000), '서버에 닿은 내 글에 🗑️');
+    r.check((await del.evaluate((el) => getComputedStyle(el).opacity)) === '0', '🗑️는 마우스를 올리기 전에는 숨는다');
+    await mineRow.hover();
+    r.check(await waitFor(async () => (await del.evaluate((el) => getComputedStyle(el).opacity)) === '1', 2000), '글에 마우스를 올리면 🗑️');
+    await shot(page, 'delete-hover');
+    A.dialogs.answer = false;
+    await del.click();
+    r.check(A.dialogs.seen.some((m) => m.includes('지울까요')), '🗑️ = 묻기');
+    await page.waitForTimeout(800);
+    r.check((await serverMsg('지울 글'))?.text === '지울 글' && (await mineRow.textContent()).includes('지울 글'), "'아니오' = 그대로");
+    A.dialogs.answer = true;
+    await del.click();
+    A.dialogs.answer = false;
+    const gone = page.locator(sel('chat-msg', id));
+    r.check(await waitFor(async () => (await gone.locator(sel('chat-text')).textContent()) === '지운 글', 5000), "'예' = 그 자리에 '지운 글'");
+    r.check((await page.locator(sel('chat-delete', id)).count()) === 0, '지운 글에는 🗑️ 없음');
+    const server = await serverUntil(() => admin.get(`v5Chat/${SID}/chatRooms/all/chatMsgs/${id}`), (d) => d?.text === '' && 'deletedAt' in (d ?? {}));
+    r.check(server?.text === '' && 'deletedAt' in (server ?? {}), '서버 - 빈 글 + deletedAt (지우지 않고 자리는 남는다)');
+    const roomAfter = await serverUntil(() => admin.get(`v5Chat/${SID}/chatRooms/all`), (d) => d?.lastText === '');
+    r.check(roomAfter?.lastId === id && roomAfter?.lastText === '', '마지막 글이면 방 미리 보기도 빈 글');
+    await page.locator(sel('chat-back')).click();
+    r.check(await waitFor(async () => (await page.locator(`${sel('chat-room', ALL_KEY)} ${sel('chat-preview')}`).textContent()) === '나: 지운 글', 5000), "목록 줄 '나: 지운 글'");
+    await sendAsB('남의 글');
+    await page.locator(sel('chat-room', ALL_KEY)).click();
+    const theirs = page.locator(`${sel('chat-mine', 'no')}:has-text("남의 글")`).last();
+    r.check(await waitFor(theirs, 8000), '남의 글이 보인다');
+    r.check((await theirs.locator('[data-chat-delete]').count()) === 0, '남의 글에는 🗑️ 없음');
+    await page.evaluate(() => window.sp5.closeAllWindows());
+  }
+
   r.section('■4 휴대폰 390 - 머리줄 ✉·💬 · 방 글 칸');
   {
     const M = await newPage(browser, { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
@@ -665,6 +706,21 @@ try {
     r.check((await M.page.locator(sel('chat-input')).getAttribute('placeholder')) === '글 (➤로 보내기)', "휴대폰 안내 '➤로 보내기'");
     await M.page.locator(sel('chat-send')).tap();
     r.check(await waitFor(M.page.locator(`${sel('chat-mine', 'yes')}:has-text("휴대폰 Enter")`), 8000), '➤ = 보내기');
+    {
+      const row = M.page.locator(`${sel('chat-mine', 'yes')}:has-text("휴대폰 Enter")`).last();
+      const id = (await row.getAttribute('data-chat-msg')) ?? '';
+      await waitFor(M.page.locator(sel('chat-delete', id)), 8000);
+      r.check(!(await M.page.locator(sel('chat-delete', id)).isVisible()), '휴대폰은 🗑️ 없음');
+      const bubble = M.page.locator(`${sel('chat-msg', id)} ${sel('chat-text')}`); // 글이 '지운 글'로 바뀌어도 같은 줄
+      M.dialogs.answer = true;
+      await bubble.dispatchEvent('pointerdown', { pointerType: 'touch', clientX: 5, clientY: 5, isPrimary: true });
+      await M.page.waitForTimeout(700);
+      await bubble.dispatchEvent('pointerup', { pointerType: 'touch' });
+      await bubble.dispatchEvent('click');
+      M.dialogs.answer = false;
+      r.check(M.dialogs.seen.some((m) => m.includes('지울까요')), '휴대폰 길게 누르기 = 묻기');
+      r.check(await waitFor(async () => (await bubble.textContent()) === '지운 글', 5000), "휴대폰 '지운 글'");
+    }
     r.check((await M.page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - 390))) === 0, '방도 넘침 0');
     await shot(M.page, 'mobile-room');
     r.check(M.errors.length === 0, `휴대폰 페이지 오류 없음 ${M.errors.slice(0, 2).join(' / ')}`);
