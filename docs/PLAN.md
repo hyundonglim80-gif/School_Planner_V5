@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P20 테마 계획**(11-03 - 6장 'P20' 절, 결정은 5장 'P20 …'). 다음 = **P20-1 ■0**(색 테마 - 코드 확인·설계 확정, 문서만). 세션 셋: P20-1 색 테마 8개 · P20-2 보기 쉽게(고대비·색약 배려·부드러운 어둡게) · P20-3 꾸미기(계절·동물 그림). 배포·👤 부탁 없음(서버·규칙·함수를 바꾸지 않는다).
+**P20 테마 계획**(11-03 - 6장 'P20' 절, 결정은 5장 'P20 …'). **P20-1 ■0 끝**(11-03 - P20 절 'P20-1 ■0 확인 결과'). 다음 = **P20-1 ■1**(palettes.json·themeCss.ts·gen-theme-css - 지금 dark.css와 diff 0 · 뜻 파랑 → cobalt · 기본·숲). 세션 셋: P20-1 색 테마 8개 · P20-2 보기 쉽게(고대비·색약 배려·부드러운 어둡게) · P20-3 꾸미기(계절·동물 그림). 배포·👤 부탁 없음(서버·규칙·함수를 바꾸지 않는다).
 **P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). **P19-1 끝**(11-03 - 규칙·자료 층·함수 코드, 운영 규칙·TTL 배포). **P19-2 끝**(11-03 - 💬 대화 창 목록·방·보내기·'+ 새 대화'·읽음·머리줄 💬 n·여는 길). **P19-3 끝**(11-03 - sw.js 'chat' 갈래·?chat=·알림 누르기 · 방 머리 🔔/🔕 · 설명서 · 함수 v5ChatPush·v5DmPush 배포). **P19-4 끝**(11-03 - '+ 새 대화' 고르기·방 만들기·⋮ 구성원·이름·더하기·나가기 · 내 글 지우기 🗑️·길게 누르기). **P19 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터.** 배포·👤 부탁 없음(규칙·함수는 P19-1·P19-3에 나가 있다).
 **P18-2 창 안 탭 단축키 끝**(11-02 main - '⌨️ 단축키 설정' 띠에서 창 안의 탭을 누르면 '창 → 탭' · 키 = 그 창을 그 탭으로 · 단축키 탭·설명서 '내가 만든 단축키'). P18 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터. 배포·👤 부탁 없음.
 P18-1 단축키 설정 - 눌러서 고르기는 11-02 끝(단축키 탭 '⌨️ 단축키 설정' → 띠 → 단추 → 완료 → 키 → 저장).
@@ -1009,6 +1009,12 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   테마 값은 `src/domain/palettes.json` 하나를 생성기·앱·시험이 같이 읽는다. 첫 조각은 지금 `dark.css`와 글자 하나 다르지 않게(diff 0) 만든 뒤 테마를 더한다 - 지금 화면이 바뀌지 않았음을 증명.
 - **P20 인쇄 = 늘 기본 밝은 색**(권장안 - 지금 다크와 같다): 잉크·흑백 인쇄기. `@media screen` 안 + `[data-print-paper]` 되돌리기.
 - **P20 꾸미기 그림 = 코드로 그린 SVG**(권장안): 저작권 걱정이 없고 가볍고(오프라인 캐시) 밝기마다 색을 바꿀 수 있다. 이미 있는 캐릭터는 본뜨지 않는다. 그림 견본은 P20-3 ■1에서 보이고 사용자 의견은 받은 뒤에 고친다.
+- **P20-1 ■0 파랑 사다리째 테마 + 뜻 파랑은 고정 사다리 `cobalt`**(권장안 - 6장 P20 절 '■0 확인 결과'): 강조 파랑이 약 180곳, 뜻 파랑(토요일·색 목록의 한 칸·구글 단추)이 15곳이라 적은 쪽을 옮긴다.
+  거꾸로(강조 180곳을 `primary-*`로)는 고칠 곳이 열 배이고, 빠뜨린 곳은 파랑으로 남는다. 테마에서 토요일이 초록이 되면 달력 약속(토 파랑·일 빨강)이 깨진다.
+- **P20-1 ■0 ΔE 기준 = 테마 강조 ↔ 뜻 색 7 이상, ↔ 공간 색 14 이상**(권장안): 지금 기본 파랑이 indigo와 7, violet(공간 색)과 14 - 지금보다 가깝게 만들지 않는다는 선. 시험이 palettes.json으로 셈해 지킨다.
+  그래서 **숲 = 잎 초록(H≈135)**(계획의 청록은 teal 6·emerald 6~10) · **라벤더 = 채도 반**(진한 보라는 violet·purple 4~7) · **종이 강조 = 세피아 갈색**(채도 0.35 - 이월 amber와 15) · **사이버 = 자홍 강조 + 청록 빛 회색**.
+- **P20-1 ■0 공간 색 바꿈 = CSS 변수 `--sp-<빛깔>-100/300`**(권장안): 테마 강조와 14 미만인 공간 색만 그 테마 블록에서 남는 빛깔(cobalt·pink·green …)의 글자 값으로 - JS가 테마를 몰라도 되고 바꿀 때 다시 그리지 않는다.
+- **P20-1 ■0 색 셈은 `src/domain/themeCss.ts` 하나**(권장안): Node 24가 `.ts`를 바로 import하므로 생성기와 vitest가 같은 함수를 쓴다 - 'theme.css가 palettes.json과 맞나'를 시험이 본다(JSON만 고치고 생성기를 잊는 일).
 ---
 
 ## 6. 세션별 내용
@@ -2508,7 +2514,7 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 |---|---|
 | 다크 · 화이트 | 이미 있는 '화면 밝기'(🌙 어둡게 · ☀️ 밝게 · 🖥️ 기기 따라) 그대로 |
 | 블루 | 색 테마 '🔵 기본'(지금 파랑) |
-| 그린 · 자연 | '🌲 숲'(청록·초록 + 살짝 따뜻한 바탕 - 완료 초록과 떨어지게) · '📜 종이'(아이보리 바탕·갈색 글자) |
+| 그린 · 자연 | '🌲 숲'(잎 초록 + 살짝 따뜻한 바탕 - ■0: 청록은 teal·완료 초록과 너무 가까웠다) · '📜 종이'(아이보리 바탕·갈색 글자) |
 | 핑크 | '🌸 벚꽃'(보랏빛 분홍 - 삭제·중요 빨강과 떨어지게) |
 | 파스텔 | '🍦 파스텔'(옅은 크림·민트·라벤더 바탕, 단추는 흰 글자가 읽히는 중간 진하기) |
 | 사이버 | '🌃 사이버'(검정 바탕 + 형광 청록·자홍 / 밝게는 흰 바탕 + 진한 자홍·청록) |
@@ -2548,13 +2554,46 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 - 문서·점검: 설명서 `features/help/chapters/settings.ts` 21·31('보기' 줄 · 이 기기에만) · start.ts · DESIGN 175(이 기기에만 목록)·4-8 · MENU 127 · `tools/inspect-mobile.mjs`(다크 대비 셈 - inspect-theme이 본뜬다) · inspect-settings ·
   `tools/lib/probe.mjs` newPage(`sp5_theme = light` 기본 - 테마도 기본 `sp5_palette` 없음).
 
+**P20-1 ■0 확인 결과 (11-03 - 위 '설계'보다 이것이 앞선다. 결정은 5장 'P20-1 ■0 …')**
+- **파랑 192곳 나누기**: 강조 약 180곳 = 테마를 따른다(파랑 사다리째) - `bg-primary` 옆 `hover:bg-blue-600`(19) · 고른 탭·칩(`bg-blue-50 text-blue-700 border-blue-300`) · 옅은 강조 바탕(`bg-blue-50`·`/40`·`/60`) · 안내 상자(`bg-blue-50/60 border-blue-100`) ·
+  포커스 테두리(`focus:border-blue-400·500`) · 링크(FormattedText) · 보통 일정 칩 바탕(MonthGrid 219·WeekDayCard 116·YearMonthCard 150 - 라벨 없는 일정 = 앱 빛깔) · 년간 범례 점(YearScreen 60·64) · 있는 #라벨 칩(NotePanel 640).
+  **뜻 파랑 15곳 = 테마가 바꾸지 않는다** → 새 고정 사다리 **`cobalt`**(= Tailwind 파랑 원래 값 - `index.css` @theme 11단, 어두운 값은 생성기)로 옮긴다(■1):
+  토요일(`domain/dayTone` 17·24 · MonthGrid 33 · MonthDaySheet 62 · YearSheetMonth 85·121 · MiniCalendarPicker 207·230) · 색 목록의 한 칸(GridTab 요일 17 · DayLessons PERIOD_COLORS 54·PERIOD_ACCENTS 63 ·
+  SearchWindow 일정 배지 41 · StudentRecordWindow 166 · LabelsWindow 일정 탭 302) · 구글 로그인 단추 hover(LoginScreen 21 - `bg-[#4285F4]`).
+- **sky(79)·indigo(90) = 뜻** → 그대로(그룹 색 `domain/groups`·반 색 `teachingSlot`·진도 📘 indigo·교사 유형 띠·공유 파일 sky·라벨 속성 accent). 남는 빛깔: **pink·green 0곳**(공간 색 바꿈에 쓴다) · gray·zinc·neutral 0곳 · stone 6.
+- **반투명**(`bg-primary/90`·`ring-primary/20`): 빌드 CSS가 `@supports (color-mix)` 안에서 `color-mix(in oklab, var(--color-primary) 90%, transparent)` → 변수를 따라온다(color-mix가 없는 옛 브라우저만 #1a73e8 - 괜찮다).
+- **JSON·생성기**: tsconfig.app `moduleResolution: bundler` → resolveJsonModule 기본 켬(TS 6 셈 확인), Vite는 JSON import. **Node 24(v24.20)는 `.ts`를 타입만 벗겨 바로 import**(확인) →
+  색 셈(oklch ↔ oklab·sRGB 안으로 채도 줄이기·ΔE)과 CSS 만들기는 `src/domain/themeCss.ts` 하나(import 없는 순수 TS), `tools/gen-theme-css.mjs`는 그것을 불러 파일에 쓰기만 →
+  단위 시험이 같은 함수로 'src/theme.css = buildThemeCss(palettes.json, tailwind theme.css)'(JSON만 고치고 다시 돌리지 않은 것)와 ΔE 기준을 본다.
+- **CSS 차례**: dark.css는 main.tsx 4에서 layer 없이 import → Tailwind `@layer theme`의 `:root` 값보다 늘 앞선다. theme.css도 같은 자리.
+- **↗ 새 창**: popout.ts·PopoutShell에 밝기 듣기가 없다 → 열 때만 같고 연 뒤 바꾸면 따로 논다(지금도). ■2에서 `storage` 이벤트(`sp5_theme`·`sp5_palette`)로 본 창 ↔ 새 창을 맞춘다(theme.ts `watchSystemTheme` 옆).
+- **처음 그리기 스크립트**: `data-palette` 한 줄만 더한다(`/^[a-z]+$/` 검사 - 기본은 붙이지 않음). theme-color meta는 앱이 시작하며 고친다(휴대폰 상태 표시줄이 잠깐 기본 빛깔 - 괜찮다).
+- **ΔE 표**(OKLab ×100, 600 = 글자·단추 단계. 테마 사다리 = 파랑 사다리의 밝기 그대로 빛깔을 돌리고 sRGB 밖이면 채도만 줄임 - 대비가 기본과 같다):
+  지금 기본 파랑 ↔ 가장 가까운 뜻 색 = **indigo 7**·sky 10, 공간 색 = **violet 14**·cyan 16 → **기준: 테마 강조 600 ↔ 뜻 색 ≥ 7, ↔ 공간 색 ≥ 14**(지금보다 가깝게 만들지 않는다 - 시험이 지킨다).
+  | 테마 | 후보(빛깔 H · 채도 배수) | 가장 가까운 뜻 색 | 14 미만 공간 색 → 바꿈 |
+  |---|---|---|---|
+  | 🌲 숲 | **잎 초록 H≈135** · 1 (청록 H 170~200은 teal 6·emerald 6~10으로 모자람) | emerald 9 | emerald 9·lime 11 |
+  | 🌸 벚꽃 | H≈340 · 1 | rose 16 | fuchsia 11 |
+  | 💜 라벤더 | H≈300 · **0.5**(진한 보라 H 280~305는 violet·purple 4~7) | sky 15 | 없음 |
+  | 🌫️ 차분한 회색 | H≈250 · 0.3 | sky 10 | cyan 9 |
+  | 🍦 파스텔 | H≈275 · 0.55 + 따뜻한 크림 바탕(라벤더와는 바탕으로 갈린다) | sky 10 | cyan 13 |
+  | 📜 종이 | **세피아 갈색 H≈55 · 0.35**(진하고 채도가 낮아 이월 노랑과 멀다) + 아이보리 바탕·갈색 빛 회색 | amber 15 | 없음 |
+  | 🌃 사이버 | **자홍 H≈330** · 1 + 청록 빛 회색(청록 강조는 teal 7·cyan 8로 모자람) | purple 13 | fuchsia 7 |
+  값은 ■1(숲)·■3(나머지)에서 정하고 기준을 시험으로 지킨다. 종이의 옅은 바탕(크림)은 이월 노랑 칩과 가까울 수 있다 → ■3 그림으로 본다.
+- **공간 색 바꿈**: 테마 강조와 14 미만인 공간 색은 그 테마에서 남는 빛깔(cobalt·pink·green·teal·sky·purple 중 강조와 14 이상이고 쓰는 공간 색과 가장 먼 것 - 생성기가 셈)로.
+  `spaceTone`이 `var(--sp-<빛깔>-100, var(--color-<빛깔>-100, 밝은 값))`을 쓰고 생성기가 그 테마 블록에 바뀐 빛깔의 **글자 값**(밝게·어둡게 따로 - 변수를 가리키면 Tailwind가 뺀 변수일 때 빈다)을 쓴다 - 화면 다시 그리기 없음.
+- **강조 `--color-primary`** = 테마 사다리를 #1a73e8의 밝기로(600보다 조금 밝게) - `bg-primary hover:bg-blue-600`이 지금처럼 한 단계 진해진다. 어둡게에서도 같은 값(지금 기본도 어둡게에서 primary를 바꾸지 않는다).
+- **회색**: slate 사다리는 밝기·채도 그대로 빛깔만 테마 회색 빛깔로(어둡게는 NEUTRAL_DARK·SURFACE·BODY도). 카드가 흰색이 아닌 밝게 테마(종이)는 `--color-white`도 바꾸고 흰 글자 되돌리기 줄(어둡게 whites와 같은 것)을 그 테마에.
+- **인쇄 쪽**: `html.dark [data-print-paper], html[data-palette] [data-print-paper]` 둘 다 원래 밝은 값(+ `--color-primary`·cobalt·`--sp-*` 걷기). 모두 `@media screen` 안이라 실제 인쇄는 늘 기본 밝게.
+
 ### P20-1. 색 테마 - 뼈대 · 테마 8개 · 고르는 칸
 **시작 조건**: 없음. **묻기**: 없음(조각마다 main).
 **먼저 읽을 것**: 이 P20 절 · 5장 'P20' · `tools/gen-dark-css.mjs` · `src/app/theme.ts` · index.html 10~22 · `src/index.css` 1~10 · `app/prefs.ts` 1~10·127~265 · `features/settings/ViewTab.tsx` · 설명서 settings 21·31 · `tools/inspect-mobile.mjs`(다크 대비 셈만).
-- [ ] ■0 **코드 확인·설계 확정**(문서만): blue 192곳을 강조/뜻으로 나누기(파일별 - 보통 일정 바탕·고른 날·링크·단추) · sky·indigo 쓰임 · `bg-primary/90`·`ring-primary/20` 같은 반투명이 변수 하나로 따라오나 ·
+- [x] ■0 **코드 확인·설계 확정**(문서만): blue 192곳을 강조/뜻으로 나누기(파일별 - 보통 일정 바탕·고른 날·링크·단추) · sky·indigo 쓰임 · `bg-primary/90`·`ring-primary/20` 같은 반투명이 변수 하나로 따라오나 ·
   node가 `palettes.json`을 읽고 Vite가 import하나 · 테마 빛깔 ↔ 뜻 색·공간 색 거리(ΔE 표) · ↗ 새 창의 밝기·테마 맞추기 · 처음 그리기 스크립트 길이. 다르면 이 절·5장을 고친다.
-- [ ] ■1 `src/domain/palettes.json` + `domain/palette.ts`(id·이름·이모지·견본 · `sanitizePalette`) + 시험 · `tools/gen-theme-css.mjs` - **먼저 지금 dark.css와 글자 하나 다르지 않게(diff 0)**, 그다음 테마 블록 → `src/theme.css`(dark.css 걷음 - import 자리 고침) ·
-  테마 둘(기본·숲)로 길을 연다(data-palette를 손으로 붙여 크롬에서 본다) · DESIGN·MAP의 dark.css 줄 고침.
+  → 11-03 위 'P20-1 ■0 확인 결과'(뜻 파랑 15곳 → `cobalt` · ΔE 기준 7/14 · 숲 = 잎 초록 · 공간 색 바꿈 `--sp-*` · 색 셈 `domain/themeCss.ts` · 새 창 `storage`).
+- [ ] ■1 `src/domain/palettes.json` + `domain/palette.ts`(id·이름·이모지·견본 · `sanitizePalette`) + `domain/themeCss.ts`(색 셈·CSS 만들기) + 시험 · `tools/gen-theme-css.mjs` - **먼저 지금 dark.css와 글자 하나 다르지 않게(diff 0)**, 그다음 테마 블록 → `src/theme.css`(dark.css 걷음 - import 자리 고침) ·
+  뜻 파랑 15곳 → `cobalt`(index.css @theme 11단 + 어두운 값) · `spaceTone` `--sp-*` · 테마 둘(기본·숲)로 길을 연다(data-palette를 손으로 붙여 크롬에서 본다) · DESIGN·MAP의 dark.css 줄 고침.
 - [ ] ■2 적용·저장: `app/palette.ts`(applyPalette·data-palette·theme-color·바뀜 이벤트) · index.html 스크립트 `sp5_palette` · prefs common `palette`(oneOfField - 받으면 applyPalette) · ↗ 새 창 맞추기 ·
   ViewTab '🎨 색 테마' 견본 칩(`data-palette-pick`) + 탭 안내('색 테마는 PC·휴대폰 같게') · 시험(prefs·ViewTab·palette).
 - [ ] ■3 나머지 여섯(벚꽃·라벤더·차분한 회색·파스텔·종이·사이버) 값 · **`tools/inspect-theme.mjs`**(새 - 테마 8 × 밝게/어둡게: 화면 넷(하루·주간·월간·메모) + 창 둘(환경설정·일정 칸)에서 글자 대비 4.5 · 흰 글자 on 강조 4.5 ·
