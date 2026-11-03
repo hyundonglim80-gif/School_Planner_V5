@@ -204,7 +204,7 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
 
           <div className="grid grid-cols-7 mb-1 pb-1 border-b border-slate-100 text-center text-xs font-bold">
             {WEEK_DAYS.map((w, idx) => (
-              <div key={w} className={`py-0.5 ${idx === 0 ? 'text-rose-500' : idx === 6 ? 'text-blue-600' : 'text-slate-500'}`}>
+              <div key={w} className={`py-0.5 ${idx === 0 ? 'text-rose-500' : idx === 6 ? 'text-cobalt-600' : 'text-slate-500'}`}>
                 {w}
               </div>
             ))}
@@ -227,7 +227,7 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
               }
               const wd = parseDateStr(dateStr).getDay();
               const selected = marked ? marked.includes(dateStr) : dateStr === date;
-              let color = wd === 0 ? 'text-rose-500' : wd === 6 ? 'text-blue-600' : 'text-slate-700';
+              let color = wd === 0 ? 'text-rose-500' : wd === 6 ? 'text-cobalt-600' : 'text-slate-700';
               let bg = 'hover:bg-blue-50 hover:text-blue-700';
               let border = 'border border-transparent';
               if (selected) {

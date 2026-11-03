@@ -299,7 +299,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
               onClick={() => setTab(k)}
               className={`flex-1 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                 tab === k
-                  ? `bg-white shadow-xs border ${k === 'event' ? 'text-blue-700 border-blue-200' : 'text-emerald-700 border-emerald-200'}`
+                  ? `bg-white shadow-xs border ${k === 'event' ? 'text-cobalt-700 border-cobalt-200' : 'text-emerald-700 border-emerald-200'}`
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >

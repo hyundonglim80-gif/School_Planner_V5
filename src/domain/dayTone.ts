@@ -14,13 +14,13 @@ export function dayToneOf(date: string, holidayName?: string | null): DayTone {
 /** 날짜 숫자 글자색 */
 export const DAY_NUMBER_COLOR: Record<DayTone, string> = {
   holiday: 'text-red-500',
-  saturday: 'text-blue-500',
+  saturday: 'text-cobalt-500',
   normal: 'text-slate-700',
 };
 
 /** 날짜 칸 배경색 (연하게) */
 export const DAY_CELL_BG: Record<DayTone, string> = {
   holiday: 'bg-red-50/70',
-  saturday: 'bg-blue-50/70',
+  saturday: 'bg-cobalt-50/70',
   normal: 'bg-white',
 };

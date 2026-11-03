@@ -30,7 +30,7 @@ const WEEKDAYS = [
   { name: '수', color: 'text-slate-700' },
   { name: '목', color: 'text-slate-700' },
   { name: '금', color: 'text-slate-700' },
-  { name: '토', color: 'text-blue-500' },
+  { name: '토', color: 'text-cobalt-500' },
 ];
 
 export interface MonthGridProps {

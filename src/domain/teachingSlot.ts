@@ -245,7 +245,7 @@ export function previousSlotOf(
 
 // ── 반 색 (S3) ──────────────────────────────────────────────────────────────
 // 교과 모드의 수업 칸은 반마다 색이 다르다. 시간표 창 '교사 유형'에서 반마다 고르고(classColors),
-// 고르지 않은 반은 그 학년도 반 차례로 8색을 돌려쓴다. Tailwind 클래스만 돌려준다(hex X - 다크 모드는 dark.css가 바꾼다).
+// 고르지 않은 반은 그 학년도 반 차례로 8색을 돌려쓴다. Tailwind 클래스만 돌려준다(hex X - 다크 모드는 theme.css가 바꾼다).
 // 클래스 이름은 통째로 적어 둔다 - 문자열을 이어 붙이면 Tailwind가 만들지 않는다.
 
 export interface ClassColorClasses {

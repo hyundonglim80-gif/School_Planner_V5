@@ -7,6 +7,20 @@
   --color-bg-card: #ffffff;
   --color-bg-hover: #f1f5f9;
 
+  /* 테마가 바꾸지 않는 파랑 = Tailwind 파랑 원래 값 (P20-1). blue는 색 테마의 강조 사다리(theme.css)라 테마마다 빛깔이 바뀐다 -
+     뜻으로 쓰는 파랑(토요일·색 목록의 한 칸·구글 단추)은 cobalt. 어둡게 값은 theme.css(tools/gen-theme-css.mjs). */
+  --color-cobalt-50: oklch(97% 0.014 254.604);
+  --color-cobalt-100: oklch(93.2% 0.032 255.585);
+  --color-cobalt-200: oklch(88.2% 0.059 254.128);
+  --color-cobalt-300: oklch(80.9% 0.105 251.813);
+  --color-cobalt-400: oklch(70.7% 0.165 254.624);
+  --color-cobalt-500: oklch(62.3% 0.214 259.815);
+  --color-cobalt-600: oklch(54.6% 0.245 262.881);
+  --color-cobalt-700: oklch(48.8% 0.243 264.376);
+  --color-cobalt-800: oklch(42.4% 0.199 265.638);
+  --color-cobalt-900: oklch(37.9% 0.146 265.522);
+  --color-cobalt-950: oklch(28.2% 0.091 267.935);
+
   /* 글자 크기는 브라우저 기본(16px)을 그대로 따른다.
    *
    * 한동안 이름 있는 단계를 전부 150%로 키워 두었다(모바일 가독성). 그런데 그
@@ -158,7 +172,7 @@ body[data-shortcut-recording='pick'] [data-shortcut-target]:hover {
 }
 
 /* 인쇄 창의 쪽 (features/print/PrintWindow) - 미리보기와 찍는 것(복제본)이 같은 모양이다. 쪽 폭 = A4 찍히는 폭(@container).
-   어두운 화면에서도 종이처럼 밝게 - dark.css가 이 안의 색 변수를 밝은 값으로 되돌린다. */
+   어두운 화면에서도 종이처럼 밝게(색 테마도) - theme.css가 이 안의 색 변수를 밝은 값으로 되돌린다. */
 [data-print-paper] {
   color: #0f172a;
   background: #fff;

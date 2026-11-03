@@ -4,7 +4,7 @@
 //   - 용지: 세로 / 가로 (화면마다 - 처음은 하루 세로, 나머지 가로) · 여백(mm) · 정렬(가로 왼쪽·가운데·오른쪽 / 세로 위·가운데·아래) - 모두 이 기기에(prefs)
 //   - 미리보기: 쪽마다 진짜 화면(printAt)을 A4 찍히는 폭으로 그려 줄여 보인다. '한 장에 맞추기'(처음 켬)면 긴 쪽을 줄여 한 장에, 끄면 넘치는 곳은 점선(다음 장).
 //     🖨️ 인쇄는 미리보기의 쪽 틀(data-print-frame - 찍히는 칸 높이, 정렬은 flex)을 그대로 복제해 쪽마다 새 용지로 찍는다(ui/print) - 보이는 것 = 찍히는 것.
-//   어두운 화면에서도 쪽은 종이처럼 밝게(dark.css가 [data-print-paper] 안을 밝은 색으로 되돌린다).
+//   어두운 화면에서도 쪽은 종이처럼 밝게(theme.css가 [data-print-paper] 안을 밝은 색으로 되돌린다).
 import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { useNav } from '../../app/nav';
 import type { WindowProps } from '../../app/windows';

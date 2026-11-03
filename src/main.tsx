@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import './dark.css'
+import './theme.css'
 import App from './app/App.tsx'
 import { applyTheme, watchSystemTheme } from './app/theme'
 import { startInstall } from './app/install'

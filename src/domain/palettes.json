@@ -1,0 +1,12 @@
+{
+  "palettes": [
+    { "id": "default", "name": "기본", "emoji": "🔵" },
+    {
+      "id": "forest",
+      "name": "숲",
+      "emoji": "🌲",
+      "accent": { "hue": 135, "chroma": 1 },
+      "neutral": { "hue": 150, "chroma": 0.7 }
+    }
+  ]
+}

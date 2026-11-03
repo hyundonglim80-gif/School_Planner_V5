@@ -296,7 +296,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 ### 7-1. 폴더
 ```
 src/
-  app/        껍데기: 머리줄·둘째 줄·탭바, 주소, 창 목록, 오른쪽 칸, 단축키, 안내(toast), 다크 모드
+  app/        껍데기: 머리줄·둘째 줄·탭바, 주소, 창 목록, 오른쪽 칸, 단축키, 안내(toast), 화면 밝기·색 테마(7-5)
   data/       firebase, 저장 도우미(repo), 기기 사본(mirror), store 고르기(select), 되돌리기(undo), id·차례
   domain/     순수 함수 - V4 lib에서 옮긴 것(테스트째): forward·lessons·classDays·semester·progress·seating·draw·groups·
               entryTable·checkLines·hashLabels·quickInput·labelTree·linkPreview·neis·csv·print·dateUtils …
@@ -338,6 +338,11 @@ P3-2 메모·기록 쓰는 칸 `note` = `{ sid, date: 날짜|null, id?, labelIds
 V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ESC = 줄 전체(저장 안 한 글은 먼저 묻기), Ctrl+S = 커서가 든 칸(없으면 보이는 탭),
 휴대폰 뒤로가기 = 맨 위 하나, 환경설정 '창 위치'로 가운데 창(쓰는 칸은 그래도 오른쪽).
 자리: 브라우저 기록·창 층 `src/app/history.ts`, 키 `src/app/keys.ts`(ESC·Ctrl+S 막기·단축키), Ctrl+S 받기 `src/ui/useSaveKey.ts`, 창 자리 설정 `src/app/layoutPrefs.ts`. 단축키는 V4 `lib/shortcuts.SHORTCUT_ACTIONS`를 id째 옮기고 새 id를 더한다(MENU.md 3-8).
+
+### 7-5. 색 (화면 밝기 · 색 테마 - P20)
+화면은 Tailwind 색 변수만 읽는다 → `src/theme.css`(생성 - `node tools/gen-theme-css.mjs`)가 `html.dark`(어둡게)·`html[data-palette="<id>"]`(색 테마, 기본은 붙이지 않음)에서 변수를 바꿔 끼운다.
+색 테마가 바꾸는 것 = 강조 `--color-primary`·**파랑 사다리 `blue`**(강조색으로 쓴다)·회색 `slate` 빛깔·바탕. 그대로 = 뜻 색(amber·emerald·red·rose …)·라벨 색·sky·indigo·**`cobalt`**(= 원래 파랑 - 토요일·색 목록의 한 칸처럼 뜻으로 쓰는 파랑).
+공간 색(겹쳐 보기)은 테마 강조와 가까우면 그 테마가 `--sp-<빛깔>-100/300`으로 바꾼다. 테마 값 `domain/palettes.json`, 색 셈·거리 기준(뜻 색 ΔE ≥ 7·공간 색 ≥ 14) `domain/themeCss.ts`.
 
 ## 8. V4 → V5 가져오기 (`src/import/v4`)
 
@@ -411,6 +416,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 8. **본문을 바꾸나?** 읽기·저장 길에서는 바꾸지 않는다.
 9. **같은 커밋에서** `DESIGN.md`·`MENU.md`·`PARITY.md`(그리고 P9-1부터는 설명서)를 고쳤나?
 10. **점검 스크립트는 `data-*`로 찾나?** 새 단추에 `data-…`를 달았나?
+11. **색**: 강조는 `primary`·`blue`(색 테마를 따른다), 뜻으로 쓰는 파랑은 `cobalt`. 새 빛깔로 뜻을 나누면 `domain/themeCss` `MEANING_HUES`에 더한다(7-5).
 
 ## 11. 성능 (P9-3 - 2026-10-14 PC, 에뮬레이터)
 

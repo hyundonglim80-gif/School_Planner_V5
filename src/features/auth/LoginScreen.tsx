@@ -18,7 +18,7 @@ export default function LoginScreen() {
           data-login-google
           onClick={loginWithGoogle}
           disabled={signingIn}
-          className="mx-auto flex cursor-pointer items-center gap-3 rounded-lg border-none bg-[#4285F4] px-6 py-3 text-lg font-bold text-white shadow-md transition-all hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mx-auto flex cursor-pointer items-center gap-3 rounded-lg border-none bg-[#4285F4] px-6 py-3 text-lg font-bold text-white shadow-md transition-all hover:bg-cobalt-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {signingIn ? '로그인 창을 여는 중...' : 'Google 계정으로 로그인'}
         </button>

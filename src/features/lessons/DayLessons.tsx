@@ -51,7 +51,7 @@ import { shortcutTarget } from '../../ui/shortcutTarget';
 import { isShortcutId } from '../../domain/shortcuts';
 
 const PERIOD_COLORS = [
-  'bg-blue-50 text-blue-700 border-blue-200',
+  'bg-cobalt-50 text-cobalt-700 border-cobalt-200',
   'bg-emerald-50 text-emerald-700 border-emerald-200',
   'bg-amber-50 text-amber-700 border-amber-200',
   'bg-purple-50 text-purple-700 border-purple-200',
@@ -60,7 +60,7 @@ const PERIOD_COLORS = [
   'bg-slate-50 text-slate-700 border-slate-200',
 ];
 /** 과목이 있는 교시 카드 왼쪽의 굵은 막대 - 교시 칩과 같은 색 (차례도 같다) */
-const PERIOD_ACCENTS = ['border-l-blue-400', 'border-l-emerald-400', 'border-l-amber-400', 'border-l-purple-400', 'border-l-rose-400', 'border-l-indigo-400', 'border-l-slate-400'];
+const PERIOD_ACCENTS = ['border-l-cobalt-400', 'border-l-emerald-400', 'border-l-amber-400', 'border-l-purple-400', 'border-l-rose-400', 'border-l-indigo-400', 'border-l-slate-400'];
 
 /** 마우스를 올렸을 때만 보이는 반 도구 (P10-2) - 휴대폰(sm 아래)은 마우스가 없으니 지금처럼 늘, 키보드로 오면 보인다.
  *  📊🔗✏️는 예전대로 휴대폰에서도 숨는다 - 휴대폰은 교시를 눌러 연 수정 칸에서 (그 줄에 모두 있다) */

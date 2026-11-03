@@ -82,7 +82,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
 
       <div className="grid text-center text-2xs font-bold text-slate-400" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {dayNames.map((n) => (
-          <div key={n} className={n === '일' ? 'text-red-400' : n === '토' ? 'text-blue-400' : ''}>
+          <div key={n} className={n === '일' ? 'text-red-400' : n === '토' ? 'text-cobalt-400' : ''}>
             {n}
           </div>
         ))}
@@ -118,7 +118,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                   >
                     <span
                       className={`text-2xs font-bold w-[18px] h-[16px] leading-[16px] rounded-full tabular-nums ${
-                        isToday ? 'bg-primary text-white' : tone === 'holiday' ? 'text-red-500' : tone === 'saturday' ? 'text-blue-500' : 'text-slate-700'
+                        isToday ? 'bg-primary text-white' : tone === 'holiday' ? 'text-red-500' : tone === 'saturday' ? 'text-cobalt-500' : 'text-slate-700'
                       } ${ddayDates.has(d) ? 'ring-[1.5px] ring-amber-400' : ''}`}
                     >
                       {Number(d.slice(8, 10))}

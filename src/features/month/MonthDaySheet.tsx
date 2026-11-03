@@ -59,7 +59,7 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
       className="fixed left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-[0_-6px_20px_rgba(15,23,42,0.12)] rounded-t-2xl max-h-[46vh] flex flex-col animate-fade-in"
     >
       <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-2 border-b border-slate-100 shrink-0">
-        <h3 className={`font-black text-sm whitespace-nowrap ${d.getDay() === 0 ? 'text-red-600' : d.getDay() === 6 ? 'text-blue-600' : 'text-slate-800'}`}>{title}</h3>
+        <h3 className={`font-black text-sm whitespace-nowrap ${d.getDay() === 0 ? 'text-red-600' : d.getDay() === 6 ? 'text-cobalt-600' : 'text-slate-800'}`}>{title}</h3>
         <SchoolEventName items={schoolEvents[date]} />
         <div className="ml-auto flex items-center gap-1 shrink-0">
           <button type="button" data-sheet-add onClick={onAdd} className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer">

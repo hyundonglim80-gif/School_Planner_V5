@@ -14,7 +14,7 @@ import SlotPairInput from '../lessons/SlotPairInput';
 import { WEEKDAYS, type TimetableDraft } from './timetableDraft';
 
 const DAYS = [
-  { key: '1', label: '월요일', color: 'text-blue-600' },
+  { key: '1', label: '월요일', color: 'text-cobalt-600' },
   { key: '2', label: '화요일', color: 'text-indigo-600' },
   { key: '3', label: '수요일', color: 'text-emerald-600' },
   { key: '4', label: '목요일', color: 'text-amber-600' },

@@ -15,9 +15,9 @@ describe('공간 색 (P17-2 - 겹친 것의 배경)', () => {
     const hues = new Set(Array.from({ length: 40 }, (_, i) => spaceHue(`g_${i.toString(36)}xyz`)));
     expect(hues.size).toBe(GROUP_SPACE_HUES.length);
   });
-  it('배경·테두리 = 다크 모드가 바꾸는 Tailwind 색 변수 (없으면 밝은 값)', () => {
+  it('배경·테두리 = 색 테마의 --sp 변수 → 다크 모드가 바꾸는 Tailwind 색 변수 (없으면 밝은 값)', () => {
     const t = spaceTone('u_abc');
-    expect(t.backgroundColor).toMatch(/^var\(--color-emerald-100, oklch\(/);
-    expect(t.borderColor).toMatch(/^var\(--color-emerald-300, oklch\(/);
+    expect(t.backgroundColor).toMatch(/^var\(--sp-emerald-100, var\(--color-emerald-100, oklch\(/);
+    expect(t.borderColor).toMatch(/^var\(--sp-emerald-300, var\(--color-emerald-300, oklch\(/);
   });
 });

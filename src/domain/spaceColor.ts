@@ -1,7 +1,7 @@
 // 공간 색 (P17-2 겹쳐 보기 - 겹친 칩·겹친 일정의 배경·테두리. 11-02 사용자 '✓·색 점 대신 배경 색으로 구분'). 저장하지 않고 sid로 셈한다
 // (원칙 넷째 - 공간 문서에 색 칸을 두면 규칙·배포가 는다). 개인 = 초록, 그룹 = 팔레트에서 sid 해시(기기가 달라도 같은 색, 그룹 둘이 같은 색일 수 있다 - 이름은 title·구분 줄에).
 // 빛깔은 주 공간 칩(개인 slate·그룹 amber)·보통 일정 바탕(파랑·흰색)·이월(amber)과 헷갈리지 않는 것만 쓴다.
-// 색은 Tailwind 색 변수로 칠한다 - 다크 모드(dark.css)가 그 변수를 어두운 빛깔로 바꿔 어두운 화면에서도 맞는다.
+// 색은 Tailwind 색 변수로 칠한다 - 다크 모드(theme.css)가 그 변수를 어두운 빛깔로 바꿔 어두운 화면에서도 맞는다.
 // 쓰는 클래스가 없으면 Tailwind가 변수를 빼므로 밝은 값(theme.css 그대로)을 뒤에 둔다.
 
 const LIGHT = {
@@ -40,7 +40,11 @@ export interface SpaceTone {
 
 export function spaceTone(sid: string): SpaceTone {
   const h = spaceHue(sid);
-  return { backgroundColor: `var(--color-${h}-100, ${LIGHT[h][100]})`, borderColor: `var(--color-${h}-300, ${LIGHT[h][300]})` };
+  // --sp-<빛깔>: 색 테마가 강조와 가까운 공간 색을 다른 빛깔로 바꾼다(theme.css - domain/themeCss spaceSwaps). 없으면 그 빛깔 그대로
+  return {
+    backgroundColor: `var(--sp-${h}-100, var(--color-${h}-100, ${LIGHT[h][100]}))`,
+    borderColor: `var(--sp-${h}-300, var(--color-${h}-300, ${LIGHT[h][300]}))`,
+  };
 }
 
 /** 공간 이름 글자 '🔒 개인' · '👥 그룹 이름' (겹친 일정의 title·구분 줄) */

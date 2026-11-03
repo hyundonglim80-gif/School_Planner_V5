@@ -163,7 +163,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
   };
 
   const tone = (k: TimelineItem['kind']) =>
-    k === 'attendance' ? 'bg-rose-50 text-rose-700 border-rose-200' : k === 'subjectAttendance' ? 'bg-orange-50 text-orange-700 border-orange-200' : k === 'memo' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200';
+    k === 'attendance' ? 'bg-rose-50 text-rose-700 border-rose-200' : k === 'subjectAttendance' ? 'bg-orange-50 text-orange-700 border-orange-200' : k === 'memo' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-cobalt-50 text-cobalt-700 border-cobalt-200';
 
   return (
     <ModalShell isOpen onClose={close} raise={raise} width="2xl" title="🧑‍🎓 학생 기록(누가기록)" footer={<ModalCloseButton onClose={close} />}>

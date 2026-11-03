@@ -38,7 +38,7 @@ const PAGE_SIZE = 50;
 
 const BADGES: Record<SearchKind, { text: string; className: string }> = {
   memo: { text: '메모', className: 'bg-amber-50 text-amber-700 border-amber-200' },
-  event: { text: '일정', className: 'bg-blue-50 text-blue-700 border-blue-200' },
+  event: { text: '일정', className: 'bg-cobalt-50 text-cobalt-700 border-cobalt-200' },
   journal: { text: '메모', className: 'bg-purple-50 text-purple-700 border-purple-200' },
   lesson: { text: '수업', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   lessonNote: { text: '비고', className: 'bg-orange-50 text-orange-700 border-orange-200' },
