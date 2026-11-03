@@ -6,6 +6,7 @@
 //      캡처 Ctrl+V = 드라이브(흉내) → 첨부만 보내기('📎 1') · '+ 새 대화' → 사람 = 새 1:1(방 문서는 첫 글이) · 1:1 그룹 옮기기(방 그룹을 나가면 함께 든 그룹으로)
 //   ■3 읽음·여는 길: 본 방은 읽음(내 읽음 문서) · 머리줄 💬 n · 새 글 안내 '보기' → 그 방 · 보는 방은 안내 없이 2초 모아 읽음 · 상대가 읽으면 '1'이 사라짐 ·
 //      계정 칸 · 단축키 chat · 머리줄 💬 · 그룹 창 '💬 그룹 대화'·구성원 💬 · 받은 쪽지 '💬 대화로'
+//   ■4 휴대폰 390(머리줄 ✉·💬 넘침 0 · 글 칸이 화면 아래 · 자판 Enter = 줄 바꿈 · ➤) · 그룹에서 빠진 사람(관리자 쓰기)은 다음 글에서 '볼 수 없음'·목록·💬에서 빠진다
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
 //   대화는 지우기 규칙이 없다 - 끝에 관리자 지우기. npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-chat.mjs
@@ -450,6 +451,56 @@ try {
   r.check(await waitFor(page.locator(sel('mail-chat', mailId)), 8000), "받은 쪽지 펼침에 '💬 대화로'");
   await page.locator(sel('mail-chat', mailId)).click();
   r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 5000), "'💬 대화로' → 보낸 사람과 1:1");
+
+  r.section('■4 휴대폰 390 - 머리줄 ✉·💬 · 방 글 칸');
+  {
+    const M = await newPage(browser, { width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    await M.page.addInitScript(() => {
+      try {
+        localStorage.setItem('sp5_theme', 'light');
+      } catch {
+        /* about:blank */
+      }
+    });
+    await open(M.page, `#/day/${DAY}`);
+    // 안 읽은 쪽지·대화가 있게 - 머리줄이 가장 넓을 때
+    await sendAsB('휴대폰 점검 글');
+    const mHead = M.page.locator(sel('header-chat'));
+    r.check(await waitFor(async () => Number(await mHead.getAttribute('data-header-chat')) >= 1, 8000), '휴대폰 머리줄 💬 n');
+    r.check(await waitFor(M.page.locator(sel('header-mail')), 5000), '휴대폰 머리줄 ✉');
+    const over = await M.page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - 390, document.body.scrollWidth - 390));
+    const boxes = await Promise.all([sel('header-mail'), sel('header-chat')].map((s) => M.page.locator(s).boundingBox()));
+    r.check(over === 0 && boxes.every((b) => b && b.x >= 0 && b.x + b.width <= 390), `머리줄 넘침 0 · ✉·💬가 화면 안 (넘침 ${over})`);
+    await shot(M.page, 'mobile-head');
+    await M.page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
+    r.check(await waitFor(M.page.locator(sel('chat-msgs')), 8000), '휴대폰 방 - 글');
+    const comp = await M.page.locator(sel('chat-composer')).boundingBox();
+    r.check(!!comp && comp.y + comp.height <= 844 + 1 && comp.y > 844 / 2, `글 칸이 화면 아래 (${comp && Math.round(comp.y)}~${comp && Math.round(comp.y + comp.height)})`);
+    await M.page.locator(sel('chat-input')).fill('휴대폰 Enter');
+    await M.page.locator(sel('chat-input')).press('Enter');
+    r.check((await M.page.locator(sel('chat-input')).inputValue()) === '휴대폰 Enter\n', '휴대폰 자판 Enter = 줄 바꿈');
+    r.check((await M.page.locator(sel('chat-input')).getAttribute('placeholder')) === '글 (➤로 보내기)', "휴대폰 안내 '➤로 보내기'");
+    await M.page.locator(sel('chat-send')).tap();
+    r.check(await waitFor(M.page.locator(`${sel('chat-mine', 'yes')}:has-text("휴대폰 Enter")`), 8000), '➤ = 보내기');
+    r.check((await M.page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - 390))) === 0, '방도 넘침 0');
+    await shot(M.page, 'mobile-room');
+    r.check(M.errors.length === 0, `휴대폰 페이지 오류 없음 ${M.errors.slice(0, 2).join(' / ')}`);
+    await M.ctx.close();
+  }
+
+  r.section('■4 그룹에서 빠지면 그룹 방을 못 읽는다');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
+  r.check(await waitFor(page.locator(sel('chat-msgs')), 8000), '그룹 방을 보는 중');
+  await admin.set(`spaces/${SID}`, { kind: 'group', name: GROUP, ownerId: uidB, members: { [uidB]: 'owner' } });
+  await page.waitForTimeout(1500);
+  await sendAsB('빠진 뒤 글');
+  r.check(await waitFor(page.locator(sel('chat-notice', 'denied')), 10000), "다음 글에서 듣기가 끊긴다 → '이 대화를 볼 수 없습니다'");
+  r.check((await page.locator(`${sel('chat-text')}:has-text("빠진 뒤 글")`).count()) === 0, '빠진 뒤 글은 보이지 않는다');
+  r.check((await page.locator(sel('chat-composer')).count()) === 0, '글 칸도 없다');
+  await page.locator(sel('chat-back')).click();
+  r.check(await waitFor(async () => (await page.locator(sel('chat-section', SID)).count()) === 0, 8000), '목록에서 그 그룹 묶음이 빠진다');
+  r.check(await waitFor(async () => (await page.locator(sel('header-chat')).count()) === 0 || (await page.locator(sel('header-chat')).getAttribute('data-header-chat')) === '0', 5000), '머리줄 💬에서도 빠진다');
 
   r.check(A.errors.length === 0, `페이지 오류 없음 ${A.errors.slice(0, 2).join(' / ')}`);
 } catch (e) {

@@ -21,6 +21,9 @@ interface ChatDraft {
 /** 글 칸이 늘어나는 가장 큰 높이(px) - 넘으면 칸 안에서 스크롤 */
 const MAX_INPUT_PX = 160;
 
+/** 휴대폰 화면 자판 - Enter = 줄 바꿈, ➤로 보낸다 */
+const touchScreen = () => typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+
 interface Props {
   roomKey: string;
   /** 보낸다 - 보냈으면 true. 보내지 못한 안내는 부르는 쪽이 한다 */
@@ -120,8 +123,7 @@ export default function ChatComposer({ roomKey, onSend, above, disabled }: Props
     if (e.key !== 'Enter' || e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.shiftKey || e.altKey) return;
     // 휴대폰 화면 자판의 Enter는 줄 바꿈 (Ctrl + Enter는 어디서나 보내기)
-    const touch = !e.ctrlKey && !e.metaKey && typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
-    if (touch) return;
+    if (!e.ctrlKey && !e.metaKey && touchScreen()) return;
     e.preventDefault();
     void send();
   };
@@ -176,7 +178,7 @@ export default function ChatComposer({ roomKey, onSend, above, disabled }: Props
           onPaste={onPaste}
           onKeyDown={onKeyDown}
           disabled={disabled}
-          placeholder="글 (Enter 보내기 · Shift + Enter 줄 바꿈)"
+          placeholder={touchScreen() ? '글 (➤로 보내기)' : '글 (Enter 보내기 · Shift + Enter 줄 바꿈)'}
           className="min-h-9 min-w-0 flex-1 resize-none rounded-xl border border-slate-200 px-3 py-1.5 text-sm leading-relaxed disabled:bg-slate-50"
         />
         <button
