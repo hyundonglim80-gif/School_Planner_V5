@@ -12,6 +12,7 @@
 //     그 뒤 새 글은 2초 모아 한 번, 모으는 동안 방을 떠나거나 창이 가려지면 그때(data/chat markRoomRead - 그룹 방 = 내 읽음 문서 한 칸, 1:1 = 방 reads.<나>).
 //   - 그룹을 나갔거나 방에서 빠지면 듣기가 permission-denied로 끊긴다(P19-1 ■0) → '이 대화를 볼 수 없습니다'.
 //   - 대화는 서버에만 있다(기기 사본·백업 없음) - 끊긴 채 열면 '인터넷이 필요합니다'.
+//   - 이 방이 보이면 이 방의 OS 알림(푸시 - P19-3 ■1)을 닫는다(view closeChatNotices).
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
@@ -38,6 +39,7 @@ import {
 import SharedAttachments from '../notes/SharedAttachments';
 import ChatComposer from './ChatComposer';
 import { CHAT_WINDOW } from './open';
+import { closeChatNotices } from './view';
 import type { GroupPeople } from './people';
 
 type Status = 'loading' | 'ok' | 'offline' | 'denied' | 'failed' | 'new';
@@ -191,6 +193,10 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
     document.addEventListener('visibilitychange', on);
     return () => document.removeEventListener('visibilitychange', on);
   }, []);
+  // 이 방을 보면 이 방의 OS 알림(푸시)을 닫는다 (P19-3 ■1)
+  useEffect(() => {
+    if (ref && shown && visible) void closeChatNotices(roomKey);
+  }, [ref, roomKey, shown, visible]);
   const markedOnce = useRef(false);
   useEffect(() => {
     if (!ref || !unread || !shown || !visible || status !== 'ok') return;

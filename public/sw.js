@@ -1,4 +1,4 @@
-// sw.js - School Planner V5 서비스 워커 (P1-4 앱으로 설치 + P8-2 서버 푸시 알림 + P8-3 공유받기·오프라인 앱 + P15-2 쪽지 푸시).
+// sw.js - School Planner V5 서비스 워커 (P1-4 앱으로 설치 + P8-2 서버 푸시 알림 + P8-3 공유받기·오프라인 앱 + P15-2 쪽지 푸시 + P19-3 대화 푸시).
 //
 // 오프라인 앱(P8-3 - V4 sw.js와 같은 갈래):
 //   - 화면 문서(navigate)는 **네트워크 먼저**(cache: 'reload' - 오래된 index.html이 새 판을 가리지 않게), 안 되면 담아 둔 '/'.
@@ -173,7 +173,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // 일정 알림 서버 푸시 (P8-2 - functions/index.js의 v5SendDueAlarms가 FCM으로 보낸다, V4 sw.js 그대로).
-// FCM 웹 푸시는 { data: {...}, from, ... } 모양으로 온다 - data.type === 'event-alarm'만 다룬다.
+// FCM 웹 푸시는 { data: {...}, from, ... } 모양으로 온다 - data.type이 'event-alarm'·'mail'·'chat'인 것만 다룬다.
 // 앱 화면을 보고 있는 창이 있으면 그 창에 넘겨 알림 창·소리로 울리고(src/features/events/EventAlarms - 같은 일정은 한 번만),
 // 없으면(앱을 닫았거나 다른 앱을 보는 중) 휴대폰·PC 알림을 띄운다. 알림 tag는 앱이 띄우는 알림과 같다(겹치면 하나로).
 self.addEventListener('push', (event) => {
@@ -186,6 +186,10 @@ self.addEventListener('push', (event) => {
   const d = (msg && msg.data) || msg || {};
   if (d.type === 'mail') {
     event.waitUntil(showMailNotice(d));
+    return;
+  }
+  if (d.type === 'chat') {
+    event.waitUntil(showChatNotice(d));
     return;
   }
   if (d.type !== 'event-alarm') return;
@@ -247,12 +251,19 @@ async function alarmRepeatTimes() {
   return Math.min(ALARM_REPEAT_MAX, Math.max(1, Math.round((seconds * 1000) / ALARM_REPEAT_MS)));
 }
 
+/** 앱 창(↗ 새 창 ?popout= 말고 - 쪽지·대화 안내는 큰 창의 Shell만 띄운다) */
+const isAppWindow = (c) => c.url.startsWith(self.registration.scope) && !new URL(c.url).searchParams.has('popout');
+/** 앱 창을 보고 있나 - 그러면 쪽지·대화 푸시는 앱 안내에 맡긴다 */
+async function appWindowShown() {
+  const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+  return wins.some((c) => c.visibilityState === 'visible' && isAppWindow(c));
+}
+
 // 쪽지 서버 푸시 (P15-2 - functions/index.js v5MailPush, data = { type: 'mail', id, sid, sender, group } - 쪽지 글은 없다).
 // 앱 화면을 보고 있는 창이 있으면 아무것도 하지 않는다(앱의 안 읽은 쪽지 구독이 '새 쪽지' 안내를 띄운다 - 두 번 뜨지 않게).
 // 없으면 알림 하나(다시 울리지 않는다 - 일정 알림과 다르다). 누르면 앱의 쪽지 창 → 그 쪽지(notificationclick).
 async function showMailNotice(d) {
-  const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-  if (wins.some((c) => c.visibilityState === 'visible' && c.url.startsWith(self.registration.scope))) return;
+  if (await appWindowShown()) return;
   await self.registration.showNotification(`✉ 쪽지 - ${d.sender || '선생님'}`, {
     body: d.group ? `👥 ${d.group}` : '새 쪽지가 왔습니다.',
     tag: `sp5-mail-${d.id}`,
@@ -262,24 +273,61 @@ async function showMailNotice(d) {
   });
 }
 
+// 대화 서버 푸시 (P19-3 - functions/index.js v5ChatPush·v5DmPush, data = { type: 'chat', room, sender, title } - 글은 없다.
+// room = 방 키(그룹 방 '<sid>~<roomId>' · 1:1 pairId - src/domain/chat parseRoomKey와 같은 모양), title = 그룹·방 이름(1:1은 '').
+// 앱 화면을 보고 있으면 없음(앱이 '💬 새 글' 안내 - 쪽지와 같다). 없으면 방마다 알림 하나(tag sp5-chat-<방 키>):
+// 같은 방의 새 글은 그 알림을 바꾼다(renotify 없음 = 소리·떨림 없이 '새 글 n개') - 단체방 글마다 울리지 않게. 알림을 지웠으면 다음 글이 다시 운다.
+// 앱에서 그 방을 보면 이 알림을 닫는다(src/features/chat/view closeChatNotices). 🔕 방은 함수가 보내지 않는다.
+const CHAT_GROUP_ROOM = /^g_[A-Za-z0-9]+~(all|r_[A-Za-z0-9]+)$/;
+const CHAT_PAIR = /^d_([A-Za-z0-9]+)_([A-Za-z0-9]+)$/;
+/** 방 키 모양이면 그대로, 아니면 '' (1:1은 작은 uid가 앞 - parseRoomKey와 같다) */
+function chatRoomOf(v) {
+  if (typeof v !== 'string' || v.length > 120) return '';
+  if (CHAT_GROUP_ROOM.test(v)) return v;
+  const p = CHAT_PAIR.exec(v);
+  return p && p[1] < p[2] ? v : '';
+}
+async function showChatNotice(d) {
+  const room = chatRoomOf(d.room);
+  if (!room || (await appWindowShown())) return;
+  const tag = `sp5-chat-${room}`;
+  const [prev] = await self.registration.getNotifications({ tag });
+  const count = ((prev && prev.data && Number(prev.data.count)) || 0) + 1;
+  const sender = d.sender || '선생님';
+  const title = d.title ? `💬 ${d.title}` : `💬 ${sender}`;
+  const many = `새 글 ${count > 99 ? '99+' : count}개`;
+  const body = d.title ? (count > 1 ? `${many} · ${sender}` : `${sender}: 새 글`) : count > 1 ? many : '새 글이 왔습니다.';
+  await self.registration.showNotification(title, {
+    body,
+    tag,
+    icon: `${self.registration.scope}icon-192.png`,
+    badge: `${self.registration.scope}icon-192.png`,
+    data: { url: self.registration.scope, chat: room, count },
+  });
+}
+
 // 알림을 누르면 열려 있는 앱 창으로, 없으면 새로 연다.
-// 쪽지 알림은 그 쪽지를 펼친다: 열린 앱 창(?popout= 새 창 말고)에 'sp5-open-mail'을 보내고(src/features/mail/receive),
-// 없으면 '/?mail=<id>'로 연다 - 앱이 로그인한 뒤 주소에서 꺼내 쪽지 창을 연다.
+// 쪽지·대화 알림은 그것을 연다: 열린 앱 창(?popout= 새 창 말고)에 'sp5-open-mail'(src/features/mail/receive)·'sp5-open-chat'(features/chat/receive)을 보내고,
+// 없으면 '/?mail=<id>'·'/?chat=<방 키>'로 연다 - 앱이 로그인한 뒤 주소에서 꺼내 쪽지 창·대화 창을 연다.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
   const url = data.url || self.registration.scope;
   const mail = typeof data.mail === 'string' && /^[A-Za-z0-9]{1,40}$/.test(data.mail) ? data.mail : '';
+  const chat = chatRoomOf(data.chat);
   event.waitUntil(
     (async () => {
       const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      const app = (c) => c.url.startsWith(self.registration.scope) && !new URL(c.url).searchParams.has('popout');
-      const mine = (mail && wins.find(app)) || wins.find((c) => c.url.startsWith(self.registration.scope));
-      if (mine) {
-        if (mail) mine.postMessage({ type: 'sp5-open-mail', id: mail });
-        return mine.focus();
+      if (mail || chat) {
+        const app = wins.find(isAppWindow);
+        if (app) {
+          app.postMessage(mail ? { type: 'sp5-open-mail', id: mail } : { type: 'sp5-open-chat', room: chat });
+          return app.focus();
+        }
+        return self.clients.openWindow(`${self.registration.scope}${mail ? `?mail=${mail}` : `?chat=${encodeURIComponent(chat)}`}`);
       }
-      return self.clients.openWindow(mail ? `${self.registration.scope}?mail=${mail}` : url);
+      const mine = wins.find((c) => c.url.startsWith(self.registration.scope));
+      return mine ? mine.focus() : self.clients.openWindow(url);
     })(),
   );
 });

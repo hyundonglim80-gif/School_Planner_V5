@@ -7,11 +7,13 @@
 //   ■3 읽음·여는 길: 본 방은 읽음(내 읽음 문서) · 머리줄 💬 n · 새 글 안내 '보기' → 그 방 · 보는 방은 안내 없이 2초 모아 읽음 · 상대가 읽으면 '1'이 사라짐 ·
 //      계정 칸 · 단축키 chat · 머리줄 💬 · 그룹 창 '💬 그룹 대화'·구성원 💬 · 받은 쪽지 '💬 대화로'
 //   ■4 휴대폰 390(머리줄 ✉·💬 넘침 0 · 글 칸이 화면 아래 · 자판 Enter = 줄 바꿈 · ➤) · 그룹에서 빠진 사람(관리자 쓰기)은 다음 글에서 '볼 수 없음'·목록·💬에서 빠진다
+//   P19-3 ■1 ?chat=(그 방 · 주소에서 지움) · 서비스 워커 'chat' 푸시(보는 앱 창이 있으면 없음 · 방마다 알림 하나 · 같은 방은 바꾸기 '새 글 n개' ·
+//      1:1 = 보낸 사람 제목 · 모양이 아닌 방 키는 없음 · 알림 누르기 → 열린 창에 그 방 · 앱에서 그 방을 보면 그 알림이 닫힘)
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
 //   대화는 지우기 규칙이 없다 - 끝에 관리자 지우기. npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-chat.mjs
 import { collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
-import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const undo = restorer();
@@ -451,6 +453,72 @@ try {
   r.check(await waitFor(page.locator(sel('mail-chat', mailId)), 8000), "받은 쪽지 펼침에 '💬 대화로'");
   await page.locator(sel('mail-chat', mailId)).click();
   r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 5000), "'💬 대화로' → 보낸 사람과 1:1");
+
+  r.section('P19-3 ■1 ?chat= (푸시 알림을 눌러 연 앱)');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  {
+    const C = await newPage(browser);
+    await open(C.page, `?chat=${encodeURIComponent(ALL_KEY)}#/day/${DAY}`);
+    r.check(await waitFor(C.page.locator(sel('chat-room-view', ALL_KEY)), 10000), '?chat= → 대화 창에 그 방');
+    r.check(!new URL(C.page.url()).searchParams.has('chat') && new URL(C.page.url()).hash.startsWith('#/day/'), '주소에서 ?chat=만 지운다 (# 뒤는 그대로)');
+    r.check(C.errors.length === 0, `새 창 페이지 오류 없음 ${C.errors.slice(0, 2).join(' / ')}`);
+    await C.ctx.close();
+  }
+
+  r.section("P19-3 ■1 서비스 워커 'chat' 푸시");
+  {
+    const origin = new URL(SITE).origin;
+    await A.ctx.grantPermissions(['notifications'], { origin });
+    const cdp = await A.ctx.newCDPSession(page);
+    const regs = [];
+    cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => regs.push(...e.registrations.filter((x) => !x.isDeleted)));
+    await cdp.send('ServiceWorker.enable');
+    r.check(await waitFor(() => regs.length > 0, 10000), '서비스 워커가 등록돼 있다');
+    const reg = regs.find((x) => x.scopeURL.startsWith(origin)) ?? regs[0];
+    // functions/chatPlan.js chatPushData 모양 - 글은 없다
+    const push = (room, title, sender) =>
+      cdp.send('ServiceWorker.deliverPushMessage', { origin, registrationId: reg.registrationId, data: JSON.stringify({ data: { type: 'chat', room, sender, title } }) });
+    const sw = A.ctx.serviceWorkers().find((w) => w.url().startsWith(origin));
+    const osNotes = (tag) =>
+      sw.evaluate(async (t) => (await self.registration.getNotifications(t ? { tag: t } : undefined)).map((n) => ({ title: n.title, body: n.body, tag: n.tag, renotify: n.renotify, data: n.data })), tag);
+    await sw.evaluate(async () => (await self.registration.getNotifications()).forEach((n) => n.close()));
+    const allTag = `sp5-chat-${ALL_KEY}`;
+    const dmTag = `sp5-chat-${PAIR}`;
+    await push(ALL_KEY, GROUP, '이점검');
+    await page.waitForTimeout(1500);
+    r.check(!!sw && (await osNotes(allTag)).length === 0, '보는 앱 창이 있으면 OS 알림을 띄우지 않는다 (앱 안내)');
+    await page.goto('about:blank');
+    await push(ALL_KEY, GROUP, '이점검');
+    r.check(await waitFor(async () => (await osNotes(allTag)).length === 1, 8000), '앱 창이 없으면 방마다 OS 알림 하나');
+    let note = (await osNotes(allTag))[0];
+    r.check(note?.title === `💬 ${GROUP}` && note?.body === '이점검: 새 글' && note?.data?.chat === ALL_KEY, `그룹 방 알림 = 그룹 이름 · 보낸 사람 (글 없음) ${JSON.stringify(note)}`);
+    await push(ALL_KEY, GROUP, '박점검');
+    r.check(await waitFor(async () => (await osNotes(allTag))[0]?.body === '새 글 2개 · 박점검', 8000), `같은 방 새 글 = 그 알림을 바꾼다 '새 글 2개 · 박점검' (${(await osNotes(allTag))[0]?.body})`);
+    note = (await osNotes(allTag))[0];
+    r.check((await osNotes(allTag)).length === 1 && note?.renotify === false, '알림은 하나 그대로 · 다시 울리지 않는다 (renotify 없음)');
+    await push(PAIR, '', '이점검');
+    r.check(await waitFor(async () => (await osNotes(dmTag)).length === 1, 8000), '다른 방은 알림 따로');
+    note = (await osNotes(dmTag))[0];
+    r.check(note?.title === '💬 이점검' && note?.body === '새 글이 왔습니다.', `1:1 알림 = 보낸 사람이 제목 ${JSON.stringify(note)}`);
+    await push('../x~all', 'x', 'x');
+    await push('d_b_a', '', 'x');
+    await page.waitForTimeout(1000);
+    r.check((await osNotes()).length === 2, `방 키 모양이 아니면 알림 없음 (알림 ${(await osNotes()).length}개)`);
+    // 열린 앱 창이 있을 때 알림을 누름 = 그 창에 'sp5-open-chat' (진짜 누르기는 CDP로 못 한다 - 같은 알림으로 notificationclick을 흉내)
+    await open(page, `#/day/${DAY}`);
+    await page.waitForTimeout(1000);
+    await sw.evaluate(async (tag) => {
+      const [n] = await self.registration.getNotifications({ tag });
+      self.dispatchEvent(new NotificationEvent('notificationclick', { notification: n }));
+    }, dmTag);
+    r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 8000), '알림을 누르면 열린 앱 창에 그 방');
+    r.check(await waitFor(async () => (await osNotes(dmTag)).length === 0, 5000), '누른 알림은 닫힌다');
+    r.check((await osNotes(allTag)).length === 1, '다른 방 알림은 남는다');
+    await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
+    r.check(await waitFor(page.locator(sel('chat-room-view', ALL_KEY)), 5000), '그룹 방으로');
+    r.check(await waitFor(async () => (await osNotes(allTag)).length === 0, 5000), '앱에서 그 방을 보면 그 방의 OS 알림이 닫힌다');
+    await page.evaluate(() => window.sp5.closeAllWindows());
+  }
 
   r.section('■4 휴대폰 390 - 머리줄 ✉·💬 · 방 글 칸');
   {
