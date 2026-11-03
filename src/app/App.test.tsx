@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import App from './App';
 import { useSession } from '../data/session';
@@ -15,6 +15,12 @@ vi.mock('../data/mail', () => ({ useMailWatch: () => {} }));
 vi.mock('../data/chat', () => ({ useChatWatch: () => {} }));
 vi.mock('../data/spaces', () => ({ useMySpacesWatch: () => {} }));
 vi.mock('../data/backupLog', () => ({ BACKUP_LOG_ID: 'backupLog', watchBackupLog: () => () => {} }));
+
+// 하루 화면 조각을 먼저 싣는다 - 화면은 처음 볼 때 싣는데(app/screens), 전체 시험을 한꺼번에 돌려 바쁘면 그 변환·싣기가
+// 아래 '받는 중' 기다림(10초)을 넘겨 가끔 틀렸다(P19-2·P19-3 11-03 - 이 시험만 10.2초, 나머지 2862 통과).
+beforeAll(async () => {
+  await import('../features/day/DayScreen');
+}, 60_000);
 
 beforeEach(() => useSession.setState({ loading: true, user: null }));
 
@@ -45,5 +51,5 @@ describe('App 껍데기', () => {
     expect(container.querySelector('[data-build-id]')).toHaveTextContent('빌드 test');
     // 로그인한 동안 기기 사본을 맞춘다
     expect(useMirrorSync).toHaveBeenLastCalledWith('u1');
-  }, 15_000); // 하루 화면은 나중에 불러온다 - 테스트를 한꺼번에 돌려 바쁠 때 5초를 넘긴다
+  }, 15_000); // 하루 화면은 나중에 불러온다 - 테스트를 한꺼번에 돌려 바쁠 때 5초를 넘긴다 (조각은 beforeAll에서 먼저 싣는다)
 });
