@@ -51,9 +51,12 @@ export function issueOf(text, attachments = 0) {
 /** 결과 글 길이 - 앱 메모 카드·수정 칸에 글로 보인다 (10-19 - 300자는 까닭이 중간에 끊겼다) */
 export const RESULT_NOTE_MAX = 1000;
 
+/** 워크플로가 저장소 주인 토큰으로 단 댓글만 - 공개 이슈라 누구나 같은 표시를 적을 수 있다 */
+const ownerComments = (comments) => (comments ?? []).filter((c) => c?.author_association === 'OWNER');
+
 /** 마지막 결과 댓글의 글 (바꾼 것·바꾸지 않은 까닭 - 넘치면 '…') */
 export function resultNoteOf(comments) {
-  const last = [...(comments ?? [])].reverse().find((c) => String(c?.body ?? '').includes(RESULT_MARK));
+  const last = ownerComments(comments).reverse().find((c) => String(c?.body ?? '').includes(RESULT_MARK));
   if (!last) return '';
   const text = String(last.body)
     .replace(RESULT_MARK, '')
@@ -64,7 +67,7 @@ export function resultNoteOf(comments) {
 
 /** 합친 커밋 (워크플로가 댓글에 '<!-- sp5-merge-sha:… -->'로 남긴다) */
 export function mergeShaOf(comments) {
-  for (const c of [...(comments ?? [])].reverse()) {
+  for (const c of ownerComments(comments).reverse()) {
     const m = new RegExp(`${MERGE_MARK}([0-9a-f]{7,40})`).exec(String(c?.body ?? ''));
     if (m) return m[1];
   }

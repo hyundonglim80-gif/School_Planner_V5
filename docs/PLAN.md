@@ -2781,7 +2781,7 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 - [x] ■0 (묻고) 운영 오류 보고: 허락하면 `v5Errors`를 읽기만 해 같은 오류를 모아 보고, 이 계획에 없는 것을 항목으로 더한다(11-04 분석은 운영 자료를 읽지 않았다). 안 되면 건너뛴다.
   → 11-04 읽음: 문서 1건뿐 - 초대 코드 칸에 주소를 붙여 넣어 Firestore 경로 오류 안내가 떴다. 새 항목 없이 ■4(참여 칸)에서 함께 고친다.
 - [x] ■1 규칙 S1·S2: `check-rules`에 '막혔다' 시험을 **먼저** 넣어 뚫린 것을 본 뒤 고친다(지금 check-rules는 이 길을 시험하지 않아 통과한다). PC 에뮬레이터가 고친 규칙을 안 읽으면 REST로 넣는다(`CLAUDE.md` 2장). 앱 쪽 안내 글·설명서도 같은 조각에서.
-- [ ] ■2 함수: 알림마다 `try/catch`(하나가 던져도 그 회차의 뒤 알림·Claude 요청 확인이 돈다, 실패는 로그 - `sent`를 먼저 적는 '두 번 보내지 않기'는 둔다) · S3·S4 + `npm run test:functions`에 시험 · `functions`에서 `npm audit fix`(moderate 6건 - P14-5에서 다음 함수 배포로 미룬 것).
+- [x] ■2 함수: 알림마다 `try/catch`(하나가 던져도 그 회차의 뒤 알림·Claude 요청 확인이 돈다, 실패는 로그 - `sent`를 먼저 적는 '두 번 보내지 않기'는 둔다) · S3·S4 + `npm run test:functions`에 시험 · `functions`에서 `npm audit fix`(moderate 6건 - P14-5에서 다음 함수 배포로 미룬 것).
 - [ ] ■3 (묻고) 배포: `node tools/live-rules.cjs`로 운영 = 고치기 전 파일인지 본다 → `npx firebase deploy --only firestore:rules --project schoolplannerv3` → live-rules '같다' → `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:v5`. 규칙이 좁아지는 것이라 옛 화면에 영향이 있는 길은 ■1에서 표로 본다.
 - [ ] ■4 S5(낮음 - 앱만): 기기 기억대로 · 시험 · 참여 칸이 받는지 inspect-groups.
 - [ ] ■5 설명서·문서 · 세션 끝 정리.

@@ -32,15 +32,26 @@ test('이슈 - 첫 줄 제목, 글만', () => {
   assert.equal(issueOf('가'.repeat(70)).title, `메모 요청: ${'가'.repeat(60)}…`);
 });
 
+const owner = (body) => ({ body, author_association: 'OWNER' });
+
+test('결과 글·합친 커밋은 저장소 주인 댓글만 믿는다', () => {
+  const mine = owner('<!-- sp5-result -->\n주인 글\n<!-- sp5-merge-sha:abc1234def -->');
+  const other = { body: '<!-- sp5-result -->\n남의 글\n<!-- sp5-merge-sha:fff9999fff -->', author_association: 'NONE' };
+  assert.equal(resultNoteOf([mine, other]), '주인 글');
+  assert.equal(mergeShaOf([mine, other]), 'abc1234def');
+  assert.equal(resultNoteOf([other]), '');
+  assert.equal(mergeShaOf([other]), null);
+});
+
 test('댓글에서 결과 글·합친 커밋', () => {
-  const comments = [{ body: '처음' }, { body: '<!-- sp5-result -->\n글자를 키웠습니다.\n<!-- sp5-merge-sha:abc1234def -->' }];
+  const comments = [owner('처음'), owner('<!-- sp5-result -->\n글자를 키웠습니다.\n<!-- sp5-merge-sha:abc1234def -->')];
   assert.equal(resultNoteOf(comments), '글자를 키웠습니다.');
   assert.equal(mergeShaOf(comments), 'abc1234def');
-  assert.equal(mergeShaOf([{ body: '없음' }]), null);
+  assert.equal(mergeShaOf([owner('없음')]), null);
   // 까닭이 길어도 끊기지 않게 (10-19 - 300자는 짧았다), 넘치면 '…'
   const long = '가'.repeat(400);
-  assert.equal(resultNoteOf([{ body: `<!-- sp5-result -->\n${long}` }]), long);
-  const over = resultNoteOf([{ body: `<!-- sp5-result -->\n${'나'.repeat(RESULT_NOTE_MAX + 50)}` }]);
+  assert.equal(resultNoteOf([owner(`<!-- sp5-result -->\n${long}`)]), long);
+  const over = resultNoteOf([owner(`<!-- sp5-result -->\n${'나'.repeat(RESULT_NOTE_MAX + 50)}`)]);
   assert.equal(over.length, RESULT_NOTE_MAX);
   assert.ok(over.endsWith('…'));
 });
@@ -58,7 +69,7 @@ test('상태 - 라벨·배포 결과·시간 초과', () => {
   assert.equal(statusFromGithub({ issue: issue(['claude-merged']), runs: cancelled }).state, 'deployed');
   const ciRed = [{ name: 'CI', status: 'completed', conclusion: 'failure' }];
   assert.equal(statusFromGithub({ issue: issue(['claude-merged']), runs: ciRed }).state, 'failed');
-  const failed = statusFromGithub({ issue: issue(['claude-failed']), comments: [{ body: '<!-- sp5-result -->\n테스트 실패' }] });
+  const failed = statusFromGithub({ issue: issue(['claude-failed']), comments: [owner('<!-- sp5-result -->\n테스트 실패')] });
   assert.deepEqual(failed, { state: 'failed', note: '테스트 실패' });
   assert.equal(statusFromGithub({ issue: issue(['claude-nochange']) }).state, 'nochange');
   assert.equal(statusFromGithub({ issue: issue([], 'closed') }).state, 'failed');

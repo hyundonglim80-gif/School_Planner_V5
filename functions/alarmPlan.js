@@ -38,16 +38,33 @@ export function alarmBody(item) {
   return (text || '예정된 일정이 있습니다.').slice(0, 300);
 }
 
+/** uid 모양 - 아니면 tokensOf의 문서 경로가 던진다 */
+const UID_RE = /^[A-Za-z0-9]+$/;
+
 /**
  * 받는 사람: 개인 공간(u_{uid}) = 그 사람, 그룹 공간 = 쓴 사람(authorId) - 쓴 사람이 없으면 구성원 모두.
+ * 그룹은 지금 구성원에게만 보낸다(쓴 사람이 구성원이 아니면 아무에게도).
  * members = 그룹 공간 문서의 members 맵(uid → 역할) 또는 배열.
  */
 export function recipientsOf(sid, item, members) {
   if (typeof sid !== 'string') return [];
   if (sid.startsWith('u_')) return [sid.slice(2)];
-  if (item?.authorId) return [String(item.authorId)];
   const list = Array.isArray(members) ? members : members && typeof members === 'object' ? Object.keys(members) : [];
-  return [...new Set(list.map(String).filter(Boolean))].sort();
+  const uids = [...new Set(list.map(String).filter((uid) => UID_RE.test(uid)))].sort();
+  if (!item?.authorId) return uids;
+  const author = String(item.authorId);
+  return uids.includes(author) ? [author] : [];
+}
+
+/** 하나씩 차례로 - 하나가 던져도 뒤가 돈다(던진 것은 onError로) */
+export async function eachSettled(list, run, onError) {
+  for (const x of list) {
+    try {
+      await run(x);
+    } catch (err) {
+      onError(x, err);
+    }
+  }
 }
 
 /**

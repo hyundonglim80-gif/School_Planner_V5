@@ -24,7 +24,7 @@ import { onDocumentCreated, onDocumentWritten } from 'firebase-functions/v2/fire
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { defineSecret, defineString } from 'firebase-functions/params';
 import { setGlobalOptions, logger } from 'firebase-functions/v2';
-import { ALARM_WINDOW_MS, isDeadTokenError, planItemAlarm, pushData, recipientsOf, touchesAlarm } from './alarmPlan.js';
+import { ALARM_WINDOW_MS, eachSettled, isDeadTokenError, planItemAlarm, pushData, recipientsOf, touchesAlarm } from './alarmPlan.js';
 import {
   FINAL_STATES,
   ISSUE_LABEL,
@@ -69,9 +69,9 @@ export const v5AlarmIndex = onDocumentWritten('spaces/{sid}/items/{itemId}', asy
   const ref = db.collection(ALARMS).doc(itemId);
   const snap = await ref.get();
   const existing = snap.exists ? snap.data() : null;
-  // 받는 사람: 그룹 공간이고 쓴 사람이 없으면 구성원 (그 공간 문서의 members)
+  // 받는 사람: 그룹 공간은 늘 지금 구성원 안에서 (그 공간 문서의 members)
   let members = null;
-  if (!sid.startsWith('u_') && !after?.authorId) {
+  if (!sid.startsWith('u_')) {
     const space = await db.collection('spaces').doc(sid).get();
     members = space.data()?.members ?? null;
   }
@@ -90,7 +90,7 @@ async function tokensOf(uid) {
 export const v5SendDueAlarms = onSchedule(
   { schedule: 'every 1 minutes', timeZone: 'Asia/Seoul', retryCount: 0, secrets: [GITHUB_TOKEN] },
   async () => {
-    await sendDueAlarms();
+    await sendDueAlarms().catch((err) => logger.error('알림 회차 실패', { error: String(err?.message || err) }));
     // Claude 요청 진행 - 알림이 먼저, 실패해도 알림에 번지지 않게
     await checkClaudeRequests().catch((err) => logger.warn('Claude 요청 확인 실패', { error: String(err?.message || err) }));
   },
@@ -101,39 +101,46 @@ async function sendDueAlarms() {
   const due = await db.collection(ALARMS).where('pendingAt', '<=', now).limit(300).get();
   if (due.empty) return;
   const messaging = getMessaging();
-  for (const doc of due.docs) {
-    const alarm = doc.data();
-    // 먼저 '보냄'으로 바꾼다 - 앞 회차가 아직 돌고 있어도 두 번 보내지 않게(그 사이 바뀌었으면 건너뛴다)
-    // 건너뛸 때도 까닭을 남긴다 - 휴대폰에 안 왔을 때 로그만 보고 가려내게(10-14 '보냄'이 없어 운영 자료를 읽어야 했다)
-    try {
-      await doc.ref.update({ sent: true, pendingAt: null, sentAt: now }, { lastUpdateTime: doc.updateTime });
-    } catch (err) {
-      logger.info('알림 건너뜀 - 그 사이 바뀜', { id: doc.id, error: String(err?.message || err) });
-      continue;
-    }
-    if (typeof alarm.atMs === 'number' && alarm.atMs < now - ALARM_WINDOW_MS) {
-      logger.info('알림 건너뜀 - 너무 늦음', { id: doc.id, atMs: alarm.atMs });
-      continue;
-    }
-    const tokens = (await Promise.all((alarm.recipients || []).map(tokensOf))).flat();
-    if (tokens.length === 0) {
-      logger.info('알림 건너뜀 - 받는 사람 기기 토큰 없음', { id: doc.id, recipients: (alarm.recipients || []).length });
-      continue;
-    }
-    const res = await messaging.sendEachForMulticast({
-      tokens: tokens.map((t) => t.token),
-      data: pushData(alarm),
-      webpush: { headers: { Urgency: 'high', TTL: '3600' } },
-      android: { priority: 'high', ttl: 3600 * 1000 },
-    });
-    const dead = [];
-    res.responses.forEach((r, i) => {
-      if (!r.success && isDeadTokenError(r.error?.code)) dead.push(tokens[i].ref);
-    });
-    await Promise.all(dead.map((ref) => ref.delete().catch(() => {})));
-    const errors = res.responses.filter((r) => !r.success).map((r) => r.error?.code || 'unknown');
-    logger.info('알림 보냄', { id: doc.id, tokens: tokens.length, ok: res.successCount, fail: res.failureCount, removed: dead.length, errors });
+  // 하나가 던져도 그 회차의 뒤 알림은 보낸다. 던진 알림은 이미 '보냄'이라 다시 보내지 않는다 - 로그로 찾는다
+  await eachSettled(
+    due.docs,
+    (doc) => sendAlarm(doc, now, messaging),
+    (doc, err) => logger.error('알림 실패', { id: doc.id, error: String(err?.message || err) }),
+  );
+}
+
+async function sendAlarm(doc, now, messaging) {
+  const alarm = doc.data();
+  // 먼저 '보냄'으로 바꾼다 - 앞 회차가 아직 돌고 있어도 두 번 보내지 않게(그 사이 바뀌었으면 건너뛴다)
+  // 건너뛸 때도 까닭을 남긴다 - 휴대폰에 안 왔을 때 로그만 보고 가려내게(10-14 '보냄'이 없어 운영 자료를 읽어야 했다)
+  try {
+    await doc.ref.update({ sent: true, pendingAt: null, sentAt: now }, { lastUpdateTime: doc.updateTime });
+  } catch (err) {
+    logger.info('알림 건너뜀 - 그 사이 바뀜', { id: doc.id, error: String(err?.message || err) });
+    return;
   }
+  if (typeof alarm.atMs === 'number' && alarm.atMs < now - ALARM_WINDOW_MS) {
+    logger.info('알림 건너뜀 - 너무 늦음', { id: doc.id, atMs: alarm.atMs });
+    return;
+  }
+  const tokens = (await Promise.all((alarm.recipients || []).map(tokensOf))).flat();
+  if (tokens.length === 0) {
+    logger.info('알림 건너뜀 - 받는 사람 기기 토큰 없음', { id: doc.id, recipients: (alarm.recipients || []).length });
+    return;
+  }
+  const res = await messaging.sendEachForMulticast({
+    tokens: tokens.map((t) => t.token),
+    data: pushData(alarm),
+    webpush: { headers: { Urgency: 'high', TTL: '3600' } },
+    android: { priority: 'high', ttl: 3600 * 1000 },
+  });
+  const dead = [];
+  res.responses.forEach((r, i) => {
+    if (!r.success && isDeadTokenError(r.error?.code)) dead.push(tokens[i].ref);
+  });
+  await Promise.all(dead.map((ref) => ref.delete().catch(() => {})));
+  const errors = res.responses.filter((r) => !r.success).map((r) => r.error?.code || 'unknown');
+  logger.info('알림 보냄', { id: doc.id, tokens: tokens.length, ok: res.successCount, fail: res.failureCount, removed: dead.length, errors });
 }
 
 // 쪽지 알림 (P15-1 ■3). 앱이 받는 쪽(mailIn)과 사본(mailSent)을 한 묶음으로 쓰므로 사본이 생기면 받는 쪽도 있다 -
@@ -291,7 +298,7 @@ export const v5ClaudeRequest = onDocumentWritten({ document: 'spaces/{sid}/items
   const user = await getAuth()
     .getUser(sid.slice(2))
     .catch(() => null);
-  if (!isAllowedEmail(user?.email, OWNER_EMAILS.value())) {
+  if (!user?.emailVerified || !isAllowedEmail(user.email, OWNER_EMAILS.value())) {
     logger.info('Claude 요청 건너뜀 - 정한 계정이 아님', { itemId });
     return;
   }
@@ -398,8 +405,8 @@ async function ensureClaudeLabels(now) {
     const user = await getAuth()
       .getUserByEmail(email)
       .catch(() => null);
-    // 아직 이 앱(같은 Firebase)에 한 번도 들어오지 않은 계정 - 다음 시간에 다시
-    if (!user) continue;
+    // 아직 이 앱(같은 Firebase)에 한 번도 들어오지 않은 계정·메일 확인이 안 된 계정 - 다음 시간에 다시
+    if (!user?.emailVerified) continue;
     const col = db.collection('spaces').doc(`u_${user.uid}`).collection('labels');
     const labels = (await col.where('kind', '==', 'note').get()).docs.map((d) => ({ id: d.id, ...d.data() }));
     const plan = planClaudeLabel(labels);

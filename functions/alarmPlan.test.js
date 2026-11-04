@@ -1,7 +1,7 @@
 // node --test functions/alarmPlan.test.js (npm run test:functions) - V4 alarmPlan.test.js를 항목 하나 단위로
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { ALARM_WINDOW_MS, alarmAtMs, alarmOf, isDeadTokenError, planItemAlarm, pushData, recipientsOf, touchesAlarm } from './alarmPlan.js';
+import { ALARM_WINDOW_MS, alarmAtMs, alarmOf, eachSettled, isDeadTokenError, planItemAlarm, pushData, recipientsOf, touchesAlarm } from './alarmPlan.js';
 
 const ev = (over = {}) => ({ kind: 'event', date: '2026-10-08', time: '09:30', text: '협의회', ...over });
 const AT = Date.UTC(2026, 9, 8, 0, 30); // 한국 09:30 = UTC 00:30
@@ -25,9 +25,31 @@ test('알림을 걸 일정: 끝냄·지움·메모·시각 없음·기간 첫날
 
 test('받는 사람: 개인 = 그 사람, 그룹 = 쓴 사람(없으면 구성원)', () => {
   assert.deepEqual(recipientsOf('u_abc', ev(), null), ['abc']);
-  assert.deepEqual(recipientsOf('g_1', ev({ authorId: 'x' }), { y: 'member' }), ['x']);
+  assert.deepEqual(recipientsOf('g_1', ev({ authorId: 'x' }), { x: 'member', y: 'owner' }), ['x']);
   assert.deepEqual(recipientsOf('g_1', ev(), { y: 'owner', x: 'member' }), ['x', 'y']);
   assert.deepEqual(recipientsOf('g_1', ev(), ['b', 'a', 'a']), ['a', 'b']);
+});
+
+test('받는 사람: 그룹은 지금 구성원에게만 · uid 모양이 아니면 뺀다', () => {
+  assert.deepEqual(recipientsOf('g_1', ev({ authorId: 'x' }), { y: 'member' }), []);
+  assert.deepEqual(recipientsOf('g_1', ev({ authorId: 'x' }), null), []);
+  assert.deepEqual(recipientsOf('g_1', ev({ authorId: 'a/b' }), { 'a/b': 'member' }), []);
+  assert.deepEqual(recipientsOf('g_1', ev(), { 'a/b': 'member', x: 'member' }), ['x']);
+});
+
+test('하나씩 차례로 - 하나가 던져도 뒤가 돌고 던진 것을 알린다', async () => {
+  const ran = [];
+  const failed = [];
+  await eachSettled(
+    [1, 2, 3],
+    async (n) => {
+      if (n === 2) throw new Error('둘');
+      ran.push(n);
+    },
+    (n, err) => failed.push([n, err.message]),
+  );
+  assert.deepEqual(ran, [1, 3]);
+  assert.deepEqual(failed, [[2, '둘']]);
 });
 
 test('새 알림 = 보낼 칸 · 같은 시각이면 다시 보내지 않고 글만 고친다 · 시각을 바꾸면 새로', () => {
