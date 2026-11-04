@@ -10,10 +10,10 @@ import { useSession } from '../data/session';
 import { useMailStore } from '../data/mailStore';
 import { useChatStore } from '../data/chatStore';
 import { useMySpaces, useSpaceChoice, useSpaceOverlay } from '../data/spaceChoice';
-import { logout } from '../features/auth/login';
+import { askLogout } from '../features/auth/askLogout';
 
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
-vi.mock('../features/auth/login', () => ({ logout: vi.fn() }));
+vi.mock('../features/auth/askLogout', () => ({ askLogout: vi.fn() }));
 
 beforeEach(() => {
   resetWindowsForTest();
@@ -153,7 +153,7 @@ describe('계정 칸 (MENU.md 3-5)', () => {
     expect(container.querySelector('[data-account-email]')).toHaveTextContent('t@example.com');
     expect(container.querySelector('[data-account-groups]')).toHaveTextContent('공유 그룹');
     await user.click(container.querySelector('[data-logout]')!);
-    expect(logout).toHaveBeenCalledTimes(1);
+    expect(askLogout).toHaveBeenCalledTimes(1);
     expect(container.querySelector('[data-account-panel]')).toBeNull();
   });
 });

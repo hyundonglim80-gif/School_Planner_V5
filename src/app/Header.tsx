@@ -10,7 +10,7 @@ import { ddayText, primaryDDay } from '../domain/dday';
 import type { ShortcutId } from '../domain/shortcuts';
 import { useCurrentSpaceId, useSession, useSpacePickerShown } from '../data/session';
 import { setSpaceChoice, useMySpaces } from '../data/spaceChoice';
-import { logout } from '../features/auth/login';
+import { askLogout } from '../features/auth/askLogout';
 import GcalPendingButton from '../features/gcal/GcalPendingButton';
 import MailHeaderButton from '../features/mail/MailHeaderButton';
 import ChatHeaderButton from '../features/chat/ChatHeaderButton';
@@ -343,7 +343,7 @@ function AccountMenu({ title }: { title: string }) {
               data-logout
               onClick={() => {
                 setOpen(false);
-                void logout();
+                void askLogout();
               }}
               className="w-full px-4 py-2 text-left font-bold flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-red-600 cursor-pointer"
             >

@@ -4,12 +4,13 @@
 //   1) 화면이 로그인 상태가 되고(?as=2 는 두 번째 계정)
 //   2) 서버에 spaces/u_{uid}(나 혼자 owner인 개인 공간)가 생기고
 //   3) Firestore 오프라인 저장소(IndexedDB 'firestore/…')가 생기지 않는다(V4 09-22 - 구조로 확인).
+//   4) 저장 안 한 칸이 있으면 로그아웃이 먼저 묻는다 - 아니오면 그대로, 예면 로그인 화면(P22-2).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-login.mjs   (SITE=… 로 다른 주소)
 // ⚠️ 에뮬레이터만 건드린다. 운영 자료와는 아무 상관이 없다.
 import { deleteApp } from 'firebase/app';
 import { doc, getDoc } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, sel, serverUntil } from './lib/probe.mjs';
+import { emulator, launch, newPage, open, report, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const emu = emulator('inspect-login');
@@ -44,6 +45,27 @@ try {
     r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
     await ctx.close();
   }
+
+  r.section('로그아웃 전에 묻기 (P22-2)');
+  const { ctx, page, errors, dialogs } = await newPage(browser);
+  await open(page, '#/day/2026-10-08');
+  await page.locator(sel('journal-add')).click();
+  const box = page.locator(sel('note-text-input'));
+  await waitFor(box);
+  await box.fill('로그아웃 점검 글');
+  const logoutNow = async () => {
+    await page.click(sel('account'));
+    await page.click(sel('logout'));
+  };
+  await logoutNow();
+  r.check((await waitFor(() => dialogs.seen.length === 1)) && dialogs.seen[0].includes('저장하지 않은 칸'), '저장 안 한 칸이 있으면 먼저 묻는다', `물음: ${dialogs.seen.join(' / ')}`);
+  await page.waitForTimeout(500);
+  r.check((await page.locator(sel('session', 'signed-in')).count()) === 1 && (await box.inputValue()) === '로그아웃 점검 글', '아니오 → 로그인 그대로, 칸과 글이 남는다');
+  dialogs.answer = true;
+  await logoutNow();
+  r.check(await waitFor(page.locator(sel('login-google')), 10000), '예 → 로그인 화면');
+  r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
+  await ctx.close();
 } finally {
   await browser.close();
   await deleteApp(emu.app).catch(() => {});
