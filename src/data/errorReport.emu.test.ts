@@ -23,6 +23,16 @@ async function signInAs(email: string) {
     await signInWithEmailAndPassword(auth, email, PASSWORD);
   }
   const u = auth.currentUser!;
+  // 규칙 isDeveloper는 메일 확인된 계정만 믿는다 - 비밀번호 계정은 에뮬레이터 관리자로 표시한다
+  if (email === DEV) {
+    const res = await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/schoolplannerv3/accounts:update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+      body: JSON.stringify({ localId: u.uid, emailVerified: true }),
+    });
+    if (!res.ok) throw new Error(`메일 확인 표시 실패 ${res.status}`);
+    await u.getIdToken(true);
+  }
   useSession.setState({ loading: false, user: { uid: u.uid, email, displayName: '', photoURL: '' } });
   return u.uid;
 }

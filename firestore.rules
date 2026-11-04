@@ -27,7 +27,7 @@ service cloud.firestore {
 
     // 등록된 개발자 계정. src/domain/developers.ts 와 같은 목록을 유지해야 한다(V4는 src/lib/developers.ts).
     function isDeveloper() {
-      return signedIn() && request.auth.token.email in [
+      return signedIn() && request.auth.token.email_verified == true && request.auth.token.email in [
         'hyundonglim@gmail.com',
         'hyundonglim80@gmail.com',
         'hyundonglim.work@gmail.com'
@@ -179,7 +179,7 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/groups/$(sid.replace('^g_', ''))).data;
     }
 
-    // 내가 그 V4 그룹(groups/{gid}.members 배열)의 구성원인가
+    // 내가 그 V4 그룹(groups/{gid}.members 배열)의 구성원인가 - 공간을 처음 만들 때만 쓴다(있는 공간에 들어오는 길은 초대 코드 하나)
     function isV4GroupMember(sid) {
       return signedIn()
         && sid.matches('g_[A-Za-z0-9]+')
@@ -236,12 +236,10 @@ service cloud.firestore {
           && request.resource.data.get('joinCodes', {}).diff(resource.data.get('joinCodes', {})).affectedKeys().hasOnly([request.auth.uid])
           && (
             // 참여: 내 칸에 적은 코드 == 지금 열린 초대 코드(주인이 inviteCode를 지우거나 바꾸면 옛 코드는 막힌다), 'member'로만
-            (((resource.data.get('inviteCode', null) != null
-                && request.resource.data.get('joinCodes', {}).get(request.auth.uid, null) == resource.data.inviteCode)
-              || isV4GroupMember(sid))
+            (resource.data.get('inviteCode', null) != null
+              && request.resource.data.get('joinCodes', {}).get(request.auth.uid, null) == resource.data.inviteCode
               && !(request.auth.uid in resource.data.members)
               && request.resource.data.members[request.auth.uid] == 'member')
-            // (V4 그룹에서 가져온 공간은 V4 구성원이면 초대 코드 없이도 - 남이 먼저 가져온 뒤 V4에 들어온 사람)
             // 나가기: 구성원이 나를 뺀다(주인은 나가지 못한다 - 그룹을 지운다)
             || (resource.data.members[request.auth.uid] == 'member'
               && !(request.auth.uid in request.resource.data.members))

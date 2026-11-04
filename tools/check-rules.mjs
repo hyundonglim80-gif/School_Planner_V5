@@ -38,6 +38,17 @@ async function login(c, email) {
   return cred.user.uid;
 }
 
+/** 구글 로그인처럼 '메일 확인됨'으로 - 에뮬레이터 비밀번호 계정은 확인 안 됨이고, 규칙 isDeveloper가 그것을 본다 */
+async function verifyEmail(c, uid) {
+  const res = await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/schoolplannerv3/accounts:update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+    body: JSON.stringify({ localId: uid, emailVerified: true }),
+  });
+  if (!res.ok) throw new Error(`메일 확인 표시 실패 ${res.status}`);
+  await c.auth.currentUser.getIdToken(true);
+}
+
 /** 되어야 하는 일 */
 async function must(what, fn) {
   try {
@@ -236,7 +247,7 @@ async function run() {
 
   console.log('\n[나이스 키 sharedConfig] — 로그인하면 읽고, 쓰기는 개발자만');
   const D = client('developer');
-  await login(D, 'hyundonglim80@gmail.com');
+  await verifyEmail(D, await login(D, 'hyundonglim80@gmail.com'));
   await must('개발자가 키를 저장한다', async () => {
     await setDoc(doc(D.db, 'sharedConfig', 'neis'), { key: 'RULECHECK-KEY', updatedAt: Date.now() });
   });
@@ -590,7 +601,7 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   await mustNot('V4 구성원이어도 owner로는 참여하지 못한다', async () => {
     await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'owner', updatedAt: now() });
   });
-  await must('V4 구성원은 초대 코드 없이 member로 참여한다', async () => {
+  await mustNot('V4 구성원이어도 초대 코드 없이는 참여하지 못한다', async () => {
     await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'member', updatedAt: now() });
   });
   await must('주인이 나중에 초대 코드를 연다 (공간 + 초대 코드 한 묶음)', async () => {
@@ -599,11 +610,36 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
     b.set(invite(A, 'V5RCV4'), { sid: v4gs, ownerId: aUid });
     await b.commit();
   });
+  await must('코드를 받은 V4 구성원은 참여한다', async () => {
+    await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'member', [`joinCodes.${cUid}`]: 'V5RCV4', updatedAt: now() });
+  });
   await must('(정리) 가져온 그룹·V4 그룹을 지운다', async () => {
     await deleteDoc(item(A, v4gs, 'rc_v4g1'));
     await deleteDoc(invite(A, 'V5RCV4'));
     await deleteDoc(space(A, v4gs));
     await deleteDoc(doc(A.db, 'groups', v4gid));
+  });
+
+  // V4 groups 문서는 누구나 [나]로 만든다 - 같은 id라고 그 그룹 공간의 구성원으로 치면 안 된다
+  const closedId = 'closedRulecheck';
+  const closedSid = `g_${closedId}`;
+  await must('(준비) 초대가 닫힌 그룹과 그 메모', async () => {
+    await setDoc(space(A, closedSid), { kind: 'group', name: '닫힌 그룹', ownerId: aUid, members: { [aUid]: 'owner' }, createdAt: now(), updatedAt: now(), v: 1 });
+    await setDoc(item(A, closedSid, 'rc_closed'), note('구성원만'));
+  });
+  await must('(준비) 같은 id의 V4 그룹 문서를 다른 사람이 만든다', async () => {
+    await setDoc(doc(X.db, 'groups', closedId), { name: '같은 id', ownerId: xUid, ownerName: 'X', inviteCode: 'V4RCLZ', members: [xUid], createdAt: now() });
+  });
+  await mustNot('그 V4 그룹 문서로 닫힌 그룹에 참여한다', async () => {
+    await updateDoc(space(X, closedSid), { [`members.${xUid}`]: 'member', updatedAt: now() });
+  });
+  await mustNot('닫힌 그룹의 메모를 읽는다', async () => {
+    await getDoc(item(X, closedSid, 'rc_closed'));
+  });
+  await must('(정리) 닫힌 그룹·같은 id V4 그룹을 지운다', async () => {
+    await deleteDoc(doc(X.db, 'groups', closedId));
+    await deleteDoc(item(A, closedSid, 'rc_closed'));
+    await deleteDoc(space(A, closedSid));
   });
 
   console.log('\n[V5 v5alarms] — 함수만');
@@ -660,6 +696,14 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   });
   await mustNot('개발자 아닌 사람이 지운다', async () => {
     await deleteDoc(errDoc(A, 'rc_e1'));
+  });
+  const U = client('unverifiedDeveloper');
+  await login(U, 'hyundonglim.work@gmail.com');
+  await mustNot('메일 확인이 안 된 계정은 개발자 메일이어도 목록을 읽지 못한다', async () => {
+    await getDocs(query(collection(U.db, 'v5Errors'), limit(1)));
+  });
+  await mustNot('메일 확인이 안 된 계정은 개발자 메일이어도 공휴일을 쓰지 못한다', async () => {
+    await setDoc(doc(U.db, 'holidays', '1999'), { days: [] });
   });
   await must('개발자가 목록을 읽는다', async () => {
     const snap = await getDocs(collection(D.db, 'v5Errors'));

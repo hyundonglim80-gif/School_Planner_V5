@@ -1,7 +1,7 @@
 // tools/inspect-import-groups.mjs - P8-4 ■3: V4 공유 그룹 가져오기를 세 계정으로 실제 크롬에서 본다.
 //   V4 그룹(주인 teacher, 구성원 teacher2)과 그 밑 자료를 심고 →
 //   teacher2(주인이 아님)가 공유 그룹 창 'V4 그룹 가져오기'로 가져온다 = g_{V4 id} 공간이 V4 주인·구성원 그대로(초대 코드 없음)·그룹 자료·쓰는 라벨만·만든 사람 ·
-//   teacher(주인)가 '🔑 초대 코드 만들기' · 다시 가져오기 = 바뀐 것 0 · V4에 나중에 든 teacher3가 가져오면 초대 코드 없이 구성원으로(겹치지 않음) ·
+//   teacher(주인)가 '🔑 초대 코드 만들기' · 다시 가져오기 = 바뀐 것 0 · V4에 나중에 든 teacher3는 가져오기로 못 들어오고 초대 코드로 구성원이 된다(겹치지 않음) ·
 //   백업 창 '가져오기' 탭에서 공유 그룹 창으로. 심은 V4 그룹·가져온 공간은 끝에 지운다.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → V4 seed → npm run seed → node tools/inspect-import-groups.mjs
@@ -123,7 +123,7 @@ try {
   r.check((await v5('items')).length === 4 && (await v5('labels')).filter((l) => !l.deletedAt).length === 3, '항목·라벨 그대로 (겹치지 않는다)');
   await A.page.evaluate(() => window.sp5.closeAllWindows());
 
-  r.section('V4에 나중에 든 teacher3 - 초대 코드 없이 구성원으로');
+  r.section('V4에 나중에 든 teacher3 - 가져오기만으로는 못 들어오고 초대 코드로 구성원이 된다');
   await updateDoc(doc(emC.db, 'groups', GID), { members: arrayUnion(uidC) });
   const C = await newPage(browser);
   await open(C.page, `#/day/${DAY}`, { as: '3' });
@@ -132,8 +132,15 @@ try {
   r.check(await waitFor(rowC, 10000), 'teacher3에게도 V4 그룹');
   await waitFor(async () => await rowC.locator(sel('v4-group-import')).isEnabled(), 8000);
   await rowC.locator(sel('v4-group-import')).click();
+  r.check(await waitFor(C.page.locator(sel('toast')).filter({ hasText: '초대 코드를 받아' }), 15000), '코드 없이 가져오면 초대 코드를 받으라는 안내');
+  r.check(!(await getDoc(doc(em.db, 'spaces', SID))).data()?.members?.[uidC], '구성원이 되지 않는다');
+  await C.page.locator(sel('group-join-code')).fill(code);
+  await C.page.locator(sel('group-join')).click();
   const joined = await serverUntil(async () => (await getDoc(doc(em.db, 'spaces', SID))).data(), (d) => d?.members?.[uidC] === 'member', 15000);
-  r.check(joined?.members?.[uidC] === 'member' && joined?.ownerId === uidA, '이미 있는 공간에 member로 들어간다 (주인 그대로)');
+  r.check(joined?.members?.[uidC] === 'member' && joined?.ownerId === uidA, '초대 코드로 member가 된다 (주인 그대로)');
+  await waitFor(async () => (await rowC.getAttribute('data-v4-group-state').catch(() => '')) === 'imported', 10000);
+  await waitFor(async () => await rowC.locator(sel('v4-group-import')).isEnabled(), 8000);
+  await rowC.locator(sel('v4-group-import')).click();
   r.check(await waitFor(rowC.locator(sel('v4-group-result')), 20000), 'teacher3 결과 표');
   r.check((await v5('items')).length === 4, '항목이 겹치지 않는다 (결정적 id)');
   await C.page.evaluate(() => window.sp5.closeAllWindows());

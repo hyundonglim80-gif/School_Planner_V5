@@ -143,7 +143,7 @@ async function freeInviteCode(wish?: string): Promise<string> {
 
 /**
  * V4 그룹의 V5 공간을 연다 (P8-4 ■2) - 내 목록에 없으면 V4 주인·구성원 그대로 만들고(V4 주인이면 V4 초대 코드도 - 쓰고 있으면 새로),
- * 이미 있으면(남이 먼저 가져왔다) V4 구성원으로 들어간다. 구성원 이름(people)은 비어 있는 사람만 V4 이름으로.
+ * 이미 있으면(남이 먼저 가져왔다) 그때의 구성원은 내 목록에 있다 - 없는 사람은 초대 코드로 들어온다. 구성원 이름(people)은 비어 있는 사람만 V4 이름으로.
  */
 export async function ensureImportedGroup(user: SessionUser, g: ImportedGroupInfo): Promise<string> {
   const sid = importedGroupSid(g.id);
@@ -161,13 +161,9 @@ export async function ensureImportedGroup(user: SessionUser, g: ImportedGroupInf
       if (code) b.set(doc(db, 'spaceInvites', code), { sid, ownerId: user.uid, createdAt: serverTimestamp() });
       await b.commit();
     } catch (e) {
-      // 이미 있다(남이 먼저 가져왔다) - V4 구성원이면 member로 들어간다
-      try {
-        await updateDoc(doc(db, 'spaces', sid), { [`members.${user.uid}`]: 'member', updatedAt: serverTimestamp() });
-      } catch (e2) {
-        console.error('[spaces] V4 그룹 공간을 열지 못했습니다.', e, e2);
-        throw new Error(`[${g.name}] 그룹 공간을 열지 못했습니다. V4에서 이 그룹의 구성원인지, 네트워크를 확인해 주세요.`);
-      }
+      // 이미 있다(남이 먼저 가져왔다) - 그때 V4 구성원이던 사람은 위 목록에 있다. 그 뒤 V4에 든 사람은 초대 코드로만 들어온다
+      console.error('[spaces] V4 그룹 공간을 열지 못했습니다.', e);
+      throw new Error(`[${g.name}] 그룹을 열지 못했습니다. 이미 V5로 옮겨진 그룹이면 그룹장에게 초대 코드를 받아 참여해 주세요.`);
     }
   }
   try {
@@ -222,7 +218,6 @@ export async function closeInvite(user: SessionUser, group: GroupSpace): Promise
 /**
  * 구성원 내보내기 (주인만, 주인 자신은 안 됨) - members·joinCodes·이름(people)을 지우고 **초대 코드도 늘 바꾼다**
  * (내보낸 사람도 옛 코드를 안다). 초대가 닫혀 있으면 닫힌 채로. 한 묶음.
- * V4에서 가져온 그룹은 V4 그룹 구성원이면 코드 없이 다시 들어온다(규칙 isV4GroupMember) - V4 그룹에서도 빼야 한다.
  */
 export async function removeMember(user: SessionUser, group: GroupSpace, uid: string): Promise<void> {
   if (group.ownerId !== user.uid) throw new Error('구성원은 그룹장만 내보냅니다.');

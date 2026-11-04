@@ -28,8 +28,18 @@ const ACCOUNTS = [
   { email: 'teacher3@example.com', note: '교과 전담 (?as=3)', teaching: SUBJECT_ONLY },
   { email: 'teacher4@example.com', note: '성능 점검 (?as=4) - 1만 항목은 tools/inspect-perf가 심는다', teaching: HOMEROOM },
   // 에뮬레이터 안에서만 쓰는 개발자 계정(환경설정 '개발자' 탭·오류 기록 읽기 - P14-2). 메일은 규칙 isDeveloper 목록의 하나(check-rules도 같은 메일)
-  { email: 'hyundonglim80@gmail.com', note: '개발자 (?as=5)', teaching: HOMEROOM },
+  { email: 'hyundonglim80@gmail.com', note: '개발자 (?as=5)', teaching: HOMEROOM, verified: true },
 ];
+
+/** 구글 로그인처럼 '메일 확인됨'으로 - 규칙 isDeveloper가 그것을 본다(비밀번호 계정은 확인 안 됨이다) */
+async function markEmailVerified(uid) {
+  const res = await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/schoolplannerv3/accounts:update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' },
+    body: JSON.stringify({ localId: uid, emailVerified: true }),
+  });
+  if (!res.ok) throw new Error(`메일 확인 표시 실패 ${res.status}`);
+}
 
 const app = initializeApp({ projectId: 'schoolplannerv3', apiKey: 'fake-api-key' }, 'seed-v5');
 const db = getFirestore(app);
@@ -49,7 +59,7 @@ const personalSpace = (uid) => ({
 });
 
 async function main() {
-  for (const { email, note, teaching } of ACCOUNTS) {
+  for (const { email, note, teaching, verified } of ACCOUNTS) {
     let uid;
     try {
       uid = (await signInWithEmailAndPassword(auth, email, PASSWORD)).user.uid;
@@ -58,6 +68,7 @@ async function main() {
       uid = (await createUserWithEmailAndPassword(auth, email, PASSWORD)).user.uid;
       console.log(`${email} 계정이 없어 만들었습니다 (V4 자료는 없다 - V4 seed를 돌리면 더해진다)`);
     }
+    if (verified) await markEmailVerified(uid);
     await setDoc(doc(db, 'spaces', `u_${uid}`), personalSpace(uid));
     // 처음 로그인 'V4 자료 가져오기' 띠는 닫아 둔다 - seed 계정에는 V4 자료가 있어 띠가 다른 점검의 화면을 밀어낸다.
     // 띠와 가져오기는 tools/inspect-import-labels.mjs가 이 기록을 비우고 본 뒤 되돌린다.
