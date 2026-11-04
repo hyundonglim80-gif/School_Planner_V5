@@ -11,6 +11,7 @@ import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEFAULT_FONT_SCALE, FONT_SCALES, type FontScale } from '../domain/fontScale';
+import { DEFAULT_DECOR } from '../domain/decor';
 import { DEFAULT_PALETTE } from '../domain/palette';
 import { readShortcutOverrides, readTabBindings, type ShortcutOverrides, type TabBindings } from '../domain/shortcuts';
 import { readDDayList, type DDay } from '../domain/dday';
@@ -162,6 +163,8 @@ export interface CommonSettings {
   palette: string;
   /** 색약 배려 (P20-2 - 사람을 따른다, PC·휴대폰 같게). 화면에 입히는 것은 app/viewAids */
   cvd: boolean;
+  /** 꾸미기 (P20-3 - domain/decor, PC·휴대폰 같게). 모르는 값은 끄기로 그린다(sanitizeDecor) */
+  decor: string;
 }
 
 export interface PhotoFolderConfig {
@@ -220,6 +223,8 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   // 모르는 id도 그대로 둔다 - 새 테마를 고른 계정을 옛 앱(새 테마를 모른다)이 기본으로 되돌려 올리지 않게
   palette: customField<string>(DEFAULT_PALETTE, (v) => (typeof v === 'string' && /^[a-z]{1,20}$/.test(v) ? v : undefined)),
   cvd: boolField(false),
+  // 팔레트처럼 모르는 값도 그대로 둔다 - 새 꾸미기를 고른 계정을 옛 앱이 끄기로 되돌려 올리지 않게
+  decor: customField<string>(DEFAULT_DECOR, (v) => (typeof v === 'string' && /^[a-z]{1,20}$/.test(v) ? v : undefined)),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */

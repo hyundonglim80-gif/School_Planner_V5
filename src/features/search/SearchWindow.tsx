@@ -33,6 +33,7 @@ import { openDayCard, useAllDayCards } from '../day/useDayCards';
 import { evalPlaceOf } from '../../domain/evaluation';
 import { useEvaluations, type EvalItem } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
+import DecorSpot from '../../ui/DecorSpot';
 
 const PAGE_SIZE = 50;
 
@@ -412,6 +413,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
             </>
           ) : (
             <div data-search-empty className="py-12 text-center text-slate-400 text-xs font-semibold">
+              <DecorSpot slot="search" />
               {keyword.trim() ? '찾는 글이 없습니다.' : '고른 기간에 항목이 없습니다.'}
             </div>
           )}

@@ -12,6 +12,7 @@ import { useTimetableShortcuts } from '../features/timetable/shortcuts';
 import { useProgressShortcuts } from '../features/progress/shortcuts';
 import { useClassBellRunner } from '../features/bell/bell';
 import { usePrintShortcut } from './printScreen';
+import DecorBand from './DecorBand';
 import { useClassShortcuts } from '../features/class/view';
 import { useAttendanceShortcuts } from '../features/attendance/open';
 import { useNoticeShortcuts } from '../features/notices/shortcuts';
@@ -153,6 +154,7 @@ export default function Shell() {
       style={{ paddingRight: rightOpen ? RIGHT_COLUMN_CSS_WIDTH : undefined, paddingLeft: leftOpen ? LEFT_COLUMN_CSS_WIDTH : undefined }}
     >
       <header ref={headerRef} className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm px-4 py-3 border-b border-border shadow-xs flex flex-col gap-2.5">
+        <DecorBand />
         <Header />
         {!isDatelessScope(scope) && <SecondRow />}
         {/* 📴 끊겨 저장을 기다림 - 앱을 닫지 마세요 (P14-6 ■1). 휴대폰에서 창이 덮으면 창 위에 */}

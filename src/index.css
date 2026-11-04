@@ -137,6 +137,35 @@ html.cvd [data-conflict]::before {
   color: var(--color-red-600);
 }
 
+/* ── 꾸미기 그림 (P20-3 - ui/decorArt) ────────────────────────────────
+   빛깔은 밝기만 따른다(색 테마와 따로 고른다). 띠는 글자 밑에 깔려 흐리게, 진한 빛깔은 띠에서 옅은 빛깔로 바꿔 글자가 묻히지 않게 한다
+   (inspect-theme이 띠의 가장 진한 빛깔을 불투명도로 섞어 글자 대비를 잰다). 그림은 움직이지 않는다. */
+.decor-art[data-art='spring'] { --decor-1: #f9a8d4; --decor-2: #fbcfe8; --decor-3: #db2777; --decor-4: #a8765a; }
+.decor-art[data-art='summer'] { --decor-1: #7dd3fc; --decor-2: #bae6fd; --decor-3: #fbbf24; --decor-4: #0369a1; }
+.decor-art[data-art='autumn'] { --decor-1: #f97316; --decor-2: #fbbf24; }
+.decor-art[data-art='winter'] { --decor-1: #60a5fa; --decor-2: #f0f9ff; --decor-3: #ef4444; --decor-4: #f97316; --decor-5: #475569; }
+.decor-art[data-art='animal'] {
+  --decor-1: #57534e; --decor-2: #fcd9a8; --decor-3: #edd1ae; --decor-4: #b98a5e;
+  --decor-5: #ffffff; --decor-6: #fde047; --decor-7: #f9a8d4; --decor-8: #fb923c;
+}
+html.dark .decor-art[data-art='spring'] { --decor-1: #e88bb8; --decor-2: #f5b8d3; --decor-3: #fde68a; --decor-4: #b08968; }
+html.dark .decor-art[data-art='summer'] { --decor-1: #38bdf8; --decor-2: #7dd3fc; --decor-3: #fcd34d; --decor-4: #e2e8f0; }
+html.dark .decor-art[data-art='autumn'] { --decor-1: #fb923c; --decor-2: #fcd34d; }
+html.dark .decor-art[data-art='winter'] { --decor-1: #93c5fd; --decor-2: #e2e8f0; --decor-3: #f87171; --decor-4: #fb923c; --decor-5: #334155; }
+html.dark .decor-art[data-art='animal'] {
+  --decor-1: #292524; --decor-2: #d9a766; --decor-3: #c9a27a; --decor-4: #8d6a4a;
+  --decor-5: #e7e5e4; --decor-6: #facc15; --decor-7: #f472b6; --decor-8: #fb923c;
+}
+.decor-band { opacity: 0.45; }
+html.dark .decor-band { opacity: 0.2; }
+html .decor-art.decor-band[data-art='spring'] { --decor-3: #fbcfe8; --decor-4: #fbcfe8; }
+html .decor-art.decor-band[data-art='summer'] { --decor-2: #a5e1fd; --decor-3: #fcd34d; --decor-4: #7dd3fc; }
+html .decor-art.decor-band[data-art='autumn'] { --decor-1: #fdba74; --decor-2: #fcd34d; }
+html .decor-art.decor-band[data-art='winter'] { --decor-2: #bae6fd; }
+html .decor-art.decor-band[data-art='animal'] { --decor-1: #a8a29e; --decor-4: #edd1ae; --decor-8: #fcd9a8; }
+/* 고대비는 글자 7:1이 먼저 - 글자 밑의 띠는 쉰다(빈 화면 그림은 글자 밑이 아니라 그대로) */
+html.hc .decor-band { display: none; }
+
 /* ── 인쇄 (V4 그대로 - ui/print) ──────────────────────────────────────
    찍을 부분을 복제해 body 바로 아래 #sp5-print-root에 넣고, 인쇄할 때는 그것만 보인다.
    스크롤 상자·높이 제한·붙박이(sticky)는 펼쳐서 잘리지 않게 한다. 색은 그대로 찍는다(라벨 칩·교시 색). */

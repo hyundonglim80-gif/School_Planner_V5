@@ -33,6 +33,7 @@ import { useDayNotes } from './useDayNotes';
 import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
 import { shortcutTarget } from '../../ui/shortcutTarget';
+import DecorSpot from '../../ui/DecorSpot';
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -232,6 +233,7 @@ export default function DayJournal({ date }: { date: YMD }) {
           </p>
         ) : cards.length > 0 ? null : (
           <div data-journal-empty className="w-full text-center py-10 bg-white/60 rounded-2xl border border-dashed border-slate-300 p-6 shadow-xs">
+            <DecorSpot slot="journal" />
             <p className="text-slate-500 font-bold text-sm">이 날의 메모가 없습니다.</p>
           </div>
         ))}

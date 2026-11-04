@@ -37,6 +37,7 @@ import { openLinkViewer } from '../links/open';
 import { openEventPanel, shownEventKey, useShownEventId, useShownEventKey } from '../events/open';
 import { useFocusReveal } from '../search/focus';
 import { shortcutTarget } from '../../ui/shortcutTarget';
+import DecorSpot from '../../ui/DecorSpot';
 
 const NONE: readonly ItemDoc[] = [];
 
@@ -268,9 +269,14 @@ export default function DayEvents({ date }: { date: YMD }) {
             </p>
           ) : (
             <div data-event-empty className="flex flex-col items-center justify-center py-10 text-center text-slate-400 text-xs">
-              <span className="text-3xl mb-2" aria-hidden>
-                📋
-              </span>
+              <DecorSpot
+                slot="events"
+                fallback={
+                  <span className="text-3xl mb-2" aria-hidden>
+                    📋
+                  </span>
+                }
+              />
               <p>오늘의 일정이 없습니다.</p>
               <p className="mt-1 text-slate-400">+ 추가 버튼을 눌러 일정을 넣어 보세요.</p>
             </div>

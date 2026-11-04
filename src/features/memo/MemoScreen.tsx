@@ -36,6 +36,7 @@ import { MEMO_SORT_OPTIONS, setMemoSortKey, sortMemos, toggleMemoSortDir, useMem
 import { openNotePanel, useShownNoteId } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
 import { shortcutTarget } from '../../ui/shortcutTarget';
+import DecorSpot from '../../ui/DecorSpot';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
 const FALLBACK_LABEL = '메모';
@@ -394,6 +395,7 @@ export default function MemoScreen() {
                   grid('active', active)
                 ) : (
                   <p data-memo-empty className="text-center text-slate-400 text-sm py-6">
+                    <DecorSpot slot="memo" />
                     {current === 'fav' ? '즐겨찾기한 메모가 없습니다. 메모의 ☆를 눌러 놓으면 여기 모입니다.' : '조건에 맞는 메모가 없습니다.'}
                   </p>
                 ))}
