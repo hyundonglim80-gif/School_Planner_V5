@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**다음 = P22-2**(쓰던 글 지키기 - 6장 'P22' 절, 결정은 5장 'P22 …'). 서버를 바꾸지 않아 어느 기기에서나 할 수 있다. 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**지금 = P22-2 ■2**(쓰던 글 지키기 - 6장 'P22' 절, 결정은 5장 'P22 …'). 서버를 바꾸지 않아 어느 기기에서나 할 수 있다. 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P23 메모 요청 대화 계획**(11-04 - 6장 'P23' 절, 결정은 5장 'P23 …'). 메모 안에서 Claude와 채팅처럼 주고받기, 세 세션. **차례 = P22-3 끝 다음, P22-4 앞**. 함수 배포는 그 세션에서 묻는다.
 **P22-1 끝**(11-04 - 규칙·함수 손봄, 운영 배포 끝 · 초대 코드 8자리 · 운영 오류 보고 1건 처리).
 **P20-3 꾸미기 끝**(11-04 - 보기 탭 ✨ 꾸미기 · 머리줄 뒤 띠 · 빈 칸 그림). **P20 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터.** 그림 의견을 받으면 `ui/decorArt`·index.css `.decor-art`를 고치고 inspect-decor. 배포·👤 부탁 없음.
@@ -2813,9 +2813,13 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 ### P22-2. 쓰던 글 지키기 - 메모 저장·✕·로그아웃 (항목 2·4·5·10)
 **시작 조건**: 없음(서버를 바꾸지 않는다 - 조각마다 main). **묻기**: 없음.
 **먼저 읽을 것**: 5장 'P22' · `features/notes/NotePanel.tsx` 355~450·612~640 · `app/WindowHost.tsx` · `app/windows.ts`(`closeWindow`·`closeAllWindows`·`useUnsavedCheck`·`anyWindowUnsaved`) · `ui/ModalShell.tsx` · `ui/SidePanelFrame.tsx` · `ui/sideColumn.ts` `closeSideSlot` · `app/history.ts` 층 · `features/auth/login.ts` `logout` · `app/Header.tsx` `data-logout`.
-- [ ] ■0 확인(문서만): `close`를 부르는 곳 표(✕·`ModalCloseButton`·`data-close` / 저장 뒤 닫기 `save().then(close)` / 뒤로가기 `useBackLayer`) · 저장 단추가 있는데 `useUnsavedCheck`가 없는 창(교과 출결·자리표·학생 기록·학교 일정 - 바로 저장인가) · 휴대폰 뒤로가기는 기록이 먼저 물러나므로 '아니오'면 층을 다시 쌓아야 하는지. 다르면 이 절·5장을 고친다.
-- [ ] ■1 메모 저장 중 친 글(항목 2): 시험 먼저 - NotePanel 시험(저장을 잡아 둔 채 글을 치고 풀면 글이 남는다) + inspect-notes 묶음. 재현 순서: 쓰고 Ctrl+S → `ctx.setOffline(true)` → 더 쓰고 Ctrl+S → 또 쓰고 → `setOffline(false)` → 칸 글 / 평소 연결은 Ctrl+S 바로 뒤 `keyboard.type`.
+- [x] ■0 확인(문서만): `close`를 부르는 곳 표(✕·`ModalCloseButton`·`data-close` / 저장 뒤 닫기 `save().then(close)` / 뒤로가기 `useBackLayer`) · 저장 단추가 있는데 `useUnsavedCheck`가 없는 창(교과 출결·자리표·학생 기록·학교 일정 - 바로 저장인가) · 휴대폰 뒤로가기는 기록이 먼저 물러나므로 '아니오'면 층을 다시 쌓아야 하는지. 다르면 이 절·5장을 고친다.
+  → 11-05 확인. 닫는 길: ✕·닫기 단추·탭 ×·오른쪽 줄 Alt+W = 창의 `close`(탭 ×·Alt+W는 `[data-close]`를 누른다) / 가운데 창 Alt+W·뒤로가기 = 층 `close` = 틀의 `onClose` / ESC·▶ = `closeAllWindows`(묻는다) / 쓰는 칸 배경 = 저장 뒤 닫기.
+  **계획에 없던 길**: `ModalShell` 창(조사표·라벨·진도·시간표·환경설정)은 `onBackdropClose`가 없어 배경을 누르면 `closeAllLayers`가 묻지 않고 닫는다(가운데 창·휴대폰) → ■3에 더했다. 뒤로가기는 기록이 먼저 물러나므로 '아니오'면 표지판을 다시 세워야 한다(안 그러면 다음 뒤로가기가 화면을 떠난다) → ■3.
+  저장 단추 없는 창: 자리표·교과 출결 표시 = 누르는 대로 바로 저장 · 학교 일정 = 읽기만 · **글이 남는 칸 둘** = 학생 기록 '관찰 한 줄'·교과 출결 사유 칸(Alt+W는 칸을 떠나지 않아 저장되지 않는다) → ■3에서 확인을 더한다. `EventPanel`의 `setForm(next)`는 빠른 입력 칩이라 저장 길이 아니다(칸은 덮지 않는다) - 다만 저장 뒤 `draft.clear()`가 그새 친 글의 보관까지 거둔다 → ■1에서 함께.
+- [x] ■1 메모 저장 중 친 글(항목 2): 시험 먼저 - NotePanel 시험(저장을 잡아 둔 채 글을 치고 풀면 글이 남는다) + inspect-notes 묶음. 재현 순서: 쓰고 Ctrl+S → `ctx.setOffline(true)` → 더 쓰고 Ctrl+S → 또 쓰고 → `setOffline(false)` → 칸 글 / 평소 연결은 Ctrl+S 바로 뒤 `keyboard.type`.
   고침: 저장에 넘긴 글과 지금 칸을 견줘(`formRef`) 같을 때만 `setForm(next)`, 다르면 `setBase`만 - 그새 친 것은 '고침'으로 남고 보관(`draft.clear`)도 지우지 않는다. 새 메모(`createNote`)·고치기(`saveNote`) 두 갈래 다. 일정 칸은 `setForm`을 하지 않아 안전하다(11-04 확인).
+  → 11-05 `noteForm.noteFormAfterSave`(그새 손대지 않은 칸만 저장된 모습으로 - 칸마다 견준다, 그새 붙인 첨부도 남는다) · NotePanel `settleSaved` · 일정 칸 `clearDraftOf`(그새 친 글이 있으면 보관을 두고) · inspect-notes 묶음 9(평소·끊긴 동안).
 - [ ] ■2 올리는 중 저장(항목 10): `save()`의 `uploading` 검사를 `hasContent` 앞으로 · `unsaved`에 `uploading` · 시험.
 - [ ] ■3 ✕·탭 ×·Alt+W(항목 4): `WindowProps`에 `askClose`(그 창의 확인이 참이면 ESC와 같은 말로 묻고 닫는다) → 출석부·평가·라벨·수업·알림장·진도·시간표의 ✕·닫기 단추에. 탭 ×·Alt+W는 `[data-close]`를 누르니 저절로 온다 · 메모·일정은 보관이 있어 그대로 · 시험 + inspect-shell 묶음(진도 창을 고치고 ✕ → 물음 / '아니오'면 칸이 그대로).
 - [ ] ■4 로그아웃(항목 5): 저장 안 한 칸·서버 대기 쓰기·쓰던 글 보관이 있으면 먼저 묻는다 · 시험 + inspect-login 묶음.

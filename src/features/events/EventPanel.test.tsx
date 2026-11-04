@@ -1,12 +1,13 @@
 // 일정 칸 - 새 일정(맨 위 라벨·맨 뒤 차례·저장하면 수정 칸)·고치기 = 바뀐 칸만·날짜 바꾸기 = date만(되돌리기는 날짜만)·
 // 속성은 라벨과 다른 것만·빠른 입력 칩·알림 창·손대기 전에는 다른 기기 고침을 따라감·저장 안 한 글
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { useEffect, useState } from 'react';
 import { Timestamp } from 'firebase/firestore';
 import { resetHistoryForTest } from '../../app/history';
 import { setPopupStyle } from '../../app/layoutPrefs';
 import { anyWindowUnsaved } from '../../app/windows';
+import { readDraft, wipeDrafts } from '../../data/drafts';
 import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
 import { useMySpaces, useSpaceChoice, useSpaceOverlay } from '../../data/spaceChoice';
@@ -16,12 +17,14 @@ import EventPanel from './EventPanel';
 import type { EventPanelParams } from './open';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
-const written = vi.hoisted(() => ({ batches: [] as WriteOp[][] }));
+const written = vi.hoisted(() => ({ batches: [] as WriteOp[][], hold: null as null | Promise<void> }));
 vi.mock('../../data/repo', async (orig) => {
   const real = await orig<typeof import('../../data/repo')>();
   const { undoOfAll } = await import('../../data/repo/ops');
   const record = async (ops: WriteOp[]) => {
     written.batches.push(ops);
+    // 풀어 줄 때까지 기다린다 (서버가 늦은 저장 - 그새 친 글을 보려고)
+    if (written.hold) await written.hold;
     return undoOfAll(ops);
   };
   return {
@@ -80,6 +83,7 @@ beforeEach(() => {
   clearUndo();
   setPopupStyle('side');
   written.batches = [];
+  written.hold = null;
   close.mockReset();
   document.body.innerHTML = '';
   useSession.setState({ loading: false, user: { uid: 'me', email: 'me@x', displayName: '', photoURL: '' } });
@@ -280,6 +284,32 @@ describe('고치기', () => {
     render(<Host initial={{ sid: SID, date: DAY, id: 'e1' }} />);
     expect(q('[data-event-missing]').textContent).toContain('지운 일정');
     expect(q('[data-event-save]')).toBeDisabled();
+  });
+});
+
+describe('저장하는 동안 친 글 (P22-2)', () => {
+  it('칸에 남고 저장 안 한 고침이 되며, 앞 저장이 쓰던 글 보관을 지우지 않는다', async () => {
+    seed();
+    const { unmount } = render(<Host initial={{ sid: SID, date: DAY, id: 'e1' }} />);
+    type('협의회 고침');
+    let release = () => {};
+    written.hold = new Promise<void>((r) => (release = r));
+    fireEvent.click(q('[data-event-save]'));
+    type('협의회 고침 그새 친 글');
+    await act(async () => {
+      release();
+      await written.hold;
+      // 저장 도우미의 await 사슬이 끝나기를 기다린다
+      await new Promise((r) => setTimeout(r, 0));
+    });
+    expect(textInput().value).toBe('협의회 고침 그새 친 글');
+    expect(anyWindowUnsaved()).toBe(true);
+    unmount();
+    await waitFor(async () => {
+      const kept = await readDraft<{ text: string }>('me', `event:${SID}:e1`);
+      expect(kept?.value.text).toBe('협의회 고침 그새 친 글');
+    });
+    await wipeDrafts('me');
   });
 });
 

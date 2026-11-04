@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LabelTree } from '../../data/select';
 import type { ItemDoc } from '../events/eventOps';
-import { createNoteData, hasContent, newNoteForm, noteEditChanges, noteFormOf, sameNoteForm, savePlanOf } from './noteForm';
+import { createNoteData, hasContent, newNoteForm, noteEditChanges, noteFormAfterSave, noteFormOf, sameNoteForm, savePlanOf } from './noteForm';
 
 const label = (id: string, name: string) => ({ id, name, color: 'blue', kind: 'note', parentId: null, order: 'a0' });
 const tree = {
@@ -16,6 +16,26 @@ const tree = {
 } as unknown as LabelTree;
 const item = (more: Partial<ItemDoc> = {}): ItemDoc =>
   ({ id: 'n1', kind: 'note', date: '2026-10-08', text: '회의', labelIds: ['L1'], order: 'a0', ...more }) as unknown as ItemDoc;
+
+describe('저장이 끝난 뒤 칸 (P22-2)', () => {
+  const sent = { ...newNoteForm('2026-10-08', tree), text: '글\n#상담', newLabels: ['새 라벨'] };
+  const saved = { ...sent, text: '글', labelIds: ['L1', 'L2', 'L9'], newLabels: [] };
+
+  it('그새 손대지 않았으면 저장된 모습 그대로', () => {
+    expect(noteFormAfterSave(sent, sent, saved)).toEqual(saved);
+  });
+
+  it('그새 고친 칸은 고친 그대로, 나머지 칸은 저장된 모습으로', () => {
+    const now = { ...sent, text: '글\n#상담\n더 친 글' };
+    expect(noteFormAfterSave(now, sent, saved)).toEqual({ ...saved, text: '글\n#상담\n더 친 글' });
+  });
+
+  it('그새 붙인 첨부도 남는다', () => {
+    const file = { name: 'a.png', url: 'https://d/a' } as unknown as (typeof sent.attachments)[number];
+    const now = { ...sent, attachments: [file] };
+    expect(noteFormAfterSave(now, sent, saved).attachments).toEqual([file]);
+  });
+});
 
 describe('새 칸', () => {
   it('미리 고른 라벨이 없으면 맨 위 라벨, 연 날 = 날짜 링크 하나 (없으면 날짜 없는 메모)', () => {

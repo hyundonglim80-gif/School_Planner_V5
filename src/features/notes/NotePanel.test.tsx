@@ -30,12 +30,14 @@ vi.mock('../../data/google/drive', async (orig) => {
     }),
   };
 });
-const written = vi.hoisted(() => ({ batches: [] as WriteOp[][] }));
+const written = vi.hoisted(() => ({ batches: [] as WriteOp[][], hold: null as null | Promise<void> }));
 vi.mock('../../data/repo', async (orig) => {
   const real = await orig<typeof import('../../data/repo')>();
   const { undoOfAll } = await import('../../data/repo/ops');
   const record = async (ops: WriteOp[]) => {
     written.batches.push(ops);
+    // 풀어 줄 때까지 기다린다 (서버가 늦은 저장 - 그새 친 글을 보려고)
+    if (written.hold) await written.hold;
     return undoOfAll(ops);
   };
   return {
@@ -94,6 +96,7 @@ beforeEach(async () => {
   clearUndo();
   setPopupStyle('side');
   written.batches = [];
+  written.hold = null;
   close.mockReset();
   document.body.innerHTML = '';
   useSession.setState({ loading: false, user: { uid: 'me', email: 'me@x', displayName: '', photoURL: '' } });
@@ -413,6 +416,95 @@ describe('체크리스트', () => {
       window.dispatchEvent(new Event('sp5-checklist'));
     });
     expect(textInput().value).toBe('☐ 빵');
+  });
+});
+
+describe('저장하는 동안 친 글 (P22-2)', () => {
+  /** 저장을 잡아 둔 채 누른다 - 돌려준 함수를 부르면 서버가 받은 것처럼 끝난다 */
+  const saveHeld = () => {
+    let release = () => {};
+    written.hold = new Promise<void>((r) => (release = r));
+    fireEvent.click(q('[data-note-save]'));
+    return () =>
+      act(async () => {
+        release();
+        await written.hold;
+        // 저장 도우미의 await 사슬이 끝나기를 기다린다
+        await new Promise((r) => setTimeout(r, 0));
+      });
+  };
+
+  it('고치던 메모: 그새 친 글이 칸에 남고 저장 안 한 고침이 되며, 다시 저장하면 그것만 적는다', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+    type('회의 기록 고침');
+    const finish = saveHeld();
+    type('회의 기록 고침 그새 친 글');
+    await finish();
+    expect(textInput().value).toBe('회의 기록 고침 그새 친 글');
+    expect(anyWindowUnsaved()).toBe(true);
+    // 앱에서는 저장 도우미가 사본에 덧칠한다 - 여기서는 손으로. 저장된 글이 도착해도 그새 친 글을 덮지 않는다
+    act(() => applyBase(SID, 'items', new Map([['n1', { ...n1, text: '회의 기록 고침' }]])));
+    expect(textInput().value).toBe('회의 기록 고침 그새 친 글');
+    written.hold = null;
+    await save();
+    expect((lastOps()[0] as { changes: Record<string, unknown> }).changes).toEqual({ text: '회의 기록 고침 그새 친 글' });
+  });
+
+  it('새 메모: 수정 칸이 되어도 그새 친 글이 남고, 한 번 더 만들지 않는다', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    type('체육대회');
+    const finish = saveHeld();
+    type('체육대회 준비물');
+    await finish();
+    const id = (lastOps()[0] as { at: { id: string } }).at.id;
+    expect(shown.params).toMatchObject({ id });
+    // 앱에서는 저장 도우미가 사본에 덧칠한다 - 여기서는 손으로. 저장된 글이 도착해도 그새 친 글을 덮지 않는다
+    act(() => applyBase(SID, 'items', new Map([[id, { ...n1, text: '체육대회', labelIds: ['L1'] }]])));
+    expect(textInput().value).toBe('체육대회 준비물');
+    expect(anyWindowUnsaved()).toBe(true);
+    written.hold = null;
+    await save();
+    expect(lastOps()[0]).toMatchObject({ type: 'patch', at: { id } });
+    expect(written.batches.filter((ops) => ops.some((o) => o.type === 'create'))).toHaveLength(1);
+  });
+
+  it('그새 친 글은 쓰던 글 보관에 남는다 - 앞 저장이 지우지 않는다', async () => {
+    seed();
+    const { unmount } = render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+    type('회의 기록 고침');
+    const finish = saveHeld();
+    type('회의 기록 고침 그새 친 글');
+    await finish();
+    unmount();
+    await waitFor(async () => {
+      const kept = await readDraft<{ text: string }>('me', `note:${SID}:n1`);
+      expect(kept?.value.text).toBe('회의 기록 고침 그새 친 글');
+    });
+  });
+
+  it('그새 고친 칸만 남긴다 - 손대지 않은 글은 저장된 모습으로(#라벨 줄을 뗀다)', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    type('오늘 상담\n#상담');
+    const finish = saveHeld();
+    fireEvent.change(q('[data-note-title-input]'), { target: { value: '그새 적은 제목' } });
+    await finish();
+    const made = lastOps()[0] as { at: { id: string }; data: Record<string, unknown> };
+    act(() => applyBase(SID, 'items', new Map([[made.at.id, { ...base, ...made.data }]])));
+    expect(textInput().value).toBe('오늘 상담');
+    expect((q('[data-note-title-input]') as HTMLInputElement).value).toBe('그새 적은 제목');
+  });
+
+  it('그새 손대지 않았으면 전처럼 저장 안 한 것이 없다', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+    type('회의 기록 고침');
+    const finish = saveHeld();
+    await finish();
+    expect(textInput().value).toBe('회의 기록 고침');
+    expect(anyWindowUnsaved()).toBe(false);
   });
 });
 

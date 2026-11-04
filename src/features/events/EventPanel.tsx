@@ -105,6 +105,15 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   const carriedNow = !!item && carried.ids.has(item.id);
   // 쓰던 글 보관 (이 기기 - data/drafts). 새 칸은 공간·날짜, 고치는 칸은 일정마다
   const draft = useDraft<EventForm>(`event:${sid}:${params.id ?? `new:${form.date}`}`, form, !untouched);
+  /** 지금 칸 - 저장이 끝난 때 그새 친 것이 있는지 본다 */
+  const formRef = useRef(form);
+  useEffect(() => {
+    formRef.current = form;
+  });
+  /** 저장했다 - 보관을 지운다. 저장하는 동안 친 글이 있으면 그 글은 아직 저장 안 한 글이라 둔다 (P22-2) */
+  const clearDraftOf = (sent: EventForm) => {
+    if (formRef.current === sent) draft.clear();
+  };
   const restoreDraft = () => {
     const kept = draft.take();
     if (!kept) return;
@@ -316,7 +325,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
       if (!isEditing && rule) {
         const made = await createSeriesEvents(sid, form, tree, { rule, until: form.endDate }, (date) => orderAfter(itemsOn(items, date, 'event')));
         if (!made) return false;
-        draft.clear();
+        clearDraftOf(form);
         // 첫 항목의 수정 칸이 된다 (적은 것은 그대로 - 날짜는 첫 항목의 날로 따라간다)
         setBase(form);
         deliverLinkPick(params.pickFor, made.firstId);
@@ -324,7 +333,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
         setParams({ sid, date: made.firstDate, id: made.firstId });
       } else if (!isEditing) {
         const id = await createEvent(sid, form, tree, orderAfter(dayEvents));
-        draft.clear();
+        clearDraftOf(form);
         // 저장한 뒤에도 적은 것이 남고 그 일정의 수정 칸이 된다 (V4 사용자 결정)
         setBase(form);
         deliverLinkPick(params.pickFor, id);
@@ -338,7 +347,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
         // 이 기기가 바꾼 칸만 적는다 - 다른 기기가 그새 같은 글을 고쳤으면 덮기 전에 묻는다 (P14-6 ■3)
         if (eventTextClash(base, formOf(item), form) && !window.confirm(CLASH_ASK)) return false;
         const wrote = await saveEvent(sid, item, form, tree, base);
-        draft.clear();
+        clearDraftOf(form);
         setBase(form);
         if (!wrote) showToast('바뀐 것이 없습니다.');
       }
@@ -361,7 +370,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     setSaving(true);
     try {
       const wrote = scope === 'only' ? await saveEvent(sid, item, form, tree, before) : await saveSeriesEvents(sid, item, form, tree, scope, seriesInfo?.list ?? [item], seriesInfo?.series);
-      draft.clear();
+      clearDraftOf(form);
       setBase(form);
       if (!wrote) showToast('바뀐 것이 없습니다.');
       checkGcalLogin(before);

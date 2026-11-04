@@ -7,6 +7,7 @@
 //   6) ☑ 체크리스트 단추·Enter 이어 쓰기·☐ 누르기 = 체크하고 맨 아래로(줄긋기)·▲▼(P10-5), 칸의 ☐ 완료 = 곧바로 그 칸만. '+ 메모'는 없다(P10-3).
 //   8) 단축키 그날 새 메모(보는 날)·날짜 없는 새 메모.
 //   7) 쓰던 글 보관: 새 기록 칸에 적고 2초 → 새로고침 → 다시 열면 '저장하지 않은 글' → 되살리기, 버리기면 다시 묻지 않는다(IndexedDB sp5-drafts-{uid}).
+//   9) 저장하는 동안 친 글(P22-2): Ctrl+S 바로 뒤에 친 글이 저장이 끝나도 칸에 남는다 · 끊긴 동안 저장을 기다리며 친 글도 남고, 다시 저장하면 서버까지.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-notes.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 기록(insp_nt…)·라벨을 심고 끝에 지운다.
@@ -249,6 +250,38 @@ try {
   await page.locator(sel('journal-add')).click();
   await page.waitForTimeout(1500);
   r.check((await page.locator(sel('draft-offer')).count()) === 0, '버리기 → 다시 묻지 않는다');
+  await page.locator(sel('note-close')).click();
+
+  // 9) 저장하는 동안 친 글 (P22-2)
+  await page.locator(sel('journal-add')).click();
+  const box = page.locator(sel('note-text-input'));
+  await waitFor(box);
+  await box.click();
+  await page.keyboard.type('점검 저장 중');
+  await page.keyboard.press('Control+s');
+  await page.keyboard.type(' 이어 친 글');
+  await waitFor(page.locator(sel('note-panel', 'edit')));
+  const heldId = await page.locator(sel('note-panel')).getAttribute('data-note-id');
+  undo.add(() => deleteDoc(itemRef(heldId)));
+  r.check(!!(await serverUntil(() => read(heldId), (d) => !!d)), '새 메모 저장이 서버에 닿았다');
+  await page.waitForTimeout(500);
+  r.check((await box.inputValue()) === '점검 저장 중 이어 친 글', '평소 연결: Ctrl+S 바로 뒤에 친 글이 남는다', `칸: ${await box.inputValue()}`);
+  await page.keyboard.press('Control+s');
+  r.check(!!(await serverUntil(() => read(heldId), (d) => d?.text === '점검 저장 중 이어 친 글')), '다시 저장 = 이어 친 글까지 서버에');
+  const heldCtx = page.context();
+  await heldCtx.setOffline(true);
+  await page.keyboard.type(' 끊긴 글');
+  await page.keyboard.press('Control+s');
+  await page.waitForTimeout(300);
+  await page.keyboard.type(' 또 친 글');
+  await page.waitForTimeout(300);
+  await heldCtx.setOffline(false);
+  r.check(!!(await serverUntil(() => read(heldId), (d) => d?.text === '점검 저장 중 이어 친 글 끊긴 글', 30000)), '끊겼다 이어지면 기다리던 저장이 서버에');
+  await page.waitForTimeout(800);
+  r.check((await box.inputValue()) === '점검 저장 중 이어 친 글 끊긴 글 또 친 글', '끊긴 동안 친 글이 칸에 남는다', `칸: ${await box.inputValue()}`);
+  await page.keyboard.press('Control+s');
+  r.check(!!(await serverUntil(() => read(heldId), (d) => d?.text === '점검 저장 중 이어 친 글 끊긴 글 또 친 글')), '다시 저장 = 끊긴 동안 친 글까지 서버에');
+  await page.waitForTimeout(300);
   await page.locator(sel('note-close')).click();
 
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);

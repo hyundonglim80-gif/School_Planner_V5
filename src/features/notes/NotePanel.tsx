@@ -46,7 +46,7 @@ import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite } from '
 import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
 import EntryTableView from './EntryTableView';
 import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
-import { hasContent, isKnownLabel, newNoteForm, noteEditedKeys, noteFormOf, noteTextClash, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
+import { hasContent, isKnownLabel, newNoteForm, noteEditedKeys, noteFormAfterSave, noteFormOf, noteTextClash, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
 import { StudentMentionList, StudentTagRow } from './StudentTags';
 import CheckLinesOverlay, { CHECK_TEXT_CLASS } from './CheckLinesOverlay';
 import { useClasses, useHubClass, type ClassItem } from '../class/classes';
@@ -74,6 +74,11 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   /** 열었을 때(또는 마지막으로 저장했을 때)의 모습 - 이것과 다르면 '손댄 것' */
   const [base, setBase] = useState<NoteForm>(form);
   const untouched = sameNoteForm(form, base, !isEditing);
+  /** 지금 칸 - 저장이 끝난 때 그새 친 것이 있는지 본다 */
+  const formRef = useRef(form);
+  useEffect(() => {
+    formRef.current = form;
+  });
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [flagBusy, setFlagBusy] = useState(false);
@@ -358,6 +363,13 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   };
 
   // ─── 저장 ───
+  /** 저장이 끝났다 - 칸을 저장된 모습으로 맞춘다. 그새 고친 칸은 그대로 두고 쓰던 글 보관도 지우지 않는다 (noteFormAfterSave) */
+  const settleSaved = (sent: NoteForm, saved: NoteForm) => {
+    const now = noteFormAfterSave(formRef.current, sent, saved);
+    if (sameNoteForm(now, saved, !isEditing)) draft.clear();
+    setForm(now);
+    setBase(saved);
+  };
   /** 저장한다. 저장했거나 저장할 것이 없으면 true */
   const save = async (): Promise<boolean> => {
     if (!hasContent(form)) {
@@ -386,11 +398,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
         // 하루 메모 칸은 그날 목록 맨 뒤, 메모 화면(날짜 없이 연 칸)은 맨 앞 - 최근 메모가 맨 위(P11-1 사용자 의견, V4 그대로)
         const order = anchorDate ? orderAfter(dayNotes) : orderBefore(memoList);
         const saved = await createNote(sid, toSave, tree, order);
-        draft.clear();
         // 저장한 뒤에도 적은 것이 남고 그 항목의 수정 칸이 된다 (V4 사용자 결정). '#라벨' 줄은 떼고 칩으로
-        const next = { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] };
-        setForm(next);
-        setBase(next);
+        settleSaved(form, { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] });
         deliverLinkPick(params.pickFor, saved.id);
         savedId.current = saved.id;
         setParams({ sid, date: params.date, id: saved.id });
@@ -403,10 +412,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
         const edited = noteEditedKeys(base, toSave);
         if (noteTextClash(base, noteFormOf(item), edited) && !window.confirm(CLASH_ASK)) return false;
         const saved = await saveNote(sid, item, toSave, tree, edited);
-        draft.clear();
-        const next = saved ? { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] } : toSave;
-        setForm(next);
-        setBase(next);
+        settleSaved(form, saved ? { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] } : toSave);
         if (!saved) showToast('바뀐 것이 없습니다.');
       }
       return true;

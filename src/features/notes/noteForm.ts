@@ -88,6 +88,19 @@ export function sameNoteForm(a: NoteForm, b: NoteForm, isNew: boolean): boolean 
   return keyOf(a, isNew) === keyOf(b, isNew);
 }
 
+/**
+ * 저장이 끝났을 때 칸에 둘 모습 (P22-2 - 저장에 넘긴 모습으로 칸을 덮어 그새 친 글이 사라졌다. Ctrl+S 하고 이어 치는 것이 흔한 습관이라 칸을 잠그지 않는다).
+ * now = 지금 칸 · sent = 저장에 넘긴 칸 · saved = 저장된 모습('#라벨' 줄을 뗀 글, 새 라벨까지 이은 라벨).
+ * 그새 손대지 않은 칸만 저장된 모습으로 바꾼다 - 고친 칸은 그대로 남아 저장 안 한 고침이 된다.
+ */
+export function noteFormAfterSave(now: NoteForm, sent: NoteForm, saved: NoteForm): NoteForm {
+  const out: Record<string, unknown> = { ...now };
+  for (const k of Object.keys(saved) as (keyof NoteForm)[]) {
+    if (JSON.stringify(now[k]) === JSON.stringify(sent[k])) out[k] = saved[k];
+  }
+  return out as unknown as NoteForm;
+}
+
 /** 저장할 것이 있나 (글·제목·첨부·표 가운데 하나 - 제목만 남은 메모도 지우지 않는다) */
 export const hasContent = (f: Pick<NoteForm, 'text' | 'attachments' | 'tables'> & { title?: string }) =>
   !!f.text.trim() || !!f.title?.trim() || f.attachments.length > 0 || f.tables.length > 0;
