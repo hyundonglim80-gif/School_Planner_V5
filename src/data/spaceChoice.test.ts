@@ -4,6 +4,7 @@ import {
   cleanInviteCode,
   clearOverlay,
   inviteCodeOf,
+  isInviteCode,
   knownGroupsOf,
   overlaySpaces,
   rememberGroups,
@@ -39,11 +40,19 @@ describe('지금 공간 고르기 (P8-4)', () => {
     setSpaceChoice('u2', 'u_u2');
     expect(useSpaceChoice.getState().sid).toBeNull();
   });
-  it('초대 코드 = 헷갈리는 글자 없는 6자리 · 넣은 코드는 띄어쓰기를 빼고 대문자로', () => {
-    let i = 0;
-    const code = inviteCodeOf(() => (i++ % 10) / 10);
-    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{6}$/);
+  it('초대 코드 = 헷갈리는 글자 없는 8자리 · 넣은 코드는 띄어쓰기를 빼고 대문자로', () => {
+    expect(inviteCodeOf()).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);
+    expect(new Set(Array.from({ length: 50 }, () => inviteCodeOf())).size).toBe(50);
+    expect(inviteCodeOf(new Uint8Array([0, 31, 32, 255]))).toBe('A9A9');
     expect(cleanInviteCode(' ab c12 ')).toBe('ABC12');
+  });
+
+  it('초대 코드 모양 - 옛 6자리·V4 코드는 받고, 붙여 넣은 주소는 받지 않는다', () => {
+    expect(isInviteCode('ABC123')).toBe(true);
+    expect(isInviteCode('V4GEMU12')).toBe(true);
+    expect(isInviteCode('ABC')).toBe(false);
+    expect(isInviteCode('HTTPS://SCHO')).toBe(false);
+    expect(isInviteCode('A/B123')).toBe(false);
   });
 });
 

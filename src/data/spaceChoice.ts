@@ -96,12 +96,14 @@ export function rememberGroups(uid: string, ids: string[]) {
   useSpaceChoice.setState(c.uid === uid ? { known: ids } : { uid, sid: null, known: ids });
 }
 
+// 32글자라 바이트 나머지가 치우치지 않는다
 const INVITE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-/** 6자리 초대 코드 (헷갈리는 0·O·1·I는 뺀다 - V4 그대로) */
-export function inviteCodeOf(rand: () => number = Math.random): string {
-  let code = '';
-  for (let i = 0; i < 6; i++) code += INVITE_CHARS.charAt(Math.floor(rand() * INVITE_CHARS.length));
-  return code;
+/** 8자리 초대 코드 (헷갈리는 0·O·1·I는 뺀다 - V4 그대로). 옛 6자리 코드는 그대로 쓴다 */
+export function inviteCodeOf(bytes: Uint8Array = crypto.getRandomValues(new Uint8Array(8))): string {
+  return Array.from(bytes, (b) => INVITE_CHARS.charAt(b % INVITE_CHARS.length)).join('');
 }
 
 export const cleanInviteCode = (s: string) => s.replace(/\s+/g, '').toUpperCase();
+
+/** 초대 코드 모양 (V4 코드 포함) - 아니면 문서 id로 쓰지 않는다. 주소를 붙여 넣으면 '/'가 경로가 되어 Firestore가 던졌다 */
+export const isInviteCode = (s: string) => /^[A-Z0-9]{4,12}$/.test(s);

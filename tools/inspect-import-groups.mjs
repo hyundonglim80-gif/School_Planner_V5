@@ -95,7 +95,7 @@ try {
   r.check((await getDoc(doc(em.db, 'spaces', SID, 'notices', DAY))).data()?.lines?.[0] === '그룹 알림장 줄', '알림장');
   const evals = await v5('evaluations');
   r.check(evals.length === 1 && evals[0].authorId === uidA && evals[0].classId === '2027-5-2', '조사표 (만든 사람 그대로)');
-  // 구성원 이름은 결과 표 뒤에 써질 수 있다 - 기다려 읽는다 (11-02 한 번 'undefined'로 틀렸다, 다시 돌리면 통과)
+  // 구성원 이름은 결과 표 뒤에 써질 수 있다 - 기다려 읽는다 (11-02·11-04 'undefined'는 만든 직후 읽기가 막힌 것 - 지금은 읽지 않는다, ensureImportedGroup)
   const people = await serverUntil(async () => Object.fromEntries((await v5('people')).map((p) => [p.id, p.name])), (m) => !!m[uidB] && !!m[uidA], 10000);
   r.check(!!people[uidB] && people[uidA] === '선생님A', `구성원 이름 (나 + V4 그룹장 이름 '${people[uidA]}')`);
   r.check(await waitFor(B.page.locator(`${sel('space-chip', SID)}[aria-pressed="true"]`), 8000), '가져오면 그 그룹을 본다 (둘째 줄 공간 칩)');
@@ -113,7 +113,7 @@ try {
   await myRow.locator(sel('group-make-code')).click();
   const withCode = await serverUntil(async () => (await getDoc(doc(em.db, 'spaces', SID))).data(), (d) => !!d?.inviteCode, 10000);
   const code = withCode?.inviteCode ?? '';
-  r.check(/^[A-Z2-9]{6}$/.test(code) && (await getDoc(doc(em.db, 'spaceInvites', code))).data()?.sid === SID, `'🔑 초대 코드 만들기' = 공간 + spaceInvites (${code})`);
+  r.check(/^[A-Z2-9]{8}$/.test(code) && (await getDoc(doc(em.db, 'spaceInvites', code))).data()?.sid === SID, `'🔑 초대 코드 만들기' = 공간 + spaceInvites (${code})`);
   r.check(await waitFor(async () => ((await myRow.locator(sel('group-code-text')).textContent().catch(() => '')) ?? '') === code, 8000), '창에 초대 코드');
   const rowA = A.page.locator(sel('v4-group', GID));
   r.check(await waitFor(async () => (await rowA.getAttribute('data-v4-group-state').catch(() => null)) === 'imported', 10000), "그룹장 V4 칸 = imported ('다시 가져오기')");

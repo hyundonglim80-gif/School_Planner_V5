@@ -55,7 +55,7 @@ try {
   const made = (await serverUntil(myGroups, (l) => l.length === 1, 10000))[0];
   const gid = made?.id ?? '';
   const g = made?.data() ?? {};
-  r.check(gid.startsWith('g_') && g.kind === 'group' && g.ownerId === uidA && g.members?.[uidA] === 'owner' && /^[A-Z2-9]{6}$/.test(g.inviteCode ?? ''), `그룹 공간 문서 (${gid} · 코드 ${g.inviteCode})`);
+  r.check(gid.startsWith('g_') && g.kind === 'group' && g.ownerId === uidA && g.members?.[uidA] === 'owner' && /^[A-Z2-9]{8}$/.test(g.inviteCode ?? ''), `그룹 공간 문서 (${gid} · 코드 ${g.inviteCode})`);
   r.check((await getDoc(doc(em.db, 'spaceInvites', g.inviteCode ?? 'x'))).data()?.sid === gid, '초대 코드 → 그룹 (spaceInvites)');
   const labels = await serverUntil(async () => (await getDocs(collection(em.db, 'spaces', gid, 'labels'))).size, (n) => n > 0);
   r.check(labels > 0, `그룹 기본 라벨 (${labels}개 - 라벨은 그룹 것)`);
@@ -76,6 +76,10 @@ try {
   B.dialogs.answer = true;
   await open(B.page, `#/day/${DAY}`, { as: '2' });
   await B.page.evaluate(() => window.sp5.openWindow('group'));
+  r.check(/^[A-HJ-NP-Z2-9]{8}$/.test(String(g.inviteCode)), `새 초대 코드는 8자리 (${g.inviteCode})`);
+  await B.page.locator(sel('group-join-code')).fill('https://school');
+  await B.page.locator(sel('group-join')).click();
+  r.check(await waitFor(B.page.locator(sel('toast')).filter({ hasText: '코드를 다시 확인' }), 8000), '주소를 붙여 넣으면 코드를 다시 확인하라는 안내');
   await B.page.locator(sel('group-join-code')).fill(` ${String(g.inviteCode).toLowerCase()} `);
   await B.page.locator(sel('group-join')).click();
   const joined = await serverUntil(async () => (await getDoc(doc(em.db, 'spaces', gid))).data(), (d) => d?.members?.[uidB] === 'member');
@@ -122,7 +126,7 @@ try {
   const rowA = (s, v) => A.page.locator(`${sel('group-row', gid)} ${sel(s, v)}`);
   await rowA('group-rotate-code').click();
   const code2 = (await serverUntil(groupDoc, (d) => d?.inviteCode && d.inviteCode !== g.inviteCode))?.inviteCode ?? '';
-  r.check(/^[A-Z2-9]{6}$/.test(code2) && code2 !== g.inviteCode, `🔄 코드 바꾸기 = 새 코드 (${g.inviteCode} → ${code2})`);
+  r.check(/^[A-Z2-9]{8}$/.test(code2) && code2 !== g.inviteCode, `🔄 코드 바꾸기 = 새 코드 (${g.inviteCode} → ${code2})`);
   r.check(!(await serverUntil(() => inviteOf(g.inviteCode), (x) => !x)) && (await inviteOf(code2))?.sid === gid, '옛 코드 문서는 지우고 새 코드 → 그룹');
   r.check(await waitFor(async () => ((await rowA('group-code-text').textContent()) ?? '') === code2, 5000), '창에 새 코드');
   r.check(A.dialogs.seen.some((m) => m.includes('옛 코드로는')), '바꾸기 전에 묻는다');
@@ -133,7 +137,7 @@ try {
   const code3 = kicked?.inviteCode ?? '';
   r.check(kicked && !kicked.members?.[uidB] && !kicked.joinCodes?.[uidB], '× 내보내기 = members·joinCodes에서 빠진다');
   r.check(!(await getDoc(doc(em.db, 'spaces', gid, 'people', uidB))).exists(), '구성원 이름(people)도 지운다');
-  r.check(/^[A-Z2-9]{6}$/.test(code3) && code3 !== code2 && !(await serverUntil(() => inviteOf(code2), (x) => !x)) && (await inviteOf(code3))?.sid === gid, `내보내면 코드도 바뀐다 (${code2} → ${code3})`);
+  r.check(/^[A-Z2-9]{8}$/.test(code3) && code3 !== code2 && !(await serverUntil(() => inviteOf(code2), (x) => !x)) && (await inviteOf(code3))?.sid === gid, `내보내면 코드도 바뀐다 (${code2} → ${code3})`);
   r.check(A.dialogs.seen.some((m) => m.includes('내보낼까요? 초대 코드도 새로 바뀝니다')), '내보내기 전에 묻는다');
   r.check(await waitFor(() => noPicker(B.page), 10000), '내보낸 사람 화면에서 그룹이 사라진다 (개인으로 - 칩 줄도 없다)');
   await B.page.evaluate(() => window.sp5.openWindow('group'));

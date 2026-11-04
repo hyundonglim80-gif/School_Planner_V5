@@ -303,7 +303,7 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
             </ul>
           )}
         </Section>
-        <Section id="groups-create" title="그룹 만들기" desc="만들면 6자리 초대 코드가 나옵니다. 그룹에는 처음에 기본 라벨이 들어갑니다(라벨은 그룹 것 - 구성원이 같은 목록을 봅니다).">
+        <Section id="groups-create" title="그룹 만들기" desc="만들면 초대 코드가 나옵니다. 그룹에는 처음에 기본 라벨이 들어갑니다(라벨은 그룹 것 - 구성원이 같은 목록을 봅니다).">
           <div className="flex gap-2">
             <input
               data-group-new-name
@@ -318,14 +318,14 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
             </button>
           </div>
         </Section>
-        <Section id="groups-join" title="초대 코드로 참여" desc="동료에게 받은 6자리 코드를 넣습니다.">
+        <Section id="groups-join" title="초대 코드로 참여" desc="동료에게 받은 코드를 넣습니다.">
           <div className="flex gap-2">
             <input
               data-group-join-code
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               onKeyDown={(e) => e.key === 'Enter' && void join()}
-              placeholder="ABC123"
+              placeholder="ABCD2345"
               maxLength={12}
               className="flex-1 min-w-0 px-3 py-2 border border-slate-200 rounded-xl text-sm font-mono tracking-widest"
             />

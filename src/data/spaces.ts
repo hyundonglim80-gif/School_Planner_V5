@@ -15,7 +15,7 @@ import { db } from './firebase';
 import { newId } from './id';
 import { batch } from './repo';
 import { defaultLabelOps } from './labels';
-import { cleanInviteCode, inviteCodeOf, rememberGroups, useMySpaces, type GroupSpace, type SpaceRole } from './spaceChoice';
+import { cleanInviteCode, inviteCodeOf, isInviteCode, rememberGroups, useMySpaces, type GroupSpace, type SpaceRole } from './spaceChoice';
 import type { SessionUser } from './session';
 
 /** 그룹 공간 아래에 둘 수 있는 컬렉션 (지울 때 비운다) - 개인 공간에만 있는 것은 그룹에 없다 */
@@ -83,8 +83,8 @@ export async function createGroup(user: SessionUser, name: string): Promise<stri
 export async function joinGroup(user: SessionUser, rawCode: string): Promise<string> {
   const code = cleanInviteCode(rawCode);
   if (!code) throw new Error('초대 코드를 적어 주세요.');
-  const inv = await getDoc(doc(db, 'spaceInvites', code));
-  const sid = inv.exists() ? String(inv.data().sid ?? '') : '';
+  const inv = isInviteCode(code) ? await getDoc(doc(db, 'spaceInvites', code)) : null;
+  const sid = inv?.exists() ? String(inv.data().sid ?? '') : '';
   if (!sid.startsWith('g_')) throw new Error('그 초대 코드의 그룹을 찾지 못했습니다. 코드를 다시 확인해 주세요.');
   if (useMySpaces.getState().groups.some((g) => g.id === sid)) return sid;
   try {
@@ -136,7 +136,7 @@ export const importedGroupSid = (v4GroupId: string) => `g_${v4GroupId}`;
 
 /** 쓰지 않은 초대 코드 하나 (먼저 바라는 코드가 비었으면 그것) */
 async function freeInviteCode(wish?: string): Promise<string> {
-  let code = wish && /^[A-Z0-9]{4,12}$/.test(wish) ? wish : inviteCodeOf();
+  let code = wish && isInviteCode(wish) ? wish : inviteCodeOf();
   for (let i = 0; i < 5 && (await getDoc(doc(db, 'spaceInvites', code))).exists(); i++) code = inviteCodeOf();
   return code;
 }
@@ -149,6 +149,7 @@ export async function ensureImportedGroup(user: SessionUser, g: ImportedGroupInf
   const sid = importedGroupSid(g.id);
   // 목록을 받기 전에는 만들지 않는다 - 이미 있는 내 그룹을 V4 모양으로 덮어쓸 수 있다(주인은 통째로 쓸 수 있다)
   if (!useMySpaces.getState().loaded) throw new Error('공유 그룹 목록을 받는 중입니다. 잠시 뒤 다시 눌러 주세요.');
+  let created = false;
   if (!useMySpaces.getState().groups.some((x) => x.id === sid)) {
     try {
       const members = Object.fromEntries(g.members.map((uid) => [uid, uid === g.ownerId ? 'owner' : 'member']));
@@ -160,6 +161,7 @@ export async function ensureImportedGroup(user: SessionUser, g: ImportedGroupInf
       });
       if (code) b.set(doc(db, 'spaceInvites', code), { sid, ownerId: user.uid, createdAt: serverTimestamp() });
       await b.commit();
+      created = true;
     } catch (e) {
       // 이미 있다(남이 먼저 가져왔다) - 그때 V4 구성원이던 사람은 위 목록에 있다. 그 뒤 V4에 든 사람은 초대 코드로만 들어온다
       console.error('[spaces] V4 그룹 공간을 열지 못했습니다.', e);
@@ -167,7 +169,8 @@ export async function ensureImportedGroup(user: SessionUser, g: ImportedGroupInf
     }
   }
   try {
-    const people = await readPeople(sid);
+    // 막 만든 공간은 이름이 비어 있다 - 읽지 않는다. 그룹 창은 쓰기가 서버에 닿기 전에 새 그룹을 그려 같은 목록을 읽고, 그 읽기가 막히면 여기 읽기도 막혔다
+    const people: Awaited<ReturnType<typeof readPeople>> = created ? {} : await readPeople(sid);
     if (!people[user.uid]) await writeMyName(sid, user);
     const names: Record<string, string> = { ...g.memberNames, ...(g.ownerName ? { [g.ownerId]: g.ownerName } : {}) };
     const missing = g.members.filter((uid) => uid !== user.uid && !people[uid] && names[uid]);
