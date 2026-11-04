@@ -29,6 +29,7 @@
 
 ## 지금 하는 일
 
+**다음 = P22-1**(11-04 계획 - 6장 'P22' 절, 결정은 5장 'P22 …'). 앞 대화가 V5 전체를 분석했다(자동 검사·크롬 점검 59개 통과, 그래도 오류 12가지 + 잔버그 + 개선) → 일곱 세션으로 손본다. P22-1은 운영 배포가 있어 이 PC에서 - 공개 저장소라 보안 항목은 기기 기억 `v5-audit-1104`에만, 다른 기기면 P22-2부터. 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P20-3 꾸미기 끝**(11-04 - 보기 탭 ✨ 꾸미기 · 머리줄 뒤 띠 · 빈 칸 그림). **P20 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터.** 그림 의견을 받으면 `ui/decorArt`·index.css `.decor-art`를 고치고 inspect-decor. 배포·👤 부탁 없음.
 **P20 테마 계획**(11-03 - 6장 'P20' 절, 결정은 5장 'P20 …'). **P20-1 끝**(11-03 - theme.css·gen-theme-css·cobalt · 보기 탭 🎨 색 테마 8개 · inspect-theme). P21-1 뒤에 P20-2 · P20-3.
 **P19 대화(채팅) 계획**(11-03 - 6장 'P19' 절, 결정은 5장 'P19 …'). **P19-1 끝**(11-03 - 규칙·자료 층·함수 코드, 운영 규칙·TTL 배포). **P19-2 끝**(11-03 - 💬 대화 창 목록·방·보내기·'+ 새 대화'·읽음·머리줄 💬 n·여는 길). **P19-3 끝**(11-03 - sw.js 'chat' 갈래·?chat=·알림 누르기 · 방 머리 🔔/🔕 · 설명서 · 함수 v5ChatPush·v5DmPush 배포). **P19-4 끝**(11-03 - '+ 새 대화' 고르기·방 만들기·⋮ 구성원·이름·더하기·나가기 · 내 글 지우기 🗑️·길게 누르기). **P19 단계 끝 - 남은 계획 없음, 새 대화는 사용자의 새 요청부터.** 배포·👤 부탁 없음(규칙·함수는 P19-1·P19-3에 나가 있다).
@@ -228,6 +229,14 @@ main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 
 | P20-3 | 꾸미기 - 계절(달 따라 저절로)·동물 그림(코드로 그린 SVG)·머리줄·빈 화면 | 중간 | 낮음 | 끝 (11-04) |
 | **P21 끌어다 놓아 첨부** (11-03 사용자 요청 · 계획 - P20-1 다음) | | | | |
 | P21-1 | 윈도우 파일을 메모 쓰는 칸·쪽지 쓰기·대화 방에 끌어다 놓으면 첨부(📎와 같은 길) · 칸 밖에 놓쳐도 브라우저가 파일을 열지 않게 | 중간 | 낮음 | 끝 (11-04) |
+| **P22 점검 뒤 손보기 ②** (11-04 계획) | | | | |
+| P22-1 | 서버 쪽 보강 - 규칙·함수(공개 저장소라 6장에 번호만) · 알림 하나의 실패 막기 · 운영 배포 | 중간 | 높음 | 대기 |
+| P22-2 | 쓰던 글 지키기 - 메모 저장 중 친 글 · ✕로 닫기 · 로그아웃 · 올리는 중 저장 | 중간 | 높음 | 대기 |
+| P22-3 | 공간이 사라지지 않게 - 끊긴 채 시작 · 사본 다시 받기 · 다른 공간 알림 · 영구 지운 항목 | 큼 | 높음 | 대기 |
+| P22-4 | 학년도·날짜·되살리기·공용 PC - 3월 학급(2027-02 전) · 자정 · 되살리기 공간 · 로그아웃 정리 | 중간 | 중간 | 대기 |
+| P22-5 | 대화·쪽지·단축키 잔버그 + 다시 확인할 것 6건 | 중간 | 중간 | 대기 |
+| P22-6 | 운영 안전망 - 보안 헤더 · CI 규칙 시험 · 자동 요청 범위 · 복원 연습 · 저장소 설정 · App Check | 중간 | 중간 | 대기 |
+| P22-7 | 처음 쓰는 사람·키보드 - 다음 할 일 띠 · 휴대폰 머리줄 · 창 초점 · 달력 칸 키보드 | 중간 | 중간 | 대기 |
 
 **차례의 까닭**: 뼈대(P1)와 자료 층(P2)이 모든 화면의 바탕이다. 하루 화면(P3)이 가장 많이 쓰는 곳이라 먼저 하고, 가져오기를 단계마다 붙여
 P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6)이 달력(P5) 뒤인 까닭: 수업 칸은 주간에도 그려지므로 화면 틀이 먼저 있어야 한다.
@@ -353,6 +362,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-11-04 | 영-전-3-현동림 PC | P21-1 | 끌어다 놓아 첨부 · 끝 | ■0 놓는 상자·로그인 길·크롬 확인 · ■1 ui/fileDrop·FileDropCover·창 지킴(보이는 파일 칸 빼기·앱 안 끌기 빼기 - capture)·메모 칸 · probe fileDrag(CDP 진짜 끌기) · ■2 쪽지(창 아래까지)·대화(방이 받아 글 칸 ref로) · ■3 설명서 |
 | 2026-11-04 | 영-전-3-현동림 PC | P20-2 | 보기 쉽게 · 끝 | ■0 색만인 곳 표 · ■1 고대비 16벌 7:1 + 어둡게 토스트·여러 개 고르기 띠 흰 바탕 흰 글자 고침 · ■2 색약 배려(세 색약 흉내) + 모양 셋 · ■3 부드럽게 + 어둡게 기한 지남 배지 대비 · ■4 켜는 칸·설명서 · inspect-theme에 칩 심기 |
 | 2026-11-04 | 영-전-3-현동림 PC | P20-3 | 꾸미기 · 끝 · P20 단계 끝 | ■0 자리 = 머리줄 뒤 띠 + 빈 칸 그림 · ■1·■2 계절 넷·동물 SVG(번들 안)·common decor · ■3 보기 탭 ✨ · 설명서 · 새 inspect-decor(그림 5 × 테마 8 × 밝기 2 맨 글자 대비) · SP5 뒤만 가림 · 오프라인 확인 |
+| 2026-11-04 | 영-전-3-현동림 PC | P22 계획 | 전체 분석 + 손볼 계획 · 문서만 | 사용자 'v5의 완성도를 높이고 싶어 - 오류·개선 분석' → 자동 검사·크롬 점검 59개 통과, 그래도 오류 12가지(재현 3) + 잔버그 + 개선 → 사용자 '보완 및 수정 할 계획을 세워줘' → 일곱 세션. 에이전트 셋이 한도에 닿아 나머지는 직접 검증(`CLAUDE.md` 2장) |
 
 ## 5. 막힌 것 · 결정 메모
 
@@ -1046,6 +1056,16 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P21 ■0 확정 - 올리는 동안 또 놓으면 받고 안내**(11-04 권장안 - 계획의 '받지 않고 덮개도 없다'를 바꿈): 올리는 상태는 대화 글 칸 안에 있어 방 전체 놓기가 알 수 없고, 🚫만 보이는 것보다 '끝난 뒤 다시 놓아 주세요'가 뜻이 분명하다. `disabled`는 받을 수 없는 칸(지운 메모·쓸 수 없는 방)에만.
 - **P21 ■0 확정 - 창 지킴은 보이는 파일 칸을 뺀다**(11-04 코드 확인 - 계획에 없었다): 백업 복원 등 보이는 `<input type=file>`은 브라우저가 놓기를 받는다 - 막으면 지금 되는 일이 깨진다.
 - **P21 ■0 확정 - 앱 안에서 시작한 끌기는 받지 않는다**(11-04 크롬 확인 - 화면의 그림을 끌면 dragstart에 'Files'가 든다): 쓰는 칸의 첨부 그림을 살짝 끌었다 놓으면 한 벌 더 올라간다. 창 capture로 듣는다 - 카드 끌기가 `stopPropagation`을 하고, 끌던 것이 사라지면 dragend가 오지 않아 drop에서도 푼다.
+- **P22 차례 = 위험 순**(권장안 - 11-04 사용자 '보완 및 수정 할 계획을 세워줘'): 서버 보안 → 글을 잃는 것 → 공간·사본 → 학년도 → 잔버그 → 운영 → 처음 쓰는 사람. 세션을 일곱으로 나눈 것은 대화 하나가 사용 한도 안에 들게 하려는 것이다. P22-4(3월 학급)는 기한이 있다 - 늦어도 2027-02-15 새 학년도 띠 전.
+- **P22 공개 저장소 - 고치기 전의 보안 항목은 번호만**(권장안): 저장소가 공개라 PLAN·커밋에 구멍을 적으면 설명서가 된다. 자세한 것은 그 PC 기기 기억 `v5-audit-1104`, 그래서 P22-1은 그 PC에서 한다. 배포한 뒤에도 일반 말로.
+- **P22 메모 저장 뒤 칸 = 그 사이 친 글을 둔다, 칸을 잠그지 않는다**(권장안): 쓰다가 Ctrl+S 하고 이어 치는 것이 흔한 습관이라 잠그면 글자가 씹힌다. 저장에 넘긴 글과 지금 칸이 같을 때만 `setForm`, 다르면 `setBase`만 - 그새 친 것은 저장 안 한 고침으로 남는다.
+- **P22 ✕·탭 × = 쓰던 글 보관이 없는 창만 묻는다**(권장안): 메모·일정은 보관이 있어 지금처럼 묻지 않는다(10-26 Alt+W '적던 글은 쓰던 글 보관에 남는다'). '✕는 저장하지 않는다'(5장)는 그대로 - 묻기만 더한다.
+  `close`를 통째로 감싸지 않고 `askClose`를 따로 둔다 - `save().then(close)`는 확인 ref가 effect로 바뀌기 전에 불려 저장했는데도 물을 수 있다.
+- **P22 끊긴 채 시작 = 서버 답이 오기 전에는 기억한 그룹을 믿는다**(권장안): `onSnapshot`은 끊긴 때 빈 결과를 `fromCache`로 준다 - 이것을 '그룹 없음'으로 믿어 `known`까지 지웠다. `chooseSpace`의 '목록을 받기 전에는 고른 것을 믿는다'를 끊긴 동안에도 쓴다. `includeMetadataChanges`는 `CLAUDE.md` 3장(P15-1)과 같다.
+- **P22 영구 지운 항목 = 공간에 기록을 남기고 기기가 읽어 뺀다**(권장안 - P22-3 ■0에서 확정): 서버에서 지운 문서는 '바뀐 것만 받기'로 오지 않는다. 앱이 꺼진 기기는 지운 표시도 받지 못해 `maybePrune` 후보가 아니다. 모든 id를 날마다 견주면 항목 수만큼 읽기가 든다 → `purge`가 공간의 작은 기록 문서(`settings/purged` - 최근 id·시각, 개수 제한)에 적고 `maybePrune`이 하루 한 번 읽는다. 개수를 넘으면 그 표시를 보고 통째로 다시 받는다.
+- **P22 3월 학급 = 고른 학년도를 함께 적는다**(권장안): `c.year === 올해`로만 거르면 올해 지난 학년 학급을 일부러 고른 사람의 고름이 다음 열기에 풀린다. 고른 때의 학년도가 지나면 믿지 않는다.
+- **P22 CSP는 Report-Only부터, App Check는 막지 않고 모니터만**(권장안): 틀린 CSP·App Check는 앱을 통째로 멈춘다 - 쉬운 헤더는 바로 넣고 둘은 본 뒤 사용자에게 묻는다. 같은 프로젝트의 V3·V4가 끊기는 것도 그때 함께 본다.
+- **P22 main은 강제 푸시·지우기만 막는다**(권장안): 검사 필수로 묶으면 자동 요청의 '확인 뒤 바로 합치기'가 막힌다(`claude-request.yml`).
 
 ## 6. 세션별 내용
 
@@ -2721,3 +2741,117 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 - [x] ■3 설명서(메모 첨부·쪽지·대화 - '📎 또는 파일을 끌어다 놓기') · inspect-manual(MATCH=그 주제) · MAP · 세션·단계 끝 정리(1-3·1-4).
   → 11-04 끝. 단위 2934 · inspect-attach·mail·chat·manual(attach|mail|chat) · 기존 끌기 move-dday·photos·seating 통과.
 **끝 조건**: 단위 · inspect-attach·mail·chat(놓기 묶음) · manual 통과 · 칸 밖에 놓아도 앱이 그대로.
+
+### P22. 점검 뒤 손보기 ② (2026-11-04 계획)
+
+사용자 말(11-04): "v5의 완성도를 높이고 싶어. 오류는 없는지. 개선해야 할 사항은 없는지 분석해줘." → "보완 및 수정 할 계획을 세워줘. 본격적인 작업은 새 대화창에서 시작할께."
+분석(11-04, `f6567dc` 기준): tsc·oxlint·단위 2989·함수·규칙·자료 시험·빌드·크롬 점검 59개 **모두 통과** - 아래는 그 점검들이 보지 못하던 것이다. 차례는 위험 순, 결정과 까닭은 5장 'P22 …'.
+**줄 번호는 그날 것** - 고치기 전에 이름으로 grep 한다. 확인 칸: **재현** = 크롬·에뮬레이터에서 실제로 봄 · **코드** = 읽어서 확인(고칠 때 틀리는 시험부터) · **다시** = 분석 에이전트만 보고 한도에 끊겨 아직 확인하지 못함.
+항목 번호는 사용자에게 보인 번호 그대로다(사용자가 '○번'이라고 말한다).
+
+| 항목 | 무엇 | 확인 | 세션 | 묻기 · 👤 |
+|---|---|---|---|---|
+| 1 | 보안 항목 S1 (공개 저장소라 번호만 - 이 절 아래 '공개 저장소') | 재현 | P22-1 | 운영 규칙 배포 |
+| 2 | 메모 저장 직후 친 글이 사라진다 - 평소 연결에서도 Ctrl+S 바로 뒤 8글자가 모두 없어졌다, 끊긴 동안은 그 사이 친 글 전부 | 재현 | P22-2 | 없음 |
+| 3 | 인터넷 없이 앱을 열면 그룹 칩이 사라지고 기억한 그룹 목록(`sp5-space.known`)이 `[]`로 지워져 개인 공간으로 넘어간다(기기 사본은 남는다) | 재현 | P22-3 | 없음 |
+| 4 | ✕·탭 ×·Alt+W가 묻지 않고 닫는다(ESC만 묻는다) - 진도·시간표·평가·출석부·알림장·수업·라벨 창은 쓰던 글 보관도 없다 | 코드 | P22-2 | 없음 |
+| 5 | 로그아웃이 묻지 않고 저장 안 한 칸을 버리고 쓰던 글 보관까지 지운다 | 코드 | P22-2 | 없음 |
+| 6 | 3월 1일부터 학급 화면·출석부가 지난 학년 학급으로 열린다(`sp5-class-hub`가 학년도를 보지 않는다) | 코드 | P22-4 | 없음 - **2027-02 전에** |
+| 7 | 앱 안 일정 알림이 지금 보는 공간 것만 울린다(푸시를 안 켠 기기는 다른 공간 알림을 놓친다) | 코드 | P22-3 | 없음 |
+| 8 | '이 기기 사본 다시 받기' 뒤 그룹 공간을 받지 않는다(`resetMirror()`에 공간을 안 넘긴다) - 새로고침해야 돌아온다 | 코드 | P22-3 | 없음 |
+| 9 | 되살리기가 공간을 보지 않는다 - 개인 백업이 그룹 공간에 들어가 구성원에게 보일 수 있다 | 코드 | P22-4 | 없음 |
+| 10 | 올리는 중 저장: 빈 새 메모는 칸이 닫혀 첨부가 사라지고, 글을 다 지운 메모는 휴지통으로 간다(`hasContent`를 `uploading`보다 먼저 본다) | 코드 | P22-2 | 없음 |
+| 11 | 다른 기기의 앱이 꺼진 사이 지우고 휴지통에서 영구로 지운 항목이 그 기기 사본에 살아 있다(`maybePrune`은 지운 표시가 있는 문서만 본다) | 코드 | P22-3 | 없음 |
+| 12 | 공용 PC: 주간학습안내 메모가 계정 구분 없이 남고 명렬표 임시본·창 목록이 로그아웃에 안 비워진다 · 다른 탭의 구글 토큰이 남는다 · 탭이 둘이면 로그아웃 정리가 끝나지 않는다 | 코드 | P22-4 | 없음 |
+| 13 | 잔버그: 대화(안 읽은 수에 내 글·끊긴 동안 '이전 글' 꺼짐·보내는 순간 보관 지움) · 쪽지('불러오는 중' 멈춤·'모두' 말없이 잘림) · 자정 넘김 · 단축키에 Ctrl+C·V 지정 | 코드 | P22-4·5 | 없음 |
+| 14 | 에이전트만 본 대화·쪽지 6건(↗ 새 창이 보던 방이 아니다 등 - P22-5 ■3) | 다시 | P22-5 | 없음 |
+| 15 | 보안 항목 S2~S5 · 알림 하나가 실패하면 그 회차의 나머지가 끊긴다 | 코드 | P22-1 | 함수 배포 |
+| 16 | 운영: 보안 헤더 없음(HSTS만) · App Check 없음 · 복원 연습 안 함 · CI에 규칙·자료 시험 없음 · main 보호·Dependabot 꺼짐 · 자동 요청 막는 목록 · 쓰지 않는 구글 권한 | 코드 | P22-6 | 돈·설정은 그 조각에서 |
+| 17 | 쓰기 편함: 처음 쓰는 사람의 다음 할 일 · 자료가 없는데 백업 경고 · 휴대폰 수업 머리줄 ⚙️ 한 줄 · 창 초점 · 달력 칸 키보드 | 코드·그림 | P22-7 | 없음 |
+
+**모든 P22 세션에 같은 것**: 세션 = 대화 하나, 조각마다 커밋·푸시(1-1) · **고치기 전에 틀리는 시험부터**(재현이 되어야 고친 것을 안다) · 정할 것은 권장안 + 5장, '묻기'는 그 조각 앞에서 AskUserQuestion으로 ·
+설명서(`features/help/chapters/*`)를 같은 커밋에서 + `inspect-manual.mjs`(MATCH) · 바꾼 `data-*`·화면 글은 `grep -rn '<옛 이름>' tools/` · 에뮬레이터는 `JAVA_TOOL_OPTIONS=-Xmx4g`로 켠다(`CLAUDE.md` 2장 - 이 PC는 JBR Java) · 크롬 점검은 하나씩 ·
+**에이전트·워크플로를 쓰지 않는다 - ultracode가 켜져 있어도**(`CLAUDE.md` 2장, 11-04 셋이 17분에 96만 토큰을 쓰고 한도에 닿았다) · 세션 끝 정리 1-3.
+**공개 저장소**: 저장소가 공개라 고치기 전의 보안 항목(S1~S5)은 이 파일·커밋 메시지·PR에 구멍을 적지 않는다. 자세한 것은 이 PC 기기 기억 `C:/Users/user/.claude/projects/d--gody5-Git/memory/v5-audit-1104.md`. 배포한 뒤에도 '규칙 손봄'처럼 일반 말로.
+
+### P22-1. 서버 쪽 보강 - 규칙·함수 (항목 1·15)
+**시작 조건**: 없음(맨 앞). **이 PC에서만**(운영 배포 · 기기 기억) - 클라우드·다른 기기면 P22-2부터 하고 돌아온다.
+**묻기**: 운영 `v5Errors` 읽기(■0) · 운영 규칙 배포 · 함수 배포(■3).
+**먼저 읽을 것**: 위 기기 기억의 'S 항목' · `firestore.rules`의 그 자리 · `tools/check-rules.mjs` · `functions/index.js` `sendDueAlarms`·`functions/alarmPlan.js`·`functions/claudePlan.js` · 설명서 share(그룹 참여).
+- [ ] ■0 (묻고) 운영 오류 보고: 허락하면 `v5Errors`를 읽기만 해 같은 오류를 모아 보고, 이 계획에 없는 것을 항목으로 더한다(11-04 분석은 운영 자료를 읽지 않았다). 안 되면 건너뛴다.
+- [ ] ■1 규칙 S1·S2: `check-rules`에 '막혔다' 시험을 **먼저** 넣어 뚫린 것을 본 뒤 고친다(지금 check-rules는 이 길을 시험하지 않아 통과한다). PC 에뮬레이터가 고친 규칙을 안 읽으면 REST로 넣는다(`CLAUDE.md` 2장). 앱 쪽 안내 글·설명서도 같은 조각에서.
+- [ ] ■2 함수: 알림마다 `try/catch`(하나가 던져도 그 회차의 뒤 알림·Claude 요청 확인이 돈다, 실패는 로그 - `sent`를 먼저 적는 '두 번 보내지 않기'는 둔다) · S3·S4 + `npm run test:functions`에 시험 · `functions`에서 `npm audit fix`(moderate 6건 - P14-5에서 다음 함수 배포로 미룬 것).
+- [ ] ■3 (묻고) 배포: `node tools/live-rules.cjs`로 운영 = 고치기 전 파일인지 본다 → `npx firebase deploy --only firestore:rules --project schoolplannerv3` → live-rules '같다' → `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:v5`. 규칙이 좁아지는 것이라 옛 화면에 영향이 있는 길은 ■1에서 표로 본다.
+- [ ] ■4 S5(낮음 - 앱만): 기기 기억대로 · 시험 · 참여 칸이 받는지 inspect-groups.
+- [ ] ■5 설명서·문서 · 세션 끝 정리.
+**끝 조건**: check-rules 새 시험 통과 · inspect-groups·share-groups·import-groups · test:functions · live-rules '같다'.
+
+### P22-2. 쓰던 글 지키기 - 메모 저장·✕·로그아웃 (항목 2·4·5·10)
+**시작 조건**: 없음(서버를 바꾸지 않는다 - 조각마다 main). **묻기**: 없음.
+**먼저 읽을 것**: 5장 'P22' · `features/notes/NotePanel.tsx` 355~450·612~640 · `app/WindowHost.tsx` · `app/windows.ts`(`closeWindow`·`closeAllWindows`·`useUnsavedCheck`·`anyWindowUnsaved`) · `ui/ModalShell.tsx` · `ui/SidePanelFrame.tsx` · `ui/sideColumn.ts` `closeSideSlot` · `app/history.ts` 층 · `features/auth/login.ts` `logout` · `app/Header.tsx` `data-logout`.
+- [ ] ■0 확인(문서만): `close`를 부르는 곳 표(✕·`ModalCloseButton`·`data-close` / 저장 뒤 닫기 `save().then(close)` / 뒤로가기 `useBackLayer`) · 저장 단추가 있는데 `useUnsavedCheck`가 없는 창(교과 출결·자리표·학생 기록·학교 일정 - 바로 저장인가) · 휴대폰 뒤로가기는 기록이 먼저 물러나므로 '아니오'면 층을 다시 쌓아야 하는지. 다르면 이 절·5장을 고친다.
+- [ ] ■1 메모 저장 중 친 글(항목 2): 시험 먼저 - NotePanel 시험(저장을 잡아 둔 채 글을 치고 풀면 글이 남는다) + inspect-notes 묶음. 재현 순서: 쓰고 Ctrl+S → `ctx.setOffline(true)` → 더 쓰고 Ctrl+S → 또 쓰고 → `setOffline(false)` → 칸 글 / 평소 연결은 Ctrl+S 바로 뒤 `keyboard.type`.
+  고침: 저장에 넘긴 글과 지금 칸을 견줘(`formRef`) 같을 때만 `setForm(next)`, 다르면 `setBase`만 - 그새 친 것은 '고침'으로 남고 보관(`draft.clear`)도 지우지 않는다. 새 메모(`createNote`)·고치기(`saveNote`) 두 갈래 다. 일정 칸은 `setForm`을 하지 않아 안전하다(11-04 확인).
+- [ ] ■2 올리는 중 저장(항목 10): `save()`의 `uploading` 검사를 `hasContent` 앞으로 · `unsaved`에 `uploading` · 시험.
+- [ ] ■3 ✕·탭 ×·Alt+W(항목 4): `WindowProps`에 `askClose`(그 창의 확인이 참이면 ESC와 같은 말로 묻고 닫는다) → 출석부·평가·라벨·수업·알림장·진도·시간표의 ✕·닫기 단추에. 탭 ×·Alt+W는 `[data-close]`를 누르니 저절로 온다 · 메모·일정은 보관이 있어 그대로 · 시험 + inspect-shell 묶음(진도 창을 고치고 ✕ → 물음 / '아니오'면 칸이 그대로).
+- [ ] ■4 로그아웃(항목 5): 저장 안 한 칸·서버 대기 쓰기·쓰던 글 보관이 있으면 먼저 묻는다 · 시험 + inspect-login 묶음.
+- [ ] ■5 설명서(쓰는 칸·로그아웃) · inspect-manual · 세션 끝 정리.
+**끝 조건**: 단위 · inspect-notes·memo·shell·login·attach 통과 · 메모 재현 순서에서 글이 남는다.
+
+### P22-3. 공간이 사라지지 않게 - 끊긴 시작·사본·알림·영구 지움 (항목 3·7·8·11)
+**시작 조건**: 없음. **묻기**: 없음(규칙 그대로 - 공간 아래 일반 쓰기로 된다. ■0에서 다르면 묻는다).
+**먼저 읽을 것**: 5장 'P22' · `data/spaces.ts` `watchMySpaces` · `data/spaceChoice.ts`(`chooseSpace`·`rememberGroups`·`knownGroupsOf`) · `app/SpaceChips.tsx` · `data/mirror/sync.ts`(`setSpaces`·`resetMirror`·`maybePrune`·`useMirrorSync`) · `data/mirror/server.ts` `deletedIds` · `data/repo` `purge` · `features/events/EventAlarms.tsx` · `domain/eventAlarm.ts` · `data/select.ts` `useOverlaySpaces` · `features/settings/AppTab.tsx` · `tools/inspect-offline.mjs`·`inspect-share-groups.mjs`.
+- [ ] ■0 확인·설계 확정(문서만): 끊긴 동안 칩에 쓸 그룹 이름을 어디에 기억하나 · 그룹 일정의 앱 알림 받는 사람(서버는 쓴 사람만 - 지금 앱은 그 공간을 보면 모두 울린다) · 영구 지우기 기록 모양(5장 권장안)과 넘칠 때.
+- [ ] ■1 끊긴 채 시작(항목 3): 시험 먼저 - 점검 묶음: 그룹을 심고 고른 뒤 `page.route('**/google.firestore.v1.Firestore/**', (r) => r.abort())` → `reload` → 14초 뒤에도 칩이 있고 `sp5-space.known`이 그대로, 풀면 그대로.
+  고침: `watchMySpaces`에 `includeMetadataChanges: true`, `metadata.fromCache`면 목록·`known`을 덮지 않는다(`loaded`는 false - `chooseSpace`가 고른 공간을 믿는다), 기억한 이름으로 칩을 그린다.
+- [ ] ■2 사본 다시 받기(항목 8): `resetMirror`가 지금 받던 공간을 그대로 다시 받는다 + sync 시험 · 그룹 공간에서 눌러도 화면이 찬다.
+- [ ] ■3 다른 공간 알림(항목 7): 개인 + 내 그룹 항목으로 `dueAlarms`(`useOverlaySpaces`처럼 store에서 모은다 - 훅을 돌리지 않는다) · 푸시와 앱이 겹쳐 두 번 울리지 않는지(`rung`) · 시험 + inspect-events 묶음.
+- [ ] ■4 영구 지운 항목(항목 11): `purge`가 기록을 남기고 `maybePrune`이 읽어 사본에서 뺀다 · 시험(앱을 끈 기기 흉내) · inspect-two-devices 묶음.
+- [ ] ■5 설명서 · MAP·DESIGN · 세션 끝 정리.
+**끝 조건**: 단위 · inspect-offline·share-groups·mirror·two-devices·events·search-trash 통과.
+
+### P22-4. 학년도·날짜·되살리기·공용 PC (항목 6·9·12·13 자정)
+**시작 조건**: 없음 - **늦어도 2027-02-15(새 학년도 띠) 전에 끝낸다**. **묻기**: 없음.
+**먼저 읽을 것**: 5장 'P22' · `features/class/classes.ts` `HUB_KEY`·`rememberHubClass` · `features/class/ClassScreen.tsx` 처음 학급 · `features/attendance/attendanceClass.ts` · `StudentRecordWindow`·`EvalOverviewWindow`의 같은 고르기 · `ui/useToday.ts` · `app/nav.ts` · `features/backup/BackupTab.tsx` `restore`·`data/backup.ts` · `data/mirror/sync.ts` `GROUP_MIRRORED` · `features/weeklyGuide/WeeklyGuideWindow.tsx` · `features/class/rosterDraft.ts` · `data/google/token.ts` · `data/session.ts` `watchSession` · `data/drafts.ts`·`data/clipboard.ts` `open`·`wipe*`.
+- [ ] ■0 확인(문서만): 계정 구분 없는 `sp5-*` 저장 키 표(개인 자료가 든 것만 고른다 - 11-04 찾은 것은 주간학습안내, 자리표·인쇄·라벨 거르개는 그때 본다) · 로그아웃 때 비울 store 표.
+- [ ] ■1 3월 학급(항목 6): 고른 학년도를 함께 적고 그 학년도가 지나면 믿지 않는다(옛 글자 값도 받는다) - `ClassScreen`·`pickAttendanceClass`·학생 기록·평가 모아 보기 · 시험(`vi.setSystemTime('2027-03-02')` - 날짜 고정 규칙) · inspect-new-year 묶음.
+- [ ] ■2 자정 넘김(항목 13): 보던 날이 '오늘'이었으면 날이 바뀔 때 따라간다(다른 날을 보던 사람은 그대로, 열린 칸은 연 날짜 그대로) - `useToday`로 껍데기에서 한 번 · 시험.
+- [ ] ■3 되살리기(항목 9): 파일 공간 ≠ 지금 공간이면 파일 이름·지금 공간을 적어 먼저 묻는다 · 그룹 공간이면 개인 공간에만 두는 컬렉션(학급·출결·진도)은 넣지 않는다 · 시험 + inspect-backup 묶음.
+- [ ] ■4 공용 PC(항목 12): 주간학습안내 열쇠를 계정마다(옛 값은 처음 읽은 계정이 받는다) · 로그아웃에 임시본·창 목록 비우기 · 계정이 바뀌면 `forgetGoogleToken` · `openDB`에 `blocking`(다른 탭이 비켜 준다)과 로그아웃 단계마다 시간 제한 · 시험 + inspect-login 묶음(두 탭).
+- [ ] ■5 설명서 · 세션 끝 정리.
+**끝 조건**: 단위 · inspect-class·attendance·new-year·backup·login·bell-guide 통과.
+
+### P22-5. 대화·쪽지·단축키 잔버그 (항목 13·14)
+**시작 조건**: 없음. **묻기**: 없음(규칙 그대로).
+**먼저 읽을 것**: `features/chat/ChatRoomView.tsx`·`ChatComposer.tsx` · `data/chat.ts` `countUnread`·`markRoomRead`·`loadOlderMsgs` · `features/mail/MailWindow.tsx` `load`·`refreshTop` · `features/mail/MailCompose.tsx` · `domain/shortcuts.ts` `recordKeyIssue` · `app/keys.ts`.
+- [ ] ■1 대화: 보낸 뒤 내 읽음을 적는다(`markRoomRead` - 규칙 그대로, 안 읽은 수에 내 글이 안 든다) · `loadMore`가 `p.offline`이면 cursor를 두고 안내 · 쓰던 글 보관은 서버가 받은 뒤 지운다(쪽지·메모처럼) · 시험.
+- [ ] ■2 쪽지: `load(true)` 중 `refreshTop`이 와도 `busy`가 풀린다 · '모두'가 `MAIL_LIMITS.to`에서 잘리면 안내 · 시험.
+- [ ] ■3 **다시 확인할 것 6건** - 재현되면 고치고, 아니면 까닭을 적고 뺀다: ↗ 새 창이 `win.params`로 열려 보던 방·탭이 아니다(`app/popout.ts`) · 새 창의 쪽지 창이 새 쪽지를 모른다(`useWatchInPopout`이 쪽지에 없다) · 새 1:1을 끊긴 채 보내면 방에 안 보여 다시 쓰게 된다 · 첨부 올리는 중 방을 떠나면 말없이 사라진다 · 올리는 중 캡처 붙여넣기가 안내 없이 버려진다 · 끊겼다 이어진 사이 글이 50개를 넘으면 가운데가 빈다.
+- [ ] ■4 단축키: `recordKeyIssue`가 Ctrl+C·V·X·A·Z(글 칸 키)·Ctrl+W·T·N(브라우저가 가져간다)을 까닭과 함께 막는다 · 시험 + inspect-shortcut-record.
+- [ ] ■5 설명서 · 세션 끝 정리.
+**끝 조건**: 단위 · inspect-chat·mail·popout·shortcut-record 통과.
+
+### P22-6. 운영 안전망 (항목 16)
+**시작 조건**: 없음(화면 동작을 바꾸지 않는다). **이 PC에서**. **묻기**: 복원 연습(■6) · 저장소 설정(■7) · App Check(■8).
+**먼저 읽을 것**: 5장 'P22' · `firebase.json` hosting · `index.html`(인라인 스크립트) · `.github/workflows/ci.yml`·`claude-request.yml`(막는 목록) · `docs/CLAUDE-REQUEST.md` · `docs/OPS.md` · `data/firebase.ts` `GOOGLE_SCOPES`.
+- [ ] ■1 쉬운 보안 헤더(`firebase.json`): `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin` · `X-Frame-Options: SAMEORIGIN` · `Permissions-Policy` · 구글 로그인 팝업·↗ 새 창·설치 앱이 그대로인지 · 배포 뒤 `curl -I`.
+- [ ] ■2 CSP는 `Content-Security-Policy-Report-Only`로만: 허용 주소 표(구글·Firebase·드라이브 그림·나이스) · 인라인 스크립트 해시 · 콘솔 위반을 점검으로 센다. 막기로 바꾸는 것은 며칠 뒤 사용자에게 묻는다.
+- [ ] ■3 CI에 규칙·자료 시험: `setup-java` + `firebase emulators:exec --only auth,firestore`로 `check:rules`·`test:data` - 시간이 늘어나는 만큼 main CI·자동 요청이 느려지는지 본다.
+- [ ] ■4 자동 요청 막는 목록에 `package.json`·`package-lock.json`·`public/sw.js`·`vite.config.ts`·`index.html` 더하기(`.github`는 PC에서만 고친다) + `docs/CLAUDE-REQUEST.md`.
+- [ ] ■5 쓰지 않는 구글 권한(`auth/tasks`) 빼기 - 이미 받은 토큰·동의 창 · 루트 audit high 4건은 `@grpc/grpc-js`(Node 쪽 - 화면에 실리지 않는다) - `overrides`로 되는지만 보고 `--force`는 하지 않는다(firebase가 9로 내려간다).
+- [ ] ■6 (묻고) 복원 연습: `docs/OPS.md` 절차대로 `restore-drill`에 풀어 문서를 보고 표를 채운다(P14-3 끝 조건이 비어 있다). 지우기 명령은 사용자가 터미널에서.
+- [ ] ■7 (묻고) 저장소 설정: main 강제 푸시·지우기만 막는다(검사 필수로 묶으면 자동 요청의 바로 합치기가 막힌다) · Dependabot 보안 업데이트.
+- [ ] ■8 (묻고) App Check: 권장 = 켜되 막지 않고 모니터만 먼저(V3·V4와 한 프로젝트라 막으면 옛 앱이 끊긴다).
+- [ ] ■9 문서 · 세션 끝 정리.
+**끝 조건**: 배포 뒤 헤더 보임 · inspect-login·pwa·popout·attach 통과 · CI 통과 · OPS 표 채움(사용자가 허락했으면).
+
+### P22-7. 처음 쓰는 사람·키보드 (항목 17)
+**시작 조건**: 없음. **묻기**: 없음(새 띠 글이 어색하면 사용자 의견 뒤에 고친다). 마지막 세션 - 단계 끝 정리까지.
+**먼저 읽을 것**: 5장 'P22' · `features/lessons/TeachingBanner.tsx` · `features/backup/AutoBackupBanner.tsx` · `features/help/chapters/start.ts` · `features/lessons/DayLessons.tsx` 머리줄 · `ui/PopupFrame.tsx`·`ui/SidePanelFrame.tsx` · `features/month/MonthGrid.tsx`·`features/week/WeekDayCard.tsx`·`features/year/YearMonthCard.tsx`.
+- [ ] ■0 확인(문서만): 새 계정 화면(11-04 그림: 백업 띠 + 교사 유형 띠 + 빈 교시 6줄) · 다음 할 일 차례 · `npx oxlint --jsx-a11y-plugin src`로 키보드가 안 되는 곳 표(11-04 = 클릭만 되는 곳 25·이름 없는 칸 6).
+- [ ] ■1 처음 쓰는 사람: 자료가 없으면 자동 백업 띠를 띄우지 않는다 · 교사 유형을 고른 뒤 '다음: ⏰ 시간표 넣기 → 학급 만들기' 띠(눌러 그 창으로, 닫으면 다시 안 뜬다 - 계정 값) · V4에서 오는 사람은 가져오기 띠가 먼저 · inspect-shell 묶음.
+- [ ] ■2 휴대폰 수업 머리줄: ⚙️가 혼자 한 줄을 차지하지 않게(머리줄 오른쪽 끝 규칙은 그대로 - 첫 줄 끝으로) · inspect-mobile(글자가 있는지도 본다).
+- [ ] ■3 창 초점: 가운데 창을 열면 안으로 옮기고 닫으면 연 단추로 돌아온다, `aria-modal` · 쓰는 칸 `autoFocus`는 그대로 · 오른쪽 칸은 화면을 같이 쓰니 가두지 않는다 · 시험.
+- [ ] ■4 달력 칸·카드 키보드: 월간·주간·년간 칸과 ■0 표에 `tabIndex`·Enter·Space(끌기·클릭은 그대로) · `.oxlintrc.json`에 그 규칙을 켤지 본다 · 시험 + inspect-month-year·week.
+- [ ] ■5 설명서(처음 시작) · inspect-manual · 세션·단계 끝 정리(1-3·1-4 - 크롬 점검 전체를 하나씩, 점검 사이 8080 확인).
+**끝 조건**: 단위 · 점검 전체 통과 · 새 계정이 띠만 보고 시간표·학급까지 간다 · P22 단계 끝.
