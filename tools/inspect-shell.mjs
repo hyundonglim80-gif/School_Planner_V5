@@ -4,6 +4,7 @@
 //   3) 시험 창 둘(창·쓰는 칸)이 V4처럼: 탭(숨은 탭도 글이 남는다)·탭 ×·Ctrl+S(커서 든 칸, 없으면 보이는 탭)·
 //      뒤로가기(맨 위 하나, 다 닫은 뒤라야 앞 화면)·ESC(줄 전체, 저장 안 한 글은 먼저 묻는다)·폭 끌기·가운데 창.
 //   4) 머리줄 ⋮ = 4구역.
+//   5) 고친 시간표 창: ✕·탭 ×·Alt+W·뒤로가기·가운데 창 배경도 묻는다, 아니오면 칸과 고친 것이 남고 뒤로가기가 화면을 떠나지 않는다(P22-2).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-shell.mjs
 // 창 위치는 계정 설정(settings/pc)을 따른다 - 처음에 '창 위치'가 적혀 있으면 걷고(다른 점검이 남긴 것에 흔들리지 않게),
@@ -133,6 +134,53 @@ try {
   await page.keyboard.press('Escape');
   r.check(await waitFor(async () => (await slots()) === 0), 'ESC: 예 → 줄 전체를 닫는다');
 
+  r.section('✕·탭 ×·Alt+W·뒤로가기도 묻는다 (P22-2)');
+  const ttWin = sel('timetable-window');
+  const ttCell = page.locator(`${ttWin} input[data-cell="0-1"]`);
+  /** 시간표 창을 열어 고친다 (저장하지 않는다 - 끝에 닫으면 계정에 남는 것이 없다) */
+  const dirtyTimetable = async () => {
+    await openWin('timetable');
+    await waitFor(page.locator(ttWin));
+    await waitFor(ttCell);
+    await ttCell.fill('점검 고친 칸');
+    await waitFor(page.locator(sel('timetable-dirty')));
+  };
+  /** 물음 하나가 뜨고 시간표 창이 고친 그대로 남았나 */
+  const asked = async (how) => {
+    const ok = await waitFor(() => dialogs.seen.length === 1);
+    r.check(ok && dialogs.seen[0].includes('저장하지 않고 닫을까요') && (await ttCell.inputValue()) === '점검 고친 칸', `${how}: 묻고, 아니오면 칸과 고친 것이 남는다`, `물음 ${dialogs.seen.join(' / ')}`);
+    dialogs.seen.length = 0;
+  };
+  dialogs.seen.length = 0;
+  dialogs.answer = false;
+  await dirtyTimetable();
+  await page.locator(`${sel('popup-frame', 'side')} ${sel('close')}`).click();
+  await asked('✕');
+  await ttCell.click();
+  await page.keyboard.press('Alt+w');
+  await asked('Alt+W');
+  await openWin('devWindow');
+  await waitFor(page.locator(sel('test-window')));
+  await page.locator(sel('side-tab-close')).first().click();
+  await waitFor(() => dialogs.seen.length === 1);
+  r.check(dialogs.seen.length === 1 && (await slots()) === 2, '숨은 탭의 ×: 묻고, 아니오면 탭이 남는다');
+  dialogs.seen.length = 0;
+  await page.locator(sel('side-tab-close')).nth(1).click();
+  await waitFor(async () => (await slots()) === 1);
+  r.check(dialogs.seen.length === 0, '고친 것이 없는 탭 ×는 묻지 않는다');
+  const hashBefore = hashOf(page);
+  await page.goBack();
+  await asked('뒤로가기');
+  await page.goBack();
+  await asked('다시 뒤로가기');
+  r.check(hashOf(page) === hashBefore && (await slots()) === 1, '뒤로가기: 아니오면 화면을 떠나지 않는다');
+  dialogs.answer = true;
+  await page.locator(sel('close')).first().click();
+  r.check(await waitFor(async () => (await slots()) === 0), '예 → 닫는다');
+  await waitFor(() => dialogs.seen.length === 1);
+  dialogs.seen.length = 0;
+  dialogs.answer = false;
+
   // 창을 연 채 화면을 바꾸면 뒤로가기는 창부터, 그다음 앞 화면
   await openWin('devWindow');
   await waitFor(page.locator(sel('test-window')));
@@ -157,6 +205,22 @@ try {
     '창은 가운데, 쓰는 칸은 그래도 오른쪽',
   );
   await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('popup-frame', 'center')).count()) === 0);
+
+  // 가운데 창 배경 누르기는 층을 모두 닫는다 - 고친 창은 먼저 묻는다 (P22-2)
+  dialogs.seen.length = 0;
+  dialogs.answer = false;
+  await dirtyTimetable();
+  await page.mouse.click(5, 300);
+  await asked('가운데 창 배경');
+  await page.keyboard.press('Escape');
+  r.check(await waitFor(() => dialogs.seen.length === 1), '배경에서 아니오 뒤에도 층이 남아 ESC가 묻는다');
+  dialogs.seen.length = 0;
+  dialogs.answer = true;
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('popup-frame', 'center')).count()) === 0);
+  r.check(dialogs.seen.length === 1, 'ESC: 예 → 한 번만 묻고 닫는다', `물음 ${dialogs.seen.length}번`);
+  dialogs.seen.length = 0;
 
   r.section('머리줄');
   await page.click(sel('more-menu'));

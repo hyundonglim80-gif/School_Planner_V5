@@ -2,7 +2,7 @@
 // 그 기능이 V5로 옮겨 오기 전에는 탭·칸을 숨긴다(빈 탭을 보이지 않는다) - 기능을 옮기는 세션이 아래 표의 ready를 켜고 칸을 더한다.
 // 계정에 PC·휴대폰 따로 올라가는 값이 대부분이다(app/prefs). 휴지통 자동 비우기·드라이브 백업·교시 이름은 그 기능 창 안으로 옮겼다(MENU 3-7).
 import { useCallback, useRef, useState } from 'react';
-import type { WindowProps } from '../../app/windows';
+import { useAskClose, type WindowProps } from '../../app/windows';
 import { useSession } from '../../data/session';
 import { isDeveloper } from '../../domain/developers';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
@@ -48,11 +48,12 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
   const shortcuts = useRef<ShortcutsTabHandle | null>(null);
   const [status, setStatus] = useState({ dirty: false, conflict: null as string | null, saved: false });
   const onStatus = useCallback((s: typeof status) => setStatus(s), []);
+  const askClose = useAskClose(close);
 
   return (
     <ModalShell
       isOpen
-      onClose={close}
+      onClose={askClose}
       raise={raise}
       width="lg"
       title="⚙️ 환경설정"
@@ -79,7 +80,7 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
               기본값으로
             </button>
           )}
-          <ModalCloseButton onClose={close} />
+          <ModalCloseButton onClose={askClose} />
           {tab === 'shortcuts' && (
             <button
               type="button"

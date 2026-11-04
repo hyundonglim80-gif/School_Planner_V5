@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, act, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { resetHistoryForTest } from './history';
+import { closeAllLayers, resetHistoryForTest } from './history';
 import { useAppKeys } from './keys';
 import { setPopupStyle } from './layoutPrefs';
 import WindowHost from './WindowHost';
 import SideTabs from '../ui/SideTabs';
-import { closeAllWindows, closeWindow, openWindow, registerWindow, resetWindowsForTest, useShownWindowPick, useWindows, windowUnsaved } from './windows';
+import { closeAllWindows, closeShownWindow, closeWindow, openWindow, registerWindow, resetWindowsForTest, useShownWindowPick, useWindows, windowUnsaved } from './windows';
 import { popOutWindow } from './popout';
 import { useSidePopups } from '../ui/sideColumn';
 
@@ -230,6 +230,79 @@ describe('오른쪽 줄', () => {
     act(() => void closeAllWindows());
     expect(ask).not.toHaveBeenCalled();
     expect(useWindows.getState().windows).toHaveLength(0);
+  });
+});
+
+describe('저장 안 한 칸을 닫기 전에 묻기 (P22-2)', () => {
+  const dirty = async (n: number) => {
+    act(() => void openWindow('devPanel', { n }));
+    await screen.findByRole('heading', { name: `시험 쓰는 칸 ${n}` });
+    const box = shownPanel()!.querySelector<HTMLTextAreaElement>('[data-test-text]')!;
+    fireEvent.change(box, { target: { value: '적던 글' } });
+  };
+  const open = () => useWindows.getState().windows.length;
+
+  it("✕: 묻고 '아니오'면 칸과 글이 남고, '예'면 닫는다", async () => {
+    render(<Host />);
+    await dirty(1);
+    const ask = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    act(() => shownPanel()!.querySelector<HTMLButtonElement>('[data-close]')!.click());
+    expect(ask).toHaveBeenCalledTimes(1);
+    expect(open()).toBe(1);
+    expect(shownPanel()!.querySelector<HTMLTextAreaElement>('[data-test-text]')!.value).toBe('적던 글');
+    ask.mockReturnValue(true);
+    act(() => shownPanel()!.querySelector<HTMLButtonElement>('[data-close]')!.click());
+    expect(open()).toBe(0);
+  });
+
+  it('탭 ×·보고 있는 칸 닫기(Alt+W)도 같은 물음을 지난다', async () => {
+    render(<Host />);
+    await dirty(1);
+    await dirty(2);
+    const ask = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    act(() => column().querySelectorAll<HTMLButtonElement>('[data-side-tab-close]')[1].click());
+    expect(open()).toBe(2);
+    act(() => void closeShownWindow());
+    expect(ask).toHaveBeenCalledTimes(2);
+    expect(open()).toBe(2);
+  });
+
+  it('고친 것이 없으면 묻지 않고 닫는다', async () => {
+    render(<Host />);
+    act(() => void openWindow('devPanel', { n: 1 }));
+    await screen.findByRole('heading', { name: '시험 쓰는 칸 1' });
+    const ask = vi.spyOn(window, 'confirm');
+    act(() => shownPanel()!.querySelector<HTMLButtonElement>('[data-close]')!.click());
+    expect(ask).not.toHaveBeenCalled();
+    expect(open()).toBe(0);
+  });
+
+  it('ESC는 한 번만 묻는다 - 층이 닫으며 창마다 또 묻지 않는다 (휴대폰 배너)', async () => {
+    wideScreen(false);
+    render(<Host />);
+    await act(async () => {
+      openWindow('devPanel', { n: 1 });
+      openWindow('devPanel', { n: 2 });
+    });
+    for (const box of document.querySelectorAll<HTMLTextAreaElement>('[data-test-text]')) fireEvent.change(box, { target: { value: '적던 글' } });
+    const ask = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    act(() => void closeAllWindows());
+    expect(ask).toHaveBeenCalledTimes(1);
+    expect(open()).toBe(0);
+  });
+
+  it('맨 위 창 닫기(휴대폰 배너의 Alt+W·배경)도 묻는다', async () => {
+    wideScreen(false);
+    render(<Host />);
+    await act(async () => void openWindow('devPanel', { n: 1 }));
+    fireEvent.change(document.querySelector<HTMLTextAreaElement>('[data-test-text]')!, { target: { value: '적던 글' } });
+    const ask = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    act(() => void closeShownWindow());
+    expect(ask).toHaveBeenCalledTimes(1);
+    expect(open()).toBe(1);
+    act(() => closeAllLayers());
+    expect(ask).toHaveBeenCalledTimes(2);
+    expect(open()).toBe(1);
   });
 });
 

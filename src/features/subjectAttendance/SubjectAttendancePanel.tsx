@@ -2,7 +2,7 @@
 //   교과 모드 하루 수업 칸의 🙋로 연다. 그 반 그 교시에 결과·지각·조퇴를 적는다. 담임 출석부와 따로, 기록 칸에도 들어가지 않는다.
 //   저장 단추가 없다 - 누를 때마다 그 학생 한 칸만 바로 저장(features/subjectAttendance/actions). 같은 날 다른 교시 칸을 함께 열어도 서로 덮지 않는다.
 //   사유 글은 칸을 떠날 때(또는 Enter) 저장한다. 교과 + 담임이고 이 반이 담임반이면 그날 담임 출석부의 결석 학생을 흐리게 알려 준다(읽기만).
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { WindowProps } from '../../app/windows';
 import { useDocs } from '../../data/select';
 import { REASONS, REASON_LABEL, attendanceDocId, readMarks } from '../../domain/attendance';
@@ -68,6 +68,15 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
     const old = records[student];
     if (old && (old.note || '') !== noteDraft.trim()) patch(student, { note: noteDraft.trim() });
   };
+
+  // 이 칸은 누르는 대로 저장한다 - 칸이 닫혀도 적던 사유를 저장한다 (P22-2 - Alt+W·ESC는 글 칸을 떠나지 않아 onBlur가 오지 않는다)
+  const commitOpenNote = useRef(() => {});
+  useEffect(() => {
+    commitOpenNote.current = () => {
+      if (openNote) commitNote(openNote);
+    };
+  });
+  useEffect(() => () => commitOpenNote.current(), []);
 
   const students = (cls?.students ?? []).filter((s) => isActive(s) || records[s.sid]).sort((a, b) => a.num - b.num);
   const summary = periodSummary(records);

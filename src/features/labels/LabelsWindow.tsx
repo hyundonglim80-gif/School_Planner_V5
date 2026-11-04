@@ -7,7 +7,7 @@
 // - 빈 라벨 정리·항목 수는 기기 사본에서 바로 센다(V4는 '항목 수 세기'로 서버를 훑었다). 다 받기 전(구독 중이 아니면)에는 세지 않는다 - 덜 센 채로 '비었다'고 보이면 쓰는 라벨을 지운다.
 // - 칸을 연 순간의 공간에 저장한다.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useAskClose, useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { showErrorToast, showToast } from '../../app/toast';
 import { orderByTree, parentMapOf, type ParentMap } from '../../domain/labelTree';
 import { cleanLabelName, EVENT_LABEL_PROPS, labelProps } from '../../domain/labels';
@@ -131,6 +131,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
     unsaved.current = () => dirty;
   });
   useUnsavedCheck(unsaved);
+  const askClose = useAskClose(close);
 
   const edit = (id: string, change: Partial<LabelDraft>) =>
     setOv((o) => ({ ...o, edits: { ...o.edits, [id]: { ...o.edits[id], ...change } } }));
@@ -252,7 +253,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
   return (
     <ModalShell
       isOpen
-      onClose={close}
+      onClose={askClose}
       raise={raise}
       width="2xl"
       title="🏷️ 라벨 관리"
@@ -271,7 +272,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
             🔍 삭제된 라벨 복구
           </button>
           {saved && <span className="text-emerald-500 text-xs font-bold">✅ 저장되었습니다</span>}
-          <ModalCloseButton onClose={close} />
+          <ModalCloseButton onClose={askClose} />
           <button
             type="button"
             data-label-save

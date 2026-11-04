@@ -7,7 +7,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showErrorToastOnce } from '../../app/toast';
-import { useUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useAskClose, useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { useDocs, useMirrorStatus } from '../../data/select';
 import {
   KINDS,
@@ -157,6 +157,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
     unsaved.current = () => dirty;
   });
   useUnsavedCheck(unsaved);
+  const askClose = useAskClose(close);
 
   const [openNote, setOpenNote] = useState<string | null>(null);
   // 전출한 학생은 빼되, 그날 기록이 이미 있으면 보인다
@@ -176,7 +177,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
     `px-2 py-1 rounded-lg border font-bold transition-colors cursor-pointer ${on ? tone : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`;
 
   return (
-    <SidePanelFrame ariaLabel="출석부" onClose={close} onBackdropClose={() => void save().then((ok) => ok && close())} onSave={() => void save()} raise={raise}>
+    <SidePanelFrame ariaLabel="출석부" onClose={askClose} onBackdropClose={() => void save().then((ok) => ok && close())} onSave={() => void save()} raise={raise}>
       <div data-attendance-panel={classId ?? ''} data-attendance-date={date} className="flex flex-col h-full min-h-0">
         <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100">
           <div className="min-w-0">
@@ -186,7 +187,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
             </p>
           </div>
           <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
-          <button type="button" data-close title="닫기" onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
+          <button type="button" data-close title="닫기" onClick={askClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
             ✕
           </button>
         </div>
@@ -459,7 +460,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
               {saving ? '저장 중...' : '잠시 뒤 저절로 저장합니다'}
             </span>
           )}
-          <button type="button" onClick={close} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer">
+          <button type="button" onClick={askClose} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer">
             닫기
           </button>
           {tab === 'check' && (

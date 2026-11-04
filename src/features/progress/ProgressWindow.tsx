@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
-import { useUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useAskClose, useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { decodeTextBytes } from '../../domain/csv';
 import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { isSingleCell, nextCell, parseClipboardGrid, type CellPos } from '../../domain/gridNav';
@@ -151,6 +151,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     unsaved.current = () => dirty;
   }, [dirty]);
   useUnsavedCheck(unsaved);
+  const askClose = useAskClose(close);
 
   // 고치던 것을 버리고 다른 진도로 옮길 때만 묻는다
   const switchTo = (next: Draft) => {
@@ -521,7 +522,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   return (
     <ModalShell
       isOpen
-      onClose={close}
+      onClose={askClose}
       raise={raise}
       width="2xl"
       title="📘 진도 관리"
@@ -540,7 +541,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
             </button>
           )}
           <div className="flex-1" />
-          <ModalCloseButton onClose={close} />
+          <ModalCloseButton onClose={askClose} />
           <button
             type="button"
             data-progress-save

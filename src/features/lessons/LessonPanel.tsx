@@ -4,7 +4,7 @@
 //   칸은 그 교시의 **지금 내용**을 따라간다 - 연 채로 하루 화면이나 다른 기기에서 고치면 칸도 바뀐다(고치는 중이면 적던 것을 둔다 - V4 10-04).
 //   저장·Ctrl+S, 좁은 화면에서 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useAskClose, useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { academicYearOf, shortDateLabel } from '../../domain/dateUtils';
 import { classLabelOf } from '../../domain/roster';
 import { useClasses } from '../class/classes';
@@ -75,6 +75,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
     unsaved.current = () => typed !== null && changed;
   });
   useUnsavedCheck(unsaved);
+  const askClose = useAskClose(close);
 
   const save = async (): Promise<boolean> => {
     if (!cell || saving) return false;
@@ -126,7 +127,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
   return (
     <SidePanelFrame
       ariaLabel={title}
-      onClose={close}
+      onClose={askClose}
       onBackdropClose={() => void (changed ? save() : Promise.resolve(true)).then((ok) => ok && close())}
       onSave={() => void save()}
       raise={raise}
@@ -140,7 +141,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
             </p>
           </div>
           <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
-          <button type="button" data-close title="닫기" onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
+          <button type="button" data-close title="닫기" onClick={askClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
             ✕
           </button>
         </div>
@@ -237,7 +238,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
             삭제
           </button>
           <div className="flex gap-2">
-            <button type="button" data-lesson-panel-close onClick={close} disabled={saving} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer">
+            <button type="button" data-lesson-panel-close onClick={askClose} disabled={saving} className="px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-200/60 rounded-xl transition-colors cursor-pointer">
               닫기
             </button>
             <button

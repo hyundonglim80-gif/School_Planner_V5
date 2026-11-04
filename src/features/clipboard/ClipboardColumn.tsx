@@ -93,7 +93,7 @@ export default function ClipboardColumn() {
   }, [open]);
 
   // 휴대폰에서 덮은 칸은 뒤로가기로 닫는다 (화면 옆에 붙은 칸은 그대로 둔다)
-  useBackLayer(open && !docked, () => setClipboardOpen(false));
+  useBackLayer(open && !docked, () => void setClipboardOpen(false));
 
   const fetchNow = async () => {
     const r = await readSystemClipboard(true);

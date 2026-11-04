@@ -3,10 +3,10 @@
 //   기록·메모 = 학생 칩(studentIds '{classId}/{sid}')이 붙은 것(개인 공간 + 지금 보는 공유 그룹 - 사본에서 고른다, V4는 글의 #태그를 범위로 다시 읽었다),
 //   출결 = 출석부(개인), 교과 모드면 교과 출결도. 조사표 = 그 학급의 조사표 중 이 학생이 명단에 있는 것. 누르면 그 자리(기록 → 그날 하루 화면, 메모 → 쓰는 칸, 조사표 → 그 창).
 //   학생은 학급 칩에서 고르거나 V4 태그('#26040305')로 찾는다.
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { setDate, setScope } from '../../app/nav';
 import { showErrorToast, showToast } from '../../app/toast';
-import type { WindowProps } from '../../app/windows';
+import { useAskClose, useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { itemLabels, useDocs, useItemsOn, useLabelTree, type LabelTree } from '../../data/select';
 import { useCurrentSpaceId, usePersonalSpaceId } from '../../data/session';
 import { KINDS, KIND_LABEL, REASONS, REASON_LABEL, historyOf, tallyByStudent } from '../../domain/attendance';
@@ -123,6 +123,13 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
   const todayNotes = useItemsOn(today, 'note', personal);
   const [obs, setObs] = useState('');
   const [obsBusy, setObsBusy] = useState(false);
+  // 적어 둔 관찰 한 줄은 닫기 전에 묻는다 (P22-2 - 나머지는 고치는 대로 저장한다)
+  const unsaved = useRef<(() => boolean) | null>(null);
+  useEffect(() => {
+    unsaved.current = () => !!obs.trim();
+  });
+  useUnsavedCheck(unsaved);
+  const askClose = useAskClose(close);
   const observe = async (text: string = obs) => {
     if (!personal || !key || obsBusy || !text.trim()) return;
     setObsBusy(true);
@@ -166,7 +173,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
     k === 'attendance' ? 'bg-rose-50 text-rose-700 border-rose-200' : k === 'subjectAttendance' ? 'bg-orange-50 text-orange-700 border-orange-200' : k === 'memo' ? 'bg-amber-50 text-amber-800 border-amber-200' : 'bg-cobalt-50 text-cobalt-700 border-cobalt-200';
 
   return (
-    <ModalShell isOpen onClose={close} raise={raise} width="2xl" title="🧑‍🎓 학생 기록(누가기록)" footer={<ModalCloseButton onClose={close} />}>
+    <ModalShell isOpen onClose={askClose} raise={raise} width="2xl" title="🧑‍🎓 학생 기록(누가기록)" footer={<ModalCloseButton onClose={askClose} />}>
       <div className="space-y-4 text-xs text-slate-700" data-student-record={cls?.id ?? ''}>
         {classes.length === 0 ? (
           <p className="text-center text-slate-400 py-8">명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.</p>

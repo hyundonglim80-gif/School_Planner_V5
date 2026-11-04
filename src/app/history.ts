@@ -5,6 +5,7 @@
 // 창(팝업·오른쪽 칸)이 열린 순서대로 z-index를 올려, 창 안에서 연 창이 늘 위에 쌓이게 한다.
 // 닫기 단추는 그 창 하나만, 배경 누르기·ESC는 모두(closeAllLayers - ESC는 저장 안 한 글을 먼저 묻는 껍데기 키 처리가 부른다).
 // 휴대폰 뒤로가기는 맨 위 하나만 닫는다.
+// 층의 close가 false를 돌려주면 창이 묻고 '아니오'를 들은 것이다(windows.useAskClose) - 그 창은 남고 층도 그대로다.
 // 화면 옆에 붙은 오른쪽 칸(useBackLayer)은 팝업이 아니지만 뒤로가기는 받는다.
 //
 // ── 뒤로가기 ──
@@ -23,7 +24,8 @@ import { dateForRoute, parseRoute, routeHash } from './route';
 
 interface Layer {
   id: number;
-  close: () => void;
+  /** false = 창이 남았다 ('아니오') */
+  close: () => boolean | void;
   /** 뒤로가기만 받는 층 (화면 옆에 붙은 오른쪽 칸) - ESC·배경 누르기(closeAllLayers)로 닫히지 않고 z-index에도 끼지 않는다 */
   backOnly: boolean;
 }
@@ -51,6 +53,16 @@ let selfPopTimer: ReturnType<typeof setTimeout> | null = null;
 const historyHandled = new Set<number>();
 
 const modalLayers = () => stack.filter((l) => !l.backOnly);
+
+/** 층을 닫는다. 창이 남았으면 false */
+function closeLayer(l: Layer): boolean {
+  try {
+    return l.close() !== false;
+  } catch (err) {
+    console.error('창 닫기 실패:', err);
+    return true;
+  }
+}
 const entryState = (): EntryState => (window.history.state as EntryState | null) ?? {};
 
 function clearSelfPopWait() {
@@ -158,13 +170,11 @@ function onPopState(e: PopStateEvent) {
     // 표지판이 물러났다 - 맨 위 층 하나만 닫는다
     const top = stack[stack.length - 1];
     historyHandled.add(top.id);
-    try {
-      top.close();
-    } catch (err) {
-      console.error('창 닫기 실패:', err);
-    }
-    // 아래에 층이 남아 있으면 다음 뒤로가기도 받아야 한다 (이 시점의 stack에는 방금 닫은 것이 아직 있다 - React가 나중에 뺀다)
-    if (stack.length > 1) postSign();
+    const closed = closeLayer(top);
+    if (!closed) historyHandled.delete(top.id);
+    // 아래에 층이 남아 있으면 다음 뒤로가기도 받아야 한다 (이 시점의 stack에는 방금 닫은 것이 아직 있다 - React가 나중에 뺀다).
+    // 창이 남았으면('아니오') 기록은 이미 물러났다 - 표지판을 다시 세운다. 안 세우면 다음 뒤로가기가 화면을 떠난다
+    if (stack.length > 1 || !closed) postSign();
     fixUrl();
     return;
   }
@@ -237,40 +247,36 @@ export function isAnyLayerOpen(): boolean {
 export function closeTopLayer(): boolean {
   const top = modalLayers().at(-1);
   if (!top) return false;
-  try {
-    top.close();
-  } catch (err) {
-    console.error('창 닫기 실패:', err);
-  }
+  closeLayer(top);
   return true;
 }
 
 /**
  * 팝업 층을 모두 닫는다 (배경 누르기, 그리고 ESC - 껍데기의 키 처리가 windows.closeAllWindows로 부른다).
- * 옆에 붙은 칸(뒤로가기만 받는 층)은 그대로.
+ * 옆에 붙은 칸(뒤로가기만 받는 층)은 그대로. 맨 위부터 닫다가 창이 남으면('아니오') 그 창과 아래 창은 그대로 둔다.
  */
 export function closeAllLayers() {
-  const snapshot = modalLayers().reverse();
-  stack = stack.filter((l) => l.backOnly);
-  openCount = 0;
-  // 한꺼번에 닫으므로 아래 각 층의 정리에서 또 물러나지 않도록 미리 표시한다.
-  snapshot.forEach((l) => historyHandled.add(l.id));
-  snapshot.forEach((l) => {
-    try {
-      l.close();
-    } catch (err) {
-      console.error('창 닫기 실패:', err);
+  const closed = new Set<Layer>();
+  for (const l of modalLayers().reverse()) {
+    // 한꺼번에 닫으므로 아래 각 층의 정리에서 또 물러나지 않도록 미리 표시한다.
+    historyHandled.add(l.id);
+    if (!closeLayer(l)) {
+      historyHandled.delete(l.id);
+      break;
     }
-  });
+    closed.add(l);
+  }
+  stack = stack.filter((l) => !closed.has(l));
+  if (modalLayers().length === 0) openCount = 0;
   // 옆에 붙은 칸이 남아 있으면 그 칸이 표지판을 계속 쓴다.
-  if (snapshot.length > 0 && stack.length === 0) removeSign();
+  if (closed.size > 0 && stack.length === 0) removeSign();
 }
 
 /**
  * 팝업 층. 열린 동안 z-index를 돌려준다.
  * raise가 바뀌면 층에서 빠졌다가 맨 위로 다시 선다 (휴대폰에서 이미 열린 쓰는 칸을 다시 열 때).
  */
-export function useModalLayer(isOpen: boolean, onClose: () => void, raise?: number): number {
+export function useModalLayer(isOpen: boolean, onClose: Layer['close'], raise?: number): number {
   return useLayer(isOpen, onClose, false, raise);
 }
 
@@ -278,11 +284,11 @@ export function useModalLayer(isOpen: boolean, onClose: () => void, raise?: numb
  * 뒤로가기만 받는 층. 화면 옆에 붙은 오른쪽 칸이 쓴다 - 폭이 768px 이상인 휴대 기기(태블릿·가로 화면)에서
  * 칸을 열고 뒤로가기를 누르면 칸이 아니라 크롬이 닫혔다(V4).
  */
-export function useBackLayer(isOpen: boolean, onClose: () => void): void {
+export function useBackLayer(isOpen: boolean, onClose: Layer['close']): void {
   useLayer(isOpen, onClose, true);
 }
 
-function useLayer(isOpen: boolean, onClose: () => void, backOnly: boolean, raise?: number): number {
+function useLayer(isOpen: boolean, onClose: Layer['close'], backOnly: boolean, raise?: number): number {
   const closeRef = useRef(onClose);
   useEffect(() => {
     closeRef.current = onClose;

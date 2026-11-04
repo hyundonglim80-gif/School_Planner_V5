@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
-import { openWindow, useUnsavedCheck, type WindowProps } from '../../app/windows';
+import { openWindow, useAskClose, useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { academicYearOf, todayStr } from '../../domain/dateUtils';
 import { timetableOn } from '../../domain/lessons';
 import { toMinutes, type PeriodDef } from '../../domain/periodTimes';
@@ -139,6 +139,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
     unsaved.current = () => dirty;
   }, [dirty]);
   useUnsavedCheck(unsaved);
+  const askClose = useAskClose(close);
 
   const grids = list.map((t) => t.grid as SlotGrid);
   const pairOptions = useSlotPairOptions(undefined, sid, grids);
@@ -209,7 +210,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
   return (
     <ModalShell
       isOpen
-      onClose={close}
+      onClose={askClose}
       raise={raise}
       width="4xl"
       title="⏰ 시간표"
@@ -246,7 +247,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
               저장하지 않은 것이 있습니다
             </span>
           )}
-          <ModalCloseButton onClose={close} />
+          <ModalCloseButton onClose={askClose} />
           <button
             type="button"
             data-timetable-save

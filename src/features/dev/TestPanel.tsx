@@ -1,7 +1,7 @@
 // 점검용 쓰는 칸 (P1-3 - 메모·기록 칸이 들어오기 전까지 오른쪽 줄·탭·ESC·Ctrl+S를 본다. 개발·에뮬레이터 빌드에만 등록한다).
 import { useEffect, useRef, useState } from 'react';
 import { showToast } from '../../app/toast';
-import { useUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useAskClose, useUnsavedCheck, type WindowProps } from '../../app/windows';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 
 export default function TestPanel({ params, close, raise }: WindowProps<{ n?: number } | undefined>) {
@@ -13,6 +13,7 @@ export default function TestPanel({ params, close, raise }: WindowProps<{ n?: nu
     unsaved.current = () => text !== saved;
   });
   useUnsavedCheck(unsaved);
+  const askClose = useAskClose(close);
 
   const save = () => {
     setSaved(text);
@@ -22,7 +23,7 @@ export default function TestPanel({ params, close, raise }: WindowProps<{ n?: nu
   return (
     <SidePanelFrame
       ariaLabel={`시험 쓰는 칸${params?.n ? ` ${params.n}` : ''}`}
-      onClose={close}
+      onClose={askClose}
       onBackdropClose={() => {
         save();
         close();
@@ -33,7 +34,7 @@ export default function TestPanel({ params, close, raise }: WindowProps<{ n?: nu
       <div data-test-panel={params?.n ?? ''} data-saved={saved} className="flex flex-col h-full">
         <div className="flex items-center justify-between gap-2 px-5 py-3.5 border-b border-slate-100 bg-slate-50/60 shrink-0">
           <h2 className="text-base font-black text-slate-800">시험 쓰는 칸 {params?.n ?? ''}</h2>
-          <button type="button" data-close onClick={close} title="닫기" className="w-8 h-8 rounded-xl bg-slate-100 text-slate-500 font-bold">
+          <button type="button" data-close onClick={askClose} title="닫기" className="w-8 h-8 rounded-xl bg-slate-100 text-slate-500 font-bold">
             ✕
           </button>
         </div>

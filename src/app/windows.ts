@@ -178,6 +178,23 @@ export function windowUnsaved(key: number): boolean {
   return false;
 }
 
+/**
+ * 이 창을 닫기 - 저장 안 한 것이 있으면 먼저 묻는다 (P22-2 - ESC만 묻고 ✕·탭 ×·Alt+W·뒤로가기·배경은 말없이 버렸다). 닫았으면 true.
+ * 쓰던 글 보관이 없는 창이 틀의 onClose와 닫기 단추에 건다 - 메모·일정은 다시 열면 글이 돌아오므로 close 그대로다.
+ * false면 창이 남는다 - 층(app/history)이 이 값을 보고 뒤로가기 표지판을 다시 세운다.
+ * close 자체를 바꾸지 않는다 - save().then(close)는 확인 ref가 effect로 바뀌기 전에 불려 저장했는데도 물을 수 있다.
+ */
+export function useAskClose(close: () => void): () => boolean {
+  const owner = useContext(SideOwnerContext);
+  return () => {
+    // 목록에서 이미 빠진 창은 ESC가 모두에게 한 번 물었다(closeAllWindows)
+    const listed = owner !== null && useWindows.getState().windows.some((w) => w.key === owner);
+    if (listed && windowUnsaved(owner) && !window.confirm('저장하지 않은 내용이 있습니다. 저장하지 않고 닫을까요?')) return false;
+    close();
+    return true;
+  };
+}
+
 // ── 창의 저장 (틀의 Ctrl+S와 같은 일 - 새 창으로 옮기기 전에 저장한다) ──
 
 const windowSaves = new Map<number, { current: (() => void) | undefined }>();
@@ -210,8 +227,9 @@ export function closeAllWindows(): boolean {
   if (anyWindowUnsaved() && !window.confirm('저장하지 않은 내용이 있는 칸이 있습니다. 저장하지 않고 모두 닫을까요?')) {
     return false;
   }
-  closeAllLayers();
+  // 창 목록을 먼저 비운다 - 층이 닫을 때 창마다 또 묻지 않는다 (useAskClose는 목록에 없는 창을 묻지 않는다)
   useWindows.setState({ windows: [] });
+  closeAllLayers();
   return true;
 }
 

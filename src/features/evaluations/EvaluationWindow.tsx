@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
-import { useUnsavedCheck, type WindowProps } from '../../app/windows';
+import { useAskClose, useUnsavedCheck, type WindowProps } from '../../app/windows';
 import { useMirrorStatus } from '../../data/select';
 import { usePersonalSpaceId, useSession } from '../../data/session';
 import { shortDateLabel } from '../../domain/dateUtils';
@@ -91,6 +91,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
     unsaved.current = () => valuesDirty || metaDirty;
   }, [valuesDirty, metaDirty]);
   useUnsavedCheck(unsaved);
+  const askClose = useAskClose(close);
 
   // 열 때 명단을 지금 명렬표와 맞춘다 (내 학급 명렬표가 있을 때만 - 조용히)
   const rosterOf = ev ? classes.find((c) => c.id === ev.classId) : undefined;
@@ -190,7 +191,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
   return (
     <ModalShell
       isOpen
-      onClose={close}
+      onClose={askClose}
       raise={raise}
       width="2xl"
       title="📊 조사표"
@@ -224,7 +225,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
             )}
             <div className="flex items-center gap-2">
               {valuesDirty && <span className="text-xs font-bold text-amber-600" data-eval-dirty>저장 전</span>}
-              <button type="button" onClick={close} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">
+              <button type="button" onClick={askClose} className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold cursor-pointer">
                 닫기
               </button>
               {canEdit && (

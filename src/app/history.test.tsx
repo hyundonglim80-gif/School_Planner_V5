@@ -19,7 +19,7 @@ beforeEach(() => {
 });
 afterEach(() => stop());
 
-function Layer({ onClose }: { onClose: () => void }) {
+function Layer({ onClose }: { onClose: () => boolean | void }) {
   useModalLayer(true, onClose);
   return null;
 }
@@ -91,6 +91,53 @@ describe('뒤로가기로 창 닫기', () => {
 
     // 창을 다 닫은 뒤의 뒤로가기라야 앞 화면
     await back();
+    expect(useNav.getState().scope).toBe('day');
+  });
+
+  it("창이 묻고 '아니오'면(false) 창이 남고, 다음 뒤로가기도 그 창이 받는다 (P22-2)", async () => {
+    stop = startRouting();
+    act(() => setScope('week'));
+    const close = vi.fn().mockReturnValue(false);
+    const layer = render(<Layer onClose={close} />);
+
+    await back();
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(useNav.getState().scope).toBe('week');
+
+    // 표지판을 다시 세웠다 - 화면을 떠나지 않고 또 묻는다
+    await back();
+    expect(close).toHaveBeenCalledTimes(2);
+    expect(useNav.getState().scope).toBe('week');
+
+    // '예'로 닫으면 표지판을 치우고, 그다음 뒤로가기가 앞 화면
+    close.mockReturnValue(true);
+    await back();
+    expect(close).toHaveBeenCalledTimes(3);
+    layer.unmount();
+    await settle();
+    await back();
+    expect(useNav.getState().scope).toBe('day');
+  });
+
+  it("층을 모두 닫다가 '아니오'면 그 층과 아래 층은 남고 위 층만 닫힌다 (P22-2)", async () => {
+    stop = startRouting();
+    const below = vi.fn();
+    const asks = vi.fn().mockReturnValue(false);
+    const top = vi.fn();
+    render(<Layer onClose={below} />);
+    render(<Layer onClose={asks} />);
+    const third = render(<Layer onClose={top} />);
+
+    act(() => closeAllLayers());
+    expect(top).toHaveBeenCalledTimes(1);
+    expect(asks).toHaveBeenCalledTimes(1);
+    expect(below).not.toHaveBeenCalled();
+    third.unmount();
+    await settle();
+
+    // 남은 창은 층에 그대로 있다 - 뒤로가기가 그 창을 묻는다
+    await back();
+    expect(asks).toHaveBeenCalledTimes(2);
     expect(useNav.getState().scope).toBe('day');
   });
 

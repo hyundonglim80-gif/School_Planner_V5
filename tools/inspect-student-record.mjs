@@ -53,7 +53,7 @@ try {
   await note('inspJ1', { date: `${year}-04-12`, text: '발표를 잘함', studentIds: [KEY('a1')] });
   await note('inspM1', { date: null, fromDate: `${year}-04-05`, text: '상담 메모', studentIds: [KEY('a1')] });
 
-  const { page, errors } = await newPage(browser);
+  const { page, errors, dialogs } = await newPage(browser);
 
   r.section('📊 조사표 모아 보기');
   await open(page, '#/class');
@@ -98,6 +98,9 @@ try {
   r.check(((await rec.locator(sel('student-eval', 'inspE3')).locator('[data-student-eval-value]').textContent()) ?? '') === '안 적음', "적지 않은 것 = '안 적음'");
   await rec.locator(sel('student-record-tab', 'timeline')).click();
   await rec.locator('[data-student-observe-input]').fill('관찰 점검');
+  // 적어 둔 관찰 한 줄은 닫기 전에 묻는다 (P22-2)
+  await page.locator(`${sel('popup-card')} ${sel('close')}`).last().click();
+  r.check((await waitFor(() => dialogs.seen.length === 1)) && (await rec.locator('[data-student-observe-input]').inputValue()) === '관찰 점검', '관찰 한 줄을 적은 채 ✕: 묻고, 아니오면 글이 남는다');
   await rec.locator('[data-student-observe-input]').press('Enter');
   const notes = async () => (await getDocs(collection(em.db, 'spaces', sid, 'items'))).docs.map((d) => d.data()).filter((d) => d.date === TODAY && (d.studentIds ?? []).includes(KEY('a1')));
   const ns = await serverUntil(notes, (l) => l.length === 1);

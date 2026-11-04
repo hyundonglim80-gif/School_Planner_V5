@@ -46,6 +46,18 @@ describe('창 공통 규칙', () => {
   it.each(entries.filter((e) => e.name.endsWith('Panel.tsx')))('$name - 쓰는 칸의 닫기 단추에 data-close (탭 ×가 누른다)', ({ src }) => {
     expect(src).toMatch(/data-close/);
   });
+
+  // P22-2: 저장 안 한 것을 묻는 창은 ✕·닫기·뒤로가기·배경에서도 묻는다 - ESC에서만 묻고 ✕는 말없이 버렸다.
+  // 쓰던 글 보관(useDraft)이 있는 메모·일정은 다시 열면 글이 돌아오므로 묻지 않는다(10-26). 환경설정은 단축키 탭이 묻는다.
+  const asksOnClose = entries.filter((e) => (e.src.includes('useUnsavedCheck(') && !e.src.includes('useDraft')) || e.name === 'settings/SettingsWindow.tsx');
+  it('묻는 창을 찾았다', () => {
+    expect(asksOnClose.length).toBeGreaterThan(7);
+  });
+  it.each(asksOnClose)('$name - 닫는 곳은 useAskClose를 지난다', ({ src }) => {
+    expect(src).toContain('useAskClose(close)');
+    expect(src).not.toContain('onClose={close}');
+    expect(src).not.toContain('onClick={close}');
+  });
 });
 
 // 그림만 있는 단추는 화면 낭독기에 "버튼"이라고만 읽히고, 마우스를 올려도 아무 설명이 뜨지 않는다(V4: ✕ 닫기 단추 12곳).
