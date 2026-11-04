@@ -5,6 +5,7 @@
       "id": "forest",
       "name": "숲",
       "emoji": "🌲",
+      "cvdGood": 245,
       "accent": { "hue": 135, "chroma": 1 },
       "neutral": { "hue": 150, "chroma": 0.7 }
     },
@@ -12,6 +13,7 @@
       "id": "cherry",
       "name": "벚꽃",
       "emoji": "🌸",
+      "cvdGood": 245,
       "accent": { "hue": 340, "chroma": 1 },
       "neutral": { "hue": 345, "chroma": 0.5 }
     },
@@ -41,6 +43,7 @@
       "id": "paper",
       "name": "종이",
       "emoji": "📜",
+      "cvdGood": 245,
       "accent": { "hue": 55, "chroma": 0.35 },
       "neutral": { "hue": 70, "chroma": 0.9 },
       "body": "oklch(97.3% 0.02 85)"

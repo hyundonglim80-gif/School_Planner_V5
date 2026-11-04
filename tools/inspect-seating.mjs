@@ -262,6 +262,13 @@ try {
   const g0 = await gbox.locator(sel('group-index', 0)).locator('[data-group-member]').evaluateAll((els) => els.map((e) => e.getAttribute('data-group-member')));
   r.check(g0.includes('a1') !== g0.includes('a2'), '떨어뜨릴 학생은 다른 모둠');
   r.check((await win.locator('[data-seating-grid] [data-seat-group]').count()) === 8, '자리마다 모둠 색');
+  // 색약 배려(P20-2 ■2): 자리의 모둠이 색뿐이던 것에 번호
+  const groupNoOf = () =>
+    win.locator('[data-seating-grid] [data-seat-group="1"]').first().evaluate((el) => getComputedStyle(el, '::after').content);
+  r.check((await groupNoOf()) === 'none', '색약 배려를 끄면 자리에 번호 없음');
+  await win.evaluate(() => document.documentElement.classList.add('cvd'));
+  r.check((await groupNoOf()) === '"2"', '색약 배려: 2모둠 자리에 번호 2');
+  await win.evaluate(() => document.documentElement.classList.remove('cvd'));
   await gbox.locator('[data-group-name]').fill('과학 모둠');
   await gbox.locator('[data-group-save]').click();
   hub = await serverUntil(hubDoc, (d) => Object.keys(d?.groupSets ?? {}).length === 1);

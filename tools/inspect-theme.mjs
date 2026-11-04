@@ -9,10 +9,13 @@
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-theme.mjs   (MATCH=forest 처럼 테마 하나만)
 import { mkdirSync, readFileSync } from 'node:fs';
+import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, waitFor } from './lib/probe.mjs';
+import { deltaE, hexLch, simulateCvd } from '../src/domain/themeCss.ts';
 
 const r = report();
-const uid = await emulator().signIn('teacher@example.com');
+const em = emulator();
+const uid = await em.signIn('teacher@example.com');
 const sid = `u_${uid}`;
 const SHOTS = process.env.SHOTS || '';
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
@@ -119,6 +122,46 @@ const stripContrast = (page) =>
     return out;
   });
 
+/** 화면에 칠해지는 뜻 색 (글자 600·옅은 바탕 100 - 색약 흉내로 견준다) */
+const meaningColors = (page) =>
+  page.evaluate(() => {
+    const c = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    const hex = (color) => {
+      c.clearRect(0, 0, 1, 1);
+      c.fillStyle = '#000';
+      c.fillStyle = color;
+      c.fillRect(0, 0, 1, 1);
+      return `#${[...c.getImageData(0, 0, 1, 1).data.slice(0, 3)].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+    };
+    const box = document.createElement('div');
+    box.innerHTML = ['emerald', 'red', 'amber'].map((h) => `<i data-h="${h}" class="text-${h}-600 bg-${h}-100"></i>`).join('');
+    document.body.append(box);
+    const out = Object.fromEntries(
+      [...box.children].map((e) => {
+        const cs = getComputedStyle(e);
+        return [e.dataset.h, { text: hex(cs.color), bg: hex(cs.backgroundColor) }];
+      }),
+    );
+    box.remove();
+    return out;
+  });
+
+const CVD_KINDS = ['protan', 'deutan', 'tritan'];
+const cvdWorst = (a, b) => Math.min(...CVD_KINDS.map((k) => deltaE(simulateCvd(hexLch(a), k), simulateCvd(hexLch(b), k))));
+/** 뜻 색 셋 사이 가장 가까운 거리 (세 색약 중) */
+const meaningGap = (m, part) => Math.min(cvdWorst(m.emerald[part], m.red[part]), cvdWorst(m.emerald[part], m.amber[part]));
+
+/** 색으로만 나누던 곳의 모양 - 실제 자리는 inspect-space-overlay, 여기서는 켜고 끌 때 규칙이 맞는지 */
+const cvdMarks = (page) =>
+  page.evaluate(() => {
+    const box = document.createElement('div');
+    box.innerHTML = '<div data-event-space="u_x" class="block"></div><div data-event-space="g_x" class="block"></div><div data-event-card="a" data-event-space="g_x"></div><div data-conflict="true"></div>';
+    document.body.append(box);
+    const out = [...box.children].map((e) => getComputedStyle(e, '::before').content);
+    box.remove();
+    return out;
+  });
+
 const setClass = (page, cls, on) => page.evaluate(([c, v]) => document.documentElement.classList.toggle(c, v), [cls, on]);
 
 const setPalette = (page, id) =>
@@ -129,8 +172,22 @@ async function go(page, hash) {
   await waitFor(async () => new URL(page.url()).hash === hash, 5000);
 }
 
+const stamp = () => ({ deletedAt: null, updatedAt: serverTimestamp(), v: 1, createdAt: Date.now(), authorId: uid });
+const PLANTED = [
+  ['th_plain', { text: '테마점검 일정' }],
+  ['th_label', { text: '테마점검 라벨', labelIds: ['th_label'] }],
+  ['th_done', { text: '테마점검 완료', labelIds: ['th_label'], done: true }],
+  ['th_soon', { text: '테마점검 기한', due: '2026-10-10' }],
+  ['th_over', { text: '테마점검 지남', due: '2026-10-01' }],
+];
+const itemRef = (id) => doc(em.db, 'spaces', sid, 'items', id);
+const labelRef = doc(em.db, 'spaces', sid, 'labels', 'th_label');
+
 const browser = await launch();
 try {
+  // 라벨 칩은 라벨 색이 칠해져야 대비를 잰다
+  await setDoc(labelRef, { kind: 'event', name: '테마라벨', color: 'purple', parentId: null, order: 'Zz9', ...stamp() });
+  for (const [id, data] of PLANTED) await setDoc(itemRef(id), { kind: 'event', date: DAY, labelIds: [], ...data, ...stamp() });
   for (const dark of [false, true]) {
     const mode = dark ? '어둡게' : '밝게';
     const { page, errors } = await newPage(browser);
@@ -141,6 +198,7 @@ try {
     /** 테마 → 보는 곳 → 대비 표 */
     const maps = {};
     const hcMaps = {};
+    const cvd = {};
     const fixed = {};
     const accentOk = {};
     for (const [where, target] of VIEWS) {
@@ -155,7 +213,14 @@ try {
         await setPalette(page, id);
         await page.waitForTimeout(150);
         (maps[id] ||= {})[where] = await contrastMap(page);
-        if (where === 'month') fixed[id] = await fixedColors(page);
+        if (where === 'month') {
+          fixed[id] = await fixedColors(page);
+          const plain = await meaningColors(page);
+          await setClass(page, 'cvd', true);
+          cvd[id] = { plain, on: await meaningColors(page), marks: await cvdMarks(page) };
+          await setClass(page, 'cvd', false);
+          cvd[id].off = await cvdMarks(page);
+        }
         await setClass(page, 'hc', true);
         await page.waitForTimeout(100);
         (hcMaps[id] ||= {})[where] = await contrastMap(page);
@@ -214,6 +279,18 @@ try {
       r.check(fixed[id].paper === fixed.default.paper, '인쇄 쪽은 기본 색');
     }
     for (const id of PALETTES) {
+      r.section(`색약 배려 · ${id} · ${mode}`);
+      const { plain, on, marks, off } = cvd[id];
+      for (const part of ['text', 'bg']) {
+        const was = meaningGap(plain, part);
+        const now = meaningGap(on, part);
+        r.check(now > was, `뜻 색(${part})이 더 잘 갈린다 ${was.toFixed(1)} → ${now.toFixed(1)}`, `뜻 색(${part}) ${was.toFixed(1)} → ${now.toFixed(1)}`);
+      }
+      r.check(on.amber.text === plain.amber.text, '이월 노랑은 그대로');
+      r.check(marks.join() === '"🔒","👥",none,"⚠"', `겹친 일정·단축키 겹침에 모양 (${marks.join(' ')})`);
+      r.check(off.every((c) => c === 'none'), '끄면 모양 없음');
+    }
+    for (const id of PALETTES) {
       r.section(`고대비 · ${id} · ${mode}`);
       for (const [where] of VIEWS) {
         const map = hcMaps[id][where];
@@ -238,6 +315,8 @@ try {
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
+  for (const [id] of PLANTED) await deleteDoc(itemRef(id)).catch(() => {});
+  await deleteDoc(labelRef).catch(() => {});
   await browser.close();
   r.done();
   process.exit();

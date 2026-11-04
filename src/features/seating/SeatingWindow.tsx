@@ -296,6 +296,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
         data-seat-warn={warn.has(key) ? '' : undefined}
         data-seat-drawn-now={drawnNow && !draw.rolling ? '' : undefined}
         data-seat-group={groupIndex}
+        data-group-no={groupIndex !== undefined ? groupIndex + 1 : undefined}
         draggable={id !== undefined}
         onDragStart={(e) => {
           e.dataTransfer.setData('text/plain', `seat:${key}`);
@@ -633,6 +634,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                       onClick={() => tapUnseated(id)}
                       data-seat-drawn-now={drawOn && !draw.rolling && draw.shown === id ? '' : undefined}
                       data-seat-group={groupOf.get(id)}
+                      data-chip-group={groupOf.has(id) ? groupOf.get(id)! + 1 : undefined}
                       className={`px-2 py-1 rounded-lg text-xs font-bold border cursor-grab ${
                         drawOn && draw.shown === id
                           ? 'border-amber-400 ring-2 ring-amber-300 bg-amber-100 text-slate-800'

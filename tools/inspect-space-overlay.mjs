@@ -179,6 +179,14 @@ try {
   r.check((await bgOf(bar.locator(sel('period-cell')))) === cardBg, '막대 바탕 = 공간 색');
   r.check((await A.page.locator(`${sel('month-day', DAY)} [data-month-event]:not([data-event-space])`).filter({ hasText: '겹침점검 개인 일정' }).count()) === 1, '개인 일정도');
   await shot(A.page, 'overlay-month-1400');
+  // 색약 배려(P20-2 ■2): 어느 공간인지가 배경색뿐이던 것에 모양
+  await A.page.evaluate(() => document.documentElement.classList.add('cvd'));
+  const beforeOf = (loc) => loc.first().evaluate((el) => getComputedStyle(el, '::before').content);
+  r.check((await beforeOf(me)) === '"👥"', '색약 배려: 겹친 칩 앞에 👥');
+  r.check((await beforeOf(bar.locator('.pointer-events-none'))) === '"👥"', '색약 배려: 겹친 막대 앞에 👥');
+  r.check((await beforeOf(A.page.locator(`${sel('month-day', DAY)} [data-month-event]:not([data-event-space])`))) === 'none', '색약 배려: 주 공간 일정은 그대로');
+  await shot(A.page, 'overlay-month-1400-cvd');
+  await A.page.evaluate(() => document.documentElement.classList.remove('cvd'));
   await me.locator(sel('month-event-text')).click();
   r.check(await waitFor(A.page.locator(sel('event-panel-space', gid)), 5000), '누르면 그 공간 칸');
   await A.page.evaluate(() => window.sp5.closeAllWindows());

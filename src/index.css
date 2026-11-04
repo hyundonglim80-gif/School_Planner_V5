@@ -102,6 +102,41 @@ body[data-shortcut-recording='pick'] [data-shortcut-target]:hover {
   outline-color: var(--color-violet-600);
 }
 
+/* 색약 배려 (P20-2 ■2) - 색으로만 나누던 곳에 모양을. 빛깔은 theme.css html.cvd.
+   겹쳐 보기 일정: 어느 공간인지가 배경색뿐 (하루는 구분 줄에 이름이 있다, 년간 학사력 막대는 글이 없다).
+   자리표 모둠: 자리·학생 칩의 색뿐 → 모둠 번호. 단축키 겹침: 어느 줄인지가 색뿐 → ⚠ */
+html.cvd [data-event-space]:not([data-event-card], .absolute, .self-start)::before,
+html.cvd .self-start[data-event-space] > .pointer-events-none::before {
+  content: '🔒';
+  margin-right: 2px;
+  font-size: 0.85em;
+}
+html.cvd [data-event-space^='g_']:not([data-event-card], .absolute, .self-start)::before,
+html.cvd .self-start[data-event-space^='g_'] > .pointer-events-none::before {
+  content: '👥';
+}
+html.cvd [data-group-no]::after {
+  content: attr(data-group-no);
+  position: absolute;
+  right: 3px;
+  bottom: 1px;
+  font-size: 0.625rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-slate-700);
+}
+html.cvd [data-chip-group]::after {
+  content: attr(data-chip-group);
+  margin-left: 4px;
+  font-weight: 900;
+  color: var(--color-slate-500);
+}
+html.cvd [data-conflict]::before {
+  content: '⚠';
+  font-weight: 900;
+  color: var(--color-red-600);
+}
+
 /* ── 인쇄 (V4 그대로 - ui/print) ──────────────────────────────────────
    찍을 부분을 복제해 body 바로 아래 #sp5-print-root에 넣고, 인쇄할 때는 그것만 보인다.
    스크롤 상자·높이 제한·붙박이(sticky)는 펼쳐서 잘리지 않게 한다. 색은 그대로 찍는다(라벨 칩·교시 색). */

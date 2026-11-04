@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 import palettes from './palettes.json';
 import { GROUP_SPACE_HUES, PERSONAL_SPACE_HUE } from './spaceColor';
 import {
+  CVD_BAD_HUE,
+  CVD_GOOD_HUE,
   HC_BUTTON_STEP,
   MEANING_HUES,
   MEANING_MIN_DE,
@@ -16,13 +18,17 @@ import {
   accentPrimary,
   buildThemeCss,
   contrast,
+  cvdLadder,
   deltaE,
   hexLch,
   inGamut,
   lchHex,
   parseOklch,
   readTailwindColors,
+  simulateCvd,
   spaceSwaps,
+  type CvdKind,
+  type Lch,
   type PaletteFile,
 } from './themeCss';
 
@@ -95,6 +101,47 @@ describe('어둡게 진한 띠 (P20-2 ■1)', () => {
     for (const cls of ['bg-slate-900\\/95', 'bg-slate-900\\/90', 'bg-slate-600\\/90', 'bg-slate-900\\/40', 'bg-red-600\\/95']) {
       expect(css).toContain(`html.dark .${cls} {`);
     }
+  });
+});
+
+describe('색약 배려 (P20-2 html.cvd)', () => {
+  const css = buildThemeCss(tw, file);
+  const kinds: CvdKind[] = ['protan', 'deutan', 'tritan'];
+  const worst = (a: Lch, b: Lch) => Math.min(...kinds.map((k) => deltaE(simulateCvd(a, k), simulateCvd(b, k))));
+  const step = (h: string, s: string) => parseOklch(orig[h][s]);
+  const good = (s: string, hue = CVD_GOOD_HUE) => parseOklch(cvdLadder(orig.emerald, hue)[s]);
+  const bad = (s: string) => parseOklch(cvdLadder(orig.red, CVD_BAD_HUE)[s]);
+
+  it('완료·삭제·이월이 지금보다 잘 갈린다 (글자 600·옅은 바탕 100, 세 색약 중 가장 가까운 거리)', () => {
+    for (const s of ['600', '100']) {
+      expect(worst(good(s), bad(s))).toBeGreaterThan(worst(step('emerald', s), step('red', s)));
+      expect(worst(good(s), step('amber', s))).toBeGreaterThan(worst(step('emerald', s), step('amber', s)));
+    }
+    expect(worst(good('600'), bad('600'))).toBeGreaterThanOrEqual(15);
+    expect(worst(good('100'), bad('100'))).toBeGreaterThanOrEqual(3);
+  });
+
+  it.each(file.palettes.map((p) => [p.name, p] as const))('%s: 완료 빛깔이 강조와 갈린다', (_n, p) => {
+    expect(worst(good('600', p.cvdGood), accentLadder(orig, p)['600'])).toBeGreaterThanOrEqual(5);
+    expect(deltaE(good('600', p.cvdGood), accentLadder(orig, p)['600'])).toBeGreaterThanOrEqual(MEANING_MIN_DE);
+  });
+
+  it('흰 글자 단추가 원래보다 크게 떨어지지 않는다', () => {
+    for (const [h, hue] of [['emerald', CVD_GOOD_HUE], ['red', CVD_BAD_HUE], ['rose', CVD_BAD_HUE]] as const) {
+      for (const s of ['500', '600', '700']) {
+        expect(contrast(WHITE, parseOklch(cvdLadder(orig[h], hue)[s]))).toBeGreaterThanOrEqual(contrast(WHITE, step(h, s)) - 0.2);
+      }
+    }
+  });
+
+  it('이월 노랑은 그대로 · 어둡게 단추 바탕도 돌린 값 · 고대비 단추는 변수로 따라온다', () => {
+    expect(css).not.toMatch(/html\.cvd \{[^}]*--color-amber-/);
+    expect(css).toContain(`html.dark.cvd .bg-emerald-600, html.dark.cvd .hover\\:bg-emerald-600:hover { background-color: ${cvdLadder(orig.emerald, CVD_GOOD_HUE)['600']}; }`);
+    expect(css).toContain('html.hc.hc.hc .bg-emerald-600, html.hc.hc.hc .hover\\:bg-emerald-600:hover { background-color: var(--sp5-strong-emerald); }');
+  });
+
+  it('인쇄 쪽은 색약 배려에서도 기본 색 변수로 돌아간다', () => {
+    expect(css).toContain('html.cvd [data-print-paper]');
   });
 });
 

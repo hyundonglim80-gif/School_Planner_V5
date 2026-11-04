@@ -115,6 +115,34 @@ export function contrast(x: Lch, y: Lch): number {
 
 export const WHITE: Lch = [1, 0, 0];
 
+/** 색약 흉내 행렬 (Machado 2009, 정도 1.0 - 선형 RGB에 곱한다) */
+export const CVD_MATRICES = {
+  protan: [
+    [0.152286, 1.052583, -0.204868],
+    [0.114503, 0.786281, 0.099216],
+    [-0.003882, -0.048116, 1.051998],
+  ],
+  deutan: [
+    [0.367322, 0.860646, -0.227968],
+    [0.280085, 0.672501, 0.047413],
+    [-0.01182, 0.04294, 0.968881],
+  ],
+  tritan: [
+    [1.255528, -0.076749, -0.178779],
+    [-0.078411, 0.930809, 0.147602],
+    [0.004733, 0.691367, 0.3039],
+  ],
+} as const;
+export type CvdKind = keyof typeof CVD_MATRICES;
+
+/** 색약인 사람에게 보이는 색 */
+export function simulateCvd(c: Lch, kind: CvdKind): Lch {
+  const rgb = labToLinear(toLab(c)).map((v) => Math.min(1, Math.max(0, v)));
+  const out = CVD_MATRICES[kind].map((row) => Math.min(1, Math.max(0, row[0] * rgb[0] + row[1] * rgb[1] + row[2] * rgb[2]))) as [number, number, number];
+  const [L, a, b] = linearToLab(out);
+  return [L, Math.hypot(a, b), normHue((Math.atan2(b, a) * 180) / Math.PI)];
+}
+
 export function hexLch(hex: string): Lch {
   const n = parseInt(hex.slice(1), 16);
   const lin: [number, number, number] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => decode(v / 255)) as [number, number, number];
@@ -194,6 +222,8 @@ export interface PaletteDef {
   /** 어둡게: 카드·화면 바탕 밝기 (0~1, 없으면 기본 23%·18%) */
   darkSurfaceL?: number;
   darkBodyL?: number;
+  /** 색약 배려의 완료 빛깔 (없으면 CVD_GOOD_HUE - 강조가 파랑·청록 쪽이 아니면 더 진한 파랑이 뜻 색끼리 잘 갈린다) */
+  cvdGood?: number;
 }
 
 export interface PaletteFile {
@@ -363,6 +393,49 @@ function darkStrips(orig: ColorTable): string[] {
   ];
 }
 
+// ── 색약 배려 ──
+
+/** 완료 초록 → 파랑 쪽, 삭제·중요 빨강 → 주황 쪽 (P20-2 ■2 - 색약 흉내 거리로 골랐다. 값은 PLAN 6장 P20-2 ■2) */
+export const CVD_GOOD_HUE = 205;
+export const CVD_BAD_HUE = 40;
+const CVD_HUES: Record<string, number> = { emerald: CVD_GOOD_HUE, red: CVD_BAD_HUE, rose: CVD_BAD_HUE };
+
+/** 사다리의 밝기·채도 그대로 빛깔만 돌린다 (단계마다 빛깔 기울기는 600 기준으로 남긴다) */
+export function cvdLadder(o: Record<string, string>, hue: number): Record<string, string> {
+  const ref = parseOklch(o['600'])[2];
+  return Object.fromEntries(
+    STEPS.map((s) => {
+      const [L, C, H] = parseOklch(o[s]);
+      return [s, lchCss(fitGamut([L, C, hue + (H - ref)]))];
+    }),
+  );
+}
+
+function cvdRules(orig: ColorTable, h: string, hue: number, sel: string, dsel: string): string[] {
+  const ladder = cvdLadder(orig[h], hue);
+  const light = STEPS.map((s) => `    --color-${h}-${s}: ${ladder[s]};`);
+  const dark = Object.entries(hueDark(ladder)).map(([s, v]) => `    --color-${h}-${s}: ${v};`);
+  return [
+    `  ${sel} {`,
+    ...light,
+    `    --sp5-strong-${h}: ${ladder[HC_BUTTON_STEP]};`,
+    `  }`,
+    `  ${dsel} {`,
+    ...dark,
+    `  }`,
+    ...['600', '700', '800', '900'].map((s) => `  ${dsel} .bg-${h}-${s}, ${dsel} .hover\\:bg-${h}-${s}:hover { background-color: ${ladder[s]}; }`),
+  ];
+}
+
+function colorVision(orig: ColorTable, file: PaletteFile): string[] {
+  const out = Object.entries(CVD_HUES).flatMap(([h, hue]) => cvdRules(orig, h, hue, 'html.cvd', 'html.dark.cvd'));
+  for (const p of file.palettes) {
+    if (p.cvdGood === undefined) continue;
+    out.push(...cvdRules(orig, 'emerald', p.cvdGood, `html.cvd[data-palette="${p.id}"]`, `html.dark.cvd[data-palette="${p.id}"]`));
+  }
+  return out;
+}
+
 // ── 고대비 ──
 
 /** 테마 블록(html.dark[data-palette="…"] .bg-blue-600 - 0,3,1)을 이기려고 클래스를 되풀이한다 */
@@ -401,7 +474,7 @@ function highContrast(orig: ColorTable): string[] {
   // 흰 글자를 얹는 단추 바탕
   for (const h of HUES) {
     for (const s of ['500', '600', '700']) {
-      const to = h === 'blue' ? 'var(--sp5-accent-strong)' : orig[h]?.[HC_BUTTON_STEP];
+      const to = h === 'blue' ? 'var(--sp5-accent-strong)' : h in CVD_HUES ? `var(--sp5-strong-${h})` : orig[h]?.[HC_BUTTON_STEP];
       if (to) out.push(`  ${HC} .bg-${h}-${s}, ${HC} .hover\\:bg-${h}-${s}:hover { background-color: ${to}; }`);
     }
   }
@@ -458,6 +531,7 @@ export function buildThemeCss(themeCss: string, file: PaletteFile): string {
   const paper: string[] = [];
   paper.push(`    --color-primary: ${LIGHT_BASE.primary};`);
   paper.push(`    --sp5-accent-strong: ${orig.blue[HC_BUTTON_STEP]};`);
+  for (const h of Object.keys(CVD_HUES)) paper.push(`    --sp5-strong-${h}: ${orig[h][HC_BUTTON_STEP]};`);
   paper.push(`    --color-white: #fff;`);
   paper.push(`    --color-bg-body: ${LIGHT_BASE.body};`);
   paper.push(`    --color-bg-card: ${LIGHT_BASE.card};`);
@@ -477,6 +551,9 @@ export function buildThemeCss(themeCss: string, file: PaletteFile): string {
 @media screen {
   html {
     --sp5-accent-strong: ${orig.blue[HC_BUTTON_STEP]};
+${Object.keys(CVD_HUES)
+  .map((h) => `    --sp5-strong-${h}: ${orig[h][HC_BUTTON_STEP]};`)
+  .join('\n')}
   }
   html.dark {
     color-scheme: dark;
@@ -492,11 +569,13 @@ ${whiteRules('html.dark').join('\n')}
     background-color: var(--color-bg-body);
   }
 ${palettes.join('\n')}
+${colorVision(orig, file).join('\n')}
 ${highContrast(orig).join('\n')}
 
   html.dark [data-print-paper],
   html[data-palette] [data-print-paper],
-  html.hc [data-print-paper] {
+  html.hc [data-print-paper],
+  html.cvd [data-print-paper] {
     color-scheme: light;
 ${paper.join('\n')}
   }
