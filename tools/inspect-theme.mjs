@@ -199,6 +199,7 @@ try {
     const maps = {};
     const hcMaps = {};
     const cvd = {};
+    const dimMaps = {};
     const fixed = {};
     const accentOk = {};
     for (const [where, target] of VIEWS) {
@@ -228,6 +229,13 @@ try {
           await page.screenshot({ path: `${SHOTS}/${id}-${dark ? 'dark' : 'light'}-${where.replace('win:', '')}-hc.png` });
         }
         await setClass(page, 'hc', false);
+        if (dark) {
+          await setClass(page, 'dim', true);
+          await page.waitForTimeout(100);
+          (dimMaps[id] ||= {})[where] = await contrastMap(page);
+          if (SHOTS && ['day', 'month'].includes(where)) await page.screenshot({ path: `${SHOTS}/${id}-dark-${where}-dim.png` });
+          await setClass(page, 'dim', false);
+        }
         if (where === 'win:settings') {
           // 고른 칩(흰 글자 on bg-primary)
           accentOk[id] = await page.locator('[data-choice][aria-pressed="true"]').first().evaluate((el) => {
@@ -255,6 +263,33 @@ try {
       }
     }
     await setPalette(page, 'default');
+
+    // 어둡게를 부드럽게 (P20-2 ■3): 어둡게일 때만 · 고대비가 켜지면 쉰다
+    const bodyBg = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+    const plainBg = await bodyBg();
+    await setClass(page, 'dim', true);
+    const dimBg = await bodyBg();
+    await setClass(page, 'hc', true);
+    const dimHcBg = await bodyBg();
+    await setClass(page, 'hc', false);
+    await setClass(page, 'dim', false);
+    r.section(`부드럽게 · ${mode}`);
+    r.check(dark ? dimBg !== plainBg : dimBg === plainBg, dark ? `바탕이 바뀐다 (${plainBg} → ${dimBg})` : '밝게에서는 그대로');
+    r.check(dimHcBg === plainBg, '고대비가 켜지면 쉰다');
+    if (dark) {
+      for (const id of PALETTES) {
+        for (const [where] of VIEWS) {
+          const base = maps[id][where];
+          const map = dimMaps[id][where];
+          const bad = Object.entries(map).filter(([k, v]) => base[k] !== undefined && v < Math.min(4.5, base[k]) - 0.3);
+          r.check(
+            bad.length === 0,
+            `${id} ${where}: 글자가 읽힌다 (${Object.keys(map).length}곳)`,
+            `${id} ${where}: 안 읽히는 글 ${bad.length} - ${bad.slice(0, 6).map(([k, v]) => `${k} ${v} (어둡게 ${base[k]})`).join(' · ')}`,
+          );
+        }
+      }
+    }
 
     r.section(`진한 띠 · ${mode}`);
     const strips = await stripContrast(page);

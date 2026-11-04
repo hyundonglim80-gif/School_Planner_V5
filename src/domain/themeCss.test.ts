@@ -7,9 +7,11 @@ import { GROUP_SPACE_HUES, PERSONAL_SPACE_HUE } from './spaceColor';
 import {
   CVD_BAD_HUE,
   CVD_GOOD_HUE,
+  DIM_SURFACE,
   HC_BUTTON_STEP,
   MEANING_HUES,
   MEANING_MIN_DE,
+  NEUTRAL_DIM,
   SLATE_50,
   SPACE_HUES,
   SPACE_MIN_DE,
@@ -101,6 +103,26 @@ describe('어둡게 진한 띠 (P20-2 ■1)', () => {
     for (const cls of ['bg-slate-900\\/95', 'bg-slate-900\\/90', 'bg-slate-600\\/90', 'bg-slate-900\\/40', 'bg-red-600\\/95']) {
       expect(css).toContain(`html.dark .${cls} {`);
     }
+  });
+});
+
+describe('어둡게를 부드럽게 (P20-2 html.dim)', () => {
+  const css = buildThemeCss(tw, file);
+  const surface = parseOklch(DIM_SURFACE);
+
+  it('바탕은 어둡게보다 밝고 가장 밝은 글자는 낮다', () => {
+    expect(surface[0]).toBeGreaterThan(0.23);
+    expect(parseOklch(NEUTRAL_DIM[900])[0]).toBeLessThan(0.94);
+  });
+
+  it('글자는 읽힌다 - 본문 7:1 · 흐린 글자 4.5:1', () => {
+    for (const s of ['700', '800', '900']) expect(contrast(parseOklch(NEUTRAL_DIM[s]), surface)).toBeGreaterThanOrEqual(7);
+    for (const s of ['400', '500', '600']) expect(contrast(parseOklch(NEUTRAL_DIM[s]), surface)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('고대비가 켜지면 쉰다 · 바탕을 물들인 테마마다 블록이 있다', () => {
+    expect(css).toContain('html.dark.dim:not(.hc) {');
+    for (const p of themes) expect(css).toContain(`html.dark.dim:not(.hc)[data-palette="${p.id}"] {`);
   });
 });
 

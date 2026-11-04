@@ -9,7 +9,7 @@
 // 바뀐다. 쓰임새를 세어 보니(2026-10-02):
 //   - 회색(slate)은 바탕(50·100·200)·테두리(200·300)·글자(400~900)로 쓰인다 → 통째로 뒤집는다.
 //   - 다른 색은 옅은 바탕(50·100)·테두리(200·300)·진한 글자(600~900)로 쓰인다 → 옅은 것은 어두운 빛깔로, 진한 것은 밝게.
-//     다만 단추 바탕(bg-600·700·800·900, 흰 글자를 얹는다)은 원래 색을 지킨다 - 아래 '단추 바탕' 규칙.
+//     다만 단추 바탕(bg-500~900, 흰 글자를 얹는다)은 원래 색을 지킨다 - 아래 '단추 바탕' 규칙.
 //   - white는 흰 바탕(bg-white 222곳)과 흰 글자(text-white 131곳)가 같은 변수다 → 변수는 어두운 바탕으로 바꾸고,
 //     흰 글자·색 단추 위 반투명 흰색은 따로 흰색으로 되돌린다.
 //   모두 @media screen 안이라 인쇄는 늘 밝은 모양이다.
@@ -350,7 +350,7 @@ function paletteBlock(orig: ColorTable, p: PaletteDef): string {
   }
 
   const keep: string[] = [];
-  for (const s of ['600', '700', '800', '900']) {
+  for (const s of ['500', '600', '700', '800', '900']) {
     keep.push(`  ${dsel} .bg-blue-${s}, ${dsel} .hover\\:bg-blue-${s}:hover { background-color: ${ladderCss[s]}; }`);
   }
   for (const s of ['700', '800', '900']) {
@@ -393,6 +393,53 @@ function darkStrips(orig: ColorTable): string[] {
   ];
 }
 
+// ── 어둡게를 부드럽게 (P20-2 ■3, html.dim - 이 기기. GitHub 'dimmed') ──
+
+/** 바탕을 짙은 회청색으로 밝히고 가장 밝은 글자를 낮춘다. 가운데 글자는 바탕이 밝아진 만큼 올려 읽히게 둔다 */
+export const DIM_SURFACE = 'oklch(30% 0.028 262)';
+export const DIM_BODY = 'oklch(25% 0.026 263)';
+export const NEUTRAL_DIM: Record<string, string> = {
+  50: 'oklch(32.5% 0.029 261)',
+  100: 'oklch(34% 0.031 260)',
+  200: 'oklch(38% 0.033 259)',
+  300: 'oklch(47% 0.035 258)',
+  400: 'oklch(70% 0.032 257)',
+  500: 'oklch(75% 0.028 257)',
+  600: 'oklch(79% 0.024 257)',
+  700: 'oklch(83% 0.019 257)',
+  800: 'oklch(86% 0.014 257)',
+  900: 'oklch(88% 0.01 257)',
+  950: 'oklch(90% 0.006 257)',
+};
+
+/** 고대비가 켜져 있으면 고대비가 이긴다 (7:1을 지키려고) */
+const DIM = 'html.dark.dim:not(.hc)';
+
+function dimmed(orig: ColorTable, file: PaletteFile): string[] {
+  // 뜻 색 글자(500·600)는 옅은 빛깔 바탕 위에서 4.5:1이 되게 한 단계 밝게 - 단추 바탕은 글자 값이라 그대로다
+  const hueText = HUES.filter((h) => h !== 'blue' && orig[h]).flatMap((h) => [`    --color-${h}-500: ${orig[h]['300']};`, `    --color-${h}-600: ${orig[h]['300']};`]);
+  const block = (sel: string, paint: (s: string) => string) => [
+    `  ${sel} {`,
+    `    --sp5-dark-surface: ${paint(DIM_SURFACE)};`,
+    `    --color-white: ${paint(DIM_SURFACE)};`,
+    `    --color-bg-body: ${paint(DIM_BODY)};`,
+    `    --color-bg-card: ${paint(DIM_SURFACE)};`,
+    `    --color-bg-hover: ${paint(NEUTRAL_DIM[100])};`,
+    `    --color-border: ${paint(NEUTRAL_DIM[300])};`,
+    ...Object.entries(NEUTRAL_DIM).map(([s, v]) => `    --color-slate-${s}: ${paint(v)};`),
+    `  }`,
+  ];
+  const out = block(DIM, (s) => s);
+  out.splice(out.length - 1, 0, ...hueText);
+  for (const p of file.palettes) {
+    if (p.neutral) out.push(...block(`${DIM}[data-palette="${p.id}"]`, (s) => lchCss(tint(s, p))));
+  }
+  // 강조 글자는 어둡게의 밝기라 바탕이 밝아지면 묻힌다 - 사다리에서 한 단계 밝게
+  const accentText = ['text-primary', 'text-blue-500', 'text-blue-600'].flatMap((c) => [`${DIM} .${c}`, `${DIM} .hover\\:${c}:hover`]);
+  out.push(`  ${accentText.join(', ')} { color: var(--color-blue-700); }`);
+  return out;
+}
+
 // ── 색약 배려 ──
 
 /** 완료 초록 → 파랑 쪽, 삭제·중요 빨강 → 주황 쪽 (P20-2 ■2 - 색약 흉내 거리로 골랐다. 값은 PLAN 6장 P20-2 ■2) */
@@ -423,7 +470,7 @@ function cvdRules(orig: ColorTable, h: string, hue: number, sel: string, dsel: s
     `  ${dsel} {`,
     ...dark,
     `  }`,
-    ...['600', '700', '800', '900'].map((s) => `  ${dsel} .bg-${h}-${s}, ${dsel} .hover\\:bg-${h}-${s}:hover { background-color: ${ladder[s]}; }`),
+    ...['500', '600', '700', '800', '900'].map((s) => `  ${dsel} .bg-${h}-${s}, ${dsel} .hover\\:bg-${h}-${s}:hover { background-color: ${ladder[s]}; }`),
   ];
 }
 
@@ -517,7 +564,7 @@ export function buildThemeCss(themeCss: string, file: PaletteFile): string {
   for (const h of HUES) {
     const o = orig[h];
     if (!o) continue;
-    for (const s of ['600', '700', '800', '900']) {
+    for (const s of ['500', '600', '700', '800', '900']) {
       keep.push(`  html.dark .bg-${h}-${s}, html.dark .hover\\:bg-${h}-${s}:hover { background-color: ${o[s]}; }`);
     }
   }
@@ -569,6 +616,7 @@ ${whiteRules('html.dark').join('\n')}
     background-color: var(--color-bg-body);
   }
 ${palettes.join('\n')}
+${dimmed(orig, file).join('\n')}
 ${colorVision(orig, file).join('\n')}
 ${highContrast(orig).join('\n')}
 

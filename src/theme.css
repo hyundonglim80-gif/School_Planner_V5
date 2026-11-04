@@ -272,74 +272,92 @@
   html.dark body {
     background-color: var(--color-bg-body);
   }
+  html.dark .bg-red-500, html.dark .hover\:bg-red-500:hover { background-color: oklch(63.7% 0.237 25.331); }
   html.dark .bg-red-600, html.dark .hover\:bg-red-600:hover { background-color: oklch(57.7% 0.245 27.325); }
   html.dark .bg-red-700, html.dark .hover\:bg-red-700:hover { background-color: oklch(50.5% 0.213 27.518); }
   html.dark .bg-red-800, html.dark .hover\:bg-red-800:hover { background-color: oklch(44.4% 0.177 26.899); }
   html.dark .bg-red-900, html.dark .hover\:bg-red-900:hover { background-color: oklch(39.6% 0.141 25.723); }
+  html.dark .bg-orange-500, html.dark .hover\:bg-orange-500:hover { background-color: oklch(70.5% 0.213 47.604); }
   html.dark .bg-orange-600, html.dark .hover\:bg-orange-600:hover { background-color: oklch(64.6% 0.222 41.116); }
   html.dark .bg-orange-700, html.dark .hover\:bg-orange-700:hover { background-color: oklch(55.3% 0.195 38.402); }
   html.dark .bg-orange-800, html.dark .hover\:bg-orange-800:hover { background-color: oklch(47% 0.157 37.304); }
   html.dark .bg-orange-900, html.dark .hover\:bg-orange-900:hover { background-color: oklch(40.8% 0.123 38.172); }
+  html.dark .bg-amber-500, html.dark .hover\:bg-amber-500:hover { background-color: oklch(76.9% 0.188 70.08); }
   html.dark .bg-amber-600, html.dark .hover\:bg-amber-600:hover { background-color: oklch(66.6% 0.179 58.318); }
   html.dark .bg-amber-700, html.dark .hover\:bg-amber-700:hover { background-color: oklch(55.5% 0.163 48.998); }
   html.dark .bg-amber-800, html.dark .hover\:bg-amber-800:hover { background-color: oklch(47.3% 0.137 46.201); }
   html.dark .bg-amber-900, html.dark .hover\:bg-amber-900:hover { background-color: oklch(41.4% 0.112 45.904); }
+  html.dark .bg-yellow-500, html.dark .hover\:bg-yellow-500:hover { background-color: oklch(79.5% 0.184 86.047); }
   html.dark .bg-yellow-600, html.dark .hover\:bg-yellow-600:hover { background-color: oklch(68.1% 0.162 75.834); }
   html.dark .bg-yellow-700, html.dark .hover\:bg-yellow-700:hover { background-color: oklch(55.4% 0.135 66.442); }
   html.dark .bg-yellow-800, html.dark .hover\:bg-yellow-800:hover { background-color: oklch(47.6% 0.114 61.907); }
   html.dark .bg-yellow-900, html.dark .hover\:bg-yellow-900:hover { background-color: oklch(42.1% 0.095 57.708); }
+  html.dark .bg-lime-500, html.dark .hover\:bg-lime-500:hover { background-color: oklch(76.8% 0.233 130.85); }
   html.dark .bg-lime-600, html.dark .hover\:bg-lime-600:hover { background-color: oklch(64.8% 0.2 131.684); }
   html.dark .bg-lime-700, html.dark .hover\:bg-lime-700:hover { background-color: oklch(53.2% 0.157 131.589); }
   html.dark .bg-lime-800, html.dark .hover\:bg-lime-800:hover { background-color: oklch(45.3% 0.124 130.933); }
   html.dark .bg-lime-900, html.dark .hover\:bg-lime-900:hover { background-color: oklch(40.5% 0.101 131.063); }
+  html.dark .bg-green-500, html.dark .hover\:bg-green-500:hover { background-color: oklch(72.3% 0.219 149.579); }
   html.dark .bg-green-600, html.dark .hover\:bg-green-600:hover { background-color: oklch(62.7% 0.194 149.214); }
   html.dark .bg-green-700, html.dark .hover\:bg-green-700:hover { background-color: oklch(52.7% 0.154 150.069); }
   html.dark .bg-green-800, html.dark .hover\:bg-green-800:hover { background-color: oklch(44.8% 0.119 151.328); }
   html.dark .bg-green-900, html.dark .hover\:bg-green-900:hover { background-color: oklch(39.3% 0.095 152.535); }
+  html.dark .bg-emerald-500, html.dark .hover\:bg-emerald-500:hover { background-color: oklch(69.6% 0.17 162.48); }
   html.dark .bg-emerald-600, html.dark .hover\:bg-emerald-600:hover { background-color: oklch(59.6% 0.145 163.225); }
   html.dark .bg-emerald-700, html.dark .hover\:bg-emerald-700:hover { background-color: oklch(50.8% 0.118 165.612); }
   html.dark .bg-emerald-800, html.dark .hover\:bg-emerald-800:hover { background-color: oklch(43.2% 0.095 166.913); }
   html.dark .bg-emerald-900, html.dark .hover\:bg-emerald-900:hover { background-color: oklch(37.8% 0.077 168.94); }
+  html.dark .bg-teal-500, html.dark .hover\:bg-teal-500:hover { background-color: oklch(70.4% 0.14 182.503); }
   html.dark .bg-teal-600, html.dark .hover\:bg-teal-600:hover { background-color: oklch(60% 0.118 184.704); }
   html.dark .bg-teal-700, html.dark .hover\:bg-teal-700:hover { background-color: oklch(51.1% 0.096 186.391); }
   html.dark .bg-teal-800, html.dark .hover\:bg-teal-800:hover { background-color: oklch(43.7% 0.078 188.216); }
   html.dark .bg-teal-900, html.dark .hover\:bg-teal-900:hover { background-color: oklch(38.6% 0.063 188.416); }
+  html.dark .bg-cyan-500, html.dark .hover\:bg-cyan-500:hover { background-color: oklch(71.5% 0.143 215.221); }
   html.dark .bg-cyan-600, html.dark .hover\:bg-cyan-600:hover { background-color: oklch(60.9% 0.126 221.723); }
   html.dark .bg-cyan-700, html.dark .hover\:bg-cyan-700:hover { background-color: oklch(52% 0.105 223.128); }
   html.dark .bg-cyan-800, html.dark .hover\:bg-cyan-800:hover { background-color: oklch(45% 0.085 224.283); }
   html.dark .bg-cyan-900, html.dark .hover\:bg-cyan-900:hover { background-color: oklch(39.8% 0.07 227.392); }
+  html.dark .bg-sky-500, html.dark .hover\:bg-sky-500:hover { background-color: oklch(68.5% 0.169 237.323); }
   html.dark .bg-sky-600, html.dark .hover\:bg-sky-600:hover { background-color: oklch(58.8% 0.158 241.966); }
   html.dark .bg-sky-700, html.dark .hover\:bg-sky-700:hover { background-color: oklch(50% 0.134 242.749); }
   html.dark .bg-sky-800, html.dark .hover\:bg-sky-800:hover { background-color: oklch(44.3% 0.11 240.79); }
   html.dark .bg-sky-900, html.dark .hover\:bg-sky-900:hover { background-color: oklch(39.1% 0.09 240.876); }
+  html.dark .bg-blue-500, html.dark .hover\:bg-blue-500:hover { background-color: oklch(62.3% 0.214 259.815); }
   html.dark .bg-blue-600, html.dark .hover\:bg-blue-600:hover { background-color: oklch(54.6% 0.245 262.881); }
   html.dark .bg-blue-700, html.dark .hover\:bg-blue-700:hover { background-color: oklch(48.8% 0.243 264.376); }
   html.dark .bg-blue-800, html.dark .hover\:bg-blue-800:hover { background-color: oklch(42.4% 0.199 265.638); }
   html.dark .bg-blue-900, html.dark .hover\:bg-blue-900:hover { background-color: oklch(37.9% 0.146 265.522); }
+  html.dark .bg-indigo-500, html.dark .hover\:bg-indigo-500:hover { background-color: oklch(58.5% 0.233 277.117); }
   html.dark .bg-indigo-600, html.dark .hover\:bg-indigo-600:hover { background-color: oklch(51.1% 0.262 276.966); }
   html.dark .bg-indigo-700, html.dark .hover\:bg-indigo-700:hover { background-color: oklch(45.7% 0.24 277.023); }
   html.dark .bg-indigo-800, html.dark .hover\:bg-indigo-800:hover { background-color: oklch(39.8% 0.195 277.366); }
   html.dark .bg-indigo-900, html.dark .hover\:bg-indigo-900:hover { background-color: oklch(35.9% 0.144 278.697); }
+  html.dark .bg-violet-500, html.dark .hover\:bg-violet-500:hover { background-color: oklch(60.6% 0.25 292.717); }
   html.dark .bg-violet-600, html.dark .hover\:bg-violet-600:hover { background-color: oklch(54.1% 0.281 293.009); }
   html.dark .bg-violet-700, html.dark .hover\:bg-violet-700:hover { background-color: oklch(49.1% 0.27 292.581); }
   html.dark .bg-violet-800, html.dark .hover\:bg-violet-800:hover { background-color: oklch(43.2% 0.232 292.759); }
   html.dark .bg-violet-900, html.dark .hover\:bg-violet-900:hover { background-color: oklch(38% 0.189 293.745); }
+  html.dark .bg-purple-500, html.dark .hover\:bg-purple-500:hover { background-color: oklch(62.7% 0.265 303.9); }
   html.dark .bg-purple-600, html.dark .hover\:bg-purple-600:hover { background-color: oklch(55.8% 0.288 302.321); }
   html.dark .bg-purple-700, html.dark .hover\:bg-purple-700:hover { background-color: oklch(49.6% 0.265 301.924); }
   html.dark .bg-purple-800, html.dark .hover\:bg-purple-800:hover { background-color: oklch(43.8% 0.218 303.724); }
   html.dark .bg-purple-900, html.dark .hover\:bg-purple-900:hover { background-color: oklch(38.1% 0.176 304.987); }
+  html.dark .bg-fuchsia-500, html.dark .hover\:bg-fuchsia-500:hover { background-color: oklch(66.7% 0.295 322.15); }
   html.dark .bg-fuchsia-600, html.dark .hover\:bg-fuchsia-600:hover { background-color: oklch(59.1% 0.293 322.896); }
   html.dark .bg-fuchsia-700, html.dark .hover\:bg-fuchsia-700:hover { background-color: oklch(51.8% 0.253 323.949); }
   html.dark .bg-fuchsia-800, html.dark .hover\:bg-fuchsia-800:hover { background-color: oklch(45.2% 0.211 324.591); }
   html.dark .bg-fuchsia-900, html.dark .hover\:bg-fuchsia-900:hover { background-color: oklch(40.1% 0.17 325.612); }
+  html.dark .bg-pink-500, html.dark .hover\:bg-pink-500:hover { background-color: oklch(65.6% 0.241 354.308); }
   html.dark .bg-pink-600, html.dark .hover\:bg-pink-600:hover { background-color: oklch(59.2% 0.249 0.584); }
   html.dark .bg-pink-700, html.dark .hover\:bg-pink-700:hover { background-color: oklch(52.5% 0.223 3.958); }
   html.dark .bg-pink-800, html.dark .hover\:bg-pink-800:hover { background-color: oklch(45.9% 0.187 3.815); }
   html.dark .bg-pink-900, html.dark .hover\:bg-pink-900:hover { background-color: oklch(40.8% 0.153 2.432); }
+  html.dark .bg-rose-500, html.dark .hover\:bg-rose-500:hover { background-color: oklch(64.5% 0.246 16.439); }
   html.dark .bg-rose-600, html.dark .hover\:bg-rose-600:hover { background-color: oklch(58.6% 0.253 17.585); }
   html.dark .bg-rose-700, html.dark .hover\:bg-rose-700:hover { background-color: oklch(51.4% 0.222 16.935); }
   html.dark .bg-rose-800, html.dark .hover\:bg-rose-800:hover { background-color: oklch(45.5% 0.188 13.697); }
   html.dark .bg-rose-900, html.dark .hover\:bg-rose-900:hover { background-color: oklch(41% 0.159 10.272); }
+  html.dark .bg-cobalt-500, html.dark .hover\:bg-cobalt-500:hover { background-color: oklch(62.3% 0.214 259.815); }
   html.dark .bg-cobalt-600, html.dark .hover\:bg-cobalt-600:hover { background-color: oklch(54.6% 0.245 262.881); }
   html.dark .bg-cobalt-700, html.dark .hover\:bg-cobalt-700:hover { background-color: oklch(48.8% 0.243 264.376); }
   html.dark .bg-cobalt-800, html.dark .hover\:bg-cobalt-800:hover { background-color: oklch(42.4% 0.199 265.638); }
@@ -430,6 +448,7 @@
     --sp-lime-100: color-mix(in oklab, oklch(40.8% 0.153 2.432) 42%, var(--sp5-dark-surface));
     --sp-lime-300: color-mix(in oklab, oklch(52.5% 0.223 3.958) 68%, var(--sp5-dark-surface));
   }
+  html.dark[data-palette="forest"] .bg-blue-500, html.dark[data-palette="forest"] .hover\:bg-blue-500:hover { background-color: oklch(62.3% 0.173 131.9); }
   html.dark[data-palette="forest"] .bg-blue-600, html.dark[data-palette="forest"] .hover\:bg-blue-600:hover { background-color: oklch(54.6% 0.16 135); }
   html.dark[data-palette="forest"] .bg-blue-700, html.dark[data-palette="forest"] .hover\:bg-blue-700:hover { background-color: oklch(48.8% 0.147 136.5); }
   html.dark[data-palette="forest"] .bg-blue-800, html.dark[data-palette="forest"] .hover\:bg-blue-800:hover { background-color: oklch(42.4% 0.131 137.8); }
@@ -502,6 +521,7 @@
     --sp-fuchsia-100: color-mix(in oklab, oklch(37.9% 0.146 265.522) 42%, var(--sp5-dark-surface));
     --sp-fuchsia-300: color-mix(in oklab, oklch(48.8% 0.243 264.376) 68%, var(--sp5-dark-surface));
   }
+  html.dark[data-palette="cherry"] .bg-blue-500, html.dark[data-palette="cherry"] .hover\:bg-blue-500:hover { background-color: oklch(62.3% 0.214 336.9); }
   html.dark[data-palette="cherry"] .bg-blue-600, html.dark[data-palette="cherry"] .hover\:bg-blue-600:hover { background-color: oklch(54.6% 0.237 340); }
   html.dark[data-palette="cherry"] .bg-blue-700, html.dark[data-palette="cherry"] .hover\:bg-blue-700:hover { background-color: oklch(48.8% 0.211 341.5); }
   html.dark[data-palette="cherry"] .bg-blue-800, html.dark[data-palette="cherry"] .hover\:bg-blue-800:hover { background-color: oklch(42.4% 0.182 342.8); }
@@ -570,6 +590,7 @@
     --color-blue-900: oklch(93.2% 0.016 292.7);
     --color-blue-950: oklch(97% 0.007 291.7);
   }
+  html.dark[data-palette="lavender"] .bg-blue-500, html.dark[data-palette="lavender"] .hover\:bg-blue-500:hover { background-color: oklch(62.3% 0.107 296.9); }
   html.dark[data-palette="lavender"] .bg-blue-600, html.dark[data-palette="lavender"] .hover\:bg-blue-600:hover { background-color: oklch(54.6% 0.122 300); }
   html.dark[data-palette="lavender"] .bg-blue-700, html.dark[data-palette="lavender"] .hover\:bg-blue-700:hover { background-color: oklch(48.8% 0.121 301.5); }
   html.dark[data-palette="lavender"] .bg-blue-800, html.dark[data-palette="lavender"] .hover\:bg-blue-800:hover { background-color: oklch(42.4% 0.1 302.8); }
@@ -642,6 +663,7 @@
     --sp-cyan-100: color-mix(in oklab, oklch(37.9% 0.146 265.522) 42%, var(--sp5-dark-surface));
     --sp-cyan-300: color-mix(in oklab, oklch(48.8% 0.243 264.376) 68%, var(--sp5-dark-surface));
   }
+  html.dark[data-palette="calm"] .bg-blue-500, html.dark[data-palette="calm"] .hover\:bg-blue-500:hover { background-color: oklch(62.3% 0.064 246.9); }
   html.dark[data-palette="calm"] .bg-blue-600, html.dark[data-palette="calm"] .hover\:bg-blue-600:hover { background-color: oklch(54.6% 0.073 250); }
   html.dark[data-palette="calm"] .bg-blue-700, html.dark[data-palette="calm"] .hover\:bg-blue-700:hover { background-color: oklch(48.8% 0.073 251.5); }
   html.dark[data-palette="calm"] .bg-blue-800, html.dark[data-palette="calm"] .hover\:bg-blue-800:hover { background-color: oklch(42.4% 0.06 252.8); }
@@ -714,6 +736,7 @@
     --sp-cyan-100: color-mix(in oklab, oklch(40.8% 0.153 2.432) 42%, var(--sp5-dark-surface));
     --sp-cyan-300: color-mix(in oklab, oklch(52.5% 0.223 3.958) 68%, var(--sp5-dark-surface));
   }
+  html.dark[data-palette="pastel"] .bg-blue-500, html.dark[data-palette="pastel"] .hover\:bg-blue-500:hover { background-color: oklch(62.3% 0.118 271.9); }
   html.dark[data-palette="pastel"] .bg-blue-600, html.dark[data-palette="pastel"] .hover\:bg-blue-600:hover { background-color: oklch(54.6% 0.135 275); }
   html.dark[data-palette="pastel"] .bg-blue-700, html.dark[data-palette="pastel"] .hover\:bg-blue-700:hover { background-color: oklch(48.8% 0.134 276.5); }
   html.dark[data-palette="pastel"] .bg-blue-800, html.dark[data-palette="pastel"] .hover\:bg-blue-800:hover { background-color: oklch(42.4% 0.109 277.8); }
@@ -782,6 +805,7 @@
     --color-blue-900: oklch(93.2% 0.011 47.7);
     --color-blue-950: oklch(97% 0.005 46.7);
   }
+  html.dark[data-palette="paper"] .bg-blue-500, html.dark[data-palette="paper"] .hover\:bg-blue-500:hover { background-color: oklch(62.3% 0.075 51.9); }
   html.dark[data-palette="paper"] .bg-blue-600, html.dark[data-palette="paper"] .hover\:bg-blue-600:hover { background-color: oklch(54.6% 0.086 55); }
   html.dark[data-palette="paper"] .bg-blue-700, html.dark[data-palette="paper"] .hover\:bg-blue-700:hover { background-color: oklch(48.8% 0.085 56.5); }
   html.dark[data-palette="paper"] .bg-blue-800, html.dark[data-palette="paper"] .hover\:bg-blue-800:hover { background-color: oklch(42.4% 0.07 57.8); }
@@ -854,6 +878,7 @@
     --sp-fuchsia-100: color-mix(in oklab, oklch(37.9% 0.146 265.522) 42%, var(--sp5-dark-surface));
     --sp-fuchsia-300: color-mix(in oklab, oklch(48.8% 0.243 264.376) 68%, var(--sp5-dark-surface));
   }
+  html.dark[data-palette="cyber"] .bg-blue-500, html.dark[data-palette="cyber"] .hover\:bg-blue-500:hover { background-color: oklch(62.3% 0.214 326.9); }
   html.dark[data-palette="cyber"] .bg-blue-600, html.dark[data-palette="cyber"] .hover\:bg-blue-600:hover { background-color: oklch(54.6% 0.245 330); }
   html.dark[data-palette="cyber"] .bg-blue-700, html.dark[data-palette="cyber"] .hover\:bg-blue-700:hover { background-color: oklch(48.8% 0.221 331.5); }
   html.dark[data-palette="cyber"] .bg-blue-800, html.dark[data-palette="cyber"] .hover\:bg-blue-800:hover { background-color: oklch(42.4% 0.191 332.8); }
@@ -862,6 +887,193 @@
   html.dark[data-palette="cyber"] .bg-slate-800, html.dark[data-palette="cyber"] .hover\:bg-slate-800:hover { background-color: oklch(40% 0.042 201); }
   html.dark[data-palette="cyber"] .bg-slate-900, html.dark[data-palette="cyber"] .hover\:bg-slate-900:hover { background-color: oklch(40% 0.042 201); }
 
+  html.dark.dim:not(.hc) {
+    --sp5-dark-surface: oklch(30% 0.028 262);
+    --color-white: oklch(30% 0.028 262);
+    --color-bg-body: oklch(25% 0.026 263);
+    --color-bg-card: oklch(30% 0.028 262);
+    --color-bg-hover: oklch(34% 0.031 260);
+    --color-border: oklch(47% 0.035 258);
+    --color-slate-50: oklch(32.5% 0.029 261);
+    --color-slate-100: oklch(34% 0.031 260);
+    --color-slate-200: oklch(38% 0.033 259);
+    --color-slate-300: oklch(47% 0.035 258);
+    --color-slate-400: oklch(70% 0.032 257);
+    --color-slate-500: oklch(75% 0.028 257);
+    --color-slate-600: oklch(79% 0.024 257);
+    --color-slate-700: oklch(83% 0.019 257);
+    --color-slate-800: oklch(86% 0.014 257);
+    --color-slate-900: oklch(88% 0.01 257);
+    --color-slate-950: oklch(90% 0.006 257);
+    --color-red-500: oklch(80.8% 0.114 19.571);
+    --color-red-600: oklch(80.8% 0.114 19.571);
+    --color-orange-500: oklch(83.7% 0.128 66.29);
+    --color-orange-600: oklch(83.7% 0.128 66.29);
+    --color-amber-500: oklch(87.9% 0.169 91.605);
+    --color-amber-600: oklch(87.9% 0.169 91.605);
+    --color-yellow-500: oklch(90.5% 0.182 98.111);
+    --color-yellow-600: oklch(90.5% 0.182 98.111);
+    --color-lime-500: oklch(89.7% 0.196 126.665);
+    --color-lime-600: oklch(89.7% 0.196 126.665);
+    --color-green-500: oklch(87.1% 0.15 154.449);
+    --color-green-600: oklch(87.1% 0.15 154.449);
+    --color-emerald-500: oklch(84.5% 0.143 164.978);
+    --color-emerald-600: oklch(84.5% 0.143 164.978);
+    --color-teal-500: oklch(85.5% 0.138 181.071);
+    --color-teal-600: oklch(85.5% 0.138 181.071);
+    --color-cyan-500: oklch(86.5% 0.127 207.078);
+    --color-cyan-600: oklch(86.5% 0.127 207.078);
+    --color-sky-500: oklch(82.8% 0.111 230.318);
+    --color-sky-600: oklch(82.8% 0.111 230.318);
+    --color-indigo-500: oklch(78.5% 0.115 274.713);
+    --color-indigo-600: oklch(78.5% 0.115 274.713);
+    --color-violet-500: oklch(81.1% 0.111 293.571);
+    --color-violet-600: oklch(81.1% 0.111 293.571);
+    --color-purple-500: oklch(82.7% 0.119 306.383);
+    --color-purple-600: oklch(82.7% 0.119 306.383);
+    --color-fuchsia-500: oklch(83.3% 0.145 321.434);
+    --color-fuchsia-600: oklch(83.3% 0.145 321.434);
+    --color-pink-500: oklch(82.3% 0.12 346.018);
+    --color-pink-600: oklch(82.3% 0.12 346.018);
+    --color-rose-500: oklch(81% 0.117 11.638);
+    --color-rose-600: oklch(81% 0.117 11.638);
+    --color-cobalt-500: oklch(80.9% 0.105 251.813);
+    --color-cobalt-600: oklch(80.9% 0.105 251.813);
+  }
+  html.dark.dim:not(.hc)[data-palette="forest"] {
+    --sp5-dark-surface: oklch(30% 0.02 155);
+    --color-white: oklch(30% 0.02 155);
+    --color-bg-body: oklch(25% 0.018 156);
+    --color-bg-card: oklch(30% 0.02 155);
+    --color-bg-hover: oklch(34% 0.022 153);
+    --color-border: oklch(47% 0.025 151);
+    --color-slate-50: oklch(32.5% 0.02 154);
+    --color-slate-100: oklch(34% 0.022 153);
+    --color-slate-200: oklch(38% 0.023 152);
+    --color-slate-300: oklch(47% 0.025 151);
+    --color-slate-400: oklch(70% 0.022 150);
+    --color-slate-500: oklch(75% 0.02 150);
+    --color-slate-600: oklch(79% 0.017 150);
+    --color-slate-700: oklch(83% 0.013 150);
+    --color-slate-800: oklch(86% 0.01 150);
+    --color-slate-900: oklch(88% 0.007 150);
+    --color-slate-950: oklch(90% 0.004 150);
+  }
+  html.dark.dim:not(.hc)[data-palette="cherry"] {
+    --sp5-dark-surface: oklch(30% 0.014 350);
+    --color-white: oklch(30% 0.014 350);
+    --color-bg-body: oklch(25% 0.013 351);
+    --color-bg-card: oklch(30% 0.014 350);
+    --color-bg-hover: oklch(34% 0.015 348);
+    --color-border: oklch(47% 0.018 346);
+    --color-slate-50: oklch(32.5% 0.015 349);
+    --color-slate-100: oklch(34% 0.015 348);
+    --color-slate-200: oklch(38% 0.017 347);
+    --color-slate-300: oklch(47% 0.018 346);
+    --color-slate-400: oklch(70% 0.016 345);
+    --color-slate-500: oklch(75% 0.014 345);
+    --color-slate-600: oklch(79% 0.012 345);
+    --color-slate-700: oklch(83% 0.009 345);
+    --color-slate-800: oklch(86% 0.007 345);
+    --color-slate-900: oklch(88% 0.005 345);
+    --color-slate-950: oklch(90% 0.003 345);
+  }
+  html.dark.dim:not(.hc)[data-palette="lavender"] {
+    --sp5-dark-surface: oklch(30% 0.017 305);
+    --color-white: oklch(30% 0.017 305);
+    --color-bg-body: oklch(25% 0.016 306);
+    --color-bg-card: oklch(30% 0.017 305);
+    --color-bg-hover: oklch(34% 0.019 303);
+    --color-border: oklch(47% 0.021 301);
+    --color-slate-50: oklch(32.5% 0.017 304);
+    --color-slate-100: oklch(34% 0.019 303);
+    --color-slate-200: oklch(38% 0.02 302);
+    --color-slate-300: oklch(47% 0.021 301);
+    --color-slate-400: oklch(70% 0.019 300);
+    --color-slate-500: oklch(75% 0.017 300);
+    --color-slate-600: oklch(79% 0.014 300);
+    --color-slate-700: oklch(83% 0.011 300);
+    --color-slate-800: oklch(86% 0.008 300);
+    --color-slate-900: oklch(88% 0.006 300);
+    --color-slate-950: oklch(90% 0.004 300);
+  }
+  html.dark.dim:not(.hc)[data-palette="calm"] {
+    --sp5-dark-surface: oklch(30% 0.01 255);
+    --color-white: oklch(30% 0.01 255);
+    --color-bg-body: oklch(25% 0.009 256);
+    --color-bg-card: oklch(30% 0.01 255);
+    --color-bg-hover: oklch(34% 0.011 253);
+    --color-border: oklch(47% 0.012 251);
+    --color-slate-50: oklch(32.5% 0.01 254);
+    --color-slate-100: oklch(34% 0.011 253);
+    --color-slate-200: oklch(38% 0.012 252);
+    --color-slate-300: oklch(47% 0.012 251);
+    --color-slate-400: oklch(70% 0.011 250);
+    --color-slate-500: oklch(75% 0.01 250);
+    --color-slate-600: oklch(79% 0.008 250);
+    --color-slate-700: oklch(83% 0.007 250);
+    --color-slate-800: oklch(86% 0.005 250);
+    --color-slate-900: oklch(88% 0.003 250);
+    --color-slate-950: oklch(90% 0.002 250);
+  }
+  html.dark.dim:not(.hc)[data-palette="pastel"] {
+    --sp5-dark-surface: oklch(30% 0.017 90);
+    --color-white: oklch(30% 0.017 90);
+    --color-bg-body: oklch(25% 0.016 91);
+    --color-bg-card: oklch(30% 0.017 90);
+    --color-bg-hover: oklch(34% 0.019 88);
+    --color-border: oklch(47% 0.021 86);
+    --color-slate-50: oklch(32.5% 0.017 89);
+    --color-slate-100: oklch(34% 0.019 88);
+    --color-slate-200: oklch(38% 0.02 87);
+    --color-slate-300: oklch(47% 0.021 86);
+    --color-slate-400: oklch(70% 0.019 85);
+    --color-slate-500: oklch(75% 0.017 85);
+    --color-slate-600: oklch(79% 0.014 85);
+    --color-slate-700: oklch(83% 0.011 85);
+    --color-slate-800: oklch(86% 0.008 85);
+    --color-slate-900: oklch(88% 0.006 85);
+    --color-slate-950: oklch(90% 0.004 85);
+  }
+  html.dark.dim:not(.hc)[data-palette="paper"] {
+    --sp5-dark-surface: oklch(30% 0.025 75);
+    --color-white: oklch(30% 0.025 75);
+    --color-bg-body: oklch(25% 0.023 76);
+    --color-bg-card: oklch(30% 0.025 75);
+    --color-bg-hover: oklch(34% 0.028 73);
+    --color-border: oklch(47% 0.032 71);
+    --color-slate-50: oklch(32.5% 0.026 74);
+    --color-slate-100: oklch(34% 0.028 73);
+    --color-slate-200: oklch(38% 0.03 72);
+    --color-slate-300: oklch(47% 0.032 71);
+    --color-slate-400: oklch(70% 0.029 70);
+    --color-slate-500: oklch(75% 0.025 70);
+    --color-slate-600: oklch(79% 0.022 70);
+    --color-slate-700: oklch(83% 0.017 70);
+    --color-slate-800: oklch(86% 0.013 70);
+    --color-slate-900: oklch(88% 0.009 70);
+    --color-slate-950: oklch(90% 0.005 70);
+  }
+  html.dark.dim:not(.hc)[data-palette="cyber"] {
+    --sp5-dark-surface: oklch(30% 0.034 205);
+    --color-white: oklch(30% 0.034 205);
+    --color-bg-body: oklch(25% 0.031 206);
+    --color-bg-card: oklch(30% 0.034 205);
+    --color-bg-hover: oklch(34% 0.037 203);
+    --color-border: oklch(47% 0.042 201);
+    --color-slate-50: oklch(32.5% 0.035 204);
+    --color-slate-100: oklch(34% 0.037 203);
+    --color-slate-200: oklch(38% 0.04 202);
+    --color-slate-300: oklch(47% 0.042 201);
+    --color-slate-400: oklch(70% 0.038 200);
+    --color-slate-500: oklch(75% 0.034 200);
+    --color-slate-600: oklch(79% 0.029 200);
+    --color-slate-700: oklch(83% 0.023 200);
+    --color-slate-800: oklch(86% 0.017 200);
+    --color-slate-900: oklch(88% 0.012 200);
+    --color-slate-950: oklch(90% 0.007 200);
+  }
+  html.dark.dim:not(.hc) .text-primary, html.dark.dim:not(.hc) .hover\:text-primary:hover, html.dark.dim:not(.hc) .text-blue-500, html.dark.dim:not(.hc) .hover\:text-blue-500:hover, html.dark.dim:not(.hc) .text-blue-600, html.dark.dim:not(.hc) .hover\:text-blue-600:hover { color: var(--color-blue-700); }
   html.cvd {
     --color-emerald-50: oklch(97.9% 0.02 207.9);
     --color-emerald-100: oklch(95% 0.052 204.8);
@@ -889,6 +1101,7 @@
     --color-emerald-900: oklch(95% 0.052 204.8);
     --color-emerald-950: oklch(97.9% 0.02 207.9);
   }
+  html.dark.cvd .bg-emerald-500, html.dark.cvd .hover\:bg-emerald-500:hover { background-color: oklch(69.6% 0.119 204.3); }
   html.dark.cvd .bg-emerald-600, html.dark.cvd .hover\:bg-emerald-600:hover { background-color: oklch(59.6% 0.102 205); }
   html.dark.cvd .bg-emerald-700, html.dark.cvd .hover\:bg-emerald-700:hover { background-color: oklch(50.8% 0.087 207.4); }
   html.dark.cvd .bg-emerald-800, html.dark.cvd .hover\:bg-emerald-800:hover { background-color: oklch(43.2% 0.075 208.7); }
@@ -920,6 +1133,7 @@
     --color-red-900: oklch(93.6% 0.032 30.4);
     --color-red-950: oklch(97.1% 0.013 30.1);
   }
+  html.dark.cvd .bg-red-500, html.dark.cvd .hover\:bg-red-500:hover { background-color: oklch(63.7% 0.209 38); }
   html.dark.cvd .bg-red-600, html.dark.cvd .hover\:bg-red-600:hover { background-color: oklch(57.7% 0.181 40); }
   html.dark.cvd .bg-red-700, html.dark.cvd .hover\:bg-red-700:hover { background-color: oklch(50.5% 0.158 40.2); }
   html.dark.cvd .bg-red-800, html.dark.cvd .hover\:bg-red-800:hover { background-color: oklch(44.4% 0.141 39.6); }
@@ -951,6 +1165,7 @@
     --color-rose-900: oklch(94.1% 0.03 35);
     --color-rose-950: oklch(96.9% 0.015 34.8);
   }
+  html.dark.cvd .bg-rose-500, html.dark.cvd .hover\:bg-rose-500:hover { background-color: oklch(64.5% 0.207 38.9); }
   html.dark.cvd .bg-rose-600, html.dark.cvd .hover\:bg-rose-600:hover { background-color: oklch(58.6% 0.184 40); }
   html.dark.cvd .bg-rose-700, html.dark.cvd .hover\:bg-rose-700:hover { background-color: oklch(51.4% 0.164 39.4); }
   html.dark.cvd .bg-rose-800, html.dark.cvd .hover\:bg-rose-800:hover { background-color: oklch(45.5% 0.156 36.1); }
@@ -982,6 +1197,7 @@
     --color-emerald-900: oklch(95% 0.026 244.8);
     --color-emerald-950: oklch(97.9% 0.01 247.9);
   }
+  html.dark.cvd[data-palette="forest"] .bg-emerald-500, html.dark.cvd[data-palette="forest"] .hover\:bg-emerald-500:hover { background-color: oklch(69.6% 0.17 244.3); }
   html.dark.cvd[data-palette="forest"] .bg-emerald-600, html.dark.cvd[data-palette="forest"] .hover\:bg-emerald-600:hover { background-color: oklch(59.6% 0.145 245); }
   html.dark.cvd[data-palette="forest"] .bg-emerald-700, html.dark.cvd[data-palette="forest"] .hover\:bg-emerald-700:hover { background-color: oklch(50.8% 0.118 247.4); }
   html.dark.cvd[data-palette="forest"] .bg-emerald-800, html.dark.cvd[data-palette="forest"] .hover\:bg-emerald-800:hover { background-color: oklch(43.2% 0.095 248.7); }
@@ -1013,6 +1229,7 @@
     --color-emerald-900: oklch(95% 0.026 244.8);
     --color-emerald-950: oklch(97.9% 0.01 247.9);
   }
+  html.dark.cvd[data-palette="cherry"] .bg-emerald-500, html.dark.cvd[data-palette="cherry"] .hover\:bg-emerald-500:hover { background-color: oklch(69.6% 0.17 244.3); }
   html.dark.cvd[data-palette="cherry"] .bg-emerald-600, html.dark.cvd[data-palette="cherry"] .hover\:bg-emerald-600:hover { background-color: oklch(59.6% 0.145 245); }
   html.dark.cvd[data-palette="cherry"] .bg-emerald-700, html.dark.cvd[data-palette="cherry"] .hover\:bg-emerald-700:hover { background-color: oklch(50.8% 0.118 247.4); }
   html.dark.cvd[data-palette="cherry"] .bg-emerald-800, html.dark.cvd[data-palette="cherry"] .hover\:bg-emerald-800:hover { background-color: oklch(43.2% 0.095 248.7); }
@@ -1044,6 +1261,7 @@
     --color-emerald-900: oklch(95% 0.026 244.8);
     --color-emerald-950: oklch(97.9% 0.01 247.9);
   }
+  html.dark.cvd[data-palette="paper"] .bg-emerald-500, html.dark.cvd[data-palette="paper"] .hover\:bg-emerald-500:hover { background-color: oklch(69.6% 0.17 244.3); }
   html.dark.cvd[data-palette="paper"] .bg-emerald-600, html.dark.cvd[data-palette="paper"] .hover\:bg-emerald-600:hover { background-color: oklch(59.6% 0.145 245); }
   html.dark.cvd[data-palette="paper"] .bg-emerald-700, html.dark.cvd[data-palette="paper"] .hover\:bg-emerald-700:hover { background-color: oklch(50.8% 0.118 247.4); }
   html.dark.cvd[data-palette="paper"] .bg-emerald-800, html.dark.cvd[data-palette="paper"] .hover\:bg-emerald-800:hover { background-color: oklch(43.2% 0.095 248.7); }
