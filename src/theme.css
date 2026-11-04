@@ -1,6 +1,9 @@
 /* src/theme.css - tools/gen-theme-css.mjs 가 만든다(색 셈은 src/domain/themeCss.ts, 테마 값은 src/domain/palettes.json).
    손으로 고치지 말고 그 둘을 고쳐 다시 돌린다: node tools/gen-theme-css.mjs  (ROADMAP 17 어둡게 · P20 색 테마) */
 @media screen {
+  html {
+    --sp5-accent-strong: oklch(42.4% 0.199 265.638);
+  }
   html.dark {
     color-scheme: dark;
     --sp5-dark-surface: oklch(23% 0.028 262);
@@ -341,6 +344,11 @@
   html.dark .bg-slate-700, html.dark .hover\:bg-slate-700:hover { background-color: oklch(40% 0.035 258); }
   html.dark .bg-slate-800, html.dark .hover\:bg-slate-800:hover { background-color: oklch(40% 0.035 258); }
   html.dark .bg-slate-900, html.dark .hover\:bg-slate-900:hover { background-color: oklch(40% 0.035 258); }
+  html.dark .bg-slate-900\/95 { background-color: color-mix(in oklab, var(--color-slate-300) 95%, transparent); --color-slate-200: oklch(92.9% 0.013 255.508); --color-slate-400: oklch(86.9% 0.022 252.894); --color-slate-900: oklch(20.8% 0.042 265.755); --color-amber-300: oklch(87.9% 0.169 91.605); --color-sky-300: oklch(82.8% 0.111 230.318); }
+  html.dark .bg-slate-900\/90 { background-color: color-mix(in oklab, var(--color-slate-300) 90%, transparent); }
+  html.dark .bg-slate-600\/90 { background-color: color-mix(in oklab, var(--color-slate-300) 90%, transparent); }
+  html.dark .bg-slate-900\/40 { background-color: rgb(0 0 0 / 0.4); }
+  html.dark .bg-red-600\/95 { background-color: color-mix(in oklab, oklch(57.7% 0.245 27.325) 95%, transparent); }
   html.dark .text-white, html.dark .hover\:text-white:hover, html.dark .group:hover .group-hover\:text-white { color: #fff; }
   html.dark .text-white\/60 { color: rgb(255 255 255 / 0.6); }
   html.dark .text-white\/50 { color: rgb(255 255 255 / 0.5); }
@@ -354,6 +362,7 @@
   /* 🌲 숲 (공간 색 emerald→cobalt · lime→pink) */
   html[data-palette="forest"] {
     --color-primary: oklch(55.4% 0.149 130);
+    --sp5-accent-strong: oklch(42.4% 0.131 137.8);
     --color-bg-body: oklch(98.4% 0.002 140.9);
     --color-bg-hover: oklch(96.8% 0.005 140.9);
     --color-border: oklch(86.9% 0.015 145.9);
@@ -429,6 +438,7 @@
   /* 🌸 벚꽃 (공간 색 fuchsia→cobalt) */
   html[data-palette="cherry"] {
     --color-primary: oklch(57.4% 0.195 335);
+    --sp5-accent-strong: oklch(42.4% 0.182 342.8);
     --color-bg-body: oklch(98.4% 0.002 335.9);
     --color-bg-hover: oklch(96.8% 0.004 335.9);
     --color-border: oklch(86.9% 0.011 340.9);
@@ -500,6 +510,7 @@
   /* 💜 라벤더 */
   html[data-palette="lavender"] {
     --color-primary: oklch(57.4% 0.097 295);
+    --sp5-accent-strong: oklch(42.4% 0.1 302.8);
     --color-bg-body: oklch(98.4% 0.002 290.9);
     --color-bg-hover: oklch(96.8% 0.004 290.9);
     --color-border: oklch(86.9% 0.013 295.9);
@@ -567,6 +578,7 @@
   /* 🌫️ 차분한 회색 (공간 색 cyan→cobalt) */
   html[data-palette="calm"] {
     --color-primary: oklch(56.4% 0.058 245);
+    --sp5-accent-strong: oklch(42.4% 0.06 252.8);
     --color-bg-body: oklch(98.4% 0.001 240.9);
     --color-bg-hover: oklch(96.8% 0.002 240.9);
     --color-border: oklch(86.9% 0.008 245.9);
@@ -638,6 +650,7 @@
   /* 🍦 파스텔 (공간 색 cyan→pink) */
   html[data-palette="pastel"] {
     --color-primary: oklch(56.9% 0.107 270);
+    --sp5-accent-strong: oklch(42.4% 0.109 277.8);
     --color-bg-body: oklch(97.5% 0.014 85);
     --color-bg-hover: oklch(96.8% 0.004 75.9);
     --color-border: oklch(86.9% 0.013 80.9);
@@ -709,6 +722,7 @@
   /* 📜 종이 */
   html[data-palette="paper"] {
     --color-primary: oklch(56.9% 0.068 50);
+    --sp5-accent-strong: oklch(42.4% 0.07 57.8);
     --color-bg-body: oklch(97.3% 0.02 85);
     --color-bg-hover: oklch(96.8% 0.006 60.9);
     --color-border: oklch(86.9% 0.02 65.9);
@@ -776,6 +790,7 @@
   /* 🌃 사이버 (공간 색 fuchsia→cobalt) */
   html[data-palette="cyber"] {
     --color-primary: oklch(57.4% 0.195 325);
+    --sp5-accent-strong: oklch(42.4% 0.191 332.8);
     --color-bg-body: oklch(98.4% 0.004 190.9);
     --color-bg-hover: oklch(96.8% 0.008 190.9);
     --color-border: oklch(86.9% 0.026 195.9);
@@ -844,10 +859,237 @@
   html.dark[data-palette="cyber"] .bg-slate-800, html.dark[data-palette="cyber"] .hover\:bg-slate-800:hover { background-color: oklch(40% 0.042 201); }
   html.dark[data-palette="cyber"] .bg-slate-900, html.dark[data-palette="cyber"] .hover\:bg-slate-900:hover { background-color: oklch(40% 0.042 201); }
 
+  html.hc.hc.hc {
+    --color-primary: var(--sp5-accent-strong);
+    --color-border: var(--color-slate-500);
+  }
+  html.hc.hc.hc .text-slate-300, html.hc.hc.hc .hover\:text-slate-300:hover { color: var(--color-slate-700); }
+  html.hc.hc.hc .text-slate-400, html.hc.hc.hc .hover\:text-slate-400:hover { color: var(--color-slate-700); }
+  html.hc.hc.hc .text-slate-500, html.hc.hc.hc .hover\:text-slate-500:hover { color: var(--color-slate-700); }
+  html.hc.hc.hc .text-slate-600, html.hc.hc.hc .hover\:text-slate-600:hover { color: var(--color-slate-800); }
+  html.hc.hc.hc .text-slate-700, html.hc.hc.hc .hover\:text-slate-700:hover { color: var(--color-slate-900); }
+  html.hc.hc.hc .text-slate-800, html.hc.hc.hc .hover\:text-slate-800:hover { color: var(--color-slate-950); }
+  html.hc.hc.hc .text-stone-300, html.hc.hc.hc .hover\:text-stone-300:hover { color: var(--color-stone-700); }
+  html.hc.hc.hc .text-stone-400, html.hc.hc.hc .hover\:text-stone-400:hover { color: var(--color-stone-700); }
+  html.hc.hc.hc .text-stone-500, html.hc.hc.hc .hover\:text-stone-500:hover { color: var(--color-stone-700); }
+  html.hc.hc.hc .text-stone-600, html.hc.hc.hc .hover\:text-stone-600:hover { color: var(--color-stone-800); }
+  html.hc.hc.hc .text-stone-700, html.hc.hc.hc .hover\:text-stone-700:hover { color: var(--color-stone-900); }
+  html.hc.hc.hc .text-stone-800, html.hc.hc.hc .hover\:text-stone-800:hover { color: var(--color-stone-950); }
+  html.hc.hc.hc .text-red-400, html.hc.hc.hc .hover\:text-red-400:hover { color: var(--color-red-900); }
+  html.hc.hc.hc .text-red-500, html.hc.hc.hc .hover\:text-red-500:hover { color: var(--color-red-900); }
+  html.hc.hc.hc .text-red-600, html.hc.hc.hc .hover\:text-red-600:hover { color: var(--color-red-900); }
+  html.hc.hc.hc .text-red-700, html.hc.hc.hc .hover\:text-red-700:hover { color: var(--color-red-900); }
+  html.hc.hc.hc .text-red-800, html.hc.hc.hc .hover\:text-red-800:hover { color: var(--color-red-950); }
+  html.hc.hc.hc .text-red-900, html.hc.hc.hc .hover\:text-red-900:hover { color: var(--color-red-950); }
+  html.hc.hc.hc .text-orange-400, html.hc.hc.hc .hover\:text-orange-400:hover { color: var(--color-orange-900); }
+  html.hc.hc.hc .text-orange-500, html.hc.hc.hc .hover\:text-orange-500:hover { color: var(--color-orange-900); }
+  html.hc.hc.hc .text-orange-600, html.hc.hc.hc .hover\:text-orange-600:hover { color: var(--color-orange-900); }
+  html.hc.hc.hc .text-orange-700, html.hc.hc.hc .hover\:text-orange-700:hover { color: var(--color-orange-900); }
+  html.hc.hc.hc .text-orange-800, html.hc.hc.hc .hover\:text-orange-800:hover { color: var(--color-orange-950); }
+  html.hc.hc.hc .text-orange-900, html.hc.hc.hc .hover\:text-orange-900:hover { color: var(--color-orange-950); }
+  html.hc.hc.hc .text-amber-400, html.hc.hc.hc .hover\:text-amber-400:hover { color: var(--color-amber-900); }
+  html.hc.hc.hc .text-amber-500, html.hc.hc.hc .hover\:text-amber-500:hover { color: var(--color-amber-900); }
+  html.hc.hc.hc .text-amber-600, html.hc.hc.hc .hover\:text-amber-600:hover { color: var(--color-amber-900); }
+  html.hc.hc.hc .text-amber-700, html.hc.hc.hc .hover\:text-amber-700:hover { color: var(--color-amber-900); }
+  html.hc.hc.hc .text-amber-800, html.hc.hc.hc .hover\:text-amber-800:hover { color: var(--color-amber-950); }
+  html.hc.hc.hc .text-amber-900, html.hc.hc.hc .hover\:text-amber-900:hover { color: var(--color-amber-950); }
+  html.hc.hc.hc .text-yellow-400, html.hc.hc.hc .hover\:text-yellow-400:hover { color: var(--color-yellow-900); }
+  html.hc.hc.hc .text-yellow-500, html.hc.hc.hc .hover\:text-yellow-500:hover { color: var(--color-yellow-900); }
+  html.hc.hc.hc .text-yellow-600, html.hc.hc.hc .hover\:text-yellow-600:hover { color: var(--color-yellow-900); }
+  html.hc.hc.hc .text-yellow-700, html.hc.hc.hc .hover\:text-yellow-700:hover { color: var(--color-yellow-900); }
+  html.hc.hc.hc .text-yellow-800, html.hc.hc.hc .hover\:text-yellow-800:hover { color: var(--color-yellow-950); }
+  html.hc.hc.hc .text-yellow-900, html.hc.hc.hc .hover\:text-yellow-900:hover { color: var(--color-yellow-950); }
+  html.hc.hc.hc .text-lime-400, html.hc.hc.hc .hover\:text-lime-400:hover { color: var(--color-lime-900); }
+  html.hc.hc.hc .text-lime-500, html.hc.hc.hc .hover\:text-lime-500:hover { color: var(--color-lime-900); }
+  html.hc.hc.hc .text-lime-600, html.hc.hc.hc .hover\:text-lime-600:hover { color: var(--color-lime-900); }
+  html.hc.hc.hc .text-lime-700, html.hc.hc.hc .hover\:text-lime-700:hover { color: var(--color-lime-900); }
+  html.hc.hc.hc .text-lime-800, html.hc.hc.hc .hover\:text-lime-800:hover { color: var(--color-lime-950); }
+  html.hc.hc.hc .text-lime-900, html.hc.hc.hc .hover\:text-lime-900:hover { color: var(--color-lime-950); }
+  html.hc.hc.hc .text-green-400, html.hc.hc.hc .hover\:text-green-400:hover { color: var(--color-green-900); }
+  html.hc.hc.hc .text-green-500, html.hc.hc.hc .hover\:text-green-500:hover { color: var(--color-green-900); }
+  html.hc.hc.hc .text-green-600, html.hc.hc.hc .hover\:text-green-600:hover { color: var(--color-green-900); }
+  html.hc.hc.hc .text-green-700, html.hc.hc.hc .hover\:text-green-700:hover { color: var(--color-green-900); }
+  html.hc.hc.hc .text-green-800, html.hc.hc.hc .hover\:text-green-800:hover { color: var(--color-green-950); }
+  html.hc.hc.hc .text-green-900, html.hc.hc.hc .hover\:text-green-900:hover { color: var(--color-green-950); }
+  html.hc.hc.hc .text-emerald-400, html.hc.hc.hc .hover\:text-emerald-400:hover { color: var(--color-emerald-900); }
+  html.hc.hc.hc .text-emerald-500, html.hc.hc.hc .hover\:text-emerald-500:hover { color: var(--color-emerald-900); }
+  html.hc.hc.hc .text-emerald-600, html.hc.hc.hc .hover\:text-emerald-600:hover { color: var(--color-emerald-900); }
+  html.hc.hc.hc .text-emerald-700, html.hc.hc.hc .hover\:text-emerald-700:hover { color: var(--color-emerald-900); }
+  html.hc.hc.hc .text-emerald-800, html.hc.hc.hc .hover\:text-emerald-800:hover { color: var(--color-emerald-950); }
+  html.hc.hc.hc .text-emerald-900, html.hc.hc.hc .hover\:text-emerald-900:hover { color: var(--color-emerald-950); }
+  html.hc.hc.hc .text-teal-400, html.hc.hc.hc .hover\:text-teal-400:hover { color: var(--color-teal-900); }
+  html.hc.hc.hc .text-teal-500, html.hc.hc.hc .hover\:text-teal-500:hover { color: var(--color-teal-900); }
+  html.hc.hc.hc .text-teal-600, html.hc.hc.hc .hover\:text-teal-600:hover { color: var(--color-teal-900); }
+  html.hc.hc.hc .text-teal-700, html.hc.hc.hc .hover\:text-teal-700:hover { color: var(--color-teal-900); }
+  html.hc.hc.hc .text-teal-800, html.hc.hc.hc .hover\:text-teal-800:hover { color: var(--color-teal-950); }
+  html.hc.hc.hc .text-teal-900, html.hc.hc.hc .hover\:text-teal-900:hover { color: var(--color-teal-950); }
+  html.hc.hc.hc .text-cyan-400, html.hc.hc.hc .hover\:text-cyan-400:hover { color: var(--color-cyan-900); }
+  html.hc.hc.hc .text-cyan-500, html.hc.hc.hc .hover\:text-cyan-500:hover { color: var(--color-cyan-900); }
+  html.hc.hc.hc .text-cyan-600, html.hc.hc.hc .hover\:text-cyan-600:hover { color: var(--color-cyan-900); }
+  html.hc.hc.hc .text-cyan-700, html.hc.hc.hc .hover\:text-cyan-700:hover { color: var(--color-cyan-900); }
+  html.hc.hc.hc .text-cyan-800, html.hc.hc.hc .hover\:text-cyan-800:hover { color: var(--color-cyan-950); }
+  html.hc.hc.hc .text-cyan-900, html.hc.hc.hc .hover\:text-cyan-900:hover { color: var(--color-cyan-950); }
+  html.hc.hc.hc .text-sky-400, html.hc.hc.hc .hover\:text-sky-400:hover { color: var(--color-sky-900); }
+  html.hc.hc.hc .text-sky-500, html.hc.hc.hc .hover\:text-sky-500:hover { color: var(--color-sky-900); }
+  html.hc.hc.hc .text-sky-600, html.hc.hc.hc .hover\:text-sky-600:hover { color: var(--color-sky-900); }
+  html.hc.hc.hc .text-sky-700, html.hc.hc.hc .hover\:text-sky-700:hover { color: var(--color-sky-900); }
+  html.hc.hc.hc .text-sky-800, html.hc.hc.hc .hover\:text-sky-800:hover { color: var(--color-sky-950); }
+  html.hc.hc.hc .text-sky-900, html.hc.hc.hc .hover\:text-sky-900:hover { color: var(--color-sky-950); }
+  html.hc.hc.hc .text-blue-400, html.hc.hc.hc .hover\:text-blue-400:hover { color: var(--color-blue-900); }
+  html.hc.hc.hc .text-blue-500, html.hc.hc.hc .hover\:text-blue-500:hover { color: var(--color-blue-900); }
+  html.hc.hc.hc .text-blue-600, html.hc.hc.hc .hover\:text-blue-600:hover { color: var(--color-blue-900); }
+  html.hc.hc.hc .text-blue-700, html.hc.hc.hc .hover\:text-blue-700:hover { color: var(--color-blue-900); }
+  html.hc.hc.hc .text-blue-800, html.hc.hc.hc .hover\:text-blue-800:hover { color: var(--color-blue-950); }
+  html.hc.hc.hc .text-blue-900, html.hc.hc.hc .hover\:text-blue-900:hover { color: var(--color-blue-950); }
+  html.hc.hc.hc .text-indigo-400, html.hc.hc.hc .hover\:text-indigo-400:hover { color: var(--color-indigo-900); }
+  html.hc.hc.hc .text-indigo-500, html.hc.hc.hc .hover\:text-indigo-500:hover { color: var(--color-indigo-900); }
+  html.hc.hc.hc .text-indigo-600, html.hc.hc.hc .hover\:text-indigo-600:hover { color: var(--color-indigo-900); }
+  html.hc.hc.hc .text-indigo-700, html.hc.hc.hc .hover\:text-indigo-700:hover { color: var(--color-indigo-900); }
+  html.hc.hc.hc .text-indigo-800, html.hc.hc.hc .hover\:text-indigo-800:hover { color: var(--color-indigo-950); }
+  html.hc.hc.hc .text-indigo-900, html.hc.hc.hc .hover\:text-indigo-900:hover { color: var(--color-indigo-950); }
+  html.hc.hc.hc .text-violet-400, html.hc.hc.hc .hover\:text-violet-400:hover { color: var(--color-violet-900); }
+  html.hc.hc.hc .text-violet-500, html.hc.hc.hc .hover\:text-violet-500:hover { color: var(--color-violet-900); }
+  html.hc.hc.hc .text-violet-600, html.hc.hc.hc .hover\:text-violet-600:hover { color: var(--color-violet-900); }
+  html.hc.hc.hc .text-violet-700, html.hc.hc.hc .hover\:text-violet-700:hover { color: var(--color-violet-900); }
+  html.hc.hc.hc .text-violet-800, html.hc.hc.hc .hover\:text-violet-800:hover { color: var(--color-violet-950); }
+  html.hc.hc.hc .text-violet-900, html.hc.hc.hc .hover\:text-violet-900:hover { color: var(--color-violet-950); }
+  html.hc.hc.hc .text-purple-400, html.hc.hc.hc .hover\:text-purple-400:hover { color: var(--color-purple-900); }
+  html.hc.hc.hc .text-purple-500, html.hc.hc.hc .hover\:text-purple-500:hover { color: var(--color-purple-900); }
+  html.hc.hc.hc .text-purple-600, html.hc.hc.hc .hover\:text-purple-600:hover { color: var(--color-purple-900); }
+  html.hc.hc.hc .text-purple-700, html.hc.hc.hc .hover\:text-purple-700:hover { color: var(--color-purple-900); }
+  html.hc.hc.hc .text-purple-800, html.hc.hc.hc .hover\:text-purple-800:hover { color: var(--color-purple-950); }
+  html.hc.hc.hc .text-purple-900, html.hc.hc.hc .hover\:text-purple-900:hover { color: var(--color-purple-950); }
+  html.hc.hc.hc .text-fuchsia-400, html.hc.hc.hc .hover\:text-fuchsia-400:hover { color: var(--color-fuchsia-900); }
+  html.hc.hc.hc .text-fuchsia-500, html.hc.hc.hc .hover\:text-fuchsia-500:hover { color: var(--color-fuchsia-900); }
+  html.hc.hc.hc .text-fuchsia-600, html.hc.hc.hc .hover\:text-fuchsia-600:hover { color: var(--color-fuchsia-900); }
+  html.hc.hc.hc .text-fuchsia-700, html.hc.hc.hc .hover\:text-fuchsia-700:hover { color: var(--color-fuchsia-900); }
+  html.hc.hc.hc .text-fuchsia-800, html.hc.hc.hc .hover\:text-fuchsia-800:hover { color: var(--color-fuchsia-950); }
+  html.hc.hc.hc .text-fuchsia-900, html.hc.hc.hc .hover\:text-fuchsia-900:hover { color: var(--color-fuchsia-950); }
+  html.hc.hc.hc .text-pink-400, html.hc.hc.hc .hover\:text-pink-400:hover { color: var(--color-pink-900); }
+  html.hc.hc.hc .text-pink-500, html.hc.hc.hc .hover\:text-pink-500:hover { color: var(--color-pink-900); }
+  html.hc.hc.hc .text-pink-600, html.hc.hc.hc .hover\:text-pink-600:hover { color: var(--color-pink-900); }
+  html.hc.hc.hc .text-pink-700, html.hc.hc.hc .hover\:text-pink-700:hover { color: var(--color-pink-900); }
+  html.hc.hc.hc .text-pink-800, html.hc.hc.hc .hover\:text-pink-800:hover { color: var(--color-pink-950); }
+  html.hc.hc.hc .text-pink-900, html.hc.hc.hc .hover\:text-pink-900:hover { color: var(--color-pink-950); }
+  html.hc.hc.hc .text-rose-400, html.hc.hc.hc .hover\:text-rose-400:hover { color: var(--color-rose-900); }
+  html.hc.hc.hc .text-rose-500, html.hc.hc.hc .hover\:text-rose-500:hover { color: var(--color-rose-900); }
+  html.hc.hc.hc .text-rose-600, html.hc.hc.hc .hover\:text-rose-600:hover { color: var(--color-rose-900); }
+  html.hc.hc.hc .text-rose-700, html.hc.hc.hc .hover\:text-rose-700:hover { color: var(--color-rose-900); }
+  html.hc.hc.hc .text-rose-800, html.hc.hc.hc .hover\:text-rose-800:hover { color: var(--color-rose-950); }
+  html.hc.hc.hc .text-rose-900, html.hc.hc.hc .hover\:text-rose-900:hover { color: var(--color-rose-950); }
+  html.hc.hc.hc .text-cobalt-400, html.hc.hc.hc .hover\:text-cobalt-400:hover { color: var(--color-cobalt-900); }
+  html.hc.hc.hc .text-cobalt-500, html.hc.hc.hc .hover\:text-cobalt-500:hover { color: var(--color-cobalt-900); }
+  html.hc.hc.hc .text-cobalt-600, html.hc.hc.hc .hover\:text-cobalt-600:hover { color: var(--color-cobalt-900); }
+  html.hc.hc.hc .text-cobalt-700, html.hc.hc.hc .hover\:text-cobalt-700:hover { color: var(--color-cobalt-900); }
+  html.hc.hc.hc .text-cobalt-800, html.hc.hc.hc .hover\:text-cobalt-800:hover { color: var(--color-cobalt-950); }
+  html.hc.hc.hc .text-cobalt-900, html.hc.hc.hc .hover\:text-cobalt-900:hover { color: var(--color-cobalt-950); }
+  html.hc.hc.hc .text-primary, html.hc.hc.hc .hover\:text-primary:hover { color: var(--color-blue-800); }
+  html.hc.hc.hc ::placeholder { color: var(--color-slate-700); }
+  html.hc.hc.hc .hover\:text-white:hover, html.hc.hc.hc .group:hover .group-hover\:text-white { color: #fff; }
+  html.hc.hc.hc .text-white\/60, html.hc.hc.hc .text-white\/50 { color: #fff; }
+  html.hc.hc.hc .bg-slate-900\/95 [class*="text-"]:not(.text-slate-900) { color: #fff; }
+  html.hc.hc.hc .opacity-40, html.hc.hc.hc .opacity-50, html.hc.hc.hc .opacity-60, html.hc.hc.hc .opacity-70, html.hc.hc.hc .disabled\:opacity-40:disabled, html.hc.hc.hc .disabled\:opacity-50:disabled { opacity: 0.85; }
+  html.hc.hc.hc .bg-red-500, html.hc.hc.hc .hover\:bg-red-500:hover { background-color: oklch(44.4% 0.177 26.899); }
+  html.hc.hc.hc .bg-red-600, html.hc.hc.hc .hover\:bg-red-600:hover { background-color: oklch(44.4% 0.177 26.899); }
+  html.hc.hc.hc .bg-red-700, html.hc.hc.hc .hover\:bg-red-700:hover { background-color: oklch(44.4% 0.177 26.899); }
+  html.hc.hc.hc .bg-orange-500, html.hc.hc.hc .hover\:bg-orange-500:hover { background-color: oklch(47% 0.157 37.304); }
+  html.hc.hc.hc .bg-orange-600, html.hc.hc.hc .hover\:bg-orange-600:hover { background-color: oklch(47% 0.157 37.304); }
+  html.hc.hc.hc .bg-orange-700, html.hc.hc.hc .hover\:bg-orange-700:hover { background-color: oklch(47% 0.157 37.304); }
+  html.hc.hc.hc .bg-amber-500, html.hc.hc.hc .hover\:bg-amber-500:hover { background-color: oklch(47.3% 0.137 46.201); }
+  html.hc.hc.hc .bg-amber-600, html.hc.hc.hc .hover\:bg-amber-600:hover { background-color: oklch(47.3% 0.137 46.201); }
+  html.hc.hc.hc .bg-amber-700, html.hc.hc.hc .hover\:bg-amber-700:hover { background-color: oklch(47.3% 0.137 46.201); }
+  html.hc.hc.hc .bg-yellow-500, html.hc.hc.hc .hover\:bg-yellow-500:hover { background-color: oklch(47.6% 0.114 61.907); }
+  html.hc.hc.hc .bg-yellow-600, html.hc.hc.hc .hover\:bg-yellow-600:hover { background-color: oklch(47.6% 0.114 61.907); }
+  html.hc.hc.hc .bg-yellow-700, html.hc.hc.hc .hover\:bg-yellow-700:hover { background-color: oklch(47.6% 0.114 61.907); }
+  html.hc.hc.hc .bg-lime-500, html.hc.hc.hc .hover\:bg-lime-500:hover { background-color: oklch(45.3% 0.124 130.933); }
+  html.hc.hc.hc .bg-lime-600, html.hc.hc.hc .hover\:bg-lime-600:hover { background-color: oklch(45.3% 0.124 130.933); }
+  html.hc.hc.hc .bg-lime-700, html.hc.hc.hc .hover\:bg-lime-700:hover { background-color: oklch(45.3% 0.124 130.933); }
+  html.hc.hc.hc .bg-green-500, html.hc.hc.hc .hover\:bg-green-500:hover { background-color: oklch(44.8% 0.119 151.328); }
+  html.hc.hc.hc .bg-green-600, html.hc.hc.hc .hover\:bg-green-600:hover { background-color: oklch(44.8% 0.119 151.328); }
+  html.hc.hc.hc .bg-green-700, html.hc.hc.hc .hover\:bg-green-700:hover { background-color: oklch(44.8% 0.119 151.328); }
+  html.hc.hc.hc .bg-emerald-500, html.hc.hc.hc .hover\:bg-emerald-500:hover { background-color: oklch(43.2% 0.095 166.913); }
+  html.hc.hc.hc .bg-emerald-600, html.hc.hc.hc .hover\:bg-emerald-600:hover { background-color: oklch(43.2% 0.095 166.913); }
+  html.hc.hc.hc .bg-emerald-700, html.hc.hc.hc .hover\:bg-emerald-700:hover { background-color: oklch(43.2% 0.095 166.913); }
+  html.hc.hc.hc .bg-teal-500, html.hc.hc.hc .hover\:bg-teal-500:hover { background-color: oklch(43.7% 0.078 188.216); }
+  html.hc.hc.hc .bg-teal-600, html.hc.hc.hc .hover\:bg-teal-600:hover { background-color: oklch(43.7% 0.078 188.216); }
+  html.hc.hc.hc .bg-teal-700, html.hc.hc.hc .hover\:bg-teal-700:hover { background-color: oklch(43.7% 0.078 188.216); }
+  html.hc.hc.hc .bg-cyan-500, html.hc.hc.hc .hover\:bg-cyan-500:hover { background-color: oklch(45% 0.085 224.283); }
+  html.hc.hc.hc .bg-cyan-600, html.hc.hc.hc .hover\:bg-cyan-600:hover { background-color: oklch(45% 0.085 224.283); }
+  html.hc.hc.hc .bg-cyan-700, html.hc.hc.hc .hover\:bg-cyan-700:hover { background-color: oklch(45% 0.085 224.283); }
+  html.hc.hc.hc .bg-sky-500, html.hc.hc.hc .hover\:bg-sky-500:hover { background-color: oklch(44.3% 0.11 240.79); }
+  html.hc.hc.hc .bg-sky-600, html.hc.hc.hc .hover\:bg-sky-600:hover { background-color: oklch(44.3% 0.11 240.79); }
+  html.hc.hc.hc .bg-sky-700, html.hc.hc.hc .hover\:bg-sky-700:hover { background-color: oklch(44.3% 0.11 240.79); }
+  html.hc.hc.hc .bg-blue-500, html.hc.hc.hc .hover\:bg-blue-500:hover { background-color: var(--sp5-accent-strong); }
+  html.hc.hc.hc .bg-blue-600, html.hc.hc.hc .hover\:bg-blue-600:hover { background-color: var(--sp5-accent-strong); }
+  html.hc.hc.hc .bg-blue-700, html.hc.hc.hc .hover\:bg-blue-700:hover { background-color: var(--sp5-accent-strong); }
+  html.hc.hc.hc .bg-indigo-500, html.hc.hc.hc .hover\:bg-indigo-500:hover { background-color: oklch(39.8% 0.195 277.366); }
+  html.hc.hc.hc .bg-indigo-600, html.hc.hc.hc .hover\:bg-indigo-600:hover { background-color: oklch(39.8% 0.195 277.366); }
+  html.hc.hc.hc .bg-indigo-700, html.hc.hc.hc .hover\:bg-indigo-700:hover { background-color: oklch(39.8% 0.195 277.366); }
+  html.hc.hc.hc .bg-violet-500, html.hc.hc.hc .hover\:bg-violet-500:hover { background-color: oklch(43.2% 0.232 292.759); }
+  html.hc.hc.hc .bg-violet-600, html.hc.hc.hc .hover\:bg-violet-600:hover { background-color: oklch(43.2% 0.232 292.759); }
+  html.hc.hc.hc .bg-violet-700, html.hc.hc.hc .hover\:bg-violet-700:hover { background-color: oklch(43.2% 0.232 292.759); }
+  html.hc.hc.hc .bg-purple-500, html.hc.hc.hc .hover\:bg-purple-500:hover { background-color: oklch(43.8% 0.218 303.724); }
+  html.hc.hc.hc .bg-purple-600, html.hc.hc.hc .hover\:bg-purple-600:hover { background-color: oklch(43.8% 0.218 303.724); }
+  html.hc.hc.hc .bg-purple-700, html.hc.hc.hc .hover\:bg-purple-700:hover { background-color: oklch(43.8% 0.218 303.724); }
+  html.hc.hc.hc .bg-fuchsia-500, html.hc.hc.hc .hover\:bg-fuchsia-500:hover { background-color: oklch(45.2% 0.211 324.591); }
+  html.hc.hc.hc .bg-fuchsia-600, html.hc.hc.hc .hover\:bg-fuchsia-600:hover { background-color: oklch(45.2% 0.211 324.591); }
+  html.hc.hc.hc .bg-fuchsia-700, html.hc.hc.hc .hover\:bg-fuchsia-700:hover { background-color: oklch(45.2% 0.211 324.591); }
+  html.hc.hc.hc .bg-pink-500, html.hc.hc.hc .hover\:bg-pink-500:hover { background-color: oklch(45.9% 0.187 3.815); }
+  html.hc.hc.hc .bg-pink-600, html.hc.hc.hc .hover\:bg-pink-600:hover { background-color: oklch(45.9% 0.187 3.815); }
+  html.hc.hc.hc .bg-pink-700, html.hc.hc.hc .hover\:bg-pink-700:hover { background-color: oklch(45.9% 0.187 3.815); }
+  html.hc.hc.hc .bg-rose-500, html.hc.hc.hc .hover\:bg-rose-500:hover { background-color: oklch(45.5% 0.188 13.697); }
+  html.hc.hc.hc .bg-rose-600, html.hc.hc.hc .hover\:bg-rose-600:hover { background-color: oklch(45.5% 0.188 13.697); }
+  html.hc.hc.hc .bg-rose-700, html.hc.hc.hc .hover\:bg-rose-700:hover { background-color: oklch(45.5% 0.188 13.697); }
+  html.hc.hc.hc .bg-cobalt-500, html.hc.hc.hc .hover\:bg-cobalt-500:hover { background-color: oklch(42.4% 0.199 265.638); }
+  html.hc.hc.hc .bg-cobalt-600, html.hc.hc.hc .hover\:bg-cobalt-600:hover { background-color: oklch(42.4% 0.199 265.638); }
+  html.hc.hc.hc .bg-cobalt-700, html.hc.hc.hc .hover\:bg-cobalt-700:hover { background-color: oklch(42.4% 0.199 265.638); }
+  html.hc.hc.hc .border-slate-100, html.hc.hc.hc .border-slate-200, html.hc.hc.hc .border-slate-300, html.hc.hc.hc .border-t-slate-100, html.hc.hc.hc .border-t-slate-200, html.hc.hc.hc .border-t-slate-300, html.hc.hc.hc .border-b-slate-100, html.hc.hc.hc .border-b-slate-200, html.hc.hc.hc .border-b-slate-300, html.hc.hc.hc .border-l-slate-100, html.hc.hc.hc .border-l-slate-200, html.hc.hc.hc .border-l-slate-300, html.hc.hc.hc .border-r-slate-100, html.hc.hc.hc .border-r-slate-200, html.hc.hc.hc .border-r-slate-300, html.hc.hc.hc .border-x-slate-100, html.hc.hc.hc .border-x-slate-200, html.hc.hc.hc .border-x-slate-300, html.hc.hc.hc .border-y-slate-100, html.hc.hc.hc .border-y-slate-200, html.hc.hc.hc .border-y-slate-300 { border-color: var(--color-slate-500); }
+  html.hc.hc.hc .divide-slate-100 > *, html.hc.hc.hc .divide-slate-200 > *, html.hc.hc.hc .divide-slate-300 > * { border-color: var(--color-slate-500); }
+  html.hc.hc.hc .border-red-100, html.hc.hc.hc .border-red-200, html.hc.hc.hc .border-red-300 { border-color: var(--color-red-600); }
+  html.hc.hc.hc .bg-red-50, html.hc.hc.hc .bg-red-100 { outline: 1px solid var(--color-red-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-orange-100, html.hc.hc.hc .border-orange-200, html.hc.hc.hc .border-orange-300 { border-color: var(--color-orange-600); }
+  html.hc.hc.hc .bg-orange-50, html.hc.hc.hc .bg-orange-100 { outline: 1px solid var(--color-orange-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-amber-100, html.hc.hc.hc .border-amber-200, html.hc.hc.hc .border-amber-300 { border-color: var(--color-amber-600); }
+  html.hc.hc.hc .bg-amber-50, html.hc.hc.hc .bg-amber-100 { outline: 1px solid var(--color-amber-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-yellow-100, html.hc.hc.hc .border-yellow-200, html.hc.hc.hc .border-yellow-300 { border-color: var(--color-yellow-600); }
+  html.hc.hc.hc .bg-yellow-50, html.hc.hc.hc .bg-yellow-100 { outline: 1px solid var(--color-yellow-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-lime-100, html.hc.hc.hc .border-lime-200, html.hc.hc.hc .border-lime-300 { border-color: var(--color-lime-600); }
+  html.hc.hc.hc .bg-lime-50, html.hc.hc.hc .bg-lime-100 { outline: 1px solid var(--color-lime-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-green-100, html.hc.hc.hc .border-green-200, html.hc.hc.hc .border-green-300 { border-color: var(--color-green-600); }
+  html.hc.hc.hc .bg-green-50, html.hc.hc.hc .bg-green-100 { outline: 1px solid var(--color-green-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-emerald-100, html.hc.hc.hc .border-emerald-200, html.hc.hc.hc .border-emerald-300 { border-color: var(--color-emerald-600); }
+  html.hc.hc.hc .bg-emerald-50, html.hc.hc.hc .bg-emerald-100 { outline: 1px solid var(--color-emerald-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-teal-100, html.hc.hc.hc .border-teal-200, html.hc.hc.hc .border-teal-300 { border-color: var(--color-teal-600); }
+  html.hc.hc.hc .bg-teal-50, html.hc.hc.hc .bg-teal-100 { outline: 1px solid var(--color-teal-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-cyan-100, html.hc.hc.hc .border-cyan-200, html.hc.hc.hc .border-cyan-300 { border-color: var(--color-cyan-600); }
+  html.hc.hc.hc .bg-cyan-50, html.hc.hc.hc .bg-cyan-100 { outline: 1px solid var(--color-cyan-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-sky-100, html.hc.hc.hc .border-sky-200, html.hc.hc.hc .border-sky-300 { border-color: var(--color-sky-600); }
+  html.hc.hc.hc .bg-sky-50, html.hc.hc.hc .bg-sky-100 { outline: 1px solid var(--color-sky-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-blue-100, html.hc.hc.hc .border-blue-200, html.hc.hc.hc .border-blue-300 { border-color: var(--color-blue-600); }
+  html.hc.hc.hc .bg-blue-50, html.hc.hc.hc .bg-blue-100 { outline: 1px solid var(--color-blue-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-indigo-100, html.hc.hc.hc .border-indigo-200, html.hc.hc.hc .border-indigo-300 { border-color: var(--color-indigo-600); }
+  html.hc.hc.hc .bg-indigo-50, html.hc.hc.hc .bg-indigo-100 { outline: 1px solid var(--color-indigo-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-violet-100, html.hc.hc.hc .border-violet-200, html.hc.hc.hc .border-violet-300 { border-color: var(--color-violet-600); }
+  html.hc.hc.hc .bg-violet-50, html.hc.hc.hc .bg-violet-100 { outline: 1px solid var(--color-violet-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-purple-100, html.hc.hc.hc .border-purple-200, html.hc.hc.hc .border-purple-300 { border-color: var(--color-purple-600); }
+  html.hc.hc.hc .bg-purple-50, html.hc.hc.hc .bg-purple-100 { outline: 1px solid var(--color-purple-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-fuchsia-100, html.hc.hc.hc .border-fuchsia-200, html.hc.hc.hc .border-fuchsia-300 { border-color: var(--color-fuchsia-600); }
+  html.hc.hc.hc .bg-fuchsia-50, html.hc.hc.hc .bg-fuchsia-100 { outline: 1px solid var(--color-fuchsia-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-pink-100, html.hc.hc.hc .border-pink-200, html.hc.hc.hc .border-pink-300 { border-color: var(--color-pink-600); }
+  html.hc.hc.hc .bg-pink-50, html.hc.hc.hc .bg-pink-100 { outline: 1px solid var(--color-pink-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-rose-100, html.hc.hc.hc .border-rose-200, html.hc.hc.hc .border-rose-300 { border-color: var(--color-rose-600); }
+  html.hc.hc.hc .bg-rose-50, html.hc.hc.hc .bg-rose-100 { outline: 1px solid var(--color-rose-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-cobalt-100, html.hc.hc.hc .border-cobalt-200, html.hc.hc.hc .border-cobalt-300 { border-color: var(--color-cobalt-600); }
+  html.hc.hc.hc .bg-cobalt-50, html.hc.hc.hc .bg-cobalt-100 { outline: 1px solid var(--color-cobalt-600); outline-offset: -1px; }
+  html.hc.hc.hc .border-primary { border-color: var(--color-blue-700); }
+  html.hc.hc.hc :focus-visible { outline: 3px solid var(--color-blue-800); outline-offset: -1px; }
+
   html.dark [data-print-paper],
-  html[data-palette] [data-print-paper] {
+  html[data-palette] [data-print-paper],
+  html.hc [data-print-paper] {
     color-scheme: light;
     --color-primary: #1a73e8;
+    --sp5-accent-strong: oklch(42.4% 0.199 265.638);
     --color-white: #fff;
     --color-bg-body: #f8fafc;
     --color-bg-card: #ffffff;

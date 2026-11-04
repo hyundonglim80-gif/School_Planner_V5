@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import palettes from './palettes.json';
 import { GROUP_SPACE_HUES, PERSONAL_SPACE_HUE } from './spaceColor';
 import {
+  HC_BUTTON_STEP,
   MEANING_HUES,
   MEANING_MIN_DE,
   SLATE_50,
@@ -86,6 +87,42 @@ describe('테마 색표 (P20-1 theme.css)', () => {
       });
     });
   }
+});
+
+describe('어둡게 진한 띠 (P20-2 ■1)', () => {
+  it('투명도가 붙은 진한 바탕(토스트·여러 개 고르기 띠·창 뒤 막)은 어둡게 규칙이 있다', () => {
+    const css = buildThemeCss(tw, file);
+    for (const cls of ['bg-slate-900\\/95', 'bg-slate-900\\/90', 'bg-slate-600\\/90', 'bg-slate-900\\/40', 'bg-red-600\\/95']) {
+      expect(css).toContain(`html.dark .${cls} {`);
+    }
+  });
+});
+
+describe('고대비 (P20-2 html.hc)', () => {
+  const css = buildThemeCss(tw, file);
+
+  it('글자는 밝기와 상관없이 같은 규칙 (사다리가 뒤집혀 있다) - 바탕을 바꾸는 변수는 건드리지 않는다', () => {
+    expect(css).toContain('html.hc.hc.hc .text-slate-400, html.hc.hc.hc .hover\\:text-slate-400:hover { color: var(--color-slate-700); }');
+    expect(css).not.toMatch(/html\.hc\.hc\.hc \{[^}]*--color-slate-(50|100|200)\b/);
+  });
+
+  it('어두운 띠 위 밝은 글자(slate-200)는 진하게 하지 않는다', () => {
+    expect(css).not.toContain('html.hc.hc.hc .text-slate-200,');
+  });
+
+  it.each(file.palettes.map((p) => [p.name, p] as const))('%s: 흰 글자 on 진한 강조 7:1', (_n, p) => {
+    expect(contrast(WHITE, accentLadder(orig, p)[HC_BUTTON_STEP])).toBeGreaterThanOrEqual(7);
+  });
+
+  it('흰 글자 on 진한 뜻 색 7:1', () => {
+    for (const h of ['emerald', 'rose', 'red', 'indigo', 'violet', 'sky', 'amber']) {
+      expect(contrast(WHITE, parseOklch(orig[h][HC_BUTTON_STEP]))).toBeGreaterThanOrEqual(7);
+    }
+  });
+
+  it('인쇄 쪽은 고대비에서도 기본 색 변수로 돌아간다', () => {
+    expect(css).toContain('html.hc [data-print-paper]');
+  });
 });
 
 describe('색 셈', () => {

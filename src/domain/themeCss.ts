@@ -19,6 +19,9 @@
 //     뜻으로 쓰는 파랑(토요일·색 목록의 한 칸)은 cobalt(= 원래 파랑, 테마가 바꾸지 않는다)를 쓴다.
 //   - 회색(slate)도 밝기·채도는 그대로 빛깔만. 뜻 색(이월 amber·완료 emerald·삭제 red·rose)·라벨 색·sky·indigo는 그대로.
 //   - 공간 색(domain/spaceColor - 겹쳐 보기)이 테마 강조와 가까우면 그 테마에서 남는 빛깔로 바꾼다(--sp-<빛깔>-100/300).
+//
+// 고대비 (P20-2, html.hc - 이 기기). 변수가 아니라 클래스 규칙으로 바꾼다 - slate-200은 테두리이자 바탕이고 400은 글자이자 점이라,
+// 변수를 바꾸면 바탕까지 짙어져 글자가 묻힌다. 사다리가 밝기마다 뒤집혀 있어 같은 규칙이 밝게·어둡게 모두 맞다.
 
 // ── 색 셈 (oklch ↔ oklab ↔ sRGB) ──
 
@@ -286,6 +289,7 @@ function paletteBlock(orig: ColorTable, p: PaletteDef): string {
 
   const lv: string[] = [];
   lv.push(`    --color-primary: ${lchCss(accentPrimary(p))};`);
+  lv.push(`    --sp5-accent-strong: ${ladderCss['800']};`);
   lv.push(`    --color-bg-body: ${lchCss(light.body)};`);
   if (p.neutral) {
     lv.push(`    --color-bg-hover: ${lchCss(tint(orig.slate['100'], p))};`);
@@ -337,6 +341,85 @@ ${keep.join('\n')}
 `;
 }
 
+/**
+ * 투명도가 붙은 진한 바탕은 위 '단추 바탕' 규칙이 못 잡는다 - 어둡게의 slate-900은 가장 밝은 글자색이라 토스트·여러 개 고르기 띠가
+ * 흰 바탕 + 흰 글자, 창 뒤 막(/40)은 화면을 밝혔다(P20-2 ■1). 띠 안의 밝은 글자도 밝은 화면 값으로 되돌린다.
+ */
+function darkStrips(orig: ColorTable): string[] {
+  const strip = (pct: number) => `color-mix(in oklab, var(--color-slate-300) ${pct}%, transparent)`;
+  const inner = [
+    ['slate', '200', '200'],
+    ['slate', '400', '300'], // 띠는 어둡게에서 조금 밝아(40%) 400이면 3.5:1
+    ['slate', '900', '900'],
+    ['amber', '300', '300'],
+    ['sky', '300', '300'],
+  ].map(([h, s, to]) => `--color-${h}-${s}: ${orig[h][to]};`);
+  return [
+    `  html.dark .bg-slate-900\\/95 { background-color: ${strip(95)}; ${inner.join(' ')} }`,
+    `  html.dark .bg-slate-900\\/90 { background-color: ${strip(90)}; }`,
+    `  html.dark .bg-slate-600\\/90 { background-color: ${strip(90)}; }`,
+    `  html.dark .bg-slate-900\\/40 { background-color: rgb(0 0 0 / 0.4); }`,
+    `  html.dark .bg-red-600\\/95 { background-color: color-mix(in oklab, ${orig.red['600']} 95%, transparent); }`,
+  ];
+}
+
+// ── 고대비 ──
+
+/** 테마 블록(html.dark[data-palette="…"] .bg-blue-600 - 0,3,1)을 이기려고 클래스를 되풀이한다 */
+const HC = 'html.hc.hc.hc';
+
+/** 글자 단계 → 진한 단계 (slate-200은 어두운 띠 위 밝은 글자라 뺀다 - MultiSelectBar) */
+const HC_NEUTRAL_TEXT: Record<string, string> = { 300: '700', 400: '700', 500: '700', 600: '800', 700: '900', 800: '950' };
+const HC_HUE_TEXT: Record<string, string> = { 400: '900', 500: '900', 600: '900', 700: '900', 800: '950', 900: '950' };
+
+/** 고대비에서 흰 글자가 7:1이 되는 단추 바탕 단계 */
+export const HC_BUTTON_STEP = '800';
+
+const hcText = (cls: string, to: string) => `  ${HC} .${cls}, ${HC} .hover\\:${cls}:hover { color: ${to}; }`;
+
+function highContrast(orig: ColorTable): string[] {
+  const out: string[] = [];
+  out.push(`  ${HC} {`);
+  out.push(`    --color-primary: var(--sp5-accent-strong);`);
+  out.push(`    --color-border: var(--color-slate-500);`);
+  out.push(`  }`);
+  // 글자
+  for (const n of ['slate', 'stone']) {
+    for (const [s, to] of Object.entries(HC_NEUTRAL_TEXT)) out.push(hcText(`text-${n}-${s}`, `var(--color-${n}-${to})`));
+  }
+  for (const h of HUES) {
+    for (const [s, to] of Object.entries(HC_HUE_TEXT)) out.push(hcText(`text-${h}-${s}`, `var(--color-${h}-${to})`));
+  }
+  out.push(hcText('text-primary', 'var(--color-blue-800)'));
+  out.push(`  ${HC} ::placeholder { color: var(--color-slate-700); }`);
+  out.push(`  ${HC} .hover\\:text-white:hover, ${HC} .group:hover .group-hover\\:text-white { color: #fff; }`);
+  out.push(`  ${HC} .text-white\\/60, ${HC} .text-white\\/50 { color: #fff; }`);
+  // 어두운 띠(여러 개 고르기·크게 뽑기) 안은 밝기와 상관없이 흰 글자
+  out.push(`  ${HC} .bg-slate-900\\/95 [class*="text-"]:not(.text-slate-900) { color: #fff; }`);
+  // 흐린 표시도 읽히게 (지난 일정·쓸 수 없는 단추)
+  out.push(`  ${HC} .opacity-40, ${HC} .opacity-50, ${HC} .opacity-60, ${HC} .opacity-70, ${HC} .disabled\\:opacity-40:disabled, ${HC} .disabled\\:opacity-50:disabled { opacity: 0.85; }`);
+  // 흰 글자를 얹는 단추 바탕
+  for (const h of HUES) {
+    for (const s of ['500', '600', '700']) {
+      const to = h === 'blue' ? 'var(--sp5-accent-strong)' : orig[h]?.[HC_BUTTON_STEP];
+      if (to) out.push(`  ${HC} .bg-${h}-${s}, ${HC} .hover\\:bg-${h}-${s}:hover { background-color: ${to}; }`);
+    }
+  }
+  // 테두리: 옅은 회색은 3:1 넘게, 옅은 빛깔도. 옅은 칩 바탕은 테두리가 없어도 가장자리가 보이게
+  const sides = ['border', 'border-t', 'border-b', 'border-l', 'border-r', 'border-x', 'border-y'];
+  const slateEdges = sides.flatMap((b) => ['100', '200', '300'].map((s) => `${HC} .${b}-slate-${s}`));
+  out.push(`  ${slateEdges.join(', ')} { border-color: var(--color-slate-500); }`);
+  out.push(`  ${['100', '200', '300'].map((s) => `${HC} .divide-slate-${s} > *`).join(', ')} { border-color: var(--color-slate-500); }`);
+  for (const h of HUES) {
+    out.push(`  ${['100', '200', '300'].map((s) => `${HC} .border-${h}-${s}`).join(', ')} { border-color: var(--color-${h}-600); }`);
+    out.push(`  ${HC} .bg-${h}-50, ${HC} .bg-${h}-100 { outline: 1px solid var(--color-${h}-600); outline-offset: -1px; }`);
+  }
+  out.push(`  ${HC} .border-primary { border-color: var(--color-blue-700); }`);
+  // 포커스 (focus:outline-none 42곳은 layer 안이라 이 규칙이 이긴다)
+  out.push(`  ${HC} :focus-visible { outline: 3px solid var(--color-blue-800); outline-offset: -1px; }`);
+  return out;
+}
+
 export function buildThemeCss(themeCss: string, file: PaletteFile): string {
   const orig = readTailwindColors(themeCss);
   const vars: string[] = [];
@@ -369,10 +452,12 @@ export function buildThemeCss(themeCss: string, file: PaletteFile): string {
   for (const s of ['700', '800', '900']) {
     keep.push(`  html.dark .bg-slate-${s}, html.dark .hover\\:bg-slate-${s}:hover { background-color: ${NEUTRAL_DARK[300]}; }`);
   }
+  keep.push(...darkStrips(orig));
 
   // 인쇄 창의 쪽(features/print [data-print-paper])은 어두운 화면·색 테마에서도 종이처럼 기본 밝은 색 - 바꾼 변수를 원래 값으로 되돌린다
   const paper: string[] = [];
   paper.push(`    --color-primary: ${LIGHT_BASE.primary};`);
+  paper.push(`    --sp5-accent-strong: ${orig.blue[HC_BUTTON_STEP]};`);
   paper.push(`    --color-white: #fff;`);
   paper.push(`    --color-bg-body: ${LIGHT_BASE.body};`);
   paper.push(`    --color-bg-card: ${LIGHT_BASE.card};`);
@@ -390,6 +475,9 @@ export function buildThemeCss(themeCss: string, file: PaletteFile): string {
   return `/* src/theme.css - tools/gen-theme-css.mjs 가 만든다(색 셈은 src/domain/themeCss.ts, 테마 값은 src/domain/palettes.json).
    손으로 고치지 말고 그 둘을 고쳐 다시 돌린다: node tools/gen-theme-css.mjs  (ROADMAP 17 어둡게 · P20 색 테마) */
 @media screen {
+  html {
+    --sp5-accent-strong: ${orig.blue[HC_BUTTON_STEP]};
+  }
   html.dark {
     color-scheme: dark;
 ${vars.join('\n')}
@@ -404,8 +492,11 @@ ${whiteRules('html.dark').join('\n')}
     background-color: var(--color-bg-body);
   }
 ${palettes.join('\n')}
+${highContrast(orig).join('\n')}
+
   html.dark [data-print-paper],
-  html[data-palette] [data-print-paper] {
+  html[data-palette] [data-print-paper],
+  html.hc [data-print-paper] {
     color-scheme: light;
 ${paper.join('\n')}
   }

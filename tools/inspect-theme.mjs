@@ -3,6 +3,7 @@
 //      (기본이 4.5 넘게 읽히던 글은 4.5 이상, 그 아래이던 글은 기본만큼 - 0.3까지 봐준다). 글자색 ↔ 칠한 바탕(inspect-mobile 본뜸).
 //   2) 흰 글자 단추(고른 칩 bg-primary)가 4.5:1 · 토요일 파랑(cobalt)·이월(amber)은 테마가 바꾸지 않는다.
 //   3) 인쇄 쪽([data-print-paper])은 어느 테마·밝기에서도 기본 밝은 색.
+//   4) 고대비(P20-2 - html.hc): 16벌 모두 글자 7:1 (HC_MIN).
 //   테마는 html data-palette를 손으로 바꿔 본다(계정 값은 건드리지 않는다 - 고르기·저장은 inspect-settings '색 테마').
 //   SHOTS=<폴더>면 테마·밝기마다 하루·월간·환경설정 그림을 남긴다(눈으로 본다).
 //
@@ -19,6 +20,7 @@ const ALL = JSON.parse(readFileSync('src/domain/palettes.json', 'utf8')).palette
 const PALETTES = ALL.filter((id) => id === 'default' || !process.env.MATCH || id === process.env.MATCH);
 
 const DAY = '2026-10-08';
+const HC_MIN = 7;
 const VIEWS = [
   ['day', `#/day/${DAY}`],
   ['week', '#/week/2026-10-05'],
@@ -91,6 +93,34 @@ const fixedColors = (page) =>
     return { sat: out[0], amber: out[1].split('/')[0], paper: out.slice(2).join(' ') };
   });
 
+/** 토스트·여러 개 고르기 띠(투명도가 붙은 진한 바탕) 위 글자 대비 - 어둡게에서 흰 바탕 + 흰 글자였다 (P20-2 ■1) */
+const stripContrast = (page) =>
+  page.evaluate(() => {
+    const c = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+    const lumOf = (color) => {
+      c.clearRect(0, 0, 1, 1);
+      c.fillStyle = '#000';
+      c.fillStyle = color;
+      c.fillRect(0, 0, 1, 1);
+      const [r, g, b] = c.getImageData(0, 0, 1, 1).data;
+      const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    const box = document.createElement('div');
+    box.innerHTML =
+      '<div class="bg-slate-900/95 text-white"><span>띠</span><b class="text-slate-200">완료</b><b class="text-slate-400">끝</b><b class="text-amber-300">라벨</b></div>' +
+      '<div class="bg-slate-900/90 text-white"><span>토스트</span></div><div class="bg-red-600/95 text-white"><span>오류</span></div>';
+    document.body.append(box);
+    const out = [...box.querySelectorAll('span,b')].map((e) => {
+      const [hi, lo] = [lumOf(getComputedStyle(e).color), lumOf(getComputedStyle(e.parentElement).backgroundColor)].sort((a, b) => b - a);
+      return [e.textContent, Math.round(((hi + 0.05) / (lo + 0.05)) * 10) / 10];
+    });
+    box.remove();
+    return out;
+  });
+
+const setClass = (page, cls, on) => page.evaluate(([c, v]) => document.documentElement.classList.toggle(c, v), [cls, on]);
+
 const setPalette = (page, id) =>
   page.evaluate((p) => (p === 'default' ? document.documentElement.removeAttribute('data-palette') : document.documentElement.setAttribute('data-palette', p)), id);
 
@@ -106,8 +136,11 @@ try {
     const { page, errors } = await newPage(browser);
     await page.addInitScript((d) => localStorage.setItem('sp5_theme', d ? 'dark' : 'light'), dark);
     await open(page, `#/day/${DAY}`);
+    // 색이 바뀌는 중간(transition)을 재지 않게
+    await page.addStyleTag({ content: '*, *::before, *::after { transition: none !important; }' });
     /** 테마 → 보는 곳 → 대비 표 */
     const maps = {};
+    const hcMaps = {};
     const fixed = {};
     const accentOk = {};
     for (const [where, target] of VIEWS) {
@@ -123,6 +156,13 @@ try {
         await page.waitForTimeout(150);
         (maps[id] ||= {})[where] = await contrastMap(page);
         if (where === 'month') fixed[id] = await fixedColors(page);
+        await setClass(page, 'hc', true);
+        await page.waitForTimeout(100);
+        (hcMaps[id] ||= {})[where] = await contrastMap(page);
+        if (SHOTS && ['day', 'month', 'win:settings'].includes(where)) {
+          await page.screenshot({ path: `${SHOTS}/${id}-${dark ? 'dark' : 'light'}-${where.replace('win:', '')}-hc.png` });
+        }
+        await setClass(page, 'hc', false);
         if (where === 'win:settings') {
           // 고른 칩(흰 글자 on bg-primary)
           accentOk[id] = await page.locator('[data-choice][aria-pressed="true"]').first().evaluate((el) => {
@@ -151,6 +191,11 @@ try {
     }
     await setPalette(page, 'default');
 
+    r.section(`진한 띠 · ${mode}`);
+    const strips = await stripContrast(page);
+    const dim = strips.filter(([, v]) => v < 4.5);
+    r.check(dim.length === 0, `토스트·여러 개 고르기 띠 글자 4.5:1 (${strips.map(([k, v]) => `${k} ${v}`).join(' · ')})`, `띠 글자가 안 읽힌다 - ${dim.map(([k, v]) => `${k} ${v}`).join(' · ')}`);
+
     for (const id of PALETTES.filter((p) => p !== 'default')) {
       r.section(`${id} · ${mode}`);
       for (const [where] of VIEWS) {
@@ -167,6 +212,18 @@ try {
       r.check(fixed[id].sat === fixed.default.sat, `토요일 파랑(cobalt)은 그대로 (${fixed[id].sat})`);
       r.check(fixed[id].amber === fixed.default.amber, `이월 노랑(amber) 글자는 그대로 (${fixed[id].amber})`);
       r.check(fixed[id].paper === fixed.default.paper, '인쇄 쪽은 기본 색');
+    }
+    for (const id of PALETTES) {
+      r.section(`고대비 · ${id} · ${mode}`);
+      for (const [where] of VIEWS) {
+        const map = hcMaps[id][where];
+        const bad = Object.entries(map).filter(([, v]) => v < HC_MIN);
+        r.check(
+          bad.length === 0,
+          `${where}: 글자 ${HC_MIN}:1 (${Object.keys(map).length}곳)`,
+          `${where}: ${HC_MIN}:1 아래 ${bad.length} - ${bad.slice(0, 8).map(([k, v]) => `${k} ${v}`).join(' · ')}`,
+        );
+      }
     }
     if (!dark) {
       // 인쇄 쪽 = 밝게 기본 (어둡게에서도 같은 값이어야 한다 - 아래 어둡게 묶음이 밝게 기본과 견준다)
