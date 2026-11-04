@@ -1,5 +1,5 @@
 // 환경설정 '보기' 탭 (MENU 3-6). 모두 누르는 즉시 바뀐다 - V4는 글자 크기·창 위치·화면 밝기만 즉시, 나머지는 '저장'을 기다렸다.
-// 화면 밝기·고대비·어둡게를 부드럽게(이 기기에만)·색 테마·색약 배려(계정에 하나 - PC·휴대폰 같게, P20) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
+// 화면 밝기·고대비·어둡게를 부드럽게(이 기기에만)·색 테마·색약 배려·꾸미기(계정에 하나 - PC·휴대폰 같게, P20) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
 import { useEffect, useState } from 'react';
 import { FONT_SCALES } from '../../domain/fontScale';
 import { setFontScale, setPopupStyle, useLayoutPrefs, type PopupStyle } from '../../app/layoutPrefs';
@@ -7,9 +7,13 @@ import { setEnableScrollNav, setStartupScope, setToggle, useNav, type StartupSco
 import { SCREENS } from '../../app/screens';
 import { isDarkMode, readThemeMode, setThemeMode, THEME_CHANGED_EVENT, type ThemeMode } from '../../app/theme';
 import { setPalette } from '../../app/palette';
+import { setDecor, useDecorChoice } from '../../app/decor';
 import { useCommonSettings } from '../../app/prefs';
 import { readContrast, readDim, setContrast, setCvd, setDim, VIEW_AIDS_CHANGED_EVENT } from '../../app/viewAids';
 import { PALETTES, paletteSwatch, sanitizePalette } from '../../domain/palette';
+import { decorKind, type DecorChoice } from '../../domain/decor';
+import { DecorPicture } from '../../ui/decorArt';
+import { useToday } from '../../ui/useToday';
 import { useShortcutTitle } from '../../app/keys';
 import { Choices, Section, ToggleRow } from './parts';
 
@@ -17,6 +21,16 @@ const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: 'system', label: '🖥️ 기기 설정 따라' },
   { value: 'light', label: '☀️ 밝게' },
   { value: 'dark', label: '🌙 어둡게' },
+];
+
+const DECOR_OPTIONS: { value: DecorChoice; label: string }[] = [
+  { value: 'off', label: '끄기' },
+  { value: 'season', label: '계절 따라' },
+  { value: 'spring', label: '봄' },
+  { value: 'summer', label: '여름' },
+  { value: 'autumn', label: '가을' },
+  { value: 'winter', label: '겨울' },
+  { value: 'animal', label: '동물' },
 ];
 
 const POPUP_STYLE_OPTIONS: { value: PopupStyle; label: string }[] = [
@@ -50,11 +64,13 @@ export default function ViewTab() {
   const palette = sanitizePalette(useCommonSettings((s) => s.palette));
   const cvd = useCommonSettings((s) => s.cvd);
   const dark = isDarkMode(themeMode);
+  const decor = useDecorChoice();
+  const today = useToday();
 
   return (
     <div>
       <p className="px-5 pt-4 text-xs text-slate-500 leading-relaxed">
-        이 탭은 고르는 즉시 바뀌고, <strong className="text-slate-700">PC와 휴대폰을 따로</strong> 계정에 저장합니다(화면 밝기는 이 기기에만, 색 테마는 PC·휴대폰 같게).
+        이 탭은 고르는 즉시 바뀌고, <strong className="text-slate-700">PC와 휴대폰을 따로</strong> 계정에 저장합니다(화면 밝기는 이 기기에만, 색 테마·꾸미기는 PC·휴대폰 같게).
       </p>
 
       <Section id="display" title="화면 표시" desc="둘째 줄의 주말 / 일정 / 수업 단추와 같은 값입니다.">
@@ -141,6 +157,36 @@ export default function ViewTab() {
             );
           })}
         </div>
+      </Section>
+
+      {/* 견본 = 그 꾸미기의 빈 화면 그림 ('계절 따라'는 지금 계절) - 누르는 즉시 바뀐다 */}
+      <Section
+        id="decor"
+        title="✨ 꾸미기"
+        desc="머리줄 뒤에 흐린 그림을 깔고, 비어 있는 칸에 작은 그림을 넣습니다. 계정에 저장해 PC와 휴대폰이 같습니다. 글자·단추 색은 그대로이고, 고대비를 켜면 머리줄 그림은 쉽니다. 인쇄에는 나오지 않습니다."
+      >
+        <div className="flex flex-wrap gap-1.5">
+          {DECOR_OPTIONS.map((o) => {
+            const kind = decorKind(o.value, today);
+            const on = o.value === decor;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                data-decor-pick={o.value}
+                aria-pressed={on}
+                onClick={() => setDecor(o.value)}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                  on ? 'border-primary ring-2 ring-primary/30 text-slate-800' : 'border-slate-200 text-slate-500 hover:border-slate-400'
+                }`}
+              >
+                {kind && <DecorPicture kind={kind} slot="events" className="w-5 h-5 shrink-0" />}
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-slate-400 mt-1.5">계절 따라: 3~5월 봄 · 6~8월 여름 · 9~11월 가을 · 12~2월 겨울로 저절로 바뀝니다.</p>
       </Section>
 
       <Section id="viewAids" title="보기 쉽게" desc="셋은 따로 켜고 끕니다. 색 테마·화면 밝기와 섞어 쓸 수 있고, 인쇄는 늘 기본 색입니다.">

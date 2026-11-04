@@ -5,8 +5,9 @@
 //   2) 공유받기: '/share-target'에 POST(글·파일) → '/?share=…' → 새 메모 칸에 글 · 공유받은 파일 줄 · 주소에서 표시가 지워진다
 //   3) '/'의 첫 스크립트가 바뀌면 '새 판이 있습니다' 띠
 //   4) P14-6 ■1: 끊긴 채 저장 → 머리줄 '앱을 닫지 마세요 (n개)'·닫기 전에 묻기 → 이어지면 저절로 저장
+//   1b) P20-3: 꾸미기 그림(머리줄 뒤 띠·빈 화면)도 끊긴 채 뜬다 - 그림은 파일이 아니라 번들 안 SVG
 //   5) P14-6 ■1b: 끊긴 채 저장하고 앱을 닫기 → 다시 열면 '📝 저장하지 않은 글 n개' → 보기 → 열기 → 되살리기 → 저장
-import { collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -21,6 +22,9 @@ const ref = doc(em.db, 'spaces', sid, 'items', 'inspOffline');
 try {
   await setDoc(ref, { kind: 'event', date: DAY, text: '오프라인점검 일정', labelIds: [], order: 'a0', createdAt: Date.now(), authorId: uid, deletedAt: null, v: 1, updatedAt: serverTimestamp() });
   undo.add(() => deleteDoc(ref));
+  const commonRef = doc(em.db, 'spaces', sid, 'settings', 'common');
+  await setDoc(commonRef, { decor: 'winter' }, { merge: true });
+  undo.add(() => setDoc(commonRef, { decor: deleteField() }, { merge: true }));
   const { ctx, page, errors } = await newPage(browser);
 
   r.section('오프라인 앱');
@@ -51,6 +55,8 @@ try {
   await page.reload();
   r.check(await waitFor(page.locator(sel('session', 'signed-in')), 20000), '네트워크 없이 다시 열어도 앱이 뜬다 (로그인 그대로)');
   r.check(await waitFor(page.locator(sel('event-card', 'inspOffline')), 15000), '자료는 기기 사본에서 (그날 일정 카드)');
+  r.check(await waitFor(page.locator(sel('decor-band', 'winter')), 5000), '꾸미기 머리줄 그림도 뜬다');
+  r.check(await waitFor(page.locator(sel('decor-spot', 'winter')), 5000), '꾸미기 빈 화면 그림도 뜬다');
   await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'app' }));
   r.check(await waitFor(page.locator('[data-settings-window]'), 10000), '나중에 불러오는 창(환경설정)도 열린다');
   await page.evaluate(() => window.sp5.closeAllWindows());

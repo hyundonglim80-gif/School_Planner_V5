@@ -162,7 +162,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 ### 4-8. 설정 (개인 공간 `settings/`)
 
-- `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` · 알림 소리 길이 `alarmSound`(초 - 0 한 번·기본 10·-1 확인할 때까지, P10-1) · 색 테마 `palette`(P20-1 - 기본 `default`, 모르는 id도 그대로 둔다 - 그리기만 기본) · 색약 배려 `cvd`(P20-2 - 기본 끔) ·
+- `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` · 알림 소리 길이 `alarmSound`(초 - 0 한 번·기본 10·-1 확인할 때까지, P10-1) · 색 테마 `palette`(P20-1 - 기본 `default`, 모르는 id도 그대로 둔다 - 그리기만 기본) · 색약 배려 `cvd`(P20-2 - 기본 끔) · 꾸미기 `decor`(P20-3 - 기본 `off`, 모르는 값도 그대로 둔다 - 그리기만 끄기) ·
   우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 학급마다 고른 사진 폴더 `photoFolders`(V4 backup_config).
 - `import`: V4 가져오기 기록(8-1) - 설정이 아니라 따로 둔다(설정 맞추기가 건드리지 않는다).
 - `backupLog`: 드라이브 자동 백업의 마지막 기록 `{ lastAt, lastName, lastSummary, folderLink }`(P8-3 - 백업이 적는다, 고르는 것은 common.autoBackup) · seed는 1년 뒤로 심는다.
@@ -344,6 +344,8 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 색 테마가 바꾸는 것 = 강조 `--color-primary`·**파랑 사다리 `blue`**(강조색으로 쓴다)·회색 `slate` 빛깔·바탕. 그대로 = 뜻 색(amber·emerald·red·rose …)·라벨 색·sky·indigo·**`cobalt`**(= 원래 파랑 - 토요일·색 목록의 한 칸처럼 뜻으로 쓰는 파랑).
 공간 색(겹쳐 보기)은 테마 강조와 가까우면 그 테마가 `--sp-<빛깔>-100/300`으로 바꾼다. 테마 값 `domain/palettes.json`, 색 셈·거리 기준(뜻 색 ΔE ≥ 7·공간 색 ≥ 14) `domain/themeCss.ts`.
 **보기 쉽게**(P20-2 - 같은 파일, 셋 다 html 클래스): `hc` 고대비는 **변수가 아니라 클래스 규칙**(slate-200은 테두리이자 바탕이라 변수를 바꾸면 바탕까지 짙어진다, `html.hc.hc.hc`로 테마 블록을 이긴다) · `cvd` 색약 배려 = emerald·red·rose 사다리의 빛깔만 돌린다(amber 그대로, 색만인 곳의 모양은 `index.css`) · `dim` = 바탕·회색 사다리(`html.dark.dim:not(.hc)` - 고대비가 이긴다). 켜는 일은 `app/viewAids`.
+
+**꾸미기**(P20-3 - 색이 아니라 그림): `ui/decorArt` 코드로 그린 SVG(번들 안 - 오프라인에서도, 파일이 아니라 sw.js 목록과 상관없다) · 빛깔은 `index.css` `.decor-art` 변수(밝기만 따른다 - 색 테마와 따로). 머리줄 뒤 띠는 머리줄의 첫 자식 `-z-10`(바탕 위·글자 밑)이고 옅은 빛깔로 덮어쓴다, 강조색 SP5만 뒤를 머리줄 바탕으로 가린다, `html.hc`면 쉰다. 빛깔·세기를 바꾸면 `tools/inspect-decor.mjs`(띠의 가장 진한 빛깔을 섞은 맨 글자 대비).
 
 ## 8. V4 → V5 가져오기 (`src/import/v4`)
 

@@ -6,5 +6,5 @@ import { DecorPicture, type DecorSlot } from './decorArt';
 export default function DecorSpot({ slot, fallback = null }: { slot: DecorSlot; fallback?: ReactNode }) {
   const kind = useDecorKind();
   if (!kind) return <>{fallback}</>;
-  return <DecorPicture kind={kind} slot={slot} className="block w-16 h-16 mx-auto mb-2 rounded-2xl print:hidden" />;
+  return <DecorPicture data-decor-spot={kind} kind={kind} slot={slot} className="block w-16 h-16 mx-auto mb-2 rounded-2xl print:hidden" />;
 }

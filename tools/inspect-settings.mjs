@@ -12,6 +12,7 @@
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-settings.mjs
 // 에뮬레이터 teacher 계정의 V5 설정 문서(spaces/u_{uid}/settings/pc)를 쓴다 - 처음 것을 읽어 두고 끝에 되돌린다.
 import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { seasonOf } from '../src/domain/decor.ts';
 import { emulator, launch, newPage, open, report, restorer, sel, SITE, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -149,6 +150,21 @@ try {
   r.check(!(await hasClass(a.page, 'hc')) && !(await hasClass(a.page, 'dim')) && !(await hasClass(a.page, 'cvd')), '끄면 셋 다 뗀다');
   const cvdOff = await serverUntil(serverCommon, (d) => d.cvd === undefined);
   r.check(cvdOff.cvd === undefined, '끄면(기본) 문서에서 빠진다');
+
+  r.section('꾸미기 (P20-3 - 그림·글자 대비는 inspect-decor)');
+  const season = seasonOf(await a.page.evaluate(() => new Date().toLocaleDateString('sv')));
+  await a.page.click(sel('decor-pick', 'winter'));
+  r.check(await waitFor(a.page.locator(sel('decor-band', 'winter'))), '누르는 즉시 머리줄 뒤에 그림');
+  r.check((await a.page.getAttribute(sel('decor-pick', 'winter'), 'aria-pressed')) === 'true', '고른 칩이 눌린 것');
+  const decorOn = await serverUntil(serverCommon, (d) => d.decor === 'winter');
+  r.check(decorOn.decor === 'winter', 'settings/common에 올라간다');
+  r.check(await waitFor(b.page.locator(sel('decor-band', 'winter')), 8000), '다른 기기(같은 계정)도 따라온다');
+  await a.page.click(sel('decor-pick', 'season'));
+  r.check(await waitFor(a.page.locator(sel('decor-band', season))), `계절 따라 = 오늘 계절 (${season})`);
+  await a.page.click(sel('decor-pick', 'off'));
+  r.check(await waitFor(async () => (await a.page.locator(sel('decor-band')).count()) === 0, 3000), '끄면 그림이 없다');
+  const decorOff = await serverUntil(serverCommon, (d) => d.decor === undefined);
+  r.check(decorOff.decor === undefined, '끄면(기본) 문서에서 빠진다');
   await twin.close();
   await a.page.keyboard.press('Escape');
 

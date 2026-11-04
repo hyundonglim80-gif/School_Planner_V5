@@ -2,7 +2,7 @@
 // 빛깔은 index.css `.decor-art`의 변수(밝기마다 - 여기서는 변수만 쓴다). 이미 있는 캐릭터는 본뜨지 않는다.
 //   DecorTile    = 머리줄 뒤 띠의 무늬 한 칸 (TILE_W × TILE_H, 아래쪽이 머리줄 아래에 붙는다 - 메모·학급 화면은 머리줄이 낮아 위가 잘린다)
 //   DecorPicture = 빈 화면 그림 (72 × 72)
-import type { ReactNode } from 'react';
+import type { ReactNode, SVGProps } from 'react';
 import type { DecorKind } from '../domain/decor';
 
 export const TILE_W = 480;
@@ -338,10 +338,10 @@ function WinterPicture() {
 
 const PICTURES: Record<Exclude<DecorKind, 'animal'>, () => ReactNode> = { spring: SpringPicture, summer: SummerPicture, autumn: AutumnPicture, winter: WinterPicture };
 
-export function DecorPicture({ kind, slot, className }: { kind: DecorKind; slot: DecorSlot; className?: string }) {
+export function DecorPicture({ kind, slot, className, ...rest }: { kind: DecorKind; slot: DecorSlot } & SVGProps<SVGSVGElement>) {
   const Draw = kind === 'animal' ? ANIMAL_OF[slot] : PICTURES[kind];
   return (
-    <svg viewBox="0 0 72 72" aria-hidden="true" data-decor-spot={kind} data-art={kind} className={`decor-art ${className ?? ''}`}>
+    <svg {...rest} viewBox="0 0 72 72" aria-hidden="true" data-art={kind} className={`decor-art ${className ?? ''}`}>
       <Draw />
     </svg>
   );
