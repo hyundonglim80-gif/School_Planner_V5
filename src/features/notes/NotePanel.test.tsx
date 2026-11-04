@@ -578,6 +578,42 @@ describe('붙이기 (P4-2)', () => {
     upload.release = null;
   });
 
+  describe('올리는 동안 저장 (P22-2)', () => {
+    const ctrlS = () => act(async () => fireEvent.keyDown(textInput(), { key: 's', ctrlKey: true }));
+    const startUpload = async () => {
+      pasteInto(textInput(), '', [new File(['x'], 'image.png', { type: 'image/png' })]);
+      await waitFor(() => expect(upload.release).not.toBeNull());
+    };
+    const finishUpload = async () => {
+      await act(async () => upload.release!());
+      await waitFor(() => expect(document.querySelector('[data-note-attachment-image]')).not.toBeNull());
+      upload.release = null;
+    };
+
+    it('빈 새 메모: 칸이 닫히지 않고 첨부가 남으며, 저장 안 한 것으로 센다', async () => {
+      seed();
+      render(<Host initial={{ sid: SID, date: DAY }} />);
+      await startUpload();
+      expect(anyWindowUnsaved()).toBe(true);
+      await ctrlS();
+      expect(close).not.toHaveBeenCalled();
+      expect(document.querySelector('[data-toast]')?.textContent).toContain('파일을 올리는 중입니다');
+      await finishUpload();
+      await ctrlS();
+      expect((lastOps().find((o) => o.type === 'create') as unknown as { data: { attachments: unknown[] } }).data.attachments).toHaveLength(1);
+    });
+
+    it('글을 다 지운 메모: 휴지통으로 가지 않는다', async () => {
+      seed();
+      render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
+      type('');
+      await startUpload();
+      await ctrlS();
+      expect(written.batches).toHaveLength(0);
+      await finishUpload();
+    });
+  });
+
   it('윈도우 파일을 칸에 놓으면 📎와 같이 올린다 - 올리는 동안 또 놓으면 안내만', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY }} />);

@@ -372,6 +372,11 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   };
   /** 저장한다. 저장했거나 저장할 것이 없으면 true */
   const save = async (): Promise<boolean> => {
+    // 먼저 본다 - 올리는 첨부는 아직 칸에 없어 비어 보인다. 빈 새 칸이 닫혀 첨부가 사라지고, 글을 다 지운 메모가 휴지통으로 갔다 (P22-2)
+    if (uploading) {
+      showToast('파일을 올리는 중입니다. 끝난 뒤 저장해 주세요.');
+      return false;
+    }
     if (!hasContent(form)) {
       // 제목·글·첨부·표를 다 지우고 저장 = 그 메모 지우기(휴지통 + 되돌리기, 칸은 deleteNote가 닫는다 - P10-5 사용자 의견 5d).
       // 새 칸이면 만들 것이 없다 - 닫는다
@@ -381,10 +386,6 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
       }
       if (!item) return false;
       await remove('🗑️ 내용을 모두 지워 메모를 휴지통으로 옮겼습니다.');
-      return false;
-    }
-    if (uploading) {
-      showToast('파일을 올리는 중입니다. 끝난 뒤 저장해 주세요.');
       return false;
     }
     // 앞선 저장이 끝나기 전에 또 들어오면 같은 항목이 두 개 생긴다
@@ -442,7 +443,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   };
 
   const saveIfChanged = async (): Promise<boolean> => {
-    if (untouched) return true;
+    if (untouched && !uploading) return true;
     // 내용을 다 지운 채면 save가 지우고(고치던 메모) 칸을 닫는다 - 여기서 또 닫지 않는다
     return save();
   };
@@ -451,7 +452,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const unsaved = useRef<(() => boolean) | null>(null);
   useEffect(() => {
     // 고치던 메모를 다 지운 것도 저장하면 지워지니 묻는다
-    unsaved.current = () => (!untouched && (hasContent(form) || isEditing)) || penDirty;
+    unsaved.current = () => (!untouched && (hasContent(form) || isEditing)) || penDirty || !!uploading;
   });
   useUnsavedCheck(unsaved);
 
