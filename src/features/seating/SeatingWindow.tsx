@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
-import type { WindowProps } from '../../app/windows';
+import { useAskClose, type WindowProps } from '../../app/windows';
 import { useDocs, useMirrorStatus } from '../../data/select';
 import { KIND_LABEL, attendanceDocId, readMarks } from '../../domain/attendance';
 import { academicYearOf } from '../../domain/dateUtils';
@@ -81,6 +81,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
   // ── 학급 ──
   const [chosen, setChosen] = useState<string | null>(params?.classId ?? null);
   const [panel, setPanel] = useState<Panel | null>(params?.draw ? 'draw' : null);
+  const askClose = useAskClose(close);
   // 다시 열면(학급 화면·수업 칸의 다른 반·🎯) 따라간다
   const [seenAt, setSeenAt] = useState(params?.at);
   if (params?.at !== seenAt) {
@@ -434,7 +435,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
   const waiting = (classes.length === 0 && classesStatus !== 'live') || (!!classId && charts.length === 0 && seatingStatus !== 'live');
 
   return (
-    <ModalShell isOpen onClose={close} raise={raise} width="2xl" title="🪑 자리표" footer={<ModalCloseButton onClose={close} />}>
+    <ModalShell isOpen onClose={askClose} raise={raise} width="2xl" title="🪑 자리표" footer={<ModalCloseButton onClose={askClose} />}>
       {classes.length === 0 && !waiting ? (
         <p className="text-center text-slate-400 py-8 text-sm" data-seating-no-class>
           명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.

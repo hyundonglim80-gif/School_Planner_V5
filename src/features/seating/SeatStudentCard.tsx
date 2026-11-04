@@ -5,7 +5,8 @@
 //   - 오늘 조사표(P7-4): 지금 보는 공간의 오늘 조사표 중 이 학급 것 - 이 학생 값만 곧바로 저장(조사표 창에서 다른 학생을 적던 것을 덮지 않는다).
 //     공유 그룹에서 남이 만든 조사표는 읽기만.
 //   저장 순서: 사본이 쓰기를 먼저 보이므로 빨리 여러 번 눌러도 다음 누름이 앞의 것을 본다(V4의 '하나씩 차례로'가 필요 없다).
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useUnsavedCheck } from '../../app/windows';
 import { useItemsOn, useLabelTree } from '../../data/select';
 import type { Stored } from '../../data/types';
 import { KINDS, KIND_HAS_PERIODS, KIND_LABEL, REASONS, REASON_LABEL, togglePeriod, withKind, type AttendanceMarks } from '../../domain/attendance';
@@ -79,6 +80,12 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
   const dayNotes = useItemsOn(date, 'note', sid);
   const todayLines = dayNotes.filter((n) => !n.deletedAt && n.studentIds?.includes(key));
   const [obs, setObs] = useState('');
+  // 적어 둔 관찰 한 줄은 자리표를 닫기 전에 묻는다 (P22-2 - 나머지는 고치는 대로 저장한다)
+  const unsaved = useRef<(() => boolean) | null>(null);
+  useEffect(() => {
+    unsaved.current = () => !!obs.trim();
+  });
+  useUnsavedCheck(unsaved);
   const observe = (text: string = obs) => {
     if (!text.trim()) return;
     if (text === obs) setObs('');

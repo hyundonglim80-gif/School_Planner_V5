@@ -328,7 +328,7 @@ store(`src/app/windows.ts`)의 `windows: [{ key, id, params, openedAt, raisedAt 
 P3-2 메모·기록 쓰는 칸 `note` = `{ sid, date: 날짜|null, id?, labelIds?, draftText? }` - 날짜 null = 메모, 메모와 기록은 같은 칸).
 오른쪽 줄의 탭 차례·숨은 탭·폭은 그 틀이 줄에 설 때 정한다(`src/ui/sideColumn.ts` - V4 PopupFrame 그대로, 다시 연 탭은 끝으로 간다).
 창 안에서 띄운 작은 창(등록하지 않은 PopupFrame)도 같은 줄에 선다. 닫기 단추에는 `data-close`(탭 ×가 누른다).
-저장 안 한 글이 있는 창은 `registerUnsavedCheck`로 알린다 - ESC·▶(줄 전체 닫기)가 먼저 묻는다.
+저장 안 한 글이 있는 창은 `useUnsavedCheck`로 알린다 - ESC·▶(줄 전체 닫기)가 먼저 묻는다. 쓰던 글 보관이 없는 창은 틀의 `onClose`와 닫기 단추에 `useAskClose(close)`를 걸어 ✕·탭 ×·Alt+W·뒤로가기·배경에서도 묻는다(P22-2 - 층의 `close`가 false면 창이 남는다, windowConventions가 지킨다).
 
 ### 7-3. 주소
 `#/day/2026-10-08` · `#/week/2026-10-05` · `#/month/2026-10` · `#/year/2026` · `#/memo` · `#/class/2026-5-2`.

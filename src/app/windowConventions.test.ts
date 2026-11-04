@@ -48,8 +48,8 @@ describe('창 공통 규칙', () => {
   });
 
   // P22-2: 저장 안 한 것을 묻는 창은 ✕·닫기·뒤로가기·배경에서도 묻는다 - ESC에서만 묻고 ✕는 말없이 버렸다.
-  // 쓰던 글 보관(useDraft)이 있는 메모·일정은 다시 열면 글이 돌아오므로 묻지 않는다(10-26). 환경설정은 단축키 탭이 묻는다.
-  const asksOnClose = entries.filter((e) => (e.src.includes('useUnsavedCheck(') && !e.src.includes('useDraft')) || e.name === 'settings/SettingsWindow.tsx');
+  // 쓰던 글 보관(useDraft)이 있는 메모·일정은 다시 열면 글이 돌아오므로 묻지 않는다(10-26). 환경설정은 단축키 탭이, 자리표는 학생 칸이 묻는다.
+  const asksOnClose = entries.filter((e) => (e.src.includes('useUnsavedCheck(') && !e.src.includes('useDraft')) || ['settings/SettingsWindow.tsx', 'seating/SeatingWindow.tsx'].includes(e.name));
   it('묻는 창을 찾았다', () => {
     expect(asksOnClose.length).toBeGreaterThan(7);
   });

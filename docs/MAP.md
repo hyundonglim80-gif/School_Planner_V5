@@ -28,7 +28,7 @@
   라벨: `labelTreeOf`·`useLabelTree`(트리 차례·기본 라벨 `defaultId`)·`itemLabels`·라벨로 보기 `itemsMatching`·붙은 수 `labelUsageOf`·`emptyLabelsOf`·`missingLabelsOf`) ·
   `labels.ts`(라벨 쓰기 - 저장 = 바뀐 칸만 `labelSaveOps`·`createLabelOp`·이름으로 찾기·만들기 `ensureLabelOps`·`defaultLabelOps`·`labelNameProblem`, 적기 `addLabel`·`saveLabels`·`restoreLabels`·`addDefaultLabels`) ·
   `session.ts`의 `currentSpaceId`·`useCurrentSpaceId`(지금 공간 한 곳). 화면 문서 = `Stored<C>`(자리 id가 붙는다 - 저장 도우미는 id를 적지 않는다).
-- **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
+- **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `askLogout.ts`(로그아웃 단추 - 사라질 것이 있으면 묻는다, P22-2) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
   로그인한 화면은 `[data-session=signed-in][data-user=<메일>]`. `logout`은 기다리던 설정을 먼저 올리고, 나간 뒤 기기 사본·쓰던 글 보관을 지운다.
 - **라벨** `src/features/labels/`: `LabelsWindow.tsx`(창 `labels` - ⋮ 일정, `{ tab: 'event'|'note' }`, 고친 것만 들고 사본 위에 얹는다, `[data-labels-window]`·
   `[data-label-tab|row|name|color|prop|parent|up|down|delete|save|add|new-name|new-parent|usage|prune|prune-item|prune-confirm|recover|defaults]`) · `ColorPicker.tsx`(`[data-color-option]`) ·
@@ -63,7 +63,7 @@
 - **↗ 새 창으로 옮기기**(10-28): `ui/popout.ts`(주소 `?popout=` 읽기·만들기 `readPopoutSpec`·`popoutUrl`(pickFor·파일 뺌) · 이 탭이 새 창인가 `POPOUT` · `WindowSlotContext`(WindowHost가 창의 맨 바깥 틀에만 - 틀이 안쪽은 null로)·`PopoutTargetContext`(옆에 붙은 틀만)) ·
   `ui/PopoutButton.tsx`(`[data-popout-open]` - ModalShell 머리·쓰는 칸 여섯 ✕ 왼쪽) · `app/popout.ts`(`popOutWindow` - 빈 팝업 먼저 → `windowUnsaved`면 `windowSaveOf` 저장·기다림 → 주소로 보내고 탭 닫기) ·
   `app/PopoutShell.tsx`(App이 `POPOUT`이면 Shell 대신 - 그 창 하나·`[data-popout=id]`, 창 가득 = 틀의 `fill` `[data-panel-frame|popup-frame=window]`, 닫히면 `window.close()`, 단축키는 `handleAppKeyDown(e, only)`) ·
-  `app/windows` `useUnsavedCheck`(창 key와 함께 - 옛 `registerUnsavedCheck` 부르던 열하나)·`useWindowSave`(틀이 Ctrl+S 저장을 창 key로) · `useDocked`는 새 창에서 늘 false. 점검 `tools/inspect-popout.mjs`(34 - 휴대폰 새 메모 🔗 포함).
+  `app/windows` `useAskClose`(닫기 전에 묻기 - P22-2) · `useUnsavedCheck`(창 key와 함께 - 옛 `registerUnsavedCheck` 부르던 열하나)·`useWindowSave`(틀이 Ctrl+S 저장을 창 key로) · `useDocked`는 새 창에서 늘 false. 점검 `tools/inspect-popout.mjs`(34 - 휴대폰 새 메모 🔗 포함).
 - **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)·다시 세운 줄 `rekeyOrders`(옮긴 것만)) ·
   `labelTree.ts`(V4 트리를 id로 - `parentMapOf`·`orderByTree`·라벨로 보기 `matchLabels`·탐색기식 `clickFilterLabel`·`filterChipOrder`·`otherKey`) ·
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) ·

@@ -187,6 +187,13 @@ try {
   r.check(same(att?.records?.a3?.periods, [2]), '교시 2');
   r.check(await waitFor(seat(a3Seat).locator(sel('seat-att', 'late'))), "자리에 '지각'");
   await card3.locator('[data-seat-observe-input]').fill('모둠 활동에서 친구를 도움');
+  // 적어 둔 관찰 한 줄은 닫기 전에 묻는다 (P22-2)
+  const asksBefore = dialogs.seen.length;
+  const answerBefore = dialogs.answer;
+  dialogs.answer = false;
+  await page.locator(`${sel('popup-card')} ${sel('close')}`).last().click();
+  r.check((await waitFor(() => dialogs.seen.length === asksBefore + 1)) && (await card3.locator('[data-seat-observe-input]').inputValue()) === '모둠 활동에서 친구를 도움', '관찰 한 줄을 적은 채 ✕: 묻고, 아니오면 글이 남는다');
+  dialogs.answer = answerBefore;
   await card3.locator('[data-seat-observe-input]').press('Enter');
   const notes = async () => (await getDocs(collection(em.db, 'spaces', sid, 'items'))).docs.map((d) => d.data()).filter((d) => (d.studentIds ?? []).includes(`${CLASS_ID}/a3`) && !d.deletedAt);
   let ns = await serverUntil(notes, (l) => l.length === 1);
