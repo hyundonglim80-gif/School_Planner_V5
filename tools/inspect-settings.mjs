@@ -123,6 +123,32 @@ try {
   const palBack = await serverUntil(serverCommon, (d) => d.palette === undefined);
   r.check(palBack.palette === undefined, '기본은 문서에서 빠진다');
   r.check(await waitFor(async () => (await palOf(twin)) === null, 3000), '다른 창도 기본으로');
+
+  r.section('보기 쉽게 (P20-2)');
+  const hasClass = (p, c) => p.evaluate((x) => document.documentElement.classList.contains(x), c);
+  const toggle = (id) => a.page.click(sel('settings-toggle', id));
+  await toggle('contrast');
+  r.check(await hasClass(a.page, 'hc'), '고대비: 누르는 즉시 화면에 (html hc)');
+  r.check(await waitFor(async () => hasClass(twin, 'hc'), 3000), '고대비: 같은 기기의 다른 창도 곧바로 (storage)');
+  r.check(!(await hasClass(b.page, 'hc')), '고대비: 다른 기기는 그대로 (이 기기에만)');
+  await toggle('dim');
+  r.check(await hasClass(a.page, 'dim'), '어둡게를 부드럽게: 누르는 즉시 화면에 (html dim)');
+  await toggle('cvd');
+  r.check(await hasClass(a.page, 'cvd'), '색약 배려: 누르는 즉시 화면에 (html cvd)');
+  const cvdOn = await serverUntil(serverCommon, (d) => d.cvd === true);
+  r.check(cvdOn.cvd === true, '색약 배려: settings/common에 올라간다');
+  r.check(await waitFor(async () => hasClass(b.page, 'cvd'), 8000), '색약 배려: 다른 기기(같은 계정)도 따라온다');
+  const bareAids = await a.ctx.newPage();
+  await bareAids.route(/\/src\/main\.tsx/, (route) => route.abort());
+  await bareAids.goto(SITE);
+  r.check((await hasClass(bareAids, 'hc')) && (await hasClass(bareAids, 'dim')) && (await hasClass(bareAids, 'cvd')), '앱이 뜨기 전(index.html 스크립트)에 셋 다 붙인다');
+  await bareAids.close();
+  await toggle('contrast');
+  await toggle('dim');
+  await toggle('cvd');
+  r.check(!(await hasClass(a.page, 'hc')) && !(await hasClass(a.page, 'dim')) && !(await hasClass(a.page, 'cvd')), '끄면 셋 다 뗀다');
+  const cvdOff = await serverUntil(serverCommon, (d) => d.cvd === undefined);
+  r.check(cvdOff.cvd === undefined, '끄면(기본) 문서에서 빠진다');
   await twin.close();
   await a.page.keyboard.press('Escape');
 

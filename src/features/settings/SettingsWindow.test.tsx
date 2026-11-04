@@ -131,6 +131,27 @@ describe('환경설정 창', () => {
     act(() => useCommonSettings.setState({ palette: 'default' }));
   });
 
+  it('보기 쉽게(P20-2): 고대비·어둡게를 부드럽게는 이 기기, 색약 배려는 계정 값', () => {
+    useCommonSettings.setState({ cvd: false });
+    localStorage.removeItem('sp5_contrast');
+    localStorage.removeItem('sp5_dim');
+    openSettings();
+    const box = (id: string) => q(`[data-settings-toggle="${id}"]`) as HTMLInputElement;
+    expect(box('contrast').checked).toBe(false);
+    fireEvent.click(box('contrast'));
+    expect(localStorage.getItem('sp5_contrast')).toBe('1');
+    expect(box('contrast').checked).toBe(true);
+    fireEvent.click(box('dim'));
+    expect(localStorage.getItem('sp5_dim')).toBe('1');
+    fireEvent.click(box('cvd'));
+    expect(useCommonSettings.getState().cvd).toBe(true);
+    expect(box('cvd').checked).toBe(true);
+    act(() => useCommonSettings.setState({ cvd: false }));
+    localStorage.removeItem('sp5_contrast');
+    localStorage.removeItem('sp5_dim');
+    document.documentElement.classList.remove('hc', 'dim');
+  });
+
   it('단축키: 키 칸을 누르고 키를 누르면 들어가고, 저장해야 바뀐다', () => {
     openSettings('shortcuts');
     const input = q('[data-shortcut-row="help"] [data-shortcut-key]');

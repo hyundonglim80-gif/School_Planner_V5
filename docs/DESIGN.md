@@ -162,7 +162,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 ### 4-8. 설정 (개인 공간 `settings/`)
 
-- `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` · 알림 소리 길이 `alarmSound`(초 - 0 한 번·기본 10·-1 확인할 때까지, P10-1) · 색 테마 `palette`(P20-1 - 기본 `default`, 모르는 id도 그대로 둔다 - 그리기만 기본) ·
+- `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` · 알림 소리 길이 `alarmSound`(초 - 0 한 번·기본 10·-1 확인할 때까지, P10-1) · 색 테마 `palette`(P20-1 - 기본 `default`, 모르는 id도 그대로 둔다 - 그리기만 기본) · 색약 배려 `cvd`(P20-2 - 기본 끔) ·
   우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 학급마다 고른 사진 폴더 `photoFolders`(V4 backup_config).
 - `import`: V4 가져오기 기록(8-1) - 설정이 아니라 따로 둔다(설정 맞추기가 건드리지 않는다).
 - `backupLog`: 드라이브 자동 백업의 마지막 기록 `{ lastAt, lastName, lastSummary, folderLink }`(P8-3 - 백업이 적는다, 고르는 것은 common.autoBackup) · seed는 1년 뒤로 심는다.
@@ -172,7 +172,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다.
 - 문서에는 **기본값과 다른 칸만** 적는다(없는 칸·틀린 칸 = 기본값). 칸마다 기본값과 읽기 규칙은 표 하나(`domain/settings.ts`의 `SettingsSpec`) -
   `app/prefs.ts`의 `DEVICE_PREFS`(pc/mobile)·`COMMON_SETTINGS`(common). 기능을 옮기는 세션이 그 표에 칸을 더한다. 맞추기는 `data/settingsSync.ts`.
-- 이 기기에만(문서에 넣지 않는다): 지금 보는 화면·날짜, 화면 밝기 `sp5_theme`, 오른쪽 칸 폭. 색 테마의 처음 그리기 사본 `sp5_palette`(계정 값을 받으면 `app/palette`가 적는다).
+- 이 기기에만(문서에 넣지 않는다): 지금 보는 화면·날짜, 화면 밝기 `sp5_theme`, 오른쪽 칸 폭. 고대비 `sp5_contrast`·어둡게를 부드럽게 `sp5_dim`(P20-2). 처음 그리기 사본 = 색 테마 `sp5_palette`(계정 값을 받으면 `app/palette`가 적는다)·색약 배려 `sp5_cvd`(`app/viewAids`).
 
 ### 4-9. 그 밖
 
@@ -339,10 +339,11 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 휴대폰 뒤로가기 = 맨 위 하나, 환경설정 '창 위치'로 가운데 창(쓰는 칸은 그래도 오른쪽).
 자리: 브라우저 기록·창 층 `src/app/history.ts`, 키 `src/app/keys.ts`(ESC·Ctrl+S 막기·단축키), Ctrl+S 받기 `src/ui/useSaveKey.ts`, 창 자리 설정 `src/app/layoutPrefs.ts`. 단축키는 V4 `lib/shortcuts.SHORTCUT_ACTIONS`를 id째 옮기고 새 id를 더한다(MENU.md 3-8).
 
-### 7-5. 색 (화면 밝기 · 색 테마 - P20)
+### 7-5. 색 (화면 밝기 · 색 테마 · 보기 쉽게 - P20)
 화면은 Tailwind 색 변수만 읽는다 → `src/theme.css`(생성 - `node tools/gen-theme-css.mjs`)가 `html.dark`(어둡게)·`html[data-palette="<id>"]`(색 테마, 기본은 붙이지 않음)에서 변수를 바꿔 끼운다.
 색 테마가 바꾸는 것 = 강조 `--color-primary`·**파랑 사다리 `blue`**(강조색으로 쓴다)·회색 `slate` 빛깔·바탕. 그대로 = 뜻 색(amber·emerald·red·rose …)·라벨 색·sky·indigo·**`cobalt`**(= 원래 파랑 - 토요일·색 목록의 한 칸처럼 뜻으로 쓰는 파랑).
 공간 색(겹쳐 보기)은 테마 강조와 가까우면 그 테마가 `--sp-<빛깔>-100/300`으로 바꾼다. 테마 값 `domain/palettes.json`, 색 셈·거리 기준(뜻 색 ΔE ≥ 7·공간 색 ≥ 14) `domain/themeCss.ts`.
+**보기 쉽게**(P20-2 - 같은 파일, 셋 다 html 클래스): `hc` 고대비는 **변수가 아니라 클래스 규칙**(slate-200은 테두리이자 바탕이라 변수를 바꾸면 바탕까지 짙어진다, `html.hc.hc.hc`로 테마 블록을 이긴다) · `cvd` 색약 배려 = emerald·red·rose 사다리의 빛깔만 돌린다(amber 그대로, 색만인 곳의 모양은 `index.css`) · `dim` = 바탕·회색 사다리(`html.dark.dim:not(.hc)` - 고대비가 이긴다). 켜는 일은 `app/viewAids`.
 
 ## 8. V4 → V5 가져오기 (`src/import/v4`)
 

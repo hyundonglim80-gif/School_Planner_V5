@@ -160,6 +160,8 @@ export interface CommonSettings {
   alarmSound: number;
   /** 색 테마 id (P20-1 - domain/palettes.json, PC·휴대폰 같게). 화면에 입히는 것은 app/palette(모르는 id는 기본으로 그린다) */
   palette: string;
+  /** 색약 배려 (P20-2 - 사람을 따른다, PC·휴대폰 같게). 화면에 입히는 것은 app/viewAids */
+  cvd: boolean;
 }
 
 export interface PhotoFolderConfig {
@@ -217,6 +219,7 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   alarmSound: oneOfField<number>(DEFAULT_ALARM_SOUND, ALARM_SOUND_SECONDS),
   // 모르는 id도 그대로 둔다 - 새 테마를 고른 계정을 옛 앱(새 테마를 모른다)이 기본으로 되돌려 올리지 않게
   palette: customField<string>(DEFAULT_PALETTE, (v) => (typeof v === 'string' && /^[a-z]{1,20}$/.test(v) ? v : undefined)),
+  cvd: boolField(false),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */

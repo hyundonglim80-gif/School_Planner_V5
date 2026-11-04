@@ -1,5 +1,5 @@
 // 환경설정 '보기' 탭 (MENU 3-6). 모두 누르는 즉시 바뀐다 - V4는 글자 크기·창 위치·화면 밝기만 즉시, 나머지는 '저장'을 기다렸다.
-// 화면 밝기(이 기기에만)·색 테마(계정에 하나 - PC·휴대폰 같게, P20-1) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
+// 화면 밝기·고대비·어둡게를 부드럽게(이 기기에만)·색 테마·색약 배려(계정에 하나 - PC·휴대폰 같게, P20) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
 import { useEffect, useState } from 'react';
 import { FONT_SCALES } from '../../domain/fontScale';
 import { setFontScale, setPopupStyle, useLayoutPrefs, type PopupStyle } from '../../app/layoutPrefs';
@@ -8,6 +8,7 @@ import { SCREENS } from '../../app/screens';
 import { isDarkMode, readThemeMode, setThemeMode, THEME_CHANGED_EVENT, type ThemeMode } from '../../app/theme';
 import { setPalette } from '../../app/palette';
 import { useCommonSettings } from '../../app/prefs';
+import { readContrast, readDim, setContrast, setCvd, setDim, VIEW_AIDS_CHANGED_EVENT } from '../../app/viewAids';
 import { PALETTES, paletteSwatch, sanitizePalette } from '../../domain/palette';
 import { useShortcutTitle } from '../../app/keys';
 import { Choices, Section, ToggleRow } from './parts';
@@ -38,8 +39,16 @@ export default function ViewTab() {
     window.addEventListener(THEME_CHANGED_EVENT, onChange);
     return () => window.removeEventListener(THEME_CHANGED_EVENT, onChange);
   }, []);
+  // 고대비·어둡게를 부드럽게도 이 기기에만 - 다른 창(↗ 새 창)에서 바꿔도 보이게
+  const [aids, setAids] = useState(() => ({ contrast: readContrast(), dim: readDim() }));
+  useEffect(() => {
+    const onChange = () => setAids({ contrast: readContrast(), dim: readDim() });
+    window.addEventListener(VIEW_AIDS_CHANGED_EVENT, onChange);
+    return () => window.removeEventListener(VIEW_AIDS_CHANGED_EVENT, onChange);
+  }, []);
   const withKey = useShortcutTitle();
   const palette = sanitizePalette(useCommonSettings((s) => s.palette));
+  const cvd = useCommonSettings((s) => s.cvd);
   const dark = isDarkMode(themeMode);
 
   return (
@@ -132,6 +141,30 @@ export default function ViewTab() {
             );
           })}
         </div>
+      </Section>
+
+      <Section id="viewAids" title="보기 쉽게" desc="셋은 따로 켜고 끕니다. 색 테마·화면 밝기와 섞어 쓸 수 있고, 인쇄는 늘 기본 색입니다.">
+        <ToggleRow
+          id="contrast"
+          label="고대비"
+          hint="글자와 테두리를 진하게 합니다. 교실 TV·전자칠판에 띄울 때 좋습니다. 이 기기에만 남습니다."
+          checked={aids.contrast}
+          onChange={setContrast}
+        />
+        <ToggleRow
+          id="cvd"
+          label="색약 배려"
+          hint="완료 초록을 파랑 쪽으로, 삭제·중요 빨강을 주황 쪽으로 바꾸고 색으로만 나누던 곳에 표시를 더합니다(겹친 일정 👥·자리 모둠 번호·단축키 겹침 ⚠). 계정에 저장해 PC와 휴대폰이 같습니다."
+          checked={cvd}
+          onChange={setCvd}
+        />
+        <ToggleRow
+          id="dim"
+          label="어둡게를 부드럽게"
+          hint="어두운 화면의 바탕을 조금 밝히고 눈부신 글자를 낮춥니다. 어둡게일 때만 바뀌고, 고대비를 켜면 쉽니다. 이 기기에만 남습니다."
+          checked={aids.dim}
+          onChange={setDim}
+        />
       </Section>
 
       <Section

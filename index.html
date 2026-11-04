@@ -11,8 +11,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=yes" />
     <meta name="theme-color" content="#2563eb" />
     <title>School Planner V5</title>
-    <!-- 화면 밝기·색 테마: 그리기 전에 dark·data-palette를 붙여 밝은 화면·기본 파랑이 번쩍이지 않게 한다.
-         규칙은 src/app/theme.ts·palette.ts와 같다(키 이름을 바꾸면 둘 다). 모르는 테마 id는 theme.css에 없어 기본으로 그린다. -->
+    <!-- 화면 밝기·색 테마·보기 쉽게: 그리기 전에 dark·data-palette·hc·dim·cvd를 붙여 밝은 화면·기본 파랑이 번쩍이지 않게 한다.
+         규칙은 src/app/theme.ts·palette.ts·viewAids.ts와 같다(키 이름을 바꾸면 모두). 모르는 테마 id는 theme.css에 없어 기본으로 그린다. -->
     <script>
       try {
         var m = localStorage.getItem('sp5_theme');
@@ -21,6 +21,8 @@
         }
         var p = localStorage.getItem('sp5_palette');
         if (p && /^[a-z]+$/.test(p) && p !== 'default') document.documentElement.setAttribute('data-palette', p);
+        var aids = { sp5_contrast: 'hc', sp5_dim: 'dim', sp5_cvd: 'cvd' };
+        for (var k in aids) if (localStorage.getItem(k) === '1') document.documentElement.classList.add(aids[k]);
       } catch (e) {}
     </script>
   </head>

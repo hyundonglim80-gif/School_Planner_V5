@@ -5,6 +5,7 @@ import './theme.css'
 import App from './app/App.tsx'
 import { applyTheme, watchSystemTheme } from './app/theme'
 import { watchPalette } from './app/palette'
+import { watchViewAids } from './app/viewAids'
 import { startInstall } from './app/install'
 import { flushPendingToast } from './app/toast'
 import { auth } from './data/firebase'
@@ -37,6 +38,8 @@ applyTheme()
 watchSystemTheme()
 // 색 테마 (계정 값을 따르고, 받으면 이 기기 사본·화면을 바꾼다 - P20-1)
 watchPalette()
+// 보기 쉽게 (고대비·어둡게를 부드럽게는 이 기기, 색약 배려는 계정 값 - P20-2)
+watchViewAids()
 // 새로고침 앞에서 맡겨 둔 안내 (백업 복원 등)
 flushPendingToast()
 // 되돌리기 Ctrl+Z(글 칸 밖에서) - 지금 공간의 마지막 쓰기. 로그인한 사람이 바뀌면 더미를 비운다
