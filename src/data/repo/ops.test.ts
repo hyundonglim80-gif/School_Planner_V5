@@ -1,11 +1,37 @@
 import { describe, it, expect } from 'vitest';
-import { DELETE_FIELD, editedOnly, failMessage, nestPaths, SERVER_TIME, toWrite, undoOf, undoOfAll, valueAt, writeOp, type WriteOp } from './ops';
+import { DELETE_FIELD, editedOnly, failMessage, nestPaths, PURGE_LOG_MONTHS, purgeLogIds, purgeLogOf, SERVER_TIME, toWrite, undoOf, undoOfAll, valueAt, writeOp, type WriteOp } from './ops';
 import type { DocPath, Item } from '../types';
 
 const at: DocPath<'items'> = { sid: 'u_me', coll: 'items', id: 'abc' };
 const ctx = { uid: 'me', now: 1000 };
 
 const note = { kind: 'note', date: null, text: '메모', labelIds: [], order: 'a0' } as const;
+
+describe('영구 지운 항목 기록 (P22-3)', () => {
+  const ms = (s: string) => new Date(s).getTime();
+  it('공간마다 문서 하나, 컬렉션마다 id 목록 - 영구 지우기가 없으면 없다', () => {
+    const at = (sid: string, coll: 'items' | 'labels', id: string) => ({ sid, coll, id });
+    const ops = [writeOp.purge(at('u_me', 'items', 'a'), {} as never), writeOp.purge(at('u_me', 'labels', 'b'), {} as never), writeOp.remove(at('u_me', 'items', 'c')), writeOp.purge(at('g_x', 'items', 'd'), {} as never)];
+    expect(purgeLogOf(ops, ms('2026-11-05T03:00:00Z'))).toEqual([
+      { path: 'spaces/u_me/settings/purged-2026-11', ids: { items: ['a'], labels: ['b'] } },
+      { path: 'spaces/g_x/settings/purged-2026-11', ids: { items: ['d'] } },
+    ]);
+    expect(purgeLogOf([writeOp.remove(at('u_me', 'items', 'c'))], 0)).toEqual([]);
+  });
+  it('어제 견주었으면 이번 달만 - 달 첫날 가까이면 앞뒤 달도', () => {
+    expect(purgeLogIds(ms('2026-11-04T00:00:00Z'), ms('2026-11-05T00:00:00Z'))).toEqual(['purged-2026-11']);
+    expect(purgeLogIds(ms('2026-11-01T00:00:00Z'), ms('2026-11-02T00:00:00Z'))).toEqual(['purged-2026-10', 'purged-2026-11']);
+    expect(purgeLogIds(ms('2026-10-30T00:00:00Z'), ms('2026-10-31T12:00:00Z'))).toEqual(['purged-2026-10', 'purged-2026-11']);
+  });
+  it('해를 넘어 석 달 쉬어도 그 달들을 모두 읽는다', () => {
+    expect(purgeLogIds(ms('2026-11-15T00:00:00Z'), ms('2027-02-10T00:00:00Z'))).toEqual(['purged-2026-11', 'purged-2026-12', 'purged-2027-01', 'purged-2027-02']);
+  });
+  it('아주 오래 쉬어도 정한 달 수까지만', () => {
+    const ids = purgeLogIds(ms('2020-01-15T00:00:00Z'), ms('2026-11-05T00:00:00Z'));
+    expect(ids).toHaveLength(PURGE_LOG_MONTHS);
+    expect(ids.at(-1)).toBe('purged-2026-11');
+  });
+});
 
 describe('toWrite - 무엇을 적나', () => {
   it('만들기: 서버 시각·판·만든 때·만든 사람·지운 표시 null을 붙인다', () => {

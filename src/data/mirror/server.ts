@@ -5,6 +5,7 @@
 //   오늘 가까운 것 where('date', '>=', 오늘 - 62일) orderBy('date') 쪽 나눠 (항목만 - 처음 받기에서 먼저, sync NEAR_DAYS)
 //   그 뒤      where('updatedAt', '>', 커서 - 1분) 구독 하나
 //   견주기      where('deletedAt', '!=', null) - 지운 항목 id (다른 기기의 영구 지우기는 구독에 보이지 않는다)
+//   기록       settings/purged-YYYY-MM 문서 몇 개 - 앱이 꺼진 사이 영구로 지운 id (repo/ops purgeLogOf)
 // 처음 받기·견주기·하나 확인은 서버에서만 읽는다(…FromServer) - 연결이 없으면 캐시의 일부를 '다 받음'으로 믿지 않고 실패로.
 import {
   collection,
@@ -26,6 +27,7 @@ import {
 } from 'firebase/firestore';
 import { USING_EMULATOR } from '../emulator';
 import { db } from '../firebase';
+import { purgeLogIds } from '../repo/ops';
 
 type Plain = Record<string, unknown>;
 
@@ -71,6 +73,8 @@ export interface MirrorServer {
   fetchOne(sid: string, coll: string, id: string): Promise<Plain | null | undefined>;
   /** 지운 표시가 있는 문서 id (연결이 없으면 null) */
   deletedIds(sid: string, coll: string): Promise<Set<string> | null>;
+  /** since 뒤로 영구로 지웠다고 적힌 id - 실마리일 뿐 지금 없다는 뜻은 아니다 (연결이 없으면 null) */
+  purgedIds(sid: string, coll: string, since: number): Promise<Set<string> | null>;
 }
 
 const isOffline = (e: unknown) => (e as { code?: string })?.code === 'unavailable';
@@ -164,6 +168,18 @@ export const firestoreServer: MirrorServer = {
       const snap = await getDocsFromServer(query(collection(db, 'spaces', sid, coll), where('deletedAt', '!=', null)));
       countReads(coll, Math.max(1, snap.size));
       return new Set(snap.docs.map((d) => d.id));
+    } catch (e) {
+      if (isOffline(e)) return null;
+      throw e;
+    }
+  },
+
+  async purgedIds(sid, coll, since) {
+    try {
+      const ids = purgeLogIds(since, Date.now());
+      const snaps = await Promise.all(ids.map((id) => getDocFromServer(doc(db, 'spaces', sid, 'settings', id))));
+      countReads('settings', snaps.length);
+      return new Set(snaps.flatMap((s) => (s.get(coll) as string[] | undefined) ?? []));
     } catch (e) {
       if (isOffline(e)) return null;
       throw e;

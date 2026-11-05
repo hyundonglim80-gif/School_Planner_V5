@@ -34,6 +34,7 @@ import { personalSpaceId } from './space';
 import { useSession } from './session';
 import { useMirror } from './mirror/store';
 import { openMirrorDb } from './mirror/db';
+import { firestoreServer } from './mirror/server';
 import { resetMirror, startMirror, stopMirror } from './mirror/sync';
 import type { Stored } from './types';
 
@@ -159,6 +160,8 @@ describe('기기 사본 (에뮬레이터)', () => {
     const undo = await purge({ sid, coll: 'items', id: 'fromOther' }, shown);
     expect((await getDoc(doc(other, 'spaces', sid, 'items', 'fromOther'))).exists()).toBe(false);
     await vi.waitFor(() => expect(items().fromOther).toBeUndefined());
+    // 앱이 꺼진 기기가 읽을 기록 (규칙이 받는지까지 - P22-3)
+    expect(await firestoreServer.purgedIds(sid, 'items', Date.now() - 86_400_000)).toContain('fromOther');
     await batch(undo);
     const back = (await getDoc(doc(other, 'spaces', sid, 'items', 'fromOther'))).data()!;
     expect(back.deletedAt).toBeInstanceOf(Timestamp);

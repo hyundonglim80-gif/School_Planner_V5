@@ -19,6 +19,7 @@ vi.mock('firebase/firestore', () => ({
   doc: (_db: unknown, path: string) => ({ path }),
   serverTimestamp: () => 'SERVER_TIME',
   deleteField: () => 'DELETE_FIELD',
+  arrayUnion: (...ids: string[]) => ({ union: ids }),
   writeBatch: vi.fn(() => {
     const ops: { kind: string; path: string; data?: unknown }[] = [];
     return {
@@ -86,6 +87,35 @@ describe('저장 도우미', () => {
     expect(written.batches.map((b) => b[0].kind)).toEqual(['update', 'update', 'delete']);
     expect(written.batches[0][0].data).toEqual({ deletedAt: 'SERVER_TIME', deletedBy: 'me', updatedAt: 'SERVER_TIME' });
     expect(written.batches[1][0].data).toEqual({ deletedAt: null, deletedBy: 'DELETE_FIELD', updatedAt: 'SERVER_TIME' });
+  });
+
+  it('영구 지우기는 같은 묶음에 공간의 달 기록을 남긴다 (P22-3 - 앱이 꺼진 기기가 읽는다)', async () => {
+    const month = new Date().toISOString().slice(0, 7);
+    await batch([
+      writeOp.purge(at, { ...note } as Item),
+      writeOp.purge({ ...at, id: 'def' }, { ...note } as Item),
+      writeOp.purge({ sid: 'g_x', coll: 'labels', id: 'lab' }, { name: '라벨' } as never),
+    ]);
+    expect(written.batches).toHaveLength(1);
+    const log = written.batches[0].filter((w) => w.kind === 'set');
+    expect(log).toEqual([
+      { kind: 'set', path: `spaces/${at.sid}/settings/purged-${month}`, data: { items: { union: [at.id, 'def'] }, updatedAt: 'SERVER_TIME', v: 1 } },
+      { kind: 'set', path: `spaces/g_x/settings/purged-${month}`, data: { labels: { union: ['lab'] }, updatedAt: 'SERVER_TIME', v: 1 } },
+    ]);
+  });
+
+  it('다른 쓰기에는 기록이 없다', async () => {
+    await remove(at);
+    expect(written.batches[0].map((w) => w.kind)).toEqual(['update']);
+  });
+
+  it('영구 지우기가 한도를 넘어도 묶음이 한도를 넘지 않고, 모두 지운다', async () => {
+    const many = Array.from({ length: BATCH_LIMIT + 3 }, (_, i) => writeOp.purge({ ...at, id: `id${i}` }, { ...note } as Item));
+    await batch(many);
+    expect(written.batches.every((b) => b.length <= BATCH_LIMIT)).toBe(true);
+    expect(written.batches.flat().filter((w) => w.kind === 'delete')).toHaveLength(BATCH_LIMIT + 3);
+    const log = written.batches[0].find((w) => w.kind === 'set')!;
+    expect((log.data as { items: { union: string[] } }).items.union).toHaveLength(BATCH_LIMIT + 3);
   });
 
   it('되돌리는 쓰기를 그대로 batch에 넣으면 되돌아간다', async () => {

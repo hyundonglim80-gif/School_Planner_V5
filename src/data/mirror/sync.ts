@@ -5,6 +5,7 @@
 //      끊기면 받은 데까지(after)부터 잇는다. 받는 동안 다른 기기가 고친 것은 updatedAt이 늦어 뒤 쪽에서 온다.
 //   3. 그 뒤로는 컬렉션마다 구독 하나: updatedAt > 커서 - 1분 (겹쳐 받아도 id로 덮는다). 지운 표시도 그대로 받는다.
 //   + 하루 한 번 서버의 지운 항목과 견줘 다른 기기에서 영구로 지운 것을 뺀다(영구 지우기는 구독에 보이지 않는다).
+//     앱이 꺼진 사이 지우고 영구로 지운 것은 지운 표시도 받지 못했다 - 공간의 기록을 읽어 사본에 남은 것을 서버에 물어 뺀다(P22-3).
 //
 // ⚠️ V4 09-22 교훈 - 사본이 고장 나도 서버 구독은 멈추지 않는다:
 //   - 받은 것은 **먼저 메모리(store)에** 넣고 사본에는 뒤따라 적는다(기다리지 않는다). 사본 쓰기가 실패하면 그때부터 메모리로만.
@@ -325,17 +326,17 @@ class Runner {
     );
   }
 
-  /** 구독에서 빠진 문서가 정말 서버에서 없어졌나 (영구 지우기) - 서버에 물어 본다 */
-  private async confirmGone(id: string) {
+  /** 구독에서 빠진 문서가 정말 서버에서 없어졌나 (영구 지우기) - 서버에 물어 본다. 답을 받지 못했으면 false */
+  private async confirmGone(id: string): Promise<boolean> {
     const upTo = timeOf(baseDoc(this.sid, this.coll, id));
     let got: Plain | null | undefined;
     try {
       got = await this.engine.server.fetchOne(this.sid, this.coll, id);
     } catch (e) {
       console.warn('[mirror] 빠진 문서를 확인하지 못했습니다.', e);
-      return;
+      return false;
     }
-    if (this.stopped || got === undefined) return;
+    if (this.stopped || got === undefined) return false;
     if (got === null) {
       const drop = [{ id, upTo }];
       dropBase(this.sid, this.coll, drop);
@@ -343,31 +344,43 @@ class Runner {
     } else {
       this.take(new Map([[id, got]]), null);
     }
+    return true;
   }
 
-  /** 하루 한 번: 사본의 지운 항목 가운데 서버에 없는 것(다른 기기에서 영구로 지운 것)을 뺀다 */
+  /**
+   * 하루 한 번: 사본의 지운 항목 가운데 서버에 없는 것(다른 기기에서 영구로 지운 것)을 뺀다.
+   * 지운 표시가 없는 항목은 기록으로 찾는다 - 앱이 꺼진 사이 지우고 영구로 지웠다. 방금 처음 받은 사본(prunedAt 0)에는 그런 것이 없다.
+   */
   private async maybePrune() {
     if (this.pruned || !WITH_TRASH.has(this.coll) || Date.now() - this.meta.prunedAt < PRUNE_EVERY_MS) return;
     this.pruned = true;
     // 묻기 전의 판을 잡아 둔다 - 그 사이 바뀐 것(되살림·방금 지움)은 건드리지 않는다
     const candidates: MirrorDrop[] = [];
     for (const [id, doc] of baseDocs(this.sid, this.coll)) if (doc.deletedAt) candidates.push({ id, upTo: timeOf(doc) });
+    const since = this.meta.prunedAt;
+    const now = Date.now();
     let onServer: Set<string> | null;
+    let purged: Set<string> | null;
     try {
       onServer = await this.engine.server.deletedIds(this.sid, this.coll);
+      purged = since ? await this.engine.server.purgedIds(this.sid, this.coll, since) : new Set();
     } catch (e) {
       console.warn('[mirror] 지운 항목을 견주지 못했습니다.', e);
       return;
     }
-    if (this.stopped || !onServer) {
+    if (this.stopped || !onServer || !purged) {
       this.pruned = false;
       return;
     }
     const drop = candidates.filter((c) => !onServer.has(c.id));
-    const now = Date.now();
-    this.meta = mergeMeta(this.meta, { prunedAt: now });
     dropBase(this.sid, this.coll, drop);
-    this.engine.persist(this.sid, this.coll, new Map(), drop, { prunedAt: now });
+    this.engine.persist(this.sid, this.coll, new Map(), drop, null);
+    const left = [...purged].filter((id) => baseDoc(this.sid, this.coll, id));
+    const answered = await Promise.all(left.map((id) => this.confirmGone(id)));
+    // 답을 못 받은 것이 있으면 견준 때를 옮기지 않는다 - 다음에 그 기록을 다시 읽는다
+    if (this.stopped || answered.includes(false)) return;
+    this.meta = mergeMeta(this.meta, { prunedAt: now });
+    this.engine.persist(this.sid, this.coll, new Map(), [], { prunedAt: now });
   }
 
   stop() {

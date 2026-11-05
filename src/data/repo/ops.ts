@@ -204,6 +204,40 @@ export function editedOnly<T extends object>(fromForm: T, fromBase: T): T {
   return out as T;
 }
 
+// ─── 영구 지운 항목 기록 (P22-3) ───
+// 서버에서 지운 문서는 '바뀐 것만 받기'로 오지 않는다 - 앱이 꺼져 있던 기기의 사본에 살아 남는다. 그래서 공간에 달마다 문서 하나
+// settings/purged-YYYY-MM { <컬렉션>: [id…] }를 남기고 기기가 하루 한 번 읽는다(mirror/sync maybePrune).
+// 기록은 실마리다 - 기기는 사본에 있는 id만 서버에 물어 없으면 뺀다. 되돌리기로 되살린 문서가 기록에 남아 있어도 틀리지 않는다.
+
+/** 이만큼 지난 기록은 읽지 않는다 (2년 넘게 앱을 열지 않은 기기는 '이 기기 사본 다시 받기'로) */
+export const PURGE_LOG_MONTHS = 24;
+const DAY_MS = 86_400_000;
+const purgeLogId = (ms: number) => `purged-${new Date(ms).toISOString().slice(0, 7)}`;
+
+/** 이 쓰기들의 기록 - 공간마다 문서 하나, 영구 지우기가 없으면 빈 목록 */
+export function purgeLogOf(ops: WriteOp[], now: number): { path: string; ids: Record<string, string[]> }[] {
+  const bySpace = new Map<string, Record<string, string[]>>();
+  for (const op of ops) {
+    if (op.type !== 'purge') continue;
+    const ids = bySpace.get(op.at.sid) ?? {};
+    bySpace.set(op.at.sid, ids);
+    (ids[op.at.coll] ??= []).push(op.at.id);
+  }
+  return [...bySpace].map(([sid, ids]) => ({ path: `spaces/${sid}/settings/${purgeLogId(now)}`, ids }));
+}
+
+/** since부터 now까지의 기록 문서 id - 앞뒤로 하루 넉넉히(기기 시각이 어긋나도) */
+export function purgeLogIds(since: number, now: number): string[] {
+  const end = new Date(now + DAY_MS);
+  const ids: string[] = [];
+  for (let i = 0; i < PURGE_LOG_MONTHS; i++) {
+    const month = Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - i, 1);
+    ids.unshift(purgeLogId(month));
+    if (month <= since - DAY_MS) break;
+  }
+  return ids;
+}
+
 /** 실패 안내 (부르는 쪽이 따로 주지 않으면). 여럿이면 첫 쓰기로 */
 export function failMessage(ops: WriteOp[]): string {
   switch (ops[0]?.type) {

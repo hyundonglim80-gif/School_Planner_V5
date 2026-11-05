@@ -25,7 +25,11 @@ class FakeServer implements MirrorServer {
   clock = 1_000_000;
   data = new Map<string, Map<string, Plain>>();
   listeners = new Set<Listener>();
-  calls = { pages: [] as { coll: string; from: number | null }[], fromDate: [] as { coll: string; date: string }[], fetchOne: [] as string[], deletedIds: 0 };
+  calls = { pages: [] as { coll: string; from: number | null }[], fromDate: [] as { coll: string; date: string }[], fetchOne: [] as string[], deletedIds: 0, purgedIds: [] as number[] };
+  /** 영구 지운 항목 기록 (공간/컬렉션 → id) */
+  purgeLog = new Map<string, Set<string>>();
+  /** 하나 확인을 못 한다 (연결이 끊겼다) */
+  fetchOffline = false;
   /** 이 수만큼 쪽을 준 뒤 연결이 끊긴다 */
   failAfterPages: number | null = null;
   /** 구독의 첫 소식을 붙잡아 둔다 (사본으로 먼저 그리는지 보려고) */
@@ -112,7 +116,20 @@ class FakeServer implements MirrorServer {
 
   async fetchOne(sid: string, coll: string, id: string) {
     this.calls.fetchOne.push(id);
+    if (this.fetchOffline) return undefined;
     return this.coll(sid, coll).get(id) ?? null;
+  }
+
+  async purgedIds(sid: string, coll: string, since: number) {
+    this.calls.purgedIds.push(since);
+    return new Set(this.purgeLog.get(`${sid}/${coll}`));
+  }
+
+  /** 다른 기기가 영구로 지웠다 - 구독에 보이지 않고 기록만 남는다 */
+  purgeElsewhere(sid: string, coll: string, id: string) {
+    this.data.get(`${sid}/${coll}`)?.delete(id);
+    const key = `${sid}/${coll}`;
+    this.purgeLog.set(key, new Set([...(this.purgeLog.get(key) ?? []), id]));
   }
 
   async deletedIds(sid: string, coll: string) {
@@ -336,6 +353,83 @@ describe('다른 기기의 영구 지우기 견주기 (하루 한 번)', () => {
     expect(docsOf(uid).trash2).toBeDefined();
     expect(docsOf(uid).alive).toBeDefined();
     await vi.waitFor(async () => expect((await readCopy(uid)).docs.has('trash1')).toBe(false));
+  });
+});
+
+describe('앱이 꺼진 사이 영구로 지운 항목 (P22-3 - 지운 표시도 받지 못해 사본에 살아 있었다)', () => {
+  /** 사본을 받고 앱을 닫는다 */
+  async function closedDevice(fill: (server: FakeServer, sid: string) => void) {
+    const uid = freshUid();
+    const sid = sidOf(uid);
+    const server = new FakeServer();
+    fill(server, sid);
+    startMirror(uid, { server, today: '2026-10-08' });
+    await vi.waitFor(() => expect(allLive(uid)).toBe(true));
+    await vi.waitFor(async () => expect((await readCopy(uid)).meta.prunedAt).toBeGreaterThan(0));
+    stopMirror();
+    return { uid, sid, server };
+  }
+  /** 하루 뒤에 다시 연다 */
+  function reopen(uid: string, server: FakeServer) {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + PRUNE_EVERY_MS + 1000);
+    startMirror(uid, { server, today: '2026-10-08' });
+  }
+
+  it('기록에 있고 서버에 없는 항목을 사본·화면에서 뺀다 - 다른 항목은 그대로', async () => {
+    const { uid, sid, server } = await closedDevice((s, id) => {
+      s.write(id, 'items', 'gone', item('지운 것', null));
+      s.write(id, 'items', 'alive', item('남은 것', null));
+    });
+    server.purgeElsewhere(sid, 'items', 'gone');
+    reopen(uid, server);
+    // 사본을 꺼낸 뒤에 빠져야 한다 (꺼내기 전에도 화면 store에는 없다)
+    await vi.waitFor(() => {
+      expect(docsOf(uid).alive).toBeDefined();
+      expect(docsOf(uid).gone).toBeUndefined();
+    });
+    await vi.waitFor(async () => expect((await readCopy(uid)).docs.has('gone')).toBe(false));
+  });
+
+  it('기록에 있어도 서버에 있으면 둔다 (되돌리기로 되살렸다) - 기록은 실마리일 뿐이다', async () => {
+    const { uid, sid, server } = await closedDevice((s, id) => s.write(id, 'items', 'back', item('되살린 것', null)));
+    server.purgeLog.set(`${sid}/items`, new Set(['back']));
+    reopen(uid, server);
+    await vi.waitFor(() => expect(server.calls.fetchOne).toContain('back'));
+    await vi.waitFor(async () => expect((await readCopy(uid)).meta.prunedAt).toBeGreaterThan(Date.now() - 1000));
+    expect(docsOf(uid).back).toBeDefined();
+  });
+
+  it('사본에 없는 id는 서버에 묻지 않는다', async () => {
+    const { uid, sid, server } = await closedDevice((s, id) => s.write(id, 'items', 'a', item('a', null)));
+    server.purgeLog.set(`${sid}/items`, new Set(['neverHere']));
+    reopen(uid, server);
+    await vi.waitFor(() => expect(server.calls.purgedIds.length).toBeGreaterThan(0));
+    await vi.waitFor(async () => expect((await readCopy(uid)).meta.prunedAt).toBeGreaterThan(Date.now() - 1000));
+    expect(server.calls.fetchOne).not.toContain('neverHere');
+  });
+
+  it('지난번에 견준 때부터의 기록을 읽는다', async () => {
+    const { uid, server } = await closedDevice((s, id) => s.write(id, 'items', 'a', item('a', null)));
+    const last = (await readCopy(uid)).meta.prunedAt;
+    reopen(uid, server);
+    await vi.waitFor(() => expect(server.calls.purgedIds).toContain(last));
+  });
+
+  it('방금 처음 받은 사본은 기록을 읽지 않는다 (지운 것이 들어 있을 수 없다)', async () => {
+    const { server } = await closedDevice((s, id) => s.write(id, 'items', 'a', item('a', null)));
+    expect(server.calls.purgedIds).toEqual([]);
+  });
+
+  it('확인하지 못한 것이 있으면 견준 때를 옮기지 않는다 - 다음에 그 기록을 다시 읽는다', async () => {
+    const { uid, sid, server } = await closedDevice((s, id) => s.write(id, 'items', 'gone', item('지운 것', null)));
+    const last = (await readCopy(uid)).meta.prunedAt;
+    server.purgeElsewhere(sid, 'items', 'gone');
+    server.fetchOffline = true;
+    reopen(uid, server);
+    await vi.waitFor(() => expect(server.calls.fetchOne).toContain('gone'));
+    await new Promise((r) => setTimeout(r, 30));
+    expect(docsOf(uid).gone).toBeDefined();
+    expect((await readCopy(uid)).meta.prunedAt).toBe(last);
   });
 });
 

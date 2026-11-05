@@ -12,7 +12,7 @@
 //
 // ⚠️ Firestore는 기기 저장소 없이(memoryLocalCache) 쓰므로 약속은 서버가 받았을 때 풀린다.
 //    화면에 먼저 보이기는 기기 사본이 한다 - 적기 직전에 그 결과를 화면 store에 얹고(data/mirror/store 덧칠), 실패하면 걷는다.
-import { deleteField, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { arrayUnion, deleteField, doc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { failWithToast } from '../../app/toast';
 import { newId } from '../id';
@@ -23,6 +23,7 @@ import {
   DELETE_FIELD,
   failMessage,
   nestPaths,
+  purgeLogOf,
   SERVER_TIME,
   toWrite,
   undoOfAll,
@@ -120,16 +121,25 @@ export async function writeOps(ops: WriteOp[]): Promise<void> {
   const local = beginLocalWrite(ops, ctx);
   // 서버가 받을 때까지 센다 - 끊긴 동안 머리줄 안내·닫기 전 묻기(data/pendingWrites)
   const pending = beginPendingWrite();
+  // 영구 지우기 기록은 첫 묶음에 함께 (ops 아래 설명). arrayUnion이라 두 기기가 같이 지워도 서로 덮지 않는다
+  const purgeLog = purgeLogOf(ops, ctx.now);
+  const size = BATCH_LIMIT - purgeLog.length;
   try {
-    for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
+    for (let i = 0; i < ops.length; i += size) {
       const b = writeBatch(db);
-      for (const op of ops.slice(i, i + BATCH_LIMIT)) {
+      for (const op of ops.slice(i, i + size)) {
         const w = toWrite(op, ctx);
         const ref = doc(db, w.path);
         if (w.kind === 'set') b.set(ref, toFirestore(w.data));
         else if (w.kind === 'update') b.update(ref, toFirestore(w.data));
         else if (w.kind === 'merge') b.set(ref, toFirestoreDeep(nestPaths(w.data)), { merge: true });
         else b.delete(ref);
+      }
+      if (i === 0) {
+        for (const { path, ids } of purgeLog) {
+          const added = Object.fromEntries(Object.entries(ids).map(([coll, list]) => [coll, arrayUnion(...list)]));
+          b.set(doc(db, path), { ...added, updatedAt: serverTimestamp(), v: 1 }, { merge: true });
+        }
       }
       await b.commit();
     }

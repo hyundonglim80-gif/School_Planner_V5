@@ -5,6 +5,7 @@
 //   3) 수업 칸: A가 비고를 고치는 동안 B가 같은 교시 과목을 바꿈 → A 저장 = B의 과목 + A의 비고
 //   4) 진도 창(■4): 손대기 전에는 B가 고친 시작일을 따라간다(💾가 켜지지 않는다) · A가 차시를 고치는 동안 B가 시작일 → A 저장 = A의 차시 + B의 시작일 ·
 //      같은 차시 목록을 둘 다 고침 → 묻는다 · 아니오 = 적지 않음 · 예 = A 목록으로 덮기
+//   5) P22-3: B의 앱이 꺼진 사이 A가 지우고 영구로 지움 → 하루 뒤 B를 열면 사본에서 빠진다 (B는 지운 표시도 받지 못했다)
 import { deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
@@ -144,7 +145,40 @@ try {
     p.dialogs.answer = true;
     await p.page.evaluate(() => window.sp5.closeAllWindows());
   }
-  r.check(A.errors.length === 0 && B.errors.length === 0, `화면 오류 없음 ${[...A.errors, ...B.errors].join(' | ')}`);
+
+  r.section('앱이 꺼진 사이 영구로 지운 메모 (P22-3)');
+  const goneRef = doc(em.db, 'spaces', sid, 'items', 'inspOffGone');
+  const stayRef = doc(em.db, 'spaces', sid, 'items', 'inspOffStay');
+  const memo = (text) => ({ kind: 'note', date: DAY, text, labelIds: [], order: 'a1', createdAt: Date.now(), authorId: uid, deletedAt: null, v: 1, updatedAt: serverTimestamp() });
+  await setDoc(goneRef, memo('꺼진 사이 지울 메모'));
+  await setDoc(stayRef, memo('꺼진 사이 남는 메모'));
+  undo.add(() => deleteDoc(goneRef));
+  undo.add(() => deleteDoc(stayRef));
+  const memoCard = (page, id) => page.locator(sel('entry-card', id));
+  r.check(await waitFor(memoCard(B.page, 'inspOffGone'), 10000), 'B 사본에 메모가 들어온다');
+  await B.page.waitForTimeout(1000); // 사본은 뒤따라 적는다
+  await B.page.close();
+  await setDoc(goneRef, { deletedAt: serverTimestamp(), deletedBy: uid, updatedAt: serverTimestamp() }, { merge: true });
+  await A.page.evaluate(() => window.sp5.openWindow('trash'));
+  const trashRow = A.page.locator(sel('trash-row', 'journal:inspOffGone'));
+  await trashRow.waitFor({ timeout: 10000 });
+  await trashRow.locator(sel('trash-purge')).click();
+  r.check((await serverUntil(() => read(goneRef), (d) => d === undefined)) === undefined, 'A가 휴지통에서 영구로 지운다');
+  const logRef = doc(em.db, 'spaces', sid, 'settings', `purged-${new Date().toISOString().slice(0, 7)}`);
+  r.check((await serverUntil(() => read(logRef), (d) => d?.items?.includes('inspOffGone')))?.items?.includes('inspOffGone') === true, '공간에 그달 기록이 남는다');
+  const later = await B.ctx.newPage();
+  const laterErrors = [];
+  later.on('pageerror', (e) => laterErrors.push(String(e)));
+  await later.clock.setFixedTime(Date.now() + 25 * 3600 * 1000);
+  await open(later, `#/day/${DAY}`);
+  r.check(await waitFor(memoCard(later, 'inspOffStay'), 10000), '하루 뒤 B를 열면 남은 메모가 보인다');
+  r.check(await waitFor(async () => (await memoCard(later, 'inspOffGone').count()) === 0, 10000), '영구로 지운 메모는 B 사본에서 빠진다');
+  await later.waitForTimeout(1000);
+  await later.reload();
+  await later.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+  await memoCard(later, 'inspOffStay').waitFor({ timeout: 10000 });
+  r.check((await memoCard(later, 'inspOffGone').count()) === 0, '다시 열어도 되살아나지 않는다 (사본에서도 지웠다)');
+  r.check(A.errors.length === 0 && B.errors.length === 0 && laterErrors.length === 0, `화면 오류 없음 ${[...A.errors, ...B.errors, ...laterErrors].join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
