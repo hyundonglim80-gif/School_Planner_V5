@@ -246,6 +246,15 @@ try {
   c("'저장하지 않은 글' 띠에 들지 않는다", (await page.locator(sel('drafts-banner')).count()) === 0);
   await openPanel();
 
+  // ↗ 새 창 - 말풍선·쓰던 글이 따라간다
+  await waitFor(followInput, 8000);
+  const [pop] = await Promise.all([page.context().waitForEvent('page', { timeout: 10000 }), page.locator(`#side-column ${sel('popout-open')}`).click()]);
+  c('↗ 새 창 - 말풍선', await waitFor(pop.locator(sel('claude-thread')), 20000));
+  const popInput = pop.locator(`${sel('note-panel')} ${sel('claude-follow')} ${sel('chat-input')}`);
+  c('↗ 새 창 - 쓰던 글이 글 칸에', await waitFor(async () => (await popInput.inputValue().catch(() => '')) === '다음 요청', 8000));
+  await pop.close();
+  await openPanel();
+
   // 라벨을 떼면 지난 대화만
   await setDoc(doc(db, 'spaces', sid, 'items', id), { labelIds: [], updatedAt: serverTimestamp() }, { merge: true });
   c('라벨을 떼면 글 칸은 없고 대화는 남는다', await waitFor(async () => (await followBox.count()) === 0 && (await page.locator(sel('claude-thread')).count()) === 1, 8000));

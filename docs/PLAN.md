@@ -2990,7 +2990,7 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 - [x] ■1 자료: `domain/claudeRequest` `readClaudeTurn`·`turnsForView`(턴이 없으면 부모로 한 턴 · 아직 턴이 없는 `claudeFollow`는 '보내는 중' 턴 하나) + 시험 · `data/claudeRequests` `useClaudeTurns(sid, itemId)`(그 메모 칸이 열린 동안만 듣는다, `orderBy('n')` 최근 50 - 칸 하나로 짓는 쿼리) · `data/types` `claudeFollow` · `notes/actions` `askClaudeMore`(`claudeAskAt`·`claudeFollow`를 한 번에 씀, 보내지 못하면 글을 칸에 되돌린다).
 - [x] ■2 말풍선 `notes/ClaudeThread`: 내 글 오른쪽 · Claude 왼쪽(표시 `claudeBadge` + 결과 글 `claudeNoteText`, 표시를 누르면 이슈) · 첫 요청은 한 줄로 접는다(메모 글이 바로 위에 있다) · `nochange`는 실패 색이 아니다 · ❌ 턴에 '↻ 글 칸에 다시 넣기' · ⚠ 보내지 못한 턴 · `NotePanel`의 `ClaudeRequestNote` 자리를 옮긴다(카드·목록 줄은 그대로 마지막 결과 글) · `data-claude-turn`·`data-claude-turn-state`.
 - [x] ■3 글 칸: 첫 요청을 보낸 뒤에만(라벨·계정 조건은 `ClaudeAskButton` 그대로, 개인 공간만) · 도는 동안(배포 중 포함 - 함수가 받지 않는다)은 쓰기만, ➤를 막고 '앞 요청이 끝나면 보낼 수 있습니다' · 메모 글을 저장하지 않아도 보낸다(메모 글은 가지 않는다) · Ctrl+S = 메모 저장, 보내기 아님 · 칸 안내 '공개 이슈로 올라갑니다 - 학생 이름은 적지 마세요' · '🤖 다시 요청'을 없애고 🤖 요청은 첫 요청에만.
-- [ ] ■4 점검 `inspect-claude-request` 묶음: `claudeRequests`·`turns`를 심어 말풍선 차례·표시·접기(글자가 있는지도) · 보내면 메모에 `claudeFollow`, 곧바로 '보내는 중' · 도는 턴이면 ➤ 막힘 · 옛 문서(턴 없음) 한 턴 · 긴 글에서 글 칸이 밀려나지 않음 · 쓰던 글이 닫았다 열어도 남음 · 휴대폰 390px 한 번(이 기능은 휴대폰에서 읽는다 - 자판·탭바가 글 칸을 가리지 않는지).
+- [x] ■4 점검 `inspect-claude-request` 묶음: `claudeRequests`·`turns`를 심어 말풍선 차례·표시·접기(글자가 있는지도) · 보내면 메모에 `claudeFollow`, 곧바로 '보내는 중' · 도는 턴이면 ➤ 막힘 · 옛 문서(턴 없음) 한 턴 · 긴 글에서 글 칸이 밀려나지 않음 · 쓰던 글이 닫았다 열어도 남음 · 휴대폰 390px 한 번(이 기능은 휴대폰에서 읽는다 - 자판·탭바가 글 칸을 가리지 않는지).
 - [ ] ■5 `docs/CLAUDE-REQUEST.md` · `CLAUDE.md` 5장 '메모로 Claude 요청'(#69 다시 요청 → 글 칸) · MAP · 세션 끝 정리.
 **끝 조건**: 단위 · inspect-claude-request·notes·memo·popout 통과 · 실제로 이은 요청 하나가 앞 대화를 받아 고치고 ✅ 배포됨까지(사용자의 다음 진짜 요청으로 본다 - 시험으로 Pro 한도를 쓰지 않는다).
 
