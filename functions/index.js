@@ -31,12 +31,14 @@ import {
   REPO,
   CLAUDE_LABEL_NAME,
   CLAUDE_LABEL_SYSTEM,
+  followOf,
   isAllowedEmail,
   isClaudeLabelName,
   issueOf,
   mergeShaOf,
   askedNow,
   nextToDispatch,
+  planAsk,
   planClaudeLabel,
   statusFromGithub,
 } from './claudePlan.js';
@@ -50,8 +52,10 @@ setGlobalOptions({ region: REGION, maxInstances: 5 });
 initializeApp();
 const db = getFirestore();
 const ALARMS = 'v5alarms';
-// Claude 요청 - v5claude/{itemId} = { sid, issue, state, open, atMs } (함수만 - 규칙에 match가 없어 앱은 못 읽고 못 쓴다)
-//   앱이 보는 표시는 spaces/{sid}/claudeRequests/{itemId} = { state, issue, url, note, atMs } (개인 공간 - 그 사람이 읽는다)
+// Claude 요청 - v5claude/{itemId} = { sid, issue, state, open, atMs, turn, turns, askAt, lastAskAt, askText } (함수만 - 규칙에 match가 없어 앱은 못 읽고 못 쓴다)
+//   앱이 보는 표시는 spaces/{sid}/claudeRequests/{itemId} = { state, issue, url, note, sha, atMs, turns } (개인 공간 - 그 사람이 읽는다, 마지막 턴 그대로)
+//   대화는 그 아래 turns/{n} = { n, askText, askAt, state, issue, url, note, sha } (P23 - 턴 = 내 요청 하나 + Claude 답 하나 = 이슈 하나, state 'dropped' = 보내지 못함)
+//   turn = 지금 도는 턴, turns = ⚠ 턴까지 쓴 마지막 번호. turn이 없는 칸은 P23 전에 시작한 요청이다.
 const CLAUDE = 'v5claude';
 // 함수만 쓰는 표시 (라벨 챙긴 때 - 규칙에 match 없음)
 const CLAUDE_META = 'v5claudeMeta';
@@ -267,16 +271,25 @@ async function github(path, init = {}) {
   return res.status === 204 ? null : res.json();
 }
 
-/** 상태를 두 곳에 (함수 칸 + 앱이 보는 칸) */
-async function setClaudeState(sid, itemId, fields) {
+/** 앱이 보는 표시 칸 */
+const claudeShown = (sid, itemId) => db.collection('spaces').doc(sid).collection('claudeRequests').doc(itemId);
+/** 턴 문서 하나 (P23 - 내 요청 하나 + Claude 답 하나) */
+const claudeTurn = (sid, itemId, n) => claudeShown(sid, itemId).collection('turns').doc(String(n));
+
+/**
+ * 상태를 함수 칸 + 앱이 보는 칸에, turn이 있으면 그 턴 문서에도 (P23).
+ * turn이 없으면 P23 함수가 나가기 전에 시작한 요청이다 - 지금까지처럼 두 곳에만. turnOnly = 턴 문서에만 더 적을 것.
+ */
+async function setClaudeState(sid, itemId, fields, turn = null, turnOnly = {}) {
   const batch = db.batch();
   const open = !FINAL_STATES.includes(fields.state);
+  const updatedAt = FieldValue.serverTimestamp();
   batch.set(db.collection(CLAUDE).doc(itemId), { ...fields, sid, open, updatedAt: Date.now() }, { merge: true });
-  batch.set(
-    db.collection('spaces').doc(sid).collection('claudeRequests').doc(itemId),
-    { ...fields, updatedAt: FieldValue.serverTimestamp() },
-    { merge: true },
-  );
+  batch.set(claudeShown(sid, itemId), { ...fields, updatedAt }, { merge: true });
+  if (typeof turn === 'number') {
+    const { atMs: _atMs, ...shown } = fields;
+    batch.set(claudeTurn(sid, itemId, turn), { ...shown, ...turnOnly, updatedAt }, { merge: true });
+  }
   await batch.commit();
 }
 
@@ -302,26 +315,61 @@ export const v5ClaudeRequest = onDocumentWritten({ document: 'spaces/{sid}/items
     logger.info('Claude 요청 건너뜀 - 정한 계정이 아님', { itemId });
     return;
   }
-  // 줄에 세운다 - 같은 메모가 아직 줄에 있거나 도는 중이면 다시 넣지 않는다(같은 저장이 두 번 들어와도)
-  const ref = db.collection(CLAUDE).doc(itemId);
-  const atMs = Date.now();
-  const queued = await db.runTransaction(async (tx) => {
-    const cur = await tx.get(ref);
-    if (cur.exists && cur.data().open) return false;
-    tx.set(ref, { sid, state: 'queued', issue: null, open: true, atMs, updatedAt: atMs });
-    return true;
-  });
-  if (!queued) return;
-  await setClaudeState(sid, itemId, { state: 'queued', issue: null, url: null, note: '', atMs });
-  logger.info('Claude 요청 줄에 섬', { itemId });
+  const plan = await enqueueClaudeAsk(sid, itemId, after);
+  logger.info('Claude 요청 받음', { itemId, ...plan });
+  if (plan.action !== 'queue') return;
   // 앞에 도는 것이 없으면 바로 보낸다 (있으면 매분 확인이 앞 요청이 끝난 뒤 보낸다)
   await dispatchNext().catch((err) => logger.warn('Claude 요청 보내기 확인 실패', { error: String(err?.message || err) }));
 });
 
 /**
+ * 줄에 세운다 (할 일은 planAsk) - 같은 메모가 아직 줄에 있거나 도는 중이면 다시 넣지 않는다(같은 저장이 두 번 들어와도).
+ * 함수 칸·표시·턴 문서를 한 트랜잭션으로: 따로 쓰면 그 사이 매분 확인이 'sending'으로 바꾼 것을 'queued'로 되돌려 이슈가 둘 생길 수 있다.
+ * ⚠ 턴은 턴 문서에만 - 부모에 쓰면 옛 화면이 모르는 상태라 카드 표시가 사라진다.
+ */
+async function enqueueClaudeAsk(sid, itemId, item) {
+  const ref = db.collection(CLAUDE).doc(itemId);
+  const shown = claudeShown(sid, itemId);
+  const askAt = item.claudeAskAt;
+  const askText = followOf(item);
+  const atMs = Date.now();
+  return db.runTransaction(async (tx) => {
+    const curSnap = await tx.get(ref);
+    const cur = curSnap.exists ? curSnap.data() : null;
+    const plan = planAsk(cur, askAt, askText);
+    if (plan.action === 'skip') return plan;
+    const parent = plan.backfill ? await tx.get(shown) : null;
+    const updatedAt = FieldValue.serverTimestamp();
+    const turnDoc = { n: plan.n, askText, askAt, issue: null, url: null, note: '', sha: null, updatedAt };
+    if (plan.action === 'drop') {
+      tx.set(claudeTurn(sid, itemId, plan.n), { ...turnDoc, state: 'dropped', note: '앞 요청이 도는 동안 보낸 글이라 보내지 못했습니다.' });
+      tx.update(ref, { turns: plan.n, lastAskAt: askAt, updatedAt: atMs });
+      tx.set(shown, { turns: plan.n, updatedAt }, { merge: true });
+      return plan;
+    }
+    // 턴이 없는 옛 메모 - 앞 답이 대화에 남게 부모로 첫 턴을 채운다. 그때 보낸 글은 남아 있지 않아 지금 메모 글로
+    if (parent?.exists) {
+      const { state, issue = null, url = null, note = '', sha = null } = parent.data();
+      tx.set(claudeTurn(sid, itemId, 1), { n: 1, askText: String(item.text ?? '').trim(), askAt: null, state, issue, url, note, sha, updatedAt });
+    }
+    tx.set(ref, { sid, state: 'queued', issue: null, open: true, atMs, updatedAt: atMs, turn: plan.n, turns: plan.n, askAt, askText });
+    tx.set(shown, { state: 'queued', issue: null, url: null, note: '', sha: null, atMs, turns: plan.n, updatedAt }, { merge: true });
+    tx.set(claudeTurn(sid, itemId, plan.n), { ...turnDoc, state: 'queued' });
+    return plan;
+  });
+}
+
+/** 이번 턴 앞의 턴들 - 보내지 못한(⚠) 턴은 Claude가 본 적 없어 뺀다 */
+async function pastClaudeTurns(sid, itemId, turn) {
+  const snap = await claudeShown(sid, itemId).collection('turns').orderBy('n').get();
+  return snap.docs.map((d) => d.data()).filter((t) => t.n < turn && t.state !== 'dropped');
+}
+
+/**
  * 한 번에 하나 (10-16): 도는 요청(sending·sent·working)이 없을 때만 가장 먼저 기다린 것을 보낸다.
  * 고르기와 'sending' 표시는 한 트랜잭션 - 매분 확인과 메모 저장이 겹쳐도 둘을 보내지 않는다.
- * 보낼 때의 메모 글로 보낸다. 그새 메모를 지웠거나 라벨을 뗐으면 보내지 않고 다음 것으로.
+ * 이어 쓴 글이 있으면 그 글을, 없으면 보낼 때의 메모 글을 보낸다(P23 - 그 글을 턴에 적는다). 앞 턴이 있으면 이슈에 앞선 대화를 넣는다.
+ * 그새 메모를 지웠거나 라벨을 뗐으면 보내지 않고 다음 것으로.
  */
 async function dispatchNext() {
   for (let tries = 0; tries < 5; tries++) {
@@ -332,27 +380,33 @@ async function dispatchNext() {
       if (!id) return null;
       const doc = open.docs.find((d) => d.id === id);
       tx.update(doc.ref, { state: 'sending', atMs: now, updatedAt: now });
-      return { id, sid: doc.data().sid };
+      const { sid, turn = null, askText = '' } = doc.data();
+      return { id, sid, turn, follow: askText };
     });
     if (!picked) return;
-    const { id: itemId, sid } = picked;
+    const { id: itemId, sid, turn, follow } = picked;
     const snap = await db.collection('spaces').doc(sid).collection('items').doc(itemId).get();
     const item = snap.exists ? snap.data() : null;
-    if (!item || item.deletedAt || !String(item.text ?? '').trim() || !(await hasClaudeLabel(sid, item.labelIds))) {
-      await setClaudeState(sid, itemId, { state: 'nochange', issue: null, url: null, note: '보내기 전에 메모를 지우거나 라벨을 뗐습니다.', atMs: now });
+    const text = follow || String(item?.text ?? '').trim();
+    // 첫 턴(이어 쓴 글이 없는 턴)은 보낼 때의 메모 글이 곧 요청 - 앞으로 메모 글을 고쳐도 대화에는 이 글이 남는다
+    const sentText = follow || !text ? {} : { askText: text };
+    if (!item || item.deletedAt || !text || !(await hasClaudeLabel(sid, item.labelIds))) {
+      await setClaudeState(sid, itemId, { state: 'nochange', issue: null, url: null, note: '보내기 전에 메모를 지우거나 라벨을 뗐습니다.', atMs: now }, turn, sentText);
       continue;
     }
     try {
-      const { title, body } = issueOf(item.text, Array.isArray(item.attachments) ? item.attachments.length : 0);
+      const history = turn > 1 ? await pastClaudeTurns(sid, itemId, turn) : [];
+      const attachments = !follow && Array.isArray(item.attachments) ? item.attachments.length : 0;
+      const { title, body } = issueOf(text, attachments, { follow: !!follow, history });
       // 라벨이 없으면 만든다(처음 한 번 - 이미 있으면 422)
       await github('/labels', { method: 'POST', body: JSON.stringify({ name: ISSUE_LABEL, color: 'd97706', description: '앱 메모에서 온 Claude 요청' }) }).catch(
         () => {},
       );
       const issue = await github('/issues', { method: 'POST', body: JSON.stringify({ title, body, labels: [ISSUE_LABEL] }) });
-      await setClaudeState(sid, itemId, { state: 'sent', issue: issue.number, url: issue.html_url, note: '', atMs: now });
-      logger.info('Claude 요청 보냄', { itemId, issue: issue.number });
+      await setClaudeState(sid, itemId, { state: 'sent', issue: issue.number, url: issue.html_url, note: '', atMs: now }, turn, sentText);
+      logger.info('Claude 요청 보냄', { itemId, issue: issue.number, turn });
     } catch (err) {
-      await setClaudeState(sid, itemId, { state: 'failed', issue: null, url: null, note: '요청을 보내지 못했습니다.', atMs: now });
+      await setClaudeState(sid, itemId, { state: 'failed', issue: null, url: null, note: '요청을 보내지 못했습니다.', atMs: now }, turn, sentText);
       logger.error('Claude 요청 보내기 실패', { itemId, error: String(err?.message || err) });
       continue;
     }
@@ -369,7 +423,7 @@ async function checkClaudeRequests() {
     if (req.state === 'queued') continue;
     if (!req.issue) {
       // 이슈를 만드는 사이 함수가 끊겼다 - 오래되면 실패로
-      if (now - (req.atMs || 0) > 10 * 60 * 1000) await setClaudeState(req.sid, doc.id, { state: 'failed', note: '요청을 보내지 못했습니다.' });
+      if (now - (req.atMs || 0) > 10 * 60 * 1000) await setClaudeState(req.sid, doc.id, { state: 'failed', note: '요청을 보내지 못했습니다.' }, req.turn);
       continue;
     }
     try {
@@ -380,7 +434,8 @@ async function checkClaudeRequests() {
       const runs = sha ? ((await github(`/actions/runs?head_sha=${sha}&per_page=20`)).workflow_runs ?? []) : null;
       const next = statusFromGithub({ issue, comments, runs, atMs: req.atMs, nowMs: now });
       if (next.state !== req.state || next.note !== (req.note ?? '')) {
-        await setClaudeState(req.sid, doc.id, { state: next.state, note: next.note });
+        // 합친 커밋은 턴에 남긴다 - 다음 턴 이슈의 앞선 대화에 적어 Claude가 git show로 본다 (P23)
+        await setClaudeState(req.sid, doc.id, { state: next.state, note: next.note, ...(sha ? { sha } : {}) }, req.turn);
         logger.info('Claude 요청 상태', { itemId: doc.id, issue: req.issue, state: next.state });
       }
     } catch (err) {
