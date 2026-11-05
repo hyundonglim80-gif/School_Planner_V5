@@ -1,6 +1,6 @@
 // 메모로 Claude 요청 - 메모 카드 진행 표시 점검 (10-16). 서버 함수가 적는 spaces/{sid}/claudeRequests/{itemId}를 관리자로 심고
 // 카드에 🤖 표시가 뜨고 상태를 따라 바뀌는지·GitHub 주소로 이어지는지·지우면 사라지는지 본다. 심은 것은 끝에 지운다.
-//   node tools/inspect-claude-request.mjs   (에뮬레이터 + npm run dev:emu + seed)
+//   node tools/inspect-claude-request.mjs   (에뮬레이터 + npm run dev:emu + seed) · 그림을 보려면 SHOT_PC·SHOT_PHONE=<파일>
 import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, waitFor } from './lib/probe.mjs';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
@@ -86,7 +86,7 @@ try {
   c('🔒 표시, ✕ 없음', (await row.locator(sel('label-locked')).count()) === 1 && (await row.locator(sel('label-delete')).count()) === 0);
   c('이름 칸은 읽기만', (await row.locator(sel('label-name')).getAttribute('readonly')) !== null);
   // 🤖 요청 단추 = 메모 수정 칸 아래(삭제 옆) - 저장으로는 보내지 않는다, 잠긴 라벨이 저장된 메모에만, 묻지 않고 곧바로 보낸다(#76),
-  // 도는 동안은 진행 표시만, 끝나면 '🤖 다시 요청'(#69)
+  // 보낸 뒤로는 메모 칸 안 대화에서 (P23 - #69 '다시 요청'을 글 칸으로)
   await page.keyboard.press('Escape');
   const ask = page.locator(sel('note-claude-ask'));
   const openPanel = async () => {
@@ -113,15 +113,11 @@ try {
   );
   c('보낸 뒤 단추 대신 🤖 요청함', await waitFor(async () => (await ask.count()) === 0 && (await page.locator(sel('note-claude-asked')).count()) === 1, 8000));
   await admin.set(path, { state: 'failed', issue: 9999, url, note: '고치지 못했습니다(확인 실패 또는 오류) - 실행 기록 https://github.com/a/b/actions/runs/1\n\n테스트가 깨졌습니다.' });
-  const again = page.locator(sel('note-claude-again'));
-  c(
-    '끝나면 수정 칸에 진행 표시 + 🤖 다시 요청 (#69)',
-    await waitFor(
-      async () => (await again.count()) === 1 && ((await again.textContent()) ?? '').includes('다시 요청') && (await page.locator(`${sel('note-panel')} ${sel('entry-claude', 'failed')}`).count()) === 1,
-      8000,
-    ),
-  );
   // ─── 메모 칸 안 대화 (P23) ───
+  const followBox = page.locator(`${sel('note-panel')} ${sel('claude-follow')}`);
+  const followInput = followBox.locator(sel('chat-input'));
+  const followSend = followBox.locator(sel('chat-send'));
+  c('보낸 뒤에는 글 칸이 뜨고 🤖 요청 단추는 없다', await waitFor(followInput, 8000) && (await ask.count()) === 0);
   const turnRow = (n) => page.locator(`${sel('note-panel')} ${sel('claude-turn', String(n))}`);
   const panelNote = turnRow(1).locator(sel('claude-turn-note'));
   c('턴이 없는 옛 메모는 부모로 한 턴', await waitFor(async () => (await page.locator(sel('claude-thread', '1')).count()) === 1 && (await turnRow(1).getAttribute('data-claude-turn-state')) === 'failed', 8000));
@@ -173,6 +169,122 @@ try {
     return Math.round(box.scrollHeight - box.scrollTop - box.clientHeight);
   });
   c('열면 맨 아래 답이 보인다', await waitFor(async () => (await scrollGap()) < 80, 4000), String(await scrollGap()));
+
+  // ─── 글 칸 ───
+  const itemNow = () => admin.get(`spaces/${sid}/items/${id}`);
+  const followState = () => followBox.getAttribute('data-claude-follow').catch(() => null);
+  const inView = async (loc) => {
+    const box = await loc.boundingBox();
+    return !!box && box.y >= 0 && box.y + box.height <= page.viewportSize().height;
+  };
+  c('글이 길어도 글 칸·저장 단추가 밀려나지 않는다', (await inView(followInput)) && (await inView(page.locator(sel('note-save')))));
+  c('안내 - 공개 이슈', ((await followBox.textContent()) ?? '').includes('공개 이슈로 올라갑니다'));
+  c('첨부가 없다', (await followBox.locator(sel('chat-attach')).count()) === 0);
+  c('끝난 요청이면 보낼 수 있다', (await followState()) === 'ready');
+
+  await turnRow(4).locator(sel('claude-turn-refill')).click();
+  c('⚠ 턴 - 글 칸에 다시 넣기', (await followInput.inputValue()) === '다른 기기에서 보낸 글', await followInput.inputValue());
+  await followInput.fill('');
+
+  // 메모를 고치던 중에 보낸다 - 메모 글은 가지 않고, 칸은 그대로
+  await page.locator(sel('note-text-input')).press('Control+End');
+  await page.locator(sel('note-text-input')).type(' 고치던 글');
+  await followInput.fill('단추를 더 키워 줘');
+  const before = await itemNow();
+  await followInput.press('Enter');
+  c('보내면 글 칸이 비고 곧바로 보내는 중', await waitFor(async () => (await followInput.inputValue()) === '' && (await turnRow(5).getAttribute('data-claude-turn-state').catch(() => '')) === 'asking', 4000));
+  c('보내는 중 글자가 있다', ((await turnRow(5).textContent()) ?? '').includes('보내는 중') && ((await turnRow(5).textContent()) ?? '').includes('단추를 더 키워 줘'));
+  c('턴이 늘면 맨 아래로', await waitFor(async () => (await scrollGap()) < 80, 4000), String(await scrollGap()));
+  c('메모에 짝이 맞는 claudeFollow', await waitFor(async () => {
+    const it = await itemNow();
+    return it?.claudeFollow?.text === '단추를 더 키워 줘' && it.claudeFollow.at === it.claudeAskAt && it.claudeAskAt !== before.claudeAskAt;
+  }, 8000));
+  c('저장 안 한 메모 글은 가지 않았다', !((await itemNow())?.text ?? '').includes('고치던 글'));
+  c('메모 칸의 고치던 글은 그대로', (await page.locator(sel('note-text-input')).inputValue()).includes('고치던 글'));
+  c('보내는 동안은 보내지 못한다', (await followState()) === 'hold');
+
+  // 쓰기는 되고 보내지는 못한다
+  const at = (await itemNow()).claudeAskAt;
+  await followInput.fill('다음 요청');
+  await followInput.press('Enter');
+  c('도는 동안 Enter는 보내지 않고 글이 남는다', (await followInput.inputValue()) === '다음 요청' && (await itemNow()).claudeAskAt === at);
+  c('➤가 막히고 까닭이 보인다', (await followSend.isDisabled()) && ((await followBox.locator(sel('chat-hold')).textContent()) ?? '').includes('앞 요청이 끝나면'));
+
+  // Ctrl+S는 메모 저장 - 보내기가 아니다
+  await followInput.press('Control+s');
+  c('Ctrl+S = 메모 저장', await waitFor(async () => ((await itemNow())?.text ?? '').includes('고치던 글'), 8000));
+  c('Ctrl+S로 보내지 않는다', (await itemNow()).claudeAskAt === at && (await followInput.inputValue()) === '다음 요청');
+
+  // 함수가 턴을 쓰면 '보내는 중'이 그 턴이 된다
+  for (const n of [5, 6]) undo.add(() => admin.remove(turnsAt(n)));
+  await admin.set(turnsAt(5), { n: 5, askText: '단추를 더 키워 줘', askAt: at, state: 'queued', issue: null, url: null, note: '', sha: null });
+  await admin.set(path, { state: 'queued', issue: null, url: null, note: '' });
+  c('서버 턴이 들어오면 보내는 중을 뺀다', await waitFor(async () => (await page.locator(`${sel('note-panel')} [data-claude-turn]`).count()) === 5 && (await turnRow(5).getAttribute('data-claude-turn-state').catch(() => '')) === 'queued', 8000));
+  await admin.set(turnsAt(5), { n: 5, askText: '단추를 더 키워 줘', askAt: at, state: 'merged', issue: 1005, url: issue(1005), note: '단추를 키웠습니다.', sha: 'ghi' });
+  await admin.set(path, { state: 'merged', issue: 1005, url: issue(1005), note: '단추를 키웠습니다.' });
+  c('배포 중에도 보내지 못한다', await waitFor(async () => ((await badgeOf(5).textContent().catch(() => '')) ?? '').includes('배포 중'), 8000) && (await followState()) === 'hold');
+  await admin.set(turnsAt(5), { n: 5, askText: '단추를 더 키워 줘', askAt: at, state: 'deployed', issue: 1005, url: issue(1005), note: '단추를 키웠습니다.', sha: 'ghi' });
+  await admin.set(path, { state: 'deployed', issue: 1005, url: issue(1005), note: '단추를 키웠습니다.' });
+  c('배포가 끝나면 쓰던 글을 보낼 수 있다', await waitFor(async () => (await followState()) === 'ready' && (await followSend.isEnabled()), 8000));
+
+  await followSend.click();
+  c('➤로 보낸다', await waitFor(async () => (await itemNow())?.claudeFollow?.text === '다음 요청', 8000));
+  await admin.set(turnsAt(6), { n: 6, askText: '다음 요청', askAt: (await itemNow()).claudeAskAt, state: 'failed', issue: 1006, url: issue(1006), note: '확인을 통과하지 못했습니다.', sha: null });
+  await admin.set(path, { state: 'failed', issue: 1006, url: issue(1006), note: '확인을 통과하지 못했습니다.' });
+  c('❌ 턴 - 글 칸에 다시 넣기', await waitFor(turnRow(6).locator(sel('claude-turn-refill')), 8000));
+  await turnRow(6).locator(sel('claude-turn-refill')).click();
+  c('보낸 글이 글 칸에', (await followInput.inputValue()) === '다음 요청');
+  c('성공한 턴에는 다시 넣기가 없다', (await turnRow(5).locator(sel('claude-turn-refill')).count()) === 0);
+
+  // 쓰던 글 - 닫았다 열어도 남고, 앱 위 '저장하지 않은 글' 띠에는 들지 않는다
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0, 8000);
+  await openPanel();
+  c('쓰던 글이 닫았다 열어도 남는다', await waitFor(async () => (await followInput.inputValue().catch(() => '')) === '다음 요청', 8000));
+  await page.reload();
+  await waitFor(page.locator(sel('entry-card', id)), 15000);
+  c("'저장하지 않은 글' 띠에 들지 않는다", (await page.locator(sel('drafts-banner')).count()) === 0);
+  await openPanel();
+
+  // 라벨을 떼면 지난 대화만
+  await setDoc(doc(db, 'spaces', sid, 'items', id), { labelIds: [], updatedAt: serverTimestamp() }, { merge: true });
+  c('라벨을 떼면 글 칸은 없고 대화는 남는다', await waitFor(async () => (await followBox.count()) === 0 && (await page.locator(sel('claude-thread')).count()) === 1, 8000));
+  c('라벨이 없으면 다시 넣기도 없다', (await turnRow(6).locator(sel('claude-turn-refill')).count()) === 0);
+  await setDoc(doc(db, 'spaces', sid, 'items', id), { labelIds: [labelId], updatedAt: serverTimestamp() }, { merge: true });
+  await waitFor(followInput, 8000);
+
+  // 휴대폰 390px 한 번 - 이 기능은 휴대폰에서 읽는다
+  const phone = await newPage(browser, { width: 390, height: 780, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+  await open(phone.page, '#/memo');
+  await waitFor(phone.page.locator(sel('entry-card', id)), 15000);
+  await phone.page.locator(`${sel('entry-card', id)} ${sel('entry-preview')}`).first().tap();
+  const phoneBox = phone.page.locator(`${sel('note-panel')} ${sel('claude-follow')}`);
+  c('휴대폰 - 칸에 글 칸', await waitFor(phoneBox, 10000));
+  const phoneInput = phoneBox.locator(sel('chat-input'));
+  await phoneInput.tap();
+  c('휴대폰 - 글 칸·➤가 화면 안', await phone.page.evaluate(() => {
+    const seen = (el) => {
+      const r = el.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+      return r.bottom <= innerHeight && (el === hit || el.contains(hit));
+    };
+    const box = document.querySelector('[data-note-panel] [data-claude-follow]');
+    return seen(box.querySelector('[data-chat-input]')) && seen(box.querySelector('[data-chat-send]'));
+  }));
+  await phoneInput.fill('휴대폰 글');
+  await phoneInput.press('Enter');
+  c('휴대폰 - Enter는 줄 바꿈', (await phoneInput.inputValue()).includes('휴대폰 글') && (await itemNow()).claudeFollow?.text === '다음 요청');
+  c('휴대폰 - 글 칸이 늘어도 맨 아래 답이 가리지 않는다', await waitFor(() => phone.page.evaluate(() => {
+    const box = document.querySelector('[data-note-panel] [data-scroll-lock]');
+    return box.scrollHeight - box.scrollTop - box.clientHeight < 2;
+  }), 4000));
+  c('휴대폰 - 말풍선이 넘치지 않는다', await phone.page.evaluate(() => {
+    const box = document.querySelector('[data-note-panel] [data-scroll-lock]');
+    return box.scrollWidth <= box.clientWidth + 1;
+  }));
+  if (process.env.SHOT_PHONE) await phone.page.screenshot({ path: process.env.SHOT_PHONE });
+  await phone.page.context().close();
+  if (process.env.SHOT_PC) await page.screenshot({ path: process.env.SHOT_PC });
   dialogs.answer = true;
   await page.keyboard.press('Escape');
   await admin.remove(path);
@@ -185,6 +297,9 @@ try {
     c('빈 라벨 정리 목록에 없다', (await page.locator(sel('label-prune-item', labelId)).count()) === 0);
   } else c('빈 라벨 정리 수에 넣지 않는다 (빈 라벨이 이것뿐)', true);
   c('콘솔 오류 없음', errors.length === 0, errors.join(' | '));
+} catch (e) {
+  // 끝까지 돌지 못하면 통과가 아니다 - 그냥 두면 finally가 삼켜 '모두 통과'로 끝난다(P23-2)
+  c('점검이 끝까지 돌았다', false, String(e));
 } finally {
   await undo.run();
   await browser.close();

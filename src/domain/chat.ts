@@ -167,9 +167,9 @@ export type ChatTarget =
   | { kind: 'dm'; pairId: string; other: string; sid: string };
 
 /** 글·첨부가 보낼 수 있는 것인가 - 안 되면 안내 글. 첨부가 있으면 글은 비어도 된다 */
-export function chatTextError(text: string, files = 0): string | null {
+export function chatTextError(text: string, files = 0, maxText: number = CHAT_LIMITS.text): string | null {
   if (!text.trim() && files === 0) return '보낼 글을 적거나 파일을 붙여 주세요.';
-  if (text.length > CHAT_LIMITS.text) return `글은 한 번에 ${CHAT_LIMITS.text}자까지 보낼 수 있습니다 (지금 ${text.length}자).`;
+  if (text.length > maxText) return `글은 한 번에 ${maxText}자까지 보낼 수 있습니다 (지금 ${text.length}자).`;
   if (files > CHAT_LIMITS.attachments) return `첨부는 한 번에 ${CHAT_LIMITS.attachments}개까지 보낼 수 있습니다 (지금 ${files}개).`;
   return null;
 }

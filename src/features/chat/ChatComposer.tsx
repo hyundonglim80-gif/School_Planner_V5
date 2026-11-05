@@ -4,6 +4,8 @@
 //   - Ctrl+S·배경 누르기·↗ 새 창은 보내지 않는다(쪽지와 같다 - <form>·onSave를 쓰지 않는다).
 //   - 보내면 글 칸을 곧바로 비운다(글은 방에 '보내는 중…'으로 먼저 보인다). 보내지 못하면 글·첨부를 칸에 되돌린다(그 사이에 새로 쓴 것이 없으면).
 //   - 쓰던 글은 이 기기에(useDraft 'chat:<방 키>' - 앱 위 '저장하지 않은 글' 띠에는 들지 않는다). 방을 다시 열면 묻지 않고 칸에 채운다(메신저처럼).
+//   - 메모 요청 글 칸(P23 - notes/ClaudeFollowBox)도 이 칸이다: 열쇠·길이·안내를 바꾸고(draftKey·maxText·label·hint) 첨부를 끈다(noAttach - 공개 이슈로 올라간다).
+//     hold = 쓰기는 되고 보내기만 막는다(앞 요청이 도는 동안) - disabled는 글 칸째 막는다.
 //   - 📎 파일·방에 끌어다 놓기(P21-1 - 방이 받아 ref의 attach로 건넨다)·글 칸에 캡처 Ctrl+V = 내 구글 드라이브에 올려 붙임(notes/attach - 쪽지·메모와 같은 길). 올리는 동안은 보내지 않는다. 첨부가 있으면 글은 비어도 된다.
 import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import { showToast } from '../../app/toast';
@@ -28,6 +30,8 @@ const touchScreen = () => typeof window.matchMedia === 'function' && window.matc
 /** 방에 놓은 파일을 건네받는다 */
 export interface ChatComposerHandle {
   attach: (files: File[]) => void;
+  /** 글을 칸에 넣는다 (쓰던 글이 있으면 뒤에 잇는다) */
+  fill: (text: string) => void;
 }
 
 interface Props {
@@ -38,9 +42,21 @@ interface Props {
   /** 글 칸 위에 띄울 것 ('↓ 새 글' 단추) */
   above?: ReactNode;
   disabled?: boolean;
+  /** 쓰던 글 열쇠 (기본 'chat:<방 키>') */
+  draftKey?: string;
+  /** 첨부를 받지 않는다 - 📎를 숨기고 캡처 Ctrl+V는 안내만 */
+  noAttach?: boolean;
+  /** 글 길이 한도 */
+  maxText?: number;
+  /** 글 칸 안내의 앞말 */
+  label?: string;
+  /** 쓰기는 되고 보내기만 막는다 - 까닭 글 (칸 아래에 보이고, 보내려 하면 알린다) */
+  hold?: string | null;
+  /** 글 칸 아래 안내 */
+  hint?: string;
 }
 
-export default function ChatComposer({ ref, roomKey, onSend, above, disabled }: Props) {
+export default function ChatComposer({ ref, roomKey, onSend, above, disabled, draftKey, noAttach, maxText = CHAT_LIMITS.text, label = '글', hold, hint }: Props) {
   const [text, setText] = useState('');
   const [files, setFiles] = useState<Attachment[]>([]);
   /** 드라이브에 올리는 중 (📎 파일 / 붙여넣은 캡처) */
@@ -48,7 +64,7 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled }: 
   const input = useRef<HTMLTextAreaElement>(null);
 
   const hasContent = text.trim() !== '' || files.length > 0;
-  const draft = useDraft<ChatDraft>(`chat:${roomKey}`, { text, attachments: files }, hasContent);
+  const draft = useDraft<ChatDraft>(draftKey ?? `chat:${roomKey}`, { text, attachments: files }, hasContent);
   // 쓰던 글이 남아 있으면 곧바로 칸에 (묻지 않는다 - 보내기 전까지 보관은 그대로)
   useEffect(() => {
     if (!draft.offer || hasContent) return;
@@ -98,6 +114,10 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled }: 
       if (uploading) showToast(DROP_BUSY_TEXT);
       else void attach(picked, false);
     },
+    fill: (t) => {
+      setText((cur) => (cur.trim() ? `${cur.trimEnd()}\n${t}` : t));
+      input.current?.focus();
+    },
   }));
   /** 캡처 그림만 올린다 - 표(엑셀은 그 범위 그림도 함께 복사한다)·글자는 그대로 글 칸에 */
   const onPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
@@ -105,18 +125,23 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled }: 
     const images = extractImageFiles(e.clipboardData);
     if (images.length === 0) return;
     e.preventDefault();
-    void attach(images, true);
+    if (noAttach) showToast('이 칸에는 그림을 붙일 수 없습니다. 글로 적어 주세요.', 4000);
+    else void attach(images, true);
   };
 
   const send = async () => {
     if (disabled) return;
     const t = input.current?.value ?? text;
     if (!t.trim() && files.length === 0) return;
+    if (hold) {
+      showToast(hold);
+      return;
+    }
     if (uploading) {
       showToast('파일을 올리는 중입니다. 끝난 뒤 보내 주세요.');
       return;
     }
-    const error = chatTextError(t, files.length);
+    const error = chatTextError(t, files.length, maxText);
     if (error) {
       showToast(error, 4000);
       return;
@@ -173,15 +198,17 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled }: 
         </p>
       )}
       <div className="flex items-end gap-1.5">
-        <label
-          data-chat-attach
-          aria-disabled={!!uploading}
-          title="파일 첨부 - 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 링크가 있는 사람은 볼 수 있습니다. 윈도우 파일은 방에 끌어다 놓아도 되고, 캡처는 글 칸에 Ctrl+V."
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg hover:bg-slate-100 ${uploading ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
-        >
-          📎
-          <input type="file" multiple data-chat-file-input onChange={onPickFiles} className="hidden" disabled={!!uploading} />
-        </label>
+        {!noAttach && (
+          <label
+            data-chat-attach
+            aria-disabled={!!uploading}
+            title="파일 첨부 - 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 링크가 있는 사람은 볼 수 있습니다. 윈도우 파일은 방에 끌어다 놓아도 되고, 캡처는 글 칸에 Ctrl+V."
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg hover:bg-slate-100 ${uploading ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
+          >
+            📎
+            <input type="file" multiple data-chat-file-input onChange={onPickFiles} className="hidden" disabled={!!uploading} />
+          </label>
+        )}
         <textarea
           ref={input}
           data-chat-input
@@ -191,26 +218,36 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled }: 
           onPaste={onPaste}
           onKeyDown={onKeyDown}
           disabled={disabled}
-          placeholder={touchScreen() ? '글 (➤로 보내기)' : '글 (Enter 보내기 · Shift + Enter 줄 바꿈)'}
+          placeholder={touchScreen() ? `${label} (➤로 보내기)` : `${label} (Enter 보내기 · Shift + Enter 줄 바꿈)`}
           className="min-h-9 min-w-0 flex-1 resize-none rounded-xl border border-slate-200 px-3 py-1.5 text-sm leading-relaxed disabled:bg-slate-50"
         />
         <button
           type="button"
           data-chat-send
-          disabled={disabled || !!uploading || !hasContent}
+          disabled={disabled || !!hold || !!uploading || !hasContent}
           // 누를 때 글 칸이 커서를 잃지 않게 (휴대폰 자판이 닫히지 않게)
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => void send()}
-          title="보내기 (Enter)"
+          title={hold || '보내기 (Enter)'}
           aria-label="보내기"
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-sm font-bold text-white hover:bg-primary/90 disabled:opacity-40 cursor-pointer"
         >
           ➤
         </button>
       </div>
-      {text.length > CHAT_LIMITS.text - 200 && (
-        <p data-chat-count className={`mt-1 text-right text-2xs ${text.length > CHAT_LIMITS.text ? 'font-bold text-red-600' : 'text-slate-400'}`}>
-          {text.length} / {CHAT_LIMITS.text}자
+      {text.length > maxText - 200 && (
+        <p data-chat-count className={`mt-1 text-right text-2xs ${text.length > maxText ? 'font-bold text-red-600' : 'text-slate-400'}`}>
+          {text.length} / {maxText}자
+        </p>
+      )}
+      {hold && (
+        <p data-chat-hold className="mt-1 text-2xs font-bold text-violet-700">
+          {hold}
+        </p>
+      )}
+      {hint && (
+        <p data-chat-hint className="mt-1 text-2xs text-slate-400">
+          {hint}
         </p>
       )}
     </div>

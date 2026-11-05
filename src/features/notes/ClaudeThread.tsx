@@ -109,7 +109,7 @@ export default function ClaudeThread({ turns, onRefill }: { turns: ClaudeTurn[];
     box.addEventListener('scroll', onScroll, { passive: true });
     // 맨 아래를 보는 동안 위가 늘어나도 따라간다 - 다시 열면 턴이 캐시에서 곧바로 와, 글 칸이 한 프레임 뒤에 높이를 재며 답을 밀어냈다(대화 방과 같다)
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => atBottom.current && (box.scrollTop = box.scrollHeight));
-    for (const el of box.children) ro?.observe(el);
+    for (const el of [box, ...box.children]) ro?.observe(el); // box = 글 칸이 늘어나 스크롤 칸이 줄 때
     return () => {
       box.removeEventListener('scroll', onScroll);
       ro?.disconnect();

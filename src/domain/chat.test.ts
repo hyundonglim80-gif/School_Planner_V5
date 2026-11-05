@@ -84,6 +84,7 @@ describe('대화 보내기 문서', () => {
     expect(chatTextError('가'.repeat(CHAT_LIMITS.text))).toBeNull();
     expect(chatTextError('가'.repeat(CHAT_LIMITS.text + 1))).toMatch(/2000자/);
     expect(chatTextError('글', CHAT_LIMITS.attachments + 1)).toMatch(/10개까지/);
+    expect(chatTextError('가'.repeat(11), 0, 10)).toMatch(/10자/);
   });
 
   it('미리 보기 = 빈 줄을 건너뛴 첫 줄 80자, 글이 없으면 📎 n', () => {
