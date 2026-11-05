@@ -167,6 +167,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - `import`: V4 가져오기 기록(8-1) - 설정이 아니라 따로 둔다(설정 맞추기가 건드리지 않는다).
 - `backupLog`: 드라이브 자동 백업의 마지막 기록 `{ lastAt, lastName, lastSummary, folderLink }`(P8-3 - 백업이 적는다, 고르는 것은 common.autoBackup) · seed는 1년 뒤로 심는다.
 - `sheets`: 이 공간의 V5 구글 시트 파일 `{ spreadsheetId }`(P8-3 - 공간마다, V4·V3의 `backup_config` 시트와 다른 파일).
+- `purged-YYYY-MM`: 그달 영구로 지운 항목 `{ <컬렉션>: [id…], updatedAt, v }`(P22-3 - 개인·그룹 공간 모두, 달은 UTC. `writeOps`가 같은 묶음에 `arrayUnion`으로 적는다, 6-2 '영구 지우기').
 - 백업 JSON(P8-3 `domain/backup.ts`) = `{ version: 'SP5-BACKUP', sid, spaceName, period, include, colls: { 컬렉션: { id: 문서 } }, auto? }` - 시각은 기기 사본과 같은 `{$ts}`, 지운 것은 담지 않는다.
 - `pc` / `mobile`: 글자 크기·창 위치·시작 화면·단축키·화면 보기(V4 `v4_preferences_pc/_mobile`). 1초 뒤 올린다(V4 `preferenceSync`). 창 안 탭 키는 칸 `tabShortcuts`(P18-2 - `shortcutOverrides`와 나눔, 키를 준 탭만).
 - V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다.
@@ -274,6 +275,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   그래서 덧칠이 있는 문서의 '빠짐'은 무시하고, 없으면 서버에 물어(`getDocFromServer`) 정말 없을 때만 사본에서 뺀다.
 - **영구 지우기**: 내 것은 끝나면 사본에서 뺀다(그 판까지만 - 그 사이 되돌려 다시 적었으면 둔다). 다른 기기의 것은 결과 밖의 문서면 구독에 보이지 않으므로,
   하루 한 번 사본의 지운 항목을 `where('deletedAt', '!=', null)`과 견줘 서버에 없는 것을 뺀다(묻기 전의 판만 - 그 사이 되살린 것은 두고).
+  앱이 꺼진 사이 지우고 영구로 지운 것은 지운 표시도 받지 못해 위 후보에 없다 → 같은 때 지난번 견준 달부터 `settings/purged-YYYY-MM`을 읽어, 사본에 남은 id만 서버에 물어 없으면 뺀다(P22-3).
+  기록은 실마리다 - 되살린 문서는 서버가 '있다'고 답한다. 답을 못 받은 것이 있으면 견준 때(`prunedAt`)를 옮기지 않는다. 처음 받은 사본은 읽지 않는다. 2년 넘게 쉰 기기는 '이 기기 사본 다시 받기'로.
 - 화면은 **`data/select.ts`만** 쓴다: 날짜로 `itemsOn` · 기간으로 `itemsBetween` · 라벨로 `itemsWithLabels` · 종류로 `itemsOfKind` · 메모만 `memos` · 휴지통 `trashOf` · 라벨 `labelsOf`,
   같은 이름의 `use…` 훅(지금 공간 - `session.useCurrentSpaceId`), 받기 상태 `useMirrorStatus`(copy 사본으로 그림 · loading · live · offline · error).
   구독을 화면에서 직접 걸지 않는다. 문서에 자리 `id`가 붙는다(`Stored<C>`) - 저장 도우미는 맨 위 `id`를 적지 않으니 화면이 든 문서를 그대로 넘겨도 된다.
