@@ -30,6 +30,7 @@ export interface AlarmCandidate {
   alarmDone?: boolean;
   deletedAt?: unknown;
   kind?: string;
+  authorId?: string;
 }
 
 /** 'YYYY-MM-DD' + 'HH:mm' → 이 기기 시각의 ms (틀리면 NaN) */
@@ -53,6 +54,17 @@ export function dueAlarms<T extends AlarmCandidate>(items: Iterable<T>, now: num
     out.push({ at, item: it });
   }
   return out.sort((a, b) => a.at - b.at || (a.item.id < b.item.id ? -1 : 1)).map((x) => x.item);
+}
+
+/** 이 사람에게 울릴 일정인가 - 서버 푸시(functions/alarmPlan.js recipientsOf)와 같다: 개인 공간은 늘, 그룹은 쓴 사람만(쓴 사람이 없는 옛 일정은 구성원 모두) */
+export const alarmIsMine = (sid: string, item: { authorId?: string }, uid: string): boolean => !sid.startsWith('g_') || !item.authorId || item.authorId === uid;
+
+/** 여러 공간에서 지금 울릴 일정 (P22-3) - 공간마다 dueAlarms, 내게 울릴 것만, 모두 합쳐 알림 시각 차례로 */
+export function dueAlarmsIn<T extends AlarmCandidate>(spaces: readonly { sid: string; items: Iterable<T> }[], uid: string, now: number, rung: ReadonlySet<string> = new Set()): { sid: string; item: T }[] {
+  const at = (it: T) => alarmAt(it.date ?? '', it.time ?? '');
+  return spaces
+    .flatMap(({ sid, items }) => dueAlarms(items, now, rung).filter((item) => alarmIsMine(sid, item, uid)).map((item) => ({ sid, item })))
+    .sort((a, b) => at(a.item) - at(b.item));
 }
 
 // ─── 알림 소리 길이 (P10-1 사용자 의견 8 - 환경설정 '알림', 계정에 하나) ───

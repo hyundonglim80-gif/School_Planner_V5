@@ -1,5 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { alarmAt, chimeCount, dueAlarms, normalizeTimeInput, type AlarmCandidate } from './eventAlarm';
+import { alarmAt, alarmIsMine, chimeCount, dueAlarms, dueAlarmsIn, normalizeTimeInput, type AlarmCandidate } from './eventAlarm';
+
+describe('내게 울릴 일정 (서버 푸시 recipientsOf와 같다 - P22-3)', () => {
+  it('개인 공간은 늘, 그룹은 쓴 사람만, 쓴 사람이 없으면 모두', () => {
+    expect(alarmIsMine('u_me', { authorId: 'other' }, 'me')).toBe(true);
+    expect(alarmIsMine('g_x', { authorId: 'me' }, 'me')).toBe(true);
+    expect(alarmIsMine('g_x', { authorId: 'other' }, 'me')).toBe(false);
+    expect(alarmIsMine('g_x', {}, 'me')).toBe(true);
+  });
+  it('여러 공간을 합쳐 알림 시각 차례로, 공간을 함께 돌려준다', () => {
+    const at = (id: string, time: string, authorId?: string): AlarmCandidate => ({ id, kind: 'event', date: '2026-10-08', time, authorId });
+    const now = new Date(2026, 9, 8, 14, 30).getTime();
+    const got = dueAlarmsIn(
+      [
+        { sid: 'u_me', items: [at('p', '14:20')] },
+        { sid: 'g_x', items: [at('g', '14:10', 'me'), at('other', '14:05', 'you')] },
+      ],
+      'me',
+      now,
+    );
+    expect(got.map((d) => [d.sid, d.item.id])).toEqual([
+      ['g_x', 'g'],
+      ['u_me', 'p'],
+    ]);
+  });
+});
 
 describe('normalizeTimeInput', () => {
   it('1430 · 930 · 14:30 · 9:05 → HH:mm', () => {

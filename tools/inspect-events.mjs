@@ -7,11 +7,12 @@
 //   6) 빠른 입력 칩(내일·15:00) 모두 넣기 → 그날·알림. 카드 ⏰ → 시각 바꾸기 = time만.
 //   7) 🗑️ = 지운 표시(문서는 남는다) → 안내의 되돌리기. 칸의 삭제 → 칸이 닫힌다 → Ctrl+Z로 되돌리기. 완료도 Ctrl+Z.
 //   8) 앱 안 알림: 1분 전 알림 → 가운데 ⏰ 창·소리, 서버에 alarmDone(그 문서 하나), 🔇·확인. ＋ 새로 → 새 일정 = 보는 날의 새 일정 칸.
+//   9) P22-3: 개인 공간을 보고 있어도 내가 쓴 그룹 일정이 울린다(그 문서에 alarmDone), 남이 쓴 그룹 일정은 울리지 않는다.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-events.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 일정(insp_ev…)·라벨을 심고 끝에 지운다.
 import { collection, deleteDoc, doc, getDoc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -228,6 +229,29 @@ try {
   await page.evaluate(() => window.sp5.runShortcut('newEvent'));
   r.check(await waitFor(async () => (await panel.getAttribute('data-event-panel')) === 'new'), "단축키 '새 일정' → 새 일정 칸");
   r.check((await page.locator(sel('event-date')).inputValue()) === DAY, '보는 날의 일정');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+
+  r.section('다른 공간 알림 (P22-3)');
+  const GID = 'g_inspAlarm';
+  const admin = emulatorAdmin();
+  const groupItem = (id) => doc(em.db, 'spaces', GID, 'items', id);
+  undo.add(async () => {
+    for (const id of ['insp_gmine', 'insp_gother']) await admin.remove(`spaces/${GID}/items/${id}`);
+    await admin.remove(`spaces/${GID}`);
+  });
+  await admin.set(`spaces/${GID}`, { kind: 'group', name: '알림 점검 그룹', ownerId: uid, members: { [uid]: 'owner' } });
+  const late = new Date(Date.now() - 60_000);
+  const lateAlarm = { kind: 'event', date: today, labelIds: [], order: 'Zz9', time: `${pad(late.getHours())}:${pad(late.getMinutes())}`, ...stamp };
+  await setDoc(groupItem('insp_gmine'), { ...lateAlarm, text: '내가 쓴 그룹 알림', authorId: uid });
+  await setDoc(groupItem('insp_gother'), { ...lateAlarm, text: '남이 쓴 그룹 알림', authorId: 'someoneElse' });
+  r.check(await waitFor(page.locator(`${sel('space-chip', sid)}[aria-pressed="true"]`), 10000), '개인 공간을 보고 있다');
+  r.check(await waitFor(page.locator(sel('alarm-item', 'insp_gmine')), 30000), '보지 않는 그룹의 내 일정이 울린다 (20초 안)');
+  r.check((await page.locator(sel('alarm-item', 'insp_gother')).count()) === 0, '남이 쓴 그룹 일정은 울리지 않는다');
+  const gRead = async (id) => (await getDoc(groupItem(id))).data();
+  r.check((await serverUntil(() => gRead('insp_gmine'), (d) => d?.alarmDone === true))?.alarmDone === true, '서버: 그 그룹 문서에 alarmDone');
+  r.check(!(await gRead('insp_gother'))?.alarmDone, '남이 쓴 일정에는 alarmDone을 적지 않는다 (쓴 사람의 알림을 막지 않는다)');
+  await page.locator(sel('alarm-dismiss')).click({ force: true });
+  await waitFor(async () => (await page.locator(sel('alarm-popup')).count()) === 0);
 
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
 } catch (e) {

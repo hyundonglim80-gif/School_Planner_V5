@@ -10,6 +10,7 @@ import '../../app/windowList';
 import { useWindows } from '../../app/windows';
 import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
+import { setSpaceChoice, useMySpaces, useSpaceChoice } from '../../data/spaceChoice';
 import type { WriteOp } from '../../data/repo';
 import EventAlarms, { ALARM_CHECK_MS, ALARM_FIRST_CHECK_MS } from './EventAlarms';
 import { openNewEvent, useEventShortcuts } from './shortcuts';
@@ -33,10 +34,10 @@ const NOW = new Date(2026, 9, 8, 14, 30, 0);
 const q = (s: string) => document.querySelector<HTMLElement>(s);
 const sounds = () => (window as unknown as { __spAlarmSoundCount?: number }).__spAlarmSoundCount ?? 0;
 
-function seed(items: Record<string, Record<string, unknown>>) {
-  trackColl(SID, 'items');
-  applyBase(SID, 'items', new Map(Object.entries(items)));
-  setStatus(SID, 'items', 'live');
+function seed(items: Record<string, Record<string, unknown>>, sid = SID) {
+  trackColl(sid, 'items');
+  applyBase(sid, 'items', new Map(Object.entries(items).map(([id, d]) => [id, { id, ...d }])));
+  setStatus(sid, 'items', 'live');
 }
 
 beforeEach(() => {
@@ -52,6 +53,8 @@ afterEach(() => {
   vi.useRealTimers();
   useWindows.setState({ windows: [] });
   setCommonSetting('alarmSound', 10);
+  useMySpaces.setState({ groups: [], loaded: false });
+  useSpaceChoice.setState({ uid: null, sid: null, known: [], names: {} });
 });
 
 describe('앱 안 일정 알림', () => {
@@ -113,6 +116,111 @@ describe('앱 안 일정 알림', () => {
     expect(await ring(30, 60_000)).toBe(10);
     // 확인할 때까지 = 3초마다 끝없이 (5분 뒤에도)
     expect(await ring(-1, 300_000)).toBe(101);
+  });
+
+  // P22-3: 푸시를 켜지 않은 기기는 앱 안 알림뿐인데 지금 보는 공간 것만 울렸다
+  describe('다른 공간 일정', () => {
+    const GROUP = 'g_x';
+    const items = (extra: Record<string, unknown>) => ({ ...base, kind: 'event', date: '2026-10-08', text: '그룹 회의', time: '14:25', ...extra });
+    const shownIds = () => [...document.querySelectorAll<HTMLElement>('[data-alarm-item]')].map((e) => e.dataset.alarmItem);
+    beforeEach(() => useMySpaces.setState({ groups: [{ id: GROUP, name: '학년', ownerId: 'me', members: { me: 'owner' } }], loaded: true }));
+
+    it('개인 공간을 보고 있어도 내가 쓴 그룹 일정이 울리고, alarmDone은 그 공간 문서에', async () => {
+      seed({ g1: items({}) }, GROUP);
+      render(<EventAlarms />);
+      await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+      expect(shownIds()).toEqual(['g1']);
+      expect(written.batches).toEqual([[{ type: 'patch', at: { sid: GROUP, coll: 'items', id: 'g1' }, changes: { alarmDone: true }, before: expect.anything() }]]);
+    });
+
+    it('그룹을 보고 있어도 개인 일정이 울린다', async () => {
+      setSpaceChoice('me', GROUP);
+      seed({ p1: items({ text: '개인 약속' }) });
+      render(<EventAlarms />);
+      await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+      expect(shownIds()).toEqual(['p1']);
+    });
+
+    it('남이 쓴 그룹 일정은 그 공간을 보고 있어도 울리지 않고 alarmDone도 적지 않는다 (서버 푸시와 같다)', async () => {
+      setSpaceChoice('me', GROUP);
+      seed({ g1: items({ authorId: 'other' }) }, GROUP);
+      render(<EventAlarms />);
+      await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+      expect(q('[data-alarm-popup]')).toBeNull();
+      expect(written.batches).toEqual([]);
+    });
+
+    it('쓴 사람이 없는 옛 그룹 일정은 구성원 모두 울린다', async () => {
+      seed({ g1: items({ authorId: undefined }) }, GROUP);
+      render(<EventAlarms />);
+      await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+      expect(shownIds()).toEqual(['g1']);
+    });
+
+    it('목록을 받기 전이면 기억한 그룹의 일정도 본다 (끊긴 채 연 앱)', async () => {
+      useMySpaces.setState({ groups: [{ id: GROUP, name: '학년', ownerId: '', members: {} }], loaded: false });
+      seed({ g1: items({}) }, GROUP);
+      render(<EventAlarms />);
+      await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+      expect(shownIds()).toEqual(['g1']);
+    });
+
+    it('두 공간의 알림은 시각 차례로', async () => {
+      seed({ p1: items({ time: '14:28' }) });
+      seed({ g1: items({ time: '14:20' }) }, GROUP);
+      render(<EventAlarms />);
+      await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+      expect(shownIds()).toEqual(['g1', 'p1']);
+    });
+
+    it('공간을 바꿔도 이 탭에서 울린 일정이 다시 울리지 않는다', async () => {
+      seed({ g1: items({}) }, GROUP);
+      render(<EventAlarms />);
+      await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+      fireEvent.click(q('[data-alarm-dismiss]')!);
+      await act(async () => setSpaceChoice('me', GROUP));
+      await act(async () => vi.advanceTimersByTime(ALARM_CHECK_MS));
+      expect(q('[data-alarm-popup]')).toBeNull();
+      expect(written.batches).toHaveLength(1);
+    });
+
+    describe('서버 푸시 (서비스 워커가 넘겨 준다)', () => {
+      let listener: ((e: MessageEvent) => void) | null = null;
+      const push = (id: string, sid: string) =>
+        act(async () => listener?.({ data: { type: 'sp5-event-alarm', alarm: { id, sid, content: '그룹 회의', time: '2026-10-08 14:25' } } } as MessageEvent));
+      beforeEach(() => {
+        Object.defineProperty(navigator, 'serviceWorker', {
+          configurable: true,
+          value: {
+            getRegistration: async () => undefined,
+            addEventListener: (_: string, fn: (e: MessageEvent) => void) => (listener = fn),
+            removeEventListener: () => (listener = null),
+          },
+        });
+      });
+      afterEach(() => Reflect.deleteProperty(navigator, 'serviceWorker'));
+
+      it('다른 공간 일정의 푸시를 먼저 받으면 그 문서에 alarmDone, 앱이 보고 두 번 울리지 않는다', async () => {
+        seed({ g1: items({}) }, GROUP);
+        render(<EventAlarms />);
+        await push('g1', GROUP);
+        expect(shownIds()).toEqual(['g1']);
+        expect(written.batches).toEqual([[{ type: 'patch', at: { sid: GROUP, coll: 'items', id: 'g1' }, changes: { alarmDone: true }, before: expect.anything() }]]);
+        await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+        expect(shownIds()).toEqual(['g1']);
+        expect(written.batches).toHaveLength(1);
+      });
+
+      it('앱이 먼저 울렸으면 뒤늦은 푸시는 다시 울리지 않는다', async () => {
+        seed({ g1: items({}) }, GROUP);
+        render(<EventAlarms />);
+        await act(async () => vi.advanceTimersByTime(ALARM_FIRST_CHECK_MS));
+        fireEvent.click(q('[data-alarm-dismiss]')!);
+        await push('g1', GROUP);
+        expect(q('[data-alarm-popup]')).toBeNull();
+        expect(written.batches).toHaveLength(1);
+      });
+    });
   });
 
   // 10-14 사용자 보고 '알림은 화면으로 나오지만 소리가 없다' - 이 탭을 아직 누르지 않아 소리가 막히면 OS 알림(기기 소리)도
