@@ -177,6 +177,8 @@ export interface Item extends Tracked {
   attachments?: Attachment[];
   /** 메모로 Claude 요청 - '🤖 요청'을 누른 때(ms). 이 값이 바뀌면 서버 함수가 줄에 세운다 (P13, 'Claude요청' 라벨 메모만) */
   claudeAskAt?: number;
+  /** 메모 칸에서 이어 쓴 말 (P23). at = 함께 적은 claudeAskAt - 짝이 맞을 때만 함수가 메모 글 대신 이 글을 보낸다 */
+  claudeFollow?: { at: number; text: string };
   /** 이은 항목 id. 수업은 'lesson:{date}:{교시}' */
   linkIds?: string[];
   src?: ImportSource;

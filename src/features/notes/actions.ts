@@ -78,6 +78,20 @@ export async function askClaude(sid: string, item: ItemDoc): Promise<void> {
   showToast('Claude에게 보냈습니다 - 카드에서 진행을 볼 수 있습니다.');
 }
 
+/**
+ * 메모 칸 안에서 이어 쓴 말을 보낸다 (P23). 메모 글은 가지 않는다 - 함수가 이 글과 앞선 대화로 새 이슈를 만든다.
+ * 두 칸을 한 번에 적는다(at = claudeAskAt이어야 짝이 맞는다). 보냈으면 true - 못 보냈으면 글 칸이 글을 되돌린다(안내는 저장 도우미가).
+ */
+export async function askClaudeMore(sid: string, item: ItemDoc, text: string): Promise<boolean> {
+  const at = Date.now();
+  try {
+    await patch(itemPath(sid, item.id), { claudeAskAt: at, claudeFollow: { at, text: text.trim() } }, item, { fail: 'Claude에게 보내지 못했습니다.' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** 보이는 목록에서 한 칸 앞·뒤로 (▲▼ - 즐겨찾기끼리, 나머지끼리). 옮긴 것의 order만 */
 export async function moveNoteInList(sid: string, shown: readonly ItemDoc[], index: number, step: -1 | 1): Promise<void> {
   const ops = noteMoveOps(sid, shown, index, step);
