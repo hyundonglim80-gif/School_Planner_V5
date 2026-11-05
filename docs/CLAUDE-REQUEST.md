@@ -9,20 +9,24 @@
   → main CI → firebase-hosting-merge.yml 배포 → 메모 카드 ✅ 배포됨
 ```
 
-**턴**(P23 11-05) = 내 요청 하나 + Claude 답 하나 = 이슈 하나. 메모 하나에 턴이 여럿 쌓인다 - 서버는 P23-1에 나갔고, 메모 칸 안 말풍선·글 칸은 P23-2(`docs/PLAN.md` 6장 'P23').
+**턴**(P23 11-05) = 내 요청 하나 + Claude 답 하나 = 이슈 하나. 메모 하나에 턴이 여럿 쌓인다 - 메모 수정 칸 안에서 채팅처럼 주고받는다(말풍선 + 글 칸, P23-2). 채팅처럼 보여도 실시간은 아니다: 턴마다 Claude가 처음부터 한 번 돈다(10~30분).
 이어 쓴 말은 메모의 `claudeFollow`로 건네고, 함수가 새 이슈 본문에 **앞선 대화**(첫 요청 + 최근 6턴 - 턴마다 이슈 번호·표시·답·합친 커밋)를 넣는다. Claude는 턴마다 처음부터 도는 새 실행이라 이것만 건너간다.
 같은 이슈에 댓글로 잇지 않는다 - 줄 세우기·진행 셈·`Closes`·브랜치 이름이 모두 '이슈 하나 = 실행 하나'다.
 
 - 진행 표시(메모 카드): (🤖 차례 기다림) → 🤖 보냄 → 🤖 고치는 중 → 🤖 배포 중 → ✅ 배포됨 / ❌ 실패 / 🤖 바꾼 것 없음. 누르면 GitHub 이슈(결과 글). 보통 10~30분.
 - **결과 글**(10-19 사용자 의견 - '바꾼 것 없음'만으로는 왜인지 몰랐다): 바꾼 것 또는 **바꾸지 않은 까닭**(이미 있다·규칙에 걸린다·요청이 모호하다 + 다시 요청할 때 더 적을 것)을
-  메모 카드 아래에 글로(세 줄까지 - 마우스를 올리면 전부), 메모 수정 칸·메모 화면 목록의 펼친 줄에는 전부. Claude가 `.claude-request/summary.md`에 쓰고(첫 줄이 결론),
+  메모 카드 아래에 글로(세 줄까지 - 마우스를 올리면 전부), 메모 화면 목록의 펼친 줄에는 전부, 메모 수정 칸에는 턴마다 말풍선으로 전부. Claude가 `.claude-request/summary.md`에 쓰고(첫 줄이 결론),
   워크플로가 이슈 결과 댓글로 → 함수가 2000자까지 옮긴다(P23 - 옛 1000자, 대화에서는 답이 곧 본문이다. 주소·'합쳤습니다' 줄은 앱이 뺀다).
 - **되묻기**(P23): 요청이 모호하면 고치지 않고 summary 끝에 물음 하나 - 같은 메모에서 답한다. 질문만 한 글이면 파일을 고치지 않고 답한다. 둘 다 표시는 '🤖 바꾼 것 없음'.
 - **라벨은 저절로**(10-16): 정한 계정에는 메모 라벨 `Claude요청`이 저절로 생긴다(한 시간 안 - 매분 함수가 한 시간에 한 번 챙긴다). 라벨 관리에서 🔒 - 이름을 바꾸거나 지울 수 없고, 빈 라벨 정리에서도 빠진다. 다른 길로 지워져도 한 시간 안에 되살아난다.
 - **한 번에 하나**(10-16): 요청이 도는 동안(보냄·고치는 중) 들어온 요청은 🤖 차례 기다림 - 앞 요청이 합쳐지거나(배포 중) 끝나면 먼저 기다린 것부터 차례대로 보낸다(1분 안).
   보낼 때의 메모 글로 보낸다(기다리는 사이 고친 글이 간다). 기다리는 사이 메모를 지우거나 라벨을 떼면 보내지 않는다(🤖 바꾼 것 없음).
 - **🤖 요청 단추**: 메모 수정 칸 아래(삭제 옆) - 잠긴 `Claude요청` 라벨(정한 계정에만 생긴다)이 **저장된** 메모에만. 고친 것을 저장하지 않았으면 누를 수 없다(저장된 글이 간다).
-  누르면 **묻지 않고 바로** 보낸다(10-20 #76 - 옛날엔 묻는 창). 도는 동안 수정 칸·카드·목록 줄에는 진행 표시만, 끝나면(바꾼 것 없음·실패·배포됨) 글을 더 적어 **'🤖 다시 요청'**(10-20 #69 - 옛날엔 한 번 보낸 메모는 다시 요청 없음).
+  누르면 **묻지 않고 바로** 보낸다(10-20 #76 - 옛날엔 묻는 창). **첫 요청에만** 쓴다 - 보낸 뒤로는 아래 글 칸(P23 - 10-20 #69 '🤖 다시 요청'을 바꿈).
+- **메모 칸 안 대화**(P23-2): 메모 글·첨부 아래 말풍선(내 글 오른쪽 · Claude 왼쪽 = 표시 + 답, 표시를 누르면 이슈). 첫 요청은 메모 글이 바로 위에 있어 한 줄로 접는다. 턴이 둘 이상이면 열 때 맨 아래로 내린다.
+  **이어서 요청** 글 칸은 스크롤 칸 밖(늘 보인다, 저장 줄 바로 위) - 대화 글 칸과 같다(Enter 보내기 · Shift + Enter 줄 바꿈 · 휴대폰은 ➤ · 쓰던 글은 이 기기에 남아 칸을 다시 열면 채운다).
+  메모 글은 가지 않으므로 저장하지 않아도 보낸다, Ctrl+S는 메모 저장이다. 앞 요청이 끝나기 전(배포 중까지)에는 쓰기만 되고 ➤가 막힌다. 첨부는 받지 않는다(공개 이슈 - 캡처 Ctrl+V는 안내만), 3000자까지.
+  ❌·⚠ 턴은 '↻ 글 칸에 다시 넣기'로 보낸 글을 되살린다. '🤖 바꾼 것 없음'은 되물음·답일 수 있어 말풍선에서는 실패 색이 아니다(카드 표시는 그대로). 라벨을 떼면 글 칸은 사라지고 지난 대화만 남는다. 옛 메모(턴이 없다)는 부모로 한 턴을 그린다.
 - 메모 첫 줄에 `#Claude요청`이라고 써도 라벨이 붙는다.
 
 ## 지키는 것
@@ -87,6 +91,7 @@
 `functions/index.js`(`v5ClaudeRequest` → `enqueueClaudeAsk` = 함수 칸·표시·턴을 한 트랜잭션으로 줄에 세우기 · `dispatchNext` = 트랜잭션으로 하나만 보내기 · `checkClaudeRequests` = 진행 → `ensureClaudeLabels`(한 시간에 한 번, 표시 `v5claudeMeta/labels`) → 다음 보내기, 함수 칸 `v5claude/{itemId}` - 규칙에 match 없음 = 앱은 못 읽음) ·
 손 실행 `tools/claude-hand-run.mjs`(함수를 Firestore·Auth 에뮬레이터에 곧바로 돌린다 - 트랜잭션은 진짜, GitHub만 흉내. 첫 요청·이어 보내기·도는 중·같은 쓰기·옛 메모·배포 순간·옛 화면·줄·실패) ·
 라벨 표시 `labels.system = 'claudeRequest'`(라벨 관리 `[data-label-locked]` - 이름 읽기만·✕ 없음·빈 라벨 정리에서 뺌) ·
-🤖 요청 `notes/ClaudeAskButton`(`[data-note-claude-ask]`·보낸 뒤 `[data-note-claude-asked]` - `notes/NotePanel` 아래) → `notes/actions.askClaude`(메모 `claudeAskAt` 하나) → 함수 `askedNow` · 진행 표시는 카드·`memo/MemoListRow`·수정 칸 ·
-앱이 보는 칸 `spaces/{sid}/claudeRequests/{itemId}`(`data/claudeRequests` Shell에 하나 · store `data/claudeRequestStore` · 순수 `domain/claudeRequest`(결과 글 `claudeNoteText`) · 카드 `notes/ClaudeRequestBadge` `[data-entry-claude=상태]` · 결과 글 `notes/ClaudeRequestNote` `[data-entry-claude-note=상태]`) ·
-워크플로 `.github/workflows/claude-request.yml` · 점검 `tools/inspect-claude-request.mjs`(카드 표시 - 함수·GitHub는 흉내 내지 않는다).
+🤖 요청 `notes/ClaudeAskButton`(`[data-note-claude-ask]`·보낸 뒤 `[data-note-claude-asked]` - `notes/NotePanel` 아래) → `notes/actions.askClaude`(메모 `claudeAskAt` 하나) → 함수 `askedNow` · 진행 표시는 카드·`memo/MemoListRow` ·
+메모 칸 안 대화 `notes/useClaudeThread`(턴 듣기·보낼 수 있나) → 말풍선 `notes/ClaudeThread`(`[data-claude-thread=턴 수|claude-turn=n|claude-turn-state|claude-turn-ask|claude-turn-fold|claude-turn-badge|claude-turn-note|claude-turn-refill]`) · 글 칸 `notes/ClaudeFollowBox`(`[data-claude-follow=ready|hold]` - `chat/ChatComposer`, 쓰던 글 `claude:<메모 id>`) → `notes/actions.askClaudeMore`(메모 `claudeAskAt` + `claudeFollow`) ·
+앱이 보는 칸 `spaces/{sid}/claudeRequests/{itemId}`(`data/claudeRequests` Shell에 하나 · store `data/claudeRequestStore` · 순수 `domain/claudeRequest`(결과 글 `claudeNoteText` · 턴 `readClaudeTurn`·`turnsForView`·`claudeBusy`·`claudeTurnBadge`) · 턴 듣기 `useClaudeTurns`(칸이 열린 동안만, 최근 50) · 카드 `notes/ClaudeRequestBadge` `[data-entry-claude=상태]` · 결과 글 `notes/ClaudeRequestNote` `[data-entry-claude-note=상태]`) ·
+워크플로 `.github/workflows/claude-request.yml` · 점검 `tools/inspect-claude-request.mjs`(카드 표시·말풍선·글 칸·휴대폰 - 함수·GitHub는 흉내 내지 않고 턴 문서를 심는다).
