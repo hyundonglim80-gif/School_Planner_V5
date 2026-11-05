@@ -404,6 +404,19 @@ describe('다시 받기 · 로그아웃', () => {
     expect(docsOf(uid).a).toBeDefined();
   });
 
+  it('다시 받기는 받던 그룹 공간도 다시 받는다 (P22-3 - 개인 공간만 받아 그룹 화면이 새로고침할 때까지 비었다)', async () => {
+    const uid = freshUid();
+    const server = new FakeServer();
+    server.write(sidOf(uid), 'items', 'a', item('a', null));
+    server.write('g_x', 'items', 'b', item('그룹 것', null));
+    const groupDocs = () => useMirror.getState().colls['g_x/items']?.docs ?? {};
+    startMirror(uid, { server, today: '2026-10-08', spaces: [sidOf(uid), 'g_x'] });
+    await vi.waitFor(() => expect(groupDocs().b).toBeDefined());
+    await resetMirror({ server, today: '2026-10-08' });
+    await vi.waitFor(() => expect(groupDocs().b).toBeDefined());
+    expect(docsOf(uid).a).toBeDefined();
+  });
+
   it('로그아웃: 멈추고 이 계정의 사본을 지운다', async () => {
     const uid = freshUid();
     const server = new FakeServer();

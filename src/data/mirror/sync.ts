@@ -405,13 +405,15 @@ export async function wipeMirror(uid: string): Promise<void> {
  * 다른 탭은 사본을 비켜 주고 메모리로만 이어 간다(새로고침하면 새 사본을 쓴다).
  */
 export async function resetMirror(opts: MirrorOptions = {}): Promise<void> {
-  const uid = running?.uid;
-  if (!uid) return;
+  if (!running) return;
+  const { uid } = running;
+  // 받던 공간 그대로 - useMirrorSync는 그룹 목록이 바뀔 때만 맞추므로, 개인 공간만 다시 시작하면 그룹 화면이 새로고침할 때까지 빈다
+  const spaces = [...new Set(running.runners.map((r) => r.sid))];
   stopMirror();
   try {
     await deleteMirrorDb(uid);
   } finally {
-    startMirror(uid, opts);
+    startMirror(uid, { spaces, ...opts });
   }
 }
 

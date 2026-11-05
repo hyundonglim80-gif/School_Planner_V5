@@ -138,6 +138,13 @@ try {
   r.check(await viewing(A.page, gid).isVisible(), '이어진 뒤에도 그 그룹을 본다');
   r.check((await choice()).known?.includes(gid) === true, '이어진 뒤에도 known 그대로');
 
+  r.section('이 기기 사본 다시 받기 (P22-3)');
+  await A.page.evaluate(() => window.sp5.openWindow('settings', { tab: 'app' }));
+  await A.page.locator(sel('mirror-reset')).click();
+  await A.page.getByText('서버에서 다시 받습니다').first().waitFor({ timeout: 10000 });
+  r.check(await waitFor(A.page.locator('[data-event-card]', { hasText: '공유점검 둘째 일정' }), 10000), '그룹 공간에서 눌러도 새로고침 없이 그룹 일정이 다시 찬다');
+  await A.page.evaluate(() => window.sp5.closeAllWindows());
+
   r.section('코드 바꾸기 · 내보내기 (그룹장만 - P14-1)');
   const inviteOf = async (c) => (await getDoc(doc(em.db, 'spaceInvites', c))).data();
   const groupDoc = async () => (await getDoc(doc(em.db, 'spaces', gid))).data();

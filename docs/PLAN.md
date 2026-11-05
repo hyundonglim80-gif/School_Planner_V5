@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**다음 = P22-3 ■2**(공간이 사라지지 않게 - 6장 'P22' 절, 결정은 5장 'P22 …'). 서버를 바꾸지 않아 어느 기기에서나 할 수 있다. 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**다음 = P22-3 ■3**(공간이 사라지지 않게 - 6장 'P22' 절, 결정은 5장 'P22 …'). 서버를 바꾸지 않아 어느 기기에서나 할 수 있다. 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P23 메모 요청 대화 계획**(11-04 - 6장 'P23' 절, 결정은 5장 'P23 …'). 메모 안에서 Claude와 채팅처럼 주고받기, 세 세션. **차례 = P22-3 끝 다음, P22-4 앞**. 함수 배포는 그 세션에서 묻는다.
 **P22-2 끝**(11-05 - 저장 중 친 글이 남는다 · 올리는 중 저장 · 닫기 전 묻기(✕·탭 ×·Alt+W·뒤로가기·배경) · 로그아웃 전 묻기).
 **P22-1 끝**(11-04 - 규칙·함수 손봄, 운영 배포 끝 · 초대 코드 8자리 · 운영 오류 보고 1건 처리).
@@ -2846,7 +2846,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 - [x] ■1 끊긴 채 시작(항목 3): 시험 먼저 - 점검 묶음: 그룹을 심고 고른 뒤 `page.route('**/google.firestore.v1.Firestore/**', (r) => r.abort())` → `reload` → 14초 뒤에도 칩이 있고 `sp5-space.known`이 그대로, 풀면 그대로.
   고침: `watchMySpaces`에 `includeMetadataChanges: true`, `metadata.fromCache`면 목록·`known`을 덮지 않는다(`loaded`는 false - `chooseSpace`가 고른 공간을 믿는다), 기억한 이름으로 칩을 그린다.
   → 11-05 `watchMySpaces`가 서버가 확인한 소식만 믿는다(`includeMetadataChanges`, `fromCache`면 `offline`만 켠다) · 서버 답 전에는 `rememberedGroups`(이름째 기억한 껍데기)로 그린다 · 공유 그룹 창은 끊긴 동안 '받지 못했습니다' · 대화·쪽지 칸은 껍데기로 구성원 이름을 읽지 않는다(이어진 뒤 빈 이름이 남는다) · 단위 spaces.test · inspect-share-groups 묶음(고치기 전 넷 틀림 → 통과)·chat·mail.
-- [ ] ■2 사본 다시 받기(항목 8): `resetMirror`가 지금 받던 공간을 그대로 다시 받는다 + sync 시험 · 그룹 공간에서 눌러도 화면이 찬다.
+- [x] ■2 사본 다시 받기(항목 8): `resetMirror`가 지금 받던 공간을 그대로 다시 받는다 + sync 시험 · 그룹 공간에서 눌러도 화면이 찬다.
+  → 11-05 `resetMirror`가 받던 공간을 그대로 다시 받는다 · sync 시험 · inspect-share-groups 묶음 · inspect-mirror 통과.
 - [ ] ■3 다른 공간 알림(항목 7): 개인 + 내 그룹 항목으로 `dueAlarms`(`useOverlaySpaces`처럼 store에서 모은다 - 훅을 돌리지 않는다) · 푸시와 앱이 겹쳐 두 번 울리지 않는지(`rung`) · 시험 + inspect-events 묶음.
 - [ ] ■4 영구 지운 항목(항목 11): `purge`가 기록을 남기고 `maybePrune`이 읽어 사본에서 뺀다 · 시험(앱을 끈 기기 흉내) · inspect-two-devices 묶음.
 - [ ] ■5 설명서 · MAP·DESIGN · 세션 끝 정리.
