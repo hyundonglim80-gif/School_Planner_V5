@@ -1,7 +1,7 @@
-// Claude 요청 진행 받기 (10-16 - 개인 공간 `claudeRequests/{itemId}`, 서버 함수만 쓴다).
+// Claude 요청 진행 받기 (10-16 - 개인 공간 `claudeRequests/{itemId}`, 서버 함수가 쓴다 - 앱은 본 답의 표시 seenAt만, P23-3).
 // 기기 사본에 넣지 않는다: 몇 개 안 되고 함수가 적는 것이라 gcalQueue처럼 바로 구독한다(없으면 읽기 하나).
 import { useEffect, useState } from 'react';
-import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, doc, limit, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
 import { readClaudeRequest, readClaudeTurn, type ClaudeRequest, type ClaudeTurn } from '../domain/claudeRequest';
 import { useClaudeRequests } from './claudeRequestStore';
 import { db } from './firebase';
@@ -30,6 +30,11 @@ export function watchClaudeRequests(sid: string): () => void {
 export function useClaudeRequestsWatch() {
   const sid = usePersonalSpaceId();
   useEffect(() => (sid ? watchClaudeRequests(sid) : undefined), [sid]);
+}
+
+/** 이 답을 봤다 (P23-3 - 카드 '새 답'을 뗀다, 다른 기기도). 못 적어도 다음에 칸을 열 때 다시 적는다 */
+export async function markClaudeSeen(sid: string, itemId: string, answeredAt: number): Promise<void> {
+  await updateDoc(doc(db, 'spaces', sid, 'claudeRequests', itemId), { seenAt: answeredAt }).catch((e) => console.warn('[claude] 본 표시를 적지 못했습니다.', e));
 }
 
 /** 칸에 보일 최근 턴 수 - 메모 하나의 대화가 이보다 길어지면 앞은 GitHub 이슈에 남는다 */

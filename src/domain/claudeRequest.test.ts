@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { claudeBadge, claudeBusy, claudeFinished, claudeNoteText, claudeTurnBadge, readClaudeRequest, readClaudeTurn, turnsForView, type ClaudeRequestState, type ClaudeTurn } from './claudeRequest';
+import { claudeBadge, claudeBusy, claudeFinished, claudeNewAnswerAt, claudeNoteText, claudeTurnBadge, readClaudeRequest, readClaudeTurn, turnsForView, type ClaudeRequestState, type ClaudeTurn } from './claudeRequest';
 import { compareOrder, orderBetween } from './order';
 
 describe('Claude 요청 표시', () => {
@@ -128,5 +128,36 @@ describe('메모 안 대화 - 턴 (P23)', () => {
     expect(claudeBusy({ ...req, state: 'merged' }, [turn(1, 10)], done)).toBe(true);
     expect(claudeBusy(req, null, [])).toBe(true);
     expect(claudeBusy(req, [turn(1, 10)], turnsForView([turn(1, 10)], req, { claudeAskAt: 20, claudeFollow: { at: 20, text: '더' } }))).toBe(true);
+  });
+});
+
+describe('새 답 (P23-3)', () => {
+  const ask = (state: ClaudeRequestState, more = {}) => readClaudeRequest({ state, issue: 1, url: null, note: '', ...more }) ?? undefined;
+
+  it('서버 문서의 시각을 읽는다 - 없거나 숫자가 아니면 칸이 없다', () => {
+    expect(ask('deployed', { answeredAt: 100, seenAt: 50 })).toMatchObject({ answeredAt: 100, seenAt: 50 });
+    expect(ask('deployed', { answeredAt: 'x' })).not.toHaveProperty('answeredAt');
+    expect(ask('deployed')).not.toHaveProperty('seenAt');
+  });
+
+  it('끝 상태 셋 모두 아직 안 봤으면 그 시각', () => {
+    for (const state of ['deployed', 'nochange', 'failed'] as const) expect(claudeNewAnswerAt(ask(state, { answeredAt: 100 }))).toBe(100);
+  });
+
+  it('본 답이면 없음 - 본 값을 그대로 적으므로 기기 시계가 달라도 같다', () => {
+    expect(claudeNewAnswerAt(ask('deployed', { answeredAt: 100, seenAt: 100 }))).toBeNull();
+  });
+
+  it('전에 본 답 뒤에 온 답은 새 답', () => {
+    expect(claudeNewAnswerAt(ask('deployed', { answeredAt: 200, seenAt: 100 }))).toBe(200);
+  });
+
+  it('옛 문서(시각 없음)·없는 문서는 없음', () => {
+    expect(claudeNewAnswerAt(ask('deployed'))).toBeNull();
+    expect(claudeNewAnswerAt(undefined)).toBeNull();
+  });
+
+  it('이어 보내 도는 동안은 없음 - 앞 답을 보지 않았어도 지금 답이 아니다', () => {
+    for (const state of ['queued', 'sending', 'sent', 'working', 'merged'] as const) expect(claudeNewAnswerAt(ask(state, { answeredAt: 100 }))).toBeNull();
   });
 });

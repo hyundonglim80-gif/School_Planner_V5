@@ -8,6 +8,10 @@ export interface ClaudeRequest {
   issue: number | null;
   url: string | null;
   note: string;
+  /** 끝 상태가 된 때 - 함수가 적는다(P23-3). P23-3 전에 끝난 요청에는 없다 */
+  answeredAt?: number;
+  /** 앱이 본 답의 answeredAt - 기기 시각이 아니라 그 값을 그대로 적어, 기기 시계가 달라도 어긋나지 않는다 */
+  seenAt?: number;
 }
 
 const STATES: readonly ClaudeRequestState[] = ['queued', 'sending', 'sent', 'working', 'merged', 'deployed', 'nochange', 'failed'];
@@ -24,11 +28,19 @@ export function readClaudeRequest(raw: unknown): ClaudeRequest | null {
     issue: typeof v.issue === 'number' ? v.issue : null,
     url,
     note: typeof v.note === 'string' ? v.note : '',
+    ...(typeof v.answeredAt === 'number' ? { answeredAt: v.answeredAt } : {}),
+    ...(typeof v.seenAt === 'number' ? { seenAt: v.seenAt } : {}),
   };
 }
 
 /** 끝난 요청 - 함수가 다음 말을 받는다. 배포 중(merged)은 아직 열려 있다 */
 export const claudeFinished = (state: ClaudeRequestState) => state === 'deployed' || state === 'nochange' || state === 'failed';
+
+/** 아직 안 본 답의 answeredAt, 없으면 null (P23-3 - 메모 카드 '새 답'). 이어 보내 도는 동안은 없다 */
+export function claudeNewAnswerAt(r: ClaudeRequest | undefined): number | null {
+  if (!r || !claudeFinished(r.state) || r.answeredAt === undefined) return null;
+  return r.answeredAt > (r.seenAt ?? 0) ? r.answeredAt : null;
+}
 
 /**
  * 결과 글 - 바꾼 것 또는 바꾸지 않은 까닭 (10-19 사용자 의견 - '바꾼 것 없음'만으로는 왜인지 몰랐다).

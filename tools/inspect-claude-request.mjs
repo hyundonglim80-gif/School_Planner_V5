@@ -297,6 +297,64 @@ try {
   dialogs.answer = true;
   await page.keyboard.press('Escape');
   await admin.remove(path);
+  // ─── 새 답 (P23-3) ───
+  const idA = 'inspectClaudeNewA001';
+  const idB = 'inspectClaudeNewB001';
+  const pathA = `spaces/${sid}/claudeRequests/${idA}`;
+  const pathB = `spaces/${sid}/claudeRequests/${idB}`;
+  for (const [x, text] of [[idA, '새 답 점검 가'], [idB, '새 답 점검 나']]) {
+    await setDoc(doc(db, 'spaces', sid, 'items', x), { kind: 'note', date: null, text, labelIds: [labelId], order: '!', deletedAt: null, v: 1, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), authorId: uid });
+    undo.add(() => admin.remove(`spaces/${sid}/items/${x}`));
+  }
+  undo.add(() => admin.remove(pathA));
+  undo.add(() => admin.remove(pathB));
+  const newChip = (x) => page.locator(`${sel('entry-card', x)} ${sel('entry-claude-new')}`);
+  const answer = (at, seen) => ({ state: 'deployed', issue: 1, url, note: '답', answeredAt: at, ...(seen ? { seenAt: seen } : {}) });
+  const seenOf = async (p) => (await admin.get(p))?.seenAt;
+  const openNote = (x) => page.evaluate(({ sid, x }) => window.sp5.openWindow('note', { sid, date: null, id: x }), { sid, x });
+  c('새 답 - 점검 메모 둘', await waitFor(page.locator(sel('entry-card', idB)), 10000));
+
+  await admin.set(pathA, answer(100));
+  c('안 본 답 = 카드에 새 답', await waitFor(newChip(idA), 8000));
+  c('새 답 글자가 있다', ((await newChip(idA).textContent()) ?? '').includes('새 답'));
+  await admin.set(pathB, { state: 'working', issue: 2, url, note: '', answeredAt: 100 });
+  await waitFor(page.locator(`${sel('entry-card', idB)} ${sel('entry-claude', 'working')}`), 8000);
+  c('이어 보내 도는 동안은 없다', (await newChip(idB).count()) === 0);
+  await admin.set(pathB, { state: 'deployed', issue: 2, url, note: '옛 답' });
+  await waitFor(page.locator(`${sel('entry-card', idB)} ${sel('entry-claude', 'deployed')}`), 8000);
+  c('옛 문서(답한 때 없음)는 없다', (await newChip(idB).count()) === 0);
+
+  await openNote(idA);
+  c('메모 칸을 보면 새 답이 사라진다', await waitFor(async () => (await newChip(idA).count()) === 0, 8000));
+  c('서버에 본 값 그대로', await waitFor(async () => (await seenOf(pathA)) === 100, 8000), String(await seenOf(pathA)));
+  await admin.set(pathA, answer(200, 100));
+  c('보고 있는 칸에 온 답은 곧바로 본 것', await waitFor(async () => (await seenOf(pathA)) === 200, 8000), String(await seenOf(pathA)));
+
+  // 다른 앱을 보는 동안은 안 본 것
+  const pageShown = (state) =>
+    page.evaluate((v) => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => v });
+      document.dispatchEvent(new Event('visibilitychange'));
+    }, state);
+  await pageShown('hidden');
+  await admin.set(pathA, answer(250, 200));
+  c('다른 앱을 보는 동안 온 답 = 새 답', await waitFor(newChip(idA), 8000));
+  await page.waitForTimeout(800);
+  c('그동안은 본 것으로 적지 않는다', (await seenOf(pathA)) === 200, String(await seenOf(pathA)));
+  await pageShown('visible');
+  c('돌아오면 본 것', await waitFor(async () => (await seenOf(pathA)) === 250, 8000), String(await seenOf(pathA)));
+
+  // 숨은 탭은 안 본 것 (B를 열면 A는 숨은 탭)
+  await openNote(idB);
+  await waitFor(page.locator(sel('side-tab')).nth(1), 8000);
+  await admin.set(pathA, answer(300, 250));
+  c('숨은 탭의 메모에 온 답 = 새 답', await waitFor(newChip(idA), 8000));
+  await page.waitForTimeout(800);
+  c('숨은 탭은 본 것으로 적지 않는다', (await seenOf(pathA)) === 250, String(await seenOf(pathA)));
+  await page.locator(sel('side-tab')).first().click();
+  c('그 탭을 보면 본 것', await waitFor(async () => (await seenOf(pathA)) === 300, 8000), String(await seenOf(pathA)));
+  await page.keyboard.press('Escape');
+
   await page.evaluate(() => window.sp5.openWindow('labels', { tab: 'note' }));
   await waitFor(row, 10000);
 

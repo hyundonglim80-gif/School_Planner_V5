@@ -1,6 +1,7 @@
 // 메모 카드의 Claude 요청 진행 표시 (10-16 - 'Claude요청' 라벨을 붙여 저장한 메모만, docs/CLAUDE-REQUEST.md).
 // 🤖 보냄 → 고치는 중 → 배포 중 → ✅ 배포됨 / ❌ 실패 · 바꾼 것 없음. 누르면 GitHub 이슈(자세히).
-import { claudeBadge } from '../../domain/claudeRequest';
+// 답을 아직 안 봤으면 표시 옆에 '새 답' (P23-3 - 그 메모 칸을 보면 사라진다).
+import { claudeBadge, claudeNewAnswerAt } from '../../domain/claudeRequest';
 import { useClaudeRequests } from '../../data/claudeRequestStore';
 
 const TONE = {
@@ -28,5 +29,14 @@ export function ClaudeBadgeChip({ badge, url, data }: { badge: ReturnType<typeof
 export default function ClaudeRequestBadge({ itemId }: { itemId: string }) {
   const req = useClaudeRequests((s) => s.byId[itemId]);
   if (!req) return null;
-  return <ClaudeBadgeChip badge={claudeBadge(req)} url={req.url} data={{ 'data-entry-claude': req.state }} />;
+  return (
+    <>
+      <ClaudeBadgeChip badge={claudeBadge(req)} url={req.url} data={{ 'data-entry-claude': req.state }} />
+      {claudeNewAnswerAt(req) !== null && (
+        <span data-entry-claude-new title="Claude 답을 아직 보지 않았습니다" className="rounded-full bg-primary px-1.5 py-0.5 text-2xs font-black text-white whitespace-nowrap">
+          새 답
+        </span>
+      )}
+    </>
+  );
 }

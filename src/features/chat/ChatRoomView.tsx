@@ -41,6 +41,7 @@ import {
 } from '../../domain/chat';
 import FileDropCover from '../../ui/FileDropCover';
 import { useFileDrop } from '../../ui/fileDrop';
+import { usePageVisible } from '../../ui/usePageVisible';
 import ChatComposer, { type ChatComposerHandle } from './ChatComposer';
 import ChatMsgRow from './ChatMsgRow';
 import type { RoomCreate } from './NewChat';
@@ -202,12 +203,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
   const reads = useChatStore((s) => s.reads);
   const unread = !!room && isRoomUnread(room, uid, myReadOf(room, uid, reads));
   const shown = useShownWindowPick((w) => (w.id === CHAT_WINDOW ? 'chat' : null)) === 'chat';
-  const [visible, setVisible] = useState(() => document.visibilityState === 'visible');
-  useEffect(() => {
-    const on = () => setVisible(document.visibilityState === 'visible');
-    document.addEventListener('visibilitychange', on);
-    return () => document.removeEventListener('visibilitychange', on);
-  }, []);
+  const visible = usePageVisible();
   // 이 방을 보면 이 방의 OS 알림(푸시)을 닫는다 (P19-3 ■1)
   useEffect(() => {
     if (ref && shown && visible) void closeChatNotices(roomKey);

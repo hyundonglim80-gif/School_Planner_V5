@@ -173,6 +173,14 @@ await tick();
   eq('답 글', t.note, '버튼을 옮겼습니다.');
   eq('부모 = 마지막 턴', (await read(shown('hand-a'))).state, 'deployed');
   eq('함수 칸 닫힘', (await read(fn('hand-a'))).open, false);
+  // 새 답 (P23-3) - 끝 상태가 되는 쓰기에만, 앱이 보는 칸에만
+  const p = await read(shown('hand-a'));
+  check('끝나면 부모에 답한 때', typeof p.answeredAt === 'number');
+  check('답한 때는 턴·함수 칸에 적지 않는다', !('answeredAt' in t) && !('answeredAt' in (await read(fn('hand-a')))));
+  await tick();
+  eq('다음 매분에도 답한 때는 그대로', (await read(shown('hand-a'))).answeredAt, p.answeredAt);
+  // 앱이 본 값을 그대로 적는다 - 다음 쓰기들이 지우지 않아야 한다
+  await shown('hand-a').update({ seenAt: p.answeredAt });
 }
 
 part('2 이어 보내기 - 이어 쓴 글이 이슈로, 앞선 대화가 함께, 첫 턴은 그대로');
@@ -198,6 +206,7 @@ check('고친 메모 글은 가지 않는다', !i2.body.includes('메모 글을 
   eq('턴 2 issue', t2.issue, i2.number);
   eq('첫 턴 글 그대로', t1.askText, '첫 요청 글');
   eq('첫 턴 답 그대로', t1.note, '버튼을 옮겼습니다.');
+  check('이어 보내도 앱이 본 값이 남는다', p.seenAt === p.answeredAt);
 }
 
 part('3 도는 중 보내기 - 글을 ⚠ 턴으로 남기고, 도는 턴은 그대로');
@@ -222,6 +231,10 @@ eq('⚠ 턴은 그대로', (await read(turnRef('hand-a', 3))).state, 'dropped');
 nochange(i2, '무엇을 작게 할까요? 글자인가요, 버튼인가요?');
 await tick();
 eq('턴 2 끝', (await read(turnRef('hand-a', 2))).state, 'nochange');
+{
+  const p = await read(shown('hand-a'));
+  check('다음 답은 본 때보다 늦다 = 새 답', p.answeredAt > p.seenAt);
+}
 eq('⚠ 턴은 끝나도 그대로', (await read(turnRef('hand-a', 3))).state, 'dropped');
 await follow('hand-a', '글자를 작게');
 const i3 = lastIssue();
@@ -344,6 +357,7 @@ gh.failCreate = false;
   const t = await read(turnRef('hand-g', 1));
   eq('턴 실패', t.state, 'failed');
   eq('턴 글 남음', t.askText, '실패할 요청');
+  check('보내기 실패도 답한 때', typeof (await read(shown('hand-g'))).answeredAt === 'number');
   eq('닫힘', (await read(fn('hand-g'))).open, false);
   await follow('hand-g', '다시 보냄');
   eq('턴 2 보냄', (await read(turnRef('hand-g', 2))).state, 'sent');

@@ -53,7 +53,8 @@ initializeApp();
 const db = getFirestore();
 const ALARMS = 'v5alarms';
 // Claude 요청 - v5claude/{itemId} = { sid, issue, state, open, atMs, turn, turns, askAt, lastAskAt, askText } (함수만 - 규칙에 match가 없어 앱은 못 읽고 못 쓴다)
-//   앱이 보는 표시는 spaces/{sid}/claudeRequests/{itemId} = { state, issue, url, note, sha, atMs, turns } (개인 공간 - 그 사람이 읽는다, 마지막 턴 그대로)
+//   앱이 보는 표시는 spaces/{sid}/claudeRequests/{itemId} = { state, issue, url, note, sha, atMs, turns, answeredAt, seenAt } (개인 공간 - 그 사람이 읽는다, 마지막 턴 그대로)
+//   answeredAt = 끝 상태가 된 때(함수) · seenAt = 앱이 본 답의 answeredAt(앱 - 다르면 카드 '새 답', P23-3)
 //   대화는 그 아래 turns/{n} = { n, askText, askAt, state, issue, url, note, sha } (P23 - 턴 = 내 요청 하나 + Claude 답 하나 = 이슈 하나, state 'dropped' = 보내지 못함)
 //   turn = 지금 도는 턴, turns = ⚠ 턴까지 쓴 마지막 번호. turn이 없는 칸은 P23 전에 시작한 요청이다.
 const CLAUDE = 'v5claude';
@@ -285,7 +286,7 @@ async function setClaudeState(sid, itemId, fields, turn = null, turnOnly = {}) {
   const open = !FINAL_STATES.includes(fields.state);
   const updatedAt = FieldValue.serverTimestamp();
   batch.set(db.collection(CLAUDE).doc(itemId), { ...fields, sid, open, updatedAt: Date.now() }, { merge: true });
-  batch.set(claudeShown(sid, itemId), { ...fields, updatedAt }, { merge: true });
+  batch.set(claudeShown(sid, itemId), { ...fields, ...(open ? {} : { answeredAt: Date.now() }), updatedAt }, { merge: true });
   if (typeof turn === 'number') {
     const { atMs: _atMs, ...shown } = fields;
     batch.set(claudeTurn(sid, itemId, turn), { ...shown, ...turnOnly, updatedAt }, { merge: true });
