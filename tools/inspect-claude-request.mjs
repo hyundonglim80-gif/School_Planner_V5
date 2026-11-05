@@ -121,10 +121,58 @@ try {
       8000,
     ),
   );
-  const panelNote = page.locator(`${sel('note-panel')} ${sel('entry-claude-note', 'failed')}`);
+  // ─── 메모 칸 안 대화 (P23) ───
+  const turnRow = (n) => page.locator(`${sel('note-panel')} ${sel('claude-turn', String(n))}`);
+  const panelNote = turnRow(1).locator(sel('claude-turn-note'));
+  c('턴이 없는 옛 메모는 부모로 한 턴', await waitFor(async () => (await page.locator(sel('claude-thread', '1')).count()) === 1 && (await turnRow(1).getAttribute('data-claude-turn-state')) === 'failed', 8000));
   const panelText = (await panelNote.textContent().catch(() => '')) ?? '';
-  c('수정 칸에 결과 글 다 (주소는 빼고)', panelText.includes('테스트가 깨졌습니다.') && panelText.includes('고치지 못했습니다') && !panelText.includes('https'), panelText);
+  c('말풍선에 결과 글 다 (주소는 빼고)', panelText.includes('테스트가 깨졌습니다.') && panelText.includes('고치지 못했습니다') && !panelText.includes('https'), panelText);
+  c('옛 메모의 내 글 자리', ((await turnRow(1).locator(sel('claude-turn-ask')).textContent()) ?? '').includes('메모 글을 보냈습니다'));
   c('카드에는 진행 표시 그대로', (await page.locator(`${sel('entry-card', id)} ${sel('entry-claude', 'failed')}`).count()) === 1);
+
+  const turnsAt = (n) => `${path}/turns/${n}`;
+  for (const n of [1, 2, 3, 4]) undo.add(() => admin.remove(turnsAt(n)));
+  const long = ['첫 요청 첫 줄입니다', ...Array.from({ length: 8 }, (_, i) => `둘째 뒤 ${i} 번째 줄`)].join('\n');
+  const issue = (n) => `https://github.com/hyundonglim80-gif/School_Planner_V5/issues/${n}`;
+  await admin.set(turnsAt(1), { n: 1, askText: long, askAt: 10, state: 'deployed', issue: 1001, url: issue(1001), note: '버튼을 오른쪽으로 옮겼습니다.', sha: 'abc' });
+  await admin.set(turnsAt(2), { n: 2, askText: '조금 더 작게 해 줘', askAt: 20, state: 'nochange', issue: 1002, url: issue(1002), note: '어느 버튼인지 알려 주세요?', sha: null });
+  await admin.set(turnsAt(3), { n: 3, askText: '머리줄 저장 단추', askAt: 30, state: 'working', issue: 1003, url: issue(1003), note: '', sha: null });
+  await admin.set(turnsAt(4), { n: 4, askText: '다른 기기에서 보낸 글', askAt: 40, state: 'dropped', issue: null, url: null, note: '앞 요청이 도는 동안 보낸 글이라 보내지 못했습니다.', sha: null });
+  c('턴 넷이 차례로', await waitFor(async () => (await page.locator(`${sel('note-panel')} [data-claude-turn]`).evaluateAll((els) => els.map((e) => e.dataset.claudeTurn).join())) === '1,2,3,4', 8000));
+  const fold = turnRow(1).locator(sel('claude-turn-ask'));
+  c('첫 요청은 접혀 있다 - 글이 있고 한 줄 높이', (await fold.getAttribute('data-claude-turn-fold')) === 'closed' && ((await fold.textContent()) ?? '').includes('첫 요청 첫 줄') && ((await fold.boundingBox())?.height ?? 99) < 44, String((await fold.boundingBox())?.height));
+  await fold.click();
+  c('누르면 다 보인다', (await fold.getAttribute('data-claude-turn-fold')) === 'open' && ((await fold.textContent()) ?? '').includes('둘째 뒤 7 번째 줄') && ((await fold.boundingBox())?.height ?? 0) > 80);
+  await fold.click();
+  c('이어 쓴 글은 그대로', ((await turnRow(2).locator(sel('claude-turn-ask')).textContent()) ?? '').includes('조금 더 작게 해 줘'));
+  c('내 글은 오른쪽·Claude는 왼쪽', await page.evaluate(() => {
+    const row = document.querySelector('[data-note-panel] [data-claude-turn="2"]');
+    const mine = row.querySelector('[data-claude-turn-ask]').getBoundingClientRect();
+    const claude = row.querySelector('[data-claude-turn-note]').getBoundingClientRect();
+    return mine.right > claude.right && mine.left > claude.left;
+  }));
+  const badgeOf = (n) => turnRow(n).locator(sel('claude-turn-badge'));
+  c('표시를 누르면 그 턴의 이슈', (await badgeOf(2).getAttribute('href')) === issue(1002) && ((await badgeOf(2).textContent()) ?? '').includes('바꾼 것 없음'));
+  const toneOf = (n) => badgeOf(n).locator('xpath=..').getAttribute('class');
+  c('바꾼 것 없음은 실패 색이 아니다', !(await toneOf(2)).includes('rose') && (await toneOf(2)).includes('violet'), await toneOf(2));
+  c('도는 턴은 답 없이 표시만', ((await badgeOf(3).textContent()) ?? '').includes('고치는 중') && (await turnRow(3).locator(sel('claude-turn-note')).count()) === 0);
+  c('⚠ 보내지 못한 턴 - 글이 남고 까닭이 보인다', ((await badgeOf(4).textContent()) ?? '').includes('보내지 못함') && ((await turnRow(4).textContent()) ?? '').includes('다른 기기에서 보낸 글') && ((await turnRow(4).textContent()) ?? '').includes('도는 동안'));
+  c('⚠ 턴은 실패 색', (await toneOf(4)).includes('rose'));
+  await admin.set(turnsAt(3), { n: 3, askText: '머리줄 저장 단추', askAt: 30, state: 'deployed', issue: 1003, url: issue(1003), note: '저장 단추를 줄였습니다.', sha: 'def' });
+  c('상태·답이 바뀌면 그 턴만 따라간다', await waitFor(async () => ((await turnRow(3).locator(sel('claude-turn-note')).textContent().catch(() => '')) ?? '').includes('저장 단추를 줄였습니다.'), 8000));
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0, 8000);
+  // 메모 글이 길어도 답이 보이게 - 턴이 둘 이상이면 열 때 맨 아래
+  await setDoc(doc(db, 'spaces', sid, 'items', id), { text: Array.from({ length: 80 }, (_, i) => `긴 메모 ${i}`).join('\n'), updatedAt: serverTimestamp() }, { merge: true });
+  // 글이 앱에 닿은 뒤에 연다. 두 번째 열기라 턴이 캐시에서 곧바로 온다 - 글 칸이 한 프레임 뒤에 늘어나도 맨 아래를 지키는지 본다
+  await waitFor(async () => ((await page.locator(sel('entry-card', id)).textContent()) ?? '').includes('긴 메모 1'), 8000);
+  await openPanel();
+  await waitFor(page.locator(sel('claude-thread', '4')), 8000);
+  const scrollGap = () => page.evaluate(() => {
+    const box = document.querySelector('[data-note-panel] [data-scroll-lock]');
+    return Math.round(box.scrollHeight - box.scrollTop - box.clientHeight);
+  });
+  c('열면 맨 아래 답이 보인다', await waitFor(async () => (await scrollGap()) < 80, 4000), String(await scrollGap()));
   dialogs.answer = true;
   await page.keyboard.press('Escape');
   await admin.remove(path);

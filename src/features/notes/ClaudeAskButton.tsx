@@ -3,16 +3,16 @@
 // 보내서 도는 동안에는 단추 대신 진행 표시만. 끝난 뒤(바꾼 것 없음·실패·배포됨)에는 글을 더 적어 '🤖 다시 요청'할 수 있다(10-20 사용자 요청 #69).
 // 저장하지 않은 고침이 있으면 누를 수 없다(저장된 글이 간다).
 import { useClaudeRequests } from '../../data/claudeRequestStore';
-import { useDocs } from '../../data/select';
+import { claudeFinished } from '../../domain/claudeRequest';
 import type { ItemDoc } from '../events/eventOps';
 import { askClaude } from './actions';
 import ClaudeRequestBadge from './ClaudeRequestBadge';
+import { useClaudeTagged } from './useClaudeThread';
 
 export default function ClaudeAskButton({ sid, item, dirty }: { sid: string; item: ItemDoc; dirty: boolean }) {
-  const labels = useDocs('labels', sid);
   const req = useClaudeRequests((s) => s.byId[item.id]);
-  const tagged = (item.labelIds ?? []).some((id) => labels[id]?.system === 'claudeRequest' && !labels[id]?.deletedAt);
-  const finished = !!req && (req.state === 'nochange' || req.state === 'failed' || req.state === 'deployed');
+  const tagged = useClaudeTagged(sid, item);
+  const finished = !!req && claudeFinished(req.state);
   if (req && !finished) return <ClaudeRequestBadge itemId={item.id} />;
   if (!req && item.claudeAskAt)
     return (

@@ -9,28 +9,24 @@ const TONE = {
   bad: 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100',
 };
 
-export default function ClaudeRequestBadge({ itemId }: { itemId: string }) {
-  const req = useClaudeRequests((s) => s.byId[itemId]);
-  if (!req) return null;
-  const b = claudeBadge(req);
-  const cls = `text-2xs font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${TONE[b.tone]}`;
-  if (!req.url)
+/** 표시 칩 하나 - 카드와 메모 칸 안 말풍선(P23)이 같이 쓴다. 주소가 있으면 누르면 이슈 */
+export function ClaudeBadgeChip({ badge, url, data }: { badge: ReturnType<typeof claudeBadge>; url: string | null; data: Record<`data-${string}`, string> }) {
+  const cls = `inline-block text-2xs font-bold px-1.5 py-0.5 rounded border whitespace-nowrap ${TONE[badge.tone]}`;
+  if (!url)
     return (
-      <span data-entry-claude={req.state} title={b.title} className={cls}>
-        {b.text}
+      <span {...data} title={badge.title} className={cls}>
+        {badge.text}
       </span>
     );
   return (
-    <a
-      data-entry-claude={req.state}
-      href={req.url}
-      target="_blank"
-      rel="noreferrer"
-      title={b.title}
-      onClick={(e) => e.stopPropagation()}
-      className={`${cls} cursor-pointer`}
-    >
-      {b.text}
+    <a {...data} href={url} target="_blank" rel="noreferrer" title={badge.title} onClick={(e) => e.stopPropagation()} className={`${cls} cursor-pointer`}>
+      {badge.text}
     </a>
   );
+}
+
+export default function ClaudeRequestBadge({ itemId }: { itemId: string }) {
+  const req = useClaudeRequests((s) => s.byId[itemId]);
+  if (!req) return null;
+  return <ClaudeBadgeChip badge={claudeBadge(req)} url={req.url} data={{ 'data-entry-claude': req.state }} />;
 }

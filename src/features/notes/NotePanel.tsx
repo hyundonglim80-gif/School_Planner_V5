@@ -39,7 +39,8 @@ import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import PopoutButton from '../../ui/PopoutButton';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import ClaudeAskButton from './ClaudeAskButton';
-import ClaudeRequestNote from './ClaudeRequestNote';
+import ClaudeThread from './ClaudeThread';
+import { useClaudeThread } from './useClaudeThread';
 import LabelPicker from '../labels/LabelPicker';
 import { orderAfter, orderBefore } from '../events/eventOps';
 import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite } from './actions';
@@ -69,6 +70,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const status = useMirrorStatus('items', sid);
   const tree = useLabelTree('note', sid);
   const personal = sid.startsWith('u_');
+  const claude = useClaudeThread(sid, item);
 
   const [form, setForm] = useState<NoteForm>(() => (item ? noteFormOf(item) : newNoteForm(params.date, tree, params.labelIds, params.draftText)));
   /** 열었을 때(또는 마지막으로 저장했을 때)의 모습 - 이것과 다르면 '손댄 것' */
@@ -815,15 +817,12 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 ),
               )}
             </div>
+
+            {/* Claude와 주고받은 글 - 바꾼 것·바꾸지 않은 까닭을 다 (10-19 → P23 말풍선) */}
+            {claude && claude.turns.length > 0 && <ClaudeThread turns={claude.turns} />}
           </div>
         )}
 
-        {/* Claude 요청 결과 - 바꾼 것·바꾸지 않은 까닭을 다 (10-19) */}
-        {personal && isEditing && item && (
-          <div className="px-6 pb-3 empty:hidden">
-            <ClaudeRequestNote itemId={item.id} />
-          </div>
-        )}
         <div className="px-6 py-4 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50/50">
           {isEditing && item ? (
             <div className="flex items-center gap-2">
