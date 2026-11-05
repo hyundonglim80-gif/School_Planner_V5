@@ -1,7 +1,20 @@
 // claudePlan.js 시험 - `npm run test:functions`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { askedNow, isClaudeLabelName, issueOf, mergeShaOf, resultNoteOf, statusFromGithub, REQUEST_TIMEOUT_MS, RESULT_NOTE_MAX } from './claudePlan.js';
+import {
+  askedNow,
+  followOf,
+  isClaudeLabelName,
+  issueOf,
+  mergeShaOf,
+  planAsk,
+  resultNoteOf,
+  statusFromGithub,
+  HISTORY_TEXT_MAX,
+  ISSUE_BODY_MAX,
+  REQUEST_TIMEOUT_MS,
+  RESULT_NOTE_MAX,
+} from './claudePlan.js';
 
 test('라벨 이름 - 그림 글자·띄어쓰기·대소문자는 보지 않는다', () => {
   for (const n of ['Claude요청', 'claude 요청', '🤖 Claude요청', 'CLAUDE 요청']) assert.equal(isClaudeLabelName(n), true, n);
@@ -32,6 +45,97 @@ test('이슈 - 첫 줄 제목, 글만', () => {
   assert.equal(issueOf('가'.repeat(70)).title, `메모 요청: ${'가'.repeat(60)}…`);
 });
 
+test('이어 쓴 글 - 같이 적은 claudeAskAt과 짝이 맞을 때만', () => {
+  const note = { kind: 'note', text: '첫 요청', claudeAskAt: 200 };
+  assert.equal(followOf({ ...note, claudeFollow: { at: 200, text: '  조금 더 작게  ' } }), '조금 더 작게');
+  // 옛 화면이 claudeAskAt만 적으면 지난 글이 다시 가지 않는다
+  assert.equal(followOf({ ...note, claudeFollow: { at: 100, text: '지난 글' } }), '');
+  assert.equal(followOf(note), '');
+  assert.equal(followOf({ ...note, claudeFollow: { at: 200, text: '   ' } }), '');
+  assert.equal(followOf({ kind: 'note', claudeFollow: { text: '짝 없음' } }), '');
+  assert.equal(followOf(null), '');
+});
+
+test('메모 글이 비어도 이어 쓴 글이 있으면 보낸다 - 제목만 남긴 메모는 살아 있다', () => {
+  const note = { kind: 'note', text: '', claudeAskAt: 200 };
+  assert.equal(askedNow('u_1', { kind: 'note', text: '' }, note), false);
+  assert.equal(askedNow('u_1', { kind: 'note', text: '' }, { ...note, claudeFollow: { at: 200, text: '더 고쳐 줘' } }), true);
+  assert.equal(askedNow('u_1', { kind: 'note', text: '' }, { ...note, claudeFollow: { at: 100, text: '지난 글' } }), false);
+});
+
+test('메모 쓰기를 함수 칸에 견주기 - 첫 턴·다음 턴·옛 메모·⚠·같은 쓰기', () => {
+  // 처음
+  assert.deepEqual(planAsk(null, 100, ''), { action: 'queue', n: 1, backfill: false });
+  // 끝난 칸 - 다음 턴
+  const done = { open: false, turn: 2, turns: 2, askAt: 100 };
+  assert.deepEqual(planAsk(done, 200, '더'), { action: 'queue', n: 3, backfill: false });
+  assert.deepEqual(planAsk(done, 200, ''), { action: 'queue', n: 3, backfill: false });
+  // ⚠ 턴 뒤 다음 턴은 그 뒤 번호 - 덮지 않는다
+  assert.deepEqual(planAsk({ ...done, turns: 3 }, 200, '더'), { action: 'queue', n: 4, backfill: false });
+  // 턴이 없는 옛 문서 - 부모로 turns/1을 채운 뒤 턴 2
+  assert.deepEqual(planAsk({ open: false, state: 'deployed' }, 200, '더'), { action: 'queue', n: 2, backfill: true });
+  assert.deepEqual(planAsk({ open: false, state: 'deployed' }, 200, ''), { action: 'queue', n: 2, backfill: true });
+  // 열린 요청 - 이어 쓴 글이 있으면 ⚠ 턴, 없으면 지금처럼 그냥 끝
+  const open = { open: true, turn: 2, turns: 2, askAt: 100 };
+  assert.deepEqual(planAsk(open, 200, '더'), { action: 'drop', n: 3 });
+  assert.deepEqual(planAsk(open, 200, ''), { action: 'skip' });
+  assert.deepEqual(planAsk({ ...open, turns: 3, lastAskAt: 200 }, 300, '또'), { action: 'drop', n: 4 });
+  // 도는 옛 요청(turn 없음)에 온 글 - ⚠ 턴은 2번, turns/1은 끝난 뒤 이어 보낼 때 채운다
+  assert.deepEqual(planAsk({ open: true, state: 'working' }, 200, '더'), { action: 'drop', n: 2 });
+  assert.deepEqual(planAsk({ open: false, state: 'deployed', turns: 2 }, 300, '또'), { action: 'queue', n: 3, backfill: true });
+  // 같은 쓰기가 두 번 - 열렸든 끝났든, 도는 턴이든 ⚠ 턴이든 그냥 끝
+  assert.deepEqual(planAsk(open, 100, '더'), { action: 'skip' });
+  assert.deepEqual(planAsk(done, 100, '더'), { action: 'skip' });
+  assert.deepEqual(planAsk({ ...open, lastAskAt: 200 }, 200, '더'), { action: 'skip' });
+});
+
+test('이어 쓴 이슈 - 이번 요청이 맨 위, 앞선 대화는 그 아래', () => {
+  const turn = (n, extra = {}) => ({ n, askText: `요청 ${n}`, state: 'deployed', issue: 40 + n, note: `답 ${n}`, sha: `abc${n}def`, ...extra });
+  const { title, body } = issueOf('조금 더 작게 해 줘\n둘째 줄', 0, { follow: true, history: [turn(1), turn(2, { state: 'nochange', sha: null })] });
+  assert.equal(title, '메모 요청 이어서: 조금 더 작게 해 줘');
+  assert.match(body, /^조금 더 작게 해 줘\n둘째 줄\n/);
+  const past = body.indexOf('앞선 대화');
+  assert.ok(past > body.indexOf('둘째 줄'), '앞선 대화는 이번 요청 아래');
+  for (const t of ['#41', '✅ 배포됨', 'abc1def', '> 요청 1', '> 답 1', '#42', '🤖 바꾼 것 없음', '> 요청 2', '> 답 2']) assert.ok(body.includes(t), t);
+  assert.ok(!body.includes('null'), '없는 커밋을 적지 않는다');
+  assert.ok(!body.includes('생략'));
+});
+
+test('앞선 대화가 없으면 지금 이슈 그대로 - 옛 화면이 메모 글을 다시 보낼 때만 앞선 대화가 붙는다', () => {
+  assert.equal(issueOf('글', 1).body, issueOf('글', 1, { history: [] }).body);
+  assert.ok(!issueOf('글').body.includes('앞선 대화'));
+  const again = issueOf('메모 글', 0, { history: [{ n: 1, askText: '첫 글', state: 'failed', issue: 9, note: '실패', sha: null }] });
+  assert.equal(again.title, '메모 요청: 메모 글');
+  assert.ok(again.body.includes('앞선 대화'));
+});
+
+test('앞선 대화 = 첫 요청 + 최근 6턴, 넘치면 생략한 수와 이슈 번호', () => {
+  const turns = Array.from({ length: 10 }, (_, i) => ({ n: i + 1, askText: `글${i + 1}끝`, state: 'deployed', issue: 100 + i + 1, note: '', sha: null }));
+  const { body } = issueOf('이번', 0, { follow: true, history: turns });
+  assert.ok(body.includes('> 글1끝'), '첫 요청은 남는다');
+  for (const n of [2, 3, 4]) assert.ok(!body.includes(`> 글${n}끝`), `${n}은 생략`);
+  for (const n of [5, 6, 7, 8, 9, 10]) assert.ok(body.includes(`> 글${n}끝`), `${n}은 남는다`);
+  assert.match(body, /앞 대화 3개 생략: #102 #103 #104/);
+});
+
+test('앞선 대화가 길어도 이슈 한도를 넘지 않는다 - 글마다 자르고, 그래도 넘으면 오래된 턴부터 뺀다', () => {
+  const long = '가'.repeat(HISTORY_TEXT_MAX + 500);
+  const one = issueOf('이번', 0, { follow: true, history: [{ n: 1, askText: long, state: 'deployed', issue: 1, note: '', sha: null }] });
+  assert.ok(one.body.includes(`${'가'.repeat(HISTORY_TEXT_MAX - 1)}…`));
+  assert.ok(!one.body.includes('가'.repeat(HISTORY_TEXT_MAX)));
+  const turns = Array.from({ length: 7 }, (_, i) => ({ n: i + 1, askText: long, state: 'deployed', issue: i + 1, note: long, sha: null }));
+  const request = '나'.repeat(40000);
+  const big = issueOf(request, 0, { follow: true, history: turns });
+  assert.ok(big.body.length <= ISSUE_BODY_MAX, String(big.body.length));
+  assert.ok(big.body.startsWith(request));
+  assert.match(big.body, /앞 대화 \d개 생략/);
+});
+
+test('앞선 대화의 글은 인용으로 - 글 안의 줄이 이슈 틀을 흉내 내지 못한다', () => {
+  const { body } = issueOf('이번', 0, { follow: true, history: [{ n: 1, askText: '가\n---\n나', state: 'deployed', issue: 1, note: '', sha: null }] });
+  assert.ok(body.includes('> 가\n> ---\n> 나'));
+});
+
 const owner = (body) => ({ body, author_association: 'OWNER' });
 
 test('결과 글·합친 커밋은 저장소 주인 댓글만 믿는다', () => {
@@ -48,8 +152,9 @@ test('댓글에서 결과 글·합친 커밋', () => {
   assert.equal(resultNoteOf(comments), '글자를 키웠습니다.');
   assert.equal(mergeShaOf(comments), 'abc1234def');
   assert.equal(mergeShaOf([owner('없음')]), null);
-  // 까닭이 길어도 끊기지 않게 (10-19 - 300자는 짧았다), 넘치면 '…'
-  const long = '가'.repeat(400);
+  // 까닭이 길어도 끊기지 않게 (10-19 - 300자는 짧았다, P23 - 대화에서는 답이 곧 본문이다), 넘치면 '…'
+  assert.equal(RESULT_NOTE_MAX, 2000);
+  const long = '가'.repeat(1500);
   assert.equal(resultNoteOf([owner(`<!-- sp5-result -->\n${long}`)]), long);
   const over = resultNoteOf([owner(`<!-- sp5-result -->\n${'나'.repeat(RESULT_NOTE_MAX + 50)}`)]);
   assert.equal(over.length, RESULT_NOTE_MAX);
