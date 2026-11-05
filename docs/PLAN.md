@@ -1115,6 +1115,14 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   | 〃 | 열림·`askAt` 다름 | ⚠ `dropped` 턴 (글을 잃지 않는다, 도는 턴은 그대로) |
   | 어느 쪽이든 `askAt`이 같음 | 열림·끝남 모두 | 그냥 끝 (같은 쓰기가 두 번) |
   **배포 순간**: `turn`이 없는 칸은 줄(queued)·도는 것 모두 지금 길 그대로다 - `setClaudeState`가 턴 문서를 쓰지 않고, `issueOf`는 앞선 대화 없이 메모 글. 끝난 뒤 이어 보내면 위 '옛 메모'. `dropped`는 턴 문서에만 쓴다 - 부모에 쓰면 옛 화면 `readClaudeRequest`가 모르는 상태라 카드 표시가 사라진다.
+- **P23-2 ■0 확인**(11-05 코드 읽음 - 권장안):
+  ① 자리: 말풍선은 `NotePanel` 스크롤 칸(`data-scroll-lock`) 맨 아래, 글 칸은 그 밖(지금 결과 글 자리) - 머리줄 아래 줄을 밀어내지 않는다. 턴이 둘 이상이면 열 때 맨 아래로, 턴이 늘면(보냄·⚠) 맨 아래로, 답이 오면 맨 아래를 보던 때만 따라간다. 위 첨부 그림이 늦게 떠도 크롬 스크롤 고정(overflow-anchor)이 자리를 지킨다.
+  ② 글 칸 = `ChatComposer` + 칸 더하기(`draftKey`·`noAttach`·`maxText`·`label`·`hold`·`hint`, 핸들 `fill`): Enter·한글 짜기·쓰던 글 보관이 같다. `disabled`는 글 칸째 막으므로 **쓰기는 되고 보내기만 막는 `hold`**를 새로 둔다. 캡처 Ctrl+V는 올리지 않고 안내만(공개 이슈).
+  ③ 쓰던 글 `claude:<itemId>`는 `draftPlace`가 null이라 '저장하지 않은 글' 띠에 들지 않는다(대화와 같다). 로그아웃 묻기(`listDrafts`)에는 든다 - 대화와 같게 둔다.
+  ④ ↗ 새 창: 칸이 닫힐 때 `useDraft`가 글을 곧바로 적고, 새 창의 글 칸이 같은 열쇠로 읽어 채운다. `PopoutShell`에도 `useClaudeRequestsWatch`가 있어 말풍선·글 칸이 그대로 뜬다.
+  ⑤ 메모를 고치던 중에 보내도 칸이 안 흔들린다: `claudeAskAt`·`claudeFollow`는 `noteFormOf`에 없어 `itemKey`가 그대로다. `patch`는 끊겨도 메모리에 먼저 들어가 말풍선이 곧바로 '보내는 중'이 되고, `commit`만 서버를 기다린다.
+  ⑥ 이어 쓴 글 한도 3000자(`CLAUDE_FOLLOW_MAX` = 함수 `HISTORY_TEXT_MAX`): 넘게 보내면 다음 턴 앞선 대화에서 잘린다.
+  ⑦ 턴을 받는 동안(`null`)은 말풍선을 그리지 않는다: 부모로 한 턴을 먼저 그리면 턴이 많은 메모가 깜빡인다. 듣기가 오류면 빈 목록 = 부모로 한 턴.
 - **P23-1 계획에 없던 것 넷**(권장안 - ■0에서 코드를 읽고 더함):
   ① 함수 칸에 `turns`(마지막으로 쓴 번호)·`lastAskAt`을 더한다: ⚠ 턴은 도는 턴 뒤 번호를 쓰지만 도는 턴(`turn`)이 바뀌면 안 된다 - 칸 하나로는 다음 턴이 ⚠ 턴 번호를 덮는다. `lastAskAt`은 ⚠ 쓰기가 두 번 와도 ⚠가 둘 생기지 않게.
   ② 같은 `askAt`이면 **닫힌 칸에서도** 끝낸다: 지금은 `open`만 봐서, 재시도가 앞 요청이 끝난 뒤 오면 같은 요청이 한 번 더 돈다(Pro 한도를 쓴다).
@@ -2978,7 +2986,7 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 ### P23-2. 화면 - 메모 칸 안 말풍선·글 칸
 **시작 조건**: P23-1 배포 끝. 어느 기기에서나(서버를 바꾸지 않는다 - 조각마다 main). **묻기**: 없음.
 **먼저 읽을 것**: `features/notes/NotePanel.tsx` 아래 줄 · `notes/ClaudeAskButton`·`ClaudeRequestNote`·`ClaudeRequestBadge` · `domain/claudeRequest` · `data/claudeRequests` · `features/chat/ChatComposer.tsx`·`ChatMsgRow.tsx`·`ChatRoomView.tsx`(맨 아래로 내리기) · `features/drafts/draftList.ts` · `tools/inspect-claude-request.mjs`.
-- [ ] ■0 확인(문서만): 말풍선은 스크롤 칸 맨 아래, 글 칸만 그 밖(지금 결과 글 자리) · 턴이 둘 이상이면 열 때 맨 아래로 내린다(권장 - 메모 글이 길면 답이 안 보인다) · 글 칸은 `ChatComposer`에 첨부 끄기·글자 수 칸을 더해 쓴다(권장 - Enter·한글 짜기·쓰던 글 보관이 같고, P22-5 ■1 고침도 받는다) · 쓰던 글 키 `claude:<itemId>`가 '저장하지 않은 글' 띠에 드는지(대화처럼 들지 않게) · ↗ 새 창에서 글 칸.
+- [x] ■0 확인(문서만): 말풍선은 스크롤 칸 맨 아래, 글 칸만 그 밖(지금 결과 글 자리) · 턴이 둘 이상이면 열 때 맨 아래로 내린다(권장 - 메모 글이 길면 답이 안 보인다) · 글 칸은 `ChatComposer`에 첨부 끄기·글자 수 칸을 더해 쓴다(권장 - Enter·한글 짜기·쓰던 글 보관이 같고, P22-5 ■1 고침도 받는다) · 쓰던 글 키 `claude:<itemId>`가 '저장하지 않은 글' 띠에 드는지(대화처럼 들지 않게) · ↗ 새 창에서 글 칸.
 - [ ] ■1 자료: `domain/claudeRequest` `readClaudeTurn`·`turnsForView`(턴이 없으면 부모로 한 턴 · 아직 턴이 없는 `claudeFollow`는 '보내는 중' 턴 하나) + 시험 · `data/claudeRequests` `useClaudeTurns(sid, itemId)`(그 메모 칸이 열린 동안만 듣는다, `orderBy('n')` 최근 50 - 칸 하나로 짓는 쿼리) · `data/types` `claudeFollow` · `notes/actions` `askClaudeMore`(`claudeAskAt`·`claudeFollow`를 한 번에 씀, 보내지 못하면 글을 칸에 되돌린다).
 - [ ] ■2 말풍선 `notes/ClaudeThread`: 내 글 오른쪽 · Claude 왼쪽(표시 `claudeBadge` + 결과 글 `claudeNoteText`, 표시를 누르면 이슈) · 첫 요청은 한 줄로 접는다(메모 글이 바로 위에 있다) · `nochange`는 실패 색이 아니다 · ❌ 턴에 '↻ 글 칸에 다시 넣기' · ⚠ 보내지 못한 턴 · `NotePanel`의 `ClaudeRequestNote` 자리를 옮긴다(카드·목록 줄은 그대로 마지막 결과 글) · `data-claude-turn`·`data-claude-turn-state`.
 - [ ] ■3 글 칸: 첫 요청을 보낸 뒤에만(라벨·계정 조건은 `ClaudeAskButton` 그대로, 개인 공간만) · 도는 동안(배포 중 포함 - 함수가 받지 않는다)은 쓰기만, ➤를 막고 '앞 요청이 끝나면 보낼 수 있습니다' · 메모 글을 저장하지 않아도 보낸다(메모 글은 가지 않는다) · Ctrl+S = 메모 저장, 보내기 아님 · 칸 안내 '공개 이슈로 올라갑니다 - 학생 이름은 적지 마세요' · '🤖 다시 요청'을 없애고 🤖 요청은 첫 요청에만.
