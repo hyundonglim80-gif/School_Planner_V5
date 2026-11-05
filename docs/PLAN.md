@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**하는 중 = P23-3 ■2**(답이 오면 알림 - 6장 'P23' 절, 결정은 5장 'P23-3 ■0 확인'). 이 PC에서, 함수 배포를 묻는다. 그 뒤 P22-4(늦어도 2027-02-15 전). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**하는 중 = P23-3 ■3**(답이 오면 알림 - 6장 'P23' 절, 결정은 5장 'P23-3 ■0 확인'). 이 PC에서, 함수 배포를 묻는다. 그 뒤 P22-4(늦어도 2027-02-15 전). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P23-2 끝**(11-05 - 메모 칸 안 말풍선·이어서 요청 글 칸, '🤖 다시 요청' 없앰). 규칙·함수 배포 없음(화면은 main 푸시로 저절로). 진짜 요청으로는 아직 돌지 않았다 - 다음 🤖 요청이 첫 확인.
 **P23-1 끝**(11-05 - 턴 문서·이슈에 앞선 대화·워크플로·함수 배포 끝. 화면은 그대로, 쓰는 모습도 그대로). 손 실행 `tools/claude-hand-run.mjs`. 진짜 요청으로는 아직 돌지 않았다 - 다음 🤖 요청이 첫 확인.
 **P22-3 끝**(11-05 - 끊긴 채 시작해도 그룹이 남는다 · 사본 다시 받기가 그룹도 받는다 · 앱 알림이 개인 + 내 그룹을 본다 · 영구 지운 항목 달 기록). 규칙·함수 배포 없음.
@@ -3019,6 +3019,6 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 **먼저 읽을 것**: `functions/index.js` `pushChat`·`tokensOf` · `public/sw.js` `showMailNotice`·`notificationclick`·`appWindowShown` · `features/chat/receive.ts`(`?chat=`) · `notes/open.ts` `openNotePanel`.
 - [x] ■0 확인(문서만): 푸시 길 표(받는 기기 · 앱을 보고 있으면 띄우지 않기) · `?claude=<itemId>`가 로그인 뒤 메모 칸을 여는 자리.
 - [x] ■1 '새 답': 부모 문서 `answeredAt`(함수 - 끝 상태가 될 때) · `seenAt`(앱 - 그 메모 칸을 보고 있을 때, 공간 아래 일반 쓰기) · 카드·목록 줄 표시 `data-entry-claude-new` · 시험.
-- [ ] ■2 푸시: 끝 상태가 될 때 그 계정 기기에 `{ type: 'claude', item, state }`(글은 넣지 않는다 - 쪽지·대화와 같다) · 실패해도 매분 확인에 번지지 않게 · `sw.js` 'claude' 갈래 · 누르면 그 메모 칸 · 점검 묶음(`about:blank`의 localStorage는 try - `CLAUDE.md` 2장).
+- [x] ■2 푸시: 끝 상태가 될 때 그 계정 기기에 `{ type: 'claude', item, state }`(글은 넣지 않는다 - 쪽지·대화와 같다) · 실패해도 매분 확인에 번지지 않게 · `sw.js` 'claude' 갈래 · 누르면 그 메모 칸 · 점검 묶음(`about:blank`의 localStorage는 try - `CLAUDE.md` 2장).
 - [ ] ■3 (묻고) 함수 배포 · `docs/CLAUDE-REQUEST.md` · `CLAUDE.md` · MAP · 세션·단계 끝 정리(1-3·1-4).
 **끝 조건**: 단위 · test:functions · inspect-claude-request · 앱을 닫은 기기에 알림이 오고 누르면 그 메모가 열린다 · P23 단계 끝.

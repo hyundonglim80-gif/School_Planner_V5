@@ -6,31 +6,20 @@
 //   - 열린 앱 창에서 알림을 누름: 서비스 워커 메시지 'sp5-open-chat'.
 import { useEffect } from 'react';
 import { showToast } from '../../app/toast';
-import { useWindows } from '../../app/windows';
+import { shownWindowNow } from '../../app/windows';
 import { useChatWatch } from '../../data/chat';
 import { useSession } from '../../data/session';
 import { useMySpaces } from '../../data/spaceChoice';
 import { chatNotice, chatParamOf, parseRoomKey, stripChatParam, type ChatRoom } from '../../domain/chat';
-import { activeOf, useSidePopups } from '../../ui/sideColumn';
 import { CHAT_WINDOW, openChat } from './open';
 import { useChatView } from './view';
-
-/** 대화 창이 지금 보이나 - 오른쪽 줄의 보이는 탭, 줄이 비었으면(가운데 창·휴대폰) 맨 위 창 (features/mail/receive와 같은 셈) */
-function chatWindowShown(): boolean {
-  if (document.visibilityState !== 'visible') return false;
-  const side = useSidePopups.getState();
-  const id = activeOf(side);
-  const wins = useWindows.getState().windows;
-  const w = id === null ? wins.reduce<(typeof wins)[number] | undefined>((a, b) => (!a || b.raisedAt > a.raisedAt ? b : a), undefined) : wins.find((x) => x.key === side.owners[id]);
-  return w?.id === CHAT_WINDOW;
-}
 
 /** 이 방의 새 글은 안내할 것이 없다 - 그 방(또는 목록)이 보이거나 🔕 */
 function quiet(r: ChatRoom): boolean {
   const me = useSession.getState().user?.uid ?? '';
   if (r.muted.includes(me)) return true;
   const view = useChatView.getState().room;
-  return view !== null && (view === '' || view === r.key) && chatWindowShown();
+  return view !== null && (view === '' || view === r.key) && shownWindowNow()?.id === CHAT_WINDOW;
 }
 
 // 한꺼번에 온 것을 모아 안내 하나로

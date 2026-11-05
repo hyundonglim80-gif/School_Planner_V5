@@ -1,8 +1,10 @@
 // claudePlan.js 시험 - `npm run test:functions`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { isReservedDataKey } from './mailPlan.js';
 import {
   askedNow,
+  claudePushData,
   followOf,
   isClaudeLabelName,
   issueOf,
@@ -213,4 +215,11 @@ test('Claude요청 라벨 - 있으면 그대로, 같은 이름이면 표시만, 
   assert.deepEqual(planClaudeLabel([{ ...l('e', 'Claude요청'), kind: 'event' }, l('m', '수업', { order: 'a1' })]), { action: 'create', order: 'a1V' });
   assert.equal(orderAfterLast([]), 'a0');
   assert.equal(orderAfterLast(['a0', 'a2', 'a1V']), 'a2V');
+});
+
+test('답 알림에 실을 값 - 메모 id와 상태뿐, 글은 없다 (P23-3)', () => {
+  const data = claudePushData({ itemId: 'abc123', state: 'deployed' });
+  assert.deepEqual(data, { type: 'claude', item: 'abc123', state: 'deployed' });
+  for (const k of Object.keys(data)) assert.equal(isReservedDataKey(k), false, k);
+  for (const v of Object.values(data)) assert.equal(typeof v, 'string');
 });

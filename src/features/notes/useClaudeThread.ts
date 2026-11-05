@@ -6,6 +6,7 @@ import { useDocs } from '../../data/select';
 import { claudeBusy, claudeNewAnswerAt, turnsForView, type ClaudeTurn } from '../../domain/claudeRequest';
 import { usePageVisible } from '../../ui/usePageVisible';
 import type { ItemDoc } from '../events/eventOps';
+import { closeClaudeNotice } from './claudeReceive';
 import { useShownNoteId } from './open';
 
 /** 서버가 정한 계정에만 만드는 잠긴 라벨이 이 메모에 붙어 있나 */
@@ -21,9 +22,10 @@ export interface ClaudeThreadView {
   busy: boolean;
 }
 
-/** 이 메모 칸을 보고 있으면 새 답을 본 것으로 적는다 (P23-3). 숨은 탭·다른 앱을 보는 동안은 아직 안 본 것이다 */
+/** 이 메모 칸을 보고 있으면 새 답을 본 것으로 적고 그 알림을 닫는다 (P23-3). 숨은 탭·다른 앱을 보는 동안은 아직 안 본 것이다 */
 function useClaudeSeen(sid: string, itemId: string | undefined) {
   const answeredAt = useClaudeRequests((s) => (itemId ? claudeNewAnswerAt(s.byId[itemId]) : null));
+  const asked = useClaudeRequests((s) => !!itemId && !!s.byId[itemId]);
   const shown = useShownNoteId(sid) === itemId;
   const visible = usePageVisible();
   // 답 하나에 한 번만 - 쓰기가 거부되면 되돌림이 같은 값으로 여기를 다시 부른다
@@ -33,6 +35,10 @@ function useClaudeSeen(sid: string, itemId: string | undefined) {
     marked.current = answeredAt;
     void markClaudeSeen(sid, itemId, answeredAt);
   }, [sid, itemId, answeredAt, shown, visible]);
+  // 다른 기기에서 먼저 봐 새 답이 없어도 이 기기 알림은 닫는다
+  useEffect(() => {
+    if (itemId && asked && shown && visible) void closeClaudeNotice(itemId);
+  }, [itemId, asked, answeredAt, shown, visible]);
 }
 
 /** 대화가 없는 메모는 null */

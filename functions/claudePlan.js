@@ -135,6 +135,11 @@ export function issueOf(text, attachments = 0, { follow = false, history = [] } 
   return { title, body: lines.join('\n') };
 }
 
+/** 답 알림에 실을 값 (P23-3 - FCM data는 글자만). 글은 싣지 않는다 - 쪽지·대화와 같다. 앱 public/sw.js 'claude' 갈래가 읽는다 */
+export function claudePushData({ itemId, state }) {
+  return { type: 'claude', item: String(itemId), state: String(state) };
+}
+
 /** 결과 글 길이 - 앱 메모 카드·수정 칸에 글로 보인다 (10-19 - 300자는 까닭이 중간에 끊겼다, P23 - 대화에서는 답이 곧 본문이다. 워크플로 자르기와 함께) */
 export const RESULT_NOTE_MAX = 2000;
 

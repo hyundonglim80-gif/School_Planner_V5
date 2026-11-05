@@ -1,4 +1,4 @@
-// sw.js - School Planner V5 서비스 워커 (P1-4 앱으로 설치 + P8-2 서버 푸시 알림 + P8-3 공유받기·오프라인 앱 + P15-2 쪽지 푸시 + P19-3 대화 푸시).
+// sw.js - School Planner V5 서비스 워커 (P1-4 앱으로 설치 + P8-2 서버 푸시 알림 + P8-3 공유받기·오프라인 앱 + P15-2 쪽지 푸시 + P19-3 대화 푸시 + P23-3 Claude 답 푸시).
 //
 // 오프라인 앱(P8-3 - V4 sw.js와 같은 갈래):
 //   - 화면 문서(navigate)는 **네트워크 먼저**(cache: 'reload' - 오래된 index.html이 새 판을 가리지 않게), 안 되면 담아 둔 '/'.
@@ -173,7 +173,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // 일정 알림 서버 푸시 (P8-2 - functions/index.js의 v5SendDueAlarms가 FCM으로 보낸다, V4 sw.js 그대로).
-// FCM 웹 푸시는 { data: {...}, from, ... } 모양으로 온다 - data.type이 'event-alarm'·'mail'·'chat'인 것만 다룬다.
+// FCM 웹 푸시는 { data: {...}, from, ... } 모양으로 온다 - data.type이 'event-alarm'·'mail'·'chat'·'claude'인 것만 다룬다.
 // 앱 화면을 보고 있는 창이 있으면 그 창에 넘겨 알림 창·소리로 울리고(src/features/events/EventAlarms - 같은 일정은 한 번만),
 // 없으면(앱을 닫았거나 다른 앱을 보는 중) 휴대폰·PC 알림을 띄운다. 알림 tag는 앱이 띄우는 알림과 같다(겹치면 하나로).
 self.addEventListener('push', (event) => {
@@ -190,6 +190,10 @@ self.addEventListener('push', (event) => {
   }
   if (d.type === 'chat') {
     event.waitUntil(showChatNotice(d));
+    return;
+  }
+  if (d.type === 'claude') {
+    event.waitUntil(showClaudeNotice(d));
     return;
   }
   if (d.type !== 'event-alarm') return;
@@ -251,9 +255,9 @@ async function alarmRepeatTimes() {
   return Math.min(ALARM_REPEAT_MAX, Math.max(1, Math.round((seconds * 1000) / ALARM_REPEAT_MS)));
 }
 
-/** 앱 창(↗ 새 창 ?popout= 말고 - 쪽지·대화 안내는 큰 창의 Shell만 띄운다) */
+/** 앱 창(↗ 새 창 ?popout= 말고 - 쪽지·대화·Claude 답 안내는 큰 창의 Shell만 띄운다) */
 const isAppWindow = (c) => c.url.startsWith(self.registration.scope) && !new URL(c.url).searchParams.has('popout');
-/** 앱 창을 보고 있나 - 그러면 쪽지·대화 푸시는 앱 안내에 맡긴다 */
+/** 앱 창을 보고 있나 - 그러면 쪽지·대화·Claude 답 푸시는 앱 안내에 맡긴다 */
 async function appWindowShown() {
   const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
   return wins.some((c) => c.visibilityState === 'visible' && isAppWindow(c));
@@ -306,25 +310,45 @@ async function showChatNotice(d) {
   });
 }
 
+// Claude 답 서버 푸시 (P23-3 - functions/index.js pushClaudeAnswer, data = { type: 'claude', item, state } - 글은 없다).
+// 앱 화면을 보고 있으면 없음(앱이 안내 - src/features/notes/claudeReceive). 없으면 메모마다 알림 하나(tag sp5-claude-<메모 id>), 다시 울리지 않는다.
+// 앱에서 그 메모 칸을 보면 이 알림을 닫는다(claudeReceive closeClaudeNotice).
+const CLAUDE_RESULT = { deployed: '✅ 배포됨', nochange: '🤖 바꾼 것 없음', failed: '❌ 실패' };
+/** 메모 id 모양이면 그대로, 아니면 '' (src/domain/claudeRequest claudeParamOf와 같다) */
+const claudeItemOf = (v) => (typeof v === 'string' && /^[A-Za-z0-9]{1,40}$/.test(v) ? v : '');
+async function showClaudeNotice(d) {
+  const item = claudeItemOf(d.item);
+  if (!item || (await appWindowShown())) return;
+  await self.registration.showNotification('🤖 Claude 답이 왔습니다', {
+    body: CLAUDE_RESULT[d.state] || '메모에서 답을 보세요.',
+    tag: `sp5-claude-${item}`,
+    icon: `${self.registration.scope}icon-192.png`,
+    badge: `${self.registration.scope}icon-192.png`,
+    data: { url: self.registration.scope, claude: item },
+  });
+}
+
 // 알림을 누르면 열려 있는 앱 창으로, 없으면 새로 연다.
-// 쪽지·대화 알림은 그것을 연다: 열린 앱 창(?popout= 새 창 말고)에 'sp5-open-mail'(src/features/mail/receive)·'sp5-open-chat'(features/chat/receive)을 보내고,
-// 없으면 '/?mail=<id>'·'/?chat=<방 키>'로 연다 - 앱이 로그인한 뒤 주소에서 꺼내 쪽지 창·대화 창을 연다.
+// 쪽지·대화·Claude 답 알림은 그것을 연다: 열린 앱 창(?popout= 새 창 말고)에 'sp5-open-mail'(src/features/mail/receive)·'sp5-open-chat'(features/chat/receive)·
+// 'sp5-open-claude'(features/notes/claudeReceive)를 보내고, 없으면 '/?mail=<id>'·'/?chat=<방 키>'·'/?claude=<메모 id>'로 연다 - 앱이 로그인한 뒤 주소에서 꺼내 그 창·칸을 연다.
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
   const url = data.url || self.registration.scope;
   const mail = typeof data.mail === 'string' && /^[A-Za-z0-9]{1,40}$/.test(data.mail) ? data.mail : '';
   const chat = chatRoomOf(data.chat);
+  const claude = claudeItemOf(data.claude);
   event.waitUntil(
     (async () => {
       const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      if (mail || chat) {
+      if (mail || chat || claude) {
         const app = wins.find(isAppWindow);
         if (app) {
-          app.postMessage(mail ? { type: 'sp5-open-mail', id: mail } : { type: 'sp5-open-chat', room: chat });
+          app.postMessage(mail ? { type: 'sp5-open-mail', id: mail } : chat ? { type: 'sp5-open-chat', room: chat } : { type: 'sp5-open-claude', item: claude });
           return app.focus();
         }
-        return self.clients.openWindow(`${self.registration.scope}${mail ? `?mail=${mail}` : `?chat=${encodeURIComponent(chat)}`}`);
+        const param = mail ? `?mail=${mail}` : chat ? `?chat=${encodeURIComponent(chat)}` : `?claude=${claude}`;
+        return self.clients.openWindow(`${self.registration.scope}${param}`);
       }
       const mine = wins.find((c) => c.url.startsWith(self.registration.scope));
       return mine ? mine.focus() : self.clients.openWindow(url);

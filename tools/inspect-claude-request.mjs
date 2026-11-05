@@ -339,6 +339,7 @@ try {
   await pageShown('hidden');
   await admin.set(pathA, answer(250, 200));
   c('다른 앱을 보는 동안 온 답 = 새 답', await waitFor(newChip(idA), 8000));
+  c('그동안은 앱 안내도 없다 (OS 알림이 뜬다)', (await page.locator(sel('toast'), { hasText: 'Claude 답이 왔습니다' }).count()) === 0);
   await page.waitForTimeout(800);
   c('그동안은 본 것으로 적지 않는다', (await seenOf(pathA)) === 200, String(await seenOf(pathA)));
   await pageShown('visible');
@@ -354,6 +355,116 @@ try {
   await page.locator(sel('side-tab')).first().click();
   c('그 탭을 보면 본 것', await waitFor(async () => (await seenOf(pathA)) === 300, 8000), String(await seenOf(pathA)));
   await page.keyboard.press('Escape');
+
+  // ─── 답 알림 (P23-3 ■2) ───
+  const toastOf = (text) => page.locator(sel('toast'), { hasText: text });
+  const told = toastOf('Claude 답이 왔습니다');
+  const working = (at) => ({ state: 'working', issue: 1, url, note: '', answeredAt: at, seenAt: at });
+  const badgeA = page.locator(`${sel('entry-card', idA)} ${sel('entry-claude', 'working')}`);
+  await admin.set(pathA, working(300));
+  await waitFor(badgeA, 8000);
+  // 앞 묶음의 숨은 탭 안내가 사라진 뒤에
+  await waitFor(async () => (await told.count()) === 0, 8000);
+  await admin.set(pathA, answer(400, 300));
+  c('앱을 연 뒤 온 답 = 안내', await waitFor(told, 8000));
+  c('안내에 결과 표시', ((await told.textContent()) ?? '').includes('✅ 배포됨'), await told.textContent());
+  await told.locator(sel('toast-action', '보기')).click();
+  c('보기 = 그 메모 칸', await waitFor(async () => (await page.locator(sel('note-text-input')).inputValue().catch(() => '')) === '새 답 점검 가', 8000));
+  c('보기로 열어도 본 것', await waitFor(async () => (await seenOf(pathA)) === 400, 8000), String(await seenOf(pathA)));
+
+  await admin.set(pathA, working(400));
+  await waitFor(badgeA, 8000);
+  await admin.set(pathA, { ...answer(500, 400), state: 'failed' });
+  await waitFor(async () => (await seenOf(pathA)) === 500, 8000);
+  await page.waitForTimeout(600);
+  c('보고 있는 메모의 답은 안내 없음', (await toastOf('❌ 실패').count()) === 0);
+  await page.keyboard.press('Escape');
+
+  await admin.set(pathA, answer(600, 500));
+  await waitFor(newChip(idA), 8000);
+  await page.reload();
+  c('다시 열어도 새 답은 남는다', await waitFor(newChip(idA), 15000));
+  await page.waitForTimeout(800);
+  c('앱을 열 때 있던 답은 안내하지 않는다', (await told.count()) === 0);
+
+  // 서비스 워커 - inspect-chat 'chat' 푸시와 같은 길
+  const origin = new URL(page.url()).origin;
+  const swCtx = page.context();
+  await swCtx.grantPermissions(['notifications'], { origin });
+  const cdp = await swCtx.newCDPSession(page);
+  const regs = [];
+  cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => regs.push(...e.registrations.filter((x) => !x.isDeleted)));
+  await cdp.send('ServiceWorker.enable');
+  c('서비스 워커가 등록돼 있다', await waitFor(() => regs.length > 0, 10000));
+  const reg = regs.find((x) => x.scopeURL.startsWith(origin)) ?? regs[0];
+  // functions/claudePlan.js claudePushData 모양 - 글은 없다
+  const push = (item, state) => cdp.send('ServiceWorker.deliverPushMessage', { origin, registrationId: reg.registrationId, data: JSON.stringify({ data: { type: 'claude', item, state } }) });
+  const sw = swCtx.serviceWorkers().find((w) => w.url().startsWith(origin));
+  const osNotes = (tag) => sw.evaluate(async (t) => (await self.registration.getNotifications(t ? { tag: t } : undefined)).map((n) => ({ title: n.title, body: n.body, tag: n.tag, data: n.data })), tag);
+  const clickNote = (tag) =>
+    sw.evaluate(async (t) => {
+      const [n] = await self.registration.getNotifications({ tag: t });
+      self.dispatchEvent(new NotificationEvent('notificationclick', { notification: n }));
+    }, tag);
+  await sw.evaluate(async () => (await self.registration.getNotifications()).forEach((n) => n.close()));
+  const tagA = `sp5-claude-${idA}`;
+  const tagB = `sp5-claude-${idB}`;
+  await push(idA, 'deployed');
+  await page.waitForTimeout(1500);
+  c('보는 앱 창이 있으면 OS 알림을 띄우지 않는다 (앱 안내)', (await osNotes(tagA)).length === 0);
+  await page.goto('about:blank');
+  await push(idA, 'deployed');
+  c('앱 창이 없으면 메모마다 OS 알림 하나', await waitFor(async () => (await osNotes(tagA)).length === 1, 8000));
+  let osNote = (await osNotes(tagA))[0];
+  c('알림 = 제목 · 결과 · 메모 id (메모 글은 없다)', osNote?.title === '🤖 Claude 답이 왔습니다' && osNote?.body === '✅ 배포됨' && osNote?.data?.claude === idA, JSON.stringify(osNote));
+  await push(idA, 'failed');
+  c('같은 메모의 다음 답은 그 알림을 바꾼다', await waitFor(async () => (await osNotes(tagA))[0]?.body === '❌ 실패', 8000));
+  c('알림은 하나 그대로', (await osNotes(tagA)).length === 1);
+  await push(idB, 'nochange');
+  c('다른 메모는 알림 따로', await waitFor(async () => (await osNotes(tagB))[0]?.body === '🤖 바꾼 것 없음', 8000));
+  await push('../x', 'deployed');
+  await page.waitForTimeout(800);
+  c('메모 id 모양이 아니면 알림 없음', (await osNotes()).length === 2, String((await osNotes()).length));
+
+  // 앱 창이 없을 때 누름 = ?claude= (진짜 누르기는 CDP로 못 한다 - 같은 알림으로 notificationclick을 흉내, 새 창 열기만 잡는다)
+  await sw.evaluate(() => {
+    self.clients.openWindow = async (u) => {
+      self.sp5Opened = u;
+      return null;
+    };
+  });
+  await clickNote(tagB);
+  c('앱 창이 없으면 ?claude=로 연다', await waitFor(async () => (await sw.evaluate(() => self.sp5Opened)) === `${origin}/?claude=${idB}`, 5000), String(await sw.evaluate(() => self.sp5Opened)));
+  c('누른 알림은 닫힌다', await waitFor(async () => (await osNotes(tagB)).length === 0, 5000));
+  await open(page, '#/memo');
+  await waitFor(newChip(idA), 15000);
+  c('앱을 열어도 칸을 보기 전에는 알림이 남는다', (await osNotes(tagA)).length === 1);
+  await clickNote(tagA);
+  c('열린 앱 창에서 누르면 그 메모 칸', await waitFor(async () => (await page.locator(sel('note-text-input')).inputValue().catch(() => '')) === '새 답 점검 가', 8000));
+  c('누른 답도 본 것', await waitFor(async () => (await seenOf(pathA)) === 600, 8000), String(await seenOf(pathA)));
+  await page.keyboard.press('Escape');
+
+  // 다른 기기에서 이미 봤어도 칸을 보면 이 기기 알림을 닫는다
+  await page.goto('about:blank');
+  await push(idA, 'deployed');
+  await waitFor(async () => (await osNotes(tagA)).length === 1, 8000);
+  await open(page, '#/memo');
+  await waitFor(page.locator(sel('entry-card', idA)), 15000);
+  await openNote(idA);
+  c('그 메모 칸을 보면 그 알림이 닫힌다 (새 답이 없어도)', await waitFor(async () => (await osNotes(tagA)).length === 0, 8000));
+  await page.keyboard.press('Escape');
+
+  // 알림을 눌러 연 앱 - 사본이 빈 기기에서도 칸이 채워지는지
+  await admin.set(pathA, answer(700, 600));
+  const cold = await newPage(browser);
+  await open(cold.page, `?claude=${idA}#/memo`);
+  const coldInput = cold.page.locator(sel('note-text-input'));
+  c('?claude= → 그 메모 칸 (빈 사본에서도 글이 채워진다)', await waitFor(async () => (await coldInput.inputValue().catch(() => '')) === '새 답 점검 가', 20000), await coldInput.inputValue().catch(() => '없음'));
+  const coldUrl = new URL(cold.page.url());
+  c('주소에서 ?claude=만 지운다 (# 뒤는 그대로)', !coldUrl.searchParams.has('claude') && coldUrl.hash.startsWith('#/memo'), cold.page.url());
+  c('?claude=로 열어도 본 것', await waitFor(async () => (await seenOf(pathA)) === 700, 8000), String(await seenOf(pathA)));
+  c('받는 쪽 콘솔 오류 없음', cold.errors.length === 0, cold.errors.join(' | '));
+  await cold.page.context().close();
 
   await page.evaluate(() => window.sp5.openWindow('labels', { tab: 'note' }));
   await waitFor(row, 10000);

@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { claudeBadge, claudeBusy, claudeFinished, claudeNewAnswerAt, claudeNoteText, claudeTurnBadge, readClaudeRequest, readClaudeTurn, turnsForView, type ClaudeRequestState, type ClaudeTurn } from './claudeRequest';
+import {
+  claudeAnsweredNow,
+  claudeBadge,
+  claudeBusy,
+  claudeFinished,
+  claudeNewAnswerAt,
+  claudeNoteText,
+  claudeParamOf,
+  claudeTurnBadge,
+  readClaudeRequest,
+  readClaudeTurn,
+  stripClaudeParam,
+  turnsForView,
+  type ClaudeRequest,
+  type ClaudeRequestState,
+  type ClaudeTurn,
+} from './claudeRequest';
 import { compareOrder, orderBetween } from './order';
 
 describe('Claude 요청 표시', () => {
@@ -159,5 +175,39 @@ describe('새 답 (P23-3)', () => {
 
   it('이어 보내 도는 동안은 없음 - 앞 답을 보지 않았어도 지금 답이 아니다', () => {
     for (const state of ['queued', 'sending', 'sent', 'working', 'merged'] as const) expect(claudeNewAnswerAt(ask(state, { answeredAt: 100 }))).toBeNull();
+  });
+});
+
+describe('답 알림 (P23-3)', () => {
+  const req = (state: ClaudeRequestState, more: Partial<ClaudeRequest> = {}): ClaudeRequest => ({ state, issue: 1, url: null, note: '', ...more });
+
+  it('답이 새로 온 메모만 - 도는 요청이 끝났을 때', () => {
+    expect(claudeAnsweredNow({ a: req('working') }, { a: req('deployed', { answeredAt: 100 }) })).toEqual(['a']);
+    expect(claudeAnsweredNow({ a: req('merged', { answeredAt: 50, seenAt: 50 }) }, { a: req('deployed', { answeredAt: 100, seenAt: 50 }) })).toEqual(['a']);
+  });
+
+  it('앱을 열 때 처음 받은 것은 안내하지 않는다 - 카드 새 답이 알린다', () => {
+    expect(claudeAnsweredNow({}, { a: req('deployed', { answeredAt: 100 }) })).toEqual([]);
+  });
+
+  it('같은 답이 다시 와도(다른 칸이 바뀌어도) 한 번만', () => {
+    expect(claudeAnsweredNow({ a: req('deployed', { answeredAt: 100 }) }, { a: req('deployed', { answeredAt: 100, note: '바뀜' }) })).toEqual([]);
+  });
+
+  it('다른 기기에서 이미 봤으면 없다', () => {
+    expect(claudeAnsweredNow({ a: req('working') }, { a: req('deployed', { answeredAt: 100, seenAt: 100 }) })).toEqual([]);
+  });
+
+  it('주소의 ?claude= - 메모 id 모양만', () => {
+    expect(claudeParamOf('?claude=abcDEF123')).toBe('abcDEF123');
+    expect(claudeParamOf('?as=5&claude=abc')).toBe('abc');
+    expect(claudeParamOf('')).toBeNull();
+    expect(claudeParamOf('?claude=../x')).toBeNull();
+    expect(claudeParamOf(`?claude=${'a'.repeat(41)}`)).toBeNull();
+  });
+
+  it('주소에서 ?claude=만 지운다 - 다른 값과 # 뒤는 둔다', () => {
+    expect(stripClaudeParam('https://x.web.app/?claude=abc#/memo')).toBe('/#/memo');
+    expect(stripClaudeParam('https://x.web.app/?as=5&claude=abc#/day/2026-11-05')).toBe('/?as=5#/day/2026-11-05');
   });
 });

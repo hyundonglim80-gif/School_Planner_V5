@@ -8,7 +8,7 @@
 // SidePanelFrame(쓰는 칸)으로 스스로 틀을 그린다 - 오른쪽 줄의 탭 차례·숨은 탭은 그 틀이 맡는다(ui/sideColumn).
 import { useContext, useEffect, useRef, type ComponentType } from 'react';
 import { create } from 'zustand';
-import { closeShownSideSlot, SideOwnerContext, useShownSideOwner } from '../ui/sideColumn';
+import { activeOf, closeShownSideSlot, SideOwnerContext, useShownSideOwner, useSidePopups } from '../ui/sideColumn';
 import { closeAllLayers, closeTopLayer } from './history';
 import { lazyWithReload } from './lazyWithReload';
 import { OfflineWindow } from './OfflineChunk';
@@ -119,12 +119,23 @@ export function openWindow(id: string, params?: unknown): number {
 export function useShownWindowPick(pick: (w: OpenWindow) => string | null): string | null {
   const owner = useShownSideOwner();
   return useWindows((s) => {
-    const w =
-      owner === undefined
-        ? s.windows.reduce<OpenWindow | undefined>((a, b) => (!a || b.raisedAt > a.raisedAt ? b : a), undefined)
-        : s.windows.find((x) => x.key === owner);
+    const w = shownOf(s.windows, owner);
     return w ? pick(w) : null;
   });
+}
+
+/** owner = 오른쪽 줄에서 보이는 칸을 그린 창 key. 줄이 비었으면(undefined - 가운데 창·휴대폰) 맨 위 창 */
+function shownOf(windows: OpenWindow[], owner: number | null | undefined): OpenWindow | undefined {
+  if (owner === undefined) return windows.reduce<OpenWindow | undefined>((a, b) => (!a || b.raisedAt > a.raisedAt ? b : a), undefined);
+  return windows.find((x) => x.key === owner);
+}
+
+/** 지금 보이는 창 (훅 밖에서 - 새 글 안내가 그 창을 보고 있나 볼 때). 다른 앱을 보는 중이면 없다 */
+export function shownWindowNow(): OpenWindow | undefined {
+  if (document.visibilityState !== 'visible') return undefined;
+  const side = useSidePopups.getState();
+  const id = activeOf(side);
+  return shownOf(useWindows.getState().windows, id === null ? undefined : side.owners[id] ?? null);
 }
 
 /** 열린 창이 가리키는 것을 바꾼다 (WindowProps.setParams) */

@@ -6,6 +6,7 @@
 //   4) v5ClaudeRequest  - 'Claude요청' 라벨 메모의 🤖 요청 단추(claudeAskAt)를 누르면 줄에 세워 GitHub 이슈를 만든다(10-16 - Claude가 고치고 배포, claudePlan.js·docs/CLAUDE-REQUEST.md).
 //                         한 번에 하나(앞 요청이 합쳐지거나 끝나야 다음) · 진행·다음 보내기·정한 계정의 'Claude요청' 라벨 챙기기는
 //                         v5SendDueAlarms가 매분 함께 한다(예약 작업을 늘리지 않는다 - 늘리면 돈이 든다).
+//                         끝 상태가 되면 그 계정 기기에 '🤖 Claude 답이 왔습니다'를 알린다(P23-3 - 글은 싣지 않는다).
 //   5) v5MailPush       - 쪽지 사본(v5Mail/{보낸 uid}/mailSent/{id})이 생기면 받는 사람 기기에 '✉ 보낸 사람 · 그룹'을 알린다(P15 - mailPlan.js).
 //                         쪽지 하나 = 실행 한 번(받는 쪽마다가 아니다). 쪽지 쓰기는 앱이 규칙을 지나 한 묶음으로 한다 - 이 함수가 꺼져도 쪽지는 간다.
 //   6) v5ChatPush       - 그룹 대화 글(v5Chat/{sid}/chatRooms/{all | r_…}/chatMsgs/{id})이 생기면 방 사람 기기에 '💬 보낸 사람 · 방 이름'을 알린다(P19 - chatPlan.js).
@@ -31,6 +32,7 @@ import {
   REPO,
   CLAUDE_LABEL_NAME,
   CLAUDE_LABEL_SYSTEM,
+  claudePushData,
   followOf,
   isAllowedEmail,
   isClaudeLabelName,
@@ -173,7 +175,7 @@ export const v5MailPush = onDocumentCreated({ document: 'v5Mail/{from}/mailSent/
 });
 
 /**
- * 쪽지·대화 푸시 - 토큰 500개씩 보내고 앱을 지웠거나 알림을 끈 기기 토큰만 지운다(invalid-argument는 두기 - mailPlan isDeadMailToken).
+ * 쪽지·대화·Claude 답 푸시 - 토큰 500개씩 보내고 앱을 지웠거나 알림을 끈 기기 토큰만 지운다(invalid-argument는 두기 - mailPlan isDeadMailToken).
  * 글자 data만 싣는다(sw.js가 알림을 그린다). 돌려주는 것 = 받은 수·지운 토큰 수·오류 코드.
  */
 async function multicast(tokens, data) {
@@ -292,6 +294,25 @@ async function setClaudeState(sid, itemId, fields, turn = null, turnOnly = {}) {
     batch.set(claudeTurn(sid, itemId, turn), { ...shown, ...turnOnly, updatedAt }, { merge: true });
   }
   await batch.commit();
+  if (!open) await pushClaudeAnswer(sid, itemId, fields.state);
+}
+
+/**
+ * 답이 왔다고 그 계정 기기에 (P23-3 - 답은 10~30분 뒤에 온다). 끝 상태로 가는 모든 길이 setClaudeState를 지난다.
+ * 상태는 이미 적혔으니 못 보내도 여기서 끝낸다 - 던지면 같은 회차의 뒤 요청 확인·다음 보내기가 밀린다. 놓치면 앱을 열 때 카드 '새 답'.
+ */
+async function pushClaudeAnswer(sid, itemId, state) {
+  try {
+    const tokens = await tokensOf(sid.slice(2));
+    if (tokens.length === 0) {
+      logger.info('Claude 답 알림 건너뜀 - 기기 토큰 없음', { itemId });
+      return;
+    }
+    const { ok, dead, errors } = await multicast(tokens, claudePushData({ itemId, state }));
+    logger.info('Claude 답 알림 보냄', { itemId, state, tokens: tokens.length, ok, removed: dead, errors });
+  } catch (err) {
+    logger.warn('Claude 답 알림 실패', { itemId, error: String(err?.message || err) });
+  }
 }
 
 /** 그 메모에 살아 있는 'Claude요청' 라벨이 붙어 있나 */

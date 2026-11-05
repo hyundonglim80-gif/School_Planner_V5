@@ -1,6 +1,6 @@
 // 메모로 Claude 요청 - 함수 손 실행 (P23-1 ■2. P13 ■3은 같은 것을 돌리고 스크립트를 남기지 않았다).
 // 함수 에뮬레이터를 켜지 않고 v5ClaudeRequest.run(event)·v5SendDueAlarms.run()을 Firestore·Auth 에뮬레이터에 곧바로 돌린다 -
-// 트랜잭션은 진짜고, GitHub만 globalThis.fetch를 바꿔 흉내 낸다(운영 코드에 시험용 길을 넣지 않는다).
+// 트랜잭션은 진짜고, GitHub만 globalThis.fetch를 바꿔 흉내 낸다(운영 코드에 시험용 길을 넣지 않는다). FCM은 sendEachForMulticast 하나만 바꾼다(P23-3).
 //
 //   node tools/claude-hand-run.mjs            (에뮬레이터 8080·9099가 켜져 있어야 한다)
 //
@@ -74,7 +74,17 @@ const require = createRequire(new URL('../functions/package.json', import.meta.u
 const { v5ClaudeRequest, v5SendDueAlarms } = await import('../functions/index.js');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
+const { getMessaging } = require('firebase-admin/messaging');
 const db = getFirestore();
+
+// 가짜 FCM - getMessaging은 앱마다 하나라 함수가 같은 것을 부른다
+const pushes = [];
+const fcm = { fail: false };
+getMessaging().sendEachForMulticast = async ({ tokens, data }) => {
+  if (fcm.fail) throw new Error('fake fcm failure');
+  pushes.push({ tokens, data });
+  return { successCount: tokens.length, failureCount: 0, responses: tokens.map(() => ({ success: true })) };
+};
 
 const items = db.collection('spaces').doc(SID).collection('items');
 const fn = (id) => db.collection('v5claude').doc(id);
@@ -134,6 +144,9 @@ if (!stranger.empty) {
 }
 await getAuth().createUser({ uid: UID, email: EMAIL, emailVerified: true });
 await db.collection('spaces').doc(SID).collection('labels').doc(LABEL).set({ kind: 'note', name: 'Claude요청', system: 'claudeRequest', deletedAt: null });
+const pushTokens = db.collection('spaces').doc(SID).collection('pushTokens');
+await pushTokens.doc('t1').set({ token: 'tok-1' });
+await pushTokens.doc('t2').set({ token: 'tok-2' });
 
 // ───────────── 갈래 ─────────────
 
@@ -165,6 +178,7 @@ await tick();
 eq('배포 중', (await read(turnRef('hand-a', 1))).state, 'merged');
 eq('합친 커밋이 턴에', (await read(turnRef('hand-a', 1))).sha, 'abc1234def');
 check('배포 중은 열려 있다', (await read(fn('hand-a'))).open === true);
+eq('끝나기 전에는 알리지 않는다', pushes.length, 0);
 i1.runs = [{ name: 'CI', status: 'completed', conclusion: 'success' }, { name: DEPLOY, status: 'completed', conclusion: 'success' }];
 await tick();
 {
@@ -179,6 +193,10 @@ await tick();
   check('답한 때는 턴·함수 칸에 적지 않는다', !('answeredAt' in t) && !('answeredAt' in (await read(fn('hand-a')))));
   await tick();
   eq('다음 매분에도 답한 때는 그대로', (await read(shown('hand-a'))).answeredAt, p.answeredAt);
+  // 답 알림 (P23-3)
+  eq('끝나면 알림 하나 - 다음 매분에도 하나', pushes.length, 1);
+  eq('그 계정의 모든 기기로', pushes[0].tokens.join(), 'tok-1,tok-2');
+  eq('메모 id와 상태만', JSON.stringify(pushes[0].data), JSON.stringify({ type: 'claude', item: 'hand-a', state: 'deployed' }));
   // 앱이 본 값을 그대로 적는다 - 다음 쓰기들이 지우지 않아야 한다
   await shown('hand-a').update({ seenAt: p.answeredAt });
 }
@@ -358,6 +376,8 @@ gh.failCreate = false;
   eq('턴 실패', t.state, 'failed');
   eq('턴 글 남음', t.askText, '실패할 요청');
   check('보내기 실패도 답한 때', typeof (await read(shown('hand-g'))).answeredAt === 'number');
+  eq('보내기 실패도 알린다', pushes.at(-1).data.state, 'failed');
+  eq('그 메모로', pushes.at(-1).data.item, 'hand-g');
   eq('닫힘', (await read(fn('hand-g'))).open, false);
   await follow('hand-g', '다시 보냄');
   eq('턴 2 보냄', (await read(turnRef('hand-g', 2))).state, 'sent');
@@ -382,6 +402,42 @@ await write('hand-g', { text: '' });
   eq('턴에 까닭', (await read(turnRef('hand-h', 1))).state, 'nochange');
   eq('턴 글은 남는다', (await read(turnRef('hand-h', 1))).askText, '지울 메모');
   await tick();
+}
+
+part('11 답 알림 - 알림이 실패해도 상태는 끝나고 다음 요청이 간다');
+await note('hand-i', '앞 요청');
+const iI = lastIssue();
+await note('hand-j', '기다리는 요청');
+eq('뒤 요청은 줄에', (await read(fn('hand-j'))).state, 'queued');
+{
+  const count = pushes.length;
+  fcm.fail = true;
+  merged(iI, '답', '6662222');
+  await tick();
+  fcm.fail = false;
+  eq('알림이 실패해도 끝 상태', (await read(shown('hand-i'))).state, 'deployed');
+  check('답한 때도 남는다', typeof (await read(shown('hand-i'))).answeredAt === 'number');
+  eq('다음 요청이 간다', (await read(fn('hand-j'))).state, 'sent');
+  eq('실패한 알림은 다시 보내지 않는다', pushes.length, count);
+  await tick();
+  eq('다음 매분에도 없다', pushes.length, count);
+  // 앱을 지운 계정 - 기기 토큰이 없으면 보내지 않고 끝난다
+  await pushTokens.doc('t1').delete();
+  await pushTokens.doc('t2').delete();
+  merged(lastIssue(), '답', '7773333');
+  await tick();
+  eq('기기가 없어도 끝 상태', (await read(shown('hand-j'))).state, 'deployed');
+  eq('기기가 없으면 알림 없음', pushes.length, count);
+  // 이슈 없이 10분이 지난 요청 - 매분 확인에서 이 갈래만 try 밖이다. 여기서 알림이 던지면 같은 회차의 뒤 요청이 밀린다
+  await pushTokens.doc('t1').set({ token: 'tok-1' });
+  await note('hand-m', '뒤 메모');
+  merged(lastIssue(), '답', '8884444');
+  await fn('hand-l').set({ sid: SID, state: 'sending', issue: null, open: true, atMs: Date.now() - 11 * 60 * 1000, updatedAt: 1, turn: 1, turns: 1, askAt: 1 });
+  fcm.fail = true;
+  await tick();
+  fcm.fail = false;
+  eq('이슈 없이 10분 = 실패', (await read(shown('hand-l'))).state, 'failed');
+  eq('그 알림이 실패해도 같은 회차의 뒤 요청이 끝난다', (await read(shown('hand-m'))).state, 'deployed');
 }
 
 await cleanup();

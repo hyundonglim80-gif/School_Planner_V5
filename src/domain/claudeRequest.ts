@@ -42,6 +42,27 @@ export function claudeNewAnswerAt(r: ClaudeRequest | undefined): number | null {
   return r.answeredAt > (r.seenAt ?? 0) ? r.answeredAt : null;
 }
 
+/** 이번 받기로 답이 새로 온 메모들 - 앱 안내 (P23-3). 처음 받은 문서는 뺀다(앱을 열 때 있던 답은 카드 '새 답'이 알린다) */
+export function claudeAnsweredNow(before: Record<string, ClaudeRequest>, now: Record<string, ClaudeRequest>): string[] {
+  return Object.keys(now).filter((id) => {
+    const at = claudeNewAnswerAt(now[id]);
+    return at !== null && before[id] !== undefined && before[id].answeredAt !== at;
+  });
+}
+
+/** 주소의 ?claude= 값 (답 알림을 눌러 연 앱 - public/sw.js) - 없거나 메모 id 모양이 아니면 null */
+export function claudeParamOf(search: string): string | null {
+  const id = new URLSearchParams(search).get('claude');
+  return id && /^[A-Za-z0-9]{1,40}$/.test(id) ? id : null;
+}
+
+/** 주소에서 ?claude=를 지운다 (새로고침해도 다시 열리지 않게). 다른 값과 # 뒤는 둔다 */
+export function stripClaudeParam(href: string): string {
+  const u = new URL(href);
+  u.searchParams.delete('claude');
+  return u.pathname + (u.searchParams.toString() ? `?${u.searchParams}` : '') + u.hash;
+}
+
 /**
  * 결과 글 - 바꾼 것 또는 바꾸지 않은 까닭 (10-19 사용자 의견 - '바꾼 것 없음'만으로는 왜인지 몰랐다).
  * 워크플로 결과 댓글(함수가 옮겨 적은 note)에서 주소와 '합쳤습니다' 머리 줄은 뺀다 - 표시가 이미 말하고, 주소는 표시를 누르면 간다.
