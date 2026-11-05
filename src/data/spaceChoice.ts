@@ -14,8 +14,11 @@ export interface GroupSpace {
   inviteCode?: string;
 }
 
-/** 내가 든 그룹 공간 (서버 구독 - 받기 전에는 loaded false) */
-export const useMySpaces = create<{ groups: GroupSpace[]; loaded: boolean }>(() => ({ groups: [], loaded: false }));
+/**
+ * 내가 든 그룹 공간 (서버 구독). loaded = 서버가 확인한 목록이다.
+ * 받기 전에는 groups가 지난번에 기억한 그룹(rememberedGroups - 구성원·초대 코드가 없는 껍데기)이고, 끊겨 있으면 offline도 켜진다(P22-3).
+ */
+export const useMySpaces = create<{ groups: GroupSpace[]; loaded: boolean; offline?: boolean }>(() => ({ groups: [], loaded: false }));
 
 /** 이 기기에서 고른 공간 (계정마다) - 계정에 올리지 않는다(기기마다 보는 공간이 다를 수 있다, V4도 이 기기) */
 interface SpaceChoice {
@@ -23,6 +26,8 @@ interface SpaceChoice {
   sid: string | null;
   /** 지난번에 받은 내 그룹 id - 기기 사본이 목록을 받기 전에(오프라인에도) 그룹 공간을 곧바로 펼친다 */
   known?: string[];
+  /** 그 그룹의 이름 (id → 이름) - 끊긴 채 열어도 칩·📂에 이름이 보이게 (P22-3) */
+  names?: Record<string, string>;
 }
 export const useSpaceChoice = create<SpaceChoice>()(persist((): SpaceChoice => ({ uid: null, sid: null }), { name: 'sp5-space' }));
 
@@ -31,6 +36,12 @@ export const knownGroupsOf = (uid: string): string[] => {
   const c = useSpaceChoice.getState();
   return c.uid === uid ? (c.known ?? []) : [];
 };
+
+/** 서버 답이 오기 전의 내 그룹 - 이름만 안다. 구성원·초대 코드를 쓰는 곳은 loaded를 본다 */
+export function rememberedGroups(uid: string): GroupSpace[] {
+  const { names } = useSpaceChoice.getState();
+  return knownGroupsOf(uid).map((id) => ({ id, name: names?.[id] ?? '그룹', ownerId: '', members: {} }));
+}
 
 /**
  * 지금 공간: 고른 그룹이 내 목록에 있으면 그 그룹, 아니면 개인 공간.
@@ -46,7 +57,7 @@ export function chooseSpace(uid: string, choice: SpaceChoice, mine: { groups: Gr
 
 export function setSpaceChoice(uid: string, sid: string | null) {
   const c = useSpaceChoice.getState();
-  useSpaceChoice.setState({ uid, sid: sid && sid.startsWith('g_') ? sid : null, known: c.uid === uid ? c.known : [] });
+  useSpaceChoice.setState({ uid, sid: sid && sid.startsWith('g_') ? sid : null, known: c.uid === uid ? c.known : [], names: c.uid === uid ? c.names : {} });
   // 주 공간이 된 공간은 겹쳐 보기에서 빠진다 (메모·학급 화면 📂로 골라도)
   const o = useSpaceOverlay.getState();
   const main = sid && sid.startsWith('g_') ? sid : `u_${uid}`;
@@ -91,9 +102,10 @@ export function clearOverlay(uid: string) {
 }
 
 /** 받은 그룹 목록을 기억한다 (다른 계정이었으면 고른 것도 비운다) */
-export function rememberGroups(uid: string, ids: string[]) {
+export function rememberGroups(uid: string, groups: readonly { id: string; name: string }[]) {
   const c = useSpaceChoice.getState();
-  useSpaceChoice.setState(c.uid === uid ? { known: ids } : { uid, sid: null, known: ids });
+  const known = { known: groups.map((g) => g.id), names: Object.fromEntries(groups.map((g) => [g.id, g.name])) };
+  useSpaceChoice.setState(c.uid === uid ? known : { uid, sid: null, ...known });
 }
 
 // 32글자라 바이트 나머지가 치우치지 않는다

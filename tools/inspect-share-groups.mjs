@@ -115,6 +115,29 @@ try {
   r.check(await waitFor(viewing(A.page, gid), 5000), '하루 화면으로 돌아오면 그 그룹 칩이 눌려 있다');
   r.check(await waitFor(A.page.locator('[data-event-card]', { hasText: '공유점검 둘째 일정' }), 8000), '다시 그룹으로');
 
+  r.section('끊긴 채 시작 (P22-3 - Firestore만 막는다, 로그인은 그대로)');
+  const choice = () => A.page.evaluate(() => JSON.parse(localStorage.getItem('sp5-space') ?? '{}').state ?? {});
+  await waitFor(async () => (await choice()).names?.[gid] === NAME, 3000);
+  const block = (route) => route.abort();
+  await A.page.route('**/google.firestore.v1.Firestore/**', block);
+  await A.page.reload();
+  await A.page.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+  // Firestore는 10초쯤 닿지 못하면 '끊김'으로 보고 빈 결과를 캐시에서 준다 - 그 뒤를 본다
+  await A.page.waitForTimeout(14000);
+  r.check(await viewing(A.page, gid).isVisible(), '14초 뒤에도 고른 그룹을 본다 (개인 공간으로 넘어가지 않는다)');
+  r.check(((await A.page.locator(sel('space-chip', gid)).textContent().catch(() => '')) ?? '').includes(NAME), '칩에 기억한 그룹 이름');
+  r.check((await choice()).known?.includes(gid) === true, 'sp5-space known이 그대로');
+  r.check(await waitFor(A.page.locator('[data-event-card]', { hasText: '공유점검 둘째 일정' }), 5000), '그룹 일정이 기기 사본에서 보인다');
+  await A.page.evaluate(() => window.sp5.openWindow('group'));
+  r.check(await waitFor(A.page.locator(sel('groups-offline')), 5000), "공유 그룹 창 = '끊겨서 목록을 받지 못했다' ('든 그룹이 없다'가 아니다)");
+  r.check((await A.page.locator(sel('groups-empty')).count()) === 0, "끊긴 동안 '아직 든 그룹이 없습니다'를 보이지 않는다");
+  await A.page.unroute('**/google.firestore.v1.Firestore/**', block);
+  await A.page.evaluate(() => window.dispatchEvent(new Event('online')));
+  r.check(await waitFor(A.page.locator(sel('group-row', gid)), 40000), '이어지면 그룹 창에 진짜 목록이 뜬다');
+  await A.page.evaluate(() => window.sp5.closeAllWindows());
+  r.check(await viewing(A.page, gid).isVisible(), '이어진 뒤에도 그 그룹을 본다');
+  r.check((await choice()).known?.includes(gid) === true, '이어진 뒤에도 known 그대로');
+
   r.section('코드 바꾸기 · 내보내기 (그룹장만 - P14-1)');
   const inviteOf = async (c) => (await getDoc(doc(em.db, 'spaceInvites', c))).data();
   const groupDoc = async () => (await getDoc(doc(em.db, 'spaces', gid))).data();

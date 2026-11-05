@@ -248,7 +248,7 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
 
 export default function GroupsWindow({ close, raise }: WindowProps) {
   const user = useSession((s) => s.user);
-  const { groups, loaded } = useMySpaces();
+  const { groups, loaded, offline } = useMySpaces();
   const current = useCurrentSpaceId();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
@@ -289,7 +289,11 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
     <ModalShell isOpen onClose={close} raise={raise} width="lg" title="👥 공유 그룹" bare footer={<ModalCloseButton onClose={close} />}>
       <div data-groups-window>
         <Section id="groups-mine" title="내 그룹" desc="그룹 공간을 고르면 모든 화면이 그 공간의 일정·수업·메모·조사표를 보여 줍니다. 명렬표·출석부·학생 사진은 개인 공간에만 있습니다.">
-          {!loaded ? (
+          {offline ? (
+            <p data-groups-offline className="text-xs text-slate-500">
+              인터넷이 끊겨 그룹 목록을 받지 못했습니다. 다시 이어지면 저절로 보입니다.
+            </p>
+          ) : !loaded ? (
             <p className="text-xs text-slate-400">불러오는 중…</p>
           ) : groups.length === 0 ? (
             <p data-groups-empty className="text-xs text-slate-500">

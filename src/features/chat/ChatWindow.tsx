@@ -235,7 +235,9 @@ export default function ChatWindow({ params, close, raise }: WindowProps<ChatPar
   useWatchInPopout();
   const uid = useSession((s) => s.user?.uid ?? null);
   const groups = useMySpaces((s) => s.groups);
-  const people = useGroupPeople(groups.map((g) => g.id));
+  // 기억한 그룹(서버 답 전)은 묻지 않는다 - 끊긴 채 읽은 빈 이름을 이어진 뒤에도 쓰게 된다
+  const listed = useMySpaces((s) => s.loaded);
+  const people = useGroupPeople(listed ? groups.map((g) => g.id) : []);
   const [open, setOpen] = useState<string | null>(params?.room ?? null);
   /** 1:1을 연 곳의 그룹 - 방이 없을 때 그 그룹에 만든다 */
   const [hint, setHint] = useState(params?.sid);

@@ -7,6 +7,7 @@ import {
   isInviteCode,
   knownGroupsOf,
   overlaySpaces,
+  rememberedGroups,
   rememberGroups,
   setSpaceChoice,
   toggleOverlay,
@@ -17,7 +18,7 @@ import {
 const g = (id: string) => ({ id, name: id, ownerId: 'o', members: {} });
 
 describe('지금 공간 고르기 (P8-4)', () => {
-  afterEach(() => useSpaceChoice.setState({ uid: null, sid: null, known: [] }));
+  afterEach(() => useSpaceChoice.setState({ uid: null, sid: null, known: [], names: {} }));
 
   it('고른 그룹이 내 목록에 있으면 그 그룹, 없거나 다른 계정 것이면 개인', () => {
     const mine = { groups: [g('g_a')], loaded: true };
@@ -31,14 +32,27 @@ describe('지금 공간 고르기 (P8-4)', () => {
   });
   it('받은 그룹을 기억하고, 다른 계정이면 고른 것을 비운다', () => {
     setSpaceChoice('u1', 'g_a');
-    rememberGroups('u1', ['g_a', 'g_b']);
+    rememberGroups('u1', [{ id: 'g_a', name: '가' }, { id: 'g_b', name: '나' }]);
     expect(knownGroupsOf('u1')).toEqual(['g_a', 'g_b']);
     expect(useSpaceChoice.getState().sid).toBe('g_a');
-    rememberGroups('u2', ['g_c']);
+    rememberGroups('u2', [{ id: 'g_c', name: '다' }]);
     expect(useSpaceChoice.getState()).toMatchObject({ uid: 'u2', sid: null, known: ['g_c'] });
     expect(knownGroupsOf('u1')).toEqual([]);
     setSpaceChoice('u2', 'u_u2');
     expect(useSpaceChoice.getState().sid).toBeNull();
+  });
+  it('기억한 그룹은 이름째 돌려주고, 공간을 바꿔도 남고, 다른 계정에는 보이지 않는다 (P22-3)', () => {
+    setSpaceChoice('u1', 'g_a');
+    rememberGroups('u1', [{ id: 'g_a', name: '학년 모임' }]);
+    setSpaceChoice('u1', null);
+    expect(rememberedGroups('u1')).toEqual([{ id: 'g_a', name: '학년 모임', ownerId: '', members: {} }]);
+    expect(rememberedGroups('u2')).toEqual([]);
+    setSpaceChoice('u2', null);
+    expect(useSpaceChoice.getState().names).toEqual({});
+  });
+  it('이름을 적기 전의 옛 기억은 이름 없이 그룹으로 (P22-3)', () => {
+    useSpaceChoice.setState({ uid: 'u1', sid: 'g_a', known: ['g_a'] });
+    expect(rememberedGroups('u1')[0].name).toBe('그룹');
   });
   it('초대 코드 = 헷갈리는 글자 없는 8자리 · 넣은 코드는 띄어쓰기를 빼고 대문자로', () => {
     expect(inviteCodeOf()).toMatch(/^[A-HJ-NP-Z2-9]{8}$/);

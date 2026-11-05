@@ -65,7 +65,8 @@ export default function MailCompose({ ask, onSent }: { ask?: ComposeAsk; onSent:
   const draft = useDraft<Compose>(uid ? DRAFT_KEY : null, c, hasContent);
 
   useEffect(() => {
-    if (!sid) return;
+    // 기억한 그룹(서버 답 전)은 묻지 않는다 - 끊긴 채 읽은 빈 이름을 이어진 뒤에도 쓰게 된다
+    if (!sid || !loaded) return;
     let alive = true;
     setNames(peopleCache.get(sid) ?? {});
     readPeople(sid)
@@ -78,7 +79,7 @@ export default function MailCompose({ ask, onSent }: { ask?: ComposeAsk; onSent:
     return () => {
       alive = false;
     };
-  }, [sid]);
+  }, [sid, loaded]);
 
   // 답장·구성원 칩 ✉로 열면 그 사람에게 (쓰던 글이 있으면 묻는다 - 아니오면 쓰던 것 그대로)
   const applied = useRef<ComposeAsk | undefined>(undefined);

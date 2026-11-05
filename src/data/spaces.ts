@@ -15,7 +15,7 @@ import { db } from './firebase';
 import { newId } from './id';
 import { batch } from './repo';
 import { defaultLabelOps } from './labels';
-import { cleanInviteCode, inviteCodeOf, isInviteCode, rememberGroups, useMySpaces, type GroupSpace, type SpaceRole } from './spaceChoice';
+import { cleanInviteCode, inviteCodeOf, isInviteCode, rememberedGroups, rememberGroups, useMySpaces, type GroupSpace, type SpaceRole } from './spaceChoice';
 import type { SessionUser } from './session';
 
 /** 그룹 공간 아래에 둘 수 있는 컬렉션 (지울 때 비운다) - 개인 공간에만 있는 것은 그룹에 없다 */
@@ -29,19 +29,29 @@ function readGroup(id: string, d: Record<string, unknown>): GroupSpace | null {
   return { id, name: typeof d.name === 'string' && d.name ? d.name : '공유 그룹', ownerId: String(d.ownerId ?? ''), members, ...(typeof d.inviteCode === 'string' && d.inviteCode ? { inviteCode: d.inviteCode } : {}) };
 }
 
-/** 내가 든 그룹 목록을 지켜본다 (App - 기기 사본도 이 목록으로 그룹 공간을 받는다) */
+/**
+ * 내가 든 그룹 목록을 지켜본다 (App - 기기 사본도 이 목록으로 그룹 공간을 받는다).
+ * 서버가 확인한 소식만 믿는다(P22-3): 끊겨 있으면 Firestore가 10초쯤 뒤 빈 결과를 캐시에서 주는데, 이것을 '든 그룹 없음'으로 믿어
+ * 기억한 그룹까지 지우고 개인 공간으로 넘어갔다. 그동안은 기억한 그룹으로 그린다(loaded false - chooseSpace가 고른 공간을 믿는다).
+ */
 export function watchMySpaces(uid: string): () => void {
-  useMySpaces.setState({ groups: [], loaded: false });
+  useMySpaces.setState({ groups: rememberedGroups(uid), loaded: false, offline: false });
   const q = query(collection(db, 'spaces'), where(`members.${uid}`, 'in', ['owner', 'member']));
   return onSnapshot(
     q,
+    // 메타데이터 소식도 받는다 - 캐시와 서버 결과가 같으면 '서버가 확인함'만 바뀌어 다른 소식이 오지 않는다
+    { includeMetadataChanges: true },
     (snap) => {
+      if (snap.metadata.fromCache) {
+        if (!useMySpaces.getState().loaded) useMySpaces.setState({ offline: true });
+        return;
+      }
       const groups = snap.docs
         .map((d) => readGroup(d.id, d.data()))
         .filter((g): g is GroupSpace => !!g)
         .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
-      useMySpaces.setState({ groups, loaded: true });
-      rememberGroups(uid, groups.map((g) => g.id));
+      useMySpaces.setState({ groups, loaded: true, offline: false });
+      rememberGroups(uid, groups);
     },
     (e) => {
       console.warn('[spaces] 공유 그룹 목록을 받지 못했습니다.', e);
