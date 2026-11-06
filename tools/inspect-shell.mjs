@@ -257,7 +257,52 @@ try {
   r.check((await hashOf(p)) === '#/day/2026-10-08', '다른 날을 보던 화면은 그대로', await hashOf(p));
   await night.ctx.close();
 
-  r.check(errors.length === 0 && night.errors.length === 0, '화면 오류 없음', `화면 오류: ${[...errors, ...night.errors].join(' / ')}`);
+  r.section('처음 쓰는 사람 - 띠만 보고 시간표·학급까지 (P22-7)');
+  // 그때 만든 새 계정(?as=new-…) - V4 자료·설정·자료가 하나도 없다
+  const who = `new-p227-${Date.now().toString(36)}`;
+  const made = await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: `${who}@example.com`, password: 'test1234', returnSecureToken: true }),
+  });
+  r.check(made.ok, '새 계정을 만든다', made.status);
+  const fresh = await newPage(browser);
+  const fp = fresh.page;
+  await open(fp, `#/day/${new Date().toISOString().slice(0, 10)}`, { as: who });
+  const teach = fp.locator(sel('teacher-mode-banner'));
+  const steps = fp.locator(sel('first-steps-banner'));
+  r.check(await waitFor(teach, 10000), '처음 = 교사 유형 띠');
+  r.check((await steps.count()) === 0 && (await fp.locator(sel('auto-backup-banner')).count()) === 0, '교사 유형을 고르기 전에는 다음 띠·백업 띠가 없다');
+  await fp.locator(sel('banner-preset', 'homeroom')).click();
+  r.check(await waitFor(steps, 8000), "고르면 '다음: ⏰ 시간표 → 🏫 학급' 띠");
+  r.check((await steps.textContent()).includes('시간표') && (await fp.locator(sel('first-step', 'timetable')).getAttribute('data-done')) === 'false', '띠에 글자가 있고 시간표가 아직');
+  await fp.locator(sel('first-step', 'timetable')).click();
+  r.check(await waitFor(fp.locator(ttWin), 8000), '⏰ 시간표 넣기 = 시간표 창');
+  await fp.locator(`${ttWin} input[data-cell="0-1"]`).fill('국어');
+  await fp.locator(sel('timetable-save')).click();
+  r.check(
+    await waitFor(async () => (await fp.locator(sel('first-step', 'timetable')).getAttribute('data-done').catch(() => '')) === 'true', 10000),
+    '시간표를 저장하면 ✓',
+  );
+  await fp.keyboard.press('Escape');
+  await fp.locator(sel('first-step', 'class')).click();
+  r.check(await waitFor(fp.locator(sel('class-empty')), 8000), '🏫 학급 만들기 = 학급 화면 (명렬표 만들기 안내)');
+  await fp.locator(sel('class-make-roster')).click();
+  if ((await fp.locator(sel('roster-edit')).getAttribute('aria-pressed')) !== 'true') await fp.locator(sel('roster-edit')).click();
+  await fp.locator(sel('roster-meta', 'grade')).fill('5');
+  await fp.locator(sel('roster-meta', 'num')).fill('2');
+  await fp.locator(sel('roster-add-count')).fill('1');
+  await fp.locator(sel('roster-add-students')).click();
+  await fp.locator(sel('roster-row', 0)).locator('[data-student-field="name"]').fill('김하늘');
+  await fp.locator(sel('roster-save')).click();
+  await waitFor(async () => !(await fp.locator(sel('roster-dirty')).count()), 10000);
+  await fp.locator(sel('scope-tab', 'day')).click();
+  await waitFor(fp.locator(sel('screen', 'day')), 5000);
+  await fp.waitForTimeout(1000);
+  r.check((await steps.count()) === 0 && (await teach.count()) === 0, '시간표·학급을 만들면 띠가 사라진다');
+  await fresh.ctx.close();
+
+  r.check(errors.length === 0 && night.errors.length === 0 && fresh.errors.length === 0, '화면 오류 없음', `화면 오류: ${[...errors, ...night.errors, ...fresh.errors].join(' / ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {

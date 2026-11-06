@@ -5,7 +5,7 @@
 //   4) 되살리기: 지운 일정은 돌아오고, 백업 뒤에 고친 일정은 덮지 않는다
 //   4b) 다른 공간 파일: 파일 이름·두 공간을 적어 먼저 묻는다 · 아니오 = 쓰지 않는다 · 그룹이면 학급·출결·설정은 넣지 않는다(P22-4)
 //   5) ☁️ 드라이브 자동 백업(드라이브는 page.route 흉내): 할 때면 열자마자 조용히 · 공개하지 않음 · 최근 8개만(V4 파일은 그대로) ·
-//      주기 고르기 = 계정 설정 · 지금 백업 = 같은 날 둘째는 시각을 붙인다 · 토큰이 없으면 띠 · 나중에 = 하루 숨김
+//      주기 고르기 = 계정 설정 · 지금 백업 = 같은 날 둘째는 시각을 붙인다 · 토큰이 없으면 띠 · 나중에 = 하루 숨김 · 자료가 없는 새 계정은 띠가 없다(P22-7)
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-backup.mjs
 import { readFileSync } from 'node:fs';
@@ -252,6 +252,32 @@ try {
   r.check((await banner.count()) === 0, '다시 열어도 하루 동안 숨는다 (이 기기)');
   r.check(c.errors.length === 0, `화면 오류 없음 ${c.errors.join(' | ')}`);
   await c.ctx.close();
+
+  // 새 계정(자료 없음 · 백업한 적 없음 · 토큰 없음) → 띠가 없다, 일정을 하나 적으면 띠 (P22-7)
+  const who = `new-bk-${Date.now().toString(36)}`;
+  const made = await fetch('http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: `${who}@example.com`, password: 'test1234', returnSecureToken: true }),
+  });
+  const newUid = (await made.json()).localId;
+  const n = await newPage(browser);
+  await mockDrive(n.ctx);
+  await open(n.page, `#/day/${DAY}`, { as: who });
+  const nBanner = n.page.locator(sel('auto-backup-banner'));
+  await n.page.waitForTimeout(4000);
+  r.check(!!newUid && (await nBanner.count()) === 0, '자료가 없는 새 계정 = 백업한 적이 없어도 띠가 없다');
+  await n.page.evaluate(([s, d]) => window.sp5.openWindow('event', { sid: s, date: d }), [`u_${newUid}`, DAY]);
+  const evText = n.page.locator(sel('event-text-input'));
+  if (await waitFor(evText, 5000)) {
+    await evText.fill('백업 띠 점검 일정');
+    await n.page.keyboard.press('Control+s');
+    r.check(await waitFor(nBanner, 15000), '일정을 하나 적으면 띠가 뜬다');
+  } else {
+    r.bad('새 일정 칸을 찾지 못했다');
+  }
+  r.check(n.errors.length === 0, `화면 오류 없음 ${n.errors.join(' | ')}`);
+  await n.ctx.close();
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {

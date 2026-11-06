@@ -44,9 +44,11 @@ export interface ImportRun {
   record?: ImportRecord;
   /** 처음 로그인 띠를 보인다 (V4 자료가 있고, 가져온 적도 띠를 닫은 적도 없다) */
   offer: boolean;
+  /** 띠를 띄울지 다 보았나 (P22-7 - 그 전에는 교사 유형·다음 띠도 띄우지 않는다: 가져오기 띠가 먼저) */
+  offerChecked: boolean;
 }
 
-const IDLE: ImportRun = { state: 'idle', step: '', done: 0, total: 0, offer: false };
+const IDLE: ImportRun = { state: 'idle', step: '', done: 0, total: 0, offer: false, offerChecked: false };
 
 export const useImportRun = create<ImportRun>(() => IDLE);
 
@@ -160,8 +162,14 @@ export async function checkImportOffer(uid: string): Promise<void> {
     if (await hasV4Data(uid)) set({ offer: useImportRun.getState().state === 'idle' });
   } catch (e) {
     console.warn('[import] 가져오기 기록을 읽지 못했습니다.', e);
+  } finally {
+    // 연결이 없어 못 보았어도 - 뒤 띠까지 막아 두지 않는다
+    set({ offerChecked: true });
   }
 }
+
+/** 가져오기 띠가 없다고 정해졌고 가져오는 중도 아닌가 (P22-7 - 교사 유형·다음 띠가 그 뒤에 뜬다. 가져오기가 교사 유형·시간표·학급을 옮겨 온다) */
+export const useImportOfferSettled = () => useImportRun((s) => s.offerChecked && !s.offer && s.state !== 'running');
 
 /** 처음 로그인 띠 닫기 - 계정에 남겨 다른 기기에서도 다시 뜨지 않는다(환경설정 '가져오기'에서는 언제든 가져온다) */
 export async function dismissImportOffer(uid: string): Promise<void> {

@@ -265,6 +265,25 @@ export function useMirrorStatus(coll: SpaceCollection, sid?: string | null): Mir
   return useMirror((s) => s.colls[key]?.status ?? 'idle');
 }
 
+/**
+ * 그 컬렉션들에 살아 있는 문서가 하나라도 있나 (P22-7 - 처음 띠·자동 백업 띠).
+ * true = 있다 · false = 모두 서버에서 받았는데 없다 · null = 아직 모른다(사본만 그렸거나 받는 중·끊김 - 없음으로 믿지 않는다)
+ */
+export function useHasLive(colls: readonly SpaceCollection[], sid?: string | null): boolean | null {
+  const current = useCurrentSpaceId();
+  const space = sid ?? current ?? '';
+  const key = colls.join(',');
+  return useMirror((s) => {
+    let known = true;
+    for (const coll of key.split(',')) {
+      const st = s.colls[collKey(space, coll)];
+      if (st && Object.values(st.docs).some((d) => !(d as { deletedAt?: unknown }).deletedAt)) return true;
+      if (st?.status !== 'live') known = false;
+    }
+    return known ? false : null;
+  });
+}
+
 /** 공휴일 표의 판 (주말 빼기 기간이 그날 빠질 수 있어 날짜로 고르는 셈이 함께 본다) */
 export const useHolidayVersion = () => useHolidayStore((s) => s.version);
 

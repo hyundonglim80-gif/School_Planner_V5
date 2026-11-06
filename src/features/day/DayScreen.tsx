@@ -4,10 +4,11 @@
 //   [기록 (넓게)]
 // 수업·일정을 나란히 두는 기준은 **본문 폭** 720px(@container) - 오른쪽 칸이 열려 본문이 좁아지면 위아래로 쌓는다(V4 그대로).
 // 보는 날은 둘째 줄 날짜(app/nav). 자료는 기기 사본에서 고른다(data/select) - V4처럼 '불러오는 중'으로 화면을 막지 않는다.
-// 수업 칸은 P6-1(features/lessons/DayLessons), 급식·학사일정은 P6-3. 교사 유형을 아직 고르지 않았으면 맨 위에 띠.
+// 수업 칸은 P6-1(features/lessons/DayLessons), 급식·학사일정은 P6-3. 교사 유형을 아직 고르지 않았으면 맨 위에 띠, 고른 뒤 시간표·학급이 없으면 '다음' 띠(P22-7).
 // printAt = 인쇄 창(features/print)의 쪽 하나 - 그날로 그리고 띠는 뺀다.
 import { useNav } from '../../app/nav';
 import DayLessons from '../lessons/DayLessons';
+import FirstStepsBanner from '../lessons/FirstStepsBanner';
 import TeachingBanner from '../lessons/TeachingBanner';
 import DayEvents from './DayEvents';
 import DayJournal from './DayJournal';
@@ -21,6 +22,7 @@ export default function DayScreen({ printAt }: { printAt?: string }) {
   return (
     <div data-screen="day" className="pb-12 flex flex-col gap-6">
       {!printAt && <TeachingBanner />}
+      {!printAt && <FirstStepsBanner />}
       {(showEvents || showClass) && (
         <div className="grid grid-cols-1 @min-[720px]:grid-cols-12 gap-6">
           {/* 주간·월간·년간이 모두 수업을 먼저 보여 주므로 하루도 수업을 앞에 둔다 */}
