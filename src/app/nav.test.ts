@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { dateLabel, stepDate, stepScope, useNav } from './nav';
+import { act, cleanup, renderHook } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { dateLabel, stepDate, stepScope, useFollowToday, useNav } from './nav';
 import type { Scope } from './route';
 
 // ◀ ▶ 날짜 이동 (V4 store/dateNav.test). 월간에서 31일에 ▶를 누르면 2월을 건너뛰어 3월로 갔다(Date.setMonth: 1/31 + 1달 = 3/3).
@@ -7,6 +8,46 @@ const at = (scope: Scope, date: string) => useNav.setState({ scope, date, showWe
 const shown = () => useNav.getState().date;
 
 beforeEach(() => at('day', '2026-10-02'));
+
+describe('자정 넘김 (P22-4)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    vi.setSystemTime(new Date(2026, 10, 6, 23, 59, 50));
+  });
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+  });
+
+  it('오늘을 보던 사람은 날이 바뀌면 따라간다 (화면은 그대로)', () => {
+    at('week', '2026-11-06');
+    renderHook(() => useFollowToday());
+    act(() => {
+      vi.advanceTimersByTime(15_000);
+    });
+    expect(shown()).toBe('2026-11-07');
+    expect(useNav.getState().scope).toBe('week');
+  });
+
+  it('다른 날을 보던 사람은 그대로', () => {
+    at('day', '2026-10-20');
+    renderHook(() => useFollowToday());
+    act(() => {
+      vi.advanceTimersByTime(15_000);
+    });
+    expect(shown()).toBe('2026-10-20');
+  });
+
+  it('탭이 며칠 잠들었다 깨어나도 오늘로', () => {
+    at('day', '2026-11-06');
+    renderHook(() => useFollowToday());
+    vi.setSystemTime(new Date(2026, 10, 9, 8, 0, 0));
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    expect(shown()).toBe('2026-11-09');
+  });
+});
 
 describe('◀ ▶ 날짜 이동', () => {
   it('월간: 31일에 ▶ 를 눌러도 다음 달로 (달을 건너뛰지 않는다)', () => {

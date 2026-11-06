@@ -7,6 +7,7 @@ import LoginScreen from '../features/auth/LoginScreen';
 import { POPOUT } from '../ui/popout';
 import PopoutShell from './PopoutShell';
 import Shell from './Shell';
+import { useFollowToday } from './nav';
 import { usePrefsSync } from './prefs';
 
 export default function App() {
@@ -18,6 +19,8 @@ export default function App() {
   useMySpacesWatch(user?.uid);
   // 로그인한 동안 기기 사본(일정·메모·기록·라벨 …)을 서버와 맞춘다 - 화면은 data/select로 고른다
   useMirrorSync(user?.uid);
+  // 켜 둔 채 자정을 넘기면 오늘을 보던 사람은 새 오늘로
+  useFollowToday();
 
   return (
     <>

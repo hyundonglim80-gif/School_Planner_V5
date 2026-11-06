@@ -5,12 +5,13 @@
 //      뒤로가기(맨 위 하나, 다 닫은 뒤라야 앞 화면)·ESC(줄 전체, 저장 안 한 글은 먼저 묻는다)·폭 끌기·가운데 창.
 //   4) 머리줄 ⋮ = 4구역.
 //   5) 고친 시간표 창: ✕·탭 ×·Alt+W·뒤로가기·가운데 창 배경도 묻는다, 아니오면 칸과 고친 것이 남고 뒤로가기가 화면을 떠나지 않는다(P22-2).
+//   6) 자정 넘김: 오늘을 보던 화면은 새 오늘로, 열린 칸은 그대로·연 날짜로 저장, 다른 날을 보던 화면은 그대로(P22-4).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-shell.mjs
 // 창 위치는 계정 설정(settings/pc)을 따른다 - 처음에 '창 위치'가 적혀 있으면 걷고(다른 점검이 남긴 것에 흔들리지 않게),
 // 끝에는 이 점검이 '가운데 창'을 시험하며 올린 것도 걷는다(P4-1 - 남겨 두면 다음 점검들이 가운데 창으로 열렸다).
-import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
-import { emulator, hashOf, launch, newPage, open, report, sel, waitFor } from './lib/probe.mjs';
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc } from 'firebase/firestore';
+import { emulator, hashOf, launch, newPage, open, report, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -228,7 +229,37 @@ try {
   r.check(sections === '일정,수업,자료,설정', `⋮ 4구역 (${sections})`);
   await page.keyboard.press('Escape');
 
-  r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
+  r.section('자정 넘김 (P22-4)');
+  const night = await newPage(browser);
+  const p = night.page;
+  const passTime = async (iso) => {
+    await p.clock.setFixedTime(new Date(iso));
+    await p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  };
+  await p.clock.setFixedTime(new Date('2026-11-06T23:59:50'));
+  await open(p, '#/day/2026-11-06');
+  await p.locator(sel('journal-add')).click();
+  const box = p.locator(sel('note-text-input'));
+  await waitFor(box);
+  await box.fill('자정 점검 글');
+  await passTime('2026-11-07T00:00:05');
+  r.check(await waitFor(async () => (await hashOf(p)) === '#/day/2026-11-07', 5000), '오늘을 보던 화면 = 새 오늘로', await hashOf(p));
+  r.check((await box.inputValue()) === '자정 점검 글', '열린 칸은 쓰던 글째 그대로');
+  await p.locator(sel('note-save')).click();
+  const items = collection(em.db, 'spaces', `u_${uid}`, 'items');
+  const savedNote = await serverUntil(async () => (await getDocs(items)).docs.find((d) => d.data().text === '자정 점검 글'), (d) => !!d);
+  r.check(savedNote?.data().date === '2026-11-06', '칸은 연 날짜로 저장한다', savedNote?.data().date);
+  if (savedNote) await deleteDoc(savedNote.ref);
+  await p.evaluate(() => { location.hash = '#/day/2026-10-08'; });
+  await waitFor(async () => (await hashOf(p)) === '#/day/2026-10-08', 5000);
+  await passTime('2026-11-08T00:00:05');
+  await p.waitForTimeout(300);
+  r.check((await hashOf(p)) === '#/day/2026-10-08', '다른 날을 보던 화면은 그대로', await hashOf(p));
+  await night.ctx.close();
+
+  r.check(errors.length === 0 && night.errors.length === 0, '화면 오류 없음', `화면 오류: ${[...errors, ...night.errors].join(' / ')}`);
+} catch (e) {
+  r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
   await browser.close();
   await clearPopupStyle();

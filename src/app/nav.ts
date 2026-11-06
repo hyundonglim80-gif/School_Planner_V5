@@ -2,8 +2,10 @@
 //
 // 주소(route.ts·history.ts)와 맞물린다: 여기 값이 바뀌면 주소가 따라가고, 주소가 바뀌면(뒤로가기·주소 입력) 여기로 들어온다.
 // 화면 컴포넌트는 이 store를 골라 읽고(useNav), 바꿀 때는 아래 함수를 부른다.
+import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useToday } from '../ui/useToday';
 import { addDays, addMonthsStr, academicYearOf, DAY_NAMES, parseDateStr, todayStr, weekdayOf, weekMonday } from '../domain/dateUtils';
 import { isDatelessScope, SCOPES, type Scope } from './route';
 import { scrollToToday } from './todayScroll';
@@ -68,6 +70,19 @@ export function setScope(scope: Scope) {
 
 export function setDate(date: string) {
   useNav.setState({ date });
+}
+
+/**
+ * 켜 둔 앱이 자정을 넘기면 보던 날이 '오늘'이었던 사람만 새 오늘로 옮긴다(P22-4). 다른 날을 보던 사람은 그대로이고,
+ * 열린 칸은 연 날짜 그대로다(칸은 이 값을 읽지 않는다). 앱 맨 위에서 한 번 - 로그인 화면에 둔 채 날을 넘겨도 맞는다.
+ */
+export function useFollowToday() {
+  const today = useToday();
+  const seen = useRef(today);
+  useEffect(() => {
+    if (seen.current !== today && useNav.getState().date === seen.current) setDate(today);
+    seen.current = today;
+  }, [today]);
 }
 
 /** 이전·다음 화면 (단축키 Shift+←/→, 옆으로 밀기) - 끝에서 돌아 처음으로 */
