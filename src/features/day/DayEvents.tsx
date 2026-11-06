@@ -38,6 +38,7 @@ import { openEventPanel, shownEventKey, useShownEventId, useShownEventKey } from
 import { useFocusReveal } from '../search/focus';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import DecorSpot from '../../ui/DecorSpot';
+import { pressKeys } from '../../ui/pressKeys';
 
 const NONE: readonly ItemDoc[] = [];
 
@@ -346,6 +347,9 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
   return (
     <div
       data-event-card={ev.id}
+      role="button"
+      tabIndex={0}
+      onKeyDown={pressKeys}
       data-event-done={done ? '1' : '0'}
       data-event-carried={since}
       data-event-away={away ? '1' : undefined}

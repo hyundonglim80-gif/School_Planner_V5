@@ -157,6 +157,8 @@ export interface CommonSettings {
   autoBackup: AutoBackupSettings;
   /** 새 학년도 준비를 끝냈다고(띠 닫기) 누른 학년도 (P9-2 - 0 = 없음). 그 학년도에는 띠를 다시 띄우지 않는다 */
   newYearDone: number;
+  /** 처음 띠 '다음: ⏰ 시간표 → 🏫 학급'을 닫았다 (P22-7 - 다른 기기에서도 다시 띄우지 않는다) */
+  firstStepsDone: boolean;
   /** 앱 안 ⏰ 알림 소리 길이(초 - 0 = 한 번, -1 = 확인할 때까지, 기본 10초 = 3초마다 3번 - P10-1). 기기 알림(서버 푸시) 소리는 기기가 정한다 */
   alarmSound: number;
   /** 색 테마 id (P20-1 - domain/palettes.json, PC·휴대폰 같게). 화면에 입히는 것은 app/palette(모르는 id는 기본으로 그린다) */
@@ -219,6 +221,7 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   phrases: customField<string[]>(DEFAULT_PHRASES, (v) => (Array.isArray(v) ? sanitizePhrases(v) : undefined)),
   autoBackup: customField<AutoBackupSettings>(DEFAULT_AUTO_BACKUP, sanitizeAutoBackup),
   newYearDone: intField(0, 0, 9999),
+  firstStepsDone: boolField(false),
   alarmSound: oneOfField<number>(DEFAULT_ALARM_SOUND, ALARM_SOUND_SECONDS),
   // 모르는 id도 그대로 둔다 - 새 테마를 고른 계정을 옛 앱(새 테마를 모른다)이 기본으로 되돌려 올리지 않게
   palette: customField<string>(DEFAULT_PALETTE, (v) => (typeof v === 'string' && /^[a-z]{1,20}$/.test(v) ? v : undefined)),

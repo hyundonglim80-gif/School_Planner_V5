@@ -10,6 +10,7 @@ import { newId } from '../../data/id';
 import { apartInGroups, defaultGroupCount, groupColor, groupName, groupSetSummary, MAX_GROUPS, moveMember, randomGroups, seatGroups, swapMembers, type GroupSet, type StudentGroup } from '../../domain/groups';
 import { parsePairKey, type SeatingChart } from '../../domain/seating';
 import { saveGroupSet } from './seatingData';
+import { pressKeys } from '../../ui/pressKeys';
 
 interface Props {
   sid: string;
@@ -297,6 +298,9 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
                 <div
                   key={i}
                   data-group-index={i}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={pressKeys}
                   onClick={() => moveTo(i)}
                   className={`rounded-lg border p-1.5 flex flex-col gap-1 ${color.chip} ${picked !== null ? 'cursor-pointer hover:ring-2 hover:ring-primary/30' : ''}`}
                 >

@@ -33,6 +33,7 @@ export default function LastYearDay({ lastDate, toDate, events, notes, existsThi
   const [y, m, d] = lastDate.split('-').map(Number);
   const empty = events.length === 0 && notes.length === 0;
   return (
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 요일 카드 누르기로 새지 않게 막기만 (P22-7)
     <div data-last-year={lastDate} onClick={(e) => e.stopPropagation()} className="mt-3 pt-2 border-t-2 border-dashed border-slate-200 cursor-default">
       <div className="text-2xs font-extrabold text-slate-400 mb-1.5" title={`${y}년 ${m}월 ${d}일 (작년 같은 주 같은 요일)`}>
         🕰️ 작년 {m}.{d}

@@ -121,6 +121,24 @@ try {
   r.check(hashOf(page).startsWith('#/month'), '하루 화면으로 가지 않는다');
   await page.keyboard.press('Escape');
 
+  // 키보드 (P22-7): Tab으로 오는 칸·일정·막대 조각 - Enter·Space = 누르기
+  r.check((await page.locator(sel('month-event', 'insp_my1')).getAttribute('tabindex')) === '0' && (await cell('2026-10-14').getAttribute('role')) === 'button', '날 칸·일정 줄은 Tab으로 온다 (button)');
+  await page.locator(sel('month-event', 'insp_my1')).focus();
+  await page.keyboard.press('Enter');
+  r.check(await waitFor(page.locator(sel('event-panel', 'edit'))), '일정 줄에서 Enter = 오른쪽 일정 칸');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('event-panel')).count()) === 0);
+  await bars('insp_my2').nth(1).locator(sel('period-cell', '2026-10-20')).focus();
+  await page.keyboard.press(' ');
+  r.check(await waitFor(page.locator(sel('event-panel', 'edit'))), '막대 조각에서 Space = 그 일정 칸');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('event-panel')).count()) === 0);
+  await cell('2026-10-14').focus();
+  await page.keyboard.press('Enter');
+  r.check(await waitFor(async () => hashOf(page) === '#/day/2026-10-14', 5000), `날 칸에서 Enter = 그날 하루 화면 (${hashOf(page)})`);
+  await page.goBack();
+  await waitFor(page.locator(sel('month-day', '2026-10-14')), 8000);
+
   const del = page.locator(sel('month-event', 'insp_my9'));
   await del.hover();
   await del.locator(sel('month-event-delete')).click();
@@ -228,6 +246,18 @@ try {
   await card('2026-10').locator(sel('year-add', '2026-10-21')).click();
   r.check(await waitFor(page.locator(sel('event-panel', 'new'))) && (await page.locator(sel('event-date')).inputValue()) === '2026-10-21', '+ 일정 = 그날 새 일정 칸');
   await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('event-panel')).count()) === 0);
+  // 키보드 (P22-7): 일정 줄·기간 줄에서 Enter = 그 일정 칸
+  await card('2026-10').locator(sel('year-event', 'insp_my1')).focus();
+  await page.keyboard.press('Enter');
+  r.check(await waitFor(page.locator(sel('event-panel', 'edit'))), '년간 일정 줄에서 Enter = 일정 칸');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('event-panel')).count()) === 0);
+  await card('2026-10').locator(sel('year-period', 'insp_my2')).focus();
+  await page.keyboard.press('Enter');
+  r.check(await waitFor(page.locator(sel('event-panel', 'edit'))), '년간 기간 줄에서 Enter = 일정 칸');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('event-panel')).count()) === 0);
   // 줄 가운데가 아니라 범위 글을 누른다 (칩 = 완료)
   await card('2026-10').locator(`${sel('year-period', 'insp_my2')} ${sel('year-period-range')}`).click({ modifiers: ['Control'] });
   r.check(await waitFor(async () => (await page.locator(sel('multi-bar')).getAttribute('data-multi-bar')) === '5'), 'Ctrl로 기간 = 그 달의 날 모두 (5)');

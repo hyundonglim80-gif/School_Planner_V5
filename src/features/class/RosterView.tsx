@@ -638,7 +638,7 @@ function StudentTable({
             <th className="p-2.5 text-center w-17">성별</th>
             <th className="p-2.5 text-center w-19">상태</th>
             <th className="p-2.5">특이사항</th>
-            <th className="p-2.5 text-center w-9" />
+            <th className="p-2.5 text-center w-9" aria-label="삭제" />
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">

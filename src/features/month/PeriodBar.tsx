@@ -9,6 +9,7 @@ import type { LabelDoc, OverlaySpace } from '../../data/select';
 import { eventDragProps } from '../events/drag';
 import EventDoneChip from '../events/EventDoneChip';
 import { doneAll, doneOnDay, type ItemDoc } from '../events/eventOps';
+import { pressKeys } from '../../ui/pressKeys';
 
 interface Props {
   bar: WeekBar<ItemDoc>;
@@ -77,6 +78,9 @@ export default function PeriodBar({ bar, space, label, compact, multiOn, picked,
           <div
             key={cell.date}
             data-period-cell={cell.date}
+            role="button"
+            tabIndex={0}
+            onKeyDown={pressKeys}
             {...eventDragProps(ev, cell.date, !!drag?.enabled, drag?.onEnd)}
             onClick={(e) => {
               e.stopPropagation();

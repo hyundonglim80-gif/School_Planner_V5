@@ -5,14 +5,14 @@
 > 세션 끝 정리(`docs/PLAN.md` 1-3)에서 새 파일·자리를 한 줄씩 더하고, 단계 끝에 다듬는다.
 
 - **도구**: `package.json`(dev 5175·dev:emu·build:emu·preview 4175·test·test:data·lint·emu·seed·check:rules, `allowScripts`) · `vite.config.ts`(base `/`, `__BUILD_ID__` 한국 시각, `__USE_EMULATOR__`) ·
-  `vitest.config.ts`(jsdom·vmThreads, `__BUILD_ID__`='test') · `src/test/setup.ts`(jest-dom·fake-indexeddb·cleanup) · `.github/workflows/ci.yml`(lint → test → build - main·`wip/**`·`claude/**`·PR) ·
+  `.oxlintrc.json`(jsx-a11y `click-events-have-key-events` = error - 누르기만 되는 칸을 막는다, 그대로 둘 곳은 까닭을 단 끄기 주석 - P22-7) · `vitest.config.ts`(jsdom·vmThreads, `__BUILD_ID__`='test') · `src/test/setup.ts`(jest-dom·fake-indexeddb·cleanup) · `.github/workflows/ci.yml`(lint → test → build - main·`wip/**`·`claude/**`·PR) ·
   `firebase-hosting-merge.yml`(main CI가 통과하면 그 커밋을 schoolplanner-v5에 배포, 비밀값 `FIREBASE_SERVICE_ACCOUNT_SCHOOLPLANNERV3`) · `firebase-hosting-pull-request.yml`(PR 미리 보기 - 로그인 안 됨).
   npm 11은 설치 스크립트를 허락 없이 돌리지 않는다 - 'not yet covered by allowScripts'가 나오면 `npm install-scripts approve|deny <패키지>`(`docs/PLAN.md` 5장).
 - **들어가는 곳**: `index.html`(manifest 링크) → `src/main.tsx`(watchSession·리디렉션 로그인 마무리·에뮬레이터 자동 로그인·앱 설치 이벤트) → `src/app/App.tsx`(불러오는 중 `[data-session=loading]` /
   로그인 화면 / 로그인하면 'SP5' `[data-session=signed-in]`, 빌드 번호 `[data-build-id]`). 글자·간격 단계(`@theme`)는 `src/index.css`(V4 앞부분).
 - **서버·규칙**: `firebase.json`(에뮬레이터 auth 9099·firestore 8080·ui 4000 · hosting 사이트 `schoolplanner-v5` = https://schoolplanner-v5.web.app, `dist`, 첫 주소·sw·manifest no-cache) · `.firebaserc` · `firestore.rules`(**정본** - V4 규칙 전부 + V5 블록, V4 저장소 것은 복사본) ·
   `tools/check-rules.mjs`(V4 35 + V5 76 - items·labels 모양·V4 그룹 가져오기 갈래 포함) · `tools/live-rules.cjs`(운영 규칙 = 파일인지, 읽기만) · `tools/seed.mjs`(V4 seed 계정의 V5 개인 공간 - 계정이 없으면 만든다) · `tools/inspect-login.mjs`(크롬: 로그인·개인 공간·Firestore IndexedDB 없음).
-- **자료 층** `src/data/`: `firebase.ts`(앱 이름 SchoolPlannerV5, memoryLocalCache, googleProvider 범위) · `emulator.ts`(`?as=2|3|4|5` - 5 = 개발자 계정) ·
+- **자료 층** `src/data/`: `firebase.ts`(앱 이름 SchoolPlannerV5, memoryLocalCache, googleProvider 범위) · `emulator.ts`(`?as=2|3|4|5` - 5 = 개발자 계정, `?as=new-…` = 점검이 그때 만든 새 계정 - P22-7) · `select.ts` `useHasLive`(그 컬렉션에 살아 있는 문서가 있나 - 받기 전 null, P22-7) ·
   `session.ts`(로그인 store `useSession` - 구독 하나) · `space.ts`(`personalSpaceId`·`ensurePersonalSpace`) ·
   `settingsSync.ts`(설정 문서 하나 맞추기 `startSettingsSync` - 구독 하나·1초 뒤·받기 전엔 안 올림, `settingsPort` = `spaces/u_{uid}/settings/{common|pc|mobile}`, 적기는 `writeOps`) ·
   `types.ts`(자료 모양 = DESIGN 4장, 컬렉션 표 `SpaceCollections`·`Editable<C>`·`DocPath`) · `id.ts`(`newId` 20자) ·
@@ -57,7 +57,7 @@
   Shell에 하나씩: '구글 로그인이 필요합니다' `features/auth/GoogleLoginPrompt.tsx` · 사진 크게 보기 `ui/ImageViewer.tsx`(`openImageViewer` - `ui/imageViewerStore.ts`, `[data-image-viewer|…-title|…-next|…-prev|…-close|…-original]`, ESC는 사진 창만) ·
   왼쪽 📋 클립보드 칸 `features/clipboard/`(`capture.ts` 열림·폭·모으기 · `paste.ts` 글 쓰던 칸에 · `ClipboardColumn.tsx`).
 - **공통 부품** `src/ui/`: `fileDrop.ts`(P21-1 윈도우 파일 끌어다 놓기 - `useFileDrop`·`guardWindowFileDrop`(main.tsx)·`DROP_BUSY_TEXT`) + `FileDropCover.tsx`(덮개 `[data-file-drop-over]`, 칸 상자는 relative) · `ModalShell.tsx`(창 껍데기, ✕ `[data-close]`) · `PopupFrame.tsx`(오른쪽 칸/배너/가운데 `[data-popup-frame]`) · `SidePanelFrame.tsx`(쓰는 칸 `[data-panel-frame]`) ·
-  `sideColumn.ts`(오른쪽 줄·탭 차례 `useSideSlot`·`useDocked`) · `SideTabs.tsx`(`[data-side-tab]`·`[data-side-tab-close]`) · `useSaveKey.ts`(Ctrl+S 받기) · `ColumnResizer.tsx` ·
+  `sideColumn.ts`(오른쪽 줄·탭 차례 `useSideSlot`·`useDocked`) · `SideTabs.tsx`(`[data-side-tab]`·`[data-side-tab-close]`) · `useSaveKey.ts`(Ctrl+S 받기) · `useDialogFocus.ts`(가운데 창·휴대폰 배너 초점 - 열면 안으로·Tab 가두기·닫으면 연 단추로, aria-modal - P22-7) · `pressKeys.ts`(카드·달력 칸 Enter·Space = 누르기 - `role="button" tabIndex={0}`, P22-7) · `ColumnResizer.tsx` ·
   `MiniCalendarPicker.tsx`(`[data-date-picker]`·`[data-picker-day]`) · `LinkPreviewCards.tsx`(글 안 주소 카드 `[data-link-preview]`) · 훅 `useMinWidth`·`useIsMobile`·`useMainWidth`·`useVisualViewport`·`useBodyScrollLock`·`useBackdropClose` ·
   `AutoTextarea.tsx`(높이를 다시 잴 때 둘레 스크롤을 지키고 커서 줄을 보이게 - P10-5, 폭이 바뀌어도 다시 재고 테두리까지 더한다, 재는 동안 부모 높이를 붙든다 - 10-21 긴 메모 마지막 줄 가려짐) · `containScroll.ts`(옆 칸 위 휠·밀기는 그 칸 안에서만 - 오른쪽 줄 `getSideColumn`·클립보드 칸, P10-5).
   '스크롤로 페이지 이동'(`app/useGlobalGestures`)은 옆 칸(`#side-column`·`[data-clipboard-panel]`) 안의 휠·밀기를 무시한다(P10-5 - 쓰는 칸은 창 층이 아니라 날짜가 넘어갔다).
@@ -72,7 +72,7 @@
   `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
 - **그날 메모 칸에 모이는 메모**(P10-4): 순수 `notes/dayNotes.ts`(`dayNoteSources` - 날짜 링크 → 일정 → 교시 → 진도, 겹치지 않게 · `noteFromLabel`) · `day/useDayNotes.ts`(하루 메모 칸·그날 메모 창이 함께) · 카드 `[data-entry-link-add]`(이은 곳 표시 `entry-from`은 10-22 #88에 뺐다) ·
   진도 창 행 `[data-progress-row-link|progress-row-links]`·진도 줄 `[data-progress-links|progress-link-add]` · `progressDraft.lessonsToSave`(이은 메모는 지금 문서의 그 행 `_from`에서).
-- **하루 화면** `src/features/day/`: `DayScreen.tsx`(맨 위 교사 유형 띠, 수업(`lessons/DayLessons` - P6-1)·일정 7:5 - 본문 폭 720px, 아래 기록 칸) · `DayJournal.tsx`(메모 칸 - `▼ 📝 메모 N [+ 추가] 📊 🏷️ … ⚙️`(P10-3), 그 날짜 링크가 있는 메모·즐겨찾기 먼저·본문 폭 2~4열, `[data-day-journal|journal-count|journal-add|journal-filter-toggle|journal-filter|journal-collapse|journal-empty|journal-waiting]`) ·
+- **하루 화면** `src/features/day/`: `DayScreen.tsx`(맨 위 교사 유형 띠 → 고른 뒤 `lessons/FirstStepsBanner`(👣 다음: ⏰ 시간표 → 🏫 학급 `[data-first-steps-banner|first-step=timetable|class|first-steps-close]`, 닫기 = `common.firstStepsDone`, 가져오기 띠가 먼저 `import/v4/run.useImportOfferSettled` - P22-7), 수업(`lessons/DayLessons` - P6-1)·일정 7:5 - 본문 폭 720px, 아래 기록 칸) · `DayJournal.tsx`(메모 칸 - `▼ 📝 메모 N [+ 추가] 📊 🏷️ … ⚙️`(P10-3), 그 날짜 링크가 있는 메모·즐겨찾기 먼저·본문 폭 2~4열, `[data-day-journal|journal-count|journal-add|journal-filter-toggle|journal-filter|journal-collapse|journal-empty|journal-waiting]`) ·
   `DayEvents.tsx`(일정 칸 - `▼ 📅 일정 N [+ 추가] … ⚙️`, 카드 PC 1열·휴대폰 2열, `[data-day-events|event-card|event-done|event-complete|event-chip|event-alarm|event-links|event-up|event-down|event-edit|event-delete|event-add|event-count]`).
 - **일정** `src/features/events/`(하루·주간·월간·년간이 함께 쓴다): `open.ts`(쓰는 칸 `event` = `{ sid, date, id? }`·`openEventPanel`·`useEditingEventIds`·`closeEventPanelsFor`) ·
   `EventPanel.tsx`(일정 칸 - `[data-event-panel=new|edit]`·`[data-event-text-input|event-date|event-date-prev|next|event-move-note|event-due-input|event-alarm-open|event-attr|event-save|event-delete]`) ·

@@ -12,5 +12,7 @@ describe('에뮬레이터', () => {
     expect(emulatorEmail('?as=3')).toBe('teacher3@example.com');
     expect(emulatorEmail('?as=5')).toBe('hyundonglim80@gmail.com');
     expect(emulatorEmail('?as=9')).toBe('teacher@example.com');
+    expect(emulatorEmail('?as=new-p227-1')).toBe('new-p227-1@example.com'); // 점검이 만든 새 계정 (P22-7)
+    expect(emulatorEmail('?as=new-A B')).toBe('teacher@example.com');
   });
 });

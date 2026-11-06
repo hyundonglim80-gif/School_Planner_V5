@@ -34,6 +34,7 @@ import { evalPlaceOf } from '../../domain/evaluation';
 import { useEvaluations, type EvalItem } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
 import DecorSpot from '../../ui/DecorSpot';
+import { pressKeys } from '../../ui/pressKeys';
 
 const PAGE_SIZE = 50;
 
@@ -266,6 +267,9 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                     <div
                       key={row.key}
                       data-search-hit={row.key}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={pressKeys}
                       data-search-hit-kind="evaluation"
                       onClick={() => goEval(ev)}
                       title="그날로 가서 그 조사표 열기"
@@ -288,6 +292,9 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                     <div
                       key={row.key}
                       data-search-hit={row.key}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={pressKeys}
                       data-search-hit-kind={card.kind}
                       onClick={() => goCard(card)}
                       title={card.kind === 'notice' ? '그날로 가서 알림장 열기' : '그날로 가서 출석부 열기'}
@@ -310,6 +317,9 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                     <div
                       key={row.key}
                       data-search-hit={row.key}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={pressKeys}
                       data-search-hit-kind={hit.kind}
                       onClick={() => goLesson(hit)}
                       title="그날 하루 화면의 그 교시로 가서 짚기"
@@ -347,6 +357,9 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                   <div
                     key={hit.key}
                     data-search-hit={hit.key}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={pressKeys}
                     data-search-hit-kind={hit.kind}
                     onClick={() => go(hit)}
                     title={hit.kind === 'memo' || hit.where === 'memo' ? '메모 화면으로 가서 짚기' : '그날 하루 화면으로 가서 짚기'}

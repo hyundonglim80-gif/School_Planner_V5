@@ -22,6 +22,7 @@ import { spaceTitle } from '../../domain/spaceColor';
 import { LessonGrid, LessonStrip } from '../lessons/CalendarLessons';
 import type { LessonSubjects } from '../lessons/lessonSubjects';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
+import { pressKeys } from '../../ui/pressKeys';
 
 const WEEKDAYS = [
   { name: '일', color: 'text-red-500' },
@@ -125,6 +126,9 @@ export default function MonthGrid(p: MonthGridProps) {
                   <div
                     key={date}
                     data-month-day={date}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={pressKeys}
                     data-today={isToday ? 'true' : undefined}
                     data-selected={p.selectedDate === date ? 'true' : undefined}
                     onClick={() => p.onSelectDate(date)}
@@ -204,6 +208,9 @@ export default function MonthGrid(p: MonthGridProps) {
                             <div
                               key={space ? `${space.sid}/${ev.id}` : ev.id}
                               data-month-event={ev.id}
+                              role="button"
+                              tabIndex={0}
+                              onKeyDown={pressKeys}
                               data-month-event-done={done ? '1' : '0'}
                               data-event-picked={isPicked ? '1' : undefined}
                               data-event-space={space?.sid}

@@ -45,6 +45,7 @@ export default function ImageViewer() {
       style={{ left: vv.left, top: vv.top, width: vv.width, height: vv.height, zIndex }}
       {...backdrop}
     >
+      {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 그림 판 - 배경으로 누르기가 새지 않게 막기만 (P22-7) */}
       <div
         className="relative w-full max-w-3xl max-h-full flex flex-col gap-2"
         onClick={(e) => e.stopPropagation()}

@@ -6,6 +6,7 @@
 import { firstLine, type LessonDayView } from '../../domain/lessons';
 import { slotId, type ProgressMark } from '../../domain/progress';
 import { parseSlot, type ClassColorClasses } from '../../domain/teachingSlot';
+import { pressKeys } from '../../ui/pressKeys';
 
 interface Props {
   date: string;
@@ -44,6 +45,9 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
             <div
               key={n}
               data-week-lesson={n}
+              role="button"
+              tabIndex={0}
+              onKeyDown={pressKeys}
               data-now={now ? 'true' : undefined}
               onClick={(e) => {
                 stop(e);

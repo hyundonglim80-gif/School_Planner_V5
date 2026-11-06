@@ -198,6 +198,7 @@ export default function SlotCombobox({
               <li className="px-2.5 py-1.5 text-slate-400">{options.length ? '맞는 반·과목이 없습니다' : '⏰ 시간표 창 교사 유형에서 가르치는 반·과목을 적으세요'}</li>
             ) : (
               shown.map((o, i) => (
+                // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 콤보 상자 줄 - 키보드는 글 칸이 화살표·Enter로 받는다 (P22-7)
                 <li
                   key={o}
                   role="option"

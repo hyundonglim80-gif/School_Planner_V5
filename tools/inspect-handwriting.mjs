@@ -10,6 +10,8 @@
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-handwriting.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 메모('점검손글씨…')를 만들고 끝에 지운다.
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
@@ -347,7 +349,7 @@ try {
   const [mClose, mDone, mColor, mUndo] = [await mb(sel('pen-close')), await mb(sel('pen-done')), await mb(sel('pen-color', 'black')), await mb(sel('pen-undo'))];
   r.check(mClose && mDone && mColor && mDone.y < mColor.y - 10 && Math.abs(mClose.y - mDone.y) < 4, `닫기·저장이 첫 줄, 도구는 아랫줄 (저장 y ${Math.round(mDone?.y)} · 펜 y ${Math.round(mColor?.y)})`);
   r.check(mDone.x + mDone.width <= 390 && mUndo && mUndo.x + mUndo.width <= 390, `단추가 화면 안 (저장 오른쪽 ${Math.round(mDone.x + mDone.width)} · 되돌리기 ${Math.round(mUndo?.x + mUndo?.width)})`);
-  await m.page.screenshot({ path: process.env.SHOT_M || 'C:/Users/user/AppData/Local/Temp/handwriting-mobile.png' });
+  await m.page.screenshot({ path: process.env.SHOT_M || join(tmpdir(), 'handwriting-mobile.png') });
   await m.page.locator(sel('pen-close')).click();
   r.check(await m.page.locator(sel('handwriting-pad')).waitFor({ state: 'detached', timeout: 3000 }).then(() => true, () => false), '닫기 = 그림판만 닫는다');
   r.check(m.errors.length === 0, `휴대폰 화면 오류 없음 ${m.errors.join(' / ')}`);

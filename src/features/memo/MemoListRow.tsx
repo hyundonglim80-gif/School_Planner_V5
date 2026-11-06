@@ -10,6 +10,7 @@ import type { ItemDoc } from '../events/eventOps';
 import ClaudeRequestBadge from '../notes/ClaudeRequestBadge';
 import ClaudeRequestNote from '../notes/ClaudeRequestNote';
 import EntryBody from '../notes/EntryBody';
+import { pressKeys } from '../../ui/pressKeys';
 
 interface Props {
   item: ItemDoc;
@@ -42,6 +43,9 @@ export default function MemoListRow(props: Props) {
   return (
     <li
       data-memo-row={item.id}
+      role="button"
+      tabIndex={0}
+      onKeyDown={pressKeys}
       data-entry-done={done ? '1' : '0'}
       data-memo-row-expanded={expanded ? '1' : '0'}
       onClick={onOpen}

@@ -2,7 +2,8 @@
 //
 // - PC에서만. 마지막 백업에서 정한 날(처음 7일)이 지났고 구글 권한(토큰)이 **이미** 있으면 개인 공간 전체를 V5 백업 JSON으로
 //   드라이브 School_Planner/백업 폴더에 공개하지 않고 올린다. 최근 N개(처음 8개)만 남기고 오래된 것은 드라이브 휴지통으로.
-// - 권한 창은 띄우지 않는다(시키지 않은 로그인 창 금지). 앱을 연 채 30분마다 다시 본다. 3일 넘게 밀리면 본문 위 띠가 '지금 백업'을 권한다.
+// - 권한 창은 띄우지 않는다(시키지 않은 로그인 창 금지). 앱을 연 채 30분마다 다시 본다. 3일 넘게 밀리면 본문 위 띠가 '지금 백업'을 권한다
+//   (개인 공간에 적은 자료가 하나도 없으면 띄우지 않는다 - P22-7 새 계정).
 // - 고르는 것은 계정 설정 common.autoBackup, 마지막 백업은 settings/backupLog(백업이 적는다 - 기기마다 같은 것을 본다).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
@@ -15,11 +16,16 @@ import { BACKUP_LOG_ID, watchBackupLog } from '../../data/backupLog';
 import { getOrCreateBackupFolder, listBackupFiles, trashDriveFile, uploadPrivateJson } from '../../data/google/driveBackup';
 import { getGoogleTokenQuietly, withGoogleToken } from '../../data/google/token';
 import { batch, writeOp } from '../../data/repo';
-import { useSession } from '../../data/session';
+import { useHasLive } from '../../data/select';
+import { usePersonalSpaceId, useSession } from '../../data/session';
+import type { SpaceCollection } from '../../data/types';
 import { personalSpaceId } from '../../data/space';
 
 const RECHECK_MS = 30 * 60 * 1000;
 const SNOOZE_KEY = 'sp5-auto-backup-snooze';
+
+/** 사람이 적는 자료 (P22-7 - 하나도 없으면 띠를 띄우지 않는다. 라벨·설정은 처음부터 있어 뺀다) */
+export const OWN_DATA_COLLS: readonly SpaceCollection[] = ['items', 'series', 'timetables', 'lessonDays', 'progress', 'classes', 'evaluations', 'notices'];
 
 /** 마지막 백업 (계정에 하나) + 지금 하는 일 */
 export const useBackupLog = create<{ log: BackupLog; loaded: boolean; busy: string }>(() => ({ log: {}, loaded: false, busy: '' }));
@@ -132,6 +138,8 @@ export function useAutoBackupRunner() {
   const settings = useCommonSettings((s) => s.autoBackup);
   const { log, loaded } = useBackupLog();
   const isPc = detectDeviceKind() === 'pc';
+  // 백업할 자료가 아직 없는 새 계정에는 띠를 띄우지 않는다(모르면 띄운다 - 자료가 있는데 경고를 놓치는 쪽이 더 나쁘다)
+  const hasData = useHasLive(OWN_DATA_COLLS, usePersonalSpaceId());
   const [snoozed, setSnoozed] = useState(snoozedNow);
   // 띠와 자동 실행이 보는 '지금' - 30분마다 다시 잰다
   const [now, setNow] = useState(() => Date.now());
@@ -183,7 +191,7 @@ export function useAutoBackupRunner() {
   }, []);
 
   return {
-    nag: isPc && loaded && tried && !snoozed && shouldNag(settings, log, now),
+    nag: isPc && loaded && tried && !snoozed && hasData !== false && shouldNag(settings, log, now),
     overdue: overdueDays(settings, log, now),
     snooze,
   };
