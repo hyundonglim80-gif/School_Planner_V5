@@ -41,10 +41,10 @@ export const auth = getAuth(app);
 // 점검용 에뮬레이터. 에뮬레이터 빌드에서만 붙는다(운영 빌드에서는 빠진다).
 connectEmulators(auth, db);
 
-// V4와 같은 범위. 빠지면 그 API(캘린더·시트 …)를 부를 때 401이 난다.
+// 쓰는 API의 권한만 받는다. 빠지면 그 API(캘린더·시트 …)를 부를 때 401이 난다.
+// (V4에 있던 'auth/tasks'는 부르는 곳이 없어 뺐다 - P22-6. 이미 받은 토큰은 그대로 쓴다.)
 export const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/calendar',
-  'https://www.googleapis.com/auth/tasks',
   'https://www.googleapis.com/auth/spreadsheets',
   'https://www.googleapis.com/auth/drive.file',
 ];

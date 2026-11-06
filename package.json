@@ -47,5 +47,10 @@
     "@firebase/util": true,
     "protobufjs": true,
     "re2": false
+  },
+  "overrides": {
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "^1.14.6"
+    }
   }
 }
