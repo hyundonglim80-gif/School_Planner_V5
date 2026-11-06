@@ -70,6 +70,8 @@ try {
   r.check((await page.locator(sel('shortcut-record-key')).textContent()) === 'Shift + 2', `누른 키가 칸에 (${await page.locator(sel('shortcut-record-key')).textContent()})`);
   r.check((await page.getAttribute(sel('scope-tab', 'day'), 'aria-pressed')) === 'true', '그 키가 앱 단축키로 가지 않는다 (Shift+2 = 주간으로 안 감)');
   r.check(await waitFor(page.locator(sel('shortcut-record-typing'))), 'Ctrl·Alt 없는 키 = 글 칸 안내');
+  await page.keyboard.press('Control+KeyV');
+  r.check(((await page.locator(sel('shortcut-record-issue')).textContent().catch(() => '')) ?? '').includes('붙여넣기'), 'Ctrl+V = 글 칸 키라 까닭을 보인다 (P22-5 ■4)');
   await page.keyboard.press('Control+Alt+KeyT');
   r.check((await page.locator(sel('shortcut-record-key')).textContent()) === 'Ctrl + Alt + T', `Ctrl+Alt+T (${await page.locator(sel('shortcut-record-key')).textContent()})`);
   await page.click(sel('shortcut-record-save'));

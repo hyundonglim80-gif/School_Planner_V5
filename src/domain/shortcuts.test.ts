@@ -257,6 +257,19 @@ describe('눌러서 정하기 (P18)', () => {
     expect(recordKeyIssue(key('T', { alt: true }))).toBeNull();
   });
 
+  it('글 칸 키·브라우저가 가져가는 키는 까닭과 함께 막는다 (P22-5 ■4)', () => {
+    for (const k of ['C', 'V', 'X', 'A', 'Z']) expect(recordKeyIssue(key(k, { ctrl: true }))).toMatch(/글 칸/);
+    for (const k of ['W', 'T', 'N']) expect(recordKeyIssue(key(k, { ctrl: true }))).toMatch(/브라우저/);
+    expect(recordKeyIssue(key('C', { ctrl: true, shift: true }))).toBeNull();
+    expect(recordKeyIssue(key('W', { alt: true }))).toBeNull();
+    expect(recordKeyIssue(key('C'))).toBeNull();
+  });
+
+  it('그 기능의 기본 키는 받는다 - 되돌리기는 Ctrl+Z로 돌아갈 수 있다', () => {
+    expect(recordKeyIssue(key('Z', { ctrl: true }), 'undo')).toBeNull();
+    expect(recordKeyIssue(key('Z', { ctrl: true }), 'search')).toMatch(/글 칸/);
+  });
+
   it('Ctrl·Alt 없는 키는 글 칸 안에서 듣지 않는다고 알린다', () => {
     expect(worksWhileTyping(key('T'))).toBe(false);
     expect(worksWhileTyping(key('T', { shift: true }))).toBe(false);

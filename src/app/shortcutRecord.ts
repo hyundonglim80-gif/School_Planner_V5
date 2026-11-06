@@ -102,7 +102,7 @@ export function onRecordKey(e: KeyboardEvent) {
 export function saveRecordedKey(): boolean {
   const { picked, binding } = useShortcutRecord.getState();
   if (!picked || !binding) return false;
-  const issue = recordKeyIssue(binding);
+  const issue = recordKeyIssue(binding, picked);
   if (issue) {
     showErrorToast(issue);
     return false;

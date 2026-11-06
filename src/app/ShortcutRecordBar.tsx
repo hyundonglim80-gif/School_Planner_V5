@@ -55,7 +55,7 @@ export default function ShortcutRecordBar() {
       </>
     );
   } else {
-    const issue = binding ? recordKeyIssue(binding) : null;
+    const issue = binding ? recordKeyIssue(binding, picked) : null;
     const cleared = binding && !issue ? assignBinding(now, picked, binding, tabs).cleared : [];
     body = (
       <>

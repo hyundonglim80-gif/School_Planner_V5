@@ -433,10 +433,25 @@ export function assignBinding(
   return { bindings: next, tabs: nextTabs, cleared };
 }
 
-/** 눌러서 정할 때 받지 않는 키 - 까닭 글. 받을 수 있으면 null (ESC는 기록 취소라 여기까지 오지 않는다) */
-export function recordKeyIssue(binding: Binding): string | null {
-  if (binding.key === 'S' && binding.ctrl && !binding.alt && !binding.shift) return 'Ctrl + S는 저장 키라 쓸 수 없습니다.';
+/** 글 칸이 쓰는 Ctrl 키 - 단축키로 주면 글 칸에서 복사·붙여넣기가 안 된다 */
+const TEXT_BOX_KEYS: Readonly<Record<string, string>> = { C: '복사', V: '붙여넣기', X: '잘라내기', A: '모두 고르기', Z: '되돌리기' };
+/** 브라우저가 먼저 가져가는 Ctrl 키 - 앱까지 오지 않는다 */
+const BROWSER_KEYS: Readonly<Record<string, string>> = { W: '탭 닫기', T: '새 탭', N: '새 창' };
+
+/**
+ * 받지 않는 키 - 까닭 글. 받을 수 있으면 null (ESC는 기록 취소라 여기까지 오지 않는다).
+ * id = 그 키를 줄 기능 - 그 기능의 기본 키는 받는다(되돌리기는 Ctrl + Z로 돌아갈 수 있어야 한다).
+ */
+export function recordKeyIssue(binding: Binding, id?: AnyShortcutId): string | null {
+  const def = SHORTCUT_ACTIONS.find((a) => a.id === id)?.def;
+  if (def && formatBinding(def) === formatBinding(binding)) return null;
   if (binding.key === 'Escape') return 'ESC는 바꿀 수 없는 키입니다.';
+  if (!binding.ctrl || binding.alt || binding.shift) return null;
+  if (binding.key === 'S') return 'Ctrl + S는 저장 키라 쓸 수 없습니다.';
+  const text = TEXT_BOX_KEYS[binding.key];
+  if (text) return `Ctrl + ${binding.key}는 글 칸의 ${text} 키라 쓸 수 없습니다.`;
+  const browser = BROWSER_KEYS[binding.key];
+  if (browser) return `Ctrl + ${binding.key}는 브라우저가 먼저 가져가(${browser}) 앱까지 오지 않습니다.`;
   return null;
 }
 

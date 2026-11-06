@@ -13,6 +13,7 @@ import { shortcutLabel, TAB_SHORTCUTS } from '../../app/tabShortcuts';
 import { useUnsavedCheck } from '../../app/windows';
 import {
   bindingFromEvent,
+  recordKeyIssue,
   compactTabBindings,
   findConflicts,
   FIXED_SHORTCUTS,
@@ -82,6 +83,12 @@ function ShortcutRow({
     const t = window.setTimeout(() => el.classList.remove('search-focus'), 2600);
     return () => window.clearTimeout(t);
   }, [focused]);
+  /** 받지 않는 키(글 칸 키·브라우저 키)는 까닭을 알리고 그대로 둔다 - 눌러서 정하기와 같다 */
+  const choose = (next: Binding) => {
+    const issue = recordKeyIssue(next, id);
+    if (issue) showToast(issue, 4000);
+    else onChange(next);
+  };
   // 칸을 누르고 키를 누르면 그 키가 들어간다. 화살표·Space처럼 글자가 없는 키도 있어 글자 대신 눌린 키를 잡는다.
   const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Tab') return; // 다음 칸으로 넘어가기는 막지 않는다
@@ -96,7 +103,7 @@ function ShortcutRow({
       return;
     }
     // 누른 대로 수식키까지 같이 채운다. 체크로 따로 손봐도 된다.
-    onChange(bindingFromEvent(native));
+    choose(bindingFromEvent(native));
   };
   // 아직 V5로 옮기지 않은 기능도 키는 정해 둘 수 있다(옮기면 그 키로 선다) - 흐리게. 창 안 탭은 있는 창만 목록에 있다
   const ready = isTabShortcutId(id) || canRun(id);
@@ -118,9 +125,9 @@ function ShortcutRow({
         {label}
       </span>
       <div className="flex items-center gap-2.5 shrink-0">
-        <ModifierBox label="Ctrl" checked={binding.ctrl} onChange={(v) => onChange({ ...binding, ctrl: v })} />
-        <ModifierBox label="Alt" checked={binding.alt} onChange={(v) => onChange({ ...binding, alt: v })} />
-        <ModifierBox label="Shift" checked={binding.shift} onChange={(v) => onChange({ ...binding, shift: v })} />
+        <ModifierBox label="Ctrl" checked={binding.ctrl} onChange={(v) => choose({ ...binding, ctrl: v })} />
+        <ModifierBox label="Alt" checked={binding.alt} onChange={(v) => choose({ ...binding, alt: v })} />
+        <ModifierBox label="Shift" checked={binding.shift} onChange={(v) => choose({ ...binding, shift: v })} />
       </div>
       <input
         type="text"
