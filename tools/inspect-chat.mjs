@@ -14,6 +14,7 @@
 //      ⋮ 구성원 · 이름 바꾸기 · 그룹을 나간 사람 흐리게 · 나간 사람 다시 더하기 · 나가기(묻기 → 목록에서 빠짐)). teacher3 = C(그룹 구성원만 - 화면 없음)
 //   P19-4 ■2 내 글 지우기(마우스를 올리면 🗑️ · 묻기 '아니오' = 그대로 · '예' = 모두에게 '지운 글'·서버 빈 글 + deletedAt·방 미리 보기 빈 글 → 목록 '나: 지운 글' ·
 //      남의 글에는 🗑️ 없음 · 휴대폰은 🗑️ 없이 길게 누르기 → 묻기 → '지운 글')
+//   P22-5 ■1 끊긴 동안 '이전 글'(안내 · 단추가 남아 이어지면 받는다) · 끊긴 채 보내고 앱을 닫아도 글이 칸에 돌아온다 · 내 글은 안 읽은 수에 들지 않는다
 //   P21 윈도우 파일 끌어다 놓기(CDP 진짜 끌기): 방 머리·글 칸 위 어디서나 덮개(글은 보이는 자리에) · 놓으면 글 칸에 첨부
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
@@ -331,6 +332,22 @@ try {
   await A.ctx.setOffline(false);
   r.check(await waitFor(async () => (await page.locator(sel('chat-offline')).count()) === 0 && (await page.locator(sel('chat-msg')).count()) >= 50, 20000), '이어지면 글이 뜬다');
 
+  r.section("P22-5 ■1 끊긴 동안 '이전 글'");
+  const more = page.locator(sel('chat-more'));
+  r.check(await waitFor(more, 5000), '지난 글이 더 있다');
+  await A.ctx.setOffline(true);
+  await more.click();
+  r.check(await waitFor(page.locator('[data-toast]:has-text("지난 글을 받지 못했습니다")'), 15000), '끊긴 동안 누르면 안내');
+  r.check(await waitFor(async () => (await more.count()) === 1 && (await more.isEnabled()), 3000), "'이전 글 더 보기'가 남는다 (빈 결과를 '더 없음'으로 믿지 않는다)");
+  await A.ctx.setOffline(false);
+  r.check(
+    await waitFor(async () => {
+      if ((await more.count()) && (await more.isEnabled())) await more.click().catch(() => {});
+      return (await page.locator(sel('chat-msg')).count()) > 50;
+    }, 20000),
+    '이어지면 지난 글을 받는다',
+  );
+
   r.section('■2 보내기');
   const box = page.locator(sel('chat-input'));
   await box.click();
@@ -363,6 +380,38 @@ try {
   await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
   r.check(await waitFor(async () => (await page.locator(sel('chat-input')).inputValue()) === '저장 키 점검', 5000), '닫았다 다시 열면 쓰던 글이 칸에');
   await page.locator(sel('chat-input')).fill('');
+
+  r.section('P22-5 ■1 끊긴 채 보내고 앱을 닫기');
+  await page.route('**/google.firestore.v1.Firestore/**', (x) => x.abort());
+  await page.locator(sel('chat-input')).fill('끊긴 글 하나');
+  await page.locator(sel('chat-input')).press('Enter');
+  await page.locator(sel('chat-input')).fill('끊긴 글 둘');
+  await page.locator(sel('chat-input')).press('Enter');
+  r.check((await page.locator(sel('chat-input')).inputValue()) === '', '보내면 칸은 빈다');
+  await page.waitForTimeout(500);
+  A.dialogs.answer = true; // 서버 대기 쓰기가 있으면 나가기를 묻는다 (pendingWritesGuard) - 그래도 나간 사람
+  await page.reload();
+  A.dialogs.answer = false;
+  await page.unroute('**/google.firestore.v1.Firestore/**');
+  await page.locator('[data-user]').first().waitFor({ timeout: 15000 });
+  await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
+  r.check(
+    await waitFor(async () => (await page.locator(sel('chat-input')).inputValue()) === '끊긴 글 하나\n끊긴 글 둘', 8000),
+    `다시 열면 받지 못한 글 둘이 칸에 (${JSON.stringify(await page.locator(sel('chat-input')).inputValue().catch(() => ''))})`,
+  );
+  r.check(!(await serverMsg('끊긴 글 하나')), '서버에는 없다 (사라진 글을 되찾은 것)');
+  await page.locator(sel('chat-input')).fill('');
+
+  r.section('P22-5 ■1 내 글은 안 읽은 수에 들지 않는다');
+  await page.locator(sel('chat-input')).fill('내 글 뒤');
+  await page.locator(sel('chat-input')).press('Enter');
+  await serverUntil(() => serverMsg('내 글 뒤'), (d) => !!d);
+  await page.waitForTimeout(800);
+  await page.locator(sel('chat-back')).click();
+  await sendAsB('내 글 다음 남의 글');
+  r.check(await waitFor(allRow.locator(sel('chat-unread-count', 1)), 8000), '남의 글 하나 = 안 읽은 수 1 (내 글을 세지 않는다)');
+  await allRow.click();
+  await page.locator(sel('chat-input')).waitFor({ timeout: 5000 });
 
   r.section('■2 캡처 붙이기 · 첨부만 보내기');
   await pasteImage(page);

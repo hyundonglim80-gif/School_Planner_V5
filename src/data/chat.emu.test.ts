@@ -141,6 +141,23 @@ describe('대화 (에뮬레이터)', () => {
     });
   });
 
+  it('내가 보낸 글은 내 안 읽은 수에 들지 않는다 - 보내면 내 읽음이 그 뒤로 간다 (P22-5 ■1)', async () => {
+    const a = await signInAs('a');
+    await watching(a.uid, async () => {
+      const key = roomKey(all());
+      track(all(), await sendChat({ kind: 'all', sid }, said('a', '내 글 하나')));
+      track(all(), await sendChat({ kind: 'all', sid }, said('a', '내 글 둘')));
+      await vi.waitFor(
+        async () => {
+          const s = useChatStore.getState();
+          expect(s.rooms[key]?.lastText).toBe('내 글 둘');
+          expect(await countUnread(all(), myReadOf(s.rooms[key], a.uid, s.reads))).toBe(0);
+        },
+        { timeout: 10_000 },
+      );
+    });
+  });
+
   it("B → A 1:1 - 방 만들기 · A 안 읽음 → A 읽음 → B 글 '1' 사라짐", async () => {
     await signInAs('b');
     const dm: ChatRoomRef = { kind: 'dm', pairId: pair };
@@ -161,6 +178,8 @@ describe('대화 (에뮬레이터)', () => {
       // A 답장 - names에 A가 더해진다
       track(dm, await sendChat({ kind: 'dm', pairId: pair, other: users.b.uid, sid }, said('a', '네')));
       await vi.waitFor(() => expect(useChatStore.getState().rooms[pair]?.names).toEqual({ [users.a.uid]: 'A선생', [users.b.uid]: 'B선생' }), { timeout: 10_000 });
+      // 내 답장은 내 안 읽은 수에 들지 않는다 (1:1은 방 reads.<나>)
+      await vi.waitFor(async () => expect(await countUnread(dm, myReadOf(useChatStore.getState().rooms[pair], a.uid, {}))).toBe(0), { timeout: 10_000 });
     });
   });
 
@@ -177,7 +196,7 @@ describe('대화 (에뮬레이터)', () => {
       expect(first.msgs.every((m, i) => i === 0 || m.at! >= first.msgs[i - 1].at!)).toBe(true);
       expect(first.cursor).not.toBeNull();
       const older = await loadOlderMsgs(all(), first.cursor!);
-      expect(older.msgs.map((m) => m.text)).toEqual(['안녕하세요', '글 0', '글 1']);
+      expect(older.msgs.map((m) => m.text)).toEqual(['안녕하세요', '내 글 하나', '내 글 둘', '글 0', '글 1']);
       expect(older.cursor).toBeNull();
     } finally {
       stop();

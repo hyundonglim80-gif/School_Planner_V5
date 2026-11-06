@@ -56,6 +56,8 @@ type Status = 'loading' | 'ok' | 'offline' | 'denied' | 'failed' | 'new';
 const BOTTOM_PX = 60;
 /** 위에서 이만큼 안으로 올리면 지난 글을 더 받는다 */
 const TOP_PX = 80;
+/** 지난 글을 못 받으면 이만큼 스크롤로 다시 받지 않는다 - 맨 위에서 움직일 때마다 안내가 쌓이지 않게 */
+const RETRY_MS = 5000;
 /** 보는 동안 온 새 글의 읽음은 이만큼 모아 한 번 적는다 */
 const READ_GATHER_MS = 2000;
 
@@ -108,6 +110,8 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
   const lastId = useRef<string | null | undefined>(undefined);
   const pageRef = useRef<ChatMsg[]>([]);
   const live = useRef({ cursor, busy });
+  /** 지난 글을 못 받았다 - 이때까지는 스크롤로 다시 받지 않는다 (단추는 바로 된다) */
+  const retryAt = useRef(0);
   useEffect(() => {
     live.current = { cursor, busy };
   }, [cursor, busy]);
@@ -140,14 +144,23 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
     live.current.busy = true;
     setBusy(true);
     const el = scroller();
+    const failed = () => {
+      retryAt.current = Date.now() + RETRY_MS;
+      showToast('지난 글을 받지 못했습니다. 인터넷 연결을 확인해 주세요.', 4000);
+    };
     try {
       const p = await loadOlderMsgs(ref, c);
+      // 끊긴 채 받은 빈 결과는 '더 없음'이 아니다 - 자리를 두어 이어지면 다시 받는다
+      if (p.offline) {
+        failed();
+        return;
+      }
       anchor.current = el ? el.scrollHeight - el.scrollTop : null;
       setKept((k) => mergeMsgs(p.msgs, k));
       setCursor(p.cursor);
     } catch (e) {
       console.warn('[chat] 지난 글을 받지 못했습니다.', e);
-      showToast('지난 글을 받지 못했습니다. 인터넷 연결을 확인해 주세요.', 4000);
+      failed();
     } finally {
       setBusy(false);
     }
@@ -164,7 +177,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
     const onScroll = () => {
       atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < BOTTOM_PX;
       if (atBottom.current) setShowNew(false);
-      if (el.scrollTop < TOP_PX && live.current.cursor) void loadMoreRef.current();
+      if (el.scrollTop < TOP_PX && live.current.cursor && Date.now() >= retryAt.current) void loadMoreRef.current();
     };
     el.addEventListener('scroll', onScroll, { passive: true });
     // 그림이 늦게 떠·글 칸이 늘어 높이가 바뀌어도 맨 아래를 보던 채로

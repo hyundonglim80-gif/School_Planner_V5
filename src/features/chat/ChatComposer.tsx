@@ -2,7 +2,8 @@
 //   - PC: Enter = 보내기, Shift + Enter = 줄 바꿈(Ctrl + Enter도 보내기). 휴대폰 화면 자판(pointer: coarse)의 Enter = 줄 바꿈, ➤로 보낸다.
 //     한글을 짜는 중의 Enter(isComposing)는 보내지 않는다 - 보낼 글은 그 순간의 글 칸 값으로(상태는 한 박자 늦을 수 있다).
 //   - Ctrl+S·배경 누르기·↗ 새 창은 보내지 않는다(쪽지와 같다 - <form>·onSave를 쓰지 않는다).
-//   - 보내면 글 칸을 곧바로 비운다(글은 방에 '보내는 중…'으로 먼저 보인다). 보내지 못하면 글·첨부를 칸에 되돌린다(그 사이에 새로 쓴 것이 없으면).
+//   - 보내면 글 칸을 곧바로 비운다(글은 방에 '보내는 중…'으로 먼저 보인다). 보내지 못하면 글·첨부를 칸에 되돌린다(그 사이에 새로 쓴 것은 뒤에).
+//     서버가 받을 때까지는 unsent가 이 기기에 따로 남긴다 - 끊긴 채 보내고 앱을 닫아도 다음에 칸으로 돌아온다(P22-5 ■1).
 //   - 쓰던 글은 이 기기에(useDraft 'chat:<방 키>' - 앱 위 '저장하지 않은 글' 띠에는 들지 않는다). 방을 다시 열면 묻지 않고 칸에 채운다(메신저처럼).
 //   - 메모 요청 글 칸(P23 - notes/ClaudeFollowBox)도 이 칸이다: 열쇠·길이·안내를 바꾸고(draftKey·maxText·label·hint) 첨부를 끈다(noAttach - 공개 이슈로 올라간다).
 //     hold = 쓰기는 되고 보내기만 막는다(앞 요청이 도는 동안) - disabled는 글 칸째 막는다.
@@ -10,11 +11,13 @@
 import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type ChangeEvent, type ClipboardEvent, type KeyboardEvent, type ReactNode, type Ref } from 'react';
 import { showToast } from '../../app/toast';
 import { useDraft } from '../../data/drafts';
+import { useSession } from '../../data/session';
 import type { Attachment } from '../../data/types';
 import { CHAT_LIMITS, chatTextError } from '../../domain/chat';
 import { isImageAttachment } from '../../domain/attachments';
 import { DROP_BUSY_TEXT } from '../../ui/fileDrop';
 import { extractImageFiles, pastedTable, uploadAttachments } from '../notes/attach';
+import { holdUnsent, takeUnsent } from './unsent';
 
 interface ChatDraft {
   text: string;
@@ -26,6 +29,9 @@ const MAX_INPUT_PX = 160;
 
 /** 휴대폰 화면 자판 - Enter = 줄 바꿈, ➤로 보낸다 */
 const touchScreen = () => typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches;
+
+/** 글 여럿을 줄을 바꿔 잇는다 (빈 글은 뺀다) */
+const joinText = (...parts: string[]) => parts.filter((p) => p.trim()).join('\n');
 
 /** 방에 놓은 파일을 건네받는다 */
 export interface ChatComposerHandle {
@@ -63,17 +69,41 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
   const [uploading, setUploading] = useState<'files' | 'paste' | null>(null);
   const input = useRef<HTMLTextAreaElement>(null);
 
+  const uid = useSession((s) => s.user?.uid ?? null);
+  const key = draftKey ?? `chat:${roomKey}`;
   const hasContent = text.trim() !== '' || files.length > 0;
-  const draft = useDraft<ChatDraft>(draftKey ?? `chat:${roomKey}`, { text, attachments: files }, hasContent);
-  // 쓰던 글이 남아 있으면 곧바로 칸에 (묻지 않는다 - 보내기 전까지 보관은 그대로)
+  const draft = useDraft<ChatDraft>(key, { text, attachments: files }, hasContent);
+  // 쓰던 글이 남아 있으면 곧바로 칸에 (묻지 않는다 - 보내기 전까지 보관은 그대로). 칸에 이미 있는 글 뒤에 잇는다
   useEffect(() => {
-    if (!draft.offer || hasContent) return;
+    if (!draft.offer) return;
     const v = draft.take();
     if (!v) return;
-    setText(typeof v.text === 'string' ? v.text : '');
-    setFiles(Array.isArray(v.attachments) ? v.attachments : []);
+    const kept = typeof v.text === 'string' ? v.text : '';
+    setText((cur) => joinText(cur, kept));
+    if (Array.isArray(v.attachments)) setFiles((cur) => [...cur, ...v.attachments]);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 남은 글을 찾았을 때만
   }, [draft.offer]);
+  // 지난번에 서버가 받지 못한 글도 칸에 (unsent - 끊긴 채 보내고 앱을 닫았다). 쓰던 글보다 앞에
+  useEffect(() => {
+    if (!uid) return;
+    let alive = true;
+    void takeUnsent(uid, key, () => alive).then((list) => {
+      if (list.length === 0) return;
+      setText((cur) => joinText(...list.map((l) => l.text), cur));
+      setFiles((cur) => [...list.flatMap((l) => l.attachments), ...cur]);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [uid, key]);
+  /** 칸이 닫혔다 - 그 뒤 서버가 막은 글은 되돌릴 칸이 없어 보관에 둔다 */
+  const closed = useRef(false);
+  useEffect(() => {
+    closed.current = false;
+    return () => {
+      closed.current = true;
+    };
+  }, []);
   // 글을 손으로 다 지우면 보관도 지운다 (안 그러면 다음에 열 때 지운 글이 다시 채워진다)
   const hadContent = useRef(false);
   useEffect(() => {
@@ -151,10 +181,14 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
     setFiles([]);
     draft.clear();
     input.current?.focus();
-    if (await onSend(t, sent)) return;
-    // 보내지 못함 - 글 그대로 (그 사이에 새로 쓴 것이 있으면 그것을 둔다)
-    setText((cur) => (cur ? cur : t));
-    setFiles((cur) => (cur.length ? cur : sent));
+    // 서버가 받을 때까지 따로 남긴다 - 끊긴 동안 보낸 글은 앱을 닫으면 사라진다
+    const release = uid ? holdUnsent(uid, key, { text: t, attachments: sent }) : null;
+    const ok = await onSend(t, sent);
+    release?.(!ok && closed.current);
+    if (ok) return;
+    // 보내지 못함 - 글을 칸에 되돌린다 (그 사이에 새로 쓴 것은 뒤에 둔다)
+    setText((cur) => joinText(t, cur));
+    setFiles((cur) => [...sent, ...cur]);
   };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {

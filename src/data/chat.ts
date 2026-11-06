@@ -91,6 +91,9 @@ export async function sendChat(t: ChatTarget, m: OutgoingChat): Promise<string> 
   } finally {
     done();
   }
+  // 내 글까지 읽은 것으로 - 안 읽은 수는 내 읽음 뒤의 글을 세므로, 안 적으면 내가 보낸 글이 남의 새 글과 함께 세어진다.
+  // 기다리지 않는다(새 방은 보낸 뒤에야 글을 듣기 시작한다 - 늦추지 않게). 실패해도 다음에 보면 다시 적는다
+  void markRoomRead(m.from, ref);
   return id;
 }
 

@@ -7,6 +7,7 @@ import { useSession } from '../../data/session';
 import { showToast } from '../../app/toast';
 import { extractImageFiles, uploadAttachments } from '../notes/attach';
 import ChatComposer, { type ChatComposerHandle } from './ChatComposer';
+import { forgetUnsentForTest } from './unsent';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 vi.mock('../notes/attach', () => ({ uploadAttachments: vi.fn(async () => []), extractImageFiles: vi.fn(() => []), pastedTable: () => false }));
@@ -25,6 +26,7 @@ const settle = () =>
 let coarse = false;
 beforeEach(async () => {
   resetDraftsForTest();
+  forgetUnsentForTest();
   await wipeDrafts(UID);
   coarse = false;
   vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('coarse') && coarse, media: q, addEventListener() {}, removeEventListener() {} }));
@@ -103,6 +105,57 @@ describe('대화 글 칸', () => {
     type('못 간 글');
     enter();
     await waitFor(() => expect(input().value).toBe('못 간 글'));
+  });
+
+  it('보내지 못하면 그새 쓴 글 앞에 되돌린다 - 어느 쪽도 잃지 않는다', async () => {
+    let finish: (sent: boolean) => void = () => {};
+    render(<ChatComposer roomKey={KEY} onSend={vi.fn(() => new Promise<boolean>((r) => (finish = r)))} />);
+    type('못 간 글');
+    enter();
+    type('그새 쓴 글');
+    await act(async () => finish(false));
+    expect(input().value).toBe('못 간 글\n그새 쓴 글');
+  });
+
+  it('서버가 받기 전에는 따로 남는다 - 앱을 다시 열면 칸에 돌아온다', async () => {
+    const first = render(<ChatComposer roomKey={KEY} onSend={vi.fn(() => new Promise<boolean>(() => {}))} />);
+    type('끊긴 동안 보낸 글');
+    enter();
+    type('둘째 글');
+    enter();
+    expect(input().value).toBe('');
+    await waitFor(async () => expect((await readDraft<unknown[]>(UID, `unsent:chat:${KEY}`))?.value).toHaveLength(2));
+    first.unmount();
+    forgetUnsentForTest(); // 앱을 닫았다 열었다
+    render(<ChatComposer roomKey={KEY} onSend={vi.fn(async () => true)} />);
+    await waitFor(() => expect(input().value).toBe('끊긴 동안 보낸 글\n둘째 글'));
+    await waitFor(async () => expect(await readDraft(UID, `unsent:chat:${KEY}`)).toBeNull());
+  });
+
+  it('서버가 받으면 지운다 - 방을 떠난 뒤 받아도 · 돌아온 칸에 보낸 글을 다시 채우지 않는다', async () => {
+    let finish: (sent: boolean) => void = () => {};
+    const first = render(<ChatComposer roomKey={KEY} onSend={vi.fn(() => new Promise<boolean>((r) => (finish = r)))} />);
+    type('가는 중인 글');
+    enter();
+    await waitFor(async () => expect(await readDraft(UID, `unsent:chat:${KEY}`)).not.toBeNull());
+    first.unmount();
+    render(<ChatComposer roomKey={KEY} onSend={vi.fn(async () => true)} />);
+    await settle();
+    expect(input().value).toBe('');
+    await act(async () => finish(true));
+    await waitFor(async () => expect(await readDraft(UID, `unsent:chat:${KEY}`)).toBeNull());
+    expect(input().value).toBe('');
+  });
+
+  it('방을 떠난 뒤 서버가 막으면 남는다 - 다음에 열면 칸에', async () => {
+    let finish: (sent: boolean) => void = () => {};
+    const first = render(<ChatComposer roomKey={KEY} onSend={vi.fn(() => new Promise<boolean>((r) => (finish = r)))} />);
+    type('막힌 글');
+    enter();
+    first.unmount();
+    await act(async () => finish(false));
+    render(<ChatComposer roomKey={KEY} onSend={vi.fn(async () => true)} />);
+    await waitFor(() => expect(input().value).toBe('막힌 글'));
   });
 
   it('쓰던 글이 남아 있으면 묻지 않고 칸에 채운다 · 손으로 다 지우면 보관도 지운다', async () => {
