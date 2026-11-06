@@ -1,6 +1,14 @@
+import { readFileSync } from 'node:fs'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+
+// 개발 서버·미리 보기도 Hosting과 같은 보안 헤더를 낸다 - 크롬 점검이 그 헤더 아래에서 돈다(P22-6). 값은 firebase.json 한 곳.
+// `firebase serve`로는 볼 수 없다 - firebase.json 헤더를 내지 않았다(Cache-Control도, firebase-tools 15.30 - 11-06).
+const hostingRules: { source?: string; headers: { key: string; value: string }[] }[] = JSON.parse(
+  readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),
+).hosting.headers
+const SECURITY_HEADERS = Object.fromEntries((hostingRules.find((rule) => rule.source === '**')?.headers ?? []).map((h) => [h.key, h.value]))
 
 // 지금 브라우저가 어느 빌드를 돌리고 있는지 화면에서 확인할 수 있게 한다(V4에서 가져온 규칙 -
 // 이것이 없을 때 고친 것이 그 기기에서 돌고 있는지 몰라 '고쳤는데 그대로'를 여러 번 주고받았다).
@@ -24,6 +32,6 @@ export default defineConfig(({ mode }) => ({
   // 점(.)으로 시작하는 기본 자리(.vite/)는 Firebase Hosting이 올리지 않아 맨 위에 둔다.
   build: { manifest: 'asset-manifest.json' },
   // V4 개발 서버(5173)·미리 보기(4173)와 같이 켜 둘 수 있게 번호를 비킨다.
-  server: { port: 5175, strictPort: true },
-  preview: { port: 4175, strictPort: true },
+  server: { port: 5175, strictPort: true, headers: SECURITY_HEADERS },
+  preview: { port: 4175, strictPort: true, headers: SECURITY_HEADERS },
 }))

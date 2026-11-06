@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**다음 = P22-6**(운영 안전망 - 6장 'P22' 절, 이 PC에서). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**다음 = P22-6 ■2**(운영 안전망 - 6장 'P22' 절, 이 PC에서, ■1 끝). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P22-5 끝**(11-06 - 대화·쪽지·단축키 잔버그 + 다시 확인 7건). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
 **P22-4 끝**(11-06 - 3월 학급 · 자정 넘김 · 되살리기 공간 · 공용 PC). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
 **P23-3 끝 = P23 단계 끝**(11-06 - 답 알림·카드 '새 답', 함수 배포 끝). `public/sw.js`를 고쳐 설치 앱은 늦게 받는다. 진짜 요청으로는 아직 돌지 않았다 - 다음 🤖 요청이 첫 확인.
@@ -2990,7 +2990,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 ### P22-6. 운영 안전망 (항목 16)
 **시작 조건**: 없음(화면 동작을 바꾸지 않는다). **이 PC에서**. **묻기**: 복원 연습(■6) · 저장소 설정(■7) · App Check(■8).
 **먼저 읽을 것**: 5장 'P22' · `firebase.json` hosting · `index.html`(인라인 스크립트) · `.github/workflows/ci.yml`·`claude-request.yml`(막는 목록) · `docs/CLAUDE-REQUEST.md` · `docs/OPS.md` · `data/firebase.ts` `GOOGLE_SCOPES`.
-- [ ] ■1 쉬운 보안 헤더(`firebase.json`): `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin` · `X-Frame-Options: SAMEORIGIN` · `Permissions-Policy` · 구글 로그인 팝업·↗ 새 창·설치 앱이 그대로인지 · 배포 뒤 `curl -I`.
+- [x] ■1 쉬운 보안 헤더(`firebase.json`): `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin` · `X-Frame-Options: SAMEORIGIN` · `Permissions-Policy` · 구글 로그인 팝업·↗ 새 창·설치 앱이 그대로인지 · 배포 뒤 `curl -I`.
+  → 11-06 `firebase.json` `source: **` 넷(`Permissions-Policy`는 앱이 쓰지 않는 camera·microphone·geolocation·payment·usb만 막는다 - 클립보드·공유·알림은 그대로) · `vite.config`가 그 값을 읽어 개발 서버·미리 보기도 같은 헤더(크롬 점검이 그 아래에서 돈다) · `tools/inspect-headers.mjs`(`SITE=`로 운영도) · login·popout·attach·pwa 통과 · 단위 3141.
 - [ ] ■2 CSP는 `Content-Security-Policy-Report-Only`로만: 허용 주소 표(구글·Firebase·드라이브 그림·나이스) · 인라인 스크립트 해시 · 콘솔 위반을 점검으로 센다. 막기로 바꾸는 것은 며칠 뒤 사용자에게 묻는다.
 - [ ] ■3 CI에 규칙·자료 시험: `setup-java` + `firebase emulators:exec --only auth,firestore`로 `check:rules`·`test:data` - 시간이 늘어나는 만큼 main CI·자동 요청이 느려지는지 본다.
 - [ ] ■4 자동 요청 막는 목록에 `package.json`·`package-lock.json`·`public/sw.js`·`vite.config.ts`·`index.html` 더하기(`.github`는 PC에서만 고친다) + `docs/CLAUDE-REQUEST.md`.
