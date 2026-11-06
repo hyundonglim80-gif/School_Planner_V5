@@ -8,6 +8,7 @@
 //
 // 어느 모양이든 창 층(app/history의 useModalLayer)에 똑같이 든다. 그래서 겹쳐 연 창의 순서, ESC로 모두 닫기,
 // 뒤로가기로 한 겹씩 닫기가 모양과 상관없이 그대로다.
+// 화면을 덮는 모양(가운데·휴대폰 배너)은 aria-modal - 열면 초점이 안으로, Tab은 안에서 돌고, 닫으면 연 단추로(ui/useDialogFocus, P22-7).
 import { useContext, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useModalLayer } from '../app/history';
@@ -17,6 +18,7 @@ import { POPOUT, PopoutTargetContext, WindowSlotContext } from './popout';
 import { getSideColumn, sideSlotProps, useDocked, useSideSlot } from './sideColumn';
 import { useBackdropClose } from './useBackdropClose';
 import { useBodyScrollLock } from './useBodyScrollLock';
+import { useDialogFocus } from './useDialogFocus';
 import { useSaveKey } from './useSaveKey';
 import { useVisualViewport } from './useVisualViewport';
 
@@ -75,6 +77,8 @@ export default function PopupFrame({
   const zIndex = useModalLayer(isOpen, onClose, raise);
   const backdrop = useBackdropClose(onBackdropClose);
   const slot = useSideSlot(docked, raise);
+  // 화면을 덮는 창(가운데·휴대폰 배너)만 초점을 안으로 옮기고 가둔다 - 오른쪽 줄·새 창 가득은 화면을 같이 쓴다 (P22-7)
+  useDialogFocus(isOpen && !docked && !fill, cardRef);
 
   if (!isOpen) return null;
 
@@ -131,9 +135,11 @@ export default function PopupFrame({
         <div
           ref={cardRef as RefObject<HTMLDivElement>}
           role="dialog"
+          aria-modal="true"
           aria-label={ariaLabel}
+          tabIndex={-1}
           data-popup-card
-          className="relative bg-white h-full w-full max-w-lg shadow-2xl flex flex-col overflow-y-auto overscroll-contain"
+          className="relative bg-white h-full w-full max-w-lg shadow-2xl flex flex-col overflow-y-auto overscroll-contain outline-none"
         >
           {inner}
         </div>
@@ -151,9 +157,11 @@ export default function PopupFrame({
       <div
         ref={cardRef as RefObject<HTMLDivElement>}
         role="dialog"
+        aria-modal="true"
         aria-label={ariaLabel}
+        tabIndex={-1}
         data-popup-card
-        className={`bg-white w-full ${CENTER_WIDTH[width]} max-h-full rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden ${cardClassName}`}
+        className={`outline-none bg-white w-full ${CENTER_WIDTH[width]} max-h-full rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden ${cardClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {inner}

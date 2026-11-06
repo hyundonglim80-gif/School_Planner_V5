@@ -223,6 +223,29 @@ try {
   r.check(dialogs.seen.length === 1, 'ESC: 예 → 한 번만 묻고 닫는다', `물음 ${dialogs.seen.length}번`);
   dialogs.seen.length = 0;
 
+  // 초점 (P22-7): 가운데 창을 열면 안으로, Tab은 창 안에서 돌고, 닫으면 연 단추(하루 수업 ⚙️)로 돌아온다
+  await page.goto(page.url().replace(/#.*$/, '#/day/2026-10-08'));
+  await screenIs('day');
+  await page.locator(sel('lessons-settings')).focus();
+  await page.keyboard.press('Enter');
+  const centerCard = page.locator(`${sel('popup-frame', 'center')} [data-popup-card]`);
+  r.check(await waitFor(centerCard, 8000), 'Enter로 연 시간표 창 = 가운데');
+  const inCard = () => page.evaluate(() => !!document.activeElement?.closest('[data-popup-frame="center"]'));
+  r.check((await centerCard.getAttribute('aria-modal')) === 'true' && (await inCard()), '열면 초점이 창 안 · aria-modal');
+  let stayed = true;
+  for (let i = 0; i < 40; i++) {
+    await page.keyboard.press('Tab');
+    if (!(await inCard())) stayed = false;
+  }
+  for (let i = 0; i < 5; i++) {
+    await page.keyboard.press('Shift+Tab');
+    if (!(await inCard())) stayed = false;
+  }
+  r.check(stayed, 'Tab·Shift+Tab 45번 - 초점이 창 밖(뒤 화면)으로 나가지 않는다');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('popup-frame', 'center')).count()) === 0);
+  r.check(await page.evaluate(() => document.activeElement?.hasAttribute('data-lessons-settings')), '닫으면 연 단추(⚙️)로 돌아온다');
+
   r.section('머리줄');
   await page.click(sel('more-menu'));
   const sections = await page.locator(sel('menu-section')).evaluateAll((els) => els.map((e) => e.dataset.menuSection).join(','));
