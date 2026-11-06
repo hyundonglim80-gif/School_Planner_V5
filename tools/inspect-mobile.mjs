@@ -144,6 +144,17 @@ async function runSet(browser, { name, width, height, mobile, dark }) {
     r.check(over === 0, `${screen}: 가로로 넘치지 않는다`, `${screen}: 가로로 ${over}px 넘친다 (${(await wideOnes(page, width)).join(' · ')})`);
     contrast[screen] = await contrastMap(page);
     await shot(page, `${name}-${screen}`);
+    if (screen === 'day') {
+      // 수업 머리줄 ⚙️ = 첫 줄 오른쪽 끝 (P22-7 - 휴대폰에서 혼자 한 줄을 차지했다)
+      const gear = await page.locator(sel('lessons-settings')).boundingBox();
+      const head = await page.locator(sel('lessons-collapse')).boundingBox();
+      const box = await page.locator(sel('day-lessons')).boundingBox();
+      const title = ((await page.locator(`${sel('day-lessons')} h3`).textContent()) ?? '').trim();
+      r.check(
+        !!gear && !!head && !!box && Math.abs(gear.y + gear.height / 2 - (head.y + head.height / 2)) < 8 && box.x + box.width - (gear.x + gear.width) < 30 && title === '수업',
+        `수업 머리줄 ⚙️ = 제목 줄 오른쪽 끝 ('${title}' · ⚙️ y ${gear && Math.round(gear.y)} / 제목 y ${head && Math.round(head.y)})`,
+      );
+    }
   }
 
   if (mobile) {

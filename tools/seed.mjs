@@ -20,6 +20,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWit
 const PASSWORD = 'test1234';
 // 교사 유형(settings/common.teaching - P6-1): 고르지 않은 계정은 하루 화면 맨 위에 '교사 유형을 골라 주세요' 띠가 떠
 // 다른 점검의 화면을 밀어낸다 - 셋 다 골라 둔다. 띠는 tools/inspect-lessons.mjs가 칸을 비우고 본 뒤 되돌린다.
+// '다음: ⏰ 시간표 → 🏫 학급' 띠(firstStepsDone - P22-7)도 닫아 둔다 - 새 계정 흐름은 tools/inspect-shell.mjs가 그때 만든 계정(?as=new-…)으로 본다.
 const HOMEROOM = { unit: 'subject', hasHomeroom: true, homeroomClass: '', subjects: [], classes: [], classColors: {} };
 const SUBJECT_ONLY = { unit: 'class', hasHomeroom: false, homeroomClass: '', subjects: ['과학'], classes: ['5-1', '5-2', '5-3'], classColors: {} };
 const ACCOUNTS = [
@@ -78,7 +79,7 @@ async function main() {
     await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'backupLog'), { lastAt: Date.now() + 365 * 86400000, updatedAt: serverTimestamp(), v: 1 });
     // 계정 설정은 다른 칸을 두고 교사 유형만 (merge)
     // 새 학년도 띠(P9-2)는 2/15 ~ 3/31에 뜬다 - 그때 돌리는 다른 점검을 밀지 않게 '준비 끝'을 먼 학년도로 (tools/inspect-new-year.mjs가 바꿔 본다)
-    await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'common'), { teaching, newYearDone: 9999, updatedAt: serverTimestamp(), v: 1 }, { merge: true });
+    await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'common'), { teaching, newYearDone: 9999, firstStepsDone: true, updatedAt: serverTimestamp(), v: 1 }, { merge: true });
     console.log(`${email} (${note}) → spaces/u_${uid}`);
   }
   console.log(`V5 자료를 심었습니다 - 개인 공간 ${ACCOUNTS.length}개`);
