@@ -2,7 +2,7 @@ import { defineConfig } from 'vitest/config';
 
 // 자료 층 테스트 (에뮬레이터). `npm run emu`를 켠 뒤 `npm run test:data`.
 // 저장 도우미·되돌리기·규칙이 실제 Firestore(에뮬레이터)에서 함께 맞는지 본다 - 단위 테스트는 Firestore를 흉내 낸다.
-// CI는 돌리지 않는다(에뮬레이터가 없다 - 단위만). 파일 이름은 *.emu.test.ts (단위 설정은 빼고 돈다).
+// CI는 ci.yml `rules-data`가 에뮬레이터를 켜고 돌린다(P22-6). 파일 이름은 *.emu.test.ts (단위 설정은 빼고 돈다).
 export default defineConfig({
   define: {
     __BUILD_ID__: JSON.stringify('test'),

@@ -141,7 +141,7 @@
   클라우드 컨테이너는 두 로그를 `/dev/null` 링크로 둔다(`ln -s /dev/null firebase-debug.log` - P4-3에 30GB가 되어 Auth 에뮬레이터가 죽었다). 링크는 git 무시라 기기마다 한 번.
 - 에뮬레이터에서 문서 하나 저장이 6~7초씩 걸리면 앱 버그가 아니라 남은 잠금이다(점검 브라우저를 저장 도중에 끈 탓) - 에뮬레이터를 다시 켜고 seed.
 - **8080이 대답하고 Node 단독 읽기가 되어도 에뮬레이터 통로는 막혀 있을 수 있다**(P22-6 ■1 - 3시간 켠 에뮬레이터에서 login·popout·attach가 `client is offline`·저장 실패로 틀렸다, 끝난 뒤 단독 읽기는 241ms). `grep -c 'too many pending' firestore-debug.log`와 시각을 본다. 앱을 고친 뒤 틀리면 **코드는 그대로 두고 에뮬레이터만 다시 켜** 견준다 - 그래야 고친 것 때문이 아님을 안다.
-- **`firebase serve`는 `firebase.json` 헤더를 내지 않는다**(P22-6 ■1 - Cache-Control도, firebase-tools 15.30). 개발 서버·미리 보기는 `vite.config`가 그 값을 읽어 낸다, 운영은 `SITE=https://schoolplanner-v5.web.app/ node tools/inspect-headers.mjs`.
+- **`firebase serve`는 `firebase.json` 헤더를 내지 않는다**(P22-6 ■1 - Cache-Control도, firebase-tools 15.34). 개발 서버·미리 보기는 `vite.config`가 그 값을 읽어 낸다, 운영은 `SITE=https://schoolplanner-v5.web.app/ node tools/inspect-headers.mjs`.
 - **`npx`로 뒤에 띄운 서버는 TaskStop이 바깥만 꺼서 포트가 남는다**(P22-6 ■1) - `exec node node_modules/…/bin/…`로 띄운다. 남았으면 포트의 PID 명령 줄을 보고 그 PID만 끈다.
 - **오래 켠 에뮬레이터는 느려져 경쟁을 가린다 - '다시 돌리면 통과'로 넘기지 않는다**(P22-1 - 저장이 4초씩 걸려 Ctrl+S 점검이 틀렸고, 다시 켜 빨라지자 11-02에 '다시 돌리면 통과'로 넘긴 구성원 이름 'undefined'가 늘 틀렸다. 진짜 앱 버그였다).
 - **점검을 도중에 끄면 심은 자료가 남는다**(P22-1 - check-rules를 끈 뒤 '대화 점검 …' 그룹 둘에 teacher가 남아 inspect-share-groups가 코드 칸 셋을 찾았다). 갑자기 strict 오류면 에뮬레이터 `spaces`부터 본다.

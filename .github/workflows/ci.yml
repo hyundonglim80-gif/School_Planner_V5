@@ -43,3 +43,36 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # 규칙·자료 층(P22-6) - 에뮬레이터가 있어야 돈다. check와 나란히 돌아 그만큼만 기다린다.
+  # 배포(firebase-hosting-merge.yml)는 CI 전체가 통과해야 하므로 여기가 깨져도 배포되지 않는다.
+  rules-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 에뮬레이터 파일은 firebase-tools 판마다 같다 - 받아 둔 것을 다시 쓴다
+      - name: Cache emulators
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ hashFiles('package-lock.json') }}
+
+      - name: Rules and data tests
+        run: npx firebase emulators:exec --only auth,firestore --project schoolplannerv3 "npm run check:rules && npm run test:data"

@@ -244,7 +244,7 @@
   `tools/inspect-forward.mjs`(P3-3: 오늘 칸 ↪·carrying 한 번·다시 열면 쓰지 않음·끝내기 = 오늘로·→ 오늘로·학교 탭·지난 일정 줄·단축키 - 48항목, 날짜는 이 기기의 오늘) ·
   `tools/inspect-groups.mjs`(P3-3: 기간 한 문서·(k/n)·그날만 완료·이 날만/이 날부터·통째로 옮기기, 반복 만들기·이 날부터 고치기·지우기 - 41항목, 2027-03) · `tools/inspect-multi.mjs`(P3-3: Ctrl·Shift·완료·라벨·옮기기(기간은 고른 날만)·지우기·ESC·⋮ - 26항목, 2027-04).
   점검용 `window.sp5` = `openWindow`·`closeAllWindows`·`runShortcut`(키가 없는 단축키 일).
-  자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 단위만 - `repo.emu`·`mirror.emu`·`import.emu`).
+  자료 층 테스트 `npm run test:data`(에뮬레이터, `*.emu.test.ts` - `vitest.data.config.ts`, CI는 `ci.yml` `rules-data`가 규칙 시험과 함께 돌린다(P22-6 - 깨지면 배포되지 않는다) - `repo.emu`·`mirror.emu`·`import.emu`).
   규칙 테스트: `app/windowConventions.test.ts`(창 틀·'취소' 금지·그림 단추 설명·⋮ 표) · `app/keys.test.tsx`(키 글자를 박지 않는다).
 - **V4 가져오기** `src/import/v4/`(V4 자리를 읽는 곳은 여기뿐 - `boundary.test`가 지킨다, 쓰기는 V5에만): `hash.ts`(SHA-1·base32·`stableStringify`) · `ids.ts`(`v4id`·id 없는 것 `idlessKey`) ·
   `classes.ts`(P7-5 `planClasses` - 명렬표(학생 sid = 셈한 값 `studentSid`, V5에서 고친 학급은 그 명렬표의 번호로)·출결·교과 출결·알림장·조사표(`v4Eval`)·자리표·허브(`v4Hub`)·암기(이름 열쇠),

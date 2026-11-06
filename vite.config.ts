@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 // 개발 서버·미리 보기도 Hosting과 같은 보안 헤더를 낸다 - 크롬 점검이 그 헤더 아래에서 돈다(P22-6). 값은 firebase.json 한 곳.
-// `firebase serve`로는 볼 수 없다 - firebase.json 헤더를 내지 않았다(Cache-Control도, firebase-tools 15.30 - 11-06).
+// `firebase serve`로는 볼 수 없다 - firebase.json 헤더를 내지 않았다(Cache-Control도, firebase-tools 15.34 - 11-06).
 const hostingRules: { source?: string; headers: { key: string; value: string }[] }[] = JSON.parse(
   readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),
 ).hosting.headers
