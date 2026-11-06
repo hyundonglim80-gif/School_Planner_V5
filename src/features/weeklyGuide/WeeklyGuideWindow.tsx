@@ -18,7 +18,8 @@ import {
   weekRangeText,
   type GuideOptions,
 } from '../../domain/weeklyGuide';
-import { useCurrentSpaceId } from '../../data/session';
+import { accountKey } from '../../data/accountKey';
+import { useCurrentSpaceId, useSession } from '../../data/session';
 import { useDocs } from '../../data/select';
 import { readNoticeLines } from '../../domain/notices';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
@@ -31,6 +32,7 @@ export interface WeeklyGuideParams {
 }
 
 const OPTS_KEY = 'sp5-weekly-guide-opts';
+// 사람이 친 글이라 계정마다 (공용 PC - P22-4)
 const TITLE_KEY = 'sp5-weekly-guide-title';
 const NOTES_KEY = 'sp5-weekly-guide-notes';
 const DEFAULT_OPTS: GuideOptions = { note: true, notices: true };
@@ -54,6 +56,9 @@ function writeText(key: string, value: string) {
 
 export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<WeeklyGuideParams | undefined>) {
   const sid = useCurrentSpaceId();
+  const uid = useSession((s) => s.user?.uid ?? '');
+  const [titleKey] = useState(() => accountKey(TITLE_KEY, uid));
+  const [notesKey] = useState(() => accountKey(NOTES_KEY, uid));
   const periods = useCommonSettings((s) => s.periods);
   const periodNames = useMemo(() => periods.map((p) => p.name), [periods]);
   const today = todayStr();
@@ -70,12 +75,12 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
   const [opts, setOpts] = useState<GuideOptions>(() => readJson(OPTS_KEY, DEFAULT_OPTS));
   const [title, setTitle] = useState(() => {
     try {
-      return localStorage.getItem(TITLE_KEY) || '주간학습안내';
+      return localStorage.getItem(titleKey) || '주간학습안내';
     } catch {
       return '주간학습안내';
     }
   });
-  const [notes, setNotes] = useState<Record<string, string>>(() => readJson<Record<string, string>>(NOTES_KEY, {}));
+  const [notes, setNotes] = useState<Record<string, string>>(() => readJson<Record<string, string>>(notesKey, {}));
   const note = notes[monday] || '';
   const previewRef = useRef<HTMLDivElement>(null);
 
@@ -84,7 +89,7 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
     if (text.trim()) next[monday] = text;
     else delete next[monday];
     setNotes(next);
-    writeText(NOTES_KEY, JSON.stringify(next));
+    writeText(notesKey, JSON.stringify(next));
   };
 
   const setOpt = (key: keyof GuideOptions, on: boolean) => {
@@ -171,7 +176,7 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
               data-guide-title
               onChange={(e) => {
                 setTitle(e.target.value);
-                writeText(TITLE_KEY, e.target.value);
+                writeText(titleKey, e.target.value);
               }}
               aria-label="제목"
               placeholder="주간학습안내"

@@ -371,7 +371,14 @@ function openCacheOnce(): Promise<IDBDatabase | null> {
         const idb = req.result;
         if (!idb.objectStoreNames.contains(CACHE_STORE)) idb.createObjectStore(CACHE_STORE);
       };
-      req.onsuccess = () => resolve(req.result);
+      req.onsuccess = () => {
+        // 다른 탭이 로그아웃하며 지우려 한다 - 비켜 준다. 안 비키면 그 탭을 닫을 때까지 사진이 남는다(P22-4)
+        req.result.onversionchange = () => {
+          req.result.close();
+          cacheOpening = null;
+        };
+        resolve(req.result);
+      };
       // 시크릿 모드·저장소 차단 등. 재어 두지 못할 뿐이므로 그냥 넘어간다.
       req.onerror = () => resolve(null);
       req.onblocked = () => resolve(null);

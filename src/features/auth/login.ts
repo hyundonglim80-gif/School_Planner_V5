@@ -13,7 +13,7 @@ import { showErrorToast } from '../../app/toast';
 import { stopPrefsSync } from '../../app/prefs';
 import { wipeClipboard } from '../../data/clipboard';
 import { wipeDrafts } from '../../data/drafts';
-import { forgetGoogleToken, keepGoogleToken } from '../../data/google/token';
+import { keepGoogleToken } from '../../data/google/token';
 import { wipeMirror } from '../../data/mirror/sync';
 import { forgetPushOnLogout } from '../../data/push';
 
@@ -78,7 +78,24 @@ export function useGoogleLogin() {
   return { signingIn, loginWithGoogle };
 }
 
-/** 로그아웃. 이 기기에 챙겨 둔 구글 토큰과 기기 사본도 지운다(다음 사람이 쓰지 않게 - 공용 PC). */
+/** 지우기 한 단계가 기다리는 만큼 - 넘으면 그 단계만 두고 넘어간다 */
+const WIPE_LIMIT_MS = 5000;
+
+/** 이 기기 저장소 하나를 지운다. 막히거나 실패해도 다른 단계를 막지 않는다 */
+async function wipeStep(what: string, wipe: () => Promise<unknown>): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const limit = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('시간 초과')), WIPE_LIMIT_MS);
+  });
+  await Promise.race([wipe(), limit])
+    .catch((e: unknown) => console.warn(`[logout] ${what}을(를) 지우지 못했습니다.`, e))
+    .finally(() => clearTimeout(timer));
+}
+
+/**
+ * 로그아웃. 이 기기의 사본·쓰던 글·클립보드·사진을 지운다(다음 사람이 쓰지 않게 - 공용 PC). 다음에 들어오면 사본은 서버에서 다시 받는다.
+ * 구글 토큰·명렬표 임시본·창 목록은 다른 탭도 함께 비워야 해서 세션을 듣는 쪽에서 비운다(accountChange).
+ */
 export async function logout() {
   const uid = auth.currentUser?.uid;
   // 방금 바꿔 1초 뒤 올리려던 설정은 로그아웃 전에 올린다(뒤에 가면 권한이 없다). 연결이 없으면 오래 기다리지 않는다.
@@ -91,15 +108,15 @@ export async function logout() {
     showErrorToast('로그아웃하지 못했습니다.', error);
     return;
   }
-  forgetGoogleToken();
-  // 기기 사본(학생 자료가 든다)은 다음에 들어오면 서버에서 다시 받는다
-  if (uid) await wipeMirror(uid).catch((e: unknown) => console.warn('[mirror] 로그아웃 때 기기 사본을 지우지 못했습니다.', e));
-  // 쓰던 글 보관도 같은 까닭으로 (공용 PC)
-  if (uid) await wipeDrafts(uid).catch((e: unknown) => console.warn('[drafts] 로그아웃 때 쓰던 글 보관을 지우지 못했습니다.', e));
-  // 클립보드 칸 목록도 (비밀번호·캡처가 지나간다)
-  if (uid) await wipeClipboard(uid).catch((e: unknown) => console.warn('[clipboard] 로그아웃 때 클립보드 목록을 지우지 못했습니다.', e));
-  // 학생 사진 담아 두기도 (얼굴 사진 - 공용 PC). 사진을 쓰는 화면에서만 읽는 모듈이라 그때 불러온다
-  await import('../../data/google/studentPhotos')
-    .then((m) => m.wipePhotoCache())
-    .catch((e: unknown) => console.warn('[photos] 로그아웃 때 사진 담아 두기를 지우지 못했습니다.', e));
+  await Promise.all([
+    ...(uid
+      ? [
+          wipeStep('기기 사본', () => wipeMirror(uid)),
+          wipeStep('쓰던 글 보관', () => wipeDrafts(uid)),
+          wipeStep('클립보드 목록', () => wipeClipboard(uid)),
+        ]
+      : []),
+    // 학생 사진은 얼굴 사진이다. 사진을 쓰는 화면에서만 읽는 모듈이라 그때 불러온다
+    wipeStep('학생 사진', () => import('../../data/google/studentPhotos').then((m) => m.wipePhotoCache())),
+  ]);
 }

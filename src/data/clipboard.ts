@@ -67,6 +67,11 @@ function open(uid: string): Promise<IDBPDatabase | null> {
         db.createObjectStore('items', { keyPath: 'id' });
         db.createObjectStore('trash', { keyPath: 'id' });
       },
+      // 다른 탭이 로그아웃하며 지우려 한다 - 비켜 준다. 안 비키면 그 탭의 정리가 끝나지 않는다(P22-4)
+      blocking(_current, _blocked, event) {
+        (event.target as IDBDatabase).close();
+        dbs.delete(uid);
+      },
     });
     const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), OPEN_TIMEOUT_MS));
     p = Promise.race([opening, timeout]).catch((e: unknown) => {

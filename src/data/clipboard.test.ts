@@ -1,10 +1,12 @@
 // 클립보드 목록 - 맨 위에 쌓기·같은 것은 위로·넘치면 버리기·지우기 = 이 기기 휴지통·되살리기·오래된 것 비우기·
 // 계정마다 따로·다시 읽어도 남는다(IndexedDB)·로그아웃하면 지운다·Ctrl+C 한 글자는 '본 것'(다시 담지 않는다)
+import { deleteDB } from 'idb';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   addClipText,
   addCopiedText,
   clearClips,
+  clipboardDbName,
   loadClipboard,
   MAX_ITEMS,
   purgeClipTrash,
@@ -27,6 +29,13 @@ beforeEach(async () => {
 });
 
 describe('클립보드 목록', () => {
+  it('다른 탭이 지우려 하면 비켜 준다 - 안 비키면 그 탭의 로그아웃 정리가 끝나지 않는다 (P22-4)', async () => {
+    await loadClipboard('me');
+    await addClipText('글');
+    const removed = await Promise.race([deleteDB(clipboardDbName('me')).then(() => true), new Promise((r) => setTimeout(() => r(false), 500))]);
+    expect(removed).toBe(true);
+  });
+
   it('최신 것이 위, 같은 것을 다시 복사하면 맨 위로 (새로 쌓지 않는다), 빈 글은 담지 않는다', async () => {
     await addClipText('하나');
     await addClipText('둘');

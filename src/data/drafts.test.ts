@@ -1,7 +1,8 @@
 // 쓰던 글 보관 - 적기·읽기·지우기·로그아웃 지우기, 훅: 손댄 동안 2초 뒤 적기·다시 열면 묻기·같으면 묻지 않고 지우기·저장하면 지우기·열쇠가 바뀌면 옮기기
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { deleteDraft, DRAFT_DELAY_MS, listDrafts, onDraftsChange, readDraft, resetDraftsForTest, useDraft, wipeDrafts, writeDraft } from './drafts';
+import { deleteDB } from 'idb';
+import { deleteDraft, draftsDbName, DRAFT_DELAY_MS, listDrafts, onDraftsChange, readDraft, resetDraftsForTest, useDraft, wipeDrafts, writeDraft } from './drafts';
 import { useSession } from './session';
 
 vi.mock('./firebase', () => ({ auth: {}, db: {} }));
@@ -18,6 +19,14 @@ beforeEach(async () => {
 afterEach(() => vi.useRealTimers());
 
 describe('보관 저장소', () => {
+  it('다른 탭이 지우려 하면 비켜 주고, 다시 쓸 수 있다 - 안 비키면 그 탭의 로그아웃 정리가 끝나지 않는다 (P22-4)', async () => {
+    await writeDraft(UID, 'note:a', { text: '글' });
+    const removed = await Promise.race([deleteDB(draftsDbName(UID)).then(() => true), new Promise((r) => setTimeout(() => r(false), 500))]);
+    expect(removed).toBe(true);
+    await writeDraft(UID, 'note:b', { text: '또' });
+    expect((await readDraft(UID, 'note:b'))?.value).toEqual({ text: '또' });
+  });
+
   it('적고 읽고 지운다, 로그아웃(wipe)하면 모두 없다', async () => {
     await writeDraft(UID, 'note:a', { text: '글' }, 5);
     expect(await readDraft(UID, 'note:a')).toEqual({ value: { text: '글' }, savedAt: 5 });

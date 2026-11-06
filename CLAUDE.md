@@ -112,7 +112,7 @@
   10-29 P14 계획: 읽기만 하는 셋 = 37만 토큰·14분, 셋 다 결과를 냈다. 에이전트 지시에 '기억 합치기·CLAUDE.md 통째 읽기를 건너뛴다'를 꼭 적는다(에이전트도 위 폴더 CLAUDE.md의 '먼저 읽기'를 받는다).
   **11-04: 셋도 안전하지 않다** - 읽기만 하는 셋(도구 80회 제한)이 17분에 96만 토큰을 쓰고 셋 다 5시간 한도에 닿아 끊겼고, 사용자가 33분 동안 Claude를 못 썼다. 남은 것은 찾는 대로 파일에 적게 한 16KB뿐. **점검·훑기는 ultracode가 켜져 있어도 에이전트 없이 직접 한다** - 쓰게 되면 하나씩, 좁은 파일 목록으로.
 - **앱이 꺼진 기기 흉내**(P22-3 inspect-two-devices): `page.close()`해도 그 컨텍스트의 IndexedDB는 남는다 → `ctx.newPage()` + `clock.setFixedTime(지금 + 25시간)`로 열면 하루 한 번 일(`maybePrune`)까지 돈다. **Firestore만 끊기**는 `page.route('**/google.firestore.v1.Firestore/**', abort)`(로그인은 그대로 - Firestore가 '끊김'으로 보는 데 10초, 풀고 `window.dispatchEvent(new Event('online'))`).
-- **점검이 `try { … } finally { done(); process.exit(); }`만 있으면 예외가 '✔ 모두 통과'로 끝난다**(P23-2 - 없는 `data-*`를 30초 기다리다 던졌는데 뒤 묶음이 말없이 빠졌다, 줄 수가 줄어 알았다). `} catch (e) { 틀림으로 센다 }`를 넣는다. 아직 없는 점검 10개: data·dev-errors·dev-holidays·login·manual·mirror·pwa·settings·shortcut-record·space-overlay.
+- **점검이 `try { … } finally { done(); process.exit(); }`만 있으면 예외가 '✔ 모두 통과'로 끝난다**(P23-2 - 없는 `data-*`를 30초 기다리다 던졌는데 뒤 묶음이 말없이 빠졌다, 줄 수가 줄어 알았다). `} catch (e) { 틀림으로 센다 }`를 넣는다. 아직 없는 점검 9개: data·dev-errors·dev-holidays·manual·mirror·pwa·settings·shortcut-record·space-overlay.
 - **처음 화면 밝기가 어둡게(#113)라 '밝은 화면'을 보는 점검은 `localStorage sp5_theme = light`를 심고 시작한다**(10-28 - inspect-handwriting 셋이 #113 뒤로 깨져 있었다).
   **창을 닫게 하는 키(ESC)는 keydown 사이에 팝업이 닫혀 `keyboard.press`가 '닫혔다'로 실패한다** - `.catch(() => {})`로 누르고 닫힘은 `waitForEvent('close')`로 본다(inspect-popout).
 - **사용자 보고가 재현되지 않으면 V4의 같은 기능 코드와 견준다**(P12-1 이월 - V5 경로는 모두 맞았고, V4 `runAutoForwarding`의 겹침 규칙이 빠져 있었다).

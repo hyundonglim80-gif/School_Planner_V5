@@ -146,6 +146,35 @@ try {
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 
+  r.section('주간학습안내 글은 계정마다 (P22-4 - 공용 PC)');
+  const shared = await newPage(browser);
+  const sp = shared.page;
+  const openGuide = () => sp.evaluate(() => window.sp5.openWindow('weeklyGuide', { date: '2026-10-12' }));
+  const guideNote = () => sp.locator(sel('guide-note-input'));
+  // 계정을 바꿔 열면 앞 계정이 잠깐 뜬다 - 바뀐 뒤에 창을 연다(바뀌는 순간 앞 계정의 창은 비워진다)
+  const becomes = (email) => sp.locator(`[data-session="signed-in"][data-user="${email}"]`).waitFor({ timeout: 15000 });
+  await open(sp, '#/week/2026-10-12');
+  await sp.evaluate(() => {
+    localStorage.setItem('sp5-weekly-guide-notes', JSON.stringify({ '2026-10-12': '옛 알리는 말' }));
+    localStorage.setItem('sp5-weekly-guide-title', '옛 제목');
+  });
+  await openGuide();
+  await waitFor(guideNote());
+  r.check((await guideNote().inputValue()) === '옛 알리는 말' && (await sp.locator(sel('guide-title')).inputValue()) === '옛 제목', '옛 글은 처음 읽은 계정이 받는다');
+  r.check(await sp.evaluate(() => localStorage.getItem('sp5-weekly-guide-notes') === null && localStorage.getItem('sp5-weekly-guide-title') === null), '계정 구분 없는 옛 열쇠는 없어진다');
+  await open(sp, '#/week/2026-10-12', { as: '2' });
+  await becomes('teacher2@example.com');
+  await openGuide();
+  await waitFor(guideNote());
+  r.check((await guideNote().inputValue()) === '' && (await sp.locator(sel('guide-title')).inputValue()) === '주간학습안내', '같은 기기의 다른 계정에는 보이지 않는다');
+  await open(sp, '#/week/2026-10-12');
+  await becomes('teacher@example.com');
+  await openGuide();
+  await waitFor(guideNote());
+  r.check((await guideNote().inputValue()) === '옛 알리는 말', '돌아오면 내 글');
+  r.check(shared.errors.length === 0, `화면 오류 없음 ${shared.errors.join(' | ')}`);
+  await shared.ctx.close();
+
   r.section('전담 (teacher3)');
   const { page: p3, errors: e3 } = await newPage(browser);
   await open(p3, '#/week/2026-10-12', { as: '3' });

@@ -5,6 +5,7 @@
 //   2) 서버에 spaces/u_{uid}(나 혼자 owner인 개인 공간)가 생기고
 //   3) Firestore 오프라인 저장소(IndexedDB 'firestore/…')가 생기지 않는다(V4 09-22 - 구조로 확인).
 //   4) 저장 안 한 칸이 있으면 로그아웃이 먼저 묻는다 - 아니오면 그대로, 예면 로그인 화면(P22-2).
+//   5) 탭이 둘이어도 로그아웃 정리가 끝난다 - 이 기기 저장소가 모두 지워지고, 다른 탭도 나가며 구글 토큰을 잊는다(P22-4).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-login.mjs   (SITE=… 로 다른 주소)
 // ⚠️ 에뮬레이터만 건드린다. 운영 자료와는 아무 상관이 없다.
@@ -66,6 +67,25 @@ try {
   r.check(await waitFor(page.locator(sel('login-google')), 10000), '예 → 로그인 화면');
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
   await ctx.close();
+
+  r.section('탭이 둘이어도 로그아웃 정리가 끝난다 (P22-4)');
+  const two = await newPage(browser);
+  const tab2 = await two.ctx.newPage();
+  await open(two.page, '#/day/2026-10-08');
+  await open(tab2, '#/day/2026-10-08');
+  const stores = (p) => p.evaluate(async () => (await indexedDB.databases()).map((x) => x.name).filter((n) => /^sp5-(mirror|drafts|clipboard)-/.test(n ?? '')).sort());
+  r.check(await waitFor(async () => (await stores(tab2)).length === 3, 8000), '두 탭이 사본·쓰던 글·클립보드 저장소를 열어 둔다', (await stores(tab2)).join(', '));
+  await tab2.evaluate(() => sessionStorage.setItem('sp5-google-token', 'tok'));
+  await two.page.click(sel('account'));
+  await two.page.click(sel('logout'));
+  r.check(await waitFor(two.page.locator(sel('login-google')), 10000), '누른 탭 = 로그인 화면');
+  r.check(await waitFor(async () => (await stores(two.page)).length === 0, 8000), '다른 탭이 열어 두어도 저장소가 모두 지워진다', (await stores(two.page)).join(', '));
+  r.check(await waitFor(tab2.locator(sel('login-google')), 10000), '다른 탭도 로그인 화면');
+  r.check((await tab2.evaluate(() => sessionStorage.getItem('sp5-google-token'))) === null, '다른 탭의 구글 토큰도 지워진다');
+  r.check(two.errors.length === 0, '화면 오류 없음', `화면 오류: ${two.errors.join(' / ')}`);
+  await two.ctx.close();
+} catch (e) {
+  r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
   await browser.close();
   await deleteApp(emu.app).catch(() => {});

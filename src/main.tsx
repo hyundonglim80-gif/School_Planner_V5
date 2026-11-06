@@ -15,6 +15,7 @@ import { setMyHolidays, startHolidays } from './data/holidays'
 import { undoLast, watchUndoOwner } from './data/undo'
 import { setShortcutAction } from './app/keys'
 import { useCommonSettings } from './app/prefs'
+import { watchAccountChange } from './features/auth/accountChange'
 import { finishRedirectLogin } from './features/auth/login'
 import { reportReactError, startErrorReports } from './data/errorReport'
 import ErrorBoundary from './ui/ErrorBoundary'
@@ -45,6 +46,8 @@ flushPendingToast()
 // 되돌리기 Ctrl+Z(글 칸 밖에서) - 지금 공간의 마지막 쓰기. 로그인한 사람이 바뀌면 더미를 비운다
 setShortcutAction('undo', () => void undoLast())
 watchUndoOwner()
+// 로그인한 사람이 바뀌면 앞 사람의 구글 토큰·명렬표 임시본·창 목록을 이 탭에서도 비운다 (공용 PC)
+watchAccountChange()
 // 놓는 칸 밖에 떨어뜨린 파일을 브라우저가 열어 쓰던 글을 잃지 않게 (P21-1)
 guardWindowFileDrop()
 // 앱으로 설치 - 서비스 워커 등록, 크롬의 설치 이벤트는 화면보다 먼저 올 수 있어 여기서 듣는다
