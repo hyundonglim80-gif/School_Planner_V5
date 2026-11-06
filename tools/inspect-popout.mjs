@@ -6,6 +6,8 @@
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-popout.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 메모('점검새창…'·'점검모바일링크…')를 만들고 끝에 지운다.
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
@@ -128,7 +130,7 @@ try {
   r.check(mSaved.some((d) => d.data().text === '점검모바일링크 메모'), '서버에 저장');
   const lb = await m.page.locator(sel('linker')).boundingBox();
   r.check(lb && lb.width > 300 && lb.y < 800, `연결 창이 화면 안에 보인다 (${Math.round(lb?.width)}px)`);
-  await m.page.screenshot({ path: process.env.SHOT || 'C:/Users/user/AppData/Local/Temp/popout-mobile-linker.png' });
+  await m.page.screenshot({ path: process.env.SHOT || join(tmpdir(), 'popout-mobile-linker.png') });
   r.check(m.errors.length === 0, `휴대폰 화면 오류 없음 ${m.errors.join(' / ')}`);
 } catch (e) {
   console.error(e);
