@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**다음 = P22-7**(처음 쓰는 사람·키보드 - 6장 'P22' 절). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**P22-7 하는 중**(처음 쓰는 사람·키보드 - 6장 'P22' 절, 클라우드 세션 브랜치 `claude/admiring-pasteur-n1faq1`). ■0 끝, 다음 = ■1. 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P22-6 끝**(11-06 - 보안 헤더·CSP 지켜보기 · CI 규칙·자료 시험 · 자동 요청 막는 목록 · 복원 연습 · main 보호·Dependabot, App Check는 하지 않기로). 규칙·함수 배포 없음. CSP를 막기로 바꿀지는 운영 '[CSP] …' 보고를 며칠 본 뒤 사용자에게 묻는다.
 **P22-5 끝**(11-06 - 대화·쪽지·단축키 잔버그 + 다시 확인 7건). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
 **P22-4 끝**(11-06 - 3월 학급 · 자정 넘김 · 되살리기 공간 · 공용 PC). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
@@ -1115,6 +1115,9 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P22-6 규칙·자료 시험 = CI 안, 배포의 문턱으로**(권장안): 배포는 CI 전체 성공을 기다리므로 여기 넣으면 시험이 깨질 때 배포도 멈춘다. 따로 워크플로로 빼면 깨져도 배포되고 아무도 못 본다 - 혼자 쓰고 자동 요청이 사람 확인 없이 합쳐지니 막는 쪽을 골랐다. 시간이 늘지 않았고(나란히 56초) 시험이 진짜 틀림을 잡는 것을 봤다. 불안정해서 배포를 자주 막으면 그때 따로 뺀다.
 - **P22-6 CSP 허용 범위**(권장안): `script-src`는 해시로 엄격히(앱에 `eval`·`innerHTML` 쓰기·`dangerouslySetInnerHTML`이 없다) · `style-src`는 `'unsafe-inline'`을 둔다(사진 고르기 같은 구글 부품이 스타일을 넣을 수 있는데 에뮬레이터로 확인하지 못했다, 스크립트보다 위험이 낮다 - 운영 보고를 보고 좁힐 수 있다) · 인라인 스크립트는 파일로 빼지 않고 해시 - 빼면 첫 화면 전에 요청 하나가 늘고 옛 서비스 워커에 없는 파일이 된다.
 - **P22 main은 강제 푸시·지우기만 막는다**(권장안): 검사 필수로 묶으면 자동 요청의 '확인 뒤 바로 합치기'가 막힌다(`claude-request.yml`).
+- **P22-7 처음 띠 차례 = 📥 V4 가져오기 → 👩‍🏫 교사 유형 → 다음: ⏰ 시간표 → 🏫 학급**(권장안 - ■0): 가져오기가 교사 유형·시간표·학급을 함께 옮겨 오므로 가져오기 띠가 있으면 뒤 둘을 띄우지 않는다(가져오기 기록을 읽기 전에도 - 번쩍이지 않게). 한 번에 띠 하나.
+  '다음' 띠는 시간표가 없거나 학급이 없을 때(학년도를 보지 않는다 - 지난 학년 것은 3월 🌱 띠가 맡는다), 다 하면 저절로 사라지고 '닫기'는 계정(`common.firstStepsDone`)에 - 다른 기기에서도 다시 뜨지 않는다. 학급 단계는 전담에게도 보인다(명렬표가 교과 반·교과 출결에 쓰인다).
+- **P22-7 자동 백업 띠 = 개인 공간에 자료가 있을 때만**(권장안 - ■0): '자료' = 살아 있는 일정·메모·수업·시간표·진도·학급·조사표·알림장 하나라도(라벨·설정은 처음부터 있어 빼고). 사본을 받기 전(모름)에는 지금처럼 띄운다 - 자료가 있는데 경고를 놓치는 쪽이 더 나쁘다. 자동 백업 자체(구글 권한이 있을 때 조용히)는 그대로.
 - **P23 차례 = P22-3 다음, P22-4 앞**(권장안 - 11-04 사용자 'Claude요청 메모 안에서 채팅처럼 이어서 요청 - 계획에 추가'): 글·공간을 잃는 오류(P22-2·3)가 새 기능보다 먼저이고, P22-2가 같은 `NotePanel`을 고친다. 그 뒤로는 자주 쓰는 기능이라 P22-5~7보다 쓸모가 크고, P22-4 기한(2027-02-15)까지 여유가 있다.
 - **P23 한 번 주고받기 = 이슈 하나 - 같은 이슈에 댓글로 잇지 않는다**(권장안): 줄 세우기·진행 셈·`Closes`·브랜치 이름이 모두 '이슈 하나 = 실행 하나'다. 이슈를 다시 열어 쓰면 라벨·결과 댓글이 어느 회차 것인지 가려야 한다. 맥락은 새 이슈 본문에 앞선 대화를 넣어 건넨다 - 워크플로가 본문을 이미 프롬프트에 넣고, 공개 이슈의 남 댓글은 프롬프트에 들어가지 않는 것도 그대로다.
 - **P23 대화 자료 = `claudeRequests/{itemId}/turns/{n}` 문서 - 배열이 아니다**(권장안): 부모 문서는 Shell이 늘 듣는다. 배열로 넣으면 앱을 열 때마다 모든 메모의 대화를 받고, 상태가 바뀔 때마다 배열을 읽어 다시 써야 한다. 턴 문서는 그 메모 칸이 열린 동안만 듣고, 함수는 지금 batch에 쓰기 하나를 더하면 된다. 부모의 state·issue·url·note는 마지막 턴 그대로 둔다 - 카드·옛 화면이 그대로 돈다. 규칙 그대로(공간 아래 일반 읽기·쓰기), 기기 사본·백업에 넣지 않는다(지금 요청 표시와 같다). 메모를 영구로 지워도 남는다(지금 표시 문서와 같다 - 글은 공개 이슈에도 있다).
@@ -3019,7 +3022,15 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 ### P22-7. 처음 쓰는 사람·키보드 (항목 17)
 **시작 조건**: 없음. **묻기**: 없음(새 띠 글이 어색하면 사용자 의견 뒤에 고친다). 마지막 세션 - 단계 끝 정리까지.
 **먼저 읽을 것**: 5장 'P22' · `features/lessons/TeachingBanner.tsx` · `features/backup/AutoBackupBanner.tsx` · `features/help/chapters/start.ts` · `features/lessons/DayLessons.tsx` 머리줄 · `ui/PopupFrame.tsx`·`ui/SidePanelFrame.tsx` · `features/month/MonthGrid.tsx`·`features/week/WeekDayCard.tsx`·`features/year/YearMonthCard.tsx`.
-- [ ] ■0 확인(문서만): 새 계정 화면(11-04 그림: 백업 띠 + 교사 유형 띠 + 빈 교시 6줄) · 다음 할 일 차례 · `npx oxlint --jsx-a11y-plugin src`로 키보드가 안 되는 곳 표(11-04 = 클릭만 되는 곳 25·이름 없는 칸 6).
+- [x] ■0 확인(문서만): 새 계정 화면(11-04 그림: 백업 띠 + 교사 유형 띠 + 빈 교시 6줄) · 다음 할 일 차례 · `npx oxlint --jsx-a11y-plugin src`로 키보드가 안 되는 곳 표(11-04 = 클릭만 되는 곳 25·이름 없는 칸 6).
+  → 11-06(oxlint 1.90, 시험 파일 뺌): 클릭만 25 · 이름 없는 칸 6 · 초점 없는 경계선 1 - 11-04와 같다. 띠 차례와 '자료 없음'은 5장 'P22-7 …'.
+  | 무엇 | 자리(이름으로 grep) | ■4 |
+  |---|---|---|
+  | 누르면 칸이 열리는 카드·칸 | DayEvents `data-event-card` · DayLessons `data-lesson-card` · WeekLessonRows `data-week-lesson` · MemoListRow `data-memo-row` · EntryCard `data-entry-card` · MonthGrid `data-month-day`·`data-month-event` · PeriodBar `data-period-cell` · WeekDayCard `data-week-day`·`data-week-event` · YearMonthCard `data-year-period`·`data-year-event` · SearchWindow `data-search-hit` 넷 · SeatGroupsBox `data-group-index` · StudentPhoto `data-photo`(크게 보기) | `tabIndex`·Enter·Space |
+  | 누르기를 막기만(stopPropagation) | LastYearDay · ImageViewer · LinkPreviewCards · MiniCalendarPicker 달력 · PopupFrame 창 카드 | 그대로 |
+  | 배경(누르면 닫기 - ESC가 같다) · 콤보 상자 줄(글 칸이 화살표를 받는다) | ClipboardColumn 배경 · SlotCombobox `role=option` | 그대로 |
+  | 이름 없는 칸 | RosterView·ProgressWindow 빈 머리 칸 `<th>` · EvalTable 단계 `<select>` 둘 · EvaluationWindow 조사표 단추 · StudentRecordWindow 조사표 단추 | `aria-label` |
+  | 초점 없는 경계선 | ColumnResizer `role=separator` | 그대로(두 번 누르기·끌기 - 폭은 키로 바꾸지 않는다) |
 - [ ] ■1 처음 쓰는 사람: 자료가 없으면 자동 백업 띠를 띄우지 않는다 · 교사 유형을 고른 뒤 '다음: ⏰ 시간표 넣기 → 학급 만들기' 띠(눌러 그 창으로, 닫으면 다시 안 뜬다 - 계정 값) · V4에서 오는 사람은 가져오기 띠가 먼저 · inspect-shell 묶음.
 - [ ] ■2 휴대폰 수업 머리줄: ⚙️가 혼자 한 줄을 차지하지 않게(머리줄 오른쪽 끝 규칙은 그대로 - 첫 줄 끝으로) · inspect-mobile(글자가 있는지도 본다).
 - [ ] ■3 창 초점: 가운데 창을 열면 안으로 옮기고 닫으면 연 단추로 돌아온다, `aria-modal` · 쓰는 칸 `autoFocus`는 그대로 · 오른쪽 칸은 화면을 같이 쓰니 가두지 않는다 · 시험.
