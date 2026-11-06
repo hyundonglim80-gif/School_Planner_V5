@@ -189,6 +189,34 @@ export function planRestore(file: BackupFile, include: ReadonlySet<BackupKind>, 
   return plan;
 }
 
+const fileSpaceText = (f: BackupFile, sid: string) => {
+  if (f.sid.startsWith('u_')) return sid.startsWith('u_') ? '다른 계정의 개인 공간' : '개인 공간';
+  if (!f.sid) return '어느 공간인지 모름';
+  return f.spaceName && !f.spaceName.startsWith('g_') ? f.spaceName : '그룹 공간';
+};
+
+/** 지금 공간 것이 아닌 파일을 되살리기 전에 물을 글 (모두 지금 공간 것이면 null) - 개인 백업이 말없이 그룹에 들어가 구성원에게 보이지 않게 */
+export function otherSpaceQuestion(files: ReadonlyArray<{ name: string; file: BackupFile }>, sid: string, spaceText: string): string | null {
+  const others = files.filter(({ file }) => file.sid !== sid);
+  if (others.length === 0) return null;
+  const lines = others.map(({ name, file }) => `· ${name} - ${fileSpaceText(file, sid)}`).join('\n');
+  const group = sid.startsWith('g_') ? '\n\n그룹 공간에 넣으면 구성원 모두가 봅니다. 학급·출결·진도처럼 개인 공간에만 두는 것은 넣지 않습니다.' : '';
+  return `지금 공간(${spaceText})의 백업이 아닌 파일이 있습니다.\n\n${lines}${group}\n\n지금 공간에 넣을까요?`;
+}
+
+/** 그 공간에 둘 수 있는 컬렉션만 남긴 파일과 빠진 문서 수 */
+export function restorableFile(file: BackupFile, allowed: readonly string[]): { file: BackupFile; left: number } {
+  const colls: BackupFile['colls'] = {};
+  let left = 0;
+  for (const coll of BACKUP_COLLS) {
+    const bag = file.colls[coll];
+    if (!bag) continue;
+    if (allowed.includes(coll)) colls[coll] = bag;
+    else left += Object.keys(bag).length;
+  }
+  return { file: { ...file, colls }, left };
+}
+
 // ── CSV (V4 그대로 - 엑셀에서 여는 한 장: 구분 · 날짜 · 시간/교시/라벨 · 내용 · 비고) ──
 
 export const CSV_HEADER = ['#구분', '날짜/작성일', '시간/교시/라벨', '내용', '비고/상세'];

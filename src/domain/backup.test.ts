@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BACKUP_VERSION, countBackup, csvRowsOf, describeCounts, isV4Backup, keepInBackup, kindOf, planRestore, readBackupFile, type BackupFile, type BackupKind } from './backup';
+import { BACKUP_VERSION, countBackup, csvRowsOf, describeCounts, isV4Backup, keepInBackup, kindOf, otherSpaceQuestion, planRestore, readBackupFile, restorableFile, type BackupFile, type BackupKind } from './backup';
 
 const ALL = new Set<BackupKind>(['events', 'lessons', 'records', 'memos', 'classes', 'evaluations']);
 const R = { start: '2026-03-01', end: '2027-02-28' };
@@ -63,6 +63,46 @@ describe('되살리기', () => {
     expect(plan.kept).toBe(2);
     expect(plan.added.events).toBe(2);
     expect(plan.puts.find((p) => p.id === 'e2')?.data.deletedAt).toBeNull();
+  });
+});
+
+describe('다른 공간 파일 되살리기 (P22-4)', () => {
+  const fileOf = (sid: string, spaceName: string, colls: Record<string, unknown> = {}) => readBackupFile({ version: BACKUP_VERSION, exportedAt: '2026-11-06T00:00:00Z', sid, spaceName, colls })!;
+  const mine = { name: '내백업.json', file: fileOf('u_me', '개인') };
+
+  it('지금 공간 파일이면 묻지 않는다', () => {
+    expect(otherSpaceQuestion([mine], 'u_me', '개인 공간')).toBeNull();
+  });
+
+  it('다른 공간이면 파일 이름·백업한 공간·지금 공간을 적어 묻는다', () => {
+    const q = otherSpaceQuestion([mine], 'g_x', '3학년 모임');
+    expect(q).toContain('내백업.json');
+    expect(q).toContain('개인 공간');
+    expect(q).toContain('3학년 모임');
+  });
+
+  it('그룹 공간에 넣을 때는 구성원에게 보인다고 알린다, 개인 공간이면 그 말이 없다', () => {
+    expect(otherSpaceQuestion([mine], 'g_x', '3학년 모임')).toContain('구성원');
+    expect(otherSpaceQuestion([{ name: 'a.json', file: fileOf('g_x', '3학년 모임') }], 'u_me', '개인 공간')).not.toContain('구성원');
+  });
+
+  it('여러 파일이면 다른 공간 것만 적는다', () => {
+    const q = otherSpaceQuestion([mine, { name: '남.json', file: fileOf('u_other', '개인') }], 'u_me', '개인 공간');
+    expect(q).toContain('남.json');
+    expect(q).not.toContain('내백업.json');
+  });
+
+  it('공간을 모르는 옛 파일도 묻는다', () => {
+    expect(otherSpaceQuestion([{ name: 'a.json', file: fileOf('', '') }], 'u_me', '개인 공간')).toContain('a.json');
+  });
+
+  it('둘 수 있는 컬렉션만 남기고 빠진 수를 안다 - 그룹에 학급·출결·설정이 들어가지 않는다', () => {
+    const file = fileOf('u_me', '개인', { items: { a: { kind: 'note', date: null } }, classes: { '2026-5-2': {} }, attendance: { x: {}, y: {} }, settings: { common: {} } });
+    const { file: narrowed, left } = restorableFile(file, ['items', 'labels']);
+    expect(left).toBe(4);
+    const plan = planRestore(narrowed, ALL, {});
+    expect(plan.puts.map((p) => p.coll)).toEqual(['items']);
+    expect(file.colls.classes).toBeDefined();
   });
 });
 

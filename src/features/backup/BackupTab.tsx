@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useNav } from '../../app/nav';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
-import { BACKUP_KINDS, countBackup, csvRowsOf, describeCounts, isV4Backup, planRestore, readBackupFile, type BackupFile, type BackupKind, type DateRange } from '../../domain/backup';
+import { BACKUP_COLLS, BACKUP_KINDS, countBackup, csvRowsOf, describeCounts, isV4Backup, otherSpaceQuestion, planRestore, readBackupFile, restorableFile, type BackupFile, type BackupKind, type DateRange } from '../../domain/backup';
 import { academicYearOf, addDays, todayStr } from '../../domain/dateUtils';
 import { fileLooksLikeKeep } from '../../domain/keepImport';
 import { lessonsOn } from '../../domain/lessons';
@@ -11,7 +11,9 @@ import { classIdOf, describeClass, genderToText } from '../../domain/roster';
 import { schoolYearSpan } from '../../domain/semester';
 import { buildBackup, readCurrentFor, writeRestore } from '../../data/backup';
 import { itemLabels, itemsBetween, labelTreeOf, memos, noteDaysBetween, useDocs } from '../../data/select';
+import { GROUP_MIRRORED } from '../../data/mirror/sync';
 import { useCurrentSpaceId } from '../../data/session';
+import { useMySpaces } from '../../data/spaceChoice';
 import { downloadCsv, downloadJson } from '../../ui/download';
 import { rangeForScope } from '../gcal/manual';
 import { useLessonSource } from '../lessons/useLessons';
@@ -34,7 +36,8 @@ const ALL_KINDS = BACKUP_KINDS.map((k) => k.key);
 export default function BackupTab() {
   const sid = useCurrentSpaceId();
   const personal = !!sid?.startsWith('u_');
-  const spaceName = personal ? '개인' : (sid ?? '');
+  const groupName = useMySpaces((s) => s.groups.find((g) => g.id === sid)?.name);
+  const spaceName = personal ? '개인' : groupName || (sid ?? '');
   const scope = useNav((s) => s.scope);
   const date = useNav((s) => s.date);
   const items = useDocs('items', sid);
@@ -150,18 +153,23 @@ export default function BackupTab() {
   const restore = async () => {
     if (!sid || files.length === 0) return;
     if (chosen.length === 0) return showToast('되살릴 것을 하나 이상 골라 주세요.');
+    const ask = otherSpaceQuestion(files, sid, personal ? '개인 공간' : groupName || '그룹 공간');
+    if (ask && !window.confirm(ask)) return;
     setBusy('지금 자료와 맞춰 보는 중…');
     try {
       const added: Record<BackupKind, number> = { events: 0, lessons: 0, records: 0, memos: 0, classes: 0, evaluations: 0 };
       let kept = 0;
-      for (const { name, file } of files) {
+      let left = 0;
+      for (const { name, file: picked } of files) {
         setBusy(`${name} 맞춰 보는 중…`);
+        const { file, left: notHere } = restorableFile(picked, personal ? BACKUP_COLLS : GROUP_MIRRORED);
+        left += notHere;
         const plan = planRestore(file, new Set(chosen), await readCurrentFor(sid, file));
         await writeRestore(sid, plan, (done, total) => setBusy(`${name} 되살리는 중… (${done}/${total})`));
         for (const k of ALL_KINDS) added[k] += plan.added[k];
         kept += plan.kept;
       }
-      const text = `${describeCounts(added) || '넣은 것 없음'}${kept ? ` (지금 있는 ${kept}개는 그대로 두었습니다)` : ''}`;
+      const text = `${describeCounts(added) || '넣은 것 없음'}${kept ? ` (지금 있는 ${kept}개는 그대로 두었습니다)` : ''}${left ? ` · 개인 공간에만 두는 ${left}개는 넣지 않았습니다` : ''}`;
       setResult(text);
       showToast(`♻️ 백업에서 되살렸습니다 - ${text}`);
     } catch (e) {

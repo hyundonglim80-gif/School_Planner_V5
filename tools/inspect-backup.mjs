@@ -3,13 +3,14 @@
 //   2) 🗄️ JSON 백업 받기 → V5 모양(version·colls·시각 $ts) · 고른 갈래만 · 지운 것은 없다
 //   3) 📄 CSV 받기 → V4 모양 머리줄
 //   4) 되살리기: 지운 일정은 돌아오고, 백업 뒤에 고친 일정은 덮지 않는다
+//   4b) 다른 공간 파일: 파일 이름·두 공간을 적어 먼저 묻는다 · 아니오 = 쓰지 않는다 · 그룹이면 학급·출결·설정은 넣지 않는다(P22-4)
 //   5) ☁️ 드라이브 자동 백업(드라이브는 page.route 흉내): 할 때면 열자마자 조용히 · 공개하지 않음 · 최근 8개만(V4 파일은 그대로) ·
 //      주기 고르기 = 계정 설정 · 지금 백업 = 같은 날 둘째는 시각을 붙인다 · 토큰이 없으면 띠 · 나중에 = 하루 숨김
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-backup.mjs
 import { readFileSync } from 'node:fs';
 import { deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, emulatorAdmin, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const DAYMS = 86400000;
@@ -85,6 +86,50 @@ try {
   r.check(((await page.locator(sel('restore-result')).textContent()) ?? '').includes('그대로 두었습니다'), '지금 있는 것은 그대로 둔 수');
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
   await page.close();
+
+  r.section('다른 공간 파일 (P22-4)');
+  const admin = emulatorAdmin();
+  const GID = 'g_inspBk';
+  const memoId = 'inspBkOther';
+  await admin.set(`spaces/${GID}`, { kind: 'group', name: '백업점검 그룹', ownerId: uid, members: { [uid]: 'owner' }, createdAt: Date.now(), v: 1 });
+  undo.add(async () => {
+    await admin.remove(`spaces/${GID}/items/${memoId}`);
+    await admin.remove(`spaces/${GID}`);
+  });
+  const g = await newPage(browser);
+  await g.page.addInitScript(([u, s]) => localStorage.setItem('sp5-space', JSON.stringify({ state: { uid: u, sid: s }, version: 0 })), [uid, GID]);
+  await open(g.page, `#/day/${DAY}`);
+  await g.page.evaluate(() => window.sp5.openWindow('backup', { tab: 'backup' }));
+  const plain = { deletedAt: null, createdAt: 1, authorId: uid, v: 1 };
+  const other = {
+    version: 'SP5-BACKUP', exportedAt: new Date().toISOString(), sid, spaceName: '개인', period: 'all', include: ['memos', 'classes'],
+    colls: {
+      items: { [memoId]: { ...plain, kind: 'note', date: null, text: '다른 공간 메모', labelIds: [], order: 'a0' } },
+      classes: { '2026-9-9': { ...plain, year: 2026, grade: 9, num: 9, students: [] } },
+      attendance: { 'att-x': { ...plain, records: {} } },
+      settings: { common: { v: 1 } },
+    },
+  };
+  await g.page.locator(sel('restore-file')).setInputFiles({ name: '개인백업.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(other)) });
+  await waitFor(g.page.locator(sel('restore-preview')), 5000);
+  const groupRef = (...p) => doc(em.db, 'spaces', GID, ...p);
+  await g.page.locator(sel('restore-run')).click();
+  r.check(await waitFor(() => g.dialogs.seen.length === 1, 5000), '다른 공간 파일은 먼저 묻는다');
+  const asked = g.dialogs.seen[0] ?? '';
+  r.check(asked.includes('개인백업.json') && asked.includes('개인 공간') && asked.includes('백업점검 그룹') && asked.includes('구성원'), '물음에 파일 이름·두 공간·구성원 안내', asked);
+  await g.page.waitForTimeout(800);
+  r.check(!(await getDoc(groupRef('items', memoId))).exists(), '아니오 = 아무것도 넣지 않는다');
+  g.dialogs.answer = true;
+  await g.page.locator(sel('restore-run')).click();
+  r.check(await waitFor(g.page.locator(sel('restore-result')), 20000), '예 = 되살린다');
+  r.check((await getDoc(groupRef('items', memoId))).data()?.text === '다른 공간 메모', '메모는 그룹 공간에 들어간다');
+  const blocked = [['classes', '2026-9-9'], ['attendance', 'att-x'], ['settings', 'common']];
+  const leaked = [];
+  for (const [c, id] of blocked) if (await admin.get(`spaces/${GID}/${c}/${id}`)) leaked.push(c);
+  r.check(leaked.length === 0, '학급·출결·설정은 그룹 공간에 넣지 않는다', leaked.join(','));
+  r.check(((await g.page.locator(sel('restore-result')).textContent()) ?? '').includes('3개는 넣지 않았습니다'), '넣지 않은 수를 알린다');
+  r.check(g.errors.length === 0, `화면 오류 없음 ${g.errors.join(' | ')}`);
+  await g.ctx.close();
 
   // ── 드라이브 흉내 ──
   r.section('☁️ 드라이브 자동 백업');
