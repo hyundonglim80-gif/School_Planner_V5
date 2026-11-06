@@ -28,7 +28,7 @@
   라벨: `labelTreeOf`·`useLabelTree`(트리 차례·기본 라벨 `defaultId`)·`itemLabels`·라벨로 보기 `itemsMatching`·붙은 수 `labelUsageOf`·`emptyLabelsOf`·`missingLabelsOf`) ·
   `labels.ts`(라벨 쓰기 - 저장 = 바뀐 칸만 `labelSaveOps`·`createLabelOp`·이름으로 찾기·만들기 `ensureLabelOps`·`defaultLabelOps`·`labelNameProblem`, 적기 `addLabel`·`saveLabels`·`restoreLabels`·`addDefaultLabels`) ·
   `session.ts`의 `currentSpaceId`·`useCurrentSpaceId`(지금 공간 한 곳). 화면 문서 = `Stored<C>`(자리 id가 붙는다 - 저장 도우미는 id를 적지 않는다).
-- **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `askLogout.ts`(로그아웃 단추 - 사라질 것이 있으면 묻는다, P22-2) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
+- **기능** `src/features/auth/`: `LoginScreen.tsx`(`[data-login-google]`) · `askLogout.ts`(로그아웃 단추 - 사라질 것이 있으면 묻는다, P22-2) · `accountChange.ts`(`watchAccountChange` - 사람이 바뀌면 모든 탭에서 구글 토큰·명렬표 임시본·창 목록을 비운다, P22-4) · `login.ts`(`useGoogleLogin`·`logout`·`finishRedirectLogin`, 구글 토큰 sessionStorage `sp5-google-token`).
   로그인한 화면은 `[data-session=signed-in][data-user=<메일>]`. `logout`은 기다리던 설정을 먼저 올리고, 나간 뒤 기기 사본·쓰던 글 보관을 지운다.
 - **라벨** `src/features/labels/`: `LabelsWindow.tsx`(창 `labels` - ⋮ 일정, `{ tab: 'event'|'note' }`, 고친 것만 들고 사본 위에 얹는다, `[data-labels-window]`·
   `[data-label-tab|row|name|color|prop|parent|up|down|delete|save|add|new-name|new-parent|usage|prune|prune-item|prune-confirm|recover|defaults]`) · `ColorPicker.tsx`(`[data-color-option]`) ·
@@ -43,7 +43,7 @@
 - **껍데기** `src/app/`: `App.tsx`(로그인 상태 → `Shell`) · `Shell.tsx`(틀: 머리줄·본문·탭바·창·오른쪽 줄 ▶·폭 끌기) · `Header.tsx`(첫 줄 - ⏳·🗑️·🔍·화면 탭·?·⋮·사진 - PC '＋ 새로'는 P10-1에서 뺐다, 휴대폰 둥근 ＋ `[data-new-fab]`만,
   `[data-header-*]`·`[data-scope-tab]`·`[data-more-menu]`·`[data-menu-item]`·`[data-new]`) · `SecondRow.tsx`(토글·◀ 날짜 ▶·📅·학기 칩·공간 칩, `[data-date-prev|next|label]`·`[data-view-toggle]`) ·
   계정 칸(사진 → `[data-account]`·`[data-account-panel]`·`[data-account-name|email]`·`[data-logout]`) · `MobileTabBar.tsx`(`[data-tabbar-tab]`) · `screens.ts`(화면 여섯 = 탭·단축키, 화면은 `features/<화면>/<Name>Screen.tsx` - 하루 말고는 아직 빈 자리 `ui/EmptyScreen` `[data-screen]`) ·
-  `route.ts`(주소 ↔ 화면, 순수) · `nav.ts`(화면·날짜·토글 store `useNav` - 'YYYY-MM-DD', `stepDate`·`goToday`·`dateLabel`) ·
+  `route.ts`(주소 ↔ 화면, 순수) · `nav.ts`(화면·날짜·토글 store `useNav` - 'YYYY-MM-DD', `stepDate`·`goToday`·`dateLabel`·`useFollowToday` - 자정 넘김, 앱 맨 위에서 한 번) ·
   `history.ts`(브라우저 기록 한 곳: 주소 맞물리기 `startRouting` + 창 층 `useModalLayer`·`useBackLayer`·`closeAllLayers`, 뒤로가기 표지판) ·
   `windows.ts`(창 목록 `registerWindow`·`openWindow`·`setWindowParams`(창의 `setParams`)·`closeAllWindows`·`registerUnsavedCheck`) · `windowList.ts`(창 등록 한 곳 - 창을 만드는 세션이 한 줄씩) · `WindowHost.tsx` ·
   `moreMenu.ts`(⋮ 4구역 8항목 표) · `keys.ts`(키 처리 한 곳 `runShortcut`·`setShortcutAction`·`runFromButton`·`useShortcutTitle`·`useTabTarget`(탭 단추 표시·툴팁), 바꾼 키 `sp5-shortcuts` = { overrides, tabs }) ·
@@ -110,6 +110,7 @@
   `features/progress/`(`useProgress`(`useProgressPlans`·`useProgressMarks(보는 날)` - 개인 공간을 볼 때만) · `actions`(`saveProgressPlan` 바뀐 칸만·bumps는 빼고 · `setProgressBump` · `deleteProgressPlan` 휴지통) · `progressDraft`(순수) · `open.ts`(`openProgress` - 창 `progress` `{ planId?, cls?, preset?, course?, at }`) · `shortcuts`(`newCourse`) ·
   `ProgressWindow`(`[data-progress-window|plan|new|key|key-option|subject|start|start-quick|sample|csv-open|csv-input|paste|table|row|row-delete|add-row|preview|summary|rows|save|delete]`·`[data-course-form|subject|class-toggle|hint|status|status-row|behind|bump|preview]`·`[data-slot|slot-bump]`) ·
   `ProgressMarkLine`(`[data-progress-mark=k|bumped|progress-mark-open|progress-page|progress-supplies|progress-bump=bump|undo]`, `ProgressCreateButton` `[data-progress-create]`)) · 주간 배지 `[data-week-progress]` · 시간표 창 `[data-timetable-progress]` · `ui/download.ts`(`downloadCsv`). 점검 `tools/inspect-progress.mjs`(66).
+- **이 기기 저장 열쇠 계정마다** `data/accountKey.ts`(`accountKey` - 옛 값은 처음 읽은 계정이, 주간학습안내 글·제목 - P22-4).
 - **수업 종·주간학습안내·인쇄**(P6-3): 순수 `domain/classBell.ts`·`weeklyGuide.ts`(`guideDaysOf` = 계산한 수업 칸) · 설정 `common.classBell` · `features/bell/`(`bell.ts` `useClassBell`·`saveClassBell`·`useBellMutedHere`(이 기기 `sp5-class-bell-muted`)·`useClassBellRunner`(Shell) · `BellSettings`) ·
   하루 머리줄 `[data-day-bell|day-bell-panel|day-bell-close]`·`[data-class-bell|bell-enabled|bell-on|bell-amount|bell-unit|bell-when|bell-weekdays|bell-here|bell-preview]` · 창 `weeklyGuide` `{ date? }`(`features/weeklyGuide/WeeklyGuideWindow` `[data-weekly-guide-window|guide-range|guide-prev|next|this|coming|guide-copy|guide-print|guide-title|guide-opt|guide-note-input|weekly-guide|guide-heading|guide-note|guide-row|guide-cell]`, 주간 `[data-week-guide]`(담임)) ·
   인쇄 `ui/print.ts`(`printNode`·`preparePrint`(여럿이면 쪽마다 `.sp5-print-page`)·`#sp5-print-root` + index.css @media print, `data-print-hide`는 빼고 찍는다) · `app/printScreen.ts`(`openPrintWindow`·`usePrintShortcut` = ⋮ 'print'·Ctrl+P → 인쇄 창). 점검 `tools/inspect-bell-guide.mjs`.
@@ -121,7 +122,7 @@
   `DayMeals`(`[data-day-meals|day-meal|day-school-events|day-school-event-open]`) · `SchoolEventName`(`[data-school-event=날짜]` - 주간 카드·월간 칸·월간 휴대폰 목록·년간 자세히, 학사력은 `monthSheetItems.schoolOf`) · 창 `schoolEvent` `{ date, items }`(`SchoolEventWindow` `[data-school-event-window|school-event-item|school-event-dday|school-event-to-event]`)) ·
   시간표 창 학기·방학 `[data-terms-fill|terms-fill-note]`. 점검 `tools/inspect-neis.mjs`(36 - 나이스는 page.route 흉내).
 - **학급·명렬표**(P7-1 - 개인 공간 `classes/{학년도-학년-반}`, 학생 sid): 순수 `domain/roster.ts`(`classIdOf`·고르기 세 칸·`nextClassNum`·`addStudents`·CSV 학급 하나/전체·`withSids`·`cleanStudent`) · 사본 `MIRRORED` += classes(휴지통 '기타'의 학급) ·
-  `features/class/`(`classes.ts` `useClasses`·`saveRoster`(바뀐 학급만·학년도/학년/반을 고치면 새 id)·고른 학급 `useHubClass`(`sp5-class-hub`) · `rosterDraft.ts`(저장 전까지 이 탭에) · `view.ts`(학급 도구 | 명렬표·탭, 단축키 '명렬표') · `tools.ts`(도구 카드 `CLASS_TOOLS`) ·
+  `features/class/`(`classes.ts` `useClasses`·`saveRoster`(바뀐 학급만·학년도/학년/반을 고치면 새 id)·고른 학급 `useHubClassId`(`sp5-class-hub` - 학년도와 함께, 지나면 null · 순수 `domain/roster` `hubPickOf`·`trustedHubId`·`readHubPick`) · `rosterDraft.ts`(저장 전까지 이 탭에) · `view.ts`(학급 도구 | 명렬표·탭, 단축키 '명렬표') · `tools.ts`(도구 카드 `CLASS_TOOLS`) ·
   `ClassScreen.tsx`(`[data-class-mode|class-empty|class-students|class-student|class-view=name|photo|class-photo-grid|class-photo-card|class-photo-count]`) ·
   `RosterView.tsx`(`[data-roster|roster-pick|roster-edit|roster-tab|roster-row|student-field|roster-remove|roster-save|roster-dirty|roster-discard|roster-photos|roster-view=list|tile|roster-tiles|roster-tile|roster-drop|roster-photo-count|roster-photo-folder|roster-csv-*|roster-all-csv-*|search-*]`)) ·
   가르치는 반에 명렬표의 반(`lessons/teaching.useTeachingClasses`). 점검 `tools/inspect-class.mjs`(34).
