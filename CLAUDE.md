@@ -26,7 +26,7 @@
 
 ## 지금 상태 (진행 중인 것·사용자에게 부탁한 것만 - 세션마다 2줄 이하)
 
-- **P22 점검 뒤 손보기 ②**(11-04 - `docs/PLAN.md` 6장 'P22', 일곱 세션). P22-1·2·3·4 끝. **다음 = P22-5**(새 대화에서 '이어서').
+- **P22 점검 뒤 손보기 ②**(11-04 - `docs/PLAN.md` 6장 'P22', 일곱 세션). P22-1·2·3·4·5 끝. **다음 = P22-6**(새 대화에서 '이어서' - 이 PC에서).
 - **P23 메모 요청 대화 끝**(11-06 - 말풍선·글 칸·답 알림, 함수 배포 끝). 진짜 🤖 요청으로는 아직 돌지 않았다 - 사용자의 다음 요청이 첫 확인이다.
 - 지난 👤 실제 기기 확인(P12~P16·P14-3·P14-5)은 사용자가 오류를 발견하면 알린다(1장 '확인 부탁') - 그때 그 세션 절(PLAN 6장)에서 확인 순서를 찾는다.
 - **P24 한눈에 화면 계획**(11-06 사용자 손 그림 - `docs/PLAN.md` 6장 'P24', 세 세션): 왼쪽 작은 달력·한 주 + 오른쪽 고른 날 수업·일정·메모, 경계선으로 칸 크기. **P22가 끝나면(P22-7 뒤) 시작** - 시작할 때까지 이 줄을 둔다.
@@ -116,6 +116,7 @@
 - **앱이 꺼진 기기 흉내**(P22-3 inspect-two-devices): `page.close()`해도 그 컨텍스트의 IndexedDB는 남는다 → `ctx.newPage()` + `clock.setFixedTime(지금 + 25시간)`로 열면 하루 한 번 일(`maybePrune`)까지 돈다. **Firestore만 끊기**는 `page.route('**/google.firestore.v1.Firestore/**', abort)`(로그인은 그대로 - Firestore가 '끊김'으로 보는 데 10초, 풀고 `window.dispatchEvent(new Event('online'))`).
 - **점검이 `try { … } finally { done(); process.exit(); }`만 있으면 예외가 '✔ 모두 통과'로 끝난다**(P23-2 - 없는 `data-*`를 30초 기다리다 던졌는데 뒤 묶음이 말없이 빠졌다, 줄 수가 줄어 알았다). `} catch (e) { 틀림으로 센다 }`를 넣는다. 아직 없는 점검 9개: data·dev-errors·dev-holidays·manual·mirror·pwa·settings·shortcut-record·space-overlay.
 - **한 컨텍스트에서 `?as=`로 계정을 바꿔 여는 점검은 `data-user`가 새 계정이 된 뒤에 창을 연다**(P22-4 - 앞 계정이 잠깐 뜨고 `open`은 그때 돌아온다. 그새 연 창은 `watchAccountChange`가 비운다).
+- **에뮬레이터는 끊겼다 이어질 때 쌓인 글을 묶어 내려 주지 않는 것으로 보인다**(P22-5 ■3 - 55개를 끊고 이어도 듣기가 한 쪽을 건너뛰지 않아 빈틈이 재현되지 않았다). 한 번에 내려 줄 때만 생기는 일은 단위 시험으로 만든다.
 - **처음 화면 밝기가 어둡게(#113)라 '밝은 화면'을 보는 점검은 `localStorage sp5_theme = light`를 심고 시작한다**(10-28 - inspect-handwriting 셋이 #113 뒤로 깨져 있었다).
   **창을 닫게 하는 키(ESC)는 keydown 사이에 팝업이 닫혀 `keyboard.press`가 '닫혔다'로 실패한다** - `.catch(() => {})`로 누르고 닫힘은 `waitForEvent('close')`로 본다(inspect-popout).
 - **사용자 보고가 재현되지 않으면 V4의 같은 기능 코드와 견준다**(P12-1 이월 - V5 경로는 모두 맞았고, V4 `runAutoForwarding`의 겹침 규칙이 빠져 있었다).
