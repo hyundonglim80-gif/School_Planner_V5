@@ -153,7 +153,7 @@ try {
   r.check(await waitFor(page.locator(sel('class-hub'))), '🏫 학급 도구');
   await page.locator(sel('class-pick')).selectOption(`${year}-5-1`);
   r.check(await waitFor(page.locator(sel('class-students', 2))), '학급 고르기 = 그 학급 학생 명단');
-  r.check((await page.evaluate(() => localStorage.getItem('sp5-class-hub'))) === `${year}-5-1`, '고른 학급은 이 기기에 남는다');
+  r.check(JSON.parse(await page.evaluate(() => localStorage.getItem('sp5-class-hub'))).id === `${year}-5-1`, '고른 학급은 이 기기에 남는다');
   r.check((await page.locator(sel('class-tool')).count()) === 7 && !(await page.locator(sel('class-tool', 'subjectAttendance')).count()), '담임 = 도구 카드 7 (교과 출결 빼고)');
   // 도구 카드 = 그 학급으로 (여덟 도구 모두 창이 있다 - P7-4)
   await page.locator(sel('class-tool', 'evalOverview')).click();

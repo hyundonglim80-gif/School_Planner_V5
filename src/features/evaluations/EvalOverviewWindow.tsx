@@ -30,7 +30,7 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { printNode } from '../../ui/print';
 import { copyText } from '../../ui/shareText';
 import { useToday } from '../../ui/useToday';
-import { rememberHubClass, useClasses, useHubClass } from '../class/classes';
+import { rememberHubClass, useClasses, useHubClassId } from '../class/classes';
 import { useTeaching } from '../lessons/teaching';
 import CourseEvalOverview from './CourseEvalOverview';
 import { useSpacesEvals, type SpaceEval } from './evalData';
@@ -43,7 +43,7 @@ const tool = 'px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-s
 
 export default function EvalOverviewWindow({ params, close, raise }: WindowProps<EvalOverviewParams | undefined>) {
   const { classes } = useClasses();
-  const hubClass = useHubClass((s) => s.id);
+  const hubClass = useHubClassId();
   const today = useToday();
   const terms = useCommonSettings((s) => s.terms);
   const { isClassUnit } = useTeaching();

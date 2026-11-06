@@ -2,14 +2,16 @@
 //   읽기: 기기 사본(지운 것 빼고, 학년도 최근 것부터 · 학년·반 차례).
 //   쓰기: 명렬표의 💾 저장 한 번 = 바뀐 학급만 한 묶음 - 새 학급은 만들기, 학생·이름은 그 칸만, 학년도·학년·반을 고친 학급은 새 id로 옮기고 옛 것은 지운 표시,
 //         지운 학급은 지운 표시(휴지통 '기타'). 되돌리기는 안내·Ctrl+Z.
-//   고른 학급은 이 기기에 남긴다(학급 화면 - 학급 도구가 그 학급으로 연다, V4 classMemory).
+//   고른 학급은 이 기기에 남긴다(학급 화면 - 학급 도구가 그 학급으로 연다, V4 classMemory). 고른 학년도가 지나면 믿지 않는다(useHubClassId).
 import { create } from 'zustand';
 import { batch, writeOp, type WriteOp } from '../../data/repo';
 import { isLive, useDocs } from '../../data/select';
 import { usePersonalSpaceId } from '../../data/session';
 import type { DocPath, Stored } from '../../data/types';
 import { recordUndo } from '../../data/undo';
-import { classIdOf, cleanStudent, compareClasses, describeClass, type RosterClass } from '../../domain/roster';
+import { academicYearOf, todayStr } from '../../domain/dateUtils';
+import { classIdOf, cleanStudent, compareClasses, describeClass, hubPickOf, readHubPick, trustedHubId, type HubPick, type RosterClass } from '../../domain/roster';
+import { useToday } from '../../ui/useToday';
 import { useMemo } from 'react';
 
 export type ClassItem = RosterClass & { id: string };
@@ -34,24 +36,30 @@ export function useClasses(): { classes: ClassItem[]; sid: string | null; docs: 
 // ── 고른 학급 (이 기기) ──
 
 const HUB_KEY = 'sp5-class-hub';
-const readHub = (): string | null => {
+const readHub = (): HubPick | null => {
   try {
-    return localStorage.getItem(HUB_KEY);
+    return readHubPick(localStorage.getItem(HUB_KEY));
   } catch {
     return null;
   }
 };
 
-/** 학급 화면에서 고른 학급 id - 학급 도구(출석부·자리표…)도 처음에 이 학급으로 연다 */
-export const useHubClass = create<{ id: string | null }>(() => ({ id: readHub() }));
+const useHubPick = create<{ pick: HubPick | null }>(() => ({ pick: readHub() }));
+
+/** 학급 화면에서 고른 학급 id - 학급 도구(출석부·자리표…)도 처음에 이 학급으로 연다. 고른 학년도가 지났으면 null */
+export function useHubClassId(): string | null {
+  const pick = useHubPick((s) => s.pick);
+  return trustedHubId(pick, academicYearOf(useToday()));
+}
 
 export function rememberHubClass(id: string) {
+  const pick = hubPickOf(id, academicYearOf(todayStr()));
   try {
-    localStorage.setItem(HUB_KEY, id);
+    localStorage.setItem(HUB_KEY, JSON.stringify(pick));
   } catch {
     // 이 기기에 남기지 못할 뿐
   }
-  useHubClass.setState({ id });
+  useHubPick.setState({ pick });
 }
 
 // ── 저장 ──

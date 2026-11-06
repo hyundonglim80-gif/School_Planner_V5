@@ -25,6 +25,36 @@ export interface RosterClass {
 
 export const classIdOf = (c: Pick<RosterClass, 'year' | 'grade' | 'num'>) => `${c.year}-${c.grade}-${c.num}`;
 
+/**
+ * 학급 화면에서 고른 학급 (이 기기). 고른 때의 학년도를 함께 적어, 그 학년도가 지나면 믿지 않는다 - 3월 1일부터 학급 화면·출석부가
+ * 지난 학년 학급으로 열리던 것(P22-4). '올해 학급만'으로 거르면 올해 지난 학년 학급을 일부러 고른 사람의 고름이 풀린다.
+ */
+export interface HubPick {
+  id: string;
+  /** 이 학년도까지 믿는다 */
+  year: number;
+}
+
+const classYearOf = (id: string) => Number(id.split('-')[0]);
+
+/** 고른 때: 지금 학년도까지. 새 학년도 학급을 2월에 미리 고르면 그 학년도까지 */
+export const hubPickOf = (id: string, schoolYear: number): HubPick => ({ id, year: Math.max(schoolYear, classYearOf(id) || 0) });
+
+/** 믿을 수 있는 학급 id (고른 학년도가 지났으면 null) */
+export const trustedHubId = (pick: HubPick | null, schoolYear: number): string | null => (pick && pick.year >= schoolYear ? pick.id : null);
+
+/** 적어 둔 글 → 고름. 옛 값은 학급 id 글자라 그 학급의 학년도로 본다 */
+export function readHubPick(raw: string | null): HubPick | null {
+  if (!raw) return null;
+  if (/^\d{4}-/.test(raw)) return { id: raw, year: classYearOf(raw) };
+  try {
+    const v = JSON.parse(raw) as Partial<HubPick> | null;
+    return typeof v?.id === 'string' && typeof v.year === 'number' ? { id: v.id, year: v.year } : null;
+  } catch {
+    return null;
+  }
+}
+
 /** '5-2' (수업 칸·반 색의 반 글자) */
 export const classLabelOf = (c: Pick<RosterClass, 'grade' | 'num'>) => `${c.grade}-${c.num}`;
 

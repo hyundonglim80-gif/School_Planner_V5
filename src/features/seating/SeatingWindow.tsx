@@ -34,7 +34,7 @@ import { drawStatusLine } from '../../domain/draw';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { useToday } from '../../ui/useToday';
 import { openAttendance } from '../attendance/open';
-import { rememberHubClass, useClasses, useHubClass } from '../class/classes';
+import { rememberHubClass, useClasses, useHubClassId } from '../class/classes';
 import DrawBigView from './DrawBigView';
 import type { SeatingParams } from './open';
 import SeatApartBox from './SeatApartBox';
@@ -74,7 +74,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
   const { classes, sid } = useClasses();
   const classesStatus = useMirrorStatus('classes', sid);
   const seatingStatus = useMirrorStatus('seating', sid);
-  const hubClass = useHubClass((s) => s.id);
+  const hubClass = useHubClassId();
   const today = useToday();
   const periodCount = useCommonSettings((s) => s.periods.length) || 6;
 

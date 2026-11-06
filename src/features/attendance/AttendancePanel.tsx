@@ -35,7 +35,7 @@ import { normalizeSlotText } from '../../domain/teachingSlot';
 import { printNode } from '../../ui/print';
 import PopoutButton from '../../ui/PopoutButton';
 import SidePanelFrame from '../../ui/SidePanelFrame';
-import { rememberHubClass, useClasses, useHubClass } from '../class/classes';
+import { rememberHubClass, useClasses, useHubClassId } from '../class/classes';
 import { useTeaching } from '../lessons/teaching';
 import { saveAttendance } from './actions';
 import { pickAttendanceClass } from './attendanceClass';
@@ -64,7 +64,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
   const { classes, sid } = useClasses();
   const docs = useDocs('attendance', sid);
   const status = useMirrorStatus('attendance', sid);
-  const hub = useHubClass((s) => s.id);
+  const hub = useHubClassId();
   const { mode, preset } = useTeaching();
   const periodCount = useCommonSettings((s) => s.periods.length) || 6;
   const terms = useCommonSettings((s) => s.terms);

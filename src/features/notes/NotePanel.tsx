@@ -52,7 +52,7 @@ import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
 import { hasContent, isKnownLabel, newNoteForm, noteEditedKeys, noteFormAfterSave, noteFormOf, noteTextClash, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
 import { StudentMentionList, StudentTagRow } from './StudentTags';
 import CheckLinesOverlay, { CHECK_TEXT_CLASS } from './CheckLinesOverlay';
-import { useClasses, useHubClass, type ClassItem } from '../class/classes';
+import { useClasses, useHubClassId, type ClassItem } from '../class/classes';
 import { hasInk, type PenStroke } from '../../domain/handwriting';
 import HandwritingPad from './HandwritingPad';
 import type { NotePanelParams } from './open';
@@ -96,7 +96,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const penDirty = hasInk(penStrokes);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const { classes } = useClasses();
-  const hubClass = useHubClass((s) => s.id);
+  const hubClass = useHubClassId();
   // 새 메모의 차례 = 연 날(그 날짜 링크가 남아 있으면 - 아니면 첫 날짜) 목록의 맨 뒤, 날짜가 없으면 메모 목록의 맨 뒤
   const anchorDate = params.date && form.dates.includes(params.date) ? params.date : (form.dates[0] ?? '');
   const dayNotes = useItemsOn(anchorDate, 'note', sid);

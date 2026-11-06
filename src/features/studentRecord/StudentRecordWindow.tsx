@@ -19,7 +19,7 @@ import { studentTotals, subjectRecordText } from '../../domain/subjectAttendance
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { copyText } from '../../ui/shareText';
 import { useToday } from '../../ui/useToday';
-import { rememberHubClass, useClasses, useHubClass } from '../class/classes';
+import { rememberHubClass, useClasses, useHubClassId } from '../class/classes';
 import { useSpacesEvals, type SpaceEval } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
 import { useTeaching } from '../lessons/teaching';
@@ -41,7 +41,7 @@ const labelText = (tree: LabelTree, ids: readonly string[] | undefined) =>
 
 export default function StudentRecordWindow({ params, close, raise }: WindowProps<StudentRecordParams | undefined>) {
   const { classes } = useClasses();
-  const hubClass = useHubClass((s) => s.id);
+  const hubClass = useHubClassId();
   const today = useToday();
   const { isClassUnit } = useTeaching();
   const personal = usePersonalSpaceId();

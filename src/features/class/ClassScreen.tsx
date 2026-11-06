@@ -20,7 +20,7 @@ import { currentSpaceId, usePersonalSpaceId } from '../../data/session';
 import { useClassColorOf, useTeaching } from '../lessons/teaching';
 import StudentPhoto from '../photos/StudentPhoto';
 import { readOn, usePhotoTools, writeOn } from '../photos/usePhotoTools';
-import { rememberHubClass, useClasses, useHubClass, type ClassItem } from './classes';
+import { rememberHubClass, useClasses, useHubClassId, type ClassItem } from './classes';
 import RosterView from './RosterView';
 import { CLASS_TOOLS, type ClassTool } from './tools';
 import { openClassRoster, setClassView, useClassView } from './view';
@@ -34,7 +34,7 @@ const PHOTOS_KEY = 'sp5-class-photos';
 function ClassHub() {
   const { classes } = useClasses();
   const status = useMirrorStatus('classes', usePersonalSpaceId());
-  const remembered = useHubClass((s) => s.id);
+  const remembered = useHubClassId();
   const { showHomeroomTools: modeHomeroom, isClassUnit, preset, mode } = useTeaching();
   const colorOf = useClassColorOf();
   const year = academicYearOf(todayStr());
@@ -68,7 +68,8 @@ function ClassHub() {
 
   const choose = (id: string) => rememberHubClass(id);
   const openTool = (id: ClassTool['id']) => {
-    if (cls) rememberHubClass(cls.id);
+    // 올해 학급이 없어 넘어온 지난 학년 학급은 '고름'으로 적지 않는다 - 새 학급을 만든 뒤에도 그 학급으로 열리게 된다
+    if (cls && cls.year >= year) rememberHubClass(cls.id);
     if (id === 'roster') openClassRoster();
     // 출석부는 오늘로 (단축키는 보는 날)
     else if (id === 'attendance') openAttendance({ date: todayStr(), classId: cls?.id });

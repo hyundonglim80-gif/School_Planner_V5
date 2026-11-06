@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { describeClass, isActive } from '../../domain/roster';
 import { studentKeyOf, studentOfKey, type MentionCandidate } from '../../domain/studentTag';
-import { useClasses, useHubClass, type ClassItem } from '../class/classes';
+import { useClasses, useHubClassId, type ClassItem } from '../class/classes';
 
 /** 칩 글자 '김지우' - 올해가 아닌 학급이면 '김지우 (2025 4-3)' */
 const chipText = (cls: ClassItem, name: string, num: number, year: number) => `${name || `${num}번`}${cls.year !== year ? ` (${cls.year} ${cls.grade}-${cls.num})` : ''}`;
@@ -60,7 +60,7 @@ export function StudentMentionList({
 /** 고른 학생 칩 + 🧑‍🎓 학생 고르기 */
 export function StudentTagRow({ studentIds, onChange, year }: { studentIds: string[]; onChange: (ids: string[]) => void; year: number }) {
   const { classes } = useClasses();
-  const hub = useHubClass((s) => s.id);
+  const hub = useHubClassId();
   const [open, setOpen] = useState(false);
   const [classId, setClassId] = useState<string | null>(null);
   const cls = classes.find((c) => c.id === classId) ?? classes.find((c) => c.id === hub) ?? classes.find((c) => c.students.length > 0) ?? classes[0] ?? null;

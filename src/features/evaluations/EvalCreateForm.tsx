@@ -18,7 +18,7 @@ import {
 import { evalGroupsFrom, groupSetSummary } from '../../domain/groups';
 import { classLabelOf, describeClass } from '../../domain/roster';
 import { parseSlot } from '../../domain/teachingSlot';
-import { useClasses, useHubClass } from '../class/classes';
+import { useClasses, useHubClassId } from '../class/classes';
 import { useTeaching } from '../lessons/teaching';
 import { useClassHub } from '../seating/seatingData';
 import { createEvaluations, type NewEval } from './evalData';
@@ -40,7 +40,7 @@ const label = 'text-xs font-bold text-slate-600 block mb-1';
 
 export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Props) {
   const { classes } = useClasses();
-  const hubClass = useHubClass((s) => s.id);
+  const hubClass = useHubClassId();
   const { isClassUnit } = useTeaching();
   const periods = useCommonSettings((s) => s.periods);
 

@@ -8,8 +8,10 @@ import {
   cleanStudent,
   describeClass,
   gradeOptions,
+  hubPickOf,
   indexOfPick,
   nextClassNum,
+  readHubPick,
   numOptions,
   parseClassCsv,
   parseRosterCsv,
@@ -18,6 +20,7 @@ import {
   textToGender,
   withSids,
   yearOptions,
+  trustedHubId,
   type RosterClass,
 } from './roster';
 
@@ -43,6 +46,38 @@ describe('학년도 / 학년 / 반 고르기 (V4 classPicker)', () => {
   it('id·이름', () => {
     expect(classIdOf(cls(2026, 5, 2))).toBe('2026-5-2');
     expect(describeClass(cls(2026, 5, 2))).toBe('2026학년도 5학년 2반');
+  });
+});
+
+describe('고른 학급 = 학년도와 함께 (P22-4 - 3월 1일부터 지난 학년 학급으로 열지 않는다)', () => {
+  it('고른 때의 학년도가 지나면 믿지 않는다', () => {
+    const pick = hubPickOf('2026-5-2', 2026);
+    expect(trustedHubId(pick, 2026)).toBe('2026-5-2');
+    expect(trustedHubId(pick, 2027)).toBeNull();
+  });
+
+  it('올해 일부러 고른 지난 학년 학급은 올해 동안 믿는다', () => {
+    expect(trustedHubId(hubPickOf('2025-4-3', 2026), 2026)).toBe('2025-4-3');
+  });
+
+  it('새 학년도 학급을 2월에 미리 고르면 3월에도 믿는다', () => {
+    const pick = hubPickOf('2027-6-1', 2026);
+    expect(trustedHubId(pick, 2027)).toBe('2027-6-1');
+    expect(trustedHubId(pick, 2028)).toBeNull();
+  });
+
+  it('옛 글자 값은 그 학급의 학년도로 읽는다', () => {
+    expect(readHubPick('2026-5-2')).toEqual({ id: '2026-5-2', year: 2026 });
+    expect(trustedHubId(readHubPick('2026-5-2'), 2027)).toBeNull();
+  });
+
+  it('적어 둔 값을 그대로 읽고, 틀린 값은 없는 것으로', () => {
+    expect(readHubPick(JSON.stringify(hubPickOf('2025-4-3', 2026)))).toEqual({ id: '2025-4-3', year: 2026 });
+    expect(readHubPick(null)).toBeNull();
+    expect(readHubPick('')).toBeNull();
+    expect(readHubPick('학급')).toBeNull();
+    expect(readHubPick('{"id":1}')).toBeNull();
+    expect(readHubPick('123')).toBeNull();
   });
 });
 

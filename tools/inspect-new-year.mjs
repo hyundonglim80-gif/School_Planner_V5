@@ -4,6 +4,7 @@
 //   3) ② 지난 시간표 베껴 만들기 = 2027-03-01 ~ 2028-02-29 같은 표 · 시간표 창이 그 표로
 //   4) ③ 방학 적기 = 시간표 창 '학기·방학' 탭이 2027학년도로 → 적고 💾 → 네 단계 ✓ · 할 것이 없으면 띠가 내려간다
 //   5) ✅ 준비 끝 = common.newYearDone · 띠 닫기(할 것이 다시 생겨도 그 학년도에는 띄우지 않는다) · 시간표 창 머리줄 🌱
+//   6) 3/2 = 지난 학년에 고른 학급을 믿지 않는다(학급 화면·학급 도구) · 올해 고른 지난 학급은 남는다 · 넘어온 지난 학급은 '고름'이 되지 않는다(P22-4)
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-new-year.mjs
 // 에뮬레이터 teacher의 classes·timetables·settings/common을 바꾸고 끝에 되돌린다.
@@ -137,7 +138,47 @@ try {
   await p2.page.waitForTimeout(2500);
   r.check((await p2.page.locator(sel('new-year-banner')).count()) === 0, '4/2 = 띠 없음 (할 것이 남아도)');
 
-  r.check(errors.length === 0 && p2.errors.length === 0, `화면 오류 없음 ${[...errors, ...p2.errors].join(' | ')}`);
+  r.section('3월이 되면 고른 학급이 새 학년도로 (P22-4)');
+  const p3 = await newPage(browser);
+  const hub = () => p3.page.locator(sel('class-hub'));
+  const hubId = () => hub().getAttribute('data-class-hub');
+  const stored = () => p3.page.evaluate(() => localStorage.getItem('sp5-class-hub'));
+  await p3.page.clock.setFixedTime(new Date('2027-03-02T09:00:00'));
+  // 옛 글자 값 - 지난 학년에 고른 학급 (앱을 처음 열 때만 심는다)
+  await p3.page.addInitScript(() => {
+    if (!sessionStorage.getItem('hub-planted')) {
+      sessionStorage.setItem('hub-planted', '1');
+      localStorage.setItem('sp5-class-hub', '2026-5-2');
+    }
+  });
+  await open(p3.page, '#/class');
+  await waitFor(hub());
+  r.check((await hubId()) === '2027-6-3', '3/2 = 지난 학년에 고른 학급이 아니라 올해 학급', `${await hubId()}`);
+  await p3.page.evaluate(() => window.sp5.openWindow('evalOverview'));
+  r.check(await waitFor(p3.page.locator(sel('eval-overview-window', '2027-6-3')), 5000), '학급 도구(조사표 모아 보기)도 올해 학급');
+  await p3.page.evaluate(() => window.sp5.closeAllWindows());
+
+  await p3.page.locator(sel('class-pick')).selectOption('2026-5-2');
+  await waitFor(p3.page.locator('[data-class-hub="2026-5-2"]'));
+  r.check(JSON.parse(await stored()).year === 2027, '올해 고른 지난 학급 = 올해 학년도로 적는다', await stored());
+  await p3.page.reload();
+  await waitFor(hub());
+  r.check((await hubId()) === '2026-5-2', '올해 일부러 고른 지난 학급은 다시 열어도 그대로');
+
+  // 올해 학급이 없어 지난 학급으로 넘어온 때: 도구를 눌러도 '고름'이 되지 않아, 학급을 만들면 그 학급으로 열린다
+  await p3.page.evaluate(() => localStorage.removeItem('sp5-class-hub'));
+  const newClass = await read(ref('classes', '2027-6-3'));
+  await setDoc(ref('classes', '2027-6-3'), { ...newClass, deletedAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  await p3.page.reload();
+  await waitFor(p3.page.locator('[data-class-hub="2026-5-2"]'));
+  await p3.page.locator(sel('class-tool', 'evalOverview')).click();
+  await waitFor(p3.page.locator(sel('eval-overview-window', '2026-5-2')), 5000);
+  r.check((await stored()) === null, '넘어온 지난 학급은 도구를 눌러도 고름이 되지 않는다', await stored());
+  await p3.page.evaluate(() => window.sp5.closeAllWindows());
+  await setDoc(ref('classes', '2027-6-3'), { ...newClass, deletedAt: null, updatedAt: serverTimestamp() });
+  r.check(await waitFor(p3.page.locator('[data-class-hub="2027-6-3"]'), 8000), '올해 학급이 생기면 그 학급으로');
+
+  r.check(errors.length === 0 && p2.errors.length === 0 && p3.errors.length === 0, `화면 오류 없음 ${[...errors, ...p2.errors, ...p3.errors].join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
