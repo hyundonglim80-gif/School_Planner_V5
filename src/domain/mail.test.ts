@@ -7,6 +7,7 @@ import {
   mailParamOf,
   mailPreview,
   mailTextError,
+  mailToAll,
   mailWhen,
   MAIL_KEEP_DAYS,
   MAIL_LIMITS,
@@ -148,5 +149,15 @@ describe('쪽지 셈', () => {
     expect(mailParamOf('')).toBeNull();
     expect(stripMailParam('http://x.test/?as=2&mail=Ab12#/day/2026-11-02')).toBe('/?as=2#/day/2026-11-02');
     expect(stripMailParam('http://x.test/?mail=Ab12')).toBe('/');
+  });
+});
+
+describe('모두 고르기 (P22-5 ■2)', () => {
+  it('한도 안이면 모두 · 넘으면 한도까지 고르고 빠진 수를 알린다', () => {
+    const ids = (n: number) => Array.from({ length: n }, (_, i) => `u${i}`);
+    expect(mailToAll(ids(3))).toEqual({ to: ids(3), cut: 0 });
+    expect(mailToAll(ids(MAIL_LIMITS.to))).toEqual({ to: ids(MAIL_LIMITS.to), cut: 0 });
+    expect(mailToAll(ids(MAIL_LIMITS.to + 2))).toEqual({ to: ids(MAIL_LIMITS.to), cut: 2 });
+    expect(mailToAll([])).toEqual({ to: [], cut: 0 });
   });
 });

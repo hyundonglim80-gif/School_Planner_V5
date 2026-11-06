@@ -13,7 +13,7 @@ import { useCurrentSpaceId, useSession } from '../../data/session';
 import { useMySpaces } from '../../data/spaceChoice';
 import { readPeople } from '../../data/spaces';
 import type { Attachment } from '../../data/types';
-import { MAIL_LIMITS, mailTextError, recipientsOf } from '../../domain/mail';
+import { MAIL_LIMITS, mailTextError, mailToAll, recipientsOf } from '../../domain/mail';
 import DraftOffer from '../../ui/DraftOffer';
 import FileDropCover from '../../ui/FileDropCover';
 import { DROP_BUSY_TEXT, useFileDrop } from '../../ui/fileDrop';
@@ -93,7 +93,13 @@ export default function MailCompose({ ask, onSent }: { ask?: ComposeAsk; onSent:
 
   const set = (patch: Partial<Compose>) => setC((prev) => ({ ...prev, ...patch }));
   const toggle = (id: string) => set({ to: picked.includes(id) ? picked.filter((x) => x !== id) : [...picked, id] });
-  const all = members.length > 0 && members.every((id) => picked.includes(id));
+  // '모두' = 한 번에 보낼 수 있는 만큼 - 넘으면 빠진 수를 알린다 (다시 누르면 풀린다)
+  const everyone = mailToAll(members);
+  const all = everyone.to.length > 0 && everyone.to.every((id) => picked.includes(id));
+  const toggleAll = () => {
+    set({ to: all ? [] : everyone.to });
+    if (!all && everyone.cut > 0) showToast(`한 번에 ${MAIL_LIMITS.to}명까지 보낼 수 있어 ${everyone.cut}명은 고르지 않았습니다. 그 선생님께는 따로 보내 주세요.`, 5000);
+  };
 
   // ─── 붙이기 (notes/attach - 메모와 같은 길) ───
   const attach = async (files: File[], pasted: boolean) => {
@@ -218,7 +224,7 @@ export default function MailCompose({ ask, onSent }: { ask?: ComposeAsk; onSent:
               type="button"
               data-mail-to-all
               aria-pressed={all}
-              onClick={() => set({ to: all ? [] : members.slice(0, MAIL_LIMITS.to) })}
+              onClick={toggleAll}
               className={`rounded-full border px-2.5 py-1 text-xs font-bold cursor-pointer ${all ? 'border-primary bg-primary text-white' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}
             >
               모두

@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P22-5 하던 중 - 다음 = ■2 쪽지**(대화·쪽지·단축키 잔버그 - 6장 'P22' 절). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**P22-5 하던 중 - 다음 = ■3 다시 확인할 것**(대화·쪽지·단축키 잔버그 - 6장 'P22' 절). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P22-4 끝**(11-06 - 3월 학급 · 자정 넘김 · 되살리기 공간 · 공용 PC). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
 **P23-3 끝 = P23 단계 끝**(11-06 - 답 알림·카드 '새 답', 함수 배포 끝). `public/sw.js`를 고쳐 설치 앱은 늦게 받는다. 진짜 요청으로는 아직 돌지 않았다 - 다음 🤖 요청이 첫 확인.
 **P24 한눈에 화면 계획**(11-06 사용자 손 그림 - 6장 'P24' 절, 결정은 5장 'P24 …') - **P22가 끝나면(P22-7 뒤) 다음**. 왼쪽 작은 달력·한 주 + 오른쪽 고른 날 수업·일정·메모, 경계선으로 칸 크기. 화면만(서버·규칙·함수·돈 없음), 세 세션.
@@ -2970,7 +2970,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 **먼저 읽을 것**: `features/chat/ChatRoomView.tsx`·`ChatComposer.tsx` · `data/chat.ts` `countUnread`·`markRoomRead`·`loadOlderMsgs` · `features/mail/MailWindow.tsx` `load`·`refreshTop` · `features/mail/MailCompose.tsx` · `domain/shortcuts.ts` `recordKeyIssue` · `app/keys.ts`.
 - [x] ■1 대화: 보낸 뒤 내 읽음을 적는다(`markRoomRead` - 규칙 그대로, 안 읽은 수에 내 글이 안 든다) · `loadMore`가 `p.offline`이면 cursor를 두고 안내 · 쓰던 글 보관은 서버가 받은 뒤 지운다(쪽지·메모처럼) · 시험.
   → 11-06 `sendChat`이 보낸 뒤 내 읽음을 적는다(기다리지 않는다 - 새 방은 보낸 뒤에야 듣는다) · `loadMore`는 끊긴 결과면 자리를 두고 5초 동안 스크롤로 다시 받지 않는다(안내가 쌓이지 않게, 단추는 바로) · 보관은 `useDraft`를 늦추지 않고 **`chat/unsent`로 따로**(열쇠 `unsent:<칸 열쇠>` - 잇달아 보낸 글이 서로 덮지 않고, 이 탭에서 기다리는 글은 돌아온 칸에 다시 채우지 않는다, 칸이 닫힌 뒤 서버가 막은 글은 다음에 열면 칸에) · 보내지 못한 글은 그새 쓴 글 앞에 되돌린다(옛 코드는 버렸다) · 시험: ChatComposer 넷 · chat.emu 둘(읽음을 빼면 틀린다) · inspect-chat 묶음 셋.
-- [ ] ■2 쪽지: `load(true)` 중 `refreshTop`이 와도 `busy`가 풀린다 · '모두'가 `MAIL_LIMITS.to`에서 잘리면 안내 · 시험.
+- [x] ■2 쪽지: `load(true)` 중 `refreshTop`이 와도 `busy`가 풀린다 · '모두'가 `MAIL_LIMITS.to`에서 잘리면 안내 · 시험.
+  → 11-06 `refreshTop`을 `topSeq`로 따로 센다(받는 중인 '더 보기'를 버리지 않는다 - 그 쪽이 빠지고 단추가 멈췄다, `load(false)`만 첫 쪽 받기를 거둔다) · `domain/mail` `mailToAll`(빠진 수를 알리고, 다시 누르면 풀린다 - 옛 코드는 `all`이 거짓이라 풀리지도 않았다) · MailWindow.test(고치기 전 틀림) · mail.test · inspect-mail 통과.
 - [ ] ■3 **다시 확인할 것 6건** - 재현되면 고치고, 아니면 까닭을 적고 뺀다: ↗ 새 창이 `win.params`로 열려 보던 방·탭이 아니다(`app/popout.ts`) · 새 창의 쪽지 창이 새 쪽지를 모른다(`useWatchInPopout`이 쪽지에 없다) · 새 1:1을 끊긴 채 보내면 방에 안 보여 다시 쓰게 된다 · 첨부 올리는 중 방을 떠나면 말없이 사라진다 · 올리는 중 캡처 붙여넣기가 안내 없이 버려진다 · 끊겼다 이어진 사이 글이 50개를 넘으면 가운데가 빈다.
   + 11-04 P22-1에서 찾음(코드만 읽음, 재현 전): 막 만든 그룹의 대화 듣기가 처음에 막히면 `dropGroup`이 그 그룹을 빼고 다시 듣지 않는다 - 만든 사람에게 그룹 대화가 새로고침 전까지 안 보이는지 본다(inspect-import-groups 콘솔에 '[chat] 그룹 대화를 받지 못했습니다'가 뜬다).
 - [ ] ■4 단축키: `recordKeyIssue`가 Ctrl+C·V·X·A·Z(글 칸 키)·Ctrl+W·T·N(브라우저가 가져간다)을 까닭과 함께 막는다 · 시험 + inspect-shortcut-record.

@@ -9,6 +9,12 @@ import { cleanAttachment, isImageAttachment, readSharedAttachments } from './att
 
 /** 칸마다 가장 긴 것 - 규칙(firestore.rules `v5Mail`)과 같게. 그룹 이름은 공간 이름 그대로(이름이 빈 공간만 60자) */
 export const MAIL_LIMITS = { text: 2000, to: 50, toNames: 600, fromName: 40, groupName: 60, attachments: 10 } as const;
+/** '모두' 고르기 - 한 번에 보낼 수 있는 만큼. cut = 그래서 빠진 사람 수(말없이 자르지 않게 알린다) */
+export function mailToAll(members: readonly string[]): { to: string[]; cut: number } {
+  const to = members.slice(0, MAIL_LIMITS.to);
+  return { to, cut: members.length - to.length };
+}
+
 /** 1년 뒤 TTL 정책이 지운다(규칙은 370일 안) */
 export const MAIL_KEEP_DAYS = 365;
 /** 쪽지 창이 한 번에 받는 수 */

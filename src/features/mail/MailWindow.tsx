@@ -114,7 +114,7 @@ interface ListProps {
   onReply?: (m: MailIn) => void;
 }
 
-function MailList({ box, active, focus, bump = 0, onReply }: ListProps) {
+export function MailList({ box, active, focus, bump = 0, onReply }: ListProps) {
   const uid = useSession((s) => s.user?.uid ?? null);
   const hidden = useHiddenMail((s) => s.ids);
   const unread = useMailStore((s) => s.unread);
@@ -123,6 +123,8 @@ function MailList({ box, active, focus, bump = 0, onReply }: ListProps) {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const seq = useRef(0);
+  /** 첫 쪽 다시 받기(refreshTop)는 따로 센다 - 위에 더하기만 하므로 받는 중인 '더 보기'를 버리면 안 된다(그 쪽이 빠지고 '불러오는 중'에 멈췄다) */
+  const topSeq = useRef(0);
   // 줄의 시각을 '오늘'과 견줄 때 (창을 연 때 - 그리는 사이에 바뀌지 않게)
   const [now] = useState(() => Date.now());
   const focused = useRef<{ id: string } | undefined>(undefined);
@@ -130,6 +132,8 @@ function MailList({ box, active, focus, bump = 0, onReply }: ListProps) {
   const load = async (more: boolean) => {
     if (!uid) return;
     const my = ++seq.current;
+    // 처음부터 다시 받으면 앞서 부른 첫 쪽 받기는 쓸모없다 (앞 계정 것일 수도 있다)
+    if (!more) topSeq.current++;
     setBusy(true);
     setFailed(false);
     try {
@@ -162,10 +166,10 @@ function MailList({ box, active, focus, bump = 0, onReply }: ListProps) {
   // 첫 쪽을 다시 받아 위에 더한다 - 새 쪽지가 왔을 때(안 읽은 수가 늘면)·푸시로 연 쪽지가 목록에 없을 때
   const refreshTop = () => {
     if (!uid) return;
-    const my = ++seq.current;
+    const my = ++topSeq.current;
     fetchPage(uid, box, null)
       .then((p) => {
-        if (my !== seq.current) return;
+        if (my !== topSeq.current) return;
         setPage((prev) => (prev && prev.items.length ? { ...prev, items: merge(p.items, prev.items) } : p));
       })
       .catch((e) => console.warn('[mail] 새 쪽지를 받지 못했습니다.', e));
