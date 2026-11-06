@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**다음 = P22-6 ■4**(운영 안전망 - 6장 'P22' 절, 이 PC에서, ■1~■3 끝). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**다음 = P22-6 ■5**(운영 안전망 - 6장 'P22' 절, 이 PC에서, ■1~■4 끝). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P22-5 끝**(11-06 - 대화·쪽지·단축키 잔버그 + 다시 확인 7건). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
 **P22-4 끝**(11-06 - 3월 학급 · 자정 넘김 · 되살리기 공간 · 공용 PC). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
 **P23-3 끝 = P23 단계 끝**(11-06 - 답 알림·카드 '새 답', 함수 배포 끝). `public/sw.js`를 고쳐 설치 앱은 늦게 받는다. 진짜 요청으로는 아직 돌지 않았다 - 다음 🤖 요청이 첫 확인.
@@ -2999,7 +2999,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   → 11-06 `firebase.json` · 인라인 스크립트 해시(`securityHeaders.test`가 지킨다, `.gitattributes`로 `index.html`은 LF) · **위반을 오류 보고로 모은다**(계획에 없던 것 - 5장 'P22-6 CSP 위반') · `inspect-headers` 크롬: 외부 주소 넷으로 요청이 나간 것을 보고 위반 0건, 일부러 넣은 그림·인라인 스크립트는 잡힌다, 운영 주소면 첫 화면 · 개발 서버는 CSP를 내지 않는다 · 단위 3147. **로그인 창·사진 고르기·드라이브 올리기는 에뮬레이터로 볼 수 없다** - 운영 '[CSP] …' 보고를 본 뒤 막기를 묻는다.
 - [x] ■3 CI에 규칙·자료 시험: `setup-java` + `firebase emulators:exec --only auth,firestore`로 `check:rules`·`test:data` - 시간이 늘어나는 만큼 main CI·자동 요청이 느려지는지 본다.
   → 11-06 `ci.yml` `rules-data`를 `check`와 나란히 · `wip`에서 진짜 CI로 쟀다: 둘 다 56초(늘지 않았다), 규칙 335개·자료 7파일이 빈 에뮬레이터에서 통과(로그로 확인) · 규칙 한 줄을 일부러 빼자 그 시험 하나만 틀리고 CI 실패 = 배포되지 않는다. 자동 요청은 `claude-request.yml`이 따로 확인해 그대로이고 배포만 이 CI를 기다린다.
-- [ ] ■4 자동 요청 막는 목록에 `package.json`·`package-lock.json`·`public/sw.js`·`vite.config.ts`·`index.html` 더하기(`.github`는 PC에서만 고친다) + `docs/CLAUDE-REQUEST.md`.
+- [x] ■4 자동 요청 막는 목록에 `package.json`·`package-lock.json`·`public/sw.js`·`vite.config.ts`·`index.html` 더하기(`.github`는 PC에서만 고친다) + `docs/CLAUDE-REQUEST.md`.
+  → 11-06 `claude-request.yml` 프롬프트·막는 식·안내 글 · 설치가 `npm ci`이고 `npm install`이 허락 목록에 없어 잠금 파일이 저절로 바뀌어 실패하는 일은 없다 · 옛 #113이 `index.html`을 고쳤다 - 같은 요청은 이제 까닭을 남기고 끝난다(CSP 해시가 `firebase.json`에 있어 어차피 시험에서 깨진다).
 - [ ] ■5 쓰지 않는 구글 권한(`auth/tasks`) 빼기 - 이미 받은 토큰·동의 창 · 루트 audit high 4건은 `@grpc/grpc-js`(Node 쪽 - 화면에 실리지 않는다) - `overrides`로 되는지만 보고 `--force`는 하지 않는다(firebase가 9로 내려간다).
 - [ ] ■6 (묻고) 복원 연습: `docs/OPS.md` 절차대로 `restore-drill`에 풀어 문서를 보고 표를 채운다(P14-3 끝 조건이 비어 있다). 지우기 명령은 사용자가 터미널에서.
 - [ ] ■7 (묻고) 저장소 설정: main 강제 푸시·지우기만 막는다(검사 필수로 묶으면 자동 요청의 바로 합치기가 막힌다) · Dependabot 보안 업데이트.

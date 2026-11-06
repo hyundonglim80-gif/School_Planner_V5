@@ -37,7 +37,7 @@
 - **보낼 수 있는 계정**: 배포 값 `CLAUDE_OWNER_EMAILS`의 메일만(사용자 결정 10-16 - 세 계정). 개인 공간 메모만(공유 그룹 메모는 보내지 않는다).
   메일 목록은 코드에 적지 않는다 - 저장소가 공개라서(배포가 `functions/.env.schoolplannerv3`에 적는다, git 무시).
 - **공개**: 요청 글은 누구나 볼 수 있는 이슈가 된다 - 학생 이름 등은 적지 않는다. 첨부는 보내지 않는다.
-- **자동으로 올리지 않는 파일**: `firestore.rules`·`functions/`·`.github/`·`firebase.json`·`.firebaserc` - PC에서 배포해야 해서. 고치면 실패로 끝나고 까닭을 남긴다.
+- **자동으로 올리지 않는 파일**: `firestore.rules`·`functions/`·`.github/`·`firebase.json`·`.firebaserc`(PC에서 배포해야 해서) · `package.json`·`package-lock.json`·`public/sw.js`·`vite.config.ts`·`index.html`(앱 전체에 닿는데 자동 확인은 크롬 점검을 돌리지 않아서 - P22-6, `index.html`은 CSP 해시가 `firebase.json`에 있어 어차피 혼자 못 고친다). 고치면 실패로 끝나고 까닭을 남긴다.
 - **확인**: CI와 같은 것(lint·단위 테스트·함수 시험·빌드). 크롬 점검·에뮬레이터는 돌리지 않는다 - 하나라도 실패하면 올리지 않는다.
   다만 화면 글·`data-*`·자리를 바꾸면 그것을 찾는 점검 줄(`tools/inspect-*.mjs`)도 grep으로 찾아 같은 커밋에서 고친다(돌리지는 않는다 - 커밋 메시지 끝 '점검 고침: …', P14-4 10-29).
   Actions에서 크롬 점검을 돌리지 않는 까닭: 에뮬레이터·V4 seed·개발 서버가 들어 한 번에 수십 분(공개 저장소라 분은 무료지만 요청마다 기다림이 길어진다).
