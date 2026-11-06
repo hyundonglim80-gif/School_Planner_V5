@@ -9,12 +9,13 @@ import { useEffect, useRef, useState } from 'react';
 import type { QueryDocumentSnapshot } from 'firebase/firestore';
 import type { WindowProps } from '../../app/windows';
 import { showToast } from '../../app/toast';
-import { loadInbox, loadSent, markRead } from '../../data/mail';
+import { loadInbox, loadSent, markRead, useMailWatch } from '../../data/mail';
 import { useMailStore } from '../../data/mailStore';
 import { useSession } from '../../data/session';
 import { useMySpaces } from '../../data/spaceChoice';
 import { mailFilesLabel, mailPreview, mailWhen, replyQuote, unreadLabel, type MailBox, type MailIn, type MailSent } from '../../domain/mail';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
+import { POPOUT } from '../../ui/popout';
 import { removeMail, useHiddenMail } from './actions';
 import SharedAttachments from '../notes/SharedAttachments';
 import MailCompose, { type ComposeAsk } from './MailCompose';
@@ -22,6 +23,9 @@ import type { MailParams, MailTabId } from './open';
 import { useTabTarget } from '../../app/keys';
 import { dmPairId } from '../../domain/chat';
 import { openChat } from '../chat/open';
+
+/** 새 창은 Shell이 없어 안 읽은 쪽지를 듣는 곳이 없다 - 여기서 듣는다(새 쪽지를 알고 목록에 더한다, 대화 창과 같다) */
+const useWatchInPopout: () => void = POPOUT ? () => useMailWatch() : () => {};
 
 type Item = MailIn | MailSent;
 const isIn = (m: Item): m is MailIn => 'from' in m;
@@ -293,7 +297,8 @@ const TABS: ReadonlyArray<{ id: MailTabId; label: string }> = [
 /** 쓰기 탭을 채울 것 (그룹 창 구성원 칩 ✉ - 열 때마다 새 객체) */
 const askOf = (p: MailParams | undefined): ComposeAsk | undefined => (p?.tab === 'write' && (p.sid || p.to) ? { sid: p.sid, to: p.to } : undefined);
 
-export default function MailWindow({ params, close, raise }: WindowProps<MailParams | undefined>) {
+export default function MailWindow({ params, close, raise, setParams }: WindowProps<MailParams | undefined>) {
+  useWatchInPopout();
   // 창 안 탭 단축키(P18-2) - 단축키 설정이 고르는 표시 + 키가 있으면 툴팁
   const tabTarget = useTabTarget();
   const [tab, setTab] = useState<MailTabId>(params?.tab ?? 'in');
@@ -315,6 +320,11 @@ export default function MailWindow({ params, close, raise }: WindowProps<MailPar
       if (next) setAsk(next);
     }
   }
+  // 보는 탭을 창 값에 적는다 - ↗ 새 창은 창 값으로 연다(P22-5 ■3)
+  useEffect(() => {
+    setParams({ tab });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 탭이 바뀔 때만
+  }, [tab]);
   // 쓰기 탭은 처음 열 때 그린다 (구성원 이름 읽기) - 그 뒤로는 숨기기만(적던 글이 남게)
   const [composing, setComposing] = useState(tab === 'write');
   if (tab === 'write' && !composing) setComposing(true);

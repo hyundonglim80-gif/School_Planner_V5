@@ -15,6 +15,7 @@
 //   P19-4 ■2 내 글 지우기(마우스를 올리면 🗑️ · 묻기 '아니오' = 그대로 · '예' = 모두에게 '지운 글'·서버 빈 글 + deletedAt·방 미리 보기 빈 글 → 목록 '나: 지운 글' ·
 //      남의 글에는 🗑️ 없음 · 휴대폰은 🗑️ 없이 길게 누르기 → 묻기 → '지운 글')
 //   P22-5 ■1 끊긴 동안 '이전 글'(안내 · 단추가 남아 이어지면 받는다) · 끊긴 채 보내고 앱을 닫아도 글이 칸에 돌아온다 · 내 글은 안 읽은 수에 들지 않는다
+//   P22-5 ■3 ↗ 새 창은 보던 방 · 끊긴 사이 글이 50개를 넘어도 가운데가 비지 않는다 · 끊긴 채 보낸 새 1:1 글이 방에 보인다
 //   P21 윈도우 파일 끌어다 놓기(CDP 진짜 끌기): 방 머리·글 칸 위 어디서나 덮개(글은 보이는 자리에) · 놓으면 글 칸에 첨부
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
@@ -338,11 +339,11 @@ try {
   await A.ctx.setOffline(true);
   await more.click();
   r.check(await waitFor(page.locator('[data-toast]:has-text("지난 글을 받지 못했습니다")'), 15000), '끊긴 동안 누르면 안내');
-  r.check(await waitFor(async () => (await more.count()) === 1 && (await more.isEnabled()), 3000), "'이전 글 더 보기'가 남는다 (빈 결과를 '더 없음'으로 믿지 않는다)");
+  r.check(await waitFor(async () => (await more.count()) === 1 && (await more.isEnabled({ timeout: 500 }).catch(() => false)), 3000), "'이전 글 더 보기'가 남는다 (빈 결과를 '더 없음'으로 믿지 않는다)");
   await A.ctx.setOffline(false);
   r.check(
     await waitFor(async () => {
-      if ((await more.count()) && (await more.isEnabled())) await more.click().catch(() => {});
+      if ((await more.count()) && (await more.isEnabled({ timeout: 500 }).catch(() => false))) await more.click().catch(() => {});
       return (await page.locator(sel('chat-msg')).count()) > 50;
     }, 20000),
     '이어지면 지난 글을 받는다',
@@ -413,6 +414,35 @@ try {
   await allRow.click();
   await page.locator(sel('chat-input')).waitFor({ timeout: 5000 });
 
+  r.section('P22-5 ■3 ↗ 새 창은 보던 방');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.openWindow('chat'));
+  await dmRow.click();
+  await page.locator(sel('chat-room-view', PAIR)).waitFor({ timeout: 5000 });
+  const [pop] = await Promise.all([A.ctx.waitForEvent('page', { timeout: 10000 }), page.locator(`#side-column ${sel('popout-open')}`).click()]);
+  await pop.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+  r.check(await waitFor(pop.locator(sel('chat-room-view', PAIR)), 15000), '목록에서 고른 방을 ↗ = 새 창도 그 방');
+  await pop.close();
+  await page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
+  await page.locator(sel('chat-input')).waitFor({ timeout: 5000 });
+
+  r.section('P22-5 ■3 끊긴 사이 글이 50개를 넘으면');
+  await A.ctx.setOffline(true);
+  await page.waitForTimeout(500);
+  const gapIds = [];
+  for (let i = 0; i < 55; i++) gapIds.push(await sendAsB(`끊긴 사이 ${i}`));
+  await page.waitForTimeout(1500);
+  r.check((await page.locator(sel('chat-msg', gapIds[54])).count()) === 0, `끊긴 동안은 안 들어온다 (${await page.locator(sel('chat-msg')).count()}개)`);
+  await A.ctx.setOffline(false);
+  r.check(await waitFor(page.locator(sel('chat-msg', gapIds[54])), 30000), '이어지면 새 글이 뜬다');
+  r.check(
+    await waitFor(async () => {
+      if ((await more.count()) && (await more.isEnabled({ timeout: 500 }).catch(() => false))) await more.click().catch(() => {});
+      return (await page.locator(sel('chat-msg', gapIds[0])).count()) === 1;
+    }, 15000),
+    '위로 받으면 가운데 글까지 이어진다',
+  );
+
   r.section('■2 캡처 붙이기 · 첨부만 보내기');
   await pasteImage(page);
   r.check(await waitFor(page.locator(sel('chat-files', 1)), 8000), `캡처 Ctrl+V → 드라이브에 올려 붙임 (${google.uploads.length}번 올림)`);
@@ -457,12 +487,17 @@ try {
   await page.locator(sel('chat-new-start')).click();
   r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 3000), '시작 → 그 사람과의 1:1');
   r.check((await page.locator(sel('chat-status', 'new')).count()) === 1 && (await page.locator(sel('chat-empty', 'new')).count()) === 1, "방이 없으면 듣지 않고 '첫 글을 보내…'");
+  // 끊긴 채 보내도 방에 보인다 (P22-5 ■3 - 안 보이면 안 간 줄 알고 다시 쓴다)
+  await A.ctx.setOffline(true);
   await page.locator(sel('chat-input')).fill('새 1:1 첫 글');
   await page.locator(sel('chat-input')).press('Enter');
+  r.check(await waitFor(page.locator(`${sel('chat-mine', 'yes')}:has-text("새 1:1 첫 글")`), 3000), '끊긴 채 보낸 첫 글이 방에 보인다');
+  await A.ctx.setOffline(false);
   const dmDoc = await serverUntil(() => admin.get(`v5Dm/${PAIR}`), (d) => d?.lastText === '새 1:1 첫 글');
   r.check(dmDoc?.sid === SID && dmDoc?.members?.[uidA] === true && dmDoc?.members?.[uidB] === true, `첫 글이 방을 만든다 (sid ${dmDoc?.sid})`);
   r.check(await waitFor(page.locator(`${sel('chat-mine', 'yes')}:has-text("새 1:1 첫 글")`), 8000), '서버에 닿은 뒤 듣기 → 내 글');
   r.check((await page.locator(sel('chat-notice', 'denied')).count()) === 0, '볼 수 없음 없음');
+  r.check((await page.locator(`${sel('chat-mine', 'yes')}:has-text("새 1:1 첫 글")`).count()) === 1, '첫 글은 한 번만 보인다');
 
   r.section('■2 1:1 그룹 옮기기');
   await patchField(`v5Dm/${PAIR}`, 'sid', 'g_chatprobegone');

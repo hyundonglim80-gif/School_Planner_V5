@@ -7,6 +7,8 @@ import { showToast } from '../app/toast';
 
 /** 올리는 동안 또 놓았을 때 (칸마다 올리는 일은 한 번에 하나) */
 export const DROP_BUSY_TEXT = '파일을 올리는 중입니다. 끝난 뒤 다시 놓아 주세요.';
+/** 올리는 중 붙여 넣은 캡처 - 말없이 버리지 않는다 */
+export const PASTE_BUSY_TEXT = '파일을 올리는 중입니다. 끝난 뒤 다시 붙여 넣어 주세요.';
 
 let dragFromApp = false;
 

@@ -310,4 +310,16 @@ describe('대화 (에뮬레이터)', () => {
       expect(unread(b.uid)).not.toContain(roomKey(all()));
     });
   });
+
+  it('막힌 그룹 듣기를 다시 건다 - 막 만든 그룹 대화가 새로고침 없이 보인다 (P22-5 ■3)', async () => {
+    const x = await signInAs('x');
+    const stop = watchChatRooms(x.uid, [sid]);
+    try {
+      await new Promise((r) => setTimeout(r, 500)); // 아직 그룹 밖 - 듣기가 막힌다
+      await joinGroup(x, code);
+      await vi.waitFor(() => expect(useChatStore.getState().rooms[roomKey(all())]).toBeDefined(), { timeout: 15_000 });
+    } finally {
+      stop();
+    }
+  }, 30_000);
 });

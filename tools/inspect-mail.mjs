@@ -400,6 +400,19 @@ try {
   await page.waitForTimeout(1000);
   r.check((await notice.count()) === 0, '안내는 띄우지 않는다');
 
+  r.section('P22-5 ■3 ↗ 새 창 - 보던 탭 · 새 쪽지');
+  await page.locator(sel('mail-tab-btn', 'sent')).click();
+  await page.locator(sel('mail-window', 'sent')).waitFor({ timeout: 5000 });
+  const [pop] = await Promise.all([page.context().waitForEvent('page', { timeout: 10000 }), page.locator(`#side-column ${sel('popout-open')}`).click()]);
+  await pop.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+  r.check(await waitFor(pop.locator(sel('mail-window', 'sent')), 15000), '새 창 = 보던 보낸 쪽지 탭');
+  await pop.locator(sel('mail-tab-btn', 'in')).click();
+  await pop.locator(sel('mail-list', 'in')).waitFor({ timeout: 8000 });
+  await pop.waitForTimeout(1500);
+  const freshPop = await send(emB, uidB, '이점검', uidA, '새 창 보는 중 점검');
+  r.check(await waitFor(pop.locator(sel('mail-row', freshPop)), 8000), '새 창의 쪽지 창도 새 쪽지를 안다');
+  await pop.close();
+
   r.section('■3 계정 칸 · 단축키');
   await page.evaluate(() => window.sp5.closeAllWindows());
   await page.locator(sel('account')).click();

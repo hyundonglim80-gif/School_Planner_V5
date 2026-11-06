@@ -60,6 +60,9 @@ const msgsOf = (ref: ChatRoomRef) => {
   return collection(db, first, ...rest);
 };
 const readsDoc = (uid: string) => doc(db, 'v5ChatReads', uid);
+/** 막힌 그룹 듣기를 다시 거는 수 · 간격(이것의 1·2·3배) - 막 만든 그룹은 규칙이 그룹 문서를 아직 못 본다(쓰기보다 읽기가 먼저 나간다) */
+const GROUP_RETRIES = 3;
+const GROUP_RETRY_MS = 3000;
 // 방·읽음 문서의 서버 시각은 막 쓴 동안 기기 짐작으로(읽음을 적은 순간 안 읽음이 사라지게 - 기본값 null이면 읽음 칸이 없는 것처럼 보인다)
 const EST = { serverTimestamps: 'estimate' } as const;
 
@@ -69,9 +72,9 @@ export const newRoomId = () => `r_${newId()}`;
 /**
  * 보내기 - 글 + 방 미리 보기를 한 묶음(규칙이 서로 본다). 돌려주는 것 = 글 id.
  * 1:1은 부르는 쪽이 보내기 직전에 함께 든 그룹(sid)을 다시 골라 넘긴다(그 그룹을 나갔으면 다른 그룹으로 옮긴다).
+ * id = 듣기 전에 방에 먼저 그린 글의 id(새 방 - 서버 글이 오면 같은 id로 바뀐다).
  */
-export async function sendChat(t: ChatTarget, m: OutgoingChat): Promise<string> {
-  const id = newId();
+export async function sendChat(t: ChatTarget, m: OutgoingChat, id = newId()): Promise<string> {
   const ref = refOf(t);
   const { msg, room, merge } = chatSendDocs(t, m, id, serverTimestamp(), Timestamp.fromMillis(chatExpireAt(Date.now())));
   const b = writeBatch(db);
@@ -230,39 +233,58 @@ export function watchChatRooms(uid: string, sids: readonly string[], onNew?: (ro
     }
     if (!fromCache) primed.add(source);
   };
+  const groupStops = new Map<string, () => void>();
+  const tries = new Map<string, number>();
+  const timers = new Set<ReturnType<typeof setTimeout>>();
   const dropGroup = (sid: string, e: unknown) => {
+    const stop = groupStops.get(sid);
+    if (!stop) return; // 두 듣기가 함께 막힌다 - 한 번만
     console.warn('[chat] 그룹 대화를 받지 못했습니다 (그룹을 나갔거나 내보내졌을 수 있습니다).', e);
+    stop();
+    groupStops.delete(sid);
     groupAll.delete(sid);
     groupRooms.delete(sid);
     publish();
+    // 잠시 뒤 다시 듣는다 - 막 만든 그룹이면 그때는 들린다. 정말 나갔으면 또 막혀 몇 번 뒤 그친다
+    const n = tries.get(sid) ?? 0;
+    if (n >= GROUP_RETRIES) return;
+    tries.set(sid, n + 1);
+    const t = setTimeout(() => {
+      timers.delete(t);
+      listenGroup(sid);
+    }, GROUP_RETRY_MS * (n + 1));
+    timers.add(t);
+  };
+  const listenGroup = (sid: string) => {
+    const allRef: ChatRoomRef = { kind: 'all', sid, roomId: 'all' };
+    const stopAll = onSnapshot(
+      roomDoc(allRef),
+      (snap) => {
+        if (snap.exists()) groupAll.set(sid, readChatRoom(allRef, snap.data(EST)));
+        else groupAll.delete(sid);
+        notice(`all:${sid}`, snap.exists() ? [groupAll.get(sid)!] : [], snap.metadata.fromCache);
+        publish();
+      },
+      (e) => dropGroup(sid, e),
+    );
+    const stopRooms = onSnapshot(
+      query(collection(db, 'v5Chat', sid, 'chatRooms'), where(`members.${uid}`, '==', true)),
+      (snap) => {
+        const list = snap.docs.map((d) => readChatRoom({ kind: 'room', sid, roomId: d.id }, d.data(EST)));
+        groupRooms.set(sid, list);
+        notice(`rooms:${sid}`, list, snap.metadata.fromCache);
+        publish();
+      },
+      (e) => dropGroup(sid, e),
+    );
+    groupStops.set(sid, () => {
+      stopAll();
+      stopRooms();
+    });
   };
 
   const stops: (() => void)[] = [];
-  for (const sid of sids) {
-    const allRef: ChatRoomRef = { kind: 'all', sid, roomId: 'all' };
-    stops.push(
-      onSnapshot(
-        roomDoc(allRef),
-        (snap) => {
-          if (snap.exists()) groupAll.set(sid, readChatRoom(allRef, snap.data(EST)));
-          else groupAll.delete(sid);
-          notice(`all:${sid}`, snap.exists() ? [groupAll.get(sid)!] : [], snap.metadata.fromCache);
-          publish();
-        },
-        (e) => dropGroup(sid, e),
-      ),
-      onSnapshot(
-        query(collection(db, 'v5Chat', sid, 'chatRooms'), where(`members.${uid}`, '==', true)),
-        (snap) => {
-          const list = snap.docs.map((d) => readChatRoom({ kind: 'room', sid, roomId: d.id }, d.data(EST)));
-          groupRooms.set(sid, list);
-          notice(`rooms:${sid}`, list, snap.metadata.fromCache);
-          publish();
-        },
-        (e) => dropGroup(sid, e),
-      ),
-    );
-  }
+  for (const sid of sids) listenGroup(sid);
   stops.push(
     onSnapshot(
       query(collection(db, 'v5Dm'), where(`members.${uid}`, '==', true)),
@@ -289,6 +311,8 @@ export function watchChatRooms(uid: string, sids: readonly string[], onNew?: (ro
     ),
   );
   return () => {
+    for (const t of timers) clearTimeout(t);
+    for (const s of groupStops.values()) s();
     for (const s of stops) s();
     useChatStore.setState({ rooms: {}, reads: {}, ready: false });
   };

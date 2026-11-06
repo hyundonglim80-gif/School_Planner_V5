@@ -316,6 +316,12 @@ export function mergeMsgs(a: readonly ChatMsg[], b: readonly ChatMsg[]): ChatMsg
   return [...byId.values()].sort((x, y) => at(x) - at(y) || x.id.localeCompare(y.id));
 }
 
+/** 듣기가 건너뛰었나 - 꽉 찬 새 쪽이 앞 쪽과 겹치지 않는다(끊긴 사이 글이 한 쪽을 넘었다). 앞 글과의 사이가 비어 있다 */
+export function pageSkipped(prev: readonly ChatMsg[], next: readonly ChatMsg[]): boolean {
+  const seen = prev.filter((m) => m.at !== null);
+  return next.length >= CHAT_PAGE && seen.length > 0 && !seen.some((m) => next.some((x) => x.id === m.id));
+}
+
 /** 1:1 내 글 옆 '1' - 상대가 아직 안 읽었다(그룹 방은 읽은 사람 수를 세지 않는다) */
 export function unseenByOther(room: ChatRoom, me: string, msg: ChatMsg): boolean {
   if (room.kind !== 'dm' || msg.from !== me || msg.deleted) return false;

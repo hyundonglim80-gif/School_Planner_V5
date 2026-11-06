@@ -158,6 +158,36 @@ describe('대화 글 칸', () => {
     await waitFor(() => expect(input().value).toBe('막힌 글'));
   });
 
+  it('첨부를 올리는 중 방을 떠나도 다음에 열면 칸에 있다', async () => {
+    let finish: (added: never[]) => void = () => {};
+    const file = { url: 'https://drive/a', name: 'a.txt' };
+    vi.mocked(uploadAttachments).mockImplementationOnce(() => new Promise((r) => (finish = r as never)));
+    const ref = createRef<ChatComposerHandle>();
+    const first = render(<ChatComposer ref={ref} roomKey={KEY} onSend={vi.fn(async () => true)} />);
+    act(() => ref.current!.attach([new File(['a'], 'a.txt')]));
+    first.unmount();
+    await act(async () => finish([file] as never[]));
+    await settle();
+    render(<ChatComposer roomKey={KEY} onSend={vi.fn(async () => true)} />);
+    await waitFor(() => expect(document.querySelector('[data-chat-file="a.txt"]')).not.toBeNull());
+  });
+
+  it('올리는 중 캡처를 붙여 넣으면 버리지 않고 안내한다', async () => {
+    let finish: (added: []) => void = () => {};
+    vi.mocked(uploadAttachments).mockClear();
+    vi.mocked(uploadAttachments).mockImplementationOnce(() => new Promise((r) => (finish = r)));
+    vi.mocked(showToast).mockClear();
+    vi.mocked(extractImageFiles).mockReturnValue([new File(['a'], 'a.png')]);
+    render(<ChatComposer roomKey={KEY} onSend={vi.fn(async () => true)} />);
+    fireEvent.paste(input(), { clipboardData: { items: [] } });
+    expect(uploadAttachments).toHaveBeenCalledTimes(1);
+    fireEvent.paste(input(), { clipboardData: { items: [] } });
+    expect(uploadAttachments).toHaveBeenCalledTimes(1);
+    expect(showToast).toHaveBeenCalledWith(expect.stringContaining('올리는 중'));
+    vi.mocked(extractImageFiles).mockReturnValue([]);
+    await act(async () => finish([]));
+  });
+
   it('쓰던 글이 남아 있으면 묻지 않고 칸에 채운다 · 손으로 다 지우면 보관도 지운다', async () => {
     await writeDraft(UID, `chat:${KEY}`, { text: '쓰던 글', attachments: [] });
     render(<ChatComposer roomKey={KEY} onSend={vi.fn(async () => true)} />);

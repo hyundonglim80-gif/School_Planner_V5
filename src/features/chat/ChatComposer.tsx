@@ -15,7 +15,7 @@ import { useSession } from '../../data/session';
 import type { Attachment } from '../../data/types';
 import { CHAT_LIMITS, chatTextError } from '../../domain/chat';
 import { isImageAttachment } from '../../domain/attachments';
-import { DROP_BUSY_TEXT } from '../../ui/fileDrop';
+import { DROP_BUSY_TEXT, PASTE_BUSY_TEXT } from '../../ui/fileDrop';
 import { extractImageFiles, pastedTable, uploadAttachments } from '../notes/attach';
 import { holdUnsent, takeUnsent } from './unsent';
 
@@ -129,7 +129,12 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
     setUploading(pasted ? 'paste' : 'files');
     try {
       const added = await uploadAttachments(picked, pasted);
-      if (added.length > 0) setFiles((prev) => [...prev, ...added]);
+      if (added.length === 0) return;
+      // 올리는 동안 방을 떠났다 - 붙일 칸이 없으니 남겨 두고 다음에 열면 칸에
+      if (closed.current) {
+        if (uid) holdUnsent(uid, key, { text: '', attachments: added })(true);
+        showToast('📎 올린 첨부는 그 방을 다시 열면 글 칸에 있습니다.', 4000);
+      } else setFiles((prev) => [...prev, ...added]);
     } finally {
       setUploading(null);
     }
@@ -156,6 +161,7 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
     if (images.length === 0) return;
     e.preventDefault();
     if (noAttach) showToast('이 칸에는 그림을 붙일 수 없습니다. 글로 적어 주세요.', 4000);
+    else if (uploading) showToast(PASTE_BUSY_TEXT);
     else void attach(images, true);
   };
 

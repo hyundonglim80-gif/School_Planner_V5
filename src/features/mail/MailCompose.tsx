@@ -16,7 +16,7 @@ import type { Attachment } from '../../data/types';
 import { MAIL_LIMITS, mailTextError, mailToAll, recipientsOf } from '../../domain/mail';
 import DraftOffer from '../../ui/DraftOffer';
 import FileDropCover from '../../ui/FileDropCover';
-import { DROP_BUSY_TEXT, useFileDrop } from '../../ui/fileDrop';
+import { DROP_BUSY_TEXT, PASTE_BUSY_TEXT, useFileDrop } from '../../ui/fileDrop';
 import { extractImageFiles, pastedTable, uploadAttachments } from '../notes/attach';
 import SharedAttachments from '../notes/SharedAttachments';
 
@@ -127,7 +127,8 @@ export default function MailCompose({ ask, onSent }: { ask?: ComposeAsk; onSent:
     const images = extractImageFiles(e.clipboardData);
     if (images.length === 0) return;
     e.preventDefault();
-    void attach(images, true);
+    if (uploading) showToast(PASTE_BUSY_TEXT);
+    else void attach(images, true);
   };
 
   const send = async () => {

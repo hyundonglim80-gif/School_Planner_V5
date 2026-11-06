@@ -20,6 +20,7 @@ import {
   mergeMsgs,
   msgsPath,
   myReadOf,
+  pageSkipped,
   parseRoomKey,
   readChatMsg,
   readChatRoom,
@@ -324,5 +325,17 @@ describe('?chat= 주소', () => {
   it('지우기 - 다른 값과 # 뒤는 둔다', () => {
     expect(stripChatParam('https://a.test/?chat=g_G~all&as=1#/day/2026-11-03')).toBe('/?as=1#/day/2026-11-03');
     expect(stripChatParam('https://a.test/?chat=d_a_b')).toBe('/');
+  });
+
+});
+
+describe('듣기 건너뜀 (P22-5 ■3)', () => {
+  it('듣기가 건너뛰었나 - 꽉 찬 새 쪽이 앞 쪽과 겹치지 않으면 사이가 빈다', () => {
+    const page = (from: number, n: number) => Array.from({ length: n }, (_, i) => ({ id: `m${from + i}`, from: 'b', fromName: '', text: '', attachments: [], at: from + i, deleted: false }));
+    expect(pageSkipped(page(0, 50), page(60, 50))).toBe(true);
+    expect(pageSkipped(page(0, 50), page(49, 50))).toBe(false);
+    expect(pageSkipped(page(0, 50), page(60, 49))).toBe(false);
+    expect(pageSkipped([], page(60, 50))).toBe(false);
+    expect(pageSkipped([{ ...page(0, 1)[0], at: null }], page(60, 50))).toBe(false);
   });
 });

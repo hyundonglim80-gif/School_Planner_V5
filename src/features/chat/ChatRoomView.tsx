@@ -23,6 +23,7 @@ import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { useShownWindowPick } from '../../app/windows';
 import { deleteChatMsg, loadOlderMsgs, markRoomRead, sendChat, setRoomMuted, watchRoomMsgs, type ChatPage } from '../../data/chat';
 import { useChatStore } from '../../data/chatStore';
+import { newId } from '../../data/id';
 import { useSession } from '../../data/session';
 import type { GroupSpace } from '../../data/spaceChoice';
 import type { Attachment } from '../../data/types';
@@ -34,6 +35,7 @@ import {
   isRoomUnread,
   mergeMsgs,
   myReadOf,
+  pageSkipped,
   parseRoomKey,
   unseenByOther,
   type ChatMsg,
@@ -121,15 +123,18 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
     if (!ref || !listen) return;
     const onPage = (p: ChatPage) => {
       // 듣기 밖으로 밀린 글(가장 오래된 것보다 앞)은 따로 둔다 - 듣기에서 그냥 빠진 글은 버린다
+      // 끊긴 사이 글이 한 쪽을 넘으면 앞 글과의 사이가 빈다 - 앞 글을 버리고 이 쪽부터 다시 받아 올라간다(가운데가 말없이 비지 않게)
+      const skipped = !p.offline && pageSkipped(pageRef.current, p.msgs);
       const oldest = p.msgs.find((m) => m.at !== null)?.at;
       const pushed =
-        p.msgs.length >= CHAT_PAGE && oldest !== undefined && oldest !== null
+        !skipped && p.msgs.length >= CHAT_PAGE && oldest !== undefined && oldest !== null
           ? pageRef.current.filter((m) => m.at !== null && m.at <= oldest && !p.msgs.some((x) => x.id === m.id))
           : [];
       pageRef.current = p.msgs;
-      if (pushed.length) setKept((k) => mergeMsgs(k, pushed));
+      if (skipped) setKept([]);
+      else if (pushed.length) setKept((k) => mergeMsgs(k, pushed));
       setPage(p.msgs);
-      if (!p.offline) setCursor((c) => (c === undefined ? p.cursor : c));
+      if (!p.offline) setCursor((c) => (c === undefined || skipped ? p.cursor : c));
       setStatus((s) => (!p.offline ? 'ok' : s === 'ok' ? 'ok' : 'offline'));
     };
     return watchRoomMsgs(ref, onPage, (e) => {
@@ -267,11 +272,17 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
       target = ref.kind === 'all' ? { kind: 'all', sid: ref.sid } : { kind: 'room', sid: ref.sid, roomId: ref.roomId, create: make };
     }
     const fromName = people[target.sid]?.[uid] || user.displayName || user.email || '선생님';
+    // 아직 듣지 않는 새 방은 글이 방에 오지 않는다 - 끊긴 동안 안 보이면 안 간 줄 알고 다시 쓴다. 먼저 그려 둔다('보내는 중…', 서버 글이 오면 같은 id로 바뀐다)
+    const id = newId();
+    const drawn = !listen;
+    if (drawn) setKept((k) => mergeMsgs(k, [{ id, from: uid, fromName, text, attachments, at: null, deleted: false }]));
     try {
-      await sendChat(target, { from: uid, fromName, text, attachments });
+      await sendChat(target, { from: uid, fromName, text, attachments }, id);
       if (isNew && !firstSent) setFirstSent(true);
+      if (drawn) setKept((k) => k.map((m) => (m.id === id ? { ...m, at: Date.now() } : m)));
       return true;
     } catch (e) {
+      if (drawn) setKept((k) => k.filter((m) => m.id !== id));
       // 방을 만들지 못했으면 다음 글이 다시 만든다
       if (target.kind === 'room' && target.create) creating.current = false;
       // 안내는 sendChat이 (failWithToast) - 글은 칸에 되돌린다(ChatComposer)

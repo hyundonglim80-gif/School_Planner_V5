@@ -231,7 +231,7 @@ function ChatList({
   );
 }
 
-export default function ChatWindow({ params, close, raise }: WindowProps<ChatParams | undefined>) {
+export default function ChatWindow({ params, close, raise, setParams }: WindowProps<ChatParams | undefined>) {
   useWatchInPopout();
   const uid = useSession((s) => s.user?.uid ?? null);
   const groups = useMySpaces((s) => s.groups);
@@ -253,7 +253,7 @@ export default function ChatWindow({ params, close, raise }: WindowProps<ChatPar
   const [asked, setAsked] = useState(params);
   if (params !== asked) {
     setAsked(params);
-    if (params?.room) openRoom(params.room, params.sid);
+    if (params?.room && params.room !== open) openRoom(params.room, params.sid);
   }
   // 계정이 바뀌면 목록으로 (창 목록은 로그아웃에도 남는다)
   const [shownFor, setShownFor] = useState(uid);
@@ -261,6 +261,13 @@ export default function ChatWindow({ params, close, raise }: WindowProps<ChatPar
     setShownFor(uid);
     setOpen(null);
   }
+
+  // 보는 방을 창 값에 적는다 - ↗ 새 창은 창 값으로 연다(P22-5 ■3). 방 문서가 없는 새 방은 새 창이 열지 못해 적지 않는다(새 창 = 목록)
+  const shownRoom = open && room ? open : null;
+  useEffect(() => {
+    setParams(shownRoom ? { room: shownRoom, sid: hint } : undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 보는 방이 바뀔 때만
+  }, [shownRoom]);
 
   // 새 글 안내가 보는 것 - 지금 그린 방(목록이면 '')
   useEffect(() => {
