@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   buildReport,
+  cspViolationText,
   DAY_MAX,
   errorKey,
   groupErrors,
@@ -172,5 +173,19 @@ describe('groupErrors - 같은 문장끼리', () => {
     expect(a.builds).toEqual(['old', CTX.build]);
     expect(a.devices).toEqual(['mobile·앱', 'pc']);
     expect(a.ids.sort()).toEqual(['a', 'c', 'd']);
+  });
+});
+
+describe('cspViolationText', () => {
+  it('지시와 출처만 - 주소의 경로·검색어에는 글이 들 수 있어 싣지 않는다', () => {
+    expect(cspViolationText({ effectiveDirective: 'img-src', blockedURI: 'https://example.com/학생/사진.png?token=abc' })).toBe('[CSP] img-src https://example.com');
+  });
+  it('주소가 아닌 것은 그 이름 그대로 (inline·eval), data·blob 주소는 종류만', () => {
+    expect(cspViolationText({ effectiveDirective: 'script-src-elem', blockedURI: 'inline' })).toBe('[CSP] script-src-elem inline');
+    expect(cspViolationText({ effectiveDirective: 'img-src', blockedURI: 'data:image/png;base64,AAAA' })).toBe('[CSP] img-src data');
+  });
+  it('확장 프로그램이 낸 것은 앱 일이 아니다 - 크롬은 주소 대신 이름만 주기도 한다', () => {
+    expect(cspViolationText({ effectiveDirective: 'img-src', blockedURI: 'chrome-extension' })).toBeNull();
+    expect(cspViolationText({ effectiveDirective: 'script-src', blockedURI: 'inline', sourceFile: 'chrome-extension://abc/c.js' })).toBeNull();
   });
 });

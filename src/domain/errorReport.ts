@@ -87,6 +87,22 @@ export function isNoise(e: { name: string; message: string; stack: string; sourc
   return looksLikeStaleChunk(e.message);
 }
 
+/**
+ * CSP 위반 한 건 → 알릴 문장 (P22-6). Report-Only 위반은 그 사람 콘솔에만 남아, 막기로 바꿔도 되는지 보려면 모아야 한다.
+ * 주소는 출처만(경로·검색어에 글이 들 수 있다). 확장 프로그램이 낸 것은 앱 일이 아니라 null - 크롬은 주소 대신 이름만 주기도 한다.
+ */
+export function cspViolationText(v: { effectiveDirective: string; blockedURI: string; sourceFile?: string | null }): string | null {
+  if (/(?:chrome|moz|safari(?:-web)?)-extension/.test(`${v.blockedURI}\n${v.sourceFile ?? ''}`)) return null;
+  let what = v.blockedURI;
+  try {
+    const url = new URL(v.blockedURI);
+    what = url.origin === 'null' ? url.protocol.slice(0, -1) : url.origin;
+  } catch {
+    /* inline·eval은 주소가 아니다 */
+  }
+  return `[CSP] ${v.effectiveDirective} ${what}`;
+}
+
 /** 같은 오류인지 가르는 열쇠: 종류 + 문장 + 스택 첫 자리 */
 export function errorKey(kind: ErrorKind, message: string, stack: string): string {
   const frame = stack.split('\n').find((l) => /:\d+/.test(l)) ?? '';

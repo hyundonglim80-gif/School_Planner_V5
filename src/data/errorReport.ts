@@ -13,6 +13,7 @@ import { setErrorToastReporter } from '../app/toast';
 import { todayStr } from '../domain/dateUtils';
 import {
   buildReport,
+  cspViolationText,
   describeError,
   errorKey,
   isNoise,
@@ -122,6 +123,10 @@ export function startErrorReports() {
   });
   window.addEventListener('unhandledrejection', (ev) => {
     void reportError('rejection', ev.reason);
+  });
+  document.addEventListener('securitypolicyviolation', (ev) => {
+    const text = cspViolationText(ev);
+    if (text) void reportError('error', new Error(text), { source: ev.sourceFile });
   });
   setErrorToastReporter((message, error) => void reportError('toast', error, { toastText: message }));
 }

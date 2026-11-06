@@ -9,6 +9,8 @@ const hostingRules: { source?: string; headers: { key: string; value: string }[]
   readFileSync(new URL('./firebase.json', import.meta.url), 'utf8'),
 ).hosting.headers
 const SECURITY_HEADERS = Object.fromEntries((hostingRules.find((rule) => rule.source === '**')?.headers ?? []).map((h) => [h.key, h.value]))
+// CSP는 미리 보기(빌드 파일)만 - 개발 서버는 빠른 고침 스크립트·웹소켓이 위반으로 콘솔을 채운다.
+const DEV_HEADERS = Object.fromEntries(Object.entries(SECURITY_HEADERS).filter(([key]) => !key.startsWith('Content-Security-Policy')))
 
 // 지금 브라우저가 어느 빌드를 돌리고 있는지 화면에서 확인할 수 있게 한다(V4에서 가져온 규칙 -
 // 이것이 없을 때 고친 것이 그 기기에서 돌고 있는지 몰라 '고쳤는데 그대로'를 여러 번 주고받았다).
@@ -32,6 +34,6 @@ export default defineConfig(({ mode }) => ({
   // 점(.)으로 시작하는 기본 자리(.vite/)는 Firebase Hosting이 올리지 않아 맨 위에 둔다.
   build: { manifest: 'asset-manifest.json' },
   // V4 개발 서버(5173)·미리 보기(4173)와 같이 켜 둘 수 있게 번호를 비킨다.
-  server: { port: 5175, strictPort: true, headers: SECURITY_HEADERS },
+  server: { port: 5175, strictPort: true, headers: DEV_HEADERS },
   preview: { port: 4175, strictPort: true, headers: SECURITY_HEADERS },
 }))

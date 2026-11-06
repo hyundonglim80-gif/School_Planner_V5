@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**다음 = P22-6 ■2**(운영 안전망 - 6장 'P22' 절, 이 PC에서, ■1 끝). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**다음 = P22-6 ■3**(운영 안전망 - 6장 'P22' 절, 이 PC에서, ■1·■2 끝). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P22-5 끝**(11-06 - 대화·쪽지·단축키 잔버그 + 다시 확인 7건). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
 **P22-4 끝**(11-06 - 3월 학급 · 자정 넘김 · 되살리기 공간 · 공용 PC). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
 **P23-3 끝 = P23 단계 끝**(11-06 - 답 알림·카드 '새 답', 함수 배포 끝). `public/sw.js`를 고쳐 설치 앱은 늦게 받는다. 진짜 요청으로는 아직 돌지 않았다 - 다음 🤖 요청이 첫 확인.
@@ -1108,6 +1108,8 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 - **P22-5 서버가 받기 전 글 = 쓰던 글 보관과 열쇠를 나눈다**(권장안 - 계획은 '보관을 서버가 받은 뒤 지운다'): 글 칸은 보내면 비고 대화는 잇달아 보내므로, 한 열쇠에 두면 뒤 글이 앞 글을 덮는다. 끊긴 채 방을 떠났다 돌아오면 '보내는 중…'인 글이 칸에도 채워지므로 이 탭에서 기다리는 글은 돌려주지 않는다.
 - **P22-5 못 주는 키도 그 기능의 기본 키는 받는다**(권장안): 되돌리기 기본이 Ctrl + Z라 일괄로 막으면 처음 키로 돌아가지 못한다. Ctrl + Shift 조합은 막지 않는다(계획 범위 - 브라우저가 가져가는 것이 있으나 설치 앱에서는 앱까지 온다).
 - **P22 CSP는 Report-Only부터, App Check는 막지 않고 모니터만**(권장안): 틀린 CSP·App Check는 앱을 통째로 멈춘다 - 쉬운 헤더는 바로 넣고 둘은 본 뒤 사용자에게 묻는다. 같은 프로젝트의 V3·V4가 끊기는 것도 그때 함께 본다.
+- **P22-6 CSP 위반 = 오류 보고(`v5Errors`)로 모은다**(권장안 - 계획에 없던 것): 보고 주소 없는 Report-Only 위반은 그 사람 콘솔에만 남아, 며칠을 켜 두어도 막아도 되는지 알 길이 없다. 위험한 길(구글 로그인 창·사진 고르기·드라이브 올리기)은 에뮬레이터로 볼 수 없어 더 그렇다. 종류는 있는 `'error'`에 글 앞 `[CSP]`로 - 규칙을 바꾸지 않아 배포가 없다. 주소는 출처만, 확장 프로그램 것은 버리고, 세션 10건·하루 30건 상한은 그대로다.
+- **P22-6 CSP 허용 범위**(권장안): `script-src`는 해시로 엄격히(앱에 `eval`·`innerHTML` 쓰기·`dangerouslySetInnerHTML`이 없다) · `style-src`는 `'unsafe-inline'`을 둔다(사진 고르기 같은 구글 부품이 스타일을 넣을 수 있는데 에뮬레이터로 확인하지 못했다, 스크립트보다 위험이 낮다 - 운영 보고를 보고 좁힐 수 있다) · 인라인 스크립트는 파일로 빼지 않고 해시 - 빼면 첫 화면 전에 요청 하나가 늘고 옛 서비스 워커에 없는 파일이 된다.
 - **P22 main은 강제 푸시·지우기만 막는다**(권장안): 검사 필수로 묶으면 자동 요청의 '확인 뒤 바로 합치기'가 막힌다(`claude-request.yml`).
 - **P23 차례 = P22-3 다음, P22-4 앞**(권장안 - 11-04 사용자 'Claude요청 메모 안에서 채팅처럼 이어서 요청 - 계획에 추가'): 글·공간을 잃는 오류(P22-2·3)가 새 기능보다 먼저이고, P22-2가 같은 `NotePanel`을 고친다. 그 뒤로는 자주 쓰는 기능이라 P22-5~7보다 쓸모가 크고, P22-4 기한(2027-02-15)까지 여유가 있다.
 - **P23 한 번 주고받기 = 이슈 하나 - 같은 이슈에 댓글로 잇지 않는다**(권장안): 줄 세우기·진행 셈·`Closes`·브랜치 이름이 모두 '이슈 하나 = 실행 하나'다. 이슈를 다시 열어 쓰면 라벨·결과 댓글이 어느 회차 것인지 가려야 한다. 맥락은 새 이슈 본문에 앞선 대화를 넣어 건넨다 - 워크플로가 본문을 이미 프롬프트에 넣고, 공개 이슈의 남 댓글은 프롬프트에 들어가지 않는 것도 그대로다.
@@ -2992,7 +2994,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 **먼저 읽을 것**: 5장 'P22' · `firebase.json` hosting · `index.html`(인라인 스크립트) · `.github/workflows/ci.yml`·`claude-request.yml`(막는 목록) · `docs/CLAUDE-REQUEST.md` · `docs/OPS.md` · `data/firebase.ts` `GOOGLE_SCOPES`.
 - [x] ■1 쉬운 보안 헤더(`firebase.json`): `X-Content-Type-Options: nosniff` · `Referrer-Policy: strict-origin-when-cross-origin` · `X-Frame-Options: SAMEORIGIN` · `Permissions-Policy` · 구글 로그인 팝업·↗ 새 창·설치 앱이 그대로인지 · 배포 뒤 `curl -I`.
   → 11-06 `firebase.json` `source: **` 넷(`Permissions-Policy`는 앱이 쓰지 않는 camera·microphone·geolocation·payment·usb만 막는다 - 클립보드·공유·알림은 그대로) · `vite.config`가 그 값을 읽어 개발 서버·미리 보기도 같은 헤더(크롬 점검이 그 아래에서 돈다) · `tools/inspect-headers.mjs`(`SITE=`로 운영도) · login·popout·attach·pwa 통과 · 단위 3141.
-- [ ] ■2 CSP는 `Content-Security-Policy-Report-Only`로만: 허용 주소 표(구글·Firebase·드라이브 그림·나이스) · 인라인 스크립트 해시 · 콘솔 위반을 점검으로 센다. 막기로 바꾸는 것은 며칠 뒤 사용자에게 묻는다.
+- [x] ■2 CSP는 `Content-Security-Policy-Report-Only`로만: 허용 주소 표(구글·Firebase·드라이브 그림·나이스) · 인라인 스크립트 해시 · 콘솔 위반을 점검으로 센다. 막기로 바꾸는 것은 며칠 뒤 사용자에게 묻는다.
+  → 11-06 `firebase.json` · 인라인 스크립트 해시(`securityHeaders.test`가 지킨다, `.gitattributes`로 `index.html`은 LF) · **위반을 오류 보고로 모은다**(계획에 없던 것 - 5장 'P22-6 CSP 위반') · `inspect-headers` 크롬: 외부 주소 넷으로 요청이 나간 것을 보고 위반 0건, 일부러 넣은 그림·인라인 스크립트는 잡힌다, 운영 주소면 첫 화면 · 개발 서버는 CSP를 내지 않는다 · 단위 3147. **로그인 창·사진 고르기·드라이브 올리기는 에뮬레이터로 볼 수 없다** - 운영 '[CSP] …' 보고를 본 뒤 막기를 묻는다.
 - [ ] ■3 CI에 규칙·자료 시험: `setup-java` + `firebase emulators:exec --only auth,firestore`로 `check:rules`·`test:data` - 시간이 늘어나는 만큼 main CI·자동 요청이 느려지는지 본다.
 - [ ] ■4 자동 요청 막는 목록에 `package.json`·`package-lock.json`·`public/sw.js`·`vite.config.ts`·`index.html` 더하기(`.github`는 PC에서만 고친다) + `docs/CLAUDE-REQUEST.md`.
 - [ ] ■5 쓰지 않는 구글 권한(`auth/tasks`) 빼기 - 이미 받은 토큰·동의 창 · 루트 audit high 4건은 `@grpc/grpc-js`(Node 쪽 - 화면에 실리지 않는다) - `overrides`로 되는지만 보고 `--force`는 하지 않는다(firebase가 9로 내려간다).

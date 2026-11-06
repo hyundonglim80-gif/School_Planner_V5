@@ -107,6 +107,17 @@ describe('startErrorReports', () => {
     expect(sent.docs).toHaveLength(0);
   });
 
+  it('CSP 위반은 출처만 실어 알린다 - Report-Only 위반은 그 사람 콘솔에만 남는다', async () => {
+    const violation = (blockedURI: string, sourceFile = '') => Object.assign(new Event('securitypolicyviolation'), { effectiveDirective: 'img-src', blockedURI, sourceFile });
+    document.dispatchEvent(violation('https://example.com/a.png?token=abc'));
+    await vi.waitFor(() => expect(sent.docs).toHaveLength(1));
+    expect(sent.docs[0]).toMatchObject({ kind: 'error', message: '[CSP] img-src https://example.com' });
+    expect(JSON.stringify(sent.docs[0])).not.toContain('token');
+    document.dispatchEvent(violation('chrome-extension'));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(sent.docs).toHaveLength(1);
+  });
+
   it("오류를 넘긴 안내만 'toast'로 - 안내 글 + 오류 이름·코드, 입력 확인 안내는 보내지 않는다", async () => {
     showErrorToast("'우리반.csv'에서 차시를 찾지 못했습니다.");
     showErrorToast('메모를 저장하지 못했습니다.', Object.assign(new Error('Quota 김철수'), { name: 'FirebaseError', code: 'resource-exhausted' }));
