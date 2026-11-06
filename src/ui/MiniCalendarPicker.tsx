@@ -157,6 +157,7 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
       </button>
 
       {isOpen && (
+        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 달력 판 - 바깥 누르기로 닫히지 않게 막기만(날짜는 단추) (P22-7)
         <div
           ref={popoverRef}
           data-date-picker-popover

@@ -20,6 +20,7 @@ import ClaudeRequestNote from './ClaudeRequestNote';
 import { ownTitle } from '../../domain/noteTitle';
 import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
+import { pressKeys } from '../../ui/pressKeys';
 
 export interface EntryCardProps {
   item: ItemDoc;
@@ -85,6 +86,9 @@ export default function EntryCard(props: EntryCardProps) {
   return (
     <div
       data-entry-card={item.id}
+      role="button"
+      tabIndex={0}
+      onKeyDown={pressKeys}
       data-entry-kind={item.date ? 'journal' : 'memo'}
       data-entry-done={done ? '1' : '0'}
       data-entry-favorite={favorite ? '1' : '0'}

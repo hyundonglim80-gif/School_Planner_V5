@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P22-7 하는 중**(처음 쓰는 사람·키보드 - 6장 'P22' 절, 클라우드 세션 브랜치 `claude/admiring-pasteur-n1faq1`). ■0~■3 끝, 다음 = ■4. 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**P22-7 하는 중**(처음 쓰는 사람·키보드 - 6장 'P22' 절, 클라우드 세션 브랜치 `claude/admiring-pasteur-n1faq1`). ■0~■4 끝, 다음 = ■5(설명서·세션·단계 끝 정리). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P22-6 끝**(11-06 - 보안 헤더·CSP 지켜보기 · CI 규칙·자료 시험 · 자동 요청 막는 목록 · 복원 연습 · main 보호·Dependabot, App Check는 하지 않기로). 규칙·함수 배포 없음. CSP를 막기로 바꿀지는 운영 '[CSP] …' 보고를 며칠 본 뒤 사용자에게 묻는다.
 **P22-5 끝**(11-06 - 대화·쪽지·단축키 잔버그 + 다시 확인 7건). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
 **P22-4 끝**(11-06 - 3월 학급 · 자정 넘김 · 되살리기 공간 · 공용 PC). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
@@ -3037,7 +3037,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   → 11-06: 휴대폰은 ⚙️ = 첫 줄 오른쪽 끝, '지금' 안내는 그 아래 한 줄(`order`) · 넓으면 그대로 · inspect-mobile 넷(고치기 전 휴대폰 둘이 틀림을 봄) · seed가 `firstStepsDone`을 닫아 둔다(점검 계정에 띠가 떠 화면을 밀었다).
 - [x] ■3 창 초점: 가운데 창을 열면 안으로 옮기고 닫으면 연 단추로 돌아온다, `aria-modal` · 쓰는 칸 `autoFocus`는 그대로 · 오른쪽 칸은 화면을 같이 쓰니 가두지 않는다 · 시험.
   → 11-06: `ui/useDialogFocus` - PopupFrame 가운데·휴대폰 배너(쓰는 칸·오른쪽 줄·새 창 가득은 아님). Tab 가두기는 문서에서 들어 창 안 칸이 Tab을 스스로 쓰면(표 칸) 그쪽이 먼저 · 연 단추는 열리는 그 그리기에서 잡는다(autoFocus보다 먼저) · 단위 5 · inspect-shell 가운데 창 초점 넷 · inspect-popout.
-- [ ] ■4 달력 칸·카드 키보드: 월간·주간·년간 칸과 ■0 표에 `tabIndex`·Enter·Space(끌기·클릭은 그대로) · `.oxlintrc.json`에 그 규칙을 켤지 본다 · 시험 + inspect-month-year·week.
+- [x] ■4 달력 칸·카드 키보드: 월간·주간·년간 칸과 ■0 표에 `tabIndex`·Enter·Space(끌기·클릭은 그대로) · `.oxlintrc.json`에 그 규칙을 켤지 본다 · 시험 + inspect-month-year·week.
+  → 11-06: `ui/pressKeys` - ■0 표의 18곳에 `role="button" tabIndex={0} onKeyDown={pressKeys}`(카드 자신에 초점이 있을 때 Enter·Space = 누르기, 조합 키·안쪽 칸 키는 그대로) · 빈 머리 칸 둘 `aria-label` - 나머지 이름 없는 칸 넷은 lint가 못 보는 것(`aria-label`이 있는 select·안에 글이 있는 단추) · **`.oxlintrc.json`에 jsx-a11y `click-events-have-key-events` = error**(그대로 둘 7곳은 까닭을 단 끄기 주석, 시끄러운 규칙 여덟은 끔) · 단위 2 · inspect-month-year·week 키보드 묶음 · events·memo·search-trash · inspect-week 새로고침이 '서버가 받기 전 저장' 물음에 막히던 것(30초 멈춤 한 번)은 그 물음만 '예'.
 - [ ] ■5 설명서(처음 시작) · inspect-manual · 세션·단계 끝 정리(1-3·1-4 - 크롬 점검 전체를 하나씩, 점검 사이 8080 확인).
 **끝 조건**: 단위 · 점검 전체 통과 · 새 계정이 띠만 보고 시간표·학급까지 간다 · P22 단계 끝.
 

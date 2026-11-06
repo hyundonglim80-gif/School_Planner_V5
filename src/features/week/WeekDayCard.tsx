@@ -19,6 +19,7 @@ import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
+import { pressKeys } from '../../ui/pressKeys';
 
 export interface WeekDayCardProps {
   date: string;
@@ -93,6 +94,9 @@ function EventChip({
   return (
     <div
       data-week-event={ev.id}
+      role="button"
+      tabIndex={0}
+      onKeyDown={pressKeys}
       data-week-event-done={done ? '1' : '0'}
       data-week-carried={carried ? '1' : undefined}
       data-event-picked={picked ? '1' : undefined}
@@ -185,6 +189,9 @@ export default function WeekDayCard(props: WeekDayCardProps) {
   return (
     <div
       data-week-day={date}
+      role="button"
+      tabIndex={0}
+      onKeyDown={pressKeys}
       data-today={isToday ? 'true' : undefined}
       onClick={props.onOpenDay}
       {...(props.drop ? dropTargetProps(props.drop.handlers, date) : {})}

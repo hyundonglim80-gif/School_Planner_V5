@@ -207,6 +207,7 @@ export default function ClipboardColumn() {
   return (
     <div className="fixed inset-0 z-[1000] flex">
       <div className="relative w-full max-w-sm h-full shadow-2xl">{panel}</div>
+      {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 배경 누르기 = 닫기, 키보드는 ESC (P22-7) */}
       <div className="flex-1 bg-slate-900/40 backdrop-blur-xs" onClick={() => setClipboardOpen(false)} />
     </div>
   );

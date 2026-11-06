@@ -10,6 +10,7 @@ function Card({ p }: { p: LinkPreview }) {
   const [mapOpen, setMapOpen] = useState(false);
   const [iconOk, setIconOk] = useState(true);
   return (
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 카드 누르기로 새지 않게 막기만(링크는 a) (P22-7)
     <div data-link-preview={p.kind} className="rounded-xl border border-slate-200 bg-slate-50/70 overflow-hidden" onClick={stop}>
       <a href={p.url} target="_blank" rel="noreferrer" onClick={stop} className="flex items-center gap-2.5 p-2 hover:bg-white transition-colors min-w-0">
         {p.kind === 'youtube' && p.thumb ? (

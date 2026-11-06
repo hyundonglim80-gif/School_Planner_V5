@@ -931,7 +931,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                       <th className="px-2 py-1 text-left font-bold">지난 수업</th>
                       <th className="px-2 py-1 text-left font-bold">다음 수업</th>
                       <th className="px-2 py-1 text-left font-bold">진도</th>
-                      <th className="px-1 py-1" />
+                      <th className="px-1 py-1" aria-label="밀기" />
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

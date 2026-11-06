@@ -1,6 +1,7 @@
 // 학생 사진 한 칸 (V4 components/roster/StudentPhoto.tsx 그대로). 명렬표의 32px 동그라미부터 암기 판의 큰 카드까지 같은
 // 것을 쓴다. 사진이 없으면 눌러서 바로 올릴 수 있는 빈 칸이 된다.
 import { useRef, type ChangeEvent } from 'react';
+import { pressKeys } from '../../ui/pressKeys';
 
 export type PhotoShape = 'circle' | 'card';
 
@@ -99,6 +100,9 @@ export default function StudentPhoto({
     return (
       <div
         data-photo={name}
+        role={onOpen ? 'button' : undefined}
+        tabIndex={onOpen ? 0 : undefined}
+        onKeyDown={onOpen ? pressKeys : undefined}
         className={`relative ${box} bg-slate-100 ${onOpen ? 'cursor-zoom-in' : ''} ${className}`}
         style={style}
         onClick={onOpen ? (e) => { e.stopPropagation(); onOpen(); } : undefined}

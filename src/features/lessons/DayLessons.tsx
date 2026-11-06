@@ -49,6 +49,7 @@ import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import { isShortcutId } from '../../domain/shortcuts';
+import { pressKeys } from '../../ui/pressKeys';
 
 const PERIOD_COLORS = [
   'bg-cobalt-50 text-cobalt-700 border-cobalt-200',
@@ -275,6 +276,9 @@ export default function DayLessons({ date }: { date: string }) {
               <div
                 key={n}
                 data-lesson-card={n}
+                role="button"
+                tabIndex={0}
+                onKeyDown={pressKeys}
                 data-lesson-id={id}
                 data-now={isNow ? 'true' : isNext ? 'next' : undefined}
                 data-slot-color={slotColor?.name}

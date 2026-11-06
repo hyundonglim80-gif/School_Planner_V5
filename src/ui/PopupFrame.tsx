@@ -154,6 +154,7 @@ export default function PopupFrame({
       data-popup-frame="center"
       {...backdrop}
     >
+      {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 창 판 - 배경으로 누르기가 새지 않게 막기만 (P22-7) */}
       <div
         ref={cardRef as RefObject<HTMLDivElement>}
         role="dialog"

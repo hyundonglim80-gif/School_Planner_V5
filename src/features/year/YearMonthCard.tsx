@@ -27,6 +27,7 @@ import { spaceTitle } from '../../domain/spaceColor';
 import type { CalendarEvents } from '../month/calendarEvents';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
 import { LessonStrip, LessonWraps } from '../lessons/CalendarLessons';
+import { pressKeys } from '../../ui/pressKeys';
 
 interface Props {
   m: AcademicMonth;
@@ -138,6 +139,9 @@ function YearMonthCard(p: Props) {
       <div
         key={`period-${space?.sid ?? ''}${ev.id}`}
         data-year-period={ev.id}
+        role="button"
+        tabIndex={0}
+        onKeyDown={pressKeys}
         data-year-period-done={allDone ? '1' : '0'}
         data-event-picked={anyPicked ? '1' : undefined}
         data-event-space={space?.sid}
@@ -181,6 +185,9 @@ function YearMonthCard(p: Props) {
       <div
         key={space ? `${space.sid}/${ev.id}` : ev.id}
         data-year-event={ev.id}
+        role="button"
+        tabIndex={0}
+        onKeyDown={pressKeys}
         data-year-event-done={done ? '1' : '0'}
         data-event-picked={picked ? '1' : undefined}
         data-event-space={space?.sid}

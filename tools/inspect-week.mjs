@@ -59,7 +59,7 @@ try {
     for (const d of await madeHere()) await deleteDoc(d.ref);
   });
 
-  const { page, errors } = await newPage(browser);
+  const { page, errors, dialogs } = await newPage(browser);
   await open(page, '#/week/2026-10-08');
   await page.evaluate(() => localStorage.removeItem('sp5-last-year'));
   await page.reload();
@@ -124,6 +124,27 @@ try {
   await day('2026-10-05').click({ position: { x: 90, y: 20 } });
   r.check(await waitFor(async () => hashOf(page) === '#/day/2026-10-05'), `카드 빈 곳 = 그날 하루 화면 (${hashOf(page)})`);
 
+  r.section('키보드 (P22-7)');
+  await page.goBack();
+  await waitFor(day('2026-10-08'), 8000);
+  await waitFor(chip('insp_wk2').first(), 8000);
+  r.check((await day('2026-10-08').getAttribute('tabindex')) === '0' && (await chip('insp_wk1').getAttribute('role')) === 'button', '요일 카드·일정 줄은 Tab으로 온다 (button)');
+  await day('2026-10-08').locator(sel('week-event', 'insp_wk2')).focus();
+  await page.keyboard.press('Enter');
+  r.check(await waitFor(page.locator(sel('event-panel', 'edit'))), '일정 줄에서 Enter = 오른쪽 일정 칸');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('event-panel')).count()) === 0);
+  const lessonRow = page.locator(`${sel('week-this')} ${sel('week-lesson')}`).first();
+  if (await lessonRow.count()) {
+    await lessonRow.focus();
+    await page.keyboard.press(' ');
+    r.check(await waitFor(page.locator(sel('lesson-panel'))), '교시 줄에서 Space = 그 교시 수업 칸');
+    await page.keyboard.press('Escape');
+  }
+  await day('2026-10-07').focus();
+  await page.keyboard.press('Enter');
+  r.check(await waitFor(async () => hashOf(page) === '#/day/2026-10-07'), `요일 카드에서 Enter = 그날 하루 화면 (${hashOf(page)})`);
+
   r.section('오늘 카드 - 이월');
   await page.goto(page.url().replace(/#.*$/, `#/week/${TODAY}`));
   const todayCard = page.locator(`${sel('week-this')} ${sel('week-day', TODAY)}`);
@@ -157,7 +178,10 @@ try {
   r.check(await waitFor(async () => (await ly('2026-10-07').locator('[data-already]').count()) === 2), "가져온 뒤에는 '올해 있음'");
   await page.locator(sel('toast')).filter({ hasText: '올해로 가져왔습니다' }).locator('[data-toast-action="되돌리기"]').click();
   r.check(await waitFor(async () => (await madeHere()).every((d) => d.data().deletedAt), 8000), '안내의 되돌리기 = 가져온 것만 지운 표시');
+  // 서버가 받기 전 저장이 남아 있으면 앱이 떠나기 전에 묻는다(beforeunload) - 점검의 기본 '아니오'면 새로고침이 멈춘다(P22-7에 한 번 30초 멈춤)
+  dialogs.answer = true;
   await page.reload();
+  dialogs.answer = false;
   await page.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
   r.check(await waitFor(page.locator(sel('last-year-label')), 8000), '켜 둔 것은 이 기기에 남는다 (새로고침 뒤에도)');
   await page.locator(sel('last-year-toggle')).click();
