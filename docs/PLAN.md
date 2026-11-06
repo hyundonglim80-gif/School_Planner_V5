@@ -2912,7 +2912,23 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 ### P22-4. 학년도·날짜·되살리기·공용 PC (항목 6·9·12·13 자정)
 **시작 조건**: 없음 - **늦어도 2027-02-15(새 학년도 띠) 전에 끝낸다**. **묻기**: 없음.
 **먼저 읽을 것**: 5장 'P22' · `features/class/classes.ts` `HUB_KEY`·`rememberHubClass` · `features/class/ClassScreen.tsx` 처음 학급 · `features/attendance/attendanceClass.ts` · `StudentRecordWindow`·`EvalOverviewWindow`의 같은 고르기 · `ui/useToday.ts` · `app/nav.ts` · `features/backup/BackupTab.tsx` `restore`·`data/backup.ts` · `data/mirror/sync.ts` `GROUP_MIRRORED` · `features/weeklyGuide/WeeklyGuideWindow.tsx` · `features/class/rosterDraft.ts` · `data/google/token.ts` · `data/session.ts` `watchSession` · `data/drafts.ts`·`data/clipboard.ts` `open`·`wipe*`.
-- [ ] ■0 확인(문서만): 계정 구분 없는 `sp5-*` 저장 키 표(개인 자료가 든 것만 고른다 - 11-04 찾은 것은 주간학습안내, 자리표·인쇄·라벨 거르개는 그때 본다) · 로그아웃 때 비울 store 표.
+- [x] ■0 확인(문서만): 계정 구분 없는 `sp5-*` 저장 키 표(개인 자료가 든 것만 고른다 - 11-04 찾은 것은 주간학습안내, 자리표·인쇄·라벨 거르개는 그때 본다) · 로그아웃 때 비울 store 표. (11-06 - 아래 두 표)
+
+  | 이 기기 저장(계정 표시 없음) | 든 것 | 정함 |
+  |---|---|---|
+  | `sp5-weekly-guide-notes` · `-title` | 주마다 적은 글 · 제목(학교·반 이름이 들 수 있다) | **계정마다**(■4) - 사람이 친 글은 이 둘뿐 |
+  | `sp5-weekly-guide-opts` · `sp5-seating-shuffle` · `sp5-photo-quiz` · `sp5-print` | 켜고 끄기·여백 | 그대로 |
+  | `sp5-class-hub` · `sp5-seating-chart` · `sp5-seating-groupset` · `sp5-eval-overview-course` · `sp5-label-filters` | 문서 id뿐(글 없음, 남의 계정 id면 못 찾아 다음 고르기로 넘어간다) | 그대로 |
+  | `sp5-memo-sort`·`-view` · `sp5-year-view` · `sp5-last-year` · `sp5-layout` · `sp5-view` | 화면 설정 | 그대로 |
+  | `sp5-common` · 단축키 등 계정 설정 사본 | 계정 설정 | 이미 `sp5-settings-owner`가 계정이 바뀌면 비운다 |
+  | `sp5-space` · `sp5-space-overlay` · `sp5-push-token` | 값에 uid가 있다 | 이미 계정별 |
+
+  | 로그아웃에 비울 것 | 지금 | 할 일 |
+  |---|---|---|
+  | IndexedDB 사본·쓰던 글·클립보드·사진 | 차례로 기다린다 - 앞이 막히면 뒤를 못 지운다, 쓰던 글·클립보드는 `blocking`이 없어 다른 탭이 열어 두면 끝나지 않는다 | `blocking` + 단계마다 시간 제한(■4) |
+  | `useRosterDraft`(명렬표 임시본) · `useWindows`(창 목록) | 메모리에 남아 다음 계정 화면에 뜬다 | 계정이 바뀌면 비운다 - **로그아웃한 탭만이 아니라 모든 탭**(`watchUndoOwner`처럼 세션을 듣는다) |
+  | 구글 토큰(sessionStorage·메모리) | 로그아웃을 누른 탭만 지운다 | 같은 곳에서 `forgetGoogleToken` |
+  | 되돌리기 더미 · 계정 설정 사본 | 이미 비운다 | 그대로 |
 - [ ] ■1 3월 학급(항목 6): 고른 학년도를 함께 적고 그 학년도가 지나면 믿지 않는다(옛 글자 값도 받는다) - `ClassScreen`·`pickAttendanceClass`·학생 기록·평가 모아 보기 · 시험(`vi.setSystemTime('2027-03-02')` - 날짜 고정 규칙) · inspect-new-year 묶음.
 - [ ] ■2 자정 넘김(항목 13): 보던 날이 '오늘'이었으면 날이 바뀔 때 따라간다(다른 날을 보던 사람은 그대로, 열린 칸은 연 날짜 그대로) - `useToday`로 껍데기에서 한 번 · 시험.
 - [ ] ■3 되살리기(항목 9): 파일 공간 ≠ 지금 공간이면 파일 이름·지금 공간을 적어 먼저 묻는다 · 그룹 공간이면 개인 공간에만 두는 컬렉션(학급·출결·진도)은 넣지 않는다 · 시험 + inspect-backup 묶음.
