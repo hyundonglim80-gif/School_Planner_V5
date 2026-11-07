@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P24-1 하는 중**(11-07 클라우드 - ■0·■1 끝, 다음 ■2). 한눈에 화면 - 6장 'P24' 절. 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
+**P24-1 하는 중**(11-07 클라우드 - ■0~■2 끝, 다음 ■3). 한눈에 화면 - 6장 'P24' 절. 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P22-7 끝 = P22 단계 끝**(11-06 클라우드 - 처음 띠 차례·다음 띠 · 자료 없는 새 계정은 백업 띠 없음 · 휴대폰 수업 ⚙️ · 가운데 창 초점 · 달력 칸·카드 키보드 + lint 규칙). 규칙·함수 배포 없음(화면은 main에 합치면 저절로).
 **P22-6 끝**(11-06 - 보안 헤더·CSP 지켜보기 · CI 규칙·자료 시험 · 자동 요청 막는 목록 · 복원 연습 · main 보호·Dependabot, App Check는 하지 않기로). 규칙·함수 배포 없음. CSP를 막기로 바꿀지는 운영 '[CSP] …' 보고를 며칠 본 뒤 사용자에게 묻는다.
 **P22-5 끝**(11-06 - 대화·쪽지·단축키 잔버그 + 다시 확인 7건). 규칙·함수 배포 없음(화면은 main 푸시로 저절로).
@@ -3180,7 +3180,7 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   **기준**: 두 무리를 쌓는 것 = 본문 < 780px(왼쪽 최소 440 = 요일 칸 넷 ~104 + 틈, 오른쪽 최소 320, 경계선 8 - 쌓으면 경계선 없이 화면이 스크롤) · 수업|일정 나란히 = 오른쪽 무리 ≥ 480px(좁으면 같은 경계선이 위아래로) · 최소 폭 수업 200·일정 160, 높이 위·메모 120.
   본문 폭을 읽는 곳: `useMainWidth` = 하루 메모 칸 열 수(이 화면에서는 메모 칸 폭을 재서 그 칸 `MainWidthContext`)·주간 다음 주 줄·월간·년간·메모·검색 · `@container` = 하루 수업|일정 720(이 화면은 쓰지 않고 칸을 직접 나눈다)·주간 요일 칸 수(P24-2) · `useIsMobile`·`sm:`(창 폭) = 일정 카드 1열/2열·수업 머리 줄바꿈 - 칸 폭과 상관없이 PC 모양이라 그대로 둔다.
 - [x] ■1 화면 자리: `Scope`에 `board`(`SCOPES`·`SCREENS`에는 아직 넣지 않는다 - `SCREEN_COMPONENTS`만) · `parseRoute`·`routeHash` `#/board/YYYY-MM-DD` · `steppedDate` 한 주 · `dateLabel` 주 이름 · 둘째 줄 토글은 주간과 같게(주말·일정·수업) · `printPageOfScope` = 주간 · 구글 캘린더 손 보내기 = 그 주 · `features/board/BoardScreen.tsx` 빈 틀 · 시험(route·nav·printPages).
-- [ ] ■2 칸 나누기 `ui/SplitPane.tsx`(새 부품 - `ColumnResizer`는 화면 끝에 붙는 fixed라 따로): 가로·세로 · 비율(%)·최소 폭 · 끄는 동안 CSS 변수만, 놓으면 저장 · 두 번 누르면 기본 · `role="separator"`·`aria-valuenow`·화살표 키 · 터치·펜(`touch-none`) · `data-split=<이름>` · 기억 `app/boardPrefs.ts`(이 기기 `sp5-board` - 비율 셋, 계정에 올리지 않는다) + 시험.
+- [x] ■2 칸 나누기 `ui/SplitPane.tsx`(새 부품 - `ColumnResizer`는 화면 끝에 붙는 fixed라 따로): 가로·세로 · 비율(%)·최소 폭 · 끄는 동안 CSS 변수만, 놓으면 저장 · 두 번 누르면 기본 · `role="separator"`·`aria-valuenow`·화살표 키 · 터치·펜(`touch-none`) · `data-split=<이름>` · 기억 `app/boardPrefs.ts`(이 기기 `sp5-board` - 비율 셋, 계정에 올리지 않는다) + 시험.
 - [ ] ■3 화면: 화면 높이에 맞춤(창 높이 − 위끝, 띠가 뜨면 재서) · 이 화면만 `max-w-7xl` 풀기(Shell이 화면마다 고른다) · 왼쪽|오른쪽 `data-split="board-main"` - 왼쪽은 빈 자리(P24-2) · 오른쪽 = 고른 날 이름 + 위(수업|일정 `board-day`) / 메모(`board-memo`) - `DayLessons`·`DayEvents`·`DayJournal` 그대로, 칸마다 `@container` + 폭을 재서 `MainWidthContext` · 수업·일정 토글을 끄면 남은 쪽이 다 쓴다(하루 화면과 같다) · 좁으면 수업·일정을 위아래로, 아주 좁으면 두 무리를 위아래로(■0 기준) · `useGlobalGestures`: 이 화면 칸 안의 휠·위아래 밀기와 경계선에서 시작한 밀기는 넘기지 않는다.
 - [ ] ■4 점검 `tools/inspect-board.mjs`(1400px - `#/board/날짜`로 열기·칸 자리·경계선 셋 끌기·두 번 누르기·다시 열어도 남음·수정 칸을 열면 비율 그대로·좁은 폭·칸 안 휠에 주가 안 넘어감·오른쪽 세 칸에 글자) · inspect-scroll·shell · 하루 화면 부품을 고쳤으면 그 점검(notes·events·lessons) · MAP · 세션 끝 정리.
 **끝 조건**: 단위 · inspect-board·scroll·shell 통과 · 머리줄 탭에는 아직 없다(주소로만).
