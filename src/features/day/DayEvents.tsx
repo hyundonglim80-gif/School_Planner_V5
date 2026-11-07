@@ -137,8 +137,9 @@ export default function DayEvents({ date }: { date: YMD }) {
       className={`bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 flex flex-col ${collapsed ? '' : 'h-full'}`}
     >
       {/* 머리줄: ▼ 📅 일정 8 [+ 추가] ……… ⚙️ */}
+      {/* 좁은 칸(한눈에 화면 - P24)에서는 '+ 추가'가 제목 뒤에서 줄을 바꾼다 - 제목은 꺾이지 않는다('일/정') */}
       <div className={`flex items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0">
           <button
             type="button"
             data-event-collapse
@@ -151,7 +152,7 @@ export default function DayEvents({ date }: { date: YMD }) {
           <span className="text-xl" aria-hidden>
             📅
           </span>
-          <h3 className="text-base font-extrabold text-slate-800">일정</h3>
+          <h3 className="text-base font-extrabold text-slate-800 whitespace-nowrap">일정</h3>
           <span data-event-count={count} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
             {count}
           </span>

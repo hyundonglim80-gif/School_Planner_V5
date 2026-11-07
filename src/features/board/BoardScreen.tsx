@@ -1,8 +1,175 @@
 // 한눈에 화면 (P24 - 사용자 손 그림 11-06). 왼쪽 = 작은 달력 + 한 주 요일 칸(P24-2), 오른쪽 = 고른 날의 수업·일정·메모(하루 화면 칸 그대로).
 // 고른 날 = 둘째 줄 날짜(app/nav), ◀▶ = 한 주. P24-3 전에는 주소 #/board/날짜로만 열린다(화면 탭·탭바·단축키에 없다).
+//
+//   ┌ 왼쪽 무리 ┐┃┌ 11월 6일 (금) ─────┐
+//   │ (P24-2)   │┃│ 수업 ┃ 일정        │   ┃ ━ = 경계선(ui/SplitPane) - 끌어서 크기, 두 번 누르면 기본. 비율은 이 기기에(app/boardPrefs)
+//   │           │┃├━━━━━━┻━━━━━━━━━━━━━┤
+//   │           │┃│ 메모                │   칸마다 칸 안에서 스크롤, 화면은 창 높이에 맞춘다
+//   └───────────┘┃└─────────────────────┘
+// 기준(P24-1 ■0): 본문 780px 밑이면 두 무리를 위아래로 쌓고(경계선 없이 화면이 스크롤), 오른쪽 무리 480px 밑이면 수업/일정을 위아래로.
+// 수정 칸이 열리면 본문이 줄어도 비율 그대로 접힌다(5장 'P24 오른쪽 칸').
+import { useRef, type ReactNode } from 'react';
+import { setBoardSplit, useBoardSplit } from '../../app/boardPrefs';
 import { useNav } from '../../app/nav';
+import { DAY_NAMES, weekdayOf } from '../../domain/dateUtils';
+import SplitPane from '../../ui/SplitPane';
+import { useElementWidth } from '../../ui/useElementWidth';
+import { MainWidthContext, useMainWidth } from '../../ui/useMainWidth';
+import { useToday } from '../../ui/useToday';
+import DayBody from '../day/DayBody';
+import DayEvents from '../day/DayEvents';
+import DayJournal from '../day/DayJournal';
+import { journalColumnsFor } from '../day/journalColumns';
+import DayLessons from '../lessons/DayLessons';
+import { useFitHeight } from './useFitHeight';
+
+/** 본문이 이보다 좁으면 두 무리를 쌓는다 (왼쪽 최소 440 + 오른쪽 최소 320 + 경계선) */
+const STACK_BELOW = 780;
+/** 오른쪽 무리가 이보다 좁으면 수업/일정을 위아래로 */
+const DAY_ROW_MIN = 480;
 
 export default function BoardScreen() {
   const date = useNav((s) => s.date);
-  return <div data-screen="board" data-board-date={date} className="animate-fade-in pb-12" />;
+  const stacked = useMainWidth() < STACK_BELOW;
+  const boxRef = useRef<HTMLDivElement>(null);
+  const height = useFitHeight(boxRef, !stacked);
+  const mainRatio = useBoardSplit('main');
+
+  if (stacked) {
+    return (
+      <div ref={boxRef} data-screen="board" data-board-date={date} data-board-stacked className="animate-fade-in pb-12 flex flex-col gap-6">
+        <BoardLeft fit={false} />
+        <div data-board-day-group className="flex flex-col gap-3">
+          <DayTitle date={date} />
+          <DayBody date={date} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={boxRef} data-screen="board" data-board-date={date} className="animate-fade-in flex flex-col" style={height ? { height } : undefined}>
+      <SplitPane
+        name="board-main"
+        direction="row"
+        ratio={mainRatio}
+        onCommit={(r) => setBoardSplit('main', r)}
+        minFirst={440}
+        minSecond={320}
+        label="왼쪽 · 오른쪽 칸 크기"
+        className="flex-1"
+        first={<BoardLeft fit />}
+        second={<BoardDay date={date} />}
+      />
+    </div>
+  );
+}
+
+/** 왼쪽 무리 - 작은 달력·요일 칸은 P24-2. fit = 화면 높이에 맞춘 칸(칸 안 스크롤) */
+function BoardLeft({ fit }: { fit: boolean }) {
+  return (
+    <div
+      data-board-left
+      data-board-pane={fit ? 'left' : undefined}
+      className={`${fit ? 'flex-1 min-h-0 overflow-y-auto overscroll-contain' : 'min-h-40'} rounded-2xl border border-dashed border-slate-200 p-4 text-xs text-slate-400`}
+    >
+      달력·요일 칸은 준비 중입니다.
+    </div>
+  );
+}
+
+/** 고른 날 이름 (둘째 줄은 주 이름이라 여기에) */
+function DayTitle({ date }: { date: string }) {
+  const today = useToday();
+  const [, m, d] = date.split('-').map(Number);
+  return (
+    <h2 data-board-day-title={date} className="flex items-center gap-2 px-1 text-sm font-extrabold text-slate-700">
+      {m}월 {d}일 ({DAY_NAMES[weekdayOf(date)]})
+      {date === today && <span className="px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-2xs font-bold">오늘</span>}
+    </h2>
+  );
+}
+
+/** 칸 하나 - 칸 안에서 스크롤, 휠·위아래 밀기는 날짜를 넘기지 않는다(app/useGlobalGestures) */
+function Pane({ name, children }: { name: string; children: ReactNode }) {
+  return (
+    <div data-board-pane={name} className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-2xl">
+      {children}
+    </div>
+  );
+}
+
+/** 메모 칸 - 메모 열 수는 이 칸 폭으로(하루 화면은 본문 폭). 열 수가 바뀔 때만 다시 그린다 */
+function MemoPane({ date }: { date: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const width = useElementWidth(ref, journalColumnsFor, 360);
+  return (
+    <div ref={ref} data-board-pane="memo" className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-2xl">
+      <MainWidthContext.Provider value={width}>
+        <DayJournal date={date} />
+      </MainWidthContext.Provider>
+    </div>
+  );
+}
+
+/** 오른쪽 무리 - 고른 날 이름 + 위(수업 | 일정) / 메모. 토글을 끄면 남은 쪽이 다 쓴다(하루 화면과 같다) */
+function BoardDay({ date }: { date: string }) {
+  const showEvents = useNav((s) => s.showEvents);
+  const showClass = useNav((s) => s.showClass);
+  const dayRatio = useBoardSplit('day');
+  const memoRatio = useBoardSplit('memo');
+  const groupRef = useRef<HTMLDivElement>(null);
+  const dayRow = useElementWidth(groupRef, (w) => w >= DAY_ROW_MIN, DAY_ROW_MIN) >= DAY_ROW_MIN;
+
+  const lessons = (
+    <Pane name="lessons">
+      <DayLessons date={date} />
+    </Pane>
+  );
+  const events = (
+    <Pane name="events">
+      <DayEvents date={date} />
+    </Pane>
+  );
+  const top =
+    showClass && showEvents ? (
+      <SplitPane
+        name="board-day"
+        direction={dayRow ? 'row' : 'column'}
+        ratio={dayRatio}
+        onCommit={(r) => setBoardSplit('day', r)}
+        minFirst={dayRow ? 200 : 100}
+        minSecond={dayRow ? 160 : 100}
+        label="수업 · 일정 칸 크기"
+        className="flex-1"
+        first={lessons}
+        second={events}
+      />
+    ) : showClass ? (
+      lessons
+    ) : showEvents ? (
+      events
+    ) : null;
+
+  return (
+    <div ref={groupRef} data-board-day-group className="flex-1 min-h-0 flex flex-col gap-2">
+      <DayTitle date={date} />
+      {top ? (
+        <SplitPane
+          name="board-memo"
+          direction="column"
+          ratio={memoRatio}
+          onCommit={(r) => setBoardSplit('memo', r)}
+          minFirst={120}
+          minSecond={120}
+          label="위 칸 · 메모 칸 크기"
+          className="flex-1"
+          first={top}
+          second={<MemoPane date={date} />}
+        />
+      ) : (
+        <MemoPane date={date} />
+      )}
+    </div>
+  );
 }

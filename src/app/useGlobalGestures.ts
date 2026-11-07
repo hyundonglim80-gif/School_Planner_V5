@@ -15,6 +15,13 @@ const isWindowOpen = () => isAnyLayerOpen() || !!document.querySelector('[role="
  */
 const inSideColumn = (t: EventTarget | null) => t instanceof Element && !!t.closest('#side-column, [data-clipboard-panel]');
 
+/**
+ * 한눈에 화면(P24)의 칸 안 - 칸마다 스크롤해서 페이지는 늘 '끝'이다. 칸 안 휠·위아래 밀기는 그 칸의 것(날짜를 넘기지 않는다).
+ * 경계선(data-split-handle)에서 시작한 밀기는 끌기라 화면도 넘기지 않는다.
+ */
+const inBoardPane = (t: EventTarget | null) => t instanceof Element && !!t.closest('[data-board-pane]');
+const onSplitHandle = (t: EventTarget | null) => t instanceof Element && !!t.closest('[data-split-handle]');
+
 const pageMetrics = (edge: number) => {
   const scrollHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
   const bottom = Math.ceil(window.innerHeight + window.scrollY);
@@ -22,7 +29,7 @@ const pageMetrics = (edge: number) => {
 };
 
 export function useGlobalGestures() {
-  const start = useRef({ x: 0, y: 0, atTop: false, atBottom: false, side: false });
+  const start = useRef({ x: 0, y: 0, atTop: false, atBottom: false, side: false, pane: false });
   const blockWheelTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navLock = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -37,7 +44,13 @@ export function useGlobalGestures() {
 
     const onTouchStart = (e: TouchEvent) => {
       if (isWindowOpen()) return;
-      start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, ...pageMetrics(50), side: inSideColumn(e.target) };
+      start.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+        ...pageMetrics(50),
+        side: inSideColumn(e.target) || onSplitHandle(e.target),
+        pane: inBoardPane(e.target),
+      };
     };
 
     const onTouchEnd = (e: TouchEvent) => {
@@ -51,7 +64,7 @@ export function useGlobalGestures() {
         if (Math.abs(deltaX) > 50) stepScope(deltaX > 0 ? 1 : -1);
         return;
       }
-      if (isDatelessScope(s.scope)) return;
+      if (isDatelessScope(s.scope) || start.current.pane) return;
       const { atTop, atBottom } = pageMetrics(50);
       if (atBottom && deltaY > 50 && start.current.atBottom) {
         stepDate(1);
@@ -63,7 +76,7 @@ export function useGlobalGestures() {
     };
 
     const onWheel = (e: WheelEvent) => {
-      if (isWindowOpen() || navLock.current || inSideColumn(e.target)) return;
+      if (isWindowOpen() || navLock.current || inSideColumn(e.target) || inBoardPane(e.target)) return;
       const s = useNav.getState();
       if (!s.enableScrollNav || isDatelessScope(s.scope)) return;
       const { atTop, atBottom } = pageMetrics(10);
