@@ -91,6 +91,14 @@ describe('◀ ▶ 날짜 이동', () => {
     expect(shown()).toBe('2026-10-09');
   });
 
+  it('한눈에도 한 주씩 - 고른 날의 요일은 그대로 (P24)', () => {
+    at('board', '2026-11-06'); // 금
+    stepDate(1);
+    expect(shown()).toBe('2026-11-13');
+    stepDate(-1);
+    expect(shown()).toBe('2026-11-06');
+  });
+
   it('메모·학급은 날짜가 없다 - 옮기지 않는다', () => {
     at('memo', '2026-10-02');
     stepDate(1);
@@ -115,6 +123,8 @@ describe('둘째 줄 날짜 글자', () => {
     expect(dateLabel('month', '2026-10-08')).toBe('2026년 10월');
     expect(dateLabel('year', '2027-02-08')).toBe('2026학년도');
     expect(dateLabel('memo', '2026-10-08')).toBe('');
+    // 한눈에도 주 이름 (P24)
+    expect(dateLabel('board', '2026-11-06')).toBe('2026년 11월 1주');
   });
 
   it('달을 걸친 주는 목요일이 든 달로 (일요일도 그 주 - 월~일)', () => {

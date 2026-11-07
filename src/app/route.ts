@@ -1,6 +1,6 @@
 // 주소 ↔ 화면·날짜 (DESIGN 7-3). 순수 함수만 - 브라우저 기록을 다루는 것은 history.ts.
 //
-//   #/day/2026-10-08 · #/week/2026-10-05(월요일) · #/month/2026-10 · #/year/2026(학년도) · #/memo · #/class(/학급 id)
+//   #/day/2026-10-08 · #/week/2026-10-05(월요일) · #/month/2026-10 · #/year/2026(학년도) · #/board/2026-11-06(고른 날) · #/memo · #/class(/학급 id)
 //
 // 창은 주소에 넣지 않는다. 주간·월간·년간 주소는 날짜 하나가 아니라 기간이라, 보던 날이 그 안에 있으면 그대로 둔다
 // (하루 → 월간 → 하루로 돌아와도 보던 날).
@@ -13,7 +13,8 @@ import {
   weekMonday,
 } from '../domain/dateUtils';
 
-export type Scope = 'day' | 'week' | 'month' | 'year' | 'memo' | 'class';
+/** board = 한눈에(P24 - 작은 달력·한 주·고른 날 하루). P24-3 전에는 SCOPES·SCREENS에 넣지 않아 주소로만 열린다 */
+export type Scope = 'day' | 'week' | 'month' | 'year' | 'board' | 'memo' | 'class';
 
 /** 화면 차례 (화면 탭·탭바·단축키 '이전/다음 화면'·옆으로 밀기가 같은 차례) */
 export const SCOPES: readonly Scope[] = ['day', 'week', 'month', 'year', 'memo', 'class'];
@@ -35,7 +36,9 @@ export function parseRoute(hash: string): Route | null {
   const [scope, arg, ...rest] = parts;
   if (rest.length > 0) return null;
   switch (scope) {
+    // 한눈에는 고른 날 하나 - 새로고침·뒤로가기가 그날로 온다(5장 'P24 이름')
     case 'day':
+    case 'board':
       return arg && isValidDateStr(arg) ? { scope, range: [arg, arg] } : null;
     case 'week': {
       if (!arg || !isValidDateStr(arg)) return null;
@@ -71,6 +74,8 @@ export function routeHash(scope: Scope, date: string, classId?: string | null): 
       return `#/month/${date.slice(0, 7)}`;
     case 'year':
       return `#/year/${academicYearOf(date)}`;
+    case 'board':
+      return `#/board/${date}`;
     case 'memo':
       return '#/memo';
     case 'class':

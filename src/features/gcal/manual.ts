@@ -104,9 +104,9 @@ export function resetCalendarSync() {
   useCalendarSync.setState(IDLE, true);
 }
 
-/** 지금 보는 화면의 기간 (V4 rangeForScope - 하루·메모·학급은 그날, 주간은 그 주, 월간은 그 달, 년간은 학년도) */
+/** 지금 보는 화면의 기간 (V4 rangeForScope - 하루·메모·학급은 그날, 주간·한눈에는 그 주, 월간은 그 달, 년간은 학년도) */
 export function rangeForScope(scope: Scope, date: string): { start: string; end: string } {
-  if (scope === 'week') {
+  if (scope === 'week' || scope === 'board') {
     const w = weekDates(date);
     return { start: w[0], end: w[6] };
   }
