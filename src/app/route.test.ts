@@ -7,6 +7,7 @@ describe('주소 ↔ 화면 (DESIGN 7-3)', () => {
     expect(routeHash('week', '2026-10-08')).toBe('#/week/2026-10-05');
     expect(routeHash('month', '2026-10-08')).toBe('#/month/2026-10');
     expect(routeHash('year', '2027-02-10')).toBe('#/year/2026');
+    expect(routeHash('board', '2026-11-06')).toBe('#/board/2026-11-06');
     expect(routeHash('memo', '2026-10-08')).toBe('#/memo');
     expect(routeHash('class', '2026-10-08')).toBe('#/class');
     expect(routeHash('class', '2026-10-08', '2026-5-2')).toBe('#/class/2026-5-2');
@@ -17,18 +18,19 @@ describe('주소 ↔ 화면 (DESIGN 7-3)', () => {
     expect(parseRoute('#/week/2026-10-08')).toEqual({ scope: 'week', range: ['2026-10-05', '2026-10-11'] });
     expect(parseRoute('#/month/2028-02')).toEqual({ scope: 'month', range: ['2028-02-01', '2028-02-29'] });
     expect(parseRoute('#/year/2026')).toEqual({ scope: 'year', range: ['2026-03-01', '2027-02-28'] });
+    expect(parseRoute('#/board/2026-11-06')).toEqual({ scope: 'board', range: ['2026-11-06', '2026-11-06'] });
     expect(parseRoute('#/memo')).toEqual({ scope: 'memo' });
     expect(parseRoute('#/class/2026-5-2')).toEqual({ scope: 'class', classId: '2026-5-2' });
   });
 
   it('모르는 주소는 null (그때는 보던 화면의 주소로 바꾼다)', () => {
-    for (const h of ['', '#', '#/', '#/day', '#/day/2026-02-30', '#/month/2026-13', '#/year/26', '#/memo/x', '#/foo/1', '#/day/2026-10-08/x']) {
+    for (const h of ['', '#', '#/', '#/day', '#/day/2026-02-30', '#/month/2026-13', '#/year/26', '#/memo/x', '#/foo/1', '#/day/2026-10-08/x', '#/board', '#/board/2026-11', '#/board/2026-11-06/x']) {
       expect(parseRoute(h)).toBeNull();
     }
   });
 
   it('화면 여섯 모두 주소로 오간다', () => {
-    for (const scope of SCOPES) {
+    for (const scope of [...SCOPES, 'board' as const]) {
       const route = parseRoute(routeHash(scope, '2026-10-08'));
       expect(route?.scope).toBe(scope);
     }

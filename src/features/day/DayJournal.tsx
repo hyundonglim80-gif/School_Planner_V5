@@ -28,6 +28,7 @@ import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
 import { openNotePanel, useShownNoteId } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
 import DayCardView from './DayCards';
+import { journalColumnsFor } from './journalColumns';
 import { useDayCardsOn } from './useDayCards';
 import { useDayNotes } from './useDayNotes';
 import { useEvalsOn } from '../evaluations/evalData';
@@ -75,7 +76,7 @@ export default function DayJournal({ date }: { date: YMD }) {
 
   // 칸 수는 창 폭이 아니라 본문 폭으로 - 오른쪽 칸이 열려 본문이 좁아지면 줄인다. 휴대폰도 2열(일정 칸과 같게)
   const mainWidth = useMainWidth();
-  const columnsCount = mainWidth >= 980 ? 4 : mainWidth >= 720 ? 3 : 2;
+  const columnsCount = journalColumnsFor(mainWidth);
   const columns = Array.from({ length: columnsCount }, () => [] as { item: ItemDoc; index: number }[]);
   shown.forEach((item, index) => columns[index % columnsCount].push({ item, index }));
 

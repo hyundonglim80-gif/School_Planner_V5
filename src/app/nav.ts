@@ -106,7 +106,9 @@ export function steppedDate(s: Pick<NavState, 'scope' | 'date' | 'showWeekend'>,
       }
       return d;
     }
+    // 한눈에는 왼쪽 큰 칸이 한 주라 주간처럼 한 주씩 - 고른 날의 요일은 그대로 (5장 'P24 고른 날')
     case 'week':
+    case 'board':
       return addDays(s.date, 7 * dir);
     // 31일에 ▶를 눌러도 다음 달을 건너뛰지 않게 그 달의 마지막 날로 (addMonthsClamped)
     case 'month':
@@ -155,7 +157,9 @@ export function dateLabel(scope: Scope, date: string): string {
   switch (scope) {
     case 'day':
       return `${y}년 ${m}월 ${d}일 (${DAY_NAMES[weekdayOf(date)]})`;
-    case 'week': {
+    // 한눈에도 둘째 줄은 주 이름 (고른 날 이름은 오른쪽 무리 위에)
+    case 'week':
+    case 'board': {
       // 그 주(월~일)의 목요일이 든 달의 몇째 주 - 달을 걸친 주는 날이 더 많은 달로 센다.
       // 목요일이 1~7일인 주 = 1주 (P14-4 - 1일의 요일을 더하면 1일이 금·토인 달에 1주를 빼먹었다)
       const thu = parseDateStr(addDays(weekMonday(date), 3));

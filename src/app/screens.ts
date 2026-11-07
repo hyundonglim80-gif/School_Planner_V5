@@ -29,4 +29,6 @@ export const SCREEN_COMPONENTS: Record<Scope, ReturnType<typeof lazyWithReload>>
   year: lazyWithReload(() => import('../features/year/YearScreen'), OfflineScreen),
   memo: lazyWithReload(() => import('../features/memo/MemoScreen'), OfflineScreen),
   class: lazyWithReload(() => import('../features/class/ClassScreen'), OfflineScreen),
+  // 한눈에(P24) - P24-3까지 SCREENS에 넣지 않는다(주소 #/board/날짜로만)
+  board: lazyWithReload(() => import('../features/board/BoardScreen'), OfflineScreen),
 };

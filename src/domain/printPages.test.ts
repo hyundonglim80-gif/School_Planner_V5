@@ -4,6 +4,8 @@ import { cleanMargin, DEFAULT_PRINT_PREFS, pageStart, paperSizeMm, printPageOfSc
 describe('printPages', () => {
   it('보는 화면 → 처음 고른 쪽 (메모·학급은 하루)', () => {
     expect(['day', 'week', 'month', 'year', 'memo', 'class'].map(printPageOfScope)).toEqual(['day', 'week', 'month', 'year', 'day', 'day']);
+    // 한눈에는 그 주 (P24)
+    expect(printPageOfScope('board')).toBe('week');
   });
 
   it('고른 날이 든 쪽의 첫날 - 주 = 월요일, 달 = 1일, 학년도 = 3월 1일 (1·2월은 앞 학년도)', () => {

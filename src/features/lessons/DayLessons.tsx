@@ -145,11 +145,12 @@ export default function DayLessons({ date }: { date: string }) {
 
   return (
     <section data-day-lessons={date} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
-      <div className={`flex flex-wrap sm:flex-nowrap items-start sm:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
+      <div className={`flex flex-wrap @min-[600px]:flex-nowrap items-start @min-[600px]:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
         {/* 제목은 줄어들지 않는다. 좁으면 오른쪽의 '지금' 안내만 줄어든다 (V4 - '수업'이 '수/업'으로 꺾였다).
             휴대폰은 단추(종·출석부·알림장·진도·뽑기)가 제목 뒤에서 줄을 바꾼다 - 한 줄이면 390px 화면 밖으로 나갔다(P9-3).
-            휴대폰의 ⚙️는 첫 줄 오른쪽 끝, '지금' 안내는 그 아래 한 줄(P22-7 - ⚙️가 혼자 한 줄을 차지했다). 넓으면 단추 | 지금 … ⚙️ 그대로 */}
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0 flex-1 basis-0 sm:flex-none sm:basis-auto sm:shrink-0">
+            휴대폰의 ⚙️는 첫 줄 오른쪽 끝, '지금' 안내는 그 아래 한 줄(P22-7 - ⚙️가 혼자 한 줄을 차지했다). 넓으면 단추 | 지금 … ⚙️ 그대로.
+            '좁다'는 창 폭(sm)이 아니라 둘레 칸 폭(@container 600px - 하루 화면은 본문 = 창 폭 − 여백이라 sm과 같다): 한눈에 화면의 수업 칸(P24)·수정 칸이 열린 좁은 본문에서도 줄을 바꾼다 */}
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0 flex-1 basis-0 @min-[600px]:flex-none @min-[600px]:basis-auto @min-[600px]:shrink-0">
           <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             <button
               type="button"
@@ -209,7 +210,7 @@ export default function DayLessons({ date }: { date: string }) {
           )}
         </div>
         {!collapsed && nowLine && (
-          <div className="order-3 sm:order-2 basis-full sm:basis-auto flex items-center sm:justify-end min-w-0 sm:flex-1">
+          <div className="order-3 @min-[600px]:order-2 basis-full @min-[600px]:basis-auto flex items-center @min-[600px]:justify-end min-w-0 @min-[600px]:flex-1">
             <span data-now-line className="min-w-0 truncate text-xs font-bold text-primary bg-blue-50 border border-blue-100 rounded-lg px-2 py-1" title={nowLine}>
               🕘 {nowLine}
             </span>
@@ -221,7 +222,7 @@ export default function DayLessons({ date }: { date: string }) {
             data-lessons-settings
             {...shortcutTarget('timetable')}
             onClick={() => openWindow('timetable')}
-            className="order-2 sm:order-3 shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="order-2 @min-[600px]:order-3 shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
             title="시간표 설정 (시간표·교시·학기·교사 유형)"
             aria-label="시간표 설정"
           >
