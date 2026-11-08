@@ -7,10 +7,13 @@
 //   3) 수정 칸을 열면 비율 그대로 접힌다(수업/일정 위아래) · ◀▶ 한 주
 //   4) '스크롤로 페이지 이동'을 켜도 칸 안 휠은 날짜를 넘기지 않는다
 //   5) 좁은 폭(본문 780 밑)은 두 무리를 쌓는다
+//   6) 넓이·모양 한 번씩(P24-3 ■3): 태블릿 가로 1280 · 1920(쌓지 않음·비율·칸에 글자·넘침 없음) · 어둡게 + 부드럽게 + 꾸미기(빈 칸 그림) · 고대비 + 색약 배려
+//      (고른 칸 테두리가 남는다) - SHOTS=<폴더>면 그림을 남긴다(눈으로 본다). 휴대폰 390은 inspect-mobile, Ctrl+P는 inspect-print.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-board.mjs
 // 에뮬레이터 teacher 계정 개인 공간에 점검 일정·메모(insp_bd…)를 심고 끝에 지운다. 칸 비율은 기기 저장소(sp5-board)라 새 창마다 비어 있다.
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { mkdirSync } from 'node:fs';
 import { emulator, hashOf, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -21,6 +24,10 @@ const undo = restorer();
 const browser = await launch();
 
 const DAY = '2026-10-08'; // 목
+// 아무것도 심지 않은 날 - 일정·메모 칸이 비어 꾸미기 빈 칸 그림이 뜬다 (inspect-decor와 같은 날)
+const EMPTY_DAY = '2031-02-03';
+const SHOTS = process.env.SHOTS || '';
+if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 const itemRef = (id) => doc(em.db, 'spaces', sid, 'items', id);
 const stamp = { deletedAt: null, updatedAt: serverTimestamp(), v: 1, createdAt: Date.now(), authorId: uid, labelIds: [] };
 const ITEMS = {
@@ -281,6 +288,90 @@ try {
   r.check(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), '가로로 넘치지 않는다');
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
+  await page.context().close();
+
+  // ── P24-3 ■3 넓이·모양 한 번씩 (새 창마다 - 칸 비율은 기기 저장소라 기본) ──
+  for (const [w, h] of [
+    [1280, 800],
+    [1920, 1080],
+  ]) {
+    r.section(`넓이 ${w}px (${w === 1280 ? '태블릿 가로' : '넓은 모니터'} - P24-3)`);
+    const { ctx, page: p, errors: errs } = await newPage(browser, { width: w, height: h });
+    await open(p, `#/board/${DAY}`);
+    const ev = p.locator(`${sel('board-pane', 'events')} ${sel('event-card', 'insp_bd_event')}`);
+    r.check((await waitFor(ev, 10000)) && ((await ev.textContent()) ?? '').includes('점검한눈 일정'), '일정 칸에 심은 일정·글자');
+    r.check((await p.locator('[data-board-stacked]').count()) === 0 && (await p.locator(sel('split-handle')).count()) === 3, '쌓지 않는다 - 경계선 셋');
+    const [l, b, ls, es, mm] = await Promise.all(['[data-board-left]', sel('split', 'board-main'), sel('board-pane', 'lessons'), sel('board-pane', 'events'), sel('board-pane', 'memo')].map((q) => box(p, q)));
+    r.check(near(l[2] / b[2], 0.58, 0.03), `왼쪽 몫 58% (${Math.round((l[2] / b[2]) * 100)}% · 왼 ${l[2]}px)`);
+    r.check(near(ls[1], es[1]) && es[0] > ls[0] && mm[1] > ls[1] + ls[3] - 2, `수업 | 일정 나란히, 메모는 아래 (${ls} | ${es} / ${mm})`);
+    const days = await p.locator(sel('week-day')).evaluateAll((els) => els.map((e) => [Math.round(e.getBoundingClientRect().width), (e.textContent ?? '').trim().length]));
+    r.check(days.length === 7 && days.every(([dw, n]) => dw >= 100 && n > 0), `요일 칸 일곱 - 폭 100px 넘게·글자 (${days.map(([dw]) => dw).join(',')})`);
+    r.check(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight + 1), '넘치지 않고 창 높이에 맞음');
+    if (SHOTS) await p.screenshot({ path: `${SHOTS}/board-${w}.png` });
+    r.check(errs.length === 0, `화면 오류 없음 ${errs.join(' | ')}`);
+    await ctx.close();
+  }
+
+  r.section('어둡게 + 부드럽게 + 꾸미기 (빈 칸 그림) · 고대비 + 색약 배려 (P24-3)');
+  {
+    const { ctx, page: p, errors: errs } = await newPage(browser);
+    // 화면 밝기·부드럽게·고대비는 이 기기(localStorage), 색약 배려·꾸미기는 계정 - 꾸미기는 계정에 쓰고 끝에 끈다
+    await p.addInitScript(() => {
+      try {
+        localStorage.setItem('sp5_theme', 'dark');
+        localStorage.setItem('sp5_dim', '1');
+      } catch {
+        /* about:blank */
+      }
+    });
+    await open(p, `#/board/${EMPTY_DAY}`);
+    await waitFor(p.locator(sel('screen', 'board')), 10000);
+    const prefs = (fn, arg) =>
+      p.evaluate(
+        async ([body, a]) => {
+          const m = await import(window.__appModule('/src/app/prefs.ts'));
+          return new Function('m', 'a', `return (${body})(m, a)`)(m, a);
+        },
+        [fn.toString(), arg],
+      );
+    // 앱이 막 떴을 때 넣은 값은 서버 값이 덮는다 - 계정 설정을 받은 뒤에 (CLAUDE.md 2장 P20-3)
+    await waitFor(async () => prefs((m) => m.useCommonLoaded.getState().loaded), 10000);
+    const cls = await p.evaluate(() => document.documentElement.className);
+    r.check(/\bdark\b/.test(cls) && /\bdim\b/.test(cls), `어둡게 + 부드럽게 (${cls})`);
+    try {
+      await prefs((m, k) => m.setCommonSetting('decor', k), 'animal');
+      const evSpot = p.locator(`${sel('board-pane', 'events')} ${sel('event-empty')} ${sel('decor-spot')}`);
+      const memoSpot = p.locator(`${sel('board-pane', 'memo')} ${sel('journal-empty')} ${sel('decor-spot')}`);
+      r.check(await waitFor(evSpot, 6000), '꾸미기: 빈 일정 칸에 그림');
+      r.check(await waitFor(memoSpot, 6000), '꾸미기: 빈 메모 칸에 그림');
+      r.check(((await p.locator(`${sel('board-pane', 'events')} ${sel('event-empty')}`).textContent()) ?? '').includes('일정이 없습니다'), '안내 글은 그대로');
+      r.check(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight + 1), '넘치지 않고 창 높이에 맞음');
+      if (SHOTS) await p.screenshot({ path: `${SHOTS}/board-dark-dim-decor.png` });
+
+      // 고대비(이 기기 - 켜면 부드럽게는 쉰다) + 색약 배려(계정 값은 두고 그 모양만 - 그림만 본다)
+      await p.evaluate(async () => {
+        (await import(window.__appModule('/src/app/viewAids.ts'))).setContrast(true);
+        document.documentElement.classList.add('cvd');
+      });
+      const cls2 = await p.evaluate(() => document.documentElement.className);
+      r.check(/\bhc\b/.test(cls2) && /\bcvd\b/.test(cls2), `고대비 + 색약 배려 (${cls2})`);
+      const ring = await p.locator(sel('board-day-selected')).evaluate((e) => {
+        const cs = getComputedStyle(e);
+        return [cs.outlineStyle, parseFloat(cs.outlineWidth), (e.textContent ?? '').trim().length];
+      });
+      r.check(ring[0] !== 'none' && ring[1] >= 2 && ring[2] > 0, `고른 칸 테두리가 남는다 (${ring.join(' · ')})`);
+      const calSel = p.locator(sel('board-cal-day', EMPTY_DAY));
+      r.check(((await calSel.textContent()) ?? '').trim() === '3', '달력 고른 날 글자');
+      r.check(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth), '넘치지 않는다');
+      if (SHOTS) await p.screenshot({ path: `${SHOTS}/board-contrast-cvd.png` });
+    } finally {
+      await prefs((m, k) => m.setCommonSetting('decor', k), 'off');
+      await p.evaluate(async () => (await import(window.__appModule('/src/app/viewAids.ts'))).setContrast(false));
+      await p.waitForTimeout(3000); // 계정에 올라가는 설정 (CLAUDE.md 2장)
+    }
+    r.check(errs.length === 0, `화면 오류 없음 ${errs.join(' | ')}`);
+    await ctx.close();
+  }
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
