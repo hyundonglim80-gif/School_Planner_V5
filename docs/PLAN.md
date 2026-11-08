@@ -29,7 +29,7 @@
 
 ## 지금 하는 일
 
-**P24-3 하는 중**(11-08 클라우드 - ■1 화면 탭 '한눈에'·Shift+7·시작 화면 끝 · 다음 ■2 설명서 - 6장 'P24-3' 절).
+**P24-3 하는 중**(11-08 클라우드 - ■1 화면 탭 '한눈에'·Shift+7·시작 화면 · ■2 설명서 끝 · 다음 ■3 넓이·모양 한 번씩 - 6장 'P24-3' 절).
 **P24-2 끝**(11-08 클라우드 - 왼쪽: 주간 요일 카드를 `week/useWeekCards`로 떼어 함께 · 카드 누르기 = 그날 고르기 · 작은 달력 `ui/MiniMonth`(월요일부터·보는 주·점) · 그 달 '달력' 일정 목록 · inspect-board 80). 규칙·함수 배포 없음(숨긴 채 - 주소로만).
 **P24-1 끝**(11-07 클라우드 - 한눈에 화면 틀, 숨긴 채 주소 `#/board/날짜`로만: 경계선 셋·창 높이 맞춤·오른쪽 하루 세 칸·좁으면 쌓기 · inspect-board). 에이전트·워크플로는 쓰지 않는다(ultracode가 켜져 있어도).
 **P22-7 끝 = P22 단계 끝**(11-06 클라우드 - 처음 띠 차례·다음 띠 · 자료 없는 새 계정은 백업 띠 없음 · 휴대폰 수업 ⚙️ · 가운데 창 초점 · 달력 칸·카드 키보드 + lint 규칙). 규칙·함수 배포 없음(화면은 main에 합치면 저절로).
@@ -3208,7 +3208,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 **먼저 읽을 것**: `app/screens.ts`·`route.ts`(`SCOPES`)·`nav.ts`(`stepScope`·`STARTUP_SCOPES`)·`MobileTabBar.tsx`·`Header.tsx` 화면 탭·`useGlobalGestures.ts` · `domain/shortcuts.ts` '화면 이동' · `features/help/chapters/views.ts`·`../topics.ts` · `tools/inspect-manual.mjs` · `docs/MENU.md` 3-1·3-3·3-8 · `docs/DESIGN.md` 7-3.
 - [x] ■1 내놓기: `SCOPES`·`SCREENS`에 '한눈에'(년간 뒤) · 휴대폰 탭바에서 빼고(`ScreenDef`에 표시) 휴대폰 좌우 밀기도 건너뛴다 · 단축키 `scopeBoard`(Shift+7) · 시작 화면 고르기 · 시험(screens·shortcuts·nav).
   **■1 한 것(11-08)**: 휴대폰에서 빼는 표시는 `ScreenDef`가 아니라 `route.isPhoneHiddenScope` 한 곳(탭바·`stepScope(step, phone)`이 함께 읽는다 - nav가 screens(화면 lazy)를 부르지 않게) · 밀기의 '휴대폰' = 창 폭 640 밑(탭바가 보이는 폭) · 주소로 한눈에를 연 채 밀면 그 앞뒤(년간·메모) · 단축키 목록 차례는 학급 뒤(키 1~7 차례 - 탭 차례와 다르다) · 머리줄 탭 일곱은 640px부터 들어간다(640~720은 전처럼 두 줄) · inspect-board '내놓기' 묶음(탭 차례·탭/Shift+7 = 보던 날 그대로·Shift+→ 년간 → 한눈에 → 메모·툴팁·시작 화면 칸) · inspect-shell 탭 일곱.
-- [ ] ■2 설명서 `views` 새 주제 'board'(년간 뒤 - 칸 셋·고른 날·◀▶ 한 주·경계선 끌기·두 번 누르기·좁으면 접기·휴대폰 탭바에는 없음, 단축키는 **이름**({key:scopeBoard}) 꼴) · 화면 탭 목록이 적힌 다른 주제(`grep -rn '년간' src/features/help`) · inspect-manual 묶음(MATCH=board).
+- [x] ■2 설명서 `views` 새 주제 'board'(년간 뒤 - 칸 셋·고른 날·◀▶ 한 주·경계선 끌기·두 번 누르기·좁으면 접기·휴대폰 탭바에는 없음, 단축키는 **이름**({key:scopeBoard}) 꼴) · 화면 탭 목록이 적힌 다른 주제(`grep -rn '년간' src/features/help`) · inspect-manual 묶음(MATCH=board).
+  **■2 한 것(11-08)**: 주제 'board' 🧭(년간 뒤 - 고른 날·◀▶ 한 주·왼쪽 달력/목록/요일 칸·오른쪽 하루 세 칸·경계선·좁으면 쌓기·휴대폰 탭바에 없음·인쇄 = 그 주를 주간) · 화면 탭 목록이 적힌 곳(start 'layout'·'navigation' 탭·단축키·◀▶·날짜 칸 누르기 / 'mobile' 탭바에 없음 · views 장 요약) · inspect-manual 'board' 묶음 + 'layout' 화면 탭 일곱 · PARITY 'V5에서 새로' 한 줄. 설명서 73주제.
 - [ ] ■3 넓이·모양 한 번씩: 휴대폰 390px(주소로 열면 쌓기·넘침 없음 - inspect-mobile 묶음, 글자가 있는지도) · 태블릿 가로 1280px · 1920px · 고대비·색약 배려·어둡게·꾸미기 빈 칸 그림 · Ctrl+P = 그 주(inspect-print).
 - [ ] ■4 `MENU.md`(3-1 머리줄 탭·3-3 화면별·3-8 단축키) · `DESIGN.md` 7-3 주소 · `CLAUDE.md` 5장 화면 규칙 한 줄 · MAP · 세션·단계 끝 정리(1-3·1-4 - inspect-board·week·month-year·shell·scroll·print·mobile·settings·manual).
 **끝 조건**: 단위 · 위 점검 통과 · 머리줄에 '한눈에' 탭 · P24 단계 끝.

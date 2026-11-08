@@ -165,7 +165,7 @@ try {
   await topic('layout', async () => {
     for (const s of ['header-dday', 'header-trash', 'header-search', 'header-help', 'more-menu', 'account']) r.check((await count(sel(s))) > 0, `머리줄 ${s}`);
     r.check((await count(sel('new-menu'))) === 0, 'PC 머리줄에 ＋ 새로 없음 (P10-1 - 휴대폰은 둥근 ＋)');
-    r.check((await count(sel('scope-tab'))) === 6, '화면 탭 여섯');
+    r.check((await count(sel('scope-tab'))) === 7, '화면 탭 일곱 (한눈에 - P24-3)');
     r.check((await count(sel('view-toggle'))) === 3 && (await count(sel('date-label'))) === 1, '둘째 줄: 토글 셋·날짜');
     await q(sel('more-menu')).click();
     r.check((await count(sel('menu-section'))) === 4, '⋮ 네 구역');
@@ -254,6 +254,29 @@ try {
     r.check((await count(sel('year-view'))) === 2, '📅 학사력 / 📋 자세히');
     // 열두 달은 세 달씩 나눠 그린다 - 다 그릴 때까지 기다린다 (P9-3 - 바쁠 때 덜 그려진 것을 세었다)
     r.check(await waitFor(async () => (await count(sel('sheet-month'))) >= 12 || (await count(sel('year-month'))) >= 12, 5000), '열두 달');
+  });
+
+  // 한눈에 (P24-3) - 머리줄 탭(년간 뒤)·왼쪽 달력·한 주·달력 일정 줄·오른쪽 하루 세 칸·경계선 셋·요일 칸 누르기 = 고르기·▶ 한 주·휴대폰 탭바에는 없다
+  await topic('board', async () => {
+    const tabs = await page.locator(sel('scope-tab')).evaluateAll((els) => els.map((e) => e.getAttribute('data-scope-tab')));
+    r.check(tabs.indexOf('board') === tabs.indexOf('year') + 1, `머리줄 '한눈에' 탭은 년간 뒤 (${tabs.join(',')})`);
+    await q(sel('scope-tab', 'board')).click();
+    r.check(await has(sel('screen', 'board')), "탭 '한눈에' → 한눈에 화면");
+    await go(`#/board/${DAY}`, 'board');
+    r.check(await waitFor(async () => (await count(sel('board-cal-day'))) >= 28, 5000), '작은 달력');
+    r.check((await q(sel('board-cal-day')).getAttribute('data-board-cal-day')) === '2026-09-28', '달력은 월요일부터 (첫 칸 9/28 월)');
+    r.check((await count(sel('week-day'))) === 7, '요일 칸 일곱');
+    const row = q(sel('board-month-item', 'insp_man_e1'));
+    r.check(await has(sel('board-month-item', 'insp_man_e1')), "달력 아래 그 달 '달력' 일정 줄");
+    r.check(((await row.textContent()) ?? '').includes('설명서점검 일정'), '일정 줄에 글자');
+    for (const p of ['lessons', 'events', 'memo']) r.check((await count(sel('board-pane', p))) === 1, `오른쪽 ${p} 칸`);
+    r.check((await count(sel('split-handle'))) === 3, '경계선 셋');
+    await q(sel('week-day', '2026-10-06')).click({ position: { x: 8, y: 8 } });
+    r.check(await waitFor(async () => page.url().includes('#/board/2026-10-06'), 3000), '요일 칸 누르기 = 그날 고르기 (하루 화면으로 가지 않는다)');
+    await q(sel('date-next')).click();
+    r.check(await waitFor(async () => page.url().includes('#/board/2026-10-13'), 3000), '▶ = 한 주 (요일 그대로)');
+    r.check((await count(sel('tabbar-tab', 'board'))) === 0, '휴대폰 아래 탭바에는 없다');
+    await go(`#/day/${DAY}`, 'day');
   });
 
   await topic('badges', async () => {
