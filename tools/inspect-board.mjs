@@ -1,5 +1,7 @@
-// tools/inspect-board.mjs - P24-1 ■4: 한눈에 화면 틀(숨긴 채 - 주소 #/board/날짜로만)을 실제 크롬 1400px에서 본다.
+// tools/inspect-board.mjs - P24-1 ■4·P24-2 ■4: 한눈에 화면(숨긴 채 - 주소 #/board/날짜로만)을 실제 크롬 1400px에서 본다.
 //   1) 주소로 열기 · 둘째 줄 = 주 이름 · 오른쪽 = 고른 날 이름 + 수업|일정 / 메모(글자가 있는지) · 창 높이에 맞음 · 머리줄 탭에는 아직 없다
+//   1b) 왼쪽(P24-2): [달력][월][화][수] / [목][금][토][일] 두 줄이 반씩 · 요일 칸 누르기 = 그날 고르기 · 작은 달력(월요일부터·보는 주·점) 날짜 누르기 ·
+//       달력 ◀▶ = 달만 · 그 달 '달력' 일정 목록(날짜 차례·기간 m/d~m/d·줄 누르기 = 그날 + 그 일정 칸·칩 = 완료) · 빈 달 · 주말 감추기 = [달력][월][화] / [수][목][금]
 //   2) 경계선 셋 끌기(왼쪽|오른쪽 · 수업|일정 · 위/메모) → 크기가 바뀌고 이 기기에 남는다 · 다시 열어도 그대로 · 두 번 누르면 기본
 //   3) 수정 칸을 열면 비율 그대로 접힌다(수업/일정 위아래) · ◀▶ 한 주
 //   4) '스크롤로 페이지 이동'을 켜도 칸 안 휠은 날짜를 넘기지 않는다
@@ -7,8 +9,8 @@
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-board.mjs
 // 에뮬레이터 teacher 계정 개인 공간에 점검 일정·메모(insp_bd…)를 심고 끝에 지운다. 칸 비율은 기기 저장소(sp5-board)라 새 창마다 비어 있다.
-import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { emulator, hashOf, launch, newPage, open, report, restorer, sel, waitFor } from './lib/probe.mjs';
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { emulator, hashOf, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -23,6 +25,8 @@ const stamp = { deletedAt: null, updatedAt: serverTimestamp(), v: 1, createdAt: 
 const ITEMS = {
   insp_bd_event: { kind: 'event', date: DAY, text: '점검한눈 일정', order: 'Zz1', carrying: true },
   insp_bd_note: { kind: 'note', date: DAY, text: '점검한눈 메모', order: 'Zz2' },
+  // 다음 주 기간 - 달력 목록 차례·'m/d~m/d' (라벨이 없으면 '달력' 켬)
+  insp_bd_period: { kind: 'event', date: '2026-10-12', endDate: '2026-10-14', text: '점검한눈 기간', order: 'Zz3' },
 };
 
 /** 칸 자리 [x, y, 폭, 높이] */
@@ -82,6 +86,89 @@ try {
   const board = await box(page, sel('split', 'board-main'));
   r.check(near(left[2] / board[2], 0.58, 0.02), `기본 왼쪽 몫 58% (${Math.round((left[2] / board[2]) * 100)}%)`);
 
+  r.section("왼쪽 - 요일 칸 일곱 · 작은 달력 · 달력 일정 목록 (P24-2)");
+  const L = '[data-board-left]';
+  const cards = page.locator(`${L} ${sel('week-day')}`);
+  r.check(await waitFor(async () => (await cards.count()) === 7), `요일 칸 일곱 (${await cards.count()})`);
+  const dayLabels = (await page.locator(`${L} ${sel('week-day-label')}`).allTextContents()).join(' ');
+  r.check(dayLabels === '10.5 10.6 10.7 10.8 10.9 10.10 10.11', `요일 칸 글자 = 월~일 (${dayLabels})`);
+  const [cal, mon, thu, sun] = await Promise.all([sel('board-month'), sel('week-day', '2026-10-05'), sel('week-day', '2026-10-08'), sel('week-day', '2026-10-11')].map((q) => box(page, `${L} ${q}`)));
+  r.check(cal && mon && cal[0] + cal[2] < mon[0] && near(cal[1], mon[1]), `첫 칸 = 달력, 그 오른쪽 월 (${cal} | ${mon})`);
+  r.check(thu && near(thu[0], cal[0]) && thu[1] >= cal[1] + cal[3], `목은 둘째 줄 첫 칸 (${thu})`);
+  r.check(sun && near(sun[1], thu[1]) && sun[0] > thu[0], `일은 둘째 줄 끝 (${sun})`);
+  r.check(near(thu[3], cal[3], 3) && near(mon[3], cal[3], 3), `두 줄이 반씩 - 같은 높이 (${cal[3]} · ${mon[3]} · ${thu[3]})`);
+  const selectedCard = () => page.locator(`${L} [data-board-day-selected]`).getAttribute('data-week-day');
+  r.check((await selectedCard()) === DAY, `고른 칸 = 고른 날 (${await selectedCard()})`);
+  // 작은 달력 - 월요일부터 · 보는 주 한 줄 · 고른 날 · 점 · 글자
+  const calDay = (d) => page.locator(sel('board-cal-day', d));
+  const firstCal = await page.locator(sel('board-cal-day')).first().getAttribute('data-board-cal-day');
+  r.check(firstCal === '2026-09-28', `달력은 월요일부터 (첫 칸 ${firstCal})`);
+  r.check((await page.locator(sel('board-cal-week')).getAttribute('data-board-cal-week')) === '2026-10-05', '보는 주 한 줄을 칠한다');
+  r.check((await calDay(DAY).textContent()) === '8' && (await calDay(DAY).getAttribute('aria-current')) === 'date', '고른 날 칸 - 글자 8·칠함');
+  r.check(Number(await calDay(DAY).getAttribute('data-board-cal-count')) >= 1, `달력 일정이 있는 날 = 점 (${await calDay(DAY).getAttribute('data-board-cal-count')})`);
+  r.check(((await page.locator(sel('board-cal-title')).textContent()) ?? '') === '2026년 10월', '달력 머리 = 그 달');
+  // 목록 - 날짜 차례 · 글자 · 기간 m/d~m/d
+  const item = (id) => page.locator(sel('board-month-item', id));
+  r.check(await waitFor(item('insp_bd_period'), 8000), '목록에 심은 기간 일정');
+  r.check(((await item('insp_bd_event').textContent()) ?? '').includes('10/8') && ((await item('insp_bd_event').textContent()) ?? '').includes('점검한눈 일정'), `목록 줄 = m/d + 글 (${await item('insp_bd_event').textContent()})`);
+  r.check(((await item('insp_bd_period').textContent()) ?? '').includes('10/12~10/14'), `기간 = m/d~m/d (${await item('insp_bd_period').textContent()})`);
+  const order = await page.locator(sel('board-month-item')).evaluateAll((es) => es.map((e) => e.getAttribute('data-board-month-item')));
+  r.check(order.indexOf('insp_bd_event') >= 0 && order.indexOf('insp_bd_event') < order.indexOf('insp_bd_period'), '날짜 차례 (10/8 → 10/12)');
+
+  // 요일 칸 누르기 = 그날 고르기 (하루 화면으로 가지 않는다)
+  await page.locator(`${sel('week-day', '2026-10-06')} ${sel('week-day-label')}`).click();
+  r.check(await waitFor(async () => hashOf(page) === '#/board/2026-10-06'), `요일 칸 누르기 = 그날 고르기 (${hashOf(page)})`);
+  r.check(((await page.locator(sel('board-day-title')).textContent()) ?? '').startsWith('10월 6일 (화)'), '오른쪽이 그날');
+  r.check((await selectedCard()) === '2026-10-06' && (await calDay('2026-10-06').getAttribute('aria-current')) === 'date', '고른 칸·달력이 따라온다');
+  // 달력 날짜 = 그날 (다른 주면 요일 칸도 그 주)
+  await calDay('2026-10-21').click();
+  r.check(await waitFor(async () => hashOf(page) === '#/board/2026-10-21'), `달력 날짜 누르기 = 그날 (${hashOf(page)})`);
+  r.check(await waitFor(page.locator(`${L} ${sel('week-day', '2026-10-19')}`)), '요일 칸이 그 주 (10/19~)');
+  r.check((await page.locator(sel('board-cal-week')).getAttribute('data-board-cal-week')) === '2026-10-19', '달력 칠한 주도 그 주');
+  r.check(((await page.locator(sel('date-label')).textContent()) ?? '').includes('10월 4주'), `둘째 줄 주 이름 (${await page.locator(sel('date-label')).textContent()})`);
+  // 달력 ◀▶ = 달만 넘겨 보기 (고른 날은 그대로)
+  await page.locator(sel('board-cal-next')).click();
+  r.check(await waitFor(page.locator(sel('board-month', '2026-11'))), '달력 ▶ = 다음 달');
+  r.check(hashOf(page) === '#/board/2026-10-21' && (await calDay('2026-11-30').count()) === 1, '고른 날은 그대로');
+  r.check(((await page.locator(sel('board-cal-title')).textContent()) ?? '') === '2026년 11월', '달력 머리 = 넘겨 본 달');
+  // 고른 날이 바뀌면(둘째 줄 ◀ = 한 주) 그 달로 돌아온다
+  await page.locator(sel('date-prev')).click();
+  r.check(await waitFor(async () => hashOf(page) === '#/board/2026-10-14'), `◀ = 한 주 (${hashOf(page)})`);
+  r.check(await waitFor(page.locator(sel('board-month', '2026-10'))), '고른 날이 바뀌면 달력이 그 달로');
+  // 목록 줄 누르기 = 그날 + 그 일정 칸
+  await page.locator(`${sel('board-month-item', 'insp_bd_event')} ${sel('board-month-item-text')}`).click();
+  r.check(await waitFor(async () => hashOf(page) === `#/board/${DAY}`), `목록 줄 = 그날 고르기 (${hashOf(page)})`);
+  const evPanel = page.locator(`#side-column ${sel('event-panel', 'edit')}`);
+  r.check(await waitFor(evPanel, 5000), '목록 줄 = 그 일정 칸');
+  r.check((await evPanel.getAttribute('data-event-id')) === 'insp_bd_event', `그 일정 (${await evPanel.getAttribute('data-event-id')})`);
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator('#side-column').count()) === 0, 5000);
+  // 칩 = 완료 (서버) · 다시 = 풀기
+  await page.locator(sel('board-month-item-chip', 'insp_bd_event')).click();
+  const doneOf = async () => (await getDoc(itemRef('insp_bd_event'))).data()?.done;
+  r.check((await serverUntil(doneOf, (v) => v === true)) === true, '목록 칩 = 완료 (서버)');
+  r.check(await waitFor(async () => (await item('insp_bd_event').getAttribute('data-board-month-item-done')) === '1'), '목록 줄 = 끝낸 표시 ✓');
+  await page.locator(sel('board-month-item-chip', 'insp_bd_event')).click();
+  r.check((await serverUntil(doneOf, (v) => !v)) !== true, '다시 누르면 풀기');
+  // 빈 달
+  await page.goto(page.url().replace(/#.*$/, '#/board/2031-01-15'));
+  r.check(await waitFor(page.locator(sel('board-month-empty')), 5000), '달력 일정이 없는 달');
+  r.check(((await page.locator(sel('board-month-empty')).textContent()) ?? '').includes('1월 달력 일정이 없습니다'), `빈 달 안내 글자 (${await page.locator(sel('board-month-empty')).textContent()})`);
+  await page.goto(page.url().replace(/#.*$/, `#/board/${DAY}`));
+  await waitFor(async () => (await selectedCard()) === DAY, 5000);
+  // 주말 감추기 = [달력][월][화] / [수][목][금]
+  await page.locator(sel('view-toggle', 'showWeekend')).click();
+  try {
+    r.check(await waitFor(async () => (await cards.count()) === 5), `주말을 감추면 요일 칸 다섯 (${await cards.count()})`);
+    const [cal5, tue5, wed5] = await Promise.all([sel('board-month'), sel('week-day', '2026-10-06'), sel('week-day', '2026-10-07')].map((q) => box(page, `${L} ${q}`)));
+    r.check(near(tue5[1], cal5[1]) && tue5[0] > cal5[0], `화는 첫 줄 끝 (${tue5})`);
+    r.check(near(wed5[0], cal5[0]) && wed5[1] >= cal5[1] + cal5[3], `수는 둘째 줄 첫 칸 (${wed5})`);
+  } finally {
+    await page.locator(sel('view-toggle', 'showWeekend')).click();
+    await page.waitForTimeout(2500); // 계정 설정은 1초 뒤 올라간다
+  }
+  r.check(await waitFor(async () => (await cards.count()) === 7), '주말을 다시 켜면 일곱');
+
   r.section('경계선 셋 끌기 → 이 기기에 남는다');
   await drag(page, 'board-main', -150, 0);
   const left2 = await box(page, '[data-board-left]');
@@ -134,7 +221,7 @@ try {
   await nav(true);
   try {
     await page.waitForTimeout(300);
-    for (const pane of ['lessons', 'memo']) {
+    for (const pane of ['left', 'lessons', 'memo']) {
       const b = await box(page, sel('board-pane', pane));
       await page.mouse.move(b[0] + b[2] / 2, b[1] + b[3] / 2);
       for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 400);
