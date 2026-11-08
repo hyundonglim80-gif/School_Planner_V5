@@ -3,7 +3,7 @@
 //   수업: 교시 줄(features/lessons/WeekLessonRows - P6-1) - 누르면 'N교시 수정' 칸.
 //   일정: 라벨 칩 누르기 = 완료, 글 누르기 = 오른쪽 일정 칸, 마우스를 올리면 ✕, 🔗 n = 연결된 데이터. 오늘 카드에는 이월로 따라오는 일정도(↪).
 //   겹쳐 보기(P17-2): 겹친 공간 일정은 이월 뒤에 공간 색 배경으로(끌기·✕·고르기 없음 - 누르기·완료는 부르는 쪽이 그 공간으로).
-//   카드 빈 곳 = 그날 하루 화면. + = 그날 새 일정. 일정을 끌어 다른 요일 카드에 놓으면 옮긴다(P5-3 - 마우스 화면만).
+//   카드 빈 곳 = 그날 하루 화면(한눈에는 그날 고르기 - P24-2, 고른 날은 outline). + = 그날 새 일정. 일정을 끌어 다른 요일 카드에 놓으면 옮긴다(P5-3 - 마우스 화면만).
 import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
@@ -43,6 +43,12 @@ export interface WeekDayCardProps {
   labelsOf: (ev: ItemDoc) => LabelDoc[];
   pickedIds: ReadonlySet<string>;
   multiOn: boolean;
+  /** 고른 날 (한눈에 - 테두리 밖 outline, 오늘 칸 테두리와 겹쳐도 보인다) */
+  selected?: boolean;
+  /** 칸 높이에 맞추고 넘치면 카드 안에서 스크롤 (한눈에 - 두 줄이 반씩) */
+  fill?: boolean;
+  /** 카드 빈 곳 title (주지 않으면 '누르면 그날 하루 화면') */
+  openDayTitle?: string;
   onOpenDay: () => void;
   onAdd: () => void;
   onOpenNotes: () => void;
@@ -193,12 +199,16 @@ export default function WeekDayCard(props: WeekDayCardProps) {
       tabIndex={0}
       onKeyDown={pressKeys}
       data-today={isToday ? 'true' : undefined}
+      data-board-day-selected={props.selected ? 'true' : undefined}
+      aria-current={props.selected ? 'date' : undefined}
       onClick={props.onOpenDay}
       {...(props.drop ? dropTargetProps(props.drop.handlers, date) : {})}
-      className={`${DAY_CELL_BG[tone]} rounded-2xl border p-2.5 flex flex-col transition-all cursor-pointer group/day hover:shadow-md hover:border-primary/50 min-h-[250px] min-w-0 overflow-hidden ${
+      className={`${DAY_CELL_BG[tone]} rounded-2xl border p-2.5 flex flex-col transition-all cursor-pointer group/day hover:shadow-md hover:border-primary/50 min-w-0 ${
+        props.fill ? 'h-full min-h-0 overflow-y-auto overscroll-contain' : 'min-h-[250px] overflow-hidden'
+      } ${props.selected ? 'outline-2 outline-offset-2 outline-primary' : ''} ${
         isToday ? 'border-primary ring-2 ring-primary/20 shadow-xs' : 'border-slate-200/80 shadow-xs'
       } ${props.drop?.over ? DROP_TARGET_CLASS : ''}`}
-      title="누르면 그날 하루 화면"
+      title={props.openDayTitle ?? '누르면 그날 하루 화면'}
     >
       <div className="flex flex-wrap items-center justify-between gap-x-1 gap-y-1 pb-2.5 border-b border-slate-100 mb-3">
         <div className="flex items-center gap-1 min-w-0 min-h-9">

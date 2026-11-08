@@ -3,105 +3,44 @@
 //   - 🕰️ 작년 이맘때: 이번 주 줄의 카드 아래에 작년 학년도 같은 주 같은 요일(domain/lastYearWeek), 골라서 📥 올해로 가져오기.
 //   - 겹쳐 보기(P17-2): 요일 카드마다 주 공간 것(이월 포함) 뒤에 겹친 공간 그날 일정(그 공간 라벨 트리·색 점) - 누르면 그 공간 칸, 칩 = 그 공간에 완료. 끌기·✕·고르기는 주 공간 것만.
 //   - 📰 주간학습안내(담임 - features/weeklyGuide)는 P6-3. 인쇄(⋮·Ctrl+P)는 인쇄 창(features/print)이 printAt으로 그 주만 그린다(단추 줄·다음 주·작년 없이). 수업 줄은 P6-1(features/lessons/WeekLessonRows - 요일끼리 교시 줄 수가 같다), 끌어 옮기기·공휴일은 P5-3.
-import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
-import { setDate, setScope, useNav } from '../../app/nav';
-import { useCommonSettings } from '../../app/prefs';
+//   - 요일 카드 줄(셈·고르기·끌기·지우기)은 useWeekCards(P24-2 - 한눈에 화면과 함께 쓴다). 여기에는 주간만의 것 - 다음 주 줄·작년 이맘때·주간학습안내.
+import { useMemo, useState } from 'react';
+import { useNav } from '../../app/nav';
 import { openWindow } from '../../app/windows';
 import { addDays, weekDates } from '../../domain/dateUtils';
 import { lastYearWeekOf } from '../../domain/lastYearWeek';
-import { periodStateAt, timesOf } from '../../domain/periodTimes';
-import { itemLabels, itemsOn, useDocs, useHolidayVersion, useLabelTree, useOverlaySpaces, type OverlaySpace } from '../../data/select';
+import { itemLabels, itemsOn, useDocs, useLabelTree } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
-import { useClock } from '../../ui/useClock';
 import { useMainWidth } from '../../ui/useMainWidth';
-import { deleteEvent, setEventDone } from '../events/actions';
-import EventDeleteChooser from '../events/EventDeleteChooser';
-import { useEventDrop } from '../events/drag';
-import EventMoveChooser from '../events/EventMoveChooser';
-import { doneOnDay, isGrouped, orderAfter, type ItemDoc } from '../events/eventOps';
-import { useCarried } from '../events/forward';
-import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
-import { openEventPanel } from '../events/open';
-import { openLessonPanel } from '../lessons/open';
-import { useClassColorOf, useTeaching } from '../lessons/teaching';
-import { useLessonsFor } from '../lessons/useLessons';
-import WeekLessonRows from '../lessons/WeekLessonRows';
-import { useProgressMarks } from '../progress/useProgress';
-import { lessonLinkId } from '../links/linkOps';
-import { openLinkViewer } from '../links/open';
-import { openDayNotes } from '../notes/open';
+import { useTeaching } from '../lessons/teaching';
 import { importLastYear } from './actions';
 import { existsThisYear, isImportableNote, pickKeyOf, type LastYearPick } from './lastYear';
 import LastYearDay from './LastYearDay';
 import { toggleLastYear, useShowLastYear } from './prefs';
-import WeekDayCard from './WeekDayCard';
-import { useEvalCountsByDate } from '../evaluations/evalData';
+import { useWeekCards } from './useWeekCards';
 import { shortcutTarget } from '../../ui/shortcutTarget';
-
-const quiet = () => {
-  /* 안내는 저장 도우미가 했다 */
-};
-
-/** 요일 수에 따라 칸 수 (본문 폭 @container - 오른쪽 칸이 열리면 그만큼 접는다, V4 그대로) */
-const gridClass = (n: number) =>
-  'grid grid-cols-2 @min-[720px]:grid-cols-3 ' + (n === 5 ? '@min-[1200px]:grid-cols-5' : '@min-[980px]:grid-cols-4 @min-[1200px]:grid-cols-7') + ' gap-2 sm:gap-3';
 
 export default function WeekScreen({ printAt }: { printAt?: string }) {
   const sid = useCurrentSpaceId();
-  const evalCounts = useEvalCountsByDate(sid);
   const navDate = useNav((s) => s.date);
   const date = printAt ?? navDate;
   const showWeekend = useNav((s) => s.showWeekend);
   const showEvents = useNav((s) => s.showEvents);
-  const showClass = useNav((s) => s.showClass);
   const showLastYear = useShowLastYear((s) => s.on) && !printAt;
   const items = useDocs('items', sid);
   const eventTree = useLabelTree('event', sid);
   const noteTree = useLabelTree('note', sid);
-  const carried = useCarried(sid);
-  const today = carried.today;
-  const overlays = useOverlaySpaces();
-  const holidays = useHolidayVersion();
-  const multi = useMulti();
-  const drop = useEventDrop(sid);
   const showNextWeek = useMainWidth() >= 1200 && !printAt;
-  const [scopeFor, setScopeFor] = useState<{ item: ItemDoc; day: string } | null>(null);
+  const { showHomeroomTools } = useTeaching();
 
   const thisWeek = useMemo(() => weekDates(date), [date]);
   const nextWeek = useMemo(() => weekDates(addDays(thisWeek[0], 7)), [thisWeek]);
   const visible = (days: string[]) => (showWeekend ? days : days.filter((d) => ![0, 6].includes(new Date(`${d}T00:00:00`).getDay())));
   const shownThis = visible(thisWeek);
   const shownNext = visible(nextWeek);
-
-  // ─── 수업 (P6-1) - 두 주를 함께 셈한다. 교시 줄 수는 보이는 요일끼리 같게(7교시 보충이 있으면 그만큼) ───
+  // 요일 카드 줄 - 두 주를 함께 셈한다 (수업 줄·겹친 공간 - 폭이 바뀌어 다음 주 줄이 생겨도 다시 셈하지 않는다)
   const allDays = useMemo(() => [...thisWeek, ...nextWeek], [thisWeek, nextWeek]);
-  const lessons = useLessonsFor(allDays, sid);
-  const periodDefs = useCommonSettings((s) => s.periods);
-  const times = useMemo(() => timesOf(periodDefs), [periodDefs]);
-  const nowMs = useClock(showClass && allDays.includes(today));
-  const { isClassUnit, showHomeroomTools } = useTeaching();
-  const classColorOf = useClassColorOf(date, sid);
-  // 진도 (P6-2) - 보이는 마지막 날까지 (개인 공간에서만 겹친다)
-  const { marks } = useProgressMarks(allDays[allDays.length - 1]);
-  const rowsOf = (days: string[]) => Math.max(periodDefs.length, ...days.map((d) => lessons[d]?.cells.length ?? 0));
-  const lessonRows = (day: string, rows: number) => {
-    const view = lessons[day];
-    if (!showClass || !view || !sid) return undefined;
-    const state = day === today ? periodStateAt(times, new Date(nowMs), rows) : null;
-    return (
-      <WeekLessonRows
-        date={day}
-        view={view}
-        rows={rows}
-        nowPeriod={state?.kind === 'during' ? state.period : null}
-        isClassUnit={isClassUnit}
-        classColorOf={classColorOf}
-        marks={marks}
-        onOpen={(n) => openLessonPanel({ sid, date: day, n })}
-        onLinks={(n) => openLinkViewer({ sid, id: lessonLinkId(day, n) })}
-      />
-    );
-  };
+  const cards = useWeekCards(sid, date, allDays);
 
   // 작년 이맘때 (이번 주 줄에만)
   const lastYear = useMemo(() => lastYearWeekOf(thisWeek), [thisWeek]);
@@ -113,22 +52,6 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
   const setPicks = (next: Record<string, LastYearPick>) => setPickState({ scope: pickScope, picks: next });
   const [importing, setImporting] = useState(false);
 
-  const eventsOf = (day: string) => itemsOn(items, day, 'event');
-  // 겹친 공간 그날 일정 (두 주 - 공간마다 그 공간 문서에서) + 항목 → 공간
-  const overlayWeek = useMemo(() => {
-    void holidays;
-    const byDay = new Map<string, ItemDoc[]>();
-    const spaceOf = new Map<ItemDoc, OverlaySpace>();
-    for (const o of overlays)
-      for (const day of allDays)
-        for (const ev of itemsOn(o.items, day, 'event')) {
-          spaceOf.set(ev, o);
-          byDay.set(day, [...(byDay.get(day) ?? []), ev]);
-        }
-    return { byDay, spaceOf };
-  }, [overlays, allDays, holidays]);
-  const spaceOf = (ev: ItemDoc) => overlayWeek.spaceOf.get(ev);
-  const sidOf = (ev: ItemDoc) => spaceOf(ev)?.sid ?? sid;
   const lastYearOf = (day: string) => {
     const from = lastYear?.dateMap[day];
     if (!from) return null;
@@ -170,101 +93,30 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
     }
   };
 
-  // ─── 일정 ───
-  const visiblePicks = (days: string[]): EventPick[] => days.flatMap((d) => eventsOf(d).map((ev) => ({ id: ev.id, day: d })));
-  const eventClick = (ev: ItemDoc, day: string, days: string[], e: ReactMouseEvent) => {
-    const p = { id: ev.id, day };
-    const space = spaceOf(ev);
-    // 겹친 일정은 고르기에 들지 않는다 - 고르는 동안은 눌러도 아무 일 없음
-    if (space) {
-      if (!multi.on) openEventPanel({ sid: space.sid, date: day, id: ev.id });
-      return;
-    }
-    if (e.shiftKey) pickRange(visiblePicks(days), p);
-    else if (multi.on || e.ctrlKey || e.metaKey) togglePick(p);
-    else if (sid) openEventPanel({ sid, date: day, id: ev.id });
-  };
-  const toggleDone = (ev: ItemDoc, day: string, isCarried: boolean) => {
-    const space = spaceOf(ev);
-    if (space) {
-      void setEventDone(space.sid, ev, !doneOnDay(ev, day), { day }).catch(quiet);
-      return;
-    }
-    if (!sid) return;
-    // 따라오던 일정을 오늘 칸에서 끝내면 오늘로 옮겨 적는다 (하루 화면과 같다)
-    if (isCarried) void setEventDone(sid, ev, true, { carried: { today, order: orderAfter(eventsOf(today)) } }).catch(quiet);
-    else void setEventDone(sid, ev, !doneOnDay(ev, day), { day }).catch(quiet);
-  };
-  const remove = (ev: ItemDoc, day: string) => {
-    if (!sid) return;
-    if (isGrouped(ev)) setScopeFor({ item: ev, day });
-    else void deleteEvent(sid, ev).catch(quiet);
-  };
-
-  const grid = (days: string[], withLastYear: boolean) => {
-    const rows = rowsOf(days);
+  /** 카드 아래 작년 이맘때 칸 (이번 주 줄에만, 켰을 때) */
+  const lastYearCell = (day: string) => {
+    const ly = showLastYear ? lastYearOf(day) : null;
     return (
-      <div data-week-grid className={gridClass(days.length)} style={{ ['--week-cols' as string]: days.length }}>
-        {days.map((day) => {
-          const pickedHere = new Set(multi.picks.filter((p) => p.day === day).map((p) => p.id));
-          const ly = withLastYear && showLastYear ? lastYearOf(day) : null;
-          return (
-            <WeekDayCard
-              key={day}
-              date={day}
-              today={today}
-              events={eventsOf(day)}
-              carried={day === today ? carried.list : undefined}
-              overlay={overlayWeek.byDay.get(day)}
-              spaceOf={spaceOf}
-              noteCount={itemsOn(items, day, 'note').length}
-              evalCount={evalCounts[day] ?? 0}
-              sid={sid}
-              showEvents={showEvents}
-              lessons={lessonRows(day, rows)}
-              labelsOf={(ev) => itemLabels(spaceOf(ev)?.tree ?? eventTree, ev.labelIds)}
-              pickedIds={pickedHere}
-              multiOn={multi.on}
-              onOpenDay={() => {
-                setDate(day);
-                setScope('day');
-              }}
-              onAdd={() => sid && openEventPanel({ sid, date: day })}
-              onOpenNotes={() => sid && openDayNotes({ sid, date: day })}
-              onEventClick={(ev, e) => eventClick(ev, day, days, e)}
-              onToggleDone={(ev, isCarried) => toggleDone(ev, day, isCarried)}
-              onDelete={(ev) => remove(ev, day)}
-              onOpenLinks={(ev) => {
-                const s = sidOf(ev);
-                if (s) openLinkViewer({ sid: s, id: ev.id });
-              }}
-              drop={{ handlers: drop.handlers, over: drop.overDate === day, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}
-              lastYear={
-                ly && (
-                  <LastYearDay
-                    lastDate={ly.from}
-                    toDate={day}
-                    events={ly.events}
-                    notes={ly.notes}
-                    existsThisYear={(it) => existsThisYear(items, it, day)}
-                    eventLabels={(it) => itemLabels(eventTree, it.labelIds)}
-                    noteLabels={(it) => itemLabels(noteTree, it.labelIds)}
-                    picked={pickedKeys}
-                    onTogglePick={togglePickItem}
-                  />
-                )
-              }
-            />
-          );
-        })}
-      </div>
+      ly && (
+        <LastYearDay
+          lastDate={ly.from}
+          toDate={day}
+          events={ly.events}
+          notes={ly.notes}
+          existsThisYear={(it) => existsThisYear(items, it, day)}
+          eventLabels={(it) => itemLabels(eventTree, it.labelIds)}
+          noteLabels={(it) => itemLabels(noteTree, it.labelIds)}
+          picked={pickedKeys}
+          onTogglePick={togglePickItem}
+        />
+      )
     );
   };
 
   const pickedCount = pickedKeys.size;
   const md = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}`;
 
-  if (printAt) return <div data-screen="week">{grid(shownThis, false)}</div>;
+  if (printAt) return <div data-screen="week">{cards.grid(shownThis)}</div>;
 
   return (
     <div data-screen="week" className="animate-fade-in pb-12">
@@ -332,8 +184,8 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
 
       <div className="flex flex-col gap-4">
         {/* 날짜(둘째 줄)를 누르면 오늘로 - 오늘 카드가 없으면(주말을 감춘 토·일) 이번 주 (app/todayScroll) */}
-        <div data-today-area={thisWeek.includes(today) ? 'true' : undefined} data-week-this>
-          {grid(shownThis, true)}
+        <div data-today-area={thisWeek.includes(cards.today) ? 'true' : undefined} data-week-this>
+          {cards.grid(shownThis, { extra: lastYearCell })}
         </div>
         {showNextWeek && (
           <section aria-label="다음 주" data-week-next>
@@ -344,12 +196,11 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
               </span>
               <div className="flex-1 border-t border-dashed border-slate-200" />
             </div>
-            {grid(shownNext, false)}
+            {cards.grid(shownNext)}
           </section>
         )}
       </div>
-      {scopeFor && sid && <EventDeleteChooser sid={sid} item={scopeFor.item} day={scopeFor.day} onClose={() => setScopeFor(null)} />}
-      {drop.pending && sid && <EventMoveChooser sid={sid} {...drop.pending} onClose={drop.cancel} />}
+      {cards.dialogs}
     </div>
   );
 }
