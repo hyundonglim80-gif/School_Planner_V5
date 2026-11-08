@@ -1,10 +1,20 @@
 // 처음 로그인 띠 'V4 자료 가져오기' (P2-4). V4로 쓴 자료가 있는데 가져온 적도 띠를 닫은 적도 없으면 본문 맨 위에 뜬다(V4 자동 백업 띠 모양).
 // '가져오기'는 백업 창 '가져오기' 탭을 열고 곧바로 가져온다(진행·결과는 그 탭에). '닫기'는 계정에 남겨 다른 기기에서도 다시 뜨지 않는다 -
 // 백업 창 '가져오기' 탭에서 언제든 가져온다.
+// 가져오기 셈(import/v4/run - 일정·학급·진도 셈까지)은 '가져오기'를 누를 때 나눠 받는다(P25-1 첫 화면 JS) - 띠는 상태(runState)만 본다.
 import { useEffect } from 'react';
+import { showErrorToast } from '../../app/toast';
 import { openWindow } from '../../app/windows';
 import { useSession } from '../../data/session';
-import { checkImportOffer, dismissImportOffer, resetGroupImportRun, resetImportRun, runImport, useImportRun } from '../../import/v4/run';
+import { checkImportOffer, dismissImportOffer, resetGroupImportRun, resetImportRun, useImportRun } from '../../import/v4/runState';
+
+/** 가져오기 셈을 받아 돌린다 - 받지 못하면(끊김·새 판) 안내만, 띠는 그대로 남아 다시 누를 수 있다 */
+function startImport(uid: string) {
+  import('../../import/v4/run').then(
+    (m) => m.runImport(uid),
+    (e) => showErrorToast('가져오기를 시작하지 못했습니다. 인터넷 연결을 보고 새로고침한 뒤 다시 눌러 주세요.', e),
+  );
+}
 
 export default function ImportBanner() {
   const uid = useSession((s) => s.user?.uid);
@@ -34,7 +44,7 @@ export default function ImportBanner() {
           data-import-banner-run
           onClick={() => {
             openWindow('backup', { tab: 'import' });
-            void runImport(uid);
+            startImport(uid);
           }}
           className="px-2.5 py-1 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold cursor-pointer"
         >

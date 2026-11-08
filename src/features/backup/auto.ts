@@ -5,21 +5,18 @@
 // - 권한 창은 띄우지 않는다(시키지 않은 로그인 창 금지). 앱을 연 채 30분마다 다시 본다. 3일 넘게 밀리면 본문 위 띠가 '지금 백업'을 권한다
 //   (개인 공간에 적은 자료가 하나도 없으면 띄우지 않는다 - P22-7 새 계정).
 // - 고르는 것은 계정 설정 common.autoBackup, 마지막 백업은 settings/backupLog(백업이 적는다 - 기기마다 같은 것을 본다).
+// - 백업 한 번(자료 모으기·드라이브 올리기)은 backupRun.ts - 백업할 때만 나눠 받는다(P25-1 첫 화면 JS).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { create } from 'zustand';
 import { detectDeviceKind, useCommonSettings } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
-import { backupFileName, backupsToTrash, overdueDays, isBackupDue, shouldNag, type BackupLog } from '../../domain/autoBackup';
-import { BACKUP_KINDS, countBackup, describeCounts } from '../../domain/backup';
-import { buildBackup } from '../../data/backup';
-import { BACKUP_LOG_ID, watchBackupLog } from '../../data/backupLog';
-import { getOrCreateBackupFolder, listBackupFiles, trashDriveFile, uploadPrivateJson } from '../../data/google/driveBackup';
+import { overdueDays, isBackupDue, shouldNag, type BackupLog } from '../../domain/autoBackup';
+import { watchBackupLog } from '../../data/backupLog';
 import { getGoogleTokenQuietly, withGoogleToken } from '../../data/google/token';
-import { batch, writeOp } from '../../data/repo';
 import { useHasLive } from '../../data/select';
 import { usePersonalSpaceId, useSession } from '../../data/session';
 import type { SpaceCollection } from '../../data/types';
-import { personalSpaceId } from '../../data/space';
+import type { BackupRunResult } from './backupRun';
 
 const RECHECK_MS = 30 * 60 * 1000;
 const SNOOZE_KEY = 'sp5-auto-backup-snooze';
@@ -52,50 +49,15 @@ export function useBackupLogWatch() {
   }, [uid]);
 }
 
-export interface BackupRunResult {
-  name: string;
-  summary: string;
-  trashed: number;
-}
+export type { BackupRunResult };
 
 /** 한 번에 하나만 (자동과 '지금 백업'이 겹치지 않게, 탭 안에서) */
 let inFlight = false;
 
-/** 지금 백업한다 - 실패하면 던진다(마지막 백업 시각은 성공했을 때만 고친다) */
+/** 지금 백업한다 - 실패하면 던진다. 백업 한 번은 그때 받는다(backupRun.ts) */
 async function runDriveBackup(uid: string, token: string, keep: number): Promise<BackupRunResult> {
-  const sid = personalSpaceId(uid);
-  const step = (busy: string) => useBackupLog.setState({ busy });
-  step('백업할 자료를 모으는 중…');
-  const file = await buildBackup(
-    sid,
-    '개인',
-    BACKUP_KINDS.map((k) => k.key),
-    null,
-  );
-  file.auto = true;
-  const summary = describeCounts(countBackup(file.colls));
-
-  step('드라이브에 올리는 중…');
-  const folder = await getOrCreateBackupFolder(token);
-  const before = await listBackupFiles(token, folder.id);
-  const name = backupFileName(new Date(), before.map((f) => f.name));
-  await uploadPrivateJson(token, folder.id, name, JSON.stringify(file));
-
-  // 오래된 것 정리 - 실패해도 백업은 됐다
-  let trashed = 0;
-  try {
-    const after = await listBackupFiles(token, folder.id);
-    for (const f of backupsToTrash(after, keep)) {
-      await trashDriveFile(token, f.id);
-      trashed += 1;
-    }
-  } catch (e) {
-    console.warn('오래된 자동 백업을 정리하지 못했습니다:', e);
-  }
-
-  const log: Record<string, unknown> = { lastAt: Date.now(), lastName: name, ...(summary ? { lastSummary: summary } : {}), ...(folder.webViewLink ? { folderLink: folder.webViewLink } : {}) };
-  await batch([writeOp.merge({ sid, coll: 'settings', id: BACKUP_LOG_ID }, log, null)], { fail: '드라이브에는 올렸지만 마지막 백업 시각을 적지 못했습니다.' });
-  return { name, summary, trashed };
+  const { runDriveBackup: run } = await import('./backupRun');
+  return run(uid, token, keep, (busy) => useBackupLog.setState({ busy }));
 }
 
 /** '지금 백업' - 사용자가 눌렀을 때(권한을 물어도 된다). 성공하면 true */
