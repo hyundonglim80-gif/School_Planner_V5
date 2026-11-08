@@ -13,11 +13,17 @@ import {
   weekMonday,
 } from '../domain/dateUtils';
 
-/** board = 한눈에(P24 - 작은 달력·한 주·고른 날 하루). P24-3 전에는 SCOPES·SCREENS에 넣지 않아 주소로만 열린다 */
+/** board = 한눈에(P24 - 작은 달력·한 주·고른 날 하루) */
 export type Scope = 'day' | 'week' | 'month' | 'year' | 'board' | 'memo' | 'class';
 
 /** 화면 차례 (화면 탭·탭바·단축키 '이전/다음 화면'·옆으로 밀기가 같은 차례) */
-export const SCOPES: readonly Scope[] = ['day', 'week', 'month', 'year', 'memo', 'class'];
+export const SCOPES: readonly Scope[] = ['day', 'week', 'month', 'year', 'board', 'memo', 'class'];
+
+/**
+ * 휴대폰(640px 밑)에서 빼는 화면 - 아래 탭바·옆으로 밀기에 없다(5장 'P24 휴대폰 탭바'). 390px에는 이 배치가 들어가지 않고(쌓으면 긴 화면일 뿐),
+ * 탭바 여섯 칸(한 칸 65px)을 지킨다. 머리줄 화면 탭은 640px부터라 태블릿은 쓴다. 주소로 열면 위아래로 쌓아 보인다.
+ */
+export const isPhoneHiddenScope = (scope: Scope) => scope === 'board';
 
 /** 날짜가 없는 화면 (둘째 줄이 없고, 날짜 이동·밀기를 하지 않는다) */
 export const isDatelessScope = (scope: Scope) => scope === 'memo' || scope === 'class';

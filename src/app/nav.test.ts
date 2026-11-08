@@ -114,6 +114,24 @@ describe('이전·다음 화면', () => {
     stepScope(-1);
     expect(useNav.getState().scope).toBe('class');
   });
+
+  it('한눈에는 년간 뒤 - 휴대폰 밀기(phone)는 건너뛴다, 주소로 한눈에를 연 채 밀면 그 앞뒤 (P24-3)', () => {
+    at('year', '2026-10-02');
+    stepScope(1);
+    expect(useNav.getState().scope).toBe('board');
+    stepScope(1);
+    expect(useNav.getState().scope).toBe('memo');
+    stepScope(-1, true);
+    expect(useNav.getState().scope).toBe('year');
+    stepScope(1, true);
+    expect(useNav.getState().scope).toBe('memo');
+    at('board', '2026-10-02');
+    stepScope(1, true);
+    expect(useNav.getState().scope).toBe('memo');
+    at('board', '2026-10-02');
+    stepScope(-1, true);
+    expect(useNav.getState().scope).toBe('year');
+  });
 });
 
 describe('둘째 줄 날짜 글자', () => {

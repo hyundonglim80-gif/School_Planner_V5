@@ -1,5 +1,5 @@
 // tools/inspect-shell.mjs - P1-3 끝 조건을 크롬으로 본다 (앱 껍데기).
-//   1) 빈 화면 여섯을 화면 탭·단축키·주소로 오간다. 새로고침해도 그 자리, 뒤로가기 = 앞 화면.
+//   1) 빈 화면 일곱(P24-3 한눈에 포함)을 화면 탭·단축키·주소로 오간다. 새로고침해도 그 자리, 뒤로가기 = 앞 화면.
 //   2) 둘째 줄: ◀▶·날짜(오늘로)·📅 고르기·토글, 메모·학급에는 없다.
 //   3) 시험 창 둘(창·쓰는 칸)이 V4처럼: 탭(숨은 탭도 글이 남는다)·탭 ×·Ctrl+S(커서 든 칸, 없으면 보이는 탭)·
 //      뒤로가기(맨 위 하나, 다 닫은 뒤라야 앞 화면)·ESC(줄 전체, 저장 안 한 글은 먼저 묻는다)·폭 끌기·가운데 창.
@@ -37,7 +37,7 @@ try {
   r.section('화면 탭·주소');
   await open(page, '#/day/2026-10-08');
   r.check(await screenIs('day'), '주소로 연 하루 화면');
-  for (const scope of ['week', 'month', 'year', 'memo', 'class', 'day']) {
+  for (const scope of ['week', 'month', 'year', 'board', 'memo', 'class', 'day']) {
     await page.click(sel('scope-tab', scope));
     const shown = await screenIs(scope);
     r.check(shown && hashOf(page).startsWith(`#/${scope}`), `탭 → ${scope} (${hashOf(page)})`);

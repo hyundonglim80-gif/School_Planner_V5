@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dateForRoute, parseRoute, routeHash, SCOPES } from './route';
+import { dateForRoute, isPhoneHiddenScope, parseRoute, routeHash, SCOPES } from './route';
 
 describe('주소 ↔ 화면 (DESIGN 7-3)', () => {
   it('화면마다 주소 모양', () => {
@@ -29,8 +29,10 @@ describe('주소 ↔ 화면 (DESIGN 7-3)', () => {
     }
   });
 
-  it('화면 여섯 모두 주소로 오간다', () => {
-    for (const scope of [...SCOPES, 'board' as const]) {
+  it('화면 일곱 모두 주소로 오간다 - 한눈에는 년간 뒤 (P24-3)', () => {
+    expect(SCOPES).toEqual(['day', 'week', 'month', 'year', 'board', 'memo', 'class']);
+    expect(SCOPES.filter(isPhoneHiddenScope)).toEqual(['board']);
+    for (const scope of SCOPES) {
       const route = parseRoute(routeHash(scope, '2026-10-08'));
       expect(route?.scope).toBe(scope);
     }

@@ -7,7 +7,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useToday } from '../ui/useToday';
 import { addDays, addMonthsStr, academicYearOf, DAY_NAMES, parseDateStr, todayStr, weekdayOf, weekMonday } from '../domain/dateUtils';
-import { isDatelessScope, SCOPES, type Scope } from './route';
+import { isDatelessScope, isPhoneHiddenScope, SCOPES, type Scope } from './route';
 import { scrollToToday } from './todayScroll';
 
 export type SemesterFilter = 'all' | 1 | 2;
@@ -85,10 +85,16 @@ export function useFollowToday() {
   }, [today]);
 }
 
-/** 이전·다음 화면 (단축키 Shift+←/→, 옆으로 밀기) - 끝에서 돌아 처음으로 */
-export function stepScope(step: 1 | -1) {
-  const i = SCOPES.indexOf(useNav.getState().scope);
-  setScope(SCOPES[(i + step + SCOPES.length) % SCOPES.length]);
+/**
+ * 이전·다음 화면 (단축키 Shift+←/→, 옆으로 밀기) - 끝에서 돌아 처음으로.
+ * phone = 휴대폰 밀기 - 탭바에 없는 화면(한눈에)은 건너뛴다. 주소로 한눈에를 연 채 밀면 그 앞뒤 화면으로 간다.
+ */
+export function stepScope(step: 1 | -1, phone = false) {
+  const n = SCOPES.length;
+  let i = SCOPES.indexOf(useNav.getState().scope);
+  do i = (i + step + n) % n;
+  while (phone && isPhoneHiddenScope(SCOPES[i]));
+  setScope(SCOPES[i]);
 }
 
 /** 그 화면에서 ◀(-1) ▶(1) 했을 때의 날 */

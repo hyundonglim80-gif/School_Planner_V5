@@ -8,11 +8,13 @@ import { setScope, useNav } from './nav';
 describe('MobileTabBar (V4)', () => {
   beforeEach(() => setScope('day'));
 
-  it('여섯 화면을 모두 보여준다', () => {
-    render(<MobileTabBar />);
+  it('여섯 화면을 보여준다 - 한눈에는 없다 (P24-3 - 390px에 들어가지 않는다)', () => {
+    const { container } = render(<MobileTabBar />);
     for (const label of ['하루', '주간', '월간', '년간', '메모', '학급']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
+    expect(container.querySelectorAll('[data-tabbar-tab]')).toHaveLength(6);
+    expect(container.querySelector('[data-tabbar-tab="board"]')).toBeNull();
   });
 
   it('누르면 화면이 바뀐다', async () => {

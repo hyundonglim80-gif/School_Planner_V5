@@ -1,6 +1,10 @@
 // 휴대폰 세로 화면의 화면 탭 (V4 components/MobileTabBar.tsx). 세로로 긴 화면에서는 위 탭이 엄지에서 가장 멀어 아래로 내린다.
 import { setScope, useNav } from './nav';
+import { isPhoneHiddenScope } from './route';
 import { SCREENS } from './screens';
+
+/** 탭바 화면 - 한눈에는 뺀다 (5장 'P24 휴대폰 탭바' - 390px에 들어가지 않고 한 칸 65px을 지킨다) */
+const TABS = SCREENS.filter((s) => !isPhoneHiddenScope(s.id));
 
 export default function MobileTabBar() {
   const scope = useNav((s) => s.scope);
@@ -12,7 +16,7 @@ export default function MobileTabBar() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="flex items-stretch">
-        {SCREENS.map((tab) => {
+        {TABS.map((tab) => {
           const isActive = scope === tab.id;
           return (
             <button

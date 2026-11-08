@@ -45,7 +45,7 @@ describe('App 껍데기', () => {
     const { container } = render(<App />);
     expect(screen.getByText('SP5')).toBeInTheDocument();
     expect(container.querySelector('[data-session="signed-in"]')).toHaveAttribute('data-user', 't@example.com');
-    expect(container.querySelectorAll('[data-scope-tab]')).toHaveLength(6);
+    expect(container.querySelectorAll('[data-scope-tab]')).toHaveLength(7);
     // 첫 화면 = 하루 (사본이 비어 있으면 '받는 중')
     expect(await screen.findByText('일정을 받는 중…', {}, { timeout: 10_000 })).toBeInTheDocument();
     expect(container.querySelector('[data-build-id]')).toHaveTextContent('빌드 test');

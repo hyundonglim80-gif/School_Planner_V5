@@ -1,5 +1,6 @@
-// tools/inspect-board.mjs - P24-1 ■4·P24-2 ■4: 한눈에 화면(숨긴 채 - 주소 #/board/날짜로만)을 실제 크롬 1400px에서 본다.
-//   1) 주소로 열기 · 둘째 줄 = 주 이름 · 오른쪽 = 고른 날 이름 + 수업|일정 / 메모(글자가 있는지) · 창 높이에 맞음 · 머리줄 탭에는 아직 없다
+// tools/inspect-board.mjs - P24-1 ■4·P24-2 ■4·P24-3 ■1: 한눈에 화면을 실제 크롬 1400px에서 본다.
+//   0) 내놓기(P24-3): 머리줄 화면 탭 '한눈에'는 년간 뒤 · 탭·Shift+7로 가고 보던 날 그대로 · Shift+→ 차례(년간 → 한눈에 → 메모) · 환경설정 시작 화면에 '한눈에'
+//   1) 주소로 열기 · 둘째 줄 = 주 이름 · 오른쪽 = 고른 날 이름 + 수업|일정 / 메모(글자가 있는지) · 창 높이에 맞음 · 머리줄 탭이 눌려 있다
 //   1b) 왼쪽(P24-2): [달력][월][화][수] / [목][금][토][일] 두 줄이 반씩 · 요일 칸 누르기 = 그날 고르기 · 작은 달력(월요일부터·보는 주·점) 날짜 누르기 ·
 //       달력 ◀▶ = 달만 · 그 달 '달력' 일정 목록(날짜 차례·기간 m/d~m/d·줄 누르기 = 그날 + 그 일정 칸·칩 = 완료) · 빈 달 · 주말 감추기 = [달력][월][화] / [수][목][금]
 //   2) 경계선 셋 끌기(왼쪽|오른쪽 · 수업|일정 · 위/메모) → 크기가 바뀌고 이 기기에 남는다 · 다시 열어도 그대로 · 두 번 누르면 기본
@@ -56,6 +57,36 @@ try {
     await setDoc(itemRef(id), { ...stamp, ...data });
     undo.add(() => deleteDoc(itemRef(id)));
   }
+  r.section('내놓기 - 화면 탭·Shift+7·시작 화면 (P24-3)');
+  {
+    // 따로 연 창 - 환경설정 창·보던 화면이 뒤 묶음에 남지 않게 (같은 주소 goto는 새로 읽지 않는다)
+    const { ctx, page, errors } = await newPage(browser);
+    await open(page, `#/day/${DAY}`);
+    const tabs = await page.locator(sel('scope-tab')).evaluateAll((els) => els.map((e) => `${e.getAttribute('data-scope-tab')}:${e.textContent}`));
+    r.check(tabs.join(',') === 'day:하루,week:주간,month:월간,year:년간,board:한눈에,memo:메모,class:학급', `화면 탭 일곱 - 한눈에는 년간 뒤 (${tabs.join(',')})`);
+    await page.locator(sel('scope-tab', 'board')).click();
+    r.check(await waitFor(page.locator(sel('screen', 'board')), 10000), '탭 \'한눈에\'를 누르면 한눈에 화면');
+    r.check(hashOf(page) === `#/board/${DAY}`, `보던 날 그대로 - 하루에서 보던 날이 고른 날 (${hashOf(page)})`);
+    await page.locator('main').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('Shift+Digit4');
+    r.check(await waitFor(page.locator(sel('screen', 'year'))), 'Shift+4 → 년간');
+    await page.keyboard.press('Shift+ArrowRight');
+    r.check(await waitFor(page.locator(sel('screen', 'board'))), 'Shift+→ → 한눈에 (년간 다음)');
+    await page.keyboard.press('Shift+ArrowRight');
+    r.check(await waitFor(page.locator(sel('screen', 'memo'))), 'Shift+→ → 메모 (한눈에 다음)');
+    await page.keyboard.press('Shift+Digit7');
+    r.check(await waitFor(page.locator(sel('screen', 'board'))), 'Shift+7 → 한눈에');
+    const tip = await page.locator(sel('scope-tab', 'board')).getAttribute('title');
+    r.check(/한눈에 화면.*Shift.*7/.test(tip ?? ''), `탭 툴팁에 단축키 (${tip})`);
+    await page.evaluate(() => window.sp5.openWindow('settings'));
+    await page.locator(sel('settings-tab', 'view')).click();
+    const startup = page.locator(sel('choice', 'startupScope:board'));
+    r.check(await waitFor(startup, 5000), '환경설정 시작 화면에 \'한눈에\'');
+    r.check(((await startup.textContent()) ?? '').includes('한눈에'), `시작 화면 칸에 글자 (${await startup.textContent()})`);
+    r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
+    await ctx.close();
+  }
+
   const { page, errors } = await newPage(browser);
   await open(page, `#/board/${DAY}`);
   const screen = page.locator(sel('screen', 'board'));
@@ -67,7 +98,7 @@ try {
   r.check(label === '2026년 10월 2주', `둘째 줄 = 주 이름 (${label})`);
   const title = await page.locator(sel('board-day-title')).textContent();
   r.check(title?.startsWith('10월 8일 (목)'), `오른쪽 위 = 고른 날 이름 (${title})`);
-  r.check((await page.locator(sel('scope-tab', 'board')).count()) === 0, '머리줄 화면 탭에는 아직 없다 (P24-3까지 숨김)');
+  r.check((await page.locator(sel('scope-tab', 'board')).getAttribute('aria-pressed')) === 'true', '머리줄 화면 탭 \'한눈에\'가 눌려 있다');
   // 오른쪽 세 칸에 글자 (크기만 재면 빈 칸도 통과한다 - CLAUDE.md 2장)
   const eventCard = page.locator(`${sel('board-pane', 'events')} ${sel('event-card', 'insp_bd_event')}`);
   const noteCard = page.locator(`${sel('board-pane', 'memo')} ${sel('entry-card', 'insp_bd_note')}`);
