@@ -8,7 +8,7 @@ import { showToast } from '../../app/toast';
 import { openWindow } from '../../app/windows';
 import { useHasLive } from '../../data/select';
 import { usePersonalSpaceId } from '../../data/session';
-import { useImportOfferSettled } from '../../import/v4/run';
+import { useImportOfferSettled } from '../../import/v4/runState';
 import { setClassView } from '../class/view';
 import { useTeaching } from './teaching';
 

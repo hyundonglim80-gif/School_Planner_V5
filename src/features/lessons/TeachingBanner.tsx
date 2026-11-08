@@ -4,7 +4,7 @@
 // V4 가져오기 띠가 있거나 아직 모르면 띄우지 않는다(P22-7 - 가져오기가 교사 유형을 옮겨 온다). 고른 뒤에는 '다음' 띠(FirstStepsBanner).
 import { useCommonLoaded } from '../../app/prefs';
 import { showToast } from '../../app/toast';
-import { useImportOfferSettled } from '../../import/v4/run';
+import { useImportOfferSettled } from '../../import/v4/runState';
 import { presetPatch, TEACHER_PRESETS, type TeacherPreset } from '../../domain/teachingMode';
 import { updateTeaching, useTeaching } from './teaching';
 

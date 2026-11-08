@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
@@ -20,6 +21,8 @@ const BUILD_ID = new Date(Date.now() + 9 * 3600_000).toISOString().slice(0, 16).
 export default defineConfig(({ mode }) => ({
   // V5는 Firebase Hosting 새 사이트의 맨 위에 선다(V3·V4의 github.io 하위 경로와 출처를 나누려고 - PLAN 2장).
   base: '/',
+  // re2js(Firestore 파이프라인 정규식 엔진 - 첫 화면 gzip 44KB)를 빈 대신 것으로 (P25-1 첫 화면 JS). 까닭·지킴은 src/data/re2jsStub.ts·.test.ts.
+  resolve: { alias: { re2js: fileURLToPath(new URL('./src/data/re2jsStub.ts', import.meta.url)) } },
   define: {
     __BUILD_ID__: JSON.stringify(BUILD_ID),
     // 점검용 에뮬레이터에 붙는 빌드인가(`--mode emu` 또는 VITE_USE_EMULATOR=1 - V4와 같은 변수).

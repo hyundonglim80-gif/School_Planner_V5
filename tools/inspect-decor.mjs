@@ -37,7 +37,8 @@ const prefs = (page, fn, arg) =>
 const setDecor = async (page, kind) => {
   await prefs(page, (m, k) => m.setCommonSetting('decor', k), kind);
   if (kind === 'off') await waitFor(async () => (await page.locator(sel('decor-band')).count()) === 0, 3000);
-  else await page.locator(sel('decor-band', kind)).waitFor({ state: 'attached', timeout: 5000 });
+  // 띠 그림은 켰을 때 나눠 받는다(P25-1) - 상자만이 아니라 무늬까지 그려진 뒤에 잰다
+  else await page.locator(`${sel('decor-band', kind)} svg pattern`).waitFor({ state: 'attached', timeout: 5000 });
 };
 const commonLoaded = (page) => waitFor(async () => prefs(page, (m) => m.useCommonLoaded.getState().loaded), 10000);
 
@@ -157,7 +158,8 @@ try {
       r.check(blocked.length === 0, '머리줄 단추를 막지 않는다', `막힌 단추: ${blocked.join(' · ')}`);
       const events = page.locator(`${sel('event-empty')} ${sel('decor-spot', kind)}`);
       const journal = page.locator(`${sel('journal-empty')} ${sel('decor-spot', kind)}`);
-      r.check((await events.count()) === 1 && (await journal.count()) === 1, '빈 일정·메모 칸에 그림');
+      // 그림은 켰을 때 나눠 받는다(P25-1) - 처음 켠 때는 받을 때까지 기다린다
+      r.check(await waitFor(async () => (await events.count()) === 1 && (await journal.count()) === 1), '빈 일정·메모 칸에 그림');
       const size = await events.evaluate((e) => {
         const b = e.getBoundingClientRect();
         return [Math.round(b.width), Math.round(b.height), e.querySelectorAll('path, circle, ellipse').length];

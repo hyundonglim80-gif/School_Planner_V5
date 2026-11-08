@@ -1,6 +1,8 @@
-// 꾸미기 그림 (P20-3) - 코드로 그린 SVG. 번들 안에 있어 오프라인에서도 뜬다(파일로 두면 sw.js 담을 목록을 따로 챙겨야 한다).
+// 꾸미기 그림 (P20-3) - 코드로 그린 SVG. 빌드 조각이라 sw.js가 함께 담아 오프라인에서도 뜬다(그림 파일로 두면 담을 목록을 따로 챙겨야 한다).
+// 꾸미기는 기본 끄기라 첫 화면에 싣지 않고 켰을 때만 나눠 받는다(P25-1 - DecorBand·DecorSpot이 lazy로 부른다).
 // 빛깔은 index.css `.decor-art`의 변수(밝기마다 - 여기서는 변수만 쓴다). 이미 있는 캐릭터는 본뜨지 않는다.
 //   DecorTile    = 머리줄 뒤 띠의 무늬 한 칸 (TILE_W × TILE_H, 아래쪽이 머리줄 아래에 붙는다 - 메모·학급 화면은 머리줄이 낮아 위가 잘린다)
+//   DecorBandArt = 그 무늬를 가로로 되풀이한 띠 그림 (DecorBand 안)
 //   DecorPicture = 빈 화면 그림 (72 × 72)
 import type { ReactNode, SVGProps } from 'react';
 import type { DecorKind } from '../domain/decor';
@@ -284,6 +286,22 @@ const TILES: Record<DecorKind, () => ReactNode> = { spring: SpringTile, summer: 
 export function DecorTile({ kind }: { kind: DecorKind }) {
   const Draw = TILES[kind];
   return <Draw />;
+}
+
+const TILE_ID = 'sp5-decor-tile';
+
+/** 머리줄 뒤 띠 그림 - 무늬 한 칸을 가로로 되풀이 */
+export function DecorBandArt({ kind }: { kind: DecorKind }) {
+  return (
+    <svg width="100%" height={TILE_H}>
+      <defs>
+        <pattern id={TILE_ID} width={TILE_W} height={TILE_H} patternUnits="userSpaceOnUse">
+          <DecorTile kind={kind} />
+        </pattern>
+      </defs>
+      <rect width="100%" height={TILE_H} fill={`url(#${TILE_ID})`} />
+    </svg>
+  );
 }
 
 // ── 빈 화면 그림 ──

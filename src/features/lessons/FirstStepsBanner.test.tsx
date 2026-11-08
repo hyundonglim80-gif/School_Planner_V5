@@ -8,7 +8,7 @@ import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mi
 import { useHasLive } from '../../data/select';
 import { useSession } from '../../data/session';
 import { DEFAULT_TEACHING_MODE } from '../../domain/teachingMode';
-import { useImportRun } from '../../import/v4/run';
+import { useImportRun } from '../../import/v4/runState';
 import FirstStepsBanner from './FirstStepsBanner';
 import TeachingBanner from './TeachingBanner';
 

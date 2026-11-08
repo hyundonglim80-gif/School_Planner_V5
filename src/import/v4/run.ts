@@ -1,5 +1,5 @@
 // V4 가져오기 실행 (DESIGN 8장). 읽기(read.ts) → 맞춰 보기(labels·settings - 순수) → 적기(저장 도우미) → 기록(settings/import).
-// 화면(환경설정 '가져오기'·처음 로그인 띠)은 이 store(useImportRun)를 보고 runImport를 부른다.
+// 화면(환경설정 '가져오기'·처음 로그인 띠)은 store(useImportRun - runState.ts)를 보고 runImport를 부른다. 처음 띠는 누를 때 이 파일을 나눠 받는다(P25-1).
 //
 // - 한 번에 하나만 돈다. 적기는 500개씩 묶어(Firestore 한도) 진행 칸을 채운다 - 끊기면 다시 누르면 된다(결정적 id·지문이라 겹치지 않는다).
 // - 되돌리기(Ctrl+Z)에 넣지 않는다: 수백 개를 한꺼번에 지운 표시로 되돌리면 더 위험하다. 다시 가져오기가 바뀐 것만 고친다.
@@ -8,7 +8,6 @@
 //   학급(P7-5 - 명렬표·출결·알림장·조사표·자리표·모둠·암기, 기록·메모의 학생 태그는 같은 실행의 명렬표로), 기록은 맨 끝(다 적은 뒤).
 // 공유 그룹(P8-4 runGroupImport): V4 groups/{gid} → spaces/g_{gid} - 공간을 열고(data/spaces ensureImportedGroup) 그 그룹 항목이 쓰는 라벨·일정·기록·메모·수업 칸·
 //   알림장·조사표를 같은 규칙으로. 기록은 그 그룹의 settings/import.
-import { create } from 'zustand';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { batch, BATCH_LIMIT, writeOp } from '../../data/repo';
 import { personalSpaceId } from '../../data/space';
@@ -25,39 +24,16 @@ import { planClasses, planEvaluations, planNotices, studentSid } from './classes
 import { planItems, usedLabelNames, type ItemsPlan } from './items';
 import { eventLabelSources, type V4LabelDocs } from './labels';
 import { planLessons } from './lessons';
-import { hasV4Data, readSpaceDoc, readSpaceDocs, readV4ClassDocs, readV4GroupDocs, readV4ItemDocs, readV4LabelDocs, readV4LessonDocs, readV4SettingsDocs, type V4Group } from './read';
+import { readSpaceDoc, readSpaceDocs, readV4ClassDocs, readV4GroupDocs, readV4ItemDocs, readV4LabelDocs, readV4LessonDocs, readV4SettingsDocs, type V4Group } from './read';
 import { readRecord, recordData, recordPath, type ImportRecord } from './record';
+import { useGroupImportRun, useImportRun, type GroupImportRun, type ImportRun } from './runState';
 import { planSettings, termsFromV4 } from './settings';
 
-export type ImportState = 'idle' | 'running' | 'done' | 'failed';
-
-export interface ImportRun {
-  state: ImportState;
-  /** 지금 하는 일 (진행 칸 글) */
-  step: string;
-  /** 적은 쓰기 / 모두 */
-  done: number;
-  total: number;
-  /** 이번 결과 (끝나면) */
-  counts?: Record<string, ImportCounts>;
-  /** 서버에서 읽은 기록 (지난 결과·띠) - 아직 모르면 undefined */
-  record?: ImportRecord;
-  /** 처음 로그인 띠를 보인다 (V4 자료가 있고, 가져온 적도 띠를 닫은 적도 없다) */
-  offer: boolean;
-  /** 띠를 띄울지 다 보았나 (P22-7 - 그 전에는 교사 유형·다음 띠도 띄우지 않는다: 가져오기 띠가 먼저) */
-  offerChecked: boolean;
-}
-
-const IDLE: ImportRun = { state: 'idle', step: '', done: 0, total: 0, offer: false, offerChecked: false };
-
-export const useImportRun = create<ImportRun>(() => IDLE);
+// 상태·처음 띠는 runState.ts(첫 화면이 부른다 - P25-1). 여기서 부르던 곳은 그대로 쓴다.
+export * from './runState';
 
 const set = (p: Partial<ImportRun>) => useImportRun.setState(p);
-
-/** 로그아웃·다른 계정 - 앞 사람 결과를 보이지 않는다 */
-export function resetImportRun() {
-  useImportRun.setState(IDLE, true);
-}
+const setGroup = (p: Partial<GroupImportRun>) => useGroupImportRun.setState(p);
 
 /** 결과 수 모두 더하기 */
 export const totalCounts = (counts: Record<string, ImportCounts> | undefined) =>
@@ -142,69 +118,6 @@ function lessonOffDay(ip: ItemsPlan, labelDocs: V4LabelDocs, eventLabelMap: Read
   }
   const eventsOn = (date: string) => ip.events.filter((e) => e.date === date || onPeriodDay(e as Parameters<typeof onPeriodDay>[0], date, isHoliday));
   return (date: string) => classOffReason(date, { terms, isHoliday, eventsOn, labels }) !== null;
-}
-
-/** 기록만 읽는다 (환경설정 '가져오기' - 지난 결과). 연결이 없으면 조용히 */
-export async function loadImportRecord(uid: string): Promise<void> {
-  try {
-    set({ record: readRecord(await readSpaceDoc(personalSpaceId(uid), 'settings', 'import')) });
-  } catch (e) {
-    console.warn('[import] 가져오기 기록을 읽지 못했습니다.', e);
-  }
-}
-
-/** 기록을 읽고 처음 로그인 띠를 보일지 정한다. 연결이 없으면 조용히 그만둔다(다음에 열 때 다시) */
-export async function checkImportOffer(uid: string): Promise<void> {
-  try {
-    const record = readRecord(await readSpaceDoc(personalSpaceId(uid), 'settings', 'import'));
-    set({ record });
-    if (record.at || record.dismissed) return;
-    if (await hasV4Data(uid)) set({ offer: useImportRun.getState().state === 'idle' });
-  } catch (e) {
-    console.warn('[import] 가져오기 기록을 읽지 못했습니다.', e);
-  } finally {
-    // 연결이 없어 못 보았어도 - 뒤 띠까지 막아 두지 않는다
-    set({ offerChecked: true });
-  }
-}
-
-/** 가져오기 띠가 없다고 정해졌고 가져오는 중도 아닌가 (P22-7 - 교사 유형·다음 띠가 그 뒤에 뜬다. 가져오기가 교사 유형·시간표·학급을 옮겨 온다) */
-export const useImportOfferSettled = () => useImportRun((s) => s.offerChecked && !s.offer && s.state !== 'running');
-
-/** 처음 로그인 띠 닫기 - 계정에 남겨 다른 기기에서도 다시 뜨지 않는다(환경설정 '가져오기'에서는 언제든 가져온다) */
-export async function dismissImportOffer(uid: string): Promise<void> {
-  const sid = personalSpaceId(uid);
-  set({ offer: false });
-  try {
-    // 기록이 있으면 그 위에 (못 읽으면 적지 않는다 - 지난 결과를 빈 기록으로 덮지 않게)
-    const recDoc = await readSpaceDoc(sid, 'settings', 'import');
-    const next: ImportRecord = { ...readRecord(recDoc), dismissed: true };
-    await batch([writeOp.put(recordPath(sid), recordData(next), recDoc)]);
-    set({ record: next });
-  } catch (e) {
-    if (!(e instanceof ShownError)) showErrorToast('띠를 닫은 것을 계정에 남기지 못했습니다. 다음에 다시 보일 수 있습니다.', e);
-  }
-}
-
-// ───────── 공유 그룹 (P8-4) ─────────
-
-export interface GroupImportRun {
-  state: ImportState;
-  /** 가져오는(가져온) V4 그룹 id */
-  gid: string | null;
-  step: string;
-  done: number;
-  total: number;
-  /** 끝난 결과 - V4 그룹 id → 결과 수·안내 수 (이번 로그인 동안) */
-  results: Record<string, { at: number; counts: Record<string, ImportCounts>; notes: Record<string, number> }>;
-}
-
-const GROUP_IDLE: GroupImportRun = { state: 'idle', gid: null, step: '', done: 0, total: 0, results: {} };
-export const useGroupImportRun = create<GroupImportRun>(() => GROUP_IDLE);
-const setGroup = (p: Partial<GroupImportRun>) => useGroupImportRun.setState(p);
-
-export function resetGroupImportRun() {
-  useGroupImportRun.setState(GROUP_IDLE, true);
 }
 
 /**
