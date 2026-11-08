@@ -110,7 +110,9 @@ try {
   r.check(shifted?.date === '2026-10-29' && shifted.endDate === '2026-10-31', `통째로 = 끝 날도 같은 날 수만큼 (${shifted?.date}~${shifted?.endDate})`);
 
   r.section('끌어 옮기기 - 년간 자세히');
+  // 바로 앞 범위 창이 닫히며 한 뒤로가기가 주소를 월간으로 되돌릴 수 있다 - 년간이 뜰 때까지 다시 간다 (CLAUDE.md 2장, 11-08 한 번 틀림)
   await page.goto(page.url().replace(/#.*$/, '#/year/2026'));
+  for (let i = 0; i < 3 && !(await waitFor(page.locator(sel('year-view', 'detail')), 3000)); i++) await page.goto(page.url().replace(/#.*$/, '#/year/2026'));
   await page.locator(sel('year-view', 'detail')).click();
   await waitFor(page.locator(sel('year-event', 'insp_mv5')), 8000);
   await page.locator(sel('year-event', 'insp_mv5')).dragTo(page.locator(sel('year-day', '2026-11-12')));
