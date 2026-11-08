@@ -73,4 +73,16 @@ describe('월간 달력 날', () => {
     const f = monthGridDates(2027, 2);
     expect([f[0], f[f.length - 1], f.length]).toEqual(['2027-01-31', '2027-03-06', 35]);
   });
+  it('월요일부터 (P24-2 한눈에 작은 달력) - 1일이 든 주의 월요일 ~ 말일이 든 주의 일요일', async () => {
+    const { monthGridDates } = await import('./dateUtils');
+    // 2026-11-01은 일요일 - 그 주 월요일 10-26부터, 11-30(월)이 든 주 일요일 12-06까지
+    const n = monthGridDates(2026, 11, 1);
+    expect([n[0], n[n.length - 1], n.length]).toEqual(['2026-10-26', '2026-12-06', 42]);
+    // 2027-02-01은 월요일, 02-28은 일요일 - 꼭 네 주
+    const f = monthGridDates(2027, 2, 1);
+    expect([f[0], f[f.length - 1], f.length]).toEqual(['2027-02-01', '2027-02-28', 28]);
+    // 일요일부터와 같은 달 2026-10 (1일 목, 31일 토)
+    const o = monthGridDates(2026, 10, 1);
+    expect([o[0], o[o.length - 1], o.length]).toEqual(['2026-09-28', '2026-11-01', 35]);
+  });
 });

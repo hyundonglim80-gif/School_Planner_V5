@@ -1,7 +1,9 @@
 // 둘째 줄 날짜 옆 📅 - 눌러도 올려도 작은 달력이 뜬다 (V4 components/MiniCalendarPicker.tsx에서 옮김, 날짜는 'YYYY-MM-DD').
 // 메모 쓰는 칸의 '+ 날짜'(P10-3)도 이것 - trigger로 단추 모양을 바꾸고(누를 때만 열린다), marked = 이미 고른 날짜들.
+// 요일 머리 + 날 칸 판은 ui/MiniMonth(P24-2 - 한눈에 화면 첫 칸과 함께 쓴다, 여기는 일요일부터).
 import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
-import { formatDate, parseDateStr, todayStr } from '../domain/dateUtils';
+import { parseDateStr, todayStr } from '../domain/dateUtils';
+import MiniMonth from './MiniMonth';
 
 interface MiniCalendarPickerProps {
   /** 보는 날 'YYYY-MM-DD' */
@@ -16,7 +18,6 @@ interface MiniCalendarPickerProps {
 }
 
 const POPOVER_WIDTH = 230;
-const WEEK_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
 export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked, hint = '클릭 시 이동' }: MiniCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -110,21 +111,6 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
     handleClose();
   };
 
-  // 달력 칸: 앞 달 꼬리 + 이번 달 + 다음 달 머리 (한 줄 7칸)
-  const firstDayIndex = new Date(viewYear, viewMonth, 1).getDay();
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-  const cells: Array<{ dateStr: string; day: number; inMonth: boolean }> = [];
-  for (let i = firstDayIndex; i > 0; i--) {
-    const d = new Date(viewYear, viewMonth, 1 - i);
-    cells.push({ dateStr: formatDate(d), day: d.getDate(), inMonth: false });
-  }
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push({ dateStr: formatDate(new Date(viewYear, viewMonth, d)), day: d, inMonth: true });
-  }
-  const remaining = (7 - (cells.length % 7)) % 7;
-  for (let d = 1; d <= remaining; d++) {
-    cells.push({ dateStr: formatDate(new Date(viewYear, viewMonth + 1, d)), day: d, inMonth: false });
-  }
   const today = todayStr();
 
   return (
@@ -203,26 +189,20 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
             </div>
           </div>
 
-          <div className="grid grid-cols-7 mb-1 pb-1 border-b border-slate-100 text-center text-xs font-bold">
-            {WEEK_DAYS.map((w, idx) => (
-              <div key={w} className={`py-0.5 ${idx === 0 ? 'text-rose-500' : idx === 6 ? 'text-cobalt-600' : 'text-slate-500'}`}>
-                {w}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-0.5 text-center">
-            {cells.map(({ dateStr, day, inMonth }) => {
+          {/* 달력 칸: 앞 달 꼬리 + 이번 달 + 다음 달 머리 (한 줄 7칸) */}
+          <MiniMonth
+            year={viewYear}
+            month={viewMonth + 1}
+            day={(dateStr, inMonth) => {
               if (!inMonth) {
                 return (
                   <button
-                    key={dateStr}
                     type="button"
                     data-picker-day={dateStr}
                     onClick={() => select(dateStr)}
                     className="h-6 flex items-center justify-center text-xs text-slate-300 hover:bg-slate-100 hover:text-slate-500 rounded transition-colors cursor-pointer"
                   >
-                    {day}
+                    {Number(dateStr.slice(8))}
                   </button>
                 );
               }
@@ -239,17 +219,16 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
               }
               return (
                 <button
-                  key={dateStr}
                   type="button"
                   data-picker-day={dateStr}
                   onClick={() => select(dateStr)}
                   className={`h-6 flex items-center justify-center text-xs rounded transition-colors cursor-pointer ${color} ${bg} ${border}`}
                 >
-                  {day}
+                  {Number(dateStr.slice(8))}
                 </button>
               );
-            })}
-          </div>
+            }}
+          />
 
           <div className="flex justify-between items-center mt-1.5 pt-1.5 border-t border-slate-100 text-xs">
             <label className="relative inline-flex items-center gap-1 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded cursor-pointer transition-colors font-medium">
