@@ -52,6 +52,7 @@ const ACTIONS: Partial<Record<ShortcutId, () => void>> = {
   scopeWeek: () => setScope('week'),
   scopeMonth: () => setScope('month'),
   scopeYear: () => setScope('year'),
+  scopeBoard: () => setScope('board'),
   scopeMemo: () => setScope('memo'),
   scopeClass: () => setScope('class'),
   scopePrev: () => stepScope(-1),

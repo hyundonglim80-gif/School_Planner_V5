@@ -19,6 +19,7 @@ export type ShortcutId =
   | 'scopeWeek'
   | 'scopeMonth'
   | 'scopeYear'
+  | 'scopeBoard'
   | 'scopeMemo'
   | 'scopeClass'
   | 'scopePrev'
@@ -118,6 +119,8 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'scopeYear', label: '년간 화면', group: '화면 이동', def: b('4', { shift: true }) },
   { id: 'scopeMemo', label: '메모 화면', group: '화면 이동', def: b('5', { shift: true }) },
   { id: 'scopeClass', label: '학급 화면', group: '화면 이동', def: b('6', { shift: true }) },
+  // 한눈에(P24-3, V5) - 탭은 년간 뒤지만 키는 비어 있던 7 (Shift+1~6은 V4 그대로)
+  { id: 'scopeBoard', label: '한눈에 화면', group: '화면 이동', def: b('7', { shift: true }) },
   { id: 'scopePrev', label: '이전 화면으로', group: '화면 이동', def: b('ArrowLeft', { shift: true }) },
   { id: 'scopeNext', label: '다음 화면으로', group: '화면 이동', def: b('ArrowRight', { shift: true }) },
 

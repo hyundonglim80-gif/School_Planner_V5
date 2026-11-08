@@ -74,7 +74,7 @@ describe('⋮ 메뉴 (MENU.md 3-4)', () => {
 });
 
 describe('머리줄', () => {
-  it('⏳ · 🗑️ · 🔍 · 화면 탭 여섯 · ? · ⋮ · 사진 (PC ＋ 새로는 없다 - P10-1)', () => {
+  it('⏳ · 🗑️ · 🔍 · 화면 탭 일곱 · ? · ⋮ · 사진 (PC ＋ 새로는 없다 - P10-1)', () => {
     const { container } = render(<Header />);
     for (const sel of ['[data-header-dday]', '[data-header-trash]', '[data-header-search]', '[data-header-help]', '[data-more-menu]', '[data-account]']) {
       expect(container.querySelector(sel), sel).not.toBeNull();
@@ -83,7 +83,8 @@ describe('머리줄', () => {
     // 둥근 ＋는 머리줄(backdrop-blur - fixed의 기준) 밖 body에 (P9-3)
     expect(container.querySelector('[data-new-fab]')).toBeNull();
     expect(document.body.querySelector('[data-new-fab]')).not.toBeNull();
-    expect(container.querySelectorAll('[data-scope-tab]')).toHaveLength(6);
+    // 한눈에는 년간 뒤 (P24-3)
+    expect([...container.querySelectorAll('[data-scope-tab]')].map((b) => b.getAttribute('data-scope-tab'))).toEqual(['day', 'week', 'month', 'year', 'board', 'memo', 'class']);
     expect(screen.getByText('SP5')).toBeInTheDocument();
   });
 

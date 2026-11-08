@@ -3,7 +3,7 @@
 //   2) 화면 '하루' = 세로, 구간 끝을 달력에서 고르면 쪽이 늘고 🖨️ 인쇄 = 쪽마다 새 용지(.sp5-print-page)·A4 세로
 //   3) 한 장에 맞추기: 긴 날은 줄여 한 장(zoom) / 끄면 점선으로 여러 장
 //   4) 여백(단추·mm 칸 = @page 여백·쪽 폭)·정렬(가로·세로) - 이 기기에 남는다
-//   5) 월간·년간 쪽, 가로·세로 바꾸기, 메모 화면에서 열면 하루 + '이 화면 그대로 인쇄'
+//   5) 월간·년간 쪽, 가로·세로 바꾸기, 한눈에에서 Ctrl+P = 그 주를 주간으로(P24-3), 메모 화면에서 열면 하루 + '이 화면 그대로 인쇄'
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-print.mjs
 // 에뮬레이터 teacher 계정에 일정·메모를 심고 끝에 지운다.
@@ -158,6 +158,17 @@ try {
   r.check((await page.locator('#sp5-print-root [data-year-sheet]').count()) === 1 && (await page.locator('#sp5-print-root-page').textContent()).includes('landscape'), '찍을 것 = 학사력, 가로');
   await page.locator(sel('print-page', 'month')).click();
   r.check((await page.locator(sel('print-orient', 'portrait')).getAttribute('aria-pressed')) === 'true', '고른 방향은 화면마다 남는다 (월간 세로)');
+
+  r.section('한눈에에서 Ctrl+P = 그 주를 주간으로 (P24-3)');
+  await page.locator(sel('close')).click();
+  await page.goto(page.url().replace(/#.*$/, '#/board/2026-10-14'));
+  await waitFor(page.locator(sel('screen', 'board')), 8000);
+  await page.locator(sel('board-day-title')).click();
+  await page.keyboard.press('Control+p');
+  r.check(await waitFor(win, 8000), 'Ctrl+P = 인쇄 창');
+  r.check((await win.getAttribute('data-print-window')) === 'week', '찍을 화면 = 주간');
+  r.check((await page.locator(sel('print-range')).getAttribute('data-print-range')) === '2026-10-12~2026-10-12', `구간 = 고른 날이 든 주 (${await page.locator(sel('print-range')).getAttribute('data-print-range')})`);
+  r.check(await waitFor(page.locator('[data-print-paper]').filter({ hasText: '인쇄점검 현장학습' }).first(), 8000), '미리보기 쪽에 그 주 일정');
 
   r.section('메모 화면에서');
   await page.locator(sel('close')).click();

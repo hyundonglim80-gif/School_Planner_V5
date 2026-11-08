@@ -1,6 +1,7 @@
 // tools/inspect-mobile.mjs - P9-3 ■2: 휴대폰 390px 한 번 + 다크 모드 (V4 09-28 사용자 결정 - 390px는 이때만 본다).
-//   1) 휴대폰 390px: 여섯 화면과 큰 창마다 가로로 넘치지 않는다(본문 scrollWidth) · 화면 오류 없음 ·
-//      휴대폰 틀(아래 탭바·둥근 ＋·월간 그날 목록에 수업 칩·년간 자세히는 이번 달만 펼침·창은 화면을 덮는다).
+//   1) 휴대폰 390px: 일곱 화면(한눈에는 주소로 - P24-3)과 큰 창마다 가로로 넘치지 않는다(본문 scrollWidth) · 화면 오류 없음 ·
+//      휴대폰 틀(아래 탭바·둥근 ＋·월간 그날 목록에 수업 칩·년간 자세히는 이번 달만 펼침·창은 화면을 덮는다) ·
+//      한눈에(P24-3): 탭바에 없다 · 주소로 열면 위아래로 쌓는다(달력·요일 칸 → 고른 날 수업·일정·메모, 글자가 있는지).
 //   2) 다크 모드(휴대폰·PC): html.dark · 밝을 때 읽히던 글(대비 3 이상)이 어두울 때 2 아래로 떨어지지 않는다(글자색 ↔ 칠한 바탕).
 //      라벨 칩·기간 막대는 V4처럼 다크에서도 제 빛깔(정해 둔 hex)이라 뺀다.
 //   SHOTS=<폴더>면 화면마다 그림을 남긴다(눈으로 본다). 심은 자료(시간표·일정·기록·메모)는 끝에 걷는다.
@@ -111,6 +112,8 @@ const SCREENS = [
   ['week', `#/week/2026-10-12`],
   ['month', '#/month/2026-10'],
   ['year', '#/year/2026'],
+  // 한눈에 (P24-3) - 휴대폰은 탭바에 없고 주소로 열면 쌓는다
+  ['board', `#/board/${DAY}`],
   ['memo', '#/memo'],
   ['class', '#/class'],
 ];
@@ -197,6 +200,24 @@ async function runSet(browser, { name, width, height, mobile, dark }) {
     r.check((await overflowOf(page, width)) === 0, '년간 자세히가 넘치지 않는다');
     await shot(page, `${name}-year-detail`);
     await page.locator(sel('year-view', 'sheet')).click();
+    // 한눈에 (P24-3): 탭바 여섯에 없다 · 주소로 열면 위아래로 쌓는다 · 칸마다 글자
+    r.check((await page.locator(sel('tabbar-tab')).count()) === 6 && (await page.locator(sel('tabbar-tab', 'board')).count()) === 0, '탭바 여섯 - 한눈에는 없다');
+    await go(page, `#/board/${DAY}`);
+    r.check(await waitFor(page.locator(`${sel('screen', 'board')}[data-board-stacked]`), 8000), '한눈에를 주소로 열면 위아래로 쌓는다');
+    const boardDays = await page.locator(sel('week-day')).evaluateAll((els) => els.map((e) => [Math.round(e.getBoundingClientRect().width), (e.textContent ?? '').trim().length]));
+    r.check(boardDays.length === 7 && boardDays.every(([w, n]) => w >= 120 && n > 0), `요일 칸 일곱 - 폭 120px 넘게·글자 (${boardDays.map(([w]) => w).join(',')})`);
+    r.check((await page.locator(sel('board-cal-day')).count()) >= 28, '작은 달력');
+    const [calBox, dayGroup] = await Promise.all([page.locator('[data-board-left]').boundingBox(), page.locator(sel('board-day-group')).boundingBox()]);
+    r.check(!!calBox && !!dayGroup && dayGroup.y >= calBox.y + calBox.height, '고른 날 무리는 왼쪽 무리 아래');
+    const title = ((await page.locator(sel('board-day-title')).textContent()) ?? '').trim();
+    r.check(title.startsWith('10월 14일'), `고른 날 이름 (${title})`);
+    const boardEvent = page.locator(`${sel('board-day-group')} ${sel('event-card', 'insp_mob_e1')}`);
+    r.check(await waitFor(boardEvent, 6000), '고른 날 일정 칸에 심은 일정');
+    r.check(((await boardEvent.textContent()) ?? '').includes('점검폰 학부모'), '일정 카드에 글자');
+    r.check(await waitFor(page.locator(`${sel('board-day-group')} ${sel('day-lessons')}`)), '고른 날 수업 칸');
+    r.check((await page.locator(sel('split-handle')).count()) === 0, '쌓으면 경계선이 없다');
+    r.check((await overflowOf(page, width)) === 0, '한눈에가 넘치지 않는다', `한눈에 가로로 넘친다 (${(await wideOnes(page, width)).join(' · ')})`);
+    await shot(page, `${name}-board`);
   }
 
   // 큰 창 (쓰는 칸·창) - 휴대폰은 화면을 덮는다
