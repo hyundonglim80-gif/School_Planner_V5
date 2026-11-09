@@ -407,6 +407,7 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
 | 2026-11-08 | 클라우드(claude.ai/code) | P24-2 | 한눈에 왼쪽(숨긴 채) | ■0 뗄 것 표(훅 하나 - 끌기가 두 줄을 건너야) · ■1 `week/useWeekCards`(주간이 먼저 쓰고 inspect-week 통과)·[첫 칸][월~수]/[목~일]·카드 누르기 = 고르기 · ■2 `ui/MiniMonth`(📅와 함께)·`monthGridDates` 주 시작·`BoardMonth` 달력 · ■3 `monthList` 목록 · ■4 inspect-board 80 + week·month-year·multi·move-dday(범위 창 뒤 주소 되돌림 - 다시 가기)·space-overlay·shell·notes·print |
 | 2026-11-08 | 클라우드(claude.ai/code) | P24-3 | 한눈에 내놓기 · 끝 = P24 단계 끝 | ■1 `SCOPES`·`SCREENS` 년간 뒤·`scopeBoard` Shift+7·시작 화면·`route.isPhoneHiddenScope`(탭바·`stepScope(step, phone)`) · ■2 설명서 'board'·화면 탭 글·inspect-manual 묶음·PARITY · ■3 inspect-mobile 390·inspect-board 1280/1920/보기 쉽게/꾸미기·inspect-print Ctrl+P(앱 코드 고침 없음) · ■4 MENU·DESIGN 7-3·MAP·CLAUDE.md · 단계 끝 점검 board·week·month-year·shell·scroll·print·mobile·settings·manual(345) 모두 통과 |
 | 2026-11-08 | 클라우드(claude.ai/code) | P25-1 | 첫 화면 JS 나눠 받기 · 끝 = P25 단계 끝 | ■0 묶음 표(모듈마다 크기·진입에서 닿는 길) · ■1 re2js 대신 것(+ 지키는 시험)·`import/v4/runState`·`backup/backupRun`·휴지통 자동 비우기·꾸미기 그림 lazy · 점검 perf 439 → 375KB(같은 컨테이너 견줌, 처음 그림 같음)·import-labels·decor(그림 기다리기)·search-trash·backup 통과, offline 하나는 세션 전부터 컨테이너만 · ■2 DESIGN 10·11장·MAP·CLAUDE.md |
+| 2026-11-09 | 영-전-3-현동림 PC | (요청) | 메모 요청 모델·노력 함수 배포 | 사용자 '이어서' → 남은 👤 함수 배포를 묻고 '지금 배포' → 함수 시험 39 통과 · `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:v5` 7개 성공 · v5SendDueAlarms 새 판(00012) 200 · 규칙 그대로 |
 
 ## 5. 막힌 것 · 결정 메모
 
