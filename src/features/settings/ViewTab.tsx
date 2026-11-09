@@ -2,59 +2,26 @@
 // 화면 밝기·고대비·어둡게를 부드럽게(이 기기에만)·색 테마·색약 배려·꾸미기(계정에 하나 - PC·휴대폰 같게, P20) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
 import { useEffect, useState } from 'react';
 import { FONT_SCALES } from '../../domain/fontScale';
-import { setFontScale, setPopupStyle, useLayoutPrefs, windowMode, type PopupStyle } from '../../app/layoutPrefs';
+import { setFontScale, setPopupStyle, useLayoutPrefs, windowMode } from '../../app/layoutPrefs';
 import { detectDeviceKind } from '../../app/deviceKind';
-import { setEnableScrollNav, setStartupScope, setToggle, useNav, type StartupScope } from '../../app/nav';
-import { SCREENS } from '../../app/screens';
+import { setEnableScrollNav, setStartupScope, setToggle, useNav } from '../../app/nav';
 import { isDarkMode, readThemeMode, setThemeMode, THEME_CHANGED_EVENT, type ThemeMode } from '../../app/theme';
 import { setPalette } from '../../app/palette';
 import { setDecor, useDecorChoice } from '../../app/decor';
 import { useCommonSettings } from '../../app/prefs';
 import { readContrast, readDim, setContrast, setCvd, setDim, VIEW_AIDS_CHANGED_EVENT } from '../../app/viewAids';
 import { PALETTES, paletteSwatch, sanitizePalette } from '../../domain/palette';
-import { decorKind, type DecorChoice } from '../../domain/decor';
+import { decorKind } from '../../domain/decor';
 import { DecorPicture } from '../../ui/decorArt';
 import { useToday } from '../../ui/useToday';
 import { useShortcutTitle } from '../../app/keys';
+import { DECOR_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, THEME_OPTIONS } from '../../app/optionShortcuts';
 import { Choices, Section, ToggleRow } from './parts';
-
-const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
-  { value: 'system', label: '🖥️ 기기 설정 따라' },
-  { value: 'light', label: '☀️ 밝게' },
-  { value: 'dark', label: '🌙 어둡게' },
-];
-
-const DECOR_OPTIONS: { value: DecorChoice; label: string }[] = [
-  { value: 'off', label: '끄기' },
-  { value: 'season', label: '계절 따라' },
-  { value: 'spring', label: '봄' },
-  { value: 'summer', label: '여름' },
-  { value: 'autumn', label: '가을' },
-  { value: 'winter', label: '겨울' },
-  { value: 'animal', label: '동물' },
-];
-
-// PC는 오른쪽 칸 / 팝업창(11-09 사용자 요청 - 옛 '가운데 창 (예전 방식)'을 바꿨다), 휴대폰은 브라우저 새 창이 없어 오른쪽 칸 / 가운데 창 그대로
-const POPUP_STYLE_OPTIONS: Record<'pc' | 'mobile', { value: PopupStyle; label: string }[]> = {
-  pc: [
-    { value: 'side', label: '오른쪽 칸' },
-    { value: 'popup', label: '팝업창' },
-  ],
-  mobile: [
-    { value: 'side', label: '오른쪽 칸' },
-    { value: 'center', label: '가운데 창' },
-  ],
-};
 
 const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
   pc: "'오른쪽 칸'은 화면을 나눠 오른쪽에 띄웁니다(왼쪽 화면을 보며 쓸 수 있다). '팝업창'은 창마다 브라우저 새 창으로 띄워 브라우저 밖·다른 모니터로 옮길 수 있습니다 - 자리와 크기는 창마다 기억합니다.",
   mobile: "'오른쪽 칸'은 오른쪽에서 나오는 배너로, '가운데 창'은 화면 가운데에 띄웁니다(메모·일정을 쓰는 칸은 늘 오른쪽).",
 };
-
-const STARTUP_OPTIONS: { value: StartupScope; label: string }[] = [
-  { value: 'last', label: '마지막에 보던 화면' },
-  ...SCREENS.map((s) => ({ value: s.id, label: s.label })),
-];
 
 export default function ViewTab() {
   const nav = useNav();

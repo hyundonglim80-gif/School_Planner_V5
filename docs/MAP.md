@@ -48,7 +48,9 @@
   `history.ts`(브라우저 기록 한 곳: 주소 맞물리기 `startRouting` + 창 층 `useModalLayer`·`useBackLayer`·`closeAllLayers`, 뒤로가기 표지판) ·
   `windows.ts`(창 목록 `registerWindow`·`openWindow`·`setWindowParams`(창의 `setParams`)·`closeAllWindows`·`registerUnsavedCheck`) · `windowList.ts`(창 등록 한 곳 - 창을 만드는 세션이 한 줄씩) · `WindowHost.tsx` ·
   `moreMenu.ts`(⋮ 4구역 8항목 표) · `keys.ts`(키 처리 한 곳 `runShortcut`·`setShortcutAction`·`runFromButton`·`useShortcutTitle`·`useTabTarget`(탭 단추 표시·툴팁), 바꾼 키 `sp5-shortcuts` = { overrides, tabs }) ·
-  `tabShortcuts.ts`(P18-2 창 안 탭 목록 `TAB_SHORTCUTS`('창:탭' - 창의 탭 타입으로)·ALIAS·`runTabShortcut`·`setTabOpener`(출석부·알림장)·`shortcutLabel`, 키 = 기기 칸 `tabShortcuts`) ·
+  `tabShortcuts.ts`(P18-2 창 안 탭 목록 `TAB_SHORTCUTS`('창:탭' - 창의 탭 타입으로)·ALIAS·`runTabShortcut`·`setTabOpener`(출석부·알림장)·`shortcutLabel`·`isKnownShortcut`, 키 = 기기 칸 `tabShortcuts`) ·
+  `customShortcuts.ts`(P28 내가 만든 키의 등록소 - `provideCustomShortcuts('opt'|'press', 찾기)`·`customShortcutOf`·`runCustomShortcut`, 가벼워서 keys·tabShortcuts가 본다) ·
+  `optionShortcuts.ts`(P28-2 환경설정 값 키 `opt.<이름>.<값>`·켜기/끄기 `opt.<이름>` - 값 14·고르는 값 목록 한 곳(ViewTab도)·`nextOptionValue`(앞 값 `sp5-opt-prev` → 기본값)·`optionTargetOf`·`useOptionTarget`(단추 표시·툴팁), Shell·단축키 탭이 import해 단다, 키 = 기기 칸 `customShortcuts`) ·
   `shortcutRecord.ts`·`ShortcutRecordBar.tsx`(P18-1 눌러서 정하기 - 고르기 = document capture로 `[data-shortcut-target]`(단추에 `ui/shortcutTarget`), 키 = window capture, ESC 취소, 키 바꾸기 = `startKeyFor`, 팝업창 안이면 `requestShortcutRecord` → 큰 창(`popupWindows` 'record' → `startRecordFromPopup`), 저장 = `domain/shortcuts` `assignBinding` → 환경설정 `{ tab: 'shortcuts', focus }` · 띠 `[data-shortcut-record=pick|key]`·body `data-shortcut-recording` 점선 = index.css) ·
   `layoutPrefs.ts`(창 위치·글자 크기·줄 폭 `sp5-layout`) · `prefs.ts`(어느 설정을 어느 문서에 - `DEVICE_PREFS`·`COMMON_SETTINGS`·`useCommonSettings`·`usePrefsSync`·`stopPrefsSync`,
   값은 nav·layoutPrefs·keys store 그대로, 사본 주인 `sp5-settings-owner`) · `install.ts`(sw 등록·설치 이벤트 `installApp`·`useInstall`) · `theme.ts`(화면 밝기 `sp5_theme` - `index.html` 스크립트와 같은 규칙) · `todayScroll.ts` · `useGlobalGestures.ts` · `lazyWithReload.ts` ·

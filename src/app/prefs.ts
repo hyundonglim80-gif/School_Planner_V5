@@ -13,7 +13,14 @@ import { persist } from 'zustand/middleware';
 import { DEFAULT_FONT_SCALE, FONT_SCALES, type FontScale } from '../domain/fontScale';
 import { DEFAULT_DECOR } from '../domain/decor';
 import { DEFAULT_PALETTE } from '../domain/palette';
-import { readShortcutOverrides, readTabBindings, type ShortcutOverrides, type TabBindings } from '../domain/shortcuts';
+import {
+  readCustomBindings,
+  readShortcutOverrides,
+  readTabBindings,
+  type CustomBindings,
+  type ShortcutOverrides,
+  type TabBindings,
+} from '../domain/shortcuts';
 import { readDDayList, type DDay } from '../domain/dday';
 import { DEFAULT_PERIODS, readPeriods, type PeriodDef } from '../domain/periodTimes';
 import { readTerms, type SchoolTerms } from '../domain/semester';
@@ -35,7 +42,7 @@ import {
 } from '../domain/settings';
 import { settingsPort, startSettingsSync, type SettingsBinding } from '../data/settingsSync';
 import { setFontScale, useLayoutPrefs, type PopupStyle } from './layoutPrefs';
-import { setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
+import { setCustomShortcuts, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
 import { isKnownTabShortcut } from './tabShortcuts';
 import { useNav, type SemesterFilter, type StartupScope, STARTUP_SCOPES } from './nav';
 import { detectDeviceKind, type DeviceKind } from './deviceKind';
@@ -52,6 +59,11 @@ export interface DevicePrefs {
   shortcutOverrides: ShortcutOverrides;
   /** 창 안 탭 키 (P18-2 - 키를 준 탭만). shortcutOverrides와 칸을 나눈다 - 옛 판은 모르는 칸을 읽지 않는다 */
   tabShortcuts: TabBindings;
+  /**
+   * 내가 만든 그 밖의 키 (P28 - 환경설정 값 'opt.…'·단추 'press.…', 키를 준 것만). tabShortcuts와 칸을 나눈다 -
+   * 옛 판(P28 전)은 tabShortcuts를 '있는 탭'으로 걸러 다시 쓰므로 거기 두면 지워진다. 이 칸은 모양만 보고 모르는 id도 남긴다.
+   */
+  customShortcuts: CustomBindings;
   showWeekend: boolean;
   showEvents: boolean;
   showClass: boolean;
@@ -61,6 +73,7 @@ export interface DevicePrefs {
 
 const overridesField: SettingField<ShortcutOverrides> = { def: {}, read: readShortcutOverrides };
 const tabShortcutsField: SettingField<TabBindings> = { def: {}, read: (v) => readTabBindings(v, isKnownTabShortcut) };
+const customShortcutsField: SettingField<CustomBindings> = { def: {}, read: readCustomBindings };
 
 export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   fontScale: oneOfField<FontScale>(
@@ -71,6 +84,7 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   startupScope: oneOfField<StartupScope>('last', STARTUP_SCOPES),
   shortcutOverrides: overridesField,
   tabShortcuts: tabShortcutsField,
+  customShortcuts: customShortcutsField,
   showWeekend: boolField(true),
   showEvents: boolField(true),
   showClass: boolField(true),
@@ -87,6 +101,7 @@ function currentDevicePrefs(): DevicePrefs {
     startupScope,
     shortcutOverrides: useShortcutOverrides.getState().overrides,
     tabShortcuts: useShortcutOverrides.getState().tabs,
+    customShortcuts: useShortcutOverrides.getState().custom,
     showWeekend,
     showEvents,
     showClass,
@@ -101,6 +116,7 @@ function applyDevicePrefs(p: DevicePrefs) {
   if (p.popupStyle !== now.popupStyle) useLayoutPrefs.setState({ popupStyle: p.popupStyle });
   if (JSON.stringify(p.shortcutOverrides) !== JSON.stringify(now.shortcutOverrides)) setShortcutOverrides(p.shortcutOverrides);
   if (JSON.stringify(p.tabShortcuts) !== JSON.stringify(now.tabShortcuts)) setTabShortcuts(p.tabShortcuts);
+  if (JSON.stringify(p.customShortcuts) !== JSON.stringify(now.customShortcuts)) setCustomShortcuts(p.customShortcuts);
   const navKeys = ['startupScope', 'showWeekend', 'showEvents', 'showClass', 'semesterFilter', 'enableScrollNav'] as const;
   const navChanges = Object.fromEntries(navKeys.filter((k) => p[k] !== now[k]).map((k) => [k, p[k]]));
   if (Object.keys(navChanges).length > 0) useNav.setState(navChanges);

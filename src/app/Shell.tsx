@@ -47,6 +47,8 @@ import { MainWidthContext, unscaledWidth } from '../ui/useMainWidth';
 import { startRouting } from './history';
 import Header from './Header';
 import { useAppKeys } from './keys';
+// 환경설정 값 단축키(P28-2)의 할 일을 키 처리에 단다
+import './optionShortcuts';
 import { useLayoutPrefs } from './layoutPrefs';
 import MobileTabBar from './MobileTabBar';
 import { useNav } from './nav';

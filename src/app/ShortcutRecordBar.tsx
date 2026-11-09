@@ -6,7 +6,7 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { assignBinding, bindingOf, formatAnyBinding, recordKeyIssue, resolveBindings, worksWhileTyping } from '../domain/shortcuts';
-import { useShortcutOverrides } from './keys';
+import { useExtraBindings, useShortcutOverrides } from './keys';
 import { shortcutLabel } from './tabShortcuts';
 import { cancelShortcutRecord, finishPick, onRecordClick, onRecordKey, repick, saveRecordedKey, useShortcutRecord } from './shortcutRecord';
 
@@ -14,7 +14,8 @@ const BTN = 'px-3 py-1.5 text-xs font-bold rounded-xl transition-all disabled:op
 
 export default function ShortcutRecordBar() {
   const { stage, picked, miss, binding } = useShortcutRecord();
-  const { overrides, tabs } = useShortcutOverrides();
+  const overrides = useShortcutOverrides((s) => s.overrides);
+  const extra = useExtraBindings();
 
   useEffect(() => {
     if (stage === 'off') return;
@@ -56,11 +57,11 @@ export default function ShortcutRecordBar() {
     );
   } else {
     const issue = binding ? recordKeyIssue(binding, picked) : null;
-    const cleared = binding && !issue ? assignBinding(now, picked, binding, tabs).cleared : [];
+    const cleared = binding && !issue ? assignBinding(now, picked, binding, extra).cleared : [];
     body = (
       <>
         <span className="text-xs text-slate-600 min-w-0">
-          <strong className="text-slate-800">'{label}'</strong>에 줄 키를 누르세요 <span className="text-slate-400">(지금: {formatAnyBinding(picked, bindingOf(picked, now, tabs))} · Backspace = 지우기)</span>
+          <strong className="text-slate-800">'{label}'</strong>에 줄 키를 누르세요 <span className="text-slate-400">(지금: {formatAnyBinding(picked, bindingOf(picked, now, extra))} · Backspace = 지우기)</span>
         </span>
         <kbd data-shortcut-record-key className="min-w-20 px-2 py-1 text-center bg-white border border-slate-300 rounded-lg text-sm font-mono font-bold text-slate-800 shrink-0">
           {binding ? formatAnyBinding(picked, binding) : '…'}

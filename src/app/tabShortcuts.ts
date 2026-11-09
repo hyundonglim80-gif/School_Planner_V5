@@ -5,7 +5,8 @@
 //   여는 길: 기본은 openWindow(창, { tab }). 날짜·공간이 있어야 열리는 쓰는 칸(출석부·알림장)은 그 기능이 setTabOpener로 단다.
 // 탭 단추에 다는 표시·툴팁은 app/keys useTabTarget, 키 처리는 app/keys handleAppKeyDown.
 import type { AnyShortcutId, ShortcutId, TabShortcutId } from '../domain/shortcuts';
-import { isTabShortcutId, labelOf } from '../domain/shortcuts';
+import { isCustomShortcutId, isShortcutId, isTabShortcutId, labelOf } from '../domain/shortcuts';
+import { customShortcutOf } from './customShortcuts';
 import type { ItemKind } from '../data/types';
 import type { AttendanceTab } from '../features/attendance/open';
 import type { BackupTabId } from '../features/backup/open';
@@ -87,14 +88,23 @@ export const getTabShortcut = (id: TabShortcutId): TabShortcut | undefined => by
 export const isKnownTabShortcut = (id: TabShortcutId): boolean => byId.has(id);
 
 /** 그 탭 단추가 고르는 것 - 목록에 있는 탭, 같은 일을 하는 단축키, 없으면(고를 수 없는 탭) null */
-export function tabTargetOf(window: string, tab: string): AnyShortcutId | null {
+export function tabTargetOf(window: string, tab: string): ShortcutId | TabShortcutId | null {
   const id: TabShortcutId = `${window}:${tab}`;
   return ALIAS[id] ?? (byId.has(id) ? id : null);
 }
 
-/** 화면에 보일 이름 - 기능은 단축키 목록의 이름, 창 안 탭은 '창 → 탭' */
+/** 화면에 보일 이름 - 기능은 단축키 목록의 이름, 창 안 탭은 '창 → 탭', 내가 만든 것은 단 쪽의 이름('창 위치 → 팝업창') */
 export function shortcutLabel(id: AnyShortcutId): string {
-  return isTabShortcutId(id) ? byId.get(id)?.label ?? id : labelOf(id);
+  if (isTabShortcutId(id)) return byId.get(id)?.label ?? id;
+  if (isCustomShortcutId(id)) return customShortcutOf(id)?.label ?? id;
+  return labelOf(id);
+}
+
+/** 키를 줄 수 있는 것으로 아는 id인가 (눌러서 고르기·팝업창 부탁이 받는 것 - 기능·있는 창 안 탭·이 판이 아는 내가 만든 것) */
+export function isKnownShortcut(id: string): id is AnyShortcutId {
+  if (isTabShortcutId(id)) return byId.has(id);
+  if (isCustomShortcutId(id)) return !!customShortcutOf(id);
+  return isShortcutId(id);
 }
 
 const openers = new Map<string, (tab: string) => void>();

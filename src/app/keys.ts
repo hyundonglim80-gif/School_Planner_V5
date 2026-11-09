@@ -4,23 +4,28 @@
 //   그 밖  : 환경설정에서 바꿀 수 있는 단축키(domain/shortcuts). 키 조합은 거기서, 하는 일은 여기서(runShortcut).
 //            창을 여는 단축키는 창 목록의 같은 id 창을 연다 - 창을 등록하면 단축키도 저절로 선다.
 // 글을 칠 때(입력칸·글 칸)는 Ctrl·Alt 없는 단축키를 듣지 않는다(글자가 먹히지 않으면 곤란하다).
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   allBindings,
   formatActionBinding,
   formatBinding,
+  isCustomShortcutId,
   isModifierOnly,
   isTabShortcutId,
   matchesEvent,
   resolveBindings,
   SHORTCUT_ACTIONS,
+  splitExtraBindings,
   type AnyShortcutId,
+  type CustomBindings,
+  type ExtraBindings,
   type ShortcutId,
   type ShortcutOverrides,
   type TabBindings,
 } from '../domain/shortcuts';
+import { runCustomShortcut } from './customShortcuts';
 import { isSaveKey } from '../ui/useSaveKey';
 import { showToast } from './toast';
 import { goToday, setScope, setToggle, stepDate, stepScope, useNav } from './nav';
@@ -30,12 +35,18 @@ import { popOutWindow } from './popout';
 import { closeAllWindows, closeShownWindow, closeWindow, getWindowDef, openWindow, useWindows } from './windows';
 import { runTabShortcut, tabTargetOf } from './tabShortcuts';
 
+interface ShortcutKeys {
+  overrides: ShortcutOverrides;
+  tabs: TabBindings;
+  custom: CustomBindings;
+}
+
 /**
- * 기본값에서 바꾼 단축키만 (V4 shortcutOverrides) + 창 안 탭 키(tabs - P18-2, 키를 준 탭만).
+ * 기본값에서 바꾼 단축키만 (V4 shortcutOverrides) + 창 안 탭 키(tabs - P18-2, 키를 준 탭만) + 내가 만든 것(custom - P28, 환경설정 값·단추).
  * 이 기기 사본 - 계정(기기 종류마다)과는 app/prefs.ts가 맞춘다
  */
-export const useShortcutOverrides = create<{ overrides: ShortcutOverrides; tabs: TabBindings }>()(
-  persist(() => ({ overrides: {} as ShortcutOverrides, tabs: {} as TabBindings }), { name: 'sp5-shortcuts' }),
+export const useShortcutOverrides = create<ShortcutKeys>()(
+  persist(() => ({ overrides: {} as ShortcutOverrides, tabs: {} as TabBindings, custom: {} as CustomBindings }), { name: 'sp5-shortcuts' }),
 );
 
 export function setShortcutOverrides(overrides: ShortcutOverrides) {
@@ -44,6 +55,26 @@ export function setShortcutOverrides(overrides: ShortcutOverrides) {
 
 export function setTabShortcuts(tabs: TabBindings) {
   useShortcutOverrides.setState({ tabs });
+}
+
+export function setCustomShortcuts(custom: CustomBindings) {
+  useShortcutOverrides.setState({ custom });
+}
+
+/** 창 안 탭 + 내가 만든 것 한 목록 (domain/shortcuts allBindings·assignBinding이 받는 것) */
+export const extraBindingsOf = (s: Pick<ShortcutKeys, 'tabs' | 'custom'>): ExtraBindings => ({ ...s.tabs, ...s.custom });
+
+/** 한 목록을 칸 둘에 나눠 넣는다 (assignBinding이 돌려준 것) */
+export function setExtraShortcuts(extra: ExtraBindings) {
+  const { tabs, custom } = splitExtraBindings(extra);
+  useShortcutOverrides.setState({ tabs, custom });
+}
+
+/** 화면에서 - 창 안 탭 + 내가 만든 것 (바뀔 때만 새 객체) */
+export function useExtraBindings(): ExtraBindings {
+  const tabs = useShortcutOverrides((s) => s.tabs);
+  const custom = useShortcutOverrides((s) => s.custom);
+  return useMemo(() => extraBindingsOf({ tabs, custom }), [tabs, custom]);
 }
 
 /** 창이 아닌 단축키가 하는 일. 없는 기능(아직 옮기지 않은 것)은 false - 브라우저 기본 동작을 막지 않는다. */
@@ -153,13 +184,19 @@ export function handleAppKeyDown(e: KeyboardEvent, only?: ReadonlySet<ShortcutId
   }
   if (isModifierOnly(e) || e.isComposing) return;
   const typing = isTypingTarget(e.target);
-  const { overrides, tabs } = useShortcutOverrides.getState();
-  // 창 안 탭(P18-2)은 새 창으로 옮긴 창에서는 듣지 않는다 - 그 창에는 다른 창이 없다
-  for (const { id, action, binding } of allBindings(resolveBindings(overrides), only ? {} : tabs)) {
+  const state = useShortcutOverrides.getState();
+  // 창 안 탭(P18-2)·내가 만든 것(P28)은 새 창으로 옮긴 창에서는 듣지 않는다 - 그 창에는 다른 창·화면이 없다
+  for (const { id, action, binding } of allBindings(resolveBindings(state.overrides), only ? {} : extraBindingsOf(state))) {
     if (only && !only.has(id as ShortcutId)) continue;
     if (!matchesEvent(binding, e, action)) continue;
     // 입력칸에 글자를 쓰는 중이면 수식키 없는 단축키는 무시한다. 되돌리기는 글 칸에서는 글 되돌리기가 먼저.
     if (typing && ((!binding.ctrl && !binding.alt) || id === 'undo')) continue;
+    // 이 판이 모르는 내가 만든 것(나중 판이 더한 것)은 건너뛴다 - 키를 막지 않는다
+    if (isCustomShortcutId(id)) {
+      if (!runCustomShortcut(id)) continue;
+      e.preventDefault();
+      return;
+    }
     if (isTabShortcutId(id) ? runTabShortcut(id) : runShortcut(id)) e.preventDefault();
     return;
   }

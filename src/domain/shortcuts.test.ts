@@ -22,6 +22,10 @@ import {
   allBindings,
   bindingOf,
   formatAnyBinding,
+  isCustomShortcutId,
+  isExtraShortcutId,
+  readCustomBindings,
+  splitExtraBindings,
   type Binding,
   type TabShortcutId,
 } from './shortcuts';
@@ -342,7 +346,7 @@ describe('창 안 탭 키 (P18-2)', () => {
   it('탭에 키를 주면 그 키를 쓰던 기능·탭에서 뺀다', () => {
     const tabs = { 'backup:import': key('N', { alt: true }) };
     const r = assignBinding(resolveBindings(), 'settings:notify', key('N', { alt: true }), tabs);
-    expect(r.tabs).toEqual({ 'settings:notify': key('N', { alt: true }) });
+    expect(r.extra).toEqual({ 'settings:notify': key('N', { alt: true }) });
     expect(r.cleared).toEqual(['backup:import']);
     const r2 = assignBinding(resolveBindings(), 'settings:notify', key('F', { ctrl: true }));
     expect(r2.cleared).toEqual(['search']);
@@ -353,11 +357,11 @@ describe('창 안 탭 키 (P18-2)', () => {
 
   it('기능에 키를 주면 그 키를 쓰던 탭은 빠진다 · 탭에 빈 키 = 빠짐', () => {
     const r = assignBinding(resolveBindings(), 'timetable', key('N', { alt: true }), { 'settings:notify': key('N', { alt: true }) });
-    expect(r.tabs).toEqual({});
+    expect(r.extra).toEqual({});
     expect(r.cleared).toEqual(['settings:notify']);
     expect(r.bindings.timetable).toEqual(key('N', { alt: true }));
     const gone = assignBinding(resolveBindings(), 'settings:notify', key(''), { 'settings:notify': key('N', { alt: true }) });
-    expect(gone.tabs).toEqual({});
+    expect(gone.extra).toEqual({});
     expect(gone.cleared).toEqual([]);
   });
 
@@ -367,5 +371,54 @@ describe('창 안 탭 키 (P18-2)', () => {
     expect(bindingOf('search', resolveBindings())).toEqual(key('F', { ctrl: true }));
     expect(formatAnyBinding('settings:notify', key('N', { ctrl: true, alt: true }))).toBe('Ctrl + Alt + N');
     expect(formatAnyBinding('toggleWeekend', key('ArrowUp', { shift: true }))).toBe('Shift + ↑ / ↓');
+  });
+});
+
+describe('내가 만든 키 - 환경설정 값 (P28-2)', () => {
+  const key = (k: string, mods: Partial<Omit<Binding, 'key'>> = {}): Binding => bind(k, mods);
+
+  it('id 모양: opt.<이름>.<값> · opt.<이름>(켜기/끄기) · press.<…> - 창 안 탭·기능과 갈린다', () => {
+    for (const id of ['opt.popupStyle.popup', 'opt.contrast', 'opt.alarmSound.-1', 'opt.autoBackupKeep.8', 'press.ab12']) {
+      expect(isCustomShortcutId(id)).toBe(true);
+      expect(isExtraShortcutId(id)).toBe(true);
+      expect(isTabShortcutId(id)).toBe(false);
+    }
+    for (const id of ['opt', 'opt.', 'settings:notify', 'search', 'other.x', 'opt.a.b.c', 'opt.a b']) expect(isCustomShortcutId(id)).toBe(false);
+    expect(isExtraShortcutId('settings:notify')).toBe(true);
+    expect(isExtraShortcutId('search')).toBe(false);
+  });
+
+  it('계정 칸 읽기: 모양이 맞으면 모르는 id도 남긴다(나중 판의 값) · 빈 키·틀린 모양은 뺀다', () => {
+    expect(
+      readCustomBindings({
+        'opt.popupStyle.popup': key('P', { alt: true }),
+        'opt.someFutureThing.x': key('Q', { alt: true }),
+        'opt.contrast': key(''),
+        'settings:notify': key('N', { alt: true }),
+        'opt.bad': { key: 'X' },
+      }),
+    ).toEqual({ 'opt.popupStyle.popup': key('P', { alt: true }), 'opt.someFutureThing.x': key('Q', { alt: true }) });
+    expect(readCustomBindings([])).toBeUndefined();
+    expect(readCustomBindings(null)).toBeUndefined();
+  });
+
+  it('한 목록 → 칸 둘 (창 안 탭 · 내가 만든 것), 빈 키는 뺀다', () => {
+    expect(
+      splitExtraBindings({ 'settings:notify': key('N', { alt: true }), 'opt.contrast': key('H', { alt: true }), 'opt.dim': key('') }),
+    ).toEqual({ tabs: { 'settings:notify': key('N', { alt: true }) }, custom: { 'opt.contrast': key('H', { alt: true }) } });
+  });
+
+  it('값 키도 한 목록으로 겹침을 본다 - 주면 그 키를 쓰던 기능·탭에서 빼고, 기능에 주면 값 키가 빠진다', () => {
+    const extra = { 'settings:notify': key('N', { alt: true }) };
+    const r = assignBinding(resolveBindings(), 'opt.popupStyle.popup', key('N', { alt: true }), extra);
+    expect(r.extra).toEqual({ 'opt.popupStyle.popup': key('N', { alt: true }) });
+    expect(r.cleared).toEqual(['settings:notify']);
+    const r2 = assignBinding(resolveBindings(), 'search', key('H', { alt: true }), { 'opt.contrast': key('H', { alt: true }) });
+    expect(r2.extra).toEqual({});
+    expect(r2.cleared).toEqual(['opt.contrast']);
+    expect(findConflicts(resolveBindings(), { 'opt.contrast': key('F', { ctrl: true }) })).toEqual([['search', 'opt.contrast']]);
+    expect(allBindings(resolveBindings(), { 'opt.contrast': key('H', { alt: true }) }).at(-1)).toEqual({ id: 'opt.contrast', binding: key('H', { alt: true }) });
+    expect(bindingOf('opt.contrast', resolveBindings())).toEqual(key(''));
+    expect(formatAnyBinding('opt.contrast', key('H', { alt: true }))).toBe('Alt + H');
   });
 });

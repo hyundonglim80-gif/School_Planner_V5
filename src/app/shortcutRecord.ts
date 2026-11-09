@@ -13,17 +13,15 @@ import {
   bindingFromEvent,
   formatAnyBinding,
   isModifierOnly,
-  isShortcutId,
-  isTabShortcutId,
   overridesFromBindings,
   recordKeyIssue,
   resolveBindings,
   type AnyShortcutId,
   type Binding,
 } from '../domain/shortcuts';
-import { setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
+import { extraBindingsOf, setExtraShortcuts, setShortcutOverrides, useShortcutOverrides } from './keys';
 import { sendRecordToOpener } from './popupWindows';
-import { isKnownTabShortcut, shortcutLabel } from './tabShortcuts';
+import { isKnownShortcut, shortcutLabel } from './tabShortcuts';
 import { showErrorToast, showToast } from './toast';
 import { openWindow } from './windows';
 import { POPOUT } from '../ui/popout';
@@ -57,7 +55,7 @@ export function startKeyFor(id: AnyShortcutId) {
 /** 큰 창이 받은 시작 부탁(팝업창에서) - 아는 것만 */
 export function startRecordFromPopup(id?: string) {
   if (id === undefined) startShortcutRecord();
-  else if (isShortcutId(id) || (isTabShortcutId(id) && isKnownTabShortcut(id))) startKeyFor(id);
+  else if (isKnownShortcut(id)) startKeyFor(id);
 }
 
 /**
@@ -102,7 +100,7 @@ export function onRecordClick(e: MouseEvent) {
   const t = e.target instanceof Element ? e.target : null;
   if (!t || t.closest('[data-shortcut-record]')) return;
   const id = t.closest<HTMLElement>('[data-shortcut-target]')?.dataset.shortcutTarget;
-  if (id && (isShortcutId(id) || (isTabShortcutId(id) && isKnownTabShortcut(id)))) useShortcutRecord.setState({ picked: id, miss: false });
+  if (id && isKnownShortcut(id)) useShortcutRecord.setState({ picked: id, miss: false });
   else if (t.closest(PRESSABLE) && !t.closest(OPENER)) useShortcutRecord.setState({ miss: true });
 }
 
@@ -137,10 +135,10 @@ export function saveRecordedKey(): boolean {
     showErrorToast(issue);
     return false;
   }
-  const { overrides, tabs: nowTabs } = useShortcutOverrides.getState();
-  const { bindings, tabs, cleared } = assignBinding(resolveBindings(overrides), picked, binding, nowTabs);
+  const state = useShortcutOverrides.getState();
+  const { bindings, extra, cleared } = assignBinding(resolveBindings(state.overrides), picked, binding, extraBindingsOf(state));
   setShortcutOverrides(overridesFromBindings(bindings));
-  setTabShortcuts(tabs);
+  setExtraShortcuts(extra);
   const label = shortcutLabel(picked);
   const away = cleared.length > 0 ? ` · ${cleared.map((id) => `'${shortcutLabel(id)}'`).join(', ')}에서는 뺐습니다` : '';
   showToast(binding.key ? `⌨️ '${label}' = ${formatAnyBinding(picked, binding)}${away}` : `⌨️ '${label}' 단축키를 지웠습니다`, 4000);

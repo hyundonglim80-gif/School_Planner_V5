@@ -8,9 +8,12 @@
 // 끝나면 이 탭이 그 줄을 짚는다(focusId - 같은 줄을 또 바꿔도 다시 짚게 focusToken = 연 params).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { showToast } from '../../app/toast';
-import { canRun, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from '../../app/keys';
+import { canRun, setCustomShortcuts, setExtraShortcuts, setShortcutOverrides, setTabShortcuts, useExtraBindings, useShortcutOverrides } from '../../app/keys';
 import { detectDeviceKind } from '../../app/prefs';
 import { shortcutLabel, TAB_SHORTCUTS } from '../../app/tabShortcuts';
+import { customShortcutOf } from '../../app/customShortcuts';
+// 환경설정 값 키의 이름·할 일을 단다(팝업창에서 이 탭만 열어도 이름이 보이게)
+import '../../app/optionShortcuts';
 import {
   allBindings,
   assignBinding,
@@ -18,13 +21,15 @@ import {
   findConflicts,
   FIXED_SHORTCUTS,
   formatAnyBinding,
-  isTabShortcutId,
+  isCustomShortcutId,
+  isExtraShortcutId,
   overridesFromBindings,
   resolveBindings,
   SHORTCUT_ACTIONS,
   type AnyShortcutId,
   type Binding,
   type BindingEntry,
+  type CustomBindings,
   type ShortcutId,
   type ShortcutOverrides,
   type TabBindings,
@@ -33,6 +38,9 @@ import {
 const NONE: Binding = { ctrl: false, alt: false, shift: false, key: '' };
 /** 창 안 탭(P18-2) 묶음 이름 - 기능 묶음 뒤 */
 const TAB_GROUP = '창 안 탭';
+/** 환경설정 값(P28-2) 묶음 이름 - 창 안 탭 뒤 */
+const CUSTOM_GROUP = '환경설정 값';
+const GROUP_TITLE: Record<string, string> = { [TAB_GROUP]: '내가 만든 단축키 (창 안 탭)', [CUSTOM_GROUP]: '내가 만든 단축키 (환경설정 값)' };
 const SMALL_BTN = 'px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer shrink-0';
 
 /**
@@ -81,7 +89,7 @@ function ShortcutRow({
     return () => window.clearTimeout(t);
   }, [focused, focusToken]);
   // 아직 V5로 옮기지 않은 기능(옛 키를 가져온 것) - 흐리게. 창 안 탭은 있는 창만 목록에 있다
-  const ready = isTabShortcutId(id) || canRun(id);
+  const ready = isCustomShortcutId(id) ? !!customShortcutOf(id) : isExtraShortcutId(id) || canRun(id);
   const isDefault = !!action && !!binding.key && sameBinding(action.def, binding);
 
   return (
@@ -151,47 +159,51 @@ export default function ShortcutsTab({
   onChangeKey: (id: AnyShortcutId) => void;
 }) {
   const overrides = useShortcutOverrides((s) => s.overrides);
-  const tabs = useShortcutOverrides((s) => s.tabs);
+  const extra = useExtraBindings();
   const bindings = useMemo(() => resolveBindings(overrides), [overrides]);
-  const conflicted = useMemo(() => new Set<AnyShortcutId>(findConflicts(bindings, tabs).flat()), [bindings, tabs]);
+  const conflicted = useMemo(() => new Set<AnyShortcutId>(findConflicts(bindings, extra).flat()), [bindings, extra]);
 
-  // 키가 걸린 것만(+ 누를 단추가 없는 기능), 기능 묶음 차례(단축키 목록) 다음 창 안 탭(탭 목록 차례)
+  // 키가 걸린 것만(+ 누를 단추가 없는 기능), 기능 묶음 차례(단축키 목록) 다음 창 안 탭(탭 목록 차례) · 환경설정 값(이름 차례)
   const groups = useMemo(() => {
     const out = new Map<string, BindingEntry[]>();
     for (const a of SHORTCUT_ACTIONS) if (!out.has(a.group)) out.set(a.group, []);
     out.set(TAB_GROUP, []);
+    out.set(CUSTOM_GROUP, []);
     const tabOrder = new Map(TAB_SHORTCUTS.map((t, i) => [t.id, i]));
-    for (const e of allBindings(bindings, tabs)) {
+    for (const e of allBindings(bindings, extra)) {
       if (!e.binding.key && !(e.action && NO_BUTTON.has(e.action.id))) continue;
-      out.get(e.action ? e.action.group : TAB_GROUP)!.push(e);
+      out.get(e.action ? e.action.group : isCustomShortcutId(e.id) ? CUSTOM_GROUP : TAB_GROUP)!.push(e);
     }
     out.get(TAB_GROUP)!.sort((a, b) => (tabOrder.get(a.id as never) ?? 0) - (tabOrder.get(b.id as never) ?? 0));
+    out.get(CUSTOM_GROUP)!.sort((a, b) => shortcutLabel(a.id).localeCompare(shortcutLabel(b.id), 'ko'));
     return [...out.entries()].filter(([, list]) => list.length > 0);
-  }, [bindings, tabs]);
+  }, [bindings, extra]);
 
   /** 바꾸기 전 값으로 (안내의 되돌리기) */
-  const undoTo = (before: { overrides: ShortcutOverrides; tabs: TabBindings }) => ({
+  const undoTo = (before: { overrides: ShortcutOverrides; tabs: TabBindings; custom: CustomBindings }) => ({
     label: '되돌리기',
     run: () => {
       setShortcutOverrides(before.overrides);
       setTabShortcuts(before.tabs);
+      setCustomShortcuts(before.custom);
     },
   });
 
   const clear = (id: AnyShortcutId) => {
     const before = useShortcutOverrides.getState();
-    const was = formatAnyBinding(id, bindingOf(id, bindings, tabs));
-    const next = assignBinding(bindings, id, NONE, tabs);
+    const was = formatAnyBinding(id, bindingOf(id, bindings, extra));
+    const next = assignBinding(bindings, id, NONE, extra);
     setShortcutOverrides(overridesFromBindings(next.bindings));
-    setTabShortcuts(next.tabs);
+    setExtraShortcuts(next.extra);
     showToast(`⌨️ '${shortcutLabel(id)}' 단축키(${was})를 해제했습니다`, 5000, 'info', undoTo(before));
   };
 
   const reset = () => {
-    if (!window.confirm('단축키를 처음 값으로 되돌릴까요?\n바꾼 키는 기본 키로 돌아가고, 내가 만든 단축키(창 안 탭)는 모두 빠집니다.')) return;
+    if (!window.confirm('단축키를 처음 값으로 되돌릴까요?\n바꾼 키는 기본 키로 돌아가고, 내가 만든 단축키(창 안 탭·환경설정 값)는 모두 빠집니다.')) return;
     const before = useShortcutOverrides.getState();
     setShortcutOverrides({});
     setTabShortcuts({});
+    setCustomShortcuts({});
     showToast('⌨️ 단축키를 기본값으로 되돌렸습니다', 5000, 'info', undoTo(before));
   };
 
@@ -240,7 +252,7 @@ export default function ShortcutsTab({
         {/* 누를 단추가 없는 기능은 늘 있어 목록이 비지 않는다 */}
         {groups.map(([groupName, entries]) => (
           <div key={groupName} data-shortcut-group={groupName} className="px-5 py-4 border-b border-slate-100">
-            <h3 className="text-sm font-black text-slate-800 mb-2">{groupName === TAB_GROUP ? '내가 만든 단축키 (창 안 탭)' : groupName}</h3>
+            <h3 className="text-sm font-black text-slate-800 mb-2">{GROUP_TITLE[groupName] ?? groupName}</h3>
             <div className="space-y-2">
               {entries.map((e) => (
                 <ShortcutRow

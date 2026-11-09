@@ -74,12 +74,27 @@ export type ShortcutId =
  * 어떤 탭이 있는지는 app/tabShortcuts(창의 탭 타입으로 적는다) - 여기는 키 다루기만.
  */
 export type TabShortcutId = `${string}:${string}`;
-/** 키를 줄 수 있는 것 = 기능(단축키 목록) + 창 안 탭 */
-export type AnyShortcutId = ShortcutId | TabShortcutId;
+/**
+ * 내가 만든 그 밖의 단축키 (P28 - 기기 칸 customShortcuts, 창 안 탭과 칸을 나눈다):
+ *   'opt.<이름>.<값>' = 환경설정 값 고르기(켜기/끄기는 'opt.<이름>' - P28-2, app/optionShortcuts) · 'press.<…>' = 단추 대신 누르기(P28-3).
+ * 하는 일은 app/customShortcuts에 단 것이 안다 - 여기는 키 다루기만. ':'가 없어 창 안 탭과 갈린다.
+ */
+export type CustomShortcutId = `opt.${string}` | `press.${string}`;
+/** 기능 목록 밖에서 키를 준 것 = 창 안 탭 + 내가 만든 것 (기본값이 없다 - 키를 준 것만 적는다) */
+export type ExtraShortcutId = TabShortcutId | CustomShortcutId;
+/** 키를 줄 수 있는 것 = 기능(단축키 목록) + 창 안 탭 + 내가 만든 것 */
+export type AnyShortcutId = ShortcutId | ExtraShortcutId;
 /** 창 안 탭 키 - 키를 준 탭만 적는다(기본값이 없다) */
 export type TabBindings = Partial<Record<TabShortcutId, Binding>>;
+/** 내가 만든 것의 키 - 키를 준 것만 */
+export type CustomBindings = Partial<Record<CustomShortcutId, Binding>>;
+/** 창 안 탭 + 내가 만든 것의 키 (키 처리·겹침은 한 목록으로 본다, 저장은 칸 둘 - splitExtraBindings) */
+export type ExtraBindings = Partial<Record<ExtraShortcutId, Binding>>;
 
 export const isTabShortcutId = (id: string): id is TabShortcutId => /^[A-Za-z]+:[A-Za-z]+$/.test(id);
+export const isCustomShortcutId = (id: string): id is CustomShortcutId => /^(opt|press)\.[A-Za-z0-9]+(\.[A-Za-z0-9-]+)?$/.test(id);
+/** 기능 목록 밖의 것인가 (창 안 탭·내가 만든 것) */
+export const isExtraShortcutId = (id: string): id is ExtraShortcutId => isTabShortcutId(id) || isCustomShortcutId(id);
 
 export interface ShortcutAction {
   id: ShortcutId;
@@ -337,6 +352,32 @@ export function readTabBindings(v: unknown, known: (id: TabShortcutId) => boolea
   return out;
 }
 
+/**
+ * 계정 설정 문서의 내가 만든 키(P28 customShortcuts) → 믿을 만한 것만. 모양이 맞는 id면 이 판이 모르는 것도 남긴다
+ * (나중 판이 더한 값·단추 키를 옛 판이 걸러 다시 쓰면 지워진다 - 그래서 창 안 탭과 칸을 나눴다). 빈 키는 뺀다. 통째로 틀리면 undefined.
+ */
+export function readCustomBindings(v: unknown): CustomBindings | undefined {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const out: CustomBindings = {};
+  for (const [id, raw] of Object.entries(v as Record<string, unknown>)) {
+    const k = readBinding(raw);
+    if (k && k.key && isCustomShortcutId(id)) out[id] = k;
+  }
+  return out;
+}
+
+/** 한 목록(키 처리·겹침) → 저장하는 칸 둘 (창 안 탭 tabShortcuts · 내가 만든 것 customShortcuts) */
+export function splitExtraBindings(extra: ExtraBindings): { tabs: TabBindings; custom: CustomBindings } {
+  const tabs: TabBindings = {};
+  const custom: CustomBindings = {};
+  for (const [id, k] of Object.entries(extra) as Array<[ExtraShortcutId, Binding | undefined]>) {
+    if (!k?.key) continue;
+    if (isTabShortcutId(id)) tabs[id] = k;
+    else if (isCustomShortcutId(id)) custom[id] = k;
+  }
+  return { tabs, custom };
+}
+
 /** 빈 키를 뺀다 (목록에서 비운 탭 = 빠짐) */
 export function compactTabBindings(tabs: TabBindings): TabBindings {
   const out: TabBindings = {};
@@ -368,22 +409,25 @@ export interface BindingEntry {
   binding: Binding;
 }
 
-/** 키를 줄 수 있는 것 모두 - 기능(목록 차례) 다음 창 안 탭(id 차례). 키 처리(app/keys)도 이 차례로 본다(먼저 것이 키를 가져간다) */
-export function allBindings(bindings: Record<ShortcutId, Binding>, tabs: TabBindings = {}): BindingEntry[] {
+/**
+ * 키를 줄 수 있는 것 모두 - 기능(목록 차례) 다음 창 안 탭·내가 만든 것(id 차례, 키가 있는 것만).
+ * 키 처리(app/keys)도 이 차례로 본다(먼저 것이 키를 가져간다)
+ */
+export function allBindings(bindings: Record<ShortcutId, Binding>, extra: ExtraBindings = {}): BindingEntry[] {
   const out: BindingEntry[] = SHORTCUT_ACTIONS.map((action) => ({ id: action.id, action, binding: bindings[action.id] }));
-  for (const id of (Object.keys(tabs) as TabShortcutId[]).sort()) {
-    const binding = tabs[id];
-    if (binding?.key) out.push({ id, binding });
+  for (const id of (Object.keys(extra) as ExtraShortcutId[]).sort()) {
+    const binding = extra[id];
+    if (binding?.key && isExtraShortcutId(id)) out.push({ id, binding });
   }
   return out;
 }
 
-/** 같은 조합을 쓰는 기능(·창 안 탭)이 있으면 그 쌍을 돌려준다 */
-export function findConflicts(bindings: Record<ShortcutId, Binding>, tabs: TabBindings = {}): Array<[AnyShortcutId, AnyShortcutId]> {
+/** 같은 조합을 쓰는 기능(·창 안 탭·내가 만든 것)이 있으면 그 쌍을 돌려준다 */
+export function findConflicts(bindings: Record<ShortcutId, Binding>, extra: ExtraBindings = {}): Array<[AnyShortcutId, AnyShortcutId]> {
   const slots = new Map<string, AnyShortcutId>();
   const conflicts: Array<[AnyShortcutId, AnyShortcutId]> = [];
 
-  for (const { id, action, binding } of allBindings(bindings, tabs)) {
+  for (const { id, action, binding } of allBindings(bindings, extra)) {
     const met = new Set<AnyShortcutId>();
     for (const slot of slotsOf(action, binding)) {
       const taken = slots.get(slot);
@@ -404,7 +448,7 @@ export function isShortcutId(id: string): id is ShortcutId {
 }
 
 /**
- * 한 기능(·창 안 탭)에 키를 준다. 같은 자리(조합)를 쓰던 다른 것은 그 키를 뺀다(기능 = 없음, 탭 = 목록에서 빠짐) - 뺀 것 목록도 돌려준다.
+ * 한 기능(·창 안 탭·내가 만든 것)에 키를 준다. 같은 자리(조합)를 쓰던 다른 것은 그 키를 뺀다(기능 = 없음, 그 밖 = 목록에서 빠짐) - 뺀 것 목록도 돌려준다.
  * 목록(단축키 탭)은 겹치면 저장을 막지만, 눌러서 정할 때는 '이 키를 여기에'가 뜻이 분명하다(PLAN 5장 P18).
  * 키가 빈 조합을 주면 그것의 단축키를 지운다.
  */
@@ -412,28 +456,28 @@ export function assignBinding(
   bindings: Record<ShortcutId, Binding>,
   id: AnyShortcutId,
   binding: Binding,
-  tabs: TabBindings = {},
-): { bindings: Record<ShortcutId, Binding>; tabs: TabBindings; cleared: AnyShortcutId[] } {
+  extra: ExtraBindings = {},
+): { bindings: Record<ShortcutId, Binding>; extra: ExtraBindings; cleared: AnyShortcutId[] } {
   const next = { ...bindings };
-  const nextTabs: TabBindings = { ...tabs };
+  const nextExtra: ExtraBindings = { ...extra };
   let action: ShortcutAction | undefined;
-  if (isTabShortcutId(id)) {
-    if (binding.key) nextTabs[id] = binding;
-    else delete nextTabs[id];
+  if (isExtraShortcutId(id)) {
+    if (binding.key) nextExtra[id] = binding;
+    else delete nextExtra[id];
   } else {
     next[id] = binding;
     action = SHORTCUT_ACTIONS.find((a) => a.id === id);
   }
   const mine = new Set(slotsOf(action, binding));
   const cleared: AnyShortcutId[] = [];
-  if (mine.size === 0) return { bindings: next, tabs: nextTabs, cleared };
-  for (const other of allBindings(next, nextTabs)) {
+  if (mine.size === 0) return { bindings: next, extra: nextExtra, cleared };
+  for (const other of allBindings(next, nextExtra)) {
     if (other.id === id || !slotsOf(other.action, other.binding).some((s) => mine.has(s))) continue;
-    if (isTabShortcutId(other.id)) delete nextTabs[other.id];
+    if (isExtraShortcutId(other.id)) delete nextExtra[other.id];
     else next[other.id] = b('');
     cleared.push(other.id);
   }
-  return { bindings: next, tabs: nextTabs, cleared };
+  return { bindings: next, extra: nextExtra, cleared };
 }
 
 /** 글 칸이 쓰는 Ctrl 키 - 단축키로 주면 글 칸에서 복사·붙여넣기가 안 된다 */
@@ -467,13 +511,13 @@ export function labelOf(id: ShortcutId): string {
   return SHORTCUT_ACTIONS.find((a) => a.id === id)?.label || id;
 }
 
-/** 그것의 지금 키 (창 안 탭은 없으면 빈 키) */
-export function bindingOf(id: AnyShortcutId, bindings: Record<ShortcutId, Binding>, tabs: TabBindings = {}): Binding {
-  return isTabShortcutId(id) ? tabs[id] || b('') : bindings[id];
+/** 그것의 지금 키 (창 안 탭·내가 만든 것은 없으면 빈 키) */
+export function bindingOf(id: AnyShortcutId, bindings: Record<ShortcutId, Binding>, extra: ExtraBindings = {}): Binding {
+  return isExtraShortcutId(id) ? extra[id] || b('') : bindings[id];
 }
 
-/** 화면에 보여줄 키 - 기능은 ↑/↓ 짝까지(formatActionBinding), 창 안 탭은 그대로 */
+/** 화면에 보여줄 키 - 기능은 ↑/↓ 짝까지(formatActionBinding), 창 안 탭·내가 만든 것은 그대로 */
 export function formatAnyBinding(id: AnyShortcutId, binding: Binding): string {
-  const action = isTabShortcutId(id) ? undefined : SHORTCUT_ACTIONS.find((a) => a.id === id);
+  const action = isExtraShortcutId(id) ? undefined : SHORTCUT_ACTIONS.find((a) => a.id === id);
   return action ? formatActionBinding(action, binding) : formatBinding(binding);
 }
