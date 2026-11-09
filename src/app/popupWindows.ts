@@ -12,7 +12,7 @@
 //   - 팝업창의 자리·크기는 창마다 이 기기에 남겨 다음에 그 자리에 연다(rememberPopupRect).
 // 창 목록을 import하지 않는다(창 목록이 이것을 부른다) - 팝업창 안에서 다시 열기는 부르는 쪽이 넘긴다.
 import { useEffect } from 'react';
-import { POPOUT, popoutUrl } from '../ui/popout';
+import { CLIPBOARD_POPOUT_ID, POPOUT, popoutUrl } from '../ui/popout';
 import { useNav, type NavState } from './nav';
 import { SCOPES } from './route';
 import { showToast } from './toast';
@@ -82,14 +82,15 @@ function readRects(): Record<string, Rect> {
 const okRect = (r: Rect | undefined): r is Rect =>
   !!r && [r.x, r.y, r.w, r.h].every((n) => typeof n === 'number' && Number.isFinite(n)) && r.w >= 200 && r.h >= 200;
 
-/** 새 팝업창 자리 - 남겨 둔 자리, 없으면 큰 창 오른쪽에 오른쪽 칸 폭으로(여럿이면 조금씩 비켜) */
+/** 새 팝업창 자리 - 남겨 둔 자리, 없으면 큰 창 오른쪽에 오른쪽 칸 폭으로(여럿이면 조금씩 비켜). 클립보드는 왼쪽에 좁게(#140 - 옛 왼쪽 칸 자리) */
 export function popupFeatures(id: string): string {
   const saved = readRects()[id];
   if (okRect(saved)) return `popup=yes,width=${Math.round(saved.w)},height=${Math.round(saved.h)},left=${Math.round(saved.x)},top=${Math.round(saved.y)}`;
   const shift = 28 * (opened.filter((p) => !p.win.closed).length % 8);
-  const width = 528;
+  const onLeft = id === CLIPBOARD_POPOUT_ID;
+  const width = onLeft ? 380 : 528;
   const height = Math.max(480, (window.outerHeight || 800) - 80);
-  const left = Math.max(0, window.screenX + (window.outerWidth || 1400) - width - 8 - shift);
+  const left = onLeft ? Math.max(0, window.screenX + 8) : Math.max(0, window.screenX + (window.outerWidth || 1400) - width - 8 - shift);
   const top = Math.max(0, window.screenY + 40 + shift);
   return `popup=yes,width=${width},height=${height},left=${left},top=${top}`;
 }

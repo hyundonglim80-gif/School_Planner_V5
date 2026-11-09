@@ -27,7 +27,7 @@ import { applyMention, findMention, matchMentionStudents, studentIdsToSave, type
 import { useDraft } from '../../data/drafts';
 import { attachmentImageSrc } from '../../data/google/drive';
 import type { Attachment } from '../../data/types';
-import { useDocs, useItemsOn, useLabelTree, useMemos, useMirrorStatus } from '../../data/select';
+import { useAllNotes, useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import MiniCalendarPicker from '../../ui/MiniCalendarPicker';
 import AutoTextarea from '../../ui/AutoTextarea';
 import { listKeyOf } from '../../ui/listKeys';
@@ -44,7 +44,8 @@ import ClaudeFollowBox from './ClaudeFollowBox';
 import ClaudeThread from './ClaudeThread';
 import { useClaudeTagged, useClaudeThread } from './useClaudeThread';
 import LabelPicker from '../labels/LabelPicker';
-import { orderAfter, orderBefore } from '../events/eventOps';
+import { orderAfter } from '../events/eventOps';
+import { memoOrderBefore } from './noteOps';
 import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite } from './actions';
 import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
 import EntryTableView from './EntryTableView';
@@ -100,7 +101,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   // 새 메모의 차례 = 연 날(그 날짜 링크가 남아 있으면 - 아니면 첫 날짜) 목록의 맨 뒤, 날짜가 없으면 메모 목록의 맨 뒤
   const anchorDate = params.date && form.dates.includes(params.date) ? params.date : (form.dates[0] ?? '');
   const dayNotes = useItemsOn(anchorDate, 'note', sid);
-  const memoList = useMemos(sid);
+  // 메모 화면 맨 앞 차례를 셀 때 메모 화면에서 옮긴 날짜 링크 메모도 본다 (#140)
+  const memoList = useAllNotes(sid);
   // 쓰던 글 보관 (이 기기 - data/drafts). 새 칸은 공간·자리, 고치는 칸은 항목마다. 고치던 항목의 완료·즐겨찾기는 칸의 것이 아니라 빼고 둔다
   const draft = useDraft<NoteForm>(
     `note:${sid}:${params.id ?? `new:${params.date || 'memo'}`}`,
@@ -403,7 +405,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     try {
       if (!isEditing) {
         // 하루 메모 칸은 그날 목록 맨 뒤, 메모 화면(날짜 없이 연 칸)은 맨 앞 - 최근 메모가 맨 위(P11-1 사용자 의견, V4 그대로)
-        const order = anchorDate ? orderAfter(dayNotes) : orderBefore(memoList);
+        const order = anchorDate ? orderAfter(dayNotes) : memoOrderBefore(memoList);
         const saved = await createNote(sid, toSave, tree, order);
         // 저장한 뒤에도 적은 것이 남고 그 항목의 수정 칸이 된다 (V4 사용자 결정). '#라벨' 줄은 떼고 칩으로
         settleSaved(form, { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] });

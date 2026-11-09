@@ -1,10 +1,11 @@
 // 앱 맨 위: 로그인 상태에 따라 불러오는 중 / 로그인 화면 / 껍데기(Shell - 머리줄·화면·창).
-// 새 창으로 옮긴 창(주소 ?popout= - ui/popout)이면 껍데기 대신 그 창 하나만(PopoutShell).
+// 새 창으로 옮긴 창(주소 ?popout= - ui/popout)이면 껍데기 대신 그 창 하나만(PopoutShell). 클립보드 팝업창은 목록 칸만(ClipboardPopout - #140).
 import { useSession } from '../data/session';
 import { useMirrorSync } from '../data/mirror/sync';
 import { useMySpacesWatch } from '../data/spaces';
 import LoginScreen from '../features/auth/LoginScreen';
-import { POPOUT } from '../ui/popout';
+import ClipboardPopout from '../features/clipboard/ClipboardPopout';
+import { CLIPBOARD_POPOUT_ID, POPOUT } from '../ui/popout';
 import PopoutShell from './PopoutShell';
 import Shell from './Shell';
 import { useFollowToday } from './nav';
@@ -32,7 +33,7 @@ export default function App() {
         <LoginScreen />
       ) : (
         <div data-session="signed-in" data-user={user.email}>
-          {POPOUT ? <PopoutShell spec={POPOUT} /> : <Shell />}
+          {POPOUT ? POPOUT.id === CLIPBOARD_POPOUT_ID ? <ClipboardPopout /> : <PopoutShell spec={POPOUT} /> : <Shell />}
         </div>
       )}
       {/* 어느 빌드가 돌고 있는지 화면에서 본다(V4 규칙). */}

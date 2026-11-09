@@ -15,11 +15,12 @@ export function isEditable(el: Element | null): el is HTMLElement {
 
 let lastEditable: HTMLElement | null = null;
 
-/** 마지막으로 글을 쓰던 칸. 클립보드 칸 안의 칸은 세지 않는다. */
-export function rememberEditable(el: Element | null) {
-  if (!isEditable(el)) return;
-  if (el.closest('[data-clipboard-panel]')) return;
+/** 마지막으로 글을 쓰던 칸. 클립보드 칸 안의 칸은 세지 않는다. 기억했으면 true */
+export function rememberEditable(el: Element | null): boolean {
+  if (!isEditable(el)) return false;
+  if (el.closest('[data-clipboard-panel]')) return false;
   lastEditable = el;
+  return true;
 }
 
 export function getPasteTarget(): HTMLElement | null {
@@ -56,14 +57,18 @@ function insertText(el: HTMLElement, text: string) {
 
 export type PasteResult = 'pasted' | 'copied' | 'failed';
 
-/** 붙여넣는다. 받을 칸이 없으면(또는 그림을 못 받는 칸이면) 시스템 클립보드에 담고 'copied' */
-export async function pasteClip(item: ClipItem): Promise<PasteResult> {
+/**
+ * 이 창의 글 쓰던 칸에 넣는다. 넣었으면 true - 받을 칸이 없거나 그림을 못 받는 칸이면 false.
+ * 클립보드 팝업창(#140)이 다른 창에 부탁할 때도 그 창에서 이것을 부른다(features/clipboard/popupClip).
+ */
+export function pasteIntoTarget(item: ClipItem): boolean {
   const target = getPasteTarget();
-  if (target && item.kind === 'text') {
+  if (!target) return false;
+  if (item.kind === 'text') {
     insertText(target, item.text || '');
-    return 'pasted';
+    return true;
   }
-  if (target && item.kind === 'image' && item.blob) {
+  if (item.kind === 'image' && item.blob) {
     target.focus();
     try {
       const ext = (item.blob.type.split('/')[1] || 'png').replace('jpeg', 'jpg');
@@ -73,11 +78,17 @@ export async function pasteClip(item: ClipItem): Promise<PasteResult> {
       const ev = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
       target.dispatchEvent(ev);
       // 메모·기록 칸처럼 그림을 받는 칸은 붙여넣기를 가로채(preventDefault) 올린다
-      if (ev.defaultPrevented) return 'pasted';
+      return ev.defaultPrevented;
     } catch {
-      /* 아래에서 클립보드에 담는다 */
+      return false;
     }
   }
+  return false;
+}
+
+/** 붙여넣는다. 받을 칸이 없으면(또는 그림을 못 받는 칸이면) 시스템 클립보드에 담고 'copied' */
+export async function pasteClip(item: ClipItem): Promise<PasteResult> {
+  if (pasteIntoTarget(item)) return 'pasted';
   return (await copyClipToSystem(item)) ? 'copied' : 'failed';
 }
 

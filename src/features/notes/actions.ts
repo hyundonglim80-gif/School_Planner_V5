@@ -8,7 +8,7 @@ import type { LabelTree } from '../../data/select';
 import { recordUndo } from '../../data/undo';
 import { doneChanges, itemPath, type ItemDoc } from '../events/eventOps';
 import { createNoteData, noteEditChanges, savePlanOf, type NoteForm } from './noteForm';
-import { checkLineChanges, favoriteChanges, noteDragOps, noteMoveOps } from './noteOps';
+import { checkLineChanges, favoriteChanges, memoReorderOps, noteDragOps, noteMoveOps } from './noteOps';
 import { closeNotePanelsFor } from './open';
 import { claudeRunField } from './claudeRunPrefs';
 
@@ -106,6 +106,17 @@ export async function moveNoteInList(sid: string, shown: readonly ItemDoc[], ind
 /** 끌어 놓아 순서 바꾸기 (보이는 목록의 from 번째 → to 번째 자리). 옮긴 것의 order만 */
 export async function moveNoteByDrag(sid: string, shown: readonly ItemDoc[], from: number, to: number): Promise<void> {
   const ops = noteDragOps(sid, shown, from, to);
+  if (!ops) return;
+  const undo = await batch(ops, { fail: '순서를 바꾸지 못했습니다.' });
+  recordUndo(sid, '', undo, { what: '순서 바꾸기', quiet: true });
+}
+
+/**
+ * 메모 화면에서 순서 바꾸기 (▲▼는 to = from ± 1, 끌어 놓기 - #140). shown = 메모 화면에 보이는 차례.
+ * 날짜 링크 메모도 옮긴다 - 그 메모는 메모 화면 차례(memoOrder)만 적어 하루 메모 칸 차례는 그대로(noteOps.memoReorderOps).
+ */
+export async function moveMemoOnScreen(sid: string, shown: readonly ItemDoc[], from: number, to: number): Promise<void> {
+  const ops = memoReorderOps(sid, shown, from, to);
   if (!ops) return;
   const undo = await batch(ops, { fail: '순서를 바꾸지 못했습니다.' });
   recordUndo(sid, '', undo, { what: '순서 바꾸기', quiet: true });

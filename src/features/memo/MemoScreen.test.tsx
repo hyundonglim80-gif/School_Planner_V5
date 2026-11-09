@@ -115,11 +115,20 @@ describe('메모 화면', () => {
     // 날짜 링크 메모(옛 기록)도 - 날짜 없는 메모 뒤에, 📅 칩
     expect(cards().indexOf('rec')).toBe(4);
     expect(q('[data-entry-card="rec"] [data-entry-date-chip="2026-10-08"]')).not.toBeNull();
-    expect((q('[data-entry-card="rec"] [data-entry-up]') as HTMLButtonElement | null)?.disabled ?? true).toBe(true);
+    // 날짜 링크 메모도 ▲▼로 옮긴다 (#140)
+    expect((q('[data-entry-card="rec"] [data-entry-up]') as HTMLButtonElement | null)?.disabled ?? true).toBe(false);
     expect(q('[data-memo-done]')?.dataset.memoDone).toBe('1');
     await act(async () => fireEvent.click(q('[data-memo-clear-done]')!));
     expect(written.batches[0]).toEqual([{ type: 'remove', at: { sid: SID, coll: 'items', id: 'm4' } }]);
     expect(q('[data-toast-action="되돌리기"]')).not.toBeNull();
+    // ▲ = 메모 화면 차례(memoOrder)만 - 하루 메모 칸 차례(order)는 그대로
+    await act(async () => fireEvent.click(q('[data-entry-card="rec"] [data-entry-up]')!));
+    const [move, ...rest] = written.batches.at(-1) as { type: string; at: { id: string }; changes: Record<string, unknown> }[];
+    expect(rest).toEqual([]);
+    expect(move).toMatchObject({ type: 'patch', at: { id: 'rec' } });
+    expect(Object.keys(move.changes)).toEqual(['memoOrder']);
+    const key = move.changes.memoOrder as string;
+    expect(key > 'a2' && key < 'a4').toBe(true);
   });
 
   it('날짜 링크 메모: 가장 늦은 날이 최근인 것부터, 칩을 누르면 그날 하루 화면, 처음 60장 + 더 보기', async () => {

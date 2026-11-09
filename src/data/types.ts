@@ -156,6 +156,11 @@ export interface Item extends Tracked {
   favorite?: boolean;
   /** 같은 날·같은 목록 안 차례 (domain/order - 분수 인덱스) */
   order: string;
+  /**
+   * 날짜 링크 메모의 메모 화면 차례 (#140 - 메모 화면에서 ▲▼·끌어 놓아 옮겼을 때만 적는다). order는 하루 메모 칸 차례라 그대로 둔다.
+   * 날짜 없는 메모는 order가 곧 메모 화면 차례다(features/notes/noteOps memoKey).
+   */
+  memoOrder?: string;
   /** 알림 시각 (그 항목의 date 기준) */
   time?: HM;
   alarmDone?: boolean;
