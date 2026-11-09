@@ -59,7 +59,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
 
   const edit = (t: ItemDoc) => {
     if (t.kind === 'event') openEventPanel({ sid, date: t.date ?? '', id: t.id });
-    else openNotePanel({ sid, date: t.date ?? null, id: t.id });
+    else openNotePanel({ sid, date: t.date ?? null, id: t.id, edit: true });
   };
 
   const unlink = (targetId: string) => {

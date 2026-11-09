@@ -1,5 +1,6 @@
 // 메모 칸 - 새로(맨 위 라벨·연 날 맨 뒤·저장하면 수정 칸)·#라벨(새 라벨과 한 묶음)·'+ 새 라벨'·고치기 = 바뀐 칸만·
-// 📅 날짜 링크(칩 여러 개 - P10-3)·완료/즐겨찾기(고치던 항목은 곧바로 그 칸만)·체크리스트·손대기 전에는 다른 기기 고침을 따라감·저장 안 한 글
+// 📅 날짜 링크(칩 여러 개 - P10-3)·완료/즐겨찾기(고치던 항목은 곧바로 그 칸만)·체크리스트·손대기 전에는 다른 기기 고침을 따라감·저장 안 한 글 ·
+// 보기 칸(11-09 - 있는 메모는 내용만, ✏️ 수정 = 수정 칸). 고치기 시험은 곧바로 수정 칸(edit: true)으로 연다 - 보기 칸은 따로 'view: true'.
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { useEffect, useState } from 'react';
@@ -76,12 +77,16 @@ function seed(items = new Map<string, Record<string, unknown>>([['n1', n1], ['m1
 }
 
 const close = vi.fn();
-const shown: { params?: NotePanelParams } = {};
-function Host({ initial }: { initial: NotePanelParams }) {
-  const [params, setParams] = useState(initial);
+const shown: { params?: NotePanelParams; set?: (p: NotePanelParams) => void } = {};
+/** 있는 메모는 곧바로 수정 칸 (view = 보기 칸부터 - 11-09) */
+function Host({ initial, view }: { initial: NotePanelParams; view?: boolean }) {
+  const [params, setParams] = useState(initial.id && !view ? { ...initial, edit: true } : initial);
   useEffect(() => {
     shown.params = params;
   });
+  useEffect(() => {
+    shown.set = setParams;
+  }, []);
   return <NotePanel params={params} close={close} raise={0} setParams={setParams} />;
 }
 
@@ -194,6 +199,59 @@ describe('새 메모', () => {
     type('글');
     await save();
     expect(lastOps().map((o) => o.at.coll)).toEqual(['labels', 'items']);
+  });
+});
+
+describe('보기 칸 (11-09)', () => {
+  it('있는 메모는 내용만 - 글 칸·저장 없이 라벨 칩·날짜·본문, ✏️ 수정 = 지금의 수정 칸 (params에도 적는다)', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} view />);
+    expect(q('[data-note-panel]').dataset.notePanel).toBe('edit');
+    expect(q('[data-note-panel]').dataset.noteMode).toBe('view');
+    expect(document.querySelector('[data-note-text-input]')).toBeNull();
+    expect(document.querySelector('[data-note-save]')).toBeNull();
+    expect(q('[data-note-view-body]').textContent).toContain('회의 기록');
+    expect(q('[data-note-view-chip="L2"]').textContent).toBe('상담');
+    expect(q(`[data-note-view-date="${DAY}"]`)).not.toBeNull();
+    // 보기만으로는 저장 안 한 것이 없다
+    expect(anyWindowUnsaved()).toBe(false);
+    await act(async () => fireEvent.click(q('[data-note-edit]')));
+    expect(q('[data-note-panel]').dataset.noteMode).toBe('edit');
+    expect(textInput().value).toBe('회의 기록');
+    expect(shown.params).toMatchObject({ id: 'n1', edit: true });
+  });
+
+  it('라벨 칩 = 완료 (그 칸만, 칩 크기 그대로 ✓), ☆ = 즐겨찾기 - 보기 칸 그대로', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} view />);
+    expect(q('[data-note-view-chip="L2"]').dataset.noteDoneChip).toBe('0');
+    await act(async () => fireEvent.click(q('[data-note-view-chip="L2"]')));
+    expect(lastOps()[0]).toMatchObject({ type: 'patch', at: { id: 'n1' } });
+    expect(Object.keys((lastOps()[0] as { changes: object }).changes).sort()).toEqual(['done', 'doneAt']);
+    await act(async () => fireEvent.click(q('[data-note-flag="favorite"]')));
+    expect(lastOps()[0]).toMatchObject({ changes: { favorite: true } });
+    expect(q('[data-note-panel]').dataset.noteMode).toBe('view');
+  });
+
+  it('라벨 없는 메모는 회색 ○ 칩, 한 번 수정 칸이 되면 같은 메모를 다시 열어도 수정 칸 (적던 글이 숨지 않게)', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: null, id: 'm1' }} view />);
+    expect(q('[data-note-view-chip=""]').getAttribute('aria-label')).toBe('메모 완료');
+    await act(async () => fireEvent.click(q('[data-note-edit]')));
+    type('적던 글');
+    // 카드를 다시 누르면 params가 edit 없이 온다
+    act(() => shown.set!({ sid: SID, date: null, id: 'm1' }));
+    expect(q('[data-note-panel]').dataset.noteMode).toBe('edit');
+    expect(textInput().value).toBe('적던 글');
+  });
+
+  it('edit: true로 열면 곧바로 수정 칸, 새 메모는 늘 수정 칸', () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY, id: 'n1', edit: true }} view />);
+    expect(q('[data-note-panel]').dataset.noteMode).toBe('edit');
+    document.body.innerHTML = '';
+    render(<Host initial={{ sid: SID, date: DAY }} view />);
+    expect(q('[data-note-panel]').dataset.noteMode).toBe('edit');
   });
 });
 

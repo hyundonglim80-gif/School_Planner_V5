@@ -90,8 +90,10 @@ try {
   await page.keyboard.press('Escape');
   const ask = page.locator(sel('note-claude-ask'));
   const openPanel = async () => {
-    await page.locator(sel('entry-card', id)).click();
-    await waitFor(page.locator(sel('note-panel', 'edit')), 8000);
+    // 카드 ✏️ = 곧바로 수정 칸 (11-09 - 카드 누르기는 보기 칸, 글을 고치는 묶음이라 수정 칸으로)
+    await page.locator(sel('entry-card', id)).hover();
+    await page.locator(sel('entry-card', id)).locator(sel('entry-edit')).click();
+    await waitFor(page.locator(`${sel('note-panel', 'edit')}[data-note-mode="edit"]`), 8000);
   };
   await openPanel();
   c('라벨이 없는 메모에는 단추가 없다', (await ask.count()) === 0);
@@ -389,7 +391,9 @@ try {
   c('앱을 연 뒤 온 답 = 안내', await waitFor(told, 8000));
   c('안내에 결과 표시', ((await told.textContent()) ?? '').includes('✅ 배포됨'), await told.textContent());
   await told.locator(sel('toast-action', '보기')).click();
-  c('보기 = 그 메모 칸', await waitFor(async () => (await page.locator(sel('note-text-input')).inputValue().catch(() => '')) === '새 답 점검 가', 8000));
+  // 안내·알림으로 연 칸은 보기 칸 (11-09 - 대화·이어서 요청은 보기 칸에도 있다)
+  const viewText = (p) => p.locator(sel('note-view-body')).textContent().catch(() => '');
+  c('보기 = 그 메모 칸', await waitFor(async () => ((await viewText(page)) ?? '').trim() === '새 답 점검 가', 8000));
   c('보기로 열어도 본 것', await waitFor(async () => (await seenOf(pathA)) === 400, 8000), String(await seenOf(pathA)));
 
   await admin.set(pathA, working(400));
@@ -460,7 +464,7 @@ try {
   await waitFor(newChip(idA), 15000);
   c('앱을 열어도 칸을 보기 전에는 알림이 남는다', (await osNotes(tagA)).length === 1);
   await clickNote(tagA);
-  c('열린 앱 창에서 누르면 그 메모 칸', await waitFor(async () => (await page.locator(sel('note-text-input')).inputValue().catch(() => '')) === '새 답 점검 가', 8000));
+  c('열린 앱 창에서 누르면 그 메모 칸', await waitFor(async () => ((await viewText(page)) ?? '').trim() === '새 답 점검 가', 8000));
   c('누른 답도 본 것', await waitFor(async () => (await seenOf(pathA)) === 600, 8000), String(await seenOf(pathA)));
   await page.keyboard.press('Escape');
 
@@ -478,8 +482,7 @@ try {
   await admin.set(pathA, answer(700, 600));
   const cold = await newPage(browser);
   await open(cold.page, `?claude=${idA}#/memo`);
-  const coldInput = cold.page.locator(sel('note-text-input'));
-  c('?claude= → 그 메모 칸 (빈 사본에서도 글이 채워진다)', await waitFor(async () => (await coldInput.inputValue().catch(() => '')) === '새 답 점검 가', 20000), await coldInput.inputValue().catch(() => '없음'));
+  c('?claude= → 그 메모 칸 (빈 사본에서도 글이 채워진다)', await waitFor(async () => ((await viewText(cold.page)) ?? '').trim() === '새 답 점검 가', 20000), (await viewText(cold.page)) || '없음');
   const coldUrl = new URL(cold.page.url());
   c('주소에서 ?claude=만 지운다 (# 뒤는 그대로)', !coldUrl.searchParams.has('claude') && coldUrl.hash.startsWith('#/memo'), cold.page.url());
   c('?claude=로 열어도 본 것', await waitFor(async () => (await seenOf(pathA)) === 700, 8000), String(await seenOf(pathA)));

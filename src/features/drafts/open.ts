@@ -12,6 +12,6 @@ export function openDraftsWindow() {
 
 /** 그 글의 칸을 같은 보관 열쇠로 다시 연다 → 칸 맨 위 '되살리기' */
 export function openDraftRow({ place }: Pick<DraftRowView, 'place'>) {
-  if (place.kind === 'note') openNotePanel({ sid: place.sid, date: place.date, ...(place.id ? { id: place.id } : {}) });
+  if (place.kind === 'note') openNotePanel({ sid: place.sid, date: place.date, ...(place.id ? { id: place.id, edit: true } : {}) });
   else if (place.date) openEventPanel({ sid: place.sid, date: place.date, ...(place.id ? { id: place.id } : {}) });
 }

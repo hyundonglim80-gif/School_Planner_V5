@@ -106,7 +106,8 @@ async function checkViolations() {
     r.check(await page.evaluate(() => document.documentElement.classList.contains('dark')), '인라인 스크립트가 돌았다 (처음 화면 어둡게)');
     // 접힌 카드라 글 요소가 없다 - 칩에 걸리지 않게 왼쪽 위 끝을 누른다
     await card.click({ position: { x: 10, y: 10 } });
-    const panel = page.locator(sel('note-text-input'));
+    // 카드 누르기 = 메모 보기 칸 (11-09)
+    const panel = page.locator(sel('note-view-body'));
     r.check(await waitFor(panel), '메모 칸이 열렸다');
     r.check(await waitFor(page.locator(sel('link-preview', 'youtube')).first()), '유튜브 미리보기');
     r.check(await waitFor(page.locator(sel('link-preview', 'site')).first()), '사이트 미리보기');

@@ -191,7 +191,7 @@ try {
   r.check((await viewer.locator(sel('image-viewer-title')).textContent()).includes('(1/2)'), '› = 넘기기 (끝에서 처음으로)');
   await card.evaluate(() => {}); // 카드는 그대로
   await page.locator(sel('entry-edit')).first().evaluate(() => {});
-  await page.evaluate(([s, d, i]) => window.sp5.openWindow('note', { sid: s, date: d, id: i }), [sid, DAY, id]);
+  await page.evaluate(([s, d, i]) => window.sp5.openWindow('note', { sid: s, date: d, id: i, edit: true }), [sid, DAY, id]);
   await page.locator(sel('image-viewer-close')).click();
   await panel.locator(sel('note-attachment-view')).first().click();
   r.check(await waitFor(viewer), '쓰는 칸의 그림도 크게 보기');

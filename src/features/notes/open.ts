@@ -2,6 +2,7 @@
 //
 // - 새로 쓰는 칸 = { sid, date } - date가 있으면 그날 기록, null이면 메모. 같은 공간·같은 자리의 새 칸이 열려 있으면 그 탭을 보인다.
 // - 수정 칸 = { sid, date, id } - 같은 항목이면 그 탭(자리는 보지 않는다 - 항목은 id로 찾는다, 원칙 2).
+//   있는 메모는 먼저 보기 칸(내용만 - 11-09 사용자 요청)으로 열리고 ✏️ 수정을 누르면 수정 칸. edit: true면 곧바로 수정 칸(카드 ✏️·연결 창 ✏️ 수정·남은 글).
 // - 저장한 새 칸은 그 항목의 수정 칸이 된다(setParams로 id를 더한다 - 적은 것은 그대로 남는다). 메모·기록 모두 같은 칸이다(V4 EntryDrawer).
 import { closeWindow, getWindowDef, openWindow, useShownWindowPick, useWindows } from '../../app/windows';
 import { showToast } from '../../app/toast';
@@ -16,6 +17,8 @@ export interface NotePanelParams {
   date: YMD | null;
   /** 고치는 항목 (없으면 새로) */
   id?: string;
+  /** 있는 메모를 보기 칸 없이 곧바로 수정 칸으로 (11-09 - 같은 칸인지는 보지 않는다) */
+  edit?: boolean;
   /** 새 칸에 미리 골라 둘 라벨 (라벨로 보기에서 고른 것 - P4-1) */
   labelIds?: string[];
   /** 새 칸에 미리 적어 둘 글 (공유받은 글 - P8-3) */

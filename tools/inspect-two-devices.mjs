@@ -31,7 +31,7 @@ try {
   const A = await newPage(browser);
   const B = await newPage(browser);
   for (const p of [A, B]) await open(p.page, `#/day/${DAY}`);
-  const openNote = (p) => p.page.evaluate(([s, d]) => window.sp5.openWindow('note', { sid: s, date: d, id: 'inspTwoDev' }), [sid, DAY]);
+  const openNote = (p) => p.page.evaluate(([s, d]) => window.sp5.openWindow('note', { sid: s, date: d, id: 'inspTwoDev', edit: true }), [sid, DAY]);
   const notePanel = (p) => p.page.locator(sel('note-panel', 'edit'));
   const card = (p) => p.page.locator(sel('entry-card', 'inspTwoDev'));
 

@@ -242,6 +242,7 @@ export default function MemoScreen() {
                   onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => move(i, i - 1) : undefined}
                   onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => move(i, i + 1) : undefined}
                   onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}
+                  onEdit={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id, edit: true })}
                   onOpenLinks={() => sid && openLinkViewer({ sid, id: m.id })}
                   moreLinks={progressLinks.get(m.id)?.length}
                   onAddLink={() => sid && openLinker({ sid, id: m.id })}

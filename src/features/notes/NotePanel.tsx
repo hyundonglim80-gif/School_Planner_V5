@@ -1,6 +1,9 @@
 // 메모를 쓰는 칸 (V4 components/EntryDrawer.tsx - 메모와 기록이 같은 칸, P10-3부터 '메모' 하나). 쓰는 칸 'note'.
 //
 // - 어느 화면에서든 이 칸 하나로 새로 쓰고 고친다. 칸을 연 순간의 공간에 저장한다.
+// - 있는 메모는 먼저 **보기 칸**(11-09 사용자 요청 - 연결된 데이터 창처럼 내용만): 라벨 칩 = 완료, ☆, 📅 날짜(누르면 그날 하루 화면), 글(체크 줄은 눌러서 체크)·그림·파일·표,
+//   🔗 연결된 항목, Claude 대화. **✏️ 수정**을 누르면 아래의 수정 칸이 된다(한 번 수정 칸이 되면 같은 메모를 다시 열어도 수정 칸 - 적던 글이 숨지 않게).
+//   곧바로 수정 칸 = 새 메모·params.edit(카드 ✏️·연결 창 ✏️ 수정·남은 글 목록). 보기 칸에 파일을 놓거나 '되살리기'를 누르면 수정 칸이 된다.
 // - 머리: 제목 · ☐ 완료 · ☆ 즐겨찾기(고치던 항목은 누르는 즉시 그 칸만 저장, 새 항목은 처음 저장 때 함께) · 📅 날짜 링크.
 //   날짜 칩 여러 개(+ 날짜 = 작은 달력, 칩 × = 그 날짜 빼기) - 그 날마다 하루 '메모' 칸에 보인다. 다 빼면 메모 화면에만(domain/noteDates).
 //   하루 '메모' 칸에서 + 추가 = 그 날짜 링크 하나로 새 메모.
@@ -22,12 +25,15 @@ import { useShortcutTitle } from '../../app/keys';
 import { fileIcon, formatFileSize, isImageAttachment } from '../../domain/attachments';
 import { caretAfterCheck, checkGlyphLineAt, continueOnEnter, hasCheckLines, moveCheckLine, toggleCheckMoving, toggleLinesPrefix } from '../../domain/checkLines';
 import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
-import { addNoteDate, removeNoteDate } from '../../domain/noteDates';
+import { addNoteDate, noteDates, removeNoteDate } from '../../domain/noteDates';
+import { labelPath } from '../../domain/labelTree';
+import { ownTitle } from '../../domain/noteTitle';
+import { setDate, setScope } from '../../app/nav';
 import { applyMention, findMention, matchMentionStudents, studentIdsToSave, type Mention, type MentionCandidate } from '../../domain/studentTag';
 import { useDraft } from '../../data/drafts';
 import { attachmentImageSrc } from '../../data/google/drive';
 import type { Attachment } from '../../data/types';
-import { useAllNotes, useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
+import { itemLabels, useAllNotes, useDocs, useItemsOn, useLabelTree, useMirrorStatus } from '../../data/select';
 import MiniCalendarPicker from '../../ui/MiniCalendarPicker';
 import AutoTextarea from '../../ui/AutoTextarea';
 import { listKeyOf } from '../../ui/listKeys';
@@ -46,12 +52,14 @@ import { useClaudeTagged, useClaudeThread } from './useClaudeThread';
 import LabelPicker from '../labels/LabelPicker';
 import { orderAfter } from '../events/eventOps';
 import { memoOrderBefore } from './noteOps';
-import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite } from './actions';
+import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from './actions';
+import EntryBody from './EntryBody';
+import EventDoneChip from '../events/EventDoneChip';
 import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
 import EntryTableView from './EntryTableView';
 import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
 import { hasContent, isKnownLabel, newNoteForm, noteEditedKeys, noteFormAfterSave, noteFormOf, noteTextClash, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
-import { StudentMentionList, StudentTagRow } from './StudentTags';
+import { EntryStudents, StudentMentionList, StudentTagRow } from './StudentTags';
 import CheckLinesOverlay, { CHECK_TEXT_CLASS } from './CheckLinesOverlay';
 import { useClasses, useHubClassId, type ClassItem } from '../class/classes';
 import { hasInk, type PenStroke } from '../../domain/handwriting';
@@ -76,6 +84,16 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const claude = useClaudeThread(sid, item);
   const claudeTagged = useClaudeTagged(sid, item);
   const claudeBox = useRef<ChatComposerHandle>(null);
+  // 보기 칸 / 수정 칸 (11-09). 한 번 수정 칸이 되면 그대로 - 같은 메모를 다시 열어(params가 바뀌어) 보기 칸으로 돌아가면 적던 글이 숨는다
+  const [editMode, setEditMode] = useState(() => !isEditing || !!params.edit);
+  if (params.edit && !editMode) setEditMode(true);
+  const viewing = isEditing && !editMode;
+  /** ✏️ 수정 - 새 창으로 옮겨도(↗) 수정 칸이게 params에도 적는다 */
+  const startEdit = () => {
+    if (!viewing) return;
+    setEditMode(true);
+    setParams({ ...params, edit: true });
+  };
 
   const [form, setForm] = useState<NoteForm>(() => (item ? noteFormOf(item) : newNoteForm(params.date, tree, params.labelIds, params.draftText)));
   /** 열었을 때(또는 마지막으로 저장했을 때)의 모습 - 이것과 다르면 '손댄 것' */
@@ -325,7 +343,10 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   const fileDrop = useFileDrop(
     (files) => {
       if (uploading) showToast(DROP_BUSY_TEXT);
-      else void attach(files, false);
+      else {
+        startEdit();
+        void attach(files, false);
+      }
     },
     { disabled: isEditing && !item },
   );
@@ -411,7 +432,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
         settleSaved(form, { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] });
         deliverLinkPick(params.pickFor, saved.id);
         savedId.current = saved.id;
-        setParams({ sid, date: params.date, id: saved.id });
+        setParams({ sid, date: params.date, id: saved.id, edit: true });
       } else {
         if (!item) {
           showToast('메모를 찾지 못했습니다. 그 사이 지워졌을 수 있습니다.');
@@ -464,24 +485,80 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   });
   useUnsavedCheck(unsaved);
 
-  const title = isEditing ? `${noun} 수정` : `새 ${noun}`;
+  const title = viewing ? noun : isEditing ? `${noun} 수정` : `새 ${noun}`;
   const subtitle = personal ? '개인' : '공유';
+  const pathOf = (id: string) => labelPath(id, tree.parents, (x) => tree.byId.get(x)?.name);
+  const viewLabels = viewing && item ? itemLabels(tree, item.labelIds) : [];
+  const openDay = (d: string) => {
+    setDate(d);
+    setScope('day');
+  };
+  const hasBody = !!item && (!!item.text || (item.attachments ?? []).some((a) => a?.url) || (item.tables?.length ?? 0) > 0);
 
   return (
     <SidePanelFrame
       ariaLabel={title}
       onClose={close}
       onBackdropClose={() => void saveIfChanged().then((ok) => ok && close())}
-      onSave={() => void save()}
+      onSave={viewing ? undefined : () => void save()}
       raise={raise}
     >
-      <div data-note-panel={isEditing ? 'edit' : 'new'} data-note-id={params.id ?? ''} data-note-dates={form.dates.join(',')} className="relative flex flex-col h-full min-h-0" {...fileDrop.dropProps}>
+      <div
+        data-note-panel={isEditing ? 'edit' : 'new'}
+        data-note-mode={viewing ? 'view' : 'edit'}
+        data-note-id={params.id ?? ''}
+        data-note-dates={form.dates.join(',')}
+        className="relative flex flex-col h-full min-h-0"
+        {...fileDrop.dropProps}
+      >
         {fileDrop.over && <FileDropCover />}
         <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100">
           <div className="min-w-0">
             <h3 className="text-lg font-bold text-slate-800">{title}</h3>
             <p className="text-xs font-bold text-primary mt-0.5 truncate">{subtitle}</p>
-            {(!isEditing || item) && (
+            {viewing && item && (
+              <div data-note-view-head className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                <button
+                  type="button"
+                  data-note-flag="favorite"
+                  aria-pressed={favorite}
+                  disabled={flagBusy}
+                  onClick={() => void toggleFlag('favorite')}
+                  title={favorite ? '즐겨찾기 풀기' : '즐겨찾기'}
+                  className={`p-0.5 text-base leading-none transition-colors cursor-pointer shrink-0 ${favorite ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'}`}
+                >
+                  {favorite ? '★' : '☆'}
+                </button>
+                {/* 라벨 칩 = 완료 (카드와 같이 - 누르면 바로 저장) */}
+                {(viewLabels.length > 0 ? viewLabels : [null]).map((l, i) => (
+                  <EventDoneChip
+                    key={l?.id ?? 'none'}
+                    kind="note"
+                    label={l}
+                    done={done}
+                    mark={i === 0}
+                    onToggle={() => void toggleFlag('done')}
+                    hint={l ? pathOf(l.id) : undefined}
+                    truncate
+                    className="px-2 py-0.5 rounded-md text-xs min-w-0 max-w-[10rem]"
+                    data={{ 'data-note-view-chip': l?.id ?? '' }}
+                  />
+                ))}
+                {noteDates(item).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    data-note-view-date={d}
+                    onClick={() => openDay(d)}
+                    title={`${shortDateLabel(d)} 하루 화면으로`}
+                    className="px-1.5 py-0.5 rounded-md text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
+                  >
+                    📅 {shortDateLabel(d)}
+                  </button>
+                ))}
+              </div>
+            )}
+            {!viewing && (!isEditing || item) && (
               <>
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <button
@@ -572,6 +649,47 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               : status === 'live'
                 ? '항목을 찾지 못했습니다. 그 사이 지워졌을 수 있습니다.'
                 : '불러오는 중...'}
+          </div>
+        ) : viewing && item ? (
+          <div data-note-view className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-4" data-scroll-lock>
+            {draft.offer && (
+              <DraftOffer
+                savedAt={draft.offer.savedAt}
+                onRestore={() => {
+                  startEdit();
+                  restoreDraft();
+                }}
+                onDiscard={draft.discard}
+              />
+            )}
+            {ownTitle(item) && (
+              <h4 data-note-view-title className={`text-base font-extrabold break-words ${done ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                {ownTitle(item)}
+              </h4>
+            )}
+            {hasBody ? (
+              <div data-note-view-body className="p-4 bg-slate-50/70 border border-slate-100 rounded-xl flex flex-col gap-3 min-w-0">
+                <EntryBody item={item} onToggleCheckLine={(idx, line) => toggleNoteCheckLine(sid, item, idx, line)} fullTables large />
+              </div>
+            ) : (
+              !ownTitle(item) && (
+                <p data-note-view-empty className="text-sm text-slate-400">
+                  (내용 없음)
+                </p>
+              )
+            )}
+            {(item.studentIds?.length ?? 0) > 0 && <EntryStudents studentIds={item.studentIds ?? []} />}
+            {(item.linkIds?.length ?? 0) > 0 && (
+              <button
+                type="button"
+                data-note-links-open={item.linkIds?.length}
+                onClick={() => openLinkViewer({ sid, id: item.id })}
+                className="w-full flex items-center justify-center gap-2 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-yellow-200"
+              >
+                📑 연결된 항목 {item.linkIds?.length}개 보기
+              </button>
+            )}
+            {claude && claude.turns.length > 0 && <ClaudeThread turns={claude.turns} onRefill={claudeTagged ? (text) => claudeBox.current?.fill(text) : undefined} />}
           </div>
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-6" data-scroll-lock>
@@ -858,6 +976,16 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
             >
               닫기
             </button>
+            {viewing ? (
+              <button
+                type="button"
+                data-note-edit
+                onClick={startEdit}
+                className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer"
+              >
+                ✏️ 수정
+              </button>
+            ) : (
             <button
               type="button"
               data-note-save
@@ -868,6 +996,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
             >
               {saving ? '저장 중...' : '저장'}
             </button>
+            )}
           </div>
         </div>
       </div>

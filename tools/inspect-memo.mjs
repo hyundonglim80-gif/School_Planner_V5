@@ -1,10 +1,11 @@
 // tools/inspect-memo.mjs - P4-1: 메모 화면·라벨로 보기를 실제 크롬에서 본다.
 //   1) 메모 화면: 즐겨찾기로 연다, 왼쪽 라벨로 보기(⭐ → 라벨 → 전체), 카드는 가장 짧은 열부터(여러 열).
 //   2) 라벨 칩: 그냥 = 하나만, Ctrl = 더하기, 상위 → 하위 것도, ▸ 펴서 '기타', 숫자 = 진행 중, 다른 화면에 다녀와도 그대로, ESC = 전체.
-//   3) 진행/완료 구역, ☐ 완료 = 완료 구역으로(문서 하나), 🗑️ 전체 비우기 = 한 묶음 + 되돌리기.
+//   3) 진행/완료 구역, 라벨 칩 = 완료(☐ 없음, 칩 크기 그대로 ✓ - 11-09) = 완료 구역으로(문서 하나), 🗑️ 전체 비우기 = 한 묶음 + 되돌리기.
 //   4) + 새 메모 = 날짜 없는 칸(고른 라벨 미리) → 저장하면 메모 화면에.
 //   5) 하루 메모 칸 라벨로 보기: 접힘 → 🏷️로 펴기 → 전체·칩, 고르면 그 메모만.
 //   6) 파란 테두리 = 오른쪽 칸에 보이는 메모 하나 (다른 메모·탭을 고르면 옮겨 가고, 메모가 아닌 탭이면 없다 - 10-21).
+//   7) 카드 누르기 = 메모 보기 칸(내용만 - 라벨 칩 완료), ✏️ 수정 = 수정 칸(다시 눌러도 그대로), 카드 ✏️ = 곧바로 수정 칸, 창 위치 팝업창도 (11-09).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-memo.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 메모·기록·라벨(insp_mm…)을 심고 끝에 지운다.
@@ -105,10 +106,22 @@ try {
   await page.keyboard.press('Escape');
   r.check(await waitFor(async () => await pressed('all')), 'ESC = 전체');
 
-  r.section('완료·전체 비우기');
-  await card('insp_mm3').locator(sel('entry-complete')).click();
+  r.section('완료·전체 비우기 (라벨 칩 = 완료 - 11-09)');
+  const chip3 = card('insp_mm3').locator('[data-note-done-chip]');
+  r.check((await card('insp_mm3').locator('input[type="checkbox"]').count()) === 0, '카드에 ☐ 체크 칸이 없다');
+  r.check((await chip3.getAttribute('data-entry-chip')) === 'insp_mlu' && (await chip3.getAttribute('data-note-done-chip')) === '0', '라벨 칩이 완료 칩');
+  const box0 = await chip3.boundingBox();
+  await chip3.click();
   const d3 = await serverUntil(() => read('insp_mm3'), (d) => d?.done === true);
-  r.check(d3?.done === true, '☐ = 완료 (문서 하나)');
+  r.check(d3?.done === true, '라벨 칩 누르기 = 완료 (문서 하나)');
+  r.check(await waitFor(card('insp_mm3').locator('[data-note-check]')), '완료 = 칩 안에 ✓');
+  const box1 = await chip3.boundingBox();
+  r.check(
+    !!box0 && !!box1 && Math.abs(box1.width - box0.width) < 0.6 && Math.abs(box1.height - box0.height) < 0.6,
+    `칩 크기 그대로 (${box0?.width.toFixed(1)}×${box0?.height.toFixed(1)} → ${box1?.width.toFixed(1)}×${box1?.height.toFixed(1)})`,
+  );
+  const fonts = await chip3.evaluate((el) => [parseFloat(getComputedStyle(el).fontSize), parseFloat(getComputedStyle(el.querySelector('.absolute > span:last-child')).fontSize)]);
+  r.check(fonts[1] < fonts[0] * 0.8 && (await chip3.textContent()).includes('점검개인'), `글자는 줄여 그대로 보인다 (${fonts[0]}px → ${fonts[1]}px)`);
   r.check(await waitFor(async () => Number(await page.locator(sel('memo-done')).getAttribute('data-memo-done')) >= 2), '완료 구역으로');
   await chip('insp_mlu').click();
   await page.locator(sel('memo-clear-done')).click();
@@ -187,9 +200,9 @@ try {
   await chip('all').click();
   const ringed = () => page.locator(sel('entry-card')).evaluateAll((els) => els.filter((e) => e.className.includes('ring-primary')).map((e) => e.dataset.entryCard));
   const onlyRing = async (ids) => waitFor(async () => JSON.stringify(await ringed()) === JSON.stringify(ids));
-  await card('insp_mm1').click();
+  await card('insp_mm1').locator(sel('entry-text')).click();
   r.check(await onlyRing(['insp_mm1']), 'mm1을 누르면 mm1만');
-  await card('insp_mm2').click();
+  await card('insp_mm2').locator(sel('entry-text')).click();
   r.check(await waitFor(page.locator(`${sel('note-panel', 'edit')}[data-note-id="insp_mm2"]`)), 'mm2 칸이 새 탭으로');
   r.check(await onlyRing(['insp_mm2']), `mm2를 누르면 mm2만 - mm1 테두리는 빠진다 (${await ringed()})`);
   await page.locator('[data-side-tab]').first().locator('button').first().click();
@@ -200,6 +213,41 @@ try {
   await page.keyboard.press('Escape');
   r.check(await waitFor(async () => (await page.locator('[data-side-tab]').count()) === 0), 'ESC = 오른쪽 칸 모두 닫기');
   r.check(await onlyRing([]), '닫으면 테두리 없음');
+
+  r.section('카드 누르기 = 메모 보기 칸, ✏️ 수정 = 수정 칸 (11-09 사용자 요청)');
+  await card('insp_mm1').locator(sel('entry-text')).click();
+  const view = page.locator(`${sel('note-panel')}[data-note-id="insp_mm1"]`);
+  const modeOf = (loc) => loc.getAttribute('data-note-mode').catch(() => '');
+  r.check(await waitFor(async () => (await modeOf(view)) === 'view'), '카드 누르기 = 보기 칸');
+  r.check((await view.locator(sel('note-text-input')).count()) === 0 && (await page.locator(sel('note-save')).count()) === 0, '글 칸·저장 단추 없이 내용만');
+  r.check(((await view.locator(sel('note-view-body')).textContent()) ?? '').includes('점검 메모 학교'), '본문이 보인다');
+  const vChip = view.locator(sel('note-view-chip', 'insp_mlp'));
+  r.check((await vChip.count()) === 1 && (await page.locator(sel('note-edit')).isVisible()), '라벨 칩·✏️ 수정 단추');
+  await vChip.click();
+  r.check((await serverUntil(() => read('insp_mm1'), (d) => d?.done === true))?.done === true, '보기 칸 라벨 칩 = 완료 (곧바로 저장)');
+  r.check(await waitFor(view.locator('[data-note-check]')), '보기 칸 칩에도 ✓');
+  await vChip.click();
+  await serverUntil(() => read('insp_mm1'), (d) => !d?.done);
+  await page.locator(sel('note-edit')).click();
+  r.check(await waitFor(async () => (await modeOf(view)) === 'edit'), '✏️ 수정 = 수정 칸');
+  const vText = view.locator(sel('note-text-input'));
+  r.check(await waitFor(() => vText.evaluate((el) => el === document.activeElement)), '커서는 글 칸에');
+  r.check((await vText.inputValue()) === '점검 메모 학교', '글 칸에 그 글');
+  // 커서는 글 맨 앞이다 (전과 같다) - 친 글이 어디에 들었든 다시 눌러도 그대로인지만 본다
+  await page.keyboard.type(' 고침');
+  const typed = await vText.inputValue();
+  await card('insp_mm1').locator(sel('entry-text')).click();
+  await page.waitForTimeout(300);
+  r.check(typed.includes('고침') && (await modeOf(view)) === 'edit' && (await vText.inputValue()) === typed, '같은 카드를 다시 눌러도 수정 칸 그대로 (적던 글)');
+  await vText.fill('점검 메모 학교');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0);
+  await card('insp_mm2').hover();
+  await card('insp_mm2').locator(sel('entry-edit')).click();
+  const ed = page.locator(`${sel('note-panel')}[data-note-id="insp_mm2"]`);
+  r.check(await waitFor(async () => (await modeOf(ed)) === 'edit'), '카드 ✏️ = 곧바로 수정 칸');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0);
 
   r.section('하루 메모 칸 라벨로 보기 (칩 줄은 접혀 시작 - 🏷️로 편다, P10-3)');
   await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));
@@ -262,6 +310,32 @@ try {
   const dayIds = async () =>
     (await page.locator(`${sel('day-journal', DAY)} ${sel('entry-card')}`).evaluateAll((els) => els.map((e) => e.dataset.entryCard))).filter((id) => id.startsWith('insp_'));
   r.check(await waitFor(async () => JSON.stringify(await dayIds()) === '["insp_mj1","insp_mj2","insp_mo3"]'), `하루 메모 칸 차례는 그대로 (${await dayIds()})`);
+
+  r.section('창 위치 팝업창 - 메모를 누르면 보기 팝업창, ✏️ 수정 = 그 창에서 수정 (11-09)');
+  const pcRef = doc(em.db, 'spaces', sid, 'settings', 'pc');
+  const pcBefore = await getDoc(pcRef);
+  undo.add(() => (pcBefore.exists() ? setDoc(pcRef, pcBefore.data()) : deleteDoc(pcRef)));
+  await setDoc(pcRef, { ...(pcBefore.exists() ? pcBefore.data() : {}), popupStyle: 'popup', v: 1 });
+  const P = await newPage(browser);
+  await open(P.page, '#/memo');
+  r.check(
+    await waitFor(() => P.page.evaluate(async () => (await import(window.__appModule('/src/app/layoutPrefs.ts'))).useLayoutPrefs.getState().popupStyle === 'popup'), 10000),
+    '창 위치 = 팝업창 (계정 설정)',
+  );
+  await P.page.locator(sel('filter-chip', 'all')).click();
+  const pCard = P.page.locator(sel('entry-card', 'insp_mm1'));
+  await waitFor(pCard, 10000);
+  const [pop] = await Promise.all([P.ctx.waitForEvent('page', { timeout: 10000 }), pCard.locator(sel('entry-text')).click()]);
+  await pop.waitForURL(/popout=/, { timeout: 10000 }).catch(() => {});
+  const pPanel = pop.locator(sel('note-panel'));
+  r.check(await waitFor(async () => (await modeOf(pPanel)) === 'view', 20000), '팝업창도 보기 칸부터 (내용만)');
+  r.check(((await pop.locator(sel('note-view-body')).textContent().catch(() => '')) ?? '').includes('점검 메모 학교'), '팝업창에 본문');
+  await pop.locator(sel('note-edit')).click();
+  r.check(await waitFor(async () => (await modeOf(pPanel)) === 'edit'), '팝업창에서 ✏️ 수정 = 수정 칸');
+  r.check(await waitFor(pop.locator(sel('note-text-input'))), '팝업창 글 칸');
+  r.check(P.errors.length === 0, `팝업창 큰 창 화면 오류 없음 ${P.errors.join(' | ')}`);
+  await pop.close();
+  await P.page.close();
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {

@@ -5,12 +5,19 @@
 // - 여러 라벨이면 ✓는 첫 칩에만 (mark), 어느 칩을 눌러도 완료.
 // - onToggle이 없으면 보기만 (작년 이맘때 등) - 라벨 없는 일정은 끝냈을 때만 ✓.
 // - 기간 일정은 하루·주간 칩 = 그날만, 월간 막대·년간 기간 줄 칩 = 기간 전체(whole - 10-30 사용자 보고).
+// - 메모 카드·목록 줄·메모 보기 칸도 이것을 쓴다(kind 'note' - 11-09 사용자 요청, ☐ 체크 칸을 없앴다). data-* 이름은 메모 것.
 import type { CSSProperties, KeyboardEvent, MouseEvent } from 'react';
 import { labelColor } from '../../domain/labels';
 import type { LabelDoc } from '../../data/select';
 
 interface Props {
-  label: LabelDoc | null;
+  label: Pick<LabelDoc, 'name' | 'color'> | null;
+  /** 메모 칩이면 'note' - data-note-done-chip·data-note-check (일정 점검이 메모 칩을 세지 않게) */
+  kind?: 'event' | 'note';
+  /** 마우스를 올리면 보일 글 앞부분 (메모 칩 - '상위 › 하위') */
+  hint?: string;
+  /** 긴 라벨 이름은 칩 폭(className의 max-w)에서 … (메모 칩) */
+  truncate?: boolean;
   done: boolean;
   /** ✓를 이 칩에 붙이나 (여러 라벨이면 첫 칩만 - 기본 true) */
   mark?: boolean;
@@ -36,8 +43,11 @@ export function DoneMark({ className = '' }: { className?: string }) {
   );
 }
 
-export default function EventDoneChip({ label, done, mark = true, onToggle, forward, whole, className, data, style }: Props) {
+export default function EventDoneChip({ label, done, mark = true, onToggle, forward, whole, className, data, style, kind = 'event', hint, truncate }: Props) {
   if (!label && !onToggle && !done) return null;
+  const note = kind === 'note';
+  const checkAttr = { [note ? 'data-note-check' : 'data-event-check']: '' };
+  const tip = (t: string) => (hint ? `${hint} - ${t}` : t);
   const c = label ? labelColor(label.color) : null;
   const act = onToggle
     ? {
@@ -54,21 +64,25 @@ export default function EventDoneChip({ label, done, mark = true, onToggle, forw
           e.stopPropagation();
           onToggle();
         },
-        title: whole
-          ? done
-            ? '눌러서 기간 전체 완료 풀기'
-            : '눌러서 기간 전체 완료 (하루만은 하루·주간 화면에서)'
-          : done
-            ? '눌러서 완료 풀기'
-            : forward
-              ? '눌러서 완료 (이월 정지)'
-              : '눌러서 완료',
+        title: tip(
+          whole
+            ? done
+              ? '눌러서 기간 전체 완료 풀기'
+              : '눌러서 기간 전체 완료 (하루만은 하루·주간 화면에서)'
+            : done
+              ? '눌러서 완료 풀기'
+              : forward
+                ? '눌러서 완료 (이월 정지)'
+                : '눌러서 완료',
+        ),
       }
-    : {};
+    : hint
+      ? { title: hint }
+      : {};
   const check = done && mark;
   // 눈에 띄게 초록 동그라미에 흰 ✓ (#123)
   const checkMark = (
-    <span data-event-check className="inline-flex items-center justify-center w-[1.15em] h-[1.15em] rounded-full bg-emerald-600 text-white text-[0.75em] font-black leading-none shrink-0">
+    <span {...checkAttr} className="inline-flex items-center justify-center w-[1.15em] h-[1.15em] rounded-full bg-emerald-600 text-white text-[0.75em] font-black leading-none shrink-0">
       ✓
     </span>
   );
@@ -76,8 +90,8 @@ export default function EventDoneChip({ label, done, mark = true, onToggle, forw
     <span
       {...data}
       {...act}
-      data-event-done-chip={mark && onToggle ? (done ? '1' : '0') : undefined}
-      aria-label={c ? undefined : done ? '완료 풀기' : '일정 완료'}
+      {...{ [note ? 'data-note-done-chip' : 'data-event-done-chip']: mark && onToggle ? (done ? '1' : '0') : undefined }}
+      aria-label={c ? undefined : done ? '완료 풀기' : note ? '메모 완료' : '일정 완료'}
       className={`relative inline-flex items-center gap-1 align-middle font-bold rounded shadow-2xs whitespace-nowrap ${onToggle ? 'cursor-pointer hover:brightness-95' : ''} ${className}`}
       style={{
         ...(c
@@ -91,12 +105,14 @@ export default function EventDoneChip({ label, done, mark = true, onToggle, forw
           // 라벨 칩 완료 (#123·#127): 칩 크기는 원래 글자가 그대로 잡고(보이지 않게 - 글은 ::before라 textContent에 겹치지 않는다),
           // 그 칩 안에 ✓와 줄인 글자를 겹쳐 그린다 - 완료 전후 칩 크기가 같다(여백까지 쓴다)
           <>
-            <span aria-hidden data-ghost={label.name} className="invisible before:content-[attr(data-ghost)]" />
+            <span aria-hidden data-ghost={label.name} className={`invisible before:content-[attr(data-ghost)] ${truncate ? 'truncate min-w-0' : ''}`} />
             <span className="absolute inset-0 flex items-center justify-center gap-px px-px overflow-hidden">
               {checkMark}
-              <span className="text-[0.75em] leading-none">{label.name}</span>
+              <span className={`text-[0.75em] leading-none ${truncate ? 'truncate min-w-0' : ''}`}>{label.name}</span>
             </span>
           </>
+        ) : truncate ? (
+          <span className="truncate min-w-0">{label.name}</span>
         ) : (
           label.name
         )

@@ -1,4 +1,4 @@
-// 메모 본문 (카드와 메모 화면 목록의 펼친 줄이 함께 쓴다 - P11-1에 EntryCard에서 나눴다).
+// 메모 본문 (카드와 메모 화면 목록의 펼친 줄이 함께 쓴다 - P11-1에 EntryCard에서 나눴다. 메모 보기 칸도 - 11-09, large = 그림을 자르지 않고 크게).
 //   그림(누르면 크게 보기·넘겨 보기) · 파일 · 글(체크 줄은 눌러서 체크 - 체크한 줄은 아래쪽에 모아 보이기만, V4 10-07) · 글 안 주소 미리보기 · 표(작게 보기만).
 import { Fragment, useState, type ReactNode } from 'react';
 import { checkLineState, hasCheckLines } from '../../domain/checkLines';
@@ -16,11 +16,13 @@ interface Props {
   onToggleCheckLine: (lineIndex: number, line: string) => Promise<unknown>;
   /** 표를 칸 안에서 스크롤하지 않고 끝 행까지 모두 보인다 (오른쪽 칸 - 넘치면 칸 전체가 스크롤) */
   fullTables?: boolean;
+  /** 메모 보기 칸 - 그림을 자르지 않고 크게 (11-09) */
+  large?: boolean;
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
-export default function EntryBody({ item, onToggleCheckLine, fullTables }: Props) {
+export default function EntryBody({ item, onToggleCheckLine, fullTables, large }: Props) {
   const body = item.text ?? '';
   const done = !!item.done;
   const attachments = (item.attachments ?? []).filter((a) => a && a.url);
@@ -122,7 +124,12 @@ export default function EntryBody({ item, onToggleCheckLine, fullTables }: Props
               className="block w-full rounded-xl overflow-hidden border border-slate-100 bg-slate-50 cursor-pointer"
               title="눌러서 크게 보기"
             >
-              <img src={attachmentImageSrc(img, 600)} alt={img.name || '첨부 이미지'} className="w-full max-h-48 object-cover" loading="lazy" />
+              <img
+                src={attachmentImageSrc(img, large ? 1200 : 600)}
+                alt={img.name || '첨부 이미지'}
+                className={large ? 'w-full max-h-[28rem] object-contain bg-white' : 'w-full max-h-48 object-cover'}
+                loading="lazy"
+              />
             </button>
           ))}
         </div>

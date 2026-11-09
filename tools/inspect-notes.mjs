@@ -1,6 +1,6 @@
 // tools/inspect-notes.mjs - P3-2(P10-3 메모 하나 + 날짜 링크): 하루 화면 메모 칸·메모 쓰는 칸을 실제 크롬에서 본다 (저장마다 서버 문서 하나만 바뀐다).
 //   1) 하루 화면 기록 칸: 그날 기록 카드(라벨 칩·☑ n/m·🔗), 즐겨찾기가 맨 위, 메모·다른 날은 없다, 긴 기록은 접혀 있다.
-//   2) ☐ 완료·☆ 즐겨찾기·체크 줄 = 그 기록 문서 하나(다른 기록의 updatedAt은 그대로), 안내 없이. ▲ 순서 = 문서 하나.
+//   2) 라벨 칩 완료(☐ 없음 - 11-09)·☆ 즐겨찾기·체크 줄 = 그 기록 문서 하나(다른 기록의 updatedAt은 그대로), 안내 없이. ▲ 순서 = 문서 하나.
 //   3) 🗑️ = 지운 표시 → 안내의 되돌리기.
 //   4) + 추가 → 새 기록 칸(맨 위 라벨·커서는 글 칸) → '#라벨' 미리 보기 → Ctrl+S = 새 문서 하나 + 새 라벨, 칸은 그 기록의 수정 칸('#' 줄은 떼고).
 //   5) 고치기 = 그 문서의 바뀐 칸만. + 날짜로 둘째 날 → dates 두 개, 그 날 메모 칸에도 · 메모 화면에 📅 칩 둘 · 칩 × 다 빼기 = date null, 안내의 되돌리기 = 원래대로.
@@ -65,7 +65,7 @@ try {
   r.check((await card('insp_nt9').count()) === 0 && (await card('insp_nm1').count()) === 0, '다른 날 기록·메모는 없다');
   const chip = card('insp_nt1').locator(sel('entry-chip', 'insp_nc'));
   r.check(await chip.isVisible(), '라벨 칩');
-  r.check((await chip.getAttribute('title')) === '점검상위 › 점검하위', '하위 라벨 칩 = 상위 › 하위');
+  r.check((await chip.getAttribute('title')) === '점검상위 › 점검하위 - 눌러서 완료', '하위 라벨 칩 = 상위 › 하위 (누르면 완료)');
   r.check((await card('insp_nt3').locator(sel('entry-checks')).getAttribute('data-entry-checks')) === '1/3', '☑ 1/3');
   r.check((await card('insp_nt1').locator(sel('entry-links')).textContent()).includes('1'), '🔗 링크 수');
   r.check((await card('insp_nt4').getAttribute('data-entry-collapsed')) === '1', '긴 기록은 접혀 있다');
@@ -74,8 +74,8 @@ try {
 
   r.section('완료·즐겨찾기·체크 줄·순서 = 문서 하나');
   let before = await stamps();
-  await card('insp_nt1').locator(sel('entry-complete')).click();
-  r.check(await waitFor(async () => (await card('insp_nt1').getAttribute('data-entry-done')) === '1', 2000), '☐ 누르면 곧바로 완료로 보인다');
+  await chip.click();
+  r.check(await waitFor(async () => (await card('insp_nt1').getAttribute('data-entry-done')) === '1', 2000), '라벨 칩 누르면 곧바로 완료로 보인다');
   const done = await serverUntil(() => read('insp_nt1'), (d) => d?.done === true);
   r.check(done?.done === true && typeof done.doneAt === 'number', '서버: done·doneAt');
   let after = await serverUntil(stamps, (s) => changed(before, s).length > 0);

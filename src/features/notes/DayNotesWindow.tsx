@@ -86,6 +86,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
                 onMoveUp={canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
                 onMoveDown={canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                 onOpen={() => openNotePanel({ sid, date, id: item.id })}
+                onEdit={() => openNotePanel({ sid, date, id: item.id, edit: true })}
                 onOpenLinks={() => openLinkViewer({ sid, id: item.id })}
                 moreLinks={progressLinks.get(item.id)?.length}
                 onAddLink={() => openLinker({ sid, id: item.id })}

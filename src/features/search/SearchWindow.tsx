@@ -162,7 +162,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
     if (!sid) return;
     const it = hit.item;
     if (it.kind === 'event') openEventPanel({ sid, date: hit.date ?? it.date ?? date, id: it.id });
-    else openNotePanel({ sid, date: it.date ?? null, id: it.id });
+    else openNotePanel({ sid, date: it.date ?? null, id: it.id, edit: true });
   };
 
   const labelOptions = [...eventTree.rows.map((r) => ({ id: r.id, name: `📅 ${eventTree.byId.get(r.id)?.name ?? ''}` })), ...noteTree.rows.map((r) => ({ id: r.id, name: `📝 ${r.depth ? '└ ' : ''}${noteTree.byId.get(r.id)?.name ?? ''}` }))];

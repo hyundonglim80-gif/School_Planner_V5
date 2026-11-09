@@ -82,7 +82,7 @@ export default function DayJournal({ date }: { date: YMD }) {
 
   const pathOf = (id: string) => labelPath(id, tree.parents, (x) => tree.byId.get(x)?.name);
   const openCreate = () => sid && openNotePanel({ sid, date });
-  const openEdit = (item: ItemDoc) => sid && openNotePanel({ sid, date, id: item.id });
+  const openEdit = (item: ItemDoc, edit?: boolean) => sid && openNotePanel({ sid, date, id: item.id, ...(edit ? { edit } : {}) });
 
   return (
     <section data-day-journal={date} className="flex flex-col gap-4">
@@ -211,6 +211,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                       onMoveUp={sid && canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
                       onMoveDown={sid && canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
                       onOpen={() => openEdit(item)}
+                      onEdit={() => openEdit(item, true)}
                       onOpenLinks={() => sid && openLinkViewer({ sid, id: item.id })}
                       moreLinks={progressLinks.get(item.id)?.length}
                       onAddLink={() => sid && openLinker({ sid, id: item.id })}

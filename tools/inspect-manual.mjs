@@ -491,7 +491,7 @@ try {
   await topic('journal-view', async () => {
     const card = q(sel('entry-card', 'insp_man_n1'));
     r.check(await waitFor(card), '메모 카드');
-    for (const s of ['entry-complete', 'entry-favorite-toggle', 'entry-table', 'entry-students']) r.check((await card.locator(sel(s)).count()) > 0, `카드 ${s}`);
+    for (const s of ['note-done-chip', 'entry-favorite-toggle', 'entry-table', 'entry-students']) r.check((await card.locator(sel(s)).count()) > 0, `카드 ${s}`);
     r.check((await card.locator(sel('entry-from')).count()) === 0, '그날 일정에 이은 메모 = 카드에 이은 곳 표시 없음');
     r.check(((await card.getAttribute('data-reorder-card')) ?? '').startsWith('note:day:'), '마우스 화면 = 카드를 끌어 놓아 차례 바꾸기 (#81)');
     const toggle = q(sel('journal-filter-toggle'));

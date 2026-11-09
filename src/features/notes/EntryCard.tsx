@@ -1,6 +1,8 @@
 // 메모·기록 카드 하나 (V4 components/EntryCard.tsx - 메모 화면과 하루 화면 기록 칸이 같은 카드를 쓴다).
 //
-//   머리줄: ▶ ▲▼ ☐완료 ☆ 라벨칩…  시각·📅 날짜 칩·📌/🏫 온 길  ☑ 2/5  🔗 n (접혔을 때 🖼️)·📎·▦  ……  🔗 ✏️ 🗑️(마우스를 올리면)
+//   머리줄: ▶ ▲▼ ☆ 라벨칩…  시각·📅 날짜 칩·📌/🏫 온 길  ☑ 2/5  🔗 n (접혔을 때 🖼️)·📎·▦  ……  🔗 ✏️ 🗑️(마우스를 올리면)
+//   - 라벨 칩 = 완료(11-09 사용자 요청 - 일정과 같이 ☐ 체크 칸을 없앴다): 누르면 완료·풀기, 끝내면 칩 크기 그대로 글자를 줄이고 ✓(EventDoneChip). 라벨이 없으면 회색 ○ 칩.
+//   - 카드를 누르면 메모 보기 칸(내용만 - 11-09), ✏️는 곧바로 수정 칸.
 //   - 단추·라벨 칩은 한 줄에(V4 10-07 사용자 요청), 시각·표시는 넘치면 다음 줄로. 라벨 칩은 위(머리줄)에 - 메모·기록 라벨 한 목록의 색.
 //   - 지운 라벨·모르는 라벨은 그리지 않는다(부르는 쪽이 itemLabels로 고른다).
 //   - 완료는 줄 긋기, ★ 즐겨찾기. 체크 줄(☐/☑)은 눌러서 체크 - 체크한 줄은 카드 아래쪽에 모아 보이기만 한다(V4 10-07, 구글 Keep처럼).
@@ -11,7 +13,6 @@ import { shortDateLabel } from '../../domain/dateUtils';
 import { checkCount } from '../../domain/checkLines';
 import { previewLine } from '../../domain/entryCollapse';
 import { isImageAttachment } from '../../domain/attachments';
-import { labelColor } from '../../domain/labels';
 import { attachmentImageSrc } from '../../data/google/drive';
 import { openImageViewer } from '../../ui/imageViewerStore';
 import type { ItemDoc } from '../events/eventOps';
@@ -21,6 +22,7 @@ import { ownTitle } from '../../domain/noteTitle';
 import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
 import { pressKeys } from '../../ui/pressKeys';
+import EventDoneChip from '../events/EventDoneChip';
 
 export interface EntryCardProps {
   item: ItemDoc;
@@ -44,7 +46,10 @@ export interface EntryCardProps {
   onMoveDown?: () => void;
   /** 끌어 놓아 순서 바꾸기 속성 (ui/reorderDrag - 마우스로 쓰는 화면에서만 온다) */
   dragProps?: object;
+  /** 카드 누르기 = 메모 보기 칸 */
   onOpen: () => void;
+  /** ✏️ = 곧바로 수정 칸 (없으면 onOpen) */
+  onEdit?: () => void;
   /** 🔗 n - 이은 항목 보기 (links/LinkViewerWindow) */
   onOpenLinks?: () => void;
   /** 🔗 n에 더할 수 - 이 메모를 이은 진도 차시 (진도 쪽에만 적혀 있다 - P10-4) */
@@ -98,7 +103,7 @@ export default function EntryCard(props: EntryCardProps) {
         stop(e);
         props.onOpen();
       }}
-      title="클릭하여 수정"
+      title="클릭하여 보기 (✏️ = 수정)"
       className={`relative w-full rounded-2xl p-3 sm:p-4 min-w-0 transition-all duration-200 border flex flex-col gap-2 group shadow-sm hover:shadow-md cursor-pointer ${
         editing
           ? 'border-primary ring-1 ring-primary bg-primary/5'
@@ -153,16 +158,6 @@ export default function EntryCard(props: EntryCardProps) {
                 ▼
               </button>
             </div>
-            <input
-              type="checkbox"
-              checked={done}
-              aria-label={`${noun} 완료`}
-              title={done ? '완료 풀기' : '완료'}
-              data-entry-complete
-              onClick={stop}
-              onChange={props.onToggleDone}
-              className="w-4 h-4 rounded text-primary focus:ring-primary border-slate-300 accent-primary cursor-pointer shrink-0"
-            />
             {/* 즐겨찾기. 휴대폰에는 마우스 올리기가 없어 늘 보인다 */}
             <button
               type="button"
@@ -179,20 +174,21 @@ export default function EntryCard(props: EntryCardProps) {
             >
               {favorite ? '★' : '☆'}
             </button>
-            {labels.map((l) => {
-              const c = labelColor(l.color);
-              return (
-                <span
-                  key={l.id}
-                  data-entry-chip={l.id}
-                  title={pathOf?.(l.id) ?? l.name}
-                  className="px-2 py-0.5 rounded-md text-xs font-bold border whitespace-nowrap truncate min-w-0 max-w-[10rem]"
-                  style={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}
-                >
-                  {l.name}
-                </span>
-              );
-            })}
+            {/* 라벨 칩 = 완료 (일정과 같이 - ✓는 첫 칩에, 어느 칩을 눌러도). 라벨이 없으면 회색 ○ 칩 */}
+            {(labels.length > 0 ? labels : [null]).map((l, i) => (
+              <EventDoneChip
+                key={l?.id ?? 'none'}
+                kind="note"
+                label={l}
+                done={done}
+                mark={i === 0}
+                onToggle={props.onToggleDone}
+                hint={l ? (pathOf?.(l.id) ?? l.name) : undefined}
+                truncate
+                className="px-2 py-0.5 rounded-md text-xs min-w-0 max-w-[10rem] shrink-0"
+                data={{ 'data-entry-chip': l?.id ?? '' }}
+              />
+            ))}
           </span>
           <span className="text-xs text-slate-400" data-entry-date>
             {dateText}
@@ -294,7 +290,7 @@ export default function EntryCard(props: EntryCardProps) {
             data-entry-edit
             onClick={(e) => {
               stop(e);
-              props.onOpen();
+              (props.onEdit ?? props.onOpen)();
             }}
             className="p-1 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg text-xs font-semibold transition-all cursor-pointer"
             title={`${noun} 수정`}

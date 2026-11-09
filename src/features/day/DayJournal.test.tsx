@@ -28,6 +28,12 @@ vi.mock('../../data/repo', async (orig) => {
   };
 });
 
+const opened = vi.hoisted(() => ({ calls: [] as unknown[] }));
+vi.mock('../notes/open', async (orig) => {
+  const real = await orig<typeof import('../notes/open')>();
+  return { ...real, openNotePanel: vi.fn((p: unknown) => opened.calls.push(p)) };
+});
+
 const SID = 'u_me';
 const DAY = '2026-10-08';
 const t = new Timestamp(1, 0);
@@ -71,6 +77,7 @@ function seed(status: 'live' | 'loading' = 'live', docs = items) {
 beforeEach(() => {
   resetMirrorStore();
   written.batches = [];
+  opened.calls = [];
   useWindows.setState({ windows: [] });
   document.body.innerHTML = '';
   useSession.setState({ loading: false, user: { uid: 'me', email: '', displayName: '', photoURL: '' } });
@@ -106,7 +113,9 @@ describe('하루 기록 칸', () => {
     const a = q('[data-entry-card="a"]')!;
     const chips = [...a.querySelectorAll<HTMLElement>('[data-entry-chip]')];
     expect(chips.map((c) => c.dataset.entryChip)).toEqual(['C']);
-    expect(chips[0].title).toBe('학급 › 상담');
+    expect(chips[0].title).toBe('학급 › 상담 - 눌러서 완료');
+    // 라벨 없는 메모는 회색 ○ 칩 (완료할 길 - 11-09)
+    expect(q('[data-entry-card="c"] [data-entry-chip=""]')?.getAttribute('aria-label')).toBe('메모 완료');
     expect(a.querySelector('[data-entry-links]')?.textContent).toContain('1');
     expect(a.querySelector('[data-entry-tables]')?.textContent).toContain('1');
     expect(a.querySelector('[data-entry-table="t1"]')).not.toBeNull();
@@ -126,11 +135,13 @@ describe('하루 기록 칸', () => {
     expect(long().querySelector('[data-entry-text]')).not.toBeNull();
   });
 
-  it('☐ 완료·☆ 즐겨찾기 = 그 칸만 (문서 하나), 안내 없이 Ctrl+Z 더미에, 카드 열기로 번지지 않는다', async () => {
+  it('라벨 칩 완료·☆ 즐겨찾기 = 그 칸만 (문서 하나), 안내 없이 Ctrl+Z 더미에, 카드 열기로 번지지 않는다', async () => {
     seed();
     render(<DayJournal date={DAY} />);
     const before = undoCount(SID);
-    await act(async () => fireEvent.click(q('[data-entry-card="a"] [data-entry-complete]')!));
+    // ☐ 체크 칸은 없다 - 라벨 칩을 누르면 완료 (11-09 사용자 요청, 일정과 같이)
+    expect(document.querySelector('input[type="checkbox"]')).toBeNull();
+    await act(async () => fireEvent.click(q('[data-entry-card="a"] [data-entry-chip="C"]')!));
     expect(written.batches[0]).toHaveLength(1);
     expect(written.batches[0][0]).toMatchObject({ type: 'patch', at: { coll: 'items', id: 'a' }, changes: { done: true } });
     await act(async () => fireEvent.click(q('[data-entry-card="b"] [data-entry-favorite-toggle]')!));
@@ -138,6 +149,19 @@ describe('하루 기록 칸', () => {
     expect(undoCount(SID)).toBe(before + 2);
     expect(q('[data-toast]')).toBeNull();
     expect(useWindows.getState().windows).toEqual([]);
+    expect(opened.calls).toEqual([]);
+  });
+
+  it('카드 누르기 = 메모 보기 칸, ✏️ = 곧바로 수정 칸 (11-09)', () => {
+    seed();
+    render(<DayJournal date={DAY} />);
+    opened.calls = [];
+    fireEvent.click(q('[data-entry-card="a"]')!);
+    fireEvent.click(q('[data-entry-card="b"] [data-entry-edit]')!);
+    expect(opened.calls).toEqual([
+      { sid: SID, date: DAY, id: 'a' },
+      { sid: SID, date: DAY, id: 'b', edit: true },
+    ]);
   });
 
   it('체크 줄 누르기 = 그 줄의 체크 글자만 바꾼 글', async () => {
