@@ -48,12 +48,12 @@
     /* 글자 크기 = 바탕 × 환경설정 '글자 크기'(--font-scale - domain/fontScale). 휴대폰 바탕은 브라우저 기본(100%) */
     font-size: calc(100% * var(--font-scale, 1));
   }
-  /* PC(폭 640px 이상) 바탕은 80% (11-08 사용자 요청 - 크롬 확대 80%가 한 화면에 보기 좋았다, 휴대폰은 그대로).
+  /* PC(폭 640px 이상) 바탕은 90% (11-08 사용자 요청 80% - 크롬 확대 80%가 한 화면에 보기 좋았다 → 11-09 '좀 작다'로 90%, 휴대폰은 그대로).
    * screen만 - 인쇄는 그대로 둔다. 640 = 40rem(미디어 쿼리의 rem은 브라우저 기본 크기라 이 값에 따라 돌지 않는다)
-   * 80은 domain/fontScale PC_BASE_PERCENT와 같게 */
+   * 90은 domain/fontScale PC_BASE_PERCENT와 같게 */
   @media screen and (min-width: 40rem) {
     html {
-      font-size: calc(80% * var(--font-scale, 1));
+      font-size: calc(90% * var(--font-scale, 1));
     }
   }
   html, body {

@@ -12,9 +12,9 @@
 // px가 아니라 %로 적는 것은 브라우저 설정에서 글자를 키워 둔 사람의 뜻을
 // 덮어쓰지 않기 위해서다. 그 사람에게는 '보통'이 16px보다 크다.
 //
-// PC(폭 640px 이상 화면)는 바탕이 80%다(11-08 사용자 요청 - 크롬 확대 비율 80%가
-// 한 화면에 보기 좋게 들어왔다. 휴대폰은 그대로). 바탕은 index.css의 html에 있고,
-// 여기서 고른 단계는 그 바탕에 곱한다(--font-scale) - PC '보통' = 80%, '작게' = 74%.
+// PC(폭 640px 이상 화면)는 바탕이 90%다(11-08 사용자 요청 80% - 크롬 확대 비율 80%가
+// 한 화면에 보기 좋게 들어왔다 → 11-09 써 보니 '좀 작다'로 90%. 휴대폰은 그대로). 바탕은 index.css의 html에 있고,
+// 여기서 고른 단계는 그 바탕에 곱한다(--font-scale) - PC '보통' = 90%, '작게' = 83%.
 
 export type FontScale = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -29,7 +29,7 @@ export const FONT_SCALES: Array<{ id: FontScale; label: string; percent: number 
 export const DEFAULT_FONT_SCALE: FontScale = 'md';
 
 /** PC(폭 640px 이상) 바탕 크기 % - index.css html과 같다. 휴대폰은 100 */
-export const PC_BASE_PERCENT = 80;
+export const PC_BASE_PERCENT = 90;
 
 export function fontScalePercent(scale: FontScale): number {
   return FONT_SCALES.find((s) => s.id === scale)?.percent ?? 100;
@@ -38,7 +38,7 @@ export function fontScalePercent(scale: FontScale): number {
 /**
  * 고른 크기를 화면에 입힌다.
  *
- * 크기 자체(html font-size)는 index.css가 정한다 - 바탕(휴대폰 100%·PC 80%) × 이 값.
+ * 크기 자체(html font-size)는 index.css가 정한다 - 바탕(휴대폰 100%·PC 90%) × 이 값.
  * 그래서 창 폭이 휴대폰 ↔ PC로 넘어가도 다시 입힐 것이 없다.
  * '보통'일 때는 값을 지운다(곱하기 1 - 바탕 그대로).
  */

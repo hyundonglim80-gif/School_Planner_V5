@@ -42,7 +42,7 @@ describe('글자 크기 단계', () => {
     expect(root.fontSize).toBe('');
   });
 
-  it('고른 단계를 바탕(휴대폰 100%·PC 80% - index.css)에 곱하게 입힌다', () => {
+  it('고른 단계를 바탕(휴대폰 100%·PC 90% - index.css)에 곱하게 입힌다', () => {
     const root = document.documentElement.style;
     root.fontSize = '130%'; // 옛 길이 남긴 값은 걷는다
     applyFontScale('xs');
@@ -53,7 +53,8 @@ describe('글자 크기 단계', () => {
     expect(root.getPropertyValue('--font-scale')).toBe('1.15');
   });
 
-  it('PC 바탕 80%가 index.css와 같다 (11-08 사용자 요청)', () => {
+  it('PC 바탕 90%가 index.css와 같다 (11-08 80% → 11-09 90% 사용자 요청)', () => {
+    expect(PC_BASE_PERCENT).toBe(90);
     const css = readFileSync('src/index.css', 'utf8');
     expect(css).toContain(`font-size: calc(${PC_BASE_PERCENT}% * var(--font-scale, 1))`);
     expect(css).toContain('font-size: calc(100% * var(--font-scale, 1))');

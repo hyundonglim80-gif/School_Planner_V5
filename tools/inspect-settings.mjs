@@ -32,7 +32,7 @@ const browser = await launch();
 try {
   const a = await newPage(browser);
   const b = await newPage(browser);
-  // 고른 단계 = html의 --font-scale (11-08 - 크기는 바탕(PC 80%) × 이 값, index.css)
+  // 고른 단계 = html의 --font-scale (11-08 - 크기는 바탕(PC 90%) × 이 값, index.css)
   const fontOf = (p) => p.evaluate(() => document.documentElement.style.getPropertyValue('--font-scale') || '1');
   const serverPc = async () => (await getDoc(pcRef)).data() ?? {};
 
@@ -46,12 +46,12 @@ try {
   r.check(tabs.join() === 'view,notify,school,shortcuts,app', `탭은 지금 있는 것만 (${tabs.join()})`);
 
   r.section('글자 크기 → 계정 → 다른 창');
-  // PC 바탕 80% (11-08 사용자 요청 - 크롬 확대 80%가 보기 좋았다). 점검 창 폭은 1400 - 16px × 0.8
+  // PC 바탕 90% (11-08 사용자 요청 80% → 11-09 '좀 작다'로 90%). 점검 창 폭은 1400 - 16px × 0.9
   const pxOf = (p) => p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
-  r.check((await pxOf(a.page)) === 12.8, `PC '보통' = 80% (${await pxOf(a.page)}px)`);
+  r.check(Math.abs((await pxOf(a.page)) - 14.4) < 0.01, `PC '보통' = 90% (${await pxOf(a.page)}px)`);
   await a.page.click(sel('choice', 'fontScale:lg'));
   r.check((await fontOf(a.page)) === '1.15', '고르는 즉시 화면이 바뀐다');
-  r.check(Math.abs((await pxOf(a.page)) - 12.8 * 1.15) < 0.01, `PC '크게' = 80% × 115% (${await pxOf(a.page)}px)`);
+  r.check(Math.abs((await pxOf(a.page)) - 14.4 * 1.15) < 0.01, `PC '크게' = 90% × 115% (${await pxOf(a.page)}px)`);
   const pc = await serverUntil(serverPc, (d) => d.fontScale === 'lg');
   r.check(pc.fontScale === 'lg', `settings/pc에 올라간다 (${JSON.stringify(pc)})`);
   r.check(await waitFor(async () => (await fontOf(b.page)) === '1.15'), `다른 창이 따라온다 (${await fontOf(b.page)})`);

@@ -279,8 +279,8 @@ try {
   }
 
   r.section('좁은 폭은 두 무리를 쌓는다');
-  // PC는 글자 바탕 80%라(11-08 - 크롬 확대 80%처럼) 본문 폭을 0.8로 나눠 780과 견준다 - 640 넘는 창은 645 근처라야 쌓인다(760이면 950으로 친다)
-  await page.setViewportSize({ width: 645, height: 900 });
+  // PC는 글자 바탕 90%라(11-09 - 옛 80%) 본문 폭을 0.9로 나눠 780과 견준다 - 640 넘는 창은 700 근처라야 쌓인다(760이면 820쯤으로 친다)
+  await page.setViewportSize({ width: 700, height: 900 });
   await page.goto(page.url().replace(/#.*$/, `#/board/${DAY}`));
   r.check(await waitFor(page.locator(`${sel('screen', 'board')}[data-board-stacked]`), 5000), '본문 780 밑 - 쌓기');
   const [leftS, dayS] = await Promise.all([box(page, '[data-board-left]'), box(page, sel('board-day-group'))]);
