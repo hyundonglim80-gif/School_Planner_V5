@@ -219,6 +219,50 @@ try {
   await jToggle.click();
   r.check(await waitFor(async () => (await jf.count()) === 0), '🏷️ 다시 → 접힌다 (이 기기에 기억)');
 
+  r.section('메모 화면 차례 - 날짜 있는 메모도 ▲▼·끌어 놓기 (#138·#140 11-09)');
+  // 날짜 있는 메모는 메모 화면 차례(memoOrder)만 적고, 하루 메모 칸 차례(order)는 그대로다
+  await setDoc(labelRef('insp_mlo'), { kind: 'note', name: '점검차례', color: 'amber', parentId: null, order: 'Zz4', ...stamp });
+  undo.add(() => deleteDoc(labelRef('insp_mlo')));
+  const ORDER_MEMOS = {
+    insp_mo1: { date: null, text: '점검 차례 날짜 없음', order: 'Zz1' },
+    insp_mo2: { date: '2026-10-09', text: '점검 차례 10-09', order: 'Zz1' },
+    insp_mo3: { date: DAY, text: '점검 차례 10-08', order: 'Zz3' },
+  };
+  for (const [id, data] of Object.entries(ORDER_MEMOS)) {
+    await setDoc(itemRef(id), { kind: 'note', labelIds: ['insp_mlo'], ...data, ...stamp });
+    undo.add(() => deleteDoc(itemRef(id)));
+  }
+  await page.goto(page.url().replace(/#.*$/, '#/memo'));
+  await waitFor(page.locator(sel('memo-screen')));
+  if ((await viewBtn.getAttribute('data-memo-view-toggle')) !== 'card') await viewBtn.click();
+  await chip('insp_mlo').click();
+  const orderIds = async () => (await cardIds()).filter((id) => id.startsWith('insp_mo'));
+  const orderIs = (want) => waitFor(async () => JSON.stringify(await orderIds()) === JSON.stringify(want), 8000);
+  r.check(await orderIs(['insp_mo1', 'insp_mo2', 'insp_mo3']), `처음 = 날짜 없는 메모 → 날짜 메모 최근 날부터 (${await orderIds()})`);
+  const up = (id) => card(id).locator(sel('entry-up'));
+  await card('insp_mo3').hover();
+  r.check((await up('insp_mo3').count()) === 1 && !(await up('insp_mo3').isDisabled()), '날짜 있는 메모에도 ▲');
+  await up('insp_mo3').click();
+  r.check(await orderIs(['insp_mo1', 'insp_mo3', 'insp_mo2']), `▲ = 한 칸 위 (${await orderIds()})`);
+  const mo3 = await serverUntil(() => read('insp_mo3'), (d) => !!d?.memoOrder);
+  r.check(!!mo3?.memoOrder && mo3.order === 'Zz3', `서버: 메모 화면 차례(memoOrder)만 - 하루 칸 차례(order)는 그대로 (${mo3?.memoOrder} · ${mo3?.order})`);
+  r.check(!(await read('insp_mo2'))?.memoOrder, '옮기지 않은 날짜 메모는 적지 않는다');
+  await card('insp_mo3').hover();
+  await up('insp_mo3').click();
+  r.check(await orderIs(['insp_mo3', 'insp_mo1', 'insp_mo2']), `▲ 한 번 더 = 날짜 없는 메모보다 위 (${await orderIds()})`);
+  await card('insp_mo2').dragTo(card('insp_mo3'));
+  r.check(await orderIs(['insp_mo2', 'insp_mo3', 'insp_mo1']), `끌어 놓기도 (맨 뒤 → 맨 앞, ${await orderIds()})`);
+  const mo2 = await serverUntil(() => read('insp_mo2'), (d) => !!d?.memoOrder);
+  r.check(!!mo2?.memoOrder && mo2.order === 'Zz1', `서버: 끈 날짜 메모도 memoOrder만 (${mo2?.memoOrder} · ${mo2?.order})`);
+  await page.reload();
+  await waitFor(page.locator(sel('memo-screen')));
+  r.check(await orderIs(['insp_mo2', 'insp_mo3', 'insp_mo1']), `새로 열어도 그대로 (${await orderIds()})`);
+  await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));
+  await page.locator(sel('day-journal', DAY)).waitFor({ timeout: 8000 });
+  const dayIds = async () =>
+    (await page.locator(`${sel('day-journal', DAY)} ${sel('entry-card')}`).evaluateAll((els) => els.map((e) => e.dataset.entryCard))).filter((id) => id.startsWith('insp_'));
+  r.check(await waitFor(async () => JSON.stringify(await dayIds()) === '["insp_mj1","insp_mj2","insp_mo3"]'), `하루 메모 칸 차례는 그대로 (${await dayIds()})`);
+
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
