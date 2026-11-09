@@ -1,5 +1,5 @@
 // 메모 화면 정렬 (사용자 요청 #49). 머리줄 옆 '정렬' 고르기 - 이 기기에 기억한다.
-// 'manual'(기본) = 지금까지의 차례(즐겨찾기 → 날짜 없는 메모 ▲▼ → 날짜 링크 메모). 나머지는 그 기준으로 한 번에 줄 세운다(▲▼는 '내 차례'에서만).
+// 'manual'(기본) = 지금까지의 차례(즐겨찾기 → 날짜 없는 메모·옮긴 날짜 링크 메모 ▲▼ → 날짜 링크 메모 - #140). 나머지는 그 기준으로 한 번에 줄 세운다(▲▼는 '내 차례'에서만).
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { noteDates } from '../../domain/noteDates';

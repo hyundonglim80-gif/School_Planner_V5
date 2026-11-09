@@ -5,7 +5,8 @@
 //   옆 숫자는 진행 중 메모 수. ESC = 고른 라벨 모두 떼기(오른쪽 칸도 함께 닫힌다). 칩 아래 'Ctrl·Shift+누르기 = 여러 개'(옛 '?' - P11-1).
 // - 오른쪽: 진행 / 완료 두 구역(제목을 누르면 접고 편다). 카드는 가장 짧은 열부터 쌓는다(ui/Masonry - 칸 폭으로 2~4열, 휴대폰도 2열).
 //   머리줄 ☰ / ▦(메모 화면에서만)로 목록 보기 - 한 줄에 메모 하나(MemoListRow, P10-5 사용자 의견 5e), ▶로 그 줄의 본문을 펴고 접는다(P11-1).
-//   차례 = 즐겨찾기 → 날짜 없는 메모(▲▼로 옮긴다 - 새 메모는 맨 위, P11-1) → 날짜 링크 메모(가장 늦은 날이 최근인 것부터 - ▲▼ 없음, 카드에 📅 날짜 칩 = 그날 하루 화면).
+//   차례 = 즐겨찾기 → 날짜 없는 메모(새 메모는 맨 위, P11-1) → 날짜 링크 메모(가장 늦은 날이 최근인 것부터, 카드에 📅 날짜 칩 = 그날 하루 화면).
+//   ▲▼·끌어 놓기는 모든 메모(#140 - 날짜 링크 메모를 옮기면 메모 화면 차례 memoOrder만 적어 하루 메모 칸 차례는 그대로 - notes/noteOps memoReorderOps).
 //   한 구역에 처음 PAGE장, '더 보기'로 더 (가져온 V4 기록이 많다). 카드는 하루 메모 칸과 같은 EntryCard(완료·★·▲▼·체크 줄·접기·✏️·🗑️).
 // - 완료 구역 '🗑️ 전체 비우기' = 지운 표시 여럿 한 묶음 + 안내의 되돌리기(V4는 묻고 휴지통으로).
 // - 라벨이 없는 메모가 있으면 위에 안내 - '메모' 라벨 붙이기(라벨로 보기에서도 찾게, V4).
@@ -22,7 +23,7 @@ import Masonry from '../../ui/Masonry';
 import { useIsMobile } from '../../ui/useIsMobile';
 import type { ItemDoc } from '../events/eventOps';
 import { reorderDragProps } from '../../ui/reorderDrag';
-import { deleteNote, deleteNotes, labelNotes, moveNoteByDrag, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
+import { deleteNote, deleteNotes, labelNotes, moveMemoOnScreen, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
 import EntryCard from '../notes/EntryCard';
 import MemoListRow from './MemoListRow';
 import { useMemoView } from './memoView';
@@ -180,8 +181,11 @@ export default function MemoScreen() {
   const pathOf = (id: string) => labelPath(id, tree.parents, (x) => tree.byId.get(x)?.name);
 
   const grid = (key: 'active' | 'done', list: ItemDoc[]) => {
-    // ▲▼는 날짜 없는 메모끼리 (날짜 링크 메모는 날짜 차례)
-    const movable = sortKey === 'manual' ? list.filter((m) => noteDates(m).length === 0) : [];
+    // ▲▼·끌어 놓기는 '내 차례'에서 모든 메모 (#140 - 날짜 링크 메모도. 그 메모는 메모 화면 자리만 바뀌고 하루 메모 칸 차례는 그대로)
+    const movable = sortKey === 'manual' ? list : [];
+    const move = (from: number, to: number) => {
+      if (sid) void moveMemoOnScreen(sid, movable, from, to).catch(quiet);
+    };
     const page = list.slice(0, limit[key]);
     return (
       <>
@@ -193,9 +197,9 @@ export default function MemoScreen() {
               return (
                 <MemoListRow
                   key={m.id}
-                  dragProps={sid && i >= 0 ? reorderDragProps(`note:memo:${key}`, i, (f, t) => void moveNoteByDrag(sid, movable, f, t).catch(quiet)) : undefined}
-                  onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => void moveNoteInList(sid, movable, i, -1).catch(quiet) : undefined}
-                  onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => void moveNoteInList(sid, movable, i, 1).catch(quiet) : undefined}
+                  dragProps={sid && i >= 0 ? reorderDragProps(`note:memo:${key}`, i, move) : undefined}
+                  onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => move(i, i - 1) : undefined}
+                  onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => move(i, i + 1) : undefined}
                   item={m}
                   labels={itemLabels(tree, m.labelIds)}
                   pathOf={pathOf}
@@ -234,9 +238,9 @@ export default function MemoScreen() {
                   editing={shownId === m.id}
                   collapsed={isCollapsed}
                   onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [m.id]: !isCollapsed }))}
-                  dragProps={sid && i >= 0 ? reorderDragProps(`note:memo:${key}`, i, (f, t) => void moveNoteByDrag(sid, movable, f, t).catch(quiet)) : undefined}
-                  onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => void moveNoteInList(sid, movable, i, -1).catch(quiet) : undefined}
-                  onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => void moveNoteInList(sid, movable, i, 1).catch(quiet) : undefined}
+                  dragProps={sid && i >= 0 ? reorderDragProps(`note:memo:${key}`, i, move) : undefined}
+                  onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => move(i, i - 1) : undefined}
+                  onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => move(i, i + 1) : undefined}
                   onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}
                   onOpenLinks={() => sid && openLinkViewer({ sid, id: m.id })}
                   moreLinks={progressLinks.get(m.id)?.length}

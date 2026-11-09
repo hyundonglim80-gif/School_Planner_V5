@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { useGcalAuto } from '../features/gcal/auto';
 import { useClaudeRequestsWatch } from '../data/claudeRequests';
+import { useClipboardCapture } from '../features/clipboard/capture';
 import type { ShortcutId } from '../domain/shortcuts';
 import ImageViewer from '../ui/ImageViewer';
 import { setPopoutRoot, type PopoutSpec } from '../ui/popout';
@@ -75,6 +76,8 @@ export default function PopoutShell({ spec }: { spec: PopoutSpec }) {
 
   useGcalAuto();
   useClaudeRequestsWatch();
+  // 복사한 것 모으기 · 클립보드 팝업창에서 누른 항목을 이 창의 글 칸에 받기 (#140)
+  useClipboardCapture('popout');
 
   if (!def) {
     return (

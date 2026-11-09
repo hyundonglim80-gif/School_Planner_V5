@@ -6,6 +6,7 @@ import { setShortcutAction } from '../../app/keys';
 import { addCopiedText, loadClipboard, readSystemClipboard } from '../../data/clipboard';
 import { useSession } from '../../data/session';
 import { rememberEditable, selectedTextForCopy } from './paste';
+import { markEditorWindow, openClipboardPopup, useClipboardBridge } from './popupClip';
 
 /** 왼쪽 칸의 기본 폭 */
 export const LEFT_COLUMN_WIDTH = 'clamp(260px, 24vw, 380px)';
@@ -18,12 +19,26 @@ const POLL_MS = 2000;
 /** 칸이 열려 있나 (이 기기에 기억 - 넓은 화면에서 열어 둔 채 다시 열면 그대로) */
 export const useClipboardPanel = create<{ open: boolean }>()(persist((): { open: boolean } => ({ open: false }), { name: 'sp5-clipboard-open' }));
 export const setClipboardOpen = (open: boolean) => useClipboardPanel.setState({ open });
-export const toggleClipboard = () => setClipboardOpen(!useClipboardPanel.getState().open);
+/**
+ * 📋·단축키. 창 위치가 팝업창(PC)이면 클립보드 팝업창을 연다(#140 - popupClip). 왼쪽 칸이 열려 있으면 닫고,
+ * 팝업창을 못 띄우면(브라우저가 막음) 왼쪽 칸을 연다.
+ */
+export const toggleClipboard = () => {
+  const open = useClipboardPanel.getState().open;
+  if (!open && openClipboardPopup()) return;
+  setClipboardOpen(!open);
+};
 
-/** 복사한 것을 모은다. 칸이 닫혀 있어도 모은다 (Shell이 늘 부른다). */
-export function useClipboardCapture() {
+/**
+ * 복사한 것을 모은다. 칸이 닫혀 있어도 모은다 (Shell이 늘 부른다).
+ * where: 'shell' = 큰 창 · 'popout' = 메모 등의 팝업창(시스템 클립보드를 잠깐마다 보지 않는다) · 'clipboard' = 클립보드 팝업창(늘 본다).
+ */
+export function useClipboardCapture(where: 'shell' | 'popout' | 'clipboard' = 'shell') {
   const uid = useSession((s) => s.user?.uid ?? null);
-  const open = useClipboardPanel((s) => s.open);
+  const panelOpen = useClipboardPanel((s) => s.open);
+  const open = where === 'clipboard' || (where === 'shell' && panelOpen);
+  // 창 위치가 팝업창이면 다른 창(클립보드 팝업창)과 주고받는다 (#140)
+  useClipboardBridge(uid);
 
   useEffect(() => {
     if (uid) void loadClipboard(uid);
@@ -34,7 +49,9 @@ export function useClipboardCapture() {
       const text = selectedTextForCopy();
       if (text) void addCopiedText(text);
     };
-    const onFocusIn = (e: FocusEvent) => rememberEditable(e.target as Element);
+    const onFocusIn = (e: FocusEvent) => {
+      if (rememberEditable(e.target as Element)) markEditorWindow();
+    };
     // 다른 프로그램에서 복사·캡처하고 돌아왔을 때 (읽기를 허락해 둔 경우만)
     const onReturn = () => {
       if (document.visibilityState === 'visible') void readSystemClipboard(false);

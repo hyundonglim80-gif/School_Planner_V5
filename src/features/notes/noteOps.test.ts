@@ -1,6 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { ItemDoc } from '../events/eventOps';
-import { canMoveNote, checkLineChanges, favoriteChanges, favoriteFirst, memoScreenOrder, noteDragOps, noteMoveOps } from './noteOps';
+import {
+  canMoveNote,
+  checkLineChanges,
+  favoriteChanges,
+  favoriteFirst,
+  memoKey,
+  memoOrderBefore,
+  memoReorderOps,
+  memoScreenOrder,
+  noteDragOps,
+  noteMoveOps,
+} from './noteOps';
 
 const note = (id: string, order: string, more: Partial<ItemDoc> = {}): ItemDoc =>
   ({ id, order, kind: 'note', date: '2026-10-08', text: id, labelIds: [], ...more }) as unknown as ItemDoc;
@@ -59,6 +70,61 @@ describe('메모 셈', () => {
     expect(checkLineChanges(item, 2, '☑ 빵')).toEqual({ text: '장보기\n☐ 우유\n☐ 빵' });
     expect(checkLineChanges(item, 1, '☐ 두유')).toBeNull();
     expect(checkLineChanges(item, 0, '장보기')).toBeNull();
+  });
+});
+
+describe('메모 화면에서 날짜 링크 메모도 옮긴다 (#140)', () => {
+  /** 쓰기를 적용한 문서들 */
+  function applied(list: ItemDoc[], ops: ReturnType<typeof memoReorderOps>): ItemDoc[] {
+    const byId = new Map(list.map((d) => [d.id, { ...d }]));
+    for (const op of ops ?? []) if (op.type === 'patch') Object.assign(byId.get(op.at.id)!, op.changes);
+    return [...byId.values()];
+  }
+  const list = [
+    note('m1', 'a1', { date: null }),
+    note('m2', 'a2', { date: null }),
+    note('d1', 'a0', { date: '2026-10-09' }),
+    note('d2', 'a5', { date: '2026-10-05' }),
+    note('d3', 'a3', { date: '2026-10-01' }),
+  ];
+  const shown = memoScreenOrder(list); // m1 m2 d1 d2 d3
+
+  it('날짜 링크 메모를 맨 위로 = 그 메모의 memoOrder 하나 (하루 칸 차례 order는 그대로)', () => {
+    expect(shown.map((d) => d.id)).toEqual(['m1', 'm2', 'd1', 'd2', 'd3']);
+    const ops = memoReorderOps('u_me', shown, 3, 0)!;
+    expect(ops).toHaveLength(1);
+    expect(ops[0]).toMatchObject({ type: 'patch', at: { id: 'd2' } });
+    expect(Object.keys((ops[0] as { changes: object }).changes)).toEqual(['memoOrder']);
+    const after = applied(list, ops);
+    expect(memoScreenOrder(after).map((d) => d.id)).toEqual(['d2', 'm1', 'm2', 'd1', 'd3']);
+    expect(after.find((d) => d.id === 'd2')?.order).toBe('a5');
+  });
+
+  it('▲ 한 칸 - 날짜 링크 메모끼리도 바뀌고, 뒤에 날짜 차례대로 남은 메모는 적지 않는다', () => {
+    // d2를 d1 위로 = d2만 값을 받는다 (d1·d3은 날짜 차례 그대로 뒤에)
+    const ops = memoReorderOps('u_me', shown, 3, 2)!;
+    expect(ops.map((o) => (o as { at: { id: string } }).at.id)).toEqual(['d2']);
+    expect(memoScreenOrder(applied(list, ops)).map((d) => d.id)).toEqual(['m1', 'm2', 'd2', 'd1', 'd3']);
+  });
+
+  it('날짜 없는 메모를 날짜 메모 사이로 - 날짜 없는 메모는 order, 날짜 메모는 memoOrder', () => {
+    const ops = memoReorderOps('u_me', shown, 0, 3)!;
+    const after = applied(list, ops);
+    expect(memoScreenOrder(after).map((d) => d.id)).toEqual(['m2', 'd1', 'd2', 'm1', 'd3']);
+    expect(after.find((d) => d.id === 'd3')?.memoOrder).toBeUndefined();
+    expect(after.find((d) => d.id === 'd1')?.order).toBe('a0');
+  });
+
+  it('즐겨찾기와 나머지 사이·같은 자리는 옮기지 않는다', () => {
+    const withFav = memoScreenOrder([...list, note('f', 'a9', { date: '2026-10-02', favorite: true })]);
+    expect(memoReorderOps('u_me', withFav, 0, 1)).toBeNull();
+    expect(memoReorderOps('u_me', shown, 2, 2)).toBeNull();
+  });
+
+  it('메모 화면 새 메모는 옮겨 올린 날짜 메모보다도 앞', () => {
+    const after = applied(list, memoReorderOps('u_me', shown, 3, 0));
+    const first = memoOrderBefore(after);
+    expect(after.every((d) => memoKey(d) === null || first < memoKey(d)!)).toBe(true);
   });
 });
 

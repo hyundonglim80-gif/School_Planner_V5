@@ -83,6 +83,12 @@ function open(uid: string): Promise<IDBPDatabase | null> {
   return p;
 }
 
+/** 이 기기에 다 적은 뒤 부른다 - 클립보드 팝업창(#140)과 다른 창이 목록을 다시 읽게 알린다(features/clipboard/popupClip이 건다) */
+let afterWrite: ((uid: string) => void) | null = null;
+export const setClipboardWriteListener = (f: ((uid: string) => void) | null) => {
+  afterWrite = f;
+};
+
 /** 저장소 하나에 쓴다 (넣기·빼기). 실패는 조용히 - 목록은 이 탭에 남는다 */
 async function write(uid: string, store: StoreName, puts: ClipItem[], deletes: string[]): Promise<void> {
   if (puts.length === 0 && deletes.length === 0) return;
@@ -91,6 +97,7 @@ async function write(uid: string, store: StoreName, puts: ClipItem[], deletes: s
     if (!db) return;
     const tx = db.transaction(store, 'readwrite');
     await Promise.all([...puts.map((it) => tx.store.put(it)), ...deletes.map((id) => tx.store.delete(id)), tx.done]);
+    afterWrite?.(uid);
   } catch (e) {
     warnOnce(e);
   }
@@ -120,6 +127,16 @@ export async function loadClipboard(uid: string): Promise<void> {
   const merged = [...now.items, ...items.filter((it) => !now.items.some((c) => c.key === it.key))].sort((a, b) => b.createdAt - a.createdAt);
   const mergedTrash = [...now.trash, ...trash.filter((t) => !now.trash.some((c) => c.id === t.id))].sort((a, b) => b.deletedAt - a.deletedAt);
   useClipboard.setState({ items: merged, trash: mergedTrash, loaded: true });
+}
+
+/** 다른 창이 바꾼 목록을 다시 읽는다 (이 기기 저장소가 정본 - 이 창의 목록을 그것으로 바꾼다, #140 클립보드 팝업창) */
+export async function reloadClipboard(uid: string): Promise<void> {
+  if (useClipboard.getState().uid !== uid) return;
+  // 이 창에서 저장소를 못 열면 빈 목록으로 덮지 않는다
+  if (!(await open(uid))) return;
+  const [items, trash] = await Promise.all([readAll<ClipItem>(uid, 'items'), readAll<ClipTrashItem>(uid, 'trash')]);
+  if (useClipboard.getState().uid !== uid) return;
+  useClipboard.setState({ items: items.sort((a, b) => b.createdAt - a.createdAt), trash: trash.sort((a, b) => b.deletedAt - a.deletedAt), loaded: true });
 }
 
 /** 로그아웃 - 그 계정의 목록·휴지통을 통째로 */
