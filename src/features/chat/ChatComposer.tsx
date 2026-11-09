@@ -60,9 +60,11 @@ interface Props {
   hold?: string | null;
   /** 글 칸 아래 안내 */
   hint?: string;
+  /** 안내 줄 오른쪽에 둘 것 (메모 요청의 모델·노력 고르기 - 11-08) */
+  footer?: ReactNode;
 }
 
-export default function ChatComposer({ ref, roomKey, onSend, above, disabled, draftKey, noAttach, maxText = CHAT_LIMITS.text, label = '글', hold, hint }: Props) {
+export default function ChatComposer({ ref, roomKey, onSend, above, disabled, draftKey, noAttach, maxText = CHAT_LIMITS.text, label = '글', hold, hint, footer }: Props) {
   const [text, setText] = useState('');
   const [files, setFiles] = useState<Attachment[]>([]);
   /** 드라이브에 올리는 중 (📎 파일 / 붙여넣은 캡처) */
@@ -285,10 +287,15 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
           {hold}
         </p>
       )}
-      {hint && (
-        <p data-chat-hint className="mt-1 text-2xs text-slate-400">
-          {hint}
-        </p>
+      {(hint || footer) && (
+        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          {hint && (
+            <p data-chat-hint className="text-2xs text-slate-400">
+              {hint}
+            </p>
+          )}
+          {footer}
+        </div>
       )}
     </div>
   );

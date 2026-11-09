@@ -104,6 +104,11 @@ try {
   c('저장하지 않은 고침이 있으면 누를 수 없다', await waitFor(async () => await ask.isDisabled(), 4000));
   await page.locator(sel('note-save')).click();
   c('저장하면 누를 수 있다', await waitFor(async () => (await ask.count()) === 1 && (await ask.isEnabled()), 8000));
+  // 모델·노력 고르기 (11-08 사용자 요청) - 단추 옆, 보낼 때 메모에 함께
+  const runBox = page.locator(`${sel('note-panel')} ${sel('claude-run')}`);
+  c('🤖 요청 옆에 모델·노력 고르기', (await runBox.count()) === 1 && (await runBox.locator('[data-claude-run-model]').getAttribute('data-claude-run-model')) === 'default');
+  await runBox.locator('[data-claude-run-model]').selectOption('opus');
+  await runBox.locator('[data-claude-run-effort]').selectOption('high');
   const seen0 = dialogs.seen.length;
   await ask.click();
   c(
@@ -111,6 +116,10 @@ try {
     (await waitFor(async () => typeof (await admin.get(`spaces/${sid}/items/${id}`))?.claudeAskAt === 'number', 8000)) && dialogs.seen.length === seen0,
     dialogs.seen.slice(seen0).join(' | '),
   );
+  c('고른 모델·노력이 짝(at)과 함께 메모에', await waitFor(async () => {
+    const it = await admin.get(`spaces/${sid}/items/${id}`);
+    return it?.claudeRun?.model === 'opus' && it.claudeRun.effort === 'high' && it.claudeRun.at === it.claudeAskAt;
+  }, 8000), JSON.stringify((await admin.get(`spaces/${sid}/items/${id}`))?.claudeRun));
   c('보낸 뒤 단추 대신 🤖 요청함', await waitFor(async () => (await ask.count()) === 0 && (await page.locator(sel('note-claude-asked')).count()) === 1, 8000));
   await admin.set(path, { state: 'failed', issue: 9999, url, note: '고치지 못했습니다(확인 실패 또는 오류) - 실행 기록 https://github.com/a/b/actions/runs/1\n\n테스트가 깨졌습니다.' });
   // ─── 메모 칸 안 대화 (P23) ───
@@ -227,13 +236,24 @@ try {
   await admin.set(path, { state: 'deployed', issue: 1005, url: issue(1005), note: '단추를 키웠습니다.' });
   c('배포가 끝나면 쓰던 글을 보낼 수 있다', await waitFor(async () => (await followState()) === 'ready' && (await followSend.isEnabled()), 8000));
 
+  // 글 칸 아래에도 고르기 - 고른 값이 이 기기에 남아 있다
+  const followRun = followBox.locator(sel('claude-run'));
+  c('이어서 요청 칸에도 모델·노력 (고른 값 그대로)', (await followRun.locator('[data-claude-run-model]').getAttribute('data-claude-run-model')) === 'opus');
+  await followRun.locator('[data-claude-run-model]').selectOption('');
+  await followRun.locator('[data-claude-run-effort]').selectOption('max');
   await followSend.click();
   c('➤로 보낸다', await waitFor(async () => (await itemNow())?.claudeFollow?.text === '다음 요청', 8000));
-  await admin.set(turnsAt(6), { n: 6, askText: '다음 요청', askAt: (await itemNow()).claudeAskAt, state: 'failed', issue: 1006, url: issue(1006), note: '확인을 통과하지 못했습니다.', sha: null });
+  c('이어서 보낼 때도 고른 값 (모델 기본 · 노력 최대)', await waitFor(async () => {
+    const it = await itemNow();
+    return it?.claudeRun?.model === '' && it.claudeRun.effort === 'max' && it.claudeRun.at === it.claudeAskAt;
+  }, 8000), JSON.stringify((await itemNow())?.claudeRun));
+  await admin.set(turnsAt(6), { n: 6, askText: '다음 요청', askAt: (await itemNow()).claudeAskAt, model: '', effort: 'max', state: 'failed', issue: 1006, url: issue(1006), note: '확인을 통과하지 못했습니다.', sha: null });
   await admin.set(path, { state: 'failed', issue: 1006, url: issue(1006), note: '확인을 통과하지 못했습니다.' });
   c('❌ 턴 - 글 칸에 다시 넣기', await waitFor(turnRow(6).locator(sel('claude-turn-refill')), 8000));
   await turnRow(6).locator(sel('claude-turn-refill')).click();
   c('보낸 글이 글 칸에', (await followInput.inputValue()) === '다음 요청');
+  c('말풍선에 고른 노력', ((await turnRow(6).locator(sel('claude-turn-run')).textContent().catch(() => '')) ?? '') === '노력 최대');
+  c('기본으로 보낸 턴에는 적지 않는다', (await turnRow(5).locator(sel('claude-turn-run')).count()) === 0);
   c('성공한 턴에는 다시 넣기가 없다', (await turnRow(5).locator(sel('claude-turn-refill')).count()) === 0);
 
   // 쓰던 글 - 닫았다 열어도 남고, 앱 위 '저장하지 않은 글' 띠에는 들지 않는다

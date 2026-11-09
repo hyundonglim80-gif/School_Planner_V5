@@ -34,6 +34,7 @@ import {
   CLAUDE_LABEL_SYSTEM,
   claudePushData,
   followOf,
+  runOf,
   isAllowedEmail,
   isClaudeLabelName,
   issueOf,
@@ -354,6 +355,7 @@ async function enqueueClaudeAsk(sid, itemId, item) {
   const shown = claudeShown(sid, itemId);
   const askAt = item.claudeAskAt;
   const askText = followOf(item);
+  const { model, effort } = runOf(item);
   const atMs = Date.now();
   return db.runTransaction(async (tx) => {
     const curSnap = await tx.get(ref);
@@ -362,7 +364,7 @@ async function enqueueClaudeAsk(sid, itemId, item) {
     if (plan.action === 'skip') return plan;
     const parent = plan.backfill ? await tx.get(shown) : null;
     const updatedAt = FieldValue.serverTimestamp();
-    const turnDoc = { n: plan.n, askText, askAt, issue: null, url: null, note: '', sha: null, updatedAt };
+    const turnDoc = { n: plan.n, askText, askAt, model, effort, issue: null, url: null, note: '', sha: null, updatedAt };
     if (plan.action === 'drop') {
       tx.set(claudeTurn(sid, itemId, plan.n), { ...turnDoc, state: 'dropped', note: '앞 요청이 도는 동안 보낸 글이라 보내지 못했습니다.' });
       tx.update(ref, { turns: plan.n, lastAskAt: askAt, updatedAt: atMs });
@@ -374,7 +376,7 @@ async function enqueueClaudeAsk(sid, itemId, item) {
       const { state, issue = null, url = null, note = '', sha = null } = parent.data();
       tx.set(claudeTurn(sid, itemId, 1), { n: 1, askText: String(item.text ?? '').trim(), askAt: null, state, issue, url, note, sha, updatedAt });
     }
-    tx.set(ref, { sid, state: 'queued', issue: null, open: true, atMs, updatedAt: atMs, turn: plan.n, turns: plan.n, askAt, askText });
+    tx.set(ref, { sid, state: 'queued', issue: null, open: true, atMs, updatedAt: atMs, turn: plan.n, turns: plan.n, askAt, askText, model, effort });
     tx.set(shown, { state: 'queued', issue: null, url: null, note: '', sha: null, atMs, turns: plan.n, updatedAt }, { merge: true });
     tx.set(claudeTurn(sid, itemId, plan.n), { ...turnDoc, state: 'queued' });
     return plan;
@@ -402,11 +404,11 @@ async function dispatchNext() {
       if (!id) return null;
       const doc = open.docs.find((d) => d.id === id);
       tx.update(doc.ref, { state: 'sending', atMs: now, updatedAt: now });
-      const { sid, turn = null, askText = '' } = doc.data();
-      return { id, sid, turn, follow: askText };
+      const { sid, turn = null, askText = '', model = '', effort = '' } = doc.data();
+      return { id, sid, turn, follow: askText, run: { model, effort } };
     });
     if (!picked) return;
-    const { id: itemId, sid, turn, follow } = picked;
+    const { id: itemId, sid, turn, follow, run } = picked;
     const snap = await db.collection('spaces').doc(sid).collection('items').doc(itemId).get();
     const item = snap.exists ? snap.data() : null;
     const text = follow || String(item?.text ?? '').trim();
@@ -419,7 +421,7 @@ async function dispatchNext() {
     try {
       const history = turn > 1 ? await pastClaudeTurns(sid, itemId, turn) : [];
       const attachments = !follow && Array.isArray(item.attachments) ? item.attachments.length : 0;
-      const { title, body } = issueOf(text, attachments, { follow: !!follow, history });
+      const { title, body } = issueOf(text, attachments, { follow: !!follow, history, run });
       // 라벨이 없으면 만든다(처음 한 번 - 이미 있으면 422)
       await github('/labels', { method: 'POST', body: JSON.stringify({ name: ISSUE_LABEL, color: 'd97706', description: '앱 메모에서 온 Claude 요청' }) }).catch(
         () => {},

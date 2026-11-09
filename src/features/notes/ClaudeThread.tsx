@@ -5,7 +5,7 @@
 //   - 턴이 둘 이상이면 열 때 맨 아래로(메모 글이 길면 답이 안 보인다). 턴이 늘면 맨 아래로, 답이 오면 맨 아래를 보던 때만 따라간다.
 //   말풍선은 턴이 있을 때만 그린다(부르는 쪽) - 스크롤 듣기가 처음 그릴 때 칸을 찾는다.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { claudeNoteText, claudeTurnBadge, type ClaudeTurn } from '../../domain/claudeRequest';
+import { claudeNoteText, claudeRunLabel, claudeTurnBadge, type ClaudeTurn } from '../../domain/claudeRequest';
 import { ClaudeBadgeChip } from './ClaudeRequestBadge';
 import { CLAUDE_NOTE_TONE } from './claudeTone';
 
@@ -49,6 +49,7 @@ function Turn({ turn, onRefill }: { turn: ClaudeTurn; onRefill?: (text: string) 
   const badge = claudeTurnBadge(turn);
   const note = claudeNoteText(turn);
   const again = onRefill && (turn.state === 'failed' || turn.state === 'dropped') && turn.askText.trim();
+  const run = turn.run ? claudeRunLabel(turn.run) : '';
   return (
     <li data-claude-turn={turn.n} data-claude-turn-state={turn.state} className="space-y-1.5">
       <div className="flex justify-end">
@@ -57,6 +58,12 @@ function Turn({ turn, onRefill }: { turn: ClaudeTurn; onRefill?: (text: string) 
       <div className="flex justify-start">
         <div className={`min-w-0 max-w-[85%] space-y-1 rounded-2xl border px-3 py-1.5 ${CLAUDE_NOTE_TONE[badge.tone]}`}>
           <ClaudeBadgeChip badge={badge} url={turn.url} data={{ 'data-claude-turn-badge': turn.state }} />
+          {/* 고른 모델·노력 (11-08) - 기본이면 적지 않는다 */}
+          {run && (
+            <span data-claude-turn-run className="ml-1.5 text-2xs opacity-75">
+              {run}
+            </span>
+          )}
           {note && (
             <p data-claude-turn-note className="whitespace-pre-wrap break-words text-xs leading-relaxed">
               {note}

@@ -42,7 +42,7 @@ import ColumnResizer from '../ui/ColumnResizer';
 import ImageViewer from '../ui/ImageViewer';
 import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../ui/sideColumn';
 import SideTabs from '../ui/SideTabs';
-import { MainWidthContext } from '../ui/useMainWidth';
+import { MainWidthContext, unscaledWidth } from '../ui/useMainWidth';
 import { startRouting } from './history';
 import Header from './Header';
 import { useAppKeys } from './keys';
@@ -138,10 +138,10 @@ export default function Shell() {
   useEffect(() => {
     const el = mainRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    // 안쪽 여백을 뺀 폭 (CSS의 @container 가 재는 폭과 같게)
+    // 안쪽 여백을 뺀 폭 (CSS의 @container 가 재는 폭과 같게) - PC 글자 바탕(80%)은 걷는다 (unscaledWidth)
     const measure = () => {
       const cs = getComputedStyle(el);
-      setMainWidth(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight));
+      setMainWidth(unscaledWidth(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)));
     };
     const ro = new ResizeObserver(measure);
     ro.observe(el);

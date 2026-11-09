@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  claudeRunLabel,
+  readClaudeRun,
   claudeAnsweredNow,
   claudeBadge,
   claudeBusy,
@@ -209,5 +211,29 @@ describe('답 알림 (P23-3)', () => {
   it('주소에서 ?claude=만 지운다 - 다른 값과 # 뒤는 둔다', () => {
     expect(stripClaudeParam('https://x.web.app/?claude=abc#/memo')).toBe('/#/memo');
     expect(stripClaudeParam('https://x.web.app/?as=5&claude=abc#/day/2026-11-05')).toBe('/?as=5#/day/2026-11-05');
+  });
+});
+
+describe('모델·노력 고르기 (11-08 사용자 요청)', () => {
+  it('모르는 값은 기본으로', () => {
+    expect(readClaudeRun({ model: 'opus', effort: 'high' })).toEqual({ model: 'opus', effort: 'high' });
+    expect(readClaudeRun({ model: 'gpt', effort: 'huge' })).toEqual({ model: '', effort: '' });
+    expect(readClaudeRun(null)).toEqual({ model: '', effort: '' });
+  });
+
+  it('말풍선 글 - 기본은 적지 않는다', () => {
+    expect(claudeRunLabel({ model: 'opus', effort: 'high' })).toBe('Opus · 노력 높음');
+    expect(claudeRunLabel({ model: '', effort: 'max' })).toBe('노력 최대');
+    expect(claudeRunLabel({ model: 'sonnet', effort: '' })).toBe('Sonnet');
+    expect(claudeRunLabel({ model: '', effort: '' })).toBe('');
+  });
+
+  it('턴에 적힌 모델·노력을 읽고, 보내는 중 턴은 짝이 맞는 메모 값을 쓴다', () => {
+    expect(readClaudeTurn({ n: 2, state: 'sent', model: 'haiku', effort: 'low' })?.run).toEqual({ model: 'haiku', effort: 'low' });
+    const req = { state: 'deployed' as const, issue: 1, url: null, note: '' };
+    const turns = [{ n: 1, askText: '첫', askAt: 1, state: 'deployed' as const, issue: 1, url: null, note: '' }];
+    const ask = { claudeAskAt: 5, claudeFollow: { at: 5, text: '다음' }, claudeRun: { at: 5, model: 'opus', effort: 'xhigh' } };
+    expect(turnsForView(turns, req, ask).at(-1)?.run).toEqual({ model: 'opus', effort: 'xhigh' });
+    expect(turnsForView(turns, req, { ...ask, claudeRun: { at: 4, model: 'opus', effort: 'xhigh' } }).at(-1)?.run).toBeUndefined();
   });
 });

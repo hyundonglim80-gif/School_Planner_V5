@@ -36,6 +36,21 @@ export function followOf(after) {
   return String(f.text ?? '').trim();
 }
 
+/** 고를 수 있는 모델·노력 (11-08 사용자 요청) - 앱 domain/claudeRequest CLAUDE_MODELS·CLAUDE_EFFORTS, 워크플로 claude-request.yml과 같게 */
+export const CLAUDE_MODELS = ['fable', 'opus', 'sonnet', 'haiku'];
+export const CLAUDE_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'];
+export const RUN_MARK = 'sp5-run';
+
+/**
+ * 고른 모델·노력 (11-08 - 메모의 claudeRun = { at, model, effort }). at이 claudeAskAt과 맞을 때만 - 옛 화면이 claudeAskAt만 적으면 지난 값이 다시 가지 않는다.
+ * 모르는 값·빈 값은 '' = 기본(워크플로가 아무것도 붙이지 않는다).
+ */
+export function runOf(after) {
+  const r = after?.claudeRun;
+  if (!r || typeof after.claudeAskAt !== 'number' || r.at !== after.claudeAskAt) return { model: '', effort: '' };
+  return { model: CLAUDE_MODELS.includes(r.model) ? r.model : '', effort: CLAUDE_EFFORTS.includes(r.effort) ? r.effort : '' };
+}
+
 /**
  * 이번 쓰기가 '🤖 요청' 누르기인가 (10-16 사용자 요청 - 저장으로는 보내지 않고, 사용자가 정한 때 단추로).
  * 앱이 메모의 claudeAskAt(누른 때 ms)만 바꿔 적는다 - 그 값이 새로 생기거나 바뀐 쓰기만. 개인 공간·메모·지우지 않음·글이 있음.
@@ -125,13 +140,17 @@ function historyLines(history, room) {
  * P23: follow = 메모 안에서 이어 쓴 말(제목이 다르다) · history = 앞 턴들(이번 요청이 맨 위, 그 아래에 앞선 대화).
  * 이슈 하나 = 턴 하나라 맥락은 새 이슈 본문으로 건넨다 - 워크플로가 본문을 프롬프트에 넣는다.
  */
-export function issueOf(text, attachments = 0, { follow = false, history = [] } = {}) {
+export function issueOf(text, attachments = 0, { follow = false, history = [], run = null } = {}) {
   const body = String(text ?? '').trim();
   const first = body.split('\n').find((l) => l.trim()) ?? '';
   const short = first.trim().slice(0, 60);
   const title = `${follow ? '메모 요청 이어서' : '메모 요청'}: ${short}${first.trim().length > 60 ? '…' : ''}`;
   const lines = [body, ...historyLines(history, ISSUE_BODY_MAX - body.length - 200), '', '---', '앱 메모에 Claude요청 라벨을 붙여 저장해 저절로 만든 요청입니다.'];
   if (attachments > 0) lines.push(`(메모의 첨부 ${attachments}개는 보내지 않았습니다.)`);
+  // 고른 모델·노력 - 워크플로가 이 줄만 읽어 --model·--effort로 (값은 정한 목록 안에서만, 11-08)
+  const model = CLAUDE_MODELS.includes(run?.model) ? run.model : '';
+  const effort = CLAUDE_EFFORTS.includes(run?.effort) ? run.effort : '';
+  if (model || effort) lines.push(`<!-- ${RUN_MARK} model=${model} effort=${effort} -->`);
   return { title, body: lines.join('\n') };
 }
 

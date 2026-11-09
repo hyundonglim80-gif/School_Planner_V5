@@ -30,6 +30,11 @@
 - **답이 오면**(P23-3): 끝 상태(✅ 배포됨 · 🤖 바꾼 것 없음 · ❌ 실패)가 되면 그 계정의 모든 기기에 알림 '🤖 Claude 답이 왔습니다' + 결과(메모 글은 싣지 않는다). 메모마다 알림 하나 - 같은 메모의 다음 답은 그 알림을 바꾸고, 일정 알림처럼 다시 울리지 않는다. 누르면 그 메모 칸이 열린다.
   앱 화면을 보고 있으면 OS 알림 대신 앱 안내 '… · 보기', 그 메모 칸을 보고 있으면 둘 다 없다(답이 말풍선에 곧바로 뜬다). 안내는 앱을 연 뒤 온 답만 - 앱을 닫은 동안 온 답은 카드 '새 답'이 알린다.
   카드·목록 줄 **새 답** = 아직 안 본 답. 그 메모 칸을 보이는 탭으로 보면 사라지고(다른 기기도), 그 메모의 OS 알림도 닫힌다. 숨은 탭·다른 앱을 보는 동안은 안 본 것이다. P23-3 전에 끝난 요청에는 표시가 없다(옮기지 않는다).
+- **모델·노력 고르기**(11-08 사용자 요청): 🤖 요청 단추 옆과 이어서 요청 글 칸 아래에 `모델`(기본·Fable·Opus·Sonnet·Haiku)·`노력`(기본·낮음·보통·높음·아주 높음·최대) 고르기.
+  고른 값은 이 기기에 남아 다음 요청도 그 값으로 시작한다(`sp5-claude-run`). 보낼 때 메모에 `claudeRun = { at, model, effort }`(at = 함께 적는 `claudeAskAt`)를 적고 →
+  함수가 함수 칸·턴에 옮겨 이슈 본문 끝 `<!-- sp5-run model=… effort=… -->`로 → 워크플로 '모델·노력 고르기'가 정한 값만 `--model`·`--effort`로 붙인다. '기본' = 아무것도 붙이지 않는다(구독 기본).
+  말풍선 표시 옆에 고른 것('Opus · 노력 높음' - 기본이면 없음). 구독에서 쓸 수 없는 모델이면 그 턴은 ❌ 실패 - 다른 모델로 다시 보낸다. 값 목록은 앱·함수·워크플로 셋이 같아야 한다.
+  함수를 배포하기 전에는 고른 값이 이슈에 실리지 않는다(모두 기본으로 돈다).
 - 메모 첫 줄에 `#Claude요청`이라고 써도 라벨이 붙는다.
 
 ## 지키는 것
@@ -80,23 +85,24 @@
 
 | 자리 | 칸 | 쓰는 쪽 |
 |---|---|---|
-| `spaces/{sid}/items/{itemId}` | `claudeAskAt`(누른 때) · `claudeFollow: { at, text }`(이어 쓴 글 - `at` = 같이 적는 `claudeAskAt`, 짝이 안 맞으면 지난 글이라 보내지 않는다) | 앱 |
-| `v5claude/{itemId}` | `sid`·`state`·`issue`·`open`·`atMs` · `turn`(지금 턴) · `turns`(⚠ 턴까지 쓴 마지막 번호) · `askAt` · `lastAskAt`(⚠ 쓰기) · `askText`(이어 쓴 글 - 비면 보낼 때의 메모 글) · `sha` | 함수 (앱은 못 읽음) |
+| `spaces/{sid}/items/{itemId}` | `claudeAskAt`(누른 때) · `claudeFollow: { at, text }`(이어 쓴 글 - `at` = 같이 적는 `claudeAskAt`, 짝이 안 맞으면 지난 글이라 보내지 않는다) · `claudeRun: { at, model, effort }`(고른 모델·노력 - 짝은 같다, 빈 값 = 기본, 11-08) | 앱 |
+| `v5claude/{itemId}` | `sid`·`state`·`issue`·`open`·`atMs` · `turn`(지금 턴) · `turns`(⚠ 턴까지 쓴 마지막 번호) · `askAt` · `lastAskAt`(⚠ 쓰기) · `askText`(이어 쓴 글 - 비면 보낼 때의 메모 글) · `model`·`effort`(11-08) · `sha` | 함수 (앱은 못 읽음) |
 | `spaces/{sid}/claudeRequests/{itemId}` | 마지막 턴의 `state`·`issue`·`url`·`note`·`sha` + `turns`·`atMs` + `answeredAt`(끝 상태가 된 때) - Shell이 늘 듣는다. `dropped`는 여기 쓰지 않는다(옛 화면이 모르는 상태라 카드가 사라진다) | 함수 |
 | 〃 | `seenAt`(본 답의 `answeredAt` 값 그대로 - 기기 시각이 아니라 기기 시계가 달라도 어긋나지 않는다. 규칙은 공간 아래 일반 쓰기, 함수는 `merge`로 써서 지우지 않는다) | 앱 |
-| `spaces/{sid}/claudeRequests/{itemId}/turns/{n}` | `n`·`askText`·`askAt`·`state`·`issue`·`url`·`note`·`sha`·`updatedAt` - 그 메모 칸이 열린 동안만 듣는다 | 함수 |
+| `spaces/{sid}/claudeRequests/{itemId}/turns/{n}` | `n`·`askText`·`askAt`·`model`·`effort`·`state`·`issue`·`url`·`note`·`sha`·`updatedAt` - 그 메모 칸이 열린 동안만 듣는다 | 함수 |
 
 `turn`이 없는 칸 = P23 함수가 나가기 전에 시작한 요청 - 턴 문서 없이 지금 길 그대로 끝난다. 그 메모에 이어 보내면 함수가 부모로 `turns/1`을 채운 뒤(글은 그때의 메모 글 - 보낸 글이 남아 있지 않다) 다음 턴을 쓴다. 옛 메모를 옮기지 않는다.
 기기 사본·백업에 넣지 않고, 메모를 영구로 지워도 남는다(글은 공개 이슈에도 있다).
 
 ## 자리
 
-`functions/claudePlan.js`(순수 - 라벨 이름·새로 붙은 라벨·이어 쓴 글 `followOf`·쓰기를 함수 칸에 견주기 `planAsk`·이슈 글·앞선 대화·계정·상태 셈·한 번에 하나 `nextToDispatch`·라벨 챙기기 `planClaudeLabel`, `claudePlan.test.js`) ·
+`functions/claudePlan.js`(순수 - 라벨 이름·새로 붙은 라벨·이어 쓴 글 `followOf`·모델·노력 `runOf`(11-08)·쓰기를 함수 칸에 견주기 `planAsk`·이슈 글·앞선 대화·계정·상태 셈·한 번에 하나 `nextToDispatch`·라벨 챙기기 `planClaudeLabel`, `claudePlan.test.js`) ·
 `functions/index.js`(`v5ClaudeRequest` → `enqueueClaudeAsk` = 함수 칸·표시·턴을 한 트랜잭션으로 줄에 세우기 · `dispatchNext` = 트랜잭션으로 하나만 보내기 · `checkClaudeRequests` = 진행 → `ensureClaudeLabels`(한 시간에 한 번, 표시 `v5claudeMeta/labels`) → 다음 보내기, 함수 칸 `v5claude/{itemId}` - 규칙에 match 없음 = 앱은 못 읽음) ·
 손 실행 `tools/claude-hand-run.mjs`(함수를 Firestore·Auth 에뮬레이터에 곧바로 돌린다 - 트랜잭션은 진짜, GitHub와 FCM만 흉내. 첫 요청·이어 보내기·도는 중·같은 쓰기·옛 메모·배포 순간·옛 화면·줄·실패·답 알림) ·
 라벨 표시 `labels.system = 'claudeRequest'`(라벨 관리 `[data-label-locked]` - 이름 읽기만·✕ 없음·빈 라벨 정리에서 뺌) ·
 🤖 요청 `notes/ClaudeAskButton`(`[data-note-claude-ask]`·보낸 뒤 `[data-note-claude-asked]` - `notes/NotePanel` 아래) → `notes/actions.askClaude`(메모 `claudeAskAt` 하나) → 함수 `askedNow` · 진행 표시는 카드·`memo/MemoListRow` ·
 메모 칸 안 대화 `notes/useClaudeThread`(턴 듣기·보낼 수 있나) → 말풍선 `notes/ClaudeThread`(`[data-claude-thread=턴 수|claude-turn=n|claude-turn-state|claude-turn-ask|claude-turn-fold|claude-turn-badge|claude-turn-note|claude-turn-refill]`) · 글 칸 `notes/ClaudeFollowBox`(`[data-claude-follow=ready|hold]` - `chat/ChatComposer`, 쓰던 글 `claude:<메모 id>`) → `notes/actions.askClaudeMore`(메모 `claudeAskAt` + `claudeFollow`) ·
+모델·노력(11-08) `notes/ClaudeRunPicker`(`[data-claude-run|claude-run-model|claude-run-effort]` - 🤖 요청 옆·글 칸 `footer`) · 기기 값 `notes/claudeRunPrefs` · 순수 `domain/claudeRequest` `CLAUDE_MODELS`·`CLAUDE_EFFORTS`·`readClaudeRun`·`claudeRunLabel` · 말풍선 `[data-claude-turn-run]` ·
 앱이 보는 칸 `spaces/{sid}/claudeRequests/{itemId}`(`data/claudeRequests` Shell에 하나 · store `data/claudeRequestStore` · 순수 `domain/claudeRequest`(결과 글 `claudeNoteText` · 턴 `readClaudeTurn`·`turnsForView`·`claudeBusy`·`claudeTurnBadge`) · 턴 듣기 `useClaudeTurns`(칸이 열린 동안만, 최근 50) · 카드 `notes/ClaudeRequestBadge` `[data-entry-claude=상태]` · 결과 글 `notes/ClaudeRequestNote` `[data-entry-claude-note=상태]`) ·
 답 알림(P23-3) 함수 `setClaudeState`(끝 상태면 `answeredAt` + `pushClaudeAnswer`, 실패해도 삼킨다) · 순수 `claudePushData` · `public/sw.js` `showClaudeNotice`(tag `sp5-claude-<메모 id>`)·notificationclick(`sp5-open-claude`·`?claude=`) · 앱 `notes/claudeReceive`(Shell `useClaudeReceiver` - 앱 안내·주소·메시지, `closeClaudeNotice`) · 본 표시 `notes/useClaudeThread` `useClaudeSeen` → `data/claudeRequests` `markClaudeSeen` · 순수 `domain/claudeRequest` `claudeNewAnswerAt`·`claudeAnsweredNow`·`claudeParamOf`·`stripClaudeParam` · 카드 `[data-entry-claude-new]` ·
 워크플로 `.github/workflows/claude-request.yml` · 점검 `tools/inspect-claude-request.mjs`(카드 표시·말풍선·글 칸·휴대폰·새 답·답 알림 - 함수·GitHub는 흉내 내지 않고 문서를 심고, 푸시는 CDP로 넣는다).

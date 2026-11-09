@@ -115,12 +115,16 @@ export interface ClaudeTurn {
   issue: number | null;
   url: string | null;
   note: string;
+  /** 고른 모델·노력 (11-08) - 함수가 턴에 적는다. 없으면 기본 */
+  run?: ClaudeRun;
 }
 
 /** 메모의 칸 가운데 대화에 쓰는 것 */
 export interface ClaudeAskFields {
   claudeAskAt?: number;
   claudeFollow?: { at: number; text: string };
+  /** 고른 모델·노력 (11-08) - at = 함께 적은 claudeAskAt */
+  claudeRun?: { at: number; model: string; effort: string };
 }
 
 /** 서버 턴 문서 → 표시할 것 (모양이 틀리면 null) */
@@ -136,6 +140,8 @@ export function readClaudeTurn(raw: unknown): ClaudeTurn | null {
     askText: typeof v.askText === 'string' ? v.askText : '',
     askAt: typeof v.askAt === 'number' ? v.askAt : null,
     state: v.state === 'dropped' ? 'dropped' : shown.state,
+    // 고른 모델·노력 (11-08) - 그 전 턴·기본으로 보낸 턴에는 없다
+    ...(v.model || v.effort ? { run: readClaudeRun(v) } : {}),
   };
 }
 
@@ -148,7 +154,8 @@ export function turnsForView(turns: readonly ClaudeTurn[] | null, req: ClaudeReq
   const list: ClaudeTurn[] = turns.length > 0 ? [...turns].sort((a, b) => a.n - b.n) : [{ n: 1, askText: '', askAt: null, ...req }];
   const follow = ask.claudeFollow;
   if (!follow || follow.at !== ask.claudeAskAt || list.some((t) => t.askAt === follow.at)) return list;
-  return [...list, { n: list[list.length - 1].n + 1, askText: follow.text, askAt: follow.at, state: 'asking', issue: null, url: null, note: '' }];
+  const run = ask.claudeRun?.at === follow.at ? readClaudeRun(ask.claudeRun) : undefined;
+  return [...list, { n: list[list.length - 1].n + 1, askText: follow.text, askAt: follow.at, state: 'asking', issue: null, url: null, note: '', run }];
 }
 
 /** 아직 보낼 수 없나 - 메모 하나에 열린 요청은 하나다(도는 중·배포 중·보내는 중, 턴을 받는 중) */
@@ -162,4 +169,51 @@ export function claudeTurnBadge(t: ClaudeTurn): ReturnType<typeof claudeBadge> {
   if (t.state === 'dropped') return { text: '⚠ 보내지 못함', tone: 'bad', title: t.note };
   const b = claudeBadge({ ...t, state: t.state });
   return t.state === 'nochange' ? { ...b, tone: 'wait' } : b;
+}
+
+// ─── 모델·노력 고르기 (11-08 사용자 요청 - 'Claude 모델과 노력 정도를 선택할 수 있게') ───
+//   앱이 메모에 claudeRun = { at, model, effort }(at = 함께 적는 claudeAskAt)를 적고 → 함수가 이슈 본문 표시 줄로 →
+//   워크플로(.github/workflows/claude-request.yml)가 --model·--effort로. 빈 값 = 기본(워크플로가 아무것도 붙이지 않는다).
+//   고를 수 있는 값은 함수(functions/claudePlan.js CLAUDE_MODELS·CLAUDE_EFFORTS)·워크플로와 같다 - 하나를 바꾸면 셋 다.
+
+export type ClaudeModel = '' | 'fable' | 'opus' | 'sonnet' | 'haiku';
+export type ClaudeEffort = '' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+
+export const CLAUDE_MODELS: ReadonlyArray<{ id: ClaudeModel; label: string }> = [
+  { id: '', label: '기본' },
+  { id: 'fable', label: 'Fable' },
+  { id: 'opus', label: 'Opus' },
+  { id: 'sonnet', label: 'Sonnet' },
+  { id: 'haiku', label: 'Haiku' },
+];
+export const CLAUDE_EFFORTS: ReadonlyArray<{ id: ClaudeEffort; label: string }> = [
+  { id: '', label: '기본' },
+  { id: 'low', label: '낮음' },
+  { id: 'medium', label: '보통' },
+  { id: 'high', label: '높음' },
+  { id: 'xhigh', label: '아주 높음' },
+  { id: 'max', label: '최대' },
+];
+
+export interface ClaudeRun {
+  model: ClaudeModel;
+  effort: ClaudeEffort;
+}
+
+export const DEFAULT_CLAUDE_RUN: ClaudeRun = { model: '', effort: '' };
+
+/** 모르는 값은 기본으로 (기기 보관·서버 문서 모두) */
+export function readClaudeRun(raw: unknown): ClaudeRun {
+  const v = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+  return {
+    model: CLAUDE_MODELS.find((m) => m.id && m.id === v.model)?.id ?? '',
+    effort: CLAUDE_EFFORTS.find((e) => e.id && e.id === v.effort)?.id ?? '',
+  };
+}
+
+/** 말풍선에 붙이는 짧은 글 - 'Opus · 노력 높음'. 둘 다 기본이면 '' */
+export function claudeRunLabel(run: ClaudeRun): string {
+  const model = CLAUDE_MODELS.find((m) => m.id === run.model);
+  const effort = CLAUDE_EFFORTS.find((e) => e.id === run.effort);
+  return [run.model && model?.label, run.effort && effort && `노력 ${effort.label}`].filter(Boolean).join(' · ');
 }

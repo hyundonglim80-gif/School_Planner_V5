@@ -8,6 +8,7 @@ import { CLAUDE_FOLLOW_MAX } from '../../domain/claudeRequest';
 import ChatComposer, { type ChatComposerHandle } from '../chat/ChatComposer';
 import type { ItemDoc } from '../events/eventOps';
 import { askClaudeMore } from './actions';
+import ClaudeRunPicker from './ClaudeRunPicker';
 
 interface Props {
   ref?: Ref<ChatComposerHandle>;
@@ -29,6 +30,7 @@ export default function ClaudeFollowBox({ ref, sid, item, busy }: Props) {
         hold={busy ? '앞 요청이 끝나면 보낼 수 있습니다' : null}
         hint="공개 이슈로 올라갑니다 - 학생 이름은 적지 마세요"
         onSend={(text) => askClaudeMore(sid, item, text)}
+        footer={<ClaudeRunPicker />}
       />
     </div>
   );
