@@ -23,7 +23,7 @@ import { extraBindingsOf, setExtraShortcuts, setShortcutOverrides, useShortcutOv
 import { sendRecordToOpener } from './popupWindows';
 import { isKnownShortcut, shortcutLabel } from './tabShortcuts';
 import { showErrorToast, showToast } from './toast';
-import { openWindow } from './windows';
+import { holdPopupWindows, openWindow } from './windows';
 import { POPOUT } from '../ui/popout';
 
 export type RecordStage = 'off' | 'pick' | 'key';
@@ -41,6 +41,12 @@ interface RecordState {
 const OFF: RecordState = { stage: 'off', picked: null, miss: false, binding: null };
 
 export const useShortcutRecord = create<RecordState>(() => OFF);
+
+// 고르는 동안 창은 큰 창 안에 (P28-2) - 창 위치 '팝업창'이면 메뉴로 연 환경설정이 브라우저 팝업창에 떠서, 그 안의 값·탭을 누른 것을 이 띠가 보지 못했다.
+// 끝나면(저장 뒤 단축키 탭을 다시 여는 것부터) 팝업창 그대로.
+useShortcutRecord.subscribe((s, prev) => {
+  if ((s.stage === 'off') !== (prev.stage === 'off')) holdPopupWindows(s.stage !== 'off');
+});
 
 export function startShortcutRecord() {
   useShortcutRecord.setState({ ...OFF, stage: 'pick' });

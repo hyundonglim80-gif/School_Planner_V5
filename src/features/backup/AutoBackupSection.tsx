@@ -1,7 +1,7 @@
 // 백업 탭의 '☁️ 드라이브 자동 백업' 칸 (V4 환경설정 > 드라이브 자동 백업 - MENU 3-7에서 백업 창으로).
 // 켜기·주기·남길 개수는 누르는 즉시 계정에(common.autoBackup), 지금 백업은 권한을 물어도 된다.
 import { setCommonSetting, useCommonSettings } from '../../app/prefs';
-import { INTERVAL_CHOICES, KEEP_CHOICES } from '../../domain/autoBackup';
+import { INTERVAL_OPTIONS, KEEP_OPTIONS } from '../../app/optionShortcuts';
 import { Choices, Section, ToggleRow } from '../settings/parts';
 import { backupNow, useBackupLog, useBackupLogWatch } from './auto';
 
@@ -23,14 +23,14 @@ export default function AutoBackupSection() {
       desc="PC에서 앱을 열 때 정한 날이 지났으면 개인 공간 전체를 구글 드라이브 School_Planner/백업 폴더에 올립니다(공개하지 않습니다). 구글 권한이 이미 있을 때만 조용히 하고, 휴대폰에서는 하지 않습니다."
     >
       <div data-auto-backup>
-        <ToggleRow id="auto-backup" label="자동 백업" hint="3일 넘게 밀리면 화면 위에 '지금 백업' 띠가 뜹니다." checked={s.enabled} onChange={(enabled) => set({ enabled })} />
+        <ToggleRow id="auto-backup" option="autoBackup" label="자동 백업" hint="3일 넘게 밀리면 화면 위에 '지금 백업' 띠가 뜹니다." checked={s.enabled} onChange={(enabled) => set({ enabled })} />
         <div className="flex items-center gap-2 py-1.5 text-xs font-bold text-slate-600">
           <span className="w-16 shrink-0">주기</span>
-          <Choices name="auto-backup-interval" value={s.intervalDays} onChange={(intervalDays) => set({ intervalDays })} options={INTERVAL_CHOICES.map((d) => ({ value: d, label: `${d}일마다` }))} />
+          <Choices name="auto-backup-interval" option="autoBackupInterval" value={s.intervalDays} onChange={(intervalDays) => set({ intervalDays })} options={INTERVAL_OPTIONS} />
         </div>
         <div className="flex items-center gap-2 py-1.5 text-xs font-bold text-slate-600">
           <span className="w-16 shrink-0">남길 개수</span>
-          <Choices name="auto-backup-keep" value={s.keep} onChange={(keep) => set({ keep })} options={KEEP_CHOICES.map((n) => ({ value: n, label: `최근 ${n}개` }))} />
+          <Choices name="auto-backup-keep" option="autoBackupKeep" value={s.keep} onChange={(keep) => set({ keep })} options={KEEP_OPTIONS} />
         </div>
         <p data-auto-backup-last className="mt-2 text-xs text-slate-500">
           {log.lastAt ? (

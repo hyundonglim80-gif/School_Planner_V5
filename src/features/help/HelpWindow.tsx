@@ -8,8 +8,20 @@ import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type R
 import { useShortcutOverrides } from '../../app/keys';
 import { useCommonSettings } from '../../app/prefs';
 import type { WindowProps } from '../../app/windows';
-import { FIXED_SHORTCUTS, formatActionBinding, formatBinding, resolveBindings, SHORTCUT_ACTIONS, type ShortcutId } from '../../domain/shortcuts';
+import {
+  FIXED_SHORTCUTS,
+  formatActionBinding,
+  formatBinding,
+  resolveBindings,
+  SHORTCUT_ACTIONS,
+  type Binding,
+  type CustomShortcutId,
+  type ShortcutId,
+} from '../../domain/shortcuts';
 import { TAB_SHORTCUTS } from '../../app/tabShortcuts';
+import { customShortcutOf } from '../../app/customShortcuts';
+// 환경설정 값 키의 이름을 단다(팝업창에서 설명서만 열어도)
+import '../../app/optionShortcuts';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import {
   ALL_HELP_TOPICS,
@@ -69,6 +81,18 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
   const bindings = useMemo(() => resolveBindings(overrides), [overrides]);
   // 창 안 탭 키 (P18-2) - 키를 준 탭만
   const tabKeys = useShortcutOverrides((s) => s.tabs);
+  // 환경설정 값 키 (P28-2) - 이 판이 아는 것만(이름은 app/optionShortcuts가 단다)
+  const customMap = useShortcutOverrides((s) => s.custom);
+  const customKeys = useMemo(
+    () =>
+      (Object.entries(customMap) as Array<[CustomShortcutId, Binding | undefined]>)
+        .flatMap(([id, key]) => {
+          const known = key?.key ? customShortcutOf(id) : undefined;
+          return known ? [{ id, label: known.label, key: key! }] : [];
+        })
+        .sort((a, b) => a.label.localeCompare(b.label, 'ko')),
+    [customMap],
+  );
 
   const values: HelpValues = useMemo(
     () => ({
@@ -281,6 +305,24 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
             </p>
           )}
         </div>
+        {/* 환경설정 값 키 (P28-2) - 이 판이 아는 것만, 이름 차례. 없으면 묶음째 감춘다(창 안 탭 묶음의 '없음' 안내가 만드는 길을 말한다) */}
+        {customKeys.length > 0 && (
+          <div data-help-shortcut-options>
+            <div className="text-xs font-bold text-slate-500 mb-1.5">내가 만든 단축키 (환경설정 값)</div>
+            <div className="grid grid-cols-1 @min-[480px]:grid-cols-2 gap-1.5">
+              {customKeys.map(({ id, label, key }) => (
+                <div
+                  key={id}
+                  data-help-shortcut={id}
+                  className="px-2.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-2"
+                >
+                  <span className="text-slate-600 min-w-0 break-keep">{label}</span>
+                  <kbd className="px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-2xs">{formatBinding(key)}</kbd>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <div>
           <div className="text-xs font-bold text-slate-500 mb-1.5">고정 (바꿀 수 없음)</div>
           <div className="grid grid-cols-1 @min-[480px]:grid-cols-2 gap-1.5">

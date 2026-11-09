@@ -1,5 +1,6 @@
 // 환경설정 창의 작은 부품 (V4 SettingsModal의 Section·ToggleRow·고르기 단추).
 import type { CSSProperties, ReactNode } from 'react';
+import { useOptionTarget } from '../../app/optionShortcuts';
 
 export function Section({ title, desc, children, id }: { title: string; desc?: ReactNode; children: ReactNode; id?: string }) {
   return (
@@ -11,22 +12,25 @@ export function Section({ title, desc, children, id }: { title: string; desc?: R
   );
 }
 
-/** 한 줄짜리 켜기/끄기 */
+/** 한 줄짜리 켜기/끄기. option = 환경설정 값 단축키 이름(app/optionShortcuts - 단축키 설정이 이 줄을 고른다, 키가 있으면 툴팁) */
 export function ToggleRow({
   label,
   hint,
   checked,
   onChange,
   id,
+  option,
 }: {
   label: string;
   hint?: string;
   checked: boolean;
   onChange: (v: boolean) => void;
   id?: string;
+  option?: string;
 }) {
+  const target = useOptionTarget();
   return (
-    <label className="flex items-center justify-between gap-3 py-2 cursor-pointer">
+    <label {...(option ? target(option) : {})} className="flex items-center justify-between gap-3 py-2 cursor-pointer">
       <span className="min-w-0">
         <span className="block text-sm font-bold text-slate-700">{label}</span>
         {hint && <span className="block text-xs text-slate-400 mt-0.5">{hint}</span>}
@@ -42,25 +46,29 @@ export function ToggleRow({
   );
 }
 
-/** 여럿 가운데 하나 고르기 (누르는 즉시) */
+/** 여럿 가운데 하나 고르기 (누르는 즉시). option = 환경설정 값 단축키 이름(값마다 단축키 설정이 고른다 - app/optionShortcuts) */
 export function Choices<T extends string | number>({
   options,
   value,
   onChange,
   name,
+  option,
 }: {
   options: ReadonlyArray<{ value: T; label: string; style?: CSSProperties }>;
   value: T;
   onChange: (v: T) => void;
   /** 점검용 data-choice="<name>:<값>" */
   name: string;
+  option?: string;
 }) {
+  const target = useOptionTarget();
   return (
     <div className="flex flex-wrap gap-1.5">
       {options.map((opt) => (
         <button
           key={String(opt.value)}
           type="button"
+          {...(option ? target(option, opt.value) : {})}
           data-choice={`${name}:${opt.value}`}
           onClick={() => onChange(opt.value)}
           aria-pressed={value === opt.value}

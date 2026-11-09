@@ -8,6 +8,8 @@
 //   7) 창 안 탭(P18-2): ⋮ → 환경설정 → 알림 탭 = '고른 것: 환경설정 → 알림' → Ctrl+Alt+N → 계정 tabShortcuts · '내가 만든 단축키' 줄 ·
 //      열린 환경설정에서 그 키 = 알림 탭(다른 탭을 눌렀어도 다시) · 탭 툴팁 · 설명서 표 · 🗑️ → 메모 탭 = 휴지통 메모 탭으로 열림
 //   8) 단축키 탭 줄(P28-1): 키 바꾸기 = 고르기 없이 띠의 키 단계(창은 그대로) · 해제 = 곧바로 빠짐 · 되돌리기
+//   9) 환경설정 값(P28-2): 팝업창 모드여도 고르는 동안 환경설정은 큰 창 안 · 창 위치 팝업창 단추 = 'opt.popupStyle.popup' → Ctrl+Alt+P → 계정 customShortcuts ·
+//      그 키 = 창을 열지 않고 팝업창 + 안내, 다시 = 오른쪽 칸 · 단추 툴팁 · 설명서 표 · 고대비 줄 = 'opt.contrast' → 키마다 켜고 끄기
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-shortcut-record.mjs
 // 에뮬레이터 teacher 계정의 V5 설정 문서(spaces/u_{uid}/settings/pc)를 쓴다 - 처음 것을 읽어 두고 끝에 되돌린다.
@@ -203,6 +205,87 @@ try {
   await serverUntil(serverPc, (d) => !d.tabShortcuts?.['settings:notify']);
   await page.evaluate(() => window.sp5.closeAllWindows());
 
+  r.section('환경설정 값 (P28-2) - 창 위치 → 팝업창 · 고대비');
+  const setStyle = (v) => page.evaluate(async (v) => (await import(window.__appModule('/src/app/layoutPrefs.ts'))).setPopupStyle(v), v);
+  const styleNow = () => page.evaluate(async () => (await import(window.__appModule('/src/app/layoutPrefs.ts'))).useLayoutPrefs.getState().popupStyle);
+  const lastToast = async () => (await page.locator(sel('toast')).last().textContent().catch(() => '')) ?? '';
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  // 팝업창 모드에서 고른다 - 고르는 동안 연 창은 큰 창 안에 떠야 그 안을 누른 것을 띠가 본다
+  await startRecord();
+  await waitFor(bar('pick'));
+  await setStyle('popup');
+  const pagesBefore = page.context().pages().length;
+  await page.click(sel('more-menu'));
+  await page.click(sel('menu-item', 'settings'));
+  r.check(await waitFor(page.locator(sel('settings-tab', 'view'))), '팝업창 모드여도 고르는 동안 환경설정은 큰 창 안에');
+  r.check(page.context().pages().length === pagesBefore, `브라우저 팝업창은 뜨지 않는다 (창 ${page.context().pages().length}개)`);
+  await page.click(sel('settings-tab', 'view'));
+  const choiceOutline = await page.locator(sel('choice', 'popupStyle:popup')).evaluate((el) => getComputedStyle(el).outlineStyle);
+  r.check(choiceOutline === 'dashed', `값 단추에 점선 테두리 (팝업창 = ${choiceOutline})`);
+  const toggleOutline = await page.locator(sel('settings-toggle', 'contrast')).evaluate((el) => getComputedStyle(el.closest('label')).outlineStyle);
+  r.check(toggleOutline === 'dashed', `켜기/끄기 줄에도 (고대비 = ${toggleOutline})`);
+  await page.click(sel('choice', 'popupStyle:popup'));
+  r.check(await waitFor(page.locator(sel('shortcut-record-picked', 'opt.popupStyle.popup'))), "창 위치 팝업창 = '고른 것: 창 위치 → 팝업창'");
+  const pickedOpt = await page.locator(sel('shortcut-record-picked')).textContent();
+  r.check(pickedOpt?.includes('창 위치 → 팝업창'), `띠 글자 (${pickedOpt})`);
+  // 저장하면 단축키 탭을 다시 연다 - 오른쪽 칸으로 두고 저장한다(팝업창이면 브라우저 창이 뜬다)
+  await setStyle('side');
+  await page.click(sel('shortcut-record-done'));
+  await page.keyboard.press('Control+Alt+KeyP');
+  r.check((await page.locator(sel('shortcut-record-key')).textContent()) === 'Ctrl + Alt + P', 'Ctrl+Alt+P');
+  await page.click(sel('shortcut-record-save'));
+  const optSaved = await serverUntil(serverPc, (d) => d.customShortcuts?.['opt.popupStyle.popup']?.key === 'P');
+  r.check(
+    JSON.stringify(optSaved.customShortcuts) === JSON.stringify({ 'opt.popupStyle.popup': { ctrl: true, alt: true, shift: false, key: 'P' } }),
+    `계정 settings/pc customShortcuts에 올라간다 (${JSON.stringify(optSaved.customShortcuts)})`,
+  );
+  r.check(!optSaved.tabShortcuts?.['opt.popupStyle.popup'], '창 안 탭 칸(tabShortcuts)과 섞이지 않는다');
+  const optRow = `${sel('shortcut-group', '환경설정 값')} ${sel('shortcut-row', 'opt.popupStyle.popup')}`;
+  r.check(await waitFor(page.locator(`${optRow}[data-shortcut-row-focus]`)), "단축키 탭 '내가 만든 단축키 (환경설정 값)'에 그 줄 (짚는다)");
+  r.check((await page.locator(optRow).textContent())?.includes('창 위치 → 팝업창'), '줄 이름 = 창 위치 → 팝업창');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.locator('main').click({ position: { x: 5, y: 5 } });
+  const pagesNow = page.context().pages().length;
+  await page.keyboard.press('Control+Alt+KeyP');
+  r.check(await waitFor(async () => (await styleNow()) === 'popup'), 'Ctrl+Alt+P = 창 위치가 팝업창으로');
+  r.check(await waitFor(async () => (await lastToast()).includes('⚙️ 창 위치: 팝업창')), `안내 '⚙️ 창 위치: 팝업창' (${await lastToast()})`);
+  r.check((await page.locator(sel('settings-window')).count()) === 0 && page.context().pages().length === pagesNow, '창은 열지 않는다 (값만)');
+  r.check((await serverUntil(serverPc, (d) => d.popupStyle === 'popup')).popupStyle === 'popup', '계정에도 팝업창');
+  await page.keyboard.press('Control+Alt+KeyP');
+  r.check(await waitFor(async () => (await styleNow()) === 'side'), '다시 누르면 = 앞 값(오른쪽 칸)으로');
+  r.check(await waitFor(async () => (await lastToast()).includes('⚙️ 창 위치: 오른쪽 칸')), `안내 '⚙️ 창 위치: 오른쪽 칸' (${await lastToast()})`);
+  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'view' }));
+  const optTip = await page.getAttribute(sel('choice', 'popupStyle:popup'), 'title');
+  r.check(optTip?.includes('Ctrl + Alt + P'), `팝업창 단추 툴팁에 키 (${optTip})`);
+  await page.evaluate(() => window.sp5.openWindow('help', { topic: 'shortcuts' }));
+  r.check(await waitFor(page.locator(sel('help-shortcut', 'opt.popupStyle.popup'))), "설명서 단축키 표 '내가 만든 단축키 (환경설정 값)'");
+  const helpOpt = await page.locator(sel('help-shortcut', 'opt.popupStyle.popup')).textContent();
+  r.check(helpOpt?.includes('창 위치 → 팝업창') && helpOpt?.includes('Ctrl + Alt + P'), `설명서 표 줄 (${helpOpt})`);
+  await page.evaluate(() => window.sp5.closeAllWindows());
+
+  // 고대비 = 켜기/끄기 줄을 눌러 고른다 → 키는 늘 뒤집는다
+  const hc = () => page.evaluate(() => document.documentElement.classList.contains('hc'));
+  await startRecord();
+  await waitFor(bar('pick'));
+  await page.click(sel('more-menu'));
+  await page.click(sel('menu-item', 'settings'));
+  await page.click(sel('settings-tab', 'view'));
+  await page.locator(sel('settings-toggle', 'contrast')).click();
+  r.check(await waitFor(page.locator(sel('shortcut-record-picked', 'opt.contrast'))), "고대비 줄 = '고른 것: 고대비 켜기 / 끄기'");
+  r.check(await hc(), '누른 것은 그대로 (고대비가 켜졌다)');
+  await page.click(sel('shortcut-record-done'));
+  await page.keyboard.press('Control+Alt+KeyH');
+  await page.click(sel('shortcut-record-save'));
+  await serverUntil(serverPc, (d) => d.customShortcuts?.['opt.contrast']?.key === 'H');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.locator('main').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('Control+Alt+KeyH');
+  r.check(await waitFor(async () => !(await hc())), 'Ctrl+Alt+H = 고대비 끄기');
+  await page.keyboard.press('Control+Alt+KeyH');
+  r.check(await waitFor(hc), '다시 = 켜기 (늘 뒤집는다)');
+  await page.keyboard.press('Control+Alt+KeyH');
+  await waitFor(async () => !(await hc()));
+
   r.section('ESC = 기록 취소');
   await page.evaluate(() => window.sp5.closeAllWindows());
   await startRecord();
@@ -222,6 +305,9 @@ try {
   r.check(bodyMark === '', '점선 표시도 걷힌다 (body)');
 
   r.check(a.errors.length === 0, '화면 오류 없음', `화면 오류: ${a.errors.join(' | ')}`);
+} catch (e) {
+  // 예외가 '✔ 모두 통과'로 끝나지 않게 (P23-2)
+  r.check(false, '점검이 도중에 멈췄다', String(e?.stack ?? e));
 } finally {
   await browser.close();
   // 창이 1초 뒤 올리는 것이 끝난 뒤에 되돌린다

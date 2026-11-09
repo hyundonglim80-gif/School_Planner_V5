@@ -15,7 +15,7 @@ import { decorKind } from '../../domain/decor';
 import { DecorPicture } from '../../ui/decorArt';
 import { useToday } from '../../ui/useToday';
 import { useShortcutTitle } from '../../app/keys';
-import { DECOR_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, THEME_OPTIONS } from '../../app/optionShortcuts';
+import { DECOR_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, THEME_OPTIONS, useOptionTarget } from '../../app/optionShortcuts';
 import { Choices, Section, ToggleRow } from './parts';
 
 const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
@@ -42,6 +42,7 @@ export default function ViewTab() {
     return () => window.removeEventListener(VIEW_AIDS_CHANGED_EVENT, onChange);
   }, []);
   const withKey = useShortcutTitle();
+  const optionTarget = useOptionTarget();
   const palette = sanitizePalette(useCommonSettings((s) => s.palette));
   const cvd = useCommonSettings((s) => s.cvd);
   const dark = isDarkMode(themeMode);
@@ -57,6 +58,7 @@ export default function ViewTab() {
       <Section id="display" title="화면 표시" desc="둘째 줄의 주말 / 일정 / 수업 단추와 같은 값입니다.">
         <ToggleRow
           id="showWeekend"
+          option="showWeekend"
           label="주말"
           hint={withKey('토·일 칸을 달력에 보여줍니다', 'toggleWeekend')}
           checked={nav.showWeekend}
@@ -64,6 +66,7 @@ export default function ViewTab() {
         />
         <ToggleRow
           id="showEvents"
+          option="showEvents"
           label="일정"
           hint={withKey('하루·주간·월간·년간에 일정 항목을 보여줍니다', 'toggleEvents')}
           checked={nav.showEvents}
@@ -71,6 +74,7 @@ export default function ViewTab() {
         />
         <ToggleRow
           id="showClass"
+          option="showClass"
           label="수업"
           hint={withKey('시간표와 교시 항목을 보여줍니다', 'toggleClass')}
           checked={nav.showClass}
@@ -79,6 +83,7 @@ export default function ViewTab() {
         {/* V4는 휴대폰 첫 화면에 손짓 안내를 띄웠지만 기본이 꺼져 있어 맞지 않았다 - 켜는 자리에 적는다 */}
         <ToggleRow
           id="enableScrollNav"
+          option="enableScrollNav"
           label="스크롤로 페이지 이동"
           hint="화면 맨 위·맨 아래에서 더 굴리거나 당기면 이전·다음 날짜로, 휴대폰에서 옆으로 밀면 이전·다음 화면으로 넘어갑니다"
           checked={nav.enableScrollNav}
@@ -90,6 +95,7 @@ export default function ViewTab() {
       <Section id="fontScale" title="글자 크기">
         <Choices
           name="fontScale"
+          option="fontScale"
           value={fontScale}
           onChange={setFontScale}
           options={FONT_SCALES.map((s) => ({ value: s.id, label: s.label, style: { fontSize: `calc(0.75rem * ${s.percent} / 100)` } }))}
@@ -103,6 +109,7 @@ export default function ViewTab() {
       >
         <Choices
           name="theme"
+          option="theme"
           value={themeMode}
           onChange={setThemeMode}
           options={THEME_OPTIONS}
@@ -123,6 +130,7 @@ export default function ViewTab() {
               <button
                 key={p.id}
                 type="button"
+                {...optionTarget('palette', p.id)}
                 data-palette-pick={p.id}
                 aria-pressed={on}
                 onClick={() => setPalette(p.id)}
@@ -154,6 +162,7 @@ export default function ViewTab() {
               <button
                 key={o.value}
                 type="button"
+                {...optionTarget('decor', o.value)}
                 data-decor-pick={o.value}
                 aria-pressed={on}
                 onClick={() => setDecor(o.value)}
@@ -173,6 +182,7 @@ export default function ViewTab() {
       <Section id="viewAids" title="보기 쉽게" desc="셋은 따로 켜고 끕니다. 색 테마·화면 밝기와 섞어 쓸 수 있고, 인쇄는 늘 기본 색입니다.">
         <ToggleRow
           id="contrast"
+          option="contrast"
           label="고대비"
           hint="글자와 테두리를 진하게 합니다. 교실 TV·전자칠판에 띄울 때 좋습니다. 이 기기에만 남습니다."
           checked={aids.contrast}
@@ -180,6 +190,7 @@ export default function ViewTab() {
         />
         <ToggleRow
           id="cvd"
+          option="cvd"
           label="색약 배려"
           hint="완료 초록을 파랑 쪽으로, 삭제·중요 빨강을 주황 쪽으로 바꾸고 색으로만 나누던 곳에 표시를 더합니다(겹친 일정 👥·자리 모둠 번호·단축키 겹침 ⚠). 계정에 저장해 PC와 휴대폰이 같습니다."
           checked={cvd}
@@ -187,6 +198,7 @@ export default function ViewTab() {
         />
         <ToggleRow
           id="dim"
+          option="dim"
           label="어둡게를 부드럽게"
           hint="어두운 화면의 바탕을 조금 밝히고 눈부신 글자를 낮춥니다. 어둡게일 때만 바뀌고, 고대비를 켜면 쉽니다. 이 기기에만 남습니다."
           checked={aids.dim}
@@ -199,11 +211,11 @@ export default function ViewTab() {
         title="창 위치"
         desc={POPUP_STYLE_DESC[device]}
       >
-        <Choices name="popupStyle" value={windowMode(popupStyle, device)} onChange={setPopupStyle} options={POPUP_STYLE_OPTIONS[device]} />
+        <Choices name="popupStyle" option="popupStyle" value={windowMode(popupStyle, device)} onChange={setPopupStyle} options={POPUP_STYLE_OPTIONS[device]} />
       </Section>
 
       <Section id="startupScope" title="시작 화면" desc="앱을 열었을 때 처음 보여줄 화면입니다. 새로고침하면 보던 화면 그대로입니다.">
-        <Choices name="startupScope" value={nav.startupScope} onChange={setStartupScope} options={STARTUP_OPTIONS} />
+        <Choices name="startupScope" option="startupScope" value={nav.startupScope} onChange={setStartupScope} options={STARTUP_OPTIONS} />
       </Section>
     </div>
   );

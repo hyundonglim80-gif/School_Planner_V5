@@ -100,6 +100,15 @@ const sameParams = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSO
 /** openWindow가 팝업창으로 띄워 이 창의 목록에는 없을 때 돌려주는 key */
 export const IN_POPUP = -1;
 
+let popupsHeld = false;
+/**
+ * 켜 두는 동안 창 위치가 팝업창이어도 창을 이 창 안에 띄운다 (P28-2 - 단축키 설정으로 고르는 동안: 팝업창 안을 누른 것은
+ * 큰 창의 띠가 보지 못해 환경설정 값·창 안 탭을 고를 수 없었다. app/shortcutRecord가 켜고 끈다)
+ */
+export function holdPopupWindows(on: boolean) {
+  popupsHeld = on;
+}
+
 /**
  * 창을 연다. 이미 열린 같은 창이면 그 탭을 보인다. 열린 창의 key를 돌려준다.
  * 창 위치가 팝업창(PC)이면 브라우저 팝업창으로 띄우고 IN_POPUP을 돌려준다(app/popupWindows - 못 띄우면 이 창 안에).
@@ -110,7 +119,7 @@ export function openWindow(id: string, params?: unknown, opts: { here?: boolean 
   if (!def) throw new Error(`등록하지 않은 창: ${id}`);
   const sameAs = (p: unknown) => (def.sameAs ? def.sameAs(p, params) : def.kind === 'side' || sameParams(p, params));
   const same = (w: OpenWindow) => w.id === id && sameAs(w.params);
-  if (!opts.here && popupWindowsOn() && portableParams(params) && openPopupWindow(id, params, sameAs)) return IN_POPUP;
+  if (!opts.here && !popupsHeld && popupWindowsOn() && portableParams(params) && openPopupWindow(id, params, sameAs)) return IN_POPUP;
   const now = stamp();
   const existing = useWindows.getState().windows.find(same);
   if (existing) {

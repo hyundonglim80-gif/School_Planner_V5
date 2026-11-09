@@ -4,14 +4,14 @@ import { resetHistoryForTest } from '../../app/history';
 import { setPopupStyle, useLayoutPrefs } from '../../app/layoutPrefs';
 import { useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
-import { handleAppKeyDown, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from '../../app/keys';
-import { anyWindowUnsaved } from '../../app/windows';
+import { handleAppKeyDown, setCustomShortcuts, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from '../../app/keys';
+import { anyWindowUnsaved, getWindowDef, openWindow, registerWindow, useWindows } from '../../app/windows';
 import { overridesFromBindings, resolveBindings, SHORTCUT_ACTIONS } from '../../domain/shortcuts';
 import { useMirror } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
-import SettingsWindow from './SettingsWindow';
+import SettingsWindow from './SettingsWindow';
 import { NO_BUTTON } from './ShortcutsTab';
-import { cancelShortcutRecord, useShortcutRecord } from '../../app/shortcutRecord';
+import { cancelShortcutRecord, onRecordClick, startShortcutRecord, useShortcutRecord } from '../../app/shortcutRecord';
 
 // 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
@@ -42,6 +42,7 @@ beforeEach(() => {
   useNav.setState({ showWeekend: true, startupScope: 'last' });
   setShortcutOverrides({});
   setTabShortcuts({});
+  setCustomShortcuts({});
   // 앞 시험의 안내(되돌리기 단추)를 걷는다
   document.getElementById('sp5-toast-container')?.remove();
 });
@@ -260,6 +261,80 @@ describe('환경설정 창', () => {
     fireEvent.click(q('[data-shortcut-clear="settings:notify"]'));
     expect(useShortcutOverrides.getState().tabs).toEqual({});
     expect(document.querySelector('[data-shortcut-group="창 안 탭"]')).toBeNull();
+  });
+
+  it('환경설정 값 단추에 단축키 설정 표시 (P28-2) - 값마다 opt.<이름>.<값> · 켜기/끄기 줄 · 주말·일정·수업은 둘째 줄 단축키 · 키가 있으면 툴팁', () => {
+    setCustomShortcuts({ 'opt.popupStyle.popup': { ctrl: false, alt: true, shift: false, key: 'P' } });
+    openSettings('view');
+    expect(q('[data-choice="popupStyle:popup"]')).toHaveAttribute('data-shortcut-target', 'opt.popupStyle.popup');
+    expect(q('[data-choice="popupStyle:popup"]')).toHaveAttribute('title', '단축키: Alt + P');
+    expect(q('[data-choice="popupStyle:side"]')).toHaveAttribute('data-shortcut-target', 'opt.popupStyle.side');
+    expect(q('[data-choice="popupStyle:side"]')).not.toHaveAttribute('title');
+    expect(q('[data-choice="fontScale:lg"]')).toHaveAttribute('data-shortcut-target', 'opt.fontScale.lg');
+    expect(q('[data-choice="theme:light"]')).toHaveAttribute('data-shortcut-target', 'opt.theme.light');
+    expect(q('[data-choice="startupScope:week"]')).toHaveAttribute('data-shortcut-target', 'opt.startupScope.week');
+    expect(q('[data-palette-pick="default"]')).toHaveAttribute('data-shortcut-target', 'opt.palette.default');
+    expect(q('[data-decor-pick="animal"]')).toHaveAttribute('data-shortcut-target', 'opt.decor.animal');
+    expect(q('[data-settings-toggle="contrast"]').closest('label')).toHaveAttribute('data-shortcut-target', 'opt.contrast');
+    expect(q('[data-settings-toggle="enableScrollNav"]').closest('label')).toHaveAttribute('data-shortcut-target', 'opt.enableScrollNav');
+    expect(q('[data-settings-toggle="showWeekend"]').closest('label')).toHaveAttribute('data-shortcut-target', 'toggleWeekend');
+  });
+
+  it('눌러서 고르기 (P28-2): 값 단추·켜기/끄기 줄을 누르면 그것을 고른다(값도 평소처럼 바뀐다)', () => {
+    openSettings('view');
+    document.addEventListener('click', onRecordClick, true);
+    try {
+      startShortcutRecord();
+      fireEvent.click(q('[data-choice="fontScale:lg"]'));
+      expect(useShortcutRecord.getState()).toMatchObject({ stage: 'pick', picked: 'opt.fontScale.lg', miss: false });
+      expect(useLayoutPrefs.getState().fontScale).toBe('lg');
+      fireEvent.click(q('[data-settings-toggle="dim"]'));
+      expect(useShortcutRecord.getState().picked).toBe('opt.dim');
+      fireEvent.click(q('[data-settings-toggle="showClass"]'));
+      expect(useShortcutRecord.getState().picked).toBe('toggleClass');
+    } finally {
+      document.removeEventListener('click', onRecordClick, true);
+      cancelShortcutRecord();
+    }
+  });
+
+  it('고르는 동안 창은 팝업창이 아니라 이 창 안에 (P28-2 - 팝업창 안을 누른 것은 띠가 못 본다), 끝나면 팝업창', () => {
+    useWindows.setState({ windows: [] });
+    if (!getWindowDef('p28probe')) registerWindow({ id: 'p28probe', title: '시험', icon: '🧪', kind: 'side', dev: true, load: () => import('../dev/TestWindow') });
+    // 팝업창은 방금 누른 때만 연다(navigator.userActivation) - 누른 것으로
+    const had = Object.getOwnPropertyDescriptor(navigator, 'userActivation');
+    Object.defineProperty(navigator, 'userActivation', { value: { isActive: true }, configurable: true });
+    // 막힌 것으로(null) - 안내 뒤 이 창 안에 뜬다. 여기서는 열어 보려 했는지만 본다
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    try {
+      setPopupStyle('popup');
+      startShortcutRecord();
+      openWindow('p28probe');
+      expect(open).not.toHaveBeenCalled();
+      expect(useWindows.getState().windows.map((w) => w.id)).toEqual(['p28probe']);
+      cancelShortcutRecord();
+      openWindow('p28probe', { again: 1 });
+      expect(open).toHaveBeenCalledTimes(1);
+    } finally {
+      open.mockRestore();
+      if (had) Object.defineProperty(navigator, 'userActivation', had);
+      else delete (navigator as { userActivation?: unknown }).userActivation;
+      useWindows.setState({ windows: [] });
+    }
+  });
+
+  it('내가 만든 단축키(환경설정 값 - P28-2)는 창 안 탭 뒤 한 묶음 · 이름 = 제목 → 값 · 해제하면 빠진다', () => {
+    setCustomShortcuts({ 'opt.popupStyle.popup': { ctrl: false, alt: true, shift: false, key: 'P' }, 'opt.contrast': { ctrl: false, alt: true, shift: false, key: 'H' } });
+    openSettings('shortcuts');
+    expect(qa('[data-shortcut-group]').map((g) => g.dataset.shortcutGroup).at(-1)).toBe('환경설정 값');
+    expect(q('[data-shortcut-group="환경설정 값"] h3')).toHaveTextContent('내가 만든 단축키 (환경설정 값)');
+    expect(q('[data-shortcut-row="opt.popupStyle.popup"]')).toHaveTextContent('창 위치 → 팝업창');
+    expect(q('[data-shortcut-row="opt.contrast"]')).toHaveTextContent('고대비 켜기 / 끄기');
+    expect(keyText('opt.popupStyle.popup')).toBe('Alt + P');
+    fireEvent.click(q('[data-shortcut-clear="opt.popupStyle.popup"]'));
+    expect(useShortcutOverrides.getState().custom).toEqual({ 'opt.contrast': { ctrl: false, alt: true, shift: false, key: 'H' } });
+    fireEvent.click(q('[data-shortcut-clear="opt.contrast"]'));
+    expect(document.querySelector('[data-shortcut-group="환경설정 값"]')).toBeNull();
   });
 
   it('겹친 키(옛 자료)는 두 줄 모두 ⚠ · 키가 하나도 없으면 단추 없는 기능 줄만', () => {
