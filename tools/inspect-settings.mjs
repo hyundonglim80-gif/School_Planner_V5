@@ -46,12 +46,12 @@ try {
   r.check(tabs.join() === 'view,notify,school,shortcuts,app', `탭은 지금 있는 것만 (${tabs.join()})`);
 
   r.section('글자 크기 → 계정 → 다른 창');
-  // PC 바탕 90% (11-08 사용자 요청 80% → 11-09 '좀 작다'로 90%). 점검 창 폭은 1400 - 16px × 0.9
+  // PC 바탕 = 한눈에만 90%, 하루 등 다른 화면은 100% (11-08 80% → 11-09 90% → 같은 날 한눈에만 - P29-1). 점검 창 폭은 1400
   const pxOf = (p) => p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
-  r.check(Math.abs((await pxOf(a.page)) - 14.4) < 0.01, `PC '보통' = 90% (${await pxOf(a.page)}px)`);
+  r.check(Math.abs((await pxOf(a.page)) - 16) < 0.01, `PC 하루 '보통' = 100% (${await pxOf(a.page)}px)`);
   await a.page.click(sel('choice', 'fontScale:lg'));
   r.check((await fontOf(a.page)) === '1.15', '고르는 즉시 화면이 바뀐다');
-  r.check(Math.abs((await pxOf(a.page)) - 14.4 * 1.15) < 0.01, `PC '크게' = 90% × 115% (${await pxOf(a.page)}px)`);
+  r.check(Math.abs((await pxOf(a.page)) - 16 * 1.15) < 0.01, `PC 하루 '크게' = 100% × 115% (${await pxOf(a.page)}px)`);
   const pc = await serverUntil(serverPc, (d) => d.fontScale === 'lg');
   r.check(pc.fontScale === 'lg', `settings/pc에 올라간다 (${JSON.stringify(pc)})`);
   r.check(await waitFor(async () => (await fontOf(b.page)) === '1.15'), `다른 창이 따라온다 (${await fontOf(b.page)})`);
@@ -59,6 +59,27 @@ try {
   const back = await serverUntil(serverPc, (d) => !('fontScale' in d));
   r.check(!('fontScale' in back), '보통으로 되돌리면 문서에서 그 칸이 빠진다');
   r.check(await waitFor(async () => (await fontOf(b.page)) === '1'), '다른 창도 보통으로');
+
+  r.section('PC 글자 바탕 = 한눈에만 90% (P29-1 - 11-09 사용자)');
+  // 다른 창(b)에서 본다 - a는 환경설정 창이 열려 있다
+  await open(b.page, '#/board/2026-10-08');
+  r.check(await waitFor(b.page.locator(sel('screen', 'board'))), '한눈에 화면');
+  r.check(await waitFor(async () => Math.abs((await pxOf(b.page)) - 14.4) < 0.01, 3000), `한눈에 = 90% (${await pxOf(b.page)}px)`);
+  r.check(await b.page.evaluate(() => document.documentElement.hasAttribute('data-dense')), 'html에 한눈에 표시(data-dense)');
+  for (const [hash, name] of [
+    ['#/week/2026-10-08', 'week'],
+    ['#/month/2026-10', 'month'],
+    ['#/memo', 'memo'],
+  ]) {
+    await open(b.page, hash);
+    r.check(await waitFor(b.page.locator(sel('screen', name))), `${name} 화면`);
+    r.check(await waitFor(async () => Math.abs((await pxOf(b.page)) - 16) < 0.01, 3000), `${name} = 100% (${await pxOf(b.page)}px)`);
+  }
+  await open(b.page, '#/board/2026-10-08');
+  r.check(await waitFor(async () => Math.abs((await pxOf(b.page)) - 14.4) < 0.01, 3000), `다시 한눈에 = 90% (${await pxOf(b.page)}px)`);
+  await open(b.page, '#/day/2026-10-08');
+  r.check(await waitFor(b.page.locator(sel('screen', 'day'))), '하루 화면으로 되돌림');
+  r.check(await waitFor(async () => Math.abs((await pxOf(b.page)) - 16) < 0.01, 3000), `하루 = 100% (${await pxOf(b.page)}px)`);
 
   r.section('알림 소리 길이 → 계정 → 다른 창 (P10-1)');
   const serverCommon = async () => (await getDoc(commonRef)).data() ?? {};

@@ -317,7 +317,7 @@ try {
   }
 
   r.section('좁은 폭은 두 무리를 쌓는다');
-  // PC는 글자 바탕 90%라(11-09 - 옛 80%) 본문 폭을 0.9로 나눠 780과 견준다 - 640 넘는 창은 700 근처라야 쌓인다(760이면 820쯤으로 친다)
+  // PC 한눈에는 글자 바탕 90%라(11-09 - 옛 80%, 같은 날 한눈에만 - P29-1) 본문 폭을 0.9로 나눠 780과 견준다 - 640 넘는 창은 700 근처라야 쌓인다(760이면 820쯤으로 친다)
   await page.setViewportSize({ width: 700, height: 900 });
   await page.goto(page.url().replace(/#.*$/, `#/board/${DAY}`));
   r.check(await waitFor(page.locator(`${sel('screen', 'board')}[data-board-stacked]`), 5000), '본문 780 밑 - 쌓기');

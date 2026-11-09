@@ -37,6 +37,7 @@ const quiet = () => {
  * 요일 수에 따라 칸 수 (본문 폭 @container - 오른쪽 칸이 열리면 그만큼 접는다, V4 그대로).
  * 경계는 rem(16px 기준 720·980·1200px)이다 - PC 글자 바탕 90%(11-09)에서 px로 두면 본문(max-w-7xl도 rem)이 1200px에 닿지 못해,
  * 다음 주 줄(JS - 바탕을 걷은 1200, ui/useMainWidth unscaledWidth)은 뜨는데 요일은 넷·셋으로 꺾였다(11-09 사용자 보고). 75rem = 바탕 90%에서 1080px = 걷은 1200.
+ * 같은 날 바탕 90%는 한눈에만이 되었다(P29-1) - 주간 화면은 100%라 75rem = 1200px, 한눈에 왼쪽은 90%라 1080px. rem이라 둘 다 따라간다.
  */
 export const weekGridClass = (n: number) =>
   'grid grid-cols-2 @min-[45rem]:grid-cols-3 ' + (n === 5 ? '@min-[75rem]:grid-cols-5' : '@min-[61.25rem]:grid-cols-4 @min-[75rem]:grid-cols-7') + ' gap-2 sm:gap-3';

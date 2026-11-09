@@ -48,11 +48,12 @@
     /* 글자 크기 = 바탕 × 환경설정 '글자 크기'(--font-scale - domain/fontScale). 휴대폰 바탕은 브라우저 기본(100%) */
     font-size: calc(100% * var(--font-scale, 1));
   }
-  /* PC(폭 640px 이상) 바탕은 90% (11-08 사용자 요청 80% - 크롬 확대 80%가 한 화면에 보기 좋았다 → 11-09 '좀 작다'로 90%, 휴대폰은 그대로).
+  /* PC(폭 640px 이상) '한눈에' 화면만 바탕 90% (11-08 사용자 요청 80% → 11-09 '좀 작다'로 90% → 같은 날 '한눈에는 볼 것이 많으니 90%,
+   * 나머지 화면은 100%'). data-dense = 지금 화면이 한눈에(app/nav가 붙인다 - 팝업창은 없다). 휴대폰은 그대로(한눈에가 없다).
    * screen만 - 인쇄는 그대로 둔다. 640 = 40rem(미디어 쿼리의 rem은 브라우저 기본 크기라 이 값에 따라 돌지 않는다)
-   * 90은 domain/fontScale PC_BASE_PERCENT와 같게 */
+   * 90은 domain/fontScale DENSE_BASE_PERCENT와 같게 */
   @media screen and (min-width: 40rem) {
-    html {
+    html[data-dense] {
       font-size: calc(90% * var(--font-scale, 1));
     }
   }

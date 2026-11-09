@@ -142,7 +142,8 @@ export default function Shell() {
   useEffect(() => {
     const el = mainRef.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    // 안쪽 여백을 뺀 폭 (CSS의 @container 가 재는 폭과 같게) - PC 글자 바탕(90%)은 걷는다 (unscaledWidth)
+    // 안쪽 여백을 뺀 폭 (CSS의 @container 가 재는 폭과 같게) - PC 한눈에 글자 바탕(90%)은 걷는다 (unscaledWidth).
+    // 화면이 바뀌면 다시 잰다 - 바탕(한눈에 90%·다른 화면 100%)이 바뀌면 폭이 같아도 걷는 값이 다르다
     const measure = () => {
       const cs = getComputedStyle(el);
       setMainWidth(unscaledWidth(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)));
@@ -151,7 +152,7 @@ export default function Shell() {
     ro.observe(el);
     measure();
     return () => ro.disconnect();
-  }, []);
+  }, [scope]);
 
   const Screen = SCREEN_COMPONENTS[scope];
 

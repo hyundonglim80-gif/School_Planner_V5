@@ -70,7 +70,7 @@
 - **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)·다시 세운 줄 `rekeyOrders`(옮긴 것만)) ·
   `labelTree.ts`(V4 트리를 id로 - `parentMapOf`·`orderByTree`·라벨로 보기 `matchLabels`·탐색기식 `clickFilterLabel`·`filterChipOrder`·`otherKey`) ·
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) ·
-  `entryTable.ts`(붙인 표 - V4 그대로: 붙여넣은 HTML 읽기·행/열·칸 서식) · `attachments.ts`(그림인가·파일 그림·크기·붙여넣은 이름·새 붙임) · `linkPreview.ts`(주소 → 카드) · `masonry.ts`(가장 짧은 열) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts`(PC 바탕 90% `PC_BASE_PERCENT` - 크기는 index.css html, 단계는 `--font-scale`, 11-08) · `typeScale.ts` ·
+  `entryTable.ts`(붙인 표 - V4 그대로: 붙여넣은 HTML 읽기·행/열·칸 서식) · `attachments.ts`(그림인가·파일 그림·크기·붙여넣은 이름·새 붙임) · `linkPreview.ts`(주소 → 카드) · `masonry.ts`(가장 짧은 열) · `shortcuts.ts`(V4 id + 새 id 다섯, `readShortcutOverrides`·`overridesFromBindings`) · `fontScale.ts`(PC 한눈에만 바탕 90% `DENSE_BASE_PERCENT`·html 표시 `data-dense` `setDenseScreen`(app/nav가 붙인다) - 크기는 index.css html, 단계는 `--font-scale`, 11-08 · 11-09 P29-1) · `typeScale.ts` ·
   `settings.ts`(설정 칸 표 `SettingsSpec` - 기본값·읽기, `readSettings`·`sparseSettings`: 문서에는 기본값과 다른 칸만).
 - **그날 메모 칸에 모이는 메모**(P10-4): 순수 `notes/dayNotes.ts`(`dayNoteSources` - 날짜 링크 → 일정 → 교시 → 진도, 겹치지 않게 · `noteFromLabel`) · `day/useDayNotes.ts`(하루 메모 칸·그날 메모 창이 함께) · 카드 `[data-entry-link-add]`(이은 곳 표시 `entry-from`은 10-22 #88에 뺐다) ·
   진도 창 행 `[data-progress-row-link|progress-row-links]`·진도 줄 `[data-progress-links|progress-link-add]` · `progressDraft.lessonsToSave`(이은 메모는 지금 문서의 그 행 `_from`에서).

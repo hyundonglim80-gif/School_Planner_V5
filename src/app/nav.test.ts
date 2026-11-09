@@ -1,6 +1,7 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { dateLabel, stepDate, stepScope, useFollowToday, useNav } from './nav';
+import { dateLabel, setScope, stepDate, stepScope, useFollowToday, useNav } from './nav';
+import { DENSE_ATTR } from '../domain/fontScale';
 import type { Scope } from './route';
 
 // ◀ ▶ 날짜 이동 (V4 store/dateNav.test). 월간에서 31일에 ▶를 누르면 2월을 건너뛰어 3월로 갔다(Date.setMonth: 1/31 + 1달 = 3/3).
@@ -162,5 +163,21 @@ describe('둘째 줄 날짜 글자', () => {
     expect(dateLabel('week', '2027-04-26')).toBe('2027년 4월 5주');
     expect(dateLabel('week', '2027-12-27')).toBe('2027년 12월 5주');
     expect(dateLabel('week', '2028-12-25')).toBe('2028년 12월 4주');
+  });
+});
+
+describe('한눈에만 PC 글자 90% - html 표시 (P29-1)', () => {
+  afterEach(() => setScope('day'));
+  const dense = () => document.documentElement.hasAttribute(DENSE_ATTR);
+
+  it('화면이 한눈에가 되면 곧바로(그리기 전에) 붙고, 다른 화면이면 뗀다', () => {
+    setScope('day');
+    expect(dense()).toBe(false);
+    setScope('board');
+    expect(dense()).toBe(true);
+    for (const scope of ['week', 'month', 'year', 'memo', 'class'] as Scope[]) {
+      setScope(scope);
+      expect(dense(), scope).toBe(false);
+    }
   });
 });

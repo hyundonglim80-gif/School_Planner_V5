@@ -10,6 +10,7 @@ import { useToday } from '../ui/useToday';
 import { addDays, addMonthsStr, academicYearOf, DAY_NAMES, parseDateStr, todayStr, weekdayOf, weekMonday } from '../domain/dateUtils';
 import { isDatelessScope, isPhoneHiddenScope, SCOPES, type Scope } from './route';
 import { scrollToToday } from './todayScroll';
+import { setDenseScreen } from '../domain/fontScale';
 
 export type SemesterFilter = 'all' | 1 | 2;
 
@@ -67,6 +68,18 @@ export const useNav = create<NavState>()(
 
 export function setScope(scope: Scope) {
   useNav.setState({ scope });
+}
+
+/**
+ * PC 글자 바탕은 한눈에 화면만 90%, 다른 화면은 100%(11-09 사용자 - '한눈에는 볼 것이 많으니') - html 표시(domain/fontScale DENSE_ATTR)를
+ * 화면 값이 바뀌는 그 자리에서 맞춘다. Shell 효과로 붙이면 한 박자 늦어, 화면들이 그리며 읽는 바탕(ui/useMainWidth unscaledWidth)이 첫 그림에 틀린다.
+ * 팝업창(ui/popout)은 화면이 없다 - 늘 100%(마지막 화면이 한눈에여도).
+ */
+if (!POPOUT) {
+  setDenseScreen(useNav.getState().scope === 'board');
+  useNav.subscribe((s, prev) => {
+    if (s.scope !== prev.scope) setDenseScreen(s.scope === 'board');
+  });
 }
 
 export function setDate(date: string) {

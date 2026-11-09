@@ -147,7 +147,7 @@ function Pane({ name, children }: { name: string; children: ReactNode }) {
 /** 메모 칸 - 메모 열 수는 이 칸 폭으로(하루 화면은 본문 폭). 열 수가 바뀔 때만 다시 그린다 */
 function MemoPane({ date }: { date: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  // PC 글자 바탕(90%)은 걷고 견준다 - 하루 화면 본문 폭과 같게 (ui/useMainWidth unscaledWidth)
+  // PC 한눈에 글자 바탕(90%)은 걷고 견준다 - 하루 화면(바탕 100%) 본문 폭과 같게 (ui/useMainWidth unscaledWidth)
   const width = unscaledWidth(useElementWidth(ref, (w) => journalColumnsFor(unscaledWidth(w)), 360));
   return (
     <div ref={ref} data-board-pane="memo" className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-2xl">
