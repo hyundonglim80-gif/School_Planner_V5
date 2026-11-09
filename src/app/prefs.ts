@@ -38,21 +38,10 @@ import { setFontScale, useLayoutPrefs, type PopupStyle } from './layoutPrefs';
 import { setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
 import { isKnownTabShortcut } from './tabShortcuts';
 import { useNav, type SemesterFilter, type StartupScope, STARTUP_SCOPES } from './nav';
+import { detectDeviceKind, type DeviceKind } from './deviceKind';
 
-export type DeviceKind = 'pc' | 'mobile';
-
-/**
- * 이 기기가 PC인가 휴대폰인가 (V4 detectDeviceKind).
- * ⚠️ 화면 폭으로 가르면 PC에서 창을 좁히기만 해도 휴대폰 설정으로 넘어간다. 주 입력이 손가락인지, 휴대폰 브라우저인지로 본다(태블릿은 휴대폰 쪽).
- */
-export function detectDeviceKind(): DeviceKind {
-  try {
-    if (window.matchMedia?.('(pointer: coarse)').matches) return 'mobile';
-  } catch {
-    /* matchMedia가 없는 환경 */
-  }
-  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ? 'mobile' : 'pc';
-}
+// PC인가 휴대폰인가는 app/deviceKind에 (창 목록도 본다)
+export { detectDeviceKind, type DeviceKind };
 
 // ── 기기 종류마다 (pc / mobile) ──
 
@@ -78,7 +67,7 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
     DEFAULT_FONT_SCALE,
     FONT_SCALES.map((s) => s.id),
   ),
-  popupStyle: oneOfField<PopupStyle>('side', ['side', 'center']),
+  popupStyle: oneOfField<PopupStyle>('side', ['side', 'center', 'popup']),
   startupScope: oneOfField<StartupScope>('last', STARTUP_SCOPES),
   shortcutOverrides: overridesField,
   tabShortcuts: tabShortcutsField,

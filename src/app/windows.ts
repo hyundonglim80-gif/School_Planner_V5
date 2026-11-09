@@ -10,8 +10,10 @@ import { useContext, useEffect, useRef, type ComponentType } from 'react';
 import { create } from 'zustand';
 import { activeOf, closeShownSideSlot, SideOwnerContext, useShownSideOwner, useSidePopups } from '../ui/sideColumn';
 import { closeAllLayers, closeTopLayer } from './history';
+import { popupWindowsOn } from './layoutPrefs';
 import { lazyWithReload } from './lazyWithReload';
 import { OfflineWindow } from './OfflineChunk';
+import { openPopupWindow, portableParams } from './popupWindows';
 
 /** ⋮ 메뉴 구역 (MENU.md 3-4) */
 export type MenuSection = '일정' | '수업' | '자료' | '설정';
@@ -95,12 +97,20 @@ const stamp = () => {
 
 const sameParams = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
-/** 창을 연다. 이미 열린 같은 창이면 그 탭을 보인다. 열린 창의 key를 돌려준다. */
-export function openWindow(id: string, params?: unknown): number {
+/** openWindow가 팝업창으로 띄워 이 창의 목록에는 없을 때 돌려주는 key */
+export const IN_POPUP = -1;
+
+/**
+ * 창을 연다. 이미 열린 같은 창이면 그 탭을 보인다. 열린 창의 key를 돌려준다.
+ * 창 위치가 팝업창(PC)이면 브라우저 팝업창으로 띄우고 IN_POPUP을 돌려준다(app/popupWindows - 못 띄우면 이 창 안에).
+ * here = 이 창 안에 (팝업창 껍데기가 제 창을 그릴 때).
+ */
+export function openWindow(id: string, params?: unknown, opts: { here?: boolean } = {}): number {
   const def = getWindowDef(id);
   if (!def) throw new Error(`등록하지 않은 창: ${id}`);
-  const same = (w: OpenWindow) =>
-    w.id === id && (def.sameAs ? def.sameAs(w.params, params) : def.kind === 'side' || sameParams(w.params, params));
+  const sameAs = (p: unknown) => (def.sameAs ? def.sameAs(p, params) : def.kind === 'side' || sameParams(p, params));
+  const same = (w: OpenWindow) => w.id === id && sameAs(w.params);
+  if (!opts.here && popupWindowsOn() && portableParams(params) && openPopupWindow(id, params, sameAs)) return IN_POPUP;
   const now = stamp();
   const existing = useWindows.getState().windows.find(same);
   if (existing) {

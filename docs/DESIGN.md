@@ -340,7 +340,7 @@ P3-2 메모·기록 쓰는 칸 `note` = `{ sid, date: 날짜|null, id?, labelIds
 
 ### 7-4. 오른쪽 칸·단축키
 V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ESC = 줄 전체(저장 안 한 글은 먼저 묻기), Ctrl+S = 커서가 든 칸(없으면 보이는 탭),
-휴대폰 뒤로가기 = 맨 위 하나, 환경설정 '창 위치'로 가운데 창(쓰는 칸은 그래도 오른쪽).
+휴대폰 뒤로가기 = 맨 위 하나, 환경설정 '창 위치'로 PC는 팝업창(11-09 - 모든 창·쓰는 칸이 브라우저 새 창, `app/popupWindows`), 휴대폰은 가운데 창(쓰는 칸은 그래도 오른쪽).
 자리: 브라우저 기록·창 층 `src/app/history.ts`, 키 `src/app/keys.ts`(ESC·Ctrl+S 막기·단축키), Ctrl+S 받기 `src/ui/useSaveKey.ts`, 창 자리 설정 `src/app/layoutPrefs.ts`. 단축키는 V4 `lib/shortcuts.SHORTCUT_ACTIONS`를 id째 옮기고 새 id를 더한다(MENU.md 3-8).
 
 ### 7-5. 색 (화면 밝기 · 색 테마 · 보기 쉽게 - P20)
