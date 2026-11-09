@@ -29,8 +29,8 @@ describe('주소 ↔ 화면 (DESIGN 7-3)', () => {
     }
   });
 
-  it('화면 일곱 모두 주소로 오간다 - 한눈에는 년간 뒤 (P24-3)', () => {
-    expect(SCOPES).toEqual(['day', 'week', 'month', 'year', 'board', 'memo', 'class']);
+  it('화면 일곱 모두 주소로 오간다 - 한눈에가 맨 앞, 하루가 그 다음 (11-09 사용자 요청)', () => {
+    expect(SCOPES).toEqual(['board', 'day', 'week', 'month', 'year', 'memo', 'class']);
     expect(SCOPES.filter(isPhoneHiddenScope)).toEqual(['board']);
     for (const scope of SCOPES) {
       const route = parseRoute(routeHash(scope, '2026-10-08'));

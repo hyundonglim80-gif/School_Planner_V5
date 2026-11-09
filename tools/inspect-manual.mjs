@@ -261,10 +261,10 @@ try {
     r.check(await waitFor(async () => (await count(sel('sheet-month'))) >= 12 || (await count(sel('year-month'))) >= 12, 5000), '열두 달');
   });
 
-  // 한눈에 (P24-3) - 머리줄 탭(년간 뒤)·왼쪽 달력·한 주·달력 일정 줄·오른쪽 하루 세 칸·경계선 셋·요일 칸 누르기 = 고르기·▶ 한 주·휴대폰 탭바에는 없다
+  // 한눈에 (P24-3) - 머리줄 탭(맨 앞 - 11-09)·왼쪽 달력·한 주·달력 일정 줄·오른쪽 하루 세 칸·경계선 셋·요일 칸 누르기 = 고르기·▶ 한 주·휴대폰 탭바에는 없다
   await topic('board', async () => {
     const tabs = await page.locator(sel('scope-tab')).evaluateAll((els) => els.map((e) => e.getAttribute('data-scope-tab')));
-    r.check(tabs.indexOf('board') === tabs.indexOf('year') + 1, `머리줄 '한눈에' 탭은 년간 뒤 (${tabs.join(',')})`);
+    r.check(tabs[0] === 'board' && tabs[1] === 'day', `머리줄 '한눈에' 탭은 맨 앞, 하루가 그 다음 (${tabs.join(',')})`);
     await q(sel('scope-tab', 'board')).click();
     r.check(await has(sel('screen', 'board')), "탭 '한눈에' → 한눈에 화면");
     await go(`#/board/${DAY}`, 'board');

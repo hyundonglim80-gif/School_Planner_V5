@@ -4,7 +4,7 @@ import { Timestamp } from 'firebase/firestore';
 import { labelTreeOf, type Docs } from '../../data/select';
 import { spaceTone } from '../../domain/spaceColor';
 import { calendarEvents } from '../month/calendarEvents';
-import { monthCalendarList, rowDateLabel } from './monthList';
+import { monthCalendarList, rowDateLabel, shiftMonth } from './monthList';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 
@@ -48,5 +48,15 @@ describe('그 달 달력 일정 목록', () => {
     const ids = monthCalendarList(cal, '2026-11-01', '2026-11-30').map((r) => r.ev.id);
     expect(ids).toEqual(['d', 'e', 'a', 'b', 'g1', 'g']);
     expect(cal.spaceOf.get(monthCalendarList(cal, '2026-11-01', '2026-11-30')[4].ev)).toBe(space);
+  });
+});
+
+describe('달 옮기기 (한눈에 위 칸 = 이번 달, 아래 칸 = 다음 달 - 11-09)', () => {
+  it('해를 넘는다', () => {
+    expect(shiftMonth('2026-11', 1)).toBe('2026-12');
+    expect(shiftMonth('2026-12', 1)).toBe('2027-01');
+    expect(shiftMonth('2027-01', -1)).toBe('2026-12');
+    expect(shiftMonth('2027-02', 0)).toBe('2027-02');
+    expect(shiftMonth('2026-03', -14)).toBe('2025-01');
   });
 });

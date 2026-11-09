@@ -1,10 +1,11 @@
-// 한눈에 화면 첫 칸 (P24-2) - 작은 달력(월요일부터, 보는 주 한 줄 칠함) + 그 달 '달력' 일정 목록.
-//   달력 날짜를 누르면 그날을 고른다(요일 칸·오른쪽이 따라온다). 달력 ◀▶는 달만 넘겨 보고 고른 날은 그대로 - 고른 날이 바뀌면 그 달로 돌아온다.
+// 한눈에 화면 달 칸 (P24-2) - 작은 달력(월요일부터, 보는 주 한 줄 칠함) + 그 달 '달력' 일정 목록.
+//   11-09 사용자 요청: 왼쪽 위 칸 = 이번 달(고른 날의 달), 그 아래 칸 = 다음 달 - 보는 달은 부르는 쪽(BoardScreen)이 하나로 들고, 아래 칸은 위 칸 + 1달.
+//   달력 날짜를 누르면 그날을 고른다(요일 칸·오른쪽이 따라온다). ◀▶(위 칸에만)는 두 칸을 함께 한 달씩 넘겨 보고 고른 날은 그대로 - 고른 날이 바뀌면 그 달로 돌아온다.
 //   날 칸: 고른 날 = 채운 칸, 오늘 = 테두리, 토 파랑·일·공휴일 빨강(domain/dayTone), '달력' 일정이 있는 날 = 아래 점(겹친 공간 것도 - P17-2).
 //   달력 판은 ui/MiniMonth(📅 뜨는 달력과 함께 - 그쪽은 일요일부터).
 //   아래 목록 = 보는 달의 '달력' 일정(monthList - 하루짜리 + 걸친 기간, 날짜 차례). 줄을 누르면 그날 고르기 + 그 일정 칸, 라벨 칩 = 완료(기간은 전체 - 월간 막대와 같다).
 //   겹친 공간 것은 공간 색 배경(P17-2) - 그 공간 칸에서 열고 그 공간에 완료. 둘째 줄 '일정'을 끄면 목록·점이 없다.
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { setDate, useNav } from '../../app/nav';
 import { useHolidayName } from '../../data/holidays';
 import { itemLabels, useDocs, useLabelTree, useOverlaySpaces } from '../../data/select';
@@ -33,16 +34,15 @@ interface Props {
   week: readonly string[];
   /** 화면 높이에 맞춘 칸 - 칸 안에서 스크롤 */
   fit: boolean;
+  /** 보여 줄 달 'YYYY-MM' */
+  ym: string;
+  /** 위 칸(이번 달) / 아래 칸(다음 달) */
+  slot: 'this' | 'next';
+  /** ◀▶ - 위 칸에만 (두 칸을 함께 넘긴다) */
+  onStep?: (n: 1 | -1) => void;
 }
 
-/** 'YYYY-MM'에서 n달 옮긴 'YYYY-MM' */
-const shiftMonth = (ym: string, n: number) => {
-  const [y, m] = ym.split('-').map(Number);
-  const d = new Date(y, m - 1 + n, 1);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-};
-
-export default function BoardMonth({ date, week, fit }: Props) {
+export default function BoardMonth({ date, week, fit, ym, slot, onStep }: Props) {
   const sid = useCurrentSpaceId();
   const items = useDocs('items', sid);
   const tree = useLabelTree('event', sid);
@@ -52,11 +52,7 @@ export default function BoardMonth({ date, week, fit }: Props) {
   const today = useToday();
   const holidayName = useHolidayName();
 
-  // 넘겨 보는 달 - 고른 날이 바뀌면 그 달로 (고른 날과 함께 기억한다)
-  const [peek, setPeek] = useState<{ base: string; ym: string } | null>(null);
-  const ym = peek?.base === date ? peek.ym : date.slice(0, 7);
   const [y, m] = ym.split('-').map(Number);
-  const step = (n: number) => setPeek({ base: date, ym: shiftMonth(ym, n) });
 
   // 달력 칸 범위의 '달력' 일정 수 (날마다 - 하루짜리 + 그날에 걸친 기간)
   const dates = useMemo(() => monthGridDates(y, m, 1), [y, m]);
@@ -92,33 +88,39 @@ export default function BoardMonth({ date, week, fit }: Props) {
   return (
     <section
       data-board-month={ym}
-      aria-label={`${y}년 ${m}월 달력`}
+      data-board-month-slot={slot}
+      aria-label={`${slot === 'next' ? '다음 달 ' : ''}${y}년 ${m}월 달력`}
       className={`rounded-2xl border border-slate-200/80 bg-white shadow-xs p-2 flex flex-col gap-2 min-w-0 ${fit ? 'h-full min-h-0 overflow-y-auto overscroll-contain' : 'min-h-[250px]'}`}
     >
-      <div className="flex items-center justify-between gap-1 mb-1 shrink-0">
-        <button
-          type="button"
-          data-board-cal-prev
-          onClick={() => step(-1)}
-          title="이전 달 보기 (고른 날은 그대로)"
-          aria-label="이전 달 보기"
-          className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
-        >
-          ◀
-        </button>
+      {/* 머리 - ◀▶는 위 칸에만, 아래 칸은 같은 높이에 이름만 (두 칸의 달력 줄이 나란하다) */}
+      <div className={`flex items-center gap-1 mb-1 shrink-0 h-6 ${onStep ? 'justify-between' : 'justify-center'}`}>
+        {onStep && (
+          <button
+            type="button"
+            data-board-cal-prev
+            onClick={() => onStep(-1)}
+            title="이전 달 보기 - 아래 칸도 함께 (고른 날은 그대로)"
+            aria-label="이전 달 보기"
+            className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
+          >
+            ◀
+          </button>
+        )}
         <span data-board-cal-title className="min-w-0 truncate text-xs font-extrabold text-slate-700">
           {y}년 {m}월
         </span>
-        <button
-          type="button"
-          data-board-cal-next
-          onClick={() => step(1)}
-          title="다음 달 보기 (고른 날은 그대로)"
-          aria-label="다음 달 보기"
-          className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
-        >
-          ▶
-        </button>
+        {onStep && (
+          <button
+            type="button"
+            data-board-cal-next
+            onClick={() => onStep(1)}
+            title="다음 달 보기 - 아래 칸도 함께 (고른 날은 그대로)"
+            aria-label="다음 달 보기"
+            className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
+          >
+            ▶
+          </button>
+        )}
       </div>
       <div className="shrink-0">
         <MiniMonth

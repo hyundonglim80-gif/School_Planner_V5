@@ -13,12 +13,12 @@ export interface ScreenDef {
 }
 
 export const SCREENS: readonly ScreenDef[] = [
+  // 한눈에(P24) - 맨 앞(11-09 사용자 요청 - 처음엔 년간 뒤), 키는 Shift+7 그대로(손에 익은 Shift+1~6을 바꾸지 않는다). 휴대폰 탭바에는 없다(route isPhoneHiddenScope)
+  { id: 'board', label: '한눈에', icon: '🧭', shortcut: 'scopeBoard' },
   { id: 'day', label: '하루', icon: '📋', shortcut: 'scopeDay' },
   { id: 'week', label: '주간', icon: '🗓️', shortcut: 'scopeWeek' },
   { id: 'month', label: '월간', icon: '📅', shortcut: 'scopeMonth' },
   { id: 'year', label: '년간', icon: '📊', shortcut: 'scopeYear' },
-  // 한눈에(P24) - 년간 뒤, Shift+7(손에 익은 Shift+1~6을 바꾸지 않는다). 휴대폰 탭바에는 없다(route isPhoneHiddenScope)
-  { id: 'board', label: '한눈에', icon: '🧭', shortcut: 'scopeBoard' },
   { id: 'memo', label: '메모', icon: '📝', shortcut: 'scopeMemo' },
   // 탭바는 여섯 - 390px에서 한 칸 65px, 이름이 두 글자라 들어간다 (V4 ROADMAP 16)
   { id: 'class', label: '학급', icon: '🏫', shortcut: 'scopeClass' },

@@ -107,30 +107,33 @@ describe('◀ ▶ 날짜 이동', () => {
 });
 
 describe('이전·다음 화면', () => {
-  it('끝에서 돌아 처음으로', () => {
+  it('끝에서 돌아 처음으로 (처음 = 한눈에 - 11-09 차례)', () => {
     at('class', '2026-10-02');
     stepScope(1);
-    expect(useNav.getState().scope).toBe('day');
+    expect(useNav.getState().scope).toBe('board');
     stepScope(-1);
     expect(useNav.getState().scope).toBe('class');
   });
 
-  it('한눈에는 년간 뒤 - 휴대폰 밀기(phone)는 건너뛴다, 주소로 한눈에를 연 채 밀면 그 앞뒤 (P24-3)', () => {
-    at('year', '2026-10-02');
+  it('한눈에는 맨 앞·하루가 그 다음 - 휴대폰 밀기(phone)는 건너뛴다, 주소로 한눈에를 연 채 밀면 그 앞뒤 (11-09 사용자 요청 - P24-3에는 년간 뒤)', () => {
+    at('class', '2026-10-02');
     stepScope(1);
     expect(useNav.getState().scope).toBe('board');
     stepScope(1);
-    expect(useNav.getState().scope).toBe('memo');
-    stepScope(-1, true);
-    expect(useNav.getState().scope).toBe('year');
+    expect(useNav.getState().scope).toBe('day');
+    stepScope(-1);
+    expect(useNav.getState().scope).toBe('board');
+    at('class', '2026-10-02');
     stepScope(1, true);
-    expect(useNav.getState().scope).toBe('memo');
+    expect(useNav.getState().scope).toBe('day');
+    stepScope(-1, true);
+    expect(useNav.getState().scope).toBe('class');
     at('board', '2026-10-02');
     stepScope(1, true);
-    expect(useNav.getState().scope).toBe('memo');
+    expect(useNav.getState().scope).toBe('day');
     at('board', '2026-10-02');
     stepScope(-1, true);
-    expect(useNav.getState().scope).toBe('year');
+    expect(useNav.getState().scope).toBe('class');
   });
 });
 

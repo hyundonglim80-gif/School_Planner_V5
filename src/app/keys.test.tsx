@@ -28,11 +28,15 @@ describe('단축키 (V4 기본값 그대로)', () => {
     expect(useNav.getState().scope).toBe('week');
   });
 
-  it('Shift+7 → 한눈에 (P24-3 - 탭은 년간 뒤, 키는 비어 있던 7), 그 다음 화면은 메모', () => {
+  it('Shift+7 → 한눈에 (P24-3 - 키는 비어 있던 7, 11-09 탭이 맨 앞으로 가도 키는 그대로), 그 다음 화면은 하루', () => {
     press({ key: '&', code: 'Digit7', shiftKey: true });
     expect(useNav.getState().scope).toBe('board');
     press({ key: 'ArrowRight', code: 'ArrowRight', shiftKey: true });
-    expect(useNav.getState().scope).toBe('memo');
+    expect(useNav.getState().scope).toBe('day');
+    press({ key: 'ArrowLeft', code: 'ArrowLeft', shiftKey: true });
+    expect(useNav.getState().scope).toBe('board');
+    press({ key: '!', code: 'Digit1', shiftKey: true });
+    expect(useNav.getState().scope).toBe('day');
   });
 
   it('Ctrl+→ 다음 날짜, Shift+↑/↓ 주말 토글', () => {

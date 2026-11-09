@@ -83,8 +83,8 @@ describe('머리줄', () => {
     // 둥근 ＋는 머리줄(backdrop-blur - fixed의 기준) 밖 body에 (P9-3)
     expect(container.querySelector('[data-new-fab]')).toBeNull();
     expect(document.body.querySelector('[data-new-fab]')).not.toBeNull();
-    // 한눈에는 년간 뒤 (P24-3)
-    expect([...container.querySelectorAll('[data-scope-tab]')].map((b) => b.getAttribute('data-scope-tab'))).toEqual(['day', 'week', 'month', 'year', 'board', 'memo', 'class']);
+    // 한눈에가 맨 앞, 하루가 그 다음 (11-09 사용자 요청 - P24-3에는 년간 뒤)
+    expect([...container.querySelectorAll('[data-scope-tab]')].map((b) => b.getAttribute('data-scope-tab'))).toEqual(['board', 'day', 'week', 'month', 'year', 'memo', 'class']);
     expect(screen.getByText('SP5')).toBeInTheDocument();
   });
 

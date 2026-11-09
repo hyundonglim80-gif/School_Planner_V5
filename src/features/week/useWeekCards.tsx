@@ -1,6 +1,6 @@
 // 요일 카드 줄 (P24-2 - 주간 화면 grid()를 떼어 주간·한눈에가 함께 쓴다).
 //   훅 하나가 셈(일정·라벨 트리·이월·겹친 공간·조사표 수·수업 줄·진도)과 손잡이(여러 개 고르기·끌어 옮기기·지우기)를 들고,
-//   grid(보이는 날들, 고를 것)가 카드 줄을 그린다 - 주간은 이번 주·다음 주 두 줄, 한눈에는 첫 칸(달력) + 한 주.
+//   grid(보이는 날들, 고를 것)가 카드 줄을 그린다 - 주간은 이번 주·다음 주 두 줄, 한눈에는 칸 차례를 스스로 놓는다(arrange - 이번 달·다음 달·토일 한 칸, 11-09).
 //   끌어 옮기기는 훅 하나(useEventDrop)라 이번 주 줄에서 다음 주 줄로도 끈다. 묻는 창(지우기 범위·옮기기 범위)은 dialogs를 화면에 한 번.
 //   수업 줄은 셈할 날들(days)을 한 번에 - 요일끼리 교시 줄 수가 같다(보이는 줄마다 7교시 보충이 있으면 그만큼).
 //   주간만의 것(다음 주 줄·작년 이맘때·주간학습안내)은 주간 화면에 - 작년 칸은 extra로 카드 아래에 덧붙인다.
@@ -33,17 +33,24 @@ const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
 };
 
-/** 요일 수에 따라 칸 수 (본문 폭 @container - 오른쪽 칸이 열리면 그만큼 접는다, V4 그대로) */
+/**
+ * 요일 수에 따라 칸 수 (본문 폭 @container - 오른쪽 칸이 열리면 그만큼 접는다, V4 그대로).
+ * 경계는 rem(16px 기준 720·980·1200px)이다 - PC 글자 바탕 90%(11-09)에서 px로 두면 본문(max-w-7xl도 rem)이 1200px에 닿지 못해,
+ * 다음 주 줄(JS - 바탕을 걷은 1200, ui/useMainWidth unscaledWidth)은 뜨는데 요일은 넷·셋으로 꺾였다(11-09 사용자 보고). 75rem = 바탕 90%에서 1080px = 걷은 1200.
+ */
 export const weekGridClass = (n: number) =>
-  'grid grid-cols-2 @min-[720px]:grid-cols-3 ' + (n === 5 ? '@min-[1200px]:grid-cols-5' : '@min-[980px]:grid-cols-4 @min-[1200px]:grid-cols-7') + ' gap-2 sm:gap-3';
+  'grid grid-cols-2 @min-[45rem]:grid-cols-3 ' + (n === 5 ? '@min-[75rem]:grid-cols-5' : '@min-[61.25rem]:grid-cols-4 @min-[75rem]:grid-cols-7') + ' gap-2 sm:gap-3';
 
 export interface WeekGridOptions {
   /** 칸 줄 class (주지 않으면 주간 칸 수 - weekGridClass) */
   className?: string;
   /** 칸 줄 style */
   style?: CSSProperties;
-  /** 요일 카드 앞 첫 칸 (한눈에 - 작은 달력) */
-  lead?: ReactNode;
+  /**
+   * 칸을 스스로 놓는다 (한눈에 - 11-09 [이번 달][월][화][수] / [다음 달][목][금][토·일]). card(날)은 그날 요일 카드,
+   * noLessons = 수업 줄 없이, half = 한 칸을 둘이 나눠 쓴다(쌓은 모양의 최소 높이 반). 주지 않으면 보이는 날을 차례로.
+   */
+  arrange?: (card: (day: string, o?: { noLessons?: boolean; half?: boolean }) => ReactNode) => ReactNode;
   /** 요일 카드 빈 곳을 누르면 (주지 않으면 그날 하루 화면) */
   onOpenDay?: (day: string) => void;
   /** 요일 카드 빈 곳 title */
@@ -160,46 +167,47 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
         setDate(day);
         setScope('day');
       });
+    const card = (day: string, o: { noLessons?: boolean; half?: boolean } = {}) => {
+      const pickedHere = new Set(multi.picks.filter((p) => p.day === day).map((p) => p.id));
+      return (
+        <WeekDayCard
+          key={day}
+          date={day}
+          today={today}
+          events={eventsOf(day)}
+          carried={day === today ? carried.list : undefined}
+          overlay={overlayDays.byDay.get(day)}
+          spaceOf={spaceOf}
+          noteCount={itemsOn(items, day, 'note').length}
+          evalCount={evalCounts[day] ?? 0}
+          sid={sid}
+          showEvents={showEvents}
+          lessons={o.noLessons ? undefined : lessonRows(day, rows)}
+          labelsOf={(ev) => itemLabels(spaceOf(ev)?.tree ?? eventTree, ev.labelIds)}
+          pickedIds={pickedHere}
+          multiOn={multi.on}
+          selected={opts.selected === day}
+          fill={opts.fill}
+          half={o.half}
+          openDayTitle={opts.openDayTitle}
+          onOpenDay={() => openDay(day)}
+          onAdd={() => sid && openEventPanel({ sid, date: day })}
+          onOpenNotes={() => sid && openDayNotes({ sid, date: day })}
+          onEventClick={(ev, e) => eventClick(ev, day, shown, e)}
+          onToggleDone={(ev, isCarried) => toggleDone(ev, day, isCarried)}
+          onDelete={(ev) => remove(ev, day)}
+          onOpenLinks={(ev) => {
+            const s = sidOf(ev);
+            if (s) openLinkViewer({ sid: s, id: ev.id });
+          }}
+          drop={{ handlers: drop.handlers, over: drop.overDate === day, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}
+          lastYear={opts.extra?.(day)}
+        />
+      );
+    };
     return (
       <div data-week-grid className={opts.className ?? weekGridClass(shown.length)} style={{ ['--week-cols' as string]: shown.length, ...opts.style }}>
-        {opts.lead}
-        {shown.map((day) => {
-          const pickedHere = new Set(multi.picks.filter((p) => p.day === day).map((p) => p.id));
-          return (
-            <WeekDayCard
-              key={day}
-              date={day}
-              today={today}
-              events={eventsOf(day)}
-              carried={day === today ? carried.list : undefined}
-              overlay={overlayDays.byDay.get(day)}
-              spaceOf={spaceOf}
-              noteCount={itemsOn(items, day, 'note').length}
-              evalCount={evalCounts[day] ?? 0}
-              sid={sid}
-              showEvents={showEvents}
-              lessons={lessonRows(day, rows)}
-              labelsOf={(ev) => itemLabels(spaceOf(ev)?.tree ?? eventTree, ev.labelIds)}
-              pickedIds={pickedHere}
-              multiOn={multi.on}
-              selected={opts.selected === day}
-              fill={opts.fill}
-              openDayTitle={opts.openDayTitle}
-              onOpenDay={() => openDay(day)}
-              onAdd={() => sid && openEventPanel({ sid, date: day })}
-              onOpenNotes={() => sid && openDayNotes({ sid, date: day })}
-              onEventClick={(ev, e) => eventClick(ev, day, shown, e)}
-              onToggleDone={(ev, isCarried) => toggleDone(ev, day, isCarried)}
-              onDelete={(ev) => remove(ev, day)}
-              onOpenLinks={(ev) => {
-                const s = sidOf(ev);
-                if (s) openLinkViewer({ sid: s, id: ev.id });
-              }}
-              drop={{ handlers: drop.handlers, over: drop.overDate === day, dragEnabled: drop.dragEnabled, onDragEnd: drop.clearOver }}
-              lastYear={opts.extra?.(day)}
-            />
-          );
-        })}
+        {opts.arrange ? opts.arrange(card) : shown.map((day) => card(day))}
       </div>
     );
   };

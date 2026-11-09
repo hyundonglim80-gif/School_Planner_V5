@@ -16,8 +16,8 @@ import {
 /** board = 한눈에(P24 - 작은 달력·한 주·고른 날 하루) */
 export type Scope = 'day' | 'week' | 'month' | 'year' | 'board' | 'memo' | 'class';
 
-/** 화면 차례 (화면 탭·탭바·단축키 '이전/다음 화면'·옆으로 밀기가 같은 차례) */
-export const SCOPES: readonly Scope[] = ['day', 'week', 'month', 'year', 'board', 'memo', 'class'];
+/** 화면 차례 (화면 탭·탭바·단축키 '이전/다음 화면'·옆으로 밀기가 같은 차례) - 한눈에가 맨 앞, 하루가 그 다음(11-09 사용자 요청 - P24-3에는 년간 뒤) */
+export const SCOPES: readonly Scope[] = ['board', 'day', 'week', 'month', 'year', 'memo', 'class'];
 
 /**
  * 휴대폰(640px 밑)에서 빼는 화면 - 아래 탭바·옆으로 밀기에 없다(5장 'P24 휴대폰 탭바'). 390px에는 이 배치가 들어가지 않고(쌓으면 긴 화면일 뿐),

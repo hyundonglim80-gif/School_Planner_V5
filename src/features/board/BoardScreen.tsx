@@ -1,16 +1,17 @@
-// 한눈에 화면 (P24 - 사용자 손 그림 11-06). 왼쪽 = 작은 달력 + 한 주 요일 칸(P24-2), 오른쪽 = 고른 날의 수업·일정·메모(하루 화면 칸 그대로).
-// 고른 날 = 둘째 줄 날짜(app/nav), ◀▶ = 한 주. 화면 탭은 년간 뒤·Shift+7(P24-3), 휴대폰 탭바·밀기에는 없다(주소로 열면 쌓아 보인다).
+// 한눈에 화면 (P24 - 사용자 손 그림 11-06). 왼쪽 = 이번 달·다음 달 작은 달력 + 한 주 요일 칸(P24-2 · 11-09), 오른쪽 = 고른 날의 수업·일정·메모(하루 화면 칸 그대로).
+// 고른 날 = 둘째 줄 날짜(app/nav), ◀▶ = 한 주. 화면 탭은 맨 앞·Shift+7(P24-3 · 11-09 차례), 휴대폰 탭바·밀기에는 없다(주소로 열면 쌓아 보인다).
 //
-//   ┌달력┬ 월 ┬ 화 ┬ 수 ┐┃┌ 11월 6일 (금) ─────┐
+//   ┌11월┬ 월 ┬ 화 ┬ 수 ┐┃┌ 11월 6일 (금) ─────┐
 //   │    │    │    │    │┃│ 수업 ┃ 일정        │   ┃ ━ = 경계선(ui/SplitPane) - 끌어서 크기, 두 번 누르면 기본. 비율은 이 기기에(app/boardPrefs)
-//   ├ 목 ┼ 금 ┼ 토 ┼ 일 ┤┃├━━━━━━┻━━━━━━━━━━━━━┤
-//   │    │ ★  │    │    │┃│ 메모                │   칸마다 칸 안에서 스크롤, 화면은 창 높이에 맞춘다
+//   ├12월┼ 목 ┼ 금 ┼ 토 ┤┃├━━━━━━┻━━━━━━━━━━━━━┤
+//   │    │    │ ★  ├ 일 ┤┃│ 메모                │   칸마다 칸 안에서 스크롤, 화면은 창 높이에 맞춘다
 //   └────┴────┴────┴────┘┃└─────────────────────┘
 // 왼쪽 요일 칸 = 주간 요일 카드 그대로(week/useWeekCards - 수업 줄·일정 칩·📝 n·끌어 옮기기·여러 개 고르기·겹쳐 보기). 카드 빈 곳 = 그날 고르기(★ outline).
-// 첫 칸 = 작은 달력 + 그 달 '달력' 일정 목록(BoardMonth). 주말을 감추면 [첫 칸][월][화] / [수][목][금].
+// 11-09 사용자 요청: 왼쪽 위 칸 = 이번 달(고른 날의 달), 그 아래 칸 = 다음 달(작은 달력 + 그 달 '달력' 일정 목록 - BoardMonth, ◀▶는 위 칸에서 두 칸을 함께),
+//   토·일은 수업이 없으니 수업 줄 없이 한 칸을 위(토)·아래(일)로 나눈다. 주말을 감추면 그 칸이 빈다(요일 칸 자리·크기는 그대로).
 // 기준(P24-1 ■0): 본문 780px 밑이면 두 무리를 위아래로 쌓고(경계선 없이 화면이 스크롤), 오른쪽 무리 480px 밑이면 수업/일정을 위아래로.
 // 수정 칸이 열리면 본문이 줄어도 비율 그대로 접힌다(5장 'P24 오른쪽 칸').
-import { useMemo, useRef, type ReactNode } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { setBoardSplit, useBoardSplit } from '../../app/boardPrefs';
 import { setDate, useNav } from '../../app/nav';
 import { useCurrentSpaceId } from '../../data/session';
@@ -26,6 +27,7 @@ import { journalColumnsFor } from '../day/journalColumns';
 import DayLessons from '../lessons/DayLessons';
 import { useWeekCards } from '../week/useWeekCards';
 import BoardMonth from './BoardMonth';
+import { shiftMonth } from './monthList';
 import { useFitHeight } from './useFitHeight';
 
 /** 본문이 이보다 좁으면 두 무리를 쌓는다 (왼쪽 최소 440 + 오른쪽 최소 320 + 경계선) */
@@ -70,21 +72,42 @@ export default function BoardScreen() {
   );
 }
 
-/** 왼쪽 무리 - 첫 칸(작은 달력·목록) + 한 주 요일 카드. fit = 화면 높이에 맞춘 칸(두 줄이 반씩, 카드 안 스크롤) */
+/**
+ * 왼쪽 무리 - [이번 달][월][화][수] / [다음 달][목][금][토·일] (11-09 사용자 요청). fit = 화면 높이에 맞춘 칸(두 줄이 반씩, 카드 안 스크롤).
+ * 칸은 늘 넷 × 두 줄 - 주말을 감추면 토·일 칸만 빈다. 쌓은 모양은 좁으면(600 밑) 둘씩: [이번 달][월] / [화][수] / [다음 달][목] / [금][토·일].
+ */
 function BoardLeft({ fit, date }: { fit: boolean; date: string }) {
   const sid = useCurrentSpaceId();
   const showWeekend = useNav((s) => s.showWeekend);
   const week = useMemo(() => weekDates(date), [date]);
-  const shown = showWeekend ? week : week.filter((d) => ![0, 6].includes(weekdayOf(d)));
+  const shown = showWeekend ? week : week.slice(0, 5);
   const cards = useWeekCards(sid, date, week);
+  // 넘겨 보는 달 - 고른 날이 바뀌면 그 달로 (고른 날과 함께 기억한다). 아래 칸은 늘 그 다음 달
+  const [peek, setPeek] = useState<{ base: string; ym: string } | null>(null);
+  const ym = peek?.base === date ? peek.ym : date.slice(0, 7);
+  const step = (n: 1 | -1) => setPeek({ base: date, ym: shiftMonth(ym, n) });
+  const [mon, tue, wed, thu, fri, sat, sun] = week;
   const common = {
-    lead: <BoardMonth date={date} week={week} fit={fit} />,
+    arrange: (card: (day: string, o?: { noLessons?: boolean; half?: boolean }) => ReactNode) => [
+      <BoardMonth key="month-this" date={date} week={week} fit={fit} ym={ym} slot="this" onStep={step} />,
+      card(mon),
+      card(tue),
+      card(wed),
+      <BoardMonth key="month-next" date={date} week={week} fit={fit} ym={shiftMonth(ym, 1)} slot="next" />,
+      card(thu),
+      card(fri),
+      // 토·일 = 한 칸을 위·아래로 (수업 줄 없이 - 주말에는 수업이 없다)
+      showWeekend && (
+        <div key="weekend" data-board-weekend className={fit ? 'grid grid-rows-2 gap-2 min-h-0' : 'flex flex-col gap-2'}>
+          {card(sat, { noLessons: true, half: true })}
+          {card(sun, { noLessons: true, half: true })}
+        </div>
+      ),
+    ],
     selected: date,
     onOpenDay: setDate,
     openDayTitle: '누르면 이 날을 고른다 - 오른쪽에 그날 수업·일정·메모',
   };
-  // 칸 수 = (요일 + 첫 칸) 두 줄 - 7일이면 넷, 주말을 감추면 셋. 쌓은 모양은 좁으면(600 밑) 둘
-  const cols = Math.ceil((shown.length + 1) / 2);
   return (
     <div
       data-board-left
@@ -93,8 +116,8 @@ function BoardLeft({ fit, date }: { fit: boolean; date: string }) {
       className={fit ? 'flex-1 min-h-0 overflow-y-auto overscroll-contain' : '@container'}
     >
       {fit
-        ? cards.grid(shown, { ...common, fill: true, className: 'grid grid-rows-2 gap-2 h-full min-h-80 p-1', style: { gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` } })
-        : cards.grid(shown, { ...common, className: `grid grid-cols-2 ${cols === 3 ? '@min-[600px]:grid-cols-3' : '@min-[600px]:grid-cols-4'} gap-2 p-1` })}
+        ? cards.grid(shown, { ...common, fill: true, className: 'grid grid-cols-4 grid-rows-2 gap-2 h-full min-h-80 p-1' })
+        : cards.grid(shown, { ...common, className: 'grid grid-cols-2 @min-[37.5rem]:grid-cols-4 gap-2 p-1' })}
       {cards.dialogs}
     </div>
   );

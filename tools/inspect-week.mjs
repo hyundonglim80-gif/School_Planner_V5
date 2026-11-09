@@ -74,6 +74,9 @@ try {
   const color = async (d) => day(d).locator(sel('week-day-label')).evaluate((e) => getComputedStyle(e).color);
   r.check((await color('2026-10-10')) !== (await color('2026-10-08')) && (await color('2026-10-11')) !== (await color('2026-10-10')), '토·일은 색이 다르다');
   r.check(await waitFor(page.locator(sel('week-next'))), '넓은 화면은 다음 주 줄');
+  // 11-09 사용자 보고: PC 글자 90%에서 다음 주 줄은 뜨는데 요일이 월~목 / 금~일 두 줄로 꺾였다 (칸 경계 px → rem)
+  const rowsOf = (scope) => page.locator(`${sel(scope)} ${sel('week-day')}`).evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().top))).size);
+  r.check((await rowsOf('week-this')) === 1 && (await rowsOf('week-next')) === 1, `다음 주 줄이 있으면 이번 주·다음 주 요일 일곱이 한 줄씩 (줄 ${await rowsOf('week-this')}·${await rowsOf('week-next')})`);
   r.check((await chip('insp_wk2').count()) === 3 && (await day('2026-10-08').locator(sel('week-event', 'insp_wk2')).textContent()).includes('(2/3)'), '기간 일정은 날마다 (2/3)');
   r.check((await day('2026-10-07').locator(sel('week-notes')).getAttribute('data-week-notes')) === '1', '📝 1 (그날 기록 수)');
 

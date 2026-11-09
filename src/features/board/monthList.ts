@@ -24,6 +24,13 @@ export function monthCalendarList(cal: CalendarEvents, monthStart: string, month
   return rows.sort((a, b) => a.day.localeCompare(b.day) || Number(!a.endDate) - Number(!b.endDate));
 }
 
+/** 'YYYY-MM'에서 n달 옮긴 'YYYY-MM' (한눈에 위 칸 = 이번 달, 아래 칸 = 그 다음 달 - 11-09) */
+export function shiftMonth(ym: string, n: number): string {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m - 1 + n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
 /** 'm/d' 또는 기간 'm/d~m/d' */
 export function rowDateLabel(row: MonthListRow): string {
   const md = (d: string) => `${Number(d.slice(5, 7))}/${Number(d.slice(8, 10))}`;

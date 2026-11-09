@@ -47,6 +47,8 @@ export interface WeekDayCardProps {
   selected?: boolean;
   /** 칸 높이에 맞추고 넘치면 카드 안에서 스크롤 (한눈에 - 두 줄이 반씩) */
   fill?: boolean;
+  /** 한 칸을 둘이 나눠 쓴다 (한눈에 토·일 - 쌓은 모양의 최소 높이 반) */
+  half?: boolean;
   /** 카드 빈 곳 title (주지 않으면 '누르면 그날 하루 화면') */
   openDayTitle?: string;
   onOpenDay: () => void;
@@ -204,7 +206,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
       onClick={props.onOpenDay}
       {...(props.drop ? dropTargetProps(props.drop.handlers, date) : {})}
       className={`${DAY_CELL_BG[tone]} rounded-2xl border p-2.5 flex flex-col transition-all cursor-pointer group/day hover:shadow-md hover:border-primary/50 min-w-0 ${
-        props.fill ? 'h-full min-h-0 overflow-y-auto overscroll-contain' : 'min-h-[250px] overflow-hidden'
+        props.fill ? 'h-full min-h-0 overflow-y-auto overscroll-contain' : `${props.half ? 'min-h-[120px]' : 'min-h-[250px]'} overflow-hidden`
       } ${props.selected ? 'outline-2 outline-offset-2 outline-primary' : ''} ${
         isToday ? 'border-primary ring-2 ring-primary/20 shadow-xs' : 'border-slate-200/80 shadow-xs'
       } ${props.drop?.over ? DROP_TARGET_CLASS : ''}`}
