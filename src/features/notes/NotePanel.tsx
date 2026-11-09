@@ -57,7 +57,8 @@ import EntryBody from './EntryBody';
 import EventDoneChip from '../events/EventDoneChip';
 import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
 import EntryTableView from './EntryTableView';
-import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
+import { deliverLinkPick } from '../links/actions';
+import { openLinker, openLinkViewer } from '../links/open';
 import { hasContent, isKnownLabel, newNoteForm, noteEditedKeys, noteFormAfterSave, noteFormOf, noteTextClash, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
 import { EntryStudents, StudentMentionList, StudentTagRow } from './StudentTags';
 import CheckLinesOverlay, { CHECK_TEXT_CLASS } from './CheckLinesOverlay';
@@ -430,7 +431,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
         const saved = await createNote(sid, toSave, tree, order);
         // 저장한 뒤에도 적은 것이 남고 그 항목의 수정 칸이 된다 (V4 사용자 결정). '#라벨' 줄은 떼고 칩으로
         settleSaved(form, { ...toSave, text: saved.text, labelIds: saved.labelIds, newLabels: [] });
-        deliverLinkPick(params.pickFor, saved.id);
+        void deliverLinkPick(params.pickFor, saved.id);
         savedId.current = saved.id;
         setParams({ sid, date: params.date, id: saved.id, edit: true });
       } else {

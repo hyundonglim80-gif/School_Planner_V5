@@ -30,17 +30,36 @@ export const openLinker = (params: LinkWindowParams) => openIf(LINKER, params);
 export const openLinkViewer = (params: LinkWindowParams) => openIf(LINK_VIEWER, params);
 
 // ── '+ 새 00 만들어 연결' 쪽지 ──
-const pickers = new Map<string, (id: string) => void>();
-let seq = 0;
+// 쪽지에는 잇는 쪽(공간·항목)을 적는다 - 쓰는 칸이 처음 저장하면 곧바로 잇는다(P28-1 사용자 요청, links/actions deliverLinkPick).
+// 연결 창이 그새 닫혔어도 잇는다('만들어 연결'을 누른 뜻). 창이 열려 있으면 onPick으로 알린다(닫기·안내).
 
-/** 연결 창이 쪽지를 만든다 (창이 닫히면 off) */
-export function listenLinkPick(onPick: (id: string) => void): { token: string; off: () => void } {
-  const token = `pick${++seq}`;
-  pickers.set(token, onPick);
-  return { token, off: () => pickers.delete(token) };
+/**
+ * 연결 창에 알리기. ok = 이어 저장했나(못 했으면 연결 창이 🛒에 담아 '연결 저장'으로 다시).
+ * 돌려준 글은 저장 안내 뒤에 붙는다(담아 둔 다른 것 안내).
+ */
+export type LinkPickListener = (made: string, ok: boolean) => string | void;
+
+export interface LinkPick extends LinkWindowParams {
+  onPick?: LinkPickListener;
 }
 
-/** 쓰는 칸이 처음 저장하면 쪽지의 주인(연결 창)에게 만든 항목을 돌려준다 (연결 창이 닫혔으면 아무 일도 없다) */
-export function deliverLinkPick(token: string | undefined, id: string) {
-  if (token) pickers.get(token)?.(id);
+const pickers = new Map<string, LinkPick>();
+let seq = 0;
+
+/** 연결 창이 쪽지를 만든다 (창이 닫히면 off - 쪽지는 남아 그 뒤 저장해도 잇는다) */
+export function listenLinkPick(at: LinkWindowParams, onPick: LinkPickListener): { token: string; off: () => void } {
+  const token = `pick${++seq}`;
+  const pick: LinkPick = { sid: at.sid, id: at.id, onPick };
+  pickers.set(token, pick);
+  return {
+    token,
+    off: () => {
+      pick.onPick = undefined;
+    },
+  };
+}
+
+/** 쪽지가 가리키는 잇는 쪽 (모르는 쪽지면 undefined) */
+export function linkPickOf(token: string | undefined): LinkPick | undefined {
+  return token ? pickers.get(token) : undefined;
 }

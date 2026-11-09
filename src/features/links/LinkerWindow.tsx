@@ -73,16 +73,33 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
   const [picked, setPicked] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
-  // '+ 새 00 만들어 연결' - 쓰는 칸이 처음 저장하면 여기로 돌아온다 (쪽지 = pickToken)
+  // '+ 새 00 만들어 연결' - 쓰는 칸이 처음 저장하면 곧바로 잇고(links/actions deliverLinkPick) 여기에 알린다 (쪽지 = pickToken, P28-1).
+  //   🛒에 담아 둔 다른 것이 없으면 할 일이 끝났다 - 창을 닫는다(연결 저장과 같다). 있으면 그대로 두고 안내에 붙인다.
+  //   잇지 못했으면 🛒에 담는다('연결 저장'으로 다시).
   const pickToken = useRef<string | undefined>(undefined);
+  const pickedNow = useRef(picked);
+  const closeNow = useRef(close);
   useEffect(() => {
-    const { token, off } = listenLinkPick((made) => {
-      setPicked((p) => (p.includes(made) ? p : [...p, made]));
-      showToast("🔗 새 항목을 연결 목록에 담았습니다. '연결 저장'을 누르면 이어집니다.");
+    pickedNow.current = picked;
+    closeNow.current = close;
+  });
+  useEffect(() => {
+    const { token, off } = listenLinkPick({ sid, id }, (made, ok) => {
+      if (!ok) {
+        setPicked((p) => (p.includes(made) ? p : [...p, made]));
+        return;
+      }
+      const rest = pickedNow.current.filter((p) => p !== made);
+      setPicked(rest);
+      if (rest.length === 0) {
+        closeNow.current();
+        return;
+      }
+      return ` 담아 둔 ${rest.length}개는 '연결 저장'을 누르면 이어집니다.`;
     });
     pickToken.current = token;
     return off;
-  }, []);
+  }, [sid, id]);
 
   const range = rangeOf(rangeKey, center, custom, semesterConfigOf(terms, academicYearOf(center)));
   const { start, end } = range;

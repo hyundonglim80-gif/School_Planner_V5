@@ -1,7 +1,7 @@
 // tools/inspect-links.mjs - P4-3: 링크 연결·보기를 실제 크롬에서 본다.
 //   1) 가져온 V4 링크처럼 양쪽에 linkIds를 심은 일정·기록 → 카드마다 🔗 1, 누르면 📑 연결된 데이터(지금 내용·표), 수업 링크·찾을 수 없는 항목.
 //   2) 일정 칸 🔗 링크 추가 → 연결 창(기록 탭) → 담고 연결 저장 = 양쪽 linkIds 한 묶음(서버 문서 둘) → 창이 닫힌다.
-//   3) '+ 새 기록 만들어 연결' → 같은 쓰는 칸 → 처음 저장하면 담긴다 → 연결 저장.
+//   3) '+ 새 메모 만들어 연결' → 같은 쓰는 칸 → 처음 저장하면 곧바로 잇는다(P28-1) - 🛒가 비면 연결 창이 닫히고, 담아 둔 것이 있으면 그대로.
 //   4) 📑의 🗑️ = 양쪽에서 끊기 → 안내의 되돌리기 = 다시 이어진다. 📌 이동 = 그날 하루 화면, ✏️ 수정 = 쓰는 칸.
 //   5) 새 메모 칸의 🔗 링크 추가 = 먼저 저장(수정 칸이 된다) → 그 메모의 연결 창. 다른 항목의 📑은 탭으로 쌓인다.
 //   6) P10-4: 그날 일정·수업 칸에 이은 메모가 그날 '메모' 칸에 한 번씩 (📌·🏫 표시, ▲▼ 없음) - 제 날짜 칸에는 표시 없이.
@@ -111,7 +111,7 @@ try {
 
   r.check((await linker.locator(sel('linker-tab')).evaluateAll((els) => els.map((e) => e.dataset.linkerTab).join(','))) === 'event,note,lesson', '탭 = 일정·메모·수업 (기록 탭 없음)');
 
-  r.section("'+ 새 메모 만들어 연결'");
+  r.section("'+ 새 메모 만들어 연결' - 저장하면 곧바로 잇는다 (P28-1, 🛒에 담아 둔 것이 있을 때)");
   await linker.locator(sel('linker-new', 'note')).click();
   const newPanel = page.locator(sel('note-panel', 'new'));
   r.check(await waitFor(newPanel), '같은 쓰는 칸(새 메모)이 열린다');
@@ -121,14 +121,46 @@ try {
   const madePanel = page.locator(sel('note-panel', 'edit'));
   r.check(await waitFor(madePanel, 8000), '저장 → 수정 칸');
   const madeId = await madePanel.getAttribute('data-note-id');
+  const madeLinked = await serverUntil(async () => [await read('insp_lke'), await read(madeId)], ([e, m]) => e?.linkIds?.includes(madeId) && m?.linkIds?.includes('insp_lke'));
+  r.check(madeLinked[0]?.linkIds?.includes(madeId) && madeLinked[1]?.linkIds?.[0] === 'insp_lke', "서버: '연결 저장' 없이 양쪽에 이어졌다");
+  r.check(!madeLinked[0]?.linkIds?.includes('insp_lkk'), '담아 둔 어제 기록은 아직 (연결 저장을 기다린다)');
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: "새 메모를 저장하고 연결했습니다. 담아 둔 1개는 '연결 저장'" })), '안내 = 저장하고 연결 + 담아 둔 것');
   await page.locator(sel('side-tab')).filter({ hasText: '데이터 연결하기' }).locator('button').first().click();
-  r.check(await waitFor(linker.locator(sel('linker-picked', madeId))), '만든 메모가 🛒에 담겼다');
+  r.check(await waitFor(linker.locator(sel('linker-picked', 'insp_lkk'))), '연결 창은 그대로 - 🛒에 어제 기록');
+  r.check((await linker.locator(sel('linker-picked', madeId)).count()) === 0, '만든 메모는 🛒에 없다 (이미 이었다)');
   await page.locator(sel('linker-save')).click(); // 저장 단추는 창 아랫단 (data-linker 밖)
   const saved = await serverUntil(async () => [await read('insp_lke'), await read('insp_lkk'), await read(madeId)], ([e, k, m]) => e?.linkIds?.includes('insp_lkk') && e?.linkIds?.includes(madeId) && k?.linkIds && m?.linkIds);
   r.check(saved[0]?.linkIds?.includes('insp_lkk') && saved[0]?.linkIds?.includes(madeId), '서버: 일정 쪽에 둘');
   r.check(saved[1]?.linkIds?.[0] === 'insp_lke' && saved[2]?.linkIds?.[0] === 'insp_lke', '서버: 상대 쪽에도 일정');
   r.check(await waitFor(async () => (await linker.count()) === 0), '연결 저장하면 창이 닫힌다');
   r.check(await waitFor(async () => (await evCard.locator(sel('event-links')).getAttribute('data-event-links')) === '5'), '일정 카드 🔗 5');
+
+  r.section("'+ 새 메모 만들어 연결' - 🛒가 비어 있으면 저장과 함께 연결 창이 닫힌다");
+  await page.keyboard.press('Escape');
+  // 닫히는 움직임이 끝난 뒤 다시 연다 (닫히는 칸의 단추를 누르면 놓친다)
+  await waitFor(async () => (await page.locator(sel('side-tab')).count()) === 0);
+  await evCard.locator(sel('event-edit')).click({ force: true });
+  await waitFor(evPanel, 8000);
+  await evPanel.locator(sel('event-link-add')).click();
+  r.check(await waitFor(linker), '연결 창');
+  await linker.locator(sel('linker-tab', 'note')).click();
+  await linker.locator(sel('linker-new', 'note')).click();
+  r.check(await waitFor(newPanel), '새 메모 칸');
+  await waitFor(() => newPanel.locator(sel('note-text-input')).evaluate((el) => el === document.activeElement));
+  await page.keyboard.type('점검링크 둘째 새 메모');
+  await page.keyboard.press('Control+s');
+  r.check(await waitFor(madePanel, 8000), '저장 → 수정 칸');
+  const made2 = await madePanel.getAttribute('data-note-id');
+  const linked2 = await serverUntil(async () => [await read('insp_lke'), await read(made2)], ([e, m]) => e?.linkIds?.includes(made2) && m?.linkIds?.includes('insp_lke'));
+  r.check(linked2[0]?.linkIds?.includes(made2) && linked2[1]?.linkIds?.[0] === 'insp_lke', '서버: 곧바로 양쪽에');
+  r.check(await waitFor(async () => (await linker.count()) === 0), '연결 창은 닫혔다 (할 일이 끝남)');
+  r.check(await waitFor(async () => (await page.locator(sel('note-panel', 'edit')).count()) === 1), '메모 칸은 그대로 (이어 쓸 수 있다)');
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '새 메모를 저장하고 연결했습니다' }).last()), '안내');
+  r.check(await waitFor(async () => (await evCard.locator(sel('event-links')).getAttribute('data-event-links')) === '6'), '일정 카드 🔗 6');
+  // 되돌리기 = 연결만 풀린다 (메모는 남는다)
+  await page.locator(sel('toast')).filter({ hasText: '새 메모를 저장하고 연결했습니다' }).last().locator('[data-toast-action="되돌리기"]').click();
+  const unlinked2 = await serverUntil(async () => [await read('insp_lke'), await read(made2)], ([e, m]) => !e?.linkIds?.includes(made2) && !m?.linkIds?.length);
+  r.check(!unlinked2[0]?.linkIds?.includes(made2) && unlinked2[1] && !unlinked2[1].deletedAt, '되돌리기 = 연결만 풀리고 메모는 그대로');
 
   r.section('📌 이동·✏️ 수정');
   await page.keyboard.press('Escape');

@@ -44,7 +44,8 @@ import EventDeleteChooser from './EventDeleteChooser';
 import { editChanges, effectiveAttrs, eventTextClash, formOf, newForm, periodOf, sameForm, withAttr, withLabels, withStartDate, type AttrKey, type EventForm } from './eventForm';
 import { isGrouped, orderAfter } from './eventOps';
 import type { EventPanelParams } from './open';
-import { deliverLinkPick, openLinker, openLinkViewer } from '../links/open';
+import { deliverLinkPick } from '../links/actions';
+import { openLinker, openLinkViewer } from '../links/open';
 import QuickInputChips, { type QuickChip } from './QuickInputChips';
 
 /** 이 칸을 고치는 동안 다른 기기가 같은 일정 글을 바꿨을 때 (P14-6 ■3) */
@@ -328,7 +329,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
         clearDraftOf(form);
         // 첫 항목의 수정 칸이 된다 (적은 것은 그대로 - 날짜는 첫 항목의 날로 따라간다)
         setBase(form);
-        deliverLinkPick(params.pickFor, made.firstId);
+        void deliverLinkPick(params.pickFor, made.firstId);
         savedId.current = made.firstId;
         setParams({ sid, date: made.firstDate, id: made.firstId });
       } else if (!isEditing) {
@@ -336,7 +337,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
         clearDraftOf(form);
         // 저장한 뒤에도 적은 것이 남고 그 일정의 수정 칸이 된다 (V4 사용자 결정)
         setBase(form);
-        deliverLinkPick(params.pickFor, id);
+        void deliverLinkPick(params.pickFor, id);
         savedId.current = id;
         setParams({ sid, date: form.date, id });
       } else {

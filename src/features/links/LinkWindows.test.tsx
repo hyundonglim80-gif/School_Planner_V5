@@ -9,7 +9,7 @@ import { useSession } from '../../data/session';
 import type { WriteOp } from '../../data/repo';
 import LinkerWindow from './LinkerWindow';
 import LinkViewerWindow from './LinkViewerWindow';
-import { deliverLinkPick } from './open';
+import { deliverLinkPick } from './actions';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, GOOGLE_SCOPES: [] }));
 const written = vi.hoisted(() => ({ batches: [] as WriteOp[][] }));
@@ -106,17 +106,59 @@ describe('🔗 링크 연결 창', () => {
     expect(close).not.toHaveBeenCalled();
   });
 
-  it("'+ 새 메모 만들어 연결' = 그 일정의 날짜가 달린 새 메모 칸(#90, 칸에서 고칠 수 있다), 처음 저장하면 담긴다", () => {
+  it("'+ 새 메모 만들어 연결' = 그 일정의 날짜가 달린 새 메모 칸(#90), 처음 저장하면 곧바로 잇고 연결 창을 닫는다(P28-1)", async () => {
     seed();
     render(<LinkerWindow params={{ sid: SID, id: 'ev' }} close={close} raise={0} setParams={() => {}} />);
     fireEvent.click(q('[data-linker-new="note"]')!);
     const p = opened.notes[0] as { sid: string; date: string | null; pickFor: string };
     expect(p).toMatchObject({ sid: SID, date: '2026-10-08' });
-    act(() => deliverLinkPick(p.pickFor, 'j3'));
-    expect(q('[data-linker-picked="j3"]')).not.toBeNull();
+    await act(async () => void (await deliverLinkPick(p.pickFor, 'j3')));
+    const ops = written.batches[0] as unknown as { at: { id: string }; changes: { linkIds: string[] } }[];
+    expect(ops.map((o) => [o.at.id, o.changes.linkIds])).toEqual([
+      ['ev', ['j1', 'lesson:2026-10-08:3', 'gone', 'j3']],
+      ['j3', ['ev']],
+    ]);
+    expect(close).toHaveBeenCalled();
+    expect(q('[data-toast]')?.textContent).toContain('새 메모를 저장하고 연결했습니다');
+    expect(q('[data-toast-action="되돌리기"]')).not.toBeNull();
+  });
+
+  it('🛒에 담아 둔 것이 있으면 새 메모만 잇고 창은 그대로 + 안내, 잇지 못하면 🛒에 담는다', async () => {
+    seed();
+    render(<LinkerWindow params={{ sid: SID, id: 'ev' }} close={close} raise={0} setParams={() => {}} />);
+    fireEvent.click(q('[data-linker-item="j2"]')!);
+    fireEvent.click(q('[data-linker-new="note"]')!);
+    const p = opened.notes[0] as { pickFor: string };
+    await act(async () => void (await deliverLinkPick(p.pickFor, 'm1')));
+    expect((written.batches[0] as unknown as { at: { id: string } }[]).map((o) => o.at.id)).toEqual(['ev', 'm1']);
+    expect(close).not.toHaveBeenCalled();
+    expect(qa('[data-linker-picked]').map((e) => e.dataset.linkerPicked)).toEqual(['j2']);
+    expect(q('[data-toast]')?.textContent).toContain("담아 둔 1개는 '연결 저장'을 누르면");
+    // 저장이 막히면(저장 도우미가 알린다) 담아 두어 '연결 저장'으로 다시
+    const { batch } = await import('../../data/repo');
+    vi.mocked(batch).mockRejectedValueOnce(new Error('막힘'));
+    await act(async () => void (await deliverLinkPick(p.pickFor, 'j3')));
+    expect(qa('[data-linker-picked]').map((e) => e.dataset.linkerPicked)).toEqual(['j2', 'j3']);
+  });
+
+  it('연결 창을 그새 닫았어도 잇는다 · 메모에서 새 일정 = 그 메모의 날, 안내는 "새 일정을"', async () => {
+    seed();
+    const { unmount } = render(<LinkerWindow params={{ sid: SID, id: 'j2' }} close={close} raise={0} setParams={() => {}} />);
     fireEvent.click(q('[data-linker-tab="event"]')!);
     fireEvent.click(q('[data-linker-new="event"]')!);
-    expect(opened.events[0]).toMatchObject({ date: '2026-10-08' });
+    const p = opened.events[0] as { date: string; pickFor: string };
+    expect(p.date).toBe('2026-10-07');
+    unmount();
+    await act(async () => void (await deliverLinkPick(p.pickFor, 'ev')));
+    const ops = written.batches[0] as unknown as { at: { id: string }; changes: { linkIds: string[] } }[];
+    expect(ops.map((o) => [o.at.id, o.changes.linkIds])).toEqual([
+      ['j2', ['ev']],
+      ['ev', ['j1', 'lesson:2026-10-08:3', 'gone', 'j2']],
+    ]);
+    expect(q('[data-toast]')?.textContent).toContain('새 일정을 저장하고 연결했습니다');
+    // 모르는 쪽지(·쪽지 없이 연 칸)는 아무 일도 없다
+    expect(await deliverLinkPick(undefined, 'ev')).toBe(false);
+    expect(written.batches).toHaveLength(1);
   });
 });
 
