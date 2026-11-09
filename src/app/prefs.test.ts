@@ -78,7 +78,7 @@ describe('설정 문서 나누기', () => {
     startPrefsSync('u1');
     binding('pc').apply({ fontScale: 'xl', popupStyle: 'center', showClass: false, shortcutOverrides: { zzz: {}, help: { ctrl: true, alt: false, shift: false, key: 'H' } } });
     expect(useLayoutPrefs.getState()).toMatchObject({ fontScale: 'xl', popupStyle: 'center' });
-    expect(document.documentElement.style.fontSize).toBe('130%');
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.3');
     expect(useNav.getState().showClass).toBe(false);
     // 모르는 단축키 id는 버린다
     expect(useShortcutOverrides.getState().overrides).toEqual({ help: { ctrl: true, alt: false, shift: false, key: 'H' } });

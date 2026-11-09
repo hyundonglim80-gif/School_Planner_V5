@@ -32,7 +32,8 @@ const browser = await launch();
 try {
   const a = await newPage(browser);
   const b = await newPage(browser);
-  const fontOf = (p) => p.evaluate(() => document.documentElement.style.fontSize || '100%');
+  // 고른 단계 = html의 --font-scale (11-08 - 크기는 바탕(PC 80%) × 이 값, index.css)
+  const fontOf = (p) => p.evaluate(() => document.documentElement.style.getPropertyValue('--font-scale') || '1');
   const serverPc = async () => (await getDoc(pcRef)).data() ?? {};
 
   r.section('환경설정 창');
@@ -45,15 +46,19 @@ try {
   r.check(tabs.join() === 'view,notify,school,shortcuts,app', `탭은 지금 있는 것만 (${tabs.join()})`);
 
   r.section('글자 크기 → 계정 → 다른 창');
+  // PC 바탕 80% (11-08 사용자 요청 - 크롬 확대 80%가 보기 좋았다). 점검 창 폭은 1400 - 16px × 0.8
+  const pxOf = (p) => p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+  r.check((await pxOf(a.page)) === 12.8, `PC '보통' = 80% (${await pxOf(a.page)}px)`);
   await a.page.click(sel('choice', 'fontScale:lg'));
-  r.check((await fontOf(a.page)) === '115%', '고르는 즉시 화면이 바뀐다');
+  r.check((await fontOf(a.page)) === '1.15', '고르는 즉시 화면이 바뀐다');
+  r.check(Math.abs((await pxOf(a.page)) - 12.8 * 1.15) < 0.01, `PC '크게' = 80% × 115% (${await pxOf(a.page)}px)`);
   const pc = await serverUntil(serverPc, (d) => d.fontScale === 'lg');
   r.check(pc.fontScale === 'lg', `settings/pc에 올라간다 (${JSON.stringify(pc)})`);
-  r.check(await waitFor(async () => (await fontOf(b.page)) === '115%'), `다른 창이 따라온다 (${await fontOf(b.page)})`);
+  r.check(await waitFor(async () => (await fontOf(b.page)) === '1.15'), `다른 창이 따라온다 (${await fontOf(b.page)})`);
   await a.page.click(sel('choice', 'fontScale:md'));
   const back = await serverUntil(serverPc, (d) => !('fontScale' in d));
   r.check(!('fontScale' in back), '보통으로 되돌리면 문서에서 그 칸이 빠진다');
-  r.check(await waitFor(async () => (await fontOf(b.page)) === '100%'), '다른 창도 보통으로');
+  r.check(await waitFor(async () => (await fontOf(b.page)) === '1'), '다른 창도 보통으로');
 
   r.section('알림 소리 길이 → 계정 → 다른 창 (P10-1)');
   const serverCommon = async () => (await getDoc(commonRef)).data() ?? {};

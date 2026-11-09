@@ -11,6 +11,10 @@
 //
 // px가 아니라 %로 적는 것은 브라우저 설정에서 글자를 키워 둔 사람의 뜻을
 // 덮어쓰지 않기 위해서다. 그 사람에게는 '보통'이 16px보다 크다.
+//
+// PC(폭 640px 이상 화면)는 바탕이 80%다(11-08 사용자 요청 - 크롬 확대 비율 80%가
+// 한 화면에 보기 좋게 들어왔다. 휴대폰은 그대로). 바탕은 index.css의 html에 있고,
+// 여기서 고른 단계는 그 바탕에 곱한다(--font-scale) - PC '보통' = 80%, '작게' = 74%.
 
 export type FontScale = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -24,6 +28,9 @@ export const FONT_SCALES: Array<{ id: FontScale; label: string; percent: number 
 
 export const DEFAULT_FONT_SCALE: FontScale = 'md';
 
+/** PC(폭 640px 이상) 바탕 크기 % - index.css html과 같다. 휴대폰은 100 */
+export const PC_BASE_PERCENT = 80;
+
 export function fontScalePercent(scale: FontScale): number {
   return FONT_SCALES.find((s) => s.id === scale)?.percent ?? 100;
 }
@@ -31,14 +38,16 @@ export function fontScalePercent(scale: FontScale): number {
 /**
  * 고른 크기를 화면에 입힌다.
  *
- * '보통'일 때는 값을 지운다. 100%라고 적어 두면 브라우저 설정에서 글자를
- * 키워 둔 사람에게도 100%가 강제되어, 그 사람 뜻을 덮어쓰게 된다.
+ * 크기 자체(html font-size)는 index.css가 정한다 - 바탕(휴대폰 100%·PC 80%) × 이 값.
+ * 그래서 창 폭이 휴대폰 ↔ PC로 넘어가도 다시 입힐 것이 없다.
+ * '보통'일 때는 값을 지운다(곱하기 1 - 바탕 그대로).
  */
 export function applyFontScale(scale: FontScale) {
   const root = document.documentElement;
+  root.style.removeProperty('font-size'); // 옛 길(html에 %를 바로 적었다)이 남지 않게
   if (scale === DEFAULT_FONT_SCALE) {
-    root.style.removeProperty('font-size');
+    root.style.removeProperty('--font-scale');
     return;
   }
-  root.style.fontSize = `${fontScalePercent(scale)}%`;
+  root.style.setProperty('--font-scale', String(fontScalePercent(scale) / 100));
 }

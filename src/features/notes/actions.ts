@@ -10,6 +10,7 @@ import { doneChanges, itemPath, type ItemDoc } from '../events/eventOps';
 import { createNoteData, noteEditChanges, savePlanOf, type NoteForm } from './noteForm';
 import { checkLineChanges, favoriteChanges, noteDragOps, noteMoveOps } from './noteOps';
 import { closeNotePanelsFor } from './open';
+import { claudeRunField } from './claudeRunPrefs';
 
 const KEEP = '적은 내용은 칸에 남아 있습니다.';
 
@@ -74,7 +75,9 @@ export async function setNoteFavorite(sid: string, item: ItemDoc, favorite: bool
  * 누른 때만 적는다 - 서버 함수가 이 값이 바뀐 것을 보고 줄에 세운다(보낼 때의 메모 글로). 되돌리기는 없다(이미 보냈다).
  */
 export async function askClaude(sid: string, item: ItemDoc): Promise<void> {
-  await patch(itemPath(sid, item.id), { claudeAskAt: Date.now() }, item, { fail: 'Claude에게 보내지 못했습니다.' });
+  const at = Date.now();
+  // 고른 모델·노력도 함께 (11-08 - 짝 at이 맞을 때만 함수가 싣는다)
+  await patch(itemPath(sid, item.id), { claudeAskAt: at, claudeRun: claudeRunField(at) }, item, { fail: 'Claude에게 보내지 못했습니다.' });
   showToast('Claude에게 보냈습니다 - 카드에서 진행을 볼 수 있습니다.');
 }
 
@@ -85,7 +88,7 @@ export async function askClaude(sid: string, item: ItemDoc): Promise<void> {
 export async function askClaudeMore(sid: string, item: ItemDoc, text: string): Promise<boolean> {
   const at = Date.now();
   try {
-    await patch(itemPath(sid, item.id), { claudeAskAt: at, claudeFollow: { at, text: text.trim() } }, item, { fail: 'Claude에게 보내지 못했습니다.' });
+    await patch(itemPath(sid, item.id), { claudeAskAt: at, claudeFollow: { at, text: text.trim() }, claudeRun: claudeRunField(at) }, item, { fail: 'Claude에게 보내지 못했습니다.' });
     return true;
   } catch {
     return false;

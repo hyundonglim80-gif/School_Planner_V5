@@ -114,7 +114,7 @@ describe('환경설정 창', () => {
     expect(useNav.getState().showWeekend).toBe(false);
     fireEvent.click(q('[data-choice="fontScale:lg"]'));
     expect(useLayoutPrefs.getState().fontScale).toBe('lg');
-    expect(document.documentElement.style.fontSize).toBe('115%');
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.15');
     fireEvent.click(q('[data-choice="startupScope:memo"]'));
     expect(useNav.getState().startupScope).toBe('memo');
     expect(document.querySelector('[data-shortcut-save]')).toBeNull();

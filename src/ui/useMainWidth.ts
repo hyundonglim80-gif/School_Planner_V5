@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import { PC_BASE_PERCENT } from '../domain/fontScale';
 
 /**
  * 화면 본문(main)의 실제 폭.
@@ -11,4 +12,17 @@ export const MainWidthContext = createContext<number>(typeof window !== 'undefin
 
 export function useMainWidth(): number {
   return useContext(MainWidthContext);
+}
+
+/** index.css의 PC 바탕(80%)이 걸리는 화면인가 - 같은 미디어 쿼리 */
+const PC_BASE_QUERY = 'screen and (min-width: 40rem)';
+
+/**
+ * 잰 폭(px) → 칸 수를 정하는 폭. PC는 글자 바탕이 80%라(11-08 사용자 요청 - 크롬 확대 80%처럼) 본문 최대 폭(rem)도 함께 줄어,
+ * 다음 주 줄(1200)·한눈에 쌓기(780)·메모 열 수 같은 px 경계에 닿지 못했다 - 브라우저 확대 80%와 같게 바탕을 걷어 견준다.
+ * 환경설정 '글자 크기' 단계는 걷지 않는다(전과 같다 - 휴대폰 경계가 그대로).
+ */
+export function unscaledWidth(px: number): number {
+  const pc = typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(PC_BASE_QUERY).matches;
+  return pc ? px / (PC_BASE_PERCENT / 100) : px;
 }

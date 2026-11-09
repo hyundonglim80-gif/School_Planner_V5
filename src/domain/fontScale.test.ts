@@ -1,11 +1,14 @@
+/// <reference types="node" />
 import { describe, it, expect, beforeEach } from 'vitest';
-import { FONT_SCALES, DEFAULT_FONT_SCALE, fontScalePercent, applyFontScale } from './fontScale';
+import { readFileSync } from 'node:fs';
+import { FONT_SCALES, DEFAULT_FONT_SCALE, PC_BASE_PERCENT, fontScalePercent, applyFontScale } from './fontScale';
 
 // 글자 단계와 여백 한 칸이 모두 rem으로 적혀 있어, <html>의 글자 크기 하나만
 // 바꾸면 둘이 같은 비율로 함께 움직인다. 그 약속을 여기에 고정한다.
 describe('글자 크기 단계', () => {
   beforeEach(() => {
     document.documentElement.style.removeProperty('font-size');
+    document.documentElement.style.removeProperty('--font-scale');
   });
 
   it('다섯 단계가 있고 이름이 정해져 있다', () => {
@@ -30,19 +33,30 @@ describe('글자 크기 단계', () => {
 
   it("'보통'은 값을 비워 둔다 (브라우저 설정을 덮어쓰지 않는다)", () => {
     // 브라우저에서 글자를 키워 둔 사람에게 100%를 박으면 그 뜻이 지워진다
+    const root = document.documentElement.style;
     applyFontScale('xl');
-    expect(document.documentElement.style.fontSize).toBe('130%');
+    expect(root.getPropertyValue('--font-scale')).toBe('1.3');
 
     applyFontScale('md');
-    expect(document.documentElement.style.fontSize).toBe('');
+    expect(root.getPropertyValue('--font-scale')).toBe('');
+    expect(root.fontSize).toBe('');
   });
 
-  it('고른 단계를 화면에 입힌다', () => {
+  it('고른 단계를 바탕(휴대폰 100%·PC 80% - index.css)에 곱하게 입힌다', () => {
+    const root = document.documentElement.style;
+    root.fontSize = '130%'; // 옛 길이 남긴 값은 걷는다
     applyFontScale('xs');
-    expect(document.documentElement.style.fontSize).toBe('85%');
+    expect(root.getPropertyValue('--font-scale')).toBe('0.85');
+    expect(root.fontSize).toBe('');
 
     applyFontScale('lg');
-    expect(document.documentElement.style.fontSize).toBe('115%');
+    expect(root.getPropertyValue('--font-scale')).toBe('1.15');
+  });
+
+  it('PC 바탕 80%가 index.css와 같다 (11-08 사용자 요청)', () => {
+    const css = readFileSync('src/index.css', 'utf8');
+    expect(css).toContain(`font-size: calc(${PC_BASE_PERCENT}% * var(--font-scale, 1))`);
+    expect(css).toContain('font-size: calc(100% * var(--font-scale, 1))');
   });
 
   it('모르는 값이 들어와도 보통 크기로 버틴다', () => {

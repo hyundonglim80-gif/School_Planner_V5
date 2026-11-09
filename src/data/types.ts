@@ -179,6 +179,8 @@ export interface Item extends Tracked {
   claudeAskAt?: number;
   /** 메모 칸에서 이어 쓴 말 (P23). at = 함께 적은 claudeAskAt - 짝이 맞을 때만 함수가 메모 글 대신 이 글을 보낸다 */
   claudeFollow?: { at: number; text: string };
+  /** 고른 모델·노력 (11-08 사용자 요청). at = 함께 적은 claudeAskAt - 짝이 맞을 때만 함수가 이슈에 싣는다, 빈 값 = 기본 */
+  claudeRun?: { at: number; model: string; effort: string };
   /** 이은 항목 id. 수업은 'lesson:{date}:{교시}' */
   linkIds?: string[];
   src?: ImportSource;

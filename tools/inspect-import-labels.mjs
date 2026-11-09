@@ -140,7 +140,7 @@ try {
   const common = await readDoc(v5Settings('common'));
   r.check(common?.forwardDays === 21, 'V4 이월 기간 → common.forwardDays', JSON.stringify(common));
   r.check(
-    await waitFor(async () => (await page.evaluate(() => document.documentElement.style.fontSize)) === '115%', 5000),
+    await waitFor(async () => (await page.evaluate(() => document.documentElement.style.getPropertyValue('--font-scale'))) === '1.15', 5000),
     '이 기기에 입혀진다 (글자 크게)',
   );
   const record = await readDoc(v5Settings('import'));

@@ -17,7 +17,7 @@ import { useCurrentSpaceId } from '../../data/session';
 import { DAY_NAMES, weekDates, weekdayOf } from '../../domain/dateUtils';
 import SplitPane from '../../ui/SplitPane';
 import { useElementWidth } from '../../ui/useElementWidth';
-import { MainWidthContext, useMainWidth } from '../../ui/useMainWidth';
+import { MainWidthContext, unscaledWidth, useMainWidth } from '../../ui/useMainWidth';
 import { useToday } from '../../ui/useToday';
 import DayBody from '../day/DayBody';
 import DayEvents from '../day/DayEvents';
@@ -124,7 +124,8 @@ function Pane({ name, children }: { name: string; children: ReactNode }) {
 /** 메모 칸 - 메모 열 수는 이 칸 폭으로(하루 화면은 본문 폭). 열 수가 바뀔 때만 다시 그린다 */
 function MemoPane({ date }: { date: string }) {
   const ref = useRef<HTMLDivElement>(null);
-  const width = useElementWidth(ref, journalColumnsFor, 360);
+  // PC 글자 바탕(80%)은 걷고 견준다 - 하루 화면 본문 폭과 같게 (ui/useMainWidth unscaledWidth)
+  const width = unscaledWidth(useElementWidth(ref, (w) => journalColumnsFor(unscaledWidth(w)), 360));
   return (
     <div ref={ref} data-board-pane="memo" className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-2xl">
       <MainWidthContext.Provider value={width}>
@@ -141,7 +142,7 @@ function BoardDay({ date }: { date: string }) {
   const dayRatio = useBoardSplit('day');
   const memoRatio = useBoardSplit('memo');
   const groupRef = useRef<HTMLDivElement>(null);
-  const dayRow = useElementWidth(groupRef, (w) => w >= DAY_ROW_MIN, DAY_ROW_MIN) >= DAY_ROW_MIN;
+  const dayRow = unscaledWidth(useElementWidth(groupRef, (w) => unscaledWidth(w) >= DAY_ROW_MIN, DAY_ROW_MIN)) >= DAY_ROW_MIN;
 
   const lessons = (
     <Pane name="lessons">

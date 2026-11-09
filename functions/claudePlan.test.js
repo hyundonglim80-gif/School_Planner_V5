@@ -6,6 +6,7 @@ import {
   askedNow,
   claudePushData,
   followOf,
+  runOf,
   isClaudeLabelName,
   issueOf,
   mergeShaOf,
@@ -56,6 +57,24 @@ test('이어 쓴 글 - 같이 적은 claudeAskAt과 짝이 맞을 때만', () =>
   assert.equal(followOf({ ...note, claudeFollow: { at: 200, text: '   ' } }), '');
   assert.equal(followOf({ kind: 'note', claudeFollow: { text: '짝 없음' } }), '');
   assert.equal(followOf(null), '');
+});
+
+test('모델·노력 - 짝이 맞고 정한 값일 때만 이슈 표시 줄로 (11-08)', () => {
+  const note = { kind: 'note', text: '요청', claudeAskAt: 200 };
+  assert.deepEqual(runOf({ ...note, claudeRun: { at: 200, model: 'opus', effort: 'high' } }), { model: 'opus', effort: 'high' });
+  // 옛 화면이 claudeAskAt만 적으면 지난 값이 다시 가지 않는다
+  assert.deepEqual(runOf({ ...note, claudeRun: { at: 100, model: 'opus', effort: 'high' } }), { model: '', effort: '' });
+  assert.deepEqual(runOf(note), { model: '', effort: '' });
+  // 모르는 값(셸에 닿을 글자 포함)은 기본으로
+  assert.deepEqual(runOf({ ...note, claudeRun: { at: 200, model: 'opus --x', effort: 'max"' } }), { model: '', effort: '' });
+  assert.deepEqual(runOf({ ...note, claudeRun: { at: 200, model: '', effort: 'xhigh' } }), { model: '', effort: 'xhigh' });
+
+  assert.match(issueOf('글', 0, { run: { model: 'sonnet', effort: 'low' } }).body, /\n<!-- sp5-run model=sonnet effort=low -->$/);
+  assert.match(issueOf('글', 0, { run: { model: '', effort: 'max' } }).body, /<!-- sp5-run model= effort=max -->$/);
+  // 기본이면 줄이 없다 - 워크플로가 아무것도 붙이지 않는다
+  assert.doesNotMatch(issueOf('글', 0, { run: { model: '', effort: '' } }).body, /sp5-run/);
+  assert.doesNotMatch(issueOf('글').body, /sp5-run/);
+  assert.doesNotMatch(issueOf('글', 0, { run: { model: 'gpt', effort: 'huge' } }).body, /sp5-run/);
 });
 
 test('메모 글이 비어도 이어 쓴 글이 있으면 보낸다 - 제목만 남긴 메모는 살아 있다', () => {
