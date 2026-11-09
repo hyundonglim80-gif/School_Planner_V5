@@ -22,7 +22,9 @@ const MSG = 'sp5-popup';
 type BridgeMessage =
   | { kind: typeof MSG; type: 'open'; id: string; params: unknown }
   | { kind: typeof MSG; type: 'params'; id: string; params: unknown }
-  | { kind: typeof MSG; type: 'nav'; nav: Pick<NavState, 'scope' | 'date' | 'classId'> };
+  | { kind: typeof MSG; type: 'nav'; nav: Pick<NavState, 'scope' | 'date' | 'classId'> }
+  /** 단축키 설정 띠는 큰 창에만 있다 - 팝업창의 환경설정에서 시작하면 큰 창으로(id = 그것의 키만 받기, P28-1) */
+  | { kind: typeof MSG; type: 'record'; id?: string };
 
 interface OpenedPopup {
   id: string;
@@ -194,12 +196,18 @@ export function sendNavToOpener(nav: Pick<NavState, 'scope' | 'date' | 'classId'
   if (POPOUT) post(window.opener as Window | null, { kind: MSG, type: 'nav', nav });
 }
 
+/** 팝업창 안에서 - 단축키 설정(눌러서 고르기·키 바꾸기)을 큰 창에서 시작하게 한다 (띠는 큰 창의 껍데기에만 - app/ShortcutRecordBar) */
+export function sendRecordToOpener(id?: string) {
+  if (POPOUT) post(window.opener as Window | null, { kind: MSG, type: 'record', id });
+}
+
 const isBridge = (d: unknown): d is BridgeMessage => !!d && typeof d === 'object' && (d as { kind?: unknown }).kind === MSG;
 
 /**
  * 팝업창과 주고받기 (큰 창의 껍데기·팝업창 껍데기에서 한 번). openHere = 팝업창 안에서 '그 창을 다시 열기'(창 목록의 openWindow를 이 창 안에).
+ * onRecord = 큰 창에서 - 팝업창이 단축키 설정을 시작해 달라고 했다(팝업창 안의 팝업창이면 제 연 창으로 이어 보낸다).
  */
-export function usePopupBridge(openHere?: (id: string, params: unknown) => void) {
+export function usePopupBridge(openHere?: (id: string, params: unknown) => void, onRecord?: (id?: string) => void) {
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin || !isBridge(e.data)) return;
@@ -214,11 +222,15 @@ export function usePopupBridge(openHere?: (id: string, params: unknown) => void)
         if (!SCOPES.includes(scope) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
         if (POPOUT) sendNavToOpener({ scope, date, classId: classId ?? null });
         else useNav.setState({ scope, date, classId: classId ?? null });
+      } else if (m.type === 'record') {
+        const id = typeof m.id === 'string' ? m.id : undefined;
+        if (POPOUT) sendRecordToOpener(id);
+        else onRecord?.(id);
       }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [openHere]);
+  }, [openHere, onRecord]);
 }
 
 /** 시험에서만 */

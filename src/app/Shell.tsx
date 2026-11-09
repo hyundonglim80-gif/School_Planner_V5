@@ -37,6 +37,7 @@ import { useShareReceiver } from '../features/share/receive';
 import NewBuildBanner from './NewBuildBanner';
 import PendingWritesBanner from './PendingWritesBanner';
 import ShortcutRecordBar from './ShortcutRecordBar';
+import { startRecordFromPopup } from './shortcutRecord';
 import { usePendingWritesGuard } from './pendingWritesGuard';
 import ColumnResizer from '../ui/ColumnResizer';
 import ImageViewer from '../ui/ImageViewer';
@@ -65,8 +66,8 @@ export default function Shell() {
   useEffect(() => startRouting(), []);
   useGlobalGestures();
   useAppKeys();
-  // 창 위치 '팝업창' - 팝업창에서 옮긴 화면·새로 저장한 것을 받는다 (app/popupWindows)
-  usePopupBridge();
+  // 창 위치 '팝업창' - 팝업창에서 옮긴 화면·새로 저장한 것·단축키 설정 시작을 받는다 (app/popupWindows)
+  usePopupBridge(undefined, startRecordFromPopup);
   // ＋ 새로 → 새 일정 (단축키 newEvent)
   useEventShortcuts();
   useNoteShortcuts();

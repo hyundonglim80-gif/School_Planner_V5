@@ -1,7 +1,7 @@
 // tools/inspect-settings.mjs - P1-4 끝 조건 중 설정을 크롬으로 본다.
 //   1) ⋮ → 환경설정: 지금 있는 탭(보기·단축키·앱)만.
 //   2) 글자 크기를 바꾸면 화면이 곧바로 바뀌고, 1초 뒤 계정(settings/pc)에 올라가 다른 창(같은 종류의 다른 기기)이 따라온다.
-//   3) 단축키를 바꿔 저장하면 다른 창에서도 그 키로 돈다.
+//   3) 단축키 탭(P28-1 - 키가 걸린 것만): 키 바꾸기 = 띠의 키 단계 → 저장하면 계정·다른 창에서도 그 키로 · 해제·기본값으로는 바로.
 //   4) 시작 화면: 주소에 화면 없이 열면 그 화면, 새로고침은 보던 화면 그대로.
 //   5) 계정 칸: 사진을 누르면 이름·메일·로그아웃 (■3에서 더한다).
 //   6) 알림 소리 길이(P10-1): 계정(settings/common)에 올라가고 다른 창이 따라온다, 처음 값(10초)이면 문서에서 빠진다.
@@ -72,24 +72,36 @@ try {
   await a.page.click(sel('choice', 'alarmSound:10'));
   r.check(!('alarmSound' in (await serverUntil(serverCommon, (d) => !('alarmSound' in d)))), '10초로 되돌리면 문서에서 그 칸이 빠진다');
 
-  r.section('단축키');
+  r.section('단축키 (P28-1 - 키가 걸린 것만 · 키 바꾸기·해제 · 바로 저장)');
   await a.page.click(sel('settings-tab', 'shortcuts'));
-  await a.page.click(`${sel('shortcut-row', 'settings')} ${sel('shortcut-key')}`);
+  const memoRow = sel('shortcut-row', 'scopeMemo');
+  r.check(await waitFor(a.page.locator(memoRow)), '기본 키가 있는 줄 (메모 화면 Shift + 5)');
+  r.check((await a.page.locator(sel('shortcut-row', 'settings')).count()) === 0, '키가 없는 기능(환경설정)은 줄이 없다');
+  r.check((await a.page.locator(sel('shortcut-save')).count()) === 0 && (await a.page.locator(`${sel('shortcut-list')} input`).count()) === 0, '키 칸·저장 단추가 없다');
+  await a.page.click(sel('shortcut-change', 'scopeMemo'));
+  r.check(await waitFor(a.page.locator(sel('shortcut-record', 'key'))), '키 바꾸기 = 띠의 키 단계 (환경설정 창은 그대로)');
+  r.check((await a.page.locator(sel('settings-window')).count()) === 1, '환경설정 창은 열린 채');
   await a.page.keyboard.press('Control+Alt+KeyK');
-  r.check((await a.page.inputValue(`${sel('shortcut-row', 'settings')} ${sel('shortcut-key')}`)) === 'K', '키 칸에 K가 들어간다');
+  r.check((await a.page.textContent(sel('shortcut-record-key'))) === 'Ctrl + Alt + K', '띠에 누른 키');
   r.check((await a.page.locator(sel('settings-window')).count()) === 1, '누른 키가 화면 단축키로 올라가지 않는다');
-  await a.page.click(sel('shortcut-save'));
-  const sc = await serverUntil(serverPc, (d) => d.shortcutOverrides?.settings?.key === 'K');
-  r.check(sc.shortcutOverrides?.settings?.key === 'K', '저장하면 계정에 올라간다');
+  await a.page.click(sel('shortcut-record-save'));
+  const sc = await serverUntil(serverPc, (d) => d.shortcutOverrides?.scopeMemo?.key === 'K');
+  r.check(sc.shortcutOverrides?.scopeMemo?.key === 'K', '저장하면 계정에 올라간다');
+  r.check(await waitFor(async () => ((await a.page.textContent(`${memoRow} ${sel('shortcut-key')}`)) ?? '') === 'Ctrl + Alt + K'), '그 줄 = Ctrl + Alt + K');
+  r.check(await waitFor(a.page.locator(`${memoRow}[data-shortcut-row-focus]`)), '그 줄을 짚는다');
   await waitFor(async () => (await b.page.evaluate(() => localStorage.getItem('sp5-shortcuts') || '')).includes('"K"'));
   await b.page.locator('main').click({ position: { x: 5, y: 5 } });
   await b.page.keyboard.press('Control+Alt+KeyK');
-  r.check(await waitFor(b.page.locator(sel('settings-window'))), '다른 창에서 그 키로 환경설정이 열린다');
-  await b.page.keyboard.press('Escape');
+  r.check(await waitFor(b.page.locator(sel('screen', 'memo'))), '다른 창에서 그 키로 메모 화면');
+  await a.page.click(sel('shortcut-clear', 'search'));
+  const sc1 = await serverUntil(serverPc, (d) => d.shortcutOverrides?.search?.key === '');
+  r.check(sc1.shortcutOverrides?.search?.key === '' && (await a.page.locator(sel('shortcut-row', 'search')).count()) === 0, '해제 = 바로 저장 · 그 줄이 빠진다');
+  a.dialogs.answer = true;
   await a.page.click(sel('shortcut-reset'));
-  await a.page.click(sel('shortcut-save'));
+  a.dialogs.answer = false;
   const sc2 = await serverUntil(serverPc, (d) => !d.shortcutOverrides);
-  r.check(!sc2.shortcutOverrides, '기본값으로 되돌려 저장하면 칸이 빠진다');
+  r.check(!sc2.shortcutOverrides, '기본값으로(묻고 바로) = 계정에서 칸이 빠진다');
+  r.check(await waitFor(a.page.locator(sel('shortcut-row', 'search'))), '검색 줄이 돌아왔다');
 
   r.section('시작 화면');
   await a.page.click(sel('settings-tab', 'view'));

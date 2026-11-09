@@ -4,6 +4,8 @@
 //                 창 안 탭(P18-2)도 같다 - 탭 단추의 표시가 '창:탭' id(app/tabShortcuts, 단추에는 app/keys useTabTarget).
 //   키(key)     : 띠의 '완료'를 누르면 키를 받는다. 받는 동안 누른 키는 앱 단축키·글 칸으로 가지 않는다(window capture에서 먼저 받아 멈춘다).
 //   ESC         : 어느 때나 기록 취소(오른쪽 칸 닫기는 하지 않는다).
+//   키 바꾸기    : 단축키 탭의 줄(P28-1)은 고르기를 건너뛰고 곧바로 키 단계(startKeyFor).
+//   팝업창       : 띠는 큰 창의 껍데기에만 있다 - 팝업창(창 위치 '팝업창')의 환경설정에서 시작하면 큰 창에 알린다(requestShortcutRecord).
 // 띠(화면)는 app/ShortcutRecordBar - 여기 손잡이를 고르는 동안에만 단다.
 import { create } from 'zustand';
 import {
@@ -20,9 +22,11 @@ import {
   type Binding,
 } from '../domain/shortcuts';
 import { setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
+import { sendRecordToOpener } from './popupWindows';
 import { isKnownTabShortcut, shortcutLabel } from './tabShortcuts';
 import { showErrorToast, showToast } from './toast';
 import { openWindow } from './windows';
+import { POPOUT } from '../ui/popout';
 
 export type RecordStage = 'off' | 'pick' | 'key';
 
@@ -42,6 +46,32 @@ export const useShortcutRecord = create<RecordState>(() => OFF);
 
 export function startShortcutRecord() {
   useShortcutRecord.setState({ ...OFF, stage: 'pick' });
+}
+
+/** 키 바꾸기 - 그것의 키만 다시 받는다 (단축키 탭의 줄, P28-1) */
+export function startKeyFor(id: AnyShortcutId) {
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  useShortcutRecord.setState({ ...OFF, stage: 'key', picked: id });
+}
+
+/** 큰 창이 받은 시작 부탁(팝업창에서) - 아는 것만 */
+export function startRecordFromPopup(id?: string) {
+  if (id === undefined) startShortcutRecord();
+  else if (isShortcutId(id) || (isTabShortcutId(id) && isKnownTabShortcut(id))) startKeyFor(id);
+}
+
+/**
+ * 환경설정 창에서 시작한다. 팝업창 안이면 큰 창에 알리고 true(부르는 쪽이 이 팝업창을 닫는다 - 키는 큰 창이 받는다).
+ * 이 창 안이면 여기서 시작하고 false. id = 키 바꾸기, 없으면 눌러서 고르기.
+ */
+export function requestShortcutRecord(id?: AnyShortcutId): boolean {
+  if (POPOUT) {
+    sendRecordToOpener(id);
+    return true;
+  }
+  if (id) startKeyFor(id);
+  else startShortcutRecord();
+  return false;
 }
 
 export function cancelShortcutRecord() {

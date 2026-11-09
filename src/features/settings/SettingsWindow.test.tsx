@@ -6,10 +6,11 @@ import { useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { handleAppKeyDown, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from '../../app/keys';
 import { anyWindowUnsaved } from '../../app/windows';
-import { overridesFromBindings, resolveBindings } from '../../domain/shortcuts';
+import { overridesFromBindings, resolveBindings, SHORTCUT_ACTIONS } from '../../domain/shortcuts';
 import { useMirror } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
-import SettingsWindow from './SettingsWindow';
+import SettingsWindow from './SettingsWindow';
+import { NO_BUTTON } from './ShortcutsTab';
 import { cancelShortcutRecord, useShortcutRecord } from '../../app/shortcutRecord';
 
 // 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
@@ -41,6 +42,8 @@ beforeEach(() => {
   useNav.setState({ showWeekend: true, startupScope: 'last' });
   setShortcutOverrides({});
   setTabShortcuts({});
+  // 앞 시험의 안내(되돌리기 단추)를 걷는다
+  document.getElementById('sp5-toast-container')?.remove();
 });
 
 const openSettings = (tab?: 'view' | 'school' | 'shortcuts' | 'app' | 'dev') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
@@ -152,125 +155,130 @@ describe('환경설정 창', () => {
     document.documentElement.classList.remove('hc', 'dim');
   });
 
-  it('단축키: 키 칸을 누르고 키를 누르면 들어가고, 저장해야 바뀐다', () => {
+  // ── 단축키 탭 (P28-1 - 키가 걸린 것만, 줄마다 키 바꾸기·해제, 누르는 즉시 저장) ──
+  const NONE = { ctrl: false, alt: false, shift: false, key: '' };
+  const rowIds = () => qa('[data-shortcut-row]').map((r) => r.dataset.shortcutRow);
+  const keyText = (id: string) => q(`[data-shortcut-row="${id}"] [data-shortcut-key]`).textContent;
+
+  it('단축키 탭 = 키가 걸린 것만 (기본 키 + 바꾼 것) · 키 칸·저장 단추 없음', () => {
+    setShortcutOverrides({ help: { ctrl: true, alt: true, shift: false, key: 'H' } });
     openSettings('shortcuts');
-    const input = q('[data-shortcut-row="help"] [data-shortcut-key]');
-    fireEvent.keyDown(input, { key: 'h', code: 'KeyH', ctrlKey: true, altKey: true });
-    expect(input).toHaveValue('H');
-    expect(useShortcutOverrides.getState().overrides).toEqual({});
-    expect(anyWindowUnsaved()).toBe(true);
-    fireEvent.click(q('[data-shortcut-save]'));
-    expect(useShortcutOverrides.getState().overrides).toEqual({ help: { ctrl: true, alt: true, shift: false, key: 'H' } });
+    expect(rowIds()).toContain('scopeDay');
+    expect(rowIds()).toContain('help');
+    // 기본값이 비어 있는 기능(시간표 등)은 줄이 없다 - 더하기는 '⌨️ 단축키 설정'으로만
+    expect(rowIds()).not.toContain('timetable');
+    // 키가 있는 것 + 누를 단추가 없는 기능(키가 없어도)
+    expect(rowIds()).toHaveLength(SHORTCUT_ACTIONS.filter((a) => a.def.key || NO_BUTTON.has(a.id)).length + 1);
+    expect(keyText('scopeDay')).toBe('Shift + 1');
+    expect(keyText('toggleWeekend')).toBe('Shift + ↑ / ↓');
+    expect(q('[data-shortcut-row="scopeDay"] [data-shortcut-default]')).toBeInTheDocument();
+    expect(document.querySelector('[data-shortcut-row="help"] [data-shortcut-default]')).toBeNull();
+    expect(document.querySelector('[data-shortcut-row] input')).toBeNull();
+    expect(document.querySelector('[data-shortcut-save]')).toBeNull();
     expect(anyWindowUnsaved()).toBe(false);
   });
 
-  it('단축키 칸에서 누른 키는 화면 단축키로 올라가지 않는다', () => {
-    const run = vi.fn();
-    window.addEventListener('keydown', run);
+  it('해제 = 바로 저장(그 줄이 빠진다) + 안내의 되돌리기', () => {
     openSettings('shortcuts');
-    fireEvent.keyDown(q('[data-shortcut-row="help"] [data-shortcut-key]'), { key: '1', code: 'Digit1', shiftKey: true });
-    window.removeEventListener('keydown', run);
-    expect(run).not.toHaveBeenCalled();
-  });
-
-  it('겹치는 키는 저장하지 않는다', () => {
-    openSettings('shortcuts');
-    // 하루 화면(Shift+1)과 같은 키를 주간 화면에
-    fireEvent.keyDown(q('[data-shortcut-row="scopeWeek"] [data-shortcut-key]'), { key: '!', code: 'Digit1', shiftKey: true });
-    expect(q('[data-shortcut-row="scopeDay"]')).toHaveAttribute('data-conflict');
-    expect(q('[data-shortcut-conflict]')).toBeInTheDocument();
-    fireEvent.click(q('[data-shortcut-save]'));
+    fireEvent.click(q('[data-shortcut-clear="search"]'));
+    expect(useShortcutOverrides.getState().overrides).toEqual({ search: NONE });
+    expect(rowIds()).not.toContain('search');
+    expect(q('[data-toast]').textContent).toContain("'검색 열기' 단축키(Ctrl + F)를 해제했습니다");
+    act(() => fireEvent.click(q('[data-toast-action="되돌리기"]')));
     expect(useShortcutOverrides.getState().overrides).toEqual({});
+    expect(rowIds()).toContain('search');
   });
 
-  it('Ctrl+S = 단축키 저장 (다른 탭에 있어도 고치던 것을)', () => {
+  it('누를 단추가 없는 기능은 키가 없어도 줄이 있다 - 키 정하기 (해제해도 다시 걸 수 있게)', () => {
     openSettings('shortcuts');
-    fireEvent.keyDown(q('[data-shortcut-row="help"] [data-shortcut-key]'), { key: 'h', code: 'KeyH', ctrlKey: true, altKey: true });
-    fireEvent.click(q('[data-settings-tab="view"]'));
-    act(() => {
-      q('[data-settings-window]').dispatchEvent(new KeyboardEvent('keydown', { key: 's', code: 'KeyS', ctrlKey: true, bubbles: true }));
-    });
-    expect(useShortcutOverrides.getState().overrides).toHaveProperty('help');
+    expect(keyText('recurring')).toBe('없음');
+    expect(q('[data-shortcut-change="recurring"]')).toHaveTextContent('키 정하기');
+    expect(document.querySelector('[data-shortcut-clear="recurring"]')).toBeNull();
+    fireEvent.click(q('[data-shortcut-clear="undo"]'));
+    expect(rowIds()).toContain('undo');
+    expect(keyText('undo')).toBe('없음');
+    expect(q('[data-shortcut-change="undo"]')).toHaveTextContent('키 정하기');
+    fireEvent.click(q('[data-shortcut-change="undo"]'));
+    expect(useShortcutRecord.getState()).toMatchObject({ stage: 'key', picked: 'undo' });
+    act(() => cancelShortcutRecord());
   });
 
-  it('기본값으로 → 저장하면 바꾼 키가 없어진다', () => {
-    setShortcutOverrides({ help: { ctrl: true, alt: true, shift: false, key: 'H' } });
-    openSettings('shortcuts');
-    fireEvent.click(q('[data-shortcut-reset]'));
-    fireEvent.click(q('[data-shortcut-save]'));
-    expect(useShortcutOverrides.getState().overrides).toEqual({});
-  });
-
-  it('⌨️ 단축키 설정 (P18-1) = 창을 닫고 눌러서 고르기 시작 · 고치던 것은 먼저 묻고 저장', () => {
+  it('키 바꾸기 = 띠의 키 단계로 곧바로 (환경설정 창은 그대로)', () => {
     const close = vi.fn();
     render(<SettingsWindow params={{ tab: 'shortcuts' }} close={close} raise={0} setParams={vi.fn()} />);
-    fireEvent.keyDown(q('[data-shortcut-row="help"] [data-shortcut-key]'), { key: 'h', code: 'KeyH', ctrlKey: true, altKey: true });
-    const ask = vi.spyOn(window, 'confirm').mockReturnValueOnce(false);
-    fireEvent.click(q('[data-shortcut-record-start]'));
+    fireEvent.click(q('[data-shortcut-change="scopeDay"]'));
+    expect(useShortcutRecord.getState()).toMatchObject({ stage: 'key', picked: 'scopeDay', binding: null });
     expect(close).not.toHaveBeenCalled();
-    expect(useShortcutRecord.getState().stage).toBe('off');
-    ask.mockReturnValueOnce(true);
+    act(() => cancelShortcutRecord());
+  });
+
+  it('⌨️ 단축키 설정 (P18-1) = 창을 닫고 눌러서 고르기 시작 (고치던 것이 없어 묻지 않는다)', () => {
+    const close = vi.fn();
+    const ask = vi.spyOn(window, 'confirm');
+    render(<SettingsWindow params={{ tab: 'shortcuts' }} close={close} raise={0} setParams={vi.fn()} />);
     fireEvent.click(q('[data-shortcut-record-start]'));
-    expect(useShortcutOverrides.getState().overrides).toHaveProperty('help');
     expect(close).toHaveBeenCalled();
     expect(useShortcutRecord.getState().stage).toBe('pick');
+    expect(ask).not.toHaveBeenCalled();
     ask.mockRestore();
     act(() => cancelShortcutRecord());
   });
 
+  it('기본값으로 = 묻고 바로 (창 안 탭 키도 빠진다) + 되돌리기', () => {
+    setShortcutOverrides({ help: { ctrl: true, alt: true, shift: false, key: 'H' } });
+    setTabShortcuts({ 'backup:import': { ctrl: false, alt: true, shift: false, key: 'I' } });
+    openSettings('shortcuts');
+    const ask = vi.spyOn(window, 'confirm').mockReturnValueOnce(false);
+    fireEvent.click(q('[data-shortcut-reset]'));
+    expect(useShortcutOverrides.getState().overrides).toHaveProperty('help');
+    ask.mockReturnValueOnce(true);
+    fireEvent.click(q('[data-shortcut-reset]'));
+    expect(useShortcutOverrides.getState()).toMatchObject({ overrides: {}, tabs: {} });
+    expect(rowIds()).not.toContain('help');
+    act(() => fireEvent.click(q('[data-toast-action="되돌리기"]')));
+    expect(useShortcutOverrides.getState().tabs).toHaveProperty('backup:import');
+    ask.mockRestore();
+  });
+
   it('눌러서 정한 뒤 열면(focus) 그 줄을 짚는다', () => {
+    setShortcutOverrides({ timetable: { ctrl: true, alt: true, shift: false, key: 'T' } });
     render(<SettingsWindow params={{ tab: 'shortcuts', focus: 'timetable' }} close={vi.fn()} raise={0} setParams={vi.fn()} />);
     expect(q('[data-shortcut-row="timetable"]')).toHaveAttribute('data-shortcut-row-focus');
     expect(q('[data-shortcut-row="timetable"]')).toHaveClass('search-focus');
-    expect(q('[data-shortcut-row="help"]')).not.toHaveAttribute('data-shortcut-row-focus');
+    expect(q('[data-shortcut-row="scopeDay"]')).not.toHaveAttribute('data-shortcut-row-focus');
   });
 
-  it("내가 만든 단축키 (P18-2): 키를 준 탭만 · 없으면 '아직 없습니다' · 눌러서 정한 뒤 열면 그 줄", () => {
-    const first = openSettings('shortcuts');
-    expect(q('[data-shortcut-tabs-empty]')).toBeInTheDocument();
-    first.unmount();
+  it("내가 만든 단축키(창 안 탭 - P18-2)는 기능 뒤 한 묶음 · 해제하면 빠진다", () => {
     setTabShortcuts({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } });
     render(<SettingsWindow params={{ tab: 'shortcuts', focus: 'settings:notify' }} close={vi.fn()} raise={0} setParams={vi.fn()} />);
-    expect(qa('[data-shortcut-tabs] [data-shortcut-row]').map((r) => r.dataset.shortcutRow)).toEqual(['settings:notify']);
+    const groups = qa('[data-shortcut-group]').map((g) => g.dataset.shortcutGroup);
+    expect(groups.at(-1)).toBe('창 안 탭');
+    expect(qa('[data-shortcut-group="창 안 탭"] [data-shortcut-row]').map((r) => r.dataset.shortcutRow)).toEqual(['settings:notify']);
     expect(q('[data-shortcut-row="settings:notify"]')).toHaveTextContent('환경설정 → 알림');
-    expect(q('[data-shortcut-row="settings:notify"] [data-shortcut-key]')).toHaveValue('N');
+    expect(keyText('settings:notify')).toBe('Ctrl + Alt + N');
     expect(q('[data-shortcut-row="settings:notify"]')).toHaveAttribute('data-shortcut-row-focus');
-  });
-
-  it('내가 만든 단축키: 키를 바꿔 저장 · 기능과 겹치면 막는다 · 비우고 저장하면 빠진다', () => {
-    setTabShortcuts({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'N' } });
-    openSettings('shortcuts');
-    const input = () => q('[data-shortcut-row="settings:notify"] [data-shortcut-key]');
-    fireEvent.keyDown(input(), { key: 'f', code: 'KeyF', ctrlKey: true });
-    expect(q('[data-shortcut-row="search"]')).toHaveAttribute('data-conflict');
-    fireEvent.click(q('[data-shortcut-save]'));
-    expect(useShortcutOverrides.getState().tabs['settings:notify']?.key).toBe('N');
-    fireEvent.keyDown(input(), { key: 'm', code: 'KeyM', ctrlKey: true, altKey: true });
-    expect(anyWindowUnsaved()).toBe(true);
-    fireEvent.click(q('[data-shortcut-save]'));
-    expect(useShortcutOverrides.getState().tabs).toEqual({ 'settings:notify': { ctrl: true, alt: true, shift: false, key: 'M' } });
-    // 비우면 줄은 남아 있다가 저장하면 빠진다
-    fireEvent.keyDown(input(), { key: 'Backspace', code: 'Backspace' });
-    expect(input()).toHaveValue('');
-    fireEvent.click(q('[data-shortcut-save]'));
+    fireEvent.click(q('[data-shortcut-clear="settings:notify"]'));
     expect(useShortcutOverrides.getState().tabs).toEqual({});
-    expect(document.querySelector('[data-shortcut-row="settings:notify"]')).toBeNull();
-    expect(q('[data-shortcut-tabs-empty]')).toBeInTheDocument();
+    expect(document.querySelector('[data-shortcut-group="창 안 탭"]')).toBeNull();
   });
 
-  it('기본값으로 → 저장하면 창 안 탭 키도 빠진다 · 다른 기기에서 더한 탭도 따라온다', () => {
+  it('겹친 키(옛 자료)는 두 줄 모두 ⚠ · 키가 하나도 없으면 단추 없는 기능 줄만', () => {
+    // 하루 화면(Shift+1)과 같은 키를 주간 화면에 - 눌러서 정하면 생기지 않는다(겹친 쪽에서 뺀다)
+    setShortcutOverrides({ scopeWeek: { ctrl: false, alt: false, shift: true, key: '1' } });
+    const first = openSettings('shortcuts');
+    expect(q('[data-shortcut-row="scopeDay"]')).toHaveAttribute('data-conflict');
+    expect(q('[data-shortcut-row="scopeWeek"]')).toHaveAttribute('data-conflict');
+    first.unmount();
+    // 키를 모두 비우면 남는 것은 누를 단추가 없는 기능 줄뿐
+    setShortcutOverrides(Object.fromEntries(SHORTCUT_ACTIONS.map((a) => [a.id, NONE])));
     openSettings('shortcuts');
-    act(() => setTabShortcuts({ 'backup:import': { ctrl: false, alt: true, shift: false, key: 'I' } }));
-    expect(q('[data-shortcut-row="backup:import"] [data-shortcut-key]')).toHaveValue('I');
-    fireEvent.click(q('[data-shortcut-reset]'));
-    fireEvent.click(q('[data-shortcut-save]'));
-    expect(useShortcutOverrides.getState().tabs).toEqual({});
+    expect(new Set(rowIds())).toEqual(new Set(NO_BUTTON));
   });
 
-  it('고치지 않은 채로 다른 기기에서 키가 바뀌면 따라간다', () => {
+  it('다른 기기에서 키가 바뀌면 따라간다', () => {
     openSettings('shortcuts');
     act(() => setShortcutOverrides({ help: { ctrl: true, alt: true, shift: false, key: 'Q' } }));
-    expect(q('[data-shortcut-row="help"] [data-shortcut-key]')).toHaveValue('Q');
+    expect(keyText('help')).toBe('Ctrl + Alt + Q');
   });
 
   it('창 밖 Ctrl 단축키는 그대로 돈다 (창이 열려 있어도)', () => {

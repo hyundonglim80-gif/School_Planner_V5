@@ -1,78 +1,75 @@
-// 환경설정 '단축키' 탭 (V4 components/ShortcutModal.tsx를 탭으로). 조합을 직접 정한다.
+// 환경설정 '단축키' 탭 (V4 components/ShortcutModal.tsx를 탭으로 → P28-1 사용자 요청으로 '키가 걸린 것만').
 //
-// 다른 탭과 달리 '저장'을 눌러야 바뀐다 - 키를 하나씩 바꾸는 동안 두 기능이 같은 키를 잠깐 쓰게 되는데, 그때마다 바로 바뀌면
-// 엉뚱한 기능이 돈다. '저장'은 겹치는 키가 있으면 막는다. 저장해도 창은 닫히지 않는다. 탭을 바꿔도 고치던 것은 남고,
-// ESC로 모두 닫을 때는 먼저 묻는다(창 목록의 저장 안 한 글 묻기).
-// '⌨️ 단축키 설정'(P18-1 - PC만) = 메뉴·단추를 눌러 기능을 고르고 키를 누르는 길(app/shortcutRecord). 끝나면 이 탭이 그 줄을 짚는다(focusId).
-// '내가 만든 단축키'(P18-2) = 창 안 탭 키 - 키를 준 탭만 보인다(더하기는 '⌨️ 단축키 설정'으로만, 키를 비우고 저장하면 빠진다 - PLAN 5장).
-import { useEffect, useImperativeHandle, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type Ref } from 'react';
-import { showErrorToast, showToast } from '../../app/toast';
+// 단축키를 더하는 길은 '⌨️ 단축키 설정'(눌러서 고르기 - app/shortcutRecord) 하나다(11-09 사용자 '일원화' - PLAN 5장 'P28').
+// 이 탭에는 키가 걸린 것만(기본 키 + 내가 만든 것 - 기능·창 안 탭) 줄로 보이고, 줄마다 [키 바꾸기](띠의 키 단계로 곧바로)·[해제].
+// 모두 누르는 즉시 저장된다(예전의 기능 52개마다 키 칸 + '저장'은 없앴다). 해제·기본값으로는 안내의 '되돌리기'로 되돌린다.
+// 누를 단추가 없는 기능(NO_BUTTON)은 키가 없어도 늘 줄이 있다 - 눌러서 고를 수 없으니 여기서 [키 정하기](없으면 해제한 뒤 다시 걸 길이 없다).
+// 겹친 줄(⚠)은 옛 자료에서만 나온다 - 눌러서 정하면 겹친 쪽에서 키를 뺀다(domain/shortcuts assignBinding).
+// 끝나면 이 탭이 그 줄을 짚는다(focusId - 같은 줄을 또 바꿔도 다시 짚게 focusToken = 연 params).
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { showToast } from '../../app/toast';
 import { canRun, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from '../../app/keys';
 import { detectDeviceKind } from '../../app/prefs';
 import { shortcutLabel, TAB_SHORTCUTS } from '../../app/tabShortcuts';
-import { useUnsavedCheck } from '../../app/windows';
 import {
-  bindingFromEvent,
-  recordKeyIssue,
-  compactTabBindings,
+  allBindings,
+  assignBinding,
+  bindingOf,
   findConflicts,
   FIXED_SHORTCUTS,
-  isModifierOnly,
+  formatAnyBinding,
   isTabShortcutId,
   overridesFromBindings,
   resolveBindings,
   SHORTCUT_ACTIONS,
-  tabBindingsKey,
   type AnyShortcutId,
   type Binding,
+  type BindingEntry,
   type ShortcutId,
+  type ShortcutOverrides,
   type TabBindings,
 } from '../../domain/shortcuts';
 
-/** 입력칸에 보여줄 글자. 화살표처럼 이름이 긴 키는 기호로 */
-const KEY_DISPLAY: Record<string, string> = {
-  ArrowUp: '↑',
-  ArrowDown: '↓',
-  ArrowLeft: '←',
-  ArrowRight: '→',
-  Space: 'Space',
-  Enter: 'Enter',
-};
+const NONE: Binding = { ctrl: false, alt: false, shift: false, key: '' };
+/** 창 안 탭(P18-2) 묶음 이름 - 기능 묶음 뒤 */
+const TAB_GROUP = '창 안 탭';
+const SMALL_BTN = 'px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer shrink-0';
 
-type Bindings = Record<ShortcutId, Binding>;
-const keyOf = (b: Bindings) => JSON.stringify(SHORTCUT_ACTIONS.map((a) => b[a.id]));
+/**
+ * 누를 단추가 없는(또는 다른 단추와 하는 일이 달라 표시를 달지 않은) 기능 - 키가 없어도 줄을 보인다.
+ * 단추에 shortcutTarget을 달면 여기서 뺀다.
+ */
+export const NO_BUTTON: ReadonlySet<ShortcutId> = new Set<ShortcutId>([
+  'undo',
+  'checklist',
+  'scopePrev',
+  'scopeNext',
+  'recurring',
+  'forwarding',
+  'newCourse',
+  'toggleTheme',
+]);
 
-function ModifierBox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <label className="flex items-center gap-1 cursor-pointer select-none shrink-0">
-      <input
-        type="checkbox"
-        data-shortcut-mod={label}
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="w-3.5 h-3.5 rounded text-primary focus:ring-primary border-slate-300 accent-primary cursor-pointer"
-      />
-      <span className={`text-xs font-bold ${checked ? 'text-slate-700' : 'text-slate-400'}`}>{label}</span>
-    </label>
-  );
-}
+const sameBinding = (a: Binding, b: Binding) => a.ctrl === b.ctrl && a.alt === b.alt && a.shift === b.shift && a.key === b.key;
 
 function ShortcutRow({
-  id,
-  label,
-  binding,
+  entry,
   conflicted,
   focused,
+  focusToken,
   onChange,
+  onClear,
 }: {
-  id: AnyShortcutId;
-  label: string;
-  binding: Binding;
+  entry: BindingEntry;
   conflicted: boolean;
-  /** 방금 눌러서 정한 줄 - 보이게 옮기고 잠깐 짚는다 */
+  /** 방금 정한 줄 - 보이게 옮기고 잠깐 짚는다 */
   focused: boolean;
-  onChange: (b: Binding) => void;
+  focusToken: unknown;
+  onChange: () => void;
+  onClear: () => void;
 }) {
+  const { id, action, binding } = entry;
+  const label = shortcutLabel(id);
   const rowRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = rowRef.current;
@@ -82,31 +79,10 @@ function ShortcutRow({
     el.classList.add('search-focus');
     const t = window.setTimeout(() => el.classList.remove('search-focus'), 2600);
     return () => window.clearTimeout(t);
-  }, [focused]);
-  /** 받지 않는 키(글 칸 키·브라우저 키)는 까닭을 알리고 그대로 둔다 - 눌러서 정하기와 같다 */
-  const choose = (next: Binding) => {
-    const issue = recordKeyIssue(next, id);
-    if (issue) showToast(issue, 4000);
-    else onChange(next);
-  };
-  // 칸을 누르고 키를 누르면 그 키가 들어간다. 화살표·Space처럼 글자가 없는 키도 있어 글자 대신 눌린 키를 잡는다.
-  const handleKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Tab') return; // 다음 칸으로 넘어가기는 막지 않는다
-    if (e.key === 'Escape') return; // ESC는 지금처럼 창을 닫는다
-    e.preventDefault();
-    // ⚠️ 여기서 멈추지 않으면 화면 전체 단축키(app/keys)까지 올라간다 - 휴지통에 준 Alt+T를 다른 칸에 넣으려는 순간 휴지통이 열렸다(V4)
-    e.stopPropagation();
-    const native = e.nativeEvent;
-    if (isModifierOnly(native)) return;
-    if (e.key === 'Backspace' || e.key === 'Delete') {
-      onChange({ ...binding, key: '' });
-      return;
-    }
-    // 누른 대로 수식키까지 같이 채운다. 체크로 따로 손봐도 된다.
-    choose(bindingFromEvent(native));
-  };
-  // 아직 V5로 옮기지 않은 기능도 키는 정해 둘 수 있다(옮기면 그 키로 선다) - 흐리게. 창 안 탭은 있는 창만 목록에 있다
+  }, [focused, focusToken]);
+  // 아직 V5로 옮기지 않은 기능(옛 키를 가져온 것) - 흐리게. 창 안 탭은 있는 창만 목록에 있다
   const ready = isTabShortcutId(id) || canRun(id);
+  const isDefault = !!action && !!binding.key && sameBinding(action.def, binding);
 
   return (
     <div
@@ -114,211 +90,173 @@ function ShortcutRow({
       data-shortcut-row={id}
       data-conflict={conflicted || undefined}
       data-shortcut-row-focus={focused || undefined}
-      className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border p-2.5 ${
-        conflicted ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100'
-      }`}
+      className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border p-2.5 ${conflicted ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100'}`}
     >
       <span
         className={`text-sm font-bold min-w-0 flex-1 ${ready ? 'text-slate-700' : 'text-slate-400'}`}
-        title={ready ? undefined : '아직 V5로 옮기지 않은 기능입니다. 키는 미리 정해 둘 수 있습니다.'}
+        title={ready ? undefined : '아직 V5로 옮기지 않은 기능입니다. 키는 남겨 둡니다.'}
       >
         {label}
+        {conflicted && <span className="ml-1.5 text-xs text-red-600">⚠ 같은 키를 쓰는 것이 있습니다</span>}
       </span>
-      <div className="flex items-center gap-2.5 shrink-0">
-        <ModifierBox label="Ctrl" checked={binding.ctrl} onChange={(v) => choose({ ...binding, ctrl: v })} />
-        <ModifierBox label="Alt" checked={binding.alt} onChange={(v) => choose({ ...binding, alt: v })} />
-        <ModifierBox label="Shift" checked={binding.shift} onChange={(v) => choose({ ...binding, shift: v })} />
-      </div>
-      <input
-        type="text"
-        readOnly
+      <kbd
         data-shortcut-key
-        value={KEY_DISPLAY[binding.key] || binding.key}
-        onKeyDown={handleKeyDown}
-        placeholder="없음"
-        aria-label={`${label} 키`}
-        title="이 칸을 누른 뒤 원하는 키를 누르세요. 비우려면 Backspace (비우면 그 기능은 단축키 없이 씁니다)."
-        className={`w-20 shrink-0 px-2 py-1.5 text-center bg-white border rounded-lg text-sm font-bold text-slate-800 cursor-pointer focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 ${
-          conflicted ? 'border-red-300' : 'border-slate-200'
-        }`}
-      />
+        className={`min-w-16 px-2 py-1 text-center bg-white border rounded-lg text-sm font-mono font-bold text-slate-800 shrink-0 ${conflicted ? 'border-red-300' : 'border-slate-200'}`}
+      >
+        {binding.key ? formatAnyBinding(id, binding) : '없음'}
+      </kbd>
+      {isDefault && (
+        <span data-shortcut-default className="text-2xs font-bold text-slate-400 shrink-0">
+          기본
+        </span>
+      )}
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          type="button"
+          data-shortcut-change={id}
+          onClick={onChange}
+          title={binding.key ? '고르기를 건너뛰고 이 단축키에 줄 키만 다시 누릅니다' : '누를 단추가 없는 기능이라 여기서 키를 정합니다'}
+          className={`${SMALL_BTN} bg-white border-slate-200 text-slate-600 hover:border-primary hover:text-primary`}
+        >
+          {binding.key ? '키 바꾸기' : '키 정하기'}
+        </button>
+        {binding.key && (
+          <button
+            type="button"
+            data-shortcut-clear={id}
+            onClick={onClear}
+            title="이 단축키를 없앱니다 (기능은 단추·메뉴로 그대로 씁니다)"
+            className={`${SMALL_BTN} bg-white border-slate-200 text-rose-600 hover:border-rose-300 hover:bg-rose-50`}
+          >
+            해제
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
-/** 창 아랫단에 놓을 것과 Ctrl+S가 부를 저장을 창(SettingsWindow)에 알린다 */
-export interface ShortcutsTabHandle {
-  save: () => void;
-  reset: () => void;
-}
-
 export default function ShortcutsTab({
-  ref,
-  onStatus,
   focusId,
+  focusToken,
   onStartRecord,
+  onChangeKey,
 }: {
-  ref: Ref<ShortcutsTabHandle>;
-  onStatus: (s: { dirty: boolean; conflict: string | null; saved: boolean }) => void;
   focusId?: AnyShortcutId;
-  /** 환경설정 창을 닫고 단축키 설정(눌러서 고르기)을 시작한다 */
+  /** 연 params - 같은 줄을 다시 짚을 때 */
+  focusToken?: unknown;
+  /** 눌러서 고르기(단축키 설정)를 시작한다 - 환경설정 창은 닫는다 */
   onStartRecord: () => void;
+  /** 그 줄의 키만 다시 받는다 */
+  onChangeKey: (id: AnyShortcutId) => void;
 }) {
-  const stored = useShortcutOverrides((s) => s.overrides);
-  const storedTabs = useShortcutOverrides((s) => s.tabs);
-  const [draft, setDraft] = useState<Bindings>(() => resolveBindings(stored));
-  // 창 안 탭 키 (P18-2) - 비운 줄은 빈 키로 남겨 두었다가 저장할 때 뺀다(줄이 손 밑에서 사라지지 않게)
-  const [tabDraft, setTabDraft] = useState<TabBindings>(() => storedTabs);
-  const [saved, setSaved] = useState(false);
-  // 마지막으로 맞춘 저장값. 고치지 않은 채로 다른 기기에서 바뀌면 따라간다(고치던 중이면 그대로 둔다).
-  const base = useRef(resolveBindings(stored));
-  useEffect(() => {
-    const next = resolveBindings(stored);
-    // 앞 저장값을 붙잡아 둔다 - setDraft의 함수는 나중에 돌아 그때는 base가 이미 새 값이다
-    const prev = keyOf(base.current);
-    setDraft((d) => (keyOf(d) === prev ? next : d));
-    base.current = next;
-  }, [stored]);
-  const baseTabs = useRef(storedTabs);
-  useEffect(() => {
-    const prev = tabBindingsKey(baseTabs.current);
-    setTabDraft((d) => (tabBindingsKey(d) === prev ? storedTabs : d));
-    baseTabs.current = storedTabs;
-  }, [storedTabs]);
+  const overrides = useShortcutOverrides((s) => s.overrides);
+  const tabs = useShortcutOverrides((s) => s.tabs);
+  const bindings = useMemo(() => resolveBindings(overrides), [overrides]);
+  const conflicted = useMemo(() => new Set<AnyShortcutId>(findConflicts(bindings, tabs).flat()), [bindings, tabs]);
 
-  const conflicts = useMemo(() => findConflicts(draft, compactTabBindings(tabDraft)), [draft, tabDraft]);
-  const conflicted = useMemo(() => new Set<AnyShortcutId>(conflicts.flat()), [conflicts]);
-  const dirty = keyOf(draft) !== keyOf(resolveBindings(stored)) || tabBindingsKey(tabDraft) !== tabBindingsKey(storedTabs);
-  const conflict = conflicts.length > 0 ? `${shortcutLabel(conflicts[0][0])} / ${shortcutLabel(conflicts[0][1])}` : null;
-  // 보이는 탭 줄 = 저장된 것 + 고치는 중인 것 (탭 목록 차례)
-  const tabRows = TAB_SHORTCUTS.filter((t) => storedTabs[t.id] || tabDraft[t.id]);
+  // 키가 걸린 것만(+ 누를 단추가 없는 기능), 기능 묶음 차례(단축키 목록) 다음 창 안 탭(탭 목록 차례)
+  const groups = useMemo(() => {
+    const out = new Map<string, BindingEntry[]>();
+    for (const a of SHORTCUT_ACTIONS) if (!out.has(a.group)) out.set(a.group, []);
+    out.set(TAB_GROUP, []);
+    const tabOrder = new Map(TAB_SHORTCUTS.map((t, i) => [t.id, i]));
+    for (const e of allBindings(bindings, tabs)) {
+      if (!e.binding.key && !(e.action && NO_BUTTON.has(e.action.id))) continue;
+      out.get(e.action ? e.action.group : TAB_GROUP)!.push(e);
+    }
+    out.get(TAB_GROUP)!.sort((a, b) => (tabOrder.get(a.id as never) ?? 0) - (tabOrder.get(b.id as never) ?? 0));
+    return [...out.entries()].filter(([, list]) => list.length > 0);
+  }, [bindings, tabs]);
 
-  useEffect(() => onStatus({ dirty, conflict, saved }), [dirty, conflict, saved, onStatus]);
-
-  // ESC로 모두 닫기 전에 묻는다
-  const unsaved = useRef<(() => boolean) | null>(null);
-  useEffect(() => {
-    unsaved.current = () => dirty;
+  /** 바꾸기 전 값으로 (안내의 되돌리기) */
+  const undoTo = (before: { overrides: ShortcutOverrides; tabs: TabBindings }) => ({
+    label: '되돌리기',
+    run: () => {
+      setShortcutOverrides(before.overrides);
+      setTabShortcuts(before.tabs);
+    },
   });
-  useUnsavedCheck(unsaved);
 
-  const store = () => {
-    const tabs = compactTabBindings(tabDraft);
-    setShortcutOverrides(overridesFromBindings(draft));
-    setTabShortcuts(tabs);
-    setTabDraft(tabs);
+  const clear = (id: AnyShortcutId) => {
+    const before = useShortcutOverrides.getState();
+    const was = formatAnyBinding(id, bindingOf(id, bindings, tabs));
+    const next = assignBinding(bindings, id, NONE, tabs);
+    setShortcutOverrides(overridesFromBindings(next.bindings));
+    setTabShortcuts(next.tabs);
+    showToast(`⌨️ '${shortcutLabel(id)}' 단축키(${was})를 해제했습니다`, 5000, 'info', undoTo(before));
   };
 
-  useImperativeHandle(ref, () => ({
-    save: () => {
-      // 키가 비어 있는 것은 '쓰지 않음'이다. 막지 않는다. (창 안 탭은 빠진다)
-      if (conflict) return showErrorToast(`같은 조합을 두 기능이 쓰고 있습니다: ${conflict}`);
-      store();
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    },
-    reset: () => {
-      setDraft(resolveBindings());
-      // 창 안 탭은 기본값이 없다 - 모두 비운다(저장하면 빠진다)
-      setTabDraft(Object.fromEntries(tabRows.map((t) => [t.id, { ctrl: false, alt: false, shift: false, key: '' }])));
-      showToast("기본값으로 되돌렸습니다. '저장'을 눌러야 적용됩니다.");
-    },
-  }));
+  const reset = () => {
+    if (!window.confirm('단축키를 처음 값으로 되돌릴까요?\n바꾼 키는 기본 키로 돌아가고, 내가 만든 단축키(창 안 탭)는 모두 빠집니다.')) return;
+    const before = useShortcutOverrides.getState();
+    setShortcutOverrides({});
+    setTabShortcuts({});
+    showToast('⌨️ 단축키를 기본값으로 되돌렸습니다', 5000, 'info', undoTo(before));
+  };
 
   // 눌러서 정하기는 키보드가 있는 PC만 (휴대폰 단축키는 따로 저장된다 - 단추를 숨긴다)
   const [pc] = useState(() => detectDeviceKind() === 'pc');
-  const startRecord = () => {
-    // 고치던 것과 엇갈리지 않게 먼저 저장한다(PLAN 5장 P18)
-    if (dirty) {
-      if (!window.confirm('고치던 단축키를 먼저 저장하고 시작할까요?')) return;
-      if (conflict) return showErrorToast(`같은 조합을 두 기능이 쓰고 있습니다: ${conflict}`);
-      store();
-    }
-    onStartRecord();
-  };
-
-  const groups = useMemo(() => {
-    const out: Record<string, typeof SHORTCUT_ACTIONS> = {};
-    for (const action of SHORTCUT_ACTIONS) (out[action.group] ||= []).push(action);
-    return Object.entries(out);
-  }, []);
 
   return (
     <div>
       <div className="px-5 py-3 border-b border-slate-100">
-        {pc && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2.5">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-2.5">
+          {pc && (
             <button
               type="button"
               data-shortcut-record-start
-              onClick={startRecord}
+              onClick={onStartRecord}
               className="px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
             >
               ⌨️ 단축키 설정
             </button>
-            <span className="text-xs text-slate-500">
-              메뉴·단추를 <strong className="text-slate-700">직접 눌러</strong> 고른 뒤 키를 누르면 바로 저장됩니다.
-            </span>
-          </div>
-        )}
+          )}
+          <button
+            type="button"
+            data-shortcut-reset
+            onClick={reset}
+            className="ml-auto px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+          >
+            기본값으로
+          </button>
+        </div>
         <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3 text-xs text-slate-600 leading-relaxed">
-          키 칸을 누른 뒤 <strong className="text-slate-800">원하는 키를 그대로 누르면</strong> 들어갑니다. 글자·숫자·기호는 물론 화살표나 Space도
-          됩니다. Ctrl / Alt / Shift는 체크로 켜고 끕니다.
+          {pc ? (
+            <>
+              단축키를 더하려면 <strong className="text-slate-800">⌨️ 단축키 설정</strong>을 누른 뒤, 키로 쓰고 싶은 메뉴·단추를 평소처럼{' '}
+              <strong className="text-slate-800">직접 눌러</strong> 찾아가 <strong className="text-slate-800">완료</strong> → 키를 누릅니다(마지막에 누른 것이 고른 것).
+            </>
+          ) : (
+            <>단축키를 더하는 것은 PC에서 합니다(⌨️ 단축키 설정 - 단추를 눌러 고른다). 휴대폰 키는 PC와 따로 저장됩니다.</>
+          )}
           <br />
-          켜고 끄는 기능(주말·일정·수업)에 화살표를 쓰면 <strong className="text-slate-800">↑와 ↓가 같이</strong> 동작합니다.
-          <br />
-          '메뉴 열기'는 기본값이 <strong className="text-slate-800">없음</strong>입니다. 자주 쓰는 것만 골라 정해 두세요. 비워 두면 그 기능은
-          메뉴에서만 씁니다. 바꾼 키는 PC와 휴대폰을 따로 계정에 저장합니다.
+          아래에는 <strong className="text-slate-800">키가 걸린 것만</strong> 보입니다(누를 단추가 없는 되돌리기·이전 화면 같은 기능은 키가 없어도 보여 <strong className="text-slate-800">키 정하기</strong>로 정합니다).
+          누르는 즉시 저장되고, 해제한 기능은 단추·메뉴로 그대로 씁니다.
         </div>
       </div>
 
-      {groups.map(([groupName, actions]) => (
-        <div key={groupName} className="px-5 py-4 border-b border-slate-100">
-          <h3 className="text-sm font-black text-slate-800 mb-2">{groupName}</h3>
-          <div className="space-y-2">
-            {actions.map((action) => (
-              <ShortcutRow
-                key={action.id}
-                id={action.id}
-                label={action.label}
-                binding={draft[action.id]}
-                conflicted={conflicted.has(action.id)}
-                focused={focusId === action.id}
-                onChange={(b) => setDraft((prev) => ({ ...prev, [action.id]: b }))}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
-
-      {/* 내가 만든 단축키 (P18-2 - 창 안 탭). 휴대폰은 더할 길이 없어 있을 때만 */}
-      {(pc || tabRows.length > 0) && (
-        <div className="px-5 py-4 border-b border-slate-100" data-shortcut-tabs>
-          <h3 className="text-sm font-black text-slate-800 mb-0.5">내가 만든 단축키 (창 안 탭)</h3>
-          <p className="text-xs text-slate-400 mb-2">
-            창 안의 탭(예: 환경설정 → 알림)은 맨 위 <strong className="text-slate-500">⌨️ 단축키 설정</strong>으로 그 탭을 눌러 더합니다. 키를 비우고 저장하면 빠집니다.
-          </p>
-          {tabRows.length === 0 ? (
-            <p data-shortcut-tabs-empty className="text-xs text-slate-400 rounded-xl border border-dashed border-slate-200 p-2.5">
-              아직 없습니다.
-            </p>
-          ) : (
+      <div data-shortcut-list>
+        {/* 누를 단추가 없는 기능은 늘 있어 목록이 비지 않는다 */}
+        {groups.map(([groupName, entries]) => (
+          <div key={groupName} data-shortcut-group={groupName} className="px-5 py-4 border-b border-slate-100">
+            <h3 className="text-sm font-black text-slate-800 mb-2">{groupName === TAB_GROUP ? '내가 만든 단축키 (창 안 탭)' : groupName}</h3>
             <div className="space-y-2">
-              {tabRows.map((t) => (
+              {entries.map((e) => (
                 <ShortcutRow
-                  key={t.id}
-                  id={t.id}
-                  label={t.label}
-                  binding={tabDraft[t.id] || { ctrl: false, alt: false, shift: false, key: '' }}
-                  conflicted={conflicted.has(t.id)}
-                  focused={focusId === t.id}
-                  onChange={(b) => setTabDraft((prev) => ({ ...prev, [t.id]: b }))}
+                  key={e.id}
+                  entry={e}
+                  conflicted={conflicted.has(e.id)}
+                  focused={focusId === e.id}
+                  focusToken={focusToken}
+                  onChange={() => onChangeKey(e.id)}
+                  onClear={() => clear(e.id)}
                 />
               ))}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        ))}
+      </div>
 
       {/* 바꾸지 않는 것들. 목록에서 빠지면 "없는 기능"으로 보이므로 까닭과 함께 보여 준다 */}
       <div className="px-5 py-4">
@@ -329,9 +267,7 @@ export default function ShortcutsTab({
             <div key={fixed.label} className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-bold text-slate-500 min-w-0">{fixed.label}</span>
-                <kbd className="px-2 py-1 shrink-0 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-500">
-                  {fixed.keys}
-                </kbd>
+                <kbd className="px-2 py-1 shrink-0 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-500">{fixed.keys}</kbd>
               </div>
               <p className="text-xs text-slate-400 mt-1">{fixed.why}</p>
             </div>

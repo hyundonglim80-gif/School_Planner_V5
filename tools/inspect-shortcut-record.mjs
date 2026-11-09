@@ -6,7 +6,8 @@
 //   5) 겹친 키: 머리줄 🗑️ → Ctrl+F → '검색 열기'에서 뺀다는 안내 → 저장 → search = 없음
 //   6) ESC = 기록 취소(열린 창은 그대로, 키는 그대로)
 //   7) 창 안 탭(P18-2): ⋮ → 환경설정 → 알림 탭 = '고른 것: 환경설정 → 알림' → Ctrl+Alt+N → 계정 tabShortcuts · '내가 만든 단축키' 줄 ·
-//      열린 환경설정에서 그 키 = 알림 탭(다른 탭을 눌렀어도 다시) · 탭 툴팁 · 설명서 표 · 🗑️ → 메모 탭 = 휴지통 메모 탭으로 열림 · 비우고 저장 = 빠짐
+//      열린 환경설정에서 그 키 = 알림 탭(다른 탭을 눌렀어도 다시) · 탭 툴팁 · 설명서 표 · 🗑️ → 메모 탭 = 휴지통 메모 탭으로 열림
+//   8) 단축키 탭 줄(P28-1): 키 바꾸기 = 고르기 없이 띠의 키 단계(창은 그대로) · 해제 = 곧바로 빠짐 · 되돌리기
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-shortcut-record.mjs
 // 에뮬레이터 teacher 계정의 V5 설정 문서(spaces/u_{uid}/settings/pc)를 쓴다 - 처음 것을 읽어 두고 끝에 되돌린다.
@@ -82,9 +83,8 @@ try {
     `계정 settings/pc에 올라간다 (${JSON.stringify(saved.shortcutOverrides)})`,
   );
   r.check(await waitFor(page.locator(`${sel('shortcut-row', 'timetable')}[data-shortcut-row-focus]`)), '환경설정 단축키 탭이 그 줄을 짚는다');
-  r.check((await page.inputValue(`${sel('shortcut-row', 'timetable')} ${sel('shortcut-key')}`)) === 'T', '단축키 탭 그 줄 = T');
-  const mods = await page.locator(`${sel('shortcut-row', 'timetable')} ${sel('shortcut-mod')}`).evaluateAll((els) => els.filter((e) => e.checked).map((e) => e.dataset.shortcutMod));
-  r.check(mods.join() === 'Ctrl,Alt', `Ctrl·Alt 체크 (${mods.join()})`);
+  const rowKey = (id) => page.locator(`${sel('shortcut-row', id)} ${sel('shortcut-key')}`).textContent();
+  r.check((await rowKey('timetable')) === 'Ctrl + Alt + T', `단축키 탭 그 줄 = Ctrl + Alt + T (${await rowKey('timetable')}) - 키가 없던 기능이 목록에 생긴다 (P28-1)`);
 
   r.section('그 키로 동작 · 메뉴·설명서에 보임');
   await page.evaluate(() => window.sp5.closeAllWindows());
@@ -116,7 +116,7 @@ try {
   const moved = await serverUntil(serverPc, (d) => d.shortcutOverrides?.trash?.key === 'F');
   r.check(moved.shortcutOverrides?.trash?.key === 'F' && moved.shortcutOverrides?.search?.key === '', `휴지통 = Ctrl+F, 검색 열기 = 없음 (${JSON.stringify(moved.shortcutOverrides)})`);
   r.check(await waitFor(page.locator(`${sel('shortcut-row', 'trash')}[data-shortcut-row-focus]`)), '단축키 탭이 휴지통 줄을 짚는다');
-  r.check((await page.inputValue(`${sel('shortcut-row', 'search')} ${sel('shortcut-key')}`)) === '', '단축키 탭 검색 열기 = 없음');
+  r.check((await page.locator(sel('shortcut-row', 'search')).count()) === 0, '단축키 탭에서 검색 열기 줄이 빠졌다 (키가 없다)');
 
   r.section('창 안 탭 (P18-2) - 환경설정 → 알림');
   await page.evaluate(() => window.sp5.closeAllWindows());
@@ -142,7 +142,7 @@ try {
     `계정 settings/pc tabShortcuts에 올라간다 (${JSON.stringify(tabSaved.tabShortcuts)})`,
   );
   r.check(!tabSaved.shortcutOverrides?.settings, '기능 키(shortcutOverrides)와 섞이지 않는다');
-  const tabRow = `${sel('shortcut-tabs')} ${sel('shortcut-row', 'settings:notify')}`;
+  const tabRow = `${sel('shortcut-group', '창 안 탭')} ${sel('shortcut-row', 'settings:notify')}`;
   r.check(await waitFor(page.locator(`${tabRow}[data-shortcut-row-focus]`)), "단축키 탭 '내가 만든 단축키'에 그 줄 (짚는다)");
   r.check((await page.locator(tabRow).textContent())?.includes('환경설정 → 알림'), '줄 이름 = 환경설정 → 알림');
 
@@ -181,15 +181,26 @@ try {
   await page.keyboard.press('Control+Alt+KeyM');
   r.check(await waitFor(page.locator(`${sel('trash-tab', 'memo')}[aria-selected="true"]`)), 'Ctrl+Alt+M = 휴지통이 메모 탭으로 열린다');
 
-  r.section('창 안 탭 - 비우고 저장 = 빠짐');
+  r.section('키 바꾸기 · 해제 (P28-1 - 단축키 탭 줄)');
   await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'shortcuts' }));
   await waitFor(page.locator(tabRow));
-  await page.click(`${tabRow} ${sel('shortcut-key')}`);
-  await page.keyboard.press('Backspace');
-  await page.click(sel('shortcut-save'));
+  await page.click(`${sel('shortcut-row', 'timetable')} ${sel('shortcut-change', 'timetable')}`);
+  r.check(await waitFor(bar('key')), "키 바꾸기 = 고르기 없이 띠의 키 단계 ('시간표')");
+  r.check(((await page.locator(sel('shortcut-record', 'key')).textContent()) ?? '').includes("'시간표'"), '띠에 그 이름');
+  r.check((await page.locator(sel('settings-window')).count()) === 1, '환경설정 창은 열린 채');
+  await page.keyboard.press('Control+Alt+KeyY');
+  await page.click(sel('shortcut-record-save'));
+  const changed = await serverUntil(serverPc, (d) => d.shortcutOverrides?.timetable?.key === 'Y');
+  r.check(changed.shortcutOverrides?.timetable?.key === 'Y', '계정 = Ctrl + Alt + Y');
+  r.check(await waitFor(async () => (await rowKey('timetable')) === 'Ctrl + Alt + Y'), '그 줄 = Ctrl + Alt + Y');
+  await page.click(sel('shortcut-clear', 'settings:notify'));
   const cleared = await serverUntil(serverPc, (d) => !d.tabShortcuts?.['settings:notify']);
-  r.check(JSON.stringify(cleared.tabShortcuts) === JSON.stringify({ 'trash:memo': { ctrl: true, alt: true, shift: false, key: 'M' } }), `알림 탭 키만 빠진다 (${JSON.stringify(cleared.tabShortcuts)})`);
-  r.check(await waitFor(async () => (await page.locator(tabRow).count()) === 0), '저장하면 그 줄이 빠진다');
+  r.check(JSON.stringify(cleared.tabShortcuts) === JSON.stringify({ 'trash:memo': { ctrl: true, alt: true, shift: false, key: 'M' } }), `해제 = 알림 탭 키만 곧바로 빠진다 (${JSON.stringify(cleared.tabShortcuts)})`);
+  r.check(await waitFor(async () => (await page.locator(tabRow).count()) === 0), '그 줄이 빠진다');
+  await page.locator(sel('toast')).filter({ hasText: '해제했습니다' }).last().locator('[data-toast-action="되돌리기"]').click();
+  r.check(!!(await serverUntil(serverPc, (d) => !!d.tabShortcuts?.['settings:notify'])).tabShortcuts?.['settings:notify'], '안내의 되돌리기 = 다시 걸린다');
+  await page.click(sel('shortcut-clear', 'settings:notify'));
+  await serverUntil(serverPc, (d) => !d.tabShortcuts?.['settings:notify']);
   await page.evaluate(() => window.sp5.closeAllWindows());
 
   r.section('ESC = 기록 취소');
