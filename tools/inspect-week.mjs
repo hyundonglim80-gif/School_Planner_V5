@@ -1,5 +1,5 @@
 // tools/inspect-week.mjs - P5-1: 주간 화면·작년 이맘때를 실제 크롬에서 본다.
-//   1) 요일 카드 일곱(월~일, 토 파랑·일 빨강), 본문이 넓으면 다음 주 줄, 주말 끄기 = 다섯, 오른쪽 칸이 열려 좁아지면 다음 주는 빠진다.
+//   1) 요일 카드 일곱(월~일, 토 파랑·일 빨강 - 토·일은 수업 줄 없이 한 칸에 위·아래, 11-09), 본문이 넓으면 다음 주 줄, 주말 끄기 = 다섯, 오른쪽 칸이 열려 좁아지면 다음 주는 빠진다.
 //   2) 일정 칩: 기간 '(k/n)', 라벨 칩 = 완료(문서 하나·그날만), 글 = 오른쪽 일정 칸, ✕ = 지운 표시 + 되돌리기, + = 그날 새 일정 칸,
 //      🔗 n = 연결된 데이터, 카드 빈 곳 = 그날 하루 화면, Ctrl = 여러 개 고르기. 오늘 카드에는 이월로 따라오는 일정(↪).
 //   3) 📝 n = 그날 기록 창(하루 화면으로 가지 않는다) - '+ 추가' = 같은 기록 칸.
@@ -75,9 +75,23 @@ try {
   r.check((await color('2026-10-10')) !== (await color('2026-10-08')) && (await color('2026-10-11')) !== (await color('2026-10-10')), '토·일은 색이 다르다');
   r.check(await waitFor(page.locator(sel('week-next'))), '넓은 화면은 다음 주 줄');
   // 11-09 사용자 보고: PC 글자 90%에서 다음 주 줄은 뜨는데 요일이 월~목 / 금~일 두 줄로 꺾였다 (칸 경계 px → rem)
-  const rowsOf = (scope) => page.locator(`${sel(scope)} ${sel('week-day')}`).evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().top))).size);
-  r.check((await rowsOf('week-this')) === 1 && (await rowsOf('week-next')) === 1, `다음 주 줄이 있으면 이번 주·다음 주 요일 일곱이 한 줄씩 (줄 ${await rowsOf('week-this')}·${await rowsOf('week-next')})`);
-  r.check((await chip('insp_wk2').count()) === 3 && (await day('2026-10-08').locator(sel('week-event', 'insp_wk2')).textContent()).includes('(2/3)'), '기간 일정은 날마다 (2/3)');
+  // 11-09 사용자 요청: 토·일은 한눈에처럼 수업 줄 없이 한 칸에 위(토)·아래(일)로 - 칸 = 월~금 + 주말 여섯 (줄 수는 칸의 위 끝으로 센다)
+  const rowsOf = (scope) => page.locator(`${sel(scope)} ${sel('week-grid')} > *`).evaluateAll((els) => new Set(els.map((e) => Math.round(e.getBoundingClientRect().top))).size);
+  r.check((await rowsOf('week-this')) === 1 && (await rowsOf('week-next')) === 1, `다음 주 줄이 있으면 이번 주·다음 주 칸 여섯이 한 줄씩 (줄 ${await rowsOf('week-this')}·${await rowsOf('week-next')})`);
+  const weekendBox = page.locator(`${sel('week-this')} ${sel('week-weekend')}`);
+  const [satBox, sunBox, friBox] = await Promise.all(['2026-10-10', '2026-10-11', '2026-10-09'].map((d) => day(d).boundingBox()));
+  r.check(
+    (await weekendBox.locator(sel('week-day')).count()) === 2 && !!satBox && !!sunBox && Math.abs(satBox.x - sunBox.x) < 2 && sunBox.y > satBox.y + satBox.height - 2,
+    '토·일 = 한 칸에 위(토)·아래(일)',
+  );
+  r.check(!!friBox && !!satBox && Math.abs(friBox.y - satBox.y) < 2 && Math.abs(friBox.y + friBox.height - (sunBox.y + sunBox.height)) < 3, '주말 칸 높이 = 평일 카드 높이 (위·아래 끝이 같다)');
+  const friLessons = await day('2026-10-09').locator(sel('week-lessons')).count();
+  r.check((await weekendBox.locator(sel('week-lessons')).count()) === 0, `토·일에는 수업 줄이 없다 (금요일 수업 줄 ${friLessons})`);
+  // 심은 자료가 늦게 뜰 때가 있다 - 기다린다 (11-09 한 번 틀림)
+  r.check(
+    await waitFor(async () => (await chip('insp_wk2').count()) === 3 && ((await day('2026-10-08').locator(sel('week-event', 'insp_wk2')).textContent()) ?? '').includes('(2/3)')),
+    '기간 일정은 날마다 (2/3)',
+  );
   r.check((await day('2026-10-07').locator(sel('week-notes')).getAttribute('data-week-notes')) === '1', '📝 1 (그날 기록 수)');
 
   r.section('일정 칩');

@@ -4,6 +4,7 @@
 //   - 겹쳐 보기(P17-2): 요일 카드마다 주 공간 것(이월 포함) 뒤에 겹친 공간 그날 일정(그 공간 라벨 트리·색 점) - 누르면 그 공간 칸, 칩 = 그 공간에 완료. 끌기·✕·고르기는 주 공간 것만.
 //   - 📰 주간학습안내(담임 - features/weeklyGuide)는 P6-3. 인쇄(⋮·Ctrl+P)는 인쇄 창(features/print)이 printAt으로 그 주만 그린다(단추 줄·다음 주·작년 없이). 수업 줄은 P6-1(features/lessons/WeekLessonRows - 요일끼리 교시 줄 수가 같다), 끌어 옮기기·공휴일은 P5-3.
 //   - 요일 카드 줄(셈·고르기·끌기·지우기)은 useWeekCards(P24-2 - 한눈에 화면과 함께 쓴다). 여기에는 주간만의 것 - 다음 주 줄·작년 이맘때·주간학습안내.
+//   - 토·일은 수업 줄 없이 한 칸에 위(토)·아래(일)로(11-09 사용자 요청 '한눈에처럼' - stackWeekend). 인쇄도 같다(여섯 열).
 import { useMemo, useState } from 'react';
 import { useNav } from '../../app/nav';
 import { openWindow } from '../../app/windows';
@@ -116,7 +117,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
   const pickedCount = pickedKeys.size;
   const md = (d: string) => `${Number(d.slice(5, 7))}.${Number(d.slice(8, 10))}`;
 
-  if (printAt) return <div data-screen="week">{cards.grid(shownThis)}</div>;
+  if (printAt) return <div data-screen="week">{cards.grid(shownThis, { stackWeekend: true })}</div>;
 
   return (
     <div data-screen="week" className="animate-fade-in pb-12">
@@ -185,7 +186,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
       <div className="flex flex-col gap-4">
         {/* 날짜(둘째 줄)를 누르면 오늘로 - 오늘 카드가 없으면(주말을 감춘 토·일) 이번 주 (app/todayScroll) */}
         <div data-today-area={thisWeek.includes(cards.today) ? 'true' : undefined} data-week-this>
-          {cards.grid(shownThis, { extra: lastYearCell })}
+          {cards.grid(shownThis, { extra: lastYearCell, stackWeekend: true })}
         </div>
         {showNextWeek && (
           <section aria-label="다음 주" data-week-next>
@@ -196,7 +197,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
               </span>
               <div className="flex-1 border-t border-dashed border-slate-200" />
             </div>
-            {cards.grid(shownNext)}
+            {cards.grid(shownNext, { stackWeekend: true })}
           </section>
         )}
       </div>

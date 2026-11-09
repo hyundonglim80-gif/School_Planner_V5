@@ -4,9 +4,11 @@
 //   끌어 옮기기는 훅 하나(useEventDrop)라 이번 주 줄에서 다음 주 줄로도 끈다. 묻는 창(지우기 범위·옮기기 범위)은 dialogs를 화면에 한 번.
 //   수업 줄은 셈할 날들(days)을 한 번에 - 요일끼리 교시 줄 수가 같다(보이는 줄마다 7교시 보충이 있으면 그만큼).
 //   주간만의 것(다음 주 줄·작년 이맘때·주간학습안내)은 주간 화면에 - 작년 칸은 extra로 카드 아래에 덧붙인다.
+//   토·일 한 칸(stackWeekend - 11-09 사용자 요청 '한눈에처럼'): 주간도 토·일을 수업 줄 없이 한 칸에 위(토)·아래(일)로 - 칸은 월~금 + 주말 = 여섯.
 import { useMemo, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
+import { weekdayOf } from '../../domain/dateUtils';
 import { periodStateAt, timesOf } from '../../domain/periodTimes';
 import { itemLabels, itemsOn, useDocs, useHolidayVersion, useLabelTree, useOverlaySpaces, type OverlaySpace } from '../../data/select';
 import { useClock } from '../../ui/useClock';
@@ -40,7 +42,15 @@ const quiet = () => {
  * 같은 날 바탕 90%는 한눈에만이 되었다(P29-1) - 주간 화면은 100%라 75rem = 1200px, 한눈에 왼쪽은 90%라 1080px. rem이라 둘 다 따라간다.
  */
 export const weekGridClass = (n: number) =>
-  'grid grid-cols-2 @min-[45rem]:grid-cols-3 ' + (n === 5 ? '@min-[75rem]:grid-cols-5' : '@min-[61.25rem]:grid-cols-4 @min-[75rem]:grid-cols-7') + ' gap-2 sm:gap-3';
+  'grid grid-cols-2 @min-[45rem]:grid-cols-3 ' +
+  (n === 5 ? '@min-[75rem]:grid-cols-5' : n === 6 ? '@min-[75rem]:grid-cols-6' : '@min-[61.25rem]:grid-cols-4 @min-[75rem]:grid-cols-7') +
+  ' gap-2 sm:gap-3';
+
+/** 토요일·일요일인가 */
+const isWeekendDay = (day: string) => {
+  const w = weekdayOf(day);
+  return w === 0 || w === 6;
+};
 
 export interface WeekGridOptions {
   /** 칸 줄 class (주지 않으면 주간 칸 수 - weekGridClass) */
@@ -62,6 +72,11 @@ export interface WeekGridOptions {
   fill?: boolean;
   /** 카드 아래 덧붙임 (주간 - 작년 이맘때) */
   extra?: (day: string) => ReactNode;
+  /**
+   * 토·일을 한 칸에 위(토)·아래(일)로, 수업 줄 없이 (주간 - 11-09 사용자 요청 '한눈에의 토·일처럼').
+   * 보이는 날에 토·일이 둘 다 있을 때만(주말을 감추면 월~금 다섯 칸 그대로). arrange를 주면 쓰지 않는다.
+   */
+  stackWeekend?: boolean;
 }
 
 /**
@@ -161,7 +176,11 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
   };
 
   const grid = (shown: readonly string[], opts: WeekGridOptions = {}) => {
-    const rows = rowsOf(shown);
+    const weekend = opts.stackWeekend && !opts.arrange ? shown.filter(isWeekendDay) : [];
+    const stacked = weekend.length === 2;
+    const weekdays = stacked ? shown.filter((d) => !isWeekendDay(d)) : shown;
+    // 교시 줄 수는 수업 줄이 서는 날끼리 (한 칸에 모은 토·일은 수업 줄이 없다)
+    const rows = rowsOf(weekdays);
     const openDay =
       opts.onOpenDay ??
       ((day: string) => {
@@ -206,9 +225,21 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
         />
       );
     };
+    // 칸 수 = 열 수 (인쇄는 --week-cols 열 - index.css)
+    const cells = stacked ? weekdays.length + 1 : shown.length;
     return (
-      <div data-week-grid className={opts.className ?? weekGridClass(shown.length)} style={{ ['--week-cols' as string]: shown.length, ...opts.style }}>
-        {opts.arrange ? opts.arrange(card) : shown.map((day) => card(day))}
+      <div data-week-grid className={opts.className ?? weekGridClass(cells)} style={{ ['--week-cols' as string]: cells, ...opts.style }}>
+        {opts.arrange
+          ? opts.arrange(card)
+          : stacked
+            ? [
+                ...weekdays.map((day) => card(day)),
+                // 위 = 토, 아래 = 일. 두 칸은 같은 높이(줄 높이를 반씩 - 많은 쪽 일정이 다 보이게 칸이 자란다)
+                <div key="weekend" data-week-weekend className="grid grid-rows-2 gap-2 sm:gap-3 min-w-0">
+                  {weekend.map((day) => card(day, { noLessons: true, half: true }))}
+                </div>,
+              ]
+            : shown.map((day) => card(day))}
       </div>
     );
   };
