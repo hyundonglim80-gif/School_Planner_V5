@@ -6,7 +6,8 @@ import { useAppKeys } from './keys';
 import { setPopupStyle } from './layoutPrefs';
 import WindowHost from './WindowHost';
 import SideTabs from '../ui/SideTabs';
-import { closeAllWindows, closeShownWindow, closeWindow, openWindow, registerWindow, resetWindowsForTest, useShownWindowPick, useWindows, windowUnsaved } from './windows';
+import { resetPopupWindowsForTest } from './popupWindows';
+import { closeAllWindows, closeShownWindow, closeWindow, IN_POPUP, openWindow, registerWindow, resetWindowsForTest, useShownWindowPick, useWindows, windowUnsaved } from './windows';
 import { popOutWindow } from './popout';
 import { useSidePopups } from '../ui/sideColumn';
 
@@ -326,6 +327,118 @@ describe('창 위치', () => {
     act(() => void openWindow('devPanel', { n: 1 }));
     await screen.findByRole('heading', { name: '시험 쓰는 칸 1' });
     expect(document.querySelector('[data-panel-frame="banner"]')).not.toBeNull();
+  });
+});
+
+describe('창 위치 팝업창 (11-09)', () => {
+  /** 누른 때인 척 + 브라우저 새 창 흉내 (주소로 보낸 것을 적는다) */
+  function fakePopups() {
+    Object.defineProperty(navigator, 'userActivation', { configurable: true, value: { isActive: true, hasBeenActive: true } });
+    const made: { name: string; features: string; url: string | null; focus: ReturnType<typeof vi.fn>; postMessage: ReturnType<typeof vi.fn> }[] = [];
+    const spy = vi.spyOn(window, 'open').mockImplementation((_u, name) => {
+      const doc = document.implementation.createHTMLDocument('');
+      const w = {
+        name: String(name),
+        features: '',
+        url: null as string | null,
+        closed: false,
+        document: doc,
+        focus: vi.fn(),
+        postMessage: vi.fn(),
+        location: {
+          href: 'about:blank',
+          replace(u: string) {
+            w.url = u;
+          },
+        },
+      };
+      made.push(w);
+      return w as unknown as Window;
+    });
+    return { made, spy };
+  }
+  /** PC 넓은 화면 - wideScreen은 손가락(coarse)까지 참이라 휴대폰으로 셈된다 */
+  function pc(coarse = false) {
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes('coarse') ? coarse : true,
+      media: query,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    })) as unknown as typeof window.matchMedia;
+  }
+  beforeEach(() => {
+    resetPopupWindowsForTest();
+    pc();
+  });
+  afterEach(() => {
+    Object.defineProperty(navigator, 'userActivation', { configurable: true, value: { isActive: false, hasBeenActive: false } });
+  });
+
+  it('창도 쓰는 칸도 브라우저 팝업창으로 - 이 창 목록에는 없다', () => {
+    setPopupStyle('popup');
+    const { made } = fakePopups();
+    expect(openWindow('devWindow')).toBe(IN_POPUP);
+    expect(openWindow('devPanel', { n: 1 })).toBe(IN_POPUP);
+    expect(useWindows.getState().windows).toHaveLength(0);
+    expect(made).toHaveLength(2);
+    const spec = (u: string | null) => JSON.parse(new URL(u!).searchParams.get('popout')!) as unknown;
+    expect(spec(made[0].url)).toEqual({ id: 'devWindow' });
+    expect(spec(made[1].url)).toEqual({ id: 'devPanel', params: { n: 1 } });
+    expect(made[0].features).toBe('');
+  });
+
+  it('PC의 옛 가운데 창도 팝업창으로 본다', () => {
+    setPopupStyle('center');
+    const { made } = fakePopups();
+    expect(openWindow('devWindow')).toBe(IN_POPUP);
+    expect(made).toHaveLength(1);
+  });
+
+  it('이미 연 같은 창은 새로 띄우지 않고 그 팝업창을 앞으로 (그 안에서 다시 연다)', () => {
+    setPopupStyle('popup');
+    const { made, spy } = fakePopups();
+    openWindow('devPanel', { n: 1 });
+    openWindow('devPanel', { n: 1 });
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(made[0].focus).toHaveBeenCalledTimes(2);
+    expect(made[0].postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'open', id: 'devPanel', params: { n: 1 } }), window.location.origin);
+    // 다른 칸은 새 팝업창
+    openWindow('devPanel', { n: 2 });
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it('값을 돌려주는 창(pickFor)·방금 누르지 않았을 때·막혔을 때는 이 창 안 가운데', async () => {
+    setPopupStyle('popup');
+    const { spy } = fakePopups();
+    render(<Host />);
+    act(() => void openWindow('devPanel', { n: 1, pickFor: { kind: 'note' } }));
+    expect(spy).not.toHaveBeenCalled();
+    await screen.findByRole('heading', { name: '시험 쓰는 칸 1' });
+
+    Object.defineProperty(navigator, 'userActivation', { configurable: true, value: { isActive: false, hasBeenActive: true } });
+    act(() => void openWindow('devWindow'));
+    expect(spy).not.toHaveBeenCalled();
+    await screen.findByRole('heading', { name: '시험 창' });
+    expect(document.querySelector('[data-popup-frame="center"]')).not.toBeNull();
+
+    act(() => useWindows.setState({ windows: [] }));
+    Object.defineProperty(navigator, 'userActivation', { configurable: true, value: { isActive: true, hasBeenActive: true } });
+    spy.mockReturnValue(null);
+    act(() => void openWindow('devWindow'));
+    expect(spy).toHaveBeenCalledTimes(1);
+    await screen.findByRole('heading', { name: '시험 창' });
+    expect(document.querySelector('[data-popup-frame="center"]')).not.toBeNull();
+  });
+
+  it('휴대폰은 팝업창이 없다 - 가운데 창', async () => {
+    pc(true);
+    setPopupStyle('popup');
+    const { spy } = fakePopups();
+    render(<Host />);
+    act(() => void openWindow('devWindow'));
+    expect(spy).not.toHaveBeenCalled();
+    await screen.findByRole('heading', { name: '시험 창' });
+    expect(document.querySelector('[data-popup-frame="center"]')).not.toBeNull();
   });
 });
 

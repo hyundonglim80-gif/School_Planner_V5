@@ -51,6 +51,7 @@ import MobileTabBar from './MobileTabBar';
 import { useNav } from './nav';
 import { isDatelessScope } from './route';
 import { SCREEN_COMPONENTS } from './screens';
+import { usePopupBridge } from './popupWindows';
 import SecondRow from './SecondRow';
 import { useGlobalGestures } from './useGlobalGestures';
 import WindowHost from './WindowHost';
@@ -64,6 +65,8 @@ export default function Shell() {
   useEffect(() => startRouting(), []);
   useGlobalGestures();
   useAppKeys();
+  // 창 위치 '팝업창' - 팝업창에서 옮긴 화면·새로 저장한 것을 받는다 (app/popupWindows)
+  usePopupBridge();
   // ＋ 새로 → 새 일정 (단축키 newEvent)
   useEventShortcuts();
   useNoteShortcuts();

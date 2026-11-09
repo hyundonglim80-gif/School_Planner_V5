@@ -63,6 +63,7 @@
   '스크롤로 페이지 이동'(`app/useGlobalGestures`)은 옆 칸(`#side-column`·`[data-clipboard-panel]`) 안의 휠·밀기를 무시한다(P10-5 - 쓰는 칸은 창 층이 아니라 날짜가 넘어갔다).
 - **↗ 새 창으로 옮기기**(10-28): `ui/popout.ts`(주소 `?popout=` 읽기·만들기 `readPopoutSpec`·`popoutUrl`(pickFor·파일 뺌) · 이 탭이 새 창인가 `POPOUT` · `WindowSlotContext`(WindowHost가 창의 맨 바깥 틀에만 - 틀이 안쪽은 null로)·`PopoutTargetContext`(옆에 붙은 틀만)) ·
   `ui/PopoutButton.tsx`(`[data-popout-open]` - ModalShell 머리·쓰는 칸 여섯 ✕ 왼쪽) · `app/popout.ts`(`popOutWindow` - 빈 팝업 먼저 → `windowUnsaved`면 `windowSaveOf` 저장·기다림 → 주소로 보내고 탭 닫기) ·
+  **창 위치 팝업창**(11-09): `app/popupWindows.ts`(`openPopupWindow` - openWindow가 넘긴다·`portableParams`·이름 `popupName`·자리 `popupFeatures`/`rememberPopupRect` `sp5-popup-rects`·`usePopupBridge` 팝업창 ↔ 큰 창 open·params·nav) · `app/layoutPrefs` `windowMode`·`popupWindowsOn` · `app/deviceKind.ts`(`detectDeviceKind` - prefs가 다시 내보낸다) · 창 목록 `IN_POPUP`·`openWindow(…, { here })` ·
   `app/PopoutShell.tsx`(App이 `POPOUT`이면 Shell 대신 - 그 창 하나·`[data-popout=id]`, 창 가득 = 틀의 `fill` `[data-panel-frame|popup-frame=window]`, 닫히면 `window.close()`, 단축키는 `handleAppKeyDown(e, only)`) ·
   `app/windows` `useAskClose`(닫기 전에 묻기 - P22-2) · `useUnsavedCheck`(창 key와 함께 - 옛 `registerUnsavedCheck` 부르던 열하나)·`useWindowSave`(틀이 Ctrl+S 저장을 창 key로) · `useDocked`는 새 창에서 늘 false. 점검 `tools/inspect-popout.mjs`(34 - 휴대폰 새 메모 🔗 포함).
 - **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)·다시 세운 줄 `rekeyOrders`(옮긴 것만)) ·

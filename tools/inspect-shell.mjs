@@ -2,7 +2,9 @@
 //   1) 빈 화면 일곱(P24-3 한눈에 포함)을 화면 탭·단축키·주소로 오간다. 새로고침해도 그 자리, 뒤로가기 = 앞 화면.
 //   2) 둘째 줄: ◀▶·날짜(오늘로)·📅 고르기·토글, 메모·학급에는 없다.
 //   3) 시험 창 둘(창·쓰는 칸)이 V4처럼: 탭(숨은 탭도 글이 남는다)·탭 ×·Ctrl+S(커서 든 칸, 없으면 보이는 탭)·
-//      뒤로가기(맨 위 하나, 다 닫은 뒤라야 앞 화면)·ESC(줄 전체, 저장 안 한 글은 먼저 묻는다)·폭 끌기·가운데 창.
+//      뒤로가기(맨 위 하나, 다 닫은 뒤라야 앞 화면)·ESC(줄 전체, 저장 안 한 글은 먼저 묻는다)·폭 끌기·
+//      팝업창(11-09 - PC 창 위치: 누르면 브라우저 팝업창, 다시 누르면 그 팝업창, 팝업창의 화면 옮기기는 큰 창으로, 자리 기억)·
+//      팝업창을 못 띄울 때의 가운데 창(방금 누르지 않음·막힘).
 //   4) 머리줄 ⋮ = 4구역.
 //   5) 고친 시간표 창: ✕·탭 ×·Alt+W·뒤로가기·가운데 창 배경도 묻는다, 아니오면 칸과 고친 것이 남고 뒤로가기가 화면을 떠나지 않는다(P22-2).
 //   6) 자정 넘김: 오늘을 보던 화면은 새 오늘로, 열린 칸은 그대로·연 날짜로 저장, 다른 날을 보던 화면은 그대로(P22-4).
@@ -192,12 +194,47 @@ try {
   await page.goBack();
   r.check(await screenIs('month'), '그다음 뒤로가기는 앞 화면');
 
-  r.section('창 위치 - 가운데 창');
+  r.section('창 위치 - 팝업창 (11-09)');
   // 창 위치는 계정 설정(PC) - 기기 저장소만 바꾸면 다시 열 때 계정 값이 이긴다(P1-4 설정 맞추기)
   const pcNow = (await getDoc(pcRef)).data() ?? {};
-  await setDoc(pcRef, { ...pcNow, popupStyle: 'center', v: 1 });
+  await setDoc(pcRef, { ...pcNow, popupStyle: 'popup', v: 1 });
   await page.reload();
   await screenIs('month');
+  {
+    const ctx = page.context();
+    await page.goto(page.url().replace(/#.*$/, '#/day/2026-10-08'));
+    await screenIs('day');
+    const ttBtn = page.locator(sel('lessons-settings'));
+    await waitFor(ttBtn);
+    const [pop] = await Promise.all([ctx.waitForEvent('page', { timeout: 10000 }), ttBtn.click()]);
+    await pop.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+    r.check(new URL(pop.url()).searchParams.get('popout')?.includes('"timetable"'), '누르면 브라우저 팝업창 (시간표)', pop.url());
+    r.check(await waitFor(pop.locator(`${sel('popup-frame', 'window')} ${ttWin}`), 10000), '팝업창 안은 그 창 가득');
+    r.check((await page.locator('[data-popup-card]').count()) === 0 && (await slots()) === 0, '큰 창에는 창도 오른쪽 칸도 없다');
+    const pagesBefore = ctx.pages().length;
+    await ttBtn.click();
+    await page.waitForTimeout(800);
+    r.check(ctx.pages().length === pagesBefore && !pop.isClosed(), '다시 누르면 새로 띄우지 않고 그 팝업창', `창 ${ctx.pages().length}개`);
+    // 팝업창에서 화면을 옮기면 큰 창이 옮긴다
+    await pop.evaluate(async () => (await import(window.__appModule('/src/app/nav.ts'))).setDate('2026-10-20'));
+    r.check(await waitFor(async () => (await hashOf(page)) === '#/day/2026-10-20', 5000), '팝업창의 화면 옮기기 = 큰 창이 옮긴다', await hashOf(page));
+    // 자리·크기는 창마다 기억한다
+    await pop.waitForTimeout(1800);
+    const rects = await page.evaluate(() => JSON.parse(localStorage.getItem('sp5-popup-rects') || '{}'));
+    r.check(rects.timetable?.w > 200 && rects.timetable?.h > 200, '팝업창 자리·크기를 남긴다', JSON.stringify(rects.timetable));
+    await pop.close();
+    await page.evaluate(() => localStorage.removeItem('sp5-popup-rects'));
+  }
+
+  r.section('창 위치 - 팝업창을 못 띄우면 가운데 창');
+  // 점검이 부른 열기(evaluate)는 '방금 누르지 않음'이면 이 창 안 가운데 - 바로 앞 누르기가 몇 초 '방금'으로 남아 새로 연다.
+  // 그리고 브라우저가 팝업창을 막은 때(window.open = null)도 가운데 - 그 안내는 아래 Enter에서 본다
+  await page.goto(page.url().replace(/#.*$/, '#/month/2026-10'));
+  await page.reload();
+  await screenIs('month');
+  await page.evaluate(() => {
+    window.open = () => null;
+  });
   await openWin('devWindow');
   await openWin('devPanel', { n: 2 });
   await waitFor(page.locator(sel('test-panel', 2)));
@@ -224,12 +261,14 @@ try {
   dialogs.seen.length = 0;
 
   // 초점 (P22-7): 가운데 창을 열면 안으로, Tab은 창 안에서 돌고, 닫으면 연 단추(하루 수업 ⚙️)로 돌아온다
+  // 브라우저가 팝업창을 막은 때 - 가운데 창으로 (11-09, window.open은 위에서 막았다)
   await page.goto(page.url().replace(/#.*$/, '#/day/2026-10-08'));
   await screenIs('day');
   await page.locator(sel('lessons-settings')).focus();
   await page.keyboard.press('Enter');
   const centerCard = page.locator(`${sel('popup-frame', 'center')} [data-popup-card]`);
-  r.check(await waitFor(centerCard, 8000), 'Enter로 연 시간표 창 = 가운데');
+  r.check(await waitFor(centerCard, 8000), 'Enter로 연 시간표 창 = 가운데 (팝업창이 막혔을 때)');
+  r.check(await waitFor(page.locator('#sp5-toast-container', { hasText: '팝업창을 막아' })), '막혔다고 알린다');
   const inCard = () => page.evaluate(() => !!document.activeElement?.closest('[data-popup-frame="center"]'));
   r.check((await centerCard.getAttribute('aria-modal')) === 'true' && (await inCard()), '열면 초점이 창 안 · aria-modal');
   let stayed = true;
@@ -245,6 +284,9 @@ try {
   await page.keyboard.press('Escape');
   await waitFor(async () => (await page.locator(sel('popup-frame', 'center')).count()) === 0);
   r.check(await page.evaluate(() => document.activeElement?.hasAttribute('data-lessons-settings')), '닫으면 연 단추(⚙️)로 돌아온다');
+
+  // 팝업창이면 뒤 묶음(자정 넘김·새 계정)의 쓰는 칸도 팝업창으로 뜬다 - 여기서 걷는다
+  await clearPopupStyle();
 
   r.section('머리줄');
   await page.click(sel('more-menu'));

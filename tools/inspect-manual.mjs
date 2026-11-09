@@ -209,6 +209,11 @@ try {
 
   await topic('popups', async () => {
     await win('settings');
+    await q(sel('settings-tab', 'view')).click();
+    r.check(
+      (await waitFor(page.locator(sel('choice', 'popupStyle:popup')), 4000)) && (await count(sel('choice', 'popupStyle:center'))) === 0,
+      "창 위치 = 오른쪽 칸 / 팝업창 (PC - 11-09 '가운데 창 (예전 방식)'을 바꿈)",
+    );
     await win('search');
     r.check(await waitFor(async () => (await count(sel('side-tab'))) >= 2, 4000), '오른쪽 칸 위에 탭이 둘');
     await q(sel('side-tab-close')).click();

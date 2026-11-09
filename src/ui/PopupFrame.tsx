@@ -1,8 +1,10 @@
-// 모든 창의 바깥 틀 (V4 components/PopupFrame.tsx). 환경설정 '창 위치'(popupStyle)에 따라 세 가지로 그린다.
+// 모든 창의 바깥 틀 (V4 components/PopupFrame.tsx). 환경설정 '창 위치'(popupStyle)에 따라 그린다.
 //
 //   side + 넓은 화면(768px 이상) : 쓰는 칸처럼 화면 오른쪽 줄에 선다(sideColumn). 뒤 화면을 어둡게 덮지 않고 스크롤도 잠그지 않는다.
 //   side + 좁은 화면(휴대폰)      : 어두운 배경 위로 오른쪽에서 뜨는 배너.
-//   center                       : 화면 가운데에 뜨는 창.
+//   center (휴대폰 '가운데 창')   : 화면 가운데에 뜨는 창.
+//   popup (PC '팝업창', 11-09)    : 창 목록이 브라우저 팝업창으로 띄운다(app/popupWindows - 그 안은 아래 '새 창').
+//                                  이 창 안에 남는 것(링크 고르기처럼 값을 돌려주는 창·브라우저가 막았을 때)은 가운데.
 //   새 창(ui/popout)              : 새 창으로 옮긴 그 창은 창 가득, 그 안에서 연 다른 창은 가운데.
 //   오른쪽 줄에 붙은 창은 머리 ↗(ModalShell → ui/PopoutButton)로 새 창으로 옮긴다(10-28).
 //
@@ -67,7 +69,7 @@ export default function PopupFrame({
   const win = useContext(WindowSlotContext);
   useWindowSave(isOpen ? win?.key : null, onSave);
   const fill = !!win?.fill;
-  const side = useLayoutPrefs((s) => s.popupStyle) !== 'center' && !POPOUT;
+  const side = useLayoutPrefs((s) => s.popupStyle) === 'side' && !POPOUT;
   const wide = useDocked();
   const docked = isOpen && side && wide;
 

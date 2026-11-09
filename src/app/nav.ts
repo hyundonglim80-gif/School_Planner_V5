@@ -5,6 +5,7 @@
 import { useEffect, useRef } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { POPOUT } from '../ui/popout';
 import { useToday } from '../ui/useToday';
 import { addDays, addMonthsStr, academicYearOf, DAY_NAMES, parseDateStr, todayStr, weekdayOf, weekMonday } from '../domain/dateUtils';
 import { isDatelessScope, isPhoneHiddenScope, SCOPES, type Scope } from './route';
@@ -80,7 +81,8 @@ export function useFollowToday() {
   const today = useToday();
   const seen = useRef(today);
   useEffect(() => {
-    if (seen.current !== today && useNav.getState().date === seen.current) setDate(today);
+    // 팝업창(ui/popout)은 화면이 없다 - 옮기면 큰 창으로 보내져(app/popupWindows) 다른 날을 보던 큰 창이 오늘로 간다
+    if (!POPOUT && seen.current !== today && useNav.getState().date === seen.current) setDate(today);
     seen.current = today;
   }, [today]);
 }
