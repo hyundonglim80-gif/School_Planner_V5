@@ -86,6 +86,20 @@ function activeTabOf(win: string, frames: Element[]): string | undefined {
 
 // ── 고르기 ──
 
+/** 단추 글 - 안쪽 글 조각 사이를 띄운다 ('📎' + '파일 첨부' → '📎 파일 첨부') */
+function textOf(el: Element): string {
+  const parts: string[] = [];
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) parts.push(n.nodeValue ?? '');
+  return parts.join(' ');
+}
+
+/** 파일 고르기 단추 = 숨은 파일 칸을 감싼 label (메모 칸 📎 파일 첨부) - 그 label을 단추로. 누르면 브라우저가 안의 칸도 눌러 두 번 오지만 같은 것을 고른다 */
+function fileButtonOf(clicked: Element): Element | null {
+  const label = clicked.closest('label');
+  return label?.querySelector('input[type="file"]') ? label : null;
+}
+
 /** 고르는 중인 단추 (키를 저장할 때 store에 넣는다 - 고르다 그만둔 것이 계정에 올라가지 않게) */
 const pending = new Map<PressShortcutId, PressTarget>();
 
@@ -96,7 +110,7 @@ export type PressPick = { id: PressShortcutId } | { reason: string };
  * 기능 표시(data-shortcut-target)가 있는 단추는 부르는 쪽(app/shortcutRecord)이 먼저 본다.
  */
 export function pickPressTarget(clicked: Element): PressPick | null {
-  const btn = clicked.closest(BUTTON);
+  const btn = clicked.closest(BUTTON) ?? fileButtonOf(clicked);
   if (!btn) return clicked.closest(BOX) ? { reason: PRESS_MISS.box } : null;
 
   // 자리
@@ -116,12 +130,14 @@ export function pickPressTarget(clicked: Element): PressPick | null {
     return hits.length === 1 && hits[0] === btn;
   };
 
-  // 카드·날 칸 안의 단추 - 날짜·항목 id가 든 것 안에 있다 (창의 제 항목 - 일정 칸의 data-event-id처럼 그 창에 하나뿐인 것 - 은 괜찮다)
+  // 카드·날 칸 안의 단추 - 날짜·항목 id가 든 것 안에 있다. 그 자리의 제 것은 괜찮다(그 자리에 하나뿐일 때):
+  //   창 = 그 창의 항목(일정 칸의 data-event-id) · 화면 = 보고 있는 날(하루 화면 수업 칸 data-day-lessons). 화면의 카드 하나(항목 id)는 늘 안 된다 - 카드가 늘면 다른 것이 된다
+  const navDate = useNav.getState().date;
   for (let el = btn.parentElement; el && el !== frame && el !== document.body; el = el.parentElement) {
     if (el.hasAttribute('data-screen')) break;
     for (const a of el.attributes) {
       if (!isUsableAttr(a.name) || !a.value || !isItemBoundValue(a.value)) continue;
-      if (place && within(attrSelector(a.name)).length <= 1) continue;
+      if ((place || a.value === navDate) && within(attrSelector(a.name)).length <= 1) continue;
       return { reason: PRESS_MISS.item };
     }
   }
@@ -142,8 +158,11 @@ export function pickPressTarget(clicked: Element): PressPick | null {
   }
 
   // 이름
-  const input = btn instanceof HTMLInputElement ? btn.closest('label')?.textContent : null;
-  const name = buttonName(btn.getAttribute('aria-label') || input || btn.textContent || btn.getAttribute('title') || '') || found.attr.replace(/^data-/, '');
+  //   글이 그림 하나(▼·✕)면 title이 낫다('수업 접기')
+  const input = btn instanceof HTMLInputElement ? btn.closest('label') : null;
+  const text = textOf(input ?? btn);
+  const wordy = /[\p{L}\p{N}]/u.test(text) ? text : '';
+  const name = buttonName(btn.getAttribute('aria-label') || wordy || btn.getAttribute('title') || text) || found.attr.replace(/^data-/, '');
   let target: PressTarget;
   if (place) {
     const { win } = place;

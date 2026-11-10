@@ -169,7 +169,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - `sheets`: 이 공간의 V5 구글 시트 파일 `{ spreadsheetId }`(P8-3 - 공간마다, V4·V3의 `backup_config` 시트와 다른 파일).
 - `purged-YYYY-MM`: 그달 영구로 지운 항목 `{ <컬렉션>: [id…], updatedAt, v }`(P22-3 - 개인·그룹 공간 모두, 달은 UTC. `writeOps`가 같은 묶음에 `arrayUnion`으로 적는다, 6-2 '영구 지우기').
 - 백업 JSON(P8-3 `domain/backup.ts`) = `{ version: 'SP5-BACKUP', sid, spaceName, period, include, colls: { 컬렉션: { id: 문서 } }, auto? }` - 시각은 기기 사본과 같은 `{$ts}`, 지운 것은 담지 않는다.
-- `pc` / `mobile`: 글자 크기·창 위치·시작 화면·단축키·화면 보기(V4 `v4_preferences_pc/_mobile`). 1초 뒤 올린다(V4 `preferenceSync`). 창 안 탭 키는 칸 `tabShortcuts`(P18-2 - `shortcutOverrides`와 나눔, 키를 준 탭만).
+- `pc` / `mobile`: 글자 크기·창 위치·시작 화면·단축키·화면 보기(V4 `v4_preferences_pc/_mobile`). 1초 뒤 올린다(V4 `preferenceSync`). 창 안 탭 키는 칸 `tabShortcuts`(P18-2 - `shortcutOverrides`와 나눔, 키를 준 탭만). 내가 만든 키(환경설정 값 `opt.…`·단추 `press.…`)는 칸 `customShortcuts`(P28 - 모양만 보고 읽어 모르는 id도 남긴다), 단추의 자리·찾기·이름은 칸 `pressTargets`(P28-3 - 키가 있는 것만 올린다).
 - V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다.
 - 문서에는 **기본값과 다른 칸만** 적는다(없는 칸·틀린 칸 = 기본값). 칸마다 기본값과 읽기 규칙은 표 하나(`domain/settings.ts`의 `SettingsSpec`) -
   `app/prefs.ts`의 `DEVICE_PREFS`(pc/mobile)·`COMMON_SETTINGS`(common). 기능을 옮기는 세션이 그 표에 칸을 더한다. 맞추기는 `data/settingsSync.ts`.

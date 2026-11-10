@@ -10,10 +10,12 @@
 //   8) 단축키 탭 줄(P28-1): 키 바꾸기 = 고르기 없이 띠의 키 단계(창은 그대로) · 해제 = 곧바로 빠짐 · 되돌리기
 //   9) 환경설정 값(P28-2): 팝업창 모드여도 고르는 동안 환경설정은 큰 창 안 · 창 위치 팝업창 단추 = 'opt.popupStyle.popup' → Ctrl+Alt+P → 계정 customShortcuts ·
 //      그 키 = 창을 열지 않고 팝업창 + 안내, 다시 = 오른쪽 칸 · 단추 툴팁 · 설명서 표 · 고대비 줄 = 'opt.contrast' → 키마다 켜고 끄기
+//  10) 그 밖의 단추(P28-3): 하루 수업 접기도 고른다 · 메모 카드 안 ▼ = 항목마다라 못 만든다 · 머리줄 카드/목록 → Ctrl+Alt+L = 하루 화면에서도 메모 화면으로 가서 누름 ·
+//      검색 창 메모 칩 → Ctrl+Alt+K = 닫혀 있으면 열고 누름 · 팝업창 모드면 팝업창 안에서('누르기' 소식) · 메모 칸 📎 → Ctrl+Alt+U = 열린 칸(숨은 탭)이면 누름, 닫혔으면 안내만
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-shortcut-record.mjs
 // 에뮬레이터 teacher 계정의 V5 설정 문서(spaces/u_{uid}/settings/pc)를 쓴다 - 처음 것을 읽어 두고 끝에 되돌린다.
-import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
+import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -26,6 +28,12 @@ undo.add(() => (before.exists() ? setDoc(pcRef, before.data()) : deleteDoc(pcRef
 // 기본 키에서 시작한다 (지난 점검이 남긴 것이 있으면 결과가 흔들린다)
 await deleteDoc(pcRef);
 const serverPc = async () => (await getDoc(pcRef)).data() ?? {};
+// P28-3 카드 안 단추 - 메모 둘(진짜 id 모양 20자 - 카드가 '항목'으로 보인다)
+for (const [i, id] of ['inspPressMemo0000001', 'inspPressMemo0000002'].entries()) {
+  const ref = doc(em.db, 'spaces', `u_${uid}`, 'items', id);
+  await setDoc(ref, { kind: 'note', date: null, text: `단축키 점검 메모 ${i + 1}`, labelIds: [], order: `Zz${i}`, deletedAt: null, updatedAt: serverTimestamp(), v: 1, createdAt: Date.now(), authorId: uid });
+  undo.add(() => deleteDoc(ref));
+}
 
 const browser = await launch();
 try {
@@ -57,7 +65,9 @@ try {
   r.check(await waitFor(page.locator(sel('account-panel'))), '누른 것은 그대로 동작한다 (계정 칸이 열린다)');
   r.check((await page.locator(sel('shortcut-record-miss')).count()) === 0, '칸을 펴는 단추(계정 사진)는 나무라지 않는다 - 찾아 들어가는 길');
   await page.click(sel('lessons-collapse'));
-  r.check(await waitFor(page.locator(sel('shortcut-record-miss'))), "수업 접기 ▼ = '이 단추는 단축키로 만들 수 없습니다'");
+  const pickedText = async () => ((await page.locator(sel('shortcut-record-picked')).textContent().catch(() => '')) ?? '').trim();
+  // P28-3부터 표시 없는 단추도 고른다(그 단추를 대신 누르기) - 하루 화면 수업 칸은 보고 있는 날의 것이라 된다
+  r.check(await waitFor(async () => (await pickedText()).includes('하루 → 수업 접기')), `표시 없는 단추(수업 접기 ▼)도 고른다 = '하루 → 수업 접기' (${await pickedText()})`);
   await page.click(sel('lessons-collapse'));
   await page.click(sel('more-menu'));
   await page.click(sel('menu-item', 'timetable'));
@@ -285,6 +295,125 @@ try {
   r.check(await waitFor(hc), '다시 = 켜기 (늘 뒤집는다)');
   await page.keyboard.press('Control+Alt+KeyH');
   await waitFor(async () => !(await hc()));
+
+  r.section('그 밖의 단추 (P28-3) - 메모 화면 카드/목록 · 카드 안 단추는 못 건다');
+  const pickedId = async () => (await page.locator(sel('shortcut-record-picked')).getAttribute('data-shortcut-record-picked').catch(() => '')) ?? '';
+  const keyOf = async (id) => (await serverPc()).customShortcuts?.[id]?.key;
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await open(page, '#/memo');
+  await waitFor(page.locator(sel('memo-screen')));
+  const viewNow = () => page.locator(sel('memo-view-toggle')).getAttribute('data-memo-view-toggle');
+  if ((await viewNow()) !== 'card') await page.click(sel('memo-view-toggle'));
+  await waitFor(async () => (await viewNow()) === 'card');
+  await startRecord();
+  await waitFor(bar('pick'));
+  if ((await page.locator(sel('entry-collapse')).count()) > 0) {
+    await page.locator(sel('entry-collapse')).first().click();
+    r.check(await waitFor(page.locator(sel('shortcut-record-miss'))), '카드 안 단추(접기 ▼) = 만들 수 없다');
+    const why = (await page.locator(sel('shortcut-record-miss')).textContent()) ?? '';
+    r.check(why.includes('항목(날짜)마다'), `까닭 = 항목(날짜)마다 다른 단추 (${why})`);
+    r.check((await pickedId()) === '', '고른 것은 없다');
+    await page.locator(sel('entry-collapse')).first().click();
+  } else r.check(false, '메모 카드가 없다 - seed부터');
+  await page.click(sel('memo-view-toggle'));
+  const viewPid = await pickedId();
+  r.check(viewPid.startsWith('press.'), `머리줄 카드/목록 단추 = 그 단추를 고른다 (${viewPid})`);
+  r.check((await pickedText()).includes('머리줄 →'), `띠 글자 (${await pickedText()})`);
+  r.check((await page.locator(sel('shortcut-record-miss')).count()) === 0, '만들 수 없다는 안내는 걷힌다');
+  r.check(await waitFor(async () => (await viewNow()) === 'list'), '누른 것은 그대로 (목록 보기로)');
+  await page.click(sel('shortcut-record-done'));
+  await page.keyboard.press('Control+Alt+KeyL');
+  await page.click(sel('shortcut-record-save'));
+  const viewSaved = await serverUntil(serverPc, (d) => d.customShortcuts?.[viewPid]?.key === 'L' && !!d.pressTargets?.[viewPid]);
+  const viewTarget = viewSaved.pressTargets?.[viewPid];
+  r.check(viewTarget?.screen === 'memo' && viewTarget?.attr === 'data-memo-view-toggle' && !viewTarget?.value, `계정 pressTargets = 메모 화면 · 이름만 (${JSON.stringify(viewTarget)})`);
+  const pressRow = `${sel('shortcut-group', '단추')} ${sel('shortcut-row', viewPid)}`;
+  r.check(await waitFor(page.locator(`${pressRow}[data-shortcut-row-focus]`)), "단축키 탭 '내가 만든 단축키 (단추 대신 누르기)'에 그 줄 (짚는다)");
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await open(page, '#/day/2026-10-08');
+  await waitFor(page.locator('[data-screen="day"]'));
+  await page.locator('main').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('Control+Alt+KeyL');
+  r.check(await waitFor(page.locator('[data-screen="memo"]')), '하루 화면에서 Ctrl+Alt+L = 메모 화면으로 가서');
+  r.check(await waitFor(async () => (await viewNow()) === 'card'), '그 단추를 대신 누른다 (목록 → 카드)');
+  await page.keyboard.press('Control+Alt+KeyL');
+  r.check(await waitFor(async () => (await viewNow()) === 'list'), '메모 화면에서 다시 = 또 누른다 (카드 → 목록)');
+  await page.keyboard.press('Control+Alt+KeyL');
+  await waitFor(async () => (await viewNow()) === 'card');
+
+  r.section('그 밖의 단추 - 창 안 (검색 → 메모 칩) · 닫혀 있으면 열고 · 팝업창이면 팝업창 안에서');
+  // 칩 규칙: 아무것도 안 고름 = 전체 켬 · 메모를 누르면 메모만(전체 꺼짐) · 다시 누르면 다시 전체 - '전체' 칩으로 본다
+  const allOn = (p = page) => p.locator(sel('search-kind', 'all')).getAttribute('aria-pressed');
+  await startRecord();
+  await waitFor(bar('pick'));
+  await page.click(sel('header-search'));
+  await waitFor(page.locator(sel('search-kind', 'memo')));
+  r.check((await allOn()) === 'true', '검색 창을 새로 열면 전체');
+  await page.click(sel('search-kind', 'memo'));
+  const kindPid = await pickedId();
+  r.check(kindPid.startsWith('press.') && (await pickedText()).includes('검색 → 메모'), `검색 창 메모 칩 = '검색 → 메모' (${await pickedText()})`);
+  await page.click(sel('shortcut-record-done'));
+  await page.keyboard.press('Control+Alt+KeyK');
+  await page.click(sel('shortcut-record-save'));
+  const kindSaved = await serverUntil(serverPc, (d) => !!d.pressTargets?.[kindPid]);
+  const kindTarget = kindSaved.pressTargets?.[kindPid];
+  r.check(kindTarget?.win === 'search' && kindTarget?.value === 'memo' && !kindTarget?.only, `계정 = 검색 창 · 이름 = 값(칩이 여럿) · 열 수 있음 (${JSON.stringify(kindTarget)})`);
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.locator('main').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('Control+Alt+KeyK');
+  r.check(await waitFor(page.locator(sel('search-kind', 'memo'))), '닫혀 있으면 Ctrl+Alt+K = 검색 창을 열고');
+  r.check(await waitFor(async () => (await allOn()) === 'false'), '뜨면 메모 칩을 누른다 (메모만)');
+  await page.keyboard.press('Control+Alt+KeyK');
+  r.check(await waitFor(async () => (await allOn()) === 'true'), '열려 있으면 곧바로 누른다 (다시 전체)');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  // 창 위치 팝업창 - 검색 창이 브라우저 팝업창으로 뜨고, 그 안의 칩을 '누르기' 소식으로 누른다
+  await setStyle('popup');
+  await page.locator('main').click({ position: { x: 5, y: 5 } });
+  const popWait = page.context().waitForEvent('page', { timeout: 10000 }).catch(() => null);
+  await page.keyboard.press('Control+Alt+KeyK');
+  const pop = await popWait;
+  r.check(!!pop, '팝업창 모드 = 검색 창이 팝업창으로 뜬다');
+  if (pop) {
+    r.check(await waitFor(pop.locator(sel('search-kind', 'memo')), 15000), '팝업창에 검색 창');
+    r.check(await waitFor(async () => (await allOn(pop)) === 'false', 10000), "팝업창 안의 메모 칩을 누른다 ('누르기' 소식 - 메모만)");
+    await page.bringToFront();
+    await page.locator('main').click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('Control+Alt+KeyK');
+    r.check(await waitFor(async () => (await allOn(pop)) === 'true', 10000), '열린 팝업창이면 그 안에서 또 누른다 (다시 전체 - 같은 부탁은 한 번만)');
+    await pop.close().catch(() => {});
+  }
+  await setStyle('side');
+
+  r.section('그 밖의 단추 - 메모 칸 📎 (열려 있을 때만)');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await open(page, '#/memo');
+  await startRecord();
+  await waitFor(bar('pick'));
+  await page.click(sel('memo-new'));
+  await waitFor(page.locator(sel('note-attach')));
+  const chooser1 = page.waitForEvent('filechooser', { timeout: 5000 }).catch(() => null);
+  await page.locator(sel('note-attach')).click();
+  await chooser1;
+  const attachPid = await pickedId();
+  r.check(attachPid.startsWith('press.') && (await pickedText()).includes('메모 → 📎 파일 첨부'), `메모 칸 📎 = '메모 → 📎 파일 첨부' (${await pickedText()})`);
+  await page.click(sel('shortcut-record-done'));
+  await page.keyboard.press('Control+Alt+KeyU');
+  await page.click(sel('shortcut-record-save'));
+  const attachSaved = await serverUntil(serverPc, (d) => !!d.pressTargets?.[attachPid]);
+  r.check(attachSaved.pressTargets?.[attachPid]?.only === true, `쓰는 칸 = 열려 있을 때만 (${JSON.stringify(attachSaved.pressTargets?.[attachPid])})`);
+  // 저장하면 환경설정 단축키 탭이 보이는 탭 - 메모 칸은 숨은 탭으로 남는다
+  r.check((await page.locator(sel('note-attach')).count()) === 1, '메모 칸은 열린 채 (숨은 탭)');
+  const chooser2 = page.waitForEvent('filechooser', { timeout: 5000 }).catch(() => null);
+  await page.locator('main').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('Control+Alt+KeyU');
+  r.check(!!(await chooser2), 'Ctrl+Alt+U = 열린 메모 칸의 📎 (파일 고르기 창) - 숨은 탭이어도');
+  r.check(await page.locator(sel('note-attach')).isVisible(), '그 메모 칸이 보이는 탭이 된다');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await waitFor(async () => (await page.locator(sel('note-attach')).count()) === 0);
+  await page.keyboard.press('Control+Alt+KeyU');
+  r.check(await waitFor(async () => (await lastToast()).includes("'메모' 칸이 열려 있을 때")), `닫혀 있으면 열지 않고 안내 (${await lastToast()})`);
+  r.check((await page.locator(sel('note-attach')).count()) === 0, '메모 칸을 열지 않는다');
+  r.check(!!(await keyOf(viewPid)) && !!(await keyOf(kindPid)) && !!(await keyOf(attachPid)), '세 단추 키 모두 계정에');
 
   r.section('ESC = 기록 취소');
   await page.evaluate(() => window.sp5.closeAllWindows());

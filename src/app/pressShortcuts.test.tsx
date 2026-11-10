@@ -7,7 +7,7 @@ const toast = vi.hoisted(() => vi.fn());
 vi.mock('./toast', () => ({ showToast: toast, showErrorToast: vi.fn() }));
 
 import { isCustomShortcutId, type CustomShortcutId } from '../domain/shortcuts';
-import type { PressTarget } from '../domain/pressTarget';
+import { pressIdOf, type PressTarget } from '../domain/pressTarget';
 import { customShortcutOf, runCustomShortcut } from './customShortcuts';
 import { addPressTargets, handleAppKeyDown, setCustomShortcuts, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
 import { useNav } from './nav';
@@ -101,6 +101,26 @@ describe('고르기 (P28-3 ■0 - 자기 data-* · 자리 · 이름)', () => {
     expect(pickPressTarget(q('[data-text]'))).toBeNull();
   });
 
+  it('보고 있는 날의 칸(하루 화면 수업 칸)은 화면의 것 · 다른 날 칸(주간 날 칸)은 날마다 · 그림 글이면 title이 이름', () => {
+    useNav.setState({ scope: 'day', date: '2027-03-05' });
+    render(
+      <div data-screen="day">
+        <section data-day-lessons="2027-03-05">
+          <button type="button" data-lessons-collapse title="수업 접기">
+            ▼
+          </button>
+        </section>
+        <div data-week-day="2027-03-06">
+          <button type="button" data-day-more>
+            더 보기
+          </button>
+        </div>
+      </div>,
+    );
+    expect(pick('[data-lessons-collapse]').target).toEqual({ screen: 'day', attr: 'data-lessons-collapse', label: '하루 → 수업 접기' });
+    expect(pickPressTarget(q('[data-day-more]'))).toEqual({ reason: PRESS_MISS.item });
+  });
+
   it('창 안 단추 = 그 창 + 보던 탭 · 창의 제 항목(일정 칸 id)은 괜찮다 · 쓰는 칸·값이 있어야 여는 창 = 열려 있을 때만', () => {
     openFake(11, 'settings', { tab: 'view' });
     openFake(12, 'note', { id: ID });
@@ -120,9 +140,12 @@ describe('고르기 (P28-3 ■0 - 자기 data-* · 자리 · 이름)', () => {
         </section>
         <aside data-window-key="12">
           <div data-note-id={ID}>
-            <button type="button" data-note-attach>
-              📎 첨부
-            </button>
+            {/* 메모 칸 📎 = 숨은 파일 칸을 감싼 label */}
+            <label data-note-attach>
+              <span>📎</span>
+              <span>파일 첨부</span>
+              <input type="file" className="hidden" data-file-input />
+            </label>
           </div>
         </aside>
         <section data-window-key="13">
@@ -133,7 +156,9 @@ describe('고르기 (P28-3 ■0 - 자기 data-* · 자리 · 이름)', () => {
       </>,
     );
     expect(pick('[data-view-reset]').target).toEqual({ win: 'settings', tab: 'view', attr: 'data-view-reset', label: '환경설정 → 보기 → 처음대로' });
-    expect(pick('[data-note-attach]').target).toEqual({ win: 'note', attr: 'data-note-attach', label: '메모 → 📎 첨부', only: true });
+    expect(pick('[data-note-attach] span').target).toEqual({ win: 'note', attr: 'data-note-attach', label: '메모 → 📎 파일 첨부', only: true });
+    // 브라우저가 이어 누르는 숨은 파일 칸도 같은 단추
+    expect(pickPressTarget(q('[data-file-input]'))).toEqual({ id: pressIdOf({ win: 'note', attr: 'data-note-attach' }) });
     expect(pick('[data-seat-shuffle]').target).toMatchObject({ win: 'seating', only: true });
   });
 
