@@ -74,6 +74,48 @@ try {
   r.check((await page.locator(sel('view-toggle', 'showWeekend')).getAttribute('aria-pressed')) === 'false', '주말 토글 끔');
   await page.click(sel('view-toggle', 'showWeekend'));
 
+  r.section('머리줄 접기 (메모 요청 #142)');
+  // 손잡이 자리: 머리줄 높이 · 손잡이 위끝·가운데(머리줄 아래 테두리에서, 화면 가운데에서 얼마나 벗어났나) · 글자
+  const foldLook = () =>
+    page.evaluate(() => {
+      const header = document.querySelector('header').getBoundingClientRect();
+      const btn = document.querySelector('[data-header-fold]');
+      const b = btn.getBoundingClientRect();
+      return {
+        headerH: Math.round(header.height),
+        top: Math.round(b.top),
+        offEdge: Math.round(Math.abs(b.top + b.height / 2 - header.bottom)),
+        offCenter: Math.round(Math.abs(b.left + b.width / 2 - document.documentElement.clientWidth / 2)),
+        text: btn.textContent,
+        mainTop: Math.round(document.querySelector('main').getBoundingClientRect().top + window.scrollY),
+        headerVar: document.documentElement.style.getPropertyValue('--app-header-h').trim(),
+        saved: JSON.parse(localStorage.getItem('sp5-header-fold') ?? '{}').state?.folded,
+      };
+    });
+  const foldDate = () => page.locator(sel('header-fold-date')).textContent();
+  const opened = await foldLook();
+  r.check((await page.locator(sel('header-fold', 'open')).count()) === 1 && opened.headerH > 60, `펴진 머리줄(${opened.headerH}px)에 접기 손잡이`);
+  r.check(opened.text.includes('▲') && opened.offEdge <= 2 && opened.offCenter <= 2, `▲는 머리줄 아래 테두리 가운데 (테두리에서 ${opened.offEdge}px · 가운데에서 ${opened.offCenter}px)`);
+  await page.click(sel('header-fold', 'open'));
+  r.check(await waitFor(page.locator(sel('header-fold', 'folded'))), '▲ = 접는다');
+  await waitFor(async () => (await foldLook()).headerVar === '0px');
+  const folded = await foldLook();
+  r.check(folded.headerH === 0 && folded.headerVar === '0px' && folded.mainTop === 0, `머리줄 높이 0 · 본문이 화면 맨 위부터 (머리줄 ${folded.headerH} · --app-header-h ${folded.headerVar} · 본문 위 ${folded.mainTop})`);
+  r.check(folded.text.includes('▼') && folded.top === 0 && folded.offCenter <= 2, `▼는 화면 위 가운데 (위 ${folded.top}px · 가운데에서 ${folded.offCenter}px)`);
+  r.check(!(await page.locator(sel('scope-tab', 'day')).isVisible()) && !(await page.locator(sel('date-label')).isVisible()), '첫 줄·둘째 줄은 보이지 않는다');
+  const foldDay = await foldDate();
+  r.check(!!foldDay && foldDay === (await page.locator(sel('date-label')).textContent()), `손잡이에 보는 날짜 (${foldDay})`);
+  await page.locator('main').click({ position: { x: 5, y: 5 } });
+  await page.keyboard.press('Control+ArrowRight');
+  r.check(await waitFor(async () => (await foldDate()) !== foldDay), `접은 채 Ctrl+→ = 다음 날 - 손잡이 날짜가 바뀐다 (${foldDay} → ${await foldDate()})`);
+  await page.keyboard.press('Control+ArrowLeft');
+  await waitFor(async () => (await foldDate()) === foldDay);
+  r.check(folded.saved === true, '접은 상태를 이 기기에 기억한다 (sp5-header-fold)');
+  await page.click(sel('header-fold', 'folded'));
+  r.check(await waitFor(page.locator(sel('header-fold', 'open'))), '▼ = 다시 편다');
+  const reopened = await foldLook();
+  r.check(reopened.headerH === opened.headerH && reopened.saved === false && (await page.locator(sel('scope-tab', 'day')).isVisible()), `머리줄이 그대로 돌아온다 (${reopened.headerH}px)`);
+
   r.section('주소·새로고침·뒤로가기');
   await page.goto(page.url().split('#')[0] + '#/month/2026-12');
   r.check(await screenIs('month'), '주소를 바꾸면 그 화면 (#/month/2026-12)');

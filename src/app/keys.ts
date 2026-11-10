@@ -31,6 +31,7 @@ import { isSaveKey } from '../ui/useSaveKey';
 import { showToast } from './toast';
 import { goToday, setScope, setToggle, stepDate, stepScope, useNav } from './nav';
 import { toggleThemeMode } from './theme';
+import { toggleHeaderFold } from './headerFold';
 import { activeOf, useSidePopups } from '../ui/sideColumn';
 import { popOutWindow } from './popout';
 import { closeAllWindows, closeShownWindow, closeWindow, getWindowDef, openWindow, useWindows } from './windows';
@@ -108,6 +109,8 @@ const ACTIONS: Partial<Record<ShortcutId, () => void>> = {
   print: () => window.print(),
   // 어둡게 ↔ 밝게 (V4 ROADMAP 17)
   toggleTheme: toggleThemeMode,
+  // 머리줄 접기 ↔ 펴기 (메모 요청 #142 - 손잡이 ▲▼와 같다)
+  toggleHeader: toggleHeaderFold,
   // 보고 있는 칸 하나만 닫기 (10-26 - ESC는 모두)
   closePanel: () => {
     closeShownWindow();
