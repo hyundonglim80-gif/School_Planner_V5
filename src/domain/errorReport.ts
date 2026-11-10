@@ -88,7 +88,7 @@ export function isNoise(e: { name: string; message: string; stack: string; sourc
 }
 
 /**
- * CSP 위반 한 건 → 알릴 문장 (P22-6). Report-Only 위반은 그 사람 콘솔에만 남아, 막기로 바꿔도 되는지 보려면 모아야 한다.
+ * CSP 위반 한 건 → 알릴 문장 (P22-6). 위반은 그 사람 콘솔에만 남아 모아야 안다 - Report-Only 때는 막아도 되는지, 막기(P26-2 11-11) 뒤로는 무엇이 막혀 화면이 깨졌는지.
  * 주소는 출처만(경로·검색어에 글이 들 수 있다). 확장 프로그램이 낸 것은 앱 일이 아니라 null - 크롬은 주소 대신 이름만 주기도 한다.
  */
 export function cspViolationText(v: { effectiveDirective: string; blockedURI: string; sourceFile?: string | null }): string | null {

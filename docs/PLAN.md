@@ -38,7 +38,7 @@ PC 대화는 '이어서'에서 이 목록의 `[ ]`부터 한다(아래 세션 �
 <!-- PC 일 끝 - 메모 요청 자동 실행(워크플로)은 이 줄 바로 위에 한 줄씩 더한다. 이 줄을 지우거나 옮기지 않는다 -->
 
 **P26-1 끝**(11-10 PC - 크롬 점검 전체 63개 통과(개발 서버 60 + 미리 보기 headers·offline·perf) · 예외를 삼키는 점검 8개에 catch · 틀린 여섯은 앱 버그 0: 점검 고침 넷(class 번호 칸 재기 · import-labels 'V4 가운데 창 = PC 팝업창' · lessons 나눠 받는 칸 15초 · shortcut-record 기록) + 막힌 에뮬레이터 둘(가져오기 - 새로 켜니 통과), 6장 'P26-1'). 점검·문서만(앱 코드 그대로).
-**다음 = P26-2 보안 정리 ■0부터**(PC(VS Code) - 운영 오류 보고 읽기는 묻고, 6장 'P26-2') → P26-3 새 학년도 연습.
+**P26-2 하는 중**(11-11 PC): ■0~■2 끝 - 운영 오류 보고 1건(옛것)·CSP 위반 0건 → **CSP 막기**(미리 보기 점검 여섯 통과). **다음 = ■3 의존성 경고**(6장 'P26-2') → ■4 문서 → P26-3 새 학년도 연습.
 
 **P28-3 끝 = P28 끝**(11-10 PC - 표시 없는 단추 = 그 단추를 대신 누르기 `press.<해시>`(자리 = 창 + 탭 / 화면 · 그 자리에 하나뿐인 자기 `data-*`) · 안 보이면 그 창을 그 탭으로 열고 / 팝업창이면 'press' 소식 / 그 화면으로 가서 ·
 카드·날 칸 단추는 '항목(날짜)마다'라 못 만듦 · 쓰는 칸 단추는 열려 있을 때만 · 기기 칸 `pressTargets`, 6장 'P28-3'·5장 'P28-3 … 고르는 법'). 화면만(배포는 main 푸시로 저절로). **다음 = P26-1 PC 크롬 점검 전체**(PC(VS Code) - 6장 'P26-1', 새 대화에서 '이어서' = P26-1 ■0부터) → P26-2 보안 정리 → P26-3 새 학년도 연습.
@@ -3398,9 +3398,17 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 ### P26-2. 보안 정리 - 운영 오류 보고 · CSP 막기 · 의존성 경고
 **시작 조건**: P26-1 끝(점검 전체가 통과해야 CSP를 막은 뒤 깨진 것을 가릴 수 있다). PC. **묻기**: 운영 `v5Errors` 읽기(■0) · CSP를 막기로 바꾸기(■2 - 막으면 빠진 출처가 화면을 깨뜨릴 수 있다).
 **먼저 읽을 것**: 5장 'P22-6 CSP 위반' · `firebase.json` 헤더 · `securityHeaders.test` · `tools/inspect-headers.mjs` · `vite.config`(개발 서버·미리 보기가 같은 헤더를 낸다) · 5장 'P14-5 루트는 force 없이 9건'.
-- [ ] ■0 (묻고) 운영 오류 보고를 읽기만 한다(개발자 탭 또는 CLI) - 같은 것끼리 모아 표: '[CSP] …' 위반 출처(앱이 부르는 것 / 확장 프로그램 등 앱 밖) · CSP 밖 오류(새로 찾은 앱 버그는 이 절에 ■로 더한다). 개인 자료가 든 글은 문서에 옮기지 않는다.
-- [ ] ■1 고칠 것 고치기: 앱이 부르는데 빠진 출처는 정책에 더한다 · 오류 보고에서 찾은 앱 버그.
-- [ ] ■2 (묻고) `Content-Security-Policy-Report-Only` → `Content-Security-Policy`(위반 보고는 그대로 모은다) · `securityHeaders.test` · 개발 서버·미리 보기(4175)로 크롬 점검 몇 개(login·attach·gcal·popout·offline) · main 푸시 뒤 `SITE=https://schoolplanner-v5.web.app/ node tools/inspect-headers.mjs`.
+- [x] ■0 (묻고) 운영 오류 보고를 읽기만 한다(개발자 탭 또는 CLI) - 같은 것끼리 모아 표: '[CSP] …' 위반 출처(앱이 부르는 것 / 확장 프로그램 등 앱 밖) · CSP 밖 오류(새로 찾은 앱 버그는 이 절에 ■로 더한다). 개인 자료가 든 글은 문서에 옮기지 않는다.
+  → 11-11 사용자 허락, CLI로 읽음(firebase-tools 로그인 + Firestore REST 목록, 스크래치패드 스크립트 - 쓰기 없음): **문서 1건뿐** = 11-02 초대 코드 칸 주소 붙여넣기 안내(toast - P22-1 ■4에서 고친 것, TTL 30일 전). **'[CSP] …' 0건**(11-06 Report-Only 뒤 5일).
+- [x] ■1 고칠 것 고치기: 앱이 부르는데 빠진 출처는 정책에 더한다 · 오류 보고에서 찾은 앱 버그.
+  → 11-11 고칠 것 없음. 0건이 '보고 길이 안 돌아서'가 아닌지 따로 봄: 운영 조각에 `securitypolicyviolation` 듣기가 있다 · 운영 로그인 단추 → 구글 로그인 창(accounts.google.com)까지 위반 0·화면 오류 0(로그인은 하지 않음 - apis.google.com·identitytoolkit·www.googleapis.com) ·
+  운영 조각 130개에 eval·new Function 없음, 적힌 바깥 주소(googleapis·drive·docs·maps·img.youtube·neis·data.go.kr …)는 모두 허용 목록 안(takeout·github·react.dev는 링크) · `/__/auth/handler`·`iframe`(Firebase 예약 길)에는 CSP가 붙지 않는다 · 서비스 워커는 같은 출처 GET만, importScripts 없음 · 소리는 Web Audio(파일 없음).
+- [x] ■2 (묻고) `Content-Security-Policy-Report-Only` → `Content-Security-Policy`(위반 보고는 그대로 모은다) · `securityHeaders.test` · 개발 서버·미리 보기(4175)로 크롬 점검 몇 개(login·attach·gcal·popout·offline) · main 푸시 뒤 `SITE=https://schoolplanner-v5.web.app/ node tools/inspect-headers.mjs`.
+  → 11-11 사용자 '막기로 바꾸기' · `firebase.json` 한 줄 · **미리 보기만 에뮬레이터 주소를 더한다**(`vite.config` `EMULATOR_CSP` - connect-src 8080·9099, frame-src 9099 = Auth 에뮬레이터 로그인 iframe. 운영은 같은 출처 `/__/auth/iframe`) ·
+  시험: 막기다(Report-Only 없음)·운영 정책에 127.0.0.1 없음 · inspect-headers: 미리 보기 값 = firebase.json + 에뮬레이터 주소, Report-Only 헤더 없음, 일부러 넣은 인라인 스크립트가 `enforce`로 와서 돌지 않음, 에뮬레이터 위반도 빼지 않고 센다, 운영 첫 화면은 로그인 단추 → 구글 로그인 창까지 ·
+  **개발 서버는 CSP를 내지 않으므로 점검은 미리 보기(4177)로**: headers·login·attach·gcal·popout·offline 모두 통과. 찾은 것 둘(앱 버그 아님): ① attach의 드라이브 올리기 흉내 주소 `upload.mock.test`가 막힘 → 운영과 같은 꼴 `www.googleapis.com/upload/drive/v3/files?…&upload_id=mockN`
+  ② frame-src에 Auth 에뮬레이터가 없어 막힌 iframe이 크롬 오류 페이지가 되고, 점검 init script가 거기서 sessionStorage를 읽다 SecurityError(개발 서버는 통과) → ■2 frame-src.
+  (다른 점검 다섯 - backup·chat·handwriting·keep·mail - 도 `upload.mock.test`를 쓴다: 개발 서버로 돌리면 그대로 되고, 미리 보기로 돌릴 일이 생기면 같은 꼴로 바꾼다.)
 - [ ] ■3 의존성 경고 2건(루트 `package-lock.json` - minimatch → 11.0.1, uuid → 11.1.1): `npm ls minimatch uuid`로 누가 끌어오나 → force 없이 되면 고치고(단위·빌드·inspect-perf), 안 되면 까닭을 5장에 · functions는 `npm audit` 0건인지 본다.
 - [ ] ■4 문서(5장 결정 · CLAUDE.md 지금 상태의 'P22-6 뒤 남은 것' 줄 걷기 · OPS) · 세션 끝 정리.
 **끝 조건**: 운영 응답이 막기 CSP(inspect-headers) · 화면 오류·새 위반 없음 · 의존성 경고 0 또는 까닭.

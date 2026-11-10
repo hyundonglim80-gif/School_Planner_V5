@@ -9,10 +9,19 @@ const read = (name: string) => readFileSync(resolve(process.cwd(), name), 'utf8'
 
 const rules: { source?: string; headers: { key: string; value: string }[] }[] = JSON.parse(read('firebase.json')).hosting.headers;
 const headers = rules.find((rule) => rule.source === '**')?.headers ?? [];
-const csp = headers.find((h) => h.key === 'Content-Security-Policy-Report-Only')?.value ?? '';
+const csp = headers.find((h) => h.key === 'Content-Security-Policy')?.value ?? '';
 const directive = (name: string) => csp.split(';').map((d) => d.trim()).find((d) => d.startsWith(`${name} `)) ?? '';
 
 describe('CSP', () => {
+  it('막기다 - 지켜보기(Report-Only)로 되돌아가지 않는다 (P26-2: 운영 위반 보고 0건을 보고 바꿨다)', () => {
+    expect(csp).not.toBe('');
+    expect(headers.some((h) => h.key === 'Content-Security-Policy-Report-Only')).toBe(false);
+  });
+
+  it('운영 정책에 에뮬레이터 주소가 없다 - 미리 보기만 vite.config가 더한다', () => {
+    expect(csp).not.toMatch(/127\.0\.0\.1|localhost/);
+  });
+
   it('index.html 인라인 스크립트의 해시가 script-src에 있다 - 글자 하나만 고쳐도 해시가 바뀐다', () => {
     // 저장소는 LF다 (.gitattributes) - 운영 빌드도 LF로 받는다
     const html = read('index.html').replace(/\r\n/g, '\n');

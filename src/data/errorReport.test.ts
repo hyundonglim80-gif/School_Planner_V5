@@ -107,7 +107,7 @@ describe('startErrorReports', () => {
     expect(sent.docs).toHaveLength(0);
   });
 
-  it('CSP 위반은 출처만 실어 알린다 - Report-Only 위반은 그 사람 콘솔에만 남는다', async () => {
+  it('CSP 위반은 출처만 실어 알린다 - 보고 주소가 없어 위반은 그 사람 콘솔에만 남는다', async () => {
     const violation = (blockedURI: string, sourceFile = '') => Object.assign(new Event('securitypolicyviolation'), { effectiveDirective: 'img-src', blockedURI, sourceFile });
     document.dispatchEvent(violation('https://example.com/a.png?token=abc'));
     await vi.waitFor(() => expect(sent.docs).toHaveLength(1));

@@ -48,7 +48,8 @@ async function mockGoogle(ctx) {
     if (url.includes('uploadType=resumable')) {
       const meta = JSON.parse(req.postData() || '{}');
       google.uploads.push({ name: meta.name, mimeType: meta.mimeType, parents: meta.parents });
-      return route.fulfill({ status: 200, headers: { ...CORS, Location: `https://upload.mock.test/s/${google.uploads.length}` }, body: '' });
+      // 세션 주소는 운영과 같은 꼴(www.googleapis.com) - 미리 보기의 막기 CSP(P26-2)가 가짜 출처를 막지 않게
+      return route.fulfill({ status: 200, headers: { ...CORS, Location: `https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&upload_id=mock${google.uploads.length}` }, body: '' });
     }
     if (req.method() === 'GET' && url.includes('q=')) {
       google.folderLookups += 1;
@@ -56,9 +57,10 @@ async function mockGoogle(ctx) {
     }
     return route.fulfill({ status: 404, headers: CORS, json: {} });
   });
-  await ctx.route(/upload\.mock\.test\/s\/(\d+)/, (route) => {
+  // 나중에 단 route가 먼저 받는다 - 위 drive/v3/files보다 세션 주소(upload_id)가 먼저
+  await ctx.route(/upload_id=mock\d+/, (route) => {
     if (route.request().method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
-    const n = route.request().url().split('/').pop();
+    const n = new URL(route.request().url()).searchParams.get('upload_id').slice('mock'.length);
     const up = google.uploads[Number(n) - 1];
     return route.fulfill({ status: 200, headers: CORS, json: { id: `DRIVE${n}`, name: up?.name, webViewLink: `https://drive.google.com/file/d/DRIVE${n}/view` } });
   });

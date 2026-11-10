@@ -12,6 +12,15 @@ const hostingRules: { source?: string; headers: { key: string; value: string }[]
 const SECURITY_HEADERS = Object.fromEntries((hostingRules.find((rule) => rule.source === '**')?.headers ?? []).map((h) => [h.key, h.value]))
 // CSP는 미리 보기(빌드 파일)만 - 개발 서버는 빠른 고침 스크립트·웹소켓이 위반으로 콘솔을 채운다.
 const DEV_HEADERS = Object.fromEntries(Object.entries(SECURITY_HEADERS).filter(([key]) => !key.startsWith('Content-Security-Policy')))
+// 미리 보기는 이 PC에서 에뮬레이터 빌드(--mode emu)를 돌린다 - CSP가 막기(P26-2)라 에뮬레이터 주소를 더한다(미리 보기만, 운영 정책은 firebase.json 그대로):
+// connect-src = Firestore·Auth 에뮬레이터, frame-src = Auth 에뮬레이터 로그인 iframe(운영은 같은 출처 /__/auth/iframe - 막히면 크롬 오류 페이지가 된다).
+// 주소는 src/data/emulator.ts connectEmulators와 같다. tools/inspect-headers.mjs EMULATOR_CSP도 같은 글자다.
+const EMULATOR_CSP: Record<string, string> = { 'connect-src': 'http://127.0.0.1:8080 http://127.0.0.1:9099', 'frame-src': 'http://127.0.0.1:9099' }
+const withEmulator = (csp: string) =>
+  Object.entries(EMULATOR_CSP).reduce((v, [name, add]) => v.replace(new RegExp(`(^|;\\s*)${name} ([^;]*)`), `$1${name} $2 ${add}`), csp)
+const PREVIEW_HEADERS = Object.fromEntries(
+  Object.entries(SECURITY_HEADERS).map(([key, value]) => [key, key === 'Content-Security-Policy' ? withEmulator(value) : value]),
+)
 
 // 지금 브라우저가 어느 빌드를 돌리고 있는지 화면에서 확인할 수 있게 한다(V4에서 가져온 규칙 -
 // 이것이 없을 때 고친 것이 그 기기에서 돌고 있는지 몰라 '고쳤는데 그대로'를 여러 번 주고받았다).
@@ -38,5 +47,5 @@ export default defineConfig(({ mode }) => ({
   build: { manifest: 'asset-manifest.json' },
   // V4 개발 서버(5173)·미리 보기(4173)와 같이 켜 둘 수 있게 번호를 비킨다.
   server: { port: 5175, strictPort: true, headers: DEV_HEADERS },
-  preview: { port: 4175, strictPort: true, headers: SECURITY_HEADERS },
+  preview: { port: 4175, strictPort: true, headers: PREVIEW_HEADERS },
 }))
