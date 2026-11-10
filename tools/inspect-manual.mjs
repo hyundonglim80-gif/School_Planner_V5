@@ -843,6 +843,9 @@ try {
     r.check(TOPICS.length >= 69 && missing.length === 0, `장 파일의 주제 ${TOPICS.length}개를 모두 점검했다`, `점검에 없는 주제: ${missing.join(', ')}`);
   }
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' | ')}`);
+} catch (e) {
+  // 예외가 '✔ 모두 통과'로 끝나지 않게 (P23-2 · P26-1)
+  r.check(false, '점검이 도중에 멈췄다', String(e?.stack ?? e));
 } finally {
   await undo.run();
   await browser.close();

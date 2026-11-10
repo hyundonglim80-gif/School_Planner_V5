@@ -74,6 +74,9 @@ try {
   // t 화면 오류는 일부러 낸 것뿐
   const unexpected = t.errors.filter((e) => !e.includes('점검 오류'));
   r.check(unexpected.length + d.errors.length === 0, '화면 오류 없음 (일부러 낸 것 빼고)', `화면 오류: ${[...unexpected, ...d.errors].join(' | ')}`);
+} catch (e) {
+  // 예외가 '✔ 모두 통과'로 끝나지 않게 (P23-2 · P26-1)
+  r.check(false, '점검이 도중에 멈췄다', String(e?.stack ?? e));
 } finally {
   await browser.close();
   await undo.run();

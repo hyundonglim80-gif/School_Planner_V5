@@ -233,6 +233,9 @@ try {
   r.check(await waitFor(d.page.locator(sel('settings-section', 'dev-errors'))), '개발자 탭에 오류 기록 칸');
 
   r.check(a.errors.length + b.errors.length + d.errors.length === 0, '화면 오류 없음', `화면 오류: ${[...a.errors, ...b.errors, ...d.errors].join(' | ')}`);
+} catch (e) {
+  // 예외가 '✔ 모두 통과'로 끝나지 않게 (P23-2 · P26-1)
+  r.check(false, '점검이 도중에 멈췄다', String(e?.stack ?? e));
 } finally {
   await browser.close();
   // 창이 1초 뒤 올리는 것이 끝난 뒤에 되돌린다

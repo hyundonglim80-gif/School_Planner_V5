@@ -162,6 +162,9 @@ try {
   r.check(await waitFor(async () => !(await dbNames(a.page)).includes(DB), 5000), '로그아웃하면 그 계정의 기기 사본을 지운다');
 
   r.check(a.errors.length === 0, '화면 오류 없음', `화면 오류: ${a.errors.join(' | ')}`);
+} catch (e) {
+  // 예외가 '✔ 모두 통과'로 끝나지 않게 (P23-2 · P26-1)
+  r.check(false, '점검이 도중에 멈췄다', String(e?.stack ?? e));
 } finally {
   await browser.close();
   await undo.run();

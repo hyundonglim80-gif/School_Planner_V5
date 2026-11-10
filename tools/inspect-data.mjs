@@ -85,6 +85,9 @@ try {
   r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '되돌릴 것이 없습니다' })), '더 없으면 알린다');
 
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류 - ${errors.join(' | ')}`);
+} catch (e) {
+  // 예외가 '✔ 모두 통과'로 끝나지 않게 (P23-2 · P26-1)
+  r.check(false, '점검이 도중에 멈췄다', String(e?.stack ?? e));
 } finally {
   await undo.run();
   await browser.close();

@@ -242,6 +242,9 @@ try {
   r.check(await waitFor(async () => (await A.page.locator(sel('space-chip', gid)).count()) === 0, 10000), '그룹 칩이 사라진다');
   r.check((await A.page.locator(sel('overlay-group')).count()) === 0 && (await A.page.locator('[data-event-space]').count()) === 0, '겹친 일정도 빠진다');
   r.check(A.errors.length === 0, `화면 오류 없음 ${A.errors.join(' / ')}`);
+} catch (e) {
+  // 예외가 '✔ 모두 통과'로 끝나지 않게 (P23-2 · P26-1)
+  r.check(false, '점검이 도중에 멈췄다', String(e?.stack ?? e));
 } finally {
   await undo.run();
   await browser.close();
