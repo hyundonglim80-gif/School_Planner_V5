@@ -155,8 +155,9 @@ try {
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
-  await undo.run();
+  // 브라우저를 먼저 닫는다 - 열린 채 가져온 문서 1천여 개를 지우면 구독마다 메시지가 쌓여 에뮬레이터 통로가 막힌다(10001 - P26-1)
   await browser.close();
+  await undo.run();
   r.done();
   process.exit();
 }

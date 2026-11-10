@@ -10,7 +10,7 @@
 //   npm run emu · V4 저장소 npm run seed · npm run seed · npm run dev:emu (켜 둔다) → node tools/inspect-import-labels.mjs
 // 에뮬레이터 teacher 계정의 V4 설정 문서를 고쳐 심고(V4 seed 라벨 + 트리·구글 캘린더·V3 속성 이름·설정), 끝에 V4·V5 문서를 모두 되돌린다.
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, writeBatch } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, launch, newPage, noUserActivation, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -148,9 +148,16 @@ try {
 
   r.section('라벨 관리 창에도 그대로');
   await page.keyboard.press('Escape');
+  // 가져온 V4 '가운데 창'(center)은 PC에서 팝업창이다(11-09 사용자 결정 - layoutPrefs windowMode) → 메뉴로 열면 새 브라우저 창 (P26-1)
+  const popWait = page.context().waitForEvent('page', { timeout: 10000 }).catch(() => null);
   await page.locator(sel('more-menu')).click();
   await page.locator(sel('menu-item', 'labels')).click();
-  const lrow = (id) => page.locator(sel('label-row', id));
+  const lp = await popWait;
+  // 팝업창은 about:blank로 먼저 뜬 뒤 ?popout=…으로 간다
+  await lp?.waitForURL(/popout=/, { timeout: 10000 }).catch(() => {});
+  r.check(!!lp && lp.url().includes('popout='), "V4 '가운데 창' = PC에서는 팝업창으로 열린다 (11-09)", `새 창 ${lp?.url() ?? '없음'}`);
+  const host = lp ?? page;
+  const lrow = (id) => host.locator(sel('label-row', id));
   const ev3 = byName('event', '이월');
   r.check(await waitFor(lrow(ev3.id)), '가져온 일정 라벨이 보인다');
   r.check(
@@ -159,13 +166,16 @@ try {
       !(await lrow(ev3.id).locator(sel('label-prop', 'forward')).isChecked()),
     '이름·색·속성이 같다',
   );
-  await page.locator(sel('label-tab', 'note')).click();
+  await host.locator(sel('label-tab', 'note')).click();
   r.check(await waitFor(lrow(a.id)), '메모·기록 탭에 하위가 보인다');
   r.check((await lrow(a.id).getAttribute('data-depth')) === '1', '하위는 제 상위 밑에 들여 보인다');
-  await page.keyboard.press('Escape');
+  if (lp) await lp.close();
+  else await page.keyboard.press('Escape');
 
   r.section('두 번째 가져오기 = 바뀐 것 0');
   const stamps = Object.fromEntries(mine.map((l) => [l.id, l.updatedAt.toMillis()]));
+  // 팝업창 모드라도 '방금 누름'이 없으면 큰 창 안에 뜬다 - 이 묶음은 큰 창에서 본다 (새로고침하면 걷힌다)
+  await noUserActivation(page);
   await page.evaluate(() => window.sp5.openWindow('backup', { tab: 'import' }));
   await page.locator(sel('import-run')).waitFor();
   await page.locator(sel('import-run')).click();
@@ -203,8 +213,9 @@ try {
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
-  await undo.run();
+  // 브라우저를 먼저 닫는다 - 열린 채 가져온 문서 1천여 개를 지우면 구독마다 메시지가 쌓여 에뮬레이터 통로가 막힌다(10001 - P26-1)
   await browser.close();
+  await undo.run();
   r.done();
   process.exit();
 }
