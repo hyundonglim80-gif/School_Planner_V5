@@ -16,7 +16,8 @@ function setup() {
       <button type="button" {...shortcutTarget('timetable')}>
         <span data-inner>⏰ 시간표</span>
       </button>
-      <button type="button" data-plain>
+      {/* 자기 data-* 표시가 없는 단추 - 대신 누르기(P28-3)로도 찾을 길이 없다 */}
+      <button type="button" className="plain">
         아무 단추
       </button>
       <button type="button" data-opener aria-expanded={false}>
@@ -41,7 +42,7 @@ beforeEach(() => {
   registerWindow({ id: 'settings', title: '환경설정', icon: '⚙️', kind: 'side', load: () => import('../features/dev/TestWindow') });
   setShortcutOverrides({});
   setTabShortcuts({});
-  useShortcutRecord.setState({ stage: 'off', picked: null, miss: false, binding: null });
+  useShortcutRecord.setState({ stage: 'off', picked: null, miss: null, binding: null });
 });
 
 describe('단축키 설정 띠 (P18-1)', () => {
@@ -59,7 +60,7 @@ describe('단축키 설정 띠 (P18-1)', () => {
     act(() => startShortcutRecord());
     fireEvent.click(q('[data-opener]'));
     expect(q('[data-shortcut-record-miss]')).toBeNull();
-    fireEvent.click(q('[data-plain]'));
+    fireEvent.click(q('.plain'));
     expect(q('[data-shortcut-record-miss]')).not.toBeNull();
     fireEvent.click(q('[data-inner]'));
     expect(q('[data-shortcut-record-picked="timetable"]')).toHaveTextContent('시간표');
@@ -67,7 +68,7 @@ describe('단축키 설정 띠 (P18-1)', () => {
     fireEvent.click(q('[data-text]'));
     expect(q('[data-shortcut-record-miss]')).toBeNull();
     // 앞에 고른 것은 그대로
-    fireEvent.click(q('[data-plain]'));
+    fireEvent.click(q('.plain'));
     expect(q('[data-shortcut-record-picked="timetable"]')).not.toBeNull();
     // 띠 안을 누른 것은 세지 않는다
     fireEvent.click(q('[data-shortcut-record-cancel]').previousElementSibling as HTMLElement);

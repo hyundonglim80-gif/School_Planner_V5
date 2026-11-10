@@ -19,6 +19,7 @@ import { usePendingWritesGuard } from './pendingWritesGuard';
 import WindowHost from './WindowHost';
 import { useNav } from './nav';
 import { rememberPopupRect, sendNavToOpener, sendParamsToOpener, usePopupBridge } from './popupWindows';
+import { pressInThisWindow } from './pressShortcuts';
 import './windowList';
 import { anyWindowUnsaved, getWindowDef, openWindow, useWindows } from './windows';
 
@@ -51,7 +52,8 @@ export default function PopoutShell({ spec }: { spec: PopoutSpec }) {
   }, [root, rootParams, spec.id]);
 
   // 연 창이 같은 창을 다시 열면 여기서(그 창을 앞으로 · 가리키는 것을 바꾼다)
-  usePopupBridge(useCallback((id: string, params: unknown) => void openWindow(id, params, { here: true }), []));
+  // 큰 창의 단추 대신 누르기 키(P28-3)가 이 창 안의 단추를 눌러 달라고 하면 여기서 누른다
+  usePopupBridge(useCallback((id: string, params: unknown) => void openWindow(id, params, { here: true }), []), undefined, pressInThisWindow);
   useEffect(() => rememberPopupRect(spec.id), [spec.id]);
   // 화면 옮기기는 연 창으로 (이 창에는 화면이 없다)
   useEffect(

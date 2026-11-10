@@ -17,7 +17,7 @@ import { useModalLayer } from '../app/history';
 import { useLayoutPrefs } from '../app/layoutPrefs';
 import { useWindowSave } from '../app/windows';
 import { POPOUT, PopoutTargetContext, WindowSlotContext } from './popout';
-import { getSideColumn, sideSlotProps, useDocked, useSideSlot } from './sideColumn';
+import { getSideColumn, SideOwnerContext, sideSlotProps, useDocked, useSideSlot } from './sideColumn';
 import { useBackdropClose } from './useBackdropClose';
 import { useBodyScrollLock } from './useBodyScrollLock';
 import { useDialogFocus } from './useDialogFocus';
@@ -67,6 +67,8 @@ export default function PopupFrame({
   const cardRef = useRef<HTMLElement | null>(null);
   useSaveKey(isOpen, cardRef, onSave);
   const win = useContext(WindowSlotContext);
+  // 어느 창의 틀인가 (창 목록의 key - 단추 대신 누르기가 자리를 찾는다, P28-3). 창 안에서 띄운 작은 창도 그 창의 것
+  const owner = useContext(SideOwnerContext) ?? undefined;
   useWindowSave(isOpen ? win?.key : null, onSave);
   const fill = !!win?.fill;
   const side = useLayoutPrefs((s) => s.popupStyle) === 'side' && !POPOUT;
@@ -93,7 +95,7 @@ export default function PopupFrame({
 
   if (fill) {
     return (
-      <div className="fixed inset-0 flex" style={{ zIndex }} data-popup-frame="window">
+      <div className="fixed inset-0 flex" style={{ zIndex }} data-popup-frame="window" data-window-key={owner}>
         <div
           ref={cardRef as RefObject<HTMLDivElement>}
           role="dialog"
@@ -116,6 +118,7 @@ export default function PopupFrame({
         aria-label={ariaLabel}
         data-popup-card
         data-popup-frame="side"
+        data-window-key={owner}
         data-side-slot={slotId}
         className={className}
         style={style}
@@ -132,6 +135,7 @@ export default function PopupFrame({
         className="fixed inset-0 flex justify-end"
         style={{ left: vv.left, top: vv.top, width: vv.width, height: vv.height, zIndex }}
         data-popup-frame="banner"
+        data-window-key={owner}
       >
         <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs" {...backdrop} />
         <div
@@ -154,6 +158,7 @@ export default function PopupFrame({
       className="fixed inset-0 flex items-start justify-center overflow-y-auto p-4 bg-slate-900/40 backdrop-blur-sm"
       style={{ left: vv.left, top: vv.top, width: vv.width, height: vv.height, zIndex }}
       data-popup-frame="center"
+      data-window-key={owner}
       {...backdrop}
     >
       {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 창 판 - 배경으로 누르기가 새지 않게 막기만 (P22-7) */}

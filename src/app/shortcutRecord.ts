@@ -2,6 +2,7 @@
 //   고르기(pick): 평소처럼 누르며 메뉴를 찾아 들어간다(누른 것은 그대로 동작한다). 누른 단추에 `data-shortcut-target`(ui/shortcutTarget)이
 //                 있으면 그 기능을 '고른 것'으로 - 마지막에 누른 것이 이긴다. 단추 자리가 아니라 기능(단축키 id)을 기억한다.
 //                 창 안 탭(P18-2)도 같다 - 탭 단추의 표시가 '창:탭' id(app/tabShortcuts, 단추에는 app/keys useTabTarget).
+//                 표시가 없는 단추는 그 단추 자체를 고른다(P28-3 단추 대신 누르기 'press.…' - app/pressShortcuts). 못 고르면 띠에 까닭.
 //   키(key)     : 띠의 '완료'를 누르면 키를 받는다. 받는 동안 누른 키는 앱 단축키·글 칸으로 가지 않는다(window capture에서 먼저 받아 멈춘다).
 //   ESC         : 어느 때나 기록 취소(오른쪽 칸 닫기는 하지 않는다).
 //   키 바꾸기    : 단축키 탭의 줄(P28-1)은 고르기를 건너뛰고 곧바로 키 단계(startKeyFor).
@@ -19,7 +20,8 @@ import {
   type AnyShortcutId,
   type Binding,
 } from '../domain/shortcuts';
-import { extraBindingsOf, setExtraShortcuts, setShortcutOverrides, useShortcutOverrides } from './keys';
+import { addPressTargets, extraBindingsOf, setExtraShortcuts, setShortcutOverrides, useShortcutOverrides } from './keys';
+import { clearPendingPress, pickPressTarget, takePendingPress } from './pressShortcuts';
 import { sendRecordToOpener } from './popupWindows';
 import { isKnownShortcut, shortcutLabel } from './tabShortcuts';
 import { showErrorToast, showToast } from './toast';
@@ -32,13 +34,13 @@ interface RecordState {
   stage: RecordStage;
   /** 고른 기능 (·창 안 탭) */
   picked: AnyShortcutId | null;
-  /** 방금 누른 것이 단축키로 만들 수 없는 단추였나 (앞에 고른 것은 그대로) */
-  miss: boolean;
+  /** 방금 누른 것을 단축키로 만들 수 없는 까닭 (없으면 null - 앞에 고른 것은 그대로) */
+  miss: string | null;
   /** 키 단계에서 누른 조합 (아직 누르지 않았으면 null, 키가 빈 조합 = 지우기) */
   binding: Binding | null;
 }
 
-const OFF: RecordState = { stage: 'off', picked: null, miss: false, binding: null };
+const OFF: RecordState = { stage: 'off', picked: null, miss: null, binding: null };
 
 export const useShortcutRecord = create<RecordState>(() => OFF);
 
@@ -79,6 +81,7 @@ export function requestShortcutRecord(id?: AnyShortcutId): boolean {
 }
 
 export function cancelShortcutRecord() {
+  clearPendingPress();
   useShortcutRecord.setState(OFF);
 }
 
@@ -87,27 +90,36 @@ export function finishPick() {
   if (!useShortcutRecord.getState().picked) return;
   // 누른 단추에 초점이 남으면 Space·Enter가 그 단추를 누른다 - 키 칸만 받게 비운다
   if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-  useShortcutRecord.setState({ stage: 'key', binding: null, miss: false });
+  useShortcutRecord.setState({ stage: 'key', binding: null, miss: null });
 }
 
 /** 다시 고르기 (고른 것은 남긴다 - 다른 것을 누르면 바뀐다) */
 export function repick() {
-  useShortcutRecord.setState({ stage: 'pick', binding: null, miss: false });
+  useShortcutRecord.setState({ stage: 'pick', binding: null, miss: null });
 }
 
-/** 누르면 버튼처럼 동작하는 것 - 고를 수 없는 것을 눌렀다고 알릴 자리 */
-const PRESSABLE = 'button, a[href], [role="button"], [role="tab"], [role="menuitem"], input, select, label, summary';
-/** 메뉴·칸을 펴는 단추(⋮·계정 사진·🔔 종) - 찾아 들어가는 길이라 '만들 수 없다'고 나무라지 않는다 */
+/** 메뉴·칸을 펴는 단추(⋮·계정 사진·🔔 종) - 찾아 들어가는 길이라 고르지도, '만들 수 없다'고 나무라지도 않는다 */
 const OPENER = '[aria-expanded], [aria-haspopup]';
+const BUTTONISH = 'button, a[href], [role="button"], [role="tab"], [role="menuitem"], summary';
 
-/** document capture - 누른 단추가 무엇인지 본다. 누르기는 막지 않는다(메뉴를 찾아 들어가야 한다). */
+/**
+ * document capture - 누른 단추가 무엇인지 본다. 누르기는 막지 않는다(메뉴를 찾아 들어가야 한다).
+ * 기능 표시가 있으면 그 기능, 없으면 그 단추 자체(단추 대신 누르기 - P28-3 app/pressShortcuts), 그것도 안 되면 까닭.
+ */
 export function onRecordClick(e: MouseEvent) {
   if (useShortcutRecord.getState().stage !== 'pick') return;
   const t = e.target instanceof Element ? e.target : null;
   if (!t || t.closest('[data-shortcut-record]')) return;
   const id = t.closest<HTMLElement>('[data-shortcut-target]')?.dataset.shortcutTarget;
-  if (id && isKnownShortcut(id)) useShortcutRecord.setState({ picked: id, miss: false });
-  else if (t.closest(PRESSABLE) && !t.closest(OPENER)) useShortcutRecord.setState({ miss: true });
+  if (id && isKnownShortcut(id)) {
+    useShortcutRecord.setState({ picked: id, miss: null });
+    return;
+  }
+  if (t.closest(BUTTONISH)?.matches(OPENER)) return;
+  const r = pickPressTarget(t);
+  if (!r) return;
+  if ('id' in r) useShortcutRecord.setState({ picked: r.id, miss: null });
+  else useShortcutRecord.setState({ miss: r.reason });
 }
 
 /** window capture - 앱 단축키(app/keys)·창의 ESC보다 먼저 받는다 */
@@ -143,6 +155,9 @@ export function saveRecordedKey(): boolean {
   }
   const state = useShortcutOverrides.getState();
   const { bindings, extra, cleared } = assignBinding(resolveBindings(state.overrides), picked, binding, extraBindingsOf(state));
+  // 고른 단추(P28-3)는 키보다 먼저 적는다 - 이름·할 일을 찾는 곳
+  const target = takePendingPress(picked);
+  if (target) addPressTargets({ [picked]: target });
   setShortcutOverrides(overridesFromBindings(bindings));
   setExtraShortcuts(extra);
   const label = shortcutLabel(picked);

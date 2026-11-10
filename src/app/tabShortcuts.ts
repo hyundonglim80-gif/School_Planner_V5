@@ -117,12 +117,32 @@ export function setTabOpener(window: string, open: (tab: string) => void): () =>
   };
 }
 
+/** 그 창을 탭으로 여는 길이 따로 있나 (날짜·공간이 있어야 열리는 쓰는 칸 - 단추 대신 누르기가 열 수 있는지 본다, P28-3) */
+export const hasTabOpener = (window: string): boolean => openers.has(window);
+
+/** 그 창을 그 탭으로 연다 (따로 단 여는 길이 있으면 그것 - 출석부·알림장) */
+export function openWindowTab(window: string, tab: string) {
+  const open = openers.get(window);
+  if (open) open(tab);
+  else openWindow(window, { tab });
+}
+
 /** 그 창을 그 탭으로 연다. 열 수 있으면 true (창을 등록하지 않았으면 false) */
 export function runTabShortcut(id: TabShortcutId): boolean {
   const t = byId.get(id);
   if (!t || !getWindowDef(t.window)) return false;
-  const open = openers.get(t.window);
-  if (open) open(t.tab);
-  else openWindow(t.window, { tab: t.tab });
+  openWindowTab(t.window, t.tab);
   return true;
+}
+
+/** 탭 단추의 표시(data-shortcut-target) → 그 창의 탭 id ('settings:notify' → 'notify', 같은 일을 하는 단축키 'calendar' → 'send'). 그 창의 탭이 아니면 null */
+export function tabOfTarget(window: string, target: string): string | null {
+  if (target.startsWith(`${window}:`)) return target.slice(window.length + 1) || null;
+  for (const [id, alias] of Object.entries(ALIAS)) if (alias === target && id.startsWith(`${window}:`)) return id.slice(window.length + 1);
+  return null;
+}
+
+/** '환경설정 → 알림' (목록에 없는 탭은 창 이름만) */
+export function tabLabelOf(window: string, tab: string | undefined, title: string): string {
+  return (tab && byId.get(`${window}:${tab}`)?.label) || title;
 }

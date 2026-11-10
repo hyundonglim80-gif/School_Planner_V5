@@ -42,7 +42,8 @@ import {
 } from '../domain/settings';
 import { settingsPort, startSettingsSync, type SettingsBinding } from '../data/settingsSync';
 import { setFontScale, useLayoutPrefs, type PopupStyle } from './layoutPrefs';
-import { setCustomShortcuts, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
+import { addPressTargets, setCustomShortcuts, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
+import { prunePressTargets, readPressTargets, type PressTargets } from '../domain/pressTarget';
 import { isKnownTabShortcut } from './tabShortcuts';
 import { useNav, type SemesterFilter, type StartupScope, STARTUP_SCOPES } from './nav';
 import { detectDeviceKind, type DeviceKind } from './deviceKind';
@@ -64,6 +65,8 @@ export interface DevicePrefs {
    * 옛 판(P28 전)은 tabShortcuts를 '있는 탭'으로 걸러 다시 쓰므로 거기 두면 지워진다. 이 칸은 모양만 보고 모르는 id도 남긴다.
    */
   customShortcuts: CustomBindings;
+  /** 단추 대신 누르기(P28-3)의 그 단추 - 'press.…' → 자리·찾기·이름 (키가 있는 것만 올린다) */
+  pressTargets: PressTargets;
   showWeekend: boolean;
   showEvents: boolean;
   showClass: boolean;
@@ -74,6 +77,7 @@ export interface DevicePrefs {
 const overridesField: SettingField<ShortcutOverrides> = { def: {}, read: readShortcutOverrides };
 const tabShortcutsField: SettingField<TabBindings> = { def: {}, read: (v) => readTabBindings(v, isKnownTabShortcut) };
 const customShortcutsField: SettingField<CustomBindings> = { def: {}, read: readCustomBindings };
+const pressTargetsField: SettingField<PressTargets> = { def: {}, read: readPressTargets };
 
 export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   fontScale: oneOfField<FontScale>(
@@ -85,6 +89,7 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   shortcutOverrides: overridesField,
   tabShortcuts: tabShortcutsField,
   customShortcuts: customShortcutsField,
+  pressTargets: pressTargetsField,
   showWeekend: boolField(true),
   showEvents: boolField(true),
   showClass: boolField(true),
@@ -102,6 +107,7 @@ function currentDevicePrefs(): DevicePrefs {
     shortcutOverrides: useShortcutOverrides.getState().overrides,
     tabShortcuts: useShortcutOverrides.getState().tabs,
     customShortcuts: useShortcutOverrides.getState().custom,
+    pressTargets: prunePressTargets(useShortcutOverrides.getState().press, useShortcutOverrides.getState().custom),
     showWeekend,
     showEvents,
     showClass,
@@ -116,6 +122,8 @@ function applyDevicePrefs(p: DevicePrefs) {
   if (p.popupStyle !== now.popupStyle) useLayoutPrefs.setState({ popupStyle: p.popupStyle });
   if (JSON.stringify(p.shortcutOverrides) !== JSON.stringify(now.shortcutOverrides)) setShortcutOverrides(p.shortcutOverrides);
   if (JSON.stringify(p.tabShortcuts) !== JSON.stringify(now.tabShortcuts)) setTabShortcuts(p.tabShortcuts);
+  // 단추 적은 것은 더하기만 - 이 기기에서 해제한 것(되돌리기)·고르는 중인 것을 지우지 않는다. 키가 없으면 쓰이지 않는다
+  if (JSON.stringify(p.pressTargets) !== JSON.stringify(now.pressTargets)) addPressTargets(p.pressTargets);
   if (JSON.stringify(p.customShortcuts) !== JSON.stringify(now.customShortcuts)) setCustomShortcuts(p.customShortcuts);
   const navKeys = ['startupScope', 'showWeekend', 'showEvents', 'showClass', 'semesterFilter', 'enableScrollNav'] as const;
   const navChanges = Object.fromEntries(navKeys.filter((k) => p[k] !== now[k]).map((k) => [k, p[k]]));

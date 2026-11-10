@@ -12,6 +12,7 @@
 //   - 팝업창의 자리·크기는 창마다 이 기기에 남겨 다음에 그 자리에 연다(rememberPopupRect).
 // 창 목록을 import하지 않는다(창 목록이 이것을 부른다) - 팝업창 안에서 다시 열기는 부르는 쪽이 넘긴다.
 import { useEffect } from 'react';
+import type { PressTarget } from '../domain/pressTarget';
 import { CLIPBOARD_POPOUT_ID, POPOUT, popoutUrl } from '../ui/popout';
 import { useNav, type NavState } from './nav';
 import { SCOPES } from './route';
@@ -24,7 +25,10 @@ type BridgeMessage =
   | { kind: typeof MSG; type: 'params'; id: string; params: unknown }
   | { kind: typeof MSG; type: 'nav'; nav: Pick<NavState, 'scope' | 'date' | 'classId'> }
   /** 단축키 설정 띠는 큰 창에만 있다 - 팝업창의 환경설정에서 시작하면 큰 창으로(id = 그것의 키만 받기, P28-1) */
-  | { kind: typeof MSG; type: 'record'; id?: string };
+  | { kind: typeof MSG; type: 'record'; id?: string }
+  /** 단추 대신 누르기(P28-3) - 큰 창의 키가 팝업창 안의 단추를 누르게 한다(nonce = 같은 부탁을 두 번 누르지 않게) · 팝업창의 답 */
+  | { kind: typeof MSG; type: 'press'; target: PressTarget; nonce: string }
+  | { kind: typeof MSG; type: 'pressed'; nonce: string; ok: boolean };
 
 interface OpenedPopup {
   id: string;
@@ -203,11 +207,60 @@ export function sendRecordToOpener(id?: string) {
 
 const isBridge = (d: unknown): d is BridgeMessage => !!d && typeof d === 'object' && (d as { kind?: unknown }).kind === MSG;
 
+/** 그 창을 그린 팝업창이 열려 있나 (여럿이면 맨 나중에 연 것) */
+function livePopupOf(id: string): OpenedPopup | undefined {
+  for (let i = opened.length - 1; i >= 0; i--) if (opened[i].id === id && !opened[i].win.closed) return opened[i];
+  return undefined;
+}
+
+export const popupOpenFor = (id: string): boolean => !!livePopupOf(id);
+
+/** 누르기 부탁을 다시 보내는 사이·횟수 - 막 띄운 팝업창은 앱을 읽는 1~2초 동안 소식을 받지 못한다 */
+const PRESS_RETRY_MS = 400;
+const PRESS_TRIES = 20;
+
+/**
+ * 큰 창에서 - 그 창을 그린 팝업창 안의 단추를 누르게 한다(P28-3). 팝업창이 답할 때까지 다시 보낸다(같은 nonce - 팝업창은 한 번만 누른다).
+ * 답: true = 눌렀다 · false = 팝업창이 단추를 찾지 못했다 · null = 팝업창이 없거나 답이 없었다
+ */
+export function pressInPopup(id: string, target: PressTarget): Promise<boolean | null> {
+  const nonce = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  return new Promise((resolve) => {
+    let tries = 0;
+    let timer = 0;
+    const finish = (v: boolean | null) => {
+      window.clearInterval(timer);
+      window.removeEventListener('message', onMessage);
+      resolve(v);
+    };
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || !isBridge(e.data)) return;
+      if (e.data.type === 'pressed' && e.data.nonce === nonce) finish(e.data.ok === true);
+    };
+    const send = () => {
+      const p = livePopupOf(id);
+      if (!p || ++tries > PRESS_TRIES) return finish(null);
+      post(p.win, { kind: MSG, type: 'press', target, nonce });
+    };
+    window.addEventListener('message', onMessage);
+    timer = window.setInterval(send, PRESS_RETRY_MS);
+    send();
+  });
+}
+
+/** 팝업창 안에서 받은 누르기 부탁 (다시 온 같은 부탁은 건너뛴다) */
+const seenPress = new Set<string>();
+
 /**
  * 팝업창과 주고받기 (큰 창의 껍데기·팝업창 껍데기에서 한 번). openHere = 팝업창 안에서 '그 창을 다시 열기'(창 목록의 openWindow를 이 창 안에).
  * onRecord = 큰 창에서 - 팝업창이 단축키 설정을 시작해 달라고 했다(팝업창 안의 팝업창이면 제 연 창으로 이어 보낸다).
+ * onPress = 팝업창 안에서 - 큰 창의 단축키가 이 창 안의 단추를 눌러 달라고 했다(P28-3, 눌렀으면 true). 답은 보낸 창에.
  */
-export function usePopupBridge(openHere?: (id: string, params: unknown) => void, onRecord?: (id?: string) => void) {
+export function usePopupBridge(
+  openHere?: (id: string, params: unknown) => void,
+  onRecord?: (id?: string) => void,
+  onPress?: (target: PressTarget) => Promise<boolean>,
+) {
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin || !isBridge(e.data)) return;
@@ -226,15 +279,24 @@ export function usePopupBridge(openHere?: (id: string, params: unknown) => void,
         const id = typeof m.id === 'string' ? m.id : undefined;
         if (POPOUT) sendRecordToOpener(id);
         else onRecord?.(id);
+      } else if (m.type === 'press') {
+        if (!onPress || typeof m.nonce !== 'string' || !m.target || seenPress.has(m.nonce)) return;
+        seenPress.add(m.nonce);
+        const source = e.source as Window | null;
+        void onPress(m.target).then(
+          (ok) => post(source, { kind: MSG, type: 'pressed', nonce: m.nonce, ok }),
+          () => post(source, { kind: MSG, type: 'pressed', nonce: m.nonce, ok: false }),
+        );
       }
     };
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [openHere, onRecord]);
+  }, [openHere, onRecord, onPress]);
 }
 
 /** 시험에서만 */
 export function resetPopupWindowsForTest() {
   opened.length = 0;
   toldBlocked = false;
+  seenPress.clear();
 }

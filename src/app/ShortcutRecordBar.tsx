@@ -38,7 +38,7 @@ export default function ShortcutRecordBar() {
     body = (
       <>
         <span className="text-xs text-slate-600 min-w-0">
-          단축키로 쓸 <strong className="text-slate-800">메뉴·단추를 누르세요</strong> <span className="text-slate-400">(점선 테두리)</span>
+          단축키로 쓸 <strong className="text-slate-800">메뉴·단추를 누르세요</strong> <span className="text-slate-400">(점선 = 기능 · 그 밖의 단추는 키가 대신 누릅니다)</span>
         </span>
         {picked && (
           <span data-shortcut-record-picked={picked} className="px-2 py-1 rounded-lg bg-violet-50 border border-violet-200 text-violet-800 text-xs font-bold truncate max-w-56" title={label}>
@@ -47,7 +47,7 @@ export default function ShortcutRecordBar() {
         )}
         {miss && (
           <span data-shortcut-record-miss className="text-xs font-bold text-rose-600">
-            이 단추는 단축키로 만들 수 없습니다
+            {miss}
           </span>
         )}
         <button type="button" data-shortcut-record-done disabled={!picked} onClick={finishPick} className={`${BTN} bg-primary text-white hover:bg-primary/90`}>

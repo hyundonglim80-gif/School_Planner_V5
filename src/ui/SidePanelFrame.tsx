@@ -11,7 +11,7 @@ import { createPortal } from 'react-dom';
 import { useBackLayer, useModalLayer } from '../app/history';
 import { useWindowSave } from '../app/windows';
 import { POPOUT, PopoutTargetContext, WindowSlotContext } from './popout';
-import { getSideColumn, sideSlotProps, useDocked, useSideSlot } from './sideColumn';
+import { getSideColumn, SideOwnerContext, sideSlotProps, useDocked, useSideSlot } from './sideColumn';
 import { useBackdropClose } from './useBackdropClose';
 import { useBodyScrollLock } from './useBodyScrollLock';
 import { useSaveKey } from './useSaveKey';
@@ -33,6 +33,8 @@ interface SidePanelFrameProps {
 
 export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaLabel, raise, children }: SidePanelFrameProps) {
   const win = useContext(WindowSlotContext);
+  // 어느 창의 틀인가 (창 목록의 key - 단추 대신 누르기가 자리를 찾는다, P28-3)
+  const owner = useContext(SideOwnerContext) ?? undefined;
   const fill = !!win?.fill;
   const docked = useDocked();
   const panelRef = useRef<HTMLElement | null>(null);
@@ -56,7 +58,7 @@ export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaL
   if (docked) {
     const { className, style, 'data-side-slot': slotId } = sideSlotProps(slot);
     return createPortal(
-      <aside ref={panelRef} aria-label={ariaLabel} data-panel-frame="side" className={className} style={style} data-side-slot={slotId}>
+      <aside ref={panelRef} aria-label={ariaLabel} data-panel-frame="side" data-window-key={owner} className={className} style={style} data-side-slot={slotId}>
         {inner}
       </aside>,
       getSideColumn(),
@@ -65,7 +67,7 @@ export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaL
 
   if (fill) {
     return (
-      <div className="fixed inset-0 flex" style={{ zIndex }} data-panel-frame="window">
+      <div className="fixed inset-0 flex" style={{ zIndex }} data-panel-frame="window" data-window-key={owner}>
         <aside ref={panelRef as RefObject<HTMLElement>} aria-label={ariaLabel} className="relative bg-white h-full w-full flex flex-col">
           {inner}
         </aside>
@@ -78,6 +80,7 @@ export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaL
       className="fixed inset-0 flex justify-end"
       style={{ left: vv.left, top: vv.top, width: vv.width, height: vv.height, zIndex }}
       data-panel-frame="banner"
+      data-window-key={owner}
     >
       <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity duration-300" {...backdrop} />
       <aside

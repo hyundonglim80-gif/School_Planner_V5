@@ -286,7 +286,7 @@ describe('환경설정 창', () => {
     try {
       startShortcutRecord();
       fireEvent.click(q('[data-choice="fontScale:lg"]'));
-      expect(useShortcutRecord.getState()).toMatchObject({ stage: 'pick', picked: 'opt.fontScale.lg', miss: false });
+      expect(useShortcutRecord.getState()).toMatchObject({ stage: 'pick', picked: 'opt.fontScale.lg', miss: null });
       expect(useLayoutPrefs.getState().fontScale).toBe('lg');
       fireEvent.click(q('[data-settings-toggle="dim"]'));
       expect(useShortcutRecord.getState().picked).toBe('opt.dim');

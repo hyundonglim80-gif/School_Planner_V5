@@ -26,6 +26,7 @@ import {
   type TabBindings,
 } from '../domain/shortcuts';
 import { runCustomShortcut } from './customShortcuts';
+import type { PressTargets } from '../domain/pressTarget';
 import { isSaveKey } from '../ui/useSaveKey';
 import { showToast } from './toast';
 import { goToday, setScope, setToggle, stepDate, stepScope, useNav } from './nav';
@@ -39,6 +40,8 @@ interface ShortcutKeys {
   overrides: ShortcutOverrides;
   tabs: TabBindings;
   custom: CustomBindings;
+  /** 단추 대신 누르기(P28-3)의 그 단추 - id 'press.…' → 자리·찾기·이름. 키는 custom에. 해제해도 여기는 남는다(되돌리기) - 서버에는 키 있는 것만(app/prefs) */
+  press: PressTargets;
 }
 
 /**
@@ -46,7 +49,7 @@ interface ShortcutKeys {
  * 이 기기 사본 - 계정(기기 종류마다)과는 app/prefs.ts가 맞춘다
  */
 export const useShortcutOverrides = create<ShortcutKeys>()(
-  persist(() => ({ overrides: {} as ShortcutOverrides, tabs: {} as TabBindings, custom: {} as CustomBindings }), { name: 'sp5-shortcuts' }),
+  persist(() => ({ overrides: {} as ShortcutOverrides, tabs: {} as TabBindings, custom: {} as CustomBindings, press: {} as PressTargets }), { name: 'sp5-shortcuts' }),
 );
 
 export function setShortcutOverrides(overrides: ShortcutOverrides) {
@@ -59,6 +62,11 @@ export function setTabShortcuts(tabs: TabBindings) {
 
 export function setCustomShortcuts(custom: CustomBindings) {
   useShortcutOverrides.setState({ custom });
+}
+
+/** 단추 적은 것을 더한다 (고른 단추를 저장할 때·서버 값 - 있던 것은 남긴다: 해제한 것의 되돌리기) */
+export function addPressTargets(press: PressTargets) {
+  useShortcutOverrides.setState((s) => ({ press: { ...s.press, ...press } }));
 }
 
 /** 창 안 탭 + 내가 만든 것 한 목록 (domain/shortcuts allBindings·assignBinding이 받는 것) */

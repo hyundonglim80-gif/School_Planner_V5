@@ -14,6 +14,7 @@ import { shortcutLabel, TAB_SHORTCUTS } from '../../app/tabShortcuts';
 import { customShortcutOf } from '../../app/customShortcuts';
 // 환경설정 값 키의 이름·할 일을 단다(팝업창에서 이 탭만 열어도 이름이 보이게)
 import '../../app/optionShortcuts';
+import '../../app/pressShortcuts';
 import {
   allBindings,
   assignBinding,
@@ -34,13 +35,20 @@ import {
   type ShortcutOverrides,
   type TabBindings,
 } from '../../domain/shortcuts';
+import { isPressShortcutId } from '../../domain/pressTarget';
 
 const NONE: Binding = { ctrl: false, alt: false, shift: false, key: '' };
 /** 창 안 탭(P18-2) 묶음 이름 - 기능 묶음 뒤 */
 const TAB_GROUP = '창 안 탭';
 /** 환경설정 값(P28-2) 묶음 이름 - 창 안 탭 뒤 */
 const CUSTOM_GROUP = '환경설정 값';
-const GROUP_TITLE: Record<string, string> = { [TAB_GROUP]: '내가 만든 단축키 (창 안 탭)', [CUSTOM_GROUP]: '내가 만든 단축키 (환경설정 값)' };
+/** 단추 대신 누르기(P28-3) 묶음 이름 - 맨 뒤 */
+const PRESS_GROUP = '단추';
+const GROUP_TITLE: Record<string, string> = {
+  [TAB_GROUP]: '내가 만든 단축키 (창 안 탭)',
+  [CUSTOM_GROUP]: '내가 만든 단축키 (환경설정 값)',
+  [PRESS_GROUP]: '내가 만든 단축키 (단추 대신 누르기)',
+};
 const SMALL_BTN = 'px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer shrink-0';
 
 /**
@@ -169,13 +177,14 @@ export default function ShortcutsTab({
     for (const a of SHORTCUT_ACTIONS) if (!out.has(a.group)) out.set(a.group, []);
     out.set(TAB_GROUP, []);
     out.set(CUSTOM_GROUP, []);
+    out.set(PRESS_GROUP, []);
     const tabOrder = new Map(TAB_SHORTCUTS.map((t, i) => [t.id, i]));
     for (const e of allBindings(bindings, extra)) {
       if (!e.binding.key && !(e.action && NO_BUTTON.has(e.action.id))) continue;
-      out.get(e.action ? e.action.group : isCustomShortcutId(e.id) ? CUSTOM_GROUP : TAB_GROUP)!.push(e);
+      out.get(e.action ? e.action.group : isPressShortcutId(e.id) ? PRESS_GROUP : isCustomShortcutId(e.id) ? CUSTOM_GROUP : TAB_GROUP)!.push(e);
     }
     out.get(TAB_GROUP)!.sort((a, b) => (tabOrder.get(a.id as never) ?? 0) - (tabOrder.get(b.id as never) ?? 0));
-    out.get(CUSTOM_GROUP)!.sort((a, b) => shortcutLabel(a.id).localeCompare(shortcutLabel(b.id), 'ko'));
+    for (const g of [CUSTOM_GROUP, PRESS_GROUP]) out.get(g)!.sort((a, b) => shortcutLabel(a.id).localeCompare(shortcutLabel(b.id), 'ko'));
     return [...out.entries()].filter(([, list]) => list.length > 0);
   }, [bindings, extra]);
 
@@ -199,7 +208,7 @@ export default function ShortcutsTab({
   };
 
   const reset = () => {
-    if (!window.confirm('단축키를 처음 값으로 되돌릴까요?\n바꾼 키는 기본 키로 돌아가고, 내가 만든 단축키(창 안 탭·환경설정 값)는 모두 빠집니다.')) return;
+    if (!window.confirm('단축키를 처음 값으로 되돌릴까요?\n바꾼 키는 기본 키로 돌아가고, 내가 만든 단축키(창 안 탭·환경설정 값·단추)는 모두 빠집니다.')) return;
     const before = useShortcutOverrides.getState();
     setShortcutOverrides({});
     setTabShortcuts({});
