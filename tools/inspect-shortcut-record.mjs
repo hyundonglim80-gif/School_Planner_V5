@@ -280,9 +280,12 @@ try {
   await page.click(sel('more-menu'));
   await page.click(sel('menu-item', 'settings'));
   await page.click(sel('settings-tab', 'view'));
+  // P26-1: 전체 점검에서 한 번 이 줄부터 셋이 틀렸다(혼자는 늘 통과) - 다시 나면 까닭을 가르게 누르기 전 값·칸 표시를 함께 적는다
+  const hcBefore = await hc();
+  const boxBefore = await page.locator(sel('settings-toggle', 'contrast')).isChecked();
   await page.locator(sel('settings-toggle', 'contrast')).click();
   r.check(await waitFor(page.locator(sel('shortcut-record-picked', 'opt.contrast'))), "고대비 줄 = '고른 것: 고대비 켜기 / 끄기'");
-  r.check(await hc(), '누른 것은 그대로 (고대비가 켜졌다)');
+  r.check(await hc(), `누른 것은 그대로 (고대비가 켜졌다 - 누르기 전 html ${hcBefore} · 칸 ${boxBefore} → 칸 ${await page.locator(sel('settings-toggle', 'contrast')).isChecked()})`);
   await page.click(sel('shortcut-record-done'));
   await page.keyboard.press('Control+Alt+KeyH');
   await page.click(sel('shortcut-record-save'));

@@ -182,7 +182,8 @@ try {
   await lessonCard(2).click();
   // 교시를 누르면 오른쪽 'N교시 수정' 칸 (10-22 #94 - 카드 자리에서 고치던 칸은 없앴다)
   const editor = page.locator(sel('lesson-panel', 'lesson:2026-10-12:2'));
-  r.check(await waitFor(editor), "교시를 누르면 오른쪽 'N교시 수정' 칸");
+  // 수정 칸은 나눠 받는 부품(windowList `import()`)이라 처음 열 때 늦을 수 있다 - 5초로는 전체 점검 중에 한 번 빠졌다(P26-1)
+  r.check(await waitFor(editor, 15000), "교시를 누르면 오른쪽 'N교시 수정' 칸");
   await editor.locator(sel('lesson-panel-subject')).fill('체육');
   r.check(!(await editor.locator(sel('lesson-memo-input')).count()) && (await editor.locator(sel('lesson-panel-note')).count()) === 1, '비고는 한 칸 (수업 메모 칸 없음)');
   await editor.locator(sel('lesson-panel-note')).fill('운동장\n줄넘기');
