@@ -102,7 +102,9 @@ try {
   const folded = await foldLook();
   r.check(folded.headerH === 0 && folded.headerVar === '0px' && folded.mainTop === 0, `머리줄 높이 0 · 본문이 화면 맨 위부터 (머리줄 ${folded.headerH} · --app-header-h ${folded.headerVar} · 본문 위 ${folded.mainTop})`);
   r.check(folded.text.includes('▼') && folded.top === 0 && folded.offCenter <= 2, `▼는 화면 위 가운데 (위 ${folded.top}px · 가운데에서 ${folded.offCenter}px)`);
-  r.check(!(await page.locator(sel('scope-tab', 'day')).isVisible()) && !(await page.locator(sel('date-label')).isVisible()), '첫 줄·둘째 줄은 보이지 않는다');
+  // 탭 단추는 transition-all이라 visibility도 0.15초 늦게 바뀐다(그동안도 머리줄 높이 0·overflow-hidden이라 화면에는 없다) - 숨을 때까지 기다린다
+  const rowsHidden = async () => !(await page.locator(sel('scope-tab', 'day')).isVisible()) && !(await page.locator(sel('date-label')).isVisible());
+  r.check(await waitFor(rowsHidden, 2000), '첫 줄·둘째 줄은 보이지 않는다');
   const foldDay = await foldDate();
   r.check(!!foldDay && foldDay === (await page.locator(sel('date-label')).textContent()), `손잡이에 보는 날짜 (${foldDay})`);
   await page.locator('main').click({ position: { x: 5, y: 5 } });
@@ -113,8 +115,14 @@ try {
   r.check(folded.saved === true, '접은 상태를 이 기기에 기억한다 (sp5-header-fold)');
   await page.click(sel('header-fold', 'folded'));
   r.check(await waitFor(page.locator(sel('header-fold', 'open'))), '▼ = 다시 편다');
+  await waitFor(async () => (await foldLook()).headerH === opened.headerH, 2000);
   const reopened = await foldLook();
-  r.check(reopened.headerH === opened.headerH && reopened.saved === false && (await page.locator(sel('scope-tab', 'day')).isVisible()), `머리줄이 그대로 돌아온다 (${reopened.headerH}px)`);
+  const tabShown = await page.locator(sel('scope-tab', 'day')).isVisible();
+  r.check(
+    reopened.headerH === opened.headerH && reopened.saved === false && tabShown,
+    `머리줄이 그대로 돌아온다 (${reopened.headerH}px)`,
+    `머리줄이 돌아오지 않았다: 높이 ${opened.headerH} → ${reopened.headerH} · 기억 ${reopened.saved} · 하루 탭 보임 ${tabShown}`,
+  );
 
   r.section('주소·새로고침·뒤로가기');
   await page.goto(page.url().split('#')[0] + '#/month/2026-12');

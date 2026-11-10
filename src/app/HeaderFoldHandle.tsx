@@ -9,7 +9,7 @@ import { useShortcutTitle } from './keys';
 import { dateLabel, useNav } from './nav';
 
 const BASE =
-  'absolute left-1/2 -translate-x-1/2 z-10 h-4 min-w-12 flex items-center justify-center gap-1 border border-slate-200 text-2xs leading-none font-bold text-slate-500 whitespace-nowrap select-none cursor-pointer transition-colors hover:text-primary hover:border-primary/50 print:hidden before:absolute before:-inset-x-2 before:-inset-y-1';
+  'absolute left-1/2 -translate-x-1/2 z-10 h-4 min-w-12 flex items-center justify-center gap-1 border border-slate-200 text-2xs leading-none font-bold text-slate-600 whitespace-nowrap select-none cursor-pointer transition-colors hover:text-primary hover:border-primary/50 print:hidden before:absolute before:-inset-x-2 before:-inset-y-1';
 
 export default function HeaderFoldHandle({ folded }: { folded: boolean }) {
   const withShortcut = useShortcutTitle();
