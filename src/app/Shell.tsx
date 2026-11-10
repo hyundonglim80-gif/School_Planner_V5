@@ -46,6 +46,8 @@ import SideTabs from '../ui/SideTabs';
 import { MainWidthContext, unscaledWidth } from '../ui/useMainWidth';
 import { startRouting } from './history';
 import Header from './Header';
+import { useHeaderFold } from './headerFold';
+import HeaderFoldHandle from './HeaderFoldHandle';
 import { useAppKeys } from './keys';
 // 환경설정 값 단축키(P28-2)의 할 일을 키 처리에 단다
 import './optionShortcuts';
@@ -112,6 +114,8 @@ export default function Shell() {
   const leftOpen = useClipboardPanel((s) => s.open) && docked;
   // 휴대폰은 창이 화면을 덮는다 - 그때 '저장을 기다립니다' 띠는 창 위에 뜬다
   const windowCovers = useWindows((s) => s.windows.length > 0) && !docked;
+  // 머리줄 접기 - 내용만 크게 본다 (메모 요청 #142, 이 기기에 기억)
+  const folded = useHeaderFold((s) => s.folded);
   // 경계선을 끌어 바꾼 폭. 칸들은 body 아래에 그려지므로(createPortal) 문서 맨 위에 건다.
   const rightPanelWidth = useLayoutPrefs((s) => s.rightPanelWidth);
   const leftPanelWidth = useLayoutPrefs((s) => s.leftPanelWidth);
@@ -163,16 +167,29 @@ export default function Shell() {
       className="min-h-screen bg-bg-body text-slate-900 transition-[padding] duration-200"
       style={{ paddingRight: rightOpen ? RIGHT_COLUMN_CSS_WIDTH : undefined, paddingLeft: leftOpen ? LEFT_COLUMN_CSS_WIDTH : undefined }}
     >
-      <header ref={headerRef} className="sticky top-0 z-40 bg-white/95 backdrop-blur-sm px-4 py-3 border-b border-border shadow-xs flex flex-col gap-2.5">
-        <DecorBand />
-        <Header />
-        {!isDatelessScope(scope) && <SecondRow />}
-        {/* 📴 끊겨 저장을 기다림 - 앱을 닫지 마세요 (P14-6 ■1). 휴대폰에서 창이 덮으면 창 위에 */}
-        <PendingWritesBanner floating={windowCovers} />
+      {/*
+        머리줄 접기 (메모 요청 #142 - app/headerFold): 접으면 머리줄 요소는 높이 0으로 화면 위에 붙어 남고(높이를 재는 곳 - --app-header-h·한눈에 높이·오늘로 가기 - 이 0을 받는다),
+        첫 줄·둘째 줄은 그린 채 감춘다 - 지우면 휴대폰 둥근 ＋(첫 줄이 body에 그린다)가 사라지고, display:none이면 머리줄 단추에 건 '단추 대신 누르기' 키가 단추를 찾지 못한다.
+      */}
+      <header
+        ref={headerRef}
+        data-header-folded={folded ? '' : undefined}
+        className={folded ? 'sticky top-0 z-40 h-0' : 'sticky top-0 z-40 bg-white/95 backdrop-blur-sm px-4 py-3 border-b border-border shadow-xs flex flex-col gap-2.5'}
+      >
+        <div data-header-rows className={folded ? 'invisible relative h-0 overflow-hidden' : 'contents'}>
+          <DecorBand />
+          <Header />
+          {!isDatelessScope(scope) && <SecondRow />}
+        </div>
+        {/* 📴 끊겨 저장을 기다림 - 앱을 닫지 마세요 (P14-6 ■1). 휴대폰에서 창이 덮으면 창 위에, 머리줄을 접었으면 화면 위에 띄운다 */}
+        <PendingWritesBanner floating={windowCovers || folded} />
+        {/* ▲ 접기 / ▼ 펴기 손잡이 - 머리줄 아래 가운데, 접으면 화면 위 가운데 */}
+        <HeaderFoldHandle folded={folded} />
       </header>
 
-      {/* 아래 탭바에 내용이 가리지 않도록 아래 여백을 둔다. 한눈에 화면만 폭 제한(1280px)을 푼다 - 칸이 열하나라 넓은 모니터에서 덕을 본다(P24) */}
-      <main ref={mainRef} className={`@container px-3 py-3 sm:p-5 ${scope === 'board' ? '' : 'max-w-7xl'} mx-auto pb-24 sm:pb-5`}>
+      {/* 아래 탭바에 내용이 가리지 않도록 아래 여백을 둔다. 한눈에 화면만 폭 제한(1280px)을 푼다 - 칸이 열하나라 넓은 모니터에서 덕을 본다(P24).
+          머리줄을 접으면 위 여백을 손잡이 높이보다 넉넉히 둔다(휴대폰 12px → 20px - 맨 위에서는 손잡이가 내용을 가리지 않게) */}
+      <main ref={mainRef} className={`@container px-3 py-3 sm:p-5 ${folded ? 'pt-5' : ''} ${scope === 'board' ? '' : 'max-w-7xl'} mx-auto pb-24 sm:pb-5`}>
         {/* 처음 로그인 'V4 자료 가져오기' 띠 (V4 자료가 있고 가져온 적이 없을 때만) */}
         <NewBuildBanner />
         <ImportBanner />

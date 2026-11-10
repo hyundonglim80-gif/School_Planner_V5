@@ -167,6 +167,7 @@ try {
     r.check((await count(sel('new-menu'))) === 0, 'PC 머리줄에 ＋ 새로 없음 (P10-1 - 휴대폰은 둥근 ＋)');
     r.check((await count(sel('scope-tab'))) === 7, '화면 탭 일곱 (한눈에 - P24-3)');
     r.check((await count(sel('view-toggle'))) === 3 && (await count(sel('date-label'))) === 1, '둘째 줄: 토글 셋·날짜');
+    r.check((await count(sel('header-fold', 'open'))) === 1, '머리줄 아래 가운데 ▲ 접기 손잡이 (메모 요청 #142)');
     await q(sel('more-menu')).click();
     r.check((await count(sel('menu-section'))) === 4, '⋮ 네 구역');
     r.check((await count(sel('menu-item'))) === 8, '⋮ 하루 화면에서 여덟 항목 (인쇄 창은 모든 화면에 - 10-23)');

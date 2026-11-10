@@ -30,6 +30,7 @@ export type ShortcutId =
   | 'toggleWeekend'
   | 'toggleEvents'
   | 'toggleClass'
+  | 'toggleHeader'
   | 'lastYear'
   | 'clipboard'
   | 'multiSelect'
@@ -188,6 +189,8 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'newCourse', label: '진도 만들기 (여러 반)', group: '메뉴 열기', def: b('') },
   // 화면 밝기 (ROADMAP 17) - 어둡게 ↔ 밝게
   { id: 'toggleTheme', label: '어둡게 / 밝게 보기', group: '메뉴 열기', def: b('') },
+  // 머리줄 접기 / 펴기 (메모 요청 #142 - 내용만 크게 보기. 머리줄 아래 가운데 ▲ · 접은 뒤 화면 위 가운데 ▼와 같다)
+  { id: 'toggleHeader', label: '머리줄 접기 / 펴기 (내용만 크게 보기)', group: '메뉴 열기', def: b('') },
 ];
 
 /** 바꾸지 않는 단축키. 목록에는 보여주되 고칠 수 없다. */
