@@ -258,14 +258,16 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
 
   // ── 내용 덩어리 ────────────────────────────────────────────────────
   const renderShortcutTable = () => {
-    const groups = Array.from(new Set(SHORTCUT_ACTIONS.map((a) => a.group)));
+    // 고정 단축키(검색·인쇄·되돌리기 - #149)는 기능 묶음이 아니라 맨 아래 '고정'에
+    const actions = SHORTCUT_ACTIONS.filter((a) => !a.fixed);
+    const groups = Array.from(new Set(actions.map((a) => a.group)));
     return (
       <div className="space-y-3" data-help-shortcuts>
         {groups.map((group) => (
           <div key={group}>
             <div className="text-xs font-bold text-slate-500 mb-1.5">{group}</div>
             <div className="grid grid-cols-1 @min-[480px]:grid-cols-2 gap-1.5">
-              {SHORTCUT_ACTIONS.filter((a) => a.group === group).map((action) => (
+              {actions.filter((a) => a.group === group).map((action) => (
                 <div
                   key={action.id}
                   data-help-shortcut={action.id}
@@ -329,6 +331,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
             {FIXED_SHORTCUTS.map((fixed) => (
               <div
                 key={fixed.label}
+                data-help-shortcut-fixed={fixed.id ?? fixed.keys}
                 className="px-2.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-2"
               >
                 <span className="text-slate-600 min-w-0 break-keep">{fixed.label}</span>

@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import {
   assignBinding,
   bindingFromEvent,
+  fixedShortcutIssue,
   formatAnyBinding,
   isModifierOnly,
   overridesFromBindings,
@@ -60,10 +61,10 @@ export function startKeyFor(id: AnyShortcutId) {
   useShortcutRecord.setState({ ...OFF, stage: 'key', picked: id });
 }
 
-/** 큰 창이 받은 시작 부탁(팝업창에서) - 아는 것만 */
+/** 큰 창이 받은 시작 부탁(팝업창에서) - 아는 것만, 고정 단축키(#149)는 빼고 */
 export function startRecordFromPopup(id?: string) {
   if (id === undefined) startShortcutRecord();
-  else if (isKnownShortcut(id)) startKeyFor(id);
+  else if (isKnownShortcut(id) && !fixedShortcutIssue(id)) startKeyFor(id);
 }
 
 /**
@@ -112,7 +113,9 @@ export function onRecordClick(e: MouseEvent) {
   if (!t || t.closest('[data-shortcut-record]')) return;
   const id = t.closest<HTMLElement>('[data-shortcut-target]')?.dataset.shortcutTarget;
   if (id && isKnownShortcut(id)) {
-    useShortcutRecord.setState({ picked: id, miss: null });
+    // 고정 단축키(검색·인쇄 - #149)는 고르지 않는다 - 단추 대신 누르기로도 만들지 않는다(같은 일에 키가 둘이 된다)
+    const fixed = fixedShortcutIssue(id);
+    useShortcutRecord.setState(fixed ? { miss: fixed } : { picked: id, miss: null });
     return;
   }
   if (t.closest(BUTTONISH)?.matches(OPENER)) return;

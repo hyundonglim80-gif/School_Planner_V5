@@ -192,6 +192,10 @@ describe('사용 설명서 - 기능별 분류 → 세부 기능 → 설명·사�
     // 키가 없는 기능은 '없음'
     expect(q('[data-help-shortcut="help"] kbd')).toHaveTextContent('없음');
     for (const f of FIXED_SHORTCUTS) expect(screen.getByText(f.label)).toBeInTheDocument();
+    // 고정 단축키(#149 - 검색·인쇄·되돌리기)는 기능 묶음이 아니라 고정 묶음에만
+    for (const id of ['search', 'print', 'undo']) expect(document.querySelector(`[data-help-shortcut="${id}"]`)).toBeNull();
+    expect(q('[data-help-shortcut-fixed="search"] kbd')).toHaveTextContent('Ctrl + F');
+    expect(q('[data-help-shortcut-fixed="ESC"] kbd')).toHaveTextContent('ESC');
   });
 
   it('항목을 정해 열면 그 항목이 열리고, 열린 설명서를 다른 항목으로 다시 열면 그 항목으로 간다 (창의 설명서 주제)', () => {

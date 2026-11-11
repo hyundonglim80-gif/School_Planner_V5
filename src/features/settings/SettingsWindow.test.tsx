@@ -202,7 +202,7 @@ describe('환경설정 창', () => {
     // 기본값이 비어 있는 기능(시간표 등)은 줄이 없다 - 더하기는 '⌨️ 단축키 설정'으로만
     expect(rowIds()).not.toContain('timetable');
     // 키가 있는 것 + 누를 단추가 없는 기능(키가 없어도)
-    expect(rowIds()).toHaveLength(SHORTCUT_ACTIONS.filter((a) => a.def.key || NO_BUTTON.has(a.id)).length + 1);
+    expect(rowIds()).toHaveLength(SHORTCUT_ACTIONS.filter((a) => !a.fixed && (a.def.key || NO_BUTTON.has(a.id))).length + 1);
     expect(keyText('scopeDay')).toBe('Shift + 1');
     expect(keyText('toggleWeekend')).toBe('Shift + ↑ / ↓');
     expect(q('[data-shortcut-row="scopeDay"] [data-shortcut-default]')).toBeInTheDocument();
@@ -214,13 +214,13 @@ describe('환경설정 창', () => {
 
   it('해제 = 바로 저장(그 줄이 빠진다) + 안내의 되돌리기', () => {
     openSettings('shortcuts');
-    fireEvent.click(q('[data-shortcut-clear="search"]'));
-    expect(useShortcutOverrides.getState().overrides).toEqual({ search: NONE });
-    expect(rowIds()).not.toContain('search');
-    expect(q('[data-toast]').textContent).toContain("'검색 열기' 단축키(Ctrl + F)를 해제했습니다");
+    fireEvent.click(q('[data-shortcut-clear="scopeMemo"]'));
+    expect(useShortcutOverrides.getState().overrides).toEqual({ scopeMemo: NONE });
+    expect(rowIds()).not.toContain('scopeMemo');
+    expect(q('[data-toast]').textContent).toContain("'메모 화면' 단축키(Shift + 5)를 해제했습니다");
     act(() => fireEvent.click(q('[data-toast-action="되돌리기"]')));
     expect(useShortcutOverrides.getState().overrides).toEqual({});
-    expect(rowIds()).toContain('search');
+    expect(rowIds()).toContain('scopeMemo');
   });
 
   it('누를 단추가 없는 기능은 키가 없어도 줄이 있다 - 키 정하기 (해제해도 다시 걸 수 있게)', () => {
@@ -228,13 +228,27 @@ describe('환경설정 창', () => {
     expect(keyText('recurring')).toBe('없음');
     expect(q('[data-shortcut-change="recurring"]')).toHaveTextContent('키 정하기');
     expect(document.querySelector('[data-shortcut-clear="recurring"]')).toBeNull();
-    fireEvent.click(q('[data-shortcut-clear="undo"]'));
-    expect(rowIds()).toContain('undo');
-    expect(keyText('undo')).toBe('없음');
-    expect(q('[data-shortcut-change="undo"]')).toHaveTextContent('키 정하기');
-    fireEvent.click(q('[data-shortcut-change="undo"]'));
-    expect(useShortcutRecord.getState()).toMatchObject({ stage: 'key', picked: 'undo' });
+    fireEvent.click(q('[data-shortcut-clear="checklist"]'));
+    expect(rowIds()).toContain('checklist');
+    expect(keyText('checklist')).toBe('없음');
+    expect(q('[data-shortcut-change="checklist"]')).toHaveTextContent('키 정하기');
+    fireEvent.click(q('[data-shortcut-change="checklist"]'));
+    expect(useShortcutRecord.getState()).toMatchObject({ stage: 'key', picked: 'checklist' });
     act(() => cancelShortcutRecord());
+  });
+
+  it('고정 단축키(#149 - 검색·인쇄·되돌리기)는 줄이 없고 맨 아래 고정 묶음에 · 예전에 바꿔 둔 키는 보지 않는다', () => {
+    setShortcutOverrides({ search: { ctrl: true, alt: true, shift: false, key: 'K' } });
+    openSettings('shortcuts');
+    for (const id of ['search', 'print', 'undo']) {
+      expect(rowIds()).not.toContain(id);
+      expect(document.querySelector(`[data-shortcut-change="${id}"]`)).toBeNull();
+    }
+    const fixed = qa('[data-shortcut-fixed]').map((r) => r.dataset.shortcutFixed);
+    expect(fixed).toEqual(['ESC', 'Ctrl + S', 'search', 'print', 'undo']);
+    expect(q('[data-shortcut-fixed="search"] kbd')).toHaveTextContent('Ctrl + F');
+    expect(q('[data-shortcut-fixed="print"] kbd')).toHaveTextContent('Ctrl + P');
+    expect(q('[data-shortcut-fixed="undo"] kbd')).toHaveTextContent('Ctrl + Z');
   });
 
   it('키 바꾸기 = 띠의 키 단계로 곧바로 (환경설정 창은 그대로)', () => {

@@ -95,9 +95,9 @@ describe('설명서 내용', () => {
     expect(leftovers).toEqual([]);
   });
 
-  // 바꿀 수 있는 단축키를 글로 적어 두면, 환경설정에서 바꾸는 순간 설명서가 틀린다
+  // 바꿀 수 있는 단축키를 글로 적어 두면, 환경설정에서 바꾸는 순간 설명서가 틀린다 (고정 단축키 - #149 - 는 바뀌지 않아 적어도 된다)
   it('바꿀 수 있는 단축키를 글로 적어 두지 않는다', () => {
-    const written = SHORTCUT_ACTIONS.filter((a) => a.def.key)
+    const written = SHORTCUT_ACTIONS.filter((a) => a.def.key && !a.fixed)
       .map((a) => formatActionBinding(a, a.def))
       .flatMap((text) => (text.includes(' / ') ? [text, text.replace(' / ↓', '')] : [text]))
       .filter((text) => helpSource.includes(text));

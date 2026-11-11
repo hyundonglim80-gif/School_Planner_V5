@@ -109,12 +109,36 @@ describe('단축키 설정 띠 (P18-1)', () => {
     expect(q('[data-shortcut-record-save]')).toBeDisabled();
     pressKey({ key: 't', code: 'KeyT' });
     expect(q('[data-shortcut-record-typing]')).not.toBeNull();
+    // 고정 단축키(검색 Ctrl + F - #149)의 키는 줄 수 없다
     pressKey({ key: 'f', code: 'KeyF', ctrlKey: true });
-    expect(q('[data-shortcut-record-conflict]')).toHaveTextContent('검색 열기');
+    expect(q('[data-shortcut-record-issue]')).toHaveTextContent('고정 단축키(검색 열기)');
+    expect(q('[data-shortcut-record-save]')).toBeDisabled();
+    expect(q('[data-shortcut-record-conflict]')).toBeNull();
+    pressKey({ key: '%', code: 'Digit5', shiftKey: true });
+    expect(q('[data-shortcut-record-conflict]')).toHaveTextContent('메모 화면');
     fireEvent.click(q('[data-shortcut-record-save]'));
     const o = useShortcutOverrides.getState().overrides;
-    expect(o.timetable?.key).toBe('F');
-    expect(o.search?.key).toBe('');
+    expect(o.timetable).toEqual({ ctrl: false, alt: false, shift: true, key: '5' });
+    expect(o.scopeMemo?.key).toBe('');
+  });
+
+  it('고정 단축키(#149)의 단추를 누르면 고르지 않고 까닭 - 앞에 고른 것은 그대로', () => {
+    render(
+      <>
+        <button type="button" {...shortcutTarget('timetable')}>
+          ⏰ 시간표
+        </button>
+        <button type="button" data-fixed-search {...shortcutTarget('search')}>
+          🔍
+        </button>
+        <ShortcutRecordBar />
+      </>,
+    );
+    act(() => startShortcutRecord());
+    fireEvent.click(screen.getByText('⏰ 시간표'));
+    fireEvent.click(q('[data-fixed-search]'));
+    expect(q('[data-shortcut-record-miss]')).toHaveTextContent("'검색 열기'는 고정 단축키(Ctrl + F)라 바꿀 수 없습니다.");
+    expect(useShortcutRecord.getState().picked).toBe('timetable');
   });
 
   it('ESC = 어느 단계에서나 취소 (앱의 ESC로 가지 않는다) · 다시 고르기', () => {
@@ -167,8 +191,11 @@ describe('창 안 탭 고르기 (P18-2)', () => {
     fireEvent.click(q('[data-shortcut-record-done]'));
     expect(q('[data-shortcut-record="key"]')).toHaveTextContent("'환경설정 → 알림'에 줄 키를 누르세요");
     expect(q('[data-shortcut-record="key"]')).toHaveTextContent('지금: 없음');
-    pressKey({ key: 'f', code: 'KeyF', ctrlKey: true });
-    expect(q('[data-shortcut-record-conflict]')).toHaveTextContent('검색 열기');
+    pressKey({ key: '%', code: 'Digit5', shiftKey: true });
+    expect(q('[data-shortcut-record-conflict]')).toHaveTextContent('메모 화면');
+    // 고정 단축키(#149)의 키는 창 안 탭에도 줄 수 없다
+    pressKey({ key: 'p', code: 'KeyP', ctrlKey: true });
+    expect(q('[data-shortcut-record-issue]')).toHaveTextContent('고정 단축키(이 화면 인쇄)');
     pressKey({ key: 'n', code: 'KeyN', ctrlKey: true, altKey: true });
     expect(q('[data-shortcut-record-key]')).toHaveTextContent('Ctrl + Alt + N');
     fireEvent.click(q('[data-shortcut-record-save]'));
