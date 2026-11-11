@@ -6,7 +6,7 @@
 //      팝업창(11-09 - PC 창 위치: 누르면 브라우저 팝업창, 다시 누르면 그 팝업창, 팝업창의 화면 옮기기는 큰 창으로, 자리 기억)·
 //      팝업창을 못 띄울 때의 가운데 창(방금 누르지 않음·막힘).
 //   4) 머리줄 ⋮ = 4구역.
-//   5) 고친 시간표 창: ✕·탭 ×·Alt+W·뒤로가기·가운데 창 배경도 묻는다, 아니오면 칸과 고친 것이 남고 뒤로가기가 화면을 떠나지 않는다(P22-2).
+//   5) 고친 시간표 창: ✕·탭 ×·칸 닫기 키(Alt+S)·뒤로가기·가운데 창 배경도 묻는다, 아니오면 칸과 고친 것이 남고 뒤로가기가 화면을 떠나지 않는다(P22-2).
 //   6) 자정 넘김: 오늘을 보던 화면은 새 오늘로, 열린 칸은 그대로·연 날짜로 저장, 다른 날을 보던 화면은 그대로(P22-4).
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-shell.mjs
@@ -50,11 +50,11 @@ try {
 
   r.section('단축키');
   await page.locator('main').click({ position: { x: 5, y: 5 } });
-  await page.keyboard.press('Shift+Digit3');
-  r.check(await screenIs('month'), 'Shift+3 → 월간');
+  await page.keyboard.press('Digit3');
+  r.check(await screenIs('month'), '3 → 월간 (#149 - 전에는 Shift+3)');
   await page.keyboard.press('Shift+ArrowRight');
   r.check(await screenIs('year'), 'Shift+→ → 년간');
-  await page.keyboard.press('Shift+Digit1');
+  await page.keyboard.press('Digit1');
   await screenIs('day');
   const before = await page.locator(sel('date-label')).textContent();
   await page.keyboard.press('Control+ArrowRight');
@@ -187,7 +187,7 @@ try {
   await page.keyboard.press('Escape');
   r.check(await waitFor(async () => (await slots()) === 0), 'ESC: 예 → 줄 전체를 닫는다');
 
-  r.section('✕·탭 ×·Alt+W·뒤로가기도 묻는다 (P22-2)');
+  r.section('✕·탭 ×·Alt+S(칸 닫기)·뒤로가기도 묻는다 (P22-2)');
   const ttWin = sel('timetable-window');
   const ttCell = page.locator(`${ttWin} input[data-cell="0-1"]`);
   /** 시간표 창을 열어 고친다 (저장하지 않는다 - 끝에 닫으면 계정에 남는 것이 없다) */
@@ -210,8 +210,8 @@ try {
   await page.locator(`${sel('popup-frame', 'side')} ${sel('close')}`).click();
   await asked('✕');
   await ttCell.click();
-  await page.keyboard.press('Alt+w');
-  await asked('Alt+W');
+  await page.keyboard.press('Alt+s');
+  await asked('Alt+S');
   await openWin('devWindow');
   await waitFor(page.locator(sel('test-window')));
   await page.locator(sel('side-tab-close')).first().click();

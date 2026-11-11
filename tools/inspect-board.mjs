@@ -1,5 +1,5 @@
 // tools/inspect-board.mjs - P24-1 ■4·P24-2 ■4·P24-3 ■1: 한눈에 화면을 실제 크롬 1400px에서 본다.
-//   0) 내놓기(P24-3): 머리줄 화면 탭 '한눈에'는 맨 앞·하루가 그 다음(11-09) · 탭·Shift+7로 가고 보던 날 그대로 · Shift+→ 차례(학급 → 한눈에 → 하루) · 환경설정 시작 화면에 '한눈에'
+//   0) 내놓기(P24-3): 머리줄 화면 탭 '한눈에'는 맨 앞·하루가 그 다음(11-09) · 탭·Space(#149 - 전에는 Shift+7)로 가고 보던 날 그대로 · Shift+→ 차례(학급 → 한눈에 → 하루) · 환경설정 시작 화면에 '한눈에'
 //   1) 주소로 열기 · 둘째 줄 = 주 이름 · 오른쪽 = 고른 날 이름 + 수업|일정 / 메모(글자가 있는지) · 창 높이에 맞음 · 머리줄 탭이 눌려 있다
 //   1b) 왼쪽(P24-2 · 11-09): [이번 달][월][화][수] / [다음 달][목][금][토·일] 두 줄이 반씩 · 토·일 = 한 칸 위·아래(수업 줄 없음) · 요일 칸 누르기 = 그날 고르기 ·
 //       작은 달력(월요일부터·보는 주·점) 날짜 누르기 · 위 달력 ◀▶ = 두 달을 함께(고른 날 그대로) · 그 달 '달력' 일정 목록(날짜 차례·기간 m/d~m/d·줄 누르기 = 그날 + 그 일정 칸·칩 = 완료) ·
@@ -65,7 +65,7 @@ try {
     await setDoc(itemRef(id), { ...stamp, ...data });
     undo.add(() => deleteDoc(itemRef(id)));
   }
-  r.section('내놓기 - 화면 탭·Shift+7·시작 화면 (P24-3)');
+  r.section('내놓기 - 화면 탭·Space(#149)·시작 화면 (P24-3)');
   {
     // 따로 연 창 - 환경설정 창·보던 화면이 뒤 묶음에 남지 않게 (같은 주소 goto는 새로 읽지 않는다)
     const { ctx, page, errors } = await newPage(browser);
@@ -76,16 +76,16 @@ try {
     r.check(await waitFor(page.locator(sel('screen', 'board')), 10000), '탭 \'한눈에\'를 누르면 한눈에 화면');
     r.check(hashOf(page) === `#/board/${DAY}`, `보던 날 그대로 - 하루에서 보던 날이 고른 날 (${hashOf(page)})`);
     await page.locator('main').click({ position: { x: 5, y: 5 } });
-    await page.keyboard.press('Shift+Digit6');
-    r.check(await waitFor(page.locator(sel('screen', 'class'))), 'Shift+6 → 학급');
+    await page.keyboard.press('Digit6');
+    r.check(await waitFor(page.locator(sel('screen', 'class'))), '6 → 학급 (#149)');
     await page.keyboard.press('Shift+ArrowRight');
     r.check(await waitFor(page.locator(sel('screen', 'board'))), 'Shift+→ → 한눈에 (학급 다음 = 처음)');
     await page.keyboard.press('Shift+ArrowRight');
     r.check(await waitFor(page.locator(sel('screen', 'day'))), 'Shift+→ → 하루 (한눈에 다음)');
-    await page.keyboard.press('Shift+Digit7');
-    r.check(await waitFor(page.locator(sel('screen', 'board'))), 'Shift+7 → 한눈에');
+    await page.keyboard.press('Space');
+    r.check(await waitFor(page.locator(sel('screen', 'board'))), 'Space → 한눈에 (#149)');
     const tip = await page.locator(sel('scope-tab', 'board')).getAttribute('title');
-    r.check(/한눈에 화면.*Shift.*7/.test(tip ?? ''), `탭 툴팁에 단축키 (${tip})`);
+    r.check(/한눈에 화면.*Space/.test(tip ?? ''), `탭 툴팁에 단축키 (${tip})`);
     await page.evaluate(() => window.sp5.openWindow('settings'));
     await page.locator(sel('settings-tab', 'view')).click();
     const startup = page.locator(sel('choice', 'startupScope:board'));

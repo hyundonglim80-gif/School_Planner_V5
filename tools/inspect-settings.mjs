@@ -113,7 +113,7 @@ try {
   r.section('단축키 (P28-1 - 키가 걸린 것만 · 키 바꾸기·해제 · 바로 저장)');
   await a.page.click(sel('settings-tab', 'shortcuts'));
   const memoRow = sel('shortcut-row', 'scopeMemo');
-  r.check(await waitFor(a.page.locator(memoRow)), '기본 키가 있는 줄 (메모 화면 Shift + 5)');
+  r.check(await waitFor(a.page.locator(memoRow)), '기본 키가 있는 줄 (메모 화면 5 - #149)');
   r.check((await a.page.locator(sel('shortcut-row', 'settings')).count()) === 0, '키가 없는 기능(환경설정)은 줄이 없다');
   r.check((await a.page.locator(sel('shortcut-save')).count()) === 0 && (await a.page.locator(`${sel('shortcut-list')} input`).count()) === 0, '키 칸·저장 단추가 없다');
   await a.page.click(sel('shortcut-change', 'scopeMemo'));

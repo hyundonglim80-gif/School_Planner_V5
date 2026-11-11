@@ -326,12 +326,12 @@ try {
   r.check(d3?.periods?.['3']?.t2?.kind === 'early' && d3?.periods?.['3']?.t1?.note === '보건실', 't2 조퇴 - t1은 그대로 (학생 한 칸만)');
   r.check(await waitFor(async () => ((await page3.locator(sel('subject-attendance', 3)).textContent()) ?? '').includes('결과 1 · 조퇴 1')), "교시 카드 칩 '결과 1 · 조퇴 1'");
 
-  // 칸이 닫혀도 적던 사유를 저장한다 (P22-2 - Alt+W는 글 칸을 떠나지 않아 onBlur가 오지 않는다)
+  // 칸이 닫혀도 적던 사유를 저장한다 (P22-2 - 칸 닫기 키(기본 Alt+S - #149, 전에는 Alt+W)는 글 칸을 떠나지 않아 onBlur가 오지 않는다)
   await srow(3, 't1').locator(sel('subject-att-note-open')).click();
   await srow(3, 't1').locator(sel('subject-att-note')).fill('상담실');
-  await page3.keyboard.press('Alt+w');
+  await page3.keyboard.press('Alt+s');
   d3 = await serverUntil(sa, (d) => d?.periods?.['3']?.t1?.note === '상담실');
-  r.check(d3?.periods?.['3']?.t1?.note === '상담실' && (await cell(3).count()) === 0, 'Alt+W로 닫아도 적던 사유를 저장한다');
+  r.check(d3?.periods?.['3']?.t1?.note === '상담실' && (await cell(3).count()) === 0, 'Alt+S(칸 닫기)로 닫아도 적던 사유를 저장한다');
   await chip3.click();
   await waitFor(cell(3), 8000);
   await srow(3, 't1').locator(sel('subject-att-note-open')).click();

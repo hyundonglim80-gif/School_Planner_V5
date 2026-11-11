@@ -97,7 +97,8 @@ describe('설명서 내용', () => {
 
   // 바꿀 수 있는 단축키를 글로 적어 두면, 환경설정에서 바꾸는 순간 설명서가 틀린다 (고정 단축키 - #149 - 는 바뀌지 않아 적어도 된다)
   it('바꿀 수 있는 단축키를 글로 적어 두지 않는다', () => {
-    const written = SHORTCUT_ACTIONS.filter((a) => a.def.key && !a.fixed)
+    // 수식키 없는 기본 키(1 · + · Space … - #149)는 아무 글에나 든 글자라 찾을 수 없다 - 수식키가 붙은 것만 본다
+    const written = SHORTCUT_ACTIONS.filter((a) => a.def.key && !a.fixed && (a.def.ctrl || a.def.alt || a.def.shift))
       .map((a) => formatActionBinding(a, a.def))
       .flatMap((text) => (text.includes(' / ') ? [text, text.replace(' / ↓', '')] : [text]))
       .filter((text) => helpSource.includes(text));

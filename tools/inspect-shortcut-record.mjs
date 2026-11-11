@@ -1,9 +1,9 @@
 // tools/inspect-shortcut-record.mjs - P18-1 단축키 설정(메뉴·단추를 눌러 고르기)을 크롬으로 본다.
 //   1) 단축키 탭 '⌨️ 단축키 설정' → 환경설정 창이 닫히고 아래 띠 · 고를 수 있는 단추에 점선 테두리
 //   2) 표시 없는 단추(수업 접기 ▼)는 '만들 수 없습니다', 칸을 펴는 단추(계정 사진·⋮)는 아무 말 없음 · ⋮ → 시간표 = '고른 것: 시간표'(누른 것은 그대로 동작 - 시간표 창이 열린다)
-//   3) 완료 → 누른 키는 앱 단축키로 가지 않는다(Shift+2 = 주간으로 안 감) → Ctrl+Alt+T → 저장 → 계정 settings/pc · 환경설정 단축키 탭이 그 줄을 짚는다
+//   3) 완료 → 누른 키는 앱 단축키로 가지 않는다(2 = 주간으로 안 감) → Ctrl+Alt+T → 저장 → 계정 settings/pc · 환경설정 단축키 탭이 그 줄을 짚는다
 //   4) 창을 닫고 Ctrl+Alt+T = 시간표 창 · ⋮ 메뉴 시간표 옆 키 · 사용 설명서 단축키 표
-//   5) 겹친 키: 머리줄 🗑️ → Ctrl+F = 고정 단축키라 막힘(#149) → Shift+5 → '메모 화면'에서 뺀다는 안내 → 저장 → scopeMemo = 없음
+//   5) 겹친 키: 머리줄 🗑️ → Ctrl+F = 고정 단축키라 막힘(#149) → 5 → '메모 화면'에서 뺀다는 안내 → 저장 → scopeMemo = 없음
 //   6) ESC = 기록 취소(열린 창은 그대로, 키는 그대로)
 //   7) 창 안 탭(P18-2): ⋮ → 환경설정 → 알림 탭 = '고른 것: 환경설정 → 알림' → Ctrl+Alt+N → 계정 tabShortcuts · '내가 만든 단축키' 줄 ·
 //      열린 환경설정에서 그 키 = 알림 탭(다른 탭을 눌렀어도 다시) · 탭 툴팁 · 설명서 표 · 🗑️ → 메모 탭 = 휴지통 메모 탭으로 열림
@@ -79,9 +79,9 @@ try {
   r.section('키 받기 → 저장');
   await page.click(sel('shortcut-record-done'));
   r.check(await waitFor(bar('key')), '완료 = 키 받기');
-  await page.keyboard.press('Shift+Digit2');
-  r.check((await page.locator(sel('shortcut-record-key')).textContent()) === 'Shift + 2', `누른 키가 칸에 (${await page.locator(sel('shortcut-record-key')).textContent()})`);
-  r.check((await page.getAttribute(sel('scope-tab', 'day'), 'aria-pressed')) === 'true', '그 키가 앱 단축키로 가지 않는다 (Shift+2 = 주간으로 안 감)');
+  await page.keyboard.press('Digit2');
+  r.check((await page.locator(sel('shortcut-record-key')).textContent()) === '2', `누른 키가 칸에 (${await page.locator(sel('shortcut-record-key')).textContent()})`);
+  r.check((await page.getAttribute(sel('scope-tab', 'day'), 'aria-pressed')) === 'true', '그 키가 앱 단축키로 가지 않는다 (2 = 주간으로 안 감 - #149 기본 키)');
   r.check(await waitFor(page.locator(sel('shortcut-record-typing'))), 'Ctrl·Alt 없는 키 = 글 칸 안내');
   await page.keyboard.press('Control+KeyV');
   r.check(((await page.locator(sel('shortcut-record-issue')).textContent().catch(() => '')) ?? '').includes('붙여넣기'), 'Ctrl+V = 글 칸 키라 까닭을 보인다 (P22-5 ■4)');
@@ -125,12 +125,12 @@ try {
   await page.keyboard.press('Control+KeyF');
   const fixedIssue = (await page.locator(sel('shortcut-record-issue')).textContent().catch(() => '')) ?? '';
   r.check(fixedIssue.includes('고정 단축키(검색 열기)') && (await page.locator(sel('shortcut-record-save')).isDisabled()), `Ctrl+F = 고정 단축키라 저장을 막는다 (${fixedIssue})`);
-  await page.keyboard.press('Shift+Digit5');
+  await page.keyboard.press('Digit5');
   const conflict = await page.locator(sel('shortcut-record-conflict')).textContent().catch(() => '');
   r.check(conflict.includes('메모 화면'), `저장 전에 알린다 (${conflict})`);
   await page.click(sel('shortcut-record-save'));
   const moved = await serverUntil(serverPc, (d) => d.shortcutOverrides?.trash?.key === '5');
-  r.check(moved.shortcutOverrides?.trash?.key === '5' && moved.shortcutOverrides?.scopeMemo?.key === '', `휴지통 = Shift+5, 메모 화면 = 없음 (${JSON.stringify(moved.shortcutOverrides)})`);
+  r.check(moved.shortcutOverrides?.trash?.key === '5' && moved.shortcutOverrides?.scopeMemo?.key === '', `휴지통 = 5, 메모 화면 = 없음 (${JSON.stringify(moved.shortcutOverrides)})`);
   r.check(await waitFor(page.locator(`${sel('shortcut-row', 'trash')}[data-shortcut-row-focus]`)), '단축키 탭이 휴지통 줄을 짚는다');
   r.check((await page.locator(sel('shortcut-row', 'scopeMemo')).count()) === 0, '단축키 탭에서 메모 화면 줄이 빠졌다 (키가 없다)');
 

@@ -139,19 +139,22 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
     def: b('Z', { ctrl: true }),
     fixed: '거의 모든 프로그램에서 Ctrl + Z가 되돌리기라 바꾸지 않습니다. 글 칸 안에서는 글 되돌리기가 먼저입니다.',
   },
-  // 쓰는 칸(메모·기록) 글 칸에서 커서가 있는 줄 앞에 ☐ (19번 U9). 커서가 글 칸에 있을 때만 동작한다
-  { id: 'checklist', label: '체크리스트 (쓰는 칸 줄 앞에 ☐)', group: '쓰는 칸', def: b('L', { ctrl: true, shift: true }) },
-  // 보고 있는 칸 하나만 닫기 (10-26 사용자 요청 - 탭의 ×와 같다, ESC는 모두). Ctrl+W는 브라우저가 탭을 닫아 Alt+W. 글 칸 안에서도 된다(Alt)
-  { id: 'closePanel', label: '보고 있는 칸 닫기 (오른쪽 칸의 탭 하나)', group: '쓰는 칸', def: b('W', { alt: true }) },
+  // ── 기본 키 (11-11 메모 요청 #149 '이 계정 단축키를 모든 계정 초기화 값으로' - 사용자 업무 계정의 PC 키를 그대로 옮겼다.
+  //    전에는 화면 이동 Shift + 1~7 · 칸 닫기 Alt + W · 체크리스트 Ctrl + Shift + L, 메뉴 열기 묶음은 모두 비어 있었다.
+  //    + · * 는 숫자 키패드 키다(본 자판의 + · * 는 Shift가 함께 눌려 다른 조합). 계정에 남은 '바꾼 것'은 그대로 이긴다) ──
+  // 쓰는 칸(메모·기록) 글 칸에서 커서가 있는 줄 앞에 ☐ (19번 U9). 커서가 글 칸에 있을 때만 동작한다 - 글 칸 밖에서는 브라우저 Ctrl + L(주소 칸)
+  { id: 'checklist', label: '체크리스트 (쓰는 칸 줄 앞에 ☐)', group: '쓰는 칸', def: b('L', { ctrl: true }) },
+  // 보고 있는 칸 하나만 닫기 (10-26 사용자 요청 - 탭의 ×와 같다, ESC는 모두). Ctrl+W는 브라우저가 탭을 닫아 처음엔 Alt+W, #149부터 Alt+S. 글 칸 안에서도 된다(Alt)
+  { id: 'closePanel', label: '보고 있는 칸 닫기 (오른쪽 칸의 탭 하나)', group: '쓰는 칸', def: b('S', { alt: true }) },
 
-  { id: 'scopeDay', label: '하루 화면', group: '화면 이동', def: b('1', { shift: true }) },
-  { id: 'scopeWeek', label: '주간 화면', group: '화면 이동', def: b('2', { shift: true }) },
-  { id: 'scopeMonth', label: '월간 화면', group: '화면 이동', def: b('3', { shift: true }) },
-  { id: 'scopeYear', label: '년간 화면', group: '화면 이동', def: b('4', { shift: true }) },
-  { id: 'scopeMemo', label: '메모 화면', group: '화면 이동', def: b('5', { shift: true }) },
-  { id: 'scopeClass', label: '학급 화면', group: '화면 이동', def: b('6', { shift: true }) },
-  // 한눈에(P24-3, V5) - 탭은 년간 뒤지만 키는 비어 있던 7 (Shift+1~6은 V4 그대로)
-  { id: 'scopeBoard', label: '한눈에 화면', group: '화면 이동', def: b('7', { shift: true }) },
+  { id: 'scopeDay', label: '하루 화면', group: '화면 이동', def: b('1') },
+  { id: 'scopeWeek', label: '주간 화면', group: '화면 이동', def: b('2') },
+  { id: 'scopeMonth', label: '월간 화면', group: '화면 이동', def: b('3') },
+  { id: 'scopeYear', label: '년간 화면', group: '화면 이동', def: b('4') },
+  { id: 'scopeMemo', label: '메모 화면', group: '화면 이동', def: b('5') },
+  { id: 'scopeClass', label: '학급 화면', group: '화면 이동', def: b('6') },
+  // 한눈에(P24-3, V5) - 처음엔 Shift+7, #149부터 Space(수식키 없는 Space·Enter는 단추·카드에 초점이 있으면 그것을 누르기가 먼저 - app/keys)
+  { id: 'scopeBoard', label: '한눈에 화면', group: '화면 이동', def: b('Space') },
   { id: 'scopePrev', label: '이전 화면으로', group: '화면 이동', def: b('ArrowLeft', { shift: true }) },
   { id: 'scopeNext', label: '다음 화면으로', group: '화면 이동', def: b('ArrowRight', { shift: true }) },
 
@@ -163,7 +166,7 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'toggleEvents', label: '일정 보이기 / 숨기기', group: '화면 표시', def: b('ArrowUp', { ctrl: true }), pairArrows: true },
   { id: 'toggleClass', label: '수업 보이기 / 숨기기', group: '화면 표시', def: b('ArrowUp', { alt: true }), pairArrows: true },
 
-  // 아래는 기본값이 비어 있다. 쓰고 싶은 사람이 직접 정한다.
+  // 아래는 기본값이 비어 있다. 쓰고 싶은 사람이 직접 정한다 - 새 창으로 빼기·밝기·머리줄 접기·글자 크기만 #149부터 기본 키가 있다.
   // 자주 쓰는 조합을 미리 차지해 두면 오히려 걸리적거린다.
   // 새로 만들기 (V5 - 머리줄 '＋ 새로'와 같다)
   { id: 'newEvent', label: '새 일정', group: '메뉴 열기', def: b('') },
@@ -176,7 +179,7 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'calendar', label: '구글 캘린더로 보내기 (백업 · 가져오기 · 보내기)', group: '메뉴 열기', def: b('') },
   { id: 'dday', label: 'D-Day 관리', group: '메뉴 열기', def: b('') },
   // 보고 있는 칸을 새 창으로 빼기 (#125 - 칸 머리 ↗와 같다)
-  { id: 'popOut', label: '보고 있는 칸 새 창으로 빼기 (오른쪽 칸의 탭 하나)', group: '메뉴 열기', def: b('') },
+  { id: 'popOut', label: '보고 있는 칸 새 창으로 빼기 (오른쪽 칸의 탭 하나)', group: '메뉴 열기', def: b('`') },
   { id: 'trash', label: '휴지통 열기 / 닫기', group: '메뉴 열기', def: b('') },
   { id: 'labels', label: '라벨 관리', group: '메뉴 열기', def: b('') },
   { id: 'recurring', label: '반복 일정 (새 일정 칸, 반복을 펴고)', group: '메뉴 열기', def: b('') },
@@ -203,13 +206,13 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'teachingMode', label: '교사 유형 바꾸기', group: '메뉴 열기', def: b('') },
   { id: 'newCourse', label: '진도 만들기 (여러 반)', group: '메뉴 열기', def: b('') },
   // 화면 밝기 (ROADMAP 17) - 어둡게 ↔ 밝게
-  { id: 'toggleTheme', label: '어둡게 / 밝게 보기', group: '메뉴 열기', def: b('') },
+  { id: 'toggleTheme', label: '어둡게 / 밝게 보기', group: '메뉴 열기', def: b('*') },
   // 머리줄 접기 / 펴기 (메모 요청 #142 - 내용만 크게 보기. 머리줄 아래 가운데 ▲ · 접은 뒤 화면 위 가운데 ▼와 같다)
-  { id: 'toggleHeader', label: '머리줄 접기 / 펴기 (내용만 크게 보기)', group: '메뉴 열기', def: b('') },
+  { id: 'toggleHeader', label: '머리줄 접기 / 펴기 (내용만 크게 보기)', group: '메뉴 열기', def: b('\\') },
   // 글자 크기 (메모 요청 #145 - 환경설정 보기 탭 − / 초기화 / +와 같다). 지금 보는 화면만, 누를 때마다 5%씩 쌓인다
-  { id: 'fontSmaller', label: '글자 작게 (지금 화면 −5%)', group: '메뉴 열기', def: b('') },
-  { id: 'fontLarger', label: '글자 크게 (지금 화면 +5%)', group: '메뉴 열기', def: b('') },
-  { id: 'fontReset', label: '글자 크기 초기화 (지금 화면 100%)', group: '메뉴 열기', def: b('') },
+  { id: 'fontSmaller', label: '글자 작게 (지금 화면 −5%)', group: '메뉴 열기', def: b('-') },
+  { id: 'fontLarger', label: '글자 크게 (지금 화면 +5%)', group: '메뉴 열기', def: b('+') },
+  { id: 'fontReset', label: '글자 크기 초기화 (지금 화면 100%)', group: '메뉴 열기', def: b('0') },
 ];
 
 // ── 키 이름 ────────────────────────────────────────────────────────────

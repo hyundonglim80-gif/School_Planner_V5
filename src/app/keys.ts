@@ -1,9 +1,10 @@
 // 껍데기의 키 처리 한 곳 (V4 Layout handleKeyDown·runShortcut).
-//   ESC    : 오른쪽 줄 전체(창·쓰는 칸)를 닫는다 - 저장 안 한 글이 있으면 먼저 묻는다. 보이는 탭 하나만은 단축키 closePanel(Alt+W).
+//   ESC    : 오른쪽 줄 전체(창·쓰는 칸)를 닫는다 - 저장 안 한 글이 있으면 먼저 묻는다. 보이는 탭 하나만은 단축키 closePanel(기본 Alt+S - #149, 처음엔 Alt+W).
 //   Ctrl+S : 브라우저 '다른 이름으로 저장'을 막는다. 저장은 커서가 든 칸·창이 받는다(ui/useSaveKey).
 //   그 밖  : 환경설정에서 바꿀 수 있는 단축키(domain/shortcuts). 키 조합은 거기서, 하는 일은 여기서(runShortcut).
 //            창을 여는 단축키는 창 목록의 같은 id 창을 연다 - 창을 등록하면 단축키도 저절로 선다.
 // 글을 칠 때(입력칸·글 칸)는 Ctrl·Alt 없는 단축키를 듣지 않는다(글자가 먹히지 않으면 곤란하다).
+// 단추·카드에 초점이 있으면 Ctrl·Alt 없는 Space·Enter 단축키를 듣지 않는다(그것을 누르기 - #149 한눈에 = Space).
 import { useEffect, useMemo } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -186,6 +187,13 @@ function isTypingTarget(t: EventTarget | null): boolean {
   return t.isContentEditable;
 }
 
+/** Space·Enter로 누르는 것인가 (단추·링크·누르는 카드 role=button·체크 상자 …) - 그 위에서는 수식키 없는 Space·Enter 단축키를 듣지 않는다 */
+const PRESS_TARGET =
+  'button, a[href], summary, [role="button"], [role="link"], [role="checkbox"], [role="radio"], [role="switch"], [role="tab"], [role="menuitem"], [role="option"], input[type="checkbox"], input[type="radio"], input[type="button"], input[type="submit"], input[type="reset"]';
+function isPressTarget(t: EventTarget | null): boolean {
+  return t instanceof HTMLElement && t.matches(PRESS_TARGET);
+}
+
 /** 새 창으로 옮긴 창·팝업창(app/PopoutShell)이 듣는 단축키 - 화면이 없어 화면·날짜 단축키는 할 일이 없다.
  * 글자 크기 셋은 팝업창 줄(POPOUT_FONT_PAGE)을 바꾼다(메모 요청 #145 - 처음에 빠져 팝업창 안에서 누른 키가 듣지 않았다, PC 확인) */
 export const POPOUT_KEYS: ReadonlySet<ShortcutId> = new Set<ShortcutId>(['undo', 'closePanel', 'checklist', 'fontSmaller', 'fontLarger', 'fontReset']);
@@ -211,6 +219,9 @@ export function handleAppKeyDown(e: KeyboardEvent, only?: ReadonlySet<ShortcutId
     if (!matchesEvent(binding, e, action)) continue;
     // 입력칸에 글자를 쓰는 중이면 수식키 없는 단축키는 무시한다. 되돌리기는 글 칸에서는 글 되돌리기가 먼저.
     if (typing && ((!binding.ctrl && !binding.alt) || id === 'undo')) continue;
+    // 단추·카드·링크에 초점이 있으면 수식키 없는 Space·Enter는 그것을 누르기다(키보드로 누르기 - ui/pressKeys, P22-7).
+    // #149에서 한눈에 화면 기본 키가 Space가 되어, 카드를 Space로 열면 한눈에로도 가 버렸다
+    if (!binding.ctrl && !binding.alt && (binding.key === 'Space' || binding.key === 'Enter') && isPressTarget(e.target)) continue;
     // 이 판이 모르는 내가 만든 것(나중 판이 더한 것)은 건너뛴다 - 키를 막지 않는다
     if (isCustomShortcutId(id)) {
       if (!runCustomShortcut(id)) continue;

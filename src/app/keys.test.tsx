@@ -18,25 +18,48 @@ beforeEach(() => {
   useNav.setState({ scope: 'day', date: '2026-10-08', showWeekend: true, showEvents: true, showClass: true });
 });
 
-describe('단축키 (V4 기본값 그대로)', () => {
-  it('Shift+2 → 주간, Shift+← / → → 이전·다음 화면', () => {
-    press({ key: '@', code: 'Digit2', shiftKey: true });
+describe('단축키 (기본값 - 11-11 메모 요청 #149 사용자 업무 계정 키, 전에는 V4 Shift+1~7)', () => {
+  it('2 → 주간, Shift+← / → → 이전·다음 화면', () => {
+    press({ key: '2', code: 'Digit2' });
     expect(useNav.getState().scope).toBe('week');
     press({ key: 'ArrowRight', code: 'ArrowRight', shiftKey: true });
     expect(useNav.getState().scope).toBe('month');
     press({ key: 'ArrowLeft', code: 'ArrowLeft', shiftKey: true });
     expect(useNav.getState().scope).toBe('week');
+    // 숫자 키패드도 같은 숫자
+    press({ key: '5', code: 'Numpad5' });
+    expect(useNav.getState().scope).toBe('memo');
   });
 
-  it('Shift+7 → 한눈에 (P24-3 - 키는 비어 있던 7, 11-09 탭이 맨 앞으로 가도 키는 그대로), 그 다음 화면은 하루', () => {
-    press({ key: '&', code: 'Digit7', shiftKey: true });
+  it('Space → 한눈에 (P24-3 처음엔 Shift+7), 그 다음 화면은 하루 · Shift+1은 이제 아무것도 아니다', () => {
+    const e = press({ key: ' ', code: 'Space' });
     expect(useNav.getState().scope).toBe('board');
+    expect(e.defaultPrevented).toBe(true);
     press({ key: 'ArrowRight', code: 'ArrowRight', shiftKey: true });
     expect(useNav.getState().scope).toBe('day');
     press({ key: 'ArrowLeft', code: 'ArrowLeft', shiftKey: true });
     expect(useNav.getState().scope).toBe('board');
     press({ key: '!', code: 'Digit1', shiftKey: true });
+    expect(useNav.getState().scope).toBe('board');
+    press({ key: '1', code: 'Digit1' });
     expect(useNav.getState().scope).toBe('day');
+  });
+
+  it('단추·누르는 카드·체크 상자에 초점이 있으면 Space·Enter는 그것을 누르기 - 한눈에로 가지 않는다 (#149)', () => {
+    const card = document.createElement('div');
+    card.setAttribute('role', 'button');
+    for (const target of [document.createElement('button'), card, Object.assign(document.createElement('input'), { type: 'checkbox' })]) {
+      const e = press({ key: ' ', code: 'Space' }, target);
+      expect(useNav.getState().scope).toBe('day');
+      expect(e.defaultPrevented).toBe(false);
+    }
+    // 숫자 키는 단추 위에서도 화면 이동 (누르기 키가 아니다)
+    press({ key: '2', code: 'Digit2' }, document.createElement('button'));
+    expect(useNav.getState().scope).toBe('week');
+    // 수식키가 붙은 Space(오늘로 Ctrl+Space)는 단추 위에서도
+    useNav.setState({ date: '2026-10-01' });
+    press({ key: ' ', code: 'Space', ctrlKey: true }, document.createElement('button'));
+    expect(useNav.getState().date).not.toBe('2026-10-01');
   });
 
   it('Ctrl+→ 다음 날짜, Shift+↑/↓ 주말 토글', () => {
@@ -47,9 +70,10 @@ describe('단축키 (V4 기본값 그대로)', () => {
     expect(useNav.getState().showWeekend).toBe(false);
   });
 
-  it('글을 칠 때는 Ctrl·Alt 없는 단축키를 듣지 않는다 (Shift+2는 글자 @)', () => {
+  it('글을 칠 때는 Ctrl·Alt 없는 단축키를 듣지 않는다 (2는 글자 2 · Space는 띄어쓰기)', () => {
     const ta = document.createElement('textarea');
-    const e = press({ key: '@', code: 'Digit2', shiftKey: true }, ta);
+    expect(press({ key: ' ', code: 'Space' }, ta).defaultPrevented).toBe(false);
+    const e = press({ key: '2', code: 'Digit2' }, ta);
     expect(useNav.getState().scope).toBe('day');
     expect(e.defaultPrevented).toBe(false);
   });
@@ -69,10 +93,9 @@ describe('단축키 (V4 기본값 그대로)', () => {
     setShortcutOverrides({ scopeYear: { ctrl: false, alt: true, shift: false, key: 'Y' } });
     press({ key: 'y', code: 'KeyY', altKey: true });
     expect(useNav.getState().scope).toBe('year');
-    press({ key: '$', code: 'Digit4', shiftKey: true });
-    // 옛 키(Shift+4)는 더 이상 년간이 아니다
+    // 기본 키(4 - #149)는 더 이상 년간이 아니다
     useNav.setState({ scope: 'day' });
-    press({ key: '$', code: 'Digit4', shiftKey: true });
+    press({ key: '4', code: 'Digit4' });
     expect(useNav.getState().scope).toBe('day');
   });
 
@@ -116,7 +139,8 @@ describe('단축키는 한 곳에서만 정한다', () => {
 
   // 날짜 ◀▶ 툴팁('Ctrl + ←')과 환경설정 안내('Shift + ↑/↓')가 글로 박혀 있어서, 단축키를 바꾸면 안내만 옛 키를 가리켰다(V4).
   it('화면 글에 기본 단축키를 적어 두지 않는다 (툴팁은 useShortcutTitle로)', () => {
-    const defaults = SHORTCUT_ACTIONS.filter((a) => a.def.key).flatMap((a) => {
+    // 수식키 없는 기본 키(1 · + · Space … - #149)는 아무 글에나 든 글자라 찾을 수 없다 - 수식키가 붙은 것만 본다
+    const defaults = SHORTCUT_ACTIONS.filter((a) => a.def.key && (a.def.ctrl || a.def.alt || a.def.shift)).flatMap((a) => {
       const text = formatActionBinding(a, a.def);
       return text.includes(' / ') ? [text, text.replace(' / ', '/'), text.replace(' / ↓', '')] : [text];
     });

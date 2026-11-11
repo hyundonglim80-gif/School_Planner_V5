@@ -206,15 +206,28 @@ describe('목록 자체', () => {
     }
   });
 
-  it("'메뉴 열기'는 기본값이 비어 있고 나머지는 채워져 있다", () => {
+  // #149 - 사용자 업무 계정 키를 모든 계정 기본값으로: 메뉴 열기 가운데 이 여섯만 기본 키가 있다
+  const MENU_WITH_KEY = ['popOut', 'toggleTheme', 'toggleHeader', 'fontSmaller', 'fontLarger', 'fontReset'];
+
+  it("'메뉴 열기'는 기본값이 비어 있고(#149의 여섯 빼고) 나머지는 채워져 있다", () => {
     for (const action of SHORTCUT_ACTIONS) {
-      if (action.group === '메뉴 열기') {
+      if (action.group === '메뉴 열기' && !MENU_WITH_KEY.includes(action.id)) {
         // 자주 쓰는 조합을 미리 차지해 두면 오히려 걸리적거린다. 쓸 사람이 직접 정한다.
         expect(action.def.key, `${action.id} 는 기본값이 없어야 한다`).toBe('');
       } else {
         expect(action.def.key, `${action.id} 의 기본 키가 비어 있다`).toBeTruthy();
       }
     }
+  });
+
+  it('#149 기본 키 = 사용자 업무 계정 PC 키 (화면 이동 숫자 · 한눈에 Space · 칸 닫기 Alt + S · 체크리스트 Ctrl + L · 키패드 + − * 0 · 백틱 · 역슬래시)', () => {
+    const def = (id: string) => formatBinding(SHORTCUT_ACTIONS.find((a) => a.id === id)!.def);
+    expect(['scopeDay', 'scopeWeek', 'scopeMonth', 'scopeYear', 'scopeMemo', 'scopeClass'].map(def)).toEqual(['1', '2', '3', '4', '5', '6']);
+    expect(def('scopeBoard')).toBe('Space');
+    expect(def('closePanel')).toBe('Alt + S');
+    expect(def('checklist')).toBe('Ctrl + L');
+    expect(MENU_WITH_KEY.map(def)).toEqual(['`', '*', '\\', '-', '+', '0']);
+    for (const id of MENU_WITH_KEY) expect(SHORTCUT_ACTIONS.find((a) => a.id === id)!.group).toBe('메뉴 열기');
   });
 
   it('키를 정하지 않은 기능은 아무 키에도 걸리지 않는다', () => {
@@ -253,11 +266,11 @@ describe('눌러서 정하기 (P18)', () => {
   });
 
   it('다른 기능이 쓰던 키면 그 기능에서 뺀다 (기본값이 있던 것은 없음으로 남는다)', () => {
-    const { bindings, cleared } = assignBinding(resolveBindings(), 'timetable', key('5', { shift: true }));
+    const { bindings, cleared } = assignBinding(resolveBindings(), 'timetable', key('5'));
     expect(cleared).toEqual(['scopeMemo']);
     expect(bindings.scopeMemo.key).toBe('');
     expect(findConflicts(bindings)).toEqual([]);
-    expect(overridesFromBindings(bindings)).toEqual({ timetable: key('5', { shift: true }), scopeMemo: key('') });
+    expect(overridesFromBindings(bindings)).toEqual({ timetable: key('5'), scopeMemo: key('') });
   });
 
   it('고정 단축키(#149)는 바꾸지도 빼지도 않는다', () => {
@@ -392,7 +405,7 @@ describe('창 안 탭 키 (P18-2)', () => {
     const r = assignBinding(resolveBindings(), 'settings:notify', key('N', { alt: true }), tabs);
     expect(r.extra).toEqual({ 'settings:notify': key('N', { alt: true }) });
     expect(r.cleared).toEqual(['backup:import']);
-    const r2 = assignBinding(resolveBindings(), 'settings:notify', key('5', { shift: true }));
+    const r2 = assignBinding(resolveBindings(), 'settings:notify', key('5'));
     expect(r2.cleared).toEqual(['scopeMemo']);
     expect(r2.bindings.scopeMemo.key).toBe('');
     // 넘긴 것은 고치지 않는다

@@ -256,7 +256,7 @@ describe('저장 안 한 칸을 닫기 전에 묻기 (P22-2)', () => {
     expect(open()).toBe(0);
   });
 
-  it('탭 ×·보고 있는 칸 닫기(Alt+W)도 같은 물음을 지난다', async () => {
+  it('탭 ×·보고 있는 칸 닫기(closePanel 키)도 같은 물음을 지난다', async () => {
     render(<Host />);
     await dirty(1);
     await dirty(2);
@@ -292,7 +292,7 @@ describe('저장 안 한 칸을 닫기 전에 묻기 (P22-2)', () => {
     expect(open()).toBe(0);
   });
 
-  it('맨 위 창 닫기(휴대폰 배너의 Alt+W·배경)도 묻는다', async () => {
+  it('맨 위 창 닫기(휴대폰 배너의 칸 닫기 키·배경)도 묻는다', async () => {
     wideScreen(false);
     render(<Host />);
     await act(async () => void openWindow('devPanel', { n: 1 }));

@@ -114,11 +114,11 @@ describe('단축키 설정 띠 (P18-1)', () => {
     expect(q('[data-shortcut-record-issue]')).toHaveTextContent('고정 단축키(검색 열기)');
     expect(q('[data-shortcut-record-save]')).toBeDisabled();
     expect(q('[data-shortcut-record-conflict]')).toBeNull();
-    pressKey({ key: '%', code: 'Digit5', shiftKey: true });
+    pressKey({ key: '5', code: 'Digit5' }); // 메모 화면 기본 키 5 (#149, 전에는 Shift + 5)
     expect(q('[data-shortcut-record-conflict]')).toHaveTextContent('메모 화면');
     fireEvent.click(q('[data-shortcut-record-save]'));
     const o = useShortcutOverrides.getState().overrides;
-    expect(o.timetable).toEqual({ ctrl: false, alt: false, shift: true, key: '5' });
+    expect(o.timetable).toEqual({ ctrl: false, alt: false, shift: false, key: '5' });
     expect(o.scopeMemo?.key).toBe('');
   });
 
@@ -191,7 +191,7 @@ describe('창 안 탭 고르기 (P18-2)', () => {
     fireEvent.click(q('[data-shortcut-record-done]'));
     expect(q('[data-shortcut-record="key"]')).toHaveTextContent("'환경설정 → 알림'에 줄 키를 누르세요");
     expect(q('[data-shortcut-record="key"]')).toHaveTextContent('지금: 없음');
-    pressKey({ key: '%', code: 'Digit5', shiftKey: true });
+    pressKey({ key: '5', code: 'Digit5' }); // 메모 화면 기본 키 5 (#149, 전에는 Shift + 5)
     expect(q('[data-shortcut-record-conflict]')).toHaveTextContent('메모 화면');
     // 고정 단축키(#149)의 키는 창 안 탭에도 줄 수 없다
     pressKey({ key: 'p', code: 'KeyP', ctrlKey: true });

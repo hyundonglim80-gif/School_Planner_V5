@@ -13,7 +13,7 @@ export interface ScreenDef {
 }
 
 export const SCREENS: readonly ScreenDef[] = [
-  // 한눈에(P24) - 맨 앞(11-09 사용자 요청 - 처음엔 년간 뒤), 키는 Shift+7 그대로(손에 익은 Shift+1~6을 바꾸지 않는다). 휴대폰 탭바에는 없다(route isPhoneHiddenScope)
+  // 한눈에(P24) - 맨 앞(11-09 사용자 요청 - 처음엔 년간 뒤), 키는 처음 Shift+7(#149부터 기본 Space). 휴대폰 탭바에는 없다(route isPhoneHiddenScope)
   { id: 'board', label: '한눈에', icon: '🧭', shortcut: 'scopeBoard' },
   { id: 'day', label: '하루', icon: '📋', shortcut: 'scopeDay' },
   { id: 'week', label: '주간', icon: '🗓️', shortcut: 'scopeWeek' },

@@ -78,7 +78,7 @@ describe('손잡이 (app/HeaderFoldHandle)', () => {
     const { container, rerender } = render(<HeaderFoldHandle folded={false} />);
     const btn = () => container.querySelector<HTMLElement>('[data-header-fold]')!;
     expect(btn().dataset.shortcutTarget).toBe('toggleHeader');
-    expect(btn()).toHaveAttribute('title', '머리줄 접기 (내용만 크게 보기)');
+    expect(btn()).toHaveAttribute('title', '머리줄 접기 (내용만 크게 보기) (단축키: \\)');
     act(() => setShortcutOverrides({ toggleHeader: { ctrl: true, alt: true, shift: false, key: 'H' } }));
     expect(btn()).toHaveAttribute('title', '머리줄 접기 (내용만 크게 보기) (단축키: Ctrl + Alt + H)');
     rerender(<HeaderFoldHandle folded />);
@@ -95,10 +95,12 @@ describe('손잡이 (app/HeaderFoldHandle)', () => {
 });
 
 describe("단축키 '머리줄 접기 / 펴기' (toggleHeader)", () => {
-  it('기본 키는 없다 - 정해 둔 키와 겹치지 않게, 단축키 설정에서 정한다', () => {
+  it('기본 키 = \\ (#149 - 사용자 업무 계정 키, 처음엔 없었다)', () => {
     const action = SHORTCUT_ACTIONS.find((a) => a.id === 'toggleHeader');
-    expect(action?.def.key).toBe('');
+    expect(action?.def.key).toBe('\\');
     expect(canRun('toggleHeader')).toBe(true);
+    handleAppKeyDown(new KeyboardEvent('keydown', { key: '\\', code: 'Backslash', cancelable: true }));
+    expect(useHeaderFold.getState().folded).toBe(true);
   });
 
   it('정한 키로 접고 편다 (글 칸 안에서도 - Ctrl·Alt 키)', () => {

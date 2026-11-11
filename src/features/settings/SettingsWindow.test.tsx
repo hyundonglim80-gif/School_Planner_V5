@@ -203,7 +203,7 @@ describe('환경설정 창', () => {
     expect(rowIds()).not.toContain('timetable');
     // 키가 있는 것 + 누를 단추가 없는 기능(키가 없어도)
     expect(rowIds()).toHaveLength(SHORTCUT_ACTIONS.filter((a) => !a.fixed && (a.def.key || NO_BUTTON.has(a.id))).length + 1);
-    expect(keyText('scopeDay')).toBe('Shift + 1');
+    expect(keyText('scopeDay')).toBe('1'); // #149 - 전에는 Shift + 1
     expect(keyText('toggleWeekend')).toBe('Shift + ↑ / ↓');
     expect(q('[data-shortcut-row="scopeDay"] [data-shortcut-default]')).toBeInTheDocument();
     expect(document.querySelector('[data-shortcut-row="help"] [data-shortcut-default]')).toBeNull();
@@ -217,7 +217,7 @@ describe('환경설정 창', () => {
     fireEvent.click(q('[data-shortcut-clear="scopeMemo"]'));
     expect(useShortcutOverrides.getState().overrides).toEqual({ scopeMemo: NONE });
     expect(rowIds()).not.toContain('scopeMemo');
-    expect(q('[data-toast]').textContent).toContain("'메모 화면' 단축키(Shift + 5)를 해제했습니다");
+    expect(q('[data-toast]').textContent).toContain("'메모 화면' 단축키(5)를 해제했습니다");
     act(() => fireEvent.click(q('[data-toast-action="되돌리기"]')));
     expect(useShortcutOverrides.getState().overrides).toEqual({});
     expect(rowIds()).toContain('scopeMemo');
@@ -388,8 +388,8 @@ describe('환경설정 창', () => {
   });
 
   it('겹친 키(옛 자료)는 두 줄 모두 ⚠ · 키가 하나도 없으면 단추 없는 기능 줄만', () => {
-    // 하루 화면(Shift+1)과 같은 키를 주간 화면에 - 눌러서 정하면 생기지 않는다(겹친 쪽에서 뺀다)
-    setShortcutOverrides({ scopeWeek: { ctrl: false, alt: false, shift: true, key: '1' } });
+    // 하루 화면(1 - #149)과 같은 키를 주간 화면에 - 눌러서 정하면 생기지 않는다(겹친 쪽에서 뺀다)
+    setShortcutOverrides({ scopeWeek: { ctrl: false, alt: false, shift: false, key: '1' } });
     const first = openSettings('shortcuts');
     expect(q('[data-shortcut-row="scopeDay"]')).toHaveAttribute('data-conflict');
     expect(q('[data-shortcut-row="scopeWeek"]')).toHaveAttribute('data-conflict');
@@ -408,7 +408,7 @@ describe('환경설정 창', () => {
 
   it('창 밖 Ctrl 단축키는 그대로 돈다 (창이 열려 있어도)', () => {
     openSettings();
-    handleAppKeyDown(new KeyboardEvent('keydown', { key: '!', code: 'Digit3', shiftKey: true }));
+    handleAppKeyDown(new KeyboardEvent('keydown', { key: '3', code: 'Digit3' })); // 월간 3 (#149)
     expect(useNav.getState().scope).toBe('month');
   });
 });

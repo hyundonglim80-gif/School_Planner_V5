@@ -37,11 +37,16 @@ describe('화면마다 글자 크기', () => {
 });
 
 describe("단축키 '글자 작게 / 크게 / 초기화'", () => {
-  it('기본 키는 없다 - 단축키 설정에서 정한다', () => {
-    for (const id of ['fontSmaller', 'fontLarger', 'fontReset'] as const) {
-      expect(SHORTCUT_ACTIONS.find((a) => a.id === id)?.def.key).toBe('');
-      expect(canRun(id)).toBe(true);
-    }
+  it('기본 키 = − · + · 0 (#149 - 사용자 업무 계정 키, 키패드)', () => {
+    expect((['fontSmaller', 'fontLarger', 'fontReset'] as const).map((id) => SHORTCUT_ACTIONS.find((a) => a.id === id)?.def.key)).toEqual(['-', '+', '0']);
+    for (const id of ['fontSmaller', 'fontLarger', 'fontReset'] as const) expect(canRun(id)).toBe(true);
+    // 기본 키로: 키패드 + 두 번 = 110% · 0 = 초기화
+    const press = (key: string, code: string) => handleAppKeyDown(new KeyboardEvent('keydown', { key, code, cancelable: true }));
+    press('+', 'NumpadAdd');
+    press('+', 'NumpadAdd');
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 110 });
+    press('0', 'Numpad0');
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({});
   });
 
   it('정한 키를 여러 번 누르면 쌓여서 계속 작아진다 - 지금 화면만, 안내는 하나만 남는다', () => {
