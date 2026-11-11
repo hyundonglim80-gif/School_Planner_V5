@@ -135,8 +135,13 @@ try {
   );
 
   r.section('설정');
-  const pc = await serverUntil(() => readDoc(v5Settings('pc')), (d) => d?.fontScale === 'lg');
-  r.check(pc?.fontScale === 'lg' && pc?.popupStyle === 'center' && pc?.showWeekend === false, 'V5 settings/pc = V4 PC 설정', JSON.stringify(pc));
+  // V4 글자 크기 단계 '크게'는 V5 화면마다 115%로 들어온다 (메모 요청 #145 - fontSizes, 옛 fontScale 칸은 적지 않는다)
+  const pc = await serverUntil(() => readDoc(v5Settings('pc')), (d) => d?.fontSizes?.day === 115);
+  r.check(
+    pc?.fontSizes?.day === 115 && pc?.fontSizes?.board === 115 && !('fontScale' in (pc ?? {})) && pc?.popupStyle === 'center' && pc?.showWeekend === false,
+    'V5 settings/pc = V4 PC 설정 (글자 크게 = 화면마다 115%)',
+    JSON.stringify(pc),
+  );
   const common = await readDoc(v5Settings('common'));
   r.check(common?.forwardDays === 21, 'V4 이월 기간 → common.forwardDays', JSON.stringify(common));
   r.check(

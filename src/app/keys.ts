@@ -32,6 +32,7 @@ import { showToast } from './toast';
 import { goToday, setScope, setToggle, stepDate, stepScope, useNav } from './nav';
 import { toggleThemeMode } from './theme';
 import { toggleHeaderFold } from './headerFold';
+import { stepFontSizeByKey } from './fontSize';
 import { activeOf, useSidePopups } from '../ui/sideColumn';
 import { popOutWindow } from './popout';
 import { closeAllWindows, closeShownWindow, closeWindow, getWindowDef, openWindow, useWindows } from './windows';
@@ -111,6 +112,10 @@ const ACTIONS: Partial<Record<ShortcutId, () => void>> = {
   toggleTheme: toggleThemeMode,
   // 머리줄 접기 ↔ 펴기 (메모 요청 #142 - 손잡이 ▲▼와 같다)
   toggleHeader: toggleHeaderFold,
+  // 지금 화면 글자 크기 5%씩 (메모 요청 #145 - 환경설정 보기 탭 − / 초기화 / +와 같다, 누를 때마다 쌓인다)
+  fontSmaller: () => stepFontSizeByKey(-1),
+  fontLarger: () => stepFontSizeByKey(1),
+  fontReset: () => stepFontSizeByKey(0),
   // 보고 있는 칸 하나만 닫기 (10-26 - ESC는 모두)
   closePanel: () => {
     closeShownWindow();

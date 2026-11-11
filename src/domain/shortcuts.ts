@@ -31,6 +31,9 @@ export type ShortcutId =
   | 'toggleEvents'
   | 'toggleClass'
   | 'toggleHeader'
+  | 'fontSmaller'
+  | 'fontLarger'
+  | 'fontReset'
   | 'lastYear'
   | 'clipboard'
   | 'multiSelect'
@@ -191,6 +194,10 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'toggleTheme', label: '어둡게 / 밝게 보기', group: '메뉴 열기', def: b('') },
   // 머리줄 접기 / 펴기 (메모 요청 #142 - 내용만 크게 보기. 머리줄 아래 가운데 ▲ · 접은 뒤 화면 위 가운데 ▼와 같다)
   { id: 'toggleHeader', label: '머리줄 접기 / 펴기 (내용만 크게 보기)', group: '메뉴 열기', def: b('') },
+  // 글자 크기 (메모 요청 #145 - 환경설정 보기 탭 − / 초기화 / +와 같다). 지금 보는 화면만, 누를 때마다 5%씩 쌓인다
+  { id: 'fontSmaller', label: '글자 작게 (지금 화면 −5%)', group: '메뉴 열기', def: b('') },
+  { id: 'fontLarger', label: '글자 크게 (지금 화면 +5%)', group: '메뉴 열기', def: b('') },
+  { id: 'fontReset', label: '글자 크기 초기화 (지금 화면 100%)', group: '메뉴 열기', def: b('') },
 ];
 
 /** 바꾸지 않는 단축키. 목록에는 보여주되 고칠 수 없다. */

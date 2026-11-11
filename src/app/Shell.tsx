@@ -171,8 +171,10 @@ export default function Shell() {
         머리줄 접기 (메모 요청 #142 - app/headerFold): 접으면 머리줄 요소는 높이 0으로 화면 위에 붙어 남고(높이를 재는 곳 - --app-header-h·한눈에 높이·오늘로 가기 - 이 0을 받는다),
         첫 줄·둘째 줄은 그린 채 감춘다 - 지우면 휴대폰 둥근 ＋(첫 줄이 body에 그린다)가 사라지고, display:none이면 머리줄 단추에 건 '단추 대신 누르기' 키가 단추를 찾지 못한다.
       */}
+      {/* data-fixed-font = 머리줄은 화면마다 다른 글자 크기를 따르지 않고 늘 100% (메모 요청 #145 - index.css) */}
       <header
         ref={headerRef}
+        data-fixed-font
         data-header-folded={folded ? '' : undefined}
         className={folded ? 'sticky top-0 z-40 h-0' : 'sticky top-0 z-40 bg-white/95 backdrop-blur-sm px-4 py-3 border-b border-border shadow-xs flex flex-col gap-2.5'}
       >

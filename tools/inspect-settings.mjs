@@ -1,6 +1,6 @@
 // tools/inspect-settings.mjs - P1-4 끝 조건 중 설정을 크롬으로 본다.
 //   1) ⋮ → 환경설정: 지금 있는 탭(보기·단축키·앱)만.
-//   2) 글자 크기를 바꾸면 화면이 곧바로 바뀌고, 1초 뒤 계정(settings/pc)에 올라가 다른 창(같은 종류의 다른 기기)이 따라온다.
+//   2) 글자 크기(화면마다 % - 메모 요청 #145)를 바꾸면 화면이 곧바로 바뀌고(머리줄은 100% 그대로), 1초 뒤 계정(settings/pc)에 올라가 다른 창(같은 종류의 다른 기기)이 따라온다.
 //   3) 단축키 탭(P28-1 - 키가 걸린 것만): 키 바꾸기 = 띠의 키 단계 → 저장하면 계정·다른 창에서도 그 키로 · 해제·기본값으로는 바로.
 //   4) 시작 화면: 주소에 화면 없이 열면 그 화면, 새로고침은 보던 화면 그대로.
 //   5) 계정 칸: 사진을 누르면 이름·메일·로그아웃 (■3에서 더한다).
@@ -45,20 +45,34 @@ try {
   const tabs = await a.page.locator(sel('settings-tab')).evaluateAll((els) => els.map((e) => e.dataset.settingsTab));
   r.check(tabs.join() === 'view,notify,school,shortcuts,app', `탭은 지금 있는 것만 (${tabs.join()})`);
 
-  r.section('글자 크기 → 계정 → 다른 창');
+  r.section('글자 크기 (화면마다 % - 메모 요청 #145) → 계정 → 다른 창');
   // PC 바탕 = 한눈에만 90%, 하루 등 다른 화면은 100% (11-08 80% → 11-09 90% → 같은 날 한눈에만 - P29-1). 점검 창 폭은 1400
   const pxOf = (p) => p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
-  r.check(Math.abs((await pxOf(a.page)) - 16) < 0.01, `PC 하루 '보통' = 100% (${await pxOf(a.page)}px)`);
-  await a.page.click(sel('choice', 'fontScale:lg'));
-  r.check((await fontOf(a.page)) === '1.15', '고르는 즉시 화면이 바뀐다');
-  r.check(Math.abs((await pxOf(a.page)) - 16 * 1.15) < 0.01, `PC 하루 '크게' = 100% × 115% (${await pxOf(a.page)}px)`);
-  const pc = await serverUntil(serverPc, (d) => d.fontScale === 'lg');
-  r.check(pc.fontScale === 'lg', `settings/pc에 올라간다 (${JSON.stringify(pc)})`);
-  r.check(await waitFor(async () => (await fontOf(b.page)) === '1.15'), `다른 창이 따라온다 (${await fontOf(b.page)})`);
-  await a.page.click(sel('choice', 'fontScale:md'));
-  const back = await serverUntil(serverPc, (d) => !('fontScale' in d));
-  r.check(!('fontScale' in back), '보통으로 되돌리면 문서에서 그 칸이 빠진다');
-  r.check(await waitFor(async () => (await fontOf(b.page)) === '1'), '다른 창도 보통으로');
+  // 머리줄(header[data-fixed-font])은 글자 크기를 따르지 않는다 - 글자 16px·위 여백(py-3)이 그대로
+  const headerOf = (p) =>
+    p.evaluate(() => {
+      const s = getComputedStyle(document.querySelector('header[data-fixed-font]'));
+      return { font: parseFloat(s.fontSize), pad: parseFloat(s.paddingTop) };
+    });
+  r.check(Math.abs((await pxOf(a.page)) - 16) < 0.01, `PC 하루 100% (${await pxOf(a.page)}px)`);
+  r.check(await waitFor(a.page.locator(`${sel('font-page', 'day')}[data-font-current]`)), '글자 크기 - 지금 화면(하루) 줄');
+  const head0 = await headerOf(a.page);
+  for (let i = 0; i < 3; i++) await a.page.click(sel('font-step', 'day:up'));
+  r.check((await fontOf(a.page)) === '1.15', '+ 세 번 = 115% (누를 때마다 5%씩 쌓인다, 누르는 즉시 화면이 바뀐다)');
+  r.check(((await a.page.locator(sel('font-percent', 'day')).textContent()) ?? '').trim() === '115%', '하루 줄에 115%');
+  r.check(Math.abs((await pxOf(a.page)) - 16 * 1.15) < 0.01, `PC 하루 115% (${await pxOf(a.page)}px)`);
+  const head1 = await headerOf(a.page);
+  r.check(Math.abs(head1.font - 16) < 0.01 && Math.abs(head1.pad - head0.pad) < 0.01, `머리줄은 100% 그대로 (글자 ${head1.font}px · 위 여백 ${head0.pad} → ${head1.pad}px)`);
+  const pc = await serverUntil(serverPc, (d) => d.fontSizes?.day === 115);
+  r.check(
+    pc.fontSizes?.day === 115 && Object.keys(pc.fontSizes ?? {}).length === 1 && !('fontScale' in pc),
+    `settings/pc에 하루만 올라간다 (${JSON.stringify(pc)})`,
+  );
+  r.check(await waitFor(async () => (await fontOf(b.page)) === '1.15'), `다른 창(하루)이 따라온다 (${await fontOf(b.page)})`);
+  await a.page.click(sel('font-step', 'day:reset'));
+  const back = await serverUntil(serverPc, (d) => !('fontSizes' in d));
+  r.check(!('fontSizes' in back), '초기화(100%)하면 문서에서 그 칸이 빠진다');
+  r.check(await waitFor(async () => (await fontOf(b.page)) === '1'), '다른 창도 100%로');
 
   r.section('PC 글자 바탕 = 한눈에만 90% (P29-1 - 11-09 사용자)');
   // 다른 창(b)에서 본다 - a는 환경설정 창이 열려 있다
@@ -66,6 +80,9 @@ try {
   r.check(await waitFor(b.page.locator(sel('screen', 'board'))), '한눈에 화면');
   r.check(await waitFor(async () => Math.abs((await pxOf(b.page)) - 14.4) < 0.01, 3000), `한눈에 = 90% (${await pxOf(b.page)}px)`);
   r.check(await b.page.evaluate(() => document.documentElement.hasAttribute('data-dense')), 'html에 한눈에 표시(data-dense)');
+  // 머리줄은 한눈에서도 100% (메모 요청 #145 - 전에는 한눈에서 머리줄도 90%였다)
+  const headB = await headerOf(b.page);
+  r.check(Math.abs(headB.font - 16) < 0.01 && Math.abs(headB.pad - head0.pad) < 0.01, `한눈에서도 머리줄은 100% (글자 ${headB.font}px · 위 여백 ${headB.pad}px)`);
   for (const [hash, name] of [
     ['#/week/2026-10-08', 'week'],
     ['#/month/2026-10', 'month'],
@@ -215,12 +232,12 @@ try {
   await a.page.keyboard.press('Escape');
   // 글자 크기를 바꾸자마자 로그아웃해도 그 설정은 계정에 남는다(1초를 기다리지 않고 먼저 올린다)
   await a.page.evaluate(() => window.sp5.openWindow('settings'));
-  await a.page.click(sel('choice', 'fontScale:xl'));
+  await a.page.click(sel('font-step', 'day:down'));
   await a.page.click(sel('account'));
   await a.page.click(sel('logout'));
   r.check(await waitFor(a.page.locator(sel('login-google')), 10000), '로그아웃하면 로그인 화면');
-  const out = await serverUntil(serverPc, (d) => d.fontScale === 'xl', 5000);
-  r.check(out.fontScale === 'xl', `바꾸자마자 로그아웃해도 설정이 올라가 있다 (${out.fontScale})`);
+  const out = await serverUntil(serverPc, (d) => d.fontSizes?.day === 95, 5000);
+  r.check(out.fontSizes?.day === 95, `바꾸자마자 로그아웃해도 설정이 올라가 있다 (${JSON.stringify(out.fontSizes)})`);
 
   r.section('개발자 탭 (P14-2 - 개발자 계정 ?as=5 에만)');
   const d = await newPage(browser);
