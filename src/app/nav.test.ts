@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { dateLabel, setScope, stepDate, stepScope, useFollowToday, useNav } from './nav';
+import { dateLabel, setScope, setSemesterFilter, stepDate, stepScope, useFollowToday, useNav, useSemesterFollow } from './nav';
 import { DENSE_ATTR } from '../domain/fontScale';
 import type { Scope } from './route';
 
@@ -179,5 +179,38 @@ describe('한눈에만 PC 글자 90% - html 표시 (P29-1)', () => {
       setScope(scope);
       expect(dense(), scope).toBe(false);
     }
+  });
+});
+
+describe('년간 학기 칩 따라가기 (P26-3)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+  });
+  afterEach(() => {
+    cleanup();
+    vi.useRealTimers();
+    useNav.setState({ semesterFilter: 'all', semesterFilterAt: '' });
+  });
+
+  it('1·2학기를 고르면 고른 때의 학기를 적고, 전체면 비운다', () => {
+    vi.setSystemTime(new Date(2026, 10, 11, 9));
+    setSemesterFilter(2);
+    expect(useNav.getState()).toMatchObject({ semesterFilter: 2, semesterFilterAt: '2026-2' });
+    setSemesterFilter('all');
+    expect(useNav.getState()).toMatchObject({ semesterFilter: 'all', semesterFilterAt: '' });
+  });
+
+  it('11월에 고른 2학기 → 새 학년도 3월에 열면 1학기 (실제 자료: 3~8월이 숨었다)', () => {
+    vi.setSystemTime(new Date(2027, 2, 2, 9));
+    useNav.setState({ semesterFilter: 2, semesterFilterAt: '2026-2' });
+    renderHook(() => useSemesterFollow());
+    expect(useNav.getState()).toMatchObject({ semesterFilter: 1, semesterFilterAt: '2027-1' });
+  });
+
+  it('고른 때를 모르는 옛 설정은 지금 학기만 적고 칩은 그대로 · 같은 학기 안에서는 그대로', () => {
+    vi.setSystemTime(new Date(2026, 10, 11, 9));
+    useNav.setState({ semesterFilter: 1, semesterFilterAt: '' });
+    renderHook(() => useSemesterFollow());
+    expect(useNav.getState()).toMatchObject({ semesterFilter: 1, semesterFilterAt: '2026-2' });
   });
 });

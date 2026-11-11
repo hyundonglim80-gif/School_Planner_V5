@@ -1,7 +1,7 @@
 // 년간 셈 (V4 yearSheet.test 옮김 - 기간은 V5 한 문서로)
 import { describe, expect, it } from 'vitest';
 import { periodsInDates } from './periodBars';
-import { academicMonths, dayTooltip, monthSheetItems, monthWeeks } from './yearSheet';
+import { academicMonths, dayTooltip, followSemesterFilter, monthSheetItems, monthWeeks, semesterKeyOf } from './yearSheet';
 
 describe('academicMonths', () => {
   it('3월~이듬해 2월, 1학기 3~8월·2학기 9~2월', () => {
@@ -89,5 +89,28 @@ describe('monthSheetItems', () => {
     // 기간 가운데 날의 풍선에도 기간이 보인다
     expect(dayTooltip('2026-10-06', items)).toBe('10월 6일\n📆 시험');
     expect(dayTooltip('2026-10-04', items)).toBe('10월 4일');
+  });
+});
+
+describe('학기 칩 따라가기 (P26-3)', () => {
+  it('학기 열쇠 = 년간 달 나눔 (3~8월 1학기, 9~2월 2학기 - 1·2월은 앞 학년도)', () => {
+    expect(semesterKeyOf('2026-03-01')).toBe('2026-1');
+    expect(semesterKeyOf('2026-08-31')).toBe('2026-1');
+    expect(semesterKeyOf('2026-09-01')).toBe('2026-2');
+    expect(semesterKeyOf('2026-12-31')).toBe('2026-2');
+    expect(semesterKeyOf('2027-02-28')).toBe('2026-2');
+    expect(semesterKeyOf('2027-03-02')).toBe('2027-1');
+  });
+
+  it('고른 학기가 지나면 지금 학기로 · 같은 학기면 그대로 · 고른 때를 모르면 지금만 적는다 · 전체는 그대로', () => {
+    // 11월에 2학기를 골랐다 → 3월 2일 = 1학기 (실제 자료: 새 학년도에도 '2학기'로 남아 3~8월이 숨었다)
+    expect(followSemesterFilter(2, '2026-2', '2027-03-02')).toEqual({ semesterFilter: 1, semesterFilterAt: '2027-1' });
+    expect(followSemesterFilter(2, '2026-2', '2027-02-20')).toBeNull();
+    // 1학기에 1학기를 골랐다 → 9월 = 2학기
+    expect(followSemesterFilter(1, '2027-1', '2027-09-01')).toEqual({ semesterFilter: 2, semesterFilterAt: '2027-2' });
+    // 2학기 중에 일부러 1학기를 다시 본다 - 그 학기 동안은 그대로
+    expect(followSemesterFilter(1, '2026-2', '2026-12-01')).toBeNull();
+    expect(followSemesterFilter(2, '', '2026-11-11')).toEqual({ semesterFilter: 2, semesterFilterAt: '2026-2' });
+    expect(followSemesterFilter('all', '2025-1', '2027-03-02')).toBeNull();
   });
 });

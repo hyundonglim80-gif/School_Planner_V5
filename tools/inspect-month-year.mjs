@@ -283,6 +283,31 @@ try {
     '오늘 칸이 화면 안에',
   );
 
+  r.section('년간 - 학기 칩 따라가기 (P26-3)');
+  // 11월에 고른 '2학기'가 새 학년도 3월에도 남아 3~8월이 숨었다(실제 자료 사본) → 학기가 바뀌면 지금 학기로
+  const pcRef = doc(em.db, 'spaces', sid, 'settings', 'pc');
+  const pc0 = await getDoc(pcRef);
+  undo.add(() => (pc0.exists() ? setDoc(pcRef, pc0.data()) : deleteDoc(pcRef)));
+  await setDoc(pcRef, { semesterFilter: 2, semesterFilterAt: '2026-2', updatedAt: serverTimestamp(), v: 1 }, { merge: true });
+  const p3 = await newPage(browser);
+  await p3.page.clock.setFixedTime(new Date('2027-03-02T09:00:00'));
+  await open(p3.page, '#/year/2027');
+  const chip = (id) => p3.page.locator(sel('semester', id));
+  r.check(await waitFor(async () => (await chip('1').getAttribute('aria-pressed')) === 'true', 10000), '3/2에 열면 칩 = 1학기 (11월에 고른 2학기가 아니라)');
+  r.check(
+    await waitFor(async () => (await p3.page.locator(sel('sheet-month')).count()) === 6 && (await p3.page.locator(sel('sheet-month', '2027-03')).count()) === 1),
+    '3~8월이 보인다',
+  );
+  const pcAfter = await serverUntil(async () => (await getDoc(pcRef)).data(), (d) => d?.semesterFilterAt === '2027-1', 8000);
+  r.check(pcAfter?.semesterFilter === 1 && pcAfter.semesterFilterAt === '2027-1', '계정(기기 종류)에도 1학기 · 고른 때 2027-1', JSON.stringify({ f: pcAfter?.semesterFilter, at: pcAfter?.semesterFilterAt }));
+  // 같은 학기 안에서 일부러 2학기를 보면 그대로
+  await chip('2').click();
+  await p3.page.waitForTimeout(1500);
+  r.check((await chip('2').getAttribute('aria-pressed')) === 'true', '같은 학기 안에서 일부러 고른 2학기는 그대로');
+  r.check(p3.errors.length === 0, `화면 오류 없음 ${p3.errors.join(' | ')}`);
+  await p3.page.waitForTimeout(2500);
+  await p3.page.close();
+
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);

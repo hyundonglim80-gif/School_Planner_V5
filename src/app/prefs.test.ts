@@ -20,7 +20,7 @@ const binding = (docId: string) => started.find((s) => s.docId === docId)!.bindi
 
 function resetStores() {
   useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side' });
-  useNav.setState({ scope: 'day', showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', enableScrollNav: false, startupScope: 'last' });
+  useNav.setState({ scope: 'day', showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', semesterFilterAt: '', enableScrollNav: false, startupScope: 'last' });
   useShortcutOverrides.setState({ overrides: {}, tabs: {} });
   useCommonSettings.setState({ forwardDays: 14 });
 }
@@ -116,6 +116,15 @@ describe('설정 문서 나누기', () => {
     expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 95 });
     binding('pc').apply({ fontScale: 'md' });
     expect(useLayoutPrefs.getState().fontSizes).toEqual({});
+  });
+
+  it('학기 칩을 고른 때의 학기(P26-3)도 기기 종류 문서에 - 이상한 값은 모름(빈 글자)', () => {
+    startPrefsSync('u1');
+    binding('pc').apply({ semesterFilter: 2, semesterFilterAt: '2026-2' });
+    expect(useNav.getState()).toMatchObject({ semesterFilter: 2, semesterFilterAt: '2026-2' });
+    expect(binding('pc').local()).toEqual({ semesterFilter: 2, semesterFilterAt: '2026-2' });
+    binding('pc').apply({ semesterFilter: 2, semesterFilterAt: '2학기' });
+    expect(useNav.getState().semesterFilterAt).toBe('');
   });
 
   it('common: 이월 기간은 1~60일', () => {

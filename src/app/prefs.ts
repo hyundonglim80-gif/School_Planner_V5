@@ -72,6 +72,8 @@ export interface DevicePrefs {
   showEvents: boolean;
   showClass: boolean;
   semesterFilter: SemesterFilter;
+  /** 학기 칩을 고른 때의 학기 열쇠 (P26-3 - 학기가 바뀌면 따라간다) */
+  semesterFilterAt: string;
   enableScrollNav: boolean;
 }
 
@@ -92,12 +94,13 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   showEvents: boolField(true),
   showClass: boolField(true),
   semesterFilter: oneOfField<SemesterFilter>('all', ['all', 1, 2]),
+  semesterFilterAt: customField<string>('', (v) => (typeof v === 'string' && /^(\d{4}-[12])?$/.test(v) ? v : undefined)),
   enableScrollNav: boolField(false),
 };
 
 function currentDevicePrefs(): DevicePrefs {
   const { fontSizes, popupStyle } = useLayoutPrefs.getState();
-  const { startupScope, showWeekend, showEvents, showClass, semesterFilter, enableScrollNav } = useNav.getState();
+  const { startupScope, showWeekend, showEvents, showClass, semesterFilter, semesterFilterAt, enableScrollNav } = useNav.getState();
   return {
     fontSizes,
     popupStyle,
@@ -110,6 +113,7 @@ function currentDevicePrefs(): DevicePrefs {
     showEvents,
     showClass,
     semesterFilter,
+    semesterFilterAt,
     enableScrollNav,
   };
 }
@@ -123,7 +127,7 @@ function applyDevicePrefs(p: DevicePrefs) {
   // 단추 적은 것은 더하기만 - 이 기기에서 해제한 것(되돌리기)·고르는 중인 것을 지우지 않는다. 키가 없으면 쓰이지 않는다
   if (JSON.stringify(p.pressTargets) !== JSON.stringify(now.pressTargets)) addPressTargets(p.pressTargets);
   if (JSON.stringify(p.customShortcuts) !== JSON.stringify(now.customShortcuts)) setCustomShortcuts(p.customShortcuts);
-  const navKeys = ['startupScope', 'showWeekend', 'showEvents', 'showClass', 'semesterFilter', 'enableScrollNav'] as const;
+  const navKeys = ['startupScope', 'showWeekend', 'showEvents', 'showClass', 'semesterFilter', 'semesterFilterAt', 'enableScrollNav'] as const;
   const navChanges = Object.fromEntries(navKeys.filter((k) => p[k] !== now[k]).map((k) => [k, p[k]]));
   if (Object.keys(navChanges).length > 0) useNav.setState(navChanges);
 }

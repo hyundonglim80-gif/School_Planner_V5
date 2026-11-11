@@ -53,7 +53,7 @@ import { useAppKeys } from './keys';
 import './optionShortcuts';
 import { useLayoutPrefs } from './layoutPrefs';
 import MobileTabBar from './MobileTabBar';
-import { useNav } from './nav';
+import { useNav, useSemesterFollow } from './nav';
 import { isDatelessScope } from './route';
 import { SCREEN_COMPONENTS } from './screens';
 import { usePopupBridge } from './popupWindows';
@@ -69,6 +69,8 @@ export default function Shell() {
   // 주소와 맞물린다 (뒤로가기 = 앞 화면, 새로고침해도 그 자리)
   useEffect(() => startRouting(), []);
   useGlobalGestures();
+  // 년간 학기 칩 - 학기가 바뀌면 지금 학기로 (P26-3)
+  useSemesterFollow();
   useAppKeys();
   // 창 위치 '팝업창' - 팝업창에서 옮긴 화면·새로 저장한 것·단축키 설정 시작을 받는다 (app/popupWindows)
   usePopupBridge(undefined, startRecordFromPopup);

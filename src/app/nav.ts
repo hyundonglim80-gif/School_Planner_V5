@@ -11,6 +11,7 @@ import { addDays, addMonthsStr, academicYearOf, DAY_NAMES, parseDateStr, todaySt
 import { isDatelessScope, isPhoneHiddenScope, SCOPES, type Scope } from './route';
 import { scrollToToday } from './todayScroll';
 import { setDenseScreen } from '../domain/fontScale';
+import { followSemesterFilter, semesterKeyOf } from '../domain/yearSheet';
 
 export type SemesterFilter = 'all' | 1 | 2;
 
@@ -29,6 +30,8 @@ export interface NavState {
   showClass: boolean;
   /** 년간 학기 칩 */
   semesterFilter: SemesterFilter;
+  /** 1·2학기를 고른 때의 학기 열쇠 '2026-2' - 학기가 바뀌면 칩이 지금 학기로 따라간다(P26-3, useSemesterFollow). '' = 모름 */
+  semesterFilterAt: string;
   /** 위아래 끝에서 더 굴리거나 옆으로 밀어 화면·날짜 옮기기 (환경설정) */
   enableScrollNav: boolean;
   startupScope: StartupScope;
@@ -48,6 +51,7 @@ export const useNav = create<NavState>()(
       showEvents: true,
       showClass: true,
       semesterFilter: 'all',
+      semesterFilterAt: '',
       enableScrollNav: false,
       startupScope: 'last',
     }),
@@ -59,6 +63,7 @@ export const useNav = create<NavState>()(
         showEvents: s.showEvents,
         showClass: s.showClass,
         semesterFilter: s.semesterFilter,
+        semesterFilterAt: s.semesterFilterAt,
         enableScrollNav: s.enableScrollNav,
         startupScope: s.startupScope,
       }),
@@ -166,7 +171,21 @@ export function setToggle(key: 'showWeekend' | 'showEvents' | 'showClass', on: b
 }
 
 export function setSemesterFilter(semesterFilter: SemesterFilter) {
-  useNav.setState({ semesterFilter });
+  useNav.setState({ semesterFilter, semesterFilterAt: semesterFilter === 'all' ? '' : semesterKeyOf(todayStr()) });
+}
+
+/**
+ * 학기 칩 따라가기 (P26-3 사용자 결정): 1·2학기를 고른 학기가 지나면 지금 학기로 - 11월에 고른 '2학기'가 새 학년도 3월에도 남아 3~8월이 숨었다.
+ * 계정에서 받은 값·자정 넘김에도 다시 본다(Shell).
+ */
+export function useSemesterFollow() {
+  const today = useToday();
+  const filter = useNav((s) => s.semesterFilter);
+  const at = useNav((s) => s.semesterFilterAt);
+  useEffect(() => {
+    const next = followSemesterFilter(filter, at, today);
+    if (next) useNav.setState(next);
+  }, [filter, at, today]);
 }
 
 export const setEnableScrollNav = (enableScrollNav: boolean) => useNav.setState({ enableScrollNav });

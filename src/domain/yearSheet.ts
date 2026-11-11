@@ -27,6 +27,25 @@ export function academicMonths(academicYear: number): AcademicMonth[] {
   return out;
 }
 
+/** 년간 학기 칩의 학기 열쇠 '2026-2' - 년간의 달 나눔(academicMonths)과 같이 3~8월 1학기, 9~2월 2학기 */
+export function semesterKeyOf(date: string): string {
+  const y = Number(date.slice(0, 4));
+  const m = Number(date.slice(5, 7));
+  return m >= 3 && m <= 8 ? `${y}-1` : `${m >= 9 ? y : y - 1}-2`;
+}
+
+/**
+ * 학기 칩 따라가기 (P26-3 사용자 결정 '학기가 바뀌면 따라가기'): 1·2학기를 고른 때의 학기(at - 그때의 열쇠)가 지나면 지금 학기로.
+ * 고른 때를 모르면(옛 설정) 지금 열쇠만 적는다 - 그 뒤 학기가 바뀌면 따라간다. '전체'는 그대로. 바꿀 것이 없으면 null.
+ */
+export function followSemesterFilter(filter: 'all' | 1 | 2, at: string, today: string): { semesterFilter: 'all' | 1 | 2; semesterFilterAt: string } | null {
+  if (filter === 'all') return null;
+  const now = semesterKeyOf(today);
+  if (at === now) return null;
+  if (!at) return { semesterFilter: filter, semesterFilterAt: now };
+  return { semesterFilter: now.endsWith('-1') ? 1 : 2, semesterFilterAt: now };
+}
+
 /**
  * 한 달을 주(일~토)로 나눈다. 칸 밖 날은 null.
  * 주말을 숨기면 월~금 다섯 칸으로, 그러고 나서 빈 주(1일이 토요일인 달의 첫 주 등)는 뺀다.
