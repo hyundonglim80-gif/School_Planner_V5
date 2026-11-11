@@ -8,7 +8,7 @@ import { useState, type ReactNode } from 'react';
 import { setCommonSetting } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
 import { openWindow, type WindowProps } from '../../app/windows';
-import { todayStr } from '../../domain/dateUtils';
+import { monthDayLabel, todayStr } from '../../domain/dateUtils';
 import { defaultNewYear, parseRosterPaste } from '../../domain/newYear';
 import { classIdOf, compareClasses, describeClass, type RosterClass } from '../../domain/roster';
 import { presetOf, TEACHER_PRESETS } from '../../domain/teachingMode';
@@ -17,7 +17,7 @@ import { rememberHubClass } from '../class/classes';
 import { useRosterDraft } from '../class/rosterDraft';
 import { openClassRoster } from '../class/view';
 import { updateTeaching } from '../lessons/teaching';
-import { createCopiedTimetable, createNewClass, useNewYear } from './useNewYear';
+import { clearStaleSubjects, createCopiedTimetable, createNewClass, useNewYear, useNewYearLoaded } from './useNewYear';
 
 export type NewYearParams = { year?: number };
 
@@ -52,12 +52,16 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
     setAsked(params);
     if (params?.year) setYear(params.year);
   }
-  const { state, source, sid, classSid, classDocs, mode } = useNewYear(year);
+  const { state, source, staleDays, dayDocs, sid, classSid, classDocs, mode } = useNewYear(year);
+  // 받기 전의 '없음'은 모르는 것이다 - 받기 전에 '빈 시간표 만들기'를 누르면 베낄 표가 있어도 빈 표가 생겼다(P26-3, 느린 서버)
+  const loaded = useNewYearLoaded();
   const preset = presetOf(mode);
   const wantsHomeroom = preset === 'subjectHomeroom';
 
   const lastHomeroom = state.lastClasses[0];
-  const [grade, setGrade] = useState(() => (lastHomeroom ? String(lastHomeroom.grade) : ''));
+  // 손대기 전에는 지난 학년도 첫 학급의 학년 (창을 연 뒤에 받아도 채운다)
+  const [gradeTyped, setGrade] = useState<string | null>(null);
+  const grade = gradeTyped ?? (lastHomeroom ? String(lastHomeroom.grade) : '');
   const [num, setNum] = useState('');
   const [names, setNames] = useState('');
   const [asHomeroom, setAsHomeroom] = useState(true);
@@ -67,7 +71,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
   const makeClass = async () => {
     const g = Number(grade);
     const c = Number(num);
-    if (!classSid || busy) return;
+    if (!classSid || busy || !loaded) return;
     if (!Number.isInteger(g) || g < 1 || g > 12 || !Number.isInteger(c) || c < 1 || c > 30) return showErrorToast('학년(1~12)과 반(1~30)을 숫자로 적어 주세요.');
     setBusy(true);
     try {
@@ -84,11 +88,23 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
   };
 
   const copyTimetable = async () => {
-    if (!sid || busy) return;
+    if (!sid || busy || !loaded) return;
     setBusy(true);
     try {
       const id = await createCopiedTimetable(sid, source, year);
       openWindow('timetable', { tab: 'grid', pick: id });
+    } catch {
+      // 안내는 저장 도우미가 했다
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const clearStale = async () => {
+    if (!sid || busy || !loaded) return;
+    setBusy(true);
+    try {
+      await clearStaleSubjects(sid, dayDocs, staleDays);
     } catch {
       // 안내는 저장 도우미가 했다
     } finally {
@@ -200,7 +216,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
             className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs"
           />
           <div className="flex items-center gap-2 flex-wrap">
-            <button type="button" data-new-year-create-class onClick={() => void makeClass()} disabled={busy} className={`${btn} bg-primary hover:bg-primary/90 text-white`}>
+            <button type="button" data-new-year-create-class onClick={() => void makeClass()} disabled={busy || !loaded} className={`${btn} bg-primary hover:bg-primary/90 text-white`}>
               🏫 학급 만들기{parsed.length ? ` (학생 ${parsed.length}명)` : ''}
             </button>
             {parsed.length > 0 && (
@@ -233,10 +249,13 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
           {state.timetable ? (
             <p>{year}학년도 시간표가 있습니다. 2학기에 바뀌면 시간표 창에서 '+ 새 시간표'로 더합니다.</p>
           ) : (
-            <p>
-              {source ? (
+            <p data-new-year-source={loaded ? (source?.id ?? '') : undefined}>
+              {!loaded ? (
+                <>시간표를 받는 중…</>
+              ) : source ? (
                 <>
-                  마지막에 쓰던 <b>[{source.name}]</b>을 베껴 {year}학년도 시간표(3/1 ~ 이듬해 2월)를 만들고, 바뀐 칸만 고칩니다.
+                  마지막에 쓰던 <b>[{source.name}]</b>
+                  {source.from && <span className="text-slate-500"> ({monthDayLabel(source.from)}부터)</span>}을 베껴 {year}학년도 시간표(3/1 ~ 이듬해 2월)를 만들고, 바뀐 칸만 고칩니다.
                 </>
               ) : (
                 <>베낄 지난 시간표가 없습니다. 빈 시간표를 만들어 채웁니다.</>
@@ -245,14 +264,29 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
           )}
           <div className="flex gap-1.5 flex-wrap">
             {!state.timetable && (
-              <button type="button" data-new-year-copy-timetable onClick={() => void copyTimetable()} disabled={busy} className={`${btn} bg-primary hover:bg-primary/90 text-white`}>
-                🗂️ {source ? '지난 시간표 베껴 만들기' : '빈 시간표 만들기'}
+              <button type="button" data-new-year-copy-timetable onClick={() => void copyTimetable()} disabled={busy || !loaded} className={`${btn} bg-primary hover:bg-primary/90 text-white`}>
+                🗂️ {!loaded || source ? '지난 시간표 베껴 만들기' : '빈 시간표 만들기'}
               </button>
             )}
             <button type="button" data-new-year-open-timetable onClick={() => openWindow('timetable', { tab: 'grid' })} className={`${btn} bg-white border border-slate-200 hover:bg-slate-50`}>
               ⏰ 시간표 창
             </button>
           </div>
+          {loaded && staleDays.length > 0 && (
+            <div data-new-year-stale={staleDays.length} className="bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 space-y-1.5 text-amber-900">
+              <p>
+                ⚠️ V4에서 가져온 <b>{year}학년도 날짜의 과목</b>이 {staleDays.length}일 남아 있습니다 (
+                {staleDays
+                  .slice(0, 4)
+                  .map((d) => monthDayLabel(d.date))
+                  .join(' · ')}
+                {staleDays.length > 4 ? ' …' : ''}). V4가 1년 앞까지 적어 둔 옛 시간표라, 그날은 새 시간표 대신 옛 과목이 보입니다.
+              </p>
+              <button type="button" data-new-year-clear-stale onClick={() => void clearStale()} disabled={busy} className={`${btn} bg-white border border-amber-300 hover:bg-amber-100`}>
+                🧹 옛 과목 지우기 (비고·첨부는 남김)
+              </button>
+            </div>
+          )}
         </Step>
 
         <Step id="terms" n={3} title="학기·방학" done={state.terms}>

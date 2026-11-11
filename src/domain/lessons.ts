@@ -91,8 +91,8 @@ export function classOffReason(date: string, src: Pick<LessonSource, 'terms' | '
 }
 
 /** 그 날짜가 든 시간표. 겹치면 늦게 시작한 것 → 나중에 만든 것 → id 차례 */
-export function timetableOn(date: string, timetables: readonly TimetableLike[]): TimetableLike | null {
-  let best: TimetableLike | null = null;
+export function timetableOn<T extends TimetableLike>(date: string, timetables: readonly T[]): T | null {
+  let best: T | null = null;
   for (const t of timetables) {
     if (!t.from || t.from > date || (t.to && t.to < date)) continue;
     if (

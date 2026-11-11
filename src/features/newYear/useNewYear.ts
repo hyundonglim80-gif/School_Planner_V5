@@ -8,9 +8,10 @@ import { isLive, useDocs, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId, usePersonalSpaceId } from '../../data/session';
 import { recordUndo } from '../../data/undo';
 import { classIdOf, cleanStudent, describeClass, withSids, type CsvStudent } from '../../domain/roster';
-import { copiedTimetable, hasPastData, latestTimetableBefore, newYearPending, newYearState, type PeriodTimetable } from '../../domain/newYear';
+import { copiedTimetable, dropSubjectChanges, hasPastData, latestTimetableBefore, newYearPending, newYearState, staleImportedSubjects, type DayDocLike, type PeriodTimetable } from '../../domain/newYear';
 import { presetOf } from '../../domain/teachingMode';
 import { classPath, useClasses } from '../class/classes';
+import { lessonDayPath } from '../lessons/lessonOps';
 import { useTeaching } from '../lessons/teaching';
 import { timetablePath } from '../timetable/timetableDraft';
 
@@ -18,6 +19,7 @@ export function useNewYear(year: number) {
   const { classes, sid: classSid, docs: classDocs } = useClasses();
   const sid = useCurrentSpaceId();
   const ttDocs = useDocs('timetables', sid);
+  const dayDocs = useDocs('lessonDays', sid);
   const terms = useCommonSettings((s) => s.terms);
   const { mode } = useTeaching();
   // 담임반은 (중등) 전담 + 담임만 고른다 - 초등 담임은 담임반 칸을 쓰지 않는다
@@ -32,17 +34,22 @@ export function useNewYear(year: number) {
           from: t.from,
           to: t.to,
           grid: t.grid ?? {},
+          createdAt: t.createdAt,
         })),
     [ttDocs],
   );
   const state = useMemo(() => newYearState(year, { classes, timetables, terms, homeroomClass }), [year, classes, timetables, terms, homeroomClass]);
   const source = useMemo(() => latestTimetableBefore(timetables, year), [timetables, year]);
   const past = useMemo(() => hasPastData({ classes, timetables }, year), [classes, timetables, year]);
+  // 새 학년도 날짜에 남은 V4 과목 - 새 시간표를 가린다 (P26-3)
+  const staleDays = useMemo(() => staleImportedSubjects(dayDocs as unknown as Record<string, DayDocLike>, year), [dayDocs, year]);
   return {
     state,
     pending: newYearPending(state),
     past,
     source,
+    staleDays,
+    dayDocs,
     sid,
     classSid,
     classDocs,
@@ -86,4 +93,17 @@ export async function createCopiedTimetable(sid: string, src: PeriodTimetable | 
   const undo = await batch([writeOp.create(timetablePath(sid, id), copiedTimetable(src, year))], { fail: '시간표를 만들지 못했습니다. 다시 눌러 주세요.' });
   recordUndo(sid, src ? `✅ [${src.name}]를 베껴 ${year}학년도 시간표를 만들었습니다.` : `✅ ${year}학년도 빈 시간표를 만들었습니다.`, undo, { what: '새 시간표' });
   return id;
+}
+
+/** 새 학년도 날짜에 남은 V4 과목을 뺀다 (비고·첨부·링크는 남긴다). 되돌리기 하나로. 실패하면 던진다 */
+export async function clearStaleSubjects(sid: string, docs: ReturnType<typeof useDocs<'lessonDays'>>, stale: ReadonlyArray<{ date: string; periods: string[] }>): Promise<void> {
+  const ops = stale.flatMap(({ date, periods }) => {
+    const doc = docs[date];
+    if (!doc) return [];
+    const changes = dropSubjectChanges(doc as unknown as DayDocLike, periods);
+    return Object.keys(changes).length ? [writeOp.merge(lessonDayPath(sid, date), changes as never, doc)] : [];
+  });
+  if (!ops.length) return;
+  const undo = await batch(ops, { fail: '옛 과목을 지우지 못했습니다. 다시 눌러 주세요.' });
+  recordUndo(sid, `🧹 V4에서 가져온 옛 과목을 ${ops.length}일에서 지웠습니다 - 그날도 새 시간표를 따릅니다.`, undo, { what: '옛 과목 지우기' });
 }

@@ -2,7 +2,8 @@
 //   넘기는 것이 없다: 라벨·설정·교시·교사 유형은 그대로 쓰고, 지난 학년도 자료(일정·기록·학급·출석)는 그 자리에 남는다(보기만).
 //   새로 하는 것만 고른다 - 새 학급(명렬표 붙여넣기) · 새 시간표(지난 것 베끼기) · 그 학년도 방학(나이스로 채우기) · 담임반.
 //   띠는 2/15 ~ 3/31에, 지난 자료가 있는 계정에만, 할 것이 남았고 '준비 끝'을 누르지 않았을 때(common.newYearDone).
-import { academicYearOf } from './dateUtils';
+import { academicYearOf, addDays } from './dateUtils';
+import { cellHasContent, timetableOn, type LessonCellDoc } from './lessons';
 import { schoolYearSpan, type SchoolTerms } from './semester';
 import { textToGender, type CsvStudent, type RosterClass } from './roster';
 
@@ -26,6 +27,8 @@ export interface PeriodTimetable {
   from: string;
   to: string;
   grid: Record<string, Record<string, string>>;
+  /** 같은 날 시작한 표 가리기 (화면 `timetableOn`과 같이 - 나중에 만든 것) */
+  createdAt?: number;
 }
 
 /** 그 학년도 기간에 걸친 시간표가 있나 */
@@ -34,11 +37,19 @@ export const timetableInYear = (list: readonly PeriodTimetable[], year: number) 
   return list.some((t) => t.from && t.to && t.from <= span.end && t.to >= span.start);
 };
 
-/** 베낄 시간표 - 그 학년도 전에 시작한 것 중 가장 늦게 시작한 것(마지막에 쓰던 표) */
+/**
+ * 베낄 시간표 = 마지막에 쓰던 표: 새 학년도 전날(2월 끝날)에 화면이 쓰는 표(`timetableOn` - 겹치면 늦게 시작한 것 → 나중에 만든 것).
+ * 그날 쓰는 표가 없으면 그 전에 시작한 것 중 같은 차례로 첫째.
+ * (P26-3 실제 자료 - 같은 날 시작한 표가 둘이면 목록 차례로 골라, 화면이 쓰지 않는 옛 V4 가져온 표를 베꼈다)
+ */
 export function latestTimetableBefore(list: readonly PeriodTimetable[], year: number): PeriodTimetable | null {
   const start = schoolYearSpan(year).start;
   const before = list.filter((t) => t.from && t.from < start);
-  return before.sort((a, b) => b.from.localeCompare(a.from))[0] ?? null;
+  const lastDay = addDays(start, -1);
+  const inUse = timetableOn(lastDay, before);
+  if (inUse) return inUse;
+  const latest = timetableOn(lastDay, before.map((t) => ({ ...t, to: '' })));
+  return latest ? (before.find((t) => t.id === latest.id) ?? null) : null;
 }
 
 /** 베낀 새 시간표 - 그 학년도 3/1 ~ 이듬해 2월 끝, 이름 '1학기 시간표'(2학기 시간표는 시간표 창에서 '2학기부터'로) */
@@ -50,6 +61,45 @@ export function copiedTimetable(src: Pick<PeriodTimetable, 'grid'> | null, year:
     to: span.end,
     grid: structuredClone(src?.grid ?? {}),
   };
+}
+
+/** 수업 칸 문서 (lessonDays - 날짜가 id) */
+export interface DayDocLike {
+  id: string;
+  periods?: Record<string, LessonCellDoc | undefined>;
+  src?: { from?: string };
+  deletedAt?: unknown;
+}
+
+/**
+ * 그 학년도 날짜에 남은 V4에서 가져온 '그날 바꾼 과목' (날짜 차례, 교시들).
+ * V4는 시간표를 날짜마다(1년 앞까지) 적어 두었고, 가져오기는 V5 시간표가 없는 날의 칸을 모두 '그날 바꾼 과목'으로 옮겼다 -
+ * 새 학년도 시간표를 만들어도 그날은 옛 과목('402' 같은 V4 글)이 보인다(P26-3 실제 자료 - 2027-03 ~ 08 월요일 등 27일).
+ */
+export function staleImportedSubjects(days: Record<string, DayDocLike>, year: number): Array<{ date: string; periods: string[] }> {
+  const span = schoolYearSpan(year);
+  const out: Array<{ date: string; periods: string[] }> = [];
+  for (const d of Object.values(days)) {
+    if (d.deletedAt || d.src?.from !== 'v4' || d.id < span.start || d.id > span.end) continue;
+    const periods = Object.entries(d.periods ?? {})
+      .filter(([, c]) => typeof c?.subject === 'string')
+      .map(([n]) => n)
+      .sort((a, b) => Number(a) - Number(b));
+    if (periods.length) out.push({ date: d.id, periods });
+  }
+  return out.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** 그날 문서에서 과목만 빼는 칸 바꾸기 - 비고·첨부·링크가 남으면 과목 칸만, 없으면 그 교시 칸째 (lessonOps와 같은 꼴) */
+export function dropSubjectChanges(doc: DayDocLike, periods: readonly string[]): Record<string, undefined> {
+  const changes: Record<string, undefined> = {};
+  for (const n of periods) {
+    const cell = doc.periods?.[n];
+    if (!cell || typeof cell.subject !== 'string') continue;
+    const { subject: _drop, ...rest } = cell;
+    changes[cellHasContent(rest) ? `periods.${n}.subject` : `periods.${n}`] = undefined;
+  }
+  return changes;
 }
 
 /** 그 학년도 방학을 둘 다 적었나 */

@@ -5,9 +5,11 @@
 //   4) ③ 방학 적기 = 시간표 창 '학기·방학' 탭이 2027학년도로 → 적고 💾 → 네 단계 ✓ · 할 것이 없으면 띠가 내려간다
 //   5) ✅ 준비 끝 = common.newYearDone · 띠 닫기(할 것이 다시 생겨도 그 학년도에는 띄우지 않는다) · 시간표 창 머리줄 🌱
 //   6) 3/2 = 지난 학년에 고른 학급을 믿지 않는다(학급 화면·학급 도구) · 올해 고른 지난 학급은 남는다 · 넘어온 지난 학급은 '고름'이 되지 않는다(P22-4)
+//   7) 실제 자료 모양(P26-3 - 사용자 백업 사본으로 찾은 것, 실제 자료는 넣지 않는다): 같은 날 시작한 표 둘이면 나중에 만든 것을 베낀다 ·
+//      V4에서 가져온 새 학년도 날짜의 과목 = 알림 → 🧹 옛 과목 지우기(비고·V5에서 바꾼 날은 남김) → 되돌리기
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-new-year.mjs
-// 에뮬레이터 teacher의 classes·timetables·settings/common을 바꾸고 끝에 되돌린다.
+// 에뮬레이터 teacher의 classes·timetables·lessonDays(심은 날만)·settings/common을 바꾸고 끝에 되돌린다.
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
@@ -45,6 +47,16 @@ try {
   const grid = { 1: { 1: '5-1 과학', 2: '5-2 과학' }, 3: { 4: '5-2 과학' } };
   await setDoc(ref('timetables', 'ny_old1'), { name: '1학기', from: '2026-03-01', to: '2027-02-28', grid: { 1: { 1: '5-1 과학' } }, ...tracked });
   await setDoc(ref('timetables', 'ny_old2'), { name: '2학기', from: '2026-08-17', to: '2027-02-28', grid, ...tracked });
+  // 같은 날 시작한 옛 표 (V4에서 가져와 먼저 만든 것 - id 차례로는 앞) - 화면은 나중에 만든 ny_old2를 쓴다 (P26-3)
+  await setDoc(ref('timetables', 'ny_old0'), { name: '2학기', from: '2026-08-17', to: '2027-02-28', grid: { 1: { 1: '501' } }, ...tracked, createdAt: tracked.createdAt - 60000 });
+  // V4가 1년 앞까지 적어 둔 옛 시간표 (가져오기가 '그날 바꾼 과목'으로 옮겼다) + V5에서 바꾼 날 하나 (P26-3)
+  const v4src = (d) => ({ from: 'v4', path: `schedules/${d}`, id: d, h: 'inspect' });
+  const plantedDays = { '2027-03-08': { periods: { 2: { subject: '502' }, 3: { subject: '503', supplies: '줄넘기' } }, src: v4src('2027-03-08') }, '2027-03-09': { periods: { 1: { subject: '보강' } } } };
+  for (const [d, data] of Object.entries(plantedDays)) {
+    const before = await read(ref('lessonDays', d));
+    undo.add(() => (before ? setDoc(ref('lessonDays', d), before) : deleteDoc(ref('lessonDays', d))));
+    await setDoc(ref('lessonDays', d), { ...data, ...tracked });
+  }
 
   const { page, errors } = await newPage(browser);
   await page.clock.setFixedTime(new Date('2027-02-20T09:00:00'));
@@ -82,6 +94,8 @@ try {
   r.check(((await page.locator(sel('new-year-names')).inputValue()) ?? '') === '', '만든 뒤 명단 칸은 비운다');
 
   r.section('② 지난 시간표 베껴 만들기');
+  r.check((await page.locator(sel('new-year-source')).getAttribute('data-new-year-source')) === 'ny_old2', '베낄 표 = 2월 끝날 화면이 쓰는 표 (같은 날 시작한 옛 표가 아니라 나중에 만든 것)');
+  r.check(((await page.locator(sel('new-year-source')).textContent()) ?? '').includes('8/17부터'), '베낄 표의 시작일을 함께 보인다');
   await page.locator(sel('new-year-copy-timetable')).click();
   const made = await serverUntil(
     async () => (await getDocs(coll('timetables'))).docs.map((d) => ({ id: d.id, ...d.data() })).filter((d) => d.from === '2027-03-01'),
@@ -94,6 +108,20 @@ try {
   r.check(await waitFor(page.locator(sel('timetable-window')), 8000), '시간표 창이 열린다');
   r.check((await page.locator(sel('timetable-pick', nt?.id)).getAttribute('aria-pressed')) === 'true', '그 시간표를 고른 채로');
   r.check((await page.locator(sel('timetable-from')).inputValue()) === '2027-03-01', '기간 칸 = 새 학년도');
+
+  r.section('② 새 학년도 날짜에 남은 V4 과목 (P26-3)');
+  await page.evaluate(() => window.sp5.openWindow('newYear', { year: 2027 }));
+  const stale = page.locator(sel('new-year-stale'));
+  r.check(await waitFor(stale, 8000), '알림이 뜬다');
+  r.check((await stale.getAttribute('data-new-year-stale')) === '1' && ((await stale.textContent()) ?? '').includes('3/8'), 'V4에서 가져온 날만 (V5에서 바꾼 3/9는 빼고) - 날짜를 보인다');
+  await page.locator(sel('new-year-clear-stale')).click();
+  const day8 = await serverUntil(() => read(ref('lessonDays', '2027-03-08')), (d) => !d?.periods?.['2'] && d?.periods?.['3'] && !('subject' in d.periods['3']), 8000);
+  r.check(!day8?.periods?.['2'] && day8?.periods?.['3']?.supplies === '줄넘기', '🧹 옛 과목 지우기 = 과목만 빼고 비고(준비물)는 남긴다', JSON.stringify(day8?.periods));
+  r.check((await read(ref('lessonDays', '2027-03-09')))?.periods?.['1']?.subject === '보강', 'V5에서 바꾼 날은 그대로');
+  r.check(await waitFor(async () => (await stale.count()) === 0, 5000), '알림이 내려간다');
+  await page.locator('[data-toast]').filter({ hasText: '옛 과목' }).locator('[data-toast-action="되돌리기"]').click();
+  const back = await serverUntil(() => read(ref('lessonDays', '2027-03-08')), (d) => d?.periods?.['2']?.subject === '502', 8000);
+  r.check(back?.periods?.['3']?.subject === '503' && (await waitFor(stale, 5000)), '되돌리기 = 옛 과목이 돌아오고 알림도 다시');
 
   r.section('③ 방학 - 시간표 창 학기·방학 탭을 그 학년도로');
   // 새 학년도 창을 다시 앞으로 (오른쪽 칸 탭)

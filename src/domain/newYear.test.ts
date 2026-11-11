@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { copiedTimetable, defaultNewYear, hasPastData, latestTimetableBefore, newYearPending, newYearState, newYearTarget, parseRosterPaste, timetableInYear } from './newYear';
+import { copiedTimetable, defaultNewYear, dropSubjectChanges, hasPastData, latestTimetableBefore, newYearPending, newYearState, newYearTarget, parseRosterPaste, staleImportedSubjects, timetableInYear } from './newYear';
 
 const tt = (id: string, from: string, to: string, cell = '국어') => ({
   id,
@@ -35,6 +35,15 @@ describe('새 학년도 넘기기', () => {
     expect(timetableInYear(list, 2027)).toBe(false);
     expect(latestTimetableBefore(list, 2027)?.id).toBe('b');
     expect(latestTimetableBefore(list, 2026)).toBeNull();
+    // 같은 날 시작한 표가 둘이면 화면처럼 나중에 만든 것 (P26-3 - 실제 자료: 옛 V4 가져온 표와 새로 만든 표가 10/20에 같이 시작, 목록 차례로 옛 표를 베꼈다)
+    const twins = [{ ...tt('e_v4', '2026-10-20', '2027-02-28', '401'), createdAt: 100 }, { ...tt('s_new', '2026-10-20', '2027-02-28', '4-1 체육'), createdAt: 200 }, tt('a', '2026-03-01', '2027-02-28')];
+    expect(latestTimetableBefore(twins, 2027)?.id).toBe('s_new');
+    expect(latestTimetableBefore([...twins].reverse(), 2027)?.id).toBe('s_new');
+    // 마지막에 쓰던 표 = 2월 끝날에 쓰던 표 - 늦게 시작했어도 그 전에 끝난 표(겨울 임시 표)가 아니다
+    const ended = [tt('a', '2026-03-01', '2027-02-28', '국어'), tt('w', '2026-12-01', '2026-12-31', '임시')];
+    expect(latestTimetableBefore(ended, 2027)?.id).toBe('a');
+    // 2월 끝날에 쓰는 표가 없으면 가장 늦게 시작한 것
+    expect(latestTimetableBefore([tt('a', '2026-03-01', '2026-07-31'), tt('b', '2026-08-20', '2026-12-31', '과학')], 2027)?.id).toBe('b');
     const copy = copiedTimetable(list[1], 2027);
     expect(copy).toEqual({
       name: '1학기 시간표',
@@ -110,5 +119,27 @@ describe('새 학년도 넘기기', () => {
       [1, '김가나'],
       [2, '이다라'],
     ]);
+  });
+  it('새 학년도 날짜에 남은 V4 과목 (P26-3 - 새 시간표를 가린다): V4에서 가져온 것·그 학년도·과목 칸만', () => {
+    const v4 = { from: 'v4' };
+    const days = {
+      '2027-03-08': { id: '2027-03-08', src: v4, periods: { '2': { subject: '402' } } },
+      '2027-03-02': { id: '2027-03-02', src: v4, periods: { '5': { subject: '403', supplies: '공' }, '1': { subject: '401' }, '3': { supplies: '줄넘기' } } },
+      '2027-02-26': { id: '2027-02-26', src: v4, periods: { '1': { subject: '401' } } }, // 지난 학년도
+      '2028-03-06': { id: '2028-03-06', src: v4, periods: { '1': { subject: '401' } } }, // 다음 학년도
+      '2027-03-09': { id: '2027-03-09', periods: { '1': { subject: '보강' } } }, // V5에서 바꾼 것
+      '2027-03-10': { id: '2027-03-10', src: v4, periods: { '1': { supplies: '공' } } }, // 과목 없음
+      '2027-03-15': { id: '2027-03-15', src: v4, deletedAt: 1, periods: { '2': { subject: '402' } } }, // 지움
+      '2027-03-16': { id: '2027-03-16', src: v4, periods: { '4': { subject: '' } } }, // 빈 글자 = 그 교시 수업 없음도 옛 것
+    };
+    expect(staleImportedSubjects(days, 2027)).toEqual([
+      { date: '2027-03-02', periods: ['1', '5'] },
+      { date: '2027-03-08', periods: ['2'] },
+      { date: '2027-03-16', periods: ['4'] },
+    ]);
+    expect(staleImportedSubjects(days, 2026)).toEqual([{ date: '2027-02-26', periods: ['1'] }]);
+    // 과목만 빼고 비고(준비물)는 남긴다 - 남는 것이 없으면 그 교시 칸째
+    expect(dropSubjectChanges(days['2027-03-02'], ['1', '5'])).toEqual({ 'periods.1': undefined, 'periods.5.subject': undefined });
+    expect(dropSubjectChanges(days['2027-03-02'], ['3'])).toEqual({});
   });
 });
