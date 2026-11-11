@@ -53,9 +53,12 @@ const SMALL_BTN = 'px-2.5 py-1 rounded-lg text-xs font-bold border transition-co
 
 /**
  * 누를 단추가 없는(또는 다른 단추와 하는 일이 달라 표시를 달지 않은) 기능 - 키가 없어도 줄을 보인다.
- * 단추에 shortcutTarget을 달면 여기서 뺀다.
+ * 단추에 shortcutTarget을 달면 여기서 뺀다 - 글자 크기 셋은 단추가 환경설정 안 깊이 있고 단축키로 쓰려는 기능이라(메모 요청 #145) 둘 다.
  */
 export const NO_BUTTON: ReadonlySet<ShortcutId> = new Set<ShortcutId>([
+  'fontSmaller',
+  'fontReset',
+  'fontLarger',
   'undo',
   'checklist',
   'scopePrev',

@@ -19,8 +19,8 @@ vi.mock('../data/settingsSync', () => ({
 const binding = (docId: string) => started.find((s) => s.docId === docId)!.binding;
 
 function resetStores() {
-  useLayoutPrefs.setState({ fontScale: 'md', popupStyle: 'side' });
-  useNav.setState({ showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', enableScrollNav: false, startupScope: 'last' });
+  useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side' });
+  useNav.setState({ scope: 'day', showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', enableScrollNav: false, startupScope: 'last' });
   useShortcutOverrides.setState({ overrides: {}, tabs: {} });
   useCommonSettings.setState({ forwardDays: 14 });
 }
@@ -45,11 +45,11 @@ describe('설정 문서 나누기', () => {
 
   it('여러 store의 바꾼 값을 한 문서로 모은다', () => {
     startPrefsSync('u1');
-    useLayoutPrefs.setState({ fontScale: 'lg' });
+    useLayoutPrefs.setState({ fontSizes: { board: 85 } });
     useNav.setState({ showWeekend: false, startupScope: 'week' });
     useShortcutOverrides.setState({ overrides: { help: { ctrl: true, alt: true, shift: false, key: 'H' } } });
     expect(binding('pc').local()).toEqual({
-      fontScale: 'lg',
+      fontSizes: { board: 85 },
       showWeekend: false,
       startupScope: 'week',
       shortcutOverrides: { help: { ctrl: true, alt: true, shift: false, key: 'H' } },
@@ -74,18 +74,48 @@ describe('설정 문서 나누기', () => {
     expect(binding('pc').local()).toEqual({});
   });
 
-  it('받은 문서를 각 store에 입히고, 글자 크기는 화면에도', () => {
+  it('받은 문서를 각 store에 입히고, 글자 크기는 지금 화면(하루)의 것을 화면에도', () => {
     startPrefsSync('u1');
-    binding('pc').apply({ fontScale: 'xl', popupStyle: 'center', showClass: false, shortcutOverrides: { zzz: {}, help: { ctrl: true, alt: false, shift: false, key: 'H' } } });
-    expect(useLayoutPrefs.getState()).toMatchObject({ fontScale: 'xl', popupStyle: 'center' });
+    binding('pc').apply({
+      fontSizes: { day: 130, board: 85 },
+      popupStyle: 'center',
+      showClass: false,
+      shortcutOverrides: { zzz: {}, help: { ctrl: true, alt: false, shift: false, key: 'H' } },
+    });
+    expect(useLayoutPrefs.getState()).toMatchObject({ fontSizes: { day: 130, board: 85 }, popupStyle: 'center' });
     expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.3');
     expect(useNav.getState().showClass).toBe(false);
     // 모르는 단축키 id는 버린다
     expect(useShortcutOverrides.getState().overrides).toEqual({ help: { ctrl: true, alt: false, shift: false, key: 'H' } });
 
+    // 화면을 옮기면 그 화면이 기억한 크기로 (메모 요청 #145)
+    useNav.setState({ scope: 'board' });
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('0.85');
+    useNav.setState({ scope: 'week' });
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
+    useNav.setState({ scope: 'day' });
+
     binding('pc').apply({});
-    expect(useLayoutPrefs.getState()).toMatchObject({ fontScale: 'md', popupStyle: 'side' });
+    expect(useLayoutPrefs.getState()).toMatchObject({ fontSizes: {}, popupStyle: 'side' });
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
     expect(useNav.getState().showClass).toBe(true);
+  });
+
+  it('옛 문서의 글자 크기 다섯 단계(fontScale)는 모든 화면에 같은 %로 옮겨 읽는다 (메모 요청 #145)', () => {
+    startPrefsSync('u1');
+    binding('pc').apply({ fontScale: 'lg', showWeekend: false });
+    const sizes = useLayoutPrefs.getState().fontSizes;
+    expect(sizes.day).toBe(115);
+    expect(sizes.board).toBe(115);
+    expect(sizes.popout).toBe(115);
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.15');
+    // 다시 적을 때는 새 칸만 (옛 칸은 빠진다)
+    expect(binding('pc').local()).toEqual({ fontSizes: sizes, showWeekend: false });
+    // 새 칸이 있으면 옛 칸은 보지 않는다
+    binding('pc').apply({ fontScale: 'xl', fontSizes: { day: 95 } });
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 95 });
+    binding('pc').apply({ fontScale: 'md' });
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({});
   });
 
   it('common: 이월 기간은 1~60일', () => {
@@ -114,19 +144,19 @@ describe('설정 문서 나누기', () => {
 
 describe('이 기기 사본의 주인', () => {
   it('처음 들어온 계정은 이 기기 값을 그대로 받아들인다', () => {
-    useLayoutPrefs.setState({ fontScale: 'lg' });
+    useLayoutPrefs.setState({ fontSizes: { day: 115 } });
     startPrefsSync('u1');
-    expect(useLayoutPrefs.getState().fontScale).toBe('lg');
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 115 });
   });
 
   it('다른 계정으로 들어오면 앞 사람 설정을 기본값으로 비운다 (새 계정에 올리지 않게)', () => {
     startPrefsSync('u1');
-    useLayoutPrefs.setState({ fontScale: 'lg' });
+    useLayoutPrefs.setState({ fontSizes: { day: 115 } });
     useCommonSettings.setState({ forwardDays: 30 });
     startPrefsSync('u1');
-    expect(useLayoutPrefs.getState().fontScale).toBe('lg');
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 115 });
     startPrefsSync('u2');
-    expect(useLayoutPrefs.getState().fontScale).toBe('md');
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({});
     expect(useCommonSettings.getState().forwardDays).toBe(14);
   });
 });

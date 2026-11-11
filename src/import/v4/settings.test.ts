@@ -2,12 +2,16 @@ import { describe, expect, it, vi } from 'vitest';
 import type { WriteOp } from '../../data/repo/ops';
 import { changedTotal } from './plan';
 import { periodsFromV4, planSettings, termsFromV4, v4SettingsDocs } from './settings';
+import { FONT_PAGES } from '../../app/layoutPrefs';
 
 // 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 
 const SID = 'u_me';
 const keys = { search: { key: 'k', ctrl: true, alt: false, shift: false } };
+
+// V4 글자 크기 단계(fontScale)는 V5 화면마다 같은 %로 들어온다 (메모 요청 #145 - lg 115 · xl 130 · sm 90)
+const all = (percent: number) => ({ fontSizes: Object.fromEntries(FONT_PAGES.map((p) => [p, percent])) });
 
 const putOf = (ops: WriteOp[], id: string) => {
   const op = ops.find((o) => o.at.id === id);
@@ -39,17 +43,18 @@ describe('planSettings - 처음 가져오기', () => {
       { pc: { fontScale: 'lg', popupStyle: 'center', showWeekend: false, shortcutOverrides: keys, startupScope: 'nope', forwardLookbackDays: 30 } },
       {},
     );
-    expect(putOf(ops, 'pc')).toEqual({ fontScale: 'lg', popupStyle: 'center', showWeekend: false, shortcutOverrides: keys });
+    expect(putOf(ops, 'pc')).toEqual({ ...all(115), popupStyle: 'center', showWeekend: false, shortcutOverrides: keys });
     expect(putOf(ops, 'common')).toEqual({ forwardDays: 30 });
     expect(putOf(ops, 'mobile')).toBeUndefined();
     expect(ops.every((o) => o.at.coll === 'settings' && o.at.sid === SID)).toBe(true);
     expect(counts.changed).toBe(5);
-    expect(written.pc).toEqual({ fontScale: 'lg', popupStyle: 'center', showWeekend: false, shortcutOverrides: keys });
+    expect(written.pc).toEqual({ ...all(115), popupStyle: 'center', showWeekend: false, shortcutOverrides: keys });
   });
 
   it('V5에서 이미 바꾼 칸은 둔다 (가져온 적이 없는데 기본값이 아니다)', () => {
+    // V5 문서의 옛 단계(작게)도 화면마다 %로 읽어 둔다
     const { ops, counts, written } = planSettings(SID, { pc: { fontScale: 'lg', showWeekend: false } }, { pc: { fontScale: 'sm' } });
-    expect(putOf(ops, 'pc')).toEqual({ fontScale: 'sm', showWeekend: false });
+    expect(putOf(ops, 'pc')).toEqual({ ...all(90), showWeekend: false });
     expect(counts).toMatchObject({ kept: 1, changed: 1 });
     expect(written.pc).toEqual({ showWeekend: false });
   });
@@ -73,7 +78,7 @@ describe('planSettings - 다시 가져오기', () => {
 
   it('V4에서 바꾼 칸은 따라가고, 기본값으로 되돌린 칸은 뺀다', () => {
     const again = planSettings(SID, { pc: { fontScale: 'xl', forwardLookbackDays: 30 } }, current, first.written);
-    expect(putOf(again.ops, 'pc')).toEqual({ fontScale: 'xl' });
+    expect(putOf(again.ops, 'pc')).toEqual(all(130));
     expect(again.counts.changed).toBe(2);
   });
 
@@ -83,7 +88,7 @@ describe('planSettings - 다시 가져오기', () => {
     // 글자 크기는 V5 것(기본값)을 두고, 주말은 V4를 따라 기본값(칸 빠짐)
     expect(putOf(again.ops, 'pc')).toEqual({});
     expect(again.counts).toMatchObject({ kept: 1, changed: 1 });
-    expect(again.written.pc).toEqual({ fontScale: 'lg' });
+    expect(again.written.pc).toEqual(all(115));
     // 그다음에도 글자 크기는 V5에서 바꾼 칸
     const third = planSettings(SID, { pc: { fontScale: 'xl', forwardLookbackDays: 30 } }, { ...edited, pc: {} }, again.written);
     expect(putOf(third.ops, 'pc')).toBeUndefined();

@@ -6,7 +6,6 @@
 // 고르는 값 목록은 여기 한 곳 - 환경설정 탭(ViewTab 등)도 여기서 읽는다. 키는 기기 칸 customShortcuts(app/prefs).
 // 단추에 다는 표시(data-shortcut-target)·툴팁은 useOptionTarget, 키 처리는 app/keys → app/customShortcuts.
 import { useMemo } from 'react';
-import { FONT_SCALES, type FontScale } from '../domain/fontScale';
 import { PALETTES, sanitizePalette, DEFAULT_PALETTE } from '../domain/palette';
 import { sanitizeDecor, type DecorChoice } from '../domain/decor';
 import { ALARM_SOUND_CHOICES, DEFAULT_ALARM_SOUND } from '../domain/eventAlarm';
@@ -14,7 +13,7 @@ import { DEFAULT_AUTO_BACKUP, INTERVAL_CHOICES, KEEP_CHOICES } from '../domain/a
 import { formatBinding, type CustomShortcutId, type ShortcutId } from '../domain/shortcuts';
 import { provideCustomShortcuts, type CustomShortcut } from './customShortcuts';
 import { detectDeviceKind } from './deviceKind';
-import { setFontScale, setPopupStyle, useLayoutPrefs, windowMode, type PopupStyle } from './layoutPrefs';
+import { setPopupStyle, useLayoutPrefs, windowMode, type PopupStyle } from './layoutPrefs';
 import { setEnableScrollNav, setStartupScope, useNav, type StartupScope } from './nav';
 import { setCommonSetting, useCommonSettings } from './prefs';
 import { SCREENS } from './screens';
@@ -89,14 +88,7 @@ const autoBackup = () => useCommonSettings.getState().autoBackup;
 
 /** 이름(id의 가운데) → 그 값. 이름은 영문·숫자만(id 모양 - domain/shortcuts isCustomShortcutId) */
 const OPTIONS: Record<string, OptionDef> = {
-  fontScale: {
-    kind: 'choice',
-    title: '글자 크기',
-    def: 'md',
-    values: () => FONT_SCALES.map((s) => ({ value: s.id, label: s.label })),
-    get: () => useLayoutPrefs.getState().fontScale,
-    set: (v) => setFontScale(v as FontScale),
-  },
+  // 글자 크기는 값 고르기가 아니다 - 화면마다 5%씩 바꾸는 단축키 '글자 작게 / 크게 / 초기화'(app/fontSize, 메모 요청 #145)
   theme: {
     kind: 'choice',
     title: '화면 밝기',

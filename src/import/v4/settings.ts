@@ -14,7 +14,7 @@
 //   지금 V5 값 ≠ prev → V5에서 바꾼 칸 → 둔다(V4 값이 다르면 '둠')
 //   그 밖 → V4 값으로(다르면 '바뀜', 기본값이면 칸을 뺀다)
 // V4에 그 문서가 없으면 그 문서는 건너뛴다(가져올 것이 없다 - V5 값을 기본값으로 되돌리지 않는다).
-import { COMMON_SETTINGS, DEVICE_PREFS } from '../../app/prefs';
+import { COMMON_SETTINGS, DEVICE_PREFS, readDevicePrefs } from '../../app/prefs';
 import { readSettings, sparseSettings, type SettingsSpec } from '../../domain/settings';
 import { writeOp, type WriteOp } from '../../data/repo/ops';
 import type { DocPath } from '../../data/types';
@@ -144,9 +144,11 @@ export function planSettings(
     const src = fromV4[id];
     if (!src) continue;
     const spec = SPECS[id];
-    const want = sparseSettings(spec, readSettings(spec, src)) as Fields;
+    // 기기 문서는 옛 글자 크기 다섯 단계(V4 fontScale)를 화면마다 %로 옮겨 읽는다(메모 요청 #145)
+    const read = (doc: unknown) => (id === 'common' ? readSettings(spec, doc) : (readDevicePrefs(doc) as unknown as Record<string, unknown>));
+    const want = sparseSettings(spec, read(src)) as Fields;
     const curDoc = current[id] ?? null;
-    const cur = sparseSettings(spec, readSettings(spec, curDoc)) as Fields;
+    const cur = sparseSettings(spec, read(curDoc)) as Fields;
     const before = prev[id] ?? {};
     const next: Fields = {};
     const wrote: Fields = {};

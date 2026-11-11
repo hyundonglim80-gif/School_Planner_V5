@@ -10,7 +10,7 @@
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { DEFAULT_FONT_SCALE, FONT_SCALES, type FontScale } from '../domain/fontScale';
+import { readFontSizes, type FontSizes } from '../domain/fontScale';
 import { DEFAULT_DECOR } from '../domain/decor';
 import { DEFAULT_PALETTE } from '../domain/palette';
 import {
@@ -41,7 +41,7 @@ import {
   type SettingsSpec,
 } from '../domain/settings';
 import { settingsPort, startSettingsSync, type SettingsBinding } from '../data/settingsSync';
-import { setFontScale, useLayoutPrefs, type PopupStyle } from './layoutPrefs';
+import { legacyFontPages, setFontSizes, useLayoutPrefs, type PopupStyle } from './layoutPrefs';
 import { addPressTargets, setCustomShortcuts, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
 import { prunePressTargets, readPressTargets, type PressTargets } from '../domain/pressTarget';
 import { isKnownTabShortcut } from './tabShortcuts';
@@ -54,7 +54,8 @@ export { detectDeviceKind, type DeviceKind };
 // ── 기기 종류마다 (pc / mobile) ──
 
 export interface DevicePrefs {
-  fontScale: FontScale;
+  /** 글자 크기 - 화면마다 %(메모 요청 #145, 100은 적지 않는다). 옛 문서의 다섯 단계 fontScale은 readDevicePrefs가 옮긴다 */
+  fontSizes: FontSizes;
   popupStyle: PopupStyle;
   startupScope: StartupScope;
   shortcutOverrides: ShortcutOverrides;
@@ -80,10 +81,7 @@ const customShortcutsField: SettingField<CustomBindings> = { def: {}, read: read
 const pressTargetsField: SettingField<PressTargets> = { def: {}, read: readPressTargets };
 
 export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
-  fontScale: oneOfField<FontScale>(
-    DEFAULT_FONT_SCALE,
-    FONT_SCALES.map((s) => s.id),
-  ),
+  fontSizes: customField<FontSizes>({}, readFontSizes),
   popupStyle: oneOfField<PopupStyle>('side', ['side', 'center', 'popup']),
   startupScope: oneOfField<StartupScope>('last', STARTUP_SCOPES),
   shortcutOverrides: overridesField,
@@ -98,10 +96,10 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
 };
 
 function currentDevicePrefs(): DevicePrefs {
-  const { fontScale, popupStyle } = useLayoutPrefs.getState();
+  const { fontSizes, popupStyle } = useLayoutPrefs.getState();
   const { startupScope, showWeekend, showEvents, showClass, semesterFilter, enableScrollNav } = useNav.getState();
   return {
-    fontScale,
+    fontSizes,
     popupStyle,
     startupScope,
     shortcutOverrides: useShortcutOverrides.getState().overrides,
@@ -118,7 +116,7 @@ function currentDevicePrefs(): DevicePrefs {
 
 function applyDevicePrefs(p: DevicePrefs) {
   const now = currentDevicePrefs();
-  if (p.fontScale !== now.fontScale) setFontScale(p.fontScale);
+  if (JSON.stringify(p.fontSizes) !== JSON.stringify(now.fontSizes)) setFontSizes(p.fontSizes);
   if (p.popupStyle !== now.popupStyle) useLayoutPrefs.setState({ popupStyle: p.popupStyle });
   if (JSON.stringify(p.shortcutOverrides) !== JSON.stringify(now.shortcutOverrides)) setShortcutOverrides(p.shortcutOverrides);
   if (JSON.stringify(p.tabShortcuts) !== JSON.stringify(now.tabShortcuts)) setTabShortcuts(p.tabShortcuts);
@@ -130,9 +128,23 @@ function applyDevicePrefs(p: DevicePrefs) {
   if (Object.keys(navChanges).length > 0) useNav.setState(navChanges);
 }
 
+/**
+ * 기기 설정 문서 읽기. 옛 문서(11-11 전·V4 가져오기)의 글자 크기 다섯 단계(fontScale)는 화면마다 같은 %로 옮긴다(메모 요청 #145) -
+ * 이 판이 문서를 다시 적으면(통째로) fontScale 칸은 빠진다.
+ */
+export function readDevicePrefs(data: unknown): DevicePrefs {
+  const d = data && typeof data === 'object' && !Array.isArray(data) ? (data as Record<string, unknown>) : {};
+  if (d.fontSizes === undefined && d.fontScale !== undefined) {
+    const { fontScale, ...rest } = d;
+    const fontSizes = legacyFontPages(fontScale);
+    return readSettings(DEVICE_PREFS, fontSizes ? { ...rest, fontSizes } : rest);
+  }
+  return readSettings(DEVICE_PREFS, d);
+}
+
 const deviceBinding: SettingsBinding = {
   local: () => sparseSettings(DEVICE_PREFS, currentDevicePrefs()),
-  apply: (data) => applyDevicePrefs(readSettings(DEVICE_PREFS, data)),
+  apply: (data) => applyDevicePrefs(readDevicePrefs(data)),
   subscribe: (onChange) => {
     const subs = [useLayoutPrefs.subscribe(onChange), useNav.subscribe(onChange), useShortcutOverrides.subscribe(onChange)];
     return () => subs.forEach((u) => u());

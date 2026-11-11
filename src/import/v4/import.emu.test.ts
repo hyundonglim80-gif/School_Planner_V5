@@ -120,11 +120,14 @@ describe('V4 가져오기 (에뮬레이터)', () => {
     expect(notes.map((l) => l.name)).toEqual(['학급활동', '학교', 'A초']);
     expect(notes[2].parentId).toBe(notes[1].id);
 
-    expect(await settingsDoc('pc')).toMatchObject({ fontScale: 'lg', popupStyle: 'center' });
+    // V4 글자 크기 단계 '크게'는 화면마다 115%로 들어온다 (메모 요청 #145 - 옛 fontScale 칸은 적지 않는다)
+    const pc = await settingsDoc('pc');
+    expect(pc).toMatchObject({ fontSizes: { day: 115, board: 115, popout: 115 }, popupStyle: 'center' });
+    expect(pc).not.toHaveProperty('fontScale');
     expect(await settingsDoc('common')).toMatchObject({ forwardDays: 21 });
     expect(await settingsDoc('mobile')).toBeUndefined();
     const record = await settingsDoc('import');
-    expect(record).toMatchObject({ labelMap: { event: { 회의: ev[2].id } }, settings: { pc: { fontScale: 'lg', popupStyle: 'center' } } });
+    expect(record).toMatchObject({ labelMap: { event: { 회의: ev[2].id } }, settings: { pc: { fontSizes: { day: 115 }, popupStyle: 'center' } } });
     expect(typeof record!.at).toBe('number');
   });
 

@@ -1,8 +1,7 @@
 // 환경설정 '보기' 탭 (MENU 3-6). 모두 누르는 즉시 바뀐다 - V4는 글자 크기·창 위치·화면 밝기만 즉시, 나머지는 '저장'을 기다렸다.
 // 화면 밝기·고대비·어둡게를 부드럽게(이 기기에만)·색 테마·색약 배려·꾸미기(계정에 하나 - PC·휴대폰 같게, P20) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
 import { useEffect, useState } from 'react';
-import { FONT_SCALES } from '../../domain/fontScale';
-import { setFontScale, setPopupStyle, useLayoutPrefs, windowMode } from '../../app/layoutPrefs';
+import { setPopupStyle, useLayoutPrefs, windowMode } from '../../app/layoutPrefs';
 import { detectDeviceKind } from '../../app/deviceKind';
 import { setEnableScrollNav, setStartupScope, setToggle, useNav } from '../../app/nav';
 import { isDarkMode, readThemeMode, setThemeMode, THEME_CHANGED_EVENT, type ThemeMode } from '../../app/theme';
@@ -17,6 +16,7 @@ import { useToday } from '../../ui/useToday';
 import { useShortcutTitle } from '../../app/keys';
 import { DECOR_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, THEME_OPTIONS, useOptionTarget } from '../../app/optionShortcuts';
 import { Choices, Section, ToggleRow } from './parts';
+import FontSizeRows from './FontSizeRows';
 
 const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
   pc: "'오른쪽 칸'은 화면을 나눠 오른쪽에 띄웁니다(왼쪽 화면을 보며 쓸 수 있다). '팝업창'은 창마다 브라우저 새 창으로 띄워 브라우저 밖·다른 모니터로 옮길 수 있습니다 - 자리와 크기는 창마다 기억합니다.",
@@ -25,7 +25,7 @@ const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
 
 export default function ViewTab() {
   const nav = useNav();
-  const { fontScale, popupStyle } = useLayoutPrefs();
+  const { popupStyle } = useLayoutPrefs();
   const [device] = useState(detectDeviceKind);
   // 화면 밝기는 이 기기에만 (localStorage) - 단축키로 바꿔도 창에 보이게 알림을 듣는다
   const [themeMode, setThemeModeState] = useState<ThemeMode>(readThemeMode);
@@ -91,15 +91,19 @@ export default function ViewTab() {
         />
       </Section>
 
-      {/* 크기는 눈으로 보고 정하는 것이라 단계마다 그 크기로 적어 둔다(V4) */}
-      <Section id="fontScale" title="글자 크기">
-        <Choices
-          name="fontScale"
-          option="fontScale"
-          value={fontScale}
-          onChange={setFontScale}
-          options={FONT_SCALES.map((s) => ({ value: s.id, label: s.label, style: { fontSize: `calc(0.75rem * ${s.percent} / 100)` } }))}
-        />
+      {/* 화면마다 따로 (메모 요청 #145 - 옛 다섯 단계). 맨 위 머리줄은 늘 100% - index.css [data-fixed-font] */}
+      <Section
+        id="fontScale"
+        title="글자 크기"
+        desc={
+          <>
+            화면마다 따로 기억합니다. <strong className="text-slate-600">− / +</strong>는 누를 때마다 5%씩, <strong className="text-slate-600">초기화</strong>는 100%입니다. 맨 위
+            머리줄은 늘 100%로 둡니다. 단축키 탭의 <strong className="text-slate-600">글자 작게 / 크게 / 초기화</strong>로 키를 정하면 지금 보는 화면이 바뀝니다
+            {device === 'pc' && ' (PC의 한눈에 화면은 볼 것이 많아 100%가 다른 화면의 90% 크기)'}.
+          </>
+        }
+      >
+        <FontSizeRows />
       </Section>
 
       <Section
