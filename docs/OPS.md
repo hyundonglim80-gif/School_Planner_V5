@@ -29,6 +29,14 @@ npx firebase firestore:databases:get "(default)" --project schoolplannerv3
 - GitHub 룰셋 'main 지키기'(id `26676723`): 기본 브랜치의 **강제 푸시·지우기만** 막는다. 검사 필수는 걸지 않는다 - 메모 자동 요청의 바로 합치기가 막힌다. 끄려면 저장소 Settings → Rules → Rulesets.
 - Dependabot 보안 알림·자동 고침을 켰다 - 고침 PR이 저절로 열려도 합치기 전에는 앱에 닿지 않는다. 합칠 때는 CI를 본다.
 - App Check는 쓰지 않는다(PLAN 5장 'P22-6 App Check').
+- Dependabot 알림이 남아도 `firebase-tools`(명령 도구) 밑이면 **강제 고침(`npm audit fix --force`)·도구 밑 판 바꿔 끼우기를 그냥 받지 않는다** - force는 도구를 옛 판으로 내리고, minimatch 바꿔 끼우기는 배포 파일을 0개로 만들었다(PLAN 5장 'P26-2 의존성 경고'). 바꾸면 `listFiles('dist')` 수부터 본다.
+
+## 보안 헤더·CSP (2026-11-11 막기 - P26-2)
+
+- 값은 `firebase.json` hosting `source: **` 한 곳. **CSP는 막기**(`Content-Security-Policy`) - 빠진 출처는 그 기능을 깨뜨린다(그림이 안 뜨거나 연결이 막힌다).
+- 위반은 앱이 오류 보고 '[CSP] <칸> <출처>'로 올린다(개발자 탭 오류 기록) - 사용자가 '사진 고르기·드라이브·캘린더가 안 된다'를 알리면 여기부터 본다. 고치기 = 그 출처를 그 칸에 더하고 main 푸시(저절로 배포).
+- 급하면 되돌리기: 키를 `Content-Security-Policy-Report-Only`로 한 줄(막지 않고 보고만) - `app/securityHeaders.test.ts`·`tools/inspect-headers.mjs`도 함께 바꾼다.
+- 확인: 운영 `SITE=https://schoolplanner-v5.web.app/ node tools/inspect-headers.mjs`(헤더 + 로그인 단추 → 구글 로그인 창까지 위반 0). 개발 서버는 CSP를 내지 않는다 - 화면 점검은 미리 보기(에뮬레이터 주소만 더한 값)로.
 
 ## 되찾기 (복원은 새 데이터베이스로만)
 
