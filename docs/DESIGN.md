@@ -164,7 +164,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 - `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` · 알림 소리 길이 `alarmSound`(초 - 0 한 번·기본 10·-1 확인할 때까지, P10-1) · 색 테마 `palette`(P20-1 - 기본 `default`, 모르는 id도 그대로 둔다 - 그리기만 기본) · 색약 배려 `cvd`(P20-2 - 기본 끔) · 꾸미기 `decor`(P20-3 - 기본 `off`, 모르는 값도 그대로 둔다 - 그리기만 끄기) ·
   우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 학급마다 고른 사진 폴더 `photoFolders`(V4 backup_config).
-- `import`: V4 가져오기 기록(8-1) - 설정이 아니라 따로 둔다(설정 맞추기가 건드리지 않는다).
+- `import`: V4 가져오기 기록(8-1) - 11-11 P31에 가져오기를 뗐다, 옛 계정에 남은 문서는 읽지 않는다(백업에도 담지 않는다).
 - `backupLog`: 드라이브 자동 백업의 마지막 기록 `{ lastAt, lastName, lastSummary, folderLink }`(P8-3 - 백업이 적는다, 고르는 것은 common.autoBackup) · seed는 1년 뒤로 심는다.
 - `sheets`: 이 공간의 V5 구글 시트 파일 `{ spreadsheetId }`(P8-3 - 공간마다, V4·V3의 `backup_config` 시트와 다른 파일).
 - `purged-YYYY-MM`: 그달 영구로 지운 항목 `{ <컬렉션>: [id…], updatedAt, v }`(P22-3 - 개인·그룹 공간 모두, 달은 UTC. `writeOps`가 같은 묶음에 `arrayUnion`으로 적는다, 6-2 '영구 지우기').
@@ -304,7 +304,6 @@ src/
   domain/     순수 함수 - V4 lib에서 옮긴 것(테스트째): forward·lessons·classDays·semester·progress·seating·draw·groups·
               entryTable·checkLines·hashLabels·quickInput·labelTree·linkPreview·neis·csv·print·dateUtils …
   features/   기능마다 폴더 - 화면·창·훅·테스트. 설명서 장은 features/help/chapters/
-  import/v4/  V4 가져오기. 옛 모양 읽기(readEventList 등)는 여기에만 둔다
   ui/         공통 부품: ModalShell·PopupFrame·SidePanelFrame·칩·카드·SlotCombobox·MiniCalendarPicker …
 ```
 
@@ -351,7 +350,10 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 
 **꾸미기**(P20-3 - 색이 아니라 그림): `ui/decorArt` 코드로 그린 SVG(번들 안 - 오프라인에서도, 파일이 아니라 sw.js 목록과 상관없다) · 빛깔은 `index.css` `.decor-art` 변수(밝기만 따른다 - 색 테마와 따로). 머리줄 뒤 띠는 머리줄의 첫 자식 `-z-10`(바탕 위·글자 밑)이고 옅은 빛깔로 덮어쓴다, 강조색 SP5만 뒤를 머리줄 바탕으로 가린다, `html.hc`면 쉰다. 빛깔·세기를 바꾸면 `tools/inspect-decor.mjs`(띠의 가장 진한 빛깔을 섞은 맨 글자 대비).
 
-## 8. V4 → V5 가져오기 (`src/import/v4`)
+## 8. V4 → V5 가져오기 (`src/import/v4` - **11-11 P31에 뗐다**)
+
+> 사용자 'V5와 V4의 연결 및 자료 호환을 끊어줘'(11-11): 코드·점검·규칙의 V4 자리를 모두 지웠다. 이 장은 **이미 가져온 문서를 읽을 때의 참고**로만 남긴다 -
+> 가져온 문서의 `src`(V4 자리·id·지문)와 아래 짝 표가 그 문서가 어디서 왔는지 알려 준다(구글 캘린더 이어 맡기 `spIdOf`·새 학년도 옛 V4 과목·휴지통 첨부가 `src`를 본다).
 
 ### 8-1. 원칙
 - **한 방향**: V4를 읽기만 하고 V5에만 쓴다. V3·V4 자료와 코드는 손대지 않는다.
@@ -407,7 +409,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 | 자료 층 테스트(에뮬레이터) `npm run test:data` | 자료 층을 고칠 때. 저장 도우미·되돌리기·기기 사본·가져오기(`src/**/*.emu.test.ts`, `vitest.data.config.ts`). 에뮬레이터를 켠 곳에서(CI는 단위만) |
 | `tools/check-rules.mjs` | 규칙을 고칠 때마다. V4 35개 + V5 |
 | 크롬 점검 `tools/inspect-*.mjs` | 세션마다 바뀐 부분만. **`data-*`로만 찾는다**(화면 글자가 아니라). 심은 자료는 끝에 되돌린다. PC 1400px 크롬 하나. 화면이 없는 자료 층은 앱 모듈을 `import('/src/…')`로 불러 store를 읽는다(`inspect-data`·`inspect-mirror`). 서버에 쓰는 것은 '그 문서만 바뀌었나'를 다른 문서의 `updatedAt`으로 본다(`inspect-labels`) |
-| 가져오기 점검 | 가져오기 세션마다: V4 seed → 가져오기 → 종류·수 대조 → 두 번째 가져오기는 '바뀐 것 0'. 순수 규칙은 단위(`import/v4/*.test`), 규칙을 지나는지는 자료 층(`import.emu.test`), 화면은 `tools/inspect-import-labels.mjs`(V4 문서를 고쳐 심고 끝에 V4·V5 모두 되돌린다). seed는 계정마다 `settings/import`에 띠 닫음을 심는다(띠가 다른 점검을 밀어내지 않게) |
+| 가져오기 점검 | 11-11 P31에 가져오기와 함께 지웠다(`import/v4/*.test`·`import.emu.test`·`group.emu.test`·`inspect-import-*` 다섯). |
 | 설명서 점검 `tools/inspect-manual.mjs` | 설명서를 고치거나 자리를 옮길 때. 68주제마다 설명서가 말하는 자리가 있나·주제가 열리나, 장 파일의 새 주제는 점검에도 더한다 |
 | `PARITY.md` | 세션 끝마다 그 세션이 끝낸 기능을 체크 |
 
@@ -447,7 +449,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 - 처음 열기는 기기마다 한 번(또는 '이 기기 사본 다시 받기')이다. 다시 열 때는 사본에서 곧바로 그리고 바뀐 것만 받는다(DESIGN 6장).
 - 휴대폰 390px·다크 모드는 `tools/inspect-mobile.mjs`(넘침·휴대폰 틀·다크 대비).
 - **P25-1 첫 화면 JS 나눠 받기**(11-08 클라우드 컨테이너 - 같은 곳에서 고치기 전 빌드와 견줌): 하루 화면이 뜰 때까지 받은 JS gzip **439KB(46개) → 375KB(62개)**.
-  re2js(Firestore 파이프라인 정규식 엔진 - firebase 묶음 154 → 110KB, `src/data/re2jsStub.ts`) · V4 가져오기 셈(띠의 '가져오기'를 누를 때) · 드라이브 백업 한 번 ·
+  re2js(Firestore 파이프라인 정규식 엔진 - firebase 묶음 154 → 110KB, `src/data/re2jsStub.ts`) · 드라이브 백업 한 번 ·
   휴지통 자동 비우기(켰을 때) · 꾸미기 그림(켰을 때)을 첫 화면에서 뺐다. 파일이 는 것은 나눠 받은 것끼리 함께 쓰는 셈이 따로 조각이 된 것 -
   같은 물결에 나란히 받아 첫 그림은 같다(작은 자료 계정 6번씩 번갈아: 하루 화면 568 → 562ms).
   남은 후보(각 gzip 2~3KB - 부품을 나누는 손이 커서 두었다): 구글 캘린더 자동(모든 쓰기를 지켜봐야 한다) · 여러 개 고르기 줄 · 📅 작은 달력 · 대화·쪽지 받기.
