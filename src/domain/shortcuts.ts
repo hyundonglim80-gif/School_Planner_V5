@@ -111,6 +111,11 @@ export interface ShortcutAction {
    * 화살표가 아닌 키로 바꾸면 이 규칙은 적용되지 않는다.
    */
   pairArrows?: boolean;
+  /**
+   * 고정 단축키 (메모 요청 #149 - 다른 프로그램에서도 같은 뜻으로 써서 키만 보고 기능을 알 수 있는 것): 바꾸거나 해제할 수 없다.
+   * 값 = 바꾸지 않는 까닭(단축키 탭·설명서의 '고정' 묶음에 보인다). 계정에 남은 옛 키는 resolveBindings가 보지 않는다.
+   */
+  fixed?: string;
 }
 
 const b = (key: string, mods: Partial<Omit<Binding, 'key'>> = {}): Binding => ({
@@ -122,11 +127,18 @@ const b = (key: string, mods: Partial<Omit<Binding, 'key'>> = {}): Binding => ({
 });
 
 export const SHORTCUT_ACTIONS: ShortcutAction[] = [
-  { id: 'search', label: '검색 열기', group: '열기', def: b('F', { ctrl: true }) },
+  // 검색·인쇄·되돌리기는 고정 (메모 요청 #149 - 거의 모든 프로그램이 같은 키를 같은 뜻으로 쓴다)
+  { id: 'search', label: '검색 열기', group: '열기', def: b('F', { ctrl: true }), fixed: '거의 모든 프로그램에서 Ctrl + F가 찾기라 바꾸지 않습니다.' },
   // 이 화면 인쇄 (V5 - 주간·년간의 🖨️ 단추 대신, MENU.md 4장). 인쇄할 수 없는 화면에서는 브라우저 인쇄
-  { id: 'print', label: '이 화면 인쇄', group: '열기', def: b('P', { ctrl: true }) },
+  { id: 'print', label: '이 화면 인쇄', group: '열기', def: b('P', { ctrl: true }), fixed: '거의 모든 프로그램에서 Ctrl + P가 인쇄라 바꾸지 않습니다.' },
   // 되돌리기 (V5 - 지우기·옮기기·완료 등). 글 칸 안에서는 글 되돌리기(브라우저)가 먼저라 글 칸 밖에서만 받는다
-  { id: 'undo', label: '되돌리기 (글 칸 밖에서)', group: '쓰는 칸', def: b('Z', { ctrl: true }) },
+  {
+    id: 'undo',
+    label: '되돌리기 (글 칸 밖에서)',
+    group: '쓰는 칸',
+    def: b('Z', { ctrl: true }),
+    fixed: '거의 모든 프로그램에서 Ctrl + Z가 되돌리기라 바꾸지 않습니다. 글 칸 안에서는 글 되돌리기가 먼저입니다.',
+  },
   // 쓰는 칸(메모·기록) 글 칸에서 커서가 있는 줄 앞에 ☐ (19번 U9). 커서가 글 칸에 있을 때만 동작한다
   { id: 'checklist', label: '체크리스트 (쓰는 칸 줄 앞에 ☐)', group: '쓰는 칸', def: b('L', { ctrl: true, shift: true }) },
   // 보고 있는 칸 하나만 닫기 (10-26 사용자 요청 - 탭의 ×와 같다, ESC는 모두). Ctrl+W는 브라우저가 탭을 닫아 Alt+W. 글 칸 안에서도 된다(Alt)
@@ -200,26 +212,6 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'fontReset', label: '글자 크기 초기화 (지금 화면 100%)', group: '메뉴 열기', def: b('') },
 ];
 
-/** 바꾸지 않는 단축키. 목록에는 보여주되 고칠 수 없다. */
-export interface FixedShortcut {
-  label: string;
-  keys: string;
-  why: string;
-}
-
-export const FIXED_SHORTCUTS: FixedShortcut[] = [
-  {
-    label: '오른쪽 칸(창·쓰는 칸) 모두 닫기 - 저장하지 않은 글이 있으면 먼저 묻습니다',
-    keys: 'ESC',
-    why: '거의 모든 프로그램이 같은 뜻으로 쓰는 키라 바꾸지 않습니다.',
-  },
-  {
-    label: '저장 (일정·메모·알림장·출석부 칸, 조사표, 그리고 저장 단추가 있는 모든 팝업)',
-    keys: 'Ctrl + S',
-    why: '글을 쓰던 칸·팝업 안에서 동작하는 키라 화면 전체 단축키와 따로 움직입니다.',
-  },
-];
-
 // ── 키 이름 ────────────────────────────────────────────────────────────
 
 const KEY_LABEL: Record<string, string> = {
@@ -241,6 +233,35 @@ export function formatBinding(binding: Binding): string {
   parts.push(KEY_LABEL[binding.key] || binding.key);
   return parts.join(' + ');
 }
+
+// ── 고정 단축키 ────────────────────────────────────────────────────────
+
+/** 바꾸지 않는 단축키. 목록에는 보여주되 고칠 수 없다. */
+export interface FixedShortcut {
+  /** 기능 목록에 있는 고정 단축키면 그 id (ESC·Ctrl+S는 없음) */
+  id?: ShortcutId;
+  label: string;
+  keys: string;
+  why: string;
+}
+
+/** 고정 단축키인 기능 (메모 요청 #149) - 단축키 탭·설명서는 기능 묶음이 아니라 '고정'에 보인다 */
+export const isFixedShortcut = (id: string): boolean => SHORTCUT_ACTIONS.some((a) => a.id === id && !!a.fixed);
+
+/** ESC·Ctrl+S(키 처리가 따로) 다음 기능 목록의 고정 단축키(검색·인쇄·되돌리기) - 키 글은 기본 키에서 */
+export const FIXED_SHORTCUTS: FixedShortcut[] = [
+  {
+    label: '오른쪽 칸(창·쓰는 칸) 모두 닫기 - 저장하지 않은 글이 있으면 먼저 묻습니다',
+    keys: 'ESC',
+    why: '거의 모든 프로그램이 같은 뜻으로 쓰는 키라 바꾸지 않습니다.',
+  },
+  {
+    label: '저장 (일정·메모·알림장·출석부 칸, 조사표, 그리고 저장 단추가 있는 모든 팝업)',
+    keys: 'Ctrl + S',
+    why: '글을 쓰던 칸·팝업 안에서 동작하는 키라 화면 전체 단축키와 따로 움직입니다.',
+  },
+  ...SHORTCUT_ACTIONS.filter((a) => a.fixed).map((a) => ({ id: a.id, label: a.label, keys: formatBinding(a.def), why: a.fixed! })),
+];
 
 /** 화살표 위/아래를 짝으로 보는 기능은 '↑ / ↓' 로 보여준다 */
 export function formatActionBinding(action: ShortcutAction, binding: Binding): string {
@@ -310,19 +331,20 @@ export function matchesEvent(
 
 export type ShortcutOverrides = Partial<Record<ShortcutId, Binding>>;
 
-/** 기본값 위에 사용자가 바꾼 것을 덮는다 */
+/** 기본값 위에 사용자가 바꾼 것을 덮는다 - 고정 단축키(#149)는 늘 기본 키(예전에 바꿔 둔 키는 보지 않는다) */
 export function resolveBindings(overrides: ShortcutOverrides = {}): Record<ShortcutId, Binding> {
   const out = {} as Record<ShortcutId, Binding>;
   for (const action of SHORTCUT_ACTIONS) {
-    out[action.id] = overrides[action.id] || action.def;
+    out[action.id] = (!action.fixed && overrides[action.id]) || action.def;
   }
   return out;
 }
 
-/** 고른 키 전부 → 기본값과 다른 것만 (나중에 기본값을 고치면 그대로 따라온다, V4) */
+/** 고른 키 전부 → 기본값과 다른 것만 (나중에 기본값을 고치면 그대로 따라온다, V4). 고정 단축키는 적지 않는다 */
 export function overridesFromBindings(bindings: Record<ShortcutId, Binding>): ShortcutOverrides {
   const out: ShortcutOverrides = {};
   for (const action of SHORTCUT_ACTIONS) {
+    if (action.fixed) continue;
     const cur = bindings[action.id];
     const def = action.def;
     if (cur.ctrl !== def.ctrl || cur.alt !== def.alt || cur.shift !== def.shift || cur.key !== def.key) out[action.id] = cur;
@@ -461,6 +483,7 @@ export function isShortcutId(id: string): id is ShortcutId {
  * 한 기능(·창 안 탭·내가 만든 것)에 키를 준다. 같은 자리(조합)를 쓰던 다른 것은 그 키를 뺀다(기능 = 없음, 그 밖 = 목록에서 빠짐) - 뺀 것 목록도 돌려준다.
  * 목록(단축키 탭)은 겹치면 저장을 막지만, 눌러서 정할 때는 '이 키를 여기에'가 뜻이 분명하다(PLAN 5장 P18).
  * 키가 빈 조합을 주면 그것의 단축키를 지운다.
+ * 고정 단축키(#149)는 바꾸지도 빼지도 않는다 - 그 키를 다른 것에 주는 것은 recordKeyIssue가 먼저 막는다.
  */
 export function assignBinding(
   bindings: Record<ShortcutId, Binding>,
@@ -470,6 +493,7 @@ export function assignBinding(
 ): { bindings: Record<ShortcutId, Binding>; extra: ExtraBindings; cleared: AnyShortcutId[] } {
   const next = { ...bindings };
   const nextExtra: ExtraBindings = { ...extra };
+  if (isFixedShortcut(id)) return { bindings: next, extra: nextExtra, cleared: [] };
   let action: ShortcutAction | undefined;
   if (isExtraShortcutId(id)) {
     if (binding.key) nextExtra[id] = binding;
@@ -482,7 +506,7 @@ export function assignBinding(
   const cleared: AnyShortcutId[] = [];
   if (mine.size === 0) return { bindings: next, extra: nextExtra, cleared };
   for (const other of allBindings(next, nextExtra)) {
-    if (other.id === id || !slotsOf(other.action, other.binding).some((s) => mine.has(s))) continue;
+    if (other.id === id || other.action?.fixed || !slotsOf(other.action, other.binding).some((s) => mine.has(s))) continue;
     if (isExtraShortcutId(other.id)) delete nextExtra[other.id];
     else next[other.id] = b('');
     cleared.push(other.id);
@@ -495,20 +519,32 @@ const TEXT_BOX_KEYS: Readonly<Record<string, string>> = { C: '복사', V: '붙�
 /** 브라우저가 먼저 가져가는 Ctrl 키 - 앱까지 오지 않는다 */
 const BROWSER_KEYS: Readonly<Record<string, string>> = { W: '탭 닫기', T: '새 탭', N: '새 창' };
 
+/** 고정 단축키인 기능을 고르면(눌러서 정하기) 까닭 글 - 아니면 null (#149) */
+export function fixedShortcutIssue(id: string): string | null {
+  const action = SHORTCUT_ACTIONS.find((a) => a.id === id && a.fixed);
+  return action ? `'${action.label}'는 고정 단축키(${formatBinding(action.def)})라 바꿀 수 없습니다.` : null;
+}
+
 /**
  * 받지 않는 키 - 까닭 글. 받을 수 있으면 null (ESC는 기록 취소라 여기까지 오지 않는다).
- * id = 그 키를 줄 기능 - 그 기능의 기본 키는 받는다(되돌리기는 Ctrl + Z로 돌아갈 수 있어야 한다).
+ * id = 그 키를 줄 기능 - 그 기능의 기본 키는 받는다. 고정 단축키(검색·인쇄·되돌리기 - #149)는 그 기능도 바꿀 수 없고, 그 키를 다른 것에 줄 수도 없다.
  */
 export function recordKeyIssue(binding: Binding, id?: AnyShortcutId): string | null {
+  if (id) {
+    const fixed = fixedShortcutIssue(id);
+    if (fixed) return fixed;
+  }
   const def = SHORTCUT_ACTIONS.find((a) => a.id === id)?.def;
   if (def && formatBinding(def) === formatBinding(binding)) return null;
   if (binding.key === 'Escape') return 'ESC는 바꿀 수 없는 키입니다.';
-  if (!binding.ctrl || binding.alt || binding.shift) return null;
-  if (binding.key === 'S') return 'Ctrl + S는 저장 키라 쓸 수 없습니다.';
-  const text = TEXT_BOX_KEYS[binding.key];
+  const ctrlOnly = binding.ctrl && !binding.alt && !binding.shift;
+  if (ctrlOnly && binding.key === 'S') return 'Ctrl + S는 저장 키라 쓸 수 없습니다.';
+  const text = ctrlOnly ? TEXT_BOX_KEYS[binding.key] : undefined;
   if (text) return `Ctrl + ${binding.key}는 글 칸의 ${text} 키라 쓸 수 없습니다.`;
-  const browser = BROWSER_KEYS[binding.key];
+  const browser = ctrlOnly ? BROWSER_KEYS[binding.key] : undefined;
   if (browser) return `Ctrl + ${binding.key}는 브라우저가 먼저 가져가(${browser}) 앱까지 오지 않습니다.`;
+  const taken = binding.key ? SHORTCUT_ACTIONS.find((a) => a.fixed && formatBinding(a.def) === formatBinding(binding)) : undefined;
+  if (taken) return `${formatBinding(binding)}는 고정 단축키(${taken.label})라 쓸 수 없습니다.`;
   return null;
 }
 

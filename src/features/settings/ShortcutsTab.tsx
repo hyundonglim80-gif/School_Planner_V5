@@ -59,7 +59,6 @@ export const NO_BUTTON: ReadonlySet<ShortcutId> = new Set<ShortcutId>([
   'fontSmaller',
   'fontReset',
   'fontLarger',
-  'undo',
   'checklist',
   'scopePrev',
   'scopeNext',
@@ -183,6 +182,8 @@ export default function ShortcutsTab({
     out.set(PRESS_GROUP, []);
     const tabOrder = new Map(TAB_SHORTCUTS.map((t, i) => [t.id, i]));
     for (const e of allBindings(bindings, extra)) {
+      // 고정 단축키(검색·인쇄·되돌리기 - #149)는 아래 '고정 단축키'에
+      if (e.action?.fixed) continue;
       if (!e.binding.key && !(e.action && NO_BUTTON.has(e.action.id))) continue;
       out.get(e.action ? e.action.group : isPressShortcutId(e.id) ? PRESS_GROUP : isCustomShortcutId(e.id) ? CUSTOM_GROUP : TAB_GROUP)!.push(e);
     }
@@ -255,8 +256,8 @@ export default function ShortcutsTab({
             <>단축키를 더하는 것은 PC에서 합니다(⌨️ 단축키 설정 - 단추를 눌러 고른다). 휴대폰 키는 PC와 따로 저장됩니다.</>
           )}
           <br />
-          아래에는 <strong className="text-slate-800">키가 걸린 것만</strong> 보입니다(누를 단추가 없는 되돌리기·이전 화면 같은 기능은 키가 없어도 보여 <strong className="text-slate-800">키 정하기</strong>로 정합니다).
-          누르는 즉시 저장되고, 해제한 기능은 단추·메뉴로 그대로 씁니다.
+          아래에는 <strong className="text-slate-800">키가 걸린 것만</strong> 보입니다(누를 단추가 없는 이전 화면·체크리스트 같은 기능은 키가 없어도 보여 <strong className="text-slate-800">키 정하기</strong>로 정합니다).
+          누르는 즉시 저장되고, 해제한 기능은 단추·메뉴로 그대로 씁니다. 검색·인쇄·되돌리기처럼 어디서나 같은 키는 맨 아래 <strong className="text-slate-800">고정 단축키</strong>입니다.
         </div>
       </div>
 
@@ -283,12 +284,12 @@ export default function ShortcutsTab({
       </div>
 
       {/* 바꾸지 않는 것들. 목록에서 빠지면 "없는 기능"으로 보이므로 까닭과 함께 보여 준다 */}
-      <div className="px-5 py-4">
+      <div data-shortcut-fixed-list className="px-5 py-4">
         <h3 className="text-sm font-black text-slate-800 mb-0.5">고정 단축키</h3>
-        <p className="text-xs text-slate-400 mb-2">아래는 바꿀 수 없습니다.</p>
+        <p className="text-xs text-slate-400 mb-2">아래는 바꿀 수 없습니다. 다른 프로그램에서도 같은 뜻으로 쓰는 키라 그대로 둡니다.</p>
         <div className="space-y-2">
           {FIXED_SHORTCUTS.map((fixed) => (
-            <div key={fixed.label} className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5">
+            <div key={fixed.label} data-shortcut-fixed={fixed.id ?? fixed.keys} className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-sm font-bold text-slate-500 min-w-0">{fixed.label}</span>
                 <kbd className="px-2 py-1 shrink-0 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-500">{fixed.keys}</kbd>

@@ -3,7 +3,7 @@
 //   2) 표시 없는 단추(수업 접기 ▼)는 '만들 수 없습니다', 칸을 펴는 단추(계정 사진·⋮)는 아무 말 없음 · ⋮ → 시간표 = '고른 것: 시간표'(누른 것은 그대로 동작 - 시간표 창이 열린다)
 //   3) 완료 → 누른 키는 앱 단축키로 가지 않는다(Shift+2 = 주간으로 안 감) → Ctrl+Alt+T → 저장 → 계정 settings/pc · 환경설정 단축키 탭이 그 줄을 짚는다
 //   4) 창을 닫고 Ctrl+Alt+T = 시간표 창 · ⋮ 메뉴 시간표 옆 키 · 사용 설명서 단축키 표
-//   5) 겹친 키: 머리줄 🗑️ → Ctrl+F → '검색 열기'에서 뺀다는 안내 → 저장 → search = 없음
+//   5) 겹친 키: 머리줄 🗑️ → Ctrl+F = 고정 단축키라 막힘(#149) → Shift+5 → '메모 화면'에서 뺀다는 안내 → 저장 → scopeMemo = 없음
 //   6) ESC = 기록 취소(열린 창은 그대로, 키는 그대로)
 //   7) 창 안 탭(P18-2): ⋮ → 환경설정 → 알림 탭 = '고른 것: 환경설정 → 알림' → Ctrl+Alt+N → 계정 tabShortcuts · '내가 만든 단축키' 줄 ·
 //      열린 환경설정에서 그 키 = 알림 탭(다른 탭을 눌렀어도 다시) · 탭 툴팁 · 설명서 표 · 🗑️ → 메모 탭 = 휴지통 메모 탭으로 열림
@@ -121,14 +121,18 @@ try {
   await page.click(sel('header-trash'));
   r.check(await waitFor(page.locator(sel('shortcut-record-picked', 'trash'))), "머리줄 🗑️ = '고른 것: 휴지통 열기 / 닫기'");
   await page.click(sel('shortcut-record-done'));
+  // 고정 단축키(검색 Ctrl + F - #149)의 키는 줄 수 없다
   await page.keyboard.press('Control+KeyF');
+  const fixedIssue = (await page.locator(sel('shortcut-record-issue')).textContent().catch(() => '')) ?? '';
+  r.check(fixedIssue.includes('고정 단축키(검색 열기)') && (await page.locator(sel('shortcut-record-save')).isDisabled()), `Ctrl+F = 고정 단축키라 저장을 막는다 (${fixedIssue})`);
+  await page.keyboard.press('Shift+Digit5');
   const conflict = await page.locator(sel('shortcut-record-conflict')).textContent().catch(() => '');
-  r.check(conflict.includes('검색 열기'), `저장 전에 알린다 (${conflict})`);
+  r.check(conflict.includes('메모 화면'), `저장 전에 알린다 (${conflict})`);
   await page.click(sel('shortcut-record-save'));
-  const moved = await serverUntil(serverPc, (d) => d.shortcutOverrides?.trash?.key === 'F');
-  r.check(moved.shortcutOverrides?.trash?.key === 'F' && moved.shortcutOverrides?.search?.key === '', `휴지통 = Ctrl+F, 검색 열기 = 없음 (${JSON.stringify(moved.shortcutOverrides)})`);
+  const moved = await serverUntil(serverPc, (d) => d.shortcutOverrides?.trash?.key === '5');
+  r.check(moved.shortcutOverrides?.trash?.key === '5' && moved.shortcutOverrides?.scopeMemo?.key === '', `휴지통 = Shift+5, 메모 화면 = 없음 (${JSON.stringify(moved.shortcutOverrides)})`);
   r.check(await waitFor(page.locator(`${sel('shortcut-row', 'trash')}[data-shortcut-row-focus]`)), '단축키 탭이 휴지통 줄을 짚는다');
-  r.check((await page.locator(sel('shortcut-row', 'search')).count()) === 0, '단축키 탭에서 검색 열기 줄이 빠졌다 (키가 없다)');
+  r.check((await page.locator(sel('shortcut-row', 'scopeMemo')).count()) === 0, '단축키 탭에서 메모 화면 줄이 빠졌다 (키가 없다)');
 
   r.section('창 안 탭 (P18-2) - 환경설정 → 알림');
   await page.evaluate(() => window.sp5.closeAllWindows());

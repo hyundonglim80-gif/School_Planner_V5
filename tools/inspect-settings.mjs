@@ -131,15 +131,19 @@ try {
   await b.page.locator('main').click({ position: { x: 5, y: 5 } });
   await b.page.keyboard.press('Control+Alt+KeyK');
   r.check(await waitFor(b.page.locator(sel('screen', 'memo'))), '다른 창에서 그 키로 메모 화면');
-  await a.page.click(sel('shortcut-clear', 'search'));
-  const sc1 = await serverUntil(serverPc, (d) => d.shortcutOverrides?.search?.key === '');
-  r.check(sc1.shortcutOverrides?.search?.key === '' && (await a.page.locator(sel('shortcut-row', 'search')).count()) === 0, '해제 = 바로 저장 · 그 줄이 빠진다');
+  r.check(
+    (await a.page.locator(sel('shortcut-row', 'search')).count()) === 0 && (await a.page.locator(sel('shortcut-fixed', 'search')).count()) === 1,
+    '고정 단축키(검색 Ctrl + F - #149)는 줄이 아니라 맨 아래 고정 묶음에',
+  );
+  await a.page.click(sel('shortcut-clear', 'scopeYear'));
+  const sc1 = await serverUntil(serverPc, (d) => d.shortcutOverrides?.scopeYear?.key === '');
+  r.check(sc1.shortcutOverrides?.scopeYear?.key === '' && (await a.page.locator(sel('shortcut-row', 'scopeYear')).count()) === 0, '해제 = 바로 저장 · 그 줄이 빠진다');
   a.dialogs.answer = true;
   await a.page.click(sel('shortcut-reset'));
   a.dialogs.answer = false;
   const sc2 = await serverUntil(serverPc, (d) => !d.shortcutOverrides);
   r.check(!sc2.shortcutOverrides, '기본값으로(묻고 바로) = 계정에서 칸이 빠진다');
-  r.check(await waitFor(a.page.locator(sel('shortcut-row', 'search'))), '검색 줄이 돌아왔다');
+  r.check(await waitFor(a.page.locator(sel('shortcut-row', 'scopeYear'))), '년간 화면 줄이 돌아왔다');
 
   r.section('시작 화면');
   await a.page.click(sel('settings-tab', 'view'));

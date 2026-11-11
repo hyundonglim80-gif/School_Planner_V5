@@ -805,7 +805,11 @@ try {
     r.check(await waitFor(async () => (await count(sel('shortcut-row'))) > 15, 5000), "환경설정 '단축키' 탭 - 키가 걸린 것만 (P28-1)");
     r.check((await count(sel('shortcut-row', 'timetable'))) === 0, '키가 없는 기능(시간표)은 줄이 없다');
     r.check((await count(sel('shortcut-change', 'scopeDay'))) === 1 && (await count(sel('shortcut-clear', 'scopeDay'))) === 1, '줄마다 키 바꾸기·해제');
-    r.check((await count(sel('shortcut-change', 'undo'))) === 1, '누를 단추가 없는 기능(되돌리기)도 줄이 있다');
+    r.check((await count(sel('shortcut-change', 'scopePrev'))) === 1, '누를 단추가 없는 기능(이전 화면)도 줄이 있다');
+    r.check(
+      (await count(sel('shortcut-row', 'undo'))) === 0 && (await count(sel('shortcut-fixed', 'undo'))) === 1 && (await count(sel('shortcut-fixed', 'search'))) === 1,
+      '고정 단축키(되돌리기·검색 - #149)는 줄이 아니라 맨 아래 고정 묶음에',
+    );
     r.check((await count(sel('shortcut-reset'))) === 1, '기본값으로');
     r.check((await count(sel('shortcut-save'))) === 0, '저장 단추 없음 (누르는 즉시)');
     r.check((await count(sel('shortcut-record-start'))) === 1, "맨 위 '⌨️ 단축키 설정' - 눌러서 정하기 (PC, 흐름은 inspect-shortcut-record)");

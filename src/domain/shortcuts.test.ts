@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   SHORTCUT_ACTIONS,
   FIXED_SHORTCUTS,
+  fixedShortcutIssue,
+  isFixedShortcut,
   eventKeyOf,
   bindingFromEvent,
   matchesEvent,
@@ -134,9 +136,18 @@ describe('resolveBindings', () => {
   });
 
   it('바꾼 것만 덮어쓴다', () => {
-    const resolved = resolveBindings({ search: bind('K', { ctrl: true }) });
-    expect(resolved.search).toEqual(bind('K', { ctrl: true }));
+    const resolved = resolveBindings({ scopeMemo: bind('K', { ctrl: true }) });
+    expect(resolved.scopeMemo).toEqual(bind('K', { ctrl: true }));
     expect(resolved.datePrev).toEqual(bind('ArrowLeft', { ctrl: true }));
+  });
+
+  it('고정 단축키(#149 - 검색·인쇄·되돌리기)는 예전에 바꿔 둔 키가 있어도 기본 키다', () => {
+    const resolved = resolveBindings({ search: bind('K', { ctrl: true }), print: bind(''), undo: bind('U', { alt: true }) });
+    expect(resolved.search).toEqual(bind('F', { ctrl: true }));
+    expect(resolved.print).toEqual(bind('P', { ctrl: true }));
+    expect(resolved.undo).toEqual(bind('Z', { ctrl: true }));
+    // 저장할 때도 고정 단축키는 적지 않는다
+    expect(overridesFromBindings({ ...resolveBindings(), search: bind('K', { ctrl: true }) })).toEqual({});
   });
 });
 
@@ -146,9 +157,9 @@ describe('findConflicts - 겹치는 조합 찾기', () => {
   });
 
   it('같은 조합을 두 기능이 쓰면 잡아낸다', () => {
-    const conflicts = findConflicts(resolveBindings({ search: bind('ArrowLeft', { ctrl: true }) }));
+    const conflicts = findConflicts(resolveBindings({ help: bind('ArrowLeft', { ctrl: true }) }));
     expect(conflicts).toHaveLength(1);
-    expect(conflicts[0]).toContain('search');
+    expect(conflicts[0]).toContain('help');
     expect(conflicts[0]).toContain('datePrev');
   });
 
@@ -177,6 +188,15 @@ describe('목록 자체', () => {
   it('ESC는 고정 목록에 있고 바꿀 수 있는 목록에는 없다', () => {
     expect(FIXED_SHORTCUTS.some((f) => f.keys === 'ESC')).toBe(true);
     expect(SHORTCUT_ACTIONS.some((a) => a.def.key === 'Escape')).toBe(false);
+  });
+
+  it('고정 단축키 (#149) = ESC · Ctrl + S · 검색 Ctrl + F · 인쇄 Ctrl + P · 되돌리기 Ctrl + Z - 까닭과 함께', () => {
+    expect(FIXED_SHORTCUTS.map((f) => f.keys)).toEqual(['ESC', 'Ctrl + S', 'Ctrl + F', 'Ctrl + P', 'Ctrl + Z']);
+    expect(FIXED_SHORTCUTS.filter((f) => f.id).map((f) => f.id)).toEqual(['search', 'print', 'undo']);
+    for (const f of FIXED_SHORTCUTS) expect(f.why.length).toBeGreaterThan(0);
+    expect(isFixedShortcut('search')).toBe(true);
+    expect(isFixedShortcut('timetable')).toBe(false);
+    expect(isFixedShortcut('settings:notify')).toBe(false);
   });
 
   it('모든 기능에 이름과 묶음이 있다', () => {
@@ -233,11 +253,22 @@ describe('눌러서 정하기 (P18)', () => {
   });
 
   it('다른 기능이 쓰던 키면 그 기능에서 뺀다 (기본값이 있던 것은 없음으로 남는다)', () => {
-    const { bindings, cleared } = assignBinding(resolveBindings(), 'timetable', key('F', { ctrl: true }));
-    expect(cleared).toEqual(['search']);
-    expect(bindings.search.key).toBe('');
+    const { bindings, cleared } = assignBinding(resolveBindings(), 'timetable', key('5', { shift: true }));
+    expect(cleared).toEqual(['scopeMemo']);
+    expect(bindings.scopeMemo.key).toBe('');
     expect(findConflicts(bindings)).toEqual([]);
-    expect(overridesFromBindings(bindings)).toEqual({ timetable: key('F', { ctrl: true }), search: key('') });
+    expect(overridesFromBindings(bindings)).toEqual({ timetable: key('5', { shift: true }), scopeMemo: key('') });
+  });
+
+  it('고정 단축키(#149)는 바꾸지도 빼지도 않는다', () => {
+    const own = assignBinding(resolveBindings(), 'search', key('K', { ctrl: true }));
+    expect(own.bindings.search).toEqual(key('F', { ctrl: true }));
+    expect(own.cleared).toEqual([]);
+    expect(assignBinding(resolveBindings(), 'undo', key('')).bindings.undo).toEqual(key('Z', { ctrl: true }));
+    // 그 키를 다른 것에 주는 것은 recordKeyIssue가 막는다 - 여기까지 와도 고정 단축키에서 빼지 않는다
+    const other = assignBinding(resolveBindings(), 'timetable', key('P', { ctrl: true }));
+    expect(other.cleared).toEqual([]);
+    expect(other.bindings.print).toEqual(key('P', { ctrl: true }));
   });
 
   it('↑/↓ 짝 기능: Shift+↓를 다른 기능에 주면 Shift+↑ 주말 토글에서 뺀다', () => {
@@ -248,10 +279,10 @@ describe('눌러서 정하기 (P18)', () => {
   });
 
   it('제 키를 다시 주면 아무것도 빼지 않는다 · 빈 키 = 그 기능 단축키 지우기', () => {
-    expect(assignBinding(resolveBindings(), 'search', key('F', { ctrl: true })).cleared).toEqual([]);
-    const { bindings, cleared } = assignBinding(resolveBindings(), 'search', key(''));
+    expect(assignBinding(resolveBindings(), 'scopeMemo', key('5', { shift: true })).cleared).toEqual([]);
+    const { bindings, cleared } = assignBinding(resolveBindings(), 'scopeMemo', key(''));
     expect(cleared).toEqual([]);
-    expect(bindings.search.key).toBe('');
+    expect(bindings.scopeMemo.key).toBe('');
   });
 
   it('Ctrl+S·ESC는 받지 않는다, 나머지는 받는다', () => {
@@ -269,9 +300,22 @@ describe('눌러서 정하기 (P18)', () => {
     expect(recordKeyIssue(key('C'))).toBeNull();
   });
 
-  it('그 기능의 기본 키는 받는다 - 되돌리기는 Ctrl+Z로 돌아갈 수 있다', () => {
-    expect(recordKeyIssue(key('Z', { ctrl: true }), 'undo')).toBeNull();
-    expect(recordKeyIssue(key('Z', { ctrl: true }), 'search')).toMatch(/글 칸/);
+  it('그 기능의 기본 키는 받는다', () => {
+    expect(recordKeyIssue(key('5', { shift: true }), 'scopeMemo')).toBeNull();
+    expect(recordKeyIssue(key('Z', { ctrl: true }), 'timetable')).toMatch(/글 칸/);
+  });
+
+  it('고정 단축키(#149): 그 기능은 바꿀 수 없고(빈 키도) · 그 키는 다른 것에 줄 수 없다', () => {
+    expect(recordKeyIssue(key('K', { ctrl: true }), 'search')).toBe("'검색 열기'는 고정 단축키(Ctrl + F)라 바꿀 수 없습니다.");
+    expect(recordKeyIssue(key('F', { ctrl: true }), 'search')).toMatch(/고정/);
+    expect(recordKeyIssue(key(''), 'undo')).toMatch(/고정/);
+    expect(recordKeyIssue(key('F', { ctrl: true }), 'timetable')).toBe('Ctrl + F는 고정 단축키(검색 열기)라 쓸 수 없습니다.');
+    expect(recordKeyIssue(key('P', { ctrl: true }), 'settings:notify')).toMatch(/고정 단축키\(이 화면 인쇄\)/);
+    expect(recordKeyIssue(key('P', { ctrl: true }))).toMatch(/고정/);
+    // 수식키가 다르면 다른 키다
+    expect(recordKeyIssue(key('F', { ctrl: true, alt: true }), 'timetable')).toBeNull();
+    expect(fixedShortcutIssue('print')).toMatch(/Ctrl \+ P/);
+    expect(fixedShortcutIssue('timetable')).toBeNull();
   });
 
   it('Ctrl·Alt 없는 키는 글 칸 안에서 듣지 않는다고 알린다', () => {
@@ -348,9 +392,9 @@ describe('창 안 탭 키 (P18-2)', () => {
     const r = assignBinding(resolveBindings(), 'settings:notify', key('N', { alt: true }), tabs);
     expect(r.extra).toEqual({ 'settings:notify': key('N', { alt: true }) });
     expect(r.cleared).toEqual(['backup:import']);
-    const r2 = assignBinding(resolveBindings(), 'settings:notify', key('F', { ctrl: true }));
-    expect(r2.cleared).toEqual(['search']);
-    expect(r2.bindings.search.key).toBe('');
+    const r2 = assignBinding(resolveBindings(), 'settings:notify', key('5', { shift: true }));
+    expect(r2.cleared).toEqual(['scopeMemo']);
+    expect(r2.bindings.scopeMemo.key).toBe('');
     // 넘긴 것은 고치지 않는다
     expect(tabs).toEqual({ 'backup:import': key('N', { alt: true }) });
   });
@@ -413,7 +457,7 @@ describe('내가 만든 키 - 환경설정 값 (P28-2)', () => {
     const r = assignBinding(resolveBindings(), 'opt.popupStyle.popup', key('N', { alt: true }), extra);
     expect(r.extra).toEqual({ 'opt.popupStyle.popup': key('N', { alt: true }) });
     expect(r.cleared).toEqual(['settings:notify']);
-    const r2 = assignBinding(resolveBindings(), 'search', key('H', { alt: true }), { 'opt.contrast': key('H', { alt: true }) });
+    const r2 = assignBinding(resolveBindings(), 'timetable', key('H', { alt: true }), { 'opt.contrast': key('H', { alt: true }) });
     expect(r2.extra).toEqual({});
     expect(r2.cleared).toEqual(['opt.contrast']);
     expect(findConflicts(resolveBindings(), { 'opt.contrast': key('F', { ctrl: true }) })).toEqual([['search', 'opt.contrast']]);
