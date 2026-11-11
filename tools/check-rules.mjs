@@ -6,14 +6,14 @@
 //   npm run emu   (다른 창 - 이 저장소에서 켜야 이 저장소의 규칙을 읽는다)
 //   npm run check:rules
 //
-// 앞 35개는 V4 저장소의 같은 스크립트를 그대로 옮긴 것(V3·V4 경로 - P15-1에 '구성원 넣기' 셋을 더했다), 뒤는 V5(spaces …).
-// 규칙의 정본은 이 저장소다 - V4 것은 10-30까지의 옛 복사본(11-02부터 V5만, firestore.rules 맨 위).
+// 앞은 V3·V4 자리(users·groups·inviteCodes)가 모두 막혔는지(11-11 P31 - 규칙에서 지웠다. 예전 V4 35가지는 그 자리의 허락을 보았다)와
+// 공용 문서(sharedConfig·admin), 뒤는 V5(spaces …).
 //
 // ⚠️ 이 스크립트는 에뮬레이터만 건드린다. 운영 데이터와는 아무 상관이 없다.
 import { initializeApp, deleteApp } from 'firebase/app';
 import {
   getFirestore, connectFirestoreEmulator, doc, setDoc, getDoc, getDocs, updateDoc,
-  deleteDoc, collection, query, where, orderBy, limit, arrayUnion, arrayRemove, deleteField, writeBatch, serverTimestamp,
+  deleteDoc, collection, query, where, orderBy, limit, deleteField, writeBatch, serverTimestamp,
   getCountFromServer, FieldPath,
 } from 'firebase/firestore';
 import {
@@ -91,159 +91,14 @@ async function run() {
   const bUid = await login(B, 'teacher2@example.com');
   const xUid = await login(X, 'stranger@example.com');
 
-  const gid = 'grp_rulecheck';
-  const code = 'RULECHK';
-
-  console.log('\n[그룹장 A]');
-  await must('그룹 만들기', async () => {
-    await setDoc(doc(A.db, 'groups', gid), {
-      name: '규칙 점검용 공유방',
-      ownerId: aUid,
-      ownerName: '김선생',
-      inviteCode: code,
-      members: [aUid],
-      memberDetails: { [aUid]: { name: '김선생', joinedAt: Date.now(), photoURL: '' } },
-      createdAt: Date.now(),
-    });
-  });
-  await mustNot('남을 넣어 그룹을 만든다 (P15-1 - V5 가져오기로 동의 없이 구성원이 된다)', async () => {
-    await setDoc(doc(A.db, 'groups', 'grp_rulecheck_bad'), {
-      name: '남을 넣은 방', ownerId: aUid, inviteCode: 'BAD', members: [aUid, bUid], createdAt: Date.now(),
-    });
-  });
-  await must('초대 코드 매핑 만들기', async () => {
-    await setDoc(doc(A.db, 'inviteCodes', code), { groupId: gid, ownerId: aUid, createdAt: Date.now() });
-  });
-  await must('같은 매핑을 다시 쓰기 (경합 때 거부되던 것)', async () => {
-    await setDoc(doc(A.db, 'inviteCodes', code), { groupId: gid, ownerId: aUid, createdAt: Date.now() });
-  });
-  await must('내 그룹 목록 조회 (array-contains)', async () => {
-    const s = await getDocs(query(collection(A.db, 'groups'), where('members', 'array-contains', aUid)));
-    if (s.empty) throw new Error('내 그룹이 안 나온다');
-  });
-  await must('그룹 안에 기록 쓰기', async () => {
-    await setDoc(doc(A.db, 'groups', gid, 'journals', today), {
-      entries: [{ id: 'jr_x', content: '박OO 학생 상담 내용', createdAt: Date.now() }],
-      updatedAt: Date.now(),
-    });
-  });
-
-  console.log('\n[아무 관계 없는 사람 X] — 전부 막혀야 한다');
-  await mustNot('그룹 목록 전체 훑기', async () => {
-    const s = await getDocs(collection(X.db, 'groups'));
-    if (s.size === 0) throw Object.assign(new Error('빈 목록'), { code: 'permission-denied' });
-  });
-  await mustNot('그룹 ID를 알 때 단건 읽기', async () => {
-    const d = await getDoc(doc(X.db, 'groups', gid));
-    if (!d.exists()) throw Object.assign(new Error('없음'), { code: 'permission-denied' });
-  });
-  await mustNot('초대 코드로 그룹 찾기 (폴백 조회)', async () => {
-    const s = await getDocs(query(collection(X.db, 'groups'), where('inviteCode', '==', code)));
-    if (s.empty) throw Object.assign(new Error('빈 목록'), { code: 'permission-denied' });
-  });
-  await mustNot('남의 그룹 상담 기록 읽기', async () => {
-    const d = await getDoc(doc(X.db, 'groups', gid, 'journals', today));
-    if (!d.exists()) throw Object.assign(new Error('없음'), { code: 'permission-denied' });
-  });
-  await mustNot('남의 그룹 기록 고쳐 쓰기', async () => {
-    await setDoc(doc(X.db, 'groups', gid, 'journals', today), { entries: [], updatedAt: Date.now() });
-  });
-  await mustNot('남의 그룹 지우기', async () => {
-    await deleteDoc(doc(X.db, 'groups', gid));
-  });
-  await mustNot('남을 마음대로 구성원으로 넣기', async () => {
-    await updateDoc(doc(X.db, 'groups', gid), { members: arrayUnion('somebody_else') });
-  });
-  await mustNot('그룹 이름 바꾸기', async () => {
-    await updateDoc(doc(X.db, 'groups', gid), { name: '내가 바꿈' });
-  });
-
-  console.log('\n[초대받은 B] — 참여가 되어야 한다');
-  await must('코드 -> 그룹 매핑 한 건 읽기', async () => {
-    const d = await getDoc(doc(B.db, 'inviteCodes', code));
-    if (!d.exists() || d.data().groupId !== gid) throw new Error('매핑을 못 읽었다');
-  });
-  await mustNot('참여 전에는 그룹을 읽지 못한다 (앱이 이걸 가정하면 안 됨)', async () => {
-    const d = await getDoc(doc(B.db, 'groups', gid));
-    if (!d.exists()) throw Object.assign(new Error('없음'), { code: 'permission-denied' });
-  });
-  await must('자기 자신만 구성원으로 넣기 (참여) — updateDoc', async () => {
-    await updateDoc(doc(B.db, 'groups', gid), {
-      members: arrayUnion(bUid),
-      [`memberDetails.${bUid}`]: { name: '이선생', joinedAt: Date.now(), photoURL: '' },
-    });
-  });
-  await must('참여한 뒤에는 그룹을 읽는다', async () => {
-    const d = await getDoc(doc(B.db, 'groups', gid));
-    if (!d.exists()) throw new Error('못 읽었다');
-  });
-  await must('참여한 뒤 그룹 기록을 읽는다', async () => {
-    const d = await getDoc(doc(B.db, 'groups', gid, 'journals', today));
-    if (!d.exists()) throw new Error('못 읽었다');
-  });
-  await must('참여한 뒤 그룹 기록을 쓴다', async () => {
-    await setDoc(doc(B.db, 'groups', gid, 'journals', today), {
-      entries: [{ id: 'jr_b', content: 'B가 남긴 기록', createdAt: Date.now() }],
-      updatedAt: Date.now(),
-    });
-  });
-  await mustNot('그룹장이 남을 구성원으로 넣는다 (P15-1)', async () => {
-    await updateDoc(doc(A.db, 'groups', gid), { members: arrayUnion('somebody_else') });
-  });
-  await mustNot('구성원이어도 그룹 이름은 못 바꾼다', async () => {
-    await updateDoc(doc(B.db, 'groups', gid), { name: 'B가 바꿈' });
-  });
-  await mustNot('구성원이어도 그룹은 못 지운다', async () => {
-    await deleteDoc(doc(B.db, 'groups', gid));
-  });
-
-  console.log('\n[옛 V3 방식] — setDoc으로 점이 든 키를 쓰면 막혀야 한다');
-  const C = client('legacy');
-  const cUid = await login(C, 'legacy@example.com');
-  await mustNot("setDoc({'memberDetails.<uid>': ...}, {merge:true}) 로 참여", async () => {
-    await setDoc(doc(C.db, 'groups', gid), {
-      members: arrayUnion(cUid),
-      [`memberDetails.${cUid}`]: { name: '옛방식', joinedAt: Date.now(), photoURL: '' },
-    }, { merge: true });
-  });
-  await must('updateDoc으로 고친 방식은 된다', async () => {
-    await updateDoc(doc(C.db, 'groups', gid), {
-      members: arrayUnion(cUid),
-      [`memberDetails.${cUid}`]: { name: '새방식', joinedAt: Date.now(), photoURL: '' },
-    });
-  });
-
-  console.log('\n[탈퇴]');
-  await must('자기 자신만 빼기 (탈퇴)', async () => {
-    await updateDoc(doc(B.db, 'groups', gid), { members: arrayRemove(bUid) });
-  });
-  await must('그룹장은 구성원을 뺀다 (빼기는 그대로)', async () => {
-    await updateDoc(doc(A.db, 'groups', gid), { members: arrayRemove(cUid) });
-  });
-  await mustNot('탈퇴한 뒤에는 그룹 기록을 못 읽는다', async () => {
-    const d = await getDoc(doc(B.db, 'groups', gid, 'journals', today));
-    if (!d.exists()) throw Object.assign(new Error('없음'), { code: 'permission-denied' });
-  });
-
-  console.log('\n[그룹장 정리]');
-  await must('그룹장이 하위 자료를 비운다', async () => {
-    await deleteDoc(doc(A.db, 'groups', gid, 'journals', today));
-  });
-  await must('그룹장이 그룹을 지운다', async () => {
-    await deleteDoc(doc(A.db, 'groups', gid));
-  });
-  await must('그룹장이 매핑을 지운다', async () => {
-    await deleteDoc(doc(A.db, 'inviteCodes', code));
-  });
-
-  console.log('\n[개인 공간] — 원래도 막혀 있었다');
-  await mustNot('남의 개인 공간 읽기', async () => {
-    const d = await getDoc(doc(X.db, 'users', aUid, 'journals', today));
-    if (!d.exists()) throw Object.assign(new Error('없음'), { code: 'permission-denied' });
-  });
-  await must('내 개인 공간은 읽는다', async () => {
-    await getDoc(doc(A.db, 'users', aUid, 'settings', 'labels'));
-  });
+  console.log('\n[V3·V4 자리] — 규칙에서 지웠다(P31): 내 것이어도 모두 막힌다');
+  await mustNot('내 V4 개인 자료 읽기 (users/{나})', () => getDoc(doc(A.db, 'users', aUid, 'settings', 'labels')));
+  await mustNot('내 V4 개인 자료 쓰기', () => setDoc(doc(A.db, 'users', aUid, 'journals', today), { entries: [], updatedAt: Date.now() }));
+  await mustNot('V4 그룹 만들기 (groups)', () => setDoc(doc(A.db, 'groups', 'grp_rulecheck'), { name: '규칙 점검', ownerId: aUid, members: [aUid], createdAt: Date.now() }));
+  await mustNot('내가 든 V4 그룹 목록', () => getDocs(query(collection(A.db, 'groups'), where('members', 'array-contains', aUid))));
+  await mustNot('V4 그룹 아래 자료 읽기', () => getDoc(doc(A.db, 'groups', 'grp_rulecheck', 'journals', today)));
+  await mustNot('V4 초대 코드 읽기 (inviteCodes)', () => getDoc(doc(B.db, 'inviteCodes', 'RULECHK')));
+  await mustNot('V4 초대 코드 만들기', () => setDoc(doc(A.db, 'inviteCodes', 'RULECHK'), { groupId: 'grp_rulecheck', ownerId: aUid, createdAt: Date.now() }));
 
   console.log('\n[나이스 키 sharedConfig] — 로그인하면 읽고, 쓰기는 개발자만');
   const D = client('developer');
@@ -266,17 +121,16 @@ async function run() {
     await deleteDoc(doc(D.db, 'sharedConfig', 'neis'));
   });
 
-  const v4 = { pass, fail };
   await runV5({ A, B, X, D, aUid, bUid, xUid });
 
-  console.log(`\n───────── V4 ${v4.pass}개 통과 / ${v4.fail}개 실패 · V5 ${pass - v4.pass}개 통과 / ${fail - v4.fail}개 실패 ─────────`);
-  for (const c of [A, B, X, C, D]) await deleteApp(c.app).catch(() => {});
+  console.log(`\n───────── ${pass}개 통과 / ${fail}개 실패 ─────────`);
+  for (const c of [A, B, X, D]) await deleteApp(c.app).catch(() => {});
   process.exit(fail === 0 ? 0 : 1);
 }
 
 // ─── V5: spaces · spaceInvites · v5alarms · v5Errors · v5Mail · 대화(runChat) ─
 //
-// V4 쪽과 달리 '문서가 없으면 막힌 것으로 친다'를 쓰지 않는다. 읽기 시험은 문서가 있는 데서만
+// '문서가 없으면 막힌 것으로 친다'를 쓰지 않는다. 읽기 시험은 문서가 있는 데서만
 // 하므로, 규칙이 열려 있으면 그대로 '그런데 됐다'가 나온다.
 async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
   const now = () => Date.now();
@@ -550,97 +404,14 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
     await updateDoc(space(B, gs), { [`members.${bUid}`]: 'member', [`joinCodes.${bUid}`]: code3, updatedAt: now() });
   });
 
-  // V4 그룹 가져오기 (P8-4 ■2): V4 groups/{gid}의 구성원이 g_{gid}를 V4 주인·구성원 그대로 만든다
-  console.log('\n[V5 V4 그룹 가져오기] — V4 구성원이 g_{V4 id}를 V4 그대로');
-  const v4gid = 'v4grpRulecheck';
-  const v4gs = `g_${v4gid}`;
   const C = client('member2');
   const cUid = await login(C, 'teacher3@example.com');
-  await must('(준비) V4 그룹: 주인 A가 만들고 B가 스스로 들어온다', async () => {
-    await setDoc(doc(A.db, 'groups', v4gid), { name: 'V4 그룹', ownerId: aUid, ownerName: 'A', inviteCode: 'V4RCHK', members: [aUid], createdAt: now() });
-    await updateDoc(doc(B.db, 'groups', v4gid), { members: arrayUnion(bUid) });
-  });
-  const imported = { kind: 'group', name: 'V4 그룹', ownerId: aUid, members: { [aUid]: 'owner', [bUid]: 'member' }, createdAt: now(), updatedAt: now(), v: 1 };
-  await mustNot('V4 구성원이 아닌 사람이 가져온다', async () => {
-    await setDoc(space(X, v4gs), { ...imported, members: { [aUid]: 'owner', [bUid]: 'member', [xUid]: 'member' } });
-  });
-  await mustNot('구성원이 스스로 주인이 되어 가져온다', async () => {
-    await setDoc(space(B, v4gs), { ...imported, ownerId: bUid, members: { [aUid]: 'member', [bUid]: 'owner' } });
-  });
-  await mustNot('V4에 없는 사람을 함께 넣어 가져온다', async () => {
-    await setDoc(space(B, v4gs), { ...imported, members: { ...imported.members, [cUid]: 'member' } });
-  });
-  await mustNot('V4 구성원을 빼고 가져온다', async () => {
-    await setDoc(space(B, v4gs), { ...imported, members: { [aUid]: 'owner' }, ownerId: aUid });
-  });
-  await mustNot('구성원을 둘 다 owner로 가져온다', async () => {
-    await setDoc(space(B, v4gs), { ...imported, members: { [aUid]: 'owner', [bUid]: 'owner' } });
-  });
-  await mustNot('주인이 아닌 구성원이 초대 코드를 열어 가져온다', async () => {
-    await setDoc(space(B, v4gs), { ...imported, inviteCode: 'V5OPEN' });
-  });
-  await mustNot('V4 그룹이 없는 g_ 이름으로 남을 넣어 만든다', async () => {
-    await setDoc(space(B, 'g_noSuchV4Group'), imported);
-  });
-  await must('주인이 아닌 V4 구성원이 V4 그대로 가져온다', async () => {
-    await setDoc(space(B, v4gs), imported);
-  });
-  await must('가져온 뒤 주인은 그룹 문서를 읽는다 (V4 주인 = V5 주인)', async () => {
-    const d = await getDoc(space(A, v4gs));
-    if (d.data()?.members?.[aUid] !== 'owner') throw new Error('주인이 아니다');
-  });
-  await must('가져온 구성원이 그룹에 항목을 쓴다', async () => {
-    await setDoc(item(B, v4gs, 'rc_v4g1'), note('가져온 그룹 메모'));
-  });
-  await mustNot('초대가 닫힌 그룹에 V4 구성원이 아닌 사람이 참여한다', async () => {
-    await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'member', updatedAt: now() });
-  });
-  await must('(준비) 가져온 뒤 V4에 C가 들어온다', async () => {
-    await updateDoc(doc(C.db, 'groups', v4gid), { members: arrayUnion(cUid) });
-  });
-  await mustNot('V4 구성원이어도 owner로는 참여하지 못한다', async () => {
-    await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'owner', updatedAt: now() });
-  });
-  await mustNot('V4 구성원이어도 초대 코드 없이는 참여하지 못한다', async () => {
-    await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'member', updatedAt: now() });
-  });
-  await must('주인이 나중에 초대 코드를 연다 (공간 + 초대 코드 한 묶음)', async () => {
-    const b = writeBatch(A.db);
-    b.update(space(A, v4gs), { inviteCode: 'V5RCV4', updatedAt: now() });
-    b.set(invite(A, 'V5RCV4'), { sid: v4gs, ownerId: aUid });
-    await b.commit();
-  });
-  await must('코드를 받은 V4 구성원은 참여한다', async () => {
-    await updateDoc(space(C, v4gs), { [`members.${cUid}`]: 'member', [`joinCodes.${cUid}`]: 'V5RCV4', updatedAt: now() });
-  });
-  await must('(정리) 가져온 그룹·V4 그룹을 지운다', async () => {
-    await deleteDoc(item(A, v4gs, 'rc_v4g1'));
-    await deleteDoc(invite(A, 'V5RCV4'));
-    await deleteDoc(space(A, v4gs));
-    await deleteDoc(doc(A.db, 'groups', v4gid));
-  });
 
-  // V4 groups 문서는 누구나 [나]로 만든다 - 같은 id라고 그 그룹 공간의 구성원으로 치면 안 된다
-  const closedId = 'closedRulecheck';
-  const closedSid = `g_${closedId}`;
-  await must('(준비) 초대가 닫힌 그룹과 그 메모', async () => {
-    await setDoc(space(A, closedSid), { kind: 'group', name: '닫힌 그룹', ownerId: aUid, members: { [aUid]: 'owner' }, createdAt: now(), updatedAt: now(), v: 1 });
-    await setDoc(item(A, closedSid, 'rc_closed'), note('구성원만'));
-  });
-  await must('(준비) 같은 id의 V4 그룹 문서를 다른 사람이 만든다', async () => {
-    await setDoc(doc(X.db, 'groups', closedId), { name: '같은 id', ownerId: xUid, ownerName: 'X', inviteCode: 'V4RCLZ', members: [xUid], createdAt: now() });
-  });
-  await mustNot('그 V4 그룹 문서로 닫힌 그룹에 참여한다', async () => {
-    await updateDoc(space(X, closedSid), { [`members.${xUid}`]: 'member', updatedAt: now() });
-  });
-  await mustNot('닫힌 그룹의 메모를 읽는다', async () => {
-    await getDoc(item(X, closedSid, 'rc_closed'));
-  });
-  await must('(정리) 닫힌 그룹·같은 id V4 그룹을 지운다', async () => {
-    await deleteDoc(doc(X.db, 'groups', closedId));
-    await deleteDoc(item(A, closedSid, 'rc_closed'));
-    await deleteDoc(space(A, closedSid));
-  });
+  // 예전 V4 그룹 가져오기 갈래(P8-4 ■2 - V4 구성원이 g_{V4 id}를 남까지 넣어 만들었다)는 11-11 P31에 뗐다
+  console.log('\n[V5 그룹 만들기] — 나 혼자 주인으로만 (V4 그룹 가져오기 갈래 없음 - P31)');
+  const v4like = { kind: 'group', name: 'V4 그룹', ownerId: aUid, members: { [aUid]: 'owner', [bUid]: 'member' }, createdAt: now(), updatedAt: now(), v: 1 };
+  await mustNot('구성원이 남(A)을 주인으로 넣어 만든다 (옛 V4 가져오기 모양)', () => setDoc(space(B, 'g_v4grpRulecheck'), v4like));
+  await mustNot('주인이 남(B)을 함께 넣어 만든다', () => setDoc(space(A, 'g_v4grpRulecheck'), v4like));
 
   console.log('\n[V5 v5alarms] — 함수만');
   await mustNot('앱이 알림 큐를 읽는다', async () => {

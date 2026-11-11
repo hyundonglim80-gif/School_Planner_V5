@@ -3609,7 +3609,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
 **시작 조건**: 없음(PC). **먼저 읽을 것**: 이 절 · 5장 'P31' · `firestore.rules` 맨 위·V3/V4 블록 · `tools/check-rules.mjs` 앞 35개.
 - [x] ■1 앱: `src/import/v4`·`features/import`·`V4ImportSection`·`V4GroupsSection` 지우기 · 교사 유형·다음 띠가 가져오기 띠를 기다리지 않게 · 저장 도우미 가져오기 옵션 · 설명서(share·start·settings·trouble·find·events) · 점검(backup·manual)·seed · 찾아 고침: 새 계정 자동 백업 띠.
   → 11-11: 66파일(6,264줄 지움) · 단위 2192(가져오기 시험 13파일 빠짐) · tsc·lint·build · 크롬 backup·manual(9주제)·groups·shell 통과(shell '교사 유형 전에는 백업 띠 없음'이 틀려 찾음 → `auto.ts` `hasData === true`).
-- [ ] ■2 규칙: V3·V4 블록·V4 그룹 갈래 지우기 · `check-rules` V4 부분 빼기 · 에뮬레이터 `check:rules`·`test:data` · 운영 규칙 배포(허락 받음).
+- [x] ■2 규칙: V3·V4 블록·V4 그룹 갈래 지우기 · `check-rules` V4 부분 빼기 · 에뮬레이터 `check:rules`·`test:data` · 운영 규칙 배포(허락 받음).
+  → 11-11: 규칙 588 → 454줄(`users`·`inviteCodes`·`groups`·`groups/{sub}`·`v4GroupOf`·`isV4GroupMember`·맨 아래 V3 배포 순서 지움, 공용 `holidays`·`admin`·`sharedConfig` 남김) · check-rules = V3·V4 자리 일곱이 모두 막힘 + V5(옛 V4 가져오기 모양으로 만들기 막힘 둘) 288 통과 · test:data 5파일 38(**PowerShell `D:\`에서** - Git Bash `/d/`는 경로 대소문자로 vitest가 둘로 읽혀 'failed to find the current suite') · 배포 전 live-rules = 커밋 파일과 같음 → 운영 배포(05:42) → live-rules '같다' · 크롬 login·groups 통과.
 - [ ] ■3 V4 저장소: GitHub Pages를 V5로 넘기는 한 쪽 화면으로(허락 받음) · V4 `CLAUDE.md` 맨 위 '끊음'.
 - [ ] ■4 문서: CLAUDE.md(1·2·3장 V4 seed·규칙 한 벌·함수 codebase) · DESIGN 8장 · MENU · MAP · 세션 끝 정리.
 **끝 조건**: V5 어디에도 V4 자리를 읽거나 쓰는 코드가 없다 · 운영 규칙에 `users`·`groups`·`inviteCodes`가 없다(기본 거부) · V4 주소를 열면 V5로 간다 · 점검에 V4 seed가 필요 없다.
