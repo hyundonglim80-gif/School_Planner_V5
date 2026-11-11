@@ -45,8 +45,10 @@
 @layer base {
   html {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    /* 글자 크기 = 바탕 × 환경설정 '글자 크기'(--font-scale - domain/fontScale). 휴대폰 바탕은 브라우저 기본(100%) */
+    /* 글자 크기 = 바탕 × 환경설정 '글자 크기'(--font-scale - domain/fontScale, 화면마다). 휴대폰 바탕은 브라우저 기본(100%) */
     font-size: calc(100% * var(--font-scale, 1));
+    /* 지금 html 글자 크기 ÷ 브라우저 기본 - 머리줄([data-fixed-font])이 이것으로 나눠 늘 100%를 지킨다 */
+    --root-scale: var(--font-scale, 1);
   }
   /* PC(폭 640px 이상) '한눈에' 화면만 바탕 90% (11-08 사용자 요청 80% → 11-09 '좀 작다'로 90% → 같은 날 '한눈에는 볼 것이 많으니 90%,
    * 나머지 화면은 100%'). data-dense = 지금 화면이 한눈에(app/nav가 붙인다 - 팝업창은 없다). 휴대폰은 그대로(한눈에가 없다).
@@ -55,7 +57,30 @@
   @media screen and (min-width: 40rem) {
     html[data-dense] {
       font-size: calc(90% * var(--font-scale, 1));
+      --root-scale: calc(0.9 * var(--font-scale, 1));
     }
+  }
+  /* 머리줄은 글자 크기를 따르지 않는다 - 늘 100% (메모 요청 #145 '화면마다 크기가 다르면 머리줄도 달라져 산만하다').
+   * 글자 단계·여백 한 칸·모서리가 모두 rem(= html 글자 크기)이라, 이 안에서만 그 값들을 --root-scale로 나눠 브라우저 기본 크기로 되돌린다.
+   * 값은 위 @theme(--spacing·--text-2xs)과 Tailwind 기본 단계 그대로 - 단계를 더하거나 바꾸면 여기도. 머리줄에 [..rem] 같은 값을 직접 쓰면 그것은 따라 움직인다 */
+  [data-fixed-font] {
+    font-size: calc(1rem / var(--root-scale));
+    --spacing: calc(0.2rem / var(--root-scale));
+    --text-2xs: calc(0.625rem / var(--root-scale));
+    --text-xs: calc(0.75rem / var(--root-scale));
+    --text-sm: calc(0.875rem / var(--root-scale));
+    --text-base: calc(1rem / var(--root-scale));
+    --text-lg: calc(1.125rem / var(--root-scale));
+    --text-xl: calc(1.25rem / var(--root-scale));
+    --text-2xl: calc(1.5rem / var(--root-scale));
+    --text-3xl: calc(1.875rem / var(--root-scale));
+    --radius-xs: calc(0.125rem / var(--root-scale));
+    --radius-sm: calc(0.25rem / var(--root-scale));
+    --radius-md: calc(0.375rem / var(--root-scale));
+    --radius-lg: calc(0.5rem / var(--root-scale));
+    --radius-xl: calc(0.75rem / var(--root-scale));
+    --radius-2xl: calc(1rem / var(--root-scale));
+    --radius-3xl: calc(1.5rem / var(--root-scale));
   }
   html, body {
     overscroll-behavior-y: none; /* 모바일에서 당겨서 새로고침 방지 */

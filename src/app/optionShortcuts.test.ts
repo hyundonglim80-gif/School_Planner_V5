@@ -21,8 +21,8 @@ const alt = (key: string) => ({ ctrl: false, alt: true, shift: false, key });
 beforeEach(() => {
   localStorage.clear();
   toast.mockClear();
-  useLayoutPrefs.setState({ popupStyle: 'side', fontScale: 'md' });
-  useCommonSettings.setState({ alarmSound: 10, autoBackup: { ...DEFAULT_AUTO_BACKUP }, cvd: false });
+  useLayoutPrefs.setState({ popupStyle: 'side', fontSizes: {} });
+  useCommonSettings.setState({ alarmSound: 10, autoBackup: { ...DEFAULT_AUTO_BACKUP }, cvd: false, decor: 'off' });
   useNav.setState({ startupScope: 'last', enableScrollNav: false });
   setShortcutOverrides({});
   setTabShortcuts({});
@@ -45,31 +45,32 @@ describe('환경설정 값 단축키 (P28-2)', () => {
   });
 
   it('이름: 고르기 = 제목 → 값 · 켜기/끄기 = 제목 켜기 / 끄기 · 모르는 것은 없음(그대로 id)', () => {
-    expect(shortcutLabel('opt.fontScale.lg')).toBe('글자 크기 → 크게');
+    expect(shortcutLabel('opt.decor.spring')).toBe('꾸미기 → 봄');
     expect(shortcutLabel('opt.alarmSound.-1')).toBe('알림 소리 → 확인할 때까지');
     expect(shortcutLabel('opt.autoBackupKeep.12')).toBe('자동 백업 남길 개수 → 최근 12개');
     expect(shortcutLabel('opt.contrast')).toBe('고대비 켜기 / 끄기');
-    for (const id of ['opt.alarmSound.7', 'opt.nothing', 'opt.contrast.x', 'opt.fontScale', 'press.ab12'] as const) {
+    // 옛 글자 크기 단계 키(opt.fontScale.…)는 메모 요청 #145로 없어졌다 - 화면마다 %(단축키 글자 작게 / 크게 / 초기화)
+    for (const id of ['opt.alarmSound.7', 'opt.nothing', 'opt.contrast.x', 'opt.decor', 'opt.fontScale.lg', 'press.ab12'] as const) {
       expect(customShortcutOf(id)).toBeUndefined();
       expect(isKnownShortcut(id)).toBe(false);
     }
     expect(shortcutLabel('opt.nothing')).toBe('opt.nothing');
-    expect(isKnownShortcut('opt.fontScale.lg')).toBe(true);
+    expect(isKnownShortcut('opt.decor.spring')).toBe(true);
     expect(isKnownShortcut('settings:notify')).toBe(true);
     expect(isKnownShortcut('search')).toBe(true);
   });
 
   it('고르기 키: 그 값으로 + 안내, 다시 누르면 앞 값 (번갈아)', () => {
-    expect(runCustomShortcut('opt.fontScale.lg')).toBe(true);
-    expect(useLayoutPrefs.getState().fontScale).toBe('lg');
-    expect(toast).toHaveBeenLastCalledWith('⚙️ 글자 크기: 크게');
-    useLayoutPrefs.setState({ fontScale: 'sm' });
-    runCustomShortcut('opt.fontScale.lg');
-    expect(useLayoutPrefs.getState().fontScale).toBe('lg');
-    // 앞 값 = 키로 바꾸기 전 값(작게)
-    runCustomShortcut('opt.fontScale.lg');
-    expect(useLayoutPrefs.getState().fontScale).toBe('sm');
-    expect(toast).toHaveBeenLastCalledWith('⚙️ 글자 크기: 작게');
+    expect(runCustomShortcut('opt.decor.spring')).toBe(true);
+    expect(useCommonSettings.getState().decor).toBe('spring');
+    expect(toast).toHaveBeenLastCalledWith('⚙️ 꾸미기: 봄');
+    useCommonSettings.setState({ decor: 'winter' });
+    runCustomShortcut('opt.decor.spring');
+    expect(useCommonSettings.getState().decor).toBe('spring');
+    // 앞 값 = 키로 바꾸기 전 값(겨울)
+    runCustomShortcut('opt.decor.spring');
+    expect(useCommonSettings.getState().decor).toBe('winter');
+    expect(toast).toHaveBeenLastCalledWith('⚙️ 꾸미기: 겨울');
   });
 
   it('창 위치 키: 팝업창 ↔ 오른쪽 칸 (창은 열지 않는다 - 값만)', () => {

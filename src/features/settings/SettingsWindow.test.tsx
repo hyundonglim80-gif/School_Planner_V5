@@ -38,8 +38,8 @@ beforeEach(() => {
   resetHistoryForTest();
   // 가운데 창으로 그린다 (오른쪽 줄 없이)
   setPopupStyle('center');
-  useLayoutPrefs.setState({ fontScale: 'md' });
-  useNav.setState({ showWeekend: true, startupScope: 'last' });
+  useLayoutPrefs.setState({ fontSizes: {} });
+  useNav.setState({ scope: 'day', showWeekend: true, startupScope: 'last' });
   setShortcutOverrides({});
   setTabShortcuts({});
   setCustomShortcuts({});
@@ -116,12 +116,45 @@ describe('환경설정 창', () => {
     openSettings();
     fireEvent.click(q('[data-settings-toggle="showWeekend"]'));
     expect(useNav.getState().showWeekend).toBe(false);
-    fireEvent.click(q('[data-choice="fontScale:lg"]'));
-    expect(useLayoutPrefs.getState().fontScale).toBe('lg');
-    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.15');
+    fireEvent.click(q('[data-font-step="day:up"]'));
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 105 });
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.05');
     fireEvent.click(q('[data-choice="startupScope:memo"]'));
     expect(useNav.getState().startupScope).toBe('memo');
     expect(document.querySelector('[data-shortcut-save]')).toBeNull();
+    fireEvent.click(q('[data-font-step="day:reset"]'));
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
+  });
+
+  it('글자 크기 (메모 요청 #145): 화면마다 한 줄 · − / 초기화 / + 는 5%씩 쌓이고 그 화면만 · 지금 화면 줄이 단축키와 같다', () => {
+    openSettings('view');
+    // 화면 일곱 + 팝업창(PC)
+    expect(qa('[data-font-page]').map((el) => el.dataset.fontPage)).toEqual(['board', 'day', 'week', 'month', 'year', 'memo', 'class', 'popout']);
+    expect(q('[data-font-current]').dataset.fontPage).toBe('day');
+    expect(q('[data-font-percent="day"]')).toHaveTextContent('100%');
+    // 누를 때마다 쌓인다
+    for (let i = 0; i < 3; i++) fireEvent.click(q('[data-font-step="day:down"]'));
+    expect(q('[data-font-percent="day"]')).toHaveTextContent('85%');
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('0.85');
+    // 다른 화면 줄은 그 화면만 - 지금 화면의 크기는 그대로
+    fireEvent.click(q('[data-font-step="month:up"]'));
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 85, month: 105 });
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('0.85');
+    // 지금 화면 줄 단추만 단축키 표시
+    expect(q('[data-font-step="day:down"]')).toHaveAttribute('data-shortcut-target', 'fontSmaller');
+    expect(q('[data-font-step="day:reset"]')).toHaveAttribute('data-shortcut-target', 'fontReset');
+    expect(q('[data-font-step="day:up"]')).toHaveAttribute('data-shortcut-target', 'fontLarger');
+    expect(q('[data-font-step="month:up"]')).not.toHaveAttribute('data-shortcut-target');
+    // 화면을 옮기면 그 화면이 기억한 크기로, 지금 화면 줄도 따라간다
+    act(() => useNav.setState({ scope: 'month' }));
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('1.05');
+    expect(q('[data-font-current]').dataset.fontPage).toBe('month');
+    fireEvent.click(q('[data-font-step="month:reset"]'));
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 85 });
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
+    act(() => useNav.setState({ scope: 'day' }));
+    expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('0.85');
+    fireEvent.click(q('[data-font-step="day:reset"]'));
   });
 
   it('보기 🎨 색 테마(P20-1): 견본 칩을 누르면 계정 값이 바뀌고 그 칩이 눌린 것', () => {
@@ -270,7 +303,6 @@ describe('환경설정 창', () => {
     expect(q('[data-choice="popupStyle:popup"]')).toHaveAttribute('title', '단축키: Alt + P');
     expect(q('[data-choice="popupStyle:side"]')).toHaveAttribute('data-shortcut-target', 'opt.popupStyle.side');
     expect(q('[data-choice="popupStyle:side"]')).not.toHaveAttribute('title');
-    expect(q('[data-choice="fontScale:lg"]')).toHaveAttribute('data-shortcut-target', 'opt.fontScale.lg');
     expect(q('[data-choice="theme:light"]')).toHaveAttribute('data-shortcut-target', 'opt.theme.light');
     expect(q('[data-choice="startupScope:week"]')).toHaveAttribute('data-shortcut-target', 'opt.startupScope.week');
     expect(q('[data-palette-pick="default"]')).toHaveAttribute('data-shortcut-target', 'opt.palette.default');
@@ -285,9 +317,13 @@ describe('환경설정 창', () => {
     document.addEventListener('click', onRecordClick, true);
     try {
       startShortcutRecord();
-      fireEvent.click(q('[data-choice="fontScale:lg"]'));
-      expect(useShortcutRecord.getState()).toMatchObject({ stage: 'pick', picked: 'opt.fontScale.lg', miss: null });
-      expect(useLayoutPrefs.getState().fontScale).toBe('lg');
+      fireEvent.click(q('[data-choice="startupScope:week"]'));
+      expect(useShortcutRecord.getState()).toMatchObject({ stage: 'pick', picked: 'opt.startupScope.week', miss: null });
+      expect(useNav.getState().startupScope).toBe('week');
+      // 글자 크기 − 단추(지금 화면 줄)는 단축키 '글자 작게'를 고른다 - 값도 평소처럼 바뀐다 (메모 요청 #145)
+      fireEvent.click(q('[data-font-step="day:down"]'));
+      expect(useShortcutRecord.getState()).toMatchObject({ stage: 'pick', picked: 'fontSmaller', miss: null });
+      expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 95 });
       fireEvent.click(q('[data-settings-toggle="dim"]'));
       expect(useShortcutRecord.getState().picked).toBe('opt.dim');
       fireEvent.click(q('[data-settings-toggle="showClass"]'));
