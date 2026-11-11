@@ -38,7 +38,7 @@ PC 대화는 '이어서'에서 이 목록의 `[ ]`부터 한다(아래 세션 �
 <!-- PC 일 끝 - 메모 요청 자동 실행(워크플로)은 이 줄 바로 위에 한 줄씩 더한다. 이 줄을 지우거나 옮기지 않는다 -->
 
 **P26-1 끝**(11-10 PC - 크롬 점검 전체 63개 통과(개발 서버 60 + 미리 보기 headers·offline·perf) · 예외를 삼키는 점검 8개에 catch · 틀린 여섯은 앱 버그 0: 점검 고침 넷(class 번호 칸 재기 · import-labels 'V4 가운데 창 = PC 팝업창' · lessons 나눠 받는 칸 15초 · shortcut-record 기록) + 막힌 에뮬레이터 둘(가져오기 - 새로 켜니 통과), 6장 'P26-1'). 점검·문서만(앱 코드 그대로).
-**P26-2 하는 중**(11-11 PC): ■0~■2 끝 - 운영 오류 보고 1건(옛것)·CSP 위반 0건 → **CSP 막기**(미리 보기 점검 여섯 통과). **다음 = ■3 의존성 경고**(6장 'P26-2') → ■4 문서 → P26-3 새 학년도 연습.
+**P26-2 하는 중**(11-11 PC): ■0~■2 끝 - 운영 오류 보고 1건(옛것)·CSP 위반 0건 → **CSP 막기**(미리 보기 점검 여섯 통과). ■3 의존성 경고 끝(uuid 고침·minimatch는 배포가 깨져 그대로 - 5장). **다음 = ■4 문서·세션 끝** → P26-3 새 학년도 연습.
 
 **P28-3 끝 = P28 끝**(11-10 PC - 표시 없는 단추 = 그 단추를 대신 누르기 `press.<해시>`(자리 = 창 + 탭 / 화면 · 그 자리에 하나뿐인 자기 `data-*`) · 안 보이면 그 창을 그 탭으로 열고 / 팝업창이면 'press' 소식 / 그 화면으로 가서 ·
 카드·날 칸 단추는 '항목(날짜)마다'라 못 만듦 · 쓰는 칸 단추는 열려 있을 때만 · 기기 칸 `pressTargets`, 6장 'P28-3'·5장 'P28-3 … 고르는 법'). 화면만(배포는 main 푸시로 저절로). **다음 = P26-1 PC 크롬 점검 전체**(PC(VS Code) - 6장 'P26-1', 새 대화에서 '이어서' = P26-1 ■0부터) → P26-2 보안 정리 → P26-3 새 학년도 연습.
@@ -1341,6 +1341,13 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   '저장을 기다립니다' 띠(머리줄 안)는 접히면 화면 위에 띄운다(`floating`). 진짜 브라우저 전체 화면(F11)은 하지 않는다 - 브라우저 키가 이미 있고, 방금 누른 때만 되며 ESC가 오른쪽 칸 닫기와 겹친다.
   휴대폰 아래 탭바는 그대로(요청은 '상단') - 탭바까지 감추면 휴대폰에서 화면을 옮길 길이 없다. 확인은 단위 시험(`headerFold.test`·`App.test`)까지 - 크롬은 PC 일(지금 하는 일 #142).
 
+- **P26-2 CSP 막기 (11-11 사용자 '막기로 바꾸기' - 나머지는 권장안)**: 운영 오류 보고 5일에 '[CSP]' 0건 + 운영 로그인 단추 → 구글 로그인 창까지 위반 0 + 조각에 eval 없음·바깥 주소 모두 허용 목록 안을 보고 `Content-Security-Policy`로. 위반 보고(오류 보고 '[CSP] …')는 그대로 모은다 - 이제는 '무엇이 막혀 화면이 깨졌나'를 알리는 길이다.
+  **미리 보기만 에뮬레이터 주소를 더한다**(`vite.config` `EMULATOR_CSP` - connect-src 8080·9099 · frame-src 9099): 운영 정책(firebase.json)에 127.0.0.1을 넣지 않으려고(시험이 지킨다). 개발 서버는 CSP를 내지 않으므로 **CSP를 보는 점검은 미리 보기로** 돌린다. 되돌리기 = firebase.json 키 한 줄을 `…-Report-Only`로(시험·inspect-headers도 함께).
+  남은 볼 수 없는 길 = 사진 고르기(Picker)·드라이브 올리기·구글 캘린더(로그인이 있어야 한다) - 깨지면 운영 오류 보고에 '[CSP] frame-src …'·'connect-src …'로 온다. 사용자가 '사진 고르기가 안 된다'를 알리면 개발자 탭 오류 기록부터 본다.
+- **P26-2 의존성 경고 (11-11 권장안)**: 루트 경고는 모두 `firebase-tools`(배포·에뮬레이터 명령 도구 - 앱 화면 묶음에 들어가지 않는다) 밑이다. 강제 고침은 firebase-tools를 13판으로 **내리라는** 것이라 쓰지 않는다. 새 판 15.35.0도 같은 꾸러미라 판 올리기로는 안 된다.
+  **uuid = 고침**: `overrides` `firebase-tools > gaxios > uuid ^11.1.1`(gaxios 6은 v4()로 여러 조각 요청 구분선만 만든다 - 돌려 봄). **minimatch = 고치지 않음**: glob 10 밑 minimatch를 11로 바꿔 끼우면 **glob이 파일을 하나도 찾지 못한다**(firebase-tools `listFiles('dist')` 146 → 0 - 화면 배포가 빈 채로 올라간다).
+  minimatch 9에는 고친 판이 없다(경고 범위 7.0.0~11.0.0). 그 사이 새로 나온 glob 자체 경고(9.0.0~14.0.1 - glob 14로 큰 판)·`@opentelemetry/core` 1 → 2(pubsub 6 필요)도 큰 판이라 그대로 - 남은 루트 13건은 모두 이 셋이 번진 것. 넣는 값이 우리 설정 파일뿐이라 실제 위험은 낮다. firebase-tools 새 판이 glob·pubsub을 올리면 다시 본다.
+  `overrides`로 도구 밑 꾸러미를 바꿀 때는 **그 도구가 실제로 하는 일**(배포 파일 목록 등)을 돌려 본다 - 설치·`npm audit`·단위 시험은 다 통과했는데 배포만 깨질 뻔했다. functions는 `npm audit fix`(fast-xml-parser 낮음 1건 → 0, 강제 없음) - 운영 함수에는 다음 함수 배포 때 들어간다.
 ## 6. 세션별 내용
 
 > 형식: **시작 조건** → **먼저 읽을 것** → 조각 ■ → **끝 조건**. 끝나면 1-3 세션 끝 정리. V4 파일 경로는 `../School_Planner_V4/` 기준.
@@ -3409,7 +3416,8 @@ Claude 의견(기능으로 기억·누른 것은 동작·창 안 탭은 2차) �
   **개발 서버는 CSP를 내지 않으므로 점검은 미리 보기(4177)로**: headers·login·attach·gcal·popout·offline 모두 통과. 찾은 것 둘(앱 버그 아님): ① attach의 드라이브 올리기 흉내 주소 `upload.mock.test`가 막힘 → 운영과 같은 꼴 `www.googleapis.com/upload/drive/v3/files?…&upload_id=mockN`
   ② frame-src에 Auth 에뮬레이터가 없어 막힌 iframe이 크롬 오류 페이지가 되고, 점검 init script가 거기서 sessionStorage를 읽다 SecurityError(개발 서버는 통과) → ■2 frame-src.
   (다른 점검 다섯 - backup·chat·handwriting·keep·mail - 도 `upload.mock.test`를 쓴다: 개발 서버로 돌리면 그대로 되고, 미리 보기로 돌릴 일이 생기면 같은 꼴로 바꾼다.)
-- [ ] ■3 의존성 경고 2건(루트 `package-lock.json` - minimatch → 11.0.1, uuid → 11.1.1): `npm ls minimatch uuid`로 누가 끌어오나 → force 없이 되면 고치고(단위·빌드·inspect-perf), 안 되면 까닭을 5장에 · functions는 `npm audit` 0건인지 본다.
+- [x] ■3 의존성 경고 2건(루트 `package-lock.json` - minimatch → 11.0.1, uuid → 11.1.1): `npm ls minimatch uuid`로 누가 끌어오나 → force 없이 되면 고치고(단위·빌드·inspect-perf), 안 되면 까닭을 5장에 · functions는 `npm audit` 0건인지 본다.
+  → 11-11 루트 14건(지난번 2건 + 그 사이 새 경고 glob·opentelemetry가 번짐) - 모두 firebase-tools 밑, 강제 = 13판으로 내리기 · uuid는 `overrides`(firebase-tools > gaxios)로 11.1.1 → 경고에서 빠짐, minimatch 11은 glob 10이 파일을 못 찾아(배포 파일 146 → 0) 되돌림 · 남은 13건 까닭은 5장 'P26-2 의존성 경고' · functions `npm audit fix` 1 → 0(함수 시험 39 통과) · 앱 꾸러미는 그대로라 inspect-perf는 돌리지 않음 · 빌드 통과.
 - [ ] ■4 문서(5장 결정 · CLAUDE.md 지금 상태의 'P22-6 뒤 남은 것' 줄 걷기 · OPS) · 세션 끝 정리.
 **끝 조건**: 운영 응답이 막기 CSP(inspect-headers) · 화면 오류·새 위반 없음 · 의존성 경고 0 또는 까닭.
 

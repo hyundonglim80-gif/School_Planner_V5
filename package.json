@@ -51,6 +51,11 @@
   "overrides": {
     "@firebase/firestore": {
       "@grpc/grpc-js": "^1.14.6"
+    },
+    "firebase-tools": {
+      "gaxios": {
+        "uuid": "^11.1.1"
+      }
     }
   }
 }
