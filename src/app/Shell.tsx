@@ -29,7 +29,6 @@ import { useWeekShortcuts } from '../features/week/prefs';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
 import ClipboardColumn from '../features/clipboard/ClipboardColumn';
-import ImportBanner from '../features/import/ImportBanner';
 import AutoBackupBanner from '../features/backup/AutoBackupBanner';
 import DraftsBanner from '../features/drafts/DraftsBanner';
 import NewYearBanner from '../features/newYear/NewYearBanner';
@@ -194,9 +193,7 @@ export default function Shell() {
       {/* 아래 탭바에 내용이 가리지 않도록 아래 여백을 둔다. 한눈에 화면만 폭 제한(1280px)을 푼다 - 칸이 열하나라 넓은 모니터에서 덕을 본다(P24).
           머리줄을 접으면 위 여백을 손잡이 높이보다 넉넉히 둔다(휴대폰 12px → 20px - 맨 위에서는 손잡이가 내용을 가리지 않게) */}
       <main ref={mainRef} className={`@container px-3 py-3 sm:p-5 ${folded ? 'pt-5' : ''} ${scope === 'board' ? '' : 'max-w-7xl'} mx-auto pb-24 sm:pb-5`}>
-        {/* 처음 로그인 'V4 자료 가져오기' 띠 (V4 자료가 있고 가져온 적이 없을 때만) */}
         <NewBuildBanner />
-        <ImportBanner />
         <AutoBackupBanner />
         {/* 앱을 열 때 남은 쓰던 글 '📝 저장하지 않은 글 n개 - 보기' (P14-6 ■1b) */}
         <DraftsBanner />

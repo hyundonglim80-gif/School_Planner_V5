@@ -49,12 +49,6 @@ describe('toWrite - 무엇을 적나', () => {
     });
   });
 
-  it('만들기: 만든 사람을 넘기면 그것을 (V4 그룹 가져오기 - 다른 구성원이 만든 것)', () => {
-    const op = writeOp.create(at, { ...note, labelIds: [] }, 'uidB');
-    expect(toWrite(op, ctx)).toMatchObject({ kind: 'set', data: { authorId: 'uidB' } });
-    expect(undoOf(op)).toEqual([{ type: 'remove', at }]);
-  });
-
   it('칸 바꾸기: 바꾼 칸과 서버 시각만, undefined는 칸 지우기, 점은 깊은 칸', () => {
     const op = writeOp.patch<'items'>(at, { text: '새 글', time: undefined, 'props.forward': false }, {});
     expect(toWrite(op, ctx)).toEqual({
@@ -70,11 +64,6 @@ describe('toWrite - 무엇을 적나', () => {
       path: 'spaces/u_me/items/abc',
       data: { deletedAt: SERVER_TIME, deletedBy: 'me', updatedAt: SERVER_TIME },
     });
-  });
-
-  it('지우기에 누가를 주면 그것으로 (V4 가져오기의 V4에서 지움)', () => {
-    expect(toWrite(writeOp.remove(at, 'v4-import'), ctx)).toMatchObject({ data: { deletedBy: 'v4-import' } });
-    expect(writeOp.remove(at)).toEqual({ type: 'remove', at });
   });
 
   it('되살리기: 지운 표시를 null로, 지운 사람 칸은 뺀다', () => {

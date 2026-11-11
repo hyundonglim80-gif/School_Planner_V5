@@ -1,5 +1,5 @@
 // tools/inspect-backup.mjs - P8-3 ■1: '💾 백업 · 가져오기 · 보내기' 창을 실제 크롬에서 본다.
-//   1) ⋮ 자료 → 창 · 탭 셋(백업·가져오기·보내기) · 단축키 '구글 캘린더로 보내기' = '보내기' 탭 · 가져오기 탭 = V4 자료 가져오기
+//   1) ⋮ 자료 → 창 · 탭 셋(백업·가져오기·보내기) · 단축키 '구글 캘린더로 보내기' = '보내기' 탭 · 가져오기 탭 = 구글 Keep (V4 가져오기는 P31에 뗐다)
 //   2) 🗄️ JSON 백업 받기 → V5 모양(version·colls·시각 $ts) · 고른 갈래만 · 지운 것은 없다
 //   3) 📄 CSV 받기 → V4 모양 머리줄
 //   4) 되살리기: 지운 일정은 돌아오고, 백업 뒤에 고친 일정은 덮지 않는다
@@ -45,7 +45,8 @@ try {
   const tabs = await page.locator('[data-backup-tab-btn]').evaluateAll((els) => els.map((e) => e.getAttribute('data-backup-tab-btn')));
   r.check(tabs.join() === 'backup,import,send,tidy', `탭 넷 (${tabs.join()})`);
   await page.locator(sel('backup-tab-btn', 'import')).click();
-  r.check(await page.locator(sel('import-run')).isVisible(), "'가져오기' 탭 = V4 자료 가져오기");
+  r.check(await page.locator(sel('keep-import')).isVisible(), "'가져오기' 탭 = 구글 Keep");
+  r.check((await page.locator(sel('import-run')).count()) === 0, "V4 자료 가져오기는 없다 (P31)");
   await page.evaluate(() => window.sp5.closeAllWindows());
   await page.evaluate(() => window.sp5.runShortcut('calendar'));
   r.check(await waitFor(async () => (await page.locator(sel('backup-window')).getAttribute('data-backup-window')) === 'send', 8000), "단축키 '구글 캘린더로 보내기' = '보내기' 탭");

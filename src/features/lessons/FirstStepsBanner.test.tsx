@@ -8,7 +8,6 @@ import { applyBase, resetMirrorStore, setStatus, trackColl } from '../../data/mi
 import { useHasLive } from '../../data/select';
 import { useSession } from '../../data/session';
 import { DEFAULT_TEACHING_MODE } from '../../domain/teachingMode';
-import { useImportRun } from '../../import/v4/runState';
 import FirstStepsBanner from './FirstStepsBanner';
 import TeachingBanner from './TeachingBanner';
 
@@ -34,7 +33,6 @@ beforeEach(() => {
   useSession.setState({ loading: false, user: { uid: 'me', email: '', displayName: '', photoURL: '' } });
   useCommonLoaded.setState({ loaded: true });
   useCommonSettings.setState({ teaching: DEFAULT_TEACHING_MODE, firstStepsDone: false });
-  useImportRun.setState({ offer: false, offerChecked: true, state: 'idle' });
   seed('timetables', {});
   seed('classes', {});
 });
@@ -84,7 +82,7 @@ describe('다음 할 일 띠 (P22-7)', () => {
     expect(q('[data-first-steps-banner]')).toBeNull();
   });
 
-  it('받기 전·교사 유형을 고르기 전·가져오기 띠가 있거나 아직 모르면·닫았으면 띄우지 않는다', () => {
+  it('받기 전·교사 유형을 고르기 전·닫았으면 띄우지 않는다', () => {
     seed('classes', {}, 'loading');
     const { rerender } = render(<FirstStepsBanner />);
     expect(q('[data-first-steps-banner]')).toBeNull();
@@ -94,13 +92,6 @@ describe('다음 할 일 띠 (P22-7)', () => {
     act(() => useCommonSettings.setState({ teaching: null }));
     expect(q('[data-first-steps-banner]')).toBeNull();
     act(() => useCommonSettings.setState({ teaching: DEFAULT_TEACHING_MODE }));
-    act(() => useImportRun.setState({ offer: true }));
-    expect(q('[data-first-steps-banner]')).toBeNull();
-    act(() => useImportRun.setState({ offer: false, offerChecked: false }));
-    expect(q('[data-first-steps-banner]')).toBeNull();
-    act(() => useImportRun.setState({ offerChecked: true, state: 'running' }));
-    expect(q('[data-first-steps-banner]')).toBeNull();
-    act(() => useImportRun.setState({ state: 'done' }));
     expect(q('[data-first-steps-banner]')).not.toBeNull();
   });
 
@@ -112,15 +103,15 @@ describe('다음 할 일 띠 (P22-7)', () => {
   });
 });
 
-describe('교사 유형 띠 - 가져오기 띠가 먼저 (P22-7)', () => {
-  it('가져오기 띠가 있거나 아직 모르면 띄우지 않는다', () => {
+describe('교사 유형 띠', () => {
+  it('계정 설정을 받기 전·이미 고른 계정은 띄우지 않는다', () => {
     useCommonSettings.setState({ teaching: null });
-    useImportRun.setState({ offer: true });
+    useCommonLoaded.setState({ loaded: false });
     render(<TeachingBanner />);
     expect(q('[data-teacher-mode-banner]')).toBeNull();
-    act(() => useImportRun.setState({ offer: false, offerChecked: false }));
-    expect(q('[data-teacher-mode-banner]')).toBeNull();
-    act(() => useImportRun.setState({ offerChecked: true }));
+    act(() => useCommonLoaded.setState({ loaded: true }));
     expect(q('[data-teacher-mode-banner]')).not.toBeNull();
+    act(() => useCommonSettings.setState({ teaching: DEFAULT_TEACHING_MODE }));
+    expect(q('[data-teacher-mode-banner]')).toBeNull();
   });
 });

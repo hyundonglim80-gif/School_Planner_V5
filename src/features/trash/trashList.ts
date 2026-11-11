@@ -2,7 +2,7 @@
 // 지운 표시가 붙은 문서를 걸러 보는 것이다: 일정·기록·메모(items)·라벨(labels)·시간표(timetables - P6-1)·진도(progress - P6-2)·학급(classes - P7-1)·자리표(seating - P7-3)·D-Day(settings/common.ddays) + 이 기기의 클립보드 휴지통.
 //   - 탭: 전체 / 일정 / 기록 / 메모 / 클립보드 / 기타(라벨·D-Day, 뒤에 생길 수업·조사표·명단… 모두) - V4 2026-09-30 사용자 요청 그대로.
 //   - 영구 삭제의 드라이브 첨부 정리: V5에서 올린 파일만, 다른 항목(살아 있는 것·휴지통)이 같은 파일을 쓰면 남긴다.
-//     **V4에서 가져온 항목(src)의 첨부는 지우지 않는다** - V4가 같은 파일을 보고 있다(PLAN 5장 P5-4).
+//     **V4에서 가져온 항목(src)의 첨부는 지우지 않는다** - 서버에 그대로 둔 V4 자료가 같은 파일을 가리킨다(PLAN 5장 P5-4·P31).
 import { driveFileIdOf } from '../../data/google/drive';
 import { ownTitle } from '../../domain/noteTitle';
 

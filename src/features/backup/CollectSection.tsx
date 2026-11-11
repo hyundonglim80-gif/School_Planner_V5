@@ -1,5 +1,5 @@
 // 백업 창 '정리' 탭의 📎 첨부 모으기 (V4 환경설정 '드라이브로 옮기기' - MENU 2-3에서 이 창의 '정리' 탭으로, P8-3).
-// V4에서 가져온 첨부 중 예전 Firebase Storage에 있는 것을 드라이브 School_Planner 폴더로 복사하고 V5의 주소만 바꾼다(원본은 V4가 쓰니 그대로).
+// V4에서 가져온 첨부 중 예전 Firebase Storage에 있는 것을 드라이브 School_Planner 폴더로 복사하고 V5의 주소만 바꾼다(원본은 그대로 - 서버에 둔 V4 자료가 가리킨다).
 import { useMemo, useState } from 'react';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { useDocs } from '../../data/select';
@@ -51,7 +51,7 @@ export default function CollectSection() {
     <Section
       id="collect"
       title="📎 첨부 모으기"
-      desc="V4에서 가져온 메모·일정·수업 칸의 첨부 가운데 예전 저장소(Firebase Storage)에 있는 것을 구글 드라이브 School_Planner 폴더로 복사하고, V5의 주소를 드라이브 것으로 바꿉니다. V4가 아직 같은 파일을 쓰므로 원본은 지우지 않습니다."
+      desc="V4에서 가져온 메모·일정·수업 칸의 첨부 가운데 예전 저장소(Firebase Storage)에 있는 것을 구글 드라이브 School_Planner 폴더로 복사하고, V5의 주소를 드라이브 것으로 바꿉니다. 원본은 지우지 않습니다."
     >
       <div data-collect className="space-y-2">
         <p className="text-xs text-slate-600">

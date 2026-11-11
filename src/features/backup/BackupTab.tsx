@@ -128,7 +128,7 @@ export default function BackupTab() {
         }
         const raw = JSON.parse(text) as unknown;
         if (isV4Backup(raw)) {
-          showToast(`${f.name}: V4 백업 파일입니다. V4 자료는 '가져오기' 탭에서 V4 계정 그대로 가져옵니다.`);
+          showToast(`${f.name}: V4 백업 파일입니다. V5에서는 되살리지 않습니다.`);
           continue;
         }
         const file = readBackupFile(raw);

@@ -155,7 +155,7 @@ export function readBackupFile(raw: unknown): BackupFile | null {
   };
 }
 
-/** V4 백업 파일인가 (V5로는 되살리지 않는다 - V4 자료는 '가져오기' 탭에서) */
+/** V4 백업 파일인가 (V5로는 되살리지 않는다 - 11-11 P31에 V4 가져오기도 뗐다) */
 export const isV4Backup = (raw: unknown) => !!raw && typeof raw === 'object' && (raw as { version?: unknown }).version === 'SP4-UNIFIED-BACKUP';
 
 export interface RestorePlan {

@@ -121,14 +121,14 @@ export interface Attachment {
   driveId?: string;
 }
 
-/** 가져온 문서의 V4 자리 (DESIGN 8장) */
+/** 가져온 문서의 V4 자리 (DESIGN 8장). V4 가져오기는 11-11 P31에 뗐다 - 이미 가져온 문서에 남은 표시를 읽기만 한다(구글 캘린더 이어 맡기·새 학년도 옛 과목·휴지통 첨부) */
 export interface ImportSource {
   from: 'v4';
   /** V4 문서 자리 (공간 밑 - 'settings/labels', 'events/2026-03-02') */
   path: string;
-  /** 그 안의 V4 id (id가 없던 것은 import/v4 nthKey) */
+  /** 그 안의 V4 id (id가 없던 것은 가져오기가 셈한 차례 키) */
   id: string;
-  /** 가져올 때 적은 칸의 지문 - 다시 가져올 때 그 뒤 V5에서 고쳤는지 본다(import/v4/plan) */
+  /** 가져올 때 적은 칸의 지문 (다시 가져오기에 썼다 - 11-11 P31에 가져오기를 뗐다, 옛 문서에 남아 있다) */
   h?: string;
 }
 

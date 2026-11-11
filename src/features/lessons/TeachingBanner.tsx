@@ -1,18 +1,16 @@
 // '교사 유형을 골라 주세요' 띠 (V4 components/TeachingModeBanner.tsx) - 한 번도 고르지 않은 계정의 하루 화면 맨 위.
 // 고르면 계정에 저장되어 다른 기기에도 다시 뜨지 않는다. '나중에'도 (초등) 담임을 저장한다. ⏰ 시간표 창 '교사 유형' 탭에서 바꾼다.
 // 계정 설정을 서버에서 받기 전에는 띄우지 않는다(받기 전의 '없음'은 모르는 것이다).
-// V4 가져오기 띠가 있거나 아직 모르면 띄우지 않는다(P22-7 - 가져오기가 교사 유형을 옮겨 온다). 고른 뒤에는 '다음' 띠(FirstStepsBanner).
+// 고른 뒤에는 '다음' 띠(FirstStepsBanner).
 import { useCommonLoaded } from '../../app/prefs';
 import { showToast } from '../../app/toast';
-import { useImportOfferSettled } from '../../import/v4/runState';
 import { presetPatch, TEACHER_PRESETS, type TeacherPreset } from '../../domain/teachingMode';
 import { updateTeaching, useTeaching } from './teaching';
 
 export default function TeachingBanner() {
   const loaded = useCommonLoaded((s) => s.loaded);
   const { chosen } = useTeaching();
-  const importSettled = useImportOfferSettled();
-  if (!loaded || chosen || !importSettled) return null;
+  if (!loaded || chosen) return null;
 
   const choose = (p: TeacherPreset, later = false) => {
     updateTeaching(presetPatch(p));

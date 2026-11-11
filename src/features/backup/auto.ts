@@ -100,7 +100,8 @@ export function useAutoBackupRunner() {
   const settings = useCommonSettings((s) => s.autoBackup);
   const { log, loaded } = useBackupLog();
   const isPc = detectDeviceKind() === 'pc';
-  // 백업할 자료가 아직 없는 새 계정에는 띠를 띄우지 않는다(모르면 띄운다 - 자료가 있는데 경고를 놓치는 쪽이 더 나쁘다)
+  // 백업할 자료가 아직 없는 새 계정에는 띠를 띄우지 않는다. 자료가 있다고 안 뒤에만 띄운다(P31 - 전에는 '모르면 띄운다'였다:
+  // 자료가 있는 계정은 기기 사본에 문서가 있어 곧바로 true이고, 모르는 동안은 받는 중이라 새 계정에 띠가 잠깐 떴다)
   const hasData = useHasLive(OWN_DATA_COLLS, usePersonalSpaceId());
   const [snoozed, setSnoozed] = useState(snoozedNow);
   // 띠와 자동 실행이 보는 '지금' - 30분마다 다시 잰다
@@ -153,7 +154,7 @@ export function useAutoBackupRunner() {
   }, []);
 
   return {
-    nag: isPc && loaded && tried && !snoozed && hasData !== false && shouldNag(settings, log, now),
+    nag: isPc && loaded && tried && !snoozed && hasData === true && shouldNag(settings, log, now),
     overdue: overdueDays(settings, log, now),
     snooze,
   };

@@ -21,7 +21,6 @@ const spaces = vi.hoisted(() => ({
   joinGroup: vi.fn(),
   leaveGroup: vi.fn(),
   deleteGroup: vi.fn(),
-  importedGroupSid: (id: string) => `g_${id}`,
 }));
 vi.mock('../../data/spaces', () => spaces);
 // 쪽지 창은 창 목록에 등록하지 않았다 - 여는 것만 본다
@@ -31,8 +30,6 @@ vi.mock('../mail/open', () => mail);
 const chat = vi.hoisted(() => ({ openChat: vi.fn(), markChatJoined: vi.fn(() => Promise.resolve()) }));
 vi.mock('../chat/open', () => ({ openChat: chat.openChat }));
 vi.mock('../../data/chat', () => ({ markChatJoined: chat.markChatJoined }));
-// V4 그룹 가져오기 칸은 V4 자리를 읽는다 - 이 시험과 상관없다
-vi.mock('./V4GroupsSection', () => ({ default: () => null }));
 
 const q = (s: string) => document.querySelector<HTMLElement>(s);
 const qa = (s: string) => [...document.querySelectorAll<HTMLElement>(s)];

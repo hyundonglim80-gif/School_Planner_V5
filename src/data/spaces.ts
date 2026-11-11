@@ -7,8 +7,7 @@
 //   (규칙이 그것만, 그 코드가 지금 inviteCode와 같을 때만 허락한다 - P14-1).
 // - 구성원 이름은 `people/{uid}`(그룹 공간 아래 - 참여할 때 내가 적는다). 공간 문서는 주인만 고치므로 거기 두지 않는다.
 // - 그룹 지우기는 주인만: 아래 자료를 먼저 비우고(Firestore는 하위 컬렉션을 함께 지우지 않는다 - V4 교훈) 공간 문서와 초대 코드를 지운다.
-// - V4 그룹 가져오기(■2): `g_{V4 그룹 id}`를 V4 주인·구성원 그대로 만든다(규칙이 V4 groups/{gid}.members로 본다 - 구성원 누구나).
-//   남이 먼저 가져왔으면 V4 구성원으로 들어간다. 초대 코드는 주인만 연다 - 주인이 아닌 사람이 가져오면 주인이 나중에 그룹 창에서(openInvite).
+// - 초대 코드가 없는 그룹(예전 V4 그룹 가져오기로 주인이 아닌 사람이 만든 `g_{V4 그룹 id}` - 11-11 P31에 가져오기를 뗐다)은 주인이 그룹 창에서 연다(openInvite).
 import { useEffect } from 'react';
 import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, onSnapshot, query, serverTimestamp, setDoc, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
@@ -130,69 +129,11 @@ export async function deleteGroup(user: SessionUser, group: GroupSpace, onStep?:
   await deleteDoc(doc(db, 'spaces', group.id));
 }
 
-/** V4에서 가져올 그룹 (import/v4/read.ts V4Group 모양 - 여기는 V4 자리를 읽지 않는다) */
-export interface ImportedGroupInfo {
-  /** V4 그룹 id - 공간 id는 `g_{id}` */
-  id: string;
-  name: string;
-  ownerId: string;
-  ownerName: string;
-  members: string[];
-  memberNames: Record<string, string>;
-  inviteCode?: string;
-}
-
-export const importedGroupSid = (v4GroupId: string) => `g_${v4GroupId}`;
-
-/** 쓰지 않은 초대 코드 하나 (먼저 바라는 코드가 비었으면 그것) */
-async function freeInviteCode(wish?: string): Promise<string> {
-  let code = wish && isInviteCode(wish) ? wish : inviteCodeOf();
+/** 쓰지 않은 초대 코드 하나 */
+async function freeInviteCode(): Promise<string> {
+  let code = inviteCodeOf();
   for (let i = 0; i < 5 && (await getDoc(doc(db, 'spaceInvites', code))).exists(); i++) code = inviteCodeOf();
   return code;
-}
-
-/**
- * V4 그룹의 V5 공간을 연다 (P8-4 ■2) - 내 목록에 없으면 V4 주인·구성원 그대로 만들고(V4 주인이면 V4 초대 코드도 - 쓰고 있으면 새로),
- * 이미 있으면(남이 먼저 가져왔다) 그때의 구성원은 내 목록에 있다 - 없는 사람은 초대 코드로 들어온다. 구성원 이름(people)은 비어 있는 사람만 V4 이름으로.
- */
-export async function ensureImportedGroup(user: SessionUser, g: ImportedGroupInfo): Promise<string> {
-  const sid = importedGroupSid(g.id);
-  // 목록을 받기 전에는 만들지 않는다 - 이미 있는 내 그룹을 V4 모양으로 덮어쓸 수 있다(주인은 통째로 쓸 수 있다)
-  if (!useMySpaces.getState().loaded) throw new Error('공유 그룹 목록을 받는 중입니다. 잠시 뒤 다시 눌러 주세요.');
-  let created = false;
-  if (!useMySpaces.getState().groups.some((x) => x.id === sid)) {
-    try {
-      const members = Object.fromEntries(g.members.map((uid) => [uid, uid === g.ownerId ? 'owner' : 'member']));
-      const code = user.uid === g.ownerId ? await freeInviteCode(g.inviteCode) : null;
-      const b = writeBatch(db);
-      b.set(doc(db, 'spaces', sid), {
-        kind: 'group', name: g.name, ownerId: g.ownerId, members, ...(code ? { inviteCode: code } : {}),
-        createdAt: serverTimestamp(), updatedAt: serverTimestamp(), v: 1,
-      });
-      if (code) b.set(doc(db, 'spaceInvites', code), { sid, ownerId: user.uid, createdAt: serverTimestamp() });
-      await b.commit();
-      created = true;
-    } catch (e) {
-      // 이미 있다(남이 먼저 가져왔다) - 그때 V4 구성원이던 사람은 위 목록에 있다. 그 뒤 V4에 든 사람은 초대 코드로만 들어온다
-      console.error('[spaces] V4 그룹 공간을 열지 못했습니다.', e);
-      throw new Error(`[${g.name}] 그룹을 열지 못했습니다. 이미 V5로 옮겨진 그룹이면 그룹장에게 초대 코드를 받아 참여해 주세요.`);
-    }
-  }
-  try {
-    // 막 만든 공간은 이름이 비어 있다 - 읽지 않는다. 그룹 창은 쓰기가 서버에 닿기 전에 새 그룹을 그려 같은 목록을 읽고, 그 읽기가 막히면 여기 읽기도 막혔다
-    const people: Awaited<ReturnType<typeof readPeople>> = created ? {} : await readPeople(sid);
-    if (!people[user.uid]) await writeMyName(sid, user);
-    const names: Record<string, string> = { ...g.memberNames, ...(g.ownerName ? { [g.ownerId]: g.ownerName } : {}) };
-    const missing = g.members.filter((uid) => uid !== user.uid && !people[uid] && names[uid]);
-    if (missing.length) {
-      const b = writeBatch(db);
-      for (const uid of missing) b.set(doc(db, 'spaces', sid, 'people', uid), { name: names[uid], photoURL: '', joinedAt: Date.now(), updatedAt: serverTimestamp(), v: 1 }, { merge: true });
-      await b.commit();
-    }
-  } catch (e) {
-    console.warn('[spaces] 구성원 이름을 적지 못했습니다(그룹은 열었다).', e);
-  }
-  return sid;
 }
 
 /** 초대 코드 열기 (주인만 - V4 그룹을 주인이 아닌 사람이 가져와 코드가 없을 때). 공간과 코드 문서를 한 묶음으로 */

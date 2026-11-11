@@ -741,7 +741,7 @@ try {
     await q(sel('account-groups')).click();
     r.check(await has(sel('groups-window')), '계정 칸 👥 공유 그룹 → 공유 그룹 창');
     r.check((await count(sel('group-new-name'))) === 1 && (await count(sel('group-join-code'))) === 1, '그룹 만들기·초대 코드로 참여');
-    r.check(await has(sel('v4-groups')), 'V4 그룹 가져오기');
+    r.check((await count(sel('v4-groups'))) === 0, 'V4 그룹 가져오기는 없다 (P31)');
   });
 
   // 쪽지 (P15-2) - 주고받기는 tools/inspect-mail.mjs(두 계정)
@@ -777,12 +777,6 @@ try {
     r.check(await has(sel('backup-window')), '⋮ 💾 백업 · 가져오기 · 보내기');
     const tabs = await page.locator(sel('backup-tab-btn')).evaluateAll((els) => els.map((e) => e.getAttribute('data-backup-tab-btn')));
     r.check(tabs.join(',') === 'backup,import,send,tidy', `탭 넷 (${tabs.join('·')})`);
-  });
-
-  await topic('v4-import', async () => {
-    await win('backup', { tab: 'import' });
-    r.check(await has(sel('import-run')), "'가져오기' 탭 - 📥 V4 자료 가져오기");
-    r.check((await count(sel('import-groups-open'))) === 1, '공유 그룹 창 길 (V4 그룹)');
   });
 
   // ════════ 10장 설정 · 단축키 ════════

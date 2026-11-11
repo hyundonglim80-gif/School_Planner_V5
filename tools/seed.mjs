@@ -1,12 +1,10 @@
 // tools/seed.mjs (V5)
 //
-// 점검용 에뮬레이터에 V5 자료를 심는다. 계정과 V4 자료는 V4 저장소의 seed가 만든다 - PC에서는 먼저 돌린다.
+// 점검용 에뮬레이터에 V5 자료를 심는다: 계정(없으면 만든다) + 그 계정들의 V5 개인 공간.
 //
-//   (V4 저장소) npm run seed   → 계정 teacher·teacher2·teacher3 + V4 자료(가져오기 시험용)
-//   (이 저장소) npm run seed   → 그 계정들의 V5 개인 공간
+//   npm run seed
 //
-// 계정이 없으면(클라우드 세션처럼 옆에 V4 저장소가 없을 때) 같은 메일·비밀번호로 만든다 - V4 seed도 있는 계정은 그대로 쓰므로
-// 나중에 V4 seed를 돌려도 겹치지 않는다. V4 자료가 필요한 가져오기 세션은 V4 저장소를 옆에 받아 V4 seed를 돌린다(PLAN 1-7).
+// V4 seed는 돌리지 않는다(11-11 P31 - V4 가져오기·V4 규칙을 뗐다. 예전에는 V4 저장소 seed가 계정과 V4 자료를 먼저 만들었다).
 //
 // 설정 기본값은 문서로 심지 않는다 - 앱이 기본값을 셈한다(DESIGN 2장 '계산할 수 있는 것은 저장하지 않는다').
 // 점검 계정이 기본값과 달라야 하는 설정(교과 전담 teacher3의 교사 유형 등)은 그 설정을 만드는 세션(P1-4·P6-1)에서 여기에 더한다.
@@ -24,7 +22,7 @@ const PASSWORD = 'test1234';
 const HOMEROOM = { unit: 'subject', hasHomeroom: true, homeroomClass: '', subjects: [], classes: [], classColors: {} };
 const SUBJECT_ONLY = { unit: 'class', hasHomeroom: false, homeroomClass: '', subjects: ['과학'], classes: ['5-1', '5-2', '5-3'], classColors: {} };
 const ACCOUNTS = [
-  { email: 'teacher@example.com', note: '기본 계정 - V4 seed 자료가 있다', teaching: HOMEROOM },
+  { email: 'teacher@example.com', note: '기본 계정', teaching: HOMEROOM },
   { email: 'teacher2@example.com', note: '공유 그룹 둘째 사람 (?as=2)', teaching: HOMEROOM },
   { email: 'teacher3@example.com', note: '교과 전담 (?as=3)', teaching: SUBJECT_ONLY },
   { email: 'teacher4@example.com', note: '성능 점검 (?as=4) - 1만 항목은 tools/inspect-perf가 심는다', teaching: HOMEROOM },
@@ -67,13 +65,10 @@ async function main() {
     } catch (e) {
       if (e.code !== 'auth/user-not-found' && e.code !== 'auth/invalid-credential') throw e;
       uid = (await createUserWithEmailAndPassword(auth, email, PASSWORD)).user.uid;
-      console.log(`${email} 계정이 없어 만들었습니다 (V4 자료는 없다 - V4 seed를 돌리면 더해진다)`);
+      console.log(`${email} 계정이 없어 만들었습니다`);
     }
     if (verified) await markEmailVerified(uid);
     await setDoc(doc(db, 'spaces', `u_${uid}`), personalSpace(uid));
-    // 처음 로그인 'V4 자료 가져오기' 띠는 닫아 둔다 - seed 계정에는 V4 자료가 있어 띠가 다른 점검의 화면을 밀어낸다.
-    // 띠와 가져오기는 tools/inspect-import-labels.mjs가 이 기록을 비우고 본 뒤 되돌린다.
-    await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'import'), { dismissed: true, updatedAt: serverTimestamp(), v: 1 });
     // 드라이브 자동 백업(P8-3)은 1년 동안 할 때가 아니게 - 마지막 백업을 앞날로 둔다. 구글 토큰을 심는 점검(첨부·사진·캘린더)에
     // 자동 백업이 끼어들어 드라이브 흉내에 백업 파일을 올리지 않게. 자동 백업은 tools/inspect-backup.mjs가 이 기록을 바꿔 본 뒤 되돌린다.
     await setDoc(doc(db, 'spaces', `u_${uid}`, 'settings', 'backupLog'), { lastAt: Date.now() + 365 * 86400000, updatedAt: serverTimestamp(), v: 1 });

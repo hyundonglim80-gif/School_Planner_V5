@@ -23,13 +23,11 @@ export type Changes<C extends SpaceCollection> = { [K in keyof Editable<C>]?: Ed
 };
 
 export type WriteOp =
-  /** authorId = 만든 사람을 그대로 둘 때만(V4 그룹 가져오기 - 없으면 적는 사람) */
-  | { type: 'create'; at: DocPath; data: Fields; authorId?: string }
+  | { type: 'create'; at: DocPath; data: Fields }
   | { type: 'patch'; at: DocPath; changes: Fields; before: Fields }
   /** patch와 같되 문서가 없으면 만든다 (setDoc merge). 지운 표시·만든 칸은 붙이지 않는다 - 날짜 문서(lessonDays)용 */
   | { type: 'merge'; at: DocPath; changes: Fields; before: Fields }
-  /** by = 누가 지웠나(없으면 적는 사람). V4 가져오기가 'V4에서 지움'을 적을 때만 준다(import/v4 IMPORT_DELETER) */
-  | { type: 'remove'; at: DocPath; by?: string }
+  | { type: 'remove'; at: DocPath }
   | { type: 'restore'; at: DocPath }
   /** 문서를 통째로 적는다 (설정 문서, 영구 지우기 되돌리기). before = 그 자리에 있던 문서(없으면 null) */
   | { type: 'put'; at: DocPath; data: Fields; before: Fields | null }
@@ -57,9 +55,9 @@ function withoutId(data: Fields): Fields {
 
 /** 칸을 고르는 쓰기 짓기 - 타입을 맞춰 WriteOp로 */
 export const writeOp = {
-  create<C extends SpaceCollection>(at: DocPath<C>, data: Editable<C>, authorId?: string): WriteOp {
+  create<C extends SpaceCollection>(at: DocPath<C>, data: Editable<C>): WriteOp {
     assertNoManaged(data as Fields, 'create');
-    return authorId ? { type: 'create', at, data: data as Fields, authorId } : { type: 'create', at, data: data as Fields };
+    return { type: 'create', at, data: data as Fields };
   },
   /** before = 고치기 전 문서(화면이 들고 있는 것). 되돌리기에 쓴다 */
   patch<C extends SpaceCollection>(at: DocPath<C>, changes: Changes<C>, before: Partial<DocOf<C>>): WriteOp {
@@ -77,8 +75,8 @@ export const writeOp = {
     for (const a of paths) for (const b of paths) if (a !== b && b.startsWith(`${a}.`)) throw new Error(`merge: '${a}'와 '${b}'를 함께 적지 않는다`);
     return { type: 'merge', at, changes: changes as Fields, before: (before ?? {}) as Fields };
   },
-  remove(at: DocPath, by?: string): WriteOp {
-    return by ? { type: 'remove', at, by } : { type: 'remove', at };
+  remove(at: DocPath): WriteOp {
+    return { type: 'remove', at };
   },
   restore(at: DocPath): WriteOp {
     return { type: 'restore', at };
@@ -165,7 +163,7 @@ export function toWrite(op: WriteOp, ctx: WriteContext): Write {
       return {
         kind: 'set',
         path,
-        data: { ...withoutId(op.data), createdAt: ctx.now, authorId: op.authorId ?? ctx.uid, deletedAt: null, updatedAt: SERVER_TIME, v: 1 },
+        data: { ...withoutId(op.data), createdAt: ctx.now, authorId: ctx.uid, deletedAt: null, updatedAt: SERVER_TIME, v: 1 },
       };
     case 'patch': {
       const data: Fields = {};
@@ -181,7 +179,7 @@ export function toWrite(op: WriteOp, ctx: WriteContext): Write {
       return { kind: 'merge', path, data };
     }
     case 'remove':
-      return { kind: 'update', path, data: { deletedAt: SERVER_TIME, deletedBy: op.by ?? ctx.uid, updatedAt: SERVER_TIME } };
+      return { kind: 'update', path, data: { deletedAt: SERVER_TIME, deletedBy: ctx.uid, updatedAt: SERVER_TIME } };
     case 'restore':
       return { kind: 'update', path, data: { deletedAt: null, deletedBy: DELETE_FIELD, updatedAt: SERVER_TIME } };
     case 'put':
