@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { SHORTCUT_ACTIONS } from '../domain/shortcuts';
 import { fontPageLabel, stepFontSizeByKey } from './fontSize';
-import { canRun, handleAppKeyDown, runShortcut, setShortcutOverrides } from './keys';
+import { canRun, handleAppKeyDown, POPOUT_KEYS, runShortcut, setShortcutOverrides } from './keys';
 import { currentFontPage, FONT_PAGES, setFontSizes, useLayoutPrefs } from './layoutPrefs';
 import { useNav } from './nav';
 
@@ -55,6 +55,15 @@ describe("단축키 '글자 작게 / 크게 / 초기화'", () => {
     expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 80 });
     expect(scale()).toBe('0.8');
     expect(toasts()).toEqual(['🔤 글자 크기 (하루): 80%']);
+  });
+
+  it('팝업창(새 창으로 옮긴 창)도 이 키를 듣는다 - 처음에 팝업창 키 목록에 빠져 있었다 (#145 PC 확인)', () => {
+    setShortcutOverrides({ fontLarger: { ctrl: true, alt: true, shift: false, key: 'J' } });
+    const e = new KeyboardEvent('keydown', { key: 'j', code: 'KeyJ', ctrlKey: true, altKey: true, cancelable: true });
+    handleAppKeyDown(e, POPOUT_KEYS);
+    expect(e.defaultPrevented).toBe(true);
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 105 });
+    for (const id of ['fontSmaller', 'fontLarger', 'fontReset'] as const) expect(POPOUT_KEYS.has(id)).toBe(true);
   });
 
   it('크게 · 초기화 (runShortcut - 단추·메뉴가 부르는 길)', () => {

@@ -81,6 +81,20 @@
     --radius-xl: calc(0.75rem / var(--root-scale));
     --radius-2xl: calc(1rem / var(--root-scale));
     --radius-3xl: calc(1.5rem / var(--root-scale));
+    /* 폭 단계(max-w-7xl 등)도 rem - 머리줄 두 줄의 max-w-7xl(80rem)이 하루 130%에서는 풀리고 한눈에 80%에서는 좁아져 단추가 47~180px 옆으로 밀렸다(#145 PC 확인) */
+    --container-3xs: calc(16rem / var(--root-scale));
+    --container-2xs: calc(18rem / var(--root-scale));
+    --container-xs: calc(20rem / var(--root-scale));
+    --container-sm: calc(24rem / var(--root-scale));
+    --container-md: calc(28rem / var(--root-scale));
+    --container-lg: calc(32rem / var(--root-scale));
+    --container-xl: calc(36rem / var(--root-scale));
+    --container-2xl: calc(42rem / var(--root-scale));
+    --container-3xl: calc(48rem / var(--root-scale));
+    --container-4xl: calc(56rem / var(--root-scale));
+    --container-5xl: calc(64rem / var(--root-scale));
+    --container-6xl: calc(72rem / var(--root-scale));
+    --container-7xl: calc(80rem / var(--root-scale));
   }
   html, body {
     overscroll-behavior-y: none; /* 모바일에서 당겨서 새로고침 방지 */

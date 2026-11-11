@@ -186,6 +186,10 @@ function isTypingTarget(t: EventTarget | null): boolean {
   return t.isContentEditable;
 }
 
+/** 새 창으로 옮긴 창·팝업창(app/PopoutShell)이 듣는 단축키 - 화면이 없어 화면·날짜 단축키는 할 일이 없다.
+ * 글자 크기 셋은 팝업창 줄(POPOUT_FONT_PAGE)을 바꾼다(메모 요청 #145 - 처음에 빠져 팝업창 안에서 누른 키가 듣지 않았다, PC 확인) */
+export const POPOUT_KEYS: ReadonlySet<ShortcutId> = new Set<ShortcutId>(['undo', 'closePanel', 'checklist', 'fontSmaller', 'fontLarger', 'fontReset']);
+
 /** only = 이 단축키만 듣는다 (새 창으로 옮긴 창 - app/PopoutShell: 화면이 없어 화면·날짜 단축키는 할 일이 없다) */
 export function handleAppKeyDown(e: KeyboardEvent, only?: ReadonlySet<ShortcutId>) {
   if (isSaveKey(e)) {

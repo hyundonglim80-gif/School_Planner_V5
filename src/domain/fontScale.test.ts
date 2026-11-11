@@ -119,6 +119,8 @@ describe('글자 크기 - 화면마다 % (메모 요청 #145)', () => {
     expect(flat).toContain('--text-2xs: 0.625rem;');
     for (const t of ['xs', 'sm', 'base', 'lg', 'xl']) expect(block).toContain(`--text-${t}: calc(`);
     expect(block).toContain('font-size: calc(1rem / var(--root-scale));');
+    // 머리줄 두 줄의 max-w-7xl(80rem)도 - 빠지면 하루 130%·한눈에 80%에서 단추가 옆으로 밀린다(#145 PC 확인)
+    expect(block).toContain('--container-7xl: calc(80rem / var(--root-scale));');
   });
 
   it('한눈에 표시를 html에 붙이고 뗀다 (P29-1)', () => {

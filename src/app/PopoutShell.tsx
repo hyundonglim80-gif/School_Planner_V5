@@ -1,7 +1,7 @@
 // 새 창으로 옮긴 창·팝업창의 껍데기 (10-28 사용자 요청 - ui/popout, 11-09 창 위치 '팝업창' - app/popupWindows). 화면·머리줄 없이 그 창 하나만 창 가득 그린다.
 //   - 팝업창에서 화면을 옮기는 일(검색 결과·그날로 가기)은 연 창(큰 창)이 한다 · 자리·크기는 창마다 이 기기에 남긴다.
 //   - 그 창을 닫으면(✕·닫기·저장 뒤 닫히는 창) 새 창도 닫힌다. 그 안에서 연 다른 창(링크 연결·라벨 관리 …)은 가운데에 뜬다.
-//   - 키: Ctrl+S는 칸이 받는다(ui/useSaveKey), ESC = 모두 닫기(저장 안 한 글은 먼저 묻는다), 되돌리기·보고 있는 칸 닫기·체크리스트.
+//   - 키: Ctrl+S는 칸이 받는다(ui/useSaveKey), ESC = 모두 닫기(저장 안 한 글은 먼저 묻는다), 되돌리기·보고 있는 칸 닫기·체크리스트·글자 크기(팝업창 줄 - #145).
 //   - 브라우저 ✕로 닫을 때 저장 안 한 글·서버가 아직 받지 않은 저장이 있으면 브라우저가 묻는다(쓰던 글은 보관에도 남는다 - data/drafts).
 //   - 큰 창(Shell)의 일 가운데 쓰기에 따라오는 것만 여기서도 한다: 구글 캘린더 보내기(저장한 일정)·Claude 요청 표시.
 //     알림·이월 표시·자동 백업·휴지통 비우기는 큰 창이 한다(두 번 하지 않게).
@@ -10,10 +10,9 @@ import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
 import { useGcalAuto } from '../features/gcal/auto';
 import { useClaudeRequestsWatch } from '../data/claudeRequests';
 import { useClipboardCapture } from '../features/clipboard/capture';
-import type { ShortcutId } from '../domain/shortcuts';
 import ImageViewer from '../ui/ImageViewer';
 import { setPopoutRoot, type PopoutSpec } from '../ui/popout';
-import { handleAppKeyDown } from './keys';
+import { handleAppKeyDown, POPOUT_KEYS } from './keys';
 import PendingWritesBanner from './PendingWritesBanner';
 import { usePendingWritesGuard } from './pendingWritesGuard';
 import WindowHost from './WindowHost';
@@ -22,8 +21,6 @@ import { rememberPopupRect, sendNavToOpener, sendParamsToOpener, usePopupBridge 
 import { pressInThisWindow } from './pressShortcuts';
 import './windowList';
 import { anyWindowUnsaved, getWindowDef, openWindow, useWindows } from './windows';
-
-const POPOUT_KEYS: ReadonlySet<ShortcutId> = new Set<ShortcutId>(['undo', 'closePanel', 'checklist']);
 
 export default function PopoutShell({ spec }: { spec: PopoutSpec }) {
   const def = getWindowDef(spec.id);
