@@ -1,5 +1,6 @@
-// 환경설정 '앱' 탭 (MENU 3-6): 앱으로 설치 · 이 기기 사본 다시 받기(P2-2) · 빌드 번호.
+// 환경설정 '앱' 탭 (MENU 3-6): 초기화(P33-2) · 앱으로 설치 · 이 기기 사본 다시 받기(P2-2) · 빌드 번호.
 import { useState } from 'react';
+import ResetSection from './ResetSection';
 import { installApp, useInstall } from '../../app/install';
 import { showErrorToast, showToast } from '../../app/toast';
 import { useMirror } from '../../data/mirror/store';
@@ -53,6 +54,7 @@ export default function AppTab() {
   const { canPrompt, standalone } = useInstall();
   return (
     <div>
+      <ResetSection />
       <Section
         id="install"
         title="앱으로 설치"

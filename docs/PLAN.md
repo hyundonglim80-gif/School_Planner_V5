@@ -3726,7 +3726,8 @@ P31로 V4를 끊었으니 그 파일은 Storage에 하나뿐이다(V4 자료는 
 - [x] ■2 `app/settingsSnapshot.ts`: 지금 값 모으기(`currentDevicePrefs`·`useCommonSettings`·이 기기 store들) · 입히기(같은 store 함수로 - 계정 맞추기가 1초 뒤 올린다) · `data` 읽기·쓰기 `settings/reset`(내 공간 - 저장 도우미 `writeOps`) · 받은 값 store(로그인 동안 구독, 로그아웃이면 비움).
   → 11-12: `data/settingsReset`(듣기·`batch` put - 누른 저장이라 실패 안내) · `app/settingsReset`(`useResetSync` - App, 로그아웃이면 비움 · `RESET_SPECS`) · **`app/resetTargets`**(겹친 값만 드는 가벼운 store - layoutPrefs·경계선·칸 폭이 불러도 prefs와 고리가 없게) · `app/settingsSnapshot`(`saveMyResetSnapshot`·`resetToInitial` + 되돌리기) ·
   이어 붙임(■3 몫을 당김): 글자 크기 초기화·`fontReset` = `stepFontSize(0)`가 초기화 값 · 한눈에 경계선·오른쪽/왼쪽 칸 두 번 누르기 · 단축키 '기본값으로'(묻는 글이 어디 값인지) · 백업에 `settings/reset`도 담는다 · 시험 settingsSnapshot 7·SettingsWindow 1·backup 1.
-- [ ] ■3 앱 탭 '초기화' 절 `[data-reset-section|reset-save|reset-apply|reset-saved-at]`(💾 초기화 설정 = 바로 저장 + 안내·↩️ 초기화 = 묻고 + 되돌리기 하나) · 글자 크기 초기화·`fontReset`·단축키 '기본값으로'·경계선 두 번 누르기 → 겹친 초기화 값 · 단위 시험 · 크롬 점검(inspect-settings 새 묶음: 바꾸고 💾 → 다른 값으로 → ↩️ = 저장한 값 · 글자 크기 초기화 = 저장한 %).
+- [x] ■3 앱 탭 '초기화' 절 `[data-reset-section|reset-save|reset-apply|reset-saved-at]`(💾 초기화 설정 = 바로 저장 + 안내·↩️ 초기화 = 묻고 + 되돌리기 하나) · 글자 크기 초기화·`fontReset`·단축키 '기본값으로'·경계선 두 번 누르기 → 겹친 초기화 값 · 단위 시험 · 크롬 점검(inspect-settings 새 묶음: 바꾸고 💾 → 다른 값으로 → ↩️ = 저장한 값 · 글자 크기 초기화 = 저장한 %).
+  → 11-12: `features/settings/ResetSection`(앱 탭 맨 위 · `data-reset-section` = 지금 초기화 값이 어디 것인가 mine/admin/app · 저장한 때) · SettingsWindow.test 1 · inspect-settings '초기화' 묶음 17(💾 = reset PC 몫·↩️ 묻고 110%·되돌리기 안내·다른 창의 `fontReset`도 110%·지우면 100%) 통과 · inspect-board 통과 · 빌드.
 - [ ] ■4 설명서 settings(새 주제 'reset' 또는 '보기' 절 + inspect-manual 묶음) · 문서 · 세션 끝 정리(1-3).
 **끝 조건**: 사용자가 💾 초기화 설정을 누르면 지금 값이 내 초기화 값이 되고, ↩️ 초기화·글자 크기 초기화·단축키 기본값으로·경계선 두 번 누르기가 그 값으로 간다 · 다른 기기 종류는 그 몫(없으면 관리자 → 앱 기본) · 사람마다 자료는 바뀌지 않는다.
 

@@ -12,6 +12,7 @@ import { useSession } from '../../data/session';
 import SettingsWindow from './SettingsWindow';
 import { NO_BUTTON } from './ShortcutsTab';
 import { useResetTargets } from '../../app/resetTargets';
+import { receiveMyReset, useResetSnapshots } from '../../app/settingsReset';
 import { LOCAL_PREFS } from '../../domain/settingsSnapshot';
 import { readSettings } from '../../domain/settings';
 import { cancelShortcutRecord, onRecordClick, startShortcutRecord, useShortcutRecord } from '../../app/shortcutRecord';
@@ -27,6 +28,15 @@ vi.mock('../../data/mirror/sync', () => ({ resetMirror }));
 vi.mock('../../data/errorReport', () => ({ loadErrorReports: vi.fn(async () => []), deleteErrorReports: vi.fn() }));
 // 관리자 계정 목록도 서버를 읽는다 - 더한 관리자 없음 (관리자인가는 data/admins.test)
 vi.mock('../../data/admins', async (orig) => ({ ...(await orig<typeof import('../../data/admins')>()), loadAdmins: vi.fn(async () => []) }));
+// 내 초기화 설정(P33-2)은 서버에 적는다 - 받은 것만 모은다
+const savedReset = vi.hoisted(() => [] as Array<{ uid: string; data: Record<string, unknown> }>);
+vi.mock('../../data/settingsReset', () => ({
+  RESET_DOC_ID: 'reset',
+  saveMyReset: vi.fn(async (uid: string, data: Record<string, unknown>) => {
+    savedReset.push({ uid, data });
+  }),
+  watchMyReset: () => () => {},
+}));
 // '공휴일'도 서버를 읽는다 - 빈 표 (칸은 DevHolidaysSection.test)
 vi.mock('../../data/govHolidays', () => ({
   loadGovApiKey: vi.fn(async () => ''),
@@ -473,5 +483,39 @@ describe('바꾼 키 고르기', () => {
     });
     expect(resetMirror).toHaveBeenCalledTimes(1);
     useMirror.setState({ persisted: null, colls: {} });
+  });
+
+  it("앱: 초기화 (P33-2) - 💾 지금 값을 내 초기화 값으로 · ↩️ 묻고 그 값으로 + 되돌리기", async () => {
+    useSession.setState({ loading: false, user: { uid: 'u1', email: 'teacher@example.com', displayName: '', photoURL: '' } });
+    useLayoutPrefs.setState({ fontSizes: { day: 115 } });
+    openSettings('app');
+    // 맨 위 절 · 아직 저장한 값이 없다
+    expect(qa('[data-settings-panel="app"] [data-settings-section]')[0].dataset.settingsSection).toBe('reset');
+    expect(q('[data-reset-section]').dataset.resetSection).toBe('app');
+    expect(q('[data-reset-saved-at]').textContent).toContain('앱 처음 값');
+    await act(async () => {
+      fireEvent.click(q('[data-reset-save]'));
+    });
+    expect(savedReset).toHaveLength(1);
+    expect(savedReset[0]).toMatchObject({ uid: 'u1', data: { pc: { prefs: { fontSizes: { day: 115 } } } } });
+    expect(q('[data-toast]').textContent).toContain('초기화 값으로 저장했습니다 (PC)');
+    // 서버가 돌려주면 (흉내) 저장한 때가 보인다
+    act(() => receiveMyReset(savedReset[0].data));
+    expect(q('[data-reset-section]').dataset.resetSection).toBe('mine');
+    expect(q('[data-reset-saved-at]').textContent).toMatch(/PC 초기화 값: \d{4}-\d{2}-\d{2} \d{2}:\d{2}에 저장/);
+
+    useLayoutPrefs.setState({ fontSizes: { day: 80 } });
+    const ask = vi.spyOn(window, 'confirm').mockReturnValueOnce(false);
+    fireEvent.click(q('[data-reset-apply]'));
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 80 });
+    ask.mockReturnValueOnce(true);
+    fireEvent.click(q('[data-reset-apply]'));
+    expect(ask.mock.calls[1][0]).toContain("내 '초기화 설정'");
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 115 });
+    act(() => fireEvent.click([...qa('[data-toast-action="되돌리기"]')].at(-1)!));
+    expect(useLayoutPrefs.getState().fontSizes).toEqual({ day: 80 });
+    ask.mockRestore();
+    act(() => useResetSnapshots.setState({ mine: null, admin: null, loaded: false }));
+    savedReset.length = 0;
   });
 });

@@ -25,8 +25,13 @@ const commonBefore = await getDoc(commonRef);
 undo.add(() => (commonBefore.exists() ? setDoc(commonRef, commonBefore.data()) : deleteDoc(commonRef)));
 const before = await getDoc(pcRef);
 undo.add(() => (before.exists() ? setDoc(pcRef, before.data()) : deleteDoc(pcRef)));
+// 내 초기화 설정 (P33-2) - 끝에 되돌린다
+const resetRef = doc(em.db, 'spaces', `u_${uid}`, 'settings', 'reset');
+const resetBefore = await getDoc(resetRef);
+undo.add(() => (resetBefore.exists() ? setDoc(resetRef, resetBefore.data()) : deleteDoc(resetRef)));
 // 기본값에서 시작한다 (지난 점검이 남긴 것이 있으면 결과가 흔들린다)
 await deleteDoc(pcRef);
+await deleteDoc(resetRef);
 
 const browser = await launch();
 try {
@@ -160,6 +165,52 @@ try {
   const sc2 = await serverUntil(serverPc, (d) => !d.shortcutOverrides);
   r.check(!sc2.shortcutOverrides, '기본값으로(묻고 바로) = 계정에서 칸이 빠진다');
   r.check(await waitFor(a.page.locator(sel('shortcut-row', 'scopeYear'))), '년간 화면 줄이 돌아왔다');
+
+  r.section("초기화 (P33-2 - 💾 초기화 설정 · ↩️ 초기화 · 글자 크기 초기화 = 저장한 값)");
+  const serverReset = async () => (await getDoc(resetRef)).data() ?? {};
+  const resetFrom = () => a.page.getAttribute(sel('reset-section'), 'data-reset-section');
+  await a.page.click(sel('settings-tab', 'view'));
+  for (let i = 0; i < 2; i++) await a.page.click(sel('font-step', 'day:up'));
+  r.check((await fontOf(a.page)) === '1.1', '하루 110%로 바꾸고');
+  await a.page.click(sel('settings-tab', 'app'));
+  r.check(await waitFor(a.page.locator(sel('reset-section'))), "앱 탭 '초기화' 절");
+  r.check((await resetFrom()) === 'app', '아직 저장한 값이 없다 (앱 처음 값)');
+  await a.page.click(sel('reset-save'));
+  const rs = await serverUntil(serverReset, (d) => d.pc?.prefs?.fontSizes?.day === 110);
+  r.check(rs.pc?.prefs?.fontSizes?.day === 110 && 'common' in rs && !('mobile' in rs) && !('semesterFilter' in (rs.pc?.prefs ?? {})), `💾 = settings/reset의 PC 몫 + 계정 몫 (${JSON.stringify(rs.pc?.prefs)})`);
+  r.check(await waitFor(async () => (await resetFrom()) === 'mine'), '절이 내 초기화 값을 받는다');
+  r.check(/\d{4}-\d{2}-\d{2} \d{2}:\d{2}에 저장/.test((await a.page.textContent(sel('reset-saved-at'))) ?? ''), '저장한 때가 보인다');
+  await a.page.click(sel('settings-tab', 'view'));
+  for (let i = 0; i < 3; i++) await a.page.click(sel('font-step', 'day:up'));
+  r.check((await fontOf(a.page)) === '1.25', '다른 값(125%)으로 바꾼 뒤');
+  await a.page.click(sel('font-step', 'day:reset'));
+  r.check(await waitFor(async () => (await fontOf(a.page)) === '1.1'), "글자 크기 '초기화' = 저장한 110% (100%가 아니라)");
+  await a.page.click(sel('font-step', 'day:down'));
+  r.check((await fontOf(a.page)) === '1.05', '다시 105%로');
+  await a.page.click(sel('settings-tab', 'app'));
+  a.dialogs.answer = true;
+  await a.page.click(sel('reset-apply'));
+  a.dialogs.answer = false;
+  r.check(await waitFor(async () => (await fontOf(a.page)) === '1.1'), '↩️ 초기화(묻고) = 저장한 값 110%');
+  // 앞 묶음(단축키 기본값으로)의 되돌리기 안내가 아직 남아 있을 수 있다 - 마지막 것
+  r.check(await waitFor(a.page.locator(sel('toast-action', '되돌리기')).last()), '안내에 되돌리기');
+  r.check(((await a.page.locator(sel('toast')).last().textContent()) ?? '').includes("내 '초기화 설정'으로 되돌렸습니다"), "안내 = 내 '초기화 설정'으로 되돌렸습니다");
+  const pcAfter = await serverUntil(serverPc, (d) => d.fontSizes?.day === 110);
+  r.check(pcAfter.fontSizes?.day === 110, '계정(settings/pc)에도 올라간다');
+  // 다른 창(같은 계정)도 내 초기화 값을 받는다 - 그 창의 글자 크기 초기화 단축키도 110%
+  await open(b.page, '#/day/2026-10-08');
+  r.check(await waitFor(async () => (await fontOf(b.page)) === '1.1'), '다른 창(하루)도 110%를 따라온다');
+  await b.page.evaluate(() => window.sp5.runShortcut('fontLarger'));
+  r.check(await waitFor(async () => (await fontOf(b.page)) === '1.15'), '다른 창에서 글자 크게 (115%)');
+  await b.page.evaluate(() => window.sp5.runShortcut('fontReset'));
+  r.check(await waitFor(async () => (await fontOf(b.page)) === '1.1'), "다른 창의 '글자 크기 초기화' 단축키도 저장한 110%");
+  // 지우면 앱 처음 값으로 (다음 점검이 흔들리지 않게 100%로 되돌린다)
+  await deleteDoc(resetRef);
+  r.check(await waitFor(async () => (await resetFrom()) === 'app'), '초기화 설정을 지우면 다시 앱 처음 값');
+  await a.page.click(sel('settings-tab', 'view'));
+  await a.page.click(sel('font-step', 'day:reset'));
+  r.check(await waitFor(async () => (await fontOf(a.page)) === '1'), '그때 글자 크기 초기화 = 100%');
+  await serverUntil(serverPc, (d) => !('fontSizes' in d));
 
   r.section('시작 화면');
   await a.page.click(sel('settings-tab', 'view'));
