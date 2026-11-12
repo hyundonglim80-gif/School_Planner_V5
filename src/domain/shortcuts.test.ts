@@ -313,6 +313,65 @@ describe('눌러서 정하기 (P18)', () => {
     expect(recordKeyIssue(key('C'))).toBeNull();
   });
 
+  it('P34: 특수 키도 모두 받는다 - Backspace·Delete·Tab·F키·기호·크롬이 앱에 먼저 주는 키', () => {
+    for (const k of ['Backspace', 'Delete', 'Tab', 'Insert', 'Home', 'End', 'PageUp', 'PageDown', 'Pause', 'F1', 'F5', 'F12', ';', '/', '`', 'Enter']) {
+      expect(recordKeyIssue(key(k)), k).toBeNull();
+    }
+    expect(recordKeyIssue(key('Tab', { shift: true }))).toBeNull();
+    expect(recordKeyIssue(key('Backspace', { ctrl: true }))).toBeNull();
+    expect(recordKeyIssue(key('Delete', { ctrl: true, shift: true }))).toBeNull();
+    // 크롬이 앱에 먼저 주고 앱이 받으면 크롬 일을 막는다(새로고침·북마크·방문 기록·주소 칸·뒤로)
+    for (const k of [key('R', { ctrl: true }), key('D', { ctrl: true }), key('H', { ctrl: true }), key('F4'), key('ArrowLeft', { alt: true }), key('PageDown', { ctrl: true, shift: true })]) {
+      expect(recordKeyIssue(k), formatBinding(k)).toBeNull();
+    }
+  });
+
+  it('P34: 크롬이 먼저 가져가는 키(앱까지 오지 않는다)는 까닭과 함께 막는다', () => {
+    const chrome = [
+      key('Tab', { ctrl: true }),
+      key('Tab', { ctrl: true, shift: true }),
+      key('PageDown', { ctrl: true }),
+      key('PageUp', { ctrl: true }),
+      key('F4', { ctrl: true }),
+      key('W', { ctrl: true, shift: true }),
+      key('T', { ctrl: true, shift: true }),
+      key('N', { ctrl: true, shift: true }),
+    ];
+    for (const k of chrome) expect(recordKeyIssue(k), formatBinding(k)).toMatch(/^브라우저가 먼저 가져가는 키/);
+    expect(recordKeyIssue(key('Tab', { ctrl: true }))).toBe('브라우저가 먼저 가져가는 키라 앱까지 오지 않습니다 (Ctrl + Tab = 다음 탭).');
+  });
+
+  it('P34: 윈도우가 먼저 쓰는 키는 까닭과 함께 막는다', () => {
+    const windows = [
+      key('Tab', { alt: true }),
+      key('Tab', { alt: true, shift: true }),
+      key('F4', { alt: true }),
+      key('Space', { alt: true }),
+      key('Delete', { ctrl: true, alt: true }),
+      key('PrintScreen'),
+      key('PrintScreen', { alt: true }),
+      key('HangulMode'),
+      key('HanjaMode'),
+      key('CapsLock'),
+      key('NumLock'),
+      key('ScrollLock'),
+      key('ContextMenu'),
+      key('AudioVolumeUp'),
+      key('MediaPlayPause'),
+      key('BrowserBack'),
+      key('LaunchMail'),
+    ];
+    for (const k of windows) expect(recordKeyIssue(k), formatBinding(k)).toMatch(/^윈도우가 먼저 쓰는 키/);
+    expect(recordKeyIssue(key('Tab', { alt: true }))).toBe('윈도우가 먼저 쓰는 키라 쓸 수 없습니다 (Alt + Tab = 창 바꾸기).');
+    expect(recordKeyIssue(key('HangulMode'))).toMatch(/한\/영/);
+    // 이름을 알 수 없는 키·입력기가 조합하는 중의 키
+    for (const k of ['Unidentified', 'Process', 'Dead', 'Fn']) expect(recordKeyIssue(key(k)), k).toMatch(/알아볼 수 없는 키/);
+    // 비슷하지만 윈도우가 쓰지 않는 조합은 받는다
+    expect(recordKeyIssue(key('Space', { ctrl: true, alt: true }))).toBeNull();
+    expect(recordKeyIssue(key('Delete', { alt: true }))).toBeNull();
+    expect(recordKeyIssue(key('F4', { shift: true }))).toBeNull();
+  });
+
   it('그 기능의 기본 키는 받는다', () => {
     expect(recordKeyIssue(key('5', { shift: true }), 'scopeMemo')).toBeNull();
     expect(recordKeyIssue(key('Z', { ctrl: true }), 'timetable')).toMatch(/글 칸/);
@@ -336,6 +395,19 @@ describe('눌러서 정하기 (P18)', () => {
     expect(worksWhileTyping(key('T', { shift: true }))).toBe(false);
     expect(worksWhileTyping(key('T', { alt: true }))).toBe(true);
     expect(worksWhileTyping(key(''))).toBe(true);
+  });
+
+  it('P34: F키는 글 칸 안에서도 · Backspace·Delete는 Ctrl·Alt와 함께여도 글 칸 안에서는 글 지우기 · Tab은 Ctrl·Alt 없으면 칸 옮기기', () => {
+    for (const k of ['F1', 'F5', 'F12', 'F24']) expect(worksWhileTyping(key(k)), k).toBe(true);
+    expect(worksWhileTyping(key('F5', { shift: true }))).toBe(true);
+    expect(worksWhileTyping(key('F25'))).toBe(false);
+    for (const k of ['Backspace', 'Delete']) {
+      expect(worksWhileTyping(key(k)), k).toBe(false);
+      expect(worksWhileTyping(key(k, { ctrl: true })), `Ctrl + ${k}`).toBe(false);
+      expect(worksWhileTyping(key(k, { alt: true })), `Alt + ${k}`).toBe(false);
+    }
+    expect(worksWhileTyping(key('Tab'))).toBe(false);
+    expect(worksWhileTyping(key('Tab', { shift: true }))).toBe(false);
   });
 
   it('↑/↓ 짝 토글과 다른 기능의 같은 화살표는 겹침이다 (목록 탭도 막는다 - 먼저 적힌 토글이 키를 가져간다)', () => {

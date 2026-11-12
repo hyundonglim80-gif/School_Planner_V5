@@ -125,7 +125,14 @@ export function onRecordClick(e: MouseEvent) {
   else useShortcutRecord.setState({ miss: r.reason });
 }
 
-/** window capture - 앱 단축키(app/keys)·창의 ESC보다 먼저 받는다 */
+/** 맥이 아닌 곳(윈도우)의 ⊞ 키 - 맥의 ⌘는 Ctrl로 받는다(bindingFromEvent) */
+const IS_MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || '');
+
+/**
+ * window capture - 앱 단축키(app/keys)·창의 ESC보다 먼저 받는다.
+ * ESC 말고는 모든 키를 그대로 받는다(P34 11-12 - 전에는 Tab은 지나보내고 Backspace·Delete는 지우기였다). 지우기는 띠의 '키 지우기' 단추.
+ * 받을 수 없는 키(크롬·윈도우가 먼저 쓰는 키)는 띠가 recordKeyIssue로 까닭을 보이고 저장을 막는다.
+ */
 export function onRecordKey(e: KeyboardEvent) {
   const { stage } = useShortcutRecord.getState();
   if (stage === 'off') return;
@@ -136,15 +143,23 @@ export function onRecordKey(e: KeyboardEvent) {
     return;
   }
   // 고르는 동안 다른 키는 평소대로(단축키로 메뉴를 열어도 된다)
-  if (stage !== 'key' || e.key === 'Tab') return;
+  if (stage !== 'key') return;
   e.preventDefault();
   e.stopImmediatePropagation();
-  if (isModifierOnly(e) || e.isComposing) return;
-  if (e.key === 'Backspace' || e.key === 'Delete') {
-    useShortcutRecord.setState({ binding: { ctrl: false, alt: false, shift: false, key: '' } });
+  // 수식키 하나만은 조합을 기다린다 - CapsLock은 키로 받아 까닭을 보인다(윈도우가 대문자를 켜고 끈다)
+  if ((isModifierOnly(e) && e.key !== 'CapsLock') || e.isComposing) return;
+  if (e.metaKey && !IS_MAC) {
+    useShortcutRecord.setState({ binding: null, miss: '⊞ 윈도우 키 조합은 윈도우가 먼저 써서 쓸 수 없습니다.' });
     return;
   }
-  useShortcutRecord.setState({ binding: bindingFromEvent(e) });
+  useShortcutRecord.setState({ binding: bindingFromEvent(e), miss: null });
+}
+
+/** 키 지우기 - 저장하면 그것의 단축키가 빠진다 (띠의 단추 - 전에는 Backspace·Delete) */
+export function clearRecordedKey() {
+  // 누른 단추에 초점이 남으면 다음 Space(키를 뗄 때)가 이 단추를 또 누른다
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  useShortcutRecord.setState({ binding: { ctrl: false, alt: false, shift: false, key: '' }, miss: null });
 }
 
 /** 받은 키를 그 기능에 저장한다(겹친 기능에서는 뺀다). 끝나면 환경설정 단축키 탭에서 그 줄을 짚는다. */

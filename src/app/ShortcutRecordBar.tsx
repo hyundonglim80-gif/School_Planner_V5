@@ -1,6 +1,7 @@
 // 단축키 설정 띠 (P18-1 - 환경설정 단축키 탭 '⌨️ 단축키 설정'으로 연다). 화면 아래 가운데에 늘 떠 있다(창이 열리고 닫혀도).
 //   고르기: '단축키로 쓸 메뉴·단추를 누르세요' · 고른 것 · [완료] [취소]   (고를 수 있는 단추는 점선 테두리 - index.css)
-//   키    : ''시간표'에 줄 키를 누르세요' · 누른 조합 · 안내(겹침·글 칸) · [저장] [다시 고르기] [취소]
+//   키    : ''시간표'에 줄 키를 누르세요' · 누른 조합 · 안내(겹침·글 칸·Tab) · [저장] [키 지우기] [다시 고르기] [취소]
+//           ESC 말고는 모든 키를 받는다(P34 - Backspace·Delete·Tab도). 받을 수 없는 키(크롬·윈도우가 먼저 쓰는 키)는 까닭 + 저장 막기.
 //   창 안 탭(P18-2)도 같다 - 이름은 '환경설정 → 알림'(app/tabShortcuts).
 // 새 창이 아니라 띠 하나라 창 목록에 넣지 않는다(PLAN 5장 P18). 띠 안을 누른 것은 고르기에 세지 않는다([data-shortcut-record]).
 import { useEffect } from 'react';
@@ -8,7 +9,7 @@ import { createPortal } from 'react-dom';
 import { assignBinding, bindingOf, formatAnyBinding, recordKeyIssue, resolveBindings, worksWhileTyping } from '../domain/shortcuts';
 import { useExtraBindings, useShortcutOverrides } from './keys';
 import { shortcutLabel } from './tabShortcuts';
-import { cancelShortcutRecord, finishPick, onRecordClick, onRecordKey, repick, saveRecordedKey, useShortcutRecord } from './shortcutRecord';
+import { cancelShortcutRecord, clearRecordedKey, finishPick, onRecordClick, onRecordKey, repick, saveRecordedKey, useShortcutRecord } from './shortcutRecord';
 
 const BTN = 'px-3 py-1.5 text-xs font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0';
 
@@ -56,12 +57,13 @@ export default function ShortcutRecordBar() {
       </>
     );
   } else {
-    const issue = binding ? recordKeyIssue(binding, picked) : null;
+    const issue = binding ? recordKeyIssue(binding, picked) : miss;
     const cleared = binding && !issue ? assignBinding(now, picked, binding, extra).cleared : [];
+    const current = bindingOf(picked, now, extra);
     body = (
       <>
         <span className="text-xs text-slate-600 min-w-0">
-          <strong className="text-slate-800">'{label}'</strong>에 줄 키를 누르세요 <span className="text-slate-400">(지금: {formatAnyBinding(picked, bindingOf(picked, now, extra))} · Backspace = 지우기)</span>
+          <strong className="text-slate-800">'{label}'</strong>에 줄 키를 누르세요 <span className="text-slate-400">(지금: {formatAnyBinding(picked, current)})</span>
         </span>
         <kbd data-shortcut-record-key className="min-w-20 px-2 py-1 text-center bg-white border border-slate-300 rounded-lg text-sm font-mono font-bold text-slate-800 shrink-0">
           {binding ? formatAnyBinding(picked, binding) : '…'}
@@ -70,6 +72,9 @@ export default function ShortcutRecordBar() {
           <span data-shortcut-record-issue className="text-xs font-bold text-rose-600">
             {issue}
           </span>
+        )}
+        {binding?.key === 'Tab' && !binding.ctrl && !binding.alt && !issue && (
+          <span data-shortcut-record-tab className="text-xs text-slate-500">글 칸 밖에서는 Tab으로 단추 사이를 옮겨 다니지 않게 됩니다</span>
         )}
         {cleared.length > 0 && (
           <span data-shortcut-record-conflict className="text-xs font-bold text-amber-700">
@@ -82,6 +87,17 @@ export default function ShortcutRecordBar() {
         <button type="button" data-shortcut-record-save disabled={!binding || !!issue} onClick={() => saveRecordedKey()} className={`${BTN} bg-primary text-white hover:bg-primary/90`}>
           저장
         </button>
+        {current.key && (
+          <button
+            type="button"
+            data-shortcut-record-clear
+            onClick={clearRecordedKey}
+            className={`${BTN} bg-white border border-slate-200 text-slate-600 hover:bg-slate-50`}
+            title="이 기능의 단축키를 뺍니다 - 저장을 누르면 빠집니다"
+          >
+            키 지우기
+          </button>
+        )}
         <button type="button" data-shortcut-record-repick onClick={repick} className={`${BTN} bg-white border border-slate-200 text-slate-600 hover:bg-slate-50`}>
           다시 고르기
         </button>

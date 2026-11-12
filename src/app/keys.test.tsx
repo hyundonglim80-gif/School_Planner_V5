@@ -78,6 +78,30 @@ describe('단축키 (기본값 - 11-11 메모 요청 #149 사용자 업무 계�
     expect(e.defaultPrevented).toBe(false);
   });
 
+  it('P34: Backspace·Tab·F5도 단축키 - 글 칸 안에서는 Backspace(Ctrl과 함께여도)·Tab은 글 고치기, F5는 단축키', () => {
+    setShortcutOverrides({
+      scopeYear: { ctrl: false, alt: false, shift: false, key: 'Backspace' },
+      scopeMemo: { ctrl: true, alt: false, shift: false, key: 'Backspace' },
+      scopeWeek: { ctrl: false, alt: false, shift: false, key: 'Tab' },
+      scopeMonth: { ctrl: false, alt: false, shift: false, key: 'F5' },
+    });
+    const ta = document.createElement('textarea');
+    for (const init of [{ key: 'Backspace', code: 'Backspace' }, { key: 'Backspace', code: 'Backspace', ctrlKey: true }, { key: 'Tab', code: 'Tab' }]) {
+      expect(press(init, ta).defaultPrevented, JSON.stringify(init)).toBe(false);
+      expect(useNav.getState().scope).toBe('day');
+    }
+    // F5는 글자를 치지 않는다 - 글 칸 안에서도 단축키(브라우저 새로고침을 막는다)
+    expect(press({ key: 'F5', code: 'F5' }, ta).defaultPrevented).toBe(true);
+    expect(useNav.getState().scope).toBe('month');
+    // 글 칸 밖에서는 모두 단축키
+    expect(press({ key: 'Backspace', code: 'Backspace' }).defaultPrevented).toBe(true);
+    expect(useNav.getState().scope).toBe('year');
+    press({ key: 'Tab', code: 'Tab' });
+    expect(useNav.getState().scope).toBe('week');
+    press({ key: 'Backspace', code: 'Backspace', ctrlKey: true });
+    expect(useNav.getState().scope).toBe('memo');
+  });
+
   it('되돌리기(Ctrl+Z)는 글 칸 안에서는 글 되돌리기에 맡긴다', () => {
     const run = vi.fn();
     const off = setShortcutAction('undo', run);

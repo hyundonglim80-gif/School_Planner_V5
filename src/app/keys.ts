@@ -3,7 +3,7 @@
 //   Ctrl+S : 브라우저 '다른 이름으로 저장'을 막는다. 저장은 커서가 든 칸·창이 받는다(ui/useSaveKey).
 //   그 밖  : 환경설정에서 바꿀 수 있는 단축키(domain/shortcuts). 키 조합은 거기서, 하는 일은 여기서(runShortcut).
 //            창을 여는 단축키는 창 목록의 같은 id 창을 연다 - 창을 등록하면 단축키도 저절로 선다.
-// 글을 칠 때(입력칸·글 칸)는 Ctrl·Alt 없는 단축키를 듣지 않는다(글자가 먹히지 않으면 곤란하다).
+// 글을 칠 때(입력칸·글 칸)는 Ctrl·Alt 없는 단축키를 듣지 않는다(글자가 먹히지 않으면 곤란하다) - F키는 듣고, Backspace·Delete는 늘 글 지우기(P34 domain/shortcuts worksWhileTyping).
 // 단추·카드에 초점이 있으면 Ctrl·Alt 없는 Space·Enter 단축키를 듣지 않는다(그것을 누르기 - #149 한눈에 = Space).
 import { useEffect, useMemo } from 'react';
 import { create } from 'zustand';
@@ -25,6 +25,7 @@ import {
   type ShortcutId,
   type ShortcutOverrides,
   type TabBindings,
+  worksWhileTyping,
 } from '../domain/shortcuts';
 import { runCustomShortcut } from './customShortcuts';
 import type { PressTargets } from '../domain/pressTarget';
@@ -217,8 +218,8 @@ export function handleAppKeyDown(e: KeyboardEvent, only?: ReadonlySet<ShortcutId
   for (const { id, action, binding } of allBindings(resolveBindings(state.overrides), only ? {} : extraBindingsOf(state))) {
     if (only && !only.has(id as ShortcutId)) continue;
     if (!matchesEvent(binding, e, action)) continue;
-    // 입력칸에 글자를 쓰는 중이면 수식키 없는 단축키는 무시한다. 되돌리기는 글 칸에서는 글 되돌리기가 먼저.
-    if (typing && ((!binding.ctrl && !binding.alt) || id === 'undo')) continue;
+    // 입력칸에 글자를 쓰는 중이면 수식키 없는 단축키는 무시한다(F키는 듣고, Backspace·Delete는 수식키가 있어도 글 지우기 - P34). 되돌리기는 글 칸에서는 글 되돌리기가 먼저.
+    if (typing && (!worksWhileTyping(binding) || id === 'undo')) continue;
     // 단추·카드·링크에 초점이 있으면 수식키 없는 Space·Enter는 그것을 누르기다(키보드로 누르기 - ui/pressKeys, P22-7).
     // #149에서 한눈에 화면 기본 키가 Space가 되어, 카드를 Space로 열면 한눈에로도 가 버렸다
     if (!binding.ctrl && !binding.alt && (binding.key === 'Space' || binding.key === 'Enter') && isPressTarget(e.target)) continue;

@@ -3769,8 +3769,10 @@ P31로 V4를 끊었으니 그 파일은 Storage에 하나뿐이다(V4 자료는 
 
 ### P34-1. 모든 키를 단축키로 - 윈도우·크롬이 먼저 쓰는 키만 막기
 **시작 조건**: 없음(화면만 - 배포는 main 푸시로 저절로). **먼저 읽을 것**: 이 절 · 5장 'P34' · `domain/shortcuts.ts` `recordKeyIssue`·`worksWhileTyping` · `app/shortcutRecord.ts` `onRecordKey` · `app/ShortcutRecordBar.tsx` · `app/keys.ts` `handleAppKeyDown`.
-- [ ] ■1 `recordKeyIssue` 막는 목록(크롬 예약·윈도우 - 까닭 글) · `worksWhileTyping`(F키 = 글 칸에서도 · Backspace·Delete = 글 칸에서는 글 지우기) → `handleAppKeyDown`도 같은 판정 · 띠: Backspace·Delete·Tab을 키로 받기 ·
+- [x] ■1 `recordKeyIssue` 막는 목록(크롬 예약·윈도우 - 까닭 글) · `worksWhileTyping`(F키 = 글 칸에서도 · Backspace·Delete = 글 칸에서는 글 지우기) → `handleAppKeyDown`도 같은 판정 · 띠: Backspace·Delete·Tab을 키로 받기 ·
   **키 지우기** 단추 `[data-shortcut-record-clear]` · ⊞ 키 조합·CapsLock은 까닭 · 단위 시험(shortcuts·ShortcutRecordBar·keys).
+  → 11-12: 위 그대로 + Tab 하나만이면 띠 안내 `[data-shortcut-record-tab]`(글 칸 밖 Tab 옮기기가 없어진다) · 까닭 글은 조사 없이 `브라우저가 먼저 가져가는 키라 … (Ctrl + Tab = 다음 탭)` · 설명서(shortcuts-edit 받지 않는 키·키 지우기, shortcuts 글 칸 안 F키·Backspace)도 이 커밋 -
+  topics.test가 'Alt + Space' 글 안의 기본 키 'Alt + S'를 잡아 'Alt와 … 스페이스 바'로 · 단위 2231 통과(re2jsStub는 부하로 한 번 틀림 - 따로 통과) · tsc·lint·빌드.
 - [ ] ■2 설명서 settings 'shortcuts-edit'(지우기 = 키 지우기 단추 · 받지 않는 키 줄)·'shortcuts'(글 칸 안의 F키·Backspace) · 크롬 점검 inspect-shortcut-record 새 묶음(Backspace·Tab·Delete를 기능에 → 저장 → 누르면 동작 · 글 칸 안 Backspace는 글 지우기 · Ctrl + Tab 막힘 · 키 지우기) ·
   `MATCH=shortcuts inspect-manual` · 문서(MAP·CLAUDE.md 5장 단축키) · 세션 끝 정리(1-3).
 **끝 조건**: Backspace·Tab·Delete·F키·기호 키처럼 앱까지 오는 키는 모두 단축키로 저장되고 동작한다 · 크롬·윈도우가 먼저 쓰는 키는 띠가 까닭을 보이고 저장을 막는다 · 글 칸 안의 Backspace·Delete·Tab은 글 고치기 그대로.

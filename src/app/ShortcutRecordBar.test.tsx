@@ -122,6 +122,71 @@ describe('단축키 설정 띠 (P18-1)', () => {
     expect(o.scopeMemo?.key).toBe('');
   });
 
+  it('P34: Backspace·Delete·Tab도 키로 받는다(앱·브라우저로 가지 않는다) · 지우기는 키 지우기 단추', () => {
+    setup();
+    setShortcutOverrides({ timetable: { ctrl: false, alt: false, shift: false, key: 'T' } });
+    const app = vi.fn();
+    window.addEventListener('keydown', app);
+    act(() => startShortcutRecord());
+    fireEvent.click(q('[data-inner]'));
+    fireEvent.click(q('[data-shortcut-record-done]'));
+    expect(q('[data-shortcut-record="key"]')).not.toHaveTextContent('Backspace = 지우기');
+    for (const [init, text] of [
+      [{ key: 'Backspace', code: 'Backspace' }, 'Backspace'],
+      [{ key: 'Delete', code: 'Delete', ctrlKey: true }, 'Ctrl + Delete'],
+      [{ key: 'Tab', code: 'Tab', shiftKey: true }, 'Shift + Tab'],
+      [{ key: 'F5', code: 'F5' }, 'F5'],
+    ] as const) {
+      const e = pressKey(init);
+      expect(e.defaultPrevented, text).toBe(true);
+      expect(q('[data-shortcut-record-key]')).toHaveTextContent(text);
+      expect(q('[data-shortcut-record-issue]'), text).toBeNull();
+      expect(q('[data-shortcut-record-save]')).not.toBeDisabled();
+    }
+    expect(app).not.toHaveBeenCalled();
+    // Tab 하나만이면 단추 사이 옮기기가 없어진다고 알린다
+    expect(q('[data-shortcut-record-tab]')).toBeNull();
+    pressKey({ key: 'Tab', code: 'Tab' });
+    expect(q('[data-shortcut-record-tab]')).not.toBeNull();
+    fireEvent.click(q('[data-shortcut-record-save]'));
+    expect(useShortcutOverrides.getState().overrides.timetable).toEqual({ ctrl: false, alt: false, shift: false, key: 'Tab' });
+    // 키 지우기 = 빈 키 → 저장하면 빠진다
+    act(() => startShortcutRecord());
+    fireEvent.click(q('[data-inner]'));
+    fireEvent.click(q('[data-shortcut-record-done]'));
+    pressKey({ key: 'Backspace', code: 'Backspace' });
+    fireEvent.click(q('[data-shortcut-record-clear]'));
+    expect(q('[data-shortcut-record-key]')).toHaveTextContent('없음');
+    expect(document.activeElement).not.toBe(q('[data-shortcut-record-clear]'));
+    fireEvent.click(q('[data-shortcut-record-save]'));
+    expect(useShortcutOverrides.getState().overrides.timetable).toBeUndefined();
+    window.removeEventListener('keydown', app);
+  });
+
+  it('P34: 크롬·윈도우가 먼저 쓰는 키는 까닭 + 저장 막기 · ⊞ 키 조합 · CapsLock · 키가 없으면 키 지우기 단추도 없다', () => {
+    setup();
+    act(() => startShortcutRecord());
+    fireEvent.click(q('[data-inner]'));
+    fireEvent.click(q('[data-shortcut-record-done]'));
+    expect(q('[data-shortcut-record-clear]')).toBeNull();
+    pressKey({ key: 'Tab', code: 'Tab', ctrlKey: true });
+    expect(q('[data-shortcut-record-issue]')).toHaveTextContent('브라우저가 먼저 가져가는 키');
+    expect(q('[data-shortcut-record-save]')).toBeDisabled();
+    pressKey({ key: 'Tab', code: 'Tab', altKey: true });
+    expect(q('[data-shortcut-record-issue]')).toHaveTextContent('창 바꾸기');
+    pressKey({ key: 'CapsLock', code: 'CapsLock' });
+    expect(q('[data-shortcut-record-issue]')).toHaveTextContent('대문자');
+    expect(q('[data-shortcut-record-save]')).toBeDisabled();
+    pressKey({ key: 'e', code: 'KeyE', metaKey: true });
+    expect(q('[data-shortcut-record-issue]')).toHaveTextContent('윈도우 키 조합');
+    expect(q('[data-shortcut-record-key]')).toHaveTextContent('…');
+    expect(q('[data-shortcut-record-save]')).toBeDisabled();
+    // 다음 키를 누르면 까닭이 걷힌다
+    pressKey({ key: 'Backspace', code: 'Backspace', altKey: true });
+    expect(q('[data-shortcut-record-issue]')).toBeNull();
+    expect(q('[data-shortcut-record-key]')).toHaveTextContent('Alt + Backspace');
+  });
+
   it('고정 단축키(#149)의 단추를 누르면 고르지 않고 까닭 - 앞에 고른 것은 그대로', () => {
     render(
       <>

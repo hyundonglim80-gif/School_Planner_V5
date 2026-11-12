@@ -519,8 +519,55 @@ export function assignBinding(
 
 /** 글 칸이 쓰는 Ctrl 키 - 단축키로 주면 글 칸에서 복사·붙여넣기가 안 된다 */
 const TEXT_BOX_KEYS: Readonly<Record<string, string>> = { C: '복사', V: '붙여넣기', X: '잘라내기', A: '모두 고르기', Z: '되돌리기' };
-/** 브라우저가 먼저 가져가는 Ctrl 키 - 앱까지 오지 않는다 */
-const BROWSER_KEYS: Readonly<Record<string, string>> = { W: '탭 닫기', T: '새 탭', N: '새 창' };
+/**
+ * 크롬이 먼저 가져가는 키 - 앱까지 오지 않는다 (크롬 소스 BrowserCommandController::IsReservedCommandOrKey의 명령 - P34 11-12).
+ * 그 밖의 크롬 키(F5·F12·Ctrl + R·D·H·L·Alt + ← …)는 크롬이 앱에 먼저 주고, 앱이 받으면 크롬 일을 막아(preventDefault) 겹치지 않는다 - 받는다.
+ */
+const BROWSER_KEYS: Readonly<Record<string, string>> = {
+  'Ctrl + W': '탭 닫기',
+  'Ctrl + F4': '탭 닫기',
+  'Ctrl + T': '새 탭',
+  'Ctrl + N': '새 창',
+  'Ctrl + Shift + W': '창 닫기',
+  'Ctrl + Shift + T': '닫은 탭 다시 열기',
+  'Ctrl + Shift + N': '시크릿 창',
+  'Ctrl + Tab': '다음 탭',
+  'Ctrl + PageDown': '다음 탭',
+  'Ctrl + Shift + Tab': '이전 탭',
+  'Ctrl + PageUp': '이전 탭',
+};
+/** 윈도우가 먼저 쓰는 조합 - 앱까지 오지 않거나, 앱이 막아도 윈도우가 함께 일을 한다 (P34) */
+const WINDOWS_COMBOS: Readonly<Record<string, string>> = {
+  'Alt + F4': '창 닫기',
+  'Alt + Space': '창 메뉴',
+  'Ctrl + Alt + Delete': '보안 화면',
+};
+/** 윈도우·키보드가 먼저 쓰는 키 - 수식키와 상관없이 (P34). 이름이 이 글로 시작하는 키 묶음 = 음량·재생·브라우저·앱 열기·밝기 같은 특수 키 */
+const SPECIAL_KEY_PREFIX = /^(Audio|Media|Launch|Browser|Brightness|Microphone|Mail|Zoom)/;
+const WINDOWS_KEYS: Readonly<Record<string, string>> = {
+  PrintScreen: '화면 캡처',
+  HangulMode: '한/영 바꾸기',
+  HanjaMode: '한자 바꾸기',
+  KanaMode: '입력기 바꾸기',
+  KanjiMode: '입력기 바꾸기',
+  CapsLock: '대문자 켜기 / 끄기',
+  NumLock: '숫자 키패드 켜기 / 끄기',
+  ScrollLock: 'Scroll Lock 켜기 / 끄기',
+  ContextMenu: '오른쪽 클릭 메뉴',
+  Power: '전원',
+  PowerOff: '전원',
+  Sleep: '절전',
+  WakeUp: '절전 깨우기',
+  Eject: '꺼내기',
+  LogOff: '로그아웃',
+};
+/** 브라우저가 이름을 모르거나(Fn 등) 입력기가 글자를 조합하는 중의 키 - 다시 눌러도 같은 키로 알아볼 수 없다 */
+const UNKNOWN_KEYS = new Set(['Unidentified', 'Dead', 'Process', 'Fn', 'FnLock']);
+
+/** 글자를 치지 않는 기능 키 F1~F24 - 글 칸 안에서도 단축키로 듣는다 (P34) */
+const isFunctionKey = (key: string): boolean => /^F([1-9]|1[0-9]|2[0-4])$/.test(key);
+/** 글 칸에서 글을 지우는 키 - Ctrl·Alt와 함께여도(Ctrl + Backspace = 낱말 지우기) 글 칸 안에서는 글 지우기가 먼저 (P34) */
+const TEXT_EDIT_KEYS = new Set(['Backspace', 'Delete']);
 
 /** 고정 단축키인 기능을 고르면(눌러서 정하기) 까닭 글 - 아니면 null (#149) */
 export function fixedShortcutIssue(id: string): string | null {
@@ -531,6 +578,7 @@ export function fixedShortcutIssue(id: string): string | null {
 /**
  * 받지 않는 키 - 까닭 글. 받을 수 있으면 null (ESC는 기록 취소라 여기까지 오지 않는다).
  * id = 그 키를 줄 기능 - 그 기능의 기본 키는 받는다. 고정 단축키(검색·인쇄·되돌리기 - #149)는 그 기능도 바꿀 수 없고, 그 키를 다른 것에 줄 수도 없다.
+ * 그 밖에는 모든 키를 받는다(P34 - Backspace·Delete·Tab·F키·기호 키) - 막는 것은 앱까지 오지 않거나 윈도우·크롬이 함께 일을 하는 키뿐이다.
  */
 export function recordKeyIssue(binding: Binding, id?: AnyShortcutId): string | null {
   if (id) {
@@ -540,20 +588,33 @@ export function recordKeyIssue(binding: Binding, id?: AnyShortcutId): string | n
   const def = SHORTCUT_ACTIONS.find((a) => a.id === id)?.def;
   if (def && formatBinding(def) === formatBinding(binding)) return null;
   if (binding.key === 'Escape') return 'ESC는 바꿀 수 없는 키입니다.';
+  const name = formatBinding(binding);
   const ctrlOnly = binding.ctrl && !binding.alt && !binding.shift;
   if (ctrlOnly && binding.key === 'S') return 'Ctrl + S는 저장 키라 쓸 수 없습니다.';
   const text = ctrlOnly ? TEXT_BOX_KEYS[binding.key] : undefined;
   if (text) return `Ctrl + ${binding.key}는 글 칸의 ${text} 키라 쓸 수 없습니다.`;
-  const browser = ctrlOnly ? BROWSER_KEYS[binding.key] : undefined;
-  if (browser) return `Ctrl + ${binding.key}는 브라우저가 먼저 가져가(${browser}) 앱까지 오지 않습니다.`;
-  const taken = binding.key ? SHORTCUT_ACTIONS.find((a) => a.fixed && formatBinding(a.def) === formatBinding(binding)) : undefined;
-  if (taken) return `${formatBinding(binding)}는 고정 단축키(${taken.label})라 쓸 수 없습니다.`;
+  const browser = BROWSER_KEYS[name];
+  if (browser) return `브라우저가 먼저 가져가는 키라 앱까지 오지 않습니다 (${name} = ${browser}).`;
+  const windows =
+    (binding.key === 'Tab' && binding.alt ? '창 바꾸기' : undefined) ??
+    WINDOWS_COMBOS[name] ??
+    WINDOWS_KEYS[binding.key] ??
+    (SPECIAL_KEY_PREFIX.test(binding.key) ? '음량·재생 같은 특수 키' : undefined);
+  if (windows) return `윈도우가 먼저 쓰는 키라 쓸 수 없습니다 (${name} = ${windows}).`;
+  if (UNKNOWN_KEYS.has(binding.key)) return `브라우저가 알아볼 수 없는 키라 쓸 수 없습니다 (${binding.key}).`;
+  const taken = binding.key ? SHORTCUT_ACTIONS.find((a) => a.fixed && formatBinding(a.def) === name) : undefined;
+  if (taken) return `${name}는 고정 단축키(${taken.label})라 쓸 수 없습니다.`;
   return null;
 }
 
-/** 글 칸 안에서도 동작하는 조합인가 - Ctrl·Alt가 없으면 글을 칠 때는 듣지 않는다(app/keys) */
+/**
+ * 글 칸 안에서도 동작하는 조합인가 (app/keys) - Ctrl·Alt가 없으면 글을 칠 때는 듣지 않는다.
+ * F1~F24는 글자를 치지 않아 글 칸 안에서도 듣고, Backspace·Delete는 Ctrl·Alt와 함께여도 글 칸 안에서는 글 지우기다 (P34).
+ */
 export function worksWhileTyping(binding: Binding): boolean {
-  return !binding.key || binding.ctrl || binding.alt;
+  if (!binding.key) return true;
+  if (TEXT_EDIT_KEYS.has(binding.key)) return false;
+  return isFunctionKey(binding.key) || binding.ctrl || binding.alt;
 }
 
 export function labelOf(id: ShortcutId): string {
