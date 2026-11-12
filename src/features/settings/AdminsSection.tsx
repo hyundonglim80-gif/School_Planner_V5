@@ -103,6 +103,8 @@ export default function AdminsSection() {
       </div>
       {list !== null && (
         <form
+          // 브라우저 메일 검사(말풍선)가 아니라 앱 안내로 - 같은 말(domain/admins ADD_ADMIN_REASON)
+          noValidate
           className="flex gap-2 mt-3"
           onSubmit={(e) => {
             e.preventDefault();
