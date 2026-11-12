@@ -3721,7 +3721,8 @@ P31로 V4를 끊었으니 그 파일은 Storage에 하나뿐이다(V4 자료는 
 
 ### P33-2. 내 '초기화 설정' · 초기화
 **시작 조건**: 없음. **먼저 읽을 것**: 이 절 · 5장 'P33' ④~⑧ · `app/prefs.ts` · `domain/settings.ts` · `app/layoutPrefs.ts` · `app/boardPrefs.ts` · `features/settings/AppTab.tsx`·`ShortcutsTab.tsx`(reset)·`FontSizeRows.tsx` · 설명서 settings.
-- [ ] ■1 순수 `domain/settingsSnapshot.ts`: 묶음 모양 `{ common, pc?: { prefs, local }, mobile?: … }`(칸마다 기본과 다른 것만) · 고르기(④의 칸 표 한 곳 - 기기·계정·이 기기 키) · 읽기(모르는 칸·틀린 값 버림) · 겹치기(내 것 → 관리자 → 앱 기본, 기기 종류 몫) · 단위 시험.
+- [x] ■1 순수 `domain/settingsSnapshot.ts`: 묶음 모양 `{ common, pc?: { prefs, local }, mobile?: … }`(칸마다 기본과 다른 것만) · 고르기(④의 칸 표 한 곳 - 기기·계정·이 기기 키) · 읽기(모르는 칸·틀린 값 버림) · 겹치기(내 것 → 관리자 → 앱 기본, 기기 종류 몫) · 단위 시험.
+  → 11-12: `RESET_DEVICE_KEYS`·`RESET_COMMON_KEYS`·`LOCAL_PREFS`(이 기기 값 표) · `saveIntoSnapshot`(다른 종류 몫 그대로) · `readSnapshot` · `snapshotDoc` · `resolveResetValues` - **몫마다** 고른다(칸마다 채우면 일부러 기본으로 둔 칸이 관리자 값이 된다) · 저장 때 `at`(ms, 보여 주기만) · 시험 10.
 - [ ] ■2 `app/settingsSnapshot.ts`: 지금 값 모으기(`currentDevicePrefs`·`useCommonSettings`·이 기기 store들) · 입히기(같은 store 함수로 - 계정 맞추기가 1초 뒤 올린다) · `data` 읽기·쓰기 `settings/reset`(내 공간 - 저장 도우미 `writeOps`) · 받은 값 store(로그인 동안 구독, 로그아웃이면 비움).
 - [ ] ■3 앱 탭 '초기화' 절 `[data-reset-section|reset-save|reset-apply|reset-saved-at]`(💾 초기화 설정 = 바로 저장 + 안내·↩️ 초기화 = 묻고 + 되돌리기 하나) · 글자 크기 초기화·`fontReset`·단축키 '기본값으로'·경계선 두 번 누르기 → 겹친 초기화 값 · 단위 시험 · 크롬 점검(inspect-settings 새 묶음: 바꾸고 💾 → 다른 값으로 → ↩️ = 저장한 값 · 글자 크기 초기화 = 저장한 %).
 - [ ] ■4 설명서 settings(새 주제 'reset' 또는 '보기' 절 + inspect-manual 묶음) · 문서 · 세션 끝 정리(1-3).
