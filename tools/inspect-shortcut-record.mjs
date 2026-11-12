@@ -12,6 +12,9 @@
 //      그 키 = 창을 열지 않고 팝업창 + 안내, 다시 = 오른쪽 칸 · 단추 툴팁 · 설명서 표 · 고대비 줄 = 'opt.contrast' → 키마다 켜고 끄기
 //  10) 그 밖의 단추(P28-3): 하루 수업 접기도 고른다 · 메모 카드 안 ▼ = 항목마다라 못 만든다 · 머리줄 카드/목록 → Ctrl+Alt+L = 하루 화면에서도 메모 화면으로 가서 누름 ·
 //      검색 창 메모 칩 → Ctrl+Alt+K = 닫혀 있으면 열고 누름 · 팝업창 모드면 팝업창 안에서('누르기' 소식) · 메모 칸 📎 → Ctrl+Alt+U = 열린 칸(숨은 탭)이면 누름, 닫혔으면 안내만
+//  11) P34 모든 키: Ctrl+Tab(크롬)·Alt+Tab(윈도우) = 까닭 + 저장 막기 · Delete·F5·Backspace도 키 · 시간표 = Backspace → 누르면 시간표, 글 칸 안은 글 지우기 ·
+//      사용 설명서 = Tab(안내) → 누르면 설명서 · 단축키 탭 줄 키 바꾸기 → 키 지우기 → 저장 = 빠짐
+//      (크롬 예약·윈도우 키가 진짜로 앱까지 오지 않는지는 볼 수 없다 - Playwright 키(CDP)는 브라우저·윈도우를 거치지 않는다)
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-shortcut-record.mjs
 // 에뮬레이터 teacher 계정의 V5 설정 문서(spaces/u_{uid}/settings/pc)를 쓴다 - 처음 것을 읽어 두고 끝에 되돌린다.
@@ -439,6 +442,80 @@ try {
   r.check(!after.shortcutOverrides?.help, `취소한 것은 저장하지 않는다 (${JSON.stringify(after.shortcutOverrides)})`);
   const bodyMark = await page.evaluate(() => document.body.dataset.shortcutRecording ?? '');
   r.check(bodyMark === '', '점선 표시도 걷힌다 (body)');
+
+  // P34 (11-12 사용자 'Backspace·Tab 같은 특수 키도 단축키로 - 윈도우·크롬이 먼저 쓰는 키만 빼고')
+  r.section('P34 - Backspace·Delete·Tab도 키 · 크롬·윈도우가 먼저 쓰는 키는 막기 · 키 지우기');
+  const keyText = async () => ((await page.locator(sel('shortcut-record-key')).textContent()) ?? '').trim();
+  const issueText = async () => ((await page.locator(sel('shortcut-record-issue')).textContent().catch(() => '')) ?? '').trim();
+  const pickMenu = async (id) => {
+    await page.evaluate(() => window.sp5.closeAllWindows());
+    await startRecord();
+    await waitFor(bar('pick'));
+    await page.click(sel('more-menu'));
+    await page.click(sel('menu-item', id));
+    await waitFor(page.locator(sel('shortcut-record-picked', id)));
+    await page.click(sel('shortcut-record-done'));
+    await waitFor(bar('key'));
+  };
+  const toBody = async () => {
+    await page.evaluate(() => window.sp5.closeAllWindows());
+    await waitFor(async () => (await page.locator(sel('settings-window')).count()) === 0);
+    await page.locator('main').click({ position: { x: 5, y: 5 } });
+  };
+  await open(page, '#/day/2026-10-08');
+  await pickMenu('timetable');
+  r.check(!((await page.locator(sel('shortcut-record', 'key')).textContent()) ?? '').includes('Backspace = 지우기'), "띠에 'Backspace = 지우기' 안내가 없다");
+  await page.keyboard.press('Control+Tab');
+  r.check((await issueText()).includes('브라우저가 먼저 가져가는 키') && (await page.locator(sel('shortcut-record-save')).isDisabled()), `Ctrl+Tab = 크롬이 먼저 가져가 저장을 막는다 (${await issueText()})`);
+  await page.keyboard.press('Alt+Tab');
+  r.check((await issueText()).includes('창 바꾸기'), `Alt+Tab = 윈도우 창 바꾸기라 막는다 (${await issueText()})`);
+  await page.keyboard.press('Delete');
+  r.check((await keyText()) === 'Delete' && !(await issueText()), `Delete도 키 (${await keyText()})`);
+  await page.keyboard.press('F5');
+  r.check((await keyText()) === 'F5' && !(await issueText()) && (await page.locator(sel('shortcut-record')).count()) === 1, `F5도 키 - 새로고침되지 않는다 (${await keyText()})`);
+  await page.keyboard.press('Backspace');
+  r.check((await keyText()) === 'Backspace' && !(await issueText()), `Backspace도 키 - 지우기가 아니다 (${await keyText()})`);
+  await page.click(sel('shortcut-record-save'));
+  const bsSaved = await serverUntil(serverPc, (d) => d.shortcutOverrides?.timetable?.key === 'Backspace');
+  r.check(
+    JSON.stringify(bsSaved.shortcutOverrides?.timetable) === JSON.stringify({ ctrl: false, alt: false, shift: false, key: 'Backspace' }),
+    `시간표 = Backspace 계정에 (${JSON.stringify(bsSaved.shortcutOverrides?.timetable)})`,
+  );
+  await toBody();
+  await page.keyboard.press('Backspace');
+  r.check(await waitFor(page.locator(sel('timetable-window'))), 'Backspace = 시간표 창');
+  // 글 칸 안의 Backspace는 글 지우기 (단축키로 가지 않는다)
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await waitFor(async () => (await page.locator(sel('timetable-window')).count()) === 0);
+  await page.evaluate(() => window.sp5.openWindow('help'));
+  const helpSearch = page.locator(sel('help-search'));
+  await waitFor(helpSearch);
+  await helpSearch.fill('ab');
+  await helpSearch.press('Backspace');
+  await page.waitForTimeout(500);
+  r.check((await helpSearch.inputValue()) === 'a' && (await page.locator(sel('timetable-window')).count()) === 0, `글 칸 안 Backspace = 글 지우기, 시간표를 열지 않는다 (${await helpSearch.inputValue()})`);
+
+  await pickMenu('help');
+  await page.keyboard.press('Tab');
+  r.check((await keyText()) === 'Tab' && (await waitFor(page.locator(sel('shortcut-record-tab')))), `Tab도 키 + 'Tab으로 단추 사이를 옮겨 다니지 않게' 안내 (${await keyText()})`);
+  await page.click(sel('shortcut-record-save'));
+  await serverUntil(serverPc, (d) => d.shortcutOverrides?.help?.key === 'Tab');
+  await toBody();
+  await page.keyboard.press('Tab');
+  r.check(await waitFor(page.locator(sel('help-window'))), 'Tab = 사용 설명서');
+
+  // 키 지우기 (전에는 Backspace) - 단축키 탭 줄의 키 바꾸기에서
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'shortcuts' }));
+  await page.locator(`${sel('shortcut-row', 'help')} ${sel('shortcut-change')}`).click();
+  await waitFor(bar('key'));
+  r.check(await waitFor(page.locator(sel('shortcut-record-clear'))), '키가 있으면 띠에 키 지우기');
+  await page.click(sel('shortcut-record-clear'));
+  r.check((await keyText()) === '없음', `키 지우기 = 없음 (${await keyText()})`);
+  await page.click(sel('shortcut-record-save'));
+  const helpCleared = await serverUntil(serverPc, (d) => !d.shortcutOverrides?.help);
+  r.check(!helpCleared.shortcutOverrides?.help, `저장하면 사용 설명서 키가 빠진다 (${JSON.stringify(helpCleared.shortcutOverrides)})`);
+  r.check(await waitFor(async () => (await page.locator(sel('shortcut-row', 'help')).count()) === 0), '단축키 탭에서 그 줄이 빠진다');
 
   r.check(a.errors.length === 0, '화면 오류 없음', `화면 오류: ${a.errors.join(' | ')}`);
 } catch (e) {
