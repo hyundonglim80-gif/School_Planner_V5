@@ -1,9 +1,11 @@
 // 내 '초기화 설정' 저장·초기화 (P33-2 - 환경설정 앱 탭 '초기화' 절이 부른다).
 //   💾 초기화 설정 = 지금 값(기기 칸·계정 칸·이 기기 값)을 모아 내 settings/reset의 이 기기 종류 몫 + 계정 몫에.
 //   ↩️ 초기화     = 초기화 값(내 것 → 관리자 → 앱 기본 - app/resetTargets)을 같은 store 함수로 입힌다 → 계정 맞추기가 1초 뒤 올린다.
+//   👑 처음 설정  = (관리자만 - P33-3) 지금 값을 새 사용자 기본값 sharedConfig/initialSettings에. 새 사용자에 깔기는 app/prefs가 이 파일을 나눠 받아 부른다.
 //   사람마다 다른 자료(학교·교시·D-Day …)와 학기 칩은 묶음에 없어 건드리지 않는다(domain/settingsSnapshot).
 import {
   LOCAL_PREFS,
+  readSnapshot,
   resolveResetValues,
   saveIntoSnapshot,
   snapshotDoc,
@@ -13,8 +15,17 @@ import {
   type SettingsSnapshot,
 } from '../domain/settingsSnapshot';
 import { readSettings } from '../domain/settings';
-import { saveMyReset } from '../data/settingsReset';
-import { applyDevicePrefs, currentDevicePrefs, detectDeviceKind, useCommonSettings, type CommonSettings, type DevicePrefs } from './prefs';
+import { loadInitialSettings, saveInitialSettings, saveMyReset } from '../data/settingsReset';
+import {
+  applyDevicePrefs,
+  currentDevicePrefs,
+  detectDeviceKind,
+  useCommonSettings,
+  type CommonSettings,
+  type DeviceKind,
+  type DevicePrefs,
+  type InitialSeed,
+} from './prefs';
 import { RESET_SPECS, useResetSnapshots } from './settingsReset';
 import { useResetTargets } from './resetTargets';
 import { setBoardSplit, useBoardPrefs } from './boardPrefs';
@@ -91,6 +102,46 @@ export async function saveMyResetSnapshot(uid: string, at = Date.now()): Promise
   const next = saveIntoSnapshot(useResetSnapshots.getState().mine, detectDeviceKind(), RESET_SPECS, collectCurrentValues(), at);
   await saveMyReset(uid, snapshotDoc(next));
   return next;
+}
+
+/**
+ * 👑 관리자 '처음 설정' 저장 (P33-3) - 지금 값을 새 사용자 기본값으로(이 기기 종류 몫 + 계정 몫, 다른 기기 종류 몫은 그대로).
+ * 여러 관리자면 마지막 저장이 이긴다. 저장한 묶음(이 기기 종류 몫이 든)을 돌려준다.
+ */
+export async function saveInitialSnapshot(by: string, at = Date.now()): Promise<SettingsSnapshot> {
+  const kind = detectDeviceKind();
+  const next = saveIntoSnapshot(null, kind, RESET_SPECS, collectCurrentValues(), at);
+  const part = next[kind]!;
+  await saveInitialSettings(kind, { common: next.common, at, part: part as unknown as Fields }, by);
+  return next;
+}
+
+/**
+ * 이 기기 값 가운데 기본 그대로인 것에만 입힌다 (P33-3 새 사용자 - PLAN 5장 'P33-3'): 이 기기에서 바꾼 값(앞 사람이 쓰던 기기의 화면 비율 …)은 그대로.
+ */
+export function applyUnsetLocalPrefs(local: Fields) {
+  const now = currentLocalPrefs();
+  const want = readSettings(LOCAL_PREFS, local);
+  const next: LocalPrefs = { ...now };
+  const keys = Object.keys(local).filter((k): k is keyof LocalPrefs => k in LOCAL_PREFS);
+  for (const k of keys) {
+    if (JSON.stringify(now[k]) === JSON.stringify(LOCAL_PREFS[k].def)) (next as unknown as Fields)[k] = want[k];
+  }
+  applyLocalPrefs(next);
+}
+
+/** 새 사용자에게 깔 관리자 '처음 설정' (그 기기 종류 몫). 처음 설정이 없으면 null, 못 읽으면 던진다 */
+export async function loadInitialSeed(kind: DeviceKind): Promise<InitialSeed | null> {
+  const snap = readSnapshot(await loadInitialSettings(), RESET_SPECS);
+  if (!snap) return null;
+  const part = snap[kind];
+  return {
+    common: snap.common,
+    device: part?.prefs ?? null,
+    applyLocal: () => {
+      if (part) applyUnsetLocalPrefs(part.local);
+    },
+  };
 }
 
 /**

@@ -5,6 +5,10 @@ import { act, renderHook } from '@testing-library/react';
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 const saved: Array<{ uid: string; data: Record<string, unknown> }> = [];
 let watchCb: ((data: unknown) => void) | null = null;
+let initialCb: ((data: unknown) => void) | null = null;
+// 관리자 '처음 설정'(P33-3) - 적은 것을 모으고, 읽기는 initialDoc을 돌려준다
+const savedInitial: Array<{ kind: string; data: Record<string, unknown>; by: string }> = [];
+let initialDoc: unknown = null;
 vi.mock('../data/settingsReset', () => ({
   RESET_DOC_ID: 'reset',
   saveMyReset: async (uid: string, data: Record<string, unknown>) => {
@@ -16,13 +20,23 @@ vi.mock('../data/settingsReset', () => ({
       watchCb = null;
     };
   },
+  watchInitialSettings: (cb: (data: unknown) => void) => {
+    initialCb = cb;
+    return () => {
+      initialCb = null;
+    };
+  },
+  loadInitialSettings: async () => initialDoc,
+  saveInitialSettings: async (kind: string, data: Record<string, unknown>, by: string) => {
+    savedInitial.push({ kind, data, by });
+  },
 }));
 
 import { RESET_COMMON_KEYS, RESET_DEVICE_KEYS, MEMO_SORT_KEYS } from '../domain/settingsSnapshot';
 import { DEFAULT_PALETTE } from '../domain/palette';
 import { COMMON_SETTINGS, DEVICE_PREFS, useCommonSettings } from './prefs';
 import { receiveMyReset, useResetSnapshots, useResetSync } from './settingsReset';
-import { resetToInitial, saveMyResetSnapshot } from './settingsSnapshot';
+import { applyUnsetLocalPrefs, loadInitialSeed, resetToInitial, saveInitialSnapshot, saveMyResetSnapshot } from './settingsSnapshot';
 import { resetBoardRatio, resetFontPercent, resetPanelWidth, useResetTargets } from './resetTargets';
 import { stepFontSize, useLayoutPrefs } from './layoutPrefs';
 import { useNav } from './nav';
@@ -36,6 +50,8 @@ const K = { ctrl: true, alt: true, shift: false, key: 'K' };
 
 function clearAll() {
   saved.length = 0;
+  savedInitial.length = 0;
+  initialDoc = null;
   localStorage.clear();
   useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side', rightPanelWidth: null, leftPanelWidth: null });
   useNav.setState({ showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', semesterFilterAt: '', enableScrollNav: false, startupScope: 'last' });
@@ -173,5 +189,67 @@ describe('받기 (로그인한 동안)', () => {
     expect(useResetSnapshots.getState()).toMatchObject({ mine: null, loaded: false });
     expect(useResetTargets.getState().values).toBeNull();
     expect(watchCb).toBeNull();
+  });
+});
+
+describe('👑 관리자 처음 설정 (P33-3)', () => {
+  it('지금 값을 이 기기 종류 몫 + 계정 몫으로 - 내 초기화 값은 그대로', async () => {
+    customize();
+    await saveInitialSnapshot('admin@example.com', 1000);
+    expect(saved).toHaveLength(0);
+    expect(savedInitial).toEqual([
+      {
+        kind: 'pc',
+        by: 'admin@example.com',
+        data: {
+          common: { forwardDays: 30 },
+          at: 1000,
+          part: {
+            prefs: { fontSizes: { day: 120 }, popupStyle: 'popup', showWeekend: false, shortcutOverrides: { scopeMemo: K } },
+            local: { boardMain: 40, rightPanelWidth: 600, theme: 'light', memoView: 'list' },
+            at: 1000,
+          },
+        },
+      },
+    ]);
+  });
+
+  it('받으면 초기화 값 = 내 것이 없을 때 처음 설정 · 내 것이 있으면 내 것', () => {
+    const { rerender } = renderHook(({ uid }: { uid?: string }) => useResetSync(uid), { initialProps: { uid: 'u1' as string | undefined } });
+    act(() => initialCb?.({ common: { forwardDays: 21 }, at: 5, pc: { prefs: { fontSizes: { day: 90 } }, local: { boardMain: 30 }, at: 5 } }));
+    expect(useResetTargets.getState().values).toMatchObject({ deviceFrom: 'admin', commonFrom: 'admin', common: { forwardDays: 21 } });
+    expect(resetFontPercent('day')).toBe(90);
+    expect(resetBoardRatio('main')).toBe(30);
+    act(() => watchCb?.({ common: {}, at: 6, pc: { prefs: {}, local: {}, at: 6 } }));
+    expect(useResetTargets.getState().values).toMatchObject({ deviceFrom: 'mine', commonFrom: 'mine' });
+    expect(resetFontPercent('day')).toBe(100);
+    rerender({ uid: undefined });
+    expect(useResetSnapshots.getState().admin).toBeNull();
+    expect(initialCb).toBeNull();
+  });
+
+  it('새 사용자에게 깔 값 - 그 기기 종류 몫 · 몫이 없으면 기기 칸 null · 문서가 없거나 틀리면 null', async () => {
+    initialDoc = { common: { forwardDays: 21, teaching: 'x' }, at: 5, pc: { prefs: { popupStyle: 'center', semesterFilter: 2 }, local: { boardDay: 35 }, at: 5 } };
+    const pc = await loadInitialSeed('pc');
+    expect(pc).toMatchObject({ common: { forwardDays: 21 }, device: { popupStyle: 'center' } });
+    expect(pc?.common).not.toHaveProperty('teaching');
+    expect(pc?.device).not.toHaveProperty('semesterFilter');
+    pc?.applyLocal();
+    expect(useBoardPrefs.getState().day).toBe(35);
+    const mobile = await loadInitialSeed('mobile');
+    expect(mobile).toMatchObject({ common: { forwardDays: 21 }, device: null });
+    initialDoc = null;
+    expect(await loadInitialSeed('pc')).toBeNull();
+    initialDoc = 'broken';
+    expect(await loadInitialSeed('pc')).toBeNull();
+  });
+
+  it('이 기기 값은 기본 그대로인 것에만 입힌다 (앞 사람이 바꾼 화면 비율·밝기는 그대로)', () => {
+    useBoardPrefs.setState({ main: 60, day: null });
+    localStorage.setItem('sp5_theme', 'system');
+    applyUnsetLocalPrefs({ boardMain: 30, boardDay: 45, theme: 'light', memoView: 'list', headerFold: true, nope: 1 });
+    expect(useBoardPrefs.getState()).toMatchObject({ main: 60, day: 45 });
+    expect(readThemeMode()).toBe('system');
+    expect(useMemoView.getState().view).toBe('list');
   });
 });

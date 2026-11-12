@@ -30,12 +30,20 @@ vi.mock('../../data/errorReport', () => ({ loadErrorReports: vi.fn(async () => [
 vi.mock('../../data/admins', async (orig) => ({ ...(await orig<typeof import('../../data/admins')>()), loadAdmins: vi.fn(async () => []) }));
 // 내 초기화 설정(P33-2)은 서버에 적는다 - 받은 것만 모은다
 const savedReset = vi.hoisted(() => [] as Array<{ uid: string; data: Record<string, unknown> }>);
+// 관리자 '처음 설정'(P33-3)도 - 적은 것만 모으고, 누가 저장했나 기록은 비어 있다
+const savedInitial = vi.hoisted(() => [] as Array<{ kind: string; data: { common: Record<string, unknown>; at: number; part: Record<string, unknown> }; by: string }>);
 vi.mock('../../data/settingsReset', () => ({
   RESET_DOC_ID: 'reset',
   saveMyReset: vi.fn(async (uid: string, data: Record<string, unknown>) => {
     savedReset.push({ uid, data });
   }),
   watchMyReset: () => () => {},
+  watchInitialSettings: () => () => {},
+  loadInitialSettings: vi.fn(async () => null),
+  loadInitialSettingsLog: vi.fn(async () => ({})),
+  saveInitialSettings: vi.fn(async (kind: string, data: { common: Record<string, unknown>; at: number; part: Record<string, unknown> }, by: string) => {
+    savedInitial.push({ kind, data, by });
+  }),
 }));
 // '공휴일'도 서버를 읽는다 - 빈 표 (칸은 DevHolidaysSection.test)
 vi.mock('../../data/govHolidays', () => ({
@@ -517,5 +525,41 @@ describe('바꾼 키 고르기', () => {
     ask.mockRestore();
     act(() => useResetSnapshots.setState({ mine: null, admin: null, loaded: false }));
     savedReset.length = 0;
+  });
+
+  it("앱: 초기화 (P33-3) - 👑 처음 설정은 관리자만 · 묻고 그 기기 종류 몫으로 저장 · 저장한 때·누가", async () => {
+    // 관리자가 아니면 단추가 없다
+    useSession.setState({ loading: false, user: { uid: 'u1', email: 'teacher@example.com', displayName: '', photoURL: '' } });
+    const view = openSettings('app');
+    expect(document.querySelector('[data-reset-admin-save]')).toBeNull();
+    view.unmount();
+
+    useSession.setState({ loading: false, user: { uid: 'u2', email: 'hyundonglim80@gmail.com', displayName: '', photoURL: '' } });
+    useLayoutPrefs.setState({ fontSizes: { day: 90 } });
+    openSettings('app');
+    expect(q('[data-reset-admin-at]').textContent).toContain('처음 설정(새 사용자)이 없습니다');
+    const ask = vi.spyOn(window, 'confirm').mockReturnValueOnce(false);
+    await act(async () => {
+      fireEvent.click(q('[data-reset-admin-save]'));
+    });
+    expect(savedInitial).toHaveLength(0);
+    ask.mockReturnValueOnce(true);
+    await act(async () => {
+      fireEvent.click(q('[data-reset-admin-save]'));
+    });
+    expect(ask.mock.calls[1][0]).toContain('새 사용자의 처음 설정(PC)');
+    expect(savedInitial).toHaveLength(1);
+    expect(savedInitial[0]).toMatchObject({ kind: 'pc', by: 'hyundonglim80@gmail.com', data: { common: {}, part: { prefs: { fontSizes: { day: 90 } } } } });
+    // 내 초기화 값은 그대로 (따로 저장한다)
+    expect(savedReset).toHaveLength(0);
+    expect(q('[data-toast]').textContent).toContain('새 사용자의 처음 설정으로 저장했습니다 (PC)');
+    // 서버가 돌려주면 (흉내) 저장한 때·누가 · 내 '↩️ 초기화'도 처음 설정으로
+    const { at, common, part } = savedInitial[0].data;
+    act(() => useResetSnapshots.setState({ admin: { common, at, pc: part as never } }));
+    expect(q('[data-reset-admin-at]').textContent).toMatch(/PC 처음 설정\(새 사용자\): \d{4}-\d{2}-\d{2} \d{2}:\d{2}에 저장 · hyundonglim80@gmail\.com/);
+    expect(q('[data-reset-section]').dataset.resetSection).toBe('admin');
+    ask.mockRestore();
+    act(() => useResetSnapshots.setState({ mine: null, admin: null, loaded: false }));
+    savedInitial.length = 0;
   });
 });

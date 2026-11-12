@@ -18,6 +18,17 @@ vi.mock('../data/settingsSync', () => ({
 
 const binding = (docId: string) => started.find((s) => s.docId === docId)!.binding;
 
+// 관리자 '처음 설정'(P33-3) - 새 사용자에게 깔 값을 나눠 받은 settingsSnapshot이 읽는다
+vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
+const initial = vi.hoisted(() => ({ doc: null as unknown, reads: 0 }));
+vi.mock('../data/settingsReset', () => ({
+  RESET_DOC_ID: 'reset',
+  loadInitialSettings: async () => {
+    initial.reads++;
+    return initial.doc;
+  },
+}));
+
 function resetStores() {
   useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side' });
   useNav.setState({ scope: 'day', showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', semesterFilterAt: '', enableScrollNav: false, startupScope: 'last' });
@@ -167,5 +178,28 @@ describe('이 기기 사본의 주인', () => {
     startPrefsSync('u2');
     expect(useLayoutPrefs.getState().fontSizes).toEqual({});
     expect(useCommonSettings.getState().forwardDays).toBe(14);
+  });
+});
+
+describe('새 사용자 처음 설정 (P33-3)', () => {
+  it('두 문서 모두 문서가 없을 때 깔 값을 받는다 - 한 번 읽어 함께 · 계정 문서 쪽이 이 기기 값도', async () => {
+    const { useBoardPrefs } = await import('./boardPrefs');
+    useBoardPrefs.setState({ main: null, day: 50, memo: null });
+    initial.reads = 0;
+    initial.doc = { common: { forwardDays: 21 }, at: 5, pc: { prefs: { popupStyle: 'center' }, local: { boardMain: 30, boardDay: 40 }, at: 5 } };
+    startPrefsSync('u1');
+    expect(await binding('common').seed?.()).toEqual({ forwardDays: 21 });
+    expect(await binding('pc').seed?.()).toEqual({ popupStyle: 'center' });
+    expect(initial.reads).toBe(1);
+    expect(useBoardPrefs.getState().main).toBeNull();
+    binding('common').seeded?.();
+    expect(useBoardPrefs.getState()).toMatchObject({ main: 30, day: 50 });
+  });
+
+  it('처음 설정이 없으면 null (지금처럼 이 기기 값만)', async () => {
+    initial.doc = null;
+    startPrefsSync('u1');
+    expect(await binding('common').seed?.()).toBeNull();
+    expect(await binding('pc').seed?.()).toBeNull();
   });
 });

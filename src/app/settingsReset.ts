@@ -1,11 +1,12 @@
-// 초기화 값 받기 (P33-2): 로그인한 동안 내 settings/reset을 듣고, 이 기기 종류가 '초기화'로 갈 값을 app/resetTargets에 채운다.
-//   겹치기 = 내 것 → 관리자 것(P33-3이 admin을 채운다) → 앱 기본 (domain/settingsSnapshot resolveResetValues).
+// 초기화 값 받기 (P33-2): 로그인한 동안 내 settings/reset과 관리자 '처음 설정'(P33-3 sharedConfig/initialSettings)을 듣고,
+//   이 기기 종류가 '초기화'로 갈 값을 app/resetTargets에 채운다.
+//   겹치기 = 내 것 → 관리자 것 → 앱 기본 (domain/settingsSnapshot resolveResetValues).
 //   로그아웃하면 비운다(다음 사람이 앞 사람 초기화 값으로 가지 않게).
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { readSnapshot, resolveResetValues, type Fields, type SettingsSnapshot, type SnapshotSpecs } from '../domain/settingsSnapshot';
 import type { SettingsSpec } from '../domain/settings';
-import { watchMyReset } from '../data/settingsReset';
+import { watchInitialSettings, watchMyReset } from '../data/settingsReset';
 import { COMMON_SETTINGS, DEVICE_PREFS, detectDeviceKind } from './prefs';
 import { useResetTargets } from './resetTargets';
 
@@ -37,13 +38,18 @@ export function receiveMyReset(data: unknown) {
   useResetSnapshots.setState({ mine: readSnapshot(data, RESET_SPECS), loaded: true });
 }
 
-/** 로그인한 동안 내 초기화 설정을 듣는다 */
+/** 받은 문서 → 관리자 '처음 설정' 묶음 (P33-3) */
+export function receiveInitialSettings(data: unknown) {
+  useResetSnapshots.setState({ admin: readSnapshot(data, RESET_SPECS) });
+}
+
+/** 로그인한 동안 내 초기화 설정과 관리자 '처음 설정'을 듣는다 */
 export function useResetSync(uid: string | undefined) {
   useEffect(() => {
     if (!uid) return;
-    const stop = watchMyReset(uid, receiveMyReset);
+    const stops = [watchMyReset(uid, receiveMyReset), watchInitialSettings(receiveInitialSettings)];
     return () => {
-      stop();
+      stops.forEach((s) => s());
       useResetSnapshots.setState({ mine: null, admin: null, loaded: false });
     };
   }, [uid]);

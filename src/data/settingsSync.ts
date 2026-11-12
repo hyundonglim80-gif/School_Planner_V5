@@ -9,6 +9,8 @@
 //   기본값으로 덮어쓴다(V4). Firestore는 기기 저장소 없이(memoryLocalCache) 쓰므로 첫 소식은 서버에서 온다 -
 //   연결이 없어 캐시에서 온 '문서 없음'만 믿지 않는다.
 // - 문서가 없으면: 이 기기 값이 기본값과 다를 때만 올린다(같으면 문서를 만들지 않는다 - 기본값은 저장하지 않는다).
+//   새 사용자(P33-3): 이음에 seed가 있으면 관리자 '처음 설정'을 먼저 받아 깔고 그 위에 이 기기 값(기본과 다른 것)을 얹는다 -
+//   입히면 기본과 달라 문서가 생기므로 다음부터는 입히지 않는다. 받는 동안 다른 기기가 만든 문서가 오면 그것이 이긴다.
 //
 // 서버와 이야기하는 부분(port)과 맞추는 규칙(startSettingsSync)을 나눠, 규칙은 서버 없이 시험한다.
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -34,6 +36,13 @@ export interface SettingsBinding {
   subscribe(onChange: () => void): () => void;
   /** 서버 값을 처음 받았을 때 (문서가 없다는 대답도) */
   ready?(): void;
+  /**
+   * 서버가 '문서 없음'이라 할 때 먼저 받아 깔 값 (P33-3 관리자 '처음 설정' - 새 사용자). 이 기기 값 가운데 기본과 다른 것이 그 위에 선다.
+   * 못 받으면(null·실패) 지금처럼 이 기기 값만.
+   */
+  seed?(): Promise<SettingsData | null>;
+  /** seed를 받아 깔았을 때 (문서가 없던 처음 한 번 - 받은 값이 비어 있어도) */
+  seeded?(): void;
 }
 
 export const SETTINGS_WRITE_DELAY_MS = 1000;
@@ -45,6 +54,9 @@ export const SETTINGS_WRITE_DELAY_MS = 1000;
 export function startSettingsSync(port: SettingsPort, binding: SettingsBinding, delayMs = SETTINGS_WRITE_DELAY_MS): () => Promise<void> {
   let ready = false;
   let applying = false;
+  // '문서 없음'에 깔 값을 받는 중 (그동안 온 서버 문서가 이긴다)
+  let seeding = false;
+  let stopped = false;
   // 서버와 이 기기가 마지막으로 맞춰진 값. 같으면 다시 적지 않는다.
   let lastKey = '';
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -62,6 +74,27 @@ export function startSettingsSync(port: SettingsPort, binding: SettingsBinding, 
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => void write(), delayMs);
   });
+
+  // 문서 없음을 받아들인다: 받은 처음 값(seed) 위에 이 기기 값(기본과 다른 것)을 얹어 입히고, 기본과 다른 것이 있으면 올린다
+  const settleMissing = (seed: SettingsData | null) => {
+    ready = true;
+    if (seed) {
+      const merged = { ...seed, ...binding.local() };
+      if (Object.keys(merged).length > 0) {
+        applying = true;
+        try {
+          binding.apply(merged);
+        } finally {
+          applying = false;
+        }
+      }
+      binding.seeded?.();
+    }
+    binding.ready?.();
+    const local = binding.local();
+    lastKey = settingsKey(local);
+    if (Object.keys(local).length > 0) void write();
+  };
 
   const unsubRemote = port.watch((data, fromCache) => {
     if (data) {
@@ -81,15 +114,25 @@ export function startSettingsSync(port: SettingsPort, binding: SettingsBinding, 
       return;
     }
     // 문서 없음: 처음 한 번만, 서버가 그렇다고 할 때만
-    if (ready || fromCache) return;
-    ready = true;
-    binding.ready?.();
-    const local = binding.local();
-    lastKey = settingsKey(local);
-    if (Object.keys(local).length > 0) void write();
+    if (ready || fromCache || seeding) return;
+    if (!binding.seed) return settleMissing(null);
+    seeding = true;
+    void binding
+      .seed()
+      .catch((e: unknown) => {
+        console.warn('[settings] 처음 설정을 받지 못했습니다 (이 기기 값으로):', e);
+        return null;
+      })
+      .then((seed) => {
+        seeding = false;
+        // 그사이 다른 기기가 문서를 만들어 받았거나(그것이 이긴다) 끊었으면 그만
+        if (ready || stopped) return;
+        settleMissing(seed);
+      });
   });
 
   return () => {
+    stopped = true;
     unsubLocal();
     unsubRemote();
     if (!timer) return Promise.resolve();

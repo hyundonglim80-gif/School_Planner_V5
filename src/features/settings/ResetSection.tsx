@@ -1,14 +1,17 @@
 // 환경설정 '앱' 탭 맨 위 '초기화' 절 (P33-2 - 11-12 사용자 '각 유저는 초기화 설정 단추로 각자의 설정 값을 각자의 초기화로').
 //   💾 초기화 설정 = 지금 설정을 내 초기화 값으로(누르는 즉시 저장 - 이 기기 종류 몫 + 계정 몫, 다른 기기 종류 몫은 그대로).
 //   ↩️ 초기화     = 묻고 초기화 값으로(내 것 → 관리자가 정한 처음 설정 → 앱 처음 값) + 안내의 되돌리기 하나.
+//   👑 초기화 설정 - 새 사용자 기본값 = (관리자만 - P33-3) 지금 설정을 처음 쓰는 사람의 시작 값으로(이 기기 종류 몫 + 계정 몫 · 여러 관리자면 마지막 저장).
 //   묶음에 드는 것·빠지는 것은 domain/settingsSnapshot. 글자 크기 초기화·단축키 기본값으로·경계선 두 번 누르기도 같은 값으로 간다.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { showErrorToastOnce, showToast } from '../../app/toast';
 import { detectDeviceKind } from '../../app/prefs';
 import { useResetSnapshots } from '../../app/settingsReset';
 import { useResetTargets } from '../../app/resetTargets';
-import { resetToInitial, saveMyResetSnapshot } from '../../app/settingsSnapshot';
+import { resetToInitial, saveInitialSnapshot, saveMyResetSnapshot } from '../../app/settingsSnapshot';
 import { useSession } from '../../data/session';
+import { useIsAdmin } from '../../data/admins';
+import { loadInitialSettingsLog, type InitialSettingsLog } from '../../data/settingsReset';
 import { Section } from './parts';
 
 const BTN = 'px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 cursor-pointer disabled:opacity-50';
@@ -24,11 +27,27 @@ function whenText(ms: number): string {
 
 export default function ResetSection() {
   const uid = useSession((s) => s.user?.uid);
+  const email = useSession((s) => s.user?.email ?? '');
+  const admin = useIsAdmin();
+  const [log, setLog] = useState<InitialSettingsLog>({});
   const [kind] = useState(detectDeviceKind);
   const mine = useResetSnapshots((s) => s.mine);
+  const adminPart = useResetSnapshots((s) => s.admin?.[kind]);
   const from = useResetTargets((s) => s.values?.deviceFrom ?? 'app');
   const [busy, setBusy] = useState(false);
   const part = mine?.[kind];
+
+  // 관리자: 누가 마지막으로 저장했나 (관리자만 읽는 문서 - 못 읽으면 때만 보인다)
+  useEffect(() => {
+    if (!admin) return;
+    let alive = true;
+    loadInitialSettingsLog()
+      .then((l) => alive && setLog(l))
+      .catch((e: unknown) => console.warn('[settings] 처음 설정 기록을 읽지 못했습니다:', e));
+    return () => {
+      alive = false;
+    };
+  }, [admin]);
 
   const save = async () => {
     if (!uid) return;
@@ -38,6 +57,27 @@ export default function ResetSection() {
       showToast(`💾 지금 설정을 초기화 값으로 저장했습니다 (${KIND_LABEL[kind]})`, 4000);
     } catch (e) {
       showErrorToastOnce('초기화 설정을 저장하지 못했습니다.', e);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveInitial = async () => {
+    if (!uid || !email) return;
+    if (
+      !window.confirm(
+        `지금 설정을 새 사용자의 처음 설정(${KIND_LABEL[kind]})으로 저장할까요?\n앞으로 V5를 처음 쓰는 사람이 이 값으로 시작합니다. 다른 관리자가 저장한 ${KIND_LABEL[kind]} 처음 설정은 이 값으로 바뀝니다(이미 쓰는 사람의 설정은 그대로).`,
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      const at = Date.now();
+      await saveInitialSnapshot(email, at);
+      setLog((l) => ({ ...l, [kind]: { by: email, at } }));
+      showToast(`👑 지금 설정을 새 사용자의 처음 설정으로 저장했습니다 (${KIND_LABEL[kind]})`, 4000);
+    } catch (e) {
+      showErrorToastOnce('처음 설정을 저장하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요.', e);
     } finally {
       setBusy(false);
     }
@@ -79,6 +119,25 @@ export default function ResetSection() {
             ↩️ 초기화
           </button>
         </div>
+        {admin && (
+          <div data-reset-admin className="mt-3 pt-3 border-t border-slate-200">
+            <p data-reset-admin-at={adminPart ? adminPart.at : ''} className="text-xs text-slate-500 mb-2">
+              {adminPart
+                ? `${KIND_LABEL[kind]} 처음 설정(새 사용자): ${adminPart.at ? `${whenText(adminPart.at)}에 저장` : '저장됨'}${log[kind] && log[kind].at === adminPart.at ? ` · ${log[kind].by}` : ''}`
+                : `${KIND_LABEL[kind]} 처음 설정(새 사용자)이 없습니다 - 처음 쓰는 사람은 앱 처음 값으로 시작합니다.`}
+            </p>
+            <button
+              type="button"
+              data-reset-admin-save
+              disabled={!uid || !email || busy}
+              onClick={() => void saveInitial()}
+              title={`지금 설정을 V5를 처음 쓰는 사람의 시작 값으로 저장합니다 (${KIND_LABEL[kind]} 몫 - 여러 관리자면 마지막 저장)`}
+              className={BTN}
+            >
+              👑 초기화 설정 - 새 사용자 기본값
+            </button>
+          </div>
+        )}
       </div>
     </Section>
   );

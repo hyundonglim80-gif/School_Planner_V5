@@ -137,3 +137,112 @@ describe('설정 맞추기', () => {
     expect(saved).toEqual([{ size: 'lg' }]);
   });
 });
+
+describe('새 사용자 처음 설정 (P33-3 seed)', () => {
+  // 두 칸짜리 이음: size(기본 md)·mode(기본 a) - 문서에는 다른 것만
+  const useTwo = create<{ size: string; mode: string }>(() => ({ size: 'md', mode: 'a' }));
+  function seedBinding(seed: () => Promise<SettingsData | null>) {
+    const calls = { seed: 0, seeded: 0, ready: 0 };
+    return {
+      calls,
+      b: {
+        local: () => {
+          const s = useTwo.getState();
+          return { ...(s.size === 'md' ? {} : { size: s.size }), ...(s.mode === 'a' ? {} : { mode: s.mode }) };
+        },
+        apply: (d: SettingsData) => useTwo.setState({ size: typeof d.size === 'string' ? d.size : 'md', mode: typeof d.mode === 'string' ? d.mode : 'a' }),
+        subscribe: (fn: () => void) => useTwo.subscribe(fn),
+        ready: () => void calls.ready++,
+        seed: () => {
+          calls.seed++;
+          return seed();
+        },
+        seeded: () => void calls.seeded++,
+      },
+    };
+  }
+  beforeEach(() => useTwo.setState({ size: 'md', mode: 'a' }));
+
+  it('문서가 없으면 처음 설정을 깔고 이 기기 값(기본과 다른 것)을 얹어 올린다', async () => {
+    const { port, saved, push } = fakePort();
+    useTwo.setState({ mode: 'b' });
+    const { b, calls } = seedBinding(async () => ({ size: 'xl', mode: 'c' }));
+    const stop = startSettingsSync(port, b);
+    push(null);
+    expect(calls).toMatchObject({ seed: 1, ready: 0 });
+    await vi.runAllTimersAsync();
+    expect(useTwo.getState()).toEqual({ size: 'xl', mode: 'b' });
+    expect(calls).toMatchObject({ seeded: 1, ready: 1 });
+    expect(saved).toEqual([{ size: 'xl', mode: 'b' }]);
+    // 다시 '문서 없음'이 와도 한 번만
+    push(null);
+    await vi.runAllTimersAsync();
+    expect(calls.seed).toBe(1);
+    stop();
+  });
+
+  it('문서가 있으면 처음 설정을 받지 않는다', async () => {
+    const { port, saved, push } = fakePort();
+    const { b, calls } = seedBinding(async () => ({ size: 'xl' }));
+    const stop = startSettingsSync(port, b);
+    push({ mode: 'b' });
+    await vi.runAllTimersAsync();
+    expect(calls.seed).toBe(0);
+    expect(useTwo.getState()).toEqual({ size: 'md', mode: 'b' });
+    expect(saved).toEqual([]);
+    stop();
+  });
+
+  it('캐시의 "문서 없음"이면 받지 않고 서버를 기다린다', async () => {
+    const { port, push } = fakePort();
+    const { b, calls } = seedBinding(async () => ({ size: 'xl' }));
+    const stop = startSettingsSync(port, b);
+    push(null, true);
+    await vi.runAllTimersAsync();
+    expect(calls).toMatchObject({ seed: 0, ready: 0 });
+    stop();
+  });
+
+  it('받지 못하면(실패·없음) 지금처럼 이 기기 값만', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const seed of [() => Promise.reject(new Error('막힘')), async () => null]) {
+      useTwo.setState({ size: 'md', mode: 'b' });
+      const { port, saved, push } = fakePort();
+      const { b, calls } = seedBinding(seed);
+      const stop = startSettingsSync(port, b);
+      push(null);
+      await vi.runAllTimersAsync();
+      expect(useTwo.getState()).toEqual({ size: 'md', mode: 'b' });
+      expect(calls).toMatchObject({ seeded: 0, ready: 1 });
+      expect(saved).toEqual([{ mode: 'b' }]);
+      stop();
+    }
+    warn.mockRestore();
+  });
+
+  it('받는 동안 다른 기기가 만든 문서가 오면 그것이 이긴다 · 끊으면 입히지 않는다', async () => {
+    let release: (v: SettingsData) => void = () => {};
+    const a = fakePort();
+    const one = seedBinding(() => new Promise((r) => (release = r)));
+    let stop = startSettingsSync(a.port, one.b);
+    a.push(null);
+    a.push({ mode: 'z' });
+    release({ size: 'xl' });
+    await vi.runAllTimersAsync();
+    expect(useTwo.getState()).toEqual({ size: 'md', mode: 'z' });
+    expect(one.calls.seeded).toBe(0);
+    expect(a.saved).toEqual([]);
+    stop();
+
+    useTwo.setState({ size: 'md', mode: 'a' });
+    const c = fakePort();
+    const two = seedBinding(() => new Promise((r) => (release = r)));
+    stop = startSettingsSync(c.port, two.b);
+    c.push(null);
+    void stop();
+    release({ size: 'xl' });
+    await vi.runAllTimersAsync();
+    expect(useTwo.getState().size).toBe('md');
+    expect(c.saved).toEqual([]);
+  });
+});

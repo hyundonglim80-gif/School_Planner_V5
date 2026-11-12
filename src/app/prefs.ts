@@ -40,7 +40,7 @@ import {
   type SettingField,
   type SettingsSpec,
 } from '../domain/settings';
-import { settingsPort, startSettingsSync, type SettingsBinding } from '../data/settingsSync';
+import { settingsPort, startSettingsSync, type SettingsBinding, type SettingsData } from '../data/settingsSync';
 import { legacyFontPages, setFontSizes, useLayoutPrefs, type PopupStyle } from './layoutPrefs';
 import { addPressTargets, setCustomShortcuts, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
 import { prunePressTargets, readPressTargets, type PressTargets } from '../domain/pressTarget';
@@ -301,15 +301,49 @@ function claimLocalCopy(uid: string) {
   }
 }
 
+// ── 새 사용자 처음 설정 (P33-3 - PLAN 5장 'P33' ⑨) ──
+
+/** 관리자 '처음 설정'의 이 기기 종류 몫 (app/settingsSnapshot loadInitialSeed) */
+export interface InitialSeed {
+  /** 계정 칸 (보기·쓰는 법만 - 기본과 다른 것) */
+  common: SettingsData;
+  /** 이 기기 종류 칸 (그 몫이 없으면 null) */
+  device: SettingsData | null;
+  /** 이 기기에만 두는 값(화면 비율·밝기 …) 가운데 기본 그대로인 것에 입힌다 */
+  applyLocal(): void;
+}
+
+/**
+ * 처음 설정을 받는 함수 - 서버가 설정 문서가 없다고 할 때만 부른다(두 문서가 한 번 받은 것을 함께 쓴다).
+ * 모으는 코드(settingsSnapshot)는 나눠 받는다 - 처음 쓰는 사람만 필요하고, 그 파일이 이 파일을 부른다(고리를 만들지 않게).
+ */
+function initialSeedLoader(): () => Promise<InitialSeed | null> {
+  let p: Promise<InitialSeed | null> | null = null;
+  return () => (p ??= import('./settingsSnapshot').then((m) => m.loadInitialSeed(detectDeviceKind())));
+}
+
 let running: (() => Promise<void>) | null = null;
 
-/** 로그인한 동안 설정 문서 둘(common + 이 기기 종류)을 맞춘다. 끊는 함수를 돌려준다(두 번 불러도 한 번만 끊는다). */
+/**
+ * 로그인한 동안 설정 문서 둘(common + 이 기기 종류)을 맞춘다. 끊는 함수를 돌려준다(두 번 불러도 한 번만 끊는다).
+ * 서버가 문서가 없다고 하면(새 사용자·처음 휴대폰) 관리자 '처음 설정'을 먼저 깐다 - 계정 문서가 없을 때는 이 기기 값도.
+ */
 export function startPrefsSync(uid: string): () => Promise<void> {
   claimLocalCopy(uid);
   useCommonLoaded.setState({ loaded: false });
+  const loadSeed = initialSeedLoader();
+  let applyLocal: (() => void) | null = null;
   const stops = [
-    startSettingsSync(settingsPort(uid, 'common'), commonBinding),
-    startSettingsSync(settingsPort(uid, detectDeviceKind()), deviceBinding),
+    startSettingsSync(settingsPort(uid, 'common'), {
+      ...commonBinding,
+      seed: async () => {
+        const s = await loadSeed();
+        applyLocal = s?.applyLocal ?? null;
+        return s?.common ?? null;
+      },
+      seeded: () => applyLocal?.(),
+    }),
+    startSettingsSync(settingsPort(uid, detectDeviceKind()), { ...deviceBinding, seed: async () => (await loadSeed())?.device ?? null }),
   ];
   let done: Promise<void> | null = null;
   const stop = () => {
