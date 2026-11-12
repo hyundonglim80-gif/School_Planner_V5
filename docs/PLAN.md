@@ -3703,10 +3703,12 @@ P31로 V4를 끊었으니 그 파일은 Storage에 하나뿐이다(V4 자료는 
 
 ### P33-1. 관리자 계정
 **시작 조건**: 없음(PC - 운영 규칙 배포는 사용자에게 묻는다). **먼저 읽을 것**: 이 절 · 5장 'P33' ①~③ · `firestore.rules` 맨 위 `isDeveloper`·`admin`·`sharedConfig`·`v5Errors` · `tools/check-rules.mjs` 나이스 키·v5Errors 묶음 · `domain/developers.ts` · `features/settings/SettingsWindow.tsx`·`DevTab.tsx`.
-- [ ] ■1 규칙: `isAdmin()` = 기본 셋(`isDeveloper` 그대로) 또는 메일 확인된 계정의 메일이 `admin/admins` `emails`에(`exists` 먼저) · `holidays`·`admin/**`·`sharedConfig`·`v5Errors`를 `isAdmin`으로 · `admin/admins` 모양(emails = 소문자 메일 목록·50개까지, updatedAt·by) ·
+- [x] ■1 규칙: `isAdmin()` = 기본 셋(`isDeveloper` 그대로) 또는 메일 확인된 계정의 메일이 `admin/admins` `emails`에(`exists` 먼저) · `holidays`·`admin/**`·`sharedConfig`·`v5Errors`를 `isAdmin`으로 · `admin/admins` 모양(emails = 소문자 메일 목록·50개까지, updatedAt·by) ·
   check-rules 새 묶음(더한 관리자 = 확인된 비개발자 계정: 더하기 전 막힘 → 더한 뒤 공휴일·나이스 키·오류 기록 됨 → 빼면 다시 막힘 · 메일 확인 안 된 계정은 목록에 있어도 막힘 · 관리자가 아니면 목록을 못 읽고 못 쓴다) · 에뮬레이터 `npm run check:rules`.
-- [ ] ■2 앱: `domain/admins.ts`(기본 셋 = `DEVELOPER_EMAILS`, `isBaseAdmin`·`normalizeAdminEmail`·목록 읽기) · `data/admins.ts`(`useIsAdmin` - 기본 셋이면 곧바로, 아니면 로그인할 때 `admin/admins` 한 번 읽기·막힘 = 아님(오류 보고 없이) · `saveAdmins` 더하기·빼기) ·
+  → 11-12: 위 그대로 + `admin/admins` 모양 검사(모르는 칸·남의 이름·목록 아님·51명 막힘) · **찾은 것**: `match /admin/{docId}/{rest=**}`는 v2에서 빈 경로도 받아 모양 검사를 건너뛰었다(넷이 '그런데 됐다') → 한 칸 더 내린 `{sub}/{rest=**}` · check-rules 311 통과 · test:data 38 통과.
+- [x] ■2 앱: `domain/admins.ts`(기본 셋 = `DEVELOPER_EMAILS`, `isBaseAdmin`·`normalizeAdminEmail`·목록 읽기) · `data/admins.ts`(`useIsAdmin` - 기본 셋이면 곧바로, 아니면 로그인할 때 `admin/admins` 한 번 읽기·막힘 = 아님(오류 보고 없이) · `saveAdmins` 더하기·빼기) ·
   `isDeveloper` 화면 자리(SettingsWindow·HolidayMissingNote)를 `useIsAdmin`으로 · 탭 이름 '관리자' · `AdminsSection`(관리자 탭 맨 위: 기본 셋은 🔒, 더한 관리자 줄마다 빼기, 메일 칸 + 더하기 - 모양 틀리면 알림·같은 메일은 한 번) `[data-admins-section|admin-row|admin-remove|admin-email|admin-add]` · 단위 시험.
+  → 11-12: 위 그대로(`data/admins` `useIsAdmin`·`loadAdmins`·`updateAdmins` 트랜잭션·나를 빼면 곧바로 아님 · `AdminsSection` 나를 뺄 때 묻기) · 시험 `domain/admins.test`(규칙 수·isDeveloper 두 곳)·`data/admins.test`(기본 셋은 읽지 않음·한 번만 읽기·막힘 = 아님·계정 바뀜)·SettingsWindow.test · tsc·lint·빌드.
 - [ ] ■3 크롬 점검: `inspect-dev-errors`(또는 새 `inspect-admins`) - `?as=5` 관리자 탭 '관리자' → 확인된 다른 계정(점검이 그때 만든 `?as=new-…` + 메일 확인)을 더하기 → 그 계정에 관리자 탭·오류 기록이 보인다 → 빼기 → 다시 열면 없다 · 운영 규칙 배포(**사용자에게 묻고** - 더하기만이라 화면보다 먼저 나가도 된다, `live-rules` 앞뒤 확인).
 - [ ] ■4 문서(MAP·DESIGN 4장 공용 문서·CLAUDE.md 3장 공용 문서·OPS 관리자 목록) · 세션 끝 정리(1-3).
 **끝 조건**: 기본 셋은 늘 관리자(빼기 없음) · 관리자가 메일을 더하면 그 계정이 다음 로그인부터 관리자 탭을 보고 규칙도 관리자로 통과 · 빼면 둘 다 막힌다 · 관리자가 아니면 목록을 못 본다 · 운영 규칙 = 커밋 파일.

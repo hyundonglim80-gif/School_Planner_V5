@@ -1,4 +1,4 @@
-// 개발자 탭 '공휴일' (P14-3 ■2 - V4 환경설정 '개발자 설정 - 공휴일'을 옮김). 공공데이터포털 특일정보에서 받아 `holidays/{연도}`에 쓴다(data/govHolidays).
+// 관리자 탭 '공휴일' (P14-3 ■2 - V4 환경설정 '개발자 설정 - 공휴일'을 옮김). 공공데이터포털 특일정보에서 받아 `holidays/{연도}`에 쓴다(data/govHolidays).
 //   - 키는 admin/config(V4와 같은 칸 - V4에서 넣은 키가 그대로 보인다). 줄은 올해·내년·내후년.
 //   - 받은 것이 지금보다 적거나 받지 못한 달이 있으면 덮어쓰기 전에 묻는다(V4는 묻지 않았다). 저장하면 이 기기 표도 다시 읽는다.
 import { useCallback, useEffect, useState } from 'react';
@@ -100,7 +100,7 @@ export default function DevHolidaysSection() {
           💾 저장
         </button>
       </div>
-      <p className="text-[11px] text-slate-400 mt-1">admin/config에 들어갑니다(개발자만 읽음 - 소스·빌드에는 남지 않습니다).</p>
+      <p className="text-[11px] text-slate-400 mt-1">admin/config에 들어갑니다(관리자만 읽음 - 소스·빌드에는 남지 않습니다).</p>
       {failed && (
         <p data-dev-holidays-failed className="text-xs text-red-500 mt-2">
           읽지 못했습니다 ({failed})

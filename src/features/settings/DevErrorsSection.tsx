@@ -1,4 +1,4 @@
-// 개발자 탭 '오류 기록' (P14-2 ■5). 사용자 화면에서 난 오류(v5Errors - data/errorReport)를 최근 50건 읽어 같은 문장끼리 묶어 보인다.
+// 관리자 탭 '오류 기록' (P14-2 ■5). 사용자 화면에서 난 오류(v5Errors - data/errorReport)를 최근 50건 읽어 같은 문장끼리 묶어 보인다.
 // 묶음을 누르면 가장 나중 것의 스택·컴포넌트·화면·브라우저. [모두 지우기]는 읽어 온 것을 지운다(30일이 지나면 TTL이 저절로 지운다).
 import { useCallback, useEffect, useState } from 'react';
 import { showErrorToast, showToast } from '../../app/toast';

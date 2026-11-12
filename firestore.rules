@@ -23,7 +23,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // 등록된 개발자 계정. src/domain/developers.ts 와 같은 목록을 유지해야 한다.
+    // 기본 관리자(처음 개발자) 셋. src/domain/developers.ts 와 같은 목록을 유지해야 한다. 늘 관리자다(앱에서 뺄 수 없다).
     function isDeveloper() {
       return signedIn() && request.auth.token.email_verified == true && request.auth.token.email in [
         'hyundonglim@gmail.com',
@@ -32,29 +32,48 @@ service cloud.firestore {
       ];
     }
 
+    // 관리자 = 기본 셋 + 관리자가 더한 계정(admin/admins 의 emails - P33-1, src/data/admins.ts).
+    // 더한 관리자도 메일 확인된 계정만(구글 로그인). 목록 문서가 없으면 기본 셋만.
+    function isAdmin() {
+      return isDeveloper() || (signedIn() && request.auth.token.email_verified == true
+        && exists(/databases/$(database)/documents/admin/admins)
+        && request.auth.token.email in get(/databases/$(database)/documents/admin/admins).data.emails);
+    }
+
     // ── 공휴일 (모두가 같이 보는 자료) ─────────────────────────────────
-    // 개발자가 1년에 한 번 공공데이터포털에서 받아 여기에 적어둔다.
+    // 관리자가 1년에 한 번 공공데이터포털에서 받아 여기에 적어둔다.
     // 사용자는 읽기만 하므로 API 키를 발급받을 필요도, 가질 필요도 없다.
     match /holidays/{year} {
       allow read: if signedIn();
-      allow write: if isDeveloper();
+      allow write: if isAdmin();
     }
 
-    // ── 개발자 전용 설정 ───────────────────────────────────────────────
-    // 공공데이터 API 키가 들어 있다. 소스에 두면 빌드 결과물에 실려
-    // 누구나 꺼내 쓸 수 있으므로, 읽기까지 개발자로 제한한다.
-    match /admin/{document=**} {
-      allow read, write: if isDeveloper();
+    // ── 관리자 전용 ────────────────────────────────────────────────────
+    // config: 공공데이터 API 키가 들어 있다. 소스에 두면 빌드 결과물에 실려 누구나 꺼내 쓸 수 있으므로,
+    // 읽기까지 관리자로 제한한다.
+    // admins: 더한 관리자 목록 { emails: [소문자 메일], updatedAt, updatedBy } - 관리자만 읽는다(모두에게 메일이 보이지 않게).
+    match /admin/{docId} {
+      allow read, delete: if isAdmin();
+      allow create, update: if isAdmin() && (docId != 'admins' || (
+        request.resource.data.keys().hasOnly(['emails', 'updatedAt', 'updatedBy'])
+        && request.resource.data.emails is list
+        && request.resource.data.emails.size() <= 50
+        && request.resource.data.updatedAt is number
+        && request.resource.data.updatedBy == request.auth.token.email));
+    }
+    // 그 아래(지금은 쓰지 않는다). {rest=**}는 빈 경로도 받아 /admin/{docId}/{rest=**}로 쓰면 위 admins 모양 검사를 건너뛴다(P33-1 check-rules가 잡음) - 한 칸 더 내려서.
+    match /admin/{docId}/{sub}/{rest=**} {
+      allow read, write: if isAdmin();
     }
 
     // ── 모두가 읽는 설정 (나이스 키) ───────────────────────────────────
-    // 나이스 급식·학사일정은 학교마다 달라 공휴일처럼 개발자가 받아 둘 수 없다. 사용자 브라우저가
+    // 나이스 급식·학사일정은 학교마다 달라 공휴일처럼 관리자가 받아 둘 수 없다. 사용자 브라우저가
     // 이 키로 open.neis.go.kr을 직접 부른다(src/data/neis.ts). 그래서 로그인한 사람은 읽는다 -
-    // 네트워크 요청에도 보이므로 막히면 키를 새로 받아 여기만 바꾼다. 쓰기는 개발자만.
+    // 네트워크 요청에도 보이므로 막히면 키를 새로 받아 여기만 바꾼다. 쓰기는 관리자만.
     // 키가 없거나 못 읽으면 앱이 키 없이(한 번에 5건씩 나눠) 부른다.
     match /sharedConfig/{doc} {
       allow read: if signedIn();
-      allow write: if isDeveloper();
+      allow write: if isAdmin();
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -198,7 +217,7 @@ service cloud.firestore {
         && request.resource.data.at == request.time
         && request.resource.data.expireAt is timestamp
         && request.resource.data.expireAt < request.time + duration.value(32, 'd');
-      allow read, delete: if isDeveloper();
+      allow read, delete: if isAdmin();
       allow update: if false;
     }
 

@@ -484,6 +484,45 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
     await deleteDoc(errDoc(D, 'rc_e1'));
   });
 
+  console.log('\n[관리자 더하기 admin/admins] — 기본 셋 + 관리자가 더한 계정, 목록은 관리자만 (P33-1)');
+  const E = client('extraAdmin');
+  await verifyEmail(E, await login(E, 'rc-admin@example.com'));
+  const adminsDoc = (c) => doc(c.db, 'admin', 'admins');
+  const adminsOf = (emails, by = 'hyundonglim80@gmail.com', extra = {}) => ({ emails, updatedAt: Date.now(), updatedBy: by, ...extra });
+  await mustNot('더하기 전: 확인된 일반 계정이 공휴일을 쓴다', () => setDoc(doc(E.db, 'holidays', '1999'), { days: [] }));
+  await mustNot('더하기 전: 일반 계정이 관리자 목록을 읽는다', () => getDoc(adminsDoc(E)));
+  await mustNot('일반 계정이 스스로 관리자 목록에 든다', () => setDoc(adminsDoc(E), adminsOf(['rc-admin@example.com'], 'rc-admin@example.com')));
+  await mustNot('관리자: 목록에 모르는 칸', () => setDoc(adminsDoc(D), adminsOf(['rc-admin@example.com'], undefined, { note: 'x' })));
+  await mustNot('관리자: 적은 사람을 남으로', () => setDoc(adminsDoc(D), adminsOf(['rc-admin@example.com'], 'someone@example.com')));
+  await mustNot('관리자: emails가 목록이 아니다', () => setDoc(adminsDoc(D), adminsOf('rc-admin@example.com')));
+  await mustNot('관리자: 51명', () => setDoc(adminsDoc(D), adminsOf(Array.from({ length: 51 }, (_, i) => `a${i}@example.com`))));
+  await must('기본 관리자가 계정을 더한다', () => setDoc(adminsDoc(D), adminsOf(['rc-admin@example.com', 'rc-admin2@example.com'])));
+  await must('더한 관리자가 목록을 읽는다', async () => {
+    const d = await getDoc(adminsDoc(E));
+    if (!d.data()?.emails?.includes('rc-admin@example.com')) throw new Error('목록에 내가 없다');
+  });
+  await must('더한 관리자가 공휴일을 쓴다', () => setDoc(doc(E.db, 'holidays', '1999'), { days: [] }));
+  await must('더한 관리자가 모두가 읽는 설정을 쓴다', () => setDoc(doc(E.db, 'sharedConfig', 'rc_admin'), { v: 1 }));
+  await must('더한 관리자가 오류 기록을 읽는다', () => getDocs(query(collection(E.db, 'v5Errors'), limit(1))));
+  await must('더한 관리자가 관리자 설정(admin/config)을 읽는다', () => getDoc(doc(E.db, 'admin', 'config')));
+  await mustNot('관리자가 아니면 목록을 읽지 못한다', () => getDoc(adminsDoc(X)));
+  await mustNot('관리자가 아니면 목록을 지우지 못한다', () => deleteDoc(adminsDoc(X)));
+  const E2 = client('extraAdminUnverified');
+  await login(E2, 'rc-admin2@example.com');
+  await mustNot('메일 확인이 안 된 계정은 목록에 있어도 오류 기록을 읽지 못한다', () => getDocs(query(collection(E2.db, 'v5Errors'), limit(1))));
+  await mustNot('메일 확인이 안 된 계정은 목록에 있어도 공휴일을 쓰지 못한다', () => setDoc(doc(E2.db, 'holidays', '1998'), { days: [] }));
+  await must('더한 관리자가 다른 관리자를 뺀다', () => setDoc(adminsDoc(E), adminsOf(['rc-admin@example.com'], 'rc-admin@example.com')));
+  await must('기본 관리자가 더한 관리자를 뺀다', () => setDoc(adminsDoc(D), adminsOf([])));
+  await mustNot('빠진 뒤: 공휴일을 쓴다', () => setDoc(doc(E.db, 'holidays', '1999'), { days: ['x'] }));
+  await mustNot('빠진 뒤: 목록을 읽는다', () => getDoc(adminsDoc(E)));
+  await must('기본 관리자가 점검 자료를 걷는다', async () => {
+    await deleteDoc(adminsDoc(D));
+    await deleteDoc(doc(D.db, 'sharedConfig', 'rc_admin'));
+    await deleteDoc(doc(D.db, 'holidays', '1999'));
+  });
+  await mustNot('목록 문서가 없으면 일반 계정은 관리자가 아니다', () => setDoc(doc(E.db, 'holidays', '1999'), { days: [] }));
+  for (const c of [E, E2]) await deleteApp(c.app).catch(() => {});
+
   console.log('\n[V5 그룹장이 남 넣기] — 구성원은 스스로만 들어온다 (P15-1)');
   await mustNot('그룹장이 남을 구성원으로 넣는다', async () => {
     await updateDoc(space(A, gs), { [`members.${xUid}`]: 'member', updatedAt: now() });

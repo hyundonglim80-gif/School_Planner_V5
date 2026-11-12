@@ -20,8 +20,10 @@ vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }))
 const resetMirror = vi.hoisted(() => vi.fn(() => Promise.resolve()));
 vi.mock('../../data/mirror/sync', () => ({ resetMirror }));
 
-// 개발자 탭 '오류 기록'은 서버를 읽는다 - 창 시험에서는 빈 목록 (칸은 DevErrorsSection.test)
+// 관리자 탭 '오류 기록'은 서버를 읽는다 - 창 시험에서는 빈 목록 (칸은 DevErrorsSection.test)
 vi.mock('../../data/errorReport', () => ({ loadErrorReports: vi.fn(async () => []), deleteErrorReports: vi.fn() }));
+// 관리자 계정 목록도 서버를 읽는다 - 더한 관리자 없음 (관리자인가는 data/admins.test)
+vi.mock('../../data/admins', async (orig) => ({ ...(await orig<typeof import('../../data/admins')>()), loadAdmins: vi.fn(async () => []) }));
 // '공휴일'도 서버를 읽는다 - 빈 표 (칸은 DevHolidaysSection.test)
 vi.mock('../../data/govHolidays', () => ({
   loadGovApiKey: vi.fn(async () => ''),
@@ -56,7 +58,7 @@ describe('환경설정 창', () => {
     expect(q('[data-settings-tab="view"]')).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('개발자 탭은 개발자 계정에만 (일반 계정은 개발자 탭으로 열어도 보기 탭)', () => {
+  it('관리자 탭(P33-1 - 옛 개발자 탭)은 관리자 계정에만 (일반 계정은 관리자 탭으로 열어도 보기 탭)', () => {
     useSession.setState({ loading: false, user: { uid: 'u1', email: 'teacher@example.com', displayName: '', photoURL: '' } });
     const plain = openSettings('dev');
     expect(document.querySelector('[data-settings-tab="dev"]')).toBeNull();
@@ -70,6 +72,10 @@ describe('환경설정 창', () => {
     expect(q('[data-settings-panel="dev"]')).toBeVisible();
     expect(q('[data-dev-tab] [data-settings-section="dev-errors"]')).toBeInTheDocument();
     expect(q('[data-dev-tab] [data-settings-section="dev-holidays"]')).toBeInTheDocument();
+    expect(q('[data-settings-tab="dev"]')).toHaveTextContent('관리자');
+    // 관리자 계정 절 - 기본 셋은 🔒(빼기 단추 없음)
+    expect(qa('[data-admins-section] [data-admin-base]')).toHaveLength(3);
+    expect(document.querySelector('[data-admins-section] [data-admin-base] [data-admin-remove]')).toBeNull();
     useSession.setState({ loading: true, user: null });
   });
 
