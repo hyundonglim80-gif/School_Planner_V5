@@ -172,6 +172,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - `pc` / `mobile`: 글자 크기·창 위치·시작 화면·단축키·화면 보기(V4 `v4_preferences_pc/_mobile`). 1초 뒤 올린다(V4 `preferenceSync`). 창 안 탭 키는 칸 `tabShortcuts`(P18-2 - `shortcutOverrides`와 나눔, 키를 준 탭만). 내가 만든 키(환경설정 값 `opt.…`·단추 `press.…`)는 칸 `customShortcuts`(P28 - 모양만 보고 읽어 모르는 id도 남긴다), 단추의 자리·찾기·이름은 칸 `pressTargets`(P28-3 - 키가 있는 것만 올린다).
 - `reset`: 내 '초기화 설정'(P33-2 - 앱 탭 💾) = `{ common, at, pc?: { prefs, local, at }, mobile?: … }` - 계정 몫(보기·쓰는 법 칸만)과 기기 종류 몫(기기 칸 + 이 기기 값 `local` = 한눈에 경계선·칸 폭·밝기·고대비·부드럽게·머리줄 접기·메모 보기/정렬·년간 보기·작년 이맘때), 칸마다 기본과 다른 것만 · `at` = 저장한 때(ms, 보여 주기만).
   저장하면 그 기기 종류 몫 + 계정 몫만 바뀐다. 모양·고르기·겹치기는 `domain/settingsSnapshot`(칸 표 `RESET_DEVICE_KEYS`·`RESET_COMMON_KEYS`·`LOCAL_PREFS`). '초기화'가 가는 값 = **몫마다** 내 것 → 관리자 기본값(P33-3) → 앱 기본. 백업에 담는다.
+- 관리자 '처음 설정' = 새 사용자 기본값(P33-3 - 앱 탭 👑, 관리자만): `sharedConfig/initialSettings` = 같은 묶음 모양(로그인하면 읽기·관리자만 쓰기) - 저장은 그 기기 종류 몫 + 계정 몫만(`mergeFields`), 문서 하나라 **마지막 저장이 이긴다**. 누가는 관리자만 읽는 `admin/initialSettings` `{ pc|mobile: { by, at } }`(모두가 읽는 문서에 메일을 두지 않는다).
+  입히기: 서버가 설정 문서가 **없다**고 할 때만(`settingsSync` seed - 캐시의 '없음'은 기다림) 그 문서 몫을 깔고 이 기기 값(기본과 다른 것)을 위에 - 계정 문서가 없을 때는 이 기기 값(화면 비율·밝기 …) 가운데 **기본 그대로인 것**에도. 입히면 문서가 생겨 다시 입히지 않는다. 못 받으면 앱 기본.
 - V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다(+ 초기화 묶음 `reset`).
 - 문서에는 **기본값과 다른 칸만** 적는다(없는 칸·틀린 칸 = 기본값). 칸마다 기본값과 읽기 규칙은 표 하나(`domain/settings.ts`의 `SettingsSpec`) -
   `app/prefs.ts`의 `DEVICE_PREFS`(pc/mobile)·`COMMON_SETTINGS`(common). 기능을 옮기는 세션이 그 표에 칸을 더한다. 맞추기는 `data/settingsSync.ts`.
@@ -202,7 +204,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   푸시(P19-3): 함수 `v5ChatPush`·`v5DmPush`가 방의 마지막 글만(보낸 사람·🔕 `muted.<uid>` 빼고) data `{ type: 'chat', room(방 키), sender, title }`(글 없음) → `public/sw.js` 방마다 OS 알림 하나(tag `sp5-chat-<방 키>` -
   같은 방 새 글은 소리 없이 바꾸기 '새 글 n개', 앞 알림 data.count) · 보는 큰 앱 창이 있으면 없음 · 누르면 'sp5-open-chat'/`?chat=` · 앱에서 그 방을 보면 그 알림을 닫는다.
   기기 사본·JSON 백업·그룹 지우기 단계에 넣지 않는다(그룹을 지우면 규칙이 곧바로 막고 TTL이 지운다). 푸시는 함수 `v5ChatPush`·`v5DmPush`(방의 마지막 글만 · 보낸 사람·🔕 빼고 · 보낸 사람·방 이름만, 글 없음).
-- 공유 자료 `holidays/{year}`, `sharedConfig/neis`는 V4와 같이 읽기만(쓰기는 관리자).
+- 공유 자료 `holidays/{year}`, `sharedConfig/neis`·`sharedConfig/initialSettings`(P33-3 처음 설정 - 4-8)는 모두 읽기만(쓰기는 관리자).
 - **관리자**(P33-1): 기본 셋(규칙 `isDeveloper` = `domain/developers`, 늘 관리자) + `admin/admins` `{ emails: [소문자 메일 ≤ 50], updatedAt, updatedBy(= 쓴 사람 메일) }`(메일 확인된 계정만 - 규칙 `isAdmin`). 목록은 관리자만 읽고 쓴다(모두에게 메일이 보이지 않게).
   `holidays`·`admin/*`·`sharedConfig`·`v5Errors` 읽기·지우기가 `isAdmin`. 앱은 기본 셋이면 곧바로, 아니면 로그인한 동안 목록을 한 번 읽어 보고 막히면 아님(`data/admins` `useIsAdmin`). 메모로 Claude 요청은 관리자와 따로(배포 값 `CLAUDE_OWNER_EMAILS`).
 

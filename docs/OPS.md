@@ -65,3 +65,4 @@ npx firebase firestore:databases:get "(default)" --project schoolplannerv3
 - 관리자 = 기본 셋(규칙 `isDeveloper` = `src/domain/developers.ts` - 늘 관리자, 앱에서 뺄 수 없다) + 관리자가 더한 계정(`admin/admins` `emails`). 더하기·빼기는 앱 환경설정 '관리자' 탭 맨 위 '관리자 계정'.
 - 더한 계정은 **메일 확인된 구글 계정**만 관리자로 통과하고, 그 계정이 **다음에 앱을 열 때부터** 관리자 탭이 보인다. 관리자 힘 = 공휴일·관리자 설정(`admin/*`)·나이스 키(`sharedConfig`)·오류 기록(`v5Errors`) - 메모로 Claude 요청은 따로(배포 값 `CLAUDE_OWNER_EMAILS`).
 - 목록 문서를 지우면 기본 셋만 남는다(앱이 잠기지 않는다). 공개 저장소라 더한 메일은 문서·커밋에 적지 않는다.
+- **처음 설정**(P33-3): 관리자가 앱 탭 '👑 초기화 설정 - 새 사용자 기본값'을 누르면 `sharedConfig/initialSettings`(그 기기 종류 몫)가 바뀐다 - 그 뒤 처음 쓰는 사람(설정 문서가 없는 계정)이 그 값으로 시작한다. 누가 저장했나는 `admin/initialSettings`. 처음 설정을 없애려면 콘솔에서 `sharedConfig/initialSettings`를 지운다(앱 처음 값으로 - 이미 입힌 계정은 그대로).
