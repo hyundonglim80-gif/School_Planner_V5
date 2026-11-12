@@ -799,7 +799,10 @@ try {
     r.check(await waitFor(async () => (await count(sel('shortcut-row'))) > 15, 5000), "환경설정 '단축키' 탭 - 키가 걸린 것만 (P28-1)");
     r.check((await count(sel('shortcut-row', 'timetable'))) === 0, '키가 없는 기능(시간표)은 줄이 없다');
     r.check((await count(sel('shortcut-change', 'scopeDay'))) === 1 && (await count(sel('shortcut-clear', 'scopeDay'))) === 1, '줄마다 키 바꾸기·해제');
-    r.check((await count(sel('shortcut-change', 'scopePrev'))) === 1, '누를 단추가 없는 기능(이전 화면)도 줄이 있다');
+    r.check(
+      (await count(sel('shortcut-row', 'recurring'))) === 0 && (await count(`${sel('shortcut-nobutton')} option[value="recurring"]`)) === 1,
+      '키 없는 단추 없는 기능(반복 일정)은 줄이 없고 ＋ 단추 없는 기능에 키 걸기에 (11-12)',
+    );
     r.check(
       (await count(sel('shortcut-row', 'undo'))) === 0 && (await count(sel('shortcut-fixed', 'undo'))) === 1 && (await count(sel('shortcut-fixed', 'search'))) === 1,
       '고정 단축키(되돌리기·검색 - #149)는 줄이 아니라 맨 아래 고정 묶음에',

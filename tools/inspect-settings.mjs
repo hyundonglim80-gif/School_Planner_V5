@@ -138,6 +138,22 @@ try {
   await a.page.click(sel('shortcut-clear', 'scopeYear'));
   const sc1 = await serverUntil(serverPc, (d) => d.shortcutOverrides?.scopeYear?.key === '');
   r.check(sc1.shortcutOverrides?.scopeYear?.key === '' && (await a.page.locator(sel('shortcut-row', 'scopeYear')).count()) === 0, '해제 = 바로 저장 · 그 줄이 빠진다');
+  // 11-12 사용자 '키가 지정되지 않은 것이 목록에 있는데 지워줘' - 단추 없는 기능도 키가 없으면 줄이 없고, 고르기 칸에서 키를 건다
+  const noKeyTexts = await a.page.locator(`${sel('shortcut-list')} ${sel('shortcut-key')}`).allTextContents();
+  r.check(!noKeyTexts.includes('없음') && (await a.page.locator(sel('shortcut-row', 'recurring')).count()) === 0, `목록에 키 없는 줄이 없다 (반복 일정 줄 없음 · ${noKeyTexts.length}줄)`);
+  const nobutton = sel('shortcut-nobutton');
+  r.check((await a.page.locator(`${nobutton} option[value="recurring"]`).count()) === 1, "'＋ 단추 없는 기능에 키 걸기'에 반복 일정");
+  await a.page.selectOption(nobutton, 'recurring');
+  r.check(await waitFor(a.page.locator(sel('shortcut-record', 'key'))), '고르면 띠의 키 단계');
+  await a.page.keyboard.press('Control+Alt+KeyR');
+  await a.page.click(sel('shortcut-record-save'));
+  const sc1b = await serverUntil(serverPc, (d) => d.shortcutOverrides?.recurring?.key === 'R');
+  r.check(sc1b.shortcutOverrides?.recurring?.key === 'R', '저장하면 계정에 올라간다 (반복 일정 Ctrl + Alt + R)');
+  r.check(
+    await waitFor(async () => ((await a.page.textContent(`${sel('shortcut-row', 'recurring')} ${sel('shortcut-key')}`).catch(() => '')) ?? '') === 'Ctrl + Alt + R'),
+    '반복 일정 줄이 생긴다 (Ctrl + Alt + R)',
+  );
+  r.check((await a.page.locator(`${nobutton} option[value="recurring"]`).count()) === 0, '고르기 칸에서는 빠진다');
   a.dialogs.answer = true;
   await a.page.click(sel('shortcut-reset'));
   a.dialogs.answer = false;

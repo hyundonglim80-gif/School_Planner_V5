@@ -207,8 +207,9 @@ describe('환경설정 창', () => {
     expect(rowIds()).toContain('help');
     // 기본값이 비어 있는 기능(시간표 등)은 줄이 없다 - 더하기는 '⌨️ 단축키 설정'으로만
     expect(rowIds()).not.toContain('timetable');
-    // 키가 있는 것 + 누를 단추가 없는 기능(키가 없어도)
-    expect(rowIds()).toHaveLength(SHORTCUT_ACTIONS.filter((a) => !a.fixed && (a.def.key || NO_BUTTON.has(a.id))).length + 1);
+    // 키가 있는 것만 (11-12 사용자 - 누를 단추가 없는 기능도 키가 없으면 줄이 없다)
+    expect(rowIds()).toHaveLength(SHORTCUT_ACTIONS.filter((a) => !a.fixed && a.def.key).length + 1);
+    expect(qa('[data-shortcut-key]').every((k) => k.textContent !== '없음')).toBe(true);
     expect(keyText('scopeDay')).toBe('1'); // #149 - 전에는 Shift + 1
     expect(keyText('toggleWeekend')).toBe('Shift + ↑ / ↓');
     expect(q('[data-shortcut-row="scopeDay"] [data-shortcut-default]')).toBeInTheDocument();
@@ -229,16 +230,16 @@ describe('환경설정 창', () => {
     expect(rowIds()).toContain('scopeMemo');
   });
 
-  it('누를 단추가 없는 기능은 키가 없어도 줄이 있다 - 키 정하기 (해제해도 다시 걸 수 있게)', () => {
+  it('누를 단추가 없는 기능은 키가 없으면 줄이 없고 고르기 칸에서 키를 건다 (해제해도 다시 걸 수 있게)', () => {
     openSettings('shortcuts');
-    expect(keyText('recurring')).toBe('없음');
-    expect(q('[data-shortcut-change="recurring"]')).toHaveTextContent('키 정하기');
-    expect(document.querySelector('[data-shortcut-clear="recurring"]')).toBeNull();
+    const options = () => qa('[data-shortcut-nobutton] option').map((o) => (o as HTMLOptionElement).value).filter(Boolean);
+    expect(rowIds()).not.toContain('recurring');
+    expect(options()).toContain('recurring');
+    expect(options()).not.toContain('checklist'); // 기본 키(Ctrl + L)가 있다
     fireEvent.click(q('[data-shortcut-clear="checklist"]'));
-    expect(rowIds()).toContain('checklist');
-    expect(keyText('checklist')).toBe('없음');
-    expect(q('[data-shortcut-change="checklist"]')).toHaveTextContent('키 정하기');
-    fireEvent.click(q('[data-shortcut-change="checklist"]'));
+    expect(rowIds()).not.toContain('checklist');
+    expect(options()).toContain('checklist');
+    fireEvent.change(q('[data-shortcut-nobutton]'), { target: { value: 'checklist' } });
     expect(useShortcutRecord.getState()).toMatchObject({ stage: 'key', picked: 'checklist' });
     act(() => cancelShortcutRecord());
   });
@@ -393,17 +394,20 @@ describe('환경설정 창', () => {
     expect(document.querySelector('[data-shortcut-group="환경설정 값"]')).toBeNull();
   });
 
-  it('겹친 키(옛 자료)는 두 줄 모두 ⚠ · 키가 하나도 없으면 단추 없는 기능 줄만', () => {
+  it('겹친 키(옛 자료)는 두 줄 모두 ⚠ · 키가 하나도 없으면 줄 없이 안내 + 고르기 칸에 단추 없는 기능', () => {
     // 하루 화면(1 - #149)과 같은 키를 주간 화면에 - 눌러서 정하면 생기지 않는다(겹친 쪽에서 뺀다)
     setShortcutOverrides({ scopeWeek: { ctrl: false, alt: false, shift: false, key: '1' } });
     const first = openSettings('shortcuts');
     expect(q('[data-shortcut-row="scopeDay"]')).toHaveAttribute('data-conflict');
     expect(q('[data-shortcut-row="scopeWeek"]')).toHaveAttribute('data-conflict');
     first.unmount();
-    // 키를 모두 비우면 남는 것은 누를 단추가 없는 기능 줄뿐
+    // 키를 모두 비우면 줄이 없고, 누를 단추가 없는 기능은 모두 고르기 칸에
     setShortcutOverrides(Object.fromEntries(SHORTCUT_ACTIONS.map((a) => [a.id, NONE])));
     openSettings('shortcuts');
-    expect(new Set(rowIds())).toEqual(new Set(NO_BUTTON));
+    expect(rowIds()).toEqual([]);
+    expect(q('[data-shortcut-empty]')).toBeInTheDocument();
+    const options = qa('[data-shortcut-nobutton] option').map((o) => (o as HTMLOptionElement).value).filter(Boolean);
+    expect(new Set(options)).toEqual(new Set(NO_BUTTON));
   });
 
   it('다른 기기에서 키가 바뀌면 따라간다', () => {

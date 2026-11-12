@@ -3,7 +3,8 @@
 // 단축키를 더하는 길은 '⌨️ 단축키 설정'(눌러서 고르기 - app/shortcutRecord) 하나다(11-09 사용자 '일원화' - PLAN 5장 'P28').
 // 이 탭에는 키가 걸린 것만(기본 키 + 내가 만든 것 - 기능·창 안 탭) 줄로 보이고, 줄마다 [키 바꾸기](띠의 키 단계로 곧바로)·[해제].
 // 모두 누르는 즉시 저장된다(예전의 기능 52개마다 키 칸 + '저장'은 없앴다). 해제·기본값으로는 안내의 '되돌리기'로 되돌린다.
-// 누를 단추가 없는 기능(NO_BUTTON)은 키가 없어도 늘 줄이 있다 - 눌러서 고를 수 없으니 여기서 [키 정하기](없으면 해제한 뒤 다시 걸 길이 없다).
+// 누를 단추가 없는 기능(NO_BUTTON)은 눌러서 고를 수 없으니 위 '＋ 단추 없는 기능에 키 걸기' 고르기 칸에서 키를 건다(없으면 해제한 뒤 다시 걸 길이 없다).
+// 11-12 사용자 '키가 지정되지 않은 것이 목록에 있는데 지워줘' - 전에는 키가 없어도 줄로 보였다(P28-1), 이제 목록은 키가 걸린 것만.
 // 겹친 줄(⚠)은 옛 자료에서만 나온다 - 눌러서 정하면 겹친 쪽에서 키를 뺀다(domain/shortcuts assignBinding).
 // 끝나면 이 탭이 그 줄을 짚는다(focusId - 같은 줄을 또 바꿔도 다시 짚게 focusToken = 연 params).
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -52,7 +53,7 @@ const GROUP_TITLE: Record<string, string> = {
 const SMALL_BTN = 'px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer shrink-0';
 
 /**
- * 누를 단추가 없는(또는 다른 단추와 하는 일이 달라 표시를 달지 않은) 기능 - 키가 없어도 줄을 보인다.
+ * 누를 단추가 없는(또는 다른 단추와 하는 일이 달라 표시를 달지 않은) 기능 - 키가 없으면 '＋ 단추 없는 기능에 키 걸기' 고르기 칸에 든다.
  * 단추에 shortcutTarget을 달면 여기서 뺀다 - 글자 크기 셋은 단추가 환경설정 안 깊이 있고 단축키로 쓰려는 기능이라(메모 요청 #145) 둘 다.
  */
 export const NO_BUTTON: ReadonlySet<ShortcutId> = new Set<ShortcutId>([
@@ -133,22 +134,20 @@ function ShortcutRow({
           type="button"
           data-shortcut-change={id}
           onClick={onChange}
-          title={binding.key ? '고르기를 건너뛰고 이 단축키에 줄 키만 다시 누릅니다' : '누를 단추가 없는 기능이라 여기서 키를 정합니다'}
+          title="고르기를 건너뛰고 이 단축키에 줄 키만 다시 누릅니다"
           className={`${SMALL_BTN} bg-white border-slate-200 text-slate-600 hover:border-primary hover:text-primary`}
         >
-          {binding.key ? '키 바꾸기' : '키 정하기'}
+          키 바꾸기
         </button>
-        {binding.key && (
-          <button
-            type="button"
-            data-shortcut-clear={id}
-            onClick={onClear}
-            title="이 단축키를 없앱니다 (기능은 단추·메뉴로 그대로 씁니다)"
-            className={`${SMALL_BTN} bg-white border-slate-200 text-rose-600 hover:border-rose-300 hover:bg-rose-50`}
-          >
-            해제
-          </button>
-        )}
+        <button
+          type="button"
+          data-shortcut-clear={id}
+          onClick={onClear}
+          title="이 단축키를 없앱니다 (기능은 단추·메뉴로 그대로 씁니다)"
+          className={`${SMALL_BTN} bg-white border-slate-200 text-rose-600 hover:border-rose-300 hover:bg-rose-50`}
+        >
+          해제
+        </button>
       </div>
     </div>
   );
@@ -173,7 +172,7 @@ export default function ShortcutsTab({
   const bindings = useMemo(() => resolveBindings(overrides), [overrides]);
   const conflicted = useMemo(() => new Set<AnyShortcutId>(findConflicts(bindings, extra).flat()), [bindings, extra]);
 
-  // 키가 걸린 것만(+ 누를 단추가 없는 기능), 기능 묶음 차례(단축키 목록) 다음 창 안 탭(탭 목록 차례) · 환경설정 값(이름 차례)
+  // 키가 걸린 것만, 기능 묶음 차례(단축키 목록) 다음 창 안 탭(탭 목록 차례) · 환경설정 값(이름 차례)
   const groups = useMemo(() => {
     const out = new Map<string, BindingEntry[]>();
     for (const a of SHORTCUT_ACTIONS) if (!out.has(a.group)) out.set(a.group, []);
@@ -184,13 +183,16 @@ export default function ShortcutsTab({
     for (const e of allBindings(bindings, extra)) {
       // 고정 단축키(검색·인쇄·되돌리기 - #149)는 아래 '고정 단축키'에
       if (e.action?.fixed) continue;
-      if (!e.binding.key && !(e.action && NO_BUTTON.has(e.action.id))) continue;
+      if (!e.binding.key) continue;
       out.get(e.action ? e.action.group : isPressShortcutId(e.id) ? PRESS_GROUP : isCustomShortcutId(e.id) ? CUSTOM_GROUP : TAB_GROUP)!.push(e);
     }
     out.get(TAB_GROUP)!.sort((a, b) => (tabOrder.get(a.id as never) ?? 0) - (tabOrder.get(b.id as never) ?? 0));
     for (const g of [CUSTOM_GROUP, PRESS_GROUP]) out.get(g)!.sort((a, b) => shortcutLabel(a.id).localeCompare(shortcutLabel(b.id), 'ko'));
     return [...out.entries()].filter(([, list]) => list.length > 0);
   }, [bindings, extra]);
+
+  // 키가 없는 '누를 단추가 없는 기능' - 목록에는 없고 고르기 칸에서 키를 건다(단축키 목록 차례)
+  const unkeyed = useMemo(() => SHORTCUT_ACTIONS.filter((a) => !a.fixed && NO_BUTTON.has(a.id) && !bindings[a.id]?.key), [bindings]);
 
   /** 바꾸기 전 값으로 (안내의 되돌리기) */
   const undoTo = (before: { overrides: ShortcutOverrides; tabs: TabBindings; custom: CustomBindings }) => ({
@@ -237,6 +239,26 @@ export default function ShortcutsTab({
               ⌨️ 단축키 설정
             </button>
           )}
+          {unkeyed.length > 0 && (
+            <select
+              data-shortcut-nobutton
+              value=""
+              onChange={(e) => {
+                const id = e.target.value as ShortcutId;
+                if (id) onChangeKey(id);
+              }}
+              title="누를 단추가 없는 기능은 눌러서 고를 수 없어 여기서 골라 키를 정합니다"
+              aria-label="단추 없는 기능에 키 걸기"
+              className="min-w-0 flex-1 max-w-64 px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 rounded-xl text-xs font-bold cursor-pointer"
+            >
+              <option value="">＋ 단추 없는 기능에 키 걸기</option>
+              {unkeyed.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {shortcutLabel(a.id)}
+                </option>
+              ))}
+            </select>
+          )}
           <button
             type="button"
             data-shortcut-reset
@@ -256,13 +278,18 @@ export default function ShortcutsTab({
             <>단축키를 더하는 것은 PC에서 합니다(⌨️ 단축키 설정 - 단추를 눌러 고른다). 휴대폰 키는 PC와 따로 저장됩니다.</>
           )}
           <br />
-          아래에는 <strong className="text-slate-800">키가 걸린 것만</strong> 보입니다(누를 단추가 없는 이전 화면·체크리스트 같은 기능은 키가 없어도 보여 <strong className="text-slate-800">키 정하기</strong>로 정합니다).
+          아래에는 <strong className="text-slate-800">키가 걸린 것만</strong> 보입니다. 누를 단추가 없는 기능(반복 일정·진도 만들기 …)은{' '}
+          <strong className="text-slate-800">＋ 단추 없는 기능에 키 걸기</strong>에서 골라 키를 정합니다.
           누르는 즉시 저장되고, 해제한 기능은 단추·메뉴로 그대로 씁니다. 검색·인쇄·되돌리기처럼 어디서나 같은 키는 맨 아래 <strong className="text-slate-800">고정 단축키</strong>입니다.
         </div>
       </div>
 
       <div data-shortcut-list>
-        {/* 누를 단추가 없는 기능은 늘 있어 목록이 비지 않는다 */}
+        {groups.length === 0 && (
+          <p data-shortcut-empty className="px-5 py-4 text-xs text-slate-400">
+            키가 걸린 단축키가 없습니다.
+          </p>
+        )}
         {groups.map(([groupName, entries]) => (
           <div key={groupName} data-shortcut-group={groupName} className="px-5 py-4 border-b border-slate-100">
             <h3 className="text-sm font-black text-slate-800 mb-2">{GROUP_TITLE[groupName] ?? groupName}</h3>
