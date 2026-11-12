@@ -40,7 +40,7 @@ export const BACKUP_COLLS = [
 export type BackupColl = (typeof BACKUP_COLLS)[number];
 
 /** 설정 문서 가운데 담는 것 (가져오기 기록·자동 백업 기록은 그 기기·그때의 것이라 뺀다) */
-export const BACKUP_SETTINGS = ['common', 'pc', 'mobile'];
+export const BACKUP_SETTINGS = ['common', 'pc', 'mobile', 'reset']; // reset = 내 '초기화 설정'(P33-2)
 
 type Doc = Record<string, unknown>;
 

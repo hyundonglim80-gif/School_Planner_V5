@@ -9,7 +9,17 @@
 // 끝나면 이 탭이 그 줄을 짚는다(focusId - 같은 줄을 또 바꿔도 다시 짚게 focusToken = 연 params).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { showToast } from '../../app/toast';
-import { canRun, setCustomShortcuts, setExtraShortcuts, setShortcutOverrides, setTabShortcuts, useExtraBindings, useShortcutOverrides } from '../../app/keys';
+import {
+  addPressTargets,
+  canRun,
+  setCustomShortcuts,
+  setExtraShortcuts,
+  setShortcutOverrides,
+  setTabShortcuts,
+  useExtraBindings,
+  useShortcutOverrides,
+} from '../../app/keys';
+import { useResetTargets } from '../../app/resetTargets';
 import { detectDeviceKind } from '../../app/prefs';
 import { shortcutLabel, TAB_SHORTCUTS } from '../../app/tabShortcuts';
 import { customShortcutOf } from '../../app/customShortcuts';
@@ -36,7 +46,7 @@ import {
   type ShortcutOverrides,
   type TabBindings,
 } from '../../domain/shortcuts';
-import { isPressShortcutId } from '../../domain/pressTarget';
+import { isPressShortcutId, type PressTargets } from '../../domain/pressTarget';
 
 const NONE: Binding = { ctrl: false, alt: false, shift: false, key: '' };
 /** 창 안 탭(P18-2) 묶음 이름 - 기능 묶음 뒤 */
@@ -213,13 +223,22 @@ export default function ShortcutsTab({
     showToast(`⌨️ '${shortcutLabel(id)}' 단축키(${was})를 해제했습니다`, 5000, 'info', undoTo(before));
   };
 
+  // 기본값으로 = 초기화 값(내 '초기화 설정' → 관리자 → 처음 키 - P33-2)
+  const resetFrom = useResetTargets((s) => s.values?.deviceFrom ?? 'app');
   const reset = () => {
-    if (!window.confirm('단축키를 처음 값으로 되돌릴까요?\n바꾼 키는 기본 키로 돌아가고, 내가 만든 단축키(창 안 탭·환경설정 값·단추)는 모두 빠집니다.')) return;
+    const msg =
+      resetFrom === 'app'
+        ? '단축키를 처음 값으로 되돌릴까요?\n바꾼 키는 기본 키로 돌아가고, 내가 만든 단축키(창 안 탭·환경설정 값·단추)는 모두 빠집니다.'
+        : `단축키를 ${resetFrom === 'mine' ? "내 '초기화 설정'" : '처음 설정'}에 저장된 키로 되돌릴까요?\n그 뒤에 바꾸거나 더한 키는 빠집니다.`;
+    if (!window.confirm(msg)) return;
     const before = useShortcutOverrides.getState();
-    setShortcutOverrides({});
-    setTabShortcuts({});
-    setCustomShortcuts({});
-    showToast('⌨️ 단축키를 기본값으로 되돌렸습니다', 5000, 'info', undoTo(before));
+    const target = useResetTargets.getState().values?.device;
+    setShortcutOverrides((target?.shortcutOverrides as ShortcutOverrides | undefined) ?? {});
+    setTabShortcuts((target?.tabShortcuts as TabBindings | undefined) ?? {});
+    setCustomShortcuts((target?.customShortcuts as CustomBindings | undefined) ?? {});
+    // 단추 대신 누르기의 그 단추 자리 (키가 없으면 쓰이지 않는다 - 더하기만)
+    if (target?.pressTargets) addPressTargets(target.pressTargets as PressTargets);
+    showToast(`⌨️ 단축키를 ${resetFrom === 'app' ? '기본값' : '초기화 값'}으로 되돌렸습니다`, 5000, 'info', undoTo(before));
   };
 
   // 눌러서 정하기는 키보드가 있는 PC만 (휴대폰 단축키는 따로 저장된다 - 단추를 숨긴다)

@@ -17,6 +17,7 @@ import {
   type FontSizes,
 } from '../domain/fontScale';
 import { POPOUT } from '../ui/popout';
+import { resetFontPercent } from './resetTargets';
 import { detectDeviceKind } from './deviceKind';
 import { useNav } from './nav';
 import { SCOPES } from './route';
@@ -77,9 +78,12 @@ export function setFontPercent(page: string, percent: number) {
   setFontSizes(withFontPercent(useLayoutPrefs.getState().fontSizes, page, percent));
 }
 
-/** 그 화면을 한 칸 작게(-1)·크게(+1)·초기화(0, 100%) - 바뀐 %를 돌려준다. 누를 때마다 쌓인다(단축키를 여러 번 누르면 계속 작게) */
+/**
+ * 그 화면을 한 칸 작게(-1)·크게(+1)·초기화(0) - 바뀐 %를 돌려준다. 누를 때마다 쌓인다(단축키를 여러 번 누르면 계속 작게).
+ * 초기화 = 초기화 값(내 '초기화 설정' → 관리자 → 100% - P33-2, app/resetTargets).
+ */
 export function stepFontSize(step: -1 | 0 | 1, page = currentFontPage()): number {
-  const next = steppedFontPercent(fontPercentOf(useLayoutPrefs.getState().fontSizes, page), step);
+  const next = step === 0 ? resetFontPercent(page) : steppedFontPercent(fontPercentOf(useLayoutPrefs.getState().fontSizes, page), step);
   setFontPercent(page, next);
   return next;
 }

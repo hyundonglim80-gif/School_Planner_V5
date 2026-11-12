@@ -11,6 +11,9 @@ import { useMirror } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
 import SettingsWindow from './SettingsWindow';
 import { NO_BUTTON } from './ShortcutsTab';
+import { useResetTargets } from '../../app/resetTargets';
+import { LOCAL_PREFS } from '../../domain/settingsSnapshot';
+import { readSettings } from '../../domain/settings';
 import { cancelShortcutRecord, onRecordClick, startShortcutRecord, useShortcutRecord } from '../../app/shortcutRecord';
 
 // 진짜 Firebase 앱을 띄우지 않는다 - 띄우면 시험이 끝난 뒤 Firebase가 IndexedDB를 열다 jsdom이 걷혀 '처리하지 않은 오류'가 가끔 남는다(PLAN 5장 'P3-1 테스트와 Firebase')
@@ -293,6 +296,33 @@ describe('환경설정 창', () => {
     act(() => fireEvent.click(q('[data-toast-action="되돌리기"]')));
     expect(useShortcutOverrides.getState().tabs).toHaveProperty('backup:import');
     ask.mockRestore();
+  });
+
+  it("기본값으로 = 초기화 값 (내 '초기화 설정'이 있으면 그 키 - P33-2)", () => {
+    const J = { ctrl: true, alt: true, shift: false, key: 'J' };
+    const R = { ctrl: false, alt: true, shift: false, key: 'R' };
+    act(() =>
+      useResetTargets.setState({
+        values: {
+          device: { shortcutOverrides: { scopeMemo: J }, tabShortcuts: {}, customShortcuts: { 'opt.contrast': R }, pressTargets: {} },
+          common: {},
+          local: readSettings(LOCAL_PREFS, {}),
+          deviceFrom: 'mine',
+          commonFrom: 'mine',
+        },
+      }),
+    );
+    setShortcutOverrides({ help: { ctrl: true, alt: true, shift: false, key: 'H' } });
+    openSettings('shortcuts');
+    const ask = vi.spyOn(window, 'confirm').mockReturnValueOnce(true);
+    fireEvent.click(q('[data-shortcut-reset]'));
+    expect(ask.mock.calls[0][0]).toContain("내 '초기화 설정'");
+    expect(useShortcutOverrides.getState()).toMatchObject({ overrides: { scopeMemo: J }, custom: { 'opt.contrast': R } });
+    expect(keyText('scopeMemo')).toBe('Ctrl + Alt + J');
+    expect(q('[data-toast]').textContent).toContain('초기화 값으로 되돌렸습니다');
+    ask.mockRestore();
+    act(() => useResetTargets.setState({ values: null }));
+    setCustomShortcuts({});
   });
 
   it('눌러서 정한 뒤 열면(focus) 그 줄을 짚는다', () => {

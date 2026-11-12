@@ -7,6 +7,7 @@ import { useSession } from '../data/session';
 // 화면 구조만 본다 - Firebase에 붙지 않는다.
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 vi.mock('../data/settingsSync', () => ({ settingsPort: () => ({}), startSettingsSync: () => () => {} }));
+vi.mock('../data/settingsReset', () => ({ watchMyReset: () => () => {}, saveMyReset: async () => {} }));
 const useMirrorSync = vi.hoisted(() => vi.fn());
 vi.mock('../data/mirror/sync', () => ({ useMirrorSync }));
 // 구글 캘린더 큐는 Firestore를 바로 구독한다 (P8-1)

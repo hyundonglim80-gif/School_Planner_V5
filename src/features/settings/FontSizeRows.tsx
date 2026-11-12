@@ -18,7 +18,7 @@ const BTN =
 
 const STEPS: Array<{ step: -1 | 0 | 1; key: 'down' | 'reset' | 'up'; label: string; title: string; shortcut: ShortcutId }> = [
   { step: -1, key: 'down', label: '−', title: '글자 작게 (5%)', shortcut: 'fontSmaller' },
-  { step: 0, key: 'reset', label: '초기화', title: '글자 크기 초기화 (100%)', shortcut: 'fontReset' },
+  { step: 0, key: 'reset', label: '초기화', title: '글자 크기 초기화 (초기화 값 - 처음은 100%)', shortcut: 'fontReset' },
   { step: 1, key: 'up', label: '+', title: '글자 크게 (5%)', shortcut: 'fontLarger' },
 ];
 

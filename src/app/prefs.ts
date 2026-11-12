@@ -98,7 +98,8 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   enableScrollNav: boolField(false),
 };
 
-function currentDevicePrefs(): DevicePrefs {
+/** 지금 이 기기의 기기 칸 값 (초기화 설정 묶음도 여기서 모은다 - app/settingsSnapshot) */
+export function currentDevicePrefs(): DevicePrefs {
   const { fontSizes, popupStyle } = useLayoutPrefs.getState();
   const { startupScope, showWeekend, showEvents, showClass, semesterFilter, semesterFilterAt, enableScrollNav } = useNav.getState();
   return {
@@ -118,7 +119,8 @@ function currentDevicePrefs(): DevicePrefs {
   };
 }
 
-function applyDevicePrefs(p: DevicePrefs) {
+/** 기기 칸 값을 이 기기 store에 입힌다 (바뀐 것만 - 초기화도 같은 길로 입혀 계정 맞추기가 1초 뒤 올린다) */
+export function applyDevicePrefs(p: DevicePrefs) {
   const now = currentDevicePrefs();
   if (JSON.stringify(p.fontSizes) !== JSON.stringify(now.fontSizes)) setFontSizes(p.fontSizes);
   if (p.popupStyle !== now.popupStyle) useLayoutPrefs.setState({ popupStyle: p.popupStyle });

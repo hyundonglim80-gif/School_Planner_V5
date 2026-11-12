@@ -25,6 +25,7 @@ describe('백업에 담기', () => {
     expect(keepInBackup('lessonDays', '2025-10-05', {}, ALL, R)).toBe(false);
     expect(keepInBackup('classes', '2025-5-2', {}, ALL, R)).toBe(true);
     expect(keepInBackup('settings', 'common', {}, only, R)).toBe(true);
+    expect(keepInBackup('settings', 'reset', {}, only, R)).toBe(true); // 내 초기화 설정 (P33-2)
     expect(keepInBackup('settings', 'import', {}, only, R)).toBe(false);
     expect(keepInBackup('labels', 'L', {}, new Set(), R)).toBe(true);
     // 날짜 링크 여럿인 메모는 하나라도 기간 안이면 (P10-3)

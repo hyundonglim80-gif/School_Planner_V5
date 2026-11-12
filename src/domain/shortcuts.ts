@@ -212,7 +212,7 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   // 글자 크기 (메모 요청 #145 - 환경설정 보기 탭 − / 초기화 / +와 같다). 지금 보는 화면만, 누를 때마다 5%씩 쌓인다
   { id: 'fontSmaller', label: '글자 작게 (지금 화면 −5%)', group: '메뉴 열기', def: b('-') },
   { id: 'fontLarger', label: '글자 크게 (지금 화면 +5%)', group: '메뉴 열기', def: b('+') },
-  { id: 'fontReset', label: '글자 크기 초기화 (지금 화면 100%)', group: '메뉴 열기', def: b('0') },
+  { id: 'fontReset', label: '글자 크기 초기화 (지금 화면 - 초기화 값)', group: '메뉴 열기', def: b('0') },
 ];
 
 // ── 키 이름 ────────────────────────────────────────────────────────────

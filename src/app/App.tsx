@@ -10,12 +10,15 @@ import PopoutShell from './PopoutShell';
 import Shell from './Shell';
 import { useFollowToday } from './nav';
 import { usePrefsSync } from './prefs';
+import { useResetSync } from './settingsReset';
 
 export default function App() {
   const loading = useSession((s) => s.loading);
   const user = useSession((s) => s.user);
   // 로그인한 동안 설정(글자 크기·단축키 …)을 계정과 맞춘다
   usePrefsSync(user?.uid);
+  // 내 '초기화 설정'(P33-2) - '초기화'가 가는 값
+  useResetSync(user?.uid);
   // 내가 든 공유 그룹 (P8-4 - 공간 고르기·기기 사본이 함께 본다)
   useMySpacesWatch(user?.uid);
   // 로그인한 동안 기기 사본(일정·메모·기록·라벨 …)을 서버와 맞춘다 - 화면은 data/select로 고른다

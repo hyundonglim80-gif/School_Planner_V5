@@ -14,6 +14,7 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { setBoardSplit, useBoardSplit } from '../../app/boardPrefs';
 import { setDate, useNav } from '../../app/nav';
+import { resetBoardRatio } from '../../app/resetTargets';
 import { useCurrentSpaceId } from '../../data/session';
 import { DAY_NAMES, weekDates, weekdayOf } from '../../domain/dateUtils';
 import SplitPane from '../../ui/SplitPane';
@@ -60,7 +61,7 @@ export default function BoardScreen() {
         name="board-main"
         direction="row"
         ratio={mainRatio}
-        onCommit={(r) => setBoardSplit('main', r)}
+        onCommit={(r) => setBoardSplit('main', r ?? resetBoardRatio('main'))}
         minFirst={440}
         minSecond={320}
         label="왼쪽 · 오른쪽 칸 크기"
@@ -183,7 +184,7 @@ function BoardDay({ date }: { date: string }) {
         name="board-day"
         direction={dayRow ? 'row' : 'column'}
         ratio={dayRatio}
-        onCommit={(r) => setBoardSplit('day', r)}
+        onCommit={(r) => setBoardSplit('day', r ?? resetBoardRatio('day'))}
         minFirst={dayRow ? 200 : 100}
         minSecond={dayRow ? 160 : 100}
         label="수업 · 일정 칸 크기"
@@ -205,7 +206,7 @@ function BoardDay({ date }: { date: string }) {
           name="board-memo"
           direction="column"
           ratio={memoRatio}
-          onCommit={(r) => setBoardSplit('memo', r)}
+          onCommit={(r) => setBoardSplit('memo', r ?? resetBoardRatio('memo'))}
           minFirst={120}
           minSecond={120}
           label="위 칸 · 메모 칸 크기"
