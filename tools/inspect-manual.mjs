@@ -788,6 +788,15 @@ try {
     r.check(tabs.join(',') === 'view,notify,school,shortcuts,app', `탭 다섯 (${tabs.join('·')})`);
   });
 
+  await topic('reset-settings', async () => {
+    await win('settings', { tab: 'app' });
+    r.check(await has(sel('reset-section')), "환경설정 '앱' 탭 맨 위 '초기화' 절 (P33-2)");
+    r.check((await count(sel('reset-save'))) === 1 && (await count(sel('reset-apply'))) === 1, '💾 초기화 설정 · ↩️ 초기화');
+    r.check(((await q(sel('reset-saved-at')).textContent()) ?? '').includes('PC'), '이 기기 종류(PC) 초기화 값 줄');
+    await win('settings', { tab: 'view' });
+    r.check(await has(sel('font-step', 'day:reset')), "보기 탭 글자 크기 '초기화'도 초기화 값으로");
+  });
+
   await topic('shortcuts', async () => {
     await win('help', { topic: 'shortcuts' });
     r.check(await has(sel('help-shortcuts')), '설명서의 단축키 표 (지금 설정값)');

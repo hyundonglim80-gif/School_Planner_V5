@@ -170,7 +170,9 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - `purged-YYYY-MM`: 그달 영구로 지운 항목 `{ <컬렉션>: [id…], updatedAt, v }`(P22-3 - 개인·그룹 공간 모두, 달은 UTC. `writeOps`가 같은 묶음에 `arrayUnion`으로 적는다, 6-2 '영구 지우기').
 - 백업 JSON(P8-3 `domain/backup.ts`) = `{ version: 'SP5-BACKUP', sid, spaceName, period, include, colls: { 컬렉션: { id: 문서 } }, auto? }` - 시각은 기기 사본과 같은 `{$ts}`, 지운 것은 담지 않는다.
 - `pc` / `mobile`: 글자 크기·창 위치·시작 화면·단축키·화면 보기(V4 `v4_preferences_pc/_mobile`). 1초 뒤 올린다(V4 `preferenceSync`). 창 안 탭 키는 칸 `tabShortcuts`(P18-2 - `shortcutOverrides`와 나눔, 키를 준 탭만). 내가 만든 키(환경설정 값 `opt.…`·단추 `press.…`)는 칸 `customShortcuts`(P28 - 모양만 보고 읽어 모르는 id도 남긴다), 단추의 자리·찾기·이름은 칸 `pressTargets`(P28-3 - 키가 있는 것만 올린다).
-- V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다.
+- `reset`: 내 '초기화 설정'(P33-2 - 앱 탭 💾) = `{ common, at, pc?: { prefs, local, at }, mobile?: … }` - 계정 몫(보기·쓰는 법 칸만)과 기기 종류 몫(기기 칸 + 이 기기 값 `local` = 한눈에 경계선·칸 폭·밝기·고대비·부드럽게·머리줄 접기·메모 보기/정렬·년간 보기·작년 이맘때), 칸마다 기본과 다른 것만 · `at` = 저장한 때(ms, 보여 주기만).
+  저장하면 그 기기 종류 몫 + 계정 몫만 바뀐다. 모양·고르기·겹치기는 `domain/settingsSnapshot`(칸 표 `RESET_DEVICE_KEYS`·`RESET_COMMON_KEYS`·`LOCAL_PREFS`). '초기화'가 가는 값 = **몫마다** 내 것 → 관리자 기본값(P33-3) → 앱 기본. 백업에 담는다.
+- V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다(+ 초기화 묶음 `reset`).
 - 문서에는 **기본값과 다른 칸만** 적는다(없는 칸·틀린 칸 = 기본값). 칸마다 기본값과 읽기 규칙은 표 하나(`domain/settings.ts`의 `SettingsSpec`) -
   `app/prefs.ts`의 `DEVICE_PREFS`(pc/mobile)·`COMMON_SETTINGS`(common). 기능을 옮기는 세션이 그 표에 칸을 더한다. 맞추기는 `data/settingsSync.ts`.
 - 이 기기에만(문서에 넣지 않는다): 지금 보는 화면·날짜, 화면 밝기 `sp5_theme`, 오른쪽 칸 폭. 고대비 `sp5_contrast`·어둡게를 부드럽게 `sp5_dim`(P20-2). 처음 그리기 사본 = 색 테마 `sp5_palette`(계정 값을 받으면 `app/palette`가 적는다)·색약 배려 `sp5_cvd`(`app/viewAids`).
