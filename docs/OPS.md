@@ -34,7 +34,7 @@ npx firebase firestore:databases:get "(default)" --project schoolplannerv3
 ## 보안 헤더·CSP (2026-11-11 막기 - P26-2)
 
 - 값은 `firebase.json` hosting `source: **` 한 곳. **CSP는 막기**(`Content-Security-Policy`) - 빠진 출처는 그 기능을 깨뜨린다(그림이 안 뜨거나 연결이 막힌다).
-- 위반은 앱이 오류 보고 '[CSP] <칸> <출처>'로 올린다(개발자 탭 오류 기록) - 사용자가 '사진 고르기·드라이브·캘린더가 안 된다'를 알리면 여기부터 본다. 고치기 = 그 출처를 그 칸에 더하고 main 푸시(저절로 배포).
+- 위반은 앱이 오류 보고 '[CSP] <칸> <출처>'로 올린다(관리자 탭 오류 기록) - 사용자가 '사진 고르기·드라이브·캘린더가 안 된다'를 알리면 여기부터 본다. 고치기 = 그 출처를 그 칸에 더하고 main 푸시(저절로 배포).
 - 급하면 되돌리기: 키를 `Content-Security-Policy-Report-Only`로 한 줄(막지 않고 보고만) - `app/securityHeaders.test.ts`·`tools/inspect-headers.mjs`도 함께 바꾼다.
 - 확인: 운영 `SITE=https://schoolplanner-v5.web.app/ node tools/inspect-headers.mjs`(헤더 + 로그인 단추 → 구글 로그인 창까지 위반 0). 개발 서버는 CSP를 내지 않는다 - 화면 점검은 미리 보기(에뮬레이터 주소만 더한 값)로.
 
@@ -59,3 +59,9 @@ npx firebase firestore:databases:get "(default)" --project schoolplannerv3
 | 날짜 | 백업 | 한 것 | 결과 |
 |---|---|---|---|
 | 2026-11-06 | `04b15d0d-…`(11-05 09:10 UTC) | `restore-drill`에 풀어 문서 수만 셌다(`tools/restore-count.cjs` - 글 내용은 받지 않았다) | **되살아났다**: 맨 위 컬렉션 16 · `spaces` 4 · 공간 `items` 1206 · `events` 2460(맨 위 365 + 그 아래) · `journals` 494 · `evaluations` 65 · 쪽지 3. `users`·`v5Mail`은 부모 문서 없이 하위만 있어 맨 위 수 0이 맞다. `(default)`와 수를 견주지는 않아 '모두 같다'까지는 모른다. 복원본이 삭제 보호를 물려받는 것을 찾았다 |
+
+## 관리자 계정 (2026-11-12 - P33-1)
+
+- 관리자 = 기본 셋(규칙 `isDeveloper` = `src/domain/developers.ts` - 늘 관리자, 앱에서 뺄 수 없다) + 관리자가 더한 계정(`admin/admins` `emails`). 더하기·빼기는 앱 환경설정 '관리자' 탭 맨 위 '관리자 계정'.
+- 더한 계정은 **메일 확인된 구글 계정**만 관리자로 통과하고, 그 계정이 **다음에 앱을 열 때부터** 관리자 탭이 보인다. 관리자 힘 = 공휴일·관리자 설정(`admin/*`)·나이스 키(`sharedConfig`)·오류 기록(`v5Errors`) - 메모로 Claude 요청은 따로(배포 값 `CLAUDE_OWNER_EMAILS`).
+- 목록 문서를 지우면 기본 셋만 남는다(앱이 잠기지 않는다). 공개 저장소라 더한 메일은 문서·커밋에 적지 않는다.

@@ -181,7 +181,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - `spaceInvites/{code}`: `{ sid, ownerId }` — 코드를 아는 사람만 하나 읽기(목록 막음).
 - `v5alarms/{itemId}`: 함수만 읽고 쓴다(규칙에 없어 앱은 막힘). V4 `v4_alarms`를 항목 하나 단위로 - `{ sid, itemId, time, atMs, content, recipients, sent, pendingAt, updatedAt }`(P8-2 `functions/` - 함수 이름 `v5AlarmIndex`·`v5SendDueAlarms`·`v5CleanupAlarms`).
 - `v5Errors/{자동 id}`: 오류 알림(P14-2 `data/errorReport.ts`) - `{ kind(error·rejection·react·toast), message, stack, note, build, scope, device, standalone, ua, uid, at, expireAt }`.
-  로그인한 사람은 제 것을 만들기만(칸 열둘·길이 - `domain/errorReport` LIMITS = 규칙), 읽기·지우기는 개발자만, 고치기 없음. 글 내용은 앱이 지운 뒤 보낸다. TTL(expireAt)이 30일 뒤 지운다. 기기 사본에 넣지 않는다.
+  로그인한 사람은 제 것을 만들기만(칸 열둘·길이 - `domain/errorReport` LIMITS = 규칙), 읽기·지우기는 관리자만(P33-1 - 기본 셋 + 더한 관리자), 고치기 없음. 글 내용은 앱이 지운 뒤 보낸다. TTL(expireAt)이 30일 뒤 지운다. 기기 사본에 넣지 않는다.
 - `v5Mail/{uid}/mailIn/{id}`·`v5Mail/{uid}/mailSent/{id}`: 쪽지(P15 - 같은 그룹 구성원끼리, `data/mail.ts`·셈 `domain/mail.ts`). 받는 사람마다 mailIn 한 장 + 보낸 사람 사본 하나를 같은 id로 한 묶음.
   mailIn `{ from, fromName, sid, groupName, to[], toNames, text, at, readAt, replyTo, attachments?, expireAt, v }` · mailSent는 from·fromName·readAt 없이.
   `attachments`(P16) = 보낸 사람 드라이브의 붙임 목록(메모 `Attachment` 모양) - 있을 때만 칸째 1~10개, 있으면 글은 비어도 된다. 규칙은 목록 안을 못 보므로 읽을 때 https 주소만(`readMailAttachments`). 규칙: 만들기 = 나·받는 사람 모두 그 공간 구성원(`get(spaces/sid)` 하나 -
@@ -200,7 +200,9 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   푸시(P19-3): 함수 `v5ChatPush`·`v5DmPush`가 방의 마지막 글만(보낸 사람·🔕 `muted.<uid>` 빼고) data `{ type: 'chat', room(방 키), sender, title }`(글 없음) → `public/sw.js` 방마다 OS 알림 하나(tag `sp5-chat-<방 키>` -
   같은 방 새 글은 소리 없이 바꾸기 '새 글 n개', 앞 알림 data.count) · 보는 큰 앱 창이 있으면 없음 · 누르면 'sp5-open-chat'/`?chat=` · 앱에서 그 방을 보면 그 알림을 닫는다.
   기기 사본·JSON 백업·그룹 지우기 단계에 넣지 않는다(그룹을 지우면 규칙이 곧바로 막고 TTL이 지운다). 푸시는 함수 `v5ChatPush`·`v5DmPush`(방의 마지막 글만 · 보낸 사람·🔕 빼고 · 보낸 사람·방 이름만, 글 없음).
-- 공유 자료 `holidays/{year}`, `sharedConfig/neis`는 V4와 같이 읽기만.
+- 공유 자료 `holidays/{year}`, `sharedConfig/neis`는 V4와 같이 읽기만(쓰기는 관리자).
+- **관리자**(P33-1): 기본 셋(규칙 `isDeveloper` = `domain/developers`, 늘 관리자) + `admin/admins` `{ emails: [소문자 메일 ≤ 50], updatedAt, updatedBy(= 쓴 사람 메일) }`(메일 확인된 계정만 - 규칙 `isAdmin`). 목록은 관리자만 읽고 쓴다(모두에게 메일이 보이지 않게).
+  `holidays`·`admin/*`·`sharedConfig`·`v5Errors` 읽기·지우기가 `isAdmin`. 앱은 기본 셋이면 곧바로, 아니면 로그인한 동안 목록을 한 번 읽어 보고 막히면 아님(`data/admins` `useIsAdmin`). 메모로 Claude 요청은 관리자와 따로(배포 값 `CLAUDE_OWNER_EMAILS`).
 
 ### 4-10. 서버에 묻는 쿼리
 
