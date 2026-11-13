@@ -8,7 +8,19 @@ import { isLive, useDocs, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId, usePersonalSpaceId } from '../../data/session';
 import { recordUndo } from '../../data/undo';
 import { classIdOf, cleanStudent, describeClass, withSids, type CsvStudent } from '../../domain/roster';
-import { copiedTimetable, dropSubjectChanges, hasPastData, latestTimetableBefore, newYearPending, newYearState, staleImportedSubjects, type DayDocLike, type PeriodTimetable } from '../../domain/newYear';
+import {
+  classNumsLabel,
+  copiedTimetable,
+  dropSubjectChanges,
+  hasPastData,
+  latestTimetableBefore,
+  newClassPlan,
+  newYearPending,
+  newYearState,
+  staleImportedSubjects,
+  type DayDocLike,
+  type PeriodTimetable,
+} from '../../domain/newYear';
 import { presetOf } from '../../domain/teachingMode';
 import { classPath, useClasses } from '../class/classes';
 import { lessonDayPath } from '../lessons/lessonOps';
@@ -85,6 +97,24 @@ export async function createNewClass(
   });
   recordUndo(sid, `✅ ${describeClass(c)}을 만들었습니다 (학생 ${students.length}명).`, undo, { what: '새 학급' });
   return id;
+}
+
+/**
+ * 교과 전담 새 학급 한꺼번에 (P32-3) - 그 학년의 반 여러 개를 빈 명렬표로. 이미 있는 반은 건너뛴다.
+ * 한 묶음 쓰기·되돌리기 하나. 만들 것이 없으면 쓰지 않고 돌려준다. 실패하면 던진다
+ */
+export async function createClasses(
+  sid: string,
+  docs: ReturnType<typeof useClasses>['docs'],
+  c: { year: number; grade: number; nums: readonly number[] },
+): Promise<{ made: number[]; skipped: number[] }> {
+  const { make, skip } = newClassPlan((id) => !!docs[id] && !docs[id].deletedAt, c);
+  if (!make.length) return { made: [], skipped: skip };
+  const ops = make.map((num) => writeOp.create(classPath(sid, classIdOf({ year: c.year, grade: c.grade, num })), { year: c.year, grade: c.grade, num, students: [] }));
+  const undo = await batch(ops, { fail: '학급을 만들지 못했습니다. 다시 눌러 주세요.' });
+  const skipped = skip.length ? ` · ${skip.join('·')}반은 이미 있어 건너뜀` : '';
+  recordUndo(sid, `✅ ${c.year}학년도 ${classNumsLabel(c.grade, make)}을 만들었습니다 (빈 명렬표 ${make.length}개${skipped}).`, undo, { what: '새 학급' });
+  return { made: make, skipped: skip };
 }
 
 /** 지난 시간표를 베껴 그 학년도 시간표를 만든다 - 새 id. 실패하면 던진다 */

@@ -201,3 +201,67 @@ export function parseRosterPaste(text: string): CsvStudent[] {
   }
   return out.sort((a, b) => a.num - b.num);
 }
+
+// ── 교과 전담 새 학급 한꺼번에 (P32-3) ──
+//   새 학년도 창 ①의 반 칸에 '1~6'·'1, 3, 5'·'1-4'처럼 적으면 그 학년의 빈 명렬표를 한 번에 만든다(명단은 반마다 명렬표에서).
+
+/** 반 번호 1~30 (명렬표·새 학년도 창과 같다) */
+export const MAX_CLASS_NUM = 30;
+
+/**
+ * 반 칸 글자 → 반 번호들(작은 것부터, 겹치지 않게). '3' · '1~6'(또는 '1-6') · '1, 3, 5' · '1~3 5' · 전각 숫자·물결도.
+ * 읽지 못한 조각(0·31·'4~2'·글자)은 bad - 하나라도 있으면 만들지 않는다(창이 안내).
+ */
+export function parseClassNums(text: string): { nums: number[]; bad: string[] } {
+  const src = String(text ?? '')
+    .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/[～〜∼]/g, '~')
+    .replace(/[‐‑‒–—―－−]/g, '-')
+    .replace(/，/g, ',')
+    .replace(/반/g, ' ')
+    .replace(/\s*([~-])\s*/g, '$1');
+  const set = new Set<number>();
+  const bad: string[] = [];
+  const ok = (n: number) => Number.isInteger(n) && n >= 1 && n <= MAX_CLASS_NUM;
+  for (const piece of src.split(/[,\s]+/).filter(Boolean)) {
+    const range = /^(\d{1,2})[~-](\d{1,2})$/.exec(piece);
+    if (range) {
+      const [from, to] = [Number(range[1]), Number(range[2])];
+      if (ok(from) && ok(to) && from <= to) {
+        for (let n = from; n <= to; n++) set.add(n);
+        continue;
+      }
+      bad.push(piece);
+      continue;
+    }
+    if (/^\d{1,2}$/.test(piece) && ok(Number(piece))) set.add(Number(piece));
+    else bad.push(piece);
+  }
+  return { nums: [...set].sort((a, b) => a - b), bad };
+}
+
+/** 만들 반과 이미 있는 반 (지운 표시가 있는 학급은 없는 것 - 다시 만든다) */
+export function newClassPlan(exists: (id: string) => boolean, c: { year: number; grade: number; nums: readonly number[] }): { make: number[]; skip: number[] } {
+  const make: number[] = [];
+  const skip: number[] = [];
+  for (const num of c.nums) (exists(`${c.year}-${c.grade}-${num}`) ? skip : make).push(num);
+  return { make, skip };
+}
+
+/** '6학년 1·2·4반' */
+export const classNumsLabel = (grade: number, nums: readonly number[]) => `${grade}학년 ${nums.join('·')}반`;
+
+/**
+ * 교사 유형 '가르치는 반'을 그 학년도 학급으로 바꿀지 (④ 단계 줄). 바꾸면 빠지는 반(그 학년도 학급에 없는 것)이 있을 때만 -
+ * 가르치는 반이 비었거나 새 학급이 다 들어 있으면 null(명렬표의 반은 원래 수업 칸 ▼에 저절로 나온다).
+ */
+export function teachingClassesOffer(current: readonly string[], yearClasses: readonly Pick<RosterClass, 'grade' | 'num'>[]): { next: string[]; dropped: string[] } | null {
+  const next = [...new Set(yearClasses.map((c) => `${c.grade}-${c.num}`))].sort((a, b) => {
+    const [ga, ca] = a.split('-').map(Number);
+    const [gb, cb] = b.split('-').map(Number);
+    return ga - gb || ca - cb;
+  });
+  if (!next.length) return null;
+  const dropped = current.filter((c) => !next.includes(c));
+  return dropped.length ? { next, dropped } : null;
+}

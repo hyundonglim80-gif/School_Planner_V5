@@ -464,6 +464,15 @@ try {
     r.check(await has(sel('new-year-window')), '⏰ 시간표 창 위 🌱 새 학년도 → 새 학년도 준비 창');
     r.check((await count(sel('new-year-step'))) === 4, '단계 넷 (새 학급·시간표·학기·방학·교사 유형·담임반)');
     r.check((await count(sel('new-year-names'))) === 1 && (await count(sel('new-year-create-class'))) === 1 && (await count(sel('new-year-done'))) === 1, '명단 붙여넣기·🏫 학급 만들기·✅ 준비 끝');
+    // 여러 반 한꺼번에 (P32-3): 반 칸 1~4 = 명단 칸 대신 빈 명렬표 안내 · 단추 '학급 n개 만들기 (빈 명렬표)' (만들지는 않는다)
+    await q(sel('new-year-grade')).fill('9');
+    await q(sel('new-year-num')).fill('1~4');
+    r.check(
+      (await has(sel('new-year-classes-note'))) && (await count(sel('new-year-names'))) === 0 && ((await q(sel('new-year-create-class')).textContent()) ?? '').includes('학급 4개 만들기 (빈 명렬표)'),
+      '반 칸 1~4 = 빈 명렬표 안내·🏫 학급 4개 만들기 (빈 명렬표)',
+    );
+    await q(sel('new-year-num')).fill('');
+    await q(sel('new-year-grade')).fill('');
   });
 
   await topic('progress', async () => {
