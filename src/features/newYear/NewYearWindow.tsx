@@ -8,8 +8,9 @@ import { useState, type ReactNode } from 'react';
 import { setCommonSetting } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
 import { openWindow, type WindowProps } from '../../app/windows';
+import { UNDO_LABEL, UNDO_TOAST_MS } from '../../data/undo';
 import { monthDayLabel, todayStr } from '../../domain/dateUtils';
-import { defaultNewYear, parseRosterPaste } from '../../domain/newYear';
+import { classNumsLabel, defaultNewYear, newClassPlan, parseClassNums, parseRosterPaste, teachingClassesOffer } from '../../domain/newYear';
 import { classIdOf, compareClasses, describeClass, type RosterClass } from '../../domain/roster';
 import { presetOf, TEACHER_PRESETS } from '../../domain/teachingMode';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
@@ -17,7 +18,7 @@ import { rememberHubClass } from '../class/classes';
 import { useRosterDraft } from '../class/rosterDraft';
 import { openClassRoster } from '../class/view';
 import { updateTeaching } from '../lessons/teaching';
-import { clearStaleSubjects, createCopiedTimetable, createNewClass, useNewYear, useNewYearLoaded } from './useNewYear';
+import { clearStaleSubjects, createClasses, createCopiedTimetable, createNewClass, useNewYear, useNewYearLoaded } from './useNewYear';
 
 export type NewYearParams = { year?: number };
 
@@ -67,14 +68,29 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
   const [asHomeroom, setAsHomeroom] = useState(true);
   const [busy, setBusy] = useState(false);
   const parsed = parseRosterPaste(names);
+  // 교과 전담 새 학급 한꺼번에 (P32-3): 반 칸에 '1~6'·'1, 3, 5'면 그 학년의 빈 명렬표를 한 번에 (명단 칸 대신 안내)
+  const classUnit = mode.unit === 'class';
+  const { nums, bad } = parseClassNums(num);
+  const multi = nums.length > 1;
+  const g = Number(grade);
+  const gradeOk = grade !== '' && Number.isInteger(g) && g >= 1 && g <= 12;
+  const plan = multi && gradeOk && !bad.length ? newClassPlan((id) => !!classDocs[id] && !classDocs[id].deletedAt, { year, grade: g, nums }) : null;
+  // 교사 유형 '가르치는 반'에 지난 학년도 반이 남았으면 ④에서 바꾸기를 권한다 (묻지 않고 바꾸면 지난 반이 사라진다)
+  const offer = classUnit ? teachingClassesOffer(mode.classes, state.classes) : null;
 
   const makeClass = async () => {
-    const g = Number(grade);
-    const c = Number(num);
     if (!classSid || busy || !loaded) return;
-    if (!Number.isInteger(g) || g < 1 || g > 12 || !Number.isInteger(c) || c < 1 || c > 30) return showErrorToast('학년(1~12)과 반(1~30)을 숫자로 적어 주세요.');
+    if (!gradeOk || bad.length || !nums.length)
+      return showErrorToast(classUnit ? '학년(1~12)과 반(1~30)을 숫자로 적어 주세요. 여러 반은 1~6 또는 1, 3, 5처럼 적습니다.' : '학년(1~12)과 반(1~30)을 숫자로 적어 주세요.');
     setBusy(true);
     try {
+      if (multi) {
+        const { made, skipped } = await createClasses(classSid, classDocs, { year, grade: g, nums });
+        if (!made.length) return showErrorToast(`${year}학년도 ${classNumsLabel(g, skipped)}은 모두 이미 있습니다. 명렬표에서 고쳐 주세요.`);
+        setNum('');
+        return;
+      }
+      const c = nums[0];
       const id = await createNewClass(classSid, classDocs, { year, grade: g, num: c }, parsed);
       if (!id) return showErrorToast(`${describeClass({ year, grade: g, num: c })}은 이미 있습니다. 명렬표에서 고쳐 주세요.`);
       if (wantsHomeroom && asHomeroom) updateTeaching({ homeroomClass: `${g}-${c}` });
@@ -110,6 +126,16 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
     } finally {
       setBusy(false);
     }
+  };
+
+  const replaceTeachingClasses = () => {
+    if (!offer) return;
+    const before = mode.classes;
+    updateTeaching({ classes: offer.next });
+    showToast(`🏫 가르치는 반을 ${year}학년도 학급으로 바꿨습니다: ${offer.next.join(', ')} (뺀 반 ${offer.dropped.join(', ')})`, UNDO_TOAST_MS, 'info', {
+      label: UNDO_LABEL,
+      run: () => updateTeaching({ classes: before }),
+    });
   };
 
   const finish = () => {
@@ -193,33 +219,55 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
             <input
               data-new-year-num
               value={num}
-              onChange={(e) => setNum(e.target.value.replace(/\D/g, ''))}
+              onChange={(e) => setNum(e.target.value.replace(/[^0-9０-９~～〜∼\-－‐‑‒–—―−,，\s]/g, ''))}
               inputMode="numeric"
               aria-label="반"
-              placeholder="반"
-              className="w-14 border border-slate-200 rounded px-2 py-1 font-bold"
+              placeholder={classUnit ? '1~6' : '반'}
+              className={`${classUnit ? 'w-24' : 'w-14'} border border-slate-200 rounded px-2 py-1 font-bold`}
             />
             <span>반</span>
-            {wantsHomeroom && (
+            {wantsHomeroom && !multi && (
               <label className="flex items-center gap-1 ml-1">
                 <input type="checkbox" data-new-year-as-homeroom checked={asHomeroom} onChange={(e) => setAsHomeroom(e.target.checked)} />
                 담임반으로
               </label>
             )}
           </div>
-          <textarea
-            data-new-year-names
-            value={names}
-            onChange={(e) => setNames(e.target.value)}
-            rows={4}
-            placeholder={'명단을 붙여 넣으세요 - 한 줄에 한 명 (엑셀의 번호·이름·성별 칸 그대로, 또는 이름만)\n비워 두면 빈 학급을 만들고 명렬표에서 적습니다.'}
-            className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs"
-          />
+          {classUnit && !multi && (
+            <p data-new-year-classes-hint className="text-slate-500">
+              여러 반은 반 칸에 <b>1~6</b> 또는 <b>1, 3, 5</b>처럼 - 빈 명렬표를 한꺼번에 만듭니다.
+            </p>
+          )}
+          {multi ? (
+            <p data-new-year-classes-note={plan ? plan.make.length : ''} className="bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-2 leading-relaxed text-slate-600">
+              반이 여럿이면 <b>빈 명렬표</b>를 만듭니다 - 명단은 만든 반 단추를 눌러 명렬표에서 반마다 붙여 넣습니다.
+              {plan && plan.skip.length > 0 && (
+                <span data-new-year-classes-skip={plan.skip.join(',')}>
+                  {' '}
+                  {plan.skip.map((n) => `${g}-${n}`).join(' · ')}{plan.make.length ? ' - 이미 있어 건너뜁니다.' : ' - 모두 이미 있습니다.'}
+                </span>
+              )}
+            </p>
+          ) : (
+            <textarea
+              data-new-year-names
+              value={names}
+              onChange={(e) => setNames(e.target.value)}
+              rows={4}
+              placeholder={'명단을 붙여 넣으세요 - 한 줄에 한 명 (엑셀의 번호·이름·성별 칸 그대로, 또는 이름만)\n비워 두면 빈 학급을 만들고 명렬표에서 적습니다.'}
+              className="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs"
+            />
+          )}
           <div className="flex items-center gap-2 flex-wrap">
             <button type="button" data-new-year-create-class onClick={() => void makeClass()} disabled={busy || !loaded} className={`${btn} bg-primary hover:bg-primary/90 text-white`}>
-              🏫 학급 만들기{parsed.length ? ` (학생 ${parsed.length}명)` : ''}
+              🏫 학급 {plan?.make.length ? `${plan.make.length}개 만들기 (빈 명렬표)` : `만들기${!multi && parsed.length ? ` (학생 ${parsed.length}명)` : ''}`}
             </button>
-            {parsed.length > 0 && (
+            {plan && plan.make.length > 0 && (
+              <span className="text-slate-500" data-new-year-classes-preview>
+                {plan.make.map((n) => `${g}-${n}`).join(' · ')}
+              </span>
+            )}
+            {!multi && parsed.length > 0 && (
               <span className="text-slate-500" data-new-year-preview>
                 {parsed
                   .slice(0, 4)
@@ -326,7 +374,17 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
               ))}
             </div>
           )}
-          {mode.unit === 'class' && <p className="text-slate-500">가르치는 반·과목이 바뀌었으면 교사 유형 탭에서 고칩니다.</p>}
+          {offer && (
+            <div data-new-year-teaching-classes={offer.dropped.join(',')} className="bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-2 space-y-1.5 text-sky-900">
+              <p>
+                교사 유형의 가르치는 반에 지난 반이 남아 있습니다: <b>{offer.dropped.join(' · ')}</b> (수업 칸 ▼에 계속 나옵니다)
+              </p>
+              <button type="button" data-new-year-replace-classes onClick={replaceTeachingClasses} className={`${btn} bg-white border border-sky-300 hover:bg-sky-100`}>
+                🏫 가르치는 반을 {year}학년도 학급으로 바꾸기 ({offer.next.join(' · ')})
+              </button>
+            </div>
+          )}
+          {classUnit && <p className="text-slate-500">가르치는 반·과목이 바뀌었으면 교사 유형 탭에서 고칩니다.</p>}
           <button type="button" data-new-year-open-teaching onClick={() => openWindow('timetable', { tab: 'teaching' })} className={`${btn} bg-white border border-slate-200 hover:bg-slate-50`}>
             👩‍🏫 교사 유형 탭
           </button>

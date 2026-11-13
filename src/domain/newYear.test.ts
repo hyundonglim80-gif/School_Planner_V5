@@ -1,5 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import { copiedTimetable, defaultNewYear, dropSubjectChanges, hasPastData, latestTimetableBefore, newYearPending, newYearState, newYearTarget, parseRosterPaste, staleImportedSubjects, timetableInYear } from './newYear';
+import {
+  classNumsLabel,
+  copiedTimetable,
+  defaultNewYear,
+  dropSubjectChanges,
+  hasPastData,
+  latestTimetableBefore,
+  newClassPlan,
+  newYearPending,
+  newYearState,
+  newYearTarget,
+  parseClassNums,
+  parseRosterPaste,
+  staleImportedSubjects,
+  teachingClassesOffer,
+  timetableInYear,
+} from './newYear';
 
 const tt = (id: string, from: string, to: string, cell = '국어') => ({
   id,
@@ -141,5 +157,47 @@ describe('새 학년도 넘기기', () => {
     // 과목만 빼고 비고(준비물)는 남긴다 - 남는 것이 없으면 그 교시 칸째
     expect(dropSubjectChanges(days['2027-03-02'], ['1', '5'])).toEqual({ 'periods.1': undefined, 'periods.5.subject': undefined });
     expect(dropSubjectChanges(days['2027-03-02'], ['3'])).toEqual({});
+  });
+});
+
+describe('교과 전담 새 학급 한꺼번에 (P32-3)', () => {
+  it('반 칸: 하나 · 범위(~ 또는 -) · 쉼표·띄어쓰기 · 섞기 - 작은 것부터 겹치지 않게', () => {
+    expect(parseClassNums('3')).toEqual({ nums: [3], bad: [] });
+    expect(parseClassNums('1~6')).toEqual({ nums: [1, 2, 3, 4, 5, 6], bad: [] });
+    expect(parseClassNums('1-4')).toEqual({ nums: [1, 2, 3, 4], bad: [] });
+    expect(parseClassNums('1 ~ 3, 5')).toEqual({ nums: [1, 2, 3, 5], bad: [] });
+    expect(parseClassNums('5, 1 3 3')).toEqual({ nums: [1, 3, 5], bad: [] });
+    expect(parseClassNums('2~4, 3~5')).toEqual({ nums: [2, 3, 4, 5], bad: [] });
+    // 전각 숫자·물결·'반' 글자
+    expect(parseClassNums('１～３반')).toEqual({ nums: [1, 2, 3], bad: [] });
+    expect(parseClassNums('1반, 2반')).toEqual({ nums: [1, 2], bad: [] });
+    expect(parseClassNums('')).toEqual({ nums: [], bad: [] });
+  });
+
+  it('반 칸: 1~30 밖·거꾸로 범위·끝나지 않은 범위는 읽지 못한다', () => {
+    expect(parseClassNums('0').bad).toEqual(['0']);
+    expect(parseClassNums('31').bad).toEqual(['31']);
+    expect(parseClassNums('4~2').bad).toEqual(['4~2']);
+    expect(parseClassNums('1~31').bad).toEqual(['1~31']);
+    expect(parseClassNums('1~').bad).toEqual(['1~']);
+    expect(parseClassNums('6-1~6-4').bad).toEqual(['6-1~6-4']);
+    expect(parseClassNums('1, 99')).toEqual({ nums: [1], bad: ['99'] });
+  });
+
+  it('이미 있는 반은 건너뛴다 (지운 학급은 없는 것)', () => {
+    const live = new Set(['2027-6-3', '2026-6-1']);
+    expect(newClassPlan((id) => live.has(id), { year: 2027, grade: 6, nums: [1, 2, 3, 4] })).toEqual({ make: [1, 2, 4], skip: [3] });
+    expect(newClassPlan(() => false, { year: 2027, grade: 6, nums: [] })).toEqual({ make: [], skip: [] });
+    expect(classNumsLabel(6, [1, 2, 4])).toBe('6학년 1·2·4반');
+  });
+
+  it('가르치는 반 바꾸기는 빠지는 반이 있을 때만 - 그 학년도 학급 차례로', () => {
+    const year = [cls(2027, 6, 10), cls(2027, 6, 2), cls(2027, 6, 1)];
+    expect(teachingClassesOffer(['5-1', '5-2', '6-1'], year)).toEqual({ next: ['6-1', '6-2', '6-10'], dropped: ['5-1', '5-2'] });
+    // 비었거나 새 학급이 다 들어 있으면 물을 것이 없다 (명렬표의 반은 ▼에 저절로)
+    expect(teachingClassesOffer([], year)).toBeNull();
+    expect(teachingClassesOffer(['6-1', '6-2'], year)).toBeNull();
+    // 그 학년도 학급이 없으면 바꿀 것이 없다
+    expect(teachingClassesOffer(['5-1'], [])).toBeNull();
   });
 });

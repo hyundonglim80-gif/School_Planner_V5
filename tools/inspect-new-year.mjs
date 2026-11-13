@@ -206,7 +206,96 @@ try {
   await setDoc(ref('classes', '2027-6-3'), { ...newClass, deletedAt: null, updatedAt: serverTimestamp() });
   r.check(await waitFor(p3.page.locator('[data-class-hub="2027-6-3"]'), 8000), '올해 학급이 생기면 그 학급으로');
 
-  r.check(errors.length === 0 && p2.errors.length === 0 && p3.errors.length === 0, `화면 오류 없음 ${[...errors, ...p2.errors, ...p3.errors].join(' | ')}`);
+  r.section('교과 전담 새 학급 한꺼번에 (P32-3 - ?as=3)');
+  // 전담 teacher3: 지난 학년도 5-1~5-3 · 가르치는 반 5-1~5-3 · 2027학년도 6-3은 이미 있다(학생 하나)
+  const em3 = emulator('inspect3');
+  const uid3 = await em3.signIn('teacher3@example.com');
+  const ref3 = (c, id) => doc(em3.db, 'spaces', `u_${uid3}`, c, id);
+  const read3 = async (rf) => {
+    const s = await getDoc(rf);
+    return s.exists() ? s.data() : null;
+  };
+  const classes3 = (await getDocs(collection(em3.db, 'spaces', `u_${uid3}`, 'classes'))).docs.map((d) => [d.id, d.data()]);
+  for (const [id] of classes3) await deleteDoc(ref3('classes', id));
+  undo.add(async () => {
+    for (const d of (await getDocs(collection(em3.db, 'spaces', `u_${uid3}`, 'classes'))).docs) await deleteDoc(d.ref);
+    for (const [id, data] of classes3) await setDoc(ref3('classes', id), data);
+  });
+  const common3 = await read3(ref3('settings', 'common'));
+  undo.add(async () => (common3 ? setDoc(ref3('settings', 'common'), common3) : deleteDoc(ref3('settings', 'common'))));
+  const tracked3 = { deletedAt: null, updatedAt: serverTimestamp(), v: 1, createdAt: Date.now(), authorId: uid3 };
+  const teaching3 = { unit: 'class', hasHomeroom: false, homeroomClass: '', subjects: ['과학'], classes: ['5-1', '5-2', '5-3'], classColors: {} };
+  await setDoc(ref3('settings', 'common'), { ...(common3 ?? {}), teaching: teaching3, newYearDone: 0, updatedAt: serverTimestamp(), v: 1 });
+  for (const n of [1, 2, 3]) await setDoc(ref3('classes', `2026-5-${n}`), { year: 2026, grade: 5, num: n, students: [], ...tracked3 });
+  await setDoc(ref3('classes', '2027-6-3'), { year: 2027, grade: 6, num: 3, students: [{ sid: 'ny3', num: 1, name: '있던학생', status: 'active' }], ...tracked3 });
+
+  const p4 = await newPage(browser);
+  const pg = p4.page;
+  await pg.clock.setFixedTime(new Date('2027-02-20T09:00:00'));
+  await open(pg, '#/day/2027-02-20', { as: 3 });
+  await pg.evaluate(() => window.sp5.openWindow('newYear', { year: 2027 }));
+  r.check(await waitFor(pg.locator(sel('new-year-window', 2027)), 8000), '전담 계정 새 학년도 창');
+  r.check(await waitFor(pg.locator(sel('new-year-classes-hint')), 5000), "전담이면 '1~6 또는 1, 3, 5' 안내가 보인다");
+  r.check((await pg.locator(sel('new-year-as-homeroom')).count()) === 0, '전담은 담임반으로 칸이 없다');
+  const made3 = () => Promise.all([1, 2, 3, 4].map((n) => read3(ref3('classes', `2027-6-${n}`))));
+  const live3 = (d) => !!d && !d.deletedAt;
+
+  await pg.locator(sel('new-year-grade')).fill('6');
+  await pg.locator(sel('new-year-num')).fill('4~2');
+  await pg.locator(sel('new-year-create-class')).click();
+  r.check(await waitFor(pg.locator('[data-toast="error"]').filter({ hasText: '여러 반은 1~6' }), 5000), "거꾸로 범위 '4~2' = 안내만 (만들지 않는다)");
+
+  await pg.locator(sel('new-year-num')).fill('1~4');
+  r.check((await pg.locator(sel('new-year-names')).count()) === 0, '반이 여럿이면 명단 칸 대신 빈 명렬표 안내');
+  const note = pg.locator(sel('new-year-classes-note'));
+  r.check((await note.getAttribute('data-new-year-classes-note')) === '3' && (await pg.locator(sel('new-year-classes-skip', '3')).count()) === 1, '만들 것 3개 · 이미 있는 6-3은 건너뛴다고 보인다');
+  r.check(((await pg.locator(sel('new-year-classes-preview')).textContent()) ?? '') === '6-1 · 6-2 · 6-4', '만들 반 미리 보기 6-1 · 6-2 · 6-4');
+  r.check(((await pg.locator(sel('new-year-create-class')).textContent()) ?? '').includes('학급 3개 만들기 (빈 명렬표)'), '단추 = 학급 3개 만들기 (빈 명렬표)');
+  await pg.locator(sel('new-year-create-class')).click();
+  const after = await serverUntil(made3, (l) => live3(l[0]) && live3(l[1]) && live3(l[3]), 10000);
+  r.check(
+    after.filter((d, i) => i !== 2).every((d) => live3(d) && d.year === 2027 && d.grade === 6 && Array.isArray(d.students) && d.students.length === 0),
+    'classes/2027-6-1·6-2·6-4 = 빈 명렬표',
+  );
+  r.check(after[2]?.students?.[0]?.name === '있던학생', '이미 있던 6-3은 그대로 (학생도)');
+  const madeToast = pg.locator('[data-toast]').filter({ hasText: '빈 명렬표 3개' });
+  r.check(await waitFor(madeToast, 5000), '안내: 6학년 1·2·4반 · 빈 명렬표 3개');
+  r.check(((await madeToast.first().textContent()) ?? '').includes('6학년 1·2·4반') && ((await madeToast.first().textContent()) ?? '').includes('3반은 이미 있어 건너뜀'), '안내에 건너뛴 반', await madeToast.first().textContent());
+  r.check((await pg.locator(sel('new-year-num')).inputValue()) === '', '만든 뒤 반 칸을 비운다');
+  r.check(await waitFor(async () => (await pg.locator('[data-new-year-class^="2027-6-"]').count()) === 4, 5000), '① 만든 반 단추 넷 (6-1 ~ 6-4)');
+
+  await madeToast.first().locator('[data-toast-action="되돌리기"]').click();
+  const undone = await serverUntil(made3, (l) => !live3(l[0]) && !live3(l[1]) && !live3(l[3]), 10000);
+  r.check(!live3(undone[0]) && !live3(undone[1]) && !live3(undone[3]) && live3(undone[2]), '되돌리기 하나 = 셋 모두 없어진다 (6-3은 남는다)');
+
+  await pg.locator(sel('new-year-num')).fill('1~4');
+  r.check(await waitFor(async () => (await note.getAttribute('data-new-year-classes-note')) === '3', 5000), '되돌린 반은 없는 것 - 다시 만들 것 3개');
+  await pg.locator(sel('new-year-create-class')).click();
+  r.check(!!(await serverUntil(made3, (l) => l.every(live3), 10000)), '다시 만들면 된다 (지운 표시 위에)');
+  await pg.locator(sel('new-year-num')).fill('3, 4');
+  r.check(await waitFor(async () => (await note.getAttribute('data-new-year-classes-note')) === '0', 5000), "'3, 4' = 모두 이미 있다");
+  await pg.locator(sel('new-year-create-class')).click();
+  r.check(await waitFor(pg.locator('[data-toast="error"]').filter({ hasText: '모두 이미 있습니다' }), 5000), '모두 있으면 만들지 않고 안내');
+  await pg.locator(sel('new-year-num')).fill('');
+
+  r.section('④ 가르치는 반을 새 학년도 학급으로 (P32-3)');
+  const offer = pg.locator(sel('new-year-teaching-classes'));
+  r.check(await waitFor(offer, 5000), '지난 반이 남았으면 바꾸기를 권한다');
+  r.check((await offer.getAttribute('data-new-year-teaching-classes')) === '5-1,5-2,5-3', '남은 반 = 5-1 · 5-2 · 5-3');
+  r.check(((await pg.locator(sel('new-year-replace-classes')).textContent()) ?? '').includes('6-1 · 6-2 · 6-3 · 6-4'), '단추에 바꿀 반 (그 학년도 학급 차례)');
+  await pg.locator(sel('new-year-replace-classes')).click();
+  const tc = await serverUntil(() => read3(ref3('settings', 'common')), (d) => d?.teaching?.classes?.join() === '6-1,6-2,6-3,6-4', 8000);
+  r.check(tc?.teaching?.classes?.join() === '6-1,6-2,6-3,6-4' && tc.teaching.subjects.join() === '과학' && tc.teaching.unit === 'class' && tc.teaching.hasHomeroom === false, '가르치는 반 = 6-1~6-4 (교사 유형의 다른 칸은 그대로)');
+  r.check(await waitFor(async () => (await offer.count()) === 0, 5000), '바꾸면 권하는 줄이 내려간다');
+  await pg.locator('[data-toast]').filter({ hasText: '가르치는 반을' }).locator('[data-toast-action="되돌리기"]').click();
+  const tb = await serverUntil(() => read3(ref3('settings', 'common')), (d) => d?.teaching?.classes?.join() === '5-1,5-2,5-3', 8000);
+  r.check(tb?.teaching?.classes?.join() === '5-1,5-2,5-3' && (await waitFor(offer, 5000)), '되돌리기 = 5-1~5-3이 돌아오고 줄도 다시');
+  if (process.env.SHOT3) await pg.screenshot({ path: process.env.SHOT3 });
+
+  r.check(
+    errors.length === 0 && p2.errors.length === 0 && p3.errors.length === 0 && p4.errors.length === 0,
+    `화면 오류 없음 ${[...errors, ...p2.errors, ...p3.errors, ...p4.errors].join(' | ')}`,
+  );
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
