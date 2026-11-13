@@ -66,3 +66,27 @@ npx firebase firestore:databases:get "(default)" --project schoolplannerv3
 - 더한 계정은 **메일 확인된 구글 계정**만 관리자로 통과하고, 그 계정이 **다음에 앱을 열 때부터** 관리자 탭이 보인다. 관리자 힘 = 공휴일·관리자 설정(`admin/*`)·나이스 키(`sharedConfig`)·오류 기록(`v5Errors`) - 메모로 Claude 요청은 따로(배포 값 `CLAUDE_OWNER_EMAILS`).
 - 목록 문서를 지우면 기본 셋만 남는다(앱이 잠기지 않는다). 공개 저장소라 더한 메일은 문서·커밋에 적지 않는다.
 - **처음 설정**(P33-3): 관리자가 앱 탭 '👑 초기화 설정 - 새 사용자 기본값'을 누르면 `sharedConfig/initialSettings`(그 기기 종류 몫)가 바뀐다 - 그 뒤 처음 쓰는 사람(설정 문서가 없는 계정)이 그 값으로 시작한다. 누가 저장했나는 `admin/initialSettings`. 처음 설정을 없애려면 콘솔에서 `sharedConfig/initialSettings`를 지운다(앱 처음 값으로 - 이미 입힌 계정은 그대로).
+
+## 예전 저장소 CORS (2026-11-13 - P32-1)
+
+- V4에서 가져온 첨부 가운데 예전 Firebase Storage(버킷 `schoolplannerv3.firebasestorage.app`)에 있는 것은 앱이 내려받아 드라이브로 옮긴다(PC 하루 화면 '📎 예전 저장소에 첨부 n개' 띠·백업 창 '정리' 탭 📎 첨부 모으기). 브라우저가 내려받으려면 **버킷 CORS에 그 사이트 주소**가 있어야 한다.
+- 11-13 운영 값(사용자 허락으로 읽고 더함): `https://schoolplanner-v5.web.app`·`https://schoolplanner-v5.firebaseapp.com` + 예전 V4 주소(`https://hyundonglim80-gif.github.io`·`http://localhost:4190`·`http://localhost:5173`), `GET`만, `maxAgeSeconds` 3600. (이 PC에는 gcloud가 없어 firebase CLI 로그인으로 Storage JSON API `PATCH /storage/v1/b/<버킷>?fields=cors`를 불렀다 - 스크립트는 남기지 않음.)
+- 막히면 앱은 '저장소 설정을 고쳐야 풀립니다 - 개발자에게 알려 주세요'를 띄우고 오류 보고 '예전 저장소 CORS 막힘'을 남긴다(관리자 탭 오류 기록). 고치기 = 구글 클라우드 콘솔 오른쪽 위 `>_`(Cloud Shell)에 붙여 넣는다:
+
+```bash
+cat > cors.json <<'JSON'
+[
+  {
+    "origin": ["https://schoolplanner-v5.web.app", "https://schoolplanner-v5.firebaseapp.com"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Content-Length", "Content-Disposition"]
+  }
+]
+JSON
+gcloud storage buckets update gs://schoolplannerv3.firebasestorage.app --cors-file=cors.json
+gcloud storage buckets describe gs://schoolplannerv3.firebasestorage.app --format="default(cors_config)"
+```
+
+- 이 값은 **모으는 동안에만** 필요하다(읽기만 허락이라 두어도 큰 문제는 없다). 모두 옮긴 뒤 걷으려면 `origin`을 빈 배열로 같은 명령. V4 사이트는 V5로 넘기기만 해서(P31) V4 주소는 이제 쓰지 않는다 - 걷어도 된다.
+- 확인은 설정 값을 읽는다 - Storage는 오류 응답(없는 파일 403)에도 늘 `Access-Control-Allow-Origin: *`를 붙여서 `curl -H Origin`으로는 가려지지 않는다.

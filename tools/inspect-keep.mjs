@@ -2,6 +2,7 @@
 //   Takeout 파일(.json·사진·.html)을 고르면 메모 수·미리보기(새로/고쳐 씀/건너뜀) → 가져오기 = 메모(date null)·keepId·라벨·드라이브 첨부·체크 줄
 //   다시 고르면 건너뜀 · 글을 고친 파일은 고쳐 씀 · 백업 탭에 Keep 파일을 넣으면 Keep 칸으로 넘어온다. 드라이브는 page.route 흉내.
 //   '정리' 탭 📎 첨부 모으기: 옛 Storage 첨부(기록·수업 칸) → 드라이브 복사 · V5 주소만 바꿈 · CORS로 막히면 한 번 알리고 멈춤
+//   P32-1 본문 맨 위 '📎 예전 저장소에 첨부 n개' 띠: 수 · 0개면 사라짐 · 띠에서 곧바로 모으기 · '나중에' 7일(다시 열어도)
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-keep.mjs
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -146,6 +147,10 @@ try {
   await ctx.route(/firebasestorage\.googleapis\.com/, (route) =>
     cors ? route.fulfill({ status: 200, headers: { 'Content-Type': 'image/png', 'Access-Control-Allow-Origin': '*' }, body: PNG }) : route.abort('failed'),
   );
+  // P32-1 띠 - PC·개인 공간·다 받은 뒤 본문 맨 위에 남은 수
+  const attachBanner = page.locator('[data-storage-attach-banner]');
+  r.check(await waitFor(page.locator(sel('storage-attach-banner', 2)), 10000), "본문 맨 위 '📎 예전 저장소에 첨부 2개' 띠");
+  r.check(((await attachBanner.textContent()) ?? '').includes('첨부 2개'), `띠 글자에 수 (${(await attachBanner.textContent())?.slice(0, 30)})`);
   await page.locator(sel('backup-tab-btn', 'tidy')).click();
   r.check(await waitFor(page.locator(sel('collect-count', 2)), 10000), "'정리' 탭 = 옮길 Storage 첨부 2개 (기록·수업 칸)");
   const before = drive.uploads.length;
@@ -160,6 +165,48 @@ try {
   const nd = (await getDoc(dref)).data();
   r.check(!!nd?.periods?.['1']?.attachments?.[0]?.driveId && nd?.periods?.['1']?.memo === '수업 메모' && nd?.periods?.['2']?.memo === '그대로', '수업 칸 첨부도 (다른 교시는 그대로)');
   r.check(await waitFor(page.locator(sel('collect-count', 0)), 8000), '다 옮기면 0개');
+  r.check(await waitFor(async () => (await attachBanner.count()) === 0, 8000), '0개면 띠도 사라진다');
+
+  r.section('📎 띠에서 모으기 (P32-1)');
+  const bref = doc(em.db, 'spaces', sid, 'items', 'inspCollectB');
+  const plantOld = (ref, n) =>
+    setDoc(ref, {
+      kind: 'note',
+      date: '2030-01-08',
+      text: `Keep점검 띠 첨부 ${n}`,
+      labelIds: [],
+      order: `a${n}`,
+      attachments: [{ name: `old${n}.png`, url: STORE(n), type: 'image/png' }],
+      createdAt: Date.now(),
+      authorId: uid,
+      deletedAt: null,
+      v: 1,
+      updatedAt: serverTimestamp(),
+    });
+  undo.add(() => deleteDoc(bref));
+  await plantOld(bref, 3);
+  r.check(await waitFor(page.locator(sel('storage-attach-banner', 1)), 10000), '새로 남은 첨부 1개 = 띠가 다시 뜬다');
+  const up0 = drive.uploads.length;
+  await page.locator(sel('storage-attach-run')).click();
+  const nb = await serverUntil(async () => (await getDoc(bref)).data(), (x) => x?.attachments?.[0]?.driveId);
+  r.check(/drive\.google\.com\/thumbnail/.test(nb?.attachments?.[0]?.url ?? '') && drive.uploads.length === up0 + 1, '띠의 [드라이브로 모으기] = 정리 탭을 열지 않고 곧바로 옮긴다');
+  r.check(await waitFor(async () => (await attachBanner.count()) === 0, 8000), '다 옮기면 띠가 사라진다');
+  r.check(await waitFor(page.locator(sel('collect-count', 0)), 8000), '정리 탭 수도 0개');
+
+  await plantOld(bref, 4);
+  r.check(await waitFor(page.locator(sel('storage-attach-banner', 1)), 10000), "'나중에' 시험 - 띠 1개");
+  await page.locator(sel('storage-attach-later')).click();
+  const snooze = Number(await page.evaluate(() => localStorage.getItem('sp5-storage-attach-snooze')));
+  r.check((await attachBanner.count()) === 0 && snooze - Date.now() > 6.9 * 86400000, "'나중에' = 띠가 닫히고 이 기기에 7일");
+  await page.reload();
+  await page.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+  await page.waitForTimeout(3000);
+  r.check((await attachBanner.count()) === 0, '다시 열어도 7일 동안은 띄우지 않는다');
+  // 위 '없음'이 받기 전이라서가 아님을 본다 - 미룸을 걷고 다시 열면 뜬다
+  await page.evaluate(() => localStorage.removeItem('sp5-storage-attach-snooze'));
+  await page.reload();
+  await page.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+  r.check(await waitFor(page.locator(sel('storage-attach-banner', 1)), 10000), '미룸을 걷으면 다시 뜬다');
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
