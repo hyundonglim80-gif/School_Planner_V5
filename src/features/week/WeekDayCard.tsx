@@ -38,6 +38,8 @@ export interface WeekDayCardProps {
   /** 조사표 창을 열 공간 */
   sid?: string | null;
   showEvents: boolean;
+  /** 일정을 처음 받는 중 (P32-2 - 빈 날도 '일정이 없습니다' 대신 '받는 중') */
+  eventsWaiting?: boolean;
   /** 수업 줄 (둘째 줄 '수업'을 켰을 때만) */
   lessons?: ReactNode;
   labelsOf: (ev: ItemDoc) => LabelDoc[];
@@ -312,7 +314,9 @@ export default function WeekDayCard(props: WeekDayCardProps) {
               })}
             </div>
           ) : (
-            <div className="text-xs text-slate-300 py-1 pl-1">일정이 없습니다.</div>
+            <div {...(props.eventsWaiting ? { 'data-week-events-waiting': '' } : {})} className="text-xs text-slate-300 py-1 pl-1">
+              {props.eventsWaiting ? '일정을 받는 중…' : '일정이 없습니다.'}
+            </div>
           )}
         </div>
       )}

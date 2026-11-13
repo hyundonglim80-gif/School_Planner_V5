@@ -9,7 +9,7 @@
 import { useMemo } from 'react';
 import { setDate, useNav } from '../../app/nav';
 import { useHolidayName } from '../../data/holidays';
-import { itemLabels, useDocs, useLabelTree, useOverlaySpaces } from '../../data/select';
+import { itemLabels, useDocs, useFirstLoading, useLabelTree, useOverlaySpaces } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { monthEnd, monthGridDates } from '../../domain/dateUtils';
@@ -50,6 +50,8 @@ const MARK_CLASS = {
 export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
   const sid = useCurrentSpaceId();
   const items = useDocs('items', sid);
+  // 일정을 처음 받는 중이면 빈 목록도 '받는 중' (P32-2)
+  const waiting = useFirstLoading('items', sid);
   const tree = useLabelTree('event', sid);
   const overlays = useOverlaySpaces();
   const showEvents = useNav((s) => s.showEvents);
@@ -200,6 +202,10 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
                 );
               })}
             </ul>
+          ) : waiting ? (
+            <p data-board-month-waiting className="text-xs text-slate-400 py-1 px-1">
+              일정을 받는 중…
+            </p>
           ) : (
             <p data-board-month-empty className="text-xs text-slate-400 py-1 px-1">
               {m}월 달력 일정이 없습니다.

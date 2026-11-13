@@ -10,7 +10,7 @@ import { setDate, setScope, useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { weekdayOf } from '../../domain/dateUtils';
 import { periodStateAt, timesOf } from '../../domain/periodTimes';
-import { itemLabels, itemsOn, useDocs, useHolidayVersion, useLabelTree, useOverlaySpaces, type OverlaySpace } from '../../data/select';
+import { itemLabels, itemsOn, useDocs, useFirstLoading, useHolidayVersion, useLabelTree, useOverlaySpaces, type OverlaySpace } from '../../data/select';
 import { useClock } from '../../ui/useClock';
 import { deleteEvent, setEventDone } from '../events/actions';
 import EventDeleteChooser from '../events/EventDeleteChooser';
@@ -23,7 +23,7 @@ import { openEventPanel } from '../events/open';
 import { useEvalCountsByDate } from '../evaluations/evalData';
 import { openLessonPanel } from '../lessons/open';
 import { useClassColorOf, useTeaching } from '../lessons/teaching';
-import { useLessonsFor } from '../lessons/useLessons';
+import { useLessonsFor, useLessonsLoading } from '../lessons/useLessons';
 import WeekLessonRows from '../lessons/WeekLessonRows';
 import { lessonLinkId } from '../links/linkOps';
 import { openLinkViewer } from '../links/open';
@@ -100,6 +100,9 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
 
   // ─── 수업 (P6-1) - 셈할 날들을 함께. 교시 줄 수는 보이는 요일끼리 같게(7교시 보충이 있으면 그만큼) ───
   const lessons = useLessonsFor(days, sid);
+  const lessonsLoading = useLessonsLoading(sid);
+  // 일정을 처음 받는 중이면 빈 날도 '받는 중' (P32-2 - 하루 일정 칸과 같게)
+  const eventsWaiting = useFirstLoading('items', sid);
   const periodDefs = useCommonSettings((s) => s.periods);
   const times = useMemo(() => timesOf(periodDefs), [periodDefs]);
   const nowMs = useClock(showClass && days.includes(today));
@@ -123,6 +126,7 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
         marks={marks}
         onOpen={(n) => openLessonPanel({ sid, date: day, n })}
         onLinks={(n) => openLinkViewer({ sid, id: lessonLinkId(day, n) })}
+        loading={lessonsLoading}
       />
     );
   };
@@ -202,6 +206,7 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
           evalCount={evalCounts[day] ?? 0}
           sid={sid}
           showEvents={showEvents}
+          eventsWaiting={eventsWaiting}
           lessons={o.noLessons ? undefined : lessonRows(day, rows)}
           labelsOf={(ev) => itemLabels(spaceOf(ev)?.tree ?? eventTree, ev.labelIds)}
           pickedIds={pickedHere}

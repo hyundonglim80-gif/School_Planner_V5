@@ -90,6 +90,40 @@ try {
   r.check((await subjectOf(4)) === '' && (await lessonCard(4).textContent()).includes('과목 미등록'), '시간표에 없는 칸은 비어 있다');
   r.check(!(await page.locator(sel('teacher-mode-banner')).count()), '교사 유형을 고른 계정은 띠가 없다');
 
+  r.section("받기 전 = '수업을 받는 중…' (새 기기 - P32-2)");
+  {
+    // 사본이 빈 새 창 + Firestore 통로를 붙잡아 두면 시간표가 오기 전 모습이다. 풀면 지금과 같다
+    const { page: p4, errors: e4 } = await newPage(browser);
+    let release;
+    const gate = new Promise((res) => (release = res));
+    await p4.route(/127\.0\.0\.1:8080\/google\.firestore/, async (route) => {
+      await gate;
+      await route.continue().catch(() => {});
+    });
+    const goto4 = (hash) => p4.goto(p4.url().replace(/#.*$/, hash));
+    await open(p4, '#/day/2026-10-12');
+    r.check(await waitFor(p4.locator(sel('lessons-loading')), 8000), '하루: 받기 전에는 수업을 받는 중');
+    r.check((await p4.locator(sel('lesson-card')).count()) === 0, "하루: 받기 전에는 '과목 미등록' 교시 카드가 없다");
+    await goto4('#/week/2026-10-12');
+    r.check(await waitFor(p4.locator(sel('week-lessons-loading')).first(), 8000), '주간: 교시 줄 대신 받는 중');
+    r.check((await p4.locator(sel('week-lesson')).count()) === 0, "주간: 빈 교시 줄('-')이 없다");
+    const boxH = await p4.locator(sel('week-lessons-loading')).first().evaluate((e) => e.getBoundingClientRect().height);
+    r.check(Math.abs(boxH - (6 * 28 + 5 * 4)) < 2, `주간: 받는 중 칸 높이 = 교시 줄 여섯 (${boxH}px - 받은 뒤 카드가 출렁이지 않게)`);
+    r.check((await p4.locator(sel('week-events-waiting')).count()) > 0, "주간: 빈 날 일정도 '일정이 없습니다' 대신 받는 중");
+    await goto4('#/board/2026-10-12');
+    r.check(await waitFor(p4.locator(sel('board-month-waiting')), 8000), '한눈에: 왼쪽 달 목록도 받는 중');
+    r.check(await waitFor(p4.locator(sel('lessons-loading'))), '한눈에: 수업 칸도 받는 중');
+    release();
+    const subject4 = () => p4.locator(`${sel('lesson-card', 1)} [data-lesson-subject]`).first().getAttribute('data-lesson-subject');
+    r.check(await waitFor(async () => (await subject4().catch(() => '')) === '국어', 20000), '받은 뒤: 월 1교시 = 시간표의 국어');
+    r.check(
+      !(await p4.locator(`${sel('lessons-loading')}, ${sel('week-lessons-loading')}, ${sel('board-month-waiting')}`).count()),
+      '받은 뒤: 받는 중 글이 남지 않는다',
+    );
+    r.check(e4.length === 0, `화면 오류 없음 ${e4.join(' | ')}`);
+    await p4.context().close();
+  }
+
   r.section('시간표 창');
   await page.locator(sel('lessons-settings')).click();
   r.check(await waitFor(page.locator(win)), '⚙️ = 시간표 창');

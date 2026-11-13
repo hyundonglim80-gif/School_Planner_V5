@@ -8,7 +8,7 @@ import { classOffReason, lessonsOn, subjectsBetween, type LessonDayView, type Le
 import type { PeriodDef } from '../../domain/periodTimes';
 import type { SchoolTerms } from '../../domain/semester';
 import { isHoliday, useHolidayStore } from '../../data/holidays';
-import { isLive, itemsOn, useDocs, useLabelTree, type Docs, type LabelTree } from '../../data/select';
+import { isLive, itemsOn, useDocs, useHasLive, useLabelTree, type Docs, type LabelTree } from '../../data/select';
 
 interface Inputs {
   timetableDocs: Docs<'timetables'>;
@@ -55,6 +55,15 @@ export function useLessonSource(sid?: string | null): LessonSource {
     () => sourceOf(sid ?? '', { timetableDocs, days, items, tree, periods, terms, holidays }),
     [sid, timetableDocs, days, items, tree, periods, terms, holidays],
   );
+}
+
+/**
+ * 수업 칸을 아직 믿을 수 없나 (P32-2) - 시간표·그날 바꾼 칸이 사본에도 없고 서버에서도 다 받지 못했다(새 기기·사본을 비운 뒤).
+ * 그동안 셈하면 모든 교시가 '과목 미등록'·빈 줄로 보인다 → 화면은 '수업을 받는 중…'. 하나라도 오면(사본 포함) 곧바로 그린다.
+ * 끊긴 채 사본이 비었으면 이어질 때까지 받는 중이다(빈 시간표로 보이지 않게 - P22-7 처음 띠와 같은 useHasLive).
+ */
+export function useLessonsLoading(sid?: string | null): boolean {
+  return useHasLive(['timetables', 'lessonDays'], sid) === null;
 }
 
 /** 그날 수업 칸 */

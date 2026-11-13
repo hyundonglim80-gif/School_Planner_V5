@@ -15,7 +15,7 @@ import { labelColor } from '../../domain/labels';
 import { periodIndexLabel, periodRangeLabel, periodsInDates, type ShownPeriod } from '../../domain/periodBars';
 import { BODY_TEXT, SECTION_TITLE } from '../../domain/typeScale';
 import { monthWeeks, type AcademicMonth } from '../../domain/yearSheet';
-import { itemLabels, type LabelTree } from '../../data/select';
+import { itemLabels, useFirstLoading, type LabelTree } from '../../data/select';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
 import { useHolidayName } from '../../data/holidays';
 import HolidayName from '../../ui/HolidayName';
@@ -108,6 +108,8 @@ function DeleteButton({ onDelete }: { onDelete: () => void }) {
 }
 
 function YearMonthCard(p: Props) {
+  // 일정을 처음 받는 중이면 빈 달도 '받는 중' (P32-2 - '비어 있음'·'일정이 없습니다'로 보였다)
+  const waiting = useFirstLoading('items', p.sid);
   const dates = monthWeeks(p.m.year, p.m.month, p.showWeekend)
     .flat()
     .filter((d): d is string => !!d);
@@ -244,7 +246,7 @@ function YearMonthCard(p: Props) {
         {p.isMobile && <span className="text-xs text-slate-400">{p.isOpen ? '▼' : '▶'}</span>}
         <span>{p.m.label}</span>
         <span className="text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-lg">{p.m.semester}학기</span>
-        {!p.isOpen && <span className="text-xs font-bold text-slate-400">{activeDays.length > 0 ? `${activeDays.length}일` : '비어 있음'}</span>}
+        {!p.isOpen && <span className="text-xs font-bold text-slate-400">{activeDays.length > 0 ? `${activeDays.length}일` : waiting ? '받는 중…' : '비어 있음'}</span>}
       </button>
 
       {/* 접은 달은 아예 그리지 않는다 (V4 - 감춰 그리던 것이 요소의 90%였다) */}
@@ -329,8 +331,8 @@ function YearMonthCard(p: Props) {
               );
             })
           ) : (
-            <div data-year-month-empty className="text-center text-slate-400 text-xs py-8 font-semibold">
-              일정이 없습니다.
+            <div {...{ [waiting ? 'data-year-month-waiting' : 'data-year-month-empty']: '' }} className="text-center text-slate-400 text-xs py-8 font-semibold">
+              {waiting ? '일정을 받는 중…' : '일정이 없습니다.'}
             </div>
           )}
         </div>

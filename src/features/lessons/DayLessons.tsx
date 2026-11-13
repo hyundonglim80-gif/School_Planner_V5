@@ -43,7 +43,7 @@ import { reorderDragProps } from '../../ui/reorderDrag';
 import { swapLessons } from './actions';
 import { openLessonPanel } from './open';
 import { useClassColorOf, useTeaching } from './teaching';
-import { cachedSubjects, useLessonSource } from './useLessons';
+import { cachedSubjects, useLessonSource, useLessonsLoading } from './useLessons';
 import { evalCountsByPlace } from '../../domain/evaluation';
 import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
@@ -73,6 +73,8 @@ export default function DayLessons({ date }: { date: string }) {
   const sid = useCurrentSpaceId();
   const src = useLessonSource(sid);
   const view = useMemo(() => lessonsOn(date, src), [date, src]);
+  // 시간표를 받기 전에는 교시 카드 대신 '받는 중' (P32-2 - 새 기기에서 모든 교시가 '과목 미등록'으로 보였다)
+  const loading = useLessonsLoading(sid);
   const dayDoc = useDocs('lessonDays', sid)[date];
   const periods = useCommonSettings((s) => s.periods);
   const times = useMemo(() => timesOf(periods), [periods]);
@@ -80,7 +82,7 @@ export default function DayLessons({ date }: { date: string }) {
   const today = useToday();
   const isToday = date === today;
   const nowMs = useClock(isToday);
-  const nowState = isToday ? periodStateAt(times, new Date(nowMs), view.cells.length) : null;
+  const nowState = isToday && !loading ? periodStateAt(times, new Date(nowMs), view.cells.length) : null;
   const { isClassUnit, showHomeroomTools, preset, mode } = useTeaching();
   const classColorOf = useClassColorOf(date, sid);
 
@@ -247,7 +249,12 @@ export default function DayLessons({ date }: { date: string }) {
         </div>
       )}
 
-      {!collapsed && (
+      {!collapsed && loading && (
+        <p data-lessons-loading className="py-10 text-center text-xs text-slate-400">
+          수업을 받는 중…
+        </p>
+      )}
+      {!collapsed && !loading && (
         <div className="grid grid-cols-1 gap-3">
           {view.cells.map((c) => {
             const n = c.n;

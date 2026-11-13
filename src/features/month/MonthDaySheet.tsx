@@ -8,7 +8,7 @@ import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
 import SchoolEventName from '../school/SchoolEventName';
 import { useSchoolSchedule } from '../school/school';
 import EventDoneChip from '../events/EventDoneChip';
-import type { LabelDoc, OverlaySpace } from '../../data/select';
+import { useFirstLoading, type LabelDoc, type OverlaySpace } from '../../data/select';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import { LessonWraps } from '../lessons/CalendarLessons';
 import { hasLessons, type LessonSubjects } from '../lessons/lessonSubjects';
@@ -36,6 +36,8 @@ interface Props {
 export default function MonthDaySheet({ date, events, hiddenCount, showEvents, lessons, labelsOf, spaceOf, onClose, onGoDay, onAdd, onOpenEvent, onToggleDone }: Props) {
   // 아래 탭바 바로 위에 붙는다 (탭바 높이는 기기 안전 여백에 따라 달라 재서 쓴다)
   const [tabBarHeight, setTabBarHeight] = useState(0);
+  // 일정을 처음 받는 중이면 빈 날도 '받는 중' (P32-2)
+  const waiting = useFirstLoading('items');
   useLayoutEffect(() => {
     const bar = document.querySelector('[data-mobile-tabbar]') as HTMLElement | null;
     if (!bar) return;
@@ -109,7 +111,11 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
             })}
           </ul>
         )}
-        {showEvents && events.length === 0 && !hasLessons(lessons) && <p className="text-xs text-slate-400 py-2 text-center">달력에 올린 일정이 없습니다.</p>}
+        {showEvents && events.length === 0 && !hasLessons(lessons) && (
+          <p {...(waiting ? { 'data-sheet-waiting': '' } : {})} className="text-xs text-slate-400 py-2 text-center">
+            {waiting ? '일정을 받는 중…' : '달력에 올린 일정이 없습니다.'}
+          </p>
+        )}
         {showEvents && hiddenCount > 0 && (
           <button type="button" data-sheet-hidden={hiddenCount} onClick={onGoDay} className="text-left text-xs text-slate-400 cursor-pointer">
             달력에 올리지 않은 일정 {hiddenCount}개 - 하루 화면에서 봅니다 →

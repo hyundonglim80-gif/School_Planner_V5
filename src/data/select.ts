@@ -266,6 +266,15 @@ export function useMirrorStatus(coll: SpaceCollection, sid?: string | null): Mir
 }
 
 /**
+ * 처음 받는 중인가 - 사본에 꺼낸 것도 서버 소식도 아직 없다(새 기기·사본을 비운 뒤). 이때 빈 목록은 '없다'가 아니라 '받는 중'이다
+ * (5장 'P3-1 하루 화면' 일정 칸 · P32-2 주간·한눈에·년간 일정 줄도). 사본으로 그렸거나(copy) 받은 뒤·끊김은 아니다.
+ */
+export function useFirstLoading(coll: SpaceCollection, sid?: string | null): boolean {
+  const status = useMirrorStatus(coll, sid);
+  return status === 'idle' || status === 'loading';
+}
+
+/**
  * 그 컬렉션들에 살아 있는 문서가 하나라도 있나 (P22-7 - 처음 띠·자동 백업 띠).
  * true = 있다 · false = 모두 서버에서 받았는데 없다 · null = 아직 모른다(사본만 그렸거나 받는 중·끊김 - 없음으로 믿지 않는다)
  */

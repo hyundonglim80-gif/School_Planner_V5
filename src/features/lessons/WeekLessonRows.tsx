@@ -20,103 +20,116 @@ interface Props {
   marks: Record<string, ProgressMark>;
   onOpen: (n: number) => void;
   onLinks: (n: number) => void;
+  /** 시간표를 아직 받지 못함 (P32-2) - 빈 교시 줄 대신 '받는 중', 높이는 교시 줄과 같게(받은 뒤 카드가 출렁이지 않게) */
+  loading?: boolean;
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
-export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUnit, classColorOf, marks, onOpen, onLinks }: Props) {
+export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUnit, classColorOf, marks, onOpen, onLinks, loading = false }: Props) {
   return (
     <div className="mb-4" data-week-lessons={date}>
       <div className="text-xs font-extrabold text-slate-400 mb-2 flex items-center gap-1">
         <span>수업</span>
       </div>
-      <div className="space-y-1">
-        {Array.from({ length: rows }, (_, i) => i + 1).map((n) => {
-          const c = view.cells.find((x) => x.n === n);
-          const filled = !!(c && (c.subject || c.note));
-          const text = c ? c.subject || firstLine(c.note) : '';
-          // 과목 뒤에 붙이는 비고 첫 줄 (과목이 없으면 비고가 이미 text다)
-          const noteLine = c?.subject ? firstLine(c.note) : '';
-          const links = c?.linkIds.length ?? 0;
-          const slot = isClassUnit && c?.subject ? parseSlot(c.subject) : null;
-          const now = nowPeriod === n;
-          const mark = marks[slotId(date, n)];
-          return (
-            <div
-              key={n}
-              data-week-lesson={n}
-              role="button"
-              tabIndex={0}
-              onKeyDown={pressKeys}
-              data-now={now ? 'true' : undefined}
-              onClick={(e) => {
-                stop(e);
-                onOpen(n);
-              }}
-              title={
-                filled
-                  ? `${n}교시 ${c?.subject || ''}${c?.note ? `${c.subject ? '\n' : ''}${c.note}` : ''}`
-                  : `${n}교시 (비어 있음${c?.changed ? ` - 이날만 비움, 시간표: ${c.base}` : ''}) - 눌러서 수업 적기`
-              }
-              className={`h-7 flex items-center gap-1.5 px-2 rounded-lg border text-xs cursor-pointer transition-colors ${
-                filled ? 'bg-slate-50 border-slate-100 hover:bg-slate-100' : 'bg-white/40 border-dashed border-slate-200 hover:bg-slate-50'
-              } ${now ? 'ring-2 ring-primary/60 bg-blue-50' : ''}`}
-            >
-              <span className={`font-bold text-xs shrink-0 ${filled ? 'text-primary' : 'text-slate-300'}`}>{n}교시</span>
-              <span className="flex-1 min-w-0 flex items-center gap-1">
-                {slot?.cls ? (
-                  <>
-                    <span data-slot-class className={`shrink-0 px-1 rounded font-black text-xs tabular-nums ${classColorOf(slot.cls).chip}`}>
-                      {slot.cls}
+      {loading ? (
+        <div
+          data-week-lessons-loading
+          // 줄 높이 h-7(1.75rem) × 줄 수 + 줄 사이 space-y-1(0.25rem)
+          style={{ height: `${rows * 1.75 + Math.max(rows - 1, 0) * 0.25}rem` }}
+          className="flex items-center justify-center rounded-lg border border-dashed border-slate-200 text-xs text-slate-400"
+        >
+          수업을 받는 중…
+        </div>
+      ) : (
+        <div className="space-y-1">
+          {Array.from({ length: rows }, (_, i) => i + 1).map((n) => {
+            const c = view.cells.find((x) => x.n === n);
+            const filled = !!(c && (c.subject || c.note));
+            const text = c ? c.subject || firstLine(c.note) : '';
+            // 과목 뒤에 붙이는 비고 첫 줄 (과목이 없으면 비고가 이미 text다)
+            const noteLine = c?.subject ? firstLine(c.note) : '';
+            const links = c?.linkIds.length ?? 0;
+            const slot = isClassUnit && c?.subject ? parseSlot(c.subject) : null;
+            const now = nowPeriod === n;
+            const mark = marks[slotId(date, n)];
+            return (
+              <div
+                key={n}
+                data-week-lesson={n}
+                role="button"
+                tabIndex={0}
+                onKeyDown={pressKeys}
+                data-now={now ? 'true' : undefined}
+                onClick={(e) => {
+                  stop(e);
+                  onOpen(n);
+                }}
+                title={
+                  filled
+                    ? `${n}교시 ${c?.subject || ''}${c?.note ? `${c.subject ? '\n' : ''}${c.note}` : ''}`
+                    : `${n}교시 (비어 있음${c?.changed ? ` - 이날만 비움, 시간표: ${c.base}` : ''}) - 눌러서 수업 적기`
+                }
+                className={`h-7 flex items-center gap-1.5 px-2 rounded-lg border text-xs cursor-pointer transition-colors ${
+                  filled ? 'bg-slate-50 border-slate-100 hover:bg-slate-100' : 'bg-white/40 border-dashed border-slate-200 hover:bg-slate-50'
+                } ${now ? 'ring-2 ring-primary/60 bg-blue-50' : ''}`}
+              >
+                <span className={`font-bold text-xs shrink-0 ${filled ? 'text-primary' : 'text-slate-300'}`}>{n}교시</span>
+                <span className="flex-1 min-w-0 flex items-center gap-1">
+                  {slot?.cls ? (
+                    <>
+                      <span data-slot-class className={`shrink-0 px-1 rounded font-black text-xs tabular-nums ${classColorOf(slot.cls).chip}`}>
+                        {slot.cls}
+                      </span>
+                      {slot.subject && <span className="shrink-0 max-w-[60%] truncate text-2xs font-semibold text-slate-600">{slot.subject}</span>}
+                    </>
+                  ) : (
+                    <span data-week-lesson-text className={`truncate text-xs ${noteLine ? 'shrink-0 max-w-[60%]' : 'flex-1'} ${filled ? 'font-semibold text-slate-800' : 'text-slate-300'}`}>
+                      {filled ? text : '-'}
                     </span>
-                    {slot.subject && <span className="shrink-0 max-w-[60%] truncate text-2xs font-semibold text-slate-600">{slot.subject}</span>}
-                  </>
-                ) : (
-                  <span data-week-lesson-text className={`truncate text-xs ${noteLine ? 'shrink-0 max-w-[60%]' : 'flex-1'} ${filled ? 'font-semibold text-slate-800' : 'text-slate-300'}`}>
-                    {filled ? text : '-'}
-                  </span>
-                )}
-                {noteLine && (
-                  <span data-week-lesson-note className="flex-1 min-w-0 truncate text-2xs text-amber-700/80">
-                    {noteLine}
-                  </span>
-                )}
-              </span>
-              {mark && (
-                <span
-                  data-week-progress={mark.bumped ? 'bumped' : (mark.index ?? 0) + 1}
-                  className={`shrink-0 text-2xs leading-none px-1 py-0.5 rounded font-bold border tabular-nums ${
-                    mark.bumped ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-indigo-700 bg-indigo-50 border-indigo-100'
-                  }`}
-                  title={
-                    mark.bumped
-                      ? `${mark.key} 진도 - 이 교시는 밀어서 차시가 없습니다`
-                      : `${mark.key} ${mark.run.k}/${mark.run.n}차시 (전체 ${(mark.index ?? 0) + 1}/${mark.total}차시)` +
-                        (mark.lesson?.content ? ` · ${mark.lesson.content}` : '') +
-                        (mark.lesson?.supplies ? ` · 준비물 ${mark.lesson.supplies}` : '')
-                  }
-                >
-                  {mark.bumped ? '밀림' : `${mark.run.k}/${mark.run.n}`}
+                  )}
+                  {noteLine && (
+                    <span data-week-lesson-note className="flex-1 min-w-0 truncate text-2xs text-amber-700/80">
+                      {noteLine}
+                    </span>
+                  )}
                 </span>
-              )}
-              {links > 0 && (
-                <button
-                  type="button"
-                  data-week-lesson-links={n}
-                  onClick={(e) => {
-                    stop(e);
-                    onLinks(n);
-                  }}
-                  className="bg-yellow-100 text-yellow-800 text-2xs leading-none px-1 py-0.5 rounded font-bold border border-yellow-300 shrink-0 hover:bg-yellow-200 cursor-pointer"
-                  title={`링크된 항목 ${links}개`}
-                >
-                  🔗 {links}
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                {mark && (
+                  <span
+                    data-week-progress={mark.bumped ? 'bumped' : (mark.index ?? 0) + 1}
+                    className={`shrink-0 text-2xs leading-none px-1 py-0.5 rounded font-bold border tabular-nums ${
+                      mark.bumped ? 'text-amber-700 bg-amber-50 border-amber-200' : 'text-indigo-700 bg-indigo-50 border-indigo-100'
+                    }`}
+                    title={
+                      mark.bumped
+                        ? `${mark.key} 진도 - 이 교시는 밀어서 차시가 없습니다`
+                        : `${mark.key} ${mark.run.k}/${mark.run.n}차시 (전체 ${(mark.index ?? 0) + 1}/${mark.total}차시)` +
+                          (mark.lesson?.content ? ` · ${mark.lesson.content}` : '') +
+                          (mark.lesson?.supplies ? ` · 준비물 ${mark.lesson.supplies}` : '')
+                    }
+                  >
+                    {mark.bumped ? '밀림' : `${mark.run.k}/${mark.run.n}`}
+                  </span>
+                )}
+                {links > 0 && (
+                  <button
+                    type="button"
+                    data-week-lesson-links={n}
+                    onClick={(e) => {
+                      stop(e);
+                      onLinks(n);
+                    }}
+                    className="bg-yellow-100 text-yellow-800 text-2xs leading-none px-1 py-0.5 rounded font-bold border border-yellow-300 shrink-0 hover:bg-yellow-200 cursor-pointer"
+                    title={`링크된 항목 ${links}개`}
+                  >
+                    🔗 {links}
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
