@@ -18,7 +18,7 @@ import { openImageViewer } from '../../ui/imageViewerStore';
 import type { ItemDoc } from '../events/eventOps';
 import ClaudeRequestBadge from './ClaudeRequestBadge';
 import ClaudeRequestNote from './ClaudeRequestNote';
-import { ownTitle } from '../../domain/noteTitle';
+import { bodyAfterHeading, noteHeading } from '../../domain/noteTitle';
 import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
 import { pressKeys } from '../../ui/pressKeys';
@@ -83,9 +83,10 @@ export default function EntryCard(props: EntryCardProps) {
   const tables = item.tables ?? [];
   const links = (item.linkIds?.length ?? 0) + (props.moreLinks ?? 0);
   const checks = checkCount(body);
-  const preview = previewLine(body);
-  // 제목은 적은 것만 - 없으면 제목 줄 없이 내용만 (10-26)
-  const title = ownTitle(item);
+  // 제목 = 글의 첫 줄(예전에 적은 제목이 있으면 그것) - 본문·접은 줄은 그 아래부터 (P35 - 첫 줄이 두 번 보이지 않게)
+  const heading = noteHeading(item);
+  const title = heading.title;
+  const preview = previewLine(bodyAfterHeading(body, heading.line));
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
   return (
@@ -314,19 +315,20 @@ export default function EntryCard(props: EntryCardProps) {
         </div>
       </div>
 
+      {/* 펼친 카드는 제목을 자르지 않는다 - 본문은 그 아래 줄부터라 긴 첫 줄이 숨지 않게 (P35) */}
       {title && (
-        <p data-entry-title className={`text-sm font-extrabold truncate ${done ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+        <p data-entry-title className={`text-sm font-extrabold ${collapsed ? 'truncate' : 'break-words'} ${done ? 'line-through text-slate-400' : 'text-slate-900'}`}>
           {title}
         </p>
       )}
 
-      {collapsed && preview && preview !== title && (
+      {collapsed && preview && (
         <p data-entry-preview className={`text-sm truncate leading-relaxed ${done ? 'line-through text-slate-400' : 'text-slate-500'}`}>
           {preview}
         </p>
       )}
 
-      {!collapsed && <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} fullTables={props.fullTables} />}
+      {!collapsed && <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} fullTables={props.fullTables} skipLine={heading.line} />}
       {/* Claude 요청 결과 - 바꾼 것·바꾸지 않은 까닭 (10-19) */}
       <ClaudeRequestNote itemId={item.id} short />
     </div>

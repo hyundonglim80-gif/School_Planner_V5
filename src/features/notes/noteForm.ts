@@ -6,18 +6,20 @@
 //   목록에 없는 이름과 '+ 새 라벨'은 저장할 때 항목과 한 묶음으로 만든다(data/labels ensureLabelOps - actions.ts).
 // - 저장 = 바뀐 칸만(원칙 1). 고치던 항목의 완료·즐겨찾기는 누르는 즉시 그 칸만 저장하므로 여기 견주지 않는다(새 항목만 처음 저장 때 함께).
 // - 글은 앞뒤 빈칸만 다듬어 적는다(V4 그대로).
+// - 제목 칸은 없다(P35 11-13 사용자 요청 - 제목 = 글의 첫 줄, domain/noteTitle). 예전에 적은 제목은 칸을 열 때 글 첫 줄로 올리고(foldTitle),
+//   글을 고쳐 저장하면 title 칸을 지운다(글에 담겼다). 글에 손대지 않으면 제목·글 모두 그대로.
 // - 🧑‍🎓 학생(studentIds '{classId}/{sid}'): '@이름'·학생 고르기로 더하고 칩 ✕로 뺀다. 글에 적은 '#26040305'는 저장할 때 더한다(domain/studentTag - NotePanel).
 import { takeHashLabels } from '../../domain/hashLabels';
 import { splitParentChild } from '../../domain/labels';
 import type { Changes } from '../../data/repo/ops';
 import type { LabelTree } from '../../data/select';
 import { cleanDates, datesChanges, datesFields, noteDates } from '../../domain/noteDates';
+import { foldTitle } from '../../domain/noteTitle';
 import type { Attachment, Editable, EntryTable, YMD } from '../../data/types';
 import type { ItemDoc } from '../events/eventOps';
 
 export interface NoteForm {
-  /** 제목 - 비우면 첫 줄이 제목으로 보인다 */
-  title: string;
+  /** 글 - 첫 줄이 제목으로 보인다 (예전 제목은 첫 줄로 올려 둔다) */
   text: string;
   /** 날짜 링크 (차례대로) - 비면 날짜 없는 메모 */
   dates: YMD[];
@@ -40,7 +42,6 @@ export interface NoteForm {
 export function newNoteForm(date: YMD | null, tree: LabelTree, labelIds?: readonly string[], draftText = ''): NoteForm {
   const preset = labelIds?.filter((id) => tree.byId.has(id)) ?? [];
   return {
-    title: '',
     text: draftText,
     dates: date ? [date] : [],
     labelIds: preset.length > 0 ? preset : tree.defaultId ? [tree.defaultId] : [],
@@ -56,8 +57,7 @@ export function newNoteForm(date: YMD | null, tree: LabelTree, labelIds?: readon
 /** 저장된 항목 → 칸 */
 export function noteFormOf(item: ItemDoc): NoteForm {
   return {
-    title: item.title ?? '',
-    text: item.text ?? '',
+    text: foldTitle(item),
     dates: noteDates(item),
     labelIds: [...(item.labelIds ?? [])],
     newLabels: [],
@@ -71,7 +71,6 @@ export function noteFormOf(item: ItemDoc): NoteForm {
 
 const keyOf = (f: NoteForm, isNew: boolean) =>
   JSON.stringify([
-    f.title.trim(),
     f.text.trim(),
     cleanDates(f.dates),
     f.labelIds,
@@ -101,9 +100,8 @@ export function noteFormAfterSave(now: NoteForm, sent: NoteForm, saved: NoteForm
   return out as unknown as NoteForm;
 }
 
-/** 저장할 것이 있나 (글·제목·첨부·표 가운데 하나 - 제목만 남은 메모도 지우지 않는다) */
-export const hasContent = (f: Pick<NoteForm, 'text' | 'attachments' | 'tables'> & { title?: string }) =>
-  !!f.text.trim() || !!f.title?.trim() || f.attachments.length > 0 || f.tables.length > 0;
+/** 저장할 것이 있나 (글·첨부·표 가운데 하나) */
+export const hasContent = (f: Pick<NoteForm, 'text' | 'attachments' | 'tables'>) => !!f.text.trim() || f.attachments.length > 0 || f.tables.length > 0;
 
 export interface SavePlan {
   /** 적을 글 ('#라벨' 줄을 뗀 뒤 앞뒤 빈칸을 다듬은 것) */
@@ -114,7 +112,7 @@ export interface SavePlan {
 
 /** 저장 직전: 첫·마지막 줄 '#라벨'을 떼고 붙일 이름을 모은다 */
 export function savePlanOf(form: NoteForm): SavePlan {
-  // 글 말고 남는 것(제목·첨부·표)이 있으면 글이 '#라벨' 한 줄뿐이어도 뗀다
+  // 글 말고 남는 것(첨부·표)이 있으면 글이 '#라벨' 한 줄뿐이어도 뗀다
   const hash = takeHashLabels(form.text, { emptyOk: hasContent({ ...form, text: '' }) });
   const names = [...form.newLabels];
   for (const n of hash.names) if (!names.includes(n)) names.push(n);
@@ -135,7 +133,6 @@ export function createNoteData(form: NoteForm, text: string, labelIds: string[],
   return {
     kind: 'note',
     ...datesFields(form.dates),
-    ...(form.title.trim() ? { title: form.title.trim() } : {}),
     text,
     labelIds,
     order,
@@ -152,8 +149,11 @@ const sameJson = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.
 /** 고친 항목 → 바뀐 칸만. 바뀐 것이 없으면 빈 객체. 날짜 링크는 domain/noteDates datesChanges(date·dates) */
 export function noteEditChanges(item: ItemDoc, form: NoteForm, text: string, labelIds: string[], only?: ReadonlySet<string>): Changes<'items'> {
   const out: Changes<'items'> = {};
-  if (text !== (item.text ?? '')) out.text = text;
-  if (form.title.trim() !== (item.title ?? '')) out.title = form.title.trim() || undefined;
+  // 견줄 글 = 칸이 열린 모습(예전 제목을 첫 줄로 올린 글). 글을 적으면 예전 제목 칸은 지운다 - 글에 담겼다 (P35)
+  if (text !== foldTitle(item)) {
+    out.text = text;
+    if (item.title !== undefined) out.title = undefined;
+  }
   if (!sameJson(labelIds, item.labelIds ?? [])) out.labelIds = labelIds;
   if (!sameJson(form.attachments, item.attachments ?? [])) out.attachments = form.attachments.length > 0 ? form.attachments : undefined;
   if (!sameJson(form.tables, item.tables ?? [])) out.tables = form.tables.length > 0 ? form.tables : undefined;
@@ -170,8 +170,11 @@ export function noteEditChanges(item: ItemDoc, form: NoteForm, text: string, lab
  */
 export function noteEditedKeys(base: NoteForm, form: NoteForm): Set<string> {
   const keys = new Set<string>();
-  if (form.text !== base.text) keys.add('text');
-  if (form.title.trim() !== base.title.trim()) keys.add('title');
+  // 글을 고치면 예전 제목 칸도 (글 첫 줄로 올라가 있다 - P35)
+  if (form.text !== base.text) {
+    keys.add('text');
+    keys.add('title');
+  }
   if (!sameJson(form.labelIds, base.labelIds)) keys.add('labelIds');
   if (!sameJson(form.attachments, base.attachments)) keys.add('attachments');
   if (!sameJson(form.tables, base.tables)) keys.add('tables');
@@ -183,7 +186,7 @@ export function noteEditedKeys(base: NoteForm, form: NoteForm): Set<string> {
   return keys;
 }
 
-/** 이 기기도 바꾼 글 칸(글·제목)을 다른 기기가 그새 바꿨나 (theirs = 지금 서버 판) - 덮기 전에 묻는다 (P14-6 ■3) */
+/** 이 기기도 바꾼 글을 다른 기기가 그새 바꿨나 (theirs = 지금 서버 판 - 예전 제목은 글 첫 줄에 들어 있다) - 덮기 전에 묻는다 (P14-6 ■3) */
 export function noteTextClash(base: NoteForm, theirs: NoteForm, edited: ReadonlySet<string>): boolean {
-  return (edited.has('text') && theirs.text !== base.text) || (edited.has('title') && theirs.title.trim() !== base.title.trim());
+  return edited.has('text') && theirs.text !== base.text;
 }

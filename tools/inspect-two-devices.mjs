@@ -41,14 +41,20 @@ try {
   await waitFor(async () => (await notePanel(A).locator(sel('note-text-input')).inputValue().catch(() => '')) === '두기기 처음 글', 15000);
   await waitFor(async () => (await notePanel(B).locator(sel('note-text-input')).inputValue().catch(() => '')) === '두기기 처음 글', 15000);
   await notePanel(A).locator(sel('note-text-input')).fill('A가 고친 글');
-  await notePanel(B).locator(sel('note-title-input')).fill('B가 단 제목');
+  // B는 날짜 링크만 하나 더 (P35 - 제목 칸이 없어졌다. 예전에는 제목을 달았다)
+  const TODAY = await B.page.evaluate(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  await notePanel(B).locator(sel('note-date-add')).click();
+  await B.page.locator(sel('picker-today')).click();
   await notePanel(B).locator(sel('note-save')).click();
-  await serverUntil(() => read(noteRef), (d) => d?.title === 'B가 단 제목');
-  // A의 사본에 B의 제목이 들어온 뒤 (A의 칸은 손댄 채라 그대로 - 카드가 먼저 바뀐다)
-  r.check(await waitFor(card(A).filter({ hasText: 'B가 단 제목' }), 10000), "A 화면 카드에 B의 제목이 들어온다 (A의 칸은 적던 글 그대로)");
+  await serverUntil(() => read(noteRef), (d) => (d?.dates ?? []).includes(TODAY));
+  // A의 사본에 B의 날짜가 들어온 뒤 (A의 칸은 손댄 채라 그대로)
+  r.check(await waitFor(async () => (await notePanel(A).locator(sel('note-text-input')).inputValue()) === 'A가 고친 글', 5000), 'B가 날짜를 더해도 A의 칸은 적던 글 그대로');
   await notePanel(A).locator(sel('note-save')).click();
   const n1 = await serverUntil(() => read(noteRef), (d) => d?.text === 'A가 고친 글');
-  r.check(n1?.text === 'A가 고친 글' && n1?.title === 'B가 단 제목', `A 저장 = A의 글 + B의 제목 (제목: ${n1?.title ?? '없음'})`);
+  r.check(n1?.text === 'A가 고친 글' && (n1?.dates ?? []).includes(TODAY), `A 저장 = A의 글 + B의 날짜 (날짜: ${JSON.stringify(n1?.dates ?? n1?.date)})`);
   r.check(A.dialogs.seen.length === 0, '다른 칸만 겹치면 묻지 않는다');
 
   r.section('메모 - 같은 글을 함께 고침');
@@ -67,7 +73,7 @@ try {
   A.dialogs.answer = true;
   await notePanel(A).locator(sel('note-save')).click();
   const n2 = await serverUntil(() => read(noteRef), (d) => d?.text === 'A의 둘째 글');
-  r.check(n2?.text === 'A의 둘째 글' && n2?.title === 'B가 단 제목', '예 = A의 글로 덮는다 (제목은 그대로)');
+  r.check(n2?.text === 'A의 둘째 글' && (n2?.dates ?? []).includes(TODAY), '예 = A의 글로 덮는다 (B가 더한 날짜는 그대로)');
   for (const p of [A, B]) {
     p.dialogs.answer = true;
     await p.page.evaluate(() => window.sp5.closeAllWindows());

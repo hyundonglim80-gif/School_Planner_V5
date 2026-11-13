@@ -27,7 +27,7 @@ import { caretAfterCheck, checkGlyphLineAt, continueOnEnter, hasCheckLines, move
 import { academicYearOf, shortDateLabel, todayStr } from '../../domain/dateUtils';
 import { addNoteDate, noteDates, removeNoteDate } from '../../domain/noteDates';
 import { labelPath } from '../../domain/labelTree';
-import { ownTitle } from '../../domain/noteTitle';
+import { bodyAfterHeading, foldTitle, noteHeading } from '../../domain/noteTitle';
 import { setDate, setScope } from '../../app/nav';
 import { applyMention, findMention, matchMentionStudents, studentIdsToSave, type Mention, type MentionCandidate } from '../../domain/studentTag';
 import { useDraft } from '../../data/drafts';
@@ -67,9 +67,9 @@ import { hasInk, type PenStroke } from '../../domain/handwriting';
 import HandwritingPad from './HandwritingPad';
 import type { NotePanelParams } from './open';
 
-const PLACEHOLDER = '자유롭게 생각을 적어 보세요...';
+const PLACEHOLDER = '첫 줄이 제목이 됩니다. 자유롭게 생각을 적어 보세요...';
 const noun = '메모';
-/** 이 칸을 고치는 동안 다른 기기가 같은 글(글·제목)을 바꿨을 때 (P14-6 ■3) */
+/** 이 칸을 고치는 동안 다른 기기가 같은 글을 바꿨을 때 (P14-6 ■3) */
 const CLASH_ASK =
   '이 칸을 고치는 동안 다른 기기에서 이 메모의 글을 바꿨습니다.\n\n확인 = 내가 적은 글로 덮어 저장\n취소 = 저장하지 않음 (적은 글은 칸에 그대로 - 칸을 닫고 다시 열면 다른 기기의 글이 보입니다)';
 
@@ -129,11 +129,12 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     !untouched,
   );
   const restoreDraft = () => {
-    const kept = draft.take() as (NoteForm & { date?: string }) | null;
+    const kept = draft.take() as (NoteForm & { date?: string; title?: string }) | null;
     if (!kept) return;
-    // P10-3 전에 남긴 글은 날짜 칸 하나(date)였다
-    const dates = kept.dates ?? (kept.date ? [kept.date] : []);
-    setForm((f) => ({ ...f, ...kept, dates, ...(isEditing ? { done: f.done, favorite: f.favorite } : {}) }));
+    // P10-3 전에 남긴 글은 날짜 칸 하나(date)였다 · P35 전에 남긴 글은 제목 칸이 따로였다 - 글 첫 줄로
+    const { title: oldTitle, date: oldDate, ...rest } = kept;
+    const dates = kept.dates ?? (oldDate ? [oldDate] : []);
+    setForm((f) => ({ ...f, ...rest, text: foldTitle({ title: oldTitle, text: kept.text }), dates, ...(isEditing ? { done: f.done, favorite: f.favorite } : {}) }));
   };
 
   // 항목·라벨은 사본에서 오므로 칸을 여는 순간에는 아직 없을 수 있다. 도착하면 채운다.
@@ -494,7 +495,9 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     setDate(d);
     setScope('day');
   };
-  const hasBody = !!item && (!!item.text || (item.attachments ?? []).some((a) => a?.url) || (item.tables?.length ?? 0) > 0);
+  // 보기 칸 제목 = 글의 첫 줄(예전 제목이 있으면 그것), 본문은 그 아래부터 (P35)
+  const heading = item ? noteHeading(item) : { title: '', line: null };
+  const hasBody = !!item && (!!bodyAfterHeading(item.text, heading.line) || (item.attachments ?? []).some((a) => a?.url) || (item.tables?.length ?? 0) > 0);
 
   return (
     <SidePanelFrame
@@ -663,17 +666,17 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 onDiscard={draft.discard}
               />
             )}
-            {ownTitle(item) && (
+            {heading.title && (
               <h4 data-note-view-title className={`text-base font-extrabold break-words ${done ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                {ownTitle(item)}
+                {heading.title}
               </h4>
             )}
             {hasBody ? (
               <div data-note-view-body className="p-4 bg-slate-50/70 border border-slate-100 rounded-xl flex flex-col gap-3 min-w-0">
-                <EntryBody item={item} onToggleCheckLine={(idx, line) => toggleNoteCheckLine(sid, item, idx, line)} fullTables large />
+                <EntryBody item={item} onToggleCheckLine={(idx, line) => toggleNoteCheckLine(sid, item, idx, line)} fullTables large skipLine={heading.line} />
               </div>
             ) : (
-              !ownTitle(item) && (
+              !heading.title && (
                 <p data-note-view-empty className="text-sm text-slate-400">
                   (내용 없음)
                 </p>
@@ -718,21 +721,13 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               </div>
             )}
             <div className="space-y-1.5">
-              <span className="block text-xs font-semibold text-slate-600">제목</span>
-              <input
-                type="text"
-                data-note-title-input
-                value={form.title}
-                onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                placeholder="제목 (비워 두어도 됩니다)"
-                maxLength={100}
-                className="block w-full px-3 py-2 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-slate-800 text-sm font-bold placeholder-slate-400 placeholder:font-normal"
-              />
-            </div>
-            <div className="space-y-1.5">
               <div className="flex items-center justify-between gap-2">
                 <span className="block text-xs font-semibold text-slate-600">
                   {noun} 내용 <span className="text-red-500">*</span>
+                  {/* 제목 칸은 없다 - 첫 줄이 카드·목록의 제목 (P35) */}
+                  <span data-note-title-hint className="ml-1.5 font-normal text-slate-400">
+                    · 첫 줄 = 제목
+                  </span>
                 </span>
                 {/* 커서가 있는 줄(골랐으면 고른 줄들) 앞에 ☐ - 모두 붙어 있으면 뗀다 */}
                 <button

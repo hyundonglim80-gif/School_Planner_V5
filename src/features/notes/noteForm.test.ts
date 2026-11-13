@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LabelTree } from '../../data/select';
 import type { ItemDoc } from '../events/eventOps';
-import { createNoteData, hasContent, newNoteForm, noteEditChanges, noteFormAfterSave, noteFormOf, sameNoteForm, savePlanOf } from './noteForm';
+import { createNoteData, hasContent, newNoteForm, noteEditChanges, noteEditedKeys, noteFormAfterSave, noteFormOf, noteTextClash, sameNoteForm, savePlanOf } from './noteForm';
 
 const label = (id: string, name: string) => ({ id, name, color: 'blue', kind: 'note', parentId: null, order: 'a0' });
 const tree = {
@@ -62,9 +62,9 @@ describe('새 칸', () => {
     expect(createNoteData(two, '글', [], 'a0')).toMatchObject({ date: '2026-10-08', dates: ['2026-10-08', '2026-10-09'] });
   });
 
-  it('저장할 것이 있나 = 글·제목·첨부·표 가운데 하나', () => {
+  it('저장할 것이 있나 = 글·첨부·표 가운데 하나 (제목 칸은 없다 - P35)', () => {
     expect(hasContent({ text: '  ', attachments: [], tables: [] })).toBe(false);
-    expect(hasContent({ text: '', title: '연수', attachments: [], tables: [] })).toBe(true);
+    expect(hasContent({ text: '연수', attachments: [], tables: [] })).toBe(true);
     expect(hasContent({ text: '', attachments: [{ name: 'a', url: 'u', type: 'file' }], tables: [] })).toBe(true);
   });
 });
@@ -74,15 +74,52 @@ describe('#라벨·새 라벨', () => {
     const form = { ...newNoteForm(null, tree), text: '#회의\n오늘 할 일\n#학급 #새것', newLabels: ['새것', '따로'] };
     expect(savePlanOf(form)).toEqual({ text: '오늘 할 일', names: ['새것', '따로', '회의', '학급'] });
   });
-  it('제목·첨부가 있으면 글이 #줄 하나뿐이어도 라벨로 (10-19 #업무-출장)', () => {
+  it('첨부·표가 있으면 글이 #줄 하나뿐이어도 라벨로 (10-19 #업무-출장)', () => {
     const base = { ...newNoteForm(null, tree), text: '#업무-출장' };
-    expect(savePlanOf({ ...base, title: '연수' })).toEqual({ text: '', names: ['업무-출장'] });
     expect(savePlanOf({ ...base, attachments: [{ name: 'a', url: 'u', type: 'file' }] })).toEqual({ text: '', names: ['업무-출장'] });
     // 글뿐이면 그대로 둔다 (지우면 빈 메모가 된다)
     expect(savePlanOf(base)).toEqual({ text: '#업무-출장', names: [] });
   });
   it('#줄이 없으면 글은 앞뒤 빈칸만 다듬는다', () => {
     expect(savePlanOf({ ...newNoteForm(null, tree), text: '  글 #가운데 \n' })).toEqual({ text: '글 #가운데', names: [] });
+  });
+});
+
+describe('제목 칸 없음 = 첫 줄이 제목 (P35)', () => {
+  it('새 칸·새 문서에 제목 칸이 없다', () => {
+    expect('title' in newNoteForm(null, tree)).toBe(false);
+    expect(createNoteData(newNoteForm(null, tree), '회의\n내용', [], 'a0')).not.toHaveProperty('title');
+  });
+
+  it('예전 제목은 칸을 열 때 글 첫 줄로 - 손대지 않으면 쓰지 않는다', () => {
+    const old = item({ title: '연수', text: '내용' });
+    const form = noteFormOf(old);
+    expect(form.text).toBe('연수\n내용');
+    expect(noteEditChanges(old, form, '연수\n내용', ['L1'])).toEqual({});
+    // 라벨만 바꾸면 제목·글 그대로
+    expect(noteEditChanges(old, form, '연수\n내용', ['L2'])).toEqual({ labelIds: ['L2'] });
+  });
+
+  it('글을 고쳐 저장하면 글에 담고 제목 칸은 지운다 (첫 줄을 지워도)', () => {
+    const old = item({ title: '연수', text: '내용' });
+    expect(noteEditChanges(old, noteFormOf(old), '연수 안내\n내용', ['L1'])).toEqual({ text: '연수 안내\n내용', title: undefined });
+    expect(noteEditChanges(old, noteFormOf(old), '내용', ['L1'])).toEqual({ text: '내용', title: undefined });
+    // 제목이 없던 메모는 글만
+    const plain = item({ text: '회의' });
+    expect(noteEditChanges(plain, noteFormOf(plain), '회의 끝', ['L1'])).toEqual({ text: '회의 끝' });
+  });
+
+  it('두 기기: 글을 고치면 제목 칸도 이 기기가 바꾼 칸 · 겹침은 글로만 본다', () => {
+    const old = item({ title: '연수', text: '내용' });
+    const base = noteFormOf(old);
+    const next = { ...base, text: '연수\n내용 더' };
+    const edited = noteEditedKeys(base, next);
+    expect([...edited].sort()).toEqual(['text', 'title']);
+    expect(noteEditChanges(old, next, next.text, ['L1'], edited)).toEqual({ text: '연수\n내용 더', title: undefined });
+    expect(noteEditedKeys(base, { ...base, labelIds: ['L2'] }).has('title')).toBe(false);
+    // 다른 기기가 예전 제목을 바꿨으면 글이 다르다 = 묻는다
+    expect(noteTextClash(base, noteFormOf(item({ title: '연수 2', text: '내용' })), edited)).toBe(true);
+    expect(noteTextClash(base, noteFormOf(old), edited)).toBe(false);
   });
 });
 

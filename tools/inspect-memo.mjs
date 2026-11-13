@@ -200,9 +200,9 @@ try {
   await chip('all').click();
   const ringed = () => page.locator(sel('entry-card')).evaluateAll((els) => els.filter((e) => e.className.includes('ring-primary')).map((e) => e.dataset.entryCard));
   const onlyRing = async (ids) => waitFor(async () => JSON.stringify(await ringed()) === JSON.stringify(ids));
-  await card('insp_mm1').locator(sel('entry-text')).click();
+  await card('insp_mm1').locator(sel('entry-title')).click();
   r.check(await onlyRing(['insp_mm1']), 'mm1을 누르면 mm1만');
-  await card('insp_mm2').locator(sel('entry-text')).click();
+  await card('insp_mm2').locator(sel('entry-title')).click();
   r.check(await waitFor(page.locator(`${sel('note-panel', 'edit')}[data-note-id="insp_mm2"]`)), 'mm2 칸이 새 탭으로');
   r.check(await onlyRing(['insp_mm2']), `mm2를 누르면 mm2만 - mm1 테두리는 빠진다 (${await ringed()})`);
   await page.locator('[data-side-tab]').first().locator('button').first().click();
@@ -215,12 +215,12 @@ try {
   r.check(await onlyRing([]), '닫으면 테두리 없음');
 
   r.section('카드 누르기 = 메모 보기 칸, ✏️ 수정 = 수정 칸 (11-09 사용자 요청)');
-  await card('insp_mm1').locator(sel('entry-text')).click();
+  await card('insp_mm1').locator(sel('entry-title')).click();
   const view = page.locator(`${sel('note-panel')}[data-note-id="insp_mm1"]`);
   const modeOf = (loc) => loc.getAttribute('data-note-mode').catch(() => '');
   r.check(await waitFor(async () => (await modeOf(view)) === 'view'), '카드 누르기 = 보기 칸');
   r.check((await view.locator(sel('note-text-input')).count()) === 0 && (await page.locator(sel('note-save')).count()) === 0, '글 칸·저장 단추 없이 내용만');
-  r.check(((await view.locator(sel('note-view-body')).textContent()) ?? '').includes('점검 메모 학교'), '본문이 보인다');
+  r.check(((await view.locator(sel('note-view-title')).textContent()) ?? '') === '점검 메모 학교', '첫 줄이 제목으로 보인다 (한 줄 메모 - P35)');
   const vChip = view.locator(sel('note-view-chip', 'insp_mlp'));
   r.check((await vChip.count()) === 1 && (await page.locator(sel('note-edit')).isVisible()), '라벨 칩·✏️ 수정 단추');
   await vChip.click();
@@ -236,7 +236,7 @@ try {
   // 커서는 글 맨 앞이다 (전과 같다) - 친 글이 어디에 들었든 다시 눌러도 그대로인지만 본다
   await page.keyboard.type(' 고침');
   const typed = await vText.inputValue();
-  await card('insp_mm1').locator(sel('entry-text')).click();
+  await card('insp_mm1').locator(sel('entry-title')).click();
   await page.waitForTimeout(300);
   r.check(typed.includes('고침') && (await modeOf(view)) === 'edit' && (await vText.inputValue()) === typed, '같은 카드를 다시 눌러도 수정 칸 그대로 (적던 글)');
   await vText.fill('점검 메모 학교');
@@ -248,6 +248,61 @@ try {
   r.check(await waitFor(async () => (await modeOf(ed)) === 'edit'), '카드 ✏️ = 곧바로 수정 칸');
   await page.keyboard.press('Escape');
   await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0);
+
+  r.section('제목 = 글의 첫 줄 · 쓰는 칸에 제목 칸 없음 (P35 11-13 사용자 요청)');
+  const TITLE_MEMOS = {
+    insp_mt1: { text: '점검 제목 첫 줄\n\n둘째 줄 본문', order: 'Zz6' },
+    insp_mt2: { title: '점검 예전 제목', text: '예전 본문', order: 'Zz7' },
+    insp_mt3: { text: '☐ 점검 체크 우유\n☐ 빵', order: 'Zz8' },
+  };
+  for (const [id, data] of Object.entries(TITLE_MEMOS)) {
+    await setDoc(itemRef(id), { kind: 'note', date: null, labelIds: ['insp_mlu'], ...data, ...stamp });
+    undo.add(() => deleteDoc(itemRef(id)));
+  }
+  await chip('all').click();
+  r.check(await waitFor(card('insp_mt3'), 10000), '심은 메모 셋');
+  const textOf = async (loc) => ((await loc.count()) ? ((await loc.first().textContent()) ?? '') : null);
+  r.check((await textOf(card('insp_mt1').locator(sel('entry-title')))) === '점검 제목 첫 줄', '카드 굵은 제목 = 첫 줄');
+  r.check((await textOf(card('insp_mt1').locator(sel('entry-text')))) === '둘째 줄 본문', `본문은 그 아래 줄부터 - 첫 줄이 두 번 보이지 않는다 (${await textOf(card('insp_mt1').locator(sel('entry-text')))})`);
+  r.check(
+    (await textOf(card('insp_mt2').locator(sel('entry-title')))) === '점검 예전 제목' && (await textOf(card('insp_mt2').locator(sel('entry-text')))) === '예전 본문',
+    '예전에 적은 제목 = 그 제목 + 본문 전체 (지금과 같다)',
+  );
+  r.check((await card('insp_mt3').locator(sel('entry-title')).count()) === 0 && (await card('insp_mt3').locator('[data-check-line]').count()) === 2, '체크 줄로 시작 = 제목 없이 체크 줄 둘 그대로');
+  // 보기 칸
+  await card('insp_mt1').locator(sel('entry-title')).click();
+  const v1 = page.locator(`${sel('note-panel')}[data-note-id="insp_mt1"]`);
+  r.check(await waitFor(async () => (await modeOf(v1)) === 'view'), '보기 칸');
+  const vBody = (await textOf(v1.locator(sel('note-view-body')))) ?? '';
+  r.check((await textOf(v1.locator(sel('note-view-title')))) === '점검 제목 첫 줄' && vBody.includes('둘째 줄 본문') && !vBody.includes('점검 제목 첫 줄'), `보기 칸도 제목 = 첫 줄, 본문은 그 아래 (${vBody})`);
+  await page.locator(sel('note-edit')).click();
+  r.check(await waitFor(async () => (await modeOf(v1)) === 'edit'), '✏️ 수정');
+  r.check((await page.locator(sel('note-title-input')).count()) === 0, '수정 칸에 제목 칸이 없다');
+  r.check(((await textOf(v1.locator(sel('note-title-hint')))) ?? '').includes('첫 줄 = 제목'), "글 칸 머리에 '첫 줄 = 제목'");
+  r.check((await v1.locator(sel('note-text-input')).inputValue()) === '점검 제목 첫 줄\n\n둘째 줄 본문', '글 칸 = 글 그대로 (첫 줄 포함)');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0);
+  // 예전 제목 메모 - 고치는 칸에서는 글 첫 줄, 글을 고쳐 저장하면 제목 칸을 지우고 글에 담는다
+  await card('insp_mt2').hover();
+  await card('insp_mt2').locator(sel('entry-edit')).click();
+  const e2 = page.locator(`${sel('note-panel')}[data-note-id="insp_mt2"]`);
+  const t2 = e2.locator(sel('note-text-input'));
+  r.check(await waitFor(async () => (await t2.inputValue().catch(() => '')) === '점검 예전 제목\n예전 본문'), '예전 제목은 글 첫 줄로 올라온다');
+  await t2.fill('점검 예전 제목\n예전 본문 고침');
+  await page.locator(sel('note-save')).click();
+  const m2 = await serverUntil(() => read('insp_mt2'), (d) => d?.text === '점검 예전 제목\n예전 본문 고침');
+  r.check(m2?.text === '점검 예전 제목\n예전 본문 고침' && !('title' in (m2 ?? {})), `저장 = 글에 담고 제목 칸은 지운다 (title: ${JSON.stringify(m2?.title)})`);
+  r.check(await waitFor(async () => (await textOf(card('insp_mt2').locator(sel('entry-title')))) === '점검 예전 제목'), '카드 모습은 그대로 (첫 줄 = 제목)');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0);
+  // 목록 줄
+  await viewBtn.click();
+  r.check(await waitFor(async () => (await textOf(page.locator(`${sel('memo-row', 'insp_mt1')} ${sel('memo-row-title')}`))) === '점검 제목 첫 줄'), '목록 줄 굵은 제목 = 첫 줄');
+  const row1 = page.locator(sel('memo-row', 'insp_mt1'));
+  await row1.locator(sel('memo-row-expand')).click();
+  r.check(await waitFor(async () => (await textOf(row1.locator(`${sel('memo-row-body')} ${sel('entry-text')}`))) === '둘째 줄 본문'), '▶ 편 본문도 그 아래 줄부터');
+  await viewBtn.click();
+  r.check(await waitFor(card('insp_mt1')), '▦ → 다시 카드');
 
   r.section('하루 메모 칸 라벨로 보기 (칩 줄은 접혀 시작 - 🏷️로 편다, P10-3)');
   await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));
@@ -325,11 +380,11 @@ try {
   await P.page.locator(sel('filter-chip', 'all')).click();
   const pCard = P.page.locator(sel('entry-card', 'insp_mm1'));
   await waitFor(pCard, 10000);
-  const [pop] = await Promise.all([P.ctx.waitForEvent('page', { timeout: 10000 }), pCard.locator(sel('entry-text')).click()]);
+  const [pop] = await Promise.all([P.ctx.waitForEvent('page', { timeout: 10000 }), pCard.locator(sel('entry-title')).click()]);
   await pop.waitForURL(/popout=/, { timeout: 10000 }).catch(() => {});
   const pPanel = pop.locator(sel('note-panel'));
   r.check(await waitFor(async () => (await modeOf(pPanel)) === 'view', 20000), '팝업창도 보기 칸부터 (내용만)');
-  r.check(((await pop.locator(sel('note-view-body')).textContent().catch(() => '')) ?? '').includes('점검 메모 학교'), '팝업창에 본문');
+  r.check(((await pop.locator(sel('note-view-title')).textContent().catch(() => '')) ?? '') === '점검 메모 학교', '팝업창에 제목(첫 줄)');
   await pop.locator(sel('note-edit')).click();
   r.check(await waitFor(async () => (await modeOf(pPanel)) === 'edit'), '팝업창에서 ✏️ 수정 = 수정 칸');
   r.check(await waitFor(pop.locator(sel('note-text-input'))), '팝업창 글 칸');

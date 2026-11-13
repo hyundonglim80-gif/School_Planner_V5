@@ -210,7 +210,10 @@ describe('보기 칸 (11-09)', () => {
     expect(q('[data-note-panel]').dataset.noteMode).toBe('view');
     expect(document.querySelector('[data-note-text-input]')).toBeNull();
     expect(document.querySelector('[data-note-save]')).toBeNull();
-    expect(q('[data-note-view-body]').textContent).toContain('회의 기록');
+    // 한 줄 메모 = 그 줄이 제목, 본문 칸은 없다 (P35 - 첫 줄이 두 번 보이지 않게)
+    expect(q('[data-note-view-title]').textContent).toBe('회의 기록');
+    expect(document.querySelector('[data-note-view-body]')).toBeNull();
+    expect(document.querySelector('[data-note-view-empty]')).toBeNull();
     expect(q('[data-note-view-chip="L2"]').textContent).toBe('상담');
     expect(q(`[data-note-view-date="${DAY}"]`)).not.toBeNull();
     // 보기만으로는 저장 안 한 것이 없다
@@ -332,11 +335,11 @@ describe('고치기', () => {
     expect(anyWindowUnsaved()).toBe(true);
   });
 
-  it('두 기기 (P14-6 ■3): 손대는 동안 다른 기기가 제목·라벨을 바꿨으면 저장은 내가 바꾼 글만 - 그것을 되돌리지 않는다', async () => {
+  it('두 기기 (P14-6 ■3): 손대는 동안 다른 기기가 라벨·날짜를 바꿨으면 저장은 내가 바꾼 글만 - 그것을 되돌리지 않는다', async () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
     type('내가 고친 글');
-    act(() => applyBase(SID, 'items', new Map([['n1', { ...n1, title: '휴대폰 제목', labelIds: ['L1'] }]])));
+    act(() => applyBase(SID, 'items', new Map([['n1', { ...n1, labelIds: ['L1'], dates: [DAY, '2026-12-01'] }]])));
     await save();
     const op = lastOps()[0] as { type: string; changes: Record<string, unknown> };
     expect(op.type).toBe('patch');
@@ -364,7 +367,7 @@ describe('고치기', () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
     type('내 글');
-    act(() => applyBase(SID, 'items', new Map([['n1', { ...n1, title: '휴대폰 제목' }]])));
+    act(() => applyBase(SID, 'items', new Map([['n1', { ...n1, labelIds: ['L1'] }]])));
     await save();
     expect(ask).not.toHaveBeenCalled();
     ask.mockRestore();
@@ -547,12 +550,14 @@ describe('저장하는 동안 친 글 (P22-2)', () => {
     render(<Host initial={{ sid: SID, date: DAY }} />);
     type('오늘 상담\n#상담');
     const finish = saveHeld();
-    fireEvent.change(q('[data-note-title-input]'), { target: { value: '그새 적은 제목' } });
+    // 그새 라벨을 하나로 바꾼다 (P35 전에는 제목 칸을 고쳤다) - 저장은 '#상담'까지 둘을 붙였다
+    fireEvent.click(q('[data-label-pick="L2"]'));
     await finish();
     const made = lastOps()[0] as { at: { id: string }; data: Record<string, unknown> };
     act(() => applyBase(SID, 'items', new Map([[made.at.id, { ...base, ...made.data }]])));
     expect(textInput().value).toBe('오늘 상담');
-    expect((q('[data-note-title-input]') as HTMLInputElement).value).toBe('그새 적은 제목');
+    expect(q('[data-label-pick="L2"]').getAttribute('aria-pressed')).toBe('true');
+    expect(q('[data-label-pick="L1"]').getAttribute('aria-pressed')).toBe('false');
   });
 
   it('그새 손대지 않았으면 전처럼 저장 안 한 것이 없다', async () => {

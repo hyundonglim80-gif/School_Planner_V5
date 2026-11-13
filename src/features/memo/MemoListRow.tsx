@@ -5,7 +5,7 @@
 import { shortDateLabel } from '../../domain/dateUtils';
 import { checkCount } from '../../domain/checkLines';
 import { previewLine } from '../../domain/entryCollapse';
-import { ownTitle } from '../../domain/noteTitle';
+import { noteHeading } from '../../domain/noteTitle';
 import type { ItemDoc } from '../events/eventOps';
 import ClaudeRequestBadge from '../notes/ClaudeRequestBadge';
 import ClaudeRequestNote from '../notes/ClaudeRequestNote';
@@ -39,6 +39,7 @@ export default function MemoListRow(props: Props) {
   const { item, labels, pathOf, dates, dateText, editing, expanded, onToggleExpand, onOpen, onOpenDate, onToggleDone, onToggleFavorite } = props;
   const done = !!item.done;
   const checks = checkCount(item.text ?? '');
+  const heading = noteHeading(item);
   const files = (item.attachments?.length ?? 0) + (item.tables?.length ?? 0);
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
   /** 라벨 칩 = 완료 (✓는 첫 칩에, 어느 칩을 눌러도). 라벨이 없으면 회색 ○ 칩 */
@@ -128,11 +129,11 @@ export default function MemoListRow(props: Props) {
         >
           {item.favorite ? '★' : '☆'}
         </button>
-        <span data-memo-row-text className={`flex-1 min-w-0 truncate text-sm ${done ? 'line-through text-slate-500' : 'text-slate-800'}`}>
-          {/* 적은 제목은 굵게, 없으면 제목 자리 없이 첫 줄 (10-26) */}
-          {ownTitle(item) ? (
+        <span data-memo-row-text className={`flex-1 min-w-0 ${expanded ? 'break-words' : 'truncate'} text-sm ${done ? 'line-through text-slate-500' : 'text-slate-800'}`}>
+          {/* 제목 = 첫 줄 굵게 (P35 - 첫 줄이 체크 줄이면 보통 글씨로 그 줄). ▶로 펴면 자르지 않는다 - 본문은 그 아래 줄부터라 긴 첫 줄이 숨지 않게 */}
+          {heading.title ? (
             <strong data-memo-row-title className="font-extrabold">
-              {ownTitle(item)}
+              {heading.title}
             </strong>
           ) : (
             previewLine(item.text) || (files > 0 ? '(첨부)' : '(빈 메모)')
@@ -168,7 +169,7 @@ export default function MemoListRow(props: Props) {
       </div>
       {expanded && (
         <div data-memo-row-body className="mt-2 pl-6 flex flex-col gap-2 min-w-0">
-          <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} />
+          <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} skipLine={heading.line} />
           <ClaudeRequestNote itemId={item.id} />
         </div>
       )}

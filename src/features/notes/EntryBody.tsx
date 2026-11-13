@@ -1,7 +1,9 @@
 // 메모 본문 (카드와 메모 화면 목록의 펼친 줄이 함께 쓴다 - P11-1에 EntryCard에서 나눴다. 메모 보기 칸도 - 11-09, large = 그림을 자르지 않고 크게).
 //   그림(누르면 크게 보기·넘겨 보기) · 파일 · 글(체크 줄은 눌러서 체크 - 체크한 줄은 아래쪽에 모아 보이기만, V4 10-07) · 글 안 주소 미리보기 · 표(작게 보기만).
+//   제목으로 보인 첫 줄(skipLine - domain/noteTitle noteHeading, P35)은 빼고 그 아래 줄부터 - 체크 줄을 누를 때는 원래 글의 줄 번호 그대로.
 import { Fragment, useState, type ReactNode } from 'react';
 import { checkLineState, hasCheckLines } from '../../domain/checkLines';
+import { bodyAfterHeading } from '../../domain/noteTitle';
 import { fileIcon, isImageAttachment } from '../../domain/attachments';
 import { attachmentImageSrc } from '../../data/google/drive';
 import FormattedText from '../../ui/FormattedText';
@@ -18,12 +20,16 @@ interface Props {
   fullTables?: boolean;
   /** 메모 보기 칸 - 그림을 자르지 않고 크게 (11-09) */
   large?: boolean;
+  /** 제목으로 보인 글 줄 번호 - 본문은 그 아래부터 (noteHeading.line, P35) */
+  skipLine?: number | null;
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
-export default function EntryBody({ item, onToggleCheckLine, fullTables, large }: Props) {
+export default function EntryBody({ item, onToggleCheckLine, fullTables, large, skipLine = null }: Props) {
   const body = item.text ?? '';
+  /** 보일 글 = 제목 줄 아래부터 */
+  const shown = bodyAfterHeading(body, skipLine);
   const done = !!item.done;
   const attachments = (item.attachments ?? []).filter((a) => a && a.url);
   const images = attachments.filter(isImageAttachment);
@@ -52,9 +58,15 @@ export default function EntryBody({ item, onToggleCheckLine, fullTables, large }
 
   /** 본문. 체크한 줄(☑)은 아래쪽에 모아 줄을 긋는다 - 보이는 차례만, 누를 때는 원래 줄 번호로 고친다 */
   const renderBody = (): ReactNode => {
-    if (!hasCheckLines(body)) return <FormattedText text={body} />;
-    const lines = body.split('\n').map((line, idx) => ({ line, idx, state: checkLineState(line) }));
+    if (!hasCheckLines(shown)) return <FormattedText text={shown} />;
+    // 제목 줄과 그 위(빈 줄)는 빼고, 줄 번호는 원래 글의 번호
+    const lines = body
+      .split('\n')
+      .map((line, idx) => ({ line, idx, state: checkLineState(line) }))
+      .filter((l) => skipLine === null || l.idx > skipLine);
     const open = lines.filter((l) => l.state !== 'done');
+    // 위쪽의 앞 빈 줄도 뺀다 (제목 줄 바로 아래 빈 줄)
+    while (open.length > 0 && !open[0].line.trim()) open.shift();
     const closed = lines.filter((l) => l.state === 'done');
     // 위쪽의 끝 빈 줄은 뺀다 (체크한 줄이 빠진 자리)
     while (open.length > 0 && !open[open.length - 1].line.trim()) open.pop();
@@ -157,7 +169,7 @@ export default function EntryBody({ item, onToggleCheckLine, fullTables, large }
           ))}
         </div>
       )}
-      {body && (
+      {shown && (
         <p data-entry-text className={`text-sm whitespace-pre-wrap break-words leading-relaxed ${done ? 'line-through text-slate-400' : 'text-slate-800'}`}>
           {renderBody()}
         </p>

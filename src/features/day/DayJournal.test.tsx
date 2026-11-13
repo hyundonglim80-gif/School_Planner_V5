@@ -46,7 +46,7 @@ const note = (id: string, order: string, more: Record<string, unknown> = {}) => 
   id,
   { ...base, kind: 'note', date: DAY, text: `기록 ${id}`, labelIds: [], order, ...more },
 ] as const;
-const LONG = '긴 글 '.repeat(40);
+const LONG = '긴 글 첫 줄\n' + '긴 글 '.repeat(40);
 const items = new Map<string, Record<string, unknown>>([
   note('a', 'a0', { labelIds: ['C', 'gone'], linkIds: ['x'], tables: [{ id: 't1', rows: [{ cells: [{ v: '칸' }] }], createdAt: 0 }] }),
   note('b', 'a1', { favorite: true }),
@@ -129,10 +129,15 @@ describe('하루 기록 칸', () => {
     render(<DayJournal date={DAY} />);
     const long = () => q('[data-entry-card="long"]')!;
     expect(long().dataset.entryCollapsed).toBe('1');
-    expect(long().querySelector('[data-entry-preview]')).not.toBeNull();
+    // 첫 줄 = 제목(자른 한 줄), 접은 줄 = 그 아래 줄 (P35)
+    expect(long().querySelector('[data-entry-title]')!.textContent).toBe('긴 글 첫 줄');
+    expect(long().querySelector('[data-entry-title]')!.className).toContain('truncate');
+    expect(long().querySelector('[data-entry-preview]')!.textContent).toMatch(/^긴 글 긴 글/);
     fireEvent.click(long().querySelector('[data-entry-collapse]')!);
     expect(long().dataset.entryCollapsed).toBe('0');
     expect(long().querySelector('[data-entry-text]')).not.toBeNull();
+    // 펼치면 제목을 자르지 않는다 (긴 첫 줄이 숨지 않게)
+    expect(long().querySelector('[data-entry-title]')!.className).not.toContain('truncate');
   });
 
   it('라벨 칩 완료·☆ 즐겨찾기 = 그 칸만 (문서 하나), 안내 없이 Ctrl+Z 더미에, 카드 열기로 번지지 않는다', async () => {
