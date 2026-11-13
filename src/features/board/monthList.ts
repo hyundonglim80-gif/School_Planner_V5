@@ -1,6 +1,7 @@
 // 한눈에 첫 칸 달력 아래 목록 (P24-2 ■3) - 그 달 '달력' 일정을 날짜 차례로(하루짜리 + 그 달에 걸친 기간).
 //   재료는 월간과 같은 calendarEvents(달력 속성·겹쳐 보기). 기간은 그 달 안 첫날 자리에(앞 달에서 걸친 것은 1일), 같은 날이면 기간 먼저(월간 막대가 위인 것처럼).
-import { isPeriod } from '../../domain/period';
+//   줄 바탕 (P35 11-13 사용자 요청): 오늘 일정 = 노랑, 보는 주(이 화면의 요일 칸 일곱)의 일정 = 옅은 파랑 - rowMark.
+import { isPeriod, onPeriodDay } from '../../domain/period';
 import type { ItemDoc } from '../events/eventOps';
 import type { CalendarEvents } from '../month/calendarEvents';
 
@@ -24,7 +25,16 @@ export function monthCalendarList(cal: CalendarEvents, monthStart: string, month
   return rows.sort((a, b) => a.day.localeCompare(b.day) || Number(!a.endDate) - Number(!b.endDate));
 }
 
-/** 'YYYY-MM'에서 n달 옮긴 'YYYY-MM' (한눈에 위 칸 = 이번 달, 아래 칸 = 그 다음 달 - 11-09) */
+/** 줄 바탕 표시: 'today' = 오늘 일정(먼저), 'week' = 보는 주에 드는 일정, null = 그 밖. 기간은 그날이 기간에 드는 날인가(주말 빼기·뺀 날까지 - 월간 막대와 같다) */
+export type RowMark = 'today' | 'week' | null;
+
+export function rowMark(row: MonthListRow, week: readonly string[], today: string): RowMark {
+  const on = (d: string) => (row.endDate ? onPeriodDay(row.ev, d) : row.day === d);
+  if (on(today)) return 'today';
+  return week.some(on) ? 'week' : null;
+}
+
+/** 'YYYY-MM'에서 n달 옮긴 'YYYY-MM' (한눈에 달 칸 ◀▶) */
 export function shiftMonth(ym: string, n: number): string {
   const [y, m] = ym.split('-').map(Number);
   const d = new Date(y, m - 1 + n, 1);

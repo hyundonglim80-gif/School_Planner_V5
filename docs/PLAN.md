@@ -41,7 +41,7 @@ PC 대화는 '이어서'에서 이 목록의 `[ ]`부터 한다(아래 세션 �
 <!-- PC 일 끝 - 메모 요청 자동 실행(워크플로)은 이 줄 바로 위에 한 줄씩 더한다. 이 줄을 지우거나 옮기지 않는다 -->
 
 **P35 사용자 요청 둘 - 메모 제목 = 첫 줄 · 한눈에 달 칸 하나**(11-13 PC - 사용자 '작업 계획에 추가하고 이어서' → P32-2 앞에, 한 세션 · 결정은 5장 'P35 …', 6장 'P35-1').
-**지금 = P35-1 ■2 한눈에 달 칸**(이 대화 - ■1 메모 제목 끝). 끝나면 다시 P32-2 수업 칸 '받는 중'.
+**지금 = P35-1 ■3 설명서·문서·세션 끝**(이 대화 - ■1 메모 제목·■2 한눈에 달 칸 끝). 끝나면 다시 P32-2 수업 칸 '받는 중'.
 
 **P34 사용자 요청 - 단축키에 모든 키**(11-12 PC - 사용자 'Backspace·Tab 등 특수 키 몇몇은 단축키로 등록할 수 없었다 - 윈도우·크롬이 선점해 겹치는 키가 아니면 모든 키를 단축키로 · 작업 계획에 추가하고 작업을 이어서' → P33-3 앞에, 한 세션 · 결정은 5장 'P34 …', 6장 'P34-1').
 **P34-1 끝 = P34 끝**(11-12 PC - 단축키 띠가 ESC 말고 모든 키를 받는다(Backspace·Delete·Tab·F키) · 크롬 예약 키·윈도우 키만 까닭과 함께 막음 · 지우기 = 띠의 '키 지우기' · 글 칸 안 F키는 듣고 Backspace·Delete는 글 지우기 · 6장 'P34-1', 5장 'P34 …'). 화면만(배포는 main 푸시로 저절로).
@@ -3834,6 +3834,8 @@ P31로 V4를 끊었으니 그 파일은 Storage에 하나뿐이다(V4 자료는 
   카드·목록 줄·보기 칸 = 첫 줄 제목 + 본문은 그 아래(`EntryBody` `skipLine`) · 단위 시험(noteTitle·noteForm·NotePanel·EntryCard).
   → 11-13: 위 그대로 + 글 칸 머리 '· 첫 줄 = 제목'(`data-note-title-hint`)·안내 글 · 쓰던 글 보관의 옛 제목도 첫 줄로 · **펼친 카드·▶ 편 목록 줄은 제목을 자르지 않는다**(긴 한 줄 메모가 잘린 제목뿐이 되어 글이 숨었다 - DayJournal.test가 잡음) ·
   시험 noteTitle 11·noteForm·NotePanel(제목 칸 쓰던 넷 → 라벨·날짜)·새 EntryBody.test 4·DayJournal · 점검 inspect-memo(한 줄 메모 = 제목을 누르게 + P35 묶음 새로)·inspect-two-devices(B = 날짜 더하기) 통과 · 단위 전체 2263 중 re2jsStub만 부하(따로 통과) · tsc·lint·빌드.
-- [ ] ■2 한눈에: 달 칸 하나 `row-span-2`(쌓은 모양도) · `BoardMonth` slot 없애기·◀▶ 글 · 목록 줄 바탕 = 보는 주 `bg-primary/10`·오늘 `bg-amber-50`(앞섬)·고른 날 = 진한 테 · `data-board-month-item-week|today` · 단위 시험(셈) · 크롬 점검 inspect-board 왼쪽 묶음 고침.
+- [x] ■2 한눈에: 달 칸 하나 `row-span-2`(쌓은 모양도) · `BoardMonth` slot 없애기·◀▶ 글 · 목록 줄 바탕 = 보는 주 `bg-primary/10`·오늘 `bg-amber-50`(앞섬)·고른 날 = 진한 테 · `data-board-month-item-week|today` · 단위 시험(셈) · 크롬 점검 inspect-board 왼쪽 묶음 고침.
+  → 11-13: `monthList.rowMark`(오늘 먼저 · 기간은 `onPeriodDay` - 주말 빼기 기간이 쉬는 날만 걸치면 아님) · 줄 `data-board-month-item-mark=today|week`·`-selected`(고른 날 = `ring-2`) · 겹친 공간 줄은 표시가 있으면 바탕은 표시·공간은 테 색 ·
+  `BoardMonth` slot 없앰·◀▶ 늘 · `BoardLeft` 달 칸 하나(쌓은 모양도 두 줄 높이) · 시험 monthList 2 · inspect-board 왼쪽 묶음 새로(달 칸 하나·두 줄 높이·다음 달 날짜 누르기·다음 달 일정 없음) + 바탕 묶음(시계 10/7 - 오늘·주·그 밖 바탕 셋이 다름·▶ 한 주 따라감) 통과 · 눈으로 1400 밝게·어둡게.
 - [ ] ■3 설명서(notes 제목 줄 셋·views 'board' 왼쪽) · 크롬 점검(inspect-memo·notes 쪽 제목 줄 찾는 점검 grep `note-title-input`·`entry-title` → 고침) · `MATCH=… inspect-manual` · 문서(CLAUDE.md 5장 메모 제목·한눈에 줄, MAP) · 세션 끝 정리(1-3).
 **끝 조건**: 메모 쓰는 칸에 제목 줄이 없고, 카드·목록·보기 칸에 첫 줄이 굵은 제목으로 한 번만 보인다(체크 줄로 시작하면 지금처럼) · 옛 제목 메모는 고치면 첫 줄로 · 한눈에 왼쪽 달 칸이 하나(두 줄 높이)이고 목록에서 보는 주·오늘 일정의 바탕이 다르다 - 점검 통과.

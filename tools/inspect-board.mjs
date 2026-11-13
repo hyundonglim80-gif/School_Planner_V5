@@ -1,9 +1,10 @@
 // tools/inspect-board.mjs - P24-1 ■4·P24-2 ■4·P24-3 ■1: 한눈에 화면을 실제 크롬 1400px에서 본다.
 //   0) 내놓기(P24-3): 머리줄 화면 탭 '한눈에'는 맨 앞·하루가 그 다음(11-09) · 탭·Space(#149 - 전에는 Shift+7)로 가고 보던 날 그대로 · Shift+→ 차례(학급 → 한눈에 → 하루) · 환경설정 시작 화면에 '한눈에'
 //   1) 주소로 열기 · 둘째 줄 = 주 이름 · 오른쪽 = 고른 날 이름 + 수업|일정 / 메모(글자가 있는지) · 창 높이에 맞음 · 머리줄 탭이 눌려 있다
-//   1b) 왼쪽(P24-2 · 11-09): [이번 달][월][화][수] / [다음 달][목][금][토·일] 두 줄이 반씩 · 토·일 = 한 칸 위·아래(수업 줄 없음) · 요일 칸 누르기 = 그날 고르기 ·
-//       작은 달력(월요일부터·보는 주·점) 날짜 누르기 · 위 달력 ◀▶ = 두 달을 함께(고른 날 그대로) · 그 달 '달력' 일정 목록(날짜 차례·기간 m/d~m/d·줄 누르기 = 그날 + 그 일정 칸·칩 = 완료) ·
-//       아래 칸 = 다음 달 목록 · 빈 달 · 주말 감추기 = 토·일 칸만 빈다
+//   1b) 왼쪽(P24-2 · 11-09 · P35 11-13): [이번 달][월][화][수] / [ 〃 ][목][금][토·일] - 달 칸 하나가 두 줄 높이, 요일 두 줄이 반씩 · 토·일 = 한 칸 위·아래(수업 줄 없음) · 요일 칸 누르기 = 그날 고르기 ·
+//       작은 달력(월요일부터·보는 주·점) 날짜 누르기 · 달력 ◀▶ = 한 달씩(고른 날 그대로) · 그 달 '달력' 일정 목록(날짜 차례·기간 m/d~m/d·줄 누르기 = 그날 + 그 일정 칸·칩 = 완료) ·
+//       다음 달 일정은 없다 · 빈 달 · 주말 감추기 = 토·일 칸만 빈다
+//   1c) 목록 바탕(P35): 오늘(시계를 10/7로) 일정 = 'today' · 보는 주 = 'week' · 그 밖 = 없음, 바탕 셋이 다르다 · 고른 날 = 테 · ▶ 한 주 = 주 표시가 따라간다
 //   2) 경계선 셋 끌기(왼쪽|오른쪽 · 수업|일정 · 위/메모) → 크기가 바뀌고 이 기기에 남는다 · 다시 열어도 그대로 · 두 번 누르면 기본
 //   3) 수정 칸을 열면 비율 그대로 접힌다(수업/일정 위아래) · ◀▶ 한 주
 //   4) '스크롤로 페이지 이동'을 켜도 칸 안 휠은 날짜를 넘기지 않는다
@@ -125,26 +126,26 @@ try {
   const board = await box(page, sel('split', 'board-main'));
   r.check(near(left[2] / board[2], 0.58, 0.02), `기본 왼쪽 몫 58% (${Math.round((left[2] / board[2]) * 100)}%)`);
 
-  r.section("왼쪽 - 이번 달·다음 달 · 요일 칸 · 토·일 한 칸 · 달력 일정 목록 (P24-2 · 11-09)");
+  r.section('왼쪽 - 이번 달 한 칸(두 줄 높이) · 요일 칸 · 토·일 한 칸 · 달력 일정 목록 (P24-2 · 11-09 · P35 11-13)');
   const L = '[data-board-left]';
-  // 위 칸 = 이번 달, 아래 칸 = 다음 달 - 두 달력에 같은 날(앞뒤 달 칸)이 함께 있을 수 있어 칸으로 좁힌다
-  const TOP = sel('board-month-slot', 'this');
-  const BOTTOM = sel('board-month-slot', 'next');
+  // 달 칸은 하나 = 이번 달 (P35 - 11-09의 아래 칸 '다음 달'은 없앴다)
+  const TOP = sel('board-month');
   const cards = page.locator(`${L} ${sel('week-day')}`);
   r.check(await waitFor(async () => (await cards.count()) === 7), `요일 칸 일곱 (${await cards.count()})`);
+  r.check((await page.locator(`${L} ${TOP}`).count()) === 1, `달 칸은 하나 (${await page.locator(`${L} ${TOP}`).count()})`);
   const dayLabels = (await page.locator(`${L} ${sel('week-day-label')}`).allTextContents()).join(' ');
   r.check(dayLabels === '10.5 10.6 10.7 10.8 10.9 10.10 10.11', `요일 칸 글자 = 월~일 (${dayLabels})`);
-  const [cal, next, mon, wed, thu, fri, sat, sun] = await Promise.all(
-    [TOP, BOTTOM, sel('week-day', '2026-10-05'), sel('week-day', '2026-10-07'), sel('week-day', '2026-10-08'), sel('week-day', '2026-10-09'), sel('week-day', '2026-10-10'), sel('week-day', '2026-10-11')].map((q) => box(page, `${L} ${q}`)),
+  const [cal, mon, wed, thu, fri, sat, sun] = await Promise.all(
+    [TOP, sel('week-day', '2026-10-05'), sel('week-day', '2026-10-07'), sel('week-day', '2026-10-08'), sel('week-day', '2026-10-09'), sel('week-day', '2026-10-10'), sel('week-day', '2026-10-11')].map((q) => box(page, `${L} ${q}`)),
   );
   r.check(cal && mon && cal[0] + cal[2] < mon[0] && near(cal[1], mon[1]), `첫 칸 = 이번 달, 그 오른쪽 월 (${cal} | ${mon})`);
   r.check(wed && near(wed[1], cal[1]) && wed[0] > mon[0], `수는 첫 줄 끝 (${wed})`);
-  r.check(next && near(next[0], cal[0]) && next[1] >= cal[1] + cal[3], `이번 달 아래 = 다음 달 (${next})`);
-  r.check(thu && near(thu[0], mon[0]) && near(thu[1], next[1]), `목은 둘째 줄 둘째 칸 - 월 아래 (${thu})`);
+  r.check(thu && near(thu[0], mon[0]) && thu[1] >= mon[1] + mon[3], `목은 둘째 줄 첫 요일 칸 - 월 아래 (${thu})`);
+  r.check(near(cal[1] + cal[3], thu[1] + thu[3], 3), `달 칸은 두 줄 높이 - 아래 끝이 목과 같다 (${cal} / ${thu})`);
   r.check(fri && near(fri[1], thu[1]) && fri[0] > thu[0], `금은 목 옆 (${fri})`);
   r.check(sat && sun && near(sat[0], sun[0]) && near(sat[0], wed[0]) && near(sat[1], thu[1]) && sun[1] >= sat[1] + sat[3], `토·일 = 수 아래 한 칸, 토 위·일 아래 (${sat} / ${sun})`);
   r.check(sun && near(sun[1] + sun[3], thu[1] + thu[3], 3) && near(sat[3], sun[3], 3) && sat[3] < thu[3] / 2 + 2, `토·일이 그 칸을 반씩 (${sat[3]} · ${sun[3]} / 목 ${thu[3]})`);
-  r.check(near(thu[3], cal[3], 3) && near(mon[3], cal[3], 3) && near(next[3], cal[3], 3), `두 줄이 반씩 - 같은 높이 (${cal[3]} · ${mon[3]} · ${next[3]} · ${thu[3]})`);
+  r.check(near(thu[3], mon[3], 3) && cal[3] > mon[3] * 2, `요일 두 줄은 같은 높이, 달 칸은 둘을 합친 높이 (${cal[3]} · ${mon[3]} · ${thu[3]})`);
   r.check((await page.locator(`${L} ${sel('week-lessons', '2026-10-08')}`).count()) === 1, '평일 칸에는 수업 줄');
   r.check((await page.locator(`${L} ${sel('week-lessons', '2026-10-10')}`).count()) === 0 && (await page.locator(`${L} ${sel('week-lessons', '2026-10-11')}`).count()) === 0, '토·일 칸에는 수업 줄이 없다');
   r.check(((await page.locator(`${L} ${sel('week-day', '2026-10-10')}`).textContent()) ?? '').includes('일정'), '토·일 칸에 일정 머리');
@@ -152,24 +153,19 @@ try {
   r.check((await selectedCard()) === DAY, `고른 칸 = 고른 날 (${await selectedCard()})`);
   // 작은 달력 - 월요일부터 · 보는 주 한 줄 · 고른 날 · 점 · 글자
   const calDay = (d) => page.locator(`${TOP} ${sel('board-cal-day', d)}`);
-  const calTitle = (slot) => page.locator(`${slot} ${sel('board-cal-title')}`).textContent();
+  const calTitle = () => page.locator(`${TOP} ${sel('board-cal-title')}`).textContent();
   const firstCal = await page.locator(`${TOP} ${sel('board-cal-day')}`).first().getAttribute('data-board-cal-day');
   r.check(firstCal === '2026-09-28', `달력은 월요일부터 (첫 칸 ${firstCal})`);
   r.check((await page.locator(`${TOP} ${sel('board-cal-week')}`).getAttribute('data-board-cal-week')) === '2026-10-05', '보는 주 한 줄을 칠한다');
   r.check((await calDay(DAY).textContent()) === '8' && (await calDay(DAY).getAttribute('aria-current')) === 'date', '고른 날 칸 - 글자 8·칠함');
   r.check(Number(await calDay(DAY).getAttribute('data-board-cal-count')) >= 1, `달력 일정이 있는 날 = 점 (${await calDay(DAY).getAttribute('data-board-cal-count')})`);
-  r.check((await calTitle(TOP)) === '2026년 10월' && (await calTitle(BOTTOM)) === '2026년 11월', `달력 머리 = 그 달 · 아래 칸 = 다음 달 (${await calTitle(TOP)} / ${await calTitle(BOTTOM)})`);
-  r.check(
-    (await page.locator(`${BOTTOM} ${sel('board-cal-day', '2026-11-30')}`).count()) === 1 && (await page.locator(`${BOTTOM} ${sel('board-cal-day')}`).first().getAttribute('data-board-cal-day')) === '2026-10-26',
-    '아래 칸 달력 = 11월 (월요일부터 10/26~)',
-  );
-  r.check((await page.locator(`${BOTTOM} ${sel('board-cal-prev')}`).count()) === 0 && (await page.locator(sel('board-cal-next')).count()) === 1, '◀▶는 위 칸에만');
+  r.check((await calTitle()) === '2026년 10월', `달력 머리 = 그 달 (${await calTitle()})`);
+  r.check((await page.locator(sel('board-cal-prev')).count()) === 1 && (await page.locator(sel('board-cal-next')).count()) === 1, '◀▶ 하나씩');
   // 목록 - 날짜 차례 · 글자 · 기간 m/d~m/d
   const item = (id) => page.locator(sel('board-month-item', id));
   r.check(await waitFor(item('insp_bd_period'), 8000), '목록에 심은 기간 일정');
   r.check(((await item('insp_bd_event').textContent()) ?? '').includes('10/8') && ((await item('insp_bd_event').textContent()) ?? '').includes('점검한눈 일정'), `목록 줄 = m/d + 글 (${await item('insp_bd_event').textContent()})`);
   r.check(((await item('insp_bd_period').textContent()) ?? '').includes('10/12~10/14'), `기간 = m/d~m/d (${await item('insp_bd_period').textContent()})`);
-  r.check((await page.locator(`${TOP} ${sel('board-month-item', 'insp_bd_event')}`).count()) === 1 && (await page.locator(`${BOTTOM} ${sel('board-month-item', 'insp_bd_event')}`).count()) === 0, '10월 일정은 위 칸 목록에만');
   const order = await page.locator(`${TOP} ${sel('board-month-item')}`).evaluateAll((es) => es.map((e) => e.getAttribute('data-board-month-item')));
   r.check(order.indexOf('insp_bd_event') >= 0 && order.indexOf('insp_bd_event') < order.indexOf('insp_bd_period'), '날짜 차례 (10/8 → 10/12)');
 
@@ -187,24 +183,24 @@ try {
   r.check(await waitFor(page.locator(`${L} ${sel('week-day', '2026-10-19')}`)), '요일 칸이 그 주 (10/19~)');
   r.check((await page.locator(`${TOP} ${sel('board-cal-week')}`).getAttribute('data-board-cal-week')) === '2026-10-19', '달력 칠한 주도 그 주');
   r.check(((await page.locator(sel('date-label')).textContent()) ?? '').includes('10월 4주'), `둘째 줄 주 이름 (${await page.locator(sel('date-label')).textContent()})`);
-  // 아래 칸(다음 달) 날짜를 눌러도 그날 - 고른 날이 11월이면 위 11월·아래 12월
-  await page.locator(`${BOTTOM} ${sel('board-cal-day', '2026-11-18')}`).click();
-  r.check(await waitFor(async () => hashOf(page) === '#/board/2026-11-18'), `아래 칸 날짜 누르기 = 그날 (${hashOf(page)})`);
-  r.check((await waitFor(page.locator(`${TOP}${sel('board-month', '2026-11')}`))) && (await calTitle(BOTTOM)) === '2026년 12월', `고른 날이 11월이면 위 11월·아래 12월 (${await calTitle(BOTTOM)})`);
+  // 달력 칸 끝의 다음 달 날짜(11/1)를 눌러도 그날 - 달 칸이 11월로
+  await calDay('2026-11-01').click();
+  r.check(await waitFor(async () => hashOf(page) === '#/board/2026-11-01'), `달력 끝 다음 달 날짜 = 그날 (${hashOf(page)})`);
+  r.check(await waitFor(page.locator(sel('board-month', '2026-11'))), '고른 날이 11월이면 달 칸도 11월');
   await page.goto(page.url().replace(/#.*$/, '#/board/2026-10-21'));
-  r.check(await waitFor(page.locator(`${TOP}${sel('board-month', '2026-10')}`)), '10/21로 돌아온다');
-  // 위 달력 ◀▶ = 두 달을 함께 넘겨 보기 (고른 날은 그대로)
+  r.check(await waitFor(page.locator(sel('board-month', '2026-10'))), '10/21로 돌아온다');
+  // 달력 ◀▶ = 한 달씩 넘겨 보기 (고른 날은 그대로)
   await page.locator(sel('board-cal-next')).click();
-  r.check(await waitFor(page.locator(`${TOP}${sel('board-month', '2026-11')}`)), '달력 ▶ = 위 칸 다음 달');
+  r.check(await waitFor(page.locator(sel('board-month', '2026-11'))), '달력 ▶ = 다음 달');
   r.check(hashOf(page) === '#/board/2026-10-21' && (await calDay('2026-11-30').count()) === 1, '고른 날은 그대로');
-  r.check((await calTitle(TOP)) === '2026년 11월' && (await calTitle(BOTTOM)) === '2026년 12월', `달력 머리 = 넘겨 본 달 · 아래 칸도 함께 (${await calTitle(TOP)} / ${await calTitle(BOTTOM)})`);
+  r.check((await calTitle()) === '2026년 11월', `달력 머리 = 넘겨 본 달 (${await calTitle()})`);
   await page.locator(sel('board-cal-prev')).click();
   await page.locator(sel('board-cal-prev')).click();
-  r.check((await waitFor(page.locator(`${TOP}${sel('board-month', '2026-09')}`))) && (await calTitle(BOTTOM)) === '2026년 10월', `◀ 두 번 = 9월 · 아래 10월 (${await calTitle(BOTTOM)})`);
+  r.check(await waitFor(page.locator(sel('board-month', '2026-09'))), '◀ 두 번 = 9월');
   // 고른 날이 바뀌면(둘째 줄 ◀ = 한 주) 그 달로 돌아온다
   await page.locator(sel('date-prev')).click();
   r.check(await waitFor(async () => hashOf(page) === '#/board/2026-10-14'), `◀ = 한 주 (${hashOf(page)})`);
-  r.check((await waitFor(page.locator(`${TOP}${sel('board-month', '2026-10')}`))) && (await calTitle(BOTTOM)) === '2026년 11월', '고른 날이 바뀌면 달력이 그 달로 (아래 칸도)');
+  r.check(await waitFor(page.locator(sel('board-month', '2026-10'))), '고른 날이 바뀌면 달력이 그 달로');
   // 목록 줄 누르기 = 그날 + 그 일정 칸
   await page.locator(`${sel('board-month-item', 'insp_bd_event')} ${sel('board-month-item-text')}`).click();
   r.check(await waitFor(async () => hashOf(page) === `#/board/${DAY}`), `목록 줄 = 그날 고르기 (${hashOf(page)})`);
@@ -220,15 +216,15 @@ try {
   r.check(await waitFor(async () => (await item('insp_bd_event').getAttribute('data-board-month-item-done')) === '1'), '목록 줄 = 끝낸 표시 ✓');
   await page.locator(sel('board-month-item-chip', 'insp_bd_event')).click();
   r.check((await serverUntil(doneOf, (v) => !v)) !== true, '다시 누르면 풀기');
-  // 빈 달 (위 1월·아래 2월 모두 빈다)
+  // 빈 달
   await page.goto(page.url().replace(/#.*$/, '#/board/2031-01-15'));
-  const empty = (slot) => page.locator(`${slot} ${sel('board-month-empty')}`);
-  r.check(await waitFor(empty(TOP), 5000), '달력 일정이 없는 달');
-  r.check(((await empty(TOP).textContent()) ?? '').includes('1월 달력 일정이 없습니다'), `빈 달 안내 글자 (${await empty(TOP).textContent()})`);
-  r.check(((await empty(BOTTOM).textContent()) ?? '').includes('2월 달력 일정이 없습니다'), `아래 칸 = 2월 안내 (${await empty(BOTTOM).textContent()})`);
-  // 아래 칸 목록 = 다음 달 일정 (9월을 고르면 10월 일정이 아래 칸에)
+  const empty = page.locator(`${TOP} ${sel('board-month-empty')}`);
+  r.check(await waitFor(empty, 5000), '달력 일정이 없는 달');
+  r.check(((await empty.textContent()) ?? '').includes('1월 달력 일정이 없습니다'), `빈 달 안내 글자 (${await empty.textContent()})`);
+  // 다음 달 일정은 보이지 않는다 (9월을 고르면 10월 일정은 목록에 없다 - P35)
   await page.goto(page.url().replace(/#.*$/, '#/board/2026-09-24'));
-  r.check(await waitFor(page.locator(`${BOTTOM} ${sel('board-month-item', 'insp_bd_event')}`), 5000), '9월을 고르면 10월 일정은 아래 칸 목록에');
+  r.check(await waitFor(page.locator(sel('board-month', '2026-09')), 5000), '9월을 고르면 달 칸 9월');
+  r.check((await page.locator(sel('board-month-item', 'insp_bd_event')).count()) === 0, '다음 달(10월) 일정은 목록에 없다');
   await page.goto(page.url().replace(/#.*$/, `#/board/${DAY}`));
   await waitFor(async () => (await selectedCard()) === DAY, 5000);
   // 주말 감추기 = 토·일 칸만 빈다 (요일 칸 자리·크기는 그대로)
@@ -236,14 +232,44 @@ try {
   try {
     r.check(await waitFor(async () => (await cards.count()) === 5), `주말을 감추면 요일 칸 다섯 (${await cards.count()})`);
     r.check((await page.locator(`${L} ${sel('board-weekend')}`).count()) === 0, '토·일 칸이 없다');
-    const [cal5, wed5, next5, thu5] = await Promise.all([TOP, sel('week-day', '2026-10-07'), BOTTOM, sel('week-day', '2026-10-08')].map((q) => box(page, `${L} ${q}`)));
+    const [cal5, wed5, thu5] = await Promise.all([TOP, sel('week-day', '2026-10-07'), sel('week-day', '2026-10-08')].map((q) => box(page, `${L} ${q}`)));
     r.check(near(wed5[1], cal5[1]) && near(wed5[0], wed[0]) && near(wed5[2], wed[2]), `수는 첫 줄 끝 그대로 (${wed5})`);
-    r.check(near(next5[0], cal5[0]) && near(thu5[1], next5[1]) && near(thu5[0], thu[0]), `다음 달·목은 둘째 줄 그대로 (${next5} · ${thu5})`);
+    r.check(near(thu5[0], thu[0]) && near(thu5[1], thu[1]) && near(cal5[1] + cal5[3], thu5[1] + thu5[3], 3), `목은 둘째 줄 그대로, 달 칸은 두 줄 높이 그대로 (${cal5} · ${thu5})`);
   } finally {
     await page.locator(sel('view-toggle', 'showWeekend')).click();
     await page.waitForTimeout(2500); // 계정 설정은 1초 뒤 올라간다
   }
   r.check(await waitFor(async () => (await cards.count()) === 7), '주말을 다시 켜면 일곱');
+
+  r.section('달력 일정 목록 바탕 - 오늘 = 노랑 · 보는 주 = 옅은 파랑 · 고른 날 = 테 (P35 11-13 사용자 요청)');
+  {
+    // 오늘을 10/7(수)로 - 보는 주(10/5~10/11)의 10/8 일정 = 보는 주, 10/7 일정 = 오늘, 10/12~14 기간 = 그 밖
+    await setDoc(itemRef('insp_bd_today'), { kind: 'event', date: '2026-10-07', text: '점검한눈 오늘', order: 'Zz4', carrying: true, ...stamp });
+    undo.add(() => deleteDoc(itemRef('insp_bd_today')));
+    const T = await newPage(browser);
+    await T.page.clock.setFixedTime(new Date('2026-10-07T10:00:00'));
+    await open(T.page, `#/board/${DAY}`);
+    const it = (id) => T.page.locator(sel('board-month-item', id));
+    r.check(await waitFor(it('insp_bd_today'), 10000), '오늘 일정이 목록에');
+    const markOf = (id) => it(id).getAttribute('data-board-month-item-mark');
+    r.check((await markOf('insp_bd_today')) === 'today', `오늘 일정 = today (${await markOf('insp_bd_today')})`);
+    r.check((await markOf('insp_bd_event')) === 'week', `보는 주 일정 = week (${await markOf('insp_bd_event')})`);
+    r.check((await markOf('insp_bd_period')) === null, `다음 주 기간 = 표시 없음 (${await markOf('insp_bd_period')})`);
+    r.check(
+      (await it('insp_bd_event').getAttribute('data-board-month-item-selected')) === '1' && (await it('insp_bd_today').getAttribute('data-board-month-item-selected')) === null,
+      '고른 날(10/8) 일정만 고른 표시(테)',
+    );
+    const bg = (id) => it(id).evaluate((e) => getComputedStyle(e).backgroundColor);
+    const [bToday, bWeek, bPlain] = [await bg('insp_bd_today'), await bg('insp_bd_event'), await bg('insp_bd_period')];
+    r.check(new Set([bToday, bWeek, bPlain]).size === 3, `바탕이 셋 다 다르다 (오늘 ${bToday} · 주 ${bWeek} · 그 밖 ${bPlain})`);
+    // 다음 주로 넘기면 주 표시가 따라간다 (10/12~14 기간 = 보는 주, 10/8 = 그 밖)
+    await T.page.locator(sel('date-next')).click();
+    r.check(await waitFor(async () => (await markOf('insp_bd_period')) === 'week'), '▶ 한 주 = 그 주에 든 기간이 보는 주');
+    r.check((await markOf('insp_bd_event')) === null && (await markOf('insp_bd_today')) === 'today', '지난 주 일정은 표시 없음 · 오늘 일정은 그대로 오늘');
+    if (SHOTS) await T.page.screenshot({ path: `${SHOTS}/board-marks.png` });
+    r.check(T.errors.length === 0, `화면 오류 없음 ${T.errors.join(' | ')}`);
+    await T.page.close();
+  }
 
   r.section('경계선 셋 끌기 → 이 기기에 남는다');
   await drag(page, 'board-main', -150, 0);

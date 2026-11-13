@@ -4,7 +4,7 @@ import { Timestamp } from 'firebase/firestore';
 import { labelTreeOf, type Docs } from '../../data/select';
 import { spaceTone } from '../../domain/spaceColor';
 import { calendarEvents } from '../month/calendarEvents';
-import { monthCalendarList, rowDateLabel, shiftMonth } from './monthList';
+import { monthCalendarList, rowDateLabel, rowMark, shiftMonth } from './monthList';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 
@@ -51,12 +51,43 @@ describe('그 달 달력 일정 목록', () => {
   });
 });
 
-describe('달 옮기기 (한눈에 위 칸 = 이번 달, 아래 칸 = 다음 달 - 11-09)', () => {
+describe('달 옮기기 (한눈에 달 칸 ◀▶)', () => {
   it('해를 넘는다', () => {
     expect(shiftMonth('2026-11', 1)).toBe('2026-12');
     expect(shiftMonth('2026-12', 1)).toBe('2027-01');
     expect(shiftMonth('2027-01', -1)).toBe('2026-12');
     expect(shiftMonth('2027-02', 0)).toBe('2027-02');
     expect(shiftMonth('2026-03', -14)).toBe('2025-01');
+  });
+});
+
+describe('줄 바탕 - 오늘 · 보는 주 (P35 11-13 사용자 요청)', () => {
+  // 보는 주 = 2026-11-09(월) ~ 11-15(일), 오늘 = 11-12(목)
+  const week = ['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15'];
+  const cal = calendarEvents(items, '2026-10-26', '2026-12-06', tree);
+  const rows = monthCalendarList(cal, '2026-11-01', '2026-11-30');
+  const markOf = (id: string, today = '2026-11-12') => rowMark(rows.find((r) => r.ev.id === id)!, week, today);
+
+  it('오늘 일정 = today (기간은 오늘이 든 것), 보는 주 = week, 그 밖 = 없음', () => {
+    expect(markOf('a')).toBe('today');
+    expect(markOf('e')).toBe('today');
+    expect(markOf('d')).toBeNull();
+    expect(markOf('g')).toBeNull();
+    // 오늘이 다른 날이면 그 주 일정은 week
+    expect(markOf('a', '2026-11-20')).toBe('week');
+    expect(markOf('e', '2026-11-20')).toBe('week');
+  });
+
+  it('보는 주에 걸친 기간도 week - 주말 빼기 기간은 쉬는 날만 걸치면 아니다', () => {
+    const its = {
+      p: { id: 'p', ...base, kind: 'event', date: '2026-11-05', endDate: '2026-11-09', text: '앞 주에서 월요일까지', order: 'a0' },
+      w: { id: 'w', ...base, kind: 'event', date: '2026-11-14', endDate: '2026-11-16', workdays: true, text: '토~월, 주말 빼기', order: 'a1' },
+    } as unknown as Docs<'items'>;
+    const c2 = calendarEvents(its, '2026-10-26', '2026-12-06', tree);
+    const r2 = monthCalendarList(c2, '2026-11-01', '2026-11-30');
+    expect(rowMark(r2.find((r) => r.ev.id === 'p')!, week, '2026-11-20')).toBe('week');
+    expect(rowMark(r2.find((r) => r.ev.id === 'w')!, week, '2026-11-20')).toBeNull();
+    // 오늘이 기간의 쉬는 날(토)이면 오늘 일정이 아니다
+    expect(rowMark(r2.find((r) => r.ev.id === 'w')!, week, '2026-11-14')).toBeNull();
   });
 });
