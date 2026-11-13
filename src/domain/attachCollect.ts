@@ -2,7 +2,8 @@
 //
 // V4에서 가져온 기록·메모·일정·수업 칸에는 예전 Firebase Storage 주소의 첨부가 남아 있을 수 있다.
 // V5는 그 파일을 드라이브(School_Planner 폴더)로 **복사**하고 V5 문서의 주소만 바꾼다.
-// Storage 원본은 지우지 않는다 - V4가 아직 같은 주소를 쓴다(PLAN 5장 P8-3).
+// Storage 원본은 지우지 않는다 - 서버에 그대로 둔 V4 자료가 같은 주소를 가리킨다(11-11 P31로 V4와 끊은 뒤에도 V4 자료는 지우지 않았다).
+// 버킷이 V5 주소의 읽기를 허락해야 내려받는다(CORS - docs/OPS.md '예전 저장소 CORS').
 
 /** 문서 안에서 찾아낸 첨부 하나 */
 export interface FoundFile {
@@ -34,6 +35,26 @@ export function collectStorageFiles(data: unknown): FoundFile[] {
   };
   walk(data, []);
   return found;
+}
+
+// 문서마다 센 수 - 문서 객체는 바뀌면 새 객체라, 늘 떠 있는 띠가 자료가 바뀔 때마다 모든 문서를 다시 훑지 않는다(P32-1)
+const counted = new WeakMap<object, number>();
+
+/** 문서 표들(items·lessonDays)에 남은 Storage 첨부 수 - 지운 문서는 빼고(collect의 collectTargets와 같은 셈) */
+export function countStorageFiles(...tables: ReadonlyArray<Readonly<Record<string, object>>>): number {
+  let n = 0;
+  for (const docs of tables) {
+    for (const doc of Object.values(docs)) {
+      if ((doc as { deletedAt?: unknown }).deletedAt) continue;
+      let c = counted.get(doc);
+      if (c === undefined) {
+        c = collectStorageFiles(doc).length;
+        counted.set(doc, c);
+      }
+      n += c;
+    }
+  }
+  return n;
 }
 
 /**

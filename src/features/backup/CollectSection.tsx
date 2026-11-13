@@ -1,14 +1,12 @@
 // 백업 창 '정리' 탭의 📎 첨부 모으기 (V4 환경설정 '드라이브로 옮기기' - MENU 2-3에서 이 창의 '정리' 탭으로, P8-3).
 // V4에서 가져온 첨부 중 예전 Firebase Storage에 있는 것을 드라이브 School_Planner 폴더로 복사하고 V5의 주소만 바꾼다(원본은 그대로 - 서버에 둔 V4 자료가 가리킨다).
+// 개인 공간에 남아 있으면 PC 하루 화면 맨 위 띠도 권한다(StorageAttachBanner - 같은 collectRun, P32-1).
 import { useMemo, useState } from 'react';
-import { showErrorToast, showToast, ShownError } from '../../app/toast';
 import { useDocs } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { Section } from '../settings/parts';
-import { collectAttachments, collectTargets } from './collect';
-
-const CORS_HELP =
-  '브라우저가 Firebase Storage의 파일을 읽지 못하도록 막혀 있습니다(CORS). 버킷에 이 사이트를 한 번 등록하면 풀립니다 - V4 저장소 docs-storage-cors.md의 명령을 Cloud Shell에 붙여 넣고 다시 눌러 주세요.';
+import { collectTargets } from './collect';
+import { runCollect } from './collectRun';
 
 export default function CollectSection() {
   const sid = useCurrentSpaceId();
@@ -24,24 +22,8 @@ export default function CollectSection() {
     setBusy('옮기는 중…');
     setResult('');
     try {
-      const r = await collectAttachments(sid, targets, setBusy);
-      if (r.corsBlocked) {
-        setResult(CORS_HELP);
-        showErrorToast(CORS_HELP);
-        return;
-      }
-      const text = [
-        `첨부 ${r.moved}개를 드라이브로 옮겼습니다 (문서 ${r.docs}개의 주소를 바꿨습니다)`,
-        r.failed > 0 ? `${r.failed}개는 옮기지 못해 옛 주소 그대로 둡니다` : '',
-        r.loginRefused ? '구글 로그인을 하지 않아 멈췄습니다' : '',
-      ]
-        .filter(Boolean)
-        .join(' · ');
-      setResult(text);
-      showToast(`✅ ${text}`);
-      if (r.errors.length > 0) console.warn('첨부 모으기 - 옮기지 못한 것:', r.errors);
-    } catch (e) {
-      if (!(e instanceof ShownError)) showErrorToast('첨부를 옮기지 못했습니다.', e);
+      const text = await runCollect(sid, setBusy);
+      if (text) setResult(text);
     } finally {
       setBusy('');
     }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { changesForNewUrls, collectStorageFiles, isStorageUrl, nameFromUrl } from './attachCollect';
+import { changesForNewUrls, collectStorageFiles, countStorageFiles, isStorageUrl, nameFromUrl } from './attachCollect';
 
 const S = 'https://firebasestorage.googleapis.com/v0/b/x.appspot.com/o/users%2Fu%2F1712345678901_%EC%82%AC%EC%A7%84.png?alt=media&token=t';
 
@@ -9,6 +9,16 @@ describe('첨부 모으기', () => {
     expect(isStorageUrl('https://x.firebasestorage.app/o/a.png')).toBe(true);
     expect(isStorageUrl('https://drive.google.com/thumbnail?id=1')).toBe(false);
     expect(isStorageUrl(3)).toBe(false);
+  });
+  it('남은 수 = 여러 표의 Storage 첨부 (지운 문서는 빼고, 같은 문서는 다시 훑지 않는다)', () => {
+    const note = { attachments: [{ url: S }, { url: S }, { url: 'https://drive.google.com/x' }] };
+    const gone = { deletedAt: 1, attachments: [{ url: S }] };
+    const day = { periods: { 1: { attachments: [{ url: S }] } } };
+    expect(countStorageFiles({ a: note, b: gone }, { '2030-01-07': day })).toBe(3);
+    expect(countStorageFiles({}, {})).toBe(0);
+    // 같은 객체는 기억한 수 - 바뀐 문서는 새 객체라 다시 센다
+    expect(countStorageFiles({ a: note })).toBe(2);
+    expect(countStorageFiles({ a: { ...note, attachments: [{ url: 'https://drive.google.com/x' }] } })).toBe(0);
   });
   it('파일 이름 = 주소 끝 (앞 타임스탬프는 뗀다)', () => {
     expect(nameFromUrl(S)).toBe('사진.png');
