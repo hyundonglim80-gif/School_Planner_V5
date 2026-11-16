@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { lessonNote, type LessonCell, type LessonCellDoc } from '../../domain/lessons';
-import { clearChanges, editChanges, isEdited, subjectToStore, swapChanges } from './lessonOps';
+import { adoptOldDay, clearChanges, editChanges, isEdited, subjectToStore, swapChanges } from './lessonOps';
 
 const cell = (n: number, over: Partial<LessonCell> = {}): LessonCell => ({
   n,
@@ -84,5 +84,34 @@ describe('비우기·맞바꾸기', () => {
     const a = withDoc(1, { subject: '수학' }, { subject: '수학', base: '국어', changed: true });
     const b = withDoc(2, { subject: '국어' }, { subject: '국어', base: '수학', changed: true });
     expect(swapChanges(a, b)).toEqual({ 'periods.1': undefined, 'periods.2': undefined });
+  });
+});
+
+describe('수업 없는 날 V4 문서에 과목 적기 (P38 adoptOldDay)', () => {
+  const day = { src: { from: 'v4' }, periods: { '1': { subject: '401' }, '2': { subject: '402', supplies: '교과서' }, '7': { subject: '407' } } };
+  const hidden = ['1', '2', '7'];
+  // 방학 날 1교시 칸 (옛 과목 '401'은 숨어 '')
+  const first = withDoc(1, { subject: '401' }, { subject: '', base: '' });
+
+  it('과목을 적으면 숨은 옛 과목과 V4 표시를 함께 걷는다 - 비고가 남은 칸은 과목만', () => {
+    expect(adoptOldDay(editChanges(first, edit('방학 보충')), day, hidden)).toEqual({
+      'periods.1.subject': '방학 보충',
+      src: undefined,
+      'periods.2.subject': undefined,
+      'periods.7': undefined,
+    });
+  });
+
+  it('과목을 적지 않는 고침(비고만)은 그대로 - 숨은 과목은 숨은 채', () => {
+    const changes = editChanges(first, edit('', '준비물'));
+    // 숨은 '401'은 그날 시간표('')와 달라 칸에서 빠지고 비고만 남는다
+    expect(changes).toEqual({ 'periods.1.subject': undefined, 'periods.1.supplies': '준비물' });
+    expect(adoptOldDay(changes, day, hidden)).toBe(changes);
+  });
+
+  it('숨은 옛 과목이 없으면 그대로', () => {
+    const changes = editChanges(cell(1), edit('보강'));
+    expect(adoptOldDay(changes, day, [])).toBe(changes);
+    expect(adoptOldDay(null, day, hidden)).toBeNull();
   });
 });

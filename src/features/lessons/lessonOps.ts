@@ -6,7 +6,7 @@
 //   - 고칠 때는 'periods.3.memo'처럼 그 칸만(merge - 그날 문서가 없으면 만든다). 다른 기기가 같은 날 다른 교시를 고쳐도 덮지 않는다.
 import type { Changes } from '../../data/repo/ops';
 import type { DocPath } from '../../data/types';
-import { cellHasContent, type LessonCell, type LessonCellDoc } from '../../domain/lessons';
+import { cellHasContent, type LessonCell, type LessonCellDoc, type LessonDayLike } from '../../domain/lessons';
 
 export const lessonDayPath = (sid: string, date: string): DocPath<'lessonDays'> => ({ sid, coll: 'lessonDays', id: date });
 
@@ -55,6 +55,28 @@ export function editChanges(cell: LessonCell, edit: LessonEdit): Changes<'lesson
     subject: subjectToStore(cell, edit.subject),
     ...(noteEdited ? noteFields(edit.note) : {}),
   });
+}
+
+/**
+ * 수업 없는 날 V4 문서에 과목을 적을 때 (P38): V4 문서는 칸마다 누가 적었는지 몰라 과목을 통째로 숨긴다 -
+ * 그대로 적으면 적은 과목도 숨는다. 그래서 그 문서의 숨은 옛 과목과 V4 표시(src)를 함께 걷는다(보이는 것은 그대로).
+ * 과목을 적지 않는 고침(비고만·비우기)은 그대로 둔다.
+ */
+export function adoptOldDay(changes: Changes<'lessonDays'> | null, day: LessonDayLike | undefined, hiddenOld: readonly string[]): Changes<'lessonDays'> | null {
+  if (!changes || !hiddenOld.length) return changes;
+  const record = changes as Record<string, unknown>;
+  const writesSubject = Object.entries(record).some(([k, v]) => /^periods\.\d+\.subject$/.test(k) && typeof v === 'string' && v.trim() !== '');
+  if (!writesSubject) return changes;
+  const touched = (n: string) => Object.keys(record).some((k) => k === `periods.${n}` || k.startsWith(`periods.${n}.`));
+  const out: Record<string, unknown> = { ...record, src: undefined };
+  for (const n of hiddenOld) {
+    if (touched(n)) continue;
+    const cell = day?.periods?.[n];
+    if (!cell) continue;
+    const { subject: _old, ...rest } = cell;
+    out[cellHasContent(rest) ? `periods.${n}.subject` : `periods.${n}`] = undefined;
+  }
+  return out as Changes<'lessonDays'>;
 }
 
 /** 고친 것이 있나 (배경을 누르면 저장하고 닫을지) */

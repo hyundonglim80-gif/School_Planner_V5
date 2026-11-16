@@ -39,7 +39,8 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
   const { sid, date, n } = params;
   const evalCount = useEvalsOn(date, sid).filter((e) => e.period === n).length;
   const src = useLessonSource(sid);
-  const cell = useMemo(() => lessonsOn(date, src).cells.find((c) => c.n === n), [date, n, src]);
+  const view = useMemo(() => lessonsOn(date, src), [date, src]);
+  const cell = useMemo(() => view.cells.find((c) => c.n === n), [view, n]);
   const dayDoc = useDocs('lessonDays', sid)[date];
   const periods = useCommonSettings((s) => s.periods);
   const { isClassUnit } = useTeaching();
@@ -87,7 +88,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
         subject: edit.subject !== subjectToSave(from.subject) ? edit.subject : cell.subject,
         note: edit.note.trim() !== from.note.trim() ? edit.note : cell.note,
       };
-      await saveLesson(sid, date, dayDoc, cell, mine);
+      await saveLesson(sid, date, dayDoc, cell, mine, view.hiddenOld);
       // 저장한 모양을 칸에도 (적은 '403과학'이 아니라 '4-3 과학') - 이제 지금 내용을 따라간다
       setTyped(null);
       setTypedFrom(null);

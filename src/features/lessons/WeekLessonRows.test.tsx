@@ -6,7 +6,7 @@ import { CLASS_COLORS } from '../../domain/teachingSlot';
 import WeekLessonRows from './WeekLessonRows';
 
 const DAY = '2026-10-12';
-const empty: LessonDayView = { date: DAY, off: null, timetable: null, cells: [] };
+const empty: LessonDayView = { date: DAY, off: null, timetable: null, cells: [], hiddenOld: [] };
 const props = {
   date: DAY,
   view: empty,

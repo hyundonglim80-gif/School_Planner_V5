@@ -3,14 +3,24 @@ import { merge } from '../../data/repo';
 import { recordUndo } from '../../data/undo';
 import { shortDateLabel } from '../../domain/dateUtils';
 import type { LessonCell } from '../../domain/lessons';
-import { clearChanges, editChanges, lessonDayPath, swapChanges, type LessonEdit } from './lessonOps';
+import { adoptOldDay, clearChanges, editChanges, lessonDayPath, swapChanges, type LessonEdit } from './lessonOps';
 import type { Stored } from '../../data/types';
 
 const KEEP = '적던 것은 그대로 두었으니 다시 저장해 주세요.';
 
-/** 수업 칸 고치기. 바뀐 것이 없으면 false (실패는 안내하고 던진다 - 칸은 닫지 않는다) */
-export async function saveLesson(sid: string, date: string, day: Stored<'lessonDays'> | undefined, cell: LessonCell, edit: LessonEdit): Promise<boolean> {
-  const changes = editChanges(cell, edit);
+/**
+ * 수업 칸 고치기. 바뀐 것이 없으면 false (실패는 안내하고 던진다 - 칸은 닫지 않는다).
+ * hiddenOld = 그날 숨긴 V4 옛 과목의 교시(LessonDayView) - 과목을 적으면 함께 걷는다(P38 adoptOldDay).
+ */
+export async function saveLesson(
+  sid: string,
+  date: string,
+  day: Stored<'lessonDays'> | undefined,
+  cell: LessonCell,
+  edit: LessonEdit,
+  hiddenOld: readonly string[] = [],
+): Promise<boolean> {
+  const changes = adoptOldDay(editChanges(cell, edit), day, hiddenOld);
   if (!changes) return false;
   const undo = await merge(lessonDayPath(sid, date), changes, day ?? null, { fail: `수업 내용을 저장하지 못했습니다. ${KEEP}` });
   recordUndo(sid, `✅ ${shortDateLabel(date)} ${cell.n}교시 수업 내용을 저장했습니다.`, undo, { what: '수업 고치기' });

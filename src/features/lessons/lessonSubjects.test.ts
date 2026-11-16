@@ -3,7 +3,7 @@ import type { LessonCell, LessonDayView } from '../../domain/lessons';
 import { hasLessons, lessonSubjects } from './lessonSubjects';
 
 const cell = (n: number, subject: string): LessonCell => ({ n, subject, base: subject, changed: false, note: '', attachments: [], linkIds: [] });
-const view = (...subjects: string[]): LessonDayView => ({ date: '2026-10-14', off: null, timetable: null, cells: subjects.map((s, i) => cell(i + 1, s)) });
+const view = (...subjects: string[]): LessonDayView => ({ date: '2026-10-14', off: null, timetable: null, cells: subjects.map((s, i) => cell(i + 1, s)), hiddenOld: [] });
 
 describe('lessonSubjects (달력 수업 칩)', () => {
   it('교시 차례대로 과목 - 빈 칸과 X(수업 없음)는 빈 글', () => {

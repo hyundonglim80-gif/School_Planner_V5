@@ -10,6 +10,7 @@
 // V5는 날마다 적지 않고 기간 문서 하나로 셈한다 - 그날 바꾼 칸(lessonDays)은 그대로 남는다.
 // P37(11-16 사용자 요청): 저장된 시간표(이름·표만)와 적용된 시간표(기간 + 그때의 표)를 나눴다 - 여기에는 적용된 것만 온다(domain/timetableApply).
 // 주말은 시간표에 칸이 없어 비지만, 그날 적은 과목은 보인다(토요 보강도 수업이다 - V4 진도 세기와 같다).
+// P38(11-16 사용자 요청): 수업 없는 날(방학·공휴일·수업X)이면 V4에서 가져온 날 문서의 과목은 옛 시간표라 보이지 않는다(hidesOldSubjects - 자료는 그대로).
 import { addDays, weekdayOf } from './dateUtils';
 import { isVacation, type SchoolTerms } from './semester';
 
@@ -37,6 +38,8 @@ export interface LessonCellDoc {
 
 export interface LessonDayLike {
   periods?: Record<string, LessonCellDoc | undefined>;
+  /** V4에서 가져온 날 문서면 { from: 'v4' } - 수업 없는 날이면 그 과목은 옛 시간표라 보이지 않는다 (P38) */
+  src?: { from?: string };
 }
 
 export type ClassOffReason = 'vacation' | 'holiday' | 'skip';
@@ -137,7 +140,17 @@ export interface LessonDayView {
   off: ClassOffReason | null;
   timetable: TimetableLike | null;
   cells: LessonCell[];
+  /** 수업 없는 날이라 보이지 않는 V4 옛 과목이 든 교시 ('3' …) - 그날 V5에서 과목을 적으면 함께 걷는다 (P38, lessonOps adoptOldDay) */
+  hiddenOld: string[];
 }
+
+/**
+ * 그날 적힌 과목을 보이지 않나 (P38 사용자 '방학 기간으로 지정된 날은 시간표가 적용되지 않게').
+ * V4는 시간표를 날짜마다 적어 두었고(방학 설정이 한 벌이라 그때 방학을 건너뛰지 못한 날도), 가져오기는 수업 없는 날의 칸을
+ * '그날 바꾼 과목'으로 그대로 옮겼다 - 방학인데 옛 시간표 과목이 보였다(운영 업무 계정 여름 15일·겨울 34일).
+ * 그래서 수업 없는 날이면 V4에서 가져온 날 문서의 과목은 옛 시간표로 본다. V5에서 그날 적은 과목(토요 보강·방학 보충)은 보인다.
+ */
+export const hidesOldSubjects = (off: ClassOffReason | null, day: LessonDayLike | undefined): boolean => !!off && day?.src?.from === 'v4';
 
 const EMPTY: readonly never[] = [];
 
@@ -168,17 +181,23 @@ export function lessonsOn(date: string, src: LessonSource): LessonDayView {
   const day = src.days[date];
   const off = classOffReason(date, src);
   const timetable = timetableOn(date, src.timetables);
+  const hideOld = hidesOldSubjects(off, day);
+  const hiddenOld: string[] = [];
   let count = src.count;
   for (const [key, doc] of Object.entries(day?.periods ?? {})) {
     const n = Number(key);
-    if (Number.isInteger(n) && n > count && n <= 20 && cellHasContent(doc)) count = n;
+    // 숨긴 옛 과목만 있는 뒤 교시(V4 7교시)로는 늘리지 않는다
+    const content = hideOld && doc ? { ...doc, subject: undefined } : doc;
+    if (Number.isInteger(n) && n > count && n <= 20 && cellHasContent(content)) count = n;
   }
   const cells: LessonCell[] = [];
   for (let n = 1; n <= count; n++) {
     const doc = day?.periods?.[String(n)];
     const base = off ? '' : gridSubject(timetable, date, n);
     // 적힌 과목이 있어도 그날 시간표와 같으면 바꾼 것이 아니다 (시간표를 나중에 고쳤다 - 빈 칸에 ✎가 남았다, P11-1)
-    const stored = typeof doc?.subject === 'string' ? doc.subject.trim() : null;
+    const written = typeof doc?.subject === 'string' ? doc.subject.trim() : null;
+    if (hideOld && written !== null) hiddenOld.push(String(n));
+    const stored = hideOld ? null : written;
     const changed = stored !== null && stored !== base;
     cells.push({
       n,
@@ -191,7 +210,13 @@ export function lessonsOn(date: string, src: LessonSource): LessonDayView {
       doc,
     });
   }
-  return { date, off, timetable, cells };
+  // 숨긴 옛 과목이 뒤 교시(V4 7교시)에만 있으면 그 칸은 그리지 않았다 - 걷을 자리로는 남긴다
+  if (hideOld) {
+    for (const [key, doc] of Object.entries(day?.periods ?? {})) {
+      if (Number(key) > count && typeof doc?.subject === 'string') hiddenOld.push(key);
+    }
+  }
+  return { date, off, timetable, cells, hiddenOld };
 }
 
 /** 날짜 → (교시 → 과목) - 과목이 있는 칸만 (지난 시간·진도 세기가 받는다 - V4 progress scheduleSubjects) */

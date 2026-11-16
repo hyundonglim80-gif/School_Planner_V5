@@ -123,6 +123,34 @@ describe('그날 수업 칸 (lessonsOn)', () => {
     expect(lessonsOn('2026-07-27', source()).cells[0].subject).toBe('');
   });
 
+  it('수업 없는 날의 V4 옛 과목(날마다 적힌 옛 시간표)은 보이지 않는다 - 비고는 남고, V5에서 적은 과목은 보인다 (P38)', () => {
+    const old = { src: { from: 'v4' }, periods: { '1': { subject: '401' }, '2': { subject: '402', supplies: '교과서' }, '7': { subject: '407' } } };
+    // 방학 (월요일 - 2학기 시간표가 있는 날)
+    const v = lessonsOn('2027-01-11', source({ days: { '2027-01-11': old } }));
+    expect(v.off).toBe('vacation');
+    expect(v.cells.map((c) => c.subject)).toEqual(['', '', '', '', '', '']); // 7교시 옛 과목으로 늘리지도 않는다
+    expect(v.cells[1]).toMatchObject({ subject: '', base: '', changed: false, note: '교과서' });
+    expect(v.hiddenOld).toEqual(['1', '2', '7']);
+    // 공휴일·수업X 날도 같다
+    expect(lessonsOn('2026-10-09', source({ days: { '2026-10-09': old } })).cells[0].subject).toBe('');
+    // 수업하는 날의 V4 문서는 그대로 (그날 바꾼 과목)
+    const school = lessonsOn('2026-10-12', source({ days: { '2026-10-12': old } }));
+    expect(school.cells[0]).toMatchObject({ subject: '401', changed: true });
+    expect(school.cells).toHaveLength(7);
+    expect(school.hiddenOld).toEqual([]);
+    // 주말은 수업 없는 날이 아니다 - V4 토요 보강도 보인다
+    expect(lessonsOn('2026-10-10', source({ days: { '2026-10-10': old } })).cells[0].subject).toBe('401');
+    // V5에서 적은 과목(src 없음)은 방학에도 보인다
+    const mine = lessonsOn('2027-01-11', source({ days: { '2027-01-11': { periods: { '1': { subject: '방학 보충' } } } } }));
+    expect(mine.cells[0]).toMatchObject({ subject: '방학 보충', changed: true });
+    expect(mine.hiddenOld).toEqual([]);
+  });
+
+  it('방학 날 V4 옛 과목은 진도·지난 시간 세기에도 없다 (subjectsBetween)', () => {
+    const out = subjectsBetween('2027-01-11', '2027-01-11', source({ days: { '2027-01-11': { src: { from: 'v4' }, periods: { '1': { subject: '401' } } } } }));
+    expect(out).toEqual({});
+  });
+
   it('설정보다 뒤 교시에 적어 둔 것이 있으면 그만큼 늘린다', () => {
     const v = lessonsOn('2026-10-12', source({ days: { '2026-10-12': { periods: { '8': { memo: '보충' }, '9': {} } } } }));
     expect(v.cells).toHaveLength(8);
