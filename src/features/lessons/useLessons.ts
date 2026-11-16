@@ -7,6 +7,7 @@ import { labelProps } from '../../domain/labels';
 import { classOffReason, lessonsOn, subjectsBetween, type LessonDayView, type LessonSource, type TimetableLike } from '../../domain/lessons';
 import type { PeriodDef } from '../../domain/periodTimes';
 import type { SchoolTerms } from '../../domain/semester';
+import { isAppliedTimetable } from '../../domain/timetableApply';
 import { isHoliday, useHolidayStore } from '../../data/holidays';
 import { isLive, itemsOn, useDocs, useHasLive, useLabelTree, type Docs, type LabelTree } from '../../data/select';
 
@@ -27,7 +28,7 @@ function sourceOf(key: string, inputs: Inputs): LessonSource {
   const last = lastBySpace.get(key);
   if (last && (Object.keys(inputs) as Array<keyof Inputs>).every((k) => last.inputs[k] === inputs[k])) return last.src;
   const timetables: TimetableLike[] = Object.values(inputs.timetableDocs)
-    .filter(isLive)
+    .filter((t) => isLive(t) && isAppliedTimetable(t)) // 저장된 시간표(이름·표만 - P37)는 날짜에 쓰이지 않는다
     .map((t) => ({ id: t.id, name: t.name, from: t.from, to: t.to, grid: t.grid ?? {}, createdAt: t.createdAt }));
   const src: LessonSource = {
     timetables,

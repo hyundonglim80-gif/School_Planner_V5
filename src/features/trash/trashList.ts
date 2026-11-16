@@ -69,7 +69,7 @@ export function trashEntries(src: {
   labels: Readonly<Record<string, LabelLike>>;
   ddays: ReadonlyArray<{ id: string; title: string; date: string; deletedAt?: number }>;
   clips: ReadonlyArray<{ id: string; kind: 'text' | 'image'; text?: string; deletedAt: number }>;
-  timetables?: Readonly<Record<string, { id: string; name: string; from: string; to: string; deletedAt?: unknown }>>;
+  timetables?: Readonly<Record<string, { id: string; name: string; kind?: string; from: string; to: string; deletedAt?: unknown }>>;
   progress?: Readonly<Record<string, { id: string; key: string; subject?: string; classes?: string[]; lessons?: readonly unknown[]; deletedAt?: unknown }>>;
   classes?: Readonly<Record<string, { id: string; year: number; grade: number; num: number; students?: readonly unknown[]; deletedAt?: unknown }>>;
   seating?: Readonly<Record<string, { id: string; name: string; classId: string; deletedAt?: unknown }>>;
@@ -90,7 +90,7 @@ export function trashEntries(src: {
   }
   for (const t of Object.values(src.timetables ?? {})) {
     if (!t.deletedAt) continue;
-    out.push({ key: `timetable:${t.id}`, kind: 'timetable', id: t.id, text: `⏰ ${t.name} (${md(t.from)}~${md(t.to)})`, deletedAt: deletedMs(t.deletedAt, now) });
+    out.push({ key: `timetable:${t.id}`, kind: 'timetable', id: t.id, text: t.kind === 'saved' || !t.from ? `⏰ ${t.name} (저장된 시간표)` : `⏰ ${t.name} (${md(t.from)}~${md(t.to)} 적용)`, deletedAt: deletedMs(t.deletedAt, now) });
   }
   for (const p of Object.values(src.progress ?? {})) {
     if (!p.deletedAt) continue;

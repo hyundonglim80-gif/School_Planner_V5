@@ -103,11 +103,16 @@ try {
     10000,
   );
   const nt = made[0];
-  r.check(nt?.to === '2028-02-29' && nt.name === '1학기 시간표', '2027-03-01 ~ 2028-02-29 (윤년) · 이름 1학기 시간표');
+  r.check(nt?.to === '2028-02-29' && nt.name === '2027학년도 시간표', '2027-03-01 ~ 2028-02-29 (윤년) · 이름 2027학년도 시간표');
+  const ntSaved = nt?.saveId ? await read(ref('timetables', nt.saveId)) : null;
+  r.check(ntSaved?.kind === 'saved' && ntSaved.from === '' && JSON.stringify(ntSaved.grid) === JSON.stringify(grid), '저장된 시간표(이름·표)도 함께 - 적용된 문서의 saveId (P37)');
   r.check(JSON.stringify(nt?.grid) === JSON.stringify(grid), '마지막에 쓰던 표(늦게 시작한 2학기)를 베꼈다');
   r.check(await waitFor(page.locator(sel('timetable-window')), 8000), '시간표 창이 열린다');
-  r.check((await page.locator(sel('timetable-pick', nt?.id)).getAttribute('aria-pressed')) === 'true', '그 시간표를 고른 채로');
-  r.check((await page.locator(sel('timetable-from')).inputValue()) === '2027-03-01', '기간 칸 = 새 학년도');
+  r.check((await page.locator(sel('timetable-pick', nt?.saveId)).getAttribute('aria-pressed')) === 'true', '그 시간표를 고른 채로');
+  r.check(
+    (await page.locator(sel('timetable-from')).inputValue()) === '2027-03-01' && (await page.locator(sel('timetable-to')).inputValue()) === '2028-02-29',
+    '적용 기간 칸 = 새 학년도 (앞으로 쓰일 기간)',
+  );
 
   r.section('② 새 학년도 날짜에 남은 V4 과목 (P26-3)');
   await page.evaluate(() => window.sp5.openWindow('newYear', { year: 2027 }));

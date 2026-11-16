@@ -62,7 +62,7 @@ describe('새 학년도 넘기기', () => {
     expect(latestTimetableBefore([tt('a', '2026-03-01', '2026-07-31'), tt('b', '2026-08-20', '2026-12-31', '과학')], 2027)?.id).toBe('b');
     const copy = copiedTimetable(list[1], 2027);
     expect(copy).toEqual({
-      name: '1학기 시간표',
+      name: '2027학년도 시간표',
       from: '2027-03-01',
       to: '2028-02-29',
       grid: { '1': { '1': '과학' } },

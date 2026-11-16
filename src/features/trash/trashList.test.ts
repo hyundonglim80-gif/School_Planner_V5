@@ -40,10 +40,18 @@ describe('휴지통 목록', () => {
       labels: {},
       ddays: [],
       clips: [],
-      timetables: { t1: { id: 't1', name: '2학기', from: '2026-08-17', to: '2027-02-28', deletedAt: ts(NOW) }, t2: { id: 't2', name: '살아 있음', from: '2026-03-01', to: '2027-02-28' } },
+      timetables: {
+        t1: { id: 't1', name: '2학기', from: '2026-08-17', to: '2027-02-28', deletedAt: ts(NOW) },
+        t2: { id: 't2', name: '살아 있음', from: '2026-03-01', to: '2027-02-28' },
+        s1: { id: 's1', name: '1학기', kind: 'saved', from: '', to: '', deletedAt: ts(NOW - 1000) },
+      },
       now: NOW,
     });
-    expect(t.map((e) => [e.key, e.text, tabOf(e.kind)])).toEqual([['timetable:t1', '⏰ 2학기 (8.17~2.28)', 'etc']]);
+    // 적용된 것은 그 기간 · 저장된 시간표(P37 - 이름·표만)는 '저장된 시간표'
+    expect(t.map((e) => [e.key, e.text, tabOf(e.kind)])).toEqual([
+      ['timetable:t1', '⏰ 2학기 (8.17~2.28 적용)', 'etc'],
+      ['timetable:s1', '⏰ 1학기 (저장된 시간표)', 'etc'],
+    ]);
   });
 
   it('진도(P6-2)도 기타 탭에 - 과정은 과목 · 반', () => {

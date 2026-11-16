@@ -1,17 +1,27 @@
-// 시간표 창 '🗂️ 시간표' 탭 (V4 TimetableTemplateModal의 표). 기간별로 여러 장 - 1학기·2학기·'10/14부터'.
-//   위 칩 = 시간표 고르기 · + 새 시간표(지금 표를 베껴 오늘부터) · 이름·기간 · 🗑️ 지우기.
+// 시간표 창 '🗂️ 시간표' 탭 (V4 TimetableTemplateModal의 표).
+//   위 칩 = 저장된 시간표 고르기(이름·표만 - P37) · + 새 시간표(지금 표를 베낀다) · 이름 · 🗑️ 지우기(적용한 날은 그대로).
 //   표: 화살표·Enter·Tab으로 칸을 옮기고, 엑셀에서 복사한 표를 Ctrl+V로 한 번에(domain/gridNav). 첫 칸은 교시 이름(교시 탭과 같은 값).
 //   교과 모드는 칸마다 학년-반 + 과목 두 칸(▼ 목록), 저장은 '5-2 과학' 한 글자.
-// 기간이 겹치면 늦게 시작한 시간표가 이긴다 - '적용' 단추 없이 저장하면 그 기간의 날이 따라간다.
+//   아래 '📅 날짜에 적용' = 시작·끝 날 + ✅ 적용(지금 표를 그 기간에 - 겹친 날만 바뀐다) · 적용된 시간표 줄(📥 불러오기·✕ 빼기).
 import { useRef } from 'react';
 import type React from 'react';
 import { showToast } from '../../app/toast';
-import { shortDateLabel } from '../../domain/dateUtils';
+import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
 import { clipboardWrites, isSingleCell, nextCell, parseClipboardGrid, type CellPos } from '../../domain/gridNav';
 import { addPeriod, removePeriod, type PeriodDef } from '../../domain/periodTimes';
 import { normalizeSlotText } from '../../domain/teachingSlot';
+import { FAR_END, type Piece } from '../../domain/timetableApply';
 import SlotPairInput from '../lessons/SlotPairInput';
 import { WEEKDAYS, type TimetableDraft } from './timetableDraft';
+
+/** 적용된 시간표 줄 하나 (날마다 실제로 쓰이는 조각) */
+export interface AppliedRow extends Piece {
+  /** 적용된 문서 id */
+  id: string;
+  name: string;
+  /** 오늘이 든 줄 */
+  today: boolean;
+}
 
 const DAYS = [
   { key: '1', label: '월요일', color: 'text-cobalt-600' },
@@ -22,9 +32,10 @@ const DAYS = [
 ] as const;
 
 interface Props {
+  /** 저장된 시간표 */
   list: TimetableDraft[];
   current: TimetableDraft;
-  /** 오늘 따르는 시간표 id */
+  /** 오늘 수업 칸이 따르는 표가 온 저장된 시간표 id */
   todayId: string | null;
   today: string;
   onPick: (id: string) => void;
@@ -33,15 +44,25 @@ interface Props {
   onRemove: (id: string) => void;
   periods: PeriodDef[];
   onPeriods: (next: PeriodDef[]) => void;
+  /** 적용할 기간 (지금 고른 시간표의) */
+  range: Piece;
+  onRange: (next: Piece) => void;
   /** 빠른 기간: 1학기부터 / 2학기부터 (학년도 끝까지) */
-  quick: { sem1: { from: string; to: string }; sem2: { from: string; to: string } };
+  quick: { sem1: Piece; sem2: Piece };
+  onApply: () => void;
+  applying: boolean;
+  applied: AppliedRow[];
+  onUnapply: (row: AppliedRow) => void;
+  onLoad: (row: AppliedRow) => void;
   isClassUnit: boolean;
   pairOptions: { classes: string[]; subjects: string[] };
 }
 
 const md = (d: string) => (d ? shortDateLabel(d) : '?');
+const short = (d: string) => (d ? monthDayLabel(d) : '?');
 
-export default function GridTab({ list, current, todayId, today, onPick, onChange, onAdd, onRemove, periods, onPeriods, quick, isClassUnit, pairOptions }: Props) {
+export default function GridTab(props: Props) {
+  const { list, current, todayId, today, onPick, onChange, onAdd, onRemove, periods, onPeriods, isClassUnit, pairOptions } = props;
   const gridRef = useRef<HTMLTableSectionElement>(null);
   const grid = current.grid;
 
@@ -114,20 +135,17 @@ export default function GridTab({ list, current, todayId, today, onPick, onChang
       {/* 시간표 고르기 */}
       <div className="flex items-center gap-1.5 flex-wrap px-3 py-2.5 bg-blue-50 border border-blue-100 rounded-xl" data-timetable-list={list.length}>
         {list.map((t) => (
-          <button key={t.id} type="button" data-timetable-pick={t.id} aria-pressed={t.id === current.id} onClick={() => onPick(t.id)} className={pill(t.id === current.id)} title={t.from ? `${t.from} ~ ${t.to}` : '기간이 없어 쓰이지 않습니다 (V4에서 가져온 표 - 아래에서 기간을 정하면 쓰입니다)'}>
+          <button key={t.id} type="button" data-timetable-pick={t.id} aria-pressed={t.id === current.id} onClick={() => onPick(t.id)} className={pill(t.id === current.id)}>
             📅 {t.name.trim() || '이름 없음'}
-            <span className={`ml-1 font-semibold ${t.id === current.id ? 'text-blue-100' : 'text-slate-400'}`}>
-              {t.from ? `${md(t.from)}~${md(t.to)}` : '기간 없음'}
-            </span>
             {t.id === todayId && <span className="ml-1">· 오늘</span>}
           </button>
         ))}
-        <button type="button" data-timetable-add onClick={onAdd} className="ml-auto px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer" title="지금 표를 베껴 오늘부터 쓰는 새 시간표를 만듭니다">
+        <button type="button" data-timetable-add onClick={onAdd} className="ml-auto px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer" title="지금 표를 베낀 새 시간표를 만듭니다">
           + 새 시간표
         </button>
       </div>
 
-      {/* 이름·기간 */}
+      {/* 이름 */}
       <div className="flex items-center gap-2 flex-wrap text-xs" data-timetable-meta={current.id}>
         <input
           type="text"
@@ -136,23 +154,14 @@ export default function GridTab({ list, current, todayId, today, onPick, onChang
           onChange={(e) => onChange({ ...current, name: e.target.value })}
           placeholder="시간표 이름"
           aria-label="시간표 이름"
-          className={`${input} w-36`}
+          className={`${input} w-48`}
         />
-        <input type="date" value={current.from} data-timetable-from onChange={(e) => onChange({ ...current, from: e.target.value })} aria-label="시작 날" className={input} />
-        <span>~</span>
-        <input type="date" value={current.to} data-timetable-to onChange={(e) => onChange({ ...current, to: e.target.value })} aria-label="끝 날" className={input} />
-        <button type="button" data-timetable-quick="sem1" onClick={() => onChange({ ...current, ...quick.sem1 })} className="px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold text-slate-600 cursor-pointer" title={`${quick.sem1.from} ~ ${quick.sem1.to}`}>
-          1학기부터
-        </button>
-        <button type="button" data-timetable-quick="sem2" onClick={() => onChange({ ...current, ...quick.sem2 })} className="px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold text-slate-600 cursor-pointer" title={`${quick.sem2.from} ~ ${quick.sem2.to}`}>
-          2학기부터
-        </button>
         <button type="button" data-timetable-delete onClick={() => onRemove(current.id)} className="ml-auto px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-bold cursor-pointer">
           🗑️ 이 시간표 지우기
         </button>
       </div>
       <p className="text-2xs text-slate-400 font-semibold -mt-2">
-        기간이 겹치면 늦게 시작한 시간표가 이깁니다. 저장하면 그 기간의 하루·주간 수업 칸이 저절로 바뀝니다(그날 따로 고친 칸은 그대로).
+        💾 저장은 이 시간표(이름·표)만 남깁니다. 수업 칸에 쓰려면 아래 <b>✅ 적용</b>을 누르세요. 지워도 이미 적용한 날의 수업 칸은 그대로입니다.
         {todayId === current.id ? ` 오늘(${md(today)})은 이 시간표를 따릅니다.` : ''}
       </p>
 
@@ -251,6 +260,75 @@ export default function GridTab({ list, current, todayId, today, onPick, onChang
             </table>
           </div>
         </div>
+      </div>
+
+      <ApplyBox {...props} input={input} />
+    </div>
+  );
+}
+
+/** 📅 날짜에 적용 - 기간 + ✅ 적용, 그 아래 적용된 시간표 줄 */
+function ApplyBox({ range, onRange, quick, onApply, applying, applied, onUnapply, onLoad, input }: Props & { input: string }) {
+  const quickBtn = 'px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold text-slate-600 cursor-pointer';
+  const small = 'px-2 py-0.5 rounded-md border font-bold cursor-pointer';
+  return (
+    <div className="space-y-2.5 px-3 py-3 bg-emerald-50/60 border border-emerald-200 rounded-xl" data-timetable-apply-box>
+      <div className="flex items-center gap-2 flex-wrap text-xs">
+        <span className="font-black text-emerald-800">📅 날짜에 적용</span>
+        <input type="date" value={range.from} data-timetable-from onChange={(e) => onRange({ ...range, from: e.target.value })} aria-label="적용 시작 날" className={input} />
+        <span>~</span>
+        <input type="date" value={range.to} data-timetable-to onChange={(e) => onRange({ ...range, to: e.target.value })} aria-label="적용 끝 날" className={input} />
+        <button type="button" data-timetable-quick="sem1" onClick={() => onRange(quick.sem1)} className={quickBtn} title={`${quick.sem1.from} ~ ${quick.sem1.to}`}>
+          1학기부터
+        </button>
+        <button type="button" data-timetable-quick="sem2" onClick={() => onRange(quick.sem2)} className={quickBtn} title={`${quick.sem2.from} ~ ${quick.sem2.to}`}>
+          2학기부터
+        </button>
+        <button
+          type="button"
+          data-timetable-apply
+          onClick={onApply}
+          disabled={applying}
+          className="ml-auto px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer"
+          title="위 표를 이 기간의 수업 칸에 씁니다"
+        >
+          ✅ {applying ? '적용 중...' : `${short(range.from)} ~ ${short(range.to)} 적용`}
+        </button>
+      </div>
+      <p className="text-2xs text-slate-500 font-semibold">
+        위 표를 이 기간의 하루·주간 수업 칸에 씁니다(저장하지 않은 고친 것도). 이미 적용한 기간과 겹치면 <b>겹친 날만</b> 이 표로 바뀌고, 그날 따로 고친 칸은 그대로입니다. 지난 날짜에 적용하면 지난 수업 칸과 진도 세기도 바뀝니다.
+      </p>
+      <div className="space-y-1" data-timetable-applied-list={applied.length}>
+        <p className="text-2xs font-black text-slate-500">적용된 시간표</p>
+        {applied.length === 0 ? (
+          <p className="text-xs font-semibold text-slate-400" data-timetable-applied-empty>
+            아직 적용한 날이 없습니다 - 수업 칸이 비어 있습니다.
+          </p>
+        ) : (
+          applied.map((row) => (
+            <div
+              key={`${row.id}:${row.from}`}
+              data-timetable-applied={row.id}
+              data-applied-from={row.from}
+              data-applied-to={row.to === FAR_END ? '' : row.to}
+              className={`flex items-center gap-2 px-2 py-1 rounded-lg text-xs ${row.today ? 'bg-white border border-emerald-300' : 'bg-white/60 border border-transparent'}`}
+            >
+              <span className="font-bold text-slate-700 tabular-nums shrink-0">
+                {md(row.from)} ~ {row.to === FAR_END ? '끝 없음' : md(row.to)}
+              </span>
+              <span className="font-semibold text-slate-600 truncate min-w-0">{row.name || '시간표'}</span>
+              {row.today && <span className="shrink-0 font-bold text-emerald-700">· 오늘</span>}
+              <span className="ml-auto flex items-center gap-1 shrink-0">
+                <button type="button" data-timetable-load onClick={() => onLoad(row)} className={`${small} bg-white hover:bg-blue-50 text-blue-700 border-blue-200`} title="이 기간에 적용된 표를 위 표로 불러옵니다">
+                  📥 불러오기
+                </button>
+                <button type="button" data-timetable-unapply onClick={() => onUnapply(row)} className={`${small} bg-white hover:bg-red-50 text-red-600 border-red-200`} title="이 기간의 적용을 뺍니다 (그 날들은 시간표 수업이 빕니다)">
+                  ✕ 빼기
+                </button>
+              </span>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );

@@ -396,9 +396,12 @@ try {
   r.check(await waitFor(fp.locator(ttWin), 8000), '⏰ 시간표 넣기 = 시간표 창');
   await fp.locator(`${ttWin} input[data-cell="0-1"]`).fill('국어');
   await fp.locator(sel('timetable-save')).click();
+  await fp.waitForTimeout(1500);
+  r.check((await fp.locator(sel('first-step', 'timetable')).getAttribute('data-done')) === 'false', '저장만 하면 아직 (P37 - 저장된 시간표는 날짜에 쓰이지 않는다)');
+  await fp.locator(sel('timetable-apply')).click();
   r.check(
     await waitFor(async () => (await fp.locator(sel('first-step', 'timetable')).getAttribute('data-done').catch(() => '')) === 'true', 10000),
-    '시간표를 저장하면 ✓',
+    '✅ 적용하면 ✓',
   );
   await fp.keyboard.press('Escape');
   await fp.locator(sel('first-step', 'class')).click();

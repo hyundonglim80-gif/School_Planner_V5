@@ -26,6 +26,7 @@ import { classPath, useClasses } from '../class/classes';
 import { lessonDayPath } from '../lessons/lessonOps';
 import { useTeaching } from '../lessons/teaching';
 import { timetablePath } from '../timetable/timetableDraft';
+import { isAppliedTimetable } from '../../domain/timetableApply';
 
 export function useNewYear(year: number) {
   const { classes, sid: classSid, docs: classDocs } = useClasses();
@@ -39,7 +40,7 @@ export function useNewYear(year: number) {
   const timetables = useMemo<PeriodTimetable[]>(
     () =>
       Object.values(ttDocs)
-        .filter(isLive)
+        .filter((t) => isLive(t) && isAppliedTimetable(t))
         .map((t) => ({
           id: t.id,
           name: t.name,
@@ -117,10 +118,17 @@ export async function createClasses(
   return { made: make, skipped: skip };
 }
 
-/** 지난 시간표를 베껴 그 학년도 시간표를 만든다 - 새 id. 실패하면 던진다 */
+/**
+ * 지난 시간표를 베껴 그 학년도 시간표를 만든다 - 저장된 시간표(이름·표) + 그 학년도 내내 적용(P37). 저장된 시간표 id를 돌려준다. 실패하면 던진다
+ */
 export async function createCopiedTimetable(sid: string, src: PeriodTimetable | null, year: number): Promise<string> {
   const id = newId();
-  const undo = await batch([writeOp.create(timetablePath(sid, id), copiedTimetable(src, year))], { fail: '시간표를 만들지 못했습니다. 다시 눌러 주세요.' });
+  const copy = copiedTimetable(src, year);
+  const ops = [
+    writeOp.create(timetablePath(sid, id), { kind: 'saved', name: copy.name, from: '', to: '', grid: copy.grid }),
+    writeOp.create(timetablePath(sid, newId()), { ...copy, saveId: id }),
+  ];
+  const undo = await batch(ops, { fail: '시간표를 만들지 못했습니다. 다시 눌러 주세요.' });
   recordUndo(sid, src ? `✅ [${src.name}]를 베껴 ${year}학년도 시간표를 만들었습니다.` : `✅ ${year}학년도 빈 시간표를 만들었습니다.`, undo, { what: '새 시간표' });
   return id;
 }

@@ -128,14 +128,28 @@ try {
   await page.locator(sel('lessons-settings')).click();
   r.check(await waitFor(page.locator(win)), '⚙️ = 시간표 창');
   r.check((await page.locator(`${win} ${sel('timetable-tab')}`).count()) === 4, '탭 넷 (교사 유형·시간표·교시·학기·방학)');
-  r.check((await page.locator(sel('timetable-pick', 'insp_tt1')).getAttribute('aria-pressed')) === 'true', '오늘 따르는 시간표가 골라져 있다');
+  // P37 - 심은 시간표(저장·적용을 함께 맡던 옛 모양)는 창을 열면 저장된 시간표로 베낀다(같은 id + '-saved')
+  const pick1 = page.locator(sel('timetable-pick', 'insp_tt1-saved'));
+  r.check(await waitFor(async () => (await pick1.getAttribute('aria-pressed').catch(() => null)) === 'true'), '옛 시간표 = 저장된 시간표 칩 (오늘 따르는 것이 골라져 있다)');
+  const copy1 = await serverUntil(() => read(A.ref('timetables', 'insp_tt1-saved')), (d) => d?.kind === 'saved');
+  r.check(
+    copy1?.kind === 'saved' && copy1.from === '' && copy1.grid?.['1']?.['1'] === '국어' && (await read(A.ref('timetables', 'insp_tt1')))?.saveId === 'insp_tt1-saved',
+    "베낀 것 = 이름·표만 (kind 'saved') · 적용된 문서에 saveId",
+  );
   r.check((await cellIn('0-1').inputValue()) === '국어', '표 칸 = 시간표 (월 1교시)');
   await cellIn('0-1').fill('도덕');
   r.check(await waitFor(page.locator(sel('timetable-dirty'))), '고치면 저장하지 않은 것 표시');
   await page.locator(sel('timetable-save')).click();
-  const tt1 = await serverUntil(() => read(A.ref('timetables', 'insp_tt1')), (d) => d?.grid?.['1']?.['1'] === '도덕');
-  r.check(tt1?.grid?.['1']?.['1'] === '도덕' && tt1.grid['1']['2'] === '수학', '💾 저장 = 그 시간표 문서의 grid (다른 칸은 그대로)');
-  r.check(await waitFor(async () => (await subjectOf(1)) === '도덕', 8000), "'적용' 없이 하루 칸이 따라온다");
+  const tt1 = await serverUntil(() => read(A.ref('timetables', 'insp_tt1-saved')), (d) => d?.grid?.['1']?.['1'] === '도덕');
+  r.check(tt1?.grid?.['1']?.['1'] === '도덕' && tt1.grid['1']['2'] === '수학', '💾 저장 = 저장된 시간표의 grid (다른 칸은 그대로)');
+  await page.waitForTimeout(1000);
+  r.check((await subjectOf(1)) === '국어' && (await read(A.ref('timetables', 'insp_tt1')))?.grid?.['1']?.['1'] === '국어', '저장만으로는 수업 칸이 그대로 (적용한 날만 바뀐다)');
+  await page.locator(sel('timetable-from')).fill('2026-03-01');
+  await page.locator(sel('timetable-to')).fill('2027-02-28');
+  await page.locator(sel('timetable-apply')).click();
+  const ap1 = await serverUntil(() => read(A.ref('timetables', 'insp_tt1')), (d) => d?.grid?.['1']?.['1'] === '도덕');
+  r.check(ap1?.from === '2026-03-01' && ap1.to === '2027-02-28' && ap1.saveId === 'insp_tt1-saved', '✅ 적용 = 같은 기간의 적용된 문서를 그 표로 고쳐 쓴다');
+  r.check(await waitFor(async () => (await subjectOf(1)) === '도덕', 8000), '✅ 적용하면 하루 칸이 따라온다');
 
   // 칸 옮기기
   await cellIn('0-1').focus();
@@ -162,19 +176,30 @@ try {
   for (const rc of ['3-1', '3-2', '4-1', '4-2']) await cellIn(rc).fill('');
   r.check(!(await page.locator(sel('timetable-dirty')).count()), '되돌리면 저장할 것이 없다');
 
-  // 새 시간표 (10/14부터) - 늦게 시작한 것이 이긴다
+  // 새 시간표 → 10/14부터 적용 - 겹친 날만 새 표 (앞 문서는 10/13까지)
   await page.locator(sel('timetable-add')).click();
   r.check((await page.locator(sel('timetable-pick')).count()) === 2, '+ 새 시간표 = 칩 하나 더 (지금 표를 베낀다)');
   r.check((await cellIn('0-1').inputValue()) === '도덕', '새 시간표는 지금 표를 베낀다');
   await page.locator(sel('timetable-name')).fill('점검 10월 시간표');
-  await page.locator(sel('timetable-from')).fill('2026-10-14');
   await cellIn('0-1').fill('음악');
   await page.locator(sel('timetable-save')).click();
   const made = await serverUntil(
     async () => (await getDocs(A.coll('timetables'))).docs.filter((d) => d.data().name === '점검 10월 시간표'),
     (l) => l.length === 1,
   );
-  r.check(made.length === 1 && made[0].data().from === '2026-10-14' && made[0].data().grid['1']['1'] === '음악', '새 시간표 = 문서 하나 (10/14부터)');
+  r.check(made.length === 1 && made[0].data().kind === 'saved' && made[0].data().from === '' && made[0].data().grid['1']['1'] === '음악', '새 시간표 = 저장된 시간표 문서 하나 (이름·표만)');
+  await page.locator(sel('timetable-from')).fill('2026-10-14');
+  await page.locator(sel('timetable-to')).fill('2027-02-28');
+  await page.locator(sel('timetable-apply')).click();
+  const appliedNow = async () => (await getDocs(A.coll('timetables'))).docs.map((d) => ({ id: d.id, ...d.data() })).filter((d) => !d.deletedAt && d.kind !== 'saved');
+  const parts = await serverUntil(appliedNow, (l) => l.length === 2 && l.some((d) => d.from === '2026-10-14'));
+  const oct = parts.find((d) => d.from === '2026-10-14');
+  r.check(
+    oct?.to === '2027-02-28' && oct.grid['1']['1'] === '음악' && oct.saveId === made[0].id && parts.find((d) => d.id === 'insp_tt1')?.to === '2026-10-13',
+    '10/14부터 적용 = 앞 문서는 10/13까지 + 새 적용 문서 하나',
+    JSON.stringify(parts.map((d) => [d.id, d.from, d.to])),
+  );
+  r.check(await waitFor(page.locator(`${sel('timetable-applied', oct?.id)}[data-applied-from="2026-10-14"]`)), '적용된 시간표 줄에 10/14 ~');
 
   // 교시 이름·시각
   await page.locator(sel('timetable-tab', 'periods')).click();
@@ -199,7 +224,7 @@ try {
 
   r.section('기간별 시간표·수업 없는 날');
   await go('#/day/2026-10-19');
-  r.check(await waitFor(async () => (await subjectOf(1)) === '음악', 8000), '10/19 = 10/14부터 시간표 (늦게 시작한 것이 이긴다)');
+  r.check(await waitFor(async () => (await subjectOf(1)) === '음악', 8000), '10/19 = 10/14부터 적용한 시간표');
   await go('#/day/2026-07-27');
   r.check(await waitFor(page.locator(sel('lessons-off', 'vacation')), 8000), '방학 = 🏖️ 표시');
   r.check((await subjectOf(1)) === '', '방학에는 시간표 수업이 없다');
@@ -344,12 +369,29 @@ try {
   await hit.click();
   r.check(await waitFor(page.locator(`${sel('lesson-card', 2)}[data-search-focus]`), 6000), '결과를 누르면 그날 그 교시를 짚는다');
   await page.keyboard.press('Escape');
-  // 시간표 지우기 = 휴지통
+  // 시간표 지우기 = 휴지통 - 적용한 날은 그대로 (P37 사용자 보고: 저장된 시간표를 지우니 적용된 수업 칸이 지워졌다)
   await page.locator(sel('lessons-settings')).click();
   await page.locator(sel('timetable-pick', made[0].id)).click();
   await page.locator(sel('timetable-delete')).click();
   await page.locator(sel('timetable-save')).click();
   r.check(!!(await serverUntil(() => read(A.ref('timetables', made[0].id)), (d) => !!d?.deletedAt))?.deletedAt, '시간표 지우기 = 지운 표시');
+  r.check(!(await read(A.ref('timetables', oct.id)))?.deletedAt, '저장된 시간표를 지워도 적용된 문서는 그대로');
+  const octRow = page.locator(sel('timetable-applied', oct.id)).first();
+  r.check(await waitFor(octRow), '적용된 시간표 줄도 그대로');
+  await octRow.locator(sel('timetable-load')).click();
+  r.check(await waitFor(async () => (await page.locator(sel('timetable-name')).inputValue()) === '점검 10월 시간표 (적용된 표)'), '📥 불러오기 = 적용된 표를 새 시간표로');
+  r.check((await cellIn('0-1').inputValue()) === '음악', '불러온 표 = 그 기간의 표');
+  await page.locator(sel('timetable-delete')).click();
+  r.check(!(await page.locator(sel('timetable-dirty')).count()), '저장하지 않은 불러온 것은 지우면 그만 (저장할 것 없음)');
+  await page.locator(`[data-popup-frame]:has(${win}) [data-close]`).click();
+  await go('#/day/2026-10-19');
+  r.check(await waitFor(async () => (await subjectOf(1)) === '음악', 8000), '지운 뒤에도 10/19 = 음악 (적용한 날은 그대로)');
+  // ✕ 빼기 → 되돌리기
+  await page.locator(sel('lessons-settings')).click();
+  await page.locator(sel('timetable-applied', oct.id)).first().locator(sel('timetable-unapply')).click();
+  r.check(await waitFor(async () => (await subjectOf(1)) === '', 8000), '✕ 빼기 = 그 날들은 시간표 수업이 빈다');
+  await toastUndo('적용을 뺐습니다').click();
+  r.check(await waitFor(async () => (await subjectOf(1)) === '음악', 8000), '되돌리기 = 다시 적용');
   await page.locator(`[data-popup-frame]:has(${win}) [data-close]`).click();
   await page.evaluate(() => window.sp5.openWindow('trash'));
   r.check(await waitFor(page.locator(sel('trash-row', `timetable:${made[0].id}`)), 8000), '휴지통에 시간표');

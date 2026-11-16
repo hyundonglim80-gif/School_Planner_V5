@@ -71,9 +71,12 @@ describe('다음 할 일 띠 (P22-7)', () => {
     expect(opened).toEqual(['timetable']);
   });
 
-  it('시간표를 넣으면 ✓, 학급 만들기 = 학급 화면 · 둘 다 하면 사라진다', () => {
-    seed('timetables', { tt: { ...base } });
-    render(<FirstStepsBanner />);
+  it('저장만 한 시간표는 아직, 적용하면 ✓ (P37) · 학급 만들기 = 학급 화면 · 둘 다 하면 사라진다', () => {
+    seed('timetables', { s: { ...base, kind: 'saved', name: '1학기', from: '', to: '', grid: {} } });
+    const { rerender } = render(<FirstStepsBanner />);
+    expect(q('[data-first-step="timetable"]')!.dataset.done).toBe('false');
+    act(() => seed('timetables', { tt: { ...base, name: '1학기', from: '2026-03-01', to: '2027-02-28', grid: {}, saveId: 's' } }));
+    rerender(<FirstStepsBanner />);
     expect(q('[data-first-step="timetable"]')!.dataset.done).toBe('true');
     expect(q('[data-first-step="timetable"]')!.textContent).toContain('✓');
     fireEvent.click(q('[data-first-step="class"]')!);

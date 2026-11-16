@@ -1,12 +1,13 @@
 // 처음 쓰는 사람의 '다음 할 일' 띠 (P22-7) - 교사 유형을 고른 뒤 하루 화면 맨 위에: '다음: ⏰ 시간표 넣기 → 🏫 학급 만들기'.
 //   띠 차례 = 👩‍🏫 교사 유형(TeachingBanner) → 이 띠 (한 번에 하나).
-//   시간표·학급이 다 있으면 저절로 사라진다(학년도는 보지 않는다 - 지난 학년 것은 3월 🌱 띠). '닫기'는 계정 common.firstStepsDone(다른 기기에서도).
+//   시간표(적용한 날이 있는 것 - P37: 저장만 한 시간표는 수업 칸에 쓰이지 않는다)·학급이 다 있으면 저절로 사라진다(학년도는 보지 않는다 - 지난 학년 것은 3월 🌱 띠). '닫기'는 계정 common.firstStepsDone(다른 기기에서도).
 //   개인 공간 시간표·학급을 서버에서 받기 전에는 띄우지 않는다(받기 전의 '없음'은 모르는 것이다).
 import { setCommonSetting, useCommonLoaded, useCommonSettings } from '../../app/prefs';
 import { setScope } from '../../app/nav';
 import { showToast } from '../../app/toast';
 import { openWindow } from '../../app/windows';
-import { useHasLive } from '../../data/select';
+import { isLive, useDocs, useHasLive, useMirrorStatus } from '../../data/select';
+import { isAppliedTimetable } from '../../domain/timetableApply';
 import { usePersonalSpaceId } from '../../data/session';
 import { setClassView } from '../class/view';
 import { useTeaching } from './teaching';
@@ -16,7 +17,9 @@ export default function FirstStepsBanner() {
   const done = useCommonSettings((s) => s.firstStepsDone);
   const { chosen } = useTeaching();
   const sid = usePersonalSpaceId();
-  const hasTimetable = useHasLive(['timetables'], sid);
+  const ttDocs = useDocs('timetables', sid);
+  const ttStatus = useMirrorStatus('timetables', sid);
+  const hasTimetable = Object.values(ttDocs).some((t) => isLive(t) && isAppliedTimetable(t)) ? true : ttStatus === 'live' ? false : null;
   const hasClass = useHasLive(['classes'], sid);
   if (!loaded || !chosen || done || hasTimetable === null || hasClass === null) return null;
   if (hasTimetable && hasClass) return null;

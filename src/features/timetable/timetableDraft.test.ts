@@ -1,9 +1,34 @@
 import { describe, expect, it } from 'vitest';
+import type { WriteOp } from '../../data/repo/ops';
 import type { Stored } from '../../data/types';
-import { cleanGrid, draftProblem, firstTimetable, timetableOps } from './timetableDraft';
+import { addDays } from '../../domain/dateUtils';
+import { timetableOn } from '../../domain/lessons';
+import { isAppliedTimetable } from '../../domain/timetableApply';
+import { applyOps, cleanGrid, firstTimetable, savedCopies, savedCopyOps, timetableOps } from './timetableDraft';
 
 const doc = (id: string, over: Partial<Stored<'timetables'>> = {}) =>
   ({ id, name: '1학기', from: '2026-03-01', to: '2027-02-28', grid: { '1': { '1': '국어' } }, deletedAt: null, ...over }) as Stored<'timetables'>;
+const saved = (id: string, over: Partial<Stored<'timetables'>> = {}) => doc(id, { kind: 'saved', from: '', to: '', ...over });
+const at = (id: string) => ({ sid: 'u_me', coll: 'timetables', id });
+
+/** 쓰기를 사본에 얹어 본다 (create·patch·remove만) */
+function run(docs: Record<string, Stored<'timetables'>>, ops: WriteOp[]) {
+  const out = { ...docs };
+  for (const op of ops) {
+    const id = op.at.id;
+    if (op.type === 'create') out[id] = { id, ...op.data, deletedAt: null } as never;
+    else if (op.type === 'patch') out[id] = { ...out[id], ...op.changes } as never;
+    else if (op.type === 'remove') out[id] = { ...out[id], deletedAt: 1 } as never;
+  }
+  return out;
+}
+const live = (docs: Record<string, Stored<'timetables'>>) => Object.values(docs).filter((d) => !d.deletedAt && isAppliedTimetable(d));
+/** 그날 수업 칸이 따르는 표의 월 1교시 */
+const subjectOn = (docs: Record<string, Stored<'timetables'>>, date: string) => timetableOn(date, live(docs))?.grid['1']?.['1'] ?? '';
+const ids = () => {
+  let n = 0;
+  return () => `new${++n}`;
+};
 
 describe('시간표 표 다듬기', () => {
   it('빈 칸·요일 밖·교시 밖을 빼고 글자를 다듬는다', () => {
@@ -11,35 +36,118 @@ describe('시간표 표 다듬기', () => {
   });
 });
 
-describe('고친 것 → 쓰기', () => {
-  const docs = { a: doc('a'), b: doc('b', { name: '2학기', from: '2026-08-17' }), gone: doc('gone', { deletedAt: 1 as never }) };
+describe('💾 저장 = 저장된 시간표만', () => {
+  const docs = { a: saved('a'), b: saved('b', { name: '2학기' }), gone: saved('gone', { deletedAt: 1 as never }), applied: doc('applied') };
 
-  it('바뀐 칸만 고치고, 새것은 만들고, 지운 것은 지운 표시', () => {
+  it('바뀐 칸만 고치고, 새것은 이름·표만으로 만들고, 지운 것은 지운 표시 - 적용된 문서는 건드리지 않는다', () => {
     const ops = timetableOps(
       'u_me',
       docs,
       {
-        a: { id: 'a', name: '1학기', from: '2026-03-01', to: '2027-02-28', grid: { '1': { '1': '국어', '2': '수학' } } },
-        b: { id: 'b', name: ' 2학기 ', from: '2026-08-17', to: '2027-02-28', grid: { '1': { '1': ' 국어' } } },
-        n: { id: 'n', name: '', from: '2026-10-14', to: '2027-02-28', grid: { '3': { '1': '음악' } } },
+        a: { id: 'a', name: '1학기', grid: { '1': { '1': '국어', '2': '수학' } } },
+        b: { id: 'b', name: ' 2학기 ', grid: { '1': { '1': ' 국어' } } },
+        n: { id: 'n', name: '', grid: { '3': { '1': '음악' } } },
       },
       ['b'],
       6,
     );
     expect(ops).toEqual([
-      { type: 'patch', at: { sid: 'u_me', coll: 'timetables', id: 'a' }, changes: { grid: { '1': { '1': '국어', '2': '수학' } } }, before: docs.a },
-      { type: 'create', at: { sid: 'u_me', coll: 'timetables', id: 'n' }, data: { name: '시간표', from: '2026-10-14', to: '2027-02-28', grid: { '3': { '1': '음악' } } } },
-      { type: 'remove', at: { sid: 'u_me', coll: 'timetables', id: 'b' } },
+      { type: 'patch', at: at('a'), changes: { grid: { '1': { '1': '국어', '2': '수학' } } }, before: docs.a },
+      { type: 'create', at: at('n'), data: { kind: 'saved', name: '시간표', from: '', to: '', grid: { '3': { '1': '음악' } } } },
+      { type: 'remove', at: at('b') },
     ]);
   });
 
   it('아무것도 적지 않은 새 시간표는 만들지 않는다, 바뀐 것이 없으면 쓰지 않는다', () => {
-    expect(timetableOps('u_me', docs, { x: firstTimetable('x', 2026), a: { ...docs.a } }, [], 6)).toEqual([]);
+    expect(timetableOps('u_me', docs, { x: firstTimetable('x'), a: { id: 'a', name: '1학기', grid: docs.a.grid } }, [], 6)).toEqual([]);
   });
 
-  it('기간이 틀리면 저장 전에 알린다', () => {
-    expect(draftProblem([{ id: 'a', name: '2학기', from: '2026-09-01', to: '2026-08-31', grid: {} }])).toMatch(/늦습니다/);
-    expect(draftProblem([{ id: 'a', name: '', from: '', to: '2026-08-31', grid: {} }])).toMatch(/기간/);
-    expect(draftProblem([firstTimetable('x', 2026)])).toBeNull();
+  it('저장된 시간표를 지워도 수업 칸은 그대로 (P37 사용자 보고)', () => {
+    const before = { s: saved('s'), t: doc('t', { saveId: 's' }) };
+    const after = run(before, timetableOps('u_me', before, {}, ['s'], 6));
+    expect(after.s.deletedAt).toBeTruthy();
+    expect(subjectOn(after, '2026-10-12')).toBe('국어');
+  });
+});
+
+describe('✅ 적용', () => {
+  const input = (name: string, subject: string) => ({ name, grid: { '1': { '1': subject } }, saveId: `s_${name}` });
+
+  it('뒤 기간에 적용하면 앞 문서의 끝을 줄이고 새 문서 하나', () => {
+    const docs = { a: doc('a', { saveId: 's_1' }) };
+    const ops = applyOps('u_me', docs, { from: '2026-10-14', to: '2027-02-28' }, input('10월', '음악'), 6, ids());
+    expect(ops).toEqual([
+      { type: 'patch', at: at('a'), changes: { to: '2026-10-13' }, before: docs.a },
+      { type: 'create', at: at('new1'), data: { name: '10월', from: '2026-10-14', to: '2027-02-28', grid: { '1': { '1': '음악' } }, saveId: 's_10월' } },
+    ]);
+  });
+
+  it('같은 기간에 다시 적용하면 그 문서를 고쳐 쓴다 (휴지통이 쌓이지 않게)', () => {
+    const docs = { a: doc('a') };
+    const ops = applyOps('u_me', docs, { from: '2026-03-01', to: '2027-02-28' }, input('1학기', '도덕'), 6, ids());
+    expect(ops).toEqual([
+      { type: 'patch', at: at('a'), changes: { name: '1학기', from: '2026-03-01', to: '2027-02-28', grid: { '1': { '1': '도덕' } }, saveId: 's_1학기' }, before: docs.a },
+    ]);
+  });
+
+  it('가운데에 적용하면 앞 문서가 둘로 (뒤 조각은 같은 표·같은 saveId) · 저장된 시간표는 그대로', () => {
+    const docs = { a: doc('a', { saveId: 's_1' }), s: saved('s') };
+    const after = run(docs, applyOps('u_me', docs, { from: '2026-05-01', to: '2026-05-31' }, input('5월', '체육'), 6, ids()));
+    expect(after.new1).toMatchObject({ from: '2026-06-01', to: '2027-02-28', grid: { '1': { '1': '국어' } }, saveId: 's_1' });
+    expect(after.s).toEqual(docs.s);
+    expect(['2026-04-30', '2026-05-01', '2026-05-31', '2026-06-01'].map((d) => subjectOn(after, d))).toEqual(['국어', '체육', '체육', '국어']);
+  });
+
+  it('✕ 빼기 = 그 날들만 비운다', () => {
+    const docs = { a: doc('a') };
+    const after = run(docs, applyOps('u_me', docs, { from: '2026-12-01', to: '2026-12-31' }, null, 6, ids()));
+    expect(['2026-11-30', '2026-12-15', '2027-01-01'].map((d) => subjectOn(after, d))).toEqual(['국어', '', '국어']);
+  });
+
+  it('여러 번 적용하면 날마다 마지막에 적용한 표 (옛 겹친 자료에서 시작해도)', () => {
+    // 옛 자료: 1학기 3/1~, 2학기 9/1~ (늦게 시작한 것이 이긴다)
+    let docs: Record<string, Stored<'timetables'>> = { a: doc('a'), b: doc('b', { from: '2026-09-01', grid: { '1': { '1': '2학기' } } }) };
+    const paint: Record<string, string> = {};
+    for (let d = '2026-03-01'; d <= '2027-02-28'; d = addDays(d, 1)) paint[d] = d < '2026-09-01' ? '국어' : '2학기';
+    const steps: Array<[string, string, string | null]> = [
+      ['2026-09-10', '2026-09-20', '가'],
+      ['2026-08-01', '2026-10-31', '나'],
+      ['2026-09-15', '2026-09-15', null],
+      ['2026-03-01', '2026-03-31', '다'],
+      ['2026-12-01', '2027-02-28', '라'],
+      ['2026-09-01', '2027-01-15', '마'],
+    ];
+    const next = ids();
+    for (const [from, to, subject] of steps) {
+      docs = run(docs, applyOps('u_me', docs, { from, to }, subject ? input(subject, subject) : null, 6, next));
+      for (let d = from; d <= to; d = addDays(d, 1)) paint[d] = subject ?? '';
+      // 적용한 뒤에는 적용된 문서끼리 날이 겹치지 않는다
+      const list = live(docs);
+      for (const x of list) for (const y of list) if (x !== y) expect(x.to < y.from || y.to < x.from, `${x.id}·${y.id} 겹침`).toBe(true);
+    }
+    for (const [d, want] of Object.entries(paint)) expect(subjectOn(docs, d), d).toBe(want);
+  });
+});
+
+describe('P37 전 자료 → 저장된 시간표로 베끼기', () => {
+  it('쓰이는 적용된 문서마다 하나(같은 이름·표는 하나로) · saveId가 있거나 늘 가려진 것은 빼고 · 같은 저장된 시간표가 있으면 잇기만', () => {
+    const docs = {
+      a: doc('a'),
+      a2: doc('a2', { from: '2027-03-01', to: '2028-02-29' }),
+      b: doc('b', { name: '2학기', from: '2026-09-01' }),
+      hidden: doc('hidden', { name: '옛 V4', from: '2026-09-01', to: '2026-12-31', createdAt: -1 }),
+      linked: doc('linked', { from: '2028-03-01', to: '2029-02-28', saveId: 'x' }),
+      s2: saved('s2', { name: '2학기' }),
+    };
+    expect(savedCopies(docs)).toEqual([
+      { id: 'a-saved', name: '1학기', grid: { '1': { '1': '국어' } }, of: ['a', 'a2'], exists: false },
+      { id: 's2', name: '2학기', grid: { '1': { '1': '국어' } }, of: ['b'], exists: true },
+    ]);
+    const ops = savedCopyOps('u_me', docs);
+    expect(ops.map((op) => `${op.type}:${op.at.id}`)).toEqual(['create:a-saved', 'patch:a', 'patch:a2', 'patch:b']);
+    const after = run(docs, ops);
+    expect(after['a-saved']).toMatchObject({ kind: 'saved', name: '1학기', from: '', to: '' });
+    expect(after.b.saveId).toBe('s2');
+    expect(savedCopies(after)).toEqual([]); // 한 번이면 끝
   });
 });

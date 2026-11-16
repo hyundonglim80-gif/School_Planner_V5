@@ -132,7 +132,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 | 자리 | 모양 | 뜻 |
 |---|---|---|
-| `timetables/{id}` | `{ name, from, to, grid: { '1'~'5'(요일): { '<교시>': '국어' \| '5-2 과학' } }, updatedAt, deletedAt, v }` | **기간별 시간표**(1학기·2학기·'10/14부터 바뀐 시간표'). 기간이 겹치면 늦게 시작한 것이 이긴다 |
+| `timetables/{id}` | `{ name, kind?, from, to, grid: { '1'~'5'(요일): { '<교시>': '국어' \| '5-2 과학' } }, saveId?, updatedAt, deletedAt, v }` | 두 가지(P37 11-16 사용자 요청 - `domain/timetableApply`): **저장된 시간표** `kind: 'saved'`(이름·표만, from·to '' - 시간표 창 칩) · **적용된 시간표**(기간 + 그때의 표, `saveId` = 온 저장된 시간표 - 그것을 지워도 그대로). 수업 칸은 적용된 것만 따른다. '✅ 적용'은 덧칠(겹친 날만 새 표 - 앞 문서를 줄이거나 둘로)이라 적용된 문서끼리 겹치지 않는다. P37 전 자료의 겹침은 늦게 시작한 것이 이긴다 |
 | `lessonDays/{date}` | `{ periods: { '<교시>': { subject?, memo?, supplies?, attachments?, linkIds? } }, updatedAt, v }` | **그날 바꾼 칸만.** `subject`가 있으면 그 과목(`''`이면 그 교시 수업 없음), 칸이 없으면 시간표를 따른다. 과목이 그날 시간표와 같으면 적지 않는다(P6-1 `features/lessons/lessonOps`). **비고(준비물)는 `supplies` 한 칸**(P10-2) - `memo`는 옛 수업 메모(P10-2 전·V4 가져오기)로 읽을 때 그 아래 줄에 이어 보이고(`domain/lessons.lessonNote`), 그 칸의 비고를 고쳐 저장하면 합친 글을 `supplies`에 쓰고 `memo`를 지운다(자료 옮기기 없음). 고칠 때는 `periods.3.supplies`처럼 그 칸만 - 날짜 문서라 저장 도우미 `merge`(없으면 만든다). 지운 표시는 없다 |
 | `settings/common.periods` | `[{ n, name, start, end }]` | 교시 이름·시각(V4 '수업 시간 명칭' + `v4_periodTimes`를 하나로). 교시 수 = 길이(1~12), 기본 1~6교시·시각 없음 |
 | `settings/common.terms` | `{ '2026': { summer?: {from,to}, winter?: {from,to} } }` | 학년도마다 **방학만**(학년도 = 3월~이듬해 2월). 학기는 셈한다 - 1학기 = 3/1 ~ 여름 방학 전날, 2학기 = 여름 방학 다음 날 ~ 겨울 방학 전날(V4 `lib/semester` - `domain/semester` `termSemesters`·`semesterConfigOf`) |
@@ -232,7 +232,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 ### 5-2. 수업 칸
 `그날 n교시 = lessonDays[date].periods[n].subject` (있으면) → 없으면 `수업 없는 날`(V4 `lib/classDays.classOffReason`: 방학·공휴일·수업X 일정·'휴업')이면 없음 →
 아니면 그 날짜가 든 시간표의 `grid[요일][n]`. 준비물·메모·첨부·링크는 `lessonDays`에만 있다. 진도(V4 `lib/progress`)는 이 결과를 입력으로 센다.
-**'시간표 적용' 단추는 없다** — 시간표를 고치면 그 기간의 날이 저절로 따라간다(그날 바꾼 칸은 그대로).
+날짜마다 적어 두지 않는다(V4 '⚡ 일괄 덮어쓰기'와 다르다) — 적용된 시간표 문서 하나가 그 기간을 맡고, 그날 바꾼 칸은 그대로다.
+**P37(11-16 사용자 요청)부터 저장과 적용이 따로다**: 💾 저장 = 저장된 시간표(이름·표), ✅ 적용 = 고른 기간에 그 표의 적용된 시간표 문서(겹친 날만 바뀐다). 저장된 시간표를 지워도 적용한 날은 그대로다(사용자 보고 - 지우니 적용된 수업 칸이 지워졌다). 옛 문서(저장·적용을 함께 맡던 것)는 시간표 창을 열면 저장된 시간표로 한 번 베낀다(`<id>-saved`).
 
 ### 5-3. 기간 일정
 항목 하나(`date`~`endDate`). 보이는 날 = 범위 안 · `skipDates` 아님 · `workdays`면 주말·공휴일 아님(`domain/period` - 공휴일은 P5-3이 넣는다, 그 전에는 주말만).

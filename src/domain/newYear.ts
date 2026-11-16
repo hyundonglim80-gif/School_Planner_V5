@@ -52,11 +52,11 @@ export function latestTimetableBefore(list: readonly PeriodTimetable[], year: nu
   return latest ? (before.find((t) => t.id === latest.id) ?? null) : null;
 }
 
-/** 베낀 새 시간표 - 그 학년도 3/1 ~ 이듬해 2월 끝, 이름 '1학기 시간표'(2학기 시간표는 시간표 창에서 '2학기부터'로) */
+/** 베낀 새 시간표 - 그 학년도 3/1 ~ 이듬해 2월 끝, 이름 '2027학년도 시간표'(저장된 시간표 칩에 지난해 것과 섞이지 않게 - P37. 2학기 시간표는 시간표 창에서 '2학기부터'로) */
 export function copiedTimetable(src: Pick<PeriodTimetable, 'grid'> | null, year: number): Omit<PeriodTimetable, 'id'> {
   const span = schoolYearSpan(year);
   return {
-    name: '1학기 시간표',
+    name: `${year}학년도 시간표`,
     from: span.start,
     to: span.end,
     grid: structuredClone(src?.grid ?? {}),

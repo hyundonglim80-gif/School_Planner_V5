@@ -251,12 +251,20 @@ export interface Series extends Tracked {
 export type TimetableGrid = Record<string, Record<string, string>>;
 
 /** 기간별 시간표. 기간이 겹치면 늦게 시작한 것이 이긴다 */
+/**
+ * 시간표 한 장 (P37 - domain/timetableApply): 두 가지다.
+ * 저장된 시간표 = `kind: 'saved'`, 이름·표만(from·to ''). 적용된 시간표 = 기간 + 그때의 표 - 수업 칸은 이것만 따른다.
+ */
 export interface Timetable extends Tracked {
   name: string;
-  /** '' = 기간 없음(적용 안 됨 - V4에서 가져왔는데 어느 학기에도 쓰지 않은 표) */
+  /** 'saved' = 저장된 시간표(시간표 창 칩 - 날짜에 쓰이지 않는다). 없으면 적용된 시간표 */
+  kind?: 'saved';
+  /** '' = 기간 없음(저장된 시간표, 또는 V4에서 가져왔는데 어느 학기에도 쓰지 않은 표) */
   from: YMD;
   to: YMD;
   grid: TimetableGrid;
+  /** 적용된 시간표가 어느 저장된 시간표에서 왔나 (그 저장된 시간표를 지워도 이 문서는 그대로) */
+  saveId?: string;
   /** V4 timetable_v5에서 가져온 것 (P6-4) */
   src?: ImportSource;
 }
