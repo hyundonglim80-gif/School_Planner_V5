@@ -174,7 +174,9 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   저장하면 그 기기 종류 몫 + 계정 몫만 바뀐다. 모양·고르기·겹치기는 `domain/settingsSnapshot`(칸 표 `RESET_DEVICE_KEYS`·`RESET_COMMON_KEYS`·`LOCAL_PREFS`). '초기화'가 가는 값 = **몫마다** 내 것 → 관리자 기본값(P33-3) → 앱 기본. 백업에 담는다.
 - 관리자 '처음 설정' = 새 사용자 기본값(P33-3 - 앱 탭 👑, 관리자만): `sharedConfig/initialSettings` = 같은 묶음 모양(로그인하면 읽기·관리자만 쓰기) - 저장은 그 기기 종류 몫 + 계정 몫만(`mergeFields`), 문서 하나라 **마지막 저장이 이긴다**. 누가는 관리자만 읽는 `admin/initialSettings` `{ pc|mobile: { by, at } }`(모두가 읽는 문서에 메일을 두지 않는다).
   입히기: 서버가 설정 문서가 **없다**고 할 때만(`settingsSync` seed - 캐시의 '없음'은 기다림) 그 문서 몫을 깔고 이 기기 값(기본과 다른 것)을 위에 - 계정 문서가 없을 때는 이 기기 값(화면 비율·밝기 …) 가운데 **기본 그대로인 것**에도. 입히면 문서가 생겨 다시 입히지 않는다. 못 받으면 앱 기본.
-- V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다(+ 초기화 묶음 `reset`).
+- `noteTemplates`: 내 메모 틀(P36-2 - 쓰는 칸 📋 틀, 개인 공간에만 - 그룹 메모에서도 이 문서) = `{ t: { <id>: { name, text(체크 줄은 ☐), labels: [{ id, name, parent? }], sid(라벨 id의 공간), tables?, order, at } } }`.
+  고치기는 그 틀의 칸만(merge - 새 틀 = `t.<id>` 하나, 있는 틀 = 칸마다·빈 표 칸 지우기, 지우기 = `t.<id>` 칸 지우기 + 되돌리기). 30개·900KB까지. 채울 때 라벨 = 같은 공간이면 id → 이름 + 상위 이름 → '+ 새 라벨'. 셈 `domain/noteTemplate`. 백업에 담는다.
+- V4는 V3가 모르는 칸을 지울까 봐 설정을 문서 10여 개로 나눴다. V5는 세 문서다(+ 초기화 묶음 `reset` · 메모 틀 `noteTemplates`).
 - 문서에는 **기본값과 다른 칸만** 적는다(없는 칸·틀린 칸 = 기본값). 칸마다 기본값과 읽기 규칙은 표 하나(`domain/settings.ts`의 `SettingsSpec`) -
   `app/prefs.ts`의 `DEVICE_PREFS`(pc/mobile)·`COMMON_SETTINGS`(common). 기능을 옮기는 세션이 그 표에 칸을 더한다. 맞추기는 `data/settingsSync.ts`.
 - 이 기기에만(문서에 넣지 않는다): 지금 보는 화면·날짜, 화면 밝기 `sp5_theme`, 오른쪽 칸 폭. 고대비 `sp5_contrast`·어둡게를 부드럽게 `sp5_dim`(P20-2). 처음 그리기 사본 = 색 테마 `sp5_palette`(계정 값을 받으면 `app/palette`가 적는다)·색약 배려 `sp5_cvd`(`app/viewAids`).
