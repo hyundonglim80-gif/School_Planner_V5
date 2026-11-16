@@ -455,6 +455,7 @@ try {
     await win('timetable', { tab: 'grid' });
     r.check(await has(sel('timetable-add')), '+ 새 시간표');
     r.check((await count('input[data-cell]')) > 0, '요일 × 교시 칸');
+    r.check((await count(sel('timetable-mode'))) === 2, '📅 날짜에 적용 - 적용 방식 둘 (🖌️ 덮어쓰기·🧩 빈 칸만 채우기)');
   });
 
   await topic('new-year', async () => {

@@ -201,6 +201,46 @@ try {
   );
   r.check(await waitFor(page.locator(`${sel('timetable-applied', oct?.id)}[data-applied-from="2026-10-14"]`)), '적용된 시간표 줄에 10/14 ~');
 
+  // P39 적용 방식 - 🧩 빈 칸만 채우기: 앞 표(10월)의 과목은 그대로, 빈 칸(월 4교시)에만. 11/2~11/30
+  r.check((await page.locator(sel('timetable-mode-box')).getAttribute('data-timetable-mode-box')) === 'replace', '적용 방식 처음 = 🖌️ 덮어쓰기');
+  await page.locator(sel('timetable-add')).click();
+  await page.locator(sel('timetable-name')).fill('점검 방과후');
+  for (const rc of ['1-1', '2-1', '0-2']) await cellIn(rc).fill('');
+  await cellIn('0-1').fill('체육');
+  await cellIn('3-1').fill('방과후');
+  await page.locator(sel('timetable-mode', 'fill')).click();
+  r.check(
+    (await page.locator(sel('timetable-mode-box')).getAttribute('data-timetable-mode-box')) === 'fill' &&
+      (await page.locator(sel('timetable-mode', 'fill')).getAttribute('aria-checked')) === 'true' &&
+      (await page.locator(sel('timetable-mode-info')).textContent()).includes('빈 칸에만'),
+    '🧩 빈 칸만 채우기를 고르면 안내 글도 바뀐다',
+  );
+  await page.locator(sel('timetable-from')).fill('2026-11-02');
+  await page.locator(sel('timetable-to')).fill('2026-11-30');
+  await page.locator(sel('timetable-apply')).click();
+  const filledParts = await serverUntil(appliedNow, (l) => l.some((d) => d.from === '2026-11-02'));
+  const nov = filledParts.find((d) => d.from === '2026-11-02');
+  r.check(
+    nov?.to === '2026-11-30' && nov.grid['1']['1'] === '음악' && nov.grid['1']['4'] === '방과후' && nov.grid['1']['2'] === '수학' && nov.name === '점검 10월 시간표 + 점검 방과후',
+    '빈 칸만 채우기 = 앞 표 과목은 그대로(월 1교시 음악) + 빈 칸에 새 과목(월 4교시 방과후) · 이름 A + B',
+    JSON.stringify(nov),
+  );
+  r.check(
+    filledParts.find((d) => d.id === oct.id)?.to === '2026-11-01' && filledParts.some((d) => d.from === '2026-12-01' && d.to === '2027-02-28' && d.grid['1']['1'] === '음악' && !d.grid['1']['4']),
+    '앞 표는 채운 기간을 빼고 앞뒤로 (10/14~11/1 · 12/1~)',
+    JSON.stringify(filledParts.map((d) => [d.id, d.from, d.to])),
+  );
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '빈 칸을 채웠습니다' })), '안내 = 빈 칸을 채웠습니다 (되돌리기)');
+  // 같은 기간에 다시 = 채울 칸이 없다 - 쓰지 않는다
+  const before = (await appliedNow()).length;
+  await page.locator(sel('timetable-apply')).click();
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '채울 빈 칸이 없습니다' })), '같은 기간에 다시 채우면 = 채울 빈 칸이 없다는 안내');
+  await page.waitForTimeout(800);
+  r.check((await appliedNow()).length === before, '채울 칸이 없으면 쓰지 않는다');
+  // 고른 것은 버린다(저장하지 않은 새 시간표) - 10월 시간표로 돌아간다
+  await page.locator(sel('timetable-delete')).click();
+  r.check(!(await page.locator(sel('timetable-dirty')).count()), '저장하지 않은 점검 방과후는 지우면 그만');
+
   // 교시 이름·시각
   await page.locator(sel('timetable-tab', 'periods')).click();
   await page.locator(sel('period-name', 1)).fill('아침');
@@ -225,6 +265,12 @@ try {
   r.section('기간별 시간표·수업 없는 날');
   await go('#/day/2026-10-19');
   r.check(await waitFor(async () => (await subjectOf(1)) === '음악', 8000), '10/19 = 10/14부터 적용한 시간표');
+  await go('#/day/2026-11-02');
+  r.check(await waitFor(async () => (await subjectOf(4)) === '방과후', 8000), '11/2 = 빈 칸만 채운 표 (4교시 방과후)');
+  r.check((await subjectOf(1)) === '음악' && (await subjectOf(2)) === '수학', '11/2 앞 표 과목은 그대로 (1교시 음악·2교시 수학)');
+  await go('#/day/2026-12-07');
+  r.check(await waitFor(async () => (await subjectOf(1)) === '음악', 8000), '12/7 = 채운 기간 뒤는 앞 표 그대로');
+  r.check((await subjectOf(4)) === '', '12/7 4교시는 비어 있다');
   await go('#/day/2026-07-27');
   r.check(await waitFor(page.locator(sel('lessons-off', 'vacation')), 8000), '방학 = 🏖️ 표시');
   r.check((await subjectOf(1)) === '', '방학에는 시간표 수업이 없다');

@@ -4,6 +4,7 @@
 //   **저장과 적용은 따로다**(P37 11-16 사용자 요청 - 저장된 시간표를 지우니 적용된 수업 칸이 지워졌다): 💾 저장 = 저장된 시간표(이름·표만),
 //   ✅ 적용 = 고른 기간의 수업 칸에 지금 표를(곧바로 쓴다, 되돌리기). 저장된 시간표를 지워도 적용한 날은 그대로다(domain/timetableApply).
 //   P37 전 자료(한 장이 저장·적용을 함께 맡았다)는 창을 열면 저장된 시간표로 한 번 베낀다(savedCopyOps - 같은 id라 그 전에도 칩에 보인다).
+//   적용 방식(P39 11-16 사용자 요청): 🖌️ 덮어쓰기(기본) / 🧩 빈 칸만 채우기(앞 표의 과목은 그대로 - applyOps mode 'fill', 채울 칸이 없으면 쓰지 않고 안내).
 // 저장하지 않고 닫으면(ESC·✕) 먼저 묻는다(창 목록 useUnsavedCheck).
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { setCommonSetting, useCommonSettings } from '../../app/prefs';
@@ -27,7 +28,7 @@ import GridTab, { type AppliedRow } from './GridTab';
 import PeriodsTab from './PeriodsTab';
 import TeachingTab from './TeachingTab';
 import TermsTab from './TermsTab';
-import { applyOps, cleanGrid, draftOf, firstTimetable, gridIsEmpty, sameGrid, savedCopies, savedCopyOps, timetableOps, type TimetableDraft } from './timetableDraft';
+import { applyOps, cleanGrid, draftOf, firstTimetable, gridIsEmpty, sameGrid, savedCopies, savedCopyOps, timetableOps, type ApplyMode, type TimetableDraft } from './timetableDraft';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import { useTabTarget } from '../../app/keys';
 
@@ -121,6 +122,8 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
   }
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
+  // 적용 방식 (P39) - 창을 다시 열면 덮어쓰기
+  const [mode, setMode] = useState<ApplyMode>('replace');
 
   const periods = periodsDraft ?? savedPeriods;
   const terms = termsDraft ?? savedTerms;
@@ -265,12 +268,17 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
     if (gridIsEmpty(grid)) return showToast('표가 비어 있습니다. 과목을 적은 뒤 적용해 주세요.');
     const name = current.name.trim() || '시간표';
     const unsavedNote = ops.some((op) => op.at.id === current.id) ? ' 고친 표는 아직 저장하지 않았습니다(💾 저장).' : '';
+    const writes = applyOps(sid, docs, { from, to }, { name, grid, saveId: current.id }, periods.length, undefined, mode);
+    // 빈 칸만 채우기인데 그 기간의 앞 표마다 이 표의 과목이 든 칸이 이미 차 있다
+    if (!writes.length) return showToast(`🧩 ${md(from)} ~ ${md(to)}에는 채울 빈 칸이 없습니다 - 이 표의 과목이 든 칸에 이미 과목이 있습니다.`);
     setApplying(true);
     try {
-      const undo = await batch(applyOps(sid, docs, { from, to }, { name, grid, saveId: current.id }, periods.length), {
-        fail: '시간표를 적용하지 못했습니다. 다시 눌러 주세요.',
-      });
-      recordUndo(sid, `✅ [${name}]를 ${md(from)} ~ ${md(to)}에 적용했습니다. 그 날들의 수업 칸이 이 표를 따릅니다.${unsavedNote}`, undo, { what: '시간표 적용' });
+      const undo = await batch(writes, { fail: '시간표를 적용하지 못했습니다. 다시 눌러 주세요.' });
+      const done =
+        mode === 'fill'
+          ? `🧩 [${name}]로 ${md(from)} ~ ${md(to)}의 빈 칸을 채웠습니다. 전에 적용한 표의 과목은 그대로입니다.`
+          : `✅ [${name}]를 ${md(from)} ~ ${md(to)}에 적용했습니다. 그 날들의 수업 칸이 이 표를 따릅니다.`;
+      recordUndo(sid, `${done}${unsavedNote}`, undo, { what: mode === 'fill' ? '시간표 빈 칸 채우기' : '시간표 적용' });
     } catch {
       // 안내는 저장 도우미가 했다
     } finally {
@@ -397,6 +405,8 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
             range={range}
             onRange={setRange}
             quick={quick}
+            mode={mode}
+            onMode={setMode}
             onApply={() => void apply()}
             applying={applying}
             applied={appliedRows}
