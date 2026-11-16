@@ -235,6 +235,33 @@ try {
   r.check(await waitFor(page.locator(sel('lessons-off', 'skip'))), '수업X 일정이 있는 날 = 수업 없음');
   r.check((await subjectOf(1)) === '', '수업X 날의 1교시는 비어 있다');
 
+  r.section('방학 날의 V4 옛 과목 (P38)');
+  // V4가 날마다 적어 둔 옛 시간표 = V4에서 가져온 날 문서의 과목 (운영 업무 계정 - 방학 날 49일). 방학(7/27 월)에는 보이지 않는다
+  const VAC = '2026-07-27';
+  await setDoc(A.ref('lessonDays', VAC), { src: { from: 'v4', path: 'schedules', id: VAC }, periods: { 1: { subject: '401' }, 2: { subject: '402', supplies: '교과서' }, 7: { subject: '407' } }, updatedAt: serverTimestamp(), v: 1 });
+  await go(`#/day/${VAC}`);
+  r.check(await waitFor(async () => ((await lessonCard(2).locator(sel('lesson-note')).textContent().catch(() => '')) ?? '').includes('교과서'), 8000), '방학 날 V4 문서의 비고는 보인다');
+  r.check(await waitFor(page.locator(sel('lessons-off', 'vacation'))), '방학 = 🏖️ 표시 그대로');
+  r.check((await subjectOf(1)) === '' && (await subjectOf(2)) === '', '방학 날 V4 옛 과목(401·402)은 보이지 않는다');
+  r.check((await page.locator(sel('lesson-card')).count()) === 6, '옛 7교시 과목으로 교시가 늘지 않는다');
+  r.check(!(await page.locator(sel('day-lessons', VAC)).textContent()).includes('401'), '화면 어디에도 옛 과목 글자가 없다');
+  // 그날 V5에서 과목을 적으면 보이고, 그 문서의 숨은 옛 과목·V4 표시를 걷는다
+  await lessonCard(1).click();
+  const editorV = page.locator(sel('lesson-panel', `lesson:${VAC}:1`));
+  r.check(await waitFor(editorV, 15000), '방학 날 1교시 수정 칸');
+  r.check((await editorV.locator(sel('lesson-panel-subject')).inputValue()) === '', '수정 칸에도 옛 과목이 없다');
+  await editorV.locator(sel('lesson-panel-subject')).fill('방학 보충');
+  await page.keyboard.press('Control+s');
+  const adopted = await serverUntil(() => dayDoc(VAC), (d) => d?.periods?.['1']?.subject === '방학 보충');
+  r.check(adopted?.periods?.['1']?.subject === '방학 보충' && !adopted?.src, '방학 날 V5에서 적은 과목 = 적히고 V4 표시는 걷힌다');
+  r.check(adopted?.periods?.['2']?.supplies === '교과서' && !('subject' in (adopted?.periods?.['2'] ?? {})) && !adopted?.periods?.['7'], '숨은 옛 과목은 걷히고(2·7교시) 비고는 남는다');
+  r.check(await waitFor(async () => (await subjectOf(1)) === '방학 보충', 8000), '적은 과목은 방학에도 보인다');
+  r.check((await subjectOf(2)) === '' && (await page.locator(sel('lesson-card')).count()) === 6, '다른 교시는 그대로 비어 있다');
+  await editorV.locator(sel('lesson-panel-close')).click();
+  // 사본은 바뀐 것만 받는다 - 문서를 지우지 않고 칸을 비운다 (끝에 lessonDays는 통째로 되돌린다)
+  await setDoc(A.ref('lessonDays', VAC), { periods: {}, updatedAt: serverTimestamp(), v: ((await dayDoc(VAC))?.v ?? 1) + 1 });
+  r.check(await waitFor(async () => (await subjectOf(1)) === '', 8000), '(점검 자료 7/27 걷음)');
+
   r.section('하루 수업 칸 고치기');
   await go('#/day/2026-10-12');
   await waitFor(async () => (await subjectOf(2)) === '수학', 8000);
