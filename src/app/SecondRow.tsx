@@ -5,6 +5,7 @@ import { useToday } from '../ui/useToday';
 import { runFromButton, useShortcutTitle } from './keys';
 import { useCommonSettings } from './prefs';
 import SpaceChips from './SpaceChips';
+import GcalToggle from '../features/gcal/GcalToggle';
 import { useSpacePickerShown } from '../data/session';
 import { dateLabel, goToday, setDate, setSemesterFilter, setToggle, stepDate, useNav, type SemesterFilter } from './nav';
 import { shortcutTarget } from '../ui/shortcutTarget';
@@ -22,7 +23,7 @@ const SEMESTERS: Array<{ id: SemesterFilter; label: string }> = [
 ];
 
 /**
- * 둘째 줄 (메모·학급 화면에는 없다) - V4 그대로: 년간 학기 칩 · 토글(주말·일정·수업) · ◀ 날짜(누르면 오늘) 📅 · D-Day · ▶ · 공간 칩(든 그룹이 있을 때 - P17-1)
+ * 둘째 줄 (메모·학급 화면에는 없다) - V4 그대로: 년간 학기 칩 · 토글(주말·일정·수업 + 고른 구글 캘린더가 있으면 📅 구글 - P36-4) · ◀ 날짜(누르면 오늘) 📅 · D-Day · ▶ · 공간 칩(든 그룹이 있을 때 - P17-1)
  * ⚠️ 좁은 화면에서는 줄을 바꾼다. 한 줄에 밀어 넣었더니 년간의 '2학기' 칩 위에 '◀'가 올라앉아 2학기를 누르면 이전 학년도로 넘어갔다(V4).
  *    아랫줄 = 학기 칩 · 공간 칩 한 줄(넓은 화면은 그 묶음을 풀어(contents) 학기 칩은 맨 앞, 공간 칩은 맨 뒤).
  */
@@ -92,6 +93,8 @@ export default function SecondRow() {
             </button>
           );
         })}
+        {/* 구글 캘린더 겹쳐 보기 (P36-4 - 고른 캘린더가 있을 때만, 이 기기) */}
+        <GcalToggle />
       </div>
 
       {/* ◀ 날짜(누르면 오늘) 📅 ▶ */}

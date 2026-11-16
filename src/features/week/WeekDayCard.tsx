@@ -3,6 +3,7 @@
 //   수업: 교시 줄(features/lessons/WeekLessonRows - P6-1) - 누르면 'N교시 수정' 칸.
 //   일정: 라벨 칩 누르기 = 완료, 글 누르기 = 오른쪽 일정 칸, 마우스를 올리면 ✕, 🔗 n = 연결된 데이터. 오늘 카드에는 이월로 따라오는 일정도(↪).
 //   겹쳐 보기(P17-2): 겹친 공간 일정은 이월 뒤에 공간 색 배경으로(끌기·✕·고르기 없음 - 누르기·완료는 부르는 쪽이 그 공간으로).
+//   구글 캘린더 겹쳐 보기(P36-4): 겹친 공간 것 뒤에 읽기 전용 줄(점선 - 누르면 그 일정 창, 수에 넣지 않는다).
 //   카드 빈 곳 = 그날 하루 화면(한눈에는 그날 고르기 - P24-2, 고른 날은 outline). + = 그날 새 일정. 일정을 끌어 다른 요일 카드에 놓으면 옮긴다(P5-3 - 마우스 화면만).
 import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
@@ -20,6 +21,8 @@ import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
 import { pressKeys } from '../../ui/pressKeys';
+import { gcalKey, type GcalShown } from '../../domain/gcalShow';
+import { GcalLine } from '../gcal/GcalItems';
 
 export interface WeekDayCardProps {
   date: string;
@@ -29,6 +32,8 @@ export interface WeekDayCardProps {
   carried?: readonly ItemDoc[];
   /** 겹쳐 본 다른 공간의 그날 일정 (P17-2 - 수에 넣지 않는다) */
   overlay?: readonly ItemDoc[];
+  /** 구글 캘린더 일정 (P36-4 - 그날 차례, 수에 넣지 않는다) */
+  gcal?: readonly GcalShown[];
   /** 겹친 일정 → 그 공간 */
   spaceOf?: (ev: ItemDoc) => OverlaySpace | undefined;
   /** 그날 기록 수 */
@@ -187,7 +192,7 @@ function EventChip({
 }
 
 export default function WeekDayCard(props: WeekDayCardProps) {
-  const { date, today, events, carried = [], overlay = [], noteCount, showEvents } = props;
+  const { date, today, events, carried = [], overlay = [], gcal = [], noteCount, showEvents } = props;
   const holiday = useHolidayName()(date);
   // 우리 학교 학사일정 (P6-3 - 나이스, 학교·달마다 담아 둔다)
   const { byDate: schoolEvents } = useSchoolSchedule([date.slice(0, 7)]);
@@ -273,7 +278,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
               </button>
             </div>
           </div>
-          {count + overlay.length > 0 ? (
+          {count + overlay.length + gcal.length > 0 ? (
             <div className="space-y-1.5">
               {[...events.map((ev) => [ev, false] as const), ...carried.map((ev) => [ev, true] as const)].map(([ev, isCarried]) => (
                 <EventChip
@@ -312,6 +317,9 @@ export default function WeekDayCard(props: WeekDayCardProps) {
                   />
                 );
               })}
+              {gcal.map((g) => (
+                <GcalLine key={gcalKey(g)} s={g} date={date} at="week" />
+              ))}
             </div>
           ) : (
             <div {...(props.eventsWaiting ? { 'data-week-events-waiting': '' } : {})} className="text-xs text-slate-300 py-1 pl-1">

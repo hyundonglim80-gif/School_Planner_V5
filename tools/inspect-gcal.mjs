@@ -7,7 +7,8 @@
 //   5) 토큰이 없을 때 저장 → '구글 로그인이 필요합니다' · 닫으면 '📅 못 보낸 일정 1' → 누르면 보낸다
 //   6) 라벨의 '구글 캘린더'를 끄면 그 라벨로 보낸 것을 지운다
 //
-//   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-gcal.mjs
+//   7) 겹쳐 보기(P36-3 고르기·받아 담기) · 겹쳐 그리기(P36-4 하루·주간·월간 막대·년간·한눈에·창·끄고 켜기·인쇄에는 없다 - ONLY=draw면 이 묶음만)
+//   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → TZ=Asia/Seoul node tools/inspect-gcal.mjs (흉내 일정이 +09:00 - 시각 글을 서울 시각으로 견준다, CI도 서울)
 // teacher 계정 - 점검 라벨·일정·큐는 끝에 지운다.
 import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, noUserActivation, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
@@ -245,6 +246,138 @@ async function overlayBundle() {
   await ctx.close();
 }
 
+// ── 겹쳐 그리기 (P36-4) - 하루·주간·월간(막대)·년간(학사력·자세히)·한눈에 · 창 · 끄고 켜기 · 인쇄에는 없다 ──
+async function drawBundle() {
+  r.section('구글 캘린더 겹쳐 그리기 (P36-4) - 하루');
+  const GRADE = 'grade@group.calendar.google.com';
+  const commonRef = doc(em.db, 'spaces', sid, 'settings', 'common');
+  const before = (await getDoc(commonRef)).data()?.gcalOverlay;
+  undo.add(() => setDoc(commonRef, { gcalOverlay: before === undefined ? deleteField() : before }, { merge: true }));
+  await setDoc(commonRef, { gcalOverlay: [{ id: GRADE, name: '학년 협의', color: '#16a765' }] }, { merge: true });
+  // 그리기 점검 일정 셋 더 (종일 하루 ov_allday는 있다): 종일 여러 날(설명에 HTML) · 시각 하루 · 밤을 넘는 시각
+  ov.events.push(
+    { id: 'ov_trip', summary: '점검 수학여행', start: { date: '2027-05-04' }, end: { date: '2027-05-07' }, description: '준비물<br><b>도시락</b> &amp; 물병', location: '경주', htmlLink: 'https://www.google.com/calendar/event?eid=ov2' },
+    { id: 'ov_talk', summary: '점검 교과 협의', start: { dateTime: '2027-05-04T14:00:00+09:00' }, end: { dateTime: '2027-05-04T15:30:00+09:00' }, location: '3층 회의실' },
+  );
+  // 앱 기간 일정 (같은 주 - 막대 줄이 겹치지 않는지)
+  // 이 묶음만 돌 때(ONLY=draw)도 지운다 - 남으면 다음 전체 점검의 하루 칸에 카드가 하나 더 서서 🗑️ 찾기가 둘을 만난다
+  undo.add(() => deleteDoc(ref('items', 'inspGcalDrawPeriod')));
+  await setDoc(ref('items', 'inspGcalDrawPeriod'), { kind: 'event', date: '2027-05-03', endDate: '2027-05-05', text: '구글점검 앱 기간', labelIds: [], order: 'a0', createdAt: Date.now(), authorId: uid, ...base });
+
+  const { ctx, page, errors } = await newPage(browser);
+  await mockOverlay(ctx);
+  await ctx.addInitScript(() => sessionStorage.setItem('sp5-google-token', 'tok'));
+  await open(page, `#/day/${DAY}`);
+  const at = (where, id) => page.locator(`[data-gcal-at="${where}"]${id ? `[data-gcal-event="${id}"]` : ''}`);
+  const ids = (loc) => loc.evaluateAll((els) => els.map((e) => e.getAttribute('data-gcal-event')));
+  r.check(await waitFor(async () => (await at('day').count()) === 3, 10000), `하루 일정 칸에 구글 일정 셋 (${await at('day').count()})`);
+  const dayIds = await ids(at('day'));
+  r.check(dayIds.join(',') === 'ov_allday,ov_trip,ov_talk' || dayIds.join(',') === 'ov_trip,ov_allday,ov_talk', `차례 = 시각 없는 것(종일) 먼저, 그다음 시각 (${dayIds.join(', ')})`);
+  r.check((await page.locator(sel('gcal-group-count')).getAttribute('data-gcal-group-count')) === '3', "구분 줄 '📅 구글 캘린더 3'");
+  const talk = at('day', 'ov_talk');
+  r.check((await talk.locator('[data-gcal-time]').textContent()) === '14:00~15:30' && (await talk.locator('[data-gcal-chip]').textContent()) === '학년 협의', '시각 일정 = 이름 칩 + 14:00~15:30');
+  const dash = await talk.evaluate((el) => getComputedStyle(el).borderTopStyle);
+  r.check(dash === 'dashed', `점선 테두리 - 색만으로 가르지 않는다 (${dash})`);
+  r.check((await page.locator(`${sel('day-events', DAY)} [data-event-done-chip]`).count()) === (await page.locator(`${sel('day-events', DAY)} [data-event-card]`).count()), '완료 칩은 앱 일정에만 (구글 카드에는 없다)');
+
+  r.section('겹쳐 그리기 - 누르면 그 일정 창');
+  await talk.click();
+  const win = page.locator(sel('gcal-window'));
+  r.check(await waitFor(win, 8000), "누르면 '📅 구글 캘린더 일정' 창");
+  r.check((await page.locator(sel('gcal-window-when')).textContent())?.includes('5월 4일 (화) 14:00 ~ 15:30'), `때 = 5월 4일 (화) 14:00 ~ 15:30 (${await page.locator(sel('gcal-window-when')).textContent()})`);
+  r.check((await page.locator(sel('gcal-window-location')).textContent())?.includes('3층 회의실'), '장소');
+  r.check((await page.locator(sel('gcal-window-open')).count()) === 0, '구글 주소가 없으면 열기 단추도 없다');
+  await at('day', 'ov_trip').click();
+  r.check(await waitFor(async () => (await page.locator(sel('gcal-window-title')).textContent()) === '점검 수학여행', 8000), '다른 것을 누르면 그 창이 그것으로 바뀐다 (창 하나)');
+  r.check((await page.locator(sel('gcal-window')).count()) === 1, '창은 하나');
+  r.check((await page.locator(sel('gcal-window-when')).textContent())?.includes('5월 4일 (화) ~ 5월 6일 (목) · 3일'), '종일 여러 날 = 끝 날은 하루 빼고 · 3일');
+  const desc = await page.locator(sel('gcal-window-description')).innerText();
+  r.check(desc === '준비물\n도시락 & 물병', `설명 = HTML을 걷은 글 (${JSON.stringify(desc)})`);
+  r.check((await page.locator(`${sel('gcal-window-description')} b`).count()) === 0, '설명을 HTML로 그리지 않는다');
+  const link = page.locator(sel('gcal-window-open'));
+  r.check((await link.getAttribute('href')) === 'https://www.google.com/calendar/event?eid=ov2' && (await link.getAttribute('target')) === '_blank', '↗ 구글 캘린더에서 열기 = 구글 주소 새 탭');
+  await page.locator(sel('gcal-window-to-event')).click();
+  const panel = page.locator(sel('event-panel'));
+  r.check(await waitFor(panel, 8000), '📅 일정으로 담기 → 새 일정 칸');
+  r.check(
+    await waitFor(async () => (await page.locator('[data-event-text-input]').inputValue().catch(() => '')) === '점검 수학여행', 5000),
+    `제목을 적어 둔 채 (${await page.locator('[data-event-text-input]').inputValue().catch(() => '?')})`,
+  );
+  r.check((await page.locator(sel('gcal-window')).count()) === 0, '구글 일정 창은 닫힌다');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await panel.count()) === 0, 5000);
+
+  r.section("겹쳐 그리기 - 둘째 줄 '📅 구글' (이 기기)");
+  const toggle = page.locator(sel('gcal-toggle'));
+  r.check((await toggle.getAttribute('aria-pressed')) === 'true', '고른 캘린더가 있으면 토글이 서고 켜져 있다');
+  await toggle.click();
+  r.check(await waitFor(async () => (await at('day').count()) === 0, 5000), '끄면 구글 일정이 사라진다');
+  r.check((await page.evaluate(() => localStorage.getItem('sp5-gcal-view')))?.includes('"on":false'), '이 기기에 기억 (sp5-gcal-view)');
+  await toggle.click();
+  r.check(await waitFor(async () => (await at('day').count()) === 3, 5000), '켜면 다시');
+
+  r.section('겹쳐 그리기 - 주간·월간(막대)');
+  await page.evaluate(() => (location.hash = '#/week/2027-05-04'));
+  r.check(await waitFor(async () => (await page.locator(`${sel('week-day', '2027-05-04')} [data-gcal-at="week"]`).count()) === 3, 8000), '주간 화요일 칸에 셋');
+  r.check((await page.locator(`${sel('week-day', '2027-05-06')} [data-gcal-at="week"][data-gcal-event="ov_trip"]`).count()) === 1, '여러 날 일정은 이어지는 날 칸에도 (목)');
+  r.check((await page.locator(`${sel('week-day', '2027-05-07')} [data-gcal-at="week"]`).count()) === 0, '종일 끝 날(구글은 다음 날 0시)에는 없다 (금)');
+  await page.locator(`${sel('week-day', '2027-05-04')} [data-gcal-event="ov_talk"]`).click();
+  r.check(await waitFor(win, 5000), '주간에서 눌러도 그 창 (하루 화면으로 가지 않는다)');
+  r.check(hashOf(page).startsWith('#/week/'), `주간 그대로 (${hashOf(page)})`);
+  await page.keyboard.press('Escape');
+
+  await page.evaluate(() => (location.hash = '#/month/2027-05'));
+  const bar = page.locator('[data-gcal-bar][data-gcal-event="ov_trip"]');
+  r.check(await waitFor(bar, 8000), '월간 = 여러 날은 막대');
+  r.check((await page.locator(`${sel('month-day', '2027-05-04')} [data-gcal-at="month"][data-gcal-event="ov_allday"]`).count()) === 1, '하루짜리 종일은 그날 칸 안 줄');
+  r.check((await page.locator(`${sel('month-day', '2027-05-11')} [data-gcal-event="ov_rep_1"] [data-gcal-time]`).textContent()) === '15:00', '시각 일정은 시작 시각만');
+  const appBar = page.locator(sel('period-bar', 'inspGcalDrawPeriod')).first();
+  r.check(await waitFor(appBar, 5000), '앱 기간 막대도 있다');
+  const [a, b] = [await appBar.boundingBox(), await bar.first().boundingBox()];
+  const overlap = a && b && a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  r.check(a && b && !overlap, `앱 막대와 구글 막대가 겹치지 않는다 (한 막대 줄 배치 - 앱 y${Math.round(a?.y ?? 0)} 구글 y${Math.round(b?.y ?? 0)})`);
+  await page.locator('[data-gcal-bar-cell="2027-05-05"]').click();
+  r.check(await waitFor(win, 5000), '막대를 누르면 그 창');
+  r.check((await page.locator(sel('gcal-window-title')).textContent()) === '점검 수학여행' && hashOf(page) === '#/month/2027-05', '하루 화면으로 가지 않는다');
+  await page.keyboard.press('Escape');
+
+  r.section('겹쳐 그리기 - 년간(학사력·자세히)·한눈에');
+  await page.evaluate(() => (location.hash = '#/year/2027'));
+  const sheetItem = page.locator('[data-gcal-at="sheet-month"][data-gcal-event="ov_allday"]');
+  r.check(await waitFor(sheetItem, 10000), '학사력 달 아래 목록에 구글 일정 줄');
+  r.check((await page.locator('[data-sheet-bar][data-gcal-bar]').count()) >= 1, '학사력 날짜 칸의 가는 막대 (여러 날)');
+  await page.locator(sel('year-view', 'detail')).click();
+  const yearTrip = page.locator('[data-gcal-at="year"][data-gcal-event="ov_trip"]');
+  r.check(await waitFor(yearTrip, 8000), '자세히 - 여러 날은 첫날 한 번');
+  r.check((await yearTrip.count()) === 1 && ((await yearTrip.locator('[data-gcal-range]').textContent()) ?? '').includes('5.4 ~ 5.6'), `범위와 함께 (${await yearTrip.locator('[data-gcal-range]').textContent()})`);
+  r.check((await page.locator(`${sel('year-day', '2027-05-20')} [data-gcal-event="ov_timed"]`).count()) === 1, '구글 일정만 있는 날도 줄로 선다 (5/20)');
+  await page.locator(sel('year-view', 'sheet')).click();
+
+  await page.evaluate(() => (location.hash = '#/board/2027-05-04'));
+  const boardRow = page.locator('[data-gcal-at="board"][data-gcal-event="ov_talk"]');
+  r.check(await waitFor(boardRow, 10000), '한눈에 달 목록에 구글 일정 줄');
+  r.check((await page.locator(`${sel('board-cal-day', '2027-05-20')}`).getAttribute('data-board-cal-count')) === '1', '달력 날 점도 센다 (구글 일정만 있는 5/20)');
+  r.check((await page.locator(`${sel('week-day', '2027-05-04')} [data-gcal-at="week"]`).count()) === 3, '한눈에 요일 칸에도');
+  await page.locator(sel('board-cal-day', '2027-05-11')).click();
+  await boardRow.click();
+  r.check(await waitFor(win, 5000), '목록 줄을 누르면 그날 고르기 + 그 창');
+  r.check(hashOf(page) === '#/board/2027-05-04', `그날을 고른다 (${hashOf(page)})`);
+  await page.keyboard.press('Escape');
+
+  r.section('겹쳐 그리기 - 인쇄에는 없다');
+  await page.evaluate(() => (location.hash = '#/month/2027-05'));
+  await waitFor(bar, 8000);
+  await page.keyboard.press('Control+p');
+  const paper = page.locator('[data-print-paper]');
+  r.check(await waitFor(paper.filter({ hasText: '구글점검 앱 기간' }), 8000), '인쇄 미리보기에 앱 일정은 있다');
+  r.check((await paper.locator('[data-gcal-event]').count()) === 0, '구글 일정은 인쇄 쪽에 없다');
+  r.check((await page.locator('[data-gcal-bar]').count()) > 0, '화면에는 그대로');
+  await page.keyboard.press('Escape');
+  r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
+  await ctx.close();
+}
+const hashOf = (page) => new URL(page.url()).hash;
+
 const base = { deletedAt: null, v: 1, updatedAt: serverTimestamp() };
 /** 라벨 고르기 - 이미 골라져 있으면 그대로 (일정 라벨이 하나뿐이면 기본 라벨로 골라져 있다) */
 const pickLabel = async (page) => {
@@ -256,6 +389,8 @@ const madeItems = async () =>
   (await getDocs(collection(em.db, 'spaces', sid, 'items'))).docs.map((d) => ({ ...d.data(), id: d.id })).filter((d) => String(d.text ?? '').startsWith('구글점검'));
 
 try {
+  // ONLY=draw = 겹쳐 그리기 묶음만 (P36-4)
+  if (process.env.ONLY === 'draw') throw Object.assign(new Error('draw only'), { drawOnly: true });
   // 점검 라벨: 구글 캘린더 + 이월
   await setDoc(ref('labels', LABEL), { kind: 'event', name: '구글점검', color: 'sky', order: 'zz', props: { gcal: true, forward: true }, ...base });
   undo.add(async () => {
@@ -430,8 +565,15 @@ try {
   await ctx.close();
 
   await overlayBundle();
+  await drawBundle();
 } catch (e) {
-  r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
+  if (e?.drawOnly) {
+    try {
+      await drawBundle();
+    } catch (e2) {
+      r.bad(`점검이 멈췄다: ${e2?.stack ?? e2}`);
+    }
+  } else r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
   await undo.run();
   await browser.close();

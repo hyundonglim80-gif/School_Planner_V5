@@ -5,6 +5,7 @@
 //   달력 판은 ui/MiniMonth(📅 뜨는 달력과 함께 - 그쪽은 일요일부터).
 //   아래 목록 = 보는 달의 '달력' 일정(monthList - 하루짜리 + 걸친 기간, 날짜 차례). 줄을 누르면 그날 고르기 + 그 일정 칸, 라벨 칩 = 완료(기간은 전체 - 월간 막대와 같다).
 //   줄 바탕(P35): **오늘 일정 = 노랑**, **보는 주(요일 칸 일곱)의 일정 = 옅은 파랑**(달력의 보는 주 줄과 같은 빛깔), 고른 날의 일정 = 진한 테(바탕은 주·오늘에 쓴다 - monthList rowMark).
+//   구글 캘린더 일정(P36-4)도 날짜 차례로 섞는다(같은 날은 앱 것 먼저 - 점선 읽기 전용 줄, 누르면 그날 고르기 + 그 일정 창). 날 점에도 센다.
 //   겹친 공간 것은 공간 색 배경(P17-2) - 오늘·보는 주 줄이면 바탕은 그 표시, 공간은 테 색으로 남는다. 그 공간 칸에서 열고 그 공간에 완료. 둘째 줄 '일정'을 끄면 목록·점이 없다.
 import { useMemo } from 'react';
 import { setDate, useNav } from '../../app/nav';
@@ -22,7 +23,10 @@ import { doneAll, doneOnDay, type ItemDoc } from '../events/eventOps';
 import { useMulti } from '../events/multi';
 import { openEventPanel } from '../events/open';
 import { calendarEvents } from '../month/calendarEvents';
-import { monthCalendarList, rowDateLabel, rowMark, type MonthListRow } from './monthList';
+import { gcalRowDateLabel, gcalRowMark, mergeMonthList, monthCalendarList, monthGcalList, rowDateLabel, rowMark, type MonthListRow } from './monthList';
+import { useGcalShown } from '../gcal/gcalView';
+import { GcalBoardRow } from '../gcal/GcalItems';
+import { gcalKey } from '../../domain/gcalShow';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -63,16 +67,23 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
 
   // 달력 칸 범위의 '달력' 일정 수 (날마다 - 하루짜리 + 그날에 걸친 기간)
   const dates = useMemo(() => monthGridDates(y, m, 1), [y, m]);
-  const cal = useMemo(() => calendarEvents(items, dates[0], dates[dates.length - 1], tree, overlays), [items, dates, tree, overlays]);
+  // 구글 캘린더 일정 (P36-4 - 받은 범위는 보는 날 ±1달, 그 밖의 달로 넘겨 보면 비어 보인다)
+  const gcal = useGcalShown(dates[0], dates[dates.length - 1]);
+  const cal = useMemo(() => calendarEvents(items, dates[0], dates[dates.length - 1], tree, overlays, gcal), [items, dates, tree, overlays, gcal]);
   const countOn = useMemo(() => {
     const out = new Map<string, number>();
     for (const d of dates) {
-      const n = (cal.byDate.get(d)?.length ?? 0) + cal.periods.filter((p) => onPeriodDay(p, d)).length;
+      const n =
+        (cal.byDate.get(d)?.length ?? 0) +
+        cal.periods.filter((p) => onPeriodDay(p, d)).length +
+        (cal.gcalByDate.get(d)?.length ?? 0) +
+        cal.gcalPeriods.filter((p) => p.date <= d && d <= p.endDate).length;
       if (n) out.set(d, n);
     }
     return out;
   }, [dates, cal]);
   const rows = useMemo(() => monthCalendarList(cal, `${ym}-01`, monthEnd(y, m)), [cal, ym, y, m]);
+  const entries = useMemo(() => mergeMonthList(rows, monthGcalList(cal, `${ym}-01`, monthEnd(y, m))), [rows, cal, ym, y, m]);
 
   // 겹친 일정은 그 공간에서 열고 끝낸다 (라벨도 그 공간 트리)
   const spaceOf = (ev: ItemDoc) => cal.spaceOf.get(ev);
@@ -157,9 +168,20 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
       </div>
       {showEvents && (
         <div data-board-month-list={rows.length} className={`border-t border-slate-100 pt-1.5 ${fit ? 'flex-1 min-h-16 overflow-y-auto overscroll-contain' : ''}`}>
-          {rows.length > 0 ? (
+          {entries.length > 0 ? (
             <ul className="flex flex-col gap-1">
-              {rows.map((row) => {
+              {entries.map((entry) => {
+                if (entry.gcal) {
+                  const gr = entry.gcal;
+                  const gMark = gcalRowMark(gr, week, today);
+                  const gHere = gr.endDate ? gr.g.first <= date && date <= gr.endDate : gr.day === date;
+                  return (
+                    <li key={`gcal/${gcalKey(gr.g)}`}>
+                      <GcalBoardRow s={gr.g} day={gr.day} dateLabel={gcalRowDateLabel(gr)} mark={gMark ? MARK_CLASS[gMark] : ''} selected={gHere} onPick={() => setDate(gr.day)} />
+                    </li>
+                  );
+                }
+                const row = entry.row;
                 const ev = row.ev;
                 const space = spaceOf(ev);
                 const label = itemLabels(space?.tree ?? tree, ev.labelIds)[0];

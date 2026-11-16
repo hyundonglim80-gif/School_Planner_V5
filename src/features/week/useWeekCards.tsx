@@ -30,6 +30,8 @@ import { openLinkViewer } from '../links/open';
 import { openDayNotes } from '../notes/open';
 import { useProgressMarks } from '../progress/useProgress';
 import WeekDayCard from './WeekDayCard';
+import { gcalListOn } from '../../domain/gcalShow';
+import { useGcalShown } from '../gcal/gcalView';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -146,6 +148,10 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
     return { byDay, spaceOf };
   }, [overlays, days, holidays]);
   const spaceOf = (ev: ItemDoc) => overlayDays.spaceOf.get(ev);
+  // 구글 캘린더 일정 (P36-4 - 셈할 날들 첫날~끝날, 칸마다 그날 차례. 끄거나 인쇄면 없다)
+  const gcalFirst = days.reduce((a, d) => (!a || d < a ? d : a), '');
+  const gcalLast = days.reduce((a, d) => (d > a ? d : a), '');
+  const gcal = useGcalShown(gcalFirst, gcalLast);
   const sidOf = (ev: ItemDoc) => spaceOf(ev)?.sid ?? sid;
 
   // ─── 일정 ───
@@ -201,6 +207,7 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
           events={eventsOf(day)}
           carried={day === today ? carried.list : undefined}
           overlay={overlayDays.byDay.get(day)}
+          gcal={gcal.length ? gcalListOn(gcal, day) : undefined}
           spaceOf={spaceOf}
           noteCount={itemsOn(items, day, 'note').length}
           evalCount={evalCounts[day] ?? 0}

@@ -6,6 +6,7 @@
 //   - 수업 칩(둘째 줄 '수업'): 계산한 수업 칸 - PC는 칸에, 휴대폰은 그날 목록에(V4 그대로).
 //   - printAt = 인쇄 창(features/print)의 쪽 하나 - 그 달을 PC 모양으로.
 //   - 겹쳐 보기(P17-2): 겹친 공간 일정도 칸·막대에 주 공간 것 뒤에(색 점) - 누르면 그 공간 칸, 칩 = 그 공간에 완료. 끌기·✕·고르기는 주 공간 것만.
+//   - 구글 캘린더 겹쳐 보기(P36-4): 앱 일정 뒤에 읽기 전용(점선 - 하루짜리는 칸 안 줄, 여러 날은 막대). 누르면 그 일정 창(휴대폰은 그날 목록). 인쇄에는 없다.
 import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
 import { monthGridDates } from '../../domain/dateUtils';
@@ -30,6 +31,8 @@ import { useEvalCountsByDate } from '../evaluations/evalData';
 import { lessonSubjects } from '../lessons/lessonSubjects';
 import { openLessonPanel } from '../lessons/open';
 import { useLessonsFor } from '../lessons/useLessons';
+import { gcalListOn } from '../../domain/gcalShow';
+import { useGcalShown } from '../gcal/gcalView';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -56,7 +59,9 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
   const month = Number(date.slice(5, 7));
   const monthKey = date.slice(0, 7);
   const dates = useMemo(() => monthGridDates(year, month), [year, month]);
-  const cal = useMemo(() => calendarEvents(items, dates[0], dates[dates.length - 1], tree, overlays), [items, dates, tree, overlays]);
+  // 구글 캘린더 일정 (P36-4 - 인쇄 창이면 없다)
+  const gcal = useGcalShown(dates[0], dates[dates.length - 1]);
+  const cal = useMemo(() => calendarEvents(items, dates[0], dates[dates.length - 1], tree, overlays, gcal), [items, dates, tree, overlays, gcal]);
   const eventsOn = (d: string) => cal.byDate.get(d) ?? [];
   // 겹친 일정은 그 공간에서 열고 끝낸다 (라벨도 그 공간 트리)
   const spaceOf = (ev: ItemDoc) => cal.spaceOf.get(ev);
@@ -137,6 +142,8 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
         selectedDate={sheetDate}
         eventsOn={eventsOn}
         periods={cal.periods}
+        gcalOn={(d) => cal.gcalByDate.get(d)}
+        gcalPeriods={cal.gcalPeriods}
         noteCount={(d) => itemsOn(items, d, 'note').length}
         evalCount={(d) => evalCounts[d] ?? 0}
         lessonsOn={showClass ? lessonsOn : undefined}
@@ -163,6 +170,7 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
         <MonthDaySheet
           date={sheetDate}
           events={sheetEvents}
+          gcal={gcalListOn(gcal, sheetDate)}
           hiddenCount={sheetHidden}
           showEvents={showEvents}
           lessons={showClass ? lessonsOn(sheetDate) : []}

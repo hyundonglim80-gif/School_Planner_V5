@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { Timestamp } from 'firebase/firestore';
 import { labelTreeOf, type Docs } from '../../data/select';
 import { spaceTone } from '../../domain/spaceColor';
+import { gcalShownList } from '../../domain/gcalShow';
 import { calendarEvents } from './calendarEvents';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
@@ -63,5 +64,23 @@ describe('겹쳐 보기 (P17-2)', () => {
   it('겹친 공간이 없으면 빈 표 (전과 같다)', () => {
     const cal = calendarEvents(items, '2026-09-27', '2026-10-31', labelTreeOf(labels, 'event'));
     expect(cal.spaceOf.size).toBe(0);
+  });
+  it('구글 캘린더 일정은 앱 목록에 섞지 않고 따로 - 하루짜리는 그날 칸, 여러 날은 막대 자리, 범위 밖은 없다 (P36-4)', () => {
+    const gcal = gcalShownList(
+      [
+        { id: 'g', cal: 'c', title: '연수', allDay: false, start: '2026-10-06T15:00', end: '2026-10-06T17:00' },
+        { id: 'h', cal: 'c', title: '출장', allDay: true, start: '2026-10-07', end: '2026-10-10' },
+        { id: 'z', cal: 'c', title: '범위 밖', allDay: true, start: '2026-11-20', end: '2026-11-21' },
+      ],
+      [{ id: 'c', name: '학교', color: '#0b8043' }],
+    );
+    const cal = calendarEvents(items, '2026-09-27', '2026-10-31', labelTreeOf(labels, 'event'), [], gcal);
+    expect(cal.byDate.get('2026-10-06')!.map((d) => d.id)).toEqual(['a', 'c']);
+    expect(cal.periods.map((d) => d.id)).toEqual(['d']);
+    expect([...cal.gcalByDate.keys()]).toEqual(['2026-10-06']);
+    expect(cal.gcalByDate.get('2026-10-06')!.map((s) => s.ev.title)).toEqual(['연수']);
+    expect(cal.gcalPeriods.map((p) => [p.gcal.ev.title, p.date, p.endDate])).toEqual([['출장', '2026-10-07', '2026-10-09']]);
+    // 넘기지 않으면 빈 것
+    expect(calendarEvents(items, '2026-09-27', '2026-10-31', labelTreeOf(labels, 'event')).gcalPeriods).toEqual([]);
   });
 });

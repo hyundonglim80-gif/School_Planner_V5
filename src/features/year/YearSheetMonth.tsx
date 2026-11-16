@@ -2,6 +2,7 @@
 //
 //   날짜 칸에는 '달력' 일정을 점(라벨 빛깔)과 가는 막대(기간)로만 찍고, 달 아래 그 달의 것을 한 줄씩 적는다.
 //   공휴일(빨간 칸·이름)·D-Day(노란 테)도 날짜 칸과 목록에. 고치기·여러 개 고르기는 '자세히'에서. 학사일정은 P6-3이 더한다.
+//   구글 캘린더 일정(P36-4)도 점(캘린더 색)·가는 막대·목록 줄(점선 - 누르면 그 일정 창, 끝낸 표시 없음). 인쇄 창에서는 없다(부모가 넘기지 않는다).
 //   달 카드는 React.memo - 부모가 넘기는 값은 붙들어 둔다(열두 달을 판마다 다시 그리지 않게, V4 그대로).
 import { memo, useState } from 'react';
 import { DAY_NAMES } from '../../domain/dateUtils';
@@ -17,6 +18,14 @@ import { useSchoolSchedule } from '../school/school';
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import { DoneMark } from '../events/EventDoneChip';
 import type { CalendarEvents } from '../month/calendarEvents';
+import { gcalKey, gcalTimeOn, type GcalBarItem, type GcalShown } from '../../domain/gcalShow';
+import { openGcalEvent } from '../gcal/open';
+import { gcalTip } from '../gcal/gcalActions';
+
+/** 앱 일정 또는 구글 캘린더 일정 (하루짜리 구글 일정도 막대 자리 꼴로 - endDate = 그날이라 기간이 아니다) */
+type Entry = ItemDoc | GcalBarItem;
+const isGcal = (it: Entry): it is GcalBarItem => 'gcal' in it;
+const asEntry = (g: GcalShown): GcalBarItem => ({ id: `gcal:${gcalKey(g)}`, date: g.first, endDate: g.first, gcal: g });
 
 interface Props {
   m: AcademicMonth;
@@ -48,21 +57,30 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
   const dayNames = showWeekend ? DAY_NAMES : DAY_NAMES.slice(1, 6);
   const dates = weeks.flat().filter((d): d is string => !!d);
 
-  const eventsOn = (d: string) => (showEvents ? (cal.byDate.get(d) ?? []) : []);
-  const periods = showEvents ? cal.periods.filter((p) => p.date! <= dates[dates.length - 1] && p.endDate! >= dates[0]) : [];
-  // 겹친 공간 일정은 그 공간 라벨 트리로 (P17-2 - cal.spaceOf)
-  const colorOf = (ev: ItemDoc) => {
+  // 앱 일정 뒤에 구글 캘린더 일정 (P36-4)
+  const eventsOn = (d: string): Entry[] => (showEvents ? [...(cal.byDate.get(d) ?? []), ...(cal.gcalByDate.get(d) ?? []).map(asEntry)] : []);
+  const inMonth = (p: { date: string | null; endDate?: string }) => p.date! <= dates[dates.length - 1] && p.endDate! >= dates[0];
+  const periods: Entry[] = showEvents ? [...cal.periods.filter(inMonth), ...cal.gcalPeriods.filter(inMonth)] : [];
+  // 겹친 공간 일정은 그 공간 라벨 트리로 (P17-2 - cal.spaceOf), 구글 일정은 캘린더 색
+  const colorOf = (ev: Entry) => {
+    if (isGcal(ev)) return ev.gcal.cal.color;
     const label = itemLabels(cal.spaceOf.get(ev)?.tree ?? tree, ev.labelIds)[0];
     return label ? labelColor(label.color).border : DEFAULT_DOT;
+  };
+  const textOf = (ev: Entry) => {
+    if (!isGcal(ev)) return ev.text;
+    const t = gcalTimeOn(ev.gcal, ev.date, true);
+    return t ? `${t} ${ev.gcal.ev.title}` : ev.gcal.ev.title;
   };
 
   // 우리 학교 학사일정 (P6-3)
   const { byDate: schoolEvents } = useSchoolSchedule([`${m.year}-${String(m.month).padStart(2, '0')}`]);
   const schoolOf = (d: string) => schoolEvents[d]?.map((it) => it.name);
-  const items = monthSheetItems<ItemDoc>({ dates, eventsOn, periods: periodsInDates(dates, periods), textOf: (ev) => ev.text, doneOn: doneOnDay, holidayOf, ddays, schoolOf });
+  const items = monthSheetItems<Entry>({ dates, eventsOn, periods: periodsInDates(dates, periods), textOf, doneOn: (ev, d) => !isGcal(ev) && doneOnDay(ev, d), holidayOf, ddays, schoolOf });
 
-  const openItem = (it: SheetItem<ItemDoc>) => {
-    if (it.item) onOpenEvent(it.item, it.date);
+  const openItem = (it: SheetItem<Entry>) => {
+    if (it.item && isGcal(it.item)) openGcalEvent(it.item.gcal, it.date);
+    else if (it.item) onOpenEvent(it.item, it.date);
     else onDateClick(it.date);
   };
 
@@ -134,12 +152,15 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                 );
               })}
               {layout.bars.map((bar) => {
+                const g = isGcal(bar.item);
+                const space = isGcal(bar.item) ? undefined : cal.spaceOf.get(bar.item);
                 return (
                   <div
-                    key={`${cal.spaceOf.get(bar.item)?.sid ?? ''}/${bar.item.id}@${bar.start}`}
+                    key={`${space?.sid ?? ''}/${bar.item.id}@${bar.start}`}
                     data-sheet-bar={bar.item.id}
-                    data-event-space={cal.spaceOf.get(bar.item)?.sid}
-                    title={`📆 ${bar.item.text} (${md(bar.cells[0].date)} ~ ${md(bar.cells[bar.cells.length - 1].date)})`}
+                    data-gcal-bar={g ? '' : undefined}
+                    data-event-space={space?.sid}
+                    title={`${g ? '📅' : '📆'} ${textOf(bar.item)} (${md(bar.cells[0].date)} ~ ${md(bar.cells[bar.cells.length - 1].date)})`}
                     className="absolute pointer-events-none"
                     style={{
                       left: `calc(${(bar.start / cols) * 100}% + ${bar.startsPeriod ? 3 : 0}px)`,
@@ -163,7 +184,8 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
             const dow = DAY_NAMES[new Date(`${it.date}T00:00:00`).getDay()];
             // 넘치는 줄은 화면에서만 접는다 - 인쇄에는 다 찍힌다 (P6-3 data-sheet-extra)
             const extra = !expanded && i >= LIST_LIMIT;
-            const space = it.item ? cal.spaceOf.get(it.item) : undefined;
+            const gItem = it.item && isGcal(it.item) ? it.item.gcal : undefined;
+            const space = it.item && !isGcal(it.item) ? cal.spaceOf.get(it.item) : undefined;
             return (
               <li key={`${it.kind}-${it.date}-${space?.sid ?? ''}${it.item?.id ?? i}`} className={extra ? 'hidden' : ''} data-sheet-extra={extra ? '' : undefined}>
                 <button
@@ -171,10 +193,11 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                   data-sheet-item={it.kind}
                   data-sheet-item-id={it.item?.id}
                   data-event-space={space?.sid}
+                  {...(gItem ? { 'data-gcal-event': gItem.ev.id, 'data-gcal-cal': gItem.cal.id, 'data-gcal-at': 'sheet-month', 'data-gcal-day': it.date } : {})}
                   style={space?.tone}
                   onClick={() => openItem(it)}
-                  className="w-full flex items-start gap-1.5 text-left text-2xs leading-snug rounded hover:bg-slate-50 px-0.5 cursor-pointer"
-                  title={it.item ? '누르면 오른쪽 칸에서 고치기' : '그날 하루 화면'}
+                  className={`w-full flex items-start gap-1.5 text-left text-2xs leading-snug rounded hover:bg-slate-50 px-0.5 cursor-pointer ${gItem ? 'border border-dashed border-slate-300' : ''}`}
+                  title={gItem ? gcalTip(gItem) : it.item ? '누르면 오른쪽 칸에서 고치기' : '그날 하루 화면'}
                 >
                   <span className={`shrink-0 w-[34px] tabular-nums font-bold ${it.kind === 'holiday' ? 'text-red-500' : 'text-slate-400'}`}>
                     {Number(it.date.slice(8, 10))}({dow})

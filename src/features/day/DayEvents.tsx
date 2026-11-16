@@ -10,8 +10,9 @@
 // - 쓰기마다 문서 하나, 되돌리기는 Ctrl+Z(완료·순서는 안내 없이 - V4도 띄우지 않았다).
 // - 겹쳐 보기(P17-2 - 둘째 줄 공간 칩 Ctrl·길게 누르기): 주 공간 것 아래에 공간마다 구분 줄 '👥 그룹A n' + 그 공간 일정(그 공간 라벨 트리로, 카드 = 공간 색 배경).
 //   누르기 = 그 공간 칸 · 라벨 칩 = 그 공간에 완료. ▲▼·끌기·고르기·🗑️·이월은 없다(주 공간 것만). 머리 수(data-event-count)는 주 공간 것만.
+// - 구글 캘린더 겹쳐 보기(P36-4): 맨 뒤에 '📅 구글 캘린더 n' 구분 줄 + 읽기 전용 카드(점선 - 누르면 그 일정 창). 수에 넣지 않는다.
 // 새로 쓰고 고치는 칸은 여기 없다 - 오른쪽 일정 칸(EventPanel) 하나로 어느 화면에서나 같게 (V4 그대로).
-import { useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { goToday } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { openWindow } from '../../app/windows';
@@ -38,6 +39,9 @@ import { openEventPanel, shownEventKey, useShownEventId, useShownEventKey } from
 import { useFocusReveal } from '../search/focus';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import DecorSpot from '../../ui/DecorSpot';
+import { gcalKey, gcalListOn } from '../../domain/gcalShow';
+import { useGcalShown } from '../gcal/gcalView';
+import { GcalDayCard, GcalGroupHeader } from '../gcal/GcalItems';
 import { pressKeys } from '../../ui/pressKeys';
 
 const NONE: readonly ItemDoc[] = [];
@@ -94,6 +98,10 @@ export default function DayEvents({ date }: { date: YMD }) {
   // 겹쳐 보는 다른 공간의 그날 일정 (P17-2 - 주 공간 것 아래에 공간마다 구분 줄, 수에는 넣지 않는다)
   const overlays = useOverlayEventsOn(date);
   const overlayCount = overlays.reduce((n, o) => n + o.events.length, 0);
+  // 구글 캘린더 일정 (P36-4 - 맨 뒤, 수에 넣지 않는다. 끄거나 인쇄면 없다)
+  const gcal = useGcalShown(date, date);
+  const gcalToday = useMemo(() => gcalListOn(gcal, date), [gcal, date]);
+  const shownCount = count + overlayCount + gcalToday.length;
   const shownKey = useShownEventKey();
   const [collapsed, setCollapsed] = useState(false);
   // 검색 결과로 이 날 일정을 짚으러 오면 접힌 칸을 편다
@@ -101,7 +109,7 @@ export default function DayEvents({ date }: { date: YMD }) {
   // ⏰ 표시를 누르면 알림 시각 창 (여기서는 누르는 즉시 저장 - V4 그대로)
   const [alarmFor, setAlarmFor] = useState<ItemDoc | null>(null);
   // 사본도 서버 소식도 아직 없으면 '없다' 대신 받는 중이라고 한다
-  const waiting = count === 0 && overlayCount === 0 && (status === 'idle' || status === 'loading');
+  const waiting = shownCount === 0 && (status === 'idle' || status === 'loading');
 
   const openCreate = () => sid && openEventPanel({ sid, date });
   const openEdit = (ev: ItemDoc) => sid && openEventPanel({ sid, date, id: ev.id });
@@ -185,8 +193,8 @@ export default function DayEvents({ date }: { date: YMD }) {
 
       {!collapsed && (
         // 카드. 휴대폰은 2열, PC(sm 이상)는 1열
-        <div className={`flex-1 overflow-y-auto pr-1 min-h-[110px] ${count + overlayCount > 0 ? 'grid grid-cols-2 sm:grid-cols-1 gap-2 content-start' : ''}`}>
-          {count + overlayCount > 0 ? (
+        <div className={`flex-1 overflow-y-auto pr-1 min-h-[110px] ${shownCount > 0 ? 'grid grid-cols-2 sm:grid-cols-1 gap-2 content-start' : ''}`}>
+          {shownCount > 0 ? (
             <>
               {events.map((ev, idx) => (
                 <EventCard
@@ -264,6 +272,14 @@ export default function DayEvents({ date }: { date: YMD }) {
                   ))}
                 </OverlayGroup>
               ))}
+              {gcalToday.length > 0 && (
+                <>
+                  <GcalGroupHeader count={gcalToday.length} />
+                  {gcalToday.map((g) => (
+                    <GcalDayCard key={gcalKey(g)} s={g} date={date} />
+                  ))}
+                </>
+              )}
             </>
           ) : waiting ? (
             <p data-event-waiting className="py-10 text-center text-xs text-slate-400">

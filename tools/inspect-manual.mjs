@@ -778,6 +778,9 @@ try {
     await win('settings', { tab: 'view' });
     r.check(await has(sel('settings-section', 'gcalOverlay')), "환경설정 '보기' 탭 - 📅 구글 캘린더 겹쳐 보기");
     r.check((await count(sel('gcal-overlay-load'))) === 1, '📋 내 캘린더 목록 받기');
+    // 겹쳐 그리기 (P36-4) - 고른 캘린더가 없으면 둘째 줄 '📅 구글'이 없다 (그리기·창·끄고 켜기는 tools/inspect-gcal.mjs ONLY=draw)
+    r.check((await count(sel('gcal-overlay-how'))) === 1, "칸 설명에 화면 겹쳐 그리기 · '📅 구글' 끄고 켜기");
+    r.check((await count(sel('gcal-toggle'))) === 0, "고른 캘린더가 없으면 둘째 줄 '📅 구글'은 없다");
   });
 
   await topic('neis', async () => {
