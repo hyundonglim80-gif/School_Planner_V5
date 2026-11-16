@@ -20,8 +20,10 @@ import { getAuth, connectAuthEmulator, signInWithEmailAndPassword } from 'fireba
 export const SITE = process.env.SITE || 'http://localhost:5175/';
 
 // 틀린 순간의 그림 (P36-1 CI): SHOTS_DIR이 있으면 ✘를 찍을 때 newPage로 연 창(과 그 창이 연 창)을 모두 찍는다.
-// 기다리지 않고 찍는다(bad는 동기) - 맨 마지막 ✘ 바로 뒤 process.exit()면 그 그림은 빠질 수 있다. 점검 스크립트는 그대로 둔다.
+// 기다리지 않고 찍는다(bad는 동기) - launch()로 띄운 브라우저는 닫기 전에 찍던 그림을 기다린다(멈춘 점검의 catch → finally browser.close).
+// chromium.launch를 곧바로 쓴 점검은 맨 마지막 ✘ 그림이 빠질 수 있다. 점검 스크립트는 그대로 둔다.
 const livePages = new Set();
+const pendingShots = new Set();
 let shotNo = 0;
 function trackPage(page) {
   livePages.add(page);
@@ -35,7 +37,11 @@ function shootOnFail(what) {
   for (const page of livePages) {
     const file = join(dir, `${name}-${String(++shotNo).padStart(2, '0')}.png`);
     writeFileSync(`${file}.txt`, `${what}\n${page.url()}\n`);
-    page.screenshot({ path: file }).catch(() => {});
+    const shot = page
+      .screenshot({ path: file, timeout: 10000 })
+      .catch(() => {})
+      .finally(() => pendingShots.delete(shot));
+    pendingShots.add(shot);
   }
 }
 
@@ -89,7 +95,13 @@ export function browserOptions() {
 }
 
 export async function launch() {
-  return chromium.launch(browserOptions());
+  const browser = await chromium.launch(browserOptions());
+  const close = browser.close.bind(browser);
+  browser.close = async (...args) => {
+    await Promise.allSettled([...pendingShots]); // 틀린 순간 그림을 마저 찍고 닫는다 (SHOTS_DIR이 없으면 비어 있다)
+    return close(...args);
+  };
+  return browser;
 }
 
 /**

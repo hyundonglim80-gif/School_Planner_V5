@@ -18,6 +18,8 @@ interface MiniCalendarPickerProps {
 }
 
 const POPOVER_WIDTH = 230;
+/** 마우스를 올려 막 연 뒤 이 안에 누르면 닫지 않는다 - 올리자마자 누르는(휴대폰 톡·빠른 클릭) 한 동작이 열었다 닫는 일 (P36-1 CI가 찾음) */
+const HOVER_CLICK_GRACE_MS = 400;
 
 export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked, hint = '클릭 시 이동' }: MiniCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,6 +30,7 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
   const btnRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hoverOpenedAtRef = useRef(0);
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimerRef.current) {
@@ -66,7 +69,10 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
 
   const handleMouseEnter = useCallback(() => {
     clearCloseTimer();
-    if (!isOpen) handleOpen();
+    if (!isOpen) {
+      hoverOpenedAtRef.current = Date.now();
+      handleOpen();
+    }
   }, [clearCloseTimer, handleOpen, isOpen]);
 
   // 화면 크기를 바꾸거나 굴리면 자리를 다시 잡는다
@@ -126,8 +132,10 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
         disabled={trigger?.disabled}
         onClick={(e) => {
           e.stopPropagation();
-          if (isOpen) handleClose();
-          else handleOpen();
+          // 올려서 막 열린 것을 누름 = 열려고 누른 것이라 그대로 둔다(화면이 그 사이 다시 그려졌느냐에 따라 닫히곤 했다)
+          if (!isOpen) handleOpen();
+          else if (Date.now() - hoverOpenedAtRef.current < HOVER_CLICK_GRACE_MS) clearCloseTimer();
+          else handleClose();
         }}
         className={
           trigger?.className ??
