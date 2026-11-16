@@ -773,6 +773,11 @@ try {
     await shortcut('calendar');
     r.check(await has(sel('backup-window', 'send')), "단축키 '구글 캘린더로 보내기' = 백업 창 '보내기' 탭");
     r.check(await has(sel('calendar-sync-window')), '📅 구글 캘린더로 보내기 칸');
+    // 받아 겹쳐 보기 (P36-3) - 환경설정 보기 탭
+    await closeAll();
+    await win('settings', { tab: 'view' });
+    r.check(await has(sel('settings-section', 'gcalOverlay')), "환경설정 '보기' 탭 - 📅 구글 캘린더 겹쳐 보기");
+    r.check((await count(sel('gcal-overlay-load'))) === 1, '📋 내 캘린더 목록 받기');
   });
 
   await topic('neis', async () => {

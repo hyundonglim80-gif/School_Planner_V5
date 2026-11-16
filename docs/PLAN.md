@@ -4013,7 +4013,11 @@ CLAUDE.md 2장 점검 교훈(에뮬레이터 부하·`npx` 대신 `exec node`·�
 - [x] ■0 정할 것(권장안 → 5장 'P36-3 구글 캘린더 받기 ■0 정한 것' - 11-16 PC: 보기 탭 '화면 표시' 아래 '📅 구글 캘린더 겹쳐 보기' · common `gcalOverlay` 10개 · 달 단위 ±1달(년간 = 학년도) · IndexedDB `sp5-gcal-{uid}` · 조용한 토큰일 때만 15분 · 끝까지 받은 것만 바꿈): 고르는 곳(환경설정 캘린더 줄 아래 '📅 겹쳐 볼 구글 캘린더' - 계정에 고른 캘린더 id·이름·색) · 앱이 보내는 캘린더는 목록에서 뺀다(겹치면 두 번 보인다) ·
   받는 범위(보는 화면 둘레 - 하루·주간 = 그 달, 월간 = 앞뒤 한 달, 년간 = 학년도 · 반복은 펼쳐 받기·기간으로 거르기) · 담는 곳(**이 기기 IndexedDB 캐시만** - 앱 자료(`items`)로 저장하지 않는다(원칙 넷째·남의 캘린더를 학급 자료와 섞지 않는다), 백업에 넣지 않는다) ·
   다시 받기(화면을 열 때 15분이 넘었고 토큰이 있을 때만 - 없으면 받은 것 그대로 + '🔄 다시 받기' 칩, 로그인 창을 저절로 띄우지 않는다).
-- [ ] ■1 `data/google/calendar.ts` 캘린더 목록·기간 일정 읽기(쪽 넘김) + 단위 시험(fetch 흉내) · `data/gcalOverlay`(캐시·범위 셈·다시 받기 때 - 끊긴 때 온 빈 결과를 '없음'으로 믿지 않는다) · 고르기 줄 화면 + 단위.
+- [x] ■1 `data/google/calendar.ts` 캘린더 목록·기간 일정 읽기(쪽 넘김) + 단위 시험(fetch 흉내) · `data/gcalOverlay`(캐시·범위 셈·다시 받기 때 - 끊긴 때 온 빈 결과를 '없음'으로 믿지 않는다) · 고르기 줄 화면 + 단위.
+  → **11-16 PC 끝**: 순수 `domain/gcalOverlay`(고른 것 읽기 10개·고르기 줄(앱 캘린더·지운 것 빼기, 기본 먼저)·일정 읽기(취소 빼기·이 기기 시각·설명 1000자·https 주소만)·보이는 날 `eventSpan`·달 ±1/학년도 `neededMonths`·`staleMonths`·`runsOf`·`splitByMonth`·`overlayBetween`, 시험 15) ·
+  `data/google/calendar` `allPages`(쪽 넘김 50쪽 끝, 도중 실패는 던짐)·`listCalendars`·`listEventsBetween`(시험 4) · `data/gcalOverlay`(IndexedDB `sp5-gcal-{uid}` · 조용한 토큰만 + 없으면 1분은 다시 묻지 않음 · 끝까지 받은 것만 바꿈 · 401 needsLogin·404/403 missing · 함께 물으면 한 번 · `pruneGcalCalendars`·`wipeGcalOverlay`(로그아웃), 시험 14) ·
+  common `gcalOverlay` · Shell `useGcalOverlayAuto`(계정 설정을 받은 뒤에만 - 화면·날짜·탭 보임) · 보기 탭 '📅 구글 캘린더 겹쳐 보기' `GcalOverlaySection`(`data-gcal-overlay-*`, 시험 8 · '그리기는 다음 판' 줄 `data-gcal-overlay-soon` - P36-4에서 뺀다) · 설명서 calendar-sync 새 절·settings 보기 줄 ·
+  찾아 고침: 받기 함수 인자 이름이 사본 쓰기 함수(`run`)를 가려 IDB에 쓰지 못했다(받은 것은 메모리에만, '닿지 못했습니다'로 삼킴 - 시험이 잡음) → 이름을 바꾸고 그 갈래에 콘솔 경고 · 단위 2369(re2jsStub는 부하 탓 - 따로 통과)·빌드·크롬 manual(calendar-sync·settings)·settings 통과.
 - [ ] ■2 PC 진짜 확인(내 계정 캘린더 목록·한 달 받기·토큰 끊김) · 점검 `inspect-gcal` 새 묶음(흉내 응답 - 허용된 진짜 출처 꼴 주소, CSP) · 세션 끝 정리(1-3).
 **끝 조건**: 환경설정에서 내 구글 캘린더를 골라 두면 그 일정이 이 기기에 담기고(앱 자료·백업에는 없음), 로그인이 끊겨도 오류 창 없이 받은 것을 보이며 '다시 받기'로 잇는다.
 

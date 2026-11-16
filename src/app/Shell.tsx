@@ -21,6 +21,7 @@ import { useSeatingShortcuts } from '../features/seating/open';
 import { useSearchFocusRunner } from '../features/search/focus';
 import { useTrashAutoEmpty } from '../features/trash/auto';
 import { useGcalAuto } from '../features/gcal/auto';
+import { useGcalOverlayAuto } from '../features/gcal/overlayAuto';
 import { useClaudeRequestsWatch } from '../data/claudeRequests';
 import { useMailReceiver } from '../features/mail/receive';
 import { useChatReceiver } from '../features/chat/receive';
@@ -96,6 +97,8 @@ export default function Shell() {
   useTrashAutoEmpty();
   // 구글 캘린더 자동 보내기 (P8-1)
   useGcalAuto();
+  // 겹쳐 볼 구글 캘린더 받기 (P36-3 - 고른 것이 없으면 하는 일 없음)
+  useGcalOverlayAuto();
   // 메모로 보낸 Claude 요청의 진행 (메모 카드 표시 - 10-16)
   useClaudeRequestsWatch();
   // ✉ 쪽지 - 안 읽은 수(머리줄)·새 쪽지 안내·푸시 알림으로 연 쪽지 (P15-2 - 새 창은 하지 않는다)

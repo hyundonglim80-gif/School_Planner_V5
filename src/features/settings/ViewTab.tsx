@@ -17,6 +17,7 @@ import { useShortcutTitle } from '../../app/keys';
 import { DECOR_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, THEME_OPTIONS, useOptionTarget } from '../../app/optionShortcuts';
 import { Choices, Section, ToggleRow } from './parts';
 import FontSizeRows from './FontSizeRows';
+import GcalOverlaySection from '../gcal/GcalOverlaySection';
 
 const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
   pc: "'오른쪽 칸'은 화면을 나눠 오른쪽에 띄웁니다(왼쪽 화면을 보며 쓸 수 있다). '팝업창'은 창마다 브라우저 새 창으로 띄워 브라우저 밖·다른 모니터로 옮길 수 있습니다 - 자리와 크기는 창마다 기억합니다.",
@@ -52,7 +53,7 @@ export default function ViewTab() {
   return (
     <div>
       <p className="px-5 pt-4 text-xs text-slate-500 leading-relaxed">
-        이 탭은 고르는 즉시 바뀌고, <strong className="text-slate-700">PC와 휴대폰을 따로</strong> 계정에 저장합니다(화면 밝기는 이 기기에만, 색 테마·꾸미기는 PC·휴대폰 같게).
+        이 탭은 고르는 즉시 바뀌고, <strong className="text-slate-700">PC와 휴대폰을 따로</strong> 계정에 저장합니다(화면 밝기는 이 기기에만, 색 테마·꾸미기·겹쳐 볼 구글 캘린더는 PC·휴대폰 같게).
       </p>
 
       <Section id="display" title="화면 표시" desc="둘째 줄의 주말 / 일정 / 수업 단추와 같은 값입니다.">
@@ -89,6 +90,23 @@ export default function ViewTab() {
           checked={nav.enableScrollNav}
           onChange={setEnableScrollNav}
         />
+      </Section>
+
+      {/* P36-3 - 고른 것은 계정에 하나(PC·휴대폰 같게), 받은 일정은 이 기기에만 */}
+      <Section
+        id="gcalOverlay"
+        title="📅 구글 캘린더 겹쳐 보기"
+        desc={
+          <>
+            고른 구글 캘린더의 일정을 이 기기에 받아 두고 일정 칸에 겹쳐 봅니다(읽기만 - 고치기는 구글 캘린더에서). 받은 일정은 앱 자료·백업에 들지 않고, 로그아웃하면
+            지웁니다. 앱이 보내는 SP(work)·SP(class)·SP(commentary)는 두 번 보이지 않게 목록에서 뺍니다.
+            <span data-gcal-overlay-soon className="block mt-1 text-amber-700">
+              화면에 겹쳐 그리기는 다음 판에서 나옵니다 - 지금은 골라 받아 두기까지입니다.
+            </span>
+          </>
+        }
+      >
+        <GcalOverlaySection />
       </Section>
 
       {/* 화면마다 따로 (메모 요청 #145 - 옛 다섯 단계). 맨 위 머리줄은 늘 100% - index.css [data-fixed-font] */}

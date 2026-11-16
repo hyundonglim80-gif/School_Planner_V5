@@ -12,6 +12,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { readFontSizes, type FontSizes } from '../domain/fontScale';
 import { DEFAULT_DECOR } from '../domain/decor';
+import { sanitizeOverlayCalendars, type OverlayCalendar } from '../domain/gcalOverlay';
 import { DEFAULT_PALETTE } from '../domain/palette';
 import {
   readCustomBindings,
@@ -198,6 +199,8 @@ export interface CommonSettings {
   cvd: boolean;
   /** 꾸미기 (P20-3 - domain/decor, PC·휴대폰 같게). 모르는 값은 끄기로 그린다(sanitizeDecor) */
   decor: string;
+  /** 겹쳐 볼 구글 캘린더 (P36-3 - domain/gcalOverlay, 10개까지). 받은 일정은 이 기기에만(data/gcalOverlay). 사람마다 다른 자료라 초기화 설정·처음 설정에는 넣지 않는다 */
+  gcalOverlay: OverlayCalendar[];
 }
 
 export interface PhotoFolderConfig {
@@ -259,6 +262,7 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   cvd: boolField(false),
   // 팔레트처럼 모르는 값도 그대로 둔다 - 새 꾸미기를 고른 계정을 옛 앱이 끄기로 되돌려 올리지 않게
   decor: customField<string>(DEFAULT_DECOR, (v) => (typeof v === 'string' && /^[a-z]{1,20}$/.test(v) ? v : undefined)),
+  gcalOverlay: customField<OverlayCalendar[]>([], sanitizeOverlayCalendars),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */

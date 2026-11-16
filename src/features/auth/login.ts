@@ -13,6 +13,7 @@ import { showErrorToast } from '../../app/toast';
 import { stopPrefsSync } from '../../app/prefs';
 import { wipeClipboard } from '../../data/clipboard';
 import { wipeDrafts } from '../../data/drafts';
+import { wipeGcalOverlay } from '../../data/gcalOverlay';
 import { keepGoogleToken } from '../../data/google/token';
 import { wipeMirror } from '../../data/mirror/sync';
 import { forgetPushOnLogout } from '../../data/push';
@@ -93,7 +94,7 @@ async function wipeStep(what: string, wipe: () => Promise<unknown>): Promise<voi
 }
 
 /**
- * 로그아웃. 이 기기의 사본·쓰던 글·클립보드·사진을 지운다(다음 사람이 쓰지 않게 - 공용 PC). 다음에 들어오면 사본은 서버에서 다시 받는다.
+ * 로그아웃. 이 기기의 사본·쓰던 글·클립보드·받은 구글 캘린더 일정·사진을 지운다(다음 사람이 쓰지 않게 - 공용 PC). 다음에 들어오면 사본은 서버에서 다시 받는다.
  * 구글 토큰·명렬표 임시본·창 목록은 다른 탭도 함께 비워야 해서 세션을 듣는 쪽에서 비운다(accountChange).
  */
 export async function logout() {
@@ -114,6 +115,8 @@ export async function logout() {
           wipeStep('기기 사본', () => wipeMirror(uid)),
           wipeStep('쓰던 글 보관', () => wipeDrafts(uid)),
           wipeStep('클립보드 목록', () => wipeClipboard(uid)),
+          // 겹쳐 본 구글 캘린더 일정 (P36-3 - 이 기기에만 받아 둔 것)
+          wipeStep('받은 구글 캘린더 일정', () => wipeGcalOverlay(uid)),
         ]
       : []),
     // 학생 사진은 얼굴 사진이다. 사진을 쓰는 화면에서만 읽는 모듈이라 그때 불러온다
