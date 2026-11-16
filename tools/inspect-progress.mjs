@@ -288,6 +288,9 @@ try {
   // 새 행: 차시 2를 내용보다 먼저 적어도 행은 하나, 미리보기는 2차시 더
   await page.locator(sel('progress-add-row')).click();
   await waitFor(page.locator(sel('progress-table', 3)));
+  // '+ 행 추가'는 한 프레임 뒤(requestAnimationFrame) 새 행 칸으로 커서를 옮긴다 - 그 전에 치면 친 글자가 옮겨 간 칸으로 들어간다
+  // (P36-1 CI 일곱에 한 번: '2'가 내용 칸으로 가 '공 던지기'에 덮였다). 커서가 새 행에 온 뒤 친다
+  await waitFor(() => page.evaluate(() => document.activeElement?.getAttribute('data-cell')?.startsWith('2-') ?? false), 3000);
   await cell('2-1').fill('2');
   await cell('2-2').fill('공 던지기');
   await cell('0-2').click();

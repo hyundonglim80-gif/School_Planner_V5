@@ -114,18 +114,22 @@ if (!(await waitHttp(SITE, 500))) {
   await browser.close();
 }
 
-// 4. 점검을 하나씩
+// 4. 점검을 하나씩 (REPEAT=n이면 목록을 n바퀴 - 흔들림 찾기, CI 손 실행 '몇 번' · 바퀴마다 그림 이름이 이어진다)
+const REPEAT = Math.max(1, Math.min(10, Number(process.env.REPEAT) || 1));
 const results = [];
-for (const name of probes) {
-  console.log(`\n▶ inspect-${name}`);
-  const r = await run(name, [`tools/inspect-${name}.mjs`], {
-    env: { SHOTS_DIR: join(OUT, 'shots') },
-    file: join(OUT, `${name}.log`),
-  });
-  const fails = r.text.split('\n').filter((l) => /✘/.test(l) && !/✘ \d+개 틀림/.test(l)).map((l) => l.trim());
-  const passes = r.text.split('\n').filter((l) => /^\s*✔ /.test(l)).length;
-  results.push({ name, ok: r.code === 0, ms: r.ms, passes, fails });
-  console.log(`◀ inspect-${name}: ${r.code === 0 ? '통과' : `틀림 (종료 ${r.code})`} · ${sec(r.ms)}`);
+for (let round = 1; round <= REPEAT; round++) {
+  for (const name of probes) {
+    const label = REPEAT > 1 ? `${name}#${round}` : name;
+    console.log(`\n▶ inspect-${label}`);
+    const r = await run(label, [`tools/inspect-${name}.mjs`], {
+      env: { SHOTS_DIR: join(OUT, 'shots') },
+      file: join(OUT, `${label.replace('#', '-')}.log`),
+    });
+    const fails = r.text.split('\n').filter((l) => /✘/.test(l) && !/✘ \d+개 틀림/.test(l)).map((l) => l.trim());
+    const passes = r.text.split('\n').filter((l) => /^\s*✔ /.test(l)).length;
+    results.push({ name: label, ok: r.code === 0, ms: r.ms, passes, fails });
+    console.log(`◀ inspect-${label}: ${r.code === 0 ? '통과' : `틀림 (종료 ${r.code})`} · ${sec(r.ms)}`);
+  }
 }
 
 // 5. 요약 (GitHub 일 요약 · 메모 요청 결과 글이 읽는 ci-out/summary.md)

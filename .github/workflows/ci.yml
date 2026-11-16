@@ -9,6 +9,11 @@ on:
     branches: [ main, 'wip/**', 'claude/**', '!claude/request-*' ]
   pull_request:
   workflow_dispatch:
+    inputs:
+      repeat:
+        description: '크롬 점검을 몇 바퀴 (흔들림 찾기 - 1~10)'
+        required: false
+        default: '1'
 
 permissions:
   contents: read
@@ -83,10 +88,13 @@ jobs:
   # 틀리면 CI 실패 = 배포 멈춤. 메모 요청(claude-request.yml)은 PR의 이 일까지 기다렸다 합친다.
   chrome:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    # 한 바퀴 4~5분 - 손 실행 '몇 바퀴'(repeat)까지
+    timeout-minutes: 60
     env:
       # 점검의 '오늘'·날짜 칸은 한국 시각으로 셈한다(PC와 같게) - 러너 기본은 UTC
       TZ: Asia/Seoul
+      # 손 실행(workflow_dispatch)에서 고른 바퀴 수 - 푸시·PR은 한 바퀴
+      REPEAT: ${{ github.event.inputs.repeat || '1' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
