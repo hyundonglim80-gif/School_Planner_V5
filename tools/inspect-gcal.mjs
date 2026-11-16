@@ -9,7 +9,7 @@
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-gcal.mjs
 // teacher 계정 - 점검 라벨·일정·큐는 끝에 지운다.
-import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, noUserActivation, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -82,6 +82,167 @@ async function mockGoogle(ctx) {
     }
     return route.fulfill({ status: 405, headers: CORS, json: {} });
   });
+}
+
+// ── 겹쳐 보기 흉내 (P36-3) - 내 캘린더 목록·기간 일정 (진짜 주소 꼴 - CSP connect-src *.googleapis.com) ──
+const ov = {
+  tokenOk: true,
+  /** 일정을 503으로 (끊김·구글 고장) */
+  down: false,
+  /** 일정 요청 [캘린더, timeMin, timeMax] */
+  asks: [],
+  cals: [
+    { id: 'me@example.com', summary: 'me@example.com', summaryOverride: '내 캘린더', primary: true, backgroundColor: '#9fe1e7' },
+    { id: 'CAL_WORK', summary: 'SP(work)', backgroundColor: '#000000' },
+    { id: 'grade@group.calendar.google.com', summary: '학년 협의', backgroundColor: '#16a765' },
+    { id: 'gone@group.calendar.google.com', summary: '지운 캘린더', backgroundColor: '#ff7537' },
+  ],
+  /** 학년 협의의 일정 (반복은 펼친 것 - singleEvents) */
+  events: [
+    { id: 'ov_allday', summary: '점검 학년 협의회', start: { date: '2027-05-04' }, end: { date: '2027-05-05' }, htmlLink: 'https://www.google.com/calendar/event?eid=ov1' },
+    { id: 'ov_timed', summary: '점검 공개 수업', start: { dateTime: '2027-05-20T09:00:00+09:00' }, end: { dateTime: '2027-05-20T10:00:00+09:00' }, location: '5-2' },
+    { id: 'ov_rep_1', summary: '점검 주간 회의', start: { dateTime: '2027-05-11T15:00:00+09:00' }, end: { dateTime: '2027-05-11T16:00:00+09:00' } },
+    { id: 'ov_rep_2', summary: '점검 주간 회의', start: { dateTime: '2027-05-18T15:00:00+09:00' }, end: { dateTime: '2027-05-18T16:00:00+09:00' } },
+    { id: 'ov_cancel', status: 'cancelled', summary: '점검 취소된 것', start: { date: '2027-05-06' }, end: { date: '2027-05-07' } },
+    { id: 'ov_long', summary: '점검 체험 학습 주간', start: { date: '2027-06-28' }, end: { date: '2027-07-03' } },
+  ],
+};
+async function mockOverlay(ctx) {
+  await ctx.route(/oauth2\.googleapis\.com\/tokeninfo/, (route) =>
+    route.fulfill({ status: ov.tokenOk ? 200 : 400, headers: CORS, json: ov.tokenOk ? { expires_in: 3000 } : { error: 'invalid_token' } }),
+  );
+  await ctx.route(/www\.googleapis\.com\/calendar\/v3\//, async (route) => {
+    const req = route.request();
+    if (req.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS });
+    if (!ov.tokenOk) return route.fulfill({ status: 401, headers: CORS, json: { error: { message: 'Invalid Credentials' } } });
+    const url = new URL(req.url());
+    if (url.pathname.endsWith('/users/me/calendarList')) return route.fulfill({ status: 200, headers: CORS, json: { items: ov.cals } });
+    const m = url.pathname.match(/\/calendars\/([^/]+)\/events$/);
+    if (!m || req.method() !== 'GET') return route.fulfill({ status: 405, headers: CORS, json: {} });
+    const cal = decodeURIComponent(m[1]);
+    const timeMin = url.searchParams.get('timeMin');
+    const timeMax = url.searchParams.get('timeMax');
+    ov.asks.push([cal, timeMin, timeMax]);
+    if (cal.startsWith('gone@')) return route.fulfill({ status: 404, headers: CORS, json: { error: { message: 'Not Found' } } });
+    if (ov.down) return route.fulfill({ status: 503, headers: CORS, json: { error: { message: 'Backend Error' } } });
+    const lo = Date.parse(timeMin);
+    const hi = Date.parse(timeMax);
+    const at = (t) => Date.parse(t.dateTime ?? `${t.date}T00:00:00+09:00`);
+    const items = cal.startsWith('grade@') ? ov.events.filter((e) => at(e.end) > lo && at(e.start) < hi) : [];
+    return route.fulfill({ status: 200, headers: CORS, json: { items } });
+  });
+}
+/** 이 기기 시각 그 달 1일 0시 (앱이 묻는 timeMin·timeMax 꼴) */
+const monthStart = (y, m) => new Date(y, m - 1, 1).toISOString();
+
+async function overlayBundle() {
+  r.section('구글 캘린더 겹쳐 보기 (P36-3) - 고르기 · 받아 담기');
+  const commonRef = doc(em.db, 'spaces', sid, 'settings', 'common');
+  const before = (await getDoc(commonRef)).data()?.gcalOverlay;
+  undo.add(() => setDoc(commonRef, { gcalOverlay: before === undefined ? deleteField() : before }, { merge: true }));
+  await setDoc(commonRef, { gcalOverlay: deleteField() }, { merge: true });
+  const picked = async () => ((await getDoc(commonRef)).data()?.gcalOverlay ?? []).map((c) => c.id);
+
+  const { ctx, page, errors } = await newPage(browser);
+  await mockOverlay(ctx);
+  await ctx.addInitScript(() => sessionStorage.setItem('sp5-google-token', 'tok'));
+  await open(page, `#/day/${DAY}`);
+  const idbRows = () =>
+    page.evaluate(
+      (u) =>
+        new Promise((res) => {
+          const rq = indexedDB.open(`sp5-gcal-${u}`);
+          rq.onsuccess = () => {
+            const db = rq.result;
+            if (!db.objectStoreNames.contains('months')) return (db.close(), res([]));
+            const all = db.transaction('months').objectStore('months').getAll();
+            all.onsuccess = () => (db.close(), res(all.result.map((x) => ({ key: x.key, ids: x.events.map((e) => e.id) }))));
+          };
+          rq.onerror = () => res([]);
+        }),
+      uid,
+    );
+  const openView = async () => {
+    await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'view' }));
+    await waitFor(page.locator(sel('settings-section', 'gcalOverlay')), 8000);
+  };
+  const GRADE = 'grade@group.calendar.google.com';
+  const GONE = 'gone@group.calendar.google.com';
+  const countNow = async () => Number(await page.locator(sel('gcal-overlay-count')).getAttribute('data-gcal-overlay-count'));
+
+  await openView();
+  r.check((await page.locator(sel('gcal-overlay-status')).count()) === 0 && (await page.locator(sel('gcal-overlay-list')).count()) === 0, '처음 = 목록 받기 단추만');
+  r.check(ov.asks.length === 0, '고른 것이 없으면 구글에 일정을 묻지 않는다');
+  await page.locator(sel('gcal-overlay-load')).click();
+  r.check(await waitFor(page.locator(sel('gcal-overlay-pick', GRADE)), 8000), '📋 내 캘린더 목록 받기 → 줄');
+  const rowIds = await page.locator('[data-gcal-overlay-pick]').evaluateAll((els) => els.map((e) => e.getAttribute('data-gcal-overlay-pick')));
+  r.check(rowIds[0] === 'me@example.com' && !rowIds.includes('CAL_WORK') && rowIds.length === 3, `기본 캘린더 먼저 · 앱이 보내는 SP(work)는 없다 (${rowIds.join(', ')})`);
+  r.check(((await page.locator(sel('gcal-overlay-row', 'me@example.com')).textContent()) ?? '').includes('(기본)'), '내 캘린더 (기본)');
+
+  await page.locator(sel('gcal-overlay-pick', GRADE)).check();
+  r.check((await serverUntil(picked, (l) => l.includes(GRADE))).includes(GRADE), '고르면 계정 칸 common gcalOverlay에');
+  // 4~6월 = 5월 넷 + 6월 말에 시작하는 체험 학습 주간 (취소된 것은 빼고)
+  r.check(await waitFor(async () => (await countNow()) === 5, 10000), `고르면 곧바로 받는다 - 받아 둔 일정 5개 (취소된 것은 빼고 · ${await countNow()})`);
+  const first = ov.asks.find(([c]) => c === GRADE);
+  r.check(first?.[1] === monthStart(2027, 4) && first?.[2] === monthStart(2027, 7), `보는 달 ±1 = 4~6월 한 번에 (${first?.[1]} ~ ${first?.[2]})`);
+  r.check(await waitFor(async () => (await idbRows()).length === 3, 8000), '이 기기 IndexedDB에 달 칸 셋');
+  const may = (await idbRows()).find((x) => x.key === `${GRADE}|2027-05`);
+  r.check(may && may.ids.length === 4 && may.ids.includes('ov_rep_2') && !may.ids.includes('ov_cancel'), `5월 칸 = 펼친 반복 둘 포함 넷 (${may?.ids.join(', ')})`);
+  r.check((await page.locator(sel('gcal-overlay-status')).textContent())?.includes('에 받음'), '받은 때가 보인다');
+  const titles = new Set(ov.events.map((e) => e.summary));
+  r.check(!(await getDocs(collection(em.db, 'spaces', sid, 'items'))).docs.some((d) => titles.has(String(d.data().text ?? ''))), '앱 자료(items)에는 쓰지 않는다');
+
+  r.section('겹쳐 보기 - 화면을 옮기면 없는 달만 · 15분 안에는 다시 묻지 않음');
+  await page.keyboard.press('Escape');
+  const asked = ov.asks.length;
+  await page.evaluate(() => (location.hash = '#/month/2027-07'));
+  r.check(await waitFor(() => ov.asks.length > asked, 8000), '월간 7월로 옮기면 묻는다');
+  const next = ov.asks.slice(asked).filter(([c]) => c === GRADE);
+  r.check(next.length === 1 && next[0][1] === monthStart(2027, 7) && next[0][2] === monthStart(2027, 9), `받아 둔 6월은 빼고 7~8월만 (${next.map((a) => `${a[1]}~${a[2]}`).join(' | ')})`);
+  const jul = await waitFor(async () => (await idbRows()).find((x) => x.key === `${GRADE}|2027-07`)?.ids.includes('ov_long'), 8000);
+  r.check(jul, '6월 말~7월 초 걸친 일정은 7월 칸에도');
+  const asked2 = ov.asks.length;
+  await page.evaluate(() => (location.hash = '#/month/2027-06'));
+  await page.waitForTimeout(1500);
+  r.check(ov.asks.length === asked2, '돌아온 6월(5~7월 모두 받음)은 15분 안이라 묻지 않는다');
+
+  r.section('겹쳐 보기 - 로그인 끊김 · 끊김 · 지운 캘린더');
+  ov.tokenOk = false;
+  const asked3 = ov.asks.length;
+  await page.evaluate(() => (location.hash = '#/month/2027-10'));
+  await openView();
+  r.check(await waitFor(page.locator(sel('gcal-overlay-login')), 8000), '토큰이 없으면 로그인 창 없이 안내 (전에 받은 것을 보인다)');
+  r.check(ov.asks.length === asked3 && (await page.locator(sel('google-login-prompt')).count()) === 0, "구글에 일정을 묻지 않고 '구글 로그인이 필요합니다' 창도 띄우지 않는다");
+  r.check((await countNow()) >= 5, `받아 둔 것은 그대로 (${await countNow()})`);
+  ov.tokenOk = true;
+  await page.evaluate(() => sessionStorage.setItem('sp5-google-token', 'tok2'));
+  await page.locator(sel('gcal-overlay-refresh')).click();
+  r.check(await waitFor(async () => (await page.locator(sel('gcal-overlay-login')).count()) === 0, 8000), '🔄 다시 받기 → 받고 안내가 사라진다');
+  r.check(ov.asks.slice(asked3).some(([c, lo]) => c === GRADE && lo === monthStart(2027, 9)), '10월 ±1(9~11월)을 받았다');
+  const kept = await countNow();
+  ov.down = true;
+  await page.locator(sel('gcal-overlay-refresh')).click();
+  r.check(await waitFor(page.locator(sel('gcal-overlay-error')), 8000), '구글이 503 → 안내 글');
+  r.check((await countNow()) === kept && (await idbRows()).some((x) => x.key === `${GRADE}|2027-10`), `받아 둔 것은 지우지 않는다 (${kept})`);
+  ov.down = false;
+  await page.locator(sel('gcal-overlay-load')).click();
+  await waitFor(page.locator(sel('gcal-overlay-pick', GONE)), 8000);
+  await page.locator(sel('gcal-overlay-pick', GONE)).check();
+  r.check(await waitFor(page.locator(sel('gcal-overlay-missing', GONE)), 8000), '404 캘린더 = 구글에서 찾을 수 없음');
+  // 설정은 1초 뒤 올라간다 - 올라간 뒤에도 404 때문에 빠지지 않는지
+  await serverUntil(picked, (l) => l.includes(GONE));
+  await page.waitForTimeout(2000);
+  r.check((await picked()).includes(GONE) && (await page.locator(sel('gcal-overlay-pick', GONE)).isChecked()), '고른 것은 지우지 않는다 (계정 칸·체크 그대로)');
+
+  r.section('겹쳐 보기 - 빼기');
+  await page.locator(sel('gcal-overlay-pick', GRADE)).uncheck();
+  r.check(!(await serverUntil(picked, (l) => !l.includes(GRADE))).includes(GRADE), '빼면 계정 칸에서 빠진다');
+  r.check(await waitFor(async () => !(await idbRows()).some((x) => x.key.startsWith(`${GRADE}|`)), 8000), '그 캘린더의 받은 것을 이 기기에서 지운다');
+  await page.locator(sel('gcal-overlay-pick', GONE)).uncheck();
+  await serverUntil(picked, (l) => l.length === 0);
+  await page.waitForTimeout(2500);
+  r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
+  await ctx.close();
 }
 
 const base = { deletedAt: null, v: 1, updatedAt: serverTimestamp() };
@@ -266,6 +427,9 @@ try {
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
   const lbl = (await getDoc(ref('labels', LABEL))).data();
   r.check(lbl?.props?.gcal === false || lbl?.props?.gcal === undefined, '라벨 문서 = 끔');
+  await ctx.close();
+
+  await overlayBundle();
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {

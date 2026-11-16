@@ -163,7 +163,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 ### 4-8. 설정 (개인 공간 `settings/`)
 
 - `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` · 알림 소리 길이 `alarmSound`(초 - 0 한 번·기본 10·-1 확인할 때까지, P10-1) · 색 테마 `palette`(P20-1 - 기본 `default`, 모르는 id도 그대로 둔다 - 그리기만 기본) · 색약 배려 `cvd`(P20-2 - 기본 끔) · 꾸미기 `decor`(P20-3 - 기본 `off`, 모르는 값도 그대로 둔다 - 그리기만 끄기) ·
-  우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 학급마다 고른 사진 폴더 `photoFolders`(V4 backup_config).
+  우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 학급마다 고른 사진 폴더 `photoFolders`(V4 backup_config) ·
+  겹쳐 볼 구글 캘린더 `gcalOverlay`(P36-3 - `[{ id, name, color }]` 10개까지, 이름·색은 고를 때 적은 것. 사람마다 다른 자료라 초기화 설정·처음 설정 밖 - 받은 일정은 6-4, 서버에 없다).
 - `import`: V4 가져오기 기록(8-1) - 11-11 P31에 가져오기를 뗐다, 옛 계정에 남은 문서는 읽지 않는다(백업에도 담지 않는다).
 - `backupLog`: 드라이브 자동 백업의 마지막 기록 `{ lastAt, lastName, lastSummary, folderLink }`(P8-3 - 백업이 적는다, 고르는 것은 common.autoBackup) · seed는 1년 뒤로 심는다.
 - `sheets`: 이 공간의 V5 구글 시트 파일 `{ spreadsheetId }`(P8-3 - 공간마다, V4·V3의 `backup_config` 시트와 다른 파일).
@@ -305,6 +306,15 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   `useDraft(열쇠, 칸 값, 손댔나)` - 손댄 동안 2초 뒤, 칸이 닫힐 때·`pagehide`에는 곧바로 적는다. 닫기·ESC로 버리고 닫아도 남는다(다시 열어 '버리기').
   남은 글이 지금 칸과 같으면 묻지 않고 지운다. 새 칸의 날짜를 바꾸면 열쇠를 옮긴다. 로그아웃하면 `wipeDrafts`(기기 사본과 같은 까닭).
 - 트랜잭션은 끝(`tx.done`)까지 함께 기다린다 - 따로 두면 끊긴 트랜잭션의 done이 받는 이 없이 거절되어 '처리하지 않은 오류'가 된다. 고장 나면 조용히(콘솔에 한 번) - 칸은 그대로 쓴다.
+
+### 6-4. 받은 구글 캘린더 일정 (P36-3 - PLAN 5장 'P36-3 구글 캘린더 받기 ■0 정한 것')
+고른 구글 캘린더(common `gcalOverlay`)의 일정을 **이 기기에만** 받아 둔다 - 앱 자료(`items`)·백업·서버에 넣지 않는다(원칙 넷째 - 언제든 다시 받을 수 있다 · 남의 캘린더를 학급 자료와 섞지 않는다).
+- `data/gcalOverlay.ts`: DB `sp5-gcal-{uid}`(계정마다) 저장소 `months`, 열쇠 = `<캘린더 id>|YYYY-MM` → `{ events, at }`(끝까지 받은 때). 일정 = `domain/gcalOverlay` `OverlayEvent` `{ id, cal, title, allDay, start, end, location?, description?(1000자), link? }` -
+  종일 `start`·`end`는 날짜(끝은 구글 그대로 다음 날), 시각은 이 기기 시각 `YYYY-MM-DDTHH:mm` · 보이는 날은 `eventSpan`, 여러 달에 걸친 것은 달마다 담고 `overlayBetween`이 캘린더 + id로 하나.
+- 받는 달 = 보는 날의 달 ±1(년간 = 학년도 + 앞뒤 한 달, 메모·학급 = 없음 - `neededMonths`) 가운데 비었거나 15분 지난 달, 이어진 달은 한 번에(`singleEvents`·`timeMin`·`timeMax`·`timeZone=Asia/Seoul`, 쪽 넘김 끝까지).
+  Shell `features/gcal/overlayAuto` - 계정 설정을 받은 뒤 화면·날짜·탭 보임마다 · **조용한 토큰만**(없으면 `needsLogin` + 1분은 다시 묻지 않음, 로그인 창을 띄우지 않는다) · 고르기 칸의 고르기·🔄 다시 받기는 누른 때라 로그인을 묻는다.
+- **끝까지 받은 응답만 그 달을 바꾼다**(끊김·5xx·쪽 넘김 도중 실패 = 그대로 + `error`) · 401 = 토큰을 잊고 `needsLogin` · 404·403 = `missing`(고른 것은 그대로) · 같은 달을 함께 물으면 한 번.
+- 고르기에서 빼면(다른 기기에서도) `pruneGcalCalendars`, 로그아웃하면 `wipeGcalOverlay`. IndexedDB가 고장이면 그 탭 메모리로만.
 
 ## 7. 화면 뼈대 (`src/app`)
 
