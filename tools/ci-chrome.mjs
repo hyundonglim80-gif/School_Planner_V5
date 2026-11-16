@@ -122,7 +122,7 @@ for (const name of probes) {
     env: { SHOTS_DIR: join(OUT, 'shots') },
     file: join(OUT, `${name}.log`),
   });
-  const fails = r.text.split('\n').filter((l) => /✘/.test(l)).map((l) => l.trim());
+  const fails = r.text.split('\n').filter((l) => /✘/.test(l) && !/✘ \d+개 틀림/.test(l)).map((l) => l.trim());
   const passes = r.text.split('\n').filter((l) => /^\s*✔ /.test(l)).length;
   results.push({ name, ok: r.code === 0, ms: r.ms, passes, fails });
   console.log(`◀ inspect-${name}: ${r.code === 0 ? '통과' : `틀림 (종료 ${r.code})`} · ${sec(r.ms)}`);
