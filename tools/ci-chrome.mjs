@@ -14,7 +14,8 @@ import { spawn, spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const CI_PROBES =['shell', 'memo', 'notes', 'progress', 'lessons', 'settings', 'events', 'week'];
+// 여덟(P36-1) + 달력 화면 다섯(P40-1 - P36-4가 모든 달력 화면에 구글 일정 줄을 넣었다: 월간·년간·한눈에·겹쳐 보기(흉내 응답)·이월·인쇄).
+const CI_PROBES = ['shell', 'memo', 'notes', 'progress', 'lessons', 'settings', 'events', 'week', 'month-year', 'board', 'gcal', 'forward', 'print'];
 
 const OUT = 'ci-out';
 const SITE = 'http://localhost:5175/';
