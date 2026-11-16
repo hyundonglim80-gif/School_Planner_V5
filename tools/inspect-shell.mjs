@@ -117,7 +117,8 @@ try {
   r.check(await waitFor(page.locator(sel('header-fold', 'open'))), '▼ = 다시 편다');
   await waitFor(async () => (await foldLook()).headerH === opened.headerH, 2000);
   const reopened = await foldLook();
-  const tabShown = await page.locator(sel('scope-tab', 'day')).isVisible();
+  // 펼 때도 탭 단추의 visibility는 transition-all로 0.15초 늦게 돌아온다 - 높이가 먼저 돌아와도 보일 때까지 기다린다(P36-1 CI가 찾음)
+  const tabShown = await waitFor(() => page.locator(sel('scope-tab', 'day')).isVisible(), 2000);
   r.check(
     reopened.headerH === opened.headerH && reopened.saved === false && tabShown,
     `머리줄이 그대로 돌아온다 (${reopened.headerH}px)`,

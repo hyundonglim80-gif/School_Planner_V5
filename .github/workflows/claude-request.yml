@@ -1,8 +1,8 @@
 # 앱 메모로 Claude에게 고칠 것 보내기 (사용자 요청 10-16 - 완전 자동, docs/CLAUDE-REQUEST.md).
 #
 # 메모에 'Claude요청' 라벨을 붙여 저장 → 함수(functions/index.js v5ClaudeRequest)가 이슈(라벨 claude-request)를 만든다
-#   → 여기서 Claude가 고친다 → CI와 같은 확인(lint·테스트·빌드) → PR을 만들고 바로 합친다
-#   → main CI → 화면 배포(firebase-hosting-merge.yml).
+#   → 여기서 Claude가 고친다 → CI와 같은 확인(lint·테스트·빌드) → PR을 만들고 그 PR의 CI(규칙·자료 시험·크롬 점검 - P36-1)를 기다렸다 합친다
+#   (CI가 틀리면 합치지 않고 PR을 열어 둔 채 작업 계획에 PC 일로) → main CI → 화면 배포(firebase-hosting-merge.yml).
 # 진행은 이슈 라벨로 남긴다: claude-working → claude-merged / claude-nochange / claude-failed
 #   (함수가 매분 읽어 앱 메모 카드에 보인다 - 결과 댓글은 '<!-- sp5-result -->', 합친 커밋은 '<!-- sp5-merge-sha:… -->').
 #
@@ -31,7 +31,8 @@ jobs:
       github.event.sender.login == github.repository_owner &&
       github.event.issue.user.login == github.repository_owner
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Claude(길면 한 시간) + 합치기 전 PR CI(크롬 점검 15분 안팎 - P36-1)
+    timeout-minutes: 120
     env:
       GH_TOKEN: ${{ secrets.CLAUDE_REQUEST_GITHUB_TOKEN }}
       ISSUE: ${{ github.event.issue.number }}
@@ -94,7 +95,7 @@ jobs:
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npx vitest:*),Bash(npx tsc:*),Bash(npx oxlint:*),Bash(npm test:*),Bash(npm run lint:*),Bash(npm run build:*),Bash(npm run test:functions:*),Bash(node --test:*),Bash(git diff:*),Bash(git status:*),Bash(git log:*),Bash(git show:*),Bash(ls:*),Bash(mkdir:*)"
           prompt: |
             너는 GitHub Actions 안에서 혼자 돈다. 선생님(이 앱을 만드는 사용자)이 앱 메모로 보낸 요청을 이 저장소(School Planner V5)에서 고친다.
-            이 실행 안에서는 물을 수 없다 - 묻고 기다리지 말고 이 실행을 끝낸다. 고친 것은 확인을 통과하면 사람이 보지 않고 바로 실제 화면에 배포된다.
+            이 실행 안에서는 물을 수 없다 - 묻고 기다리지 말고 이 실행을 끝낸다. 고친 것은 확인(lint·테스트·빌드)과 합치기 전 PR의 CI(규칙·자료 시험 + 크롬 점검 여덟 - tools/ci-chrome.mjs)를 통과하면 사람이 보지 않고 바로 실제 화면에 배포된다.
             선생님은 같은 메모에서 답을 읽고 이어서 말한다. 그 말은 새 실행이 된다 - 이번 실행의 기억은 이어지지 않고, 이슈의 '앞선 대화'만 건너간다.
 
             앞선 대화(요청 글 아래 '## 앞선 대화'):
@@ -109,6 +110,7 @@ jobs:
             - 이 실행에서는 하지 않는다: CLAUDE.md 0장(기억 합치기·git pull), 에뮬레이터·개발 서버·크롬 점검(tools/inspect-*) 돌리기 - 여기에는 없다.
             - 다만 화면 글·`data-*` 이름·자리를 바꾸면 `grep -rn '<옛 글·이름>' tools/`로 그것을 찾는 점검(tools/inspect-*.mjs)을 찾아 그 줄도 같은 커밋에서 고친다(돌리지는 않는다).
               고친 점검이 있으면 commit.txt 끝에 '점검 고침: inspect-○○ (무엇)' 한 줄 - PC에서 이어 할 때 그 점검부터 돌린다.
+              tools/ci-chrome.mjs 목록의 점검은 합치기 전에 CI가 돌린다 - 그 점검이 찾는 글·`data-*`를 바꾸고 점검 줄을 고치지 않으면 합쳐지지 않고 PC 일이 된다.
             - git commit·push·PR은 하지 않는다 - 파일만 고친다. 워크플로가 올리고 합친다.
             - firestore.rules · functions/ · .github/ · firebase.json · .firebaserc · package.json · package-lock.json · public/sw.js · vite.config.ts · index.html은 고치지 않는다(앱 전체에 닿아 PC에서 고치고 확인한다 - 고치면 이 실행에서 고친 것은 모두 버려지고 PC 일로 넘어간다).
               그런 것이 있어야 하는 요청이면 고치지 말고 아래 'PC 일로 넘기기'를 한다.
@@ -232,9 +234,13 @@ jobs:
           npm run test:functions
           npm run build
 
+      # 합치기 전에 그 PR의 CI 전체(check·rules-data·chrome = 크롬 점검 여덟 - P36-1)를 기다린다. 하나라도 틀리면 합치지 않고 PR을 열어 둔다
+      # (브랜치 남김 - PC가 받아 고치고 합친다, 아래 '화면 점검이 틀리면 PC 일로'). 작업 계획 한 줄만 바뀌었으면 앱이 그대로라 기다리지 않는다.
       - name: 올리고 합치기
         id: merge
         if: steps.diff.outputs.changed == 'true'
+        env:
+          PC_ONLY: ${{ steps.plan.outputs.pconly }}
         run: |
           git config user.name "claude-request"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -244,9 +250,27 @@ jobs:
           printf '\nCloses #%s\n' "$ISSUE" >> "$RUNNER_TEMP/msg"
           git commit -q -F "$RUNNER_TEMP/msg"
           git push -q -u origin "$branch"
-          { [ -s .claude-request/summary.md ] && cat .claude-request/summary.md; printf '\n\n앱 메모 요청으로 저절로 만들고 합친 PR입니다 (확인: lint·테스트·빌드).\n\nCloses #%s\n' "$ISSUE"; } > "$RUNNER_TEMP/prbody"
+          { [ -s .claude-request/summary.md ] && cat .claude-request/summary.md; printf '\n\n앱 메모 요청으로 저절로 만들고 합친 PR입니다 (확인: lint·테스트·빌드 + 합치기 전에 이 PR의 CI - 규칙·자료 시험·크롬 점검).\n\nCloses #%s\n' "$ISSUE"; } > "$RUNNER_TEMP/prbody"
           url=$(gh pr create --base main --head "$branch" --title "$(head -n1 "$RUNNER_TEMP/msg")" --body-file "$RUNNER_TEMP/prbody")
           echo "url=$url" >> "$GITHUB_OUTPUT"
+          if [ "$PC_ONLY" != "true" ]; then
+            # 막 만든 PR은 검사가 붙기까지 잠깐 걸린다 - CI 일 셋이 보일 때까지(5분)
+            ci_jobs='select(.workflow == "CI" and .event == "pull_request" and (.name == "check" or .name == "rules-data" or .name == "chrome"))'
+            # gh pr checks는 틀림·기다림이면 0이 아닌 값으로 끝난다 - 출력만 쓴다(|| true)
+            for i in $(seq 1 30); do
+              n=$( { gh pr checks "$url" --json workflow,event,name -q "[.[] | $ci_jobs] | length" 2>/dev/null || true; } | tail -n1)
+              [ "${n:-0}" -ge 3 ] 2>/dev/null && break
+              sleep 10
+            done
+            gh pr checks "$url" --watch --interval 30 > /dev/null 2>&1 || true
+            { gh pr checks "$url" --json workflow,event,name,bucket,link -q ".[] | $ci_jobs | \"\(.bucket) \(.name) \(.link)\"" || true; } | tee "$RUNNER_TEMP/ci.txt"
+            # 셋 다 통과(pass)여야 합친다 - 일이 빠졌거나(못 찾음) 하나라도 fail·cancel·pending이면 멈춘다
+            if [ "$(grep -c '^pass ' "$RUNNER_TEMP/ci.txt")" -lt 3 ]; then
+              echo "ci=failure" >> "$GITHUB_OUTPUT"
+              echo "::error::PR의 CI가 통과하지 못해 합치지 않았습니다 - PR을 열어 둡니다: $url"
+              exit 1
+            fi
+          fi
           # 막 만든 PR은 합칠 수 있는지 GitHub가 셈하는 동안 잠깐 거절한다
           for i in 1 2 3 4 5 6; do
             if gh pr merge "$url" --squash --delete-branch; then break; fi
@@ -255,6 +279,54 @@ jobs:
           done
           sha=$(gh pr view "$url" --json mergeCommit -q .mergeCommit.oid)
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      # PR의 CI가 틀렸을 때(P36-1): 무엇이 틀렸는지(크롬 점검은 그 일의 결과 묶음 ci-out/summary.md)를 읽어
+      # docs/PLAN.md '메모 요청에서 온 PC 일'에 한 줄을 적어 main에 바로 올린다(PR은 열어 둔 채 - PC가 그 브랜치를 받아 고치고 합친다).
+      - name: 화면 점검이 틀리면 PC 일로
+        id: cifail
+        if: failure() && steps.merge.outputs.ci == 'failure'
+        env:
+          TITLE: ${{ github.event.issue.title }}
+          PR_URL: ${{ steps.merge.outputs.url }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/ci-out"
+          run_id=$(grep ' chrome ' "$RUNNER_TEMP/ci.txt" | grep -o 'runs/[0-9]*' | head -n1 | cut -d/ -f2 || true)
+          if [ -n "$run_id" ]; then gh run download "$run_id" -n chrome-probes -D "$RUNNER_TEMP/ci-out" || true; fi
+          # 작업 계획 한 줄은 main에 (PR 브랜치의 고침은 커밋된 채 PR에 남는다 - 작업 사본은 깨끗하다)
+          git checkout -q main
+          git pull -q --ff-only origin main
+          CI_TXT="$RUNNER_TEMP/ci.txt" SUMMARY="$RUNNER_TEMP/ci-out/summary.md" node <<'JS'
+          const fs = require('fs');
+          const read = (p) => { try { return fs.readFileSync(p, 'utf8'); } catch { return ''; } };
+          // 틀린 CI 일 이름(check·rules-data·chrome) - pass가 아닌 줄
+          const jobs = read(process.env.CI_TXT).split('\n').filter((l) => l.trim() && !l.startsWith('pass ')).map((l) => l.split(' ')[1]);
+          // 크롬 점검 표의 틀린 줄: | 이름 | **틀림** | 시간 | ✔ | 틀린 줄 |
+          const probes = read(process.env.SUMMARY).split('\n')
+            .map((l) => /^\| ([\w-]+) \| \*\*틀림\*\* \|[^|]*\|[^|]*\| (.*) \|$/.exec(l))
+            .filter(Boolean)
+            .map((m) => `inspect-${m[1]}${m[2].trim() ? ` (${m[2].trim().replace(/\\\|/g, '|').slice(0, 120)})` : ''}`);
+          const what = probes.length ? `크롬 점검 ${probes.join(' · ')}` : jobs.length ? `CI ${jobs.join('·')}` : 'CI 결과를 찾지 못함';
+          const kst = new Date(Date.now() + 9 * 3600 * 1000);
+          const day = `${String(kst.getUTCMonth() + 1).padStart(2, '0')}-${String(kst.getUTCDate()).padStart(2, '0')}`;
+          const title = (process.env.TITLE || '').replace(/^메모 요청( 이어서)?:\s*/, '').replace(/[<>`]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
+          const line = `- [ ] #${process.env.ISSUE} (${day}) ${title} · 고친 것이 합치기 전 CI를 통과하지 못해 합치지 않았다 - 틀린 것: ${what.replace(/[<>`]/g, '')} · 할 것: PR ${process.env.PR_URL}(브랜치 \`claude/request-${process.env.ISSUE}\`, 열어 둠)을 받아 그 점검을 돌려 본다 - 앱 버그면 고치고, 점검이 옛 \`data-*\`·글을 찾으면 점검을 고쳐 PR을 합친 뒤 이슈에 결과 한 줄`;
+          const path = 'docs/PLAN.md';
+          let text = fs.readFileSync(path, 'utf8');
+          const at = text.indexOf('<!-- PC 일 끝');
+          if (at >= 0) text = text.slice(0, at) + line + '\n' + text.slice(at);
+          else text = text.replace('## 지금 하는 일\n\n', `## 지금 하는 일\n\n${line}\n\n`);
+          fs.writeFileSync(path, text);
+          fs.writeFileSync(`${process.env.RUNNER_TEMP}/ci-what.txt`, what);
+          console.log(line);
+          JS
+          git add docs/PLAN.md
+          git commit -q -m "V5 메모 요청 #$ISSUE - 합치기 전 CI가 틀려 PC 일로 (PR 열어 둠)"
+          for i in 1 2 3; do
+            if git push -q origin HEAD:main; then break; fi
+            [ "$i" = 3 ] && exit 1
+            git pull -q --rebase origin main
+          done
+          echo "what=$(cat "$RUNNER_TEMP/ci-what.txt")" >> "$GITHUB_OUTPUT"
 
       - name: 결과 남기기
         if: always()
@@ -265,6 +337,9 @@ jobs:
           CLAUDE_KIND: ${{ steps.done.outputs.kind }}
           CHECK: ${{ steps.check.outcome }}
           MERGE: ${{ steps.merge.outcome }}
+          CI_FAIL: ${{ steps.merge.outputs.ci }}
+          CI_WHAT: ${{ steps.cifail.outputs.what }}
+          CI_PC: ${{ steps.cifail.outcome }}
           PR_URL: ${{ steps.merge.outputs.url }}
           SHA: ${{ steps.merge.outputs.sha }}
           JOB_STATUS: ${{ job.status }}
@@ -300,12 +375,17 @@ jobs:
               head="고치지 못했습니다: Claude가 끝까지 하지 못했습니다(시간 한도·사용 한도 또는 오류)."
             elif [ "$CHECK" = "failure" ]; then
               head="고치지 못했습니다: 고친 것이 확인(lint·테스트·빌드)을 통과하지 못했습니다."
+            elif [ "$CI_FAIL" = "failure" ]; then
+              # 합치기 전 CI(크롬 점검 등)가 틀렸다 - PR은 열어 두었다 (P36-1)
+              head="합치지 않았습니다: 고친 것이 합치기 전 화면 점검을 통과하지 못했습니다(${CI_WHAT:-CI})."
+              if [ "$CI_PC" = "success" ]; then head="$head 고친 것은 PR에 남겨 두었고, PC에서 확인해 합칩니다(작업 계획 'PC 일'에 적음). $PR_URL"; else head="$head 고친 것은 PR에 남겨 두었습니다. $PR_URL"; fi
             elif [ "$MERGE" = "failure" ]; then
               head="고치지 못했습니다: 올리고 합치는 중에 실패했습니다(같은 때 다른 고침과 겹침 등)."
             else
               head="고치지 못했습니다(준비 중 오류)."
             fi
-            head="$head 앱은 그대로입니다 - 같은 글을 다시 보내면 처음부터 다시 합니다. 실행 기록 $RUN_URL"
+            if [ "$CI_FAIL" = "failure" ]; then head="$head 앱은 그대로입니다. 실행 기록 $RUN_URL"
+            else head="$head 앱은 그대로입니다 - 같은 글을 다시 보내면 처음부터 다시 합니다. 실행 기록 $RUN_URL"; fi
             why="아래는 Claude가 써 둔 글이지만 앱에는 들어가지 않았습니다."
           fi
           {

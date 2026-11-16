@@ -4,8 +4,9 @@ name: CI
 # main에서 모두 통과하면 firebase-hosting-merge.yml이 배포한다(P1-4).
 on:
   push:
-    # claude/** = 클라우드 세션(claude.ai/code)이 푸시하는 브랜치
-    branches: [ main, 'wip/**', 'claude/**' ]
+    # claude/** = 클라우드 세션(claude.ai/code)이 푸시하는 브랜치.
+    # claude/request-* = 메모 요청 PR 브랜치 - PR의 CI(pull_request, main과 합친 모습)만 돈다(크롬 점검이 두 번 돌지 않게 - P36-1)
+    branches: [ main, 'wip/**', 'claude/**', '!claude/request-*' ]
   pull_request:
   workflow_dispatch:
 
