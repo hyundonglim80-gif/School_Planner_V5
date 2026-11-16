@@ -6,6 +6,7 @@
 //   5) 하루 메모 칸 라벨로 보기: 접힘 → 🏷️로 펴기 → 전체·칩, 고르면 그 메모만.
 //   6) 파란 테두리 = 오른쪽 칸에 보이는 메모 하나 (다른 메모·탭을 고르면 옮겨 가고, 메모가 아닌 탭이면 없다 - 10-21).
 //   7) 카드 누르기 = 메모 보기 칸(내용만 - 라벨 칩 완료), ✏️ 수정 = 수정 칸(다시 눌러도 그대로), 카드 ✏️ = 곧바로 수정 칸, 창 위치 팝업창도 (11-09).
+//   8) 📋 메모 틀(P36-2): 지금 글을 틀로 저장(이름 = 첫 줄·☑ → ☐·라벨 id + 이름) → 새 칸 채우기(빈 칸은 곧바로, 글이 있으면 묻는다) → 저장 · 같은 이름 · 이름·▲·지우기 + 되돌리기 · 다른 기기.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-memo.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 메모·기록·라벨(insp_mm…)을 심고 끝에 지운다.
@@ -62,7 +63,7 @@ try {
     for (const d of await madeHere()) await deleteDoc(d.ref);
   });
 
-  const { page, errors } = await newPage(browser);
+  const { page, errors, dialogs } = await newPage(browser);
   // 기억해 둔 거르개를 비우고 연다
   await open(page, '#/memo');
   await page.evaluate(() => localStorage.removeItem('sp5-label-filters'));
@@ -365,6 +366,120 @@ try {
   const dayIds = async () =>
     (await page.locator(`${sel('day-journal', DAY)} ${sel('entry-card')}`).evaluateAll((els) => els.map((e) => e.dataset.entryCard))).filter((id) => id.startsWith('insp_'));
   r.check(await waitFor(async () => JSON.stringify(await dayIds()) === '["insp_mj1","insp_mj2","insp_mo3"]'), `하루 메모 칸 차례는 그대로 (${await dayIds()})`);
+
+  r.section('📋 메모 틀 - 지금 글을 틀로 저장 → 새 칸 채우기 · 이름·차례·지우기 (P36-2)');
+  const tplRef = doc(em.db, 'spaces', sid, 'settings', 'noteTemplates');
+  const tplBefore = await getDoc(tplRef);
+  undo.add(() => (tplBefore.exists() ? setDoc(tplRef, tplBefore.data()) : deleteDoc(tplRef)));
+  await deleteDoc(tplRef);
+  const readTpl = async () => {
+    const s = await getDoc(tplRef);
+    return s.exists() ? s.data() : null;
+  };
+  const tplCount = (d) => Object.keys(d?.t ?? {}).length;
+  const TPL_TEXT = '점검 틀 회의록\n☐ 안건 하나\n☐ 안건 둘';
+  await page.goto(page.url().replace(/#.*$/, '#/memo'));
+  await waitFor(page.locator(sel('memo-screen')));
+  const openNew = async (labelIds) => {
+    await page.evaluate(([s, l]) => window.sp5.openWindow('note', { sid: s, date: null, labelIds: l }), [sid, labelIds]);
+    await waitFor(page.locator(sel('note-panel', 'new')));
+    // 저장하면 'edit'가 되므로 칸 하나만 연 채 이름 없이 찾는다
+    const p = page.locator(sel('note-panel'));
+    await waitFor(() => p.locator(sel('note-text-input')).evaluate((el) => el === document.activeElement));
+    return p;
+  };
+  const panelsGone = () => waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0);
+  let tp = await openNew(['insp_mlc']);
+  r.check((await tp.locator(sel('note-template-open')).count()) === 1, "수정 칸 '메모 내용' 줄에 📋 틀");
+  await tp.locator(sel('note-text-input')).fill('점검 틀 회의록\n☑ 안건 하나\n☐ 안건 둘');
+  await tp.locator(sel('note-template-open')).click();
+  const menu = tp.locator(sel('note-template-menu'));
+  r.check(await waitFor(async () => (await menu.getAttribute('data-note-template-menu').catch(() => '')) === '0'), '📋 틀 → 목록 (처음은 틀 없음)');
+  r.check(await waitFor(menu.locator(sel('note-template-empty'))), '빈 목록 안내');
+  await menu.locator(sel('note-template-save')).click();
+  const s1 = await serverUntil(readTpl, (d) => tplCount(d) === 1);
+  const [tid1, t1] = Object.entries(s1?.t ?? {})[0] ?? [];
+  r.check(t1?.name === '점검 틀 회의록', `서버: 틀 이름 = 첫 줄 (${t1?.name})`);
+  r.check(t1?.text === TPL_TEXT, `체크 줄은 모두 ☐로 (${JSON.stringify(t1?.text)})`);
+  r.check(JSON.stringify(t1?.labels) === JSON.stringify([{ id: 'insp_mlc', name: '점검A초', parent: '점검학교' }]) && t1?.sid === sid, `라벨 = id + 이름 + 상위 이름 (${JSON.stringify(t1?.labels)})`);
+  r.check(await waitFor(menu.locator(sel('note-template', tid1))), '목록에 그 틀');
+  r.check(await waitFor(page.locator(sel('toast')).filter({ hasText: '틀로 저장했습니다' })), '안내');
+  await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await menu.count()) === 0) && (await tp.count()) === 1, 'ESC = 틀 목록만 닫는다 (메모 칸은 그대로)');
+  await tp.locator(sel('note-text-input')).fill('');
+  await page.keyboard.press('Escape');
+  await panelsGone();
+
+  tp = await openNew(['insp_mlu']);
+  const asked0 = dialogs.seen.length;
+  await tp.locator(sel('note-template-open')).click();
+  await menu.locator(sel('note-template-use', tid1)).click();
+  const tText = tp.locator(sel('note-text-input'));
+  r.check(await waitFor(async () => (await tText.inputValue()) === TPL_TEXT), '빈 칸 = 묻지 않고 틀 글로 채운다');
+  r.check(dialogs.seen.length === asked0, '묻는 창 없음');
+  r.check(
+    (await tp.locator('[data-label-pick="insp_mlc"][aria-pressed="true"]').count()) === 1 && (await tp.locator('[data-label-pick="insp_mlu"][aria-pressed="true"]').count()) === 0,
+    '라벨도 틀 것으로 (점검A초)',
+  );
+  r.check((await menu.count()) === 0 && (await waitFor(page.locator(sel('toast')).filter({ hasText: '틀로 채웠습니다' }))), '채우면 목록이 닫히고 안내');
+  await tText.fill(`${TPL_TEXT}\n점검 더 적음`);
+  await tp.locator(sel('note-template-open')).click();
+  dialogs.answer = false;
+  await menu.locator(sel('note-template-use', tid1)).click();
+  r.check(await waitFor(() => dialogs.seen.length === asked0 + 1), '쓰던 글이 있으면 묻는다');
+  r.check(dialogs.seen.at(-1)?.includes('쓰던 글') && (await tText.inputValue()).includes('점검 더 적음'), "'취소' = 쓰던 글 그대로");
+  dialogs.answer = true;
+  await menu.locator(sel('note-template-use', tid1)).click();
+  r.check(await waitFor(async () => (await tText.inputValue()) === TPL_TEXT), "'확인' = 틀 글로 바꾼다");
+  dialogs.answer = false;
+  await page.keyboard.press('Control+s');
+  r.check(await waitFor(async () => (await tp.getAttribute('data-note-panel')) === 'edit'), '저장 → 수정 칸');
+  const madeId = await tp.getAttribute('data-note-id');
+  const made = await serverUntil(() => read(madeId), (d) => !!d);
+  r.check(made?.text === TPL_TEXT && JSON.stringify(made?.labelIds) === '["insp_mlc"]', `서버: 틀로 채운 메모 (글·라벨 ${JSON.stringify(made?.labelIds)})`);
+
+  // 같은 이름으로 다시 저장 → 묻고 '취소' = 새 틀 '… (2)'
+  await tp.locator(sel('note-template-open')).click();
+  await waitFor(menu.locator(sel('note-template', tid1)));
+  const asked1 = dialogs.seen.length;
+  await menu.locator(sel('note-template-save')).click();
+  r.check(await waitFor(() => dialogs.seen.length === asked1 + 1) && dialogs.seen.at(-1)?.includes('이미 있습니다'), '같은 이름이면 묻는다');
+  const s2 = await serverUntil(readTpl, (d) => tplCount(d) === 2);
+  const [tid2, tpl2] = Object.entries(s2?.t ?? {}).find(([id]) => id !== tid1) ?? [];
+  r.check(tpl2?.name === '점검 틀 회의록 (2)' && s2?.t?.[tid1]?.order === 0 && tpl2?.order === 1, `'취소' = 새 틀로 더함 - 맨 아래 (${tpl2?.name})`);
+  // 이름 바꾸기
+  await waitFor(menu.locator(sel('note-template', tid2)));
+  await menu.locator(sel('note-template-rename', tid2)).click();
+  await menu.locator(sel('note-template-name-input')).fill('점검 틀 둘');
+  await page.keyboard.press('Enter');
+  r.check((await serverUntil(readTpl, (d) => d?.t?.[tid2]?.name === '점검 틀 둘'))?.t?.[tid2]?.name === '점검 틀 둘', '✏️ 이름 바꾸기 (Enter)');
+  // ▲
+  await waitFor(async () => ((await menu.locator(sel('note-template-use', tid2)).textContent()) ?? '').includes('점검 틀 둘'));
+  await menu.locator(`${sel('note-template', tid2)} ${sel('note-template-move', 'up')}`).click();
+  const s3 = await serverUntil(readTpl, (d) => d?.t?.[tid2]?.order === 0);
+  r.check(s3?.t?.[tid2]?.order === 0 && s3?.t?.[tid1]?.order === 1, '▲ = 한 칸 위 (서버 차례)');
+  const tplIds = () => menu.locator(sel('note-template')).evaluateAll((els) => els.map((e) => e.dataset.noteTemplate));
+  r.check(await waitFor(async () => JSON.stringify(await tplIds()) === JSON.stringify([tid2, tid1])), '목록 차례도');
+  // 지우기 + 되돌리기
+  await menu.locator(sel('note-template-remove', tid1)).click();
+  r.check(tplCount(await serverUntil(readTpl, (d) => tplCount(d) === 1)) === 1, '🗑️ 지우기 (묻지 않는다)');
+  await page.locator(sel('toast')).filter({ hasText: '틀을 지웠습니다' }).locator('[data-toast-action="되돌리기"]').click();
+  const s4 = await serverUntil(readTpl, (d) => tplCount(d) === 2);
+  r.check(tplCount(s4) === 2 && s4?.t?.[tid1]?.text === TPL_TEXT, '안내의 되돌리기 = 그 틀이 되살아난다');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await menu.count()) === 0);
+  await page.keyboard.press('Escape');
+  await panelsGone();
+  // 다른 기기(새 창) - 계정에 있는 같은 틀
+  const D = await newPage(browser);
+  await open(D.page, '#/memo');
+  await D.page.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+  await D.page.evaluate((s) => window.sp5.openWindow('note', { sid: s, date: null }), sid);
+  await D.page.locator(`${sel('note-panel', 'new')} ${sel('note-template-open')}`).click();
+  const dIds = () => D.page.locator(sel('note-template')).evaluateAll((els) => els.map((e) => e.dataset.noteTemplate));
+  r.check(await waitFor(async () => JSON.stringify(await dIds()) === JSON.stringify([tid2, tid1]), 15000), `다른 기기에도 같은 틀·같은 차례 (${await dIds()})`);
+  r.check(D.errors.length === 0, `다른 기기 화면 오류 없음 ${D.errors.join(' | ')}`);
+  await D.page.close();
 
   r.section('창 위치 팝업창 - 메모를 누르면 보기 팝업창, ✏️ 수정 = 그 창에서 수정 (11-09)');
   const pcRef = doc(em.db, 'spaces', sid, 'settings', 'pc');

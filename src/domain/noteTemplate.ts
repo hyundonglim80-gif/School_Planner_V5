@@ -112,6 +112,15 @@ export function templateNameOf(text: string, list: readonly NoteTemplate[]): str
   return `틀 ${n}`;
 }
 
+/** 겹치지 않는 이름 ('회의록' → '회의록 (2)' …) */
+export function uniqueTemplateName(name: string, list: readonly NoteTemplate[]): string {
+  const used = new Set(list.map((t) => t.name));
+  if (!used.has(name)) return name;
+  let n = 2;
+  while (used.has(`${name} (${n})`)) n++;
+  return `${name} (${n})`;
+}
+
 /** 이름 다듬기 (빈 이름은 null - 바꾸지 않는다) */
 export function cleanTemplateName(name: string): string | null {
   const n = name.replace(/\s+/g, ' ').trim().slice(0, MAX_TEMPLATE_NAME);

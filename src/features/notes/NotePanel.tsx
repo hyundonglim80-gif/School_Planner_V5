@@ -8,6 +8,7 @@
 //   날짜 칩 여러 개(+ 날짜 = 작은 달력, 칩 × = 그 날짜 빼기) - 그 날마다 하루 '메모' 칸에 보인다. 다 빼면 메모 화면에만(domain/noteDates).
 //   하루 '메모' 칸에서 + 추가 = 그 날짜 링크 하나로 새 메모.
 // - 내용: ☑ 체크리스트(단추·단축키·Enter 이어 쓰기·☐ 누르기) · 첫·마지막 줄 '#라벨' 미리 보기 · 글 안 주소의 미리보기.
+//   📋 틀(P36-2 - NoteTemplateMenu): 내 틀로 글·표·라벨 채우기(쓰던 글이 있으면 묻는다) · 지금 글을 틀로 저장 · 이름·차례·지우기.
 // - 붙이기(P4-2 - attach.ts): 📎 파일 첨부·윈도우 파일 끌어다 놓기(P21-1 - 칸 어디든)·캡처 Ctrl+V = 드라이브에 원본으로, 엑셀 표 Ctrl+V = 표(그림보다 먼저) - 칸 글자·행/열 고치기.
 //   올리는 동안은 저장하지 않는다(올라간 것이 빠진 채 저장되지 않게).
 //   ✏️ 손글씨 = 화면 가득 그림판(HandwritingPad) - 💾 저장하면 PNG로 드라이브에 올려 붙이고 메모도 저장한다(10-28). 그리던 것은 이 칸이 들고 있어 닫았다 열어도 이어진다.
@@ -66,6 +67,9 @@ import { useClasses, useHubClassId, type ClassItem } from '../class/classes';
 import { hasInk, type PenStroke } from '../../domain/handwriting';
 import HandwritingPad from './HandwritingPad';
 import type { NotePanelParams } from './open';
+import NoteTemplateMenu, { NoteTemplateButton } from './NoteTemplateMenu';
+import { applyTemplate, formHasBody, type NoteTemplate } from '../../domain/noteTemplate';
+import { newId } from '../../data/id';
 
 const PLACEHOLDER = '첫 줄이 제목이 됩니다. 자유롭게 생각을 적어 보세요...';
 const noun = '메모';
@@ -281,6 +285,18 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     if (r) setTextAndCaret(r.text, caretAfterCheck(r.text, r.line));
   };
   const checkMode = hasCheckLines(form.text);
+
+  // ─── 📋 메모 틀 (P36-2 - NoteTemplateMenu) ───
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  /** 틀로 채우기 - 쓰던 글·표가 있으면 묻는다(쓰던 글은 묻지 않고 덮이지 않는다). 날짜·완료·첨부·학생은 그대로 */
+  const fillFromTemplate = (tpl: NoteTemplate) => {
+    if (formHasBody(form) && !window.confirm(`쓰던 글을 '${tpl.name}' 틀로 바꿀까요?\n\n확인 = 글·표·라벨을 틀 것으로 바꿉니다\n취소 = 그대로 둡니다`)) return;
+    const next = applyTemplate(form, tpl, tree, sid, newId);
+    pendingCaret.current = [next.text.length, next.text.length];
+    setForm(next);
+    setTemplatesOpen(false);
+    showToast(`📋 '${tpl.name}' 틀로 채웠습니다.`);
+  };
   // 단축키 '체크리스트'(app/keys가 sp5-checklist로 알린다) - 커서가 이 칸의 글 칸에 있을 때만
   const checklistRef = useRef(toggleChecklist);
   useEffect(() => {
@@ -729,19 +745,34 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     · 첫 줄 = 제목
                   </span>
                 </span>
-                {/* 커서가 있는 줄(골랐으면 고른 줄들) 앞에 ☐ - 모두 붙어 있으면 뗀다 */}
-                <button
-                  type="button"
-                  data-checklist-toggle
-                  // 누르는 동안 글 칸의 커서·고른 범위를 잃지 않게
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={toggleChecklist}
-                  title={withShortcut('체크리스트 - 커서가 있는 줄 앞에 ☐', 'checklist')}
-                  className="px-2 py-0.5 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-md cursor-pointer"
-                >
-                  ☑ 체크리스트
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <NoteTemplateButton open={templatesOpen} onToggle={() => setTemplatesOpen((o) => !o)} />
+                  {/* 커서가 있는 줄(골랐으면 고른 줄들) 앞에 ☐ - 모두 붙어 있으면 뗀다 */}
+                  <button
+                    type="button"
+                    data-checklist-toggle
+                    // 누르는 동안 글 칸의 커서·고른 범위를 잃지 않게
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={toggleChecklist}
+                    title={withShortcut('체크리스트 - 커서가 있는 줄 앞에 ☐', 'checklist')}
+                    className="px-2 py-0.5 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-md cursor-pointer"
+                  >
+                    ☑ 체크리스트
+                  </button>
+                </div>
               </div>
+              {templatesOpen && (
+                <NoteTemplateMenu
+                  form={form}
+                  tree={tree}
+                  sid={sid}
+                  onApply={fillFromTemplate}
+                  onClose={() => {
+                    setTemplatesOpen(false);
+                    textRef.current?.focus();
+                  }}
+                />
+              )}
               <div className="relative">
                 {checkMode && <CheckLinesOverlay text={form.text} onMove={moveCheck} />}
                 <AutoTextarea

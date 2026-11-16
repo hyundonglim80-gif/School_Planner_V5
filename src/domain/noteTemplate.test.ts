@@ -14,6 +14,7 @@ import {
   templateRename,
   templateWrite,
   uncheckAll,
+  uniqueTemplateName,
   type NoteTemplate,
   type TemplateLabelTree,
 } from './noteTemplate';
@@ -89,6 +90,10 @@ describe('글', () => {
     expect(templateNameOf('가'.repeat(60), [])).toHaveLength(40);
     expect(templateNameOf('', [tpl({ name: '틀 2' })])).toBe('틀 3');
     expect(templateNameOf('  ', [tpl({ name: '틀 2' }), tpl({ id: 'b', name: '틀 3' })])).toBe('틀 4');
+  });
+  it('겹치지 않는 이름', () => {
+    expect(uniqueTemplateName('회의록', [])).toBe('회의록');
+    expect(uniqueTemplateName('회의록', [tpl(), tpl({ id: 'b', name: '회의록 (2)' })])).toBe('회의록 (3)');
   });
   it('이름 다듬기 - 빈 이름은 null', () => {
     expect(cleanTemplateName('  주간   계획 ')).toBe('주간 계획');
