@@ -26,6 +26,7 @@ describe('백업에 담기', () => {
     expect(keepInBackup('classes', '2025-5-2', {}, ALL, R)).toBe(true);
     expect(keepInBackup('settings', 'common', {}, only, R)).toBe(true);
     expect(keepInBackup('settings', 'reset', {}, only, R)).toBe(true); // 내 초기화 설정 (P33-2)
+    expect(keepInBackup('settings', 'noteTemplates', {}, only, R)).toBe(true); // 내 메모 틀 (P36-2)
     expect(keepInBackup('settings', 'import', {}, only, R)).toBe(false);
     expect(keepInBackup('labels', 'L', {}, new Set(), R)).toBe(true);
     // 날짜 링크 여럿인 메모는 하나라도 기간 안이면 (P10-3)
@@ -45,7 +46,7 @@ describe('되살리기', () => {
       e3: { kind: 'event', date: '2026-10-07', text: '없음', deletedAt: null },
       m1: { kind: 'note', date: null, text: '메모', deletedAt: null },
     },
-    settings: { common: { forwardDays: 7 } },
+    settings: { common: { forwardDays: 7 }, noteTemplates: { t: { a: { name: '틀', text: '틀' } } } },
     attendance: { a1: { classId: 'c', date: '2026-10-05', records: {} } },
   });
   it('파일 읽기: 버전이 다르면 null, V4 백업은 알아본다', () => {
@@ -60,7 +61,7 @@ describe('되살리기', () => {
       settings: { common: {} },
       labels: {},
     });
-    expect(plan.puts.map((p) => `${p.coll}/${p.id}`)).toEqual(['labels/L1', 'items/e2', 'items/e3']);
+    expect(plan.puts.map((p) => `${p.coll}/${p.id}`)).toEqual(['labels/L1', 'settings/noteTemplates', 'items/e2', 'items/e3']);
     expect(plan.kept).toBe(2);
     expect(plan.added.events).toBe(2);
     expect(plan.puts.find((p) => p.id === 'e2')?.data.deletedAt).toBeNull();
