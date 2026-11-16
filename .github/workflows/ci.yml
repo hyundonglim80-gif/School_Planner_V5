@@ -1,6 +1,7 @@
 name: CI
 
-# 푸시·PR마다 검사 → 테스트 → 빌드. main에서 통과하면 firebase-hosting-merge.yml이 배포한다(P1-4).
+# 푸시·PR마다 검사 → 테스트 → 빌드(check) · 규칙·자료 시험(rules-data) · 크롬 점검(chrome - P36-1), 셋이 나란히.
+# main에서 모두 통과하면 firebase-hosting-merge.yml이 배포한다(P1-4).
 on:
   push:
     # claude/** = 클라우드 세션(claude.ai/code)이 푸시하는 브랜치
@@ -76,3 +77,70 @@ jobs:
 
       - name: Rules and data tests
         run: npx firebase emulators:exec --only auth,firestore --project schoolplannerv3 "npm run check:rules && npm run test:data"
+
+  # 크롬 점검(P36-1) - 자주 바뀌는 화면의 점검 여덟을 하나씩(목록·까닭은 tools/ci-chrome.mjs · PLAN 5장 'P36-1').
+  # 틀리면 CI 실패 = 배포 멈춤. 메모 요청(claude-request.yml)은 PR의 이 일까지 기다렸다 합친다.
+  chrome:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      # 점검의 '오늘'·날짜 칸은 한국 시각으로 셈한다(PC와 같게) - 러너 기본은 UTC
+      TZ: Asia/Seoul
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Set up Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cache emulators
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ hashFiles('package-lock.json') }}
+
+      # 러너에 깔린 구글 크롬을 쓴다(probe browserOptions - /opt/google/chrome/chrome이면 channel 'chrome', 받기 없음).
+      # 한글 글꼴이 없으면 글자 폭을 재는 점검이 틀린다 - 없을 때만 깐다.
+      - name: Chrome and Korean font
+        run: |
+          google-chrome --version
+          if ! fc-list :lang=ko | grep -q .; then
+            sudo apt-get update -q
+            sudo apt-get install -y -q fonts-noto-cjk
+          fi
+          fc-list :lang=ko | head -3
+
+      - name: Chrome probes
+        run: npx firebase emulators:exec --only auth,firestore --project schoolplannerv3 "node tools/ci-chrome.mjs"
+
+      # 에뮬레이터 로그는 끝만(전체는 수백 MB가 될 수 있다 - CLAUDE.md 2장). 통로 넘침 수도 함께.
+      - name: Emulator log tail
+        if: always()
+        run: |
+          mkdir -p ci-out
+          for f in firestore-debug.log firebase-debug.log; do
+            [ -f "$f" ] || continue
+            ls -lh "$f"
+            tail -c 2000000 "$f" > "ci-out/$f"
+          done
+          echo "too many pending: $(grep -c 'too many pending' firestore-debug.log 2>/dev/null || echo 0)"
+
+      - name: Upload probe output
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: chrome-probes
+          path: ci-out/
+          retention-days: 14

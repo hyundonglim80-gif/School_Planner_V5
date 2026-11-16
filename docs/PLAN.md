@@ -1512,6 +1512,11 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   ② 까닭: 메모 틀 기능이 없다(일정 `series.template`은 반복 묶음의 틀로 다른 것) · P26 추천 다섯의 ④로 남긴 후보 · 개인 공간 `settings/<문서>`는 지금 규칙이 받는다(`spaces/{sid}/{sub}/…` - P33-2 `settings/reset`과 같다, 규칙 배포 없음).
   ③④ 까닭: 구글 캘린더는 보내기만(`data/google/calendar.ts` 읽기는 앱이 보낸 일정을 `app=` 표시로 찾을 때뿐) · 로그인 권한은 이미 `auth/calendar`(전체, `data/firebase.ts`) - 새 권한·동의 화면 없음 · CSP `connect-src https://*.googleapis.com`이 이미 받는다 · P26 추천 다섯의 ⑤로 남긴 후보.
   세션 안에서 정할 것은 권장안을 고르고 여기에 적는다(①의 막기/알리기만·메모 요청이 기다리는 법, ②의 틀 자리·담는 것, ③의 담아 두는 곳·다시 받기 때, ④의 모양·누르기).
+- **P36-1 ■0 정한 것 (11-16 PC)**: ① 정리 - PR #146 닫음(사용자 '닫기' - #147이 같은 고침을 합쳤다) · Dependabot #151(`@hono/node-server` 2.1.8)·#155(`hono` 4.13.18) 합침(사용자 '둘 다' - firebase-tools 안 MCP SDK가 쓰는 개발 도구, 배포 파일에 없다. 미리 보기 배포만 Dependabot이 비밀값을 못 써 늘 실패).
+  ② 고를 점검 여덟 = **shell·memo·notes·progress·lessons·settings·events·week** - 10-16 뒤 메모 요청 커밋 41개가 고친 곳을 셌다(notes 21 · progress 16 · lessons 12 · memo 10 · settings 7 · 단축키·머리줄(shell) 10 · events 3 · day 3, 설명서 31은 글뿐이라 inspect-manual은 길어 뺐다) + 주간(가장 많이 보는 화면 둘째). 리눅스에서 돌지 못하게 하는 것(윈도우 갈래·진짜 클립보드·팝업창)이 여덟에 없다(붙여넣기는 흉내 `ClipboardEvent`).
+  ③ **막기** - CI 새 일 `chrome`이 틀리면 CI 실패 = 배포 멈춤(알리기만이면 깨진 화면이 그대로 올라간다 - 이 일의 까닭). 다만 **CI에서 세 번 돌려 한 번이라도 틀린 점검은 빼고**(흔들리는 점검이 배포를 막으면 모두가 '다시 돌리기'에 익숙해진다) 까닭을 여기에 적는다. 컨테이너가 아니라 CI 자체에서 세 번(■1) - 이 PC는 윈도우라 리눅스 흔들림을 볼 수 없다.
+  ④ **메모 요청 = PR을 만들고 그 PR의 CI(check·rules-data·chrome)를 기다렸다 합친다**(워크플로 안에서 따로 돌리기 대신): 점검 목록·준비가 CI 한 곳에만 있어 둘이 어긋나지 않는다 · 틀리면 PR을 열어 둔 채(브랜치 남김) PC가 그 브랜치를 받아 고치고 합친다 · 그동안 자기 확인 뒤 곧바로 합치던 것이 CI 전체를 기다리므로 규칙·자료 시험도 합치기 전에 돈다.
+  ⑤ 틀렸을 때 그림 - 점검이 `✘`를 찍는 순간 열린 창을 찍는다(`SHOTS_DIR`이 있을 때만, probe `report().bad` - 점검 스크립트는 그대로) · 점검 출력·그림·`firestore-debug.log` 끝을 CI artifact로.
 
 ## 6. 세션별 내용
 
@@ -3895,7 +3900,7 @@ P31로 V4를 끊었으니 그 파일은 Storage에 하나뿐이다(V4 자료는 
 CLAUDE.md 2장 점검 교훈(에뮬레이터 부하·`npx` 대신 `exec node`·점검은 하나씩 차례로·예외를 삼키지 않는 catch).
 **확인한 코드 (11-13)**: CI = lint·단위·함수 시험·빌드(check) + 에뮬레이터 규칙·자료 시험(rules-data) - 크롬 점검(`tools/inspect-*.mjs` 60개)은 없다. 메모 요청은 자기 확인 뒤 PR을 곧바로 합치고(검사 필수 없음), main CI가 통과해야 배포된다.
 점검은 에뮬레이터(auth·firestore) + `npm run seed` + 개발 서버(`vite --mode emu`, 5175) 위에서 돈다 · 리눅스 Chromium은 Playwright가 받는다(CI에는 Chromium 받기 한 번 + 캐시).
-- [ ] ■0 정리 + 정할 것(권장안 → 5장): 열린 PR #146(#145 실패가 남긴 것 - #147이 같은 고침을 합쳤다, 닫기는 사용자에게 한 줄 묻고) · #151 Dependabot(`@hono/node-server` - 개발 도구 쪽, 배포 파일에 없다 - CI 통과면 합칠지 묻고) ·
+- [x] ■0 정리 + 정할 것(권장안 → 5장 'P36-1 ■0 정한 것' - 11-16 PC: #146 닫음 · #151·#155 합침 · 점검 여덟(shell·memo·notes·progress·lessons·settings·events·week) · 막기(세 번 중 한 번이라도 틀린 것은 뺌) · 메모 요청은 PR CI를 기다렸다 합침): 열린 PR #146(#145 실패가 남긴 것 - #147이 같은 고침을 합쳤다, 닫기는 사용자에게 한 줄 묻고) · #151 Dependabot(`@hono/node-server` - 개발 도구 쪽, 배포 파일에 없다 - CI 통과면 합칠지 묻고) ·
   고를 점검 6~8개(후보: shell·memo·week·board·lessons·settings·notes·events - 메모 요청이 가장 자주 건드린 화면, 하나 2분 안쪽) · 막기(틀리면 배포 멈춤) 또는 알리기만 - 권장: **컨테이너에서 고른 것을 세 번씩 돌려 한 번도 틀리지 않은 것만 막기**, 흔들리는 것은 빼고 5장에 까닭.
 - [ ] ■1 CI 새 일 `chrome`(check·rules-data와 나란히): Java 21 + 에뮬레이터 캐시 + Chromium 캐시 → 에뮬레이터 안에서 seed → 개발 서버를 뒤에서 → 고른 점검을 하나씩 → 틀리면 실패 + 점검 출력·그림을 artifact로 · 두 로그(`firebase-debug.log`·`firestore-debug.log`)가 커지지 않게.
   세션 브랜치에 올려 CI에서 세 번 돌려 본다(시간·흔들림) - 10분 안쪽이 목표.

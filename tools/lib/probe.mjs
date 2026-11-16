@@ -19,6 +19,26 @@ import { getAuth, connectAuthEmulator, signInWithEmailAndPassword } from 'fireba
 
 export const SITE = process.env.SITE || 'http://localhost:5175/';
 
+// 틀린 순간의 그림 (P36-1 CI): SHOTS_DIR이 있으면 ✘를 찍을 때 newPage로 연 창(과 그 창이 연 창)을 모두 찍는다.
+// 기다리지 않고 찍는다(bad는 동기) - 맨 마지막 ✘ 바로 뒤 process.exit()면 그 그림은 빠질 수 있다. 점검 스크립트는 그대로 둔다.
+const livePages = new Set();
+let shotNo = 0;
+function trackPage(page) {
+  livePages.add(page);
+  page.on('close', () => livePages.delete(page));
+}
+function shootOnFail(what) {
+  const dir = process.env.SHOTS_DIR;
+  if (!dir) return;
+  mkdirSync(dir, { recursive: true });
+  const name = (process.argv[1] || 'probe').replace(/^.*[\\/]/, '').replace(/^inspect-|\.mjs$/g, '');
+  for (const page of livePages) {
+    const file = join(dir, `${name}-${String(++shotNo).padStart(2, '0')}.png`);
+    writeFileSync(`${file}.txt`, `${what}\n${page.url()}\n`);
+    page.screenshot({ path: file }).catch(() => {});
+  }
+}
+
 /** 결과 적기: ok / bad / check(조건, 맞을 때 글, 틀릴 때 글). 끝에 done()이 틀린 수만큼 종료 코드를 남긴다. */
 export function report() {
   let fail = 0;
@@ -26,6 +46,7 @@ export function report() {
   const bad = (what) => {
     console.log(`  ✘ ${what}`);
     fail++;
+    shootOnFail(what);
   };
   return {
     ok,
@@ -84,6 +105,8 @@ export async function newPage(browser, { width = 1400, height = 900, ...context 
     window.__appModule = (path) => performance.getEntriesByType('resource').map((e) => e.name).find((n) => new URL(n).pathname === path) ?? path;
   });
   const page = await ctx.newPage();
+  trackPage(page);
+  ctx.on('page', trackPage); // 점검이 ctx.newPage()로 더 연 창·팝업창도 (틀린 순간 그림)
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   const dialogs = { seen: [], answer: false };
