@@ -3,6 +3,7 @@
 // 달력은 가리지 않아 날짜를 연달아 눌러 볼 수 있고, 같은 날을 한 번 더 누르거나 '하루 화면'을 누르면 하루 화면으로 간다.
 // 창(ModalShell)이 아니다 - 휴대폰 창은 오른쪽에서 화면을 덮어 달력이 가려진다. 이것은 화면의 일부다.
 // 그날 수업은 교시 번호와 과목 칩(달력 칸에는 그리지 않는다 - V4 ROADMAP 15).
+// 구글 캘린더 일정(P36-4)은 앱 일정 뒤에 읽기 전용 줄(점선 - 누르면 그 일정 창).
 import { useLayoutEffect, useState } from 'react';
 import { DAY_NAMES, parseDateStr } from '../../domain/dateUtils';
 import SchoolEventName from '../school/SchoolEventName';
@@ -12,11 +13,15 @@ import { useFirstLoading, type LabelDoc, type OverlaySpace } from '../../data/se
 import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import { LessonWraps } from '../lessons/CalendarLessons';
 import { hasLessons, type LessonSubjects } from '../lessons/lessonSubjects';
+import { gcalKey, type GcalShown } from '../../domain/gcalShow';
+import { GcalLine } from '../gcal/GcalItems';
 
 interface Props {
   date: string;
   /** 달력에 올린 그날 일정 (하루짜리 + 기간) */
   events: readonly ItemDoc[];
+  /** 그날 구글 캘린더 일정 (P36-4 - 여러 날 것 포함, 그날 차례) */
+  gcal?: readonly GcalShown[];
   /** 달력에 올리지 않은 그날 일정 수 */
   hiddenCount: number;
   showEvents: boolean;
@@ -33,7 +38,7 @@ interface Props {
   onToggleDone?: (ev: ItemDoc) => void;
 }
 
-export default function MonthDaySheet({ date, events, hiddenCount, showEvents, lessons, labelsOf, spaceOf, onClose, onGoDay, onAdd, onOpenEvent, onToggleDone }: Props) {
+export default function MonthDaySheet({ date, events, gcal = [], hiddenCount, showEvents, lessons, labelsOf, spaceOf, onClose, onGoDay, onAdd, onOpenEvent, onToggleDone }: Props) {
   // 아래 탭바 바로 위에 붙는다 (탭바 높이는 기기 안전 여백에 따라 달라 재서 쓴다)
   const [tabBarHeight, setTabBarHeight] = useState(0);
   // 일정을 처음 받는 중이면 빈 날도 '받는 중' (P32-2)
@@ -109,9 +114,14 @@ export default function MonthDaySheet({ date, events, hiddenCount, showEvents, l
                 </li>
               );
             })}
+            {gcal.map((g) => (
+              <li key={gcalKey(g)}>
+                <GcalLine s={g} date={date} at="sheet" />
+              </li>
+            ))}
           </ul>
         )}
-        {showEvents && events.length === 0 && !hasLessons(lessons) && (
+        {showEvents && events.length === 0 && gcal.length === 0 && !hasLessons(lessons) && (
           <p {...(waiting ? { 'data-sheet-waiting': '' } : {})} className="text-xs text-slate-400 py-2 text-center">
             {waiting ? '일정을 받는 중…' : '달력에 올린 일정이 없습니다.'}
           </p>

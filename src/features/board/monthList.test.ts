@@ -4,7 +4,8 @@ import { Timestamp } from 'firebase/firestore';
 import { labelTreeOf, type Docs } from '../../data/select';
 import { spaceTone } from '../../domain/spaceColor';
 import { calendarEvents } from '../month/calendarEvents';
-import { monthCalendarList, rowDateLabel, rowMark, shiftMonth } from './monthList';
+import { gcalShownList } from '../../domain/gcalShow';
+import { gcalRowDateLabel, gcalRowMark, mergeMonthList, monthCalendarList, monthGcalList, rowDateLabel, rowMark, shiftMonth } from './monthList';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 
@@ -89,5 +90,43 @@ describe('줄 바탕 - 오늘 · 보는 주 (P35 11-13 사용자 요청)', () =>
     expect(rowMark(r2.find((r) => r.ev.id === 'w')!, week, '2026-11-20')).toBeNull();
     // 오늘이 기간의 쉬는 날(토)이면 오늘 일정이 아니다
     expect(rowMark(r2.find((r) => r.ev.id === 'w')!, week, '2026-11-14')).toBeNull();
+  });
+});
+
+describe('구글 캘린더 일정 줄 (P36-4)', () => {
+  const gcal = gcalShownList(
+    [
+      { id: 'g1', cal: 'c', title: '연수', allDay: false, start: '2026-11-12T15:00', end: '2026-11-12T17:00' },
+      { id: 'g2', cal: 'c', title: '출장', allDay: true, start: '2026-10-30', end: '2026-11-04' },
+      { id: 'g3', cal: 'c', title: '첫날', allDay: true, start: '2026-11-01', end: '2026-11-02' },
+      { id: 'g4', cal: 'c', title: '다음 달', allDay: true, start: '2026-12-01', end: '2026-12-02' },
+    ],
+    [{ id: 'c', name: '학교', color: '#0b8043' }],
+  );
+  const cal = calendarEvents(items, '2026-10-26', '2026-12-06', tree, [], gcal);
+
+  it('그 달 하루짜리 + 걸친 여러 날(그 달 안 첫날 자리) - 같은 날이면 여러 날 먼저, 다음 달 것은 없다', () => {
+    const g = monthGcalList(cal, '2026-11-01', '2026-11-30');
+    expect(g.map((r) => [r.g.ev.id, r.day, r.endDate])).toEqual([
+      ['g2', '2026-11-01', '2026-11-03'],
+      ['g3', '2026-11-01', undefined],
+      ['g1', '2026-11-12', undefined],
+    ]);
+    expect(gcalRowDateLabel(g[0])).toBe('10/30~11/3');
+    expect(gcalRowDateLabel(g[2])).toBe('11/12');
+  });
+
+  it('앱 줄과 날짜 차례로 섞는다 - 같은 날은 앱 것 먼저', () => {
+    const merged = mergeMonthList(monthCalendarList(cal, '2026-11-01', '2026-11-30'), monthGcalList(cal, '2026-11-01', '2026-11-30'));
+    expect(merged.map((e) => (e.row ? e.row.ev.id : `g:${e.gcal!.g.ev.id}`))).toEqual(['d', 'g:g2', 'g:g3', 'e', 'a', 'b', 'g:g1', 'g']);
+  });
+
+  it('줄 바탕 - 오늘 = today, 보는 주 = week (여러 날은 첫날~끝날)', () => {
+    const [trip, , talk] = monthGcalList(cal, '2026-11-01', '2026-11-30');
+    const week = ['2026-11-09', '2026-11-10', '2026-11-11', '2026-11-12', '2026-11-13', '2026-11-14', '2026-11-15'];
+    expect(gcalRowMark(talk, week, '2026-11-12')).toBe('today');
+    expect(gcalRowMark(talk, week, '2026-11-20')).toBe('week');
+    expect(gcalRowMark(trip, week, '2026-10-31')).toBe('today');
+    expect(gcalRowMark(trip, week, '2026-11-20')).toBeNull();
   });
 });

@@ -7,6 +7,7 @@
 //   - 일정을 끌어 다른 날 줄에 놓으면 옮긴다(P5-3 - 그리는 날에만 놓을 수 있다, V4 그대로). 학사일정은 P6-3.
 //   - 수업 칩(둘째 줄 '수업' - V4 그대로): 수업이 있는 날도 줄로 선다. PC는 교시마다 같은 폭의 띠, 휴대폰은 든 교시만 번호와 칩. 누르면 그 교시 수업 칸.
 //   - 겹쳐 보기(P17-2): 겹친 공간 일정도 주 공간 것 뒤에 공간 색 배경으로(cal.spaceOf - 그 공간 라벨 트리) - 끌기·✕·고르기 없음, 누르기·완료는 부르는 쪽이 그 공간으로.
+//   - 구글 캘린더 겹쳐 보기(P36-4): 앱 일정 뒤에 읽기 전용 줄(점선 - 여러 날은 그 달 처음 보이는 날 한 번 + 범위). 누르면 그 일정 창. 그 일정만 있는 날도 줄로 선다.
 //   달 카드는 React.memo - 바뀐 달만 다시 그린다(V4 - 열두 달 요소가 11,000개였다).
 import { memo, type MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_NAMES } from '../../domain/dateUtils';
@@ -28,6 +29,8 @@ import type { CalendarEvents } from '../month/calendarEvents';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
 import { LessonStrip, LessonWraps } from '../lessons/CalendarLessons';
 import { pressKeys } from '../../ui/pressKeys';
+import { gcalKey, type GcalBarItem, type GcalShown } from '../../domain/gcalShow';
+import { GcalLine } from '../gcal/GcalItems';
 
 interface Props {
   m: AcademicMonth;
@@ -69,6 +72,7 @@ interface Props {
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
+const NO_GCAL: readonly GcalShown[] = [];
 
 function LinksButton({ ev, onOpen }: { ev: ItemDoc; onOpen: (ev: ItemDoc) => void }) {
   const n = ev.linkIds?.length ?? 0;
@@ -117,12 +121,17 @@ function YearMonthCard(p: Props) {
   const startsOn = new Map<string, ShownPeriod<ItemDoc>[]>();
   for (const sp of periods) startsOn.set(sp.cells[0].date, [...(startsOn.get(sp.cells[0].date) ?? []), sp]);
   const eventsOn = (d: string) => (p.showEvents ? (p.cal.byDate.get(d) ?? []) : []);
+  // 구글 캘린더 일정 (P36-4) - 여러 날은 이 달에서 처음 보이는 날 한 번
+  const gcalPeriods = p.showEvents ? periodsInDates(dates, p.cal.gcalPeriods) : [];
+  const gcalStarts = new Map<string, ShownPeriod<GcalBarItem>[]>();
+  for (const sp of gcalPeriods) gcalStarts.set(sp.cells[0].date, [...(gcalStarts.get(sp.cells[0].date) ?? []), sp]);
+  const gcalOn = (d: string) => (p.showEvents ? (p.cal.gcalByDate.get(d) ?? NO_GCAL) : NO_GCAL);
   const holidayOf = useHolidayName();
   // 우리 학교 학사일정 (P6-3)
   const { byDate: schoolEvents } = useSchoolSchedule(dates.length ? [dates[0].slice(0, 7)] : []);
   const lessonsOn: Readonly<Record<string, readonly string[]>> = p.lessons ? JSON.parse(p.lessons) : {};
   // 그릴 날 = 일정이 있는 날·공휴일·학사일정·수업이 있는 날
-  const activeDays = dates.filter((d) => eventsOn(d).length > 0 || startsOn.has(d) || !!holidayOf(d) || !!schoolEvents[d] || !!lessonsOn[d]);
+  const activeDays = dates.filter((d) => eventsOn(d).length > 0 || startsOn.has(d) || gcalOn(d).length > 0 || gcalStarts.has(d) || !!holidayOf(d) || !!schoolEvents[d] || !!lessonsOn[d]);
   const firstLabel = (ev: ItemDoc) => itemLabels(p.cal.spaceOf.get(ev)?.tree ?? p.tree, ev.labelIds)[0];
   const isPicked = (id: string, d: string) => p.picked.has(`${id}|${d}`);
 
@@ -260,6 +269,8 @@ function YearMonthCard(p: Props) {
               const notes = p.noteCounts.get(d) ?? 0;
               const evs = eventsOn(d);
               const starts = startsOn.get(d) ?? [];
+              const gStarts = gcalStarts.get(d) ?? [];
+              const gEvents = gcalOn(d);
               return (
                 <div
                   key={d}
@@ -321,10 +332,27 @@ function YearMonthCard(p: Props) {
                     ) : (
                       <LessonStrip date={d} subjects={lessonsOn[d]} tag="year" onOpen={p.onOpenLesson} height={22} />
                     ))}
-                  {(starts.length > 0 || evs.length > 0) && (
+                  {(starts.length > 0 || evs.length > 0 || gStarts.length > 0 || gEvents.length > 0) && (
                     <div className="flex flex-col gap-1">
                       {starts.map(renderPeriod)}
                       {evs.map((ev) => renderEvent(ev, d))}
+                      {gStarts.map((sp) => (
+                        <GcalLine
+                          key={sp.item.id}
+                          s={sp.item.gcal}
+                          date={d}
+                          at="year"
+                          after={
+                            <span data-gcal-range className="inline-block align-middle ml-1.5 text-2xs font-semibold text-slate-500 whitespace-nowrap">
+                              {sp.startsPeriod ? '' : '◂ '}📆 {periodRangeLabel(sp.cells)}
+                              {sp.endsPeriod ? '' : ' ▸'}
+                            </span>
+                          }
+                        />
+                      ))}
+                      {gEvents.map((g) => (
+                        <GcalLine key={gcalKey(g)} s={g} date={d} at="year" />
+                      ))}
                     </div>
                   )}
                 </div>

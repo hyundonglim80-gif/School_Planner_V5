@@ -9,6 +9,7 @@ import type { PrintParams } from '../features/print/types';
 import type { HelpParams } from '../features/help/HelpWindow';
 import type { NewYearParams } from '../features/newYear/NewYearWindow';
 import { SCHOOL_EVENT_WINDOW, type SchoolEventParams } from '../features/school/open';
+import { GCAL_EVENT_WINDOW, type GcalEventParams } from '../features/gcal/open';
 import { ATTENDANCE_PANEL, type AttendancePanelParams } from '../features/attendance/open';
 import { NOTICE_PANEL, sameNoticePanel, type NoticePanelParams } from '../features/notices/open';
 import { SUBJECT_ATT_CELL, SUBJECT_ATT_SUMMARY, sameSubjectCell, type SubjectAttendanceCellParams, type SubjectAttendanceSummaryParams } from '../features/subjectAttendance/open';
@@ -296,6 +297,16 @@ registerWindow<SchoolEventParams>({
   kind: 'side',
   help: 'neis',
   load: () => import('../features/school/SchoolEventWindow'),
+});
+
+// 구글 캘린더 일정 (P36-4) - 겹쳐 그린 구글 일정을 누르면. 보기만(구글에서 열기·일정으로 담기)
+registerWindow<GcalEventParams>({
+  id: GCAL_EVENT_WINDOW,
+  title: '구글 캘린더 일정',
+  icon: '📅',
+  kind: 'side',
+  help: 'calendar-sync',
+  load: () => import('../features/gcal/GcalEventWindow'),
 });
 
 // ⋮ 수업 - 진도 관리(P6-2). 하루 수업 머리줄 📘에도(주간·월간·메모 화면에서도 열려고 ⋮에도 - MENU 규칙 3의 예외).

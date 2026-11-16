@@ -33,6 +33,12 @@ export const isGcalMulti = (s: Pick<GcalShown, 'first' | 'last'>) => s.last > s.
 /** 그날 보이나 */
 export const gcalOnDay = (s: Pick<GcalShown, 'first' | 'last'>, date: string) => s.first <= date && date <= s.last;
 
+/** 여러 날 일정의 그날 차례 '(2/3)' (앱 기간 일정과 같은 꼴 - 하루짜리·범위 밖은 null) */
+export function gcalPosition(s: Pick<GcalShown, 'first' | 'last'>, date: string): { k: number; n: number } | null {
+  if (!isGcalMulti(s) || !gcalOnDay(s, date)) return null;
+  return { k: daysBetween(s.first, date) + 1, n: daysBetween(s.first, s.last) + 1 };
+}
+
 /** 받은 일정에 고른 캘린더를 붙인다 - 고르기에서 빠진 캘린더 것은 버린다 (차례는 받은 그대로) */
 export function gcalShownList(events: readonly OverlayEvent[], cals: readonly OverlayCalendar[]): GcalShown[] {
   const byId = new Map(cals.map((c) => [c.id, c]));
@@ -106,6 +112,23 @@ export function gcalCalendar(list: readonly GcalShown[], from: string, to: strin
   }
   for (const [d, day] of byDate) byDate.set(d, gcalListOn(day, d));
   return { byDate, periods };
+}
+
+const ENTITIES: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
+
+/**
+ * 구글 일정 설명을 글로 - 구글은 설명에 HTML(<br>·<a>·<b>)을 섞어 준다. 화면은 HTML로 그리지 않는다(남이 쓴 글 - 글로만).
+ * 줄바꿈 꼴(<br>·</p>·</div>·</li>)은 줄로, 나머지 꼬리표는 걷고, 흔한 글자 표(&amp; 등)는 풀고, 빈 줄은 둘까지.
+ */
+export function gcalPlainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '• ')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&(amp|lt|gt|quot|#39|nbsp);/g, (m) => ENTITIES[m] ?? m)
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 const dayLabel = (d: string) => {

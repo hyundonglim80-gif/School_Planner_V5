@@ -3,11 +3,12 @@
 //   - 일정은 접지 않고 다 보인다(V4 - '+1개'로 줄이면 무엇인지 몰라 결국 들어가 봐야 한다).
 //   - 휴대폰(compact)은 칸 모양은 두고 안에 든 것만 줄인다: 라벨은 색 띠, 제목은 한 줄·칸 폭에 맞춘 글자, 일정·막대를 누르면 그날 목록.
 //   - 일정·막대 조각을 끌어 다른 날 칸에 놓으면 옮긴다(P5-3 - 마우스 화면만).
+//   - 구글 캘린더 일정(P36-4): 앱 일정 뒤에 읽기 전용(점선 - 하루짜리는 칸 안 줄, 여러 날은 앱 기간 막대와 한 막대 줄 배치). 누르면 그 일정 창, 휴대폰은 그날 목록.
 //   - 수업 칩(P9-3 - V4 그대로): PC 칸의 날짜 줄 아래 교시마다 칩(누르면 그 교시 수정 칸). 휴대폰은 교시 둘씩 한 줄 작은 칩(LessonGrid - 10-16 사용 의견, V4는 칸에서 뺐다) + 그날 목록(MonthDaySheet).
 import type { MouseEvent as ReactMouseEvent } from 'react';
 import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { labelColor } from '../../domain/labels';
-import { layoutWeekBars, type BarCell } from '../../domain/periodBars';
+import { layoutWeekBars, type BarCell, type WeekBar } from '../../domain/periodBars';
 import { fitToWidthFontSize } from '../../domain/typeScale';
 import type { LabelDoc, OverlaySpace } from '../../data/select';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
@@ -23,6 +24,8 @@ import { LessonGrid, LessonStrip } from '../lessons/CalendarLessons';
 import type { LessonSubjects } from '../lessons/lessonSubjects';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
 import { pressKeys } from '../../ui/pressKeys';
+import { gcalKey, type GcalBarItem, type GcalShown } from '../../domain/gcalShow';
+import { GcalBar, GcalLine } from '../gcal/GcalItems';
 
 const WEEKDAYS = [
   { name: '일', color: 'text-red-500' },
@@ -47,6 +50,10 @@ export interface MonthGridProps {
   selectedDate: string | null;
   eventsOn: (date: string) => ItemDoc[];
   periods: readonly ItemDoc[];
+  /** 그날 구글 캘린더 하루짜리 일정 (P36-4 - 읽기 전용) */
+  gcalOn?: (date: string) => readonly GcalShown[] | undefined;
+  /** 구글 캘린더 여러 날 일정 (막대) */
+  gcalPeriods?: readonly GcalBarItem[];
   noteCount: (date: string) => number;
   /** 그날 조사표 수 (📊 n - P7-4) */
   evalCount?: (date: string) => number;
@@ -75,6 +82,8 @@ export interface MonthGridProps {
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
+const NO_GCAL: readonly GcalShown[] = [];
+const isGcalBar = (b: WeekBar<ItemDoc | GcalBarItem>): b is WeekBar<GcalBarItem> => 'gcal' in b.item;
 
 export default function MonthGrid(p: MonthGridProps) {
   const cols = p.showWeekend ? 7 : 5;
@@ -103,7 +112,8 @@ export default function MonthGrid(p: MonthGridProps) {
       </div>
       <div className="divide-y divide-slate-100">
         {weeks.map((week) => {
-          const layout = p.showEvents ? layoutWeekBars(week, p.periods) : { bars: [], lanes: 0 };
+          // 앱 기간 일정과 구글 여러 날 일정을 한 막대 줄 배치로 (겹치지 않게)
+          const layout = p.showEvents ? layoutWeekBars<ItemDoc | GcalBarItem>(week, p.gcalPeriods?.length ? [...p.periods, ...p.gcalPeriods] : p.periods) : { bars: [], lanes: 0 };
           const lanes = layout.lanes;
           return (
             <div
@@ -275,12 +285,28 @@ export default function MonthGrid(p: MonthGridProps) {
                             </div>
                           );
                         })}
+                        {(p.gcalOn?.(date) ?? NO_GCAL).map((g) => (
+                          <GcalLine key={gcalKey(g)} s={g} date={date} at={p.compact ? 'compact' : 'month'} instead={p.compact ? () => p.onSelectDate(date) : undefined} />
+                        ))}
                       </div>
                     )}
                   </div>
                 );
               })}
-              {layout.bars.map((bar) => {
+              {layout.bars.map((one) => {
+                if (isGcalBar(one))
+                  return (
+                    <GcalBar
+                      key={`${one.item.id}@${one.start}`}
+                      bar={one}
+                      compact={p.compact}
+                      isCurrentMonth={(d) => d.startsWith(p.month)}
+                      instead={p.compact ? p.onSelectDate : undefined}
+                      style={{ gridColumn: `${one.start + 1} / span ${one.len}`, gridRow: one.lane + 2 }}
+                    />
+                  );
+                // 구글 막대가 아니면 앱 기간 일정
+                const bar = one as WeekBar<ItemDoc>;
                 const label = p.labelsOf(bar.item)[0];
                 const space = p.spaceOf?.(bar.item);
                 return (

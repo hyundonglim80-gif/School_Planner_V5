@@ -100,8 +100,8 @@ export default function ViewTab() {
           <>
             고른 구글 캘린더의 일정을 이 기기에 받아 두고 일정 칸에 겹쳐 봅니다(읽기만 - 고치기는 구글 캘린더에서). 받은 일정은 앱 자료·백업에 들지 않고, 로그아웃하면
             지웁니다. 앱이 보내는 SP(work)·SP(class)·SP(commentary)는 두 번 보이지 않게 목록에서 뺍니다.
-            <span data-gcal-overlay-soon className="block mt-1 text-amber-700">
-              화면에 겹쳐 그리기는 다음 판에서 나옵니다 - 지금은 골라 받아 두기까지입니다.
+            <span data-gcal-overlay-how className="block mt-1">
+              하루·주간·월간·년간·한눈에 화면의 일정 칸에 점선 줄로 보이고, 누르면 자세히 보거나 구글 캘린더에서 엽니다. 둘째 줄 &apos;📅 구글&apos;로 이 기기에서 끄고 켭니다(인쇄에는 들지 않습니다).
             </span>
           </>
         }

@@ -35,6 +35,7 @@ import WeekScreen from '../week/WeekScreen';
 import YearScreen from '../year/YearScreen';
 import { usePrintPrefs } from './prefs';
 import type { PrintParams } from './types';
+import { GcalOffContext } from '../gcal/gcalView';
 
 /** 한 장에 맞출 때 쓰는 높이 (찍히는 칸의 97%) */
 const FIT_SLACK = 0.97;
@@ -332,7 +333,10 @@ function PaperSheet({ page, start, title, landscape, scale, fit, marginMm, align
         >
           <div ref={paperRef} data-print-paper className="@container shrink-0" style={{ width: w, zoom }}>
             <h1 className="sp5-print-title">{title}</h1>
-            <Screen printAt={start} />
+            {/* 구글 캘린더 일정은 인쇄에 넣지 않는다 (P36-4 - 받은 범위가 인쇄 범위와 달라 빠진 달이 생기고, 학급 게시용 인쇄에 남의 캘린더가 섞이지 않게) */}
+            <GcalOffContext.Provider value>
+              <Screen printAt={start} />
+            </GcalOffContext.Provider>
           </div>
         </div>
       </div>

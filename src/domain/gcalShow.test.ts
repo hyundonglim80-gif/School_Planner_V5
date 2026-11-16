@@ -1,7 +1,7 @@
 // 구글 캘린더 겹쳐 그리기 셈 (P36-4) - 캘린더 붙이기·그날 시각 글·그날 차례·달력 칸(하루짜리/막대)·창의 때 글
 import { describe, expect, it } from 'vitest';
 import type { OverlayCalendar, OverlayEvent } from './gcalOverlay';
-import { gcalCalendar, gcalKey, gcalListOn, gcalOnDay, gcalShownList, gcalTimeOn, gcalWhenLabel, isGcalMulti } from './gcalShow';
+import { gcalCalendar, gcalKey, gcalListOn, gcalOnDay, gcalPlainText, gcalPosition, gcalShownList, gcalTimeOn, gcalWhenLabel, isGcalMulti } from './gcalShow';
 
 const CALS: OverlayCalendar[] = [
   { id: 'c1', name: '학교', color: '#0b8043' },
@@ -31,6 +31,10 @@ describe('캘린더 붙이기', () => {
     expect([overnight.last, isGcalMulti(overnight)]).toEqual(['2026-11-17', true]);
     expect(gcalOnDay(allDay3, '2026-11-18')).toBe(true);
     expect(gcalOnDay(allDay3, '2026-11-19')).toBe(false);
+    // 그날 차례 '(2/3)' - 하루짜리·범위 밖은 없다
+    expect(gcalPosition(allDay3, '2026-11-17')).toEqual({ k: 2, n: 3 });
+    expect(gcalPosition(allDay3, '2026-11-19')).toBeNull();
+    expect(gcalPosition(tillMidnight, '2026-11-16')).toBeNull();
   });
 });
 
@@ -95,6 +99,16 @@ describe('달력 칸 (월간·년간·한눈에 달 목록)', () => {
     const [s] = shown(ev('break', '2027-02-26', '2027-03-03'));
     expect([s.first, s.last]).toEqual(['2027-02-26', '2027-03-02']);
     expect(gcalCalendar([s], '2027-02-01', '2027-02-28').periods.map((p) => p.endDate)).toEqual(['2027-03-02']);
+  });
+});
+
+describe('설명 글', () => {
+  it('구글이 섞어 준 HTML은 글로 - 줄바꿈 꼴은 줄, 꼬리표는 걷고, 글자 표는 풀고, 빈 줄은 둘까지', () => {
+    expect(gcalPlainText('준비물<br>- 실내화<br/><b>꼭</b> &amp; 물병')).toBe('준비물\n- 실내화\n꼭 & 물병');
+    expect(gcalPlainText('<p>첫 줄</p><p>둘째</p>\n\n\n\n끝')).toBe('첫 줄\n둘째\n\n끝');
+    expect(gcalPlainText('<ul><li>하나</li><li>둘</li></ul>')).toBe('• 하나\n• 둘');
+    expect(gcalPlainText('<a href="https://x.test">회의 자료</a> &lt;3층&gt;')).toBe('회의 자료 <3층>');
+    expect(gcalPlainText('<img src=x onerror=alert(1)>글')).toBe('글');
   });
 });
 

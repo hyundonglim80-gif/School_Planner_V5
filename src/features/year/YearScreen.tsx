@@ -15,6 +15,7 @@ import { onPeriodDay } from '../../domain/period';
 import type { ShownPeriod } from '../../domain/periodBars';
 import { academicMonths, monthWeeks, type AcademicMonth } from '../../domain/yearSheet';
 import { noteDaysBetween, useDocs, useLabelTree, useMirrorStatus, useOverlaySpaces } from '../../data/select';
+import { useGcalShown } from '../gcal/gcalView';
 import { useCurrentSpaceId } from '../../data/session';
 import { useIsMobile } from '../../ui/useIsMobile';
 import { useToday } from '../../ui/useToday';
@@ -114,7 +115,9 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
   const academicYear = academicYearOf(date);
   const [from, to] = academicYearRange(academicYear);
   const months = useMemo(() => academicMonths(academicYear).filter((m) => semesterFilter === 'all' || m.semester === semesterFilter), [academicYear, semesterFilter]);
-  const cal = useMemo(() => calendarEvents(items, from, to, tree, overlays), [items, from, to, tree, overlays]);
+  // 구글 캘린더 일정 (P36-4 - 자세히·학사력에 읽기 전용, 인쇄 창이면 없다)
+  const gcal = useGcalShown(from, to);
+  const cal = useMemo(() => calendarEvents(items, from, to, tree, overlays, gcal), [items, from, to, tree, overlays, gcal]);
   const noteCounts = useMemo(() => {
     const map = new Map<string, number>();
     for (const { date: d } of noteDaysBetween(items, from, to)) map.set(d, (map.get(d) ?? 0) + 1);

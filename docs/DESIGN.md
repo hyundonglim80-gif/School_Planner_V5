@@ -315,6 +315,9 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   Shell `features/gcal/overlayAuto` - 계정 설정을 받은 뒤 화면·날짜·탭 보임마다 · **조용한 토큰만**(없으면 `needsLogin` + 1분은 다시 묻지 않음, 로그인 창을 띄우지 않는다) · 고르기 칸의 고르기·🔄 다시 받기는 누른 때라 로그인을 묻는다.
 - **끝까지 받은 응답만 그 달을 바꾼다**(끊김·5xx·쪽 넘김 도중 실패 = 그대로 + `error`) · 401 = 토큰을 잊고 `needsLogin` · 404·403 = `missing`(고른 것은 그대로) · 같은 달을 함께 물으면 한 번.
 - 고르기에서 빼면(다른 기기에서도) `pruneGcalCalendars`, 로그아웃하면 `wipeGcalOverlay`. IndexedDB가 고장이면 그 탭 메모리로만.
+- **그리기(P36-4 - PLAN 5장 'P36-4 … ■0 정한 것')**: 화면은 `features/gcal/gcalView` `useGcalShown(first, last)`로 읽는다(받은 것 + 고른 캘린더 이름·색 = `domain/gcalShow` `GcalShown { ev, cal, first, last }`) - 이 기기에서 끄면(`sp5-gcal-view`)·인쇄 창 안(`GcalOffContext`)·다른 계정 것이면 빈 목록.
+  **앱 일정 목록(ItemDoc)에는 섞지 않는다**: 달력은 `calendarEvents`의 따로 칸 `gcalByDate`(하루짜리, 그날 차례)·`gcalPeriods`(여러 날 = 막대 자리 `GcalBarItem` - id `gcal:` - 월간·학사력은 앱 기간 일정과 한 `layoutWeekBars`에 넣어 줄을 나눈다), 하루·주간은 그날 목록 `gcalListOn`.
+  그리는 것은 `features/gcal/GcalItems`(점선 + 캘린더 이름 칩/색 점 + 시각 + 제목 · 완료·끌기·고르기 없음) · 누르면 창 `gcalEvent`(창 값에 그 일정을 담는다 - 다시 찾지 않는다) · 설명은 `gcalPlainText`로 글만(HTML로 그리지 않는다).
 
 ## 7. 화면 뼈대 (`src/app`)
 
