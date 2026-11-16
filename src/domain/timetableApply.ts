@@ -5,6 +5,8 @@
 //   '적용'은 그 기간에 표를 덧칠한다 - 겹친 날은 새로 적용한 표가 이기고, 앞뒤 날은 그대로(앞 문서의 기간을 줄이거나 둘로 나눈다).
 //   그래서 적용한 뒤에는 적용된 문서끼리 날이 겹치지 않는다. 그 전(P37 전) 자료는 겹칠 수 있어 '늦게 시작한 것이 이긴다'(timetableOn)로 읽는다.
 //   기간 없는 옛 V4 가져온 표(`from: ''`)는 어느 날에도 쓰이지 않아 저장된 시간표로 본다.
+//   P39(11-16 사용자 요청): 적용 방식을 고른다 - 🖌️ 덮어쓰기(위 덧칠) / 🧩 빈 칸만 채우기(fillPieces - 앞 표의 과목은 그대로,
+//   빈 칸과 적용된 표가 없는 날에만 새 표의 과목). 채운 날도 앞 문서에서 빼고 새 문서로 쓰니 겹치지 않는 것은 같다.
 import { addDays } from './dateUtils';
 import { timetableOn, type TimetableLike } from './lessons';
 
@@ -70,6 +72,72 @@ export function cutPieces<P extends Piece>(pieces: readonly P[], cut: Piece): P[
   return out;
 }
 
+type Grid = TimetableLike['grid'];
+
+const cellText = (grid: Grid, wd: string, n: string) => {
+  const v = grid[wd]?.[n];
+  return typeof v === 'string' ? v.trim() : '';
+};
+
+/**
+ * 빈 칸만 채우기 (P39 11-16 사용자 '기존 시간표에서 겹치지 않은 시간표만 적용').
+ * 앞 표(base)에 과목이 있는 칸은 그대로, 빈 칸에만 add의 과목 - 둘 다 있으면 앞 표가 이긴다.
+ * added = 채운 칸 수 (0이면 바뀐 것이 없다).
+ */
+export function fillGrid(base: Grid, add: Grid): { grid: Record<string, Record<string, string>>; added: number } {
+  const grid: Record<string, Record<string, string>> = {};
+  for (const [wd, row] of Object.entries(base)) {
+    for (const n of Object.keys(row ?? {})) {
+      const text = cellText(base, wd, n);
+      if (text) (grid[wd] ??= {})[n] = text;
+    }
+  }
+  let added = 0;
+  for (const [wd, row] of Object.entries(add)) {
+    for (const n of Object.keys(row ?? {})) {
+      const text = cellText(add, wd, n);
+      if (!text || grid[wd]?.[n]) continue;
+      (grid[wd] ??= {})[n] = text;
+      added++;
+    }
+  }
+  return { grid, added };
+}
+
+/** 빈 칸만 채우기로 새로 쓸 조각 하나 */
+export interface FillPiece extends Piece {
+  /** 채운 앞 문서 (null = 적용된 표가 없던 날 - 새 표 그대로) */
+  baseId: string | null;
+  grid: Grid;
+}
+
+/**
+ * cut 기간에 grid를 빈 칸만 채우기로 적용하면 새로 쓸 조각들 (시작 날 차례).
+ * 날마다 쓰이는 앞 표마다 그 표에 grid를 채운 표(채울 칸이 없으면 그 조각은 그대로라 뺀다), 적용된 표가 없는 날은 grid 그대로.
+ * 빈 배열 = 채울 것이 없다. 앞 문서에서 이 조각들을 빼는 것은 planApplied(list, 조각들).
+ */
+export function fillPieces<T extends TimetableLike & Kinded>(list: readonly T[], cut: Piece, grid: Grid): FillPiece[] {
+  const applied = list.filter(isAppliedTimetable);
+  const byId = new Map(applied.map((t) => [t.id, t]));
+  const out: FillPiece[] = [];
+  const empty = Object.values(grid).every((row) => Object.values(row ?? {}).every((v) => !(typeof v === 'string' && v.trim())));
+  let cursor: string | null = cut.from;
+  const gap = (to: string) => {
+    if (cursor && cursor <= to && !empty) out.push({ from: cursor, to, baseId: null, grid });
+  };
+  for (const s of effectiveSegments(applied)) {
+    if (!cursor || s.to < cursor || s.from > cut.to) continue;
+    const from = s.from > cursor ? s.from : cursor;
+    const to = s.to < cut.to ? s.to : cut.to;
+    if (from > cursor) gap(addDays(from, -1));
+    const filled = fillGrid(byId.get(s.id)?.grid ?? {}, grid);
+    if (filled.added) out.push({ from, to, baseId: s.id, grid: filled.grid });
+    cursor = to >= cut.to ? null : addDays(to, 1);
+  }
+  if (cursor) gap(cut.to);
+  return out;
+}
+
 export interface AppliedPlan {
   /** 기간이 바뀌는 문서 - 첫 조각은 그 문서에, 나머지는 같은 표로 새 문서 (시작 날 차례) */
   reshape: Array<{ id: string; pieces: Piece[] }>;
@@ -79,13 +147,14 @@ export interface AppliedPlan {
 
 /**
  * 적용된 문서들이 cut 기간을 비우려면 어떻게 바뀌나 (cut이 없으면 겹친 옛 자료를 겹치지 않게 다듬기만).
- * 새로 적용할 때 = 이것 + cut 기간의 새 문서 하나. 적용 빼기 = 이것만.
+ * 새로 적용할 때 = 이것 + cut 기간의 새 문서 하나. 적용 빼기 = 이것만. 빈 칸만 채우기 = cut에 채울 조각들(fillPieces)을 주고 + 조각마다 새 문서.
  * 날마다 쓰이는 문서는 cut 밖에서 그대로다(조각이 그날의 이기는 문서를 그대로 옮긴다).
  */
-export function planApplied<T extends TimetableLike & Kinded>(list: readonly T[], cut: Piece | null): AppliedPlan {
+export function planApplied<T extends TimetableLike & Kinded>(list: readonly T[], cut: Piece | readonly Piece[] | null): AppliedPlan {
   const applied = list.filter(isAppliedTimetable);
   const segments = effectiveSegments(applied);
-  const left = cut ? cutPieces(segments, cut) : segments;
+  const cuts: readonly Piece[] = !cut ? [] : 'from' in cut ? [cut] : cut;
+  const left = cuts.reduce<Segment[]>((pieces, c) => cutPieces(pieces, c), segments);
   const byId = new Map<string, Piece[]>();
   for (const s of left) byId.set(s.id, [...(byId.get(s.id) ?? []), { from: s.from, to: s.to }]);
   const reshape: AppliedPlan['reshape'] = [];

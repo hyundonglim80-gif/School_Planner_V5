@@ -2,10 +2,11 @@
 //   P37(11-16 사용자 요청) - 저장과 적용을 나눴다(domain/timetableApply):
 //   💾 저장(Ctrl+S) = **저장된 시간표**(이름·표만, `kind: 'saved'`) 한 묶음 - 지워도 이미 적용한 날은 그대로.
 //   ✅ 적용 = 고른 기간에 지금 표를 **적용된 시간표**(기간 + 그때의 표)로 - 겹친 날만 새 표, 앞뒤 날은 그대로. 그날 바꾼 칸(lessonDays)은 그대로.
+//   P39(11-16 사용자 요청): 적용 방식 - 🖌️ 덮어쓰기(위) / 🧩 빈 칸만 채우기(앞 표의 과목은 그대로, 빈 칸과 적용된 표가 없는 날에만 - applyOps mode 'fill').
 import { newId } from '../../data/id';
 import { writeOp, type WriteOp } from '../../data/repo/ops';
 import type { DocPath, Stored, TimetableGrid } from '../../data/types';
-import { effectiveSegments, FAR_END, isAppliedTimetable, isSavedTimetable, planApplied, type Piece } from '../../domain/timetableApply';
+import { effectiveSegments, FAR_END, fillPieces, isAppliedTimetable, isSavedTimetable, planApplied, type Piece } from '../../domain/timetableApply';
 
 /** 저장된 시간표 하나 (창이 고치는 것 - 이름·표만) */
 export interface TimetableDraft {
@@ -21,7 +22,7 @@ export const WEEKDAYS = ['1', '2', '3', '4', '5'] as const;
 export const timetablePath = (sid: string, id: string): DocPath<'timetables'> => ({ sid, coll: 'timetables', id });
 
 /** 빈 칸을 빼고 글자를 다듬은 표 (요일 '1'~'5', 교시 1~count만) */
-export function cleanGrid(grid: TimetableGrid, count?: number): TimetableGrid {
+export function cleanGrid(grid: Readonly<Record<string, Record<string, string> | undefined>>, count?: number): TimetableGrid {
   const out: TimetableGrid = {};
   for (const wd of WEEKDAYS) {
     const row: Record<string, string> = {};
@@ -80,10 +81,21 @@ export interface ApplyInput {
   saveId: string;
 }
 
+/** 적용 방식 (P39) - 덮어쓰기 = 그 기간은 모두 이 표 · 빈 칸만 채우기 = 앞 표의 과목은 그대로, 빈 칸과 적용된 표가 없는 날에만 */
+export type ApplyMode = 'replace' | 'fill';
+
+/** 채운 표의 이름 - 'A + B' (같은 이름이거나 이미 든 이름이면 그대로) */
+const fillName = (base: string | undefined, add: string) => {
+  const a = nameOf(base);
+  const b = nameOf(add);
+  return a.split(' + ').includes(b) ? a : `${a} + ${b}`;
+};
+
 /**
  * ✅ 적용(input 있음) / 적용 빼기(input 없음) → 쓰기. cut = 그 기간(끝 FAR_END = 끝 날 없음).
  * 겹친 적용된 문서는 cut 밖의 날만 남긴다(줄이기 · 둘로 나누면 뒤 조각은 같은 표로 새 문서 · 다 덮이면 지운다).
  * 새 적용은 다 덮인 문서가 있으면 그 문서를 새 기간·표로 고쳐 쓴다(같은 기간에 다시 적용할 때마다 휴지통이 쌓이지 않게).
+ * mode 'fill'(P39 빈 칸만 채우기)은 채울 조각(fillPieces)만 앞 문서에서 빼고 조각마다 채운 표를 쓴다 - 채울 것이 없으면 [].
  */
 export function applyOps(
   sid: string,
@@ -92,9 +104,13 @@ export function applyOps(
   input: ApplyInput | null,
   count: number,
   makeId: () => string = newId,
+  mode: ApplyMode = 'replace',
 ): WriteOp[] {
   const live = Object.values(docs).filter((d) => !d.deletedAt);
-  const plan = planApplied(live, cut);
+  const grid = input ? cleanGrid(input.grid, count) : {};
+  const fills = input && mode === 'fill' ? fillPieces(live, cut, grid) : null;
+  if (fills && !fills.length) return [];
+  const plan = planApplied(live, fills ?? cut);
   const field = (to: string) => (to === FAR_END ? '' : to);
   const ops: WriteOp[] = [];
   for (const { id, pieces } of plan.reshape) {
@@ -116,13 +132,36 @@ export function applyOps(
       );
     }
   }
-  const reuse = input ? plan.drop[0] : undefined;
-  for (const id of plan.drop) if (id !== reuse) ops.push(writeOp.remove(timetablePath(sid, id)));
-  if (input) {
-    const data = { name: nameOf(input.name), from: cut.from, to: field(cut.to), grid: cleanGrid(input.grid, count), saveId: input.saveId };
-    if (reuse) ops.push(writeOp.patch(timetablePath(sid, reuse), data, docs[reuse]));
+  // 새로 쓸 문서 - 덮어쓰기는 cut 하나, 채우기는 조각마다(앞 표가 있던 날은 채운 표·앞 표의 이름과 saveId)
+  const writes = !input
+    ? []
+    : fills
+      ? fills.map((f) => {
+          const base = f.baseId ? docs[f.baseId] : undefined;
+          return {
+            baseId: f.baseId,
+            data: {
+              name: base ? fillName(base.name, input.name) : nameOf(input.name),
+              from: f.from,
+              to: field(f.to),
+              grid: base ? cleanGrid(f.grid) : grid,
+              saveId: base?.saveId || input.saveId,
+            },
+          };
+        })
+      : [{ baseId: null, data: { name: nameOf(input.name), from: cut.from, to: field(cut.to), grid, saveId: input.saveId } }];
+  // 다 덮인 문서는 새로 쓸 문서로 고쳐 쓴다(그 문서를 채운 조각이 있으면 그것으로, 아니면 차례대로) - 남은 것만 지운다
+  const spare = [...plan.drop];
+  const reuse = writes.map((w) => (w.baseId && spare.includes(w.baseId) ? (spare.splice(spare.indexOf(w.baseId), 1), w.baseId) : null));
+  reuse.forEach((id, i) => {
+    if (!id && spare.length) reuse[i] = spare.shift() ?? null;
+  });
+  for (const id of plan.drop) if (!reuse.includes(id)) ops.push(writeOp.remove(timetablePath(sid, id)));
+  writes.forEach(({ data }, i) => {
+    const id = reuse[i];
+    if (id) ops.push(writeOp.patch(timetablePath(sid, id), data, docs[id]));
     else ops.push(writeOp.create(timetablePath(sid, makeId()), data));
-  }
+  });
   return ops;
 }
 

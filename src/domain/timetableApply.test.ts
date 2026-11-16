@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cutPieces, effectiveSegments, FAR_END, isAppliedTimetable, isSavedTimetable, planApplied } from './timetableApply';
+import { cutPieces, effectiveSegments, FAR_END, fillGrid, fillPieces, isAppliedTimetable, isSavedTimetable, planApplied } from './timetableApply';
 
 const tt = (id: string, from: string, to: string, over: Record<string, unknown> = {}) => ({ id, name: id, from, to, grid: {}, ...over });
 
@@ -63,6 +63,41 @@ describe('적용 계획', () => {
         { id: 'b', pieces: [{ from: '2026-09-01', to: '2026-09-09' }, { from: '2026-09-21', to: '2027-02-28' }] },
       ],
       drop: ['hidden'],
+    });
+  });
+});
+
+describe('빈 칸만 채우기 (P39)', () => {
+  it('앞 표에 과목이 있는 칸은 그대로, 빈 칸에만 채운다 · 채운 칸 수', () => {
+    const base = { '1': { '1': '국어', '2': '  ', '3': '수학' }, '3': { '1': '음악' } };
+    const add = { '1': { '1': '체육', '2': '과학' }, '2': { '4': '미술' }, '3': { '1': '' } };
+    expect(fillGrid(base, add)).toEqual({ grid: { '1': { '1': '국어', '2': '과학', '3': '수학' }, '3': { '1': '음악' }, '2': { '4': '미술' } }, added: 2 });
+    expect(fillGrid(base, { '1': { '1': '체육' } }).added).toBe(0);
+  });
+
+  it('앞 표마다 채운 조각 · 적용된 표가 없는 날은 새 표 그대로 · 채울 칸이 없는 조각은 뺀다', () => {
+    const add = { '1': { '5': '방과후' } };
+    const list = [
+      tt('a', '2026-03-02', '2026-05-31', { grid: { '1': { '1': '국어' } } }),
+      tt('full', '2026-06-01', '2026-06-30', { grid: { '1': { '5': '창체' } } }),
+      tt('b', '2026-08-01', '', { grid: { '2': { '1': '수학' } } }),
+    ];
+    expect(fillPieces(list, { from: '2026-05-01', to: '2026-09-30' }, add)).toEqual([
+      { from: '2026-05-01', to: '2026-05-31', baseId: 'a', grid: { '1': { '1': '국어', '5': '방과후' } } },
+      { from: '2026-07-01', to: '2026-07-31', baseId: null, grid: add },
+      { from: '2026-08-01', to: '2026-09-30', baseId: 'b', grid: { '2': { '1': '수학' }, '1': { '5': '방과후' } } },
+    ]);
+    // 적용된 표가 하나도 없으면 기간 전체가 새 표
+    expect(fillPieces([], { from: '2026-03-02', to: '2026-07-20' }, add)).toEqual([{ from: '2026-03-02', to: '2026-07-20', baseId: null, grid: add }]);
+    // 모든 날의 앞 표에 이미 그 칸이 있으면 채울 것이 없다
+    expect(fillPieces(list, { from: '2026-06-03', to: '2026-06-20' }, add)).toEqual([]);
+  });
+
+  it('여러 기간을 한 번에 빼기 (채운 조각만 앞 문서에서 빠진다)', () => {
+    const list = [tt('a', '2026-03-01', '2027-02-28')];
+    expect(planApplied(list, [{ from: '2026-04-01', to: '2026-04-30' }, { from: '2026-06-01', to: '2026-06-30' }])).toEqual({
+      reshape: [{ id: 'a', pieces: [{ from: '2026-03-01', to: '2026-03-31' }, { from: '2026-05-01', to: '2026-05-31' }, { from: '2026-07-01', to: '2027-02-28' }] }],
+      drop: [],
     });
   });
 });

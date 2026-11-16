@@ -129,6 +129,80 @@ describe('✅ 적용', () => {
   });
 });
 
+describe('🧩 빈 칸만 채우기 (P39 사용자 요청)', () => {
+  const input = (name: string, grid: Record<string, Record<string, string>>) => ({ name, grid, saveId: `s_${name}` });
+  /** 그날 수업 칸이 따르는 표의 그 칸 글자 */
+  const cellOn = (docs: Record<string, Stored<'timetables'>>, date: string, wd: string, n: string) => timetableOn(date, live(docs))?.grid[wd]?.[n] ?? '';
+
+  it('가운데 기간을 채우면 앞 표가 셋으로 - 가운데는 채운 표(이름 A + B, 앞 표의 saveId), 앞 표 과목은 그대로', () => {
+    const docs = { a: doc('a', { name: '1학기', saveId: 's_1', grid: { '1': { '1': '국어', '2': '수학' } } }) };
+    const after = run(docs, applyOps('u_me', docs, { from: '2026-10-05', to: '2026-10-30' }, input('방과후', { '1': { '1': '체육', '5': '방과후' } }), 6, ids(), 'fill'));
+    const made = Object.values(after).filter((d) => d.id !== 'a');
+    expect(after.a).toMatchObject({ from: '2026-03-01', to: '2026-10-04' });
+    expect(made).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: '1학기 + 방과후', from: '2026-10-05', to: '2026-10-30', grid: { '1': { '1': '국어', '2': '수학', '5': '방과후' } }, saveId: 's_1' }),
+        expect.objectContaining({ name: '1학기', from: '2026-10-31', to: '2027-02-28', grid: { '1': { '1': '국어', '2': '수학' } }, saveId: 's_1' }),
+      ]),
+    );
+    expect(['2026-10-02', '2026-10-05', '2026-10-30', '2026-11-02'].map((d) => [cellOn(after, d, '1', '1'), cellOn(after, d, '1', '5')])).toEqual([
+      ['국어', ''],
+      ['국어', '방과후'],
+      ['국어', '방과후'],
+      ['국어', ''],
+    ]);
+  });
+
+  it('적용된 표가 없는 날은 새 표 그대로 · 채울 칸이 없으면 쓰지 않는다 · 다 덮인 문서는 고쳐 쓴다', () => {
+    const docs = { a: doc('a', { from: '2026-03-02', to: '2026-07-20' }) };
+    // 1학기는 이미 그 칸(월 1교시)이 있어 채울 것이 없다 → 2학기(적용된 표 없음)만 새 표
+    const ops = applyOps('u_me', docs, { from: '2026-03-02', to: '2027-02-28' }, input('2학기', { '1': { '1': '도덕' } }), 6, ids(), 'fill');
+    expect(ops).toEqual([
+      { type: 'create', at: at('new1'), data: { name: '2학기', from: '2026-07-21', to: '2027-02-28', grid: { '1': { '1': '도덕' } }, saveId: 's_2학기' } },
+    ]);
+    expect(applyOps('u_me', docs, { from: '2026-04-01', to: '2026-04-30' }, input('같은', { '1': { '1': '도덕' } }), 6, ids(), 'fill')).toEqual([]);
+    // 앞 문서가 기간 안에 다 들면 그 문서를 채운 표로 고쳐 쓴다(휴지통이 쌓이지 않게)
+    const whole = applyOps('u_me', docs, { from: '2026-03-01', to: '2026-07-31' }, input('더', { '2': { '3': '영어' } }), 6, ids(), 'fill');
+    expect(whole).toEqual([
+      { type: 'create', at: at('new1'), data: { name: '더', from: '2026-03-01', to: '2026-03-01', grid: { '2': { '3': '영어' } }, saveId: 's_더' } },
+      {
+        type: 'patch',
+        at: at('a'),
+        changes: { name: '1학기 + 더', from: '2026-03-02', to: '2026-07-20', grid: { '1': { '1': '국어' }, '2': { '3': '영어' } }, saveId: 's_더' },
+        before: docs.a,
+      },
+      { type: 'create', at: at('new2'), data: { name: '더', from: '2026-07-21', to: '2026-07-31', grid: { '2': { '3': '영어' } }, saveId: 's_더' } },
+    ]);
+  });
+
+  it('덮어쓰기·채우기·빼기를 섞어 여러 번 - 날마다·칸마다 마지막 뜻대로, 적용된 문서끼리 겹치지 않는다', () => {
+    let docs: Record<string, Stored<'timetables'>> = { a: doc('a', { grid: { '1': { '1': '국어' } } }) };
+    // 날 → 월 1·2교시 (기대값)
+    const paint: Record<string, [string, string]> = {};
+    for (let d = '2026-03-01'; d <= '2027-02-28'; d = addDays(d, 1)) paint[d] = ['국어', ''];
+    const steps: Array<[string, string, 'replace' | 'fill' | null, [string, string]]> = [
+      ['2026-05-01', '2026-06-30', 'fill', ['체육', '수학']],
+      ['2026-06-01', '2026-07-31', 'replace', ['', '과학']],
+      ['2026-06-15', '2026-09-15', 'fill', ['음악', '미술']],
+      ['2026-08-01', '2026-08-31', null, ['', '']],
+      ['2026-07-20', '2026-10-10', 'fill', ['도덕', '']],
+      ['2027-02-01', '2027-03-31', 'fill', ['영어', '영어']],
+    ];
+    const next = ids();
+    for (const [from, to, mode, [p1, p2]] of steps) {
+      const grid = { '1': { '1': p1, '2': p2 } };
+      docs = run(docs, applyOps('u_me', docs, { from, to }, mode ? input(`${p1}${p2}`, grid) : null, 6, next, mode ?? 'replace'));
+      for (let d = from; d <= to; d = addDays(d, 1)) {
+        const was = paint[d] ?? ['', ''];
+        paint[d] = mode === 'fill' ? [was[0] || p1, was[1] || p2] : mode === 'replace' ? [p1, p2] : ['', ''];
+      }
+      const list = live(docs);
+      for (const x of list) for (const y of list) if (x !== y) expect(x.to < y.from || y.to < x.from, `${x.id}·${y.id} 겹침`).toBe(true);
+    }
+    for (const [d, want] of Object.entries(paint)) expect([cellOn(docs, d, '1', '1'), cellOn(docs, d, '1', '2')], d).toEqual(want);
+  });
+});
+
 describe('P37 전 자료 → 저장된 시간표로 베끼기', () => {
   it('쓰이는 적용된 문서마다 하나(같은 이름·표는 하나로) · saveId가 있거나 늘 가려진 것은 빼고 · 같은 저장된 시간표가 있으면 잇기만', () => {
     const docs = {
