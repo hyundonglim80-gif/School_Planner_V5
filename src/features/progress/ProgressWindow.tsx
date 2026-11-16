@@ -5,7 +5,7 @@
 //   저장은 개인 공간 progress/{planId}(💾·Ctrl+S, 바뀐 칸만) · 밀기는 누르는 대로 · 🗑️ 지우기 = 휴지통.
 //   행마다 🔗 = 그 차시에 메모 잇기(P10-4 - 고치던 것이 있으면 먼저 저장, 진도 쪽 그 행에만 적는다) · 숫자 = 이은 메모 보기.
 //   두 기기(P14-6 ■4): 손대지 않은 묶음(반·과목·시작일·차시 목록)은 다른 기기가 고친 것을 따라가고, 저장은 이 기기가 바꾼 묶음만.
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type React from 'react';
 import { useCommonSettings } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
@@ -324,6 +324,17 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     lastFocus.current = null;
   }, [draft?.id]);
 
+  // 행을 더하거나 붙여 넣은 뒤 옮길 칸 - 그 행이 그려진 바로 그때(useLayoutEffect) 옮긴다.
+  // 예전에는 한 프레임 뒤(requestAnimationFrame)라, 그 사이 친 글자(빠른 타자·느린 PC·점검)가 이전 칸에 들어갔다(P36-1 CI가 찾음).
+  // 누르기·키 입력에서 온 고침은 React가 그 자리에서 그리므로 다음 키보다 먼저 옮겨진다.
+  const pendingFocus = useRef<CellPos | null>(null);
+  useLayoutEffect(() => {
+    if (!pendingFocus.current) return;
+    const pos = pendingFocus.current;
+    pendingFocus.current = null;
+    focusCell(pos);
+  });
+
   /** after 행 바로 아래에 빈 행을 넣고 그 행의 col 칸에 커서. after가 없으면 마지막으로 커서가 있던 행(없었으면 맨 아래) */
   const addRow = (after?: number, col?: number) => {
     if (!draft) return;
@@ -331,8 +342,8 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
     const last = lastFocus.current;
     const { lessons: next, at } = insertRowAfter(draft.lessons, after ?? (last && last.row < len ? last.row : len - 1));
     const focusCol = col ?? last?.col ?? 2;
+    pendingFocus.current = { row: at, col: focusCol };
     update({ lessons: next });
-    requestAnimationFrame(() => focusCell({ row: at, col: focusCol }));
   };
 
   const removeRow = (row: number) => {
@@ -352,8 +363,8 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
   const copyRow = (row: number) => {
     if (!draft) return;
     const { lessons: next, at } = duplicateRow(draft.lessons, row);
+    pendingFocus.current = { row: at, col: lastFocus.current?.col ?? 2 };
     update({ lessons: next });
-    requestAnimationFrame(() => focusCell({ row: at, col: lastFocus.current?.col ?? 2 }));
   };
 
   const handleCellKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, row: number, col: number) => {
@@ -399,8 +410,8 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
         last = { row: i, col: col + c };
       });
     });
+    pendingFocus.current = last;
     update({ lessons: next });
-    requestAnimationFrame(() => focusCell(last));
   };
 
   // ── 저장·지우기·밀기 ──
