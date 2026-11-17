@@ -50,6 +50,7 @@ import { openEvaluation } from '../evaluations/open';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import { isShortcutId } from '../../domain/shortcuts';
 import { pressKeys } from '../../ui/pressKeys';
+import { FLOAT_TOOLS } from '../../ui/cardTools';
 
 const PERIOD_COLORS = [
   'bg-cobalt-50 text-cobalt-700 border-cobalt-200',
@@ -63,9 +64,9 @@ const PERIOD_COLORS = [
 /** 과목이 있는 교시 카드 왼쪽의 굵은 막대 - 교시 칩과 같은 색 (차례도 같다) */
 const PERIOD_ACCENTS = ['border-l-cobalt-400', 'border-l-emerald-400', 'border-l-amber-400', 'border-l-purple-400', 'border-l-rose-400', 'border-l-indigo-400', 'border-l-slate-400'];
 
-/** 마우스를 올렸을 때만 보이는 반 도구 (P10-2) - 휴대폰(sm 아래)은 마우스가 없으니 지금처럼 늘, 키보드로 오면 보인다.
- *  📊🔗✏️는 예전대로 휴대폰에서도 숨는다 - 휴대폰은 교시를 눌러 연 수정 칸에서 (그 줄에 모두 있다) */
-const HOVER_ONLY = 'sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100';
+/** 카드 단추 (P41-2 - 예전 P10-2 '마우스를 올렸을 때만'은 안 보여도 자리를 차지했다): 🙋 출결·🪑·🎯·📊·🔗·✏️는 PC에서 카드 오른쪽 위에 떠서(ui/cardTools),
+ *  적힌 것이 있는 것(출결 요약·📊 n·📑 n)만 카드 줄에 늘. 휴대폰은 적힌 것만 - 나머지는 교시를 눌러 연 수정 칸에서(그 칸에 모두 있다) */
+const TOOL_BTN = 'text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 text-xs cursor-pointer';
 /** 지난 시간을 거슬러 찾는 날 수 */
 const PREV_LOOKBACK_DAYS = 60;
 
@@ -360,7 +361,7 @@ export default function DayLessons({ date }: { date: string }) {
                             {mark.lesson.content}
                           </span>
                         )}
-                        {slotClass && (
+                        {slotClass && attSummary && (
                           <button
                             type="button"
                             data-subject-attendance={n}
@@ -369,13 +370,9 @@ export default function DayLessons({ date }: { date: string }) {
                               openAtt();
                             }}
                             title={`${slot?.cls} ${n}교시 교과 출결 (결과·지각·조퇴)`}
-                            className={`shrink-0 text-2xs font-bold rounded-full px-1.5 py-0.5 border transition-all cursor-pointer ${
-                              attSummary
-                                ? 'text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100'
-                                : `text-slate-400 bg-white border-slate-200 hover:text-slate-600 hover:border-slate-400 ${HOVER_ONLY}`
-                            }`}
+                            className="shrink-0 text-2xs font-bold rounded-full px-1.5 py-0.5 border transition-all cursor-pointer text-rose-700 bg-rose-50 border-rose-200 hover:bg-rose-100"
                           >
-                            {attSummary ? <span data-subject-att-chip>{attSummary}</span> : '🙋 출결'}
+                            <span data-subject-att-chip>{attSummary}</span>
                           </button>
                         )}
                         {isNow && nowState?.kind === 'during' && (
@@ -398,35 +395,8 @@ export default function DayLessons({ date }: { date: string }) {
                             📑 {linkCount}
                           </button>
                         )}
-                      </div>
-                      <div className="flex items-center gap-0.5 shrink-0">
-                        {/* 교과 모드: 이 반으로 바로 가는 학급 도구 (V4 S8) - 📊🔗✏️처럼 마우스를 올렸을 때만 (P10-2, 휴대폰은 늘) */}
-                        {slotClass && (
-                          <span data-class-tools={slotClass.id} className="flex items-center gap-0.5">
-                            {(
-                              [
-                                ['seating', '🪑', '자리표'],
-                                ['drawStudent', '🎯', '발표자 뽑기'],
-                              ] as const
-                            ).map(([tool, icon, label]) => (
-                              <button
-                                key={tool}
-                                type="button"
-                                data-class-tool-btn={tool}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openSeating({ classId: slotClass.id, draw: tool === 'drawStudent' });
-                                }}
-                                title={`${slot?.cls} ${label}`}
-                                aria-label={`${slot?.cls} ${label}`}
-                                className={`text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 text-xs transition-all cursor-pointer ${HOVER_ONLY}`}
-                              >
-                                {icon}
-                              </button>
-                            ))}
-                          </span>
-                        )}
-                        {sid && (
+                        {/* 적힌 것이 있는 📊만 카드 줄에 늘 (P41-2) - 칩들 뒤에 붙인다: 오른쪽 끝에 두면 마우스를 올렸을 때 떠 있는 단추 묶음이 덮는다 */}
+                        {sid && evalCount > 0 && (
                           <button
                             type="button"
                             data-lesson-evals={n}
@@ -435,42 +405,100 @@ export default function DayLessons({ date }: { date: string }) {
                               e.stopPropagation();
                               openEval();
                             }}
-                            className={`p-1 rounded hover:bg-slate-100 text-xs transition-all cursor-pointer ${
-                              evalCount ? 'text-emerald-700 font-bold' : 'opacity-0 group-hover:opacity-100 text-slate-400 hover:text-emerald-600'
-                            }`}
-                            title={evalCount ? `조사표 ${evalCount}건` : slot?.cls ? `${slot.cls} 조사표` : '조사표 관리'}
-                            aria-label={evalCount ? `조사표 ${evalCount}건` : '조사표 관리'}
+                            className="shrink-0 px-1 py-0.5 rounded hover:bg-slate-100 text-xs transition-all cursor-pointer text-emerald-700 font-bold"
+                            title={`조사표 ${evalCount}건`}
+                            aria-label={`조사표 ${evalCount}건`}
                           >
-                            📊{evalCount || ''}
+                            📊{evalCount}
                           </button>
                         )}
-                        <button
-                          type="button"
-                          data-lesson-link={n}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (sid) openLinker({ sid, id });
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 text-xs transition-all cursor-pointer"
-                          title="링크 추가"
-                          aria-label="링크 추가"
-                        >
-                          🔗
-                        </button>
-                        <button
-                          type="button"
-                          data-lesson-edit={n}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startEdit(c);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 text-xs transition-all cursor-pointer"
-                          title="수업 수정"
-                          aria-label="수업 수정"
-                        >
-                          ✏️
-                        </button>
                       </div>
+                    </div>
+                    {/* 떠 있는 단추 묶음 (P41-2 - PC만, 마우스를 올리거나 키보드 초점일 때 - 자리를 차지하지 않는다) */}
+                    <div data-lesson-tools={n} className={FLOAT_TOOLS}>
+                      {slotClass && !attSummary && (
+                        <button
+                          type="button"
+                          data-subject-attendance={n}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openAtt();
+                          }}
+                          title={`${slot?.cls} ${n}교시 교과 출결 (결과·지각·조퇴)`}
+                          aria-label={`${slot?.cls} ${n}교시 교과 출결`}
+                          className={TOOL_BTN}
+                        >
+                          🙋
+                        </button>
+                      )}
+                      {/* 교과 모드: 이 반으로 바로 가는 학급 도구 (V4 S8) */}
+                      {slotClass && (
+                        <span data-class-tools={slotClass.id} className="flex items-center gap-0.5">
+                          {(
+                            [
+                              ['seating', '🪑', '자리표'],
+                              ['drawStudent', '🎯', '발표자 뽑기'],
+                            ] as const
+                          ).map(([tool, icon, label]) => (
+                            <button
+                              key={tool}
+                              type="button"
+                              data-class-tool-btn={tool}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openSeating({ classId: slotClass.id, draw: tool === 'drawStudent' });
+                              }}
+                              title={`${slot?.cls} ${label}`}
+                              aria-label={`${slot?.cls} ${label}`}
+                              className={TOOL_BTN}
+                            >
+                              {icon}
+                            </button>
+                          ))}
+                        </span>
+                      )}
+                      {sid && !evalCount && (
+                        <button
+                          type="button"
+                          data-lesson-evals={n}
+                          data-eval-count={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEval();
+                          }}
+                          className={`${TOOL_BTN} hover:text-emerald-600`}
+                          title={slot?.cls ? `${slot.cls} 조사표` : '조사표 관리'}
+                          aria-label="조사표 관리"
+                        >
+                          📊
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        data-lesson-link={n}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (sid) openLinker({ sid, id });
+                        }}
+                        className={TOOL_BTN}
+                        title="링크 추가"
+                        aria-label="링크 추가"
+                      >
+                        🔗
+                      </button>
+                      <button
+                        type="button"
+                        data-lesson-edit={n}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEdit(c);
+                        }}
+                        className={TOOL_BTN}
+                        title="수업 수정"
+                        aria-label="수업 수정"
+                      >
+                        ✏️
+                      </button>
                     </div>
 
                     {prevNote && prev && (

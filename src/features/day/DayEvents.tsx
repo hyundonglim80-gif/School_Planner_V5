@@ -43,6 +43,7 @@ import { gcalKey, gcalListOn } from '../../domain/gcalShow';
 import { useGcalShown } from '../gcal/gcalView';
 import { GcalDayCard, GcalGroupHeader } from '../gcal/GcalItems';
 import { pressKeys } from '../../ui/pressKeys';
+import { FLOAT_TOOLS } from '../../ui/cardTools';
 
 const NONE: readonly ItemDoc[] = [];
 
@@ -381,7 +382,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
         onCardClick(e);
       }}
       title={overlay ? `${overlay.name} 공간 일정 - 클릭하여 오른쪽 칸에서 수정 (겹쳐 보기)` : '클릭하여 오른쪽 칸에서 수정 (Ctrl·Shift와 함께 누르면 여러 개 고르기)'}
-      className={`group flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-2xs transition-all cursor-pointer min-w-0 select-none sm:select-auto ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
+      className={`group relative flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-2xs transition-all cursor-pointer min-w-0 select-none sm:select-auto ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
         picked
           ? 'border-primary ring-2 ring-primary bg-blue-50 text-slate-800'
           : editing
@@ -427,8 +428,9 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
             </button>
           </div>
         )}
-        {/* 마우스를 올리면 나오는 ✏️ 수정 · 🗑️ 삭제 (V4 EventItemActions - 확인 창 없이 지우고 안내의 되돌리기로 돌아온다) */}
-        <span className="shrink-0 sm:order-3 inline-flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* 마우스를 올리면 나오는 ✏️ 수정 · 🗑️ 삭제 (V4 EventItemActions - 확인 창 없이 지우고 안내의 되돌리기로 돌아온다).
+            P41-2: 카드 오른쪽 위에 떠서 자리를 차지하지 않는다(ui/cardTools) · 휴대폰에는 없다 - 예전에는 휴대폰에서도 안 보인 채 눌려 카드 오른쪽 위를 누르면 지워졌다. 휴대폰은 카드를 눌러 연 수정 칸에서 */}
+        <span data-event-tools className={FLOAT_TOOLS}>
           <button
             type="button"
             data-event-edit
@@ -436,7 +438,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               stop(e);
               onOpen();
             }}
-            className="px-1 text-2xs leading-none text-slate-400 hover:text-primary cursor-pointer"
+            className="p-1 text-xs leading-none text-slate-400 hover:text-primary cursor-pointer"
             title="일정 수정"
             aria-label="일정 수정"
           >
@@ -450,7 +452,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
                 stop(e);
                 onDelete();
               }}
-              className="px-1 text-2xs leading-none text-slate-400 hover:text-red-500 cursor-pointer"
+              className="p-1 text-xs leading-none text-slate-400 hover:text-red-500 cursor-pointer"
               title="일정 삭제"
               aria-label="일정 삭제"
             >

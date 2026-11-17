@@ -23,6 +23,7 @@ import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
 import { pressKeys } from '../../ui/pressKeys';
 import EventDoneChip from '../events/EventDoneChip';
+import { FLOAT_TOOLS } from '../../ui/cardTools';
 
 export interface EntryCardProps {
   item: ItemDoc;
@@ -269,8 +270,8 @@ export default function EntryCard(props: EntryCardProps) {
             </span>
           )}
         </div>
-        {/* 마우스를 올렸을 때만 - 자리를 차지하지 않게 위에 띄운다 (칩이 밀려 줄바꿈되지 않게) */}
-        <div className="hidden sm:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 absolute top-2 right-2 bg-white/95 rounded-lg shadow-xs">
+        {/* 마우스를 올렸을 때만 - 자리를 차지하지 않게 위에 띄운다 (칩이 밀려 줄바꿈되지 않게) - 수업·일정 카드와 같은 틀(P41-2 ui/cardTools) */}
+        <div data-entry-tools className={FLOAT_TOOLS}>
           {props.onAddLink && (
             <button
               type="button"

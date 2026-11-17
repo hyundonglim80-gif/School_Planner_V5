@@ -345,13 +345,25 @@ try {
   const tools3 = p3.page.locator(sel('class-tools', C3));
   r.check(await waitFor(tools3, 8000), "교시 카드 '5-1 과학'에 반 도구");
   r.check(!(await p3.page.locator(sel('lessons-tool', 'drawStudent')).count()), '전담은 머리줄 🎯가 없다');
-  // 반 도구·🙋 출결은 마우스를 올렸을 때만 (P10-2 - 📊🔗✏️처럼)
+  // 반 도구·🙋 출결·📊🔗✏️는 카드 위에 떠 있는 묶음 - 마우스를 올렸을 때만 보이고, 숨어 있어도 자리를 차지하지 않는다 (P41-2)
   const opacity = (loc) => loc.evaluate((el) => getComputedStyle(el).opacity);
   const lessonCard3 = p3.page.locator(sel('lesson-card', 3));
+  const float3 = lessonCard3.locator(sel('lesson-tools', 3));
   await p3.page.mouse.move(5, 5);
-  r.check(await waitFor(async () => (await opacity(tools3.locator(sel('class-tool-btn', 'seating')))) === '0' && (await opacity(lessonCard3.locator(sel('subject-attendance', 3)))) === '0', 3000), '마우스를 올리기 전에는 🪑·🎯·🙋 숨김');
+  r.check(
+    (await float3.locator(sel('class-tools', C3)).count()) === 1 && (await float3.locator(sel('subject-attendance', 3)).count()) === 1,
+    '🪑·🎯·🙋(적힌 것 없음)은 떠 있는 묶음 안',
+  );
+  r.check(await waitFor(async () => (await opacity(float3)) === '0', 3000), '마우스를 올리기 전에는 🪑·🎯·🙋 숨김');
+  r.check((await float3.evaluate((el) => getComputedStyle(el).position)) === 'absolute', '묶음은 카드 위에 떠 있다 (position absolute)');
+  // 숨은 동안 첫 줄 글 칸이 카드 폭을 거의 다 쓴다 - 예전에는 숨은 단추 여섯(🙋 출결·🪑·🎯·📊·🔗·✏️)이 170px쯤 차지했다
+  const widths = await lessonCard3.evaluate((card) => {
+    const left = card.querySelector('[data-lesson-subject]').parentElement;
+    return { card: Math.round(card.getBoundingClientRect().width), left: Math.round(left.getBoundingClientRect().width) };
+  });
+  r.check(widths.left >= widths.card - 80, `첫 줄 글 칸 ${widths.left}px / 카드 ${widths.card}px (▲▼·여백만 뺀다)`);
   await lessonCard3.hover();
-  r.check(await waitFor(async () => (await opacity(tools3.locator(sel('class-tool-btn', 'seating')))) === '1' && (await opacity(lessonCard3.locator(sel('subject-attendance', 3)))) === '1', 3000), '마우스를 올리면 보인다');
+  r.check(await waitFor(async () => (await opacity(float3)) === '1', 3000), '마우스를 올리면 보인다');
   // 오른쪽 N교시 수정 칸에도 같은 단추 (고치는 동안 사라지지 않게 - P10-2, 10-22 #94 오른쪽 칸으로)
   await lessonCard3.click();
   const ed = p3.page.locator(sel('lesson-panel'));
@@ -373,6 +385,17 @@ try {
   const win3 = p3.page.locator(sel('seating-window', C3));
   r.check(await waitFor(win3, 8000), '🎯 뽑기 = 그 반 자리표');
   r.check(await waitFor(win3.locator(sel('seating-box', 'draw'))), '뽑기 칸이 펴져 있다 (자리표가 없어도 명렬표로)');
+  // 휴대폰(390): 적힌 것이 없는 단추는 카드에 없다 - 교시를 눌러 연 수정 칸에서 (P41-2 - 예전에는 🙋·🪑·🎯가 카드마다 늘 보였다)
+  const phone = await newPage(browser, { width: 390, height: 844, isMobile: true, hasTouch: true });
+  await open(phone.page, `#/day/${D3}`, { as: 3 });
+  const phCard = phone.page.locator(sel('lesson-card', 3));
+  r.check(await waitFor(phCard, 10000), '휴대폰 하루 화면 3교시 카드');
+  r.check(
+    !(await phCard.locator(sel('lesson-tools', 3)).isVisible()) && !(await phCard.locator(sel('subject-attendance', 3)).isVisible()) && !(await phCard.locator(sel('class-tool-btn', 'seating')).isVisible()),
+    '휴대폰 카드에는 🙋·🪑·🎯·📊·🔗·✏️가 보이지 않는다 (수정 칸에서)',
+  );
+  r.check(phone.errors.length === 0, '휴대폰 화면 오류 없음', phone.errors.join(' | '));
+  await phone.page.context().close();
   r.check(p3.errors.length === 0, '화면 오류 없음', p3.errors.join(' | '));
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
