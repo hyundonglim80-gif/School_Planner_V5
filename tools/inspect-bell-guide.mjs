@@ -75,6 +75,8 @@ try {
     await p2.clock.install({ time: new Date('2026-10-12T08:58:50') });
     await open(p2, '#/day/2026-10-12');
     await waitFor(p2.locator(sel('day-bell')), 8000);
+    // 계정 설정(종 켜짐)을 받은 뒤에 시계를 돌린다 - 받기 전에 08:59:00을 지나면 종 셈이 그 뒤부터라 울리지 않는다(P42-2 11-17 전체 점검에서 한 번)
+    await waitFor(async () => ((await p2.locator(sel('day-bell')).textContent()) ?? '').includes('🔔'), 8000);
     await p2.clock.runFor(15_000);
     const rang = await waitFor(async () => (await p2.evaluate(() => window.__spBellLast || '')).includes('1교시 시작'), 5000);
     r.check(rang, `교시 시작 1분 전에 종 (${await p2.evaluate(() => window.__spBellLast || '')})`);

@@ -392,7 +392,8 @@ try {
   c('안내에 결과 표시', ((await told.textContent()) ?? '').includes('✅ 배포됨'), await told.textContent());
   await told.locator(sel('toast-action', '보기')).click();
   // 안내·알림으로 연 칸은 보기 칸 (11-09 - 대화·이어서 요청은 보기 칸에도 있다)
-  const viewText = (p) => p.locator(sel('note-view-body')).textContent().catch(() => '');
+  // 한 줄 메모는 그 줄이 굵은 제목(note-view-title)이고 본문 칸은 없다(P35-1 11-13 - 점검이 본문 칸을 찾아 셋이 틀렸다, P42-2에 고침)
+  const viewText = (p) => p.locator(sel('note-view-title')).textContent().catch(() => '');
   c('보기 = 그 메모 칸', await waitFor(async () => ((await viewText(page)) ?? '').trim() === '새 답 점검 가', 8000));
   c('보기로 열어도 본 것', await waitFor(async () => (await seenOf(pathA)) === 400, 8000), String(await seenOf(pathA)));
 

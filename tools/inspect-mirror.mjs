@@ -113,11 +113,15 @@ try {
 
   r.section('IndexedDB를 지운 채로도 서버 자료가 들어온다');
   const cdp = await a.ctx.newCDPSession(a.page);
-  await cdp.send('Storage.clearDataForOrigin', { origin: new URL(SITE).origin, storageTypes: 'indexeddb' });
+  // 사본 DB만 지운다(DevTools 지우기 = 열린 연결을 브라우저가 끊는다 - 앱의 terminated 길). 사이트 IndexedDB를 통째로 지우면(Storage.clearDataForOrigin)
+  // 로그인 정보(firebaseLocalStorageDb)까지 지워져 몇 초 뒤 로그아웃 → 그새 온 자료만 들어와 앞 점검에 따라 틀렸다(P42-2 11-17 - 메모 점검 바로 뒤 2초 넘김·혼자는 통과)
+  await cdp.send('IndexedDB.deleteDatabase', { securityOrigin: new URL(SITE).origin, databaseName: DB });
   r.check(await waitFor(async () => (await mirror(a.page)).persisted === 'memory', 5000), '도는 중에 지우면 메모리로만(memory)');
   await serverWrite('mirrorD', '사본을 지운 뒤');
   const afterWipe = await within2s(a.page, 'mirrorD');
   r.check(afterWipe.ok, `그 뒤에도 서버 자료가 들어온다 (${afterWipe.ms}ms)`);
+  await a.page.waitForTimeout(3000);
+  r.check((await a.page.locator(sel('session', 'signed-in')).count()) === 1 && (await mirror(a.page)).persisted === 'memory', '사본만 잃었으면 로그인·구독은 그대로 (3초 뒤)');
   r.check(!(await dbNames(a.page)).includes(DB), '이 탭은 사본을 다시 만들지 않는다(빈 DB에 커서만 앞서지 않게)');
 
   // 처음부터 IndexedDB가 막힌 브라우저 (사본만 막는다 - 로그인 저장은 둔다)

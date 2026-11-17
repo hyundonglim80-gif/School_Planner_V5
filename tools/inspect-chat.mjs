@@ -597,6 +597,11 @@ try {
     await page.waitForTimeout(1500);
     r.check(!!sw && (await osNotes(allTag)).length === 0, '보는 앱 창이 있으면 OS 알림을 띄우지 않는다 (앱 안내)');
     await page.goto('about:blank');
+    // 서비스 워커가 '보는 앱 창'을 더는 세지 않을 때 보낸다 - 떠난 바로 뒤 첫 푸시가 앱 안내 갈래로 빠져 알림이 없었다(P42-2 11-17 전체 점검에서 한 번)
+    await waitFor(
+      () => sw.evaluate(async () => !(await self.clients.matchAll({ type: 'window', includeUncontrolled: true })).some((c) => c.visibilityState === 'visible' && c.url.startsWith(self.registration.scope))),
+      5000,
+    );
     await push(ALL_KEY, GROUP, '이점검');
     r.check(await waitFor(async () => (await osNotes(allTag)).length === 1, 8000), '앱 창이 없으면 방마다 OS 알림 하나');
     let note = (await osNotes(allTag))[0];
