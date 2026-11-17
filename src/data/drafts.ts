@@ -42,7 +42,9 @@ function open(uid: string): Promise<IDBPDatabase | null> {
   let p = dbs.get(uid);
   if (!p) {
     const opening = openDB(draftsDbName(uid), 1, {
-      upgrade(db) {
+      upgrade(db, _old, _new, tx) {
+        // 판 올리기 트랜잭션이 끊기면(그사이 지움·창이 닫힘) 여는 약속이 실패를 알린다 - idb가 따로 만드는 그 트랜잭션의 done은 받아 둔다(받지 않으면 '처리하지 않은 오류' - P41-1 CI)
+        void tx.done.catch(() => {});
         db.createObjectStore('drafts', { keyPath: 'key' });
       },
       // 다른 탭이 로그아웃하며 지우려 한다 - 비켜 준다. 안 비키면 그 탭의 정리가 끝나지 않는다(P22-4)

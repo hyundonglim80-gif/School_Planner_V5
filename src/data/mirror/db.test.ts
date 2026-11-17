@@ -99,4 +99,25 @@ describe('기기 사본 저장소', () => {
     const again = await open(uid);
     expect((await again.load('u_a', 'items')).docs.size).toBe(0);
   });
+
+  it("판 올리기가 끊겨도 '처리하지 않은 오류'가 남지 않는다 - 여는 약속만 실패 (P41-1 CI 흔들림)", async () => {
+    // 판 올리기 트랜잭션을 그 직후에 끊는다(그사이 다른 탭이 지움·창이 닫힘과 같다). idb는 그 트랜잭션의 done 약속을 따로 만든다
+    const realOpen = indexedDB.open.bind(indexedDB);
+    const spy = vi.spyOn(indexedDB, 'open').mockImplementation((name: string, version?: number) => {
+      const req = realOpen(name, version);
+      req.addEventListener('upgradeneeded', () => queueMicrotask(() => req.transaction?.abort()));
+      return req;
+    });
+    const unhandled: unknown[] = [];
+    const onUnhandled = (e: unknown) => void unhandled.push(e);
+    process.on('unhandledRejection', onUnhandled);
+    try {
+      await expect(openMirrorDb(freshUid(), vi.fn())).rejects.toBeTruthy();
+      await new Promise((r) => setTimeout(r, 50));
+      expect(unhandled).toEqual([]);
+    } finally {
+      process.off('unhandledRejection', onUnhandled);
+      spy.mockRestore();
+    }
+  });
 });

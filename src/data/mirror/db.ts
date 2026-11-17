@@ -126,7 +126,9 @@ export async function openMirrorDb(uid: string, onLost: (why: string) => void, t
   };
   const idb: IDBPDatabase = await withTimeout(
     openDB(mirrorDbName(uid), MIRROR_DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, _old, _new, tx) {
+        // 판 올리기 트랜잭션이 끊기면(그사이 지움·창이 닫힘) 여는 약속이 실패를 알린다 - idb가 따로 만드는 그 트랜잭션의 done은 받아 둔다(받지 않으면 '처리하지 않은 오류' - P41-1 CI)
+        void tx.done.catch(() => {});
         if (!db.objectStoreNames.contains('docs')) db.createObjectStore('docs', { keyPath: ['sid', 'coll', 'id'] });
         if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: ['sid', 'coll'] });
       },
@@ -154,6 +156,7 @@ export async function openMirrorDb(uid: string, onLost: (why: string) => void, t
       const [rows, metaRow] = await Promise.all([
         tx.objectStore('docs').getAll(range(sid, coll)) as Promise<DocRow[]>,
         tx.objectStore('meta').get([sid, coll]) as Promise<MetaRow | undefined>,
+        tx.done,
       ]);
       const docs = new Map<string, Plain>();
       for (const row of rows) docs.set(row.id, decodeDoc(row.data));
