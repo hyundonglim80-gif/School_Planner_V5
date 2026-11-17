@@ -1,5 +1,6 @@
 // 환경설정 '보기' 탭 (MENU 3-6). 모두 누르는 즉시 바뀐다 - V4는 글자 크기·창 위치·화면 밝기만 즉시, 나머지는 '저장'을 기다렸다.
 // 화면 밝기·고대비·어둡게를 부드럽게(이 기기에만)·색 테마·색약 배려·꾸미기(계정에 하나 - PC·휴대폰 같게, P20) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
+// 어디에 남는지는 칸 제목 옆 같은 모양 표시(parts SavedBadge)로 - 글로 되풀이하지 않는다(P44-3 11-17: 칸 아홉에 안내 열 개, '이 기기' 10번·'계정에' 7번·'PC와 휴대폰' 8번·'인쇄' 5번).
 import { useEffect, useState } from 'react';
 import { setPopupStyle, useLayoutPrefs, windowMode } from '../../app/layoutPrefs';
 import { detectDeviceKind } from '../../app/deviceKind';
@@ -20,8 +21,8 @@ import FontSizeRows from './FontSizeRows';
 import GcalOverlaySection from '../gcal/GcalOverlaySection';
 
 const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
-  pc: "'오른쪽 칸'은 화면을 나눠 오른쪽에 띄웁니다(왼쪽 화면을 보며 쓸 수 있다). '팝업창'은 창마다 브라우저 새 창으로 띄워 브라우저 밖·다른 모니터로 옮길 수 있습니다 - 자리와 크기는 창마다 기억합니다.",
-  mobile: "'오른쪽 칸'은 오른쪽에서 나오는 배너로, '가운데 창'은 화면 가운데에 띄웁니다(메모·일정을 쓰는 칸은 늘 오른쪽).",
+  pc: "오른쪽 칸 = 화면을 나눠 오른쪽에 · 팝업창 = 창마다 브라우저 새 창(다른 모니터로 옮길 수 있고 자리·크기는 창마다 기억)",
+  mobile: '오른쪽 칸 = 오른쪽에서 나오는 배너 · 가운데 창 = 화면 가운데에 (쓰는 칸은 늘 오른쪽)',
 };
 
 export default function ViewTab() {
@@ -52,16 +53,12 @@ export default function ViewTab() {
 
   return (
     <div>
-      <p className="px-5 pt-4 text-xs text-slate-500 leading-relaxed">
-        이 탭은 고르는 즉시 바뀌고, <strong className="text-slate-700">PC와 휴대폰을 따로</strong> 계정에 저장합니다(화면 밝기는 이 기기에만, 색 테마·꾸미기·겹쳐 볼 구글 캘린더는 PC·휴대폰 같게).
-      </p>
-
-      <Section id="display" title="화면 표시" desc="둘째 줄의 주말 / 일정 / 수업 단추와 같은 값입니다.">
+      <Section id="display" title="화면 표시" saved="split" desc="둘째 줄 주말 · 일정 · 수업 단추와 같은 값">
         <ToggleRow
           id="showWeekend"
           option="showWeekend"
           label="주말"
-          hint={withKey('토·일 칸을 달력에 보여줍니다', 'toggleWeekend')}
+          hint={withKey('토·일 칸', 'toggleWeekend')}
           checked={nav.showWeekend}
           onChange={(v) => setToggle('showWeekend', v)}
         />
@@ -69,7 +66,7 @@ export default function ViewTab() {
           id="showEvents"
           option="showEvents"
           label="일정"
-          hint={withKey('하루·주간·월간·년간에 일정 항목을 보여줍니다', 'toggleEvents')}
+          hint={withKey('하루·주간·월간·년간의 일정', 'toggleEvents')}
           checked={nav.showEvents}
           onChange={(v) => setToggle('showEvents', v)}
         />
@@ -77,7 +74,7 @@ export default function ViewTab() {
           id="showClass"
           option="showClass"
           label="수업"
-          hint={withKey('시간표와 교시 항목을 보여줍니다', 'toggleClass')}
+          hint={withKey('시간표와 교시', 'toggleClass')}
           checked={nav.showClass}
           onChange={(v) => setToggle('showClass', v)}
         />
@@ -86,7 +83,7 @@ export default function ViewTab() {
           id="enableScrollNav"
           option="enableScrollNav"
           label="스크롤로 페이지 이동"
-          hint="화면 맨 위·맨 아래에서 더 굴리거나 당기면 이전·다음 날짜로, 휴대폰에서 옆으로 밀면 이전·다음 화면으로 넘어갑니다"
+          hint="맨 위·맨 아래에서 더 굴리면 이전·다음 날짜 · 휴대폰은 옆으로 밀면 이전·다음 화면"
           checked={nav.enableScrollNav}
           onChange={setEnableScrollNav}
         />
@@ -96,12 +93,13 @@ export default function ViewTab() {
       <Section
         id="gcalOverlay"
         title="📅 구글 캘린더 겹쳐 보기"
+        saved="all"
         desc={
           <>
-            고른 구글 캘린더의 일정을 이 기기에 받아 두고 일정 칸에 겹쳐 봅니다(읽기만 - 고치기는 구글 캘린더에서). 받은 일정은 앱 자료·백업에 들지 않고, 로그아웃하면
-            지웁니다. 앱이 보내는 SP(work)·SP(class)·SP(commentary)는 두 번 보이지 않게 목록에서 뺍니다.
+            고른 캘린더의 일정이 일정 칸에 점선 줄로 보입니다(읽기만 - 고치기는 구글 캘린더에서). 받은 일정은 이 기기에만 두고 백업에 들지 않습니다. 앱이 보내는
+            SP(…) 캘린더는 목록에 없습니다.
             <span data-gcal-overlay-how className="block mt-1">
-              하루·주간·월간·년간·한눈에 화면의 일정 칸에 점선 줄로 보이고, 누르면 자세히 보거나 구글 캘린더에서 엽니다. 둘째 줄 &apos;📅 구글&apos;로 이 기기에서 끄고 켭니다(인쇄에는 들지 않습니다).
+              줄을 누르면 자세히 보거나 구글 캘린더에서 엽니다 · 둘째 줄 &apos;📅 구글&apos;로 이 기기에서 끄고 켭니다.
             </span>
           </>
         }
@@ -113,13 +111,8 @@ export default function ViewTab() {
       <Section
         id="fontScale"
         title="글자 크기"
-        desc={
-          <>
-            화면마다 따로 기억합니다. <strong className="text-slate-600">− / +</strong>는 누를 때마다 5%씩, <strong className="text-slate-600">초기화</strong>는 100%입니다. 맨 위
-            머리줄은 늘 100%로 둡니다. 단축키 탭의 <strong className="text-slate-600">글자 작게 / 크게 / 초기화</strong>로 키를 정하면 지금 보는 화면이 바뀝니다
-            {device === 'pc' && ' (PC의 한눈에 화면은 볼 것이 많아 100%가 다른 화면의 90% 크기)'}.
-          </>
-        }
+        saved="split"
+        desc={`화면마다 따로 · − / + = 5%씩 · 맨 위 머리줄은 늘 100%${device === 'pc' ? ' · 한눈에는 볼 것이 많아 100%가 다른 화면의 90% 크기' : ''}`}
       >
         <FontSizeRows />
       </Section>
@@ -127,7 +120,7 @@ export default function ViewTab() {
       <Section
         id="theme"
         title="화면 밝기"
-        desc="어둡게 하면 밤이나 어두운 교실에서 눈이 덜 부십니다. 이 기기에만 남습니다. 인쇄는 늘 밝게 찍힙니다."
+        saved="device"
       >
         <Choices
           name="theme"
@@ -142,7 +135,8 @@ export default function ViewTab() {
       <Section
         id="palette"
         title="🎨 색 테마"
-        desc="단추·고른 칸의 강조색과 바탕 빛깔을 바꿉니다. 계정에 저장해 PC와 휴대폰이 같은 테마이고, 화면 밝기와 따로 고릅니다. 토요일 파랑·이월·완료·라벨 색은 그대로, 인쇄는 늘 기본 색입니다."
+        saved="all"
+        desc="단추·고른 칸의 강조색과 바탕 빛깔 (토요일 파랑·이월·완료·라벨 색은 그대로)"
       >
         <div className="flex flex-wrap gap-1.5">
           {PALETTES.map((p) => {
@@ -174,7 +168,8 @@ export default function ViewTab() {
       <Section
         id="decor"
         title="✨ 꾸미기"
-        desc="머리줄 뒤에 흐린 그림을 깔고, 비어 있는 칸에 작은 그림을 넣습니다. 계정에 저장해 PC와 휴대폰이 같습니다. 글자·단추 색은 그대로이고, 고대비를 켜면 머리줄 그림은 쉽니다. 인쇄에는 나오지 않습니다."
+        saved="all"
+        desc="머리줄 뒤 흐린 그림과 빈 칸의 작은 그림 (고대비를 켜면 머리줄 그림은 쉰다)"
       >
         <div className="flex flex-wrap gap-1.5">
           {DECOR_OPTIONS.map((o) => {
@@ -198,15 +193,16 @@ export default function ViewTab() {
             );
           })}
         </div>
-        <p className="text-xs text-slate-400 mt-1.5">계절 따라: 3~5월 봄 · 6~8월 여름 · 9~11월 가을 · 12~2월 겨울로 저절로 바뀝니다.</p>
+        <p className="text-xs text-slate-400 mt-1.5">계절 따라 = 3~5월 봄 · 6~8월 여름 · 9~11월 가을 · 12~2월 겨울</p>
       </Section>
 
-      <Section id="viewAids" title="보기 쉽게" desc="셋은 따로 켜고 끕니다. 색 테마·화면 밝기와 섞어 쓸 수 있고, 인쇄는 늘 기본 색입니다.">
+      <Section id="viewAids" title="보기 쉽게">
         <ToggleRow
           id="contrast"
           option="contrast"
           label="고대비"
-          hint="글자와 테두리를 진하게 합니다. 교실 TV·전자칠판에 띄울 때 좋습니다. 이 기기에만 남습니다."
+          saved="device"
+          hint="글자와 테두리를 진하게 - 교실 TV·전자칠판에"
           checked={aids.contrast}
           onChange={setContrast}
         />
@@ -214,7 +210,8 @@ export default function ViewTab() {
           id="cvd"
           option="cvd"
           label="색약 배려"
-          hint="완료 초록을 파랑 쪽으로, 삭제·중요 빨강을 주황 쪽으로 바꾸고 색으로만 나누던 곳에 표시를 더합니다(겹친 일정 👥·자리 모둠 번호·단축키 겹침 ⚠). 계정에 저장해 PC와 휴대폰이 같습니다."
+          saved="all"
+          hint="완료 초록 → 파랑 쪽, 삭제·중요 빨강 → 주황 쪽 · 색으로만 나누던 곳에 표시(겹친 일정 👥·자리 모둠 번호·단축키 겹침 ⚠)"
           checked={cvd}
           onChange={setCvd}
         />
@@ -222,7 +219,8 @@ export default function ViewTab() {
           id="dim"
           option="dim"
           label="어둡게를 부드럽게"
-          hint="어두운 화면의 바탕을 조금 밝히고 눈부신 글자를 낮춥니다. 어둡게일 때만 바뀌고, 고대비를 켜면 쉽니다. 이 기기에만 남습니다."
+          saved="device"
+          hint="어두운 화면의 바탕을 조금 밝히고 눈부신 글자를 낮춘다 (어둡게일 때만 · 고대비를 켜면 쉰다)"
           checked={aids.dim}
           onChange={setDim}
         />
@@ -231,14 +229,16 @@ export default function ViewTab() {
       <Section
         id="popupStyle"
         title="창 위치"
+        saved="split"
         desc={POPUP_STYLE_DESC[device]}
       >
         <Choices name="popupStyle" option="popupStyle" value={windowMode(popupStyle, device)} onChange={setPopupStyle} options={POPUP_STYLE_OPTIONS[device]} />
       </Section>
 
-      <Section id="startupScope" title="시작 화면" desc="앱을 열었을 때 처음 보여줄 화면입니다. 새로고침하면 보던 화면 그대로입니다.">
+      <Section id="startupScope" title="시작 화면" saved="split" desc="앱을 열 때 처음 화면 (새로고침은 보던 화면 그대로)">
         <Choices name="startupScope" option="startupScope" value={nav.startupScope} onChange={setStartupScope} options={STARTUP_OPTIONS} />
       </Section>
+      <p data-view-print-note className="px-5 py-3 text-xs text-slate-400">인쇄는 이 탭의 밝기·색·꾸미기와 상관없이 늘 밝은 기본 모양입니다.</p>
     </div>
   );
 }

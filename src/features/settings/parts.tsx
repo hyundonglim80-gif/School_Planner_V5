@@ -2,10 +2,34 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useOptionTarget } from '../../app/optionShortcuts';
 
-export function Section({ title, desc, children, id }: { title: string; desc?: ReactNode; children: ReactNode; id?: string }) {
+/**
+ * 그 값이 어디에 남나 (P44-3 - 칸마다 '이 기기에만 남습니다'·'계정에 저장해 PC와 휴대폰이 같습니다'를 글로 되풀이하던 것을 같은 모양 표시 하나로).
+ * device = 이 기기에만(localStorage) · all = 계정에 하나(PC·휴대폰 같게) · split = 계정에, PC끼리·휴대폰끼리 따로(app/prefs DevicePrefs)
+ */
+export type Saved = 'device' | 'all' | 'split';
+
+const SAVED: Record<Saved, { text: string; title: string }> = {
+  device: { text: '이 기기만', title: '이 기기에만 남습니다 - 다른 기기에서는 따로 고릅니다' },
+  all: { text: '모든 기기', title: '계정에 저장해 PC와 휴대폰이 같습니다' },
+  split: { text: 'PC·휴대폰 따로', title: '계정에 저장하고 PC와 휴대폰은 따로 기억합니다(휴대폰에서 바꾼 것이 PC까지 따라가지 않습니다)' },
+};
+
+export function SavedBadge({ saved }: { saved: Saved }) {
+  const { text, title } = SAVED[saved];
+  return (
+    <span data-settings-saved={saved} title={title} className="shrink-0 px-1.5 py-0.5 rounded-full border border-slate-200 bg-slate-50 text-2xs font-bold text-slate-500">
+      {text}
+    </span>
+  );
+}
+
+export function Section({ title, desc, children, id, saved }: { title: string; desc?: ReactNode; children: ReactNode; id?: string; saved?: Saved }) {
   return (
     <div data-settings-section={id} className="px-5 py-4 border-b border-slate-100 last:border-b-0">
-      <h3 className="text-sm font-black text-slate-800">{title}</h3>
+      <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-black text-slate-800">
+        {title}
+        {saved && <SavedBadge saved={saved} />}
+      </h3>
       {desc && <p className="text-xs text-slate-400 mt-0.5 mb-2 leading-relaxed">{desc}</p>}
       <div className={desc ? '' : 'mt-2'}>{children}</div>
     </div>
@@ -20,6 +44,7 @@ export function ToggleRow({
   onChange,
   id,
   option,
+  saved,
 }: {
   label: string;
   hint?: string;
@@ -27,12 +52,17 @@ export function ToggleRow({
   onChange: (v: boolean) => void;
   id?: string;
   option?: string;
+  /** 칸 안에서 줄마다 남는 곳이 다를 때만 (보기 쉽게) - 칸이 하나면 Section saved */
+  saved?: Saved;
 }) {
   const target = useOptionTarget();
   return (
     <label {...(option ? target(option) : {})} className="flex items-center justify-between gap-3 py-2 cursor-pointer">
       <span className="min-w-0">
-        <span className="block text-sm font-bold text-slate-700">{label}</span>
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-slate-700">
+          {label}
+          {saved && <SavedBadge saved={saved} />}
+        </span>
         {hint && <span className="block text-xs text-slate-400 mt-0.5">{hint}</span>}
       </span>
       <input
