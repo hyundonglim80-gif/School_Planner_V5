@@ -25,7 +25,9 @@ class FakeServer implements MirrorServer {
   clock = 1_000_000;
   data = new Map<string, Map<string, Plain>>();
   listeners = new Set<Listener>();
-  calls = { pages: [] as { coll: string; from: number | null }[], fromDate: [] as { coll: string; date: string }[], fetchOne: [] as string[], deletedIds: 0, purgedIds: [] as number[] };
+  calls = { pages: [] as { coll: string; from: number | null }[], fromDate: [] as { coll: string; date: string }[], fetchOne: [] as string[], deletedCount: 0, deletedIds: 0, purgedIds: [] as number[] };
+  /** 개수 읽기를 못 한다 (연결이 끊겼다) */
+  countOffline = false;
   /** 영구 지운 항목 기록 (공간/컬렉션 → id) */
   purgeLog = new Map<string, Set<string>>();
   /** 하나 확인을 못 한다 (연결이 끊겼다) */
@@ -130,6 +132,12 @@ class FakeServer implements MirrorServer {
     this.data.get(`${sid}/${coll}`)?.delete(id);
     const key = `${sid}/${coll}`;
     this.purgeLog.set(key, new Set([...(this.purgeLog.get(key) ?? []), id]));
+  }
+
+  async deletedCount(sid: string, coll: string) {
+    this.calls.deletedCount++;
+    if (this.countOffline) return null;
+    return [...this.coll(sid, coll).values()].filter((d) => d.deletedAt).length;
   }
 
   async deletedIds(sid: string, coll: string) {
@@ -353,6 +361,82 @@ describe('다른 기기의 영구 지우기 견주기 (하루 한 번)', () => {
     expect(docsOf(uid).trash2).toBeDefined();
     expect(docsOf(uid).alive).toBeDefined();
     await vi.waitFor(async () => expect((await readCopy(uid)).docs.has('trash1')).toBe(false));
+  });
+
+  /** 휴지통 둘을 받은 사본을 닫고, 하루 뒤에 다시 연다 (between = 닫힌 동안 서버에 일어난 일) */
+  async function dayLater(between: (server: FakeServer, sid: string) => void) {
+    const uid = freshUid();
+    const sid = sidOf(uid);
+    const server = new FakeServer();
+    server.write(sid, 'items', 'trash1', item('휴지통 하나', null, { deletedAt: t(1) }));
+    server.write(sid, 'items', 'trash2', item('휴지통 둘', null, { deletedAt: t(1) }));
+    server.write(sid, 'items', 'alive', item('살아 있음', null));
+    startMirror(uid, { server, today: '2026-10-08' });
+    await vi.waitFor(() => expect(allLive(uid)).toBe(true));
+    await vi.waitFor(async () => expect((await readCopy(uid)).meta.prunedAt).toBeGreaterThan(0));
+    stopMirror();
+    between(server, sid);
+    const last = (await readCopy(uid)).meta.prunedAt;
+    const before = { count: server.calls.deletedCount, ids: server.calls.deletedIds };
+    vi.spyOn(Date, 'now').mockReturnValue(Date.now() + PRUNE_EVERY_MS + 1000);
+    startMirror(uid, { server, today: '2026-10-08' });
+    await vi.waitFor(() => expect(allLive(uid)).toBe(true));
+    return { uid, sid, server, last, before };
+  }
+
+  it('개수 먼저 (P41-1): 서버의 지운 항목 수가 사본과 같으면 휴지통 문서를 받지 않는다', async () => {
+    const { uid, server, last, before } = await dayLater(() => {});
+    await vi.waitFor(async () => expect((await readCopy(uid)).meta.prunedAt).toBeGreaterThan(last));
+    expect(server.calls.deletedCount).toBeGreaterThan(before.count);
+    expect(server.calls.deletedIds).toBe(before.ids);
+    expect(docsOf(uid).trash1).toBeDefined();
+    expect(docsOf(uid).trash2).toBeDefined();
+  });
+
+  it('처음 받은 사본도 개수만 묻는다 - 방금 받은 휴지통을 또 받지 않는다', async () => {
+    const uid = freshUid();
+    const sid = sidOf(uid);
+    const server = new FakeServer();
+    server.write(sid, 'items', 'trash1', item('휴지통 하나', null, { deletedAt: t(1) }));
+    startMirror(uid, { server, today: '2026-10-08' });
+    await vi.waitFor(async () => expect((await readCopy(uid)).meta.prunedAt).toBeGreaterThan(0));
+    expect(server.calls.deletedCount).toBeGreaterThan(0);
+    expect(server.calls.deletedIds).toBe(0);
+  });
+
+  it('닫힌 동안 휴지통에 들어온 것은 구독으로 받아 개수가 맞는다 - 목록을 받지 않는다', async () => {
+    const { uid, server, last, before } = await dayLater((s, sid) => {
+      s.write(sid, 'items', 'alive', item('살아 있음', null, { deletedAt: t(2) }));
+    });
+    await vi.waitFor(async () => expect((await readCopy(uid)).meta.prunedAt).toBeGreaterThan(last));
+    expect(docsOf(uid).alive?.deletedAt).toBeTruthy();
+    expect(server.calls.deletedIds).toBe(before.ids);
+  });
+
+  it('개수가 다르면(다른 기기가 영구로 지웠다) 예전처럼 id를 받아 견준다', async () => {
+    const { uid, server, before } = await dayLater((s, sid) => void s.data.get(`${sid}/items`)!.delete('trash2'));
+    await vi.waitFor(() => expect(server.calls.deletedIds).toBeGreaterThan(before.ids));
+    await vi.waitFor(() => expect(docsOf(uid).trash2).toBeUndefined());
+    expect(docsOf(uid).trash1).toBeDefined();
+  });
+
+  it('영구로 지우고 같은 수만큼 새로 지웠어도 - 새로 지운 것은 구독으로 와서 개수가 달라 견준다', async () => {
+    const { uid, server, before } = await dayLater((s, sid) => {
+      s.data.get(`${sid}/items`)!.delete('trash2');
+      s.write(sid, 'items', 'alive', item('살아 있음', null, { deletedAt: t(2) }));
+    });
+    await vi.waitFor(() => expect(server.calls.deletedIds).toBeGreaterThan(before.ids));
+    await vi.waitFor(() => expect(docsOf(uid).trash2).toBeUndefined());
+    expect(docsOf(uid).trash1).toBeDefined();
+    expect(docsOf(uid).alive).toBeDefined();
+  });
+
+  it('개수를 묻지 못하면(끊김) 견준 때를 옮기지 않는다 - 다음에 다시', async () => {
+    const { uid, server, last, before } = await dayLater((s) => void (s.countOffline = true));
+    await vi.waitFor(() => expect(server.calls.deletedCount).toBeGreaterThan(before.count));
+    await new Promise((r) => setTimeout(r, 30));
+    expect(server.calls.deletedIds).toBe(before.ids);
+    expect((await readCopy(uid)).meta.prunedAt).toBe(last);
   });
 });
 

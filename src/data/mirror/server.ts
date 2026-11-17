@@ -4,12 +4,13 @@
 //   처음 받기   orderBy('updatedAt') 쪽 나눠 (이어 받을 때는 그 시각부터 - 같은 시각은 겹쳐 받는다, id로 덮으니 괜찮다)
 //   오늘 가까운 것 where('date', '>=', 오늘 - 62일) orderBy('date') 쪽 나눠 (항목만 - 처음 받기에서 먼저, sync NEAR_DAYS)
 //   그 뒤      where('updatedAt', '>', 커서 - 1분) 구독 하나
-//   견주기      where('deletedAt', '!=', null) - 지운 항목 id (다른 기기의 영구 지우기는 구독에 보이지 않는다)
+//   견주기      where('deletedAt', '!=', null) 개수 먼저(1천 개마다 읽기 1) - 사본과 같으면 끝, 다를 때만 지운 항목 id (다른 기기의 영구 지우기는 구독에 보이지 않는다 - P41-1)
 //   기록       settings/purged-YYYY-MM 문서 몇 개 - 앱이 꺼진 사이 영구로 지운 id (repo/ops purgeLogOf)
 // 처음 받기·견주기·하나 확인은 서버에서만 읽는다(…FromServer) - 연결이 없으면 캐시의 일부를 '다 받음'으로 믿지 않고 실패로.
 import {
   collection,
   doc,
+  getCountFromServer,
   getDocFromServer,
   getDocsFromServer,
   limit,
@@ -71,6 +72,8 @@ export interface MirrorServer {
   ): () => void;
   /** 서버의 그 문서: 문서 / null = 없음 / undefined = 연결이 없어 모름 */
   fetchOne(sid: string, coll: string, id: string): Promise<Plain | null | undefined>;
+  /** 지운 표시가 있는 문서 수 - 문서를 받지 않는다(개수 읽기, 연결이 없으면 null) */
+  deletedCount(sid: string, coll: string): Promise<number | null>;
   /** 지운 표시가 있는 문서 id (연결이 없으면 null) */
   deletedIds(sid: string, coll: string): Promise<Set<string> | null>;
   /** since 뒤로 영구로 지웠다고 적힌 id - 실마리일 뿐 지금 없다는 뜻은 아니다 (연결이 없으면 null) */
@@ -159,6 +162,19 @@ export const firestoreServer: MirrorServer = {
       return snap.exists() ? snap.data() : null;
     } catch (e) {
       if (isOffline(e)) return undefined;
+      throw e;
+    }
+  },
+
+  async deletedCount(sid, coll) {
+    try {
+      const snap = await getCountFromServer(query(collection(db, 'spaces', sid, coll), where('deletedAt', '!=', null)));
+      const count = snap.data().count;
+      // 개수 읽기는 색인 1천 개마다 읽기 1 (빈 결과도 1)
+      countReads(coll, Math.max(1, Math.ceil(count / 1000)));
+      return count;
+    } catch (e) {
+      if (isOffline(e)) return null;
       throw e;
     }
   },

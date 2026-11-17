@@ -155,6 +155,10 @@ describe('기기 사본 (에뮬레이터)', () => {
     copy.close();
     const fromCopy = docs.get('fromOther')!;
     expect(fromCopy.deletedAt).toBeInstanceOf(Timestamp);
+    // 개수 먼저 견주기(P41-1)가 규칙을 지나고 목록과 같은 수를 준다
+    const deleted = await firestoreServer.deletedIds(sid, 'items');
+    expect(deleted).toContain('fromOther');
+    expect(await firestoreServer.deletedCount(sid, 'items')).toBe(deleted!.size);
     // 화면이 든 문서(자리 id가 붙어 있다)를 그대로 넘긴다
     const shown = items().fromOther as unknown as Stored<'items'>;
     const undo = await purge({ sid, coll: 'items', id: 'fromOther' }, shown);

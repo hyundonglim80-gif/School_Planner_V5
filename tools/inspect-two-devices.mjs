@@ -6,6 +6,7 @@
 //   4) 진도 창(■4): 손대기 전에는 B가 고친 시작일을 따라간다(💾가 켜지지 않는다) · A가 차시를 고치는 동안 B가 시작일 → A 저장 = A의 차시 + B의 시작일 ·
 //      같은 차시 목록을 둘 다 고침 → 묻는다 · 아니오 = 적지 않음 · 예 = A 목록으로 덮기
 //   5) P22-3: B의 앱이 꺼진 사이 A가 지우고 영구로 지움 → 하루 뒤 B를 열면 사본에서 빠진다 (B는 지운 표시도 받지 못했다)
+//   6) P41-1: 휴지통이 그대로면 하루 뒤 견주기가 개수만 묻는다 - 휴지통 문서를 다시 받지 않는다(items 읽기 수)
 import { deleteDoc, deleteField, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
@@ -184,6 +185,37 @@ try {
   await later.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
   await memoCard(later, 'inspOffStay').waitFor({ timeout: 10000 });
   r.check((await memoCard(later, 'inspOffGone').count()) === 0, '다시 열어도 되살아나지 않는다 (사본에서도 지웠다)');
+
+  r.section('휴지통이 그대로면 하루 뒤에 휴지통 문서를 다시 받지 않는다 (P41-1 개수 먼저)');
+  // 휴지통 K개를 B 사본에 받게 하고 닫는다 → 하루 더 뒤에 열면 견주기가 개수만 묻는다(예전에는 휴지통 문서를 모두 받아 items 읽기가 K개 더 많았다)
+  const K = 30;
+  const dietRefs = Array.from({ length: K }, (_, i) => doc(em.db, 'spaces', sid, 'items', `inspTrashDiet${i}`));
+  await Promise.all(dietRefs.map((ref, i) => setDoc(ref, { ...memo(`휴지통 다이어트 ${i}`), deletedAt: serverTimestamp(), deletedBy: uid })));
+  undo.add(() => Promise.all(dietRefs.map((ref) => deleteDoc(ref))));
+  await later.evaluate(() => window.sp5.openWindow('trash'));
+  r.check(await waitFor(later.locator(sel('trash-row', `journal:inspTrashDiet${K - 1}`)), 10000), `B 사본에 휴지통 ${K}개가 들어온다`);
+  await later.waitForTimeout(1000); // 사본은 뒤따라 적는다
+  await later.close();
+  const later2 = await B.ctx.newPage();
+  later2.on('pageerror', (e) => laterErrors.push(String(e)));
+  const dayAfter = Date.now() + 50 * 3600 * 1000;
+  await later2.clock.setFixedTime(dayAfter);
+  await open(later2, `#/day/${DAY}`);
+  const prunedAt = () =>
+    later2.evaluate(async ([u, s]) => {
+      const m = await import(window.__appModule('/src/data/mirror/db.ts'));
+      const d = await m.openMirrorDb(u, () => {});
+      try {
+        return (await d.load(s, 'items')).meta.prunedAt;
+      } finally {
+        d.close();
+      }
+    }, [uid, sid]);
+  r.check(await waitFor(async () => (await prunedAt()) >= dayAfter - 60_000, 15000), '하루 뒤 열면 지운 항목을 견준다 (견준 때가 옮겨진다)');
+  const reads = await later2.evaluate(() => window.__sp5Reads?.items ?? 0);
+  // 구독 겹침(1분)으로 방금 심은 K개는 다시 온다 - 견주기가 목록을 받았다면 그 위에 휴지통 전체(K개 넘게)가 더해진다
+  r.check(reads < K + 15, `items 읽기 ${reads} < ${K + 15} (휴지통 목록을 받지 않았다 - 예전이면 ${2 * K} 넘게)`);
+  await later2.close();
   r.check(A.errors.length === 0 && B.errors.length === 0 && laterErrors.length === 0, `화면 오류 없음 ${[...A.errors, ...B.errors, ...laterErrors].join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
