@@ -8,7 +8,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { claudeNoteText, claudeRunLabel, claudeTurnBadge, type ClaudeTurn } from '../../domain/claudeRequest';
 import { ClaudeBadgeChip } from './ClaudeRequestBadge';
 import { CLAUDE_NOTE_TONE } from './claudeTone';
-import { followsBottom } from '../../ui/followBottom';
 
 /** 맨 아래에서 이만큼 안이면 맨 아래를 보는 것으로 친다(px) */
 const NEAR_BOTTOM_PX = 80;
@@ -111,11 +110,8 @@ export default function ClaudeThread({ turns, onRefill }: { turns: ClaudeTurn[];
   useEffect(() => {
     const box = scroller();
     if (!box) return;
-    // 벗어난 것은 위로 올렸을 때만 (ui/followBottom - 내린 바로 뒤 글 칸이 늘어 생긴 틈을 '벗어남'으로 읽지 않게)
-    let lastTop = box.scrollTop;
     const onScroll = () => {
-      atBottom.current = followsBottom(atBottom.current, { gap: box.scrollHeight - box.scrollTop - box.clientHeight, top: box.scrollTop, lastTop }, NEAR_BOTTOM_PX);
-      lastTop = box.scrollTop;
+      atBottom.current = box.scrollHeight - box.scrollTop - box.clientHeight < NEAR_BOTTOM_PX;
     };
     box.addEventListener('scroll', onScroll, { passive: true });
     // 맨 아래를 보는 동안 위가 늘어나도 따라간다 - 다시 열면 턴이 캐시에서 곧바로 와, 글 칸이 한 프레임 뒤에 높이를 재며 답을 밀어냈다(대화 방과 같다)
