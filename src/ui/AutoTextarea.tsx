@@ -11,6 +11,7 @@
 // 줄바꿈이 늘어나는데, 글이 그대로라 높이를 다시 재지 않아 늘어난 줄만큼 아래가 잘렸다. 높이는 테두리까지 더한다(border-box).
 // 재는 동안에도 폭이 바뀌지 않게 부모 높이를 붙든다(줄인 칸 때문에 둘레 스크롤바가 잠깐 사라지면 넓은 폭으로 잰다).
 import { useCallback, useEffect, useRef, type Ref, type RefObject, type TextareaHTMLAttributes } from 'react';
+import { restoreSpots } from './restoreSpots';
 
 /** 스크롤해 둔 조상들과 그 자리 (창 스크롤 포함) */
 function scrollSpots(el: HTMLElement): [Element, number][] {
@@ -112,15 +113,21 @@ export default function AutoTextarea({
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight + borderY(el)}px`;
     if (parent) parent.style.minHeight = keep;
-    for (const [n, top] of spots) n.scrollTop = top;
+    restoreSpots(spots);
     el.scrollTop = 0;
     if (reveal) revealCaret(el);
   }, []);
 
   // 팝업 안에서는 마운트 직후 레이아웃이 아직 잡히지 않아 scrollHeight가 0으로
   // 나온다. 한 프레임 뒤에 재어야 처음부터 내용에 맞는 높이로 열린다.
+  // 처음 잴 때는 커서 줄을 찾아 둘레를 움직이지 않는다 - 연 칸의 커서는 글 맨 앞이라, 긴 메모를 열자마자 맨 아래로 내려 둔
+  // Claude 대화(notes/ClaudeThread)를 다시 글 맨 위로 끌어올린다(P44-1 - restoreSpots와 함께). 글이 바뀐 뒤(치기·틀 채우기)부터 커서 줄을 보인다.
+  const measured = useRef(false);
   useEffect(() => {
-    const frame = requestAnimationFrame(() => resize());
+    const frame = requestAnimationFrame(() => {
+      resize(measured.current);
+      measured.current = true;
+    });
     return () => cancelAnimationFrame(frame);
   }, [value, resize]);
 

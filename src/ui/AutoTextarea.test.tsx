@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import AutoTextarea from './AutoTextarea';
 
@@ -118,6 +118,40 @@ describe('AutoTextarea', () => {
       if (saved.oh) Object.defineProperty(HTMLElement.prototype, 'offsetHeight', saved.oh);
       else delete (HTMLElement.prototype as { offsetHeight?: number }).offsetHeight;
     }
+  });
+
+  it('처음 잴 때는 커서 줄을 찾아 둘레를 움직이지 않는다 - 글이 바뀐 뒤(치기)부터 (P44-1 - 열자마자 맨 아래로 내린 Claude 대화를 끌어올렸다)', async () => {
+    function InBox() {
+      const [value, setValue] = useState('긴 메모\n'.repeat(40));
+      return (
+        <div data-testid="box" style={{ overflowY: 'auto' }}>
+          <AutoTextarea autoFocus value={value} onChange={(e) => setValue(e.target.value)} placeholder="내용" />
+        </div>
+      );
+    }
+    render(<InBox />);
+    const box = screen.getByTestId('box');
+    const el = screen.getByPlaceholderText('내용') as HTMLTextAreaElement;
+    // 스크롤 상자(높이 100, 내용 1000)는 맨 아래, 글 칸의 커서 줄(글 맨 앞)은 상자 위쪽 밖
+    let top = 900;
+    Object.defineProperty(box, 'scrollTop', {
+      configurable: true,
+      get: () => top,
+      set: (v: number) => {
+        top = v;
+      },
+    });
+    Object.defineProperty(box, 'scrollHeight', { configurable: true, get: () => 1000 });
+    Object.defineProperty(box, 'clientHeight', { configurable: true, get: () => 100 });
+    box.getBoundingClientRect = () => ({ top: 0, bottom: 100, left: 0, right: 300, width: 300, height: 100, x: 0, y: 0, toJSON: () => ({}) });
+    el.getBoundingClientRect = () => ({ top: -500, bottom: 300, left: 0, right: 300, width: 300, height: 800, x: 0, y: -500, toJSON: () => ({}) });
+    expect(document.activeElement).toBe(el);
+    await waitFor(() => expect(el.style.height).toBe('820px'));
+    await new Promise((r) => requestAnimationFrame(() => r(null)));
+    expect(top).toBe(900);
+    // 치면 커서 줄을 보이게 둘레를 움직인다
+    fireEvent.change(el, { target: { value: `${el.value}더` } });
+    await waitFor(() => expect(top).toBeLessThan(900));
   });
 
   it('스크롤바가 생기지 않도록 overflow를 감춘다', () => {
