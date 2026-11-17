@@ -35,7 +35,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
   공휴일 `holidays/{year}`를 그대로 쓴다. 무엇보다 **드라이브 `drive.file` 권한이 구글 클라우드 프로젝트(번호)에 묶여 있어**,
   같은 프로젝트에 있어야 V4가 올린 첨부·학생 사진·백업 파일을 V5가 그대로 연다.
 - **Firestore는 `(default)` 데이터베이스.** 이름 붙인 데이터베이스는 따로 떼기는 좋지만 무료 사용량이 없다.
-  V5 컬렉션은 V3·V4가 쓰지 않는 이름: `spaces`, `spaceInvites`, `v5alarms`, `v5Errors`, `v5Mail`(하위 `mailIn`·`mailSent` - DB 전체에서 고유, P15).
+  V5 컬렉션은 V3·V4가 쓰지 않는 이름: `spaces`, `spaceInvites`, `v5alarms`, `v5Errors`, `v5Mail`(하위 `mailIn`·`mailSent` - DB 전체에서 고유, P15 · **P41-3 11-17 화면·자료 층을 걷었다** - 남은 문서는 TTL 1년이 지운다).
 - **규칙 파일은 하나다.** 기본 데이터베이스의 규칙은 한 벌이라 V5가 규칙을 배포하면 V3·V4 규칙도 그것으로 바뀐다.
   그래서 **V5 저장소 `firestore.rules` = V4 규칙 전부 + V5 블록**이고, P1-2부터 이것이 정본이다.
   V4 `firestore.rules`는 같은 내용의 복사본으로 두고 맨 위에 '정본은 V5 저장소'라고 적는다.
@@ -189,7 +189,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - `v5alarms/{itemId}`: 함수만 읽고 쓴다(규칙에 없어 앱은 막힘). V4 `v4_alarms`를 항목 하나 단위로 - `{ sid, itemId, time, atMs, content, recipients, sent, pendingAt, updatedAt }`(P8-2 `functions/` - 함수 이름 `v5AlarmIndex`·`v5SendDueAlarms`·`v5CleanupAlarms`).
 - `v5Errors/{자동 id}`: 오류 알림(P14-2 `data/errorReport.ts`) - `{ kind(error·rejection·react·toast), message, stack, note, build, scope, device, standalone, ua, uid, at, expireAt }`.
   로그인한 사람은 제 것을 만들기만(칸 열둘·길이 - `domain/errorReport` LIMITS = 규칙), 읽기·지우기는 관리자만(P33-1 - 기본 셋 + 더한 관리자), 고치기 없음. 글 내용은 앱이 지운 뒤 보낸다. TTL(expireAt)이 30일 뒤 지운다. 기기 사본에 넣지 않는다.
-- `v5Mail/{uid}/mailIn/{id}`·`v5Mail/{uid}/mailSent/{id}`: 쪽지(P15 - 같은 그룹 구성원끼리, `data/mail.ts`·셈 `domain/mail.ts`). 받는 사람마다 mailIn 한 장 + 보낸 사람 사본 하나를 같은 id로 한 묶음.
+- `v5Mail/{uid}/mailIn/{id}`·`v5Mail/{uid}/mailSent/{id}`: 쪽지(P15 - 같은 그룹 구성원끼리). **P41-3(11-17)에 앱에서 걷었다**(💬 대화가 같은 일 - 코드 `data/mail.ts`·`domain/mail.ts`·`features/mail`은 지웠다, git 기록에 있다). 규칙·함수 `v5MailPush`·TTL은 PLAN P41-3 ■3(PC)까지 남는다. 아래는 옛 모양. 받는 사람마다 mailIn 한 장 + 보낸 사람 사본 하나를 같은 id로 한 묶음.
   mailIn `{ from, fromName, sid, groupName, to[], toNames, text, at, readAt, replyTo, attachments?, expireAt, v }` · mailSent는 from·fromName·readAt 없이.
   `attachments`(P16) = 보낸 사람 드라이브의 붙임 목록(메모 `Attachment` 모양) - 있을 때만 칸째 1~10개, 있으면 글은 비어도 된다. 규칙은 목록 안을 못 보므로 읽을 때 https 주소만(`readMailAttachments`). 규칙: 만들기 = 나·받는 사람 모두 그 공간 구성원(`get(spaces/sid)` 하나 -
   묶음 안 같은 문서 get은 한 번으로 센다, 서로 다른 문서는 20개까지) · 받는 사람 ≤ 50 · 글 ≤ 2000(글자 칸 수) · 그룹 이름 = 공간 이름 · `at == request.time` · mailIn은 같은 id 사본이 함께(`existsAfter`) ·
@@ -215,7 +215,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 화면은 기기 사본에서 고르므로 서버 쿼리는 칸 하나짜리뿐이다(복합 색인이 필요 없다): 구독 `updatedAt > 커서 - 1분` · 처음 받기 `orderBy('updatedAt')` 쪽 나눠 ·
 처음 받기에서 먼저 `date >= 학년도 첫날` · 하루 한 번 견주기 `deletedAt != null`(P2-2 `data/mirror/server.ts`). 함수의 `v5alarms`도 칸 하나(`pendingAt`).
-쪽지(P15)도 칸 하나씩: 안 읽은 것 `mailIn where('readAt','==',null).limit(100)`(includeMetadataChanges) · 목록 `orderBy('at','desc').limit(30)` + startAfter.
+쪽지(P15 - P41-3에 걷었다)도 칸 하나씩: 안 읽은 것 `mailIn where('readAt','==',null).limit(100)`(includeMetadataChanges) · 목록 `orderBy('at','desc').limit(30)` + startAfter.
 대화(P19)도 칸 하나씩: 방 목록 `chatRooms·v5Dm where('members.<나>','==',true)`(규칙이 남의 uid로 묻는 것을 막는다) + 그룹마다 `chatRooms/all` 문서 · 방 글 `orderBy('at','desc').limit(50)` + startAfter ·
 안 읽은 수 `getCountFromServer(where('at','>', 내 읽음).limit(100))`(규칙에 get()이 있어도 된다 - P19-1 ■0).
 ⚠️ 에뮬레이터는 색인을 보지 않는다 - 새 쿼리는 칸 하나로 짓고, 둘 이상이면 운영에서 색인이 필요한지 먼저 본다.
