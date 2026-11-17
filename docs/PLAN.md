@@ -55,7 +55,7 @@ PC 대화는 '이어서'에서 이 목록의 `[ ]`부터 한다(아래 세션 �
 **P42 추천 셋 계획**(11-17 PC - P41 끝 뒤 추천 셋 → 사용자 '작업 계획에 추가' + 추천 기준을 늘 규칙으로(CLAUDE.md 1장 '추천 기준') · 세 세션, 모두 PC · 차례·까닭은 5장 'P42 추천 셋', 6장 'P42').
 **11-17 P42-1 끝**(PC - 사용자 허락으로 운영 읽기만: 두 계정 모두 이미 14일을 골라 두어 12-01 기본 90일과 상관없음 · 휴지통 0건 → 그대로 · 5장 'P42-1 결과').
 **11-17 P42-2 끝**(PC - 크롬 점검 59개 모두 통과(개발 서버 56 + 미리 보기 headers·offline·perf) · 앱 버그 0 · 점검 고침 넷: claude-request(P35 한 줄 메모 = 제목 칸)·mirror(사이트 IndexedDB 통째 지우기 → 사본만 - 로그인까지 지워졌다)·bell-guide·chat(경쟁) · 에뮬레이터 넘침은 사용자 허락으로 새로 켬 · 5장 'P42-2 결과').
-**다음 = P42-3 함수 Node 24 + 함수 코드 배포**(PC - 배포는 묻는다, 6장 'P42-3').
+**11-17 P42-3 ■0·■1 끝**(클라우드 - 함수 판 24로 바꿈, 시험 통과). **다음 = P42-3 ■2 함수 배포만**(PC - 배포는 묻는다, 6장 'P42-3').
 
 **11-17 PC 일 P36-4 끝**(PC - 진짜 구글 캘린더로 모든 확인 통과 · 고침 셋: 한눈에 달 목록 구글 줄 = 색 점 · 기본 캘린더 이름 '내 캘린더' · 수업 카드 반 이름 겹침 · 맨 위 PC 일 줄 · 5장 'P36-4 PC 확인 11-17'). 화면만(배포는 main 푸시로 저절로). PC 일 목록이 비었다 → 같은 날 추천 셋 = 위 P41.
 
@@ -402,7 +402,7 @@ main은 **실제로 쓰는 사이트**라 빌드·테스트가 통과한 것만 
 | **P42 추천 셋** (11-17 사용자 '작업 계획에 추가' - P41 끝 뒤, 추천 기준은 CLAUDE.md 1장 · 셋 다 PC) | | | | |
 | P42-1 | 12-01 자동 비우기 전 운영 휴지통 세기 - 두 계정에서 그날 영구 삭제될 항목(90일 지난 휴지통) 수만 읽기로 세어 보이고, 사용자가 그대로 / 끄기를 고른다(운영 읽기·실제 자료 - 묻는다) | 작음 | 작음 | 끝 (11-17) |
 | P42-2 | 크롬 점검 전체 한 바퀴 - P41이 카드 단추·쪽지를 여러 화면에서 걷은 뒤 59개를 하나씩(CI는 열셋만) · 틀린 것 고치기 | 중간 | 작음 | 끝 (11-17) |
-| P42-3 | 함수 Node 24 + 함수 코드 배포 - Node 22 지원이 2027-04 말에 끝난다(새 학년도 첫 달) · 11-17 바꾼 함수 코드(pushPlan)도 아직 운영 밖 · 배포는 묻는다 | 작음 | 중간 | 대기 |
+| P42-3 | 함수 Node 24 + 함수 코드 배포 - Node 22 지원이 2027-04 말에 끝난다(새 학년도 첫 달) · 11-17 바꾼 함수 코드(pushPlan)도 아직 운영 밖 · 배포는 묻는다 | 작음 | 중간 | ■0·■1 끝(클라우드) · ■2 배포 대기 |
 | **P43 사용자 요청** (11-17 사용자 '새 창으로 뺀 칸에서 링크 보기처럼 다시 창을 띄우면 오른쪽 칸을 분할해서 · 그 칸도 새 창으로' - P42-3 앞에) | | | | |
 | P43-1 | 새 창(↗) 안에서 연 창 = 가운데 대신 새 창 오른쪽 분할 칸(큰 창 오른쪽 칸과 같은 탭·경계선·✕) · 분할하면 새 창을 옆으로 넓히고 다 닫으면 되돌림 · 분할 칸 ↗ = 또 새 창 · ESC = 분할 칸만 · 설명서·점검 | 중간 | 중간 | 끝 (11-17) |
 
@@ -4252,8 +4252,10 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
 ### P42-3. 함수 Node 24 + 함수 코드 배포
 **시작 조건**: PC(함수 배포 - `FUNCTIONS_DISCOVERY_TIMEOUT=60`, 3장·기기 기억). **묻기**: 함수 배포.
 **먼저 읽을 것**: 이 절 · 5장 'P42 추천 셋' ③ · `functions/package.json`(engines `22`·의존성) · `firebase.json`(functions runtime `nodejs22`·codebase `v5`) · `functions/index.js` 머리 주석(배포는 `--only functions:v5`) · `.github/workflows/ci.yml`(함수 시험 Node 24) · 5장 P26-2(의존성 - functions 0) · 기기 기억 '배포'(functions:log가 늦을 때 `--debug`).
-- [ ] ■0 확인: 이 PC firebase-tools 판이 `nodejs24`를 받나 · firebase-functions·firebase-admin 판이 Node 24에서 되나(`npm ls`·`npm outdated` - 판 올리기는 작은 것만) · 함수 에뮬레이터로 여섯이 뜨나(이 PC 노드 판도 본다).
-- [ ] ■1 engines 24·runtime nodejs24 · `npm run test:functions` · 함수 에뮬레이터(Node 24)에서 여섯이 읽히나(`FUNCTIONS_DISCOVERY_TIMEOUT=60`) · 커밋(배포 전에는 main에 올려도 운영은 그대로 - 호스팅 배포만 저절로).
+- [x] ■0 (11-17 클라우드) 확인: 이 PC firebase-tools 판이 `nodejs24`를 받나 · firebase-functions·firebase-admin 판이 Node 24에서 되나(`npm ls`·`npm outdated` - 판 올리기는 작은 것만) · 함수 에뮬레이터로 여섯이 뜨나(이 PC 노드 판도 본다).
+  → 11-17 클라우드: 저장소 firebase-tools 15.34.2(PC도 `npx`라 같은 판)가 `nodejs24` = GA(지원 끝 2028-04) · firebase-functions 7.4.0(node ≥18)·firebase-admin 14.5.0(node ≥22) 그대로 - 올릴 것 없음(admin 14.5.1은 조각 판이라 건너뜀) · 함수 에뮬레이터 대신 Node 24로 `index.js`를 읽어 여섯 모두 나옴.
+- [x] ■1 (11-17 클라우드) engines 24·runtime nodejs24 · `npm run test:functions` · 함수 에뮬레이터(Node 24)에서 여섯이 읽히나(`FUNCTIONS_DISCOVERY_TIMEOUT=60`) · 커밋(배포 전에는 main에 올려도 운영은 그대로 - 호스팅 배포만 저절로).
+  → 11-17 클라우드: `functions/package.json` engines·lock 머리·`firebase.json` runtime = 24 · 함수 시험 37 통과(Node 22·Node 24 둘 다) · MAP 함수 줄(Node 24·쪽지 함수 지움). **남은 것 = ■2 PC 배포만**.
 - [ ] ■2 사용자 허락 → `FUNCTIONS_DISCOVERY_TIMEOUT=60 npx firebase deploy --only functions:v5 --project schoolplannerv3` · 여섯 모두 nodejs24(`functions:list`) · 매분 함수가 새 판으로 도나(`functions:log --debug`) · 일정 알림 하나를 심어 휴대폰·PC에 오는지는 사용자 기기로(한 번 묻는다).
 **끝 조건**: 운영 함수 여섯이 Node 24 · 11-17 함수 코드(pushPlan)가 운영에 · 매분 함수가 도는 것을 로그로 봤다.
 
