@@ -51,6 +51,7 @@ import RoomInfo from './RoomInfo';
 import { CHAT_WINDOW } from './open';
 import { closeChatNotices } from './view';
 import type { GroupPeople } from './people';
+import { followsBottom } from '../../ui/followBottom';
 
 type Status = 'loading' | 'ok' | 'offline' | 'denied' | 'failed' | 'new';
 
@@ -179,9 +180,13 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
   useEffect(() => {
     const el = scroller();
     if (!el) return;
+    // 벗어난 것은 위로 올렸을 때만 (ui/followBottom - 내린 바로 뒤 그림·글 칸이 늘어 생긴 틈을 '벗어남'으로 읽지 않게)
+    let lastTop = el.scrollTop;
     const onScroll = () => {
-      atBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < BOTTOM_PX;
-      if (atBottom.current) setShowNew(false);
+      const gap = el.scrollHeight - el.scrollTop - el.clientHeight;
+      atBottom.current = followsBottom(atBottom.current, { gap, top: el.scrollTop, lastTop }, BOTTOM_PX);
+      lastTop = el.scrollTop;
+      if (gap < BOTTOM_PX) setShowNew(false);
       if (el.scrollTop < TOP_PX && live.current.cursor && Date.now() >= retryAt.current) void loadMoreRef.current();
     };
     el.addEventListener('scroll', onScroll, { passive: true });
