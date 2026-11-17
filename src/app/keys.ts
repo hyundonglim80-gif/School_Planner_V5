@@ -37,7 +37,7 @@ import { toggleHeaderFold } from './headerFold';
 import { stepFontSizeByKey } from './fontSize';
 import { activeOf, useSidePopups } from '../ui/sideColumn';
 import { popOutWindow } from './popout';
-import { closeAllWindows, closeShownWindow, closeWindow, getWindowDef, openWindow, useWindows } from './windows';
+import { closeAllWindows, closeShownWindow, closeSplitWindows, closeWindow, getWindowDef, openWindow, useWindows } from './windows';
 import { runTabShortcut, tabTargetOf } from './tabShortcuts';
 
 interface ShortcutKeys {
@@ -196,8 +196,9 @@ function isPressTarget(t: EventTarget | null): boolean {
 }
 
 /** 새 창으로 옮긴 창·팝업창(app/PopoutShell)이 듣는 단축키 - 화면이 없어 화면·날짜 단축키는 할 일이 없다.
- * 글자 크기 셋은 팝업창 줄(POPOUT_FONT_PAGE)을 바꾼다(메모 요청 #145 - 처음에 빠져 팝업창 안에서 누른 키가 듣지 않았다, PC 확인) */
-export const POPOUT_KEYS: ReadonlySet<ShortcutId> = new Set<ShortcutId>(['undo', 'closePanel', 'checklist', 'fontSmaller', 'fontLarger', 'fontReset']);
+ * 글자 크기 셋은 팝업창 줄(POPOUT_FONT_PAGE)을 바꾼다(메모 요청 #145 - 처음에 빠져 팝업창 안에서 누른 키가 듣지 않았다, PC 확인).
+ * '보고 있는 칸 새 창으로 빼기' = 새 창 오른쪽 분할 칸의 보이는 탭을 또 새 창으로(P43) */
+export const POPOUT_KEYS: ReadonlySet<ShortcutId> = new Set<ShortcutId>(['undo', 'closePanel', 'checklist', 'fontSmaller', 'fontLarger', 'fontReset', 'popOut']);
 
 /** only = 이 단축키만 듣는다 (새 창으로 옮긴 창 - app/PopoutShell: 화면이 없어 화면·날짜 단축키는 할 일이 없다) */
 export function handleAppKeyDown(e: KeyboardEvent, only?: ReadonlySet<ShortcutId>) {
@@ -208,6 +209,8 @@ export function handleAppKeyDown(e: KeyboardEvent, only?: ReadonlySet<ShortcutId
   if (e.key === 'Escape') {
     // 고르던 것을 먼저 푼다(여러 개 고르기 - 오른쪽 칸도 함께 닫힌다, 라벨로 보기 칩과 같다)
     for (const fn of [...escapeActions]) fn();
+    // 새 창은 오른쪽 분할 칸이 있으면 그것만(P43 - 처음 칸은 둔다), 없으면 모두(새 창도 닫힌다)
+    if (closeSplitWindows()) return;
     closeAllWindows();
     return;
   }

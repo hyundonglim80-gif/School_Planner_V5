@@ -1,8 +1,8 @@
-// 오른쪽 칸 하나를 새 창으로 옮긴다 (10-28 사용자 요청 - 머리 ↗, 설명은 ui/popout).
+// 오른쪽 칸 하나를 새 창으로 옮긴다 (10-28 사용자 요청 - 머리 ↗, 설명은 ui/popout). 새 창 안의 분할 칸도 또 새 창으로(P43 - 창 가득 그린 처음 칸은 아니다).
 //   1. 누른 그때 빈 새 창부터 연다 - 저장을 기다린 뒤에 열면 브라우저가 팝업으로 보고 막는다.
 //   2. 저장하지 않은 것이 있으면 그 창의 저장(Ctrl+S와 같다)을 하고 끝나기를 기다린다. 저장 단추가 없는 창이거나 저장이 안 되면 옮기지 않는다.
 //   3. 새 창을 그 창의 주소(?popout=)로 보내고, 여기 오른쪽 칸의 그 탭은 닫는다.
-import { POPOUT, popoutUrl } from '../ui/popout';
+import { isPopoutRoot, popoutUrl } from '../ui/popout';
 import { getSideColumn } from '../ui/sideColumn';
 import { showToast } from './toast';
 import { closeWindow, useWindows, windowSaveOf, windowUnsaved } from './windows';
@@ -36,7 +36,7 @@ function until(ok: () => boolean, ms: number): Promise<boolean> {
 
 /** 창(창 목록의 key)을 새 창으로 옮긴다. 누른 일(click) 안에서 부른다 */
 export async function popOutWindow(key: number): Promise<void> {
-  if (POPOUT || !findWindow(key)) return;
+  if (isPopoutRoot(key) || !findWindow(key)) return;
   const popup = window.open('', `sp5-popout-${key}`, popupFeatures());
   if (!popup) {
     showToast('브라우저가 새 창을 막았습니다. 주소창 오른쪽의 팝업 차단 표시를 눌러 이 사이트를 허용해 주세요.');

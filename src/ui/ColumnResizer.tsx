@@ -2,7 +2,7 @@
 //   - 바꾼 폭은 이 기기에 기억한다 (app/layoutPrefs).
 //   - 두 번 누르면 초기화 값(내 '초기화 설정' → 관리자 → 기본 폭 - P33-2)으로 돌아간다.
 //   - 반대쪽 화면이 320px은 남도록 묶는다.
-// 넓은 화면에서 칸이 화면 옆에 붙어 있을 때만 껍데기가 그린다.
+// 넓은 화면에서 칸이 화면 옆에 붙어 있을 때만 껍데기가 그린다. 새 창 안 분할 칸(P43)은 onWidth로 그 새 창 안에서만 바꾼다(기억하지 않는다).
 import { useRef } from 'react';
 import { setLeftPanelWidth, setRightPanelWidth } from '../app/layoutPrefs';
 import { resetPanelWidth } from '../app/resetTargets';
@@ -10,8 +10,8 @@ import { resetPanelWidth } from '../app/resetTargets';
 const MIN_PX = 280;
 const KEEP_MAIN_PX = 320;
 
-export default function ColumnResizer({ side, width }: { side: 'left' | 'right'; width: string }) {
-  const setWidth = side === 'right' ? setRightPanelWidth : setLeftPanelWidth;
+export default function ColumnResizer({ side, width, onWidth }: { side: 'left' | 'right'; width: string; onWidth?: (px: number | null) => void }) {
+  const setWidth = onWidth ?? (side === 'right' ? setRightPanelWidth : setLeftPanelWidth);
   const dragging = useRef(false);
 
   const widthAt = (clientX: number) => {
@@ -43,7 +43,7 @@ export default function ColumnResizer({ side, width }: { side: 'left' | 'right';
         e.currentTarget.releasePointerCapture?.(e.pointerId);
         document.body.style.userSelect = '';
       }}
-      onDoubleClick={() => setWidth(resetPanelWidth(side))}
+      onDoubleClick={() => setWidth(onWidth ? null : resetPanelWidth(side))}
     >
       <div className="mx-auto h-full w-0.5 bg-transparent group-hover:bg-primary/60 transition-colors" />
     </div>

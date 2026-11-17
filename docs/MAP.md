@@ -71,7 +71,10 @@
   `ui/PopoutButton.tsx`(`[data-popout-open]` - ModalShell 머리·쓰는 칸 여섯 ✕ 왼쪽) · `app/popout.ts`(`popOutWindow` - 빈 팝업 먼저 → `windowUnsaved`면 `windowSaveOf` 저장·기다림 → 주소로 보내고 탭 닫기) ·
   **창 위치 팝업창**(11-09): `app/popupWindows.ts`(`openPopupWindow` - openWindow가 넘긴다·`portableParams`·이름 `popupName`·자리 `popupFeatures`/`rememberPopupRect` `sp5-popup-rects`·`usePopupBridge` 팝업창 ↔ 큰 창 open·params·nav) · `app/layoutPrefs` `windowMode`·`popupWindowsOn` · `app/deviceKind.ts`(`detectDeviceKind` - prefs가 다시 내보낸다) · 창 목록 `IN_POPUP`·`openWindow(…, { here })` ·
   `app/PopoutShell.tsx`(App이 `POPOUT`이면 Shell 대신 - 그 창 하나·`[data-popout=id]`, 창 가득 = 틀의 `fill` `[data-panel-frame|popup-frame=window]`, 닫히면 `window.close()`, 단축키는 `handleAppKeyDown(e, only)`) ·
-  `app/windows` `useAskClose`(닫기 전에 묻기 - P22-2) · `useUnsavedCheck`(창 key와 함께 - 옛 `registerUnsavedCheck` 부르던 열하나)·`useWindowSave`(틀이 Ctrl+S 저장을 창 key로) · `useDocked`는 새 창에서 늘 false. 점검 `tools/inspect-popout.mjs`(34 - 휴대폰 새 메모 🔗 포함).
+  `app/windows` `useAskClose`(닫기 전에 묻기 - P22-2) · `useUnsavedCheck`(창 key와 함께 - 옛 `registerUnsavedCheck` 부르던 열하나)·`useWindowSave`(틀이 Ctrl+S 저장을 창 key로) · 점검 `tools/inspect-popout.mjs`(휴대폰 새 메모 🔗 포함).
+  **새 창 안 분할 칸**(P43 11-17): `useDocked`는 새 창에서 늘 true(창 가득 그린 처음 칸은 틀이 `fill`로 뺀다) → 그 안에서 연 창은 새 창의 `#side-column`(큰 창과 같은 탭·↗) · 처음 칸은 `sideColumn.useFillRight`만큼 비킨다 ·
+  `app/popoutSplit.ts`(`useSplitWindowSize` - 서면 `ui/popout.splitGrowth`로 새 창 넓히기(resizeTo·moveTo, 두 번 불러도 같게)·다 닫히면 150ms 뒤 되돌림(사용자가 바꿨으면 그대로)) · PopoutShell `SideTabs`·`ColumnResizer onWidth`(그 새 창만 `--right-column-w`, 기본 `SPLIT_DEFAULT_WIDTH` 50vw)·▶ `[data-close-column]` ·
+  `windows.closeSplitWindows`(ESC·▶ - 처음 칸 빼고, 한 번 묻기) · `popOutWindow`는 처음 칸(`isPopoutRoot`)만 막는다 · `POPOUT_KEYS` + `popOut` · `useShownWindowPick`은 새 창이면 처음 칸도 · `rememberPopupRect(id, skip)`(넓힌 동안 안 남김).
 - **순수 함수** `src/domain/`: `dateUtils.ts` · `order.ts`(차례 값 - 분수 인덱스 `orderBetween`·`ordersBetween`·`compareOrder`(같으면 id로)·다시 세운 줄 `rekeyOrders`(옮긴 것만)) ·
   `labelTree.ts`(V4 트리를 id로 - `parentMapOf`·`orderByTree`·라벨로 보기 `matchLabels`·탐색기식 `clickFilterLabel`·`filterChipOrder`·`otherKey`) ·
   `labels.ts`(색 표 `LABEL_COLORS`·`labelColor`·속성 읽기 `labelProps`·속성 칸 `EVENT_LABEL_PROPS`·기본 라벨 `DEFAULT_LABELS`·`cleanLabelName`) ·

@@ -4,14 +4,14 @@
 //              들지 않는다. 뒤로가기는 받는다(useBackLayer). ESC는 껍데기가 오른쪽 줄 전체를 닫는다(저장 안 한 글은 먼저 묻는다).
 //              머리 ↗(ui/PopoutButton)로 새 창으로 옮긴다(10-28).
 //   좁은 화면 : 어두운 배경 위로 오른쪽에서 뜬다. 배경을 누르면 고친 것을 저장하고 닫는다(닫기·✕·ESC는 저장하지 않는다).
-//   새 창     : 새 창으로 옮긴 그 칸은 창 가득 (ui/popout - 배경 없음).
+//   새 창     : 새 창으로 옮긴 그 칸은 창 가득 (ui/popout - 배경 없음). 그 안에서 연 칸은 새 창 오른쪽에 나눠 선다(P43 - 위 '넓은 화면'과 같다).
 // 창 위치가 '가운데 창'이어도 쓰는 칸은 오른쪽에 붙는다(V4 그대로 - 글을 쓰며 왼쪽 화면을 본다).
 import { useContext, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useBackLayer, useModalLayer } from '../app/history';
 import { useWindowSave } from '../app/windows';
-import { POPOUT, PopoutTargetContext, WindowSlotContext } from './popout';
-import { getSideColumn, SideOwnerContext, sideSlotProps, useDocked, useSideSlot } from './sideColumn';
+import { PopoutTargetContext, WindowSlotContext } from './popout';
+import { getSideColumn, SideOwnerContext, sideSlotProps, useDocked, useFillRight, useSideSlot } from './sideColumn';
 import { useBackdropClose } from './useBackdropClose';
 import { useBodyScrollLock } from './useBodyScrollLock';
 import { useSaveKey } from './useSaveKey';
@@ -36,7 +36,9 @@ export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaL
   // 어느 창의 틀인가 (창 목록의 key - 단추 대신 누르기가 자리를 찾는다, P28-3)
   const owner = useContext(SideOwnerContext) ?? undefined;
   const fill = !!win?.fill;
-  const docked = useDocked();
+  // 새 창이 창 가득 그린 칸은 붙지 않는다 (P43 - 새 창 안에서는 그 밖의 칸이 모두 붙는다)
+  const docked = useDocked() && !fill;
+  const fillRight = useFillRight();
   const panelRef = useRef<HTMLElement | null>(null);
   useSaveKey(true, panelRef, onSave);
   useWindowSave(win?.key, onSave);
@@ -51,7 +53,7 @@ export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaL
   // 안쪽: 창 안에서 띄운 작은 창은 '그 창'이 아니다(null) · 머리 ↗는 오른쪽 줄에 붙은 창의 맨 바깥 틀에서만
   const inner = (
     <WindowSlotContext.Provider value={null}>
-      <PopoutTargetContext.Provider value={docked && win && !POPOUT ? win.key : null}>{children}</PopoutTargetContext.Provider>
+      <PopoutTargetContext.Provider value={docked && win ? win.key : null}>{children}</PopoutTargetContext.Provider>
     </WindowSlotContext.Provider>
   );
 
@@ -67,7 +69,7 @@ export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaL
 
   if (fill) {
     return (
-      <div className="fixed inset-0 flex" style={{ zIndex }} data-panel-frame="window" data-window-key={owner}>
+      <div className="fixed inset-0 flex" style={{ zIndex, right: fillRight }} data-panel-frame="window" data-window-key={owner}>
         <aside ref={panelRef as RefObject<HTMLElement>} aria-label={ariaLabel} className="relative bg-white h-full w-full flex flex-col">
           {inner}
         </aside>

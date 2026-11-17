@@ -5,7 +5,7 @@
 //   center (휴대폰 '가운데 창')   : 화면 가운데에 뜨는 창.
 //   popup (PC '팝업창', 11-09)    : 창 목록이 브라우저 팝업창으로 띄운다(app/popupWindows - 그 안은 아래 '새 창').
 //                                  이 창 안에 남는 것(링크 고르기처럼 값을 돌려주는 창·브라우저가 막았을 때)은 가운데.
-//   새 창(ui/popout)              : 새 창으로 옮긴 그 창은 창 가득, 그 안에서 연 다른 창은 가운데.
+//   새 창(ui/popout)              : 새 창으로 옮긴 그 창은 창 가득, 그 안에서 연 다른 창은 새 창 오른쪽에 나눠 선다(P43 - 큰 창 오른쪽 칸과 같다, ↗로 또 새 창).
 //   오른쪽 줄에 붙은 창은 머리 ↗(ModalShell → ui/PopoutButton)로 새 창으로 옮긴다(10-28).
 //
 // 어느 모양이든 창 층(app/history의 useModalLayer)에 똑같이 든다. 그래서 겹쳐 연 창의 순서, ESC로 모두 닫기,
@@ -17,7 +17,7 @@ import { useModalLayer } from '../app/history';
 import { useLayoutPrefs } from '../app/layoutPrefs';
 import { useWindowSave } from '../app/windows';
 import { POPOUT, PopoutTargetContext, WindowSlotContext } from './popout';
-import { getSideColumn, SideOwnerContext, sideSlotProps, useDocked, useSideSlot } from './sideColumn';
+import { getSideColumn, SideOwnerContext, sideSlotProps, useDocked, useFillRight, useSideSlot } from './sideColumn';
 import { useBackdropClose } from './useBackdropClose';
 import { useBodyScrollLock } from './useBodyScrollLock';
 import { useDialogFocus } from './useDialogFocus';
@@ -71,9 +71,12 @@ export default function PopupFrame({
   const owner = useContext(SideOwnerContext) ?? undefined;
   useWindowSave(isOpen ? win?.key : null, onSave);
   const fill = !!win?.fill;
-  const side = useLayoutPrefs((s) => s.popupStyle) === 'side' && !POPOUT;
+  // 새 창 안에서는 창 위치와 상관없이 붙는다(P43 - 창 가득 그린 처음 칸만 빼고)
+  const side = useLayoutPrefs((s) => s.popupStyle) === 'side' || !!POPOUT;
   const wide = useDocked();
-  const docked = isOpen && side && wide;
+  const docked = isOpen && side && wide && !fill;
+  // 새 창의 창 가득 칸 - 분할 칸이 서면 그 폭만큼 비킨다
+  const fillRight = useFillRight();
 
   // 옆에 붙은 칸은 왼쪽 화면과 함께 쓰므로 본문 스크롤을 잠그지 않는다
   useBodyScrollLock(isOpen && !docked);
@@ -86,16 +89,16 @@ export default function PopupFrame({
 
   if (!isOpen) return null;
 
-  // 안쪽: 창 안에서 띄운 작은 창은 '그 창'이 아니다(null) · 머리 ↗는 오른쪽 줄에 붙은 창의 맨 바깥 틀에서만
+  // 안쪽: 창 안에서 띄운 작은 창은 '그 창'이 아니다(null) · 머리 ↗는 오른쪽 줄에 붙은 창의 맨 바깥 틀에서만(새 창의 분할 칸도 - P43)
   const inner = (
     <WindowSlotContext.Provider value={null}>
-      <PopoutTargetContext.Provider value={docked && win && !POPOUT ? win.key : null}>{children}</PopoutTargetContext.Provider>
+      <PopoutTargetContext.Provider value={docked && win ? win.key : null}>{children}</PopoutTargetContext.Provider>
     </WindowSlotContext.Provider>
   );
 
   if (fill) {
     return (
-      <div className="fixed inset-0 flex" style={{ zIndex }} data-popup-frame="window" data-window-key={owner}>
+      <div className="fixed inset-0 flex" style={{ zIndex, right: fillRight }} data-popup-frame="window" data-window-key={owner}>
         <div
           ref={cardRef as RefObject<HTMLDivElement>}
           role="dialog"

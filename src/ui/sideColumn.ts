@@ -18,10 +18,14 @@ import { useMinWidth } from './useMinWidth';
 /** 이 폭 이상이면 오른쪽 칸을 화면 옆에 붙인다. 그보다 좁으면(휴대폰) 화면을 덮는 배너. */
 export const DOCK_MIN_WIDTH = 768;
 
-/** 넓은 화면이면 옆에 붙는다. 새 창으로 옮긴 창(ui/popout) 안에서는 늘 붙지 않는다 - 그 안에서 연 창은 가운데에 뜬다 */
+/**
+ * 넓은 화면이면 옆에 붙는다. 새 창으로 옮긴 창(ui/popout) 안에서는 늘 붙는다 - 그 안에서 연 창은 새 창 오른쪽에 나눠 선다
+ * (P43 11-17 사용자 요청 - 전에는 가운데에 떠 처음 칸을 가렸다. 새 창이 좁으면 app/PopoutShell이 새 창을 넓힌다).
+ * 새 창이 창 가득 그린 그 창(처음 칸)은 틀이 따로 본다(WindowSlotContext fill - 붙지 않는다).
+ */
 export function useDocked(): boolean {
   const wide = useMinWidth(DOCK_MIN_WIDTH);
-  return wide && !POPOUT;
+  return wide || !!POPOUT;
 }
 
 /**
@@ -45,6 +49,12 @@ export const useSidePopups = create<{ order: string[]; active: string | null; ow
   active: null,
   owners: {},
 }));
+
+/** 새 창(ui/popout)의 창 가득 칸이 비킬 오른쪽 폭 - 분할 칸(오른쪽 줄)이 서 있으면 그 폭, 아니면 없음 (P43) */
+export function useFillRight(): string | undefined {
+  const split = useSidePopups((s) => s.order.length > 0);
+  return POPOUT && split ? RIGHT_COLUMN_CSS_WIDTH : undefined;
+}
 
 /** 지금 보이는 칸 id (active가 줄에 없으면 맨 나중에 연 것) */
 export const activeOf = (s: { order: string[]; active: string | null }) =>

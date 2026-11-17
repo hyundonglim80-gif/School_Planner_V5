@@ -8,7 +8,8 @@
 // SidePanelFrame(쓰는 칸)으로 스스로 틀을 그린다 - 오른쪽 줄의 탭 차례·숨은 탭은 그 틀이 맡는다(ui/sideColumn).
 import { useContext, useEffect, useRef, type ComponentType } from 'react';
 import { create } from 'zustand';
-import { activeOf, closeShownSideSlot, SideOwnerContext, useShownSideOwner, useSidePopups } from '../ui/sideColumn';
+import { isPopoutRoot, POPOUT } from '../ui/popout';
+import { activeOf, closeShownSideSlot, closeSideSlot, SideOwnerContext, useShownSideOwner, useSidePopups } from '../ui/sideColumn';
 import { closeAllLayers, closeTopLayer } from './history';
 import { popupWindowsOn } from './layoutPrefs';
 import { lazyWithReload } from './lazyWithReload';
@@ -139,7 +140,11 @@ export function useShownWindowPick(pick: (w: OpenWindow) => string | null): stri
   const owner = useShownSideOwner();
   return useWindows((s) => {
     const w = shownOf(s.windows, owner);
-    return w ? pick(w) : null;
+    const v = w ? pick(w) : null;
+    if (v !== null || !POPOUT) return v;
+    // 새 창은 창 가득 그린 처음 칸도 늘 보인다 - 오른쪽에 분할 칸이 서 있어도 (P43)
+    const root = s.windows.find((x) => isPopoutRoot(x.key));
+    return root && root !== w ? pick(root) : null;
   });
 }
 
@@ -260,6 +265,27 @@ export function closeAllWindows(): boolean {
   // 창 목록을 먼저 비운다 - 층이 닫을 때 창마다 또 묻지 않는다 (useAskClose는 목록에 없는 창을 묻지 않는다)
   useWindows.setState({ windows: [] });
   closeAllLayers();
+  return true;
+}
+
+/**
+ * 새 창(ui/popout)의 분할 칸(오른쪽 줄)을 모두 닫는다 - 창 가득 그린 처음 칸은 둔다 (P43 - 새 창의 ESC·▶. 큰 창 ESC가 오른쪽 칸만 닫는 것과 같다).
+ * 저장 안 한 것이 있으면 먼저 한 번 묻는다. 분할 칸이 없으면 false(그때 ESC는 지금처럼 모두 닫는다 - 새 창도 닫힌다).
+ */
+export function closeSplitWindows(): boolean {
+  if (!POPOUT) return false;
+  const side = useSidePopups.getState();
+  if (side.order.length === 0) return false;
+  const split = useWindows.getState().windows.filter((w) => !isPopoutRoot(w.key));
+  if (split.some((w) => windowUnsaved(w.key)) && !window.confirm('저장하지 않은 내용이 있는 칸이 있습니다. 저장하지 않고 닫을까요?')) return true;
+  // 창 목록에서 먼저 빼서 창마다 또 묻지 않는다 (useAskClose는 목록에 없는 창을 묻지 않는다)
+  const gone = new Set(split.map((w) => w.key));
+  useWindows.setState((s) => ({ windows: s.windows.filter((w) => !gone.has(w.key)) }));
+  // 처음 칸이 제 안에서 띄운 작은 창(창 목록 밖)은 그 칸의 닫기로
+  for (const id of side.order) {
+    const owner = side.owners[id];
+    if (owner === undefined || !gone.has(owner)) closeSideSlot(id);
+  }
   return true;
 }
 

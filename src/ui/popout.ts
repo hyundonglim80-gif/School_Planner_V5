@@ -65,3 +65,27 @@ export const WindowSlotContext = createContext<{ key: number; fill: boolean } | 
 
 /** 머리 ↗가 옮길 창 key - 오른쪽 줄에 붙은 틀이 제 안쪽에 건다(아니면 null = ↗를 그리지 않는다) */
 export const PopoutTargetContext = createContext<number | null>(null);
+
+// ── 새 창 안 분할 칸 (P43 11-17 사용자 요청) ──
+// 새 창 안에서 연 창(링크 보기·링크 연결 …)은 가운데가 아니라 새 창 오른쪽에 나눠 붙는다(ui/sideColumn useDocked).
+// 그때 새 창을 옆으로 넓혀 처음 칸이 좁아지지 않게 하고, 분할 칸이 모두 닫히면 되돌린다(app/PopoutShell).
+
+/** 분할 칸 기본 폭 = 새 창의 반 (경계선을 끌면 그 새 창 안에서만 바뀐다) */
+export const SPLIT_DEFAULT_WIDTH = '50vw';
+
+/** 이만큼도 넓힐 수 없으면(이미 화면만큼 넓다 - 최대화) 그대로 두고 반씩 나눈다 */
+const MIN_GROW_PX = 80;
+
+/**
+ * 분할 칸이 설 때 새 창을 얼마나 넓히고 옮길지. 두 배 폭까지, 그 화면 안에서(오른쪽이 넘치면 왼쪽으로 옮긴다).
+ * win = 새 창의 화면 자리(screenX·outerWidth), screen = 그 화면의 쓸 수 있는 자리(availLeft·availWidth).
+ * dx = 옆으로 옮길 만큼(왼쪽 -), dw = 넓힐 만큼. 넓히지 않으면 둘 다 0.
+ */
+export function splitGrowth(win: { x: number; width: number }, screen: { left: number; width: number }): { dx: number; dw: number } {
+  const target = Math.min(win.width * 2, screen.width);
+  const dw = Math.round(target - win.width);
+  if (!(dw >= MIN_GROW_PX)) return { dx: 0, dw: 0 };
+  const over = win.x + win.width + dw - (screen.left + screen.width);
+  const dx = over > 0 ? -Math.min(over, Math.max(0, win.x - screen.left)) : 0;
+  return { dx: Math.round(dx), dw };
+}

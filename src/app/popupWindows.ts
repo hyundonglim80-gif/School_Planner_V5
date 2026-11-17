@@ -101,10 +101,14 @@ export function popupFeatures(id: string): string {
   return `popup=yes,width=${width},height=${height},left=${left},top=${top}`;
 }
 
-/** 팝업창 안에서 - 이 창의 자리·크기를 남긴다(옮기기는 알림이 없어 잠깐마다 본다). 그만두는 함수를 돌려준다 */
-export function rememberPopupRect(id: string): () => void {
+/**
+ * 팝업창 안에서 - 이 창의 자리·크기를 남긴다(옮기기는 알림이 없어 잠깐마다 본다). 그만두는 함수를 돌려준다.
+ * skip이 true인 동안은 남기지 않는다(P43 - 분할 칸 때문에 넓힌 크기를 다음에 열 자리로 기억하지 않게).
+ */
+export function rememberPopupRect(id: string, skip?: () => boolean): () => void {
   let last = '';
   const save = () => {
+    if (skip?.()) return;
     const r: Rect = { x: window.screenX, y: window.screenY, w: window.outerWidth, h: window.outerHeight };
     if (!okRect(r)) return;
     const s = JSON.stringify(r);
