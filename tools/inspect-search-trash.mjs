@@ -170,8 +170,33 @@ try {
   r.check((await read(itemRef('insp_tr2')))?.deletedAt, '아직 안 지난 것은 남는다 (3일 전)');
   await page.locator(sel('trash-settings')).click();
   await page.locator(sel('trash-days', '0')).click();
-  r.check((await serverUntil(() => read(commonRef), (d) => !d?.trashDays, 8000))?.trashDays === undefined, '끄기 = 기본값이라 칸이 빠진다');
+  r.check((await serverUntil(() => read(commonRef), (d) => d?.trashDays === 0, 8000))?.trashDays === 0, '끄기도 칸에 적힌다 (고르지 않음 = 기본 90일과 다르다 - P41-1)');
+  r.check((await page.locator(sel('trash-auto')).getAttribute('data-trash-auto')) === '0', '안내 줄 = 꺼짐');
   await page.waitForTimeout(2500);
+
+  r.section('고르지 않은 계정 = 기본 90일 (P41-1 - 2026-12-01부터)');
+  await updateDoc(commonRef, { trashDays: deleteField() });
+  r.check(await waitFor(async () => (await page.locator(sel('trash-auto')).getAttribute('data-trash-auto')) === '-1', 8000), '칸이 없으면 고르지 않음(-1)');
+  r.check((await page.locator(sel('trash-days', '90')).getAttribute('aria-pressed')) === 'true', '⚙️ 90일 (기본)이 눌린 모습');
+  const autoText = (await page.locator(sel('trash-auto')).textContent()) ?? '';
+  r.check(new Date().toISOString().slice(0, 10) < '2026-12-01' ? autoText.includes('12월 1일부터') : autoText.includes('90일'), `안내 줄: ${autoText.trim()}`);
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('trash-window')).count()) === 0);
+  // 정한 날 뒤: 90일 지난 것만 비운다 (시계를 12월 2일 뒤로 - 화면이 셈하는 오늘)
+  const later = Math.max(Date.now(), new Date('2026-12-02T09:00:00+09:00').getTime());
+  const old90 = { kind: 'note', date: null, labelIds: [], order: 'Zz3', ...stamp, deletedBy: uid };
+  await setDoc(itemRef('insp_tr100'), { ...old90, text: '점검휴지통 100일 전', deletedAt: Timestamp.fromMillis(later - 100 * DAY) });
+  await setDoc(itemRef('insp_tr80'), { ...old90, text: '점검휴지통 80일 전', deletedAt: Timestamp.fromMillis(later - 80 * DAY) });
+  undo.add(() => deleteDoc(itemRef('insp_tr100')));
+  undo.add(() => deleteDoc(itemRef('insp_tr80')));
+  const p2 = await ctx.newPage();
+  await p2.clock.setFixedTime(later);
+  await p2.goto(page.url());
+  await p2.locator(sel('session', 'signed-in')).waitFor({ timeout: 20000 });
+  await p2.evaluate(() => window.sp5.openWindow('trash'));
+  r.check((await serverUntil(() => read(itemRef('insp_tr100')), (d) => d === null, 10000)) === null, '12월 뒤에는 고르지 않은 계정도 90일 지난 것을 비운다 (100일 전)');
+  r.check(!!(await read(itemRef('insp_tr80')))?.deletedAt, '90일 안 지난 것은 남는다 (80일 전)');
+  await p2.close();
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {

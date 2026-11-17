@@ -14,6 +14,7 @@ import { readFontSizes, type FontSizes } from '../domain/fontScale';
 import { DEFAULT_DECOR } from '../domain/decor';
 import { sanitizeOverlayCalendars, type OverlayCalendar } from '../domain/gcalOverlay';
 import { DEFAULT_PALETTE } from '../domain/palette';
+import { TRASH_DAYS_UNSET } from '../domain/trashDays';
 import {
   readCustomBindings,
   readShortcutOverrides,
@@ -230,7 +231,7 @@ const readPhotoFolders = (v: unknown): PhotoFolders | undefined => {
   return { root: readFolder(o.root), byClass };
 };
 
-/** 휴지통 자동 비우기에서 고를 수 있는 날 (0 = 끄기) */
+/** 휴지통 자동 비우기에서 고를 수 있는 날 (0 = 끄기). 고르지 않으면 TRASH_DAYS_UNSET - 기본 90일(domain/trashDays, P41-1) */
 export const TRASH_DAYS = [0, 7, 14, 30, 60, 90] as const;
 
 const readHolidayMap = (v: unknown): Record<string, string> | undefined => {
@@ -245,7 +246,8 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   ddays: customField<DDay[]>([], readDDayList),
   ddayPick: customField<string | null>(null, (v) => (typeof v === 'string' && v ? v : v === null ? null : undefined)),
   myHolidays: customField<Record<string, string>>({}, readHolidayMap),
-  trashDays: customField<number>(0, (v) => ((TRASH_DAYS as readonly number[]).includes(Number(v)) ? Number(v) : undefined)),
+  // 칸이 없으면 '고르지 않음'(-1) - 끄기(0)도 칸에 적힌다(P41-1 - 예전 기본은 끄기라 끄기는 적지 않았다)
+  trashDays: customField<number>(TRASH_DAYS_UNSET, (v) => ((TRASH_DAYS as readonly number[]).includes(Number(v)) ? Number(v) : undefined)),
   teaching: customField<TeachingMode | null>(null, (v) => (v && typeof v === 'object' && !Array.isArray(v) ? sanitizeTeachingMode(v) : undefined)),
   periods: customField<PeriodDef[]>(DEFAULT_PERIODS, readPeriods),
   terms: customField<SchoolTerms>({}, readTerms),

@@ -1,7 +1,7 @@
 // 휴지통 (V4 components/TrashModal.tsx) - 맨 위 🗑️·단축키 'trash'. 창 'trash'(오른쪽 칸).
 //   - 탭: 전체 / 일정 / 기록 / 메모 / 클립보드(이 기기) / 기타(라벨·D-Day …) - 옆 숫자는 그 안의 수.
 //   - 항목마다 복원 · 영구 삭제(묻는다 - 되돌릴 수 없다). 고르기·전체 선택(보는 탭만 - 탭을 바꾸면 풀린다)·일괄 복원·일괄 삭제·비우기(탭이면 그 탭만).
-//   - ⚙️ 자동 비우기(끄기·7·14·30·60·90일, 계정에 하나 - 기본 끄기): 휴지통의 설정은 휴지통에(MENU.md). 열 때 지난 것은 곧바로 비운다.
+//   - ⚙️ 자동 비우기(끄기·7·14·30·60·90일, 계정에 하나 - 고르지 않으면 90일, 2026-12-01부터 - P41-1, 예전 기본은 끄기): 휴지통의 설정은 휴지통에(MENU.md). 열 때 지난 것은 곧바로 비운다.
 //   - V4에서 지워져 가져오기가 지운 표시를 한 것은 'V4에서 지움'.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { setCommonSetting, TRASH_DAYS, useCommonSettings } from '../../app/prefs';
@@ -14,6 +14,8 @@ import { purgeEntries, restoreEntries } from './actions';
 import { useTrashDocs } from './useTrashDocs';
 import { expiredOf, KIND_LABEL, TRASH_TABS, tabOf, trashEntries, type TrashEntry, type TrashTab } from './trashList';
 import { useTabTarget } from '../../app/keys';
+import { todayStr } from '../../domain/dateUtils';
+import { effectiveTrashDays, TRASH_DAYS_UNSET, TRASH_DEFAULT_DAYS, TRASH_DEFAULT_FROM } from '../../domain/trashDays';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -27,6 +29,10 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
   const docs = useTrashDocs(sid);
   const ddays = useCommonSettings((s) => s.ddays);
   const trashDays = useCommonSettings((s) => s.trashDays);
+  // 고르지 않은 계정 = 기본 90일(정한 날부터 - 그 전에는 꺼짐)
+  const unset = trashDays === TRASH_DAYS_UNSET;
+  const today = todayStr();
+  const days = effectiveTrashDays(trashDays, today);
   const clips = useClipboard((s) => s.trash);
   const entries = useMemo(() => trashEntries({ ...docs, ddays, clips }), [docs, ddays, clips]);
   const [tab, setTab] = useState<TrashTab>(params?.tab ?? 'all');
@@ -51,11 +57,11 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
   // 열 때 기간이 지난 것은 곧바로 비운다 (V4 - 앱을 열 때 하루 한 번도 돈다, TrashAutoEmpty)
   const swept = useRef(false);
   useEffect(() => {
-    if (swept.current || !sid || trashDays <= 0) return;
-    const old = expiredOf(entries, trashDays);
+    if (swept.current || !sid || days <= 0) return;
+    const old = expiredOf(entries, days);
     swept.current = true;
     if (old.length) void purgeEntries(sid, old, docs, false).catch(quiet);
-  }, [sid, trashDays, entries, docs]);
+  }, [sid, days, entries, docs]);
 
   const run = async (job: () => Promise<unknown>) => {
     if (busy) return;
@@ -117,15 +123,16 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
                   key={d}
                   type="button"
                   data-trash-days={d}
-                  aria-pressed={trashDays === d}
+                  aria-pressed={trashDays === d || (unset && d === TRASH_DEFAULT_DAYS)}
                   onClick={() => setCommonSetting('trashDays', d)}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg border cursor-pointer ${trashDays === d ? 'bg-primary text-white border-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg border cursor-pointer ${trashDays === d || (unset && d === TRASH_DEFAULT_DAYS) ? 'bg-primary text-white border-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}
                 >
                   {d === 0 ? '끄기' : `${d}일`}
+                  {d === TRASH_DEFAULT_DAYS && ' (기본)'}
                 </button>
               ))}
             </div>
-            <p className="text-2xs text-slate-500">지운 지 그만큼 지난 항목을 앱을 열 때 영구 삭제합니다(첨부 파일도 정리). 처음에는 꺼져 있습니다.</p>
+            <p className="text-2xs text-slate-500">지운 지 그만큼 지난 항목을 앱을 열 때 영구 삭제합니다(첨부 파일도 정리). 고르지 않으면 90일입니다.</p>
           </div>
         )}
 
@@ -158,9 +165,13 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
 
         <div className="px-3 py-2 rounded-xl bg-amber-50/60 border border-amber-100 flex items-center justify-between gap-2 flex-wrap text-xs">
           <span className="text-slate-600" data-trash-auto={trashDays}>
-            {trashDays > 0 ? (
+            {unset && days === 0 ? (
               <>
-                🕒 지운 지 <b>{trashDays}일</b>이 지난 항목은 자동으로 영구 삭제됩니다.
+                🕒 <b>{Number(TRASH_DEFAULT_FROM.slice(5, 7))}월 {Number(TRASH_DEFAULT_FROM.slice(8))}일부터</b> 지운 지 <b>{TRASH_DEFAULT_DAYS}일</b>이 지난 항목은 자동으로 영구 삭제됩니다(기본). 남겨 두려면 ⚙️에서 끄기.
+              </>
+            ) : days > 0 ? (
+              <>
+                🕒 지운 지 <b>{days}일</b>이 지난 항목은 자동으로 영구 삭제됩니다{unset && '(기본 - ⚙️에서 바꿉니다)'}.
               </>
             ) : (
               <>🕒 자동 비우기 꺼짐 - 직접 지우기 전까지 남아 있습니다.</>

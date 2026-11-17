@@ -1,5 +1,6 @@
 // 휴지통 자동 비우기 (V4 trashRetention.purgeExpiredTrashDaily) - Shell에 하나. 앱을 열어 항목·라벨 사본이 서버와 맞춰지면(live)
-// 하루 한 번(이 기기 기준) 기간이 지난 것을 영구 삭제한다. 끄기(0)면 아무것도 하지 않는다(기본).
+// 하루 한 번(이 기기 기준) 기간이 지난 것을 영구 삭제한다. 끄기(0)면 아무것도 하지 않는다.
+// 고르지 않은 계정은 기본 90일 - 2026-12-01부터(domain/trashDays, P41-1 - 예전 기본은 끄기).
 // 셈·지우기(trashList·actions - 드라이브 첨부 지우기까지)는 켰을 때만 나눠 받는다(P25-1 첫 화면 JS).
 import { useEffect, useRef } from 'react';
 import { useCommonSettings } from '../../app/prefs';
@@ -7,10 +8,12 @@ import { useClipboard } from '../../data/clipboard';
 import { useMirrorStatus } from '../../data/select';
 import { useTrashDocs } from './useTrashDocs';
 import { useCurrentSpaceId } from '../../data/session';
+import { todayStr } from '../../domain/dateUtils';
+import { effectiveTrashDays } from '../../domain/trashDays';
 
 export function useTrashAutoEmpty() {
   const sid = useCurrentSpaceId();
-  const days = useCommonSettings((s) => s.trashDays);
+  const days = effectiveTrashDays(useCommonSettings((s) => s.trashDays), todayStr());
   const docs = useTrashDocs(sid);
   const itemsLive = useMirrorStatus('items', sid) === 'live';
   const labelsLive = useMirrorStatus('labels', sid) === 'live';
