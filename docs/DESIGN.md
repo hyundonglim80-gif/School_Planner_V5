@@ -162,7 +162,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 ### 4-8. 설정 (개인 공간 `settings/`)
 
-- `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays` · 자동 백업 `autoBackup` · 알림 소리 길이 `alarmSound`(초 - 0 한 번·기본 10·-1 확인할 때까지, P10-1) · 색 테마 `palette`(P20-1 - 기본 `default`, 모르는 id도 그대로 둔다 - 그리기만 기본) · 색약 배려 `cvd`(P20-2 - 기본 끔) · 꾸미기 `decor`(P20-3 - 기본 `off`, 모르는 값도 그대로 둔다 - 그리기만 끄기) ·
+- `common`(계정에 하나): 교사 유형 `teaching` · 이월 기간 `forwardDays`(기본 14) · 휴지통 자동 비우기 `trashDays`(칸 없음 = 고르지 않음 → 90일, 2026-12-01부터 - P41-1 `domain/trashDays`, 끄기 0도 적는다) · 자동 백업 `autoBackup` · 알림 소리 길이 `alarmSound`(초 - 0 한 번·기본 10·-1 확인할 때까지, P10-1) · 색 테마 `palette`(P20-1 - 기본 `default`, 모르는 id도 그대로 둔다 - 그리기만 기본) · 색약 배려 `cvd`(P20-2 - 기본 끔) · 꾸미기 `decor`(P20-3 - 기본 `off`, 모르는 값도 그대로 둔다 - 그리기만 끄기) ·
   우리 학교 `school` · 수업 종 `classBell` · 교시 `periods` · 학기 `terms` · D-Day `ddays` · 관찰 문구 `phrases` · 학급마다 고른 사진 폴더 `photoFolders`(V4 backup_config) ·
   겹쳐 볼 구글 캘린더 `gcalOverlay`(P36-3 - `[{ id, name, color }]` 10개까지, 이름·색은 고를 때 적은 것. 사람마다 다른 자료라 초기화 설정·처음 설정 밖 - 받은 일정은 6-4, 서버에 없다).
 - `import`: V4 가져오기 기록(8-1) - 11-11 P31에 가져오기를 뗐다, 옛 계정에 남은 문서는 읽지 않는다(백업에도 담지 않는다).
@@ -288,6 +288,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
   그래서 덧칠이 있는 문서의 '빠짐'은 무시하고, 없으면 서버에 물어(`getDocFromServer`) 정말 없을 때만 사본에서 뺀다.
 - **영구 지우기**: 내 것은 끝나면 사본에서 뺀다(그 판까지만 - 그 사이 되돌려 다시 적었으면 둔다). 다른 기기의 것은 결과 밖의 문서면 구독에 보이지 않으므로,
   하루 한 번 사본의 지운 항목을 `where('deletedAt', '!=', null)`과 견줘 서버에 없는 것을 뺀다(묻기 전의 판만 - 그 사이 되살린 것은 두고).
+  먼저 그 쿼리의 **개수**(`getCountFromServer` - 1천 개마다 읽기 1)만 묻고 사본의 지운 항목 수와 같으면 끝(P41-1 - 구독이 따라잡은 뒤라 같은 수면 같은 모임, 휴지통 문서를 날마다 받지 않는다).
   앱이 꺼진 사이 지우고 영구로 지운 것은 지운 표시도 받지 못해 위 후보에 없다 → 같은 때 지난번 견준 달부터 `settings/purged-YYYY-MM`을 읽어, 사본에 남은 id만 서버에 물어 없으면 뺀다(P22-3).
   기록은 실마리다 - 되살린 문서는 서버가 '있다'고 답한다. 답을 못 받은 것이 있으면 견준 때(`prunedAt`)를 옮기지 않는다. 처음 받은 사본은 읽지 않는다. 2년 넘게 쉰 기기는 '이 기기 사본 다시 받기'로.
 - 화면은 **`data/select.ts`만** 쓴다: 날짜로 `itemsOn` · 기간으로 `itemsBetween` · 라벨로 `itemsWithLabels` · 종류로 `itemsOfKind` · 메모만 `memos` · 휴지통 `trashOf` · 라벨 `labelsOf`,
