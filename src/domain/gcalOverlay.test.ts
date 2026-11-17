@@ -63,6 +63,17 @@ describe('고르기 줄', () => {
     expect(list[0]).toEqual({ id: 'me@x', name: '내 캘린더', color: '#9fe1e7', primary: true });
     expect(list[1].color).toBe(OVERLAY_DEFAULT_COLOR);
   });
+
+  it('기본 캘린더 이름이 메일 주소(구글이 주는 그대로)면 내 캘린더 - 다른 캘린더·바꾼 이름은 그대로 (P36-4 PC 확인)', () => {
+    const list = pickableCalendars([
+      { id: 't@school.kr', summary: 't@school.kr', primary: true },
+      { id: 'a@group.calendar.google.com', summary: 'a@group.calendar.google.com' },
+      { id: 'p@x', summary: 'p@x', summaryOverride: '학교 일정', primary: true },
+    ]);
+    expect(list.find((c) => c.id === 't@school.kr')?.name).toBe('내 캘린더');
+    expect(list.find((c) => c.id === 'p@x')?.name).toBe('학교 일정');
+    expect(list.find((c) => c.id === 'a@group.calendar.google.com')?.name).toBe('a@group.calendar.google.com');
+  });
 });
 
 describe('일정 읽기', () => {

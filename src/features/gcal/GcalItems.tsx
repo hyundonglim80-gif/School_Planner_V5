@@ -85,7 +85,8 @@ const LINE: Record<Exclude<GcalAt, 'day' | 'compact'>, { box: string; chip: stri
   month: { box: 'px-1.5 py-0.5 rounded text-2xs leading-tight', chip: '', time: 'mr-1' },
   year: { box: 'px-1.5 py-1 rounded-lg text-xs leading-snug', chip: 'mr-1.5 text-2xs px-1.5 py-0.5 max-w-[min(8rem,100%)]', time: 'mr-1 text-2xs' },
   sheet: { box: 'px-2 py-1.5 rounded-lg text-xs leading-snug', chip: 'mr-1.5 text-2xs px-1.5 py-0.5 max-w-[min(8rem,100%)]', time: 'mr-1 text-2xs' },
-  board: { box: 'px-1.5 py-1 rounded-lg text-xs leading-snug', chip: 'mr-1 text-2xs px-1 py-0.5 max-w-[min(7rem,100%)]', time: 'mr-1 text-2xs' },
+  // 한눈에 달 목록은 이름 칩 없이 색 점 (GcalBoardRow)
+  board: { box: 'px-1.5 py-1 rounded-lg text-xs leading-snug', chip: '', time: 'mr-1 text-2xs' },
 };
 
 /**
@@ -148,8 +149,9 @@ export function GcalBoardRow({ s, day, dateLabel, mark, selected, onPick }: { s:
       className={`w-full text-left flex items-start gap-1 border border-dashed text-slate-800 cursor-pointer hover:shadow-xs ${look.box} ${mark || 'bg-white border-slate-300 hover:border-slate-400'} ${selected ? 'ring-2 ring-primary/60' : ''}`}
     >
       <span className="shrink-0 font-bold text-2xs text-slate-500 tabular-nums pt-0.5">{dateLabel}</span>
-      <GcalCalChip s={s} className={`shrink-0 ${look.chip}`} />
-      <span data-gcal-text className="min-w-0 break-words">
+      {/* 좁은 달 목록이라 이름 칩 대신 색 점(월간 칸과 같게 - P36-4 PC 확인: 기본 캘린더 이름 칩이 자리를 다 차지해 제목이 두 글자씩 꺾였다). 이름은 title에 */}
+      <GcalDot color={s.cal.color} className="w-2 h-2 mt-1" />
+      <span data-gcal-text className="min-w-0 flex-1 break-words">
         <Time s={s} date={day} short className={look.time} />
         {s.ev.title}
       </span>

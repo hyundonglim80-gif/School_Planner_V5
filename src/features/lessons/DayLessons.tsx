@@ -333,12 +333,14 @@ export default function DayLessons({ date }: { date: string }) {
                       <div className="flex items-center gap-1.5 min-w-0 flex-1">
                         <span className={`px-2 py-0.5 shrink-0 rounded-lg text-xs font-bold border ${colorClass}`}>{name}</span>
                         {slot?.cls ? (
-                          <span data-lesson-subject={c.subject} className="flex items-baseline gap-1.5 min-w-0 leading-tight">
+                          // 반·과목 묶음은 줄지 않는다 - 좁으면 내용 글이 먼저 준다 (11-17 PC: min-w-0이라 묶음이 반 이름보다 좁아져
+                          //   반 이름이 넘쳐 내용 글과 겹쳤다 - 한눈에 오른쪽 하루 칸·하루 화면 + 오른쪽 칸 + 글자 140%). 긴 과목 이름만 10em에서 줄임
+                          <span data-lesson-subject={c.subject} className="flex items-baseline gap-1.5 shrink-0 leading-tight">
                             <span data-slot-class className="shrink-0 font-black text-base sm:text-lg text-slate-900 tabular-nums">
                               {slot.cls}
                             </span>
                             {slot.subject && (
-                              <span data-slot-subject className="truncate text-xs sm:text-sm font-bold text-slate-500">
+                              <span data-slot-subject className="truncate max-w-[10em] text-xs sm:text-sm font-bold text-slate-500">
                                 {slot.subject}
                               </span>
                             )}

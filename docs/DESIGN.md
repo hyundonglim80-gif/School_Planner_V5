@@ -317,7 +317,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 - 고르기에서 빼면(다른 기기에서도) `pruneGcalCalendars`, 로그아웃하면 `wipeGcalOverlay`. IndexedDB가 고장이면 그 탭 메모리로만.
 - **그리기(P36-4 - PLAN 5장 'P36-4 … ■0 정한 것')**: 화면은 `features/gcal/gcalView` `useGcalShown(first, last)`로 읽는다(받은 것 + 고른 캘린더 이름·색 = `domain/gcalShow` `GcalShown { ev, cal, first, last }`) - 이 기기에서 끄면(`sp5-gcal-view`)·인쇄 창 안(`GcalOffContext`)·다른 계정 것이면 빈 목록.
   **앱 일정 목록(ItemDoc)에는 섞지 않는다**: 달력은 `calendarEvents`의 따로 칸 `gcalByDate`(하루짜리, 그날 차례)·`gcalPeriods`(여러 날 = 막대 자리 `GcalBarItem` - id `gcal:` - 월간·학사력은 앱 기간 일정과 한 `layoutWeekBars`에 넣어 줄을 나눈다), 하루·주간은 그날 목록 `gcalListOn`.
-  그리는 것은 `features/gcal/GcalItems`(점선 + 캘린더 이름 칩/색 점 + 시각 + 제목 · 완료·끌기·고르기 없음) · 누르면 창 `gcalEvent`(창 값에 그 일정을 담는다 - 다시 찾지 않는다) · 설명은 `gcalPlainText`로 글만(HTML로 그리지 않는다).
+  그리는 것은 `features/gcal/GcalItems`(점선 + 캘린더 이름 칩/색 점(월간 칸·한눈에 달 목록은 색 점만) + 시각 + 제목 · 완료·끌기·고르기 없음 · 기본 캘린더 이름 = '내 캘린더' - 구글은 메일 주소로 준다, `pickableCalendars`) · 누르면 창 `gcalEvent`(창 값에 그 일정을 담는다 - 다시 찾지 않는다) · 설명은 `gcalPlainText`로 글만(HTML로 그리지 않는다).
 
 ## 7. 화면 뼈대 (`src/app`)
 

@@ -389,6 +389,22 @@ try {
   r.check(cb?.bumps?.[0] === '2026-10-12#2', `5-3 다음 수업 밀기 = 그 반의 다음 교시만 (${cb?.bumps?.[0]})`);
   await p3.locator(`[data-popup-frame]:has(${sel('progress-window')}) [data-close]`).click();
   r.check(await waitFor(card3(1).locator(sel('progress-mark', 1)), 8000), '5-2 = 1차시');
+  // 좁은 카드 - 반·과목이 줄지 않고 내용 글이 그 뒤에서 줄어든다 (11-17 PC: 반·과목 묶음이 0까지 줄어 반 이름이 넘쳐 내용 글과 겹쳤다 -
+  //   한눈에 오른쪽 하루 칸·하루 화면 + 오른쪽 칸 + 글자 140%. 마우스를 올려야 보이는 단추도 자리는 잡는다)
+  //   사용자 화면처럼 하루 글자 140% - 계정에 쓰지 않고 html 변수만 (끝에 걷는다)
+  await p3.setViewportSize({ width: 390, height: 844 });
+  await p3.evaluate(() => document.documentElement.style.setProperty('--font-scale', '1.4'));
+  await p3.waitForTimeout(500);
+  const lap = await card3(1).evaluate((el) => {
+    const box = (s) => el.querySelector(s)?.getBoundingClientRect();
+    const cls = box('[data-slot-class]');
+    const sub = box('[data-slot-subject]');
+    const con = box('[data-lesson-content]');
+    return { card: Math.round(el.getBoundingClientRect().width), subW: Math.round(sub?.width ?? -1), subRight: Math.round(sub?.right ?? cls?.right ?? 0), conLeft: Math.round(con?.left ?? -1), hasCon: !!con };
+  });
+  r.check(lap.hasCon && lap.subW > 0 && lap.conLeft >= lap.subRight, `좁은 칸(카드 ${lap.card}px·글자 140%) - 과목이 보이고(폭 ${lap.subW}) 내용 글은 그 뒤에서 (과목 끝 ${lap.subRight} ≤ 내용 시작 ${lap.conLeft})`);
+  await p3.evaluate(() => document.documentElement.style.removeProperty('--font-scale'));
+  await p3.setViewportSize({ width: 1400, height: 900 });
   r.check(await waitFor(card3(2).locator(sel('progress-mark', 'bumped')), 8000), '5-3 = 민 교시 (반마다 따로 센다)');
   void d3;
   await p3.waitForTimeout(500);

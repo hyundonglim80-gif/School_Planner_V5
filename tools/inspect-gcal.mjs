@@ -93,7 +93,8 @@ const ov = {
   /** 일정 요청 [캘린더, timeMin, timeMax] */
   asks: [],
   cals: [
-    { id: 'me@example.com', summary: 'me@example.com', summaryOverride: '내 캘린더', primary: true, backgroundColor: '#9fe1e7' },
+    // 진짜 구글 모양 - 기본 캘린더 이름(summary)은 메일 주소, summaryOverride 없음 (P36-4 PC 확인 11-17: 흉내가 다른 이름을 달아 긴 이름 칩을 놓쳤다)
+    { id: 'me@example.com', summary: 'me@example.com', primary: true, backgroundColor: '#9fe1e7' },
     { id: 'CAL_WORK', summary: 'SP(work)', backgroundColor: '#000000' },
     { id: 'grade@group.calendar.google.com', summary: '학년 협의', backgroundColor: '#16a765' },
     { id: 'gone@group.calendar.google.com', summary: '지운 캘린더', backgroundColor: '#ff7537' },
@@ -178,7 +179,8 @@ async function overlayBundle() {
   r.check(await waitFor(page.locator(sel('gcal-overlay-pick', GRADE)), 8000), '📋 내 캘린더 목록 받기 → 줄');
   const rowIds = await page.locator('[data-gcal-overlay-pick]').evaluateAll((els) => els.map((e) => e.getAttribute('data-gcal-overlay-pick')));
   r.check(rowIds[0] === 'me@example.com' && !rowIds.includes('CAL_WORK') && rowIds.length === 3, `기본 캘린더 먼저 · 앱이 보내는 SP(work)는 없다 (${rowIds.join(', ')})`);
-  r.check(((await page.locator(sel('gcal-overlay-row', 'me@example.com')).textContent()) ?? '').includes('(기본)'), '내 캘린더 (기본)');
+  const meRow = (await page.locator(sel('gcal-overlay-row', 'me@example.com')).textContent()) ?? '';
+  r.check(meRow.includes('내 캘린더') && meRow.includes('(기본)') && !meRow.includes('me@example.com'), `기본 캘린더 이름(메일 주소) = 내 캘린더 (기본) (${meRow.trim()})`);
 
   await page.locator(sel('gcal-overlay-pick', GRADE)).check();
   r.check((await serverUntil(picked, (l) => l.includes(GRADE))).includes(GRADE), '고르면 계정 칸 common gcalOverlay에');
@@ -356,6 +358,9 @@ async function drawBundle() {
   await page.evaluate(() => (location.hash = '#/board/2027-05-04'));
   const boardRow = page.locator('[data-gcal-at="board"][data-gcal-event="ov_talk"]');
   r.check(await waitFor(boardRow, 10000), '한눈에 달 목록에 구글 일정 줄');
+  // 좁은 달 목록은 이름 칩 대신 색 점 - 제목이 줄의 대부분을 쓴다 (P36-4 PC 확인: 긴 캘린더 이름 칩에 밀려 제목이 두 글자씩 꺾였다)
+  const boardFit = await boardRow.evaluate((el) => ({ chip: el.querySelectorAll('[data-gcal-chip]').length, row: el.getBoundingClientRect().width, text: el.querySelector('[data-gcal-text]').getBoundingClientRect().width }));
+  r.check(boardFit.chip === 0 && boardFit.text >= boardFit.row * 0.55, `한눈에 달 목록 = 색 점 + 넓은 제목 (칩 ${boardFit.chip} · 제목 ${Math.round(boardFit.text)} / 줄 ${Math.round(boardFit.row)}px)`);
   r.check((await page.locator(`${sel('board-cal-day', '2027-05-20')}`).getAttribute('data-board-cal-count')) === '1', '달력 날 점도 센다 (구글 일정만 있는 5/20)');
   r.check((await page.locator(`${sel('week-day', '2027-05-04')} [data-gcal-at="week"]`).count()) === 3, '한눈에 요일 칸에도');
   await page.locator(sel('board-cal-day', '2027-05-11')).click();

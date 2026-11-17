@@ -96,11 +96,22 @@ export function sanitizeOverlayCalendars(v: unknown): OverlayCalendar[] | undefi
 /** 앱이 보내는 캘린더 이름 (SP(work)·SP(class)·SP(commentary)) - 겹치면 같은 일정이 두 번 보인다 */
 const APP_CALENDAR_NAMES = new Set(Object.values(CALENDAR_NAME));
 
+/** 기본 캘린더의 이름 - 구글은 이름(summary)을 메일 주소로 준다. 메일 주소 칩은 길고 뜻이 없어 '내 캘린더'로 (P36-4 PC 확인 11-17) */
+export const PRIMARY_CALENDAR_NAME = '내 캘린더';
+
+function calendarName(c: GoogleCalendarEntry): string {
+  const own = c.summaryOverride?.trim();
+  if (own) return own;
+  const summary = c.summary?.trim() ?? '';
+  if (c.primary && (!summary || summary === c.id)) return PRIMARY_CALENDAR_NAME;
+  return summary || c.id;
+}
+
 /** 고르기 줄에 보일 캘린더 - 앱이 보내는 캘린더·지운 캘린더는 빼고, 기본 캘린더 먼저 그다음 이름 차례 */
 export function pickableCalendars(list: readonly GoogleCalendarEntry[]): PickableCalendar[] {
   return list
     .filter((c) => c && typeof c.id === 'string' && c.id && !c.deleted && !APP_CALENDAR_NAMES.has(c.summary ?? '') && !APP_CALENDAR_NAMES.has(c.summaryOverride ?? ''))
-    .map((c) => ({ id: c.id, name: (c.summaryOverride || c.summary || c.id).trim(), color: colorOf(c.backgroundColor), primary: !!c.primary }))
+    .map((c) => ({ id: c.id, name: calendarName(c), color: colorOf(c.backgroundColor), primary: !!c.primary }))
     .sort((a, b) => Number(b.primary) - Number(a.primary) || a.name.localeCompare(b.name, 'ko'));
 }
 
