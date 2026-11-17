@@ -83,11 +83,11 @@ jobs:
 
       - name: Rules and data tests
         run: npx firebase emulators:exec --only auth,firestore --project schoolplannerv3 "npm run check:rules && npm run test:data"
-
+  # 크롬 점검(P36-1 · P40-1 · P44-1) - 자주 바뀌는 화면·달력 화면·최근 바뀐 화면의 점검 열일곱을 하나씩(목록·까닭은 tools/ci-chrome.mjs · PLAN 5장 'P36-1'·'P40-1'·'P44 추천 셋').
   # 크롬 점검(P36-1 · P40-1) - 자주 바뀌는 화면·달력 화면의 점검 열셋을 하나씩(목록·까닭은 tools/ci-chrome.mjs · PLAN 5장 'P36-1'·'P40-1').
   # 틀리면 CI 실패 = 배포 멈춤. 메모 요청(claude-request.yml)은 PR의 이 일까지 기다렸다 합친다.
   chrome:
-    runs-on: ubuntu-latest
+    # 한 바퀴 9분 안쪽(점검 열일곱) - 손 실행 '몇 바퀴'(repeat)까지
     # 한 바퀴 6~7분(점검 열셋) - 손 실행 '몇 바퀴'(repeat)까지
     timeout-minutes: 60
     env:
