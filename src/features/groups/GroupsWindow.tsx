@@ -1,6 +1,6 @@
 // 👥 공유 그룹 창 (V4 GroupModal - MENU 2-2: 계정 칸 '👥 공유 그룹'·공간 고르기 끝 '👥 그룹 관리…', 단축키 'group'). P8-4.
 // 내 그룹(초대 코드·구성원·열기·나가기/지우기, 그룹장은 🔄 코드 바꾸기·🚫 초대 닫기·구성원 × 내보내기 - P14-1) · 새 그룹 만들기 · 초대 코드로 참여.
-// 구성원 칩 ✉(나 말고) = 그 사람에게 쪽지 쓰기(P15-2 ■2 - 쪽지 창 '쓰기' 탭) · 💬 = 그 사람과 1:1 대화 · 그룹 머리 '💬 그룹 대화' = 그룹 전체 방(P19-2 ■3).
+// 구성원 칩 💬(나 말고) = 그 사람과 1:1 대화(P41-3 - 옛 ✉ 쪽지 쓰기는 쪽지와 함께 걷었다) · 그룹 머리 '💬 그룹 대화' = 그룹 전체 방(P19-2 ■3).
 // 초대 코드로 들면 그 그룹 전체 방의 지난 글을 읽은 것으로 적는다(markChatJoined - 실패해도 참여는 된다, PLAN 5장 'P19 ■2 안 읽음').
 import { useEffect, useState } from 'react';
 import { showErrorToast, showToast, ShownError } from '../../app/toast';
@@ -13,7 +13,6 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { markChatJoined } from '../../data/chat';
 import { dmPairId } from '../../domain/chat';
 import { openChat } from '../chat/open';
-import { openMail } from '../mail/open';
 import { Section } from '../settings/parts';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -162,18 +161,6 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
           return (
             <span key={id} data-group-person={id} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
               {name}
-              {id !== uid && (
-                <button
-                  type="button"
-                  data-group-mail={id}
-                  onClick={() => openMail({ tab: 'write', sid: group.id, to: [id] })}
-                  title={`${name} 선생님에게 쪽지`}
-                  aria-label={`${name} 선생님에게 쪽지`}
-                  className="px-0.5 text-slate-400 hover:text-primary cursor-pointer"
-                >
-                  ✉
-                </button>
-              )}
               {id !== uid && (
                 <button
                   type="button"

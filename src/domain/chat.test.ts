@@ -10,6 +10,7 @@ import {
   chatRows,
   chatSections,
   chatSendDocs,
+  chatWhen,
   cleanRoomName,
   defaultRoomName,
   chatTextError,
@@ -337,5 +338,18 @@ describe('듣기 건너뜀 (P22-5 ■3)', () => {
     expect(pageSkipped(page(0, 50), page(60, 49))).toBe(false);
     expect(pageSkipped([], page(60, 50))).toBe(false);
     expect(pageSkipped([{ ...page(0, 1)[0], at: null }], page(60, 50))).toBe(false);
+  });
+});
+
+describe('방 목록 줄 시각 (P41-3 - 쪽지 mailWhen에서 옮김)', () => {
+  it('오늘·올해·그 전·보내는 중', () => {
+    const now = new Date(2026, 10, 2, 15, 0).getTime();
+    const time = (d: Date) => d.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
+    const today = new Date(2026, 10, 2, 9, 5);
+    expect(chatWhen(today.getTime(), now)).toBe(time(today));
+    const before = new Date(2026, 9, 30, 9, 5);
+    expect(chatWhen(before.getTime(), now)).toBe(`10/30 ${time(before)}`);
+    expect(chatWhen(new Date(2025, 10, 2).getTime(), now)).toBe('2025/11/2');
+    expect(chatWhen(null, now)).toBe('보내는 중…');
   });
 });

@@ -754,14 +754,6 @@ try {
     r.check((await count(sel('v4-groups'))) === 0, 'V4 그룹 가져오기는 없다 (P31)');
   });
 
-  // 쪽지 (P15-2) - 주고받기는 tools/inspect-mail.mjs(두 계정)
-  await topic('mail', async () => {
-    await win('mail');
-    r.check(await has(sel('mail-window', 'in')), '✉ 쪽지 창 - 받은 쪽지 탭');
-    await q(sel('mail-tab-btn', 'sent')).click();
-    r.check(await has(sel('mail-window', 'sent')), '보낸 쪽지 탭');
-  });
-
   // 대화 (P19-2) - 주고받기·방은 tools/inspect-chat.mjs(두 계정)
   await topic('chat', async () => {
     await shortcut('chat');

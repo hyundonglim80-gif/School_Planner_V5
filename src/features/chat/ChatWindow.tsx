@@ -10,8 +10,7 @@ import { countUnread, useChatWatch } from '../../data/chat';
 import { useChatStore } from '../../data/chatStore';
 import { useSession } from '../../data/session';
 import { useMySpaces, type GroupSpace } from '../../data/spaceChoice';
-import { chatCountLabel, chatSections, dmOtherOf, isRoomUnread, myReadOf, parseRoomKey, roomPreview, type ChatRoom } from '../../domain/chat';
-import { mailWhen } from '../../domain/mail';
+import { chatCountLabel, chatSections, chatWhen, dmOtherOf, isRoomUnread, myReadOf, parseRoomKey, roomPreview, type ChatRoom } from '../../domain/chat';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { POPOUT } from '../../ui/popout';
 import ChatRoomView from './ChatRoomView';
@@ -113,7 +112,7 @@ function RoomRow({ roomKey, icon, name, sub, room, me, now, unread, count, onOpe
                 🔕
               </span>
             )}
-            {room?.lastId && <span className="ml-auto shrink-0 text-2xs text-slate-400">{mailWhen(room.lastAt, now)}</span>}
+            {room?.lastId && <span className="ml-auto shrink-0 text-2xs text-slate-400">{chatWhen(room.lastAt, now)}</span>}
           </span>
           <span className="flex items-center gap-1.5">
             <span data-chat-preview className={`min-w-0 flex-1 truncate text-xs ${unread ? 'font-bold text-slate-800' : preview ? 'text-slate-500' : 'text-slate-300'}`}>

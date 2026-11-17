@@ -10,7 +10,6 @@ import { customShortcutOf } from './customShortcuts';
 import type { ItemKind } from '../data/types';
 import type { AttendanceTab } from '../features/attendance/open';
 import type { BackupTabId } from '../features/backup/open';
-import type { MailTabId } from '../features/mail/open';
 import type { NoticeTab } from '../features/notices/open';
 import type { SettingsTabId } from '../features/settings/SettingsWindow';
 import type { TimetableTab } from '../features/timetable/TimetableWindow';
@@ -44,11 +43,6 @@ export const TAB_SHORTCUTS: TabShortcut[] = [
     ['backup', '백업'],
     ['import', '가져오기'],
     ['tidy', '정리'],
-  ]),
-  ...tabsOf<MailTabId>('mail', '쪽지', [
-    ['in', '받은 쪽지'],
-    ['sent', '보낸 쪽지'],
-    ['write', '쓰기'],
   ]),
   // '교사 유형' = 단축키 '교사 유형 바꾸기'(ALIAS)
   ...tabsOf<Exclude<TimetableTab, 'teaching'>>('timetable', '시간표', [

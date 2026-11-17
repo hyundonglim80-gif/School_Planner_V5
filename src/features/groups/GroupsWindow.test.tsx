@@ -23,9 +23,6 @@ const spaces = vi.hoisted(() => ({
   deleteGroup: vi.fn(),
 }));
 vi.mock('../../data/spaces', () => spaces);
-// 쪽지 창은 창 목록에 등록하지 않았다 - 여는 것만 본다
-const mail = vi.hoisted(() => ({ openMail: vi.fn() }));
-vi.mock('../mail/open', () => mail);
 // 대화도 (P19-2 ■3) - 창 열기·참여 때 읽음 적기만 본다
 const chat = vi.hoisted(() => ({ openChat: vi.fn(), markChatJoined: vi.fn(() => Promise.resolve()) }));
 vi.mock('../chat/open', () => ({ openChat: chat.openChat }));
@@ -115,12 +112,10 @@ describe('공유 그룹 창 - 그룹장 도구 (P14-1)', () => {
     expect(confirm.mock.calls[0][0]).toBe('이구성 선생님을 그룹에서 내보낼까요?');
   });
 
-  it('구성원 칩 ✉ = 나 말고 모두(그룹장·구성원), 누르면 그 사람에게 쪽지 쓰기 (P15-2 ■2)', async () => {
+  it('구성원 칩에 ✉ 쪽지 쓰기는 없다 (P41-3 - 쪽지를 걷어 💬 1:1 대화만)', async () => {
     signIn('u2');
     await openWith(group());
-    expect(qa('[data-group-mail]').map((b) => b.dataset.groupMail)).toEqual(['u1']);
-    fireEvent.click(q('[data-group-mail="u1"]')!);
-    expect(mail.openMail).toHaveBeenCalledWith({ tab: 'write', sid: 'g_t1', to: ['u1'] });
+    expect(qa('[data-group-mail]')).toEqual([]);
   });
 
   it("💬 그룹 대화 = 그룹 전체 방 · 구성원 칩 💬 = 그 사람과 1:1 (연 그룹과 함께) (P19-2 ■3)", async () => {

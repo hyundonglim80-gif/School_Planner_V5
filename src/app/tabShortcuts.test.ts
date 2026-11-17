@@ -68,7 +68,6 @@ const sources = import.meta.glob(['../features/**/*Window.tsx', '../features/**/
 const FILE_OF: Record<string, string> = {
   settings: 'settings/SettingsWindow',
   backup: 'backup/BackupWindow',
-  mail: 'mail/MailWindow',
   timetable: 'timetable/TimetableWindow',
   labels: 'labels/LabelsWindow',
   trash: 'trash/TrashWindow',

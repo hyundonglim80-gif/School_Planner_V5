@@ -1,7 +1,7 @@
-// 쪽지·대화 글의 첨부 보이기 (P16 쪽지 MailAttachments → P19-2 ■2 대화도 함께 - 메모 쓰는 칸 NotePanel의 첨부 줄과 같은 모양).
+// 대화 글의 첨부 보이기 (P16 쪽지 MailAttachments → P19-2 ■2 대화도 함께 → P41-3 쪽지를 걷어 대화만 - 메모 쓰는 칸 NotePanel의 첨부 줄과 같은 모양).
 //   쓰는 칸은 ✕(빼기)까지, 받은 글은 보기만. 그림은 크게(누르면 크게 보기 - 이 글의 그림들을 넘겨 본다), 파일은 종류 그림 + 이름(누르면 새 탭).
 //   주소는 보낸 사람 드라이브의 '링크가 있는 사람은 보기'(data/google/drive) - 받는 사람은 로그인 없이 본다.
-//   점검 고르개는 kind로 'data-mail-attachment…'·'data-chat-attachment…'(inspect-mail·inspect-chat).
+//   점검 고르개는 'data-chat-attachment…'(inspect-chat).
 import { fileIcon, formatFileSize, isImageAttachment } from '../../domain/attachments';
 import { attachmentImageSrc } from '../../data/google/drive';
 import type { Attachment } from '../../data/types';
@@ -10,11 +10,11 @@ import { openImageViewer } from '../../ui/imageViewerStore';
 interface Props {
   items: readonly Attachment[];
   onRemove?: (index: number) => void;
-  /** data-* 이름 앞 (쪽지 'mail' · 대화 'chat') */
-  kind?: 'mail' | 'chat';
+  /** data-* 이름 앞 (대화 'chat') */
+  kind?: 'chat';
 }
 
-export default function SharedAttachments({ items, onRemove, kind = 'mail' }: Props) {
+export default function SharedAttachments({ items, onRemove, kind = 'chat' }: Props) {
   if (items.length === 0) return null;
   const d = (name: string, value: string | number = '') => ({ [`data-${kind}-${name}`]: value });
   const pics = items.filter(isImageAttachment);

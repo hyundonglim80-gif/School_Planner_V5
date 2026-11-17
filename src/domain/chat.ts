@@ -382,7 +382,18 @@ export function chatRows(msgs: readonly ChatMsg[], now = Date.now()): ChatRow[] 
   return rows;
 }
 
-// 푸시 알림을 눌러 앱을 열 때 주소 ?chat=<방 키> (public/sw.js notificationclick) - ?mail= 본보기(domain/mail)
+/** 방 목록 줄의 시각 - 오늘이면 '오후 3:05', 올해면 '11/2 오후 3:05', 그 전이면 '2025/11/2'. null = 내가 막 보내 서버가 아직 받지 않음 (P41-3 - 쪽지 mailWhen에서 옮김) */
+export function chatWhen(at: number | null, now: number): string {
+  if (at === null) return '보내는 중…';
+  const d = new Date(at);
+  const n = new Date(now);
+  const time = d.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit' });
+  if (d.toDateString() === n.toDateString()) return time;
+  if (d.getFullYear() === n.getFullYear()) return `${d.getMonth() + 1}/${d.getDate()} ${time}`;
+  return `${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+// 푸시 알림을 눌러 앱을 열 때 주소 ?chat=<방 키> (public/sw.js notificationclick)
 
 /** 주소의 ?chat= 값 - 없거나 방 키 모양이 아니면 null */
 export function chatParamOf(search: string): string | null {

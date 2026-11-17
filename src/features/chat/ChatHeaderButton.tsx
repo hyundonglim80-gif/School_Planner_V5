@@ -1,4 +1,4 @@
-// 머리줄 '💬 대화 n' (P19-2 ■3 - MENU 3-1, ✉ 쪽지 뒤). 든 그룹이 있으면 늘, 그룹을 나왔어도 안 읽은 대화(1:1)가 있으면.
+// 머리줄 '💬 대화 n' (P19-2 ■3 - MENU 3-1, 휴지통 뒤 - P41-3 ✉ 쪽지를 걷었다). 든 그룹이 있으면 늘, 그룹을 나왔어도 안 읽은 대화(1:1)가 있으면.
 // n = 안 읽은 방 수(Shell의 듣기 data/chat useChatWatch가 채운 store - 🔕 방도 센다, 100부터 '99+'). 누르면 단축키 'chat'(창 목록 id라 대화 창이 열린다).
 import { runFromButton, useShortcutTitle } from '../../app/keys';
 import { useMySpaces } from '../../data/spaceChoice';

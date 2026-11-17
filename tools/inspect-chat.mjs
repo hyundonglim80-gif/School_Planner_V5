@@ -5,8 +5,8 @@
 //   ■2 보내기: Enter = 보내기(칸이 비고 서버 글·방 미리 보기) · Shift+Enter 줄 바꿈 · Ctrl+S는 보내지 않음 · 쓰던 글은 닫았다 열면 칸에 ·
 //      캡처 Ctrl+V = 드라이브(흉내) → 첨부만 보내기('📎 1') · '+ 새 대화' → 사람 = 새 1:1(방 문서는 첫 글이) · 1:1 그룹 옮기기(방 그룹을 나가면 함께 든 그룹으로)
 //   ■3 읽음·여는 길: 본 방은 읽음(내 읽음 문서) · 머리줄 💬 n · 새 글 안내 '보기' → 그 방 · 보는 방은 안내 없이 2초 모아 읽음 · 상대가 읽으면 '1'이 사라짐 ·
-//      계정 칸 · 단축키 chat · 머리줄 💬 · 그룹 창 '💬 그룹 대화'·구성원 💬 · 받은 쪽지 '💬 대화로'
-//   ■4 휴대폰 390(머리줄 ✉·💬 넘침 0 · 글 칸이 화면 아래 · 자판 Enter = 줄 바꿈 · ➤) · 그룹에서 빠진 사람(관리자 쓰기)은 다음 글에서 '볼 수 없음'·목록·💬에서 빠진다
+//      계정 칸 · 단축키 chat · 머리줄 💬 · 그룹 창 '💬 그룹 대화'·구성원 💬 (받은 쪽지 '💬 대화로'는 P41-3에 쪽지와 함께 걷었다)
+//   ■4 휴대폰 390(머리줄 💬 넘침 0 · 글 칸이 화면 아래 · 자판 Enter = 줄 바꿈 · ➤) · 그룹에서 빠진 사람(관리자 쓰기)은 다음 글에서 '볼 수 없음'·목록·💬에서 빠진다
 //   P19-3 ■1 ?chat=(그 방 · 주소에서 지움) · 서비스 워커 'chat' 푸시(보는 앱 창이 있으면 없음 · 방마다 알림 하나 · 같은 방은 바꾸기 '새 글 n개' ·
 //      1:1 = 보낸 사람 제목 · 모양이 아닌 방 키는 없음 · 알림 누르기 → 열린 창에 그 방 · 앱에서 그 방을 보면 그 알림이 닫힘)
 //   P19-3 ■2 🔕(방 머리 🔔 → 서버 muted.<나> · 목록 줄 🔕 · 끈 방 새 글은 안내 없음·💬 n에는 듦 · 다시 누르면 켜기)
@@ -20,7 +20,7 @@
 //
 //   그룹·지난 글은 관리자 쓰기로 심는다(B 주인·A 구성원 - 규칙은 그룹장이 남을 넣지 못한다, 지난 날 시각은 규칙이 막는다). 새 글은 B 클라이언트로(규칙 통과).
 //   대화는 지우기 규칙이 없다 - 끝에 관리자 지우기. npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-chat.mjs
-import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
+import { collection, deleteField, doc, getDoc, getDocs, query, serverTimestamp, Timestamp, updateDoc, where, writeBatch } from 'firebase/firestore';
 import { emulator, emulatorAdmin, fileDrag, launch, newPage, open, report, restorer, sel, serverUntil, SITE, waitFor } from './lib/probe.mjs';
 
 const r = report();
@@ -109,7 +109,7 @@ async function patchField(path, field, value) {
 /** A가 볼 수 있는 그룹 전체 방 글 가운데 그 글 (서버) */
 const serverMsg = async (text) => (await getDocs(query(collection(em.db, 'v5Chat', SID, 'chatRooms', 'all', 'chatMsgs'), where('text', '==', text)))).docs[0]?.data();
 
-// ── 구글 흉내 (inspect-mail과 같게 - 토큰은 살아 있는 것) ──
+// ── 구글 흉내 (토큰은 살아 있는 것) ──
 const google = { uploads: [] };
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': '*', 'Access-Control-Expose-Headers': 'Location' };
 const PNG = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
@@ -541,7 +541,7 @@ try {
   await updateDoc(doc(emB.db, 'v5Dm', PAIR), { [`reads.${uidB}`]: serverTimestamp() });
   r.check(await waitFor(async () => (await lastMine.locator(sel('chat-unseen')).count()) === 0, 8000), "상대가 읽으면 '1'이 사라진다");
 
-  r.section('■3 여는 길 - 계정 칸 · 단축키 · 그룹 창 · 받은 쪽지');
+  r.section('■3 여는 길 - 계정 칸 · 단축키 · 그룹 창');
   await page.evaluate(() => window.sp5.closeAllWindows());
   await page.locator(sel('account')).click();
   await page.locator(sel('account-chat')).click();
@@ -560,21 +560,8 @@ try {
   await page.evaluate(() => window.sp5.openWindow('group'));
   await page.locator(`${sel('group-row', SID)} ${sel('group-dm', uidB)}`).click();
   r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 5000), '그룹 창 구성원 💬 → 그 사람과 1:1');
-  await page.evaluate(() => window.sp5.closeAllWindows());
-  const mailId = doc(collectionRef()).id;
-  const mailCommon = { sid: SID, groupName: GROUP, to: [uidA], toNames: '김점검', text: '대화로 점검 쪽지', at: serverTimestamp(), replyTo: null, expireAt: Timestamp.fromMillis(Date.now() + YEAR), v: 1 };
-  const mb = writeBatch(emB.db);
-  mb.set(doc(emB.db, 'v5Mail', uidA, 'mailIn', mailId), { from: uidB, fromName: '이점검', ...mailCommon, readAt: null });
-  mb.set(doc(emB.db, 'v5Mail', uidB, 'mailSent', mailId), mailCommon);
-  await mb.commit();
-  undo.add(async () => {
-    await deleteDoc(doc(em.db, 'v5Mail', uidA, 'mailIn', mailId)).catch(() => {});
-    await deleteDoc(doc(emB.db, 'v5Mail', uidB, 'mailSent', mailId)).catch(() => {});
-  });
-  await page.evaluate((id) => window.sp5.openWindow('mail', { id }), mailId);
-  r.check(await waitFor(page.locator(sel('mail-chat', mailId)), 8000), "받은 쪽지 펼침에 '💬 대화로'");
-  await page.locator(sel('mail-chat', mailId)).click();
-  r.check(await waitFor(page.locator(sel('chat-room-view', PAIR)), 5000), "'💬 대화로' → 보낸 사람과 1:1");
+  // 쪽지는 P41-3에 걷었다 - 머리줄·계정 칸에 ✉가 없다
+  r.check((await page.locator(sel('header-mail')).count()) === 0 && (await page.locator(sel('account-mail')).count()) === 0, '머리줄·계정 칸에 ✉ 쪽지가 없다 (P41-3)');
 
   r.section('P19-3 ■1 ?chat= (푸시 알림을 눌러 연 앱)');
   await page.evaluate(() => window.sp5.closeAllWindows());
@@ -792,14 +779,13 @@ try {
       }
     });
     await open(M.page, `#/day/${DAY}`);
-    // 안 읽은 쪽지·대화가 있게 - 머리줄이 가장 넓을 때
+    // 안 읽은 대화가 있게 - 머리줄이 가장 넓을 때
     await sendAsB('휴대폰 점검 글');
     const mHead = M.page.locator(sel('header-chat'));
     r.check(await waitFor(async () => Number(await mHead.getAttribute('data-header-chat')) >= 1, 8000), '휴대폰 머리줄 💬 n');
-    r.check(await waitFor(M.page.locator(sel('header-mail')), 5000), '휴대폰 머리줄 ✉');
     const over = await M.page.evaluate(() => Math.max(0, document.documentElement.scrollWidth - 390, document.body.scrollWidth - 390));
-    const boxes = await Promise.all([sel('header-mail'), sel('header-chat')].map((s) => M.page.locator(s).boundingBox()));
-    r.check(over === 0 && boxes.every((b) => b && b.x >= 0 && b.x + b.width <= 390), `머리줄 넘침 0 · ✉·💬가 화면 안 (넘침 ${over})`);
+    const boxes = await Promise.all([sel('header-chat')].map((s) => M.page.locator(s).boundingBox()));
+    r.check(over === 0 && boxes.every((b) => b && b.x >= 0 && b.x + b.width <= 390), `머리줄 넘침 0 · 💬가 화면 안 (넘침 ${over})`);
     await shot(M.page, 'mobile-head');
     await M.page.evaluate((room) => window.sp5.openWindow('chat', { room }), ALL_KEY);
     r.check(await waitFor(M.page.locator(sel('chat-msgs')), 8000), '휴대폰 방 - 글');

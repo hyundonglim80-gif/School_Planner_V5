@@ -16,7 +16,6 @@ import { SUBJECT_ATT_CELL, SUBJECT_ATT_SUMMARY, sameSubjectCell, type SubjectAtt
 import { SEATING_WINDOW, type SeatingParams } from '../features/seating/open';
 import { STUDENT_RECORD, type StudentRecordParams } from '../features/studentRecord/open';
 import { EVAL_OVERVIEW, EVAL_WINDOW, sameEvalWindow, type EvalOverviewParams, type EvaluationParams } from '../features/evaluations/open';
-import { MAIL_WINDOW, type MailParams } from '../features/mail/open';
 import { CHAT_WINDOW, type ChatParams } from '../features/chat/open';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
@@ -238,17 +237,7 @@ registerWindow({
   load: () => import('../features/groups/GroupsWindow'),
 });
 
-// ✉ 쪽지 (P15-2) - 같은 그룹 구성원끼리. 받은·보낸 쪽지(서버에만 - 기기 사본·백업 없음). ⋮에는 넣지 않는다(MENU 3-4)
-registerWindow<MailParams | undefined>({
-  id: MAIL_WINDOW,
-  title: '쪽지',
-  icon: '✉️',
-  kind: 'side',
-  help: 'mail',
-  load: () => import('../features/mail/MailWindow'),
-});
-
-// 💬 대화 (P19-2) - 같은 그룹 구성원끼리 1:1 · 그룹 전체 · 고른 사람 방(서버에만 - 기기 사본·백업 없음). 쪽지 창과 따로, ⋮에는 넣지 않는다
+// 💬 대화 (P19-2) - 같은 그룹 구성원끼리 1:1 · 그룹 전체 · 고른 사람 방(서버에만 - 기기 사본·백업 없음). ⋮에는 넣지 않는다 (P41-3 - 같은 일을 하던 쪽지는 걷었다)
 registerWindow<ChatParams | undefined>({
   id: CHAT_WINDOW,
   title: '대화',

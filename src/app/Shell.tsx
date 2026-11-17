@@ -23,7 +23,6 @@ import { useTrashAutoEmpty } from '../features/trash/auto';
 import { useGcalAuto } from '../features/gcal/auto';
 import { useGcalOverlayAuto } from '../features/gcal/overlayAuto';
 import { useClaudeRequestsWatch } from '../data/claudeRequests';
-import { useMailReceiver } from '../features/mail/receive';
 import { useChatReceiver } from '../features/chat/receive';
 import { useClaudeReceiver } from '../features/notes/claudeReceive';
 import { useWeekShortcuts } from '../features/week/prefs';
@@ -101,8 +100,6 @@ export default function Shell() {
   useGcalOverlayAuto();
   // 메모로 보낸 Claude 요청의 진행 (메모 카드 표시 - 10-16)
   useClaudeRequestsWatch();
-  // ✉ 쪽지 - 안 읽은 수(머리줄)·새 쪽지 안내·푸시 알림으로 연 쪽지 (P15-2 - 새 창은 하지 않는다)
-  useMailReceiver();
   // 💬 대화 - 내가 든 방 듣기 → 대화 창 목록 (P19-2 - 새 창은 대화 창이 스스로)
   useChatReceiver();
   // 🤖 Claude 답 - 답 안내·푸시 알림으로 연 메모 (P23-3 - 새 창은 하지 않는다)
