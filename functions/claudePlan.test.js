@@ -1,7 +1,7 @@
 // claudePlan.js 시험 - `npm run test:functions`
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isReservedDataKey } from './mailPlan.js';
+import { isReservedDataKey } from './pushPlan.js';
 import {
   askedNow,
   claudePushData,

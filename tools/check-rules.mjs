@@ -528,148 +528,21 @@ async function runV5({ A, B, X, D, aUid, bUid, xUid }) {
     await updateDoc(space(A, gs), { [`members.${xUid}`]: 'member', updatedAt: now() });
   });
 
-  // 쪽지 (P15-1 - src/data/mail.ts): 받는 사람마다 v5Mail/{그 사람}/mailIn/{id} + 내 v5Mail/{나}/mailSent/{id}를 한 묶음으로
-  console.log('\n[V5 쪽지] — 같은 그룹 구성원끼리, 받는 쪽 한 장씩 + 내 사본 한 묶음 (P15-1)');
-  const ms = 'g_rcmail';
-  const mcode = 'V5RCMAIL';
-  const rid = now().toString(36); // 지난 실행이 남긴 같은 id가 있으면 만들기가 고치기가 된다
-  const inbox = (c, uid, id) => doc(c.db, 'v5Mail', uid, 'mailIn', id);
-  const sentBox = (c, uid, id) => doc(c.db, 'v5Mail', uid, 'mailSent', id);
-  const sentOf = (to, extra = {}) => ({
-    sid: ms, groupName: '쪽지 점검', to, toNames: to.map(() => '선생님').join(', '), text: '내일 협의회는 3시입니다',
-    at: serverTimestamp(), replyTo: null, expireAt: new Date(now() + 365 * 86400000), v: 1, ...extra,
-  });
-  const inOf = (from, to, extra = {}) => ({ from, fromName: '김선생', ...sentOf(to), readAt: null, ...extra });
-  // 앱이 하는 대로 한 묶음. both = 두 상자에 같이, boxes = 받는 쪽을 쓸 상자(기본 to), noSent = 사본 없이, drop = 뺄 칸
-  const send = async (c, from, id, to, { both = {}, inExtra = {}, sentExtra = {}, boxes = to, noSent = false, drop } = {}) => {
-    const b = writeBatch(c.db);
-    for (const uid of boxes) {
-      const d = inOf(from, to, { ...both, ...inExtra });
-      if (drop) delete d[drop];
-      b.set(inbox(c, uid, id), d);
-    }
-    if (!noSent) b.set(sentBox(c, from, id), sentOf(to, { ...both, ...sentExtra }));
-    await b.commit();
-  };
-  const m1 = `m1_${rid}`;
-  const m2 = `m2_${rid}`;
-  const m3 = `m3_${rid}`;
-  const m4 = `m4_${rid}`; // 첨부와 함께 (P16)
-  const m5 = `m5_${rid}`; // 첨부만 (P16)
-  const r1 = `r1_${rid}`;
-  const mx = `mx_${rid}`; // 막혀야 하는 시도들 - 막히면 아무것도 남지 않는다
+  // 쪽지(P15 v5Mail)는 P41-3(11-17)에 걷었다 - 규칙에 match가 없어 앱이 읽지도 쓰지도 못한다(남은 문서는 TTL이 지운다).
+  // 목록 묻기는 문서가 없어도 규칙으로 가린다 - 열려 있으면 빈 목록이 와서 '그런데 됐다'가 나온다.
+  console.log('\n[V5 쪽지 자리] — 걷었다: 받은 상자·보낸 사본이 모두 닫혔다 (P41-3)');
+  const mid = `m_${now().toString(36)}`;
+  await mustNot('B가 제 받은 쪽지 상자를 읽는다', () => getDocs(collection(B.db, 'v5Mail', bUid, 'mailIn')));
+  await mustNot('B가 제 보낸 사본 상자를 읽는다', () => getDocs(collection(B.db, 'v5Mail', bUid, 'mailSent')));
+  await mustNot('B가 제 받은 쪽지 하나를 지운다', () => deleteDoc(doc(B.db, 'v5Mail', bUid, 'mailIn', mid)));
+  await mustNot('A가 B에게 쪽지를 쓴다', () => setDoc(doc(A.db, 'v5Mail', bUid, 'mailIn', mid), { from: aUid, text: '내일 협의회는 3시입니다' }));
+  await mustNot('A가 제 보낸 사본을 쓴다', () => setDoc(doc(A.db, 'v5Mail', aUid, 'mailSent', mid), { text: '내일 협의회는 3시입니다' }));
 
-  await must('(준비) 쪽지 그룹: 주인 A + 코드로 B·C가 들어온다', async () => {
-    const b = writeBatch(A.db);
-    b.set(space(A, ms), { ...group, name: '쪽지 점검', inviteCode: mcode });
-    b.set(invite(A, mcode), { sid: ms, ownerId: aUid });
-    await b.commit();
-    await updateDoc(space(B, ms), { [`members.${bUid}`]: 'member', [`joinCodes.${bUid}`]: mcode, updatedAt: now() });
-    await updateDoc(space(C, ms), { [`members.${cUid}`]: 'member', [`joinCodes.${cUid}`]: mcode, updatedAt: now() });
-  });
-  await must('A가 B에게 (B 받은 쪽지 + A 보낸 사본 한 묶음)', () => send(A, aUid, m1, [bUid]));
-  await must('A가 B·C 둘에게', () => send(A, aUid, m2, [bUid, cUid]));
-  await must('한글 2000자', () => send(A, aUid, m3, [bUid], { both: { text: '가'.repeat(2000) } }));
-  // 첨부(P16) - 보낸 사람 드라이브의 붙임 목록, 있을 때만 칸째 1~10개
-  const att = (i) => ({ id: `file_${i}`, name: `캡처${i}.png`, url: `https://drive.google.com/thumbnail?id=D${i}&sz=w1000`, type: 'image/png', size: 1234, driveId: `D${i}` });
-  const atts = (n) => Array.from({ length: n }, (_, i) => att(i));
-  await must('첨부 둘과 함께 (attachments)', () => send(A, aUid, m4, [bUid], { both: { attachments: atts(2) } }));
-  await must('글 없이 첨부만 · 10개', () => send(A, aUid, m5, [bUid], { both: { text: '', attachments: atts(10) } }));
-  await must('B가 받은 쪽지 목록을 읽는다', async () => {
-    const s = await getDocs(collection(B.db, 'v5Mail', bUid, 'mailIn'));
-    if (!s.docs.some((d) => d.id === m1)) throw new Error('받은 쪽지가 없다');
-  });
-  await must("B가 안 읽은 것만 묻는다 (where readAt == null, limit)", async () => {
-    const s = await getDocs(query(collection(B.db, 'v5Mail', bUid, 'mailIn'), where('readAt', '==', null), limit(100)));
-    if (!s.docs.some((d) => d.id === m1)) throw new Error('안 읽은 쪽지가 안 나온다');
-  });
-  await must("B가 최근 것부터 30개 (orderBy at desc)", async () => {
-    await getDocs(query(collection(B.db, 'v5Mail', bUid, 'mailIn'), orderBy('at', 'desc'), limit(30)));
-  });
-  await must('B가 펼쳐 읽음 (readAt = 서버 시각)', () => updateDoc(inbox(B, bUid, m1), { readAt: serverTimestamp() }));
-  await must('다른 기기에서 다시 읽음 (이미 읽은 것)', () => updateDoc(inbox(B, bUid, m1), { readAt: serverTimestamp() }));
-  await must('B가 답장한다 (replyTo)', () => send(B, bUid, r1, [aUid], { both: { replyTo: m1 } }));
-  await must('A가 보낸 사본을 읽고 목록을 본다', async () => {
-    if (!(await getDoc(sentBox(A, aUid, m1))).exists()) throw new Error('사본이 없다');
-    await getDocs(collection(A.db, 'v5Mail', aUid, 'mailSent'));
-  });
-  await must('B가 받은 쪽지를 지운다', () => deleteDoc(inbox(B, bUid, m1)));
-  await must('A가 보낸 사본을 지운다', () => deleteDoc(sentBox(A, aUid, m1)));
-
-  await mustNot('그룹 밖 X가 B에게', () => send(X, xUid, mx, [bUid]));
-  await mustNot('A가 그룹 밖 X에게', () => send(A, aUid, mx, [xUid]));
-  await mustNot('from을 남(B)으로 적는다', () => send(A, aUid, mx, [cUid], { inExtra: { from: bUid } }));
-  await mustNot('받는 사람 목록에 없는 C의 상자에도 넣는다', () => send(A, aUid, mx, [bUid], { boxes: [bUid, cUid] }));
-  await mustNot('나에게 보낸다', () => send(A, aUid, mx, [aUid]));
-  await mustNot('보낸 사본 없이 받는 쪽만 만든다', () => send(A, aUid, mx, [bUid], { noSent: true }));
-  await mustNot('남(B)의 보낸 사본을 만든다', () => setDoc(sentBox(A, bUid, mx), sentOf([cUid])));
-  await mustNot('2001자', () => send(A, aUid, mx, [bUid], { both: { text: '가'.repeat(2001) } }));
-  await mustNot('빈 글', () => send(A, aUid, mx, [bUid], { both: { text: '' } }));
-  await mustNot('첨부 11개', () => send(A, aUid, mx, [bUid], { both: { attachments: atts(11) } }));
-  await mustNot('빈 첨부 목록', () => send(A, aUid, mx, [bUid], { both: { attachments: [] } }));
-  await mustNot('빈 글 + 빈 첨부 목록', () => send(A, aUid, mx, [bUid], { both: { text: '', attachments: [] } }));
-  await mustNot('첨부가 목록이 아니다', () => send(A, aUid, mx, [bUid], { both: { attachments: 'https://example.com/x' } }));
-  await mustNot('B가 받은 쪽지 첨부를 고친다', () => updateDoc(inbox(B, bUid, m4), { attachments: atts(1) }));
-  await mustNot('모르는 칸', () => send(A, aUid, mx, [bUid], { inExtra: { secret: '김철수' } }));
-  await mustNot('칸을 뺀다 (replyTo 없이 - undefined는 칸째 빠진다)', () => send(A, aUid, mx, [bUid], { drop: 'replyTo' }));
-  await mustNot('at을 기기 시각으로', () => send(A, aUid, mx, [bUid], { both: { at: deviceTime() } }));
-  await mustNot('읽음을 적은 채 만든다', () => send(A, aUid, mx, [bUid], { inExtra: { readAt: serverTimestamp() } }));
-  await mustNot('먼 expireAt (400일 - TTL을 피해 오래 남기기)', () => send(A, aUid, mx, [bUid], { both: { expireAt: new Date(now() + 400 * 86400000) } }));
-  await mustNot('개인 공간을 sid로', () => send(A, aUid, mx, [bUid], { both: { sid: `u_${aUid}` } }));
-  await mustNot("'/'가 든 sid", () => send(A, aUid, mx, [bUid], { both: { sid: `${ms}/people/${bUid}` } }));
-  await mustNot('그룹 이름을 꾸민다', () => send(A, aUid, mx, [bUid], { both: { groupName: '교육청 공지' } }));
-  await mustNot('구성원이 아닌 사람을 사본 받는 사람에', () => setDoc(sentBox(A, aUid, mx), sentOf([xUid])));
-  await mustNot('X가 B의 받은 쪽지를 읽는다', () => getDoc(inbox(X, bUid, m2)));
-  await mustNot('X가 B의 받은 쪽지 목록을 본다', () => getDocs(collection(X.db, 'v5Mail', bUid, 'mailIn')));
-  await mustNot('보낸 A도 B의 받은 쪽은 읽지 못한다', () => getDoc(inbox(A, bUid, m2)));
-  await mustNot('B가 A의 보낸 사본을 읽는다', () => getDoc(sentBox(B, aUid, m2)));
-  await mustNot('B가 받은 쪽지 글을 고친다', () => updateDoc(inbox(B, bUid, m2), { text: '바꿈' }));
-  await mustNot('B가 읽음과 함께 보낸 사람도 고친다', () => updateDoc(inbox(B, bUid, m2), { readAt: serverTimestamp(), fromName: '교감' }));
-  await mustNot('C가 B의 읽음을 적는다', () => updateDoc(inbox(C, bUid, m2), { readAt: serverTimestamp() }));
-  await mustNot('읽음을 기기 시각으로', () => updateDoc(inbox(B, bUid, m2), { readAt: deviceTime() }));
-  await mustNot('A가 보낸 사본을 고친다', () => updateDoc(sentBox(A, aUid, m2), { text: '바꿈' }));
   await mustNot('v5Mail/{나} 문서 자신에 쓴다', () => setDoc(doc(B.db, 'v5Mail', bUid), { x: 1 }));
   await mustNot('v5Mail/{나} 아래 다른 상자에 쓴다', () => setDoc(doc(B.db, 'v5Mail', bUid, 'other', 'x'), { x: 1 }));
 
-  // 받는 사람이 많아도 한 묶음 - 규칙의 get은 같은 문서(그룹·사본)라 한 번씩만 센다(서로 다른 문서는 20개까지)
-  const J = client('mailJoiners');
-  const joiners = [];
-  await must('(준비) 49명이 코드로 들어온다 (B·C와 함께 51명)', async () => {
-    for (let i = 0; i < 49; i++) {
-      const uid = await login(J, `rc-mail-${i}@example.com`);
-      await updateDoc(space(J, ms), { [`members.${uid}`]: 'member', [`joinCodes.${uid}`]: mcode, updatedAt: now() });
-      joiners.push(uid);
-    }
-  });
-  const m50 = `m50_${rid}`;
-  await must('50명에게 한 묶음 (쓰기 51개)', () => send(A, aUid, m50, [bUid, cUid, ...joiners.slice(0, 48)]));
-  await mustNot('51명에게', () => send(A, aUid, mx, [bUid, cUid, ...joiners]));
-  await must('(정리) 49명이 받은 쪽지를 지우고 나간다', async () => {
-    for (let i = 0; i < 49; i++) {
-      const uid = await login(J, `rc-mail-${i}@example.com`);
-      if (i < 48) await deleteDoc(inbox(J, uid, m50));
-      await updateDoc(space(J, ms), { [`members.${uid}`]: deleteField(), updatedAt: now() });
-    }
-  });
-
-  await must('(준비) C가 그룹을 나간다', () => updateDoc(space(C, ms), { [`members.${cUid}`]: deleteField(), updatedAt: now() }));
-  await mustNot('A가 나간 C에게', () => send(A, aUid, mx, [cUid]));
-  await mustNot('나간 C가 A에게', () => send(C, cUid, mx, [aUid]));
-  await must('나간 C도 받은 쪽지는 읽고 지운다', async () => {
-    if (!(await getDoc(inbox(C, cUid, m2))).exists()) throw new Error('받은 쪽지가 없다');
-    await deleteDoc(inbox(C, cUid, m2));
-    await deleteDoc(inbox(C, cUid, m50));
-  });
-
-  await must('(정리) 쪽지·쪽지 그룹을 지운다', async () => {
-    for (const id of [m2, m3, m4, m5]) await deleteDoc(inbox(B, bUid, id));
-    await deleteDoc(inbox(B, bUid, m50));
-    await deleteDoc(sentBox(B, bUid, r1));
-    await deleteDoc(inbox(A, aUid, r1));
-    for (const id of [m2, m3, m4, m5, m50]) await deleteDoc(sentBox(A, aUid, id));
-    await deleteDoc(invite(A, mcode));
-    await deleteDoc(space(A, ms));
-  });
+  // 대화 50명 방 시험이 쓰는 계정 묶음 (쪽지 50명 시험에서 왔다 - 계정 이름 rc-mail-n은 그대로)
+  const J = client('manyJoiners');
   await runChat({ A, B, C, X, J, aUid, bUid, cUid, xUid, group, space, invite, now });
   await deleteApp(J.app).catch(() => {});
 

@@ -1,9 +1,9 @@
 // functions/chatPlan.js - 대화 푸시 셈 (P19-1 ■3, 순수 함수 - chatPlan.test.js). 보내기는 index.js v5ChatPush·v5DmPush.
-// 글이 생기면 방 사람 기기에 '💬 보낸 사람 · 방 이름'만 알린다 - 글은 싣지 않는다(쪽지와 같은 까닭 - 잠금 화면에 학생 이야기, FCM data 4KB).
+// 글이 생기면 방 사람 기기에 '💬 보낸 사람 · 방 이름'만 알린다 - 글은 싣지 않는다(잠금 화면에 학생 이야기가 보일 수 있고, FCM data는 4KB까지).
 // 같은 방의 새 글은 알림 하나를 소리 없이 바꾼다(앱 public/sw.js 'chat' 갈래 - tag sp5-chat-<방 키>). 🔕(방 muted.<uid>)인 사람은 뺀다.
-// FCM data 키로 'from'은 쓰지 못한다 → 보낸 사람은 'sender'(mailPlan.js isReservedDataKey).
+// FCM data 키로 'from'은 쓰지 못한다 → 보낸 사람은 'sender'(pushPlan.js isReservedDataKey).
 
-import { NAME_MAX } from './mailPlan.js';
+import { NAME_MAX } from './pushPlan.js';
 
 const cut = (s, n) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
 const trueKeys = (m) => (m && typeof m === 'object' ? Object.keys(m).filter((k) => m[k] === true) : []);

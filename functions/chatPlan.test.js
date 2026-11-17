@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { chatPushData, chatRecipients, chatTitle, isLastMsg } from './chatPlan.js';
-import { NAME_MAX, isReservedDataKey } from './mailPlan.js';
+import { NAME_MAX, isReservedDataKey } from './pushPlan.js';
 
 const space = { a: 'owner', b: 'member', c: 'member', d: 'left' };
 

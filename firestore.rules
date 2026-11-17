@@ -77,7 +77,7 @@ service cloud.firestore {
     }
 
     // ══════════════════════════════════════════════════════════════════
-    // V5 — spaces · spaceInvites · v5alarms · v5Errors · v5Mail · v5Chat · v5Dm · v5ChatReads
+    // V5 — spaces · spaceInvites · v5alarms · v5Errors · v5Chat · v5Dm · v5ChatReads
     //
     // 공간 = 개인 `u_{uid}`(그 사람만) 또는 그룹 `g_{id}`(구성원만).
     // 구성원은 맵 members: { uid: 'owner' | 'member' }.
@@ -113,7 +113,7 @@ service cloud.firestore {
       allow update: if (
           // 주인: 무엇이든 고친다. 다만 종류·주인은 그대로, 주인은 늘 'owner',
           // 개인 공간은 구성원도 그대로(나 혼자). 그룹 구성원은 빼기만 - 남을 넣지 못한다
-          // (P15-1 - 그러면 '같은 그룹 = 스스로 들어온 사람'이라 쪽지를 동의 없이 받지 않는다. 앱은 남을 넣지 않는다).
+          // (P15-1 - 그러면 '같은 그룹 = 스스로 들어온 사람'이라 대화 글을 동의 없이 받지 않는다. 앱은 남을 넣지 않는다).
           signedIn()
           && resource.data.ownerId == request.auth.uid
           && request.resource.data.kind == resource.data.kind
@@ -221,66 +221,8 @@ service cloud.firestore {
       allow update: if false;
     }
 
-    // 쪽지(P15 - src/data/mail.ts). 같은 그룹(spaces/{sid}) 구성원끼리만.
-    // 받는 사람마다 v5Mail/{받는 uid}/mailIn/{id} 한 장 + 보낸 사람 사본 v5Mail/{나}/mailSent/{id} - 앱이 같은 id로 한 묶음에 쓴다.
-    // 묶음 안에서 같은 문서 get은 한 번으로 센다(서로 다른 문서는 20개까지 - P15-1 ■0 에뮬레이터) - 받는 사람이 많아도 그룹 문서·사본 둘.
-    // 칸과 길이는 src/domain/mail.ts MAIL_LIMITS와 같게. expireAt은 콘솔 TTL 정책(컬렉션 그룹 mailIn·mailSent)이 지난 것을 지운다(1년).
-    // 상자 이름 mailIn·mailSent는 DB 전체에서 고유하게(TTL 정책은 컬렉션 그룹 이름마다다). v5Mail/{uid} 문서 자신과 다른 하위 컬렉션은 막힌다(match 없음).
-    function mailSpace(sid) {
-      return get(/databases/$(database)/documents/spaces/$(sid)).data;
-    }
-
-    // 두 상자에 같은 칸 - 그룹·받는 사람·글·서버 시각·답장·지울 날. 나와 받는 사람 모두 지금 그 그룹 구성원이어야 한다.
-    // sid는 문서 칸 값이라 경로에 넣기 전에 모양부터 본다('/'가 든 값이 다른 문서를 가리키지 않게).
-    function validMail(d) {
-      return d.sid is string && d.sid.matches('g_[A-Za-z0-9]+')
-        && d.to is list && d.to.size() >= 1 && d.to.size() <= 50
-        && !(request.auth.uid in d.to)
-        && d.toNames is string && d.toNames.size() <= 600
-        && d.text is string && d.text.size() <= 2000
-        // 첨부(P16 - 보낸 사람 드라이브의 붙임 목록)는 있을 때만, 1~10개. 첨부가 있으면 글은 비어도 된다.
-        // 목록 안 칸은 규칙이 보지 못한다 - 앱이 읽을 때 https 주소만 받는다(domain/mail readMailAttachments).
-        && (d.text.size() >= 1 || 'attachments' in d)
-        && (!('attachments' in d) || (d.attachments is list && d.attachments.size() >= 1 && d.attachments.size() <= 10))
-        && d.groupName is string
-        && d.at == request.time
-        && (d.replyTo == null || (d.replyTo is string && d.replyTo.size() <= 40))
-        && d.expireAt is timestamp && d.expireAt < request.time + duration.value(370, 'd')
-        && d.v == 1
-        && mailSpace(d.sid).kind == 'group'
-        && mailSpace(d.sid).members.get(request.auth.uid, null) in ['owner', 'member']
-        && mailSpace(d.sid).members.keys().hasAll(d.to)
-        // 그룹 이름 = 그 공간 이름(꾸미지 못한다). 이름이 빈 공간만 앱이 보이는 이름('공유 그룹' 등 60자까지)
-        && (d.groupName == mailSpace(d.sid).get('name', '')
-          || (mailSpace(d.sid).get('name', '') == '' && d.groupName.size() <= 60));
-    }
-
-    match /v5Mail/{owner}/mailIn/{id} {
-      // 보내는 사람이 만든다: from = 나, 이 상자 주인은 받는 사람 중 하나, 같은 id의 내 사본이 같은 묶음에 있다.
-      allow create: if signedIn()
-        && request.resource.data.keys().hasOnly(['from', 'fromName', 'sid', 'groupName', 'to', 'toNames', 'text', 'at', 'readAt', 'replyTo', 'attachments', 'expireAt', 'v'])
-        && request.resource.data.keys().hasAll(['from', 'fromName', 'sid', 'groupName', 'to', 'toNames', 'text', 'at', 'readAt', 'replyTo', 'expireAt', 'v'])
-        && request.resource.data.from == request.auth.uid
-        && owner in request.resource.data.to
-        && request.resource.data.fromName is string && request.resource.data.fromName.size() <= 40
-        && request.resource.data.readAt == null
-        && validMail(request.resource.data)
-        && existsAfter(/databases/$(database)/documents/v5Mail/$(request.auth.uid)/mailSent/$(id));
-      allow get, list, delete: if signedIn() && request.auth.uid == owner;
-      // 주인이 읽음 표시만 - 서버 시각, 이미 읽은 것도 다시 적을 수 있다(두 기기가 함께 펼쳐도 거부 없게).
-      allow update: if signedIn() && request.auth.uid == owner
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['readAt'])
-        && request.resource.data.readAt == request.time;
-    }
-
-    match /v5Mail/{owner}/mailSent/{id} {
-      allow create: if signedIn() && request.auth.uid == owner
-        && request.resource.data.keys().hasOnly(['sid', 'groupName', 'to', 'toNames', 'text', 'at', 'replyTo', 'attachments', 'expireAt', 'v'])
-        && request.resource.data.keys().hasAll(['sid', 'groupName', 'to', 'toNames', 'text', 'at', 'replyTo', 'expireAt', 'v'])
-        && validMail(request.resource.data);
-      allow get, list, delete: if signedIn() && request.auth.uid == owner;
-      allow update: if false;
-    }
+    // 쪽지(P15 v5Mail/{uid}/mailIn·mailSent)는 P41-3(11-17)에 걷었다 - 💬 대화가 같은 일을 한다. match가 없어 앱은 읽지도 쓰지도 못하고,
+    // 남은 문서는 TTL 정책(firestore.indexes.json 컬렉션 그룹 mailIn·mailSent, expireAt 1년)이 지운다. 옛 규칙은 git 기록에.
 
     // 대화(P19 - src/data/chat.ts). 같은 그룹 구성원끼리 - 방 문서 하나 + 그 아래 글(chatMsgs)을 구성원이 함께 읽는다.
     //   그룹 방 v5Chat/{sid}/chatRooms/{roomId}: 'all' = 그룹 전체(지금 구성원 모두) · 'r_…' = 고른 사람 방(members).
@@ -297,7 +239,7 @@ service cloud.firestore {
         && isSpaceMember(get(/databases/$(database)/documents/spaces/$(sid)).data);
     }
 
-    // 글 모양 - 첨부는 쪽지(P16)와 같다(있을 때만 1~10개, 있으면 글은 비어도 된다)
+    // 글 모양 - 첨부(P16 쪽지에서 온 꼴 - 보낸 사람 드라이브의 붙임 목록)는 있을 때만 1~10개, 있으면 글은 비어도 된다
     function validChatMsg(d) {
       return d.keys().hasOnly(['from', 'fromName', 'text', 'attachments', 'at', 'expireAt', 'v'])
         && d.keys().hasAll(['from', 'fromName', 'text', 'at', 'expireAt', 'v'])
@@ -421,7 +363,7 @@ service cloud.firestore {
     }
 
     match /v5Dm/{pairId} {
-      // 두 사람만 - 그룹을 나가도 지난 글은 읽는다(쪽지 받은 것이 남듯). 보내기는 함께 든 그룹이 있을 때만.
+      // 두 사람만 - 그룹을 나가도 지난 글은 읽는다(받은 글은 남는다). 보내기는 함께 든 그룹이 있을 때만.
       allow get, list: if signedIn() && resource.data.members[request.auth.uid] == true;
       // 만들기와 보내기가 같은 모양(names는 내 칸만) - 둘이 함께 첫 글을 보내도 하나는 고치기로 지나간다
       allow create: if signedIn()
