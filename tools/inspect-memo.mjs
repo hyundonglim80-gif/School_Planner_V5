@@ -358,6 +358,12 @@ try {
   r.check(await orderIs(['insp_mo2', 'insp_mo3', 'insp_mo1']), `끌어 놓기도 (맨 뒤 → 맨 앞, ${await orderIds()})`);
   const mo2 = await serverUntil(() => read('insp_mo2'), (d) => !!d?.memoOrder);
   r.check(!!mo2?.memoOrder && mo2.order === 'Zz1', `서버: 끈 날짜 메모도 memoOrder만 (${mo2?.memoOrder} · ${mo2?.order})`);
+  // 서버 문서가 보여도 앱은 쓰기 대답을 아직 못 받았을 수 있다 - 그 사이 새로고침은 '떠나기 전에 묻기'(pendingWritesGuard)에
+  // 점검의 기본 '아니오'로 30초 멈춘다(11-17 CI 한 번). 앱의 기다리는 저장이 빌 때까지 기다린 뒤 새로 연다
+  r.check(
+    await waitFor(() => page.evaluate(async () => !(await import(window.__appModule('/src/data/pendingWrites.ts'))).hasPendingWrites()), 10000),
+    '새로 열기 전 앱의 기다리는 저장 없음',
+  );
   await page.reload();
   await waitFor(page.locator(sel('memo-screen')));
   r.check(await orderIs(['insp_mo2', 'insp_mo3', 'insp_mo1']), `새로 열어도 그대로 (${await orderIds()})`);
