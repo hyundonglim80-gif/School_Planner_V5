@@ -5,7 +5,7 @@
 import { Suspense, useEffect, useRef, useState } from 'react';
 import EventAlarms from '../features/events/EventAlarms';
 import ForwardMarks from '../features/events/ForwardMarks';
-import MultiSelectBar from '../features/events/MultiSelectBar';
+import MultiSelectGate from '../features/events/MultiSelectGate';
 import { useEventShortcuts } from '../features/events/shortcuts';
 import { useNoteShortcuts } from '../features/notes/shortcuts';
 import { useTimetableShortcuts } from '../features/timetable/shortcuts';
@@ -36,11 +36,12 @@ import NewYearBanner from '../features/newYear/NewYearBanner';
 import { useShareReceiver } from '../features/share/receive';
 import NewBuildBanner from './NewBuildBanner';
 import PendingWritesBanner from './PendingWritesBanner';
-import ShortcutRecordBar from './ShortcutRecordBar';
+import ShortcutRecordGate from './ShortcutRecordGate';
 import { startRecordFromPopup } from './shortcutRecord';
 import { usePendingWritesGuard } from './pendingWritesGuard';
 import ColumnResizer from '../ui/ColumnResizer';
-import ImageViewer from '../ui/ImageViewer';
+import { useImageViewer } from '../ui/imageViewerStore';
+import { lazyWithReload } from './lazyWithReload';
 import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../ui/sideColumn';
 import SideTabs from '../ui/SideTabs';
 import { MainWidthContext, unscaledWidth } from '../ui/useMainWidth';
@@ -63,8 +64,12 @@ import WindowHost from './WindowHost';
 import './windowList';
 import { closeAllWindows, useWindows } from './windows';
 
+// 누를 때만 쓰는 부품은 그때 나눠 받는다 (P44-2 첫 화면 JS - DESIGN 10장 12). 끊겨 못 받으면 그리지 않는다.
+const ImageViewer = lazyWithReload(() => import('../ui/ImageViewer'), () => null);
+
 export default function Shell() {
   const scope = useNav((s) => s.scope);
+  const viewerOpen = useImageViewer((s) => s.images.length > 0);
 
   // 주소와 맞물린다 (뒤로가기 = 앞 화면, 새로고침해도 그 자리)
   useEffect(() => startRouting(), []);
@@ -221,12 +226,16 @@ export default function Shell() {
       {/* 왼쪽 📋 클립보드 칸 (이 기기에만) */}
       <ClipboardColumn />
       {leftOpen && <ColumnResizer side="left" width={LEFT_COLUMN_CSS_WIDTH} />}
-      {/* 사진 크게 보기 (ui/imageViewer) */}
-      <ImageViewer />
-      {/* 여러 개 고르기 - 고르는 동안 화면 아래 동작 줄 */}
-      <MultiSelectBar />
-      {/* ⌨️ 단축키 설정 - 메뉴·단추를 눌러 고르는 동안 아래 띠 (P18-1) */}
-      <ShortcutRecordBar />
+      {/* 사진 크게 보기 (ui/imageViewer) - 열 때만 나눠 받는다 (P44-2) */}
+      {viewerOpen && (
+        <Suspense fallback={null}>
+          <ImageViewer />
+        </Suspense>
+      )}
+      {/* 여러 개 고르기 - 고르는 동안 화면 아래 동작 줄 (켤 때만 받는다 - P44-2) */}
+      <MultiSelectGate />
+      {/* ⌨️ 단축키 설정 - 메뉴·단추를 눌러 고르는 동안 아래 띠 (P18-1 · 고르는 동안만 받는다 - P44-2) */}
+      <ShortcutRecordGate />
       {/* 오른쪽 칸이 둘 이상이면 위에 탭 (V4 2026-10-07) */}
       <SideTabs />
       {rightOpen && <ColumnResizer side="right" width={RIGHT_COLUMN_CSS_WIDTH} />}

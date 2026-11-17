@@ -44,7 +44,22 @@ export default defineConfig(({ mode }) => ({
   ],
   // 서비스 워커가 이 판의 앱 파일을 미리 담을 목록 (public/sw.js precache - P8-3 오프라인 앱).
   // 점(.)으로 시작하는 기본 자리(.vite/)는 Firebase Hosting이 올리지 않아 맨 위에 둔다.
-  build: { manifest: 'asset-manifest.json' },
+  // 첫 화면 조각 묶기 (P44-2 첫 화면 JS): 처음부터 받는 모듈($initial)은 라이브러리 한 조각(vendor - 앱 코드가 바뀌어도 이름이 같아
+  // 배포 뒤 다시 받지 않는다) + 앱 한 조각으로. 그냥 두면 나눠 받는 창이 처음 모듈을 함께 쓸 때마다 그 모듈이 작은 조각으로 쪼개져
+  // 파일마다 gzip이 따로라 나눠 받기로 덜어 낸 만큼 다시 늘었다(11-17 - 하루 화면까지 394.8 → 395.0KB). 묶은 뒤 376.9KB.
+  build: {
+    manifest: 'asset-manifest.json',
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            { name: 'vendor', tags: ['$initial'], test: /node_modules[\\/]/, priority: 2 },
+            { name: 'initial', tags: ['$initial'], priority: 1 },
+          ],
+        },
+      },
+    },
+  },
   // V4 개발 서버(5173)·미리 보기(4173)와 같이 켜 둘 수 있게 번호를 비킨다.
   server: { port: 5175, strictPort: true, headers: DEV_HEADERS },
   preview: { port: 4175, strictPort: true, headers: PREVIEW_HEADERS },

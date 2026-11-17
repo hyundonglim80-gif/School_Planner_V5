@@ -8,6 +8,7 @@
 //   키 바꾸기    : 단축키 탭의 줄(P28-1)은 고르기를 건너뛰고 곧바로 키 단계(startKeyFor).
 //   팝업창       : 띠는 큰 창의 껍데기에만 있다 - 팝업창(창 위치 '팝업창')의 환경설정에서 시작하면 큰 창에 알린다(requestShortcutRecord).
 // 띠(화면)는 app/ShortcutRecordBar - 여기 손잡이를 고르는 동안에만 단다.
+import { useEffect } from 'react';
 import { create } from 'zustand';
 import {
   assignBinding,
@@ -53,6 +54,24 @@ useShortcutRecord.subscribe((s, prev) => {
 
 export function startShortcutRecord() {
   useShortcutRecord.setState({ ...OFF, stage: 'pick' });
+}
+
+/**
+ * 고르는 동안 누르기·키를 가로챈다. 껍데기의 문(ShortcutRecordGate)이 걸어 띠를 받기 전에 누른 것도 놓치지 않고(P44-2 - 띠는 나눠 받는다),
+ * 띠(ShortcutRecordBar)도 건다 - 같은 함수·같은 capture라 브라우저가 한 번만 건다(띠만 그리는 시험도 그대로 된다).
+ */
+export function useRecordListeners(stage: RecordStage) {
+  useEffect(() => {
+    if (stage === 'off') return;
+    document.addEventListener('click', onRecordClick, true);
+    window.addEventListener('keydown', onRecordKey, true);
+    document.body.dataset.shortcutRecording = stage;
+    return () => {
+      document.removeEventListener('click', onRecordClick, true);
+      window.removeEventListener('keydown', onRecordKey, true);
+      delete document.body.dataset.shortcutRecording;
+    };
+  }, [stage]);
 }
 
 /** 키 바꾸기 - 그것의 키만 다시 받는다 (단축키 탭의 줄, P28-1) */

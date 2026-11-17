@@ -4,12 +4,12 @@
 //           ESC 말고는 모든 키를 받는다(P34 - Backspace·Delete·Tab도). 받을 수 없는 키(크롬·윈도우가 먼저 쓰는 키)는 까닭 + 저장 막기.
 //   창 안 탭(P18-2)도 같다 - 이름은 '환경설정 → 알림'(app/tabShortcuts).
 // 새 창이 아니라 띠 하나라 창 목록에 넣지 않는다(PLAN 5장 P18). 띠 안을 누른 것은 고르기에 세지 않는다([data-shortcut-record]).
-import { useEffect } from 'react';
+// 껍데기는 고르는 동안만 이 띠를 나눠 받는다(ShortcutRecordGate - P44-2). 누르기·키 가로채기는 문이 먼저 건다(useRecordListeners).
 import { createPortal } from 'react-dom';
 import { assignBinding, bindingOf, formatAnyBinding, recordKeyIssue, resolveBindings, worksWhileTyping } from '../domain/shortcuts';
 import { useExtraBindings, useShortcutOverrides } from './keys';
 import { shortcutLabel } from './tabShortcuts';
-import { cancelShortcutRecord, clearRecordedKey, finishPick, onRecordClick, onRecordKey, repick, saveRecordedKey, useShortcutRecord } from './shortcutRecord';
+import { cancelShortcutRecord, clearRecordedKey, finishPick, repick, saveRecordedKey, useRecordListeners, useShortcutRecord } from './shortcutRecord';
 
 const BTN = 'px-3 py-1.5 text-xs font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0';
 
@@ -17,18 +17,7 @@ export default function ShortcutRecordBar() {
   const { stage, picked, miss, binding } = useShortcutRecord();
   const overrides = useShortcutOverrides((s) => s.overrides);
   const extra = useExtraBindings();
-
-  useEffect(() => {
-    if (stage === 'off') return;
-    document.addEventListener('click', onRecordClick, true);
-    window.addEventListener('keydown', onRecordKey, true);
-    document.body.dataset.shortcutRecording = stage;
-    return () => {
-      document.removeEventListener('click', onRecordClick, true);
-      window.removeEventListener('keydown', onRecordKey, true);
-      delete document.body.dataset.shortcutRecording;
-    };
-  }, [stage]);
+  useRecordListeners(stage);
 
   if (stage === 'off') return null;
   const label = picked ? shortcutLabel(picked) : '';

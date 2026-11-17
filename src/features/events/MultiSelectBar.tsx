@@ -3,8 +3,8 @@
 // N 선택됨 · ☑ 완료 · 🏷️ 라벨 · 📅 옮기기 · 🗑️ 삭제 · ✕ - 동작을 하거나 ✕·ESC를 누르면 여러 개 고르기가 끝난다(V4 그대로).
 // 모두 한 묶음으로 적고 안내의 되돌리기 하나로 모두 되돌린다. 지우기는 묻지 않는다(V5 - 지운 표시 + 되돌리기, V4는 확인 창).
 // 옮기기는 처음에 내일(V4 - '오늘 못 한 것 내일로'가 가장 흔하다), ◀ ▶로 하루씩.
+// 껍데기는 이 줄을 켰을 때만 나눠 받는다 - 단축키·ESC는 문(MultiSelectGate)이 늘 듣는다(P44-2).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { addEscapeAction, setShortcutAction } from '../../app/keys';
 import { addDays, shortDateLabel } from '../../domain/dateUtils';
 import { labelColor } from '../../domain/labels';
 import { isPeriod } from '../../domain/period';
@@ -14,7 +14,7 @@ import { completePicked, deletePicked, movePicked, relabelPicked } from './actio
 import { orderAfter } from './eventOps';
 import { effectiveAttrs, formOf } from './eventForm';
 import { useCarried } from './forward';
-import { endMulti, toggleMulti, useMulti } from './multi';
+import { endMulti, useMulti } from './multi';
 import { pickedCount, resolvePicks } from './multiOps';
 
 const quiet = () => {
@@ -51,11 +51,6 @@ export default function MultiSelectBar() {
   const labelRef = useOutside(panel === 'label', closePanel);
   const moveRef = useOutside(panel === 'move', closePanel);
 
-  // ⋮ '여러 개 고르기' · ESC로 끝내기
-  useEffect(() => {
-    const offs = [setShortcutAction('multiSelect', toggleMulti), addEscapeAction(endMulti)];
-    return () => offs.forEach((off) => off());
-  }, []);
   // 켤 때마다 옮길 날은 내일, 판은 닫고
   const [wasOn, setWasOn] = useState(on);
   if (on !== wasOn) {
