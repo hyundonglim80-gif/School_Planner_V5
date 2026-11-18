@@ -285,6 +285,9 @@ try {
 
   r.section('년간 - 학기 칩 따라가기 (P26-3)');
   // 11월에 고른 '2학기'가 새 학년도 3월에도 남아 3~8월이 숨었다(실제 자료 사본) → 학기가 바뀌면 지금 학기로
+  // 앞 창(진짜 오늘 = 11월이면 2학기)을 닫는다 - 같은 계정·같은 PC 칸을 보는 두 창의 '오늘'이 학기를 달리하면 서로 따라가기를 계정에 번갈아 적어
+  // 칩이 1 ↔ 2로 핑퐁한다(11-18 P45-1 - '일부러 고른 2학기는 그대로'가 1로 틀렸다). 진짜 기기들은 오늘이 같아 생기지 않는다.
+  await page.close();
   const pcRef = doc(em.db, 'spaces', sid, 'settings', 'pc');
   const pc0 = await getDoc(pcRef);
   undo.add(() => (pc0.exists() ? setDoc(pcRef, pc0.data()) : deleteDoc(pcRef)));

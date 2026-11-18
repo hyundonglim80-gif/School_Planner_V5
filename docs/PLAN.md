@@ -1690,6 +1690,10 @@ P3 끝부터 사용자가 **내 자료로** 써 볼 수 있게 한다. 수업(P6
   차례 = 사용자가 말한 번호대로 ① 의존성 → ② 대화 방(권장안 - 둘은 서로 닿지 않는다. 대화 방 고침이 판 올린 뒤의 CI 위에서 한 번 더 걸러진다).
   ① 까닭(11-18 `npm outdated`): **firebase 12.19.0 → 13.4.0**(메이저 - 한 판 뒤처짐. 앱의 바탕이라 미루면 다음 메이저와 겹쳐 한 번에 커진다, 새 학년도(2027-03) 전 조용할 때) · 같은 메이저 안 작은 판 열하나: vite 8.3.5 → 8.3.8 · vitest 5.0.5 → 5.1.0 · @vitejs/plugin-react 6.1.2 → 6.3.0 · tailwindcss·@tailwindcss/vite 4.3.3 → 4.3.5 · playwright 1.64.1 → 1.65.1 · oxlint 1.90.0 → 1.94.0 · zustand 5.0.16 → 5.1.0 · fake-indexeddb 6.2.6 → 6.2.8 · @testing-library/user-event 14.6.8 → 14.6.12 · firebase-tools 15.34.2 → 15.36.0.
   **뺀 것**(메이저라 따로): typescript 6 → 7(새로 짠 컴파일러 - 따로 큰 일) · jsdom 30 → 31 · @types/node 24 → 26(런타임이 Node 24라 24에 맞춘다) · 함수 의존성(P42-3에서 봄 - 그대로) · Dependabot minimatch 알림(개발용, P26-2 '바꾸면 배포 파일 0개'로 그대로).
+  **P45-1 정한 것 (11-18 PC)**: ⓐ ■0 조사 = Firebase JS 13.0.0(10-07)의 깨지는 것은 AI Logic(`@firebase/ai`)뿐 - 앱이 쓰는 셋(`firebase/app`·`auth`·`firestore`)은 깨지는 것·지운 API가 없다(릴리스 노트 13.0~13.3 · 13.4는 노트에 아직 없음) · 바뀐 동작은 auth 13.2 '토큰 미리 새로 받기 30초 → 5분'뿐(앱은 토큰 시각을 재지 않는다) · 고친 것이 앱에 이롭다: auth 처음 띄울 때 잠깐의 할당량·5xx 오류로 로그인이 풀리지 않음(13.0·13.1) · 숨은 탭의 IndexedDB가 다른 탭 로그인을 막지 않음(13.3) · 팝업 취소·IndexedDB 첫 채우기의 '처리하지 않은 오류'(13.2) · firestore 13.3 스냅샷 JSON 한글 → 고칠 것이 적어 ■2를 나누지 않는다.
+  ⓑ `npm audit` 21건(중간 13·높음 8)은 **올리기 전 잠금 파일로 세어도 같은 21건** - 모두 개발 도구(firebase-tools의 @opentelemetry·glob·minimatch, vite 빌드의 picomatch '모든 판') 안이라 앱 묶음 밖, `--force`는 판을 내린다 → 이번 일과 상관없음, 그대로(P26-2와 같은 까닭).
+  ⓒ `test:data`가 Git Bash에서 넷 다 'Vitest failed to find the current suite' = CLAUDE.md 2장에 이미 있는 경로 대소문자 일(5.0.5로 되돌려도 같아 판 올리기와 상관없음 확인 · vitest의 고침 PR #11871은 합쳐지지 않고 닫힘) → PowerShell `D:\…`에서 34 통과(첫 실행은 chat 묶음이 준비 30초를 한 번 넘김, 다시 통과).
+  ⓓ 크롬 열일곱 중 month-year '같은 학기 안에서 일부러 고른 2학기는 그대로'가 1로 틀림 = **점검의 경쟁**(판 올리기와 상관없음): 앞 창(진짜 오늘 11-18 = 2학기)이 끝까지 열린 채 새 창(시계 2027-03-02 = 1학기)을 같은 계정·같은 PC 칸으로 열어, 두 창이 학기 따라가기(P26-3)를 계정에 1초마다 번갈아 적어 칩이 1 ↔ 2로 핑퐁했다(누른 뒤 1.5초에 어느 쪽이 보일지는 때에 달림 - P26-3(11-11)부터 숨어 있었고 CI(11-16~)는 운 좋게 통과) · 진짜 기기들은 오늘이 같아 생기지 않는다 → 그 묶음 앞에서 앞 창을 닫음 · 세 번 93 통과.
   ② 까닭(11-18 코드): `features/chat/ChatRoomView`가 P44-1 고치기 전 `ClaudeThread`와 같은 꼴 - 스크롤 알림이 '맨 아래인가'를 정하고(`onScroll`) 크기 알림(ResizeObserver)은 그 값만 보고 따라간다 · Claude 대화는 이 꼴로 CI에서 세 번 맨 위(2006px)에 남았고 PC·컨테이너에서는 재현되지 않았다(P44-1 ⑤) · 대화 방은 아직 틀린 적이 없다(CI chat 네 번 통과) = 숨은 틈. 지난 글 받기(위로 올리면 더 받기 - `anchor`)의 자리 지키기와 겹치지 않게 한다.
 - **P44 추천 셋 (11-17 클라우드 - '이어서' → 남은 계획은 P42-3 ■2 PC 함수 배포뿐 → 추천 기준(CLAUDE.md 1장)으로 셋 → 사용자 "모두 실행해줘")**: 세 세션, 이 대화에서 차례로(사용자 요청 - 1-1 '세션 = 대화 하나'의 예외), 셋 다 클라우드.
   차례 = ① CI 점검(②안정성 - 뒤 두 고침도 더 넓은 CI 그물 위에서) → ② 첫 화면 JS(④자원) → ③ 보기 탭 안내 글(③설명 최소·⑤정돈).
@@ -4351,8 +4355,10 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
 ### P45-1. 의존성 판 올리기 (Firebase JS 13 + 작은 판)
 **시작 조건**: 없음(클라우드 가능 - CI 크롬 열일곱이 지킨다). **진짜 구글 로그인 팝업·다시 받기는 컨테이너가 닿지 못한다**(CLAUDE.md 2장) - 클라우드면 끝에 맨 위 'PC 일'에 한 줄(■3). **묻기**: 없음(배포는 main 합치면 저절로 - 규칙·함수 배포 없음).
 **먼저 읽을 것**: 이 절 · 5장 'P45 추천 둘' ① · `package.json` · `vite.config.ts`(re2js 대신 것 alias - 5장 'P25-1 re2js', CLAUDE.md 2장 'Firebase를 올려 re2jsStub.test가 깨지면') · 5장 P26-2(uuid 덮어쓰기·minimatch 그대로) · Firebase JS SDK 13 릴리스 노트(깨지는 것) · inspect-perf(첫 화면 JS 379KB - 기준 400KB).
-- [ ] ■0 조사: `npm outdated` 다시 · Firebase 12 → 13 깨지는 것 목록과 앱이 쓰는 곳(grep - auth 팝업·다시 받기·firestore 구독·쓰기 묶음·messaging·storage) · 고칠 것이 많으면 5장에 적고 ■2를 나눈다
-- [ ] ■1 같은 메이저 안 작은 판 열하나(5장 목록) · playwright는 브라우저도 받기(`npx playwright install chromium`) · 단위·tsc·lint·빌드 · 크롬 열일곱(`tools/ci-chrome.mjs`) · 커밋
+- [x] ■0 조사: `npm outdated` 다시 · Firebase 12 → 13 깨지는 것 목록과 앱이 쓰는 곳(grep - auth 팝업·다시 받기·firestore 구독·쓰기 묶음·messaging·storage) · 고칠 것이 많으면 5장에 적고 ■2를 나눈다
+  → 11-18 PC: 목록은 계획과 같다 · 앱이 부르는 것은 app·auth·firestore 셋뿐, 13의 깨지는 것은 AI Logic뿐 → ■2 나누지 않음(5장 'P45-1 정한 것' ⓐ~ⓒ)
+- [x] ■1 같은 메이저 안 작은 판 열하나(5장 목록) · playwright는 브라우저도 받기(`npx playwright install chromium`) · 단위·tsc·lint·빌드 · 크롬 열일곱(`tools/ci-chrome.mjs`) · 커밋
+  → 11-18 PC: 열하나 모두 올림(vitest 5.1.0 포함) · 단위 2412·자료 34(PowerShell D:\)·tsc·lint·빌드 · 크롬 열일곱 중 열여섯 통과, month-year 하나 = **점검의 경쟁**(5장 'P45-1 정한 것' ⓓ) → 고쳐 세 번 93 통과
 - [ ] ■2 firebase 12.19 → 13.x · 깨지는 것 고치기 · `re2jsStub.test` · 단위·tsc·lint·빌드 · inspect-perf 첫 화면 JS(400KB 아래인지 - 늘면 5장에 숫자) · 크롬 열일곱 + 오프라인(미리 보기 `inspect-offline`)·headers · 커밋
 - [ ] ■3 PC(클라우드면 PC 일 한 줄): 진짜 구글 로그인 팝업·다시 받기(구글 캘린더 목록)·로그아웃 뒤 다시 로그인 · 운영 사이트에서 한 번(합친 뒤)
 **끝 조건**: 판을 올렸다 · 단위·lint·빌드·CI 크롬 통과 · 첫 화면 JS 400KB 아래 · 진짜 구글 로그인이 된다.
