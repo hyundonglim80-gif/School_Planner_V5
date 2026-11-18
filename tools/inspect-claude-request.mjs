@@ -173,13 +173,65 @@ try {
   await setDoc(doc(db, 'spaces', sid, 'items', id), { text: Array.from({ length: 80 }, (_, i) => `긴 메모 ${i}`).join('\n'), updatedAt: serverTimestamp() }, { merge: true });
   // 글이 앱에 닿은 뒤에 연다. 두 번째 열기라 턴이 캐시에서 곧바로 온다 - 글 칸이 한 프레임 뒤에 늘어나도 맨 아래를 지키는지 본다
   await waitFor(async () => ((await page.locator(sel('entry-card', id)).textContent()) ?? '').includes('긴 메모 1'), 8000);
+  // 기록 장치 (11-18 P45-1 - P44-1의 '열고 1.5초 지키기' 뒤에도 CI에서 2006px로 틀렸다. CLAUDE.md 2장 '스크롤이 엉뚱하면 짐작 말고 기록'):
+  // 메모 칸 스크롤 상자의 scrollTop 쓰기·scrollTo·scrollIntoView·초점·스크롤 알림과 0.1초마다의 상자 모습을 부른 자리와 함께 모아, 틀리면 출력한다.
+  await page.evaluate(() => {
+    const t0 = performance.now();
+    const log = [];
+    const ids = new WeakMap();
+    let next = 1;
+    const idOf = (el) => (ids.has(el) ? ids.get(el) : (ids.set(el, next++), next - 1));
+    const t = () => Math.round(performance.now() - t0);
+    const boxOf = () => document.querySelector('[data-note-panel] [data-scroll-lock]');
+    const isBox = (el) => el instanceof Element && el.matches('[data-note-panel] [data-scroll-lock]');
+    const where = () => (new Error().stack ?? '').split('\n').slice(3, 9).map((s) => s.trim().replace(/https?:\/\/[^/]+\//, '').replace(/\?[^:]*/, '')).join(' < ');
+    const name = (el) => `${el.tagName.toLowerCase()}${[...el.attributes].filter((a) => a.name.startsWith('data-')).map((a) => `[${a.name}]`).slice(0, 2).join('')}`;
+    const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+    const orig = { scrollTo: Element.prototype.scrollTo, scroll: Element.prototype.scroll, scrollBy: Element.prototype.scrollBy, scrollIntoView: Element.prototype.scrollIntoView, focus: HTMLElement.prototype.focus };
+    Object.defineProperty(Element.prototype, 'scrollTop', {
+      configurable: true,
+      get() { return desc.get.call(this); },
+      set(v) {
+        if (isBox(this)) log.push(`${t()} set#${idOf(this)} ${Math.round(desc.get.call(this))}→${Math.round(v)} (높이 ${this.scrollHeight}/${this.clientHeight}) ${where()}`);
+        desc.set.call(this, v);
+      },
+    });
+    for (const k of ['scrollTo', 'scroll', 'scrollBy']) Element.prototype[k] = function (...a) { if (isBox(this)) log.push(`${t()} ${k}#${idOf(this)} ${JSON.stringify(a)} ${where()}`); return orig[k].apply(this, a); };
+    Element.prototype.scrollIntoView = function (...a) { log.push(`${t()} scrollIntoView ${name(this)} ${where()}`); return orig.scrollIntoView.apply(this, a); };
+    HTMLElement.prototype.focus = function (...a) { log.push(`${t()} focus ${name(this)} ${JSON.stringify(a)} ${where()}`); return orig.focus.apply(this, a); };
+    const onScroll = (e) => isBox(e.target) && log.push(`${t()} 스크롤 알림#${idOf(e.target)} top ${Math.round(e.target.scrollTop)} (높이 ${e.target.scrollHeight}/${e.target.clientHeight})`);
+    document.addEventListener('scroll', onScroll, true);
+    let last = '';
+    const timer = setInterval(() => {
+      const b = boxOf();
+      const now = b ? `#${idOf(b)} top ${Math.round(b.scrollTop)} 높이 ${b.scrollHeight}/${b.clientHeight} 초점 ${document.activeElement ? name(document.activeElement) : '-'}` : '상자 없음';
+      if (now !== last) log.push(`${t()} 모습 ${now}`);
+      last = now;
+    }, 100);
+    window.__scrollRec = {
+      log,
+      stop() {
+        clearInterval(timer);
+        document.removeEventListener('scroll', onScroll, true);
+        Object.defineProperty(Element.prototype, 'scrollTop', desc);
+        Object.assign(Element.prototype, { scrollTo: orig.scrollTo, scroll: orig.scroll, scrollBy: orig.scrollBy, scrollIntoView: orig.scrollIntoView });
+        HTMLElement.prototype.focus = orig.focus;
+      },
+    };
+  });
   await openPanel();
   await waitFor(page.locator(sel('claude-thread', '4')), 8000);
   const scrollGap = () => page.evaluate(() => {
     const box = document.querySelector('[data-note-panel] [data-scroll-lock]');
     return Math.round(box.scrollHeight - box.scrollTop - box.clientHeight);
   });
-  c('열면 맨 아래 답이 보인다', await waitFor(async () => (await scrollGap()) < 80, 4000), String(await scrollGap()));
+  const atBottomOk = await waitFor(async () => (await scrollGap()) < 80, 4000);
+  c('열면 맨 아래 답이 보인다', atBottomOk, String(await scrollGap()));
+  const scrollLog = await page.evaluate(() => {
+    window.__scrollRec.stop();
+    return window.__scrollRec.log;
+  });
+  if (!atBottomOk || process.env.SCROLL_LOG) console.log(`  [스크롤 기록 ${scrollLog.length}줄]\n${scrollLog.slice(0, 150).map((l) => `    ${l.slice(0, 400)}`).join('\n')}`);
 
   // ─── 글 칸 ───
   const itemNow = () => admin.get(`spaces/${sid}/items/${id}`);
