@@ -124,8 +124,10 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
     [noteDraft, noteParents],
   );
 
-  // 저장 안 한 것이 있으면 ESC로 모두 닫기 전에 묻는다
-  const dirty = ops.length > 0;
+  // 저장 안 한 것이 있으면 ESC로 모두 닫기 전에 묻는다 - 사용자가 손댄 것이 있을 때만(11-18 P45-1).
+  // 옛 자료의 어긋난 차례(order)는 손대지 않아도 다시 매길 쓰기(ops)가 되는데, 그것만으로 '저장하지 않은 내용'을 물어
+  // ESC가 아무것도 닫지 않았다(점검 inspect-claude-request가 'zz' 차례로 심어 CI에서 숨은 채 흔들렸다). 다시 매기기는 저장할 때 함께 간다.
+  const dirty = ov !== NO_CHANGES && ops.length > 0;
   const unsaved = useRef<(() => boolean) | null>(null);
   useEffect(() => {
     unsaved.current = () => dirty;

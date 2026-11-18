@@ -93,6 +93,22 @@ describe('라벨 관리 창', () => {
     expect(anyWindowUnsaved()).toBe(false);
   });
 
+  it('차례가 어긋난 옛 라벨이 있어도 손대지 않았으면 저장 안 한 것이 아니다 - ESC가 묻지 않는다 (11-18)', async () => {
+    const odd = new Map(labels);
+    odd.set('c', { ...base, kind: 'note', name: 'Claude요청', color: 'indigo', parentId: null, order: 'zz' });
+    seed({ labels: odd });
+    open('note');
+    expect(rowIds()).toContain('c');
+    expect(anyWindowUnsaved()).toBe(false);
+    expect(q('[data-label-save]')).not.toHaveAttribute('data-dirty');
+    // 손대면 묻는다 - 저장하면 어긋난 차례도 함께 다시 매긴다
+    fireEvent.change(q('[data-label-row="x"] [data-label-name]'), { target: { value: '빈 것' } });
+    expect(anyWindowUnsaved()).toBe(true);
+    await save();
+    expect(written.batches[0].map((o) => o.at.id)).toEqual(expect.arrayContaining(['x', 'c']));
+    expect(anyWindowUnsaved()).toBe(false);
+  });
+
   it('속성·색·▲▼·지우기를 한꺼번에 저장한다', async () => {
     seed();
     open();

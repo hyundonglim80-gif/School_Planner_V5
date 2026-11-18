@@ -72,6 +72,7 @@ try {
     name: 'Claude요청',
     color: 'indigo',
     parentId: null,
+    // 앱이 매기지 않는 꼴의 차례(옛 자료처럼) - 손대지 않은 라벨 관리가 이것만으로 '저장 안 됨'이 되어 ESC가 아무것도 닫지 못했다(11-18 P45-1, 아래 'ESC = 라벨 관리 닫힘')
     order: 'zz',
     system: 'claudeRequest',
     deletedAt: null,
@@ -87,7 +88,13 @@ try {
   c('이름 칸은 읽기만', (await row.locator(sel('label-name')).getAttribute('readonly')) !== null);
   // 🤖 요청 단추 = 메모 수정 칸 아래(삭제 옆) - 저장으로는 보내지 않는다, 잠긴 라벨이 저장된 메모에만, 묻지 않고 곧바로 보낸다(#76),
   // 보낸 뒤로는 메모 칸 안 대화에서 (P23 - #69 '다시 요청'을 글 칸으로)
+  const seenEsc = dialogs.seen.length;
   await page.keyboard.press('Escape');
+  c(
+    'ESC = 라벨 관리 닫힘 (손대지 않았으면 묻지 않는다 - 어긋난 차례만으로는)',
+    (await waitFor(async () => (await page.locator(sel('labels-window')).count()) === 0, 8000)) && dialogs.seen.length === seenEsc,
+    dialogs.seen.slice(seenEsc).join(' | '),
+  );
   const ask = page.locator(sel('note-claude-ask'));
   const openPanel = async () => {
     // 카드 ✏️ = 곧바로 수정 칸 (11-09 - 카드 누르기는 보기 칸, 글을 고치는 묶음이라 수정 칸으로)
@@ -167,8 +174,10 @@ try {
   c('⚠ 턴은 실패 색', (await toneOf(4)).includes('rose'));
   await admin.set(turnsAt(3), { n: 3, askText: '머리줄 저장 단추', askAt: 30, state: 'deployed', issue: 1003, url: issue(1003), note: '저장 단추를 줄였습니다.', sha: 'def' });
   c('상태·답이 바뀌면 그 턴만 따라간다', await waitFor(async () => ((await turnRow(3).locator(sel('claude-turn-note')).textContent().catch(() => '')) ?? '').includes('저장 단추를 줄였습니다.'), 8000));
+  const seenEsc2 = dialogs.seen.length;
   await page.keyboard.press('Escape');
-  await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0, 8000);
+  // 닫혔는지 본다 - 닫히지 않으면 아래 '다시 열기'가 열려 있던 칸을 그대로 보아, 그때의 스크롤 자리로 통과·실패가 갈렸다(11-18 P45-1 - CI 2006px)
+  c('ESC = 메모 칸 닫힘', await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0, 8000), dialogs.seen.slice(seenEsc2).join(' | '));
   // 메모 글이 길어도 답이 보이게 - 턴이 둘 이상이면 열 때 맨 아래
   await setDoc(doc(db, 'spaces', sid, 'items', id), { text: Array.from({ length: 80 }, (_, i) => `긴 메모 ${i}`).join('\n'), updatedAt: serverTimestamp() }, { merge: true });
   // 글이 앱에 닿은 뒤에 연다. 두 번째 열기라 턴이 캐시에서 곧바로 온다 - 글 칸이 한 프레임 뒤에 늘어나도 맨 아래를 지키는지 본다
