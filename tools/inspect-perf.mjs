@@ -76,8 +76,12 @@ const count = (await getCountFromServer(items)).data().count;
 r.check(count >= N, `teacher4 항목 ${count}개 (+ 표시 하나)`);
 const hitsOf = (word) => Array.from({ length: N }, (_, k) => itemOf(k + 1)).filter((it) => it.text.includes(word)).length;
 
-/** 앱이 센 서버 읽기가 3초 동안 늘지 않을 때까지 (최대 ms) - 마지막 값 */
-async function readsSettled(page, ms = 120000) {
+/**
+ * 앱이 센 서버 읽기가 3초 동안 늘지 않을 때까지 (최대 ms) - 마지막 값.
+ * `enough`(읽기 → 참/거짓)를 주면 그것이 참이 될 때까지는 멈춰 있어도 기다린다 - 바쁜 에뮬레이터는 한 쪽(3000개)을 받는 데 3초를 넘겨
+ * 처음 받기가 300·5476에서 '다 받음'으로 잘렸고, 남은 것을 '다시 열기'가 받아 그쪽까지 틀렸다(11-18 P45-1 - Firebase 12·13 똑같음).
+ */
+async function readsSettled(page, ms = 120000, enough = () => true) {
   const end = Date.now() + ms;
   let last = '';
   let since = Date.now();
@@ -86,7 +90,7 @@ async function readsSettled(page, ms = 120000) {
     if (now !== last) {
       last = now;
       since = Date.now();
-    } else if (Date.now() - since > 3000) break;
+    } else if (Date.now() - since > 3000 && enough(JSON.parse(last || '{}'))) break;
     if (Date.now() > end) break;
     await new Promise((res) => setTimeout(res, 250));
   }
@@ -112,7 +116,7 @@ try {
   r.check(await waitFor(card, 60000), '하루 화면에 일정 카드');
   const firstCard = Date.now() - t0;
   const firstJs = [...js.keys()];
-  const reads1 = await readsSettled(page);
+  const reads1 = await readsSettled(page, 180000, (o) => (o.items ?? 0) >= N);
   const synced1 = Date.now() - t0;
   r.check(sum(reads1) >= N, `처음 받기 = 서버 읽기 ${sum(reads1)} (항목 ${reads1.items ?? 0})`);
   rows.push(['처음 열기(사본 없음)', `${firstCard}ms`, `${synced1}ms`, sum(reads1), JSON.stringify(reads1)]);

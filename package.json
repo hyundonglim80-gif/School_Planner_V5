@@ -18,7 +18,7 @@
     "check:rules": "node tools/check-rules.mjs"
   },
   "dependencies": {
-    "firebase": "^12.18.0",
+    "firebase": "^13.4.0",
     "idb": "^8.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

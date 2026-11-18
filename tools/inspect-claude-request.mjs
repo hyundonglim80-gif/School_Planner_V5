@@ -72,6 +72,7 @@ try {
     name: 'Claude요청',
     color: 'indigo',
     parentId: null,
+    // 앱이 매기지 않는 꼴의 차례(옛 자료처럼) - 손대지 않은 라벨 관리가 이것만으로 '저장 안 됨'이 되어 ESC가 아무것도 닫지 못했다(11-18 P45-1, 아래 'ESC = 라벨 관리 닫힘')
     order: 'zz',
     system: 'claudeRequest',
     deletedAt: null,
@@ -87,7 +88,13 @@ try {
   c('이름 칸은 읽기만', (await row.locator(sel('label-name')).getAttribute('readonly')) !== null);
   // 🤖 요청 단추 = 메모 수정 칸 아래(삭제 옆) - 저장으로는 보내지 않는다, 잠긴 라벨이 저장된 메모에만, 묻지 않고 곧바로 보낸다(#76),
   // 보낸 뒤로는 메모 칸 안 대화에서 (P23 - #69 '다시 요청'을 글 칸으로)
+  const seenEsc = dialogs.seen.length;
   await page.keyboard.press('Escape');
+  c(
+    'ESC = 라벨 관리 닫힘 (손대지 않았으면 묻지 않는다 - 어긋난 차례만으로는)',
+    (await waitFor(async () => (await page.locator(sel('labels-window')).count()) === 0, 8000)) && dialogs.seen.length === seenEsc,
+    dialogs.seen.slice(seenEsc).join(' | '),
+  );
   const ask = page.locator(sel('note-claude-ask'));
   const openPanel = async () => {
     // 카드 ✏️ = 곧바로 수정 칸 (11-09 - 카드 누르기는 보기 칸, 글을 고치는 묶음이라 수정 칸으로)
@@ -167,19 +174,73 @@ try {
   c('⚠ 턴은 실패 색', (await toneOf(4)).includes('rose'));
   await admin.set(turnsAt(3), { n: 3, askText: '머리줄 저장 단추', askAt: 30, state: 'deployed', issue: 1003, url: issue(1003), note: '저장 단추를 줄였습니다.', sha: 'def' });
   c('상태·답이 바뀌면 그 턴만 따라간다', await waitFor(async () => ((await turnRow(3).locator(sel('claude-turn-note')).textContent().catch(() => '')) ?? '').includes('저장 단추를 줄였습니다.'), 8000));
+  const seenEsc2 = dialogs.seen.length;
   await page.keyboard.press('Escape');
-  await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0, 8000);
+  // 닫혔는지 본다 - 닫히지 않으면 아래 '다시 열기'가 열려 있던 칸을 그대로 보아, 그때의 스크롤 자리로 통과·실패가 갈렸다(11-18 P45-1 - CI 2006px)
+  c('ESC = 메모 칸 닫힘', await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0, 8000), dialogs.seen.slice(seenEsc2).join(' | '));
   // 메모 글이 길어도 답이 보이게 - 턴이 둘 이상이면 열 때 맨 아래
   await setDoc(doc(db, 'spaces', sid, 'items', id), { text: Array.from({ length: 80 }, (_, i) => `긴 메모 ${i}`).join('\n'), updatedAt: serverTimestamp() }, { merge: true });
   // 글이 앱에 닿은 뒤에 연다. 두 번째 열기라 턴이 캐시에서 곧바로 온다 - 글 칸이 한 프레임 뒤에 늘어나도 맨 아래를 지키는지 본다
   await waitFor(async () => ((await page.locator(sel('entry-card', id)).textContent()) ?? '').includes('긴 메모 1'), 8000);
+  // 기록 장치 (11-18 P45-1 - P44-1의 '열고 1.5초 지키기' 뒤에도 CI에서 2006px로 틀렸다. CLAUDE.md 2장 '스크롤이 엉뚱하면 짐작 말고 기록'):
+  // 메모 칸 스크롤 상자의 scrollTop 쓰기·scrollTo·scrollIntoView·초점·스크롤 알림과 0.1초마다의 상자 모습을 부른 자리와 함께 모아, 틀리면 출력한다.
+  await page.evaluate(() => {
+    const t0 = performance.now();
+    const log = [];
+    const ids = new WeakMap();
+    let next = 1;
+    const idOf = (el) => (ids.has(el) ? ids.get(el) : (ids.set(el, next++), next - 1));
+    const t = () => Math.round(performance.now() - t0);
+    const boxOf = () => document.querySelector('[data-note-panel] [data-scroll-lock]');
+    const isBox = (el) => el instanceof Element && el.matches('[data-note-panel] [data-scroll-lock]');
+    const where = () => (new Error().stack ?? '').split('\n').slice(3, 9).map((s) => s.trim().replace(/https?:\/\/[^/]+\//, '').replace(/\?[^:]*/, '')).join(' < ');
+    const name = (el) => `${el.tagName.toLowerCase()}${[...el.attributes].filter((a) => a.name.startsWith('data-')).map((a) => `[${a.name}]`).slice(0, 2).join('')}`;
+    const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'scrollTop');
+    const orig = { scrollTo: Element.prototype.scrollTo, scroll: Element.prototype.scroll, scrollBy: Element.prototype.scrollBy, scrollIntoView: Element.prototype.scrollIntoView, focus: HTMLElement.prototype.focus };
+    Object.defineProperty(Element.prototype, 'scrollTop', {
+      configurable: true,
+      get() { return desc.get.call(this); },
+      set(v) {
+        if (isBox(this)) log.push(`${t()} set#${idOf(this)} ${Math.round(desc.get.call(this))}→${Math.round(v)} (높이 ${this.scrollHeight}/${this.clientHeight}) ${where()}`);
+        desc.set.call(this, v);
+      },
+    });
+    for (const k of ['scrollTo', 'scroll', 'scrollBy']) Element.prototype[k] = function (...a) { if (isBox(this)) log.push(`${t()} ${k}#${idOf(this)} ${JSON.stringify(a)} ${where()}`); return orig[k].apply(this, a); };
+    Element.prototype.scrollIntoView = function (...a) { log.push(`${t()} scrollIntoView ${name(this)} ${where()}`); return orig.scrollIntoView.apply(this, a); };
+    HTMLElement.prototype.focus = function (...a) { log.push(`${t()} focus ${name(this)} ${JSON.stringify(a)} ${where()}`); return orig.focus.apply(this, a); };
+    const onScroll = (e) => isBox(e.target) && log.push(`${t()} 스크롤 알림#${idOf(e.target)} top ${Math.round(e.target.scrollTop)} (높이 ${e.target.scrollHeight}/${e.target.clientHeight})`);
+    document.addEventListener('scroll', onScroll, true);
+    let last = '';
+    const timer = setInterval(() => {
+      const b = boxOf();
+      const now = b ? `#${idOf(b)} top ${Math.round(b.scrollTop)} 높이 ${b.scrollHeight}/${b.clientHeight} 초점 ${document.activeElement ? name(document.activeElement) : '-'}` : '상자 없음';
+      if (now !== last) log.push(`${t()} 모습 ${now}`);
+      last = now;
+    }, 100);
+    window.__scrollRec = {
+      log,
+      stop() {
+        clearInterval(timer);
+        document.removeEventListener('scroll', onScroll, true);
+        Object.defineProperty(Element.prototype, 'scrollTop', desc);
+        Object.assign(Element.prototype, { scrollTo: orig.scrollTo, scroll: orig.scroll, scrollBy: orig.scrollBy, scrollIntoView: orig.scrollIntoView });
+        HTMLElement.prototype.focus = orig.focus;
+      },
+    };
+  });
   await openPanel();
   await waitFor(page.locator(sel('claude-thread', '4')), 8000);
   const scrollGap = () => page.evaluate(() => {
     const box = document.querySelector('[data-note-panel] [data-scroll-lock]');
     return Math.round(box.scrollHeight - box.scrollTop - box.clientHeight);
   });
-  c('열면 맨 아래 답이 보인다', await waitFor(async () => (await scrollGap()) < 80, 4000), String(await scrollGap()));
+  const atBottomOk = await waitFor(async () => (await scrollGap()) < 80, 4000);
+  c('열면 맨 아래 답이 보인다', atBottomOk, String(await scrollGap()));
+  const scrollLog = await page.evaluate(() => {
+    window.__scrollRec.stop();
+    return window.__scrollRec.log;
+  });
+  if (!atBottomOk || process.env.SCROLL_LOG) console.log(`  [스크롤 기록 ${scrollLog.length}줄]\n${scrollLog.slice(0, 150).map((l) => `    ${l.slice(0, 400)}`).join('\n')}`);
 
   // ─── 글 칸 ───
   const itemNow = () => admin.get(`spaces/${sid}/items/${id}`);
