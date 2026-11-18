@@ -216,6 +216,23 @@ describe('환경설정 창', () => {
     document.documentElement.classList.remove('hc', 'dim');
   });
 
+  it('어디에 남나 (P44-3): 칸 제목 옆 같은 모양 표시 - 실제로 남는 곳과 같고, 글로 되풀이하지 않는다', () => {
+    openSettings();
+    const saved = (sel: string) => q(`${sel} [data-settings-saved]`).dataset.settingsSaved;
+    // 기기 종류마다 계정에(app/prefs DevicePrefs - 위 시험의 주말·시작 화면·글자 크기)
+    for (const id of ['display', 'fontScale', 'popupStyle', 'startupScope']) expect(saved(`[data-settings-section="${id}"]`), id).toBe('split');
+    // 계정에 하나(common) - 색 테마·꾸미기·겹쳐 볼 캘린더
+    for (const id of ['palette', 'decor', 'gcalOverlay']) expect(saved(`[data-settings-section="${id}"]`), id).toBe('all');
+    // 이 기기에만(localStorage) - 화면 밝기·고대비·어둡게를 부드럽게 / 색약 배려는 계정(위 시험)
+    expect(saved('[data-settings-section="theme"]')).toBe('device');
+    const rowSaved = (id: string) => q(`[data-settings-toggle="${id}"]`).closest('label')!.querySelector<HTMLElement>('[data-settings-saved]')!.dataset.settingsSaved;
+    expect([rowSaved('contrast'), rowSaved('cvd'), rowSaved('dim')]).toEqual(['device', 'all', 'device']);
+    const text = q('[data-settings-section="display"]').closest('[role="tabpanel"], div')!.parentElement!.textContent ?? '';
+    expect(text).not.toContain('이 기기에만 남습니다');
+    expect(text).not.toContain('계정에 저장해');
+    expect(text.match(/인쇄/g) ?? []).toHaveLength(1);
+  });
+
   // ── 단축키 탭 (P28-1 - 키가 걸린 것만, 줄마다 키 바꾸기·해제, 누르는 즉시 저장) ──
   const NONE = { ctrl: false, alt: false, shift: false, key: '' };
   const rowIds = () => qa('[data-shortcut-row]').map((r) => r.dataset.shortcutRow);

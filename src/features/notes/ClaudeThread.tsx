@@ -3,6 +3,8 @@
 //   - 첫 요청은 한 줄로 접는다(메모 글이 바로 위에 있다, 글이 없으면 턴이 없는 옛 메모·보내기 전).
 //   - '바꾼 것 없음'은 실패 색이 아니다(되물음·답일 수 있다) · ❌·⚠ 턴은 보낸 글을 글 칸에 다시 넣을 수 있다.
 //   - 턴이 둘 이상이면 열 때 맨 아래로(메모 글이 길면 답이 안 보인다). 턴이 늘면 맨 아래로, 답이 오면 맨 아래를 보던 때만 따라간다.
+//     내린 뒤 잠깐(SETTLE_MS)은 사용자가 손대기 전까지 프레임마다 맨 아래를 지킨다 - 그동안 글 칸이 높이를 재고 오른쪽 칸이 자리를 잡는다
+//     (P44-1 11-17~18 CI - 세 번 모두 칸이 맨 위(2006px)에 남았는데 PC·컨테이너에서는 재현되지 않았다. 스크롤 알림·크기 알림 한 번에 기대지 않는다).
 //   말풍선은 턴이 있을 때만 그린다(부르는 쪽) - 스크롤 듣기가 처음 그릴 때 칸을 찾는다.
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { claudeNoteText, claudeRunLabel, claudeTurnBadge, type ClaudeTurn } from '../../domain/claudeRequest';
@@ -11,6 +13,10 @@ import { CLAUDE_NOTE_TONE } from './claudeTone';
 
 /** 맨 아래에서 이만큼 안이면 맨 아래를 보는 것으로 친다(px) */
 const NEAR_BOTTOM_PX = 80;
+/** 맨 아래로 내린 뒤 이만큼(ms)은 프레임마다 맨 아래를 지킨다 - 사용자가 손대면(휠·터치·누르기·키) 곧바로 그만 */
+export const SETTLE_MS = 1500;
+/** 사용자가 칸에 손댔다 - 이 뒤의 스크롤은 사용자의 것 */
+const USER_INPUT = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const;
 
 const MINE = 'max-w-[85%] rounded-2xl bg-primary px-3 py-1.5 text-left text-sm text-white';
 
@@ -93,6 +99,26 @@ export default function ClaudeThread({ turns, onRefill }: { turns: ClaudeTurn[];
   /** 맨 아래를 보고 있다 */
   const atBottom = useRef(false);
   const scroller = () => root.current?.closest<HTMLElement>('[data-scroll-lock]') ?? null;
+  /** 이때(performance.now)까지 맨 아래를 지킨다 (0 = 지키지 않음) */
+  const settleUntil = useRef(0);
+  const frame = useRef(0);
+  const settling = () => performance.now() < settleUntil.current;
+  /** 맨 아래로 내리고 잠깐 지킨다 - 늦게 높이를 재는 글 칸·자리를 잡는 칸이 밀어내도, 그 알림이 오지 않아도 */
+  const pinBottom = (box: HTMLElement) => {
+    box.scrollTop = box.scrollHeight;
+    atBottom.current = true;
+    settleUntil.current = performance.now() + SETTLE_MS;
+    if (frame.current) return;
+    const tick = () => {
+      if (!settling()) {
+        frame.current = 0;
+        return;
+      }
+      if (box.scrollHeight - box.scrollTop - box.clientHeight > 1) box.scrollTop = box.scrollHeight;
+      frame.current = requestAnimationFrame(tick);
+    };
+    frame.current = requestAnimationFrame(tick);
+  };
 
   const changes = turns.map((t) => `${t.n}:${t.state}:${t.note.length}`).join();
   useLayoutEffect(() => {
@@ -101,26 +127,32 @@ export default function ClaudeThread({ turns, onRefill }: { turns: ClaudeTurn[];
     const opened = drawn.current === 0;
     const grew = turns.length > drawn.current;
     drawn.current = turns.length;
-    if (opened ? turns.length > 1 : grew || atBottom.current) {
-      box.scrollTop = box.scrollHeight;
-      atBottom.current = true;
-    }
+    if (opened ? turns.length > 1 : grew || atBottom.current) pinBottom(box);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 턴·상태·답이 바뀔 때만
   }, [changes]);
   useEffect(() => {
     const box = scroller();
     if (!box) return;
     const onScroll = () => {
+      if (settling()) return; // 지키는 동안의 스크롤은 칸이 자리 잡는 것 - 사용자가 손대면 먼저 그만둔다(아래)
       atBottom.current = box.scrollHeight - box.scrollTop - box.clientHeight < NEAR_BOTTOM_PX;
     };
+    const onUser = () => {
+      settleUntil.current = 0;
+    };
     box.addEventListener('scroll', onScroll, { passive: true });
+    for (const type of USER_INPUT) box.addEventListener(type, onUser, { capture: true, passive: true });
     // 맨 아래를 보는 동안 위가 늘어나도 따라간다 - 다시 열면 턴이 캐시에서 곧바로 와, 글 칸이 한 프레임 뒤에 높이를 재며 답을 밀어냈다(대화 방과 같다)
     const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(() => atBottom.current && (box.scrollTop = box.scrollHeight));
     for (const el of [box, ...box.children]) ro?.observe(el); // box = 글 칸이 늘어나 스크롤 칸이 줄 때
     return () => {
       box.removeEventListener('scroll', onScroll);
+      for (const type of USER_INPUT) box.removeEventListener(type, onUser, { capture: true });
       ro?.disconnect();
+      cancelAnimationFrame(frame.current);
+      frame.current = 0;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 처음 그릴 때 한 번 (칸은 그대로다)
   }, []);
 
   return (

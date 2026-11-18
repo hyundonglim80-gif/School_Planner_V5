@@ -56,7 +56,7 @@
 - **공개**: 요청 글은 누구나 볼 수 있는 이슈가 된다 - 학생 이름 등은 적지 않는다. 첨부는 보내지 않는다.
 - **자동으로 올리지 않는 파일**: `firestore.rules`·`functions/`·`.github/`·`firebase.json`·`.firebaserc`(PC에서 배포해야 해서) · `package.json`·`package-lock.json`·`public/sw.js`·`vite.config.ts`·`index.html`(앱 전체에 닿는데 합치기 전 크롬 점검은 여덟뿐이라 - P22-6, `index.html`은 CSP 해시가 `firebase.json`에 있어 어차피 혼자 못 고친다). 고치면 그 실행의 고침을 모두 버리고 PC 일로 작업 계획에 적는다(위 'PC 일로 넘기기' - 11-09, 옛날엔 실패로 끝났다).
 - **확인**: 먼저 워크플로 안에서 CI와 같은 것(lint·단위 테스트·함수 시험·빌드) - 하나라도 실패하면 올리지 않는다.
-  그다음 **PR을 만들고 그 PR의 CI 전체(check·rules-data·chrome)를 기다렸다 합친다**(P36-1 11-16 - 옛날엔 곧바로 합쳤다). `chrome` = 자주 바뀌는 화면·달력 화면의 크롬 점검 열셋(`tools/ci-chrome.mjs` 목록 - 에뮬레이터 + seed + 개발 서버 위에서 하나씩).
+  그다음 **PR을 만들고 그 PR의 CI 전체(check·rules-data·chrome)를 기다렸다 합친다**(P36-1 11-16 - 옛날엔 곧바로 합쳤다). `chrome` = 자주 바뀌는 화면·달력 화면·최근 바뀐 화면의 크롬 점검 열일곱(P44-1)(`tools/ci-chrome.mjs` 목록 - 에뮬레이터 + seed + 개발 서버 위에서 하나씩).
   화면 글·`data-*`·자리를 바꾸면 그것을 찾는 점검 줄(`tools/inspect-*.mjs`)도 grep으로 찾아 같은 커밋에서 고친다(Claude는 돌리지 않는다 - 커밋 메시지 끝 '점검 고침: …', P14-4 10-29). 여덟 안의 점검이면 CI가 돌려 본다.
 - **CI가 틀리면**(P36-1): 합치지 않고 **PR을 열어 둔다**(브랜치 `claude/request-<이슈>` 남김) · 틀린 것(크롬 점검 이름과 틀린 줄 - 그 일의 결과 묶음 `chrome-probes`의 `summary.md`)을 '메모 요청에서 온 PC 일'에 한 줄로 적어 main에 바로 올린다 ·
   결과 글 첫 줄 '합치지 않았습니다: 고친 것이 합치기 전 화면 점검을 통과하지 못했습니다(…)' + PR 주소, 라벨 `claude-failed`. PC는 그 브랜치를 받아 점검을 돌려 보고 앱 버그면 고치고, 점검이 옛 것을 찾으면 점검을 고쳐 PR을 합친다.

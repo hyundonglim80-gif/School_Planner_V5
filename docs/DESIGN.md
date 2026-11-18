@@ -455,6 +455,8 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 11. **색**: 강조는 `primary`·`blue`(색 테마를 따른다), 뜻으로 쓰는 파랑은 `cobalt`. 새 빛깔로 뜻을 나누면 `domain/themeCss` `MEANING_HUES`에 더한다(7-5).
 12. **첫 화면에 싣나?** Shell·App이 늘 그리는 부품이 끌어오는 것은 모든 사람이 열 때마다 받는다. 기본 꺼진 기능·누를 때만 쓰는 셈은
     store·띠(가벼운 것)와 셈(무거운 것)을 나누고 셈은 `import()`로(11장 P25-1). 큰 것을 더했으면 `inspect-perf`(첫 화면 JS gzip 400KB 아래).
+    Shell이 늘 그리는 줄·창은 **작은 문(상태만 보고 null) + 켤 때 받는 본체**로(P44-2 `MultiSelectGate`·`ShortcutRecordGate`·사진 보기) - 단축키·가로채기는 문이 건다.
+    처음 받는 모듈은 `vite.config` `codeSplitting` 묶음(`$initial` = vendor + initial)이 두 조각으로 모은다 - 묶음이 없으면 나눠 받는 것이 늘 때마다 처음 모듈이 작은 조각으로 쪼개져 gzip 합이 도로 는다(11-17). 크기는 **하루 화면까지 받는 파일 합**으로 견준다(입구만 보면 속는다).
 
 ## 11. 성능 (P9-3 - 2026-10-14 PC, 에뮬레이터)
 

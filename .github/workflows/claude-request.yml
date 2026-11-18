@@ -234,7 +234,7 @@ jobs:
           npm run test:functions
           npm run build
 
-      # 합치기 전에 그 PR의 CI 전체(check·rules-data·chrome = 크롬 점검 열셋 - P36-1·P40-1)를 기다린다. 하나라도 틀리면 합치지 않고 PR을 열어 둔다
+      # 합치기 전에 그 PR의 CI 전체(check·rules-data·chrome = 크롬 점검 열일곱 - P36-1·P40-1·P44-1)를 기다린다. 하나라도 틀리면 합치지 않고 PR을 열어 둔다
       # (브랜치 남김 - PC가 받아 고치고 합친다, 아래 '화면 점검이 틀리면 PC 일로'). 작업 계획 한 줄만 바뀌었으면 앱이 그대로라 기다리지 않는다.
       - name: 올리고 합치기
         id: merge

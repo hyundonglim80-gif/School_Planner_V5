@@ -11,6 +11,13 @@ import type { WriteOp } from '../../data/repo';
 import DayEvents from '../day/DayEvents';
 import { endMulti, useMulti } from './multi';
 import MultiSelectBar from './MultiSelectBar';
+import { useMultiSelectKeys } from './multiKeys';
+
+/** 껍데기에서는 문(MultiSelectGate)이 늘 듣는 단축키·ESC - 시험은 줄을 곧바로 그린다 */
+function Keys() {
+  useMultiSelectKeys();
+  return null;
+}
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 const written = vi.hoisted(() => ({ batches: [] as WriteOp[][] }));
@@ -63,6 +70,7 @@ const view = () =>
   render(
     <>
       <DayEvents date={DAY} />
+      <Keys />
       <MultiSelectBar />
     </>,
   );

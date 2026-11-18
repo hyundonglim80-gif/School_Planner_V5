@@ -179,7 +179,8 @@ try {
   r.check(await waitFor(async () => (await page.locator(sel('trash-auto')).getAttribute('data-trash-auto')) === '-1', 8000), '칸이 없으면 고르지 않음(-1)');
   r.check((await page.locator(sel('trash-days', '90')).getAttribute('aria-pressed')) === 'true', '⚙️ 90일 (기본)이 눌린 모습');
   const autoText = (await page.locator(sel('trash-auto')).textContent()) ?? '';
-  r.check(new Date().toISOString().slice(0, 10) < '2026-12-01' ? autoText.includes('12월 1일부터') : autoText.includes('90일'), `안내 줄: ${autoText.trim()}`);
+  // 앱이 셈하는 오늘(이 기기 시각) - UTC로 견주면 12-01 0~9시(서울)에 어긋난다(P44-1 - 날마다 도는 CI)
+  r.check(new Date().toLocaleDateString('sv') < '2026-12-01' ? autoText.includes('12월 1일부터') : autoText.includes('90일'), `안내 줄: ${autoText.trim()}`);
   await page.keyboard.press('Escape');
   await waitFor(async () => (await page.locator(sel('trash-window')).count()) === 0);
   // 정한 날 뒤: 90일 지난 것만 비운다 (시계를 12월 2일 뒤로 - 화면이 셈하는 오늘)

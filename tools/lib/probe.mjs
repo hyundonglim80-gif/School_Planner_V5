@@ -78,20 +78,23 @@ export const sel = (name, value) => (value === undefined ? `[data-${name}]` : `[
  * V4는 컨테이너에서 Chromium을 /opt/google/chrome/chrome으로 링크해 썼다(V4 CLAUDE.md 2장). CHROME=<경로>로 정할 수도 있다.
  */
 export function browserOptions() {
-  if (process.env.CHROME) return { executablePath: process.env.CHROME };
-  if (process.platform !== 'linux' || existsSync('/opt/google/chrome/chrome')) return { channel: 'chrome' };
+  // 리눅스 크롬은 언어 설정(LANG)이 비면 한글 파일 경로를 읽지 못해 끌어 온 파일을 버리고(덮개가 안 뜬다) 내려받기 이름을 'download'로 바꾼다
+  // (P44-1 11-17 - 클라우드 컨테이너는 LANG이 비어 있다. CI 러너·PC는 UTF-8이라 통과했다).
+  const env = process.platform === 'linux' && !/utf-?8/i.test(process.env.LC_ALL || process.env.LANG || '') ? { env: { ...process.env, LANG: 'C.UTF-8' } } : {};
+  if (process.env.CHROME) return { executablePath: process.env.CHROME, ...env };
+  if (process.platform !== 'linux' || existsSync('/opt/google/chrome/chrome')) return { channel: 'chrome', ...env };
   const root = process.env.PLAYWRIGHT_BROWSERS_PATH || '/opt/pw-browsers';
   try {
     for (const dir of readdirSync(root).filter((n) => n.startsWith('chromium-')).sort().reverse()) {
       for (const sub of ['chrome-linux64', 'chrome-linux']) {
         const path = `${root}/${dir}/${sub}/chrome`;
-        if (existsSync(path)) return { executablePath: path };
+        if (existsSync(path)) return { executablePath: path, ...env };
       }
     }
   } catch {
     /* 없으면 Playwright 기본 Chromium */
   }
-  return {};
+  return { ...env };
 }
 
 export async function launch() {

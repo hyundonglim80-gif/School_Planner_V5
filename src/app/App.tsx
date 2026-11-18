@@ -1,16 +1,21 @@
 // 앱 맨 위: 로그인 상태에 따라 불러오는 중 / 로그인 화면 / 껍데기(Shell - 머리줄·화면·창).
 // 새 창으로 옮긴 창(주소 ?popout= - ui/popout)이면 껍데기 대신 그 창 하나만(PopoutShell). 클립보드 팝업창은 목록 칸만(ClipboardPopout - #140).
+import { Suspense } from 'react';
 import { useSession } from '../data/session';
 import { useMirrorSync } from '../data/mirror/sync';
 import { useMySpacesWatch } from '../data/spaces';
 import LoginScreen from '../features/auth/LoginScreen';
-import ClipboardPopout from '../features/clipboard/ClipboardPopout';
 import { CLIPBOARD_POPOUT_ID, POPOUT } from '../ui/popout';
-import PopoutShell from './PopoutShell';
 import Shell from './Shell';
 import { useFollowToday } from './nav';
 import { usePrefsSync } from './prefs';
 import { useResetSync } from './settingsReset';
+import { lazyWithReload } from './lazyWithReload';
+
+// 새 창(↗)·클립보드 팝업창의 껍데기는 그 창에서만 받는다 (P44-2 첫 화면 JS - 큰 창은 Shell만)
+const PopoutShell = lazyWithReload(() => import('./PopoutShell'));
+const ClipboardPopout = lazyWithReload(() => import('../features/clipboard/ClipboardPopout'));
+const WAIT = <p className="p-6 text-slate-400">불러오는 중…</p>;
 
 export default function App() {
   const loading = useSession((s) => s.loading);
@@ -36,7 +41,11 @@ export default function App() {
         <LoginScreen />
       ) : (
         <div data-session="signed-in" data-user={user.email}>
-          {POPOUT ? POPOUT.id === CLIPBOARD_POPOUT_ID ? <ClipboardPopout /> : <PopoutShell spec={POPOUT} /> : <Shell />}
+          {POPOUT ? (
+            <Suspense fallback={WAIT}>{POPOUT.id === CLIPBOARD_POPOUT_ID ? <ClipboardPopout /> : <PopoutShell spec={POPOUT} />}</Suspense>
+          ) : (
+            <Shell />
+          )}
         </div>
       )}
       {/* 어느 빌드가 돌고 있는지 화면에서 본다(V4 규칙). */}
