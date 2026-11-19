@@ -7,6 +7,7 @@
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-evaluations.mjs
 // 에뮬레이터 teacher·teacher3의 classes를 비우고 점검 학급을 심었다가 끝에 되돌린다. 점검 학급의 조사표·자리표·학급 허브·수업 칸은 끝에 지우거나 되돌린다.
+import { readFileSync } from 'node:fs';
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
@@ -227,6 +228,67 @@ try {
   await rec.locator(sel('student-record-tab', 'evals')).click();
   r.check(((await rec.locator(sel('student-eval', e4.id)).locator('[data-student-eval-value]').textContent()) ?? '') === 'A+', "학생 기록 조사표 = 'A+'");
 
+  r.section('점수로 단계 자동 매기기 (P46-2 - 사용자 예: 3단계 10·5에 7 = 보통)');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await open(page, `#/day/${D}`);
+  await page.locator(sel('lesson-card', 3)).hover();
+  await badge3.click();
+  await waitFor(async () => (await w3.getAttribute('data-eval-mode')) === 'list');
+  await page.locator('[data-eval-new]').click();
+  await w3.locator('[data-eval-title]').fill('점수 평가');
+  r.check((await w3.locator('[data-eval-by-score]').count()) === 1, "3단계면 '점수로 단계 자동 매기기' 체크");
+  await w3.locator('[data-eval-by-score]').check();
+  r.check((await w3.locator('[data-eval-cut]').count()) === 2, '기준 칸 둘 (마지막 단계는 나머지)');
+  await w3.locator(sel('eval-cut', 0)).fill('5');
+  await w3.locator(sel('eval-cut', 1)).fill('10');
+  await w3.locator('[data-eval-create-submit]').click();
+  r.check((await waitFor(w3.locator('[data-eval-cut-error]'))) && (await w3.locator(sel('eval-cut', 1)).getAttribute('aria-invalid')) === 'true', '아래 단계가 더 크면 생성을 막고 그 칸을 붉게');
+  r.check(!(await liveEvals()).some((e) => e.title === '점수 평가'), '틀린 기준으로는 만들지 않는다');
+  await w3.locator(sel('eval-cut', 0)).fill('10');
+  await w3.locator(sel('eval-cut', 1)).fill('5');
+  r.check((await w3.locator('[data-eval-cut-error]').count()) === 0, '고치면 안내가 사라진다');
+  await w3.locator('[data-eval-create-submit]').click();
+  list = await serverUntil(liveEvals, (l) => l.some((e) => e.title === '점수 평가'));
+  const e5 = list.find((e) => e.title === '점수 평가');
+  r.check(same(e5?.cuts, [10, 5]) && same(e5?.steps, ['우수', '보통', '노력요함']) && !e5?.free, '서버: 기준 [10, 5] · 단계 셋');
+  r.check(await waitFor(w3.locator(sel('eval-view', e5.id))), '만든 조사표가 곧바로 열린다');
+  const sc = (s) => row(w3, s).locator('[data-eval-score="indiv"]');
+  const res = (s) => row(w3, s).locator('[data-eval-indiv-score]');
+  await sc('a1').fill('7');
+  r.check((await res('a1').inputValue()) === '보통', "7을 치면 옆 결과 칸 = '보통'");
+  await sc('a2').fill('10');
+  await sc('a3').fill('4.9');
+  await sc('a4').fill('결석');
+  r.check((await res('a2').inputValue()) === '우수' && (await res('a3').inputValue()) === '노력요함', '10 = 우수 · 4.9 = 노력요함 (기준은 이상)');
+  r.check((await sc('a4').getAttribute('aria-invalid')) === 'true' && (await res('a4').inputValue()) === '', '숫자가 아니면(결석) 붉은 칸 · 결과는 빈칸');
+  await res('a1').selectOption('우수');
+  await page.locator('[data-eval-save]').click();
+  const d5 = await serverUntil(() => evalDoc(e5.id), (d) => d?.values?.a4?.score === '결석');
+  r.check(
+    same(d5?.values, { a1: { score: '7', indiv: '우수' }, a2: { score: '10', indiv: '우수' }, a3: { score: '4.9', indiv: '노력요함' }, a4: { score: '결석' } }),
+    '저장 = 점수 + 결과 (손으로 바꾼 결과는 그대로)',
+  );
+  await w3.locator('[data-eval-meta-toggle]').click();
+  await w3.locator(sel('eval-meta-cut', 0)).fill('8');
+  await w3.locator(sel('eval-meta-cut', 1)).fill('4');
+  const seen5 = dialogs.seen.length;
+  await w3.locator('[data-eval-meta-save]').click();
+  const d5b = await serverUntil(() => evalDoc(e5.id), (d) => same(d?.cuts, [8, 4]));
+  r.check(dialogs.seen.length === seen5 + 1 && String(dialogs.seen.at(-1)).includes('2명'), '⚙️ 기준 고치기 = 바뀌는 학생 수를 묻는다 (2명)', String(dialogs.seen.at(-1)));
+  r.check(
+    d5b?.values?.a1?.indiv === '보통' && d5b?.values?.a2?.indiv === '우수' && d5b?.values?.a3?.indiv === '보통' && same(d5b?.values?.a4, { score: '결석' }),
+    '새 기준 8·4로 점수가 있는 학생을 다시 매긴다 (손으로 바꾼 a1도)',
+  );
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await open(page, '#/class');
+  await page.locator(sel('class-tool', 'evalOverview')).click();
+  const ov5 = page.locator(sel('eval-overview-window', CLASS_ID));
+  const cell5 = ov5.locator(sel('eval-cell', `${e5.id}:a1`));
+  r.check(await waitFor(async () => ((await cell5.count()) ? ((await cell5.textContent()) ?? '') : '').startsWith('보통 (7)'), 8000), "모아 보기 칸 = '보통 (7)'");
+  const [dl5] = await Promise.all([page.waitForEvent('download'), ov5.locator('[data-eval-overview-csv]').click()]);
+  const csv5 = readFileSync(await dl5.path(), 'utf8');
+  r.check(csv5.includes('점수 평가,점수,사유') && csv5.includes('보통,7,'), '📥 CSV = 값 · 점수 · 사유 (점수는 따로)');
+
   r.section('자리표 학생 칸 · 교과 전담 반 도구');
   await page.evaluate(() => window.sp5.closeAllWindows());
   const evToday = ref('evaluations', 'inspectToday');
@@ -269,6 +331,27 @@ try {
     updatedAt: serverTimestamp(),
     v: 1,
   });
+  // 점수로 단계 자동 매기기(P46-2) - 오늘 조사표 칸에 점수 칸
+  const evScore = ref('evaluations', 'inspectTodayScore');
+  undo.add(() => deleteDoc(evScore));
+  await setDoc(evScore, {
+    date: TODAY,
+    period: 4,
+    classId: CLASS_ID,
+    title: '오늘 점수',
+    type: 'eval',
+    indiv: true,
+    group: false,
+    steps: ['우수', '보통', '노력요함'],
+    cuts: [10, 5],
+    students: [{ sid: 'a1', num: 1, name: '김하나' }],
+    values: {},
+    authorId: uid,
+    deletedAt: null,
+    createdAt: Date.now(),
+    updatedAt: serverTimestamp(),
+    v: 1,
+  });
   await page.evaluate((c) => window.sp5.openWindow('seating', { classId: c }), CLASS_ID);
   const seatWin = page.locator(sel('seating-window', CLASS_ID));
   await waitFor(seatWin.locator('[data-seating-create]'), 8000);
@@ -286,6 +369,12 @@ try {
   await freeRow.locator('[data-seat-eval-indiv]').press('Enter');
   const df = await serverUntil(async () => (await getDoc(evFree)).data(), (d) => d?.values?.a1?.indiv === '90점');
   r.check(same(df?.values, { a1: { indiv: '90점' } }), 'Enter = 그 학생 값만 저장');
+  const scoreRow = seatWin.locator(sel('seat-student', 'a1')).locator(sel('seat-eval', 'inspectTodayScore'));
+  await scoreRow.locator('[data-seat-eval-score="indiv"]').fill('7');
+  await scoreRow.locator('[data-seat-eval-score="indiv"]').press('Enter');
+  const ds = await serverUntil(async () => (await getDoc(evScore)).data(), (d) => d?.values?.a1?.score === '7');
+  r.check(same(ds?.values, { a1: { score: '7', indiv: '보통' } }), "점수 기준 오늘 조사표 = 점수 칸에 7 → '보통'");
+  r.check(await waitFor(async () => (await scoreRow.locator('select[data-seat-eval-indiv]').inputValue()) === '보통'), '옆 고르기 칸도 보통');
   await page.evaluate(() => window.sp5.closeAllWindows());
   r.check(errors.length === 0, '화면 오류 없음', errors.join(' | '));
 

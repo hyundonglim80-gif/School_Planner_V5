@@ -152,8 +152,8 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 ### 4-7. 조사표·알림장·진도 (조사표·알림장은 공간마다, 진도는 개인)
 
-- `evaluations/{evalId}`: **조사표 한 장 = 문서 하나** `{ date, period: 교시 | null(기록 칸), classId, title, type: 'eval'|'check'|'memo', subject?, indiv?, group?, steps?, free?(평가 단계 '기타' P46-1 - true면 steps []·값은 indiv·group에 적은 글 그대로), groups?: [{ name, members: [sid] }],
-  students: [{ sid, num, name, out? }], values: { [sid]: { indiv?, group?, groupName?, checked?, reason?, memo? } }, authorId, updatedAt, deletedAt, v }`
+- `evaluations/{evalId}`: **조사표 한 장 = 문서 하나** `{ date, period: 교시 | null(기록 칸), classId, title, type: 'eval'|'check'|'memo', subject?, indiv?, group?, steps?, free?(평가 단계 '기타' P46-1 - true면 steps []·값은 indiv·group에 적은 글 그대로), cuts?(점수로 단계 자동 매기기 P46-2 - (i+1)단계가 되는 '이 점수 이상', 단계 수 − 1개), groups?: [{ name, members: [sid] }],
+  students: [{ sid, num, name, out? }], values: { [sid]: { indiv?, group?, groupName?, checked?, reason?, memo?, score?, groupScore?(P46-2 - 친 점수 글자, 결과는 그 점수로 매긴 단계) } }, authorId, updatedAt, deletedAt, v }`
   (V4는 하루 문서의 배열 `list`/`evalList` - 두 이름을 함께 쓰던 것을 없앤다). 명단은 문서에 둔다(그룹 공간의 다른 사람도 이름을 본다 - 열 때 명렬표와 맞춘다).
 - `notices/{date}`: `{ date, lines: string[], updatedAt }`.
 - `progress/{planId}`: V4 `v4_progress` 모양 그대로(`key, subject?, classes?, startDate, lessons[], bumps[]`) + `updatedAt, deletedAt`.

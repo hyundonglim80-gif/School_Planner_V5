@@ -5,6 +5,7 @@
 // 시트에서 지운 줄은 앱에서 지우지 않는다(V4는 그날 목록을 통째로 바꿨다 - PLAN 5장 P8-3). 날짜 옮기기는 앱에서.
 import { doc, getDocFromServer } from 'firebase/firestore';
 import { addDays } from '../../domain/dateUtils';
+import { hasScoreCuts } from '../../domain/evaluation';
 import { lessonNote, lessonsOn, type LessonSource } from '../../domain/lessons';
 import { cleanLabelName } from '../../domain/labels';
 import { orderBetween } from '../../domain/order';
@@ -105,6 +106,8 @@ function sheetEvalOf(ev: Docs<'evaluations'>[string], classes: Docs<'classes'>):
     ...(ev.subject ? { subject: ev.subject } : {}),
     ...(ev.indiv ? { indiv: true } : {}),
     ...(ev.group ? { group: true } : {}),
+    // 점수 기준(P46-2) - 시트에 점수 칸을 내고 되읽을 때 다시 매긴다
+    ...(hasScoreCuts(ev) ? { steps: ev.steps, cuts: ev.cuts } : {}),
     students: (ev.students ?? []).map((s) => ({ sid: s.sid, num: s.num, name: s.name, ...(genderOf.get(s.sid) ? { gender: genderOf.get(s.sid) } : {}) })),
     values: ev.values ?? {},
   };

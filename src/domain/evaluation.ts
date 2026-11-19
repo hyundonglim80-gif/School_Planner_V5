@@ -22,6 +22,9 @@ export interface EvalValue {
   checked?: boolean;
   reason?: string;
   memo?: string;
+  /** 점수로 단계 자동 매기기(P46-2) - 친 점수 글자 그대로(개별·조별). 결과(indiv·group)는 그 점수로 매긴 단계 */
+  score?: string;
+  groupScore?: string;
 }
 export type EvalValues = Record<string, EvalValue>;
 
@@ -53,6 +56,8 @@ export interface EvalDoc {
   steps?: string[];
   /** 평가 단계 '기타' (P46-1): 단계 없이 학생마다 숫자·글자 그대로 (steps = [], 값은 indiv·group 글자) */
   free?: boolean;
+  /** 점수로 단계 자동 매기기 (P46-2): cuts[i] = (i+1)단계가 되는 '이 점수 이상'(1단계가 가장 높다), 마지막 단계는 나머지 - 단계 수 − 1개 */
+  cuts?: number[];
   groups?: EvalGroup[];
   students: EvalStudent[];
   values: EvalValues;
@@ -60,6 +65,65 @@ export interface EvalDoc {
 
 /** 단계 '기타' 조사표인가 - 결과 칸이 고르기 대신 글 칸 */
 export const isFreeEval = (ev: Pick<EvalDoc, 'type' | 'free'>): boolean => ev.type === 'eval' && ev.free === true;
+
+// ── 점수로 단계 자동 매기기 (P46-2 - 사용자 예: 3단계 기준 10·5 → 7 = 보통) ──
+
+/** 점수 기준이 있는 조사표인가 (평가 · 기타 아님 · 기준 = 단계 수 − 1개의 수) */
+export function hasScoreCuts(ev: Pick<EvalDoc, 'type' | 'free' | 'steps' | 'cuts'>): boolean {
+  const cuts = ev.cuts;
+  return ev.type === 'eval' && ev.free !== true && Array.isArray(cuts) && cuts.length > 0 && cuts.length === (ev.steps?.length ?? 0) - 1 && cuts.every((c) => typeof c === 'number' && Number.isFinite(c));
+}
+
+/** 점수 글자 → 수 ('7' · ' 7.5 ' · '-1'). 숫자가 아니면(결석·빈 칸) null */
+export function parseScore(text: string | undefined): number | null {
+  const t = (text ?? '').trim();
+  return /^-?\d+(\.\d+)?$/.test(t) ? Number(t) : null;
+}
+
+/** 점수 → 단계 이름. 기준은 '이상'(10·5에 10 = 1단계, 7·5 = 2단계, 4.9 = 3단계) */
+export function stepForScore(steps: readonly string[], cuts: readonly number[], score: number): string {
+  for (let i = 0; i < cuts.length; i++) if (score >= cuts[i]) return steps[i] ?? '';
+  return steps[steps.length - 1] ?? '';
+}
+
+/** 기준 칸 검사 - 빈 칸이거나 위 단계 기준보다 크거나 같으면 그 칸 번호, 모두 맞으면 -1 */
+export function badCutIndex(cuts: ReadonlyArray<number | null>): number {
+  for (let i = 0; i < cuts.length; i++) {
+    const c = cuts[i];
+    if (c == null || !Number.isFinite(c)) return i;
+    const above = cuts[i - 1];
+    if (i > 0 && above != null && c >= above) return i;
+  }
+  return -1;
+}
+
+/** 결과 칸 ↔ 점수 칸 */
+export const SCORE_FIELD = { indiv: 'score', group: 'groupScore' } as const;
+export type ScoredField = keyof typeof SCORE_FIELD;
+
+/** 점수를 쳤을 때 고칠 값 = 점수 글자 + 결과(숫자면 그 단계, 비었거나 숫자가 아니면 결과도 비운다 - 글은 점수 칸에 남는다) */
+export function scorePatch(ev: Pick<EvalDoc, 'steps' | 'cuts'>, field: ScoredField, scoreText: string): EvalValue {
+  const n = parseScore(scoreText);
+  return { [SCORE_FIELD[field]]: scoreText, [field]: n == null ? '' : stepForScore(ev.steps ?? [], ev.cuts ?? [], n) };
+}
+
+/** 기준을 바꾸면 점수(수)가 있는 학생의 결과를 새 기준으로 다시 매긴다 - 손으로 바꾼 결과도 덮는다. 새 값과 결과가 바뀌는 학생 수 */
+export function rescoreValues(steps: readonly string[], cuts: readonly number[], values: EvalValues): { values: EvalValues; changed: number } {
+  const out: EvalValues = { ...values };
+  let changed = 0;
+  for (const [sid, rec] of Object.entries(values)) {
+    const next: EvalValue = { ...rec };
+    for (const field of ['indiv', 'group'] as const) {
+      const n = parseScore(rec[SCORE_FIELD[field]]);
+      if (n != null) next[field] = stepForScore(steps, cuts, n);
+    }
+    if ((next.indiv ?? '') !== (rec.indiv ?? '') || (next.group ?? '') !== (rec.group ?? '')) {
+      out[sid] = next;
+      changed++;
+    }
+  }
+  return { values: out, changed };
+}
 
 /** 조사표가 붙은 자리: 교시 글자 '3' 또는 'journal' (기록 칸) */
 export const evalPlaceOf = (ev: Pick<EvalDoc, 'period'>): string => (ev.period == null ? 'journal' : String(ev.period));
@@ -135,6 +199,8 @@ export function cleanEvalValue(v: EvalValue | undefined): EvalValue | null {
   if (typeof v.checked === 'boolean') out.checked = v.checked;
   if (v.reason?.trim()) out.reason = v.reason.trim();
   if (v.memo?.trim()) out.memo = v.memo.trim();
+  if (v.score?.trim()) out.score = v.score.trim();
+  if (v.groupScore?.trim()) out.groupScore = v.groupScore.trim();
   return Object.keys(out).length ? out : null;
 }
 
@@ -171,15 +237,21 @@ export interface EvalCell {
   note: string;
 }
 
-/** 한 조사표의 한 학생 값 */
-export function studentEvalCell(ev: Pick<EvalDoc, 'type' | 'values' | 'indiv' | 'group' | 'groups'>, sid: string): EvalCell {
+/** 결과 + 점수 ('보통 (7)' · 점수만이면 '(결석)') - 점수로 단계 자동 매기기(P46-2) */
+const withScore = (result: string | undefined, score: string | undefined, scores: boolean): string =>
+  [result ?? '', scores && score ? `(${score})` : ''].filter(Boolean).join(' ');
+
+/** 한 조사표의 한 학생 값. scores = 점수를 결과 뒤에 붙인다('보통 (7)' - CSV는 점수를 따로 칸에 둔다) */
+export function studentEvalCell(ev: Pick<EvalDoc, 'type' | 'values' | 'indiv' | 'group' | 'groups'>, sid: string, { scores = true }: { scores?: boolean } = {}): EvalCell {
   const rec = ev.values?.[sid] ?? {};
   if (ev.type === 'eval') {
     const parts: string[] = [];
-    if (ev.indiv && rec.indiv) parts.push(rec.indiv);
-    if (ev.group && rec.group) {
+    const indiv = withScore(rec.indiv, rec.score, scores);
+    if (ev.indiv && indiv) parts.push(indiv);
+    const group = withScore(rec.group, rec.groupScore, scores);
+    if (ev.group && group) {
       const gName = rec.groupName ?? ev.groups?.find((g) => g.members.includes(sid))?.name ?? '';
-      parts.push(gName ? `${gName} ${rec.group}` : `조 ${rec.group}`);
+      parts.push(gName ? `${gName} ${group}` : `조 ${group}`);
     }
     return { main: parts.join(' · '), note: (rec.reason ?? '').trim() };
   }
@@ -245,8 +317,14 @@ export interface OverviewStudent {
   out?: boolean;
 }
 
-/** 학급 × 조사표 CSV 줄. 머리 두 줄(날짜·교과·유형 / 제목) 뒤에 학생마다 한 줄. 조사표마다 값과 사유 두 칸 (메모는 한 칸) */
-export function overviewCsvRows(evals: ReadonlyArray<Pick<EvalDoc, 'date' | 'subject' | 'title' | 'type' | 'values' | 'indiv' | 'group' | 'groups'>>, students: readonly OverviewStudent[]): string[][] {
+/**
+ * 학급 × 조사표 CSV 줄. 머리 두 줄(날짜·교과·유형 / 제목) 뒤에 학생마다 한 줄. 조사표마다 값과 사유 두 칸 (메모는 한 칸).
+ * 점수 기준이 있는 조사표(P46-2)는 값 · **점수** · 사유 세 칸 - 엑셀에서 점수로 셈할 수 있게 점수를 따로 둔다.
+ */
+export function overviewCsvRows(
+  evals: ReadonlyArray<Pick<EvalDoc, 'date' | 'subject' | 'title' | 'type' | 'values' | 'indiv' | 'group' | 'groups' | 'steps' | 'cuts' | 'free'>>,
+  students: readonly OverviewStudent[],
+): string[][] {
   const head1 = ['번호', '이름'];
   const head2 = ['', ''];
   for (const ev of evals) {
@@ -254,6 +332,9 @@ export function overviewCsvRows(evals: ReadonlyArray<Pick<EvalDoc, 'date' | 'sub
     if (ev.type === 'memo') {
       head1.push(info);
       head2.push(ev.title);
+    } else if (hasScoreCuts(ev)) {
+      head1.push(info, '', '');
+      head2.push(ev.title, '점수', '사유');
     } else {
       head1.push(info, '');
       head2.push(ev.title, '사유');
@@ -262,9 +343,15 @@ export function overviewCsvRows(evals: ReadonlyArray<Pick<EvalDoc, 'date' | 'sub
   const rows = students.map((st) => {
     const row = [String(st.num), st.name + (st.out ? ' (전출)' : '')];
     for (const ev of evals) {
-      const c = studentEvalCell(ev, st.sid);
-      if (ev.type === 'memo') row.push(c.main);
-      else row.push(c.main, c.note);
+      if (ev.type === 'memo') row.push(studentEvalCell(ev, st.sid).main);
+      else if (hasScoreCuts(ev)) {
+        const c = studentEvalCell(ev, st.sid, { scores: false });
+        const rec = ev.values?.[st.sid] ?? {};
+        row.push(c.main, [ev.indiv ? rec.score : '', ev.group ? rec.groupScore : ''].filter(Boolean).join(' · '), c.note);
+      } else {
+        const c = studentEvalCell(ev, st.sid);
+        row.push(c.main, c.note);
+      }
     }
     return row;
   });

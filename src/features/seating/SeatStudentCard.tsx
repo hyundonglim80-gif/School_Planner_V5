@@ -18,7 +18,7 @@ import type { ClassItem } from '../class/classes';
 import ObservationPhrases from './ObservationPhrases';
 import { addObservation } from './observation';
 import { useCurrentSpaceId, useSession } from '../../data/session';
-import { EVAL_TYPE_LABEL, evalHasStudent, evalTextField, isFreeEval, sortEvals, type EvalValue } from '../../domain/evaluation';
+import { EVAL_TYPE_LABEL, evalHasStudent, evalTextField, hasScoreCuts, isFreeEval, parseScore, scorePatch, SCORE_FIELD, sortEvals, type EvalValue } from '../../domain/evaluation';
 import { saveEvalStudentValue, useEvalsOn, type EvalItem } from '../evaluations/evalData';
 
 interface Props {
@@ -82,6 +82,40 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
     if (d === undefined) return;
     if (d.trim() !== (e.values[student.sid]?.[field] ?? '')) patchEval(e, { [field]: d });
     setEvalDrafts(({ [k]: _done, ...rest }) => rest);
+  };
+  /** 점수로 단계 자동 매기기(P46-2)의 점수 칸 - 떠날 때·Enter에 점수 + 그 단계 결과를 저장 */
+  const scoreKey = (e: EvalItem, field: 'indiv' | 'group') => `${e.id}:score:${field}`;
+  const saveEvalScore = (e: EvalItem, field: 'indiv' | 'group') => {
+    const k = scoreKey(e, field);
+    const d = evalDrafts[k];
+    if (d === undefined) return;
+    if (d.trim() !== (e.values[student.sid]?.[SCORE_FIELD[field]] ?? '')) patchEval(e, scorePatch(e, field, d));
+    setEvalDrafts(({ [k]: _done, ...rest }) => rest);
+  };
+  const scoreInput = (e: EvalItem, field: 'indiv' | 'group', editable: boolean) => {
+    const text = evalDrafts[scoreKey(e, field)] ?? e.values[student.sid]?.[SCORE_FIELD[field]] ?? '';
+    const bad = !!text.trim() && parseScore(text) == null;
+    return (
+      <input
+        type="text"
+        data-seat-eval-score={field}
+        value={text}
+        inputMode="decimal"
+        onChange={(ev) => setEvalDrafts((d) => ({ ...d, [scoreKey(e, field)]: ev.target.value }))}
+        onBlur={() => saveEvalScore(e, field)}
+        onKeyDown={(ev) => {
+          if (ev.key === 'Enter' && !ev.nativeEvent.isComposing) {
+            ev.preventDefault();
+            saveEvalScore(e, field);
+          }
+        }}
+        readOnly={!editable}
+        placeholder={field === 'indiv' ? '점수' : '모둠 점수'}
+        aria-label={`${e.title} ${field === 'indiv' ? '' : '모둠 '}점수`}
+        aria-invalid={bad || undefined}
+        className={`w-14 px-1.5 py-0.5 border rounded-lg text-center ${bad ? 'border-rose-500' : 'border-slate-200'}`}
+      />
+    );
   };
   const resultInput = (e: EvalItem, field: 'indiv' | 'group', editable: boolean) => (
     <input
@@ -264,12 +298,14 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                         <span className="text-slate-400">명단에 없는 학생</span>
                       ) : (
                         <>
+                          {e.type === 'eval' && e.indiv && hasScoreCuts(e) && scoreInput(e, 'indiv', editable)}
                           {e.type === 'eval' && e.indiv && (isFreeEval(e) ? resultInput(e, 'indiv', editable) : (
                             <select value={val.indiv ?? ''} data-seat-eval-indiv onChange={(ev) => patchEval(e, { indiv: ev.target.value })} disabled={!editable} aria-label={`${e.title} 개인 평가`} className="border border-slate-200 rounded-lg py-0.5 px-1">
                               <option value="">-</option>
                               {steps}
                             </select>
                           ))}
+                          {e.type === 'eval' && e.group && hasScoreCuts(e) && scoreInput(e, 'group', editable)}
                           {e.type === 'eval' && e.group && (isFreeEval(e) ? resultInput(e, 'group', editable) : (
                             <select value={val.group ?? ''} data-seat-eval-group onChange={(ev) => patchEval(e, { group: ev.target.value })} disabled={!editable} aria-label={`${e.title} 모둠 평가`} className="border border-slate-200 rounded-lg py-0.5 px-1">
                               <option value="">모둠 -</option>

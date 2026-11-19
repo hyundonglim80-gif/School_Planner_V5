@@ -2,7 +2,7 @@
 //   맨 위 '전체 일괄 적용' 줄(인쇄에서 빠진다)·학생마다 조 이름(나눈 조가 미리 채워진다)·조별 결과·개별 결과·체크·사유/메모.
 //   전출(명렬표에서 사라진) 학생은 흐리게 - 값은 남는다. 고칠 수 없는 조사표(그룹 공간의 남의 것)는 잠근다.
 import { forwardRef } from 'react';
-import { applyEvalToAll, evalTextField, isFreeEval, withEvalValue, type EvalValues } from '../../domain/evaluation';
+import { applyEvalToAll, evalTextField, hasScoreCuts, isFreeEval, parseScore, scorePatch, SCORE_FIELD, withEvalValue, type EvalValues, type ScoredField } from '../../domain/evaluation';
 import type { EvalItem } from './evalData';
 
 interface Props {
@@ -21,6 +21,8 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
   const withIndiv = ev.type === 'eval' && !!ev.indiv;
   /** 단계 '기타'(P46-1) - 결과 칸이 고르기 대신 글 칸 (숫자·글자 그대로) */
   const free = isFreeEval(ev);
+  /** 점수로 단계 자동 매기기(P46-2) - 결과 칸 왼쪽에 점수 칸, 치면 옆 결과가 그 단계(결과는 손으로 바꿀 수 있다) */
+  const scored = hasScoreCuts(ev);
   const lock = canEdit ? '' : 'bg-slate-100 text-slate-400 cursor-not-allowed';
   const set = (sid: string, p: Parameters<typeof withEvalValue>[2]) => onChange(withEvalValue(values, sid, p));
   const all = (p: Parameters<typeof applyEvalToAll>[2]) => onChange(applyEvalToAll(values, ev.students, p));
@@ -29,6 +31,29 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
       {s}
     </option>
   ));
+  /** 점수 칸 - 숫자가 아니면(결석 등) 붉은 테두리, 글은 남는다 */
+  const scoreInput = (field: ScoredField, sid: string, text: string, num: number) => (
+    <input
+      value={text}
+      data-eval-score={field}
+      inputMode="decimal"
+      aria-label={`${num}번 ${field === 'indiv' ? '' : '조 '}점수`}
+      aria-invalid={(!!text.trim() && parseScore(text) == null) || undefined}
+      onChange={(e) => set(sid, scorePatch(ev, field, e.target.value))}
+      readOnly={!canEdit}
+      className={`w-full min-w-10 px-1 py-0.5 border rounded text-center text-xs ${text.trim() && parseScore(text) == null ? 'border-rose-500 ring-1 ring-rose-300' : ''} ${lock}`}
+    />
+  );
+  const allScoreInput = (field: ScoredField) => (
+    <input
+      className="w-full min-w-10 px-1 py-0.5 border rounded text-center text-xs"
+      placeholder="점수"
+      inputMode="decimal"
+      aria-label={`${field === 'indiv' ? '' : '조 '}점수 일괄`}
+      data-eval-all-score={field}
+      onChange={(e) => all(scorePatch(ev, field, e.target.value))}
+    />
+  );
 
   return (
     <div ref={ref} className="border border-slate-200 rounded-xl overflow-hidden" data-eval-table={ev.id}>
@@ -41,9 +66,11 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
               {withGroup && (
                 <>
                   <th className={head}>조이름</th>
+                  {scored && <th className={`${head} w-14`}>조 점수</th>}
                   <th className={head}>조별 결과</th>
                 </>
               )}
+              {withIndiv && scored && <th className={`${head} w-14`}>점수</th>}
               {withIndiv && <th className={head}>개별 결과</th>}
               {ev.type === 'check' && <th className={head}>체크(O/X)</th>}
               <th className={head}>{ev.type === 'memo' ? '개별 메모내용' : '사유 / 메모'}</th>
@@ -58,6 +85,7 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
                     <td className="p-1">
                       <input className="w-full px-1 py-0.5 border rounded text-center text-xs" placeholder="조" aria-label="조 이름 일괄" onChange={(e) => all({ groupName: e.target.value })} />
                     </td>
+                    {scored && <td className="p-1">{allScoreInput('group')}</td>}
                     <td className="p-1">
                       {free ? (
                         <input className="w-full px-1 py-0.5 border rounded text-center text-xs" placeholder="일괄입력" aria-label="조별 결과 일괄" data-eval-all-group onChange={(e) => all({ group: e.target.value })} />
@@ -70,6 +98,7 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
                     </td>
                   </>
                 )}
+                {withIndiv && scored && <td className="p-1">{allScoreInput('indiv')}</td>}
                 {withIndiv && (
                   <td className="p-1">
                     {free ? (
@@ -121,6 +150,7 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
                           className={`w-full px-1 py-0.5 border rounded text-center text-xs ${lock}`}
                         />
                       </td>
+                      {scored && <td className="p-1">{scoreInput('group', st.sid, rec[SCORE_FIELD.group] ?? '', st.num)}</td>}
                       <td className="p-1">
                         {free ? (
                           <input
@@ -140,6 +170,7 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
                       </td>
                     </>
                   )}
+                  {withIndiv && scored && <td className="p-1">{scoreInput('indiv', st.sid, rec[SCORE_FIELD.indiv] ?? '', st.num)}</td>}
                   {withIndiv && (
                     <td className="p-1">
                       {free ? (
