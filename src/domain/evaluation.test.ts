@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyEvalToAll,
+  badCutIndex,
   cleanEvalValue,
   courseEvalCompletion,
   courseOverviewCsvRows,
@@ -14,12 +15,17 @@ import {
   filterEvals,
   groupCourseEvals,
   groupsByNumber,
+  hasScoreCuts,
   isEmptyCell,
   isFreeEval,
   overviewCsvRows,
+  parseScore,
+  rescoreValues,
+  scorePatch,
   semesterOf,
   sortEvals,
   stepCounts,
+  stepForScore,
   studentEvalCell,
   syncEvalStudents,
   type EvalDoc,
@@ -202,6 +208,9 @@ describe("평가 단계 '기타' (P46-1)", () => {
       ['2', '나래', 'A+', '발표'],
     ]);
   });
+  it('기타에는 점수 기준이 없다', () => {
+    expect(hasScoreCuts({ ...free, cuts: [10] })).toBe(false);
+  });
   it('저장할 때 적은 결과의 앞뒤 빈칸을 걷고, 빈칸뿐이면 뺀다', () => {
     expect(cleanEvalValue({ indiv: '  85 ', group: ' 잘함' })).toEqual({ indiv: '85', group: '잘함' });
     expect(cleanEvalValue({ indiv: '   ' })).toBeNull();
@@ -236,5 +245,73 @@ describe('과정별 (V4 courseEvals)', () => {
       ['5-1', '1/3'],
       ['5-2', ''],
     ]);
+  });
+});
+
+describe('점수로 단계 자동 매기기 (P46-2)', () => {
+  // 사용자 예: 3단계, 10 이상 '우수' · 5 이상 10 미만 '보통' · 5 미만 '노력요함'
+  const steps = ['우수', '보통', '노력요함'];
+  const cuts = [10, 5];
+  const scored = { ...base, steps, cuts };
+  it('점수 → 단계 (기준은 이상)', () => {
+    expect(stepForScore(steps, cuts, 10)).toBe('우수');
+    expect(stepForScore(steps, cuts, 12.5)).toBe('우수');
+    expect(stepForScore(steps, cuts, 7)).toBe('보통');
+    expect(stepForScore(steps, cuts, 5)).toBe('보통');
+    expect(stepForScore(steps, cuts, 4.9)).toBe('노력요함');
+    expect(stepForScore(steps, cuts, -3)).toBe('노력요함');
+  });
+  it('점수 글자 읽기 - 숫자가 아니면 null', () => {
+    expect(parseScore('7')).toBe(7);
+    expect(parseScore(' 7.5 ')).toBe(7.5);
+    expect(parseScore('-1')).toBe(-1);
+    expect(parseScore('')).toBeNull();
+    expect(parseScore('결석')).toBeNull();
+    expect(parseScore('7점')).toBeNull();
+    expect(parseScore(undefined)).toBeNull();
+  });
+  it('점수를 치면 결과가 그 단계, 비우거나 숫자가 아니면 결과도 비운다(점수 글은 남긴다)', () => {
+    expect(scorePatch(scored, 'indiv', '7')).toEqual({ score: '7', indiv: '보통' });
+    expect(scorePatch(scored, 'group', '10')).toEqual({ groupScore: '10', group: '우수' });
+    expect(scorePatch(scored, 'indiv', '')).toEqual({ score: '', indiv: '' });
+    expect(scorePatch(scored, 'indiv', '결석')).toEqual({ score: '결석', indiv: '' });
+    expect(cleanEvalValue(scorePatch(scored, 'indiv', '결석'))).toEqual({ score: '결석' });
+    expect(cleanEvalValue(scorePatch(scored, 'indiv', ''))).toBeNull();
+  });
+  it('기준 검사 - 빈 칸 · 위 단계보다 크거나 같으면 그 칸', () => {
+    expect(badCutIndex([10, 5])).toBe(-1);
+    expect(badCutIndex([90, 80, 70, 60])).toBe(-1);
+    expect(badCutIndex([10, null])).toBe(1);
+    expect(badCutIndex([null, 5])).toBe(0);
+    expect(badCutIndex([5, 10])).toBe(1);
+    expect(badCutIndex([5, 5])).toBe(1);
+  });
+  it('기준이 있는 조사표 = 평가 · 기준 수 = 단계 수 − 1', () => {
+    expect(hasScoreCuts(scored)).toBe(true);
+    expect(hasScoreCuts({ ...scored, cuts: [10] })).toBe(false);
+    expect(hasScoreCuts({ ...scored, cuts: undefined })).toBe(false);
+    expect(hasScoreCuts({ ...scored, type: 'check' })).toBe(false);
+  });
+  it('기준을 바꾸면 점수가 있는 학생만 다시 매긴다 - 손으로 바꾼 결과도 덮고, 바뀐 수를 센다', () => {
+    const values = {
+      a: { score: '7', indiv: '보통' },
+      b: { score: '9', indiv: '우수' }, // 손으로 바꾼 결과
+      c: { indiv: '노력요함' }, // 점수 없음 - 그대로
+      d: { score: '결석' },
+    };
+    const { values: next, changed } = rescoreValues(steps, [8, 5], values);
+    expect(next.a).toEqual({ score: '7', indiv: '보통' });
+    expect(next.b).toEqual({ score: '9', indiv: '우수' });
+    expect(changed).toBe(0);
+    const r2 = rescoreValues(steps, [6, 3], values);
+    expect(r2.values.a.indiv).toBe('우수');
+    expect(r2.values.b.indiv).toBe('우수');
+    expect(r2.values.c).toBe(values.c);
+    expect(r2.values.d).toBe(values.d);
+    expect(r2.changed).toBe(1);
+  });
+  it('점수 칸도 바뀐 학생 칸만 저장한다', () => {
+    expect(evalValuesChanges({ a: { score: '7', indiv: '보통' } }, { a: { score: '7 ', indiv: '보통' } })).toEqual({});
+    expect(evalValuesChanges({ a: { score: '7', indiv: '보통' } }, { a: { score: '12', indiv: '우수' } })).toEqual({ 'values.a': { score: '12', indiv: '우수' } });
   });
 });

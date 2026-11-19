@@ -392,9 +392,12 @@ export interface Evaluation extends Tracked {
   steps?: string[];
   /** 평가 단계 '기타' (P46-1) - 단계 없이 학생마다 숫자·글자를 그대로 적는다(steps = []). 값은 indiv·group 칸 그대로 */
   free?: boolean;
+  /** 점수로 단계 자동 매기기 (P46-2) - (i+1)단계가 되는 '이 점수 이상', 단계 수 − 1개(마지막 단계는 나머지) */
+  cuts?: number[];
   groups?: Array<{ name: string; members: string[] }>;
   students: Array<{ sid: string; num: number; name: string; out?: true }>;
-  values: Record<string, { indiv?: string; group?: string; groupName?: string; checked?: boolean; reason?: string; memo?: string }>;
+  /** score·groupScore = 친 점수 글자(P46-2 - 결과 indiv·group은 그 점수로 매긴 단계) */
+  values: Record<string, { indiv?: string; group?: string; groupName?: string; checked?: boolean; reason?: string; memo?: string; score?: string; groupScore?: string }>;
   /** V4에서 가져온 것 (P7-5) */
   src?: ImportSource;
 }

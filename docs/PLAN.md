@@ -4483,7 +4483,8 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
 ### P46-2. 점수로 단계 자동 매기기 (3·4·5단계)
 **시작 조건**: P46-1 끝 · 클라우드 가능(구글 시트 진짜 보내기·되읽기 확인만 PC - 클라우드면 맨 위 'PC 일'에 한 줄). **묻기**: 없음.
 **먼저 읽을 것**: 이 절 · 5장 'P46' ⓐ·ⓒ~ⓘ · P46-1에서 고친 파일 · `EvalMetaBox.tsx`(⚙️ 기본 정보 수정) · `EvalOverviewWindow.tsx`(CSV·📋 표 복사) · `src/domain/sheets.ts`(`columnsOf`·`buildEvalRows`·`evalUpdatesFor`)·`src/features/backup/sheets.ts`.
-- [ ] ■1 셈(`domain/evaluation`): 점수 → 단계(`steps`·`cuts`) · 기준 검사(위가 아래보다 큼·빈 칸 없음) · 기준을 바꾸면 다시 매길 학생 · `cleanEvalValue`·`evalValuesChanges`에 `score`·`groupScore` · 단위 시험(사용자 예: 10 → 우수 · 7 → 보통 · 5 → 보통 · 4.9 → 노력요함 · 빈 칸 · '결석')
+- [x] ■1 셈(`domain/evaluation`): 점수 → 단계(`steps`·`cuts`) · 기준 검사(위가 아래보다 큼·빈 칸 없음) · 기준을 바꾸면 다시 매길 학생 · `cleanEvalValue`·`evalValuesChanges`에 `score`·`groupScore` · 단위 시험(사용자 예: 10 → 우수 · 7 → 보통 · 5 → 보통 · 4.9 → 노력요함 · 빈 칸 · '결석')
+  → 11-19 클라우드: `hasScoreCuts`(평가·기타 아님·기준 = 단계 수 − 1개의 수) · `parseScore`(숫자만 - '7점'·'결석'은 null) · `stepForScore`(이상) · `badCutIndex`(빈 칸·위 단계보다 크거나 같음) · `scorePatch`(점수 + 결과, 숫자가 아니면 결과 비움) · `rescoreValues`(점수가 수인 학생만 다시 - 바뀐 수) · 값 `score`·`groupScore`(types·cleanEvalValue) · 문서 `cuts` · 시험 8(evaluation.test 30)
 - [ ] ■2 만들기 칸: 3·4·5단계에서 '점수로 단계 자동 매기기' 체크 → 단계 이름 옆 '__ 이상' 칸 · 마지막 단계 '나머지' · 틀리면 생성 막기 · 문서 `cuts` · 다른 반 베끼기
 - [ ] ■3 표: 결과 칸 왼쪽 점수 칸(개별·조별·전체 일괄) · 치면 옆 결과 칸이 단계 · 숫자 아니면 붉은 테두리 · 자리표 오늘 조사표에도 점수 칸 · ⚙️ 기준 고치기 + 바뀌는 학생 수 묻고 다시 매기기
 - [ ] ■4 읽는 곳: 모아 보기·학생 카드 '보통 (7)' · CSV·📋 표 복사·구글 시트에 점수 칸 + 시트 되읽기 다시 매기기 · 단위(sheets.test·evaluation.test)
