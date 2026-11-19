@@ -125,22 +125,21 @@ describe('고치는 표 - 고르기 (P48-1)', () => {
   });
 
   it('ESC 두 번째 = 고르기 풀기, 세 번째는 앱(전역 ESC)으로 · 표가 맡은 키는 앱으로 가지 않는다', () => {
-    const seen = vi.fn();
-    window.addEventListener('keydown', seen);
-    seen.latest = filled();
-  render(<Host start={filled()} autoEdit />);
+    const appKeys = vi.fn();
+    window.addEventListener('keydown', appKeys);
+    render(<Host start={filled()} autoEdit />);
     expect(input().getAttribute('data-table-input')).toBe('0-0');
     key('Escape');
     key('ArrowDown');
     key('Delete');
     key('z', { ctrlKey: true, code: 'KeyZ' } as KeyboardEventInit);
-    expect(seen).not.toHaveBeenCalled();
+    expect(appKeys).not.toHaveBeenCalled();
     key('Escape');
     expect(document.querySelector('[data-table-input]')).toBeNull();
     expect(nameBox()).toBe('');
     fireEvent.keyDown(document.body, { key: 'Escape' });
-    expect(seen).toHaveBeenCalledTimes(1);
-    window.removeEventListener('keydown', seen);
+    expect(appKeys).toHaveBeenCalledTimes(1);
+    window.removeEventListener('keydown', appKeys);
   });
 
   it('Alt+Enter = 칸 안 줄 바꿈 · 다른 칸을 누르면 고치던 글을 넣는다', () => {

@@ -376,7 +376,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
             '칸을 누르면 고칩니다'
           )}
         </span>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!canUndo} onClick={undo} title="표에서 한 것 되돌리기 (칸을 고르는 동안 Ctrl + Z)" aria-label="표 되돌리기" data-table-op="undo">
+        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!canUndo} onClick={undo} title="표에서 한 것 되돌리기 (50번까지)" aria-label="표 되돌리기" data-table-op="undo">
           ↶
         </button>
         <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('rowAbove')} title="고른 칸 위에 행 넣기" data-table-op="row-above">
