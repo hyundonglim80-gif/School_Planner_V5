@@ -122,14 +122,19 @@ jobs:
 
       # 러너에 깔린 구글 크롬을 쓴다(probe browserOptions - /opt/google/chrome/chrome이면 channel 'chrome', 받기 없음).
       # 한글 글꼴이 없으면 글자 폭을 재는 점검이 틀린다 - 없을 때만 깐다.
+      # 우분투 꾸러미 서버가 잠깐 끊기면 받기가 틀려 CI·배포가 멈췄다(11-19 P47-2 합침) - 세 번까지 다시 받는다.
       - name: Chrome and Korean font
         run: |
           google-chrome --version
-          if ! fc-list :lang=ko | grep -q .; then
-            sudo apt-get update -q
-            sudo apt-get install -y -q fonts-noto-cjk
-          fi
+          for i in 1 2 3; do
+            fc-list :lang=ko | grep -q . && break
+            sudo apt-get update -q -o Acquire::Retries=3 || true
+            sudo apt-get install -y -q -o Acquire::Retries=5 fonts-noto-cjk && break
+            echo "한글 글꼴 받기 실패 $i - 20초 뒤 다시"
+            sleep 20
+          done
           fc-list :lang=ko | head -3
+          fc-list :lang=ko | grep -q .
 
       - name: Chrome probes
         run: npx firebase emulators:exec --only auth,firestore --project schoolplannerv3 "node tools/ci-chrome.mjs"
