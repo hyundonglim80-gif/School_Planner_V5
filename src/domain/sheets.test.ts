@@ -136,6 +136,15 @@ describe("'조사표_학급' 시트", () => {
     rows[8][3] = '';
     expect(evalUpdatesFor(e, parseEvalRows(rows))).toEqual({ s1: {}, s2: { indiv: '중' } });
   });
+  it("단계 '기타'(P46-1) - 적은 숫자·글자가 개별결과 칸에 그대로 나가고, 시트에서 고친 글도 그대로 들어온다", () => {
+    const e = ev({ steps: [], values: { s1: { indiv: '85' }, s2: { indiv: 'A+' } } } as Partial<SheetEval>);
+    const rows = buildEvalRows([e]);
+    expect(rows[8].slice(3, 4)).toEqual(['85']);
+    expect(rows[9].slice(3, 4)).toEqual(['A+']);
+    expect(evalUpdatesFor(e, parseEvalRows(rows))).toEqual({});
+    rows[9][3] = '92';
+    expect(evalUpdatesFor(e, parseEvalRows(rows))).toEqual({ s2: { indiv: '92' } });
+  });
   it('시트에만 있는 조사표는 버리고, 머리말을 모르면 읽지 않는다', () => {
     const rows = buildEvalRows([ev()]);
     expect(evalUpdatesFor(ev({ id: 'OTHER' }), parseEvalRows(rows))).toEqual({});

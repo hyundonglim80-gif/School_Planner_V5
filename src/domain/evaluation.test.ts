@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyEvalToAll,
+  cleanEvalValue,
   courseEvalCompletion,
   courseOverviewCsvRows,
   evalCellText,
@@ -14,6 +15,7 @@ import {
   groupCourseEvals,
   groupsByNumber,
   isEmptyCell,
+  isFreeEval,
   overviewCsvRows,
   semesterOf,
   sortEvals,
@@ -175,6 +177,35 @@ describe('overviewCsvRows · stepCounts', () => {
   it('단계별 사람 수', () => {
     expect(stepCounts(ev1, ['a', 'b', 'c'])).toBe('잘함 2');
     expect(stepCounts(ev2, ['a', 'b'])).toBe('');
+  });
+});
+
+describe("평가 단계 '기타' (P46-1)", () => {
+  const free = { ...base, steps: [], free: true, values: { a: { indiv: '85' }, b: { indiv: 'A+', reason: '발표' }, c: { reason: '결석' } } };
+  it('기타인가 - 평가이고 free가 꼭 true일 때만', () => {
+    expect(isFreeEval(free)).toBe(true);
+    expect(isFreeEval({ ...free, type: 'check' })).toBe(false);
+    expect(isFreeEval({ ...free, free: undefined })).toBe(false);
+    expect(isFreeEval({ ...free, free: 'yes' as unknown as boolean })).toBe(false);
+  });
+  it("사람 수 = 값이 있는 학생 수 '적음 n' (단계가 없다)", () => {
+    expect(stepCounts(free, ['a', 'b', 'c'])).toBe('적음 2');
+    expect(stepCounts({ ...free, values: {} }, ['a', 'b'])).toBe('');
+    expect(stepCounts(free, ['a'])).toBe('적음 1');
+  });
+  it('학생 칸·모아 보기 CSV는 적은 글 그대로', () => {
+    expect(studentEvalCell(free, 'a')).toEqual({ main: '85', note: '' });
+    expect(evalCellText(studentEvalCell(free, 'b'))).toBe('A+ - 발표');
+    const rows = overviewCsvRows([free], [{ sid: 'a', num: 1, name: '가람' }, { sid: 'b', num: 2, name: '나래' }]);
+    expect(rows.slice(2)).toEqual([
+      ['1', '가람', '85', ''],
+      ['2', '나래', 'A+', '발표'],
+    ]);
+  });
+  it('저장할 때 적은 결과의 앞뒤 빈칸을 걷고, 빈칸뿐이면 뺀다', () => {
+    expect(cleanEvalValue({ indiv: '  85 ', group: ' 잘함' })).toEqual({ indiv: '85', group: '잘함' });
+    expect(cleanEvalValue({ indiv: '   ' })).toBeNull();
+    expect(evalValuesChanges({ a: { indiv: '85' } }, { a: { indiv: '85 ' } })).toEqual({});
   });
 });
 

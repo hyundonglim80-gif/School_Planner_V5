@@ -51,10 +51,15 @@ export interface EvalDoc {
   indiv?: boolean;
   group?: boolean;
   steps?: string[];
+  /** 평가 단계 '기타' (P46-1): 단계 없이 학생마다 숫자·글자 그대로 (steps = [], 값은 indiv·group 글자) */
+  free?: boolean;
   groups?: EvalGroup[];
   students: EvalStudent[];
   values: EvalValues;
 }
+
+/** 단계 '기타' 조사표인가 - 결과 칸이 고르기 대신 글 칸 */
+export const isFreeEval = (ev: Pick<EvalDoc, 'type' | 'free'>): boolean => ev.type === 'eval' && ev.free === true;
 
 /** 조사표가 붙은 자리: 교시 글자 '3' 또는 'journal' (기록 칸) */
 export const evalPlaceOf = (ev: Pick<EvalDoc, 'period'>): string => (ev.period == null ? 'journal' : String(ev.period));
@@ -123,8 +128,9 @@ export const evalTextField = (type: EvalType): 'memo' | 'reason' => (type === 'm
 export function cleanEvalValue(v: EvalValue | undefined): EvalValue | null {
   if (!v) return null;
   const out: EvalValue = {};
-  if (v.indiv) out.indiv = v.indiv;
-  if (v.group) out.group = v.group;
+  // 기타(P46-1)는 결과를 손으로 적는다 - 앞뒤 빈칸은 걷는다(단계 이름에는 빈칸이 없다)
+  if (v.indiv?.trim()) out.indiv = v.indiv.trim();
+  if (v.group?.trim()) out.group = v.group.trim();
   if (v.groupName?.trim()) out.groupName = v.groupName.trim();
   if (typeof v.checked === 'boolean') out.checked = v.checked;
   if (v.reason?.trim()) out.reason = v.reason.trim();
@@ -265,14 +271,18 @@ export function overviewCsvRows(evals: ReadonlyArray<Pick<EvalDoc, 'date' | 'sub
   return [head1, head2, ...rows];
 }
 
-/** 조사표 하나의 단계별 사람 수 ('잘함 12 · 보통 8') - 평가만 */
-export function stepCounts(ev: Pick<EvalDoc, 'type' | 'values' | 'steps'>, sids: readonly string[]): string {
+/** 조사표 하나의 단계별 사람 수 ('잘함 12 · 보통 8') - 평가만. 기타(P46-1)는 값이 제각각이라 값이 있는 학생 수 ('적음 12') */
+export function stepCounts(ev: Pick<EvalDoc, 'type' | 'values' | 'steps' | 'free'>, sids: readonly string[]): string {
   if (ev.type !== 'eval') return '';
   const counts = new Map<string, number>();
   for (const sid of sids) {
     const rec = ev.values?.[sid] ?? {};
-    const v = rec.indiv || rec.group || '';
+    const v = (rec.indiv || rec.group || '').trim();
     if (v) counts.set(v, (counts.get(v) ?? 0) + 1);
+  }
+  if (isFreeEval(ev)) {
+    const n = [...counts.values()].reduce((a, b) => a + b, 0);
+    return n ? `적음 ${n}` : '';
   }
   const steps = ev.steps ?? [];
   const order = [...steps, ...[...counts.keys()].filter((k) => !steps.includes(k))];

@@ -18,7 +18,7 @@ import type { ClassItem } from '../class/classes';
 import ObservationPhrases from './ObservationPhrases';
 import { addObservation } from './observation';
 import { useCurrentSpaceId, useSession } from '../../data/session';
-import { EVAL_TYPE_LABEL, evalHasStudent, evalTextField, sortEvals, type EvalValue } from '../../domain/evaluation';
+import { EVAL_TYPE_LABEL, evalHasStudent, evalTextField, isFreeEval, sortEvals, type EvalValue } from '../../domain/evaluation';
 import { saveEvalStudentValue, useEvalsOn, type EvalItem } from '../evaluations/evalData';
 
 interface Props {
@@ -74,6 +74,34 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
     if (d.trim() !== (e.values[student.sid]?.[field] ?? '')) patchEval(e, { [field]: d });
     setEvalDrafts(({ [e.id]: _done, ...rest }) => rest);
   };
+  /** 단계 '기타'(P46-1)의 결과 글 칸도 같은 꼴 - 열쇠 '조사표 id:칸' */
+  const resultKey = (e: EvalItem, field: 'indiv' | 'group') => `${e.id}:${field}`;
+  const saveEvalResult = (e: EvalItem, field: 'indiv' | 'group') => {
+    const k = resultKey(e, field);
+    const d = evalDrafts[k];
+    if (d === undefined) return;
+    if (d.trim() !== (e.values[student.sid]?.[field] ?? '')) patchEval(e, { [field]: d });
+    setEvalDrafts(({ [k]: _done, ...rest }) => rest);
+  };
+  const resultInput = (e: EvalItem, field: 'indiv' | 'group', editable: boolean) => (
+    <input
+      type="text"
+      {...(field === 'indiv' ? { 'data-seat-eval-indiv': '' } : { 'data-seat-eval-group': '' })}
+      value={evalDrafts[resultKey(e, field)] ?? e.values[student.sid]?.[field] ?? ''}
+      onChange={(ev) => setEvalDrafts((d) => ({ ...d, [resultKey(e, field)]: ev.target.value }))}
+      onBlur={() => saveEvalResult(e, field)}
+      onKeyDown={(ev) => {
+        if (ev.key === 'Enter' && !ev.nativeEvent.isComposing) {
+          ev.preventDefault();
+          saveEvalResult(e, field);
+        }
+      }}
+      readOnly={!editable}
+      placeholder={field === 'indiv' ? '결과' : '모둠 결과'}
+      aria-label={`${e.title} ${field === 'indiv' ? '개인' : '모둠'} 평가`}
+      className="w-20 px-2 py-0.5 border border-slate-200 rounded-lg"
+    />
+  );
 
   // ── 관찰 한 줄 (개인 공간 오늘 기록) ──
   const tree = useLabelTree('note', sid);
@@ -236,13 +264,13 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                         <span className="text-slate-400">명단에 없는 학생</span>
                       ) : (
                         <>
-                          {e.type === 'eval' && e.indiv && (
+                          {e.type === 'eval' && e.indiv && (isFreeEval(e) ? resultInput(e, 'indiv', editable) : (
                             <select value={val.indiv ?? ''} data-seat-eval-indiv onChange={(ev) => patchEval(e, { indiv: ev.target.value })} disabled={!editable} aria-label={`${e.title} 개인 평가`} className="border border-slate-200 rounded-lg py-0.5 px-1">
                               <option value="">-</option>
                               {steps}
                             </select>
-                          )}
-                          {e.type === 'eval' && e.group && (
+                          ))}
+                          {e.type === 'eval' && e.group && (isFreeEval(e) ? resultInput(e, 'group', editable) : (
                             <select value={val.group ?? ''} data-seat-eval-group onChange={(ev) => patchEval(e, { group: ev.target.value })} disabled={!editable} aria-label={`${e.title} 모둠 평가`} className="border border-slate-200 rounded-lg py-0.5 px-1">
                               <option value="">모둠 -</option>
                               {(e.steps ?? []).map((st) => (
@@ -251,7 +279,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                                 </option>
                               ))}
                             </select>
-                          )}
+                          ))}
                           {e.type === 'check' && (
                             <input type="checkbox" data-seat-eval-check checked={!!val.checked} onChange={(ev) => patchEval(e, { checked: ev.target.checked })} disabled={!editable} aria-label={`${e.title} 체크`} className="w-5 h-5 accent-slate-600" />
                           )}

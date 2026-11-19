@@ -152,7 +152,7 @@ template: { text, labelIds, time?, props? }, imported?: true, updatedAt, deleted
 
 ### 4-7. 조사표·알림장·진도 (조사표·알림장은 공간마다, 진도는 개인)
 
-- `evaluations/{evalId}`: **조사표 한 장 = 문서 하나** `{ date, period: 교시 | null(기록 칸), classId, title, type: 'eval'|'check'|'memo', subject?, indiv?, group?, steps?, groups?: [{ name, members: [sid] }],
+- `evaluations/{evalId}`: **조사표 한 장 = 문서 하나** `{ date, period: 교시 | null(기록 칸), classId, title, type: 'eval'|'check'|'memo', subject?, indiv?, group?, steps?, free?(평가 단계 '기타' P46-1 - true면 steps []·값은 indiv·group에 적은 글 그대로), groups?: [{ name, members: [sid] }],
   students: [{ sid, num, name, out? }], values: { [sid]: { indiv?, group?, groupName?, checked?, reason?, memo? } }, authorId, updatedAt, deletedAt, v }`
   (V4는 하루 문서의 배열 `list`/`evalList` - 두 이름을 함께 쓰던 것을 없앤다). 명단은 문서에 둔다(그룹 공간의 다른 사람도 이름을 본다 - 열 때 명렬표와 맞춘다).
 - `notices/{date}`: `{ date, lines: string[], updatedAt }`.

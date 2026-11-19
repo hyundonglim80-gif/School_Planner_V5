@@ -2,7 +2,7 @@
 //   맨 위 '전체 일괄 적용' 줄(인쇄에서 빠진다)·학생마다 조 이름(나눈 조가 미리 채워진다)·조별 결과·개별 결과·체크·사유/메모.
 //   전출(명렬표에서 사라진) 학생은 흐리게 - 값은 남는다. 고칠 수 없는 조사표(그룹 공간의 남의 것)는 잠근다.
 import { forwardRef } from 'react';
-import { applyEvalToAll, evalTextField, withEvalValue, type EvalValues } from '../../domain/evaluation';
+import { applyEvalToAll, evalTextField, isFreeEval, withEvalValue, type EvalValues } from '../../domain/evaluation';
 import type { EvalItem } from './evalData';
 
 interface Props {
@@ -19,6 +19,8 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
   const steps = ev.steps ?? [];
   const withGroup = ev.type === 'eval' && !!ev.group;
   const withIndiv = ev.type === 'eval' && !!ev.indiv;
+  /** 단계 '기타'(P46-1) - 결과 칸이 고르기 대신 글 칸 (숫자·글자 그대로) */
+  const free = isFreeEval(ev);
   const lock = canEdit ? '' : 'bg-slate-100 text-slate-400 cursor-not-allowed';
   const set = (sid: string, p: Parameters<typeof withEvalValue>[2]) => onChange(withEvalValue(values, sid, p));
   const all = (p: Parameters<typeof applyEvalToAll>[2]) => onChange(applyEvalToAll(values, ev.students, p));
@@ -57,19 +59,27 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
                       <input className="w-full px-1 py-0.5 border rounded text-center text-xs" placeholder="조" aria-label="조 이름 일괄" onChange={(e) => all({ groupName: e.target.value })} />
                     </td>
                     <td className="p-1">
-                      <select className="w-full border rounded text-xs py-0.5" aria-label="조별 결과 일괄" data-eval-all-group onChange={(e) => all({ group: e.target.value })}>
-                        <option value="">선택</option>
-                        {stepOptions}
-                      </select>
+                      {free ? (
+                        <input className="w-full px-1 py-0.5 border rounded text-center text-xs" placeholder="일괄입력" aria-label="조별 결과 일괄" data-eval-all-group onChange={(e) => all({ group: e.target.value })} />
+                      ) : (
+                        <select className="w-full border rounded text-xs py-0.5" aria-label="조별 결과 일괄" data-eval-all-group onChange={(e) => all({ group: e.target.value })}>
+                          <option value="">선택</option>
+                          {stepOptions}
+                        </select>
+                      )}
                     </td>
                   </>
                 )}
                 {withIndiv && (
                   <td className="p-1">
-                    <select className="w-full border rounded text-xs py-0.5" aria-label="개별 결과 일괄" data-eval-all-indiv onChange={(e) => all({ indiv: e.target.value })}>
-                      <option value="">선택</option>
-                      {stepOptions}
-                    </select>
+                    {free ? (
+                      <input className="w-full px-1 py-0.5 border rounded text-center text-xs" placeholder="일괄입력" aria-label="개별 결과 일괄" data-eval-all-indiv onChange={(e) => all({ indiv: e.target.value })} />
+                    ) : (
+                      <select className="w-full border rounded text-xs py-0.5" aria-label="개별 결과 일괄" data-eval-all-indiv onChange={(e) => all({ indiv: e.target.value })}>
+                        <option value="">선택</option>
+                        {stepOptions}
+                      </select>
+                    )}
                   </td>
                 )}
                 {ev.type === 'check' && (
@@ -112,19 +122,41 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
                         />
                       </td>
                       <td className="p-1">
-                        <select value={rec.group ?? ''} data-eval-group-score aria-label={`${st.num}번 조별 결과`} onChange={(e) => set(st.sid, { group: e.target.value })} disabled={!canEdit} className={`w-full border rounded text-xs py-0.5 ${lock}`}>
-                          <option value=""></option>
-                          {stepOptions}
-                        </select>
+                        {free ? (
+                          <input
+                            value={rec.group ?? ''}
+                            data-eval-group-score
+                            aria-label={`${st.num}번 조별 결과`}
+                            onChange={(e) => set(st.sid, { group: e.target.value })}
+                            readOnly={!canEdit}
+                            className={`w-full px-1 py-0.5 border rounded text-center text-xs ${lock}`}
+                          />
+                        ) : (
+                          <select value={rec.group ?? ''} data-eval-group-score aria-label={`${st.num}번 조별 결과`} onChange={(e) => set(st.sid, { group: e.target.value })} disabled={!canEdit} className={`w-full border rounded text-xs py-0.5 ${lock}`}>
+                            <option value=""></option>
+                            {stepOptions}
+                          </select>
+                        )}
                       </td>
                     </>
                   )}
                   {withIndiv && (
                     <td className="p-1">
-                      <select value={rec.indiv ?? ''} data-eval-indiv-score aria-label={`${st.num}번 개별 결과`} onChange={(e) => set(st.sid, { indiv: e.target.value })} disabled={!canEdit} className={`w-full border rounded text-xs py-0.5 ${lock}`}>
-                        <option value=""></option>
-                        {stepOptions}
-                      </select>
+                      {free ? (
+                        <input
+                          value={rec.indiv ?? ''}
+                          data-eval-indiv-score
+                          aria-label={`${st.num}번 개별 결과`}
+                          onChange={(e) => set(st.sid, { indiv: e.target.value })}
+                          readOnly={!canEdit}
+                          className={`w-full px-1 py-0.5 border rounded text-center text-xs ${lock}`}
+                        />
+                      ) : (
+                        <select value={rec.indiv ?? ''} data-eval-indiv-score aria-label={`${st.num}번 개별 결과`} onChange={(e) => set(st.sid, { indiv: e.target.value })} disabled={!canEdit} className={`w-full border rounded text-xs py-0.5 ${lock}`}>
+                          <option value=""></option>
+                          {stepOptions}
+                        </select>
+                      )}
                     </td>
                   )}
                   {ev.type === 'check' && (

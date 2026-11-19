@@ -25,6 +25,7 @@ export function readEval(d: EvalItem): EvalItem {
     students: Array.isArray(d.students) ? d.students : [],
     values: d.values && typeof d.values === 'object' ? d.values : {},
     ...(Array.isArray(d.steps) ? {} : { steps: [] }),
+    // free(기타 - P46-1)는 그대로 둔다: 읽는 곳은 모두 isFreeEval(=== true)로 본다
   };
 }
 
@@ -74,7 +75,9 @@ const dataOf = (e: NewEval): Editable<'evaluations'> => ({
   title: e.title,
   type: e.type,
   ...(e.subject ? { subject: e.subject } : {}),
-  ...(e.type === 'eval' ? { indiv: !!e.indiv, group: !!e.group, steps: e.steps ?? [], ...(e.group ? { groups: e.groups ?? [] } : {}) } : {}),
+  ...(e.type === 'eval'
+    ? { indiv: !!e.indiv, group: !!e.group, steps: e.free ? [] : (e.steps ?? []), ...(e.free ? { free: true } : {}), ...(e.group ? { groups: e.groups ?? [] } : {}) }
+    : {}),
   students: e.students,
   values: e.values ?? {},
 });
