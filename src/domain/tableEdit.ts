@@ -2,6 +2,22 @@
 //   쓰는 칸의 고치는 표(features/notes/TableEditor)만 부른다 - 카드가 부르는 표 그리기(EntryTableView)는 domain/tableCss만.
 //   병합된 칸의 나머지 자리는 { v: '', x: 1 } (가려진 칸) - 행·열을 넣고 빼면 병합 크기가 따라간다.
 import type { EntryTable, TableCell, TableRow } from '../data/types';
+import { MAX_TABLE_CELLS, newTableId } from './entryTable';
+
+/** 빈 표 (쓰는 칸 ▦ 표 - P48-1, 3행 × 3열) */
+export function newEmptyTable(rows = 3, cols = 3, now = Date.now()): EntryTable {
+  return { id: newTableId(), createdAt: now, rows: Array.from({ length: rows }, () => ({ cells: Array.from({ length: cols }, () => ({ v: '' })) })) };
+}
+
+/** 행·열을 더 늘릴 수 있나 (표 하나 3,000칸 - 붙여넣기와 같은 한도) */
+export function canGrow(t: EntryTable, addRows: number, addCols: number): boolean {
+  const rows = t.rows.length + addRows;
+  const cols = (t.rows[0]?.cells.length ?? 0) + addCols;
+  return rows * cols <= MAX_TABLE_CELLS;
+}
+
+/** 늘릴 수 없을 때 안내 */
+export const GROW_LIMIT_TEXT = `표 하나에 ${MAX_TABLE_CELLS.toLocaleString()}칸까지 둘 수 있습니다. 표를 나눠 주세요.`;
 
 const cloneRows = (t: EntryTable): TableRow[] =>
   t.rows.map((row) => ({ ...row, cells: row.cells.map((c) => ({ ...c })) }));

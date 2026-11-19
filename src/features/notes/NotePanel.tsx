@@ -58,6 +58,7 @@ import EntryBody from './EntryBody';
 import EventDoneChip from '../events/EventDoneChip';
 import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
 import TableEditor from './TableEditor';
+import { newEmptyTable } from '../../domain/tableEdit';
 import { deliverLinkPick } from '../links/actions';
 import { openLinker, openLinkViewer } from '../links/open';
 import { hasContent, isKnownLabel, newNoteForm, noteEditedKeys, noteFormAfterSave, noteFormOf, noteTextClash, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
@@ -117,6 +118,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
   /** ✏️ 손글씨 그림판을 열었나 · 그리던 것 (첨부하면 비운다) */
   const [penOpen, setPenOpen] = useState(false);
   const [penStrokes, setPenStrokes] = useState<PenStroke[]>([]);
+  /** ▦ 표로 막 만든 빈 표 - 그 표만 A1을 고치는 상태로 그린다 (P48-1) */
+  const [freshTableId, setFreshTableId] = useState<string | null>(null);
   const penDirty = hasInk(penStrokes);
   const textRef = useRef<HTMLTextAreaElement>(null);
   const { classes } = useClasses();
@@ -369,6 +372,13 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
     { disabled: isEditing && !item },
   );
   /** 표가 먼저(엑셀은 그림도 함께 복사한다), 그다음 캡처 그림, 나머지(글자)는 그대로 */
+  /** ▦ 표 - 빈 표를 본문 아래에 붙이고 A1을 고친다 (P48-1 - 칸이 모두 비면 저장하지 않는다) */
+  const addTable = () => {
+    const t = newEmptyTable();
+    setFreshTableId(t.id);
+    setForm((f) => ({ ...f, tables: [...f.tables, t] }));
+  };
+
   const onTextPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
     const table = pastedTable(e.clipboardData);
     if (table === 'text') return;
@@ -822,11 +832,12 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               </p>
               {/* 글 안 주소 미리보기 (보이기만 - 글은 바꾸지 않는다) */}
               <LinkPreviewCards text={form.text} />
-              {/* 붙인 표 - 칸을 눌러 글자를 고치고 행·열을 넣고 뺀다 */}
+              {/* 붙인 표·▦ 표로 만든 표 - 칸을 눌러 글자를 고치고 행·열을 넣고 뺀다 */}
               {form.tables.map((t, i) => (
                 <TableEditor
                   key={t.id}
                   table={t}
+                  autoEdit={t.id === freshTableId}
                   title={form.tables.length > 1 ? `표 ${i + 1}` : '표'}
                   onChange={(next) => setForm((f) => ({ ...f, tables: f.tables.map((x) => (x.id === t.id ? next : x)) }))}
                   onRemove={() => setForm((f) => ({ ...f, tables: f.tables.filter((x) => x.id !== t.id) }))}
@@ -886,6 +897,16 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 >
                   <span>✏️</span>
                   <span>{penDirty ? '손글씨 (그리던 것)' : '손글씨'}</span>
+                </button>
+                <button
+                  type="button"
+                  data-note-table-add
+                  onClick={addTable}
+                  title="빈 표(3행 × 3열)를 본문 아래에 붙입니다. 칸을 눌러 적고, 마지막 칸에서 Tab을 누르면 행이 늘어납니다."
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 shadow-2xs"
+                >
+                  <span>▦</span>
+                  <span>표</span>
                 </button>
                 <button
                   type="button"

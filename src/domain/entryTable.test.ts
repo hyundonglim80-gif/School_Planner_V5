@@ -2,7 +2,8 @@
 import { describe, it, expect } from 'vitest';
 import { isRealTable, MAX_TABLE_CELLS, parseClipboardTable, type EntryTable } from './entryTable';
 import { cellCss } from './tableCss';
-import { deleteCol, deleteRow, insertCol, insertRow, setCellText, tableForSave } from './tableEdit';
+import { isBlankTable, keptTables } from './tableCss';
+import { canGrow, deleteCol, deleteRow, insertCol, insertRow, newEmptyTable, setCellText, tableForSave } from './tableEdit';
 
 // 엑셀에서 복사하면 클립보드에 들어오는 HTML의 모양 (줄여 옮김).
 // 서식은 대부분 <style>의 .xl클래스로, 병합은 colspan/rowspan, 열 너비는 <col width>.
@@ -205,5 +206,28 @@ describe('표 고치기', () => {
       fontSize: '14pt',
       textAlign: 'center',
     });
+  });
+});
+
+describe('빈 표 (P48-1 ▦ 표)', () => {
+  it('3행 × 3열, 칸은 모두 빈 글 - 모두 비면 저장 때 뺀다', () => {
+    const t = newEmptyTable(3, 3, 5);
+    expect(t.rows.map((r) => r.cells.map((c) => c.v))).toEqual([['', '', ''], ['', '', ''], ['', '', '']]);
+    expect(t.createdAt).toBe(5);
+    expect(t.id).toMatch(/^tb_/);
+    expect(isBlankTable(t)).toBe(true);
+    expect(isBlankTable(setCellText(t, 2, 2, ' '))).toBe(true);
+    const filled = setCellText(t, 2, 2, '끝');
+    expect(isBlankTable(filled)).toBe(false);
+    expect(keptTables([t, filled])).toEqual([filled]);
+  });
+
+  it('행·열을 늘려도 3,000칸까지', () => {
+    const t = newEmptyTable(30, 100);
+    expect(canGrow(t, 0, 0)).toBe(true);
+    expect(canGrow(t, 1, 0)).toBe(false);
+    expect(canGrow(newEmptyTable(29, 100), 1, 0)).toBe(true);
+    expect(canGrow(newEmptyTable(3, 3), 0, 1)).toBe(true);
+    expect(MAX_TABLE_CELLS).toBe(3000);
   });
 });
