@@ -43,7 +43,7 @@ import {
   type SettingsSpec,
 } from '../domain/settings';
 import { settingsPort, startSettingsSync, type SettingsBinding, type SettingsData } from '../data/settingsSync';
-import { legacyFontPages, setFontSizes, useLayoutPrefs, type PopupStyle } from './layoutPrefs';
+import { legacyFontPages, setFontSizes, useLayoutPrefs, type PopupStyle, type SideAt } from './layoutPrefs';
 import { addPressTargets, setCustomShortcuts, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from './keys';
 import { prunePressTargets, readPressTargets, type PressTargets } from '../domain/pressTarget';
 import { isKnownTabShortcut } from './tabShortcuts';
@@ -59,6 +59,8 @@ export interface DevicePrefs {
   /** 글자 크기 - 화면마다 %(메모 요청 #145, 100은 적지 않는다). 옛 문서의 다섯 단계 fontScale은 readDevicePrefs가 옮긴다 */
   fontSizes: FontSizes;
   popupStyle: PopupStyle;
+  /** 창 칸이 서는 쪽 (P47-2 - PC만 왼쪽을 고른다, 환경설정 '창 위치' 왼쪽 칸). popupStyle과 칸을 나눈다 - 옛 판은 모르는 칸을 그대로 둔다 */
+  sideAt: SideAt;
   startupScope: StartupScope;
   shortcutOverrides: ShortcutOverrides;
   /** 창 안 탭 키 (P18-2 - 키를 준 탭만). shortcutOverrides와 칸을 나눈다 - 옛 판은 모르는 칸을 읽지 않는다 */
@@ -87,6 +89,7 @@ const pressTargetsField: SettingField<PressTargets> = { def: {}, read: readPress
 export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   fontSizes: customField<FontSizes>({}, readFontSizes),
   popupStyle: oneOfField<PopupStyle>('side', ['side', 'center', 'popup']),
+  sideAt: oneOfField<SideAt>('right', ['right', 'left']),
   startupScope: oneOfField<StartupScope>('last', STARTUP_SCOPES),
   shortcutOverrides: overridesField,
   tabShortcuts: tabShortcutsField,
@@ -102,11 +105,12 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
 
 /** 지금 이 기기의 기기 칸 값 (초기화 설정 묶음도 여기서 모은다 - app/settingsSnapshot) */
 export function currentDevicePrefs(): DevicePrefs {
-  const { fontSizes, popupStyle } = useLayoutPrefs.getState();
+  const { fontSizes, popupStyle, sideAt } = useLayoutPrefs.getState();
   const { startupScope, showWeekend, showEvents, showClass, semesterFilter, semesterFilterAt, enableScrollNav } = useNav.getState();
   return {
     fontSizes,
     popupStyle,
+    sideAt,
     startupScope,
     shortcutOverrides: useShortcutOverrides.getState().overrides,
     tabShortcuts: useShortcutOverrides.getState().tabs,
@@ -126,6 +130,7 @@ export function applyDevicePrefs(p: DevicePrefs) {
   const now = currentDevicePrefs();
   if (JSON.stringify(p.fontSizes) !== JSON.stringify(now.fontSizes)) setFontSizes(p.fontSizes);
   if (p.popupStyle !== now.popupStyle) useLayoutPrefs.setState({ popupStyle: p.popupStyle });
+  if (p.sideAt !== now.sideAt) useLayoutPrefs.setState({ sideAt: p.sideAt });
   if (JSON.stringify(p.shortcutOverrides) !== JSON.stringify(now.shortcutOverrides)) setShortcutOverrides(p.shortcutOverrides);
   if (JSON.stringify(p.tabShortcuts) !== JSON.stringify(now.tabShortcuts)) setTabShortcuts(p.tabShortcuts);
   // 단추 적은 것은 더하기만 - 이 기기에서 해제한 것(되돌리기)·고르는 중인 것을 지우지 않는다. 키가 없으면 쓰이지 않는다

@@ -52,7 +52,7 @@ export default function SideTabs() {
   return createPortal(
     <div
       role="tablist"
-      aria-label="오른쪽 칸"
+      aria-label="창 칸"
       data-side-tabs
       className="sticky top-0 z-20 flex items-end gap-1 overflow-x-auto bg-slate-100 border-b border-slate-200 px-1.5 pt-1.5 shrink-0"
       style={{ order: -1 }}

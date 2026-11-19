@@ -30,7 +30,7 @@ vi.mock('../data/settingsReset', () => ({
 }));
 
 function resetStores() {
-  useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side' });
+  useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side', sideAt: 'right' });
   useNav.setState({ scope: 'day', showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', semesterFilterAt: '', enableScrollNav: false, startupScope: 'last' });
   useShortcutOverrides.setState({ overrides: {}, tabs: {} });
   useCommonSettings.setState({ forwardDays: 14 });
@@ -110,6 +110,19 @@ describe('설정 문서 나누기', () => {
     expect(useLayoutPrefs.getState()).toMatchObject({ fontSizes: {}, popupStyle: 'side' });
     expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
     expect(useNav.getState().showClass).toBe(true);
+  });
+
+  it('창 칸 쪽(sideAt - P47-2): 왼쪽만 적고 받으면 입힌다 · 모르는 값은 오른쪽', () => {
+    startPrefsSync('u1');
+    expect(binding('pc').local()).toEqual({});
+    useLayoutPrefs.setState({ sideAt: 'left' });
+    expect(binding('pc').local()).toEqual({ sideAt: 'left' });
+    binding('pc').apply({ popupStyle: 'side' });
+    expect(useLayoutPrefs.getState().sideAt).toBe('right');
+    binding('pc').apply({ sideAt: 'left' });
+    expect(useLayoutPrefs.getState().sideAt).toBe('left');
+    binding('pc').apply({ sideAt: 'top' });
+    expect(useLayoutPrefs.getState().sideAt).toBe('right');
   });
 
   it('옛 문서의 글자 크기 다섯 단계(fontScale)는 모든 화면에 같은 %로 옮겨 읽는다 (메모 요청 #145)', () => {

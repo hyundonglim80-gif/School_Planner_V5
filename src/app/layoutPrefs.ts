@@ -2,7 +2,9 @@
 //   popupStyle: 환경설정 '창 위치' - 오른쪽 칸(side) / 팝업창(popup - PC만, 11-09) / 가운데 창(center - 휴대폰만).
 //     PC의 옛 '가운데 창'은 팝업창으로 본다(11-09 사용자 요청 - PC 고르기에서 가운데 창을 팝업창으로 바꿨다). 실제로 쓰는 값은 windowMode().
 //   fontSizes: 글자 크기 - 화면마다 %(메모 요청 #145 - 옛 다섯 단계 fontScale을 바꿨다). 팝업창은 'popout' 하나.
-//   이 둘은 계정 설정(PC·휴대폰 따로)과 맞춘다 - app/prefs.ts. 여기 값은 이 기기 사본(열자마자 그리기용).
+//   sideAt: 창 칸이 서는 쪽 - 오른쪽(기본) / 왼쪽(P47-2 11-19 사용자 요청 - PC만, 휴대폰은 늘 오른쪽). 환경설정에서는 '창 위치' 한 줄(오른쪽 칸 · 왼쪽 칸 · 팝업창 - windowPlace).
+//     popupStyle에 값을 더하지 않고 칸을 나눴다 - 옛 판은 모르는 popupStyle을 기본(오른쪽 칸)으로 읽어 되올리지만, 모르는 칸은 그대로 둔다.
+//   이 셋은 계정 설정(PC·휴대폰 따로)과 맞춘다 - app/prefs.ts. 여기 값은 이 기기 사본(열자마자 그리기용).
 //   rightPanelWidth: 경계선을 끌어 바꾼 창 칸 폭(px), null이면 기본 폭. 이 기기에만.
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
@@ -23,9 +25,13 @@ import { useNav } from './nav';
 import { SCOPES } from './route';
 
 export type PopupStyle = 'side' | 'center' | 'popup';
+export type SideAt = 'right' | 'left';
+/** 환경설정 '창 위치'에서 고르는 값 - 오른쪽 칸(side) · 왼쪽 칸(left - PC만) · 팝업창(popup - PC만) · 가운데 창(center - 휴대폰만) */
+export type WindowPlace = PopupStyle | 'left';
 
 interface LayoutPrefs {
   popupStyle: PopupStyle;
+  sideAt: SideAt;
   fontSizes: FontSizes;
   rightPanelWidth: number | null;
 }
@@ -40,7 +46,7 @@ export const currentFontPage = (): string => (POPOUT ? POPOUT_FONT_PAGE : useNav
 export const legacyFontPages = (scale: unknown): FontSizes | undefined => legacyFontSizes(scale, FONT_PAGES);
 
 export const useLayoutPrefs = create<LayoutPrefs>()(
-  persist((): LayoutPrefs => ({ popupStyle: 'side', fontSizes: {}, rightPanelWidth: null }), {
+  persist((): LayoutPrefs => ({ popupStyle: 'side', sideAt: 'right', fontSizes: {}, rightPanelWidth: null }), {
     name: 'sp5-layout',
     // 1 = 글자 크기가 화면마다 % (메모 요청 #145). 옛 저장(0)의 단계 하나는 모든 화면에 같은 %로 옮긴다
     version: 1,
@@ -101,3 +107,27 @@ export function windowMode(style: PopupStyle, device = detectDeviceKind()): Popu
 
 /** 지금 창을 브라우저 팝업창으로 띄우는가 (PC + '팝업창') */
 export const popupWindowsOn = () => windowMode(useLayoutPrefs.getState().popupStyle) === 'popup';
+
+/** 창 칸이 서는 쪽 - 왼쪽은 PC만(휴대폰은 창이 화면을 거의 덮어 왼쪽·오른쪽이 뜻이 없다 - P47-2 ⓗ) */
+export function sideOf(sideAt: SideAt, device = detectDeviceKind()): SideAt {
+  return device === 'pc' && sideAt === 'left' ? 'left' : 'right';
+}
+
+/** 환경설정 '창 위치'에 보이는 값 (창 위치 + 창 칸 쪽을 한 줄로) */
+export function windowPlace(style: PopupStyle, sideAt: SideAt, device = detectDeviceKind()): WindowPlace {
+  const mode = windowMode(style, device);
+  return mode === 'side' && sideOf(sideAt, device) === 'left' ? 'left' : mode;
+}
+
+/** '창 위치' 고르기 - 왼쪽 칸 = 오른쪽 칸 모양 + 왼쪽. 팝업창·가운데 창을 고르면 창 칸 쪽은 오른쪽으로(세 값이 겹치지 않게 - 그때도 큰 창에 남는 칸은 오른쪽) */
+export function setWindowPlace(place: WindowPlace) {
+  if (place === 'left') useLayoutPrefs.setState({ popupStyle: 'side', sideAt: 'left' });
+  else useLayoutPrefs.setState({ popupStyle: place, sideAt: 'right' });
+}
+
+/**
+ * 이 창에서 창 칸이 왼쪽에 서는가 - 새 창(ui/popout) 안의 분할 칸은 늘 오른쪽(새 창을 오른쪽으로 넓힌다 - P43·P47 ⓔ).
+ * 창 칸·탭·경계선·화면 밀기·📋 단추·▶ 손잡이가 이것을 본다(ui/sideColumn·app/Shell·features/clipboard/ClipboardColumn).
+ */
+export const sideLeftNow = (): boolean => !POPOUT && sideOf(useLayoutPrefs.getState().sideAt) === 'left';
+export const useSideLeft = (): boolean => useLayoutPrefs((s) => !POPOUT && sideOf(s.sideAt) === 'left');

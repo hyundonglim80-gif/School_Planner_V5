@@ -52,7 +52,7 @@ import HeaderFoldHandle from './HeaderFoldHandle';
 import { useAppKeys } from './keys';
 // 환경설정 값 단축키(P28-2)의 할 일을 키 처리에 단다
 import './optionShortcuts';
-import { useLayoutPrefs } from './layoutPrefs';
+import { useLayoutPrefs, useSideLeft } from './layoutPrefs';
 import MobileTabBar from './MobileTabBar';
 import { useNav, useSemesterFollow } from './nav';
 import { isDatelessScope } from './route';
@@ -115,7 +115,9 @@ export default function Shell() {
   usePendingWritesGuard();
 
   // 오른쪽 줄(창·쓰는 칸)이 하나라도 서 있으면 그 폭만큼 화면을 줄인다. 폭은 모든 칸이 같다.
+  // 창 위치 '왼쪽 칸'(P47-2)이면 줄이 왼쪽에 서고 화면을 오른쪽으로 민다 - 경계선·▶ 손잡이도 거울처럼
   const rightOpen = useSidePopups((s) => s.order.length > 0);
+  const sideLeft = useSideLeft();
   const docked = useDocked();
   // 휴대폰은 창이 화면을 덮는다 - 그때 '저장을 기다립니다' 띠는 창 위에 뜬다
   const windowCovers = useWindows((s) => s.windows.length > 0) && !docked;
@@ -167,7 +169,7 @@ export default function Shell() {
   return (
     <div
       className="min-h-screen bg-bg-body text-slate-900 transition-[padding] duration-200"
-      style={{ paddingRight: rightOpen ? RIGHT_COLUMN_CSS_WIDTH : undefined }}
+      style={rightOpen ? (sideLeft ? { paddingLeft: RIGHT_COLUMN_CSS_WIDTH } : { paddingRight: RIGHT_COLUMN_CSS_WIDTH }) : undefined}
     >
       {/*
         머리줄 접기 (메모 요청 #142 - app/headerFold): 접으면 머리줄 요소는 높이 0으로 화면 위에 붙어 남고(높이를 재는 곳 - --app-header-h·한눈에 높이·오늘로 가기 - 이 0을 받는다),
@@ -232,20 +234,20 @@ export default function Shell() {
       <ShortcutRecordGate />
       {/* 오른쪽 칸이 둘 이상이면 위에 탭 (V4 2026-10-07) */}
       <SideTabs />
-      {rightOpen && <ColumnResizer side="right" width={RIGHT_COLUMN_CSS_WIDTH} />}
-      {/* 오른쪽 줄을 닫는 작은 단추 (V4 2026-09-30) - ESC와 같다(저장 안 한 글이 있으면 먼저 묻는다) */}
+      {rightOpen && <ColumnResizer side={sideLeft ? 'left' : 'right'} width={RIGHT_COLUMN_CSS_WIDTH} />}
+      {/* 오른쪽 줄을 닫는 작은 단추 (V4 2026-09-30) - ESC와 같다(저장 안 한 글이 있으면 먼저 묻는다). 왼쪽 칸이면 ◀ - 줄 쪽을 가리킨다 */}
       {rightOpen && (
         <button
           type="button"
-          data-close-column
+          data-close-column={sideLeft ? 'left' : 'right'}
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => closeAllWindows()}
-          title="오른쪽 칸 닫기 (ESC와 같음)"
-          aria-label="오른쪽 칸 닫기"
-          className="fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center rounded-l-xl bg-white/90 border border-r-0 border-slate-200 shadow-md text-xs text-slate-500 hover:bg-primary/10 hover:w-7 transition-all cursor-pointer"
-          style={{ right: RIGHT_COLUMN_CSS_WIDTH }}
+          title={`${sideLeft ? '왼쪽' : '오른쪽'} 칸 닫기 (ESC와 같음)`}
+          aria-label={`${sideLeft ? '왼쪽' : '오른쪽'} 칸 닫기`}
+          className={`fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center bg-white/90 border border-slate-200 shadow-md text-xs text-slate-500 hover:bg-primary/10 hover:w-7 transition-all cursor-pointer ${sideLeft ? 'rounded-r-xl border-l-0' : 'rounded-l-xl border-r-0'}`}
+          style={sideLeft ? { left: RIGHT_COLUMN_CSS_WIDTH } : { right: RIGHT_COLUMN_CSS_WIDTH }}
         >
-          ▶
+          {sideLeft ? '◀' : '▶'}
         </button>
       )}
     </div>

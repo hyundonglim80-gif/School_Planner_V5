@@ -2,7 +2,7 @@
 // 화면 밝기·고대비·어둡게를 부드럽게(이 기기에만)·색 테마·색약 배려·꾸미기(계정에 하나 - PC·휴대폰 같게, P20) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
 // 어디에 남는지는 칸 제목 옆 같은 모양 표시(parts SavedBadge)로 - 글로 되풀이하지 않는다(P44-3 11-17: 칸 아홉에 안내 열 개, '이 기기' 10번·'계정에' 7번·'PC와 휴대폰' 8번·'인쇄' 5번).
 import { useEffect, useState } from 'react';
-import { setPopupStyle, useLayoutPrefs, windowMode } from '../../app/layoutPrefs';
+import { setWindowPlace, useLayoutPrefs, windowPlace } from '../../app/layoutPrefs';
 import { detectDeviceKind } from '../../app/deviceKind';
 import { setEnableScrollNav, setStartupScope, setToggle, useNav } from '../../app/nav';
 import { isDarkMode, readThemeMode, setThemeMode, THEME_CHANGED_EVENT, type ThemeMode } from '../../app/theme';
@@ -21,13 +21,13 @@ import FontSizeRows from './FontSizeRows';
 import GcalOverlaySection from '../gcal/GcalOverlaySection';
 
 const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
-  pc: "오른쪽 칸 = 화면을 나눠 오른쪽에 · 팝업창 = 창마다 브라우저 새 창(다른 모니터로 옮길 수 있고 자리·크기는 창마다 기억)",
+  pc: '오른쪽·왼쪽 칸 = 화면을 나눠 그쪽에 · 팝업창 = 창마다 브라우저 새 창(다른 모니터로 옮길 수 있고 자리·크기는 창마다 기억)',
   mobile: '오른쪽 칸 = 오른쪽에서 나오는 배너 · 가운데 창 = 화면 가운데에 (쓰는 칸은 늘 오른쪽)',
 };
 
 export default function ViewTab() {
   const nav = useNav();
-  const { popupStyle } = useLayoutPrefs();
+  const { popupStyle, sideAt } = useLayoutPrefs();
   const [device] = useState(detectDeviceKind);
   // 화면 밝기는 이 기기에만 (localStorage) - 단축키로 바꿔도 창에 보이게 알림을 듣는다
   const [themeMode, setThemeModeState] = useState<ThemeMode>(readThemeMode);
@@ -232,7 +232,7 @@ export default function ViewTab() {
         saved="split"
         desc={POPUP_STYLE_DESC[device]}
       >
-        <Choices name="popupStyle" option="popupStyle" value={windowMode(popupStyle, device)} onChange={setPopupStyle} options={POPUP_STYLE_OPTIONS[device]} />
+        <Choices name="popupStyle" option="popupStyle" value={windowPlace(popupStyle, sideAt, device)} onChange={setWindowPlace} options={POPUP_STYLE_OPTIONS[device]} />
       </Section>
 
       <Section id="startupScope" title="시작 화면" saved="split" desc="앱을 열 때 처음 화면 (새로고침은 보던 화면 그대로)">

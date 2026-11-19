@@ -6,11 +6,14 @@
 //   - 칸이 둘 이상이면 줄 위에 **탭**이 선다 (V4 2026-10-07 사용자 요청 - 높이를 나누는 방식은 거절). 새 칸을 열면 탭이 하나 더해지고
 //     그 칸이 보인다. 안 보이는 칸도 그대로 살아 있어 적던 글이 남는다(display:none). 탭의 ×는 그 칸의 '닫기'를 누른다.
 // 휴대폰 배너는 줄에 세우지 않는다 - 화면이 작아 쌓아 두면 쓸 수 없다. 위에 덮는다.
+// 줄이 서는 쪽: 오른쪽(기본) / 왼쪽(P47-2 - 환경설정 '창 위치' 왼쪽 칸, PC만 - app/layoutPrefs sideLeftNow). 이름은 '오른쪽 줄' 그대로 둔다.
+//   왼쪽이면 줄·탭·경계선(안쪽 가장자리)·화면 밀기(app/Shell)·📋 단추·▶ 손잡이가 거울처럼 선다. 새 창 안 분할 칸은 늘 오른쪽(P43).
 //
 // 줄에 무엇이 서는지는 칸이 그려질 때 스스로 선다(useSideSlot) - 창 목록에 등록한 창도, 창 안에서 띄운 작은 창도 같은 줄이다.
 // 줄 위의 탭은 SideTabs.tsx.
 import { createContext, useContext, useEffect, useId, type CSSProperties } from 'react';
 import { create } from 'zustand';
+import { sideLeftNow, useLayoutPrefs } from '../app/layoutPrefs';
 import { containScroll } from './containScroll';
 import { POPOUT } from './popout';
 import { useMinWidth } from './useMinWidth';
@@ -93,14 +96,26 @@ export function closeShownSideSlot(): boolean {
   return id !== null && closeSideSlot(id);
 }
 
+const COLUMN_CLASS = 'fixed top-0 bottom-0 z-[45] flex flex-col bg-white border-slate-200 shadow-xl overflow-y-auto overscroll-contain empty:hidden';
+
+/** 줄을 서는 쪽에 둔다 - data-side-column = 'right' | 'left' (점검·화면 밀기가 본다) */
+function placeColumn(el: HTMLElement) {
+  const left = sideLeftNow();
+  el.className = `${COLUMN_CLASS} ${left ? 'left-0 border-r' : 'right-0 border-l'}`;
+  el.setAttribute('data-side-column', left ? 'left' : 'right');
+}
+
+// 환경설정에서 쪽을 바꾸면 이미 선 줄도 곧바로 옮긴다
+useLayoutPrefs.subscribe((s, prev) => {
+  if (s.sideAt !== prev.sideAt && columnEl) placeColumn(columnEl);
+});
+
 /** 오른쪽 줄. 칸들이 여기에 그려진다(createPortal). 비어 있으면 보이지 않는다. */
 export function getSideColumn(): HTMLElement {
   if (columnEl && columnEl.isConnected) return columnEl;
   columnEl = document.createElement('div');
   columnEl.id = 'side-column';
-  columnEl.setAttribute('data-side-column', '');
-  columnEl.className =
-    'fixed top-0 right-0 bottom-0 z-[45] flex flex-col bg-white border-l border-slate-200 shadow-xl overflow-y-auto overscroll-contain empty:hidden';
+  placeColumn(columnEl);
   columnEl.style.width = RIGHT_COLUMN_CSS_WIDTH;
   // 칸 위의 휠은 칸 안에서만 (내용이 짧거나 끝에 닿아도 뒤 화면을 움직이지 않게 - P10-5)
   containScroll(columnEl);

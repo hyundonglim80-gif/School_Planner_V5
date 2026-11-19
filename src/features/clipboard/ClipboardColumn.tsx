@@ -6,7 +6,7 @@
 //   - 창 위치가 팝업창(PC)이면 📋가 탭 대신 클립보드 팝업창을 연다(#140 - popupClip·ClipboardPopout).
 import { useEffect, useMemo, useState } from 'react';
 import { useShortcutTitle } from '../../app/keys';
-import { popupWindowsOn } from '../../app/layoutPrefs';
+import { popupWindowsOn, useSideLeft } from '../../app/layoutPrefs';
 import { openWindow, useShownWindowPick, useWindows } from '../../app/windows';
 import { showErrorToast, showToast } from '../../app/toast';
 import { clearClips, clipboardReadGranted, readSystemClipboard, removeClip, useClipboard, type ClipItem } from '../../data/clipboard';
@@ -182,6 +182,8 @@ export default function ClipboardColumn() {
   const docked = useDocked();
   const withShortcut = useShortcutTitle();
   const sideOpen = useSidePopups((s) => s.order.length > 0) && docked;
+  // 창 칸이 서는 쪽 가장자리 (P47-2 왼쪽 칸 - 휴대폰·좁은 창은 창이 오른쪽에서 덮어 그대로 오른쪽)
+  const left = useSideLeft() && docked;
   const tabOpen = useWindows((s) => s.windows.some((w) => w.id === CLIPBOARD_WINDOW));
   const shown = useShownWindowPick((w) => (w.id === CLIPBOARD_WINDOW ? 'clipboard' : null)) === 'clipboard';
 
@@ -204,9 +206,10 @@ export default function ClipboardColumn() {
       aria-label={tabOpen && shown ? '클립보드 닫기' : '클립보드 열기'}
       aria-expanded={tabOpen && shown}
       // 늘 📋 - 바로 아래 '오른쪽 칸 닫기 ▶'와 헷갈리지 않게 글은 바꾸지 않고, 탭이 보이면 눌린 모양
-      className={`fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center rounded-l-xl border border-r-0 shadow-md text-xs hover:bg-primary/10 hover:w-7 transition-all cursor-pointer ${tabOpen && shown ? 'bg-primary/15 border-primary/40' : 'bg-white/90 border-slate-200'}`}
+      data-clipboard-edge={left ? 'left' : 'right'}
+      className={`fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center border shadow-md text-xs hover:bg-primary/10 hover:w-7 transition-all cursor-pointer ${left ? 'rounded-r-xl border-l-0' : 'rounded-l-xl border-r-0'} ${tabOpen && shown ? 'bg-primary/15 border-primary/40' : 'bg-white/90 border-slate-200'}`}
       // 창 칸이 서 있으면 그 안쪽 가장자리 - 가운데의 '오른쪽 칸 닫기 ▶' 손잡이(Shell) 바로 위
-      style={sideOpen ? { right: RIGHT_COLUMN_CSS_WIDTH, top: 'calc(50% - 4rem)' } : { right: 0 }}
+      style={sideOpen ? { [left ? 'left' : 'right']: RIGHT_COLUMN_CSS_WIDTH, top: 'calc(50% - 4rem)' } : { [left ? 'left' : 'right']: 0 }}
     >
       📋
     </button>

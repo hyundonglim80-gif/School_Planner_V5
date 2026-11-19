@@ -61,7 +61,7 @@ beforeEach(() => {
   resetHistoryForTest();
   // 가운데 창으로 그린다 (오른쪽 줄 없이)
   setPopupStyle('center');
-  useLayoutPrefs.setState({ fontSizes: {} });
+  useLayoutPrefs.setState({ fontSizes: {}, sideAt: 'right' });
   useNav.setState({ scope: 'day', showWeekend: true, startupScope: 'last' });
   setShortcutOverrides({});
   setTabShortcuts({});
@@ -151,6 +151,18 @@ describe('환경설정 창', () => {
     expect(document.querySelector('[data-shortcut-save]')).toBeNull();
     fireEvent.click(q('[data-font-step="day:reset"]'));
     expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
+  });
+
+  it('창 위치 (P47-2): PC = 오른쪽 칸 · 왼쪽 칸 · 팝업창 한 줄 - 왼쪽 칸 = 오른쪽 칸 모양 + 창 칸 쪽 왼쪽', () => {
+    openSettings('view');
+    expect(qa('[data-settings-section="popupStyle"] [data-choice]').map((b) => b.dataset.choice)).toEqual(['popupStyle:side', 'popupStyle:left', 'popupStyle:popup']);
+    expect(q('[data-choice="popupStyle:popup"]')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(q('[data-choice="popupStyle:left"]'));
+    expect(useLayoutPrefs.getState()).toMatchObject({ popupStyle: 'side', sideAt: 'left' });
+    expect(q('[data-choice="popupStyle:left"]')).toHaveAttribute('aria-pressed', 'true');
+    expect(q('[data-choice="popupStyle:side"]')).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(q('[data-choice="popupStyle:side"]'));
+    expect(useLayoutPrefs.getState()).toMatchObject({ popupStyle: 'side', sideAt: 'right' });
   });
 
   it('글자 크기 (메모 요청 #145): 화면마다 한 줄 · − / 초기화 / + 는 5%씩 쌓이고 그 화면만 · 지금 화면 줄이 단축키와 같다', () => {

@@ -13,7 +13,7 @@ import { DEFAULT_AUTO_BACKUP, INTERVAL_CHOICES, KEEP_CHOICES } from '../domain/a
 import { formatBinding, type CustomShortcutId, type ShortcutId } from '../domain/shortcuts';
 import { provideCustomShortcuts, type CustomShortcut } from './customShortcuts';
 import { detectDeviceKind } from './deviceKind';
-import { setPopupStyle, useLayoutPrefs, windowMode, type PopupStyle } from './layoutPrefs';
+import { setWindowPlace, useLayoutPrefs, windowPlace, type WindowPlace } from './layoutPrefs';
 import { setEnableScrollNav, setStartupScope, useNav, type StartupScope } from './nav';
 import { setCommonSetting, useCommonSettings } from './prefs';
 import { SCREENS } from './screens';
@@ -48,10 +48,12 @@ export const DECOR_OPTIONS: OptionChoice<DecorChoice>[] = [
   { value: 'animal', label: '동물' },
 ];
 
-// PC는 오른쪽 칸 / 팝업창(11-09 사용자 요청 - 옛 '가운데 창 (예전 방식)'을 바꿨다), 휴대폰은 브라우저 새 창이 없어 오른쪽 칸 / 가운데 창 그대로
-export const POPUP_STYLE_OPTIONS: Record<'pc' | 'mobile', OptionChoice<PopupStyle>[]> = {
+// PC는 오른쪽 칸 / 왼쪽 칸(P47-2 11-19 사용자 요청) / 팝업창(11-09 사용자 요청 - 옛 '가운데 창 (예전 방식)'을 바꿨다),
+// 휴대폰은 브라우저 새 창이 없고 창이 화면을 거의 덮어 오른쪽 칸 / 가운데 창 그대로
+export const POPUP_STYLE_OPTIONS: Record<'pc' | 'mobile', OptionChoice<WindowPlace>[]> = {
   pc: [
     { value: 'side', label: '오른쪽 칸' },
+    { value: 'left', label: '왼쪽 칸' },
     { value: 'popup', label: '팝업창' },
   ],
   mobile: [
@@ -122,8 +124,8 @@ const OPTIONS: Record<string, OptionDef> = {
     title: '창 위치',
     def: 'side',
     values: () => POPUP_STYLE_OPTIONS[detectDeviceKind()],
-    get: () => windowMode(useLayoutPrefs.getState().popupStyle),
-    set: (v) => setPopupStyle(v as PopupStyle),
+    get: () => windowPlace(useLayoutPrefs.getState().popupStyle, useLayoutPrefs.getState().sideAt),
+    set: (v) => setWindowPlace(v as WindowPlace),
   },
   startupScope: {
     kind: 'choice',
