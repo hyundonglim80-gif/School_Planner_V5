@@ -76,7 +76,14 @@ const dataOf = (e: NewEval): Editable<'evaluations'> => ({
   type: e.type,
   ...(e.subject ? { subject: e.subject } : {}),
   ...(e.type === 'eval'
-    ? { indiv: !!e.indiv, group: !!e.group, steps: e.free ? [] : (e.steps ?? []), ...(e.free ? { free: true } : {}), ...(e.group ? { groups: e.groups ?? [] } : {}) }
+    ? {
+        indiv: !!e.indiv,
+        group: !!e.group,
+        steps: e.free ? [] : (e.steps ?? []),
+        ...(e.free ? { free: true } : {}),
+        ...(!e.free && e.cuts?.length ? { cuts: e.cuts } : {}),
+        ...(e.group ? { groups: e.groups ?? [] } : {}),
+      }
     : {}),
   students: e.students,
   values: e.values ?? {},

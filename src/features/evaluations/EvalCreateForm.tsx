@@ -7,12 +7,14 @@ import { useCommonSettings } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
 import { academicYearOf, shortDateLabel } from '../../domain/dateUtils';
 import {
+  badCutIndex,
   DEFAULT_STEPS,
   EVAL_SUBJECTS,
   EVAL_TYPES,
   EVAL_TYPE_CHOICE,
   evalStudentsOf,
   groupsByNumber,
+  parseScore,
   type EvalType,
 } from '../../domain/evaluation';
 import { evalGroupsFrom, groupSetSummary } from '../../domain/groups';
@@ -69,6 +71,13 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
   const [steps, setSteps] = useState<string[]>(DEFAULT_STEPS.slice(0, 3));
   /** 단계 '기타' (P46-1) - 단계 없이 학생마다 숫자·글자를 그대로 적는다 */
   const [free, setFree] = useState(false);
+  /** 점수로 단계 자동 매기기 (P46-2 - 3·4·5단계) · 단계마다 '이 점수 이상' 글자(마지막 단계는 나머지) · 생성을 눌러 틀렸으면 그 칸을 붉게 */
+  const [byScore, setByScore] = useState(false);
+  const [cutText, setCutText] = useState<string[]>([]);
+  const [cutTried, setCutTried] = useState(false);
+  const scoring = type === 'eval' && !free && byScore && steps.length >= 3;
+  const cutNums = steps.slice(0, -1).map((_, i) => parseScore(cutText[i]));
+  const badCut = scoring && cutTried ? badCutIndex(cutNums) : -1;
   const [alsoOthers, setAlsoOthers] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -85,6 +94,13 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
     if (busy) return;
     if (!title.trim()) return showToast('제목을 입력하세요.');
     if (!cls) return showErrorToast('명렬표를 먼저 등록해 주세요. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 넣습니다.');
+    if (scoring) {
+      if (badCutIndex(cutNums) >= 0) {
+        setCutTried(true);
+        return showToast('점수 기준을 확인하세요 - 칸을 모두 채우고, 위 단계가 아래 단계보다 커야 합니다.');
+      }
+      if (steps.some((s) => !s.trim())) return showToast('단계 이름을 모두 적어 주세요.');
+    }
     const students = evalStudentsOf(cls.students);
     const sids = students.map((s) => s.sid);
     const base: NewEval = {
@@ -100,6 +116,7 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
             group,
             steps: free ? [] : steps.map((s) => s.trim()).filter(Boolean),
             ...(free ? { free: true } : {}),
+            ...(scoring ? { cuts: cutNums as number[] } : {}),
             ...(group ? { groups: chosenSet ? evalGroupsFrom(chosenSet, sids) : groupsByNumber(sids, groupCount) } : {}),
           }
         : {}),
@@ -248,18 +265,49 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
                 결과 칸에 숫자·글자를 그대로 적습니다 (85 · A+ · 통과)
               </p>
             ) : (
-              <div className="flex gap-2 mt-2">
-                {steps.map((s, i) => (
-                  <input
-                    key={i}
-                    value={s}
-                    data-eval-step={i}
-                    aria-label={`${i + 1}단계 이름`}
-                    onChange={(e) => setSteps((list) => list.map((x, j) => (j === i ? e.target.value : x)))}
-                    className="px-2 py-1 border border-slate-200 rounded text-xs flex-1 min-w-0 bg-white"
-                  />
-                ))}
-              </div>
+              <>
+                <div className="flex gap-2 mt-2">
+                  {steps.map((s, i) => (
+                    <div key={i} className="flex-1 min-w-0 flex flex-col gap-1">
+                      <input
+                        value={s}
+                        data-eval-step={i}
+                        aria-label={`${i + 1}단계 이름`}
+                        onChange={(e) => setSteps((list) => list.map((x, j) => (j === i ? e.target.value : x)))}
+                        className="px-2 py-1 border border-slate-200 rounded text-xs w-full min-w-0 bg-white"
+                      />
+                      {scoring &&
+                        (i < steps.length - 1 ? (
+                          <span className="flex items-center gap-1 text-2xs text-slate-500">
+                            <input
+                              value={cutText[i] ?? ''}
+                              data-eval-cut={i}
+                              inputMode="decimal"
+                              placeholder="점수"
+                              aria-label={`${s || `${i + 1}단계`} 기준 점수 (이상)`}
+                              aria-invalid={badCut === i || undefined}
+                              onChange={(e) => setCutText((list) => Object.assign([...list], { [i]: e.target.value }))}
+                              className={`w-full min-w-0 px-1.5 py-0.5 border rounded text-xs bg-white text-right ${badCut === i ? 'border-rose-500 ring-1 ring-rose-300' : 'border-slate-200'}`}
+                            />
+                            <span className="shrink-0">이상</span>
+                          </span>
+                        ) : (
+                          <span className="py-0.5 text-2xs text-slate-500 text-center">나머지</span>
+                        ))}
+                    </div>
+                  ))}
+                </div>
+                {steps.length >= 3 && (
+                  <label className="mt-2 flex items-center gap-1.5 text-xs font-bold cursor-pointer w-fit">
+                    <input type="checkbox" data-eval-by-score checked={byScore} onChange={(e) => setByScore(e.target.checked)} className="accent-primary" /> 점수로 단계 자동 매기기
+                  </label>
+                )}
+                {badCut >= 0 && (
+                  <p className="mt-1 text-2xs font-bold text-rose-600" data-eval-cut-error>
+                    붉은 칸을 고치세요 - 빈 칸 없이, 위 단계 점수가 아래 단계보다 커야 합니다.
+                  </p>
+                )}
+              </>
             )}
           </div>
           {group && (

@@ -227,6 +227,31 @@ try {
   await rec.locator(sel('student-record-tab', 'evals')).click();
   r.check(((await rec.locator(sel('student-eval', e4.id)).locator('[data-student-eval-value]').textContent()) ?? '') === 'A+', "학생 기록 조사표 = 'A+'");
 
+  r.section('점수로 단계 자동 매기기 (P46-2 - 사용자 예: 3단계 10·5에 7 = 보통)');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await open(page, `#/day/${D}`);
+  await page.locator(sel('lesson-card', 3)).hover();
+  await badge3.click();
+  await waitFor(async () => (await w3.getAttribute('data-eval-mode')) === 'list');
+  await page.locator('[data-eval-new]').click();
+  await w3.locator('[data-eval-title]').fill('점수 평가');
+  r.check((await w3.locator('[data-eval-by-score]').count()) === 1, "3단계면 '점수로 단계 자동 매기기' 체크");
+  await w3.locator('[data-eval-by-score]').check();
+  r.check((await w3.locator('[data-eval-cut]').count()) === 2, '기준 칸 둘 (마지막 단계는 나머지)');
+  await w3.locator(sel('eval-cut', 0)).fill('5');
+  await w3.locator(sel('eval-cut', 1)).fill('10');
+  await w3.locator('[data-eval-create-submit]').click();
+  r.check((await waitFor(w3.locator('[data-eval-cut-error]'))) && (await w3.locator(sel('eval-cut', 1)).getAttribute('aria-invalid')) === 'true', '아래 단계가 더 크면 생성을 막고 그 칸을 붉게');
+  r.check(!(await liveEvals()).some((e) => e.title === '점수 평가'), '틀린 기준으로는 만들지 않는다');
+  await w3.locator(sel('eval-cut', 0)).fill('10');
+  await w3.locator(sel('eval-cut', 1)).fill('5');
+  r.check((await w3.locator('[data-eval-cut-error]').count()) === 0, '고치면 안내가 사라진다');
+  await w3.locator('[data-eval-create-submit]').click();
+  list = await serverUntil(liveEvals, (l) => l.some((e) => e.title === '점수 평가'));
+  const e5 = list.find((e) => e.title === '점수 평가');
+  r.check(same(e5?.cuts, [10, 5]) && same(e5?.steps, ['우수', '보통', '노력요함']) && !e5?.free, '서버: 기준 [10, 5] · 단계 셋');
+  r.check(await waitFor(w3.locator(sel('eval-view', e5.id))), '만든 조사표가 곧바로 열린다');
+
   r.section('자리표 학생 칸 · 교과 전담 반 도구');
   await page.evaluate(() => window.sp5.closeAllWindows());
   const evToday = ref('evaluations', 'inspectToday');
