@@ -229,6 +229,8 @@ export interface SheetEval {
   /** 점수 기준(P46-2) - 있으면 점수 칸을 내고, 되읽을 때 점수가 바뀌면 같은 셈으로 결과를 다시 매긴다 */
   steps?: string[];
   cuts?: number[];
+  /** 만들 때 나눈 조 (조별) - 조 이름을 손으로 적지 않은 학생의 조이름 칸은 이 이름(앱 칸·모아 보기와 같게) */
+  groups?: Array<{ name: string; members: string[] }>;
   students: Array<{ sid: string; num: number; name: string; gender?: string }>;
   values: Record<string, { indiv?: string; group?: string; groupName?: string; checked?: boolean; reason?: string; memo?: string; score?: string; groupScore?: string }>;
 }
@@ -236,6 +238,9 @@ export interface SheetEval {
 export type EvalValue = SheetEval['values'][string];
 
 const scoredSheet = (ev: SheetEval) => hasScoreCuts(ev);
+
+/** 학생의 조 이름 - 손으로 적은 이름, 없으면 만들 때 나눈 조 (EvalTable 조이름 칸·studentEvalCell과 같은 셈) */
+const groupNameOf = (ev: SheetEval, sid: string, v: EvalValue): string => v.groupName ?? ev.groups?.find((g) => g.members.includes(sid))?.name ?? '';
 
 export const evalSheetNameOf = (classId: string) => `${EVAL_SHEET_PREFIX}${classId || '기타'}`;
 
@@ -287,7 +292,7 @@ export function buildEvalRows(evals: SheetEval[]): string[][] {
       const blank = !mine;
       if (ev.type === 'eval') {
         const scored = scoredSheet(ev);
-        if (ev.group) row.push(blank ? '' : (v.groupName ?? ''), ...(scored ? [blank ? '' : (v.groupScore ?? '')] : []), blank ? '' : (v.group ?? ''));
+        if (ev.group) row.push(blank ? '' : groupNameOf(ev, mine.sid, v), ...(scored ? [blank ? '' : (v.groupScore ?? '')] : []), blank ? '' : (v.group ?? ''));
         if (ev.indiv || !ev.group) row.push(...(scored ? [blank ? '' : (v.score ?? '')] : []), blank ? '' : (v.indiv ?? ''));
         row.push(blank ? '' : (v.reason ?? ''));
       } else if (ev.type === 'check') {
@@ -362,7 +367,9 @@ export function evalUpdatesFor(ev: SheetEval, updates: readonly EvalCellUpdate[]
       else (next as Record<string, unknown>)[k] = v;
     };
     if (ev.type === 'eval') {
-      set('groupName', cells[COL_GROUP_NAME]);
+      // 조이름 칸은 나눈 조 이름까지 내보낸다 - 그대로면 적지 않는다(되읽을 때마다 모든 학생에 조 이름을 박지 않게)
+      const gName = cells[COL_GROUP_NAME];
+      if (gName !== groupNameOf(ev, st.sid, before)) set('groupName', gName);
       set('group', cells[COL_GROUP_SCORE]);
       set('indiv', cells[COL_INDIV_SCORE]);
       set('reason', cells[COL_REASON]);

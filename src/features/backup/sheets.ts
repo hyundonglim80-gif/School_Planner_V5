@@ -108,6 +108,8 @@ function sheetEvalOf(ev: Docs<'evaluations'>[string], classes: Docs<'classes'>):
     ...(ev.group ? { group: true } : {}),
     // 점수 기준(P46-2) - 시트에 점수 칸을 내고 되읽을 때 다시 매긴다
     ...(hasScoreCuts(ev) ? { steps: ev.steps, cuts: ev.cuts } : {}),
+    // 만들 때 나눈 조 - 조이름 칸(손으로 적지 않은 학생)
+    ...(ev.group && ev.groups?.length ? { groups: ev.groups } : {}),
     students: (ev.students ?? []).map((s) => ({ sid: s.sid, num: s.num, name: s.name, ...(genderOf.get(s.sid) ? { gender: genderOf.get(s.sid) } : {}) })),
     values: ev.values ?? {},
   };

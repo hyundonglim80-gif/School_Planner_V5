@@ -161,6 +161,28 @@ describe("'조사표_학급' 시트", () => {
     const rows = buildEvalRows([ev({ group: true, indiv: false, steps: ['상', '중', '하'], cuts: [8, 4] })]);
     expect(rows[7].slice(3)).toEqual(['조이름', '조별점수', '조별결과', '미평가사유(메모)']);
   });
+  it('조이름 칸 = 손으로 적은 이름, 없으면 만들 때 나눈 조 (11-20 PC 확인 - 나눈 조가 빈칸으로 나갔다)', () => {
+    const e = ev({
+      group: true,
+      indiv: false,
+      groups: [
+        { name: 'A조', members: ['s1'] },
+        { name: 'B조', members: ['s2'] },
+      ],
+      values: { s1: { group: '상' }, s2: { groupName: '별빛', group: '중' } },
+    });
+    const rows = buildEvalRows([e]);
+    expect(rows[8].slice(3, 5)).toEqual(['A조', '상']);
+    expect(rows[9].slice(3, 5)).toEqual(['별빛', '중']);
+    // 그대로 되읽으면 바뀐 것이 없다 (나눈 조 이름을 학생 값에 박지 않는다)
+    expect(evalUpdatesFor(e, parseEvalRows(rows))).toEqual({});
+    // 고치기 전에 내보낸 시트(나눈 조가 빈칸)를 되읽어도 그대로
+    rows[8][3] = '';
+    expect(evalUpdatesFor(e, parseEvalRows(rows))).toEqual({});
+    // 시트에서 조 이름을 고치면 들어온다
+    rows[8][3] = '달빛';
+    expect(evalUpdatesFor(e, parseEvalRows(rows))).toEqual({ s1: { group: '상', groupName: '달빛' } });
+  });
   it('시트에만 있는 조사표는 버리고, 머리말을 모르면 읽지 않는다', () => {
     const rows = buildEvalRows([ev()]);
     expect(evalUpdatesFor(ev({ id: 'OTHER' }), parseEvalRows(rows))).toEqual({});
