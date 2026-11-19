@@ -1,4 +1,4 @@
-// 왼쪽 클립보드 칸의 '복사한 것' 목록 (V4 lib/clipboardHistory.ts - 붙여넣기는 features/clipboard/paste.ts).
+// 📋 클립보드 탭(P47-1 - 옛 왼쪽 칸)·클립보드 팝업창의 '복사한 것' 목록 (V4 lib/clipboardHistory.ts - 붙여넣기는 features/clipboard/paste.ts).
 //
 // 어디서 모으나
 //   1) 이 앱 안에서 Ctrl+C / 잘라내기 한 글자 (copy·cut - features/clipboard의 useClipboardCapture)
