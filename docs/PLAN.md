@@ -4505,7 +4505,7 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
 **시작 조건**: P46 끝(사용자가 앞당기면 그대로) · 클라우드 가능(배포 없음). **묻기**: 없음.
 **먼저 읽을 것**: 이 절 · 5장 'P47' ⓐ~ⓕ · 설명서 클립보드 주제(`grep -n "clipboard" src/features/help/chapters/*.ts`) · `src/features/clipboard/`(ClipboardColumn·capture·paste·popupClip) · `src/ui/sideColumn.ts`·`SideTabs.tsx`(탭 줄 `useSideSlot`) · `src/app/Shell.tsx`(왼쪽 줄·밀기) · `src/app/useGlobalGestures.ts` · `src/app/resetTargets.ts` · 점검 inspect-clipboard-popup·inspect-scroll·inspect-shell(grep `data-clipboard`).
 - [x] ■1 클립보드를 창 칸 탭으로: 목록 칸(ClipboardPanel)을 창 칸에 세우기 · 📋 단추(창 칸 쪽 가장자리)·단축키 열기/닫기 · 열림 기억 · 왼쪽 줄·폭·밀기·초기화 왼쪽 폭 걷기 · 단위(ClipboardColumn.test 고침) → **11-19 클라우드**: 창 목록의 창 'clipboard'(= 단축키 id = 팝업창 id - 팝업창 모드면 창 목록이 클립보드 팝업창으로) · `ClipboardWindow`(ModalShell '📋 클립보드')·`ClipboardList`(탭·팝업창이 함께)·`ClipboardToggle`(칸이 닫히면 오른쪽 가장자리 가운데, 열리면 ▶ 아래) · 📋 = 없으면 열기·숨었으면 보이기·보이면 닫기 · 열림 기억 `sp5-clipboard-open` 그대로(넓은 화면·오른쪽 칸 모드만 다시 세움) · 막힌 팝업창 = 큰 창 가운데(다른 창과 같다) · leftPanelWidth 걷음(이 기기 판 2·초기화 묶음은 옛 칸을 읽지 않음) · 단위 2444 · inspect-scroll·clipboard-popup 통과
-- [ ] ■2 붙여넣기 뒤 그 칸이 든 탭으로 돌아가기 · 쓸 칸 없음 안내 · 휴대폰 덮기·뒤로가기 · 팝업창 모드·새 창 그대로 · 단위
+- [x] ■2 붙여넣기 뒤 그 칸이 든 탭으로 돌아가기 · 쓸 칸 없음 안내 · 휴대폰 덮기·뒤로가기 · 팝업창 모드·새 창 그대로 · 단위 → **11-19 클라우드**: `paste.pasteIntoTarget`이 그 칸이 숨은 탭이면 먼저 보이고(flushSync - 숨은 칸에는 커서를 못 둔다) 커서 자리에 · 그림을 못 받는 칸이면 클립보드 탭으로 되돌림 · 클립보드 탭 ↗ = 클립보드 팝업창(같은 id) → 주고받기(BroadcastChannel)·'마지막으로 글을 쓰던 창'을 창 위치와 상관없이 늘 켬(오른쪽 칸 모드에서도 팝업창이 큰 창 메모에 붙인다) · 단위(탭 돌아가기 - 빼면 틀림 확인·그림·↗) · 크롬: 메모 쓰다 📋 → 항목 → 메모 탭·커서 자리·초점, ↗ 팝업창에서 누르면 큰 창 메모에
 - [ ] ■3 설명서(클립보드·창 위치 둘레) · 점검 고침(inspect-clipboard-popup·scroll·shell + grep `data-clipboard`) · 크롬 PC 1400 · 커밋
 **끝 조건**: 왼쪽 클립보드 칸이 없고 📋가 창 칸의 탭을 연다 · 메모를 쓰다 클립보드 탭에서 항목을 누르면 메모에 붙고 메모 탭이 보인다 · 단위·점검 통과.
 

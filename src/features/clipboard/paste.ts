@@ -1,8 +1,11 @@
-// 클립보드 칸 항목을 글 쓰던 칸에 붙여넣기 (V4 lib/clipboardHistory.ts의 붙여넣기 부분).
+// 클립보드 항목을 글 쓰던 칸에 붙여넣기 (V4 lib/clipboardHistory.ts의 붙여넣기 부분).
 //   항목을 누르면 마지막으로 글을 쓰던 칸(입력칸·글 칸)의 커서 자리에 넣는다.
+//   그 칸이 창 칸의 다른 탭에 숨어 있으면(클립보드 탭을 보는 동안) 그 탭을 먼저 보인다 - 붙은 것이 보이게(P47-1 ⓒ).
 //   그림은 그 칸에 Ctrl+V 한 것처럼 넘긴다(메모·기록 칸은 가로채 드라이브에 올려 붙인다 - notes/attach).
 //   받을 칸이 없으면 시스템 클립보드에 도로 담아 두고, 원하는 곳에서 Ctrl+V 하게 한다.
+import { flushSync } from 'react-dom';
 import { copyClipToSystem, type ClipItem } from '../../data/clipboard';
+import { activateSideSlot, activeOf, useSidePopups } from '../../ui/sideColumn';
 
 const TEXT_INPUT_TYPES = ['text', 'search', 'url', 'email', 'tel', 'number', ''];
 
@@ -15,7 +18,7 @@ export function isEditable(el: Element | null): el is HTMLElement {
 
 let lastEditable: HTMLElement | null = null;
 
-/** 마지막으로 글을 쓰던 칸. 클립보드 칸 안의 칸은 세지 않는다. 기억했으면 true */
+/** 마지막으로 글을 쓰던 칸. 클립보드 목록 안의 칸은 세지 않는다. 기억했으면 true */
 export function rememberEditable(el: Element | null): boolean {
   if (!isEditable(el)) return false;
   if (el.closest('[data-clipboard-panel]')) return false;
@@ -55,6 +58,19 @@ function insertText(el: HTMLElement, text: string) {
   }
 }
 
+/**
+ * 그 칸이 창 칸의 숨은 탭에 있으면 그 탭을 보인다 - 숨은(display:none) 칸에는 커서를 둘 수 없고 붙은 것도 안 보인다.
+ * 곧바로 그려야(flushSync) 이어서 커서를 둘 수 있다. 탭 밖(하루 화면 등)이나 이미 보이는 탭이면 그대로.
+ * 보이던 탭을 돌려준다 (바꾸지 않았으면 null) - 붙이지 못하면 그 탭으로 되돌린다.
+ */
+function showSlotOf(el: HTMLElement): string | null {
+  const slot = el.closest<HTMLElement>('[data-side-slot]')?.getAttribute('data-side-slot');
+  const shown = activeOf(useSidePopups.getState());
+  if (!slot || shown === slot) return null;
+  flushSync(() => activateSideSlot(slot));
+  return shown;
+}
+
 export type PasteResult = 'pasted' | 'copied' | 'failed';
 
 /**
@@ -64,10 +80,19 @@ export type PasteResult = 'pasted' | 'copied' | 'failed';
 export function pasteIntoTarget(item: ClipItem): boolean {
   const target = getPasteTarget();
   if (!target) return false;
+  const before = showSlotOf(target);
   if (item.kind === 'text') {
     insertText(target, item.text || '');
     return true;
   }
+  const pasted = pasteImage(target, item);
+  // 그림을 받지 못하는 칸이면 보던 탭(클립보드)으로 되돌린다 - 시스템 클립보드에 담는다는 안내를 거기서 본다
+  if (!pasted && before) activateSideSlot(before);
+  return pasted;
+}
+
+/** 그림은 그 칸에 Ctrl+V 한 것처럼 넘긴다. 칸이 가로채 올리면(메모·기록 칸) true */
+function pasteImage(target: HTMLElement, item: ClipItem): boolean {
   if (item.kind === 'image' && item.blob) {
     target.focus();
     try {

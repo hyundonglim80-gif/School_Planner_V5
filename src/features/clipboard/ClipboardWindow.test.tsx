@@ -8,7 +8,7 @@ import { runShortcut } from '../../app/keys';
 import { setPopupStyle } from '../../app/layoutPrefs';
 import WindowHost from '../../app/WindowHost';
 import { openWindow, registerWindow, resetWindowsForTest, useWindows } from '../../app/windows';
-import { addClipText, loadClipboard, resetClipboardForTest, useClipboard, wipeClipboard } from '../../data/clipboard';
+import { addClipImage, addClipText, loadClipboard, resetClipboardForTest, useClipboard, wipeClipboard } from '../../data/clipboard';
 import { useSession } from '../../data/session';
 import SideTabs from '../../ui/SideTabs';
 import { CLIPBOARD_WINDOW, setClipboardOpen, useClipboardCapture, useClipboardPanel } from './capture';
@@ -141,6 +141,50 @@ describe('클립보드 탭', () => {
     await act(async () => fireEvent.click(q(`[data-clip-remove="${id}"]`)!));
     expect(useClipboard.getState().items).toEqual([]);
     expect(useClipboard.getState().trash.map((t) => t.text)).toEqual(['가운데']);
+  });
+
+  it('다른 탭(메모 칸)에 쓰던 글이면 그 탭으로 돌아가 커서 자리에 붙인다 (P47-1 ⓒ)', async () => {
+    await addClipText('붙임');
+    render(<Host />);
+    act(() => void openWindow('devPanel', { n: 1 }));
+    await waitFor(() => expect(q('[data-test-text]')).not.toBeNull());
+    const ta = q('[data-test-text]') as HTMLTextAreaElement;
+    fireEvent.change(ta, { target: { value: '가나' } });
+    ta.focus();
+    ta.setSelectionRange(1, 1);
+    // 📋 → 클립보드 탭이 보이고 메모 칸은 숨는다
+    fireEvent.click(q('[data-clipboard-toggle]')!);
+    const id = useClipboard.getState().items[0].id;
+    await waitFor(() => expect(q(`[data-clip-paste="${id}"]`)).not.toBeNull());
+    const panelSlot = () => ta.closest<HTMLElement>('[data-side-slot]')!;
+    const clipSlot = () => q('[data-clipboard-panel]')!.closest<HTMLElement>('[data-side-slot]')!;
+    await waitFor(() => expect(panelSlot().style.display).toBe('none'));
+    ta.blur();
+    await act(async () => fireEvent.click(q(`[data-clip-paste="${id}"]`)!));
+    expect(ta.value).toBe('가붙임나');
+    expect(panelSlot().style.display).not.toBe('none');
+    expect(clipSlot().style.display).toBe('none');
+    expect(document.activeElement).toBe(ta);
+    // 클립보드 탭은 숨은 채 남는다 - 📋 = 다시 보이기
+    expect(clipOpen()).toBe(true);
+    expect(q('[data-clipboard-toggle]')?.getAttribute('data-clipboard-toggle')).toBe('closed');
+  });
+
+  it('그림을 받지 못하는 칸이면 클립보드 탭에 그대로 남는다', async () => {
+    await addClipImage(new Blob(['x'], { type: 'image/png' }));
+    render(<Host />);
+    act(() => void openWindow('devPanel', { n: 1 }));
+    await waitFor(() => expect(q('[data-test-text]')).not.toBeNull());
+    const ta = q('[data-test-text]') as HTMLTextAreaElement;
+    ta.focus();
+    fireEvent.click(q('[data-clipboard-toggle]')!);
+    const id = useClipboard.getState().items[0].id;
+    await waitFor(() => expect(q(`[data-clip-paste="${id}"]`)).not.toBeNull());
+    const clipSlot = () => q('[data-clipboard-panel]')!.closest<HTMLElement>('[data-side-slot]')!;
+    await waitFor(() => expect(clipSlot().style.display).not.toBe('none'));
+    await act(async () => fireEvent.click(q(`[data-clip-paste="${id}"]`)!));
+    await waitFor(() => expect(clipSlot().style.display).not.toBe('none'));
+    expect(ta.closest<HTMLElement>('[data-side-slot]')!.style.display).toBe('none');
   });
 
   it('받을 칸이 없으면 시스템 클립보드에 담고 알린다', async () => {
