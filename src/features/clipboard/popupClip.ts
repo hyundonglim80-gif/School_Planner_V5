@@ -5,8 +5,10 @@
 //   - 항목을 누르면 마지막으로 글을 쓰던 창(큰 창·메모 팝업창 - 글 칸을 누를 때 그 창 표시 WIN_ID를 이 기기에 적는다)에 부탁해
 //     그 창의 커서 자리에 넣는다(paste.pasteIntoTarget). 그 창을 닫았거나 받을 칸이 없으면 팝업창이 시스템 클립보드에 담는다(Ctrl+V).
 //   - 브라우저가 팝업창을 막으면 지금처럼 왼쪽 칸이 열린다(capture.toggleClipboard). 휴대폰·오른쪽 칸 모드는 그대로 왼쪽 칸.
+//   - 주고받기·'마지막으로 글을 쓰던 창' 적기는 창 위치와 상관없이 늘 켠다(P47-1 뒤 11-19) - 오른쪽 칸 모드에서 📋 클립보드 탭을 ↗로
+//     새 창에 옮기면 같은 id라 이 팝업창이 되는데, 꺼 두면 항목을 눌러도 큰 창에 붙지 않고 늘 시스템 클립보드에 담기만 했다.
 import { useEffect } from 'react';
-import { popupWindowsOn, useLayoutPrefs, windowMode } from '../../app/layoutPrefs';
+import { popupWindowsOn } from '../../app/layoutPrefs';
 import { openPopupWindow } from '../../app/popupWindows';
 import { copyClipToSystem, reloadClipboard, setClipboardWriteListener, type ClipItem } from '../../data/clipboard';
 import { CLIPBOARD_POPOUT_ID, POPOUT } from '../../ui/popout';
@@ -46,9 +48,9 @@ export function openClipboardPopup(): boolean {
   return openPopupWindow(CLIPBOARD_POPOUT_ID, null, () => true);
 }
 
-/** 글 칸을 눌렀다 - 이 창이 마지막으로 글을 쓰던 창 (팝업창 모드에서만 적는다) */
+/** 글 칸을 눌렀다 - 이 창이 마지막으로 글을 쓰던 창 (창 위치와 상관없이 - 클립보드 탭 ↗ 팝업창도 여기로 붙인다) */
 export function markEditorWindow() {
-  if (IN_CLIPBOARD_POPUP || !popupWindowsOn()) return;
+  if (IN_CLIPBOARD_POPUP) return;
   try {
     localStorage.setItem(LAST_EDITOR_KEY, WIN_ID);
   } catch {
@@ -117,13 +119,12 @@ export function handleClipMessage(m: unknown, uid: string) {
 }
 
 /**
- * 창 위치가 팝업창일 때 다른 창과 주고받기 - 큰 창·메모 팝업창·클립보드 팝업창이 늘 부른다(capture.useClipboardCapture).
+ * 다른 창과 주고받기 - 큰 창·메모 팝업창·클립보드 팝업창이 늘 부른다(capture.useClipboardCapture). 창 위치와 상관없이 켠다(위 머리말).
  * 붙여넣기 부탁을 받고, 이 창이 목록을 바꾸면 알리고, 다른 창이 바꾸면 다시 읽는다.
  */
 export function useClipboardBridge(uid: string | null) {
-  const on = useLayoutPrefs((s) => IN_CLIPBOARD_POPUP || windowMode(s.popupStyle) === 'popup');
   useEffect(() => {
-    if (!on || !uid || typeof BroadcastChannel === 'undefined') return;
+    if (!uid || typeof BroadcastChannel === 'undefined') return;
     const ch = new BroadcastChannel(CHANNEL);
     channel = ch;
     ch.onmessage = (e: MessageEvent) => handleClipMessage(e.data, uid);
@@ -144,5 +145,5 @@ export function useClipboardBridge(uid: string | null) {
       if (channel === ch) channel = null;
       ch.close();
     };
-  }, [on, uid]);
+  }, [uid]);
 }
