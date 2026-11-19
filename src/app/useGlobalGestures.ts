@@ -10,10 +10,10 @@ import { isDatelessScope } from './route';
 const isWindowOpen = () => isAnyLayerOpen() || !!document.querySelector('[role="dialog"]');
 
 /**
- * 옆 칸(오른쪽 줄의 쓰는 칸·왼쪽 클립보드 칸) 안의 손짓은 그 칸의 것이다 - 가운데 화면의 날짜·화면을 옮기지 않는다.
+ * 옆 칸(창 칸의 창·쓰는 칸·클립보드 탭) 안의 손짓은 그 칸의 것이다 - 가운데 화면의 날짜·화면을 옮기지 않는다.
  * 쓰는 칸은 창 층에 들지 않아(isWindowOpen이 모른다) 긴 메모를 굴리다 끝에 닿으면 가운데 날짜가 넘어갔다(P10-5 사용자 의견 6e).
  */
-const inSideColumn = (t: EventTarget | null) => t instanceof Element && !!t.closest('#side-column, [data-clipboard-panel]');
+const inSideColumn = (t: EventTarget | null) => t instanceof Element && !!t.closest('#side-column');
 
 /**
  * 한눈에 화면(P24)의 칸 안 - 칸마다 스크롤해서 페이지는 늘 '끝'이다. 칸 안 휠·위아래 밀기는 그 칸의 것(날짜를 넘기지 않는다).

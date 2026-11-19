@@ -1,9 +1,9 @@
-// 화면 보기 설정 (V4 useAppStore의 popupStyle·rightPanelWidth·leftPanelWidth·fontScale).
+// 화면 보기 설정 (V4 useAppStore의 popupStyle·rightPanelWidth·fontScale).
 //   popupStyle: 환경설정 '창 위치' - 오른쪽 칸(side) / 팝업창(popup - PC만, 11-09) / 가운데 창(center - 휴대폰만).
 //     PC의 옛 '가운데 창'은 팝업창으로 본다(11-09 사용자 요청 - PC 고르기에서 가운데 창을 팝업창으로 바꿨다). 실제로 쓰는 값은 windowMode().
 //   fontSizes: 글자 크기 - 화면마다 %(메모 요청 #145 - 옛 다섯 단계 fontScale을 바꿨다). 팝업창은 'popout' 하나.
 //   이 둘은 계정 설정(PC·휴대폰 따로)과 맞춘다 - app/prefs.ts. 여기 값은 이 기기 사본(열자마자 그리기용).
-//   rightPanelWidth·leftPanelWidth: 경계선을 끌어 바꾼 폭(px), null이면 기본 폭. 이 기기에만.
+//   rightPanelWidth: 창 칸의 경계선을 끌어 바꾼 폭(px), null이면 기본 폭. 이 기기에만. (옛 왼쪽 클립보드 칸 폭 leftPanelWidth는 P47-1에 걷었다 - 클립보드가 창 칸의 탭)
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
@@ -28,7 +28,6 @@ interface LayoutPrefs {
   popupStyle: PopupStyle;
   fontSizes: FontSizes;
   rightPanelWidth: number | null;
-  leftPanelWidth: number | null;
 }
 
 /** 글자 크기를 따로 기억하는 곳 - 화면 일곱 + 팝업창 */
@@ -41,13 +40,15 @@ export const currentFontPage = (): string => (POPOUT ? POPOUT_FONT_PAGE : useNav
 export const legacyFontPages = (scale: unknown): FontSizes | undefined => legacyFontSizes(scale, FONT_PAGES);
 
 export const useLayoutPrefs = create<LayoutPrefs>()(
-  persist((): LayoutPrefs => ({ popupStyle: 'side', fontSizes: {}, rightPanelWidth: null, leftPanelWidth: null }), {
+  persist((): LayoutPrefs => ({ popupStyle: 'side', fontSizes: {}, rightPanelWidth: null }), {
     name: 'sp5-layout',
     // 1 = 글자 크기가 화면마다 % (메모 요청 #145). 옛 저장(0)의 단계 하나는 모든 화면에 같은 %로 옮긴다
-    version: 1,
+    // 2 = 옛 왼쪽 클립보드 칸 폭(leftPanelWidth)을 버린다 (P47-1)
+    version: 2,
     migrate: (old) => {
       const o = old && typeof old === 'object' ? (old as Record<string, unknown>) : {};
-      const { fontScale, ...rest } = o;
+      // 버리는 칸은 이름 앞에 _
+      const { fontScale, leftPanelWidth: _leftPanelWidth, ...rest } = o;
       return { ...rest, fontSizes: readFontSizes(o.fontSizes) ?? legacyFontPages(fontScale) ?? {} } as unknown as LayoutPrefs;
     },
     // 저장해 둔 글자 크기는 화면이 그려지기 전에 입힌다 - 나중에 입히면 기본 크기로 한 번 그려졌다가 바뀌어 열 때마다 글자가 튄다(V4)
@@ -90,7 +91,6 @@ export function stepFontSize(step: -1 | 0 | 1, page = currentFontPage()): number
 
 export const setPopupStyle = (popupStyle: PopupStyle) => useLayoutPrefs.setState({ popupStyle });
 export const setRightPanelWidth = (rightPanelWidth: number | null) => useLayoutPrefs.setState({ rightPanelWidth });
-export const setLeftPanelWidth = (leftPanelWidth: number | null) => useLayoutPrefs.setState({ leftPanelWidth });
 
 /**
  * 이 기기에서 실제로 쓰는 창 위치. PC는 오른쪽 칸 / 팝업창(옛 가운데 창도 팝업창), 휴대폰은 오른쪽 칸 / 가운데 창

@@ -1,13 +1,13 @@
-// 클립보드 팝업창 (#140 - 환경설정 '창 위치'가 팝업창이면 왼쪽 📋가 클립보드를 브라우저 팝업창으로 연다).
+// 클립보드 팝업창 (#140 - 환경설정 '창 위치'가 팝업창이면 📋가 클립보드를 브라우저 팝업창으로 연다).
 //
-//   - 팝업창은 같은 앱을 주소 ?popout={"id":"clipboard"}로 따로 띄운다(ClipboardPopout - 창 목록의 창이 아니다).
+//   - 창 목록의 클립보드 창 'clipboard'(P47-1 - 큰 창에서는 창 칸의 탭)를 창 목록이 팝업창으로 띄운다 - 같은 앱을 주소 ?popout={"id":"clipboard"}로
+//     따로 띄워 창 틀 없이 목록만 그린다(ClipboardPopout).
 //     목록은 이 기기 저장소(IndexedDB)를 함께 쓰고, 한 창이 바꾸면 다른 창에 알려 다시 읽는다(BroadcastChannel).
 //   - 항목을 누르면 마지막으로 글을 쓰던 창(큰 창·메모 팝업창 - 글 칸을 누를 때 그 창 표시 WIN_ID를 이 기기에 적는다)에 부탁해
 //     그 창의 커서 자리에 넣는다(paste.pasteIntoTarget). 그 창을 닫았거나 받을 칸이 없으면 팝업창이 시스템 클립보드에 담는다(Ctrl+V).
-//   - 브라우저가 팝업창을 막으면 지금처럼 왼쪽 칸이 열린다(capture.toggleClipboard). 휴대폰·오른쪽 칸 모드는 그대로 왼쪽 칸.
+//   - 브라우저가 팝업창을 막으면 다른 창처럼 큰 창 가운데에 클립보드 창이 뜬다(app/windows). 휴대폰·오른쪽 칸 모드는 창 칸의 탭.
 import { useEffect } from 'react';
 import { popupWindowsOn, useLayoutPrefs, windowMode } from '../../app/layoutPrefs';
-import { openPopupWindow } from '../../app/popupWindows';
 import { copyClipToSystem, reloadClipboard, setClipboardWriteListener, type ClipItem } from '../../data/clipboard';
 import { CLIPBOARD_POPOUT_ID, POPOUT } from '../../ui/popout';
 import { pasteIntoTarget, type PasteResult } from './paste';
@@ -38,12 +38,6 @@ function post(msg: Msg) {
   } catch {
     /* 닫히는 중 */
   }
-}
-
-/** 큰 창에서 📋 = 클립보드 팝업창. 띄웠으면(이미 열린 것을 앞으로 가져왔으면) true - 못 띄우면 부르는 쪽이 왼쪽 칸을 연다. 누른 일 안에서 부른다 */
-export function openClipboardPopup(): boolean {
-  if (POPOUT || !popupWindowsOn()) return false;
-  return openPopupWindow(CLIPBOARD_POPOUT_ID, null, () => true);
 }
 
 /** 글 칸을 눌렀다 - 이 창이 마지막으로 글을 쓰던 창 (팝업창 모드에서만 적는다) */

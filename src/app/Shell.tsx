@@ -27,8 +27,8 @@ import { useChatReceiver } from '../features/chat/receive';
 import { useClaudeReceiver } from '../features/notes/claudeReceive';
 import { useWeekShortcuts } from '../features/week/prefs';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
-import { LEFT_COLUMN_CSS_WIDTH, useClipboardCapture, useClipboardPanel } from '../features/clipboard/capture';
-import ClipboardColumn from '../features/clipboard/ClipboardColumn';
+import { useClipboardCapture } from '../features/clipboard/capture';
+import ClipboardToggle from '../features/clipboard/ClipboardToggle';
 import AutoBackupBanner from '../features/backup/AutoBackupBanner';
 import StorageAttachBanner from '../features/backup/StorageAttachBanner';
 import DraftsBanner from '../features/drafts/DraftsBanner';
@@ -109,30 +109,25 @@ export default function Shell() {
   useChatReceiver();
   // 🤖 Claude 답 - 답 안내·푸시 알림으로 연 메모 (P23-3 - 새 창은 하지 않는다)
   useClaudeReceiver();
-  // 복사한 것 모으기 (왼쪽 📋 클립보드 칸 - 닫혀 있어도 모은다)
+  // 복사한 것 모으기 (📋 클립보드 탭 - 닫혀 있어도 모은다)
   useClipboardCapture();
   // 서버가 아직 받지 않은 저장이 있으면 탭을 닫기 전에 묻는다 (P14-6 ■1 - 끊긴 동안 쓰기는 메모리에만)
   usePendingWritesGuard();
 
   // 오른쪽 줄(창·쓰는 칸)이 하나라도 서 있으면 그 폭만큼 화면을 줄인다. 폭은 모든 칸이 같다.
   const rightOpen = useSidePopups((s) => s.order.length > 0);
-  // 왼쪽 클립보드 칸이 화면 옆에 붙어 있으면 그 폭만큼 화면을 오른쪽으로 민다 (휴대폰은 위에 덮는다)
   const docked = useDocked();
-  const leftOpen = useClipboardPanel((s) => s.open) && docked;
   // 휴대폰은 창이 화면을 덮는다 - 그때 '저장을 기다립니다' 띠는 창 위에 뜬다
   const windowCovers = useWindows((s) => s.windows.length > 0) && !docked;
   // 머리줄 접기 - 내용만 크게 본다 (메모 요청 #142, 이 기기에 기억)
   const folded = useHeaderFold((s) => s.folded);
   // 경계선을 끌어 바꾼 폭. 칸들은 body 아래에 그려지므로(createPortal) 문서 맨 위에 건다.
   const rightPanelWidth = useLayoutPrefs((s) => s.rightPanelWidth);
-  const leftPanelWidth = useLayoutPrefs((s) => s.leftPanelWidth);
   useEffect(() => {
     const root = document.documentElement.style;
     if (rightPanelWidth) root.setProperty('--right-column-w', `${rightPanelWidth}px`);
     else root.removeProperty('--right-column-w');
-    if (leftPanelWidth) root.setProperty('--left-column-w', `${leftPanelWidth}px`);
-    else root.removeProperty('--left-column-w');
-  }, [rightPanelWidth, leftPanelWidth]);
+  }, [rightPanelWidth]);
 
   // 머리줄 높이를 --app-header-h로 알려 둔다. 머리줄에 붙어 따라 내려가는 칸(메모 화면의 라벨 거르개 등)이
   // 그만큼 아래에 멈춘다. 머리줄은 줄바꿈과 D-Day 표시에 따라 높이가 달라지므로 재서 쓴다.
@@ -172,7 +167,7 @@ export default function Shell() {
   return (
     <div
       className="min-h-screen bg-bg-body text-slate-900 transition-[padding] duration-200"
-      style={{ paddingRight: rightOpen ? RIGHT_COLUMN_CSS_WIDTH : undefined, paddingLeft: leftOpen ? LEFT_COLUMN_CSS_WIDTH : undefined }}
+      style={{ paddingRight: rightOpen ? RIGHT_COLUMN_CSS_WIDTH : undefined }}
     >
       {/*
         머리줄 접기 (메모 요청 #142 - app/headerFold): 접으면 머리줄 요소는 높이 0으로 화면 위에 붙어 남고(높이를 재는 곳 - --app-header-h·한눈에 높이·오늘로 가기 - 이 0을 받는다),
@@ -223,9 +218,6 @@ export default function Shell() {
       <ForwardMarks />
       {/* '구글 로그인이 필요합니다' - 드라이브·캘린더를 쓰다 토큰이 만료됐는데 로그인 창이 막힐 때 (data/google) */}
       <GoogleLoginPrompt />
-      {/* 왼쪽 📋 클립보드 칸 (이 기기에만) */}
-      <ClipboardColumn />
-      {leftOpen && <ColumnResizer side="left" width={LEFT_COLUMN_CSS_WIDTH} />}
       {/* 사진 크게 보기 (ui/imageViewer) - 열 때만 나눠 받는다 (P44-2) */}
       {viewerOpen && (
         <Suspense fallback={null}>
@@ -254,6 +246,8 @@ export default function Shell() {
           ▶
         </button>
       )}
+      {/* 📋 클립보드 (이 기기에만) - 창 칸의 탭으로 연다 (P47-1). 칸이 닫혀 있으면 오른쪽 가장자리, 열려 있으면 ▶ 아래 */}
+      <ClipboardToggle />
     </div>
   );
 }

@@ -1,14 +1,17 @@
-// 창 위치 '팝업창'이면 📋 = 클립보드 팝업창 (#140) - 못 띄우면 왼쪽 칸 · 글 칸을 누른 창 = 마지막으로 글을 쓰던 창 ·
+// 창 위치 '팝업창'이면 📋 = 클립보드 팝업창 (#140) - 못 띄우면 큰 창 가운데 (P47-1 - 클립보드는 창 목록의 창) · 글 칸을 누른 창 = 마지막으로 글을 쓰던 창 ·
 // 그 창이 부탁을 받으면 커서 자리에 넣는다 · 받을 창이 없으면 팝업창이 시스템 클립보드에 담는다
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { useState } from 'react';
+import { resetHistoryForTest } from '../../app/history';
 import { setPopupStyle } from '../../app/layoutPrefs';
 import { resetPopupWindowsForTest } from '../../app/popupWindows';
+import WindowHost from '../../app/WindowHost';
+import { registerWindow, resetWindowsForTest, useWindows } from '../../app/windows';
 import { loadClipboard, resetClipboardForTest, wipeClipboard, type ClipItem } from '../../data/clipboard';
 import { useSession } from '../../data/session';
-import { setClipboardOpen, useClipboardCapture, useClipboardPanel } from './capture';
-import ClipboardColumn from './ClipboardColumn';
+import { CLIPBOARD_WINDOW, setClipboardOpen, useClipboardCapture } from './capture';
+import ClipboardToggle from './ClipboardToggle';
 import { handleClipMessage, pasteFromPopup, WIN_ID } from './popupClip';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
@@ -22,7 +25,8 @@ function Host() {
   return (
     <>
       <textarea data-target value={text} onChange={(e) => setText(e.target.value)} />
-      <ClipboardColumn />
+      <ClipboardToggle />
+      <WindowHost />
     </>
   );
 }
@@ -62,9 +66,14 @@ function fakeOpen(blocked = false) {
 
 const textClip = (text: string): ClipItem => ({ id: 'c1', kind: 'text', text, key: `t:${text}`, createdAt: 1 });
 
+const clipOpen = () => useWindows.getState().windows.some((w) => w.id === CLIPBOARD_WINDOW);
+
 beforeEach(async () => {
   pc();
   resetPopupWindowsForTest();
+  resetHistoryForTest();
+  resetWindowsForTest();
+  registerWindow({ id: CLIPBOARD_WINDOW, title: '클립보드', icon: '📋', kind: 'side', help: 'clipboard', load: () => import('./ClipboardWindow') });
   resetClipboardForTest();
   await wipeClipboard('me');
   setClipboardOpen(false);
@@ -75,40 +84,44 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
+  act(() => useWindows.setState({ windows: [] }));
   setPopupStyle('side');
   vi.restoreAllMocks();
   Object.defineProperty(navigator, 'userActivation', { configurable: true, value: { isActive: false, hasBeenActive: false } });
 });
 
 describe('클립보드 팝업창 (#140)', () => {
-  it('창 위치가 팝업창이면 📋 = 클립보드 팝업창 (왼쪽 칸은 열지 않는다)', () => {
+  it('창 위치가 팝업창이면 📋 = 클립보드 팝업창 (큰 창에는 탭을 열지 않는다)', () => {
     setPopupStyle('popup');
     const { urls } = fakeOpen();
     const r = render(<Host />);
     fireEvent.click(q('[data-clipboard-toggle]')!);
     expect(urls).toHaveLength(1);
     expect(JSON.parse(new URL(urls[0]).searchParams.get('popout')!)).toMatchObject({ id: 'clipboard' });
-    expect(useClipboardPanel.getState().open).toBe(false);
-    expect(q('[data-clipboard-panel]')).toBeNull();
+    expect(clipOpen()).toBe(false);
+    // 열려 있으면 새로 띄우지 않고 앞으로
+    fireEvent.click(q('[data-clipboard-toggle]')!);
+    expect(urls).toHaveLength(1);
     r.unmount();
   });
 
-  it('브라우저가 팝업창을 막으면 왼쪽 칸을 연다', () => {
+  it('브라우저가 팝업창을 막으면 큰 창 가운데에 연다 (다른 창과 같다)', async () => {
     setPopupStyle('popup');
     fakeOpen(true);
     const r = render(<Host />);
     fireEvent.click(q('[data-clipboard-toggle]')!);
-    expect(useClipboardPanel.getState().open).toBe(true);
-    expect(q('[data-clipboard-panel]')).not.toBeNull();
+    expect(clipOpen()).toBe(true);
+    await waitFor(() => expect(q('[data-clipboard-panel]')).not.toBeNull());
+    expect(q('[data-clipboard-panel]')!.closest('[data-popup-frame]')?.getAttribute('data-popup-frame')).toBe('center');
     r.unmount();
   });
 
-  it('오른쪽 칸 모드는 예전처럼 왼쪽 칸 (팝업창을 띄우지 않는다)', () => {
+  it('오른쪽 칸 모드는 창 칸의 탭 (팝업창을 띄우지 않는다)', async () => {
     const { spy } = fakeOpen();
     const r = render(<Host />);
     fireEvent.click(q('[data-clipboard-toggle]')!);
     expect(spy).not.toHaveBeenCalled();
-    expect(useClipboardPanel.getState().open).toBe(true);
+    await waitFor(() => expect(q('#side-column [data-clipboard-panel]')).not.toBeNull());
     r.unmount();
   });
 

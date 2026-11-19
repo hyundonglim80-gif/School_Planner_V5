@@ -22,9 +22,7 @@ export function resetBoardRatio(key: 'main' | 'day' | 'memo'): number | null {
   return key === 'main' ? local.boardMain : key === 'day' ? local.boardDay : local.boardMemo;
 }
 
-/** 오른쪽 칸·왼쪽 클립보드 칸 폭의 초기화 값 (px, null = 앱 기본) */
-export function resetPanelWidth(side: 'left' | 'right'): number | null {
-  const local = values()?.local;
-  if (!local) return null;
-  return side === 'right' ? local.rightPanelWidth : local.leftPanelWidth;
+/** 창 칸 폭의 초기화 값 (px, null = 앱 기본) */
+export function resetPanelWidth(): number | null {
+  return values()?.local.rightPanelWidth ?? null;
 }

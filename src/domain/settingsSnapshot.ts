@@ -3,7 +3,7 @@
 //   묶음 = { common, pc?: { prefs, local, at }, mobile?: … } - 칸마다 **기본값과 다른 것만**(설정 문서와 같은 규칙 - 없는 칸 = 앱 기본값).
 //     common = 계정 칸 가운데 보기·쓰는 법(이월 기간·휴지통·알림 소리·색 테마·색약 배려·꾸미기)
 //     prefs  = 기기 칸(설정 문서 pc|mobile) - 글자 크기·창 위치·시작 화면·단축키 넷·주말/일정/학급 표시·스크롤 이동
-//     local  = 이 기기에만 두는 것 - 화면 비율(한눈에 경계선 셋·오른쪽/왼쪽 칸 폭)·밝기·고대비·부드럽게·머리줄 접기·메모 카드/목록·정렬·년간 보기·작년 이맘때
+//     local  = 이 기기에만 두는 것 - 화면 비율(한눈에 경계선 셋·창 칸 폭)·밝기·고대비·부드럽게·머리줄 접기·메모 카드/목록·정렬·년간 보기·작년 이맘때
 //   빼는 것 = 사람마다 다른 자료(학교·교사 유형·교시·방학·수업 종·D-Day·개인 공휴일·사진 폴더·관찰 문구·자동 백업·띠 닫음·새 학년도)와 학기 칩(때를 따른다).
 //   기기 종류마다 따로(⑤): PC에서 저장하면 PC 몫 + 계정 몫만 바뀌고 휴대폰 몫은 그대로.
 //
@@ -43,9 +43,8 @@ export interface LocalPrefs {
   boardMain: number | null;
   boardDay: number | null;
   boardMemo: number | null;
-  /** 오른쪽 칸·왼쪽 클립보드 칸 폭 (app/layoutPrefs - px, null = 기본) */
+  /** 창 칸 폭 (app/layoutPrefs - px, null = 기본. 옛 왼쪽 클립보드 칸 폭은 P47-1에 걷었다 - 옛 묶음의 그 칸은 읽지 않는다) */
   rightPanelWidth: number | null;
-  leftPanelWidth: number | null;
   /** 화면 밝기 (app/theme - 정하지 않았으면 어둡게) */
   theme: 'light' | 'dark' | 'system';
   /** 고대비·어둡게를 부드럽게 (app/viewAids) */
@@ -73,7 +72,6 @@ export const LOCAL_PREFS: SettingsSpec<LocalPrefs> = {
   boardDay: ratioField,
   boardMemo: ratioField,
   rightPanelWidth: widthField,
-  leftPanelWidth: widthField,
   theme: oneOfField<LocalPrefs['theme']>('dark', ['light', 'dark', 'system']),
   contrast: boolField(false),
   dim: boolField(false),

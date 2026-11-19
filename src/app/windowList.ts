@@ -17,6 +17,7 @@ import { SEATING_WINDOW, type SeatingParams } from '../features/seating/open';
 import { STUDENT_RECORD, type StudentRecordParams } from '../features/studentRecord/open';
 import { EVAL_OVERVIEW, EVAL_WINDOW, sameEvalWindow, type EvalOverviewParams, type EvaluationParams } from '../features/evaluations/open';
 import { CHAT_WINDOW, type ChatParams } from '../features/chat/open';
+import { CLIPBOARD_POPOUT_ID } from '../ui/popout';
 import { runShortcut } from './keys';
 import { closeAllWindows, openWindow, registerWindow } from './windows';
 
@@ -245,6 +246,17 @@ registerWindow<ChatParams | undefined>({
   kind: 'side',
   help: 'chat',
   load: () => import('../features/chat/ChatWindow'),
+});
+
+// 📋 클립보드 (P47-1 - 옛 왼쪽 칸을 창 칸의 탭으로). 창 칸 쪽 가장자리 📋 단추·단축키 'clipboard'(열기/닫기 - features/clipboard/capture).
+// 창 위치가 팝업창이면 같은 id로 클립보드 팝업창(app/App이 features/clipboard/ClipboardPopout을 그린다)
+registerWindow({
+  id: CLIPBOARD_POPOUT_ID,
+  title: '클립보드',
+  icon: '📋',
+  kind: 'side',
+  help: 'clipboard',
+  load: () => import('../features/clipboard/ClipboardWindow'),
 });
 
 // 머리줄 ⏳ D-Day (P5-3) - 단축키 'dday'

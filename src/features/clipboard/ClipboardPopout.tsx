@@ -1,12 +1,13 @@
-// 클립보드 팝업창 (#140 - 창 위치 '팝업창'에서 왼쪽 📋를 누르면 - popupClip). 같은 앱을 ?popout={"id":"clipboard"}로 띄워 목록 칸만 창 가득 그린다.
-//   - 목록·가져오기·모두 지우기·✕(휴지통)는 왼쪽 칸과 같다(ClipboardPanel). 다른 창에서 복사한 것도 곧바로 보인다(이 기기 저장소를 함께 쓴다).
+// 클립보드 팝업창 (#140 - 창 위치 '팝업창'에서 📋를 누르면 - 창 목록이 같은 id 'clipboard'를 팝업창으로 띄운다).
+// 같은 앱을 ?popout={"id":"clipboard"}로 띄워 목록만 창 가득 그린다(app/App - 창 목록의 창 틀 없이).
+//   - 목록·가져오기·모두 지우기·✕(휴지통)는 창 칸의 클립보드 탭과 같다(ClipboardList). 다른 창에서 복사한 것도 곧바로 보인다(이 기기 저장소를 함께 쓴다).
 //   - 항목을 누르면 마지막으로 글을 쓰던 창(큰 창·메모 팝업창)의 커서 자리에 붙는다. 그 창을 닫았으면 클립보드에 담는다(Ctrl+V).
 //   - ✕·ESC = 이 팝업창 닫기. 자리·크기는 이 기기에 남겨 다음에 그 자리에 연다.
 import { useEffect } from 'react';
 import { rememberPopupRect } from '../../app/popupWindows';
 import { CLIPBOARD_POPOUT_ID } from '../../ui/popout';
 import { useClipboardCapture } from './capture';
-import { ClipboardPanel } from './ClipboardColumn';
+import ClipboardList from './ClipboardList';
 import { pasteFromPopup } from './popupClip';
 
 const closeWindow = () => window.close();
@@ -26,12 +27,25 @@ export default function ClipboardPopout() {
   }, []);
 
   return (
-    <div data-popout={CLIPBOARD_POPOUT_ID} className="h-screen bg-bg-body text-slate-900">
-      <ClipboardPanel
-        onClose={closeWindow}
-        pasteWith={pasteFromPopup}
-        hint="누르면 마지막으로 글을 쓰던 창의 커서 자리에 붙여넣습니다(그 창을 닫았으면 클립보드에 담아 Ctrl+V). 이 기기에만 남습니다."
-      />
+    <div data-popout={CLIPBOARD_POPOUT_ID} className="h-screen flex flex-col bg-white text-slate-900">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-slate-100 bg-slate-50/60 shrink-0">
+        <h2 className="text-base font-black text-slate-800">📋 클립보드</h2>
+        <button
+          type="button"
+          data-clipboard-close
+          onClick={closeWindow}
+          title="닫기"
+          className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:bg-slate-200 font-bold cursor-pointer"
+        >
+          ✕
+        </button>
+      </div>
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <ClipboardList
+          pasteWith={pasteFromPopup}
+          hint="누르면 마지막으로 글을 쓰던 창의 커서 자리에 붙여넣습니다(그 창을 닫았으면 클립보드에 담아 Ctrl+V). 이 기기에만 남습니다."
+        />
+      </div>
     </div>
   );
 }

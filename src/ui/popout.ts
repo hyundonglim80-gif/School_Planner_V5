@@ -9,7 +9,10 @@ import { createContext } from 'react';
 
 export const POPOUT_PARAM = 'popout';
 
-/** 클립보드 팝업창의 id (#140 - 창 위치 '팝업창'에서 📋를 누르면). 창 목록의 창이 아니라 app/App이 따로 그린다(features/clipboard/ClipboardPopout) */
+/**
+ * 클립보드 창의 id (= 단축키 id). 큰 창에서는 창 목록의 창 '📋 클립보드' 탭(P47-1 - features/clipboard/ClipboardWindow),
+ * 창 위치 '팝업창'이면 같은 id의 팝업창(#140) - 그 팝업창은 창 틀 없이 app/App이 따로 그린다(features/clipboard/ClipboardPopout)
+ */
 export const CLIPBOARD_POPOUT_ID = 'clipboard';
 
 /** 새 창이 그릴 창 */
