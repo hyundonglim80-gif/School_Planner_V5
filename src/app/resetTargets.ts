@@ -22,9 +22,9 @@ export function resetBoardRatio(key: 'main' | 'day' | 'memo'): number | null {
   return key === 'main' ? local.boardMain : key === 'day' ? local.boardDay : local.boardMemo;
 }
 
-/** 오른쪽 칸·왼쪽 클립보드 칸 폭의 초기화 값 (px, null = 앱 기본) */
-export function resetPanelWidth(side: 'left' | 'right'): number | null {
+/** 창 칸 폭의 초기화 값 (px, null = 앱 기본). 왼쪽 클립보드 칸 폭은 P47-1에 없앴다 - 경계선이 어느 쪽이든 창 칸 폭 */
+export function resetPanelWidth(_side: 'left' | 'right'): number | null {
   const local = values()?.local;
   if (!local) return null;
-  return side === 'right' ? local.rightPanelWidth : local.leftPanelWidth;
+  return local.rightPanelWidth;
 }

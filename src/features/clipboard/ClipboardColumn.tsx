@@ -1,18 +1,19 @@
-// 왼쪽 클립보드 칸 (V4 components/ClipboardPanel.tsx - 오른쪽 줄의 창·쓰는 칸이 아니라 왼쪽 줄 하나라 이름이 Column). 화면 왼쪽 가장자리의 작은 📋 단추로 열고 닫는다.
+// 📋 클립보드 (V4 components/ClipboardPanel.tsx). P47-1(11-19 사용자) - 왼쪽 칸을 없애고 **창 칸의 탭 하나**('📋 클립보드' - ClipboardWindow).
+//   - 이 파일: 목록 칸(ClipboardPanel - 창 칸 탭과 클립보드 팝업창이 함께 쓴다) + 화면 가장자리의 작은 📋 단추(창 칸이 서는 쪽).
 //   - 복사한 것(글자·캡처 그림)을 최신 것이 위로. 모으는 규칙은 data/clipboard, 붙여넣기는 ./paste.
 //   - 항목을 누르면 마지막으로 글을 쓰던 칸에 붙여넣는다 - 누르는 순간 그 칸의 커서를 빼앗지 않게(mousedown 기본 동작을 막는다).
-//   - 넓은 화면(768px~)에서는 화면 옆에 붙어 화면을 오른쪽으로 민다(Shell). 휴대폰은 위에 덮고 뒤로가기로 닫는다.
-//   - 폭은 오른쪽 경계선을 끌어 바꾼다(ColumnResizer - Shell). 단축키 '클립보드 칸 열기 / 닫기'.
-//   - 창 위치가 팝업창(PC)이면 📋가 이 칸 대신 클립보드 팝업창을 연다(#140 - popupClip·ClipboardPopout, 목록 칸 ClipboardPanel을 함께 쓴다).
+//   - 탭은 다른 창과 같은 줄·같은 폭·같은 ×. 휴대폰은 다른 창처럼 위에 덮고 뒤로가기로 닫는다. 단축키 '클립보드 칸 열기 / 닫기'.
+//   - 창 위치가 팝업창(PC)이면 📋가 탭 대신 클립보드 팝업창을 연다(#140 - popupClip·ClipboardPopout).
 import { useEffect, useMemo, useState } from 'react';
-import { useBackLayer } from '../../app/history';
 import { useShortcutTitle } from '../../app/keys';
+import { popupWindowsOn } from '../../app/layoutPrefs';
+import { openWindow, useShownWindowPick, useWindows } from '../../app/windows';
 import { showErrorToast, showToast } from '../../app/toast';
 import { clearClips, clipboardReadGranted, readSystemClipboard, removeClip, useClipboard, type ClipItem } from '../../data/clipboard';
 import { containScroll } from '../../ui/containScroll';
-import { useDocked } from '../../ui/sideColumn';
-import { LEFT_COLUMN_CSS_WIDTH, setClipboardOpen, toggleClipboard, useClipboardPanel } from './capture';
-import { pasteClip, type PasteResult } from './paste';
+import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../../ui/sideColumn';
+import { CLIPBOARD_WINDOW, setClipboardOpen, toggleClipboard, useClipboardPanel } from './capture';
+import { type PasteResult } from './paste';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 
 function timeLabel(ms: number) {
@@ -80,9 +81,10 @@ function ClipRow({ item, pasteWith }: { item: ClipItem; pasteWith: Paste }) {
 const containRef = (el: HTMLElement | null) => (el ? containScroll(el) : undefined);
 
 /**
- * 클립보드 목록 칸 (왼쪽 칸과 클립보드 팝업창이 함께 쓴다 - #140). onClose = ✕·ESC, pasteWith = 항목 누르기, hint = 머리 아래 안내.
+ * 클립보드 목록 칸 (창 칸의 탭과 클립보드 팝업창이 함께 쓴다 - #140). onClose = ✕·ESC, pasteWith = 항목 누르기, hint = 머리 아래 안내.
+ * titled = 제목·✕를 이 칸이 그린다(팝업창). 창 칸 탭은 창 틀(ModalShell)이 제목·✕를 그려 false.
  */
-export function ClipboardPanel({ onClose, pasteWith, hint }: { onClose: () => void; pasteWith: Paste; hint: string }) {
+export function ClipboardPanel({ onClose, pasteWith, hint, titled = true }: { onClose: () => void; pasteWith: Paste; hint: string; titled?: boolean }) {
   const items = useClipboard((s) => s.items);
   const [granted, setGranted] = useState(true);
 
@@ -111,6 +113,7 @@ export function ClipboardPanel({ onClose, pasteWith, hint }: { onClose: () => vo
       }}
     >
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-100 px-4 py-3">
+        {titled && (
         <div className="flex items-center justify-between gap-2">
           <h2 className="text-base font-black text-slate-800">📋 클립보드</h2>
           <button
@@ -123,7 +126,8 @@ export function ClipboardPanel({ onClose, pasteWith, hint }: { onClose: () => vo
             ✕
           </button>
         </div>
-        <p className="text-2xs text-slate-400 mt-1">{hint}</p>
+        )}
+        <p className={`text-2xs text-slate-400 ${titled ? 'mt-1' : ''}`}>{hint}</p>
         <div className="flex items-center gap-1.5 mt-2">
           <button
             type="button"
@@ -170,59 +174,41 @@ export function ClipboardPanel({ onClose, pasteWith, hint }: { onClose: () => vo
   );
 }
 
-const closePanel = () => setClipboardOpen(false);
-
+/**
+ * 화면 가장자리의 작은 📋 단추 (창 칸이 서는 쪽 - 지금은 오른쪽. 창 칸이 서 있으면 그 안쪽 가장자리에 붙는다).
+ * 넓은 화면에서 탭을 열어 둔 채 앱을 다시 열면 탭을 다시 세운다. 휴대폰은 덮으므로 닫고 시작한다.
+ */
 export default function ClipboardColumn() {
-  const open = useClipboardPanel((s) => s.open);
   const docked = useDocked();
   const withShortcut = useShortcutTitle();
+  const sideOpen = useSidePopups((s) => s.order.length > 0) && docked;
+  const tabOpen = useWindows((s) => s.windows.some((w) => w.id === CLIPBOARD_WINDOW));
+  const shown = useShownWindowPick((w) => (w.id === CLIPBOARD_WINDOW ? 'clipboard' : null)) === 'clipboard';
 
-  // 휴대폰에서는 화면을 덮으므로, 열어 둔 채 앱을 다시 열었을 때 곧바로 덮지 않게 닫고 시작한다 (처음 한 번)
+  // 열어 둔 채 다시 열었으면 (처음 한 번): 넓은 화면은 탭을 다시 세우고, 휴대폰은 덮지 않게 닫는다. 팝업창 모드는 팝업창을 스스로 띄우지 않는다
   const [dockedAtStart] = useState(docked);
   useEffect(() => {
-    if (!dockedAtStart && useClipboardPanel.getState().open) setClipboardOpen(false);
+    if (!useClipboardPanel.getState().open) return;
+    if (dockedAtStart && !popupWindowsOn()) openWindow(CLIPBOARD_WINDOW, undefined, { here: true });
+    else setClipboardOpen(false);
   }, [dockedAtStart]);
 
-  // 휴대폰에서 덮은 칸은 뒤로가기로 닫는다 (화면 옆에 붙은 칸은 그대로 둔다)
-  useBackLayer(open && !docked, () => void setClipboardOpen(false));
-
-  const toggle = (
+  return (
     <button
       type="button"
-      data-clipboard-toggle={open ? 'open' : 'closed'}
+      data-clipboard-toggle={tabOpen && shown ? 'open' : 'closed'}
       {...shortcutTarget('clipboard')}
       onMouseDown={(e) => e.preventDefault()}
       onClick={toggleClipboard}
-      title={withShortcut(open ? '클립보드 닫기' : '클립보드 열기 (복사한 것 모아 보기)', 'clipboard')}
-      aria-label={open ? '클립보드 닫기' : '클립보드 열기'}
-      aria-expanded={open}
-      className="fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center rounded-r-xl bg-white/90 border border-l-0 border-slate-200 shadow-md text-xs hover:bg-primary/10 hover:w-7 transition-all cursor-pointer"
-      style={{ left: open && docked ? LEFT_COLUMN_CSS_WIDTH : 0 }}
+      title={withShortcut(tabOpen && shown ? '클립보드 닫기' : '클립보드 열기 (복사한 것 모아 보기)', 'clipboard')}
+      aria-label={tabOpen && shown ? '클립보드 닫기' : '클립보드 열기'}
+      aria-expanded={tabOpen && shown}
+      // 늘 📋 - 바로 아래 '오른쪽 칸 닫기 ▶'와 헷갈리지 않게 글은 바꾸지 않고, 탭이 보이면 눌린 모양
+      className={`fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center rounded-l-xl border border-r-0 shadow-md text-xs hover:bg-primary/10 hover:w-7 transition-all cursor-pointer ${tabOpen && shown ? 'bg-primary/15 border-primary/40' : 'bg-white/90 border-slate-200'}`}
+      // 창 칸이 서 있으면 그 안쪽 가장자리 - 가운데의 '오른쪽 칸 닫기 ▶' 손잡이(Shell) 바로 위
+      style={sideOpen ? { right: RIGHT_COLUMN_CSS_WIDTH, top: 'calc(50% - 4rem)' } : { right: 0 }}
     >
-      {open ? '◀' : '📋'}
+      📋
     </button>
-  );
-
-  if (!open) return toggle;
-
-  const panel = <ClipboardPanel onClose={closePanel} pasteWith={pasteClip} hint="누르면 글을 쓰던 칸에 붙여넣습니다. 이 기기에만 남습니다." />;
-
-  if (docked) {
-    return (
-      <>
-        <div className="fixed top-0 left-0 bottom-0 z-[45] border-r border-slate-200 shadow-xl" style={{ width: LEFT_COLUMN_CSS_WIDTH }}>
-          {panel}
-        </div>
-        {toggle}
-      </>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-[1000] flex">
-      <div className="relative w-full max-w-sm h-full shadow-2xl">{panel}</div>
-      {/* oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 배경 누르기 = 닫기, 키보드는 ESC (P22-7) */}
-      <div className="flex-1 bg-slate-900/40 backdrop-blur-xs" onClick={() => setClipboardOpen(false)} />
-    </div>
   );
 }

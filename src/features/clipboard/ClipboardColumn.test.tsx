@@ -1,16 +1,20 @@
-// 클립보드 칸 - 📋로 열고 닫기·단축키·Ctrl+C 한 글자를 모은다(비밀번호 칸은 빼고)·누르면 글 쓰던 칸의 커서 자리에·받을 칸이 없으면 클립보드에·✕ = 휴지통
+// 클립보드 = 창 칸의 탭 (P47-1) - 📋로 열고 닫기·단축키·열어 둔 채 다시 열면 다시 선다(휴대폰은 닫고 시작)·Ctrl+C 한 글자를 모은다(비밀번호 칸은 빼고)·누르면 글 쓰던 칸의 커서 자리에·받을 칸이 없으면 클립보드에·✕ = 휴지통
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { runShortcut } from '../../app/keys';
+import '../../app/windowList';
+import { useWindows } from '../../app/windows';
 import { addClipText, loadClipboard, resetClipboardForTest, useClipboard, wipeClipboard } from '../../data/clipboard';
 import { useSession } from '../../data/session';
 import { setClipboardOpen, useClipboardCapture, useClipboardPanel } from './capture';
 import ClipboardColumn from './ClipboardColumn';
+import ClipboardWindow from './ClipboardWindow';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 
 const q = (s: string) => document.querySelector<HTMLElement>(s);
+const tabs = () => useWindows.getState().windows.filter((w) => w.id === 'clipboard');
 
 function Host() {
   useClipboardCapture();
@@ -34,22 +38,38 @@ beforeEach(async () => {
   resetClipboardForTest();
   await wipeClipboard('me');
   setClipboardOpen(false);
+  useWindows.setState({ windows: [] });
   document.body.innerHTML = '';
   useSession.setState({ loading: false, user: { uid: 'me', email: '', displayName: '', photoURL: '' } });
   await loadClipboard('me');
 });
 
 describe('클립보드 칸', () => {
-  it('📋 = 열기, ◀·✕ = 닫기, 단축키로도', async () => {
+  it('📋 = 창 칸에 클립보드 탭, 보이는 탭이면 📋·단축키 = 닫기', async () => {
     render(<Host />);
     expect(q('[data-clipboard-toggle="closed"]')?.textContent).toBe('📋');
     fireEvent.click(q('[data-clipboard-toggle]')!);
-    expect(q('[data-clipboard-panel]')).not.toBeNull();
-    expect(q('[data-clipboard-empty]')).not.toBeNull();
-    fireEvent.click(q('[data-clipboard-close]')!);
-    expect(useClipboardPanel.getState().open).toBe(false);
+    expect(tabs()).toHaveLength(1);
+    await waitFor(() => expect(q('[data-clipboard-toggle="open"]')?.textContent).toBe('📋'));
+    fireEvent.click(q('[data-clipboard-toggle]')!);
+    expect(tabs()).toHaveLength(0);
     act(() => void runShortcut('clipboard'));
+    expect(tabs()).toHaveLength(1);
+    act(() => void runShortcut('clipboard'));
+    expect(tabs()).toHaveLength(0);
+  });
+
+  it('탭이 서 있는 동안 열림을 이 기기에 적는다 (닫으면 지운다)', () => {
+    const { unmount } = render(<ClipboardWindow params={undefined} close={() => {}} raise={0} setParams={() => {}} />);
     expect(useClipboardPanel.getState().open).toBe(true);
+    unmount();
+    expect(useClipboardPanel.getState().open).toBe(false);
+  });
+
+  it('넓은 화면: 열어 둔 채 다시 열면 탭이 다시 선다', () => {
+    setClipboardOpen(true);
+    render(<ClipboardColumn />);
+    expect(tabs()).toHaveLength(1);
   });
 
   it('앱 안에서 Ctrl+C 한 글자를 모은다 - 비밀번호 칸은 빼고', async () => {
@@ -69,8 +89,12 @@ describe('클립보드 칸', () => {
 
   it('항목을 누르면 글 쓰던 칸의 커서 자리에 넣는다, ✕ = 휴지통', async () => {
     await addClipText('가운데');
-    setClipboardOpen(true);
-    render(<Host />);
+    render(
+      <>
+        <Host />
+        <ClipboardWindow params={undefined} close={() => {}} raise={0} setParams={() => {}} />
+      </>,
+    );
     const ta = q('[data-target]') as HTMLTextAreaElement;
     ta.focus();
     ta.setSelectionRange(1, 1);
@@ -86,8 +110,7 @@ describe('클립보드 칸', () => {
     const writeText = vi.fn(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
     await addClipText('담기');
-    setClipboardOpen(true);
-    render(<ClipboardColumn />);
+    render(<ClipboardWindow params={undefined} close={() => {}} raise={0} setParams={() => {}} />);
     (document.activeElement as HTMLElement | null)?.blur();
     const id = useClipboard.getState().items[0].id;
     await act(async () => fireEvent.click(q(`[data-clip-paste="${id}"]`)!));
@@ -95,13 +118,11 @@ describe('클립보드 칸', () => {
     expect(q('[data-toast]')?.textContent).toContain('클립보드에 담았습니다');
   });
 
-  it('휴대폰: 열어 둔 채 다시 열면 닫고 시작한다 (화면을 덮지 않게), 열면 덮는다', () => {
+  it('휴대폰: 열어 둔 채 다시 열면 닫고 시작한다 (화면을 덮지 않게 - 탭을 세우지 않는다)', () => {
     wide(false);
     setClipboardOpen(true);
     render(<ClipboardColumn />);
     expect(useClipboardPanel.getState().open).toBe(false);
-    act(() => setClipboardOpen(true));
-    expect(q('[data-clipboard-panel]')).not.toBeNull();
-    expect(q('[data-clipboard-toggle]')).toBeNull();
+    expect(tabs()).toHaveLength(0);
   });
 });

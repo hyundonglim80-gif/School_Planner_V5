@@ -185,6 +185,16 @@ registerWindow({
   load: () => import('../features/search/SearchWindow'),
 });
 
+// 📋 클립보드 = 창 칸의 탭 하나 (P47-1 11-19 - 왼쪽 클립보드 칸을 없앰). 단축키 'clipboard'는 열기/닫기(features/clipboard/capture toggleClipboard)
+registerWindow({
+  id: 'clipboard',
+  title: '클립보드',
+  icon: '📋',
+  kind: 'side',
+  help: 'clipboard',
+  load: () => import('../features/clipboard/ClipboardWindow'),
+});
+
 // 머리줄 🗑️ 휴지통 (P5-4) - 단축키 'trash'
 registerWindow({
   id: 'trash',

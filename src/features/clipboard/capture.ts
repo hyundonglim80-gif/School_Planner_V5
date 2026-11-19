@@ -1,32 +1,32 @@
-// 클립보드 칸의 열림·폭과 '복사한 것 모으기' (V4 components/ClipboardPanel.tsx의 useClipboardCapture). Shell이 늘 부른다.
+// 📋 클립보드 탭의 열림과 '복사한 것 모으기' (V4 components/ClipboardPanel.tsx의 useClipboardCapture). Shell이 늘 부른다. P47-1 - 왼쪽 칸 → 창 칸의 탭.
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { setShortcutAction } from '../../app/keys';
+import { closeWindow, openWindow, shownWindowNow, useWindows } from '../../app/windows';
 import { addCopiedText, loadClipboard, readSystemClipboard } from '../../data/clipboard';
 import { useSession } from '../../data/session';
 import { rememberEditable, selectedTextForCopy } from './paste';
 import { markEditorWindow, openClipboardPopup, useClipboardBridge } from './popupClip';
 
-/** 왼쪽 칸의 기본 폭 */
-export const LEFT_COLUMN_WIDTH = 'clamp(260px, 24vw, 380px)';
-/** 경계선을 끌어 바꾼 폭(--left-column-w)이 있으면 그것. 오른쪽 화면이 320px은 남게 묶는다. */
-export const LEFT_COLUMN_CSS_WIDTH = `min(var(--left-column-w, ${LEFT_COLUMN_WIDTH}), calc(100vw - 320px))`;
+/** 클립보드 탭의 창 id (= 단축키 id 'clipboard' - 단축키는 아래 toggleClipboard가 받는다) */
+export const CLIPBOARD_WINDOW = 'clipboard';
 
-/** 칸이 열려 있는 동안 시스템 클립보드를 다시 보는 간격 (읽기를 허락해 둔 경우만) */
+/** 탭이 열려 있는 동안 시스템 클립보드를 다시 보는 간격 (읽기를 허락해 둔 경우만) */
 const POLL_MS = 2000;
 
-/** 칸이 열려 있나 (이 기기에 기억 - 넓은 화면에서 열어 둔 채 다시 열면 그대로) */
+/** 클립보드 탭이 서 있나 (이 기기에 기억 - 넓은 화면에서 열어 둔 채 다시 열면 그대로 선다). 탭(ClipboardWindow)이 서고 닫힐 때 적는다 */
 export const useClipboardPanel = create<{ open: boolean }>()(persist((): { open: boolean } => ({ open: false }), { name: 'sp5-clipboard-open' }));
 export const setClipboardOpen = (open: boolean) => useClipboardPanel.setState({ open });
 /**
- * 📋·단축키. 창 위치가 팝업창(PC)이면 클립보드 팝업창을 연다(#140 - popupClip). 왼쪽 칸이 열려 있으면 닫고,
- * 팝업창을 못 띄우면(브라우저가 막음) 왼쪽 칸을 연다.
+ * 📋·단축키 (P47-1 11-19 - 왼쪽 칸을 없애고 창 칸의 탭 하나로): 탭이 없으면 창 칸에 '📋 클립보드' 탭을 세워 보이고,
+ * 보이는 탭이면 닫고, 숨은 탭이면 앞으로. 창 위치가 팝업창(PC)이면 클립보드 팝업창을 연다(#140 - popupClip, 못 띄우면 이 창 안에 탭).
  */
 export const toggleClipboard = () => {
-  const open = useClipboardPanel.getState().open;
-  if (!open && openClipboardPopup()) return;
-  setClipboardOpen(!open);
+  const tab = useWindows.getState().windows.find((w) => w.id === CLIPBOARD_WINDOW);
+  if (tab && shownWindowNow()?.key === tab.key) return closeWindow(tab.key);
+  if (!tab && openClipboardPopup()) return;
+  openWindow(CLIPBOARD_WINDOW, undefined, { here: true });
 };
 
 /**

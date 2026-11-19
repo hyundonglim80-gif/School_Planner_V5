@@ -1,9 +1,9 @@
-// 화면 보기 설정 (V4 useAppStore의 popupStyle·rightPanelWidth·leftPanelWidth·fontScale).
+// 화면 보기 설정 (V4 useAppStore의 popupStyle·rightPanelWidth·fontScale - leftPanelWidth(왼쪽 클립보드 칸)는 P47-1에 없앴다).
 //   popupStyle: 환경설정 '창 위치' - 오른쪽 칸(side) / 팝업창(popup - PC만, 11-09) / 가운데 창(center - 휴대폰만).
 //     PC의 옛 '가운데 창'은 팝업창으로 본다(11-09 사용자 요청 - PC 고르기에서 가운데 창을 팝업창으로 바꿨다). 실제로 쓰는 값은 windowMode().
 //   fontSizes: 글자 크기 - 화면마다 %(메모 요청 #145 - 옛 다섯 단계 fontScale을 바꿨다). 팝업창은 'popout' 하나.
 //   이 둘은 계정 설정(PC·휴대폰 따로)과 맞춘다 - app/prefs.ts. 여기 값은 이 기기 사본(열자마자 그리기용).
-//   rightPanelWidth·leftPanelWidth: 경계선을 끌어 바꾼 폭(px), null이면 기본 폭. 이 기기에만.
+//   rightPanelWidth: 경계선을 끌어 바꾼 창 칸 폭(px), null이면 기본 폭. 이 기기에만.
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
@@ -28,7 +28,6 @@ interface LayoutPrefs {
   popupStyle: PopupStyle;
   fontSizes: FontSizes;
   rightPanelWidth: number | null;
-  leftPanelWidth: number | null;
 }
 
 /** 글자 크기를 따로 기억하는 곳 - 화면 일곱 + 팝업창 */
@@ -41,7 +40,7 @@ export const currentFontPage = (): string => (POPOUT ? POPOUT_FONT_PAGE : useNav
 export const legacyFontPages = (scale: unknown): FontSizes | undefined => legacyFontSizes(scale, FONT_PAGES);
 
 export const useLayoutPrefs = create<LayoutPrefs>()(
-  persist((): LayoutPrefs => ({ popupStyle: 'side', fontSizes: {}, rightPanelWidth: null, leftPanelWidth: null }), {
+  persist((): LayoutPrefs => ({ popupStyle: 'side', fontSizes: {}, rightPanelWidth: null }), {
     name: 'sp5-layout',
     // 1 = 글자 크기가 화면마다 % (메모 요청 #145). 옛 저장(0)의 단계 하나는 모든 화면에 같은 %로 옮긴다
     version: 1,
@@ -90,7 +89,6 @@ export function stepFontSize(step: -1 | 0 | 1, page = currentFontPage()): number
 
 export const setPopupStyle = (popupStyle: PopupStyle) => useLayoutPrefs.setState({ popupStyle });
 export const setRightPanelWidth = (rightPanelWidth: number | null) => useLayoutPrefs.setState({ rightPanelWidth });
-export const setLeftPanelWidth = (leftPanelWidth: number | null) => useLayoutPrefs.setState({ leftPanelWidth });
 
 /**
  * 이 기기에서 실제로 쓰는 창 위치. PC는 오른쪽 칸 / 팝업창(옛 가운데 창도 팝업창), 휴대폰은 오른쪽 칸 / 가운데 창
