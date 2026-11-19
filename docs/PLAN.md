@@ -4487,7 +4487,8 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
   → 11-19 클라우드: `hasScoreCuts`(평가·기타 아님·기준 = 단계 수 − 1개의 수) · `parseScore`(숫자만 - '7점'·'결석'은 null) · `stepForScore`(이상) · `badCutIndex`(빈 칸·위 단계보다 크거나 같음) · `scorePatch`(점수 + 결과, 숫자가 아니면 결과 비움) · `rescoreValues`(점수가 수인 학생만 다시 - 바뀐 수) · 값 `score`·`groupScore`(types·cleanEvalValue) · 문서 `cuts` · 시험 8(evaluation.test 30)
 - [x] ■2 만들기 칸: 3·4·5단계에서 '점수로 단계 자동 매기기' 체크 → 단계 이름 옆 '__ 이상' 칸 · 마지막 단계 '나머지' · 틀리면 생성 막기 · 문서 `cuts` · 다른 반 베끼기
   → 11-19 클라우드: 단계 이름 칸 아래 '__ 이상'(`data-eval-cut=i`, 마지막 '나머지') · 체크 `data-eval-by-score`(3단계 이상일 때만, 기타면 없음) · 생성 때 `badCutIndex` → 그 칸 붉게(`aria-invalid`) + 한 줄 `data-eval-cut-error` + 안내, 단계 이름 빈 칸도 막음 · 문서 `cuts`(`dataOf` - 기타 아닐 때) · 다른 반 베끼기는 `...base` · inspect-evaluations 묶음(막기·고침·서버 [10, 5])
-- [ ] ■3 표: 결과 칸 왼쪽 점수 칸(개별·조별·전체 일괄) · 치면 옆 결과 칸이 단계 · 숫자 아니면 붉은 테두리 · 자리표 오늘 조사표에도 점수 칸 · ⚙️ 기준 고치기 + 바뀌는 학생 수 묻고 다시 매기기
+- [x] ■3 표: 결과 칸 왼쪽 점수 칸(개별·조별·전체 일괄) · 치면 옆 결과 칸이 단계 · 숫자 아니면 붉은 테두리 · 자리표 오늘 조사표에도 점수 칸 · ⚙️ 기준 고치기 + 바뀌는 학생 수 묻고 다시 매기기
+  → 11-19 클라우드: 표 '점수'·'조 점수' 열(`data-eval-score=indiv|group`, 일괄 `data-eval-all-score`) - 치면 `scorePatch`로 옆 고르기가 그 단계, 숫자가 아니면 `aria-invalid` 붉은 테두리·결과 빈칸 · 결과 고르기는 그대로라 손으로 바꿀 수 있다 · 자리표 `data-seat-eval-score`(떠날 때·Enter) · ⚙️ 기본 정보 수정 '점수 기준 (이상)' `data-eval-meta-cut`(단계 이름표·마지막 나머지) → 저장 때 `rescoreValues` 바뀌는 수 `confirm`('N명의 결과가 바뀝니다') → cuts + 값 한 번에(`saveEvalMeta`) · 시험 EvalTable 4 더(8) · inspect-evaluations(7 → 10 = 우수 · 4.9 · 결석 · 손 고침 · 기준 8·4 = 2명 · 자리표 7 → 보통)
 - [ ] ■4 읽는 곳: 모아 보기·학생 카드 '보통 (7)' · CSV·📋 표 복사·구글 시트에 점수 칸 + 시트 되읽기 다시 매기기 · 단위(sheets.test·evaluation.test)
 - [ ] ■5 설명서(만들기·입력 + 보기 '3단계 기준 10·5에 7 → 보통') · inspect-evaluations 묶음(사용자 예 그대로 · 기준 고치기 · 모아 보기) · 커밋
 **끝 조건**: 3단계 기준 10·5로 만든 조사표에 7을 치면 옆 칸이 '보통'이 되고, 저장·다시 열기·모아 보기·CSV·시트까지 같다 · 기준을 고치면 점수가 있는 학생이 다시 매겨진다.

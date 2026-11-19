@@ -1,5 +1,5 @@
 // 조사표 창의 '⚙️ 기본 정보 수정' (V4 그대로 접어 두었다가 편다) - 제목·대상 학급·날짜·위치·교과. 저장은 창이 한다(Ctrl+S도).
-import { EVAL_SUBJECTS } from '../../domain/evaluation';
+import { badCutIndex, EVAL_SUBJECTS, parseScore } from '../../domain/evaluation';
 import { describeClass } from '../../domain/roster';
 import type { ClassItem } from '../class/classes';
 
@@ -10,6 +10,8 @@ export interface MetaDraft {
   /** '3' / 'journal' */
   place: string;
   subject: string;
+  /** 점수 기준 글자 (P46-2 - 기준이 있는 조사표만, 단계 수 − 1개). 단계 수·이름은 바꾸지 않는다 */
+  cuts: string[];
 }
 
 interface Props {
@@ -20,13 +22,16 @@ interface Props {
   onSave: () => void;
   classes: readonly ClassItem[];
   periodNames: readonly string[];
+  /** 단계 이름 (점수 기준 줄의 이름표) */
+  steps?: readonly string[];
 }
 
 const field = 'w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500';
 const label = 'block text-xs font-bold text-slate-600 mb-1';
 
-export default function EvalMetaBox({ open, onToggle, meta, onChange, onSave, classes, periodNames }: Props) {
+export default function EvalMetaBox({ open, onToggle, meta, onChange, onSave, classes, periodNames, steps = [] }: Props) {
   const set = (p: Partial<MetaDraft>) => onChange({ ...meta, ...p });
+  const badCut = meta.cuts.length ? badCutIndex(meta.cuts.map((c) => parseScore(c))) : -1;
   const subjects = [...EVAL_SUBJECTS, ...(meta.subject && !EVAL_SUBJECTS.includes(meta.subject) ? [meta.subject] : [])];
   return (
     <div className="mb-3 border border-slate-300 rounded-xl bg-slate-50 p-3" data-eval-meta={open ? 'open' : 'closed'}>
@@ -82,6 +87,31 @@ export default function EvalMetaBox({ open, onToggle, meta, onChange, onSave, cl
               </select>
             </div>
           </div>
+          {meta.cuts.length > 0 && (
+            <div data-eval-meta-cuts>
+              <label className={label}>점수 기준 (이상) - 저장하면 점수가 있는 학생을 새 기준으로 다시 매깁니다</label>
+              <div className="flex gap-2">
+                {steps.map((s, i) => (
+                  <div key={i} className="flex-1 min-w-0">
+                    <div className="text-2xs text-slate-500 truncate mb-0.5">{s}</div>
+                    {i < meta.cuts.length ? (
+                      <input
+                        value={meta.cuts[i]}
+                        data-eval-meta-cut={i}
+                        inputMode="decimal"
+                        aria-label={`${s} 기준 점수 (이상)`}
+                        aria-invalid={badCut === i || undefined}
+                        onChange={(e) => set({ cuts: meta.cuts.map((c, j) => (j === i ? e.target.value : c)) })}
+                        className={`${field} text-right ${badCut === i ? 'border-rose-500 ring-1 ring-rose-300' : ''}`}
+                      />
+                    ) : (
+                      <div className="py-1.5 text-xs text-slate-500">나머지</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="text-right">
             <button type="button" data-eval-meta-save onClick={onSave} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer">
               정보 업데이트

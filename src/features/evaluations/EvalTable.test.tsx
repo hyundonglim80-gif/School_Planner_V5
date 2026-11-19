@@ -58,3 +58,42 @@ describe("조사표 표 - 평가 단계 '기타' (P46-1)", () => {
     expect(container.querySelector('[data-eval-all]')).toBeNull();
   });
 });
+
+describe('조사표 표 - 점수로 단계 자동 매기기 (P46-2)', () => {
+  const scored = (extra: Partial<EvalItem> = {}) => ev({ steps: ['우수', '보통', '노력요함'], cuts: [10, 5], ...extra });
+
+  it('결과 칸 왼쪽에 점수 칸 - 7을 치면 결과가 보통', () => {
+    const onChange = vi.fn();
+    const { container } = render(<EvalTable ev={scored()} values={{}} canEdit onChange={onChange} />);
+    const row = container.querySelector('[data-eval-row="a"]')!;
+    const cells = [...row.querySelectorAll('td')];
+    const scoreAt = cells.findIndex((td) => td.querySelector('[data-eval-score="indiv"]'));
+    expect(scoreAt).toBeGreaterThan(-1);
+    expect(cells[scoreAt + 1].querySelector('select[data-eval-indiv-score]')).not.toBeNull();
+    fireEvent.change(row.querySelector('[data-eval-score="indiv"]')!, { target: { value: '7' } });
+    expect(onChange).toHaveBeenLastCalledWith({ a: { score: '7', indiv: '보통' } });
+  });
+
+  it('숫자가 아닌 점수(결석)는 붉은 칸 · 결과는 비운다', () => {
+    const onChange = vi.fn();
+    const { container } = render(<EvalTable ev={scored()} values={{ a: { score: '결석' }, b: { score: '7', indiv: '보통' } }} canEdit onChange={onChange} />);
+    expect(container.querySelector('[data-eval-row="a"] [data-eval-score="indiv"]')!.getAttribute('aria-invalid')).toBe('true');
+    expect(container.querySelector('[data-eval-row="b"] [data-eval-score="indiv"]')!.getAttribute('aria-invalid')).toBeNull();
+    fireEvent.change(container.querySelector('[data-eval-row="b"] [data-eval-score="indiv"]')!, { target: { value: '결석' } });
+    expect(onChange).toHaveBeenLastCalledWith({ a: { score: '결석' }, b: { score: '결석', indiv: '' } });
+  });
+
+  it('전체 일괄 점수·조 점수 칸', () => {
+    const onChange = vi.fn();
+    const { container } = render(<EvalTable ev={scored({ group: true, groups: [{ name: '1모둠', members: ['a', 'b'] }] })} values={{}} canEdit onChange={onChange} />);
+    fireEvent.change(container.querySelector('[data-eval-all-score="indiv"]')!, { target: { value: '10' } });
+    expect(onChange).toHaveBeenLastCalledWith({ a: { score: '10', indiv: '우수' }, b: { score: '10', indiv: '우수' } });
+    fireEvent.change(container.querySelector('[data-eval-row="b"] [data-eval-score="group"]')!, { target: { value: '4' } });
+    expect(onChange).toHaveBeenLastCalledWith({ b: { groupScore: '4', group: '노력요함' } });
+  });
+
+  it('기준이 없으면 점수 칸도 없다', () => {
+    const { container } = render(<EvalTable ev={ev()} values={{}} canEdit onChange={() => {}} />);
+    expect(container.querySelector('[data-eval-score]')).toBeNull();
+  });
+});

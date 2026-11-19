@@ -10,11 +10,15 @@ import { useMirrorStatus } from '../../data/select';
 import { usePersonalSpaceId, useSession } from '../../data/session';
 import { shortDateLabel } from '../../domain/dateUtils';
 import {
+  badCutIndex,
   EVAL_TYPE_LABEL,
   evalPlaceLabel,
   evalPlaceOf,
   evalStudentsOf,
   evalValuesChanges,
+  hasScoreCuts,
+  parseScore,
+  rescoreValues,
   sortEvals,
   syncEvalStudents,
   type EvalValues,
@@ -31,7 +35,14 @@ import type { EvaluationParams } from './open';
 
 type Mode = { kind: 'auto' } | { kind: 'list' } | { kind: 'create' } | { kind: 'view'; id: string };
 
-const metaOf = (ev: EvalItem): MetaDraft => ({ title: ev.title, classId: ev.classId, date: ev.date, place: evalPlaceOf(ev), subject: ev.subject ?? '' });
+const metaOf = (ev: EvalItem): MetaDraft => ({
+  title: ev.title,
+  classId: ev.classId,
+  date: ev.date,
+  place: evalPlaceOf(ev),
+  subject: ev.subject ?? '',
+  cuts: hasScoreCuts(ev) ? (ev.cuts ?? []).map(String) : [],
+});
 
 export default function EvaluationWindow({ params, close, raise, setParams }: WindowProps<EvaluationParams>) {
   const { sid, date, place } = params;
@@ -139,11 +150,24 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
       next.classId = c.id;
       next.students = evalStudentsOf(c.students);
     }
+    // 점수 기준 (P46-2): 바꿨으면 점수가 있는 학생을 새 기준으로 다시 매긴다 - 손으로 바꾼 결과도 덮으니 바뀌는 수를 묻는다
+    let saveValues = valuesDirty ? values : undefined;
+    if (hasScoreCuts(ev) && metaShown.cuts.length) {
+      const nums = metaShown.cuts.map((c) => parseScore(c));
+      if (badCutIndex(nums) >= 0) return showToast('점수 기준을 확인하세요 - 칸을 모두 채우고, 위 단계가 아래 단계보다 커야 합니다.');
+      const cuts = nums as number[];
+      if (JSON.stringify(cuts) !== JSON.stringify(ev.cuts)) {
+        const re = rescoreValues(ev.steps ?? [], cuts, values);
+        if (re.changed > 0 && !window.confirm(`새 기준으로 ${re.changed}명의 결과가 바뀝니다.\n손으로 바꾼 결과도 점수대로 다시 매깁니다. 바꿀까요?`)) return;
+        next.cuts = cuts;
+        if (re.changed > 0) saveValues = re.values;
+      }
+    }
     const moved = metaShown.date !== ev.date || metaShown.place !== evalPlaceOf(ev);
     setBusy(true);
     try {
       // 적다 만 값도 함께 담는다 (기본 정보만 저장하고 표를 흘려보내면 적은 값이 사라진다 - V4)
-      await saveEvalMeta(sid, ev, next, valuesDirty ? values : undefined);
+      await saveEvalMeta(sid, ev, next, saveValues);
       setDraft(null);
       setMeta(null);
       setMetaOpen(false);
@@ -283,7 +307,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
               </p>
             </div>
             {canEdit && (
-              <EvalMetaBox open={metaOpen} onToggle={() => setMetaOpen((v) => !v)} meta={metaShown} onChange={setMeta} onSave={() => void saveMeta()} classes={classes} periodNames={periodNames} />
+              <EvalMetaBox open={metaOpen} onToggle={() => setMetaOpen((v) => !v)} meta={metaShown} onChange={setMeta} onSave={() => void saveMeta()} classes={classes} periodNames={periodNames} steps={ev.steps ?? []} />
             )}
             <div className="flex justify-end -mt-1 mb-1.5">
               <button

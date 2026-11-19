@@ -116,7 +116,7 @@ export async function saveEvalStudentValue(sid: string, stored: EvalItem, studen
   recordUndo(sid, '조사표', undo, { what: '조사표 값', quiet: true });
 }
 
-export type EvalMeta = Partial<Pick<EvalDoc, 'title' | 'subject' | 'date' | 'period' | 'classId' | 'students'>>;
+export type EvalMeta = Partial<Pick<EvalDoc, 'title' | 'subject' | 'date' | 'period' | 'classId' | 'students' | 'cuts'>>;
 
 /** 기본 정보 (제목·학급·날짜·자리·교과) - 바뀐 칸만. 적던 값(values)도 함께 받으면 한 번에 */
 export async function saveEvalMeta(sid: string, stored: EvalItem, meta: EvalMeta, values?: EvalValues): Promise<void> {
