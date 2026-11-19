@@ -390,6 +390,8 @@ export interface Evaluation extends Tracked {
   indiv?: boolean;
   group?: boolean;
   steps?: string[];
+  /** 평가 단계 '기타' (P46-1) - 단계 없이 학생마다 숫자·글자를 그대로 적는다(steps = []). 값은 indiv·group 칸 그대로 */
+  free?: boolean;
   groups?: Array<{ name: string; members: string[] }>;
   students: Array<{ sid: string; num: number; name: string; out?: true }>;
   values: Record<string, { indiv?: string; group?: string; groupName?: string; checked?: boolean; reason?: string; memo?: string }>;
