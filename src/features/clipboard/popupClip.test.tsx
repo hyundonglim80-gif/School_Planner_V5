@@ -134,6 +134,39 @@ describe('클립보드 팝업창 (#140)', () => {
     r.unmount();
   });
 
+  it('오른쪽 칸 모드에서도 글 칸을 누른 창을 적고 부탁을 받는다 - 클립보드 탭을 ↗로 옮긴 팝업창이 이 창에 붙인다 (P47-1 뒤)', () => {
+    vi.spyOn(window, 'focus').mockImplementation(() => {});
+    const posted: unknown[] = [];
+    const BC = globalThis.BroadcastChannel;
+    // 이 창이 듣는 통로 (jsdom 통로는 다른 창이 없다 - 열렸나·받은 말을 그대로 넘기나만 본다)
+    class FakeChannel {
+      onmessage: ((e: MessageEvent) => void) | null = null;
+      constructor() {
+        channels.push(this);
+      }
+      postMessage(m: unknown) {
+        posted.push(m);
+      }
+      close() {}
+    }
+    const channels: FakeChannel[] = [];
+    globalThis.BroadcastChannel = FakeChannel as unknown as typeof BroadcastChannel;
+    try {
+      const r = render(<Host />);
+      const ta = q('[data-target]') as HTMLTextAreaElement;
+      ta.focus();
+      ta.setSelectionRange(2, 2);
+      expect(localStorage.getItem(LAST_EDITOR_KEY)).toBe(WIN_ID);
+      expect(channels).toHaveLength(1);
+      act(() => channels[0].onmessage?.({ data: { t: 'paste', to: WIN_ID, req: 'r3', item: textClip('끝') } } as MessageEvent));
+      expect(ta.value).toBe('앞뒤끝');
+      expect(posted).toContainEqual({ t: 'result', req: 'r3', pasted: true });
+      r.unmount();
+    } finally {
+      globalThis.BroadcastChannel = BC;
+    }
+  });
+
   it('받을 창이 없으면(닫았다) 팝업창이 시스템 클립보드에 담는다', async () => {
     const writeText = vi.fn(async () => undefined);
     Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } });
