@@ -53,7 +53,7 @@ function clearAll() {
   savedInitial.length = 0;
   initialDoc = null;
   localStorage.clear();
-  useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side', rightPanelWidth: null, leftPanelWidth: null });
+  useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side', rightPanelWidth: null });
   useNav.setState({ showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', semesterFilterAt: '', enableScrollNav: false, startupScope: 'last' });
   useShortcutOverrides.setState({ overrides: {}, tabs: {}, custom: {} });
   useCommonSettings.setState({ forwardDays: 14, palette: DEFAULT_PALETTE, teaching: null, newYearDone: 0 });
@@ -148,7 +148,7 @@ describe('↩️ 초기화 · 글자 크기 초기화 · 경계선 두 번 누�
       receiveMyReset({
         common: {},
         at: 1,
-        pc: { prefs: { fontSizes: { day: 115, week: 90 } }, local: { boardDay: 45, leftPanelWidth: 400 }, at: 1 },
+        pc: { prefs: { fontSizes: { day: 115, week: 90 } }, local: { boardDay: 45, rightPanelWidth: 400 }, at: 1 },
       }),
     );
     expect(resetFontPercent('day')).toBe(115);
@@ -158,8 +158,9 @@ describe('↩️ 초기화 · 글자 크기 초기화 · 경계선 두 번 누�
     expect(useLayoutPrefs.getState().fontSizes).toEqual({ week: 90 });
     expect(resetBoardRatio('day')).toBe(45);
     expect(resetBoardRatio('main')).toBeNull();
+    // 왼쪽 클립보드 칸은 P47-1에 없앴다 - 경계선이 어느 쪽이든 창 칸 폭
+    expect(resetPanelWidth('right')).toBe(400);
     expect(resetPanelWidth('left')).toBe(400);
-    expect(resetPanelWidth('right')).toBeNull();
   });
 
   it('초기화 설정이 없으면 앱 기본값 (지금까지와 같다)', () => {

@@ -162,6 +162,12 @@ export function shownWindowNow(): OpenWindow | undefined {
   return shownOf(useWindows.getState().windows, id === null ? undefined : side.owners[id] ?? null);
 }
 
+/** 열린 창을 앞으로 - 창 칸 탭이면 그 탭을 보이고, 덮는 창(휴대폰)이면 맨 위로 (P47-1 - 클립보드 탭에서 붙여넣은 칸을 보인다) */
+export function raiseWindow(key: number) {
+  const now = stamp();
+  useWindows.setState((s) => ({ windows: s.windows.map((w) => (w.key === key ? { ...w, raisedAt: now } : w)) }));
+}
+
 /** 열린 창이 가리키는 것을 바꾼다 (WindowProps.setParams) */
 export function setWindowParams(key: number, params: unknown) {
   useWindows.setState((s) => ({ windows: s.windows.map((w) => (w.key === key ? { ...w, params } : w)) }));

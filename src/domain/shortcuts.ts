@@ -174,7 +174,7 @@ export const SHORTCUT_ACTIONS: ShortcutAction[] = [
   { id: 'multiSelect', label: '여러 개 고르기', group: '메뉴 열기', def: b('') },
   // 주간 화면의 '작년 이맘때' (ROADMAP 7). 다른 화면에서 누르면 주간으로 가서 켠다.
   { id: 'lastYear', label: '작년 이맘때 보이기 / 숨기기 (주간)', group: '메뉴 열기', def: b('') },
-  { id: 'clipboard', label: '클립보드 칸 열기 / 닫기', group: '메뉴 열기', def: b('') },
+  { id: 'clipboard', label: '클립보드 열기 / 닫기', group: '메뉴 열기', def: b('') },
   { id: 'calendar', label: '구글 캘린더로 보내기 (백업 · 가져오기 · 보내기)', group: '메뉴 열기', def: b('') },
   { id: 'dday', label: 'D-Day 관리', group: '메뉴 열기', def: b('') },
   // 보고 있는 칸을 새 창으로 빼기 (#125 - 칸 머리 ↗와 같다)

@@ -1,19 +1,22 @@
-// 창 위치 '팝업창'이면 📋 = 클립보드 팝업창 (#140) - 못 띄우면 왼쪽 칸 · 글 칸을 누른 창 = 마지막으로 글을 쓰던 창 ·
+// 창 위치 '팝업창'이면 📋 = 클립보드 팝업창 (#140) - 못 띄우면 창 칸의 클립보드 탭(P47-1) · 글 칸을 누른 창 = 마지막으로 글을 쓰던 창 ·
 // 그 창이 부탁을 받으면 커서 자리에 넣는다 · 받을 창이 없으면 팝업창이 시스템 클립보드에 담는다
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { setPopupStyle } from '../../app/layoutPrefs';
+import '../../app/windowList';
+import { useWindows } from '../../app/windows';
 import { resetPopupWindowsForTest } from '../../app/popupWindows';
 import { loadClipboard, resetClipboardForTest, wipeClipboard, type ClipItem } from '../../data/clipboard';
 import { useSession } from '../../data/session';
-import { setClipboardOpen, useClipboardCapture, useClipboardPanel } from './capture';
+import { setClipboardOpen, useClipboardCapture } from './capture';
 import ClipboardColumn from './ClipboardColumn';
 import { handleClipMessage, pasteFromPopup, WIN_ID } from './popupClip';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 
 const q = (s: string) => document.querySelector<HTMLElement>(s);
+const tabs = () => useWindows.getState().windows.filter((w) => w.id === 'clipboard');
 const LAST_EDITOR_KEY = 'sp5-clip-last-editor';
 
 function Host() {
@@ -81,34 +84,35 @@ afterEach(() => {
 });
 
 describe('클립보드 팝업창 (#140)', () => {
-  it('창 위치가 팝업창이면 📋 = 클립보드 팝업창 (왼쪽 칸은 열지 않는다)', () => {
+  it('창 위치가 팝업창이면 📋 = 클립보드 팝업창 (창 칸 탭은 세우지 않는다)', () => {
+    useWindows.setState({ windows: [] });
     setPopupStyle('popup');
     const { urls } = fakeOpen();
     const r = render(<Host />);
     fireEvent.click(q('[data-clipboard-toggle]')!);
     expect(urls).toHaveLength(1);
     expect(JSON.parse(new URL(urls[0]).searchParams.get('popout')!)).toMatchObject({ id: 'clipboard' });
-    expect(useClipboardPanel.getState().open).toBe(false);
-    expect(q('[data-clipboard-panel]')).toBeNull();
+    expect(tabs()).toHaveLength(0);
     r.unmount();
   });
 
-  it('브라우저가 팝업창을 막으면 왼쪽 칸을 연다', () => {
+  it('브라우저가 팝업창을 막으면 이 창의 창 칸에 클립보드 탭', () => {
+    useWindows.setState({ windows: [] });
     setPopupStyle('popup');
     fakeOpen(true);
     const r = render(<Host />);
     fireEvent.click(q('[data-clipboard-toggle]')!);
-    expect(useClipboardPanel.getState().open).toBe(true);
-    expect(q('[data-clipboard-panel]')).not.toBeNull();
+    expect(tabs()).toHaveLength(1);
     r.unmount();
   });
 
-  it('오른쪽 칸 모드는 예전처럼 왼쪽 칸 (팝업창을 띄우지 않는다)', () => {
+  it('오른쪽 칸 모드는 창 칸의 클립보드 탭 (팝업창을 띄우지 않는다)', () => {
+    useWindows.setState({ windows: [] });
     const { spy } = fakeOpen();
     const r = render(<Host />);
     fireEvent.click(q('[data-clipboard-toggle]')!);
     expect(spy).not.toHaveBeenCalled();
-    expect(useClipboardPanel.getState().open).toBe(true);
+    expect(tabs()).toHaveLength(1);
     r.unmount();
   });
 

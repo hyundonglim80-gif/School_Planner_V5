@@ -29,7 +29,7 @@ import {
 import { RESET_SPECS, useResetSnapshots } from './settingsReset';
 import { useResetTargets } from './resetTargets';
 import { setBoardSplit, useBoardPrefs } from './boardPrefs';
-import { setLeftPanelWidth, setRightPanelWidth, useLayoutPrefs } from './layoutPrefs';
+import { setRightPanelWidth, useLayoutPrefs } from './layoutPrefs';
 import { readThemeMode, setThemeMode } from './theme';
 import { readContrast, readDim, setContrast, setDim } from './viewAids';
 import { setHeaderFolded, useHeaderFold } from './headerFold';
@@ -48,7 +48,6 @@ export function currentLocalPrefs(): LocalPrefs {
     boardDay: board.day,
     boardMemo: board.memo,
     rightPanelWidth: layout.rightPanelWidth,
-    leftPanelWidth: layout.leftPanelWidth,
     theme: readThemeMode(),
     contrast: readContrast(),
     dim: readDim(),
@@ -68,7 +67,6 @@ function applyLocalPrefs(p: LocalPrefs) {
   if (p.boardDay !== now.boardDay) setBoardSplit('day', p.boardDay);
   if (p.boardMemo !== now.boardMemo) setBoardSplit('memo', p.boardMemo);
   if (p.rightPanelWidth !== now.rightPanelWidth) setRightPanelWidth(p.rightPanelWidth);
-  if (p.leftPanelWidth !== now.leftPanelWidth) setLeftPanelWidth(p.leftPanelWidth);
   if (p.theme !== now.theme) setThemeMode(p.theme);
   if (p.contrast !== now.contrast) setContrast(p.contrast);
   if (p.dim !== now.dim) setDim(p.dim);
