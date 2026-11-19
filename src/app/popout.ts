@@ -4,6 +4,7 @@
 //   3. 새 창을 그 창의 주소(?popout=)로 보내고, 여기 오른쪽 칸의 그 탭은 닫는다.
 import { isPopoutRoot, popoutUrl } from '../ui/popout';
 import { getSideColumn } from '../ui/sideColumn';
+import { sideLeftNow } from './layoutPrefs';
 import { showToast } from './toast';
 import { closeWindow, useWindows, windowSaveOf, windowUnsaved } from './windows';
 
@@ -12,12 +13,12 @@ const SAVE_WAIT_MS = 8000;
 
 const findWindow = (key: number) => useWindows.getState().windows.find((w) => w.key === key);
 
-/** 새 창 자리 - 지금 창의 오른쪽 칸 자리에 그 폭으로 (거기서 끌어 다른 모니터로 옮긴다) */
+/** 새 창 자리 - 지금 창의 오른쪽 칸 자리에 그 폭으로 (거기서 끌어 다른 모니터로 옮긴다). 왼쪽 칸이면 왼쪽에(P47-2) */
 function popupFeatures(): string {
   const colW = getSideColumn().offsetWidth || 512;
   const width = Math.max(420, Math.min(colW + 16, 900));
   const height = Math.max(480, window.outerHeight - 80);
-  const left = Math.max(0, window.screenX + window.outerWidth - width - 8);
+  const left = sideLeftNow() ? Math.max(0, window.screenX + 8) : Math.max(0, window.screenX + window.outerWidth - width - 8);
   const top = Math.max(0, window.screenY + 40);
   return `popup=yes,width=${width},height=${height},left=${left},top=${top}`;
 }

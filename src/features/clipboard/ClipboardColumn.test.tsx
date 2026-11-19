@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { runShortcut } from '../../app/keys';
+import { useLayoutPrefs } from '../../app/layoutPrefs';
+import { getSideColumn } from '../../ui/sideColumn';
 import '../../app/windowList';
 import { useWindows } from '../../app/windows';
 import { addClipText, loadClipboard, resetClipboardForTest, useClipboard, wipeClipboard } from '../../data/clipboard';
@@ -149,5 +151,39 @@ describe('클립보드 칸', () => {
     render(<ClipboardColumn />);
     expect(useClipboardPanel.getState().open).toBe(false);
     expect(tabs()).toHaveLength(0);
+  });
+});
+
+describe('창 위치 왼쪽 칸 (P47-2)', () => {
+  /** PC 넓은 화면 - 손가락 기기(pointer: coarse)가 아니다 */
+  const widePc = () => {
+    window.matchMedia = ((query: string) => ({ matches: !query.includes('coarse'), media: query, addEventListener() {}, removeEventListener() {} })) as unknown as typeof window.matchMedia;
+  };
+
+  it('창 칸 줄·📋 단추가 왼쪽 가장자리로 - 쪽을 바꾸면 이미 선 줄도 곧바로 옮긴다', () => {
+    widePc();
+    useLayoutPrefs.setState({ popupStyle: 'side', sideAt: 'right' });
+    const col = getSideColumn();
+    expect(col.dataset.sideColumn).toBe('right');
+    expect(col.classList.contains('right-0')).toBe(true);
+    render(<ClipboardColumn />);
+    expect(q('[data-clipboard-toggle]')?.dataset.clipboardEdge).toBe('right');
+    act(() => useLayoutPrefs.setState({ sideAt: 'left' }));
+    expect(col.dataset.sideColumn).toBe('left');
+    expect(col.classList.contains('left-0')).toBe(true);
+    expect(col.classList.contains('right-0')).toBe(false);
+    expect(q('[data-clipboard-toggle]')?.dataset.clipboardEdge).toBe('left');
+    expect(q('[data-clipboard-toggle]')?.style.left).toBe('0px');
+    act(() => useLayoutPrefs.setState({ sideAt: 'right' }));
+    expect(col.dataset.sideColumn).toBe('right');
+  });
+
+  it('휴대폰은 왼쪽을 골라도 오른쪽 (창이 화면을 덮는다 - ⓗ)', () => {
+    wide(true);
+    useLayoutPrefs.setState({ popupStyle: 'side', sideAt: 'left' });
+    render(<ClipboardColumn />);
+    expect(q('[data-clipboard-toggle]')?.dataset.clipboardEdge).toBe('right');
+    expect(getSideColumn().dataset.sideColumn).toBe('right');
+    useLayoutPrefs.setState({ sideAt: 'right' });
   });
 });

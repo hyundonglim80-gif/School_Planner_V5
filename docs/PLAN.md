@@ -4521,7 +4521,7 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
 **시작 조건**: P47-1 끝 · 클라우드 가능(배포 없음). **묻기**: 없음.
 **먼저 읽을 것**: 이 절 · 5장 'P47' ⓖ~ⓙ · `src/app/layoutPrefs.ts`·`src/app/prefs.ts`(계정 설정 `popupStyle` 길) · `src/features/settings/ViewTab.tsx`·`src/app/optionShortcuts.ts`(`POPUP_STYLE_OPTIONS`·값 단축키) · `src/ui/sideColumn.ts`·`SideTabs.tsx`·`src/ui/ColumnResizer.tsx` · `src/app/Shell.tsx` · 5장 P33(초기화 설정·관리자 새 사용자 기본값).
 - [x] ■1 설정: `sideAt` 칸(이 기기 사본 + 계정 설정 PC) · 보기 탭 PC 고르기 셋 + 값 단축키 · 초기화 설정·관리자 새 사용자 기본값에 지나가나 · 단위(prefs·SettingsWindow·optionShortcuts)
-- [ ] ■2 화면: 창 칸·탭·경계선·화면 밀기·📋 단추·나오는 움직임을 왼쪽으로 · 창 칸 자리에 기대는 것 훑어 맞추기(5장 ⓘ) · 단위
+- [x] ■2 화면: 창 칸·탭·경계선·화면 밀기·📋 단추·나오는 움직임을 왼쪽으로 · 창 칸 자리에 기대는 것 훑어 맞추기(5장 ⓘ) · 단위
 - [ ] ■3 설명서(창 위치 한 줄·환경설정) · 크롬: 왼쪽 칸으로 shell·memo·board·popout·scroll 묶음 + 오른쪽 그대로 · 커밋
 **끝 조건**: PC에서 왼쪽 칸을 고르면 창(과 클립보드 탭)이 왼쪽에 서고 화면이 오른쪽으로 밀린다 · 다른 PC에서도 같은 값(계정) · 오른쪽 칸·팝업창·휴대폰은 그대로 · 단위·점검 통과.
 
