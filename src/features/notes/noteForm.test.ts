@@ -78,7 +78,7 @@ describe('새 칸', () => {
     expect(createNoteData(form, '', [], 'a0').tables).toEqual([filled]);
     expect(createNoteData({ ...form, tables: [blank] }, '글', [], 'a0')).not.toHaveProperty('tables');
     // 고친 칸: 빈 표만 더했으면 바뀐 것 없음
-    const open = noteFormOf(item(), tree);
+    const open = noteFormOf(item());
     expect(noteEditChanges(item(), { ...open, tables: [blank] }, '회의', ['L1'])).toEqual({});
     expect(noteEditedKeys(open, { ...open, tables: [blank] }).has('tables')).toBe(false);
     expect(sameNoteForm(open, { ...open, tables: [blank] }, false)).toBe(true);

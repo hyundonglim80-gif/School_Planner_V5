@@ -124,3 +124,124 @@ export function tableForSave(t: EntryTable): EntryTable {
   if (t.styles) out.styles = t.styles;
   return out;
 }
+
+// ───────────────────────── 고르기 (P48-1 - 칸 이름·범위·옮기기) ─────────────────────────
+
+/** 칸 자리 (격자 - 가려진 칸 자리도 센다) */
+export interface CellPos {
+  r: number;
+  c: number;
+}
+
+/** 범위 (위·왼쪽 r1·c1 ~ 아래·오른쪽 r2·c2, 끝 칸 포함) */
+export interface CellRange {
+  r1: number;
+  c1: number;
+  r2: number;
+  c2: number;
+}
+
+/** 열 이름: 0 → A, 25 → Z, 26 → AA (엑셀과 같게) */
+export function colName(c: number): string {
+  let n = c + 1;
+  let out = '';
+  while (n > 0) {
+    const m = (n - 1) % 26;
+    out = String.fromCharCode(65 + m) + out;
+    n = Math.floor((n - 1) / 26);
+  }
+  return out;
+}
+
+/** 칸 이름 'B2' */
+export const cellName = (p: CellPos) => `${colName(p.c)}${p.r + 1}`;
+
+/** 범위 이름 - 한 칸이면 'B2', 여럿이면 'B2:D5' */
+export const rangeName = (g: CellRange) =>
+  g.r1 === g.r2 && g.c1 === g.c2 ? cellName({ r: g.r1, c: g.c1 }) : `${cellName({ r: g.r1, c: g.c1 })}:${cellName({ r: g.r2, c: g.c2 })}`;
+
+/** 칸 (r, c)를 덮는 칸 - 병합이면 그 왼쪽 위 칸과 크기, 아니면 그 칸 하나 */
+export function anchorOf(t: EntryTable, r: number, c: number): { r: number; c: number; rs: number; cs: number } {
+  const cell = t.rows[r]?.cells[c];
+  if (cell && !cell.x) return { r, c, rs: cell.rs ?? 1, cs: cell.cs ?? 1 };
+  // 가려진 칸: 왼쪽·위로 거슬러 덮는 칸을 찾는다 (병합은 100열 × 500행까지)
+  for (let ar = r; ar >= 0 && ar > r - 500; ar--) {
+    for (let ac = c; ac >= 0 && ac > c - 100; ac--) {
+      const a = t.rows[ar]?.cells[ac];
+      if (a && !a.x && ar + (a.rs ?? 1) > r && ac + (a.cs ?? 1) > c) return { r: ar, c: ac, rs: a.rs ?? 1, cs: a.cs ?? 1 };
+    }
+  }
+  return { r, c, rs: 1, cs: 1 };
+}
+
+/** 두 칸을 끝으로 한 범위 - 걸친 병합 칸은 통째로 넣는다 (엑셀처럼) */
+export function rangeOf(t: EntryTable, a: CellPos, b: CellPos): CellRange {
+  const g = { r1: Math.min(a.r, b.r), c1: Math.min(a.c, b.c), r2: Math.max(a.r, b.r), c2: Math.max(a.c, b.c) };
+  for (let grew = true; grew; ) {
+    grew = false;
+    for (let r = g.r1; r <= g.r2; r++) {
+      for (let c = g.c1; c <= g.c2; c++) {
+        const k = anchorOf(t, r, c);
+        if (k.r < g.r1 || k.c < g.c1 || k.r + k.rs - 1 > g.r2 || k.c + k.cs - 1 > g.c2) {
+          g.r1 = Math.min(g.r1, k.r);
+          g.c1 = Math.min(g.c1, k.c);
+          g.r2 = Math.max(g.r2, k.r + k.rs - 1);
+          g.c2 = Math.max(g.c2, k.c + k.cs - 1);
+          grew = true;
+        }
+      }
+    }
+  }
+  return g;
+}
+
+/** 범위 안인가 */
+export const inRange = (g: CellRange | null, r: number, c: number) => !!g && r >= g.r1 && r <= g.r2 && c >= g.c1 && c <= g.c2;
+
+/** 방향키 한 번 - 병합 칸은 한 칸처럼 건너고, 끝에서는 멈춘다. 돌려주는 것은 닿은 격자 자리 */
+export function moveCell(t: EntryTable, p: CellPos, dr: number, dc: number): CellPos {
+  const rows = t.rows.length;
+  const cols = t.rows[0]?.cells.length ?? 0;
+  const k = anchorOf(t, p.r, p.c);
+  let { r, c } = p;
+  if (dc > 0) c = k.c + k.cs;
+  else if (dc < 0) c = k.c - 1;
+  if (dr > 0) r = k.r + k.rs;
+  else if (dr < 0) r = k.r - 1;
+  if (r < 0 || r >= rows || c < 0 || c >= cols) return p;
+  return { r, c };
+}
+
+/** 범위 칸 글을 비운다 (가려진 칸은 그대로). 바뀐 것이 없으면 그 표 그대로 */
+export function clearRange(t: EntryTable, g: CellRange): EntryTable {
+  let changed = false;
+  const rows = t.rows.map((row, r) =>
+    r < g.r1 || r > g.r2
+      ? row
+      : {
+          ...row,
+          cells: row.cells.map((cell, c) => {
+            if (c < g.c1 || c > g.c2 || cell.x || cell.v === '') return cell;
+            changed = true;
+            return { ...cell, v: '' };
+          }),
+        }
+  );
+  return changed ? { ...t, rows } : t;
+}
+
+/** 행 여럿 빼기 (r1~r2) - 모두 빼지는 않는다 */
+export function deleteRows(t: EntryTable, r1: number, r2: number): EntryTable {
+  if (r2 - r1 + 1 >= t.rows.length) return t;
+  let out = t;
+  for (let r = r2; r >= r1; r--) out = deleteRow(out, r);
+  return out;
+}
+
+/** 열 여럿 빼기 (c1~c2) - 모두 빼지는 않는다 */
+export function deleteCols(t: EntryTable, c1: number, c2: number): EntryTable {
+  if (c2 - c1 + 1 >= (t.rows[0]?.cells.length ?? 0)) return t;
+  let out = t;
+  for (let c = c2; c >= c1; c--) out = deleteCol(out, c);
+  return out;
+}
