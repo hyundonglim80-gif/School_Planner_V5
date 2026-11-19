@@ -53,7 +53,7 @@ function clearAll() {
   savedInitial.length = 0;
   initialDoc = null;
   localStorage.clear();
-  useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side', rightPanelWidth: null });
+  useLayoutPrefs.setState({ fontSizes: {}, popupStyle: 'side', sideAt: 'right', rightPanelWidth: null });
   useNav.setState({ showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', semesterFilterAt: '', enableScrollNav: false, startupScope: 'last' });
   useShortcutOverrides.setState({ overrides: {}, tabs: {}, custom: {} });
   useCommonSettings.setState({ forwardDays: 14, palette: DEFAULT_PALETTE, teaching: null, newYearDone: 0 });
@@ -99,6 +99,16 @@ describe('💾 초기화 설정', () => {
         at: 1000,
       },
     });
+  });
+
+  it('창 위치 왼쪽 칸(P47-2 sideAt)도 PC 몫에 - 초기화하면 왼쪽으로', async () => {
+    useLayoutPrefs.setState({ sideAt: 'left' });
+    await saveMyResetSnapshot('u1', 3);
+    expect(saved[0].data.pc).toMatchObject({ prefs: { sideAt: 'left' } });
+    act(() => receiveMyReset(saved[0].data));
+    useLayoutPrefs.setState({ sideAt: 'right' });
+    act(() => void resetToInitial());
+    expect(useLayoutPrefs.getState().sideAt).toBe('left');
   });
 
   it('휴대폰 몫이 있으면 그대로 두고 PC 몫만 바꾼다', async () => {

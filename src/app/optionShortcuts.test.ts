@@ -21,7 +21,7 @@ const alt = (key: string) => ({ ctrl: false, alt: true, shift: false, key });
 beforeEach(() => {
   localStorage.clear();
   toast.mockClear();
-  useLayoutPrefs.setState({ popupStyle: 'side', fontSizes: {} });
+  useLayoutPrefs.setState({ popupStyle: 'side', sideAt: 'right', fontSizes: {} });
   useCommonSettings.setState({ alarmSound: 10, autoBackup: { ...DEFAULT_AUTO_BACKUP }, cvd: false, decor: 'off' });
   useNav.setState({ startupScope: 'last', enableScrollNav: false });
   setShortcutOverrides({});
@@ -80,6 +80,20 @@ describe('환경설정 값 단축키 (P28-2)', () => {
     runCustomShortcut('opt.popupStyle.popup');
     expect(useLayoutPrefs.getState().popupStyle).toBe('side');
     expect(toast).toHaveBeenLastCalledWith('⚙️ 창 위치: 오른쪽 칸');
+  });
+
+  it('창 위치 키: 왼쪽 칸 = 오른쪽 칸 모양 + 왼쪽 · 팝업창을 고르면 쪽은 오른쪽으로 · 다시 누르면 앞 값(왼쪽 칸) (P47-2)', () => {
+    runCustomShortcut('opt.popupStyle.left');
+    expect(useLayoutPrefs.getState()).toMatchObject({ popupStyle: 'side', sideAt: 'left' });
+    expect(toast).toHaveBeenLastCalledWith('⚙️ 창 위치: 왼쪽 칸');
+    runCustomShortcut('opt.popupStyle.popup');
+    expect(useLayoutPrefs.getState()).toMatchObject({ popupStyle: 'popup', sideAt: 'right' });
+    runCustomShortcut('opt.popupStyle.popup');
+    expect(useLayoutPrefs.getState()).toMatchObject({ popupStyle: 'side', sideAt: 'left' });
+    expect(toast).toHaveBeenLastCalledWith('⚙️ 창 위치: 왼쪽 칸');
+    // 왼쪽 칸에서 왼쪽 칸 키 = 앞 값(팝업창)
+    runCustomShortcut('opt.popupStyle.left');
+    expect(useLayoutPrefs.getState()).toMatchObject({ popupStyle: 'popup', sideAt: 'right' });
   });
 
   it('켜기/끄기 키는 늘 뒤집는다 · 계정 값(자동 백업)은 다른 칸을 그대로 둔다', () => {
