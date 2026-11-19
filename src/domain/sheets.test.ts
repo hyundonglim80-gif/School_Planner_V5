@@ -145,6 +145,22 @@ describe("'조사표_학급' 시트", () => {
     rows[9][3] = '92';
     expect(evalUpdatesFor(e, parseEvalRows(rows))).toEqual({ s2: { indiv: '92' } });
   });
+  it('점수 기준(P46-2) - 결과 칸 왼쪽에 점수 칸, 시트에서 점수를 고치면 같은 셈으로 결과를 다시 매긴다', () => {
+    const e = ev({ steps: ['우수', '보통', '노력요함'], cuts: [10, 5], values: { s1: { score: '7', indiv: '보통' }, s2: { score: '12', indiv: '보통' } } });
+    const rows = buildEvalRows([e]);
+    expect(rows[7].slice(3)).toEqual(['개별점수', '개별결과', '미평가사유(메모)']);
+    expect(rows[8].slice(3, 5)).toEqual(['7', '보통']);
+    expect(evalUpdatesFor(e, parseEvalRows(rows))).toEqual({});
+    rows[8][3] = '11';
+    rows[9][4] = '노력요함';
+    expect(evalUpdatesFor(e, parseEvalRows(rows))).toEqual({ s1: { score: '11', indiv: '우수' }, s2: { score: '12', indiv: '노력요함' } });
+    rows[8][3] = '결석';
+    expect(evalUpdatesFor(e, parseEvalRows(rows)).s1).toEqual({ score: '결석' });
+  });
+  it('점수 기준 + 조별 = 조이름 · 조별점수 · 조별결과', () => {
+    const rows = buildEvalRows([ev({ group: true, indiv: false, steps: ['상', '중', '하'], cuts: [8, 4] })]);
+    expect(rows[7].slice(3)).toEqual(['조이름', '조별점수', '조별결과', '미평가사유(메모)']);
+  });
   it('시트에만 있는 조사표는 버리고, 머리말을 모르면 읽지 않는다', () => {
     const rows = buildEvalRows([ev()]);
     expect(evalUpdatesFor(ev({ id: 'OTHER' }), parseEvalRows(rows))).toEqual({});

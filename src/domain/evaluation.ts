@@ -237,15 +237,21 @@ export interface EvalCell {
   note: string;
 }
 
-/** 한 조사표의 한 학생 값 */
-export function studentEvalCell(ev: Pick<EvalDoc, 'type' | 'values' | 'indiv' | 'group' | 'groups'>, sid: string): EvalCell {
+/** 결과 + 점수 ('보통 (7)' · 점수만이면 '(결석)') - 점수로 단계 자동 매기기(P46-2) */
+const withScore = (result: string | undefined, score: string | undefined, scores: boolean): string =>
+  [result ?? '', scores && score ? `(${score})` : ''].filter(Boolean).join(' ');
+
+/** 한 조사표의 한 학생 값. scores = 점수를 결과 뒤에 붙인다('보통 (7)' - CSV는 점수를 따로 칸에 둔다) */
+export function studentEvalCell(ev: Pick<EvalDoc, 'type' | 'values' | 'indiv' | 'group' | 'groups'>, sid: string, { scores = true }: { scores?: boolean } = {}): EvalCell {
   const rec = ev.values?.[sid] ?? {};
   if (ev.type === 'eval') {
     const parts: string[] = [];
-    if (ev.indiv && rec.indiv) parts.push(rec.indiv);
-    if (ev.group && rec.group) {
+    const indiv = withScore(rec.indiv, rec.score, scores);
+    if (ev.indiv && indiv) parts.push(indiv);
+    const group = withScore(rec.group, rec.groupScore, scores);
+    if (ev.group && group) {
       const gName = rec.groupName ?? ev.groups?.find((g) => g.members.includes(sid))?.name ?? '';
-      parts.push(gName ? `${gName} ${rec.group}` : `조 ${rec.group}`);
+      parts.push(gName ? `${gName} ${group}` : `조 ${group}`);
     }
     return { main: parts.join(' · '), note: (rec.reason ?? '').trim() };
   }
@@ -311,8 +317,14 @@ export interface OverviewStudent {
   out?: boolean;
 }
 
-/** 학급 × 조사표 CSV 줄. 머리 두 줄(날짜·교과·유형 / 제목) 뒤에 학생마다 한 줄. 조사표마다 값과 사유 두 칸 (메모는 한 칸) */
-export function overviewCsvRows(evals: ReadonlyArray<Pick<EvalDoc, 'date' | 'subject' | 'title' | 'type' | 'values' | 'indiv' | 'group' | 'groups'>>, students: readonly OverviewStudent[]): string[][] {
+/**
+ * 학급 × 조사표 CSV 줄. 머리 두 줄(날짜·교과·유형 / 제목) 뒤에 학생마다 한 줄. 조사표마다 값과 사유 두 칸 (메모는 한 칸).
+ * 점수 기준이 있는 조사표(P46-2)는 값 · **점수** · 사유 세 칸 - 엑셀에서 점수로 셈할 수 있게 점수를 따로 둔다.
+ */
+export function overviewCsvRows(
+  evals: ReadonlyArray<Pick<EvalDoc, 'date' | 'subject' | 'title' | 'type' | 'values' | 'indiv' | 'group' | 'groups' | 'steps' | 'cuts' | 'free'>>,
+  students: readonly OverviewStudent[],
+): string[][] {
   const head1 = ['번호', '이름'];
   const head2 = ['', ''];
   for (const ev of evals) {
@@ -320,6 +332,9 @@ export function overviewCsvRows(evals: ReadonlyArray<Pick<EvalDoc, 'date' | 'sub
     if (ev.type === 'memo') {
       head1.push(info);
       head2.push(ev.title);
+    } else if (hasScoreCuts(ev)) {
+      head1.push(info, '', '');
+      head2.push(ev.title, '점수', '사유');
     } else {
       head1.push(info, '');
       head2.push(ev.title, '사유');
@@ -328,9 +343,15 @@ export function overviewCsvRows(evals: ReadonlyArray<Pick<EvalDoc, 'date' | 'sub
   const rows = students.map((st) => {
     const row = [String(st.num), st.name + (st.out ? ' (전출)' : '')];
     for (const ev of evals) {
-      const c = studentEvalCell(ev, st.sid);
-      if (ev.type === 'memo') row.push(c.main);
-      else row.push(c.main, c.note);
+      if (ev.type === 'memo') row.push(studentEvalCell(ev, st.sid).main);
+      else if (hasScoreCuts(ev)) {
+        const c = studentEvalCell(ev, st.sid, { scores: false });
+        const rec = ev.values?.[st.sid] ?? {};
+        row.push(c.main, [ev.indiv ? rec.score : '', ev.group ? rec.groupScore : ''].filter(Boolean).join(' · '), c.note);
+      } else {
+        const c = studentEvalCell(ev, st.sid);
+        row.push(c.main, c.note);
+      }
     }
     return row;
   });

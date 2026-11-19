@@ -315,3 +315,24 @@ describe('점수로 단계 자동 매기기 (P46-2)', () => {
     expect(evalValuesChanges({ a: { score: '7', indiv: '보통' } }, { a: { score: '12', indiv: '우수' } })).toEqual({ 'values.a': { score: '12', indiv: '우수' } });
   });
 });
+
+describe('점수 기준 조사표를 읽는 곳 (P46-2)', () => {
+  const scored = { ...base, steps: ['우수', '보통', '노력요함'], cuts: [10, 5], values: { a: { score: '7', indiv: '보통', reason: '발표' }, b: { score: '결석' }, c: { indiv: '우수' } } };
+  it("모아 보기·학생 카드 칸 = '보통 (7)' · 점수만이면 '(결석)'", () => {
+    expect(studentEvalCell(scored, 'a')).toEqual({ main: '보통 (7)', note: '발표' });
+    expect(studentEvalCell(scored, 'b').main).toBe('(결석)');
+    expect(studentEvalCell(scored, 'c').main).toBe('우수');
+    expect(studentEvalCell(scored, 'a', { scores: false }).main).toBe('보통');
+  });
+  it('조별 점수도 조 이름 뒤에', () => {
+    const g = { ...scored, indiv: false, group: true, groups: [{ name: '1모둠', members: ['a'] }], values: { a: { groupScore: '12', group: '우수' } } };
+    expect(studentEvalCell(g, 'a').main).toBe('1모둠 우수 (12)');
+  });
+  it('CSV·표 복사 = 값 · 점수 · 사유 세 칸 (점수는 따로 - 엑셀에서 셈하게)', () => {
+    const rows = overviewCsvRows([scored], [{ sid: 'a', num: 1, name: '가람' }, { sid: 'b', num: 2, name: '나래' }]);
+    expect(rows[0]).toEqual(['번호', '이름', '2026-04-10 수학 평가', '', '']);
+    expect(rows[1]).toEqual(['', '', '단원평가', '점수', '사유']);
+    expect(rows[2]).toEqual(['1', '가람', '보통', '7', '발표']);
+    expect(rows[3]).toEqual(['2', '나래', '', '결석', '']);
+  });
+});

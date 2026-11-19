@@ -7,6 +7,7 @@
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-evaluations.mjs
 // 에뮬레이터 teacher·teacher3의 classes를 비우고 점검 학급을 심었다가 끝에 되돌린다. 점검 학급의 조사표·자리표·학급 허브·수업 칸은 끝에 지우거나 되돌린다.
+import { readFileSync } from 'node:fs';
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
@@ -278,6 +279,15 @@ try {
     d5b?.values?.a1?.indiv === '보통' && d5b?.values?.a2?.indiv === '우수' && d5b?.values?.a3?.indiv === '보통' && same(d5b?.values?.a4, { score: '결석' }),
     '새 기준 8·4로 점수가 있는 학생을 다시 매긴다 (손으로 바꾼 a1도)',
   );
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await open(page, '#/class');
+  await page.locator(sel('class-tool', 'evalOverview')).click();
+  const ov5 = page.locator(sel('eval-overview-window', CLASS_ID));
+  const cell5 = ov5.locator(sel('eval-cell', `${e5.id}:a1`));
+  r.check(await waitFor(async () => ((await cell5.count()) ? ((await cell5.textContent()) ?? '') : '').startsWith('보통 (7)'), 8000), "모아 보기 칸 = '보통 (7)'");
+  const [dl5] = await Promise.all([page.waitForEvent('download'), ov5.locator('[data-eval-overview-csv]').click()]);
+  const csv5 = readFileSync(await dl5.path(), 'utf8');
+  r.check(csv5.includes('점수 평가,점수,사유') && csv5.includes('보통,7,'), '📥 CSV = 값 · 점수 · 사유 (점수는 따로)');
 
   r.section('자리표 학생 칸 · 교과 전담 반 도구');
   await page.evaluate(() => window.sp5.closeAllWindows());

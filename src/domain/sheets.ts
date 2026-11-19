@@ -8,6 +8,7 @@
 //
 // V5는 **V5만의 시트 파일**에 쓴다(V4·V3가 함께 쓰는 시트를 덮지 않는다 - PLAN 5장 P8-3). 되읽기는 고치고 더하기만 - 시트에서 지운 줄은 앱에서 지우지 않는다.
 
+import { hasScoreCuts, parseScore, stepForScore } from './evaluation';
 import { textToGender, withSids, type CsvStudent, type RosterStudent } from './roster';
 
 export const SHEET_SCHEDULE = '일정기록';
@@ -208,6 +209,9 @@ export function parseScheduleRows(rows: unknown[][], include: SheetsInclude): Re
 const COL_GROUP_NAME = '조이름';
 const COL_GROUP_SCORE = '조별결과';
 const COL_INDIV_SCORE = '개별결과';
+/** 점수로 단계 자동 매기기(P46-2) - 점수 기준이 있는 조사표만 결과 칸 왼쪽에 */
+const COL_GROUP_POINTS = '조별점수';
+const COL_INDIV_POINTS = '개별점수';
 const COL_REASON = '미평가사유(메모)';
 const COL_CHECK = '체크결과';
 const COL_MEMO = '메모내용';
@@ -222,19 +226,25 @@ export interface SheetEval {
   subject?: string;
   indiv?: boolean;
   group?: boolean;
+  /** 점수 기준(P46-2) - 있으면 점수 칸을 내고, 되읽을 때 점수가 바뀌면 같은 셈으로 결과를 다시 매긴다 */
+  steps?: string[];
+  cuts?: number[];
   students: Array<{ sid: string; num: number; name: string; gender?: string }>;
-  values: Record<string, { indiv?: string; group?: string; groupName?: string; checked?: boolean; reason?: string; memo?: string }>;
+  values: Record<string, { indiv?: string; group?: string; groupName?: string; checked?: boolean; reason?: string; memo?: string; score?: string; groupScore?: string }>;
 }
 
 export type EvalValue = SheetEval['values'][string];
+
+const scoredSheet = (ev: SheetEval) => hasScoreCuts(ev);
 
 export const evalSheetNameOf = (classId: string) => `${EVAL_SHEET_PREFIX}${classId || '기타'}`;
 
 function columnsOf(ev: SheetEval): string[] {
   if (ev.type === 'eval') {
     const cols: string[] = [];
-    if (ev.group) cols.push(COL_GROUP_NAME, COL_GROUP_SCORE);
-    if (ev.indiv || !ev.group) cols.push(COL_INDIV_SCORE);
+    const scored = scoredSheet(ev);
+    if (ev.group) cols.push(COL_GROUP_NAME, ...(scored ? [COL_GROUP_POINTS] : []), COL_GROUP_SCORE);
+    if (ev.indiv || !ev.group) cols.push(...(scored ? [COL_INDIV_POINTS] : []), COL_INDIV_SCORE);
     cols.push(COL_REASON);
     return cols;
   }
@@ -276,8 +286,9 @@ export function buildEvalRows(evals: SheetEval[]): string[][] {
       const v: EvalValue = (mine && ev.values[mine.sid]) || {};
       const blank = !mine;
       if (ev.type === 'eval') {
-        if (ev.group) row.push(blank ? '' : (v.groupName ?? ''), blank ? '' : (v.group ?? ''));
-        if (ev.indiv || !ev.group) row.push(blank ? '' : (v.indiv ?? ''));
+        const scored = scoredSheet(ev);
+        if (ev.group) row.push(blank ? '' : (v.groupName ?? ''), ...(scored ? [blank ? '' : (v.groupScore ?? '')] : []), blank ? '' : (v.group ?? ''));
+        if (ev.indiv || !ev.group) row.push(...(scored ? [blank ? '' : (v.score ?? '')] : []), blank ? '' : (v.indiv ?? ''));
         row.push(blank ? '' : (v.reason ?? ''));
       } else if (ev.type === 'check') {
         row.push(blank ? '' : v.checked === true ? 'O' : v.checked === false ? 'X' : '', blank ? '' : (v.reason ?? ''));
@@ -355,6 +366,20 @@ export function evalUpdatesFor(ev: SheetEval, updates: readonly EvalCellUpdate[]
       set('group', cells[COL_GROUP_SCORE]);
       set('indiv', cells[COL_INDIV_SCORE]);
       set('reason', cells[COL_REASON]);
+      // 점수 기준(P46-2): 시트에서 점수를 고쳤으면 앱과 같은 셈으로 결과를 다시 매긴다(숫자가 아니면 결과를 비운다)
+      if (scoredSheet(ev)) {
+        for (const [field, scoreKey, col] of [
+          ['indiv', 'score', COL_INDIV_POINTS],
+          ['group', 'groupScore', COL_GROUP_POINTS],
+        ] as const) {
+          const cellScore = cells[col];
+          if (cellScore === undefined || cellScore === (before[scoreKey] ?? '')) continue;
+          set(scoreKey, cellScore);
+          const n = parseScore(cellScore);
+          if (n == null) delete next[field];
+          else next[field] = stepForScore(ev.steps ?? [], ev.cuts ?? [], n);
+        }
+      }
     } else if (ev.type === 'check') {
       const c = cells[COL_CHECK];
       if (c !== undefined) {
