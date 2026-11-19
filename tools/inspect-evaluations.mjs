@@ -2,7 +2,8 @@
 //   1) 하루 수업 칸 📊 → 그 교시에 새 조사표(학급·교과 기본값) → 서버 문서 하나(명단 = 재학생 sid) · 값 = 바뀐 학생 칸만(Ctrl+S) · 전체 일괄 적용 · 카드 📊1
 //   2) 같은 교시에 둘이면 목록 · ⚙️ 기본 정보로 기록 칸으로 옮기기(창이 따라간다) · 기록 칸 머리 📊1 · 주간·월간 📊 n → 그날 목록
 //   3) 조별 평가 = 자리표에서 저장한 모둠 · 열 때 명렬표와 맞추기(새 학생) · 지우기 → 휴지통 → 되살리기 · 검색 '조사표'
-//   4) 자리표 학생 칸의 '오늘 조사표' = 그 학생 값만 · 교과 전담(teacher3) 교시 카드 반 도구 📊 = 그 반·과목
+//   4) 평가 단계 '기타'(P46-1): 만들기 '기타' → 서버 free·단계 없음 → 결과 글 칸에 85·A+·통과 → 저장(앞뒤 빈칸 걷음) → 다시 열기 · 모아 보기 '적음 3'·칸 · 학생 기록
+//   5) 자리표 학생 칸의 '오늘 조사표' = 그 학생 값만(기타는 글 칸 - Enter에 저장) · 교과 전담(teacher3) 교시 카드 반 도구 📊 = 그 반·과목
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-evaluations.mjs
 // 에뮬레이터 teacher·teacher3의 classes를 비우고 점검 학급을 심었다가 끝에 되돌린다. 점검 학급의 조사표·자리표·학급 허브·수업 칸은 끝에 지우거나 되돌린다.
@@ -179,6 +180,53 @@ try {
   await hit.click();
   r.check(await waitFor(win('journal').locator(sel('eval-view', e1.id)), 8000), '누르면 그 조사표 창');
 
+  r.section("평가 단계 '기타' (P46-1)");
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await open(page, `#/day/${D}`);
+  await page.locator(sel('lesson-card', 3)).hover();
+  await badge3.click();
+  r.check(await waitFor(async () => (await w3.getAttribute('data-eval-mode')) === 'list'), '3교시 조사표 목록');
+  await page.locator('[data-eval-new]').click();
+  await w3.locator('[data-eval-title]').fill('기타 점수');
+  await w3.locator('[data-eval-step-count]').selectOption('free');
+  r.check((await waitFor(w3.locator('[data-eval-free-hint]'))) && (await w3.locator('[data-eval-step]').count()) === 0, "단계 수 '기타' = 단계 이름 칸 대신 한 줄 안내");
+  await w3.locator('[data-eval-create-submit]').click();
+  list = await serverUntil(liveEvals, (l) => l.some((e) => e.title === '기타 점수'));
+  const e4 = list.find((e) => e.title === '기타 점수');
+  r.check(e4?.free === true && same(e4.steps, []) && e4.indiv === true && e4.period === 3, '서버: free · 단계 없음 · 개인 평가');
+  r.check(await waitFor(w3.locator(sel('eval-view', e4.id))), '만든 조사표가 곧바로 열린다');
+  // 명단 = 위 묶음에서 더한 새 학생(a6)까지 재학생 다섯
+  const n4 = e4.students.length;
+  r.check(
+    (await waitFor(async () => (await w3.locator('input[data-eval-indiv-score]').count()) === n4)) && (await w3.locator('select[data-eval-indiv-score]').count()) === 0,
+    `결과 칸 = 글 칸 ${n4}개 (고르기 없음)`,
+  );
+  await row(w3, 'a1').locator('[data-eval-indiv-score]').fill('85');
+  await row(w3, 'a2').locator('[data-eval-indiv-score]').fill('A+');
+  await row(w3, 'a3').locator('[data-eval-indiv-score]').fill(' 통과 ');
+  await page.locator('[data-eval-save]').click();
+  const d4 = await serverUntil(() => evalDoc(e4.id), (d) => d?.values?.a3?.indiv === '통과');
+  r.check(same(d4?.values, { a1: { indiv: '85' }, a2: { indiv: 'A+' }, a3: { indiv: '통과' } }), '저장 = 적은 글 그대로 (앞뒤 빈칸 걷음)');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.reload();
+  await page.locator(sel('lesson-card', 3)).hover();
+  await badge3.click();
+  await w3.locator(sel('eval-item', e4.id)).click();
+  r.check(await waitFor(async () => (await row(w3, 'a2').locator('[data-eval-indiv-score]').inputValue()) === 'A+', 8000), '다시 열어도 적은 글');
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await open(page, '#/class');
+  await page.locator(sel('class-tool', 'evalOverview')).click();
+  const ov = page.locator(sel('eval-overview-window', CLASS_ID));
+  const steps4 = ov.locator(sel('eval-col', e4.id)).locator('[data-eval-steps]');
+  r.check(await waitFor(async () => ((await steps4.count()) ? ((await steps4.textContent()) ?? '') : '') === '적음 3', 8000), "모아 보기 머리 = '적음 3' (단계별 수 대신)");
+  r.check(((await ov.locator(sel('eval-cell', `${e4.id}:a1`)).textContent()) ?? '') === '85', "모아 보기 칸 = '85'");
+  await page.evaluate(() => window.sp5.closeAllWindows());
+  await page.locator(sel('class-student', 2)).first().click();
+  const rec = page.locator(sel('student-record', CLASS_ID));
+  await waitFor(rec.locator(sel('student-card', 'a2')), 8000);
+  await rec.locator(sel('student-record-tab', 'evals')).click();
+  r.check(((await rec.locator(sel('student-eval', e4.id)).locator('[data-student-eval-value]').textContent()) ?? '') === 'A+', "학생 기록 조사표 = 'A+'");
+
   r.section('자리표 학생 칸 · 교과 전담 반 도구');
   await page.evaluate(() => window.sp5.closeAllWindows());
   const evToday = ref('evaluations', 'inspectToday');
@@ -200,6 +248,27 @@ try {
     updatedAt: serverTimestamp(),
     v: 1,
   });
+  // 단계 '기타'(P46-1) - 오늘 조사표 칸이 글 칸
+  const evFree = ref('evaluations', 'inspectTodayFree');
+  undo.add(() => deleteDoc(evFree));
+  await setDoc(evFree, {
+    date: TODAY,
+    period: 3,
+    classId: CLASS_ID,
+    title: '오늘 기타',
+    type: 'eval',
+    indiv: true,
+    group: false,
+    steps: [],
+    free: true,
+    students: [{ sid: 'a1', num: 1, name: '김하나' }],
+    values: {},
+    authorId: uid,
+    deletedAt: null,
+    createdAt: Date.now(),
+    updatedAt: serverTimestamp(),
+    v: 1,
+  });
   await page.evaluate((c) => window.sp5.openWindow('seating', { classId: c }), CLASS_ID);
   const seatWin = page.locator(sel('seating-window', CLASS_ID));
   await waitFor(seatWin.locator('[data-seating-create]'), 8000);
@@ -211,6 +280,12 @@ try {
   await evRow.locator('[data-seat-eval-indiv]').selectOption('잘함');
   const dt = await serverUntil(async () => (await getDoc(evToday)).data(), (d) => d?.values?.a1?.indiv === '잘함');
   r.check(same(dt?.values, { a1: { indiv: '잘함' } }), '고르면 그 학생 값만 곧바로');
+  const freeRow = seatWin.locator(sel('seat-student', 'a1')).locator(sel('seat-eval', 'inspectTodayFree'));
+  r.check(await waitFor(freeRow.locator('input[data-seat-eval-indiv]'), 8000), "'기타' 오늘 조사표 = 결과 글 칸");
+  await freeRow.locator('[data-seat-eval-indiv]').fill('90점');
+  await freeRow.locator('[data-seat-eval-indiv]').press('Enter');
+  const df = await serverUntil(async () => (await getDoc(evFree)).data(), (d) => d?.values?.a1?.indiv === '90점');
+  r.check(same(df?.values, { a1: { indiv: '90점' } }), 'Enter = 그 학생 값만 저장');
   await page.evaluate(() => window.sp5.closeAllWindows());
   r.check(errors.length === 0, '화면 오류 없음', errors.join(' | '));
 
