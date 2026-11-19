@@ -67,6 +67,8 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
   const [groupCount, setGroupCount] = useState(4);
   const [groupSetId, setGroupSetId] = useState('');
   const [steps, setSteps] = useState<string[]>(DEFAULT_STEPS.slice(0, 3));
+  /** 단계 '기타' (P46-1) - 단계 없이 학생마다 숫자·글자를 그대로 적는다 */
+  const [free, setFree] = useState(false);
   const [alsoOthers, setAlsoOthers] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -96,7 +98,8 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
         ? {
             indiv,
             group,
-            steps: steps.map((s) => s.trim()).filter(Boolean),
+            steps: free ? [] : steps.map((s) => s.trim()).filter(Boolean),
+            ...(free ? { free: true } : {}),
             ...(group ? { groups: chosenSet ? evalGroupsFrom(chosenSet, sids) : groupsByNumber(sids, groupCount) } : {}),
           }
         : {}),
@@ -221,12 +224,16 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
             </label>
           </div>
           <div>
-            <label className="text-xs font-bold text-slate-500 block mb-1">평가 단계 수: {steps.length}단계</label>
+            <label className="text-xs font-bold text-slate-500 block mb-1">평가 단계 수: {free ? '기타' : `${steps.length}단계`}</label>
             <select
-              value={steps.length}
+              value={free ? 'free' : steps.length}
               data-eval-step-count
               aria-label="평가 단계 수"
-              onChange={(e) => setSteps(DEFAULT_STEPS.slice(0, Number(e.target.value)))}
+              onChange={(e) => {
+                if (e.target.value === 'free') return setFree(true);
+                setFree(false);
+                setSteps(DEFAULT_STEPS.slice(0, Number(e.target.value)));
+              }}
               className="px-2 py-1 border border-slate-200 rounded text-xs bg-white"
             >
               {[2, 3, 4, 5].map((n) => (
@@ -234,19 +241,26 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
                   {n}단계
                 </option>
               ))}
+              <option value="free">기타</option>
             </select>
-            <div className="flex gap-2 mt-2">
-              {steps.map((s, i) => (
-                <input
-                  key={i}
-                  value={s}
-                  data-eval-step={i}
-                  aria-label={`${i + 1}단계 이름`}
-                  onChange={(e) => setSteps((list) => list.map((x, j) => (j === i ? e.target.value : x)))}
-                  className="px-2 py-1 border border-slate-200 rounded text-xs flex-1 min-w-0 bg-white"
-                />
-              ))}
-            </div>
+            {free ? (
+              <p className="mt-2 text-2xs text-slate-500" data-eval-free-hint>
+                결과 칸에 숫자·글자를 그대로 적습니다 (85 · A+ · 통과)
+              </p>
+            ) : (
+              <div className="flex gap-2 mt-2">
+                {steps.map((s, i) => (
+                  <input
+                    key={i}
+                    value={s}
+                    data-eval-step={i}
+                    aria-label={`${i + 1}단계 이름`}
+                    onChange={(e) => setSteps((list) => list.map((x, j) => (j === i ? e.target.value : x)))}
+                    className="px-2 py-1 border border-slate-200 rounded text-xs flex-1 min-w-0 bg-white"
+                  />
+                ))}
+              </div>
+            )}
           </div>
           {group && (
             <div className="space-y-2">

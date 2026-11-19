@@ -59,7 +59,7 @@ PC 대화는 '이어서'에서 이 목록의 `[ ]`부터 한다(아래 세션 �
 
 **P46 조사표 평가 '기타'·점수 기준 계획**(11-18 PC - 사용자 요청 "조사표의 '평가' 유형에 '기타'목록을 추가 … 3단계, 4단계, 5단계 평가에서 기준을 넣어서 자동으로 단계가 주어지게" · 두 세션, 둘 다 클라우드 가능(배포 없음) · 알아들은 것·정한 것은 5장 'P46', 6장 'P46').
 **다음 = P46-1 '기타'(숫자·글자 그대로 적기) → P46-2 점수로 단계 자동 매기기**(P45-2는 뺐다 - 위).
-**11-19 P46-1 ■1 끝**(클라우드 - 자료·셈 `free`·`isFreeEval`·'적음 n') → 다음 ■2 화면(만들기 '기타'·표·자리표 글 칸).
+**11-19 P46-1 ■1·■2 끝**(클라우드 - 자료·셈 `free`·`isFreeEval`·'적음 n' · 만들기 '기타'·표·자리표 글 칸) → 다음 ■3 설명서·점검 묶음.
 
 **P47 창 칸 왼쪽·오른쪽 고르기 + 클립보드 합치기 계획**(11-19 PC - 사용자 요청 "현재 오른쪽 창 열리는 것을 왼쪽과 오른쪽 중 환경설정에서 선택할 수 있게 … 그리고 클립보드도 통합해줘" + 물어 고름 '클립보드 = 창 칸의 탭 하나' · 두 세션, 둘 다 클라우드 가능(배포 없음) · 5장 'P47', 6장 'P47').
 **P46 다음 = P47-1 클립보드를 창 칸의 탭으로 → P47-2 창 칸 왼쪽·오른쪽 고르기**(사용자가 먼저 하라면 P46 앞으로).
@@ -4473,7 +4473,8 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
 **먼저 읽을 것**: 이 절 · 5장 'P46' ⓐ·ⓑ·ⓘ · 설명서 evaluation 장 · `src/domain/evaluation.ts`(`stepCounts`·`studentEvalCell`·`cleanEvalValue`) · `src/features/evaluations/EvalCreateForm.tsx`(단계 수 고르기)·`EvalTable.tsx`·`evalData.ts`(문서 맞추기·만들기 칸) · `src/data/types.ts` Evaluation · `src/features/seating/SeatStudentCard.tsx`(오늘 조사표) · `tools/inspect-evaluations.mjs`.
 - [x] ■1 자료·셈: `free` 칸(types · evalData 맞추기·만들기 · 과정별 다른 반 베끼기 · 백업 되살리기를 지나가나) · `stepCounts` 기타 = '적음 n' · 단위 시험
   → 11-19 클라우드: `free?: boolean`(types·EvalDoc) + `isFreeEval`(평가이고 `=== true`일 때만 - 읽기 `readEval`은 손대지 않음) · 만들기 `dataOf` = 기타면 `steps: []` + `free: true` · 다른 반 베끼기는 `...base`라 그대로 · 백업 되살리기는 문서째(`planRestore`) · 시트 되읽기(`evalUpdatesFor`)는 단계를 거르지 않아 그대로 · `cleanEvalValue` indiv·group 앞뒤 빈칸 걷기 · 시험 4(evaluation.test 22)
-- [ ] ■2 화면: 만들기 고르기 끝에 '기타'(고르면 단계 이름 칸 감춤) · 표 결과 칸·전체 일괄 = 글 칸 · 자리표 오늘 조사표 = 글 칸 · 인쇄에 글 그대로 · 새 단추·칸에 `data-…` · 단위(EvalTable 등)
+- [x] ■2 화면: 만들기 고르기 끝에 '기타'(고르면 단계 이름 칸 감춤) · 표 결과 칸·전체 일괄 = 글 칸 · 자리표 오늘 조사표 = 글 칸 · 인쇄에 글 그대로 · 새 단추·칸에 `data-…` · 단위(EvalTable 등)
+  → 11-19 클라우드: 단계 수 고르기 끝 `기타`(값 `free` - 단계 이름 칸 자리에 한 줄 '결과 칸에 숫자·글자를 그대로 적습니다 (85 · A+ · 통과)' `data-eval-free-hint`) · 표·일괄·자리표 글 칸은 고르기와 **같은 `data-*`**(`eval-indiv-score`·`eval-group-score`·`eval-all-indiv`·`eval-all-group`·`seat-eval-indiv`·`seat-eval-group` - 점검은 select면 selectOption, 기타면 fill) · 자리표 글 칸은 사유 칸처럼 떠날 때·Enter에 저장 · 인쇄는 `ui/print`가 글 칸 값을 글로 바꿔 그대로 · 새 시험 EvalTable.test 4 · inspect-evaluations 그대로 통과
 - [ ] ■3 설명서(만들기 4번·입력) · inspect-evaluations에 기타 묶음(만들기 → 85·A+ 적기 → 저장 → 다시 열기 · 모아 보기 '적음 2' · 학생 카드) + inspect-student-record · 커밋
 **끝 조건**: 기타 조사표를 만들어 숫자·글자를 적고 저장하면 다시 열기·모아 보기·학생 카드·자리표·구글 시트에 그 글이 그대로 나온다.
 
