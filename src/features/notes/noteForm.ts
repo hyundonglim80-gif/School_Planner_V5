@@ -15,6 +15,7 @@ import type { Changes } from '../../data/repo/ops';
 import type { LabelTree } from '../../data/select';
 import { cleanDates, datesChanges, datesFields, noteDates } from '../../domain/noteDates';
 import { foldTitle } from '../../domain/noteTitle';
+import { keptTables } from '../../domain/tableCss';
 import type { Attachment, Editable, EntryTable, YMD } from '../../data/types';
 import type { ItemDoc } from '../events/eventOps';
 
@@ -76,7 +77,8 @@ const keyOf = (f: NoteForm, isNew: boolean) =>
     f.labelIds,
     f.newLabels,
     f.attachments.map((a) => a.url),
-    f.tables,
+    // 칸이 모두 빈 표(▦ 표로 만들기만 한 것)는 저장하지 않으니 손댄 것도 아니다 (P48-1)
+    keptTables(f.tables),
     f.studentIds,
     // 고치던 항목의 완료·즐겨찾기는 칸이 아니라 항목에 곧바로 저장한다
     isNew ? [f.done, f.favorite] : null,
@@ -100,8 +102,8 @@ export function noteFormAfterSave(now: NoteForm, sent: NoteForm, saved: NoteForm
   return out as unknown as NoteForm;
 }
 
-/** 저장할 것이 있나 (글·첨부·표 가운데 하나) */
-export const hasContent = (f: Pick<NoteForm, 'text' | 'attachments' | 'tables'>) => !!f.text.trim() || f.attachments.length > 0 || f.tables.length > 0;
+/** 저장할 것이 있나 (글·첨부·표 가운데 하나 - 칸이 모두 빈 표(▦ 표로 만들고 비워 둔 것)는 없는 것, P48-1) */
+export const hasContent = (f: Pick<NoteForm, 'text' | 'attachments' | 'tables'>) => !!f.text.trim() || f.attachments.length > 0 || keptTables(f.tables).length > 0;
 
 export interface SavePlan {
   /** 적을 글 ('#라벨' 줄을 뗀 뒤 앞뒤 빈칸을 다듬은 것) */
@@ -139,7 +141,7 @@ export function createNoteData(form: NoteForm, text: string, labelIds: string[],
     ...(form.done ? { done: true, doneAt: now } : {}),
     ...(form.favorite ? { favorite: true } : {}),
     ...(form.attachments.length > 0 ? { attachments: form.attachments } : {}),
-    ...(form.tables.length > 0 ? { tables: form.tables } : {}),
+    ...(keptTables(form.tables).length > 0 ? { tables: keptTables(form.tables) } : {}),
     ...(form.studentIds.length > 0 ? { studentIds: form.studentIds } : {}),
   };
 }
@@ -156,7 +158,9 @@ export function noteEditChanges(item: ItemDoc, form: NoteForm, text: string, lab
   }
   if (!sameJson(labelIds, item.labelIds ?? [])) out.labelIds = labelIds;
   if (!sameJson(form.attachments, item.attachments ?? [])) out.attachments = form.attachments.length > 0 ? form.attachments : undefined;
-  if (!sameJson(form.tables, item.tables ?? [])) out.tables = form.tables.length > 0 ? form.tables : undefined;
+  // 칸이 모두 빈 표는 적지 않는다 (P48-1)
+  const tables = keptTables(form.tables);
+  if (!sameJson(tables, item.tables ?? [])) out.tables = tables.length > 0 ? tables : undefined;
   if (!sameJson(form.studentIds, item.studentIds ?? [])) out.studentIds = form.studentIds.length > 0 ? form.studentIds : undefined;
   Object.assign(out, datesChanges(item, form.dates));
   // 이 기기가 바꾼 칸만 (P14-6 ■3) - 값이 undefined(칸 지우기)인 것도 남긴다
@@ -177,7 +181,7 @@ export function noteEditedKeys(base: NoteForm, form: NoteForm): Set<string> {
   }
   if (!sameJson(form.labelIds, base.labelIds)) keys.add('labelIds');
   if (!sameJson(form.attachments, base.attachments)) keys.add('attachments');
-  if (!sameJson(form.tables, base.tables)) keys.add('tables');
+  if (!sameJson(keptTables(form.tables), keptTables(base.tables))) keys.add('tables');
   if (!sameJson(form.studentIds, base.studentIds)) keys.add('studentIds');
   if (!sameJson(form.dates, base.dates)) {
     keys.add('date');

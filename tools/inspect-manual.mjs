@@ -583,6 +583,16 @@ try {
     r.check((await count(sel('table-op'))) > 0, '행/열 단추');
   });
 
+  await topic('table-make', async () => {
+    await q(sel('entry-card', 'insp_man_n1')).locator(sel('entry-edit')).click();
+    await q(sel('note-table-add')).click();
+    r.check(await waitFor(async () => (await count(sel('table-input'))) === 1), '▦ 표 = 빈 표, 첫 칸 고치기 (P48-1)');
+    r.check((await count(sel('table-col'))) >= 3 && (await count(sel('table-row'))) >= 3, '위 A·B·C / 왼쪽 1·2·3 띠');
+    r.check((await count(sel('table-op', 'undo'))) >= 1 && (await count(sel('table-name'))) >= 1, '↶ 되돌리기·칸 이름 줄');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
+  });
+
   await topic('paste-image', async () => {
     await q(sel('entry-card', 'insp_man_n1')).locator(sel('entry-edit')).click();
     r.check(await has(sel('note-text-input')), '내용 칸 (Ctrl + V로 캡처 붙이기)');

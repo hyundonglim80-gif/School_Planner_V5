@@ -162,7 +162,7 @@ try {
   await page.keyboard.press('Escape');
   r.check(await panel.isVisible(), '칸 고치기의 ESC는 칸만 멈춘다 (쓰는 칸은 그대로)');
   await table.locator(sel('table-op', 'row-below')).click();
-  r.check((await table.locator('tr').count()) === 3, '↓ 행 = 한 행 더');
+  r.check((await table.locator('tbody tr').count()) === 3, '↓ 행 = 한 행 더');
 
   r.section('저장 = 문서 하나');
   await page.locator(sel('note-text-input')).click();

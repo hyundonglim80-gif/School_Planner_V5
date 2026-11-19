@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LabelTree } from '../../data/select';
 import type { ItemDoc } from '../events/eventOps';
+import { newEmptyTable, setCellText } from '../../domain/tableEdit';
 import { createNoteData, hasContent, newNoteForm, noteEditChanges, noteEditedKeys, noteFormAfterSave, noteFormOf, noteTextClash, sameNoteForm, savePlanOf } from './noteForm';
 
 const label = (id: string, name: string) => ({ id, name, color: 'blue', kind: 'note', parentId: null, order: 'a0' });
@@ -66,6 +67,21 @@ describe('새 칸', () => {
     expect(hasContent({ text: '  ', attachments: [], tables: [] })).toBe(false);
     expect(hasContent({ text: '연수', attachments: [], tables: [] })).toBe(true);
     expect(hasContent({ text: '', attachments: [{ name: 'a', url: 'u', type: 'file' }], tables: [] })).toBe(true);
+  });
+
+  it('칸이 모두 빈 표(▦ 표로 만들기만 한 것)는 없는 것 - 저장하지 않는다 (P48-1)', () => {
+    const blank = newEmptyTable(3, 3, 1);
+    const filled = setCellText(newEmptyTable(3, 3, 1), 0, 0, '이름');
+    expect(hasContent({ text: '', attachments: [], tables: [blank] })).toBe(false);
+    expect(hasContent({ text: '', attachments: [], tables: [blank, filled] })).toBe(true);
+    const form = { ...newNoteForm(null, tree), tables: [blank, filled] };
+    expect(createNoteData(form, '', [], 'a0').tables).toEqual([filled]);
+    expect(createNoteData({ ...form, tables: [blank] }, '글', [], 'a0')).not.toHaveProperty('tables');
+    // 고친 칸: 빈 표만 더했으면 바뀐 것 없음
+    const open = noteFormOf(item());
+    expect(noteEditChanges(item(), { ...open, tables: [blank] }, '회의', ['L1'])).toEqual({});
+    expect(noteEditedKeys(open, { ...open, tables: [blank] }).has('tables')).toBe(false);
+    expect(sameNoteForm(open, { ...open, tables: [blank] }, false)).toBe(true);
   });
 });
 

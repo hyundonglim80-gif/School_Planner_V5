@@ -178,7 +178,7 @@ export default function EntryBody({ item, onToggleCheckLine, fullTables, large, 
       {body && <LinkPreviewCards text={body} />}
       {/* 붙인 표 - 작게 보기만 (고치기는 쓰는 칸에서) */}
       {tables.map((t) => (
-        <EntryTableView key={t.id} table={t} compact fullHeight={fullTables} />
+        <EntryTableView key={t.id} table={t} fullHeight={fullTables} />
       ))}
     </>
   );

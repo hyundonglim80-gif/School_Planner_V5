@@ -2,13 +2,15 @@
 //   - 엑셀·한셀·구글 시트에서 복사해 본문에 붙여넣으면 서식째 표로 붙는다.
 //     살리는 것: 보이는 값, 병합, 배경색, 글자색·굵게·기울임·밑줄·크기, 정렬, 테두리, 대각선, 열 너비, 줄 높이.
 //     못 살리는 것: 수식(계산된 값만 온다), 차트·그림, 메모(주석), 데이터 유효성.
-//   - 붙인 뒤에는 칸 글자만 고치고, 줄·열을 더하고 뺀다. 서식을 크게 바꿀 때는 다시 붙여넣는다.
+//   - 붙인 뒤에는 칸 글자만 고치고, 줄·열을 더하고 뺀다(domain/tableEdit). 서식을 크게 바꿀 때는 다시 붙여넣는다.
 //   - 본문 아래 첨부처럼 둔다(항목의 tables 칸). V5는 글 없이 표만 있어도 저장한다(V4의 '[표]' 글은 없다).
+//   - 그리기(칸 서식 → 화면 스타일·칸 수)는 domain/tableCss - 카드가 부르는 첫 화면 몫이라 이 파일(붙여넣기 읽기)과 나눴다(P48-1).
 //
 // 저장 모양(data/types EntryTable): Firestore는 배열 안의 배열을 받지 않으므로 rows는 { cells: [...] }의 배열이다.
 // 칸은 표 전체를 채우는 격자로 둔다. 병합된 칸의 나머지 자리는 { v: '', x: 1 } (가려진 칸).
 // 같은 서식은 styles에 한 번만 두고 칸은 번호(s)로 가리킨다 - 크기를 줄인다.
 import type { EntryTable, TableCell, TableCellStyle, TableRow } from '../data/types';
+import { tableSize } from './tableCss';
 
 export type { EntryTable, TableCell, TableCellStyle, TableRow };
 
@@ -292,123 +294,10 @@ export function parseClipboardTable(html: string): EntryTable | { error: string 
   return out;
 }
 
-/** 표 칸 수 (가려진 칸 포함한 격자) */
-export function tableSize(t: EntryTable): { rows: number; cols: number } {
-  return { rows: t.rows.length, cols: t.rows[0]?.cells.length ?? 0 };
-}
-
 /** 칸이 둘 이상인 표만 표로 붙인다. 한 칸만 복사했으면 글자로 붙이는 것이 자연스럽다 */
 export function isRealTable(t: EntryTable): boolean {
   const { rows, cols } = tableSize(t);
   return rows * cols >= 2;
-}
-
-// ───────────────────────── 고치기 (칸 글자, 줄·열) ─────────────────────────
-
-const cloneRows = (t: EntryTable): TableRow[] =>
-  t.rows.map((row) => ({ ...row, cells: row.cells.map((c) => ({ ...c })) }));
-
-/** 병합 칸 (왼쪽 위 칸의 자리와 크기) */
-function anchors(rows: TableRow[]): { r: number; c: number; rs: number; cs: number }[] {
-  const out: { r: number; c: number; rs: number; cs: number }[] = [];
-  rows.forEach((row, r) =>
-    row.cells.forEach((cell, c) => {
-      if (!cell.x && ((cell.rs ?? 1) > 1 || (cell.cs ?? 1) > 1)) out.push({ r, c, rs: cell.rs ?? 1, cs: cell.cs ?? 1 });
-    })
-  );
-  return out;
-}
-
-export function setCellText(t: EntryTable, r: number, c: number, v: string): EntryTable {
-  const rows = cloneRows(t);
-  if (!rows[r]?.cells[c] || rows[r].cells[c].x) return t;
-  rows[r].cells[c].v = v;
-  return { ...t, rows };
-}
-
-/** 줄을 at 자리에 끼운다 (at = 줄 수면 맨 아래). 새 칸은 위(없으면 아래) 줄의 서식을 따른다 */
-export function insertRow(t: EntryTable, at: number): EntryTable {
-  const rows = cloneRows(t);
-  const n = rows[0]?.cells.length ?? 1;
-  const spanning = anchors(rows).filter((a) => a.r < at && at < a.r + a.rs);
-  const model = rows[at - 1] ?? rows[at];
-  const cells: TableCell[] = [];
-  for (let c = 0; c < n; c++) {
-    const inside = spanning.some((a) => c >= a.c && c < a.c + a.cs);
-    const s = model?.cells[c]?.s;
-    cells.push(inside ? { v: '', x: 1 } : s !== undefined ? { v: '', s } : { v: '' });
-  }
-  for (const a of spanning) rows[a.r].cells[a.c].rs = a.rs + 1;
-  rows.splice(at, 0, model?.h ? { h: model.h, cells } : { cells });
-  return { ...t, rows };
-}
-
-/** 줄 하나를 뺀다. 병합이 걸쳐 있으면 병합을 한 줄 줄이고, 병합의 첫 줄이면 다음 줄로 넘긴다 */
-export function deleteRow(t: EntryTable, at: number): EntryTable {
-  if (t.rows.length <= 1) return t;
-  const rows = cloneRows(t);
-  for (const a of anchors(rows)) {
-    if (a.r < at && at < a.r + a.rs) rows[a.r].cells[a.c].rs = a.rs - 1 > 1 ? a.rs - 1 : undefined;
-    else if (a.r === at && a.rs > 1) {
-      const moved = { ...rows[at].cells[a.c], rs: a.rs - 1 > 1 ? a.rs - 1 : undefined };
-      delete moved.x;
-      rows[at + 1].cells[a.c] = moved;
-    }
-  }
-  rows.splice(at, 1);
-  return { ...t, rows: rows.map((row) => ({ ...row, cells: row.cells.map(clean) })) };
-}
-
-/** 열을 at 자리에 끼운다 */
-export function insertCol(t: EntryTable, at: number): EntryTable {
-  const rows = cloneRows(t);
-  const spanning = anchors(rows).filter((a) => a.c < at && at < a.c + a.cs);
-  rows.forEach((row, r) => {
-    const inside = spanning.some((a) => r >= a.r && r < a.r + a.rs);
-    const model = row.cells[at - 1] ?? row.cells[at];
-    const s = model && !model.x ? model.s : undefined;
-    row.cells.splice(at, 0, inside ? { v: '', x: 1 } : s !== undefined ? { v: '', s } : { v: '' });
-  });
-  for (const a of spanning) rows[a.r].cells[a.c].cs = a.cs + 1;
-  const cols = t.cols ? [...t.cols] : undefined;
-  if (cols) cols.splice(at, 0, cols[at - 1] ?? cols[at] ?? 0);
-  return { ...t, rows, ...(cols ? { cols } : {}) };
-}
-
-/** 열 하나를 뺀다 */
-export function deleteCol(t: EntryTable, at: number): EntryTable {
-  if ((t.rows[0]?.cells.length ?? 0) <= 1) return t;
-  const rows = cloneRows(t);
-  for (const a of anchors(rows)) {
-    if (a.c < at && at < a.c + a.cs) rows[a.r].cells[a.c].cs = a.cs - 1 > 1 ? a.cs - 1 : undefined;
-    else if (a.c === at && a.cs > 1) {
-      const moved = { ...rows[a.r].cells[at], cs: a.cs - 1 > 1 ? a.cs - 1 : undefined };
-      delete moved.x;
-      rows[a.r].cells[at + 1] = moved;
-    }
-  }
-  rows.forEach((row) => row.cells.splice(at, 1));
-  const cols = t.cols ? t.cols.filter((_, i) => i !== at) : undefined;
-  return { ...t, rows: rows.map((row) => ({ ...row, cells: row.cells.map(clean) })), ...(cols ? { cols } : {}) };
-}
-
-/** undefined 칸을 뺀다 (Firestore는 undefined를 받지 않는다) */
-function clean(cell: TableCell): TableCell {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(cell)) if (v !== undefined) out[k] = v;
-  return out as unknown as TableCell;
-}
-
-/** 저장할 모양으로 다듬는다: undefined 없애기 */
-export function tableForSave(t: EntryTable): EntryTable {
-  const out: EntryTable = {
-    id: t.id,
-    createdAt: t.createdAt,
-    rows: t.rows.map((row) => (row.h ? { h: row.h, cells: row.cells.map(clean) } : { cells: row.cells.map(clean) })),
-  };
-  if (t.cols) out.cols = t.cols;
-  if (t.styles) out.styles = t.styles;
-  return out;
 }
 
 /** 저장된 값을 믿을 수 있는 표 목록으로 (모양이 이상한 것은 뺀다) */
@@ -418,47 +307,4 @@ export function normalizeTables(raw: unknown): EntryTable[] {
     const rows = (t as { rows?: unknown } | null)?.rows;
     return !!t && typeof t === 'object' && Array.isArray(rows) && rows.every((r) => !!r && Array.isArray((r as { cells?: unknown }).cells));
   });
-}
-
-/**
- * 대각선을 칸 배경으로 그린다. 칸 크기에 맞춰 늘어나는 SVG 선이라, 굵기는 그대로 두고
- * 점선·파선도 그린다. 색은 safeColor를 거친 #rrggbb 뿐이라 URL에 그대로 넣어도 안전하다.
- */
-function diagonalImage(spec: string, down: boolean): string | undefined {
-  const m = /^(\d)px (solid|dashed|dotted|double) (#[0-9a-f]{3,6})$/.exec(spec);
-  if (!m) return undefined;
-  const width = m[2] === 'double' ? 1 : Number(m[1]);
-  const dash = m[2] === 'dashed' ? " stroke-dasharray='6 3'" : m[2] === 'dotted' ? " stroke-dasharray='1 2'" : '';
-  const [y1, y2] = down ? [0, 100] : [100, 0];
-  const line = (offset: number) =>
-    `<line x1='0' y1='${y1 + offset}' x2='100' y2='${y2 + offset}' stroke='${m[3]}' stroke-width='${width}' vector-effect='non-scaling-stroke'${dash}/>`;
-  // 이중선은 가는 선 두 줄
-  const lines = m[2] === 'double' ? line(-1.5) + line(1.5) : line(0);
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'>${lines}</svg>`;
-  return `url("data:image/svg+xml,${svg.replace(/#/g, '%23').replace(/</g, '%3C').replace(/>/g, '%3E')}")`;
-}
-
-/** 칸 서식 → 화면 스타일 */
-export function cellCss(s?: TableCellStyle): Record<string, string | number> {
-  if (!s) return {};
-  const css: Record<string, string | number> = {};
-  if (s.bg) css.backgroundColor = s.bg;
-  if (s.c) css.color = s.c;
-  if (s.b) css.fontWeight = 700;
-  if (s.i) css.fontStyle = 'italic';
-  if (s.u) css.textDecoration = 'underline';
-  if (s.fs) css.fontSize = `${s.fs}pt`;
-  if (s.ha) css.textAlign = s.ha;
-  if (s.va) css.verticalAlign = s.va;
-  if (s.bt) css.borderTop = s.bt;
-  if (s.br) css.borderRight = s.br;
-  if (s.bb) css.borderBottom = s.bb;
-  if (s.bl) css.borderLeft = s.bl;
-  const diagonals = [s.dd && diagonalImage(s.dd, true), s.du && diagonalImage(s.du, false)].filter(Boolean);
-  if (diagonals.length) {
-    css.backgroundImage = diagonals.join(', ');
-    css.backgroundSize = '100% 100%';
-    css.backgroundRepeat = 'no-repeat';
-  }
-  return css;
 }

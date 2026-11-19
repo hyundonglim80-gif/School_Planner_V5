@@ -1,18 +1,28 @@
-// V4 lib/entryTable.test.ts 그대로
+// V4 lib/entryTable.test.ts 그대로 (P48-1 - 고치기는 tableEdit, 그리기는 tableCss로 나뉘었다)
 import { describe, it, expect } from 'vitest';
+import { isRealTable, MAX_TABLE_CELLS, parseClipboardTable, type EntryTable } from './entryTable';
+import { cellCss } from './tableCss';
+import { isBlankTable, keptTables } from './tableCss';
 import {
-  cellCss,
+  anchorOf,
+  canGrow,
+  cellName,
+  clearRange,
+  colName,
   deleteCol,
+  deleteCols,
   deleteRow,
+  deleteRows,
+  inRange,
   insertCol,
   insertRow,
-  isRealTable,
-  MAX_TABLE_CELLS,
-  parseClipboardTable,
+  moveCell,
+  newEmptyTable,
+  rangeName,
+  rangeOf,
   setCellText,
   tableForSave,
-  type EntryTable,
-} from './entryTable';
+} from './tableEdit';
 
 // 엑셀에서 복사하면 클립보드에 들어오는 HTML의 모양 (줄여 옮김).
 // 서식은 대부분 <style>의 .xl클래스로, 병합은 colspan/rowspan, 열 너비는 <col width>.
@@ -215,5 +225,77 @@ describe('표 고치기', () => {
       fontSize: '14pt',
       textAlign: 'center',
     });
+  });
+});
+
+describe('빈 표 (P48-1 ▦ 표)', () => {
+  it('3행 × 3열, 칸은 모두 빈 글 - 모두 비면 저장 때 뺀다', () => {
+    const t = newEmptyTable(3, 3, 5);
+    expect(t.rows.map((r) => r.cells.map((c) => c.v))).toEqual([['', '', ''], ['', '', ''], ['', '', '']]);
+    expect(t.createdAt).toBe(5);
+    expect(t.id).toMatch(/^tb_/);
+    expect(isBlankTable(t)).toBe(true);
+    expect(isBlankTable(setCellText(t, 2, 2, ' '))).toBe(true);
+    const filled = setCellText(t, 2, 2, '끝');
+    expect(isBlankTable(filled)).toBe(false);
+    expect(keptTables([t, filled])).toEqual([filled]);
+  });
+
+  it('행·열을 늘려도 3,000칸까지', () => {
+    const t = newEmptyTable(30, 100);
+    expect(canGrow(t, 0, 0)).toBe(true);
+    expect(canGrow(t, 1, 0)).toBe(false);
+    expect(canGrow(newEmptyTable(29, 100), 1, 0)).toBe(true);
+    expect(canGrow(newEmptyTable(3, 3), 0, 1)).toBe(true);
+    expect(MAX_TABLE_CELLS).toBe(3000);
+  });
+});
+
+describe('고르기 (P48-1 - 칸 이름·범위·옮기기)', () => {
+  // EXCEL = 0행: A1:B1 병합 '학급 명렬' / 1~2행: A2:A3 병합
+  const base = () => asTable(parseClipboardTable(EXCEL));
+  const grid = () => newEmptyTable(3, 4);
+
+  it('열 이름·칸 이름·범위 이름 (엑셀과 같게)', () => {
+    expect([0, 1, 25, 26, 27, 51, 52, 701, 702].map(colName)).toEqual(['A', 'B', 'Z', 'AA', 'AB', 'AZ', 'BA', 'ZZ', 'AAA']);
+    expect(cellName({ r: 1, c: 2 })).toBe('C2');
+    expect(rangeName({ r1: 1, c1: 1, r2: 1, c2: 1 })).toBe('B2');
+    expect(rangeName({ r1: 1, c1: 1, r2: 4, c2: 3 })).toBe('B2:D5');
+  });
+
+  it('범위는 두 끝 칸으로, 걸친 병합 칸은 통째로', () => {
+    expect(rangeOf(grid(), { r: 2, c: 3 }, { r: 0, c: 1 })).toEqual({ r1: 0, c1: 1, r2: 2, c2: 3 });
+    const t = base();
+    expect(anchorOf(t, 0, 1)).toEqual({ r: 0, c: 0, rs: 1, cs: 2 });
+    expect(anchorOf(t, 2, 0)).toEqual({ r: 1, c: 0, rs: 2, cs: 1 });
+    // B1(가려진 칸)~C1 → A1:C1, A3~B3 → A2:B3
+    expect(rangeOf(t, { r: 0, c: 1 }, { r: 0, c: 2 })).toEqual({ r1: 0, c1: 0, r2: 0, c2: 2 });
+    expect(rangeOf(t, { r: 2, c: 0 }, { r: 2, c: 1 })).toEqual({ r1: 1, c1: 0, r2: 2, c2: 1 });
+    expect(inRange({ r1: 1, c1: 0, r2: 2, c2: 1 }, 2, 1)).toBe(true);
+    expect(inRange({ r1: 1, c1: 0, r2: 2, c2: 1 }, 0, 1)).toBe(false);
+    expect(inRange(null, 0, 0)).toBe(false);
+  });
+
+  it('방향키: 병합 칸은 한 칸처럼, 끝에서는 멈춘다', () => {
+    const t = base();
+    expect(moveCell(t, { r: 0, c: 0 }, 0, 1)).toEqual({ r: 0, c: 2 }); // 병합 A1:B1 → C1
+    expect(moveCell(t, { r: 1, c: 0 }, 1, 0)).toEqual({ r: 1, c: 0 }); // A2:A3 아래는 끝
+    expect(moveCell(t, { r: 2, c: 1 }, 0, -1)).toEqual({ r: 2, c: 0 }); // 가려진 칸 자리 - 주인은 anchorOf로
+    expect(moveCell(t, { r: 0, c: 2 }, 0, 1)).toEqual({ r: 0, c: 2 }); // 오른쪽 끝
+    expect(moveCell(grid(), { r: 0, c: 0 }, -1, 0)).toEqual({ r: 0, c: 0 });
+    expect(moveCell(grid(), { r: 1, c: 1 }, 1, 0)).toEqual({ r: 2, c: 1 });
+  });
+
+  it('범위 비우기 (가려진 칸은 그대로, 바뀐 것 없으면 그대로) · 행·열 여럿 빼기', () => {
+    const t = setCellText(setCellText(grid(), 0, 0, 'a'), 2, 3, 'd');
+    const cleared = clearRange(t, { r1: 0, c1: 0, r2: 1, c2: 3 });
+    expect(cleared.rows.map((r) => r.cells.map((c) => c.v))).toEqual([['', '', '', ''], ['', '', '', ''], ['', '', '', 'd']]);
+    expect(clearRange(cleared, { r1: 0, c1: 0, r2: 1, c2: 3 })).toBe(cleared);
+    const b = base();
+    expect(clearRange(b, { r1: 0, c1: 0, r2: 0, c2: 1 }).rows[0].cells[1]).toEqual({ v: '', x: 1 });
+    expect(deleteRows(grid(), 0, 1).rows.length).toBe(1);
+    expect(deleteRows(grid(), 0, 2).rows.length).toBe(3); // 모두는 빼지 않는다
+    expect(deleteCols(grid(), 1, 2).rows[0].cells.length).toBe(2);
+    expect(deleteCols(grid(), 0, 3).rows[0].cells.length).toBe(4);
   });
 });

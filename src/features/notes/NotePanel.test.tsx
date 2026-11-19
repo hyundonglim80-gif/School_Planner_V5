@@ -614,13 +614,55 @@ describe('붙이기 (P4-2)', () => {
     expect(document.querySelectorAll('[data-note-table]')).toHaveLength(1);
     expect(upload.release).toBeNull();
     fireEvent.click(q('[data-cell="1-1"]'));
-    const cell = q('[data-cell="1-1"] textarea') as HTMLTextAreaElement;
+    const cell = q('[data-table-input="1-1"]') as HTMLTextAreaElement;
     fireEvent.change(cell, { target: { value: '95' } });
     fireEvent.keyDown(cell, { key: 'Enter' });
     fireEvent.click(q('[data-table-op="row-below"]'));
     await save();
     const data = (lastOps().find((o) => o.type === 'create') as unknown as { data: { tables: { rows: { cells: { v: string }[] }[] }[] } }).data;
     expect(data.tables[0].rows.map((r) => r.cells.map((c) => c.v).join(','))).toEqual(['이름,점수', '가,95', ',']);
+  });
+
+  it('▦ 표 = 빈 표 3 × 3, A1부터 적고 마지막 칸 Tab = 새 행, 고치던 글은 Ctrl+S에도 (P48-1)', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    fireEvent.click(q('[data-note-table-add]'));
+    const table = q('[data-note-table]');
+    expect(table.querySelectorAll('td[data-cell]')).toHaveLength(9);
+    const a1 = q('[data-table-input="0-0"]') as HTMLTextAreaElement;
+    expect(document.activeElement).toBe(a1);
+    fireEvent.change(a1, { target: { value: '이름' } });
+    fireEvent.keyDown(a1, { key: 'Tab' });
+    for (let i = 0; i < 7; i++) fireEvent.keyDown(document.activeElement!, { key: 'Tab' });
+    expect(document.activeElement?.getAttribute('data-table-input')).toBe('2-2');
+    fireEvent.keyDown(document.activeElement!, { key: 'Tab' });
+    expect(table.querySelectorAll('tbody tr')).toHaveLength(4);
+    const d1 = document.activeElement as HTMLTextAreaElement;
+    expect(d1.getAttribute('data-table-input')).toBe('3-0');
+    fireEvent.change(d1, { target: { value: '넷째 줄' } });
+    act(() => void fireEvent.keyDown(d1, { key: 's', ctrlKey: true }));
+    await act(async () => {});
+    const data = (lastOps().find((o) => o.type === 'create') as unknown as { data: { text: string; tables: { rows: { cells: { v: string }[] }[] }[] } }).data;
+    expect(data.text).toBe('');
+    expect(data.tables[0].rows.map((r) => r.cells.map((c) => c.v).join(','))).toEqual(['이름,,', ',,', ',,', '넷째 줄,,']);
+  });
+
+  it('▦ 표만 만들고 비워 두면 저장하지 않고 닫는다 (빈 메모와 같게)', async () => {
+    seed();
+    render(<Host initial={{ sid: SID, date: DAY }} />);
+    const before = written.batches.length;
+    close.mockClear();
+    fireEvent.click(q('[data-note-table-add]'));
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    expect(anyWindowUnsaved()).toBe(false);
+    expect((q('[data-note-save]') as HTMLButtonElement).disabled).toBe(true);
+    act(() => {
+      textInput().focus();
+      fireEvent.keyDown(textInput(), { key: 's', ctrlKey: true });
+    });
+    await act(async () => {});
+    expect(written.batches.length).toBe(before);
+    expect(close).toHaveBeenCalled();
   });
 
   it('캡처 Ctrl+V = 드라이브에 올려 첨부, 올리는 동안은 저장하지 않는다', async () => {
