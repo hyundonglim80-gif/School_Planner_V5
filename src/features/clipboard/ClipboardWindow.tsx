@@ -6,7 +6,7 @@ import type { WindowProps } from '../../app/windows';
 import ModalShell from '../../ui/ModalShell';
 import { setClipboardOpen } from './capture';
 import { ClipboardPanel } from './ClipboardColumn';
-import { pasteClip } from './paste';
+import { pasteClipShowingTarget } from './paste';
 
 export default function ClipboardWindow({ close, raise }: WindowProps) {
   useEffect(() => {
@@ -18,7 +18,7 @@ export default function ClipboardWindow({ close, raise }: WindowProps) {
 
   return (
     <ModalShell isOpen onClose={close} raise={raise} title="📋 클립보드" bare>
-      <ClipboardPanel titled={false} onClose={close} pasteWith={pasteClip} hint="누르면 글을 쓰던 칸에 붙여넣습니다. 이 기기에만 남습니다." />
+      <ClipboardPanel titled={false} onClose={close} pasteWith={pasteClipShowingTarget} hint="누르면 글을 쓰던 칸에 붙여넣습니다. 이 기기에만 남습니다." />
     </ModalShell>
   );
 }

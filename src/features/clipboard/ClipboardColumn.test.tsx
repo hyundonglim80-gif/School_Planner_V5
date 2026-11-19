@@ -10,6 +10,7 @@ import { useSession } from '../../data/session';
 import { setClipboardOpen, useClipboardCapture, useClipboardPanel } from './capture';
 import ClipboardColumn from './ClipboardColumn';
 import ClipboardWindow from './ClipboardWindow';
+import { pasteClipShowingTarget, windowKeyOf } from './paste';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 
@@ -104,6 +105,30 @@ describe('클립보드 칸', () => {
     await act(async () => fireEvent.click(q(`[data-clip-remove="${id}"]`)!));
     expect(useClipboard.getState().items).toEqual([]);
     expect(useClipboard.getState().trash.map((t) => t.text)).toEqual(['가운데']);
+  });
+
+  it('붙여넣을 칸이 다른 창(숨은 탭)에 있으면 그 창을 먼저 앞으로 보이고 붙인다 (P47-1)', async () => {
+    await addClipText('탭');
+    function NoteLike() {
+      useClipboardCapture();
+      const [text, setText] = useState('');
+      return (
+        <div data-window-key="777">
+          <textarea data-note value={text} onChange={(e) => setText(e.target.value)} />
+        </div>
+      );
+    }
+    render(<NoteLike />);
+    useWindows.setState({ windows: [{ key: 777, id: 'note', params: {}, openedAt: 1, raisedAt: 1 }] });
+    const ta = q('[data-note]') as HTMLTextAreaElement;
+    ta.focus();
+    ta.blur();
+    expect(windowKeyOf(ta)).toBe(777);
+    expect(windowKeyOf(document.body)).toBeNull();
+    const item = useClipboard.getState().items[0];
+    await act(async () => void (await pasteClipShowingTarget(item)));
+    expect(useWindows.getState().windows[0].raisedAt).toBeGreaterThan(1);
+    expect(ta.value).toBe('탭');
   });
 
   it('받을 칸이 없으면 시스템 클립보드에 담고 알린다', async () => {

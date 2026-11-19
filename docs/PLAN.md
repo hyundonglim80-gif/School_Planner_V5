@@ -4506,7 +4506,8 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
 **먼저 읽을 것**: 이 절 · 5장 'P47' ⓐ~ⓕ · 설명서 클립보드 주제(`grep -n "clipboard" src/features/help/chapters/*.ts`) · `src/features/clipboard/`(ClipboardColumn·capture·paste·popupClip) · `src/ui/sideColumn.ts`·`SideTabs.tsx`(탭 줄 `useSideSlot`) · `src/app/Shell.tsx`(왼쪽 줄·밀기) · `src/app/useGlobalGestures.ts` · `src/app/resetTargets.ts` · 점검 inspect-clipboard-popup·inspect-scroll·inspect-shell(grep `data-clipboard`).
 - [x] ■1 클립보드를 창 칸 탭으로: 목록 칸(ClipboardPanel)을 창 칸에 세우기 · 📋 단추(창 칸 쪽 가장자리)·단축키 열기/닫기 · 열림 기억 · 왼쪽 줄·폭·밀기·초기화 왼쪽 폭 걷기 · 단위(ClipboardColumn.test 고침)
   → 11-19 클라우드: 창 목록 `clipboard`(kind side, `ClipboardWindow` = ModalShell + `ClipboardPanel titled={false}`) · `toggleClipboard` = 탭이 없으면 세움(팝업창 모드는 클립보드 팝업창, 막히면 이 창 안 탭) · 보이는 탭이면 닫기 · 숨은 탭이면 앞으로 · 열림 기억 `sp5-clipboard-open`(탭이 서고 닫힐 때) → 다시 열면 넓은 화면은 다시 세우고 휴대폰은 닫고 시작 · 📋 단추 = 오른쪽 가장자리, 창 칸이 서 있으면 그 안쪽 가장자리의 '오른쪽 칸 닫기 ▶' 바로 위(늘 📋 - 보이면 눌린 모양) · 왼쪽 줄·`leftPanelWidth`·`--left-column-w`·초기화 왼쪽 폭 걷음(경계선 두 번 누르기 = 창 칸 폭) · 시험 ClipboardColumn 7·popupClip 고침
-- [ ] ■2 붙여넣기 뒤 그 칸이 든 탭으로 돌아가기 · 쓸 칸 없음 안내 · 휴대폰 덮기·뒤로가기 · 팝업창 모드·새 창 그대로 · 단위
+- [x] ■2 붙여넣기 뒤 그 칸이 든 탭으로 돌아가기 · 쓸 칸 없음 안내 · 휴대폰 덮기·뒤로가기 · 팝업창 모드·새 창 그대로 · 단위
+  → 11-19 클라우드: `paste.pasteClipShowingTarget` = 받을 칸(`getPasteTarget`)이 든 창(`data-window-key` - `windowKeyOf`)을 먼저 앞으로(`windows.raiseWindow` - 탭이면 그 탭, 휴대폰이면 맨 위) 하고 칸이 보일 때까지 몇 프레임 뒤 붙인다(숨은 탭 칸은 커서를 못 둔다) · 창 밖 칸이면 그대로 · 쓸 칸이 없으면 지금처럼 시스템 클립보드 + 안내 · 휴대폰 덮기·뒤로가기·팝업창 모드는 창 틀이 그대로 · 시험 1 · inspect-attach 클립보드 묶음을 탭으로 다시 씀(14 통과 - 왼쪽 칸 밀기·왼쪽 경계선 줄은 뺌)
 - [ ] ■3 설명서(클립보드·창 위치 둘레) · 점검 고침(inspect-clipboard-popup·scroll·shell + grep `data-clipboard`) · 크롬 PC 1400 · 커밋
 **끝 조건**: 왼쪽 클립보드 칸이 없고 📋가 창 칸의 탭을 연다 · 메모를 쓰다 클립보드 탭에서 항목을 누르면 메모에 붙고 메모 탭이 보인다 · 단위·점검 통과.
 

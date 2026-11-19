@@ -2,6 +2,7 @@
 //   항목을 누르면 마지막으로 글을 쓰던 칸(입력칸·글 칸)의 커서 자리에 넣는다.
 //   그림은 그 칸에 Ctrl+V 한 것처럼 넘긴다(메모·기록 칸은 가로채 드라이브에 올려 붙인다 - notes/attach).
 //   받을 칸이 없으면 시스템 클립보드에 도로 담아 두고, 원하는 곳에서 Ctrl+V 하게 한다.
+import { raiseWindow } from '../../app/windows';
 import { copyClipToSystem, type ClipItem } from '../../data/clipboard';
 
 const TEXT_INPUT_TYPES = ['text', 'search', 'url', 'email', 'tel', 'number', ''];
@@ -90,6 +91,29 @@ export function pasteIntoTarget(item: ClipItem): boolean {
 export async function pasteClip(item: ClipItem): Promise<PasteResult> {
   if (pasteIntoTarget(item)) return 'pasted';
   return (await copyClipToSystem(item)) ? 'copied' : 'failed';
+}
+
+/** 받을 칸이 든 창 (창 틀의 data-window-key - 창 밖 칸이면 null) */
+export function windowKeyOf(el: Element | null): number | null {
+  const key = Number(el?.closest('[data-window-key]')?.getAttribute('data-window-key'));
+  return Number.isFinite(key) && key > 0 ? key : null;
+}
+
+const nextFrame = () => new Promise<void>((r) => (typeof requestAnimationFrame === 'function' ? requestAnimationFrame(() => r()) : setTimeout(r, 0)));
+
+/**
+ * 창 칸의 📋 클립보드 탭에서 붙여넣기 (P47-1 ⓒ): 받을 칸이 든 창(탭)을 먼저 앞으로 보이고 붙인다 - 숨은 탭(display:none)의 칸에는
+ * 커서를 둘 수 없고, 붙은 것이 보여야 한다. 칸이 창 밖(하루 화면 등)이면 탭은 그대로.
+ */
+export async function pasteClipShowingTarget(item: ClipItem): Promise<PasteResult> {
+  const target = getPasteTarget();
+  const key = windowKeyOf(target);
+  if (target && key) {
+    raiseWindow(key);
+    // 그 탭이 그려져 칸이 보일 때까지 (몇 프레임)
+    for (let i = 0; i < 10 && !target.getClientRects().length; i++) await nextFrame();
+  }
+  return pasteClip(item);
 }
 
 /** 이 앱 안에서 복사(Ctrl+C)·잘라내기한 글자 - 비밀번호 칸은 빼고 */
