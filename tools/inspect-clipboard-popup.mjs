@@ -1,5 +1,5 @@
 // 점검: 창 위치 '팝업창'이면 왼쪽 📋 = 클립보드 팝업창 (#138·#140 11-09 - 메모 요청이 고쳤고 PC에서 크롬으로 확인)
-//   1) 📋 = 브라우저 팝업창(?popout={"id":"clipboard"}), 이 기기의 클립보드 목록, 큰 창에는 왼쪽 칸이 열리지 않는다, 다시 누르면 그 팝업창
+//   1) 📋 = 브라우저 팝업창(?popout={"id":"clipboard"}), 이 기기의 클립보드 목록, 큰 창에는 클립보드 탭이 서지 않는다, 다시 누르면 그 팝업창
 //   2) 메모 팝업창 글 칸에서 쓰다가 클립보드 팝업창 항목을 누르면 그 커서 자리에 붙는다
 //   3) 글을 쓰던 창을 닫았으면 시스템 클립보드에 담는다(Ctrl+V)
 // 창 위치는 계정 설정(PC) - 문서로 바꾸고 끝에 되돌린다(CLAUDE.md 2장 - 기기 저장소만 바꾸면 계정 값이 이긴다).
@@ -47,7 +47,7 @@ try {
   r.check(await waitFor(clip.locator(sel('clipboard-panel')), 20000), '팝업창 안에 클립보드 목록');
   const item = clip.locator('[data-clip-paste]').filter({ hasText: CLIP });
   r.check(await waitFor(item, 8000), '이 기기의 클립보드 항목이 보인다');
-  r.check((await page.locator(sel('clipboard-panel')).count()) === 0, '큰 창에는 왼쪽 칸이 열리지 않는다');
+  r.check((await page.locator(sel('clipboard-panel')).count()) === 0, '큰 창에는 클립보드 탭이 서지 않는다');
   const pagesBefore = ctx.pages().length;
   await toggle.click();
   await page.waitForTimeout(800);

@@ -43,7 +43,7 @@ export interface LocalPrefs {
   boardMain: number | null;
   boardDay: number | null;
   boardMemo: number | null;
-  /** 오른쪽 칸·왼쪽 클립보드 칸 폭 (app/layoutPrefs - px, null = 기본) */
+  /** 창 칸 폭(왼쪽 클립보드 칸은 P47-1에 없앴다) (app/layoutPrefs - px, null = 기본) */
   rightPanelWidth: number | null;
   /** 화면 밝기 (app/theme - 정하지 않았으면 어둡게) */
   theme: 'light' | 'dark' | 'system';

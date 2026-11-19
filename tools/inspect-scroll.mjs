@@ -127,13 +127,14 @@ try {
   const before2 = await page.evaluate(() => window.scrollY);
   await page.locator(sel('clipboard-toggle', 'closed')).click();
   const clip = page.locator(sel('clipboard-panel'));
-  r.check(await waitFor(clip), '왼쪽 클립보드 칸');
+  r.check(await waitFor(clip), '📋 클립보드 탭 (창 칸 - P47-1)');
   const clipBox = await clip.boundingBox();
   await page.mouse.move(clipBox.x + clipBox.width / 2, clipBox.y + clipBox.height - 40);
   for (const dy of [400, -400, 400]) await page.mouse.wheel(0, dy);
   await page.waitForTimeout(300);
-  r.check((await page.evaluate(() => window.scrollY)) === before2, '클립보드 칸 위 휠 - 가운데 그대로');
-  await page.locator(sel('clipboard-close')).click();
+  r.check((await page.evaluate(() => window.scrollY)) === before2, '클립보드 탭 위 휠 - 가운데 그대로');
+  await page.locator(sel('clipboard-toggle')).click();
+  await waitFor(async () => (await clip.count()) === 0);
 
   // 긴 메모 칸을 끝까지 내린 뒤 더 내린다 (끝에 닿은 휠)
   const longPanel = await openEdit('insp_sc_long');
