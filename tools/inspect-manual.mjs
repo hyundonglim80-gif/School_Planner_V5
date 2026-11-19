@@ -589,9 +589,10 @@ try {
 
   await topic('clipboard', async () => {
     await q(sel('clipboard-toggle')).click();
-    r.check(await has(sel('clipboard-panel')), '왼쪽 📋 → 클립보드 칸');
+    r.check(await has('#side-column [data-clipboard-panel]'), '오른쪽 가장자리 📋 → 오른쪽 칸의 클립보드 탭');
     r.check((await count(sel('clipboard-fetch'))) === 1, '⤓ 가져오기');
-    await q(sel('clipboard-close')).click();
+    await q(sel('clipboard-toggle', 'open')).click();
+    r.check(await waitFor(async () => (await count(sel('clipboard-panel'))) === 0), '📋 다시 누르기 = 닫기');
   });
 
   await topic('image-viewer', async () => {

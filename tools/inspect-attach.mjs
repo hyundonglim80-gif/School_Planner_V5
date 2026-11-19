@@ -200,24 +200,30 @@ try {
   await page.keyboard.press('Escape');
   r.check((await viewer.count()) === 0 && (await panel.isVisible()), 'ESC는 사진 창만 닫는다 (쓰는 칸은 그대로)');
 
-  r.section('클립보드 칸');
-  await page.locator(sel('clipboard-toggle')).click();
+  r.section('클립보드 탭 (P47-1 - 창 칸의 탭 하나)');
   const column = page.locator(sel('clipboard-panel'));
-  r.check(await waitFor(column), '📋 = 왼쪽 클립보드 칸');
-  // 화면 여백은 0.2초에 걸쳐 바뀐다
-  const mainLeft = () => page.locator('main').evaluate((m) => m.getBoundingClientRect().left);
-  r.check(await waitFor(async () => (await mainLeft()) >= (await column.boundingBox()).width - 1), `넓은 화면에서는 화면을 오른쪽으로 민다 (본문 왼쪽 ${Math.round(await mainLeft())})`);
   const text = page.locator(sel('note-text-input'));
+  // 클립보드 탭 보이기(📋 - 숨었으면 보이기) · 메모 탭 보이기(탭 줄)
+  const showClip = async () => {
+    if ((await page.locator(sel('clipboard-toggle', 'open')).count()) === 0) await page.locator(sel('clipboard-toggle')).click();
+    await waitFor(column);
+  };
+  const showMemo = () => page.locator('[data-side-tab]').filter({ hasNotText: '클립보드' }).locator('button').first().click();
   await text.click();
   await text.press('Control+Home');
   await page.keyboard.press('Shift+End');
   await page.keyboard.press('Control+c');
   const firstLine = (await text.inputValue()).split('\n')[0];
-  r.check(await waitFor(column.locator(sel('clip-item', 'text')).filter({ hasText: firstLine })), `Ctrl+C 한 글자가 모인다 (${firstLine.slice(0, 20)})`);
   await text.press('Control+End');
   await page.keyboard.type(' / ');
-  await column.locator(sel('clip-item', 'text')).first().locator(sel('clip-paste')).click();
+  await page.locator(sel('clipboard-toggle')).click();
+  r.check(await waitFor(page.locator('#side-column').locator(column)), '📋 = 창 칸의 클립보드 탭');
+  r.check((await page.locator('[data-side-tab]').count()) === 2 && !(await text.isVisible()), '메모 칸은 숨은 탭으로 (탭 둘)');
+  r.check(await waitFor(column.locator(sel('clip-item', 'text')).filter({ hasText: firstLine })), `Ctrl+C 한 글자가 모인다 (${firstLine.slice(0, 20)})`);
+  await column.locator(sel('clip-item', 'text')).filter({ hasText: firstLine }).first().locator(sel('clip-paste')).click();
+  r.check(await waitFor(text), '항목 누르기 = 메모 탭으로 돌아간다');
   r.check((await text.inputValue()).endsWith(` / ${firstLine}`), '항목 누르기 = 글 쓰던 칸의 커서 자리에');
+  await showClip();
   await page.evaluate(() => navigator.clipboard.writeText('점검첨부 밖에서 복사'));
   await column.locator(sel('clipboard-fetch')).click();
   r.check(await waitFor(column.locator(sel('clip-item', 'text')).filter({ hasText: '밖에서 복사' })), '⤓ 가져오기 = 다른 프로그램에서 복사한 글자');
@@ -233,10 +239,13 @@ try {
   const imgClip = column.locator(sel('clip-item', 'image')).first();
   r.check(await waitFor(imgClip), '캡처 그림도 모인다 (🖼️)');
   const before = google.uploads.length;
+  await showMemo();
   await text.click();
+  await showClip();
   await imgClip.locator(sel('clip-paste')).click();
   r.check(await waitFor(async () => (await panel.locator(sel('note-attachment-image')).count()) === 3, 8000), '그림 항목 누르기 = 쓰는 칸에 올려 붙인다');
   r.check(google.uploads.length === before + 1, '드라이브에 하나 더 올렸다');
+  await showClip();
   const n = await column.locator(sel('clip-item')).count();
   await column.locator(sel('clip-item')).first().hover();
   await column.locator(sel('clip-remove')).first().click();
@@ -253,19 +262,20 @@ try {
     return out;
   }, uid);
   r.check(kept.items === n - 1 && kept.trash >= 1, `이 기기 IndexedDB에 (목록 ${kept.items} · 휴지통 ${kept.trash})`);
-  const resizer = page.locator(sel('column-resizer', 'left'));
+  const resizer = page.locator(sel('column-resizer', 'right'));
   const w0 = (await column.boundingBox()).width;
   const g = await resizer.boundingBox();
   await page.mouse.move(g.x + 4, 400);
   await page.mouse.down();
-  await page.mouse.move(g.x + 100, 400, { steps: 5 });
+  await page.mouse.move(g.x - 92, 400, { steps: 5 });
   await page.mouse.up();
   const w1 = (await column.boundingBox()).width;
   await resizer.dblclick();
   const w2 = (await column.boundingBox()).width;
-  r.check(w1 > w0 + 60 && Math.abs(w2 - w0) < 2, `폭 끌기 ${Math.round(w0)} → ${Math.round(w1)}, 두 번 누르면 ${Math.round(w2)}`);
-  await page.locator(sel('clipboard-toggle')).click();
-  r.check((await column.count()) === 0, '◀ = 닫기');
+  r.check(w1 > w0 + 60 && Math.abs(w2 - w0) < 2, `폭 = 창 칸 폭 - 끌기 ${Math.round(w0)} → ${Math.round(w1)}, 두 번 누르면 ${Math.round(w2)}`);
+  await page.locator(sel('clipboard-toggle', 'open')).click();
+  r.check(await waitFor(async () => (await column.count()) === 0), '보이는 탭에서 📋 = 닫기 (메모 탭은 남는다)');
+  r.check(await text.isVisible(), '메모 칸이 다시 보인다');
   await page.keyboard.press('Escape');
 
   r.section('윈도우 파일 끌어다 놓기 (P21-1)');
