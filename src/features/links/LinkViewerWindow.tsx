@@ -166,7 +166,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
         {/* 표는 보기만, 다 펼친다 (스크롤은 창 하나) */}
         {tables.map((tb) => (
           <div key={tb.id} className="mt-1.5">
-            <EntryTableView table={tb} compact fullHeight />
+            <EntryTableView table={tb} fullHeight />
           </div>
         ))}
         {(pics.length > 0 || files.length > 0) && (

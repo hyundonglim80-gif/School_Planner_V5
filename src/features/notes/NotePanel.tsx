@@ -57,7 +57,7 @@ import { createNote, deleteNote, saveNote, setNoteDone, setNoteFavorite, toggleN
 import EntryBody from './EntryBody';
 import EventDoneChip from '../events/EventDoneChip';
 import { extractImageFiles, pastedTable, tablePastedText, uploadAttachments } from './attach';
-import EntryTableView from './EntryTableView';
+import TableEditor from './TableEditor';
 import { deliverLinkPick } from '../links/actions';
 import { openLinker, openLinkViewer } from '../links/open';
 import { hasContent, isKnownLabel, newNoteForm, noteEditedKeys, noteFormAfterSave, noteFormOf, noteTextClash, sameNoteForm, savePlanOf, type NoteForm } from './noteForm';
@@ -824,7 +824,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               <LinkPreviewCards text={form.text} />
               {/* 붙인 표 - 칸을 눌러 글자를 고치고 행·열을 넣고 뺀다 */}
               {form.tables.map((t, i) => (
-                <EntryTableView
+                <TableEditor
                   key={t.id}
                   table={t}
                   title={form.tables.length > 1 ? `표 ${i + 1}` : '표'}

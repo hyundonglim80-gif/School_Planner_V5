@@ -1,18 +1,8 @@
-// V4 lib/entryTable.test.ts 그대로
+// V4 lib/entryTable.test.ts 그대로 (P48-1 - 고치기는 tableEdit, 그리기는 tableCss로 나뉘었다)
 import { describe, it, expect } from 'vitest';
-import {
-  cellCss,
-  deleteCol,
-  deleteRow,
-  insertCol,
-  insertRow,
-  isRealTable,
-  MAX_TABLE_CELLS,
-  parseClipboardTable,
-  setCellText,
-  tableForSave,
-  type EntryTable,
-} from './entryTable';
+import { isRealTable, MAX_TABLE_CELLS, parseClipboardTable, type EntryTable } from './entryTable';
+import { cellCss } from './tableCss';
+import { deleteCol, deleteRow, insertCol, insertRow, setCellText, tableForSave } from './tableEdit';
 
 // 엑셀에서 복사하면 클립보드에 들어오는 HTML의 모양 (줄여 옮김).
 // 서식은 대부분 <style>의 .xl클래스로, 병합은 colspan/rowspan, 열 너비는 <col width>.

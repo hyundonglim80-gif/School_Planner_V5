@@ -4,7 +4,8 @@
 //   - 여러 개 중 일부만 올라갔으면 올라간 것은 붙여 둔다(버리면 드라이브에만 남고 다시 올리면 두 벌이 된다 - V4).
 import { showErrorToast } from '../../app/toast';
 import { makeAttachment, pastedImageName } from '../../domain/attachments';
-import { isRealTable, parseClipboardTable, tableSize, type EntryTable } from '../../domain/entryTable';
+import { isRealTable, parseClipboardTable, type EntryTable } from '../../domain/entryTable';
+import { tableSize } from '../../domain/tableCss';
 import { driveUrlToStore, uploadFailReason, uploadToDrive } from '../../data/google/drive';
 import type { Attachment } from '../../data/types';
 
