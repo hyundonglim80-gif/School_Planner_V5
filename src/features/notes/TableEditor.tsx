@@ -9,6 +9,8 @@
 //   - 고치던 글은 Ctrl+S에도 함께 저장된다(누른 그때 표에 넣는다 - 쓰는 칸의 Ctrl+S는 document에서 받는다).
 //   - 띠 둘째 줄(P48-2 - PLAN 5장 'P48' ⓔ·ⓕ): 1,000 · 원 · % · 소수 −/+ · 굵게 · 맞춤 ▾ · 칸 색 ▾ - 고른 칸·범위에, 다시 누르면 풂, ↶로 되돌림.
 //     서식을 입힌 칸은 보이는 글('1,234원')을 v에, 원래 수를 n에 - 고칠 때는 원래 수(1234)가 보인다. Ctrl+B = 굵게(엑셀처럼).
+//   - 식(P48-3 - PLAN 5장 'P48' ⓖ·ⓗ, 셈은 domain/tableFormula): '='로 시작하면 식 - 칸을 누르면 식, 떠나면 결과, 칸 이름 줄에 식.
+//     표를 바꿀 때마다(칸·행/열·서식·↶) 표 전체를 다시 셈한다 · 오류 칸에 마우스를 올리면 쉬운 까닭 · '로 시작하면 글.
 //   단추의 data-table-op 이름은 '단추 대신 누르기' 키가 쓴다 - 바꾸지 않는다.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
@@ -35,6 +37,7 @@ import {
   type CellRange,
 } from '../../domain/tableEdit';
 import { editText, FILL_COLORS, setAlign, setFill, setNumberFormat, stepDecimals, styleOf, toggleBold, type NumFormat } from '../../domain/tableFormat';
+import { formulaErrorReason, recalcTable } from '../../domain/tableFormula';
 import type { EntryTable } from '../../data/types';
 import { TableColGroup } from './EntryTableView';
 
@@ -122,11 +125,11 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
     }
   });
 
-  /** 표를 바꾼다 (↶로 되돌릴 수 있게 앞 모습을 둔다) */
+  /** 표를 바꾼다 (↶로 되돌릴 수 있게 앞 모습을 둔다). 식이 있으면 표 전체를 다시 셈한다 - 서식을 바꿔도 식 결과가 그 서식으로 */
   const apply = (next: EntryTable) => {
     if (next === table) return;
     setHistory((h) => [...h.slice(-(UNDO_LIMIT - 1)), table]);
-    onChange(next);
+    onChange(recalcTable(next));
   };
 
   /** 칸을 고른다 (고치기는 멈춘다) */
@@ -580,7 +583,9 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                       colSpan={cell.cs}
                       rowSpan={cell.rs}
                       style={css}
+                      title={formulaErrorReason(cell)}
                       data-cell={`${r}-${c}`}
+                      data-cell-formula={cell.f ? '' : undefined}
                       data-cell-on={on || undefined}
                       onMouseDown={keepFocus}
                       onClick={(e) => onCellClick(e, r, c)}

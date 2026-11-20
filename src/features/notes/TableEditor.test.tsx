@@ -243,6 +243,90 @@ describe('고치는 표 - 숫자 서식·꾸밈 (P48-2)', () => {
   });
 });
 
+describe('고치는 표 - 식 (P48-3)', () => {
+  const op = (name: string) => act(() => void fireEvent.click(q(`[data-table-op="${name}"]`)));
+  /** 점수 표: A = 이름, B = 점수 (3명) + 빈 줄 */
+  function scores(): EntryTable {
+    let t = newEmptyTable(5, 2, 1);
+    [['이름', '점수'], ['가', '90'], ['나', '70'], ['다', '85']].forEach((row, r) => row.forEach((v, c) => (t = setCellText(t, r, c, v))));
+    return t;
+  }
+
+  it('=SUM(…)을 치면 결과, 칸을 누르면 식, 칸 이름 줄에 식 · 위 칸을 고치면 곧바로 다시 셈', () => {
+    seen.latest = scores();
+    render(<Host start={scores()} />);
+    fireEvent.click(q('[data-cell="4-1"]'));
+    fireEvent.change(input(), { target: { value: '=sum(b2:b4)' } });
+    key('Enter');
+    expect(values()[4][1]).toBe('245');
+    expect(seen.latest.rows[4].cells[1].f).toBe('=SUM(B2:B4)');
+    expect(q('[data-cell="4-1"]').textContent).toBe('245');
+    expect(q('[data-cell="4-1"]').hasAttribute('data-cell-formula')).toBe(true);
+    // 고르기 상태로 돌아와 칸 이름 줄에 식
+    key('ArrowUp');
+    key('ArrowDown');
+    expect(q('[data-table-name]').textContent).toContain('=SUM(B2:B4)');
+    // 칸을 누르면 식
+    fireEvent.click(q('[data-cell="4-1"]'));
+    expect(input().value).toBe('=SUM(B2:B4)');
+    key('Escape');
+    // 위 칸을 고치면 곧바로
+    fireEvent.click(q('[data-cell="1-1"]'));
+    fireEvent.change(input(), { target: { value: '100' } });
+    key('Enter');
+    expect(values()[4][1]).toBe('255');
+    expect(q('[data-cell="4-1"]').textContent).toBe('255');
+  });
+
+  it('행을 넣으면 범위가 따라가고 · 오류 칸에는 쉬운 까닭 · ↶로 되돌림', () => {
+    let t = setCellText(scores(), 4, 1, '=SUM(B2:B4)');
+    t = setCellText(t, 4, 0, '=B2/0');
+    seen.latest = t;
+    render(<Host start={t} />);
+    expect(q('[data-cell="4-0"]').textContent).toBe('#DIV/0!');
+    expect(q('[data-cell="4-0"]').title).toContain('0으로 나눴습니다');
+    expect(q('[data-cell="4-1"]').title).toBe('');
+    // 3행(나) 위에 행 넣기
+    fireEvent.click(q('[data-cell="2-1"]'));
+    key('Escape');
+    op('row-above');
+    expect(seen.latest.rows[5].cells[1]).toMatchObject({ f: '=SUM(B2:B5)', v: '245' });
+    fireEvent.change(input(), { target: { value: '5' } });
+    key('Enter');
+    expect(values()[5][1]).toBe('250');
+    // ↶ 두 번 = 행 넣기 전
+    op('undo');
+    op('undo');
+    expect(seen.latest.rows[4].cells[1]).toMatchObject({ f: '=SUM(B2:B4)', v: '245' });
+  });
+
+  it("서식을 바꾸면 식 결과도 그 서식 · '로 시작하면 글 · Delete = 식도 지움", () => {
+    let t = setCellText(scores(), 4, 1, '=AVERAGE(B2:B4)');
+    seen.latest = t;
+    render(<Host start={t} />);
+    expect(values()[4][1]).toBe('81.66666667');
+    fireEvent.click(q('[data-cell="4-1"]'));
+    key('Escape');
+    op('dp-less');
+    expect(values()[4][1]).toBe('81.6666667');
+    op('num-comma');
+    for (let i = 0; i < 6; i++) op('dp-less');
+    expect(values()[4][1]).toBe('81.7');
+    op('num-won');
+    op('dp-less');
+    expect(values()[4][1]).toBe('82원');
+    // '로 시작하면 글
+    key('Delete');
+    expect(seen.latest.rows[4].cells[1].f).toBeUndefined();
+    fireEvent.click(q('[data-cell="4-0"]'));
+    fireEvent.change(input(), { target: { value: "'=합계" } });
+    key('Enter');
+    expect(seen.latest.rows[4].cells[0]).toEqual({ v: '=합계' });
+    fireEvent.click(q('[data-cell="4-0"]'));
+    expect(input().value).toBe("'=합계");
+  });
+});
+
 describe('막 만든 표만 A1을 곧바로 고친다 (P48-2 찾아 고침)', () => {
   it('A1에 글이 있는 표는 autoEdit이어도 고치지 않는다 - 다시 그려져도 A1을 빈 글로 덮지 않게', () => {
     seen.latest = filled();
