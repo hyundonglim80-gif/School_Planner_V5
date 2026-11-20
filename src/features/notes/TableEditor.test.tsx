@@ -327,6 +327,106 @@ describe('고치는 표 - 식 (P48-3)', () => {
   });
 });
 
+describe('고치는 표 - Σ·채우기·정렬 (P48-4)', () => {
+  const op = (name: string) => act(() => void fireEvent.click(q(`[data-table-op="${name}"]`)));
+  const toasts = () => document.getElementById('sp5-toast-container')?.textContent ?? '';
+  /** 이름·국어·수학·합계 (4명) + 빈 줄 */
+  function scores(): EntryTable {
+    let t = newEmptyTable(6, 4, 1);
+    [['이름', '국어', '수학', '합계'], ['가', '90', '80'], ['나', '70', '95'], ['다', '85', '85'], ['라', '60', '70']].forEach((row, r) =>
+      row.forEach((v, c) => (t = setCellText(t, r, c, v)))
+    );
+    return t;
+  }
+
+  it('Σ ▾ 합계: 빈 칸 = 위의 수를 묶은 식, 그 칸을 골라 칸 이름 줄에 식 · 범위 = 아래 줄에 열마다', () => {
+    seen.latest = scores();
+    render(<Host start={scores()} />);
+    fireEvent.click(q('[data-cell="5-1"]'));
+    op('autosum');
+    expect(document.querySelectorAll('[data-table-op^="autosum-"]')).toHaveLength(5);
+    op('autosum-sum');
+    expect(document.querySelector('[data-table-op="autosum-sum"]')).toBeNull();
+    expect(seen.latest.rows[5].cells[1]).toMatchObject({ f: '=SUM(B2:B5)', v: '305' });
+    expect(nameBox()).toBe('B6');
+    expect(q('[data-table-name]').textContent).toContain('=SUM(B2:B5)');
+    expect(document.activeElement).toBe(input());
+    // 범위 C2:C5 → 아래 빈 칸 C6
+    fireEvent.click(q('[data-cell="1-2"]'));
+    fireEvent.click(q('[data-cell="4-2"]'), { shiftKey: true });
+    op('autosum');
+    op('autosum-average');
+    expect(seen.latest.rows[5].cells[2]).toMatchObject({ f: '=AVERAGE(C2:C5)', v: '82.5' });
+    expect(nameBox()).toBe('C6');
+    // ↶ 두 번 = 처음
+    op('undo');
+    op('undo');
+    expect(values()[5]).toEqual(['', '', '', '']);
+  });
+
+  it('Σ: 합계 열(D2)은 왼쪽 · 묶을 수가 없으면 =SUM()을 열어 괄호 안에 커서 · 글이 든 칸은 안내', () => {
+    seen.latest = scores();
+    render(<Host start={scores()} />);
+    fireEvent.click(q('[data-cell="1-3"]'));
+    op('autosum');
+    op('autosum-sum');
+    expect(seen.latest.rows[1].cells[3]).toMatchObject({ f: '=SUM(B2:C2)', v: '170' });
+    // 이름 열 빈 칸 A6 - 위는 글뿐, 왼쪽은 없다
+    fireEvent.click(q('[data-cell="5-0"]'));
+    op('autosum');
+    op('autosum-max');
+    expect(input().getAttribute('data-table-editing')).toBe('true');
+    expect(input().value).toBe('=MAX()');
+    expect(input().selectionStart).toBe(5);
+    expect(toasts()).toContain('괄호 안에 범위');
+    key('Escape');
+    expect(seen.latest.rows[5].cells[0].v).toBe('');
+    fireEvent.click(q('[data-cell="2-1"]'));
+    op('autosum');
+    op('autosum-sum');
+    expect(toasts()).toContain('비어 있지 않습니다');
+    expect(values()[2][1]).toBe('70');
+  });
+
+  it('⇣ 채우기: 맨 위 식을 아래로 (주소가 행을 따라) · 한 칸만 고르면 바로 위 칸을', () => {
+    const t = setCellText(scores(), 1, 3, '=B2+C2');
+    seen.latest = t;
+    render(<Host start={t} />);
+    expect((q('[data-table-op="copy-down"]') as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(q('[data-cell="1-3"]'));
+    fireEvent.click(q('[data-cell="3-3"]'), { shiftKey: true });
+    op('copy-down');
+    expect(seen.latest.rows[2].cells[3]).toMatchObject({ f: '=B3+C3', v: '165' });
+    expect(seen.latest.rows[3].cells[3]).toMatchObject({ f: '=B4+C4', v: '170' });
+    expect(nameBox()).toBe('D2:D4');
+    fireEvent.click(q('[data-cell="4-3"]'));
+    key('Escape');
+    op('copy-down');
+    expect(seen.latest.rows[4].cells[3]).toMatchObject({ f: '=B5+C5', v: '130' });
+  });
+
+  it('정렬 ▾ 큰 것부터: 고른 칸의 열로 행째 - 제목 줄은 그대로, 고른 칸 그대로, 안내 · 작은 것부터(가나다)', () => {
+    seen.latest = scores();
+    render(<Host start={scores()} />);
+    fireEvent.click(q('[data-cell="2-2"]'));
+    key('Escape');
+    op('sort');
+    op('sort-desc');
+    expect(values().map((r) => r[0])).toEqual(['이름', '나', '다', '가', '라', '']);
+    expect(values()[1]).toEqual(['나', '70', '95', '']);
+    expect(nameBox()).toBe('C3');
+    expect(toasts()).toContain('2~5행을 C열 큰 것부터 정렬했습니다');
+    // 이름 열 가나다 (작은 것부터)
+    fireEvent.click(q('[data-cell="1-0"]'));
+    key('Escape');
+    op('sort');
+    op('sort-asc');
+    expect(values().map((r) => r[0])).toEqual(['이름', '가', '나', '다', '라', '']);
+    op('undo');
+    expect(values().map((r) => r[0])).toEqual(['이름', '나', '다', '가', '라', '']);
+  });
+});
+
 describe('막 만든 표만 A1을 곧바로 고친다 (P48-2 찾아 고침)', () => {
   it('A1에 글이 있는 표는 autoEdit이어도 고치지 않는다 - 다시 그려져도 A1을 빈 글로 덮지 않게', () => {
     seen.latest = filled();

@@ -171,6 +171,16 @@ export function setNumberFormat(t: EntryTable, g: CellRange, nf: NumFormat): Ent
   });
 }
 
+/** 숫자 서식을 푼다 (일반 - 1,000·원·%·소수 자리 모두). Σ 개수가 위 칸에서 물려받은 원을 걷는다 (P48-4) */
+export function clearNumberFormat(t: EntryTable, g: CellRange): EntryTable {
+  if (!cellsIn(t, g).some((c) => hasNumFormat(styleOf(t, c)))) return t;
+  return restyleRange(t, g, (s, cell) => {
+    s.nf = undefined;
+    s.dp = undefined;
+    return [s, reformat(cell, s)];
+  });
+}
+
 /** 소수 자리 −/+ (엑셀처럼 고른 칸(at)에 보이는 자리에서 하나 - 범위 모두 같은 자리로) */
 export function stepDecimals(t: EntryTable, g: CellRange, at: CellPos, delta: 1 | -1): EntryTable {
   const cells = cellsIn(t, g);
