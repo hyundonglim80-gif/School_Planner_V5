@@ -1,6 +1,7 @@
 // 클립보드 칸 항목을 글 쓰던 칸에 붙여넣기 (V4 lib/clipboardHistory.ts의 붙여넣기 부분).
 //   항목을 누르면 마지막으로 글을 쓰던 칸(입력칸·글 칸)의 커서 자리에 넣는다.
 //   그림은 그 칸에 Ctrl+V 한 것처럼 넘긴다(메모·기록 칸은 가로채 드라이브에 올려 붙인다 - notes/attach).
+//   글도 먼저 붙여넣기로 넘긴다(P48-5) - 표 칸·시간표·진도표 칸이 엑셀 범위 글을 Ctrl+V처럼 받고, 받지 않으면 커서 자리에 글.
 //   받을 칸이 없으면 시스템 클립보드에 도로 담아 두고, 원하는 곳에서 Ctrl+V 하게 한다.
 import { raiseWindow } from '../../app/windows';
 import { copyClipToSystem, type ClipItem } from '../../data/clipboard';
@@ -56,6 +57,22 @@ function insertText(el: HTMLElement, text: string) {
   }
 }
 
+/**
+ * 글 칸이 스스로 받는 붙여넣기 - Ctrl+V처럼 붙여넣기 이벤트로 넘긴다. 칸이 받았으면(preventDefault) true.
+ * 표 칸(P48-5 - 엑셀 범위 글을 고른 칸부터 채운다)·시간표·진도표 칸이 클립보드 탭의 글도 Ctrl+V와 같게 받는다.
+ */
+function pasteAsEvent(el: HTMLElement, text: string): boolean {
+  try {
+    const dt = new DataTransfer();
+    dt.setData('text/plain', text);
+    const ev = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true });
+    el.dispatchEvent(ev);
+    return ev.defaultPrevented;
+  } catch {
+    return false;
+  }
+}
+
 export type PasteResult = 'pasted' | 'copied' | 'failed';
 
 /**
@@ -66,7 +83,8 @@ export function pasteIntoTarget(item: ClipItem): boolean {
   const target = getPasteTarget();
   if (!target) return false;
   if (item.kind === 'text') {
-    insertText(target, item.text || '');
+    target.focus();
+    if (!pasteAsEvent(target, item.text || '')) insertText(target, item.text || '');
     return true;
   }
   if (item.kind === 'image' && item.blob) {
@@ -116,9 +134,19 @@ export async function pasteClipShowingTarget(item: ClipItem): Promise<PasteResul
   return pasteClip(item);
 }
 
+/** 칸이 스스로 정하는 복사 글 (고치는 표의 고른 범위 - 글 칸에는 고른 글이 없다) */
+const copySources = new WeakMap<Element, () => string>();
+
+/** 이 칸에서 복사하면 모을 글을 정한다 (빈 글이면 칸 안 고른 글 그대로) */
+export function setCopySource(el: Element, get: () => string) {
+  copySources.set(el, get);
+}
+
 /** 이 앱 안에서 복사(Ctrl+C)·잘라내기한 글자 - 비밀번호 칸은 빼고 */
 export function selectedTextForCopy(): string {
   const active = document.activeElement;
+  const own = active ? copySources.get(active)?.() : '';
+  if (own) return own;
   if (active instanceof HTMLInputElement && active.type === 'password') return '';
   if (active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement) {
     const { selectionStart: s, selectionEnd: e, value } = active;

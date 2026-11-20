@@ -7,6 +7,8 @@
 //      범위 안에 행을 넣으면 합계·석차 범위가 늘어남 · 오류 칸 까닭 → 서버 f·v → 카드에 결과 → 검색이 결과 글로 찾는다 → 다시 열면 식
 //   6) Σ·채우기·정렬 (P48-4): 합계 머리 아래 Σ = 왼쪽 수 → ⇣ 채우기 D2:D5 → 범위 Σ = 행을 넣어 열마다(합계 열은 전체 합) →
 //      정렬 ▾ 큰 것부터(제목·합계 줄 그대로, 안내) → ↶ → 다시 정렬 → 서버: 행마다 식이 제 행 → 카드도 그 차례
+//   7) 엑셀과 오가기 (P48-5): 엑셀 HTML 4행 × 3열 Ctrl+V = A1부터 값만·늘림 안내 → B2:C3 Ctrl+C = 탭 글 + HTML(x:num) → 원 칸에 3000 = 3,000원 → 서버 →
+//      다른 메모 본문에 Ctrl+V = 그 범위가 새 표 → 📋 클립보드 탭: 표 범위 복사도 모임 · 밖의 탭 글을 누르면 고른 B1부터 채움(늘림) → 서버
 // 실행: 에뮬레이터 + 개발 서버(npm run dev:emu) 켠 채 node tools/inspect-table.mjs
 import { collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
@@ -412,6 +414,98 @@ try {
   r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '닫힘');
   const scard = page.locator(sel('entry-card', sid4)).locator(sel('entry-table'));
   r.check(await waitFor(async () => (await scard.locator('[data-cell="2-0"]').textContent()) === '다'), '카드도 정렬한 차례');
+
+  r.section('엑셀과 오가기 (P48-5)');
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new URL(page.url()).origin });
+  /** 시스템 클립보드에 엑셀처럼 HTML 표 + 탭 글 */
+  const putClip = (html, text) =>
+    page.evaluate(
+      ([h, t]) => navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([h], { type: 'text/html' }), 'text/plain': new Blob([t], { type: 'text/plain' }) })]),
+      [html, text]
+    );
+  const readClip = () =>
+    page.evaluate(async () => {
+      const [item] = await navigator.clipboard.read();
+      const get = async (t) => (item.types.includes(t) ? (await item.getType(t)).text() : '');
+      return { text: await get('text/plain'), html: await get('text/html') };
+    });
+  const rowsOf = (tbl) => tbl.locator('tbody tr').evaluateAll((trs) => trs.map((tr) => [...tr.querySelectorAll('td[data-cell]')].map((td) => td.textContent)));
+  await page.locator(sel('journal-add')).click();
+  await waitFor(panel);
+  await page.keyboard.type(`${MARK} 오가기`);
+  await page.locator(sel('note-table-add')).click();
+  await waitFor(table);
+  // 엑셀에서 4행 × 3열을 복사한 것 (서식은 클래스, 수는 x:num, 탭 글은 줄마다 끝에 줄 바꿈)
+  const EXCEL =
+    '<html xmlns:x="urn:schemas-microsoft-com:office:excel"><head><style>.xl65{font-weight:700;background:#FFFF00}</style></head><body><table>' +
+    '<tr><td class=xl65>이름</td><td class=xl65>국어</td><td class=xl65>학급비</td></tr>' +
+    '<tr><td>김하나</td><td x:num>95</td><td x:num="12000">12,000원</td></tr>' +
+    '<tr><td>박둘</td><td x:num>88</td><td x:num="8000">8,000원</td></tr>' +
+    '<tr><td>이셋</td><td x:num>70</td><td x:num="5000">5,000원</td></tr></table></body></html>';
+  await putClip(EXCEL, '이름\t국어\t학급비\r\n김하나\t95\t12,000원\r\n박둘\t88\t8,000원\r\n이셋\t70\t5,000원\r\n');
+  r.check((await focusedCell(page)) === '0-0', '막 만든 표 A1을 고치는 중');
+  await page.keyboard.press('Control+v');
+  const pasted = JSON.stringify(await rowsOf(table));
+  r.check(pasted === '[["이름","국어","학급비"],["김하나","95","12,000원"],["박둘","88","8,000원"],["이셋","70","5,000원"]]', `엑셀 범위 Ctrl+V = A1부터 값만 채움 (${pasted})`);
+  r.check(await waitFor(page.locator('[data-toast]', { hasText: '표를 늘려 붙였습니다 (4행 × 3열)' }), 3000), '모자란 행을 늘렸다는 안내');
+  r.check((await table.locator(sel('table-name')).getAttribute('data-table-name')) === 'A1:C4', '붙인 범위를 고른다 (A1:C4)');
+  r.check((await table.locator('[data-table-editing]').count()) === 0 && (await focusedCell(page)) === '0-0', '고르기 상태 - 초점은 표 안');
+  // 고른 범위 Ctrl+C → 엑셀로 (탭 글 + HTML 표)
+  await cellAt('1-1').click();
+  await cellAt('2-2').click({ modifiers: ['Shift'] });
+  await page.keyboard.press('Control+c');
+  const got = await readClip();
+  r.check(got.text === '95\t12,000원\n88\t8,000원', `Ctrl+C = 탭 글 (${JSON.stringify(got.text)})`);
+  r.check(/<table[\s>]/.test(got.html) && got.html.includes('12,000원') && got.html.includes('x:num="12000"'), `Ctrl+C = HTML 표 + 수 칸 x:num (${got.html.length}자)`);
+  // 서식 칸에 붙여넣기 = 그 칸의 서식대로: 원을 입힌 C5에 수 하나
+  await table.locator('[data-table-row="3"]').click();
+  await table.locator(sel('table-op', 'row-below')).click();
+  await cellAt('4-2').click();
+  await page.keyboard.press('Escape');
+  await table.locator(sel('table-op', 'num-won')).click();
+  await page.evaluate(() => navigator.clipboard.writeText('3000'));
+  await page.keyboard.press('Control+v');
+  r.check((await textAt('4-2')) === '3,000원', `원 칸에 3000 붙이기 = 3,000원 (${await textAt('4-2')})`);
+  await page.keyboard.press('Control+s');
+  r.check(await waitFor(async () => (await panel.getAttribute('data-note-panel')) === 'edit', 8000), 'Ctrl+S → 수정 칸');
+  const cid = await panel.getAttribute('data-note-id');
+  const fs5 = await serverUntil(async () => (await madeHere()).find((d) => d.id === cid)?.data(), (d) => d?.tables?.[0]?.rows?.length === 5);
+  const c5 = fs5?.tables?.[0]?.rows?.[4]?.cells?.[2];
+  r.check(JSON.stringify(cellTexts(fs5)?.[0]?.[3]) === '["이셋","70","5,000원"]' && c5?.v === '3,000원' && c5?.n === 3000, `서버: 붙인 값 · 원 칸 n (${JSON.stringify(c5)})`);
+  for (let i = 0; i < 3; i++) await page.keyboard.press('Escape');
+  await waitFor(async () => (await panel.count()) === 0, 5000);
+  // 다른 메모 본문에 Ctrl+V = 그 범위가 새 표 (V5 → V5)
+  await page.evaluate(([h, t]) => navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([h], { type: 'text/html' }), 'text/plain': new Blob([t], { type: 'text/plain' }) })]), [got.html, got.text]);
+  await page.locator(sel('journal-add')).click();
+  await waitFor(panel);
+  await page.keyboard.type(`${MARK} 붙인 범위`);
+  await page.keyboard.press('Control+v');
+  r.check(await waitFor(table), '다른 메모 본문에 붙이면 새 표');
+  r.check(JSON.stringify(await rowsOf(table)) === '[["95","12,000원"],["88","8,000원"]]', `복사한 범위 그대로 (${JSON.stringify(await rowsOf(table))})`);
+  // 📋 클립보드 탭: 표에서 복사한 범위도 모였다 · 다른 데서 복사한 탭 글을 표 칸에 누르면 고른 칸부터 채움
+  const column = page.locator(sel('clipboard-panel'));
+  await cellAt('0-1').click();
+  await page.keyboard.press('Escape');
+  r.check((await focusedCell(page)) === '0-1' && (await table.locator('[data-table-editing]').count()) === 0, 'B1 고르기 상태');
+  await page.locator(sel('clipboard-toggle')).click();
+  r.check(await waitFor(column), '📋 클립보드 탭');
+  r.check(await waitFor(column.locator(sel('clip-item', 'text')).filter({ hasText: '88' }).filter({ hasText: '8,000원' })), '표에서 Ctrl+C 한 범위도 클립보드에 모인다');
+  await page.evaluate(() => navigator.clipboard.writeText('가\t나\r\n다\t라\r\n'));
+  await column.locator(sel('clipboard-fetch')).click();
+  const tabItem = column.locator(sel('clip-item', 'text')).filter({ hasText: '가' }).first();
+  r.check(await waitFor(tabItem), '⤓ 가져오기 = 밖에서 복사한 탭 글');
+  await tabItem.locator(sel('clip-paste')).click();
+  r.check(await waitFor(async () => await table.isVisible()), '항목 누르기 = 메모 탭이 다시 보인다');
+  const viaTab = JSON.stringify(await rowsOf(table));
+  r.check(viaTab === '[["95","가","나"],["88","다","라"]]', `고른 B1부터 채움 - 늘려서 (${viaTab})`);
+  r.check((await table.locator(sel('table-name')).getAttribute('data-table-name')) === 'B1:C2', '붙인 범위를 고른다 (B1:C2)');
+  await page.keyboard.press('Control+s');
+  r.check(await waitFor(async () => (await panel.getAttribute('data-note-panel')) === 'edit', 8000), 'Ctrl+S → 수정 칸');
+  const pid = await panel.getAttribute('data-note-id');
+  const fs6 = await serverUntil(async () => (await madeHere()).find((d) => d.id === pid)?.data(), (d) => !!d?.tables?.length);
+  r.check(JSON.stringify(cellTexts(fs6)) === '[[["95","가","나"],["88","다","라"]]]', `서버: 새 표 (${JSON.stringify(cellTexts(fs6))})`);
+  for (let i = 0; i < 3; i++) await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '닫힘');
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {

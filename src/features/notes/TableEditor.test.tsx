@@ -436,3 +436,86 @@ describe('막 만든 표만 A1을 곧바로 고친다 (P48-2 찾아 고침)', ()
     expect(q('[data-cell="0-0"]').textContent).toBe('0,0');
   });
 });
+
+describe('고치는 표 - 엑셀과 오가기 (P48-5)', () => {
+  const toasts = () => document.getElementById('sp5-toast-container')?.textContent ?? '';
+  /** 붙여넣기·복사 이벤트의 clipboardData 흉내 (jsdom에는 DataTransfer가 없다) */
+  function clip(data: Record<string, string> = {}) {
+    const store: Record<string, string> = { ...data };
+    return { store, getData: (t: string) => store[t] ?? '', setData: (t: string, v: string) => void (store[t] = v) };
+  }
+  /** 붙여넣고 막았나(preventDefault - 표가 맡았다) */
+  const paste = (data: Record<string, string>) => {
+    let handled = false;
+    act(() => {
+      handled = !fireEvent.paste(input(), { clipboardData: clip(data) });
+    });
+    return handled;
+  };
+
+  it('고르기 상태 Ctrl+C = 고른 범위를 탭 글 + HTML 표로 · 고치는 중에는 글 칸 그대로 · Ctrl+X = 복사하고 비움', () => {
+    seen.latest = filled();
+    render(<Host start={filled()} />);
+    fireEvent.click(q('[data-cell="0-0"]'));
+    // 고치는 중 - 표가 막지 않는다(글 칸 안 고른 글)
+    const editingCopy = clip();
+    expect(fireEvent.copy(input(), { clipboardData: editingCopy })).toBe(true);
+    expect(editingCopy.store['text/plain']).toBeUndefined();
+    key('Escape');
+    fireEvent.click(q('[data-cell="1-1"]'), { shiftKey: true });
+    const c = clip();
+    expect(fireEvent.copy(input(), { clipboardData: c })).toBe(false);
+    expect(c.store['text/plain']).toBe('0,0\t0,1\n1,0\t1,1');
+    expect(c.store['text/html']).toContain('<td>1,1</td>');
+    const x = clip();
+    act(() => void fireEvent.cut(input(), { clipboardData: x }));
+    expect(x.store['text/plain']).toBe('0,0\t0,1\n1,0\t1,1');
+    expect(values()).toEqual([
+      ['', '', '0,2'],
+      ['', '', '1,2'],
+      ['2,0', '2,1', '2,2'],
+    ]);
+  });
+
+  it('엑셀 범위 Ctrl+V = 고른 칸부터 값만 채우고 그 범위를 고른다 · 모자라면 늘리고 안내 · ↶로 되돌림', () => {
+    seen.latest = filled();
+    render(<Host start={filled()} />);
+    fireEvent.click(q('[data-cell="1-1"]'));
+    // 칸을 누르면 곧 고치는 중 - 그래도 탭 글(엑셀 범위)이면 채운다
+    expect(paste({ 'text/plain': '가\t나\t다\r\n라\t마\t바\r\n' })).toBe(true);
+    expect(values()).toEqual([
+      ['0,0', '0,1', '0,2', ''],
+      ['1,0', '가', '나', '다'],
+      ['2,0', '라', '마', '바'],
+    ]);
+    expect(nameBox()).toBe('B2:D3');
+    expect(input().hasAttribute('data-table-editing')).toBe(false);
+    expect(toasts()).toContain('표를 늘려 붙였습니다 (3행 × 4열)');
+    act(() => void fireEvent.click(q('[data-table-op="undo"]')));
+    expect(values()).toEqual(filled().rows.map((r) => r.cells.map((c) => c.v)));
+  });
+
+  it('엑셀 HTML이 먼저 · 고르기 상태 한 칸 값 = 고른 칸 모두에 · 병합과 겹치면 안내', () => {
+    seen.latest = filled();
+    render(<Host start={filled()} />);
+    fireEvent.click(q('[data-cell="0-0"]'));
+    key('Escape');
+    fireEvent.click(q('[data-cell="0-1"]'), { shiftKey: true });
+    expect(paste({ 'text/html': '<table><tr><td>○</td></tr></table>', 'text/plain': '○\r\n' })).toBe(true);
+    expect(values()[0]).toEqual(['○', '○', '0,2']);
+    expect(paste({ 'text/html': '<table><tr><td>엑셀</td><td x:num>7</td></tr></table>', 'text/plain': '무시\t됨' })).toBe(true);
+    expect(values()[0]).toEqual(['엑셀', '7', '0,2']);
+  });
+
+  it('고치는 중 여러 줄 글(탭 없음) = 칸 안 줄 바꿈 그대로(브라우저) · 엑셀 한 칸 = 끝 줄 바꿈을 걷고 커서 자리에', () => {
+    seen.latest = filled();
+    render(<Host start={filled()} />);
+    fireEvent.click(q('[data-cell="0-0"]'));
+    expect(paste({ 'text/plain': '첫 줄\n둘째 줄' })).toBe(false);
+    fireEvent.change(input(), { target: { value: '' } });
+    expect(paste({ 'text/html': '<table><tr><td>95</td></tr></table>', 'text/plain': '95\r\n' })).toBe(true);
+    expect(input().value).toBe('95');
+    key('Enter');
+    expect(values()[0][0]).toBe('95');
+  });
+});

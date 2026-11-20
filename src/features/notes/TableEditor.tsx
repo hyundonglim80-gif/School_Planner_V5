@@ -13,10 +13,14 @@
 //     표를 바꿀 때마다(칸·행/열·서식·↶) 표 전체를 다시 셈한다 · 오류 칸에 마우스를 올리면 쉬운 까닭 · '로 시작하면 글.
 //   - Σ ▾ · ⇣ 채우기 · 정렬 ▾ (P48-4 - PLAN 5장 'P48' ⓘ~ⓚ, 셈은 domain/tableTools): Σ = 위(없으면 왼쪽)의 수를 묶은 식, 범위면 그 아래에 열마다 ·
 //     ⇣ = 맨 위 칸을 아래로(식은 주소를 따라) · 정렬 = 고른 칸의 열로 행째(제목·합계 줄은 그대로), 끝나면 안내. 모두 ↶로 되돌린다.
+//   - 엑셀과 오가기 (P48-5 - PLAN 5장 'P48' ⓛ, 셈은 domain/tableClip): 고르기 상태 Ctrl+C·Ctrl+X = 고른 범위를 탭 글 + HTML 표로(엑셀·한셀·다른 메모에 붙는다) ·
+//     Ctrl+V에 칸이 둘 이상(엑셀 범위·탭 글)이면 고른 칸부터 값만 채운다(모자라면 행·열을 늘림) - 고치는 칸에 여러 줄 글만이면 칸 안 줄 바꿈 그대로 ·
+//     📋 클립보드 탭에서 누른 글도 같은 길(features/clipboard/paste가 붙여넣기로 넘긴다).
 //   단추의 data-table-op 이름은 '단추 대신 누르기' 키가 쓴다 - 바꾸지 않는다.
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { showToast } from '../../app/toast';
+import { setCopySource } from '../clipboard/paste';
 import { isSaveKey } from '../../ui/useSaveKey';
 import { baseCellCss, TABLE_STYLE, tableSize } from '../../domain/tableCss';
 import {
@@ -40,6 +44,7 @@ import {
 } from '../../domain/tableEdit';
 import { editText, FILL_COLORS, setAlign, setFill, setNumberFormat, stepDecimals, styleOf, toggleBold, type NumFormat } from '../../domain/tableFormat';
 import { formulaErrorReason, recalcTable } from '../../domain/tableFormula';
+import { clipGrid, isManyCells, pasteGrid, rangeHtml, rangeTsv } from '../../domain/tableClip';
 import { AUTO_FNS, autoSum, fillDown, sortNote, sortRowsOf, sortTable, type AutoFn, type ToolResult } from '../../domain/tableTools';
 import type { EntryTable } from '../../data/types';
 import { TableColGroup } from './EntryTableView';
@@ -109,6 +114,8 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
     const input = inputRef.current;
     const box = boxRef.current;
     if (!input || !box || !active) return;
+    // 이 앱 클립보드 모으기(features/clipboard/capture)가 고른 범위 복사도 모으게 - 고치는 중이면 빈 글(글 칸 안 고른 글 그대로)
+    setCopySource(input, () => (editing || !range ? '' : rangeTsv(table, range)));
     const td = box.querySelector<HTMLElement>(`[data-cell="${active.r}-${active.c}"]`);
     if (td) {
       const br = box.getBoundingClientRect();
@@ -312,6 +319,69 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
     apply(withDraft(table));
     setEditing(false);
     setDraft('');
+  };
+
+  /** 고르기 상태 Ctrl+C·Ctrl+X = 고른 범위를 탭 글 + HTML 표로 (고치는 중이면 글 칸 안 고른 글 그대로) */
+  const onCopy = (e: ClipboardEvent<HTMLTextAreaElement>, cut: boolean) => {
+    if (editing || !range) return;
+    e.preventDefault();
+    e.clipboardData.setData('text/plain', rangeTsv(table, range));
+    e.clipboardData.setData('text/html', rangeHtml(table, range));
+    if (cut) apply(clearRange(table, range));
+  };
+
+  /** 고치던 글의 커서 자리에 넣는다 (브라우저 되돌리기가 살게 insertText - 안 되면 글을 바꿔) */
+  const insertAtCaret = (el: HTMLTextAreaElement, text: string) => {
+    let done = false;
+    try {
+      done = document.execCommand('insertText', false, text);
+    } catch {
+      done = false;
+    }
+    if (done) return;
+    const { selectionStart: a, selectionEnd: b } = el;
+    flushSync(() => setDraft((d) => d.slice(0, a) + text + d.slice(b)));
+    el.setSelectionRange(a + text.length, a + text.length);
+  };
+
+  /**
+   * Ctrl+V (📋 클립보드 탭에서 누른 글도 이리 온다): 칸이 둘 이상(엑셀 범위·탭 글)이면 고른 칸부터 값만 채운다.
+   * 고르기 상태는 한 칸 값도 그 칸(여러 칸을 골랐으면 모두)에 · 고치는 중에 한 칸 값은 커서 자리에, 여러 줄 글(탭 없음)은 칸 안 줄 바꿈 그대로.
+   */
+  const onPaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!active || !range) return;
+    const text = e.clipboardData.getData('text/plain');
+    const got = clipGrid(e.clipboardData.getData('text/html'), text);
+    if (!got) return;
+    if ('error' in got) {
+      e.preventDefault();
+      showToast(got.error);
+      return;
+    }
+    const many = isManyCells(got.grid);
+    if (editing && !many) {
+      // 엑셀 한 칸은 끝에 줄 바꿈이 붙어 온다 - 걷고 값만
+      const v = got.grid[0]?.[0] ?? '';
+      if (v !== text) {
+        e.preventDefault();
+        insertAtCaret(e.currentTarget, v);
+      }
+      return;
+    }
+    if (editing && !got.table && !text.includes('\t')) return;
+    e.preventDefault();
+    const focused = document.activeElement === inputRef.current;
+    const base = withDraft(table);
+    const res = pasteGrid(base, range, got.grid);
+    if ('error' in res) {
+      apply(base);
+      showToast(res.error);
+      if (live) pick(live.a, live.b, focused);
+      return;
+    }
+    apply(res.table);
+    pick({ r: res.sel.r1, c: res.sel.c1 }, { r: res.sel.r2, c: res.sel.c2 }, focused);
+    if (res.grown) showToast(`표를 늘려 붙였습니다 (${res.table.rows.length}행 × ${res.table.rows[0]?.cells.length ?? 0}열)`);
   };
 
   const onCellClick = (e: MouseEvent, r: number, c: number) => {
@@ -730,6 +800,9 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
             onChange={(e) => onInput(e.target.value)}
             onKeyDown={onKeyDown}
             onBlur={onBlur}
+            onCopy={(e) => onCopy(e, false)}
+            onCut={(e) => onCopy(e, true)}
+            onPaste={onPaste}
             rows={Math.max(1, (editing ? draft : '').split('\n').length)}
             className={`absolute z-10 box-border resize-none m-0 outline-none ${editing ? 'border-2 border-blue-600 bg-blue-50 shadow-md' : 'opacity-0 pointer-events-none border-0'}`}
             style={
