@@ -3,6 +3,8 @@
 //   2) ▦ 표만 만들고 비워 두면 표 없이 (글만 저장)
 //   3) 고르기: A·B·C / 1·2·3 띠 · 칸 이름 줄 · ESC = 고르기 상태 · 방향키·Shift+방향키·Shift+누르기·열 머리 · Delete · ↶·Ctrl+Z ·
 //      표 안 키가 앱 단축키(숫자 화면 이동·Space 한눈에·Ctrl+Z 저장 되돌리기)로 새지 않는다 · 한글 첫 글자 조합 · ESC 셋째 = 쓰는 칸 닫힘
+//   4) 숫자 서식·꾸밈 (P48-2) · 5) 식 (P48-3): 점수 표 =SUM·=AVERAGE·=B2+C2·=RANK(…$…) → 위 칸을 고치면 곧바로 · 칸 이름 줄·칸을 누르면 식 ·
+//      범위 안에 행을 넣으면 합계·석차 범위가 늘어남 · 오류 칸 까닭 → 서버 f·v → 카드에 결과 → 검색이 결과 글로 찾는다 → 다시 열면 식
 // 실행: 에뮬레이터 + 개발 서버(npm run dev:emu) 켠 채 node tools/inspect-table.mjs
 import { collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
@@ -228,6 +230,107 @@ try {
   await table.locator(sel('table-op', 'undo')).click();
   r.check((await cellAt('1-2').textContent()) === '1,234원', '↶ = 1,234원');
   for (let i = 0; i < 2; i++) await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '바뀐 것 없이 ESC = 묻지 않고 닫힘');
+
+  r.section('식 (P48-3)');
+  await waitFor(async () => (await panel.count()) === 0, 5000);
+  await page.locator(sel('journal-add')).click();
+  await waitFor(panel);
+  await page.keyboard.type(`${MARK} 점수`);
+  await page.locator(sel('note-table-add')).click();
+  await waitFor(table);
+  const typeCells = async (...vs) => {
+    for (const v of vs) {
+      await page.keyboard.type(v);
+      await page.keyboard.press('Tab');
+    }
+  };
+  const textAt = (rc) => cellAt(rc).textContent();
+  // 이름·국어·수학 / 가 90 80 / 나 70 60 / 합계 =SUM (소문자로도) / 평균 =AVERAGE
+  await typeCells('이름', '국어', '수학', '가', '90', '80', '나', '70', '60', '합계', '=sum(b2:b3)', '=SUM(C2:C3)', '평균', '=AVERAGE(B2:B3)');
+  await page.keyboard.type('=average(c2:c3)');
+  await page.keyboard.press('Enter');
+  const sums = [await textAt('3-1'), await textAt('3-2'), await textAt('4-1'), await textAt('4-2')];
+  r.check(sums.join() === '160,140,80,70', `=SUM·=AVERAGE 결과 (${sums.join(', ')})`);
+  r.check((await table.locator(sel('table-name')).textContent()).includes('=AVERAGE(C2:C3)'), `칸 이름 줄에 식 - 대문자로 다듬음 (${await table.locator(sel('table-name')).textContent()})`);
+  // 열 둘 더: 총점(D) = B + C · 석차(E) = RANK(…, $D$2:$D$3)
+  await table.locator('[data-table-col="2"]').click();
+  await table.locator(sel('table-op', 'col-right')).click();
+  await table.locator(sel('table-op', 'col-right')).click();
+  await cellAt('0-3').click();
+  for (const v of ['총점', '=B2+C2', '=b3+c3', '=SUM(D2:D3)']) {
+    await page.keyboard.type(v);
+    await page.keyboard.press('Enter');
+  }
+  await cellAt('0-4').click();
+  for (const v of ['석차', '=RANK(D2,$D$2:$D$3)', '=RANK(D3,$D$2:$D$3)']) {
+    await page.keyboard.type(v);
+    await page.keyboard.press('Enter');
+  }
+  const totals = [await textAt('1-3'), await textAt('2-3'), await textAt('3-3'), await textAt('1-4'), await textAt('2-4')];
+  r.check(totals.join() === '170,130,300,1,2', `=B2+C2·=SUM·=RANK (${totals.join(', ')})`);
+  await cellAt('1-3').click();
+  r.check((await page.locator(sel('table-input')).inputValue()) === '=B2+C2', `식 칸을 누르면 식 (${await page.locator(sel('table-input')).inputValue()})`);
+  await page.keyboard.press('Escape');
+  r.check((await textAt('1-3')) === '170', '떠나면 결과');
+  // 위 칸을 고치면 곧바로: 나 국어 70 → 120 = 총점 180 · 석차가 바뀐다
+  await cellAt('2-1').click();
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type('120');
+  await page.keyboard.press('Enter');
+  const again = [await textAt('3-1'), await textAt('4-1'), await textAt('2-3'), await textAt('1-4'), await textAt('2-4')];
+  r.check(again.join() === '210,105,180,2,1', `위 칸을 고치면 합계·평균·총점·석차가 곧바로 (${again.join(', ')})`);
+  // 범위 안(3행 위)에 행을 넣으면 합계·석차 범위가 늘어난다
+  await table.locator('[data-table-row="2"]').click();
+  await table.locator(sel('table-op', 'row-above')).click();
+  await typeCells('다', '80', '100');
+  await page.keyboard.type('=A3&"점검식결과"');
+  await page.keyboard.press('Tab');
+  await page.keyboard.type('=B3/0');
+  await page.keyboard.press('Enter');
+  const grown = [await textAt('4-1'), await textAt('5-1'), await textAt('2-3'), await textAt('2-4')];
+  r.check(grown.join() === '290,96.66666667,다점검식결과,#DIV/0!', `행을 넣은 뒤 합계·평균이 새 행까지 · 글 잇기 · 오류 (${grown.join(', ')})`);
+  r.check((await cellAt('2-4').getAttribute('title'))?.includes('0으로 나눴습니다'), `오류 칸에 쉬운 까닭 (${await cellAt('2-4').getAttribute('title')})`);
+  r.check((await textAt('3-4')) === '1' && (await textAt('1-4')) === '2', '석차 범위도 따라감 ($D$2:$D$4)');
+  await page.keyboard.press('Control+s');
+  r.check(await waitFor(async () => (await panel.getAttribute('data-note-panel')) === 'edit', 8000), 'Ctrl+S → 수정 칸');
+  const fid = await panel.getAttribute('data-note-id');
+  const fs1 = await serverUntil(async () => (await madeHere()).find((d) => d.id === fid)?.data(), (d) => d?.tables?.[0]?.rows?.[4]?.cells?.[1]?.v === '290');
+  const rows1 = fs1?.tables?.[0]?.rows ?? [];
+  const pick = (r1, c1) => {
+    const c = rows1[r1]?.cells?.[c1];
+    return c ? `${c.f ?? ''}→${c.v}` : '없음';
+  };
+  const want = {
+    B5: ['=SUM(B2:B4)→290', pick(4, 1)],
+    B6: ['=AVERAGE(B2:B4)→96.66666667', pick(5, 1)],
+    D2: ['=B2+C2→170', pick(1, 3)],
+    E4: ['=RANK(D4,$D$2:$D$4)→1', pick(3, 4)],
+    D3: ['=A3&"점검식결과"→다점검식결과', pick(2, 3)],
+    B3: ['→80', pick(2, 1)],
+  };
+  const wrong = Object.entries(want).filter(([, [a, b]]) => a !== b);
+  r.check(!wrong.length, `서버: 식 f·결과 v (${wrong.length ? JSON.stringify(wrong) : Object.keys(want).join('·')})`);
+  r.check(rows1[4]?.cells?.[1]?.n === undefined && JSON.stringify(fs1).indexOf('undefined') < 0, '서버: 결과가 바탕 글과 같으면 n 없음·빈 값 없음');
+  for (let i = 0; i < 3; i++) await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '닫힘');
+  const fcard = page.locator(sel('entry-card', fid)).locator(sel('entry-table'));
+  r.check(await waitFor(async () => (await fcard.locator('[data-cell="4-1"]').textContent()) === '290'), '카드에 결과 290');
+  // 검색은 결과 글로 찾는다 (식 글이 아니라)
+  await page.locator(sel('header-search')).click();
+  await waitFor(page.locator(sel('search-window')));
+  await page.locator(sel('search-scope')).selectOption('all');
+  await page.locator(sel('search-input')).fill('다점검식결과');
+  r.check(await waitFor(page.locator(sel('search-hit', fid)), 8000), '검색: 식 결과 글로 찾는다');
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('search-window')).count()) === 0, 3000);
+  // 다시 열기: 칸은 결과, 누르면 식
+  await page.evaluate(([s, d, i]) => window.sp5.openWindow('note', { sid: s, date: d, id: i, edit: true }), [sid, DAY, fid]);
+  await waitFor(table);
+  r.check((await textAt('4-1')) === '290', '다시 열기 = 결과');
+  await cellAt('4-1').click();
+  r.check((await page.locator(sel('table-input')).inputValue()) === '=SUM(B2:B4)', `다시 열어 누르면 식 (${await page.locator(sel('table-input')).inputValue()})`);
+  for (let i = 0; i < 3; i++) await page.keyboard.press('Escape');
   r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '바뀐 것 없이 ESC = 묻지 않고 닫힘');
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
