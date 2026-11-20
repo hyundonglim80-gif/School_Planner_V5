@@ -782,6 +782,65 @@ export function recalcTable(t: EntryTable): EntryTable {
 /** 표에 식 칸이 있나 */
 export const hasFormula = (t: EntryTable) => t.rows.some((row) => row.cells.some((c) => !!c.f));
 
+// ───────────────────────── 묶어 세는 칸 (P48-4 Σ·정렬 - 합계·평균 줄과 합계 열) ─────────────────────────
+
+/** 범위를 묶어 세는 함수 (석차 RANK는 행마다 하는 것이라 뺀다) */
+const AGGREGATE = new Set(['SUM', 'AVERAGE', 'COUNT', 'COUNTA', 'COUNTIF', 'MAX', 'MIN']);
+
+/**
+ * 식이 묶어 세는 쪽 - down = 위·아래 여러 행을 묶는다(제 행은 빼고 - 합계·평균 줄의 =SUM(B2:B5)),
+ * across = 옆 여러 열을 묶는다(제 열은 빼고 - 합계 열의 =SUM(B2:C2)). 누적 합 =SUM(B$2:B3)처럼 제 칸이 든 범위는 아니다.
+ */
+export function aggregateAxes(f: string, r: number, c: number): { down: boolean; across: boolean } {
+  const out = { down: false, across: false };
+  const walk = (n: Node | null, inAgg: boolean) => {
+    if (!n) return;
+    if (n.k === 'range' && inAgg) {
+      if (n.r2 > n.r1 && (r < n.r1 || r > n.r2)) out.down = true;
+      if (n.c2 > n.c1 && (c < n.c1 || c > n.c2)) out.across = true;
+    } else if (n.k === 'neg' || n.k === 'pct') walk(n.a, inAgg);
+    else if (n.k === 'bin') {
+      walk(n.a, inAgg);
+      walk(n.b, inAgg);
+    } else if (n.k === 'fn') {
+      const agg = AGGREGATE.has(n.name);
+      for (const a of n.args) walk(a, agg || inAgg);
+    }
+  };
+  walk(parseFormula(f), false);
+  return out;
+}
+
+// ───────────────────────── 식 베끼기 (P48-4 ⇣ 채우기·정렬 - 엑셀처럼 $ 없는 주소만 따라간다) ─────────────────────────
+
+/** 칸 주소 한도 (REF_RE - 열 세 글자 ZZZ, 행 일곱 자리) */
+const MAX_COL = 18277;
+const MAX_ROW = 9999998;
+
+/**
+ * 식을 dr행·dc열 옮긴 자리로 베낀다 - $ 없는 주소만 따라간다(D2 '=B2+C2' → D3 '=B3+C3', $B$2는 그대로).
+ * 표 위·왼쪽 밖으로 나간 주소는 #REF! (엑셀처럼). 읽지 못하는 식은 그대로.
+ */
+export function moveFormula(f: string, dr: number, dc: number): string {
+  if (!dr && !dc) return f;
+  const move = (p: RefPart): RefPart | null => {
+    const r = p.ar ? p.r : p.r + dr;
+    const c = p.ac ? p.c : p.c + dc;
+    return r < 0 || c < 0 || r > MAX_ROW || c > MAX_COL ? null : { ...p, r, c };
+  };
+  const out = rewrite(f, (t) => {
+    if (t.k === 'ref') {
+      const a = move(t.a!);
+      return a ? refText(a) : REF;
+    }
+    if (t.k !== 'range') return null;
+    const a = move(t.a!);
+    const b = move(t.b!);
+    return a && b ? `${refText(a)}:${refText(b)}` : REF;
+  });
+  return out ?? f;
+}
+
 // ───────────────────────── 처음 가리킨 칸 모양 (ⓖ) ─────────────────────────
 
 /** 세는 함수(개수·석차)의 답은 숫자 서식을 따르지 않는다 */

@@ -5,6 +5,8 @@
 //      표 안 키가 앱 단축키(숫자 화면 이동·Space 한눈에·Ctrl+Z 저장 되돌리기)로 새지 않는다 · 한글 첫 글자 조합 · ESC 셋째 = 쓰는 칸 닫힘
 //   4) 숫자 서식·꾸밈 (P48-2) · 5) 식 (P48-3): 점수 표 =SUM·=AVERAGE·=B2+C2·=RANK(…$…) → 위 칸을 고치면 곧바로 · 칸 이름 줄·칸을 누르면 식 ·
 //      범위 안에 행을 넣으면 합계·석차 범위가 늘어남 · 오류 칸 까닭 → 서버 f·v → 카드에 결과 → 검색이 결과 글로 찾는다 → 다시 열면 식
+//   6) Σ·채우기·정렬 (P48-4): 합계 머리 아래 Σ = 왼쪽 수 → ⇣ 채우기 D2:D5 → 범위 Σ = 행을 넣어 열마다(합계 열은 전체 합) →
+//      정렬 ▾ 큰 것부터(제목·합계 줄 그대로, 안내) → ↶ → 다시 정렬 → 서버: 행마다 식이 제 행 → 카드도 그 차례
 // 실행: 에뮬레이터 + 개발 서버(npm run dev:emu) 켠 채 node tools/inspect-table.mjs
 import { collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
@@ -332,6 +334,84 @@ try {
   r.check((await page.locator(sel('table-input')).inputValue()) === '=SUM(B2:B4)', `다시 열어 누르면 식 (${await page.locator(sel('table-input')).inputValue()})`);
   for (let i = 0; i < 3; i++) await page.keyboard.press('Escape');
   r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '바뀐 것 없이 ESC = 묻지 않고 닫힘');
+
+  r.section('Σ·채우기·정렬 (P48-4)');
+  await page.locator(sel('journal-add')).click();
+  await waitFor(panel);
+  await page.keyboard.type(`${MARK} 정렬`);
+  await page.locator(sel('note-table-add')).click();
+  await waitFor(table);
+  // 이름·국어·수학 / 가 90 80 / 나 70 95 / 다 85 85 / 라 60 70 (마지막 칸 Tab = 새 행)
+  await typeCells('이름', '국어', '수학', '가', '90', '80', '나', '70', '95', '다', '85', '85', '라', '60');
+  await page.keyboard.type('70');
+  await page.keyboard.press('Enter');
+  await table.locator('[data-table-col="2"]').click();
+  await table.locator(sel('table-op', 'col-right')).click();
+  await cellAt('0-3').click();
+  await page.keyboard.type('합계');
+  await page.keyboard.press('Enter');
+  r.check((await focusedCell(page)) === '1-3', `합계 머리 아래 D2 (${await focusedCell(page)})`);
+  // Σ ▾ 합계 = 머리 이름 아래 칸이라 왼쪽 수(국어·수학)를 묶는다
+  const op = (name) => table.locator(sel('table-op', name));
+  await op('autosum').click();
+  r.check((await table.locator('[data-table-op^="autosum-"]').count()) === 5, 'Σ ▾ = 합계·평균·개수·최대·최소');
+  await op('autosum-sum').click();
+  r.check((await textAt('1-3')) === '170', `Σ 합계 = 170 (${await textAt('1-3')})`);
+  r.check((await table.locator(sel('table-name')).textContent()).includes('=SUM(B2:C2)'), `넣은 칸을 골라 칸 이름 줄에 식 (${await table.locator(sel('table-name')).textContent()})`);
+  r.check((await focusedCell(page)) === '1-3', 'Σ 뒤에도 표 안 초점 (방향키가 표로)');
+  // ⇣ 채우기: D2:D5
+  await cellAt('4-3').click({ modifiers: ['Shift'] });
+  await op('copy-down').click();
+  const filled = [await textAt('2-3'), await textAt('3-3'), await textAt('4-3')];
+  r.check(filled.join() === '165,170,130', `⇣ 채우기 = 행마다 합계 (${filled.join(', ')})`);
+  // Σ 범위 B2:D5 → 표 끝이라 행을 하나 넣고 열마다 (합계 열은 전체 합)
+  await cellAt('1-1').click();
+  await cellAt('4-3').click({ modifiers: ['Shift'] });
+  await op('autosum').click();
+  await op('autosum-sum').click();
+  r.check((await table.locator('tbody tr').count()) === 6, `표 끝이면 행을 넣어 (${await table.locator('tbody tr').count()}행)`);
+  const colSums = [await textAt('5-1'), await textAt('5-2'), await textAt('5-3')];
+  r.check(colSums.join() === '305,330,635', `열마다 합계 (${colSums.join(', ')})`);
+  r.check((await table.locator(sel('table-name')).getAttribute('data-table-name')) === 'B6:D6', '넣은 칸을 고른다 (B6:D6)');
+  r.check(await waitFor(page.locator('[data-toast]', { hasText: '6행을 넣어 적었습니다' }), 3000), '행을 넣었다는 안내');
+  await cellAt('5-0').click();
+  await page.keyboard.type('합계');
+  await page.keyboard.press('Enter');
+  // 정렬 ▾ 큰 것부터: D3을 골라 - 제목 줄·합계 줄은 그대로, 같은 점수는 처음 차례
+  await cellAt('2-3').click();
+  await page.keyboard.press('Escape');
+  await op('sort').click();
+  await op('sort-desc').click();
+  const names = async () => (await table.locator('td[data-cell$="-0"]').allTextContents()).join(',');
+  r.check((await names()) === '이름,가,다,나,라,합계', `합계 큰 것부터 (${await names()})`);
+  r.check(await waitFor(page.locator('[data-toast]', { hasText: '2~5행을 D열 큰 것부터 정렬했습니다' }), 3000), '정렬한 행·열 안내');
+  r.check((await table.locator(sel('table-name')).getAttribute('data-table-name')) === 'D3', '고른 칸 그대로 (D3)');
+  await op('undo').click();
+  r.check((await names()) === '이름,가,나,다,라,합계', `↶ = 정렬 전 (${await names()})`);
+  await op('sort').click();
+  await op('sort-desc').click();
+  await page.keyboard.press('Control+s');
+  r.check(await waitFor(async () => (await panel.getAttribute('data-note-panel')) === 'edit', 8000), 'Ctrl+S → 수정 칸');
+  const sid4 = await panel.getAttribute('data-note-id');
+  const fs4 = await serverUntil(async () => (await madeHere()).find((d) => d.id === sid4)?.data(), (d) => d?.tables?.[0]?.rows?.[2]?.cells?.[0]?.v === '다');
+  const rows4 = fs4?.tables?.[0]?.rows ?? [];
+  const at4 = (rr, cc) => {
+    const c = rows4[rr]?.cells?.[cc];
+    return c ? `${c.f ?? ''}→${c.v}` : '없음';
+  };
+  const want4 = {
+    A3: ['→다', at4(2, 0)],
+    D3: ['=SUM(B3:C3)→170', at4(2, 3)],
+    D4: ['=SUM(B4:C4)→165', at4(3, 3)],
+    B6: ['=SUM(B2:B5)→305', at4(5, 1)],
+    D6: ['=SUM(D2:D5)→635', at4(5, 3)],
+  };
+  const wrong4 = Object.entries(want4).filter(([, [a, b]]) => a !== b);
+  r.check(!wrong4.length, `서버: 정렬한 행의 식이 제 행·합계 그대로 (${wrong4.length ? JSON.stringify(wrong4) : Object.keys(want4).join('·')})`);
+  for (let i = 0; i < 3; i++) await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '닫힘');
+  const scard = page.locator(sel('entry-card', sid4)).locator(sel('entry-table'));
+  r.check(await waitFor(async () => (await scard.locator('[data-cell="2-0"]').textContent()) === '다'), '카드도 정렬한 차례');
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {

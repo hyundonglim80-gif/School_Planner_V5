@@ -11,6 +11,8 @@
 //     서식을 입힌 칸은 보이는 글('1,234원')을 v에, 원래 수를 n에 - 고칠 때는 원래 수(1234)가 보인다. Ctrl+B = 굵게(엑셀처럼).
 //   - 식(P48-3 - PLAN 5장 'P48' ⓖ·ⓗ, 셈은 domain/tableFormula): '='로 시작하면 식 - 칸을 누르면 식, 떠나면 결과, 칸 이름 줄에 식.
 //     표를 바꿀 때마다(칸·행/열·서식·↶) 표 전체를 다시 셈한다 · 오류 칸에 마우스를 올리면 쉬운 까닭 · '로 시작하면 글.
+//   - Σ ▾ · ⇣ 채우기 · 정렬 ▾ (P48-4 - PLAN 5장 'P48' ⓘ~ⓚ, 셈은 domain/tableTools): Σ = 위(없으면 왼쪽)의 수를 묶은 식, 범위면 그 아래에 열마다 ·
+//     ⇣ = 맨 위 칸을 아래로(식은 주소를 따라) · 정렬 = 고른 칸의 열로 행째(제목·합계 줄은 그대로), 끝나면 안내. 모두 ↶로 되돌린다.
 //   단추의 data-table-op 이름은 '단추 대신 누르기' 키가 쓴다 - 바꾸지 않는다.
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
@@ -38,6 +40,7 @@ import {
 } from '../../domain/tableEdit';
 import { editText, FILL_COLORS, setAlign, setFill, setNumberFormat, stepDecimals, styleOf, toggleBold, type NumFormat } from '../../domain/tableFormat';
 import { formulaErrorReason, recalcTable } from '../../domain/tableFormula';
+import { AUTO_FNS, autoSum, fillDown, sortNote, sortRowsOf, sortTable, type AutoFn, type ToolResult } from '../../domain/tableTools';
 import type { EntryTable } from '../../data/types';
 import { TableColGroup } from './EntryTableView';
 
@@ -75,8 +78,8 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   const [history, setHistory] = useState<EntryTable[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
-  /** 다음 그림 뒤에 글 칸에 초점 ('end' = 글 끝에 커서) · 고른 칸이 보이게 스크롤 */
-  const wantFocus = useRef<false | 'keep' | 'end'>(firstOk ? 'end' : false);
+  /** 다음 그림 뒤에 글 칸에 초점 ('end' = 글 끝에 커서, 수 = 그 자리에 커서) · 고른 칸이 보이게 스크롤 */
+  const wantFocus = useRef<false | 'keep' | 'end' | number>(firstOk ? 'end' : false);
   const wantScroll = useRef(false);
 
   // 줄·열이 줄어 고른 칸이 표 밖이면 맞춘다 (되돌리기 뒤)
@@ -88,8 +91,8 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   const activeStyle = activeCell ? styleOf(table, activeCell) : undefined;
   /** 고른 칸을 고칠 때 보이는 글 (서식을 입힌 수는 원래 수 - '1,234원' → 1234) */
   const activeValue = activeCell ? editText(activeCell, activeStyle) : '';
-  /** 열린 ▾ 고르기 (맞춤·칸 색) */
-  const [menu, setMenu] = useState<'align' | 'fill' | null>(null);
+  /** 열린 ▾ 고르기 (맞춤·칸 색·Σ·정렬) */
+  const [menu, setMenu] = useState<'align' | 'fill' | 'autosum' | 'sort' | null>(null);
   const menuRef = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     if (!menu) return;
@@ -122,6 +125,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
       wantFocus.current = false;
       input.focus({ preventScroll: true });
       if (caret === 'end') input.setSelectionRange(input.value.length, input.value.length);
+      else if (typeof caret === 'number') input.setSelectionRange(caret, caret);
     }
   });
 
@@ -359,6 +363,58 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   }
   const numFormat = (nf: NumFormat) => format((t, r) => setNumberFormat(t, r, nf));
   const decimals = (delta: 1 | -1) => format((t, r) => stepDecimals(t, r, live ? live.a : { r: r.r1, c: r.c1 }, delta));
+
+  /** Σ·채우기·정렬의 결과를 표에 (P48-4) - 고를 칸이 오면 그 칸을, 아니면 고른 그대로 · 못 하면 고친 글만 넣고 안내 */
+  const finish = (base: EntryTable, res: ToolResult, focused: boolean, done?: string) => {
+    if ('error' in res) {
+      apply(base);
+      showToast(res.error);
+    } else {
+      apply(res.table);
+      const note = res.note ?? done;
+      if (note) showToast(note);
+    }
+    const s = 'error' in res ? undefined : res.sel;
+    if (s) pick({ r: s.r1, c: s.c1 }, { r: s.r2, c: s.c2 }, focused);
+    else if (live) pick(live.a, live.b, focused);
+  };
+  /** Σ 자동 합계 (합계·평균·개수·최대·최소) */
+  const runAutoSum = (fn: AutoFn) => {
+    setMenu(null);
+    if (!g || !active) return;
+    const focused = document.activeElement === inputRef.current;
+    const base = withDraft(table);
+    const res = autoSum(base, g, fn);
+    if ('edit' in res) {
+      // 묶을 수가 없다 - '=SUM()'을 열어 괄호 안에 범위를 적게 (엑셀처럼)
+      apply(base);
+      setSel({ a: { r: active.r, c: active.c }, b: { r: active.r, c: active.c } });
+      setEditing(true);
+      setDraft(res.edit);
+      wantFocus.current = res.edit.length - 1;
+      showToast('묶을 수를 찾지 못했습니다 - 괄호 안에 범위(예: B2:B5)를 적어 주세요');
+      return;
+    }
+    finish(base, res, focused);
+  };
+  /** ⇣ 아래로 채우기 */
+  const runFillDown = () => {
+    setMenu(null);
+    if (!g) return;
+    const focused = document.activeElement === inputRef.current;
+    const base = withDraft(table);
+    finish(base, fillDown(base, g), focused);
+  };
+  /** 정렬 (desc = 큰 것부터) - 고른 칸의 열로 */
+  const runSort = (desc: boolean) => {
+    setMenu(null);
+    if (!g || !active) return;
+    const focused = document.activeElement === inputRef.current;
+    const base = withDraft(table);
+    const [r1, r2] = sortRowsOf(base, g);
+    const res = sortTable(base, r1, r2, active.c, desc);
+    finish(base, res, focused, sortNote(r1, r2, active.c, desc));
+  };
   type OpKind = 'rowAbove' | 'rowBelow' | 'rowDelete' | 'colLeft' | 'colRight' | 'colDelete';
   const runOp = (kind: OpKind) => {
     if (!g) return;
@@ -378,6 +434,10 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   const canUndo = history.length > 0 || (editing && draft !== activeValue);
   /** 켠 서식 단추 모양 (고른 칸의 서식) */
   const on = (pressed: boolean) => (pressed ? btn.replace('border-slate-200 bg-white text-slate-600', 'border-blue-300 bg-blue-100 text-blue-700') : btn);
+  /** ▾ 고르기 상자·줄 */
+  const menuBox = 'absolute left-0 top-full mt-1 z-20 flex flex-col min-w-28 p-1 rounded-lg border border-slate-200 bg-white shadow-lg';
+  const menuItem = (picked: boolean) =>
+    `flex items-center gap-1.5 px-2 py-1 rounded text-left text-2xs font-bold whitespace-nowrap cursor-pointer ${picked ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`;
   const head = 'border border-slate-200 bg-slate-100 text-slate-500 font-semibold select-none cursor-pointer hover:bg-slate-200';
   const headOn = 'border border-blue-300 bg-blue-100 text-blue-700 font-bold select-none cursor-pointer';
   const name = g ? rangeName(g) : '';
@@ -444,9 +504,68 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
         <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g || colCount >= nCols} onClick={() => runOp('colDelete')} title="고른 칸의 열 빼기" data-table-op="col-delete">
           열 빼기
         </button>
+        <span className="relative" ref={menu === 'sort' ? menuRef : undefined}>
+          <button
+            type="button"
+            onMouseDown={keepFocus}
+            className={btn}
+            aria-expanded={menu === 'sort'}
+            disabled={!g || nRows < 2}
+            onClick={() => setMenu(menu === 'sort' ? null : 'sort')}
+            title="고른 칸의 열로 행을 정렬합니다 (첫 행 제목·맨 아래 합계 줄은 그대로 - 몇 행만 하려면 그 행들을 골라서)"
+            data-table-op="sort"
+          >
+            정렬 ▾
+          </button>
+          {menu === 'sort' && (
+            <span role="menu" className={menuBox}>
+              <button type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runSort(false)} className={menuItem(false)} data-table-op="sort-asc">
+                작은 것부터 <span className="font-normal text-slate-400">(가나다)</span>
+              </button>
+              <button type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runSort(true)} className={menuItem(false)} data-table-op="sort-desc">
+                큰 것부터
+              </button>
+            </span>
+          )}
+        </span>
       </div>
       {/* 띠 둘째 줄 - 숫자 서식·꾸밈 (P48-2) */}
       <div className="flex flex-wrap items-center gap-1 px-2.5 py-1.5 border-b border-slate-200 bg-white/60" data-table-format-bar>
+        {/* Σ ▾ · ⇣ 채우기 (P48-4) */}
+        <span className="relative" ref={menu === 'autosum' ? menuRef : undefined}>
+          <button
+            type="button"
+            onMouseDown={keepFocus}
+            className={btn}
+            aria-expanded={menu === 'autosum'}
+            disabled={!g}
+            onClick={() => setMenu(menu === 'autosum' ? null : 'autosum')}
+            title="자동 합계 - 빈 칸을 고르면 위(없으면 왼쪽)의 수를, 수가 든 범위를 고르면 그 아래에 열마다"
+            data-table-op="autosum"
+          >
+            Σ ▾
+          </button>
+          {menu === 'autosum' && (
+            <span role="menu" className={menuBox}>
+              {AUTO_FNS.map((a) => (
+                <button key={a.op} type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runAutoSum(a.fn)} className={menuItem(false)} data-table-op={a.op}>
+                  {a.label} <span className="ml-auto pl-2 font-normal text-slate-400">{a.fn}</span>
+                </button>
+              ))}
+            </span>
+          )}
+        </span>
+        <button
+          type="button"
+          onMouseDown={keepFocus}
+          className={btn}
+          disabled={!g || (g.r1 === g.r2 && g.r1 === 0)}
+          onClick={runFillDown}
+          title="아래로 채우기 - 맨 위 칸을 고른 칸들에 베낍니다 (식은 주소를 따라 바뀝니다 · 한 줄만 고르면 바로 위 칸을)"
+          data-table-op="copy-down"
+        >
+          ⇣ 채우기
+        </button>
         <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'comma')} aria-pressed={activeStyle?.nf === 'comma'} disabled={!g} onClick={() => numFormat('comma')} title="세 자리 쉼표 (1234 → 1,234) - 다시 누르면 풉니다" data-table-op="num-comma">
           1,000
         </button>
@@ -470,7 +589,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
             맞춤 ▾
           </button>
           {menu === 'align' && (
-            <span role="menu" className="absolute left-0 top-full mt-1 z-20 flex flex-col min-w-28 p-1 rounded-lg border border-slate-200 bg-white shadow-lg">
+            <span role="menu" className={menuBox}>
               {(
                 [
                   ['left', '왼쪽', 'align-left'],
@@ -486,7 +605,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                   aria-checked={activeStyle?.ha === ha}
                   onMouseDown={keepFocus}
                   onClick={() => format((t, r) => setAlign(t, r, ha))}
-                  className={`px-2 py-1 rounded text-left text-2xs font-bold cursor-pointer ${activeStyle?.ha === ha ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
+                  className={menuItem(activeStyle?.ha === ha)}
                   title={ha ? undefined : '글은 왼쪽, 수는 오른쪽'}
                   data-table-op={op}
                 >
@@ -502,7 +621,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
             칸 색 ▾
           </button>
           {menu === 'fill' && (
-            <span role="menu" className="absolute left-0 top-full mt-1 z-20 flex flex-col min-w-28 p-1 rounded-lg border border-slate-200 bg-white shadow-lg">
+            <span role="menu" className={menuBox}>
               {[...FILL_COLORS, { key: 'none', name: '없음', bg: undefined }].map((f) => (
                 <button
                   key={f.key}
@@ -511,7 +630,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                   aria-checked={activeStyle?.bg === f.bg}
                   onMouseDown={keepFocus}
                   onClick={() => format((t, r) => setFill(t, r, f.bg))}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded text-left text-2xs font-bold cursor-pointer ${activeStyle?.bg === f.bg ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
+                  className={menuItem(activeStyle?.bg === f.bg)}
                   data-table-op={`fill-${f.key}`}
                 >
                   <span className="inline-block w-3.5 h-3.5 rounded-sm border border-slate-300" style={{ backgroundColor: f.bg ?? '#ffffff' }} />
