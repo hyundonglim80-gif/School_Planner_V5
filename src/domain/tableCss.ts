@@ -5,7 +5,7 @@ import type { EntryTable, TableCell, TableCellStyle } from '../data/types';
 import { isNumberCell } from './tableNumber';
 
 /** 칸이 모두 비었나 (글이 하나도 없다) - 저장 때 뺀다(빈 메모 규칙과 같게, P48-1 ▦ 표). 메모 저장 모양(noteForm)이 불러 여기(가벼운 쪽)에 둔다 */
-export const isBlankTable = (t: EntryTable) => t.rows.every((row) => row.cells.every((c) => !c.v.trim()));
+export const isBlankTable = (t: EntryTable) => t.rows.every((row) => row.cells.every((c) => !c.v.trim() && !c.f));
 
 /** 저장할 표 - 칸이 모두 빈 표는 뺀다 */
 export const keptTables = (tables: EntryTable[]) => tables.filter((t) => !isBlankTable(t));
