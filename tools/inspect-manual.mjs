@@ -592,6 +592,9 @@ try {
     const fmtOps = ['num-comma', 'num-won', 'num-pct', 'dp-less', 'dp-more', 'bold', 'align', 'fill'];
     const fmtSeen = await Promise.all(fmtOps.map((o) => count(sel('table-op', o))));
     r.check(fmtSeen.every((n) => n >= 1), `띠 둘째 줄 1,000·원·%·소수 −/+·굵게·맞춤 ▾·칸 색 ▾ (P48-2 - ${fmtSeen.join(',')})`);
+    const toolOps = ['autosum', 'copy-down', 'sort'];
+    const toolSeen = await Promise.all(toolOps.map((o) => count(sel('table-op', o))));
+    r.check(toolSeen.every((n) => n >= 1), `Σ ▾·⇣ 채우기·정렬 ▾ (P48-4 - ${toolSeen.join(',')})`);
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
   });
