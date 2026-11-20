@@ -93,7 +93,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | `seriesId` / `seriesIndex` | string? / number? | 반복 묶음 |
 | `fromDate` | `'YYYY-MM-DD'`? | 기록에서 메모로 뺄 때 그 날('📅 10/6에서' - P3-2). P10-3부터 적지 않고 보이지도 않는다(옛 문서에 남은 것은 둔다 - 학생 기록 타임라인이 날 없는 메모의 날로 읽는다) |
 | `keepId` | string? | 구글 Keep에서 가져온 메모의 열쇠(V4 tasks 그대로 - P3-4) |
-| `tables` | EntryTable[]? | 붙인 표·▦ 표(V4 `lib/entryTable` 모양 그대로 - `rows[].cells[]`, 칸 `v` = 늘 보이는 글) · P48-2: 숫자 서식을 입힌 칸은 `v`에 입힌 글('1,234원')·`n`에 원래 수(보이는 글이 바탕 글과 다를 때만) · `styles[]`에 `nf`('comma'·'won'·'pct')·`dp`(소수 자리) - 카드·검색·옛 판 앱은 `v`만 읽는다(PLAN 5장 'P48' ⓐ) |
+| `tables` | EntryTable[]? | 붙인 표·▦ 표(V4 `lib/entryTable` 모양 그대로 - `rows[].cells[]`, 칸 `v` = 늘 보이는 글) · P48-2: 숫자 서식을 입힌 칸은 `v`에 입힌 글('1,234원')·`n`에 원래 수(보이는 글이 바탕 글과 다를 때만) · `styles[]`에 `nf`('comma'·'won'·'pct')·`dp`(소수 자리) - 카드·검색·옛 판 앱은 `v`만 읽는다(PLAN 5장 'P48' ⓐ) · P48-3: 식 칸 `f`(친 그대로 '=SUM(B2:B5)' - 함수 이름·칸 주소만 대문자), 그 칸 `v`·`n`은 쓰는 칸이 표를 고칠 때마다 다시 셈한 결과(계산할 수 있는 것을 저장하는 예외 - 쓰는 칸만 쓴다) · P48-5: 엑셀·다른 메모와 오가는 것은 `v`(보이는 값)뿐 - 붙여넣으면 붙이는 칸 서식대로 다시 읽는다 |
 | `studentIds` | string[]? | 학생 태그 `'{classId}/{sid}'` |
 | `attachments` | Attachment[]? | 드라이브 파일(V4 모양: name·url·type·size·driveId) |
 | `linkIds` | string[]? | 이은 항목 id. 수업은 `'lesson:{date}:{교시}'`. 진도 차시(`'progress:{planId}:{행}'`)는 진도 쪽에만 적고 메모에는 적지 않는다(P10-4 - 계산해 보인다) |
