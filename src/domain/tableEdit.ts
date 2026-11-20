@@ -1,9 +1,13 @@
 // 메모·기록 표 고치기 - 칸 글자, 행·열 넣고 빼기 (V4 lib/entryTable.ts의 고치기 부분 - P48-1에 domain/entryTable에서 나눔).
 //   쓰는 칸의 고치는 표(features/notes/TableEditor)만 부른다 - 카드가 부르는 표 그리기(EntryTableView)는 domain/tableCss만.
 //   병합된 칸의 나머지 자리는 { v: '', x: 1 } (가려진 칸) - 행·열을 넣고 빼면 병합 크기가 따라간다.
+//   식 칸(f - P48-3)이 있으면 바꾼 뒤 표 전체를 다시 셈하고(domain/tableFormula recalcTable), 행·열을 넣고 빼면 식 주소가 따라간다.
 import type { EntryTable, TableCell, TableRow } from '../data/types';
 import { MAX_TABLE_CELLS, newTableId } from './entryTable';
 import { cellWithInput, styleOf } from './tableFormat';
+import { adoptFormat, colName, isFormulaText, normalizeFormula, recalcTable, shiftFormulas } from './tableFormula';
+
+export { colName };
 
 /** 빈 표 (쓰는 칸 ▦ 표 - P48-1, 3행 × 3열) */
 export function newEmptyTable(rows = 3, cols = 3, now = Date.now()): EntryTable {
@@ -34,13 +38,25 @@ function anchors(rows: TableRow[]): { r: number; c: number; rs: number; cs: numb
   return out;
 }
 
-/** 칸에 글을 넣는다 - 숫자 서식이 있는 칸에 수를 치면 서식을 입힌다(P48-2 - domain/tableFormat cellWithInput) */
+/**
+ * 칸에 글을 넣는다 - 숫자 서식이 있는 칸에 수를 치면 서식을 입힌다(P48-2 - domain/tableFormat cellWithInput).
+ * '='로 시작하면 식(P48-3 - 처음 넣는 식은 처음 가리킨 수 칸의 1,000·원·%를 따른다), '로 시작하면 ' 뒤 글 그대로(엑셀처럼).
+ */
 export function setCellText(t: EntryTable, r: number, c: number, v: string): EntryTable {
   const rows = cloneRows(t);
   const cell = rows[r]?.cells[c];
   if (!cell || cell.x) return t;
-  rows[r].cells[c] = cellWithInput(cell, v, styleOf(t, cell));
-  return { ...t, rows };
+  if (isFormulaText(v)) {
+    const f = normalizeFormula(v);
+    const next: TableCell = { ...cell, f };
+    rows[r].cells[c] = next;
+    const out = { ...t, rows };
+    return recalcTable(cell.f ? out : adoptFormat(out, r, c));
+  }
+  const next = cellWithInput(cell, v.startsWith("'") ? v.slice(1) : v, styleOf(t, cell));
+  delete next.f;
+  rows[r].cells[c] = next;
+  return recalcTable({ ...t, rows });
 }
 
 /** 줄을 at 자리에 끼운다 (at = 줄 수면 맨 아래). 새 칸은 위(없으면 아래) 줄의 서식을 따른다 */
@@ -57,7 +73,7 @@ export function insertRow(t: EntryTable, at: number): EntryTable {
   }
   for (const a of spanning) rows[a.r].cells[a.c].rs = a.rs + 1;
   rows.splice(at, 0, model?.h ? { h: model.h, cells } : { cells });
-  return { ...t, rows };
+  return recalcTable(shiftFormulas({ ...t, rows }, 'r', at, 1));
 }
 
 /** 줄 하나를 뺀다. 병합이 걸쳐 있으면 병합을 한 줄 줄이고, 병합의 첫 줄이면 다음 줄로 넘긴다 */
@@ -73,7 +89,7 @@ export function deleteRow(t: EntryTable, at: number): EntryTable {
     }
   }
   rows.splice(at, 1);
-  return { ...t, rows: rows.map((row) => ({ ...row, cells: row.cells.map(clean) })) };
+  return recalcTable(shiftFormulas({ ...t, rows: rows.map((row) => ({ ...row, cells: row.cells.map(clean) })) }, 'r', at, -1));
 }
 
 /** 열을 at 자리에 끼운다 */
@@ -89,7 +105,7 @@ export function insertCol(t: EntryTable, at: number): EntryTable {
   for (const a of spanning) rows[a.r].cells[a.c].cs = a.cs + 1;
   const cols = t.cols ? [...t.cols] : undefined;
   if (cols) cols.splice(at, 0, cols[at - 1] ?? cols[at] ?? 0);
-  return { ...t, rows, ...(cols ? { cols } : {}) };
+  return recalcTable(shiftFormulas({ ...t, rows, ...(cols ? { cols } : {}) }, 'c', at, 1));
 }
 
 /** 열 하나를 뺀다 */
@@ -106,7 +122,7 @@ export function deleteCol(t: EntryTable, at: number): EntryTable {
   }
   rows.forEach((row) => row.cells.splice(at, 1));
   const cols = t.cols ? t.cols.filter((_, i) => i !== at) : undefined;
-  return { ...t, rows: rows.map((row) => ({ ...row, cells: row.cells.map(clean) })), ...(cols ? { cols } : {}) };
+  return recalcTable(shiftFormulas({ ...t, rows: rows.map((row) => ({ ...row, cells: row.cells.map(clean) })), ...(cols ? { cols } : {}) }, 'c', at, -1));
 }
 
 /** undefined 칸을 뺀다 (Firestore는 undefined를 받지 않는다) */
@@ -144,17 +160,7 @@ export interface CellRange {
   c2: number;
 }
 
-/** 열 이름: 0 → A, 25 → Z, 26 → AA (엑셀과 같게) */
-export function colName(c: number): string {
-  let n = c + 1;
-  let out = '';
-  while (n > 0) {
-    const m = (n - 1) % 26;
-    out = String.fromCharCode(65 + m) + out;
-    n = Math.floor((n - 1) / 26);
-  }
-  return out;
-}
+/** 열 이름 colName은 domain/tableFormula (식 주소도 쓴다) - 위에서 다시 내보낸다 */
 
 /** 칸 이름 'B2' */
 export const cellName = (p: CellPos) => `${colName(p.c)}${p.r + 1}`;
@@ -224,15 +230,16 @@ export function clearRange(t: EntryTable, g: CellRange): EntryTable {
       : {
           ...row,
           cells: row.cells.map((cell, c) => {
-            if (c < g.c1 || c > g.c2 || cell.x || (cell.v === '' && cell.n === undefined)) return cell;
+            if (c < g.c1 || c > g.c2 || cell.x || (cell.v === '' && cell.n === undefined && !cell.f)) return cell;
             changed = true;
             const out = { ...cell, v: '' };
             delete out.n;
+            delete out.f;
             return out;
           }),
         }
   );
-  return changed ? { ...t, rows } : t;
+  return changed ? recalcTable({ ...t, rows }) : t;
 }
 
 /** 행 여럿 빼기 (r1~r2) - 모두 빼지는 않는다 */

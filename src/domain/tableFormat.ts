@@ -54,16 +54,21 @@ const hasNumFormat = (s?: TableCellStyle) => !!s && (s.nf !== undefined || s.dp 
 /** 칸 서식 */
 export const styleOf = (t: EntryTable, cell: TableCell): TableCellStyle | undefined => (cell.s !== undefined ? t.styles?.[cell.s] : undefined);
 
-/** 칸을 고칠 때 보이는 글 - 서식을 입힌 수는 원래 수('1,234원' → 1234, '12.5%' → 12.5%), 나머지는 보이는 글 그대로 */
+/**
+ * 칸을 고칠 때 보이는 글 - 식 칸은 식(P48-3), 서식을 입힌 수는 원래 수('1,234원' → 1234, '12.5%' → 12.5%), 나머지는 보이는 글 그대로.
+ * '='로 시작하는 글 칸은 앞에 '를 붙인다 - 고친 뒤 다시 넣어도 식이 되지 않게 (엑셀처럼).
+ */
 export function editText(cell: TableCell, style?: TableCellStyle): string {
+  if (cell.f) return cell.f;
+  if (cell.v.startsWith('=')) return `'${cell.v}`;
   if (!hasNumFormat(style)) return cell.v;
   const x = cellNumber(cell);
   if (x === null) return cell.v;
   return style!.nf === 'pct' ? `${plainText(x * 100)}%` : plainText(x);
 }
 
-/** 수 x를 서식 s로 입힌 칸 (v = 보이는 글, n = 보이는 글이 바탕 글과 다를 때만) */
-function withNumber(cell: TableCell, x: number, s?: TableCellStyle): TableCell {
+/** 수 x를 서식 s로 입힌 칸 (v = 보이는 글, n = 보이는 글이 바탕 글과 다를 때만) - 식 결과(domain/tableFormula)도 */
+export function numberCell(cell: TableCell, x: number, s?: TableCellStyle): TableCell {
   const v = hasNumFormat(s) ? formatNum(x, s!.nf, s!.dp) : generalText(x);
   const out: TableCell = { ...cell, v };
   if (v !== plainText(x)) out.n = x;
@@ -80,7 +85,7 @@ export function cellWithInput(cell: TableCell, text: string, style?: TableCellSt
     const x = parseNum(text);
     if (x !== null) {
       const bare = style!.nf === 'pct' && !text.trim().endsWith('%');
-      return withNumber(cell, bare ? x / 100 : x, style);
+      return numberCell(cell, bare ? x / 100 : x, style);
     }
   }
   const out: TableCell = { ...cell, v: text };
@@ -149,7 +154,7 @@ function cellsIn(t: EntryTable, g: CellRange): TableCell[] {
 /** 서식을 바꾼 칸의 수를 새 서식으로 다시 보인다 (글 칸은 그대로) */
 const reformat = (cell: TableCell, s: TableCellStyle): TableCell => {
   const x = cellNumber(cell);
-  return x === null ? cell : withNumber(cell, x, s);
+  return x === null ? cell : numberCell(cell, x, s);
 };
 
 /**
