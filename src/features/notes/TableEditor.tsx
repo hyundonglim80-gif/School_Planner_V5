@@ -16,6 +16,8 @@
 //   - 엑셀과 오가기 (P48-5 - PLAN 5장 'P48' ⓛ, 셈은 domain/tableClip): 고르기 상태 Ctrl+C·Ctrl+X = 고른 범위를 탭 글 + HTML 표로(엑셀·한셀·다른 메모에 붙는다) ·
 //     Ctrl+V에 칸이 둘 이상(엑셀 범위·탭 글)이면 고른 칸부터 값만 채운다(모자라면 행·열을 늘림) - 고치는 칸에 여러 줄 글만이면 칸 안 줄 바꿈 그대로 ·
 //     📋 클립보드 탭에서 누른 글도 같은 길(features/clipboard/paste가 붙여넣기로 넘긴다).
+//   - 띠 두 줄(P49-2 - PLAN 5장 'P49-2 정한 것')은 칸을 고르고 초점이 이 표에 있을 때만, 제목 줄 자리에 겹쳐 뜬다(위로 삐져나와 위 글을 잠깐 가린다) -
+//     고르지 않은 표는 제목 줄만 · 서고 접혀도 표가 밀리지 않는다 · 다른 표·본문을 누르면 접히고(고른 칸은 남는다) ESC 둘째(고르기 풀기)에도 접힌다.
 //   단추의 data-table-op 이름은 '단추 대신 누르기' 키가 쓴다 - 바꾸지 않는다.
 import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
@@ -86,6 +88,8 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   /** 다음 그림 뒤에 글 칸에 초점 ('end' = 글 끝에 커서, 수 = 그 자리에 커서) · 고른 칸이 보이게 스크롤 */
   const wantFocus = useRef<false | 'keep' | 'end' | number>(firstOk ? 'end' : false);
   const wantScroll = useRef(false);
+  /** 초점이 이 표(글 칸)에 있다 - 띠는 칸을 고르고 초점이 있는 표에만 (P49-2) */
+  const [focused, setFocused] = useState(false);
 
   // 줄·열이 줄어 고른 칸이 표 밖이면 맞춘다 (되돌리기 뒤)
   const clamp = (p: CellPos): CellPos => ({ r: Math.max(0, Math.min(p.r, nRows - 1)), c: Math.max(0, Math.min(p.c, nCols - 1)) });
@@ -291,9 +295,10 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
       take();
       if (range) apply(clearRange(table, range));
     } else if (e.key === 'Escape') {
-      // 고르기 풀기 - 한 번 더 누르면 전역 ESC
+      // 고르기 풀기 - 띠도 접힌다(글 칸이 사라진다). 한 번 더 누르면 전역 ESC
       take();
       setSel(null);
+      setFocused(false);
     } else if (mod && !e.altKey && !e.shiftKey && e.code === 'KeyZ') {
       take();
       undo();
@@ -314,7 +319,8 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   };
 
   const onBlur = () => {
-    // 표 밖을 누르면 고치던 글을 넣는다 (고른 칸은 그대로 둔다 - 단추가 그 칸을 쓴다)
+    // 표 밖을 누르면 띠를 접고 고치던 글을 넣는다. 고른 칸은 그대로 둔다 - 📋 클립보드 탭에서 누른 글이 그 칸에 붙는다(초점을 돌려 띠도 다시 선다)
+    setFocused(false);
     if (!editing) return;
     apply(withDraft(table));
     setEditing(false);
@@ -512,12 +518,14 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   const headOn = 'border border-blue-300 bg-blue-100 text-blue-700 font-bold select-none cursor-pointer';
   const name = g ? rangeName(g) : '';
   const many = rowCount * colCount > 1;
+  /** 띠 두 줄 - 칸을 고르고 초점이 이 표에 있을 때만 (P49-2 - 고르지 않은 표는 제목 줄만, 다른 표·본문을 누르면 접힌다) */
+  const bar = !!g && focused;
 
   return (
     // overflow-hidden 없음 - 띠의 ▾ 고르기(맞춤·칸 색)가 표 아래로 펼쳐진다
     <div className="bg-slate-50 border border-slate-200 rounded-xl" data-note-table={table.id}>
       <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-slate-200">
-        <span className="text-xs font-bold text-slate-600">
+        <span className="text-xs font-bold text-slate-600" title="칸을 누르면 이 자리에 표 단추 줄이 섭니다">
           ▦ {title || '표'} <span className="font-normal text-slate-400">· {nRows}행 × {nCols}열</span>
         </span>
         {onRemove && (
@@ -533,293 +541,300 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
           </button>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-1 px-2.5 py-1.5 border-b border-slate-200 bg-white/60">
-        {/* 칸 이름 줄 - 고른 칸·범위 이름과 그 칸 글 */}
-        <span data-table-name={name} className={`mr-1 inline-flex items-center gap-1.5 min-w-0 max-w-full text-2xs ${g ? 'text-slate-600' : 'text-slate-400'}`}>
-          {g ? (
-            <>
-              <b className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 tabular-nums">{name}</b>
-              {many ? (
-                <span className="text-slate-400">
-                  {rowCount}행 × {colCount}열
-                </span>
-              ) : activeValue ? (
-                <span className="truncate max-w-40" title={activeValue}>
-                  {activeValue.split('\n')[0]}
-                </span>
-              ) : null}
-            </>
-          ) : (
-            '칸을 누르면 고칩니다'
-          )}
-        </span>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!canUndo} onClick={undo} title="표에서 한 것 되돌리기 (50번까지)" aria-label="표 되돌리기" data-table-op="undo">
-          ↶
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('rowAbove')} title="고른 칸 위에 행 넣기" data-table-op="row-above">
-          ↑ 행
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('rowBelow')} title="고른 칸 아래에 행 넣기" data-table-op="row-below">
-          ↓ 행
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g || rowCount >= nRows} onClick={() => runOp('rowDelete')} title="고른 칸의 행 빼기" data-table-op="row-delete">
-          행 빼기
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('colLeft')} title="고른 칸 왼쪽에 열 넣기" data-table-op="col-left">
-          ← 열
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('colRight')} title="고른 칸 오른쪽에 열 넣기" data-table-op="col-right">
-          → 열
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g || colCount >= nCols} onClick={() => runOp('colDelete')} title="고른 칸의 열 빼기" data-table-op="col-delete">
-          열 빼기
-        </button>
-        <span className="relative" ref={menu === 'sort' ? menuRef : undefined}>
-          <button
-            type="button"
+      {/* 띠는 표 칸 묶음 위(= 제목 줄 자리)에 겹쳐 뜬다 - 서고 접혀도 표가 밀리지 않아 누른 칸이 손 밑에 그대로 (P49-2 - 쓰는 칸은 스크롤할 자리가 없을 때가 많아 스크롤로 맞출 수 없다) */}
+      <div className="relative">
+        {bar && (
+          <div
+            data-table-bar
+            // 띠의 빈 곳을 눌러도 글 칸 초점이 그대로 (띠가 접히지 않게)
             onMouseDown={keepFocus}
-            className={btn}
-            aria-expanded={menu === 'sort'}
-            disabled={!g || nRows < 2}
-            onClick={() => setMenu(menu === 'sort' ? null : 'sort')}
-            title="고른 칸의 열로 행을 정렬합니다 (첫 행 제목·맨 아래 합계 줄은 그대로 - 몇 행만 하려면 그 행들을 골라서)"
-            data-table-op="sort"
+            className="absolute bottom-full -left-px -right-px z-20 rounded-xl border border-slate-200 bg-white shadow-lg"
           >
-            정렬 ▾
-          </button>
-          {menu === 'sort' && (
-            <span role="menu" className={menuBox}>
-              <button type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runSort(false)} className={menuItem(false)} data-table-op="sort-asc">
-                작은 것부터 <span className="font-normal text-slate-400">(가나다)</span>
+            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1.5 border-b border-slate-200">
+              {/* 칸 이름 줄 - 고른 칸·범위 이름과 그 칸 글 */}
+              <span data-table-name={name} className="mr-1 inline-flex items-center gap-1.5 min-w-0 max-w-full text-2xs text-slate-600">
+                <b className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 tabular-nums">{name}</b>
+                {many ? (
+                  <span className="text-slate-400">
+                    {rowCount}행 × {colCount}열
+                  </span>
+                ) : activeValue ? (
+                  <span className="truncate max-w-40" title={activeValue}>
+                    {activeValue.split('\n')[0]}
+                  </span>
+                ) : null}
+              </span>
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!canUndo} onClick={undo} title="표에서 한 것 되돌리기 (50번까지)" aria-label="표 되돌리기" data-table-op="undo">
+                ↶
               </button>
-              <button type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runSort(true)} className={menuItem(false)} data-table-op="sort-desc">
-                큰 것부터
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('rowAbove')} title="고른 칸 위에 행 넣기" data-table-op="row-above">
+                ↑ 행
               </button>
-            </span>
-          )}
-        </span>
-      </div>
-      {/* 띠 둘째 줄 - 숫자 서식·꾸밈 (P48-2) */}
-      <div className="flex flex-wrap items-center gap-1 px-2.5 py-1.5 border-b border-slate-200 bg-white/60" data-table-format-bar>
-        {/* Σ ▾ · ⇣ 채우기 (P48-4) */}
-        <span className="relative" ref={menu === 'autosum' ? menuRef : undefined}>
-          <button
-            type="button"
-            onMouseDown={keepFocus}
-            className={btn}
-            aria-expanded={menu === 'autosum'}
-            disabled={!g}
-            onClick={() => setMenu(menu === 'autosum' ? null : 'autosum')}
-            title="자동 합계 - 빈 칸을 고르면 위(없으면 왼쪽)의 수를, 수가 든 범위를 고르면 그 아래에 열마다"
-            data-table-op="autosum"
-          >
-            Σ ▾
-          </button>
-          {menu === 'autosum' && (
-            <span role="menu" className={menuBox}>
-              {AUTO_FNS.map((a) => (
-                <button key={a.op} type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runAutoSum(a.fn)} className={menuItem(false)} data-table-op={a.op}>
-                  {a.label} <span className="ml-auto pl-2 font-normal text-slate-400">{a.fn}</span>
-                </button>
-              ))}
-            </span>
-          )}
-        </span>
-        <button
-          type="button"
-          onMouseDown={keepFocus}
-          className={btn}
-          disabled={!g || (g.r1 === g.r2 && g.r1 === 0)}
-          onClick={runFillDown}
-          title="아래로 채우기 - 맨 위 칸을 고른 칸들에 베낍니다 (식은 주소를 따라 바뀝니다 · 한 줄만 고르면 바로 위 칸을)"
-          data-table-op="copy-down"
-        >
-          ⇣ 채우기
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'comma')} aria-pressed={activeStyle?.nf === 'comma'} disabled={!g} onClick={() => numFormat('comma')} title="세 자리 쉼표 (1234 → 1,234) - 다시 누르면 풉니다" data-table-op="num-comma">
-          1,000
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'won')} aria-pressed={activeStyle?.nf === 'won'} disabled={!g} onClick={() => numFormat('won')} title="원 (1234 → 1,234원) - 다시 누르면 풉니다" data-table-op="num-won">
-          원
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'pct')} aria-pressed={activeStyle?.nf === 'pct'} disabled={!g} onClick={() => numFormat('pct')} title="백분율 (0.125 → 12.5%) - 다시 누르면 풉니다" data-table-op="num-pct">
-          %
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(-1)} title="소수 자리 하나 줄이기 (반올림해 보입니다 - 셈은 원래 수로)" data-table-op="dp-less">
-          소수 −
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(1)} title="소수 자리 하나 늘리기" data-table-op="dp-more">
-          소수 +
-        </button>
-        <button type="button" onMouseDown={keepFocus} className={`${on(activeStyle?.b === 1)} font-black`} aria-pressed={activeStyle?.b === 1} disabled={!g} onClick={() => format(toggleBold)} title="굵게 (Ctrl + B) - 다시 누르면 풉니다" data-table-op="bold">
-          굵게
-        </button>
-        <span className="relative" ref={menu === 'align' ? menuRef : undefined}>
-          <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'align'} disabled={!g} onClick={() => setMenu(menu === 'align' ? null : 'align')} title="맞춤" data-table-op="align">
-            맞춤 ▾
-          </button>
-          {menu === 'align' && (
-            <span role="menu" className={menuBox}>
-              {(
-                [
-                  ['left', '왼쪽', 'align-left'],
-                  ['center', '가운데', 'align-center'],
-                  ['right', '오른쪽', 'align-right'],
-                  [undefined, '처음대로', 'align-reset'],
-                ] as const
-              ).map(([ha, label, op]) => (
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('rowBelow')} title="고른 칸 아래에 행 넣기" data-table-op="row-below">
+                ↓ 행
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g || rowCount >= nRows} onClick={() => runOp('rowDelete')} title="고른 칸의 행 빼기" data-table-op="row-delete">
+                행 빼기
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('colLeft')} title="고른 칸 왼쪽에 열 넣기" data-table-op="col-left">
+                ← 열
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('colRight')} title="고른 칸 오른쪽에 열 넣기" data-table-op="col-right">
+                → 열
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g || colCount >= nCols} onClick={() => runOp('colDelete')} title="고른 칸의 열 빼기" data-table-op="col-delete">
+                열 빼기
+              </button>
+              <span className="relative" ref={menu === 'sort' ? menuRef : undefined}>
                 <button
-                  key={op}
                   type="button"
-                  role="menuitemradio"
-                  aria-checked={activeStyle?.ha === ha}
                   onMouseDown={keepFocus}
-                  onClick={() => format((t, r) => setAlign(t, r, ha))}
-                  className={menuItem(activeStyle?.ha === ha)}
-                  title={ha ? undefined : '글은 왼쪽, 수는 오른쪽'}
-                  data-table-op={op}
+                  className={btn}
+                  aria-expanded={menu === 'sort'}
+                  disabled={!g || nRows < 2}
+                  onClick={() => setMenu(menu === 'sort' ? null : 'sort')}
+                  title="고른 칸의 열로 행을 정렬합니다 (첫 행 제목·맨 아래 합계 줄은 그대로 - 몇 행만 하려면 그 행들을 골라서)"
+                  data-table-op="sort"
                 >
-                  {label}
+                  정렬 ▾
                 </button>
-              ))}
-            </span>
-          )}
-        </span>
-        <span className="relative" ref={menu === 'fill' ? menuRef : undefined}>
-          <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'fill'} disabled={!g} onClick={() => setMenu(menu === 'fill' ? null : 'fill')} title="칸 색" data-table-op="fill">
-            <span className="inline-block w-2.5 h-2.5 mr-1 rounded-sm border border-slate-300 align-[-1px]" style={{ backgroundColor: activeStyle?.bg ?? '#ffffff' }} />
-            칸 색 ▾
-          </button>
-          {menu === 'fill' && (
-            <span role="menu" className={menuBox}>
-              {[...FILL_COLORS, { key: 'none', name: '없음', bg: undefined }].map((f) => (
+                {menu === 'sort' && (
+                  <span role="menu" className={menuBox}>
+                    <button type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runSort(false)} className={menuItem(false)} data-table-op="sort-asc">
+                      작은 것부터 <span className="font-normal text-slate-400">(가나다)</span>
+                    </button>
+                    <button type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runSort(true)} className={menuItem(false)} data-table-op="sort-desc">
+                      큰 것부터
+                    </button>
+                  </span>
+                )}
+              </span>
+            </div>
+            {/* 띠 둘째 줄 - 숫자 서식·꾸밈 (P48-2) */}
+            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1.5" data-table-format-bar>
+              {/* Σ ▾ · ⇣ 채우기 (P48-4) */}
+              <span className="relative" ref={menu === 'autosum' ? menuRef : undefined}>
                 <button
-                  key={f.key}
                   type="button"
-                  role="menuitemradio"
-                  aria-checked={activeStyle?.bg === f.bg}
                   onMouseDown={keepFocus}
-                  onClick={() => format((t, r) => setFill(t, r, f.bg))}
-                  className={menuItem(activeStyle?.bg === f.bg)}
-                  data-table-op={`fill-${f.key}`}
+                  className={btn}
+                  aria-expanded={menu === 'autosum'}
+                  disabled={!g}
+                  onClick={() => setMenu(menu === 'autosum' ? null : 'autosum')}
+                  title="자동 합계 - 빈 칸을 고르면 위(없으면 왼쪽)의 수를, 수가 든 범위를 고르면 그 아래에 열마다"
+                  data-table-op="autosum"
                 >
-                  <span className="inline-block w-3.5 h-3.5 rounded-sm border border-slate-300" style={{ backgroundColor: f.bg ?? '#ffffff' }} />
-                  {f.name}
+                  Σ ▾
                 </button>
-              ))}
-            </span>
-          )}
-        </span>
-      </div>
-      {/* 세로는 칸 안에서 따로 스크롤하지 않고 쓰는 칸 전체로 (P10-5 사용자 의견 6f), 넓은 표는 가로만 */}
-      <div ref={boxRef} className="relative overflow-x-auto overflow-y-hidden p-2">
-        <table className="border-collapse" style={TABLE_STYLE as CSSProperties}>
-          <TableColGroup table={table} lead={ROW_HEAD_W} />
-          <thead>
-            <tr>
-              <th
-                data-table-all
+                {menu === 'autosum' && (
+                  <span role="menu" className={menuBox}>
+                    {AUTO_FNS.map((a) => (
+                      <button key={a.op} type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runAutoSum(a.fn)} className={menuItem(false)} data-table-op={a.op}>
+                        {a.label} <span className="ml-auto pl-2 font-normal text-slate-400">{a.fn}</span>
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </span>
+              <button
+                type="button"
                 onMouseDown={keepFocus}
-                onClick={() => {
-                  apply(withDraft(table));
-                  pick({ r: 0, c: 0 }, { r: nRows - 1, c: nCols - 1 });
-                }}
-                className={`${head} w-7 min-w-7`}
-                title="표 전체 고르기"
-                aria-label="표 전체 고르기"
-              />
-              {Array.from({ length: nCols }, (_, c) => (
-                <th
-                  key={c}
-                  data-table-col={c}
-                  onMouseDown={keepFocus}
-                  onClick={(e) => pickCols(e, c)}
-                  className={`${g && c >= g.c1 && c <= g.c2 ? headOn : head} px-1 py-0`}
-                  style={{ fontSize: 10, lineHeight: 1.6 }}
-                  title={`${colName(c)}열 고르기 (Shift = 여러 열)`}
-                >
-                  {colName(c)}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {table.rows.map((row, r) => (
-              <tr key={r} style={row.h ? { height: row.h } : undefined}>
-                <th
-                  data-table-row={r}
-                  onMouseDown={keepFocus}
-                  onClick={(e) => pickRows(e, r)}
-                  className={`${g && r >= g.r1 && r <= g.r2 ? headOn : head} px-1 py-0 tabular-nums`}
-                  style={{ fontSize: 10 }}
-                  title={`${r + 1}행 고르기 (Shift = 여러 행)`}
-                >
-                  {r + 1}
-                </th>
-                {row.cells.map((cell, c) => {
-                  if (cell.x) return null;
-                  const on = inRange(g, r, c);
-                  const isActive = active?.r === r && active?.c === c;
-                  const css: CSSProperties = {
-                    ...(baseCellCss(table.styles?.[cell.s ?? -1], cell) as CSSProperties),
-                    ...(on && many ? { boxShadow: SEL_TINT } : {}),
-                    ...(isActive ? { outline: '2px solid #2563eb', outlineOffset: -2 } : {}),
-                    cursor: 'cell',
-                  };
-                  return (
-                    <td
-                      key={c}
-                      colSpan={cell.cs}
-                      rowSpan={cell.rs}
-                      style={css}
-                      title={formulaErrorReason(cell)}
-                      data-cell={`${r}-${c}`}
-                      data-cell-formula={cell.f ? '' : undefined}
-                      data-cell-on={on || undefined}
-                      onMouseDown={keepFocus}
-                      onClick={(e) => onCellClick(e, r, c)}
-                    >
-                      {cell.v}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {active && (
-          // 글 칸 하나 - 고른 칸 위에 뜬다. 고르기 상태에서는 보이지 않게(초점만), 고치는 동안 칸을 덮는다
-          <textarea
-            ref={inputRef}
-            value={editing ? draft : ''}
-            data-table-input={`${active.r}-${active.c}`}
-            data-table-editing={editing || undefined}
-            aria-label={`${cellName(active)} 칸`}
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(e) => onInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            onBlur={onBlur}
-            onCopy={(e) => onCopy(e, false)}
-            onCut={(e) => onCopy(e, true)}
-            onPaste={onPaste}
-            rows={Math.max(1, (editing ? draft : '').split('\n').length)}
-            className={`absolute z-10 box-border resize-none m-0 outline-none ${editing ? 'border-2 border-blue-600 bg-blue-50 shadow-md' : 'opacity-0 pointer-events-none border-0'}`}
-            style={
-              {
-                ...TABLE_STYLE,
-                backgroundColor: editing ? '#eff6ff' : 'transparent',
-                ...(editing ? {} : { width: 1, height: 1 }),
-                padding: editing ? '0 4px' : 0,
-                textAlign: table.styles?.[activeCell?.s ?? -1]?.ha ?? 'left',
-                whiteSpace: 'pre',
-                overflow: 'hidden',
-                // 글 길이만큼 넓어진다 (크롬 123+)
-                fieldSizing: 'content',
-              } as CSSProperties
-            }
-          />
+                className={btn}
+                disabled={!g || (g.r1 === g.r2 && g.r1 === 0)}
+                onClick={runFillDown}
+                title="아래로 채우기 - 맨 위 칸을 고른 칸들에 베낍니다 (식은 주소를 따라 바뀝니다 · 한 줄만 고르면 바로 위 칸을)"
+                data-table-op="copy-down"
+              >
+                ⇣ 채우기
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'comma')} aria-pressed={activeStyle?.nf === 'comma'} disabled={!g} onClick={() => numFormat('comma')} title="세 자리 쉼표 (1234 → 1,234) - 다시 누르면 풉니다" data-table-op="num-comma">
+                1,000
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'won')} aria-pressed={activeStyle?.nf === 'won'} disabled={!g} onClick={() => numFormat('won')} title="원 (1234 → 1,234원) - 다시 누르면 풉니다" data-table-op="num-won">
+                원
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'pct')} aria-pressed={activeStyle?.nf === 'pct'} disabled={!g} onClick={() => numFormat('pct')} title="백분율 (0.125 → 12.5%) - 다시 누르면 풉니다" data-table-op="num-pct">
+                %
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(-1)} title="소수 자리 하나 줄이기 (반올림해 보입니다 - 셈은 원래 수로)" data-table-op="dp-less">
+                소수 −
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(1)} title="소수 자리 하나 늘리기" data-table-op="dp-more">
+                소수 +
+              </button>
+              <button type="button" onMouseDown={keepFocus} className={`${on(activeStyle?.b === 1)} font-black`} aria-pressed={activeStyle?.b === 1} disabled={!g} onClick={() => format(toggleBold)} title="굵게 (Ctrl + B) - 다시 누르면 풉니다" data-table-op="bold">
+                굵게
+              </button>
+              <span className="relative" ref={menu === 'align' ? menuRef : undefined}>
+                <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'align'} disabled={!g} onClick={() => setMenu(menu === 'align' ? null : 'align')} title="맞춤" data-table-op="align">
+                  맞춤 ▾
+                </button>
+                {menu === 'align' && (
+                  <span role="menu" className={menuBox}>
+                    {(
+                      [
+                        ['left', '왼쪽', 'align-left'],
+                        ['center', '가운데', 'align-center'],
+                        ['right', '오른쪽', 'align-right'],
+                        [undefined, '처음대로', 'align-reset'],
+                      ] as const
+                    ).map(([ha, label, op]) => (
+                      <button
+                        key={op}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={activeStyle?.ha === ha}
+                        onMouseDown={keepFocus}
+                        onClick={() => format((t, r) => setAlign(t, r, ha))}
+                        className={menuItem(activeStyle?.ha === ha)}
+                        title={ha ? undefined : '글은 왼쪽, 수는 오른쪽'}
+                        data-table-op={op}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </span>
+              <span className="relative" ref={menu === 'fill' ? menuRef : undefined}>
+                <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'fill'} disabled={!g} onClick={() => setMenu(menu === 'fill' ? null : 'fill')} title="칸 색" data-table-op="fill">
+                  <span className="inline-block w-2.5 h-2.5 mr-1 rounded-sm border border-slate-300 align-[-1px]" style={{ backgroundColor: activeStyle?.bg ?? '#ffffff' }} />
+                  칸 색 ▾
+                </button>
+                {menu === 'fill' && (
+                  <span role="menu" className={menuBox}>
+                    {[...FILL_COLORS, { key: 'none', name: '없음', bg: undefined }].map((f) => (
+                      <button
+                        key={f.key}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={activeStyle?.bg === f.bg}
+                        onMouseDown={keepFocus}
+                        onClick={() => format((t, r) => setFill(t, r, f.bg))}
+                        className={menuItem(activeStyle?.bg === f.bg)}
+                        data-table-op={`fill-${f.key}`}
+                      >
+                        <span className="inline-block w-3.5 h-3.5 rounded-sm border border-slate-300" style={{ backgroundColor: f.bg ?? '#ffffff' }} />
+                        {f.name}
+                      </button>
+                    ))}
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
         )}
+        {/* 세로는 칸 안에서 따로 스크롤하지 않고 쓰는 칸 전체로 (P10-5 사용자 의견 6f), 넓은 표는 가로만 */}
+        <div ref={boxRef} className="relative overflow-x-auto overflow-y-hidden p-2">
+          <table className="border-collapse" style={TABLE_STYLE as CSSProperties}>
+            <TableColGroup table={table} lead={ROW_HEAD_W} />
+            <thead>
+              <tr>
+                <th
+                  data-table-all
+                  onMouseDown={keepFocus}
+                  onClick={() => {
+                    apply(withDraft(table));
+                    pick({ r: 0, c: 0 }, { r: nRows - 1, c: nCols - 1 });
+                  }}
+                  className={`${head} w-7 min-w-7`}
+                  title="표 전체 고르기"
+                  aria-label="표 전체 고르기"
+                />
+                {Array.from({ length: nCols }, (_, c) => (
+                  <th
+                    key={c}
+                    data-table-col={c}
+                    onMouseDown={keepFocus}
+                    onClick={(e) => pickCols(e, c)}
+                    className={`${g && c >= g.c1 && c <= g.c2 ? headOn : head} px-1 py-0`}
+                    style={{ fontSize: 10, lineHeight: 1.6 }}
+                    title={`${colName(c)}열 고르기 (Shift = 여러 열)`}
+                  >
+                    {colName(c)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {table.rows.map((row, r) => (
+                <tr key={r} style={row.h ? { height: row.h } : undefined}>
+                  <th
+                    data-table-row={r}
+                    onMouseDown={keepFocus}
+                    onClick={(e) => pickRows(e, r)}
+                    className={`${g && r >= g.r1 && r <= g.r2 ? headOn : head} px-1 py-0 tabular-nums`}
+                    style={{ fontSize: 10 }}
+                    title={`${r + 1}행 고르기 (Shift = 여러 행)`}
+                  >
+                    {r + 1}
+                  </th>
+                  {row.cells.map((cell, c) => {
+                    if (cell.x) return null;
+                    const on = inRange(g, r, c);
+                    const isActive = active?.r === r && active?.c === c;
+                    const css: CSSProperties = {
+                      ...(baseCellCss(table.styles?.[cell.s ?? -1], cell) as CSSProperties),
+                      ...(on && many ? { boxShadow: SEL_TINT } : {}),
+                      ...(isActive ? { outline: '2px solid #2563eb', outlineOffset: -2 } : {}),
+                      cursor: 'cell',
+                    };
+                    return (
+                      <td
+                        key={c}
+                        colSpan={cell.cs}
+                        rowSpan={cell.rs}
+                        style={css}
+                        title={formulaErrorReason(cell)}
+                        data-cell={`${r}-${c}`}
+                        data-cell-formula={cell.f ? '' : undefined}
+                        data-cell-on={on || undefined}
+                        onMouseDown={keepFocus}
+                        onClick={(e) => onCellClick(e, r, c)}
+                      >
+                        {cell.v}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {active && (
+            // 글 칸 하나 - 고른 칸 위에 뜬다. 고르기 상태에서는 보이지 않게(초점만), 고치는 동안 칸을 덮는다
+            <textarea
+              ref={inputRef}
+              value={editing ? draft : ''}
+              data-table-input={`${active.r}-${active.c}`}
+              data-table-editing={editing || undefined}
+              aria-label={`${cellName(active)} 칸`}
+              autoComplete="off"
+              spellCheck={false}
+              onChange={(e) => onInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              onFocus={() => setFocused(true)}
+              onBlur={onBlur}
+              onCopy={(e) => onCopy(e, false)}
+              onCut={(e) => onCopy(e, true)}
+              onPaste={onPaste}
+              rows={Math.max(1, (editing ? draft : '').split('\n').length)}
+              className={`absolute z-10 box-border resize-none m-0 outline-none ${editing ? 'border-2 border-blue-600 bg-blue-50 shadow-md' : 'opacity-0 pointer-events-none border-0'}`}
+              style={
+                {
+                  ...TABLE_STYLE,
+                  backgroundColor: editing ? '#eff6ff' : 'transparent',
+                  ...(editing ? {} : { width: 1, height: 1 }),
+                  padding: editing ? '0 4px' : 0,
+                  textAlign: table.styles?.[activeCell?.s ?? -1]?.ha ?? 'left',
+                  whiteSpace: 'pre',
+                  overflow: 'hidden',
+                  // 글 길이만큼 넓어진다 (크롬 123+)
+                  fieldSizing: 'content',
+                } as CSSProperties
+              }
+            />
+          )}
+        </div>
       </div>
     </div>
   );
