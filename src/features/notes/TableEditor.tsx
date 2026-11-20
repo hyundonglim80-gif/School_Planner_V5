@@ -522,8 +522,9 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   const bar = !!g && focused;
 
   return (
-    // overflow-hidden 없음 - 띠의 ▾ 고르기(맞춤·칸 색)가 표 아래로 펼쳐진다
-    <div className="bg-slate-50 border border-slate-200 rounded-xl" data-note-table={table.id}>
+    // overflow-hidden 없음 - 띠의 ▾ 고르기(맞춤·칸 색)가 표 아래로 펼쳐진다.
+    // 표가 잇달아 있으면 뒤 표 위를 띄운다 - 뒤 표의 띠가 위로 삐져나와도(PC 두 줄) 앞 표 끝 줄을 가리지 않게 (P49-2)
+    <div className="bg-slate-50 border border-slate-200 rounded-xl [[data-note-table]+&]:mt-10" data-note-table={table.id}>
       <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-slate-200">
         <span className="text-xs font-bold text-slate-600" title="칸을 누르면 이 자리에 표 단추 줄이 섭니다">
           ▦ {title || '표'} <span className="font-normal text-slate-400">· {nRows}행 × {nCols}열</span>
@@ -550,7 +551,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
             onMouseDown={keepFocus}
             className="absolute bottom-full -left-px -right-px z-20 rounded-xl border border-slate-200 bg-white shadow-lg"
           >
-            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1.5 border-b border-slate-200">
+            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1 border-b border-slate-200">
               {/* 칸 이름 줄 - 고른 칸·범위 이름과 그 칸 글 */}
               <span data-table-name={name} className="mr-1 inline-flex items-center gap-1.5 min-w-0 max-w-full text-2xs text-slate-600">
                 <b className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 tabular-nums">{name}</b>
@@ -611,7 +612,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
               </span>
             </div>
             {/* 띠 둘째 줄 - 숫자 서식·꾸밈 (P48-2) */}
-            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1.5" data-table-format-bar>
+            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1" data-table-format-bar>
               {/* Σ ▾ · ⇣ 채우기 (P48-4) */}
               <span className="relative" ref={menu === 'autosum' ? menuRef : undefined}>
                 <button

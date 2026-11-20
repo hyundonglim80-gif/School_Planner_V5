@@ -580,7 +580,12 @@ try {
   await topic('paste-table', async () => {
     await q(sel('entry-card', 'insp_man_n1')).locator(sel('entry-edit')).click();
     r.check(await has(sel('note-table')), '칸 안의 표 (칸 글자·행/열 고치기)');
+    r.check((await count(sel('table-op'))) === 0, '칸을 누르기 전에는 단추 줄 없음 (P49-2)');
+    await q(`${sel('note-table')} [data-cell="0-0"]`).click();
+    r.check(await has(sel('table-bar')), '칸을 누르면 표 위에 단추 줄');
     r.check((await count(sel('table-op'))) > 0, '행/열 단추');
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Escape');
   });
 
   await topic('table-make', async () => {
