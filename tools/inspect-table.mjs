@@ -152,6 +152,84 @@ try {
   await page.keyboard.press('Escape');
   r.check(await waitFor(async () => (await panel.count()) === 0, 5000), 'ESC 셋째 = 전역 ESC (쓰는 칸 닫힘)');
 
+  r.section('숫자 서식·꾸밈 (P48-2)');
+  await page.evaluate(([s, d, i]) => window.sp5.openWindow('note', { sid: s, date: d, id: i, edit: true }), [sid, DAY, id]);
+  await waitFor(table);
+  const cellAt = (rc) => table.locator(`[data-cell="${rc}"]`);
+  const cssOf = (loc) => loc.evaluate((el) => ({ align: getComputedStyle(el).textAlign, weight: getComputedStyle(el).fontWeight, bg: getComputedStyle(el).backgroundColor }));
+  // C2에 1234 → Enter → 위로 → 1,000 → 원 (사용자 말 그대로)
+  await cellAt('1-2').click();
+  await page.keyboard.type('1234');
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowUp');
+  r.check((await cssOf(cellAt('1-2'))).align === 'right', '맞춤을 정하지 않은 수 칸 = 오른쪽');
+  await table.locator(sel('table-op', 'num-comma')).click();
+  r.check((await cellAt('1-2').textContent()) === '1,234', `1,000 = 세 자리 쉼표 (${await cellAt('1-2').textContent()})`);
+  await table.locator(sel('table-op', 'num-won')).click();
+  r.check((await cellAt('1-2').textContent()) === '1,234원', `원 = 1,234원 (${await cellAt('1-2').textContent()})`);
+  r.check((await table.locator(sel('table-op', 'num-won')).getAttribute('aria-pressed')) === 'true', '원 단추가 켜져 보인다');
+  r.check((await focusedCell(page)) === '1-2', '단추를 눌러도 초점은 표 안 (고른 칸 그대로)');
+  // B2 '20000'도 원 - 키로 옮겨 단추
+  await page.keyboard.press('ArrowLeft');
+  await table.locator(sel('table-op', 'num-won')).click();
+  r.check((await cellAt('1-1').textContent()) === '20,000원', `B2 = 20,000원 (${await cellAt('1-1').textContent()})`);
+  // 다시 고치면 원래 수
+  await page.keyboard.press('F2');
+  r.check((await page.locator(sel('table-input')).inputValue()) === '20000', `다시 고치면 원래 수 (${await page.locator(sel('table-input')).inputValue()})`);
+  await page.keyboard.press('Escape');
+  // 머리 줄: 행 번호 1 → 굵게 · 맞춤 ▾ 가운데 · 칸 색 ▾ 노랑
+  await table.locator('[data-table-row="0"]').click();
+  await table.locator(sel('table-op', 'bold')).click();
+  await table.locator(sel('table-op', 'align')).click();
+  await table.locator(sel('table-op', 'align-center')).click();
+  await table.locator(sel('table-op', 'fill')).click();
+  await table.locator(sel('table-op', 'fill-yellow')).click();
+  const head = await cssOf(cellAt('0-0'));
+  r.check(head.weight === '700' && head.align === 'center' && head.bg === 'rgb(254, 249, 195)', `머리 줄 굵게·가운데·노랑 (${JSON.stringify(head)})`);
+  r.check((await table.locator(sel('table-op', 'align-center')).count()) === 0, '고르면 ▾가 닫힌다');
+  // Ctrl+B = 굵게 (두 번 = 풂)
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Control+b');
+  r.check((await cssOf(cellAt('1-0'))).weight === '700', 'Ctrl+B = 굵게');
+  await page.keyboard.press('Control+b');
+  r.check((await cssOf(cellAt('1-0'))).weight === '400', 'Ctrl+B 한 번 더 = 풂');
+  r.check((await panel.isVisible()) && (await focusedCell(page)) === '1-0', 'Ctrl+B가 표 밖으로 새지 않는다');
+  // 낮은 표에서도 ▾ 고르기 끝 항목이 잘리지 않는다 (표 상자가 자르던 것)
+  await table.locator(sel('table-op', 'fill')).click();
+  const lastItem = table.locator(sel('table-op', 'fill-none'));
+  r.check(await lastItem.evaluate((el) => { const b = el.getBoundingClientRect(); return el.contains(document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2)); }), '칸 색 ▾ 끝 항목(없음)이 표 아래로 펼쳐져 보인다');
+  await lastItem.click();
+  await page.keyboard.press('Control+s');
+  const fmt = await serverUntil(async () => (await madeHere()).find((d) => d.id === id)?.data(), (d) => d?.tables?.[0]?.rows?.[1]?.cells?.[2]?.v === '1,234원');
+  const ft = fmt?.tables?.[0];
+  const c2 = ft?.rows?.[1]?.cells?.[2];
+  r.check(c2?.v === '1,234원' && c2?.n === 1234 && ft?.styles?.[c2?.s]?.nf === 'won', `서버: C2 v '1,234원' · n 1234 · 서식 원 (${JSON.stringify(c2)})`);
+  const a1 = ft?.rows?.[0]?.cells?.[0];
+  const headStyle = ft?.styles?.[a1?.s] ?? {};
+  r.check(headStyle.b === 1 && headStyle.bg === '#fef9c3' && headStyle.ha === 'center' && Object.keys(headStyle).length === 3, `서버: 머리 칸 서식 (${JSON.stringify(headStyle)})`);
+  r.check(JSON.stringify(fmt).indexOf('undefined') < 0 && ft?.styles?.length === 2, `서버: 쓰는 서식만 (${ft?.styles?.length}개)`);
+  for (let i = 0; i < 3; i++) await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '닫힘');
+  const cardTable = card.locator(sel('entry-table'));
+  r.check(await waitFor(async () => (await cardTable.locator('[data-cell="1-2"]').textContent()) === '1,234원'), '카드에 1,234원');
+  const cardCss = await cssOf(cardTable.locator('[data-cell="1-2"]'));
+  const cardHead = await cssOf(cardTable.locator('[data-cell="0-0"]'));
+  r.check(cardCss.align === 'right' && cardHead.weight === '700' && cardHead.bg === 'rgb(254, 249, 195)', `카드: 수 오른쪽·머리 굵게·노랑 (${JSON.stringify([cardCss, cardHead])})`);
+  // 다시 열기: 보이는 글 그대로, 고치면 원래 수 · 친 수에 원이 입는다
+  await page.evaluate(([s, d, i]) => window.sp5.openWindow('note', { sid: s, date: d, id: i, edit: true }), [sid, DAY, id]);
+  await waitFor(table);
+  r.check((await cellAt('1-2').textContent()) === '1,234원', '다시 열기 = 1,234원');
+  await cellAt('1-2').click();
+  r.check((await page.locator(sel('table-input')).inputValue()) === '1234', '다시 열어 고치면 1234');
+  await page.keyboard.press('Control+a');
+  await page.keyboard.type('5000');
+  await page.keyboard.press('Enter');
+  r.check((await cellAt('1-2').textContent()) === '5,000원', `친 수에 원이 입는다 (${await cellAt('1-2').textContent()})`);
+  await table.locator(sel('table-op', 'undo')).click();
+  r.check((await cellAt('1-2').textContent()) === '1,234원', '↶ = 1,234원');
+  for (let i = 0; i < 2; i++) await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '바뀐 것 없이 ESC = 묻지 않고 닫힘');
+
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);

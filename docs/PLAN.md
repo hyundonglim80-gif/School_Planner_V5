@@ -4569,7 +4569,8 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
   → **11-20 끝**: 읽기 `domain/tableNumber`(`parseNum`·`cellNumber`·`roundTo` 0에서 먼 쪽·`plainText` 유효 15자리 - 카드 그리기가 불러 첫 화면이라 읽기만) · 보이기 `domain/tableFormat`(`formatNum`·`generalText` 유효 10자리·`shownDecimals` - 쓰는 칸만) · 앞에 0이 붙은 수('007'·'01012345678')는 번호라 글 · 단위 tableNumber 5·tableFormat 14
 - [x] ■2 자료: 칸 `n` · 서식 `nf`·`dp` · 서식을 입히고 풀 때 `v`·`n` 맞추기 · 숫자 칸 오른쪽 맞춤(맞춤을 정하지 않았을 때) · `tableForSave`·`normalizeTables`·메모 틀이 새 칸을 지나가나 · 단위
   → **11-20 끝**: `n` = 보이는 글이 바탕 글과 다를 때만('1,234원' → 1234) · 칸 넣기(`setCellText`)가 서식대로 입힘 - % 칸에 15 = 15% · 글로 고치거나 비우면 `n` 뺌 · 서식을 바꿀 때 styles를 쓰는 것만 다시 모음 · 맞춤 없는 수 칸 오른쪽 = 그릴 때(`baseCellCss` 둘째 인자 - 카드·고치는 표) · 메모 저장·틀은 표를 통째로 옮겨 새 칸이 그대로 지나감
-- [ ] ■3 띠 둘째 줄: 1,000 · 원 · % · 소수 −/+ · 굵게 · 맞춤 ▾ · 칸 색 ▾(고른 칸·범위에, 다시 누르면 풂, ↶로 되돌림) · `data-table-op` · 단위(고치는 표)
+- [x] ■3 띠 둘째 줄: 1,000 · 원 · % · 소수 −/+ · 굵게 · 맞춤 ▾ · 칸 색 ▾(고른 칸·범위에, 다시 누르면 풂, ↶로 되돌림) · `data-table-op` · 단위(고치는 표)
+  → **11-20 끝**: 띠 둘째 줄 `data-table-format-bar` - `data-table-op` num-comma·num-won·num-pct·dp-less·dp-more·bold·align(▾ align-left·center·right·reset)·fill(▾ fill-yellow·green·blue·pink·orange·gray·none) · 켠 서식은 단추가 파랗게(고른 칸 서식, `aria-pressed`) · 고치던 글을 넣고 입힌다 · 다시 고치면 원래 수(1234) · **Ctrl+B = 굵게**(계획 밖 - 엑셀과 같아 더함) · ESC = 열린 ▾만 닫기 · 표 상자 `overflow-hidden`을 걷어 ▾가 낮은 표 아래로 펼쳐진다 · **찾아 고침**(P48-1부터): 화면 폭이 바뀌어 고치는 표가 다시 그려지면 '막 만든 표' 표시로 A1이 빈 글 고치기로 열려, 밖을 누르면 A1 글이 지워졌다 → A1이 빈 표만 곧바로 고친다 · 단위 TableEditor 11 · inspect-table 서식 묶음·inspect-attach 통과
 - [ ] ■4 설명서(숫자 서식·꾸밈) · CLAUDE.md 5장 '메모·기록의 표'(서식 편집 없음 → 고칠 수 있는 것) · inspect-table 묶음(1234 → 1,000 → 원 → 저장 → 서버 `n`·`v` → 카드 '1,234원' · 굵게·가운데·칸 색) · 커밋
 **끝 조건**: 칸에 1234를 치고 원을 누르면 1,234원으로 보이고 저장·카드·다시 열기까지 같다 · 다시 고치면 칸에 1234가 보인다.
 
