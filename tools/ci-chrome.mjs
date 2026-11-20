@@ -138,7 +138,7 @@ for (let round = 1; round <= REPEAT; round++) {
     });
     const fails = r.text.split('\n').filter((l) => /✘/.test(l) && !/✘ \d+개 틀림/.test(l)).map((l) => l.trim());
     const passes = r.text.split('\n').filter((l) => /^\s*✔ /.test(l)).length;
-    results.push({ name: label, ok: r.code === 0, ms: r.ms, passes, fails });
+    results.push({ name: label, ok: r.code === 0, ms: r.ms, passes, fails, tail: r.code === 0 ? '' : r.text.split('\n').slice(-60).join('\n') });
     console.log(`◀ inspect-${label}: ${r.code === 0 ? '통과' : `틀림 (종료 ${r.code})`} · ${sec(r.ms)}`);
   }
 }
@@ -156,4 +156,6 @@ const lines = [
 writeFileSync(join(OUT, 'summary.md'), lines.join('\n'));
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
 console.log('\n' + lines.join('\n'));
+// 틀린 점검의 끝 줄을 맨 끝에 한 번 더 - 일 기록의 끝만 읽어도(클라우드 대화는 결과 묶음 주소에 닿지 못한다) 무엇을 기다리다 멈췄나 보인다(P49-1)
+for (const r of failed) console.log(`\n── ${r.name} 끝 60줄 ──\n${r.tail}`);
 process.exit(failed.length ? 1 : 0);
