@@ -127,7 +127,7 @@ describe('고치는 표 - 고르기 (P48-1)', () => {
   it('ESC 두 번째 = 고르기 풀기, 세 번째는 앱(전역 ESC)으로 · 표가 맡은 키는 앱으로 가지 않는다', () => {
     const appKeys = vi.fn();
     window.addEventListener('keydown', appKeys);
-    render(<Host start={filled()} autoEdit />);
+    render(<Host start={setCellText(filled(), 0, 0, '')} autoEdit />);
     expect(input().getAttribute('data-table-input')).toBe('0-0');
     key('Escape');
     key('ArrowDown');
@@ -153,5 +153,102 @@ describe('고치는 표 - 고르기 (P48-1)', () => {
     fireEvent.click(q('[data-cell="2-2"]'));
     expect(values()[0][0]).toBe('첫\n줄');
     expect(nameBox()).toBe('C3');
+  });
+});
+
+describe('고치는 표 - 숫자 서식·꾸밈 (P48-2)', () => {
+  const op = (name: string) => act(() => void fireEvent.click(q(`[data-table-op="${name}"]`)));
+  const styleAt = (r: number, c: number) => {
+    const cell = seen.latest.rows[r].cells[c];
+    return cell.s === undefined ? undefined : seen.latest.styles?.[cell.s];
+  };
+
+  it('칸에 1234 → 1,000 → 원 = 1,234원 · 다시 고치면 1234가 보이고 · 고친 수에도 원이 입는다', () => {
+    seen.latest = newEmptyTable(2, 2, 1);
+    render(<Host start={newEmptyTable(2, 2, 1)} autoEdit />);
+    fireEvent.change(input(), { target: { value: '1234' } });
+    // 고치던 글을 넣고 서식을 입힌다
+    op('num-comma');
+    expect(values()[0][0]).toBe('1,234');
+    expect(input().hasAttribute('data-table-editing')).toBe(false);
+    expect(q('[data-table-op="num-comma"]').getAttribute('aria-pressed')).toBe('true');
+    op('num-won');
+    expect(values()[0][0]).toBe('1,234원');
+    expect(seen.latest.rows[0].cells[0].n).toBe(1234);
+    expect(q('[data-cell="0-0"]').textContent).toBe('1,234원');
+    expect(q('[data-cell="0-0"]').style.textAlign).toBe('right');
+    expect(q('[data-table-name]').textContent).toContain('1234');
+    key('F2');
+    expect(input().value).toBe('1234');
+    fireEvent.change(input(), { target: { value: '5000' } });
+    key('Enter');
+    expect(values()[0][0]).toBe('5,000원');
+    // 다시 누르면 풂
+    key('ArrowUp');
+    op('num-won');
+    expect(values()[0][0]).toBe('5000');
+    expect(seen.latest.styles).toBeUndefined();
+  });
+
+  it('% · 소수 −/+ · ↶로 되돌림', () => {
+    let t = newEmptyTable(1, 2, 1);
+    t = setCellText(setCellText(t, 0, 0, '0.125'), 0, 1, '1.23456');
+    seen.latest = t;
+    render(<Host start={t} />);
+    fireEvent.click(q('[data-cell="0-0"]'));
+    key('Escape');
+    op('num-pct');
+    expect(values()[0][0]).toBe('12.5%');
+    op('dp-more');
+    expect(values()[0][0]).toBe('12.50%');
+    key('ArrowRight');
+    op('dp-less');
+    expect(values()[0][1]).toBe('1.2346');
+    expect(seen.latest.rows[0].cells[1].n).toBe(1.23456);
+    op('undo');
+    expect(values()[0][1]).toBe('1.23456');
+    op('undo');
+    op('undo');
+    expect(values()[0]).toEqual(['0.125', '1.23456']);
+  });
+
+  it('굵게(단추·Ctrl+B) · 맞춤 ▾ · 칸 색 ▾ - 범위에, ESC = ▾만 닫기', () => {
+    seen.latest = filled();
+    render(<Host start={filled()} />);
+    fireEvent.click(q('[data-cell="0-0"]'));
+    key('Escape');
+    key('ArrowRight', { shiftKey: true });
+    op('bold');
+    expect([styleAt(0, 0)?.b, styleAt(0, 1)?.b, styleAt(0, 2)?.b]).toEqual([1, 1, undefined]);
+    key('b', { ctrlKey: true, code: 'KeyB' } as KeyboardEventInit);
+    expect(styleAt(0, 0)).toBeUndefined();
+    op('align');
+    expect(document.querySelector('[data-table-op="align-center"]')).not.toBeNull();
+    key('Escape');
+    expect(document.querySelector('[data-table-op="align-center"]')).toBeNull();
+    expect(nameBox()).toBe('A1:B1');
+    op('align');
+    op('align-center');
+    expect(styleAt(0, 1)?.ha).toBe('center');
+    expect(document.querySelector('[data-table-op="align-center"]')).toBeNull();
+    op('fill');
+    op('fill-yellow');
+    expect(styleAt(0, 0)).toEqual({ ha: 'center', bg: '#fef9c3' });
+    expect(q('[data-cell="0-0"]').style.backgroundColor).toBe('rgb(254, 249, 195)');
+    op('fill');
+    op('fill-none');
+    op('align');
+    op('align-reset');
+    expect(seen.latest.styles).toBeUndefined();
+  });
+});
+
+describe('막 만든 표만 A1을 곧바로 고친다 (P48-2 찾아 고침)', () => {
+  it('A1에 글이 있는 표는 autoEdit이어도 고치지 않는다 - 다시 그려져도 A1을 빈 글로 덮지 않게', () => {
+    seen.latest = filled();
+    render(<Host start={filled()} autoEdit />);
+    expect(document.querySelector('[data-table-input]')).toBeNull();
+    expect(nameBox()).toBe('');
+    expect(q('[data-cell="0-0"]').textContent).toBe('0,0');
   });
 });

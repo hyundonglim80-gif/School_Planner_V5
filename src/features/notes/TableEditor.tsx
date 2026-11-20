@@ -7,8 +7,10 @@
 //   - 글 칸은 표 위에 하나만 떠 있다(고른 칸 자리). 고르기 상태에서도 초점은 그 글 칸(보이지 않게) - 앱의 글자 단축키(숫자·Space)가 끼어들지 않고,
 //     한글 첫 글자도 그 칸에서 조합이 이어진다(칸마다 글 칸을 새로 그리면 조합이 끊긴다).
 //   - 고치던 글은 Ctrl+S에도 함께 저장된다(누른 그때 표에 넣는다 - 쓰는 칸의 Ctrl+S는 document에서 받는다).
+//   - 띠 둘째 줄(P48-2 - PLAN 5장 'P48' ⓔ·ⓕ): 1,000 · 원 · % · 소수 −/+ · 굵게 · 맞춤 ▾ · 칸 색 ▾ - 고른 칸·범위에, 다시 누르면 풂, ↶로 되돌림.
+//     서식을 입힌 칸은 보이는 글('1,234원')을 v에, 원래 수를 n에 - 고칠 때는 원래 수(1234)가 보인다. Ctrl+B = 굵게(엑셀처럼).
 //   단추의 data-table-op 이름은 '단추 대신 누르기' 키가 쓴다 - 바꾸지 않는다.
-import { useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { showToast } from '../../app/toast';
 import { isSaveKey } from '../../ui/useSaveKey';
@@ -30,7 +32,9 @@ import {
   rangeOf,
   setCellText,
   type CellPos,
+  type CellRange,
 } from '../../domain/tableEdit';
+import { editText, FILL_COLORS, setAlign, setFill, setNumberFormat, stepDecimals, styleOf, toggleBold, type NumFormat } from '../../domain/tableFormat';
 import type { EntryTable } from '../../data/types';
 import { TableColGroup } from './EntryTableView';
 
@@ -59,7 +63,8 @@ const ARROWS: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: 
 
 export default function TableEditor({ table, onChange, onRemove, title, autoEdit }: Props) {
   const { rows: nRows, cols: nCols } = tableSize(table);
-  const firstOk = !!autoEdit && !!table.rows[0]?.cells[0] && !table.rows[0].cells[0].x;
+  // 막 만든 빈 표만 (A1이 비었을 때) - 화면 폭이 바뀌어 칸이 다시 그려질 때 적어 둔 A1을 빈 글로 덮지 않게 (P48-2 찾아 고침)
+  const firstOk = !!autoEdit && !!table.rows[0]?.cells[0] && !table.rows[0].cells[0].x && table.rows[0].cells[0].v === '';
   const [sel, setSel] = useState<Sel | null>(() => (firstOk ? { a: { r: 0, c: 0 }, b: { r: 0, c: 0 } } : null));
   /** 고른 칸(sel.a)의 글을 고치는 중 */
   const [editing, setEditing] = useState(firstOk);
@@ -77,7 +82,21 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   const active = live ? anchorOf(table, live.a.r, live.a.c) : null;
   const range = live ? rangeOf(table, live.a, live.b) : null;
   const activeCell = active ? table.rows[active.r]?.cells[active.c] : undefined;
-  const activeValue = activeCell?.v ?? '';
+  const activeStyle = activeCell ? styleOf(table, activeCell) : undefined;
+  /** 고른 칸을 고칠 때 보이는 글 (서식을 입힌 수는 원래 수 - '1,234원' → 1234) */
+  const activeValue = activeCell ? editText(activeCell, activeStyle) : '';
+  /** 열린 ▾ 고르기 (맞춤·칸 색) */
+  const [menu, setMenu] = useState<'align' | 'fill' | null>(null);
+  const menuRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    if (!menu) return;
+    // 고르기 밖을 누르면 닫는다 (▾ 단추도 안쪽 - 다시 누르면 닫기)
+    const close = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenu(null);
+    };
+    document.addEventListener('pointerdown', close, true);
+    return () => document.removeEventListener('pointerdown', close, true);
+  }, [menu]);
 
   // 글 칸을 고른 칸 위에 둔다 (고르기 상태에서는 보이지 않게 - 초점만)
   useLayoutEffect(() => {
@@ -123,7 +142,8 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
     const k = anchorOf(table, p.r, p.c);
     setSel({ a: { r: k.r, c: k.c }, b: { r: k.r, c: k.c } });
     setEditing(true);
-    setDraft(table.rows[k.r].cells[k.c].v);
+    const cell = table.rows[k.r].cells[k.c];
+    setDraft(editText(cell, styleOf(table, cell)));
     wantFocus.current = 'end';
   };
 
@@ -201,6 +221,18 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
       e.preventDefault();
       e.stopPropagation();
     };
+    if (menu && e.key === 'Escape') {
+      // 열린 ▾ 고르기만 닫는다
+      take();
+      setMenu(null);
+      return;
+    }
+    if (mod && !e.altKey && !e.shiftKey && e.code === 'KeyB') {
+      // 굵게 (엑셀처럼 - 고치는 중이면 적던 글을 넣고)
+      take();
+      format(toggleBold);
+      return;
+    }
     if (editing) {
       if (e.key === 'Escape') {
         // 칸 고치기만 멈춘다(적던 글은 버린다). 쓰는 칸 전체가 닫히면(전역 ESC - window에서 받는다) 적던 것이 사라진다.
@@ -315,6 +347,15 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
     const s = after(next);
     pick(s.a, s.b, document.activeElement === inputRef.current);
   };
+  /** 서식 단추 (고친 글을 먼저 넣고) - 고른 칸은 그대로, 고치기는 멈춘다 */
+  function format(fn: (t: EntryTable, g: CellRange) => EntryTable) {
+    setMenu(null);
+    if (!g || !live) return;
+    apply(fn(withDraft(table), g));
+    pick(live.a, live.b, document.activeElement === inputRef.current);
+  }
+  const numFormat = (nf: NumFormat) => format((t, r) => setNumberFormat(t, r, nf));
+  const decimals = (delta: 1 | -1) => format((t, r) => stepDecimals(t, r, live ? live.a : { r: r.r1, c: r.c1 }, delta));
   type OpKind = 'rowAbove' | 'rowBelow' | 'rowDelete' | 'colLeft' | 'colRight' | 'colDelete';
   const runOp = (kind: OpKind) => {
     if (!g) return;
@@ -332,13 +373,16 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   /** 단추·띠를 눌러도 글 칸 초점이 그대로 (고르기 상태가 이어지게) */
   const keepFocus = (e: MouseEvent) => e.preventDefault();
   const canUndo = history.length > 0 || (editing && draft !== activeValue);
+  /** 켠 서식 단추 모양 (고른 칸의 서식) */
+  const on = (pressed: boolean) => (pressed ? btn.replace('border-slate-200 bg-white text-slate-600', 'border-blue-300 bg-blue-100 text-blue-700') : btn);
   const head = 'border border-slate-200 bg-slate-100 text-slate-500 font-semibold select-none cursor-pointer hover:bg-slate-200';
   const headOn = 'border border-blue-300 bg-blue-100 text-blue-700 font-bold select-none cursor-pointer';
   const name = g ? rangeName(g) : '';
   const many = rowCount * colCount > 1;
 
   return (
-    <div className="bg-slate-50 border border-slate-200 rounded-xl overflow-hidden" data-note-table={table.id}>
+    // overflow-hidden 없음 - 띠의 ▾ 고르기(맞춤·칸 색)가 표 아래로 펼쳐진다
+    <div className="bg-slate-50 border border-slate-200 rounded-xl" data-note-table={table.id}>
       <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-slate-200">
         <span className="text-xs font-bold text-slate-600">
           ▦ {title || '표'} <span className="font-normal text-slate-400">· {nRows}행 × {nCols}열</span>
@@ -398,6 +442,83 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
           열 빼기
         </button>
       </div>
+      {/* 띠 둘째 줄 - 숫자 서식·꾸밈 (P48-2) */}
+      <div className="flex flex-wrap items-center gap-1 px-2.5 py-1.5 border-b border-slate-200 bg-white/60" data-table-format-bar>
+        <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'comma')} aria-pressed={activeStyle?.nf === 'comma'} disabled={!g} onClick={() => numFormat('comma')} title="세 자리 쉼표 (1234 → 1,234) - 다시 누르면 풉니다" data-table-op="num-comma">
+          1,000
+        </button>
+        <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'won')} aria-pressed={activeStyle?.nf === 'won'} disabled={!g} onClick={() => numFormat('won')} title="원 (1234 → 1,234원) - 다시 누르면 풉니다" data-table-op="num-won">
+          원
+        </button>
+        <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'pct')} aria-pressed={activeStyle?.nf === 'pct'} disabled={!g} onClick={() => numFormat('pct')} title="백분율 (0.125 → 12.5%) - 다시 누르면 풉니다" data-table-op="num-pct">
+          %
+        </button>
+        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(-1)} title="소수 자리 하나 줄이기 (반올림해 보입니다 - 셈은 원래 수로)" data-table-op="dp-less">
+          소수 −
+        </button>
+        <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(1)} title="소수 자리 하나 늘리기" data-table-op="dp-more">
+          소수 +
+        </button>
+        <button type="button" onMouseDown={keepFocus} className={`${on(activeStyle?.b === 1)} font-black`} aria-pressed={activeStyle?.b === 1} disabled={!g} onClick={() => format(toggleBold)} title="굵게 (Ctrl + B) - 다시 누르면 풉니다" data-table-op="bold">
+          굵게
+        </button>
+        <span className="relative" ref={menu === 'align' ? menuRef : undefined}>
+          <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'align'} disabled={!g} onClick={() => setMenu(menu === 'align' ? null : 'align')} title="맞춤" data-table-op="align">
+            맞춤 ▾
+          </button>
+          {menu === 'align' && (
+            <span role="menu" className="absolute left-0 top-full mt-1 z-20 flex flex-col min-w-28 p-1 rounded-lg border border-slate-200 bg-white shadow-lg">
+              {(
+                [
+                  ['left', '왼쪽', 'align-left'],
+                  ['center', '가운데', 'align-center'],
+                  ['right', '오른쪽', 'align-right'],
+                  [undefined, '처음대로', 'align-reset'],
+                ] as const
+              ).map(([ha, label, op]) => (
+                <button
+                  key={op}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={activeStyle?.ha === ha}
+                  onMouseDown={keepFocus}
+                  onClick={() => format((t, r) => setAlign(t, r, ha))}
+                  className={`px-2 py-1 rounded text-left text-2xs font-bold cursor-pointer ${activeStyle?.ha === ha ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
+                  title={ha ? undefined : '글은 왼쪽, 수는 오른쪽'}
+                  data-table-op={op}
+                >
+                  {label}
+                </button>
+              ))}
+            </span>
+          )}
+        </span>
+        <span className="relative" ref={menu === 'fill' ? menuRef : undefined}>
+          <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'fill'} disabled={!g} onClick={() => setMenu(menu === 'fill' ? null : 'fill')} title="칸 색" data-table-op="fill">
+            <span className="inline-block w-2.5 h-2.5 mr-1 rounded-sm border border-slate-300 align-[-1px]" style={{ backgroundColor: activeStyle?.bg ?? '#ffffff' }} />
+            칸 색 ▾
+          </button>
+          {menu === 'fill' && (
+            <span role="menu" className="absolute left-0 top-full mt-1 z-20 flex flex-col min-w-28 p-1 rounded-lg border border-slate-200 bg-white shadow-lg">
+              {[...FILL_COLORS, { key: 'none', name: '없음', bg: undefined }].map((f) => (
+                <button
+                  key={f.key}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={activeStyle?.bg === f.bg}
+                  onMouseDown={keepFocus}
+                  onClick={() => format((t, r) => setFill(t, r, f.bg))}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded text-left text-2xs font-bold cursor-pointer ${activeStyle?.bg === f.bg ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`}
+                  data-table-op={`fill-${f.key}`}
+                >
+                  <span className="inline-block w-3.5 h-3.5 rounded-sm border border-slate-300" style={{ backgroundColor: f.bg ?? '#ffffff' }} />
+                  {f.name}
+                </button>
+              ))}
+            </span>
+          )}
+        </span>
+      </div>
       {/* 세로는 칸 안에서 따로 스크롤하지 않고 쓰는 칸 전체로 (P10-5 사용자 의견 6f), 넓은 표는 가로만 */}
       <div ref={boxRef} className="relative overflow-x-auto overflow-y-hidden p-2">
         <table className="border-collapse" style={TABLE_STYLE as CSSProperties}>
@@ -448,7 +569,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                   const on = inRange(g, r, c);
                   const isActive = active?.r === r && active?.c === c;
                   const css: CSSProperties = {
-                    ...(baseCellCss(table.styles?.[cell.s ?? -1]) as CSSProperties),
+                    ...(baseCellCss(table.styles?.[cell.s ?? -1], cell) as CSSProperties),
                     ...(on && many ? { boxShadow: SEL_TINT } : {}),
                     ...(isActive ? { outline: '2px solid #2563eb', outlineOffset: -2 } : {}),
                     cursor: 'cell',

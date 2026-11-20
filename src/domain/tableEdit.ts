@@ -3,6 +3,7 @@
 //   병합된 칸의 나머지 자리는 { v: '', x: 1 } (가려진 칸) - 행·열을 넣고 빼면 병합 크기가 따라간다.
 import type { EntryTable, TableCell, TableRow } from '../data/types';
 import { MAX_TABLE_CELLS, newTableId } from './entryTable';
+import { cellWithInput, styleOf } from './tableFormat';
 
 /** 빈 표 (쓰는 칸 ▦ 표 - P48-1, 3행 × 3열) */
 export function newEmptyTable(rows = 3, cols = 3, now = Date.now()): EntryTable {
@@ -33,10 +34,12 @@ function anchors(rows: TableRow[]): { r: number; c: number; rs: number; cs: numb
   return out;
 }
 
+/** 칸에 글을 넣는다 - 숫자 서식이 있는 칸에 수를 치면 서식을 입힌다(P48-2 - domain/tableFormat cellWithInput) */
 export function setCellText(t: EntryTable, r: number, c: number, v: string): EntryTable {
   const rows = cloneRows(t);
-  if (!rows[r]?.cells[c] || rows[r].cells[c].x) return t;
-  rows[r].cells[c].v = v;
+  const cell = rows[r]?.cells[c];
+  if (!cell || cell.x) return t;
+  rows[r].cells[c] = cellWithInput(cell, v, styleOf(t, cell));
   return { ...t, rows };
 }
 
@@ -221,9 +224,11 @@ export function clearRange(t: EntryTable, g: CellRange): EntryTable {
       : {
           ...row,
           cells: row.cells.map((cell, c) => {
-            if (c < g.c1 || c > g.c2 || cell.x || cell.v === '') return cell;
+            if (c < g.c1 || c > g.c2 || cell.x || (cell.v === '' && cell.n === undefined)) return cell;
             changed = true;
-            return { ...cell, v: '' };
+            const out = { ...cell, v: '' };
+            delete out.n;
+            return out;
           }),
         }
   );

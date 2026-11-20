@@ -589,6 +589,9 @@ try {
     r.check(await waitFor(async () => (await count(sel('table-input'))) === 1), '▦ 표 = 빈 표, 첫 칸 고치기 (P48-1)');
     r.check((await count(sel('table-col'))) >= 3 && (await count(sel('table-row'))) >= 3, '위 A·B·C / 왼쪽 1·2·3 띠');
     r.check((await count(sel('table-op', 'undo'))) >= 1 && (await count(sel('table-name'))) >= 1, '↶ 되돌리기·칸 이름 줄');
+    const fmtOps = ['num-comma', 'num-won', 'num-pct', 'dp-less', 'dp-more', 'bold', 'align', 'fill'];
+    const fmtSeen = await Promise.all(fmtOps.map((o) => count(sel('table-op', o))));
+    r.check(fmtSeen.every((n) => n >= 1), `띠 둘째 줄 1,000·원·%·소수 −/+·굵게·맞춤 ▾·칸 색 ▾ (P48-2 - ${fmtSeen.join(',')})`);
     await page.keyboard.press('Escape');
     await page.keyboard.press('Escape');
   });
