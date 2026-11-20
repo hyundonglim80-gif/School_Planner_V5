@@ -35,7 +35,7 @@ const focusedCell = (page) => page.evaluate(() => document.activeElement?.getAtt
 const cellTexts = (doc) => doc?.tables?.map((t) => t.rows.map((row) => row.cells.map((c) => c.v)));
 
 try {
-  const { page, errors } = await newPage(browser);
+  const { page, errors, dialogs } = await newPage(browser);
   await open(page, `#/day/${DAY}`);
   await page.locator(sel('day-journal', DAY)).waitFor({ timeout: 8000 });
 
@@ -43,6 +43,17 @@ try {
   await page.locator(sel('journal-add')).click();
   const panel = page.locator(sel('note-panel'));
   await waitFor(panel);
+  /**
+   * 앱이 저장 대답까지 받았다 - 서버 문서가 보여도(serverUntil) 앱은 아직일 수 있다. 그새 ESC를 누르면 '저장 안 함'으로 묻고
+   * 점검 답 '아니오'로 칸이 남는다(P48-5 CI 세 바퀴 중 둘 - 이미 있는 메모는 '수정 칸이 됨'으로 기다릴 수 없다)
+   */
+  const appSaved = () =>
+    waitFor(
+      async () =>
+        (await page.evaluate(async () => !(await import(window.__appModule('/src/data/pendingWrites.ts'))).hasPendingWrites())) &&
+        (await panel.locator(sel('note-save')).textContent()) !== '저장 중...',
+      10000
+    );
   await page.keyboard.type(`${MARK} 학급비`);
   await page.locator(sel('note-table-add')).click();
   const table = panel.locator(sel('note-table'));
@@ -155,8 +166,10 @@ try {
   await page.keyboard.press('Control+s');
   const after = await serverUntil(async () => (await madeHere()).find((d) => d.id === id)?.data(), (d) => d?.tables?.[0]?.rows?.length === 3);
   r.check(after?.tables?.[0]?.rows?.length === 3, `고르기 상태가 풀린 뒤 Ctrl+S = 보이는 칸 저장 (${after?.tables?.[0]?.rows?.length}행)`);
+  r.check(await appSaved(), '앱도 저장 대답을 받았다');
+  const asked = dialogs.seen.length;
   await page.keyboard.press('Escape');
-  r.check(await waitFor(async () => (await panel.count()) === 0, 5000), 'ESC 셋째 = 전역 ESC (쓰는 칸 닫힘)');
+  r.check(await waitFor(async () => (await panel.count()) === 0, 5000), `ESC 셋째 = 전역 ESC (쓰는 칸 닫힘${dialogs.seen.length > asked ? ' - 묻는 창: ' + dialogs.seen.at(-1) : ''})`);
 
   r.section('숫자 서식·꾸밈 (P48-2)');
   await page.evaluate(([s, d, i]) => window.sp5.openWindow('note', { sid: s, date: d, id: i, edit: true }), [sid, DAY, id]);
@@ -214,6 +227,7 @@ try {
   const headStyle = ft?.styles?.[a1?.s] ?? {};
   r.check(headStyle.b === 1 && headStyle.bg === '#fef9c3' && headStyle.ha === 'center' && Object.keys(headStyle).length === 3, `서버: 머리 칸 서식 (${JSON.stringify(headStyle)})`);
   r.check(JSON.stringify(fmt).indexOf('undefined') < 0 && ft?.styles?.length === 2, `서버: 쓰는 서식만 (${ft?.styles?.length}개)`);
+  r.check(await appSaved(), '앱도 저장 대답을 받았다');
   for (let i = 0; i < 3; i++) await page.keyboard.press('Escape');
   r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '닫힘');
   const cardTable = card.locator(sel('entry-table'));
