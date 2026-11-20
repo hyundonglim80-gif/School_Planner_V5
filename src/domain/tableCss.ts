@@ -1,7 +1,8 @@
 // 메모·기록 표를 그리는 데 쓰는 것 (P48-1 - domain/entryTable에서 나눔).
 //   카드·보기 칸·연결 창이 부르는 표 그리기(features/notes/EntryTableView)는 첫 화면에 든다 → 그리기만 가볍게 여기에 두고,
 //   붙여넣은 HTML 읽기(domain/entryTable)·고치기(domain/tableEdit)는 쓰는 칸만 받는다.
-import type { EntryTable, TableCellStyle } from '../data/types';
+import type { EntryTable, TableCell, TableCellStyle } from '../data/types';
+import { isNumberCell } from './tableNumber';
 
 /** 칸이 모두 비었나 (글이 하나도 없다) - 저장 때 뺀다(빈 메모 규칙과 같게, P48-1 ▦ 표). 메모 저장 모양(noteForm)이 불러 여기(가벼운 쪽)에 둔다 */
 export const isBlankTable = (t: EntryTable) => t.rows.every((row) => row.cells.every((c) => !c.v.trim()));
@@ -63,13 +64,14 @@ export const GRID_LINE = '1px solid #e2e8f0';
 /** 표 바탕 - 어두운 화면에서도 흰 종이 (엑셀에서 붙인 색이 그대로 보이게) */
 export const TABLE_STYLE: Record<string, string | number> = { fontSize: '10pt', lineHeight: 1.35, color: '#1e293b', backgroundColor: '#ffffff' };
 
-/** 칸 하나의 기본 모양 + 붙여넣은 서식 */
-export function baseCellCss(style?: TableCellStyle): Record<string, string | number> {
+/** 칸 하나의 기본 모양 + 서식. 맞춤을 정하지 않은 수 칸은 오른쪽 (엑셀 '일반' 맞춤 - P48-2, 붙여넣기는 이미 적어 둔다) */
+export function baseCellCss(style?: TableCellStyle, cell?: Pick<TableCell, 'v' | 'n'>): Record<string, string | number> {
   return {
     border: GRID_LINE,
     padding: '2px 6px',
     verticalAlign: 'bottom',
     whiteSpace: style?.wrap ? 'pre-wrap' : 'pre',
+    ...(!style?.ha && cell && isNumberCell(cell) ? { textAlign: 'right' } : {}),
     ...cellCss(style),
   };
 }

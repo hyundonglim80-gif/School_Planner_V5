@@ -42,7 +42,7 @@ export default function EntryTableView({ table, fullHeight }: Props) {
             <tr key={r} style={row.h ? { height: row.h } : undefined}>
               {row.cells.map((cell, c) =>
                 cell.x ? null : (
-                  <td key={c} colSpan={cell.cs} rowSpan={cell.rs} style={baseCellCss(table.styles?.[cell.s ?? -1]) as CSSProperties} data-cell={`${r}-${c}`}>
+                  <td key={c} colSpan={cell.cs} rowSpan={cell.rs} style={baseCellCss(table.styles?.[cell.s ?? -1], cell) as CSSProperties} data-cell={`${r}-${c}`}>
                     {cell.v}
                   </td>
                 )
