@@ -20,6 +20,19 @@ export function OfflineWindow({ close }: WindowProps) {
   return null;
 }
 
+/** 화면 안에서 바로 그리는 창(onClose를 받는 것 - 일정 알림 맞추기·지우기 고르기, P49-3): 창처럼 안내하고 닫는다 */
+export function OfflineInlineWindow({ onClose }: { onClose: () => void }) {
+  const { renew } = useChunkRetry();
+  useEffect(() => {
+    renew();
+    showToast(OFFLINE_WINDOW_MESSAGE, 5000, 'error');
+    onClose();
+    // 그린 그때 한 번만
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return null;
+}
+
 /** 화면: 그 자리에 안내 - 인터넷이 이어지면 저절로 다시 받는다 */
 export function OfflineScreen() {
   const { retry } = useChunkRetry();

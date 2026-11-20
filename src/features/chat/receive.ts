@@ -7,10 +7,10 @@
 import { useEffect } from 'react';
 import { showToast } from '../../app/toast';
 import { shownWindowNow } from '../../app/windows';
-import { useChatWatch } from '../../data/chat';
+import { useChatWatch } from '../../data/chatWatch';
 import { useSession } from '../../data/session';
 import { useMySpaces } from '../../data/spaceChoice';
-import { chatNotice, chatParamOf, parseRoomKey, stripChatParam, type ChatRoom } from '../../domain/chat';
+import { chatNotice, chatParamOf, parseRoomKey, stripChatParam, type ChatRoom } from '../../domain/chatCore';
 import { CHAT_WINDOW, openChat } from './open';
 import { useChatView } from './view';
 

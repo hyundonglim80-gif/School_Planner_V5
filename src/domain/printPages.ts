@@ -3,8 +3,9 @@
 //   - 구간은 달력에서 날짜를 골라 정한다 - 고른 날이 든 주·달·학년도로 맞춘다.
 //   - 쪽이 너무 많으면 앞에서 MAX_PRINT_PAGES쪽만(한 판마다 화면 하나를 그린다).
 import { academicYearOf, addDays, addMonthsStr, DAY_NAMES, weekMonday, weekdayOf } from './dateUtils';
+import { printPageOfScope, type PrintPage } from './printPage';
 
-export type PrintPage = 'day' | 'week' | 'month' | 'year';
+export { printPageOfScope, type PrintPage };
 
 export const PRINT_PAGES: ReadonlyArray<{ id: PrintPage; label: string; unit: string }> = [
   { id: 'day', label: '하루', unit: '날' },
@@ -18,12 +19,6 @@ export const MAX_PRINT_PAGES = 31;
 
 /** 처음 고른 용지 방향 - 하루는 세로(수업·일정·메모가 위아래로 길다), 나머지는 가로 */
 export const DEFAULT_LANDSCAPE: Record<PrintPage, boolean> = { day: false, week: true, month: true, year: true };
-
-/** 보는 화면 → 처음 고른 쪽 (메모·학급 화면은 하루, 한눈에는 그 주 - 화면 꼴이 종이에 맞지 않는다, P24) */
-export function printPageOfScope(scope: string): PrintPage {
-  if (scope === 'board') return 'week';
-  return scope === 'week' || scope === 'month' || scope === 'year' ? scope : 'day';
-}
 
 /** 그 날이 든 쪽의 첫날 */
 export function pageStart(page: PrintPage, date: string): string {

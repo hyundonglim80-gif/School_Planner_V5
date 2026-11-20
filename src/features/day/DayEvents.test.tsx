@@ -1,6 +1,6 @@
 // 하루 일정 칸 - 그날 일정만·카드(라벨 칩·⏰·기한·🔗)·완료(☐·칩)·순서(▲▼ = 문서 하나)·받는 중·고치는 일정 짚기
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render, waitFor } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
 import { useNav } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
@@ -172,10 +172,12 @@ describe('하루 일정 칸', () => {
     seed();
     render(<DayEvents date={DAY} />);
     fireEvent.click(q('[data-event-card="a"] [data-event-alarm]')!);
+    await waitFor(() => expect(q('[data-alarm-time]')).not.toBeNull());
     fireEvent.change(q('[data-alarm-time]')!, { target: { value: '1000' } });
     await act(async () => fireEvent.click(q('[data-alarm-save]')!));
     expect(written.batches[0][0]).toMatchObject({ type: 'patch', at: { id: 'a' }, changes: { time: '10:00' } });
     fireEvent.click(q('[data-event-card="a"] [data-event-alarm]')!);
+    await waitFor(() => expect(q('[data-alarm-off]')).not.toBeNull());
     await act(async () => fireEvent.click(q('[data-alarm-off]')!));
     expect(written.batches[1][0]).toMatchObject({ changes: { time: undefined } });
     expect(useWindows.getState().windows).toEqual([]);
@@ -344,7 +346,8 @@ describe('기간 일정 (한 문서 - DESIGN 5-3)', () => {
     seed('live', span);
     render(<DayEvents date={DAY} />);
     fireEvent.click(q('[data-event-card="p"] [data-event-delete]')!);
-    expect(q('[data-scope-window]')).not.toBeNull();
+    await waitFor(() => expect(q('[data-scope-window]')).not.toBeNull());
+
     expect(q('[data-scope-choice="after"]')?.textContent).toContain('4일');
     expect(q('[data-scope-choice="all"]')?.textContent).toContain('5일');
     expect(written.batches).toEqual([]);
@@ -353,6 +356,7 @@ describe('기간 일정 (한 문서 - DESIGN 5-3)', () => {
     expect(q('[data-scope-window]')).toBeNull();
     expect(q('[data-toast]')?.textContent).toContain('하루를 기간에서 뺐습니다');
     fireEvent.click(q('[data-event-card="p"] [data-event-delete]')!);
+    await waitFor(() => expect(q('[data-scope-choice="all"]')).not.toBeNull());
     await act(async () => fireEvent.click(q('[data-scope-choice="all"]')!));
     expect(written.batches[1]).toEqual([{ type: 'remove', at: { sid: SID, coll: 'items', id: 'p' } }]);
   });
@@ -361,6 +365,7 @@ describe('기간 일정 (한 문서 - DESIGN 5-3)', () => {
     seed('live', span);
     render(<DayEvents date="2026-10-12" />);
     fireEvent.click(q('[data-event-card="p"] [data-event-delete]')!);
+    await waitFor(() => expect(q('[data-scope-choice="after"]')).not.toBeNull());
     await act(async () => fireEvent.click(q('[data-scope-choice="after"]')!));
     expect(written.batches[0][0]).toMatchObject({ changes: { endDate: '2026-10-09' } });
   });

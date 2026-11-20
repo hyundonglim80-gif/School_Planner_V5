@@ -1,6 +1,6 @@
 // 대화 표시 store (P19-1 ■2). Firebase를 부르지 않는다 - 머리줄 💬 n·대화 창이 읽고, 받기는 data/chat(Shell에 하나)이 채운다.
 import { create } from 'zustand';
-import type { ChatRoom } from '../domain/chat';
+import type { ChatRoom } from '../domain/chatCore';
 
 interface ChatState {
   /** 내가 든 방 - 방 키 → 방 (그룹 전체 방은 첫 글이 오기 전에는 없다) */

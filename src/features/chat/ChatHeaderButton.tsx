@@ -2,7 +2,7 @@
 // n = 안 읽은 방 수(Shell의 듣기 data/chat useChatWatch가 채운 store - 🔕 방도 센다, 100부터 '99+'). 누르면 단축키 'chat'(창 목록 id라 대화 창이 열린다).
 import { runFromButton, useShortcutTitle } from '../../app/keys';
 import { useMySpaces } from '../../data/spaceChoice';
-import { chatCountLabel } from '../../domain/chat';
+import { chatCountLabel } from '../../domain/chatCore';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import { useChatUnread } from './unread';
 
