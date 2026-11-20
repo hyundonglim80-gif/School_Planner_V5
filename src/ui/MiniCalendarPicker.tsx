@@ -1,9 +1,11 @@
 // 둘째 줄 날짜 옆 📅 - 눌러도 올려도 작은 달력이 뜬다 (V4 components/MiniCalendarPicker.tsx에서 옮김, 날짜는 'YYYY-MM-DD').
 // 메모 쓰는 칸의 '+ 날짜'(P10-3)도 이것 - trigger로 단추 모양을 바꾸고(누를 때만 열린다), marked = 이미 고른 날짜들.
-// 요일 머리 + 날 칸 판은 ui/MiniMonth(P24-2 - 한눈에 화면 첫 칸과 함께 쓴다, 여기는 일요일부터).
-import { useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
-import { parseDateStr, todayStr } from '../domain/dateUtils';
-import MiniMonth from './MiniMonth';
+// 뜨는 판(달·날 칸)은 ui/MiniCalendarPopover - 처음 열 때만 받는다(P49-3 첫 화면 JS - 둘째 줄 📅는 늘 그린다). 요일 머리 + 날 칸 판은 ui/MiniMonth.
+import { Suspense, useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
+import { lazyWithReload } from '../app/lazyWithReload';
+
+/** 뜨는 판 (끊겨서 못 받으면 판 없이 - 다음에 열 때 다시 받는다) */
+const MiniCalendarPopover = lazyWithReload(() => import('./MiniCalendarPopover'), () => null);
 
 interface MiniCalendarPickerProps {
   /** 보는 날 'YYYY-MM-DD' */
@@ -17,14 +19,12 @@ interface MiniCalendarPickerProps {
   hint?: string;
 }
 
-const POPOVER_WIDTH = 230;
+export const POPOVER_WIDTH = 230;
 /** 마우스를 올려 막 연 뒤 이 안에 누르면 닫지 않는다 - 올리자마자 누르는(휴대폰 톡·빠른 클릭) 한 동작이 열었다 닫는 일 (P36-1 CI가 찾음) */
 const HOVER_CLICK_GRACE_MS = 400;
 
 export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked, hint = '클릭 시 이동' }: MiniCalendarPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [viewYear, setViewYear] = useState(() => parseDateStr(date).getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => parseDateStr(date).getMonth()); // 0 ~ 11
   const [popoverPos, setPopoverPos] = useState({ top: 0, left: 0 });
 
   const btnRef = useRef<HTMLButtonElement>(null);
@@ -55,12 +55,9 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
 
   const handleOpen = useCallback(() => {
     clearCloseTimer();
-    const d = parseDateStr(date);
-    setViewYear(d.getFullYear());
-    setViewMonth(d.getMonth());
     updatePosition();
     setIsOpen(true);
-  }, [clearCloseTimer, date, updatePosition]);
+  }, [clearCloseTimer, updatePosition]);
 
   const handleClose = useCallback(() => {
     clearCloseTimer();
@@ -106,18 +103,10 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
     };
   }, [isOpen, handleClose]);
 
-  const changeMonth = (delta: number) => {
-    const d = new Date(viewYear, viewMonth + delta, 1);
-    setViewYear(d.getFullYear());
-    setViewMonth(d.getMonth());
-  };
-
   const select = (dateStr: string) => {
     onSelectDate(dateStr);
     handleClose();
   };
-
-  const today = todayStr();
 
   return (
     <div
@@ -127,6 +116,7 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
     >
       <button
         ref={btnRef}
+        aria-expanded={isOpen}
         type="button"
         {...(trigger ? { [`data-${trigger.data}`]: '' } : { 'data-date-picker': '' })}
         disabled={trigger?.disabled}
@@ -151,108 +141,19 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
       </button>
 
       {isOpen && (
-        // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 달력 판 - 바깥 누르기로 닫히지 않게 막기만(날짜는 단추) (P22-7)
-        <div
-          ref={popoverRef}
-          data-date-picker-popover
-          onMouseEnter={trigger ? undefined : handleMouseEnter}
-          onMouseLeave={trigger ? undefined : startCloseTimer}
-          onClick={(e) => e.stopPropagation()}
-          style={{ position: 'fixed', top: popoverPos.top, left: popoverPos.left, width: POPOVER_WIDTH, zIndex: 99999 }}
-          className="bg-white border border-slate-200 rounded-xl shadow-xl p-2.5 text-slate-800 select-none text-left"
-        >
-          {/* 단추와 달력 사이 틈에서 마우스가 빠져도 닫히지 않게 */}
-          <div className="absolute -top-3 left-0 w-full h-3 bg-transparent pointer-events-auto" />
-
-          <div className="flex justify-between items-center mb-1.5 pb-1 border-b border-slate-100">
-            <div className="flex items-center gap-0.5">
-              <button type="button" onClick={() => changeMonth(-12)} className="px-1 py-0.5 text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="이전 연도">
-                «
-              </button>
-              <button type="button" onClick={() => changeMonth(-1)} className="px-1 py-0.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="이전 달">
-                ◀
-              </button>
-              <span className="font-bold text-xs text-slate-800 tracking-tight px-1 whitespace-nowrap">
-                {viewYear}년 {viewMonth + 1}월
-              </span>
-              <button type="button" onClick={() => changeMonth(1)} className="px-1 py-0.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="다음 달">
-                ▶
-              </button>
-              <button type="button" onClick={() => changeMonth(12)} className="px-1 py-0.5 text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="다음 연도">
-                »
-              </button>
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                data-picker-today
-                onClick={() => select(today)}
-                className="px-1.5 py-0.5 text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-600 border border-blue-200 rounded transition-colors cursor-pointer"
-              >
-                오늘
-              </button>
-              <button type="button" onClick={handleClose} className="px-1 text-slate-400 hover:text-slate-700 text-xs font-bold rounded transition-colors cursor-pointer" title="닫기">
-                ✕
-              </button>
-            </div>
-          </div>
-
-          {/* 달력 칸: 앞 달 꼬리 + 이번 달 + 다음 달 머리 (한 줄 7칸) */}
-          <MiniMonth
-            year={viewYear}
-            month={viewMonth + 1}
-            day={(dateStr, inMonth) => {
-              if (!inMonth) {
-                return (
-                  <button
-                    type="button"
-                    data-picker-day={dateStr}
-                    onClick={() => select(dateStr)}
-                    className="h-6 flex items-center justify-center text-xs text-slate-300 hover:bg-slate-100 hover:text-slate-500 rounded transition-colors cursor-pointer"
-                  >
-                    {Number(dateStr.slice(8))}
-                  </button>
-                );
-              }
-              const wd = parseDateStr(dateStr).getDay();
-              const selected = marked ? marked.includes(dateStr) : dateStr === date;
-              let color = wd === 0 ? 'text-rose-500' : wd === 6 ? 'text-cobalt-600' : 'text-slate-700';
-              let bg = 'hover:bg-blue-50 hover:text-blue-700';
-              let border = 'border border-transparent';
-              if (selected) {
-                color = 'text-white font-bold';
-                bg = 'bg-primary shadow-2xs';
-              } else if (dateStr === today) {
-                border = 'border border-blue-500 font-bold';
-              }
-              return (
-                <button
-                  type="button"
-                  data-picker-day={dateStr}
-                  onClick={() => select(dateStr)}
-                  className={`h-6 flex items-center justify-center text-xs rounded transition-colors cursor-pointer ${color} ${bg} ${border}`}
-                >
-                  {Number(dateStr.slice(8))}
-                </button>
-              );
-            }}
+        <Suspense fallback={null}>
+          <MiniCalendarPopover
+            date={date}
+            marked={marked}
+            hint={hint}
+            pos={popoverPos}
+            popoverRef={popoverRef}
+            onMouseEnter={trigger ? undefined : handleMouseEnter}
+            onMouseLeave={trigger ? undefined : startCloseTimer}
+            select={select}
+            onClose={handleClose}
           />
-
-          <div className="flex justify-between items-center mt-1.5 pt-1.5 border-t border-slate-100 text-xs">
-            <label className="relative inline-flex items-center gap-1 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded cursor-pointer transition-colors font-medium">
-              <span>📅 직접 선택</span>
-              <input
-                type="date"
-                defaultValue={date}
-                className="absolute inset-0 opacity-0 cursor-pointer"
-                onChange={(e) => {
-                  if (e.target.value) select(e.target.value);
-                }}
-              />
-            </label>
-            <span className="text-2xs text-slate-400">{hint}</span>
-          </div>
-        </div>
+        </Suspense>
       )}
     </div>
   );

@@ -2,7 +2,7 @@
 import { useChatStore } from '../../data/chatStore';
 import { useSession } from '../../data/session';
 import { useMySpaces } from '../../data/spaceChoice';
-import { unreadRoomCount } from '../../domain/chat';
+import { unreadRoomCount } from '../../domain/chatCore';
 
 export function useChatUnread(): number {
   const uid = useSession((s) => s.user?.uid ?? '');

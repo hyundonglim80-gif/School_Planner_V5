@@ -12,7 +12,9 @@
 //   누르기 = 그 공간 칸 · 라벨 칩 = 그 공간에 완료. ▲▼·끌기·고르기·🗑️·이월은 없다(주 공간 것만). 머리 수(data-event-count)는 주 공간 것만.
 // - 구글 캘린더 겹쳐 보기(P36-4): 맨 뒤에 '📅 구글 캘린더 n' 구분 줄 + 읽기 전용 카드(점선 - 누르면 그 일정 창). 수에 넣지 않는다.
 // 새로 쓰고 고치는 칸은 여기 없다 - 오른쪽 일정 칸(EventPanel) 하나로 어느 화면에서나 같게 (V4 그대로).
-import { useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { Suspense, useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { lazyWithReload } from '../../app/lazyWithReload';
+import { OfflineInlineWindow } from '../../app/OfflineChunk';
 import { goToday } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { openWindow } from '../../app/windows';
@@ -28,11 +30,9 @@ import { reorderDragProps } from '../../ui/reorderDrag';
 import { deleteEvent, moveEventInList, setEventAlarm, setEventDone } from '../events/actions';
 import DueBadge from '../events/DueBadge';
 import EventDoneChip from '../events/EventDoneChip';
-import EventAlarmWindow from '../events/EventAlarmWindow';
 import { doneOnDay, isGrouped, orderAfter, type ItemDoc } from '../events/eventOps';
 import { useCarried } from '../events/forward';
 import { pickRange, togglePick, useMulti, type EventPick } from '../events/multi';
-import EventDeleteChooser from '../events/EventDeleteChooser';
 import DayPastEvents from './DayPastEvents';
 import { openLinkViewer } from '../links/open';
 import { openEventPanel, shownEventKey, useShownEventId, useShownEventKey } from '../events/open';
@@ -44,6 +44,10 @@ import { useGcalShown } from '../gcal/gcalView';
 import { GcalDayCard, GcalGroupHeader } from '../gcal/GcalItems';
 import { pressKeys } from '../../ui/pressKeys';
 import { FLOAT_TOOLS } from '../../ui/cardTools';
+
+// 누를 때만 뜨는 창 - 열 때 받는다 (P49-3 첫 화면 JS)
+const EventAlarmWindow = lazyWithReload(() => import('../events/EventAlarmWindow'), OfflineInlineWindow);
+const EventDeleteChooser = lazyWithReload(() => import('../events/EventDeleteChooser'), OfflineInlineWindow);
 
 const NONE: readonly ItemDoc[] = [];
 
@@ -306,15 +310,21 @@ export default function DayEvents({ date }: { date: YMD }) {
       {!collapsed && sid && date === today && (
         <DayPastEvents sid={sid} today={today} stale={carried.stale} forwardDays={forwardDays} lastOrder={lastOrderOf(events)} />
       )}
-      {scopeFor && sid && <EventDeleteChooser sid={sid} item={scopeFor} day={date} onClose={() => setScopeFor(null)} />}
+      {scopeFor && sid && (
+        <Suspense fallback={null}>
+          <EventDeleteChooser sid={sid} item={scopeFor} day={date} onClose={() => setScopeFor(null)} />
+        </Suspense>
+      )}
       {alarmFor && sid && (
-        <EventAlarmWindow
-          onClose={() => setAlarmFor(null)}
-          date={alarmFor.date ?? date}
-          initialTime={alarmFor.time ?? ''}
-          onSave={(time) => setEventAlarm(sid, alarmFor, time)}
-          onTurnOff={() => setEventAlarm(sid, alarmFor, '')}
-        />
+        <Suspense fallback={null}>
+          <EventAlarmWindow
+            onClose={() => setAlarmFor(null)}
+            date={alarmFor.date ?? date}
+            initialTime={alarmFor.time ?? ''}
+            onSave={(time) => setEventAlarm(sid, alarmFor, time)}
+            onTurnOff={() => setEventAlarm(sid, alarmFor, '')}
+          />
+        </Suspense>
       )}
     </section>
   );

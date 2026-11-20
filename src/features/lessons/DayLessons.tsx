@@ -12,7 +12,8 @@
 //   - 🍚 급식·📚 학사(features/school - P6-3): 카드 아래, 환경설정 '우리 학교'를 골랐을 때만.
 // 교과 모드 칸의 🙋 = 그 반·그 교시 교과 출결(P7-2 - 개인 공간에서, 칸의 반이 그 학년도 명렬표에 있을 때). 교시 카드의 반 도구 = 🪑 자리표·🎯 뽑기(P7-3 - 그 반으로 연다).
 // 교시마다 📊n = 그 교시 조사표(P7-4). 반 도구·🙋·📊는 적힌 것(출결·조사표 수)이 없으면 마우스를 올려야 보인다(P10-2), 수정 칸에도 같은 단추 줄.
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
+import { lazyWithReload } from '../../app/lazyWithReload';
 import { setDate } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { listWindows, openWindow } from '../../app/windows';
@@ -30,7 +31,6 @@ import { useToday } from '../../ui/useToday';
 import { lessonLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useClassBell } from '../bell/bell';
-import BellSettings from '../bell/BellSettings';
 import DayMeals from '../school/DayMeals';
 import ProgressMarkLine from '../progress/ProgressMarkLine';
 import { useProgressMarks } from '../progress/useProgress';
@@ -51,6 +51,9 @@ import { shortcutTarget } from '../../ui/shortcutTarget';
 import { isShortcutId } from '../../domain/shortcuts';
 import { pressKeys } from '../../ui/pressKeys';
 import { FLOAT_TOOLS } from '../../ui/cardTools';
+
+// 🔔 수업 종 설정은 머리의 '종' 단추로 펼 때 받는다 (P49-3 첫 화면 JS - 끊겨서 못 받으면 판 없이)
+const BellSettings = lazyWithReload(() => import('../bell/BellSettings'), () => null);
 
 const PERIOD_COLORS = [
   'bg-cobalt-50 text-cobalt-700 border-cobalt-200',
@@ -246,7 +249,9 @@ export default function DayLessons({ date }: { date: string }) {
           >
             ✕
           </button>
-          <BellSettings hasTimes={validPeriods(times).length > 0} />
+          <Suspense fallback={null}>
+            <BellSettings hasTimes={validPeriods(times).length > 0} />
+          </Suspense>
         </div>
       )}
 

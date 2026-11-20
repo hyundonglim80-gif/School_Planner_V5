@@ -63,6 +63,11 @@ const m1 = { ...base, kind: 'note', date: null, text: '메모 하나', labelIds:
 
 const q = (s: string) => document.querySelector<HTMLElement>(s)!;
 const lastOps = () => written.batches.at(-1)!;
+/** 📅 + 날짜 → 작은 달력 (뜨는 판은 처음 열 때 받는다 - P49-3, 뜰 때까지 기다린다) */
+async function openDatePicker() {
+  fireEvent.click(q('[data-note-date-add]'));
+  await waitFor(() => expect(document.querySelector('[data-date-picker-popover]')).not.toBeNull());
+}
 const textInput = () => q('[data-note-text-input]') as HTMLTextAreaElement;
 
 function seed(items = new Map<string, Record<string, unknown>>([['n1', n1], ['m1', m1]])) {
@@ -141,7 +146,7 @@ describe('새 메모', () => {
     render(<Host initial={{ sid: SID, date: null }} />);
     expect(q('[data-note-panel]').dataset.noteDates).toBe('');
     expect(q('[data-note-dates-empty]')).not.toBeNull();
-    fireEvent.click(q('[data-note-date-add]'));
+    await openDatePicker();
     fireEvent.click(q('[data-picker-today]'));
     expect(document.querySelectorAll('[data-note-date-chip]')).toHaveLength(1);
     fireEvent.click(q('[data-note-date-remove]'));
@@ -290,14 +295,14 @@ describe('고치기', () => {
     seed();
     render(<Host initial={{ sid: SID, date: DAY, id: 'n1' }} />);
     expect([...document.querySelectorAll<HTMLElement>('[data-note-date-chip]')].map((e) => e.dataset.noteDateChip)).toEqual([DAY]);
-    fireEvent.click(q('[data-note-date-add]'));
+    await openDatePicker();
     fireEvent.click(q('[data-picker-day="2026-10-15"]'));
     // 고른 날짜는 칠해 보이고, 다시 누르면 뺀다
-    fireEvent.click(q('[data-note-date-add]'));
+    await openDatePicker();
     expect(q('[data-picker-day="2026-10-15"]').className).toContain('bg-primary');
     fireEvent.click(q('[data-picker-day="2026-10-15"]'));
     expect(document.querySelectorAll('[data-note-date-chip]')).toHaveLength(1);
-    fireEvent.click(q('[data-note-date-add]'));
+    await openDatePicker();
     fireEvent.click(q('[data-picker-day="2026-10-15"]'));
     expect([...document.querySelectorAll<HTMLElement>('[data-note-date-chip]')].map((e) => e.dataset.noteDateChip)).toEqual([DAY, '2026-10-15']);
     expect(anyWindowUnsaved()).toBe(true);
@@ -318,7 +323,7 @@ describe('고치기', () => {
     expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: null });
     document.body.innerHTML = '';
     render(<Host initial={{ sid: SID, date: null, id: 'm1' }} />);
-    fireEvent.click(q('[data-note-date-add]'));
+    await openDatePicker();
     fireEvent.click(q('[data-picker-today]'));
     await save();
     expect((lastOps()[0] as { changes: object }).changes).toEqual({ date: todayStr() });

@@ -14,7 +14,7 @@ import { askLogout } from '../features/auth/askLogout';
 import GcalPendingButton from '../features/gcal/GcalPendingButton';
 import ChatHeaderButton from '../features/chat/ChatHeaderButton';
 import { useChatUnread } from '../features/chat/unread';
-import { chatCountLabel } from '../domain/chat';
+import { chatCountLabel } from '../domain/chatCore';
 import { canRun, runFromButton, useShortcutOverrides, useShortcutTitle } from './keys';
 import { MORE_MENU } from './moreMenu';
 import { useCommonSettings } from './prefs';

@@ -6,13 +6,9 @@ import { academicYearOf, addDays } from './dateUtils';
 import { cellHasContent, timetableOn, type LessonCellDoc } from './lessons';
 import { schoolYearSpan, type SchoolTerms } from './semester';
 import { textToGender, type CsvStudent, type RosterClass } from './roster';
+import { newYearTarget } from './newYearTarget';
 
-/** 띠를 띄우는 학년도 - 2월 15일 ~ 3월 31일이면 그 3월에 시작하는 학년도, 아니면 null */
-export function newYearTarget(today: string): number | null {
-  const [y, m, d] = today.split('-').map(Number);
-  if ((m === 2 && d >= 15) || m === 3) return y;
-  return null;
-}
+export { newYearTarget };
 
 /** 띠 밖에서 열면: 3~8월은 올해, 9~2월은 다음 학년도 */
 export function defaultNewYear(today: string): number {

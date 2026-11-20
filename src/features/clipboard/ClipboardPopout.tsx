@@ -6,7 +6,7 @@ import { useEffect } from 'react';
 import { rememberPopupRect } from '../../app/popupWindows';
 import { CLIPBOARD_POPOUT_ID } from '../../ui/popout';
 import { useClipboardCapture } from './capture';
-import { ClipboardPanel } from './ClipboardColumn';
+import { ClipboardPanel } from './ClipboardList';
 import { pasteFromPopup } from './popupClip';
 
 const closeWindow = () => window.close();

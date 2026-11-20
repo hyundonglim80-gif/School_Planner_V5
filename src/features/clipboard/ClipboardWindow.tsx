@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import type { WindowProps } from '../../app/windows';
 import ModalShell from '../../ui/ModalShell';
 import { setClipboardOpen } from './capture';
-import { ClipboardPanel } from './ClipboardColumn';
+import { ClipboardPanel } from './ClipboardList';
 import { pasteClipShowingTarget } from './paste';
 
 export default function ClipboardWindow({ close, raise }: WindowProps) {
