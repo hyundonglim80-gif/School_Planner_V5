@@ -93,7 +93,7 @@ V4에서 사고가 났거나 코드가 불어난 자리마다 원칙 하나씩 �
 | `seriesId` / `seriesIndex` | string? / number? | 반복 묶음 |
 | `fromDate` | `'YYYY-MM-DD'`? | 기록에서 메모로 뺄 때 그 날('📅 10/6에서' - P3-2). P10-3부터 적지 않고 보이지도 않는다(옛 문서에 남은 것은 둔다 - 학생 기록 타임라인이 날 없는 메모의 날로 읽는다) |
 | `keepId` | string? | 구글 Keep에서 가져온 메모의 열쇠(V4 tasks 그대로 - P3-4) |
-| `tables` | EntryTable[]? | 붙인 표(V4 `lib/entryTable` 모양 그대로 - `rows[].cells[]`) |
+| `tables` | EntryTable[]? | 붙인 표·▦ 표(V4 `lib/entryTable` 모양 그대로 - `rows[].cells[]`, 칸 `v` = 늘 보이는 글) · P48-2: 숫자 서식을 입힌 칸은 `v`에 입힌 글('1,234원')·`n`에 원래 수(보이는 글이 바탕 글과 다를 때만) · `styles[]`에 `nf`('comma'·'won'·'pct')·`dp`(소수 자리) - 카드·검색·옛 판 앱은 `v`만 읽는다(PLAN 5장 'P48' ⓐ) |
 | `studentIds` | string[]? | 학생 태그 `'{classId}/{sid}'` |
 | `attachments` | Attachment[]? | 드라이브 파일(V4 모양: name·url·type·size·driveId) |
 | `linkIds` | string[]? | 이은 항목 id. 수업은 `'lesson:{date}:{교시}'`. 진도 차시(`'progress:{planId}:{행}'`)는 진도 쪽에만 적고 메모에는 적지 않는다(P10-4 - 계산해 보인다) |
