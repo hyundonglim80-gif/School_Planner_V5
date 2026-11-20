@@ -9,6 +9,8 @@
 //      정렬 ▾ 큰 것부터(제목·합계 줄 그대로, 안내) → ↶ → 다시 정렬 → 서버: 행마다 식이 제 행 → 카드도 그 차례
 //   7) 엑셀과 오가기 (P48-5): 엑셀 HTML 4행 × 3열 Ctrl+V = A1부터 값만·늘림 안내 → B2:C3 Ctrl+C = 탭 글 + HTML(x:num) → 원 칸에 3000 = 3,000원 → 서버 →
 //      다른 메모 본문에 Ctrl+V = 그 범위가 새 표 → 📋 클립보드 탭: 표 범위 복사도 모임 · 밖의 탭 글을 누르면 고른 B1부터 채움(늘림) → 서버
+//   8) 띠는 칸을 고른 표에만 (P49-2 - 3)에서 처음엔 띠 없음·누르면 섬·누른 칸 px 그대로·본문을 누르면 접힘): 표 둘 = 누른 표에만 · 뒤 표 띠가 앞 표 끝 줄을 가리지 않음 ·
+//      띠는 표 칸 묶음 위 · ESC 둘째에 접힘 → 서버 표 둘
 // 실행: 에뮬레이터 + 개발 서버(npm run dev:emu) 켠 채 node tools/inspect-table.mjs
 import { collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
@@ -112,8 +114,16 @@ try {
   const nameBox = () => table.locator(sel('table-name')).getAttribute('data-table-name');
   r.check((await table.locator(sel('table-col')).allTextContents()).join('') === 'ABC', '위 A·B·C 띠');
   r.check((await table.locator(sel('table-row')).allTextContents()).join('') === '1234', '왼쪽 1·2·3·4 띠');
+  // 띠는 칸을 고른 표에만 (P49-2) - 서도 표가 밀리지 않는다
+  r.check((await table.locator(sel('table-bar')).count()) === 0 && (await table.locator(sel('table-op')).count()) === 0, '고르지 않은 표 = 제목 줄만 (단추 띠 없음)');
+  const b1Box = await table.locator('[data-cell="0-1"]').boundingBox();
   await table.locator('[data-cell="0-1"]').click();
   r.check((await nameBox()) === 'B1' && (await focusedCell(page)) === '0-1', `칸을 누르면 고치기 + 칸 이름 줄 (${await nameBox()})`);
+  const b1After = await table.locator('[data-cell="0-1"]').boundingBox();
+  r.check((await table.locator(sel('table-bar')).count()) === 1 && b1After.x === b1Box.x && b1After.y === b1Box.y, `칸을 누르면 띠가 서고 누른 칸은 손 밑 그대로 (${b1Box.y} → ${b1After.y})`);
+  await page.locator(sel('note-text-input')).click();
+  r.check((await table.locator(sel('table-bar')).count()) === 0 && (await table.locator('[data-cell="0-1"]').boundingBox()).y === b1Box.y, '본문을 누르면 띠가 접히고 표는 그대로');
+  await table.locator('[data-cell="0-1"]').click();
   await page.keyboard.press('Escape');
   r.check(await panel.isVisible(), 'ESC = 고치기만 멈춘다 (쓰는 칸 그대로)');
   r.check((await focusedCell(page)) === '0-1' && (await table.locator('[data-table-editing]').count()) === 0, '고르기 상태 - 초점은 표 안');
@@ -161,7 +171,7 @@ try {
   await table.locator('[data-cell="0-0"]').click();
   await page.keyboard.press('Escape');
   await page.keyboard.press('Escape');
-  r.check((await nameBox()) === '' && (await panel.isVisible()), 'ESC 둘째 = 고르기 풀기 (쓰는 칸 그대로)');
+  r.check((await table.locator(sel('table-bar')).count()) === 0 && (await panel.isVisible()), 'ESC 둘째 = 고르기 풀기 - 띠도 접힘 (쓰는 칸 그대로)');
   // 저장 안 한 것이 있으면 전역 ESC가 먼저 묻는다(점검은 '아니오') - 저장하고 닫는다
   await page.keyboard.press('Control+s');
   const after = await serverUntil(async () => (await madeHere()).find((d) => d.id === id)?.data(), (d) => d?.tables?.[0]?.rows?.length === 3);
@@ -519,6 +529,51 @@ try {
   const fs6 = await serverUntil(async () => (await madeHere()).find((d) => d.id === pid)?.data(), (d) => !!d?.tables?.length);
   r.check(JSON.stringify(cellTexts(fs6)) === '[[["95","가","나"],["88","다","라"]]]', `서버: 새 표 (${JSON.stringify(cellTexts(fs6))})`);
   for (let i = 0; i < 3; i++) await page.keyboard.press('Escape');
+  r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '닫힘');
+
+  r.section('표가 둘이면 누른 표에만 띠 (P49-2)');
+  await page.locator(sel('journal-add')).click();
+  await waitFor(panel);
+  await page.keyboard.type(`${MARK} 표 둘`);
+  await page.locator(sel('note-table-add')).click();
+  await waitFor(table);
+  await page.keyboard.type('첫 표');
+  await page.keyboard.press('Enter');
+  await page.locator(sel('note-table-add')).click();
+  const tables = panel.locator(sel('note-table'));
+  r.check(await waitFor(async () => (await tables.count()) === 2), '▦ 표 한 번 더 = 표 둘');
+  await page.keyboard.type('둘째 표');
+  await page.keyboard.press('Enter');
+  const [one, two] = [tables.nth(0), tables.nth(1)];
+  const barIn = (t) => t.locator(sel('table-bar')).count();
+  r.check((await barIn(one)) === 0 && (await barIn(two)) === 1, '막 만든 둘째 표에만 띠');
+  // 둘째 표 띠가 위로 삐져나와도 첫 표 끝 줄을 가리지 않는다 (뒤 표 위를 띄움)
+  const lastRow = await one.locator('[data-cell="2-1"]').boundingBox();
+  const twoBar = await two.locator(sel('table-bar')).boundingBox();
+  r.check(twoBar.y >= lastRow.y + lastRow.height, `둘째 표 띠가 첫 표 끝 줄 아래에서 (띠 ${Math.round(twoBar.y)} ≥ 끝 줄 ${Math.round(lastRow.y + lastRow.height)})`);
+  const twoHead = await two.locator('[data-table-all]').boundingBox();
+  r.check(twoBar.y + twoBar.height <= twoHead.y + 1, `띠는 표 칸 묶음 위 - 칸을 가리지 않는다 (띠 끝 ${Math.round(twoBar.y + twoBar.height)} ≤ 머리 ${Math.round(twoHead.y)})`);
+  const oneCell = one.locator('[data-cell="1-1"]');
+  const oneBefore = await oneCell.boundingBox();
+  await oneCell.click();
+  const oneAfter = await oneCell.boundingBox();
+  r.check((await barIn(one)) === 1 && (await barIn(two)) === 0, '첫 표 칸을 누르면 첫 표에만 띠 (둘째 표 띠는 접힘)');
+  r.check(oneAfter.y === oneBefore.y && oneAfter.x === oneBefore.x, `누른 칸 자리 그대로 (${oneBefore.y} → ${oneAfter.y})`);
+  const twoCell = two.locator('[data-cell="2-2"]');
+  const twoBefore = await twoCell.boundingBox();
+  await twoCell.click();
+  r.check((await barIn(one)) === 0 && (await barIn(two)) === 1 && (await twoCell.boundingBox()).y === twoBefore.y, '다시 둘째 표 = 둘째 표에만, 누른 칸 그대로');
+  await page.keyboard.press('Escape');
+  r.check((await barIn(two)) === 1, 'ESC 하나 = 고르기 상태 (띠 그대로)');
+  await page.keyboard.press('Escape');
+  r.check((await barIn(two)) === 0 && (await panel.isVisible()), 'ESC 둘째 = 고르기 풀기, 띠도 접힘');
+  await page.keyboard.press('Control+s');
+  r.check(await waitFor(async () => (await panel.getAttribute('data-note-panel')) === 'edit', 8000), 'Ctrl+S → 수정 칸');
+  const tid = await panel.getAttribute('data-note-id');
+  const fs7 = await serverUntil(async () => (await madeHere()).find((d) => d.id === tid)?.data(), (d) => d?.tables?.length === 2);
+  r.check(fs7?.tables?.length === 2, `서버: 표 둘 (${fs7?.tables?.length})`);
+  r.check(await appSaved(), '앱도 저장 대답을 받았다');
+  await page.keyboard.press('Escape');
   r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '닫힘');
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);

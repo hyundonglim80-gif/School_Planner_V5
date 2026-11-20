@@ -33,7 +33,9 @@ function Host({ start, autoEdit }: { start: EntryTable; autoEdit?: boolean }) {
 
 const q = (s: string) => document.querySelector<HTMLElement>(s)!;
 const input = () => q('[data-table-input]') as HTMLTextAreaElement;
-const nameBox = () => q('[data-table-name]').getAttribute('data-table-name');
+/** 띠의 칸 이름 줄 (띠가 없으면 null - P49-2 칸을 고른 표에만) */
+const nameBox = () => document.querySelector('[data-table-name]')?.getAttribute('data-table-name') ?? null;
+const bars = () => document.querySelectorAll('[data-table-bar]').length;
 const key = (k: string, more: Partial<KeyboardEventInit> = {}) => act(() => void fireEvent.keyDown(input(), { key: k, ...more }));
 const values = () => seen.latest.rows.map((r) => r.cells.map((c) => c.v));
 
@@ -43,7 +45,8 @@ describe('고치는 표 - 고르기 (P48-1)', () => {
   render(<Host start={filled()} />);
     expect([...document.querySelectorAll('[data-table-col]')].map((e) => e.textContent)).toEqual(['A', 'B', 'C']);
     expect([...document.querySelectorAll('[data-table-row]')].map((e) => e.textContent)).toEqual(['1', '2', '3']);
-    expect(nameBox()).toBe('');
+    expect(nameBox()).toBeNull();
+    expect(bars()).toBe(0);
     fireEvent.click(q('[data-cell="1-1"]'));
     expect(nameBox()).toBe('B2');
     expect(input().getAttribute('data-table-editing')).toBe('true');
@@ -136,7 +139,8 @@ describe('고치는 표 - 고르기 (P48-1)', () => {
     expect(appKeys).not.toHaveBeenCalled();
     key('Escape');
     expect(document.querySelector('[data-table-input]')).toBeNull();
-    expect(nameBox()).toBe('');
+    expect(nameBox()).toBeNull();
+    expect(bars()).toBe(0);
     fireEvent.keyDown(document.body, { key: 'Escape' });
     expect(appKeys).toHaveBeenCalledTimes(1);
     window.removeEventListener('keydown', appKeys);
@@ -153,6 +157,74 @@ describe('고치는 표 - 고르기 (P48-1)', () => {
     fireEvent.click(q('[data-cell="2-2"]'));
     expect(values()[0][0]).toBe('첫\n줄');
     expect(nameBox()).toBe('C3');
+  });
+});
+
+describe('띠는 칸을 고른 표에만 (P49-2)', () => {
+  const barOf = (root: Element) => root.querySelector('[data-table-bar]');
+
+  it('고르지 않은 표 = 제목 줄만 · 칸을 누르면 띠 두 줄이 표 칸 묶음 위(제목 줄 자리)에 · 띠의 빈 곳을 눌러도 초점 그대로', () => {
+    seen.latest = filled();
+    render(<Host start={filled()} />);
+    expect(bars()).toBe(0);
+    expect(document.querySelectorAll('[data-table-op]')).toHaveLength(0);
+    fireEvent.click(q('[data-cell="1-1"]'));
+    expect(bars()).toBe(1);
+    const bar = q('[data-table-bar]');
+    expect(bar.querySelector('[data-table-format-bar]')).not.toBeNull();
+    expect(bar.querySelectorAll('[data-table-op]').length).toBeGreaterThanOrEqual(18);
+    // 겹쳐 뜬다 - 표 칸 묶음(글 칸이 서는 상자) 바로 위, 제목 줄과 같은 부모가 아니다
+    expect(bar.className).toContain('absolute');
+    expect(bar.className).toContain('bottom-full');
+    expect(bar.parentElement?.contains(input())).toBe(true);
+    // 띠의 빈 곳을 눌러도 (mousedown을 막아) 글 칸 초점이 그대로
+    expect(fireEvent.mouseDown(bar)).toBe(false);
+  });
+
+  it('표 밖으로 초점이 가면 띠가 접히고 고른 칸은 남는다 · 글 칸에 초점이 돌아오면 다시 (📋 클립보드 탭 붙이기)', () => {
+    seen.latest = filled();
+    render(
+      <>
+        <Host start={filled()} />
+        <textarea data-other />
+      </>
+    );
+    fireEvent.click(q('[data-cell="0-1"]'));
+    fireEvent.change(input(), { target: { value: '넣을 글' } });
+    act(() => q('[data-other]').focus());
+    expect(bars()).toBe(0);
+    expect(values()[0][1]).toBe('넣을 글');
+    expect(input().getAttribute('data-table-input')).toBe('0-1');
+    act(() => input().focus());
+    expect(bars()).toBe(1);
+    expect(nameBox()).toBe('B1');
+  });
+
+  it('표가 둘이면 누른 표에만 띠 · ESC 둘째(고르기 풀기)에 접힌다', () => {
+    seen.latest = filled();
+    render(
+      <>
+        <div data-one>
+          <Host start={filled()} />
+        </div>
+        <div data-two>
+          <Host start={filled()} />
+        </div>
+      </>
+    );
+    const one = q('[data-one]');
+    const two = q('[data-two]');
+    fireEvent.click(one.querySelector('[data-cell="0-0"]')!);
+    expect(barOf(one)).not.toBeNull();
+    expect(barOf(two)).toBeNull();
+    fireEvent.click(two.querySelector('[data-cell="2-2"]')!);
+    expect(barOf(one)).toBeNull();
+    expect(barOf(two)?.querySelector('[data-table-name]')?.getAttribute('data-table-name')).toBe('C3');
+    const twoInput = () => two.querySelector('[data-table-input]')!;
+    act(() => void fireEvent.keyDown(twoInput(), { key: 'Escape' }));
+    expect(barOf(two)).not.toBeNull();
+    act(() => void fireEvent.keyDown(twoInput(), { key: 'Escape' }));
+    expect(bars()).toBe(0);
   });
 });
 
@@ -392,7 +464,7 @@ describe('고치는 표 - Σ·채우기·정렬 (P48-4)', () => {
     const t = setCellText(scores(), 1, 3, '=B2+C2');
     seen.latest = t;
     render(<Host start={t} />);
-    expect((q('[data-table-op="copy-down"]') as HTMLButtonElement).disabled).toBe(true);
+    expect(document.querySelector('[data-table-op="copy-down"]')).toBeNull();
     fireEvent.click(q('[data-cell="1-3"]'));
     fireEvent.click(q('[data-cell="3-3"]'), { shiftKey: true });
     op('copy-down');
@@ -432,7 +504,7 @@ describe('막 만든 표만 A1을 곧바로 고친다 (P48-2 찾아 고침)', ()
     seen.latest = filled();
     render(<Host start={filled()} autoEdit />);
     expect(document.querySelector('[data-table-input]')).toBeNull();
-    expect(nameBox()).toBe('');
+    expect(nameBox()).toBeNull();
     expect(q('[data-cell="0-0"]').textContent).toBe('0,0');
   });
 });
