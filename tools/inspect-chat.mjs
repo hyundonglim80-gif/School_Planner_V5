@@ -839,7 +839,8 @@ try {
 
   r.check(A.errors.length === 0, `페이지 오류 없음 ${A.errors.slice(0, 2).join(' / ')}`);
 } catch (e) {
-  r.bad(`멈춤: ${String(e?.message || e).split('\n')[0]}`);
+  // 첫 줄만 찍으면 무엇을 기다렸는지(Playwright 'Call log')가 빠진다 - 다른 점검처럼 전부(P49-1 CI chat#2 '멈춤: locator.click: Timeout')
+  r.bad(`점검이 멈췄다: ${e?.stack ?? e}`);
 } finally {
   await browser.close();
   await undo.run();

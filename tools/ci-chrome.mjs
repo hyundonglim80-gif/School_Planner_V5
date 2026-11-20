@@ -16,12 +16,15 @@ import { join } from 'node:path';
 
 // 여덟(P36-1) + 달력 화면 다섯(P40-1 - P36-4가 모든 달력 화면에 구글 일정 줄을 넣었다: 월간·년간·한눈에·겹쳐 보기(흉내 응답)·이월·인쇄)
 // + 넷(P44-1 - 11-13~17에 바뀐 화면인데 CI 밖이라 옛 화면을 본 채 남을 수 있던 것: ↗ 새 창·분할 칸·검색·휴지통·메모 요청 카드·💬 대화)
-// + 메모 표(P48-5 - P48 다섯 세션의 빈 표·서식·식·Σ·채우기·정렬·엑셀과 오가기, 날짜에 기대지 않는다).
+// + 메모 표(P48-5 - P48 다섯 세션의 빈 표·서식·식·Σ·채우기·정렬·엑셀과 오가기, 날짜에 기대지 않는다)
+// + 넷(P49-1 - 11-18~20에 바뀐 화면인데 CI 밖이던 것, 짧은 것부터: 클립보드 팝업창·첨부(표 붙여넣기·클립보드 탭)·조사표(기타·점수 기준)·창 왼쪽 칸
+//   · 조사표만 오늘로 학년도를 센다 - probe FAKE_TODAY로 2월 말·3월 1일·월말·다음 해까지 통과, 나머지 셋은 정한 날).
 const CI_PROBES = [
   ...['shell', 'memo', 'notes', 'progress', 'lessons', 'settings', 'events', 'week'],
   ...['month-year', 'board', 'gcal', 'forward', 'print'],
   ...['popout', 'search-trash', 'claude-request', 'chat'],
   'table',
+  ...['clipboard-popup', 'attach', 'evaluations', 'side-left'],
 ];
 
 const OUT = 'ci-out';
@@ -135,7 +138,7 @@ for (let round = 1; round <= REPEAT; round++) {
     });
     const fails = r.text.split('\n').filter((l) => /✘/.test(l) && !/✘ \d+개 틀림/.test(l)).map((l) => l.trim());
     const passes = r.text.split('\n').filter((l) => /^\s*✔ /.test(l)).length;
-    results.push({ name: label, ok: r.code === 0, ms: r.ms, passes, fails });
+    results.push({ name: label, ok: r.code === 0, ms: r.ms, passes, fails, tail: r.code === 0 ? '' : r.text.split('\n').slice(-60).join('\n') });
     console.log(`◀ inspect-${label}: ${r.code === 0 ? '통과' : `틀림 (종료 ${r.code})`} · ${sec(r.ms)}`);
   }
 }
@@ -153,4 +156,6 @@ const lines = [
 writeFileSync(join(OUT, 'summary.md'), lines.join('\n'));
 if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
 console.log('\n' + lines.join('\n'));
+// 틀린 점검의 끝 줄을 맨 끝에 한 번 더 - 일 기록의 끝만 읽어도(클라우드 대화는 결과 묶음 주소에 닿지 못한다) 무엇을 기다리다 멈췄나 보인다(P49-1)
+for (const r of failed) console.log(`\n── ${r.name} 끝 60줄 ──\n${r.tail}`);
 process.exit(failed.length ? 1 : 0);

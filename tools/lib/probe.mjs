@@ -19,6 +19,32 @@ import { getAuth, connectAuthEmulator, signInWithEmailAndPassword } from 'fireba
 
 export const SITE = process.env.SITE || 'http://localhost:5175/';
 
+// 그날인 척 돌리기 (P49-1): FAKE_TODAY=2027-02-28 node tools/inspect-….mjs
+//   노드(점검 스크립트)와 newPage로 연 크롬 창 모두 그날 10시부터 시계가 흐른다 - 날마다 도는 CI에 넣을 점검이
+//   학년도가 바뀌는 2월 말·3월 1일·월말에 깨지지 않나 본다(CLAUDE.md 2장 'CI가 크롬 점검 …를 돌린다').
+//   에뮬레이터 시각(serverTimestamp)은 진짜 그대로 - 기기 사본은 서버 시각으로 이어 받아 상관없다.
+//   다만 서버 시각과 '오늘'을 견주는 것은 빗나간다: 미래 날이면 휴지통 자동 비우기(12-01부터 90일)가 방금 지운 것도
+//   오래된 것으로 보고 지운다 - 휴지통을 보는 점검은 그 계정 settings/common trashDays를 0(끄기)으로 두고 돌린다(P49-1 inspect-evaluations).
+//   점검이 이 파일보다 먼저 날짜를 세면 빗나간다(점검은 맨 위에서 probe를 부른다 - ESM은 부른 것부터 돈다).
+function shiftDate(shift) {
+  const Real = Date;
+  function Shifted(...a) {
+    if (!new.target) return new Real(Real.now() + shift).toString();
+    return a.length ? new Real(...a) : new Real(Real.now() + shift);
+  }
+  Shifted.prototype = Real.prototype;
+  Shifted.now = () => Real.now() + shift;
+  Shifted.parse = Real.parse;
+  Shifted.UTC = Real.UTC;
+  globalThis.Date = Shifted;
+}
+const FAKE_SHIFT = process.env.FAKE_TODAY ? new Date(`${process.env.FAKE_TODAY}T10:00:00`).getTime() - Date.now() : 0;
+if (Number.isNaN(FAKE_SHIFT)) throw new Error(`FAKE_TODAY는 YYYY-MM-DD: ${process.env.FAKE_TODAY}`);
+if (FAKE_SHIFT) {
+  shiftDate(FAKE_SHIFT);
+  console.log(`(FAKE_TODAY - 오늘 = ${process.env.FAKE_TODAY})`);
+}
+
 // 틀린 순간의 그림 (P36-1 CI): SHOTS_DIR이 있으면 ✘를 찍을 때 newPage로 연 창(과 그 창이 연 창)을 모두 찍는다.
 // 기다리지 않고 찍는다(bad는 동기) - launch()로 띄운 브라우저는 닫기 전에 찍던 그림을 기다린다(멈춘 점검의 catch → finally browser.close).
 // chromium.launch를 곧바로 쓴 점검은 맨 마지막 ✘ 그림이 빠질 수 있다. 점검 스크립트는 그대로 둔다.
@@ -119,6 +145,7 @@ export async function newPage(browser, { width = 1400, height = 900, ...context 
   await ctx.addInitScript(() => {
     window.__appModule = (path) => performance.getEntriesByType('resource').map((e) => e.name).find((n) => new URL(n).pathname === path) ?? path;
   });
+  if (FAKE_SHIFT) await ctx.addInitScript(`(${shiftDate})(${FAKE_SHIFT})`);
   const page = await ctx.newPage();
   trackPage(page);
   ctx.on('page', trackPage); // 점검이 ctx.newPage()로 더 연 창·팝업창도 (틀린 순간 그림)
