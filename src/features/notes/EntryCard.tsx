@@ -24,6 +24,7 @@ import { EntryStudents } from './StudentTags';
 import { pressKeys } from '../../ui/pressKeys';
 import EventDoneChip from '../events/EventDoneChip';
 import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
+import { Glyph } from '../../ui/Icon';
 
 export interface EntryCardProps {
   item: ItemDoc;
@@ -212,7 +213,7 @@ export default function EntryCard(props: EntryCardProps) {
               title={`${shortDateLabel(d)} 하루 화면으로`}
               className="px-1.5 py-0.5 rounded-md text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
             >
-              📅 {shortDateLabel(d)}
+              <Glyph e="📅" /> {shortDateLabel(d)}
             </button>
           ))}
           {checks.total > 0 && (
@@ -240,7 +241,7 @@ export default function EntryCard(props: EntryCardProps) {
               className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 transition-colors cursor-pointer flex items-center gap-1"
               title={`링크된 항목 ${links}개`}
             >
-              🔗 {links}
+              <Glyph e="🔗" /> {links}
             </button>
           )}
           {/* 접혀 있을 때는 그림이 있다는 표시만 */}
@@ -255,13 +256,13 @@ export default function EntryCard(props: EntryCardProps) {
               className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 text-xs px-1.5 py-0.5 rounded font-bold border border-indigo-200 cursor-pointer"
               title="첨부 이미지 크게 보기"
             >
-              🖼️ {images.length}
+              <Glyph e="🖼" /> {images.length}
             </button>
           )}
           {/* 파일·표 표시는 늘, 그림은 접혔을 때만 (펼치면 그림이 보인다) */}
           {files.length > 0 && (
             <span data-entry-files={files.length} className="bg-slate-100 text-slate-600 text-xs px-1.5 py-0.5 rounded font-bold border border-slate-200">
-              📎 {files.length}
+              <Glyph e="📎" /> {files.length}
             </span>
           )}
           {tables.length > 0 && (
@@ -284,7 +285,7 @@ export default function EntryCard(props: EntryCardProps) {
               title="링크 추가 - 일정·메모·수업에 잇기"
               aria-label="링크 추가"
             >
-              🔗
+              <Glyph e="🔗" />
             </button>
           )}
           <button
@@ -298,7 +299,7 @@ export default function EntryCard(props: EntryCardProps) {
             title={`${noun} 수정`}
             aria-label={`${noun} 수정`}
           >
-            ✏️
+            <Glyph e="✏" />
           </button>
           <button
             type="button"
@@ -311,7 +312,7 @@ export default function EntryCard(props: EntryCardProps) {
             title={`${noun} 삭제`}
             aria-label={`${noun} 삭제`}
           >
-            🗑️
+            <Glyph e="🗑" />
           </button>
         </div>
       </div>

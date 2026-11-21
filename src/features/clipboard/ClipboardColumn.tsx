@@ -9,6 +9,7 @@ import { openWindow, useShownWindowPick, useWindows } from '../../app/windows';
 import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../../ui/sideColumn';
 import { CLIPBOARD_WINDOW, setClipboardOpen, toggleClipboard, useClipboardPanel } from './capture';
 import { shortcutTarget } from '../../ui/shortcutTarget';
+import { Glyph } from '../../ui/Icon';
 
 /**
  * 화면 가장자리의 작은 📋 단추 (창 칸이 서는 쪽 - 지금은 오른쪽. 창 칸이 서 있으면 그 안쪽 가장자리에 붙는다).
@@ -47,7 +48,7 @@ export default function ClipboardColumn() {
       // 창 칸이 서 있으면 그 안쪽 가장자리 - 가운데의 '오른쪽 칸 닫기 ▶' 손잡이(Shell) 바로 위
       style={sideOpen ? { [left ? 'left' : 'right']: RIGHT_COLUMN_CSS_WIDTH, top: 'calc(50% - 4rem)' } : { [left ? 'left' : 'right']: 0 }}
     >
-      📋
+      <Glyph e="📋" />
     </button>
   );
 }

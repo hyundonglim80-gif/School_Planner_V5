@@ -27,6 +27,7 @@ import { openClassRoster, setClassView, useClassView } from './view';
 import { isDirty, useRosterDraft } from './rosterDraft';
 import { openStudentRecord } from '../studentRecord/open';
 import { shortcutTarget } from '../../ui/shortcutTarget';
+import { Glyph } from '../../ui/Icon';
 
 /** 학급 화면의 사진 보기 켬/끔 - 이 기기에만 (명렬표 관리의 sp5-roster-photos와 따로 - V4) */
 const PHOTOS_KEY = 'sp5-class-photos';
@@ -101,11 +102,11 @@ function ClassHub() {
     }
     return (
       <div className="max-w-xl mx-auto text-center py-16 flex flex-col items-center gap-3" data-class-empty>
-        <p className="text-4xl">🏫</p>
+        <p className="text-4xl"><Glyph e="🏫" /></p>
         <p className="font-bold text-slate-700">아직 학급(명렬표)이 없습니다.</p>
         <p className="text-sm text-slate-500">명렬표를 만들면 이 화면에서 출석부·자리표·누가기록·조사표를 학급별로 엽니다.</p>
         <button type="button" data-class-make-roster onClick={() => openClassRoster('manage')} className="px-4 py-2 rounded-xl bg-primary text-white font-bold text-sm cursor-pointer">
-          🧑‍🤝‍🧑 명렬표 만들기
+          <Glyph e="🧑‍🤝‍🧑" /> 명렬표 만들기
         </button>
       </div>
     );
@@ -114,7 +115,7 @@ function ClassHub() {
   return (
     <div className="flex flex-col gap-4" data-class-hub={cls?.id}>
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="text-lg font-black text-slate-800">🏫 학급</h2>
+        <h2 className="text-lg font-black text-slate-800"><Glyph e="🏫" /> 학급</h2>
         <select aria-label="학급 고르기" data-class-pick value={cls?.id ?? ''} onChange={(e) => choose(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-xl font-bold text-sm bg-white">
           {classes.map((c) => (
             <option key={c.id} value={c.id}>
@@ -160,7 +161,7 @@ function ClassHub() {
           onClick={() => openTool('attendance')}
           className="text-left bg-white border border-slate-200 rounded-2xl px-4 py-3 hover:bg-slate-50 flex flex-wrap items-center gap-x-3 gap-y-1 cursor-pointer"
         >
-          <span className="font-black text-sm text-slate-700">📋 오늘 출결</span>
+          <span className="font-black text-sm text-slate-700"><Glyph e="📋" /> 오늘 출결</span>
           {todayRows.length === 0 ? (
             <span className="text-sm text-emerald-700 font-bold">적힌 결석·지각·조퇴·결과가 없습니다</span>
           ) : (
@@ -188,7 +189,7 @@ function ClassHub() {
             onClick={() => openTool(t.id)}
             className="text-left bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 hover:border-primary/50 hover:shadow-sm transition-all flex flex-col gap-1 cursor-pointer"
           >
-            <span className="text-2xl leading-none">{t.icon}</span>
+            <Glyph e={t.icon} className="w-7 h-7 text-primary" />
             <span className="font-black text-sm text-slate-800">{t.label}</span>
             <span className="text-xs text-slate-500">{t.desc}</span>
           </button>
@@ -199,7 +200,7 @@ function ClassHub() {
       <section className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4" data-class-students={students.length}>
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <h3 className="font-black text-sm text-slate-700">
-            🧑‍🎓 학생 {students.length}명 <span className="text-xs font-semibold text-slate-500">- {showPhotos ? '사진을 누르면 크게, 이름을 누르면 누가기록' : '누르면 그 학생의 누가기록'}</span>
+            <Glyph e="🧑‍🎓" /> 학생 {students.length}명 <span className="text-xs font-semibold text-slate-500">- {showPhotos ? '사진을 누르면 크게, 이름을 누르면 누가기록' : '누르면 그 학생의 누가기록'}</span>
           </h3>
           {showPhotos && photos.status === 'ready' && students.length > 0 && (
             <span className="text-xs font-semibold text-slate-500" data-class-photo-count={students.length - photos.missing.length}>
@@ -311,10 +312,10 @@ export default function ClassScreen() {
     <div data-screen="class" className="animate-fade-in pb-12 flex flex-col gap-3">
       <div role="tablist" aria-label="학급 화면" data-class-mode-switch className="self-start flex gap-1 bg-slate-100 rounded-xl p-1">
         <button type="button" role="tab" aria-selected={view === 'hub'} data-class-mode="hub" onClick={() => setClassView('hub')} className={item(view === 'hub')}>
-          🏫 학급 도구
+          <Glyph e="🏫" /> 학급 도구
         </button>
         <button type="button" role="tab" aria-selected={view === 'roster'} data-class-mode="roster" {...shortcutTarget('roster')} onClick={() => openClassRoster()} className={item(view === 'roster')}>
-          🧑‍🤝‍🧑 명렬표 (관리 · 검색 · 암기){dirty && <span className="ml-1 text-amber-600" title="저장하지 않은 것이 있습니다">●</span>}
+          <Glyph e="🧑‍🤝‍🧑" /> 명렬표 (관리 · 검색 · 암기){dirty && <span className="ml-1 text-amber-600" title="저장하지 않은 것이 있습니다">●</span>}
         </button>
       </div>
       {view === 'roster' ? <RosterView /> : <ClassHub />}

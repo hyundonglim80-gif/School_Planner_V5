@@ -35,6 +35,7 @@ import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import DecorSpot from '../../ui/DecorSpot';
+import { Glyph } from '../../ui/Icon';
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -99,8 +100,8 @@ export default function DayJournal({ date }: { date: YMD }) {
             >
               {collapsed ? '▶' : '▼'}
             </button>
-            <span className="text-xl" aria-hidden>
-              📝
+            <span className="flex text-primary" aria-hidden>
+              <Glyph e="📝" className="w-5 h-5" />
             </span>
             <h3 className="text-base font-extrabold text-slate-800">메모</h3>
             <span data-journal-count={notes.length} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
@@ -131,7 +132,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                   journalEvals ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-100'
                 }`}
               >
-                📊{journalEvals || ''}
+                <Glyph e="📊" />{journalEvals || ''}
               </button>
             )}
             {/* 🏷️ 라벨로 보기 칩 줄 펴기·접기 (기본 접힘 - 고른 라벨이 있으면 그 수) */}
@@ -147,7 +148,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                   picked ? 'bg-sky-50 hover:bg-sky-100 text-sky-700' : filterOpen ? 'bg-slate-100 text-slate-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                🏷️{picked ? ` ${picked}` : ''} {filterOpen ? '▴' : '▾'}
+                <Glyph e="🏷" />{picked ? ` ${picked}` : ''} {filterOpen ? '▴' : '▾'}
               </button>
             )}
           </div>
@@ -178,7 +179,7 @@ export default function DayJournal({ date }: { date: YMD }) {
             title="메모 라벨 설정"
             aria-label="메모 라벨 설정"
           >
-            ⚙️
+            <Glyph e="⚙" />
           </button>
         </div>
       </div>

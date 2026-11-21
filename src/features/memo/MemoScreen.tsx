@@ -38,6 +38,7 @@ import { openNotePanel, useShownNoteId } from '../notes/open';
 import { useFocusReveal } from '../search/focus';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import DecorSpot from '../../ui/DecorSpot';
+import { Glyph } from '../../ui/Icon';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
 const FALLBACK_LABEL = '메모';
@@ -327,7 +328,7 @@ export default function MemoScreen() {
                 className="flex items-center gap-1 px-1 -mx-1 rounded-md hover:bg-slate-100 hover:text-blue-900 cursor-pointer min-w-0"
                 title="메모 라벨 관리 (이름·색·상위 라벨·차례)"
               >
-                🏷️ 라벨<span className="hidden sm:inline"> 관리</span>
+                <Glyph e="🏷" /> 라벨<span className="hidden sm:inline"> 관리</span>
               </button>
             </div>
             {specialChip('fav', '⭐ 즐겨찾기', 'bg-amber-100 text-amber-900 border-amber-300', '즐겨찾기한 메모만 보기')}
@@ -349,7 +350,7 @@ export default function MemoScreen() {
             <>
               {unlabeled.length > 0 && (
                 <div data-memo-unlabeled={unlabeled.length} className="flex items-center justify-between gap-2 flex-wrap mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
-                  <span className="font-bold">🏷️ 라벨이 없는 메모 {unlabeled.length}개</span>
+                  <span className="font-bold"><Glyph e="🏷" /> 라벨이 없는 메모 {unlabeled.length}개</span>
                   <button
                     type="button"
                     data-memo-label-unlabeled
@@ -416,7 +417,7 @@ export default function MemoScreen() {
                     className="px-2 sm:px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-xs font-bold cursor-pointer shrink-0 disabled:opacity-50"
                     title="완료된 메모 모두 삭제 (안내의 되돌리기로 되살립니다)"
                   >
-                    🗑️<span className="hidden sm:inline"> 전체 비우기</span>
+                    <Glyph e="🗑" /><span className="hidden sm:inline"> 전체 비우기</span>
                   </button>
                 )}
               </div>

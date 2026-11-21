@@ -328,7 +328,16 @@ try {
   const d1 = await serverUntil(() => dayDoc('2026-10-12'), (d) => d?.periods?.['2']?.subject === '체육');
   r.check(d1?.periods?.['2']?.subject === '체육' && d1.periods['2'].supplies === '운동장\n줄넘기' && !('memo' in d1.periods['2']), 'Ctrl+S = lessonDays/날짜의 그 칸 (과목·비고 = supplies 한 칸)');
   r.check(Object.keys(d1?.periods ?? {}).join() === '2', '다른 교시는 적지 않는다 (시간표를 따른다)');
-  r.check(await waitFor(async () => ((await lessonCard(2).locator(sel('lesson-note')).textContent()) ?? '').includes('📌 비고운동장\n줄넘기'), 6000), '카드에 📌 비고 한 칸 (#94 - 비고(준비물) → 비고)');
+  // 📌은 선 아이콘(P53-3 - data-glyph)이라 글에는 없다
+  r.check(
+    await waitFor(
+      async () =>
+        ((await lessonCard(2).locator(sel('lesson-note')).textContent()) ?? '').includes('비고운동장\n줄넘기') &&
+        (await lessonCard(2).locator(`${sel('lesson-note')} [data-glyph="📌"]`).count()) === 1,
+      6000,
+    ),
+    '카드에 📌 비고 한 칸 (#94 - 비고(준비물) → 비고)',
+  );
   r.check(await waitFor(editor), '저장해도 칸은 열려 있다');
   // 시간표로 되돌리면 과목 칸이 빠진다
   await editor.locator(sel('lesson-panel-subject')).fill('수학');

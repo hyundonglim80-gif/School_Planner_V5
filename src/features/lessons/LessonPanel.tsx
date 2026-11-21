@@ -32,6 +32,7 @@ import { useSlotPairOptions, useTeaching } from './teaching';
 import { useLessonSource } from './useLessons';
 import { useEvalsOn } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
+import { Glyph } from '../../ui/Icon';
 
 const toolClass = 'px-3 py-1.5 bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 rounded-xl text-xs font-bold transition-colors cursor-pointer';
 
@@ -150,7 +151,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-6 space-y-4" data-scroll-lock>
           <div className="flex flex-wrap gap-2 pb-4 border-b border-slate-100">
             <button type="button" data-lesson-panel-link onClick={() => openLinker({ sid, id })} className="px-3 py-1.5 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-xl text-xs font-bold transition-colors cursor-pointer">
-              🔗 링크 추가
+              <Glyph e="🔗" /> 링크 추가
             </button>
             {linkCount > 0 && (
               <button
@@ -159,7 +160,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
                 onClick={() => openLinkViewer({ sid, id })}
                 className="px-3 py-1.5 bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200 rounded-xl text-xs font-bold transition-colors cursor-pointer"
               >
-                📑 연결된 링크 ({linkCount})
+                <Glyph e="📑" /> 연결된 링크 ({linkCount})
               </button>
             )}
             <button
@@ -168,18 +169,18 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
               onClick={() => openEvaluation({ sid, date, place: String(n), slot: subjectToSave(form.subject) })}
               className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-xl text-xs font-bold transition-colors cursor-pointer"
             >
-              📊 조사표{evalCount ? ` (${evalCount})` : ''}
+              <Glyph e="📊" /> 조사표{evalCount ? ` (${evalCount})` : ''}
             </button>
             {slotClass && (
               <>
                 <button type="button" data-lesson-panel-tool="attendance" onClick={() => openSubjectAttendanceCell({ classId: slotClass.id, date, n, subject: slot?.subject })} className={toolClass} title={`${slot?.cls} ${n}교시 교과 출결`}>
-                  🙋 출결
+                  <Glyph e="🙋" /> 출결
                 </button>
                 <button type="button" data-lesson-panel-tool="seating" onClick={() => openSeating({ classId: slotClass.id })} className={toolClass} title={`${slot?.cls} 자리표`}>
-                  🪑 자리표
+                  <Glyph e="🪑" /> 자리표
                 </button>
                 <button type="button" data-lesson-panel-tool="drawStudent" onClick={() => openSeating({ classId: slotClass.id, draw: true })} className={toolClass} title={`${slot?.cls} 발표자 뽑기`}>
-                  🎯 뽑기
+                  <Glyph e="🎯" /> 뽑기
                 </button>
               </>
             )}

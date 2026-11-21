@@ -44,6 +44,7 @@ import { useGcalShown } from '../gcal/gcalView';
 import { GcalDayCard, GcalGroupHeader } from '../gcal/GcalItems';
 import { pressKeys } from '../../ui/pressKeys';
 import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
+import { Glyph } from '../../ui/Icon';
 
 // 누를 때만 뜨는 창 - 열 때 받는다 (P49-3 첫 화면 JS)
 const EventAlarmWindow = lazyWithReload(() => import('../events/EventAlarmWindow'), OfflineInlineWindow);
@@ -162,8 +163,8 @@ export default function DayEvents({ date }: { date: YMD }) {
           >
             {collapsed ? '▶' : '▼'}
           </button>
-          <span className="text-xl" aria-hidden>
-            📅
+          <span className="flex text-primary" aria-hidden>
+            <Glyph e="📅" className="w-5 h-5" />
           </span>
           <h3 className="text-base font-extrabold text-slate-800 whitespace-nowrap">일정</h3>
           <span data-event-count={count} className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
@@ -192,7 +193,7 @@ export default function DayEvents({ date }: { date: YMD }) {
           title="일정 라벨 설정"
           aria-label="일정 라벨 설정"
         >
-          ⚙️
+          <Glyph e="⚙" />
         </button>
       </div>
 
@@ -296,7 +297,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                 slot="events"
                 fallback={
                   <span className="text-3xl mb-2" aria-hidden>
-                    📋
+                    <Glyph e="📋" />
                   </span>
                 }
               />
@@ -452,7 +453,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
             title="일정 수정"
             aria-label="일정 수정"
           >
-            ✏️
+            <Glyph e="✏" />
           </button>
           {!overlay && (
             <button
@@ -466,7 +467,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               title="일정 삭제"
               aria-label="일정 삭제"
             >
-              🗑️
+              <Glyph e="🗑" />
             </button>
           )}
         </span>
@@ -502,7 +503,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
                 ev.alarmDone ? 'text-slate-500 bg-slate-100 border-slate-200' : 'text-primary bg-blue-50 border-blue-200'
               }`}
             >
-              ⏰ {ev.time}
+              <Glyph e="⏰" /> {ev.time}
             </button>
           )}
 
@@ -539,7 +540,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
           </span>
           {ev.seriesId && (
             <span data-event-series title="반복 일정 - 고치거나 지우면 어디까지 할지 묻습니다" className="inline align-middle ml-1 text-xs text-purple-500">
-              🔁
+              <Glyph e="🔁" />
             </span>
           )}
           {pos && (
@@ -564,7 +565,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               className="inline-flex align-middle ml-1 bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 transition-colors cursor-pointer items-center gap-1"
               title={`링크된 항목 ${links}개`}
             >
-              🔗 {links}
+              <Glyph e="🔗" /> {links}
             </button>
           )}
 
@@ -593,7 +594,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
                     className="block px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 truncate max-w-[150px] hover:bg-slate-100 transition-colors"
                     title={att.name}
                   >
-                    📎 {att.name}
+                    <Glyph e="📎" /> {att.name}
                   </a>
                 ),
               )}

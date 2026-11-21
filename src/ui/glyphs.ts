@@ -1,0 +1,77 @@
+// 이모지 → 선 아이콘 바꿈표 (P53-3 사용자 'UI를 세련되게' → 권장안 '다'): 머리줄·단추의 이모지를 같은 두께·한 색(글자색)의 선 아이콘으로.
+//   같은 이모지 = 같은 아이콘(화면 어디서나) - 설명서 글의 같은 이모지도 이 표로 그 아이콘이 된다(HelpWindow renderInline → glyphText).
+//   이름 글자('메모'·'시간표'·'저장')는 그대로, 앞의 그림만 바뀐다(5장 P53 정한 것). 표에 없는 이모지는 그대로 이모지로 보인다.
+//   ☐·☑은 넣지 않는다 - 메모 글의 체크 줄 글자다(본문은 바꾸지 않는다, CLAUDE.md 4장).
+import type { IconName } from './iconPaths';
+
+export const GLYPHS: Readonly<Record<string, IconName>> = {
+  '⏳': 'hourglass',
+  '🗑': 'trash-2',
+  '🔍': 'search',
+  '📅': 'calendar-days',
+  '🗓': 'calendar-range',
+  '📋': 'clipboard-list',
+  '📊': 'chart-column',
+  '📝': 'notebook-pen',
+  '🗒': 'sticky-note',
+  '🏫': 'school',
+  '🧭': 'compass',
+  '⏰': 'alarm-clock',
+  '🕘': 'clock',
+  '⚙': 'settings',
+  '🔔': 'bell',
+  '🔕': 'bell-off',
+  '📢': 'megaphone',
+  '📘': 'book-open',
+  '🎯': 'target',
+  '🙋': 'hand',
+  '🪑': 'armchair',
+  '🏷': 'tag',
+  '📥': 'inbox',
+  '🔗': 'link',
+  '✏': 'pencil',
+  '📎': 'paperclip',
+  '⭐': 'star',
+  '📑': 'files',
+  '📌': 'pin',
+  '🔒': 'lock',
+  '📂': 'folder-open',
+  '🖼': 'image',
+  '🔁': 'repeat',
+  '👥': 'users',
+  '🧑': 'user',
+  '💬': 'message-circle',
+  '🚪': 'log-out',
+  '💾': 'save',
+  '🖨': 'printer',
+  '💡': 'lightbulb',
+  '⌨': 'keyboard',
+  '✨': 'sparkles',
+  '🎨': 'palette',
+  '🌱': 'sprout',
+  '👑': 'crown',
+  '🤖': 'bot',
+  '✅': 'circle-check',
+  '📰': 'newspaper',
+  '📚': 'library',
+  // 붙은 이모지(ZWJ) - 통째로 한 칸 (학급 도구: 학생 기록·명렬표)
+  '🧑‍🎓': 'graduation-cap',
+  '🧑‍🤝‍🧑': 'users',
+};
+
+/** 이모지의 모양 고르개(U+FE0F)를 뗀 것 - '🗑️'와 '🗑'가 같은 칸 */
+export const bareEmoji = (e: string) => e.replace(/\uFE0F/g, '');
+
+/** 이 이모지가 바뀌는 아이콘 (없으면 undefined) */
+export const glyphIcon = (e: string): IconName | undefined => GLYPHS[bareEmoji(e)];
+
+/**
+ * 글 안에서 바꿈표 이모지를 찾는 식 (모양 고르개까지 함께). 긴 것(붙은 이모지)부터 견주고, 바꿈표에 없는 붙은 이모지의 앞 글자만 떼지 않게
+ * 뒤에 ZWJ(U+200D)가 오면 견주지 않는다('🧑‍🍳'의 '🧑'을 사람 아이콘으로 바꾸면 요리사가 깨진다).
+ */
+export const GLYPH_RE = new RegExp(
+  `(${Object.keys(GLYPHS)
+    .sort((a, b) => b.length - a.length)
+    .join('|')})\\uFE0F?(?!\\u200D)`,
+  'gu',
+);

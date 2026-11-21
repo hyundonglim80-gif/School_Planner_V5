@@ -55,7 +55,7 @@ try {
   await open(page, '#/day/2026-10-12');
   const bellBtn = page.locator(sel('day-bell'));
   r.check(await waitFor(bellBtn, 8000), "'⏰ 수업' 옆 종 단추");
-  r.check((await bellBtn.textContent()).includes('🔕'), '처음은 꺼짐 🔕');
+  r.check((await bellBtn.locator('[data-glyph="🔕"]').count()) === 1, '처음은 꺼짐 🔕 (선 아이콘 - P53-3)');
   await bellBtn.click();
   r.check(await waitFor(page.locator(sel('class-bell'))), '누르면 수업 종 설정 칸');
   r.check(!(await page.locator(`${sel('class-bell')} >> text=교시 시각을 먼저`).count()), '교시 시각이 있으면 안내 없음');
@@ -65,7 +65,7 @@ try {
   await page.locator(sel('bell-amount', 'start')).fill('1');
   const saved2 = await serverUntil(() => read(A.ref('settings', 'common')), (d) => d?.classBell?.start?.amount === 1);
   r.check(saved2?.classBell?.start?.amount === 1 && saved2.classBell.start.unit === 'min' && saved2.classBell.start.when === 'before', '시작 1분 전');
-  r.check(await waitFor(async () => (await bellBtn.textContent()).includes('🔔')), '켜면 🔔 종');
+  r.check(await waitFor(async () => (await bellBtn.locator('[data-glyph="🔔"]').count()) === 1), '켜면 🔔 종');
   await page.locator(sel('day-bell-close')).click();
   r.check(!(await page.locator(sel('class-bell')).count()), '✕ = 설정 칸 닫기');
 
@@ -76,7 +76,7 @@ try {
     await open(p2, '#/day/2026-10-12');
     await waitFor(p2.locator(sel('day-bell')), 8000);
     // 계정 설정(종 켜짐)을 받은 뒤에 시계를 돌린다 - 받기 전에 08:59:00을 지나면 종 셈이 그 뒤부터라 울리지 않는다(P42-2 11-17 전체 점검에서 한 번)
-    await waitFor(async () => ((await p2.locator(sel('day-bell')).textContent()) ?? '').includes('🔔'), 8000);
+    await waitFor(async () => (await p2.locator(`${sel('day-bell')} [data-glyph="🔔"]`).count()) === 1, 8000);
     await p2.clock.runFor(15_000);
     const rang = await waitFor(async () => (await p2.evaluate(() => window.__spBellLast || '')).includes('1교시 시작'), 5000);
     r.check(rang, `교시 시작 1분 전에 종 (${await p2.evaluate(() => window.__spBellLast || '')})`);

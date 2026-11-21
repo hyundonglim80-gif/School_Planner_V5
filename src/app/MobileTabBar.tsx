@@ -2,6 +2,7 @@
 import { setScope, useNav } from './nav';
 import { isPhoneHiddenScope } from './route';
 import { SCREENS } from './screens';
+import { Glyph } from '../ui/Icon';
 
 /** 탭바 화면 - 한눈에는 뺀다 (5장 'P24 휴대폰 탭바' - 390px에 들어가지 않고 한 칸 65px을 지킨다) */
 const TABS = SCREENS.filter((s) => !isPhoneHiddenScope(s.id));
@@ -29,7 +30,7 @@ export default function MobileTabBar() {
                 isActive ? 'text-primary' : 'text-slate-500'
               }`}
             >
-              <span className={`text-lg leading-none ${isActive ? '' : 'opacity-60 grayscale'}`}>{tab.icon}</span>
+              <Glyph e={tab.icon} className={`w-5 h-5 ${isActive ? '' : 'opacity-80'}`} />
               <span className="text-xs font-bold leading-none">{tab.label}</span>
             </button>
           );

@@ -50,10 +50,11 @@ beforeEach(async () => {
 describe('클립보드 칸', () => {
   it('📋 = 창 칸에 클립보드 탭, 보이는 탭이면 📋·단축키 = 닫기', async () => {
     render(<Host />);
-    expect(q('[data-clipboard-toggle="closed"]')?.textContent).toBe('📋');
+    // 손잡이 그림 = 📋의 선 아이콘(P53-3 ui/glyphs - jsdom은 이모지 든 속성 선택자를 못 찾아 아이콘 이름으로)
+    expect(q('[data-clipboard-toggle="closed"] [data-icon="clipboard-list"]')).toBeTruthy();
     fireEvent.click(q('[data-clipboard-toggle]')!);
     expect(tabs()).toHaveLength(1);
-    await waitFor(() => expect(q('[data-clipboard-toggle="open"]')?.textContent).toBe('📋'));
+    await waitFor(() => expect(q('[data-clipboard-toggle="open"] [data-icon="clipboard-list"]')).toBeTruthy());
     fireEvent.click(q('[data-clipboard-toggle]')!);
     expect(tabs()).toHaveLength(0);
     act(() => void runShortcut('clipboard'));
