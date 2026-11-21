@@ -526,6 +526,8 @@ try {
   });
 
   await topic('memo-write', async () => {
+    // 스스로 메모 화면을 연다 - 앞 주제(memo-screen)가 연 화면에 기대면 MATCH로 혼자 돌릴 때 '+ 새 메모'를 못 찾는다(P51-1)
+    await go('#/memo', 'memo');
     await q(sel('memo-new')).click();
     r.check(await has(sel('note-panel', 'new')), '+ 새 메모 → 새 메모 칸');
     r.check((await count(sel('note-date-chip'))) === 0 && (await count(sel('note-dates-empty'))) === 1, '+ 새 메모 = 날짜 없음');
