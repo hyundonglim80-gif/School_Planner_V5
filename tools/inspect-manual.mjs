@@ -693,6 +693,8 @@ try {
   });
 
   await topic('attendance', async () => {
+    // 스스로 하루 화면을 연다 - 앞 주제(notice)가 연 화면에 기대면 혼자 돌릴 때 📋 출석부를 못 찾는다(P51-1)
+    await go(`#/day/${DAY}`, 'day');
     await q(sel('lessons-tool', 'attendance')).click();
     r.check(await has(sel('attendance-panel')), '하루 수업 칸 📋 출석부 → 출석부 칸');
     r.check((await count(sel('attendance-row'))) === 3, '학생 셋 (모두 출석에서 시작)');
