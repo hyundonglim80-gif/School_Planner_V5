@@ -72,7 +72,9 @@ import NoteTemplateMenu, { NoteTemplateButton } from './NoteTemplateMenu';
 import { applyTemplate, formHasBody, type NoteTemplate } from '../../domain/noteTemplate';
 import { newId } from '../../data/id';
 
-const PLACEHOLDER = '첫 줄이 제목이 됩니다. 자유롭게 생각을 적어 보세요...';
+/** 빈 글 칸에만 보인다 - 치면 사라져 자리를 차지하지 않는다(P50-2: 늘 보이던 안내 줄을 걷고 짧게 여기로).
+ *  '첫 줄 = 제목'은 칸 머리(`data-note-title-hint` - P35)가 말하므로 여기서 되풀이하지 않는다 */
+const PLACEHOLDER = '#라벨 · @학생 이름 · Ctrl+V로 캡처·엑셀 표';
 const noun = '메모';
 /** 이 칸을 고치는 동안 다른 기기가 같은 글을 바꿨을 때 (P14-6 ■3) */
 const CLASH_ASK =
@@ -827,9 +829,8 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   })}
                 </div>
               )}
-              <p className="text-2xs text-slate-400">
-                첫 줄·마지막 줄의 #이름은 라벨이 됩니다. ☐ 줄 끝에서 Enter를 누르면 다음 줄도 ☐로 시작합니다. @이름으로 학생을 붙입니다. 캡처·엑셀 표는 Ctrl+V로 붙입니다.
-              </p>
+              {/* 늘 보이던 안내 줄(#라벨·☐ 이어 쓰기·@학생·Ctrl+V)은 걷었다(P50-2) - 빈 글 칸의 자리 글(PLACEHOLDER)이 짧게 알리고,
+                  치면 그때 표시가 뜬다(#줄 미리 보기·@ 학생 목록). 자세한 것은 설명서 memo-write(#라벨·체크 목록)·student-record(@이름)·paste-table */}
               {/* 글 안 주소 미리보기 (보이기만 - 글은 바꾸지 않는다) */}
               <LinkPreviewCards text={form.text} />
               {/* 붙인 표·▦ 표로 만든 표 - 칸을 눌러 글자를 고치고 행·열을 넣고 뺀다 */}
