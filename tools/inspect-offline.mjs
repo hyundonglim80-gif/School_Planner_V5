@@ -38,7 +38,8 @@ try {
       for (const f of e.css ?? []) s.add(`/${f}`);
       for (const f of e.assets ?? []) s.add(`/${f}`);
     }
-    return [...s];
+    // 글꼴 조각(.woff2 - Pretendard 92조각)은 미리 담지 않는다(P53-1 - 쓴 글자의 조각만 받아 담는다, 아래 '쓴 글꼴 조각')
+    return [...s].filter((p) => !p.endsWith('.woff2'));
   });
   const cachedAll = await waitFor(
     () =>
@@ -51,6 +52,11 @@ try {
     30000,
   );
   r.check(cachedAll, `서비스 워커가 이 판의 앱 파일 ${want.length}개와 첫 화면을 담는다`);
+  const fontsCached = await waitFor(
+    () => page.evaluate(async () => (await (await caches.open('sp5-app-v1')).keys()).filter((q) => q.url.endsWith('.woff2')).length > 0),
+    10000,
+  );
+  r.check(fontsCached, '쓴 글꼴 조각(Pretendard)은 받은 대로 담긴다 - 92조각을 다 미리 받지는 않는다 (P53-1)');
   await ctx.setOffline(true);
   await page.reload();
   r.check(await waitFor(page.locator(sel('session', 'signed-in')), 20000), '네트워크 없이 다시 열어도 앱이 뜬다 (로그인 그대로)');
