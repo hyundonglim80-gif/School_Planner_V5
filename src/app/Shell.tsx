@@ -204,7 +204,7 @@ export default function Shell() {
         <DraftsBanner />
         <NewYearBanner />
         <MainWidthContext.Provider value={mainWidth}>
-          <Suspense fallback={<p className="p-6 text-xs text-slate-400">불러오는 중…</p>}>
+          <Suspense fallback={<p className="p-6 text-xs text-slate-500">불러오는 중…</p>}>
             <Screen />
           </Suspense>
         </MainWidthContext.Provider>

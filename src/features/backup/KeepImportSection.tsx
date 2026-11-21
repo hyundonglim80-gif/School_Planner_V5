@@ -118,7 +118,7 @@ export default function KeepImportSection() {
     <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none">
       <input type="checkbox" data-keep-opt={id} checked={on} onChange={(e) => set(e.target.checked)} className="w-3.5 h-3.5 accent-primary cursor-pointer" />
       {label}
-      {hint && <span className="font-normal text-slate-400">{hint}</span>}
+      {hint && <span className="font-normal text-slate-500">{hint}</span>}
     </label>
   );
 
@@ -221,10 +221,10 @@ export default function KeepImportSection() {
                 {picked.slice(0, 20).map((n, i) => (
                   <div key={i} data-keep-preview-item className="px-3 py-2">
                     <p className="text-xs text-slate-800 whitespace-pre-wrap line-clamp-2">{n.content}</p>
-                    {n.labels.length > 0 && options.keepLabels && <p className="text-xs text-slate-400 mt-0.5">🏷️ {n.labels.join(', ')}</p>}
+                    {n.labels.length > 0 && options.keepLabels && <p className="text-xs text-slate-500 mt-0.5">🏷️ {n.labels.join(', ')}</p>}
                   </div>
                 ))}
-                {picked.length > 20 && <p className="px-3 py-2 text-xs text-slate-400">… 그리고 {picked.length - 20}건 더</p>}
+                {picked.length > 20 && <p className="px-3 py-2 text-xs text-slate-500">… 그리고 {picked.length - 20}건 더</p>}
               </div>
             </div>
             <button

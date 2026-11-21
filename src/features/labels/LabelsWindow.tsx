@@ -334,7 +334,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
             </div>
           )}
 
-          {status && <p className="text-xs text-slate-400 font-bold">{status}</p>}
+          {status && <p className="text-xs text-slate-500 font-bold">{status}</p>}
           {!status && tree.list.length === 0 && (
             <div data-label-empty={tab} className="flex items-center justify-between gap-2 flex-wrap px-3 py-2.5 rounded-xl bg-slate-50 border border-dashed border-slate-300 text-xs text-slate-600">
               <span className="font-bold">{KIND_NOUN[tab]} 라벨이 없습니다. 아래에서 더하거나 기본 라벨을 넣으세요.</span>
@@ -426,7 +426,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                       <div className="flex items-center gap-2 flex-wrap min-w-0">
                         <UpDown first={sib <= 0} last={sib === siblings.length - 1} onMove={(dir) => move('note', d.id, dir)} sameParent />
                         {row.depth === 1 && (
-                          <span className="text-slate-400" aria-hidden>
+                          <span className="text-slate-500" aria-hidden>
                             └
                           </span>
                         )}
@@ -474,7 +474,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                         <span
                           data-label-locked
                           title="앱이 만든 라벨이라 이름을 바꾸거나 지울 수 없습니다 (메모로 Claude 요청)"
-                          className="px-1.5 py-0.5 text-slate-400 shrink-0"
+                          className="px-1.5 py-0.5 text-slate-500 shrink-0"
                         >
                           🔒
                         </span>
@@ -498,7 +498,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                 >
                   🧹 빈 라벨 정리 ({emptyCount}개)
                 </button>
-                {!counted && <span className="text-slate-400 font-bold">항목을 받는 중이라 아직 세지 않았습니다.</span>}
+                {!counted && <span className="text-slate-500 font-bold">항목을 받는 중이라 아직 세지 않았습니다.</span>}
               </div>
               {pruneList && (
                 <div data-label-prune-list className="border border-rose-200 bg-rose-50/50 rounded-xl p-3 space-y-2 text-xs">
@@ -592,7 +592,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
 
 function UpDown({ first, last, onMove, sameParent }: { first: boolean; last: boolean; onMove: (dir: 'up' | 'down') => void; sameParent?: boolean }) {
   const where = sameParent ? ' (같은 상위 안에서)' : '';
-  const cls = (off: boolean) => `text-xs px-1 rounded leading-none ${off ? 'text-slate-200' : 'text-slate-400 hover:text-slate-700 cursor-pointer'}`;
+  const cls = (off: boolean) => `text-xs px-1 rounded leading-none ${off ? 'text-slate-200' : 'text-slate-500 hover:text-slate-700 cursor-pointer'}`;
   return (
     <div className="flex flex-col gap-0.5">
       <button type="button" data-label-up disabled={first} onClick={() => onMove('up')} title={`위로${where}`} className={cls(first)}>
@@ -632,7 +632,7 @@ function DeleteButton({ noun, name, onDelete }: { noun: string; name: string; on
       data-label-delete
       onClick={onDelete}
       title={`${noun} 라벨 '${name}' 지우기 (저장할 때 휴지통으로)`}
-      className="text-slate-400 hover:text-red-500 font-black px-1.5 py-0.5 rounded transition-colors cursor-pointer shrink-0"
+      className="text-slate-500 hover:text-red-500 font-black px-1.5 py-0.5 rounded transition-colors cursor-pointer shrink-0"
     >
       ✕
     </button>

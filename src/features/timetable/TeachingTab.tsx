@@ -109,7 +109,7 @@ export default function TeachingTab({ grids }: { grids: readonly SlotGrid[] }) {
           );
         })}
       </div>
-      <p className="text-xs text-slate-400">유형을 바꿔도 적어 둔 자료는 그대로입니다. 보이는 모양만 달라집니다. PC·휴대폰이 같은 유형을 씁니다.</p>
+      <p className="text-xs text-slate-500">유형을 바꿔도 적어 둔 자료는 그대로입니다. 보이는 모양만 달라집니다. PC·휴대폰이 같은 유형을 씁니다.</p>
 
       {preset !== 'homeroom' && (
         <div className="space-y-1.5" data-teaching-subjects>
@@ -135,7 +135,7 @@ export default function TeachingTab({ grids }: { grids: readonly SlotGrid[] }) {
               className="w-28 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:border-primary"
             />
           </div>
-          <p className="text-xs text-slate-400">쉼표나 Enter로 더합니다. 시간표 칸을 채울 때 ▼ 목록에 먼저 보여 줍니다.</p>
+          <p className="text-xs text-slate-500">쉼표나 Enter로 더합니다. 시간표 칸을 채울 때 ▼ 목록에 먼저 보여 줍니다.</p>
         </div>
       )}
 
@@ -163,7 +163,7 @@ export default function TeachingTab({ grids }: { grids: readonly SlotGrid[] }) {
               className="w-36 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:border-primary"
             />
           </div>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-slate-500">
             시간표·수업 칸에 적힌 반은 저절로 들어갑니다. 학년 초처럼 시간표가 없을 때 적어 두면 수업 칸 ▼에 나옵니다. <code>5-1~5-6</code>처럼 범위도 됩니다.
           </p>
         </div>
@@ -196,7 +196,7 @@ export default function TeachingTab({ grids }: { grids: readonly SlotGrid[] }) {
               );
             })}
           </div>
-          <p className="text-xs text-slate-400">고르지 않은 반은 반 차례대로 색이 정해집니다.</p>
+          <p className="text-xs text-slate-500">고르지 않은 반은 반 차례대로 색이 정해집니다.</p>
         </div>
       )}
 
@@ -224,7 +224,7 @@ export default function TeachingTab({ grids }: { grids: readonly SlotGrid[] }) {
               className="w-28 px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 focus:outline-none focus:border-primary"
             />
           </div>
-          <p className="text-xs text-slate-400">출석부·알림장이 담임반으로 열립니다. 명렬표(학급 화면)의 반도 곧 여기에 나옵니다.</p>
+          <p className="text-xs text-slate-500">출석부·알림장이 담임반으로 열립니다. 명렬표(학급 화면)의 반도 곧 여기에 나옵니다.</p>
         </div>
       )}
     </div>

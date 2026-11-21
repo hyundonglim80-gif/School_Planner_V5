@@ -25,9 +25,9 @@ export default function SeatDrawBox({ shown, rolling, status, draw, nameFor, onP
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex-1 min-w-[10rem] h-14 rounded-xl bg-white border border-amber-200 flex items-center justify-center gap-2 px-3" aria-live="polite" data-draw-result={rolling ? '' : (shown ?? '')}>
           {shown === null ? (
-            <span className="text-slate-400 font-bold">누가 발표할까요?</span>
+            <span className="text-slate-500 font-bold">누가 발표할까요?</span>
           ) : (
-            <span className={`text-xl font-black truncate ${rolling ? 'text-slate-400' : 'text-slate-900'}`}>{nameFor(shown)}</span>
+            <span className={`text-xl font-black truncate ${rolling ? 'text-slate-500' : 'text-slate-900'}`}>{nameFor(shown)}</span>
           )}
         </div>
         <button
@@ -57,7 +57,7 @@ export default function SeatDrawBox({ shown, rolling, status, draw, nameFor, onP
       </div>
       {visiblePicked.length > 0 && (
         <div className="flex flex-wrap items-center gap-1" data-draw-picked={visiblePicked.length}>
-          <span className="text-2xs font-black text-slate-400 mr-1">뽑힌 차례</span>
+          <span className="text-2xs font-black text-slate-500 mr-1">뽑힌 차례</span>
           {visiblePicked.map((n, i) => (
             <span
               key={n}

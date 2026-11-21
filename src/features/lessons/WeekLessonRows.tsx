@@ -29,7 +29,7 @@ const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUnit, classColorOf, marks, onOpen, onLinks, loading = false }: Props) {
   return (
     <div className="mb-4" data-week-lessons={date}>
-      <div className="text-xs font-extrabold text-slate-400 mb-2 flex items-center gap-1">
+      <div className="text-xs font-extrabold text-slate-500 mb-2 flex items-center gap-1">
         <span>수업</span>
       </div>
       {loading ? (
@@ -37,7 +37,7 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
           data-week-lessons-loading
           // 줄 높이 h-7(1.75rem) × 줄 수 + 줄 사이 space-y-1(0.25rem)
           style={{ height: `${rows * 1.75 + Math.max(rows - 1, 0) * 0.25}rem` }}
-          className="flex items-center justify-center rounded-lg border border-dashed border-slate-200 text-xs text-slate-400"
+          className="flex items-center justify-center rounded-lg border border-dashed border-slate-200 text-xs text-slate-500"
         >
           수업을 받는 중…
         </div>

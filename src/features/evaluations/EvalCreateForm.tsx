@@ -322,7 +322,7 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
                     </option>
                   ))}
                 </select>
-                {hub.groupSets.length === 0 && <p className="text-2xs text-slate-400 mt-1">학급 화면 → 🪑 자리표 → 👥 모둠에서 나눠 저장한 모둠을 여기서 불러 씁니다.</p>}
+                {hub.groupSets.length === 0 && <p className="text-2xs text-slate-500 mt-1">학급 화면 → 🪑 자리표 → 👥 모둠에서 나눠 저장한 모둠을 여기서 불러 씁니다.</p>}
               </div>
               {chosenSet ? (
                 <p className="text-2xs text-slate-500 leading-relaxed" data-eval-group-preview>

@@ -552,14 +552,14 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
     <div className="@container bg-slate-50 border border-slate-200 rounded-xl [[data-note-table]+&]:mt-10" data-note-table={table.id}>
       <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-slate-200">
         <span className="text-xs font-bold text-slate-600" title="칸을 누르면 이 자리에 표 단추 줄이 섭니다">
-          ▦ {title || '표'} <span className="font-normal text-slate-400">· {nRows}행 × {nCols}열</span>
+          ▦ {title || '표'} <span className="font-normal text-slate-500">· {nRows}행 × {nCols}열</span>
         </span>
         {onRemove && (
           <button
             type="button"
             data-note-table-remove={table.id}
             onClick={onRemove}
-            className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+            className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
             title="표 삭제"
             aria-label={`${title || '표'} 삭제`}
           >
@@ -581,7 +581,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
               <span data-table-name={name} className="mr-1 inline-flex items-center gap-1.5 min-w-0 max-w-full text-2xs text-slate-600">
                 <b className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 tabular-nums">{name}</b>
                 {many ? (
-                  <span className="text-slate-400">
+                  <span className="text-slate-500">
                     {rowCount}행 × {colCount}열
                   </span>
                 ) : activeValue ? (
@@ -628,7 +628,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                 {menu === 'sort' && (
                   <span role="menu" className={menuBox}>
                     <button type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runSort(false)} className={menuItem(false)} data-table-op="sort-asc">
-                      작은 것부터 <span className="font-normal text-slate-400">(가나다)</span>
+                      작은 것부터 <span className="font-normal text-slate-500">(가나다)</span>
                     </button>
                     <button type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runSort(true)} className={menuItem(false)} data-table-op="sort-desc">
                       큰 것부터
@@ -658,7 +658,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                   <span role="menu" className={menuBox}>
                     {AUTO_FNS.map((a) => (
                       <button key={a.op} type="button" role="menuitem" onMouseDown={keepFocus} onClick={() => runAutoSum(a.fn)} className={menuItem(false)} data-table-op={a.op}>
-                        {a.label} <span className="ml-auto pl-2 font-normal text-slate-400">{a.fn}</span>
+                        {a.label} <span className="ml-auto pl-2 font-normal text-slate-500">{a.fn}</span>
                       </button>
                     ))}
                   </span>

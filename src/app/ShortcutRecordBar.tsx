@@ -28,7 +28,7 @@ export default function ShortcutRecordBar() {
     body = (
       <>
         <span className="text-xs text-slate-600 min-w-0">
-          단축키로 쓸 <strong className="text-slate-800">메뉴·단추를 누르세요</strong> <span className="text-slate-400">(점선 = 기능 · 그 밖의 단추는 키가 대신 누릅니다)</span>
+          단축키로 쓸 <strong className="text-slate-800">메뉴·단추를 누르세요</strong> <span className="text-slate-500">(점선 = 기능 · 그 밖의 단추는 키가 대신 누릅니다)</span>
         </span>
         {picked && (
           <span data-shortcut-record-picked={picked} className="px-2 py-1 rounded-lg bg-violet-50 border border-violet-200 text-violet-800 text-xs font-bold truncate max-w-56" title={label}>
@@ -52,7 +52,7 @@ export default function ShortcutRecordBar() {
     body = (
       <>
         <span className="text-xs text-slate-600 min-w-0">
-          <strong className="text-slate-800">'{label}'</strong>에 줄 키를 누르세요 <span className="text-slate-400">(지금: {formatAnyBinding(picked, current)})</span>
+          <strong className="text-slate-800">'{label}'</strong>에 줄 키를 누르세요 <span className="text-slate-500">(지금: {formatAnyBinding(picked, current)})</span>
         </span>
         <kbd data-shortcut-record-key className="min-w-20 px-2 py-1 text-center bg-white border border-slate-300 rounded-lg text-sm font-mono font-bold text-slate-800 shrink-0">
           {binding ? formatAnyBinding(picked, binding) : '…'}

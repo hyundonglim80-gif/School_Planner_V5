@@ -197,7 +197,7 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2 text-xs" data-seating-box="groups">
       {sets.length > 0 && (
         <div className="flex flex-wrap items-center gap-1" aria-label="저장한 모둠">
-          <span className="font-bold text-slate-400 mr-1">저장한 모둠</span>
+          <span className="font-bold text-slate-500 mr-1">저장한 모둠</span>
           {sets.map((s) => (
             <button
               key={s.id}
@@ -213,7 +213,7 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
         </div>
       )}
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="font-bold text-slate-400">새로 나누기</span>
+        <span className="font-bold text-slate-500">새로 나누기</span>
         <label className="flex items-center gap-1">
           <input
             type="number"
@@ -234,7 +234,7 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
         <button type="button" data-group-by-seat onClick={makeBySeat} className={btn} title="자리표에서 앞뒤 두 줄 × 짝씩 묶습니다 (모둠 수는 자리대로)">
           🪑 자리대로 (앞뒤 넷씩)
         </button>
-        {apart.length > 0 && <span className="text-slate-400">떨어뜨릴 학생 {apart.length}쌍은 다른 모둠으로</span>}
+        {apart.length > 0 && <span className="text-slate-500">떨어뜨릴 학생 {apart.length}쌍은 다른 모둠으로</span>}
       </div>
       {shown && (
         <div className="flex flex-col gap-2 pt-2 border-t border-slate-200" data-group-view={draft ? 'draft' : 'saved'}>
@@ -307,7 +307,7 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
                   <div className={`flex items-center gap-1 font-black ${color.text}`} data-group-head>
                     <span className={`w-2 h-2 rounded-full ${color.bar}`} aria-hidden />
                     {g.name}
-                    <span className="font-bold text-slate-400">{g.members.length}명</span>
+                    <span className="font-bold text-slate-500">{g.members.length}명</span>
                   </div>
                   <div className="flex flex-wrap gap-1">{g.members.map(memberChip)}</div>
                 </div>
@@ -316,11 +316,11 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
           </div>
           {unassigned.length > 0 && (
             <div className="flex flex-wrap items-center gap-1" data-group-unassigned>
-              <span className="text-2xs font-black text-slate-400 mr-1">모둠 없는 학생</span>
+              <span className="text-2xs font-black text-slate-500 mr-1">모둠 없는 학생</span>
               {unassigned.map(memberChip)}
             </div>
           )}
-          <div className="flex flex-wrap items-center gap-2 text-2xs text-slate-400">
+          <div className="flex flex-wrap items-center gap-2 text-2xs text-slate-500">
             <span>
               학생을 누른 뒤 다른 모둠의 학생을 누르면 서로 바꾸고, 모둠 이름을 누르면 그 모둠으로 옮깁니다.
               {draft ? '' : ' 저장한 모둠은 바로 저장됩니다.'}
@@ -333,7 +333,7 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
           </div>
         </div>
       )}
-      {!shown && sets.length === 0 && <p className="text-slate-400">저장한 모둠이 없습니다. 무작위나 자리대로 나눈 뒤 이름을 붙여 저장하면, 조사표 '조별 평가'를 만들 때 불러 씁니다.</p>}
+      {!shown && sets.length === 0 && <p className="text-slate-500">저장한 모둠이 없습니다. 무작위나 자리대로 나눈 뒤 이름을 붙여 저장하면, 조사표 '조별 평가'를 만들 때 불러 씁니다.</p>}
     </div>
   );
 }

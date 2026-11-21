@@ -36,8 +36,14 @@
    *
    * ⚠️ text-[11px] 처럼 px를 직접 쓰지 않는다. 단계가 바뀔 때 그 값만 남아
    * 옆 글자와 어긋난다. 규칙은 V4 lib/typeScale.ts - V5로 옮기면 domain/typeScale. */
-  --text-2xs: 0.625rem;    /* 10px - 달력 칸처럼 가장 밀집한 곳 */
+  --text-2xs: 0.6875rem;   /* 11px - 달력 칸처럼 가장 밀집한 곳 (P53-2 - 10px가 282곳이라 흐리고 작았다) */
   --text-2xs--line-height: 1.35;
+
+  /* 굵기 한 단계씩 낮춤 (P53-2 - 굵은 글씨가 1,059곳·보통·중간 55곳이라 다 굵어 강약이 없었다. 가변 글꼴 Pretendard라 사이 값도 그린다).
+   * bold 700 → 600 · extrabold 800 → 700 · black 900 → 800(과목 '굵고 크게'는 그대로 가장 굵다). semibold 600·medium 500은 그대로 */
+  --font-weight-bold: 600;
+  --font-weight-extrabold: 700;
+  --font-weight-black: 800;
 
   /* 여백과 간격의 한 칸. Tailwind 기본은 0.25rem(4px)인데, 글자가 작아진
    * 만큼 함께 조인다. p-3이 12px가 아니라 9.6px가 된다. 여백을 일일이 고치는
@@ -69,7 +75,7 @@
   [data-fixed-font] {
     font-size: calc(1rem / var(--root-scale));
     --spacing: calc(0.2rem / var(--root-scale));
-    --text-2xs: calc(0.625rem / var(--root-scale));
+    --text-2xs: calc(0.6875rem / var(--root-scale));
     --text-xs: calc(0.75rem / var(--root-scale));
     --text-sm: calc(0.875rem / var(--root-scale));
     --text-base: calc(1rem / var(--root-scale));

@@ -155,7 +155,7 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
                 className={`px-2 sm:px-3 py-2 -mb-px border-b-2 text-xs font-bold whitespace-nowrap cursor-pointer ${active ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
               >
                 {t.label}
-                <span data-trash-count={count(t.key)} className={`ml-1 px-1.5 rounded-full text-2xs ${active ? 'bg-primary/10' : 'bg-slate-100 text-slate-400'}`}>
+                <span data-trash-count={count(t.key)} className={`ml-1 px-1.5 rounded-full text-2xs ${active ? 'bg-primary/10' : 'bg-slate-100 text-slate-500'}`}>
                   {count(t.key)}
                 </span>
               </button>
@@ -220,7 +220,7 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
         )}
 
         {visible.length === 0 ? (
-          <div data-trash-empty-note className="text-center py-12 text-slate-400 flex flex-col items-center gap-2">
+          <div data-trash-empty-note className="text-center py-12 text-slate-500 flex flex-col items-center gap-2">
             <span className="text-4xl opacity-50">🍃</span>
             <p className="text-xs">{tab === 'all' ? '휴지통이 비어 있습니다.' : `지운 ${tabLabel} 항목이 없습니다.`}</p>
           </div>

@@ -325,9 +325,9 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
   else if (msgs.length === 0)
     body =
       status === 'loading' ? (
-        <p className="py-8 text-center text-xs text-slate-400">불러오는 중…</p>
+        <p className="py-8 text-center text-xs text-slate-500">불러오는 중…</p>
       ) : status === 'offline' ? null : (
-        <p data-chat-empty={status === 'new' ? 'new' : 'room'} className="py-8 text-center text-xs text-slate-400">
+        <p data-chat-empty={status === 'new' ? 'new' : 'room'} className="py-8 text-center text-xs text-slate-500">
           {status === 'new' ? '첫 글을 보내 대화를 시작해 보세요.' : '아직 글이 없습니다. 첫 글을 보내 보세요.'}
         </p>
       );
@@ -340,7 +340,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
           return (
             <Fragment key={msg.id}>
               {day && (
-                <li data-chat-day className="my-3 text-center text-2xs text-slate-400">
+                <li data-chat-day className="my-3 text-center text-2xs text-slate-500">
                   <span className="rounded-full bg-slate-100 px-2.5 py-0.5">{day}</span>
                 </li>
               )}
@@ -376,7 +376,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
         <span data-chat-room-title className="min-w-0 truncate text-sm font-black text-slate-800">
           {title}
         </span>
-        {sub && <span className="min-w-0 shrink truncate text-2xs text-slate-400">{sub}</span>}
+        {sub && <span className="min-w-0 shrink truncate text-2xs text-slate-500">{sub}</span>}
         {room && canWrite && (
           <button
             type="button"

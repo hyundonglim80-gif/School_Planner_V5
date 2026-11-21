@@ -122,12 +122,12 @@ export default function MonthDaySheet({ date, events, gcal = [], hiddenCount, sh
           </ul>
         )}
         {showEvents && events.length === 0 && gcal.length === 0 && !hasLessons(lessons) && (
-          <p {...(waiting ? { 'data-sheet-waiting': '' } : {})} className="text-xs text-slate-400 py-2 text-center">
+          <p {...(waiting ? { 'data-sheet-waiting': '' } : {})} className="text-xs text-slate-500 py-2 text-center">
             {waiting ? '일정을 받는 중…' : '달력에 올린 일정이 없습니다.'}
           </p>
         )}
         {showEvents && hiddenCount > 0 && (
-          <button type="button" data-sheet-hidden={hiddenCount} onClick={onGoDay} className="text-left text-xs text-slate-400 cursor-pointer">
+          <button type="button" data-sheet-hidden={hiddenCount} onClick={onGoDay} className="text-left text-xs text-slate-500 cursor-pointer">
             달력에 올리지 않은 일정 {hiddenCount}개 - 하루 화면에서 봅니다 →
           </button>
         )}

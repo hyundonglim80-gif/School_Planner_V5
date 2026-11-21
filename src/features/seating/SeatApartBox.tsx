@@ -38,7 +38,7 @@ export default function SeatApartBox({ sid, classId, stored, apart, activeIds, n
     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2 text-xs" data-seating-box="apart">
       <p className="text-slate-500">섞을 때 앞뒤옆(대각선 포함)으로 붙여 앉히지 않습니다. 모둠을 무작위로 나눌 때도 같은 모둠에 넣지 않습니다. 이 학급의 자리표 모두에 쓰입니다.</p>
       {apart.length === 0 ? (
-        <p className="text-slate-400">아직 없습니다.</p>
+        <p className="text-slate-500">아직 없습니다.</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
           {apart.map((key) => {
@@ -53,7 +53,7 @@ export default function SeatApartBox({ sid, classId, stored, apart, activeIds, n
                   onClick={() => write(apart.filter((k) => k !== key))}
                   aria-label={`${nameOf(pair[0])} ↔ ${nameOf(pair[1])} 빼기`}
                   title="빼기"
-                  className="w-5 h-5 rounded-full hover:bg-slate-100 text-slate-400 cursor-pointer"
+                  className="w-5 h-5 rounded-full hover:bg-slate-100 text-slate-500 cursor-pointer"
                 >
                   ✕
                 </button>

@@ -589,7 +589,7 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
           onContextMenu={(e) => e.preventDefault()}
         />
         {count === 0 && (
-          <div data-pen-hint className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm leading-relaxed pointer-events-none select-none text-slate-400">
+          <div data-pen-hint className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm leading-relaxed pointer-events-none select-none text-slate-500">
             펜·손가락·마우스로 쓰세요.
             <br />
             펜으로 쓰면 손바닥은 그리지 않습니다 · 펜 옆 단추를 누른 채 그으면 지웁니다.

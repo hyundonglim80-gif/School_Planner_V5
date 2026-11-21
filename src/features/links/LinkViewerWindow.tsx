@@ -131,7 +131,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
             edit: () => openLessonPanel({ sid, date: lesson.date, n: lesson.period }),
           })}
           <div data-link-text className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs font-medium whitespace-pre-wrap break-words leading-relaxed min-h-[36px] text-slate-800">
-            {c?.note ? <FormattedText text={c.note} /> : <span className="text-slate-400">(비고(준비물) 없음)</span>}
+            {c?.note ? <FormattedText text={c.note} /> : <span className="text-slate-500">(비고(준비물) 없음)</span>}
           </div>
         </div>
       );
@@ -141,7 +141,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
       return (
         <div key={linkId} data-link-row={linkId} data-link-kind="missing" className="bg-white border border-dashed border-slate-300 rounded-xl p-3.5">
           {header('❔', t ? '휴지통에 있는 항목' : status === 'live' ? '찾을 수 없는 항목' : '불러오는 중…', linkId, {})}
-          <p className="text-xs text-slate-400">{t ? '휴지통에서 되살리면 다시 보입니다.' : '지워졌거나 다른 공간의 항목입니다. 연결을 끊어도 됩니다.'}</p>
+          <p className="text-xs text-slate-500">{t ? '휴지통에서 되살리면 다시 보입니다.' : '지워졌거나 다른 공간의 항목입니다. 연결을 끊어도 됩니다.'}</p>
         </div>
       );
     }
@@ -157,10 +157,10 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
         {header(LINK_KIND_ICON[kind], title, linkId, { move: () => goTo(t.date ?? null), edit: () => edit(t) })}
         {/* 글 없이 표만 있으면 글 칸은 비운다 */}
         {(t.text || tables.length === 0) && (
-          <div data-link-text className={`p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs font-medium whitespace-pre-wrap break-words leading-relaxed min-h-[36px] ${t.done && kind !== 'event' ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+          <div data-link-text className={`p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs font-medium whitespace-pre-wrap break-words leading-relaxed min-h-[36px] ${t.done && kind !== 'event' ? 'line-through text-slate-500' : 'text-slate-800'}`}>
             {/* 끝낸 일정은 줄긋기 대신 ✓ (P10-1) - 메모의 완료는 그대로 */}
             {t.done && kind === 'event' && <DoneMark />}
-            {t.text ? <FormattedText text={t.text} /> : <span className="text-slate-400">(내용 없음)</span>}
+            {t.text ? <FormattedText text={t.text} /> : <span className="text-slate-500">(내용 없음)</span>}
           </div>
         )}
         {/* 표는 보기만, 다 펼친다 (스크롤은 창 하나) */}
@@ -227,7 +227,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
           </p>
         )}
         {links.length === 0 ? (
-          <div className="text-center py-12 text-slate-400 flex flex-col items-center gap-2" data-link-viewer-empty>
+          <div className="text-center py-12 text-slate-500 flex flex-col items-center gap-2" data-link-viewer-empty>
             <span className="text-3xl opacity-50">📂</span>
             <p className="text-xs font-medium">{source || lessonEnd || progressEnd ? '연결된 항목이 없습니다.' : status === 'live' ? '항목을 찾지 못했습니다.' : '불러오는 중…'}</p>
           </div>

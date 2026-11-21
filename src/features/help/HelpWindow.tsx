@@ -302,7 +302,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
               ))}
             </div>
           ) : (
-            <p data-help-shortcut-tabs-empty className="text-slate-400">
+            <p data-help-shortcut-tabs-empty className="text-slate-500">
               없음 - 환경설정 단축키 탭의 ⌨️ 단축키 설정으로 창 안의 탭(예: 환경설정 → 알림)을 눌러 만듭니다.
             </p>
           )}
@@ -431,7 +431,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
       <span className="text-base shrink-0">{topic.icon}</span>
       <span className="min-w-0 flex-1">
         <span className="block font-bold text-slate-800 group-hover:text-primary truncate">{topic.title}</span>
-        <span className="block text-slate-400 truncate">
+        <span className="block text-slate-500 truncate">
           {categoryTitle ? `${categoryTitle} · ` : ''}
           {topic.summary}
         </span>
@@ -458,7 +458,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
             <span>{topic.icon}</span>
             <span>{topic.title}</span>
           </h3>
-          <p className="text-slate-400 mt-0.5">{topic.summary}</p>
+          <p className="text-slate-500 mt-0.5">{topic.summary}</p>
         </div>
 
         <section aria-labelledby="help-detail-heading" className="space-y-3" data-help-blocks>
@@ -519,7 +519,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
               onClick={() => openTopic(prev.id)}
               className="flex-1 min-w-0 text-left px-3 py-2 rounded-xl border border-slate-200 hover:border-primary/40 hover:bg-blue-50/50 transition-colors cursor-pointer"
             >
-              <span className="block text-slate-400">‹ 이전</span>
+              <span className="block text-slate-500">‹ 이전</span>
               <span className="block font-bold text-slate-700 truncate">{prev.title}</span>
             </button>
           ) : (
@@ -532,7 +532,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
               onClick={() => openTopic(next.id)}
               className="flex-1 min-w-0 text-right px-3 py-2 rounded-xl border border-slate-200 hover:border-primary/40 hover:bg-blue-50/50 transition-colors cursor-pointer"
             >
-              <span className="block text-slate-400">다음 ›</span>
+              <span className="block text-slate-500">다음 ›</span>
               <span className="block font-bold text-slate-700 truncate">{next.title}</span>
             </button>
           ) : (
@@ -558,7 +558,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
           type="button"
           data-help-tree-all
           onClick={() => setExpanded(allExpanded ? new Set() : new Set(HELP_CATEGORIES.map((c) => c.id)))}
-          className="text-2xs font-bold text-slate-400 hover:text-primary cursor-pointer"
+          className="text-2xs font-bold text-slate-500 hover:text-primary cursor-pointer"
         >
           {allExpanded ? '모두 접기' : '모두 펴기'}
         </button>
@@ -591,7 +591,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                   aria-expanded={open}
                   aria-label={`${category.title} ${open ? '접기' : '펴기'}`}
                   title={`${category.title} ${open ? '접기' : '펴기'}`}
-                  className="w-4 h-6 shrink-0 flex items-center justify-center rounded text-slate-400 hover:text-primary hover:bg-white cursor-pointer"
+                  className="w-4 h-6 shrink-0 flex items-center justify-center rounded text-slate-500 hover:text-primary hover:bg-white cursor-pointer"
                 >
                   {open ? '▾' : '▸'}
                 </button>
@@ -605,7 +605,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                 >
                   <span className="shrink-0">{category.icon}</span>
                   <span className="min-w-0">{category.title}</span>
-                  <span className="ml-auto pl-1 shrink-0 text-2xs font-bold text-slate-400 leading-5">{category.topics.length}</span>
+                  <span className="ml-auto pl-1 shrink-0 text-2xs font-bold text-slate-500 leading-5">{category.topics.length}</span>
                 </button>
               </div>
               {open && (
@@ -640,7 +640,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
   // ── 위치 표시 (사용 설명서 › 분류 › 기능) ─────────────────────────────
   function breadcrumb(category: HelpCategory, topic?: HelpTopic) {
     return (
-      <nav aria-label="설명서 위치" data-help-crumb className="flex items-center gap-1.5 flex-wrap text-slate-400">
+      <nav aria-label="설명서 위치" data-help-crumb className="flex items-center gap-1.5 flex-wrap text-slate-500">
         <button
           type="button"
           data-help-back
@@ -695,11 +695,11 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
       {terms.length > 0 ? (
         matches.length > 0 ? (
           <div className="space-y-1.5" data-help-results={matches.length}>
-            <div className="text-slate-400">{matches.length}개 항목</div>
+            <div className="text-slate-500">{matches.length}개 항목</div>
             {matches.map((topic) => topicButton(topic, topic.category.title))}
           </div>
         ) : (
-          <p className="text-center text-slate-400 py-8" data-help-results={0}>
+          <p className="text-center text-slate-500 py-8" data-help-results={0}>
             '{query.trim()}'에 대한 설명을 찾지 못했습니다.
           </p>
         )
@@ -731,7 +731,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-1.5">
                       <span className="font-extrabold text-sm text-slate-800 group-hover:text-primary">{category.title}</span>
-                      <span className="text-2xs font-bold text-slate-400">{category.topics.length}개 기능</span>
+                      <span className="text-2xs font-bold text-slate-500">{category.topics.length}개 기능</span>
                     </span>
                     <span className="block text-slate-500 mt-0.5">{category.summary}</span>
                   </span>
@@ -754,7 +754,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
           <span>{category.icon}</span>
           <span>{category.title}</span>
         </h3>
-        <p className="text-slate-400 mt-0.5">{category.summary}</p>
+        <p className="text-slate-500 mt-0.5">{category.summary}</p>
       </div>
       <div className="space-y-1.5">{category.topics.map((topic) => topicButton(topic))}</div>
     </div>

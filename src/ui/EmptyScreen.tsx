@@ -3,7 +3,7 @@ export default function EmptyScreen({ scope, title, session }: { scope: string; 
   return (
     <section data-screen={scope} className="rounded-2xl border border-dashed border-slate-300 bg-white/60 p-8 text-center">
       <h2 className="text-base font-black text-slate-700">{title}</h2>
-      <p className="mt-1 text-xs text-slate-400">{session}에서 채웁니다.</p>
+      <p className="mt-1 text-xs text-slate-500">{session}에서 채웁니다.</p>
     </section>
   );
 }

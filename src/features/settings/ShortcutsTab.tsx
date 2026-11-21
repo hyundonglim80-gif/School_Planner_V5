@@ -122,7 +122,7 @@ function ShortcutRow({
       className={`flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl border p-2.5 ${conflicted ? 'bg-red-50 border-red-200' : 'bg-slate-50 border-slate-100'}`}
     >
       <span
-        className={`text-sm font-bold min-w-0 flex-1 ${ready ? 'text-slate-700' : 'text-slate-400'}`}
+        className={`text-sm font-bold min-w-0 flex-1 ${ready ? 'text-slate-700' : 'text-slate-500'}`}
         title={ready ? undefined : '아직 V5로 옮기지 않은 기능입니다. 키는 남겨 둡니다.'}
       >
         {label}
@@ -135,7 +135,7 @@ function ShortcutRow({
         {binding.key ? formatAnyBinding(id, binding) : '없음'}
       </kbd>
       {isDefault && (
-        <span data-shortcut-default className="text-2xs font-bold text-slate-400 shrink-0">
+        <span data-shortcut-default className="text-2xs font-bold text-slate-500 shrink-0">
           기본
         </span>
       )}
@@ -305,7 +305,7 @@ export default function ShortcutsTab({
 
       <div data-shortcut-list>
         {groups.length === 0 && (
-          <p data-shortcut-empty className="px-5 py-4 text-xs text-slate-400">
+          <p data-shortcut-empty className="px-5 py-4 text-xs text-slate-500">
             키가 걸린 단축키가 없습니다.
           </p>
         )}
@@ -332,7 +332,7 @@ export default function ShortcutsTab({
       {/* 바꾸지 않는 것들. 목록에서 빠지면 "없는 기능"으로 보이므로 까닭과 함께 보여 준다 */}
       <div data-shortcut-fixed-list className="px-5 py-4">
         <h3 className="text-sm font-black text-slate-800 mb-0.5">고정 단축키</h3>
-        <p className="text-xs text-slate-400 mb-2">아래는 바꿀 수 없습니다. 다른 프로그램에서도 같은 뜻으로 쓰는 키라 그대로 둡니다.</p>
+        <p className="text-xs text-slate-500 mb-2">아래는 바꿀 수 없습니다. 다른 프로그램에서도 같은 뜻으로 쓰는 키라 그대로 둡니다.</p>
         <div className="space-y-2">
           {FIXED_SHORTCUTS.map((fixed) => (
             <div key={fixed.label} data-shortcut-fixed={fixed.id ?? fixed.keys} className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5">
@@ -340,7 +340,7 @@ export default function ShortcutsTab({
                 <span className="text-sm font-bold text-slate-500 min-w-0">{fixed.label}</span>
                 <kbd className="px-2 py-1 shrink-0 bg-white border border-slate-200 rounded-lg text-xs font-mono font-bold text-slate-500">{fixed.keys}</kbd>
               </div>
-              <p className="text-xs text-slate-400 mt-1">{fixed.why}</p>
+              <p className="text-xs text-slate-500 mt-1">{fixed.why}</p>
             </div>
           ))}
         </div>

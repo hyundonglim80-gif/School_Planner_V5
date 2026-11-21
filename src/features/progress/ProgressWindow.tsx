@@ -566,7 +566,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
       }
     >
       {!draft ? (
-        <div className="py-10 text-center text-xs text-slate-400">진도를 불러오는 중...</div>
+        <div className="py-10 text-center text-xs text-slate-500">진도를 불러오는 중...</div>
       ) : (
         <div className="space-y-4" data-progress-window={draft.id}>
           {/* 진도 목록 */}
@@ -667,11 +667,11 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 pt-1">시간표에 '5-2 과학'처럼 반을 적거나 ⏰ 시간표 창 교사 유형에서 가르치는 반을 적으세요.</p>
+                  <p className="text-xs text-slate-500 pt-1">시간표에 '5-2 과학'처럼 반을 적거나 ⏰ 시간표 창 교사 유형에서 가르치는 반을 적으세요.</p>
                 )}
               </div>
               {draft.subject.trim() && (
-                <p className="pl-16 text-xs text-slate-400" data-course-hint>
+                <p className="pl-16 text-xs text-slate-500" data-course-hint>
                   {draftClasses.length > 0 ? (
                     <>
                       {courseTitle({ subject: draft.subject, classes: draftClasses })} - 반마다 수업 칸의 학년-반 과목 '{formatSlot(draftClasses[0], draft.subject)}'을(를) 따로 셉니다.
@@ -718,7 +718,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                   })}
                 </div>
               ) : (
-                <p className="pl-16 text-xs text-slate-400">⏰ 시간표 창에서 시간표를 만들면 과목을 여기서 고를 수 있습니다.</p>
+                <p className="pl-16 text-xs text-slate-500">⏰ 시간표 창에서 시간표를 만들면 과목을 여기서 고를 수 있습니다.</p>
               )}
             </section>
           )}
@@ -763,7 +763,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                     {periods.length > lessons.length ? `(${lessons.length}행 · ${periods.length}차시)` : `(${periods.length})`}
                   </span>
                 )}
-                <span className="ml-1.5 font-normal text-slate-400">{orderNo ? '한 행 = 한 차시' : '차시 칸 = 그 내용을 몇 차시 동안 (비우면 1)'}</span>
+                <span className="ml-1.5 font-normal text-slate-500">{orderNo ? '한 행 = 한 차시' : '차시 칸 = 그 내용을 몇 차시 동안 (비우면 1)'}</span>
               </h3>
               <div className="flex items-center gap-1">
                 <button
@@ -851,7 +851,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           type="button"
                           data-progress-row-link={r}
                           onClick={() => void linkRow(r)}
-                          className="text-slate-400 hover:text-yellow-700 text-xs cursor-pointer"
+                          className="text-slate-500 hover:text-yellow-700 text-xs cursor-pointer"
                           title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다 (고치던 것이 있으면 먼저 저장)"
                           aria-label={`${r + 1}번째 행에 메모 잇기`}
                         >
@@ -876,7 +876,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           data-progress-row-up={r}
                           disabled={r === 0}
                           onClick={() => moveRowTo(r, r - 1)}
-                          className="text-slate-400 hover:text-primary disabled:opacity-30 disabled:cursor-default text-2xs cursor-pointer"
+                          className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:cursor-default text-2xs cursor-pointer"
                           title="한 칸 위로"
                           aria-label={`${r + 1}번째 행 위로`}
                         >
@@ -887,7 +887,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           data-progress-row-down={r}
                           disabled={r === draft.lessons.length - 1}
                           onClick={() => moveRowTo(r, r + 1)}
-                          className="text-slate-400 hover:text-primary disabled:opacity-30 disabled:cursor-default text-2xs cursor-pointer"
+                          className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:cursor-default text-2xs cursor-pointer"
                           title="한 칸 아래로"
                           aria-label={`${r + 1}번째 행 아래로`}
                         >
@@ -897,7 +897,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           type="button"
                           data-progress-row-copy={r}
                           onClick={() => copyRow(r)}
-                          className="text-slate-400 hover:text-primary text-xs cursor-pointer"
+                          className="text-slate-500 hover:text-primary text-xs cursor-pointer"
                           title="이 행을 복사해 바로 아래에 넣기"
                           aria-label={`${r + 1}번째 행 복사`}
                         >
@@ -978,7 +978,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                                 toggleBump(r.next!.date, r.next!.period, true, `${r.cls} `);
                               }}
                               title={`${r.cls}의 다음 수업(${shortDateLabel(r.next.date)} ${r.next.period}교시)을 밉니다 - 그 반 뒤 차시가 한 칸씩 밀립니다`}
-                              className="px-1.5 py-0.5 rounded border text-xs font-bold text-slate-400 border-slate-200 hover:text-slate-600 hover:bg-slate-50 whitespace-nowrap cursor-pointer"
+                              className="px-1.5 py-0.5 rounded border text-xs font-bold text-slate-500 border-slate-200 hover:text-slate-600 hover:bg-slate-50 whitespace-nowrap cursor-pointer"
                             >
                               다음 수업 밀기
                             </button>
@@ -1013,7 +1013,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
               {summary}
             </p>
             {until && (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 같은 '{key}' 진도가 {shortDateLabel(until)}부터 이어받습니다 - 이 진도는 그 전날까지 셉니다.
               </p>
             )}
@@ -1029,7 +1029,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                       key={`${s.date}#${s.period}`}
                       data-slot={`${s.date}#${s.period}`}
                       data-upcoming={s === nextRow ? 'true' : undefined}
-                      className={`flex items-center gap-2 px-2.5 py-1.5 text-xs ${s.date === today ? 'bg-amber-50' : ''} ${past ? 'text-slate-400' : 'text-slate-700'}`}
+                      className={`flex items-center gap-2 px-2.5 py-1.5 text-xs ${s.date === today ? 'bg-amber-50' : ''} ${past ? 'text-slate-500' : 'text-slate-700'}`}
                     >
                       <span className={`shrink-0 min-w-[6.75rem] whitespace-nowrap tabular-nums ${upcoming ? 'font-bold' : ''}`}>
                         {shortDateLabel(s.date)} {s.period}교시
@@ -1050,7 +1050,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           data-slot-bump={`${s.date}#${s.period}`}
                           onClick={() => toggleBump(s.date, s.period, !s.bumped)}
                           className={`shrink-0 px-1.5 py-0.5 rounded border text-xs font-bold cursor-pointer ${
-                            s.bumped ? 'text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100' : 'text-slate-400 border-slate-200 hover:text-slate-600 hover:bg-slate-50'
+                            s.bumped ? 'text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100' : 'text-slate-500 border-slate-200 hover:text-slate-600 hover:bg-slate-50'
                           }`}
                           title={s.bumped ? '밀기를 되돌립니다 - 뒤 차시가 한 칸씩 당겨집니다' : '이 교시에 수업을 못 했으면 밉니다 - 뒤 차시가 한 칸씩 밀립니다'}
                         >
@@ -1062,7 +1062,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                 })}
               </ol>
             )}
-            {!savedDoc && rows.length > 0 && lessons.length > 0 && <p className="text-xs text-slate-400">저장하면 교시마다 밀기·되돌리기를 할 수 있습니다.</p>}
+            {!savedDoc && rows.length > 0 && lessons.length > 0 && <p className="text-xs text-slate-500">저장하면 교시마다 밀기·되돌리기를 할 수 있습니다.</p>}
           </section>
         </div>
       )}

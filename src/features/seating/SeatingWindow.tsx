@@ -338,7 +338,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
           <span className="text-2xs text-slate-300 font-bold">빈 자리</span>
         ) : (
           <>
-            <span className={`text-2xs font-black leading-none ${st?.gender === 'M' ? 'text-sky-600' : st?.gender === 'F' ? 'text-rose-500' : 'text-slate-400'}`}>
+            <span className={`text-2xs font-black leading-none ${st?.gender === 'M' ? 'text-sky-600' : st?.gender === 'F' ? 'text-rose-500' : 'text-slate-500'}`}>
               {st?.num ?? '?'}
               {att && (
                 <span className="ml-1 text-rose-600" data-seat-att={att.kind}>
@@ -437,7 +437,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
   return (
     <ModalShell isOpen onClose={askClose} raise={raise} width="2xl" title="🪑 자리표" footer={<ModalCloseButton onClose={askClose} />}>
       {classes.length === 0 && !waiting ? (
-        <p className="text-center text-slate-400 py-8 text-sm" data-seating-no-class>
+        <p className="text-center text-slate-500 py-8 text-sm" data-seating-no-class>
           명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.
         </p>
       ) : (
@@ -525,7 +525,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
           />
 
           {waiting || !classId ? (
-            <p className="text-center text-slate-400 py-8 text-xs" data-seating-waiting>
+            <p className="text-center text-slate-500 py-8 text-xs" data-seating-waiting>
               불러오는 중…
             </p>
           ) : !chart ? (
@@ -562,7 +562,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                 </button>
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
-                <span className="font-bold text-slate-400">섞을 때</span>
+                <span className="font-bold text-slate-500">섞을 때</span>
                 <label className="flex items-center gap-1 cursor-pointer">
                   <input type="checkbox" data-shuffle-opt="avoidPast" checked={shuffleOpts.avoidPast} onChange={(e) => setShuffleOpt('avoidPast', e.target.checked)} />
                   지난 짝 피하기
@@ -571,7 +571,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                   <input type="checkbox" data-shuffle-opt="mixGender" checked={shuffleOpts.mixGender} onChange={(e) => setShuffleOpt('mixGender', e.target.checked)} />
                   남녀 짝
                 </label>
-                <span className="text-slate-400">🔒 고정 칸은 그대로</span>
+                <span className="text-slate-500">🔒 고정 칸은 그대로</span>
               </div>
 
               {panel === 'shape' && sid && chartStored && <SeatShapeBox sid={sid} chart={chart} stored={chartStored} active={seatStudents} onDeleted={() => setPanel(null)} />}
@@ -618,7 +618,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                   dropOnUnseated(e.dataTransfer.getData('text/plain'));
                 }}
               >
-                <div className="text-2xs font-black text-slate-400 mb-1">
+                <div className="text-2xs font-black text-slate-500 mb-1">
                   자리 없는 학생 {unseated.length}명 <span className="font-bold">· 자리를 여기로 끌면 비웁니다</span>
                 </div>
                 <div className="flex flex-wrap gap-1">
@@ -657,7 +657,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                   ))}
                 </div>
               </div>
-              <p className="text-2xs text-slate-400">
+              <p className="text-2xs text-slate-500">
                 재학 {active.length}명 · 번호 색 <span className="text-sky-600 font-bold">남</span>/<span className="text-rose-500 font-bold">여</span> · 전출한 학생은 회색으로 남고 섞을 때 빠집니다. 학생 자리를 누르면 오늘 출결·관찰
                 한 줄을 적습니다.
               </p>

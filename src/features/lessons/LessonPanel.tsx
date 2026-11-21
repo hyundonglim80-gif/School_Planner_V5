@@ -141,8 +141,8 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
               {shortDateLabel(date)} 수업{cell?.changed ? ` · 이날만 바꾼 과목 (시간표: ${cell.base || '수업 없음'})` : ''}
             </p>
           </div>
-          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
-          <button type="button" data-close title="닫기" onClick={askClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100" />
+          <button type="button" data-close title="닫기" onClick={askClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer">
             ✕
           </button>
         </div>

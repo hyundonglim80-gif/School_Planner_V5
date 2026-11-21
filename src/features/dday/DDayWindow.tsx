@@ -60,7 +60,7 @@ export default function DDayWindow({ close, raise }: WindowProps) {
 
         <div className="space-y-2">
           <div className="text-xs font-bold text-slate-500">
-            등록된 D-Day ({list.length})<span className="font-medium text-slate-400"> · 항목을 누르면 상단에 표시되고, 다시 누르면 내려갑니다</span>
+            등록된 D-Day ({list.length})<span className="font-medium text-slate-500"> · 항목을 누르면 상단에 표시되고, 다시 누르면 내려갑니다</span>
           </div>
           {list.length > 0 ? (
             list.map((item) => {
@@ -88,7 +88,7 @@ export default function DDayWindow({ close, raise }: WindowProps) {
                         {selected && <span className="text-primary">★ </span>}
                         {item.title}
                       </span>
-                      <span className="block text-xs text-slate-400">{item.date}</span>
+                      <span className="block text-xs text-slate-500">{item.date}</span>
                     </span>
                   </button>
                   <button
@@ -104,7 +104,7 @@ export default function DDayWindow({ close, raise }: WindowProps) {
               );
             })
           ) : (
-            <div className="text-center py-8 text-slate-400 text-xs" data-dday-empty>
+            <div className="text-center py-8 text-slate-500 text-xs" data-dday-empty>
               등록된 D-Day 일정이 없습니다.
             </div>
           )}

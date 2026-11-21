@@ -69,7 +69,7 @@ const PERIOD_ACCENTS = ['border-l-cobalt-400', 'border-l-emerald-400', 'border-l
 
 /** 카드 단추 (P41-2 - 예전 P10-2 '마우스를 올렸을 때만'은 안 보여도 자리를 차지했다): 🙋 출결·🪑·🎯·📊·🔗·✏️는 PC에서 카드 오른쪽 위에 떠서(ui/cardTools),
  *  적힌 것이 있는 것(출결 요약·📊 n·📑 n)만 카드 줄에 늘. 휴대폰은 적힌 것만 - 나머지는 교시를 눌러 연 수정 칸에서(그 칸에 모두 있다) */
-const TOOL_BTN = 'text-slate-400 hover:text-blue-600 p-1 rounded hover:bg-slate-100 text-xs cursor-pointer';
+const TOOL_BTN = 'text-slate-500 hover:text-blue-600 p-1 rounded hover:bg-slate-100 text-xs cursor-pointer';
 /** 지난 시간을 거슬러 찾는 날 수 */
 const PREV_LOOKBACK_DAYS = 60;
 
@@ -162,7 +162,7 @@ export default function DayLessons({ date }: { date: string }) {
               type="button"
               data-lessons-collapse
               onClick={() => setCollapsed(!collapsed)}
-              className="text-slate-400 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+              className="text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
               title={collapsed ? '수업 펼치기' : '수업 접기'}
             >
               {collapsed ? '▶' : '▼'}
@@ -243,7 +243,7 @@ export default function DayLessons({ date }: { date: string }) {
             type="button"
             data-day-bell-close
             onClick={() => setBellOpen(false)}
-            className="absolute -top-2 -right-2 z-10 w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-full shadow-xs text-slate-400 hover:text-slate-700 text-xs hover:bg-slate-100 cursor-pointer"
+            className="absolute -top-2 -right-2 z-10 w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-full shadow-xs text-slate-500 hover:text-slate-700 text-xs hover:bg-slate-100 cursor-pointer"
             title="수업 종 설정 닫기"
             aria-label="수업 종 설정 닫기"
           >
@@ -256,7 +256,7 @@ export default function DayLessons({ date }: { date: string }) {
       )}
 
       {!collapsed && loading && (
-        <p data-lessons-loading className="py-10 text-center text-xs text-slate-400">
+        <p data-lessons-loading className="py-10 text-center text-xs text-slate-500">
           수업을 받는 중…
         </p>
       )}
@@ -530,7 +530,7 @@ export default function DayLessons({ date }: { date: string }) {
                     {/* 차례: 교시·반·과목·내용 / 단원·준비물(진도 줄) / 비고 */}
                     {c.note && (
                       <div className="flex flex-col text-xs" data-lesson-note>
-                        <span className="text-slate-400 text-xs mb-0.5">📌 비고</span>
+                        <span className="text-slate-500 text-xs mb-0.5">📌 비고</span>
                         <p className="text-amber-700 font-medium whitespace-pre-wrap leading-relaxed">{c.note}</p>
                       </div>
                     )}

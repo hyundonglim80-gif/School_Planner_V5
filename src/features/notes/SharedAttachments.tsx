@@ -29,7 +29,7 @@ export default function SharedAttachments({ items, onRemove, kind = 'chat' }: Pr
         type="button"
         {...d('attachment-remove')}
         onClick={() => onRemove(idx)}
-        className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer shrink-0"
+        className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer shrink-0"
         title={`${what} 빼기`}
         aria-label={`${what} 빼기`}
       >
@@ -62,7 +62,7 @@ export default function SharedAttachments({ items, onRemove, kind = 'chat' }: Pr
                 <a href={att.url} target="_blank" rel="noreferrer" className="text-xs font-bold text-slate-800 hover:text-primary truncate block hover:underline" title={att.name}>
                   {att.name}
                 </a>
-                {att.size ? <span className="text-xs text-slate-400 block">{formatFileSize(att.size)}</span> : null}
+                {att.size ? <span className="text-xs text-slate-500 block">{formatFileSize(att.size)}</span> : null}
               </div>
             </div>
             {remove(idx, '첨부')}

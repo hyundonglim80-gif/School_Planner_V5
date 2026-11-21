@@ -43,7 +43,7 @@ export function OfflineScreen() {
   return (
     <div data-screen-offline className="p-6 text-center text-sm text-slate-500">
       <p>📴 인터넷이 끊겨 이 화면을 아직 받지 못했습니다.</p>
-      <p className="text-xs text-slate-400 mt-1">인터넷이 이어지면 저절로 열립니다.</p>
+      <p className="text-xs text-slate-500 mt-1">인터넷이 이어지면 저절로 열립니다.</p>
       <button
         type="button"
         data-screen-offline-retry

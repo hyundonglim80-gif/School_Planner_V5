@@ -40,7 +40,7 @@ export default function PhotoStatusBar({
       </div>
 
       <div className="flex items-center gap-1.5 shrink-0">
-        {where && <span className="text-2xs text-slate-400 font-semibold">{where}</span>}
+        {where && <span className="text-2xs text-slate-500 font-semibold">{where}</span>}
         {diagnosis.offerOpenFolder && onOpenFolder && (
           <button
             type="button"

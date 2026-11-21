@@ -100,21 +100,21 @@ export default function DevHolidaysSection() {
           💾 저장
         </button>
       </div>
-      <p className="text-[11px] text-slate-400 mt-1">admin/config에 들어갑니다(관리자만 읽음 - 소스·빌드에는 남지 않습니다).</p>
+      <p className="text-[11px] text-slate-500 mt-1">admin/config에 들어갑니다(관리자만 읽음 - 소스·빌드에는 남지 않습니다).</p>
       {failed && (
         <p data-dev-holidays-failed className="text-xs text-red-500 mt-2">
           읽지 못했습니다 ({failed})
         </p>
       )}
       <ul className="mt-3 space-y-1.5">
-        {years === null && !failed && <li className="text-xs text-slate-400">읽는 중…</li>}
+        {years === null && !failed && <li className="text-xs text-slate-500">읽는 중…</li>}
         {years?.map((st) => (
           <li key={st.year} data-dev-holiday-year={st.year} data-count={st.count} className="flex items-center gap-2 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
             <span className="text-sm font-black text-slate-700 w-14 shrink-0">{st.year}년</span>
             <span className="text-xs text-slate-500 flex-1 min-w-0">
               {st.count > 0 ? (
                 <>
-                  {st.count}건{st.updatedAt > 0 && <span className="text-slate-400"> · {dayLabel(st.updatedAt)} 받음</span>}
+                  {st.count}건{st.updatedAt > 0 && <span className="text-slate-500"> · {dayLabel(st.updatedAt)} 받음</span>}
                 </>
               ) : (
                 <span className="text-amber-600 font-bold">⚠️ 없음</span>

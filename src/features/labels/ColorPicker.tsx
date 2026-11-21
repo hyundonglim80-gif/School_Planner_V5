@@ -56,7 +56,7 @@ export default function ColorPicker({ color, onChange, name }: { color: string; 
         className="flex items-center gap-1.5 px-2 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
       >
         <span className="w-5 h-5 rounded-full border shadow-2xs shrink-0" style={{ backgroundColor: active.bg, borderColor: active.border }} />
-        <span className="text-2xs text-slate-400 font-black leading-none select-none">▼</span>
+        <span className="text-2xs text-slate-500 font-black leading-none select-none">▼</span>
       </button>
       {open &&
         createPortal(

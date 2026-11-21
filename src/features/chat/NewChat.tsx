@@ -75,7 +75,7 @@ export default function NewChat({ me, groups, people, onPick, onClose }: Props) 
             👥 {group?.name}
           </span>
         )}
-        <button type="button" data-chat-new-close onClick={onClose} title="새 대화 닫기" aria-label="새 대화 닫기" className="h-6 w-6 shrink-0 rounded-lg font-bold text-slate-400 hover:bg-slate-200 hover:text-slate-700 cursor-pointer">
+        <button type="button" data-chat-new-close onClick={onClose} title="새 대화 닫기" aria-label="새 대화 닫기" className="h-6 w-6 shrink-0 rounded-lg font-bold text-slate-500 hover:bg-slate-200 hover:text-slate-700 cursor-pointer">
           ✕
         </button>
       </div>

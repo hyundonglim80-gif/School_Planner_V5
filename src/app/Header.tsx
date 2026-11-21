@@ -175,7 +175,7 @@ function MenuKey({ id }: { id: ShortcutId }) {
   const binding = resolveBindings(overrides)[id];
   if (!binding.key) return null;
   const action = SHORTCUT_ACTIONS.find((a) => a.id === id)!;
-  return <kbd className="ml-auto pl-2 shrink-0 text-2xs font-mono font-bold text-slate-400 whitespace-nowrap">{formatActionBinding(action, binding)}</kbd>;
+  return <kbd className="ml-auto pl-2 shrink-0 text-2xs font-mono font-bold text-slate-500 whitespace-nowrap">{formatActionBinding(action, binding)}</kbd>;
 }
 
 const NEW_ITEMS: Array<{ id: ShortcutId; icon: string; label: string }> = [
@@ -198,7 +198,7 @@ function NewItems({ close }: { close: () => void }) {
             runFromButton(it.id);
           }}
           className={`w-full px-4 py-2 text-left font-bold flex items-center gap-2 hover:bg-slate-50 hover:text-primary ${
-            canRun(it.id) ? 'text-slate-700' : 'text-slate-400'
+            canRun(it.id) ? 'text-slate-700' : 'text-slate-500'
           }`}
         >
           <span>{it.icon}</span> {it.label}
@@ -304,7 +304,7 @@ function AccountMenu({ title }: { title: string }) {
               className="w-full px-4 py-2 text-left font-bold flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer"
             >
               <span>👥</span> 공유 그룹
-              {groupCount > 0 && <span className="ml-auto text-2xs text-slate-400">{groupCount}개</span>}
+              {groupCount > 0 && <span className="ml-auto text-2xs text-slate-500">{groupCount}개</span>}
             </button>
             <button
               type="button"
@@ -431,7 +431,7 @@ function MoreMenu() {
                       runFromButton(item.id);
                     }}
                     className={`w-full px-4 py-2 text-left font-bold flex items-center gap-2 hover:bg-slate-50 hover:text-primary ${
-                      canRun(item.id) ? 'text-slate-700' : 'text-slate-400'
+                      canRun(item.id) ? 'text-slate-700' : 'text-slate-500'
                     }`}
                   >
                     <span>{item.icon}</span> {item.label}

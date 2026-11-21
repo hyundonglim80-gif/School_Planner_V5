@@ -82,7 +82,7 @@ export default function EventAlarmWindow({ onClose, date, initialTime, onSave, o
       <div data-alarm-window>
         <p className="mb-3 text-xs font-bold text-slate-500">
           알림 날짜 <span className="text-slate-800">{shortDateLabel(date)}</span>
-          <span className="font-normal text-slate-400"> · 일정 날짜를 옮기면 알림도 따라갑니다</span>
+          <span className="font-normal text-slate-500"> · 일정 날짜를 옮기면 알림도 따라갑니다</span>
         </p>
         <label className="block text-xs font-bold text-slate-500 mb-1.5" htmlFor="sp5-alarm-time">
           시간 입력 (24시간제)

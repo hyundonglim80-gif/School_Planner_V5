@@ -47,7 +47,7 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
 
       <div className="flex justify-between items-center mb-1.5 pb-1 border-b border-slate-100">
         <div className="flex items-center gap-0.5">
-          <button type="button" onClick={() => changeMonth(-12)} className="px-1 py-0.5 text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="이전 연도">
+          <button type="button" onClick={() => changeMonth(-12)} className="px-1 py-0.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="이전 연도">
             «
           </button>
           <button type="button" onClick={() => changeMonth(-1)} className="px-1 py-0.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="이전 달">
@@ -59,7 +59,7 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
           <button type="button" onClick={() => changeMonth(1)} className="px-1 py-0.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="다음 달">
             ▶
           </button>
-          <button type="button" onClick={() => changeMonth(12)} className="px-1 py-0.5 text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="다음 연도">
+          <button type="button" onClick={() => changeMonth(12)} className="px-1 py-0.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="다음 연도">
             »
           </button>
         </div>
@@ -72,7 +72,7 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
           >
             오늘
           </button>
-          <button type="button" onClick={onClose} className="px-1 text-slate-400 hover:text-slate-700 text-xs font-bold rounded transition-colors cursor-pointer" title="닫기">
+          <button type="button" onClick={onClose} className="px-1 text-slate-500 hover:text-slate-700 text-xs font-bold rounded transition-colors cursor-pointer" title="닫기">
             ✕
           </button>
         </div>
@@ -131,7 +131,7 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
             }}
           />
         </label>
-        <span className="text-2xs text-slate-400">{hint}</span>
+        <span className="text-2xs text-slate-500">{hint}</span>
       </div>
     </div>
   );

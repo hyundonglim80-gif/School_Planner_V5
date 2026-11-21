@@ -146,7 +146,7 @@ export default function StudentPhoto({
   const empty = (
     <div
       data-photo-empty={name}
-      className={`${box} border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-400 ${
+      className={`${box} border border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-500 ${
         canUpload ? 'hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50/50 cursor-pointer' : ''
       } transition-colors ${className}`}
       style={style}

@@ -94,7 +94,7 @@ export default function DayJournal({ date }: { date: YMD }) {
               type="button"
               data-journal-collapse
               onClick={() => setCollapsed(!collapsed)}
-              className="text-slate-400 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
+              className="text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
               title={collapsed ? '펼치기' : '접기'}
             >
               {collapsed ? '▶' : '▼'}
@@ -128,7 +128,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                 title={journalEvals ? `메모 칸 조사표 ${journalEvals}건` : '메모 칸에 조사표 만들기'}
                 aria-label={journalEvals ? `메모 칸 조사표 ${journalEvals}건` : '메모 칸에 조사표 만들기'}
                 className={`px-2 py-1 text-xs font-bold rounded-xl transition-colors shrink-0 cursor-pointer ${
-                  journalEvals ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700' : 'text-slate-400 hover:text-emerald-700 hover:bg-slate-100'
+                  journalEvals ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-100'
                 }`}
               >
                 📊{journalEvals || ''}
@@ -144,7 +144,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                 title={filterOpen ? '라벨로 보기 접기' : picked ? `라벨로 보기 - ${picked}개 고름 (펴기)` : '라벨로 보기 펴기'}
                 aria-label={filterOpen ? '라벨로 보기 접기' : '라벨로 보기 펴기'}
                 className={`px-2 py-1 text-xs font-bold rounded-xl transition-colors shrink-0 cursor-pointer ${
-                  picked ? 'bg-sky-50 hover:bg-sky-100 text-sky-700' : filterOpen ? 'bg-slate-100 text-slate-700' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100'
+                  picked ? 'bg-sky-50 hover:bg-sky-100 text-sky-700' : filterOpen ? 'bg-slate-100 text-slate-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
                 }`}
               >
                 🏷️{picked ? ` ${picked}` : ''} {filterOpen ? '▴' : '▾'}
@@ -164,7 +164,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                 onClick={() => setJournalFilter(EMPTY_FILTER)}
               />
               <LabelFilterChips tree={tree} filter={filter} onChange={setJournalFilter} countOf={countOf} row />
-              <span data-filter-help title={FILTER_HELP} className="hidden sm:inline text-2xs text-slate-400 whitespace-nowrap">
+              <span data-filter-help title={FILTER_HELP} className="hidden sm:inline text-2xs text-slate-500 whitespace-nowrap">
                 {FILTER_HINT}
               </span>
             </div>
@@ -230,7 +230,7 @@ export default function DayJournal({ date }: { date: YMD }) {
             고른 라벨의 메모가 없습니다.
           </div>
         ) : waiting ? (
-          <p data-journal-waiting className="py-10 text-center text-xs text-slate-400">
+          <p data-journal-waiting className="py-10 text-center text-xs text-slate-500">
             메모를 받는 중…
           </p>
         ) : cards.length > 0 ? null : (

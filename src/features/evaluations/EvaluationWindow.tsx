@@ -222,7 +222,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
       onSave={shown.kind === 'view' ? () => void (metaOpen && metaDirty ? saveMeta() : saveValues()) : undefined}
       headerExtra={
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400" data-eval-where>
+          <span className="text-xs text-slate-500" data-eval-where>
             {shortDateLabel(date)} · {placeLabel}
           </span>
           {shown.kind !== 'create' && (
@@ -245,7 +245,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
                 삭제
               </button>
             ) : (
-              <span className="text-xs text-slate-400 font-bold">다른 사람이 만든 조사표입니다</span>
+              <span className="text-xs text-slate-500 font-bold">다른 사람이 만든 조사표입니다</span>
             )}
             <div className="flex items-center gap-2">
               {valuesDirty && <span className="text-xs font-bold text-amber-600" data-eval-dirty>저장 전</span>}
@@ -264,7 +264,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
     >
       <div data-eval-window={`${date}|${place ?? ''}`} data-eval-mode={waiting ? 'waiting' : shown.kind}>
         {waiting ? (
-          <p className="text-center text-slate-400 text-xs py-8">불러오는 중…</p>
+          <p className="text-center text-slate-500 text-xs py-8">불러오는 중…</p>
         ) : shown.kind === 'list' ? (
           <div className="space-y-2">
             <p className="text-xs text-slate-500 font-bold mb-2.5">
@@ -281,13 +281,13 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <span className="font-bold text-sm text-slate-800">{e.title}</span>
-                    <span className="block mt-0.5 text-xs text-slate-400">
+                    <span className="block mt-0.5 text-xs text-slate-500">
                       {classLabelOfEval(e)} · {EVAL_TYPE_LABEL[e.type]}
                       {e.subject ? ` · ${e.subject}` : ''}
                       {wholeDay ? ` · ${evalPlaceLabel(evalPlaceOf(e), periodNames)}` : ''}
                     </span>
                   </div>
-                  <span className="text-xs text-slate-400 shrink-0">{e.students.length}명</span>
+                  <span className="text-xs text-slate-500 shrink-0">{e.students.length}명</span>
                 </div>
               </button>
             ))}
@@ -299,9 +299,9 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
             <div className="mb-3 min-w-0">
               <h4 className="font-black text-slate-800" data-eval-heading>
                 {ev.title}
-                {shared && <span className="ml-1.5 text-xs font-bold text-slate-400">{canEdit ? '(공유됨)' : '(공유됨 - 읽기전용)'}</span>}
+                {shared && <span className="ml-1.5 text-xs font-bold text-slate-500">{canEdit ? '(공유됨)' : '(공유됨 - 읽기전용)'}</span>}
               </h4>
-              <p className="text-xs text-slate-400" data-eval-info>
+              <p className="text-xs text-slate-500" data-eval-info>
                 {rosterOf ? describeClass(rosterOf) : ev.classId} · {EVAL_TYPE_LABEL[ev.type]}
                 {ev.subject ? ` · ${ev.subject}` : ''} · {evalPlaceLabel(evalPlaceOf(ev), periodNames)} · {ev.students.length}명
               </p>

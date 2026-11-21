@@ -14,7 +14,7 @@ export default function DayMeals({ date }: { date: string }) {
   if (!school) return null;
   if (meals.length === 0 && events.length === 0) {
     return failed ? (
-      <p className="mt-3 text-xs text-slate-400" data-day-meals-failed>
+      <p className="mt-3 text-xs text-slate-500" data-day-meals-failed>
         🍚 급식을 불러오지 못했습니다. 잠시 뒤 다시 열어 보세요.
       </p>
     ) : null;
@@ -45,7 +45,7 @@ export default function DayMeals({ date }: { date: string }) {
                   {i > 0 && <span className="text-slate-300"> · </span>}
                   {d.name}
                   {d.allergies.length > 0 && (
-                    <sup className="ml-0.5 text-2xs text-slate-400" title={d.allergies.map((n) => ALLERGY_NAMES[n] || n).join(', ')}>
+                    <sup className="ml-0.5 text-2xs text-slate-500" title={d.allergies.map((n) => ALLERGY_NAMES[n] || n).join(', ')}>
                       {d.allergies.join('.')}
                     </sup>
                   )}

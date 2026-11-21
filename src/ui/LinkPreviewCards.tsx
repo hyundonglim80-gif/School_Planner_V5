@@ -29,7 +29,7 @@ function Card({ p }: { p: LinkPreview }) {
             {p.kind === 'site' ? p.sub || '/' : p.domain}
           </span>
         </span>
-        <span className="text-2xs text-slate-400 shrink-0">열기 ↗</span>
+        <span className="text-2xs text-slate-500 shrink-0">열기 ↗</span>
       </a>
       {p.embed && (
         <div className="border-t border-slate-200">

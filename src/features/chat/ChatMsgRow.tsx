@@ -42,7 +42,7 @@ export default function ChatMsgRow({ msg, mine, head, time, unseen, onDelete }: 
               <p
                 data-chat-text
                 className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-1.5 text-sm ${
-                  msg.deleted ? 'italic text-slate-400 bg-slate-50 border border-slate-200' : mine ? 'bg-primary text-white' : 'bg-slate-100 text-slate-800'
+                  msg.deleted ? 'italic text-slate-500 bg-slate-50 border border-slate-200' : mine ? 'bg-primary text-white' : 'bg-slate-100 text-slate-800'
                 }`}
               >
                 {msg.deleted ? '지운 글' : msg.text}
@@ -54,7 +54,7 @@ export default function ChatMsgRow({ msg, mine, head, time, unseen, onDelete }: 
               </div>
             )}
           </div>
-          <span className={`flex shrink-0 flex-col text-[10px] leading-tight text-slate-400 ${mine ? 'items-end' : 'items-start'}`}>
+          <span className={`flex shrink-0 flex-col text-[10px] leading-tight text-slate-500 ${mine ? 'items-end' : 'items-start'}`}>
             {canDelete && (
               <button
                 type="button"

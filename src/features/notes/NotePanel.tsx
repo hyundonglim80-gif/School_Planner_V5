@@ -657,25 +657,25 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                         'px-1.5 py-0.5 text-xs font-bold text-slate-500 border border-dashed border-slate-300 rounded-md hover:text-primary hover:border-primary disabled:opacity-60 cursor-pointer',
                     }}
                   />
-                  {form.dates.length === 0 && <span className="text-xs text-slate-400" data-note-dates-empty>날짜 없음 (메모 화면에만)</span>}
+                  {form.dates.length === 0 && <span className="text-xs text-slate-500" data-note-dates-empty>날짜 없음 (메모 화면에만)</span>}
                 </div>
               </>
             )}
           </div>
-          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100" />
           <button
             type="button"
             data-close
             title="닫기"
             onClick={close}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           >
             ✕
           </button>
         </div>
 
         {isEditing && !item ? (
-          <div data-note-missing className="flex-1 flex items-center justify-center px-6 text-center text-xs text-slate-400">
+          <div data-note-missing className="flex-1 flex items-center justify-center px-6 text-center text-xs text-slate-500">
             {stored?.deletedAt
               ? '지운 항목입니다. 휴지통에서 되살릴 수 있습니다.'
               : status === 'live'
@@ -695,7 +695,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               />
             )}
             {heading.title && (
-              <h4 data-note-view-title className={`text-base font-extrabold break-words ${done ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+              <h4 data-note-view-title className={`text-base font-extrabold break-words ${done ? 'line-through text-slate-500' : 'text-slate-900'}`}>
                 {heading.title}
               </h4>
             )}
@@ -705,7 +705,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               </div>
             ) : (
               !heading.title && (
-                <p data-note-view-empty className="text-sm text-slate-400">
+                <p data-note-view-empty className="text-sm text-slate-500">
                   (내용 없음)
                 </p>
               )
@@ -753,7 +753,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 <span className="block text-xs font-semibold text-slate-600">
                   {noun} 내용 <span className="text-red-500">*</span>
                   {/* 제목 칸은 없다 - 첫 줄이 카드·목록의 제목 (P35) */}
-                  <span data-note-title-hint className="ml-1.5 font-normal text-slate-400">
+                  <span data-note-title-hint className="ml-1.5 font-normal text-slate-500">
                     · 첫 줄 = 제목
                   </span>
                 </span>
@@ -922,7 +922,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 </button>
               </div>
               {/* 드라이브 첨부는 '링크가 있는 사람은 보기'로 올린다(drive.ts - V4 결정, P14-4 사용자 ①: 공개 그대로 + 알리기) */}
-              <p data-note-attach-public className="text-2xs text-slate-400">
+              <p data-note-attach-public className="text-2xs text-slate-500">
                 📎·✏️ 올린 파일은 &apos;링크가 있는 사람은 보기&apos;로 열립니다. 학생 얼굴·성적처럼 퍼지면 안 되는 것은 올리지 마세요.
               </p>
               {(item?.linkIds?.length ?? 0) > 0 && (
@@ -951,7 +951,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                         type="button"
                         data-note-attachment-remove
                         onClick={() => setForm((f) => ({ ...f, attachments: f.attachments.filter((_, i) => i !== idx) }))}
-                        className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer shrink-0"
+                        className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer shrink-0"
                         title="그림 빼기 (저장할 때)"
                         aria-label="그림 빼기"
                       >
@@ -973,14 +973,14 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                         <a href={att.url} target="_blank" rel="noreferrer" className="text-xs font-bold text-slate-800 hover:text-primary truncate block hover:underline" title={att.name}>
                           {att.name}
                         </a>
-                        {att.size ? <span className="text-xs text-slate-400 block">{formatFileSize(att.size)}</span> : null}
+                        {att.size ? <span className="text-xs text-slate-500 block">{formatFileSize(att.size)}</span> : null}
                       </div>
                     </div>
                     <button
                       type="button"
                       data-note-attachment-remove
                       onClick={() => setForm((f) => ({ ...f, attachments: f.attachments.filter((_, i) => i !== idx) }))}
-                      className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer shrink-0"
+                      className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold cursor-pointer shrink-0"
                       title="첨부 빼기 (저장할 때)"
                       aria-label="첨부 빼기"
                     >

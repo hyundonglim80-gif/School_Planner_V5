@@ -195,7 +195,7 @@ export default function BackupTab() {
         {period === 'custom' && (
           <div className="flex items-center gap-2 mb-2 text-xs">
             <input type="date" aria-label="시작일" data-backup-start value={custom.start} onChange={(e) => setCustom((c) => ({ ...c, start: e.target.value }))} className="px-2 py-1.5 border border-slate-200 rounded-lg" />
-            <span className="text-slate-400">~</span>
+            <span className="text-slate-500">~</span>
             <input type="date" aria-label="종료일" data-backup-end value={custom.end} onChange={(e) => setCustom((c) => ({ ...c, end: e.target.value }))} className="px-2 py-1.5 border border-slate-200 rounded-lg" />
           </div>
         )}

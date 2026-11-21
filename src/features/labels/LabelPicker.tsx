@@ -153,7 +153,7 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
             </button>
           ))}
         {rows.length === 0 && newNames.length === 0 && !onNewNamesChange && (
-          <span className="text-xs text-slate-400">라벨이 없습니다 - ⚙️ 라벨 수정에서 더하세요.</span>
+          <span className="text-xs text-slate-500">라벨이 없습니다 - ⚙️ 라벨 수정에서 더하세요.</span>
         )}
       </div>
     </div>

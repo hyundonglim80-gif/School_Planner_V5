@@ -225,11 +225,11 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
               })}
             </ul>
           ) : waiting ? (
-            <p data-board-month-waiting className="text-xs text-slate-400 py-1 px-1">
+            <p data-board-month-waiting className="text-xs text-slate-500 py-1 px-1">
               일정을 받는 중…
             </p>
           ) : (
-            <p data-board-month-empty className="text-xs text-slate-400 py-1 px-1">
+            <p data-board-month-empty className="text-xs text-slate-500 py-1 px-1">
               {m}월 달력 일정이 없습니다.
             </p>
           )}

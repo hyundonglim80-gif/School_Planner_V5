@@ -176,7 +176,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
     <ModalShell isOpen onClose={askClose} raise={raise} width="2xl" title="🧑‍🎓 학생 기록(누가기록)" footer={<ModalCloseButton onClose={askClose} />}>
       <div className="space-y-4 text-xs text-slate-700" data-student-record={cls?.id ?? ''}>
         {classes.length === 0 ? (
-          <p className="text-center text-slate-400 py-8">명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.</p>
+          <p className="text-center text-slate-500 py-8">명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.</p>
         ) : (
           <>
             <div className="flex items-center gap-2 flex-wrap">
@@ -223,7 +223,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
             </div>
 
             {!student || !cls ? (
-              <p className="text-center text-slate-400 py-6">학생을 고르세요. 메모를 쓸 때 '@이름'이나 🧑‍🎓 학생 고르기로 학생을 붙여 두면 여기에 모입니다.</p>
+              <p className="text-center text-slate-500 py-6">학생을 고르세요. 메모를 쓸 때 '@이름'이나 🧑‍🎓 학생 고르기로 학생을 붙여 두면 여기에 모입니다.</p>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap p-3 bg-slate-50 border border-slate-200 rounded-xl" data-student-card={student.sid}>
@@ -232,12 +232,12 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                     <div className="min-w-0">
                       <div className="text-sm font-black text-slate-800">
                         {student.num}번 {student.name}
-                        {student.gender && <span className="ml-1 text-xs font-bold text-slate-400">{student.gender === 'M' ? '남' : '여'}</span>}
-                        {!isActive(student) && <span className="ml-1 text-xs font-bold text-slate-400">(전출)</span>}
+                        {student.gender && <span className="ml-1 text-xs font-bold text-slate-500">{student.gender === 'M' ? '남' : '여'}</span>}
+                        {!isActive(student) && <span className="ml-1 text-xs font-bold text-slate-500">(전출)</span>}
                       </div>
                       {student.note?.trim() && (
                         <div className="mt-0.5 text-slate-600" data-student-note>
-                          <b className="text-slate-400">특이사항</b> {student.note}
+                          <b className="text-slate-500">특이사항</b> {student.note}
                         </div>
                       )}
                       <div className="text-slate-500 mt-0.5" data-student-counts={`${noteCount}|${filledEvals}`}>
@@ -252,7 +252,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                             return (
                               <span key={k}>
                                 {' '}
-                                · {KIND_LABEL[k]} {n} <span className="text-slate-400">({detail})</span>
+                                · {KIND_LABEL[k]} {n} <span className="text-slate-500">({detail})</span>
                               </span>
                             );
                           })}
@@ -271,7 +271,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                 </div>
 
                 <div className="p-3 border border-amber-200 bg-amber-50/40 rounded-xl" data-student-observe>
-                  <div className="text-2xs font-black text-slate-400 mb-1">관찰 한 줄 → 오늘 메모 (개인)</div>
+                  <div className="text-2xs font-black text-slate-500 mb-1">관찰 한 줄 → 오늘 메모 (개인)</div>
                   <div className="flex items-center gap-1.5">
                     <input
                       type="text"
@@ -318,7 +318,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
 
                 {tab === 'evals' ? (
                   studentEvals.length === 0 ? (
-                    <p className="text-center text-slate-400 py-6">{cls.year}학년도에 이 학급으로 만든 조사표 중 이 학생이 든 것이 없습니다.</p>
+                    <p className="text-center text-slate-500 py-6">{cls.year}학년도에 이 학급으로 만든 조사표 중 이 학생이 든 것이 없습니다.</p>
                   ) : (
                     <ul className="space-y-1.5" data-student-evals>
                       {studentEvals.map(({ ev, cell }) => (
@@ -332,14 +332,14 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                           >
                             <div className="shrink-0 w-28 whitespace-nowrap">
                               <b className="text-slate-800">{ev.date}</b>
-                              <span className="text-slate-400">{shortDateLabel(ev.date).replace(/^\d+\/\d+/, '')}</span>
+                              <span className="text-slate-500">{shortDateLabel(ev.date).replace(/^\d+\/\d+/, '')}</span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="px-1.5 py-px rounded-md font-bold border bg-violet-50 text-violet-700 border-violet-200">{EVAL_TYPE_LABEL[ev.type]}</span>
                                 {ev.subject && <span className="font-bold text-slate-500">{ev.subject}</span>}
                                 <span className="font-bold text-slate-800 truncate">{ev.title}</span>
-                                {ev.shared && <span className="text-slate-400">👥</span>}
+                                {ev.shared && <span className="text-slate-500">👥</span>}
                               </div>
                               <p className={`mt-0.5 text-sm ${isEmptyCell(cell) ? 'text-slate-300' : 'text-slate-700 font-bold'}`} data-student-eval-value>
                                 {isEmptyCell(cell) ? '안 적음' : evalCellText(cell)}
@@ -351,7 +351,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                     </ul>
                   )
                 ) : items.length === 0 ? (
-                  <p className="text-center text-slate-400 py-6">{cls.year}학년도에 이 학생이 붙은 메모와 출결 기록이 없습니다.</p>
+                  <p className="text-center text-slate-500 py-6">{cls.year}학년도에 이 학생이 붙은 메모와 출결 기록이 없습니다.</p>
                 ) : (
                   <ol className="relative border-l-2 border-slate-200 ml-2 space-y-2" data-student-timeline={items.length}>
                     {items.map((it) => (
@@ -367,11 +367,11 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                         >
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <b className="text-slate-800">{it.date}</b>
-                            <span className="text-slate-400">{shortDateLabel(it.date).replace(/^\d+\/\d+/, '')}</span>
+                            <span className="text-slate-500">{shortDateLabel(it.date).replace(/^\d+\/\d+/, '')}</span>
                             <span data-timeline-kind={it.kind} className={`px-1.5 py-px rounded-md font-bold border ${tone(it.kind)}`}>
                               {it.kind === 'memo' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : it.kind === 'journal' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : TIMELINE_LABEL[it.kind]}
                             </span>
-                            {it.shared && <span className="text-slate-400">👥</span>}
+                            {it.shared && <span className="text-slate-500">👥</span>}
                           </div>
                           <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{it.text}</p>
                         </button>

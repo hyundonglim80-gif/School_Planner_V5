@@ -136,7 +136,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
             e.stopPropagation();
             openLinker({ sid, id: progressLinkId(mark.planId, mark.row!) });
           }}
-          className={`ml-auto shrink-0 px-1 py-0.5 rounded text-slate-400 hover:text-yellow-700 hover:bg-yellow-50 transition-opacity ${alwaysShowAction ? '' : 'sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100'}`}
+          className={`ml-auto shrink-0 px-1 py-0.5 rounded text-slate-500 hover:text-yellow-700 hover:bg-yellow-50 transition-opacity ${alwaysShowAction ? '' : 'sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100'}`}
           title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다"
           aria-label="이 차시에 메모 잇기"
         >

@@ -156,13 +156,13 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
           onClick={onClose}
           title="틀 목록 닫기"
           aria-label="틀 목록 닫기"
-          className="w-6 h-6 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 cursor-pointer"
+          className="w-6 h-6 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-200/70 cursor-pointer"
         >
           ✕
         </button>
       </div>
       {!loaded ? (
-        <p data-note-template-loading className="text-xs text-slate-400">
+        <p data-note-template-loading className="text-xs text-slate-500">
           틀을 받는 중...
         </p>
       ) : list.length === 0 ? (
@@ -205,7 +205,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                   className="flex-1 min-w-0 text-left px-1.5 py-1 text-xs font-bold text-slate-700 hover:text-primary rounded-md hover:bg-slate-50 focus:bg-slate-50 cursor-pointer truncate"
                 >
                   {t.name}
-                  {t.tables.length > 0 && <span className="ml-1 font-normal text-slate-400">· 표 {t.tables.length}</span>}
+                  {t.tables.length > 0 && <span className="ml-1 font-normal text-slate-500">· 표 {t.tables.length}</span>}
                 </button>
               )}
               <button
@@ -214,7 +214,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                 onClick={() => setRenaming({ id: t.id, name: t.name })}
                 title="이름 바꾸기"
                 aria-label={`${t.name} 이름 바꾸기`}
-                className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer shrink-0"
+                className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer shrink-0"
               >
                 ✏️
               </button>
@@ -225,7 +225,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                 onClick={() => move(t, -1)}
                 title="위로"
                 aria-label={`${t.name} 위로`}
-                className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer shrink-0"
+                className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer shrink-0"
               >
                 ▲
               </button>
@@ -236,7 +236,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                 onClick={() => move(t, 1)}
                 title="아래로"
                 aria-label={`${t.name} 아래로`}
-                className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer shrink-0"
+                className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer shrink-0"
               >
                 ▼
               </button>
@@ -246,7 +246,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                 onClick={() => void write(templateRemove(t.id), { message: `🗑️ '${t.name}' 틀을 지웠습니다.`, what: '메모 틀 지우기' })}
                 title="틀 지우기 (안내의 '되돌리기'로 되살립니다)"
                 aria-label={`${t.name} 지우기`}
-                className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer shrink-0"
+                className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer shrink-0"
               >
                 🗑️
               </button>
@@ -264,7 +264,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
       >
         💾 지금 글을 틀로 저장
       </button>
-      <p className="text-2xs text-slate-400">
+      <p className="text-2xs text-slate-500">
         틀에는 글·라벨·표가 담깁니다(체크 줄은 ☐로). 첨부·날짜·완료는 담지 않습니다. 틀은 {MAX_NOTE_TEMPLATES}개까지, 내 계정에 있어 다른 기기·그룹 메모에서도 씁니다.
       </p>
     </div>

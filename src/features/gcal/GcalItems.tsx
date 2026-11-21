@@ -49,7 +49,7 @@ function Position({ s, date, className }: { s: GcalShown; date: string; classNam
   const pos = gcalPosition(s, date);
   if (!pos) return null;
   return (
-    <span data-gcal-period={`${pos.k}/${pos.n}`} className={`inline align-middle ml-1 font-bold text-slate-400 ${className}`}>
+    <span data-gcal-period={`${pos.k}/${pos.n}`} className={`inline align-middle ml-1 font-bold text-slate-500 ${className}`}>
       ({pos.k}/{pos.n})
     </span>
   );

@@ -15,7 +15,7 @@ import { lazyWithReload } from './lazyWithReload';
 // 새 창(↗)·클립보드 팝업창의 껍데기는 그 창에서만 받는다 (P44-2 첫 화면 JS - 큰 창은 Shell만)
 const PopoutShell = lazyWithReload(() => import('./PopoutShell'));
 const ClipboardPopout = lazyWithReload(() => import('../features/clipboard/ClipboardPopout'));
-const WAIT = <p className="p-6 text-slate-400">불러오는 중…</p>;
+const WAIT = <p className="p-6 text-slate-500">불러오는 중…</p>;
 
 export default function App() {
   const loading = useSession((s) => s.loading);
@@ -34,7 +34,7 @@ export default function App() {
   return (
     <>
       {loading ? (
-        <p data-session="loading" className="p-6 text-slate-400">
+        <p data-session="loading" className="p-6 text-slate-500">
           불러오는 중…
         </p>
       ) : !user ? (
@@ -49,7 +49,7 @@ export default function App() {
         </div>
       )}
       {/* 어느 빌드가 돌고 있는지 화면에서 본다(V4 규칙). */}
-      <p data-build-id className="pointer-events-none fixed bottom-1 right-2 text-[10px] text-slate-400">
+      <p data-build-id className="pointer-events-none fixed bottom-1 right-2 text-[10px] text-slate-500">
         빌드 {__BUILD_ID__}
       </p>
     </>

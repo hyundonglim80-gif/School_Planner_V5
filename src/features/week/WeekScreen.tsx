@@ -192,7 +192,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
           <section aria-label="다음 주" data-week-next>
             <div className="flex items-center gap-2 mb-2 px-1">
               <span className="text-xs font-extrabold text-slate-500">다음 주</span>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500">
                 {md(nextWeek[0])} ~ {md(nextWeek[6])}
               </span>
               <div className="flex-1 border-t border-dashed border-slate-200" />

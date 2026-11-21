@@ -30,7 +30,7 @@ export function Section({ title, desc, children, id, saved }: { title: string; d
         {title}
         {saved && <SavedBadge saved={saved} />}
       </h3>
-      {desc && <p className="text-xs text-slate-400 mt-0.5 mb-2 leading-relaxed">{desc}</p>}
+      {desc && <p className="text-xs text-slate-500 mt-0.5 mb-2 leading-relaxed">{desc}</p>}
       <div className={desc ? '' : 'mt-2'}>{children}</div>
     </div>
   );
@@ -63,7 +63,7 @@ export function ToggleRow({
           {label}
           {saved && <SavedBadge saved={saved} />}
         </span>
-        {hint && <span className="block text-xs text-slate-400 mt-0.5">{hint}</span>}
+        {hint && <span className="block text-xs text-slate-500 mt-0.5">{hint}</span>}
       </span>
       <input
         type="checkbox"

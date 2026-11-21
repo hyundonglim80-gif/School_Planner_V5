@@ -35,9 +35,9 @@ export default function DraftsWindow({ close, raise }: WindowProps) {
           이 기기에만 남아 있는 글입니다(계정에는 올라가지 않았습니다). <b>열기</b>를 누르면 그 칸이 열리고 맨 위 <b>되살리기</b>로 이어 씁니다 - 저장하면 이 목록에서 빠집니다.
         </p>
         {rows === null ? (
-          <p className="text-xs text-slate-400">불러오는 중…</p>
+          <p className="text-xs text-slate-500">불러오는 중…</p>
         ) : rows.length === 0 ? (
-          <p data-drafts-empty className="py-6 text-center text-xs text-slate-400">
+          <p data-drafts-empty className="py-6 text-center text-xs text-slate-500">
             남은 글이 없습니다.
           </p>
         ) : (

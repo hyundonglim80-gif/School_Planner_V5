@@ -15,7 +15,7 @@ export default function GcalToggle() {
       onClick={() => setGcalShown(!on)}
       title={`구글 캘린더 일정 ${on ? '숨기기' : '보이기'} (이 기기 - 고르기는 환경설정 보기 탭)`}
       className={`px-1.5 py-0.5 text-2xs sm:px-3 sm:py-1 sm:text-xs rounded-lg font-bold border transition-all whitespace-nowrap ${
-        on ? 'bg-primary text-white border-primary shadow-xs' : 'bg-white text-slate-400 border-slate-200 line-through decoration-slate-300'
+        on ? 'bg-primary text-white border-primary shadow-xs' : 'bg-white text-slate-500 border-slate-200 line-through decoration-slate-300'
       }`}
     >
       📅<span className="hidden sm:inline"> 구글</span>

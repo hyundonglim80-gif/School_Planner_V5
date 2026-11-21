@@ -104,7 +104,7 @@ function DeleteButton({ onDelete }: { onDelete: () => void }) {
       }}
       title="일정 삭제"
       aria-label="일정 삭제"
-      className="absolute -top-1.5 -right-1 w-4 h-4 hidden group-hover/ev:flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-xs text-2xs text-slate-400 hover:text-rose-600 cursor-pointer"
+      className="absolute -top-1.5 -right-1 w-4 h-4 hidden group-hover/ev:flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-xs text-2xs text-slate-500 hover:text-rose-600 cursor-pointer"
     >
       ✕
     </button>
@@ -252,10 +252,10 @@ function YearMonthCard(p: Props) {
           p.isMobile ? 'cursor-pointer' : 'cursor-default'
         }`}
       >
-        {p.isMobile && <span className="text-xs text-slate-400">{p.isOpen ? '▼' : '▶'}</span>}
+        {p.isMobile && <span className="text-xs text-slate-500">{p.isOpen ? '▼' : '▶'}</span>}
         <span>{p.m.label}</span>
         <span className="text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-lg">{p.m.semester}학기</span>
-        {!p.isOpen && <span className="text-xs font-bold text-slate-400">{activeDays.length > 0 ? `${activeDays.length}일` : waiting ? '받는 중…' : '비어 있음'}</span>}
+        {!p.isOpen && <span className="text-xs font-bold text-slate-500">{activeDays.length > 0 ? `${activeDays.length}일` : waiting ? '받는 중…' : '비어 있음'}</span>}
       </button>
 
       {/* 접은 달은 아예 그리지 않는다 (V4 - 감춰 그리던 것이 요소의 90%였다) */}
@@ -320,7 +320,7 @@ function YearMonthCard(p: Props) {
                           p.onAdd(d);
                         }}
                         title="이 날 새 일정 (오른쪽 칸)"
-                        className="text-2xs font-bold text-slate-400 hover:text-primary bg-slate-50 hover:bg-slate-100 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                        className="text-2xs font-bold text-slate-500 hover:text-primary bg-slate-50 hover:bg-slate-100 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
                       >
                         + 일정
                       </button>
@@ -359,7 +359,7 @@ function YearMonthCard(p: Props) {
               );
             })
           ) : (
-            <div {...{ [waiting ? 'data-year-month-waiting' : 'data-year-month-empty']: '' }} className="text-center text-slate-400 text-xs py-8 font-semibold">
+            <div {...{ [waiting ? 'data-year-month-waiting' : 'data-year-month-empty']: '' }} className="text-center text-slate-500 text-xs py-8 font-semibold">
               {waiting ? '일정을 받는 중…' : '일정이 없습니다.'}
             </div>
           )}

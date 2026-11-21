@@ -156,7 +156,7 @@ function EventChip({
       )}
       <DueBadge due={ev.due} today={today} completed={done} small />
       <span className="inline align-middle">{ev.text}</span>
-      {pos && <span className="inline align-middle ml-1 text-2xs font-bold text-slate-400">({pos.k}/{pos.n})</span>}
+      {pos && <span className="inline align-middle ml-1 text-2xs font-bold text-slate-500">({pos.k}/{pos.n})</span>}
       {links > 0 && (
         <button
           type="button"
@@ -181,7 +181,7 @@ function EventChip({
           }}
           title="일정 삭제"
           aria-label="일정 삭제"
-          className="absolute -top-1.5 -right-1.5 w-5 h-5 hidden group-hover:flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-xs text-2xs text-slate-400 hover:text-rose-600 hover:border-rose-200 cursor-pointer"
+          className="absolute -top-1.5 -right-1.5 w-5 h-5 hidden group-hover:flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-xs text-2xs text-slate-500 hover:text-rose-600 hover:border-rose-200 cursor-pointer"
           data-print-hide
         >
           ✕
@@ -254,7 +254,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
 
       {showEvents && (
         <div>
-          <div className="h-5 text-xs font-extrabold text-slate-400 mb-2 flex items-center justify-between">
+          <div className="h-5 text-xs font-extrabold text-slate-500 mb-2 flex items-center justify-between">
             <span>일정</span>
             <div className="flex items-center gap-1">
               {count > 0 && (
@@ -270,7 +270,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
                   stop(e);
                   props.onAdd();
                 }}
-                className="ml-1 w-5 h-5 rounded hover:bg-slate-200 text-slate-400 hover:text-primary flex items-center justify-center transition-colors text-xs font-bold leading-none cursor-pointer"
+                className="ml-1 w-5 h-5 rounded hover:bg-slate-200 text-slate-500 hover:text-primary flex items-center justify-center transition-colors text-xs font-bold leading-none cursor-pointer"
                 title="이 날 새 일정 (오른쪽 칸)"
                 aria-label="이 날 새 일정"
               >

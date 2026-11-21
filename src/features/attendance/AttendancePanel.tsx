@@ -186,8 +186,8 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
               {shortDateLabel(date)} 출결{cls ? ` · ${cls.grade}학년 ${cls.num}반` : ''} · 🔒 개인
             </p>
           </div>
-          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
-          <button type="button" data-close title="닫기" onClick={askClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100" />
+          <button type="button" data-close title="닫기" onClick={askClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
             ✕
           </button>
         </div>
@@ -226,7 +226,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
           </div>
 
           {classes.length === 0 ? (
-            <p className="text-center text-slate-400 py-8" data-attendance-empty>
+            <p className="text-center text-slate-500 py-8" data-attendance-empty>
               {status === 'live' ? '명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.' : '명렬표를 불러오는 중...'}
             </p>
           ) : tab === 'check' ? (
@@ -265,7 +265,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                     <div key={st.sid} data-attendance-row={st.sid} data-attendance-num={st.num} className={`px-3 py-2 ${r ? 'bg-rose-50/40' : ''}`}>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="w-24 shrink-0 font-bold text-slate-800 truncate">
-                          <span className="text-slate-400 mr-1">{st.num}</span>
+                          <span className="text-slate-500 mr-1">{st.num}</span>
                           {st.name || '(이름 없음)'}
                         </span>
                         <div className="flex items-center gap-1 flex-wrap">
@@ -306,7 +306,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                       </div>
                       {r && KIND_HAS_PERIODS[r.kind] && (
                         <div className="flex items-center gap-1 mt-1.5 pl-24 flex-wrap">
-                          <span className="text-slate-400 mr-1">교시</span>
+                          <span className="text-slate-500 mr-1">교시</span>
                           {Array.from({ length: periodCount }, (_, i) => i + 1).map((p) => (
                             <button
                               key={p}
@@ -314,7 +314,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                               data-attendance-period={p}
                               aria-pressed={!!r.periods?.includes(p)}
                               onClick={() => edit((m) => togglePeriod(m, st.sid, p))}
-                              className={`w-7 h-6 rounded-md border font-bold cursor-pointer ${r.periods?.includes(p) ? 'bg-rose-100 border-rose-300 text-rose-700' : 'bg-white border-slate-200 text-slate-400'}`}
+                              className={`w-7 h-6 rounded-md border font-bold cursor-pointer ${r.periods?.includes(p) ? 'bg-rose-100 border-rose-300 text-rose-700' : 'bg-white border-slate-200 text-slate-500'}`}
                             >
                               {p}
                             </button>
@@ -338,9 +338,9 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                     </div>
                   );
                 })}
-                {students.length === 0 && <p className="text-center text-slate-400 py-6">이 학급에 학생이 없습니다.</p>}
+                {students.length === 0 && <p className="text-center text-slate-500 py-6">이 학급에 학생이 없습니다.</p>}
               </div>
-              <p className="text-slate-400">
+              <p className="text-slate-500">
                 적지 않은 학생은 출석입니다. 고친 뒤 잠시 두면 저절로 저장되고(저장 단추·Ctrl+S도 됩니다), 그날 기록 칸에 '📋 출결'로 보이고, 학생 기록(누가기록)에도 모입니다.
               </p>
             </div>
@@ -354,7 +354,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                   <option value="sem2">2학기</option>
                   <option value="month">{Number(date.slice(5, 7))}월</option>
                 </select>
-                <span className="text-slate-400">
+                <span className="text-slate-500">
                   {span.start} ~ {span.end} · 결석은 날 수, 지각·조퇴·결과는 횟수 · 학생을 누르면 날짜별 내역
                 </span>
                 <button
@@ -411,9 +411,9 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                               className={`border-t border-slate-100 cursor-pointer hover:bg-blue-50/40 ${t ? '' : 'text-slate-300'}`}
                             >
                               <td className="px-2 py-1.5 text-left font-bold text-slate-800">
-                                <span className="text-slate-400 mr-1">{st.num}</span>
+                                <span className="text-slate-500 mr-1">{st.num}</span>
                                 {st.name}
-                                {!isActive(st) && <span className="ml-1 text-slate-400 font-normal">(전출)</span>}
+                                {!isActive(st) && <span className="ml-1 text-slate-500 font-normal">(전출)</span>}
                               </td>
                               {KINDS.map((k) =>
                                 REASONS.map((rs) => (
@@ -431,7 +431,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                               <tr className="bg-slate-50/60" data-attendance-history={st.sid}>
                                 <td colSpan={17} className="px-3 py-2 text-left">
                                   {hist.length === 0 ? (
-                                    <span className="text-slate-400">이 기간에 출결 기록이 없습니다 (모두 출석).</span>
+                                    <span className="text-slate-500">이 기간에 출결 기록이 없습니다 (모두 출석).</span>
                                   ) : (
                                     <ul className="space-y-0.5">
                                       {hist.map((h) => (
