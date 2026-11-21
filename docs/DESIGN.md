@@ -454,7 +454,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 10. **점검 스크립트는 `data-*`로 찾나?** 새 단추에 `data-…`를 달았나?
 11. **색**: 강조는 `primary`·`blue`(색 테마를 따른다), 뜻으로 쓰는 파랑은 `cobalt`. 새 빛깔로 뜻을 나누면 `domain/themeCss` `MEANING_HUES`에 더한다(7-5).
 12. **첫 화면에 싣나?** Shell·App이 늘 그리는 부품이 끌어오는 것은 모든 사람이 열 때마다 받는다. 기본 꺼진 기능·누를 때만 쓰는 셈은
-    store·띠(가벼운 것)와 셈(무거운 것)을 나누고 셈은 `import()`로(11장 P25-1). 큰 것을 더했으면 `inspect-perf`(첫 화면 JS gzip 400KB 아래).
+    store·띠(가벼운 것)와 셈(무거운 것)을 나누고 셈은 `import()`로(11장 P25-1). 큰 것을 더했으면 `inspect-perf`(첫 화면 JS gzip 400KB 아래). **CI `check`가 늘 지킨다** - `npm run check:size`(`tools/first-screen-js.mjs` - 입구 + 하루 화면 정적 조각 gzip 합, 정한 값 380KB, P50-1).
     Shell이 늘 그리는 줄·창은 **작은 문(상태만 보고 null) + 켤 때 받는 본체**로(P44-2 `MultiSelectGate`·`ShortcutRecordGate`·사진 보기) - 단축키·가로채기는 문이 건다.
     **큰 모듈의 함수 하나만 늘 써도 그 모듈의 쓰이는 내보내기 전부가 첫 묶음에 실린다** - 늘 쓰는 작은 셈은 작은 파일로 떼고 큰 쪽이 다시 내보낸다(P49-3 `chatCore`·`chatWatch`·`newYearTarget`·`printPage`).
     거꾸로 하루 화면도 쓰는 모듈을 첫 묶음에서 빼면 작은 조각으로 따로 받아져 오히려 1~2KB 는다(P49-3) - `inspect-perf`로 견준다.
