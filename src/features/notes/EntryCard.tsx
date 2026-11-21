@@ -23,7 +23,7 @@ import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
 import { pressKeys } from '../../ui/pressKeys';
 import EventDoneChip from '../events/EventDoneChip';
-import { FLOAT_TOOLS } from '../../ui/cardTools';
+import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
 
 export interface EntryCardProps {
   item: ItemDoc;
@@ -130,7 +130,7 @@ export default function EntryCard(props: EntryCardProps) {
             >
               {collapsed ? '▶' : '▼'}
             </button>
-            <div className="flex flex-col items-center gap-0.5 shrink-0 px-0.5">
+            <div className={`flex flex-col items-center gap-0.5 shrink-0 px-0.5 ${ORDER_ARROWS}`}>
               <button
                 type="button"
                 data-entry-up

@@ -50,7 +50,7 @@ import { openEvaluation } from '../evaluations/open';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import { isShortcutId } from '../../domain/shortcuts';
 import { pressKeys } from '../../ui/pressKeys';
-import { FLOAT_TOOLS } from '../../ui/cardTools';
+import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
 
 // 🔔 수업 종 설정은 머리의 '종' 단추로 펼 때 받는다 (P49-3 첫 화면 JS - 끊겨서 못 받으면 판 없이)
 const BellSettings = lazyWithReload(() => import('../bell/BellSettings'), () => null);
@@ -304,7 +304,7 @@ export default function DayLessons({ date }: { date: string }) {
                 } ${isNow ? 'ring-2 ring-primary/60 bg-blue-50/40' : isNext ? 'ring-1 ring-primary/30' : ''}`}
               >
                 <div className="flex gap-3 h-full items-stretch">
-                  <div className="flex flex-col items-center justify-center gap-1 shrink-0 px-1">
+                  <div className={`flex flex-col items-center justify-center gap-1 shrink-0 px-1 ${ORDER_ARROWS}`}>
                     <button
                       type="button"
                       data-lesson-up={n}
