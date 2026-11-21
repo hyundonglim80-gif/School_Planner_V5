@@ -86,8 +86,9 @@ export default function SecondRow() {
               onClick={() => setToggle(t.key, !on)}
               title={withShortcut(`${t.label} ${on ? '숨기기' : '보이기'}`, t.shortcut)}
               className={`px-1.5 py-0.5 text-2xs sm:px-3 sm:py-1 sm:text-xs rounded-lg font-bold border transition-all whitespace-nowrap ${
-                // 켜짐 = 옅은 강조색(P53-1 - 꽉 찬 파랑 셋이 화면에서 내용보다 먼저 눈에 들어왔다), 꺼짐 = 회색·줄긋기 그대로
-                on ? 'bg-primary/10 text-primary border-primary/30' : 'bg-white text-slate-500 border-slate-200 line-through decoration-slate-300'
+                // 켜짐 = 흰 바탕 + 강조색 글·테(P53-1 - 꽉 찬 파랑 셋이 화면에서 내용보다 먼저 눈에 들어왔다), 꺼짐 = 회색·줄긋기 그대로.
+                // 바탕은 불투명하게 - 비치는 옅은 바탕(bg-primary/10)은 꾸미기 띠 위에서 글 대비가 2.1~3.6:1로 떨어졌다(inspect-decor)
+                on ? 'bg-white text-primary border-primary/50' : 'bg-white text-slate-500 border-slate-200 line-through decoration-slate-300'
               }`}
             >
               {t.label}
