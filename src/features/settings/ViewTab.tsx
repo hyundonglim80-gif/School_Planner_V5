@@ -193,7 +193,7 @@ export default function ViewTab() {
             );
           })}
         </div>
-        <p className="text-xs text-slate-400 mt-1.5">계절 따라 = 3~5월 봄 · 6~8월 여름 · 9~11월 가을 · 12~2월 겨울</p>
+        <p className="text-xs text-slate-500 mt-1.5">계절 따라 = 3~5월 봄 · 6~8월 여름 · 9~11월 가을 · 12~2월 겨울</p>
       </Section>
 
       <Section id="viewAids" title="보기 쉽게">
@@ -238,7 +238,7 @@ export default function ViewTab() {
       <Section id="startupScope" title="시작 화면" saved="split" desc="앱을 열 때 처음 화면 (새로고침은 보던 화면 그대로)">
         <Choices name="startupScope" option="startupScope" value={nav.startupScope} onChange={setStartupScope} options={STARTUP_OPTIONS} />
       </Section>
-      <p data-view-print-note className="px-5 py-3 text-xs text-slate-400">인쇄는 이 탭의 밝기·색·꾸미기와 상관없이 늘 밝은 기본 모양입니다.</p>
+      <p data-view-print-note className="px-5 py-3 text-xs text-slate-500">인쇄는 이 탭의 밝기·색·꾸미기와 상관없이 늘 밝은 기본 모양입니다.</p>
     </div>
   );
 }

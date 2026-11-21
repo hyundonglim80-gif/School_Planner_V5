@@ -27,7 +27,7 @@ export function StudentMentionList({
   return (
     <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-amber-200 rounded-xl shadow-lg p-1 max-h-64 overflow-y-auto" data-student-mention>
       {candidates.length === 0 ? (
-        <p className="px-2 py-1.5 text-xs text-slate-400">
+        <p className="px-2 py-1.5 text-xs text-slate-500">
           {hasClasses ? `'${query}'에 맞는 학생이 없습니다.` : '명렬표가 없습니다 - 학급 화면의 명렬표에서 학생을 넣습니다.'} Esc로 닫습니다.
         </p>
       ) : (
@@ -44,15 +44,15 @@ export function StudentMentionList({
                 onClick={() => onPick(c)}
                 className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-xs cursor-pointer ${i === activeIndex ? 'bg-amber-100 text-amber-900' : 'hover:bg-slate-50 text-slate-700'}`}
               >
-                <span className="w-6 text-right font-black text-slate-400">{c.student.num}</span>
+                <span className="w-6 text-right font-black text-slate-500">{c.student.num}</span>
                 <span className="font-black">{c.student.name}</span>
-                {manyClasses && <span className="ml-auto text-slate-400">{describeClass(c.cls)}</span>}
+                {manyClasses && <span className="ml-auto text-slate-500">{describeClass(c.cls)}</span>}
               </button>
             </li>
           ))}
         </ul>
       )}
-      <p className="px-2 pt-1 text-2xs text-slate-400 border-t border-slate-100 mt-1">↑↓로 고르고 Enter·Tab으로 넣습니다. 자음만 쳐도(ㄱㅈ) 찾습니다.</p>
+      <p className="px-2 pt-1 text-2xs text-slate-500 border-t border-slate-100 mt-1">↑↓로 고르고 Enter·Tab으로 넣습니다. 자음만 쳐도(ㄱㅈ) 찾습니다.</p>
     </div>
   );
 }

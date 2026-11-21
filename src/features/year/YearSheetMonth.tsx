@@ -98,7 +98,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
         <span className="text-2xs font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md">{m.semester}학기</span>
       </div>
 
-      <div className="grid text-center text-2xs font-bold text-slate-400" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div className="grid text-center text-2xs font-bold text-slate-500" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
         {dayNames.map((n) => (
           <div key={n} className={n === '일' ? 'text-red-400' : n === '토' ? 'text-cobalt-400' : ''}>
             {n}
@@ -199,7 +199,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                   className={`w-full flex items-start gap-1.5 text-left text-2xs leading-snug rounded hover:bg-slate-50 px-0.5 cursor-pointer ${gItem ? 'border border-dashed border-slate-300' : ''}`}
                   title={gItem ? gcalTip(gItem) : it.item ? '누르면 오른쪽 칸에서 고치기' : '그날 하루 화면'}
                 >
-                  <span className={`shrink-0 w-[34px] tabular-nums font-bold ${it.kind === 'holiday' ? 'text-red-500' : 'text-slate-400'}`}>
+                  <span className={`shrink-0 w-[34px] tabular-nums font-bold ${it.kind === 'holiday' ? 'text-red-500' : 'text-slate-500'}`}>
                     {Number(it.date.slice(8, 10))}({dow})
                   </span>
                   <span
@@ -225,7 +225,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                     {it.kind === 'dday' && '🎯 '}
                     {it.kind === 'period' && it.continuesBefore && '◂ '}
                     {it.text}
-                    {it.kind === 'period' && it.endDate && it.endDate !== it.date && <span className="text-slate-400 font-semibold"> ~{md(it.endDate)}</span>}
+                    {it.kind === 'period' && it.endDate && it.endDate !== it.date && <span className="text-slate-500 font-semibold"> ~{md(it.endDate)}</span>}
                     {it.kind === 'period' && it.continuesAfter && ' ▸'}
                   </span>
                 </button>
@@ -234,7 +234,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
           })}
           {items.length > LIST_LIMIT && (
             <li data-print-hide>
-              <button type="button" data-sheet-more onClick={() => setExpanded((v) => !v)} className="text-2xs font-bold text-slate-400 hover:text-primary px-0.5 cursor-pointer">
+              <button type="button" data-sheet-more onClick={() => setExpanded((v) => !v)} className="text-2xs font-bold text-slate-500 hover:text-primary px-0.5 cursor-pointer">
                 {expanded ? '접기' : `+${items.length - LIST_LIMIT}개 더`}
               </button>
             </li>

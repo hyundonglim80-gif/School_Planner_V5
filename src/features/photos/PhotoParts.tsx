@@ -115,7 +115,7 @@ export function PhotoStateLine({ panel, count }: { panel: PhotoTools; count: num
   }
   if (p.status === 'checking' || p.status === 'loading' || p.resolving) {
     return (
-      <div className="text-2xs text-slate-400 font-semibold px-0.5" data-photo-loading>
+      <div className="text-2xs text-slate-500 font-semibold px-0.5" data-photo-loading>
         사진을 불러오는 중... ({count - p.missing.length}/{count})
       </div>
     );

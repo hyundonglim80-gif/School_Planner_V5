@@ -184,7 +184,7 @@ export default function MonthGrid(p: MonthGridProps) {
                                 stop(e);
                                 p.onAdd(date);
                               }}
-                              className="w-5 h-5 rounded hover:bg-slate-200 text-slate-400 hover:text-primary flex items-center justify-center transition-colors text-xs font-bold leading-none opacity-0 group-hover:opacity-100 cursor-pointer"
+                              className="w-5 h-5 rounded hover:bg-slate-200 text-slate-500 hover:text-primary flex items-center justify-center transition-colors text-xs font-bold leading-none opacity-0 group-hover:opacity-100 cursor-pointer"
                               title="이 날 새 일정 (오른쪽 칸)"
                               aria-label="이 날 새 일정"
                             >
@@ -277,7 +277,7 @@ export default function MonthGrid(p: MonthGridProps) {
                                   }}
                                   title="일정 삭제"
                                   aria-label="일정 삭제"
-                                  className="absolute -top-1.5 -right-1 w-4 h-4 hidden group-hover/ev:flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-xs text-2xs text-slate-400 hover:text-rose-600 cursor-pointer"
+                                  className="absolute -top-1.5 -right-1 w-4 h-4 hidden group-hover/ev:flex items-center justify-center rounded-full bg-white border border-slate-200 shadow-xs text-2xs text-slate-500 hover:text-rose-600 cursor-pointer"
                                 >
                                   ✕
                                 </button>

@@ -362,7 +362,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
 
         <div className="border border-slate-200 rounded-xl bg-white overflow-hidden flex flex-col" data-linker-list={list.length}>
           {list.length === 0 ? (
-            <div className="h-[152px] flex items-center justify-center text-xs text-slate-400 text-center px-4" data-linker-empty>
+            <div className="h-[152px] flex items-center justify-center text-xs text-slate-500 text-center px-4" data-linker-empty>
               {tab === 'progress' && planChips.length === 0
                 ? '진도표가 없습니다. 하루 수업 칸의 📘 진도에서 만들 수 있습니다.'
                 : tab === 'progress'
@@ -386,11 +386,11 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
                       className="w-full flex items-center px-4 py-2 hover:bg-slate-50 disabled:hover:bg-white text-left cursor-pointer disabled:cursor-default"
                     >
                       <input type="checkbox" checked={on} readOnly tabIndex={-1} className="w-4 h-4 rounded border-slate-300 pointer-events-none mr-3 shrink-0" />
-                      {c.date && <span className="text-xs text-slate-400 shrink-0 whitespace-nowrap font-medium mr-2">{c.date}</span>}
+                      {c.date && <span className="text-xs text-slate-500 shrink-0 whitespace-nowrap font-medium mr-2">{c.date}</span>}
                       <span className="text-xs text-slate-800 font-medium truncate flex-1" title={c.text}>
                         {c.text.split('\n')[0] || '(표·첨부만)'}
                       </span>
-                      {already && <span className="text-2xs font-bold text-slate-400 shrink-0 ml-2">연결됨</span>}
+                      {already && <span className="text-2xs font-bold text-slate-500 shrink-0 ml-2">연결됨</span>}
                     </button>
                   );
                 })}
@@ -434,7 +434,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
           </div>
           <div className="flex flex-wrap gap-1.5 min-h-[30px] items-center">
             {picked.length === 0 ? (
-              <span className="text-xs text-slate-400">선택된 항목이 없습니다.</span>
+              <span className="text-xs text-slate-500">선택된 항목이 없습니다.</span>
             ) : (
               picked.map((p) => {
                 const d = items[p];

@@ -64,7 +64,7 @@ export default function SchoolTab() {
             className="w-24 px-3 py-2 border border-slate-200 rounded-lg text-sm font-bold text-slate-800 focus:outline-none focus:border-primary"
           />
           <span className="text-xs font-bold text-slate-500">일 전까지</span>
-          <span className="text-xs text-slate-400 ml-auto">
+          <span className="text-xs text-slate-500 ml-auto">
             {MIN_FORWARD_DAYS}~{MAX_FORWARD_DAYS}일
           </span>
         </div>

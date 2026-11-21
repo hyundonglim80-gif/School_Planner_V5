@@ -59,7 +59,7 @@ export default function AutoBackupSection() {
             </a>
           )}
         </div>
-        <p className="mt-2 text-2xs text-slate-400">되살릴 때는 드라이브에서 파일을 내려받아 아래 '백업 파일로 되살리기'로 고릅니다. 공유 그룹 자료는 담지 않습니다.</p>
+        <p className="mt-2 text-2xs text-slate-500">되살릴 때는 드라이브에서 파일을 내려받아 아래 '백업 파일로 되살리기'로 고릅니다. 공유 그룹 자료는 담지 않습니다.</p>
       </div>
     </Section>
   );

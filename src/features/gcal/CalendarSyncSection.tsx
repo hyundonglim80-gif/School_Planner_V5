@@ -96,7 +96,7 @@ export default function CalendarSyncSection() {
               onChange={(e) => setRange((r) => ({ ...r, start: e.target.value }))}
               className="px-3 py-2 border border-slate-200 rounded-lg font-bold text-slate-800 focus:outline-none focus:border-primary"
             />
-            <span className="text-slate-400">~</span>
+            <span className="text-slate-500">~</span>
             <input
               type="date"
               aria-label="종료일"
@@ -129,7 +129,7 @@ export default function CalendarSyncSection() {
                   className="w-4 h-4 rounded border-slate-300 accent-primary cursor-pointer"
                 />
                 <span className="font-bold text-slate-700">{KIND_NAME[k]}</span>
-                <span className="text-slate-400 ml-auto">{KIND_DESC[k]}</span>
+                <span className="text-slate-500 ml-auto">{KIND_DESC[k]}</span>
               </label>
             ))}
           </div>

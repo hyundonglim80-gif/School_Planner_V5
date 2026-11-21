@@ -47,7 +47,7 @@ export default function FontSizeRows() {
               {name}
               {now && <span className="ml-1.5 text-2xs font-bold text-primary">지금 화면</span>}
             </span>
-            <span data-font-percent={page} className={`w-12 text-right text-sm font-black tabular-nums ${percent === 100 ? 'text-slate-400' : 'text-primary'}`}>
+            <span data-font-percent={page} className={`w-12 text-right text-sm font-black tabular-nums ${percent === 100 ? 'text-slate-500' : 'text-primary'}`}>
               {percent}%
             </span>
             {STEPS.map((s) => (

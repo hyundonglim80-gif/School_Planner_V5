@@ -445,20 +445,20 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
               )}
             </p>
           </div>
-          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100" />
           <button
             type="button"
             data-close
             title="닫기"
             onClick={close}
-            className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
             ✕
           </button>
         </div>
 
         {isEditing && !item ? (
-          <div data-event-missing className="flex-1 flex items-center justify-center px-6 text-center text-xs text-slate-400">
+          <div data-event-missing className="flex-1 flex items-center justify-center px-6 text-center text-xs text-slate-500">
             {stored?.deletedAt
               ? '지운 일정입니다. 휴지통에서 되살릴 수 있습니다.'
               : status === 'live'
@@ -484,7 +484,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                 (quickChips.length > 0 ? (
                   <QuickInputChips chips={quickChips} onApply={(key) => applyQuick([key])} onApplyAll={() => applyQuick(quickChips.map((c) => c.key))} />
                 ) : (
-                  <p className="mt-1 text-2xs text-slate-400">날짜(내일·다음 주 화·10/15)·시각(15:00)·#라벨을 적으면 칩으로 넣을 수 있습니다.</p>
+                  <p className="mt-1 text-2xs text-slate-500">날짜(내일·다음 주 화·10/15)·시각(15:00)·#라벨을 적으면 칩으로 넣을 수 있습니다.</p>
                 ))}
             </div>
 
@@ -567,14 +567,14 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                       }}
                       title={recurOn ? '끝 날·반복 빼기 (하루 일정)' : '끝 날 빼기 (하루 일정)'}
                       aria-label="끝 날 빼기"
-                      className="w-6 h-6 rounded-full text-slate-400 hover:text-red-500 hover:bg-slate-100 text-xs cursor-pointer"
+                      className="w-6 h-6 rounded-full text-slate-500 hover:text-red-500 hover:bg-slate-100 text-xs cursor-pointer"
                     >
                       ✕
                     </button>
                   </div>
                   {!isEditing && <RecurRow start={form.date} end={form.endDate} recur={recur} onChange={setRecur} />}
                   {recurOn ? null : span ? (
-                    <p data-event-period-count={span.days} className={`text-2xs ${periodTooLong ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+                    <p data-event-period-count={span.days} className={`text-2xs ${periodTooLong ? 'text-red-500 font-bold' : 'text-slate-500'}`}>
                       {periodTooLong
                         ? `기간은 ${MAX_PERIOD_DAYS}일까지 정할 수 있습니다.`
                         : `${span.days}일${span.off ? ` (주말·공휴일 ${span.off}일 빼고)` : span.allOff ? ' (모두 쉬는 날이라 빼지 않습니다)' : ''}${period.skipDates.length ? ` · 뺀 날 ${period.skipDates.length}일` : ''} - 날마다 '(2/${span.days})'처럼 보입니다.`}
@@ -595,7 +595,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                       )}
                     </p>
                   ) : (
-                    <p className="text-2xs text-slate-400">
+                    <p className="text-2xs text-slate-500">
                       끝 날을 고르면 여러 날에 걸친 일정 하나가 됩니다(시작 날을 옮기면 통째로 옮겨 갑니다).{isEditing ? '' : ' 요일을 고르면 그 요일만 반복합니다.'}
                     </p>
                   )}
@@ -642,14 +642,14 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                       onClick={() => setForm((f) => ({ ...f, due: '' }))}
                       title="기한 빼기"
                       aria-label="기한 빼기"
-                      className="w-6 h-6 rounded-full text-slate-400 hover:text-red-500 hover:bg-slate-100 text-xs cursor-pointer"
+                      className="w-6 h-6 rounded-full text-slate-500 hover:text-red-500 hover:bg-slate-100 text-xs cursor-pointer"
                     >
                       ✕
                     </button>
                   </>
                 )}
               </div>
-              {form.due && !attrs.forward && <p className="text-2xs text-slate-400">이월을 켜면 끝낼 때까지 날마다 따라오며 D-day가 줄어듭니다.</p>}
+              {form.due && !attrs.forward && <p className="text-2xs text-slate-500">이월을 켜면 끝낼 때까지 날마다 따라오며 D-day가 줄어듭니다.</p>}
             </div>
 
             {/* 단추 줄: 알림 · 링크 */}
@@ -696,7 +696,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
             {/* 이 일정만의 속성 (라벨을 고르면 라벨 속성이 먼저 채워진다) */}
             <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl space-y-1.5">
               <span className="block text-xs font-bold text-slate-600">
-                속성 설정 <span className="text-xs font-normal text-slate-400">(개별 일정 맞춤 조정)</span>
+                속성 설정 <span className="text-xs font-normal text-slate-500">(개별 일정 맞춤 조정)</span>
               </span>
               <div className="flex items-center gap-3.5 pt-0.5 text-xs font-medium text-slate-700 flex-wrap">
                 {ATTR_ROW.filter((a) => personal || a.key !== 'gcal').map((a) => (

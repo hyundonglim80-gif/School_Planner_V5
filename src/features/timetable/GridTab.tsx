@@ -164,7 +164,7 @@ export default function GridTab(props: Props) {
           🗑️ 이 시간표 지우기
         </button>
       </div>
-      <p className="text-2xs text-slate-400 font-semibold -mt-2">
+      <p className="text-2xs text-slate-500 font-semibold -mt-2">
         💾 저장은 이 시간표(이름·표)만 남깁니다. 수업 칸에 쓰려면 아래 <b>✅ 적용</b>을 누르세요. 지워도 이미 적용한 날의 수업 칸은 그대로입니다.
         {todayId === current.id ? ` 오늘(${md(today)})은 이 시간표를 따릅니다.` : ''}
       </p>
@@ -172,7 +172,7 @@ export default function GridTab(props: Props) {
       {/* 표 */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <p className="text-2xs text-slate-400 font-semibold">화살표·엔터·탭으로 칸을 옮기고, 엑셀에서 복사한 표를 Ctrl+V로 한 번에 붙여 넣을 수 있습니다.</p>
+          <p className="text-2xs text-slate-500 font-semibold">화살표·엔터·탭으로 칸을 옮기고, 엑셀에서 복사한 표를 Ctrl+V로 한 번에 붙여 넣을 수 있습니다.</p>
           <div className="flex items-center gap-1.5">
             <button type="button" data-grid-period-add onClick={() => onPeriods(addPeriod(periods))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold border border-slate-200 cursor-pointer">
               + 교시 추가
@@ -338,7 +338,7 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
       <div className="space-y-1" data-timetable-applied-list={applied.length}>
         <p className="text-2xs font-black text-slate-500">적용된 시간표</p>
         {applied.length === 0 ? (
-          <p className="text-xs font-semibold text-slate-400" data-timetable-applied-empty>
+          <p className="text-xs font-semibold text-slate-500" data-timetable-applied-empty>
             아직 적용한 날이 없습니다 - 수업 칸이 비어 있습니다.
           </p>
         ) : (

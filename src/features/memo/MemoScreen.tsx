@@ -280,7 +280,7 @@ export default function MemoScreen() {
       className="flex items-center gap-1.5 px-1 text-sm sm:text-base font-extrabold text-slate-900 cursor-pointer select-none"
     >
       <span>{text}</span>
-      <span className="text-xs text-slate-400">{open ? '▲' : '▼'}</span>
+      <span className="text-xs text-slate-500">{open ? '▲' : '▼'}</span>
     </button>
   );
 
@@ -334,7 +334,7 @@ export default function MemoScreen() {
             <LabelFilterChips tree={tree} filter={labelFilter ?? { labels: [], others: [] }} onChange={(f) => choose(f)} countOf={countOf} />
             {specialChip('all', '전체 메모', 'bg-slate-800 text-white border-slate-800', '모든 메모 보기')}
             {/* 여러 개 고르기 안내 - 보이는 글로 (옛 '?'는 무슨 뜻인지 몰랐다 - P11-1 사용자 의견, 휴대폰은 키가 없어 숨긴다) */}
-            <p data-filter-help title={FILTER_HELP} className="hidden sm:block px-1 pt-1 text-2xs leading-snug text-slate-400">
+            <p data-filter-help title={FILTER_HELP} className="hidden sm:block px-1 pt-1 text-2xs leading-snug text-slate-500">
               {FILTER_HINT}
             </p>
           </nav>
@@ -342,7 +342,7 @@ export default function MemoScreen() {
 
         <section ref={listRef} className="flex-1 min-w-0 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-2 sm:p-5">
           {!loaded && memos.length === 0 ? (
-            <p data-memo-waiting className="py-24 text-center text-xs text-slate-400">
+            <p data-memo-waiting className="py-24 text-center text-xs text-slate-500">
               메모를 받는 중…
             </p>
           ) : (
@@ -399,7 +399,7 @@ export default function MemoScreen() {
                 (active.length > 0 ? (
                   grid('active', active)
                 ) : (
-                  <p data-memo-empty className="text-center text-slate-400 text-sm py-6">
+                  <p data-memo-empty className="text-center text-slate-500 text-sm py-6">
                     <DecorSpot slot="memo" />
                     {current === 'fav' ? '즐겨찾기한 메모가 없습니다. 메모의 ☆를 눌러 놓으면 여기 모입니다.' : '조건에 맞는 메모가 없습니다.'}
                   </p>
@@ -421,7 +421,7 @@ export default function MemoScreen() {
                 )}
               </div>
               {doneOpen &&
-                (done.length > 0 ? grid('done', done) : <p className="text-center text-slate-400 text-sm py-4">아직 완료된 항목이 없습니다.</p>)}
+                (done.length > 0 ? grid('done', done) : <p className="text-center text-slate-500 text-sm py-4">아직 완료된 항목이 없습니다.</p>)}
             </>
           )}
         </section>

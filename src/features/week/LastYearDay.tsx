@@ -35,7 +35,7 @@ export default function LastYearDay({ lastDate, toDate, events, notes, existsThi
   return (
     // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 요일 카드 누르기로 새지 않게 막기만 (P22-7)
     <div data-last-year={lastDate} onClick={(e) => e.stopPropagation()} className="mt-3 pt-2 border-t-2 border-dashed border-slate-200 cursor-default">
-      <div className="text-2xs font-extrabold text-slate-400 mb-1.5" title={`${y}년 ${m}월 ${d}일 (작년 같은 주 같은 요일)`}>
+      <div className="text-2xs font-extrabold text-slate-500 mb-1.5" title={`${y}년 ${m}월 ${d}일 (작년 같은 주 같은 요일)`}>
         🕰️ 작년 {m}.{d}
       </div>
       {empty ? (
@@ -56,7 +56,7 @@ export default function LastYearDay({ lastDate, toDate, events, notes, existsThi
               return (
                 <div key={key} data-last-year-item="event" data-already title={`${ev.text} - 올해 이 날에 같은 일정이 있습니다`} className={rowClass(false, 'event')}>
                   {body}
-                  <span className="ml-auto shrink-0 text-2xs font-bold text-slate-400 whitespace-nowrap">올해 있음</span>
+                  <span className="ml-auto shrink-0 text-2xs font-bold text-slate-500 whitespace-nowrap">올해 있음</span>
                 </div>
               );
             }
@@ -97,7 +97,7 @@ export default function LastYearDay({ lastDate, toDate, events, notes, existsThi
                   className={rowClass(false, 'note')}
                 >
                   {body}
-                  {already && <span className="ml-auto shrink-0 text-2xs font-bold text-slate-400 whitespace-nowrap">올해 있음</span>}
+                  {already && <span className="ml-auto shrink-0 text-2xs font-bold text-slate-500 whitespace-nowrap">올해 있음</span>}
                 </div>
               );
             }

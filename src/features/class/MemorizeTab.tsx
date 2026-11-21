@@ -126,7 +126,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  if (!cls) return <div className="text-center py-12 text-xs text-slate-400 font-semibold">학급을 먼저 골라 주세요.</div>;
+  if (!cls) return <div className="text-center py-12 text-xs text-slate-500 font-semibold">학급을 먼저 골라 주세요.</div>;
 
   const loaders = extraClasses.map((c) => <ClassQuizPhotos key={classIdOf(c)} cls={c} onReady={onExtraReady} />);
   const numInput = 'w-14 px-1.5 py-1 border border-slate-300 rounded-md bg-white text-xs font-bold text-slate-700 text-center';
@@ -135,12 +135,12 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
       <label className="flex items-center gap-1.5">
         자동 넘김
         <input type="number" min={0} max={60} aria-label="자동 넘김 (초)" data-quiz-auto value={settings.auto} onChange={(e) => setSettings({ auto: Number(e.target.value) })} className={numInput} />
-        초 <span className="text-2xs font-semibold text-slate-400">(0 = 끔)</span>
+        초 <span className="text-2xs font-semibold text-slate-500">(0 = 끔)</span>
       </label>
       <label className="flex items-center gap-1.5">
         출제 수
         <input type="number" min={0} max={999} aria-label="출제 수" data-quiz-count value={settings.count} onChange={(e) => setSettings({ count: Number(e.target.value) })} className={numInput} />
-        번 <span className="text-2xs font-semibold text-slate-400">(0 = 계속)</span>
+        번 <span className="text-2xs font-semibold text-slate-500">(0 = 계속)</span>
       </label>
       {sameYear.length > 1 && (
         <div className="flex flex-wrap items-center gap-1" data-quiz-classes>
@@ -175,7 +175,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
         {loaders}
         {settingsBar}
         {extraLoading ? (
-          <div className="text-center py-12 text-xs text-slate-400 font-semibold">함께 외울 학급의 사진을 불러오는 중...</div>
+          <div className="text-center py-12 text-xs text-slate-500 font-semibold">함께 외울 학급의 사진을 불러오는 중...</div>
         ) : (
           <div className="text-center py-12 flex flex-col items-center gap-2">
             <div className="text-sm font-extrabold text-slate-700">외울 얼굴이 아직 없습니다</div>
@@ -207,7 +207,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
           <input type="checkbox" data-quiz-weighted checked={quiz.weighted} onChange={(e) => quiz.setWeighted(e.target.checked)} className="w-3.5 h-3.5 accent-primary cursor-pointer" />
           틀린 학생 더 자주
         </label>
-        <span className="text-2xs font-semibold text-slate-400" data-quiz-class-label>
+        <span className="text-2xs font-semibold text-slate-500" data-quiz-class-label>
           {multi ? `${extraClasses.length + 1}개 학급` : describeClass(cls)}
         </span>
         <span className="flex-1" />
@@ -295,7 +295,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
               </>
             )}
           </div>
-          <div className="h-5 flex justify-center gap-2.5 text-2xs text-slate-400 font-semibold">
+          <div className="h-5 flex justify-center gap-2.5 text-2xs text-slate-500 font-semibold">
             {!revealed ? (
               <>
                 <span>
@@ -319,7 +319,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
         </div>
       )}
 
-      <div className="flex justify-center items-center gap-1.5 text-2xs text-slate-400 font-semibold pt-1">
+      <div className="flex justify-center items-center gap-1.5 text-2xs text-slate-500 font-semibold pt-1">
         ✓ 기록은 계정에 저장됩니다 · 다음에 열면 틀린 학생부터 이어서
         {withoutPhoto > 0 && ` · 이 학급의 사진 없는 ${withoutPhoto}명은 빠져 있습니다`}
       </div>

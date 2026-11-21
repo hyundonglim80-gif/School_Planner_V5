@@ -55,7 +55,7 @@ export default function SchoolPicker() {
           <span className="font-bold text-slate-700" data-school-name={school.schoolCode}>
             🏫 {school.name}
           </span>
-          <span className="text-slate-400">{school.officeName}</span>
+          <span className="text-slate-500">{school.officeName}</span>
           <button type="button" data-school-change onClick={() => setSearching((v) => !v)} className={chip(false)}>
             {searching ? '그대로 두기' : '바꾸기'}
           </button>
@@ -115,12 +115,12 @@ export default function SchoolPicker() {
                     className="w-full text-left px-3 py-2 rounded-lg border border-slate-200 hover:border-primary hover:bg-primary/5 text-xs cursor-pointer"
                   >
                     <span className="font-bold text-slate-800">{s.name}</span>
-                    <span className="text-slate-400"> · {s.officeName}</span>
-                    {s.address && <span className="block text-slate-400 truncate">{s.address}</span>}
+                    <span className="text-slate-500"> · {s.officeName}</span>
+                    {s.address && <span className="block text-slate-500 truncate">{s.address}</span>}
                   </button>
                 </li>
               ))}
-              {found.schools.length === 0 && <li className="text-xs text-slate-400">찾은 학교가 없습니다. 이름을 줄여 보세요.</li>}
+              {found.schools.length === 0 && <li className="text-xs text-slate-500">찾은 학교가 없습니다. 이름을 줄여 보세요.</li>}
               {found.more && <li className="text-xs text-amber-600">더 있습니다. 이름을 더 적어 주세요 (예: '서울대도초').</li>}
             </ul>
           )}

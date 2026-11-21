@@ -59,7 +59,7 @@ export default function SpaceChips() {
         ⚙️
       </button>
       {/* 겹쳐 보기를 보이는 글로 (P11-1 - '?'는 뜻을 몰랐다). 휴대폰은 설명서 - 자리가 없다 */}
-      <span data-space-overlay-hint className="hidden xl:inline text-2xs text-slate-400 whitespace-nowrap">
+      <span data-space-overlay-hint className="hidden xl:inline text-2xs text-slate-500 whitespace-nowrap">
         Ctrl+누르기 = 겹쳐 보기
       </span>
     </div>
@@ -72,7 +72,7 @@ function SpaceChip({ chip: c, main, overlaid, onPick, onToggle }: { chip: Chip; 
     ? `font-black shadow-xs ${c.group ? 'bg-amber-100 border-amber-400 text-amber-800' : 'bg-slate-100 border-slate-400 text-slate-800'}`
     : overlaid
       ? 'font-bold bg-white text-slate-700'
-      : 'font-bold bg-white text-slate-400 border-slate-200 hover:text-slate-700 hover:border-slate-300';
+      : 'font-bold bg-white text-slate-500 border-slate-200 hover:text-slate-700 hover:border-slate-300';
   const click = (e: ReactMouseEvent) => {
     if (longPress.consumed()) return;
     if (e.ctrlKey || e.metaKey || e.shiftKey) onToggle();

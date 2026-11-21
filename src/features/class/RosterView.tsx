@@ -263,7 +263,7 @@ export default function RosterView() {
                   </option>
                 ))}
               </select>
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">▾</span>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▾</span>
             </div>
           ))}
           <button
@@ -341,7 +341,7 @@ export default function RosterView() {
             ))}
           </div>
           {dupId && <p className="text-2xs font-bold text-red-600">같은 학급({dupId})이 둘입니다 - 저장하기 전에 고쳐 주세요.</p>}
-          <p className="text-2xs text-slate-400 font-semibold">
+          <p className="text-2xs text-slate-500 font-semibold">
             학년도·학년·반을 고치면 새 학급으로 옮겨 저장합니다(학생은 그대로). 사진 폴더 이름(2026-3-2)도 달라지니 드라이브의 폴더 이름도 함께 바꿔 주세요.
           </p>
         </div>
@@ -353,9 +353,9 @@ export default function RosterView() {
             <div className="flex items-center justify-between gap-1.5 flex-wrap">
               <div className="text-xs text-slate-600 font-bold" data-roster-count={students.length}>
                 총 <span className="text-primary font-extrabold">{students.length}</span>명 (재학 <span className="text-emerald-600">{activeCount}</span>명
-                {students.length - activeCount > 0 && <span className="text-slate-400">, 전출 {students.length - activeCount}명</span>})
+                {students.length - activeCount > 0 && <span className="text-slate-500">, 전출 {students.length - activeCount}명</span>})
                 {showPhotos && photos.status === 'ready' && students.length > 0 && (
-                  <span className="text-slate-400 font-semibold" data-roster-photo-count={students.length - photos.missing.length}>
+                  <span className="text-slate-500 font-semibold" data-roster-photo-count={students.length - photos.missing.length}>
                     {' '}
                     · 사진 {students.length - photos.missing.length}/{students.length}명
                   </span>
@@ -575,7 +575,7 @@ function StudentTable({
   onRemove: (row: number) => void;
 }) {
   if (students.length === 0) {
-    return <div className="border border-slate-200 rounded-xl py-10 text-center text-xs text-slate-400 font-semibold">등록된 학생이 없습니다. 위의 '+ 학생 추가'나 CSV로 넣으세요.</div>;
+    return <div className="border border-slate-200 rounded-xl py-10 text-center text-xs text-slate-500 font-semibold">등록된 학생이 없습니다. 위의 '+ 학생 추가'나 CSV로 넣으세요.</div>;
   }
   const photoOf = (st: RosterStudent) => panel?.photos.photos.get(st.num);
   const photoProps = (st: RosterStudent) => {
@@ -796,7 +796,7 @@ function RosterSearch({
           </span>
         </div>
       )}
-      {groups.length === 0 && <div className="text-center py-10 text-xs text-slate-400 font-semibold">조건에 맞는 학생이 없습니다.</div>}
+      {groups.length === 0 && <div className="text-center py-10 text-xs text-slate-500 font-semibold">조건에 맞는 학생이 없습니다.</div>}
       <div className="flex flex-col gap-4">
         {groups.map(({ cls, hits }) => {
           const own = photos && classIdOf(cls) === pickKeyId ? photos : null;
@@ -806,7 +806,7 @@ function RosterSearch({
                 <span className="text-xs font-extrabold text-slate-700">{describeClass(cls)}</span>
                 <span className="text-2xs font-bold text-slate-500 bg-slate-100 rounded px-1.5 py-0.5">{hits.length}명</span>
                 <span className="flex-1 h-px bg-slate-200" />
-                {photos && !own && <span className="text-2xs font-semibold text-slate-400">사진은 위에서 이 학급을 골라야 보입니다</span>}
+                {photos && !own && <span className="text-2xs font-semibold text-slate-500">사진은 위에서 이 학급을 골라야 보입니다</span>}
               </div>
               <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2">
                 {hits.map((st) => {
@@ -824,7 +824,7 @@ function RosterSearch({
                       <span className="flex items-center gap-1 px-1.5 py-1.5">
                         <span className="bg-blue-50 text-primary rounded text-2xs font-extrabold px-1 shrink-0">{st.num}</span>
                         <span className="text-xs font-extrabold text-slate-800 truncate">{hideNames ? '?' : <HighlightedName name={st.name} query={name} />}</span>
-                        {st.gender && <span className="ml-auto text-2xs font-bold text-slate-400 shrink-0">{st.gender === 'M' ? '남' : '여'}</span>}
+                        {st.gender && <span className="ml-auto text-2xs font-bold text-slate-500 shrink-0">{st.gender === 'M' ? '남' : '여'}</span>}
                       </span>
                     </button>
                   );

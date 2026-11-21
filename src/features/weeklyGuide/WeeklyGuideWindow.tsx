@@ -251,7 +251,7 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
           </table>
         </div>
         {emptyWeek && <p className="text-2xs text-amber-700 font-bold" data-guide-empty>이 주에 수업 칸이 비어 있습니다. ⏰ 시간표 창에서 시간표를 만들거나 다른 주를 고릅니다.</p>}
-        <p className="text-2xs text-slate-400">
+        <p className="text-2xs text-slate-500">
           지금 보는 공간의 수업 칸(과목·비고(준비물))을 읽기만 합니다. 고치려면 그날 하루 화면에서 고칩니다 - 열어 둔 채로 고쳐도 표가 따라옵니다. 인쇄 창에서 'PDF로 저장'을 고르면 PDF가 됩니다.
         </p>
       </div>

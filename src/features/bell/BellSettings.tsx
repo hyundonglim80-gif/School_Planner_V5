@@ -39,7 +39,7 @@ export default function BellSettings({ hasTimes }: { hasTimes: boolean }) {
           <option value="before">전</option>
           <option value="after">후</option>
         </select>
-        <span className="text-slate-400">{p.amount === 0 ? '(그 시각에)' : ''}</span>
+        <span className="text-slate-500">{p.amount === 0 ? '(그 시각에)' : ''}</span>
       </div>
     );
   };
@@ -73,7 +73,7 @@ export default function BellSettings({ hasTimes }: { hasTimes: boolean }) {
           이 기기에서 울리기
         </label>
       </div>
-      <p className="text-2xs text-slate-400">앱이 열려 있을 때만 울립니다(탭을 닫으면 울리지 않습니다). 처음 한 번 화면을 누르면 소리가 납니다(브라우저 규칙).</p>
+      <p className="text-2xs text-slate-500">앱이 열려 있을 때만 울립니다(탭을 닫으면 울리지 않습니다). 처음 한 번 화면을 누르면 소리가 납니다(브라우저 규칙).</p>
     </div>
   );
 }

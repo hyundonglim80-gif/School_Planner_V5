@@ -106,13 +106,13 @@ function RoomRow({ roomKey, icon, name, sub, room, me, now, unread, count, onOpe
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline gap-1.5">
             <span className={`truncate text-sm ${unread ? 'font-black text-slate-900' : 'font-semibold text-slate-700'}`}>{name}</span>
-            {sub && <span className="min-w-0 shrink truncate text-2xs text-slate-400">{sub}</span>}
+            {sub && <span className="min-w-0 shrink truncate text-2xs text-slate-500">{sub}</span>}
             {muted && (
               <span data-chat-muted className="shrink-0 text-2xs" title="이 대화는 알림을 껐습니다">
                 🔕
               </span>
             )}
-            {room?.lastId && <span className="ml-auto shrink-0 text-2xs text-slate-400">{chatWhen(room.lastAt, now)}</span>}
+            {room?.lastId && <span className="ml-auto shrink-0 text-2xs text-slate-500">{chatWhen(room.lastAt, now)}</span>}
           </span>
           <span className="flex items-center gap-1.5">
             <span data-chat-preview className={`min-w-0 flex-1 truncate text-xs ${unread ? 'font-bold text-slate-800' : preview ? 'text-slate-500' : 'text-slate-300'}`}>
@@ -204,7 +204,7 @@ function ChatList({
           </button>
         ))}
       <section data-chat-section="dm">
-        <h3 className="px-3 pb-1 text-2xs font-black text-slate-400">👤 1:1 대화</h3>
+        <h3 className="px-3 pb-1 text-2xs font-black text-slate-500">👤 1:1 대화</h3>
         {sections.dms.length > 0 ? (
           <ul className="flex flex-col">
             {sections.dms.map((r) => {
@@ -214,12 +214,12 @@ function ChatList({
             })}
           </ul>
         ) : (
-          <p className="px-3 py-1 text-xs text-slate-400">{ready || !online ? '아직 1:1 대화가 없습니다.' : '불러오는 중…'}</p>
+          <p className="px-3 py-1 text-xs text-slate-500">{ready || !online ? '아직 1:1 대화가 없습니다.' : '불러오는 중…'}</p>
         )}
       </section>
       {sections.groups.map((g) => (
         <section key={g.sid} data-chat-section={g.sid}>
-          <h3 className="truncate px-3 pb-1 text-2xs font-black text-slate-400">👥 {g.name}</h3>
+          <h3 className="truncate px-3 pb-1 text-2xs font-black text-slate-500">👥 {g.name}</h3>
           <ul className="flex flex-col">
             {row(`${g.sid}~all`, '👥', '그룹 전체', g.all)}
             {g.rooms.map((r) => row(r.key, '💬', r.name || '이름 없는 방', r, `${r.members.length}명`))}
@@ -281,7 +281,7 @@ export default function ChatWindow({ params, close, raise, setParams }: WindowPr
     <ModalShell isOpen onClose={close} raise={raise} width="lg" title="💬 대화" bare footer={open ? undefined : <ModalCloseButton onClose={close} />}>
       <div data-chat-window={open ? 'room' : 'list'} className="flex min-h-full flex-col">
         {!uid ? (
-          <p className="py-6 text-center text-xs text-slate-400">로그인하면 대화를 볼 수 있습니다.</p>
+          <p className="py-6 text-center text-xs text-slate-500">로그인하면 대화를 볼 수 있습니다.</p>
         ) : open && head ? (
           <ChatRoomView
             key={open}

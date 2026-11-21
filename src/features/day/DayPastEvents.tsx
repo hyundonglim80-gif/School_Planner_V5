@@ -69,12 +69,12 @@ export default function DayPastEvents({ sid, today, stale, forwardDays, lastOrde
       >
         <span aria-hidden>📥</span>
         <span>지난 일정 {stale.length}개</span>
-        <span className="text-slate-400">{open ? '▾' : '▸'}</span>
+        <span className="text-slate-500">{open ? '▾' : '▸'}</span>
       </button>
 
       {open && (
         <div data-past-list className="mt-1 space-y-1.5">
-          <p className="px-2 text-2xs text-slate-400 leading-relaxed">
+          <p className="px-2 text-2xs text-slate-500 leading-relaxed">
             지난 {forwardDays}일 동안 끝내지 않은 일정입니다(이월 일정은 위에 따라옵니다). 골라서 오늘로 가져옵니다. 라벨을 누르면 완료, 🗑️는 휴지통으로.
           </p>
           {stale.map((ev) => {
@@ -106,7 +106,7 @@ export default function DayPastEvents({ sid, today, stale, forwardDays, lastOrde
                     {ev.text}
                   </button>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className="text-xs text-slate-400">{shortDateLabel(ev.date ?? today)}</span>
+                    <span className="text-xs text-slate-500">{shortDateLabel(ev.date ?? today)}</span>
                     {(labels.length > 0 ? labels : [null]).map((l) => {
                       const c = l ? labelColor(l.color) : null;
                       return (

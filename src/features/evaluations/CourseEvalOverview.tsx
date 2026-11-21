@@ -57,10 +57,10 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
     downloadCsv(courseOverviewCsvRows(columns, rows), `${`과정평가_${courseTitle(course)}`.replace(/[\\/:*?"<>|\s]+/g, '_')}.csv`);
   };
 
-  if (!loaded) return <p className="text-center text-slate-400 py-8">과정을 불러오는 중…</p>;
+  if (!loaded) return <p className="text-center text-slate-500 py-8">과정을 불러오는 중…</p>;
   if (courses.length === 0) {
     return (
-      <p className="text-center text-slate-400 py-8" data-course-overview-empty>
+      <p className="text-center text-slate-500 py-8" data-course-overview-empty>
         과정이 없습니다. ⋮ → 📘 진도 관리 → <b>+ 새 진도</b>에서 과목과 반을 골라 차시 목록 하나를 여러 반에 두면 여기서 반 × 평가로 봅니다.
       </p>
     );
@@ -84,7 +84,7 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
         </button>
       </div>
       {columns.length === 0 ? (
-        <p className="text-center text-slate-400 py-8">
+        <p className="text-center text-slate-500 py-8">
           이 과정의 반에 {course?.subject ? `'${course.subject}' ` : ''}조사표가 없습니다. 수업 칸의 📊 조사표에서 '같은 과정의 다른 반에도'로 만들면 반마다 생깁니다.
         </p>
       ) : (
@@ -95,7 +95,7 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
                 <th className="sticky left-0 z-10 bg-slate-100 p-1.5 min-w-14 text-left border-b border-r border-slate-200">반</th>
                 {columns.map((col) => (
                   <th key={col.id} className="p-1.5 border-b border-r border-slate-200 align-top min-w-24 max-w-40 font-normal text-left">
-                    <span className="block text-2xs font-bold text-slate-400">
+                    <span className="block text-2xs font-bold text-slate-500">
                       {EVAL_TYPE_LABEL[col.type]} · {evalColumnTitle({ date: col.firstDate, subject: '', title: '' })}~
                     </span>
                     <span className="block font-black text-slate-700 leading-tight line-clamp-2">{col.title}</span>
@@ -108,7 +108,7 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
                 <tr key={cls} data-course-overview-row={cls} className="hover:bg-slate-50">
                   <td className="sticky left-0 bg-white p-1.5 font-black text-slate-800 border-b border-r border-slate-100 whitespace-nowrap">
                     {cls}
-                    {!roster && <span className="block text-2xs font-normal text-slate-400">명렬표 없음</span>}
+                    {!roster && <span className="block text-2xs font-normal text-slate-500">명렬표 없음</span>}
                   </td>
                   {columns.map((col) => {
                     const ev = col.byClass[cls];
@@ -141,7 +141,7 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
           </table>
         </div>
       )}
-      <p className="text-2xs text-slate-400">반마다 같은 제목·종류의 조사표를 한 칸으로 묶었습니다(날짜는 반마다 다릅니다). '완료'는 값이 있는 학생 수 / 그 반 재학생 수. 칸을 누르면 그 반 조사표가 열립니다.</p>
+      <p className="text-2xs text-slate-500">반마다 같은 제목·종류의 조사표를 한 칸으로 묶었습니다(날짜는 반마다 다릅니다). '완료'는 값이 있는 학생 수 / 그 반 재학생 수. 칸을 누르면 그 반 조사표가 열립니다.</p>
     </div>
   );
 }

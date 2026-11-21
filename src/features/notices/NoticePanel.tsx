@@ -169,8 +169,8 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
               {shortDateLabel(date)} 알림장 · {personalSpace ? '🔒 개인' : '👥 공유'}
             </p>
           </div>
-          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100" />
-          <button type="button" data-close title="닫기" onClick={askClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
+          <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100" />
+          <button type="button" data-close title="닫기" onClick={askClose} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
             ✕
           </button>
         </div>
@@ -271,7 +271,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                   </ol>
                 </div>
               )}
-              <p className="text-slate-400">저장하면 그날 메모 칸 맨 위에 '📢 알림장'으로 보입니다. 다른 날로 옮기면 적던 것은 그 날에 저장합니다.</p>
+              <p className="text-slate-500">저장하면 그날 메모 칸 맨 위에 '📢 알림장'으로 보입니다. 다른 날로 옮기면 적던 것은 그 날에 저장합니다.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -282,12 +282,12 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                   <option value="30days">지난 한 달</option>
                   <option value="year">학년도 전체</option>
                 </select>
-                <span className="text-slate-400" data-notice-count={list.length}>
+                <span className="text-slate-500" data-notice-count={list.length}>
                   {list.length}일
                 </span>
               </div>
               {list.length === 0 ? (
-                <p className="text-center text-slate-400 py-6">이 기간에 적은 알림장이 없습니다.</p>
+                <p className="text-center text-slate-500 py-6">이 기간에 적은 알림장이 없습니다.</p>
               ) : (
                 <div className="space-y-2">
                   {list.map((n) => (
@@ -303,7 +303,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                           className="font-black text-slate-800 hover:text-primary cursor-pointer"
                           title="이 날 알림장 고치기"
                         >
-                          {shortDateLabel(n.date)} <span className="font-normal text-slate-400">{n.date.slice(0, 4)}</span>
+                          {shortDateLabel(n.date)} <span className="font-normal text-slate-500">{n.date.slice(0, 4)}</span>
                         </button>
                         <div className="flex gap-1 shrink-0">
                           {canShare() && (

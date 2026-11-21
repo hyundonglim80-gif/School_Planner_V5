@@ -157,7 +157,7 @@ export default function DayEvents({ date }: { date: YMD }) {
             type="button"
             data-event-collapse
             onClick={() => setCollapsed(!collapsed)}
-            className="text-slate-400 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
+            className="text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
             title={collapsed ? '펼치기' : '접기'}
           >
             {collapsed ? '▶' : '▼'}
@@ -287,11 +287,11 @@ export default function DayEvents({ date }: { date: YMD }) {
               )}
             </>
           ) : waiting ? (
-            <p data-event-waiting className="py-10 text-center text-xs text-slate-400">
+            <p data-event-waiting className="py-10 text-center text-xs text-slate-500">
               일정을 받는 중…
             </p>
           ) : (
-            <div data-event-empty className="flex flex-col items-center justify-center py-10 text-center text-slate-400 text-xs">
+            <div data-event-empty className="flex flex-col items-center justify-center py-10 text-center text-slate-500 text-xs">
               <DecorSpot
                 slot="events"
                 fallback={
@@ -301,7 +301,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                 }
               />
               <p>오늘의 일정이 없습니다.</p>
-              <p className="mt-1 text-slate-400">+ 추가 버튼을 눌러 일정을 넣어 보세요.</p>
+              <p className="mt-1 text-slate-500">+ 추가 버튼을 눌러 일정을 넣어 보세요.</p>
             </div>
           )}
         </div>
@@ -448,7 +448,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               stop(e);
               onOpen();
             }}
-            className="p-1 text-xs leading-none text-slate-400 hover:text-primary cursor-pointer"
+            className="p-1 text-xs leading-none text-slate-500 hover:text-primary cursor-pointer"
             title="일정 수정"
             aria-label="일정 수정"
           >
@@ -462,7 +462,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
                 stop(e);
                 onDelete();
               }}
-              className="p-1 text-xs leading-none text-slate-400 hover:text-red-500 cursor-pointer"
+              className="p-1 text-xs leading-none text-slate-500 hover:text-red-500 cursor-pointer"
               title="일정 삭제"
               aria-label="일정 삭제"
             >
@@ -499,7 +499,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               }}
               title="클릭하여 알림 시간 변경"
               className={`inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-md border transition-colors cursor-pointer ${
-                ev.alarmDone ? 'text-slate-400 bg-slate-100 border-slate-200' : 'text-primary bg-blue-50 border-blue-200'
+                ev.alarmDone ? 'text-slate-500 bg-slate-100 border-slate-200' : 'text-primary bg-blue-50 border-blue-200'
               }`}
             >
               ⏰ {ev.time}

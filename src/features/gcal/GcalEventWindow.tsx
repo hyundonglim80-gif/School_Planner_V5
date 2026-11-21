@@ -47,7 +47,7 @@ export default function GcalEventWindow({ params, close, raise }: WindowProps<Gc
           <div data-gcal-window-cal className="flex items-center gap-1.5 text-xs font-bold text-slate-600 min-w-0">
             <span aria-hidden className="w-3 h-3 shrink-0 rounded-full" style={{ backgroundColor: cal.color }} />
             <span className="truncate">{cal.name}</span>
-            <span className="shrink-0 font-normal text-slate-400">(구글 캘린더)</span>
+            <span className="shrink-0 font-normal text-slate-500">(구글 캘린더)</span>
           </div>
           {ev.location && (
             <div data-gcal-window-location className="text-sm text-slate-700 break-words">
@@ -83,7 +83,7 @@ export default function GcalEventWindow({ params, close, raise }: WindowProps<Gc
             📅 일정으로 담기
           </button>
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed">
+        <p className="text-xs text-slate-500 leading-relaxed">
           구글 캘린더 일정은 이 기기에 받아 보여 주기만 합니다. 고치거나 지우려면 구글 캘린더에서 하세요. 담은 일정은 내 것이라 구글 일정이 바뀌어도 따라 바뀌지 않습니다.
         </p>
       </div>

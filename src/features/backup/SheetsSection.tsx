@@ -130,7 +130,7 @@ export default function SheetsSection() {
         {period === 'custom' && (
           <div className="flex items-center gap-2 text-xs">
             <input type="date" aria-label="시작일" data-sheets-start value={custom.start} onChange={(e) => setCustom((c) => ({ ...c, start: e.target.value }))} className="px-2 py-1.5 border border-slate-200 rounded-lg" />
-            <span className="text-slate-400">~</span>
+            <span className="text-slate-500">~</span>
             <input type="date" aria-label="종료일" data-sheets-end value={custom.end} onChange={(e) => setCustom((c) => ({ ...c, end: e.target.value }))} className="px-2 py-1.5 border border-slate-200 rounded-lg" />
           </div>
         )}
@@ -148,7 +148,7 @@ export default function SheetsSection() {
             </label>
           ))}
         </div>
-        <p className="text-2xs text-slate-400">메모는 기간과 상관없이 모두 담습니다. 시트로 보낼 때 그 탭은 비우고 다시 씁니다.</p>
+        <p className="text-2xs text-slate-500">메모는 기간과 상관없이 모두 담습니다. 시트로 보낼 때 그 탭은 비우고 다시 씁니다.</p>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" data-sheets-export disabled={!!busy || !sid} onClick={() => void send()} className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer">
             📊 시트로 보내기

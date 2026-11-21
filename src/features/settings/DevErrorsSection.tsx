@@ -85,7 +85,7 @@ export default function DevErrorsSection() {
           읽지 못했습니다 ({failed})
         </p>
       )}
-      {groups?.length === 0 && <p data-errors-empty className="text-xs text-slate-400">오류 기록이 없습니다.</p>}
+      {groups?.length === 0 && <p data-errors-empty className="text-xs text-slate-500">오류 기록이 없습니다.</p>}
       <ul className="space-y-1.5">
         {groups?.map((g) => {
           const key = g.latest.id;
@@ -105,7 +105,7 @@ export default function DevErrorsSection() {
                   </span>
                   <span className="text-xs font-bold text-slate-700 break-all">{g.message}</span>
                 </div>
-                <div className="text-[11px] text-slate-400 mt-1 pl-8">
+                <div className="text-[11px] text-slate-500 mt-1 pl-8">
                   {KIND_LABEL[g.kind] ?? g.kind} · {timeLabel(g.lastAt)} · 판 {g.builds.join(', ')} · {g.devices.join(', ')}
                 </div>
               </button>

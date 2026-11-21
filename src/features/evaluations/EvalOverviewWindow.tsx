@@ -112,7 +112,7 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
   return (
     <ModalShell isOpen onClose={close} raise={raise} width="2xl" title="📊 조사표 모아 보기" footer={<ModalCloseButton onClose={close} />}>
       {classes.length === 0 ? (
-        <p className="text-center text-slate-400 py-8 text-sm" data-eval-overview-no-class>
+        <p className="text-center text-slate-500 py-8 text-sm" data-eval-overview-no-class>
           명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.
         </p>
       ) : (
@@ -192,9 +192,9 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                 </button>
               </div>
               {evals.length === 0 ? (
-                <p className="text-center text-slate-400 py-8">{cls ? `${cls.year}학년도에 이 학급으로 만든 조사표가 없습니다.` : ''} 조사표는 수업 칸·메모 칸의 📊에서 만듭니다.</p>
+                <p className="text-center text-slate-500 py-8">{cls ? `${cls.year}학년도에 이 학급으로 만든 조사표가 없습니다.` : ''} 조사표는 수업 칸·메모 칸의 📊에서 만듭니다.</p>
               ) : shown.length === 0 ? (
-                <p className="text-center text-slate-400 py-8">고른 교과·학기·유형에 맞는 조사표가 없습니다.</p>
+                <p className="text-center text-slate-500 py-8">고른 교과·학기·유형에 맞는 조사표가 없습니다.</p>
               ) : (
                 <div ref={tableRef} className="border border-slate-200 rounded-xl overflow-auto max-h-[65vh]" data-eval-overview>
                   <table className="text-xs border-collapse min-w-full">
@@ -213,13 +213,13 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                                 data-eval-col={ev.id}
                                 className="w-full text-left rounded-md px-1 py-0.5 hover:bg-white cursor-pointer"
                               >
-                                <span className="block text-2xs font-bold text-slate-400">
+                                <span className="block text-2xs font-bold text-slate-500">
                                   {EVAL_TYPE_LABEL[ev.type]}
                                   {ev.shared ? ' 👥' : ''}
                                 </span>
                                 <span className="block font-black text-slate-700 leading-tight line-clamp-2">{evalColumnTitle(ev)}</span>
                                 {counts && (
-                                  <span className="block text-2xs text-slate-400 leading-tight" data-eval-steps>
+                                  <span className="block text-2xs text-slate-500 leading-tight" data-eval-steps>
                                     {counts}
                                   </span>
                                 )}
@@ -232,7 +232,7 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                     <tbody>
                       {students.map((st) => (
                         <tr key={st.sid} className={st.out ? 'text-slate-300' : 'hover:bg-slate-50'} data-eval-overview-row={st.sid}>
-                          <td className="sticky left-0 bg-white p-1.5 w-10 min-w-10 text-center font-bold text-slate-400 border-b border-r border-slate-100">{st.num}</td>
+                          <td className="sticky left-0 bg-white p-1.5 w-10 min-w-10 text-center font-bold text-slate-500 border-b border-r border-slate-100">{st.num}</td>
                           <td className="sticky left-10 bg-white p-1.5 font-bold border-b border-r border-slate-100 whitespace-nowrap">
                             {st.name}
                             {st.out && <span className="ml-1 text-2xs">(전출)</span>}
@@ -255,7 +255,7 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                                   <span className="font-bold">
                                     {cell.main || '…'}
                                     {cell.note && (
-                                      <span className="ml-0.5 text-slate-400" aria-label="사유 있음">
+                                      <span className="ml-0.5 text-slate-500" aria-label="사유 있음">
                                         ✎
                                       </span>
                                     )}
@@ -270,7 +270,7 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                   </table>
                 </div>
               )}
-              <p className="text-2xs text-slate-400">
+              <p className="text-2xs text-slate-500">
                 {cls?.year}학년도에 이 학급으로 만든 조사표를 개인 공간과 지금 보는 공유 그룹에서 모았습니다. 읽기만 합니다 - 값은 조사표 머리를 눌러 연 조사표에서 고칩니다. ✎는 사유·근거가 있다는 표시(칸에 마우스를 올리면 보임)입니다.
               </p>
             </>

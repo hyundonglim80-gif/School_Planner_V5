@@ -111,7 +111,7 @@ export default function EntryBody({ item, onToggleCheckLine, fullTables, large, 
           <span data-check-done-section className={`block space-y-0.5 ${open.length > 0 ? 'mt-1.5 pt-1.5 border-t border-dashed border-slate-200' : ''}`}>
             {closed.map(({ line, idx }) => (
               <span key={idx} className="block" data-check-done={idx}>
-                {checkSpan(line, idx, 'done', 'block !mx-0 px-1.5 py-0.5 bg-slate-100 text-slate-400 line-through')}
+                {checkSpan(line, idx, 'done', 'block !mx-0 px-1.5 py-0.5 bg-slate-100 text-slate-500 line-through')}
               </span>
             ))}
           </span>
@@ -164,13 +164,13 @@ export default function EntryBody({ item, onToggleCheckLine, fullTables, large, 
               <span className="font-semibold text-slate-700 group-hover/file:text-primary truncate flex-1" title={f.name}>
                 📎 {f.name}
               </span>
-              <span className="text-xs text-slate-400 shrink-0 font-medium group-hover/file:text-primary">다운로드</span>
+              <span className="text-xs text-slate-500 shrink-0 font-medium group-hover/file:text-primary">다운로드</span>
             </a>
           ))}
         </div>
       )}
       {shown && (
-        <p data-entry-text className={`text-sm whitespace-pre-wrap break-words leading-relaxed ${done ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+        <p data-entry-text className={`text-sm whitespace-pre-wrap break-words leading-relaxed ${done ? 'line-through text-slate-500' : 'text-slate-800'}`}>
           {renderBody()}
         </p>
       )}

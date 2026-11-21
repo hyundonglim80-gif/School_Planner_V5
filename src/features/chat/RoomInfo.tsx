@@ -71,18 +71,18 @@ export default function RoomInfo({ roomRef, room, pendingMembers, uid, groups, p
   return (
     <div data-chat-room-info className="flex max-h-[50vh] flex-col gap-3 overflow-y-auto overscroll-contain border-b border-slate-100 bg-slate-50 px-3 py-3 text-xs">
       <section>
-        <h4 className="pb-1 text-2xs font-black text-slate-400">구성원 {list.length}명</h4>
+        <h4 className="pb-1 text-2xs font-black text-slate-500">구성원 {list.length}명</h4>
         <ul className="flex flex-wrap gap-1.5">
           {list.map((who) => (
             <li
               key={who}
               data-chat-member={who}
               data-chat-member-left={left(who) ? 'yes' : 'no'}
-              className={`rounded-full border border-slate-200 bg-white px-2.5 py-0.5 font-semibold ${left(who) ? 'text-slate-400 opacity-60' : 'text-slate-700'}`}
+              className={`rounded-full border border-slate-200 bg-white px-2.5 py-0.5 font-semibold ${left(who) ? 'text-slate-500 opacity-60' : 'text-slate-700'}`}
             >
               👤 {nameOf(who)}
-              {who === uid && <span className="text-slate-400"> (나)</span>}
-              {left(who) && <span className="text-2xs text-slate-400"> · 그룹을 나감</span>}
+              {who === uid && <span className="text-slate-500"> (나)</span>}
+              {left(who) && <span className="text-2xs text-slate-500"> · 그룹을 나감</span>}
             </li>
           ))}
         </ul>
@@ -113,9 +113,9 @@ export default function RoomInfo({ roomRef, room, pendingMembers, uid, groups, p
             </button>
           </section>
           <section>
-            <h4 className="pb-1 text-2xs font-black text-slate-400">사람 더하기 ({group?.name})</h4>
+            <h4 className="pb-1 text-2xs font-black text-slate-500">사람 더하기 ({group?.name})</h4>
             {addable.length === 0 ? (
-              <p data-chat-add-none className="text-slate-400">그룹 사람이 모두 이 방에 있습니다.</p>
+              <p data-chat-add-none className="text-slate-500">그룹 사람이 모두 이 방에 있습니다.</p>
             ) : (
               <div className="flex flex-wrap items-center gap-1.5">
                 {addable.map((who) => {

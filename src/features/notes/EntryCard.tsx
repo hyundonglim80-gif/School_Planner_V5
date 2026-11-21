@@ -125,7 +125,7 @@ export default function EntryCard(props: EntryCardProps) {
                 stop(e);
                 onToggleCollapse();
               }}
-              className="text-slate-400 hover:text-primary transition-colors p-0.5 text-xs cursor-pointer shrink-0"
+              className="text-slate-500 hover:text-primary transition-colors p-0.5 text-xs cursor-pointer shrink-0"
               title={collapsed ? '펼치기' : '접기'}
             >
               {collapsed ? '▶' : '▼'}
@@ -192,11 +192,11 @@ export default function EntryCard(props: EntryCardProps) {
               />
             ))}
           </span>
-          <span className="text-xs text-slate-400" data-entry-date>
+          <span className="text-xs text-slate-500" data-entry-date>
             {dateText}
           </span>
           {props.note && (
-            <span className="text-2xs font-bold text-slate-400" data-entry-note>
+            <span className="text-2xs font-bold text-slate-500" data-entry-note>
               {props.note}
             </span>
           )}
@@ -280,7 +280,7 @@ export default function EntryCard(props: EntryCardProps) {
                 stop(e);
                 props.onAddLink?.();
               }}
-              className="p-1 text-slate-400 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+              className="p-1 text-slate-500 hover:text-yellow-700 hover:bg-yellow-50 rounded-lg text-xs font-semibold transition-all cursor-pointer"
               title="링크 추가 - 일정·메모·수업에 잇기"
               aria-label="링크 추가"
             >
@@ -294,7 +294,7 @@ export default function EntryCard(props: EntryCardProps) {
               stop(e);
               (props.onEdit ?? props.onOpen)();
             }}
-            className="p-1 text-slate-400 hover:text-primary hover:bg-slate-100 rounded-lg text-xs font-semibold transition-all cursor-pointer"
+            className="p-1 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg text-xs font-semibold transition-all cursor-pointer"
             title={`${noun} 수정`}
             aria-label={`${noun} 수정`}
           >
@@ -307,7 +307,7 @@ export default function EntryCard(props: EntryCardProps) {
               stop(e);
               props.onDelete();
             }}
-            className="w-6 h-6 flex items-center justify-center text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition-all cursor-pointer"
+            className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition-all cursor-pointer"
             title={`${noun} 삭제`}
             aria-label={`${noun} 삭제`}
           >
@@ -318,13 +318,13 @@ export default function EntryCard(props: EntryCardProps) {
 
       {/* 펼친 카드는 제목을 자르지 않는다 - 본문은 그 아래 줄부터라 긴 첫 줄이 숨지 않게 (P35) */}
       {title && (
-        <p data-entry-title className={`text-sm font-extrabold ${collapsed ? 'truncate' : 'break-words'} ${done ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+        <p data-entry-title className={`text-sm font-extrabold ${collapsed ? 'truncate' : 'break-words'} ${done ? 'line-through text-slate-500' : 'text-slate-900'}`}>
           {title}
         </p>
       )}
 
       {collapsed && preview && (
-        <p data-entry-preview className={`text-sm truncate leading-relaxed ${done ? 'line-through text-slate-400' : 'text-slate-500'}`}>
+        <p data-entry-preview className={`text-sm truncate leading-relaxed ${done ? 'line-through text-slate-500' : 'text-slate-500'}`}>
           {preview}
         </p>
       )}

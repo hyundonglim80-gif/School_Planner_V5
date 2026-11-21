@@ -226,7 +226,7 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
                 onClick={() => remove(i)}
                 title="첨부 빼기"
                 aria-label="첨부 빼기"
-                className="h-5 w-5 shrink-0 rounded font-bold text-slate-400 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+                className="h-5 w-5 shrink-0 rounded font-bold text-slate-500 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
               >
                 ✕
               </button>
@@ -278,7 +278,7 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
         </button>
       </div>
       {text.length > maxText - 200 && (
-        <p data-chat-count className={`mt-1 text-right text-2xs ${text.length > maxText ? 'font-bold text-red-600' : 'text-slate-400'}`}>
+        <p data-chat-count className={`mt-1 text-right text-2xs ${text.length > maxText ? 'font-bold text-red-600' : 'text-slate-500'}`}>
           {text.length} / {maxText}자
         </p>
       )}
@@ -290,7 +290,7 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
       {(hint || footer) && (
         <div className="mt-1 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
           {hint && (
-            <p data-chat-hint className="text-2xs text-slate-400">
+            <p data-chat-hint className="text-2xs text-slate-500">
               {hint}
             </p>
           )}

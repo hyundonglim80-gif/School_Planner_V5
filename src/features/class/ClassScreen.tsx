@@ -95,7 +95,7 @@ function ClassHub() {
       return (
         <div className="flex flex-col items-center justify-center py-20 gap-3" data-class-waiting>
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-primary" />
-          <p className="text-xs text-slate-400 font-medium">명렬표를 불러오는 중...</p>
+          <p className="text-xs text-slate-500 font-medium">명렬표를 불러오는 중...</p>
         </div>
       );
     }
@@ -122,7 +122,7 @@ function ClassHub() {
             </option>
           ))}
         </select>
-        <span className="text-xs text-slate-400">고른 학급으로 아래 도구가 열립니다.</span>
+        <span className="text-xs text-slate-500">고른 학급으로 아래 도구가 열립니다.</span>
       </div>
 
       {/* 교과 모드: 올해 반을 학년별 줄의 반 색 칩으로 */}
@@ -199,10 +199,10 @@ function ClassHub() {
       <section className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4" data-class-students={students.length}>
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <h3 className="font-black text-sm text-slate-700">
-            🧑‍🎓 학생 {students.length}명 <span className="text-xs font-semibold text-slate-400">- {showPhotos ? '사진을 누르면 크게, 이름을 누르면 누가기록' : '누르면 그 학생의 누가기록'}</span>
+            🧑‍🎓 학생 {students.length}명 <span className="text-xs font-semibold text-slate-500">- {showPhotos ? '사진을 누르면 크게, 이름을 누르면 누가기록' : '누르면 그 학생의 누가기록'}</span>
           </h3>
           {showPhotos && photos.status === 'ready' && students.length > 0 && (
-            <span className="text-xs font-semibold text-slate-400" data-class-photo-count={students.length - photos.missing.length}>
+            <span className="text-xs font-semibold text-slate-500" data-class-photo-count={students.length - photos.missing.length}>
               사진 {students.length - photos.missing.length}/{students.length}명
             </span>
           )}
@@ -241,13 +241,13 @@ function ClassHub() {
               </button>
             </div>
           ) : photos.status === 'checking' || photos.status === 'loading' || photos.resolving ? (
-            <p className="mb-2 text-xs text-slate-400 font-semibold" data-photo-loading>
+            <p className="mb-2 text-xs text-slate-500 font-semibold" data-photo-loading>
               사진을 불러오는 중... ({students.length - photos.missing.length}/{students.length})
             </p>
           ) : null)}
 
         {students.length === 0 ? (
-          <p className="text-sm text-slate-400">이 학급에 학생이 없습니다. 위의 🧑‍🤝‍🧑 명렬표에서 더합니다.</p>
+          <p className="text-sm text-slate-500">이 학급에 학생이 없습니다. 위의 🧑‍🤝‍🧑 명렬표에서 더합니다.</p>
         ) : showPhotos ? (
           /* 명렬표 관리의 타일 보기와 같은 카드 - 휴대폰 세 칸(한 칸이 너무 좁으면 얼굴·이름을 못 읽는다) */
           <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2" data-class-photo-grid>
@@ -290,7 +290,7 @@ function ClassHub() {
                 onClick={() => cls && openStudentRecord({ classId: classIdOf(cls), sid: s.sid })}
                 className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-slate-200 hover:bg-primary/5 hover:border-primary/40 text-sm text-left min-w-0 cursor-pointer"
               >
-                <span className="text-xs font-bold text-slate-400 tabular-nums shrink-0">{s.num}</span>
+                <span className="text-xs font-bold text-slate-500 tabular-nums shrink-0">{s.num}</span>
                 <span className="font-bold text-slate-800 truncate">{s.name || '이름 없음'}</span>
               </button>
             ))}

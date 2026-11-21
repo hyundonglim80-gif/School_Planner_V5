@@ -156,15 +156,15 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
 
   const chip = (on: boolean, tone: string) =>
     `px-2 py-1 rounded-lg border font-bold transition-colors cursor-pointer ${on ? tone : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`;
-  const sectionTitle = 'text-2xs font-black text-slate-400 mb-1';
+  const sectionTitle = 'text-2xs font-black text-slate-500 mb-1';
   const btn = 'px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold cursor-pointer';
 
   return (
     <div className="rounded-xl border border-primary/30 bg-white shadow-sm p-3 flex flex-col gap-3 text-xs" data-seat-student={student.sid}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span className={`font-black ${student.gender === 'M' ? 'text-sky-600' : student.gender === 'F' ? 'text-rose-500' : 'text-slate-400'}`}>{student.num}번</span>
+        <span className={`font-black ${student.gender === 'M' ? 'text-sky-600' : student.gender === 'F' ? 'text-rose-500' : 'text-slate-500'}`}>{student.num}번</span>
         <span className="text-base font-black text-slate-800">{student.name || '(이름 없음)'}</span>
-        {pending > 0 && <span className="text-slate-400">저장 중…</span>}
+        {pending > 0 && <span className="text-slate-500">저장 중…</span>}
         <div className="ml-auto flex items-center gap-1">
           <button type="button" data-seat-student-record onClick={onOpenRecord} className={btn}>
             🧑‍🎓 누가기록
@@ -178,7 +178,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
             onClick={onClose}
             aria-label="학생 칸 닫기"
             title="학생 칸 닫기"
-            className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+            className="w-7 h-7 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
           >
             ✕
           </button>
@@ -187,7 +187,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
       {student.note?.trim() && <p className="text-slate-500 -mt-2">📌 {student.note.trim()}</p>}
 
       {!active ? (
-        <p className="text-slate-400">전출한 학생입니다. 지난 기록은 누가기록에서 봅니다.</p>
+        <p className="text-slate-500">전출한 학생입니다. 지난 기록은 누가기록에서 봅니다.</p>
       ) : (
         <>
           <section data-seat-student-section="attendance">
@@ -218,7 +218,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
             {record && (
               <div className="flex flex-col gap-1.5 mt-1.5">
                 <div className="flex flex-wrap items-center gap-1">
-                  <span className="text-slate-400 mr-1">사유</span>
+                  <span className="text-slate-500 mr-1">사유</span>
                   {REASONS.map((rs) => (
                     <button
                       key={rs}
@@ -234,7 +234,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                 </div>
                 {KIND_HAS_PERIODS[record.kind] && (
                   <div className="flex flex-wrap items-center gap-1">
-                    <span className="text-slate-400 mr-1">교시</span>
+                    <span className="text-slate-500 mr-1">교시</span>
                     {Array.from({ length: periodCount }, (_, i) => i + 1).map((p) => (
                       <button
                         key={p}
@@ -244,7 +244,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                         aria-pressed={!!record.periods?.includes(p)}
                         aria-label={`${p}교시`}
                         className={`w-7 h-6 rounded-md border font-bold cursor-pointer ${
-                          record.periods?.includes(p) ? 'bg-rose-100 border-rose-300 text-rose-700' : 'bg-white border-slate-200 text-slate-400'
+                          record.periods?.includes(p) ? 'bg-rose-100 border-rose-300 text-rose-700' : 'bg-white border-slate-200 text-slate-500'
                         }`}
                       >
                         {p}
@@ -275,7 +275,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
           <section data-seat-student-section="eval">
             <div className={sectionTitle}>오늘 조사표{space !== sid ? ' (지금 보는 그룹)' : ''}</div>
             {classEvals.length === 0 ? (
-              <p className="text-slate-400">오늘 이 학급의 조사표가 없습니다.</p>
+              <p className="text-slate-500">오늘 이 학급의 조사표가 없습니다.</p>
             ) : (
               <div className="flex flex-col gap-1.5">
                 {classEvals.map((e) => {
@@ -293,9 +293,9 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                         {e.subject ? `${e.subject} · ` : ''}
                         {e.title || '(제목 없음)'}
                       </span>
-                      <span className="text-2xs text-slate-400">{EVAL_TYPE_LABEL[e.type]}</span>
+                      <span className="text-2xs text-slate-500">{EVAL_TYPE_LABEL[e.type]}</span>
                       {!evalHasStudent(e, student.sid) ? (
-                        <span className="text-slate-400">명단에 없는 학생</span>
+                        <span className="text-slate-500">명단에 없는 학생</span>
                       ) : (
                         <>
                           {e.type === 'eval' && e.indiv && hasScoreCuts(e) && scoreInput(e, 'indiv', editable)}
@@ -336,7 +336,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                             aria-label={`${e.title} ${e.type === 'memo' ? '메모' : '근거'}`}
                             className="flex-1 min-w-24 px-2 py-0.5 border border-slate-200 rounded-lg"
                           />
-                          {!editable && <span className="text-2xs text-slate-400">다른 사람이 만든 조사표</span>}
+                          {!editable && <span className="text-2xs text-slate-500">다른 사람이 만든 조사표</span>}
                         </>
                       )}
                     </div>

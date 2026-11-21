@@ -45,7 +45,7 @@ function ClipRow({ item, pasteWith }: { item: ClipItem; pasteWith: Paste }) {
         title="눌러서 붙여넣기"
         className="w-full text-left px-3 py-2.5 rounded-xl border border-slate-200 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
       >
-        <span className="block text-2xs font-bold text-slate-400 mb-1">
+        <span className="block text-2xs font-bold text-slate-500 mb-1">
           {item.kind === 'image' ? '🖼️ 그림' : '📝 글자'} · {timeLabel(item.createdAt)}
         </span>
         {item.kind === 'image' && url ? (
@@ -61,7 +61,7 @@ function ClipRow({ item, pasteWith }: { item: ClipItem; pasteWith: Paste }) {
         onClick={() => void removeClip(item.id)}
         title="휴지통으로 (휴지통에서 되살릴 수 있다)"
         aria-label="이 항목 휴지통으로"
-        className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
+        className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
       >
         ✕
       </button>
@@ -119,7 +119,7 @@ export function ClipboardPanel({ onClose, pasteWith, hint, titled = true }: { on
           </button>
         </div>
         )}
-        <p className={`text-2xs text-slate-400 ${titled ? 'mt-1' : ''}`}>{hint}</p>
+        <p className={`text-2xs text-slate-500 ${titled ? 'mt-1' : ''}`}>{hint}</p>
         <div className="flex items-center gap-1.5 mt-2">
           <button
             type="button"
@@ -150,7 +150,7 @@ export function ClipboardPanel({ onClose, pasteWith, hint, titled = true }: { on
         )}
       </div>
       {items.length === 0 ? (
-        <p className="px-4 py-10 text-center text-xs text-slate-400" data-clipboard-empty>
+        <p className="px-4 py-10 text-center text-xs text-slate-500" data-clipboard-empty>
           아직 복사한 것이 없습니다.
           <br />
           글자를 Ctrl+C 하거나 '가져오기'를 눌러 보세요.

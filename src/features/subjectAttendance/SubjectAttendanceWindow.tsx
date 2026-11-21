@@ -102,7 +102,7 @@ export default function SubjectAttendanceWindow({ params, close, raise }: Window
               </button>
             </div>
           </div>
-          <p className="text-slate-400">
+          <p className="text-slate-500">
             {span.start} ~ {span.end} · 결과·지각·조퇴는 교시 수 · 학생을 누르면 날짜·교시 내역
           </p>
           <div ref={tableRef} className="overflow-x-auto border border-slate-200 rounded-xl">
@@ -125,9 +125,9 @@ export default function SubjectAttendanceWindow({ params, close, raise }: Window
                     <Fragment key={st.sid}>
                       <tr data-summary-row={st.sid} onClick={() => setOpenSid(open ? null : st.sid)} className={`border-t border-slate-100 cursor-pointer hover:bg-blue-50/40 ${sum ? '' : 'text-slate-300'}`}>
                         <td className="px-2 py-1.5 text-left font-bold text-slate-800">
-                          <span className="text-slate-400 mr-1">{st.num}</span>
+                          <span className="text-slate-500 mr-1">{st.num}</span>
                           {st.name}
-                          {!isActive(st) && <span className="ml-1 text-slate-400 font-normal">(전출)</span>}
+                          {!isActive(st) && <span className="ml-1 text-slate-500 font-normal">(전출)</span>}
                         </td>
                         <td data-summary-absent className={t?.absent ? 'font-bold text-rose-600' : ''}>{t?.absent || '·'}</td>
                         <td data-summary-late className={t?.late ? 'font-bold text-rose-600' : ''}>{t?.late || '·'}</td>
@@ -138,7 +138,7 @@ export default function SubjectAttendanceWindow({ params, close, raise }: Window
                         <tr className="bg-slate-50/60" data-summary-history={st.sid}>
                           <td colSpan={5} className="px-3 py-2 text-left">
                             {!t?.items.length ? (
-                              <span className="text-slate-400">이 기간에 교과 출결이 없습니다 (모두 출석).</span>
+                              <span className="text-slate-500">이 기간에 교과 출결이 없습니다 (모두 출석).</span>
                             ) : (
                               <ul className="space-y-0.5">
                                 {t.items.map((it) => (

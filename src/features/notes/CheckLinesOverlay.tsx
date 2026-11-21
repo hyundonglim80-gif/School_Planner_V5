@@ -52,7 +52,7 @@ export default function CheckLinesOverlay({ text, onMove }: Props) {
           return (
             <div key={i} data-check-row={i} data-check-state={st}>
               <span className={st === 'done' ? 'text-emerald-600' : 'text-slate-500'}>{m[1]}</span>
-              <span className={st === 'done' ? 'line-through text-slate-400' : ''}>{m[2]}</span>
+              <span className={st === 'done' ? 'line-through text-slate-500' : ''}>{m[2]}</span>
             </div>
           );
         })}
@@ -62,7 +62,7 @@ export default function CheckLinesOverlay({ text, onMove }: Props) {
         const up = canMoveCheckLine(text, i, -1);
         const down = canMoveCheckLine(text, i, 1);
         if (!up && !down) return null;
-        const btn = 'w-4 h-5 leading-none text-2xs text-slate-400 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-400 cursor-pointer';
+        const btn = 'w-4 h-5 leading-none text-2xs text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-400 cursor-pointer';
         return (
           <div key={i} className="absolute left-1.5 z-10 flex items-center" style={{ top: tops[i] }}>
             <button type="button" data-check-up={i} disabled={!up} onMouseDown={(e) => e.preventDefault()} onClick={() => onMove(i, -1)} title="위로" aria-label="위로" className={btn}>

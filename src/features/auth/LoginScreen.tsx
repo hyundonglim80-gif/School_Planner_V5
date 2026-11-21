@@ -23,7 +23,7 @@ export default function LoginScreen() {
           {signingIn ? '로그인 창을 여는 중...' : 'Google 계정으로 로그인'}
         </button>
         {signingIn && (
-          <p className="mt-4 text-sm text-slate-400">구글 로그인 창이 열립니다. 창이 안 보이면 팝업 차단을 확인해 주세요.</p>
+          <p className="mt-4 text-sm text-slate-500">구글 로그인 창이 열립니다. 창이 안 보이면 팝업 차단을 확인해 주세요.</p>
         )}
       </div>
     </div>

@@ -23,7 +23,7 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
   const free = isFreeEval(ev);
   /** 점수로 단계 자동 매기기(P46-2) - 결과 칸 왼쪽에 점수 칸, 치면 옆 결과가 그 단계(결과는 손으로 바꿀 수 있다) */
   const scored = hasScoreCuts(ev);
-  const lock = canEdit ? '' : 'bg-slate-100 text-slate-400 cursor-not-allowed';
+  const lock = canEdit ? '' : 'bg-slate-100 text-slate-500 cursor-not-allowed';
   const set = (sid: string, p: Parameters<typeof withEvalValue>[2]) => onChange(withEvalValue(values, sid, p));
   const all = (p: Parameters<typeof applyEvalToAll>[2]) => onChange(applyEvalToAll(values, ev.students, p));
   const stepOptions = steps.map((s) => (
@@ -134,7 +134,7 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
               return (
                 <tr key={st.sid} data-eval-row={st.sid} className={st.out ? 'bg-slate-50 opacity-50' : 'hover:bg-slate-50'}>
                   <td className="p-1.5 text-center font-bold text-slate-500 bg-slate-50/70">{st.num}</td>
-                  <td className={`p-1.5 font-bold ${st.out ? 'text-slate-400' : 'text-slate-800'}`}>
+                  <td className={`p-1.5 font-bold ${st.out ? 'text-slate-500' : 'text-slate-800'}`}>
                     {st.name}
                     {st.out && <span className="ml-0.5 font-normal">(전출/삭제됨)</span>}
                   </td>

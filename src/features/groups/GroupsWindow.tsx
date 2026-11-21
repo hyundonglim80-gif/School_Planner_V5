@@ -168,7 +168,7 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
                   onClick={() => openChat({ room: dmPairId(uid, id), sid: group.id })}
                   title={`${name} 선생님과 1:1 대화`}
                   aria-label={`${name} 선생님과 1:1 대화`}
-                  className="px-0.5 text-slate-400 hover:text-primary cursor-pointer"
+                  className="px-0.5 text-slate-500 hover:text-primary cursor-pointer"
                 >
                   💬
                 </button>
@@ -181,7 +181,7 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
                   onClick={() => void kick(id, name)}
                   title={`${name} 선생님 내보내기`}
                   aria-label={`${name} 선생님 내보내기`}
-                  className="px-0.5 font-bold text-slate-400 hover:text-red-600 disabled:opacity-50 cursor-pointer"
+                  className="px-0.5 font-bold text-slate-500 hover:text-red-600 disabled:opacity-50 cursor-pointer"
                 >
                   ×
                 </button>
@@ -280,7 +280,7 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
               인터넷이 끊겨 그룹 목록을 받지 못했습니다. 다시 이어지면 저절로 보입니다.
             </p>
           ) : !loaded ? (
-            <p className="text-xs text-slate-400">불러오는 중…</p>
+            <p className="text-xs text-slate-500">불러오는 중…</p>
           ) : groups.length === 0 ? (
             <p data-groups-empty className="text-xs text-slate-500">
               아직 든 그룹이 없습니다. 아래에서 만들거나 초대 코드로 참여합니다.

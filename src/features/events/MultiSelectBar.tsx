@@ -149,7 +149,7 @@ export default function MultiSelectBar() {
               ▶
             </button>
           </div>
-          <p className="mt-2 text-2xs text-slate-400 leading-snug">기간·반복 묶음이어도 고른 것만 옮깁니다. 묶음째 옮기려면 일정을 눌러 칸의 날짜를 고치세요.</p>
+          <p className="mt-2 text-2xs text-slate-500 leading-snug">기간·반복 묶음이어도 고른 것만 옮깁니다. 묶음째 옮기려면 일정을 눌러 칸의 날짜를 고치세요.</p>
           <button
             type="button"
             data-multi-move-go
@@ -198,7 +198,7 @@ export default function MultiSelectBar() {
             🗑️<span className="hidden sm:inline">삭제</span>
           </button>
           <div className="w-px h-5 bg-slate-700 mx-1" />
-          <button type="button" data-multi-end onClick={endMulti} disabled={busy} title="여러 개 고르기 끝내기" className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-40">
+          <button type="button" data-multi-end onClick={endMulti} disabled={busy} title="여러 개 고르기 끝내기" className="p-1.5 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-40">
             ✕
           </button>
         </div>

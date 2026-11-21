@@ -26,7 +26,7 @@ export default function MobileTabBar() {
               aria-pressed={isActive}
               onClick={() => setScope(tab.id)}
               className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-2 transition-colors ${
-                isActive ? 'text-primary' : 'text-slate-400'
+                isActive ? 'text-primary' : 'text-slate-500'
               }`}
             >
               <span className={`text-lg leading-none ${isActive ? '' : 'opacity-60 grayscale'}`}>{tab.icon}</span>

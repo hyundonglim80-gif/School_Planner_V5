@@ -82,7 +82,7 @@ export default function MemoListRow(props: Props) {
           }}
           title={expanded ? '접기' : '펼치기'}
           aria-label={expanded ? '접기' : '펼치기'}
-          className="text-slate-400 hover:text-slate-700 text-xs w-5 h-5 -ml-1 flex items-center justify-center rounded hover:bg-slate-100 shrink-0 cursor-pointer"
+          className="text-slate-500 hover:text-slate-700 text-xs w-5 h-5 -ml-1 flex items-center justify-center rounded hover:bg-slate-100 shrink-0 cursor-pointer"
         >
           {expanded ? '▼' : '▶'}
         </button>
@@ -164,7 +164,7 @@ export default function MemoListRow(props: Props) {
             {dates.length > 1 ? ` 외 ${dates.length - 1}` : ''}
           </button>
         ) : (
-          <span className="text-2xs text-slate-400 whitespace-nowrap shrink-0">{dateText}</span>
+          <span className="text-2xs text-slate-500 whitespace-nowrap shrink-0">{dateText}</span>
         )}
       </div>
       {expanded && (

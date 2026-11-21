@@ -43,7 +43,7 @@ export default function BackupWindow({ params, close, raise }: WindowProps<Backu
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
               className={`px-3 py-2 -mb-px text-sm font-bold border-b-2 transition-colors cursor-pointer ${
-                tab === t.id ? 'border-primary text-primary' : 'border-transparent text-slate-400 hover:text-slate-700'
+                tab === t.id ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
               {t.label}

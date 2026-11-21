@@ -176,7 +176,7 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
               hint={PICK_HINT[page]}
               trigger={{ label: `📅 ${printRangeLabel(page, from)}`, title: `시작 ${unit} - 달력에서 고르기`, data: 'print-from', className: rangeBtn }}
             />
-            <span className="text-slate-400">~</span>
+            <span className="text-slate-500">~</span>
             <MiniCalendarPicker
               date={to}
               onSelectDate={setTo}
@@ -203,7 +203,7 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
                 </button>
               ))}
             </div>
-            <span className="text-slate-400">A4</span>
+            <span className="text-slate-500">A4</span>
             <label className="ml-2 flex items-center gap-1.5 cursor-pointer" title="한 장을 넘는 쪽은 글자·칸을 줄여 한 장에 찍습니다 (끄면 넘는 만큼 다음 장으로)">
               <input type="checkbox" data-print-fit checked={fit} onChange={(e) => setPrefs({ fit: e.target.checked })} className="accent-primary" />
               <span className="font-bold text-slate-600">한 장에 맞추기</span>
@@ -237,14 +237,14 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
                 aria-label="여백 (mm)"
                 className="w-14 px-2 py-1 rounded-lg border border-slate-200 bg-white text-right font-bold text-slate-700"
               />
-              <span className="text-slate-400">mm (네 변 모두, 0~{MARGIN_MAX_MM})</span>
+              <span className="text-slate-500">mm (네 변 모두, 0~{MARGIN_MAX_MM})</span>
             </label>
           </div>
 
           <span className="font-bold text-slate-500">정렬</span>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
             <span className="flex items-center gap-1.5" title="쪽이 용지 폭보다 좁을 때(한 장에 맞추려 줄인 쪽) 놓을 자리">
-              <span className="text-slate-400">가로</span>
+              <span className="text-slate-500">가로</span>
               <span className="flex" role="group" aria-label="가로 정렬">
                 {ALIGN_X.map((a) => (
                   <button key={a.id} type="button" data-print-align-x={a.id} aria-pressed={alignX === a.id} onClick={() => setPrefs({ alignX: a.id })} className={seg(alignX === a.id)}>
@@ -254,7 +254,7 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
               </span>
             </span>
             <span className="flex items-center gap-1.5" title="쪽이 한 장보다 짧을 때 놓을 자리">
-              <span className="text-slate-400">세로</span>
+              <span className="text-slate-500">세로</span>
               <span className="flex" role="group" aria-label="세로 정렬">
                 {ALIGN_Y.map((a) => (
                   <button key={a.id} type="button" data-print-align-y={a.id} aria-pressed={alignY === a.id} onClick={() => setPrefs({ alignY: a.id })} className={seg(alignY === a.id)}>
@@ -268,7 +268,7 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
 
         <div className="flex items-center gap-2 pt-1">
           <span className="font-black text-slate-600">미리보기</span>
-          <span className="text-slate-400">둘째 줄 토글(일정·수업·주말)대로{fit ? '' : ' · 점선 = 다음 장'}</span>
+          <span className="text-slate-500">둘째 줄 토글(일정·수업·주말)대로{fit ? '' : ' · 점선 = 다음 장'}</span>
         </div>
         <div ref={previewRef} data-print-preview className="flex flex-col items-center gap-4 rounded-xl bg-slate-100 p-3">
           {starts.map((start) => (
@@ -342,7 +342,7 @@ function PaperSheet({ page, start, title, landscape, scale, fit, marginMm, align
       </div>
       {Array.from({ length: sheets - 1 }, (_, i) => (
         <div key={i} className="absolute left-0 right-0 border-t-2 border-dashed border-slate-400" style={{ top: (margin + (i + 1) * h) * scale }}>
-          <span className="absolute right-1 -top-4 text-2xs font-bold text-slate-400">{i + 2}장</span>
+          <span className="absolute right-1 -top-4 text-2xs font-bold text-slate-500">{i + 2}장</span>
         </div>
       ))}
     </div>

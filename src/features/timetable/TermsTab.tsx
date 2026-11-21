@@ -123,11 +123,11 @@ export default function TermsTab({ terms, onChange, year, onYear }: Props) {
       <div className="bg-white/70 border border-slate-200 rounded-lg px-3 py-2 text-slate-600 space-y-0.5">
         <div data-terms-sem1>
           <span className="font-bold text-blue-700">1학기</span> {span(sems.sem1) || '여름 방학 시작일을 적으면 셈합니다'}
-          <span className="text-slate-400"> (3월 1일 ~ 여름 방학 전날)</span>
+          <span className="text-slate-500"> (3월 1일 ~ 여름 방학 전날)</span>
         </div>
         <div data-terms-sem2>
           <span className="font-bold text-indigo-700">2학기</span> {span(sems.sem2) || '여름 방학 끝 날과 겨울 방학 시작일을 적으면 셈합니다'}
-          <span className="text-slate-400"> (여름 방학 다음 날 ~ 겨울 방학 전날)</span>
+          <span className="text-slate-500"> (여름 방학 다음 날 ~ 겨울 방학 전날)</span>
         </div>
         <div className="text-slate-500 pt-0.5">방학에는 시간표 수업이 보이지 않습니다(그날 따로 적은 과목은 보입니다). 학년도마다 따로 적습니다.</div>
       </div>

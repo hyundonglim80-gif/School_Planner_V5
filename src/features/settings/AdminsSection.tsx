@@ -72,12 +72,12 @@ export default function AdminsSection() {
         {BASE_ADMIN_EMAILS.map((email) => (
           <div key={email} data-admin-row={email} data-admin-base className={row}>
             <span className="text-xs font-bold text-slate-700 flex-1 min-w-0 truncate">{email}</span>
-            <span className="text-[11px] text-slate-400 shrink-0" title="기본 관리자는 뺄 수 없습니다">
+            <span className="text-[11px] text-slate-500 shrink-0" title="기본 관리자는 뺄 수 없습니다">
               🔒 기본
             </span>
           </div>
         ))}
-        {list === null && !failed && <p className="text-xs text-slate-400">읽는 중…</p>}
+        {list === null && !failed && <p className="text-xs text-slate-500">읽는 중…</p>}
         {failed && (
           <p data-admins-failed className="text-xs text-red-500">
             목록을 읽지 못했습니다 ({failed})
@@ -87,7 +87,7 @@ export default function AdminsSection() {
           <div key={email} data-admin-row={email} className={row}>
             <span className="text-xs font-bold text-slate-700 flex-1 min-w-0 truncate">
               {email}
-              {email === me && <span className="text-slate-400 font-normal"> (나)</span>}
+              {email === me && <span className="text-slate-500 font-normal"> (나)</span>}
             </span>
             <button
               type="button"

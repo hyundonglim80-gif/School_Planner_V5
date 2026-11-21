@@ -92,7 +92,7 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
             <p className="text-xs font-bold text-primary mt-0.5 truncate" data-subject-att-title>
               {label || '반'} · {shortDateLabel(date)} {n}교시{shownSubject ? ` · ${shownSubject}` : ''} · 🔒 개인
             </p>
-            <p className="text-xs text-slate-400 mt-0.5">누르는 대로 바로 저장됩니다 · 담임 출석부와 따로 둡니다</p>
+            <p className="text-xs text-slate-500 mt-0.5">누르는 대로 바로 저장됩니다 · 담임 출석부와 따로 둡니다</p>
           </div>
           <button
             type="button"
@@ -104,21 +104,21 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
             📊 누계
           </button>
           <PopoutButton />
-          <button type="button" data-close title="닫기" onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
+          <button type="button" data-close title="닫기" onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
             ✕
           </button>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 space-y-3 text-xs text-slate-700" data-scroll-lock>
           {!cls ? (
-            <p className="text-center text-slate-400 py-8">이 반의 명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.</p>
+            <p className="text-center text-slate-500 py-8">이 반의 명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.</p>
           ) : (
             <>
               <span className="text-slate-500" data-subject-att-summary={summary}>
                 {students.length}명 · {summary ? <b className="text-rose-600">{summary}</b> : <b className="text-emerald-700">모두 출석</b>}
               </span>
               {homeroomAbsent.length > 0 && (
-                <p className="text-slate-400" data-homeroom-absent>
+                <p className="text-slate-500" data-homeroom-absent>
                   담임 출석부: 결석 {homeroomAbsent.map((s) => `${s.num}번 ${s.name}`).join(', ')}
                 </p>
               )}
@@ -129,7 +129,7 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
                     <div key={st.sid} data-subject-att-row={st.sid} className={`px-3 py-2 ${r ? 'bg-rose-50/40' : ''}`}>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="w-24 shrink-0 font-bold text-slate-800 truncate">
-                          <span className="text-slate-400 mr-1">{st.num}</span>
+                          <span className="text-slate-500 mr-1">{st.num}</span>
                           {st.name || '(이름 없음)'}
                         </span>
                         <div className={`flex items-center gap-1 flex-wrap ${busy === st.sid ? 'opacity-60' : ''}`}>
@@ -195,9 +195,9 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
                     </div>
                   );
                 })}
-                {students.length === 0 && <p className="text-center text-slate-400 py-6">이 반에 학생이 없습니다.</p>}
+                {students.length === 0 && <p className="text-center text-slate-500 py-6">이 반에 학생이 없습니다.</p>}
               </div>
-              <p className="text-slate-400">적지 않은 학생은 출석입니다. 교과 출결은 담임 출석부·메모 칸에 들어가지 않습니다 - 이 반 이 교시에만 남습니다.</p>
+              <p className="text-slate-500">적지 않은 학생은 출석입니다. 교과 출결은 담임 출석부·메모 칸에 들어가지 않습니다 - 이 반 이 교시에만 남습니다.</p>
             </>
           )}
         </div>

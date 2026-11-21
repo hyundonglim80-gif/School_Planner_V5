@@ -60,7 +60,7 @@ export default function ModalShell({
           <h2 className="text-base font-black text-slate-800 truncate">{title}</h2>
           <div className="flex items-center gap-2 shrink-0">
             {headerExtra}
-            <PopoutButton className="w-8 h-8 rounded-xl text-slate-400 hover:bg-slate-200 hover:text-slate-700" />
+            <PopoutButton className="w-8 h-8 rounded-xl text-slate-500 hover:bg-slate-200 hover:text-slate-700" />
             <button
               type="button"
               data-close

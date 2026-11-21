@@ -115,7 +115,7 @@ export default function GcalOverlaySection() {
                 <span aria-hidden className="w-3 h-3 shrink-0 rounded-full" style={{ backgroundColor: c.color }} />
                 <span className="min-w-0 flex-1 truncate text-sm font-bold text-slate-700" title={c.name}>
                   {c.name}
-                  {c.primary && <span className="ml-1 text-xs font-normal text-slate-400">(기본)</span>}
+                  {c.primary && <span className="ml-1 text-xs font-normal text-slate-500">(기본)</span>}
                 </span>
                 {c.on && shown?.missing[c.id] && (
                   <span data-gcal-overlay-missing={c.id} className="shrink-0 text-xs font-bold text-amber-700">

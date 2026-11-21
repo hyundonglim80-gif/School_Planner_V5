@@ -112,11 +112,11 @@ describe('글자 크기 - 화면마다 % (메모 요청 #145)', () => {
     const flat = readFileSync('src/index.css', 'utf8').replace(/\s+/g, ' ');
     expect(flat).toContain('--root-scale: var(--font-scale, 1);');
     const block = flat.slice(flat.indexOf('[data-fixed-font] {'));
-    // @theme의 여백 한 칸(0.2rem)·2xs(0.625rem)와 같은 값을 나눈다 - @theme을 바꾸면 여기도
+    // @theme의 여백 한 칸(0.2rem)·2xs(0.6875rem)와 같은 값을 나눈다 - @theme을 바꾸면 여기도
     expect(block).toContain('--spacing: calc(0.2rem / var(--root-scale));');
     expect(flat).toContain('--spacing: 0.2rem;');
-    expect(block).toContain('--text-2xs: calc(0.625rem / var(--root-scale));');
-    expect(flat).toContain('--text-2xs: 0.625rem;');
+    expect(block).toContain('--text-2xs: calc(0.6875rem / var(--root-scale));');
+    expect(flat).toContain('--text-2xs: 0.6875rem;');
     for (const t of ['xs', 'sm', 'base', 'lg', 'xl']) expect(block).toContain(`--text-${t}: calc(`);
     expect(block).toContain('font-size: calc(1rem / var(--root-scale));');
     // 머리줄 두 줄의 max-w-7xl(80rem)도 - 빠지면 하루 130%·한눈에 80%에서 단추가 옆으로 밀린다(#145 PC 확인)

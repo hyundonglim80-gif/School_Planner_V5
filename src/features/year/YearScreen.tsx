@@ -288,7 +288,7 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
       {waiting ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3" data-year-waiting>
           <div className="animate-spin rounded-full h-10 w-10 border-4 border-slate-200 border-t-primary" />
-          <p className="text-xs text-slate-400 font-medium">데이터를 불러오는 중...</p>
+          <p className="text-xs text-slate-500 font-medium">데이터를 불러오는 중...</p>
         </div>
       ) : view === 'sheet' ? (
         <div data-year-sheet className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 items-start">

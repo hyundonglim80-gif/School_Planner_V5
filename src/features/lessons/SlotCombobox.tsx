@@ -176,7 +176,7 @@ export default function SlotCombobox({
           else openAll();
         }}
         // 표(openOnFocus 끔)는 칸이 많아 ▼를 칸에 마우스를 올리거나 들어갔을 때만 보인다
-        className={`absolute right-0.5 top-1/2 -translate-y-1/2 w-4 h-5 flex items-center justify-center text-2xs text-slate-400 hover:text-primary cursor-pointer ${
+        className={`absolute right-0.5 top-1/2 -translate-y-1/2 w-4 h-5 flex items-center justify-center text-2xs text-slate-500 hover:text-primary cursor-pointer ${
           openOnFocus ? '' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
         }`}
       >
@@ -195,7 +195,7 @@ export default function SlotCombobox({
             className="overflow-y-auto overscroll-contain bg-white border border-slate-200 rounded-lg shadow-xl py-1 text-xs"
           >
             {shown.length === 0 ? (
-              <li className="px-2.5 py-1.5 text-slate-400">{options.length ? '맞는 반·과목이 없습니다' : '⏰ 시간표 창 교사 유형에서 가르치는 반·과목을 적으세요'}</li>
+              <li className="px-2.5 py-1.5 text-slate-500">{options.length ? '맞는 반·과목이 없습니다' : '⏰ 시간표 창 교사 유형에서 가르치는 반·과목을 적으세요'}</li>
             ) : (
               shown.map((o, i) => (
                 // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 콤보 상자 줄 - 키보드는 글 칸이 화살표·Enter로 받는다 (P22-7)

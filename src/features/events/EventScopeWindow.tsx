@@ -77,7 +77,7 @@ export default function EventScopeWindow({ title, intro, choices, onPick, onClos
             )}
           </button>
         ))}
-        {footnote && <p className="text-xs text-slate-400">{footnote}</p>}
+        {footnote && <p className="text-xs text-slate-500">{footnote}</p>}
       </div>
     </ModalShell>
   );

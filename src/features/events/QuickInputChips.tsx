@@ -20,7 +20,7 @@ export default function QuickInputChips({
   if (chips.length === 0) return null;
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-1" data-quick-chips>
-      <span className="text-2xs font-black text-slate-400 mr-0.5">빠른 입력</span>
+      <span className="text-2xs font-black text-slate-500 mr-0.5">빠른 입력</span>
       {chips.map((c) => (
         <button
           key={c.key}

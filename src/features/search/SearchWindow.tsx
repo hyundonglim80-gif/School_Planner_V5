@@ -221,13 +221,13 @@ export default function SearchWindow({ close, raise }: WindowProps) {
               ))}
             </select>
             {scope === 'all' ? (
-              <span className="text-2xs font-semibold text-slate-400">날짜 제한 없음</span>
+              <span className="text-2xs font-semibold text-slate-500">날짜 제한 없음</span>
             ) : (
               // 고른 기간의 날짜를 늘 보이고, 그 자리에서 고치면 직접 지정으로 (V4)
               <span className="flex items-center gap-1">
                 {(['start', 'end'] as const).map((k, i) => (
                   <span key={k} className="flex items-center gap-1">
-                    {i > 0 && <span className="text-xs text-slate-400">~</span>}
+                    {i > 0 && <span className="text-xs text-slate-500">~</span>}
                     <input
                       type="date"
                       data-search-range={k}
@@ -425,7 +425,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
               )}
             </>
           ) : (
-            <div data-search-empty className="py-12 text-center text-slate-400 text-xs font-semibold">
+            <div data-search-empty className="py-12 text-center text-slate-500 text-xs font-semibold">
               <DecorSpot slot="search" />
               {keyword.trim() ? '찾는 글이 없습니다.' : '고른 기간에 항목이 없습니다.'}
             </div>

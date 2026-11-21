@@ -79,7 +79,7 @@ export default function SideTabs() {
               data-side-tab-close
               {...shortcutTarget('closePanel')}
               onClick={() => closeSideSlot(id)}
-              className="px-1.5 py-1 text-slate-400 hover:text-rose-600"
+              className="px-1.5 py-1 text-slate-500 hover:text-rose-600"
             >
               ×
             </button>

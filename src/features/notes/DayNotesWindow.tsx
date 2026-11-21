@@ -64,7 +64,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
         ))}
         {notes.length === 0 ? (
           cards.length > 0 ? null : (
-          <p className="py-10 text-center text-xs text-slate-400" data-day-notes-empty>
+          <p className="py-10 text-center text-xs text-slate-500" data-day-notes-empty>
             이 날의 메모가 없습니다.
           </p>
           )

@@ -5,7 +5,7 @@ import { popOutWindow } from '../app/popout';
 import { PopoutTargetContext } from './popout';
 import { shortcutTarget } from './shortcutTarget';
 
-export default function PopoutButton({ className = 'w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100' }: { className?: string }) {
+export default function PopoutButton({ className = 'w-8 h-8 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100' }: { className?: string }) {
   const key = useContext(PopoutTargetContext);
   if (key === null) return null;
   return (

@@ -48,7 +48,7 @@ export default function ObservationPhrases({ onPick, disabled }: Props) {
               onClick={() => setCommonSetting('phrases', phrases.filter((x) => x !== p))}
               aria-label={`'${p}' 빼기`}
               title={`'${p}' 빼기`}
-              className="px-1.5 py-0.5 rounded-r-full border border-l-0 border-slate-200 bg-white text-2xs text-slate-400 hover:text-red-500 cursor-pointer"
+              className="px-1.5 py-0.5 rounded-r-full border border-l-0 border-slate-200 bg-white text-2xs text-slate-500 hover:text-red-500 cursor-pointer"
             >
               ✕
             </button>
@@ -82,7 +82,7 @@ export default function ObservationPhrases({ onPick, disabled }: Props) {
         data-observation-phrases-edit
         onClick={() => setEditing(!editing)}
         aria-pressed={editing}
-        className="px-2 py-0.5 rounded-full text-2xs font-bold text-slate-400 hover:text-slate-700 cursor-pointer"
+        className="px-2 py-0.5 rounded-full text-2xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
       >
         {editing ? '✓ 다 고침' : '✏️ 문구'}
       </button>
