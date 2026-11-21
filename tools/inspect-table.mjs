@@ -521,8 +521,11 @@ try {
   r.check(await waitFor(tabItem), '⤓ 가져오기 = 밖에서 복사한 탭 글');
   await tabItem.locator(sel('clip-paste')).click();
   r.check(await waitFor(async () => await table.isVisible()), '항목 누르기 = 메모 탭이 다시 보인다');
-  const viaTab = JSON.stringify(await rowsOf(table));
-  r.check(viaTab === '[["95","가","나"],["88","다","라"]]', `고른 B1부터 채움 - 늘려서 (${viaTab})`);
+  // 붙여넣기는 메모 탭이 다시 보인 뒤에 든다 - 보이자마자 읽으면 붙이기 전 값을 읽는다(P51-1 CI 세 바퀴 중 셋째 - 에뮬레이터가 밀린 때, 서버에는 맞게 들어감)
+  const tabWant = '[["95","가","나"],["88","다","라"]]';
+  let viaTab = '';
+  await waitFor(async () => (viaTab = JSON.stringify(await rowsOf(table))) === tabWant, 5000);
+  r.check(viaTab === tabWant, `고른 B1부터 채움 - 늘려서 (${viaTab})`);
   r.check((await table.locator(sel('table-name')).getAttribute('data-table-name')) === 'B1:C2', '붙인 범위를 고른다 (B1:C2)');
   await page.keyboard.press('Control+s');
   r.check(await waitFor(async () => (await panel.getAttribute('data-note-panel')) === 'edit', 8000), 'Ctrl+S → 수정 칸');

@@ -19,12 +19,15 @@ import { join } from 'node:path';
 // + 메모 표(P48-5 - P48 다섯 세션의 빈 표·서식·식·Σ·채우기·정렬·엑셀과 오가기, 날짜에 기대지 않는다)
 // + 넷(P49-1 - 11-18~20에 바뀐 화면인데 CI 밖이던 것, 짧은 것부터: 클립보드 팝업창·첨부(표 붙여넣기·클립보드 탭)·조사표(기타·점수 기준)·창 왼쪽 칸
 //   · 조사표만 오늘로 학년도를 센다 - probe FAKE_TODAY로 2월 말·3월 1일·월말·다음 해까지 통과, 나머지 셋은 정한 날).
+// + 설명서(P51-1 - 설명서가 기능 명세인데 손으로만 돌렸다: 75주제 366줄 1분 · 주제마다 혼자 돌려도 통과 ·
+//   FAKE_TODAY 2026-11-30·2027-02-28·2027-03-01·2028-03-02 통과 - 시간표는 보는 날의 학년도부터 심는다).
 const CI_PROBES = [
   ...['shell', 'memo', 'notes', 'progress', 'lessons', 'settings', 'events', 'week'],
   ...['month-year', 'board', 'gcal', 'forward', 'print'],
   ...['popout', 'search-trash', 'claude-request', 'chat'],
   'table',
   ...['clipboard-popup', 'attach', 'evaluations', 'side-left'],
+  'manual',
 ];
 
 const OUT = 'ci-out';
