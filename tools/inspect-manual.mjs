@@ -36,6 +36,8 @@ const YEAR = (() => {
   const d = new Date();
   return d.getMonth() + 1 >= 3 ? d.getFullYear() : d.getFullYear() - 1;
 })();
+/** 보는 날(DAY)의 학년도 - 3월~이듬해 2월 */
+const DAY_YEAR = Number(DAY.slice(5, 7)) >= 3 ? Number(DAY.slice(0, 4)) : Number(DAY.slice(0, 4)) - 1;
 const CLASS = `${YEAR}-5-2`;
 const tracked = (u) => ({ deletedAt: null, updatedAt: serverTimestamp(), v: 1, createdAt: Date.now(), authorId: u });
 
@@ -103,9 +105,14 @@ try {
   ];
   await plant(A, 'classes', CLASS, { year: YEAR, grade: 5, num: 2, students, ...tracked(uid) });
   await plant(B, 'classes', CLASS, { year: YEAR, grade: 5, num: 2, students, ...tracked(uid3) });
+  // 새 학년도가 된 뒤(오늘 학년도 ≠ DAY 학년도)에는 DAY의 교과 출결이 그 학년도 학급을 찾는다 - 그 학급도 (P51-1 FAKE_TODAY=2027-03-01)
+  if (DAY_YEAR !== YEAR) await plant(B, 'classes', `${DAY_YEAR}-5-2`, { year: DAY_YEAR, grade: 5, num: 2, students, ...tracked(uid3) });
   const week = (s) => Object.fromEntries(['1', '2', '3', '4', '5'].map((d) => [d, { '1': s, '2': '수학' }]));
-  await plant(A, 'timetables', 'insp_man_tt', { name: '점검 시간표', from: `${YEAR}-03-01`, to: `${YEAR + 1}-02-28`, grid: week('국어'), ...tracked(uid) });
-  await plant(B, 'timetables', 'insp_man_tt', { name: '점검 전담', from: `${YEAR}-03-01`, to: `${YEAR + 1}-02-28`, grid: week('5-2 과학'), ...tracked(uid3) });
+  // 시간표는 보는 날(DAY)의 학년도부터 오늘의 학년도 끝까지 - 오늘로만 셈하면 새 학년도(3월 1일)부터 DAY가 기간 밖이 되어
+  // 수업 칸이 비었다(P51-1 FAKE_TODAY=2027-03-01에서 찾음 - 날마다 도는 CI에서 3월에 깨질 뻔했다)
+  const ttFrom = `${Math.min(DAY_YEAR, YEAR)}-03-01`;
+  await plant(A, 'timetables', 'insp_man_tt', { name: '점검 시간표', from: ttFrom, to: `${YEAR + 1}-02-28`, grid: week('국어'), ...tracked(uid) });
+  await plant(B, 'timetables', 'insp_man_tt', { name: '점검 전담', from: ttFrom, to: `${YEAR + 1}-02-28`, grid: week('5-2 과학'), ...tracked(uid3) });
   await plant(A, 'labels', 'insp_man_el', { kind: 'event', name: '점검달력', color: 'blue', parentId: null, order: 'Zz1', props: { calendar: true }, ...tracked(uid) });
   await plant(A, 'labels', 'insp_man_nl', { kind: 'note', name: '점검기록', color: 'green', parentId: null, order: 'Zz1', ...tracked(uid) });
   // 라벨 고르기(일정 하나만·메모 Ctrl = 여러 개 - #92)를 보려면 둘씩
