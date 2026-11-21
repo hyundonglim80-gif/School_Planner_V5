@@ -26,6 +26,10 @@ export const SITE = process.env.SITE || 'http://localhost:5175/';
 //   다만 서버 시각과 '오늘'을 견주는 것은 빗나간다: 미래 날이면 휴지통 자동 비우기(12-01부터 90일)가 방금 지운 것도
 //   오래된 것으로 보고 지운다 - 휴지통을 보는 점검은 그 계정 settings/common trashDays를 0(끄기)으로 두고 돌린다(P49-1 inspect-evaluations).
 //   점검이 이 파일보다 먼저 날짜를 세면 빗나간다(점검은 맨 위에서 probe를 부른다 - ESM은 부른 것부터 돈다).
+//   서버 규칙이 기기 시각을 request.time과 견주는 쓰기도 빗나간다: 미래 날이면 대화 글의 expireAt(지금 + 1년)이 규칙의 한도를 넘어
+//   막힌다(P52-1 inspect-chat - 점검이 보내는 글도 앱이 보내는 글도) - 그런 점검은 미래 날로 볼 수 없다(진짜 그날에는 서버 시각도 그날이라 상관없다).
+// 자료가 한 학년도에 묶인 점검은 pinToday로 '오늘'을 그 학년도의 하루에 묶는다(P52-1) - 아래 pinToday.
+const RealDate = Date;
 function shiftDate(shift) {
   const Real = Date;
   function Shifted(...a) {
@@ -38,11 +42,25 @@ function shiftDate(shift) {
   Shifted.UTC = Real.UTC;
   globalThis.Date = Shifted;
 }
-const FAKE_SHIFT = process.env.FAKE_TODAY ? new Date(`${process.env.FAKE_TODAY}T10:00:00`).getTime() - Date.now() : 0;
+let FAKE_SHIFT = process.env.FAKE_TODAY ? new Date(`${process.env.FAKE_TODAY}T10:00:00`).getTime() - Date.now() : 0;
 if (Number.isNaN(FAKE_SHIFT)) throw new Error(`FAKE_TODAY는 YYYY-MM-DD: ${process.env.FAKE_TODAY}`);
 if (FAKE_SHIFT) {
   shiftDate(FAKE_SHIFT);
   console.log(`(FAKE_TODAY - 오늘 = ${process.env.FAKE_TODAY})`);
+}
+
+/**
+ * '오늘'을 그날(10시부터 흐름)에 묶는다 (P52-1) - 심는 자료·보는 날이 모두 한 학년도에 묶인 점검이 진짜 날짜와 상관없이 같게 돌게.
+ *   예: inspect-lessons는 2026학년도 시간표·방학만 심는데 시간표 창 학기 탭·적용된 시간표 줄은 '오늘의 학년도'를 본다 →
+ *   2027-03-01부터 틀렸다(CI 실패 = 배포 멈춤). FAKE_TODAY보다 앞선다(그 점검은 날짜 바꿔 보기의 대상이 아니다).
+ *   점검 맨 위에서 - 날짜를 세거나 newPage를 열기 전에 부른다. 에뮬레이터 시각은 진짜라 서버 시각과 견주는 것은 FAKE_TODAY와 같은 주의.
+ */
+export function pinToday(ymd) {
+  globalThis.Date = RealDate;
+  FAKE_SHIFT = new RealDate(`${ymd}T10:00:00`).getTime() - RealDate.now();
+  if (Number.isNaN(FAKE_SHIFT)) throw new Error(`pinToday는 YYYY-MM-DD: ${ymd}`);
+  shiftDate(FAKE_SHIFT);
+  console.log(`(점검의 오늘 = ${ymd}${process.env.FAKE_TODAY ? ` - FAKE_TODAY ${process.env.FAKE_TODAY}보다 앞선다` : ''})`);
 }
 
 // 틀린 순간의 그림 (P36-1 CI): SHOTS_DIR이 있으면 ✘를 찍을 때 newPage로 연 창(과 그 창이 연 창)을 모두 찍는다.

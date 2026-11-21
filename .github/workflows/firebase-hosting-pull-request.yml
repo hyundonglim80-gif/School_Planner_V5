@@ -20,8 +20,16 @@ jobs:
 
       - run: npm ci && npm run build
 
+      # firebase 도구 = package-lock의 판 (P52-2 - firebase-hosting-merge.yml과 같다)
+      - id: fbtools
+        run: |
+          v=$(node -p 'require("./package-lock.json").packages["node_modules/firebase-tools"].version')
+          echo "firebase-tools $v"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHOOLPLANNERV3 }}
           projectId: schoolplannerv3
+          firebaseToolsVersion: ${{ steps.fbtools.outputs.version }}

@@ -36,9 +36,18 @@ jobs:
 
       - run: npm ci && npm run build
 
+      # firebase 도구 = package-lock의 판 (P52-2 - 액션 기본 'latest'는 새 판이 나오면 코드 그대로 배포가 바뀌고, CI·에뮬레이터는 잠근 판이라 미리 못 본다).
+      #   판을 올리려면 package.json(npm install)만 - 여기는 그대로. 같은 판이 node_modules에 있어 배포 때 다시 받지 않는다.
+      - id: fbtools
+        run: |
+          v=$(node -p 'require("./package-lock.json").packages["node_modules/firebase-tools"].version')
+          echo "firebase-tools $v"
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+
       - uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SCHOOLPLANNERV3 }}
           channelId: live
           projectId: schoolplannerv3
+          firebaseToolsVersion: ${{ steps.fbtools.outputs.version }}

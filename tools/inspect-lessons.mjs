@@ -10,7 +10,11 @@
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-lessons.mjs
 // 에뮬레이터 teacher·teacher3 계정의 시간표·수업 칸·점검 일정(insp_le…)을 심고 끝에 지운다. 계정 설정 common은 통째로 되돌린다.
 import { collection, deleteDoc, deleteField, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
-import { emulator, hashOf, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, hashOf, launch, newPage, open, pinToday, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+
+// 심는 시간표·방학·보는 날이 모두 2026학년도 - 시간표 창 학기 탭·적용된 시간표 줄은 '오늘의 학년도'를 본다 →
+// 오늘을 그 학년도의 하루에 묶는다(P52-1 - 묶지 않으면 2027-03-01부터 열일곱 줄이 틀렸다 = CI 실패·배포 멈춤)
+pinToday('2026-11-20');
 
 const r = report();
 const undo = restorer();
@@ -116,8 +120,9 @@ try {
     release();
     const subject4 = () => p4.locator(`${sel('lesson-card', 1)} [data-lesson-subject]`).first().getAttribute('data-lesson-subject');
     r.check(await waitFor(async () => (await subject4().catch(() => '')) === '국어', 20000), '받은 뒤: 월 1교시 = 시간표의 국어');
+    // 수업 칸이 먼저 받고 달 목록(일정)은 조금 뒤일 수 있다 - 사라질 때까지 기다린다(P52-1 - 바로 세면 가끔 남아 있었다)
     r.check(
-      !(await p4.locator(`${sel('lessons-loading')}, ${sel('week-lessons-loading')}, ${sel('board-month-waiting')}`).count()),
+      await waitFor(async () => !(await p4.locator(`${sel('lessons-loading')}, ${sel('week-lessons-loading')}, ${sel('board-month-waiting')}`).count()), 8000),
       '받은 뒤: 받는 중 글이 남지 않는다',
     );
     r.check(e4.length === 0, `화면 오류 없음 ${e4.join(' | ')}`);
