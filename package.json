@@ -15,7 +15,8 @@
     "lint": "oxlint",
     "emu": "firebase emulators:start --only auth,firestore --project schoolplannerv3",
     "seed": "node tools/seed.mjs",
-    "check:rules": "node tools/check-rules.mjs"
+    "check:rules": "node tools/check-rules.mjs",
+    "check:size": "node --test tools/first-screen-js.test.mjs && node tools/first-screen-js.mjs"
   },
   "dependencies": {
     "firebase": "^13.4.0",
