@@ -19,7 +19,7 @@
 //   - 띠 두 줄(P49-2 - PLAN 5장 'P49-2 정한 것')은 칸을 고르고 초점이 이 표에 있을 때만, 제목 줄 자리에 겹쳐 뜬다(위로 삐져나와 위 글을 잠깐 가린다) -
 //     고르지 않은 표는 제목 줄만 · 서고 접혀도 표가 밀리지 않는다 · 다른 표·본문을 누르면 접히고(고른 칸은 남는다) ESC 둘째(고르기 풀기)에도 접힌다.
 //   단추의 data-table-op 이름은 '단추 대신 누르기' 키가 쓴다 - 바꾸지 않는다.
-import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { showToast } from '../../app/toast';
 import { setCopySource } from '../clipboard/paste';
@@ -72,6 +72,21 @@ const UNDO_LIMIT = 50;
 /** 행 번호 칸 폭 (열 너비가 있는 표의 colgroup 앞자리) */
 const ROW_HEAD_W = 28;
 const SEL_TINT = 'inset 0 0 0 9999px rgba(37, 99, 235, 0.12)';
+
+/**
+ * 띠 단추 글 - 표 폭이 좁으면(28.5rem = 456px 아래 - 휴대폰·좁힌 칸) 짧은 글 (P50-3).
+ * 경계는 표 상자(@container)의 폭 · rem이라 글자 크기 %·한눈에 90%를 따라간다(CLAUDE.md 5장 '@container 경계는 rem으로').
+ * 넓은 모양이 두 줄에 들어가는 폭(띠 안 446px)보다 조금 넓게 잡았다 - PC 1400 오른쪽 칸(465px)은 그대로.
+ * 단추의 읽어 주는 이름은 aria-label(= 넓은 글)로 같게 둔다.
+ */
+function BarLabel({ full, short }: { full: string; short: ReactNode }) {
+  return (
+    <>
+      <span className="@max-[28.5rem]:hidden">{full}</span>
+      <span className="hidden @max-[28.5rem]:inline">{short}</span>
+    </>
+  );
+}
 const ARROWS: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
 
 export default function TableEditor({ table, onChange, onRemove, title, autoEdit }: Props) {
@@ -103,6 +118,8 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   /** 열린 ▾ 고르기 (맞춤·칸 색·Σ·정렬) */
   const [menu, setMenu] = useState<'align' | 'fill' | 'autosum' | 'sort' | null>(null);
   const menuRef = useRef<HTMLSpanElement>(null);
+  /** ▾ 고르기를 단추 오른쪽 끝에 맞춰 펼친다 - 단추가 띠 오른쪽 끝 가까이면(좁은 띠의 줄 끝 - P50-3) 왼쪽 맞춤은 화면 밖으로 나간다 */
+  const [menuEnd, setMenuEnd] = useState(false);
   useEffect(() => {
     if (!menu) return;
     // 고르기 밖을 누르면 닫는다 (▾ 단추도 안쪽 - 다시 누르면 닫기)
@@ -504,14 +521,22 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   };
 
   const btn =
-    'px-2 py-1 rounded-md text-2xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white cursor-pointer disabled:cursor-default';
+    'px-2 @max-[28.5rem]:px-1.5 py-1 rounded-md text-2xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white cursor-pointer disabled:cursor-default';
   /** 단추·띠를 눌러도 글 칸 초점이 그대로 (고르기 상태가 이어지게) */
   const keepFocus = (e: MouseEvent) => e.preventDefault();
   const canUndo = history.length > 0 || (editing && draft !== activeValue);
   /** 켠 서식 단추 모양 (고른 칸의 서식) */
   const on = (pressed: boolean) => (pressed ? btn.replace('border-slate-200 bg-white text-slate-600', 'border-blue-300 bg-blue-100 text-blue-700') : btn);
   /** ▾ 고르기 상자·줄 */
-  const menuBox = 'absolute left-0 top-full mt-1 z-20 flex flex-col min-w-28 p-1 rounded-lg border border-slate-200 bg-white shadow-lg';
+  const menuBox = `absolute ${menuEnd ? 'right-0' : 'left-0'} top-full mt-1 z-20 flex flex-col min-w-28 p-1 rounded-lg border border-slate-200 bg-white shadow-lg`;
+  /** ▾ 단추 - 열 때 그 단추 왼쪽에서 띠 오른쪽 끝까지 고르기 상자(넓은 것 7.5rem)가 들어가는지 본다 */
+  const toggleMenu = (name: NonNullable<typeof menu>, e: MouseEvent<HTMLButtonElement>) => {
+    if (menu === name) return setMenu(null);
+    const bar = e.currentTarget.closest('[data-table-bar]')?.getBoundingClientRect();
+    const room = parseFloat(getComputedStyle(document.documentElement).fontSize) * 7.5;
+    setMenuEnd(!!bar && e.currentTarget.getBoundingClientRect().left + room > bar.right);
+    setMenu(name);
+  };
   const menuItem = (picked: boolean) =>
     `flex items-center gap-1.5 px-2 py-1 rounded text-left text-2xs font-bold whitespace-nowrap cursor-pointer ${picked ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:bg-slate-100'}`;
   const head = 'border border-slate-200 bg-slate-100 text-slate-500 font-semibold select-none cursor-pointer hover:bg-slate-200';
@@ -524,7 +549,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   return (
     // overflow-hidden 없음 - 띠의 ▾ 고르기(맞춤·칸 색)가 표 아래로 펼쳐진다.
     // 표가 잇달아 있으면 뒤 표 위를 띄운다 - 뒤 표의 띠가 위로 삐져나와도(PC 두 줄) 앞 표 끝 줄을 가리지 않게 (P49-2)
-    <div className="bg-slate-50 border border-slate-200 rounded-xl [[data-note-table]+&]:mt-10" data-note-table={table.id}>
+    <div className="@container bg-slate-50 border border-slate-200 rounded-xl [[data-note-table]+&]:mt-10" data-note-table={table.id}>
       <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-b border-slate-200">
         <span className="text-xs font-bold text-slate-600" title="칸을 누르면 이 자리에 표 단추 줄이 섭니다">
           ▦ {title || '표'} <span className="font-normal text-slate-400">· {nRows}행 × {nCols}열</span>
@@ -549,9 +574,9 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
             data-table-bar
             // 띠의 빈 곳을 눌러도 글 칸 초점이 그대로 (띠가 접히지 않게)
             onMouseDown={keepFocus}
-            className="absolute bottom-full -left-px -right-px z-20 rounded-xl border border-slate-200 bg-white shadow-lg"
+            className="absolute bottom-full -left-px -right-px z-20 rounded-xl border border-slate-200 bg-white shadow-lg @max-[28.5rem]:flex @max-[28.5rem]:flex-wrap @max-[28.5rem]:items-center @max-[28.5rem]:gap-0.5 @max-[28.5rem]:px-1.5 @max-[28.5rem]:py-1"
           >
-            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1 border-b border-slate-200">
+            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1 border-b border-slate-200 @max-[28.5rem]:contents">
               {/* 칸 이름 줄 - 고른 칸·범위 이름과 그 칸 글 */}
               <span data-table-name={name} className="mr-1 inline-flex items-center gap-1.5 min-w-0 max-w-full text-2xs text-slate-600">
                 <b className="px-1.5 py-0.5 rounded bg-white border border-slate-200 text-slate-700 tabular-nums">{name}</b>
@@ -568,23 +593,23 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
               <button type="button" onMouseDown={keepFocus} className={btn} disabled={!canUndo} onClick={undo} title="표에서 한 것 되돌리기 (50번까지)" aria-label="표 되돌리기" data-table-op="undo">
                 ↶
               </button>
-              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('rowAbove')} title="고른 칸 위에 행 넣기" data-table-op="row-above">
-                ↑ 행
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('rowAbove')} title="고른 칸 위에 행 넣기" data-table-op="row-above" aria-label="↑ 행">
+                <BarLabel full="↑ 행" short="↑행" />
               </button>
-              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('rowBelow')} title="고른 칸 아래에 행 넣기" data-table-op="row-below">
-                ↓ 행
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('rowBelow')} title="고른 칸 아래에 행 넣기" data-table-op="row-below" aria-label="↓ 행">
+                <BarLabel full="↓ 행" short="↓행" />
               </button>
-              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g || rowCount >= nRows} onClick={() => runOp('rowDelete')} title="고른 칸의 행 빼기" data-table-op="row-delete">
-                행 빼기
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g || rowCount >= nRows} onClick={() => runOp('rowDelete')} title="고른 칸의 행 빼기" data-table-op="row-delete" aria-label="행 빼기">
+                <BarLabel full="행 빼기" short="−행" />
               </button>
-              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('colLeft')} title="고른 칸 왼쪽에 열 넣기" data-table-op="col-left">
-                ← 열
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('colLeft')} title="고른 칸 왼쪽에 열 넣기" data-table-op="col-left" aria-label="← 열">
+                <BarLabel full="← 열" short="←열" />
               </button>
-              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('colRight')} title="고른 칸 오른쪽에 열 넣기" data-table-op="col-right">
-                → 열
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => runOp('colRight')} title="고른 칸 오른쪽에 열 넣기" data-table-op="col-right" aria-label="→ 열">
+                <BarLabel full="→ 열" short="→열" />
               </button>
-              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g || colCount >= nCols} onClick={() => runOp('colDelete')} title="고른 칸의 열 빼기" data-table-op="col-delete">
-                열 빼기
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g || colCount >= nCols} onClick={() => runOp('colDelete')} title="고른 칸의 열 빼기" data-table-op="col-delete" aria-label="열 빼기">
+                <BarLabel full="열 빼기" short="−열" />
               </button>
               <span className="relative" ref={menu === 'sort' ? menuRef : undefined}>
                 <button
@@ -593,11 +618,12 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                   className={btn}
                   aria-expanded={menu === 'sort'}
                   disabled={!g || nRows < 2}
-                  onClick={() => setMenu(menu === 'sort' ? null : 'sort')}
+                  onClick={(e) => toggleMenu('sort', e)}
                   title="고른 칸의 열로 행을 정렬합니다 (첫 행 제목·맨 아래 합계 줄은 그대로 - 몇 행만 하려면 그 행들을 골라서)"
                   data-table-op="sort"
+                  aria-label="정렬 ▾"
                 >
-                  정렬 ▾
+                  <BarLabel full="정렬 ▾" short="정렬▾" />
                 </button>
                 {menu === 'sort' && (
                   <span role="menu" className={menuBox}>
@@ -612,7 +638,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
               </span>
             </div>
             {/* 띠 둘째 줄 - 숫자 서식·꾸밈 (P48-2) */}
-            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1" data-table-format-bar>
+            <div className="flex flex-wrap items-center gap-1 px-2.5 py-1 @max-[28.5rem]:contents" data-table-format-bar>
               {/* Σ ▾ · ⇣ 채우기 (P48-4) */}
               <span className="relative" ref={menu === 'autosum' ? menuRef : undefined}>
                 <button
@@ -621,11 +647,12 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                   className={btn}
                   aria-expanded={menu === 'autosum'}
                   disabled={!g}
-                  onClick={() => setMenu(menu === 'autosum' ? null : 'autosum')}
+                  onClick={(e) => toggleMenu('autosum', e)}
                   title="자동 합계 - 빈 칸을 고르면 위(없으면 왼쪽)의 수를, 수가 든 범위를 고르면 그 아래에 열마다"
                   data-table-op="autosum"
+                  aria-label="Σ ▾"
                 >
-                  Σ ▾
+                  <BarLabel full="Σ ▾" short="Σ▾" />
                 </button>
                 {menu === 'autosum' && (
                   <span role="menu" className={menuBox}>
@@ -645,8 +672,9 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                 onClick={runFillDown}
                 title="아래로 채우기 - 맨 위 칸을 고른 칸들에 베낍니다 (식은 주소를 따라 바뀝니다 · 한 줄만 고르면 바로 위 칸을)"
                 data-table-op="copy-down"
+                aria-label="⇣ 채우기"
               >
-                ⇣ 채우기
+                <BarLabel full="⇣ 채우기" short="⇣채우기" />
               </button>
               <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'comma')} aria-pressed={activeStyle?.nf === 'comma'} disabled={!g} onClick={() => numFormat('comma')} title="세 자리 쉼표 (1234 → 1,234) - 다시 누르면 풉니다" data-table-op="num-comma">
                 1,000
@@ -657,18 +685,18 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
               <button type="button" onMouseDown={keepFocus} className={on(activeStyle?.nf === 'pct')} aria-pressed={activeStyle?.nf === 'pct'} disabled={!g} onClick={() => numFormat('pct')} title="백분율 (0.125 → 12.5%) - 다시 누르면 풉니다" data-table-op="num-pct">
                 %
               </button>
-              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(-1)} title="소수 자리 하나 줄이기 (반올림해 보입니다 - 셈은 원래 수로)" data-table-op="dp-less">
-                소수 −
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(-1)} title="소수 자리 하나 줄이기 (반올림해 보입니다 - 셈은 원래 수로)" data-table-op="dp-less" aria-label="소수 −">
+                <BarLabel full="소수 −" short="소수−" />
               </button>
-              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(1)} title="소수 자리 하나 늘리기" data-table-op="dp-more">
-                소수 +
+              <button type="button" onMouseDown={keepFocus} className={btn} disabled={!g} onClick={() => decimals(1)} title="소수 자리 하나 늘리기" data-table-op="dp-more" aria-label="소수 +">
+                <BarLabel full="소수 +" short="소수+" />
               </button>
-              <button type="button" onMouseDown={keepFocus} className={`${on(activeStyle?.b === 1)} font-black`} aria-pressed={activeStyle?.b === 1} disabled={!g} onClick={() => format(toggleBold)} title="굵게 (Ctrl + B) - 다시 누르면 풉니다" data-table-op="bold">
-                굵게
+              <button type="button" onMouseDown={keepFocus} className={`${on(activeStyle?.b === 1)} font-black`} aria-pressed={activeStyle?.b === 1} disabled={!g} onClick={() => format(toggleBold)} title="굵게 (Ctrl + B) - 다시 누르면 풉니다" data-table-op="bold" aria-label="굵게">
+                <BarLabel full="굵게" short="가" />
               </button>
               <span className="relative" ref={menu === 'align' ? menuRef : undefined}>
-                <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'align'} disabled={!g} onClick={() => setMenu(menu === 'align' ? null : 'align')} title="맞춤" data-table-op="align">
-                  맞춤 ▾
+                <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'align'} disabled={!g} onClick={(e) => toggleMenu('align', e)} title="맞춤" data-table-op="align" aria-label="맞춤 ▾">
+                  <BarLabel full="맞춤 ▾" short="맞춤▾" />
                 </button>
                 {menu === 'align' && (
                   <span role="menu" className={menuBox}>
@@ -698,9 +726,9 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                 )}
               </span>
               <span className="relative" ref={menu === 'fill' ? menuRef : undefined}>
-                <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'fill'} disabled={!g} onClick={() => setMenu(menu === 'fill' ? null : 'fill')} title="칸 색" data-table-op="fill">
-                  <span className="inline-block w-2.5 h-2.5 mr-1 rounded-sm border border-slate-300 align-[-1px]" style={{ backgroundColor: activeStyle?.bg ?? '#ffffff' }} />
-                  칸 색 ▾
+                <button type="button" onMouseDown={keepFocus} className={btn} aria-expanded={menu === 'fill'} disabled={!g} onClick={(e) => toggleMenu('fill', e)} title="칸 색" data-table-op="fill" aria-label="칸 색 ▾">
+                  <span className="inline-block w-2.5 h-2.5 mr-1 @max-[28.5rem]:mr-0.5 rounded-sm border border-slate-300 align-[-1px]" style={{ backgroundColor: activeStyle?.bg ?? '#ffffff' }} />
+                  <BarLabel full="칸 색 ▾" short="▾" />
                 </button>
                 {menu === 'fill' && (
                   <span role="menu" className={menuBox}>

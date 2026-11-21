@@ -11,6 +11,7 @@
 //      다른 메모 본문에 Ctrl+V = 그 범위가 새 표 → 📋 클립보드 탭: 표 범위 복사도 모임 · 밖의 탭 글을 누르면 고른 B1부터 채움(늘림) → 서버
 //   8) 띠는 칸을 고른 표에만 (P49-2 - 3)에서 처음엔 띠 없음·누르면 섬·누른 칸 px 그대로·본문을 누르면 접힘): 표 둘 = 누른 표에만 · 뒤 표 띠가 앞 표 끝 줄을 가리지 않음 ·
 //      띠는 표 칸 묶음 위 · ESC 둘째에 접힘 → 서버 표 둘
+//   9) 휴대폰 390 (P50-3): 띠 두 줄 안(짧은 글 '−행' - 읽어 주는 이름은 '행 빼기')·잘린 단추 없음 · 줄 끝 ▾ 고르기 넷이 화면 안 · 누른 칸 그대로
 // 실행: 에뮬레이터 + 개발 서버(npm run dev:emu) 켠 채 node tools/inspect-table.mjs
 import { collection, deleteDoc, getDocs } from 'firebase/firestore';
 import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
@@ -575,6 +576,60 @@ try {
   r.check(await appSaved(), '앱도 저장 대답을 받았다');
   await page.keyboard.press('Escape');
   r.check(await waitFor(async () => (await panel.count()) === 0, 5000), '닫힘');
+
+  r.section('휴대폰 390 - 띠 두 줄 안 · 고르기는 화면 안 (P50-3)');
+  {
+    const W = 390;
+    const phone = await newPage(browser, { width: W, height: 844, isMobile: true, hasTouch: true });
+    const pp = phone.page;
+    await open(pp, `#/day/${DAY}`);
+    await pp.locator(sel('journal-add')).first().click();
+    const pPanel = pp.locator(sel('note-panel'));
+    await waitFor(pPanel);
+    await pp.keyboard.type(`${MARK} 휴대폰`);
+    await pPanel.locator(sel('note-table-add')).click();
+    const pBar = pPanel.locator(sel('table-bar'));
+    r.check(await waitFor(pBar), '▦ 표 = 띠가 선다');
+    await pp.keyboard.type('가');
+    const lay = await pBar.evaluate((el) => {
+      const box = el.getBoundingClientRect();
+      const items = [...el.querySelectorAll('[data-table-op],[data-table-name]')].filter((b) => b.offsetParent && !b.closest('[role=menu]'));
+      const tops = items.map((b) => b.getBoundingClientRect().top).sort((a, b) => a - b);
+      let rows = 0;
+      let last = -99;
+      for (const t of tops) {
+        if (t - last > 6) {
+          rows += 1;
+          last = t;
+        }
+      }
+      const short = el.querySelector('[data-table-op="row-delete"]');
+      return { rows, h: Math.round(box.height), out: items.filter((b) => b.getBoundingClientRect().right > box.right + 1).length, ops: items.length, shortText: short?.innerText, aria: short?.getAttribute('aria-label') };
+    });
+    r.check(lay.rows <= 2 && lay.out === 0 && lay.ops >= 19, `띠 두 줄 안·잘린 단추 없음 (${lay.rows}줄 ${lay.h}px · 단추 ${lay.ops} · 밖 ${lay.out}) - 고치기 전 네 줄 121px`);
+    r.check(lay.shortText === '−행' && lay.aria === '행 빼기', `좁으면 짧은 글, 읽어 주는 이름은 그대로 ('${lay.shortText}' / '${lay.aria}')`);
+    // 줄 끝 ▾ 고르기도 화면 안에 펼친다 (왼쪽 맞춤이면 오른쪽 밖으로 나갔다)
+    await pp.keyboard.press('Escape');
+    for (const op of ['fill', 'sort', 'autosum', 'align']) {
+      await pPanel.locator(sel('table-op', op)).click();
+      const menu = pPanel.locator('[role=menu]');
+      const mb = (await waitFor(menu, 2000)) ? await menu.boundingBox() : null;
+      r.check(!!mb && mb.x >= 0 && mb.x + mb.width <= W, `${op} ▾ 고르기가 화면 안 (${mb ? `${Math.round(mb.x)}~${Math.round(mb.x + mb.width)}` : '안 펼침'})`);
+      await pPanel.locator(sel('table-op', op)).click();
+      await waitFor(async () => (await menu.count()) === 0, 2000);
+    }
+    // 누른 칸은 띠가 서도 그 자리 (P49-2 - 좁은 띠도 겹쳐 뜬다)
+    await pp.keyboard.press('Escape');
+    await pp.keyboard.press('Escape');
+    r.check(await waitFor(async () => (await pBar.count()) === 0, 2000), 'ESC 둘 = 띠 접힘');
+    const c22 = pPanel.locator('[data-cell="2-2"]');
+    const before = await c22.boundingBox();
+    await c22.click();
+    const after = await c22.boundingBox();
+    r.check((await pBar.count()) === 1 && after.y === before.y, `칸을 누르면 띠가 서고 누른 칸 그대로 (${before.y} → ${after.y})`);
+    r.check(phone.errors.length === 0, `휴대폰 화면 오류 없음 ${phone.errors.join(' | ')}`);
+    await phone.ctx.close();
+  }
 
   r.check(errors.length === 0, `화면 오류 없음 ${errors.join(' | ')}`);
 } catch (e) {
