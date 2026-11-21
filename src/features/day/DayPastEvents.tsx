@@ -12,6 +12,7 @@ import { bringEventsToToday, deleteEvent, setEventDone } from '../events/actions
 import type { ItemDoc } from '../events/eventOps';
 import { setPastRowOpen, usePastRow } from '../events/forward';
 import { openEventPanel } from '../events/open';
+import { Glyph } from '../../ui/Icon';
 
 const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
@@ -67,7 +68,7 @@ export default function DayPastEvents({ sid, today, stale, forwardDays, lastOrde
         title="끝내지 않은 지난 일정 (이월 일정은 위에 따라옵니다)"
         className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
       >
-        <span aria-hidden>📥</span>
+        <span aria-hidden><Glyph e="📥" /></span>
         <span>지난 일정 {stale.length}개</span>
         <span className="text-slate-500">{open ? '▾' : '▸'}</span>
       </button>
@@ -133,7 +134,7 @@ export default function DayPastEvents({ sid, today, stale, forwardDays, lastOrde
                   aria-label="삭제"
                   className="text-slate-300 hover:text-red-500 text-xs font-bold p-1 shrink-0 cursor-pointer"
                 >
-                  🗑️
+                  <Glyph e="🗑" />
                 </button>
               </div>
             );

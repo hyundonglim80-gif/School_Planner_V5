@@ -25,6 +25,7 @@ import {
 } from '../../domain/noteTemplate';
 import { listKeyOf } from '../../ui/listKeys';
 import { useNoteTemplates } from './useNoteTemplates';
+import { Glyph } from '../../ui/Icon';
 
 const FAIL = '메모 틀을 저장하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요.';
 
@@ -41,7 +42,7 @@ export function NoteTemplateButton({ open, onToggle }: { open: boolean; onToggle
         open ? 'bg-primary text-white border-primary' : 'text-slate-600 bg-white hover:bg-slate-50 border-slate-200'
       }`}
     >
-      📋 틀
+      <Glyph e="📋" /> 틀
     </button>
   );
 }
@@ -149,7 +150,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
       className="rounded-xl border border-slate-200 bg-slate-50/80 p-2.5 space-y-2"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold text-slate-600">📋 메모 틀 {loaded && list.length > 0 ? `${list.length}개` : ''}</span>
+        <span className="text-xs font-bold text-slate-600"><Glyph e="📋" /> 메모 틀 {loaded && list.length > 0 ? `${list.length}개` : ''}</span>
         <button
           type="button"
           data-note-template-close
@@ -216,7 +217,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                 aria-label={`${t.name} 이름 바꾸기`}
                 className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 cursor-pointer shrink-0"
               >
-                ✏️
+                <Glyph e="✏" />
               </button>
               <button
                 type="button"
@@ -248,7 +249,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                 aria-label={`${t.name} 지우기`}
                 className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-500 hover:text-rose-600 hover:bg-rose-50 cursor-pointer shrink-0"
               >
-                🗑️
+                <Glyph e="🗑" />
               </button>
             </li>
           ))}
@@ -262,7 +263,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
         title={canSave ? '지금 글·라벨·표를 틀로 저장합니다 (첫 줄이 틀 이름)' : '글이나 표를 먼저 적어 주세요'}
         className="w-full py-1.5 text-xs font-bold text-primary bg-white hover:bg-blue-50 border border-dashed border-blue-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
-        💾 지금 글을 틀로 저장
+        <Glyph e="💾" /> 지금 글을 틀로 저장
       </button>
       <p className="text-2xs text-slate-500">
         틀에는 글·라벨·표가 담깁니다(체크 줄은 ☐로). 첨부·날짜·완료는 담지 않습니다. 틀은 {MAX_NOTE_TEMPLATES}개까지, 내 계정에 있어 다른 기기·그룹 메모에서도 씁니다.

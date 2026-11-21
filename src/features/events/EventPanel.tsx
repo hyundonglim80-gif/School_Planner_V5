@@ -47,6 +47,7 @@ import type { EventPanelParams } from './open';
 import { deliverLinkPick } from '../links/actions';
 import { openLinker, openLinkViewer } from '../links/open';
 import QuickInputChips, { type QuickChip } from './QuickInputChips';
+import { Glyph } from '../../ui/Icon';
 
 /** 이 칸을 고치는 동안 다른 기기가 같은 일정 글을 바꿨을 때 (P14-6 ■3) */
 const CLASH_ASK =
@@ -619,7 +620,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
               )}
               {isEditing && seriesInfo && (
                 <p data-event-series-info={seriesInfo.list.length} className="text-xs font-bold text-purple-800 bg-purple-50 border border-purple-200 rounded-lg px-2.5 py-1.5">
-                  🔁 {ruleLabel(seriesInfo.series?.rule)} · {seriesInfo.list.length}개 가운데 {seriesInfo.index + 1}번째
+                  <Glyph e="🔁" /> {ruleLabel(seriesInfo.series?.rule)} · {seriesInfo.list.length}개 가운데 {seriesInfo.index + 1}번째
                   {seriesInfo.series?.until ? ` (${shortDateLabel(seriesInfo.series.until)}까지)` : ''} - 고치거나 지우면 어디까지 할지 묻습니다.
                 </p>
               )}
@@ -666,7 +667,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                     : 'text-slate-600 bg-slate-100 hover:bg-slate-200'
                 }`}
               >
-                ⏰ {form.time ? `${shortDateLabel(form.date)} ${form.time}` : '알림 추가'}
+                <Glyph e="⏰" /> {form.time ? `${shortDateLabel(form.date)} ${form.time}` : '알림 추가'}
               </button>
               {/* 링크 - 새 일정은 먼저 저장한다 */}
               <button
@@ -677,7 +678,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                 title={isEditing ? '이 일정에 메모·다른 일정·수업을 잇습니다' : '먼저 저장하고 이 일정에 메모·다른 일정·수업을 잇습니다'}
                 className="px-3 py-1.5 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                🔗 링크 추가
+                <Glyph e="🔗" /> 링크 추가
               </button>
               {(item?.linkIds?.length ?? 0) > 0 && (
                 <button
@@ -686,7 +687,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                   onClick={() => item && openLinkViewer({ sid, id: item.id })}
                   className="px-3 py-1.5 bg-yellow-100 text-yellow-800 hover:bg-yellow-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  📑 연결 {item?.linkIds?.length}개
+                  <Glyph e="📑" /> 연결 {item?.linkIds?.length}개
                 </button>
               )}
             </div>

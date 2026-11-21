@@ -51,6 +51,7 @@ import { shortcutTarget } from '../../ui/shortcutTarget';
 import { isShortcutId } from '../../domain/shortcuts';
 import { pressKeys } from '../../ui/pressKeys';
 import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
+import { Glyph } from '../../ui/Icon';
 
 // 🔔 수업 종 설정은 머리의 '종' 단추로 펼 때 받는다 (P49-3 첫 화면 JS - 끊겨서 못 받으면 판 없이)
 const BellSettings = lazyWithReload(() => import('../bell/BellSettings'), () => null);
@@ -167,8 +168,8 @@ export default function DayLessons({ date }: { date: string }) {
             >
               {collapsed ? '▶' : '▼'}
             </button>
-            <span className="text-xl" aria-hidden>
-              ⏰
+            <span className="flex text-primary" aria-hidden>
+              <Glyph e="⏰" className="w-5 h-5" />
             </span>
             <h3 className="text-base font-extrabold text-slate-800">수업</h3>
           </div>
@@ -182,7 +183,7 @@ export default function DayLessons({ date }: { date: string }) {
             }`}
             title="수업 종 - 교시 시작·끝 시각에 종을 울립니다"
           >
-            {bell.enabled ? '🔔 종' : '🔕 종'}
+            <Glyph e={bell.enabled ? '🔔' : '🔕'} /> 종
           </button>
           {offText && (
             <span data-lessons-off={view.off} className="whitespace-nowrap text-2xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100" title="이날은 시간표 수업이 없습니다 (그날 따로 적은 과목은 보입니다)">
@@ -199,7 +200,7 @@ export default function DayLessons({ date }: { date: string }) {
                 onClick={() => openWindow(d.id, { date, ...(sid ? { sid } : {}) })}
                 className="whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
               >
-                {d.icon} {d.title}
+                <Glyph e={d.icon} /> {d.title}
               </button>
             ))}
           {!collapsed && showHomeroomTools && inPersonal && (
@@ -211,14 +212,14 @@ export default function DayLessons({ date }: { date: string }) {
               title="발표자 뽑기 - 자리표가 뽑기 칸을 펴서 열립니다"
               className="whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
             >
-              🎯 뽑기
+              <Glyph e="🎯" /> 뽑기
             </button>
           )}
         </div>
         {!collapsed && nowLine && (
           <div className="order-3 @min-[600px]:order-2 basis-full @min-[600px]:basis-auto flex items-center @min-[600px]:justify-end min-w-0 @min-[600px]:flex-1">
             <span data-now-line className="min-w-0 truncate text-xs font-bold text-primary bg-blue-50 border border-blue-100 rounded-lg px-2 py-1" title={nowLine}>
-              🕘 {nowLine}
+              <Glyph e="🕘" /> {nowLine}
             </span>
           </div>
         )}
@@ -232,7 +233,7 @@ export default function DayLessons({ date }: { date: string }) {
             title="시간표 설정 (시간표·교시·학기·교사 유형)"
             aria-label="시간표 설정"
           >
-            ⚙️
+            <Glyph e="⚙" />
           </button>
         )}
       </div>
@@ -397,7 +398,7 @@ export default function DayLessons({ date }: { date: string }) {
                             className="bg-yellow-100 text-yellow-800 text-xs px-1.5 py-0.5 rounded font-bold border border-yellow-300 shrink-0 hover:bg-yellow-200 cursor-pointer"
                             title="연결된 항목 보기"
                           >
-                            📑 {linkCount}
+                            <Glyph e="📑" /> {linkCount}
                           </button>
                         )}
                         {/* 적힌 것이 있는 📊만 카드 줄에 늘 (P41-2) - 칩들 뒤에 붙인다: 오른쪽 끝에 두면 마우스를 올렸을 때 떠 있는 단추 묶음이 덮는다 */}
@@ -414,7 +415,7 @@ export default function DayLessons({ date }: { date: string }) {
                             title={`조사표 ${evalCount}건`}
                             aria-label={`조사표 ${evalCount}건`}
                           >
-                            📊{evalCount}
+                            <Glyph e="📊" />{evalCount}
                           </button>
                         )}
                       </div>
@@ -433,7 +434,7 @@ export default function DayLessons({ date }: { date: string }) {
                           aria-label={`${slot?.cls} ${n}교시 교과 출결`}
                           className={TOOL_BTN}
                         >
-                          🙋
+                          <Glyph e="🙋" />
                         </button>
                       )}
                       {/* 교과 모드: 이 반으로 바로 가는 학급 도구 (V4 S8) */}
@@ -457,7 +458,7 @@ export default function DayLessons({ date }: { date: string }) {
                               aria-label={`${slot?.cls} ${label}`}
                               className={TOOL_BTN}
                             >
-                              {icon}
+                              <Glyph e={icon} />
                             </button>
                           ))}
                         </span>
@@ -475,7 +476,7 @@ export default function DayLessons({ date }: { date: string }) {
                           title={slot?.cls ? `${slot.cls} 조사표` : '조사표 관리'}
                           aria-label="조사표 관리"
                         >
-                          📊
+                          <Glyph e="📊" />
                         </button>
                       )}
                       <button
@@ -489,7 +490,7 @@ export default function DayLessons({ date }: { date: string }) {
                         title="링크 추가"
                         aria-label="링크 추가"
                       >
-                        🔗
+                        <Glyph e="🔗" />
                       </button>
                       <button
                         type="button"
@@ -502,7 +503,7 @@ export default function DayLessons({ date }: { date: string }) {
                         title="수업 수정"
                         aria-label="수업 수정"
                       >
-                        ✏️
+                        <Glyph e="✏" />
                       </button>
                     </div>
 
@@ -530,7 +531,7 @@ export default function DayLessons({ date }: { date: string }) {
                     {/* 차례: 교시·반·과목·내용 / 단원·준비물(진도 줄) / 비고 */}
                     {c.note && (
                       <div className="flex flex-col text-xs" data-lesson-note>
-                        <span className="text-slate-500 text-xs mb-0.5">📌 비고</span>
+                        <span className="text-slate-500 text-xs mb-0.5"><Glyph e="📌" /> 비고</span>
                         <p className="text-amber-700 font-medium whitespace-pre-wrap leading-relaxed">{c.note}</p>
                       </div>
                     )}

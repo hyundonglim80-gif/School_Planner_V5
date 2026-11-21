@@ -12,6 +12,7 @@ import { labelPath } from '../../domain/labelTree';
 import { cleanLabelName, labelColor } from '../../domain/labels';
 import type { LabelTree } from '../../data/select';
 import type { ItemKind } from '../../data/types';
+import { Glyph } from '../../ui/Icon';
 
 interface LabelPickerProps {
   kind: ItemKind;
@@ -67,7 +68,7 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
           title="라벨 관리 열기"
           className="text-xs text-primary hover:text-blue-700 font-bold flex items-center gap-1 px-2 py-0.5 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
         >
-          <span aria-hidden>⚙️</span>
+          <span aria-hidden><Glyph e="⚙" /></span>
           <span>라벨 수정</span>
         </button>
       </div>

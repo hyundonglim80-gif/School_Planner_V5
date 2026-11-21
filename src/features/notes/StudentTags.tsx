@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { describeClass, isActive } from '../../domain/roster';
 import { studentKeyOf, studentOfKey, type MentionCandidate } from '../../domain/studentTag';
 import { useClasses, useHubClassId, type ClassItem } from '../class/classes';
+import { Glyph } from '../../ui/Icon';
 
 /** 칩 글자 '김지우' - 올해가 아닌 학급이면 '김지우 (2025 4-3)' */
 const chipText = (cls: ClassItem, name: string, num: number, year: number) => `${name || `${num}번`}${cls.year !== year ? ` (${cls.year} ${cls.grade}-${cls.num})` : ''}`;
@@ -69,7 +70,7 @@ export function StudentTagRow({ studentIds, onChange, year }: { studentIds: stri
   return (
     <div className="space-y-2" data-note-students={studentIds.length}>
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-xs font-semibold text-slate-600">🧑‍🎓 학생</span>
+        <span className="text-xs font-semibold text-slate-600"><Glyph e="🧑‍🎓" /> 학생</span>
         {studentIds.map((key) => {
           const found = studentOfKey(key, classes);
           return (
@@ -154,7 +155,7 @@ export function EntryStudents({ studentIds }: { studentIds: readonly string[] })
     <span className="inline-flex flex-wrap gap-1" data-entry-students={names.length}>
       {names.map(({ cls, student }) => (
         <span key={`${cls.id}/${student.sid}`} className="px-1.5 py-0.5 rounded-full bg-amber-50 border border-amber-200 text-2xs font-bold text-amber-800" title={`${describeClass(cls)} ${student.num}번`}>
-          🧑‍🎓 {student.name || `${student.num}번`}
+          <Glyph e="🧑‍🎓" /> {student.name || `${student.num}번`}
         </span>
       ))}
     </span>

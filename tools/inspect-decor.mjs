@@ -145,7 +145,7 @@ try {
     r.section(`끄기 · ${mode}`);
     const before = await layout(page);
     r.check((await page.locator(sel('decor-spot')).count()) === 0, '그림이 없다');
-    r.check((await page.locator(sel('event-empty')).textContent()).includes('📋'), '일정 칸은 원래 모습 (📋)');
+    r.check((await page.locator(`${sel('event-empty')} [data-glyph="📋"]`).count()) === 1, '일정 칸은 원래 모습 (📋 - 선 아이콘 P53-3)');
 
     for (const kind of KINDS) {
       r.section(`${kind} · ${mode}`);
@@ -165,7 +165,7 @@ try {
         return [Math.round(b.width), Math.round(b.height), e.querySelectorAll('path, circle, ellipse').length];
       });
       r.check(size[0] === size[1] && size[0] >= 40 && size[2] > 0, `그림이 그려진다 (${size.join(' · ')})`);
-      r.check(!(await page.locator(sel('event-empty')).textContent()).includes('📋'), '📋 대신 그림');
+      r.check((await page.locator(`${sel('event-empty')} [data-glyph="📋"]`).count()) === 0, '📋 대신 그림');
       r.check((await page.locator(sel('event-empty')).textContent()).includes('일정이 없습니다'), '안내 글은 그대로');
       if (SHOTS) await page.screenshot({ path: `${SHOTS}/${kind}-${dark ? 'dark' : 'light'}-pc.png`, clip: { x: 0, y: 0, width: 1400, height: 340 } });
 

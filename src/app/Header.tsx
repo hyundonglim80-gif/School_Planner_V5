@@ -25,6 +25,7 @@ import { isDatelessScope } from './route';
 import { formatActionBinding, resolveBindings, SHORTCUT_ACTIONS } from '../domain/shortcuts';
 import { useToday } from '../ui/useToday';
 import { shortcutTarget } from '../ui/shortcutTarget';
+import { Glyph, Icon } from '../ui/Icon';
 
 /** 머리줄 작은 단추 (V4 모양) */
 const HEAD_BTN =
@@ -54,7 +55,7 @@ export default function Header() {
             className={`${HEAD_BTN} bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/80`}
             title={withShortcut('학사 D-Day 관리', 'dday')}
           >
-            <span>⏳</span>
+            <Icon name="hourglass" />
             {primary ? (
               <>
                 <span className="hidden sm:inline">{primary.title}</span>
@@ -76,7 +77,7 @@ export default function Header() {
             title={withShortcut('휴지통', 'trash')}
             aria-label="휴지통"
           >
-            <span>🗑️</span>
+            <Icon name="trash-2" />
             <span className="hidden sm:inline">휴지통</span>
           </button>
           {/* 💬 대화 n (든 그룹이 있을 때 - P19-2) */}
@@ -97,7 +98,7 @@ export default function Header() {
             className={`${HEAD_BTN} bg-slate-100 hover:bg-slate-200 text-slate-600 shadow-none`}
             title={withShortcut('검색', 'search')}
           >
-            <span>🔍</span>
+            <Icon name="search" />
             <span className="hidden sm:inline">검색</span>
           </button>
           {/* 화면 탭 - 좁은 화면에서는 아래 탭바(MobileTabBar)가 대신한다 */}
@@ -201,7 +202,7 @@ function NewItems({ close }: { close: () => void }) {
             canRun(it.id) ? 'text-slate-700' : 'text-slate-500'
           }`}
         >
-          <span>{it.icon}</span> {it.label}
+          <Glyph e={it.icon} /> {it.label}
           <MenuKey id={it.id} />
         </button>
       ))}
@@ -303,7 +304,7 @@ function AccountMenu({ title }: { title: string }) {
               }}
               className="w-full px-4 py-2 text-left font-bold flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer"
             >
-              <span>👥</span> 공유 그룹
+              <Icon name="users" /> 공유 그룹
               {groupCount > 0 && <span className="ml-auto text-2xs text-slate-500">{groupCount}개</span>}
             </button>
             <button
@@ -316,7 +317,7 @@ function AccountMenu({ title }: { title: string }) {
               }}
               className="w-full px-4 py-2 text-left font-bold flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-primary cursor-pointer"
             >
-              <span>💬</span> 대화
+              <Icon name="message-circle" /> 대화
               {chatUnread > 0 && <span className="ml-auto text-2xs font-black text-primary">안 읽음 {chatCountLabel(chatUnread)}</span>}
             </button>
             <button
@@ -328,7 +329,7 @@ function AccountMenu({ title }: { title: string }) {
               }}
               className="w-full px-4 py-2 text-left font-bold flex items-center gap-2 text-slate-700 hover:bg-slate-50 hover:text-red-600 cursor-pointer"
             >
-              <span>🚪</span> 로그아웃
+              <Icon name="log-out" /> 로그아웃
             </button>
           </div>
         </div>
@@ -364,17 +365,17 @@ function SpaceSelect() {
         title="공간 고르기 (개인 / 공유 그룹)"
         className={`${HEAD_BTN} border ${now ? 'bg-amber-50 border-amber-300 text-amber-800' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
       >
-        <span>📂</span>
-        <span className="max-w-32 truncate">{now ? `👥 ${now.name}` : '🔒 개인'}</span>
+        <Icon name="folder-open" />
+        <span className="max-w-32 truncate">{now ? <><Icon name="users" /> {now.name}</> : <><Icon name="lock" /> 개인</>}</span>
       </button>
       {open && (
         <div data-space-list className="absolute left-0 top-10 w-60 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs">
           <button type="button" data-space-option={`u_${uid}`} onClick={() => pick(null)} className={item(!now)}>
-            🔒 개인 공간
+            <Icon name="lock" /> 개인 공간
           </button>
           {groups.map((g) => (
             <button key={g.id} type="button" data-space-option={g.id} onClick={() => pick(g.id)} className={item(g.id === current)}>
-              👥 <span className="truncate">{g.name}</span>
+              <Icon name="users" /> <span className="truncate">{g.name}</span>
             </button>
           ))}
           <div className="border-t border-slate-100 mt-1 pt-1">
@@ -388,7 +389,7 @@ function SpaceSelect() {
               }}
               className={item(false)}
             >
-              👥 그룹 관리…
+              <Icon name="users" /> 그룹 관리…
             </button>
           </div>
         </div>
@@ -434,7 +435,7 @@ function MoreMenu() {
                       canRun(item.id) ? 'text-slate-700' : 'text-slate-500'
                     }`}
                   >
-                    <span>{item.icon}</span> {item.label}
+                    <Glyph e={item.icon} /> {item.label}
                     <MenuKey id={item.id} />
                   </button>
                 ))}

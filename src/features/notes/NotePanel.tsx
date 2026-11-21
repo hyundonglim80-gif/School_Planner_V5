@@ -71,6 +71,7 @@ import type { NotePanelParams } from './open';
 import NoteTemplateMenu, { NoteTemplateButton } from './NoteTemplateMenu';
 import { applyTemplate, formHasBody, type NoteTemplate } from '../../domain/noteTemplate';
 import { newId } from '../../data/id';
+import { Glyph } from '../../ui/Icon';
 
 /** 빈 글 칸에만 보인다 - 치면 사라져 자리를 차지하지 않는다(P50-2: 늘 보이던 안내 줄을 걷고 짧게 여기로).
  *  '첫 줄 = 제목'은 칸 머리(`data-note-title-hint` - P35)가 말하므로 여기서 되풀이하지 않는다 */
@@ -585,7 +586,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     title={`${shortDateLabel(d)} 하루 화면으로`}
                     className="px-1.5 py-0.5 rounded-md text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
                   >
-                    📅 {shortDateLabel(d)}
+                    <Glyph e="📅" /> {shortDateLabel(d)}
                   </button>
                 ))}
               </div>
@@ -622,7 +623,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 </div>
                 {/* 📅 날짜 링크 (P10-3): 칩마다 그날 하루 '메모' 칸에 보인다. 다 빼면 메모 화면에만 */}
                 <div className="flex flex-wrap items-center gap-1.5 mt-1.5" data-note-dates-row>
-                  <span className="text-xs font-bold text-slate-500">📅 날짜</span>
+                  <span className="text-xs font-bold text-slate-500"><Glyph e="📅" /> 날짜</span>
                   {form.dates.map((d) => (
                     <span
                       key={d}
@@ -718,7 +719,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 onClick={() => openLinkViewer({ sid, id: item.id })}
                 className="w-full flex items-center justify-center gap-2 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-yellow-200"
               >
-                📑 연결된 항목 {item.linkIds?.length}개 보기
+                <Glyph e="📑" /> 연결된 항목 {item.linkIds?.length}개 보기
               </button>
             )}
             {claude && claude.turns.length > 0 && <ClaudeThread turns={claude.turns} onRefill={claudeTagged ? (text) => claudeBox.current?.fill(text) : undefined} />}
@@ -728,7 +729,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
             {draft.offer && <DraftOffer savedAt={draft.offer.savedAt} onRestore={restoreDraft} onDiscard={draft.discard} />}
             {sharedFiles.length > 0 && (
               <div data-note-shared-files={sharedFiles.length} className="flex flex-wrap items-center gap-2 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-                <span className="font-bold">📥 공유받은 파일 {sharedFiles.length}개</span>
+                <span className="font-bold"><Glyph e="📥" /> 공유받은 파일 {sharedFiles.length}개</span>
                 <span className="text-sky-700 truncate">{sharedFiles.map((f) => f.name).join(', ')}</span>
                 <button
                   type="button"
@@ -863,12 +864,12 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 <span className="block text-xs font-semibold text-slate-600">첨부 ({form.attachments.length}개)</span>
                 {uploading === 'paste' && (
                   <span data-note-uploading="paste" className="text-xs font-bold text-primary">
-                    ⏳ 붙여넣은 이미지 업로드 중...
+                    <Glyph e="⏳" /> 붙여넣은 이미지 업로드 중...
                   </span>
                 )}
                 {uploading === 'pen' && (
                   <span data-note-uploading="pen" className="text-xs font-bold text-primary">
-                    ⏳ 손글씨 업로드 중...
+                    <Glyph e="⏳" /> 손글씨 업로드 중...
                   </span>
                 )}
               </div>
@@ -881,7 +882,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   }`}
                   title="파일을 골라 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 여러 개를 한 번에 골라도 되고, 윈도우 파일을 이 칸에 끌어다 놓아도 됩니다. 링크가 있는 사람은 볼 수 있습니다."
                 >
-                  <span>{uploading === 'files' ? '⏳' : '📎'}</span>
+                  <Glyph e={uploading === 'files' ? '⏳' : '📎'} />
                   <span data-note-uploading={uploading === 'files' ? 'files' : undefined}>{uploading === 'files' ? '업로드 중...' : '파일 첨부'}</span>
                   <input type="file" multiple data-note-file-input onChange={onPickFiles} className="hidden" disabled={!!uploading} />
                 </label>
@@ -896,7 +897,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     penDirty ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300'
                   }`}
                 >
-                  <span>✏️</span>
+                  <span><Glyph e="✏" /></span>
                   <span>{penDirty ? '손글씨 (그리던 것)' : '손글씨'}</span>
                 </button>
                 <button
@@ -917,13 +918,13 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   title={isEditing ? '이 메모에 일정·메모·수업을 잇습니다' : '먼저 저장하고 이 메모에 일정·메모·수업을 잇습니다'}
                   className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-yellow-50 text-slate-700 hover:text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 hover:border-yellow-300 shadow-2xs"
                 >
-                  <span>🔗</span>
+                  <span><Glyph e="🔗" /></span>
                   <span>링크 추가</span>
                 </button>
               </div>
               {/* 드라이브 첨부는 '링크가 있는 사람은 보기'로 올린다(drive.ts - V4 결정, P14-4 사용자 ①: 공개 그대로 + 알리기) */}
               <p data-note-attach-public className="text-2xs text-slate-500">
-                📎·✏️ 올린 파일은 &apos;링크가 있는 사람은 보기&apos;로 열립니다. 학생 얼굴·성적처럼 퍼지면 안 되는 것은 올리지 마세요.
+                <Glyph e="📎" />·✏️ 올린 파일은 &apos;링크가 있는 사람은 보기&apos;로 열립니다. 학생 얼굴·성적처럼 퍼지면 안 되는 것은 올리지 마세요.
               </p>
               {(item?.linkIds?.length ?? 0) > 0 && (
                 <button
@@ -932,7 +933,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   onClick={() => item && openLinkViewer({ sid, id: item.id })}
                   className="w-full flex items-center justify-center gap-2 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-yellow-200"
                 >
-                  📑 연결된 항목 {item?.linkIds?.length}개 보기
+                  <Glyph e="📑" /> 연결된 항목 {item?.linkIds?.length}개 보기
                 </button>
               )}
               {form.attachments.map((att, idx) =>
@@ -944,7 +945,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     </button>
                     <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-t border-slate-200">
                       <span className="text-xs text-slate-500 truncate" title={att.name}>
-                        🖼️ {att.name}
+                        <Glyph e="🖼" /> {att.name}
                         {att.size ? ` · ${formatFileSize(att.size)}` : ''}
                       </span>
                       <button
@@ -1032,7 +1033,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 onClick={startEdit}
                 className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer"
               >
-                ✏️ 수정
+                <Glyph e="✏" /> 수정
               </button>
             ) : (
             <button

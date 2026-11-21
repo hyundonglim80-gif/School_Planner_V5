@@ -3,6 +3,8 @@
 // 뜨는 판(달·날 칸)은 ui/MiniCalendarPopover - 처음 열 때만 받는다(P49-3 첫 화면 JS - 둘째 줄 📅는 늘 그린다). 요일 머리 + 날 칸 판은 ui/MiniMonth.
 import { Suspense, useState, useEffect, useRef, useCallback, type ReactNode } from 'react';
 import { lazyWithReload } from '../app/lazyWithReload';
+import { Icon } from './Icon';
+import { glyphText } from './glyphText';
 
 /** 뜨는 판 (끊겨서 못 받으면 판 없이 - 다음에 열 때 다시 받는다) */
 const MiniCalendarPopover = lazyWithReload(() => import('./MiniCalendarPopover'), () => null);
@@ -137,7 +139,7 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
         }
         title={trigger?.title ?? '달력에서 날짜 선택 (마우스 올리기 또는 클릭)'}
       >
-        {trigger?.label ?? '📅'}
+        {typeof trigger?.label === 'string' ? glyphText(trigger.label) : (trigger?.label ?? <Icon name="calendar-days" />)}
       </button>
 
       {isOpen && (

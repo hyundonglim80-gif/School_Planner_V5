@@ -5,6 +5,7 @@ import { useMySpaces } from '../../data/spaceChoice';
 import { chatCountLabel } from '../../domain/chatCore';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import { useChatUnread } from './unread';
+import { Icon } from '../../ui/Icon';
 
 export default function ChatHeaderButton({ className }: { className: string }) {
   const unread = useChatUnread();
@@ -22,7 +23,7 @@ export default function ChatHeaderButton({ className }: { className: string }) {
       title={withShortcut(label, 'chat')}
       aria-label={label}
     >
-      <span>💬</span>
+      <Icon name="message-circle" />
       <span className="hidden sm:inline">대화</span>
       {unread > 0 && (
         <span data-header-chat-count className="min-w-4 rounded-full bg-primary px-1 text-center text-2xs font-black text-white">

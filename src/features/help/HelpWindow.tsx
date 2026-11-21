@@ -34,6 +34,7 @@ import {
   type HelpTopic,
   type HelpValues,
 } from './topics';
+import { glyphText } from '../../ui/glyphText';
 
 export interface HelpParams {
   /** 이 항목을 열고 연다 (설명서 주제 id - 창 목록의 `help`) */
@@ -249,11 +250,12 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
             onClick={() => openTopic(link[1])}
             className="font-bold text-primary hover:underline cursor-pointer"
           >
-            {link[2]}
+            {glyphText(link[2])}
           </button>
         );
       }
-      return <Fragment key={i}>{part}</Fragment>;
+      // 화면 단추와 같은 그림 - 바꿈표 이모지는 선 아이콘으로(P53-3 ui/glyphs)
+      return <Fragment key={i}>{glyphText(part)}</Fragment>;
     });
 
   // ── 내용 덩어리 ────────────────────────────────────────────────────

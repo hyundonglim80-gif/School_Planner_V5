@@ -86,11 +86,20 @@ function activeTabOf(win: string, frames: Element[]): string | undefined {
 
 // ── 고르기 ──
 
-/** 단추 글 - 안쪽 글 조각 사이를 띄운다 ('📎' + '파일 첨부' → '📎 파일 첨부') */
+/**
+ * 단추 글 - 안쪽 글 조각 사이를 띄운다 ('📎' + '파일 첨부' → '📎 파일 첨부').
+ * 선 아이콘(P53-3 ui/Icon - 글이 없는 svg)은 원래 이모지(data-glyph)로 읽는다 - 단축키 이름이 아이콘으로 바뀌기 전과 같게.
+ */
 function textOf(el: Element): string {
   const parts: string[] = [];
-  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-  for (let n = walk.nextNode(); n; n = walk.nextNode()) parts.push(n.nodeValue ?? '');
+  const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT);
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    if (n.nodeType === Node.TEXT_NODE) parts.push(n.nodeValue ?? '');
+    else {
+      const glyph = (n as Element).getAttribute('data-glyph');
+      if (glyph) parts.push(glyph);
+    }
+  }
   return parts.join(' ');
 }
 
