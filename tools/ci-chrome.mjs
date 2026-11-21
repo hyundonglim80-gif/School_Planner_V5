@@ -21,6 +21,9 @@ import { join } from 'node:path';
 //   · 조사표만 오늘로 학년도를 센다 - probe FAKE_TODAY로 2월 말·3월 1일·월말·다음 해까지 통과, 나머지 셋은 정한 날).
 // + 설명서(P51-1 - 설명서가 기능 명세인데 손으로만 돌렸다: 75주제 366줄 1분 · 주제마다 혼자 돌려도 통과 ·
 //   FAKE_TODAY 2026-11-30·2027-02-28·2027-03-01·2028-03-02 통과 - 시간표는 보는 날의 학년도부터 심는다).
+// 날짜(P52-1 11-21): 앞 열여덟도 FAKE_TODAY 2027-02-28·03-01·03-02로 한 바퀴씩 - lessons만 3월 1일부터 틀렸다(자료는 2026학년도, 학기 탭·적용된 줄은
+//   오늘의 학년도) → probe pinToday로 그 점검의 오늘을 2026-11-20에 묶음. chat은 미래 날로 볼 수 없다(서버 시각이 진짜라 대화 글 expireAt이 규칙에 막힘).
+//   새로 더할 점검도 2월 말·3월 1일·두 해 뒤로 한 바퀴씩(CLAUDE.md 2장).
 const CI_PROBES = [
   ...['shell', 'memo', 'notes', 'progress', 'lessons', 'settings', 'events', 'week'],
   ...['month-year', 'board', 'gcal', 'forward', 'print'],
