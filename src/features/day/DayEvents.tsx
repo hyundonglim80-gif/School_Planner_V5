@@ -43,7 +43,7 @@ import { gcalKey, gcalListOn } from '../../domain/gcalShow';
 import { useGcalShown } from '../gcal/gcalView';
 import { GcalDayCard, GcalGroupHeader } from '../gcal/GcalItems';
 import { pressKeys } from '../../ui/pressKeys';
-import { FLOAT_TOOLS } from '../../ui/cardTools';
+import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
 
 // 누를 때만 뜨는 창 - 열 때 받는다 (P49-3 첫 화면 JS)
 const EventAlarmWindow = lazyWithReload(() => import('../events/EventAlarmWindow'), OfflineInlineWindow);
@@ -407,7 +407,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
         {overlay ? (
           <span aria-hidden className="w-4 shrink-0 sm:order-1" />
         ) : (
-          <div className="flex items-center gap-0.5 shrink-0 sm:flex-col sm:order-1 sm:mt-0.5">
+          <div className={`flex items-center gap-0.5 shrink-0 sm:flex-col sm:order-1 sm:mt-0.5 ${ORDER_ARROWS}`}>
             <button
               type="button"
               data-event-up

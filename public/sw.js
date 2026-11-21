@@ -51,7 +51,9 @@ async function precache() {
     if (path.startsWith('/assets/') && !want.has(path)) await cache.delete(req);
   }
   const todo = [];
-  for (const path of want) if (path.startsWith('/assets/') && !(await cache.match(path, { ignoreVary: true }))) todo.push(path);
+  // 글꼴 조각(.woff2 - Pretendard 92조각 2.8MB, P53-1)은 미리 받지 않는다: 브라우저가 쓴 글자의 조각만 받고, 아래 fetch가 그것을 담는다.
+  // want에는 남겨 둔다 - 위에서 지우지 않게(담아 둔 조각은 판이 바뀌어도 이름이 같으면 그대로 쓴다)
+  for (const path of want) if (path.startsWith('/assets/') && !path.endsWith('.woff2') && !(await cache.match(path, { ignoreVary: true }))) todo.push(path);
   // 여섯씩 함께 받는다 - 하나씩이면 휴대폰에서 오래 걸려, 그 사이 끊기면 아직 못 담은 창이 열리지 않는다(10-29)
   const next = async () => {
     for (let path = todo.shift(); path; path = todo.shift()) {

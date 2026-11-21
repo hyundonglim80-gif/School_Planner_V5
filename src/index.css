@@ -1,4 +1,7 @@
 @import "tailwindcss";
+/* 글꼴 Pretendard (P53-1 - OFL 1.1, orioncactus/pretendard 1.3.9 가변 글꼴 · 글자 범위별 92조각): 브라우저는 화면에 쓰인 글자의 조각만 받는다.
+   서비스 워커는 글꼴 조각을 미리 담지 않고 쓴 것만 담는다(public/sw.js) - 오프라인에서 처음 보는 글자는 시스템 글꼴로. */
+@import "./assets/fonts/pretendard/pretendardvariable-dynamic-subset.css";
 
 @theme {
   --color-primary: #1a73e8;
@@ -44,7 +47,7 @@
 
 @layer base {
   html {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     /* 글자 크기 = 바탕 × 환경설정 '글자 크기'(--font-scale - domain/fontScale, 화면마다). 휴대폰 바탕은 브라우저 기본(100%) */
     font-size: calc(100% * var(--font-scale, 1));
     /* 지금 html 글자 크기 ÷ 브라우저 기본 - 머리줄([data-fixed-font])이 이것으로 나눠 늘 100%를 지킨다 */
@@ -98,6 +101,15 @@
   }
   html, body {
     overscroll-behavior-y: none; /* 모바일에서 당겨서 새로고침 방지 */
+  }
+}
+
+/* 휴대폰 머리줄 누름 자리 (P53-1): 손가락 화면에서 머리줄 단추가 19~23px라 잘못 누르기 쉬웠다 → 32px 이상(WCAG 2.2 최소 24px · 머리줄이 너무
+ * 높아지지 않게 44px 대신). 겹 밖(unlayered)이라 단추마다 붙은 w-6 h-6 같은 크기보다 앞선다. 머리줄 접기 손잡이(▲)는 테두리에 걸친 작은 손잡이라 뺀다. */
+@media (pointer: coarse) and (max-width: 39.99rem) {
+  header[data-fixed-font] button:not([data-header-fold]) {
+    min-width: 32px;
+    min-height: 32px;
   }
 }
 
