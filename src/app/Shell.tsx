@@ -20,7 +20,7 @@ import { useBackupShortcuts } from '../features/backup/shortcuts';
 import { useSeatingShortcuts } from '../features/seating/open';
 import { useSearchFocusRunner } from '../features/search/focus';
 import { useTrashAutoEmpty } from '../features/trash/auto';
-import { useGcalAuto } from '../features/gcal/auto';
+import { useGcalAuto } from '../features/gcal/useGcalAuto';
 import { useGcalOverlayAuto } from '../features/gcal/overlayAuto';
 import { useClaudeRequestsWatch } from '../data/claudeRequests';
 import { useChatReceiver } from '../features/chat/receive';

@@ -10,7 +10,7 @@
 //     알림·이월 표시·자동 백업·휴지통 비우기는 큰 창이 한다(두 번 하지 않게).
 import { useCallback, useEffect, useState } from 'react';
 import GoogleLoginPrompt from '../features/auth/GoogleLoginPrompt';
-import { useGcalAuto } from '../features/gcal/auto';
+import { useGcalAuto } from '../features/gcal/useGcalAuto';
 import { useClaudeRequestsWatch } from '../data/claudeRequests';
 import { useClipboardCapture } from '../features/clipboard/capture';
 import ImageViewer from '../ui/ImageViewer';

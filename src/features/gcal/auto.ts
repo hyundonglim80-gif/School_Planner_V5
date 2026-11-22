@@ -8,8 +8,7 @@
 // 토큰이 없으면(로그인 만료) 큐에 남고 머리줄 '📅 못 보낸 일정 N' - 누르면 로그인 창을 열고 보낸다(누른 때라 막히지 않는다).
 // 가져오기가 쓴 것(src를 적는 쓰기)은 큐에 넣지 않는다 - V4가 이미 보냈고, 수백 개를 한꺼번에 맞추지 않게.
 // 개인 공간 일정만(V4 1차와 같다). 클라우드 컨테이너는 googleapis에 닿지 못해 점검은 fetch를 흉내 낸다.
-import { useEffect } from 'react';
-import { create } from 'zustand';
+// 첫 화면 JS(P55-1): 이 몫은 보낼 것이 있는 공간에서만 받아 세운다(useGcalAuto - 큐 듣기·머리줄 수는 그쪽, 큐는 gcalStore에서 읽는다).
 import { useCommonSettings } from '../../app/prefs';
 import { showErrorToast, showToast } from '../../app/toast';
 import { todayStr } from '../../domain/dateUtils';
@@ -17,15 +16,14 @@ import { carriedOf, isCarried } from '../../domain/forward';
 import { APP_TAG, CALENDAR_NAME, gcalOn, itemPayloads, planItemSync, planSize, spIdOf, type GcalItem, type GoogleEvent } from '../../domain/gcal';
 import { labelProps } from '../../domain/labels';
 import { isPeriod, periodDays, periodDoneOn, periodPosition } from '../../domain/period';
-import { dropGcalQueue, markGcalFail, queueGcalItems, readItemFromServer, watchGcalQueue, type GcalQueueEntry } from '../../data/gcalQueue';
+import { dropGcalQueue, markGcalFail, queueGcalItems, readItemFromServer } from '../../data/gcalQueue';
 import { deleteCalendarEvent, getOrCreateCalendarByName, insertCalendarEvent, listCalendarEvents, updateCalendarEvent } from '../../data/google/calendar';
 import { forgetGoogleToken, getGoogleTokenQuietly, getValidGoogleToken, GoogleApiError } from '../../data/google/token';
 import { isHoliday } from '../../data/holidays';
 import { observeWrites, type WriteOp } from '../../data/repo';
-import { docsNow, itemLabels, itemsOfKind, itemsOn, labelTreeOf, useMirrorStatus, type LabelTree } from '../../data/select';
-import { usePersonalSpaceId } from '../../data/session';
-import { useToday } from '../../ui/useToday';
+import { docsNow, itemLabels, itemsOfKind, itemsOn, labelTreeOf, type LabelTree } from '../../data/select';
 import { labelForwardOf } from '../events/forward';
+import { useGcal } from './gcalStore';
 
 /** 일정을 쓰고 이만큼 모였다가 큐에 넣는다 (한 번에 여러 항목을 쓰는 여러 개 고르기·반복) */
 const DEBOUNCE_MS = 1200;
@@ -36,18 +34,17 @@ const CARRIED_KEY = 'sp5-gcal-carried';
 
 export const GCAL_LOGIN_REASON = "'구글 캘린더'를 켠 일정을 구글 캘린더(SP(work))에 반영하려면 구글 로그인이 필요합니다. 로그인하면 바로 보냅니다.";
 
-/** 머리줄이 보는 것 */
-export const useGcal = create<{ pending: number; flushing: boolean }>(() => ({ pending: 0, flushing: false }));
-
 const state = {
   sid: '',
   calId: '',
-  queue: [] as GcalQueueEntry[],
   pending: new Set<string>(),
   timer: null as ReturnType<typeof setTimeout> | null,
   flushing: false,
   rerun: false,
 };
+
+/** 큐 (useGcalAuto가 듣는다) */
+const queueNow = () => useGcal.getState().queue;
 
 const setFlushing = (flushing: boolean) => {
   state.flushing = flushing;
@@ -238,7 +235,7 @@ export async function flushGcalQueue(interactive: boolean): Promise<FlushResult>
   try {
     // 단추로 부르면 토큰부터 - 누른 직후라야 로그인 창이 막히지 않는다
     let token = interactive ? await getValidGoogleToken(GCAL_LOGIN_REASON) : null;
-    const queued = [...state.queue];
+    const queued = [...queueNow()];
     if (queued.length === 0) {
       if (interactive) showToast('📅 보낼 일정이 없습니다.');
       return 'empty';
@@ -305,49 +302,48 @@ export async function sendGcalNow(): Promise<void> {
   }
 }
 
-/** 개인 공간 하나를 지켜본다 (끝내면 함수를 부른다) */
-function startGcalAuto(sid: string): () => void {
+let offWatch: (() => void) | null = null;
+
+/**
+ * 개인 공간 하나를 지켜본다 - 이미 그 공간을 보고 있으면 그대로(일정 칸이 처음 따로 켠 일정을 저장하기 앞에서도 부른다 - EventPanel).
+ * 다른 공간을 보고 있었으면 그것을 멈추고.
+ */
+export function runGcalAuto(sid: string): void {
+  if (state.sid === sid) return;
+  if (state.sid) stopGcalAuto(state.sid);
   state.sid = sid;
   state.calId = '';
-  state.queue = [];
   const offWrite = observeWrites(watchWrite);
-  const offQueue = watchGcalQueue(sid, (entries) => {
-    state.queue = entries;
-    useGcal.setState({ pending: entries.length });
-  });
   const onVisible = () => {
-    if (document.visibilityState === 'visible' && state.queue.length) void flushGcalQueue(false);
+    if (document.visibilityState === 'visible' && queueNow().length) void flushGcalQueue(false);
   };
   document.addEventListener('visibilitychange', onVisible);
-  return () => {
+  offWatch = () => {
     offWrite();
-    offQueue();
     document.removeEventListener('visibilitychange', onVisible);
-    if (state.timer) clearTimeout(state.timer);
-    state.timer = null;
-    state.pending.clear();
-    state.sid = '';
-    state.queue = [];
-    useGcal.setState({ pending: 0, flushing: false });
   };
 }
 
-/** Shell에 하나: 쓰기를 큐에 넣고, 앱을 열 때·날이 바뀔 때 이월 일정을 오늘로, 쌓인 것을 조용히 보낸다 */
-export function useGcalAuto() {
-  const sid = usePersonalSpaceId();
-  const items = useMirrorStatus('items', sid);
-  const labels = useMirrorStatus('labels', sid);
-  const today = useToday();
-  const ready = items === 'live' && labels === 'live';
-  useEffect(() => (sid ? startGcalAuto(sid) : undefined), [sid]);
-  useEffect(() => {
-    if (!sid || !ready) return;
-    queueCarriedToday();
-    const t = setTimeout(() => {
-      if (state.queue.length) void flushGcalQueue(false);
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [sid, ready, today]);
+/** 그 공간을 보고 있으면 멈춘다 (계정·개인 공간이 바뀜·껍데기가 닫힘) */
+export function stopGcalAuto(sid: string): void {
+  if (state.sid !== sid) return;
+  offWatch?.();
+  offWatch = null;
+  if (state.timer) clearTimeout(state.timer);
+  state.timer = null;
+  state.pending.clear();
+  state.sid = '';
+  useGcal.setState({ flushing: false });
+}
+
+/** 앱을 열 때·날이 바뀔 때 (사본·라벨을 받은 뒤 - useGcalAuto): 이월 일정을 오늘로, 쌓인 것을 조용히 보낸다. 끝내면 함수를 부른다 */
+export function gcalReadyToday(sid: string): () => void {
+  if (state.sid !== sid) return () => {};
+  queueCarriedToday();
+  const t = setTimeout(() => {
+    if (queueNow().length) void flushGcalQueue(false);
+  }, 1500);
+  return () => clearTimeout(t);
 }
 
 /** 시험용 */

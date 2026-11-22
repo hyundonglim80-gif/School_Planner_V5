@@ -1,5 +1,6 @@
 // 머리줄 '📅 못 보낸 일정 N' (V4 data-gcal-pending) - 구글 캘린더로 보낼 일정이 큐에 남았을 때만. 누르면 로그인 창을 열고 보낸다.
-import { sendGcalNow, useGcal } from './auto';
+import { useGcal } from './gcalStore';
+import { sendGcalNow } from './useGcalAuto';
 import { Icon } from '../../ui/Icon';
 
 export default function GcalPendingButton({ className }: { className: string }) {
