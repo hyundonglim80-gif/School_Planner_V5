@@ -17,11 +17,11 @@ import { setShortcutAction } from './app/keys'
 import { useCommonSettings } from './app/prefs'
 import { watchAccountChange } from './features/auth/accountChange'
 import { finishRedirectLogin } from './features/auth/login'
-import { reportReactError, startErrorReports } from './data/errorReport'
+import { reportReactError, startErrorReports } from './data/errorCatch'
 import ErrorBoundary from './ui/ErrorBoundary'
 import { guardWindowFileDrop } from './ui/fileDrop'
 
-// 오류 알림(P14-2): 잡지 못한 오류·약속 거절·오류 안내를 개발자에게 (글 내용 없이 - data/errorReport). 다른 시작보다 먼저
+// 오류 알림(P14-2): 잡지 못한 오류·약속 거절·오류 안내를 개발자에게 (글 내용 없이 - data/errorReport, 듣기는 data/errorCatch). 다른 시작보다 먼저
 startErrorReports()
 // 로그인 상태 구독은 앱 전체에 하나.
 watchSession()

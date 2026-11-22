@@ -15,7 +15,7 @@
 // 새 메모 칸 '+ 추가'가 새로고침을 되풀이하다 '화면을 그리다 문제가 생겼습니다'). 새로고침해도 받을 수 없으니 하지 않고
 // 대신 그림(offline - 창은 안내하고 닫기, 화면은 그 자리 안내)을 그린다. 다음에 그릴 때는 새로 받아 본다(크롬은 실패한 import를 다시 받는다).
 import { createContext, createElement, lazy, useContext, useMemo, useReducer, type ComponentProps, type ComponentType } from 'react';
-import { looksLikeStaleChunk } from '../domain/errorReport';
+import { looksLikeStaleChunk } from '../domain/staleChunk';
 
 const RELOAD_MARK = 'sp5-chunk-reloaded';
 
