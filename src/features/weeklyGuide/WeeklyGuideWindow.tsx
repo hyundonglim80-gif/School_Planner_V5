@@ -145,13 +145,13 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
       <div className="flex flex-col gap-3 text-xs text-slate-700" data-weekly-guide-window>
         <div className="flex flex-wrap items-center gap-1.5">
           <button type="button" data-guide-prev onClick={() => setMonday(shiftWeek(monday, -1))} className={btn} title="앞 주">
-            ◀
+            <Glyph e="◀" />
           </button>
           <span className="px-2 font-black text-sm text-slate-800" data-guide-range={monday}>
             {weekRangeText(dates)}
           </span>
           <button type="button" data-guide-next onClick={() => setMonday(shiftWeek(monday, 1))} className={btn} title="다음 주">
-            ▶
+            <Glyph e="▶" />
           </button>
           <button type="button" data-guide-this onClick={() => setMonday(thisMonday)} aria-pressed={monday === thisMonday} className={btn}>
             이번 주

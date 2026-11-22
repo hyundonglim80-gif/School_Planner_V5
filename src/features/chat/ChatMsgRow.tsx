@@ -42,7 +42,7 @@ export default function ChatMsgRow({ msg, mine, head, time, unseen, onDelete }: 
             {(msg.text || msg.deleted) && (
               <p
                 data-chat-text
-                className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-1.5 text-sm ${
+                className={`whitespace-pre-wrap break-words rounded-xl px-3 py-1.5 text-sm ${
                   msg.deleted ? 'italic text-slate-500 bg-slate-50 border border-slate-200' : mine ? 'bg-primary text-white' : 'bg-slate-100 text-slate-800'
                 }`}
               >

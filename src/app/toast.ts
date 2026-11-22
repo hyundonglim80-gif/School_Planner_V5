@@ -26,7 +26,7 @@ export function showToast(message: string, duration = 2500, type: 'info' | 'erro
 
   const toastEl = document.createElement('div');
   const tone = type === 'error' ? 'bg-red-600/95 border-red-400/50' : 'bg-slate-900/90 border-slate-700/50';
-  toastEl.className = `pointer-events-auto flex items-center gap-2 px-5 py-2.5 ${tone} text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xl backdrop-blur-sm border transform transition-all duration-300 translate-y-2 opacity-0`;
+  toastEl.className = `pointer-events-auto flex items-center gap-2 px-5 py-2.5 ${tone} text-white text-xs sm:text-sm font-semibold rounded-xl shadow-lg backdrop-blur-sm border transform transition-all duration-300 translate-y-2 opacity-0`;
   toastEl.setAttribute('role', 'status');
   toastEl.dataset.toast = type;
 

@@ -8,6 +8,7 @@ import { useRef, useState, type CSSProperties, type MouseEvent, type ReactNode }
 import { labelColor } from '../../domain/labels';
 import { clickFilterLabel, filterChipOrder, isOtherKey, labelPath, otherKey, otherParentOf, type LabelFilter } from '../../domain/labelTree';
 import type { LabelTree } from '../../data/select';
+import { Glyph } from '../../ui/Icon';
 
 interface ChipProps {
   /** 점검용 data-filter-chip 값 (라벨 id·'기타:상위'·'fav'·'all') */
@@ -44,7 +45,7 @@ export function FilterChip({ chipKey, text, title, count, selected, included, ot
         caret ? 'pl-6 pr-1.5 sm:pl-7 sm:pr-3' : 'px-1.5 sm:px-3'
       } ${row ? 'py-1' : 'py-1.5 sm:py-2'} rounded-lg sm:rounded-xl text-xs text-left border transition-all cursor-pointer ${
         selected
-          ? `font-black ring-2 ring-slate-900/70 ring-offset-1 shadow-sm ${selectedClass}`
+          ? `font-black ring-2 ring-slate-900/70 ring-offset-1 shadow-xs ${selectedClass}`
           : included
             ? 'font-bold bg-slate-100 text-slate-700 border-slate-400'
             : other
@@ -140,7 +141,7 @@ export default function LabelFilterChips({ tree, filter, onChange, countOf, row 
                   title={`${name} 하위 라벨 ${isOpen ? '접기' : '펼치기'}`}
                   className="absolute left-0.5 sm:left-1 top-1/2 -translate-y-1/2 z-10 w-5 h-5 flex items-center justify-center rounded text-2xs text-slate-500 hover:bg-black/10 cursor-pointer"
                 >
-                  {isOpen ? '▾' : '▸'}
+                  <Glyph e={isOpen ? '▾' : '▸'} />
                 </button>
               </div>
               {(shown.length > 0 || showOther) && (

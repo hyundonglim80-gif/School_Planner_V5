@@ -50,6 +50,7 @@ import { clipGrid, isManyCells, pasteGrid, rangeHtml, rangeTsv } from '../../dom
 import { AUTO_FNS, autoSum, fillDown, sortNote, sortRowsOf, sortTable, type AutoFn, type ToolResult } from '../../domain/tableTools';
 import type { EntryTable } from '../../data/types';
 import { TableColGroup } from './EntryTableView';
+import { glyphText } from '../../ui/glyphText';
 
 interface Props {
   table: EntryTable;
@@ -80,10 +81,11 @@ const SEL_TINT = 'inset 0 0 0 9999px rgba(37, 99, 235, 0.12)';
  * 단추의 읽어 주는 이름은 aria-label(= 넓은 글)로 같게 둔다.
  */
 function BarLabel({ full, short }: { full: string; short: ReactNode }) {
+  // ▾(고르기 펼침)은 꺾쇠 아이콘으로 (P54-4 - 바꿈표, 이름표 aria-label은 글 그대로)
   return (
     <>
-      <span className="@max-[28.5rem]:hidden">{full}</span>
-      <span className="hidden @max-[28.5rem]:inline">{short}</span>
+      <span className="@max-[28.5rem]:hidden">{glyphText(full)}</span>
+      <span className="hidden @max-[28.5rem]:inline">{typeof short === 'string' ? glyphText(short) : short}</span>
     </>
   );
 }
@@ -521,7 +523,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   };
 
   const btn =
-    'px-2 @max-[28.5rem]:px-1.5 py-1 rounded-md text-2xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white cursor-pointer disabled:cursor-default';
+    'px-2 @max-[28.5rem]:px-1.5 py-1 rounded-lg text-2xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white cursor-pointer disabled:cursor-default';
   /** 단추·띠를 눌러도 글 칸 초점이 그대로 (고르기 상태가 이어지게) */
   const keepFocus = (e: MouseEvent) => e.preventDefault();
   const canUndo = history.length > 0 || (editing && draft !== activeValue);
@@ -847,7 +849,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
               onCut={(e) => onCopy(e, true)}
               onPaste={onPaste}
               rows={Math.max(1, (editing ? draft : '').split('\n').length)}
-              className={`absolute z-10 box-border resize-none m-0 outline-none ${editing ? 'border-2 border-blue-600 bg-blue-50 shadow-md' : 'opacity-0 pointer-events-none border-0'}`}
+              className={`absolute z-10 box-border resize-none m-0 outline-none ${editing ? 'border-2 border-blue-600 bg-blue-50 shadow-lg' : 'opacity-0 pointer-events-none border-0'}`}
               style={
                 {
                   ...TABLE_STYLE,

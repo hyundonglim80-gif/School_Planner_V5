@@ -162,7 +162,7 @@ function YearMonthCard(p: Props) {
           stop(e);
           p.onPeriodClick(sp, e);
         }}
-        className={`group/ev relative px-1.5 py-1 rounded-lg ${BODY_TEXT.month} leading-snug transition-all border border-l-4 block hover:shadow-sm cursor-pointer break-words ${
+        className={`group/ev relative px-1.5 py-1 rounded-lg ${BODY_TEXT.month} leading-snug transition-all border border-l-4 block hover:shadow-xs cursor-pointer break-words ${
           anyPicked ? 'bg-primary/10 border-primary text-primary' : 'bg-blue-50/60 border-blue-100 text-slate-700 font-medium'
         }`}
         style={anyPicked ? undefined : { ...space?.tone, borderLeftColor: c?.border || '#93c5fd' }}
@@ -180,7 +180,7 @@ function YearMonthCard(p: Props) {
         />
         <span className="inline align-middle">{ev.text}</span>
         <span data-year-period-range className="inline-block align-middle ml-1.5 text-2xs font-semibold text-slate-500 whitespace-nowrap">
-          {sp.startsPeriod ? '' : '◂ '}<Glyph e="📆" /> {range} ({indexLabel}){sp.endsPeriod ? '' : ' ▸'}
+          {sp.startsPeriod ? '' : <><Glyph e="◂" /> </>}<Glyph e="📆" /> {range} ({indexLabel}){sp.endsPeriod ? '' : <> <Glyph e="▸" /></>}
         </span>
         <LinksButton ev={ev} onOpen={p.onOpenLinks} />
         {!p.multiOn && !space && <DeleteButton onDelete={() => p.onDelete(ev, sp.cells[0].date)} />}
@@ -209,7 +209,7 @@ function YearMonthCard(p: Props) {
           stop(e);
           p.onEventClick(ev, d, e);
         }}
-        className={`group/ev relative px-1.5 py-1 rounded-lg ${BODY_TEXT.month} leading-snug transition-all border block hover:shadow-sm cursor-pointer break-words ${
+        className={`group/ev relative px-1.5 py-1 rounded-lg ${BODY_TEXT.month} leading-snug transition-all border block hover:shadow-xs cursor-pointer break-words ${
           picked ? 'bg-primary/10 border-primary text-primary' : 'bg-white border-slate-200 text-slate-700 font-medium'
         }`}
         title={space ? `${spaceTitle(space)} 일정 - 누르면 오른쪽 칸에서 고치기` : '누르면 오른쪽 칸에서 고치기'}
@@ -241,8 +241,8 @@ function YearMonthCard(p: Props) {
       data-year-month-open={p.isOpen ? '1' : '0'}
       // 둘째 줄 날짜를 누르면 오늘로 (app/todayScroll) - 오늘 일정이 없어 그날 줄이 없거나 달을 접었으면 이 달로
       data-today-area={p.isCurrentMonth ? 'true' : undefined}
-      className={`bg-white rounded-2xl border shadow-sm flex flex-col transition-all ${p.isMobile ? 'p-2.5' : 'p-4 sm:p-5'} ${p.isMobile && p.isOpen ? 'col-span-2' : ''} ${
-        p.isCurrentMonth ? 'border-primary ring-2 ring-primary/10' : 'border-slate-200/80 hover:shadow-md'
+      className={`bg-white rounded-xl border shadow-xs flex flex-col transition-all ${p.isMobile ? 'p-2.5' : 'p-4 sm:p-5'} ${p.isMobile && p.isOpen ? 'col-span-2' : ''} ${
+        p.isCurrentMonth ? 'border-primary ring-2 ring-primary/10' : 'border-slate-200/80 hover:shadow-lg'
       }`}
     >
       <button
@@ -253,7 +253,7 @@ function YearMonthCard(p: Props) {
           p.isMobile ? 'cursor-pointer' : 'cursor-default'
         }`}
       >
-        {p.isMobile && <span className="text-xs text-slate-500">{p.isOpen ? '▼' : '▶'}</span>}
+        {p.isMobile && <span className="text-xs text-slate-500"><Glyph e={p.isOpen ? '▼' : '▶'} /></span>}
         <span>{p.m.label}</span>
         <span className="text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-500 rounded-lg">{p.m.semester}학기</span>
         {!p.isOpen && <span className="text-xs font-bold text-slate-500">{activeDays.length > 0 ? `${activeDays.length}일` : waiting ? '받는 중…' : '비어 있음'}</span>}
@@ -345,8 +345,8 @@ function YearMonthCard(p: Props) {
                           at="year"
                           after={
                             <span data-gcal-range className="inline-block align-middle ml-1.5 text-2xs font-semibold text-slate-500 whitespace-nowrap">
-                              {sp.startsPeriod ? '' : '◂ '}<Glyph e="📆" /> {periodRangeLabel(sp.cells)}
-                              {sp.endsPeriod ? '' : ' ▸'}
+                              {sp.startsPeriod ? '' : <><Glyph e="◂" /> </>}<Glyph e="📆" /> {periodRangeLabel(sp.cells)}
+                              {sp.endsPeriod ? '' : <> <Glyph e="▸" /></>}
                             </span>
                           }
                         />

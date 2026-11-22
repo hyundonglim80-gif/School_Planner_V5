@@ -39,7 +39,7 @@ export function NoteTemplateButton({ open, onToggle }: { open: boolean; onToggle
       aria-expanded={open}
       onClick={onToggle}
       title="메모 틀 - 자주 쓰는 양식으로 채우거나, 지금 글을 틀로 저장합니다"
-      className={`px-2 py-0.5 text-xs font-bold border rounded-md cursor-pointer ${
+      className={`px-2 py-0.5 text-xs font-bold border rounded-lg cursor-pointer ${
         open ? PICK_ON : 'text-slate-600 bg-white hover:bg-slate-50 border-slate-200'
       }`}
     >
@@ -196,7 +196,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                       setRenaming(null);
                     }
                   }}
-                  className="flex-1 min-w-0 px-1.5 py-1 text-xs border border-primary rounded-md focus:outline-none"
+                  className="flex-1 min-w-0 px-1.5 py-1 text-xs border border-primary rounded-lg focus:outline-none"
                 />
               ) : (
                 <button
@@ -204,7 +204,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                   data-note-template-use={t.id}
                   onClick={() => onApply(t)}
                   title={`'${t.name}' 틀로 채우기${t.labels.length > 0 ? ` (라벨 ${t.labels.map((l) => l.name).join(', ')})` : ''}`}
-                  className="flex-1 min-w-0 text-left px-1.5 py-1 text-xs font-bold text-slate-700 hover:text-primary rounded-md hover:bg-slate-50 focus:bg-slate-50 cursor-pointer truncate"
+                  className="flex-1 min-w-0 text-left px-1.5 py-1 text-xs font-bold text-slate-700 hover:text-primary rounded-lg hover:bg-slate-50 focus:bg-slate-50 cursor-pointer truncate"
                 >
                   {t.name}
                   {t.tables.length > 0 && <span className="ml-1 font-normal text-slate-500">· 표 {t.tables.length}</span>}
@@ -229,7 +229,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                 aria-label={`${t.name} 위로`}
                 className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer shrink-0"
               >
-                ▲
+                <Glyph e="▲" />
               </button>
               <button
                 type="button"
@@ -240,7 +240,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
                 aria-label={`${t.name} 아래로`}
                 className="w-6 h-6 flex items-center justify-center rounded text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 disabled:opacity-30 cursor-pointer shrink-0"
               >
-                ▼
+                <Glyph e="▼" />
               </button>
               <button
                 type="button"

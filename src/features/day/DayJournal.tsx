@@ -87,7 +87,7 @@ export default function DayJournal({ date }: { date: YMD }) {
 
   return (
     <section data-day-journal={date} className="flex flex-col gap-4">
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
+      <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
         {/* 머리줄: ▼ 📝 메모 N [+ 추가] 📊 🏷️ ……… ⚙️ */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <div className="flex items-center gap-2 shrink-0">
@@ -98,7 +98,7 @@ export default function DayJournal({ date }: { date: YMD }) {
               className="text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
               title={collapsed ? '펼치기' : '접기'}
             >
-              {collapsed ? '▶' : '▼'}
+              <Glyph e={collapsed ? '▶' : '▼'} />
             </button>
             <span className="flex text-primary" aria-hidden>
               <Glyph e="📝" className="w-5 h-5" />
@@ -148,7 +148,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                   picked ? 'bg-sky-50 hover:bg-sky-100 text-sky-700' : filterOpen ? 'bg-slate-100 text-slate-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
                 }`}
               >
-                <Glyph e="🏷" />{picked ? ` ${picked}` : ''} {filterOpen ? '▴' : '▾'}
+                <Glyph e="🏷" />{picked ? ` ${picked}` : ''} <Glyph e={filterOpen ? '▴' : '▾'} />
               </button>
             )}
           </div>
@@ -175,7 +175,7 @@ export default function DayJournal({ date }: { date: YMD }) {
             data-journal-labels-settings
             {...shortcutTarget('labels')}
             onClick={() => openWindow('labels', { tab: 'note' })}
-            className="ml-auto w-7 h-7 flex items-center justify-center rounded-md text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+            className="ml-auto w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
             title="메모 라벨 설정"
             aria-label="메모 라벨 설정"
           >
@@ -227,7 +227,7 @@ export default function DayJournal({ date }: { date: YMD }) {
             ))}
           </div>
         ) : notes.length > 0 ? (
-          <div data-journal-filtered-empty className="w-full text-center py-8 bg-white/60 rounded-2xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
+          <div data-journal-filtered-empty className="w-full text-center py-8 bg-white/60 rounded-xl border border-dashed border-slate-300 p-6 text-sm text-slate-500">
             고른 라벨의 메모가 없습니다.
           </div>
         ) : waiting ? (
@@ -235,7 +235,7 @@ export default function DayJournal({ date }: { date: YMD }) {
             메모를 받는 중…
           </p>
         ) : cards.length > 0 ? null : (
-          <div data-journal-empty className="w-full text-center py-10 bg-white/60 rounded-2xl border border-dashed border-slate-300 p-6 shadow-xs">
+          <div data-journal-empty className="w-full text-center py-10 bg-white/60 rounded-xl border border-dashed border-slate-300 p-6 shadow-xs">
             <DecorSpot slot="journal" />
             <p className="text-slate-500 font-bold text-sm">이 날의 메모가 없습니다.</p>
           </div>

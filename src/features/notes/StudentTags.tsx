@@ -93,7 +93,7 @@ export function StudentTagRow({ studentIds, onChange, year }: { studentIds: stri
           aria-pressed={open}
           onClick={() => setOpen((v) => !v)}
           title="학생 기록(누가기록)에 이 글이 모입니다. 글 칸에서 @이름을 쳐도 됩니다."
-          className="px-2 py-0.5 rounded-md text-xs font-bold border border-dashed border-amber-300 text-amber-700 hover:bg-amber-50 cursor-pointer"
+          className="px-2 py-0.5 rounded-lg text-xs font-bold border border-dashed border-amber-300 text-amber-700 hover:bg-amber-50 cursor-pointer"
         >
           {open ? '닫기' : '+ 학생 고르기'}
         </button>

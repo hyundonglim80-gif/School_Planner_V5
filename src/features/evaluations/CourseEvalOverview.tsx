@@ -129,7 +129,7 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
                           data-course-cell={`${cls}|${col.title}`}
                           onClick={() => openEval(ev)}
                           title={`${cls} ${ev.date} ${ev.title} - 눌러서 열기`}
-                          className={`w-full rounded-md px-1.5 py-1 font-bold hover:bg-white border cursor-pointer ${full ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : 'text-slate-700 border-transparent'}`}
+                          className={`w-full rounded-lg px-1.5 py-1 font-bold hover:bg-white border cursor-pointer ${full ? 'text-emerald-700 border-emerald-200 bg-emerald-50' : 'text-slate-700 border-transparent'}`}
                         >
                           완료 {done}/{total}
                         </button>

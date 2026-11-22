@@ -573,7 +573,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     onToggle={() => void toggleFlag('done')}
                     hint={l ? pathOf(l.id) : undefined}
                     truncate
-                    className="px-2 py-0.5 rounded-md text-xs min-w-0 max-w-[10rem]"
+                    className="px-2 py-0.5 rounded-lg text-xs min-w-0 max-w-[10rem]"
                     data={{ 'data-note-view-chip': l?.id ?? '' }}
                   />
                 ))}
@@ -584,7 +584,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     data-note-view-date={d}
                     onClick={() => openDay(d)}
                     title={`${shortDateLabel(d)} 하루 화면으로`}
-                    className="px-1.5 py-0.5 rounded-md text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
+                    className="px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
                   >
                     <Glyph e="📅" /> {shortDateLabel(d)}
                   </button>
@@ -601,7 +601,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     disabled={flagBusy}
                     onClick={() => void toggleFlag('done')}
                     title={isEditing ? '완료 표시 (누르면 바로 저장)' : '완료 표시 (처음 저장할 때 함께)'}
-                    className={`px-2 py-0.5 rounded-md text-xs font-bold border transition-colors cursor-pointer ${
+                    className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                       done ? 'bg-slate-700 text-white border-slate-700' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
                     }`}
                   >
@@ -614,7 +614,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     disabled={flagBusy}
                     onClick={() => void toggleFlag('favorite')}
                     title={isEditing ? '즐겨찾기 (누르면 바로 저장)' : '즐겨찾기 (처음 저장할 때 함께)'}
-                    className={`px-2 py-0.5 rounded-md text-xs font-bold border transition-colors cursor-pointer ${
+                    className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                       favorite ? 'bg-amber-50 text-amber-600 border-amber-300' : 'bg-white text-slate-500 border-slate-200 hover:border-amber-300'
                     }`}
                   >
@@ -628,7 +628,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     <span
                       key={d}
                       data-note-date-chip={d}
-                      className="inline-flex items-center gap-0.5 pl-2 pr-0.5 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-xs font-bold text-sky-800"
+                      className="inline-flex items-center gap-0.5 pl-2 pr-0.5 py-0.5 rounded-lg bg-sky-50 border border-sky-200 text-xs font-bold text-sky-800"
                     >
                       {shortDateLabel(d)}
                       <button
@@ -655,7 +655,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                       title: "날짜를 더하면 그날 하루 '메모' 칸에도 보입니다 (여러 날 가능)",
                       disabled: saving,
                       className:
-                        'px-1.5 py-0.5 text-xs font-bold text-slate-500 border border-dashed border-slate-300 rounded-md hover:text-primary hover:border-primary disabled:opacity-60 cursor-pointer',
+                        'px-1.5 py-0.5 text-xs font-bold text-slate-500 border border-dashed border-slate-300 rounded-lg hover:text-primary hover:border-primary disabled:opacity-60 cursor-pointer',
                     }}
                   />
                   {form.dates.length === 0 && <span className="text-xs text-slate-500" data-note-dates-empty>날짜 없음 (메모 화면에만)</span>}
@@ -768,7 +768,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={toggleChecklist}
                     title={withShortcut('체크리스트 - 커서가 있는 줄 앞에 ☐', 'checklist')}
-                    className="px-2 py-0.5 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-md cursor-pointer"
+                    className="px-2 py-0.5 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg cursor-pointer"
                   >
                     ☑ 체크리스트
                   </button>
@@ -877,7 +877,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 <label
                   data-note-attach
                   aria-disabled={!!uploading}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-dashed border-slate-300 shadow-2xs ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-dashed border-slate-300 shadow-xs ${
                     uploading ? 'opacity-60 cursor-wait' : 'cursor-pointer'
                   }`}
                   title="파일을 골라 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 여러 개를 한 번에 골라도 되고, 윈도우 파일을 이 칸에 끌어다 놓아도 됩니다. 링크가 있는 사람은 볼 수 있습니다."
@@ -893,7 +893,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   onClick={() => setPenOpen(true)}
                   disabled={!!uploading}
                   title={penDirty ? '그리던 손글씨를 이어 그립니다. 💾 저장을 누르면 그림으로 붙고 메모가 저장됩니다.' : '펜·손가락으로 쓴 것을 그림으로 바꿔 붙입니다 (구글 드라이브 School_Planner 폴더 - 링크가 있는 사람은 볼 수 있습니다)'}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed shadow-2xs disabled:opacity-60 disabled:cursor-wait ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed shadow-xs disabled:opacity-60 disabled:cursor-wait ${
                     penDirty ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300' : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300'
                   }`}
                 >
@@ -905,7 +905,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   data-note-table-add
                   onClick={addTable}
                   title="빈 표(3행 × 3열)를 본문 아래에 붙입니다. 칸을 눌러 적고, 마지막 칸에서 Tab을 누르면 행이 늘어납니다."
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 shadow-2xs"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 shadow-xs"
                 >
                   <span>▦</span>
                   <span>표</span>
@@ -916,7 +916,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   onClick={() => void addLink()}
                   disabled={saving || !!uploading}
                   title={isEditing ? '이 메모에 일정·메모·수업을 잇습니다' : '먼저 저장하고 이 메모에 일정·메모·수업을 잇습니다'}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-yellow-50 text-slate-700 hover:text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 hover:border-yellow-300 shadow-2xs"
+                  className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-slate-50 hover:bg-yellow-50 text-slate-700 hover:text-yellow-800 rounded-xl text-xs font-bold transition-colors cursor-pointer border border-dashed border-slate-300 hover:border-yellow-300 shadow-xs"
                 >
                   <span><Glyph e="🔗" /></span>
                   <span>링크 추가</span>
@@ -1031,7 +1031,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                 type="button"
                 data-note-edit
                 onClick={startEdit}
-                className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md hover:shadow-lg transition-all cursor-pointer"
+                className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-xs transition-all cursor-pointer"
               >
                 <Glyph e="✏" /> 수정
               </button>
@@ -1042,7 +1042,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               onClick={() => void save()}
               disabled={saving || (!isEditing && !hasContent(form)) || (isEditing && !item)}
               title={isEditing && !hasContent(form) ? '내용을 모두 지웠습니다 - 저장하면 이 메모를 휴지통으로 옮깁니다' : undefined}
-              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {saving ? '저장 중...' : '저장'}
             </button>

@@ -5,7 +5,7 @@ export default function LoginScreen() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-bg-body p-4">
-      <div className="rounded-2xl bg-white p-12 text-center shadow-lg">
+      <div className="rounded-xl bg-white p-12 text-center shadow-lg">
         <h1 className="mb-3 overflow-hidden whitespace-nowrap text-3xl font-bold text-primary md:text-4xl">SP5</h1>
         <p className="mb-10 text-lg text-slate-500">
           자료를 안전하게 저장하고 여러 기기에서 함께 쓰려면
@@ -18,7 +18,7 @@ export default function LoginScreen() {
           data-login-google
           onClick={loginWithGoogle}
           disabled={signingIn}
-          className="mx-auto flex cursor-pointer items-center gap-3 rounded-lg border-none bg-[#4285F4] px-6 py-3 text-lg font-bold text-white shadow-md transition-all hover:bg-cobalt-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mx-auto flex cursor-pointer items-center gap-3 rounded-lg border-none bg-[#4285F4] px-6 py-3 text-lg font-bold text-white shadow-xs transition-all hover:bg-cobalt-600 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {signingIn ? '로그인 창을 여는 중...' : 'Google 계정으로 로그인'}
         </button>

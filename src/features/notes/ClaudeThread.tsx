@@ -20,7 +20,7 @@ export const SETTLE_MS = 1500;
 /** 사용자가 칸에 손댔다 - 이 뒤의 스크롤은 사용자의 것 */
 const USER_INPUT = ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const;
 
-const MINE = 'max-w-[85%] rounded-2xl bg-primary px-3 py-1.5 text-left text-sm text-white';
+const MINE = 'max-w-[85%] rounded-xl bg-primary px-3 py-1.5 text-left text-sm text-white';
 
 /** 내 글 - 첫 요청은 한 줄로 접는다 */
 function AskBubble({ turn }: { turn: ClaudeTurn }) {
@@ -48,7 +48,7 @@ function AskBubble({ turn }: { turn: ClaudeTurn }) {
       title={open ? '접기' : '보낸 글 다 보기'}
       className={`${MINE} min-w-0 cursor-pointer ${open ? 'whitespace-pre-wrap break-words' : 'truncate'}`}
     >
-      {open ? '▾' : '▸'} {text}
+      <Glyph e={open ? '▾' : '▸'} /> {text}
     </button>
   );
 }
@@ -64,7 +64,7 @@ function Turn({ turn, onRefill }: { turn: ClaudeTurn; onRefill?: (text: string) 
         <AskBubble turn={turn} />
       </div>
       <div className="flex justify-start">
-        <div className={`min-w-0 max-w-[85%] space-y-1 rounded-2xl border px-3 py-1.5 ${CLAUDE_NOTE_TONE[badge.tone]}`}>
+        <div className={`min-w-0 max-w-[85%] space-y-1 rounded-xl border px-3 py-1.5 ${CLAUDE_NOTE_TONE[badge.tone]}`}>
           <ClaudeBadgeChip badge={badge} url={turn.url} data={{ 'data-claude-turn-badge': turn.state }} />
           {/* 고른 모델·노력 (11-08) - 기본이면 적지 않는다 */}
           {run && (

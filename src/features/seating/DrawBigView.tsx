@@ -94,7 +94,7 @@ export default function DrawBigView({ isOpen, onClose, sid, num, name, rolling, 
         onClick={onPick}
         // disabled로 두면 굴리는 동안 커서가 빠져 Enter로 이어 뽑지 못한다 - 누름은 onPick이 굴리는 중이면 무시한다
         aria-disabled={rolling}
-        className={`px-8 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 text-xl font-black cursor-pointer ${rolling ? 'opacity-60' : ''}`}
+        className={`px-8 py-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 text-xl font-black cursor-pointer ${rolling ? 'opacity-60' : ''}`}
       >
         <Glyph e="🎯" /> 다음 학생
       </button>

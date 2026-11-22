@@ -13,7 +13,7 @@ import { join } from 'node:path';
 
 const NAMES = [
   'alarm-clock', 'armchair', 'backpack', 'ban', 'bell', 'bell-off', 'book-open', 'book-open-text', 'bot', 'calendar', 'calendar-days',
-  'calendar-range', 'chart-column', 'check', 'circle-check', 'clipboard-list', 'clock', 'compass', 'corner-down-right', 'download', 'file-text',
+  'calendar-range', 'chart-column', 'check', 'chevron-down', 'chevron-left', 'chevron-right', 'chevron-up', 'circle-check', 'clipboard-list', 'clock', 'compass', 'corner-down-right', 'download', 'file-text',
   'files', 'flag', 'folder', 'folder-open', 'footprints', 'graduation-cap', 'hand', 'hourglass', 'image', 'inbox', 'keyboard', 'library',
   'lightbulb', 'link', 'lock', 'log-out', 'map', 'map-pin', 'megaphone', 'message-circle', 'newspaper', 'notebook-pen', 'palette', 'paperclip',
   'pencil', 'pin', 'presentation', 'printer', 'refresh-cw', 'repeat', 'rewind', 'save', 'school', 'search', 'settings', 'siren', 'skip-forward',

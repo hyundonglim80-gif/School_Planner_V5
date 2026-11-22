@@ -4,6 +4,7 @@ import { describeClass } from '../../domain/roster';
 import type { ClassItem } from '../class/classes';
 import { Glyph } from '../../ui/Icon';
 import { BTN_SUB } from '../../ui/buttons';
+import { glyphText } from '../../ui/glyphText';
 
 export interface MetaDraft {
   title: string;
@@ -39,7 +40,7 @@ export default function EvalMetaBox({ open, onToggle, meta, onChange, onSave, cl
     <div className="mb-3 border border-slate-300 rounded-xl bg-slate-50 p-3" data-eval-meta={open ? 'open' : 'closed'}>
       <button type="button" data-eval-meta-toggle onClick={onToggle} className="w-full flex items-center justify-between cursor-pointer">
         <span className="font-bold text-blue-800 text-xs"><Glyph e="⚙" /> 기본 정보 수정</span>
-        <span className="text-slate-500 text-xs">{open ? '▲ 접기' : '▼ 펼치기'}</span>
+        <span className="text-slate-500 text-xs">{glyphText(open ? '▲ 접기' : '▼ 펼치기')}</span>
       </button>
       {open && (
         <div className="flex flex-col gap-2.5 mt-3 pt-3 border-t border-dashed border-slate-300">

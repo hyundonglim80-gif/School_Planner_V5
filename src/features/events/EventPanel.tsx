@@ -441,7 +441,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
             <p className="text-xs font-bold text-primary mt-0.5 truncate">
               {subtitle}
               {overlayOn && (
-                <span data-event-panel-space={sid} className="inline-block ml-1.5 px-1.5 py-px rounded-md border text-slate-700 align-middle" style={spaceTone(sid)}>
+                <span data-event-panel-space={sid} className="inline-block ml-1.5 px-1.5 py-px rounded-lg border text-slate-700 align-middle" style={spaceTone(sid)}>
                   {glyphText(personal ? '🔒 개인' : `👥 공유 · ${groupName ?? '그룹'}`)}
                 </span>
               )}
@@ -498,7 +498,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                   title="전날로"
                   className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-black cursor-pointer"
                 >
-                  ◀
+                  <Glyph e="◀" />
                 </button>
                 <input
                   type="date"
@@ -515,7 +515,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                   title="다음 날로"
                   className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-black cursor-pointer"
                 >
-                  ▶
+                  <Glyph e="▶" />
                 </button>
                 {!periodOpen && (
                   <button
@@ -744,7 +744,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
               data-event-save
               onClick={() => void save()}
               disabled={saving || !form.text.trim() || (isEditing && !item)}
-              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-xs transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {saving ? '저장 중...' : dateChanged ? '옮기고 저장' : '저장'}
             </button>

@@ -28,6 +28,7 @@ import { rememberPopupRect, sendNavToOpener, sendParamsToOpener, usePopupBridge 
 import { pressInThisWindow } from './pressShortcuts';
 import './windowList';
 import { anyWindowUnsaved, closeSplitWindows, getWindowDef, openWindow, useWindows } from './windows';
+import { Glyph } from '../ui/Icon';
 
 export default function PopoutShell({ spec }: { spec: PopoutSpec }) {
   const def = getWindowDef(spec.id);
@@ -119,10 +120,10 @@ export default function PopoutShell({ spec }: { spec: PopoutSpec }) {
             onClick={() => closeSplitWindows()}
             title="오른쪽 분할 칸 닫기 (ESC와 같음)"
             aria-label="오른쪽 분할 칸 닫기"
-            className="fixed top-1/2 -translate-y-1/2 w-6 h-14 flex items-center justify-center rounded-l-xl bg-white/90 border border-r-0 border-slate-200 shadow-md text-xs text-slate-500 hover:bg-primary/10 hover:w-7 transition-all cursor-pointer"
+            className="fixed top-1/2 -translate-y-1/2 w-6 h-14 flex items-center justify-center rounded-l-xl bg-white/90 border border-r-0 border-slate-200 shadow-lg text-xs text-slate-500 hover:bg-primary/10 hover:w-7 transition-all cursor-pointer"
             style={{ right: RIGHT_COLUMN_CSS_WIDTH }}
           >
-            ▶
+            <Glyph e="▶" />
           </button>
         </div>
       )}

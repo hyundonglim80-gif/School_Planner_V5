@@ -101,7 +101,7 @@ export default function MultiSelectBar() {
   return (
     <div data-multi-bar={count} className="fixed bottom-20 sm:bottom-6 left-1/2 -translate-x-1/2 z-50">
       {panel === 'label' && (
-        <div ref={labelRef} data-multi-label-panel className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white text-slate-800 p-3 rounded-2xl shadow-2xl border border-slate-200/90 w-64">
+        <div ref={labelRef} data-multi-label-panel className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white text-slate-800 p-3 rounded-xl shadow-lg border border-slate-200/90 w-64">
           <div className="text-xs font-bold text-slate-500 mb-2 px-1">라벨 한꺼번에 바꾸기</div>
           <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1">
             <button
@@ -120,7 +120,7 @@ export default function MultiSelectBar() {
                   type="button"
                   data-multi-label={l.id}
                   onClick={() => void relabel(l.id, l.name)}
-                  className="px-2.5 py-1 text-xs font-bold rounded-lg border hover:opacity-85 shadow-2xs cursor-pointer"
+                  className="px-2.5 py-1 text-xs font-bold rounded-lg border hover:opacity-85 shadow-xs cursor-pointer"
                   style={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}
                 >
                   {l.name}
@@ -132,11 +132,11 @@ export default function MultiSelectBar() {
       )}
 
       {panel === 'move' && (
-        <div ref={moveRef} data-multi-move-panel className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white text-slate-800 p-3 rounded-2xl shadow-2xl border border-slate-200/90 w-72">
+        <div ref={moveRef} data-multi-move-panel className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 bg-white text-slate-800 p-3 rounded-xl shadow-lg border border-slate-200/90 w-72">
           <div className="text-xs font-bold text-slate-500 mb-2 px-1">고른 일정을 이 날짜로 모두 옮기기</div>
           <div className="flex items-center gap-1.5">
             <button type="button" data-multi-move-prev onClick={() => setMoveDate((d) => addDays(d, -1))} title="전날로" className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-black cursor-pointer">
-              ◀
+              <Glyph e="◀" />
             </button>
             <input
               type="date"
@@ -147,7 +147,7 @@ export default function MultiSelectBar() {
               className="flex-1 min-w-0 px-2 py-1 text-sm border border-slate-200 rounded-lg font-bold"
             />
             <button type="button" data-multi-move-next onClick={() => setMoveDate((d) => addDays(d, 1))} title="다음 날로" className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-black cursor-pointer">
-              ▶
+              <Glyph e="▶" />
             </button>
           </div>
           <p className="mt-2 text-2xs text-slate-500 leading-snug">고른 것만 옮깁니다(묶음째 옮기려면 일정 칸에서 날짜를 고치세요).</p>
@@ -163,7 +163,7 @@ export default function MultiSelectBar() {
         </div>
       )}
 
-      <div className="bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-2xl shadow-2xl flex items-center gap-4 min-w-[340px] justify-between border border-slate-700/60">
+      <div className="bg-slate-900/95 backdrop-blur-md text-white px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-4 min-w-[340px] justify-between border border-slate-700/60">
         <div className="flex items-center gap-2.5">
           <div data-multi-count={count} className="bg-primary text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-xs">
             {count}

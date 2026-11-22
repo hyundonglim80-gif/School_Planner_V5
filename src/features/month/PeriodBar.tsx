@@ -105,7 +105,7 @@ export default function PeriodBar({ bar, space, label, compact, multiOn, picked,
         className={`relative pointer-events-none flex items-center gap-1 whitespace-nowrap overflow-hidden ${compact ? 'h-full px-1 text-2xs leading-none' : 'px-1.5 py-0.5 text-2xs leading-tight'} font-bold`}
         style={{ color: color.text }}
       >
-        {!bar.startsPeriod && <span className="shrink-0 opacity-60">◂</span>}
+        {!bar.startsPeriod && <span className="shrink-0 opacity-60"><Glyph e="◂" /></span>}
         {!compact && (
           <EventDoneChip
             label={label}
@@ -139,7 +139,7 @@ export default function PeriodBar({ bar, space, label, compact, multiOn, picked,
             <Glyph e="🔗" /> {links}
           </button>
         )}
-        {!bar.endsPeriod && <span className="ml-auto shrink-0 opacity-60">▸</span>}
+        {!bar.endsPeriod && <span className="ml-auto shrink-0 opacity-60"><Glyph e="▸" /></span>}
       </div>
     </div>
   );

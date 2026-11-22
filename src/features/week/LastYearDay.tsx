@@ -24,7 +24,7 @@ interface Props {
 
 /** 항목 한 줄의 모양. 고른 것은 진하게, 나머지는 흐리게(마우스를 올리면 진하게) */
 const rowClass = (picked: boolean, tone: 'event' | 'note') =>
-  `flex items-start gap-1.5 px-1.5 py-1 rounded-md border text-xs leading-snug text-slate-600 break-words transition-opacity ${
+  `flex items-start gap-1.5 px-1.5 py-1 rounded-lg border text-xs leading-snug text-slate-600 break-words transition-opacity ${
     picked
       ? 'opacity-100 border-amber-300 bg-amber-50 ring-1 ring-amber-200'
       : `opacity-60 hover:opacity-100 border-dashed ${tone === 'event' ? 'border-slate-200 bg-white/60' : 'border-emerald-200 bg-emerald-50/40'}`

@@ -92,7 +92,7 @@ export default function EventDoneChip({ label, done, mark = true, onToggle, forw
       {...act}
       {...{ [note ? 'data-note-done-chip' : 'data-event-done-chip']: mark && onToggle ? (done ? '1' : '0') : undefined }}
       aria-label={c ? undefined : done ? '완료 풀기' : note ? '메모 완료' : '일정 완료'}
-      className={`relative inline-flex items-center gap-1 align-middle font-bold rounded shadow-2xs whitespace-nowrap ${onToggle ? 'cursor-pointer hover:brightness-95' : ''} ${className}`}
+      className={`relative inline-flex items-center gap-1 align-middle font-bold rounded shadow-xs whitespace-nowrap ${onToggle ? 'cursor-pointer hover:brightness-95' : ''} ${className}`}
       style={{
         ...(c
           ? { backgroundColor: c.bg, color: c.text, border: '1px solid ' + c.border }

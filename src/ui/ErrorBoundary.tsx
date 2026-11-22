@@ -17,7 +17,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
     if (!this.state.failed) return this.props.children;
     return (
       <div data-app-crashed className="min-h-dvh flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-sm w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-6 text-center">
+        <div className="max-w-sm w-full bg-white rounded-xl shadow-xs border border-slate-200 p-6 text-center">
           <p className="text-3xl mb-2">😥</p>
           <h1 className="text-base font-black text-slate-800">화면을 그리다 문제가 생겼습니다</h1>
           <p className="text-xs text-slate-500 mt-2 leading-relaxed">

@@ -213,7 +213,7 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                                 onClick={() => openEval(ev)}
                                 title={`${ev.date} ${ev.title} - 눌러서 열기${ev.shared ? ' (👥 공유 그룹)' : ''}`}
                                 data-eval-col={ev.id}
-                                className="w-full text-left rounded-md px-1 py-0.5 hover:bg-white cursor-pointer"
+                                className="w-full text-left rounded-lg px-1 py-0.5 hover:bg-white cursor-pointer"
                               >
                                 <span className="block text-2xs font-bold text-slate-500">
                                   {EVAL_TYPE_LABEL[ev.type]}

@@ -148,7 +148,7 @@ export default function PopupFrame({
           aria-label={ariaLabel}
           tabIndex={-1}
           data-popup-card
-          className="relative bg-white h-full w-full max-w-lg shadow-2xl flex flex-col overflow-y-auto overscroll-contain outline-none"
+          className="relative bg-white h-full w-full max-w-lg shadow-lg flex flex-col overflow-y-auto overscroll-contain outline-none"
         >
           {inner}
         </div>
@@ -172,7 +172,7 @@ export default function PopupFrame({
         aria-label={ariaLabel}
         tabIndex={-1}
         data-popup-card
-        className={`outline-none bg-white w-full ${CENTER_WIDTH[width]} max-h-full rounded-2xl shadow-2xl border border-slate-200 flex flex-col overflow-hidden ${cardClassName}`}
+        className={`outline-none bg-white w-full ${CENTER_WIDTH[width]} max-h-full rounded-xl shadow-lg border border-slate-200 flex flex-col overflow-hidden ${cardClassName}`}
         onClick={(e) => e.stopPropagation()}
       >
         {inner}

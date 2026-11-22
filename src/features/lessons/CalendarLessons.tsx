@@ -66,7 +66,7 @@ export function LessonWraps({ date, subjects, tag, onOpen }: Props) {
             <span className="max-w-[90px] truncate">{subject}</span>
           </>
         );
-        const cls = 'flex items-center gap-1 px-1.5 py-0.5 rounded-md border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold';
+        const cls = 'flex items-center gap-1 px-1.5 py-0.5 rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-bold';
         const data = { [`data-${tag}-lesson`]: i + 1 };
         return onOpen ? (
           <button

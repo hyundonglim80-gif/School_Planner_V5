@@ -240,7 +240,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
                 setLabelIds([]);
               }}
               className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                tab === k ? 'bg-blue-50 text-blue-700 border border-blue-300 shadow-2xs' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent'
+                tab === k ? 'bg-blue-50 text-blue-700 border border-blue-300 shadow-xs' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent'
               }`}
             >
               {LINK_KIND_ICON[k]} {LINK_KIND_NAME[k]}

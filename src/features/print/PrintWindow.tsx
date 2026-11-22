@@ -325,7 +325,7 @@ function PaperSheet({ page, start, title, landscape, scale, fit, marginMm, align
       data-print-sheet={start}
       data-print-sheets={sheets}
       data-print-zoom={zoom}
-      className="relative shadow-md ring-1 ring-slate-300 overflow-hidden shrink-0"
+      className="relative shadow-lg ring-1 ring-slate-300 overflow-hidden shrink-0"
       style={{ width: (w + margin * 2) * scale, height: (sheets * h + margin * 2) * scale, background: '#fff' }}
     >
       <div inert className="absolute top-0 left-0 origin-top-left pointer-events-none select-none" style={{ width: w + margin * 2, padding: margin, transform: `scale(${scale})` }}>

@@ -38,7 +38,7 @@ describe('손잡이 (app/HeaderFoldHandle)', () => {
     const { container } = render(<HeaderFoldHandle folded={false} />);
     const btn = container.querySelector<HTMLElement>('[data-header-fold]')!;
     expect(btn.dataset.headerFold).toBe('open');
-    expect(btn).toHaveTextContent('▲');
+    expect(btn.querySelector('[data-icon="chevron-up"]')).not.toBeNull(); // ▲ = 꺾쇠 아이콘 (P54-4)
     expect(btn).toHaveAttribute('aria-label', '머리줄 접기 (내용만 크게 보기)');
     expect(btn).toHaveAttribute('aria-expanded', 'true');
     // 펴져 있을 때는 날짜를 적지 않는다 (둘째 줄에 있다)
@@ -53,7 +53,7 @@ describe('손잡이 (app/HeaderFoldHandle)', () => {
     const { container } = render(<HeaderFoldHandle folded />);
     const btn = container.querySelector<HTMLElement>('[data-header-fold]')!;
     expect(btn.dataset.headerFold).toBe('folded');
-    expect(btn).toHaveTextContent('▼');
+    expect(btn.querySelector('[data-icon="chevron-down"]')).not.toBeNull();
     expect(btn).toHaveAttribute('aria-label', '머리줄 펴기');
     expect(btn).toHaveAttribute('aria-expanded', 'false');
     // 하루 화면은 본문에 날짜가 없다 - 손잡이가 알려 준다 (둘째 줄 날짜 글자와 같은 글)
@@ -70,7 +70,7 @@ describe('손잡이 (app/HeaderFoldHandle)', () => {
   it('날짜가 없는 화면(메모·학급)에서는 ▼만', () => {
     useNav.setState({ scope: 'memo' });
     const { container } = render(<HeaderFoldHandle folded />);
-    expect(container.querySelector('[data-header-fold]')).toHaveTextContent('▼');
+    expect(container.querySelector('[data-header-fold] [data-icon="chevron-down"]')).not.toBeNull();
     expect(container.querySelector('[data-header-fold-date]')).toBeNull();
   });
 

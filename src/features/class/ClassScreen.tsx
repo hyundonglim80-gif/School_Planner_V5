@@ -160,7 +160,7 @@ function ClassHub() {
           data-class-today={todayRows.length}
           {...shortcutTarget('attendance')}
           onClick={() => openTool('attendance')}
-          className="text-left bg-white border border-slate-200 rounded-2xl px-4 py-3 hover:bg-slate-50 flex flex-wrap items-center gap-x-3 gap-y-1 cursor-pointer"
+          className="text-left bg-white border border-slate-200 rounded-xl px-4 py-3 hover:bg-slate-50 flex flex-wrap items-center gap-x-3 gap-y-1 cursor-pointer"
         >
           <span className="font-black text-sm text-slate-700"><Glyph e="📋" /> 오늘 출결</span>
           {todayRows.length === 0 ? (
@@ -188,7 +188,7 @@ function ClassHub() {
             data-class-tool={t.id}
             {...shortcutTarget(t.id)}
             onClick={() => openTool(t.id)}
-            className="text-left bg-white border border-slate-200 rounded-2xl p-3 sm:p-4 hover:border-primary/50 hover:shadow-sm transition-all flex flex-col gap-1 cursor-pointer"
+            className="text-left bg-white border border-slate-200 rounded-xl p-3 sm:p-4 hover:border-primary/50 hover:shadow-xs transition-all flex flex-col gap-1 cursor-pointer"
           >
             <Glyph e={t.icon} className="w-7 h-7 text-primary" />
             <span className="font-black text-sm text-slate-800">{t.label}</span>
@@ -198,7 +198,7 @@ function ClassHub() {
       </div>
 
       {/* 학생 명단 - 이름 / 사진. 이름을 누르면 그 학생의 누가기록 */}
-      <section className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-4" data-class-students={students.length}>
+      <section className="bg-white border border-slate-200 rounded-xl p-3 sm:p-4" data-class-students={students.length}>
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <h3 className="font-black text-sm text-slate-700">
             <Glyph e="🧑‍🎓" /> 학생 {students.length}명 <span className="text-xs font-semibold text-slate-500">- {showPhotos ? '사진을 누르면 크게, 이름을 누르면 누가기록' : '누르면 그 학생의 누가기록'}</span>
@@ -217,7 +217,7 @@ function ClassHub() {
                 aria-pressed={showPhotos === on}
                 onClick={() => setPhotoMode(on)}
                 title={on ? '구글 드라이브의 학생 사진으로 봅니다 (명렬표 관리의 사진과 같습니다)' : '번호와 이름으로 봅니다'}
-                className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${showPhotos === on ? 'bg-white text-slate-800 shadow-2xs' : 'text-slate-500'}`}
+                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${showPhotos === on ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500'}`}
               >
                 {glyphText(on ? '📷 사진' : '이름')}
               </button>
@@ -256,7 +256,7 @@ function ClassHub() {
             {students.map((s) => {
               const photo = photos.photos.get(s.num);
               return (
-                <div key={s.sid} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs" data-class-photo-card={s.num}>
+                <div key={s.sid} className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs" data-class-photo-card={s.num}>
                   <StudentPhoto
                     url={photo?.url}
                     name={s.name}
@@ -308,7 +308,7 @@ export default function ClassScreen() {
   const drafts = useRosterDraft((s) => s.drafts);
   const { classes } = useClasses();
   const dirty = isDirty(drafts, classes);
-  const item = (on: boolean) => `px-3 py-1.5 rounded-lg text-sm font-black transition-colors cursor-pointer ${on ? 'bg-white text-primary shadow-2xs' : 'text-slate-500 hover:text-slate-700'}`;
+  const item = (on: boolean) => `px-3 py-1.5 rounded-lg text-sm font-black transition-colors cursor-pointer ${on ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-700'}`;
   return (
     <div data-screen="class" className="animate-fade-in pb-12 flex flex-col gap-3">
       <div role="tablist" aria-label="학급 화면" data-class-mode-switch className="self-start flex gap-1 bg-slate-100 rounded-xl p-1">

@@ -283,7 +283,7 @@ export default function MemoScreen() {
       className="flex items-center gap-1.5 px-1 text-sm sm:text-base font-extrabold text-slate-900 cursor-pointer select-none"
     >
       <span>{text}</span>
-      <span className="text-xs text-slate-500">{open ? '▲' : '▼'}</span>
+      <span className="text-xs text-slate-500"><Glyph e={open ? '▲' : '▼'} /></span>
     </button>
   );
 
@@ -309,7 +309,7 @@ export default function MemoScreen() {
             data-memo-new
             {...shortcutTarget('newMemo')}
             onClick={openCreate}
-            className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 sm:py-2.5 bg-primary hover:bg-blue-600 active:scale-98 text-white rounded-xl sm:rounded-2xl text-xs sm:text-sm font-bold shadow-sm hover:shadow-md transition-all cursor-pointer shrink-0"
+            className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 sm:py-2.5 bg-primary hover:bg-blue-600 active:scale-98 text-white rounded-xl sm:rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-lg transition-all cursor-pointer shrink-0"
             title="새 메모 쓰기 (오른쪽 칸)"
           >
             <span className="font-extrabold leading-none">+</span>
@@ -318,7 +318,7 @@ export default function MemoScreen() {
           <nav
             data-memo-filter-nav
             aria-label="메모 라벨로 보기"
-            className="min-h-0 flex flex-col gap-2 sm:gap-1.5 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-1.5 sm:p-3 overflow-y-auto overscroll-contain"
+            className="min-h-0 flex flex-col gap-2 sm:gap-1.5 bg-white rounded-xl border border-slate-200/80 shadow-xs p-1.5 sm:p-3 overflow-y-auto overscroll-contain"
           >
             <div className="sticky -top-1.5 sm:-top-3 z-10 -mt-1.5 sm:-mt-3 pt-1.5 sm:pt-3 bg-white flex items-center justify-between gap-1 text-xs font-extrabold text-blue-800 border-b-2 border-slate-100 pb-1.5 mb-0.5 px-0.5">
               {/* 제목 = 라벨 관리 창 (P10-5 사용자 의견 5a - 옛 '📁 라벨로 보기'). 칩 고르기는 그대로 */}
@@ -327,7 +327,7 @@ export default function MemoScreen() {
                 data-memo-labels-settings
                 {...shortcutTarget('labels')}
                 onClick={() => openWindow('labels', { tab: 'note' })}
-                className="flex items-center gap-1 px-1 -mx-1 rounded-md hover:bg-slate-100 hover:text-blue-900 cursor-pointer min-w-0"
+                className="flex items-center gap-1 px-1 -mx-1 rounded-lg hover:bg-slate-100 hover:text-blue-900 cursor-pointer min-w-0"
                 title="메모 라벨 관리 (이름·색·상위 라벨·차례)"
               >
                 <Glyph e="🏷" /> 라벨<span className="hidden sm:inline"> 관리</span>
@@ -343,7 +343,7 @@ export default function MemoScreen() {
           </nav>
         </div>
 
-        <section ref={listRef} className="flex-1 min-w-0 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-2 sm:p-5">
+        <section ref={listRef} className="flex-1 min-w-0 bg-white rounded-xl border border-slate-200/80 shadow-xs p-2 sm:p-5">
           {!loaded && memos.length === 0 ? (
             <p data-memo-waiting className="py-24 text-center text-xs text-slate-500">
               메모를 받는 중…
@@ -393,7 +393,7 @@ export default function MemoScreen() {
                       aria-label={sortDir === 'asc' ? '오름차순' : '내림차순'}
                       className="px-2 py-1 rounded-lg border border-slate-200 bg-white text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
                     >
-                      {sortDir === 'asc' ? '▲' : '▼'}
+                      <Glyph e={sortDir === 'asc' ? '▲' : '▼'} />
                     </button>
                   )}
                 </div>

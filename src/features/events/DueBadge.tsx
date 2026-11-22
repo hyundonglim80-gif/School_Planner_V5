@@ -16,7 +16,7 @@ export default function DueBadge({ due, today, completed, small }: DueBadgeProps
     <span
       title={`기한 ${due}`}
       data-due-badge={badge.text}
-      className={`inline-flex items-center align-middle mr-1.5 font-black rounded-md border whitespace-nowrap ${
+      className={`inline-flex items-center align-middle mr-1.5 font-black rounded-lg border whitespace-nowrap ${
         small ? 'text-2xs px-1 py-0.5' : 'text-xs px-1.5 py-0.5'
       } ${DUE_TONE_CLASS[badge.tone]}`}
     >

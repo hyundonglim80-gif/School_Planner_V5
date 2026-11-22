@@ -434,7 +434,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
   const toolBtn = (on: boolean) =>
     `px-3 py-1.5 rounded-xl text-xs font-black transition-colors cursor-pointer disabled:opacity-40 ${on ? PICK_ON : 'border border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
   const togglePanel = (p: Panel) => setPanel(panel === p ? null : p);
-  const desk = <div className="mx-auto w-1/3 min-w-24 text-center text-2xs font-black bg-amber-100 text-amber-700 rounded-md py-1 select-none">교탁</div>;
+  const desk = <div className="mx-auto w-1/3 min-w-24 text-center text-2xs font-black bg-amber-100 text-amber-700 rounded-lg py-1 select-none">교탁</div>;
   const waiting = (classes.length === 0 && classesStatus !== 'live') || (!!classId && charts.length === 0 && seatingStatus !== 'live');
 
   return (

@@ -66,7 +66,7 @@ export function GcalDayCard({ s, date }: { s: GcalShown; date: string }) {
       onKeyDown={pressKeys}
       onClick={gcalClick(s, date)}
       title={gcalTip(s)}
-      className="flex flex-col gap-1 p-2.5 sm:p-3 rounded-xl border border-dashed border-slate-300 bg-white text-slate-800 shadow-2xs hover:border-slate-400 transition-all cursor-pointer min-w-0"
+      className="flex flex-col gap-1 p-2.5 sm:p-3 rounded-xl border border-dashed border-slate-300 bg-white text-slate-800 shadow-xs hover:border-slate-400 transition-all cursor-pointer min-w-0"
     >
       <div className="leading-relaxed text-sm break-words min-w-0">
         <GcalCalChip s={s} className="mr-1.5 text-xs px-2 py-0.5 max-w-[min(12rem,100%)]" />
@@ -121,7 +121,7 @@ export function GcalLine({ s, date, at, instead, after }: { s: GcalShown; date: 
       onKeyDown={pressKeys}
       onClick={gcalClick(s, date, instead)}
       title={gcalTip(s)}
-      className={`block break-words border border-dashed border-slate-300 bg-white text-slate-700 font-medium hover:shadow-sm hover:border-slate-400 transition-all cursor-pointer ${look.box}`}
+      className={`block break-words border border-dashed border-slate-300 bg-white text-slate-700 font-medium hover:shadow-xs hover:border-slate-400 transition-all cursor-pointer ${look.box}`}
     >
       {at === 'month' ? <GcalDot color={s.cal.color} className="w-2 h-2 mr-1" /> : <GcalCalChip s={s} className={look.chip} />}
       <Time s={s} date={date} short={at === 'month'} className={look.time} />
@@ -200,14 +200,14 @@ export function GcalBar({ bar, compact, isCurrentMonth, style, instead }: { bar:
       <div
         className={`relative pointer-events-none flex items-center gap-1 whitespace-nowrap overflow-hidden text-slate-700 ${compact ? 'h-full px-1 text-2xs leading-none' : 'px-1.5 py-0.5 text-2xs leading-tight'} font-bold`}
       >
-        {!bar.startsPeriod && <span className="shrink-0 opacity-60">◂</span>}
+        {!bar.startsPeriod && <span className="shrink-0 opacity-60"><Glyph e="◂" /></span>}
         {/* 앱 막대의 라벨 칩 자리 = 캘린더 색 띠 (색 점보다 굵게 - 막대 끝이 어디 것인지) */}
         <span aria-hidden className={`shrink-0 rounded-sm ${compact ? 'w-1 h-2' : 'w-1.5 h-3'}`} style={{ backgroundColor: s.cal.color }} />
         {!compact && time && bar.startsPeriod && <span className="shrink-0 tabular-nums text-slate-500">{time}</span>}
         <span data-gcal-text className="truncate">
           {s.ev.title}
         </span>
-        {!bar.endsPeriod && <span className="ml-auto shrink-0 opacity-60">▸</span>}
+        {!bar.endsPeriod && <span className="ml-auto shrink-0 opacity-60"><Glyph e="▸" /></span>}
       </div>
     </div>
   );
@@ -217,7 +217,7 @@ export function GcalBar({ bar, compact, isCurrentMonth, style, instead }: { bar:
 export function GcalGroupHeader({ count }: { count: number }) {
   return (
     <div data-gcal-group title="구글 캘린더 일정 - 보기만 합니다 (둘째 줄 '📅 구글'로 끄고 켭니다)" className="col-span-2 sm:col-span-1 flex items-center gap-1.5 pt-1.5 text-2xs font-bold text-slate-500 min-w-0">
-      <span className="truncate px-1.5 py-0.5 rounded-md border border-dashed border-slate-300 bg-white text-slate-600"><Glyph e="📅" /> 구글 캘린더</span>
+      <span className="truncate px-1.5 py-0.5 rounded-lg border border-dashed border-slate-300 bg-white text-slate-600"><Glyph e="📅" /> 구글 캘린더</span>
       <span data-gcal-group-count={count} className="px-1.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
         {count}
       </span>

@@ -31,7 +31,7 @@ export default function EntryTableView({ table, fullHeight }: Props) {
   return (
     // 작게 보기만. 넘치는 것은 칸 안에서만 스크롤.
     <div
-      className={`${fullHeight ? 'overflow-x-auto overflow-y-hidden' : 'max-h-48 overflow-auto overscroll-contain'} rounded-md border border-slate-200 bg-white`}
+      className={`${fullHeight ? 'overflow-x-auto overflow-y-hidden' : 'max-h-48 overflow-auto overscroll-contain'} rounded-lg border border-slate-200 bg-white`}
       style={{ zoom: 0.8 }}
       data-entry-table={table.id}
     >

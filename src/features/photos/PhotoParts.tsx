@@ -8,7 +8,7 @@ import { Glyph } from '../../ui/Icon';
 export function PhotoBulkGroup({ panel }: { panel: PhotoTools }) {
   const input = useRef<HTMLInputElement>(null);
   const busy = !!panel.photos.bulk || !!panel.driveFetching;
-  const btn = 'px-2 py-0.5 bg-white text-amber-800 border border-amber-300 rounded text-xs font-bold hover:bg-amber-100 shadow-2xs cursor-pointer disabled:opacity-60';
+  const btn = 'px-2 py-0.5 bg-white text-amber-800 border border-amber-300 rounded text-xs font-bold hover:bg-amber-100 shadow-xs cursor-pointer disabled:opacity-60';
   return (
     <div data-photo-bulk-group className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-lg px-1.5 py-1" title="사진 여러 장을 한꺼번에 고르면 파일 이름으로 학생을 짝지어 올립니다">
       <span className="text-xs font-bold text-amber-800 px-0.5">

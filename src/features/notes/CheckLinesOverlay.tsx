@@ -7,6 +7,7 @@
 // 줄 자리는 아래 그림의 줄 상자에서 잰다(폭이 바뀌면 다시 - 글이 접히는 자리가 글 칸과 같다).
 import { useLayoutEffect, useRef, useState } from 'react';
 import { canMoveCheckLine, checkLineState } from '../../domain/checkLines';
+import { Glyph } from '../../ui/Icon';
 
 /** 체크 목록이 있을 때 글 칸에 더할 class (글자 투명·왼쪽 손잡이 자리 - 아래 그림과 같은 여백, 그림 위에 그려지게 relative) */
 export const CHECK_TEXT_CLASS = 'relative text-transparent caret-slate-800 selection:text-transparent selection:bg-sky-300/40 pl-11';
@@ -66,10 +67,10 @@ export default function CheckLinesOverlay({ text, onMove }: Props) {
         return (
           <div key={i} className="absolute left-1.5 z-10 flex items-center" style={{ top: tops[i] }}>
             <button type="button" data-check-up={i} disabled={!up} onMouseDown={(e) => e.preventDefault()} onClick={() => onMove(i, -1)} title="위로" aria-label="위로" className={btn}>
-              ▲
+              <Glyph e="▲" />
             </button>
             <button type="button" data-check-down={i} disabled={!down} onMouseDown={(e) => e.preventDefault()} onClick={() => onMove(i, 1)} title="아래로" aria-label="아래로" className={btn}>
-              ▼
+              <Glyph e="▼" />
             </button>
           </div>
         );

@@ -131,7 +131,7 @@ export default function MiniCalendarPicker({ date, onSelectDate, trigger, marked
         }}
         className={
           trigger?.className ??
-          `ml-1 px-1.5 py-0.5 text-xs rounded-md border transition-all flex items-center justify-center cursor-pointer shadow-2xs ${
+          `ml-1 px-1.5 py-0.5 text-xs rounded-lg border transition-all flex items-center justify-center cursor-pointer shadow-xs ${
             isOpen
               ? 'bg-sky-100 border-sky-300 text-primary'
               : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-500 hover:text-primary'

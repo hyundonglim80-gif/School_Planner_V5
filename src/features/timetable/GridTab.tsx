@@ -185,7 +185,7 @@ export default function GridTab(props: Props) {
             </button>
           </div>
         </div>
-        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className={`w-full text-xs text-center border-collapse ${isClassUnit ? 'min-w-[44rem]' : ''}`}>
               <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
@@ -282,7 +282,7 @@ const MODES: Array<{ key: ApplyMode; label: string; title: string }> = [
 
 function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, applied, onUnapply, onLoad, input, today }: Props & { input: string }) {
   const quickBtn = `px-2 py-1 rounded-lg ${BTN_SUB} font-bold cursor-pointer`;
-  const small = 'px-2 py-0.5 rounded-md border font-bold cursor-pointer';
+  const small = 'px-2 py-0.5 rounded-lg border font-bold cursor-pointer';
   return (
     <div className="space-y-2.5 px-3 py-3 bg-emerald-50/60 border border-emerald-200 rounded-xl" data-timetable-apply-box>
       <div className="flex items-center gap-2 flex-wrap text-xs">

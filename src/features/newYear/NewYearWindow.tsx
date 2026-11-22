@@ -173,7 +173,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
             aria-label="앞 학년도"
             className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold cursor-pointer"
           >
-            ◀
+            <Glyph e="◀" />
           </button>
           <span className="text-sm font-black text-slate-800">{year}학년도</span>
           <button
@@ -183,7 +183,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
             aria-label="다음 학년도"
             className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold cursor-pointer"
           >
-            ▶
+            <Glyph e="▶" />
           </button>
         </div>
         <p className="leading-relaxed text-slate-600">
@@ -379,7 +379,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
           {offer && (
             <div data-new-year-teaching-classes={offer.dropped.join(',')} className="bg-sky-50 border border-sky-200 rounded-lg px-2.5 py-2 space-y-1.5 text-sky-900">
               <p>
-                교사 유형의 가르치는 반에 지난 반이 남아 있습니다: <b>{offer.dropped.join(' · ')}</b> (수업 칸 ▼에 계속 나옵니다)
+                교사 유형의 가르치는 반에 지난 반이 남아 있습니다: <b>{offer.dropped.join(' · ')}</b> (수업 칸 <Glyph e="▼" />에 계속 나옵니다)
               </p>
               <button type="button" data-new-year-replace-classes onClick={replaceTeachingClasses} className={`${btn} bg-white border border-sky-300 hover:bg-sky-100`}>
                 <Glyph e="🏫" /> 가르치는 반을 {year}학년도 학급으로 바꾸기 ({offer.next.join(' · ')})

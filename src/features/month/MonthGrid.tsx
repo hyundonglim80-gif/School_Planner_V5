@@ -103,7 +103,7 @@ export default function MonthGrid(p: MonthGridProps) {
   const { byDate: schoolEvents } = useSchoolSchedule(shown.map((d) => d.slice(0, 7)));
 
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden" data-month-grid={p.month}>
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden" data-month-grid={p.month}>
       <div className={`grid ${p.showWeekend ? 'grid-cols-7' : 'grid-cols-5'} border-b border-slate-200 bg-slate-50/70 text-center py-2.5`}>
         {weekdays.map((w) => (
           <div key={w.name} className={`text-xs font-black ${w.color}`}>
@@ -232,7 +232,7 @@ export default function MonthGrid(p: MonthGridProps) {
                               }}
                               style={{ ...space?.tone, ...(p.compact && c ? { borderLeftWidth: '3px', borderLeftColor: c.border } : {}) }}
                               title={space ? `${spaceTitle(space)} 일정 - 누르면 오른쪽 칸에서 고치기` : '누르면 오른쪽 칸에서 고치기'}
-                              className={`group/ev relative rounded text-2xs font-medium leading-tight transition-all border block hover:shadow-sm cursor-pointer ${
+                              className={`group/ev relative rounded text-2xs font-medium leading-tight transition-all border block hover:shadow-xs cursor-pointer ${
                                 p.compact ? 'px-1 py-[1px] truncate whitespace-nowrap [container-type:inline-size]' : 'px-1.5 py-0.5 break-words'
                               } ${isPicked ? 'bg-primary/10 border-primary text-primary' : space ? 'text-slate-800' : 'bg-blue-50 text-blue-800 border-blue-100'}`}
                             >

@@ -64,6 +64,7 @@ import { useGlobalGestures } from './useGlobalGestures';
 import WindowHost from './WindowHost';
 import './windowList';
 import { closeAllWindows, useWindows } from './windows';
+import { Glyph } from '../ui/Icon';
 
 // 누를 때만 쓰는 부품은 그때 나눠 받는다 (P44-2 첫 화면 JS - DESIGN 10장 12). 끊겨 못 받으면 그리지 않는다.
 const ImageViewer = lazyWithReload(() => import('../ui/ImageViewer'), () => null);
@@ -250,10 +251,10 @@ export default function Shell() {
           onClick={() => closeAllWindows()}
           title={`${sideLeft ? '왼쪽' : '오른쪽'} 칸 닫기 (ESC와 같음)`}
           aria-label={`${sideLeft ? '왼쪽' : '오른쪽'} 칸 닫기`}
-          className={`fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center bg-white/90 border border-slate-200 shadow-md text-xs text-slate-500 hover:bg-primary/10 hover:w-7 transition-all cursor-pointer ${sideLeft ? 'rounded-r-xl border-l-0' : 'rounded-l-xl border-r-0'}`}
+          className={`fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center bg-white/90 border border-slate-200 shadow-lg text-xs text-slate-500 hover:bg-primary/10 hover:w-7 transition-all cursor-pointer ${sideLeft ? 'rounded-r-xl border-l-0' : 'rounded-l-xl border-r-0'}`}
           style={sideLeft ? { left: RIGHT_COLUMN_CSS_WIDTH } : { right: RIGHT_COLUMN_CSS_WIDTH }}
         >
-          {sideLeft ? '◀' : '▶'}
+          <Glyph e={sideLeft ? '◀' : '▶'} />
         </button>
       )}
     </div>
