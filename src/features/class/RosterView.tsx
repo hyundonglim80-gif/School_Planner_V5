@@ -44,6 +44,7 @@ import { readRosterSheet } from './rosterSheet';
 import { quizStudentsOf } from '../quiz/usePhotoQuiz';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_DANGER, BTN_MAIN, BTN_SUB, PICK_ON } from '../../ui/buttons';
 
 const TABS: Array<{ id: RosterTab; label: string }> = [
   { id: 'manage', label: '관리' },
@@ -274,7 +275,7 @@ export default function RosterView() {
             aria-pressed={editing}
             onClick={() => setEditing((v) => !v)}
             title="학급을 더하거나 지우고, 학년·반 숫자를 고칩니다"
-            className={`border rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors cursor-pointer ${editing ? 'bg-primary text-white border-primary' : 'bg-transparent text-primary border-blue-200 hover:bg-blue-100'}`}
+            className={`border rounded-lg px-2.5 py-1.5 text-xs font-bold transition-colors cursor-pointer ${editing ? PICK_ON : 'bg-transparent text-primary border-blue-200 hover:bg-blue-100'}`}
           >
             학급 편집
           </button>
@@ -286,7 +287,7 @@ export default function RosterView() {
             aria-pressed={showPhotos}
             onClick={togglePhotos}
             title={showPhotos ? '사진 칸을 감추고 구글 드라이브를 부르지 않습니다' : '사진 칸을 내고 구글 드라이브에서 사진을 불러옵니다'}
-            className={`rounded-lg px-2.5 py-1.5 text-xs font-bold border transition-colors cursor-pointer ${showPhotos ? 'bg-primary text-white border-primary' : 'bg-white text-slate-600 border-blue-200 hover:bg-blue-100'}`}
+            className={`rounded-lg px-2.5 py-1.5 text-xs font-bold border transition-colors cursor-pointer ${showPhotos ? PICK_ON : 'bg-white text-slate-600 border-blue-200 hover:bg-blue-100'}`}
           >
             <Glyph e="📷" /> 사진
           </button>
@@ -314,10 +315,10 @@ export default function RosterView() {
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <span className="text-2xs font-extrabold text-slate-500 tracking-wide">지금 고른 학급의 학년도·학년·반을 고칩니다</span>
             <div className="flex items-center gap-1.5">
-              <button type="button" data-roster-add-class onClick={act.addClass} className="px-2.5 py-1.5 bg-primary hover:bg-primary/90 text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer">
+              <button type="button" data-roster-add-class onClick={act.addClass} className={`px-2.5 py-1.5 ${BTN_SUB} rounded-lg text-xs font-bold cursor-pointer`}>
                 + 새 학급 추가
               </button>
-              <button type="button" data-roster-delete-class onClick={removeClass} className="px-2.5 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-bold cursor-pointer">
+              <button type="button" data-roster-delete-class onClick={removeClass} className={`px-2.5 py-1.5 ${BTN_DANGER} rounded-lg text-xs font-bold cursor-pointer`}>
                 학급 삭제
               </button>
             </div>
@@ -428,7 +429,7 @@ export default function RosterView() {
                       act.addStudents(parseInt(addCount, 10) || 1);
                       setAddCount('');
                     }}
-                    className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 cursor-pointer"
+                    className={`px-2.5 py-1 ${BTN_SUB} rounded-lg text-xs font-bold cursor-pointer`}
                   >
                     + 학생 추가
                   </button>
@@ -440,7 +441,7 @@ export default function RosterView() {
                     if (students.length === 0) return showErrorToast('지울 학생이 없습니다.');
                     if (window.confirm('이 학급의 학생을 모두 지울까요? (💾 저장을 눌러야 반영됩니다)')) act.setStudents([]);
                   }}
-                  className="px-2.5 py-1 bg-white hover:bg-red-50 text-red-500 rounded-lg text-xs font-bold border border-red-200 cursor-pointer"
+                  className={`px-2.5 py-1 ${BTN_DANGER} rounded-lg text-xs font-bold cursor-pointer`}
                 >
                   전체 삭제
                 </button>
@@ -502,7 +503,7 @@ export default function RosterView() {
             {!showPhotos && (
               <div className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-2 border border-slate-200 bg-slate-50 flex-wrap" data-memorize-photos-off>
                 <span className="text-2xs font-bold text-slate-600">사진 보기가 꺼져 있습니다. 얼굴이 있어야 이름을 맞힐 수 있습니다.</span>
-                <button type="button" data-memorize-photos-on onClick={togglePhotos} className="px-2.5 py-1 bg-primary hover:bg-primary/90 rounded text-2xs font-bold text-white transition-colors cursor-pointer">
+                <button type="button" data-memorize-photos-on onClick={togglePhotos} className={`px-2.5 py-1 ${BTN_SUB} rounded-lg text-2xs font-bold transition-colors cursor-pointer`}>
                   사진 켜기
                 </button>
               </div>
@@ -550,7 +551,7 @@ export default function RosterView() {
           onClick={() => void save()}
           disabled={saving}
           title="저장 (Ctrl+S)"
-          className="px-5 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+          className={`px-5 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60`}
         >
           <Glyph e="💾" /> {saving ? '저장 중...' : '저장'}
         </button>

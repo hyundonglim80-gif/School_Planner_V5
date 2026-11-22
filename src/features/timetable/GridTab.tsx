@@ -16,6 +16,7 @@ import SlotPairInput from '../lessons/SlotPairInput';
 import { WEEKDAYS, type ApplyMode, type TimetableDraft } from './timetableDraft';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_DANGER, BTN_SUB, PICK_ON } from '../../ui/buttons';
 
 /** 적용된 시간표 줄 하나 (날마다 실제로 쓰이는 조각) */
 export interface AppliedRow extends Piece {
@@ -131,7 +132,7 @@ export default function GridTab(props: Props) {
 
   const pill = (on: boolean) =>
     `px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
-      on ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-50'
+      on ? PICK_ON : 'bg-white text-slate-700 border-blue-200 hover:bg-blue-50'
     }`;
 
   const input = 'border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-400';
@@ -146,7 +147,7 @@ export default function GridTab(props: Props) {
             {t.id === todayId && <span className="ml-1">· 오늘</span>}
           </button>
         ))}
-        <button type="button" data-timetable-add onClick={onAdd} className="ml-auto px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer" title="지금 표를 베낀 새 시간표를 만듭니다">
+        <button type="button" data-timetable-add onClick={onAdd} className={`ml-auto px-2.5 py-1.5 ${BTN_SUB} rounded-lg text-xs font-bold cursor-pointer`} title="지금 표를 베낀 새 시간표를 만듭니다">
           + 새 시간표
         </button>
       </div>
@@ -162,7 +163,7 @@ export default function GridTab(props: Props) {
           aria-label="시간표 이름"
           className={`${input} w-48`}
         />
-        <button type="button" data-timetable-delete onClick={() => onRemove(current.id)} className="ml-auto px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-bold cursor-pointer">
+        <button type="button" data-timetable-delete onClick={() => onRemove(current.id)} className={`ml-auto px-2.5 py-1 ${BTN_DANGER} rounded-lg font-bold cursor-pointer`}>
           <Glyph e="🗑" /> 이 시간표 지우기
         </button>
       </div>
@@ -176,10 +177,10 @@ export default function GridTab(props: Props) {
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <p className="text-2xs text-slate-500 font-semibold">엑셀에서 복사한 표는 Ctrl+V로 한 번에 들어갑니다.</p>
           <div className="flex items-center gap-1.5">
-            <button type="button" data-grid-period-add onClick={() => onPeriods(addPeriod(periods))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold border border-slate-200 cursor-pointer">
+            <button type="button" data-grid-period-add onClick={() => onPeriods(addPeriod(periods))} className={`px-2 py-1 ${BTN_SUB} rounded-lg text-xs font-bold cursor-pointer`}>
               + 교시 추가
             </button>
-            <button type="button" data-grid-period-remove onClick={() => onPeriods(removePeriod(periods))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold border border-slate-200 cursor-pointer">
+            <button type="button" data-grid-period-remove onClick={() => onPeriods(removePeriod(periods))} className={`px-2 py-1 ${BTN_SUB} rounded-lg text-xs font-bold cursor-pointer`}>
               - 교시 삭제
             </button>
           </div>
@@ -280,7 +281,7 @@ const MODES: Array<{ key: ApplyMode; label: string; title: string }> = [
 ];
 
 function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, applied, onUnapply, onLoad, input, today }: Props & { input: string }) {
-  const quickBtn = 'px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold text-slate-600 cursor-pointer';
+  const quickBtn = `px-2 py-1 rounded-lg ${BTN_SUB} font-bold cursor-pointer`;
   const small = 'px-2 py-0.5 rounded-md border font-bold cursor-pointer';
   return (
     <div className="space-y-2.5 px-3 py-3 bg-emerald-50/60 border border-emerald-200 rounded-xl" data-timetable-apply-box>
@@ -300,7 +301,7 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
           data-timetable-apply
           onClick={onApply}
           disabled={applying}
-          className="ml-auto px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer"
+          className={`ml-auto px-3 py-1.5 ${BTN_SUB} disabled:opacity-50 rounded-lg text-xs font-bold cursor-pointer`}
           title={mode === 'fill' ? '위 표의 과목을 이 기간의 빈 칸에만 넣습니다' : '위 표를 이 기간의 수업 칸에 씁니다'}
         >
           <Glyph e="✅" /> {applying ? '적용 중...' : `${short(range.from)} ~ ${short(range.to)} 적용`}
@@ -318,7 +319,7 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
             onClick={() => onMode(m.key)}
             title={m.title}
             className={`px-2.5 py-1 rounded-lg border font-bold cursor-pointer ${
-              mode === m.key ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+              mode === m.key ? PICK_ON : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
           >
             {glyphText(m.label)}
@@ -358,10 +359,10 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
               <span className="font-semibold text-slate-600 truncate min-w-0">{row.name || '시간표'}</span>
               {row.today && <span className="shrink-0 font-bold text-emerald-700">· 오늘</span>}
               <span className="ml-auto flex items-center gap-1 shrink-0">
-                <button type="button" data-timetable-load onClick={() => onLoad(row)} className={`${small} bg-white hover:bg-blue-50 text-blue-700 border-blue-200`} title="이 기간에 적용된 표를 위 표로 불러옵니다">
+                <button type="button" data-timetable-load onClick={() => onLoad(row)} className={`${small} ${BTN_SUB}`} title="이 기간에 적용된 표를 위 표로 불러옵니다">
                   <Glyph e="📥" /> 불러오기
                 </button>
-                <button type="button" data-timetable-unapply onClick={() => onUnapply(row)} className={`${small} bg-white hover:bg-red-50 text-red-600 border-red-200`} title="이 기간의 적용을 뺍니다 (그 날들은 시간표 수업이 빕니다)">
+                <button type="button" data-timetable-unapply onClick={() => onUnapply(row)} className={`${small} ${BTN_DANGER}`} title="이 기간의 적용을 뺍니다 (그 날들은 시간표 수업이 빕니다)">
                   ✕ 빼기
                 </button>
               </span>

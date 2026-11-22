@@ -7,10 +7,11 @@ import { academicYearOf, todayStr } from '../../domain/dateUtils';
 import { presetPatch, TEACHER_PRESETS, type TeacherPreset } from '../../domain/teachingMode';
 import { CLASS_COLORS, classColor, parseClassInput, type SlotGrid } from '../../domain/teachingSlot';
 import { updateTeaching, useTeaching, useTeachingClasses } from '../lessons/teaching';
+import { PICK_ON } from '../../ui/buttons';
 
 const chip = (on: boolean) =>
   `px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
-    on ? 'bg-primary text-white border-primary shadow-xs' : 'bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary'
+    on ? PICK_ON : 'bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary'
   }`;
 
 const byClassOrder = (a: string, b: string) => {

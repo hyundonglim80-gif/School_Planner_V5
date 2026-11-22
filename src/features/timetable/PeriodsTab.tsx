@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { showToast } from '../../app/toast';
 import { addPeriod, fillPeriodTimes, removePeriod, type PeriodDef } from '../../domain/periodTimes';
+import { BTN_SUB } from '../../ui/buttons';
 
 interface Props {
   periods: PeriodDef[];
@@ -55,10 +56,10 @@ export default function PeriodsTab({ periods, onChange }: Props) {
           시각을 적으면 하루 화면이 지금 교시를 짚어 줍니다.
         </p>
         <div className="flex items-center gap-1.5 shrink-0">
-          <button type="button" data-period-add onClick={() => onChange(addPeriod(periods))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold border border-slate-200 cursor-pointer">
+          <button type="button" data-period-add onClick={() => onChange(addPeriod(periods))} className={`px-2 py-1 ${BTN_SUB} rounded-lg text-xs font-bold cursor-pointer`}>
             + 교시 추가
           </button>
-          <button type="button" data-period-remove onClick={() => onChange(removePeriod(periods))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold border border-slate-200 cursor-pointer">
+          <button type="button" data-period-remove onClick={() => onChange(removePeriod(periods))} className={`px-2 py-1 ${BTN_SUB} rounded-lg text-xs font-bold cursor-pointer`}>
             - 교시 삭제
           </button>
         </div>
