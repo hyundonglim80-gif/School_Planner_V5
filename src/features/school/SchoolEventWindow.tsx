@@ -82,7 +82,7 @@ export default function SchoolEventWindow({ params, close, raise }: WindowProps<
           );
         })}
         <p className="text-xs text-slate-500 leading-relaxed">
-          학사일정은 나이스에서 받아 보여 주기만 합니다. 담은 D-Day·일정은 내 것이라 학교가 학사일정을 바꿔도 따라 바뀌지 않습니다.
+          나이스에서 받아 보기만 합니다. 담은 D-Day·일정은 학교가 바꿔도 그대로입니다.
         </p>
       </div>
     </ModalShell>

@@ -319,7 +319,7 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
                   <option value="">번호 차례로 나누기</option>
                   {hub.groupSets.map((g) => (
                     <option key={g.id} value={g.id}>
-                      <Glyph e="🪑" /> 저장한 모둠: {g.name} ({groupSetSummary(g.groups)})
+                      🪑 저장한 모둠: {g.name} ({groupSetSummary(g.groups)})
                     </option>
                   ))}
                 </select>

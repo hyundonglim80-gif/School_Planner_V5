@@ -89,7 +89,7 @@ function AlarmSoundChoices() {
     <div className="space-y-2">
       <Choices name="alarmSound" option="alarmSound" options={ALARM_SOUND_CHOICES} value={value} onChange={(v) => setCommonSetting('alarmSound', v)} />
       <p className="text-2xs text-slate-500">
-        3초마다 울리고, 알림 창의 <b>확인</b>이나 <b><Glyph e="🔇" /> 소리 끄기</b>를 누르면 바로 멈춥니다. 앱을 닫았을 때 오는 기기 알림도 이 길이만큼 3초마다 다시 울립니다(최대 2분, 알림을 누르거나 지우면 멈춤). 소리가 안 나면 휴대폰 설정 → 알림에서 크롬(또는 설치한 앱)의 소리와 무음·방해 금지 모드를 확인하세요.
+        앱을 닫았을 때 오는 기기 알림도 이 길이만큼 다시 울립니다(최대 2분). 소리가 안 나면 휴대폰 알림 설정을 보세요.
       </p>
     </div>
   );
@@ -101,14 +101,14 @@ export default function NotifyTab() {
       <Section
         id="alarm-sound"
         title="알림 소리"
-        desc="일정의 ⏰ 알림 시각에 앱을 보고 있으면 화면 가운데 알림 창과 함께 소리가 울립니다. 소리가 얼마나 이어질지 고릅니다(모든 기기에 같게)."
+        desc="알림 시각에 울리는 소리의 길이(모든 기기에 같게)"
       >
         <AlarmSoundChoices />
       </Section>
       <Section
         id="push"
         title="일정 알림·대화 (앱을 닫아도)"
-        desc="켜 두면 일정에 건 ⏰ 알림 시각과 새 💬 대화 글이 왔을 때 앱을 닫아 두었어도 이 기기(휴대폰·PC)에 알림이 옵니다(대화 알림에는 보낸 사람·그룹만 - 글은 앱에서, 대화는 방마다 알림 하나 · 🔕 끈 방은 빼고). 앱을 보고 있으면 앱 안에서 알려 줍니다. 기기마다 따로 켭니다 - 휴대폰은 휴대폰에서 이 단추를 눌러 주세요."
+        desc="켜 두면 앱을 닫아도 이 기기에 일정 알림·새 대화가 옵니다. 기기마다 따로 켭니다."
       >
         <PushAlarmPanel />
       </Section>

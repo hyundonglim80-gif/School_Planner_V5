@@ -222,7 +222,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
         )}
         {progressEnd && (
           <p className="text-xs text-slate-500 truncate" data-linker-source>
-            <Glyph e="📘" /> {progressEnd.title} 에 잇습니다 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다
+            <Glyph e="📘" /> {progressEnd.title} 에 잇습니다 - 이 차시의 모든 수업 칸에 보입니다
           </p>
         )}
         <div className="flex gap-2 border-b border-slate-200 pb-2">

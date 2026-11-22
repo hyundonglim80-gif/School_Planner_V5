@@ -76,7 +76,7 @@ export default function DevHolidaysSection() {
   };
 
   return (
-    <Section id="dev-holidays" title="공휴일" desc="설·추석·대체 공휴일 표는 해마다 한 번 받아 둡니다(모든 사용자가 같이 읽습니다). 공공데이터포털 특일정보를 여기서만 부릅니다.">
+    <Section id="dev-holidays" title="공휴일" desc="설·추석·대체 공휴일 표를 해마다 한 번 받아 둡니다(모든 사용자가 읽음).">
       <label className="block text-xs font-bold text-slate-700 mb-1" htmlFor="dev-gov-key">
         공공데이터포털 키 (특일정보)
       </label>

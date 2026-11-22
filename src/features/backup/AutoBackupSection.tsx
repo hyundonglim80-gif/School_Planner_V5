@@ -21,7 +21,7 @@ export default function AutoBackupSection() {
     <Section
       id="auto-backup"
       title="☁️ 드라이브 자동 백업"
-      desc="PC에서 앱을 열 때 정한 날이 지났으면 개인 공간 전체를 구글 드라이브 School_Planner/백업 폴더에 올립니다(공개하지 않습니다). 구글 권한이 이미 있을 때만 조용히 하고, 휴대폰에서는 하지 않습니다."
+      desc="PC에서 앱을 열 때 정한 날이 지났으면 개인 공간 전체를 드라이브 School_Planner/백업에 올립니다."
     >
       <div data-auto-backup>
         <ToggleRow id="auto-backup" option="autoBackup" label="자동 백업" hint="3일 넘게 밀리면 화면 위에 '지금 백업' 띠가 뜹니다." checked={s.enabled} onChange={(enabled) => set({ enabled })} />
@@ -60,7 +60,7 @@ export default function AutoBackupSection() {
             </a>
           )}
         </div>
-        <p className="mt-2 text-2xs text-slate-500">되살릴 때는 드라이브에서 파일을 내려받아 아래 '백업 파일로 되살리기'로 고릅니다. 공유 그룹 자료는 담지 않습니다.</p>
+        <p className="mt-2 text-2xs text-slate-500">공유 그룹 자료는 담지 않습니다. 되살릴 때는 드라이브에서 내려받은 파일로.</p>
       </div>
     </Section>
   );

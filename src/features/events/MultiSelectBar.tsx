@@ -150,7 +150,7 @@ export default function MultiSelectBar() {
               ▶
             </button>
           </div>
-          <p className="mt-2 text-2xs text-slate-500 leading-snug">기간·반복 묶음이어도 고른 것만 옮깁니다. 묶음째 옮기려면 일정을 눌러 칸의 날짜를 고치세요.</p>
+          <p className="mt-2 text-2xs text-slate-500 leading-snug">고른 것만 옮깁니다(묶음째 옮기려면 일정 칸에서 날짜를 고치세요).</p>
           <button
             type="button"
             data-multi-move-go

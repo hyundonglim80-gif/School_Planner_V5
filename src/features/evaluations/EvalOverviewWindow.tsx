@@ -273,7 +273,7 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                 </div>
               )}
               <p className="text-2xs text-slate-500">
-                {cls?.year}학년도에 이 학급으로 만든 조사표를 개인 공간과 지금 보는 공유 그룹에서 모았습니다. 읽기만 합니다 - 값은 조사표 머리를 눌러 연 조사표에서 고칩니다. ✎는 사유·근거가 있다는 표시(칸에 마우스를 올리면 보임)입니다.
+                읽기만 합니다 - 고치려면 조사표 머리를 누르세요. ✎ = 사유·근거 있음.
               </p>
             </>
           )}

@@ -275,7 +275,7 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
   return (
     <ModalShell isOpen onClose={close} raise={raise} width="lg" title="👥 공유 그룹" bare footer={<ModalCloseButton onClose={close} />}>
       <div data-groups-window>
-        <Section id="groups-mine" title="내 그룹" desc="그룹 공간을 고르면 모든 화면이 그 공간의 일정·수업·메모·조사표를 보여 줍니다. 명렬표·출석부·학생 사진은 개인 공간에만 있습니다.">
+        <Section id="groups-mine" title="내 그룹" desc="고른 공간을 모든 화면이 보여 줍니다(명렬표·출석부·학생 사진은 개인 공간에만).">
           {offline ? (
             <p data-groups-offline className="text-xs text-slate-500">
               인터넷이 끊겨 그룹 목록을 받지 못했습니다. 다시 이어지면 저절로 보입니다.
@@ -294,7 +294,7 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
             </ul>
           )}
         </Section>
-        <Section id="groups-create" title="그룹 만들기" desc="만들면 초대 코드가 나옵니다. 그룹에는 처음에 기본 라벨이 들어갑니다(라벨은 그룹 것 - 구성원이 같은 목록을 봅니다).">
+        <Section id="groups-create" title="그룹 만들기" desc="만들면 초대 코드가 나옵니다. 라벨은 그룹 것이라 구성원이 같이 씁니다.">
           <div className="flex gap-2">
             <input
               data-group-new-name

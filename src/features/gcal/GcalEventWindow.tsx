@@ -85,7 +85,7 @@ export default function GcalEventWindow({ params, close, raise }: WindowProps<Gc
           </button>
         </div>
         <p className="text-xs text-slate-500 leading-relaxed">
-          구글 캘린더 일정은 이 기기에 받아 보여 주기만 합니다. 고치거나 지우려면 구글 캘린더에서 하세요. 담은 일정은 내 것이라 구글 일정이 바뀌어도 따라 바뀌지 않습니다.
+          고치거나 지우려면 구글 캘린더에서 하세요. 담은 일정은 구글이 바뀌어도 그대로입니다.
         </p>
       </div>
     </ModalShell>

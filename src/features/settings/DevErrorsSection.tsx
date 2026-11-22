@@ -57,7 +57,7 @@ export default function DevErrorsSection() {
 
   const total = (groups ?? []).reduce((n, g) => n + g.count, 0);
   return (
-    <Section id="dev-errors" title="오류 기록" desc="사용자 화면에서 난 오류가 글 내용 없이 모입니다(최근 50건, 같은 문장끼리 묶음 - 30일 뒤 저절로 지워짐).">
+    <Section id="dev-errors" title="오류 기록" desc="글 내용 없이 모인 오류(최근 50건 · 30일 뒤 저절로 지워짐)">
       <div className="flex items-center gap-2 mb-2">
         <span data-errors-total={total} className="text-xs text-slate-500 mr-auto">
           {groups === null ? (failed ? '' : '읽는 중…') : `${groups.length}가지 · ${total}건`}

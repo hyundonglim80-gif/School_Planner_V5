@@ -127,7 +127,7 @@ export default function KeepImportSection() {
     <Section
       id="keep-import"
       title="📝 구글 Keep 메모 가져오기"
-      desc="Keep은 구글이 바깥 앱에 열어 주지 않아 실시간 연동이 안 됩니다(회사·학교 계정 관리자용 통로만 있습니다). 대신 구글이 주는 내보내기 파일을 읽어 지금 공간의 메모로 넣습니다."
+      desc="구글이 주는 Keep 내보내기 파일을 읽어 지금 공간의 메모로 넣습니다."
     >
       <div data-keep-import className="space-y-3">
         <ol className="text-xs text-slate-600 leading-relaxed list-decimal pl-4 space-y-0.5">

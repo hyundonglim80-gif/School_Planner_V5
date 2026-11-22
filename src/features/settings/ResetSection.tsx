@@ -95,7 +95,7 @@ export default function ResetSection() {
     <Section
       id="reset"
       title="초기화"
-      desc="지금 보기 설정(글자 크기·화면 비율·단축키·창 위치·밝기·색 테마 …)을 내 초기화 값으로 저장해 두고, 언제든 그 값으로 되돌립니다. 일정·메모·학교·교시 같은 자료는 바뀌지 않습니다."
+      desc="지금 보기 설정을 저장해 두고 언제든 되돌립니다(일정·메모 같은 자료는 그대로)."
     >
       <div data-reset-section={from}>
         <p data-reset-saved-at={part ? part.at : ''} className="text-xs text-slate-500 mb-2">

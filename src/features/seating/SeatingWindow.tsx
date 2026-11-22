@@ -384,7 +384,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
       );
     }
     if (!selectedSeat) {
-      return <p className="text-xs text-slate-500">자리를 누른 뒤 다른 자리를 누르면 바꿉니다. 자리를 하나 누르면 고정·비우기·책상 없음도 고릅니다.</p>;
+      return <p className="text-xs text-slate-500">자리 둘을 차례로 누르면 바꿉니다. 하나만 누르면 고정·비우기도 고릅니다.</p>;
     }
     const key = selectedSeat;
     const isOff = chart.off.includes(key);
@@ -660,8 +660,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                 </div>
               </div>
               <p className="text-2xs text-slate-500">
-                재학 {active.length}명 · 번호 색 <span className="text-sky-600 font-bold">남</span>/<span className="text-rose-500 font-bold">여</span> · 전출한 학생은 회색으로 남고 섞을 때 빠집니다. 학생 자리를 누르면 오늘 출결·관찰
-                한 줄을 적습니다.
+                재학 {active.length}명 · 번호 색 <span className="text-sky-600 font-bold">남</span>/<span className="text-rose-500 font-bold">여</span> · 회색 = 전출(섞을 때 빠짐)
               </p>
             </>
           )}
