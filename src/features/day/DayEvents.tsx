@@ -12,7 +12,7 @@
 //   누르기 = 그 공간 칸 · 라벨 칩 = 그 공간에 완료. ▲▼·끌기·고르기·🗑️·이월은 없다(주 공간 것만). 머리 수(data-event-count)는 주 공간 것만.
 // - 구글 캘린더 겹쳐 보기(P36-4): 맨 뒤에 '📅 구글 캘린더 n' 구분 줄 + 읽기 전용 카드(점선 - 누르면 그 일정 창). 수에 넣지 않는다.
 // 새로 쓰고 고치는 칸은 여기 없다 - 오른쪽 일정 칸(EventPanel) 하나로 어느 화면에서나 같게 (V4 그대로).
-import { Suspense, useMemo, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
+import { Suspense, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { lazyWithReload } from '../../app/lazyWithReload';
 import { OfflineInlineWindow } from '../../app/OfflineChunk';
 import { goToday } from '../../app/nav';
@@ -39,9 +39,7 @@ import { openEventPanel, shownEventKey, useShownEventId, useShownEventKey } from
 import { useFocusReveal } from '../search/focus';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import DecorSpot from '../../ui/DecorSpot';
-import { gcalKey, gcalListOn } from '../../domain/gcalShow';
 import { useGcalShown } from '../gcal/gcalView';
-import { GcalDayCard, GcalGroupHeader } from '../gcal/GcalItems';
 import { pressKeys } from '../../ui/pressKeys';
 import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
 import { Glyph } from '../../ui/Icon';
@@ -49,6 +47,8 @@ import { Glyph } from '../../ui/Icon';
 // 누를 때만 뜨는 창 - 열 때 받는다 (P49-3 첫 화면 JS)
 const EventAlarmWindow = lazyWithReload(() => import('../events/EventAlarmWindow'), OfflineInlineWindow);
 const EventDeleteChooser = lazyWithReload(() => import('../events/EventDeleteChooser'), OfflineInlineWindow);
+// 구글 캘린더 일정이 그날 있을 때만 받는다 (P55-1 첫 화면 JS) - 끊겨 못 받으면 그리지 않는다
+const GcalDayList = lazyWithReload(() => import('../gcal/GcalDayList'), () => null);
 
 const NONE: readonly ItemDoc[] = [];
 
@@ -106,8 +106,7 @@ export default function DayEvents({ date }: { date: YMD }) {
   const overlayCount = overlays.reduce((n, o) => n + o.events.length, 0);
   // 구글 캘린더 일정 (P36-4 - 맨 뒤, 수에 넣지 않는다. 끄거나 인쇄면 없다)
   const gcal = useGcalShown(date, date);
-  const gcalToday = useMemo(() => gcalListOn(gcal, date), [gcal, date]);
-  const shownCount = count + overlayCount + gcalToday.length;
+  const shownCount = count + overlayCount + gcal.length;
   const shownKey = useShownEventKey();
   const [collapsed, setCollapsed] = useState(false);
   // 검색 결과로 이 날 일정을 짚으러 오면 접힌 칸을 편다
@@ -278,13 +277,10 @@ export default function DayEvents({ date }: { date: YMD }) {
                   ))}
                 </OverlayGroup>
               ))}
-              {gcalToday.length > 0 && (
-                <>
-                  <GcalGroupHeader count={gcalToday.length} />
-                  {gcalToday.map((g) => (
-                    <GcalDayCard key={gcalKey(g)} s={g} date={date} />
-                  ))}
-                </>
+              {gcal.length > 0 && (
+                <Suspense fallback={null}>
+                  <GcalDayList list={gcal} date={date} />
+                </Suspense>
               )}
             </>
           ) : waiting ? (

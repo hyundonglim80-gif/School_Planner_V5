@@ -5026,7 +5026,8 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
 ### P55-1. 켠 사람만·그때만 쓰는 것을 필요할 때 받기
 **시작 조건**: P54 끝 · 클라우드 가능(빌드 + `npm run check:size` · 닿는 화면 크롬 점검). **묻기**: 없음(동작은 그대로 - 받는 때만 바꾼다, 권장안을 5장에).
 **먼저 읽을 것**: 이 절 · 5장 'P55 추천 하나' ① · 5장 'P49-3 정한 것'(나눈 법·손해) · DESIGN 10장 12 · CLAUDE.md 2장 '나눠 받기(lazy)를 더해도 첫 화면 JS가 줄지 않을 수 있다'·'나눠 받는 부품은 켠 바로 뒤에 세지 않는다' · `tools/first-screen-js.mjs`.
-- [ ] ■1 구글 캘린더 겹쳐 보기: 고른 캘린더가 있을 때만 받기(overlayAuto → data/gcalOverlay)·셈(gcalView → overlayBetween·gcalShownList)·하루 칸 구글 카드(GcalItems) · 늘 쓰는 작은 것(설정 고르기 sanitizeOverlayCalendars·로그아웃 지우기)은 작은 파일로 · 부품 시험·tsc·lint·빌드·크기 · 커밋
+- [x] ■1 구글 캘린더 겹쳐 보기: 고른 캘린더가 있을 때만 받기(overlayAuto → data/gcalOverlay)·셈(gcalView → overlayBetween·gcalShownList)·하루 칸 구글 카드(GcalItems) · 늘 쓰는 작은 것(설정 고르기 sanitizeOverlayCalendars·로그아웃 지우기)은 작은 파일로 · 부품 시험·tsc·lint·빌드·크기 · 커밋
+  → **11-22 ■1 끝**: 첫 화면 JS **376.6 → 371.5KB**(index 111.0 → 108.3 · 하루 화면 GcalItems 조각 2.5KB 빠짐) · 작은 파일 `domain/gcalOverlayPick`(계정 칸 읽기·보는 달)·`data/gcalOverlayStore`(store·지우기) - 옛 파일이 다시 내보낸다 · 받는 몫 `overlayRun` + 고르는 셈 `gcalShownCalc`(받으면 gcalView에 넣는다) · 하루 칸 `GcalDayList`(그날 구글 일정이 있을 때만) · 고른 캘린더가 없으면 이 기기에 받아 둔 것을 지운다(탭에서 계정마다 한 번 - 전에는 빈 DB를 열어 두었다) · 부품 시험 gcal 18.
 - [ ] ■2 구글 캘린더 보내기: '구글 캘린더'를 켠 일정 라벨이 있거나 못 보낸 일정(큐)이 있을 때만 받아 시작(auto·domain/gcal·calendar) · 머리줄 '못 보낸 일정 N'은 큐만 보고 그대로 · 한 번 시작하면 그 공간에서 멈추지 않는다(라벨을 끈 뒤 지우기 큐를 보내야 한다) · 부품 시험·크기 · 커밋
 - [ ] ■3 오류 보고: 늘 듣기만 하고 오류가 나면 보내는 몫을 받기(그새 난 것은 모아 두기) · lazyWithReload의 looksLikeStaleChunk는 작은 파일로 · Claude 요청 살피기·답 받기: 앱을 연 뒤 받아 시작 · 부품 시험·크기 · 커밋
 - [ ] ■4 닿는 크롬 점검(gcal·events·shell·claude-request·notes·memo·month-year·week·board·print·search-trash·dev 오류 기록·manual 구글 주제) · 미리 보기 오프라인(나눠 받은 조각도 담기나) · 5장 'P55-1 정한 것' · DESIGN 10장 12 · 커밋

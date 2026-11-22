@@ -13,7 +13,7 @@ import { showErrorToast } from '../../app/toast';
 import { stopPrefsSync } from '../../app/prefs';
 import { wipeClipboard } from '../../data/clipboard';
 import { wipeDrafts } from '../../data/drafts';
-import { wipeGcalOverlay } from '../../data/gcalOverlay';
+import { wipeGcalCache } from '../../data/gcalOverlayStore';
 import { keepGoogleToken } from '../../data/google/token';
 import { wipeMirror } from '../../data/mirror/sync';
 import { forgetPushOnLogout } from '../../data/push';
@@ -116,7 +116,7 @@ export async function logout() {
           wipeStep('쓰던 글 보관', () => wipeDrafts(uid)),
           wipeStep('클립보드 목록', () => wipeClipboard(uid)),
           // 겹쳐 본 구글 캘린더 일정 (P36-3 - 이 기기에만 받아 둔 것)
-          wipeStep('받은 구글 캘린더 일정', () => wipeGcalOverlay(uid)),
+          wipeStep('받은 구글 캘린더 일정', () => wipeGcalCache(uid)),
         ]
       : []),
     // 학생 사진은 얼굴 사진이다. 사진을 쓰는 화면에서만 읽는 모듈이라 그때 불러온다

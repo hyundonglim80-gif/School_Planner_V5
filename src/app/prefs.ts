@@ -12,7 +12,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { readFontSizes, type FontSizes } from '../domain/fontScale';
 import { DEFAULT_DECOR } from '../domain/decor';
-import { sanitizeOverlayCalendars, type OverlayCalendar } from '../domain/gcalOverlay';
+import { sanitizeOverlayCalendars, type OverlayCalendar } from '../domain/gcalOverlayPick';
 import { DEFAULT_PALETTE } from '../domain/palette';
 import { TRASH_DAYS_UNSET } from '../domain/trashDays';
 import {
