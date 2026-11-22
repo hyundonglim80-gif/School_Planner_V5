@@ -12,7 +12,7 @@
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-month-year.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 항목(insp_my…)을 심고 끝에 지운다. 날짜는 2026-10(오늘 칸은 이 기기의 오늘).
 import { deleteDoc, doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { emulator, hashOf, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, glyphTextOf, hashOf, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -161,7 +161,7 @@ try {
   r.check(await waitFor(async () => hashOf(page) === '#/day/2026-10-23'), `칸 빈 곳 = 그날 하루 화면 (${hashOf(page)})`);
   await page.goto(page.url().replace(/#.*$/, '#/month/2026-11'));
   r.check(await waitFor(bars('insp_my3'), 8000), '다음 달에도 막대');
-  r.check((await bars('insp_my3').textContent()).includes('◂') && (await bars('insp_my3').textContent()).includes('4~6/6'), '앞 달에서 이어진다 (◂ 4~6/6)');
+  r.check((await glyphTextOf(bars('insp_my3'))).includes('◂') && (await glyphTextOf(bars('insp_my3'))).includes('4~6/6'), '앞 달에서 이어진다 (◂ 4~6/6)');
 
   r.section('월간 - 수업 칩');
   await page.goto(page.url().replace(/#.*$/, '#/month/2026-10'));
@@ -194,8 +194,8 @@ try {
   r.check((await page.locator(sel('sheet-date', '2026-10-07')).getAttribute('data-sheet-dots')) === null, "'달력'을 끈 일정은 점도 없다");
   const periodItem = sheet('2026-10').locator(`${sel('sheet-item', 'period')}[data-sheet-item-id="insp_my2"]`);
   r.check((await periodItem.count()) === 1 && (await periodItem.textContent()).includes('~10.21'), '달 아래 목록: 기간은 처음 날 한 번 (~10.21)');
-  r.check((await sheet('2026-10').locator(`${sel('sheet-item', 'period')}[data-sheet-item-id="insp_my3"]`).textContent()).includes('▸'), '다음 달로 이어지는 기간 ▸');
-  r.check((await sheet('2026-11').locator(`${sel('sheet-item', 'period')}[data-sheet-item-id="insp_my3"]`).textContent()).includes('◂'), '앞 달에서 이어진 기간 ◂');
+  r.check((await glyphTextOf(sheet('2026-10').locator(`${sel('sheet-item', 'period')}[data-sheet-item-id="insp_my3"]`))).includes('▸'), '다음 달로 이어지는 기간 ▸');
+  r.check((await glyphTextOf(sheet('2026-11').locator(`${sel('sheet-item', 'period')}[data-sheet-item-id="insp_my3"]`))).includes('◂'), '앞 달에서 이어진 기간 ◂');
   r.check(((await page.locator(sel('sheet-date', '2026-10-19')).getAttribute('title')) ?? '').includes('📆 점검달력 수학여행 준비'), '날짜 풍선 글에 기간');
   await sheet('2026-10').locator(`${sel('sheet-item', 'event')}[data-sheet-item-id="insp_my1"]`).click();
   r.check(await waitFor(page.locator(sel('event-panel', 'edit'))), '목록 = 오른쪽 일정 칸');
@@ -229,7 +229,7 @@ try {
   r.check((await card('2026-10').locator(sel('year-period', 'insp_my2')).count()) === 1, '기간은 처음 날 한 번');
   r.check((await card('2026-10').locator(`${sel('year-period', 'insp_my2')} ${sel('year-period-range')}`).textContent()).includes('(1~5/5)'), '기간 범위 (1~5/5)');
   r.check((await card('2026-10').locator(`${sel('year-period', 'insp_my6')} ${sel('year-period-range')}`).textContent()).includes('(1~2/2)'), '주말 빼기 토~일 기간도 (1~2/2)');
-  r.check((await card('2026-11').locator(`${sel('year-period', 'insp_my3')} ${sel('year-period-range')}`).textContent()).includes('◂'), '다음 달 카드에 ◂ 이어짐');
+  r.check((await glyphTextOf(card('2026-11').locator(`${sel('year-period', 'insp_my3')} ${sel('year-period-range')}`))).includes('◂'), '다음 달 카드에 ◂ 이어짐');
   await card('2026-10').locator(sel('year-event-chip', 'insp_my1')).click();
   r.check((await serverUntil(() => read('insp_my1'), (d) => d?.done === true))?.done === true, '칩 = 완료 (서버)');
   await card('2026-10').locator(sel('year-event-chip', 'insp_my1')).click();

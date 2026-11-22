@@ -131,7 +131,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
   if (!cls) return <div className="text-center py-12 text-xs text-slate-500 font-semibold">학급을 먼저 골라 주세요.</div>;
 
   const loaders = extraClasses.map((c) => <ClassQuizPhotos key={classIdOf(c)} cls={c} onReady={onExtraReady} />);
-  const numInput = 'w-14 px-1.5 py-1 border border-slate-300 rounded-md bg-white text-xs font-bold text-slate-700 text-center';
+  const numInput = 'w-14 px-1.5 py-1 border border-slate-300 rounded-lg bg-white text-xs font-bold text-slate-700 text-center';
   const settingsBar = (
     <div data-quiz-settings className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
       <label className="flex items-center gap-1.5">
@@ -160,7 +160,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
                 disabled={isCur}
                 title={isCur ? '지금 고른 학급 (늘 들어갑니다)' : on ? '빼기' : '함께 외우기'}
                 onClick={() => setSettings({ classes: on ? settings.classes.filter((x) => x !== id) : [...settings.classes, id] })}
-                className={`px-2 py-0.5 rounded-md border text-2xs font-extrabold transition-colors ${on ? PICK_ON : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-100 cursor-pointer'} ${isCur ? 'opacity-80' : ''}`}
+                className={`px-2 py-0.5 rounded-lg border text-2xs font-extrabold transition-colors ${on ? PICK_ON : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-100 cursor-pointer'} ${isCur ? 'opacity-80' : ''}`}
               >
                 {c.grade}-{c.num}
               </button>
@@ -264,7 +264,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
           <div className="w-60 relative shrink-0" data-quiz-photo>
             <StudentPhoto url={current.url} name={current.name} shape="card" />
             {quiz.currentRecord && quiz.currentRecord.x > 0 && (
-              <span className="absolute top-2.5 right-2.5 bg-red-50 border border-red-200 text-red-700 text-2xs font-extrabold rounded-md px-1.5 py-0.5">{quiz.currentRecord.x}번 틀림</span>
+              <span className="absolute top-2.5 right-2.5 bg-red-50 border border-red-200 text-red-700 text-2xs font-extrabold rounded-lg px-1.5 py-0.5">{quiz.currentRecord.x}번 틀림</span>
             )}
           </div>
           <div className="h-14 flex items-center justify-center text-center" data-quiz-answer>

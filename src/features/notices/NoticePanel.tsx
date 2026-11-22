@@ -204,11 +204,11 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <button type="button" data-notice-prev onClick={() => setDate(addDays(date, -1))} className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-black cursor-pointer" title="전날">
-                    ◀
+                    <Glyph e="◀" />
                   </button>
                   <input type="date" data-notice-date-input value={date} onChange={(e) => e.target.value && setDate(e.target.value)} aria-label="알림장 날짜" className="px-2 py-1 border border-slate-200 rounded-lg font-bold" />
                   <button type="button" data-notice-next onClick={() => setDate(addDays(date, 1))} className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-black cursor-pointer" title="다음 날">
-                    ▶
+                    <Glyph e="▶" />
                   </button>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -358,7 +358,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
               onClick={() => void save()}
               disabled={saving || !sid}
               title="Ctrl + S 로도 저장합니다"
-              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {glyphText(saving ? '저장 중...' : '💾 저장')}
             </button>

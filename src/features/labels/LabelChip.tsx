@@ -14,7 +14,7 @@ export default function LabelChip({ label, title, muted = false }: { label: Chip
     <span
       data-label-chip={label.id}
       title={title ?? label.name}
-      className="inline-flex items-center min-w-0 max-w-full px-1.5 py-0.5 rounded-md text-2xs font-bold border leading-tight truncate"
+      className="inline-flex items-center min-w-0 max-w-full px-1.5 py-0.5 rounded-lg text-2xs font-bold border leading-tight truncate"
       style={
         muted
           ? { backgroundColor: 'var(--color-slate-100)', color: 'var(--color-slate-400)', borderColor: 'var(--color-slate-200)' }

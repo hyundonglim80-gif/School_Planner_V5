@@ -132,7 +132,7 @@ export default function StudentPhoto({
               onClick={pick}
               disabled={uploading}
               title="사진 바꾸기"
-              className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-lg bg-white/90 text-slate-600 hover:bg-white hover:text-slate-900 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+              className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-lg bg-white/90 text-slate-600 hover:bg-white hover:text-slate-900 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
             >
               <CameraIcon size={13} />
             </button>
@@ -187,7 +187,7 @@ export default function StudentPhoto({
               onPickDrive();
             }}
             title={`구글 드라이브에 있는 ${name} 사진을 고릅니다`}
-            className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 rounded-md bg-white border border-slate-200 text-2xs font-bold text-slate-600 hover:text-blue-600 hover:border-blue-300 shadow-2xs cursor-pointer"
+            className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 rounded-lg bg-white border border-slate-200 text-2xs font-bold text-slate-600 hover:text-blue-600 hover:border-blue-300 shadow-xs cursor-pointer"
           >
             <Glyph e="☁" /> 드라이브에서
           </button>

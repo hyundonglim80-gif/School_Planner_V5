@@ -70,7 +70,7 @@ export default function DayPastEvents({ sid, today, stale, forwardDays, lastOrde
       >
         <span aria-hidden><Glyph e="📥" /></span>
         <span>지난 일정 {stale.length}개</span>
-        <span className="text-slate-500">{open ? '▾' : '▸'}</span>
+        <span className="text-slate-500"><Glyph e={open ? '▾' : '▸'} /></span>
       </button>
 
       {open && (
@@ -117,7 +117,7 @@ export default function DayPastEvents({ sid, today, stale, forwardDays, lastOrde
                           data-past-complete={ev.id}
                           title="누르면 완료"
                           onClick={() => void setEventDone(sid, ev, true).catch(quiet)}
-                          className="text-xs px-1.5 py-0.5 rounded-md font-bold border cursor-pointer hover:opacity-80"
+                          className="text-xs px-1.5 py-0.5 rounded-lg font-bold border cursor-pointer hover:opacity-80"
                           style={c ? { backgroundColor: c.bg, color: c.text, borderColor: c.border } : undefined}
                         >
                           {l ? l.name : '완료'}

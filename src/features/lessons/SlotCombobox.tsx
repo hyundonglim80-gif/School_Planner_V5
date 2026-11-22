@@ -6,6 +6,7 @@ import type React from 'react';
 import { createPortal } from 'react-dom';
 import { matchesName } from '../../domain/hangul';
 import { listKeyOf } from '../../ui/listKeys';
+import { Glyph } from '../../ui/Icon';
 
 type InputProps = Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'list'>;
 
@@ -180,7 +181,7 @@ export default function SlotCombobox({
           openOnFocus ? '' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
         }`}
       >
-        ▼
+        <Glyph e="▼" />
       </button>
       {open &&
         pos &&
@@ -192,7 +193,7 @@ export default function SlotCombobox({
             data-combobox-list
             onMouseDown={(e) => e.preventDefault()}
             style={{ position: 'fixed', top: pos.top, left: pos.left, minWidth: pos.width, maxHeight: pos.maxHeight, zIndex: 100000 }}
-            className="overflow-y-auto overscroll-contain bg-white border border-slate-200 rounded-lg shadow-xl py-1 text-xs"
+            className="overflow-y-auto overscroll-contain bg-white border border-slate-200 rounded-lg shadow-lg py-1 text-xs"
           >
             {shown.length === 0 ? (
               <li className="px-2.5 py-1.5 text-slate-500">{options.length ? '맞는 반·과목이 없습니다' : '⏰ 시간표 창 교사 유형에서 가르치는 반·과목을 적으세요'}</li>

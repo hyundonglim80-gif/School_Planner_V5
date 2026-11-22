@@ -23,7 +23,7 @@ import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
 import { pressKeys } from '../../ui/pressKeys';
 import EventDoneChip from '../events/EventDoneChip';
-import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
+import { FLOAT_TOOLS, HOVER_ONLY, ORDER_ARROWS } from '../../ui/cardTools';
 import { Glyph } from '../../ui/Icon';
 
 export interface EntryCardProps {
@@ -107,7 +107,7 @@ export default function EntryCard(props: EntryCardProps) {
         props.onOpen();
       }}
       title="클릭하여 보기 (✏️ = 수정)"
-      className={`relative w-full rounded-2xl p-3 sm:p-4 min-w-0 transition-all duration-200 border flex flex-col gap-2 group shadow-sm hover:shadow-md cursor-pointer ${
+      className={`relative w-full rounded-xl p-3 sm:p-4 min-w-0 transition-all duration-200 border flex flex-col gap-2 group shadow-xs hover:shadow-lg cursor-pointer ${
         editing
           ? 'border-primary ring-1 ring-primary bg-primary/5'
           : done
@@ -129,7 +129,7 @@ export default function EntryCard(props: EntryCardProps) {
               className="text-slate-500 hover:text-primary transition-colors p-0.5 text-xs cursor-pointer shrink-0"
               title={collapsed ? '펼치기' : '접기'}
             >
-              {collapsed ? '▶' : '▼'}
+              <Glyph e={collapsed ? '▶' : '▼'} />
             </button>
             <div className={`flex flex-col items-center gap-0.5 shrink-0 px-0.5 ${ORDER_ARROWS}`}>
               <button
@@ -142,9 +142,9 @@ export default function EntryCard(props: EntryCardProps) {
                 disabled={!onMoveUp}
                 title="앞으로"
                 aria-label="앞으로"
-                className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs cursor-pointer"
+                className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
               >
-                ▲
+                <Glyph e="▲" />
               </button>
               <button
                 type="button"
@@ -156,9 +156,9 @@ export default function EntryCard(props: EntryCardProps) {
                 disabled={!onMoveDown}
                 title="뒤로"
                 aria-label="뒤로"
-                className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs cursor-pointer"
+                className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
               >
-                ▼
+                <Glyph e="▼" />
               </button>
             </div>
             {/* 즐겨찾기. 휴대폰에는 마우스 올리기가 없어 늘 보인다 */}
@@ -188,12 +188,12 @@ export default function EntryCard(props: EntryCardProps) {
                 onToggle={props.onToggleDone}
                 hint={l ? (pathOf?.(l.id) ?? l.name) : undefined}
                 truncate
-                className="px-2 py-0.5 rounded-md text-xs min-w-0 max-w-[10rem] shrink-0"
+                className="px-2 py-0.5 rounded-lg text-xs min-w-0 max-w-[10rem] shrink-0"
                 data={{ 'data-entry-chip': l?.id ?? '' }}
               />
             ))}
           </span>
-          <span className="text-xs text-slate-500" data-entry-date>
+          <span className={`text-xs text-slate-500 ${HOVER_ONLY}`} data-entry-date>
             {dateText}
           </span>
           {props.note && (
@@ -211,7 +211,7 @@ export default function EntryCard(props: EntryCardProps) {
                 props.onOpenDate?.(d);
               }}
               title={`${shortDateLabel(d)} 하루 화면으로`}
-              className="px-1.5 py-0.5 rounded-md text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
+              className="px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
             >
               <Glyph e="📅" /> {shortDateLabel(d)}
             </button>

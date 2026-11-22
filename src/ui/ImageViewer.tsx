@@ -89,7 +89,7 @@ export default function ImageViewer() {
           </div>
         </div>
 
-        <div className="relative flex items-center justify-center bg-black/40 rounded-2xl overflow-hidden">
+        <div className="relative flex items-center justify-center bg-black/40 rounded-xl overflow-hidden">
           <img
             src={current.url}
             alt={current.name || '첨부 이미지'}

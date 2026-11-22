@@ -162,7 +162,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
   const btn = 'px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 font-bold cursor-pointer';
 
   return (
-    <div className="rounded-xl border border-primary/30 bg-white shadow-sm p-3 flex flex-col gap-3 text-xs" data-seat-student={student.sid}>
+    <div className="rounded-xl border border-primary/30 bg-white shadow-xs p-3 flex flex-col gap-3 text-xs" data-seat-student={student.sid}>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <span className={`font-black ${student.gender === 'M' ? 'text-sky-600' : student.gender === 'F' ? 'text-rose-500' : 'text-slate-500'}`}>{student.num}번</span>
         <span className="text-base font-black text-slate-800">{student.name || '(이름 없음)'}</span>
@@ -245,7 +245,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                         onClick={() => saveMarks(togglePeriod(marks, student.sid, p))}
                         aria-pressed={!!record.periods?.includes(p)}
                         aria-label={`${p}교시`}
-                        className={`w-7 h-6 rounded-md border font-bold cursor-pointer ${
+                        className={`w-7 h-6 rounded-lg border font-bold cursor-pointer ${
                           record.periods?.includes(p) ? 'bg-rose-100 border-rose-300 text-rose-700' : 'bg-white border-slate-200 text-slate-500'
                         }`}
                       >

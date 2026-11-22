@@ -152,7 +152,7 @@ export default function DayLessons({ date }: { date: string }) {
   const headerWindows = listWindows().filter((d) => d.lessonHeader && (d.show?.({ homeroom: showHomeroomTools, classUnit: isClassUnit }) ?? true));
 
   return (
-    <section data-day-lessons={date} className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5">
+    <section data-day-lessons={date} className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
       <div className={`flex flex-wrap @min-[600px]:flex-nowrap items-start @min-[600px]:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
         {/* 제목은 줄어들지 않는다. 좁으면 오른쪽의 '지금' 안내만 줄어든다 (V4 - '수업'이 '수/업'으로 꺾였다).
             휴대폰은 단추(종·출석부·알림장·진도·뽑기)가 제목 뒤에서 줄을 바꾼다 - 한 줄이면 390px 화면 밖으로 나갔다(P9-3).
@@ -167,7 +167,7 @@ export default function DayLessons({ date }: { date: string }) {
               className="text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
               title={collapsed ? '수업 펼치기' : '수업 접기'}
             >
-              {collapsed ? '▶' : '▼'}
+              <Glyph e={collapsed ? '▶' : '▼'} />
             </button>
             <span className="flex text-primary" aria-hidden>
               <Glyph e="⏰" className="w-5 h-5" />
@@ -230,7 +230,7 @@ export default function DayLessons({ date }: { date: string }) {
             data-lessons-settings
             {...shortcutTarget('timetable')}
             onClick={() => openWindow('timetable')}
-            className="order-2 @min-[600px]:order-3 shrink-0 w-7 h-7 flex items-center justify-center rounded-md text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="order-2 @min-[600px]:order-3 shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
             title="시간표 설정 (시간표·교시·학기·교사 유형)"
             aria-label="시간표 설정"
           >
@@ -317,9 +317,9 @@ export default function DayLessons({ date }: { date: string }) {
                       disabled={n <= 1}
                       title="위 교시와 맞바꾸기"
                       aria-label="위 교시와 맞바꾸기"
-                      className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs cursor-pointer"
+                      className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
                     >
-                      ▲
+                      <Glyph e="▲" />
                     </button>
                     <button
                       type="button"
@@ -331,9 +331,9 @@ export default function DayLessons({ date }: { date: string }) {
                       disabled={n >= view.cells.length}
                       title="아래 교시와 맞바꾸기"
                       aria-label="아래 교시와 맞바꾸기"
-                      className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs cursor-pointer"
+                      className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
                     >
-                      ▼
+                      <Glyph e="▼" />
                     </button>
                   </div>
                   <div className="flex-1 flex flex-col min-w-0">

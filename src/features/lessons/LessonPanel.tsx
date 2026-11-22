@@ -248,7 +248,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
               data-lesson-panel-save
               onClick={() => void save()}
               disabled={saving || !cell}
-              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md transition-all disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer"
             >
               {saving ? '저장 중...' : '저장'}
             </button>

@@ -111,7 +111,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
       const row = end.plan.lessons[end.row];
       const detail = [row?.unit, row?.page && `교과서 ${row.page}`, row?.supplies && `준비물 ${row.supplies}`].filter(Boolean).join(' · ');
       return (
-        <div key={linkId} data-link-row={linkId} data-link-kind="progress" className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
+        <div key={linkId} data-link-row={linkId} data-link-kind="progress" className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs">
           {header('📘', `진도 ${end.title}`, linkId, { edit: () => openProgress({ planId: end.planId }) })}
           <p data-link-text className="p-2.5 bg-slate-50/70 border border-slate-100 rounded-lg text-xs text-slate-600">
             {detail || '이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다.'}
@@ -123,7 +123,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
     if (lesson) {
       const c = lessonCell(lesson.date, lesson.period);
       return (
-        <div key={linkId} data-link-row={linkId} data-link-kind="lesson" className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm">
+        <div key={linkId} data-link-row={linkId} data-link-kind="lesson" className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs">
           {header(LINK_KIND_ICON.lesson, `[${shortDateLabel(lesson.date)}] ${lesson.period}교시 ${c?.subject || '수업'}`, linkId, {
             move: () => {
               goTo(lesson.date);
@@ -154,7 +154,7 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
     const dates = kind === 'note' ? noteDates(t) : t.date ? [t.date] : [];
     const title = dates.length ? `[${shortDateLabel(dates[0])}${dates.length > 1 ? ` 외 ${dates.length - 1}` : ''}] ${LINK_KIND_NAME[kind]}` : LINK_KIND_NAME[kind];
     return (
-      <div key={linkId} data-link-row={linkId} data-link-kind={kind} className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-sm hover:border-slate-300 transition-colors">
+      <div key={linkId} data-link-row={linkId} data-link-kind={kind} className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs hover:border-slate-300 transition-colors">
         {header(LINK_KIND_ICON[kind], title, linkId, { move: () => goTo(t.date ?? null), edit: () => edit(t) })}
         {/* 글 없이 표만 있으면 글 칸은 비운다 */}
         {(t.text || tables.length === 0) && (

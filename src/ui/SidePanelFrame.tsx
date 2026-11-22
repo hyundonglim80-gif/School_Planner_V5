@@ -88,7 +88,7 @@ export default function SidePanelFrame({ onClose, onBackdropClose, onSave, ariaL
       <aside
         ref={panelRef as RefObject<HTMLElement>}
         aria-label={ariaLabel}
-        className="relative bg-white h-full w-full max-w-lg shadow-2xl z-10 flex flex-col"
+        className="relative bg-white h-full w-full max-w-lg shadow-lg z-10 flex flex-col"
       >
         {inner}
       </aside>

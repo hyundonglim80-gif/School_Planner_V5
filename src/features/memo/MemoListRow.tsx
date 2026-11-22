@@ -54,7 +54,7 @@ export default function MemoListRow(props: Props) {
       onToggle={onToggleDone}
       hint={l ? (pathOf?.(l.id) ?? l.name) : undefined}
       truncate
-      className="px-1.5 py-0.5 rounded-md text-2xs min-w-0 max-w-[7rem] shrink-0"
+      className="px-1.5 py-0.5 rounded-lg text-2xs min-w-0 max-w-[7rem] shrink-0"
       data={{ 'data-memo-row-chip': l?.id ?? '' }}
     />
   );
@@ -85,7 +85,7 @@ export default function MemoListRow(props: Props) {
           aria-label={expanded ? '접기' : '펼치기'}
           className="text-slate-500 hover:text-slate-700 text-xs w-5 h-5 -ml-1 flex items-center justify-center rounded hover:bg-slate-100 shrink-0 cursor-pointer"
         >
-          {expanded ? '▼' : '▶'}
+          <Glyph e={expanded ? '▼' : '▶'} />
         </button>
         <div className="flex items-center shrink-0">
           <button
@@ -98,9 +98,9 @@ export default function MemoListRow(props: Props) {
             disabled={!props.onMoveUp}
             title="앞으로"
             aria-label="앞으로"
-            className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs cursor-pointer"
+            className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
           >
-            ▲
+            <Glyph e="▲" />
           </button>
           <button
             type="button"
@@ -112,9 +112,9 @@ export default function MemoListRow(props: Props) {
             disabled={!props.onMoveDown}
             title="뒤로"
             aria-label="뒤로"
-            className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs cursor-pointer"
+            className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
           >
-            ▼
+            <Glyph e="▼" />
           </button>
         </div>
         <button
@@ -159,7 +159,7 @@ export default function MemoListRow(props: Props) {
               onOpenDate(dates.at(-1)!);
             }}
             title={dates.length > 1 ? `${dates.map(shortDateLabel).join(', ')} - 누르면 가장 늦은 날 하루 화면` : `${shortDateLabel(dates[0])} 하루 화면으로`}
-            className="px-1.5 py-0.5 rounded-md text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap shrink-0"
+            className="px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap shrink-0"
           >
             <Glyph e="📅" /> {shortDateLabel(dates.at(-1)!)}
             {dates.length > 1 ? ` 외 ${dates.length - 1}` : ''}

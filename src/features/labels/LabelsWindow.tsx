@@ -598,10 +598,10 @@ function UpDown({ first, last, onMove, sameParent }: { first: boolean; last: boo
   return (
     <div className="flex flex-col gap-0.5">
       <button type="button" data-label-up disabled={first} onClick={() => onMove('up')} title={`위로${where}`} className={cls(first)}>
-        ▲
+        <Glyph e="▲" />
       </button>
       <button type="button" data-label-down disabled={last} onClick={() => onMove('down')} title={`아래로${where}`} className={cls(last)}>
-        ▼
+        <Glyph e="▼" />
       </button>
     </div>
   );

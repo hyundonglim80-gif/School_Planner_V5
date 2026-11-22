@@ -9,6 +9,7 @@ import GcalToggle from '../features/gcal/GcalToggle';
 import { useSpacePickerShown } from '../data/session';
 import { dateLabel, goToday, setDate, setSemesterFilter, setToggle, stepDate, useNav, type SemesterFilter } from './nav';
 import { shortcutTarget } from '../ui/shortcutTarget';
+import { Glyph } from '../ui/Icon';
 
 const VIEW_TOGGLES = [
   { key: 'showWeekend', label: '주말', shortcut: 'toggleWeekend' },
@@ -106,10 +107,10 @@ export default function SecondRow() {
           data-date-prev
           {...shortcutTarget('datePrev')}
           onClick={() => stepDate(-1)}
-          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs sm:text-sm transition-all shadow-2xs cursor-pointer"
+          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs sm:text-sm transition-all shadow-xs cursor-pointer"
           title={withShortcut('이전 날짜', 'datePrev')}
         >
-          ◀
+          <Glyph e="◀" />
         </button>
         <div className="flex items-center">
           <button
@@ -142,10 +143,10 @@ export default function SecondRow() {
           data-date-next
           {...shortcutTarget('dateNext')}
           onClick={() => stepDate(1)}
-          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs sm:text-sm transition-all shadow-2xs cursor-pointer"
+          className="w-7 h-7 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs sm:text-sm transition-all shadow-xs cursor-pointer"
           title={withShortcut('다음 날짜', 'dateNext')}
         >
-          ▶
+          <Glyph e="▶" />
         </button>
       </div>
     </div>

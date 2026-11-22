@@ -236,11 +236,11 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-1.5">
                   <button type="button" data-attendance-prev onClick={() => moveDate(addDays(date, -1))} className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-black cursor-pointer" title="전날">
-                    ◀
+                    <Glyph e="◀" />
                   </button>
                   <input type="date" data-attendance-date-input value={date} onChange={(e) => moveDate(e.target.value)} aria-label="출석 날짜" className="px-2 py-1 border border-slate-200 rounded-lg font-bold" />
                   <button type="button" data-attendance-next onClick={() => moveDate(addDays(date, 1))} className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-black cursor-pointer" title="다음 날">
-                    ▶
+                    <Glyph e="▶" />
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
@@ -316,7 +316,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                               data-attendance-period={p}
                               aria-pressed={!!r.periods?.includes(p)}
                               onClick={() => edit((m) => togglePeriod(m, st.sid, p))}
-                              className={`w-7 h-6 rounded-md border font-bold cursor-pointer ${r.periods?.includes(p) ? 'bg-rose-100 border-rose-300 text-rose-700' : 'bg-white border-slate-200 text-slate-500'}`}
+                              className={`w-7 h-6 rounded-lg border font-bold cursor-pointer ${r.periods?.includes(p) ? 'bg-rose-100 border-rose-300 text-rose-700' : 'bg-white border-slate-200 text-slate-500'}`}
                             >
                               {p}
                             </button>
@@ -472,7 +472,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
               onClick={() => void save()}
               disabled={saving || !classId}
               title="Ctrl + S 로도 저장합니다"
-              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {glyphText(saving ? '저장 중...' : '💾 저장')}
             </button>

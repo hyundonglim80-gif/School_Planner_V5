@@ -10,5 +10,11 @@
  */
 export const ORDER_ARROWS = 'transition-opacity pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:has-[:focus-visible]:opacity-100';
 
+/**
+ * 메모 카드의 쓴 시각·날짜 (P54-4 - 사용자가 고름 '올렸을 때만'): 마우스 화면에서는 카드에 올렸을 때·카드에 초점이 들 때만 보인다.
+ * 자리는 그대로(나타나도 칩이 밀리지 않게) · 휴대폰은 늘 보인다(올릴 마우스가 없다) · 숨어도 DOM에 있다(점검·검색이 읽는다).
+ */
+export const HOVER_ONLY = 'transition-opacity pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:group-focus-within:opacity-100';
+
 export const FLOAT_TOOLS =
   'hidden sm:flex items-center gap-0.5 absolute top-1 right-1 z-10 px-0.5 rounded-lg border border-slate-200 bg-white/95 shadow-xs opacity-0 transition-opacity group-hover:opacity-100 has-[:focus-visible]:opacity-100';

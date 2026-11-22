@@ -103,6 +103,16 @@ export const GLYPHS: Readonly<Record<string, IconName>> = {
   '🖌': 'paintbrush',
   '☀': 'sun',
   '❄': 'snowflake',
+  // 글자 삼각형 → 꺾쇠 (P54-4 - 접기·펴기·날짜 넘기기·칸 손잡이·차례 ▲▼·이어지는 기간 ◂▸·목록 ▾ - 같은 뜻 삼각형은 한 모양).
+  //   큰 것·작은 것 모두 같은 꺾쇠. 소리 '▶ 미리 듣기'(재생)는 바꿈표를 거치지 않는 글이라 그대로.
+  '▶': 'chevron-right',
+  '▸': 'chevron-right',
+  '◀': 'chevron-left',
+  '◂': 'chevron-left',
+  '▼': 'chevron-down',
+  '▾': 'chevron-down',
+  '▲': 'chevron-up',
+  '▴': 'chevron-up',
   // 붙은 이모지(ZWJ) - 통째로 한 칸 (학급 도구: 학생 기록·명렬표 · 교사 유형)
   '🧑‍🎓': 'graduation-cap',
   '🧑‍🤝‍🧑': 'users',

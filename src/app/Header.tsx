@@ -29,7 +29,7 @@ import { Glyph, Icon } from '../ui/Icon';
 
 /** 머리줄 작은 단추 (V4 모양) */
 const HEAD_BTN =
-  'p-1 sm:px-2.5 sm:py-1.5 rounded-md sm:rounded-xl text-xs font-bold transition-all flex items-center gap-0 sm:gap-1 shadow-2xs shrink-0';
+  'p-1 sm:px-2.5 sm:py-1.5 rounded-lg sm:rounded-xl text-xs font-bold transition-all flex items-center gap-0 sm:gap-1 shadow-xs shrink-0';
 
 export default function Header() {
   const scope = useNav((s) => s.scope);
@@ -132,7 +132,7 @@ export default function Header() {
           data-header-help
           {...shortcutTarget('help')}
           onClick={() => runFromButton('help')}
-          className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-md sm:rounded-xl text-xs sm:text-sm transition-colors"
+          className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-600 font-black rounded-lg sm:rounded-xl text-xs sm:text-sm transition-colors"
           title={withShortcut('사용 설명서', 'help')}
           aria-label="사용 설명서"
         >
@@ -234,7 +234,7 @@ function NewMenu() {
             ＋
           </button>
           {open && (
-            <div data-new-list className="fixed right-4 bottom-36 w-48 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs">
+            <div data-new-list className="fixed right-4 bottom-36 w-48 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 text-xs">
               <NewItems close={() => setOpen(false)} />
             </div>
           )}
@@ -250,9 +250,9 @@ function Avatar({ size }: { size: 'sm' | 'lg' }) {
   const user = useSession((s) => s.user);
   const box = size === 'lg' ? 'w-10 h-10 text-base' : 'w-6 h-6 sm:w-8 sm:h-8 text-xs';
   return user?.photoURL ? (
-    <img src={user.photoURL} alt="" className={`${box} rounded-full border-2 border-white shadow-sm object-cover shrink-0`} />
+    <img src={user.photoURL} alt="" className={`${box} rounded-full border-2 border-white shadow-xs object-cover shrink-0`} />
   ) : (
-    <span className={`${box} rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-bold text-slate-500 shadow-sm shrink-0`}>
+    <span className={`${box} rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-bold text-slate-500 shadow-xs shrink-0`}>
       {(user?.displayName || '선').charAt(0)}
     </span>
   );
@@ -281,7 +281,7 @@ function AccountMenu({ title }: { title: string }) {
         <Avatar size="sm" />
       </button>
       {open && (
-        <div data-account-panel className="absolute right-0 top-10 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs">
+        <div data-account-panel className="absolute right-0 top-10 w-72 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 text-xs">
           <div className="flex items-center gap-3 px-4 py-2">
             <Avatar size="lg" />
             <div className="min-w-0">
@@ -369,7 +369,7 @@ function SpaceSelect() {
         <span className="max-w-32 truncate">{now ? <><Icon name="users" /> {now.name}</> : <><Icon name="lock" /> 개인</>}</span>
       </button>
       {open && (
-        <div data-space-list className="absolute left-0 top-10 w-60 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs">
+        <div data-space-list className="absolute left-0 top-10 w-60 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 text-xs">
           <button type="button" data-space-option={`u_${uid}`} onClick={() => pick(null)} className={item(!now)}>
             <Icon name="lock" /> 개인 공간
           </button>
@@ -409,13 +409,13 @@ function MoreMenu() {
         data-more-menu
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-md sm:rounded-xl text-sm sm:text-base transition-colors"
+        className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 font-black rounded-lg sm:rounded-xl text-sm sm:text-base transition-colors"
         title="더보기 메뉴"
       >
         ⋮
       </button>
       {open && (
-        <div data-more-list className="absolute right-0 top-10 w-72 max-h-[80vh] overflow-y-auto bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 text-xs">
+        <div data-more-list className="absolute right-0 top-10 w-72 max-h-[80vh] overflow-y-auto bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50 text-xs">
           {MORE_MENU.map((section) => (
             <div key={section.section} role="group" aria-label={section.section} data-menu-section={section.section} className="border-t border-slate-100 first:border-t-0 mt-1 pt-1">
               <div className="px-4 pt-1.5 pb-0.5 text-2xs font-black text-slate-500 tracking-wide select-none">{section.section}</div>

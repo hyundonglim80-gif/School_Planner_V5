@@ -27,6 +27,7 @@ import { gcalRowDateLabel, gcalRowMark, mergeMonthList, monthCalendarList, month
 import { useGcalShown } from '../gcal/gcalView';
 import { GcalBoardRow } from '../gcal/GcalItems';
 import { gcalKey } from '../../domain/gcalShow';
+import { Glyph } from '../../ui/Icon';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -107,7 +108,7 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
     <section
       data-board-month={ym}
       aria-label={`${y}년 ${m}월 달력`}
-      className={`row-span-2 rounded-2xl border border-slate-200/80 bg-white shadow-xs p-2 flex flex-col gap-2 min-w-0 ${fit ? 'h-full min-h-0 overflow-y-auto overscroll-contain' : 'min-h-[250px]'}`}
+      className={`row-span-2 rounded-xl border border-slate-200/80 bg-white shadow-xs p-2 flex flex-col gap-2 min-w-0 ${fit ? 'h-full min-h-0 overflow-y-auto overscroll-contain' : 'min-h-[250px]'}`}
     >
       {/* 머리 - ◀ 그 달 ▶ */}
       <div className="flex items-center justify-between gap-1 mb-1 shrink-0 h-6">
@@ -119,7 +120,7 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
           aria-label="이전 달 보기"
           className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
         >
-          ◀
+          <Glyph e="◀" />
         </button>
         <span data-board-cal-title className="min-w-0 truncate text-xs font-extrabold text-slate-700">
           {y}년 {m}월
@@ -132,7 +133,7 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
           aria-label="다음 달 보기"
           className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
         >
-          ▶
+          <Glyph e="▶" />
         </button>
       </div>
       <div className="shrink-0">
@@ -140,13 +141,13 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
           year={y}
           month={m}
           weekStart={1}
-          week={(w) => (w[0] === week[0] ? { className: 'bg-primary/15 rounded-md', data: { 'data-board-cal-week': w[0] } } : undefined)}
+          week={(w) => (w[0] === week[0] ? { className: 'bg-primary/15 rounded-lg', data: { 'data-board-cal-week': w[0] } } : undefined)}
           day={(d, inMonth) => {
             const holiday = holidayName(d);
             const selected = d === date;
             const count = showEvents ? (countOn.get(d) ?? 0) : 0;
             const color = selected ? 'text-white font-bold' : inMonth ? DAY_NUMBER_COLOR[dayToneOf(d, holiday)] : 'text-slate-300';
-            const bg = selected ? 'bg-primary shadow-2xs' : 'hover:bg-blue-50 hover:text-blue-700';
+            const bg = selected ? 'bg-primary shadow-xs' : 'hover:bg-blue-50 hover:text-blue-700';
             const border = !selected && d === today ? 'border border-primary font-bold' : 'border border-transparent';
             const [, mm, dd] = d.split('-').map(Number);
             return (

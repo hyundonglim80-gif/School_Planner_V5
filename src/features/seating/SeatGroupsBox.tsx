@@ -189,7 +189,7 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
         setPicked(null);
         setGroups(swapMembers(shown, picked, n, activeNums));
       }}
-      className={`px-1.5 py-0.5 rounded-md border text-2xs font-bold cursor-pointer ${picked === n ? 'border-primary bg-indigo-50 text-primary ring-2 ring-primary/30' : 'border-slate-200 bg-white text-slate-700'}`}
+      className={`px-1.5 py-0.5 rounded-lg border text-2xs font-bold cursor-pointer ${picked === n ? 'border-primary bg-indigo-50 text-primary ring-2 ring-primary/30' : 'border-slate-200 bg-white text-slate-700'}`}
     >
       {nameOf(n)}
     </button>

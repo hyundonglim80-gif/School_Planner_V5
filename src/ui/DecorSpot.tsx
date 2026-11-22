@@ -17,7 +17,7 @@ export default function DecorSpot({ slot, fallback = null }: { slot: DecorSlot; 
   if (!kind) return <>{fallback}</>;
   return (
     <Suspense fallback={<span aria-hidden="true" className={SIZE} />}>
-      <DecorPicture data-decor-spot={kind} kind={kind} slot={slot} className={`${SIZE} rounded-2xl`} />
+      <DecorPicture data-decor-spot={kind} kind={kind} slot={slot} className={`${SIZE} rounded-xl`} />
     </Suspense>
   );
 }

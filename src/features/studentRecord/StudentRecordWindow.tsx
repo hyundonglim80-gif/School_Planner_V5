@@ -339,7 +339,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className="px-1.5 py-px rounded-md font-bold border bg-violet-50 text-violet-700 border-violet-200">{EVAL_TYPE_LABEL[ev.type]}</span>
+                                <span className="px-1.5 py-px rounded-lg font-bold border bg-violet-50 text-violet-700 border-violet-200">{EVAL_TYPE_LABEL[ev.type]}</span>
                                 {ev.subject && <span className="font-bold text-slate-500">{ev.subject}</span>}
                                 <span className="font-bold text-slate-800 truncate">{ev.title}</span>
                                 {ev.shared && <span className="text-slate-500"><Glyph e="👥" /></span>}
@@ -371,7 +371,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <b className="text-slate-800">{it.date}</b>
                             <span className="text-slate-500">{shortDateLabel(it.date).replace(/^\d+\/\d+/, '')}</span>
-                            <span data-timeline-kind={it.kind} className={`px-1.5 py-px rounded-md font-bold border ${tone(it.kind)}`}>
+                            <span data-timeline-kind={it.kind} className={`px-1.5 py-px rounded-lg font-bold border ${tone(it.kind)}`}>
                               {glyphText(it.kind === 'memo' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : it.kind === 'journal' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : TIMELINE_LABEL[it.kind])}
                             </span>
                             {it.shared && <span className="text-slate-500"><Glyph e="👥" /></span>}

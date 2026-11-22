@@ -86,7 +86,7 @@ try {
         top: Math.round(b.top),
         offEdge: Math.round(Math.abs(b.top + b.height / 2 - header.bottom)),
         offCenter: Math.round(Math.abs(b.left + b.width / 2 - document.documentElement.clientWidth / 2)),
-        text: btn.textContent,
+        text: btn.querySelector('[data-glyph]')?.getAttribute('data-glyph') ?? btn.textContent, // ▲▼ = 꺾쇠 아이콘 (P54-4)
         mainTop: Math.round(document.querySelector('main').getBoundingClientRect().top + window.scrollY),
         headerVar: document.documentElement.style.getPropertyValue('--app-header-h').trim(),
         saved: JSON.parse(localStorage.getItem('sp5-header-fold') ?? '{}').state?.folded,

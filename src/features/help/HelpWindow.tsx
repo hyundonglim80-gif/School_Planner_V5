@@ -228,7 +228,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
           <kbd
             key={i}
             data-help-key={key[1]}
-            className="px-1.5 py-px mx-0.5 bg-white border border-slate-300 rounded font-mono font-bold text-slate-700 shadow-2xs whitespace-nowrap"
+            className="px-1.5 py-px mx-0.5 bg-white border border-slate-300 rounded font-mono font-bold text-slate-700 shadow-xs whitespace-nowrap"
           >
             {values.keyOf(key[1] as ShortcutId)}
           </kbd>
@@ -278,7 +278,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                 >
                   <span className="text-slate-600 min-w-0 break-keep">{action.label}</span>
                   <kbd
-                    className={`px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-2xs ${
+                    className={`px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-xs ${
                       bindings[action.id].key ? '' : 'text-slate-300'
                     }`}
                   >
@@ -300,7 +300,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                   className="px-2.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-2"
                 >
                   <span className="text-slate-600 min-w-0 break-keep">{t.label}</span>
-                  <kbd className="px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-2xs">{formatBinding(tabKeys[t.id]!)}</kbd>
+                  <kbd className="px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-xs">{formatBinding(tabKeys[t.id]!)}</kbd>
                 </div>
               ))}
             </div>
@@ -322,7 +322,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                   className="px-2.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-2"
                 >
                   <span className="text-slate-600 min-w-0 break-keep">{label}</span>
-                  <kbd className="px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-2xs">{formatBinding(key)}</kbd>
+                  <kbd className="px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-xs">{formatBinding(key)}</kbd>
                 </div>
               ))}
             </div>
@@ -338,7 +338,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                 className="px-2.5 py-2 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-between gap-2"
               >
                 <span className="text-slate-600 min-w-0 break-keep">{fixed.label}</span>
-                <kbd className="px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-2xs">{fixed.keys}</kbd>
+                <kbd className="px-2 py-0.5 shrink-0 bg-white border border-slate-300 rounded font-mono font-bold shadow-xs">{fixed.keys}</kbd>
               </div>
             ))}
           </div>
@@ -596,7 +596,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
                   title={`${category.title} ${open ? '접기' : '펴기'}`}
                   className="w-4 h-6 shrink-0 flex items-center justify-center rounded text-slate-500 hover:text-primary hover:bg-white cursor-pointer"
                 >
-                  {open ? '▾' : '▸'}
+                  <Glyph e={open ? '▾' : '▸'} />
                 </button>
                 <button
                   type="button"

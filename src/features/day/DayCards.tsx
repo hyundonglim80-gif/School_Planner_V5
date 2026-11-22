@@ -11,11 +11,11 @@ export default function DayCardView({ card, sid }: { card: DayCard; sid: string 
       data-day-card-key={card.key}
       onClick={() => openDayCard(card, sid)}
       title={card.kind === 'notice' ? '알림장 칸 열기' : '출석부 열기'}
-      className={`w-full text-left rounded-2xl border p-4 shadow-xs hover:shadow-sm transition-all cursor-pointer ${
+      className={`w-full text-left rounded-xl border p-4 shadow-xs hover:shadow-xs transition-all cursor-pointer ${
         card.kind === 'notice' ? 'bg-yellow-50/70 border-yellow-200 hover:border-yellow-400' : 'bg-rose-50/50 border-rose-200 hover:border-rose-400'
       }`}
     >
-      <span className={`inline-block px-2 py-0.5 rounded-md text-xs font-bold border mb-1.5 ${card.kind === 'notice' ? 'bg-yellow-100 text-yellow-900 border-yellow-300' : 'bg-rose-100 text-rose-800 border-rose-300'}`}>{card.title}</span>
+      <span className={`inline-block px-2 py-0.5 rounded-lg text-xs font-bold border mb-1.5 ${card.kind === 'notice' ? 'bg-yellow-100 text-yellow-900 border-yellow-300' : 'bg-rose-100 text-rose-800 border-rose-300'}`}>{card.title}</span>
       <span className="block text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">{card.lines.join('\n')}</span>
     </button>
   );

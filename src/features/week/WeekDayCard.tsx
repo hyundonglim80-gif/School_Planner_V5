@@ -128,7 +128,7 @@ function EventChip({
           ? `${spaceTitle(space)} 일정 - 누르면 오른쪽 칸에서 고치기 (겹쳐 보기)`
           : `누르면 오른쪽 칸에서 고치기 (Ctrl·Shift와 함께 누르면 여러 개 고르기)${drag?.enabled ? ' · 끌어서 다른 날로 옮기기' : ''}`
       }
-      className={`group relative px-2 py-1.5 rounded-lg text-xs leading-snug transition-all border block hover:shadow-sm cursor-pointer break-words ${
+      className={`group relative px-2 py-1.5 rounded-lg text-xs leading-snug transition-all border block hover:shadow-xs cursor-pointer break-words ${
         picked
           ? 'bg-primary/10 border-primary text-primary'
           : carried
@@ -213,7 +213,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
       aria-current={props.selected ? 'date' : undefined}
       onClick={props.onOpenDay}
       {...(props.drop ? dropTargetProps(props.drop.handlers, date) : {})}
-      className={`${DAY_CELL_BG[tone]} rounded-2xl border p-2.5 flex flex-col transition-all cursor-pointer group/day hover:shadow-md hover:border-primary/50 min-w-0 ${
+      className={`${DAY_CELL_BG[tone]} rounded-xl border p-2.5 flex flex-col transition-all cursor-pointer group/day hover:shadow-lg hover:border-primary/50 min-w-0 ${
         props.fill ? 'h-full min-h-0 overflow-y-auto overscroll-contain' : `${props.half ? 'min-h-[120px]' : 'min-h-[250px]'} overflow-hidden`
       } ${props.selected ? 'outline-2 outline-offset-2 outline-primary' : ''} ${
         isToday ? 'border-primary ring-2 ring-primary/20 shadow-xs' : 'border-slate-200/80 shadow-xs'

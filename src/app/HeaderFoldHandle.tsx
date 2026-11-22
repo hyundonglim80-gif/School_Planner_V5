@@ -7,6 +7,7 @@ import { shortcutTarget } from '../ui/shortcutTarget';
 import { toggleHeaderFold } from './headerFold';
 import { useShortcutTitle } from './keys';
 import { dateLabel, useNav } from './nav';
+import { Glyph } from '../ui/Icon';
 
 const BASE =
   'absolute left-1/2 -translate-x-1/2 z-10 h-4 min-w-12 flex items-center justify-center gap-1 border border-slate-200 text-2xs leading-none font-bold text-slate-600 whitespace-nowrap select-none cursor-pointer transition-colors hover:text-primary hover:border-primary/50 print:hidden before:absolute before:-inset-x-2 before:-inset-y-1';
@@ -28,9 +29,9 @@ export default function HeaderFoldHandle({ folded }: { folded: boolean }) {
       onClick={toggleHeaderFold}
       title={withShortcut(label, 'toggleHeader')}
       aria-label={label}
-      className={`${BASE} ${folded ? 'top-0 px-2.5 rounded-b-xl border-t-0 bg-white/90 shadow-md' : 'bottom-0 translate-y-1/2 px-2 rounded-full bg-white shadow-xs'}`}
+      className={`${BASE} ${folded ? 'top-0 px-2.5 rounded-b-xl border-t-0 bg-white/90 shadow-lg' : 'bottom-0 translate-y-1/2 px-2 rounded-full bg-white shadow-xs'}`}
     >
-      <span aria-hidden="true">{folded ? '▼' : '▲'}</span>
+      <Glyph e={folded ? '▼' : '▲'} />
       {when && <span data-header-fold-date>{when}</span>}
     </button>
   );

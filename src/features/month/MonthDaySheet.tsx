@@ -64,7 +64,7 @@ export default function MonthDaySheet({ date, events, gcal = [], hiddenCount, sh
       data-month-day-sheet={date}
       aria-label={`${title} 목록`}
       style={{ bottom: tabBarHeight }}
-      className="fixed left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-[0_-6px_20px_rgba(15,23,42,0.12)] rounded-t-2xl max-h-[46vh] flex flex-col animate-fade-in"
+      className="fixed left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-[0_-6px_20px_rgba(15,23,42,0.12)] rounded-t-xl max-h-[46vh] flex flex-col animate-fade-in"
     >
       <div className="flex items-center gap-1.5 px-3 pt-2.5 pb-2 border-b border-slate-100 shrink-0">
         <h3 className={`font-black text-sm whitespace-nowrap ${d.getDay() === 0 ? 'text-red-600' : d.getDay() === 6 ? 'text-cobalt-600' : 'text-slate-800'}`}>{title}</h3>

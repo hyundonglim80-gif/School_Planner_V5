@@ -41,7 +41,7 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
       onMouseLeave={onMouseLeave}
       onClick={(e) => e.stopPropagation()}
       style={{ position: 'fixed', top: pos.top, left: pos.left, width: POPOVER_WIDTH, zIndex: 99999 }}
-      className="bg-white border border-slate-200 rounded-xl shadow-xl p-2.5 text-slate-800 select-none text-left"
+      className="bg-white border border-slate-200 rounded-xl shadow-lg p-2.5 text-slate-800 select-none text-left"
     >
       {/* 단추와 달력 사이 틈에서 마우스가 빠져도 닫히지 않게 */}
       <div className="absolute -top-3 left-0 w-full h-3 bg-transparent pointer-events-auto" />
@@ -52,13 +52,13 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
             «
           </button>
           <button type="button" onClick={() => changeMonth(-1)} className="px-1 py-0.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="이전 달">
-            ◀
+            <Glyph e="◀" />
           </button>
           <span className="font-bold text-xs text-slate-800 tracking-tight px-1 whitespace-nowrap">
             {viewYear}년 {viewMonth + 1}월
           </span>
           <button type="button" onClick={() => changeMonth(1)} className="px-1 py-0.5 text-xs text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="다음 달">
-            ▶
+            <Glyph e="▶" />
           </button>
           <button type="button" onClick={() => changeMonth(12)} className="px-1 py-0.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded transition-colors cursor-pointer" title="다음 연도">
             »
@@ -103,7 +103,7 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
           let border = 'border border-transparent';
           if (selected) {
             color = 'text-white font-bold';
-            bg = 'bg-primary shadow-2xs';
+            bg = 'bg-primary shadow-xs';
           } else if (dateStr === today) {
             border = 'border border-blue-500 font-bold';
           }

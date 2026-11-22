@@ -96,7 +96,7 @@ export function closeShownSideSlot(): boolean {
   return id !== null && closeSideSlot(id);
 }
 
-const COLUMN_CLASS = 'fixed top-0 bottom-0 z-[45] flex flex-col bg-white border-slate-200 shadow-xl overflow-y-auto overscroll-contain empty:hidden';
+const COLUMN_CLASS = 'fixed top-0 bottom-0 z-[45] flex flex-col bg-white border-slate-200 shadow-lg overflow-y-auto overscroll-contain empty:hidden';
 
 /** 줄을 서는 쪽에 둔다 - data-side-column = 'right' | 'left' (점검·화면 밀기가 본다) */
 function placeColumn(el: HTMLElement) {

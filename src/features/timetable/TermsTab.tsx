@@ -11,6 +11,7 @@ import { filterScheduleByGrade, findVacations, vacationMonths } from '../../doma
 import { useSchool } from '../school/school';
 import { termSemesters, type DateSpan, type SchoolTerms, type YearTerms } from '../../domain/semester';
 import { glyphText } from '../../ui/glyphText';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   terms: SchoolTerms;
@@ -86,13 +87,13 @@ export default function TermsTab({ terms, onChange, year, onYear }: Props) {
     <div className="space-y-3 text-xs" data-terms-tab>
       <div className="flex items-center gap-2">
         <button type="button" data-terms-prev onClick={() => onYear(year - 1)} title="앞 학년도" aria-label="앞 학년도" className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold cursor-pointer">
-          ◀
+          <Glyph e="◀" />
         </button>
         <span className="text-sm font-black text-slate-800" data-terms-year={year}>
           {year}학년도
         </span>
         <button type="button" data-terms-next onClick={() => onYear(year + 1)} title="다음 학년도" aria-label="다음 학년도" className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold cursor-pointer">
-          ▶
+          <Glyph e="▶" />
         </button>
         {year !== thisYear && (
           <button type="button" data-terms-this onClick={() => onYear(thisYear)} className="px-2 py-1 rounded-lg text-slate-500 hover:bg-slate-100 font-bold cursor-pointer">

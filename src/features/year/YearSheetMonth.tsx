@@ -90,13 +90,13 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
       data-sheet-month={m.key}
       // 둘째 줄 날짜를 누르면 오늘로 (app/todayScroll) - 오늘 칸(주말을 감춰 없으면 이 달)
       data-today-area={isCurrentMonth ? 'true' : undefined}
-      className={`bg-white rounded-2xl border p-3 flex flex-col gap-1.5 break-inside-avoid ${isCurrentMonth ? 'border-primary ring-2 ring-primary/10' : 'border-slate-200/80'}`}
+      className={`bg-white rounded-xl border p-3 flex flex-col gap-1.5 break-inside-avoid ${isCurrentMonth ? 'border-primary ring-2 ring-primary/10' : 'border-slate-200/80'}`}
     >
       <div className="flex items-center justify-between gap-2">
         <button type="button" data-sheet-month-name={m.key} onClick={() => onMonthClick(m)} title="월간 화면으로" className="font-black text-blue-800 text-sm hover:underline cursor-pointer">
           {m.label}
         </button>
-        <span className="text-2xs font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-md">{m.semester}학기</span>
+        <span className="text-2xs font-bold px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded-lg">{m.semester}학기</span>
       </div>
 
       <div className="grid text-center text-2xs font-bold text-slate-500" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
@@ -133,7 +133,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                     data-sheet-dday={ddayDates.has(d) ? '1' : undefined}
                     onClick={() => onDateClick(d)}
                     title={dayTooltip(d, items)}
-                    className={`relative flex flex-col items-center pt-0.5 rounded-md hover:bg-slate-100 cursor-pointer ${holiday ? 'bg-red-50/70' : ''}`}
+                    className={`relative flex flex-col items-center pt-0.5 rounded-lg hover:bg-slate-100 cursor-pointer ${holiday ? 'bg-red-50/70' : ''}`}
                   >
                     <span
                       className={`text-2xs font-bold w-[18px] h-[16px] leading-[16px] rounded-full tabular-nums ${
@@ -224,10 +224,10 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                     {/* 끝낸 일정은 글 앞에 ✓ (P10-1 - 색은 그대로) */}
                     {it.done && <DoneMark className="!mr-0.5" />}
                     {it.kind === 'dday' && <><Glyph e="🎯" /> </>}
-                    {it.kind === 'period' && it.continuesBefore && '◂ '}
+                    {it.kind === 'period' && it.continuesBefore && <><Glyph e="◂" /> </>}
                     {it.text}
                     {it.kind === 'period' && it.endDate && it.endDate !== it.date && <span className="text-slate-500 font-semibold"> ~{md(it.endDate)}</span>}
-                    {it.kind === 'period' && it.continuesAfter && ' ▸'}
+                    {it.kind === 'period' && it.continuesAfter && <> <Glyph e="▸" /></>}
                   </span>
                 </button>
               </li>

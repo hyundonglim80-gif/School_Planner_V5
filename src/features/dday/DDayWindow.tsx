@@ -71,7 +71,7 @@ export default function DDayWindow({ close, raise }: WindowProps) {
                   key={item.id}
                   data-dday-row={item.id}
                   data-dday-picked={selected ? '1' : '0'}
-                  className={`p-2.5 bg-white border rounded-xl flex items-center gap-2 shadow-2xs transition-all ${selected ? 'border-primary ring-1 ring-primary/30' : 'border-slate-200/80 hover:border-slate-300'}`}
+                  className={`p-2.5 bg-white border rounded-xl flex items-center gap-2 shadow-xs transition-all ${selected ? 'border-primary ring-1 ring-primary/30' : 'border-slate-200/80 hover:border-slate-300'}`}
                 >
                   <button
                     type="button"

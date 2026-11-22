@@ -139,7 +139,7 @@ function DayTitle({ date }: { date: string }) {
 /** 칸 하나 - 칸 안에서 스크롤, 휠·위아래 밀기는 날짜를 넘기지 않는다(app/useGlobalGestures) */
 function Pane({ name, children }: { name: string; children: ReactNode }) {
   return (
-    <div data-board-pane={name} className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-2xl">
+    <div data-board-pane={name} className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-xl">
       {children}
     </div>
   );
@@ -151,7 +151,7 @@ function MemoPane({ date }: { date: string }) {
   // PC 한눈에 글자 바탕(90%)은 걷고 견준다 - 하루 화면(바탕 100%) 본문 폭과 같게 (ui/useMainWidth unscaledWidth)
   const width = unscaledWidth(useElementWidth(ref, (w) => journalColumnsFor(unscaledWidth(w)), 360));
   return (
-    <div ref={ref} data-board-pane="memo" className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-2xl">
+    <div ref={ref} data-board-pane="memo" className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-xl">
       <MainWidthContext.Provider value={width}>
         <DayJournal date={date} />
       </MainWidthContext.Provider>

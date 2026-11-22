@@ -61,7 +61,7 @@ export default function RecurRow({ start, end, recur, onChange }: { start: strin
           title="격주 · 매월 · 매일"
           className="ml-1 px-1.5 py-1 text-2xs font-bold text-purple-600 hover:text-purple-800 disabled:text-purple-300 cursor-pointer disabled:cursor-default"
         >
-          {more ? '▾' : '▸'} 더 보기
+          <Glyph e={more ? '▾' : '▸'} /> 더 보기
         </button>
       </div>
 

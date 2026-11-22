@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { LABEL_COLORS, labelColor, PICKER_COLORS } from '../../domain/labels';
+import { Glyph } from '../../ui/Icon';
 
 /** 색 9개 + 여백. 아래로 펼 자리가 있는지 볼 때만 쓴다 */
 const PANEL_HEIGHT = 300;
@@ -53,10 +54,10 @@ export default function ColorPicker({ color, onChange, name }: { color: string; 
         onClick={() => setOpen(!open)}
         title={`색 바꾸기 (지금 ${active.label})`}
         aria-expanded={open}
-        className="flex items-center gap-1.5 px-2 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors cursor-pointer shadow-2xs"
+        className="flex items-center gap-1.5 px-2 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-colors cursor-pointer shadow-xs"
       >
-        <span className="w-5 h-5 rounded-full border shadow-2xs shrink-0" style={{ backgroundColor: active.bg, borderColor: active.border }} />
-        <span className="text-2xs text-slate-500 font-black leading-none select-none">▼</span>
+        <span className="w-5 h-5 rounded-full border shadow-xs shrink-0" style={{ backgroundColor: active.bg, borderColor: active.border }} />
+        <span className="text-2xs text-slate-500 font-black leading-none select-none"><Glyph e="▼" /></span>
       </button>
       {open &&
         createPortal(
@@ -64,7 +65,7 @@ export default function ColorPicker({ color, onChange, name }: { color: string; 
             ref={listRef}
             data-color-list
             style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 100000 }}
-            className="bg-white border border-slate-200 rounded-xl shadow-2xl p-1.5 min-w-[130px] flex flex-col gap-0.5"
+            className="bg-white border border-slate-200 rounded-xl shadow-lg p-1.5 min-w-[130px] flex flex-col gap-0.5"
           >
             {PICKER_COLORS.map((key) => {
               const val = LABEL_COLORS[key];
@@ -82,7 +83,7 @@ export default function ColorPicker({ color, onChange, name }: { color: string; 
                     selected ? 'bg-slate-100 text-slate-900 font-black' : 'hover:bg-slate-50 text-slate-700'
                   }`}
                 >
-                  <span className="w-4 h-4 rounded-full border shadow-2xs shrink-0" style={{ backgroundColor: val.bg, borderColor: val.border }} />
+                  <span className="w-4 h-4 rounded-full border shadow-xs shrink-0" style={{ backgroundColor: val.bg, borderColor: val.border }} />
                   <span>{val.label}</span>
                   {selected && <span className="ml-auto text-blue-600 text-xs font-bold">✓</span>}
                 </button>

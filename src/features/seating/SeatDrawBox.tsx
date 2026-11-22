@@ -63,7 +63,7 @@ export default function SeatDrawBox({ shown, rolling, status, draw, nameFor, onP
             <span
               key={n}
               data-draw-picked-sid={n}
-              className={`px-1.5 py-0.5 rounded-md border text-2xs font-bold ${!rolling && n === shown ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-slate-200 bg-white text-slate-600'}`}
+              className={`px-1.5 py-0.5 rounded-lg border text-2xs font-bold ${!rolling && n === shown ? 'border-amber-400 bg-amber-100 text-amber-800' : 'border-slate-200 bg-white text-slate-600'}`}
             >
               {i + 1}. {nameFor(n)}
             </span>

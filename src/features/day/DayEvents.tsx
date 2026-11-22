@@ -76,7 +76,7 @@ function OverlayGroup({ space, count, children }: { space: OverlaySpace; count: 
         title={`겹쳐 보는 공간 - 누르면 ${space.name} 공간에서 고칩니다`}
         className="col-span-2 sm:col-span-1 flex items-center gap-1.5 pt-1.5 text-2xs font-bold text-slate-500 min-w-0"
       >
-        <span data-overlay-name className="truncate px-1.5 py-0.5 rounded-md border text-slate-600" style={space.tone}>
+        <span data-overlay-name className="truncate px-1.5 py-0.5 rounded-lg border text-slate-600" style={space.tone}>
           {spaceTitle(space)}
         </span>
         <span data-overlay-count={count} className="px-1.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
@@ -148,7 +148,7 @@ export default function DayEvents({ date }: { date: YMD }) {
   return (
     <section
       data-day-events={date}
-      className={`bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 flex flex-col ${collapsed ? '' : 'h-full'}`}
+      className={`bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 flex flex-col ${collapsed ? '' : 'h-full'}`}
     >
       {/* 머리줄: ▼ 📅 일정 8 [+ 추가] ……… ⚙️ */}
       {/* 좁은 칸(한눈에 화면 - P24)에서는 '+ 추가'가 제목 뒤에서 줄을 바꾼다 - 제목은 꺾이지 않는다('일/정') */}
@@ -161,7 +161,7 @@ export default function DayEvents({ date }: { date: YMD }) {
             className="text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
             title={collapsed ? '펼치기' : '접기'}
           >
-            {collapsed ? '▶' : '▼'}
+            <Glyph e={collapsed ? '▶' : '▼'} />
           </button>
           <span className="flex text-primary" aria-hidden>
             <Glyph e="📅" className="w-5 h-5" />
@@ -189,7 +189,7 @@ export default function DayEvents({ date }: { date: YMD }) {
           data-event-labels-settings
           {...shortcutTarget('labels')}
           onClick={() => openWindow('labels', { tab: 'event' })}
-          className="w-7 h-7 flex items-center justify-center rounded-md text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+          className="w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           title="일정 라벨 설정"
           aria-label="일정 라벨 설정"
         >
@@ -393,7 +393,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
         onCardClick(e);
       }}
       title={overlay ? `${overlay.name} 공간 일정 - 클릭하여 오른쪽 칸에서 수정 (겹쳐 보기)` : '클릭하여 오른쪽 칸에서 수정 (Ctrl·Shift와 함께 누르면 여러 개 고르기)'}
-      className={`group relative flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-2xs transition-all cursor-pointer min-w-0 select-none sm:select-auto ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
+      className={`group relative flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-xs transition-all cursor-pointer min-w-0 select-none sm:select-auto ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
         picked
           ? 'border-primary ring-2 ring-primary bg-blue-50 text-slate-800'
           : editing
@@ -419,9 +419,9 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               disabled={first}
               title="위로"
               aria-label="위로"
-              className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs"
+              className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs"
             >
-              ▲
+              <Glyph e="▲" />
             </button>
             <button
               type="button"
@@ -433,9 +433,9 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               disabled={last}
               title="아래로"
               aria-label="아래로"
-              className="text-slate-300 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-300 p-0.5 leading-none text-xs"
+              className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs"
             >
-              ▼
+              <Glyph e="▼" />
             </button>
           </div>
         )}
@@ -484,7 +484,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               mark={i === 0}
               onToggle={onToggle}
               forward={!!l?.props?.forward}
-              className="mr-1.5 text-xs px-2 py-0.5 rounded-md"
+              className="mr-1.5 text-xs px-2 py-0.5 rounded-lg"
               data={{ 'data-event-chip': l?.id ?? '' }}
             />
           ))}
@@ -499,7 +499,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
                 onAlarm();
               }}
               title="클릭하여 알림 시간 변경"
-              className={`inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-md border transition-colors cursor-pointer ${
+              className={`inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-lg border transition-colors cursor-pointer ${
                 ev.alarmDone ? 'text-slate-500 bg-slate-100 border-slate-200' : 'text-primary bg-blue-50 border-blue-200'
               }`}
             >
@@ -512,7 +512,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
             <span
               data-event-since={since}
               title={`${shortDateLabel(since)}부터 끝내지 않아 오늘로 따라왔습니다. 끝내면 오늘 일정이 됩니다.`}
-              className="inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-md border text-emerald-700 bg-emerald-50 border-emerald-200 whitespace-nowrap"
+              className="inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-lg border text-emerald-700 bg-emerald-50 border-emerald-200 whitespace-nowrap"
             >
               <Glyph e="↪" /> {monthDayLabel(since)}부터
             </span>
@@ -527,7 +527,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
                 goToday();
               }}
               title="끝내지 않아 오늘로 따라간 일정입니다. 누르면 오늘로 갑니다."
-              className="inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-md border text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 whitespace-nowrap cursor-pointer"
+              className="inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-lg border text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 whitespace-nowrap cursor-pointer"
             >
               → 오늘로
             </button>

@@ -52,7 +52,7 @@ const TABS: Array<{ id: RosterTab; label: string }> = [
   { id: 'memorize', label: '암기' },
 ];
 
-const selectCls = 'appearance-none bg-white border border-blue-200 rounded-lg pl-2.5 pr-6 py-1.5 text-xs font-bold text-slate-700 shadow-2xs focus:outline-none focus:border-primary cursor-pointer';
+const selectCls = 'appearance-none bg-white border border-blue-200 rounded-lg pl-2.5 pr-6 py-1.5 text-xs font-bold text-slate-700 shadow-xs focus:outline-none focus:border-primary cursor-pointer';
 /** 명렬표 관리의 사진 보기 켬/끔 - 이 기기에만 (V4 sp4-roster-photos) */
 const PHOTOS_KEY = 'sp5-roster-photos';
 
@@ -247,7 +247,7 @@ export default function RosterView() {
   const activeCount = students.filter(isActive).length;
 
   return (
-    <div ref={rootRef} onKeyDown={onKeyDown} className="bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col" data-roster={classIdOf(cur)}>
+    <div ref={rootRef} onKeyDown={onKeyDown} className="bg-white border border-slate-200 rounded-xl overflow-hidden flex flex-col" data-roster={classIdOf(cur)}>
       {/* 왼쪽 학년도·학년·반, 오른쪽 세 탭 */}
       <div className="flex items-center justify-between gap-2.5 px-4 py-2.5 bg-blue-50 border-b border-blue-100 flex-wrap">
         <div className="flex items-center gap-1.5">
@@ -266,7 +266,7 @@ export default function RosterView() {
                   </option>
                 ))}
               </select>
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500">▾</span>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500"><Glyph e="▾" /></span>
             </div>
           ))}
           <button
@@ -300,7 +300,7 @@ export default function RosterView() {
               aria-selected={tab === t.id}
               data-roster-tab={t.id}
               onClick={() => useClassView.setState({ tab: t.id })}
-              className={`rounded-lg px-6 py-1.5 text-xs font-extrabold transition-colors cursor-pointer ${tab === t.id ? 'bg-white text-primary shadow-2xs' : 'bg-transparent text-slate-500 hover:text-slate-700'}`}
+              className={`rounded-lg px-6 py-1.5 text-xs font-extrabold transition-colors cursor-pointer ${tab === t.id ? 'bg-white text-primary shadow-xs' : 'bg-transparent text-slate-500 hover:text-slate-700'}`}
             >
               {glyphText(t.label)}
             </button>
@@ -374,7 +374,7 @@ export default function RosterView() {
                         data-roster-view={v}
                         aria-pressed={view === v}
                         onClick={() => setView(v)}
-                        className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${view === v ? 'bg-white text-slate-800 shadow-2xs' : 'text-slate-500'}`}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${view === v ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500'}`}
                       >
                         {v === 'list' ? '목록' : '타일'}
                       </button>
@@ -603,7 +603,7 @@ function StudentTable({
             key={st.sid}
             data-roster-tile={row}
             data-sid={st.sid}
-            className={`border rounded-xl overflow-hidden bg-white shadow-2xs transition-all ${highlight === st.sid ? 'border-primary ring-2 ring-primary/20' : 'border-slate-200'} ${!isActive(st) ? 'opacity-45' : ''}`}
+            className={`border rounded-xl overflow-hidden bg-white shadow-xs transition-all ${highlight === st.sid ? 'border-primary ring-2 ring-primary/20' : 'border-slate-200'} ${!isActive(st) ? 'opacity-45' : ''}`}
           >
             <div className="relative">
               <StudentPhoto {...photoProps(st)} shape="card" onPickDrive={() => void panel.pickDrive(st)} />
@@ -631,7 +631,7 @@ function StudentTable({
 
   const input = 'bg-white border border-slate-200 rounded px-2 py-1 focus:outline-none focus:border-primary';
   return (
-    <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-2xs">
+    <div className="border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
       <table className="w-full text-xs text-left border-collapse" data-roster-table>
         <thead className="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
           <tr>
@@ -821,7 +821,7 @@ function RosterSearch({
                       data-search-hit={st.sid}
                       onClick={() => onOpen(drafts.indexOf(cls), st)}
                       title={`${st.num}번 ${st.name}`}
-                      className={`text-left border border-slate-200 rounded-xl overflow-hidden bg-white shadow-2xs hover:border-primary cursor-pointer ${!isActive(st) ? 'opacity-45' : ''}`}
+                      className={`text-left border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs hover:border-primary cursor-pointer ${!isActive(st) ? 'opacity-45' : ''}`}
                     >
                       {photos && <StudentPhoto url={photo?.url} name={st.name} shape="card" loose={photo?.exact === false} />}
                       <span className="flex items-center gap-1 px-1.5 py-1.5">

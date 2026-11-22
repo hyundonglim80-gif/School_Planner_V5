@@ -8,7 +8,7 @@
 // 창 위치는 계정 설정(PC) - 문서로 바꾸고 끝에 되돌린다(CLAUDE.md 2장 - 기기 저장소만 바꾸면 계정 값이 이긴다).
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-side-left.mjs
 import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, glyphTextOf, launch, newPage, open, report, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -53,7 +53,7 @@ try {
   r.check((await page.evaluate(() => getComputedStyle(document.querySelector('main').parentElement).paddingRight)) === '0px', '오른쪽은 밀지 않는다');
   const grip = page.locator(sel('close-column', 'left'));
   const g = await box(grip);
-  r.check((await grip.textContent()) === '◀' && Math.abs(g.x - c0.width) < 2, `◀ 손잡이 = 칸 오른쪽 가장자리 (${Math.round(g.x)})`);
+  r.check((await glyphTextOf(grip)).trim() === '◀' && Math.abs(g.x - c0.width) < 2, `◀ 손잡이 = 칸 오른쪽 가장자리 (${Math.round(g.x)})`);
   const clipBtn = await box(page.locator(sel('clipboard-toggle')));
   r.check(Math.abs(clipBtn.x - c0.width) < 2 && clipBtn.y + clipBtn.height <= g.y + 1, `📋 = 그 바로 위 (${Math.round(clipBtn.x)}, 아래 끝 ${Math.round(clipBtn.y + clipBtn.height)} ≤ ${Math.round(g.y)})`);
   r.check((await page.locator(sel('column-resizer', 'right')).count()) === 0, '오른쪽 경계선은 없다');
@@ -113,7 +113,7 @@ try {
   await page.waitForTimeout(400);
   const cr = await box(col);
   r.check(
-    (await col.getAttribute('data-side-column')) === 'right' && Math.abs(cr.x + cr.width - 1400) < 2 && (await page.locator(sel('close-column', 'right')).textContent()) === '▶',
+    (await col.getAttribute('data-side-column')) === 'right' && Math.abs(cr.x + cr.width - 1400) < 2 && (await glyphTextOf(page.locator(sel('close-column', 'right')))).trim() === '▶',
     `오른쪽 칸을 고르면 열린 칸이 곧바로 오른쪽으로 (x ${Math.round(cr.x)}) · ▶`,
   );
   r.check((await serverUntil(read, (d) => d?.sideAt === undefined || d?.sideAt === 'right')) !== null, '계정 문서에 오른쪽 (sideAt 칸 걷힘)');

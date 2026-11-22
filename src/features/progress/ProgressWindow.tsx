@@ -637,7 +637,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                       type="button"
                       data-course-subject={sub}
                       onClick={() => update({ subject: sub })}
-                      className={`px-2 py-0.5 rounded-md text-xs border cursor-pointer ${
+                      className={`px-2 py-0.5 rounded-lg text-xs border cursor-pointer ${
                         draft.subject.trim() === sub ? 'bg-indigo-100 text-indigo-800 border-indigo-300 font-bold' : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-300'
                       }`}
                     >
@@ -659,7 +659,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           data-course-class-toggle={c}
                           aria-pressed={on}
                           onClick={() => toggleClass(c)}
-                          className={`px-2.5 py-1 rounded-md text-xs font-bold border cursor-pointer ${
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold border cursor-pointer ${
                             on ? PICK_ON : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'
                           }`}
                         >
@@ -709,7 +709,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                         type="button"
                         data-progress-key-option={k}
                         onClick={() => update({ key: k })}
-                        className={`px-2 py-0.5 rounded-md text-xs border cursor-pointer ${
+                        className={`px-2 py-0.5 rounded-lg text-xs border cursor-pointer ${
                           key === k ? 'bg-indigo-100 text-indigo-800 border-indigo-300 font-bold' : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-300'
                         }`}
                         title={has ? '이 과목의 진도가 이미 있습니다' : '이 과목으로 세기'}
@@ -749,7 +749,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                 type="button"
                 data-progress-start-quick={label}
                 onClick={() => update({ startDate: d })}
-                className="px-2 py-1 text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-md cursor-pointer"
+                className="px-2 py-1 text-xs font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg cursor-pointer"
               >
                 {label}
               </button>
@@ -774,7 +774,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                   data-progress-sample
                   onClick={() => downloadCsv(PROGRESS_SAMPLE_ROWS, PROGRESS_SAMPLE_FILENAME)}
                   title={`'단원·차시·내용·교과서·준비물' 예시 표(${PROGRESS_SAMPLE_FILENAME})를 받습니다. 엑셀에서 열어 고친 뒤 불러오거나 표를 복사해 붙여 넣으세요.`}
-                  className="px-2 py-1 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-md cursor-pointer"
+                  className="px-2 py-1 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg cursor-pointer"
                 >
                   <Glyph e="⬇" /> 예시 CSV 받기
                 </button>
@@ -783,7 +783,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                   data-progress-csv-open
                   onClick={() => csvInputRef.current?.click()}
                   title="CSV 파일의 차시 표를 불러옵니다 (예시 CSV와 같은 칸)"
-                  className="px-2 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md cursor-pointer"
+                  className="px-2 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg cursor-pointer"
                 >
                   <Glyph e="📂" /> CSV 불러오기
                 </button>
@@ -808,7 +808,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                   data-progress-count-no
                   onClick={() => update({ noCount: true })}
                   title="차시 칸의 숫자를 그 내용을 몇 차시 동안 하는지로 셉니다 (1, 2, 3 = 6차시)"
-                  className="shrink-0 px-2 py-0.5 font-bold bg-white hover:bg-amber-100 border border-amber-300 rounded-md cursor-pointer"
+                  className="shrink-0 px-2 py-0.5 font-bold bg-white hover:bg-amber-100 border border-amber-300 rounded-lg cursor-pointer"
                 >
                   차시 수로 세기
                 </button>
@@ -883,7 +883,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           title="한 칸 위로"
                           aria-label={`${r + 1}번째 행 위로`}
                         >
-                          ▲
+                          <Glyph e="▲" />
                         </button>
                         <button
                           type="button"
@@ -894,7 +894,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           title="한 칸 아래로"
                           aria-label={`${r + 1}번째 행 아래로`}
                         >
-                          ▼
+                          <Glyph e="▼" />
                         </button>
                         <button
                           type="button"
@@ -927,7 +927,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
               data-progress-add-row
               onClick={() => addRow()}
               title="마지막으로 커서가 있던 행 바로 아래에 행을 넣습니다 (칸에서 Ctrl + Enter)"
-              className="px-2.5 py-1 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-md cursor-pointer"
+              className="px-2.5 py-1 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg cursor-pointer"
             >
               + 행 추가
             </button>
@@ -1003,7 +1003,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                     aria-selected={c === viewClass}
                     data-course-preview={c}
                     onClick={() => setPreviewClass(c)}
-                    className={`px-2 py-0.5 rounded-md text-xs font-bold border cursor-pointer ${
+                    className={`px-2 py-0.5 rounded-lg text-xs font-bold border cursor-pointer ${
                       c === viewClass ? PICK_ON : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
                     }`}
                   >
