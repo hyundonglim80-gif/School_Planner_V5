@@ -30,10 +30,30 @@ describe('주소', () => {
     expect(window.location.hash).toBe('#/day/2026-10-08');
   });
 
-  it('주소에 화면이 있으면 그 화면으로 연다', () => {
-    window.history.replaceState(null, '', '#/month/2026-12');
-    stop = startRouting();
-    expect(useNav.getState()).toMatchObject({ scope: 'month', date: '2026-12-01' });
+  // 달 주소의 날짜는 오늘에 따라 다르다(오늘이 그 달 안이면 오늘 - route.dateForRoute) → 오늘을 고정한다
+  // (P56-1 - 고정하지 않아 2026-12-02 ~ 12-31에 자동 검사가 틀릴 뻔했다)
+  it('주소에 화면이 있으면 그 화면으로 연다 (오늘이 그 달 밖이면 그 달 1일)', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 8, 10));
+    try {
+      window.history.replaceState(null, '', '#/month/2026-12');
+      stop = startRouting();
+      expect(useNav.getState()).toMatchObject({ scope: 'month', date: '2026-12-01' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('달 주소가 오늘을 품으면 오늘을 고른다', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 11, 15, 10));
+    try {
+      window.history.replaceState(null, '', '#/month/2026-12');
+      stop = startRouting();
+      expect(useNav.getState()).toMatchObject({ scope: 'month', date: '2026-12-15' });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('주소에 화면이 없으면 환경설정 "시작 화면"으로 (새로고침은 보던 화면 그대로)', () => {
