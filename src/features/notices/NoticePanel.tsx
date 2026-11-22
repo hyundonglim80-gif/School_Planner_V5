@@ -26,6 +26,8 @@ import { useSchool } from '../school/school';
 import { saveNotice } from './actions';
 import type { NoticePanelParams, NoticeTab } from './open';
 import { useTabTarget } from '../../app/keys';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 type ListRange = 'month' | '30days' | 'year';
 
@@ -164,9 +166,9 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
       <div data-notice-panel={sid} data-notice-date={date} className="flex flex-col h-full min-h-0">
         <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100">
           <div className="min-w-0">
-            <h3 className="text-lg font-bold text-slate-800">📢 알림장</h3>
+            <h3 className="text-lg font-bold text-slate-800"><Glyph e="📢" /> 알림장</h3>
             <p className="text-xs font-bold text-primary mt-0.5 truncate">
-              {shortDateLabel(date)} 알림장 · {personalSpace ? '🔒 개인' : '👥 공유'}
+              {shortDateLabel(date)} 알림장 · {glyphText(personalSpace ? '🔒 개인' : '👥 공유')}
             </p>
           </div>
           <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100" />
@@ -192,7 +194,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                 aria-pressed={tab === id}
                 className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${tab === id ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
               >
-                {label}
+                {glyphText(label)}
               </button>
             ))}
           </div>
@@ -217,7 +219,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                     title="다음 수업일의 준비물과 일정을 줄로 더합니다 (주말·공휴일·방학은 건너뜁니다)"
                     className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 rounded-xl font-bold cursor-pointer"
                   >
-                    📥 다음 수업일 불러오기
+                    <Glyph e="📥" /> 다음 수업일 불러오기
                   </button>
                   {school && (
                     <button
@@ -228,7 +230,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                       title="다음 수업일 급식을 한 줄로 더합니다 (나이스 - 환경설정 '학교')"
                       className="px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200 rounded-xl font-bold disabled:opacity-50 cursor-pointer"
                     >
-                      🍚 급식
+                      <Glyph e="🍚" /> 급식
                     </button>
                   )}
                 </div>
@@ -254,11 +256,11 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                     <div className="flex gap-1">
                       {canShare() && (
                         <button type="button" data-notice-share onClick={() => shareNotice(date, lines)} className={btn} title="카카오톡·문자 등으로 보내기">
-                          📤 공유
+                          <Glyph e="📤" /> 공유
                         </button>
                       )}
                       <button type="button" data-notice-copy onClick={() => void copyText(noticeMessage(date, lines))} className={btn}>
-                        📋 복사
+                        <Glyph e="📋" /> 복사
                       </button>
                     </div>
                   </div>
@@ -271,7 +273,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                   </ol>
                 </div>
               )}
-              <p className="text-slate-500">저장하면 그날 메모 칸 맨 위에 '📢 알림장'으로 보입니다. 다른 날로 옮기면 적던 것은 그 날에 저장합니다.</p>
+              <p className="text-slate-500">저장하면 그날 메모 칸 맨 위에 '<Glyph e="📢" /> 알림장'으로 보입니다. 다른 날로 옮기면 적던 것은 그 날에 저장합니다.</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -313,7 +315,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                               className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
                               title="카카오톡·문자 등으로 보내기"
                             >
-                              📤 공유
+                              <Glyph e="📤" /> 공유
                             </button>
                           )}
                           <button
@@ -321,7 +323,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
                             onClick={() => void copyText(noticeMessage(n.date, n.lines))}
                             className="px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-lg font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
                           >
-                            📋 복사
+                            <Glyph e="📋" /> 복사
                           </button>
                         </div>
                       </div>
@@ -358,7 +360,7 @@ export default function NoticePanel({ params, close, raise }: WindowProps<Notice
               title="Ctrl + S 로도 저장합니다"
               className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md disabled:opacity-50 cursor-pointer"
             >
-              {saving ? '저장 중...' : '💾 저장'}
+              {glyphText(saving ? '저장 중...' : '💾 저장')}
             </button>
           )}
         </div>

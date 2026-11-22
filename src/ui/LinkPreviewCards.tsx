@@ -3,6 +3,7 @@
 // 구글 지도는 '지도 보기'를 누를 때만 작은 지도를 띄운다 - 목록에 지도가 여러 개 뜨면 무겁다.
 import { useMemo, useState, type SyntheticEvent } from 'react';
 import { previewsOf, type LinkPreview } from '../domain/linkPreview';
+import { Glyph } from './Icon';
 
 const stop = (e: SyntheticEvent) => e.stopPropagation();
 
@@ -16,11 +17,11 @@ function Card({ p }: { p: LinkPreview }) {
         {p.kind === 'youtube' && p.thumb ? (
           <img src={p.thumb} alt="" loading="lazy" className="w-24 h-[54px] object-cover rounded-lg shrink-0 bg-slate-200" />
         ) : p.kind === 'map' ? (
-          <span className="w-10 h-10 shrink-0 rounded-lg bg-emerald-100 flex items-center justify-center text-xl">🗺️</span>
+          <span className="w-10 h-10 shrink-0 rounded-lg bg-emerald-100 flex items-center justify-center text-xl"><Glyph e="🗺" /></span>
         ) : p.icon && iconOk ? (
           <img src={p.icon} alt="" loading="lazy" onError={() => setIconOk(false)} className="w-8 h-8 shrink-0 rounded" />
         ) : (
-          <span className="w-8 h-8 shrink-0 rounded bg-slate-200 flex items-center justify-center">🔗</span>
+          <span className="w-8 h-8 shrink-0 rounded bg-slate-200 flex items-center justify-center"><Glyph e="🔗" /></span>
         )}
         <span className="min-w-0 flex-1">
           <span className="block text-xs font-bold text-slate-800 truncate">{p.title}</span>
@@ -45,7 +46,7 @@ function Card({ p }: { p: LinkPreview }) {
               }}
               className="w-full py-1 text-2xs font-bold text-emerald-700 hover:bg-emerald-50 cursor-pointer"
             >
-              🗺️ 지도 보기
+              <Glyph e="🗺" /> 지도 보기
             </button>
           )}
         </div>

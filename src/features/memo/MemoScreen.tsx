@@ -39,6 +39,7 @@ import { useFocusReveal } from '../search/focus';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import DecorSpot from '../../ui/DecorSpot';
 import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
 const FALLBACK_LABEL = '메모';
@@ -288,7 +289,7 @@ export default function MemoScreen() {
   const specialChip = (key: 'fav' | 'all', text: string, cls: string, title: string) => (
     <FilterChip
       chipKey={key}
-      text={text}
+      text={glyphText(text)}
       title={title}
       count={key === 'fav' ? allActive.filter((m) => m.favorite).length : allActive.length}
       selected={current === key}

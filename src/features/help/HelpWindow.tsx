@@ -35,6 +35,7 @@ import {
   type HelpValues,
 } from './topics';
 import { glyphText } from '../../ui/glyphText';
+import { Glyph } from '../../ui/Icon';
 
 export interface HelpParams {
   /** 이 항목을 열고 연다 (설명서 주제 id - 창 목록의 `help`) */
@@ -305,7 +306,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
             </div>
           ) : (
             <p data-help-shortcut-tabs-empty className="text-slate-500">
-              없음 - 환경설정 단축키 탭의 ⌨️ 단축키 설정으로 창 안의 탭(예: 환경설정 → 알림)을 눌러 만듭니다.
+              없음 - 환경설정 단축키 탭의 <Glyph e="⌨" /> 단축키 설정으로 창 안의 탭(예: 환경설정 → 알림)을 눌러 만듭니다.
             </p>
           )}
         </div>
@@ -384,14 +385,14 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
       case 'tip':
         return (
           <div key={i} className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl text-slate-600 flex gap-2">
-            <span className="shrink-0">💡</span>
+            <span className="shrink-0"><Glyph e="💡" /></span>
             <p className="min-w-0">{renderInline(block.text)}</p>
           </div>
         );
       case 'note':
         return (
           <div key={i} className="p-3 bg-amber-50/70 border border-amber-100 rounded-xl text-slate-600 flex gap-2">
-            <span className="shrink-0">⚠️</span>
+            <span className="shrink-0"><Glyph e="⚠" /></span>
             <p className="min-w-0">{renderInline(block.text)}</p>
           </div>
         );
@@ -465,14 +466,14 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
 
         <section aria-labelledby="help-detail-heading" className="space-y-3" data-help-blocks>
           <h4 id="help-detail-heading" className="text-sm font-extrabold text-slate-800">
-            📖 세부 설명
+            <Glyph e="📖" /> 세부 설명
           </h4>
           {topic.blocks.map(renderBlock)}
         </section>
 
         <section aria-labelledby="help-example-heading" className="space-y-2.5" data-help-examples>
           <h4 id="help-example-heading" className="text-sm font-extrabold text-slate-800">
-            🧪 사용 예
+            <Glyph e="🧪" /> 사용 예
           </h4>
           {topic.examples.map((ex, i) => (
             <div key={i} data-help-example={i} className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-xl">
@@ -555,7 +556,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
   const renderTree = () => (
     <div className="space-y-0.5">
       <div className="flex items-center justify-between gap-1 px-2 pb-1">
-        <span className="text-2xs font-black text-slate-500 tracking-wide">📚 목차</span>
+        <span className="text-2xs font-black text-slate-500 tracking-wide"><Glyph e="📚" /> 목차</span>
         <button
           type="button"
           data-help-tree-all
@@ -572,11 +573,11 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
         aria-current={view.kind === 'home' ? 'page' : undefined}
         className={treeRowClass(view.kind === 'home')}
       >
-        <span className="shrink-0">🏠</span>
+        <span className="shrink-0"><Glyph e="🏠" /></span>
         <span className="min-w-0">처음 화면</span>
       </button>
       <button type="button" data-help-tree-shortcuts onClick={() => openTopic('shortcuts')} className={treeRowClass(false)}>
-        <span className="shrink-0">⌨️</span>
+        <span className="shrink-0"><Glyph e="⌨" /></span>
         <span className="min-w-0">단축키 한눈에 보기</span>
       </button>
       <ul className="pt-1 space-y-0.5">
@@ -713,7 +714,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
             onClick={() => openTopic('shortcuts')}
             className="w-full px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold flex items-center justify-between gap-2 transition-colors cursor-pointer"
           >
-            <span>⌨️ 단축키 한눈에 보기</span>
+            <span><Glyph e="⌨" /> 단축키 한눈에 보기</span>
             <span className="text-white/60 font-normal">지금 설정된 값 ›</span>
           </button>
           <section aria-labelledby="help-categories-heading">
@@ -782,7 +783,7 @@ export default function HelpWindow({ params, close, raise }: WindowProps<HelpPar
             showTree ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
           }`}
         >
-          📚 목차
+          <Glyph e="📚" /> 목차
         </button>
       }
       footer={<ModalCloseButton onClose={close} />}

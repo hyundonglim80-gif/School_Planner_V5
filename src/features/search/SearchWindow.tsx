@@ -35,6 +35,7 @@ import { useEvaluations, type EvalItem } from '../evaluations/evalData';
 import { openEvaluation } from '../evaluations/open';
 import DecorSpot from '../../ui/DecorSpot';
 import { pressKeys } from '../../ui/pressKeys';
+import { Glyph } from '../../ui/Icon';
 
 const PAGE_SIZE = 50;
 
@@ -282,7 +283,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                           {ev.subject ? ` · ${ev.subject}` : ''}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-800 break-words">📊 {ev.title}</p>
+                      <p className="text-xs text-slate-800 break-words"><Glyph e="📊" /> {ev.title}</p>
                     </div>
                   );
                 }
@@ -345,7 +346,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                         aria-label="수정 칸 열기"
                         className="shrink-0 w-7 h-7 rounded-lg hover:bg-slate-100 text-sm cursor-pointer"
                       >
-                        ✏️
+                        <Glyph e="✏" />
                       </button>
                     </div>
                   );
@@ -380,7 +381,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                       </div>
                       {hit.file && (
                         <div className="text-xs font-bold text-rose-700 mb-0.5 break-all">
-                          📎{' '}
+                          <Glyph e="📎" />{' '}
                           {hit.file.url ? (
                             <a href={hit.file.url} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} data-search-file className="hover:underline">
                               {hit.file.name}
@@ -408,7 +409,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                       aria-label="쓰는 칸 열기"
                       className="shrink-0 w-7 h-7 rounded-lg hover:bg-slate-100 text-sm cursor-pointer"
                     >
-                      ✏️
+                      <Glyph e="✏" />
                     </button>
                   </div>
                 );

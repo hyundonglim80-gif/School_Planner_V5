@@ -7,6 +7,7 @@ import { detectDeviceKind } from '../../app/prefs';
 import { countStorageFiles } from '../../domain/attachCollect';
 import { useDocs, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId, usePersonalSpaceId } from '../../data/session';
+import { Glyph } from '../../ui/Icon';
 
 const SNOOZE_KEY = 'sp5-storage-attach-snooze';
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -58,7 +59,7 @@ function Banner({ sid }: { sid: string }) {
 
   return (
     <div role="status" data-storage-attach-banner={count} className="mb-3 flex items-center gap-2 flex-wrap rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-      <span className="font-bold">📎 예전 저장소에 첨부 {count}개가 남아 있습니다.</span>
+      <span className="font-bold"><Glyph e="📎" /> 예전 저장소에 첨부 {count}개가 남아 있습니다.</span>
       <span className="text-sky-700">V4에서 가져온 첨부입니다 - 다른 첨부처럼 내 구글 드라이브(School_Planner 폴더)로 모아 둡니다.</span>
       <span className="ml-auto flex items-center gap-1.5">
         <button

@@ -40,6 +40,7 @@ import ShortcutRecordGate from './ShortcutRecordGate';
 import { startRecordFromPopup } from './shortcutRecord';
 import { usePendingWritesGuard } from './pendingWritesGuard';
 import ColumnResizer from '../ui/ColumnResizer';
+import { preloadLazyIcons } from '../ui/lazyIcons';
 import { useImageViewer } from '../ui/imageViewerStore';
 import { lazyWithReload } from './lazyWithReload';
 import { RIGHT_COLUMN_CSS_WIDTH, useDocked, useSidePopups } from '../ui/sideColumn';
@@ -73,6 +74,11 @@ export default function Shell() {
 
   // 주소와 맞물린다 (뒤로가기 = 앞 화면, 새로고침해도 그 자리)
   useEffect(() => startRouting(), []);
+  // 창 안에서만 쓰는 선 아이콘 경로 - 첫 화면이 뜬 뒤 미리 받아 둔다(창을 처음 열 때 빈 칸이 보이지 않게 - P54-1)
+  useEffect(() => {
+    const t = setTimeout(() => void preloadLazyIcons(), 2000);
+    return () => clearTimeout(t);
+  }, []);
   useGlobalGestures();
   // 년간 학기 칩 - 학기가 바뀌면 지금 학기로 (P26-3)
   useSemesterFollow();

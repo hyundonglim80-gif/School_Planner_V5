@@ -514,7 +514,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               title={`${shortDateLabel(since)}부터 끝내지 않아 오늘로 따라왔습니다. 끝내면 오늘 일정이 됩니다.`}
               className="inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-md border text-emerald-700 bg-emerald-50 border-emerald-200 whitespace-nowrap"
             >
-              ↪ {monthDayLabel(since)}부터
+              <Glyph e="↪" /> {monthDayLabel(since)}부터
             </span>
           )}
           {/* 지난 날 칸 - 이 일정은 오늘로 따라갔다. 누르면 오늘로 */}

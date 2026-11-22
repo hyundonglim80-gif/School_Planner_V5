@@ -11,6 +11,7 @@ import { openImageViewer } from '../../ui/imageViewerStore';
 import LinkPreviewCards from '../../ui/LinkPreviewCards';
 import type { ItemDoc } from '../events/eventOps';
 import EntryTableView from './EntryTableView';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   item: ItemDoc;
@@ -162,7 +163,7 @@ export default function EntryBody({ item, onToggleCheckLine, fullTables, large, 
                 {fileIcon(f)}
               </span>
               <span className="font-semibold text-slate-700 group-hover/file:text-primary truncate flex-1" title={f.name}>
-                📎 {f.name}
+                <Glyph e="📎" /> {f.name}
               </span>
               <span className="text-xs text-slate-500 shrink-0 font-medium group-hover/file:text-primary">다운로드</span>
             </a>

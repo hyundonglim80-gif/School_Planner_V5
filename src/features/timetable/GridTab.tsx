@@ -14,6 +14,8 @@ import { normalizeSlotText } from '../../domain/teachingSlot';
 import { FAR_END, type Piece } from '../../domain/timetableApply';
 import SlotPairInput from '../lessons/SlotPairInput';
 import { WEEKDAYS, type ApplyMode, type TimetableDraft } from './timetableDraft';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 /** 적용된 시간표 줄 하나 (날마다 실제로 쓰이는 조각) */
 export interface AppliedRow extends Piece {
@@ -140,7 +142,7 @@ export default function GridTab(props: Props) {
       <div className="flex items-center gap-1.5 flex-wrap px-3 py-2.5 bg-blue-50 border border-blue-100 rounded-xl" data-timetable-list={list.length}>
         {list.map((t) => (
           <button key={t.id} type="button" data-timetable-pick={t.id} aria-pressed={t.id === current.id} onClick={() => onPick(t.id)} className={pill(t.id === current.id)}>
-            📅 {t.name.trim() || '이름 없음'}
+            <Glyph e="📅" /> {t.name.trim() || '이름 없음'}
             {t.id === todayId && <span className="ml-1">· 오늘</span>}
           </button>
         ))}
@@ -161,11 +163,11 @@ export default function GridTab(props: Props) {
           className={`${input} w-48`}
         />
         <button type="button" data-timetable-delete onClick={() => onRemove(current.id)} className="ml-auto px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-bold cursor-pointer">
-          🗑️ 이 시간표 지우기
+          <Glyph e="🗑" /> 이 시간표 지우기
         </button>
       </div>
       <p className="text-2xs text-slate-500 font-semibold -mt-2">
-        💾 저장은 이 시간표(이름·표)만 남깁니다. 수업 칸에 쓰려면 아래 <b>✅ 적용</b>을 누르세요. 지워도 이미 적용한 날의 수업 칸은 그대로입니다.
+        <Glyph e="💾" /> 저장은 이 시간표(이름·표)만 남깁니다. 수업 칸에 쓰려면 아래 <b><Glyph e="✅" /> 적용</b>을 누르세요. 지워도 이미 적용한 날의 수업 칸은 그대로입니다.
         {todayId === current.id ? ` 오늘(${md(today)})은 이 시간표를 따릅니다.` : ''}
       </p>
 
@@ -283,7 +285,7 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
   return (
     <div className="space-y-2.5 px-3 py-3 bg-emerald-50/60 border border-emerald-200 rounded-xl" data-timetable-apply-box>
       <div className="flex items-center gap-2 flex-wrap text-xs">
-        <span className="font-black text-emerald-800">📅 날짜에 적용</span>
+        <span className="font-black text-emerald-800"><Glyph e="📅" /> 날짜에 적용</span>
         <input type="date" value={range.from} data-timetable-from onChange={(e) => onRange({ ...range, from: e.target.value })} aria-label="적용 시작 날" className={input} />
         <span>~</span>
         <input type="date" value={range.to} data-timetable-to onChange={(e) => onRange({ ...range, to: e.target.value })} aria-label="적용 끝 날" className={input} />
@@ -301,7 +303,7 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
           className="ml-auto px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold shadow-2xs cursor-pointer"
           title={mode === 'fill' ? '위 표의 과목을 이 기간의 빈 칸에만 넣습니다' : '위 표를 이 기간의 수업 칸에 씁니다'}
         >
-          ✅ {applying ? '적용 중...' : `${short(range.from)} ~ ${short(range.to)} 적용`}
+          <Glyph e="✅" /> {applying ? '적용 중...' : `${short(range.from)} ~ ${short(range.to)} 적용`}
         </button>
       </div>
       <div className="flex items-center gap-1.5 flex-wrap text-xs" role="radiogroup" aria-label="적용 방식" data-timetable-mode-box={mode}>
@@ -319,7 +321,7 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
               mode === m.key ? 'bg-emerald-600 border-emerald-600 text-white shadow-2xs' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
             }`}
           >
-            {m.label}
+            {glyphText(m.label)}
           </button>
         ))}
       </div>
@@ -357,7 +359,7 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
               {row.today && <span className="shrink-0 font-bold text-emerald-700">· 오늘</span>}
               <span className="ml-auto flex items-center gap-1 shrink-0">
                 <button type="button" data-timetable-load onClick={() => onLoad(row)} className={`${small} bg-white hover:bg-blue-50 text-blue-700 border-blue-200`} title="이 기간에 적용된 표를 위 표로 불러옵니다">
-                  📥 불러오기
+                  <Glyph e="📥" /> 불러오기
                 </button>
                 <button type="button" data-timetable-unapply onClick={() => onUnapply(row)} className={`${small} bg-white hover:bg-red-50 text-red-600 border-red-200`} title="이 기간의 적용을 뺍니다 (그 날들은 시간표 수업이 빕니다)">
                   ✕ 빼기

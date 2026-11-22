@@ -20,6 +20,7 @@ import { addObservation } from './observation';
 import { useCurrentSpaceId, useSession } from '../../data/session';
 import { EVAL_TYPE_LABEL, evalHasStudent, evalTextField, hasScoreCuts, isFreeEval, parseScore, scorePatch, SCORE_FIELD, sortEvals, type EvalValue } from '../../domain/evaluation';
 import { saveEvalStudentValue, useEvalsOn, type EvalItem } from '../evaluations/evalData';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   /** 개인 공간 */
@@ -167,10 +168,10 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
         {pending > 0 && <span className="text-slate-500">저장 중…</span>}
         <div className="ml-auto flex items-center gap-1">
           <button type="button" data-seat-student-record onClick={onOpenRecord} className={btn}>
-            🧑‍🎓 누가기록
+            <Glyph e="🧑‍🎓" /> 누가기록
           </button>
           <button type="button" data-seat-student-attendance onClick={onOpenAttendance} className={btn}>
-            📋 출석부
+            <Glyph e="📋" /> 출석부
           </button>
           <button
             type="button"
@@ -184,7 +185,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
           </button>
         </div>
       </div>
-      {student.note?.trim() && <p className="text-slate-500 -mt-2">📌 {student.note.trim()}</p>}
+      {student.note?.trim() && <p className="text-slate-500 -mt-2"><Glyph e="📌" /> {student.note.trim()}</p>}
 
       {!active ? (
         <p className="text-slate-500">전출한 학생입니다. 지난 기록은 누가기록에서 봅니다.</p>

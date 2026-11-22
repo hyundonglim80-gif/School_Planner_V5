@@ -7,6 +7,7 @@ import type { ItemDoc } from '../events/eventOps';
 import { askClaude } from './actions';
 import ClaudeRunPicker from './ClaudeRunPicker';
 import { useClaudeTagged } from './useClaudeThread';
+import { Glyph } from '../../ui/Icon';
 
 export default function ClaudeAskButton({ sid, item, dirty }: { sid: string; item: ItemDoc; dirty: boolean }) {
   const req = useClaudeRequests((s) => s.byId[item.id]);
@@ -15,7 +16,7 @@ export default function ClaudeAskButton({ sid, item, dirty }: { sid: string; ite
   if (item.claudeAskAt)
     return (
       <span data-note-claude-asked className="text-2xs font-bold text-violet-700" title="보냈습니다 - 곧 진행 표시가 뜹니다">
-        🤖 요청함
+        <Glyph e="🤖" /> 요청함
       </span>
     );
   if (!tagged || !(item.text ?? '').trim()) return null;
@@ -32,7 +33,7 @@ export default function ClaudeAskButton({ sid, item, dirty }: { sid: string; ite
         title={dirty ? '고친 것을 먼저 저장하세요 - 저장된 글을 보냅니다' : '저장된 메모 글을 Claude에게 보냅니다 (앞 요청이 있으면 차례를 기다립니다)'}
         className="px-3 py-2 text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        🤖 요청
+        <Glyph e="🤖" /> 요청
       </button>
       {/* 모델·노력 (11-08 사용자 요청) */}
       <ClaudeRunPicker />

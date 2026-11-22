@@ -1,6 +1,7 @@
 // 자리표 창의 🎯 발표자 뽑기 칸 (V4 components/SeatDrawPanel.tsx). 뽑기·저장은 useStudentDraw, 셈은 domain/draw.
 //   뽑힌 학생은 자리표에서도 짚는다(SeatingWindow가 그린다). 자리표가 없어도 학급 명렬표로 뽑는다.
 import { drawStatusLine, type DrawState, type DrawStatus } from '../../domain/draw';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   shown: string | null;
@@ -38,7 +39,7 @@ export default function SeatDrawBox({ shown, rolling, status, draw, nameFor, onP
           aria-disabled={rolling}
           className={`px-4 h-14 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 text-sm font-black cursor-pointer ${rolling ? 'opacity-60' : ''}`}
         >
-          🎯 뽑기
+          <Glyph e="🎯" /> 뽑기
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
@@ -46,13 +47,13 @@ export default function SeatDrawBox({ shown, rolling, status, draw, nameFor, onP
           {drawStatusLine(draw, status)}
         </span>
         <button type="button" data-draw-big-open onClick={onBig} className={btn}>
-          🔍 크게 보기
+          <Glyph e="🔍" /> 크게 보기
         </button>
         <button type="button" data-draw-undo onClick={onUndo} disabled={!canUndo} className={`${btn} disabled:opacity-40`} title="방금 뽑은 학생을 안 뽑힌 학생으로 되돌립니다">
-          ↩️ 되돌리기
+          <Glyph e="↩" /> 되돌리기
         </button>
         <button type="button" data-draw-new-round onClick={onNewRound} disabled={rolling || draw.picked.length === 0} className={`${btn} disabled:opacity-40`}>
-          🔄 새 판
+          <Glyph e="🔄" /> 새 판
         </button>
       </div>
       {visiblePicked.length > 0 && (

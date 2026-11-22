@@ -7,6 +7,7 @@ import { refreshHolidayYear } from '../../data/holidays';
 import { fetchGovHolidays, loadGovApiKey, loadHolidayYearStatus, saveGovApiKey, saveSharedHolidays, type HolidayYearStatus } from '../../data/govHolidays';
 import { todayStr } from '../../domain/dateUtils';
 import { Section } from './parts';
+import { Glyph } from '../../ui/Icon';
 
 const errText = (e: unknown) => String((e as { code?: string })?.code || (e as Error)?.message || e);
 const dayLabel = (ms: number) => {
@@ -97,7 +98,7 @@ export default function DevHolidaysSection() {
           onClick={() => void saveKey()}
           className="px-3 py-1.5 shrink-0 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-40"
         >
-          💾 저장
+          <Glyph e="💾" /> 저장
         </button>
       </div>
       <p className="text-[11px] text-slate-500 mt-1">admin/config에 들어갑니다(관리자만 읽음 - 소스·빌드에는 남지 않습니다).</p>
@@ -117,7 +118,7 @@ export default function DevHolidaysSection() {
                   {st.count}건{st.updatedAt > 0 && <span className="text-slate-500"> · {dayLabel(st.updatedAt)} 받음</span>}
                 </>
               ) : (
-                <span className="text-amber-600 font-bold">⚠️ 없음</span>
+                <span className="text-amber-600 font-bold"><Glyph e="⚠" /> 없음</span>
               )}
             </span>
             <button

@@ -7,6 +7,8 @@ import { useCurrentSpaceId, useSession } from '../../data/session';
 import type { GroupSpace } from '../../data/spaceChoice';
 import { CHAT_LIMITS, dmPairId, defaultRoomName } from '../../domain/chat';
 import { personName, type GroupPeople } from './people';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 /** 새 고른 사람 방 - 첫 글과 함께 만든다 */
 export interface RoomCreate {
@@ -66,13 +68,13 @@ export default function NewChat({ me, groups, people, onPick, onClose }: Props) 
           >
             {sorted.map((g) => (
               <option key={g.id} value={g.id}>
-                👥 {g.name || '공유 그룹'}
+                <Glyph e="👥" /> {g.name || '공유 그룹'}
               </option>
             ))}
           </select>
         ) : (
           <span data-chat-new-group={group?.id ?? ''} className="min-w-0 flex-1 truncate text-xs text-slate-500">
-            👥 {group?.name}
+            <Glyph e="👥" /> {group?.name}
           </span>
         )}
         <button type="button" data-chat-new-close onClick={onClose} title="새 대화 닫기" aria-label="새 대화 닫기" className="h-6 w-6 shrink-0 rounded-lg font-bold text-slate-500 hover:bg-slate-200 hover:text-slate-700 cursor-pointer">
@@ -101,7 +103,7 @@ export default function NewChat({ me, groups, people, onPick, onClose }: Props) 
                     on ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-primary hover:text-primary'
                   }`}
                 >
-                  {on ? '✓' : '👤'} {nameOf(uid)}
+                  {on ? '✓' : <Glyph e="👤" />} {nameOf(uid)}
                 </button>
               );
             })}
@@ -128,7 +130,7 @@ export default function NewChat({ me, groups, people, onPick, onClose }: Props) 
             onClick={start}
             className="self-end rounded-lg bg-primary px-3 py-1 text-xs font-bold text-white hover:bg-primary/90 disabled:opacity-40 cursor-pointer disabled:cursor-default"
           >
-            {chosenSorted.length >= 2 ? `💬 방 만들기 (${chosenSorted.length + 1}명)` : '💬 1:1 대화'}
+            {glyphText(chosenSorted.length >= 2 ? `💬 방 만들기 (${chosenSorted.length + 1}명)` : '💬 1:1 대화')}
           </button>
         </>
       )}

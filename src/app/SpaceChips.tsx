@@ -12,6 +12,8 @@ import { spaceTone } from '../domain/spaceColor';
 import { useLongPress } from '../ui/longPress';
 import { runFromButton } from './keys';
 import { shortcutTarget } from '../ui/shortcutTarget';
+import { Glyph } from '../ui/Icon';
+import { leadGlyph } from '../ui/glyphText';
 
 const CHIP = 'px-1.5 py-0.5 text-2xs sm:px-3 sm:py-1 sm:text-xs rounded-lg border transition-all whitespace-nowrap cursor-pointer';
 
@@ -56,7 +58,7 @@ export default function SpaceChips() {
         aria-label="공유 그룹 관리"
         className={`${CHIP} font-bold bg-white text-slate-500 border-slate-200 hover:bg-slate-50`}
       >
-        ⚙️
+        <Glyph e="⚙" />
       </button>
       {/* 겹쳐 보기를 보이는 글로 (P11-1 - '?'는 뜻을 몰랐다). 휴대폰은 설명서 - 자리가 없다 */}
       <span data-space-overlay-hint className="hidden xl:inline text-2xs text-slate-500 whitespace-nowrap">
@@ -91,7 +93,7 @@ function SpaceChip({ chip: c, main, overlaid, onPick, onToggle }: { chip: Chip; 
       style={overlaid ? spaceTone(c.sid) : undefined}
       className={`${CHIP} ${look} select-none`}
     >
-      <span className="block truncate max-w-32">{c.text}</span>
+      <span className="block truncate max-w-32">{leadGlyph(c.text)}</span>
     </button>
   );
 }

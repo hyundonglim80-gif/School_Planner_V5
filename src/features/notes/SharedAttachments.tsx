@@ -6,6 +6,7 @@ import { fileIcon, formatFileSize, isImageAttachment } from '../../domain/attach
 import { attachmentImageSrc } from '../../data/google/drive';
 import type { Attachment } from '../../data/types';
 import { openImageViewer } from '../../ui/imageViewerStore';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   items: readonly Attachment[];
@@ -46,7 +47,7 @@ export default function SharedAttachments({ items, onRemove, kind = 'chat' }: Pr
             </button>
             <div className="flex items-center justify-between gap-2 px-2.5 py-1.5 border-t border-slate-200">
               <span className="text-xs text-slate-500 truncate" title={att.name}>
-                🖼️ {att.name}
+                <Glyph e="🖼" /> {att.name}
                 {att.size ? ` · ${formatFileSize(att.size)}` : ''}
               </span>
               {remove(idx, '그림')}

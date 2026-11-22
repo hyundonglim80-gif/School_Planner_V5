@@ -11,6 +11,8 @@ import { ensureGcalMonths, pruneGcalCalendars, useGcalOverlay } from '../../data
 import { listCalendars } from '../../data/google/calendar';
 import { withGoogleToken } from '../../data/google/token';
 import { useSession } from '../../data/session';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 const LIST_REASON = '내 구글 캘린더 목록을 받으려면 구글 로그인이 필요합니다.';
 
@@ -97,7 +99,7 @@ export default function GcalOverlaySection() {
         aria-busy={listing}
         className="px-3 py-1.5 rounded-lg text-xs font-bold border bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary transition-colors cursor-pointer"
       >
-        {listing ? '받는 중...' : list ? '📋 목록 다시 받기' : '📋 내 캘린더 목록 받기'}
+        {glyphText(listing ? '받는 중...' : list ? '📋 목록 다시 받기' : '📋 내 캘린더 목록 받기')}
       </button>
 
       {rows.length > 0 && (
@@ -140,11 +142,11 @@ export default function GcalOverlaySection() {
             onClick={refresh}
             className="px-2 py-1 rounded-lg font-bold border bg-white text-slate-600 border-slate-200 hover:border-primary hover:text-primary transition-colors cursor-pointer"
           >
-            🔄 다시 받기
+            <Glyph e="🔄" /> 다시 받기
           </button>
           {shown?.needsLogin && (
             <span data-gcal-overlay-login className="basis-full text-amber-700">
-              구글 로그인이 끊겨 전에 받아 둔 일정을 보여 줍니다. 🔄 다시 받기를 누르면 로그인하고 새로 받습니다.
+              구글 로그인이 끊겨 전에 받아 둔 일정을 보여 줍니다. <Glyph e="🔄" /> 다시 받기를 누르면 로그인하고 새로 받습니다.
             </span>
           )}
           {shown?.error && !shown.needsLogin && (

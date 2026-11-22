@@ -11,6 +11,7 @@ import { apartInGroups, defaultGroupCount, groupColor, groupName, groupSetSummar
 import { parsePairKey, type SeatingChart } from '../../domain/seating';
 import { saveGroupSet } from './seatingData';
 import { pressKeys } from '../../ui/pressKeys';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   sid: string;
@@ -229,10 +230,10 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
           모둠
         </label>
         <button type="button" data-group-random onClick={makeRandom} className={btn}>
-          🎲 무작위로
+          <Glyph e="🎲" /> 무작위로
         </button>
         <button type="button" data-group-by-seat onClick={makeBySeat} className={btn} title="자리표에서 앞뒤 두 줄 × 짝씩 묶습니다 (모둠 수는 자리대로)">
-          🪑 자리대로 (앞뒤 넷씩)
+          <Glyph e="🪑" /> 자리대로 (앞뒤 넷씩)
         </button>
         {apart.length > 0 && <span className="text-slate-500">떨어뜨릴 학생 {apart.length}쌍은 다른 모둠으로</span>}
       </div>
@@ -261,7 +262,7 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
             {draft ? (
               <>
                 <button type="button" data-group-save onClick={() => void saveDraft()} disabled={busy} className="px-2.5 py-1 rounded-lg bg-primary text-white font-black cursor-pointer">
-                  💾 저장
+                  <Glyph e="💾" /> 저장
                 </button>
                 <button
                   type="button"
@@ -277,13 +278,13 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
               </>
             ) : (
               <button type="button" data-group-delete onClick={() => void deleteSelected()} disabled={busy} className="px-2 py-1 rounded-lg text-red-600 hover:bg-red-50 font-bold cursor-pointer">
-                🗑️ 지우기
+                <Glyph e="🗑" /> 지우기
               </button>
             )}
           </div>
           {together.length > 0 && (
             <p className="text-amber-700 font-bold" data-group-apart-warn>
-              ⚠️ 떨어뜨릴 학생이 같은 모둠:{' '}
+              <Glyph e="⚠" /> 떨어뜨릴 학생이 같은 모둠:{' '}
               {together
                 .map((k) => parsePairKey(k))
                 .filter((p): p is [string, string] => !!p)

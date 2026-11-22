@@ -8,6 +8,7 @@ import { useCommonSettings } from '../../app/prefs';
 import { audioContext, playAlarmChime, soundAllowed } from '../../app/sound';
 import { CHIME_EVERY_MS, chimeCount } from '../../domain/eventAlarm';
 import { useVisualViewport } from '../../ui/useVisualViewport';
+import { Glyph } from '../../ui/Icon';
 
 export interface RingingAlarm {
   id: string;
@@ -67,12 +68,12 @@ export default function EventAlarmPopup({ alarms, onDismiss }: { alarms: Ringing
     >
       <div className="relative w-full max-w-lg max-h-full overflow-y-auto rounded-[30px] border-8 border-yellow-300 p-8 text-center shadow-2xl sp5-alarm-content">
         <div className="text-7xl mb-5" aria-hidden>
-          ⏰
+          <Glyph e="⏰" />
         </div>
         <div className="space-y-4 mb-8">
           {alarms.map((a, i) => (
             <div key={a.id} data-alarm-item={a.id} className={i > 0 ? 'pt-4 border-t-2 border-dashed border-white/50' : ''}>
-              <p className="text-xl sm:text-2xl font-black text-white whitespace-pre-wrap leading-relaxed break-words">🚨 {a.text}</p>
+              <p className="text-xl sm:text-2xl font-black text-white whitespace-pre-wrap leading-relaxed break-words"><Glyph e="🚨" /> {a.text}</p>
             </div>
           ))}
         </div>
@@ -83,7 +84,7 @@ export default function EventAlarmPopup({ alarms, onDismiss }: { alarms: Ringing
             onClick={unblock}
             className="block mx-auto mb-3 px-5 py-2.5 text-lg font-black text-slate-900 bg-yellow-300 border-2 border-white rounded-xl hover:bg-yellow-200 cursor-pointer"
           >
-            🔔 소리 켜기
+            <Glyph e="🔔" /> 소리 켜기
           </button>
         )}
         {!muted && (
@@ -93,7 +94,7 @@ export default function EventAlarmPopup({ alarms, onDismiss }: { alarms: Ringing
             onClick={() => setMutedKey(ringKey)}
             className="block mx-auto mb-4 px-4 py-2 text-base font-bold text-white bg-black/30 border-2 border-white/70 rounded-xl hover:bg-black/40 cursor-pointer"
           >
-            🔇 소리 끄기
+            <Glyph e="🔇" /> 소리 끄기
           </button>
         )}
         <button

@@ -11,6 +11,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { claudeNoteText, claudeRunLabel, claudeTurnBadge, type ClaudeTurn } from '../../domain/claudeRequest';
 import { ClaudeBadgeChip } from './ClaudeRequestBadge';
 import { CLAUDE_NOTE_TONE } from './claudeTone';
+import { Glyph } from '../../ui/Icon';
 
 /** 맨 아래에서 이만큼 안이면 맨 아래를 보는 것으로 친다(px) */
 const NEAR_BOTTOM_PX = 80;
@@ -158,7 +159,7 @@ export default function ClaudeThread({ turns, onRefill }: { turns: ClaudeTurn[];
 
   return (
     <section ref={root} data-claude-thread={turns.length} className="space-y-2 border-t border-slate-100 pt-4">
-      <span className="block text-xs font-semibold text-slate-600">🤖 Claude와 주고받은 글</span>
+      <span className="block text-xs font-semibold text-slate-600"><Glyph e="🤖" /> Claude와 주고받은 글</span>
       <ol className="space-y-3">
         {turns.map((t) => (
           <Turn key={t.n} turn={t} onRefill={onRefill} />

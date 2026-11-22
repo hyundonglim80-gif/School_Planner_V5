@@ -31,6 +31,8 @@ import TermsTab from './TermsTab';
 import { applyOps, cleanGrid, draftOf, firstTimetable, gridIsEmpty, sameGrid, savedCopies, savedCopyOps, timetableOps, type ApplyMode, type TimetableDraft } from './timetableDraft';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import { useTabTarget } from '../../app/keys';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 export type TimetableTab = 'teaching' | 'grid' | 'periods' | 'terms';
 
@@ -335,7 +337,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
             title="새 학급·시간표·방학·담임반을 새 학년도에 맞춥니다"
             className="px-2.5 py-1.5 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
           >
-            🌱 새 학년도
+            <Glyph e="🌱" /> 새 학년도
           </button>
           {/* 진도는 시간표 칸 글자마다 센다 - 시간표를 만지다 바로 갈 수 있게 (V4 그대로) */}
           <button
@@ -346,7 +348,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
             title="과목마다 차시 목록을 붙여 넣고 시간표를 따라 몇 차시인지 봅니다"
             className="px-2.5 py-1.5 bg-white hover:bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
           >
-            📘 진도 관리
+            <Glyph e="📘" /> 진도 관리
           </button>
         </>
       }
@@ -365,7 +367,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
             disabled={saving}
             className="px-5 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
           >
-            💾 {saving ? '저장 중...' : '저장'}
+            <Glyph e="💾" /> {saving ? '저장 중...' : '저장'}
           </button>
         </>
       }
@@ -385,7 +387,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
                 tab === t.id ? 'bg-blue-50 text-blue-700 border border-blue-300' : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-transparent'
               }`}
             >
-              {t.label}
+              {glyphText(t.label)}
             </button>
           ))}
         </div>

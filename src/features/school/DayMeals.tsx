@@ -4,6 +4,7 @@
 import { schoolEventTitle } from '../../domain/schoolSetting';
 import { openSchoolEvent } from './open';
 import { useDayMeals, useSchoolSchedule } from './school';
+import { Glyph } from '../../ui/Icon';
 
 const ALLERGY_NAMES = ['', '난류', '우유', '메밀', '땅콩', '대두', '밀', '고등어', '게', '새우', '돼지고기', '복숭아', '토마토', '아황산류', '호두', '닭고기', '쇠고기', '오징어', '조개류', '잣'];
 
@@ -15,7 +16,7 @@ export default function DayMeals({ date }: { date: string }) {
   if (meals.length === 0 && events.length === 0) {
     return failed ? (
       <p className="mt-3 text-xs text-slate-500" data-day-meals-failed>
-        🍚 급식을 불러오지 못했습니다. 잠시 뒤 다시 열어 보세요.
+        <Glyph e="🍚" /> 급식을 불러오지 못했습니다. 잠시 뒤 다시 열어 보세요.
       </p>
     ) : null;
   }
@@ -23,7 +24,7 @@ export default function DayMeals({ date }: { date: string }) {
     <div className="mt-3 rounded-xl border border-orange-100 bg-orange-50/60 px-3 py-2 space-y-1">
       {events.length > 0 && (
         <div data-day-school-events className="flex gap-2 text-xs leading-relaxed">
-          <span className="shrink-0 font-bold text-teal-700">📚 학사</span>
+          <span className="shrink-0 font-bold text-teal-700"><Glyph e="📚" /> 학사</span>
           <button
             type="button"
             data-day-school-event-open
@@ -38,7 +39,7 @@ export default function DayMeals({ date }: { date: string }) {
       <div data-day-meals={meals.length > 0 ? meals.length : undefined} className="space-y-1">
         {meals.map((m) => (
           <div key={m.kind} data-day-meal={m.kind} className="flex gap-2 text-xs leading-relaxed" title={m.calories ? `${m.kind} ${m.calories}` : m.kind}>
-            <span className="shrink-0 font-bold text-orange-700">🍚 {m.kind}</span>
+            <span className="shrink-0 font-bold text-orange-700"><Glyph e="🍚" /> {m.kind}</span>
             <p className="min-w-0 text-slate-700">
               {m.dishes.map((d, i) => (
                 <span key={i}>

@@ -8,6 +8,7 @@ import * as keys from './keys';
 import { useSession } from '../data/session';
 import { useMySpaces, useSpaceChoice, useSpaceOverlay } from '../data/spaceChoice';
 import { spaceHue } from '../domain/spaceColor';
+import { textWithGlyphs } from '../ui/glyphText';
 
 vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 
@@ -27,7 +28,7 @@ describe('공간 칩 줄 (P17-1)', () => {
     const { container } = render(<SpaceChips />);
     expect(container.querySelector('[data-space-chips]')).toBeNull();
     act(() => useMySpaces.setState({ groups: [group('g_a', '협의회'), group('g_b', '5학년')], loaded: true }));
-    expect([...container.querySelectorAll<HTMLElement>('[data-space-chip]')].map((b) => b.textContent)).toEqual(['🔒 개인', '👥 협의회', '👥 5학년']);
+    expect([...container.querySelectorAll<HTMLElement>('[data-space-chip]')].map((b) => textWithGlyphs(b))).toEqual(['🔒 개인', '👥 협의회', '👥 5학년']);
     expect(container.querySelector('[data-space-chip-manage]')).not.toBeNull();
   });
 
@@ -84,7 +85,7 @@ describe('겹쳐 보기 칩 (P17-2)', () => {
     expect(overlaid(container)).toEqual(['g_a', 'g_b']);
     expect(pressed(container)).toEqual(['u_u1']);
     // ✓·점 없이 글자는 그대로, 배경·테두리 = 그 공간 색 (다크 모드가 바꾸는 색 변수 - 11-02 사용자)
-    expect(chip(container, 'g_a').textContent).toBe('👥 협의회');
+    expect(textWithGlyphs(chip(container, 'g_a'))).toBe('👥 협의회');
     expect(chip(container, 'g_a').getAttribute('style')).toContain(`--color-${spaceHue('g_a')}-100`);
     expect(chip(container, 'u_u1').getAttribute('style')).toBeNull();
     fireEvent.click(chip(container, 'u_u1'), { ctrlKey: true });

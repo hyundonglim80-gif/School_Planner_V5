@@ -8,6 +8,7 @@ import { closeImageViewer, stepImageViewer, useImageViewer } from './imageViewer
 import { useBackdropClose } from './useBackdropClose';
 import { useBodyScrollLock } from './useBodyScrollLock';
 import { useVisualViewport } from './useVisualViewport';
+import { Glyph } from './Icon';
 
 /** 이만큼 옆으로 밀면 넘긴다 (px) */
 const SWIPE_PX = 50;
@@ -62,7 +63,7 @@ export default function ImageViewer() {
       >
         <div className="flex items-center justify-between gap-2 text-white">
           <span className="text-xs font-bold truncate" title={current.name} data-image-viewer-title>
-            🖼️ {current.name || '첨부 이미지'}
+            <Glyph e="🖼" /> {current.name || '첨부 이미지'}
             {many ? ` (${index + 1}/${images.length})` : ''}
           </span>
           <div className="flex items-center gap-2 shrink-0">

@@ -25,6 +25,7 @@ import { readNoticeLines } from '../../domain/notices';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { printNode } from '../../ui/print';
 import { useLessonsFor } from '../lessons/useLessons';
+import { Glyph } from '../../ui/Icon';
 
 export interface WeeklyGuideParams {
   /** 처음 보일 주의 아무 날 (없으면 다음 주) */
@@ -160,10 +161,10 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
           </button>
           <div className="ml-auto flex items-center gap-1.5">
             <button type="button" data-guide-copy onClick={() => void copy()} className={btn}>
-              📋 표 복사
+              <Glyph e="📋" /> 표 복사
             </button>
             <button type="button" data-guide-print onClick={print} className={btn}>
-              🖨️ 인쇄
+              <Glyph e="🖨" /> 인쇄
             </button>
           </div>
         </div>
@@ -250,7 +251,7 @@ export default function WeeklyGuideWindow({ params, close, raise }: WindowProps<
             </tbody>
           </table>
         </div>
-        {emptyWeek && <p className="text-2xs text-amber-700 font-bold" data-guide-empty>이 주에 수업 칸이 비어 있습니다. ⏰ 시간표 창에서 시간표를 만들거나 다른 주를 고릅니다.</p>}
+        {emptyWeek && <p className="text-2xs text-amber-700 font-bold" data-guide-empty>이 주에 수업 칸이 비어 있습니다. <Glyph e="⏰" /> 시간표 창에서 시간표를 만들거나 다른 주를 고릅니다.</p>}
         <p className="text-2xs text-slate-500">
           지금 보는 공간의 수업 칸(과목·비고(준비물))을 읽기만 합니다. 고치려면 그날 하루 화면에서 고칩니다 - 열어 둔 채로 고쳐도 표가 따라옵니다. 인쇄 창에서 'PDF로 저장'을 고르면 PDF가 됩니다.
         </p>

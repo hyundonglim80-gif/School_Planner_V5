@@ -5,6 +5,7 @@ import type { MouseEvent } from 'react';
 import { chatTime, type ChatMsg } from '../../domain/chat';
 import { useLongPress } from '../../ui/longPress';
 import SharedAttachments from '../notes/SharedAttachments';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   msg: ChatMsg;
@@ -64,7 +65,7 @@ export default function ChatMsgRow({ msg, mine, head, time, unseen, onDelete }: 
                 aria-label="이 글 지우기"
                 className="rounded px-0.5 text-xs opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 hover:bg-red-50 pointer-coarse:hidden cursor-pointer"
               >
-                🗑️
+                <Glyph e="🗑" />
               </button>
             )}
             {unseen && (

@@ -26,6 +26,7 @@ import EvalCountBadge from '../evaluations/EvalCountBadge';
 import { pressKeys } from '../../ui/pressKeys';
 import { gcalKey, type GcalBarItem, type GcalShown } from '../../domain/gcalShow';
 import { GcalBar, GcalLine } from '../gcal/GcalItems';
+import { Glyph } from '../../ui/Icon';
 
 const WEEKDAYS = [
   { name: '일', color: 'text-red-500' },
@@ -171,7 +172,7 @@ export default function MonthGrid(p: MonthGridProps) {
                               aria-label={`메모 ${notes}건 보기`}
                               className="inline-flex items-center gap-px px-1 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-2xs font-bold leading-none hover:bg-amber-100 transition-colors shrink-0 cursor-pointer"
                             >
-                              <span aria-hidden>📝</span>
+                              <span aria-hidden><Glyph e="📝" /></span>
                               <span>{notes}</span>
                             </button>
                           )}
@@ -264,7 +265,7 @@ export default function MonthGrid(p: MonthGridProps) {
                                   className="inline-flex align-middle ml-1 bg-yellow-100 text-yellow-800 text-2xs px-1 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 cursor-pointer"
                                   title={`링크된 항목 ${links}개`}
                                 >
-                                  🔗 {links}
+                                  <Glyph e="🔗" /> {links}
                                 </button>
                               )}
                               {!p.multiOn && !p.compact && !space && (

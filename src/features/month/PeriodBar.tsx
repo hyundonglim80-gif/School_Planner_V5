@@ -10,6 +10,7 @@ import { eventDragProps } from '../events/drag';
 import EventDoneChip from '../events/EventDoneChip';
 import { doneAll, doneOnDay, type ItemDoc } from '../events/eventOps';
 import { pressKeys } from '../../ui/pressKeys';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   bar: WeekBar<ItemDoc>;
@@ -135,7 +136,7 @@ export default function PeriodBar({ bar, space, label, compact, multiOn, picked,
             className="pointer-events-auto shrink-0 bg-yellow-100 text-yellow-800 text-2xs leading-none px-1 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 cursor-pointer"
             title={`링크된 항목 ${links}개`}
           >
-            🔗 {links}
+            <Glyph e="🔗" /> {links}
           </button>
         )}
         {!bar.endsPeriod && <span className="ml-auto shrink-0 opacity-60">▸</span>}

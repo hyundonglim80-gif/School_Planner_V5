@@ -5,6 +5,7 @@ import { showErrorToast, showToast } from '../../app/toast';
 import { deleteErrorReports, loadErrorReports } from '../../data/errorReport';
 import { groupErrors, type ErrorGroup } from '../../domain/errorReport';
 import { Section } from './parts';
+import { Glyph } from '../../ui/Icon';
 
 const KIND_LABEL: Record<ErrorGroup['kind'], string> = { error: '오류', rejection: '약속 거절', react: '그리기', toast: '안내' };
 
@@ -68,7 +69,7 @@ export default function DevErrorsSection() {
           onClick={() => void load()}
           className="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-600 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-50"
         >
-          🔄 새로 읽기
+          <Glyph e="🔄" /> 새로 읽기
         </button>
         <button
           type="button"
@@ -77,7 +78,7 @@ export default function DevErrorsSection() {
           onClick={() => void clearAll()}
           className="px-3 py-1.5 bg-white border border-red-200 hover:border-red-300 text-red-500 rounded-lg text-xs font-bold cursor-pointer disabled:opacity-40"
         >
-          🗑️ 모두 지우기
+          <Glyph e="🗑" /> 모두 지우기
         </button>
       </div>
       {failed && (

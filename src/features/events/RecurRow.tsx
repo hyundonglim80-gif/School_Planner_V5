@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { DAY_NAMES, shortDateLabel } from '../../domain/dateUtils';
 import { BY_WEEKDAY, MAX_SERIES_ITEMS, recurFormDates, toggleKind, toggleWeekday, type RecurForm, type RecurKind } from '../../domain/recur';
+import { Glyph } from '../../ui/Icon';
 
 /** 월 ~ 일 (학교 달력처럼 월요일부터) */
 const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -37,7 +38,7 @@ export default function RecurRow({ start, end, recur, onChange }: { start: strin
     <div data-event-recur-row={recur.kind} className="bg-purple-50/50 border border-purple-100 p-2.5 rounded-xl space-y-2">
       <div className="flex items-center gap-1 flex-wrap">
         <span className="text-xs font-bold text-slate-600 mr-1" title="고르면 시작 날부터 끝 날까지 그 요일에만 일정을 만듭니다">
-          🔁 요일만
+          <Glyph e="🔁" /> 요일만
         </span>
         {BY_WEEKDAY.has(recur.kind) &&
           WEEK_ORDER.map((w) => {

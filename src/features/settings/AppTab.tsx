@@ -6,6 +6,7 @@ import { showErrorToast, showToast } from '../../app/toast';
 import { useMirror } from '../../data/mirror/store';
 import { resetMirror } from '../../data/mirror/sync';
 import { Section } from './parts';
+import { Glyph } from '../../ui/Icon';
 
 /** 이 기기 사본: 어디에 두나(IndexedDB / 메모리로만)·몇 개 - 다시 받기 */
 function MirrorSection() {
@@ -44,7 +45,7 @@ function MirrorSection() {
         onClick={() => void run()}
         className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 cursor-pointer disabled:opacity-50"
       >
-        🔄 이 기기 사본 다시 받기
+        <Glyph e="🔄" /> 이 기기 사본 다시 받기
       </button>
     </Section>
   );
@@ -66,7 +67,7 @@ export default function AppTab() {
           onClick={() => void installApp()}
           className="px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 cursor-pointer"
         >
-          📱 앱으로 설치
+          <Glyph e="📱" /> 앱으로 설치
         </button>
         {standalone && <p className="text-xs text-emerald-600 font-bold mt-2">지금 설치한 앱으로 열려 있습니다.</p>}
       </Section>

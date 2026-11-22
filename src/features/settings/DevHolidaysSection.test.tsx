@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, fireEvent, waitFor } from '@testing-library/react';
 import DevHolidaysSection from './DevHolidaysSection';
+import { textWithGlyphs } from '../../ui/glyphText';
 
 // 개발자 탭 공휴일 (P14-3 ■2) - 서버·특일정보는 가짜, 날은 2026-10-29
 
@@ -56,7 +57,7 @@ describe('개발자 탭 공휴일', () => {
     await waitFor(() => expect(row(2028)).toBeInTheDocument());
     expect(row(2026)).toHaveTextContent('20건 · 10/29 받음');
     expect(row(2026).querySelector('[data-dev-holiday-fetch]')).toHaveTextContent('다시 받기');
-    expect(row(2027)).toHaveTextContent('⚠️ 없음');
+    expect(textWithGlyphs(row(2027))).toContain('⚠ 없음');
     expect(row(2027).querySelector('[data-dev-holiday-fetch]')).toHaveTextContent('받기');
     await waitFor(() => expect(q('[data-dev-holidays-key]')).toHaveValue('KEY'));
   });

@@ -7,6 +7,7 @@ import { allNotes, labelsOf, useDocs } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import { Section } from '../settings/parts';
 import { keepResultText, runKeepImport, useKeepInbox } from './keep';
+import { Glyph } from '../../ui/Icon';
 
 export default function KeepImportSection() {
   const sid = useCurrentSpaceId();
@@ -148,7 +149,7 @@ export default function KeepImportSection() {
             disabled={!!busy}
             className="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-40 cursor-pointer"
           >
-            📂 {batches.length > 0 ? 'Keep 파일 더 고르기' : 'Keep 파일 고르기'}
+            <Glyph e="📂" /> {batches.length > 0 ? 'Keep 파일 더 고르기' : 'Keep 파일 고르기'}
           </button>
           <input
             ref={fileRef}
@@ -221,7 +222,7 @@ export default function KeepImportSection() {
                 {picked.slice(0, 20).map((n, i) => (
                   <div key={i} data-keep-preview-item className="px-3 py-2">
                     <p className="text-xs text-slate-800 whitespace-pre-wrap line-clamp-2">{n.content}</p>
-                    {n.labels.length > 0 && options.keepLabels && <p className="text-xs text-slate-500 mt-0.5">🏷️ {n.labels.join(', ')}</p>}
+                    {n.labels.length > 0 && options.keepLabels && <p className="text-xs text-slate-500 mt-0.5"><Glyph e="🏷" /> {n.labels.join(', ')}</p>}
                   </div>
                 ))}
                 {picked.length > 20 && <p className="px-3 py-2 text-xs text-slate-500">… 그리고 {picked.length - 20}건 더</p>}
@@ -240,7 +241,7 @@ export default function KeepImportSection() {
         )}
         {result && (
           <p data-keep-result className="text-xs font-bold text-emerald-700">
-            ✅ {result}
+            <Glyph e="✅" /> {result}
           </p>
         )}
       </div>

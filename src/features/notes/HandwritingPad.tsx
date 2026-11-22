@@ -41,6 +41,7 @@ import {
 } from '../../domain/handwriting';
 import { useBodyScrollLock } from '../../ui/useBodyScrollLock';
 import { useVisualViewport } from '../../ui/useVisualViewport';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   /** 그리던 것 (다시 열면 이어 그린다) */
@@ -499,7 +500,7 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
     >
       {/* 머리: 이름 · 닫기 · 💾 저장 / 도구. 좁은 화면은 닫기·저장이 이름과 첫 줄에, 도구는 아랫줄 (10-28 - 저장·닫기가 도구 줄 끝에 묻혔다) */}
       <div className="shrink-0 flex flex-wrap items-center gap-x-1.5 gap-y-2 px-3 py-2 bg-white border-b border-slate-200">
-        <span className="order-1 text-sm font-black text-slate-800 mr-1">✏️ 손글씨</span>
+        <span className="order-1 text-sm font-black text-slate-800 mr-1"><Glyph e="✏" /> 손글씨</span>
         <div className="order-2 md:order-3 ml-auto flex items-center gap-1.5">
           <button type="button" data-pen-close onClick={onClose} className="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 cursor-pointer" title="닫기 - 그리던 것은 남습니다. 다시 열면 이어 그립니다">
             닫기
@@ -512,7 +513,7 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
             className="px-3.5 py-1.5 rounded-lg text-xs font-black text-white bg-primary hover:bg-blue-600 cursor-pointer disabled:opacity-50"
             title="그린 것을 그림으로 바꿔 이 메모에 첨부하고 메모를 저장합니다 (구글 드라이브, Ctrl+S)"
           >
-            💾 저장
+            <Glyph e="💾" /> 저장
           </button>
         </div>
         <div className="order-3 md:order-2 w-full md:w-auto md:flex-1 flex flex-wrap items-center gap-1.5">
@@ -552,7 +553,7 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
             ))}
           </div>
           <button type="button" data-pen-eraser data-on={eraser ? '' : undefined} onClick={() => setEraser((v) => !v)} className={tool(eraser)} title="지우개 - 펜 옆 단추를 누른 채 그어도 지웁니다">
-            🧽 지우개
+            <Glyph e="🧽" /> 지우개
           </button>
           <div className="flex items-center gap-0.5" role="group" aria-label="크게·작게 보기">
             <button type="button" data-pen-zoom-out onClick={() => zoomBy(1 / ZOOM_STEP)} disabled={scale <= ZOOM_MIN} className={`${tool(false)} w-8 px-0 disabled:opacity-40`} title="작게 보기 (Ctrl+−)" aria-label="작게 보기">
@@ -570,7 +571,7 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
               ↶ 되돌리기
             </button>
             <button type="button" data-pen-clear onClick={clearAll} disabled={count === 0} className={`${tool(false)} disabled:opacity-40`} title="모두 지우기">
-              🗑️ 모두
+              <Glyph e="🗑" /> 모두
             </button>
           </div>
         </div>

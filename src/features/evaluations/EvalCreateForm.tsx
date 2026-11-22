@@ -25,6 +25,7 @@ import { useTeaching } from '../lessons/teaching';
 import { useClassHub } from '../seating/seatingData';
 import { createEvaluations, type NewEval } from './evalData';
 import { useCourseEvalTargets } from './useCourseTargets';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   /** 저장할 공간 (창을 연 공간) */
@@ -318,11 +319,11 @@ export default function EvalCreateForm({ sid, date, place, slot, onCreated }: Pr
                   <option value="">번호 차례로 나누기</option>
                   {hub.groupSets.map((g) => (
                     <option key={g.id} value={g.id}>
-                      🪑 저장한 모둠: {g.name} ({groupSetSummary(g.groups)})
+                      <Glyph e="🪑" /> 저장한 모둠: {g.name} ({groupSetSummary(g.groups)})
                     </option>
                   ))}
                 </select>
-                {hub.groupSets.length === 0 && <p className="text-2xs text-slate-500 mt-1">학급 화면 → 🪑 자리표 → 👥 모둠에서 나눠 저장한 모둠을 여기서 불러 씁니다.</p>}
+                {hub.groupSets.length === 0 && <p className="text-2xs text-slate-500 mt-1">학급 화면 → <Glyph e="🪑" /> 자리표 → <Glyph e="👥" /> 모둠에서 나눠 저장한 모둠을 여기서 불러 씁니다.</p>}
               </div>
               {chosenSet ? (
                 <p className="text-2xs text-slate-500 leading-relaxed" data-eval-group-preview>

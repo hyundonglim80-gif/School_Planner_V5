@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
 import { MAX_PHRASE_LENGTH, addPhrase } from '../../domain/observationPhrases';
+import { glyphText } from '../../ui/glyphText';
 
 interface Props {
   onPick: (phrase: string) => void;
@@ -84,7 +85,7 @@ export default function ObservationPhrases({ onPick, disabled }: Props) {
         aria-pressed={editing}
         className="px-2 py-0.5 rounded-full text-2xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
       >
-        {editing ? '✓ 다 고침' : '✏️ 문구'}
+        {glyphText(editing ? '✓ 다 고침' : '✏️ 문구')}
       </button>
     </div>
   );

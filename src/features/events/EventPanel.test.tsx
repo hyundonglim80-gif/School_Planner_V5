@@ -15,6 +15,7 @@ import { clearUndo, undoLast } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
 import EventPanel from './EventPanel';
 import type { EventPanelParams } from './open';
+import { textWithGlyphs } from '../../ui/glyphText';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 const written = vi.hoisted(() => ({ batches: [] as WriteOp[][], hold: null as null | Promise<void> }));
@@ -534,7 +535,7 @@ describe('겹쳐 보기 중 칸 머리 (P17-2)', () => {
     expect(document.querySelector('[data-event-panel-space]')).toBeNull();
     act(() => useSpaceOverlay.setState({ uid: 'me', sids: ['g_a'] }));
     expect(q('[data-event-panel-space]').dataset.eventPanelSpace).toBe(SID);
-    expect(q('[data-event-panel-space]').textContent).toBe('🔒 개인');
+    expect(textWithGlyphs(q('[data-event-panel-space]'))).toBe('🔒 개인');
     expect(q('[data-event-panel]').textContent).not.toContain('일정 · 개인');
   });
   it('그룹 칸은 👥 공유 · 그룹 이름 (그룹이 주 공간, 개인을 겹쳐 볼 때)', () => {
@@ -544,6 +545,6 @@ describe('겹쳐 보기 중 칸 머리 (P17-2)', () => {
     trackColl('g_a', 'items');
     setStatus('g_a', 'items', 'live');
     render(<Host initial={{ sid: 'g_a', date: DAY }} />);
-    expect(q('[data-event-panel-space]').textContent).toBe('👥 공유 · 협의회');
+    expect(textWithGlyphs(q('[data-event-panel-space]'))).toBe('👥 공유 · 협의회');
   });
 });

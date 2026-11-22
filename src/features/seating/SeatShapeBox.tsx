@@ -4,6 +4,7 @@ import { showToast } from '../../app/toast';
 import type { Stored } from '../../data/types';
 import { GROUP_COL_CHOICES, MAX_COLS, MAX_ROWS, numberOrderSeats, resizeChart, unseatedNums, type SeatStudent, type SeatingChart } from '../../domain/seating';
 import { deleteChart, updateChart } from './seatingData';
+import { Glyph } from '../../ui/Icon';
 
 const GROUP_COL_LABEL: Record<number, string> = { 0: '통로 없음', 1: '한 칸씩', 2: '두 칸 (짝)', 3: '세 칸' };
 
@@ -132,10 +133,10 @@ export default function SeatShapeBox({ sid, chart, stored, active, onDeleted }: 
           onClick={() => save({ seats: numberOrderSeats(chart, active).seats }, '🔢 번호 차례로 앉혔습니다.')}
           className="px-2 py-1 rounded-lg bg-white border border-slate-200 font-bold cursor-pointer"
         >
-          🔢 번호 차례로 앉히기
+          <Glyph e="🔢" /> 번호 차례로 앉히기
         </button>
         <button type="button" data-seating-delete onClick={() => void remove()} disabled={busy} className="ml-auto px-2 py-1 rounded-lg text-red-600 hover:bg-red-50 font-bold cursor-pointer">
-          🗑️ 이 자리표 지우기
+          <Glyph e="🗑" /> 이 자리표 지우기
         </button>
       </div>
     </div>

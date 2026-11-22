@@ -52,6 +52,7 @@ import { isShortcutId } from '../../domain/shortcuts';
 import { pressKeys } from '../../ui/pressKeys';
 import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
 import { Glyph } from '../../ui/Icon';
+import { leadGlyph } from '../../ui/glyphText';
 
 // 🔔 수업 종 설정은 머리의 '종' 단추로 펼 때 받는다 (P49-3 첫 화면 JS - 끊겨서 못 받으면 판 없이)
 const BellSettings = lazyWithReload(() => import('../bell/BellSettings'), () => null);
@@ -187,7 +188,7 @@ export default function DayLessons({ date }: { date: string }) {
           </button>
           {offText && (
             <span data-lessons-off={view.off} className="whitespace-nowrap text-2xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100" title="이날은 시간표 수업이 없습니다 (그날 따로 적은 과목은 보입니다)">
-              {offText}
+              {leadGlyph(offText)}
             </span>
           )}
           {!collapsed &&
@@ -518,7 +519,7 @@ export default function DayLessons({ date }: { date: string }) {
                         title={`지난 시간 비고 - 누르면 ${shortDateLabel(prev.date)}로 갑니다`}
                         className={`self-start max-w-full truncate text-left text-xs text-slate-500 hover:text-primary hover:underline cursor-pointer ${mark || c.note ? 'mb-1.5' : ''}`}
                       >
-                        ⏪ 지난 시간 {shortDateLabel(prev.date)} {prev.period}교시: <span className="text-slate-700">{prevNote}</span>
+                        <Glyph e="⏪" /> 지난 시간 {shortDateLabel(prev.date)} {prev.period}교시: <span className="text-slate-700">{prevNote}</span>
                       </button>
                     )}
 

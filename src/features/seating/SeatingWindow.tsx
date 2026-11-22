@@ -45,6 +45,8 @@ import SeatStudentCard from './SeatStudentCard';
 import { createChart, saveShuffled, updateChart, useClassHub, useSeatingCharts } from './seatingData';
 import { useStudentDraw } from './useStudentDraw';
 import { openStudentRecord } from '../studentRecord/open';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 /** 학급마다 마지막에 본 자리표 (이 기기) */
 const CHART_KEY = 'sp5-seating-chart';
@@ -351,12 +353,12 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
         )}
         {locked && (
           <span className="absolute top-0.5 right-1 text-2xs" aria-label="고정">
-            🔒
+            <Glyph e="🔒" />
           </span>
         )}
         {warn.has(key) && (
           <span className="absolute top-0.5 left-1 text-2xs" aria-label="떨어뜨릴 학생이 붙어 있음">
-            ⚠️
+            <Glyph e="⚠" />
           </span>
         )}
         {drawn && (
@@ -404,7 +406,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
         ) : (
           <>
             <button type="button" data-seat-action="lock" className={btn} onClick={() => act({ locked: toggleKey(chart.locked, key, !locked) })}>
-              {locked ? '🔓 고정 풀기' : '🔒 고정'}
+              {glyphText(locked ? '🔓 고정 풀기' : '🔒 고정')}
             </button>
             {id !== undefined && (
               <button type="button" data-seat-action="clear" className={btn} onClick={() => act({ seats: clearSeat(chart.seats, key) })}>
@@ -438,7 +440,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
     <ModalShell isOpen onClose={askClose} raise={raise} width="2xl" title="🪑 자리표" footer={<ModalCloseButton onClose={askClose} />}>
       {classes.length === 0 && !waiting ? (
         <p className="text-center text-slate-500 py-8 text-sm" data-seating-no-class>
-          명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.
+          명렬표가 없습니다. 학급 화면 → <Glyph e="🧑‍🤝‍🧑" /> 명렬표에서 학급과 학생을 먼저 넣어 주세요.
         </p>
       ) : (
         <div className="flex flex-col gap-3 text-sm" data-seating-window={classId ?? ''}>
@@ -478,10 +480,10 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
             )}
             <div className="ml-auto flex items-center gap-1.5">
               <button type="button" data-seating-tool="groups" onClick={() => togglePanel('groups')} aria-pressed={groupsOn} disabled={!classId} className={toolBtn(groupsOn)}>
-                👥 모둠
+                <Glyph e="👥" /> 모둠
               </button>
               <button type="button" data-seating-tool="draw" onClick={() => togglePanel('draw')} aria-pressed={drawOn} disabled={!classId} className={toolBtn(drawOn)}>
-                🎯 발표자 뽑기
+                <Glyph e="🎯" /> 발표자 뽑기
               </button>
             </div>
           </div>
@@ -539,7 +541,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
             <>
               <div className="flex flex-wrap items-center gap-1.5">
                 <button type="button" data-seating-tool="shuffle" onClick={() => void shuffle()} disabled={busy} className={toolBtn(false)}>
-                  🎲 섞기
+                  <Glyph e="🎲" /> 섞기
                 </button>
                 <button
                   type="button"
@@ -552,13 +554,13 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                   aria-pressed={editMode}
                   className={toolBtn(editMode)}
                 >
-                  ✏️ 자리 고치기
+                  <Glyph e="✏" /> 자리 고치기
                 </button>
                 <button type="button" data-seating-tool="shape" onClick={() => togglePanel('shape')} aria-pressed={panel === 'shape'} className={toolBtn(panel === 'shape')}>
-                  ⚙️ 모양
+                  <Glyph e="⚙" /> 모양
                 </button>
                 <button type="button" data-seating-tool="apart" onClick={() => togglePanel('apart')} aria-pressed={panel === 'apart'} className={toolBtn(panel === 'apart')}>
-                  🚫 떨어뜨릴 학생 {hub.apart.length > 0 && hub.apart.length}
+                  <Glyph e="🚫" /> 떨어뜨릴 학생 {hub.apart.length > 0 && hub.apart.length}
                 </button>
               </div>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
@@ -571,7 +573,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                   <input type="checkbox" data-shuffle-opt="mixGender" checked={shuffleOpts.mixGender} onChange={(e) => setShuffleOpt('mixGender', e.target.checked)} />
                   남녀 짝
                 </label>
-                <span className="text-slate-500">🔒 고정 칸은 그대로</span>
+                <span className="text-slate-500"><Glyph e="🔒" /> 고정 칸은 그대로</span>
               </div>
 
               {panel === 'shape' && sid && chartStored && <SeatShapeBox sid={sid} chart={chart} stored={chartStored} active={seatStudents} onDeleted={() => setPanel(null)} />}
@@ -580,7 +582,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
               {editMode && <div className="rounded-lg bg-indigo-50/60 px-3 py-2">{seatActions()}</div>}
               {warn.size > 0 && (
                 <p className="text-xs text-amber-700 font-bold" data-seating-warn={warn.size}>
-                  ⚠️ 떨어뜨릴 학생이 붙어 앉아 있습니다. 섞거나 끌어서 떼어 주세요.
+                  <Glyph e="⚠" /> 떨어뜨릴 학생이 붙어 앉아 있습니다. 섞거나 끌어서 떼어 주세요.
                 </p>
               )}
               {!editMode && sid && cls && focusStudent && (

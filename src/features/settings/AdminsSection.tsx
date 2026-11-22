@@ -7,6 +7,7 @@ import { loadAdmins, updateAdmins } from '../../data/admins';
 import { useSession } from '../../data/session';
 import { ADD_ADMIN_REASON, addAdminEmail, BASE_ADMIN_EMAILS, normalizeAdminEmail, removeAdminEmail } from '../../domain/admins';
 import { Section } from './parts';
+import { Glyph } from '../../ui/Icon';
 
 const errText = (e: unknown) => String((e as { code?: string })?.code || (e as Error)?.message || e);
 
@@ -73,7 +74,7 @@ export default function AdminsSection() {
           <div key={email} data-admin-row={email} data-admin-base className={row}>
             <span className="text-xs font-bold text-slate-700 flex-1 min-w-0 truncate">{email}</span>
             <span className="text-[11px] text-slate-500 shrink-0" title="기본 관리자는 뺄 수 없습니다">
-              🔒 기본
+              <Glyph e="🔒" /> 기본
             </span>
           </div>
         ))}

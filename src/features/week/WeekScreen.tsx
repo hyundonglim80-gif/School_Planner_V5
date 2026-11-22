@@ -20,6 +20,8 @@ import LastYearDay from './LastYearDay';
 import { toggleLastYear, useShowLastYear } from './prefs';
 import { useWeekCards } from './useWeekCards';
 import { shortcutTarget } from '../../ui/shortcutTarget';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 export default function WeekScreen({ printAt }: { printAt?: string }) {
   const sid = useCurrentSpaceId();
@@ -139,7 +141,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
                 title="고른 작년 일정·메모를 올해 같은 요일에 복사합니다 (작년 것은 그대로)"
                 className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 shadow-xs whitespace-nowrap cursor-pointer"
               >
-                {importing ? '가져오는 중…' : '📥 올해로 가져오기'}
+                {glyphText(importing ? '가져오는 중…' : '📥 올해로 가져오기')}
               </button>
               <button type="button" data-last-year-unpick onClick={() => setPicks({})} className="px-2 py-1 rounded-lg text-xs font-bold text-slate-500 hover:bg-slate-100 whitespace-nowrap cursor-pointer">
                 풀기
@@ -165,7 +167,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
             title="보고 있는 주의 주간학습안내(요일 × 교시 + 준비물)를 만듭니다"
             className="px-2.5 py-1 rounded-lg text-xs font-bold border bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-700 whitespace-nowrap cursor-pointer"
           >
-            📰 주간학습안내
+            <Glyph e="📰" /> 주간학습안내
           </button>
         )}
         <button
@@ -179,7 +181,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
             showLastYear ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-xs' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50 hover:text-slate-700'
           }`}
         >
-          🕰️ 작년 이맘때
+          <Glyph e="🕰" /> 작년 이맘때
         </button>
       </div>
 

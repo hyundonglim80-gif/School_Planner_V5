@@ -51,6 +51,8 @@ import RoomInfo from './RoomInfo';
 import { CHAT_WINDOW } from './open';
 import { closeChatNotices } from './view';
 import type { GroupPeople } from './people';
+import { Glyph } from '../../ui/Icon';
+import { glyphText, leadGlyph } from '../../ui/glyphText';
 
 type Status = 'loading' | 'ok' | 'offline' | 'denied' | 'failed' | 'new';
 
@@ -374,7 +376,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
           ← 목록
         </button>
         <span data-chat-room-title className="min-w-0 truncate text-sm font-black text-slate-800">
-          {title}
+          {leadGlyph(title)}
         </span>
         {sub && <span className="min-w-0 shrink truncate text-2xs text-slate-500">{sub}</span>}
         {room && canWrite && (
@@ -386,7 +388,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
             aria-label={muted ? '이 대화 알림 켜기' : '이 대화 알림 끄기'}
             className={`ml-auto shrink-0 rounded-lg px-2 py-1 text-sm hover:bg-slate-100 cursor-pointer ${muted ? '' : 'opacity-60 hover:opacity-100'}`}
           >
-            {muted ? '🔕' : '🔔'}
+            {glyphText(muted ? '🔕' : '🔔')}
           </button>
         )}
         {ref && canWrite && (
@@ -409,7 +411,7 @@ export default function ChatRoomView({ roomKey, uid, title, sub, groups, people,
       </div>
       {status === 'offline' && (
         <p data-chat-offline className="mx-3 mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          📴 인터넷에 연결되어 있지 않아 대화를 받지 못했습니다. 대화는 서버에만 있어 인터넷이 필요합니다.
+          <Glyph e="📴" /> 인터넷에 연결되어 있지 않아 대화를 받지 못했습니다. 대화는 서버에만 있어 인터넷이 필요합니다.
         </p>
       )}
       {cursor && status === 'ok' && (

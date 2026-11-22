@@ -7,6 +7,7 @@ import { addRoomMembers, leaveRoom, renameRoom } from '../../data/chat';
 import type { GroupSpace } from '../../data/spaceChoice';
 import { CHAT_LIMITS, dmOtherOf, type ChatMsg, type ChatRoom, type ChatRoomRef } from '../../domain/chat';
 import { personName, type GroupPeople } from './people';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   roomRef: ChatRoomRef;
@@ -80,7 +81,7 @@ export default function RoomInfo({ roomRef, room, pendingMembers, uid, groups, p
               data-chat-member-left={left(who) ? 'yes' : 'no'}
               className={`rounded-full border border-slate-200 bg-white px-2.5 py-0.5 font-semibold ${left(who) ? 'text-slate-500 opacity-60' : 'text-slate-700'}`}
             >
-              👤 {nameOf(who)}
+              <Glyph e="👤" /> {nameOf(who)}
               {who === uid && <span className="text-slate-500"> (나)</span>}
               {left(who) && <span className="text-2xs text-slate-500"> · 그룹을 나감</span>}
             </li>
@@ -155,7 +156,7 @@ export default function RoomInfo({ roomRef, room, pendingMembers, uid, groups, p
             onClick={leave}
             className="self-start rounded-lg border border-red-200 bg-white px-2.5 py-1 font-bold text-red-600 hover:bg-red-50 cursor-pointer"
           >
-            🚪 이 방 나가기
+            <Glyph e="🚪" /> 이 방 나가기
           </button>
         </>
       )}

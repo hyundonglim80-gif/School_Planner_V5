@@ -9,6 +9,7 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { draftPlaceLabel } from './draftList';
 import { openDraftRow } from './open';
 import { useDraftRows } from './useDraftRows';
+import { glyphText } from '../../ui/glyphText';
 
 const when = (ms: number) => new Date(ms).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
@@ -45,7 +46,7 @@ export default function DraftsWindow({ close, raise }: WindowProps) {
             {rows.map((r) => (
               <li key={r.key} data-drafts-row={r.key} className="flex items-center gap-2 rounded-xl border border-border bg-white px-3 py-2">
                 <span className="shrink-0 text-base" aria-hidden>
-                  {r.place.kind === 'note' ? '📝' : '📅'}
+                  {glyphText(r.place.kind === 'note' ? '📝' : '📅')}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate font-semibold text-slate-800">{r.summary}</span>

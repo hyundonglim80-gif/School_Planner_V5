@@ -2,6 +2,7 @@
 import { useRef } from 'react';
 import PhotoStatusBar from './PhotoStatusBar';
 import type { PhotoTools } from './usePhotoTools';
+import { Glyph } from '../../ui/Icon';
 
 /** '사진 여러 장 업로드' 📁 기기 · ☁️ 구글 드라이브 - 파일 이름으로 학생을 짝지어 올린다 */
 export function PhotoBulkGroup({ panel }: { panel: PhotoTools }) {
@@ -11,7 +12,7 @@ export function PhotoBulkGroup({ panel }: { panel: PhotoTools }) {
   return (
     <div data-photo-bulk-group className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-lg px-1.5 py-1" title="사진 여러 장을 한꺼번에 고르면 파일 이름으로 학생을 짝지어 올립니다">
       <span className="text-xs font-bold text-amber-800 px-0.5">
-        📷{' '}
+        <Glyph e="📷" />{' '}
         {panel.photos.bulk
           ? `올리는 중 ${panel.photos.bulk.done}/${panel.photos.bulk.total}`
           : panel.driveFetching
@@ -33,10 +34,10 @@ export function PhotoBulkGroup({ panel }: { panel: PhotoTools }) {
         }}
       />
       <button type="button" data-photo-bulk-device onClick={() => input.current?.click()} disabled={busy} className={btn} title="이 기기(컴퓨터·휴대폰)에 있는 사진을 여러 장 골라 올립니다">
-        📁 기기
+        <Glyph e="📁" /> 기기
       </button>
       <button type="button" data-photo-drive-many onClick={() => void panel.bulkFromDrive()} disabled={busy} className={btn} title="구글 드라이브에 이미 있는 사진을 여러 장 골라 올립니다">
-        ☁️ 구글 드라이브
+        <Glyph e="☁" /> 구글 드라이브
       </button>
     </div>
   );

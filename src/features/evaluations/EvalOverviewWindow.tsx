@@ -35,6 +35,8 @@ import { useTeaching } from '../lessons/teaching';
 import CourseEvalOverview from './CourseEvalOverview';
 import { useSpacesEvals, type SpaceEval } from './evalData';
 import { openEvaluation, type EvalOverviewParams } from './open';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 const NO_SUBJECT = '(없음)';
 const EMPTY_FILTER: EvalFilter = { subject: '', semester: null, type: '' };
@@ -113,7 +115,7 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
     <ModalShell isOpen onClose={close} raise={raise} width="2xl" title="📊 조사표 모아 보기" footer={<ModalCloseButton onClose={close} />}>
       {classes.length === 0 ? (
         <p className="text-center text-slate-500 py-8 text-sm" data-eval-overview-no-class>
-          명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.
+          명렬표가 없습니다. 학급 화면 → <Glyph e="🧑‍🤝‍🧑" /> 명렬표에서 학급과 학생을 먼저 넣어 주세요.
         </p>
       ) : (
         <div className="flex flex-col gap-3 text-xs text-slate-700" data-eval-overview-window={cls?.id ?? ''}>
@@ -182,13 +184,13 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                   조사표 {shown.length}개{shown.length !== evals.length ? ` (전체 ${evals.length})` : ''} · 학생 {students.length}명
                 </span>
                 <button type="button" data-eval-overview-copy onClick={() => void copy()} disabled={shown.length === 0} className={tool}>
-                  📋 표 복사
+                  <Glyph e="📋" /> 표 복사
                 </button>
                 <button type="button" data-eval-overview-csv onClick={download} disabled={shown.length === 0} className={tool}>
-                  📥 CSV
+                  <Glyph e="📥" /> CSV
                 </button>
                 <button type="button" data-eval-overview-print onClick={print} disabled={shown.length === 0} className={tool}>
-                  🖨️ 인쇄
+                  <Glyph e="🖨" /> 인쇄
                 </button>
               </div>
               {evals.length === 0 ? (
@@ -215,7 +217,7 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                               >
                                 <span className="block text-2xs font-bold text-slate-500">
                                   {EVAL_TYPE_LABEL[ev.type]}
-                                  {ev.shared ? ' 👥' : ''}
+                                  {glyphText(ev.shared ? ' 👥' : '')}
                                 </span>
                                 <span className="block font-black text-slate-700 leading-tight line-clamp-2">{evalColumnTitle(ev)}</span>
                                 {counts && (

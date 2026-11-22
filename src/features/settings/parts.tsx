@@ -1,6 +1,7 @@
 // 환경설정 창의 작은 부품 (V4 SettingsModal의 Section·ToggleRow·고르기 단추).
 import type { CSSProperties, ReactNode } from 'react';
 import { useOptionTarget } from '../../app/optionShortcuts';
+import { glyphText } from '../../ui/glyphText';
 
 /**
  * 그 값이 어디에 남나 (P44-3 - 칸마다 '이 기기에만 남습니다'·'계정에 저장해 PC와 휴대폰이 같습니다'를 글로 되풀이하던 것을 같은 모양 표시 하나로).
@@ -27,7 +28,7 @@ export function Section({ title, desc, children, id, saved }: { title: string; d
   return (
     <div data-settings-section={id} className="px-5 py-4 border-b border-slate-100 last:border-b-0">
       <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-black text-slate-800">
-        {title}
+        <span>{glyphText(title)}</span>
         {saved && <SavedBadge saved={saved} />}
       </h3>
       {desc && <p className="text-xs text-slate-500 mt-0.5 mb-2 leading-relaxed">{desc}</p>}

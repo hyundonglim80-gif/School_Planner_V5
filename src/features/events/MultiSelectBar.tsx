@@ -16,6 +16,7 @@ import { effectiveAttrs, formOf } from './eventForm';
 import { useCarried } from './forward';
 import { endMulti, useMulti } from './multi';
 import { pickedCount, resolvePicks } from './multiOps';
+import { Glyph } from '../../ui/Icon';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 - 고른 것은 그대로 둔다 */
@@ -182,7 +183,7 @@ export default function MultiSelectBar() {
             title="고른 일정의 라벨 바꾸기"
             className={`${btn} ${panel === 'label' ? 'bg-amber-500/20 text-amber-300' : 'text-slate-200 hover:text-amber-300 hover:bg-slate-800'}`}
           >
-            🏷️<span className="hidden sm:inline">라벨</span>
+            <Glyph e="🏷" /><span className="hidden sm:inline">라벨</span>
           </button>
           <button
             type="button"
@@ -192,10 +193,10 @@ export default function MultiSelectBar() {
             title="고른 일정을 다른 날짜로 옮기기"
             className={`${btn} ${panel === 'move' ? 'bg-sky-500/20 text-sky-300' : 'text-slate-200 hover:text-sky-300 hover:bg-slate-800'}`}
           >
-            📅<span className="hidden sm:inline">옮기기</span>
+            <Glyph e="📅" /><span className="hidden sm:inline">옮기기</span>
           </button>
           <button type="button" data-multi-delete onClick={() => void remove()} disabled={none} title="고른 일정 삭제" className={`${btn} text-slate-200 hover:text-rose-400 hover:bg-slate-800`}>
-            🗑️<span className="hidden sm:inline">삭제</span>
+            <Glyph e="🗑" /><span className="hidden sm:inline">삭제</span>
           </button>
           <div className="w-px h-5 bg-slate-700 mx-1" />
           <button type="button" data-multi-end onClick={endMulti} disabled={busy} title="여러 개 고르기 끝내기" className="p-1.5 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-40">

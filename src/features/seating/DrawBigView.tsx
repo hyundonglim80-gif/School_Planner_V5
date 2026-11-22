@@ -6,6 +6,7 @@ import { useModalLayer } from '../../app/history';
 import { useBackdropClose } from '../../ui/useBackdropClose';
 import { useBodyScrollLock } from '../../ui/useBodyScrollLock';
 import { useVisualViewport } from '../../ui/useVisualViewport';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   isOpen: boolean;
@@ -71,7 +72,7 @@ export default function DrawBigView({ isOpen, onClose, sid, num, name, rolling, 
       </button>
       <div className="flex flex-col items-center gap-2 select-none" aria-live="polite" data-draw-big-name={rolling ? '' : (sid ?? '')}>
         {sid === null ? (
-          <span className="text-3xl font-black text-white/60">🎯 다음 학생을 누르면 뽑습니다</span>
+          <span className="text-3xl font-black text-white/60"><Glyph e="🎯" /> 다음 학생을 누르면 뽑습니다</span>
         ) : (
           <>
             {num !== null && (
@@ -95,7 +96,7 @@ export default function DrawBigView({ isOpen, onClose, sid, num, name, rolling, 
         aria-disabled={rolling}
         className={`px-8 py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-slate-900 text-xl font-black cursor-pointer ${rolling ? 'opacity-60' : ''}`}
       >
-        🎯 다음 학생
+        <Glyph e="🎯" /> 다음 학생
       </button>
     </div>,
     document.body,

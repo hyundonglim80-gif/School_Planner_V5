@@ -12,6 +12,7 @@ import { pressKeys } from '../../ui/pressKeys';
 import { useMulti } from '../events/multi';
 import { gcalClick, gcalTip } from './gcalActions';
 import { openGcalEvent } from './open';
+import { Glyph } from '../../ui/Icon';
 
 type GcalAt = 'day' | 'week' | 'month' | 'compact' | 'year' | 'sheet' | 'board';
 
@@ -75,7 +76,7 @@ export function GcalDayCard({ s, date }: { s: GcalShown; date: string }) {
         </span>
         <Position s={s} date={date} className="text-xs" />
       </div>
-      {s.ev.location && <div className="text-xs text-slate-500 truncate">📍 {s.ev.location}</div>}
+      {s.ev.location && <div className="text-xs text-slate-500 truncate"><Glyph e="📍" /> {s.ev.location}</div>}
     </div>
   );
 }
@@ -216,7 +217,7 @@ export function GcalBar({ bar, compact, isCurrentMonth, style, instead }: { bar:
 export function GcalGroupHeader({ count }: { count: number }) {
   return (
     <div data-gcal-group title="구글 캘린더 일정 - 보기만 합니다 (둘째 줄 '📅 구글'로 끄고 켭니다)" className="col-span-2 sm:col-span-1 flex items-center gap-1.5 pt-1.5 text-2xs font-bold text-slate-500 min-w-0">
-      <span className="truncate px-1.5 py-0.5 rounded-md border border-dashed border-slate-300 bg-white text-slate-600">📅 구글 캘린더</span>
+      <span className="truncate px-1.5 py-0.5 rounded-md border border-dashed border-slate-300 bg-white text-slate-600"><Glyph e="📅" /> 구글 캘린더</span>
       <span data-gcal-group-count={count} className="px-1.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
         {count}
       </span>

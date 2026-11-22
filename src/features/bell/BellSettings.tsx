@@ -3,6 +3,7 @@
 import { playBell } from '../../app/sound';
 import type { BellPoint, ClassBellSettings } from '../../domain/classBell';
 import { saveClassBell, setBellMutedHere, useBellMutedHere, useClassBell } from './bell';
+import { Glyph } from '../../ui/Icon';
 
 export default function BellSettings({ hasTimes }: { hasTimes: boolean }) {
   const bell = useClassBell();
@@ -49,7 +50,7 @@ export default function BellSettings({ hasTimes }: { hasTimes: boolean }) {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <label className="flex items-center gap-2 text-xs font-extrabold text-slate-800">
           <input type="checkbox" data-bell-enabled checked={bell.enabled} onChange={(e) => save({ ...bell, enabled: e.target.checked })} />
-          🔔 수업 종 울리기
+          <Glyph e="🔔" /> 수업 종 울리기
         </label>
         <button
           type="button"
@@ -60,7 +61,7 @@ export default function BellSettings({ hasTimes }: { hasTimes: boolean }) {
           ▶ 미리 듣기
         </button>
       </div>
-      {!hasTimes && <p className="text-2xs text-amber-700 font-bold">⏰ 시간표 창(수업 ⚙️)의 '교시' 탭에서 교시 시각을 먼저 적어야 울립니다.</p>}
+      {!hasTimes && <p className="text-2xs text-amber-700 font-bold"><Glyph e="⏰" /> 시간표 창(수업 <Glyph e="⚙️" />)의 '교시' 탭에서 교시 시각을 먼저 적어야 울립니다.</p>}
       {row('start', '시작 시각')}
       {row('end', '종료 시각')}
       <div className="flex items-center gap-4 flex-wrap text-xs text-slate-600">

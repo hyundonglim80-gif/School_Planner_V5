@@ -10,6 +10,7 @@ import { assignBinding, bindingOf, formatAnyBinding, recordKeyIssue, resolveBind
 import { useExtraBindings, useShortcutOverrides } from './keys';
 import { shortcutLabel } from './tabShortcuts';
 import { cancelShortcutRecord, clearRecordedKey, finishPick, repick, saveRecordedKey, useRecordListeners, useShortcutRecord } from './shortcutRecord';
+import { Glyph } from '../ui/Icon';
 
 const BTN = 'px-3 py-1.5 text-xs font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer shrink-0';
 
@@ -100,7 +101,7 @@ export default function ShortcutRecordBar() {
       role="status"
       className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[99500] w-max max-w-[calc(100vw-2rem)] flex flex-wrap items-center gap-2 bg-white text-slate-800 px-4 py-2.5 rounded-2xl shadow-2xl border-2 border-violet-300"
     >
-      <span className="text-sm font-black text-violet-700 shrink-0">⌨️ 단축키 설정</span>
+      <span className="text-sm font-black text-violet-700 shrink-0"><Glyph e="⌨" /> 단축키 설정</span>
       {body}
       <button type="button" data-shortcut-record-cancel onClick={cancelShortcutRecord} className={`${BTN} bg-white border border-slate-200 text-slate-600 hover:bg-slate-50`} title="그만두기 (ESC)">
         취소

@@ -3,13 +3,15 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { activateSideSlot, activeOf, closeSideSlot, getSideColumn, useSidePopups } from './sideColumn';
+import { glyphText, textWithGlyphs } from './glyphText';
 import { shortcutTarget } from './shortcutTarget';
 
 /** 칸의 탭 이름: 칸 이름(aria-label·제목) + 쓰던 글 첫 줄 */
 function slotTitle(el: Element | null): string {
   if (!el) return '…';
   const head = el.querySelector('h1, h2, h3');
-  let label = (el.getAttribute('aria-label') || head?.textContent || '창').trim().replace(/\s+/g, ' ');
+  // 제목의 선 아이콘은 이모지로 되읽어 탭이 같은 아이콘을 그린다 (P54-1)
+  let label = (el.getAttribute('aria-label') || (head && textWithGlyphs(head)) || '창').trim().replace(/\s+/g, ' ');
   label = label.replace(/ 쓰기$/, '');
   const ta = el.querySelector('textarea');
   const first = (ta?.value || '').split('\n').find((l) => l.trim())?.trim() || '';
@@ -70,7 +72,7 @@ export default function SideTabs() {
             }`}
           >
             <button type="button" onClick={() => activateSideSlot(id)} title={titles[id]} className="pl-2.5 pr-1 py-1.5 truncate">
-              {titles[id] || '…'}
+              {titles[id] ? glyphText(titles[id]) : '…'}
             </button>
             <button
               type="button"

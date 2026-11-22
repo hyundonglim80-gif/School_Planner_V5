@@ -76,7 +76,7 @@ export default function DayPastEvents({ sid, today, stale, forwardDays, lastOrde
       {open && (
         <div data-past-list className="mt-1 space-y-1.5">
           <p className="px-2 text-2xs text-slate-500 leading-relaxed">
-            지난 {forwardDays}일 동안 끝내지 않은 일정입니다(이월 일정은 위에 따라옵니다). 골라서 오늘로 가져옵니다. 라벨을 누르면 완료, 🗑️는 휴지통으로.
+            지난 {forwardDays}일 동안 끝내지 않은 일정입니다(이월 일정은 위에 따라옵니다). 골라서 오늘로 가져옵니다. 라벨을 누르면 완료, <Glyph e="🗑" />는 휴지통으로.
           </p>
           {stale.map((ev) => {
             const labels = itemLabels(tree, ev.labelIds);

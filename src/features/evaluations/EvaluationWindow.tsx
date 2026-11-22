@@ -32,6 +32,7 @@ import EvalMetaBox, { type MetaDraft } from './EvalMetaBox';
 import EvalTable from './EvalTable';
 import { deleteEvaluation, saveEvalMeta, saveEvalValues, syncEvalRoster, useEvalsOn, type EvalItem, type EvalMeta } from './evalData';
 import type { EvaluationParams } from './open';
+import { Glyph } from '../../ui/Icon';
 
 type Mode = { kind: 'auto' } | { kind: 'list' } | { kind: 'create' } | { kind: 'view'; id: string };
 
@@ -254,7 +255,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
               </button>
               {canEdit && (
                 <button type="button" data-eval-save onClick={() => void saveValues()} disabled={busy} title="Ctrl + S 로도 저장합니다" className="px-5 py-2 bg-primary text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer">
-                  💾 저장 <span className="font-normal opacity-70">(Ctrl+S)</span>
+                  <Glyph e="💾" /> 저장 <span className="font-normal opacity-70">(Ctrl+S)</span>
                 </button>
               )}
             </div>
@@ -317,7 +318,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
                 title="이 조사표를 A4 세로로 인쇄합니다 (적은 값 그대로)"
                 className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 text-xs font-bold cursor-pointer"
               >
-                🖨️ 인쇄
+                <Glyph e="🖨" /> 인쇄
               </button>
             </div>
             <EvalTable ref={tableRef} ev={ev} values={values} canEdit={canEdit} onChange={(v) => setDraft({ id: ev.id, values: v })} />

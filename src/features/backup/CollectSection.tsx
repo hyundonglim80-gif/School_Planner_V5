@@ -7,6 +7,7 @@ import { useCurrentSpaceId } from '../../data/session';
 import { Section } from '../settings/parts';
 import { collectTargets } from './collect';
 import { runCollect } from './collectRun';
+import { glyphText } from '../../ui/glyphText';
 
 export default function CollectSection() {
   const sid = useCurrentSpaceId();
@@ -47,7 +48,7 @@ export default function CollectSection() {
           onClick={() => void run()}
           className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
         >
-          {busy || '📎 드라이브로 모으기'}
+          {glyphText(busy || '📎 드라이브로 모으기')}
         </button>
         {result && (
           <p data-collect-result className="text-xs font-bold text-emerald-700 whitespace-pre-line">
