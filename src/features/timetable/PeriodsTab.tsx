@@ -52,7 +52,7 @@ export default function PeriodsTab({ periods, onChange }: Props) {
     <div className="space-y-3" data-periods-tab>
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-xs text-slate-500 leading-relaxed">
-          교시 수와 이름은 하루·주간의 수업 칸이 이대로 나뉩니다. 시각을 적어 두면 오늘 하루 화면에서 지금 몇 교시인지, 쉬는 시간에는 다음 교시를 짚어 줍니다.
+          시각을 적으면 하루 화면이 지금 교시를 짚어 줍니다.
         </p>
         <div className="flex items-center gap-1.5 shrink-0">
           <button type="button" data-period-add onClick={() => onChange(addPeriod(periods))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold border border-slate-200 cursor-pointer">

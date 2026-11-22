@@ -167,14 +167,14 @@ export default function GridTab(props: Props) {
         </button>
       </div>
       <p className="text-2xs text-slate-500 font-semibold -mt-2">
-        <Glyph e="💾" /> 저장은 이 시간표(이름·표)만 남깁니다. 수업 칸에 쓰려면 아래 <b><Glyph e="✅" /> 적용</b>을 누르세요. 지워도 이미 적용한 날의 수업 칸은 그대로입니다.
+        <Glyph e="💾" /> 저장은 표만 남깁니다 - 수업 칸에는 아래 <b><Glyph e="✅" /> 적용</b>으로 씁니다.
         {todayId === current.id ? ` 오늘(${md(today)})은 이 시간표를 따릅니다.` : ''}
       </p>
 
       {/* 표 */}
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <p className="text-2xs text-slate-500 font-semibold">화살표·엔터·탭으로 칸을 옮기고, 엑셀에서 복사한 표를 Ctrl+V로 한 번에 붙여 넣을 수 있습니다.</p>
+          <p className="text-2xs text-slate-500 font-semibold">엑셀에서 복사한 표는 Ctrl+V로 한 번에 들어갑니다.</p>
           <div className="flex items-center gap-1.5">
             <button type="button" data-grid-period-add onClick={() => onPeriods(addPeriod(periods))} className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs font-bold border border-slate-200 cursor-pointer">
               + 교시 추가
@@ -279,7 +279,7 @@ const MODES: Array<{ key: ApplyMode; label: string; title: string }> = [
   { key: 'fill', label: '🧩 빈 칸만 채우기', title: '전에 적용한 표의 과목은 그대로 두고, 과목이 없는 칸에만 위 표의 과목을 넣습니다' },
 ];
 
-function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, applied, onUnapply, onLoad, input }: Props & { input: string }) {
+function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, applied, onUnapply, onLoad, input, today }: Props & { input: string }) {
   const quickBtn = 'px-2 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold text-slate-600 cursor-pointer';
   const small = 'px-2 py-0.5 rounded-md border font-bold cursor-pointer';
   return (
@@ -328,14 +328,14 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
       <p className="text-2xs text-slate-500 font-semibold" data-timetable-mode-info>
         {mode === 'fill' ? (
           <>
-            위 표의 과목을 이 기간의 <b>빈 칸에만</b> 넣습니다(저장하지 않은 고친 것도). 전에 적용한 표에 과목이 있는 칸은 그대로이고, 적용한 표가 없는 날은 위 표 그대로입니다.
+            위 표의 과목을 이 기간의 <b>빈 칸에만</b> 넣습니다.
           </>
         ) : (
           <>
-            위 표를 이 기간의 하루·주간 수업 칸에 씁니다(저장하지 않은 고친 것도). 이미 적용한 기간과 겹치면 <b>겹친 날만</b> 이 표로 바뀌고(전에 적용한 표는 그 날들에서 지워집니다), 앞뒤 날은 그대로입니다.
+            이미 적용한 기간과 겹치면 <b>겹친 날만</b> 이 표로 바뀝니다.
           </>
-        )}{' '}
-        그날 따로 고친 칸은 어느 방식이든 그대로입니다. 지난 날짜에 적용하면 지난 수업 칸과 진도 세기도 바뀝니다.
+        )}
+        {range.from && range.from < today ? ' 지난 날짜도 바뀌어 진도 세기가 달라집니다.' : ''}
       </p>
       <div className="space-y-1" data-timetable-applied-list={applied.length}>
         <p className="text-2xs font-black text-slate-500">적용된 시간표</p>
