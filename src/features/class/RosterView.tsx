@@ -344,7 +344,7 @@ export default function RosterView() {
           </div>
           {dupId && <p className="text-2xs font-bold text-red-600">같은 학급({dupId})이 둘입니다 - 저장하기 전에 고쳐 주세요.</p>}
           <p className="text-2xs text-slate-500 font-semibold">
-            학년도·학년·반을 고치면 새 학급으로 옮겨 저장합니다(학생은 그대로). 사진 폴더 이름(2026-3-2)도 달라지니 드라이브의 폴더 이름도 함께 바꿔 주세요.
+            고치면 사진 폴더 이름도 바뀌니 드라이브의 폴더 이름도 함께 바꿔 주세요.
           </p>
         </div>
       )}

@@ -67,7 +67,7 @@ export default function AdminsSection() {
     <Section
       id="admins"
       title="관리자 계정"
-      desc="관리자는 이 '관리자' 탭(공휴일·오류 기록·관리자 계정)을 봅니다. 기본 관리자 셋은 늘 관리자이고, 더한 계정은 다음에 앱을 열 때부터 관리자입니다(메일 확인된 구글 계정)."
+      desc="더한 계정은 다음에 앱을 열 때부터 이 탭을 봅니다(메일 확인된 구글 계정)."
     >
       <div data-admins-section className="space-y-1.5">
         {BASE_ADMIN_EMAILS.map((email) => (

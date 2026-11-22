@@ -333,7 +333,7 @@ export default function ShortcutsTab({
       {/* 바꾸지 않는 것들. 목록에서 빠지면 "없는 기능"으로 보이므로 까닭과 함께 보여 준다 */}
       <div data-shortcut-fixed-list className="px-5 py-4">
         <h3 className="text-sm font-black text-slate-800 mb-0.5">고정 단축키</h3>
-        <p className="text-xs text-slate-500 mb-2">아래는 바꿀 수 없습니다. 다른 프로그램에서도 같은 뜻으로 쓰는 키라 그대로 둡니다.</p>
+        <p className="text-xs text-slate-500 mb-2">다른 프로그램과 같은 뜻으로 쓰는 키라 바꿀 수 없습니다.</p>
         <div className="space-y-2">
           {FIXED_SHORTCUTS.map((fixed) => (
             <div key={fixed.label} data-shortcut-fixed={fixed.id ?? fixed.keys} className="rounded-xl border border-slate-100 bg-slate-50/60 p-2.5">

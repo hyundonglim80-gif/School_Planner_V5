@@ -29,7 +29,7 @@ export function StudentMentionList({
     <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-amber-200 rounded-xl shadow-lg p-1 max-h-64 overflow-y-auto" data-student-mention>
       {candidates.length === 0 ? (
         <p className="px-2 py-1.5 text-xs text-slate-500">
-          {hasClasses ? `'${query}'에 맞는 학생이 없습니다.` : '명렬표가 없습니다 - 학급 화면의 명렬표에서 학생을 넣습니다.'} Esc로 닫습니다.
+          {hasClasses ? `'${query}'에 맞는 학생이 없습니다.` : '명렬표가 없습니다 - 학급 화면의 명렬표에서 학생을 넣습니다.'}
         </p>
       ) : (
         <ul role="listbox" aria-label="학생 태그 넣기">
@@ -53,7 +53,7 @@ export function StudentMentionList({
           ))}
         </ul>
       )}
-      <p className="px-2 pt-1 text-2xs text-slate-500 border-t border-slate-100 mt-1">↑↓로 고르고 Enter·Tab으로 넣습니다. 자음만 쳐도(ㄱㅈ) 찾습니다.</p>
+      <p className="px-2 pt-1 text-2xs text-slate-500 border-t border-slate-100 mt-1">자음만 쳐도(ㄱㅈ) 찾습니다.</p>
     </div>
   );
 }

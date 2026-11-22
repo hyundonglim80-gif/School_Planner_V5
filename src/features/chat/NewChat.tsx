@@ -68,7 +68,7 @@ export default function NewChat({ me, groups, people, onPick, onClose }: Props) 
           >
             {sorted.map((g) => (
               <option key={g.id} value={g.id}>
-                <Glyph e="👥" /> {g.name || '공유 그룹'}
+                👥 {g.name || '공유 그룹'}
               </option>
             ))}
           </select>
@@ -87,7 +87,7 @@ export default function NewChat({ me, groups, people, onPick, onClose }: Props) 
         </p>
       ) : (
         <>
-          <p className="text-2xs text-slate-500">선생님을 눌러 고르세요 - 한 명 = 1:1 대화, 여러 명 = 고른 사람 방.</p>
+          <p className="text-2xs text-slate-500">한 명 = 1:1 대화 · 여러 명 = 함께 쓰는 방</p>
           <div className="flex flex-wrap gap-1.5">
             {members.map((uid) => {
               const on = chosen.includes(uid);

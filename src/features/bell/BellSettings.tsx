@@ -74,7 +74,7 @@ export default function BellSettings({ hasTimes }: { hasTimes: boolean }) {
           이 기기에서 울리기
         </label>
       </div>
-      <p className="text-2xs text-slate-500">앱이 열려 있을 때만 울립니다(탭을 닫으면 울리지 않습니다). 처음 한 번 화면을 누르면 소리가 납니다(브라우저 규칙).</p>
+      <p className="text-2xs text-slate-500">앱이 열려 있을 때만 울립니다(처음 한 번은 화면을 눌러야 소리가 납니다).</p>
     </div>
   );
 }

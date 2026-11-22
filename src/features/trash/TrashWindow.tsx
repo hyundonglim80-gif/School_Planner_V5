@@ -133,7 +133,7 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
                 </button>
               ))}
             </div>
-            <p className="text-2xs text-slate-500">지운 지 그만큼 지난 항목을 앱을 열 때 영구 삭제합니다(첨부 파일도 정리). 고르지 않으면 90일입니다.</p>
+            <p className="text-2xs text-slate-500">지운 지 그만큼 지나면 앱을 열 때 영구 삭제합니다(첨부 파일도).</p>
           </div>
         )}
 

@@ -266,7 +266,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
         <Glyph e="💾" /> 지금 글을 틀로 저장
       </button>
       <p className="text-2xs text-slate-500">
-        틀에는 글·라벨·표가 담깁니다(체크 줄은 ☐로). 첨부·날짜·완료는 담지 않습니다. 틀은 {MAX_NOTE_TEMPLATES}개까지, 내 계정에 있어 다른 기기·그룹 메모에서도 씁니다.
+        첨부·날짜·완료는 담지 않습니다 · 틀은 {MAX_NOTE_TEMPLATES}개까지
       </p>
     </div>
   );

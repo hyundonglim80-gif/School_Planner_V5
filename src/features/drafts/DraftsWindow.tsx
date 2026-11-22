@@ -33,7 +33,7 @@ export default function DraftsWindow({ close, raise }: WindowProps) {
     <ModalShell isOpen onClose={close} raise={raise} width="lg" title="📝 저장하지 않은 글" footer={<ModalCloseButton onClose={close} />}>
       <div data-drafts-window className="flex flex-col gap-3 p-4 text-sm">
         <p className="text-xs text-slate-500">
-          이 기기에만 남아 있는 글입니다(계정에는 올라가지 않았습니다). <b>열기</b>를 누르면 그 칸이 열리고 맨 위 <b>되살리기</b>로 이어 씁니다 - 저장하면 이 목록에서 빠집니다.
+          이 기기에만 남은 글입니다 - <b>열기</b> → 맨 위 <b>되살리기</b>로 이어 씁니다.
         </p>
         {rows === null ? (
           <p className="text-xs text-slate-500">불러오는 중…</p>

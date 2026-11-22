@@ -97,10 +97,9 @@ export default function ViewTab() {
         saved="all"
         desc={
           <>
-            고른 캘린더의 일정이 일정 칸에 점선 줄로 보입니다(읽기만 - 고치기는 구글 캘린더에서). 받은 일정은 이 기기에만 두고 백업에 들지 않습니다. 앱이 보내는
-            SP(…) 캘린더는 목록에 없습니다.
+            고른 캘린더의 일정이 일정 칸에 점선 줄로 보입니다(읽기만 · 이 기기에만).
             <span data-gcal-overlay-how className="block mt-1">
-              줄을 누르면 자세히 보거나 구글 캘린더에서 엽니다 · 둘째 줄 &apos;<Glyph e="📅" /> 구글&apos;로 이 기기에서 끄고 켭니다.
+              둘째 줄 &apos;<Glyph e="📅" /> 구글&apos;로 이 기기에서 끄고 켭니다.
             </span>
           </>
         }
@@ -113,7 +112,7 @@ export default function ViewTab() {
         id="fontScale"
         title="글자 크기"
         saved="split"
-        desc={`화면마다 따로 · − / + = 5%씩 · 맨 위 머리줄은 늘 100%${device === 'pc' ? ' · 한눈에는 볼 것이 많아 100%가 다른 화면의 90% 크기' : ''}`}
+        desc={`화면마다 따로 · 5%씩 · 머리줄은 늘 100%${device === 'pc' ? ' · 한눈에 100% = 다른 화면 90%' : ''}`}
       >
         <FontSizeRows />
       </Section>
@@ -137,7 +136,7 @@ export default function ViewTab() {
         id="palette"
         title="🎨 색 테마"
         saved="all"
-        desc="단추·고른 칸의 강조색과 바탕 빛깔 (토요일 파랑·이월·완료·라벨 색은 그대로)"
+        desc="단추·고른 칸의 강조색과 바탕 빛깔"
       >
         <div className="flex flex-wrap gap-1.5">
           {PALETTES.map((p) => {
@@ -170,7 +169,7 @@ export default function ViewTab() {
         id="decor"
         title="✨ 꾸미기"
         saved="all"
-        desc="머리줄 뒤 흐린 그림과 빈 칸의 작은 그림 (고대비를 켜면 머리줄 그림은 쉰다)"
+        desc="머리줄 뒤 흐린 그림과 빈 칸의 작은 그림"
       >
         <div className="flex flex-wrap gap-1.5">
           {DECOR_OPTIONS.map((o) => {
@@ -183,6 +182,7 @@ export default function ViewTab() {
                 {...optionTarget('decor', o.value)}
                 data-decor-pick={o.value}
                 aria-pressed={on}
+                title={o.value === 'season' ? '3~5월 봄 · 6~8월 여름 · 9~11월 가을 · 12~2월 겨울' : undefined}
                 onClick={() => setDecor(o.value)}
                 className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
                   on ? 'border-primary ring-2 ring-primary/30 text-slate-800' : 'border-slate-200 text-slate-500 hover:border-slate-400'
@@ -194,7 +194,6 @@ export default function ViewTab() {
             );
           })}
         </div>
-        <p className="text-xs text-slate-500 mt-1.5">계절 따라 = 3~5월 봄 · 6~8월 여름 · 9~11월 가을 · 12~2월 겨울</p>
       </Section>
 
       <Section id="viewAids" title="보기 쉽게">

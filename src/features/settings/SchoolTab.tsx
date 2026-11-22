@@ -26,7 +26,7 @@ export default function SchoolTab() {
 
   return (
     <>
-      <Section id="teaching" title="교사 유형" desc="(초등) 담임 / 전담 / (중등) 전담 + 담임 - 가르치는 반·과목·반 색·담임반과 함께 ⏰ 시간표 창에서 정합니다.">
+      <Section id="teaching" title="교사 유형" desc="⏰ 시간표 창에서 가르치는 반·과목·담임반과 함께 정합니다.">
         <div className="flex items-center gap-2">
           <span className="text-sm font-bold text-slate-800" data-teaching-current>
             {chosen ? TEACHER_PRESETS.find((p) => p.value === preset)?.label : '아직 고르지 않음'}
@@ -44,7 +44,7 @@ export default function SchoolTab() {
       <Section
         id="forward"
         title="이월"
-        desc="'이월' 속성이 켜진(이월 라벨이 붙은) 끝내지 않은 일정을 오늘 칸에 함께 보일 때 며칠 전까지 거슬러 볼지 정합니다. 그보다 오래된 것은 이미 따라오던 일정만 계속 따라옵니다. '지난 일정' 줄도 같은 값을 씁니다."
+        desc="끝내지 않은 이월 일정을 며칠 전까지 거슬러 볼지('지난 일정' 줄도 같은 값)"
       >
         <div className="flex items-center gap-2">
           <input
@@ -70,7 +70,7 @@ export default function SchoolTab() {
           </span>
         </div>
       </Section>
-      <Section id="school" title="우리 학교" desc="학교를 고르면 나이스에서 급식(하루 화면 수업 칸 아래)과 학사일정(날짜 옆 청록색 이름)을 불러옵니다. 계정에 하나 - PC·휴대폰이 같은 학교를 봅니다.">
+      <Section id="school" title="우리 학교" desc="나이스에서 급식과 학사일정을 불러옵니다.">
         <SchoolPicker />
       </Section>
     </>

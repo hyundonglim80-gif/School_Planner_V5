@@ -72,7 +72,7 @@ export default function GoogleLoginWindow() {
           </p>
         )}
         <p className="text-xs text-slate-500">
-          <b>구글 로그인</b>을 누르고 <b>지금 쓰는 계정</b>을 고르세요. 권한을 물으면 모두 허용합니다. 로그인하면 하던 일을 이어서 합니다.
+          <b>지금 쓰는 계정</b>을 고르고, 권한을 물으면 모두 허용하세요.
         </p>
         {error && (
           <p className="text-xs font-bold text-red-600" role="alert" data-google-login-error>

@@ -185,7 +185,7 @@ export default function BackupTab() {
 
   return (
     <div data-backup-tab>
-      <Section id="backup-what" title={`담을 것 · 기간 (${spaceName} 공간)`} desc="JSON 백업과 CSV, 되살리기가 함께 씁니다. 라벨·설정은 백업에 늘 함께 담깁니다.">
+      <Section id="backup-what" title={`담을 것 · 기간 (${spaceName} 공간)`} desc="라벨·설정은 늘 함께 담깁니다.">
         <div className="flex flex-wrap gap-1.5 mb-2">
           {PERIODS.map((p) => (
             <button key={p.key} type="button" data-backup-period={p.key} aria-pressed={period === p.key} onClick={() => setPeriod(p.key)} className={chip(period === p.key)}>
@@ -223,7 +223,7 @@ export default function BackupTab() {
         </div>
       </Section>
 
-      <Section id="backup-export" title="받기" desc="JSON = 앱의 자료를 통째로 담는 백업 파일(되살리기에 씁니다). CSV = 엑셀에서 여는 표(조사표는 담지 않습니다).">
+      <Section id="backup-export" title="받기" desc="JSON = 되살리기용 백업 · CSV = 엑셀 표(조사표 빼고)">
         <div className="flex flex-wrap gap-2">
           <button type="button" data-backup-json disabled={!!busy || !sid} onClick={() => void exportJson()} className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50">
             <Glyph e="🗄" /> JSON 백업 받기
@@ -239,7 +239,7 @@ export default function BackupTab() {
       <Section
         id="backup-restore"
         title="백업 파일로 되살리기"
-        desc="V5 백업 파일(.json)을 고르면 위에서 고른 것만 되살립니다. 지금 없는 것(지운 것 포함)만 넣고, 지금 있는 것은 덮지 않습니다. 여러 파일을 한 번에 고를 수 있습니다."
+        desc="위에서 고른 것 가운데 지금 없는 것만 넣습니다 - 있는 것은 덮지 않습니다."
       >
         <input type="file" accept=".json,application/json" multiple data-restore-file onChange={(e) => void pickFiles(e.target.files)} className="text-xs" />
         {files.length > 0 && (

@@ -119,7 +119,7 @@ export default function SheetsSection() {
     <Section
       id="sheets"
       title="📊 구글 시트"
-      desc="일정·수업·메모·조사표를 내 드라이브의 V5 시트 파일에 표로 씁니다. 시트에서 고친 것은 '시트에서 되읽기'로 앱에 돌려놓습니다(V4 시트와는 다른 파일입니다)."
+      desc="일정·수업·메모·조사표를 드라이브의 V5 시트에 표로 씁니다 - 시트에서 고친 것은 되읽기로."
     >
       <div data-sheets className="space-y-2.5">
         <div className="flex flex-wrap gap-1.5">
@@ -150,7 +150,7 @@ export default function SheetsSection() {
             </label>
           ))}
         </div>
-        <p className="text-2xs text-slate-500">메모는 기간과 상관없이 모두 담습니다. 시트로 보낼 때 그 탭은 비우고 다시 씁니다.</p>
+        <p className="text-2xs text-slate-500">보내면 시트의 그 탭을 비우고 다시 씁니다(메모는 기간 없이 모두).</p>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" data-sheets-export disabled={!!busy || !sid} onClick={() => void send()} className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer">
             <Glyph e="📊" /> 시트로 보내기

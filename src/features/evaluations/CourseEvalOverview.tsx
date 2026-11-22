@@ -142,7 +142,7 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
           </table>
         </div>
       )}
-      <p className="text-2xs text-slate-500">반마다 같은 제목·종류의 조사표를 한 칸으로 묶었습니다(날짜는 반마다 다릅니다). '완료'는 값이 있는 학생 수 / 그 반 재학생 수. 칸을 누르면 그 반 조사표가 열립니다.</p>
+      <p className="text-2xs text-slate-500">'완료' = 값이 있는 학생 / 재학생 · 칸을 누르면 그 반 조사표가 열립니다.</p>
     </div>
   );
 }

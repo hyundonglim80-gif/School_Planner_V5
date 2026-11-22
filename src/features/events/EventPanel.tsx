@@ -479,15 +479,12 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                 data-event-text-input
                 value={form.text}
                 onChange={(e) => setForm((f) => ({ ...f, text: e.target.value }))}
-                placeholder="새로운 일정을 입력하세요..."
+                placeholder={isEditing ? '새로운 일정을 입력하세요...' : '새 일정 (내일·10/15·15:00·#라벨도 됩니다)'}
                 className="w-full min-h-[84px] px-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder-slate-400"
               />
-              {!isEditing &&
-                (quickChips.length > 0 ? (
-                  <QuickInputChips chips={quickChips} onApply={(key) => applyQuick([key])} onApplyAll={() => applyQuick(quickChips.map((c) => c.key))} />
-                ) : (
-                  <p className="mt-1 text-2xs text-slate-500">날짜(내일·다음 주 화·10/15)·시각(15:00)·#라벨을 적으면 칩으로 넣을 수 있습니다.</p>
-                ))}
+              {!isEditing && quickChips.length > 0 && (
+                <QuickInputChips chips={quickChips} onApply={(key) => applyQuick([key])} onApplyAll={() => applyQuick(quickChips.map((c) => c.key))} />
+              )}
             </div>
 
             {/* 날짜: 새 일정은 저장할 날짜가 곧바로 바뀌고, 고치던 일정은 저장할 때 그 날짜로 옮긴다 */}
@@ -598,7 +595,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                     </p>
                   ) : (
                     <p className="text-2xs text-slate-500">
-                      끝 날을 고르면 여러 날에 걸친 일정 하나가 됩니다(시작 날을 옮기면 통째로 옮겨 갑니다).{isEditing ? '' : ' 요일을 고르면 그 요일만 반복합니다.'}
+                      끝 날을 고르면 여러 날 일정 하나가 됩니다.{isEditing ? '' : ' 요일도 고르면 그 요일만 반복합니다.'}
                     </p>
                   )}
                 </div>
