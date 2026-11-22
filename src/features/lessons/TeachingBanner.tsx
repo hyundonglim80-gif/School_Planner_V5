@@ -6,6 +6,7 @@ import { useCommonLoaded } from '../../app/prefs';
 import { showToast } from '../../app/toast';
 import { presetPatch, TEACHER_PRESETS, type TeacherPreset } from '../../domain/teachingMode';
 import { updateTeaching, useTeaching } from './teaching';
+import { Glyph } from '../../ui/Icon';
 
 export default function TeachingBanner() {
   const loaded = useCommonLoaded((s) => s.loaded);
@@ -23,7 +24,7 @@ export default function TeachingBanner() {
 
   return (
     <div role="status" data-teacher-mode-banner className="flex items-center gap-2 flex-wrap rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-      <span className="font-bold">👩‍🏫 교사 유형을 골라 주세요</span>
+      <span className="font-bold"><Glyph e="👩‍🏫" /> 교사 유형을 골라 주세요</span>
       <span className="hidden sm:inline text-sky-700">수업 칸과 학급 도구를 그에 맞춰 보여 줍니다.</span>
       <span className="ml-auto flex items-center gap-1.5 flex-wrap">
         {TEACHER_PRESETS.map((p) => (

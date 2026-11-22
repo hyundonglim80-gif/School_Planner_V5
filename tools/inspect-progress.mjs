@@ -9,7 +9,7 @@
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-progress.mjs
 // 에뮬레이터 teacher·teacher3 계정의 시간표·수업 칸·진도를 비우고 심은 뒤 끝에 되돌린다.
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, glyphTextOf, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const undo = restorer();
@@ -111,7 +111,7 @@ try {
   r.section('수업 칸 진도 줄');
   const mark1 = card(1).locator(sel('progress-mark'));
   r.check(await waitFor(mark1, 8000), '닫으면 수업 칸에 진도 줄');
-  const m1 = (await mark1.textContent()) ?? '';
+  const m1 = await glyphTextOf(mark1); // 📘·🎒는 선 아이콘(data-glyph) - P54-1
   // 하루 카드: 내용은 첫 줄 과목 옆(10-22 #94), 쪽은 진도 줄 단원 오른쪽 '12~13쪽(1/1차시)' (10-29 #111)
   const c1 = (await card(1).locator(sel('lesson-content')).textContent().catch(() => '')) ?? '';
   r.check((await mark1.getAttribute('data-progress-mark')) === '1' && m1.includes('1/1차시') && !m1.includes('시 읽기'), `📘 1/1차시(같은 내용 안 차례 - #67) (${m1})`);

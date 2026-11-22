@@ -48,6 +48,7 @@ import { deliverLinkPick } from '../links/actions';
 import { openLinker, openLinkViewer } from '../links/open';
 import QuickInputChips, { type QuickChip } from './QuickInputChips';
 import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 /** 이 칸을 고치는 동안 다른 기기가 같은 일정 글을 바꿨을 때 (P14-6 ■3) */
 const CLASH_ASK =
@@ -441,7 +442,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
               {subtitle}
               {overlayOn && (
                 <span data-event-panel-space={sid} className="inline-block ml-1.5 px-1.5 py-px rounded-md border text-slate-700 align-middle" style={spaceTone(sid)}>
-                  {personal ? '🔒 개인' : `👥 공유 · ${groupName ?? '그룹'}`}
+                  {glyphText(personal ? '🔒 개인' : `👥 공유 · ${groupName ?? '그룹'}`)}
                 </span>
               )}
             </p>
@@ -527,7 +528,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                     title={isEditing ? '여러 날에 걸친 일정 (끝 날 정하기)' : '여러 날에 걸친 일정 (끝 날 정하기) - 요일을 고르면 그 요일만 반복'}
                     className="ml-1 px-2 py-1 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 cursor-pointer"
                   >
-                    📆 끝 날{isEditing ? '' : ' · 🔁 반복'}
+                    <Glyph e="📆" /> 끝 날{isEditing ? '' : <> · <Glyph e="🔁" /> 반복</>}
                   </button>
                 )}
               </div>
@@ -581,7 +582,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                         : `${span.days}일${span.off ? ` (주말·공휴일 ${span.off}일 빼고)` : span.allOff ? ' (모두 쉬는 날이라 빼지 않습니다)' : ''}${period.skipDates.length ? ` · 뺀 날 ${period.skipDates.length}일` : ''} - 날마다 '(2/${span.days})'처럼 보입니다.`}
                       {!periodTooLong && skippedHolidays.length > 0 && (
                         <span data-event-period-holidays className="block text-red-500 font-semibold">
-                          🎌 빠지는 공휴일: {skippedHolidays.join(', ')}
+                          <Glyph e="🎌" /> 빠지는 공휴일: {skippedHolidays.join(', ')}
                         </span>
                       )}
                       {!periodTooLong && period.skipDates.length > 0 && (
@@ -615,7 +616,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
               )}
               {carriedNow && !dateChanged && item && (
                 <p data-event-carry-note className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg px-2.5 py-1.5">
-                  ↪ {shortDateLabel(carriedSince(item))}부터 끝내지 않아 오늘 칸에 따라오는 일정입니다. 오늘 칸에서 끝내면 오늘 일정이 됩니다.
+                  <Glyph e="↪" /> {shortDateLabel(carriedSince(item))}부터 끝내지 않아 오늘 칸에 따라오는 일정입니다. 오늘 칸에서 끝내면 오늘 일정이 됩니다.
                 </p>
               )}
               {isEditing && seriesInfo && (

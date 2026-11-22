@@ -39,6 +39,7 @@ import {
   type ProgressEnd,
 } from './linkOps';
 import { listenLinkPick, type LinkWindowParams } from './open';
+import { Glyph } from '../../ui/Icon';
 
 type LinkerTab = LinkKind | 'lesson' | 'progress';
 const ITEM_TABS: LinkerTab[] = ['event', 'note'];
@@ -221,7 +222,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
         )}
         {progressEnd && (
           <p className="text-xs text-slate-500 truncate" data-linker-source>
-            📘 {progressEnd.title} 에 잇습니다 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다
+            <Glyph e="📘" /> {progressEnd.title} 에 잇습니다 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다
           </p>
         )}
         <div className="flex gap-2 border-b border-slate-200 pb-2">
@@ -304,7 +305,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
                     }}
                     className={chip(on)}
                   >
-                    📘 {p.name}
+                    <Glyph e="📘" /> {p.name}
                   </button>
                 );
               })}
@@ -429,7 +430,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
         {/* 🛒 담은 것 */}
         <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl" data-linker-tray={picked.length}>
           <div className="font-bold text-xs text-slate-700 mb-2 flex items-center gap-1.5">
-            <span>🛒 선택된 연결 항목</span>
+            <span><Glyph e="🛒" /> 선택된 연결 항목</span>
             <span className="bg-blue-100 text-blue-700 px-1.5 rounded-full text-xs">{picked.length}</span>
           </div>
           <div className="flex flex-wrap gap-1.5 min-h-[30px] items-center">

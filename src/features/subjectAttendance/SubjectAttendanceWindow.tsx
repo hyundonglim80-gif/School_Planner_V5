@@ -16,6 +16,7 @@ import { useToday } from '../../ui/useToday';
 import { useClasses } from '../class/classes';
 import { useClassColorOf } from '../lessons/teaching';
 import type { SubjectAttendanceSummaryParams } from './open';
+import { Glyph } from '../../ui/Icon';
 
 type Range = 'sem1' | 'sem2' | 'year';
 const RANGE_LABEL: Record<Range, string> = { sem1: '1학기', sem2: '2학기', year: '학년도 전체' };
@@ -50,7 +51,7 @@ export default function SubjectAttendanceWindow({ params, close, raise }: Window
     <ModalShell isOpen onClose={close} raise={raise} width="2xl" title="🙋 교과 출결 누계" footer={<ModalCloseButton onClose={close} />}>
       {classes.length === 0 ? (
         <p className="py-10 text-center text-sm text-slate-500" data-subject-summary-empty>
-          {schoolYear}학년도 명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 반을 먼저 만드세요.
+          {schoolYear}학년도 명렬표가 없습니다. 학급 화면 → <Glyph e="🧑‍🤝‍🧑" /> 명렬표에서 반을 먼저 만드세요.
         </p>
       ) : (
         <div className="space-y-3 text-xs text-slate-700" data-subject-summary={cls?.id ?? ''}>
@@ -90,7 +91,7 @@ export default function SubjectAttendanceWindow({ params, close, raise }: Window
             ))}
             <div className="ml-auto flex items-center gap-1.5">
               <button type="button" data-summary-csv onClick={() => downloadCsv(rows, `${fileStem}.csv`)} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-bold cursor-pointer">
-                ⬇️ CSV
+                <Glyph e="⬇" /> CSV
               </button>
               <button
                 type="button"
@@ -98,7 +99,7 @@ export default function SubjectAttendanceWindow({ params, close, raise }: Window
                 onClick={() => tableRef.current && printNode(tableRef.current, { title: `${year}학년도 ${label} 교과 출결 누계 (${RANGE_LABEL[range]})`, subtitle: '결과·지각·조퇴는 교시 수' })}
                 className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-bold cursor-pointer"
               >
-                🖨️ 인쇄
+                <Glyph e="🖨" /> 인쇄
               </button>
             </div>
           </div>

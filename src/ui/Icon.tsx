@@ -3,12 +3,24 @@
 //   <Glyph e="📋" />                    - 이모지로(바꿈표 ui/glyphs - 없으면 이모지 그대로)
 //   glyphText('📋 출석부')               - 글 안의 바꿈표 이모지를 모두 아이콘으로(설명서·단추 글 - ui/glyphText)
 // 아이콘은 aria-hidden - 단추의 뜻은 곁의 글·title·aria-label이 말한다. data-glyph = 원래 이모지(점검이 찾는다).
+//
+// 창 안에서만 쓰는 아이콘 경로(ui/iconPathsLazy)는 나눠 받는다 (P54-1 - 첫 화면 JS, ui/lazyIcons): 그 전에 그려지면 같은 크기의 빈 칸
+// → 받으면 다시 그린다(자리는 그대로라 글이 밀리지 않는다).
+import { useEffect, useSyncExternalStore } from 'react';
 import { ICON_PATHS, type IconName } from './iconPaths';
 import { bareEmoji, glyphIcon } from './glyphs';
+import { lazyIconPaths, preloadLazyIcons, subscribeLazyIcons } from './lazyIcons';
 
 const BASE = 'inline-block shrink-0 align-[-0.18em]';
 
+const CORE: Readonly<Record<string, string>> = ICON_PATHS;
+
 export function Icon({ name, className = '', glyph }: { name: IconName; className?: string; glyph?: string }) {
+  const lazy = useSyncExternalStore(subscribeLazyIcons, lazyIconPaths, lazyIconPaths);
+  const html = CORE[name] ?? lazy?.[name];
+  useEffect(() => {
+    if (html === undefined) void preloadLazyIcons();
+  }, [html]);
   return (
     <svg
       viewBox="0 0 24 24"
@@ -21,7 +33,7 @@ export function Icon({ name, className = '', glyph }: { name: IconName; classNam
       data-icon={name}
       data-glyph={glyph}
       className={`${BASE} ${/\b(w|size)-/.test(className) ? '' : 'w-[1.15em] h-[1.15em]'} ${className}`}
-      dangerouslySetInnerHTML={{ __html: ICON_PATHS[name] }}
+      dangerouslySetInnerHTML={{ __html: html ?? '' }}
     />
   );
 }

@@ -7,6 +7,7 @@ import { TEACHER_PRESETS } from '../../domain/teachingMode';
 import { useTeaching } from '../lessons/teaching';
 import SchoolPicker from '../school/SchoolPicker';
 import { Section } from './parts';
+import { Glyph } from '../../ui/Icon';
 
 export const MIN_FORWARD_DAYS = 1;
 export const MAX_FORWARD_DAYS = 60;
@@ -36,7 +37,7 @@ export default function SchoolTab() {
             onClick={() => openWindow('timetable', { tab: 'teaching' })}
             className="ml-auto px-3 py-1.5 bg-white border border-slate-200 hover:border-primary hover:text-primary rounded-lg text-xs font-bold text-slate-600 transition-colors cursor-pointer"
           >
-            ⏰ 시간표 창에서 바꾸기
+            <Glyph e="⏰" /> 시간표 창에서 바꾸기
           </button>
         </div>
       </Section>

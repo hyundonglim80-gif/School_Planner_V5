@@ -1,5 +1,7 @@
 // 사진 크게 보기 아래 '📷 사진 바꾸기 · ☁️ 드라이브에서 고르기' (V4 RosterModal)
 import { useRef, type ChangeEvent } from 'react';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 export default function PhotoReplaceButtons({ busy, onFile, onDrive }: { busy: boolean; onFile: (file: File) => Promise<void>; onDrive: () => Promise<void> }) {
   const input = useRef<HTMLInputElement>(null);
@@ -7,10 +9,10 @@ export default function PhotoReplaceButtons({ busy, onFile, onDrive }: { busy: b
   return (
     <>
       <button type="button" data-photo-replace onClick={() => input.current?.click()} disabled={busy} className={btn}>
-        {busy ? '올리는 중...' : '📷 사진 바꾸기'}
+        {glyphText(busy ? '올리는 중...' : '📷 사진 바꾸기')}
       </button>
       <button type="button" data-photo-drive-replace onClick={() => void onDrive()} disabled={busy} className={btn}>
-        ☁️ 드라이브에서 고르기
+        <Glyph e="☁" /> 드라이브에서 고르기
       </button>
       <input
         type="file"

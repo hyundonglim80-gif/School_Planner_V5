@@ -10,6 +10,7 @@ import { academicYearOf, todayStr } from '../../domain/dateUtils';
 import { filterScheduleByGrade, findVacations, vacationMonths } from '../../domain/schoolSetting';
 import { useSchool } from '../school/school';
 import { termSemesters, type DateSpan, type SchoolTerms, type YearTerms } from '../../domain/semester';
+import { glyphText } from '../../ui/glyphText';
 
 interface Props {
   terms: SchoolTerms;
@@ -62,7 +63,7 @@ export default function TermsTab({ terms, onChange, year, onYear }: Props) {
 
   const box = (which: 'summer' | 'winter', title: string, tone: string) => (
     <div className="bg-white p-3 rounded-lg border border-slate-200 space-y-1.5">
-      <span className={`font-bold ${tone}`}>{title}</span>
+      <span className={`font-bold ${tone}`}>{glyphText(title)}</span>
       <div className="flex items-center gap-1.5">
         {(['from', 'to'] as const).map((edge, i) => (
           <span key={edge} className="contents">
@@ -107,7 +108,7 @@ export default function TermsTab({ terms, onChange, year, onYear }: Props) {
             title={`${school.name} ${year}학년도 학사일정의 방학식·개학식으로 방학 기간을 채웁니다 (저장은 💾로)`}
             className="ml-auto px-3 py-1 bg-teal-50 hover:bg-teal-100 border border-teal-200 disabled:opacity-50 text-teal-700 font-bold rounded-lg transition-colors cursor-pointer"
           >
-            {filling ? '불러오는 중…' : '📚 학사일정으로 채우기'}
+            {glyphText(filling ? '불러오는 중…' : '📚 학사일정으로 채우기')}
           </button>
         )}
       </div>

@@ -41,6 +41,8 @@ import { saveAttendance } from './actions';
 import { pickAttendanceClass } from './attendanceClass';
 import type { AttendancePanelParams, AttendanceTab } from './open';
 import { useTabTarget } from '../../app/keys';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 /** 고친 뒤 이만큼 손을 떼면 저장 (V4 UX-AUDIT C4 - 결석 한 번 누르고 저장까지 3번이던 것을 2번으로) */
 const AUTO_SAVE_MS = 2500;
@@ -181,9 +183,9 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
       <div data-attendance-panel={classId ?? ''} data-attendance-date={date} className="flex flex-col h-full min-h-0">
         <div className="flex items-start justify-between px-6 py-4 border-b border-slate-100">
           <div className="min-w-0">
-            <h3 className="text-lg font-bold text-slate-800">📋 출석부</h3>
+            <h3 className="text-lg font-bold text-slate-800"><Glyph e="📋" /> 출석부</h3>
             <p className="text-xs font-bold text-primary mt-0.5 truncate">
-              {shortDateLabel(date)} 출결{cls ? ` · ${cls.grade}학년 ${cls.num}반` : ''} · 🔒 개인
+              {shortDateLabel(date)} 출결{cls ? ` · ${cls.grade}학년 ${cls.num}반` : ''} · <Glyph e="🔒" /> 개인
             </p>
           </div>
           <PopoutButton className="ml-auto w-8 h-8 rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100" />
@@ -210,7 +212,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                   aria-pressed={tab === id}
                   className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${tab === id ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
                 >
-                  {label}
+                  {glyphText(label)}
                 </button>
               ))}
             </div>
@@ -299,7 +301,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                               onClick={() => setOpenNote(openNote === st.sid ? null : st.sid)}
                               className="px-2 py-1 rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-slate-500 cursor-pointer"
                             >
-                              {r.note ? `📝 ${r.note}` : '＋ 사유 적기'}
+                              {glyphText(r.note ? `📝 ${r.note}` : '＋ 사유 적기')}
                             </button>
                           </div>
                         )}
@@ -341,7 +343,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                 {students.length === 0 && <p className="text-center text-slate-500 py-6">이 학급에 학생이 없습니다.</p>}
               </div>
               <p className="text-slate-500">
-                적지 않은 학생은 출석입니다. 고친 뒤 잠시 두면 저절로 저장되고(저장 단추·Ctrl+S도 됩니다), 그날 기록 칸에 '📋 출결'로 보이고, 학생 기록(누가기록)에도 모입니다.
+                적지 않은 학생은 출석입니다. 고친 뒤 잠시 두면 저절로 저장되고(저장 단추·Ctrl+S도 됩니다), 그날 기록 칸에 '<Glyph e="📋" /> 출결'로 보이고, 학생 기록(누가기록)에도 모입니다.
               </p>
             </div>
           ) : (
@@ -370,7 +372,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                   }}
                   className="ml-auto px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-bold cursor-pointer"
                 >
-                  🖨️ 인쇄
+                  <Glyph e="🖨" /> 인쇄
                 </button>
               </div>
               <div ref={summaryRef} className="overflow-x-auto border border-slate-200 rounded-xl" data-attendance-summary>
@@ -472,7 +474,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
               title="Ctrl + S 로도 저장합니다"
               className="px-5 py-2 text-sm font-bold text-white bg-primary hover:bg-blue-600 rounded-xl shadow-md disabled:opacity-50 cursor-pointer"
             >
-              {saving ? '저장 중...' : '💾 저장'}
+              {glyphText(saving ? '저장 중...' : '💾 저장')}
             </button>
           )}
         </div>

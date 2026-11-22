@@ -12,6 +12,7 @@ import ClaudeRequestNote from '../notes/ClaudeRequestNote';
 import EntryBody from '../notes/EntryBody';
 import { pressKeys } from '../../ui/pressKeys';
 import EventDoneChip from '../events/EventDoneChip';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   item: ItemDoc;
@@ -160,7 +161,7 @@ export default function MemoListRow(props: Props) {
             title={dates.length > 1 ? `${dates.map(shortDateLabel).join(', ')} - 누르면 가장 늦은 날 하루 화면` : `${shortDateLabel(dates[0])} 하루 화면으로`}
             className="px-1.5 py-0.5 rounded-md text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap shrink-0"
           >
-            📅 {shortDateLabel(dates.at(-1)!)}
+            <Glyph e="📅" /> {shortDateLabel(dates.at(-1)!)}
             {dates.length > 1 ? ` 외 ${dates.length - 1}` : ''}
           </button>
         ) : (

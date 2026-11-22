@@ -168,7 +168,7 @@ export default function NoteTemplateMenu({ form, tree, sid, onApply, onClose }: 
         </p>
       ) : list.length === 0 ? (
         <p data-note-template-empty className="text-xs text-slate-500">
-          저장한 틀이 없습니다. 자주 쓰는 양식을 적고 &apos;💾 지금 글을 틀로 저장&apos;을 누르세요.
+          저장한 틀이 없습니다. 자주 쓰는 양식을 적고 &apos;<Glyph e="💾" /> 지금 글을 틀로 저장&apos;을 누르세요.
         </p>
       ) : (
         <ul className="space-y-1">

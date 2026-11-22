@@ -7,7 +7,7 @@
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-space-overlay.mjs   (SHOT=<폴더>면 그림을 남긴다)
 import { collection, deleteDoc, doc, getDocs, query, serverTimestamp, setDoc, where } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, glyphTextOf, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const undo = restorer();
@@ -102,7 +102,7 @@ try {
   r.check((await A.page.locator(`${sel('space-chip', PERSONAL)}[aria-pressed="true"]`).count()) === 1, '주 공간은 개인 그대로 (aria-pressed)');
   const chipBg = await bgOf(A.page.locator(sel('space-chip', gid)));
   r.check(chipBg !== (await bgOf(A.page.locator(sel('space-chip-manage')))) && chipBg !== (await bgOf(A.page.locator(sel('space-chip', PERSONAL)))), `겹친 칩 = 공간 색 배경 (${chipBg} - 안 고른 칩·주 공간 칩과 다르다)`);
-  r.check(((await A.page.locator(sel('space-chip', gid)).textContent()) ?? '') === `👥 ${NAME}`, '겹친 칩 글자는 그대로 (✓·점 없음)');
+  r.check((await glyphTextOf(A.page.locator(sel('space-chip', gid)))) === `👥 ${NAME}`, '겹친 칩 글자는 그대로 (✓·점 없음)');
   r.check(((await A.page.locator(sel('space-overlay-hint')).textContent()) ?? '').includes('겹쳐 보기'), 'PC 흐린 글 (Ctrl+누르기 = 겹쳐 보기)');
 
   r.section('하루 화면');

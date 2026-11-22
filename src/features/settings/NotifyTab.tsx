@@ -7,6 +7,7 @@ import { showErrorToast, showToast } from '../../app/toast';
 import { disablePush, enablePush, readPushState, type PushState } from '../../data/push';
 import { ALARM_SOUND_CHOICES } from '../../domain/eventAlarm';
 import { Choices, Section } from './parts';
+import { Glyph } from '../../ui/Icon';
 
 const STATE_TEXT: Record<PushState, string> = {
   on: '✅ 이 기기에서 받습니다',
@@ -75,7 +76,7 @@ function PushAlarmPanel() {
             data-push-on
             className="px-3 py-1.5 rounded-lg text-xs font-bold border bg-primary text-white border-primary shadow-xs disabled:opacity-50"
           >
-            🔔 이 기기에서 받기
+            <Glyph e="🔔" /> 이 기기에서 받기
           </button>
         ))}
     </div>
@@ -88,7 +89,7 @@ function AlarmSoundChoices() {
     <div className="space-y-2">
       <Choices name="alarmSound" option="alarmSound" options={ALARM_SOUND_CHOICES} value={value} onChange={(v) => setCommonSetting('alarmSound', v)} />
       <p className="text-2xs text-slate-500">
-        3초마다 울리고, 알림 창의 <b>확인</b>이나 <b>🔇 소리 끄기</b>를 누르면 바로 멈춥니다. 앱을 닫았을 때 오는 기기 알림도 이 길이만큼 3초마다 다시 울립니다(최대 2분, 알림을 누르거나 지우면 멈춤). 소리가 안 나면 휴대폰 설정 → 알림에서 크롬(또는 설치한 앱)의 소리와 무음·방해 금지 모드를 확인하세요.
+        3초마다 울리고, 알림 창의 <b>확인</b>이나 <b><Glyph e="🔇" /> 소리 끄기</b>를 누르면 바로 멈춥니다. 앱을 닫았을 때 오는 기기 알림도 이 길이만큼 3초마다 다시 울립니다(최대 2분, 알림을 누르거나 지우면 멈춤). 소리가 안 나면 휴대폰 설정 → 알림에서 크롬(또는 설치한 앱)의 소리와 무음·방해 금지 모드를 확인하세요.
       </p>
     </div>
   );

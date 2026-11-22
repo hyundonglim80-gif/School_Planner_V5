@@ -7,6 +7,8 @@ import { showErrorToast, showToast } from '../../app/toast';
 import { clearClips, clipboardReadGranted, readSystemClipboard, removeClip, useClipboard, type ClipItem } from '../../data/clipboard';
 import { containScroll } from '../../ui/containScroll';
 import { type PasteResult } from './paste';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 function timeLabel(ms: number) {
   const d = new Date(ms);
@@ -46,7 +48,7 @@ function ClipRow({ item, pasteWith }: { item: ClipItem; pasteWith: Paste }) {
         className="w-full text-left px-3 py-2.5 rounded-xl border border-slate-200 bg-white hover:border-primary hover:bg-primary/5 transition-colors cursor-pointer"
       >
         <span className="block text-2xs font-bold text-slate-500 mb-1">
-          {item.kind === 'image' ? '🖼️ 그림' : '📝 글자'} · {timeLabel(item.createdAt)}
+          {glyphText(item.kind === 'image' ? '🖼️ 그림' : '📝 글자')} · {timeLabel(item.createdAt)}
         </span>
         {item.kind === 'image' && url ? (
           <img src={url} alt="복사한 그림" className="max-h-40 max-w-full rounded-lg border border-slate-100 object-contain" />
@@ -107,7 +109,7 @@ export function ClipboardPanel({ onClose, pasteWith, hint, titled = true }: { on
       <div className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm border-b border-slate-100 px-4 py-3">
         {titled && (
         <div className="flex items-center justify-between gap-2">
-          <h2 className="text-base font-black text-slate-800">📋 클립보드</h2>
+          <h2 className="text-base font-black text-slate-800"><Glyph e="📋" /> 클립보드</h2>
           <button
             type="button"
             data-clipboard-close

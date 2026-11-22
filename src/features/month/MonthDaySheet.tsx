@@ -15,6 +15,7 @@ import { LessonWraps } from '../lessons/CalendarLessons';
 import { hasLessons, type LessonSubjects } from '../lessons/lessonSubjects';
 import { gcalKey, type GcalShown } from '../../domain/gcalShow';
 import { GcalLine } from '../gcal/GcalItems';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   date: string;
@@ -109,7 +110,7 @@ export default function MonthDaySheet({ date, events, gcal = [], hiddenCount, sh
                       data={{ 'data-sheet-event-chip': ev.id }}
                     />
                     <span className="min-w-0 break-words">{ev.text}</span>
-                    {links > 0 && <span className="ml-auto shrink-0 text-2xs font-bold text-yellow-700">🔗 {links}</span>}
+                    {links > 0 && <span className="ml-auto shrink-0 text-2xs font-bold text-yellow-700"><Glyph e="🔗" /> {links}</span>}
                   </button>
                 </li>
               );

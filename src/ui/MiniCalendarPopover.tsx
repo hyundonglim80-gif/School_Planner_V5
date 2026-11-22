@@ -4,6 +4,7 @@ import { useState, type Ref } from 'react';
 import { parseDateStr, todayStr } from '../domain/dateUtils';
 import { POPOVER_WIDTH } from './MiniCalendarPicker';
 import MiniMonth from './MiniMonth';
+import { Glyph } from './Icon';
 
 export interface MiniCalendarPopoverProps {
   date: string;
@@ -121,7 +122,7 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
 
       <div className="flex justify-between items-center mt-1.5 pt-1.5 border-t border-slate-100 text-xs">
         <label className="relative inline-flex items-center gap-1 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.5 rounded cursor-pointer transition-colors font-medium">
-          <span>📅 직접 선택</span>
+          <span><Glyph e="📅" /> 직접 선택</span>
           <input
             type="date"
             defaultValue={date}

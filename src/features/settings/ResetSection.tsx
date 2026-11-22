@@ -13,6 +13,7 @@ import { useSession } from '../../data/session';
 import { useIsAdmin } from '../../data/admins';
 import { loadInitialSettingsLog, type InitialSettingsLog } from '../../data/settingsReset';
 import { Section } from './parts';
+import { Glyph } from '../../ui/Icon';
 
 const BTN = 'px-3 py-1.5 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg text-xs font-bold text-slate-700 cursor-pointer disabled:opacity-50';
 
@@ -113,10 +114,10 @@ export default function ResetSection() {
             title={`지금 설정을 내 초기화 값으로 저장합니다 (${KIND_LABEL[kind]} 몫 - 다른 기기 종류는 그대로)`}
             className={BTN}
           >
-            💾 초기화 설정
+            <Glyph e="💾" /> 초기화 설정
           </button>
           <button type="button" data-reset-apply onClick={apply} title="묻고 나서 초기화 값으로 되돌립니다" className={BTN}>
-            ↩️ 초기화
+            <Glyph e="↩" /> 초기화
           </button>
         </div>
         {admin && (
@@ -134,7 +135,7 @@ export default function ResetSection() {
               title={`지금 설정을 V5를 처음 쓰는 사람의 시작 값으로 저장합니다 (${KIND_LABEL[kind]} 몫 - 여러 관리자면 마지막 저장)`}
               className={BTN}
             >
-              👑 초기화 설정 - 새 사용자 기본값
+              <Glyph e="👑" /> 초기화 설정 - 새 사용자 기본값
             </button>
           </div>
         )}

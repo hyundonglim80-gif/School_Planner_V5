@@ -6,6 +6,7 @@
 //   - 오른쪽 줄에 붙으면 ✕ 왼쪽에 ↗(새 창으로 옮기기 - ui/PopoutButton).
 //   - 본문 스크롤을 잠근다 (화면 옆에 붙은 칸일 때는 왼쪽 화면을 함께 쓰므로 잠그지 않는다).
 import type { ReactNode } from 'react';
+import { glyphText } from './glyphText';
 import PopoutButton from './PopoutButton';
 import PopupFrame, { type ModalWidth } from './PopupFrame';
 
@@ -57,7 +58,7 @@ export default function ModalShell({
     >
       {title !== undefined && (
         <div className="flex items-center justify-between gap-2 px-5 py-3.5 border-b border-slate-100 bg-slate-50/60 shrink-0">
-          <h2 className="text-base font-black text-slate-800 truncate">{title}</h2>
+          <h2 className="text-base font-black text-slate-800 truncate">{typeof title === 'string' ? glyphText(title) : title}</h2>
           <div className="flex items-center gap-2 shrink-0">
             {headerExtra}
             <PopoutButton className="w-8 h-8 rounded-xl text-slate-500 hover:bg-slate-200 hover:text-slate-700" />

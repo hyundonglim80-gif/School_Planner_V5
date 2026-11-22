@@ -36,6 +36,7 @@ import YearScreen from '../year/YearScreen';
 import { usePrintPrefs } from './prefs';
 import type { PrintParams } from './types';
 import { GcalOffContext } from '../gcal/gcalView';
+import { Glyph } from '../../ui/Icon';
 
 /** 한 장에 맞출 때 쓰는 높이 (찍히는 칸의 97%) */
 const FIT_SLACK = 0.97;
@@ -151,7 +152,7 @@ export default function PrintWindow({ params, close, raise }: WindowProps<PrintP
             disabled={starts.length === 0}
             className="px-4 py-2 rounded-xl text-sm font-black bg-primary text-white hover:opacity-90 disabled:opacity-50 shadow-xs cursor-pointer"
           >
-            🖨️ 인쇄 ({starts.length}쪽)
+            <Glyph e="🖨" /> 인쇄 ({starts.length}쪽)
           </button>
         </>
       }

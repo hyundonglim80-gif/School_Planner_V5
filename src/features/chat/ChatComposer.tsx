@@ -18,6 +18,7 @@ import { isImageAttachment } from '../../domain/attachments';
 import { DROP_BUSY_TEXT, PASTE_BUSY_TEXT } from '../../ui/fileDrop';
 import { extractImageFiles, pastedTable, uploadAttachments } from '../notes/attach';
 import { holdUnsent, takeUnsent } from './unsent';
+import { Glyph } from '../../ui/Icon';
 
 interface ChatDraft {
   text: string;
@@ -218,7 +219,7 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
           {files.map((f, i) => (
             <li key={`${f.url}-${i}`} data-chat-file={f.name} className="flex max-w-full items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 py-0.5 pl-2 pr-0.5 text-xs text-slate-600">
               <span className="min-w-0 truncate" title={f.name}>
-                {isImageAttachment(f) ? '🖼️' : '📎'} {f.name}
+                <Glyph e={isImageAttachment(f) ? '🖼️' : '📎'} /> {f.name}
               </span>
               <button
                 type="button"
@@ -236,7 +237,7 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
       )}
       {uploading && (
         <p data-chat-uploading={uploading} className="mb-1 text-xs font-bold text-primary">
-          ⏳ {uploading === 'paste' ? '붙여넣은 그림을 올리는 중…' : '파일을 올리는 중…'}
+          <Glyph e="⏳" /> {uploading === 'paste' ? '붙여넣은 그림을 올리는 중…' : '파일을 올리는 중…'}
         </p>
       )}
       <div className="flex items-end gap-1.5">
@@ -247,7 +248,7 @@ export default function ChatComposer({ ref, roomKey, onSend, above, disabled, dr
             title="파일 첨부 - 구글 드라이브(School_Planner 폴더)에 올려 붙입니다. 링크가 있는 사람은 볼 수 있습니다. 윈도우 파일은 방에 끌어다 놓아도 되고, 캡처는 글 칸에 Ctrl+V."
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg hover:bg-slate-100 ${uploading ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
           >
-            📎
+            <Glyph e="📎" />
             <input type="file" multiple data-chat-file-input onChange={onPickFiles} className="hidden" disabled={!!uploading} />
           </label>
         )}

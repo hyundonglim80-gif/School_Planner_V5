@@ -5,6 +5,7 @@ import EventDoneChip from '../events/EventDoneChip';
 import type { LabelDoc } from '../../data/select';
 import type { ItemDoc } from '../events/eventOps';
 import { isImportableNote, pickKeyOf, type LastYearPick } from './lastYear';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   /** 작년 같은 요일 */
@@ -36,7 +37,7 @@ export default function LastYearDay({ lastDate, toDate, events, notes, existsThi
     // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 요일 카드 누르기로 새지 않게 막기만 (P22-7)
     <div data-last-year={lastDate} onClick={(e) => e.stopPropagation()} className="mt-3 pt-2 border-t-2 border-dashed border-slate-200 cursor-default">
       <div className="text-2xs font-extrabold text-slate-500 mb-1.5" title={`${y}년 ${m}월 ${d}일 (작년 같은 주 같은 요일)`}>
-        🕰️ 작년 {m}.{d}
+        <Glyph e="🕰" /> 작년 {m}.{d}
       </div>
       {empty ? (
         <div className="text-2xs text-slate-300 pl-1">없음</div>
@@ -82,7 +83,7 @@ export default function LastYearDay({ lastDate, toDate, events, notes, existsThi
             const already = importable && existsThisYear(n);
             const body = (
               <span className="min-w-0 whitespace-pre-line line-clamp-3">
-                <span className="mr-1">📝</span>
+                <span className="mr-1"><Glyph e="📝" /></span>
                 {label && <span className="mr-1 text-2xs font-bold text-emerald-700">[{label.name}]</span>}
                 <span>{shown}</span>
               </span>

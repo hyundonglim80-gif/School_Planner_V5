@@ -12,6 +12,7 @@ import { downloadCsv } from '../../ui/download';
 import type { ClassItem } from '../class/classes';
 import { useProgressPlans } from '../progress/useProgress';
 import type { SpaceEval } from './evalData';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   classes: readonly ClassItem[];
@@ -61,7 +62,7 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
   if (courses.length === 0) {
     return (
       <p className="text-center text-slate-500 py-8" data-course-overview-empty>
-        과정이 없습니다. ⋮ → 📘 진도 관리 → <b>+ 새 진도</b>에서 과목과 반을 골라 차시 목록 하나를 여러 반에 두면 여기서 반 × 평가로 봅니다.
+        과정이 없습니다. ⋮ → <Glyph e="📘" /> 진도 관리 → <b>+ 새 진도</b>에서 과목과 반을 골라 차시 목록 하나를 여러 반에 두면 여기서 반 × 평가로 봅니다.
       </p>
     );
   }
@@ -80,12 +81,12 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
           평가 {columns.length}개 · 반 {rows.length}개
         </span>
         <button type="button" data-course-overview-csv onClick={download} disabled={columns.length === 0} className="px-2.5 py-1 rounded-lg bg-white border border-slate-200 hover:bg-slate-100 font-bold disabled:opacity-40 cursor-pointer">
-          📥 CSV
+          <Glyph e="📥" /> CSV
         </button>
       </div>
       {columns.length === 0 ? (
         <p className="text-center text-slate-500 py-8">
-          이 과정의 반에 {course?.subject ? `'${course.subject}' ` : ''}조사표가 없습니다. 수업 칸의 📊 조사표에서 '같은 과정의 다른 반에도'로 만들면 반마다 생깁니다.
+          이 과정의 반에 {course?.subject ? `'${course.subject}' ` : ''}조사표가 없습니다. 수업 칸의 <Glyph e="📊" /> 조사표에서 '같은 과정의 다른 반에도'로 만들면 반마다 생깁니다.
         </p>
       ) : (
         <div className="border border-slate-200 rounded-xl overflow-auto max-h-[65vh]">

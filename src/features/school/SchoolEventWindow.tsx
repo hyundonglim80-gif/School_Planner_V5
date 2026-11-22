@@ -12,6 +12,8 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { addDDayItem } from '../dday/actions';
 import { openEventPanel } from '../events/open';
 import type { SchoolEventParams } from './open';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 export default function SchoolEventWindow({ params, close, raise }: WindowProps<SchoolEventParams>) {
   const { date, items } = params;
@@ -35,7 +37,7 @@ export default function SchoolEventWindow({ params, close, raise }: WindowProps<
       width="sm"
       title={
         <span>
-          📚 학사일정 <span className="text-sm font-bold text-slate-500">· {shortDateLabel(date)}</span>
+          <Glyph e="📚" /> 학사일정 <span className="text-sm font-bold text-slate-500">· {shortDateLabel(date)}</span>
         </span>
       }
       footer={<ModalCloseButton onClose={close} />}
@@ -64,7 +66,7 @@ export default function SchoolEventWindow({ params, close, raise }: WindowProps<
                   title={has ? '이미 D-Day 목록에 있습니다' : `D-Day 목록에 더합니다 (${dday.text})`}
                   className="px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-colors bg-white border-rose-200 text-rose-600 hover:bg-rose-50 disabled:opacity-60 disabled:cursor-default disabled:hover:bg-white cursor-pointer"
                 >
-                  {has ? '✓ D-Day에 있음' : `⏳ D-Day로 (${dday.text})`}
+                  {glyphText(has ? '✓ D-Day에 있음' : `⏳ D-Day로 (${dday.text})`)}
                 </button>
                 <button
                   type="button"
@@ -73,7 +75,7 @@ export default function SchoolEventWindow({ params, close, raise }: WindowProps<
                   title="이 날짜의 새 일정 칸을 이름을 적어 둔 채 엽니다 - 라벨을 골라 저장하세요"
                   className="px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-colors bg-white border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
                 >
-                  📅 일정으로 담기
+                  <Glyph e="📅" /> 일정으로 담기
                 </button>
               </div>
             </div>

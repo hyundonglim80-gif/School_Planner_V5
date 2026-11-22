@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { useSession } from '../../data/session';
 import { openDraftsWindow } from './open';
 import { readDraftRows, useDraftRows } from './useDraftRows';
+import { Glyph } from '../../ui/Icon';
 
 const seenKey = (uid: string) => `sp5_drafts_seen_${uid}`;
 
@@ -54,7 +55,7 @@ export default function DraftsBanner() {
 
   return (
     <div role="status" data-drafts-banner={left} className="mb-3 flex items-center gap-2 flex-wrap rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-      <span className="font-bold">📝 저장하지 않은 글 {left}개가 이 기기에 남아 있습니다.</span>
+      <span className="font-bold"><Glyph e="📝" /> 저장하지 않은 글 {left}개가 이 기기에 남아 있습니다.</span>
       <span className="text-sky-700">인터넷이 끊긴 채 저장했거나 저장하지 않고 닫은 글입니다.</span>
       <span className="ml-auto flex items-center gap-1.5">
         <button

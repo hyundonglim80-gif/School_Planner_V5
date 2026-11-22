@@ -5,6 +5,7 @@ import { useMissingHolidayYears } from '../../data/holidays';
 import { useIsAdmin } from '../../data/admins';
 import { holidayYearsToWarn } from '../../domain/holidays';
 import { useToday } from '../../ui/useToday';
+import { Glyph } from '../../ui/Icon';
 
 function Note() {
   const years = useMissingHolidayYears(holidayYearsToWarn(useToday()));
@@ -16,7 +17,7 @@ function Note() {
       onClick={() => openWindow('settings', { tab: 'dev' })}
       className="w-full text-left mb-3 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-xs font-bold text-amber-700 hover:bg-amber-100 cursor-pointer"
     >
-      ⚠️ {years.join('·')}년 공휴일 표가 없습니다 - 환경설정 &gt; 관리자에서 받기
+      <Glyph e="⚠" /> {years.join('·')}년 공휴일 표가 없습니다 - 환경설정 &gt; 관리자에서 받기
     </button>
   );
 }

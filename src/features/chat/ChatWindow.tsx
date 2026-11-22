@@ -18,6 +18,7 @@ import NewChat, { type RoomCreate } from './NewChat';
 import { useChatView } from './view';
 import type { ChatParams } from './open';
 import { personName, useGroupPeople, type GroupPeople } from './people';
+import { Glyph } from '../../ui/Icon';
 
 // 새 창으로 옮긴 대화 창 - 그 창에는 Shell이 없어 방 목록을 스스로 듣는다(큰 창에서는 Shell이 듣는다 - 두 번 읽지 않게)
 const useWatchInPopout: () => void = POPOUT ? () => useChatWatch() : () => {};
@@ -101,7 +102,7 @@ function RoomRow({ roomKey, icon, name, sub, room, me, now, unread, count, onOpe
         className="flex w-full items-start gap-2 rounded-xl px-3 py-2 text-left hover:bg-slate-50 cursor-pointer"
       >
         <span aria-hidden className="mt-0.5 text-base leading-none">
-          {icon}
+          <Glyph e={icon} />
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-baseline gap-1.5">
@@ -109,7 +110,7 @@ function RoomRow({ roomKey, icon, name, sub, room, me, now, unread, count, onOpe
             {sub && <span className="min-w-0 shrink truncate text-2xs text-slate-500">{sub}</span>}
             {muted && (
               <span data-chat-muted className="shrink-0 text-2xs" title="이 대화는 알림을 껐습니다">
-                🔕
+                <Glyph e="🔕" />
               </span>
             )}
             {room?.lastId && <span className="ml-auto shrink-0 text-2xs text-slate-500">{chatWhen(room.lastAt, now)}</span>}
@@ -178,7 +179,7 @@ function ChatList({
       <div ref={top} data-chat-no-group className="flex flex-col items-center gap-2 px-4 py-8 text-center text-xs text-slate-500">
         <p>공유 그룹에 들어가면 같은 그룹 선생님과 대화할 수 있습니다.</p>
         <button type="button" data-chat-groups onClick={() => openWindow('group')} className="rounded-lg border border-slate-300 px-2.5 py-1 font-bold hover:bg-slate-50 cursor-pointer">
-          👥 공유 그룹
+          <Glyph e="👥" /> 공유 그룹
         </button>
       </div>
     );
@@ -187,7 +188,7 @@ function ChatList({
     <div ref={top} data-chat-list className="flex flex-col gap-3 p-3">
       {!ready && !online && (
         <p data-chat-offline className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          📴 인터넷에 연결되어 있지 않아 대화를 받지 못했습니다. 대화는 서버에만 있어 인터넷이 필요합니다.
+          <Glyph e="📴" /> 인터넷에 연결되어 있지 않아 대화를 받지 못했습니다. 대화는 서버에만 있어 인터넷이 필요합니다.
         </p>
       )}
       {groups.length > 0 &&
@@ -204,7 +205,7 @@ function ChatList({
           </button>
         ))}
       <section data-chat-section="dm">
-        <h3 className="px-3 pb-1 text-2xs font-black text-slate-500">👤 1:1 대화</h3>
+        <h3 className="px-3 pb-1 text-2xs font-black text-slate-500"><Glyph e="👤" /> 1:1 대화</h3>
         {sections.dms.length > 0 ? (
           <ul className="flex flex-col">
             {sections.dms.map((r) => {
@@ -219,7 +220,7 @@ function ChatList({
       </section>
       {sections.groups.map((g) => (
         <section key={g.sid} data-chat-section={g.sid}>
-          <h3 className="truncate px-3 pb-1 text-2xs font-black text-slate-500">👥 {g.name}</h3>
+          <h3 className="truncate px-3 pb-1 text-2xs font-black text-slate-500"><Glyph e="👥" /> {g.name}</h3>
           <ul className="flex flex-col">
             {row(`${g.sid}~all`, '👥', '그룹 전체', g.all)}
             {g.rooms.map((r) => row(r.key, '💬', r.name || '이름 없는 방', r, `${r.members.length}명`))}

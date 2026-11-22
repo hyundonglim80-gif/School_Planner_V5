@@ -6,6 +6,7 @@ import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
 import { openWindow } from '../../app/windows';
 import { useNewYear, useNewYearLoaded } from './useNewYear';
+import { Glyph } from '../../ui/Icon';
 
 /** 띠 몸 - 띠를 띄우는 날(2/15 ~ 3/31)에만 받는다 (P49-3 - 날 셈은 NewYearBanner) */
 export default function NewYearBannerBody({ year }: { year: number }) {
@@ -21,7 +22,7 @@ export default function NewYearBannerBody({ year }: { year: number }) {
 
   return (
     <div role="status" data-new-year-banner={year} className="mb-3 flex items-center gap-2 flex-wrap rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
-      <span className="font-bold">🌱 {year}학년도 준비</span>
+      <span className="font-bold"><Glyph e="🌱" /> {year}학년도 준비</span>
       <span className="text-emerald-700">라벨·설정은 그대로 - 새 학급·시간표·방학만 정하면 됩니다.</span>
       <span className="ml-auto flex items-center gap-1.5">
         <button

@@ -4,6 +4,7 @@
 // 이 창 자체가 확인 단계다 - 고를 때 몇 건(며칠)인지 보여 주고, 확인 창을 한 번 더 띄우지 않는다(V4 그대로). 지운 것은 안내의 되돌리기·Ctrl+Z.
 import { useState } from 'react';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
+import { Glyph } from '../../ui/Icon';
 
 export type GroupScope = 'only' | 'after' | 'all';
 
@@ -72,7 +73,7 @@ export default function EventScopeWindow({ title, intro, choices, onPick, onClos
             <span className="block mt-0.5 text-xs opacity-80">{c.desc}</span>
             {c.warn && (
               <span data-scope-warn className="block mt-0.5 text-xs font-bold text-amber-700">
-                ⚠️ {c.warn}
+                <Glyph e="⚠" /> {c.warn}
               </span>
             )}
           </button>

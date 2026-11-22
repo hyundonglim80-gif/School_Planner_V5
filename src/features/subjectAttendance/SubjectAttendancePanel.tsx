@@ -17,6 +17,8 @@ import { useLessonsOn } from '../lessons/useLessons';
 import { useTeaching } from '../lessons/teaching';
 import { saveSubjectCell } from './actions';
 import { openSubjectAttendanceSummary, type SubjectAttendanceCellParams } from './open';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 export default function SubjectAttendancePanel({ params, close, raise }: WindowProps<SubjectAttendanceCellParams>) {
   const { classId, date, n } = params;
@@ -88,9 +90,9 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
       <div data-subject-att-panel={`${classId}_${date}#${n}`} className="flex flex-col h-full min-h-0">
         <div className="flex items-start justify-between gap-2 px-6 py-4 border-b border-slate-100">
           <div className="min-w-0">
-            <h3 className="text-lg font-bold text-slate-800">🙋 교과 출결</h3>
+            <h3 className="text-lg font-bold text-slate-800"><Glyph e="🙋" /> 교과 출결</h3>
             <p className="text-xs font-bold text-primary mt-0.5 truncate" data-subject-att-title>
-              {label || '반'} · {shortDateLabel(date)} {n}교시{shownSubject ? ` · ${shownSubject}` : ''} · 🔒 개인
+              {label || '반'} · {shortDateLabel(date)} {n}교시{shownSubject ? ` · ${shownSubject}` : ''} · <Glyph e="🔒" /> 개인
             </p>
             <p className="text-xs text-slate-500 mt-0.5">누르는 대로 바로 저장됩니다 · 담임 출석부와 따로 둡니다</p>
           </div>
@@ -101,7 +103,7 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
             title="이 반의 교과 출결 누계 (학생마다 결과·지각·조퇴)"
             className="ml-auto shrink-0 px-2.5 py-1 text-xs font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-100 rounded-lg cursor-pointer"
           >
-            📊 누계
+            <Glyph e="📊" /> 누계
           </button>
           <PopoutButton />
           <button type="button" data-close title="닫기" onClick={close} className="w-8 h-8 flex items-center justify-center rounded-full text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
@@ -111,7 +113,7 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
 
         <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-5 space-y-3 text-xs text-slate-700" data-scroll-lock>
           {!cls ? (
-            <p className="text-center text-slate-500 py-8">이 반의 명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.</p>
+            <p className="text-center text-slate-500 py-8">이 반의 명렬표가 없습니다. 학급 화면 → <Glyph e="🧑‍🤝‍🧑" /> 명렬표에서 학급과 학생을 먼저 넣어 주세요.</p>
           ) : (
             <>
               <span className="text-slate-500" data-subject-att-summary={summary}>
@@ -166,7 +168,7 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
                               }}
                               className="px-2 py-1 rounded-lg border border-dashed border-slate-300 text-slate-500 hover:border-slate-500 cursor-pointer"
                             >
-                              {r.note ? `📝 ${r.note}` : '＋ 사유 적기'}
+                              {glyphText(r.note ? `📝 ${r.note}` : '＋ 사유 적기')}
                             </button>
                           </div>
                         )}

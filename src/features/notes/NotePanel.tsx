@@ -924,7 +924,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
               </div>
               {/* 드라이브 첨부는 '링크가 있는 사람은 보기'로 올린다(drive.ts - V4 결정, P14-4 사용자 ①: 공개 그대로 + 알리기) */}
               <p data-note-attach-public className="text-2xs text-slate-500">
-                <Glyph e="📎" />·✏️ 올린 파일은 &apos;링크가 있는 사람은 보기&apos;로 열립니다. 학생 얼굴·성적처럼 퍼지면 안 되는 것은 올리지 마세요.
+                <Glyph e="📎" />·<Glyph e="✏" /> 올린 파일은 &apos;링크가 있는 사람은 보기&apos;로 열립니다. 학생 얼굴·성적처럼 퍼지면 안 되는 것은 올리지 마세요.
               </p>
               {(item?.linkIds?.length ?? 0) > 0 && (
                 <button

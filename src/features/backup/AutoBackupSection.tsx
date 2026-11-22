@@ -4,6 +4,7 @@ import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { INTERVAL_OPTIONS, KEEP_OPTIONS } from '../../app/optionShortcuts';
 import { Choices, Section, ToggleRow } from '../settings/parts';
 import { backupNow, useBackupLog, useBackupLogWatch } from './auto';
+import { glyphText } from '../../ui/glyphText';
 
 const stamp = (ms: number) => {
   const d = new Date(ms);
@@ -51,7 +52,7 @@ export default function AutoBackupSection() {
             onClick={() => void backupNow()}
             className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
           >
-            {busy || '💾 지금 백업'}
+            {glyphText(busy || '💾 지금 백업')}
           </button>
           {log.folderLink && (
             <a data-auto-backup-folder href={log.folderLink} target="_blank" rel="noreferrer" className="text-xs font-bold text-primary hover:underline">

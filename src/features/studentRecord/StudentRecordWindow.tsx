@@ -30,6 +30,8 @@ import { requestFocus } from '../search/focus';
 import ObservationPhrases from '../seating/ObservationPhrases';
 import { addObservation } from '../seating/observation';
 import type { StudentRecordParams } from './open';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 /** 명렬표 관리의 '사진 보기' (켜 두었을 때만 드라이브에서 사진을 읽는다 - V4 그대로) */
 const PHOTOS_KEY = 'sp5-roster-photos';
@@ -176,7 +178,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
     <ModalShell isOpen onClose={askClose} raise={raise} width="2xl" title="🧑‍🎓 학생 기록(누가기록)" footer={<ModalCloseButton onClose={askClose} />}>
       <div className="space-y-4 text-xs text-slate-700" data-student-record={cls?.id ?? ''}>
         {classes.length === 0 ? (
-          <p className="text-center text-slate-500 py-8">명렬표가 없습니다. 학급 화면 → 🧑‍🤝‍🧑 명렬표에서 학급과 학생을 먼저 넣어 주세요.</p>
+          <p className="text-center text-slate-500 py-8">명렬표가 없습니다. 학급 화면 → <Glyph e="🧑‍🤝‍🧑" /> 명렬표에서 학급과 학생을 먼저 넣어 주세요.</p>
         ) : (
           <>
             <div className="flex items-center gap-2 flex-wrap">
@@ -223,7 +225,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
             </div>
 
             {!student || !cls ? (
-              <p className="text-center text-slate-500 py-6">학생을 고르세요. 메모를 쓸 때 '@이름'이나 🧑‍🎓 학생 고르기로 학생을 붙여 두면 여기에 모입니다.</p>
+              <p className="text-center text-slate-500 py-6">학생을 고르세요. 메모를 쓸 때 '@이름'이나 <Glyph e="🧑‍🎓" /> 학생 고르기로 학생을 붙여 두면 여기에 모입니다.</p>
             ) : (
               <div className="space-y-3">
                 <div className="flex items-center justify-between gap-2 flex-wrap p-3 bg-slate-50 border border-slate-200 rounded-xl" data-student-card={student.sid}>
@@ -266,7 +268,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                     disabled={items.length === 0 && filledEvals === 0}
                     className="px-2 py-1 bg-white border border-slate-200 rounded-lg font-bold hover:bg-slate-100 disabled:opacity-40 cursor-pointer"
                   >
-                    📋 전체 복사
+                    <Glyph e="📋" /> 전체 복사
                   </button>
                 </div>
 
@@ -311,7 +313,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                       onClick={() => setTab(k)}
                       className={`px-3 py-1.5 rounded-lg font-black cursor-pointer ${tab === k ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
-                      {label}
+                      {glyphText(label)}
                     </button>
                   ))}
                 </div>
@@ -339,7 +341,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                                 <span className="px-1.5 py-px rounded-md font-bold border bg-violet-50 text-violet-700 border-violet-200">{EVAL_TYPE_LABEL[ev.type]}</span>
                                 {ev.subject && <span className="font-bold text-slate-500">{ev.subject}</span>}
                                 <span className="font-bold text-slate-800 truncate">{ev.title}</span>
-                                {ev.shared && <span className="text-slate-500">👥</span>}
+                                {ev.shared && <span className="text-slate-500"><Glyph e="👥" /></span>}
                               </div>
                               <p className={`mt-0.5 text-sm ${isEmptyCell(cell) ? 'text-slate-300' : 'text-slate-700 font-bold'}`} data-student-eval-value>
                                 {isEmptyCell(cell) ? '안 적음' : evalCellText(cell)}
@@ -369,9 +371,9 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                             <b className="text-slate-800">{it.date}</b>
                             <span className="text-slate-500">{shortDateLabel(it.date).replace(/^\d+\/\d+/, '')}</span>
                             <span data-timeline-kind={it.kind} className={`px-1.5 py-px rounded-md font-bold border ${tone(it.kind)}`}>
-                              {it.kind === 'memo' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : it.kind === 'journal' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : TIMELINE_LABEL[it.kind]}
+                              {glyphText(it.kind === 'memo' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : it.kind === 'journal' ? `📝 메모${it.labels ? ` · ${it.labels}` : ''}` : TIMELINE_LABEL[it.kind])}
                             </span>
-                            {it.shared && <span className="text-slate-500">👥</span>}
+                            {it.shared && <span className="text-slate-500"><Glyph e="👥" /></span>}
                           </div>
                           <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">{it.text}</p>
                         </button>

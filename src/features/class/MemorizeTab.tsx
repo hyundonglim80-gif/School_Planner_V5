@@ -9,6 +9,7 @@ import { quizKeyOf } from '../../ui/listKeys';
 import StudentPhoto from '../photos/StudentPhoto';
 import { usePhotoTools } from '../photos/usePhotoTools';
 import { quizStudentsOf, usePhotoQuiz, type QuizStudent } from '../quiz/usePhotoQuiz';
+import { Glyph } from '../../ui/Icon';
 
 const SETTINGS_KEY = 'sp5-photo-quiz';
 function readSettings(): QuizSettings {
@@ -242,7 +243,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
             {quiz.index + (revealed ? 1 : 0)}장째 · 계속 ({quiz.round}바퀴째)
           </span>
         )}
-        {settings.auto > 0 && <span className="text-2xs font-bold text-primary whitespace-nowrap">⏱ {settings.auto}초마다 넘김</span>}
+        {settings.auto > 0 && <span className="text-2xs font-bold text-primary whitespace-nowrap"><Glyph e="⏱" /> {settings.auto}초마다 넘김</span>}
       </div>
 
       {finished || !current ? (

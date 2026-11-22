@@ -101,7 +101,7 @@ export function StudentTagRow({ studentIds, onChange, year }: { studentIds: stri
       {open && (
         <div className="p-2.5 bg-amber-50/60 border border-amber-200 rounded-xl space-y-2" data-note-student-picker>
           {!cls ? (
-            <p className="text-xs text-slate-500">명렬표가 없습니다 - 학급 화면의 🧑‍🤝‍🧑 명렬표에서 학생을 넣으면 여기서 고릅니다.</p>
+            <p className="text-xs text-slate-500">명렬표가 없습니다 - 학급 화면의 <Glyph e="🧑‍🤝‍🧑" /> 명렬표에서 학생을 넣으면 여기서 고릅니다.</p>
           ) : (
             <>
               <div className="flex items-center gap-2 flex-wrap">

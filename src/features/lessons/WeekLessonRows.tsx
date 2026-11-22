@@ -7,6 +7,7 @@ import { firstLine, type LessonDayView } from '../../domain/lessons';
 import { slotId, type ProgressMark } from '../../domain/progress';
 import { parseSlot, type ClassColorClasses } from '../../domain/teachingSlot';
 import { pressKeys } from '../../ui/pressKeys';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   date: string;
@@ -122,7 +123,7 @@ export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUni
                     className="bg-yellow-100 text-yellow-800 text-2xs leading-none px-1 py-0.5 rounded font-bold border border-yellow-300 shrink-0 hover:bg-yellow-200 cursor-pointer"
                     title={`링크된 항목 ${links}개`}
                   >
-                    🔗 {links}
+                    <Glyph e="🔗" /> {links}
                   </button>
                 )}
               </div>

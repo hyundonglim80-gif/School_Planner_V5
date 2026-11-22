@@ -14,6 +14,7 @@ import { markChatJoined } from '../../data/chat';
 import { dmPairId } from '../../domain/chat';
 import { openChat } from '../chat/open';
 import { Section } from '../settings/parts';
+import { Glyph } from '../../ui/Icon';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -129,7 +130,7 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
   return (
     <li data-group-row={group.id} className={`rounded-xl border p-3 space-y-1.5 ${current ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white'}`}>
       <div className="flex items-center gap-2">
-        <span className="text-sm font-black text-slate-800 truncate">👥 {group.name}</span>
+        <span className="text-sm font-black text-slate-800 truncate"><Glyph e="👥" /> {group.name}</span>
         <span data-group-role={owner ? 'owner' : 'member'} className="text-2xs font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
           {owner ? '그룹장' : '구성원'}
         </span>
@@ -139,7 +140,7 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
           onClick={() => openChat({ room: `${group.id}~all` })}
           className="shrink-0 rounded-lg px-1.5 py-0.5 text-2xs font-bold text-primary hover:bg-primary/10 cursor-pointer"
         >
-          💬 그룹 대화
+          <Glyph e="💬" /> 그룹 대화
         </button>
         {current ? (
           <span className="ml-auto text-2xs font-bold text-primary">지금 보는 공간</span>
@@ -170,7 +171,7 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
                   aria-label={`${name} 선생님과 1:1 대화`}
                   className="px-0.5 text-slate-500 hover:text-primary cursor-pointer"
                 >
-                  💬
+                  <Glyph e="💬" />
                 </button>
               )}
               {owner && id !== uid && (
@@ -203,10 +204,10 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
             {owner && (
               <>
                 <button type="button" data-group-rotate-code disabled={!!busy} onClick={() => void rotateCode()} title="옛 코드로는 더 들어오지 못합니다" className="px-2 py-0.5 rounded border border-slate-300 font-bold hover:bg-slate-50 disabled:opacity-50 cursor-pointer">
-                  🔄 코드 바꾸기
+                  <Glyph e="🔄" /> 코드 바꾸기
                 </button>
                 <button type="button" data-group-close-code disabled={!!busy} onClick={() => void closeCode()} title="아무도 코드로 들어오지 못합니다" className="px-2 py-0.5 rounded border border-slate-300 font-bold hover:bg-slate-50 disabled:opacity-50 cursor-pointer">
-                  🚫 초대 닫기
+                  <Glyph e="🚫" /> 초대 닫기
                 </button>
               </>
             )}
@@ -214,7 +215,7 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
         )}
         {owner && !group.inviteCode && (
           <button type="button" data-group-make-code disabled={!!busy} onClick={() => void makeCode()} className="px-2 py-0.5 rounded border border-primary/40 text-primary font-bold hover:bg-primary/5 disabled:opacity-50 cursor-pointer">
-            🔑 초대 코드 만들기
+            <Glyph e="🔑" /> 초대 코드 만들기
           </button>
         )}
         <span className="ml-auto" />

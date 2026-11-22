@@ -28,6 +28,7 @@ import { isDirty, useRosterDraft } from './rosterDraft';
 import { openStudentRecord } from '../studentRecord/open';
 import { shortcutTarget } from '../../ui/shortcutTarget';
 import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 /** 학급 화면의 사진 보기 켬/끔 - 이 기기에만 (명렬표 관리의 sp5-roster-photos와 따로 - V4) */
 const PHOTOS_KEY = 'sp5-class-photos';
@@ -218,7 +219,7 @@ function ClassHub() {
                 title={on ? '구글 드라이브의 학생 사진으로 봅니다 (명렬표 관리의 사진과 같습니다)' : '번호와 이름으로 봅니다'}
                 className={`rounded-md px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${showPhotos === on ? 'bg-white text-slate-800 shadow-2xs' : 'text-slate-500'}`}
               >
-                {on ? '📷 사진' : '이름'}
+                {glyphText(on ? '📷 사진' : '이름')}
               </button>
             ))}
           </div>
@@ -248,7 +249,7 @@ function ClassHub() {
           ) : null)}
 
         {students.length === 0 ? (
-          <p className="text-sm text-slate-500">이 학급에 학생이 없습니다. 위의 🧑‍🤝‍🧑 명렬표에서 더합니다.</p>
+          <p className="text-sm text-slate-500">이 학급에 학생이 없습니다. 위의 <Glyph e="🧑‍🤝‍🧑" /> 명렬표에서 더합니다.</p>
         ) : showPhotos ? (
           /* 명렬표 관리의 타일 보기와 같은 카드 - 휴대폰 세 칸(한 칸이 너무 좁으면 얼굴·이름을 못 읽는다) */
           <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-8 gap-2" data-class-photo-grid>

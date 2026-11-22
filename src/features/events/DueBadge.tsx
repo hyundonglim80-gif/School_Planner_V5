@@ -1,5 +1,6 @@
 // 일정 기한 표시 (V4 components/DueBadge.tsx): ⏳ D-3 · D-day · 기한 2일 지남. 끝낸 일정·기한 없는 일정에는 없다. 셈은 domain/eventDue.
 import { DUE_TONE_CLASS, dueBadge } from '../../domain/eventDue';
+import { Glyph } from '../../ui/Icon';
 
 interface DueBadgeProps {
   due: string | undefined;
@@ -19,7 +20,7 @@ export default function DueBadge({ due, today, completed, small }: DueBadgeProps
         small ? 'text-2xs px-1 py-0.5' : 'text-xs px-1.5 py-0.5'
       } ${DUE_TONE_CLASS[badge.tone]}`}
     >
-      ⏳ {badge.text}
+      <Glyph e="⏳" /> {badge.text}
     </span>
   );
 }

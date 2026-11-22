@@ -2,6 +2,7 @@
 import { badCutIndex, EVAL_SUBJECTS, parseScore } from '../../domain/evaluation';
 import { describeClass } from '../../domain/roster';
 import type { ClassItem } from '../class/classes';
+import { Glyph } from '../../ui/Icon';
 
 export interface MetaDraft {
   title: string;
@@ -36,7 +37,7 @@ export default function EvalMetaBox({ open, onToggle, meta, onChange, onSave, cl
   return (
     <div className="mb-3 border border-slate-300 rounded-xl bg-slate-50 p-3" data-eval-meta={open ? 'open' : 'closed'}>
       <button type="button" data-eval-meta-toggle onClick={onToggle} className="w-full flex items-center justify-between cursor-pointer">
-        <span className="font-bold text-blue-800 text-xs">⚙️ 기본 정보 수정</span>
+        <span className="font-bold text-blue-800 text-xs"><Glyph e="⚙" /> 기본 정보 수정</span>
         <span className="text-slate-500 text-xs">{open ? '▲ 접기' : '▼ 펼치기'}</span>
       </button>
       {open && (

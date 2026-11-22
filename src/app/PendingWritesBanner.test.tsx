@@ -4,6 +4,7 @@ import { beginPendingWrite, resetPendingWritesForTest } from '../data/pendingWri
 import PendingWritesBanner, { PENDING_NOTICE_MS } from './PendingWritesBanner';
 import { usePendingWritesGuard } from './pendingWritesGuard';
 import { showToast } from './toast';
+import { textWithGlyphs } from '../ui/glyphText';
 
 vi.mock('./toast', () => ({ showToast: vi.fn() }));
 
@@ -34,7 +35,7 @@ describe('끊겨 저장을 기다림 - 머리줄 안내 (P14-6 ■1)', () => {
     });
     expect(banner()?.getAttribute('data-pending-writes')).toBe('2');
     expect(banner()?.hasAttribute('data-pending-offline')).toBe(true);
-    expect(banner()?.textContent).toContain('📴 인터넷이 끊겨 저장을 기다립니다 - 앱을 닫지 마세요 (2개)');
+    expect(textWithGlyphs(banner()!)).toContain('📴 인터넷이 끊겨 저장을 기다립니다 - 앱을 닫지 마세요 (2개)');
     act(() => a());
     expect(banner()?.textContent).toContain('(1개)');
     expect(showToast).not.toHaveBeenCalled();
@@ -62,7 +63,7 @@ describe('끊겨 저장을 기다림 - 머리줄 안내 (P14-6 ■1)', () => {
     act(() => vi.advanceTimersByTime(PENDING_NOTICE_MS - 100));
     expect(banner()).toBeNull();
     act(() => vi.advanceTimersByTime(200));
-    expect(banner()?.textContent).toContain('⏳ 저장을 기다립니다 - 앱을 닫지 마세요 (1개)');
+    expect(textWithGlyphs(banner()!)).toContain('⏳ 저장을 기다립니다 - 앱을 닫지 마세요 (1개)');
     expect(banner()?.hasAttribute('data-pending-offline')).toBe(false);
     act(() => slow());
     expect(banner()).toBeNull();

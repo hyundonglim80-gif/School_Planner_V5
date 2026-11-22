@@ -31,6 +31,7 @@ import { LessonStrip, LessonWraps } from '../lessons/CalendarLessons';
 import { pressKeys } from '../../ui/pressKeys';
 import { gcalKey, type GcalBarItem, type GcalShown } from '../../domain/gcalShow';
 import { GcalLine } from '../gcal/GcalItems';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   m: AcademicMonth;
@@ -88,7 +89,7 @@ function LinksButton({ ev, onOpen }: { ev: ItemDoc; onOpen: (ev: ItemDoc) => voi
       className="inline-flex align-middle ml-1 bg-yellow-100 text-yellow-800 text-2xs px-1 py-0.5 rounded font-bold border border-yellow-300 shrink-0 hover:bg-yellow-200 cursor-pointer"
       title={`링크된 항목 ${n}개`}
     >
-      🔗 {n}
+      <Glyph e="🔗" /> {n}
     </button>
   );
 }
@@ -179,7 +180,7 @@ function YearMonthCard(p: Props) {
         />
         <span className="inline align-middle">{ev.text}</span>
         <span data-year-period-range className="inline-block align-middle ml-1.5 text-2xs font-semibold text-slate-500 whitespace-nowrap">
-          {sp.startsPeriod ? '' : '◂ '}📆 {range} ({indexLabel}){sp.endsPeriod ? '' : ' ▸'}
+          {sp.startsPeriod ? '' : '◂ '}<Glyph e="📆" /> {range} ({indexLabel}){sp.endsPeriod ? '' : ' ▸'}
         </span>
         <LinksButton ev={ev} onOpen={p.onOpenLinks} />
         {!p.multiOn && !space && <DeleteButton onDelete={() => p.onDelete(ev, sp.cells[0].date)} />}
@@ -307,7 +308,7 @@ function YearMonthCard(p: Props) {
                           aria-label={`메모 ${notes}건 보기`}
                           className="inline-flex items-center gap-px px-1 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-2xs font-bold leading-none hover:bg-amber-100 transition-colors shrink-0 cursor-pointer"
                         >
-                          <span aria-hidden>📝</span>
+                          <span aria-hidden><Glyph e="📝" /></span>
                           <span>{notes}</span>
                         </button>
                       )}
@@ -344,7 +345,7 @@ function YearMonthCard(p: Props) {
                           at="year"
                           after={
                             <span data-gcal-range className="inline-block align-middle ml-1.5 text-2xs font-semibold text-slate-500 whitespace-nowrap">
-                              {sp.startsPeriod ? '' : '◂ '}📆 {periodRangeLabel(sp.cells)}
+                              {sp.startsPeriod ? '' : '◂ '}<Glyph e="📆" /> {periodRangeLabel(sp.cells)}
                               {sp.endsPeriod ? '' : ' ▸'}
                             </span>
                           }

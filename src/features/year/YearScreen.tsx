@@ -37,6 +37,7 @@ import { useEvalCountsByDate } from '../evaluations/evalData';
 import { lessonSubjects } from '../lessons/lessonSubjects';
 import { openLessonPanel } from '../lessons/open';
 import { useLessonsFor } from '../lessons/useLessons';
+import { glyphText } from '../../ui/glyphText';
 
 /** 한 번에 그릴 달의 수 (V4 MONTHS_PER_FRAME) */
 const MONTHS_PER_FRAME = 3;
@@ -277,7 +278,7 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
               title={hint}
               className={`px-2.5 py-1 text-xs rounded-lg font-bold whitespace-nowrap transition-all cursor-pointer ${view === v ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
             >
-              {label}
+              {glyphText(label)}
             </button>
           ))}
         </div>

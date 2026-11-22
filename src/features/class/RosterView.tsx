@@ -42,6 +42,8 @@ import { useClassView, type RosterTab } from './view';
 import MemorizeTab from './MemorizeTab';
 import { readRosterSheet } from './rosterSheet';
 import { quizStudentsOf } from '../quiz/usePhotoQuiz';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 const TABS: Array<{ id: RosterTab; label: string }> = [
   { id: 'manage', label: '관리' },
@@ -286,7 +288,7 @@ export default function RosterView() {
             title={showPhotos ? '사진 칸을 감추고 구글 드라이브를 부르지 않습니다' : '사진 칸을 내고 구글 드라이브에서 사진을 불러옵니다'}
             className={`rounded-lg px-2.5 py-1.5 text-xs font-bold border transition-colors cursor-pointer ${showPhotos ? 'bg-primary text-white border-primary' : 'bg-white text-slate-600 border-blue-200 hover:bg-blue-100'}`}
           >
-            📷 사진
+            <Glyph e="📷" /> 사진
           </button>
         <div className="flex gap-1 bg-blue-100 rounded-xl p-1" role="tablist" aria-label="명렬표">
           {TABS.map((t) => (
@@ -299,7 +301,7 @@ export default function RosterView() {
               onClick={() => useClassView.setState({ tab: t.id })}
               className={`rounded-lg px-6 py-1.5 text-xs font-extrabold transition-colors cursor-pointer ${tab === t.id ? 'bg-white text-primary shadow-2xs' : 'bg-transparent text-slate-500 hover:text-slate-700'}`}
             >
-              {t.label}
+              {glyphText(t.label)}
             </button>
           ))}
         </div>
@@ -394,7 +396,7 @@ export default function RosterView() {
                     title="구글 시트(V5 시트 파일)의 [조사표_학년도-학년-반] 탭에서 이 학급 명단을 불러옵니다"
                     className="px-2 py-0.5 bg-white text-slate-700 border border-slate-300 rounded text-xs font-bold hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
                   >
-                    {sheetBusy ? '…' : '📊 시트'}
+                    {glyphText(sheetBusy ? '…' : '📊 시트')}
                   </button>
                 </div>
                 <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 rounded-lg px-1.5 py-1">
@@ -525,7 +527,7 @@ export default function RosterView() {
           title={photos.folder ? `드라이브에서 ${photos.folder.name || '사진 폴더'}를 엽니다` : '구글 드라이브에서 이 학급의 사진 폴더를 엽니다'}
           className="mr-auto bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer"
         >
-          📁 사진 폴더
+          <Glyph e="📁" /> 사진 폴더
         </button>
         {dirty && (
           <span className="text-xs font-bold text-amber-600" data-roster-dirty>
@@ -550,7 +552,7 @@ export default function RosterView() {
           title="저장 (Ctrl+S)"
           className="px-5 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
         >
-          💾 {saving ? '저장 중...' : '저장'}
+          <Glyph e="💾" /> {saving ? '저장 중...' : '저장'}
         </button>
       </div>
     </div>

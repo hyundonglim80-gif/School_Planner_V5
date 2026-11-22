@@ -11,6 +11,7 @@ import { setProgressBump } from './actions';
 import { progressLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
 import { openProgress } from './open';
+import { Glyph } from '../../ui/Icon';
 
 interface Props {
   mark: ProgressMark;
@@ -72,15 +73,15 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
           className="max-w-full text-left underline decoration-dotted decoration-slate-300 underline-offset-2 hover:decoration-solid"
         >
           {mark.bumped ? (
-            <span className="block text-amber-700 font-bold">⏭ 밀림 · 이 교시는 차시 없음</span>
+            <span className="block text-amber-700 font-bold"><Glyph e="⏭" /> 밀림 · 이 교시는 차시 없음</span>
           ) : (
             hideContent ? (
               // 하루 수업 카드: 단원 오른쪽에 '70-71쪽(2/2차시)' 한 줄 (같은 작은 글자)
               <span className="flex items-baseline gap-2 min-w-0">
                 {lesson?.unit ? (
-                  <span className="min-w-0 truncate text-indigo-500">📘 {lesson.unit}</span>
+                  <span className="min-w-0 truncate text-indigo-500"><Glyph e="📘" /> {lesson.unit}</span>
                 ) : (
-                  <span className="text-indigo-500">📘</span>
+                  <span className="text-indigo-500"><Glyph e="📘" /></span>
                 )}
                 <span className="shrink-0 text-indigo-700 tabular-nums">
                   {page && <span data-progress-page>{page}</span>}
@@ -92,10 +93,10 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
             ) : (
             <>
               {lesson?.unit && (
-                <span className={`block text-indigo-500 ${wrap ? 'whitespace-normal break-words' : 'truncate'}`}>📘 {lesson.unit}</span>
+                <span className={`block text-indigo-500 ${wrap ? 'whitespace-normal break-words' : 'truncate'}`}><Glyph e="📘" /> {lesson.unit}</span>
               )}
               <span className="block text-indigo-700">
-                {!lesson?.unit && '📘 '}
+                {!lesson?.unit && <><Glyph e="📘" /> </>}
                 <b className="tabular-nums">
                   {mark.run.k}/{mark.run.n}차시
                 </b>
@@ -103,14 +104,14 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
               {!hideContent && lesson?.content && (
                 <span className={`block text-indigo-700 ${wrap ? 'whitespace-normal break-words' : 'truncate'}`}>{lesson.content}</span>
               )}
-              {!hideContent && page && <span data-progress-page className="block text-indigo-700">📖 {page}</span>}
+              {!hideContent && page && <span data-progress-page className="block text-indigo-700"><Glyph e="📖" /> {page}</span>}
             </>
             )
           )}
         </button>
         {!mark.bumped && lesson?.supplies && (
           <span data-progress-supplies className={`max-w-full text-amber-600 font-medium ${wrap ? 'whitespace-normal break-words' : 'truncate'}`} title={`준비물: ${lesson.supplies}`}>
-            🎒 {lesson.supplies}
+            <Glyph e="🎒" /> {lesson.supplies}
           </span>
         )}
       </div>
@@ -125,7 +126,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
           className="shrink-0 bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 cursor-pointer"
           title={`이 차시에 이은 메모 ${lesson!.linkIds!.length}개`}
         >
-          🔗 {lesson!.linkIds!.length}
+          <Glyph e="🔗" /> {lesson!.linkIds!.length}
         </button>
       )}
       {!mark.bumped && sid && mark.row !== null && (
@@ -140,7 +141,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
           title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다"
           aria-label="이 차시에 메모 잇기"
         >
-          🔗
+          <Glyph e="🔗" />
         </button>
       )}
       <button
@@ -180,7 +181,7 @@ export function ProgressCreateButton({ subject }: { subject: string }) {
       title={`'${text}' 차시 목록을 넣어 시간표를 따라 몇 차시인지 보이게 합니다 (진도 관리)`}
       className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
     >
-      📘 진도 만들기
+      <Glyph e="📘" /> 진도 만들기
     </button>
   );
 }

@@ -117,6 +117,20 @@ export function report() {
 export const sel = (name, value) => (value === undefined ? `[data-${name}]` : `[data-${name}="${String(value).replace(/"/g, '\\"')}"]`);
 
 /**
+ * 요소의 글 - 선 아이콘(P53-3 · P54-1 - svg라 글이 없다)은 원래 이모지(data-glyph)로 되읽는다: '📘 1단원'처럼 예전 글 그대로 견준다.
+ * locator 하나(첫 것). 없으면 ''.
+ */
+export const glyphTextOf = (locator) =>
+  locator
+    .first()
+    .evaluate((el) => {
+      const copy = el.cloneNode(true);
+      copy.querySelectorAll('[data-glyph]').forEach((g) => g.replaceWith(g.getAttribute('data-glyph') || ''));
+      return copy.textContent || '';
+    })
+    .catch(() => '');
+
+/**
  * 어느 크롬으로 띄우나. PC(Windows)는 설치된 크롬(channel 'chrome'). 클라우드 세션 컨테이너(리눅스)에는 크롬이 없고
  * Playwright가 깔아 둔 Chromium만 있다(/opt/pw-browsers - 판 번호가 이 저장소의 playwright와 다를 수 있어 아무 판이나 찾는다).
  * V4는 컨테이너에서 Chromium을 /opt/google/chrome/chrome으로 링크해 썼다(V4 CLAUDE.md 2장). CHROME=<경로>로 정할 수도 있다.

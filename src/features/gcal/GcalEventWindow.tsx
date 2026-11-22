@@ -10,6 +10,7 @@ import { useCurrentSpaceId } from '../../data/session';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import { openEventPanel } from '../events/open';
 import type { GcalEventParams } from './open';
+import { Glyph } from '../../ui/Icon';
 
 export default function GcalEventWindow({ params, close, raise }: WindowProps<GcalEventParams>) {
   const { date, shown } = params;
@@ -31,7 +32,7 @@ export default function GcalEventWindow({ params, close, raise }: WindowProps<Gc
       width="sm"
       title={
         <span>
-          📅 구글 캘린더 일정 <span className="text-sm font-bold text-slate-500">· {shortDateLabel(date)}</span>
+          <Glyph e="📅" /> 구글 캘린더 일정 <span className="text-sm font-bold text-slate-500">· {shortDateLabel(date)}</span>
         </span>
       }
       footer={<ModalCloseButton onClose={close} />}
@@ -42,7 +43,7 @@ export default function GcalEventWindow({ params, close, raise }: WindowProps<Gc
             {ev.title}
           </div>
           <div data-gcal-window-when className="text-sm font-bold text-slate-600">
-            🕘 {gcalWhenLabel(shown)}
+            <Glyph e="🕘" /> {gcalWhenLabel(shown)}
           </div>
           <div data-gcal-window-cal className="flex items-center gap-1.5 text-xs font-bold text-slate-600 min-w-0">
             <span aria-hidden className="w-3 h-3 shrink-0 rounded-full" style={{ backgroundColor: cal.color }} />
@@ -51,7 +52,7 @@ export default function GcalEventWindow({ params, close, raise }: WindowProps<Gc
           </div>
           {ev.location && (
             <div data-gcal-window-location className="text-sm text-slate-700 break-words">
-              📍 {ev.location}
+              <Glyph e="📍" /> {ev.location}
             </div>
           )}
           {description && (
@@ -80,7 +81,7 @@ export default function GcalEventWindow({ params, close, raise }: WindowProps<Gc
             title="이 날짜의 새 일정 칸을 제목을 적어 둔 채 엽니다 - 라벨을 골라 저장하세요"
             className="px-2.5 py-1.5 text-xs font-bold rounded-lg border transition-colors bg-white border-slate-200 text-slate-700 hover:bg-slate-50 cursor-pointer"
           >
-            📅 일정으로 담기
+            <Glyph e="📅" /> 일정으로 담기
           </button>
         </div>
         <p className="text-xs text-slate-500 leading-relaxed">

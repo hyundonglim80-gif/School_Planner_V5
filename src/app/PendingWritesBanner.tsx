@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { usePendingWrites } from '../data/pendingWrites';
 import { showToast } from './toast';
+import { glyphText } from '../ui/glyphText';
 
 /** 인터넷이 이어져 있어도 이만큼 넘게 기다리면 띠를 띄운다 */
 export const PENDING_NOTICE_MS = 3000;
@@ -69,7 +70,7 @@ export default function PendingWritesBanner({ floating = false }: { floating?: b
       className={`flex items-center gap-x-2 gap-y-0.5 flex-wrap rounded-xl border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs text-amber-900${floating ? ' shadow-lg' : ''}`}
     >
       <span className="font-bold">
-        {online ? '⏳ 저장을 기다립니다' : '📴 인터넷이 끊겨 저장을 기다립니다'} - 앱을 닫지 마세요 ({count}개)
+        {glyphText(online ? '⏳ 저장을 기다립니다' : '📴 인터넷이 끊겨 저장을 기다립니다')} - 앱을 닫지 마세요 ({count}개)
       </span>
       <span className="text-amber-700">인터넷이 이어지면 저절로 저장됩니다.</span>
     </div>

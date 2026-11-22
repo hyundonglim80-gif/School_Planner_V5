@@ -23,6 +23,7 @@ import EvalCountBadge from '../evaluations/EvalCountBadge';
 import { pressKeys } from '../../ui/pressKeys';
 import { gcalKey, type GcalShown } from '../../domain/gcalShow';
 import { GcalLine } from '../gcal/GcalItems';
+import { Glyph } from '../../ui/Icon';
 
 export interface WeekDayCardProps {
   date: string;
@@ -138,7 +139,7 @@ function EventChip({
       {multiOn && !space && <input type="checkbox" checked={picked} readOnly tabIndex={-1} className="inline-block align-middle mr-1.5 pointer-events-none" />}
       {carried && (
         <span className="inline-block align-middle mr-1 text-2xs font-bold text-amber-700" title="지난 날에서 이월로 따라오는 일정">
-          ↪
+          <Glyph e="↪" />
         </span>
       )}
       {/* 라벨 칩을 누르면 완료 - 끝내면 칩 앞에 ✓ (P10-1, 라벨이 없으면 회색 ○ 칩). 여러 개 고르는 동안은 칩 대신 ✓만 */}
@@ -168,7 +169,7 @@ function EventChip({
           className="inline-flex align-middle ml-1 bg-yellow-100 text-yellow-800 text-2xs px-1 py-0.5 rounded font-bold border border-yellow-300 shrink-0 hover:bg-yellow-200 cursor-pointer"
           title={`링크된 항목 ${links}개`}
         >
-          🔗 {links}
+          <Glyph e="🔗" /> {links}
         </button>
       )}
       {!multiOn && !space && (
@@ -243,7 +244,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
             aria-label={`메모 ${noteCount}건 보기`}
             className="inline-flex items-center gap-px px-1 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-2xs font-bold leading-none hover:bg-amber-100 transition-colors shrink-0 cursor-pointer"
           >
-            <span aria-hidden>📝</span>
+            <span aria-hidden><Glyph e="📝" /></span>
             <span>{noteCount}</span>
           </button>
         )}

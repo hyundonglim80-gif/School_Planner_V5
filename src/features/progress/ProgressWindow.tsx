@@ -70,6 +70,8 @@ import {
 import { useProgressPlans } from './useProgress';
 import { progressLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 const FIELDS: Array<{ key: LessonField; label: string; title?: string }> = [
   { key: 'unit', label: '단원' },
@@ -548,7 +550,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
               className="px-3 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl cursor-pointer"
               title="이 진도를 지웁니다 (휴지통에서 되살릴 수 있습니다)"
             >
-              🗑️ 지우기
+              <Glyph e="🗑" /> 지우기
             </button>
           )}
           <div className="flex-1" />
@@ -560,7 +562,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
             disabled={!dirty || saving}
             className="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-xs disabled:opacity-40 cursor-pointer"
           >
-            {saving ? '저장 중...' : '💾 저장'}
+            {glyphText(saving ? '저장 중...' : '💾 저장')}
           </button>
         </div>
       }
@@ -602,7 +604,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                 saved ? 'text-indigo-700 border-indigo-300 hover:bg-indigo-50' : 'bg-indigo-50 text-indigo-700 border-indigo-400'
               }`}
             >
-              {saved ? '+ 새 진도' : '✏️ 새 진도'}
+              {glyphText(saved ? '+ 새 진도' : '✏️ 새 진도')}
             </button>
           </div>
 
@@ -667,7 +669,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-500 pt-1">시간표에 '5-2 과학'처럼 반을 적거나 ⏰ 시간표 창 교사 유형에서 가르치는 반을 적으세요.</p>
+                  <p className="text-xs text-slate-500 pt-1">시간표에 '5-2 과학'처럼 반을 적거나 <Glyph e="⏰" /> 시간표 창 교사 유형에서 가르치는 반을 적으세요.</p>
                 )}
               </div>
               {draft.subject.trim() && (
@@ -718,7 +720,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                   })}
                 </div>
               ) : (
-                <p className="pl-16 text-xs text-slate-500">⏰ 시간표 창에서 시간표를 만들면 과목을 여기서 고를 수 있습니다.</p>
+                <p className="pl-16 text-xs text-slate-500"><Glyph e="⏰" /> 시간표 창에서 시간표를 만들면 과목을 여기서 고를 수 있습니다.</p>
               )}
             </section>
           )}
@@ -773,7 +775,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                   title={`'단원·차시·내용·교과서·준비물' 예시 표(${PROGRESS_SAMPLE_FILENAME})를 받습니다. 엑셀에서 열어 고친 뒤 불러오거나 표를 복사해 붙여 넣으세요.`}
                   className="px-2 py-1 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-md cursor-pointer"
                 >
-                  ⬇️ 예시 CSV 받기
+                  <Glyph e="⬇" /> 예시 CSV 받기
                 </button>
                 <button
                   type="button"
@@ -782,7 +784,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                   title="CSV 파일의 차시 표를 불러옵니다 (예시 CSV와 같은 칸)"
                   className="px-2 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-md cursor-pointer"
                 >
-                  📂 CSV 불러오기
+                  <Glyph e="📂" /> CSV 불러오기
                 </button>
                 <input ref={csvInputRef} type="file" accept=".csv,text/csv,.txt" className="hidden" data-progress-csv-input onChange={(e) => void handleCsvFile(e)} />
               </div>
@@ -855,7 +857,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다 (고치던 것이 있으면 먼저 저장)"
                           aria-label={`${r + 1}번째 행에 메모 잇기`}
                         >
-                          🔗
+                          <Glyph e="🔗" />
                         </button>
                         {rowLinks(r) > 0 && (
                           <button
@@ -1035,7 +1037,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                         {shortDateLabel(s.date)} {s.period}교시
                       </span>
                       {s.bumped ? (
-                        <span className="flex-1 min-w-0 text-amber-700 font-bold">⏭ 밀림 (이 교시는 차시 없음)</span>
+                        <span className="flex-1 min-w-0 text-amber-700 font-bold"><Glyph e="⏭" /> 밀림 (이 교시는 차시 없음)</span>
                       ) : (
                         <span className="flex-1 min-w-0 truncate">
                           <b className="tabular-nums">

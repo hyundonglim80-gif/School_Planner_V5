@@ -31,6 +31,7 @@ import { removeLessonLink, removeLink, removeProgressLink } from './actions';
 import { LINK_KIND_ICON, LINK_KIND_NAME, lessonEndOf, linkKindOf, parseLessonLink, parseProgressLink, progressEndOf, progressLinksByNote } from './linkOps';
 import type { LinkWindowParams } from './open';
 import { DoneMark } from '../events/EventDoneChip';
+import { Glyph } from '../../ui/Icon';
 
 const btn = 'px-2 py-1 text-xs font-bold rounded-lg border transition-colors cursor-pointer';
 
@@ -77,20 +78,20 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
   const header = (icon: string, title: string, linkId: string, actions: { move?: () => void; edit?: () => void }) => (
     <div className="flex justify-between items-center gap-2 mb-2 pb-2 border-b border-slate-100">
       <span className="font-bold text-blue-700 text-xs flex items-center gap-1 min-w-0 truncate">
-        <span>{icon}</span> {title}
+        <Glyph e={icon} /> {title}
       </span>
       <div className="flex items-center gap-1 shrink-0">
         <button type="button" data-link-unlink={linkId} onClick={() => unlink(linkId)} className={`${btn} bg-rose-50 text-rose-600 hover:bg-rose-100 border-rose-200`} title="연결만 끊습니다 (양쪽 모두, 항목은 그대로)">
-          🗑️ 삭제
+          <Glyph e="🗑" /> 삭제
         </button>
         {actions.move && (
           <button type="button" data-link-move={linkId} onClick={actions.move} className={`${btn} bg-amber-50 text-amber-800 hover:bg-amber-100 border-amber-300`} title="그 항목이 있는 화면으로">
-            📌 이동
+            <Glyph e="📌" /> 이동
           </button>
         )}
         {actions.edit && (
           <button type="button" data-link-edit={linkId} onClick={actions.edit} className={`${btn} bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200`} title="하루·메모 화면과 같은 쓰는 칸을 엽니다">
-            ✏️ 수정
+            <Glyph e="✏" /> 수정
           </button>
         )}
       </div>
@@ -223,12 +224,12 @@ export default function LinkViewerWindow({ params, close, raise }: WindowProps<L
         )}
         {progressEnd && (
           <p className="text-xs text-slate-500 truncate" data-link-viewer-source>
-            📘 진도 {progressEnd.title} 에 이은 것
+            <Glyph e="📘" /> 진도 {progressEnd.title} 에 이은 것
           </p>
         )}
         {links.length === 0 ? (
           <div className="text-center py-12 text-slate-500 flex flex-col items-center gap-2" data-link-viewer-empty>
-            <span className="text-3xl opacity-50">📂</span>
+            <span className="text-3xl opacity-50"><Glyph e="📂" /></span>
             <p className="text-xs font-medium">{source || lessonEnd || progressEnd ? '연결된 항목이 없습니다.' : status === 'live' ? '항목을 찾지 못했습니다.' : '불러오는 중…'}</p>
           </div>
         ) : (

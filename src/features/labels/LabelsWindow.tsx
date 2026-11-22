@@ -35,6 +35,7 @@ import type { ItemKind, LabelProps } from '../../data/types';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import ColorPicker from './ColorPicker';
 import { useTabTarget } from '../../app/keys';
+import { Glyph } from '../../ui/Icon';
 
 export interface LabelsWindowParams {
   /** 처음 볼 탭 (각 칸의 ⚙️에서 그 탭으로) */
@@ -271,9 +272,9 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
             title="지웠지만 아직 일정·메모에 붙어 있는 라벨을 찾아 되살립니다"
             className="mr-auto px-3 py-2 bg-white hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed text-slate-600 border border-slate-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
           >
-            🔍 삭제된 라벨 복구
+            <Glyph e="🔍" /> 삭제된 라벨 복구
           </button>
-          {saved && <span className="text-emerald-500 text-xs font-bold">✅ 저장되었습니다</span>}
+          {saved && <span className="text-emerald-500 text-xs font-bold"><Glyph e="✅" /> 저장되었습니다</span>}
           <ModalCloseButton onClose={askClose} />
           <button
             type="button"
@@ -283,7 +284,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
             disabled={saving || !sid}
             className="px-5 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
           >
-            💾 {saving ? '저장 중...' : '저장'}
+            <Glyph e="💾" /> {saving ? '저장 중...' : '저장'}
           </button>
         </>
       }
@@ -306,7 +307,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <span>{k === 'event' ? '📅' : '📝'}</span> {KIND_NOUN[k]} 라벨 ({(k === 'event' ? eventDraft : noteDraft).length})
+              <Glyph e={k === 'event' ? '📅' : '📝'} /> {KIND_NOUN[k]} 라벨 ({(k === 'event' ? eventDraft : noteDraft).length})
             </button>
           ))}
         </div>
@@ -314,7 +315,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
         <div className="p-5 space-y-4" data-label-panel={tab}>
           {tab === 'event' ? (
             <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-xl text-xs text-blue-900 leading-relaxed">
-              <strong>💡 일정 라벨 속성</strong>
+              <strong><Glyph e="💡" /> 일정 라벨 속성</strong>
               <ul className="list-disc list-inside mt-1 space-y-0.5 text-blue-800">
                 {EVENT_LABEL_PROPS.map((p) => (
                   <li key={p.key}>
@@ -326,7 +327,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
             </div>
           ) : (
             <div className="bg-emerald-50 border-l-4 border-emerald-500 p-3 rounded-r-xl text-xs text-emerald-900 leading-relaxed">
-              <strong>💡 메모 라벨</strong>
+              <strong><Glyph e="💡" /> 메모 라벨</strong>
               <p className="mt-0.5 text-emerald-800">
                 날짜를 단 메모와 날짜 없는 메모가 함께 쓰는 라벨입니다. 쓰는 칸과 메모 화면·하루 화면의 라벨로 보기가 이 목록을 봅니다. 순서를 위/아래로, 상위 라벨 밑에 둘 수 있습니다(2단계까지).
                 맨 위 라벨이 새 메모의 기본 라벨입니다.
@@ -476,7 +477,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                           title="앱이 만든 라벨이라 이름을 바꾸거나 지울 수 없습니다 (메모로 Claude 요청)"
                           className="px-1.5 py-0.5 text-slate-500 shrink-0"
                         >
-                          🔒
+                          <Glyph e="🔒" />
                         </span>
                       ) : (
                         <DeleteButton noun="메모" name={d.name} onDelete={() => removeRow(d.id)} />
@@ -496,7 +497,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                   title={counted ? '메모·휴지통 어디에도 붙지 않은 라벨' : '항목을 다 받은 뒤에 셉니다'}
                   className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 disabled:opacity-50 border border-rose-200 rounded-lg font-bold text-rose-700 cursor-pointer"
                 >
-                  🧹 빈 라벨 정리 ({emptyCount}개)
+                  <Glyph e="🧹" /> 빈 라벨 정리 ({emptyCount}개)
                 </button>
                 {!counted && <span className="text-slate-500 font-bold">항목을 받는 중이라 아직 세지 않았습니다.</span>}
               </div>

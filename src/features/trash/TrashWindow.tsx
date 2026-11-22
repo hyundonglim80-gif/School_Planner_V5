@@ -16,6 +16,7 @@ import { expiredOf, KIND_LABEL, TRASH_TABS, tabOf, trashEntries, type TrashEntry
 import { useTabTarget } from '../../app/keys';
 import { todayStr } from '../../domain/dateUtils';
 import { effectiveTrashDays, TRASH_DAYS_UNSET, TRASH_DEFAULT_DAYS, TRASH_DEFAULT_FROM } from '../../domain/trashDays';
+import { Glyph } from '../../ui/Icon';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -108,7 +109,7 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
           aria-label="자동 비우기 설정"
           className={`w-8 h-8 rounded-xl text-sm cursor-pointer ${settingsOpen ? 'bg-primary/10' : 'bg-slate-100 hover:bg-slate-200'}`}
         >
-          ⚙️
+          <Glyph e="⚙" />
         </button>
       }
       footer={<ModalCloseButton onClose={close} />}
@@ -167,14 +168,14 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
           <span className="text-slate-600" data-trash-auto={trashDays}>
             {unset && days === 0 ? (
               <>
-                🕒 <b>{Number(TRASH_DEFAULT_FROM.slice(5, 7))}월 {Number(TRASH_DEFAULT_FROM.slice(8))}일부터</b> 지운 지 <b>{TRASH_DEFAULT_DAYS}일</b>이 지난 항목은 자동으로 영구 삭제됩니다(기본). 남겨 두려면 ⚙️에서 끄기.
+                <Glyph e="🕒" /> <b>{Number(TRASH_DEFAULT_FROM.slice(5, 7))}월 {Number(TRASH_DEFAULT_FROM.slice(8))}일부터</b> 지운 지 <b>{TRASH_DEFAULT_DAYS}일</b>이 지난 항목은 자동으로 영구 삭제됩니다(기본). 남겨 두려면 ⚙️에서 끄기.
               </>
             ) : days > 0 ? (
               <>
-                🕒 지운 지 <b>{days}일</b>이 지난 항목은 자동으로 영구 삭제됩니다{unset && '(기본 - ⚙️에서 바꿉니다)'}.
+                <Glyph e="🕒" /> 지운 지 <b>{days}일</b>이 지난 항목은 자동으로 영구 삭제됩니다{unset && '(기본 - ⚙️에서 바꿉니다)'}.
               </>
             ) : (
-              <>🕒 자동 비우기 꺼짐 - 직접 지우기 전까지 남아 있습니다.</>
+              <><Glyph e="🕒" /> 자동 비우기 꺼짐 - 직접 지우기 전까지 남아 있습니다.</>
             )}
           </span>
           {visible.length > 0 && (

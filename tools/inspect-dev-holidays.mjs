@@ -7,7 +7,7 @@
 //   npm run emu · npm run seed(개발자 계정 ?as=5) · npm run dev:emu (켜 둔다) → node tools/inspect-dev-holidays.mjs
 // ⚠️ 에뮬레이터만. 내후년·경고할 해의 표와 admin/config는 끝에 처음대로 되돌린다.
 import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
+import { emulator, glyphTextOf, launch, newPage, open, report, restorer, sel, serverUntil, waitFor } from './lib/probe.mjs';
 
 const r = report();
 const em = emulator();
@@ -54,7 +54,7 @@ try {
   const row = d.page.locator(sel('dev-holiday-year', YEAR));
   r.check(await waitFor(row), `${YEAR}년 줄`);
   r.check((await d.page.locator(sel('dev-holiday-year')).count()) === 3, '줄 셋 (올해·내년·내후년)');
-  r.check(/⚠️ 없음/.test((await row.textContent()) ?? ''), `없는 해는 ⚠️ 없음 (${await row.textContent()})`);
+  r.check(/⚠ 없음/.test(await glyphTextOf(row)), `없는 해는 ⚠️ 없음 (${await glyphTextOf(row)})`);
   r.check(await waitFor(async () => (await d.page.locator(sel('dev-holidays-key')).inputValue()) === 'INSPECT%2BKEY'), '키 칸 = admin/config (V4와 같은 칸)');
 
   await d.page.click(sel('dev-holiday-fetch', YEAR));

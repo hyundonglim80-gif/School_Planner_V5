@@ -13,6 +13,8 @@ import { rangeForScope } from '../gcal/manual';
 import { useLessonSource } from '../lessons/useLessons';
 import { Section } from '../settings/parts';
 import { exportToSheets, importFromSheets, readSheetRecord, sheetsReadText, type SheetsData } from './sheets';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 type Period = 'view' | 'year' | 'custom';
 const PERIODS: ReadonlyArray<{ key: Period; name: string }> = [
@@ -123,7 +125,7 @@ export default function SheetsSection() {
         <div className="flex flex-wrap gap-1.5">
           {PERIODS.map((p) => (
             <button key={p.key} type="button" data-sheets-period={p.key} aria-pressed={period === p.key} onClick={() => setPeriod(p.key)} className={chip(period === p.key)}>
-              {p.name}
+              {glyphText(p.name)}
             </button>
           ))}
         </div>
@@ -144,14 +146,14 @@ export default function SheetsSection() {
                 onChange={(e) => setInclude((p) => ({ ...p, [k.key]: e.target.checked }))}
                 className="w-3.5 h-3.5 accent-primary cursor-pointer"
               />
-              {k.name}
+              {glyphText(k.name)}
             </label>
           ))}
         </div>
         <p className="text-2xs text-slate-500">메모는 기간과 상관없이 모두 담습니다. 시트로 보낼 때 그 탭은 비우고 다시 씁니다.</p>
         <div className="flex flex-wrap items-center gap-2">
           <button type="button" data-sheets-export disabled={!!busy || !sid} onClick={() => void send()} className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer">
-            📊 시트로 보내기
+            <Glyph e="📊" /> 시트로 보내기
           </button>
           <button
             type="button"
@@ -160,11 +162,11 @@ export default function SheetsSection() {
             onClick={() => void read()}
             className="px-4 py-2 bg-white border border-slate-200 hover:border-primary hover:text-primary text-slate-600 rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
           >
-            📥 시트에서 되읽기
+            <Glyph e="📥" /> 시트에서 되읽기
           </button>
           {sheetId && (
             <a data-sheets-open href={sheetUrlOf(sheetId)} target="_blank" rel="noreferrer" className="text-xs font-bold text-primary hover:underline">
-              🔗 구글 시트 열기
+              <Glyph e="🔗" /> 구글 시트 열기
             </a>
           )}
         </div>
@@ -175,7 +177,7 @@ export default function SheetsSection() {
         )}
         {result && (
           <p data-sheets-result className="text-xs font-bold text-emerald-700">
-            ✅ {result}
+            <Glyph e="✅" /> {result}
           </p>
         )}
       </div>

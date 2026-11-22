@@ -21,6 +21,7 @@ import { Section } from '../settings/parts';
 import AutoBackupSection from './AutoBackupSection';
 import { sendToKeep } from './keep';
 import { openBackup } from './open';
+import { Glyph } from '../../ui/Icon';
 
 type Period = 'all' | 'year' | 'view' | 'custom';
 
@@ -225,10 +226,10 @@ export default function BackupTab() {
       <Section id="backup-export" title="받기" desc="JSON = 앱의 자료를 통째로 담는 백업 파일(되살리기에 씁니다). CSV = 엑셀에서 여는 표(조사표는 담지 않습니다).">
         <div className="flex flex-wrap gap-2">
           <button type="button" data-backup-json disabled={!!busy || !sid} onClick={() => void exportJson()} className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50">
-            🗄️ JSON 백업 받기
+            <Glyph e="🗄" /> JSON 백업 받기
           </button>
           <button type="button" data-backup-csv disabled={!!busy || !sid} onClick={exportCsv} className="px-4 py-2 bg-white border border-slate-200 hover:border-primary hover:text-primary text-slate-600 rounded-xl text-xs font-bold disabled:opacity-50">
-            📄 CSV 받기
+            <Glyph e="📄" /> CSV 받기
           </button>
         </div>
       </Section>
@@ -257,11 +258,11 @@ export default function BackupTab() {
           onClick={() => void restore()}
           className="mt-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold disabled:opacity-50"
         >
-          ♻️ 되살리기
+          <Glyph e="♻" /> 되살리기
         </button>
         {result && (
           <p data-restore-result className="mt-2 text-xs font-bold text-emerald-700">
-            ♻️ {result}
+            <Glyph e="♻" /> {result}
           </p>
         )}
       </Section>

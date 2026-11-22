@@ -642,7 +642,7 @@ try {
     r.check((await waitFor(mute, 5000)) && (await mute.getAttribute('data-chat-mute')) === 'off', '방 머리 🔔 (알림 켜짐)');
     await mute.click();
     r.check(await serverUntil(roomMuted, (v) => v, 8000), '🔔 누르기 → 방 muted.<나> (서버)');
-    r.check((await mute.getAttribute('data-chat-mute')) === 'on' && (await mute.textContent()) === '🔕', '머리 🔕');
+    r.check((await mute.getAttribute('data-chat-mute')) === 'on' && (await mute.locator('[data-glyph="🔕"]').count()) === 1, '머리 🔕');
     r.check(await waitFor(page.locator(sel('toast'), { hasText: '이 대화의 알림을 껐습니다' }), 3000), "안내 '🔕 이 대화의 알림을 껐습니다'");
     await page.locator(sel('chat-back')).click();
     r.check(await waitFor(page.locator(`${sel('chat-room', ALL_KEY)} ${sel('chat-muted')}`), 5000), '목록 줄에 🔕');

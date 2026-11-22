@@ -47,6 +47,7 @@ import {
   type TabBindings,
 } from '../../domain/shortcuts';
 import { isPressShortcutId, type PressTargets } from '../../domain/pressTarget';
+import { Glyph } from '../../ui/Icon';
 
 const NONE: Binding = { ctrl: false, alt: false, shift: false, key: '' };
 /** 창 안 탭(P18-2) 묶음 이름 - 기능 묶음 뒤 */
@@ -126,7 +127,7 @@ function ShortcutRow({
         title={ready ? undefined : '아직 V5로 옮기지 않은 기능입니다. 키는 남겨 둡니다.'}
       >
         {label}
-        {conflicted && <span className="ml-1.5 text-xs text-red-600">⚠ 같은 키를 쓰는 것이 있습니다</span>}
+        {conflicted && <span className="ml-1.5 text-xs text-red-600"><Glyph e="⚠" /> 같은 키를 쓰는 것이 있습니다</span>}
       </span>
       <kbd
         data-shortcut-key
@@ -255,7 +256,7 @@ export default function ShortcutsTab({
               onClick={onStartRecord}
               className="px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
             >
-              ⌨️ 단축키 설정
+              <Glyph e="⌨" /> 단축키 설정
             </button>
           )}
           {unkeyed.length > 0 && (
@@ -290,11 +291,11 @@ export default function ShortcutsTab({
         <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3 text-xs text-slate-600 leading-relaxed">
           {pc ? (
             <>
-              단축키를 더하려면 <strong className="text-slate-800">⌨️ 단축키 설정</strong>을 누른 뒤, 키로 쓰고 싶은 메뉴·단추를 평소처럼{' '}
+              단축키를 더하려면 <strong className="text-slate-800"><Glyph e="⌨" /> 단축키 설정</strong>을 누른 뒤, 키로 쓰고 싶은 메뉴·단추를 평소처럼{' '}
               <strong className="text-slate-800">직접 눌러</strong> 찾아가 <strong className="text-slate-800">완료</strong> → 키를 누릅니다(마지막에 누른 것이 고른 것).
             </>
           ) : (
-            <>단축키를 더하는 것은 PC에서 합니다(⌨️ 단축키 설정 - 단추를 눌러 고른다). 휴대폰 키는 PC와 따로 저장됩니다.</>
+            <>단축키를 더하는 것은 PC에서 합니다(<Glyph e="⌨" /> 단축키 설정 - 단추를 눌러 고른다). 휴대폰 키는 PC와 따로 저장됩니다.</>
           )}
           <br />
           아래에는 <strong className="text-slate-800">키가 걸린 것만</strong> 보입니다. 누를 단추가 없는 기능(반복 일정·진도 만들기 …)은{' '}

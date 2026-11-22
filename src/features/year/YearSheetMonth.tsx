@@ -21,6 +21,7 @@ import type { CalendarEvents } from '../month/calendarEvents';
 import { gcalKey, gcalTimeOn, type GcalBarItem, type GcalShown } from '../../domain/gcalShow';
 import { openGcalEvent } from '../gcal/open';
 import { gcalTip } from '../gcal/gcalActions';
+import { Glyph } from '../../ui/Icon';
 
 /** 앱 일정 또는 구글 캘린더 일정 (하루짜리 구글 일정도 막대 자리 꼴로 - endDate = 그날이라 기간이 아니다) */
 type Entry = ItemDoc | GcalBarItem;
@@ -222,7 +223,7 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
                   >
                     {/* 끝낸 일정은 글 앞에 ✓ (P10-1 - 색은 그대로) */}
                     {it.done && <DoneMark className="!mr-0.5" />}
-                    {it.kind === 'dday' && '🎯 '}
+                    {it.kind === 'dday' && <><Glyph e="🎯" /> </>}
                     {it.kind === 'period' && it.continuesBefore && '◂ '}
                     {it.text}
                     {it.kind === 'period' && it.endDate && it.endDate !== it.date && <span className="text-slate-500 font-semibold"> ~{md(it.endDate)}</span>}

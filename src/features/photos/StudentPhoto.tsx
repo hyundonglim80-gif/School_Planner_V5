@@ -2,6 +2,7 @@
 // 것을 쓴다. 사진이 없으면 눌러서 바로 올릴 수 있는 빈 칸이 된다.
 import { useRef, type ChangeEvent } from 'react';
 import { pressKeys } from '../../ui/pressKeys';
+import { Glyph } from '../../ui/Icon';
 
 export type PhotoShape = 'circle' | 'card';
 
@@ -188,7 +189,7 @@ export default function StudentPhoto({
             title={`구글 드라이브에 있는 ${name} 사진을 고릅니다`}
             className="absolute bottom-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap px-2 py-0.5 rounded-md bg-white border border-slate-200 text-2xs font-bold text-slate-600 hover:text-blue-600 hover:border-blue-300 shadow-2xs cursor-pointer"
           >
-            ☁️ 드라이브에서
+            <Glyph e="☁" /> 드라이브에서
           </button>
         )}
         {hidden}

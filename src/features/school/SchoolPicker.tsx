@@ -7,6 +7,7 @@ import { searchSchools, type NeisSchool } from '../../data/neis';
 import { installNeisKey } from '../../data/neisKey';
 import { maxGrade } from '../../domain/schoolSetting';
 import { saveSchool, saveSchoolGrade, useSchool } from './school';
+import { Glyph } from '../../ui/Icon';
 
 const chip = (on: boolean) =>
   `px-3 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-50 cursor-pointer ${
@@ -53,7 +54,7 @@ export default function SchoolPicker() {
       {school && (
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="font-bold text-slate-700" data-school-name={school.schoolCode}>
-            🏫 {school.name}
+            <Glyph e="🏫" /> {school.name}
           </span>
           <span className="text-slate-500">{school.officeName}</span>
           <button type="button" data-school-change onClick={() => setSearching((v) => !v)} className={chip(false)}>

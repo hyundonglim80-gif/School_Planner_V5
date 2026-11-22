@@ -19,6 +19,7 @@ import { DECOR_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, THEME_OPTIONS, use
 import { Choices, Section, ToggleRow } from './parts';
 import FontSizeRows from './FontSizeRows';
 import GcalOverlaySection from '../gcal/GcalOverlaySection';
+import { Glyph } from '../../ui/Icon';
 
 const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
   pc: '오른쪽·왼쪽 칸 = 화면을 나눠 그쪽에 · 팝업창 = 창마다 브라우저 새 창(다른 모니터로 옮길 수 있고 자리·크기는 창마다 기억)',
@@ -99,7 +100,7 @@ export default function ViewTab() {
             고른 캘린더의 일정이 일정 칸에 점선 줄로 보입니다(읽기만 - 고치기는 구글 캘린더에서). 받은 일정은 이 기기에만 두고 백업에 들지 않습니다. 앱이 보내는
             SP(…) 캘린더는 목록에 없습니다.
             <span data-gcal-overlay-how className="block mt-1">
-              줄을 누르면 자세히 보거나 구글 캘린더에서 엽니다 · 둘째 줄 &apos;📅 구글&apos;로 이 기기에서 끄고 켭니다.
+              줄을 누르면 자세히 보거나 구글 캘린더에서 엽니다 · 둘째 줄 &apos;<Glyph e="📅" /> 구글&apos;로 이 기기에서 끄고 켭니다.
             </span>
           </>
         }

@@ -19,6 +19,7 @@ import { useRosterDraft } from '../class/rosterDraft';
 import { openClassRoster } from '../class/view';
 import { updateTeaching } from '../lessons/teaching';
 import { clearStaleSubjects, createClasses, createCopiedTimetable, createNewClass, useNewYear, useNewYearLoaded } from './useNewYear';
+import { Glyph } from '../../ui/Icon';
 
 export type NewYearParams = { year?: number };
 
@@ -157,7 +158,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
         <>
           <ModalCloseButton onClose={close} />
           <button type="button" data-new-year-done onClick={finish} className="px-5 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer">
-            ✅ 준비 끝
+            <Glyph e="✅" /> 준비 끝
           </button>
         </>
       }
@@ -200,7 +201,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
                   onClick={() => openRosterAt(classIdOf(c), allClasses)}
                   className={`${btn} bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-50`}
                 >
-                  🏫 {c.grade}-{c.num} ({c.students.length}명)
+                  <Glyph e="🏫" /> {c.grade}-{c.num} ({c.students.length}명)
                 </button>
               ))}
             </div>
@@ -260,7 +261,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
           )}
           <div className="flex items-center gap-2 flex-wrap">
             <button type="button" data-new-year-create-class onClick={() => void makeClass()} disabled={busy || !loaded} className={`${btn} bg-primary hover:bg-primary/90 text-white`}>
-              🏫 학급 {plan?.make.length ? `${plan.make.length}개 만들기 (빈 명렬표)` : `만들기${!multi && parsed.length ? ` (학생 ${parsed.length}명)` : ''}`}
+              <Glyph e="🏫" /> 학급 {plan?.make.length ? `${plan.make.length}개 만들기 (빈 명렬표)` : `만들기${!multi && parsed.length ? ` (학생 ${parsed.length}명)` : ''}`}
             </button>
             {plan && plan.make.length > 0 && (
               <span className="text-slate-500" data-new-year-classes-preview>
@@ -313,17 +314,17 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
           <div className="flex gap-1.5 flex-wrap">
             {!state.timetable && (
               <button type="button" data-new-year-copy-timetable onClick={() => void copyTimetable()} disabled={busy || !loaded} className={`${btn} bg-primary hover:bg-primary/90 text-white`}>
-                🗂️ {!loaded || source ? '지난 시간표 베껴 만들기' : '빈 시간표 만들기'}
+                <Glyph e="🗂" /> {!loaded || source ? '지난 시간표 베껴 만들기' : '빈 시간표 만들기'}
               </button>
             )}
             <button type="button" data-new-year-open-timetable onClick={() => openWindow('timetable', { tab: 'grid' })} className={`${btn} bg-white border border-slate-200 hover:bg-slate-50`}>
-              ⏰ 시간표 창
+              <Glyph e="⏰" /> 시간표 창
             </button>
           </div>
           {loaded && staleDays.length > 0 && (
             <div data-new-year-stale={staleDays.length} className="bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-2 space-y-1.5 text-amber-900">
               <p>
-                ⚠️ V4에서 가져온 <b>{year}학년도 날짜의 과목</b>이 {staleDays.length}일 남아 있습니다 (
+                <Glyph e="⚠" /> V4에서 가져온 <b>{year}학년도 날짜의 과목</b>이 {staleDays.length}일 남아 있습니다 (
                 {staleDays
                   .slice(0, 4)
                   .map((d) => monthDayLabel(d.date))
@@ -331,21 +332,21 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
                 {staleDays.length > 4 ? ' …' : ''}). V4가 1년 앞까지 적어 둔 옛 시간표라, 그날은 새 시간표 대신 옛 과목이 보입니다.
               </p>
               <button type="button" data-new-year-clear-stale onClick={() => void clearStale()} disabled={busy} className={`${btn} bg-white border border-amber-300 hover:bg-amber-100`}>
-                🧹 옛 과목 지우기 (비고·첨부는 남김)
+                <Glyph e="🧹" /> 옛 과목 지우기 (비고·첨부는 남김)
               </button>
             </div>
           )}
         </Step>
 
         <Step id="terms" n={3} title="학기·방학" done={state.terms}>
-          <p>{year}학년도 여름·겨울 방학을 적으면 학기는 저절로 셉니다. 우리 학교를 골랐으면 📚 학사일정으로 채웁니다.</p>
+          <p>{year}학년도 여름·겨울 방학을 적으면 학기는 저절로 셉니다. 우리 학교를 골랐으면 <Glyph e="📚" /> 학사일정으로 채웁니다.</p>
           <button
             type="button"
             data-new-year-open-terms
             onClick={() => openWindow('timetable', { tab: 'terms', termsYear: year })}
             className={`${btn} bg-white border border-slate-200 hover:bg-slate-50`}
           >
-            🏖️ {year}학년도 방학 적기
+            <Glyph e="🏖" /> {year}학년도 방학 적기
           </button>
         </Step>
 
@@ -380,13 +381,13 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
                 교사 유형의 가르치는 반에 지난 반이 남아 있습니다: <b>{offer.dropped.join(' · ')}</b> (수업 칸 ▼에 계속 나옵니다)
               </p>
               <button type="button" data-new-year-replace-classes onClick={replaceTeachingClasses} className={`${btn} bg-white border border-sky-300 hover:bg-sky-100`}>
-                🏫 가르치는 반을 {year}학년도 학급으로 바꾸기 ({offer.next.join(' · ')})
+                <Glyph e="🏫" /> 가르치는 반을 {year}학년도 학급으로 바꾸기 ({offer.next.join(' · ')})
               </button>
             </div>
           )}
           {classUnit && <p className="text-slate-500">가르치는 반·과목이 바뀌었으면 교사 유형 탭에서 고칩니다.</p>}
           <button type="button" data-new-year-open-teaching onClick={() => openWindow('timetable', { tab: 'teaching' })} className={`${btn} bg-white border border-slate-200 hover:bg-slate-50`}>
-            👩‍🏫 교사 유형 탭
+            <Glyph e="👩‍🏫" /> 교사 유형 탭
           </button>
         </Step>
       </div>

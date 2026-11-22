@@ -16,6 +16,8 @@ import { useCurrentSpaceId } from '../../data/session';
 import { labelForwardOf } from '../events/forward';
 import { useLessonSource } from '../lessons/useLessons';
 import { KIND_NAME, rangeForScope, startCalendarSync, useCalendarSync } from './manual';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 const KIND_DESC: Record<SyncKind, string> = { event: 'SP(work) 캘린더', class: 'SP(class) 캘린더', journal: 'SP(commentary) 캘린더' };
 const KINDS: SyncKind[] = ['event', 'class', 'journal'];
@@ -76,7 +78,7 @@ export default function CalendarSyncSection() {
       <div data-calendar-sync-window className="space-y-4 text-xs px-5 py-4">
         {/* 저절로 보내기가 있다는 것을 여기서 알린다 (V4 UX-AUDIT C6) */}
         <p data-gcal-auto-hint className="px-3 py-2 rounded-xl bg-sky-50 border border-sky-200 text-sky-800 leading-relaxed">
-          💡 자주 보내는 일정은 ⋮ → 라벨 관리 → 일정 라벨에서 <b>구글 캘린더</b>를 켜 두면 저장·완료·지우기 때 <b>저절로</b> 보냅니다(일정 칸에서 하나씩 켜도 됩니다). 여기서는 기간을
+          <Glyph e="💡" /> 자주 보내는 일정은 ⋮ → 라벨 관리 → 일정 라벨에서 <b>구글 캘린더</b>를 켜 두면 저장·완료·지우기 때 <b>저절로</b> 보냅니다(일정 칸에서 하나씩 켜도 됩니다). 여기서는 기간을
           한꺼번에 맞춥니다.
         </p>
         <div className="bg-blue-50/60 border border-blue-100 rounded-xl p-3 text-slate-600 leading-relaxed">
@@ -167,7 +169,7 @@ export default function CalendarSyncSection() {
             disabled={progress.running}
             className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
           >
-            {progress.running ? '보내는 중...' : '📅 구글 캘린더로 보내기'}
+            {glyphText(progress.running ? '보내는 중...' : '📅 구글 캘린더로 보내기')}
           </button>
         </div>
 
@@ -181,7 +183,7 @@ export default function CalendarSyncSection() {
         )}
         {!progress.running && progress.lastResult && (
           <p data-cal-result className="text-emerald-700 font-bold">
-            ✅ 지난번 보내기: {progress.lastResult}
+            <Glyph e="✅" /> 지난번 보내기: {progress.lastResult}
           </p>
         )}
       </div>

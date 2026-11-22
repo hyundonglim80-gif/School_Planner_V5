@@ -11,6 +11,8 @@ import { isAppliedTimetable } from '../../domain/timetableApply';
 import { usePersonalSpaceId } from '../../data/session';
 import { setClassView } from '../class/view';
 import { useTeaching } from './teaching';
+import { Glyph } from '../../ui/Icon';
+import { glyphText } from '../../ui/glyphText';
 
 export default function FirstStepsBanner() {
   const loaded = useCommonLoaded((s) => s.loaded);
@@ -45,7 +47,7 @@ export default function FirstStepsBanner() {
 
   return (
     <div role="status" data-first-steps-banner className="flex items-center gap-2 flex-wrap rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-900">
-      <span className="font-bold">👣 다음:</span>
+      <span className="font-bold"><Glyph e="👣" /> 다음:</span>
       <span className="flex items-center gap-1.5 flex-wrap">
         {steps.map((s, i) => (
           <span key={s.id} className="flex items-center gap-1.5">
@@ -65,7 +67,7 @@ export default function FirstStepsBanner() {
               }`}
             >
               {s.done ? '✓ ' : ''}
-              {s.label}
+              {glyphText(s.label)}
             </button>
           </span>
         ))}

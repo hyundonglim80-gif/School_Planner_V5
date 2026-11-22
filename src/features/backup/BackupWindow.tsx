@@ -10,6 +10,7 @@ import CollectSection from './CollectSection';
 import KeepImportSection from './KeepImportSection';
 import SheetsSection from './SheetsSection';
 import { useTabTarget } from '../../app/keys';
+import { glyphText } from '../../ui/glyphText';
 
 const TABS: ReadonlyArray<{ id: BackupTabId; label: string }> = [
   { id: 'backup', label: '💾 백업' },
@@ -46,7 +47,7 @@ export default function BackupWindow({ params, close, raise }: WindowProps<Backu
                 tab === t.id ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
-              {t.label}
+              {glyphText(t.label)}
             </button>
           ))}
         </div>
