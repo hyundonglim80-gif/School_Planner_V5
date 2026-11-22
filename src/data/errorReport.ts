@@ -2,6 +2,7 @@
 //   - 무엇을 싣나·무엇을 버리나·몇 번까지는 domain/errorReport. 메모·학생 글은 싣지 않는다('toast'는 앱이 띄운 안내 글 + 오류 이름·코드).
 //   - 저장 도우미(repo)·되돌리기·기기 사본을 거치지 않고 addDoc 하나. 보내기가 실패하면 조용히 버린다(오류 알림이 또 오류를 부르지 않게).
 //   - 로그인하지 않았으면·개발 서버·에뮬레이터 빌드면 보내지 않는다(콘솔에는 원래대로 남는다) - 점검은 enableErrorReports(true)로 켠다.
+//   - 늘 듣는 문은 data/errorCatch(P55-1 첫 화면 JS) - 이 몫은 처음 오류가 났을 때 받는다.
 import { addDoc, collection, doc, getDocs, limit, orderBy, query, serverTimestamp, Timestamp, writeBatch } from 'firebase/firestore';
 import type { ErrorInfo } from 'react';
 import { db } from './firebase';
@@ -9,7 +10,6 @@ import { USING_EMULATOR } from './emulator';
 import { useSession } from './session';
 import { detectDeviceKind } from '../app/prefs';
 import { useNav } from '../app/nav';
-import { setErrorToastReporter } from '../app/toast';
 import { todayStr } from '../domain/dateUtils';
 import {
   buildReport,
@@ -110,28 +110,13 @@ export async function reportError(
   }
 }
 
-let started = false;
-
-/** 앱을 열 때 한 번 (main.tsx): 잡지 못한 오류·약속 거절·오류 안내(showErrorToast)를 알린다 */
-export function startErrorReports() {
-  if (started) return;
-  started = true;
-  window.addEventListener('error', (ev) => {
-    // 그림·스크립트 파일 읽기 실패(ev.error 없음)는 오류 알림이 아니다
-    if (!ev.error && !ev.message) return;
-    void reportError('error', ev.error ?? new Error(ev.message), { source: ev.filename });
-  });
-  window.addEventListener('unhandledrejection', (ev) => {
-    void reportError('rejection', ev.reason);
-  });
-  document.addEventListener('securitypolicyviolation', (ev) => {
-    const text = cspViolationText(ev);
-    if (text) void reportError('error', new Error(text), { source: ev.sourceFile });
-  });
-  setErrorToastReporter((message, error) => void reportError('toast', error, { toastText: message }));
+/** CSP 위반 (data/errorCatch가 이벤트의 칸만 넘긴다) - 출처만 싣는다 */
+export function reportCspViolation(v: { effectiveDirective: string; blockedURI: string; sourceFile?: string | null }) {
+  const text = cspViolationText(v);
+  if (text) void reportError('error', new Error(text), { source: v.sourceFile ?? undefined });
 }
 
-/** React 그리기 오류 (main.tsx createRoot의 onCaughtError·onUncaughtError) */
+/** React 그리기 오류 (main.tsx createRoot의 onCaughtError·onUncaughtError → data/errorCatch) */
 export function reportReactError(error: unknown, info: Pick<ErrorInfo, 'componentStack'>) {
   void reportError('react', error, { componentStack: info.componentStack ?? undefined });
 }

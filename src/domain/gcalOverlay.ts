@@ -4,24 +4,17 @@
 //   받은 일정 = 이 기기에만(data/gcalOverlay - IndexedDB) 달 칸 '<캘린더 id>|YYYY-MM' = { events, at }. 앱 자료·백업·서버에 넣지 않는다.
 //   받는 범위 = 달 단위 - 보는 날의 달 ±1달(하루·주간·월간·한눈에), 년간 = 그 학년도 12달 + 앞뒤 한 달. 15분이 지난 달만 다시.
 //   여러 달에 걸친 일정은 걸친 달마다 담고, 읽을 때(overlayBetween) 캘린더 + id로 하나.
-import { academicYearOf, addDays } from './dateUtils';
+import { addDays } from './dateUtils';
 import { CALENDAR_NAME } from './gcal';
+import { addMonthKey, monthsBetween, overlayColorOf, type OverlayCalendar } from './gcalOverlayPick';
 
-/** 고를 수 있는 캘린더 수 - 화면마다 캘린더 수만큼 구글에 묻는다 */
-export const MAX_OVERLAY_CALENDARS = 10;
+// 늘 쓰는 작은 셈은 gcalOverlayPick에 (P55-1 첫 화면 JS) - 여기서 불러 쓰던 곳은 그대로
+export { addMonthKey, MAX_OVERLAY_CALENDARS, monthsBetween, neededMonths, OVERLAY_DEFAULT_COLOR, overlayColorOf, sanitizeOverlayCalendars, type OverlayCalendar } from './gcalOverlayPick';
+
 /** 받은 달을 이만큼 지나면 다시 받는다 (조용한 토큰이 있을 때만) */
 export const OVERLAY_STALE_MS = 15 * 60 * 1000;
 /** 설명은 이만큼만 담는다 (이 기기 사본 - 긴 회의록이 붙은 일정) */
 export const OVERLAY_DESC_MAX = 1000;
-/** 구글이 색을 주지 않았을 때 */
-export const OVERLAY_DEFAULT_COLOR = '#4285f4';
-
-/** 겹쳐 볼 캘린더 (고를 때 적은 이름·색 - 목록을 다시 받지 않아도 보인다) */
-export interface OverlayCalendar {
-  id: string;
-  name: string;
-  color: string;
-}
 
 /** 이 기기에 담는 구글 일정 (필요한 칸만) */
 export interface OverlayEvent {
@@ -68,30 +61,9 @@ export interface PickableCalendar extends OverlayCalendar {
   primary: boolean;
 }
 
-const HEX = /^#[0-9a-f]{6}$/i;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH = /^\d{4}-\d{2}$/;
 const pad = (n: number) => String(n).padStart(2, '0');
-
-const colorOf = (v: unknown) => (typeof v === 'string' && HEX.test(v) ? v.toLowerCase() : OVERLAY_DEFAULT_COLOR);
-
-// ── 고른 캘린더 ──
-
-/** 계정 칸 읽기 (prefs customField) - 배열이 아니면 undefined(기본 []), 모르는 칸은 버리고 같은 id는 하나, 10개까지 */
-export function sanitizeOverlayCalendars(v: unknown): OverlayCalendar[] | undefined {
-  if (!Array.isArray(v)) return undefined;
-  const out: OverlayCalendar[] = [];
-  const seen = new Set<string>();
-  for (const c of v) {
-    if (!c || typeof c !== 'object') continue;
-    const o = c as Record<string, unknown>;
-    if (typeof o.id !== 'string' || !o.id || o.id.length > 300 || seen.has(o.id)) continue;
-    seen.add(o.id);
-    out.push({ id: o.id, name: typeof o.name === 'string' && o.name.trim() ? o.name.trim().slice(0, 100) : o.id, color: colorOf(o.color) });
-    if (out.length >= MAX_OVERLAY_CALENDARS) break;
-  }
-  return out;
-}
 
 /** 앱이 보내는 캘린더 이름 (SP(work)·SP(class)·SP(commentary)) - 겹치면 같은 일정이 두 번 보인다 */
 const APP_CALENDAR_NAMES = new Set(Object.values(CALENDAR_NAME));
@@ -111,7 +83,7 @@ function calendarName(c: GoogleCalendarEntry): string {
 export function pickableCalendars(list: readonly GoogleCalendarEntry[]): PickableCalendar[] {
   return list
     .filter((c) => c && typeof c.id === 'string' && c.id && !c.deleted && !APP_CALENDAR_NAMES.has(c.summary ?? '') && !APP_CALENDAR_NAMES.has(c.summaryOverride ?? ''))
-    .map((c) => ({ id: c.id, name: calendarName(c), color: colorOf(c.backgroundColor), primary: !!c.primary }))
+    .map((c) => ({ id: c.id, name: calendarName(c), color: overlayColorOf(c.backgroundColor), primary: !!c.primary }))
     .sort((a, b) => Number(b.primary) - Number(a.primary) || a.name.localeCompare(b.name, 'ko'));
 }
 
@@ -163,31 +135,6 @@ export function eventSpan(ev: Pick<OverlayEvent, 'allDay' | 'start' | 'end'>): {
 }
 
 // ── 달 ──
-
-/** 'YYYY-MM'에 n달 */
-export function addMonthKey(month: string, n: number): string {
-  const [y, m] = month.split('-').map(Number);
-  const d = new Date(y, m - 1 + n, 1);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
-}
-
-/** a ~ b 달 (둘 다 포함, 차례대로) */
-export function monthsBetween(a: string, b: string): string[] {
-  const out: string[] = [];
-  for (let cur = a, guard = 0; cur <= b && guard < 240; cur = addMonthKey(cur, 1), guard++) out.push(cur);
-  return out;
-}
-
-/** 화면이 쓰는 달 - 날짜 없는 화면(메모·학급)은 없다 */
-export function neededMonths(scope: string, date: string): string[] {
-  if (!DATE.test(date) || scope === 'memo' || scope === 'class') return [];
-  if (scope === 'year') {
-    const ay = academicYearOf(date);
-    return monthsBetween(`${ay}-02`, `${ay + 1}-03`);
-  }
-  const m = date.slice(0, 7);
-  return [addMonthKey(m, -1), m, addMonthKey(m, 1)];
-}
 
 export const monthRowKey = (cal: string, month: string) => `${cal}|${month}`;
 

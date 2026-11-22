@@ -6,6 +6,7 @@
 //   4) 이월 중인 일정 → 오늘로
 //   5) 토큰이 없을 때 저장 → '구글 로그인이 필요합니다' · 닫으면 '📅 못 보낸 일정 1' → 누르면 보낸다
 //   6) 라벨의 '구글 캘린더'를 끄면 그 라벨로 보낸 것을 지운다
+//   0) 받을 때만 받기(P55-1 첫 화면 JS): 보낼 것이 없으면 보내기·겹쳐 보기·오류 보고 모듈을 받지 않는다 · 라벨 없이 일정 칸에서 따로 켠 일정도 보낸다
 //
 //   7) 겹쳐 보기(P36-3 고르기·받아 담기) · 겹쳐 그리기(P36-4 하루·주간·월간 막대·년간·한눈에·창·끄고 켜기·인쇄에는 없다 - ONLY=draw면 이 묶음만)
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → TZ=Asia/Seoul node tools/inspect-gcal.mjs (흉내 일정이 +09:00 - 시각 글을 서울 시각으로 견준다, CI도 서울)
@@ -396,6 +397,47 @@ const madeItems = async () =>
 try {
   // ONLY=draw = 겹쳐 그리기 묶음만 (P36-4)
   if (process.env.ONLY === 'draw') throw Object.assign(new Error('draw only'), { drawOnly: true });
+
+  // ── P55-1 첫 화면 JS: 보낼 것이 없으면 보내는 몫·겹쳐 보기·오류 보고를 받지 않는다 · 일정 칸에서 따로 처음 켠 일정도 보낸다 ──
+  r.section("받을 때만 받기 (P55-1) - '구글 캘린더' 라벨 없이 일정 하나만 켜기");
+  {
+    for (const id of await queueIds()) await deleteDoc(ref('gcalQueue', id)); // 남은 큐가 있으면 문이 곧바로 받는다
+    const lone = async () => (await madeItems()).find((d) => d.text === '구글점검 따로');
+    undo.add(async () => {
+      const d = await lone();
+      if (d) await deleteDoc(ref('items', d.id));
+    });
+    const s = await newPage(browser);
+    await mockGoogle(s.ctx);
+    await s.ctx.addInitScript(() => sessionStorage.setItem('sp5-google-token', 'tok'));
+    const asked = new Set();
+    s.page.on('request', (req) => {
+      const m = new URL(req.url()).pathname.match(/^\/src\/(features\/gcal\/auto|features\/gcal\/overlayRun|data\/gcalOverlay|data\/errorReport)\.ts$/);
+      if (m) asked.add(m[1]);
+    });
+    await open(s.page, `#/day/${DAY}`);
+    await waitFor(s.page.locator(sel('screen', 'day')), 10000);
+    await new Promise((res) => setTimeout(res, 1500));
+    r.check(asked.size === 0, `첫 화면에서 받지 않는다 - 보내기·겹쳐 보기·오류 보고 (${[...asked].join(',') || '없음'})`);
+    await s.page.evaluate(([sp, d]) => window.sp5.openWindow('event', { sid: sp, date: d }), [sid, DAY]);
+    await s.page.locator(sel('event-text-input')).fill('구글점검 따로');
+    const attr = s.page.locator(sel('event-attr', 'gcal'));
+    r.check(!(await attr.isChecked()), "라벨이 정하지 않아 '구글 캘린더'는 꺼져 있다");
+    await attr.check();
+    await s.page.locator(sel('event-save')).click();
+    const made = await serverUntil(lone, (d) => !!d);
+    r.check(made?.props?.gcal === true, '일정에 따로 켠 값 (props.gcal)');
+    r.check(await waitFor(() => ofItem(made?.id).length === 1, 10000), '보내는 몫이 서지 않았어도 그 저장을 구글에 보낸다');
+    r.check(asked.has('features/gcal/auto'), '보내는 몫은 그때 받았다');
+    r.check(s.errors.length === 0, `화면 오류 없음 ${s.errors.join(' | ')}`);
+    await s.ctx.close();
+    if (made) {
+      await deleteDoc(ref('items', made.id));
+      for (const [k, e] of google.events) if (e.extendedProperties?.private?.sp_item === made.id) google.events.delete(k);
+    }
+    for (const id of await queueIds()) await deleteDoc(ref('gcalQueue', id));
+  }
+
   // 점검 라벨: 구글 캘린더 + 이월
   await setDoc(ref('labels', LABEL), { kind: 'event', name: '구글점검', color: 'sky', order: 'zz', props: { gcal: true, forward: true }, ...base });
   undo.add(async () => {

@@ -33,7 +33,7 @@ import PopoutButton from '../../ui/PopoutButton';
 import SidePanelFrame from '../../ui/SidePanelFrame';
 import LabelPicker from '../labels/LabelPicker';
 import { createEvent, createSeriesEvents, deleteEvent, saveEvent, saveSeriesEvents } from './actions';
-import { ensureGcalLogin } from '../gcal/auto';
+import { ensureGcalLogin, runGcalAuto } from '../gcal/auto';
 import EventScopeWindow from './EventScopeWindow';
 import RecurRow from './RecurRow';
 import { useSeriesOf } from './series';
@@ -286,6 +286,11 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     if (personal && (effectiveAttrs(before, tree).gcal || attrs.gcal)) void ensureGcalLogin();
   };
 
+  /** '구글 캘린더' 일정을 쓰기 앞에서 보내기를 세운다 (P55-1 - 일정 칸에서 따로 켠 일정이 이 공간의 첫 '구글 캘린더' 일정이면 보내는 몫이 아직 서지 않았다. 이 쓰기도 지켜보게 - 이미 섰으면 그대로) */
+  const startGcalBefore = (before: EventForm) => {
+    if (personal && (effectiveAttrs(before, tree).gcal || attrs.gcal)) runGcalAuto(sid);
+  };
+
   const save = async (): Promise<boolean> => {
     const before = base;
     if (!form.text.trim()) {
@@ -324,6 +329,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     if (savingRef.current) return false;
     savingRef.current = true;
     setSaving(true);
+    startGcalBefore(before);
     try {
       if (!isEditing && rule) {
         const made = await createSeriesEvents(sid, form, tree, { rule, until: form.endDate }, (date) => orderAfter(itemsOn(items, date, 'event')));
@@ -371,6 +377,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
     const before = base;
     savingRef.current = true;
     setSaving(true);
+    startGcalBefore(before);
     try {
       const wrote = scope === 'only' ? await saveEvent(sid, item, form, tree, before) : await saveSeriesEvents(sid, item, form, tree, scope, seriesInfo?.list ?? [item], seriesInfo?.series);
       clearDraftOf(form);

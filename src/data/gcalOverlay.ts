@@ -8,13 +8,15 @@
 //     401은 토큰을 잊고 needsLogin · 404·403(구글에서 그 캘린더를 지웠거나 구독을 풀었다)은 missing - 고른 것은 지우지 않는다.
 //   - 같은 달을 두 곳이 함께 물으면 한 번만(묻는 중인 약속을 함께 쓴다).
 // ⚠️ IndexedDB가 고장 나도(없음·막힘) 그 탭 메모리로는 받는다 - 다음에 열면 다시 받는다(콘솔에 한 번).
-import { create } from 'zustand';
 import { deleteDB, openDB, type IDBPDatabase } from 'idb';
 import { monthRowKey, monthsBetween, OVERLAY_STALE_MS, readGoogleEvent, runRange, runsOf, splitByMonth, staleMonths, type OverlayEvent } from '../domain/gcalOverlay';
 import { listEventsBetween } from './google/calendar';
 import { forgetGoogleToken, getGoogleTokenQuietly, getValidGoogleToken, GoogleApiError, GoogleAuthError } from './google/token';
+import { blankGcalOverlay as blank, gcalDbName, setGcalWipe, useGcalOverlay, type MonthCache } from './gcalOverlayStore';
 
-export const gcalDbName = (uid: string) => `sp5-gcal-${uid}`;
+// store·DB 이름은 gcalOverlayStore에 (P55-1 첫 화면 JS - 화면은 store만 늘 읽는다) - 여기서 불러 쓰던 곳은 그대로
+export { gcalDbName, useGcalOverlay, type GcalOverlayState, type MonthCache } from './gcalOverlayStore';
+
 const STORE = 'months';
 const OPEN_TIMEOUT_MS = 3000;
 
@@ -27,35 +29,6 @@ interface MonthRow {
   events: OverlayEvent[];
   at: number;
 }
-
-export interface MonthCache {
-  events: OverlayEvent[];
-  /** 끝까지 받은 때(ms) */
-  at: number;
-}
-
-export interface GcalOverlayState {
-  /** 지금 담고 있는 계정 (다른 계정이 들어오면 비운다) */
-  uid: string;
-  /** 이 기기 사본을 읽었나 */
-  loaded: boolean;
-  /** '<캘린더 id>|YYYY-MM' → 받은 것 */
-  rows: Record<string, MonthCache>;
-  /** 묻는 중인 수 */
-  fetching: number;
-  /** 로그인이 끊겨 받지 못했다 - '🔄 다시 받기' */
-  needsLogin: boolean;
-  /** 구글이 찾지 못한(지웠거나 구독을 푼) 캘린더 */
-  missing: Record<string, true>;
-  /** 마지막 실패 (끊김 등 - 받은 것은 그대로) */
-  error: string;
-  /** 마지막으로 끝까지 받은 때 (0 = 없음) */
-  lastAt: number;
-}
-
-const blank = (uid = ''): GcalOverlayState => ({ uid, loaded: false, rows: {}, fetching: 0, needsLogin: false, missing: {}, error: '', lastAt: 0 });
-
-export const useGcalOverlay = create<GcalOverlayState>(() => blank());
 
 // ── 이 기기 사본 (IndexedDB) ──
 
@@ -272,6 +245,9 @@ export async function wipeGcalOverlay(uid: string): Promise<void> {
   if (useGcalOverlay.getState().uid === uid) useGcalOverlay.setState(blank());
   await deleteDB(gcalDbName(uid));
 }
+
+// 이 몫을 받은 뒤의 지우기(로그아웃·고른 캘린더 없음 - gcalOverlayStore wipeGcalCache)는 연 DB를 닫고 지운다
+setGcalWipe(wipeGcalOverlay);
 
 /** 시험에서 열어 둔 DB를 잊는다 */
 export function resetGcalOverlayForTest() {

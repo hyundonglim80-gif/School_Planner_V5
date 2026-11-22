@@ -1,7 +1,9 @@
 import { describe, it, expect, beforeEach, afterAll, vi } from 'vitest';
 import { showErrorToast, ShownError } from '../app/toast';
 import { useSession } from './session';
-import { enableErrorReports, reportError, reportReactError, resetErrorReportsForTest, startErrorReports } from './errorReport';
+import { enableErrorReports, reportError, reportReactError, resetErrorReportsForTest } from './errorReport';
+// 늘 듣는 문 (P55-1 - 보내는 몫은 처음 오류가 났을 때 받는다)
+import { reportReactError as catchReactError, startErrorReports } from './errorCatch';
 
 vi.mock('./firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 
@@ -88,6 +90,16 @@ describe('reportError', () => {
 
 describe('startErrorReports', () => {
   startErrorReports();
+
+  it('React 그리기 오류도 문을 거쳐 보낸다 (받는 동안 온 것은 모아 두었다 차례로)', async () => {
+    catchReactError(new Error('문 1'), { componentStack: '\n    at A' });
+    catchReactError(new Error('문 2'), { componentStack: '\n    at B' });
+    await vi.waitFor(() => expect(sent.docs).toHaveLength(2));
+    expect(sent.docs.map((d) => [d.kind, d.message])).toEqual([
+      ['react', '문 1'],
+      ['react', '문 2'],
+    ]);
+  });
 
   it('잡지 못한 오류·약속 거절', async () => {
     window.dispatchEvent(new ErrorEvent('error', { error: new RangeError('bad'), message: 'bad', filename: 'http://x/assets/a.js' }));

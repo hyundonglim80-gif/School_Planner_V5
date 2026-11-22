@@ -457,7 +457,8 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 12. **첫 화면에 싣나?** Shell·App이 늘 그리는 부품이 끌어오는 것은 모든 사람이 열 때마다 받는다. 기본 꺼진 기능·누를 때만 쓰는 셈은
     store·띠(가벼운 것)와 셈(무거운 것)을 나누고 셈은 `import()`로(11장 P25-1). 큰 것을 더했으면 `inspect-perf`(첫 화면 JS gzip 400KB 아래). **CI `check`가 늘 지킨다** - `npm run check:size`(`tools/first-screen-js.mjs` - 입구 + 하루 화면 정적 조각 gzip 합, 정한 값 380KB, P50-1).
     Shell이 늘 그리는 줄·창은 **작은 문(상태만 보고 null) + 켤 때 받는 본체**로(P44-2 `MultiSelectGate`·`ShortcutRecordGate`·사진 보기) - 단축키·가로채기는 문이 건다.
-    **큰 모듈의 함수 하나만 늘 써도 그 모듈의 쓰이는 내보내기 전부가 첫 묶음에 실린다** - 늘 쓰는 작은 셈은 작은 파일로 떼고 큰 쪽이 다시 내보낸다(P49-3 `chatCore`·`chatWatch`·`newYearTarget`·`printPage`).
+    **큰 모듈의 함수 하나만 늘 써도 그 모듈의 쓰이는 내보내기 전부가 첫 묶음에 실린다** - 늘 쓰는 작은 셈은 작은 파일로 떼고 큰 쪽이 다시 내보낸다(P49-3 `chatCore`·`chatWatch`·`newYearTarget`·`printPage` · P55-1 `gcalOverlayPick`·`gcalOverlayStore`·`staleChunk`).
+    **켠 사람만 쓰는 기능의 뒤에서 도는 일도 문 + 받는 몫으로**(P55-1): 문은 쓸 일이 있나만 본다(구글 캘린더 = 고른 캘린더·켠 라벨·따로 켠 일정·큐, 오류 보고 = 오류가 남) - 받는 동안 온 것은 모아 둔다. 쓰기를 지켜보는 몫이면 **처음 켜는 그 쓰기를 놓치지 않게** 켜는 곳(일정 칸)이 쓰기 앞에서 세운다.
     거꾸로 하루 화면도 쓰는 모듈을 첫 묶음에서 빼면 작은 조각으로 따로 받아져 오히려 1~2KB 는다(P49-3) - `inspect-perf`로 견준다.
     처음 받는 모듈은 `vite.config` `codeSplitting` 묶음(`$initial` = vendor + initial)이 두 조각으로 모은다 - 묶음이 없으면 나눠 받는 것이 늘 때마다 처음 모듈이 작은 조각으로 쪼개져 gzip 합이 도로 는다(11-17). 크기는 **하루 화면까지 받는 파일 합**으로 견준다(입구만 보면 속는다).
 

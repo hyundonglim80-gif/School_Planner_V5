@@ -4,6 +4,11 @@
 //   - 같은 오류는 세션(탭)에 한 번, 세션 10건·하루 30건까지(`shouldSend`) - 같은 오류가 그리기마다 나도 쓰기가 불어나지 않게.
 //   - 버림(`isNoise`): 브라우저가 내는 소음(ResizeObserver loop·Script error.)·확장 프로그램·새 판 조각 404(lazyWithReload가 새로고침한다)·끊긴 동안·이미 안내한 실패(ShownError - 안내할 때 보냈다).
 
+import { looksLikeStaleChunk } from './staleChunk';
+
+// 첫 화면이 늘 쓰는 것은 작은 파일에 (P55-1) - 여기서 불러 쓰던 곳은 그대로
+export { looksLikeStaleChunk } from './staleChunk';
+
 export type ErrorKind = 'error' | 'rejection' | 'react' | 'toast';
 export const ERROR_KINDS: readonly ErrorKind[] = ['error', 'rejection', 'react', 'toast'];
 
@@ -65,15 +70,6 @@ export function describeError(err: unknown): { name: string; message: string; co
     };
   }
   return { name: '', message: err === undefined || err === null ? '' : String(err), code: '', stack: '' };
-}
-
-/** 새 판이 나가 옛 조각 파일이 없어진 것 (app/lazyWithReload가 새로고침으로 푼다) */
-export function looksLikeStaleChunk(message: string): boolean {
-  return (
-    message.includes('Failed to fetch dynamically imported module') ||
-    message.includes('error loading dynamically imported module') ||
-    message.includes('Importing a module script failed')
-  );
 }
 
 /** 보내지 않을 것 */
