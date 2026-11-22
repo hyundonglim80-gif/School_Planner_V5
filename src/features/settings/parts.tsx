@@ -2,6 +2,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { useOptionTarget } from '../../app/optionShortcuts';
 import { glyphText } from '../../ui/glyphText';
+import { PICK_ON } from '../../ui/buttons';
 
 /**
  * 그 값이 어디에 남나 (P44-3 - 칸마다 '이 기기에만 남습니다'·'계정에 저장해 PC와 휴대폰이 같습니다'를 글로 되풀이하던 것을 같은 모양 표시 하나로).
@@ -106,7 +107,7 @@ export function Choices<T extends string | number>({
           style={opt.style}
           className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
             value === opt.value
-              ? 'bg-primary text-white border-primary shadow-xs'
+              ? PICK_ON
               : 'bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary'
           }`}
         >

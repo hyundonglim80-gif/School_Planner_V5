@@ -48,6 +48,7 @@ import {
 } from '../../domain/shortcuts';
 import { isPressShortcutId, type PressTargets } from '../../domain/pressTarget';
 import { Glyph } from '../../ui/Icon';
+import { BTN_MAIN } from '../../ui/buttons';
 
 const NONE: Binding = { ctrl: false, alt: false, shift: false, key: '' };
 /** 창 안 탭(P18-2) 묶음 이름 - 기능 묶음 뒤 */
@@ -254,7 +255,7 @@ export default function ShortcutsTab({
               type="button"
               data-shortcut-record-start
               onClick={onStartRecord}
-              className="px-3.5 py-2 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+              className={`px-3.5 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer`}
             >
               <Glyph e="⌨" /> 단축키 설정
             </button>

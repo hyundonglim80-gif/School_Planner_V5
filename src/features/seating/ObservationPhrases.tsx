@@ -5,6 +5,7 @@ import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { showToast } from '../../app/toast';
 import { MAX_PHRASE_LENGTH, addPhrase } from '../../domain/observationPhrases';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_SUB } from '../../ui/buttons';
 
 interface Props {
   onPick: (phrase: string) => void;
@@ -73,7 +74,7 @@ export default function ObservationPhrases({ onPick, disabled }: Props) {
             aria-label="새 관찰 문구"
             className="w-28 px-2 py-0.5 border border-slate-200 rounded-full text-2xs"
           />
-          <button type="button" data-observation-phrase-add onClick={add} title="문구 더하기" aria-label="문구 더하기" className="px-2 py-0.5 rounded-full bg-slate-800 text-white text-2xs font-bold cursor-pointer">
+          <button type="button" data-observation-phrase-add onClick={add} title="문구 더하기" aria-label="문구 더하기" className={`px-2 py-0.5 rounded-full ${BTN_SUB} text-2xs font-bold cursor-pointer`}>
             ＋
           </button>
         </span>

@@ -10,6 +10,7 @@ import { draftPlaceLabel } from './draftList';
 import { openDraftRow } from './open';
 import { useDraftRows } from './useDraftRows';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_SUB } from '../../ui/buttons';
 
 const when = (ms: number) => new Date(ms).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
 
@@ -58,7 +59,7 @@ export default function DraftsWindow({ close, raise }: WindowProps) {
                   type="button"
                   data-drafts-row-open
                   onClick={() => openDraftRow(r)}
-                  className="shrink-0 rounded-lg bg-primary px-2.5 py-1 text-xs font-bold text-white hover:bg-blue-600 cursor-pointer"
+                  className={`shrink-0 rounded-lg ${BTN_SUB} px-2.5 py-1 text-xs font-bold cursor-pointer`}
                 >
                   열기
                 </button>

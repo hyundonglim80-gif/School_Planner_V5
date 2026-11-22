@@ -3,6 +3,7 @@ import { badCutIndex, EVAL_SUBJECTS, parseScore } from '../../domain/evaluation'
 import { describeClass } from '../../domain/roster';
 import type { ClassItem } from '../class/classes';
 import { Glyph } from '../../ui/Icon';
+import { BTN_SUB } from '../../ui/buttons';
 
 export interface MetaDraft {
   title: string;
@@ -114,7 +115,7 @@ export default function EvalMetaBox({ open, onToggle, meta, onChange, onSave, cl
             </div>
           )}
           <div className="text-right">
-            <button type="button" data-eval-meta-save onClick={onSave} className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-colors cursor-pointer">
+            <button type="button" data-eval-meta-save onClick={onSave} className={`px-4 py-1.5 ${BTN_SUB} rounded-lg text-xs font-bold transition-colors cursor-pointer`}>
               정보 업데이트
             </button>
           </div>

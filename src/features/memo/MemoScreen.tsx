@@ -40,6 +40,7 @@ import { shortcutTarget } from '../../ui/shortcutTarget';
 import DecorSpot from '../../ui/DecorSpot';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_DANGER } from '../../ui/buttons';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
 const FALLBACK_LABEL = '메모';
@@ -415,7 +416,7 @@ export default function MemoScreen() {
                     data-memo-clear-done
                     disabled={busy}
                     onClick={() => sid && void run(() => deleteNotes(sid, done))}
-                    className="px-2 sm:px-2.5 py-1 bg-rose-500 hover:bg-rose-600 text-white rounded-lg text-xs font-bold cursor-pointer shrink-0 disabled:opacity-50"
+                    className={`px-2 sm:px-2.5 py-1 ${BTN_DANGER} rounded-lg text-xs font-bold cursor-pointer shrink-0 disabled:opacity-50`}
                     title="완료된 메모 모두 삭제 (안내의 되돌리기로 되살립니다)"
                   >
                     <Glyph e="🗑" /><span className="hidden sm:inline"> 전체 비우기</span>

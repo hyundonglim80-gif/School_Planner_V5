@@ -40,6 +40,7 @@ import {
 } from './linkOps';
 import { listenLinkPick, type LinkWindowParams } from './open';
 import { Glyph } from '../../ui/Icon';
+import { BTN_MAIN, BTN_SUB, PICK_ON } from '../../ui/buttons';
 
 type LinkerTab = LinkKind | 'lesson' | 'progress';
 const ITEM_TABS: LinkerTab[] = ['event', 'note'];
@@ -184,7 +185,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
   };
 
   const chip = (on: boolean) =>
-    `px-2.5 py-1 rounded-full text-xs font-bold border transition-colors cursor-pointer ${on ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'}`;
+    `px-2.5 py-1 rounded-full text-xs font-bold border transition-colors cursor-pointer ${on ? PICK_ON : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'}`;
 
   return (
     <ModalShell
@@ -202,7 +203,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
             data-linker-save
             onClick={() => void save()}
             disabled={saving}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition-colors shadow-xs cursor-pointer"
+            className={`px-6 py-2 ${BTN_MAIN} disabled:opacity-60 rounded-xl text-xs font-bold transition-colors shadow-xs cursor-pointer`}
           >
             연결 저장
           </button>
@@ -354,7 +355,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
               type="button"
               data-linker-new={tab}
               onClick={makeNew}
-              className="w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-colors shadow-xs cursor-pointer"
+              className={`w-full px-3 py-2 ${BTN_SUB} rounded-lg text-xs font-bold transition-colors cursor-pointer`}
             >
               + 새 {LINK_KIND_NAME[tab]} 만들어 연결
             </button>

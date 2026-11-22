@@ -21,6 +21,7 @@ import { useCurrentSpaceId, useSession } from '../../data/session';
 import { EVAL_TYPE_LABEL, evalHasStudent, evalTextField, hasScoreCuts, isFreeEval, parseScore, scorePatch, SCORE_FIELD, sortEvals, type EvalValue } from '../../domain/evaluation';
 import { saveEvalStudentValue, useEvalsOn, type EvalItem } from '../evaluations/evalData';
 import { Glyph } from '../../ui/Icon';
+import { BTN_MAIN } from '../../ui/buttons';
 
 interface Props {
   /** 개인 공간 */
@@ -370,7 +371,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                 data-seat-observe-save
                 onClick={() => observe()}
                 disabled={!obs.trim()}
-                className="px-2.5 py-1 rounded-lg bg-slate-800 text-white font-bold disabled:opacity-40 cursor-pointer"
+                className={`px-2.5 py-1 rounded-lg ${BTN_MAIN} font-bold disabled:opacity-40 cursor-pointer`}
               >
                 메모로 남기기
               </button>

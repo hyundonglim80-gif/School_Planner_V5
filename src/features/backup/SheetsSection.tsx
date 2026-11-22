@@ -15,6 +15,7 @@ import { Section } from '../settings/parts';
 import { exportToSheets, importFromSheets, readSheetRecord, sheetsReadText, type SheetsData } from './sheets';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_MAIN, PICK_ON } from '../../ui/buttons';
 
 type Period = 'view' | 'year' | 'custom';
 const PERIODS: ReadonlyArray<{ key: Period; name: string }> = [
@@ -113,7 +114,7 @@ export default function SheetsSection() {
   };
 
   const chip = (on: boolean) =>
-    `px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${on ? 'bg-primary text-white border-primary' : 'bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary'}`;
+    `px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${on ? PICK_ON : 'bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary'}`;
 
   return (
     <Section
@@ -152,7 +153,7 @@ export default function SheetsSection() {
         </div>
         <p className="text-2xs text-slate-500">보내면 시트의 그 탭을 비우고 다시 씁니다(메모는 기간 없이 모두).</p>
         <div className="flex flex-wrap items-center gap-2">
-          <button type="button" data-sheets-export disabled={!!busy || !sid} onClick={() => void send()} className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer">
+          <button type="button" data-sheets-export disabled={!!busy || !sid} onClick={() => void send()} className={`px-4 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer`}>
             <Glyph e="📊" /> 시트로 보내기
           </button>
           <button

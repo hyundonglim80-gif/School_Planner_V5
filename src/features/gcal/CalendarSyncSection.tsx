@@ -18,6 +18,7 @@ import { useLessonSource } from '../lessons/useLessons';
 import { KIND_NAME, rangeForScope, startCalendarSync, useCalendarSync } from './manual';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_MAIN } from '../../ui/buttons';
 
 const KIND_DESC: Record<SyncKind, string> = { event: 'SP(work) 캘린더', class: 'SP(class) 캘린더', journal: 'SP(commentary) 캘린더' };
 const KINDS: SyncKind[] = ['event', 'class', 'journal'];
@@ -167,7 +168,7 @@ export default function CalendarSyncSection() {
             data-cal-send
             onClick={() => void send()}
             disabled={progress.running}
-            className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition-all shadow-xs"
+            className={`px-5 py-2 ${BTN_MAIN} disabled:opacity-60 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer`}
           >
             {glyphText(progress.running ? '보내는 중...' : '📅 구글 캘린더로 보내기')}
           </button>

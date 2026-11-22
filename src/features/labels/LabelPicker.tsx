@@ -13,6 +13,7 @@ import { cleanLabelName, labelColor } from '../../domain/labels';
 import type { LabelTree } from '../../data/select';
 import type { ItemKind } from '../../data/types';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 interface LabelPickerProps {
   kind: ItemKind;
@@ -83,7 +84,7 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
                 ? 'ring-2 ring-primary ring-offset-1 shadow-xs'
                 : 'opacity-70 hover:opacity-100 bg-white text-slate-600 border-slate-200'
               : on
-                ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                ? PICK_ON
                 : 'bg-slate-100 text-slate-600 border-slate-100 hover:bg-slate-200';
           return (
             <button

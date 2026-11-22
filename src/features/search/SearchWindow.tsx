@@ -36,6 +36,7 @@ import { openEvaluation } from '../evaluations/open';
 import DecorSpot from '../../ui/DecorSpot';
 import { pressKeys } from '../../ui/pressKeys';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 const PAGE_SIZE = 50;
 
@@ -196,7 +197,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                   data-search-kind={opt.id}
                   aria-pressed={on}
                   onClick={() => toggleKind(opt.id)}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${on ? 'bg-primary text-white border-primary shadow-xs' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${on ? PICK_ON : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}
                 >
                   {opt.label}
                 </button>

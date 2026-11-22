@@ -8,6 +8,7 @@ import { askClaude } from './actions';
 import ClaudeRunPicker from './ClaudeRunPicker';
 import { useClaudeTagged } from './useClaudeThread';
 import { Glyph } from '../../ui/Icon';
+import { BTN_SUB } from '../../ui/buttons';
 
 export default function ClaudeAskButton({ sid, item, dirty }: { sid: string; item: ItemDoc; dirty: boolean }) {
   const req = useClaudeRequests((s) => s.byId[item.id]);
@@ -31,7 +32,7 @@ export default function ClaudeAskButton({ sid, item, dirty }: { sid: string; ite
           void askClaude(sid, item).catch(() => {});
         }}
         title={dirty ? '고친 것을 먼저 저장하세요 - 저장된 글을 보냅니다' : '저장된 메모 글을 Claude에게 보냅니다 (앞 요청이 있으면 차례를 기다립니다)'}
-        className="px-3 py-2 text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`px-3 py-2 text-sm font-bold ${BTN_SUB} rounded-xl transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         <Glyph e="🤖" /> 요청
       </button>

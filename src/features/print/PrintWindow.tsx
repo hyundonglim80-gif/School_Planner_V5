@@ -37,6 +37,7 @@ import { usePrintPrefs } from './prefs';
 import type { PrintParams } from './types';
 import { GcalOffContext } from '../gcal/gcalView';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 /** 한 장에 맞출 때 쓰는 높이 (찍히는 칸의 97%) */
 const FIT_SLACK = 0.97;
@@ -69,7 +70,7 @@ const FLEX_Y: Record<PrintAlignY, string> = { top: 'flex-start', middle: 'center
 
 const seg = (on: boolean) =>
   `px-3 py-1.5 text-xs font-bold border transition-all cursor-pointer first:rounded-l-lg last:rounded-r-lg -ml-px first:ml-0 ${
-    on ? 'bg-primary text-white border-primary relative z-[1]' : 'bg-white text-slate-500 border-slate-200 hover:text-primary'
+    on ? `${PICK_ON} relative z-[1]` : 'bg-white text-slate-500 border-slate-200 hover:text-primary'
   }`;
 
 export default function PrintWindow({ params, close, raise }: WindowProps<PrintParams | undefined>) {

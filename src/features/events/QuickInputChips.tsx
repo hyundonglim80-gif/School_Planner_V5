@@ -1,6 +1,7 @@
 // 새 일정 빠른 입력 칩 (V4 components/QuickInputChips.tsx, ROADMAP 11-1). 셈은 domain/quickInput, 값을 넣는 일은 일정 칸(EventPanel)이 한다.
 // 적는 대로 날짜·시각·라벨을 알아보고 칩으로 보인다. 누르기 전에는 아무것도 바꾸지 않는다.
 import { Glyph } from '../../ui/Icon';
+import { BTN_SUB } from '../../ui/buttons';
 export interface QuickChip {
   key: string;
   icon: string;
@@ -39,7 +40,7 @@ export default function QuickInputChips({
           type="button"
           onClick={onApplyAll}
           data-quick-chip="all"
-          className="px-2 py-0.5 rounded-full bg-indigo-600 text-white text-2xs font-black hover:bg-indigo-700"
+          className={`px-2 py-0.5 rounded-full ${BTN_SUB} text-2xs font-bold`}
         >
           모두 넣기
         </button>

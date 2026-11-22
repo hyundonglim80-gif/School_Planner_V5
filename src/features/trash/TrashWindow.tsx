@@ -17,6 +17,7 @@ import { useTabTarget } from '../../app/keys';
 import { todayStr } from '../../domain/dateUtils';
 import { effectiveTrashDays, TRASH_DAYS_UNSET, TRASH_DEFAULT_DAYS, TRASH_DEFAULT_FROM } from '../../domain/trashDays';
 import { Glyph } from '../../ui/Icon';
+import { BTN_DANGER, PICK_ON } from '../../ui/buttons';
 
 const quiet = () => {
   /* 안내는 저장 도우미가 했다 */
@@ -126,7 +127,7 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
                   data-trash-days={d}
                   aria-pressed={trashDays === d || (unset && d === TRASH_DEFAULT_DAYS)}
                   onClick={() => setCommonSetting('trashDays', d)}
-                  className={`px-3 py-1 text-xs font-bold rounded-lg border cursor-pointer ${trashDays === d || (unset && d === TRASH_DEFAULT_DAYS) ? 'bg-primary text-white border-primary' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg border cursor-pointer ${trashDays === d || (unset && d === TRASH_DEFAULT_DAYS) ? PICK_ON : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'}`}
                 >
                   {d === 0 ? '끄기' : `${d}일`}
                   {d === TRASH_DEFAULT_DAYS && ' (기본)'}
@@ -184,7 +185,7 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
               data-trash-empty
               disabled={busy}
               onClick={() => purge(visible, `${tab === 'all' ? '휴지통의' : `'${tabLabel}' 탭의`} ${visible.length}개를 모두 영구 삭제할까요? 되돌릴 수 없습니다.`)}
-              className="px-3 py-1.5 bg-red-600 text-white hover:bg-red-700 font-bold text-xs rounded-lg disabled:opacity-40 cursor-pointer"
+              className={`px-3 py-1.5 ${BTN_DANGER} font-bold text-xs rounded-lg disabled:opacity-40 cursor-pointer`}
             >
               {tab === 'all' ? '휴지통 비우기' : `${tabLabel} 비우기`}
             </button>

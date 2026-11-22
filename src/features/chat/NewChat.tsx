@@ -9,6 +9,7 @@ import { CHAT_LIMITS, dmPairId, defaultRoomName } from '../../domain/chat';
 import { personName, type GroupPeople } from './people';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { PICK_ON } from '../../ui/buttons';
 
 /** 새 고른 사람 방 - 첫 글과 함께 만든다 */
 export interface RoomCreate {
@@ -100,7 +101,7 @@ export default function NewChat({ me, groups, people, onPick, onClose }: Props) 
                   aria-pressed={on}
                   onClick={() => toggle(uid)}
                   className={`rounded-full border px-2.5 py-1 text-xs font-bold cursor-pointer ${
-                    on ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-primary hover:text-primary'
+                    on ? PICK_ON : 'border-slate-200 bg-white text-slate-700 hover:border-primary hover:text-primary'
                   }`}
                 >
                   {on ? '✓' : <Glyph e="👤" />} {nameOf(uid)}
