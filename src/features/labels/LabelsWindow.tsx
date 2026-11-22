@@ -36,6 +36,7 @@ import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
 import ColorPicker from './ColorPicker';
 import { useTabTarget } from '../../app/keys';
 import { Glyph } from '../../ui/Icon';
+import { BTN_DANGER, BTN_MAIN, BTN_SUB } from '../../ui/buttons';
 
 export interface LabelsWindowParams {
   /** 처음 볼 탭 (각 칸의 ⚙️에서 그 탭으로) */
@@ -282,7 +283,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
             data-dirty={dirty || undefined}
             onClick={() => void save()}
             disabled={saving || !sid}
-            className="px-5 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className={`px-5 py-2 ${BTN_MAIN} disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer`}
           >
             <Glyph e="💾" /> {saving ? '저장 중...' : '저장'}
           </button>
@@ -397,7 +398,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                     data-label-add="event"
                     disabled={adding || !sid}
                     onClick={() => void add('event')}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                    className={`px-4 py-2 ${BTN_SUB} disabled:opacity-50 rounded-lg text-xs font-bold transition-all cursor-pointer`}
                   >
                     추가
                   </button>
@@ -533,7 +534,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                       data-label-prune-confirm
                       disabled={saving || !pruneList.some((x) => x.checked)}
                       onClick={() => void prune()}
-                      className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white rounded-lg font-bold cursor-pointer"
+                      className={`px-3 py-1.5 ${BTN_DANGER} disabled:opacity-50 rounded-lg font-bold cursor-pointer`}
                     >
                       고른 {pruneList.filter((x) => x.checked).length}개 지우기
                     </button>
@@ -578,7 +579,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                   data-label-add="note"
                   disabled={adding || !sid}
                   onClick={() => void add('note')}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+                  className={`px-4 py-2 ${BTN_SUB} disabled:opacity-50 rounded-lg text-xs font-bold transition-all cursor-pointer`}
                 >
                   추가
                 </button>

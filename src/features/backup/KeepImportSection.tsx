@@ -8,6 +8,7 @@ import { useCurrentSpaceId } from '../../data/session';
 import { Section } from '../settings/parts';
 import { keepResultText, runKeepImport, useKeepInbox } from './keep';
 import { Glyph } from '../../ui/Icon';
+import { BTN_MAIN } from '../../ui/buttons';
 
 export default function KeepImportSection() {
   const sid = useCurrentSpaceId();
@@ -233,7 +234,7 @@ export default function KeepImportSection() {
               data-keep-run
               onClick={() => void run()}
               disabled={!!busy || willAdd + willUpdate === 0}
-              className="px-5 py-2 bg-primary text-white rounded-xl text-xs font-bold hover:bg-primary/90 disabled:opacity-40 cursor-pointer"
+              className={`px-5 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold disabled:opacity-40 cursor-pointer`}
             >
               {busy || (willUpdate > 0 ? `메모 ${willAdd}건 가져오고 ${willUpdate}건 고치기` : `메모 ${willAdd}건 가져오기`)}
             </button>

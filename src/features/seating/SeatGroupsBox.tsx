@@ -12,6 +12,7 @@ import { parsePairKey, type SeatingChart } from '../../domain/seating';
 import { saveGroupSet } from './seatingData';
 import { pressKeys } from '../../ui/pressKeys';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 interface Props {
   sid: string;
@@ -206,7 +207,7 @@ export default function SeatGroupsBox({ sid, classId, stored, sets, activeNums, 
               data-group-set={s.id}
               aria-pressed={!draft && s.id === selectedId}
               onClick={() => chooseSet(s.id)}
-              className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer ${!draft && s.id === selectedId ? 'bg-slate-800 text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}`}
+              className={`px-2.5 py-1 rounded-lg font-bold cursor-pointer ${!draft && s.id === selectedId ? PICK_ON : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'}`}
             >
               {s.name}
             </button>

@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { DAY_NAMES, shortDateLabel } from '../../domain/dateUtils';
 import { BY_WEEKDAY, MAX_SERIES_ITEMS, recurFormDates, toggleKind, toggleWeekday, type RecurForm, type RecurKind } from '../../domain/recur';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 /** 월 ~ 일 (학교 달력처럼 월요일부터) */
 const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
@@ -19,7 +20,7 @@ const WEEKS = ['첫째', '둘째', '셋째', '넷째', '다섯째'];
 
 const chip = (on: boolean) =>
   `px-2 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
-    on ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-slate-600 border-slate-200 hover:border-purple-400'
+    on ? PICK_ON : 'bg-white text-slate-600 border-slate-200 hover:border-purple-400'
   }`;
 
 export default function RecurRow({ start, end, recur, onChange }: { start: string; end: string; recur: RecurForm; onChange: (next: RecurForm) => void }) {

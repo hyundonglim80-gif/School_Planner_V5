@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { finishGoogleLogin, useGoogleLoginPrompt } from '../../data/google/prompt';
 import { renewGoogleToken } from '../../data/google/token';
 import ModalShell from '../../ui/ModalShell';
+import { BTN_MAIN } from '../../ui/buttons';
 
 export default function GoogleLoginWindow() {
   const open = useGoogleLoginPrompt((s) => s.open);
@@ -56,7 +57,7 @@ export default function GoogleLoginWindow() {
             data-google-login
             onClick={login}
             disabled={busy}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+            className={`px-4 py-2 ${BTN_MAIN} disabled:opacity-60 rounded-xl text-xs font-bold transition-colors cursor-pointer`}
           >
             {busy ? '로그인 창을 여는 중…' : '구글 로그인'}
           </button>

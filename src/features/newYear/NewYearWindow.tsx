@@ -20,6 +20,7 @@ import { openClassRoster } from '../class/view';
 import { updateTeaching } from '../lessons/teaching';
 import { clearStaleSubjects, createClasses, createCopiedTimetable, createNewClass, useNewYear, useNewYearLoaded } from './useNewYear';
 import { Glyph } from '../../ui/Icon';
+import { BTN_MAIN, BTN_SUB } from '../../ui/buttons';
 
 export type NewYearParams = { year?: number };
 
@@ -157,7 +158,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
       footer={
         <>
           <ModalCloseButton onClose={close} />
-          <button type="button" data-new-year-done onClick={finish} className="px-5 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer">
+          <button type="button" data-new-year-done onClick={finish} className={`px-5 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold shadow-xs cursor-pointer`}>
             <Glyph e="✅" /> 준비 끝
           </button>
         </>
@@ -260,7 +261,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
             />
           )}
           <div className="flex items-center gap-2 flex-wrap">
-            <button type="button" data-new-year-create-class onClick={() => void makeClass()} disabled={busy || !loaded} className={`${btn} bg-primary hover:bg-primary/90 text-white`}>
+            <button type="button" data-new-year-create-class onClick={() => void makeClass()} disabled={busy || !loaded} className={`${btn} ${BTN_SUB}`}>
               <Glyph e="🏫" /> 학급 {plan?.make.length ? `${plan.make.length}개 만들기 (빈 명렬표)` : `만들기${!multi && parsed.length ? ` (학생 ${parsed.length}명)` : ''}`}
             </button>
             {plan && plan.make.length > 0 && (
@@ -313,11 +314,11 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
           )}
           <div className="flex gap-1.5 flex-wrap">
             {!state.timetable && (
-              <button type="button" data-new-year-copy-timetable onClick={() => void copyTimetable()} disabled={busy || !loaded} className={`${btn} bg-primary hover:bg-primary/90 text-white`}>
+              <button type="button" data-new-year-copy-timetable onClick={() => void copyTimetable()} disabled={busy || !loaded} className={`${btn} ${BTN_SUB}`}>
                 <Glyph e="🗂" /> {!loaded || source ? '지난 시간표 베껴 만들기' : '빈 시간표 만들기'}
               </button>
             )}
-            <button type="button" data-new-year-open-timetable onClick={() => openWindow('timetable', { tab: 'grid' })} className={`${btn} bg-white border border-slate-200 hover:bg-slate-50`}>
+            <button type="button" data-new-year-open-timetable onClick={() => openWindow('timetable', { tab: 'grid' })} className={`${btn} ${BTN_SUB}`}>
               <Glyph e="⏰" /> 시간표 창
             </button>
           </div>
@@ -344,7 +345,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
             type="button"
             data-new-year-open-terms
             onClick={() => openWindow('timetable', { tab: 'terms', termsYear: year })}
-            className={`${btn} bg-white border border-slate-200 hover:bg-slate-50`}
+            className={`${btn} ${BTN_SUB}`}
           >
             <Glyph e="🏖" /> {year}학년도 방학 적기
           </button>
@@ -386,7 +387,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
             </div>
           )}
           {classUnit && <p className="text-slate-500">가르치는 반·과목이 바뀌었으면 교사 유형 탭에서 고칩니다.</p>}
-          <button type="button" data-new-year-open-teaching onClick={() => openWindow('timetable', { tab: 'teaching' })} className={`${btn} bg-white border border-slate-200 hover:bg-slate-50`}>
+          <button type="button" data-new-year-open-teaching onClick={() => openWindow('timetable', { tab: 'teaching' })} className={`${btn} ${BTN_SUB}`}>
             <Glyph e="👩‍🏫" /> 교사 유형 탭
           </button>
         </Step>

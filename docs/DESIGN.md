@@ -453,6 +453,7 @@ V4 규칙 그대로(V4 `CLAUDE.md` 5장): 탭, 폭 끌기·두 번 누르기, ES
 9. **같은 커밋에서** `DESIGN.md`·`MENU.md`·`PARITY.md`(그리고 P9-1부터는 설명서)를 고쳤나?
 10. **점검 스크립트는 `data-*`로 찾나?** 새 단추에 `data-…`를 달았나?
 11. **색**: 강조는 `primary`·`blue`(색 테마를 따른다), 뜻으로 쓰는 파랑은 `cobalt`. 새 빛깔로 뜻을 나누면 `domain/themeCss` `MEANING_HUES`에 더한다(7-5).
+    새 단추는 `ui/buttons` 넷(주·보조·지우기·고르기 켜짐)에서 고른다 - 꽉 찬 색은 창(구역마다 곧바로 되는 창은 구역)마다 주 하나(P54-3).
 12. **첫 화면에 싣나?** Shell·App이 늘 그리는 부품이 끌어오는 것은 모든 사람이 열 때마다 받는다. 기본 꺼진 기능·누를 때만 쓰는 셈은
     store·띠(가벼운 것)와 셈(무거운 것)을 나누고 셈은 `import()`로(11장 P25-1). 큰 것을 더했으면 `inspect-perf`(첫 화면 JS gzip 400KB 아래). **CI `check`가 늘 지킨다** - `npm run check:size`(`tools/first-screen-js.mjs` - 입구 + 하루 화면 정적 조각 gzip 합, 정한 값 380KB, P50-1).
     Shell이 늘 그리는 줄·창은 **작은 문(상태만 보고 null) + 켤 때 받는 본체**로(P44-2 `MultiSelectGate`·`ShortcutRecordGate`·사진 보기) - 단축키·가로채기는 문이 건다.

@@ -17,6 +17,7 @@ import { useClasses } from '../class/classes';
 import { useClassColorOf } from '../lessons/teaching';
 import type { SubjectAttendanceSummaryParams } from './open';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 type Range = 'sem1' | 'sem2' | 'year';
 const RANGE_LABEL: Record<Range, string> = { sem1: '1학기', sem2: '2학기', year: '학년도 전체' };
@@ -84,7 +85,7 @@ export default function SubjectAttendanceWindow({ params, close, raise }: Window
                 data-summary-range={r}
                 aria-pressed={range === r}
                 onClick={() => setRange(r)}
-                className={`px-2 py-1 rounded-lg border font-bold cursor-pointer ${range === r ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
+                className={`px-2 py-1 rounded-lg border font-bold cursor-pointer ${range === r ? PICK_ON : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'}`}
               >
                 {RANGE_LABEL[r]}
               </button>

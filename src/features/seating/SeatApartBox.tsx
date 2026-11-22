@@ -5,6 +5,7 @@ import { showToast } from '../../app/toast';
 import type { Stored } from '../../data/types';
 import { pairKey, parsePairKey } from '../../domain/seating';
 import { saveApart } from './seatingData';
+import { BTN_SUB } from '../../ui/buttons';
 
 interface Props {
   sid: string;
@@ -72,7 +73,7 @@ export default function SeatApartBox({ sid, classId, stored, apart, activeIds, n
           <option value="">학생</option>
           {options}
         </select>
-        <button type="button" data-apart-add onClick={add} className="px-2.5 py-1 rounded-lg bg-slate-800 text-white font-bold cursor-pointer">
+        <button type="button" data-apart-add onClick={add} className={`px-2.5 py-1 rounded-lg ${BTN_SUB} font-bold cursor-pointer`}>
           ＋ 더하기
         </button>
       </div>

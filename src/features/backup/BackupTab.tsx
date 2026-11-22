@@ -22,6 +22,7 @@ import AutoBackupSection from './AutoBackupSection';
 import { sendToKeep } from './keep';
 import { openBackup } from './open';
 import { Glyph } from '../../ui/Icon';
+import { BTN_MAIN, PICK_ON } from '../../ui/buttons';
 
 type Period = 'all' | 'year' | 'view' | 'custom';
 
@@ -181,7 +182,7 @@ export default function BackupTab() {
   };
 
   const chip = (on: boolean) =>
-    `px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${on ? 'bg-primary text-white border-primary' : 'bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary'}`;
+    `px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${on ? PICK_ON : 'bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary'}`;
 
   return (
     <div data-backup-tab>
@@ -225,7 +226,7 @@ export default function BackupTab() {
 
       <Section id="backup-export" title="받기" desc="JSON = 되살리기용 백업 · CSV = 엑셀 표(조사표 빼고)">
         <div className="flex flex-wrap gap-2">
-          <button type="button" data-backup-json disabled={!!busy || !sid} onClick={() => void exportJson()} className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50">
+          <button type="button" data-backup-json disabled={!!busy || !sid} onClick={() => void exportJson()} className={`px-4 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer`}>
             <Glyph e="🗄" /> JSON 백업 받기
           </button>
           <button type="button" data-backup-csv disabled={!!busy || !sid} onClick={exportCsv} className="px-4 py-2 bg-white border border-slate-200 hover:border-primary hover:text-primary text-slate-600 rounded-xl text-xs font-bold disabled:opacity-50">
@@ -256,7 +257,7 @@ export default function BackupTab() {
           data-restore-run
           disabled={!!busy || files.length === 0}
           onClick={() => void restore()}
-          className="mt-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold disabled:opacity-50"
+          className={`mt-2 px-4 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer`}
         >
           <Glyph e="♻" /> 되살리기
         </button>

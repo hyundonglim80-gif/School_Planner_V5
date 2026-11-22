@@ -33,6 +33,7 @@ import EvalTable from './EvalTable';
 import { deleteEvaluation, saveEvalMeta, saveEvalValues, syncEvalRoster, useEvalsOn, type EvalItem, type EvalMeta } from './evalData';
 import type { EvaluationParams } from './open';
 import { Glyph } from '../../ui/Icon';
+import { BTN_MAIN, BTN_SUB } from '../../ui/buttons';
 
 type Mode = { kind: 'auto' } | { kind: 'list' } | { kind: 'create' } | { kind: 'view'; id: string };
 
@@ -227,7 +228,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
             {shortDateLabel(date)} · {placeLabel}
           </span>
           {shown.kind !== 'create' && (
-            <button type="button" data-eval-new onClick={() => go({ kind: 'create' })} className="px-3 py-1 bg-primary text-white rounded-lg text-xs font-bold cursor-pointer">
+            <button type="button" data-eval-new onClick={() => go({ kind: 'create' })} className={`px-3 py-1 ${BTN_SUB} rounded-lg text-xs font-bold cursor-pointer`}>
               + 새 조사표
             </button>
           )}
@@ -254,7 +255,7 @@ export default function EvaluationWindow({ params, close, raise, setParams }: Wi
                 닫기
               </button>
               {canEdit && (
-                <button type="button" data-eval-save onClick={() => void saveValues()} disabled={busy} title="Ctrl + S 로도 저장합니다" className="px-5 py-2 bg-primary text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer">
+                <button type="button" data-eval-save onClick={() => void saveValues()} disabled={busy} title="Ctrl + S 로도 저장합니다" className={`px-5 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold shadow-xs cursor-pointer`}>
                   <Glyph e="💾" /> 저장 <span className="font-normal opacity-70">(Ctrl+S)</span>
                 </button>
               )}

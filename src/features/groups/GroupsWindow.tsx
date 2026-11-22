@@ -15,6 +15,7 @@ import { dmPairId } from '../../domain/chat';
 import { openChat } from '../chat/open';
 import { Section } from '../settings/parts';
 import { Glyph } from '../../ui/Icon';
+import { BTN_MAIN, BTN_SUB } from '../../ui/buttons';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -149,7 +150,7 @@ function GroupRow({ group, uid, current }: { group: GroupSpace; uid: string; cur
             type="button"
             data-group-open
             onClick={() => user && setSpaceChoice(user.uid, group.id)}
-            className="ml-auto px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary/90 cursor-pointer"
+            className={`ml-auto px-2.5 py-1 rounded-lg ${BTN_SUB} text-xs font-bold cursor-pointer`}
           >
             이 공간 보기
           </button>
@@ -304,7 +305,7 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
               placeholder="예: 4학년 협의회"
               className="flex-1 min-w-0 px-3 py-2 border border-slate-200 rounded-xl text-sm"
             />
-            <button type="button" data-group-create disabled={!!busy || !name.trim()} onClick={() => void create()} className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer">
+            <button type="button" data-group-create disabled={!!busy || !name.trim()} onClick={() => void create()} className={`px-4 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer`}>
               {busy === 'create' ? '만드는 중…' : '만들기'}
             </button>
           </div>
@@ -320,7 +321,7 @@ export default function GroupsWindow({ close, raise }: WindowProps) {
               maxLength={12}
               className="flex-1 min-w-0 px-3 py-2 border border-slate-200 rounded-xl text-sm font-mono tracking-widest"
             />
-            <button type="button" data-group-join disabled={!!busy || !code.trim()} onClick={() => void join()} className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer">
+            <button type="button" data-group-join disabled={!!busy || !code.trim()} onClick={() => void join()} className={`px-4 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer`}>
               {busy === 'join' ? '참여하는 중…' : '참여하기'}
             </button>
           </div>

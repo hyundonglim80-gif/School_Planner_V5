@@ -37,6 +37,12 @@ const ITEMS = {
   insp_lkn: { kind: 'note', date: null, text: '점검링크 수업 메모', labelIds: [], order: 'Zz4', linkIds: [`lesson:${DAY}:3`] },
 };
 const lessonDayRef = doc(em.db, 'spaces', sid, 'lessonDays', DAY);
+// ESC로 오른쪽 칸을 닫고 정말 닫혔나까지 기다린다: 칸은 곧바로 사라지지만 앱이 세운 뒤로가기 표지판을 걷는 history.back()은 뒤에 온다.
+// 그 사이 새 칸을 열면 늦게 온 뒤로가기를 사용자의 뒤로가기로 읽어 새 칸을 닫는다(P54-3 - '링크 추가' 묶음이 일정 칸을 못 열고 30초 멈춤, P54-2 ⑧도 같은 꼴).
+const escClose = async (page) => {
+  await page.keyboard.press('Escape');
+  await waitFor(async () => (await page.locator(sel('side-tab')).count()) === 0 && (await page.evaluate(() => !window.history.state?.sp5Sign)), 5000);
+};
 const madeHere = async () => {
   const snap = await getDocs(collection(em.db, 'spaces', sid, 'items'));
   return snap.docs.filter((d) => (d.data().createdAt ?? 0) >= startedAt && String(d.data().text).includes('점검링크') && !d.id.startsWith('insp_'));
@@ -93,7 +99,7 @@ try {
   await page.locator(sel('toast')).filter({ hasText: '연결을 끊었습니다' }).locator('[data-toast-action="되돌리기"]').click();
   const back = await serverUntil(async () => [await read('insp_lke'), await read('insp_lkj')], ([e, j]) => e?.linkIds?.includes('insp_lkj') && j?.linkIds?.includes('insp_lke'));
   r.check(back[0]?.linkIds?.includes('insp_lkj') && back[1]?.linkIds?.includes('insp_lke'), '되돌리기 = 양쪽 다시 이어진다');
-  await page.keyboard.press('Escape');
+  await escClose(page);
 
   r.section('🔗 링크 추가 → 연결 창 → 저장');
   await evCard.locator(sel('event-edit')).click({ force: true });
@@ -136,9 +142,7 @@ try {
   r.check(await waitFor(async () => (await evCard.locator(sel('event-links')).getAttribute('data-event-links')) === '5'), '일정 카드 🔗 5');
 
   r.section("'+ 새 메모 만들어 연결' - 🛒가 비어 있으면 저장과 함께 연결 창이 닫힌다");
-  await page.keyboard.press('Escape');
-  // 닫히는 움직임이 끝난 뒤 다시 연다 (닫히는 칸의 단추를 누르면 놓친다)
-  await waitFor(async () => (await page.locator(sel('side-tab')).count()) === 0);
+  await escClose(page); // 닫히는 움직임이 끝난 뒤 다시 연다 (닫히는 칸의 단추를 누르면 놓친다)
   await evCard.locator(sel('event-edit')).click({ force: true });
   await waitFor(evPanel, 8000);
   await evPanel.locator(sel('event-link-add')).click();
@@ -163,7 +167,7 @@ try {
   r.check(!unlinked2[0]?.linkIds?.includes(made2) && unlinked2[1] && !unlinked2[1].deletedAt, '되돌리기 = 연결만 풀리고 메모는 그대로');
 
   r.section('📌 이동·✏️ 수정');
-  await page.keyboard.press('Escape');
+  await escClose(page);
   await page.goto(page.url().replace(/#.*$/, '#/day/2026-10-07'));
   await page.locator(sel('entry-card', 'insp_lkk')).locator(sel('entry-links')).click();
   r.check(await waitFor(viewer('insp_lkk')), '어제 기록의 📑');
@@ -171,7 +175,7 @@ try {
   r.check(await waitFor(async () => hashOf(page) === `#/day/${DAY}`), `📌 이동 = 그날 하루 화면 (${hashOf(page)})`);
   await viewer('insp_lkk').locator(sel('link-edit', 'insp_lke')).click();
   r.check(await waitFor(page.locator(sel('event-panel', 'edit'))), '✏️ 수정 = 일정 칸');
-  await page.keyboard.press('Escape');
+  await escClose(page);
 
   r.section('새 메모 칸의 🔗 링크 추가');
   await page.goto(page.url().replace(/#.*$/, '#/memo'));
@@ -185,7 +189,7 @@ try {
   const memoId = await memoPanel.getAttribute('data-note-id');
   r.check(await waitFor(page.locator(sel('linker', memoId))), '그 메모의 연결 창');
   r.check((await read(memoId))?.date === null, '서버: 메모');
-  await page.keyboard.press('Escape');
+  await escClose(page);
 
   r.section("그날 '메모' 칸에 이은 메모 (P10-4)");
   await page.goto(page.url().replace(/#.*$/, `#/day/${DAY}`));
@@ -240,7 +244,7 @@ try {
   await inJournal('insp_lkm').locator(sel('entry-link-add')).click();
   await lk.locator(sel('linker-tab', 'progress')).click();
   r.check(await waitFor(async () => (await lk.locator(sel('linker-item', pid)).count()) === 1 && (await lk.locator(sel('linker-item', pid)).isDisabled())), '다시 열면 그 차시는 연결됨');
-  await page.keyboard.press('Escape');
+  await escClose(page);
   await page.goto(page.url().replace(/#.*$/, '#/day/2026-10-01'));
   const own = page.locator(`${sel('day-journal', '2026-10-01')} ${sel('entry-card', 'insp_lkm')}`);
   r.check(await waitFor(own), '제 날짜 칸에도');

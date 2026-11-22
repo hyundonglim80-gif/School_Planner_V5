@@ -26,6 +26,7 @@ import {
 import { listKeyOf } from '../../ui/listKeys';
 import { useNoteTemplates } from './useNoteTemplates';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 const FAIL = '메모 틀을 저장하지 못했습니다. 인터넷 연결을 확인하고 다시 눌러 주세요.';
 
@@ -39,7 +40,7 @@ export function NoteTemplateButton({ open, onToggle }: { open: boolean; onToggle
       onClick={onToggle}
       title="메모 틀 - 자주 쓰는 양식으로 채우거나, 지금 글을 틀로 저장합니다"
       className={`px-2 py-0.5 text-xs font-bold border rounded-md cursor-pointer ${
-        open ? 'bg-primary text-white border-primary' : 'text-slate-600 bg-white hover:bg-slate-50 border-slate-200'
+        open ? PICK_ON : 'text-slate-600 bg-white hover:bg-slate-50 border-slate-200'
       }`}
     >
       <Glyph e="📋" /> 틀

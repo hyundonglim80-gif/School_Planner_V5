@@ -33,6 +33,7 @@ import { shortcutTarget } from '../../ui/shortcutTarget';
 import { useTabTarget } from '../../app/keys';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_MAIN } from '../../ui/buttons';
 
 export type TimetableTab = 'teaching' | 'grid' | 'periods' | 'terms';
 
@@ -365,7 +366,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
             data-timetable-save
             onClick={() => void save()}
             disabled={saving}
-            className="px-5 py-2 bg-primary hover:bg-primary/90 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className={`px-5 py-2 ${BTN_MAIN} disabled:opacity-50 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer`}
           >
             <Glyph e="💾" /> {saving ? '저장 중...' : '저장'}
           </button>

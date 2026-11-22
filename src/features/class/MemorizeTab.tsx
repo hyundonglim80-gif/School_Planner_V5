@@ -10,6 +10,7 @@ import StudentPhoto from '../photos/StudentPhoto';
 import { usePhotoTools } from '../photos/usePhotoTools';
 import { quizStudentsOf, usePhotoQuiz, type QuizStudent } from '../quiz/usePhotoQuiz';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 const SETTINGS_KEY = 'sp5-photo-quiz';
 function readSettings(): QuizSettings {
@@ -159,7 +160,7 @@ export default function MemorizeTab({ cls, candidates, withoutPhoto, classes, ph
                 disabled={isCur}
                 title={isCur ? '지금 고른 학급 (늘 들어갑니다)' : on ? '빼기' : '함께 외우기'}
                 onClick={() => setSettings({ classes: on ? settings.classes.filter((x) => x !== id) : [...settings.classes, id] })}
-                className={`px-2 py-0.5 rounded-md border text-2xs font-extrabold transition-colors ${on ? 'bg-primary text-white border-primary' : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-100 cursor-pointer'} ${isCur ? 'opacity-80' : ''}`}
+                className={`px-2 py-0.5 rounded-md border text-2xs font-extrabold transition-colors ${on ? PICK_ON : 'bg-white text-slate-500 border-slate-300 hover:bg-slate-100 cursor-pointer'} ${isCur ? 'opacity-80' : ''}`}
               >
                 {c.grade}-{c.num}
               </button>

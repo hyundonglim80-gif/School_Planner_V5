@@ -5,6 +5,7 @@ import type { Stored } from '../../data/types';
 import { GROUP_COL_CHOICES, MAX_COLS, MAX_ROWS, numberOrderSeats, resizeChart, unseatedNums, type SeatStudent, type SeatingChart } from '../../domain/seating';
 import { deleteChart, updateChart } from './seatingData';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 const GROUP_COL_LABEL: Record<number, string> = { 0: '통로 없음', 1: '한 칸씩', 2: '두 칸 (짝)', 3: '세 칸' };
 
@@ -55,7 +56,7 @@ export default function SeatShapeBox({ sid, chart, stored, active, onDeleted }: 
     }
   };
 
-  const pick = (on: boolean) => `px-2 py-1 rounded-lg font-bold cursor-pointer ${on ? 'bg-slate-800 text-white' : 'bg-white border border-slate-200'}`;
+  const pick = (on: boolean) => `px-2 py-1 rounded-lg font-bold cursor-pointer ${on ? PICK_ON : 'bg-white border border-slate-200'}`;
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 flex flex-col gap-2 text-xs" data-seating-box="shape">
       <label className="flex items-center gap-2">

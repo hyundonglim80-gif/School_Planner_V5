@@ -5,6 +5,7 @@ import { INTERVAL_OPTIONS, KEEP_OPTIONS } from '../../app/optionShortcuts';
 import { Choices, Section, ToggleRow } from '../settings/parts';
 import { backupNow, useBackupLog, useBackupLogWatch } from './auto';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_MAIN } from '../../ui/buttons';
 
 const stamp = (ms: number) => {
   const d = new Date(ms);
@@ -50,7 +51,7 @@ export default function AutoBackupSection() {
             data-auto-backup-now
             disabled={!!busy}
             onClick={() => void backupNow()}
-            className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
+            className={`px-4 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer`}
           >
             {glyphText(busy || '💾 지금 백업')}
           </button>

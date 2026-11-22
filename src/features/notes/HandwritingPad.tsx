@@ -42,6 +42,7 @@ import {
 import { useBodyScrollLock } from '../../ui/useBodyScrollLock';
 import { useVisualViewport } from '../../ui/useVisualViewport';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 interface Props {
   /** 그리던 것 (다시 열면 이어 그린다) */
@@ -485,7 +486,7 @@ export default function HandwritingPad({ strokes: initial, onChange, onClose, on
     setView(panView(v, 0, y < thumb.top ? step : -step, w, h, paperH.current));
   };
 
-  const tool = (on: boolean) => `px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer border transition-colors ${on ? 'bg-primary text-white border-primary' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'}`;
+  const tool = (on: boolean) => `px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer border transition-colors ${on ? PICK_ON : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'}`;
   const percent = Math.round(scale * 100);
 
   return createPortal(

@@ -47,6 +47,7 @@ import { useStudentDraw } from './useStudentDraw';
 import { openStudentRecord } from '../studentRecord/open';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { PICK_ON } from '../../ui/buttons';
 
 /** 학급마다 마지막에 본 자리표 (이 기기) */
 const CHART_KEY = 'sp5-seating-chart';
@@ -431,7 +432,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
   };
 
   const toolBtn = (on: boolean) =>
-    `px-3 py-1.5 rounded-xl text-xs font-black transition-colors cursor-pointer disabled:opacity-40 ${on ? 'bg-primary text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
+    `px-3 py-1.5 rounded-xl text-xs font-black transition-colors cursor-pointer disabled:opacity-40 ${on ? PICK_ON : 'border border-transparent bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
   const togglePanel = (p: Panel) => setPanel(panel === p ? null : p);
   const desk = <div className="mx-auto w-1/3 min-w-24 text-center text-2xs font-black bg-amber-100 text-amber-700 rounded-md py-1 select-none">교탁</div>;
   const waiting = (classes.length === 0 && classesStatus !== 'live') || (!!classId && charts.length === 0 && seatingStatus !== 'live');
@@ -468,7 +469,7 @@ export default function SeatingWindow({ params, close, raise }: WindowProps<Seat
                     data-seating-tab={c.id}
                     aria-selected={c.id === chart?.id}
                     onClick={() => chooseChart(c.id)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer ${c.id === chart?.id ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold cursor-pointer ${c.id === chart?.id ? PICK_ON : 'border border-transparent bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                   >
                     {c.name}
                   </button>

@@ -8,6 +8,7 @@ import type { GroupSpace } from '../../data/spaceChoice';
 import { CHAT_LIMITS, dmOtherOf, type ChatMsg, type ChatRoom, type ChatRoomRef } from '../../domain/chat';
 import { personName, type GroupPeople } from './people';
 import { Glyph } from '../../ui/Icon';
+import { PICK_ON } from '../../ui/buttons';
 
 interface Props {
   roomRef: ChatRoomRef;
@@ -130,7 +131,7 @@ export default function RoomInfo({ roomRef, room, pendingMembers, uid, groups, p
                       aria-pressed={on}
                       onClick={() => setAdding((a) => (on ? a.filter((x) => x !== who) : [...a, who]))}
                       className={`rounded-full border px-2.5 py-0.5 font-bold cursor-pointer ${
-                        on ? 'border-primary bg-primary text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-primary hover:text-primary'
+                        on ? PICK_ON : 'border-slate-200 bg-white text-slate-700 hover:border-primary hover:text-primary'
                       }`}
                     >
                       {on ? '✓' : '＋'} {nameOf(who)}

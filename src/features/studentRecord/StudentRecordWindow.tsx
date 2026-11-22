@@ -32,6 +32,7 @@ import { addObservation } from '../seating/observation';
 import type { StudentRecordParams } from './open';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_MAIN, PICK_ON } from '../../ui/buttons';
 
 /** 명렬표 관리의 '사진 보기' (켜 두었을 때만 드라이브에서 사진을 읽는다 - V4 그대로) */
 const PHOTOS_KEY = 'sp5-roster-photos';
@@ -216,7 +217,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                   onClick={() => setStudentSid(s.sid)}
                   aria-pressed={studentSid === s.sid}
                   className={`px-2 py-1 rounded-lg border font-bold cursor-pointer ${
-                    studentSid === s.sid ? 'bg-primary text-white border-primary' : `bg-white border-slate-200 hover:border-primary ${isActive(s) ? 'text-slate-600' : 'text-slate-300'}`
+                    studentSid === s.sid ? PICK_ON : `bg-white border-slate-200 hover:border-primary ${isActive(s) ? 'text-slate-600' : 'text-slate-300'}`
                   }`}
                 >
                   {s.num} {s.name}
@@ -290,7 +291,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                       aria-label="관찰 한 줄"
                       className="flex-1 min-w-0 px-2 py-1 border border-slate-200 rounded-lg bg-white"
                     />
-                    <button type="button" data-student-observe-save onClick={() => void observe()} disabled={!obs.trim() || obsBusy} className="px-2.5 py-1 rounded-lg bg-slate-800 text-white font-bold disabled:opacity-40 cursor-pointer">
+                    <button type="button" data-student-observe-save onClick={() => void observe()} disabled={!obs.trim() || obsBusy} className={`px-2.5 py-1 rounded-lg ${BTN_MAIN} font-bold disabled:opacity-40 cursor-pointer`}>
                       메모로 남기기
                     </button>
                   </div>
@@ -311,7 +312,7 @@ export default function StudentRecordWindow({ params, close, raise }: WindowProp
                       data-student-record-tab={k}
                       aria-selected={tab === k}
                       onClick={() => setTab(k)}
-                      className={`px-3 py-1.5 rounded-lg font-black cursor-pointer ${tab === k ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                      className={`px-3 py-1.5 rounded-lg font-black cursor-pointer ${tab === k ? PICK_ON : 'border border-transparent bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                     >
                       {glyphText(label)}
                     </button>

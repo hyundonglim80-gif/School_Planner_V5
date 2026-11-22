@@ -8,6 +8,7 @@ import { Section } from '../settings/parts';
 import { collectTargets } from './collect';
 import { runCollect } from './collectRun';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_MAIN } from '../../ui/buttons';
 
 export default function CollectSection() {
   const sid = useCurrentSpaceId();
@@ -46,7 +47,7 @@ export default function CollectSection() {
           data-collect-run
           disabled={!!busy || count === 0}
           onClick={() => void run()}
-          className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer"
+          className={`px-4 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold disabled:opacity-50 cursor-pointer`}
         >
           {glyphText(busy || '📎 드라이브로 모으기')}
         </button>

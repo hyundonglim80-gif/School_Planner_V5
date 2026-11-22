@@ -1,7 +1,7 @@
 // tools/inspect-theme.mjs - P20-1 ■3: 색 테마 여덟 × 밝게/어둡게를 크롬으로 본다.
 //   1) 화면 넷(하루·주간·월간·메모) + 창 둘(환경설정 보기 탭·새 일정 칸)에서 글자 대비가 기본 테마보다 떨어지지 않는다
 //      (기본이 4.5 넘게 읽히던 글은 4.5 이상, 그 아래이던 글은 기본만큼 - 0.3까지 봐준다). 글자색 ↔ 칠한 바탕(inspect-mobile 본뜸).
-//   2) 흰 글자 단추(고른 칩 bg-primary)가 4.5:1 · 토요일 파랑(cobalt)·이월(amber)은 테마가 바꾸지 않는다.
+//   2) 고른 칩(옅은 강조 - P54-3)·주 단추(흰 글자 on bg-primary)가 4.5:1 · 토요일 파랑(cobalt)·이월(amber)은 테마가 바꾸지 않는다.
 //   3) 인쇄 쪽([data-print-paper])은 어느 테마·밝기에서도 기본 밝은 색.
 //   4) 고대비(P20-2 - html.hc): 16벌 모두 글자 7:1 (HC_MIN).
 //   테마는 html data-palette를 손으로 바꿔 본다(계정 값은 건드리지 않는다 - 고르기·저장은 inspect-settings '색 테마').
@@ -237,7 +237,7 @@ try {
           await setClass(page, 'dim', false);
         }
         if (where === 'win:settings') {
-          // 고른 칩(흰 글자 on bg-primary)
+          // 고른 칩(옅은 강조 - P54-3 PICK_ON, 전에는 흰 글자 on bg-primary)과 주 단추(흰 글자 on bg-primary - BTN_MAIN, 견본을 창에 잠깐 심는다)
           accentOk[id] = await page.locator('[data-choice][aria-pressed="true"]').first().evaluate((el) => {
             const c = document.createElement('canvas').getContext('2d');
             const lumOf = (color) => {
@@ -248,9 +248,18 @@ try {
               const f = (v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
               return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
             };
-            const cs = getComputedStyle(el);
-            const [hi, lo] = [lumOf(cs.color), lumOf(cs.backgroundColor)].sort((a, b) => b - a);
-            return Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100;
+            const ratio = (e) => {
+              const cs = getComputedStyle(e);
+              const [hi, lo] = [lumOf(cs.color), lumOf(cs.backgroundColor)].sort((a, b) => b - a);
+              return Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100;
+            };
+            const main = document.createElement('button');
+            main.className = 'bg-primary text-white border border-primary';
+            main.textContent = '저장';
+            el.parentElement.append(main);
+            const out = { chip: ratio(el), main: ratio(main) };
+            main.remove();
+            return out;
           });
         }
         if (SHOTS && ['day', 'month', 'win:settings'].includes(where)) {
@@ -308,7 +317,8 @@ try {
           `${where}: 기본보다 안 읽히는 글 ${bad.length} - ${bad.slice(0, 5).map(([k, v]) => `${k} ${v} (기본 ${base[k]})`).join(' · ')}`,
         );
       }
-      r.check(accentOk[id] >= 4.5, `흰 글자 on 강조(고른 칩) ${accentOk[id]}:1`);
+      r.check(accentOk[id].chip >= 4.5, `고른 칩 글자(옅은 강조) ${accentOk[id].chip}:1`);
+      r.check(accentOk[id].main >= 4.5, `주 단추 흰 글자 on 강조 ${accentOk[id].main}:1`);
       r.check(fixed[id].sat === fixed.default.sat, `토요일 파랑(cobalt)은 그대로 (${fixed[id].sat})`);
       r.check(fixed[id].amber === fixed.default.amber, `이월 노랑(amber) 글자는 그대로 (${fixed[id].amber})`);
       r.check(fixed[id].paper === fixed.default.paper, '인쇄 쪽은 기본 색');

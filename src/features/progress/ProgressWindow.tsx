@@ -72,6 +72,7 @@ import { progressLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
+import { BTN_MAIN, PICK_ON } from '../../ui/buttons';
 
 const FIELDS: Array<{ key: LessonField; label: string; title?: string }> = [
   { key: 'unit', label: '단원' },
@@ -560,7 +561,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
             data-progress-save
             onClick={() => void handleSave()}
             disabled={!dirty || saving}
-            className="px-4 py-2 bg-primary hover:bg-blue-600 text-white rounded-xl text-xs font-bold shadow-xs disabled:opacity-40 cursor-pointer"
+            className={`px-4 py-2 ${BTN_MAIN} rounded-xl text-xs font-bold shadow-xs disabled:opacity-40 cursor-pointer`}
           >
             {glyphText(saving ? '저장 중...' : '💾 저장')}
           </button>
@@ -581,7 +582,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                 aria-pressed={p.id === draft.id}
                 onClick={() => p.id !== draft.id && switchTo(toDraft(p, isClassUnit))}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
-                  p.id === draft.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
+                  p.id === draft.id ? PICK_ON : 'bg-white text-slate-700 border-slate-200 hover:border-indigo-300'
                 }`}
                 title={`${p.startDate}부터 · ${planPeriods(p).length}차시`}
               >
@@ -659,7 +660,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                           aria-pressed={on}
                           onClick={() => toggleClass(c)}
                           className={`px-2.5 py-1 rounded-md text-xs font-bold border cursor-pointer ${
-                            on ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'
+                            on ? PICK_ON : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-400'
                           }`}
                         >
                           {on ? '✓ ' : ''}
@@ -1003,7 +1004,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                     data-course-preview={c}
                     onClick={() => setPreviewClass(c)}
                     className={`px-2 py-0.5 rounded-md text-xs font-bold border cursor-pointer ${
-                      c === viewClass ? 'bg-slate-700 text-white border-slate-700' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
+                      c === viewClass ? PICK_ON : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'
                     }`}
                   >
                     {c}
