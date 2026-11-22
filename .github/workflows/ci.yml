@@ -48,6 +48,19 @@ jobs:
       - name: Test functions
         run: npm run test:functions
 
+      # 앞날 부품 시험 (P56-1) - 오늘 + 35일인 척(faketime - 시계는 그날부터 흐른다) 앱·함수 시험을 한 번 더.
+      # 오늘에 기대는 시험(날짜 시한폭탄)을 그날이 오기 한 달 앞서 찾는다 - 11-22 app/history.test가 12월 한 달 내내 틀릴 뻔했다.
+      # 여기만 틀리면: 그 시험의 오늘을 고정한다(vi.useFakeTimers({ toFake: ['Date'] }) + vi.setSystemTime) · 앱이 그날 틀리는 것이면 앱을 고친다.
+      # 컨테이너·리눅스에서 다시 보기: FAKETIME_DONT_FAKE_MONOTONIC=1 faketime 'YYYY-MM-DD 10:00:00' npm test (PLAN 5장 'P56-1 정한 것')
+      - name: Test 35 days ahead
+        run: |
+          sudo apt-get install -y -qq faketime > /dev/null 2>&1 || { sudo apt-get update -qq && sudo apt-get install -y -qq faketime > /dev/null; }
+          ahead=$(date -u -d '+35 days' '+%Y-%m-%d 10:00:00')
+          echo "오늘 + 35일인 척: $ahead (UTC)"
+          export FAKETIME_DONT_FAKE_MONOTONIC=1
+          faketime "$ahead" npm test
+          faketime "$ahead" npm run test:functions
+
       - name: Build
         run: npm run build
 
