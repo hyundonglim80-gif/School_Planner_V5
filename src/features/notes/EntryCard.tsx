@@ -121,7 +121,8 @@ export default function EntryCard(props: EntryCardProps) {
       {/* 머리줄 */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-x-1.5 gap-y-1 flex-wrap min-w-0">
-          <span className="flex items-center gap-1.5 flex-nowrap min-w-0 max-w-full">
+          {/* 자리가 모자라면 칩부터 다음 줄로 (P57-2 ■4 - 한 줄로 묶어 두니 글자 130% 휴대폰 두 줄 카드에서 칩이 카드 밖으로 나갔다) */}
+          <span className="flex items-center gap-x-1.5 gap-y-1 flex-wrap min-w-0 max-w-full">
             <button
               type="button"
               data-entry-collapse
@@ -215,9 +216,11 @@ export default function EntryCard(props: EntryCardProps) {
                 props.onOpenDate?.(d);
               }}
               title={`${shortDateLabel(d)} 하루 화면으로`}
-              className="tap-area px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
+              // 좁으면 글만 말줄임 (P57-2 ■4 - 글자 130% 휴대폰 두 줄 카드에서 3px 넘쳤다 · 단추가 자르면 넓힌 누르는 자리도 잘려 글에만)
+              className="tap-area inline-flex items-center gap-1 max-w-full px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
             >
-              <Glyph e="📅" /> {shortDateLabel(d)}
+              <Glyph e="📅" />
+              <span className="min-w-0 truncate">{shortDateLabel(d)}</span>
             </button>
           ))}
           {checks.total > 0 && (

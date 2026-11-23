@@ -19,11 +19,12 @@
 //   - 띠 두 줄(P49-2 - PLAN 5장 'P49-2 정한 것')은 칸을 고르고 초점이 이 표에 있을 때만, 제목 줄 자리에 겹쳐 뜬다(위로 삐져나와 위 글을 잠깐 가린다) -
 //     고르지 않은 표는 제목 줄만 · 서고 접혀도 표가 밀리지 않는다 · 다른 표·본문을 누르면 접히고(고른 칸은 남는다) ESC 둘째(고르기 풀기)에도 접힌다.
 //   단추의 data-table-op 이름은 '단추 대신 누르기' 키가 쓴다 - 바꾸지 않는다.
-import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ClipboardEvent, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
 import { showToast } from '../../app/toast';
 import { setCopySource } from '../clipboard/paste';
 import { isSaveKey } from '../../ui/useSaveKey';
+import { useLongPress } from '../../ui/longPress';
 import { baseCellCss, TABLE_STYLE, tableSize } from '../../domain/tableCss';
 import {
   anchorOf,
@@ -409,14 +410,19 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
     if (res.grown) showToast(`표를 늘려 붙였습니다 (${res.table.rows.length}행 × ${res.table.rows[0]?.cells.length ?? 0}열)`);
   };
 
+  /** 범위: 처음 고른 칸은 그대로, 그 칸까지 (고치던 글은 넣는다). 고른 칸이 없으면 그 칸만 고른다 */
+  const extendTo = (r: number, c: number) => {
+    apply(withDraft(table));
+    setSel({ a: live?.a ?? { r, c }, b: { r, c } });
+    setEditing(false);
+    setDraft('');
+    wantFocus.current = 'keep';
+  };
+
   const onCellClick = (e: MouseEvent, r: number, c: number) => {
+    if (press.consumed()) return;
     if (e.shiftKey && live) {
-      // 범위: 처음 고른 칸은 그대로 (고치던 글은 넣는다)
-      apply(withDraft(table));
-      setSel({ a: live.a, b: { r, c } });
-      setEditing(false);
-      setDraft('');
-      wantFocus.current = 'keep';
+      extendTo(r, c);
       return;
     }
     apply(withDraft(table));
@@ -424,13 +430,35 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   };
 
   /** 열 머리·행 번호 = 그 열·행 전체 (Shift = 처음 고른 칸부터 여러 개) */
-  const pickCols = (e: MouseEvent, c: number) => {
+  const pickCols = (more: boolean, c: number) => {
     apply(withDraft(table));
-    pick({ r: 0, c: e.shiftKey && live ? live.a.c : c }, { r: nRows - 1, c });
+    pick({ r: 0, c: more && live ? live.a.c : c }, { r: nRows - 1, c });
   };
-  const pickRows = (e: MouseEvent, r: number) => {
+  const pickRows = (more: boolean, r: number) => {
     apply(withDraft(table));
-    pick({ r: e.shiftKey && live ? live.a.r : r, c: 0 }, { r, c: nCols - 1 });
+    pick({ r: more && live ? live.a.r : r, c: 0 }, { r, c: nCols - 1 });
+  };
+
+  /**
+   * 휴대폰 길게 누르기 = Shift+누르기 (P57-2 ■4 - 손가락 화면에는 Shift가 없어 범위를 못 골랐다): 칸 = 고른 칸부터 그 칸까지,
+   * 열 머리·행 번호 = 고른 칸의 열·행부터. 누른 곳은 표에서 한 번에 받는다(칸마다 훅을 두지 않는다).
+   */
+  const pressAt = useRef<{ cell?: CellPos; col?: number; row?: number } | null>(null);
+  const press = useLongPress(() => {
+    const p = pressAt.current;
+    if (p?.cell) extendTo(p.cell.r, p.cell.c);
+    else if (p?.col != null) pickCols(true, p.col);
+    else if (p?.row != null) pickRows(true, p.row);
+  });
+  const tablePress = {
+    ...press.handlers,
+    onPointerDown: (e: ReactPointerEvent<HTMLTableElement>) => {
+      const el = (e.target as HTMLElement).closest<HTMLElement>('[data-cell],[data-table-col],[data-table-row]');
+      const d = el?.dataset;
+      const [r, c] = (d?.cell ?? '').split('-').map(Number);
+      pressAt.current = d?.cell ? { cell: { r, c } } : d?.tableCol ? { col: Number(d.tableCol) } : d?.tableRow ? { row: Number(d.tableRow) } : null;
+      if (pressAt.current) press.handlers.onPointerDown(e);
+    },
   };
 
   const g = range;
@@ -757,7 +785,8 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
         )}
         {/* 세로는 칸 안에서 따로 스크롤하지 않고 쓰는 칸 전체로 (P10-5 사용자 의견 6f), 넓은 표는 가로만 */}
         <div ref={boxRef} className="relative overflow-x-auto overflow-y-hidden p-2">
-          <table className="border-collapse" style={TABLE_STYLE as CSSProperties}>
+          {/* 손가락 화면은 글자 긁어 고르기 없이 (길게 누르기 = 범위 - 글 칸은 위에 뜨는 textarea라 상관없다) */}
+          <table className="border-collapse pointer-coarse:select-none" style={TABLE_STYLE as CSSProperties} {...tablePress}>
             <TableColGroup table={table} lead={ROW_HEAD_W} />
             <thead>
               <tr>
@@ -777,10 +806,13 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                     key={c}
                     data-table-col={c}
                     onMouseDown={keepFocus}
-                    onClick={(e) => pickCols(e, c)}
+                    onClick={(e) => {
+                      if (press.consumed()) return;
+                      pickCols(e.shiftKey, c);
+                    }}
                     className={`${g && c >= g.c1 && c <= g.c2 ? headOn : head} px-1 py-0`}
                     style={{ fontSize: 10, lineHeight: 1.6 }}
-                    title={`${colName(c)}열 고르기 (Shift = 여러 열)`}
+                    title={`${colName(c)}열 고르기 (Shift·길게 누르기 = 여러 열)`}
                   >
                     {colName(c)}
                   </th>
@@ -793,10 +825,13 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
                   <th
                     data-table-row={r}
                     onMouseDown={keepFocus}
-                    onClick={(e) => pickRows(e, r)}
+                    onClick={(e) => {
+                      if (press.consumed()) return;
+                      pickRows(e.shiftKey, r);
+                    }}
                     className={`${g && r >= g.r1 && r <= g.r2 ? headOn : head} px-1 py-0 tabular-nums`}
                     style={{ fontSize: 10 }}
-                    title={`${r + 1}행 고르기 (Shift = 여러 행)`}
+                    title={`${r + 1}행 고르기 (Shift·길게 누르기 = 여러 행)`}
                   >
                     {r + 1}
                   </th>

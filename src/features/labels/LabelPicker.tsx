@@ -1,4 +1,5 @@
-// 쓰는 칸의 라벨 고르기 (V4 EventDrawer '라벨' · EntryDrawer '라벨 태그'). 일정은 하나만, 메모·기록은 Ctrl+누르기로 여러 개.
+// 쓰는 칸의 라벨 고르기 (V4 EventDrawer '라벨' · EntryDrawer '라벨 태그'). 일정은 하나만, 메모·기록은 Ctrl+누르기로 여러 개
+// (휴대폰은 길게 누르기 - P57-2 ■4, 공간 칩·일정 카드와 같은 길 ui/longPress).
 //
 // - 일정: 라벨 차례대로, 고른 칩은 라벨 색 + 테두리 고리.
 // - 메모·기록: 트리 차례(하위는 └), 고른 칩은 파랑. 마우스를 올리면 '상위 › 하위'.
@@ -6,7 +7,7 @@
 //   (data/labels ensureLabelOps). 있는 이름이면 그 라벨을 고른다.
 // - ⚙️ 라벨 수정 = 라벨 관리 창의 그 탭.
 // 고른 것은 라벨 id로 들고 있다(원칙 3) - 라벨 이름을 바꿔도 고른 것은 그대로다.
-import { useState } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { openWindow } from '../../app/windows';
 import { labelPath } from '../../domain/labelTree';
 import { cleanLabelName, labelColor } from '../../domain/labels';
@@ -14,6 +15,7 @@ import type { LabelTree } from '../../data/select';
 import type { ItemKind } from '../../data/types';
 import { Glyph } from '../../ui/Icon';
 import { PICK_ON } from '../../ui/buttons';
+import { useLongPress } from '../../ui/longPress';
 
 interface LabelPickerProps {
   kind: ItemKind;
@@ -61,7 +63,16 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
   return (
     <div data-label-picker={kind} className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-500">{kind === 'note' ? '라벨 (Ctrl+누르기 = 여러 개)' : '라벨'}</span>
+        <span data-label-picker-hint className="text-xs font-bold text-slate-500">
+          {kind === 'note' ? (
+            <>
+              라벨 (<span className="pointer-coarse:hidden">Ctrl+누르기</span>
+              <span className="hidden pointer-coarse:inline">길게 누르기</span> = 여러 개)
+            </>
+          ) : (
+            '라벨'
+          )}
+        </span>
         <button
           type="button"
           data-label-picker-settings
@@ -87,15 +98,15 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
                 ? PICK_ON
                 : 'bg-slate-100 text-slate-600 border-slate-100 hover:bg-slate-200';
           return (
-            <button
+            <PickChip
               key={id}
-              type="button"
-              data-label-pick={id}
-              aria-pressed={on}
+              id={id}
+              on={on}
               title={labelPath(id, tree.parents, nameOf)}
-              onClick={(e) => pick(id, e.ctrlKey || e.metaKey)}
               style={style}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer ${cls}`}
+              className={cls}
+              onPick={(multi) => pick(id, multi)}
+              long={kind === 'note'}
             >
               {depth === 1 && (
                 <span className="mr-0.5 opacity-60" aria-hidden>
@@ -104,7 +115,7 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
               )}
               {kind === 'note' && on ? '✓ ' : ''}
               {nameOf(id)}
-            </button>
+            </PickChip>
           );
         })}
         {newNames.map((name) => (
@@ -159,5 +170,36 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
         )}
       </div>
     </div>
+  );
+}
+
+/** 라벨 칩 하나 - 메모는 길게 누르기(손가락) = Ctrl+누르기(더하기·빼기). 길게 누른 뒤 손을 뗀 click은 넘긴다 */
+function PickChip({ id, on, title, style, className, onPick, long, children }: {
+  id: string;
+  on: boolean;
+  title: string;
+  style?: CSSProperties;
+  className: string;
+  onPick: (multi: boolean) => void;
+  long: boolean;
+  children: ReactNode;
+}) {
+  const press = useLongPress(() => long && onPick(true));
+  return (
+    <button
+      type="button"
+      data-label-pick={id}
+      aria-pressed={on}
+      title={title}
+      {...(long ? press.handlers : {})}
+      onClick={(e) => {
+        if (press.consumed()) return;
+        onPick(e.ctrlKey || e.metaKey);
+      }}
+      style={style}
+      className={`px-2.5 py-1 text-xs font-bold rounded-lg border transition-all cursor-pointer select-none ${className}`}
+    >
+      {children}
+    </button>
   );
 }

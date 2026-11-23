@@ -56,6 +56,7 @@ function ClipRow({ item, pasteWith }: { item: ClipItem; pasteWith: Paste }) {
           <span className="block text-xs text-slate-700 whitespace-pre-wrap break-words line-clamp-6">{item.text}</span>
         )}
       </button>
+      {/* 마우스 화면은 올렸을 때만, 손가락 화면은 늘 (P57-2 ■4 - 투명한 채 눌려 보이지 않는 지우기였다) */}
       <button
         type="button"
         data-clip-remove={item.id}
@@ -63,7 +64,7 @@ function ClipRow({ item, pasteWith }: { item: ClipItem; pasteWith: Paste }) {
         onClick={() => void removeClip(item.id)}
         title="휴지통으로 (휴지통에서 되살릴 수 있다)"
         aria-label="이 항목 휴지통으로"
-        className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
+        className="absolute top-1.5 right-1.5 w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-50 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 focus:opacity-100 transition-opacity cursor-pointer"
       >
         ✕
       </button>
