@@ -8,7 +8,7 @@
  * 카드 왼쪽 ▲▼ 순서 단추 묶음 (P53-1): 마우스 화면(pointer: fine)에서는 카드에 올렸을 때·키보드 초점이 들 때만 보인다 - 카드마다 늘 보이던 ▲▼가
  * 글보다 먼저 눈에 걸렸다. 자리는 그대로 차지한다(나타나도 글이 밀리지 않게). 끌어 놓기가 함께 있다(ui/reorderDrag). 휴대폰은 늘 보인다(끌기가 없다).
  */
-export const ORDER_ARROWS = 'transition-opacity pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:has-[:focus-visible]:opacity-100';
+export const ORDER_ARROWS = 'order-arrows transition-opacity pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:has-[:focus-visible]:opacity-100';
 
 /**
  * 메모 카드의 쓴 시각·날짜 (P54-4 - 사용자가 고름 '올렸을 때만'): 마우스 화면에서는 카드에 올렸을 때·카드에 초점이 들 때만 보인다.

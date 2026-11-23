@@ -119,6 +119,18 @@
   }
 }
 
+/* 화면 배치 (P59-1 - 환경설정 '화면 배치' 휴대폰 카드·메모, app/screenPrefs가 html 표시를 단다): 손가락 화면에서만.
+ *   카드 차례 단추 '⇅ 누를 때만' = 칸 머리 ⇅를 누른 칸(data-reorder-on) 안의 ▲▼(ui/cardTools ORDER_ARROWS의 order-arrows)만 선다.
+ *   메모 카드 쓴 시각 끄기 = 시각 글(card-time)을 걷는다(자리도). 겹 밖이라 flex 같은 꼴보다 앞선다. */
+@media (pointer: coarse) {
+  html[data-order-arrows='toggle'] .order-arrows:not([data-reorder-on] .order-arrows) {
+    display: none;
+  }
+  html[data-card-time='off'] .card-time {
+    display: none;
+  }
+}
+
 /* 휴대폰 누르는 자리 (P57-2 ■3): 보이는 모양은 그대로, 손가락 화면에서만 누르는 자리를 24px 이상으로 넓힌다(WCAG 2.5.8) -
  * 가운데에 맞춘 빈 ::after가 단추의 일부라 그 자리를 눌러도 그 단추다. tap-area는 relative를 준다(absolute로 띄운 단추는 tap-area-abs).
  * 넓힌 자리가 옆 단추에 닿으면 그 단추를 누를 때 이것이 눌린다 - 둘레 간격을 넓힌다(겹침 측정 '누르는 자리 겹침'이 잡는다).

@@ -198,7 +198,7 @@ export default function EntryCard(props: EntryCardProps) {
               />
             ))}
           </span>
-          <span className={`text-xs text-slate-500 ${HOVER_ONLY}`} data-entry-date>
+          <span className={`card-time text-xs text-slate-500 ${HOVER_ONLY}`} data-entry-date>
             {dateText}
           </span>
           {props.note && (

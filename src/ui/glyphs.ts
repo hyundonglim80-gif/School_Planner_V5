@@ -113,6 +113,8 @@ export const GLYPHS: Readonly<Record<string, IconName>> = {
   '▾': 'chevron-down',
   '▲': 'chevron-up',
   '▴': 'chevron-up',
+  // 카드 차례 바꾸기 켜기 (P59-1 - 휴대폰 칸 머리 ⇅, 환경설정 화면 배치 '⇅ 누를 때만')
+  '⇅': 'arrow-up-down',
   // 붙은 이모지(ZWJ) - 통째로 한 칸 (학급 도구: 학생 기록·명렬표 · 교사 유형)
   '🧑‍🎓': 'graduation-cap',
   '🧑‍🤝‍🧑': 'users',

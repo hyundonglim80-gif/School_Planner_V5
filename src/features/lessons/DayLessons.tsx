@@ -51,6 +51,7 @@ import { shortcutTarget } from '../../ui/shortcutTarget';
 import { isShortcutId } from '../../domain/shortcuts';
 import { pressKeys } from '../../ui/pressKeys';
 import { FLOAT_TOOLS_ROW, ORDER_ARROWS_EDGE } from '../../ui/cardTools';
+import { useReorderToggle } from '../../ui/useReorderToggle';
 import { Glyph } from '../../ui/Icon';
 import { leadGlyph } from '../../ui/glyphText';
 
@@ -93,6 +94,7 @@ export default function DayLessons({ date }: { date: string }) {
   const classColorOf = useClassColorOf(date, sid);
 
   const [collapsed, setCollapsed] = useState(false);
+  const { reorderAttr, reorderButton } = useReorderToggle('lessons');
   // 수업 종 설정 - '⏰ 수업' 옆 🔔 단추로 펼친다 (V4 10-07 사용자 요청 - 시간표 창에서 옮김)
   const bell = useClassBell();
   const [bellOpen, setBellOpen] = useState(false);
@@ -152,7 +154,7 @@ export default function DayLessons({ date }: { date: string }) {
   const headerWindows = listWindows().filter((d) => d.lessonHeader && (d.show?.({ homeroom: showHomeroomTools, classUnit: isClassUnit }) ?? true));
 
   return (
-    <section data-day-lessons={date} className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
+    <section data-day-lessons={date} {...reorderAttr} className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
       <div className={`flex flex-wrap @min-[37.5rem]:flex-nowrap items-start @min-[37.5rem]:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
         {/* 제목은 줄어들지 않는다. 좁으면 오른쪽의 '지금' 안내만 줄어든다 (V4 - '수업'이 '수/업'으로 꺾였다).
             휴대폰은 단추(종·출석부·알림장·진도·뽑기)가 제목 뒤에서 줄을 바꾼다 - 한 줄이면 390px 화면 밖으로 나갔다(P9-3).
@@ -226,17 +228,21 @@ export default function DayLessons({ date }: { date: string }) {
           </div>
         )}
         {!collapsed && (
-          <button
-            type="button"
-            data-lessons-settings
-            {...shortcutTarget('timetable')}
-            onClick={() => openWindow('timetable')}
-            className="tap-area order-2 @min-[37.5rem]:order-3 shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
-            title="시간표 설정 (시간표·교시·학기·교사 유형)"
-            aria-label="시간표 설정"
-          >
-            <Glyph e="⚙" />
-          </button>
+          <div className="order-2 @min-[37.5rem]:order-3 shrink-0 flex items-center gap-1">
+            {/* 휴대폰 카드 ▲▼ '⇅ 누를 때만'(P59-1)이면 ⇅ */}
+            {reorderButton}
+            <button
+              type="button"
+              data-lessons-settings
+              {...shortcutTarget('timetable')}
+              onClick={() => openWindow('timetable')}
+              className="tap-area shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+              title="시간표 설정 (시간표·교시·학기·교사 유형)"
+              aria-label="시간표 설정"
+            >
+              <Glyph e="⚙" />
+            </button>
+          </div>
         )}
       </div>
 

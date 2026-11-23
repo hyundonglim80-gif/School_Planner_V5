@@ -73,6 +73,7 @@ const WINDOWS = [
   ['links', ['links', { sid, id: 'insp_ov_n1' }]],
   ['linker', ['linker', { sid, id: 'insp_ov_n1' }]],
   ['settings-view', ['settings', { tab: 'view' }]],
+  ['settings-layout', ['settings', { tab: 'layout' }]],
   ['settings-app', ['settings', { tab: 'app' }]],
   ['settings-notify', ['settings', { tab: 'notify' }]],
   ['settings-school', ['settings', { tab: 'school' }]],
@@ -100,7 +101,7 @@ const WINDOWS = [
   ['weeklyGuide', ['weeklyGuide', { date: MONDAY }]],
   ['drafts', ['drafts']],
 ];
-const FEW = ['event-new', 'note-edit', 'note-view', 'settings-view', 'timetable', 'attendance', 'search', 'labels-note'];
+const FEW = ['event-new', 'note-edit', 'note-view', 'settings-view', 'settings-layout', 'timetable', 'attendance', 'search', 'labels-note'];
 
 const SCREENS = [
   ['board', `#/board/${DAY}`],
@@ -140,6 +141,9 @@ const SETS = [
   { name: 'ph390-font130', dev: PH390, prefs: { fontSizes: ALL_FONT(130) }, screens: 'all', windows: FEW },
   { name: 'ph360-font130', dev: PH360, prefs: { fontSizes: ALL_FONT(130) }, screens: 'all', windows: FEW },
   { name: 'ph390-dark', dev: PH390, theme: 'dark', screens: 'all', windows: FEW },
+  // 환경설정 화면 배치 (P59-1) - 휴대폰 선택지를 모두 바꾼 모습 + 칸 머리 ⇅를 누른 하루·메모 화면
+  { name: 'ph360-p59', dev: PH360, prefs: { memoNavAt: 'top', phoneCols: 1, orderArrows: 'toggle', cardTime: false }, screens: ['day', 'memo'], windows: ['settings-layout', 'note-view'], extra: ['reorderOn'] },
+  { name: 'ph390-p59', dev: PH390, prefs: { memoNavAt: 'top', orderArrows: 'toggle' }, screens: ['day', 'memo'], windows: [], extra: ['reorderOn'] },
 ];
 
 /**
@@ -234,7 +238,11 @@ async function runSet(browser, set) {
     const ok = await waitFor(
       () =>
         page.evaluate(async (p) => {
-          const s = (await import(window.__appModule('/src/app/layoutPrefs.ts'))).useLayoutPrefs.getState();
+          // 창 위치·글자 크기 = layoutPrefs · 화면 배치(P59-1) = screenPrefs
+          const s = {
+            ...(await import(window.__appModule('/src/app/layoutPrefs.ts'))).useLayoutPrefs.getState(),
+            ...(await import(window.__appModule('/src/app/screenPrefs.ts'))).useScreenPrefs.getState(),
+          };
           return p.every(([k, v]) => JSON.stringify(s[k]) === JSON.stringify(v));
         }, layoutKeys),
       15000,
@@ -309,6 +317,26 @@ async function runSet(browser, set) {
 
 /** 따로 여는 상황 */
 const EXTRA = {
+  // 칸 머리 ⇅를 누른 모습 (P59-1 - 휴대폰 카드 ▲▼ '⇅ 누를 때만'): 하루 수업·일정·메모 칸 모두 켜고, 메모 화면 진행 칸
+  async reorderOn(ctx, page, set) {
+    for (const [screen, hash, names] of [
+      ['day', `#/day/${DAY}`, ['lessons', 'events', 'journal']],
+      ['memo', '#/memo', ['memo']],
+    ]) {
+      const name = `${set.name}/${screen}-reorder`;
+      if (!want(name)) continue;
+      await go(page, hash);
+      for (const n of names) {
+        const btn = page.locator(sel('reorder-toggle', n));
+        if (!(await waitFor(btn, 8000))) return r.bad(`${name}: ⇅(${n})가 없다`);
+        await btn.click();
+      }
+      const shown = await page.locator('[data-reorder-on] .order-arrows').evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height > 0).length);
+      r.check(shown > 0, `${name}: 누른 칸에 ▲▼ ${shown}개`);
+      await measure(page, name, set.dev);
+      for (const n of names) await page.locator(sel('reorder-toggle', n)).click();
+    }
+  },
   // 여러 개 고르기 띠
   async multi(ctx, page, set) {
     const name = `${set.name}/multi-bar`;

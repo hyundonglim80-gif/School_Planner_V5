@@ -42,6 +42,8 @@ import DecorSpot from '../../ui/DecorSpot';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
 import { BTN_DANGER } from '../../ui/buttons';
+import { useScreenPrefs } from '../../app/screenPrefs';
+import { useReorderToggle } from '../../ui/useReorderToggle';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
 const FALLBACK_LABEL = '메모';
@@ -57,18 +59,18 @@ const quiet = () => {
 };
 
 /** 목록 칸의 실제 폭으로 열 수 (왼쪽 라벨 칸이 있어 화면 폭이 아니라 칸 폭을 잰다 - V4) */
-function useColumnCount(ref: React.RefObject<HTMLElement | null>) {
-  const [count, setCount] = useState(MIN_COLUMNS);
+function useColumnCount(ref: React.RefObject<HTMLElement | null>, min: number) {
+  const [count, setCount] = useState(min);
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(([entry]) => {
       const fit = Math.floor((entry.contentRect.width + 16) / (MIN_CARD_WIDTH + 16));
-      setCount(Math.min(MAX_COLUMNS, Math.max(MIN_COLUMNS, fit)));
+      setCount(Math.min(MAX_COLUMNS, Math.max(min, fit)));
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [ref]);
+  }, [ref, min]);
   return count;
 }
 
@@ -94,10 +96,15 @@ export default function MemoScreen() {
   const remembered = useLabelFilters((s) => s.memo);
   const loaded = status !== 'idle' && status !== 'loading';
   const isMobile = useIsMobile();
+  // 화면 배치 (P59-1 - 휴대폰 폭에서만): 라벨 칸 위치 · 카드 열
+  const memoNavAt = useScreenPrefs((s) => s.memoNavAt);
+  const phoneCols = useScreenPrefs((s) => s.phoneCols);
+  const navTop = isMobile && memoNavAt === 'top';
+  const { reorderAttr, reorderButton } = useReorderToggle('memo');
   // 카드 / 목록 (머리줄 그림 단추 - 이 기기 기억)
   const view = useMemoView((s) => s.view);
   const listRef = useRef<HTMLElement>(null);
-  const columns = useColumnCount(listRef);
+  const columns = useColumnCount(listRef, isMobile ? phoneCols : MIN_COLUMNS);
   const [activeOpen, setActiveOpen] = useState(true);
   const [doneOpen, setDoneOpen] = useState(true);
   // 검색 결과로 메모를 짚으러 오면 그 메모가 든 칸(진행/완료)을 편다
@@ -295,21 +302,29 @@ export default function MemoScreen() {
       count={key === 'fav' ? allActive.filter((m) => m.favorite).length : allActive.length}
       selected={current === key}
       selectedClass={cls}
+      row={navTop}
       onClick={(_e: ReactMouseEvent) => choose(key)}
     />
   );
 
   return (
     <div data-screen="memo" data-memo-screen className="animate-fade-in pb-12 flex flex-col gap-3 sm:gap-5">
-      <div className="flex items-start gap-2 sm:gap-4">
-        {/* 왼쪽 칸: 목록이 길어도 머리줄 바로 아래 멈춰 서고, 라벨이 많으면 그 안에서만 스크롤 (V4) */}
-        <div className="w-29 sm:w-44 shrink-0 flex flex-col gap-2 sm:gap-3 sticky top-[calc(var(--app-header-h,64px)+12px)] max-h-[calc(100dvh-var(--app-header-h,64px)-96px)] sm:max-h-[calc(100dvh-var(--app-header-h,64px)-32px)]">
+      <div data-memo-nav-at={navTop ? 'top' : 'side'} className={navTop ? 'flex flex-col gap-2' : 'flex items-start gap-2 sm:gap-4'}>
+        {/* 왼쪽 칸: 목록이 길어도 머리줄 바로 아래 멈춰 서고, 라벨이 많으면 그 안에서만 스크롤 (V4).
+            휴대폰에서 '위 칩 줄'(P59-1 환경설정 화면 배치)이면 카드 위에 칩을 한 흐름으로 - 카드가 화면 폭을 다 쓴다 */}
+        <div
+          className={
+            navTop
+              ? 'flex items-start gap-2'
+              : 'w-29 sm:w-44 shrink-0 flex flex-col gap-2 sm:gap-3 sticky top-[calc(var(--app-header-h,64px)+12px)] max-h-[calc(100dvh-var(--app-header-h,64px)-96px)] sm:max-h-[calc(100dvh-var(--app-header-h,64px)-32px)]'
+          }
+        >
           <button
             type="button"
             data-memo-new
             {...shortcutTarget('newMemo')}
             onClick={openCreate}
-            className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 py-2 sm:py-2.5 bg-primary hover:bg-blue-600 active:scale-98 text-white rounded-xl sm:rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-lg transition-all cursor-pointer shrink-0"
+            className={`${navTop ? 'px-3 py-2' : 'w-full px-2 py-2 sm:py-2.5'} flex items-center justify-center gap-1 sm:gap-1.5 bg-primary hover:bg-blue-600 active:scale-98 text-white rounded-xl sm:rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-lg transition-all cursor-pointer shrink-0`}
             title="새 메모 쓰기 (오른쪽 칸)"
           >
             <span className="font-extrabold leading-none">+</span>
@@ -318,9 +333,15 @@ export default function MemoScreen() {
           <nav
             data-memo-filter-nav
             aria-label="메모 라벨로 보기"
-            className="min-h-0 flex flex-col gap-2 sm:gap-1.5 bg-white rounded-xl border border-slate-200/80 shadow-xs p-1.5 sm:p-3 overflow-y-auto overscroll-contain"
+            className={`${navTop ? 'flex-1 flex flex-wrap items-center gap-1.5' : 'min-h-0 flex flex-col gap-2 sm:gap-1.5 overflow-y-auto overscroll-contain'} bg-white rounded-xl border border-slate-200/80 shadow-xs p-1.5 sm:p-3`}
           >
-            <div className="sticky -top-1.5 sm:-top-3 z-10 -mt-1.5 sm:-mt-3 pt-1.5 sm:pt-3 bg-white flex items-center justify-between gap-1 text-xs font-extrabold text-blue-800 border-b-2 border-slate-100 pb-1.5 mb-0.5 px-0.5">
+            <div
+              className={
+                navTop
+                  ? 'flex items-center text-xs font-extrabold text-blue-800 pr-1'
+                  : 'sticky -top-1.5 sm:-top-3 z-10 -mt-1.5 sm:-mt-3 pt-1.5 sm:pt-3 bg-white flex items-center justify-between gap-1 text-xs font-extrabold text-blue-800 border-b-2 border-slate-100 pb-1.5 mb-0.5 px-0.5'
+              }
+            >
               {/* 제목 = 라벨 관리 창 (P10-5 사용자 의견 5a - 옛 '📁 라벨로 보기'). 칩 고르기는 그대로 */}
               <button
                 type="button"
@@ -334,16 +355,16 @@ export default function MemoScreen() {
               </button>
             </div>
             {specialChip('fav', '⭐ 즐겨찾기', 'bg-amber-100 text-amber-900 border-amber-300', '즐겨찾기한 메모만 보기')}
-            <LabelFilterChips tree={tree} filter={labelFilter ?? { labels: [], others: [] }} onChange={(f) => choose(f)} countOf={countOf} />
+            <LabelFilterChips tree={tree} filter={labelFilter ?? { labels: [], others: [] }} onChange={(f) => choose(f)} countOf={countOf} row={navTop} />
             {specialChip('all', '전체 메모', 'bg-slate-800 text-white border-slate-800', '모든 메모 보기')}
             {/* 여러 개 고르기 안내 - 보이는 글로 (옛 '?'는 무슨 뜻인지 몰랐다 - P11-1 사용자 의견 · 손가락 화면은 '길게 누르기' - P57-2 ■4) */}
-            <p data-filter-help title={FILTER_HELP} className="hidden sm:block pointer-coarse:block px-1 pt-1 text-2xs leading-snug text-slate-500">
+            <p data-filter-help title={FILTER_HELP} className={`hidden sm:block pointer-coarse:block px-1 text-2xs leading-snug text-slate-500 ${navTop ? 'basis-full' : 'pt-1'}`}>
               <FilterHint />
             </p>
           </nav>
         </div>
 
-        <section ref={listRef} className="flex-1 min-w-0 bg-white rounded-xl border border-slate-200/80 shadow-xs p-2 sm:p-5">
+        <section ref={listRef} {...reorderAttr} className="flex-1 min-w-0 bg-white rounded-xl border border-slate-200/80 shadow-xs p-2 sm:p-5">
           {!loaded && memos.length === 0 ? (
             <p data-memo-waiting className="py-24 text-center text-xs text-slate-500">
               메모를 받는 중…
@@ -370,6 +391,8 @@ export default function MemoScreen() {
                 {sectionTitle('active', `진행 (${active.length})`, activeOpen, () => setActiveOpen(!activeOpen))}
                 {/* 정렬 - 이 기기 기억. '내 차례'가 아니면 ▲▼ 차례 바꾸기는 숨는다 */}
                 <div data-memo-sort-bar className="flex items-center gap-1 shrink-0">
+                  {/* 휴대폰 카드 ▲▼ '⇅ 누를 때만'(P59-1) - ▲▼는 '내 차례'에서만 */}
+                  {sortKey === 'manual' && reorderButton}
                   <select
                     data-memo-sort={sortKey}
                     value={sortKey}
