@@ -20,6 +20,7 @@ export const IGNORE = [
   ['cover', /^(note-text-input|note-table|table-)/, /(^|@)table-/, '표 띠는 칸을 고른 동안 표 제목 줄 자리에 겹쳐 뜬다(P49-2)'],
   ['overlap', /^check-(up|down|toggle|line)/, /^note-text-input/, '체크 줄 ▲▼·☐는 글 칸 위 덧그림(P10-5 CheckLinesOverlay - 글 칸 하나 + 덧그림)'],
   ['overlap', /^note-text-input/, /^check-(up|down|toggle|line)/, '체크 줄 ▲▼·☐는 글 칸 위 덧그림(P10-5 CheckLinesOverlay)'],
+  ['small', /^clipboard-toggle/, null, '휴대폰 📋는 화면 끝에 붙은 가는 손잡이(P57-2 - 여백 13px 안에 들어 오른끝 칸을 덮지 않게, 손가락이 화면 밖으로 더 나갈 수 없어 폭이 좁아도 누르기 쉽다 · 높이는 그대로)'],
   ['spill', /^week-event-delete/, /^week-event/, '주간 일정 ✕는 카드 모서리에 걸친 배지(올렸을 때만 - 휴대폰은 일정 칸에서 지운다)'],
   ['overlap', /^year-/, /^year-/, '년간 학사력 기간 줄은 날 칸 위에 겹쳐 그린다'],
   ['cover', /^year-/, /^year-/, '년간 학사력 기간 줄은 날 칸 위에 겹쳐 그린다'],

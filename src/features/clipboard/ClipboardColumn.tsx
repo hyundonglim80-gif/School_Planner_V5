@@ -44,7 +44,9 @@ export default function ClipboardColumn() {
       aria-expanded={tabOpen && shown}
       // 늘 📋 - 바로 아래 '오른쪽 칸 닫기 ▶'와 헷갈리지 않게 글은 바꾸지 않고, 탭이 보이면 눌린 모양
       data-clipboard-edge={left ? 'left' : 'right'}
-      className={`fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center border shadow-lg text-xs hover:bg-primary/10 hover:w-7 transition-all cursor-pointer ${left ? 'rounded-r-xl border-l-0' : 'rounded-l-xl border-r-0'} ${tabOpen && shown ? 'bg-primary/15 border-primary/40' : 'bg-white/90 border-slate-200'}`}
+      // 창이 덮는 화면(휴대폰·좁은 창)은 화면 여백(13px) 안에 들게 가늘게 - 넓으면 오른끝 칸(월간 토요일·메모 카드)을 3~10px 덮어
+      // 그 칸을 누르면 클립보드가 열렸다(P57-2). 화면 끝에 붙은 손잡이라 손가락이 더 나갈 곳이 없어 가늘어도 누르기 쉽다(높이는 그대로)
+      className={`fixed top-1/2 -translate-y-1/2 z-[46] h-14 flex items-center justify-center border shadow-lg transition-all cursor-pointer ${docked ? 'w-6 text-xs hover:bg-primary/10 hover:w-7' : 'w-3 text-[0.625rem]'} ${left ? 'rounded-r-xl border-l-0' : 'rounded-l-xl border-r-0'} ${tabOpen && shown ? 'bg-primary/15 border-primary/40' : 'bg-white/90 border-slate-200'}`}
       // 창 칸이 서 있으면 그 안쪽 가장자리 - 가운데의 '오른쪽 칸 닫기 ▶' 손잡이(Shell) 바로 위
       style={sideOpen ? { [left ? 'left' : 'right']: RIGHT_COLUMN_CSS_WIDTH, top: 'calc(50% - 4rem)' } : { [left ? 'left' : 'right']: 0 }}
     >

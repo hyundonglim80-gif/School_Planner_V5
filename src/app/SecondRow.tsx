@@ -24,6 +24,21 @@ const SEMESTERS: Array<{ id: SemesterFilter; label: string }> = [
 ];
 
 /**
+ * 하루 화면 날짜 글 - 폭 400px 아래 휴대폰에서는 '2026년 '을 숨긴다(P57-2 - 360에서 글이 142px라 둘째 줄이 25px 모자랐다).
+ * 숨기기만 해 글(textContent)은 그대로다 - 머리줄 접기 손잡이·점검이 견준다.
+ */
+function DateLabelText({ label, day }: { label: string; day: boolean }) {
+  const m = day ? /^(\d{4}년 )(.+)$/.exec(label) : null;
+  if (!m) return <>{label}</>;
+  return (
+    <>
+      <span className="max-[400px]:hidden">{m[1]}</span>
+      {m[2]}
+    </>
+  );
+}
+
+/**
  * 둘째 줄 (메모·학급 화면에는 없다) - V4 그대로: 년간 학기 칩 · 토글(주말·일정·수업 + 고른 구글 캘린더가 있으면 📅 구글 - P36-4) · ◀ 날짜(누르면 오늘) 📅 · D-Day · ▶ · 공간 칩(든 그룹이 있을 때 - P17-1)
  * ⚠️ 좁은 화면에서는 줄을 바꾼다. 한 줄에 밀어 넣었더니 년간의 '2학기' 칩 위에 '◀'가 올라앉아 2학기를 누르면 이전 학년도로 넘어갔다(V4).
  *    아랫줄 = 학기 칩 · 공간 칩 한 줄(넓은 화면은 그 묶음을 풀어(contents) 학기 칩은 맨 앞, 공간 칩은 맨 뒤).
@@ -100,8 +115,9 @@ export default function SecondRow() {
         <GcalToggle />
       </div>
 
-      {/* ◀ 날짜(누르면 오늘) 📅 ▶ */}
-      <div className="flex items-center justify-center gap-1.5 sm:gap-4 flex-1 min-w-0 order-2 sm:order-3">
+      {/* ◀ 날짜(누르면 오늘) 📅 ▶ - min-w-0을 두지 않는다(P57-2: 360에서 묶음이 내용보다 좁아져 가운데 맞춤 내용이 양쪽으로 넘쳐
+          ◀가 '수업'을 6px 덮고 ▶가 화면 밖으로 잘렸다). 모자라면(D-Day 칩 등) 겹치지 않고 다음 줄로 */}
+      <div className="flex items-center justify-center gap-1.5 sm:gap-4 flex-1 order-2 sm:order-3">
         <button
           type="button"
           data-date-prev
@@ -121,7 +137,7 @@ export default function SecondRow() {
             className="text-sm sm:text-base font-extrabold text-slate-800 hover:text-primary transition-colors cursor-pointer select-none text-center whitespace-nowrap px-1"
             title={withShortcut('오늘 날짜로 돌아가기', 'dateToday')}
           >
-            {dateLabel(nav.scope, nav.date)}
+            <DateLabelText label={dateLabel(nav.scope, nav.date)} day={nav.scope === 'day'} />
           </button>
           <MiniCalendarPicker date={nav.date} onSelectDate={setDate} />
         </div>
