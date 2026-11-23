@@ -16,7 +16,8 @@ interface Props {
   kind?: 'event' | 'note';
   /** 마우스를 올리면 보일 글 앞부분 (메모 칩 - '상위 › 하위') */
   hint?: string;
-  /** 긴 라벨 이름은 칩 폭(className의 max-w)에서 … (메모 칩) */
+  /** 긴 라벨 이름은 칩 폭에서 … (기본 켬 - P57-2: 칩이 이름 길이만큼 서서 좁은 카드 밖으로 삐지고 휴대폰 화면을 옆으로 밀었다).
+   *  칩 폭 = className의 max-w, 없으면 둘레 폭까지(max-w-full). 이름 전체는 마우스를 올리면(title) */
   truncate?: boolean;
   done: boolean;
   /** ✓를 이 칩에 붙이나 (여러 라벨이면 첫 칩만 - 기본 true) */
@@ -43,11 +44,13 @@ export function DoneMark({ className = '' }: { className?: string }) {
   );
 }
 
-export default function EventDoneChip({ label, done, mark = true, onToggle, forward, whole, className, data, style, kind = 'event', hint, truncate }: Props) {
+export default function EventDoneChip({ label, done, mark = true, onToggle, forward, whole, className, data, style, kind = 'event', hint, truncate = true }: Props) {
   if (!label && !onToggle && !done) return null;
   const note = kind === 'note';
   const checkAttr = { [note ? 'data-note-check' : 'data-event-check']: '' };
-  const tip = (t: string) => (hint ? `${hint} - ${t}` : t);
+  // 글 앞부분 = 메모는 '상위 › 하위', 일정은 라벨 이름 (말줄임으로 잘린 이름도 읽게)
+  const lead = hint ?? label?.name;
+  const tip = (t: string) => (lead ? `${lead} - ${t}` : t);
   const c = label ? labelColor(label.color) : null;
   const act = onToggle
     ? {
@@ -76,8 +79,8 @@ export default function EventDoneChip({ label, done, mark = true, onToggle, forw
                 : '눌러서 완료',
         ),
       }
-    : hint
-      ? { title: hint }
+    : lead
+      ? { title: lead }
       : {};
   const check = done && mark;
   // 눈에 띄게 초록 동그라미에 흰 ✓ (#123)
@@ -92,7 +95,7 @@ export default function EventDoneChip({ label, done, mark = true, onToggle, forw
       {...act}
       {...{ [note ? 'data-note-done-chip' : 'data-event-done-chip']: mark && onToggle ? (done ? '1' : '0') : undefined }}
       aria-label={c ? undefined : done ? '완료 풀기' : note ? '메모 완료' : '일정 완료'}
-      className={`relative inline-flex items-center gap-1 align-middle font-bold rounded shadow-xs whitespace-nowrap ${onToggle ? 'cursor-pointer hover:brightness-95' : ''} ${className}`}
+      className={`relative inline-flex items-center gap-1 align-middle font-bold rounded shadow-xs whitespace-nowrap min-w-0 ${truncate && !/(^|\s)max-w-/.test(className) ? 'max-w-full' : ''} ${onToggle ? 'cursor-pointer hover:brightness-95' : ''} ${className}`}
       style={{
         ...(c
           ? { backgroundColor: c.bg, color: c.text, border: '1px solid ' + c.border }

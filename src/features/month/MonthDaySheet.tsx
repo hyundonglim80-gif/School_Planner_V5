@@ -106,10 +106,10 @@ export default function MonthDaySheet({ date, events, gcal = [], hiddenCount, sh
                       done={done}
                       onToggle={onToggleDone ? () => onToggleDone(ev) : undefined}
                       forward={!!label?.props?.forward}
-                      className="shrink-0 text-2xs px-1.5 py-0.5"
+                      className="max-w-[40%] text-2xs px-1.5 py-0.5"
                       data={{ 'data-sheet-event-chip': ev.id }}
                     />
-                    <span className="min-w-0 break-words">{ev.text}</span>
+                    <span className="min-w-0 flex-1 break-words">{ev.text}</span>
                     {links > 0 && <span className="ml-auto shrink-0 text-2xs font-bold text-yellow-700"><Glyph e="🔗" /> {links}</span>}
                   </button>
                 </li>

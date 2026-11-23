@@ -112,7 +112,7 @@ export default function PeriodBar({ bar, space, label, compact, multiOn, picked,
             done={allDone}
             onToggle={onToggleDone}
             whole
-            className="pointer-events-auto shrink-0 px-1 text-2xs"
+            className="pointer-events-auto shrink-0 max-w-[50%] px-1 text-2xs"
             // 같은 라벨 빛 막대 위라 흰 바탕 (V4 막대 그대로)
             style={label ? { backgroundColor: 'rgb(255 255 255 / 0.7)', border: 'none' } : undefined}
             data={{ 'data-period-bar-chip': ev.id }}

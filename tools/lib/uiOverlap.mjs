@@ -13,8 +13,8 @@
 
 /** 일부러 그런 것 - [종류, 이 이름(정규식), 상대 이름(정규식 - 없으면 아무거나), 까닭] */
 export const IGNORE = [
-  ['overlap', /^(month-day|period-)/, /^period-/, '월간 기간 막대는 날 칸 위에 겹쳐 그린다(막대·칩을 누르면 일정·완료, 빈 곳은 날)'],
-  ['cover', /^(month-day|period-)/, /^period-/, '월간 기간 막대는 날 칸 위에 겹쳐 그린다'],
+  ['overlap', /^(month-day|period-)/, /(^|@)period-/, '월간 기간 막대는 날 칸 위에 겹쳐 그린다(막대·칩을 누르면 일정·완료, 빈 곳은 날)'],
+  ['cover', /^(month-day|period-)/, /(^|@)period-/, '월간 기간 막대는 날 칸 위에 겹쳐 그린다'],
   ['overlap', /^filter-chip/, /^filter-caret/, '라벨로 보기 상위 칩의 펴기 꺾쇠는 칩 안쪽 왼끝에 겹쳐 둔 단추(꺾쇠 = 펴기, 나머지 = 고르기)'],
   ['overlap', /^(note-text-input|note-table|table-)/, /(^|@)table-/, '표 띠는 칸을 고른 동안 표 제목 줄 자리에 겹쳐 뜬다(P49-2 - 흐름 밖에 띄워 표가 밀리지 않게, 본문을 누르면 접힘)'],
   ['cover', /^(note-text-input|note-table|table-)/, /(^|@)table-/, '표 띠는 칸을 고른 동안 표 제목 줄 자리에 겹쳐 뜬다(P49-2)'],

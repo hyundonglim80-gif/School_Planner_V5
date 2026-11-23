@@ -214,10 +214,10 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
                         onToggle={multiOn ? undefined : () => toggleDone(row)}
                         forward={!!label?.props?.forward}
                         whole={!!row.endDate}
-                        className="shrink-0 text-2xs px-1 py-0.5"
+                        className="max-w-[40%] text-2xs px-1 py-0.5"
                         data={{ 'data-board-month-item-chip': ev.id }}
                       />
-                      <span data-board-month-item-text className="min-w-0 break-words">
+                      <span data-board-month-item-text className="min-w-0 flex-1 break-words">
                         {ev.text}
                       </span>
                     </button>

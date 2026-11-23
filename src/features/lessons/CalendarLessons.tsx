@@ -5,6 +5,7 @@
 //   - 두 줄씩(LessonGrid): 휴대폰 월간 칸 - 교시 둘씩 한 줄(1·2 / 3·4 / 5·6), 글자는 칩 폭에 맞춘다(10-16 사용 의견 '휴대폰 월간에 수업이 안 나옴' -
 //     V4는 세로 글자가 읽기 어려워 칸에서 뺐다(ROADMAP 15, Claude 권장). 둘씩이면 칩이 22px라 두 글자 과목이 가로로 들어간다).
 //     교과 모드 '5-2 과학'은 반만('5-2'). 누르면 칸을 누른 것(그날 목록) - 칩이 작아 교시를 겨누기 어렵다.
+//   - 띠·두 줄씩: 글씨를 줄여도 넘치는 긴 과목('창의적 체험활동')은 앞부터 … (P57-2 - 가운데만 '적 체험'으로 잘려 보였다), 전체는 title.
 import { parseSlot } from '../../domain/teachingSlot';
 import { fitToWidthFontSize } from '../../domain/typeScale';
 import { hasLessons, type LessonSubjects } from './lessonSubjects';
@@ -42,7 +43,7 @@ export function LessonStrip({ date, subjects, tag, onOpen, height = 20 }: Props 
             className="flex-1 min-w-0 flex items-center justify-center border border-emerald-300 rounded-[3px] bg-emerald-50 text-emerald-700 font-bold overflow-hidden cursor-pointer hover:bg-emerald-200 transition-colors [container-type:inline-size]"
             title={`${subject} (${i + 1}교시) - 누르면 고치기`}
           >
-            <span className="text-2xs tracking-tighter whitespace-nowrap leading-none" style={{ fontSize: fitToWidthFontSize(subject) }}>
+            <span className="min-w-0 truncate text-2xs tracking-tighter leading-none" style={{ fontSize: fitToWidthFontSize(subject) }}>
               {subject}
             </span>
           </div>
@@ -112,7 +113,7 @@ export function LessonGrid({ date, subjects, tag }: Omit<Props, 'onOpen'>) {
             title={`${i + 1}교시 ${subject}`}
             className="h-[13px] min-w-0 flex items-center justify-center rounded-[3px] border border-emerald-300 bg-emerald-50 text-emerald-700 font-bold overflow-hidden [container-type:inline-size]"
           >
-            <span className="text-2xs tracking-tighter whitespace-nowrap leading-none" style={{ fontSize: fitToWidthFontSize(text) }}>
+            <span className="min-w-0 truncate text-2xs tracking-tighter leading-none" style={{ fontSize: fitToWidthFontSize(text) }}>
               {text}
             </span>
           </div>

@@ -188,7 +188,8 @@ export default function EntryCard(props: EntryCardProps) {
                 onToggle={props.onToggleDone}
                 hint={l ? (pathOf?.(l.id) ?? l.name) : undefined}
                 truncate
-                className="px-2 py-0.5 rounded-lg text-xs min-w-0 max-w-[10rem] shrink-0"
+                // 줄어도 된다(P57-2 - shrink-0이라 휴대폰 두 줄 카드에서 접기·☆와 한 줄인 칩이 카드 밖으로 54px 삐졌다)
+                className="px-2 py-0.5 rounded-lg text-xs min-w-0 max-w-[10rem]"
                 data={{ 'data-entry-chip': l?.id ?? '' }}
               />
             ))}
