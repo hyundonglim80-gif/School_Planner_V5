@@ -13,10 +13,12 @@
 // 수정 칸이 열리면 본문이 줄어도 비율 그대로 접힌다(5장 'P24 오른쪽 칸').
 import { useMemo, useRef, useState, type ReactNode } from 'react';
 import { setBoardSplit, useBoardSplit } from '../../app/boardPrefs';
+import { useLayoutPrefs } from '../../app/layoutPrefs';
 import { setDate, useNav } from '../../app/nav';
 import { resetBoardRatio } from '../../app/resetTargets';
 import { useCurrentSpaceId } from '../../data/session';
 import { DAY_NAMES, weekDates, weekdayOf } from '../../domain/dateUtils';
+import { fontPercentOf } from '../../domain/fontScale';
 import SplitPane from '../../ui/SplitPane';
 import { useElementWidth } from '../../ui/useElementWidth';
 import { MainWidthContext, unscaledWidth, useMainWidth } from '../../ui/useMainWidth';
@@ -36,9 +38,18 @@ const STACK_BELOW = 780;
 /** 오른쪽 무리가 이보다 좁으면 수업/일정을 위아래로 */
 const DAY_ROW_MIN = 480;
 
+/**
+ * 한눈에 화면 글자 크기(환경설정 '글자 크기' - 100%면 1). 위 px 경계와 칸 최소 폭에 곱한다(P57-3): 글자를 키우면 같은 글을 담을 칸도 커져야 한다 -
+ * 곱하지 않으면 창 폭 900·글자 150%에서 왼쪽 무리가 최소 440px로 남아 작은 달력 날 칸이 12px, 날 숫자(19px)가 넘쳤다. CSS의 rem 경계와 같은 셈.
+ */
+function useBoardFontScale(): number {
+  return useLayoutPrefs((s) => fontPercentOf(s.fontSizes, 'board')) / 100;
+}
+
 export default function BoardScreen() {
   const date = useNav((s) => s.date);
-  const stacked = useMainWidth() < STACK_BELOW;
+  const k = useBoardFontScale();
+  const stacked = useMainWidth() < STACK_BELOW * k;
   const boxRef = useRef<HTMLDivElement>(null);
   const height = useFitHeight(boxRef, !stacked);
   const mainRatio = useBoardSplit('main');
@@ -62,8 +73,8 @@ export default function BoardScreen() {
         direction="row"
         ratio={mainRatio}
         onCommit={(r) => setBoardSplit('main', r ?? resetBoardRatio('main'))}
-        minFirst={440}
-        minSecond={320}
+        minFirst={440 * k}
+        minSecond={320 * k}
         label="왼쪽 · 오른쪽 칸 크기"
         className="flex-1"
         first={<BoardLeft fit date={date} />}
@@ -166,7 +177,8 @@ function BoardDay({ date }: { date: string }) {
   const dayRatio = useBoardSplit('day');
   const memoRatio = useBoardSplit('memo');
   const groupRef = useRef<HTMLDivElement>(null);
-  const dayRow = unscaledWidth(useElementWidth(groupRef, (w) => unscaledWidth(w) >= DAY_ROW_MIN, DAY_ROW_MIN)) >= DAY_ROW_MIN;
+  const rowMin = DAY_ROW_MIN * useBoardFontScale();
+  const dayRow = unscaledWidth(useElementWidth(groupRef, (w) => unscaledWidth(w) >= rowMin, rowMin, rowMin)) >= rowMin;
 
   const lessons = (
     <Pane name="lessons">

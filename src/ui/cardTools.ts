@@ -1,5 +1,5 @@
 // 카드 위에 떠 있는 단추 묶음 (P41-2) - 수업·일정·메모 카드가 함께 쓴다.
-//   - 마우스를 카드에 올리거나 키보드 초점이 그 단추에 들 때만 보이고, 숨어 있는 동안 **자리를 차지하지 않는다**(카드 오른쪽 위에 뜬다).
+//   - 마우스를 카드에 올리거나 키보드 초점이 그 단추에 들 때만 보이고, 숨어 있는 동안 **자리를 차지하지 않는다**(카드 오른쪽 위에 뜬다 - 일정·메모 카드는 위 테두리에 걸쳐, P57-3).
 //     예전에는 안 보이는 단추가 자리를 차지해 좁은 칸(한눈에 오른쪽 하루 칸 277px)에서 수업 카드 첫 줄의 절반이 빈칸이었다(11-17 PC 확인).
 //   - 바탕을 깔아 그 밑 글을 덮는다(올린 동안만).
 //   - 휴대폰(sm 아래)에는 없다 - 마우스가 없으니 카드를 눌러 연 수정 칸에서 같은 단추를 누른다. 숫자·요약이 적힌 단추(📊 2·출결 요약·📑 n)는 이 묶음에 넣지 않고 카드에 늘 둔다.
@@ -28,7 +28,13 @@ export const ORDER_ARROWS_EDGE = `${ORDER_ARROWS} pointer-fine:absolute pointer-
 const FLOAT_BASE =
   'hidden sm:flex items-center gap-0.5 absolute z-10 px-0.5 rounded-lg border border-slate-200 bg-white shadow-xs opacity-0 transition-opacity group-hover:opacity-100 has-[:focus-visible]:opacity-100';
 
-export const FLOAT_TOOLS = `${FLOAT_BASE} top-1 right-1`;
+/**
+ * 일정·메모 카드의 떠 있는 묶음 (P57-3): 카드 **위 테두리에 걸쳐** 오른쪽에 뜬다(수업 카드 ▲▼가 왼쪽 테두리에 걸친 것과 같은 꼴 - P58-1).
+ * 안쪽으로는 카드 위 여백(일정 12px·메모 16px)까지만 든다 - 예전 '오른쪽 위 4px'는 좁은 카드에서 첫 줄 라벨 칩(누르면 완료)을 7~30px 덮었다
+ * (긴 라벨·두 줄 칩·글자 150%). 묶음 가운데가 테두리 위(-12px - 묶음 높이 23px). 바깥 12px는 카드 사이 틈(8px)과 위 카드의 아래 여백에 든다 -
+ * 카드를 담는 스크롤 칸은 위 여백이 12px 넘어야 첫 카드 묶음이 잘리지 않는다(DayEvents).
+ */
+export const FLOAT_TOOLS = `${FLOAT_BASE} -top-3 right-2`;
 
 /**
  * 수업 카드의 떠 있는 묶음 (P58-1): 카드 첫 줄(relative)의 가운데에 맞춰 그 줄을 깨끗이 덮는다 - 카드 위 4px에 붙이면 첫 줄 글의 아래 절반이

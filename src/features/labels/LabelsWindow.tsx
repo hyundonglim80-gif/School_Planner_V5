@@ -542,7 +542,8 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                 </div>
               )}
 
-              <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 p-3 rounded-xl">
+              {/* 모자라면 줄을 바꾼다(P57-3 - 창 폭 900·글자 150%에서 '추가'가 칸 밖으로 39px) */}
+              <div className="flex flex-wrap items-center gap-2 bg-slate-50 border border-slate-200 p-3 rounded-xl">
                 <input
                   type="text"
                   data-label-new-name="note"
@@ -551,7 +552,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                   onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && void add('note')}
                   placeholder="새 메모 라벨 이름..."
                   aria-label="새 메모 라벨 이름"
-                  className="flex-1 min-w-0 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500"
+                  className="flex-1 min-w-32 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 focus:outline-none focus:border-emerald-500"
                 />
                 <ColorPicker name="new-note" color={newNote.color} onChange={(color) => setNewNote((f) => ({ ...f, color }))} />
                 <label className="flex items-center gap-1 text-2xs font-bold text-slate-500 shrink-0">
@@ -579,7 +580,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                   data-label-add="note"
                   disabled={adding || !sid}
                   onClick={() => void add('note')}
-                  className={`px-4 py-2 ${BTN_SUB} disabled:opacity-50 rounded-lg text-xs font-bold transition-all cursor-pointer`}
+                  className={`shrink-0 whitespace-nowrap px-4 py-2 ${BTN_SUB} disabled:opacity-50 rounded-lg text-xs font-bold transition-all cursor-pointer`}
                 >
                   추가
                 </button>
