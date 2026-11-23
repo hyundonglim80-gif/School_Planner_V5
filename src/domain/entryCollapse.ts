@@ -44,3 +44,32 @@ export function previewLine(text: string | undefined | null): string {
   if (!first) return '';
   return first.length > PREVIEW_CHAR_LIMIT ? first.slice(0, PREVIEW_CHAR_LIMIT) + '…' : first;
 }
+
+// ── 펼침·접힘 기억 (11-23 사용자 요청 '펼쳤던 메모는 펼친 채로, 접은 메모는 접힌 채로') ──
+// 메모마다 사용자가 누른 것만 담는다(true = 펼침, false = 접힘). 누른 적 없는 메모는 화면 기본값 -
+// 카드는 길이를 보고(isLongEntry), 메모 화면 목록 줄은 접힌 채. 카드와 목록 줄·하루 칸과 메모 화면이 같은 값을 쓴다(같은 메모).
+
+/** 기억하는 메모 수 - 넘으면 가장 오래 손대지 않은 것부터 잊는다 (이 기기 저장소가 끝없이 늘지 않게) */
+export const ENTRY_OPEN_LIMIT = 1000;
+
+export type EntryOpenMap = Readonly<Record<string, boolean>>;
+
+/** id의 펼침을 적은 새 표 - 방금 누른 것을 맨 뒤로 옮기고, 한도를 넘으면 앞(오래된 것)부터 뺀다 */
+export function rememberEntryOpen(map: EntryOpenMap, id: string, open: boolean, limit = ENTRY_OPEN_LIMIT): Record<string, boolean> {
+  const next: Record<string, boolean> = {};
+  const keys = Object.keys(map).filter((k) => k !== id);
+  for (const k of keys.slice(Math.max(0, keys.length - (limit - 1)))) next[k] = map[k];
+  next[id] = open;
+  return next;
+}
+
+/** 카드가 접혀 있나 - 누른 적이 있으면 그 값, 없으면 길이로 */
+export function isCardCollapsed(map: EntryOpenMap, id: string, text: string | undefined | null): boolean {
+  const open = map[id];
+  return open === undefined ? isLongEntry(text) : !open;
+}
+
+/** 목록 줄이 펼쳐져 있나 - 누른 적이 없으면 접힌 채 (P11-1) */
+export function isRowExpanded(map: EntryOpenMap, id: string): boolean {
+  return map[id] === true;
+}

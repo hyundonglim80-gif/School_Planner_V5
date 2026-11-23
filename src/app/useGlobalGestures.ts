@@ -22,6 +22,15 @@ const inSideColumn = (t: EventTarget | null) => t instanceof Element && !!t.clos
 const inBoardPane = (t: EventTarget | null) => t instanceof Element && !!t.closest('[data-board-pane]');
 const onSplitHandle = (t: EventTarget | null) => t instanceof Element && !!t.closest('[data-split-handle]');
 
+/**
+ * 높이를 정한 상자(ui/ScrollCap - 펼친 메모 본문, 11-23) 안 - 넘쳐서 스크롤할 것이 있으면 그 상자의 손짓이다.
+ * 페이지가 끝에 있을 때 카드 안을 굴리면 카드와 함께 날짜가 넘어갔다.
+ */
+const inScrollCap = (t: EventTarget | null) => {
+  const box = t instanceof Element ? t.closest('[data-scroll-cap]') : null;
+  return !!box && box.scrollHeight > box.clientHeight + 1;
+};
+
 const pageMetrics = (edge: number) => {
   const scrollHeight = Math.max(document.documentElement.scrollHeight, document.body.scrollHeight);
   const bottom = Math.ceil(window.innerHeight + window.scrollY);
@@ -49,7 +58,7 @@ export function useGlobalGestures() {
         y: e.touches[0].clientY,
         ...pageMetrics(50),
         side: inSideColumn(e.target) || onSplitHandle(e.target),
-        pane: inBoardPane(e.target),
+        pane: inBoardPane(e.target) || inScrollCap(e.target),
       };
     };
 
@@ -77,7 +86,7 @@ export function useGlobalGestures() {
     };
 
     const onWheel = (e: WheelEvent) => {
-      if (isWindowOpen() || navLock.current || inSideColumn(e.target) || inBoardPane(e.target)) return;
+      if (isWindowOpen() || navLock.current || inSideColumn(e.target) || inBoardPane(e.target) || inScrollCap(e.target)) return;
       const s = useNav.getState();
       if (!s.enableScrollNav || isDatelessScope(s.scope)) return;
       const { atTop, atBottom } = pageMetrics(10);

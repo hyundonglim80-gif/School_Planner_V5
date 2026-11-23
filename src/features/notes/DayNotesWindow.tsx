@@ -1,10 +1,9 @@
 // 그날 기록 보기 (V4 components/JournalPeekModal.tsx) - 주간·월간·년간 날짜 옆 📝 n을 누르면. 창 'dayNotes' = { sid, date }.
 // 하루 화면으로 가지 않고 그날 기록만 펼쳐 본다. 카드는 하루 기록 칸과 같다(완료·즐겨찾기·체크·지우기),
 // 고치기·'+ 추가'는 하루 화면과 같은 기록 칸(오른쪽 쓰는 칸)을 연다.
-import { useState } from 'react';
 import type { WindowProps } from '../../app/windows';
 import { shortDateLabel } from '../../domain/dateUtils';
-import { isLongEntry } from '../../domain/entryCollapse';
+import { isCardCollapsed } from '../../domain/entryCollapse';
 import { labelPath } from '../../domain/labelTree';
 import { itemLabels, useLabelTree } from '../../data/select';
 import ModalShell, { ModalCloseButton } from '../../ui/ModalShell';
@@ -13,6 +12,7 @@ import { useProgressNoteLinks } from '../links/useProgressLinks';
 import { reorderDragProps } from '../../ui/reorderDrag';
 import { deleteNote, moveNoteByDrag, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from './actions';
 import EntryCard from './EntryCard';
+import { setEntryOpen, useEntryOpen } from './entryOpen';
 import DayCardView from '../day/DayCards';
 import { useDayCardsOn } from '../day/useDayCards';
 import { useDayNotes } from '../day/useDayNotes';
@@ -33,7 +33,8 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
   const notes = [...dated, ...rows.filter((r) => !r.dated).map((r) => r.item)];
   const tree = useLabelTree('note', sid);
   const shownId = useShownNoteId(sid);
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // 펼침·접힘 = 하루 메모 칸·메모 화면과 같은 기억 (이 기기 - 11-23)
+  const opened = useEntryOpen((s) => s.open);
   const pathOf = (id: string) => labelPath(id, tree.parents, (x) => tree.byId.get(x)?.name);
   // 그날 알림장·출결 (계산한 카드 - 누르면 원본 칸)
   const cards = useDayCardsOn(date, sid);
@@ -70,18 +71,18 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
           )
         ) : (
           notes.map((item, index) => {
-            const isCollapsed = collapsed[item.id] ?? isLongEntry(item.text);
+            const isCollapsed = isCardCollapsed(opened, item.id, item.text);
             return (
               <EntryCard
                 key={item.id}
                 item={item}
-                fullTables
+                inWindow
                 labels={itemLabels(tree, item.labelIds)}
                 pathOf={pathOf}
                 dateText={timeLabel(item.createdAt)}
                 editing={shownId === item.id}
                 collapsed={isCollapsed}
-                onToggleCollapse={() => setCollapsed((p) => ({ ...p, [item.id]: !isCollapsed }))}
+                onToggleCollapse={() => setEntryOpen(item.id, isCollapsed)}
                 dragProps={reorderDragProps(`note:window:${date}`, index, (f, t) => void moveNoteByDrag(sid, dated, f, t).catch(quiet))}
                 onMoveUp={canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
                 onMoveDown={canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}

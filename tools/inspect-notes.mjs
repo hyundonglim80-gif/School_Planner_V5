@@ -8,6 +8,7 @@
 //   8) 단축키 그날 새 메모(보는 날)·날짜 없는 새 메모.
 //   7) 쓰던 글 보관: 새 기록 칸에 적고 2초 → 새로고침 → 다시 열면 '저장하지 않은 글' → 되살리기, 버리기면 다시 묻지 않는다(IndexedDB sp5-drafts-{uid}).
 //   9) 저장하는 동안 친 글(P22-2): Ctrl+S 바로 뒤에 친 글이 저장이 끝나도 칸에 남는다 · 끊긴 동안 저장을 기다리며 친 글도 남고, 다시 저장하면 서버까지.
+//  10) 펼침·접힘 기억(11-23): 펼친 긴 메모·접은 짧은 메모가 새로고침해도 그대로 · 메모 화면 목록 줄도 같은 값 · 펼친 본문은 28rem 상자 안 스크롤(아래 끝 흐림) · 카드 누르기 = 옆 칸 보기는 전체.
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-notes.mjs
 // 에뮬레이터 teacher 계정의 개인 공간에 점검 기록(insp_nt…)·라벨을 심고 끝에 지운다.
@@ -283,8 +284,66 @@ try {
   r.check(!!(await serverUntil(() => read(heldId), (d) => d?.text === '점검 저장 중 이어 친 글 끊긴 글 또 친 글')), '다시 저장 = 끊긴 동안 친 글까지 서버에');
   await page.waitForTimeout(300);
   await page.locator(sel('note-close')).click();
-
   r.check(errors.length === 0, '화면 오류 없음', `화면 오류: ${errors.join(' / ')}`);
+
+  r.section('펼침·접힘 기억 · 펼친 본문은 높이를 정해 그 안에서 스크롤 · 옆 칸 보기는 전체 (11-23)');
+  // 긴 글(줄 60개) + 그림 셋 - 펼치면 카드가 한없이 길어지지 않고 그 안에서 스크롤 (새 창 - 앞 묶음의 칸·글 보관과 섞이지 않게)
+  const TALL = { text: '점검 긴 펼침\n' + Array.from({ length: 60 }, (_, i) => `줄 ${i + 1}`).join('\n'), labelIds: [], order: 'Zz5' };
+  await setDoc(itemRef('insp_nt5'), { kind: 'note', date: DAY, ...TALL, ...stamp });
+  undo.add(() => deleteDoc(itemRef('insp_nt5')));
+  const { page: p2, errors: e2 } = await newPage(browser);
+  await open(p2, `#/day/${DAY}`);
+  const card2 = (id) => p2.locator(sel('entry-card', id));
+  r.check(await waitFor(card2('insp_nt5')), '긴 메모 카드');
+  r.check((await card2('insp_nt5').getAttribute('data-entry-collapsed')) === '1', '처음은 길이대로 접힘');
+  await card2('insp_nt5').locator(sel('entry-collapse')).click();
+  const capBox = p2.locator(sel('entry-scroll', 'insp_nt5'));
+  r.check(await waitFor(capBox), '▶ = 본문이 높이를 정한 상자 안');
+  const cap = await capBox.evaluate((el) => ({ h: el.clientHeight, sh: el.scrollHeight, more: el.dataset.scrollMore, rem: parseFloat(getComputedStyle(document.documentElement).fontSize) }));
+  r.check(cap.h <= 28 * cap.rem + 1 && cap.sh > cap.h + 100, `상자 높이 ≤ 28rem, 넘친 글은 그 안에 (보이는 ${cap.h}px / 전체 ${cap.sh}px)`);
+  r.check(cap.more === '1', '아래로 더 있으면 아래 끝을 흐리게 (data-scroll-more)');
+  const titleOutside = await card2('insp_nt5').evaluate((el) => !!el.querySelector('[data-entry-title]') && !el.querySelector('[data-entry-scroll] [data-entry-title]'));
+  r.check(titleOutside, '제목은 상자 밖 (늘 보인다)');
+  await capBox.hover();
+  await p2.mouse.wheel(0, 4000);
+  r.check(await waitFor(async () => (await capBox.getAttribute('data-scroll-more')) === '0', 3000), '휠로 끝까지 내리면 흐림이 걷힌다');
+  r.check(await waitFor(async () => ((await capBox.evaluate((el) => el.scrollTop)) ?? 0) > 100, 2000), '휠은 상자 안을 굴린다');
+  // 짧은 것은 접는다 → 새로고침해도 둘 다 그대로 (이 기기에 기억)
+  await card2('insp_nt1').locator(sel('entry-collapse')).click();
+  r.check(await waitFor(async () => (await card2('insp_nt1').getAttribute('data-entry-collapsed')) === '1', 2000), '짧은 메모 ▼ = 접힘');
+  await p2.reload();
+  r.check(await waitFor(card2('insp_nt5')), '새로고침');
+  r.check((await card2('insp_nt5').getAttribute('data-entry-collapsed')) === '0', '펼친 긴 메모는 펼친 채');
+  r.check((await card2('insp_nt1').getAttribute('data-entry-collapsed')) === '1', '접은 짧은 메모는 접힌 채');
+  r.check((await card2('insp_nt4').getAttribute('data-entry-collapsed')) === '1', '손대지 않은 긴 메모는 길이대로');
+  // 메모 화면 목록 줄도 같은 값 (같은 메모)
+  await p2.goto(p2.url().replace(/#.*$/, '#/memo'));
+  await p2.evaluate(async () => {
+    const m = await import(window.__appModule('/src/features/memo/memoView.ts'));
+    m.useMemoView.setState({ view: 'list' });
+  });
+  // 즐겨찾기가 있으면 즐겨찾기로 연다 - 전체로
+  await p2.locator(sel('filter-chip', 'all')).click();
+  r.check(await waitFor(p2.locator(sel('memo-row', 'insp_nt5'))), '메모 화면 목록 줄');
+  r.check((await p2.locator(sel('memo-row', 'insp_nt5')).getAttribute('data-memo-row-expanded')) === '1', '하루 칸에서 편 메모는 목록 줄도 펼친 채');
+  r.check(await waitFor(p2.locator(`${sel('memo-row', 'insp_nt5')} ${sel('entry-scroll', 'insp_nt5')}`)), '목록 줄 본문도 높이를 정한 상자');
+  await p2.evaluate(async () => {
+    const m = await import(window.__appModule('/src/features/memo/memoView.ts'));
+    m.useMemoView.setState({ view: 'card' });
+  });
+  // 고르면(카드 누르기) 옆 칸 보기 = 전체가 다 펼쳐진다 (높이 제한 없음)
+  await p2.goto(p2.url().replace(/#.*$/, `#/day/${DAY}`));
+  await card2('insp_nt5').locator(sel('entry-title')).click();
+  const viewBody = p2.locator(`${sel('note-view-body')}`);
+  r.check(await waitFor(viewBody), '카드 누르기 = 옆 칸 메모 보기');
+  const full = await p2.evaluate(() => {
+    const v = document.querySelector('[data-note-view]');
+    const text = v?.querySelector('[data-entry-text]');
+    return { caps: v?.querySelectorAll('[data-scroll-cap]').length ?? -1, last: (text?.textContent ?? '').includes('줄 60'), h: text?.getBoundingClientRect().height ?? 0 };
+  });
+  r.check(full.caps === 0 && full.last && full.h > 28 * cap.rem, `옆 칸 보기는 높이 제한 없이 전체 (글 높이 ${Math.round(full.h)}px)`);
+  r.check(e2.length === 0, '화면 오류 없음 (펼침 묶음)', `화면 오류: ${e2.join(' / ')}`);
+  await p2.context().close();
 } catch (e) {
   r.bad(`점검이 멈췄다: ${e?.stack || e}`);
 } finally {

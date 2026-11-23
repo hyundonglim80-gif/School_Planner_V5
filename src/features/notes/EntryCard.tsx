@@ -6,7 +6,9 @@
 //   - 단추·라벨 칩은 한 줄에(V4 10-07 사용자 요청), 시각·표시는 넘치면 다음 줄로. 라벨 칩은 위(머리줄)에 - 메모·기록 라벨 한 목록의 색.
 //   - 지운 라벨·모르는 라벨은 그리지 않는다(부르는 쪽이 itemLabels로 고른다).
 //   - 완료는 줄 긋기, ★ 즐겨찾기. 체크 줄(☐/☑)은 눌러서 체크 - 체크한 줄은 카드 아래쪽에 모아 보이기만 한다(V4 10-07, 구글 Keep처럼).
-//   - 접기: 긴 글은 접힌 채 시작(부르는 쪽이 domain/entryCollapse로), 접힌 카드에는 첫 줄만.
+//   - 접기: 긴 글은 접힌 채 시작(부르는 쪽이 domain/entryCollapse로), 접힌 카드에는 첫 줄만. 누른 것은 이 기기에 기억(entryOpen - 11-23).
+//   - 펼친 본문은 높이를 정해 두고 넘치면 카드 안에서 스크롤(ui/ScrollCap - 11-23 사용자 요청, 긴 글·그림 많은 메모가 한없이 길어지지 않게).
+//     창 안(그날 메모 창 - inWindow)은 다 보인다 - 넘치면 창 전체가 스크롤.
 // 그림은 누르면 크게 보기(넘겨 보기 - 접혔을 때는 🖼️ n을 눌러), 글 안 주소는 미리보기 카드, 표는 작게 보기만(고치기는 쓰는 칸에서).
 // 펼친 본문은 EntryBody(메모 화면 목록의 펼친 줄과 함께 - P11-1).
 import { shortDateLabel } from '../../domain/dateUtils';
@@ -23,6 +25,7 @@ import EntryBody from './EntryBody';
 import { EntryStudents } from './StudentTags';
 import { pressKeys } from '../../ui/pressKeys';
 import EventDoneChip from '../events/EventDoneChip';
+import ScrollCap, { ENTRY_SCROLL_MAX } from '../../ui/ScrollCap';
 import { FLOAT_TOOLS, HOVER_ONLY, ORDER_ARROWS } from '../../ui/cardTools';
 import { Glyph } from '../../ui/Icon';
 
@@ -63,8 +66,8 @@ export interface EntryCardProps {
   onDelete: () => void;
   /** '☐ 우유' 줄을 누르면 그 줄의 체크 글자만 바꾼다 */
   onToggleCheckLine: (lineIndex: number, line: string) => Promise<unknown>;
-  /** 표를 끝 행까지 모두 보인다 (오른쪽 칸) */
-  fullTables?: boolean;
+  /** 창 안(오른쪽 칸·팝업창) - 본문을 높이 제한 없이, 표도 끝 행까지 모두 보인다 (넘치면 창 전체가 스크롤) */
+  inWindow?: boolean;
 }
 
 export default function EntryCard(props: EntryCardProps) {
@@ -331,7 +334,14 @@ export default function EntryCard(props: EntryCardProps) {
         </p>
       )}
 
-      {!collapsed && <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} fullTables={props.fullTables} skipLine={heading.line} />}
+      {!collapsed &&
+        (props.inWindow ? (
+          <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} fullTables skipLine={heading.line} />
+        ) : (
+          <ScrollCap className={ENTRY_SCROLL_MAX} data={{ 'data-entry-scroll': item.id }}>
+            <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} skipLine={heading.line} />
+          </ScrollCap>
+        ))}
       {/* Claude 요청 결과 - 바꾼 것·바꾸지 않은 까닭 (10-19) */}
       <ClaudeRequestNote itemId={item.id} short />
     </div>
