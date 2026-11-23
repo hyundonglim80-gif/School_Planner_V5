@@ -1,6 +1,6 @@
 // 라벨 칩·고르기 - 고른 것은 id로, 메모·기록은 트리 차례(└), 새 라벨은 저장 때 만들 이름으로, ⚙️ = 라벨 관리 그 탭
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
 import { useState } from 'react';
 import { labelTreeOf, itemLabels, type Docs } from '../../data/select';
@@ -83,6 +83,35 @@ describe('라벨 고르기', () => {
     fireEvent.click(q('[data-label-pick="w"]'), { ctrlKey: true });
     fireEvent.click(q('[data-label-pick="a"]'), { ctrlKey: true });
     expect(out().dataset.ids).toBe('w');
+  });
+
+  it('메모: 휴대폰 길게 누르기 = Ctrl+누르기 (손을 뗀 click은 넘긴다) · 일정은 길게 눌러도 하나만', () => {
+    vi.useFakeTimers();
+    try {
+      const long = (id: string) => {
+        const b = q(`[data-label-pick="${id}"]`);
+        fireEvent.pointerDown(b, { pointerType: 'touch', clientX: 5, clientY: 5 });
+        act(() => vi.advanceTimersByTime(600));
+        fireEvent.pointerUp(b, { pointerType: 'touch' });
+        fireEvent.click(b);
+      };
+      const { unmount } = render(<Harness kind="note" />);
+      // 안내 글은 둘 다 그려 두고 화면 종류(pointer)로 하나만 보인다
+      expect(q('[data-label-picker-hint]')).toHaveTextContent('Ctrl+누르기');
+      expect(q('[data-label-picker-hint]')).toHaveTextContent('길게 누르기');
+      fireEvent.click(q('[data-label-pick="w"]'));
+      long('s');
+      expect(out().dataset.ids).toBe('w,s');
+      long('w');
+      expect(out().dataset.ids).toBe('s');
+      unmount();
+      render(<Harness kind="event" />);
+      long('e1');
+      long('e2');
+      expect(out().dataset.ids).toBe('e2');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('새 라벨: 없는 이름은 저장 때 만들 이름으로, 있는 이름은 그 라벨을 고른다, 누르면 뺀다', () => {

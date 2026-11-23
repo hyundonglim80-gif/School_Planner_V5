@@ -374,7 +374,7 @@ export default function TimetableWindow({ params, close, raise }: WindowProps<Ti
       }
     >
       <div className="space-y-4" data-timetable-window>
-        <div className="flex gap-1.5 border-b border-slate-200 pb-2 overflow-x-auto" role="tablist">
+        <div className="flex flex-wrap gap-1.5 border-b border-slate-200 pb-2" role="tablist">
           {TABS.map((t) => (
             <button
               key={t.id}

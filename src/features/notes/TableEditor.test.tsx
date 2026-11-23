@@ -112,6 +112,36 @@ describe('고치는 표 - 고르기 (P48-1)', () => {
     expect(document.activeElement).toBe(input());
   });
 
+  it('휴대폰 길게 누르기 = Shift+누르기 (칸·열 머리·행 번호 - 손을 뗀 click은 넘긴다) · 마우스는 듣지 않는다', () => {
+    seen.latest = filled();
+    render(<Host start={filled()} />);
+    vi.useFakeTimers();
+    try {
+      const long = (s: string, pointerType = 'touch') => {
+        fireEvent.pointerDown(q(s), { pointerType, clientX: 5, clientY: 5 });
+        act(() => vi.advanceTimersByTime(600));
+        fireEvent.pointerUp(q(s), { pointerType });
+        fireEvent.click(q(s));
+      };
+      fireEvent.click(q('[data-cell="0-0"]'));
+      long('[data-cell="2-1"]');
+      expect(nameBox()).toBe('A1:B3');
+      expect(input().getAttribute('data-table-editing')).toBeNull();
+      fireEvent.click(q('[data-table-col="0"]'));
+      long('[data-table-col="2"]');
+      expect(nameBox()).toBe('A1:C3');
+      fireEvent.click(q('[data-table-row="0"]'));
+      long('[data-table-row="1"]');
+      expect(nameBox()).toBe('A1:C2');
+      // 마우스로 오래 누르면 그냥 누르기 (그 칸 고치기)
+      long('[data-cell="1-1"]', 'mouse');
+      expect(nameBox()).toBe('B2');
+      expect(input().getAttribute('data-table-editing')).toBe('true');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('행·열 단추는 고른 범위로: 행 둘 빼기 · 위에 넣기 · 모두는 못 뺀다', () => {
     seen.latest = filled();
   render(<Host start={filled()} />);

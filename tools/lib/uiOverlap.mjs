@@ -312,8 +312,9 @@ export function scanInPage({ width, height, mobile, minTarget = 24 }) {
           if (b === it || b.el.contains(it.el) || it.el.contains(b.el)) continue;
           // 다른 층(붙은 머리줄·탭바·둥근 ＋)과 닿는 것은 뺀다 - 위층이 늘 먼저 받는다(겹침 재기와 같이). 위층이 넓힌 것(머리줄 접기 손잡이)은 IGNORE에 까닭
           if (layerOf(b.el) !== layerOf(it.el)) continue;
-          const ow = Math.min(hr.right, b.r.right) - Math.max(hr.left, b.r.left);
-          const oh = Math.min(hr.bottom, b.r.bottom) - Math.max(hr.top, b.r.top);
+          // 옆 단추는 보이는 몫만(둘레 스크롤 칸이 자른 것 - 창 머리 밑으로 스크롤된 글 칸은 거기서 눌리지 않는다, P57-2 ■4)
+          const ow = Math.min(hr.right, b.box.r) - Math.max(hr.left, b.box.l);
+          const oh = Math.min(hr.bottom, b.box.b) - Math.max(hr.top, b.box.t);
           if (ow > 1 && oh > 1) add('reach', it, b.el, `${Math.round(ow)}×${Math.round(oh)}`);
         }
       }

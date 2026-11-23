@@ -351,7 +351,7 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
               data-timetable-applied={row.id}
               data-applied-from={row.from}
               data-applied-to={row.to === FAR_END ? '' : row.to}
-              className={`flex items-center gap-2 px-2 py-1 rounded-lg text-xs ${row.today ? 'bg-white border border-emerald-300' : 'bg-white/60 border border-transparent'}`}
+              className={`flex flex-wrap items-center gap-x-2 gap-y-1 px-2 py-1 rounded-lg text-xs ${row.today ? 'bg-white border border-emerald-300' : 'bg-white/60 border border-transparent'}`}
             >
               <span className="font-bold text-slate-700 tabular-nums shrink-0">
                 {md(row.from)} ~ {row.to === FAR_END ? '끝 없음' : md(row.to)}

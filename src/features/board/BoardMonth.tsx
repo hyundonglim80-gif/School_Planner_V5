@@ -202,7 +202,7 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
                       style={space ? (mark ? { borderColor: space.tone.borderColor } : space.tone) : undefined}
                       onClick={() => openRow(row)}
                       title={`${rowDateLabel(row)} ${ev.text ?? ''}${mark === 'today' ? ' (오늘)' : mark === 'week' ? ' (보는 주)' : ''} - 누르면 그날을 고르고 오른쪽 칸에서 고치기`}
-                      className={`w-full text-left flex items-start gap-1 px-1.5 py-1 rounded-lg border text-xs leading-snug cursor-pointer hover:shadow-xs ${
+                      className={`w-full text-left flex flex-wrap items-start gap-x-1 gap-y-0.5 px-1.5 py-1 rounded-lg border text-xs leading-snug cursor-pointer hover:shadow-xs ${
                         mark ? MARK_CLASS[mark] : 'bg-white border-slate-100 hover:border-slate-200'
                       } ${here ? 'ring-2 ring-primary/60' : ''} text-slate-800`}
                     >
@@ -217,7 +217,8 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
                         className="tap-area max-w-[40%] text-2xs px-1 py-0.5"
                         data={{ 'data-board-month-item-chip': ev.id }}
                       />
-                      <span data-board-month-item-text className="min-w-0 flex-1 break-words">
+                      {/* 남은 자리가 6rem 아래면 제목은 다음 줄 전체로 (P57-2 ■5 - 가로 휴대폰 달 칸 100px 남짓에서 한 글자씩 세로로 꺾였다) */}
+                      <span data-board-month-item-text className="min-w-0 grow basis-24 break-words">
                         {ev.text}
                       </span>
                     </button>

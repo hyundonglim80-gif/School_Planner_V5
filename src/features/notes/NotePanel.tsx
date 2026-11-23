@@ -638,7 +638,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                         onClick={() => removeDate(d)}
                         title={`${shortDateLabel(d)} 빼기 - 그날 '메모' 칸에서 빠집니다 (저장할 때)`}
                         aria-label={`${shortDateLabel(d)} 빼기`}
-                        className="tap-area w-4 h-4 flex items-center justify-center rounded text-sky-500 hover:text-sky-900 hover:bg-sky-100 cursor-pointer"
+                        className="tap-area w-4 h-4 flex items-center justify-center rounded leading-none text-sky-500 hover:text-sky-900 hover:bg-sky-100 cursor-pointer"
                       >
                         ×
                       </button>

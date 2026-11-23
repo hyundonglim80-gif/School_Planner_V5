@@ -98,6 +98,30 @@ describe('메모 화면', () => {
     expect(useLabelFilters.getState().memo).toBe('all');
   });
 
+  it('라벨로 보기: 휴대폰 길게 누르기 = Ctrl+누르기 (P57-2 ■4) · 안내 글은 손가락 화면 몫도', () => {
+    seed();
+    vi.useFakeTimers();
+    try {
+      render(<MemoScreen />);
+      fireEvent.click(q('[data-filter-chip="P"]')!);
+      const b = q('[data-filter-chip="U"]')!;
+      fireEvent.pointerDown(b, { pointerType: 'touch', clientX: 5, clientY: 5 });
+      act(() => vi.advanceTimersByTime(600));
+      fireEvent.pointerUp(b, { pointerType: 'touch' });
+      fireEvent.click(b);
+      expect(useLabelFilters.getState().memo).toEqual({ labels: ['P', 'U'], others: [] });
+      // 마우스 길게 누르기는 듣지 않는다 (그냥 누르기 = 하나만)
+      fireEvent.pointerDown(b, { pointerType: 'mouse', clientX: 5, clientY: 5 });
+      act(() => vi.advanceTimersByTime(600));
+      fireEvent.pointerUp(b, { pointerType: 'mouse' });
+      fireEvent.click(b);
+      expect(useLabelFilters.getState().memo).toEqual({ labels: ['U'], others: [] });
+      expect(q('[data-filter-help]')?.textContent).toContain('길게 누르기 = 여러 개');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("하위는 접혀 있고 ▸로 펴면 하위·'기타'(상위만 붙은 것)", () => {
     seed();
     render(<MemoScreen />);

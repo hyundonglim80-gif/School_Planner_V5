@@ -31,7 +31,7 @@ import { useMemoView } from './memoView';
 import type { MemoSortKey } from './memoSort';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useProgressNoteLinks } from '../links/useProgressLinks';
-import LabelFilterChips, { FILTER_HELP, FILTER_HINT, FilterChip } from '../notes/LabelFilterChips';
+import LabelFilterChips, { FILTER_HELP, FilterChip, FilterHint } from '../notes/LabelFilterChips';
 import { setMemoFilter, useLabelFilters, type MemoFilter } from '../notes/labelFilter';
 import { canMoveNote } from '../notes/noteOps';
 import { MEMO_SORT_OPTIONS, setMemoSortKey, sortMemos, toggleMemoSortDir, useMemoSort } from './memoSort';
@@ -327,7 +327,7 @@ export default function MemoScreen() {
                 data-memo-labels-settings
                 {...shortcutTarget('labels')}
                 onClick={() => openWindow('labels', { tab: 'note' })}
-                className="tap-area flex items-center gap-1 px-1 -mx-1 rounded-lg hover:bg-slate-100 hover:text-blue-900 cursor-pointer min-w-0"
+                className="tap-area flex items-center gap-1 px-0.5 -mx-0.5 rounded-lg hover:bg-slate-100 hover:text-blue-900 cursor-pointer min-w-0"
                 title="메모 라벨 관리 (이름·색·상위 라벨·차례)"
               >
                 <Glyph e="🏷" /> 라벨<span className="hidden sm:inline"> 관리</span>
@@ -336,9 +336,9 @@ export default function MemoScreen() {
             {specialChip('fav', '⭐ 즐겨찾기', 'bg-amber-100 text-amber-900 border-amber-300', '즐겨찾기한 메모만 보기')}
             <LabelFilterChips tree={tree} filter={labelFilter ?? { labels: [], others: [] }} onChange={(f) => choose(f)} countOf={countOf} />
             {specialChip('all', '전체 메모', 'bg-slate-800 text-white border-slate-800', '모든 메모 보기')}
-            {/* 여러 개 고르기 안내 - 보이는 글로 (옛 '?'는 무슨 뜻인지 몰랐다 - P11-1 사용자 의견, 휴대폰은 키가 없어 숨긴다) */}
-            <p data-filter-help title={FILTER_HELP} className="hidden sm:block px-1 pt-1 text-2xs leading-snug text-slate-500">
-              {FILTER_HINT}
+            {/* 여러 개 고르기 안내 - 보이는 글로 (옛 '?'는 무슨 뜻인지 몰랐다 - P11-1 사용자 의견 · 손가락 화면은 '길게 누르기' - P57-2 ■4) */}
+            <p data-filter-help title={FILTER_HELP} className="hidden sm:block pointer-coarse:block px-1 pt-1 text-2xs leading-snug text-slate-500">
+              <FilterHint />
             </p>
           </nav>
         </div>

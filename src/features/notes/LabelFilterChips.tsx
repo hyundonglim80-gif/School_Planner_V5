@@ -1,6 +1,7 @@
 // 라벨로 보기 칩 (V4 features/memo/MemoScreen의 filterChip·DayJournal의 라벨 버튼 - 메모 화면과 하루 기록 칸이 함께 쓴다).
 //
 // - 윈도우 탐색기처럼(domain/labelTree clickFilterLabel): 그냥 누르기 = 하나만, Ctrl = 더하기·빼기, Shift = 앞서 누른 것부터 범위. ESC = 모두 떼기(부르는 화면이 건다).
+//   휴대폰은 길게 누르기 = Ctrl+누르기(P57-2 ■4 - 공간 칩·일정 카드와 같은 길 ui/longPress). 범위는 휴대폰에 없다(하나씩 길게 누르면 된다).
 // - 하위가 있는 상위는 칩 안 왼쪽 ▸/▾로 접고 편다 - 화면을 열면 모두 접혀 있다. 상위를 고르면 하위도 함께(하위 칩이 옅게 칠해진다).
 //   하위 끝 '기타'(점선 - 진짜 라벨이 아니다) = 하위 없이 그 상위만 붙은 항목. 접었어도 고른 하위·기타는 보인다.
 // - 고른 칩은 ✓와 테두리 고리, 안 고른 칩은 흐리게(색이 옅은 라벨도 구분되게 - V4). 옆 숫자는 그 칩으로 걸리는 수(부르는 화면이 센다).
@@ -9,6 +10,7 @@ import { labelColor } from '../../domain/labels';
 import { clickFilterLabel, filterChipOrder, isOtherKey, labelPath, otherKey, otherParentOf, type LabelFilter } from '../../domain/labelTree';
 import type { LabelTree } from '../../data/select';
 import { Glyph } from '../../ui/Icon';
+import { useLongPress } from '../../ui/longPress';
 
 interface ChipProps {
   /** 점검용 data-filter-chip 값 (라벨 id·'기타:상위'·'fav'·'all') */
@@ -27,23 +29,30 @@ interface ChipProps {
   selectedStyle?: CSSProperties;
   selectedClass?: string;
   onClick: (e: MouseEvent) => void;
+  /** 손가락으로 길게 누르기 (주면 - 라벨 칩은 Ctrl+누르기와 같은 더하기·빼기) */
+  onLongPress?: () => void;
 }
 
 /** 칩 하나 (라벨 칩·즐겨찾기·전체 모두 같은 모양) */
-export function FilterChip({ chipKey, text, title, count, selected, included, other, caret, row, selectedStyle, selectedClass = '', onClick }: ChipProps) {
+export function FilterChip({ chipKey, text, title, count, selected, included, other, caret, row, selectedStyle, selectedClass = '', onClick, onLongPress }: ChipProps) {
   const empty = !!other && count === 0;
+  const press = useLongPress(() => onLongPress?.());
   return (
     <button
       type="button"
       data-filter-chip={chipKey}
       aria-pressed={selected}
-      onClick={onClick}
+      {...(onLongPress ? press.handlers : {})}
+      onClick={(e) => {
+        if (press.consumed()) return;
+        onClick(e);
+      }}
       // Shift+누르기가 글자를 긁어 고르지 않게
       onMouseDown={(e) => e.shiftKey && e.preventDefault()}
       title={title ?? (typeof text === 'string' ? text : undefined)}
       className={`relative ${row ? '' : 'w-full'} flex items-center justify-between gap-1 ${empty && !selected ? 'opacity-40' : ''} ${
         caret ? 'pl-6 pr-1.5 sm:pl-7 sm:pr-3' : 'px-1.5 sm:px-3'
-      } ${row ? 'py-1' : 'py-1.5 sm:py-2'} rounded-lg sm:rounded-xl text-xs text-left border transition-all cursor-pointer ${
+      } ${row ? 'py-1' : 'py-1.5 sm:py-2'} rounded-lg sm:rounded-xl text-xs text-left border transition-all cursor-pointer select-none ${
         selected
           ? `font-black ring-2 ring-slate-900/70 ring-offset-1 shadow-xs ${selectedClass}`
           : included
@@ -88,11 +97,12 @@ export default function LabelFilterChips({ tree, filter, onChange, countOf, row 
   const anchor = useRef<string | null>(null);
   const isSelected = (key: string) => (isOtherKey(key) ? filter.others.includes(otherParentOf(key)) : filter.labels.includes(key));
   const order = filterChipOrder(tree.rows, (p) => !!open[p], isSelected);
-  const click = (key: string, e: MouseEvent) => {
-    const c = { ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey };
+  const pick = (key: string, c: { ctrl: boolean; shift: boolean }) => {
     onChange(clickFilterLabel(filter, key, c, order, anchor.current));
     if (!c.shift) anchor.current = key;
   };
+  const click = (key: string, e: MouseEvent) => pick(key, { ctrl: e.ctrlKey || e.metaKey, shift: e.shiftKey });
+  const long = (key: string) => () => pick(key, { ctrl: true, shift: false });
   const nameOf = (id: string) => tree.byId.get(id)?.name;
 
   const chip = (id: string, extra: { caret?: boolean; included?: boolean } = {}) => {
@@ -111,6 +121,7 @@ export default function LabelFilterChips({ tree, filter, onChange, countOf, row 
         row={row}
         selectedStyle={{ backgroundColor: c.bg, color: c.text, borderColor: c.border }}
         onClick={(e) => click(id, e)}
+        onLongPress={long(id)}
       />
     );
   };
@@ -159,6 +170,7 @@ export default function LabelFilterChips({ tree, filter, onChange, countOf, row 
                       row={row}
                       selectedStyle={{ backgroundColor: '#f1f5f9', color: '#334155', borderColor: '#94a3b8' }}
                       onClick={(e) => click(other, e)}
+                      onLongPress={long(other)}
                     />
                   )}
                 </div>
@@ -171,6 +183,18 @@ export default function LabelFilterChips({ tree, filter, onChange, countOf, row 
 }
 
 /** 숨은 조작 안내 (V4 UX-AUDIT H4 - 키 조합은 글로 박지 않는다는 규칙의 예외: 마우스 누르기 방법이라 단축키가 아니다) */
-export const FILTER_HELP = '누르기: 그 라벨 하나만 · Ctrl+누르기: 더하기·빼기 · Shift+누르기: 범위 · ESC: 모두 떼기 · 상위를 고르면 하위도 함께 (▸로 펴서 \'기타\' = 상위만)';
+export const FILTER_HELP = '누르기: 그 라벨 하나만 · Ctrl+누르기(휴대폰은 길게 누르기): 더하기·빼기 · Shift+누르기: 범위 · ESC: 모두 떼기 · 상위를 고르면 하위도 함께 (▸로 펴서 \'기타\' = 상위만)';
 /** 칩 아래(옆)에 보이는 짧은 안내 - 마우스를 올리면 FILTER_HELP 전부 (P11-1 사용자 의견 - 옛 '?'는 뜻을 몰랐다) */
 export const FILTER_HINT = 'Ctrl·Shift+누르기 = 여러 개';
+/** 손가락 화면의 같은 안내 (P57-2 ■4 - 휴대폰에는 Ctrl·Shift가 없다) */
+export const FILTER_HINT_TOUCH = '길게 누르기 = 여러 개';
+
+/** 여러 개 고르기 안내 글 - 마우스 화면은 FILTER_HINT, 손가락 화면(pointer: coarse)은 FILTER_HINT_TOUCH */
+export function FilterHint() {
+  return (
+    <>
+      <span className="pointer-coarse:hidden">{FILTER_HINT}</span>
+      <span className="hidden pointer-coarse:inline">{FILTER_HINT_TOUCH}</span>
+    </>
+  );
+}

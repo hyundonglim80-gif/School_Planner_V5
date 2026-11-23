@@ -23,7 +23,7 @@ import { setEntryOpen, useEntryOpen } from '../notes/entryOpen';
 import EntryCard from '../notes/EntryCard';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useProgressNoteLinks } from '../links/useProgressLinks';
-import LabelFilterChips, { FILTER_HELP, FILTER_HINT, FilterChip } from '../notes/LabelFilterChips';
+import LabelFilterChips, { FILTER_HELP, FilterChip, FilterHint } from '../notes/LabelFilterChips';
 import { setJournalFilter, setJournalFilterOpen, useLabelFilters } from '../notes/labelFilter';
 import { canMoveNote, favoriteFirst, timeLabel } from '../notes/noteOps';
 import { openNotePanel, useShownNoteId } from '../notes/open';
@@ -166,8 +166,8 @@ export default function DayJournal({ date }: { date: YMD }) {
                 onClick={() => setJournalFilter(EMPTY_FILTER)}
               />
               <LabelFilterChips tree={tree} filter={filter} onChange={setJournalFilter} countOf={countOf} row />
-              <span data-filter-help title={FILTER_HELP} className="hidden sm:inline text-2xs text-slate-500 whitespace-nowrap">
-                {FILTER_HINT}
+              <span data-filter-help title={FILTER_HELP} className="hidden sm:inline pointer-coarse:inline text-2xs text-slate-500 whitespace-nowrap">
+                <FilterHint />
               </span>
             </div>
           )}
