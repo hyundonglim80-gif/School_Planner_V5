@@ -10,6 +10,7 @@ import type { WriteOp } from '../../data/repo';
 import { useLabelFilters } from '../notes/labelFilter';
 import MemoScreen from './MemoScreen';
 import { useMemoView } from './memoView';
+import { useEntryOpen } from '../notes/entryOpen';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 const written = vi.hoisted(() => ({ batches: [] as WriteOp[][] }));
@@ -180,6 +181,29 @@ describe('메모 화면', () => {
     expect(written.batches.at(-1)?.[0]).toMatchObject({ at: { id: 'y' }, changes: { done: true } });
     expect(opened.calls).toHaveLength(1);
     useMemoView.setState({ view: 'card' });
+  });
+
+  it('목록 줄 ▶ 펼침은 기억하고 카드와 같은 값 - 다시 열어도 펼친 채, 카드 보기에서도 (11-23)', () => {
+    useEntryOpen.setState({ open: {} });
+    useMemoView.setState({ view: 'list' });
+    const LONG = '첫 줄\n' + '긴 글 '.repeat(40);
+    seed(new Map([memo('x', 'a0', { text: LONG }), memo('y', 'a1', { text: '짧은 글' })]));
+    const first = render(<MemoScreen />);
+    const row = (id: string) => q(`[data-memo-row="${id}"]`)!;
+    expect(row('x').dataset.memoRowExpanded).toBe('0');
+    fireEvent.click(row('x').querySelector('[data-memo-row-expand]')!);
+    expect(row('x').querySelector('[data-memo-row-body] [data-entry-scroll="x"]')).not.toBeNull();
+    first.unmount();
+    const second = render(<MemoScreen />);
+    expect(row('x').dataset.memoRowExpanded).toBe('1');
+    expect(row('y').dataset.memoRowExpanded).toBe('0');
+    second.unmount();
+    // 카드 보기: 긴 x는 목록에서 펼쳤으니 펼친 채, 짧은 y는 길이대로 펼친 채
+    useMemoView.setState({ view: 'card' });
+    render(<MemoScreen />);
+    expect(q('[data-entry-card="x"]')!.dataset.entryCollapsed).toBe('0');
+    expect(q('[data-entry-card="y"]')!.dataset.entryCollapsed).toBe('0');
+    useEntryOpen.setState({ open: {} });
   });
 
   it('+ 새 메모 = 날짜 없는 칸, 고른 라벨을 미리', () => {

@@ -10,6 +10,7 @@ import type { WriteOp } from '../../data/repo';
 import { handleAppKeyDown } from '../../app/keys';
 import { EMPTY_FILTER } from '../../domain/labelTree';
 import { setJournalFilter, setJournalFilterOpen, useLabelFilters } from '../notes/labelFilter';
+import { useEntryOpen } from '../notes/entryOpen';
 import DayJournal from './DayJournal';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
@@ -81,6 +82,7 @@ beforeEach(() => {
   useWindows.setState({ windows: [] });
   document.body.innerHTML = '';
   useSession.setState({ loading: false, user: { uid: 'me', email: '', displayName: '', photoURL: '' } });
+  useEntryOpen.setState({ open: {} });
 });
 
 describe('하루 기록 칸', () => {
@@ -138,6 +140,28 @@ describe('하루 기록 칸', () => {
     expect(long().querySelector('[data-entry-text]')).not.toBeNull();
     // 펼치면 제목을 자르지 않는다 (긴 첫 줄이 숨지 않게)
     expect(long().querySelector('[data-entry-title]')!.className).not.toContain('truncate');
+  });
+
+  it('펼침·접힘은 기억한다 - 다시 그려도 그대로, 펼친 본문은 높이를 정한 상자 안 (11-23)', () => {
+    seed();
+    const first = render(<DayJournal date={DAY} />);
+    const card = (id: string) => q(`[data-entry-card="${id}"]`)!;
+    // 긴 것을 펴고, 짧은 것을 접는다
+    fireEvent.click(card('long').querySelector('[data-entry-collapse]')!);
+    fireEvent.click(card('b').querySelector('[data-entry-collapse]')!);
+    expect(useEntryOpen.getState().open).toEqual({ long: true, b: false });
+    first.unmount();
+    render(<DayJournal date={DAY} />);
+    expect(card('long').dataset.entryCollapsed).toBe('0');
+    expect(card('b').dataset.entryCollapsed).toBe('1');
+    // 손대지 않은 것은 길이대로
+    expect(card('a').dataset.entryCollapsed).toBe('0');
+    // 펼친 본문 = 넘치면 그 안에서 스크롤하는 상자, 제목은 상자 밖(늘 보인다)
+    const box = card('long').querySelector<HTMLElement>('[data-entry-scroll="long"]')!;
+    expect(box.matches('[data-scroll-cap]')).toBe(true);
+    expect(box.className).toContain('overflow-y-auto');
+    expect(box.querySelector('[data-entry-text]')).not.toBeNull();
+    expect(box.querySelector('[data-entry-title]')).toBeNull();
   });
 
   it('라벨 칩 완료·☆ 즐겨찾기 = 그 칸만 (문서 하나), 안내 없이 Ctrl+Z 더미에, 카드 열기로 번지지 않는다', async () => {

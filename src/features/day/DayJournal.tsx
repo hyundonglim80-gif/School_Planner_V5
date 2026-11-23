@@ -10,7 +10,7 @@
 import { useEffect, useState } from 'react';
 import { addEscapeAction } from '../../app/keys';
 import { openWindow } from '../../app/windows';
-import { isLongEntry } from '../../domain/entryCollapse';
+import { isCardCollapsed } from '../../domain/entryCollapse';
 import { EMPTY_FILTER, isEmptyFilter, isOtherKey, labelPath, matchLabels, otherParentOf, pruneFilter } from '../../domain/labelTree';
 import { itemLabels, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
@@ -19,6 +19,7 @@ import { useMainWidth } from '../../ui/useMainWidth';
 import type { ItemDoc } from '../events/eventOps';
 import { reorderDragProps } from '../../ui/reorderDrag';
 import { deleteNote, moveNoteByDrag, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
+import { setEntryOpen, useEntryOpen } from '../notes/entryOpen';
 import EntryCard from '../notes/EntryCard';
 import { openLinker, openLinkViewer } from '../links/open';
 import { useProgressNoteLinks } from '../links/useProgressLinks';
@@ -55,8 +56,8 @@ export default function DayJournal({ date }: { date: YMD }) {
   const [collapsed, setCollapsed] = useState(false);
   // 검색 결과로 이 날 메모를 짚으러 오면 접힌 칸을 편다 (라벨로 보기는 검색 창이 옮기기 전에 푼다)
   useFocusReveal((t) => t.kind === 'note' && t.date === date, () => setCollapsed(false));
-  // 카드 접기: 사용자가 누른 것만 담는다. 손대지 않은 카드는 길이를 보고 정한다
-  const [cardCollapsed, setCardCollapsed] = useState<Record<string, boolean>>({});
+  // 카드 접기: 사용자가 누른 것만 이 기기에 기억한다(메모 화면과 같은 값 - 11-23). 손대지 않은 카드는 길이를 보고 정한다
+  const opened = useEntryOpen((s) => s.open);
   // 라벨로 보기 (지운 라벨은 빼고 - 라벨을 받기 전에는 그대로)
   const labelStatus = useMirrorStatus('labels');
   const remembered = useLabelFilters((s) => s.journal);
@@ -197,7 +198,7 @@ export default function DayJournal({ date }: { date: YMD }) {
             {columns.map((col, ci) => (
               <div key={ci} className="flex flex-col gap-4">
                 {col.map(({ item, index }) => {
-                  const isCollapsed = cardCollapsed[item.id] ?? isLongEntry(item.text);
+                  const isCollapsed = isCardCollapsed(opened, item.id, item.text);
                   return (
                     <EntryCard
                       key={item.id}
@@ -207,7 +208,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                       dateText={timeLabel(item.createdAt)}
                       editing={shownId === item.id}
                       collapsed={isCollapsed}
-                      onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [item.id]: !isCollapsed }))}
+                      onToggleCollapse={() => setEntryOpen(item.id, isCollapsed)}
                       dragProps={sid ? reorderDragProps(`note:day:${date}`, index, (f, t) => void moveNoteByDrag(sid, dated, f, t).catch(quiet)) : undefined}
                       onMoveUp={sid && canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
                       onMoveDown={sid && canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}

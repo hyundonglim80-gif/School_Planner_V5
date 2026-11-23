@@ -14,7 +14,7 @@ import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type R
 import { addEscapeAction } from '../../app/keys';
 import { setDate, setScope } from '../../app/nav';
 import { openWindow } from '../../app/windows';
-import { isLongEntry } from '../../domain/entryCollapse';
+import { isCardCollapsed, isRowExpanded } from '../../domain/entryCollapse';
 import { isEmptyFilter, isOtherKey, labelPath, matchLabels, otherParentOf, pruneFilter, type LabelFilter } from '../../domain/labelTree';
 import { noteDates } from '../../domain/noteDates';
 import { itemLabels, useAllNotes, useLabelTree, useMirrorStatus } from '../../data/select';
@@ -24,6 +24,7 @@ import { useIsMobile } from '../../ui/useIsMobile';
 import type { ItemDoc } from '../events/eventOps';
 import { reorderDragProps } from '../../ui/reorderDrag';
 import { deleteNote, deleteNotes, labelNotes, moveMemoOnScreen, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
+import { setEntryOpen, useEntryOpen } from '../notes/entryOpen';
 import EntryCard from '../notes/EntryCard';
 import MemoListRow from './MemoListRow';
 import { useMemoView } from './memoView';
@@ -111,9 +112,8 @@ export default function MemoScreen() {
       setLimit((l) => ({ ...l, [doneOne ? 'done' : 'active']: Infinity }));
     },
   );
-  const [cardCollapsed, setCardCollapsed] = useState<Record<string, boolean>>({});
-  // 목록 보기에서 펼친 줄 (처음은 모두 한 줄 - P11-1)
-  const [rowOpen, setRowOpen] = useState<Record<string, boolean>>({});
+  // 펼침·접힘 = 누른 것만 이 기기에 기억 (11-23 - 카드·목록 줄·하루 메모 칸이 같은 값). 누른 적 없으면 카드는 길이로, 목록 줄은 한 줄(P11-1)
+  const opened = useEntryOpen((s) => s.open);
 
   // 즐겨찾기가 하나도 없으면 즐겨찾기 대신 전체로 연다 - 메모를 받은 뒤 화면을 열 때 한 번만 정한다
   // (보던 중에 마지막 ☆를 떼도 화면이 바뀌지 않고, 기억한 것도 그대로라 ☆를 붙이면 다음에는 즐겨찾기로 - V4)
@@ -209,8 +209,8 @@ export default function MemoScreen() {
                   dates={dates}
                   dateText={createdText(m.createdAt)}
                   editing={shownId === m.id}
-                  expanded={!!rowOpen[m.id]}
-                  onToggleExpand={() => setRowOpen((prev) => ({ ...prev, [m.id]: !prev[m.id] }))}
+                  expanded={isRowExpanded(opened, m.id)}
+                  onToggleExpand={() => setEntryOpen(m.id, !isRowExpanded(opened, m.id))}
                   onToggleCheckLine={(idx, line) => (sid ? toggleNoteCheckLine(sid, m, idx, line) : Promise.resolve(false))}
                   onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}
                   onOpenDate={openDay}
@@ -229,7 +229,7 @@ export default function MemoScreen() {
             renderItem={(m) => {
               const i = movable.indexOf(m);
               const dates = noteDates(m);
-              const isCollapsed = cardCollapsed[m.id] ?? isLongEntry(m.text);
+              const isCollapsed = isCardCollapsed(opened, m.id, m.text);
               return (
                 <EntryCard
                   item={m}
@@ -240,7 +240,7 @@ export default function MemoScreen() {
                   onOpenDate={openDay}
                   editing={shownId === m.id}
                   collapsed={isCollapsed}
-                  onToggleCollapse={() => setCardCollapsed((prev) => ({ ...prev, [m.id]: !isCollapsed }))}
+                  onToggleCollapse={() => setEntryOpen(m.id, isCollapsed)}
                   dragProps={sid && i >= 0 ? reorderDragProps(`note:memo:${key}`, i, move) : undefined}
                   onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => move(i, i - 1) : undefined}
                   onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => move(i, i + 1) : undefined}

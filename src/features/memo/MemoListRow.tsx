@@ -1,6 +1,7 @@
 // 메모 화면 '목록' 보기의 한 줄 (P10-5 사용자 의견 5e) - ▶ 펴기 · ★ · 첫 줄 · ☑ n/m · 라벨 칩 · 📅 날짜(없으면 쓴 날). 누르면 메모 보기 칸(11-09).
 // 라벨 칩 = 완료(11-09 사용자 요청 - 카드와 같이 ☐ 체크 칸을 없앴다, EventDoneChip). 휴대폰은 칩 줄이 좁아 첫 칩(완료)만.
 // ▶를 누르면 그 줄 아래에 카드와 같은 본문(EntryBody - 글·체크 줄·그림·첨부·표), ▼로 다시 한 줄(P11-1 사용자 의견 - 처음은 접힌 채).
+//   누른 것은 이 기기에 기억(카드와 같은 값 - notes/entryOpen, 11-23) · 펼친 본문은 카드처럼 높이를 정해 두고 넘치면 그 안에서 스크롤(ui/ScrollCap).
 // 차례 바꾸기는 카드와 같다 - ▲▼ 단추와 끌어 놓기(날짜 없는 메모끼리, 직접 정렬일 때).
 import { shortDateLabel } from '../../domain/dateUtils';
 import { checkCount } from '../../domain/checkLines';
@@ -12,6 +13,7 @@ import ClaudeRequestNote from '../notes/ClaudeRequestNote';
 import EntryBody from '../notes/EntryBody';
 import { pressKeys } from '../../ui/pressKeys';
 import EventDoneChip from '../events/EventDoneChip';
+import ScrollCap, { ENTRY_SCROLL_MAX } from '../../ui/ScrollCap';
 import { Glyph } from '../../ui/Icon';
 
 interface Props {
@@ -170,7 +172,9 @@ export default function MemoListRow(props: Props) {
       </div>
       {expanded && (
         <div data-memo-row-body className="mt-2 pl-6 flex flex-col gap-2 min-w-0">
-          <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} skipLine={heading.line} />
+          <ScrollCap className={ENTRY_SCROLL_MAX} data={{ 'data-entry-scroll': item.id }}>
+            <EntryBody item={item} onToggleCheckLine={props.onToggleCheckLine} skipLine={heading.line} />
+          </ScrollCap>
           <ClaudeRequestNote itemId={item.id} />
         </div>
       )}
