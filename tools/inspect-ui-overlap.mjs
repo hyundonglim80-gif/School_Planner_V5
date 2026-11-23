@@ -4,7 +4,7 @@
 //   일부러 그런 것은 lib/uiOverlap IGNORE(까닭과 함께).
 //
 //   SET_RE=<정규식>  묶음 이름으로 거르기(예 SET_RE='^pc' · SET_RE='^ph360$') · ONLY=<정규식>  상황 이름으로 거르기(예 ONLY='/day$' · ONLY='win:')
-//   SHOTS=<폴더>   찾은 것이 있는 상황마다 그림 · OUT=<파일.json>  모은 결과
+//   SHOTS=<폴더>   찾은 것이 있는 상황마다 그림(SHOTS_ALL=1 = 모든 상황) · OUT=<파일.json>  모은 결과
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-ui-overlap.mjs
 // 심은 자료(라벨·일정·메모·시간표·학급)와 바꾼 계정 설정(settings/pc·mobile)은 끝에 되돌린다.
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -162,7 +162,7 @@ async function measure(page, name, dev) {
       .map(fmt)
       .join(' · ')}${res.found.length > 5 ? ' …' : ''}`,
   );
-  if (SHOTS && res.found.length) await page.screenshot({ path: `${SHOTS}/${name.replace(/[/:]/g, '_')}.png` }).catch(() => {});
+  if (SHOTS && (res.found.length || process.env.SHOTS_ALL)) await page.screenshot({ path: `${SHOTS}/${name.replace(/[/:]/g, '_')}.png` }).catch(() => {});
 }
 
 async function go(page, hash) {
