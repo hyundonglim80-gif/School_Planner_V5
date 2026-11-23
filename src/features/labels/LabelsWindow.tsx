@@ -451,7 +451,7 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
                             disabled={row.hasChildren}
                             title={row.hasChildren ? '하위 라벨이 있어 상위를 둘 수 없습니다 (2단계까지)' : '이 라벨을 어느 라벨 밑에 둘지'}
                             onChange={(e) => edit(d.id, { parentId: e.target.value || null })}
-                            className="px-1.5 py-1 border border-slate-200 rounded-lg text-2xs font-bold text-slate-700 bg-white disabled:opacity-50"
+                            className="pointer-coarse:min-h-[24px] px-1.5 py-1 border border-slate-200 rounded-lg text-2xs font-bold text-slate-700 bg-white disabled:opacity-50"
                           >
                             <option value="">없음</option>
                             {candidates.map((r) => (
@@ -594,9 +594,9 @@ export default function LabelsWindow({ params, close, raise }: WindowProps<Label
 
 function UpDown({ first, last, onMove, sameParent }: { first: boolean; last: boolean; onMove: (dir: 'up' | 'down') => void; sameParent?: boolean }) {
   const where = sameParent ? ' (같은 상위 안에서)' : '';
-  const cls = (off: boolean) => `text-xs px-1 rounded leading-none ${off ? 'text-slate-200' : 'text-slate-500 hover:text-slate-700 cursor-pointer'}`;
+  const cls = (off: boolean) => `tap-area text-xs px-1 rounded leading-none ${off ? 'text-slate-200' : 'text-slate-500 hover:text-slate-700 cursor-pointer'}`;
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-0.5 pointer-coarse:gap-2">
       <button type="button" data-label-up disabled={first} onClick={() => onMove('up')} title={`위로${where}`} className={cls(first)}>
         <Glyph e="▲" />
       </button>
@@ -634,7 +634,7 @@ function DeleteButton({ noun, name, onDelete }: { noun: string; name: string; on
       data-label-delete
       onClick={onDelete}
       title={`${noun} 라벨 '${name}' 지우기 (저장할 때 휴지통으로)`}
-      className="text-slate-500 hover:text-red-500 font-black px-1.5 py-0.5 rounded transition-colors cursor-pointer shrink-0"
+      className="tap-area text-slate-500 hover:text-red-500 font-black px-1.5 py-0.5 rounded transition-colors cursor-pointer shrink-0"
     >
       ✕
     </button>

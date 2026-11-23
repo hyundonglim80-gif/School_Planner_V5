@@ -345,7 +345,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                         }}
                         title="이 수업의 수정 칸 열기"
                         aria-label="수정 칸 열기"
-                        className="shrink-0 w-7 h-7 rounded-lg hover:bg-slate-100 text-sm cursor-pointer"
+                        className="tap-area shrink-0 w-7 h-7 rounded-lg hover:bg-slate-100 text-sm cursor-pointer"
                       >
                         <Glyph e="✏" />
                       </button>
@@ -408,7 +408,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
                       }}
                       title="이 항목의 쓰는 칸 열기"
                       aria-label="쓰는 칸 열기"
-                      className="shrink-0 w-7 h-7 rounded-lg hover:bg-slate-100 text-sm cursor-pointer"
+                      className="tap-area shrink-0 w-7 h-7 rounded-lg hover:bg-slate-100 text-sm cursor-pointer"
                     >
                       <Glyph e="✏" />
                     </button>

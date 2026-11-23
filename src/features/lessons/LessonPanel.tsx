@@ -196,7 +196,7 @@ export default function LessonPanel({ params, close, raise }: WindowProps<Lesson
                 onClick={clearForm}
                 disabled={formEmpty}
                 title={`${isClassUnit ? '학년-반·과목' : '과목'}·비고를 한 번에 지웁니다 - 새로 적고 저장하세요`}
-                className="px-2 py-0.5 text-xs font-bold text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-slate-500"
+                className="tap-area px-2 py-0.5 text-xs font-bold text-slate-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default disabled:hover:bg-transparent disabled:hover:text-slate-500"
               >
                 ✕ 칸 비우기
               </button>

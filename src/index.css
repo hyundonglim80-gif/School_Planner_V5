@@ -119,6 +119,57 @@
   }
 }
 
+/* 휴대폰 누르는 자리 (P57-2 ■3): 보이는 모양은 그대로, 손가락 화면에서만 누르는 자리를 24px 이상으로 넓힌다(WCAG 2.5.8) -
+ * 가운데에 맞춘 빈 ::after가 단추의 일부라 그 자리를 눌러도 그 단추다. tap-area는 relative를 준다(absolute로 띄운 단추는 tap-area-abs).
+ * 넓힌 자리가 옆 단추에 닿으면 그 단추를 누를 때 이것이 눌린다 - 둘레 간격을 넓힌다(겹침 측정 '누르는 자리 겹침'이 잡는다).
+ * 단추 자신이 overflow를 자르면(truncate) 넓힌 자리도 잘린다 - 글을 자르는 것은 안쪽 칸에 둔다. */
+@utility tap-area {
+  @media (pointer: coarse) {
+    position: relative;
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 24px);
+      height: max(100%, 24px);
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+@utility tap-area-abs {
+  @media (pointer: coarse) {
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 24px);
+      height: max(100%, 24px);
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
+/* 휴대폰 체크 상자 줄 (P57-2 ■3): 체크 상자(11~13px)를 품은 글(label)이 누르는 자리다 - 손가락 화면에서 그 자리를 높이 24px 이상으로
+ * (tap-area와 같은 가운데 맞춘 ::after, 보이는 모양은 그대로). base 겹이라 label에 붙은 absolute 같은 꼴이 이긴다. */
+@layer base {
+  @media (pointer: coarse) {
+    label:has(input[type='checkbox'], input[type='radio']) {
+      position: relative;
+    }
+    label:has(input[type='checkbox'], input[type='radio'])::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(100%, 24px);
+      height: max(100%, 24px);
+      transform: translate(-50%, -50%);
+    }
+  }
+}
+
 /* 숫자 칸의 위아래 화살표 숨기기 (명렬표 번호 - 화살표가 칸을 먹어 두 자리 번호가 잘렸다, P10-2) */
 @utility no-spinner {
   -moz-appearance: textfield;

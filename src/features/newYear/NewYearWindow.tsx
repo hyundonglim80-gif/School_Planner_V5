@@ -171,7 +171,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
             data-new-year-prev
             onClick={() => setYear(year - 1)}
             aria-label="앞 학년도"
-            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold cursor-pointer"
+            className="tap-area w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold cursor-pointer"
           >
             <Glyph e="◀" />
           </button>
@@ -181,7 +181,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
             data-new-year-next
             onClick={() => setYear(year + 1)}
             aria-label="다음 학년도"
-            className="w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold cursor-pointer"
+            className="tap-area w-7 h-7 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 font-bold cursor-pointer"
           >
             <Glyph e="▶" />
           </button>
@@ -285,7 +285,7 @@ export default function NewYearWindow({ params, close, raise }: WindowProps<NewY
               {state.lastClasses.map((c, i) => (
                 <span key={classIdOf(c)}>
                   {i > 0 && ', '}
-                  <button type="button" data-new-year-last-class={classIdOf(c)} onClick={() => openRosterAt(classIdOf(c), allClasses)} className="underline hover:text-slate-800 cursor-pointer">
+                  <button type="button" data-new-year-last-class={classIdOf(c)} onClick={() => openRosterAt(classIdOf(c), allClasses)} className="tap-area underline hover:text-slate-800 cursor-pointer">
                     {c.grade}-{c.num}
                   </button>
                 </span>

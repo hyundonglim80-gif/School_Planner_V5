@@ -39,7 +39,7 @@ export function NoteTemplateButton({ open, onToggle }: { open: boolean; onToggle
       aria-expanded={open}
       onClick={onToggle}
       title="메모 틀 - 자주 쓰는 양식으로 채우거나, 지금 글을 틀로 저장합니다"
-      className={`px-2 py-0.5 text-xs font-bold border rounded-lg cursor-pointer ${
+      className={`tap-area px-2 py-0.5 text-xs font-bold border rounded-lg cursor-pointer ${
         open ? PICK_ON : 'text-slate-600 bg-white hover:bg-slate-50 border-slate-200'
       }`}
     >

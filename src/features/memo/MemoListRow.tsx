@@ -159,7 +159,7 @@ export default function MemoListRow(props: Props) {
               onOpenDate(dates.at(-1)!);
             }}
             title={dates.length > 1 ? `${dates.map(shortDateLabel).join(', ')} - 누르면 가장 늦은 날 하루 화면` : `${shortDateLabel(dates[0])} 하루 화면으로`}
-            className="px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap shrink-0"
+            className="tap-area px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap shrink-0"
           >
             <Glyph e="📅" /> {shortDateLabel(dates.at(-1)!)}
             {dates.length > 1 ? ` 외 ${dates.length - 1}` : ''}

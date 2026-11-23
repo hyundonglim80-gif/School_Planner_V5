@@ -118,7 +118,7 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
           onClick={() => onStep(-1)}
           title="이전 달 보기 (고른 날은 그대로)"
           aria-label="이전 달 보기"
-          className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
+          className="tap-area w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
         >
           <Glyph e="◀" />
         </button>
@@ -131,7 +131,7 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
           onClick={() => onStep(1)}
           title="다음 달 보기 (고른 날은 그대로)"
           aria-label="다음 달 보기"
-          className="w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
+          className="tap-area w-6 h-6 shrink-0 flex items-center justify-center rounded text-xs text-slate-500 hover:bg-slate-100 hover:text-slate-800 cursor-pointer"
         >
           <Glyph e="▶" />
         </button>
@@ -214,7 +214,7 @@ export default function BoardMonth({ date, week, fit, ym, onStep }: Props) {
                         onToggle={multiOn ? undefined : () => toggleDone(row)}
                         forward={!!label?.props?.forward}
                         whole={!!row.endDate}
-                        className="max-w-[40%] text-2xs px-1 py-0.5"
+                        className="tap-area max-w-[40%] text-2xs px-1 py-0.5"
                         data={{ 'data-board-month-item-chip': ev.id }}
                       />
                       <span data-board-month-item-text className="min-w-0 flex-1 break-words">

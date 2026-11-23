@@ -235,11 +235,11 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-1.5">
-                  <button type="button" data-attendance-prev onClick={() => moveDate(addDays(date, -1))} className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-black cursor-pointer" title="전날">
+                  <button type="button" data-attendance-prev onClick={() => moveDate(addDays(date, -1))} className="tap-area w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-black cursor-pointer" title="전날">
                     <Glyph e="◀" />
                   </button>
                   <input type="date" data-attendance-date-input value={date} onChange={(e) => moveDate(e.target.value)} aria-label="출석 날짜" className="px-2 py-1 border border-slate-200 rounded-lg font-bold" />
-                  <button type="button" data-attendance-next onClick={() => moveDate(addDays(date, 1))} className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-black cursor-pointer" title="다음 날">
+                  <button type="button" data-attendance-next onClick={() => moveDate(addDays(date, 1))} className="tap-area w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 font-black cursor-pointer" title="다음 날">
                     <Glyph e="▶" />
                   </button>
                 </div>

@@ -359,10 +359,10 @@ function ApplyBox({ range, onRange, quick, mode, onMode, onApply, applying, appl
               <span className="font-semibold text-slate-600 truncate min-w-0">{row.name || '시간표'}</span>
               {row.today && <span className="shrink-0 font-bold text-emerald-700">· 오늘</span>}
               <span className="ml-auto flex items-center gap-1 shrink-0">
-                <button type="button" data-timetable-load onClick={() => onLoad(row)} className={`${small} ${BTN_SUB}`} title="이 기간에 적용된 표를 위 표로 불러옵니다">
+                <button type="button" data-timetable-load onClick={() => onLoad(row)} className={`tap-area ${small} ${BTN_SUB}`} title="이 기간에 적용된 표를 위 표로 불러옵니다">
                   <Glyph e="📥" /> 불러오기
                 </button>
-                <button type="button" data-timetable-unapply onClick={() => onUnapply(row)} className={`${small} ${BTN_DANGER}`} title="이 기간의 적용을 뺍니다 (그 날들은 시간표 수업이 빕니다)">
+                <button type="button" data-timetable-unapply onClick={() => onUnapply(row)} className={`tap-area ${small} ${BTN_DANGER}`} title="이 기간의 적용을 뺍니다 (그 날들은 시간표 수업이 빕니다)">
                   ✕ 빼기
                 </button>
               </span>

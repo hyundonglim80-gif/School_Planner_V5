@@ -523,7 +523,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
   };
 
   const btn =
-    'px-2 @max-[28.5rem]:px-1.5 py-1 rounded-lg text-2xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white cursor-pointer disabled:cursor-default';
+    'tap-area px-2 @max-[28.5rem]:px-1.5 py-1 rounded-lg text-2xs font-bold border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white cursor-pointer disabled:cursor-default';
   /** 단추·띠를 눌러도 글 칸 초점이 그대로 (고르기 상태가 이어지게) */
   const keepFocus = (e: MouseEvent) => e.preventDefault();
   const canUndo = history.length > 0 || (editing && draft !== activeValue);
@@ -561,7 +561,7 @@ export default function TableEditor({ table, onChange, onRemove, title, autoEdit
             type="button"
             data-note-table-remove={table.id}
             onClick={onRemove}
-            className="w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
+            className="tap-area w-6 h-6 flex items-center justify-center text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition-colors cursor-pointer shrink-0"
             title="표 삭제"
             aria-label={`${title || '표'} 삭제`}
           >

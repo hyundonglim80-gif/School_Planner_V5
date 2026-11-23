@@ -558,7 +558,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   disabled={flagBusy}
                   onClick={() => void toggleFlag('favorite')}
                   title={favorite ? '즐겨찾기 풀기' : '즐겨찾기'}
-                  className={`p-0.5 text-base leading-none transition-colors cursor-pointer shrink-0 ${favorite ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'}`}
+                  className={`tap-area p-0.5 text-base leading-none transition-colors cursor-pointer shrink-0 ${favorite ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'}`}
                 >
                   {favorite ? '★' : '☆'}
                 </button>
@@ -573,7 +573,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     onToggle={() => void toggleFlag('done')}
                     hint={l ? pathOf(l.id) : undefined}
                     truncate
-                    className="px-2 py-0.5 rounded-lg text-xs min-w-0 max-w-[10rem]"
+                    className="tap-area px-2 py-0.5 rounded-lg text-xs min-w-0 max-w-[10rem]"
                     data={{ 'data-note-view-chip': l?.id ?? '' }}
                   />
                 ))}
@@ -584,7 +584,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     data-note-view-date={d}
                     onClick={() => openDay(d)}
                     title={`${shortDateLabel(d)} 하루 화면으로`}
-                    className="px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
+                    className="tap-area px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
                   >
                     <Glyph e="📅" /> {shortDateLabel(d)}
                   </button>
@@ -601,7 +601,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     disabled={flagBusy}
                     onClick={() => void toggleFlag('done')}
                     title={isEditing ? '완료 표시 (누르면 바로 저장)' : '완료 표시 (처음 저장할 때 함께)'}
-                    className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                    className={`tap-area px-2 py-0.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                       done ? 'bg-slate-700 text-white border-slate-700' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-400'
                     }`}
                   >
@@ -614,7 +614,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     disabled={flagBusy}
                     onClick={() => void toggleFlag('favorite')}
                     title={isEditing ? '즐겨찾기 (누르면 바로 저장)' : '즐겨찾기 (처음 저장할 때 함께)'}
-                    className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                    className={`tap-area px-2 py-0.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
                       favorite ? 'bg-amber-50 text-amber-600 border-amber-300' : 'bg-white text-slate-500 border-slate-200 hover:border-amber-300'
                     }`}
                   >
@@ -638,7 +638,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                         onClick={() => removeDate(d)}
                         title={`${shortDateLabel(d)} 빼기 - 그날 '메모' 칸에서 빠집니다 (저장할 때)`}
                         aria-label={`${shortDateLabel(d)} 빼기`}
-                        className="w-4 h-4 flex items-center justify-center rounded text-sky-500 hover:text-sky-900 hover:bg-sky-100 cursor-pointer"
+                        className="tap-area w-4 h-4 flex items-center justify-center rounded text-sky-500 hover:text-sky-900 hover:bg-sky-100 cursor-pointer"
                       >
                         ×
                       </button>
@@ -655,7 +655,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                       title: "날짜를 더하면 그날 하루 '메모' 칸에도 보입니다 (여러 날 가능)",
                       disabled: saving,
                       className:
-                        'px-1.5 py-0.5 text-xs font-bold text-slate-500 border border-dashed border-slate-300 rounded-lg hover:text-primary hover:border-primary disabled:opacity-60 cursor-pointer',
+                        'tap-area px-1.5 py-0.5 text-xs font-bold text-slate-500 border border-dashed border-slate-300 rounded-lg hover:text-primary hover:border-primary disabled:opacity-60 cursor-pointer',
                     }}
                   />
                   {form.dates.length === 0 && <span className="text-xs text-slate-500" data-note-dates-empty>날짜 없음 (메모 화면에만)</span>}
@@ -768,7 +768,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={toggleChecklist}
                     title={withShortcut('체크리스트 - 커서가 있는 줄 앞에 ☐', 'checklist')}
-                    className="px-2 py-0.5 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg cursor-pointer"
+                    className="tap-area px-2 py-0.5 text-xs font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg cursor-pointer"
                   >
                     ☑ 체크리스트
                   </button>

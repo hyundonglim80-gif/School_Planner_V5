@@ -94,7 +94,7 @@ export default function MultiSelectBar() {
   };
   const remove = () => run(() => deletePicked(sid, list));
 
-  const btn = 'flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer';
+  const btn = 'tap-area flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer';
   const none = count === 0 || busy;
 
   // 휴대폰은 아래 탭바 위로 올린다 (V4 bottom-20)

@@ -67,7 +67,7 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
           data-label-picker-settings
           onClick={() => openWindow('labels', { tab: kind })}
           title="라벨 관리 열기"
-          className="text-xs text-primary hover:text-blue-700 font-bold flex items-center gap-1 px-2 py-0.5 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
+          className="tap-area text-xs text-primary hover:text-blue-700 font-bold flex items-center gap-1 px-2 py-0.5 rounded-lg hover:bg-blue-50 transition-colors cursor-pointer"
         >
           <span aria-hidden><Glyph e="⚙" /></span>
           <span>라벨 수정</span>
