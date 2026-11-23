@@ -830,7 +830,7 @@ try {
     await q(sel('menu-item', 'settings')).click();
     await has(sel('settings-tab', 'view')); // 창은 열 때 싣는다 - 뜬 뒤에 센다
     const tabs = await page.locator(sel('settings-tab')).evaluateAll((els) => els.map((e) => e.getAttribute('data-settings-tab')));
-    r.check(tabs.join(',') === 'view,notify,school,shortcuts,app', `탭 다섯 (${tabs.join('·')})`);
+    r.check(tabs.join(',') === 'view,layout,notify,school,shortcuts,app', `탭 여섯 - 화면 배치(P59-1) (${tabs.join('·')})`);
   });
 
   await topic('reset-settings', async () => {
