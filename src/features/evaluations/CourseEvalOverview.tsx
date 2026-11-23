@@ -12,6 +12,7 @@ import { downloadCsv } from '../../ui/download';
 import type { ClassItem } from '../class/classes';
 import { useProgressPlans } from '../progress/useProgress';
 import type { SpaceEval } from './evalData';
+import { EVAL_STICKY_COL1, EVAL_STICKY_HEAD, EVAL_TABLE_BOX } from './evalTableBox';
 import { Glyph } from '../../ui/Icon';
 
 interface Props {
@@ -89,11 +90,11 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
           이 과정의 반에 {course?.subject ? `'${course.subject}' ` : ''}조사표가 없습니다. 수업 칸의 <Glyph e="📊" /> 조사표에서 '같은 과정의 다른 반에도'로 만들면 반마다 생깁니다.
         </p>
       ) : (
-        <div className="border border-slate-200 rounded-xl overflow-auto max-h-[65vh]">
+        <div className={EVAL_TABLE_BOX} data-course-overview-box>
           <table className="text-xs border-collapse min-w-full" data-course-overview-table>
-            <thead className="bg-slate-100 sticky top-0 z-20">
+            <thead className={`bg-slate-100 ${EVAL_STICKY_HEAD} z-20`}>
               <tr>
-                <th className="sticky left-0 z-10 bg-slate-100 p-1.5 min-w-14 text-left border-b border-r border-slate-200">반</th>
+                <th className={`${EVAL_STICKY_COL1} z-10 bg-slate-100 p-1.5 min-w-14 text-left border-b border-r border-slate-200`}>반</th>
                 {columns.map((col) => (
                   <th key={col.id} className="p-1.5 border-b border-r border-slate-200 align-top min-w-24 max-w-40 font-normal text-left">
                     <span className="block text-2xs font-bold text-slate-500">
@@ -107,7 +108,7 @@ export default function CourseEvalOverview({ classes, evals, openEval }: Props) 
             <tbody>
               {rows.map(({ cls, roster, sids }) => (
                 <tr key={cls} data-course-overview-row={cls} className="hover:bg-slate-50">
-                  <td className="sticky left-0 bg-white p-1.5 font-black text-slate-800 border-b border-r border-slate-100 whitespace-nowrap">
+                  <td className={`${EVAL_STICKY_COL1} bg-white p-1.5 font-black text-slate-800 border-b border-r border-slate-100 whitespace-nowrap`}>
                     {cls}
                     {!roster && <span className="block text-2xs font-normal text-slate-500">명렬표 없음</span>}
                   </td>

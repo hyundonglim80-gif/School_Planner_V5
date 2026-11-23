@@ -4,6 +4,7 @@
 import { forwardRef } from 'react';
 import { applyEvalToAll, evalTextField, hasScoreCuts, isFreeEval, parseScore, scorePatch, SCORE_FIELD, withEvalValue, type EvalValues, type ScoredField } from '../../domain/evaluation';
 import type { EvalItem } from './evalData';
+import { EVAL_STICKY_HEAD, EVAL_TABLE_BOX } from './evalTableBox';
 
 interface Props {
   ev: EvalItem;
@@ -56,10 +57,9 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
   );
 
   return (
-    <div ref={ref} className="border border-slate-200 rounded-xl overflow-hidden" data-eval-table={ev.id}>
-      <div className="max-h-[60vh] overflow-x-auto overflow-y-auto">
+    <div ref={ref} className={EVAL_TABLE_BOX} data-eval-table={ev.id}>
         <table className="w-full text-xs border-collapse text-center">
-          <thead className="bg-slate-100 sticky top-0 z-10">
+          <thead className={`bg-slate-100 ${EVAL_STICKY_HEAD} z-10`}>
             <tr>
               <th className={`${head} w-11 whitespace-nowrap`}>번호</th>
               <th className={`${head} w-20`}>이름</th>
@@ -218,7 +218,6 @@ const EvalTable = forwardRef<HTMLDivElement, Props>(function EvalTable({ ev, val
             })}
           </tbody>
         </table>
-      </div>
     </div>
   );
 });
