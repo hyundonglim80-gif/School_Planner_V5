@@ -7,7 +7,8 @@ import { detectDeviceKind } from '../../app/deviceKind';
 import { setEnableScrollNav, setStartupScope, setToggle, useNav } from '../../app/nav';
 import { useShortcutTitle } from '../../app/keys';
 import { setScreenPref, useScreenPrefs } from '../../app/screenPrefs';
-import { MEMO_NAV_OPTIONS, ORDER_ARROWS_OPTIONS, PHONE_COLS_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS } from '../../app/optionShortcuts';
+import { MEMO_NAV_OPTIONS, ORDER_ARROWS_OPTIONS, PHONE_COLS_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, WEEK_START_OPTIONS } from '../../app/optionShortcuts';
+import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { ChoiceRow, Choices, Section, ToggleRow } from './parts';
 
 const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
@@ -19,6 +20,7 @@ export default function LayoutTab() {
   const nav = useNav();
   const { popupStyle, sideAt } = useLayoutPrefs();
   const screen = useScreenPrefs();
+  const weekStart = useCommonSettings((s) => s.weekStart);
   const [device] = useState(detectDeviceKind);
   const withKey = useShortcutTitle();
 
@@ -60,6 +62,19 @@ export default function LayoutTab() {
         />
       </Section>
 
+
+      {/* P59-2 - 달력 모양. 한 주의 시작은 계정에 하나(사람을 따른다) - 한눈에 작은 달력·주간은 늘 월요일 */}
+      <Section id="calendarLayout" title="달력" saved="all">
+        <ChoiceRow
+          label="한 주의 시작"
+          hint="월간·년간·📅 작은 달력 (주간·한눈에는 늘 월요일)"
+          name="weekStart"
+          option="weekStart"
+          value={weekStart}
+          onChange={(v) => setCommonSetting('weekStart', v)}
+          options={WEEK_START_OPTIONS}
+        />
+      </Section>
 
       {/* P59-1 - 휴대폰(손가락 화면)에서만 듣는 것. 고르지 않으면 P59 전 모습 */}
       {device === 'mobile' && (

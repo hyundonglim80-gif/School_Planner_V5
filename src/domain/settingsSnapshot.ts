@@ -38,7 +38,7 @@ export const RESET_DEVICE_KEYS = [
 ] as const;
 
 /** 묶음에 드는 계정 칸 (설정 문서 common) - 보기·쓰는 법만 */
-export const RESET_COMMON_KEYS = ['forwardDays', 'trashDays', 'alarmSound', 'palette', 'cvd', 'decor'] as const;
+export const RESET_COMMON_KEYS = ['forwardDays', 'trashDays', 'alarmSound', 'palette', 'cvd', 'decor', 'weekStart'] as const;
 
 /** 메모 화면 정렬 기준 (features/memo/memoSort MEMO_SORT_OPTIONS와 같다 - 시험이 견준다) */
 export const MEMO_SORT_KEYS = ['manual', 'modified', 'created', 'title', 'label', 'date', 'size'] as const;

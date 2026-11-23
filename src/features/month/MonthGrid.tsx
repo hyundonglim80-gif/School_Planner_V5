@@ -10,6 +10,7 @@ import { DAY_CELL_BG, DAY_NUMBER_COLOR, dayToneOf } from '../../domain/dayTone';
 import { labelColor } from '../../domain/labels';
 import { layoutWeekBars, type BarCell, type WeekBar } from '../../domain/periodBars';
 import { fitToWidthFontSize } from '../../domain/typeScale';
+import { weekdayOrder, weekRowStart, type WeekStart } from '../../domain/dateUtils';
 import type { LabelDoc, OverlaySpace } from '../../data/select';
 import { DROP_TARGET_CLASS, dropTargetProps, eventDragProps, type DropHandlers } from '../events/drag';
 import { useHolidayName } from '../../data/holidays';
@@ -39,7 +40,9 @@ const WEEKDAYS = [
 ];
 
 export interface MonthGridProps {
-  /** 달력의 날 (일요일부터 주 단위) */
+  /** 한 주의 시작 (P59-2 - 없으면 일요일). dates도 이 요일부터 */
+  weekStart?: WeekStart;
+  /** 달력의 날 (한 주의 시작 요일부터 주 단위) */
   dates: readonly string[];
   /** 그 달 'YYYY-MM' */
   month: string;
@@ -91,13 +94,12 @@ export default function MonthGrid(p: MonthGridProps) {
   const shown = p.showWeekend ? p.dates : p.dates.filter((d) => ![0, 6].includes(new Date(`${d}T00:00:00`).getDay()));
   const weeks: string[][] = [];
   for (let i = 0; i < shown.length; i += cols) weeks.push(shown.slice(i, i + cols));
-  const sundayOf = (d: string) => {
-    const dt = new Date(`${d}T00:00:00`);
-    dt.setDate(dt.getDate() - dt.getDay());
-    return dt.toDateString();
-  };
+  const weekStart = p.weekStart ?? 0;
+  const sundayOf = (d: string) => weekRowStart(d, weekStart);
   const todayWeek = sundayOf(p.today);
-  const weekdays = p.showWeekend ? WEEKDAYS : WEEKDAYS.slice(1, 6);
+  const weekdays = weekdayOrder(weekStart)
+    .filter((d) => p.showWeekend || (d !== 0 && d !== 6))
+    .map((d) => WEEKDAYS[d]);
   const holidayOf = useHolidayName();
   // 우리 학교 학사일정 (P6-3)
   const { byDate: schoolEvents } = useSchoolSchedule(shown.map((d) => d.slice(0, 7)));

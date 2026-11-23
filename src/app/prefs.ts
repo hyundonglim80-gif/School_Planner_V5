@@ -49,6 +49,7 @@ import { prunePressTargets, readPressTargets, type PressTargets } from '../domai
 import { isKnownTabShortcut } from './tabShortcuts';
 import { useNav, type SemesterFilter, type StartupScope, STARTUP_SCOPES } from './nav';
 import { detectDeviceKind, type DeviceKind } from './deviceKind';
+import type { WeekStart } from '../domain/dateUtils';
 import { SCREEN_DEFAULTS, SCREEN_KEYS, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols, type ScreenPrefs } from './screenPrefs';
 
 // PC인가 휴대폰인가는 app/deviceKind에 (창 목록도 본다)
@@ -222,6 +223,8 @@ export interface CommonSettings {
   decor: string;
   /** 겹쳐 볼 구글 캘린더 (P36-3 - domain/gcalOverlay, 10개까지). 받은 일정은 이 기기에만(data/gcalOverlay). 사람마다 다른 자료라 초기화 설정·처음 설정에는 넣지 않는다 */
   gcalOverlay: OverlayCalendar[];
+  /** 한 주의 시작 (P59-2 - 환경설정 화면 배치, 0 = 일요일(기본 - P59 전 월간·년간) · 1 = 월요일). 월간·년간·📅 작은 달력이 따른다 - 한눈에 작은 달력·주간은 늘 월요일 */
+  weekStart: WeekStart;
 }
 
 export interface PhotoFolderConfig {
@@ -285,6 +288,7 @@ export const COMMON_SETTINGS: SettingsSpec<CommonSettings> = {
   // 팔레트처럼 모르는 값도 그대로 둔다 - 새 꾸미기를 고른 계정을 옛 앱이 끄기로 되돌려 올리지 않게
   decor: customField<string>(DEFAULT_DECOR, (v) => (typeof v === 'string' && /^[a-z]{1,20}$/.test(v) ? v : undefined)),
   gcalOverlay: customField<OverlayCalendar[]>([], sanitizeOverlayCalendars),
+  weekStart: oneOfField<WeekStart>(0, [0, 1]),
 };
 
 /** 계정에 하나인 설정. 이 기기 사본(sp5-common)으로 먼저 그리고 서버 값으로 바꾼다. */

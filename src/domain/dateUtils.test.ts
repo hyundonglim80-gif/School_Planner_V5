@@ -85,4 +85,13 @@ describe('월간 달력 날', () => {
     const o = monthGridDates(2026, 10, 1);
     expect([o[0], o[o.length - 1], o.length]).toEqual(['2026-09-28', '2026-11-01', 35]);
   });
+  it('한 주의 시작(P59-2): 요일 머리 차례 · 그 날이 든 달력 줄의 첫날', async () => {
+    const { weekdayOrder, weekRowStart } = await import('./dateUtils');
+    expect(weekdayOrder(0)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect(weekdayOrder(1)).toEqual([1, 2, 3, 4, 5, 6, 0]);
+    // 2026-11-01 일요일: 일요일부터면 그날, 월요일부터면 앞 주 월요일
+    expect(weekRowStart('2026-11-01', 0)).toBe('2026-11-01');
+    expect(weekRowStart('2026-11-01', 1)).toBe('2026-10-26');
+    expect(weekRowStart('2026-11-04', 1)).toBe('2026-11-02');
+  });
 });

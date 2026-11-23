@@ -5,7 +5,7 @@
 //   구글 캘린더 일정(P36-4)도 점(캘린더 색)·가는 막대·목록 줄(점선 - 누르면 그 일정 창, 끝낸 표시 없음). 인쇄 창에서는 없다(부모가 넘기지 않는다).
 //   달 카드는 React.memo - 부모가 넘기는 값은 붙들어 둔다(열두 달을 판마다 다시 그리지 않게, V4 그대로).
 import { memo, useState } from 'react';
-import { DAY_NAMES } from '../../domain/dateUtils';
+import { DAY_NAMES, weekdayOrder } from '../../domain/dateUtils';
 import { dayToneOf } from '../../domain/dayTone';
 import { labelColor } from '../../domain/labels';
 import { layoutWeekBars, periodsInDates } from '../../domain/periodBars';
@@ -53,9 +53,13 @@ function YearSheetMonth({ m, cal, tree, showWeekend, showEvents, isCurrentMonth,
   const holidayOf = useHolidayName();
   const ddays = liveDDays(useCommonSettings((s) => s.ddays));
   const ddayDates = new Set(ddays.map((d) => d.date));
-  const weeks = monthWeeks(m.year, m.month, showWeekend);
+  // 한 주의 시작 (P59-2 - 환경설정 화면 배치, 계정에 하나)
+  const weekStart = useCommonSettings((s) => s.weekStart);
+  const weeks = monthWeeks(m.year, m.month, showWeekend, weekStart);
   const cols = showWeekend ? 7 : 5;
-  const dayNames = showWeekend ? DAY_NAMES : DAY_NAMES.slice(1, 6);
+  const dayNames = weekdayOrder(weekStart)
+    .filter((d) => showWeekend || (d !== 0 && d !== 6))
+    .map((d) => DAY_NAMES[d]);
   const dates = weeks.flat().filter((d): d is string => !!d);
 
   // 앱 일정 뒤에 구글 캘린더 일정 (P36-4)

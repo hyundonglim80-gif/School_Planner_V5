@@ -27,6 +27,14 @@ describe('monthWeeks', () => {
     expect(w[0]).toEqual(['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07']);
     expect(w.every((wk) => wk.length === 5)).toBe(true);
   });
+  it('한 주의 시작 월요일(P59-2): 월~일 줄 · 주말을 숨기면 앞 다섯(월~금)', () => {
+    const w = monthWeeks(2026, 10, true, 1);
+    expect(w[0]).toEqual([null, null, null, '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']);
+    expect(w[w.length - 1]).toEqual(['2026-10-26', '2026-10-27', '2026-10-28', '2026-10-29', '2026-10-30', '2026-10-31', null]);
+    const h = monthWeeks(2026, 8, false, 1);
+    expect(h[0]).toEqual(['2026-08-03', '2026-08-04', '2026-08-05', '2026-08-06', '2026-08-07']);
+    expect(h.flat()).toEqual(monthWeeks(2026, 8, false, 0).flat());
+  });
 });
 
 interface Ev {

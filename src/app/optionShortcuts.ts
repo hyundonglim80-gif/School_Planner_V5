@@ -17,6 +17,7 @@ import { setWindowPlace, useLayoutPrefs, windowPlace, type WindowPlace } from '.
 import { setEnableScrollNav, setStartupScope, useNav, type StartupScope } from './nav';
 import { setCommonSetting, useCommonSettings } from './prefs';
 import { SCREENS } from './screens';
+import type { WeekStart } from '../domain/dateUtils';
 import { readThemeMode, setThemeMode, type ThemeMode } from './theme';
 import { setPalette } from './palette';
 import { setDecor } from './decor';
@@ -77,6 +78,12 @@ export const PHONE_COLS_OPTIONS: OptionChoice<PhoneCols>[] = [
 export const ORDER_ARROWS_OPTIONS: OptionChoice<OrderArrowsMode>[] = [
   { value: 'always', label: '늘 보이기' },
   { value: 'toggle', label: '⇅ 누를 때만' },
+];
+
+// 한 주의 시작 (P59-2 - 계정에 하나, 첫 값 = 기본 = P59 전 월간·년간)
+export const WEEK_START_OPTIONS: OptionChoice<WeekStart>[] = [
+  { value: 0, label: '일요일' },
+  { value: 1, label: '월요일' },
 ];
 
 export const INTERVAL_OPTIONS: OptionChoice<number>[] = INTERVAL_CHOICES.map((d) => ({ value: d, label: `${d}일마다` }));
@@ -141,6 +148,14 @@ const OPTIONS: Record<string, OptionDef> = {
     values: () => POPUP_STYLE_OPTIONS[detectDeviceKind()],
     get: () => windowPlace(useLayoutPrefs.getState().popupStyle, useLayoutPrefs.getState().sideAt),
     set: (v) => setWindowPlace(v as WindowPlace),
+  },
+  weekStart: {
+    kind: 'choice',
+    title: '한 주의 시작',
+    def: 0,
+    values: () => WEEK_START_OPTIONS,
+    get: () => useCommonSettings.getState().weekStart,
+    set: (v) => setCommonSetting('weekStart', Number(v) === 1 ? 1 : 0),
   },
   memoNavAt: {
     kind: 'choice',
