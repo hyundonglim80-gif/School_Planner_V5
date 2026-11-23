@@ -3,6 +3,7 @@
 // 진도는 화면에만 겹친다 - 수업 칸(lessonDays)에는 쓰지 않는다. 밀기는 진도 문서의 bumps 한 칸만 바꾼다.
 // 줄을 누르면 진도 관리 창이 그 진도로(과정이면 그 반 탭) 열린다.
 // 그 차시에 이은 메모가 있으면 🔗 n(누르면 이은 메모 보기), 마우스를 올리면 🔗 = 그 차시에 메모 잇기(P10-4 - 진도 쪽 그 행에만 적는다).
+// 🔗 잇기·이 교시 밀기는 PC 하루 카드에서 올렸을 때만 줄 끝에 겹쳐 뜬다 - 안 보일 때 자리를 차지하지 않는다(P58-1 사용자 요청, ui/cardTools FLOAT_LINE).
 import { useState, type MouseEvent } from 'react';
 import { lessonPageLabel, type ProgressMark } from '../../domain/progress';
 import { useDocs } from '../../data/select';
@@ -12,12 +13,13 @@ import { progressLinkId } from '../links/linkOps';
 import { openLinker, openLinkViewer } from '../links/open';
 import { openProgress } from './open';
 import { Glyph } from '../../ui/Icon';
+import { FLOAT_LINE } from '../../ui/cardTools';
 
 interface Props {
   mark: ProgressMark;
   date: string;
   period: number;
-  /** 밀기 단추를 늘 보인다 (수정 칸). 아니면 PC에서는 마우스를 올렸을 때만 (밀린 교시의 되돌리기는 늘) */
+  /** 밀기 단추를 늘 보인다 (수정 칸). 아니면 PC에서는 마우스를 올렸을 때만 줄 끝에 겹쳐 (밀린 교시의 되돌리기는 늘) */
   alwaysShowAction?: boolean;
   /** 내용·쪽수는 다른 줄(하루 수업 카드 첫 줄)에 보이니 빼고 단원·차시·준비물만 */
   hideContent?: boolean;
@@ -51,6 +53,9 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
     }
   };
 
+  // PC 하루 카드: 🔗 잇기·밀기는 올렸을 때만 겹쳐 뜬다 (밀린 교시의 되돌리기·수정 칸은 늘 흐름 안)
+  const floating = !alwaysShowAction && !mark.bumped;
+  const hasLinks = !mark.bumped && !!sid && mark.row !== null && (lesson?.linkIds?.length ?? 0) > 0;
   const n = (mark.index ?? 0) + 1;
   const title = mark.bumped
     ? `${mark.key} 진도 - 이 교시는 밀어서 차시가 없습니다 (누르면 진도 관리)`
@@ -115,53 +120,56 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
           </span>
         )}
       </div>
-      {!mark.bumped && sid && mark.row !== null && (lesson?.linkIds?.length ?? 0) > 0 && (
-        <button
-          type="button"
-          data-progress-links={lesson!.linkIds!.length}
-          onClick={(e) => {
-            e.stopPropagation();
-            openLinkViewer({ sid, id: progressLinkId(mark.planId, mark.row!) });
-          }}
-          className="shrink-0 bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 cursor-pointer"
-          title={`이 차시에 이은 메모 ${lesson!.linkIds!.length}개`}
-        >
-          <Glyph e="🔗" /> {lesson!.linkIds!.length}
-        </button>
-      )}
-      {!mark.bumped && sid && mark.row !== null && (
-        <button
-          type="button"
-          data-progress-link-add
-          onClick={(e) => {
-            e.stopPropagation();
-            openLinker({ sid, id: progressLinkId(mark.planId, mark.row!) });
-          }}
-          className={`ml-auto shrink-0 px-1 py-0.5 rounded text-slate-500 hover:text-yellow-700 hover:bg-yellow-50 transition-opacity ${alwaysShowAction ? '' : 'sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100'}`}
-          title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다"
-          aria-label="이 차시에 메모 잇기"
-        >
-          <Glyph e="🔗" />
-        </button>
-      )}
-      <button
-        type="button"
-        data-progress-bump={mark.bumped ? 'undo' : 'bump'}
-        onClick={toggle}
-        disabled={busy}
-        className={`${!mark.bumped && sid && mark.row !== null ? '' : 'ml-auto'} shrink-0 px-1.5 py-0.5 rounded border font-bold transition-opacity disabled:opacity-50 ${
-          mark.bumped
-            ? 'text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100'
-            : `text-slate-500 border-slate-200 bg-white hover:bg-slate-50 ${alwaysShowAction ? '' : 'sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100'}`
-        }`}
-        title={
-          mark.bumped
-            ? '밀기를 되돌립니다 - 뒤 차시가 한 칸씩 당겨집니다'
-            : '이 교시에 수업을 못 했으면 밉니다 - 이 교시는 차시 없이 두고 뒤 차시가 한 칸씩 밀립니다'
-        }
-      >
-        {mark.bumped ? '되돌리기' : '이 교시 밀기'}
-      </button>
+      {/* 줄 끝 묶음: 🔗 n(이은 메모 - 늘)은 흐름 안, 🔗 잇기·밀기는 PC 하루 카드에서 그 왼쪽에 겹쳐 뜬다(P58-1) */}
+      <span className="relative shrink-0 flex items-start gap-2">
+        {hasLinks && (
+          <button
+            type="button"
+            data-progress-links={lesson!.linkIds!.length}
+            onClick={(e) => {
+              e.stopPropagation();
+              openLinkViewer({ sid, id: progressLinkId(mark.planId, mark.row!) });
+            }}
+            className="shrink-0 bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded font-bold border border-yellow-300 hover:bg-yellow-200 cursor-pointer"
+            title={`이 차시에 이은 메모 ${lesson!.linkIds!.length}개`}
+          >
+            <Glyph e="🔗" /> {lesson!.linkIds!.length}
+          </button>
+        )}
+        <span data-progress-actions className={floating ? `${FLOAT_LINE} ${hasLinks ? 'sm:mr-1' : 'sm:-mr-1'}` : 'flex items-center gap-2'}>
+          {!mark.bumped && sid && mark.row !== null && (
+            <button
+              type="button"
+              data-progress-link-add
+              onClick={(e) => {
+                e.stopPropagation();
+                openLinker({ sid, id: progressLinkId(mark.planId, mark.row!) });
+              }}
+              className="shrink-0 px-1 py-0.5 rounded text-slate-500 hover:text-yellow-700 hover:bg-yellow-50"
+              title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다"
+              aria-label="이 차시에 메모 잇기"
+            >
+              <Glyph e="🔗" />
+            </button>
+          )}
+          <button
+            type="button"
+            data-progress-bump={mark.bumped ? 'undo' : 'bump'}
+            onClick={toggle}
+            disabled={busy}
+            className={`shrink-0 px-1.5 py-0.5 rounded border font-bold disabled:opacity-50 ${
+              mark.bumped ? 'text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100' : 'text-slate-500 border-slate-200 bg-white hover:bg-slate-50'
+            }`}
+            title={
+              mark.bumped
+                ? '밀기를 되돌립니다 - 뒤 차시가 한 칸씩 당겨집니다'
+                : '이 교시에 수업을 못 했으면 밉니다 - 이 교시는 차시 없이 두고 뒤 차시가 한 칸씩 밀립니다'
+            }
+          >
+            {mark.bumped ? '되돌리기' : '이 교시 밀기'}
+          </button>
+        </span>
+      </span>
     </div>
   );
 }
