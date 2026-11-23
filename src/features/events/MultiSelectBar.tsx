@@ -199,7 +199,8 @@ export default function MultiSelectBar() {
             <Glyph e="🗑" /><span className="hidden sm:inline">삭제</span>
           </button>
           <div className="w-px h-5 bg-slate-700 mx-1" />
-          <button type="button" data-multi-end onClick={endMulti} disabled={busy} title="여러 개 고르기 끝내기" className="p-1.5 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-40">
+          {/* 누르는 자리 24px(tap-area - P57-3: ✕ 글자 폭이 글꼴마다 달라 자동 검사 크롬에서 23px였다) */}
+          <button type="button" data-multi-end onClick={endMulti} disabled={busy} title="여러 개 고르기 끝내기" className="tap-area p-1.5 text-slate-500 hover:text-white hover:bg-slate-800 rounded-xl cursor-pointer disabled:opacity-40">
             ✕
           </button>
         </div>

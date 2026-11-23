@@ -138,7 +138,8 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
           </div>
         )}
 
-        <div role="tablist" aria-label="휴지통 종류" className="flex sm:gap-1 overflow-x-auto border-b border-slate-200">
+        {/* 모자라면 줄을 바꾼다(P57-3 - 가로 스크롤이라 창 폭 900에서 '기타' 탭이 25px 잘려 안 보였다) */}
+        <div role="tablist" aria-label="휴지통 종류" className="flex flex-wrap border-b border-slate-200">
           {TRASH_TABS.map((t) => {
             const active = tab === t.key;
             return (
@@ -154,7 +155,7 @@ export default function TrashWindow({ params, close, raise }: WindowProps<{ tab?
                   // 안 보이는 것을 고른 채로 일괄 처리하지 않게
                   setPicked(new Set());
                 }}
-                className={`px-2 sm:px-3 py-2 -mb-px border-b-2 text-xs font-bold whitespace-nowrap cursor-pointer ${active ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
+                className={`px-2 py-2 -mb-px border-b-2 text-xs font-bold whitespace-nowrap cursor-pointer ${active ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
               >
                 {t.label}
                 <span data-trash-count={count(t.key)} className={`ml-1 px-1.5 rounded-full text-2xs ${active ? 'bg-primary/10' : 'bg-slate-100 text-slate-500'}`}>

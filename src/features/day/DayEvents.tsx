@@ -151,7 +151,7 @@ export default function DayEvents({ date }: { date: YMD }) {
     >
       {/* 머리줄: ▼ 📅 일정 8 [+ 추가] ……… ⚙️ */}
       {/* 좁은 칸(한눈에 화면 - P24)에서는 '+ 추가'가 제목 뒤에서 줄을 바꾼다 - 제목은 꺾이지 않는다('일/정') */}
-      <div className={`flex items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
+      <div className={`flex items-center justify-between gap-2 ${collapsed ? '' : 'mb-4 sm:mb-1'}`}>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0">
           <button
             type="button"
@@ -198,7 +198,8 @@ export default function DayEvents({ date }: { date: YMD }) {
 
       {!collapsed && (
         // 카드. 휴대폰은 2열, PC(sm 이상)는 1열
-        <div className={`flex-1 overflow-y-auto pr-1 min-h-[110px] ${shownCount > 0 ? 'grid grid-cols-2 sm:grid-cols-1 gap-2 content-start' : ''}`}>
+        // PC 위 여백 12px(머리줄 아래 여백에서 옮김 - 합은 그대로): 카드 위 테두리에 걸쳐 뜨는 ✏️🗑️(ui/cardTools FLOAT_TOOLS)가 첫 카드에서 이 스크롤 칸에 잘리지 않게
+        <div className={`flex-1 overflow-y-auto pr-1 sm:pt-3 min-h-[110px] ${shownCount > 0 ? 'grid grid-cols-2 sm:grid-cols-1 gap-2 content-start' : ''}`}>
           {shownCount > 0 ? (
             <>
               {events.map((ev, idx) => (

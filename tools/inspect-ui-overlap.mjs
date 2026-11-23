@@ -5,12 +5,17 @@
 //
 //   SET_RE=<정규식>  묶음 이름으로 거르기(예 SET_RE='^pc' · SET_RE='^ph360$') · ONLY=<정규식>  상황 이름으로 거르기(예 ONLY='/day$' · ONLY='win:')
 //   SHOTS=<폴더>   찾은 것이 있는 상황마다 그림(SHOTS_ALL=1 = 모든 상황) · OUT=<파일.json>  모은 결과
+//   SUITE=ci  자동 검사 짧은 묶음(P57-3 - 화면 일곱 × PC 1400·휴대폰 360 + 카드 올림 + 창 여덟, tools/ci-chrome.mjs가 이것으로 돌린다) -
+//             걸린 것이 하나라도 있으면 틀림 = 배포 멈춤. 오늘은 2026-11-20에 묶는다(심는 자료가 2026학년도 - 날마다 도는 자동 검사가 해가 바뀌어도 같게)
 //   npm run emu · npm run dev:emu (켜 둔다) → node tools/inspect-ui-overlap.mjs
 // 심은 자료(라벨·일정·메모·시간표·학급)와 바꾼 계정 설정(settings/pc·mobile)은 끝에 되돌린다.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc } from 'firebase/firestore';
-import { emulator, launch, newPage, open, report, restorer, sel, waitFor } from './lib/probe.mjs';
+import { emulator, launch, newPage, open, pinToday, report, restorer, sel, waitFor } from './lib/probe.mjs';
 import { scanPage } from './lib/uiOverlap.mjs';
+
+const SUITE = process.env.SUITE || '';
+if (SUITE === 'ci') pinToday('2026-11-20'); // 날짜를 세기 전에 (아래 YEAR)
 
 const r = report();
 const em = emulator();
@@ -136,6 +141,16 @@ const SETS = [
   { name: 'ph360-font130', dev: PH360, prefs: { fontSizes: ALL_FONT(130) }, screens: 'all', windows: FEW },
   { name: 'ph390-dark', dev: PH390, theme: 'dark', screens: 'all', windows: FEW },
 ];
+
+/**
+ * 자동 검사 짧은 묶음 (P57-3 - SUITE=ci): 다시 겹치지 않게 지킨다. 화면 일곱 × PC 1400(카드 올림·창 여덟)·휴대폰 360(창 여덟·여러 개 고르기·월간 그날 목록).
+ * 넓은 상황 표(폭 1100·900·글자 150%·130%·왼쪽 칸·팝업창 …)는 손으로 - 화면 자리를 바꾸면 그 묶음을 SET_RE로 돌린다(CLAUDE.md 2장).
+ */
+const CI_SETS = [
+  { name: 'pc1400', dev: PC1400, screens: 'all', windows: FEW, hover: true },
+  { name: 'ph360', dev: PH360, screens: 'all', windows: FEW, extra: ['multi', 'sheet'] },
+];
+const RUN_SETS = SUITE === 'ci' ? CI_SETS : SETS;
 
 // ── 결과 모으기 ──
 const all = new Map(); // 종류|이름|상대 → { …, at: [상황] }
@@ -422,7 +437,7 @@ try {
 
   const browser = await launch();
   try {
-    for (const set of SETS) {
+    for (const set of RUN_SETS) {
       if (SET_RE && !SET_RE.test(set.name)) continue;
       r.section(set.name);
       try {
