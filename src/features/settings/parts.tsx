@@ -115,11 +115,14 @@ export function Choices<T extends string | number>({ options, value, onChange, n
 }
 
 /** 이름 + 여럿 가운데 하나 - 한 구역에 고르기가 여럿일 때(P59 화면 배치). 좁으면 고르기가 이름 아래로 */
-export function ChoiceRow<T extends string | number>({ label, hint, ...choices }: { label: string; hint?: string } & ChoicesProps<T>) {
+export function ChoiceRow<T extends string | number>({ label, hint, saved, ...choices }: { label: string; hint?: string; saved?: Saved } & ChoicesProps<T>) {
   return (
     <div data-settings-row={choices.name} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2">
       <span className="min-w-0">
-        <span className="block text-sm font-bold text-slate-700">{label}</span>
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-slate-700">
+          {label}
+          {saved && <SavedBadge saved={saved} />}
+        </span>
         {hint && <span className="block text-xs text-slate-500 mt-0.5">{hint}</span>}
       </span>
       <Choices {...choices} />

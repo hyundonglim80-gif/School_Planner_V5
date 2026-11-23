@@ -35,6 +35,9 @@ export const RESET_DEVICE_KEYS = [
   'phoneCols',
   'orderArrows',
   'cardTime',
+  'monthFit',
+  'weekLessons',
+  'monthLessons',
 ] as const;
 
 /** 묶음에 드는 계정 칸 (설정 문서 common) - 보기·쓰는 법만 */

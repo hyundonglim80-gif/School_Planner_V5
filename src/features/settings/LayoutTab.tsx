@@ -7,7 +7,7 @@ import { detectDeviceKind } from '../../app/deviceKind';
 import { setEnableScrollNav, setStartupScope, setToggle, useNav } from '../../app/nav';
 import { useShortcutTitle } from '../../app/keys';
 import { setScreenPref, useScreenPrefs } from '../../app/screenPrefs';
-import { MEMO_NAV_OPTIONS, ORDER_ARROWS_OPTIONS, PHONE_COLS_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, WEEK_START_OPTIONS } from '../../app/optionShortcuts';
+import { MEMO_NAV_OPTIONS, ORDER_ARROWS_OPTIONS, PHONE_COLS_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, WEEK_START_OPTIONS, WEEK_LESSONS_OPTIONS, MONTH_LESSONS_OPTIONS } from '../../app/optionShortcuts';
 import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { ChoiceRow, Choices, Section, ToggleRow } from './parts';
 
@@ -64,8 +64,9 @@ export default function LayoutTab() {
 
 
       {/* P59-2 - 달력 모양. 한 주의 시작은 계정에 하나(사람을 따른다) - 한눈에 작은 달력·주간은 늘 월요일 */}
-      <Section id="calendarLayout" title="달력" saved="all">
+      <Section id="calendarLayout" title="달력">
         <ChoiceRow
+          saved="all"
           label="한 주의 시작"
           hint="월간·년간·📅 작은 달력 (주간·한눈에는 늘 월요일)"
           name="weekStart"
@@ -73,6 +74,34 @@ export default function LayoutTab() {
           value={weekStart}
           onChange={(v) => setCommonSetting('weekStart', v)}
           options={WEEK_START_OPTIONS}
+        />
+        <ToggleRow
+          id="monthFit"
+          option="monthFit"
+          saved="split"
+          label="월간 칸을 화면 높이에 맞추기"
+          hint="달력 아래가 비지 않게 주마다 칸을 늘립니다"
+          checked={screen.monthFit}
+          onChange={(v) => setScreenPref('monthFit', v)}
+        />
+        <ChoiceRow
+          saved="split"
+          label="주간 수업"
+          hint="주간·한눈에 요일 칸 - 머리줄 '수업'을 켠 때의 모양"
+          name="weekLessons"
+          option="weekLessons"
+          value={screen.weekLessons}
+          onChange={(v) => setScreenPref('weekLessons', v)}
+          options={WEEK_LESSONS_OPTIONS}
+        />
+        <ChoiceRow
+          saved="split"
+          label="월간 수업"
+          name="monthLessons"
+          option="monthLessons"
+          value={screen.monthLessons}
+          onChange={(v) => setScreenPref('monthLessons', v)}
+          options={MONTH_LESSONS_OPTIONS}
         />
       </Section>
 

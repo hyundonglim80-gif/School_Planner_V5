@@ -7,6 +7,7 @@
 //   토·일 한 칸(stackWeekend - 11-09 사용자 요청 '한눈에처럼'): 주간도 토·일을 수업 줄 없이 한 칸에 위(토)·아래(일)로 - 칸은 월~금 + 주말 = 여섯.
 import { useMemo, useState, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
+import { useScreenPrefs } from '../../app/screenPrefs';
 import { useCommonSettings } from '../../app/prefs';
 import { weekdayOf } from '../../domain/dateUtils';
 import { periodStateAt, timesOf } from '../../domain/periodTimes';
@@ -90,6 +91,8 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
   const evalCounts = useEvalCountsByDate(sid);
   const showEvents = useNav((s) => s.showEvents);
   const showClass = useNav((s) => s.showClass);
+  // 수업 모양 (P59-2 - 환경설정 화면 배치 주간 수업: 교시마다 한 줄 / 과목 칩)
+  const weekLessons = useScreenPrefs((s) => s.weekLessons);
   const items = useDocs('items', sid);
   const eventTree = useLabelTree('event', sid);
   const carried = useCarried(sid);
@@ -129,6 +132,7 @@ export function useWeekCards(sid: string | null, date: string, days: readonly st
         onOpen={(n) => openLessonPanel({ sid, date: day, n })}
         onLinks={(n) => openLinkViewer({ sid, id: lessonLinkId(day, n) })}
         loading={lessonsLoading}
+        chips={weekLessons === 'chips'}
       />
     );
   };

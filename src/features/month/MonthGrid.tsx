@@ -21,13 +21,16 @@ import { doneOnDay, type ItemDoc } from '../events/eventOps';
 import EventDoneChip, { DoneMark } from '../events/EventDoneChip';
 import PeriodBar from './PeriodBar';
 import { spaceTitle } from '../../domain/spaceColor';
-import { LessonGrid, LessonStrip } from '../lessons/CalendarLessons';
+import { LessonCount, LessonGrid, LessonStrip } from '../lessons/CalendarLessons';
 import type { LessonSubjects } from '../lessons/lessonSubjects';
 import EvalCountBadge from '../evaluations/EvalCountBadge';
 import { pressKeys } from '../../ui/pressKeys';
 import { gcalKey, type GcalBarItem, type GcalShown } from '../../domain/gcalShow';
 import { GcalBar, GcalLine } from '../gcal/GcalItems';
 import { Glyph } from '../../ui/Icon';
+
+/** 화면 맞춤 높이 = 화면 - 머리줄 - 위아래 여백(PC) · 휴대폰은 아래 탭바까지 (P59-2) */
+const MONTH_FIT = 'flex flex-col min-h-[calc(100dvh-var(--app-header-h,64px)-2.5rem)] max-sm:min-h-[calc(100dvh-var(--app-header-h,64px)-7rem)]';
 
 const WEEKDAYS = [
   { name: '일', color: 'text-red-500' },
@@ -42,6 +45,10 @@ const WEEKDAYS = [
 export interface MonthGridProps {
   /** 한 주의 시작 (P59-2 - 없으면 일요일). dates도 이 요일부터 */
   weekStart?: WeekStart;
+  /** 수업을 '수업 n' 한 칩으로 (P59-2 - 환경설정 화면 배치 월간 수업) */
+  lessonCount?: boolean;
+  /** 화면 높이에 맞추기 (P59-2 - 환경설정 화면 배치): 달력이 머리줄 아래 화면을 채우고, 남는 높이를 주마다 나눈다(내용이 많으면 그만큼 더) */
+  fit?: boolean;
   /** 달력의 날 (한 주의 시작 요일부터 주 단위) */
   dates: readonly string[];
   /** 그 달 'YYYY-MM' */
@@ -105,7 +112,11 @@ export default function MonthGrid(p: MonthGridProps) {
   const { byDate: schoolEvents } = useSchoolSchedule(shown.map((d) => d.slice(0, 7)));
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden" data-month-grid={p.month}>
+    <div
+      className={`bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden ${p.fit ? MONTH_FIT : ''}`}
+      data-month-grid={p.month}
+      data-month-fit={p.fit ? 'true' : undefined}
+    >
       <div className={`grid ${p.showWeekend ? 'grid-cols-7' : 'grid-cols-5'} border-b border-slate-200 bg-slate-50/70 text-center py-2.5`}>
         {weekdays.map((w) => (
           <div key={w.name} className={`text-xs font-black ${w.color}`}>
@@ -113,7 +124,7 @@ export default function MonthGrid(p: MonthGridProps) {
           </div>
         ))}
       </div>
-      <div className="divide-y divide-slate-100">
+      <div className={`divide-y divide-slate-100 ${p.fit ? 'flex-1 flex flex-col' : ''}`}>
         {weeks.map((week) => {
           // 앱 기간 일정과 구글 여러 날 일정을 한 막대 줄 배치로 (겹치지 않게)
           const layout = p.showEvents ? layoutWeekBars<ItemDoc | GcalBarItem>(week, p.gcalPeriods?.length ? [...p.periods, ...p.gcalPeriods] : p.periods) : { bars: [], lanes: 0 };
@@ -124,7 +135,7 @@ export default function MonthGrid(p: MonthGridProps) {
               data-month-week={week[0]}
               // 둘째 줄 날짜를 누르면 오늘로 (app/todayScroll) - 오늘 칸이 없으면(주말을 감춘 토·일) 이 줄
               data-today-area={sundayOf(week[0]) === todayWeek ? 'true' : undefined}
-              className={`grid ${p.showWeekend ? 'grid-cols-7' : 'grid-cols-5'} ${p.compact ? 'min-h-[64px] gap-y-[2px]' : 'min-h-[74px] gap-y-1'}`}
+              className={`grid ${p.showWeekend ? 'grid-cols-7' : 'grid-cols-5'} ${p.compact ? 'min-h-[64px] gap-y-[2px]' : 'min-h-[74px] gap-y-1'} ${p.fit ? 'flex-1' : ''}`}
               style={{ gridTemplateRows: `auto${lanes ? ` repeat(${lanes}, auto)` : ''} 1fr` }}
             >
               {week.map((date, col) => {
@@ -202,7 +213,9 @@ export default function MonthGrid(p: MonthGridProps) {
                         </div>
                       )}
                       {p.lessonsOn &&
-                        (p.compact ? (
+                        (p.lessonCount ? (
+                          <LessonCount date={date} subjects={p.lessonsOn(date) ?? []} tag="month" />
+                        ) : p.compact ? (
                           <LessonGrid date={date} subjects={p.lessonsOn(date) ?? []} tag="month" />
                         ) : (
                           <LessonStrip date={date} subjects={p.lessonsOn(date) ?? []} tag="month" onOpen={p.onOpenLesson} />

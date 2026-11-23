@@ -24,7 +24,7 @@ import { setDecor } from './decor';
 import { readContrast, readDim, setContrast, setCvd, setDim } from './viewAids';
 import { showToast } from './toast';
 import { useShortcutOverrides } from './keys';
-import { setScreenPref, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols } from './screenPrefs';
+import { setScreenPref, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols, type WeekLessons, type MonthLessons } from './screenPrefs';
 
 type Value = string | number;
 export interface OptionChoice<T extends Value = Value> {
@@ -84,6 +84,15 @@ export const ORDER_ARROWS_OPTIONS: OptionChoice<OrderArrowsMode>[] = [
 export const WEEK_START_OPTIONS: OptionChoice<WeekStart>[] = [
   { value: 0, label: '일요일' },
   { value: 1, label: '월요일' },
+];
+
+export const WEEK_LESSONS_OPTIONS: OptionChoice<WeekLessons>[] = [
+  { value: 'rows', label: '교시마다 한 줄' },
+  { value: 'chips', label: '과목 칩' },
+];
+export const MONTH_LESSONS_OPTIONS: OptionChoice<MonthLessons>[] = [
+  { value: 'chips', label: '과목 칩' },
+  { value: 'count', label: "'수업 n' 한 칩" },
 ];
 
 export const INTERVAL_OPTIONS: OptionChoice<number>[] = INTERVAL_CHOICES.map((d) => ({ value: d, label: `${d}일마다` }));
@@ -181,6 +190,23 @@ const OPTIONS: Record<string, OptionDef> = {
     get: () => useScreenPrefs.getState().orderArrows,
     set: (v) => setScreenPref('orderArrows', v as OrderArrowsMode),
   },
+  weekLessons: {
+    kind: 'choice',
+    title: '주간 수업',
+    def: 'rows',
+    values: () => WEEK_LESSONS_OPTIONS,
+    get: () => useScreenPrefs.getState().weekLessons,
+    set: (v) => setScreenPref('weekLessons', v as WeekLessons),
+  },
+  monthLessons: {
+    kind: 'choice',
+    title: '월간 수업',
+    def: 'chips',
+    values: () => MONTH_LESSONS_OPTIONS,
+    get: () => useScreenPrefs.getState().monthLessons,
+    set: (v) => setScreenPref('monthLessons', v as MonthLessons),
+  },
+  monthFit: { kind: 'toggle', title: '월간 칸 화면에 맞추기', get: () => useScreenPrefs.getState().monthFit, set: (on) => setScreenPref('monthFit', on) },
   cardTime: { kind: 'toggle', title: '메모 카드 쓴 시각', get: () => useScreenPrefs.getState().cardTime, set: (on) => setScreenPref('cardTime', on) },
   startupScope: {
     kind: 'choice',

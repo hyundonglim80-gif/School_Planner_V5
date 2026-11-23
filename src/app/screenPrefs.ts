@@ -7,21 +7,32 @@
 //     phoneCols   일정·메모 카드 열 - 2열(기본) / 1열 (하루 일정·메모 칸, 메모 화면)
 //     orderArrows 카드 ▲▼ - 늘(기본) / 칸 머리 ⇅를 눌렀을 때만 (html data-order-arrows - index.css가 숨긴다)
 //     cardTime    메모 카드 쓴 시각 - 보이기(기본) / 숨기기 (html data-card-time - index.css가 숨긴다)
+//
+//   PC·휴대폰 모두 (P59-2):
+//     monthFit    월간 칸 높이 - 내용만큼(기본) / 화면에 맞추기 (1400×900에서 달력 아래 250px가 비었다)
+//     weekLessons 주간 수업 - 교시마다 한 줄(기본) / 과목 칩 (휴대폰 주간 하루 칸의 절반이 수업이었다)
+//     monthLessons 월간 수업 - 과목 칩(기본) / '수업 n' 한 칩 (휴대폰 월간 칸마다 칩 세 줄이 일정을 두세 글자로 밀어냈다)
+//     머리줄 '수업' 단추는 그대로 모든 화면의 수업을 켜고 끈다 - 이 둘은 켠 때의 모양
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type MemoNavAt = 'side' | 'top';
 export type PhoneCols = 1 | 2;
 export type OrderArrowsMode = 'always' | 'toggle';
+export type WeekLessons = 'rows' | 'chips';
+export type MonthLessons = 'chips' | 'count';
 
 export interface ScreenPrefs {
   memoNavAt: MemoNavAt;
   phoneCols: PhoneCols;
   orderArrows: OrderArrowsMode;
   cardTime: boolean;
+  monthFit: boolean;
+  weekLessons: WeekLessons;
+  monthLessons: MonthLessons;
 }
 
-export const SCREEN_DEFAULTS: ScreenPrefs = { memoNavAt: 'side', phoneCols: 2, orderArrows: 'always', cardTime: true };
+export const SCREEN_DEFAULTS: ScreenPrefs = { memoNavAt: 'side', phoneCols: 2, orderArrows: 'always', cardTime: true, monthFit: false, weekLessons: 'rows', monthLessons: 'chips' };
 export const SCREEN_KEYS = Object.keys(SCREEN_DEFAULTS) as ReadonlyArray<keyof ScreenPrefs>;
 
 export const useScreenPrefs = create<ScreenPrefs>()(persist((): ScreenPrefs => ({ ...SCREEN_DEFAULTS }), { name: 'sp5-screen' }));

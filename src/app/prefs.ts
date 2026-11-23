@@ -50,7 +50,7 @@ import { isKnownTabShortcut } from './tabShortcuts';
 import { useNav, type SemesterFilter, type StartupScope, STARTUP_SCOPES } from './nav';
 import { detectDeviceKind, type DeviceKind } from './deviceKind';
 import type { WeekStart } from '../domain/dateUtils';
-import { SCREEN_DEFAULTS, SCREEN_KEYS, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols, type ScreenPrefs } from './screenPrefs';
+import { SCREEN_DEFAULTS, SCREEN_KEYS, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols, type ScreenPrefs, type WeekLessons, type MonthLessons } from './screenPrefs';
 
 // PC인가 휴대폰인가는 app/deviceKind에 (창 목록도 본다)
 export { detectDeviceKind, type DeviceKind };
@@ -86,6 +86,9 @@ export interface DevicePrefs {
   phoneCols: PhoneCols;
   orderArrows: OrderArrowsMode;
   cardTime: boolean;
+  monthFit: boolean;
+  weekLessons: WeekLessons;
+  monthLessons: MonthLessons;
 }
 
 const overridesField: SettingField<ShortcutOverrides> = { def: {}, read: readShortcutOverrides };
@@ -112,6 +115,9 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   phoneCols: oneOfField<PhoneCols>(SCREEN_DEFAULTS.phoneCols, [2, 1]),
   orderArrows: oneOfField<OrderArrowsMode>(SCREEN_DEFAULTS.orderArrows, ['always', 'toggle']),
   cardTime: boolField(SCREEN_DEFAULTS.cardTime),
+  monthFit: boolField(SCREEN_DEFAULTS.monthFit),
+  weekLessons: oneOfField<WeekLessons>(SCREEN_DEFAULTS.weekLessons, ['rows', 'chips']),
+  monthLessons: oneOfField<MonthLessons>(SCREEN_DEFAULTS.monthLessons, ['chips', 'count']),
 };
 
 /** 지금 이 기기의 기기 칸 값 (초기화 설정 묶음도 여기서 모은다 - app/settingsSnapshot) */
