@@ -58,7 +58,7 @@ export function LessonStrip({ date, subjects, tag, onOpen, height = 20 }: Props 
 export function LessonWraps({ date, subjects, tag, onOpen }: Props) {
   if (!hasLessons(subjects)) return null;
   return (
-    <div {...{ [`data-${tag}-lessons`]: date }} className="flex flex-wrap gap-1 mt-0.5">
+    <div {...{ [`data-${tag}-lessons`]: date }} className="flex flex-wrap gap-1 pointer-coarse:gap-1.5 mt-0.5">
       {subjects.map((subject, i) => {
         if (!subject) return null;
         const body = (
@@ -79,7 +79,8 @@ export function LessonWraps({ date, subjects, tag, onOpen }: Props) {
               onOpen(date, i + 1);
             }}
             title={`${i + 1}교시 ${subject} - 누르면 고치기`}
-            className={`${cls} cursor-pointer`}
+            // 손가락 화면 누르는 자리 24px (P59-2 - 주간 과목 칩이 21px였다, P57-2 tap-area)
+            className={`${cls} tap-area cursor-pointer`}
           >
             {body}
           </button>

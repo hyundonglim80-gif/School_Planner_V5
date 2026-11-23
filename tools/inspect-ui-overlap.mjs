@@ -143,6 +143,10 @@ const SETS = [
   { name: 'ph390-dark', dev: PH390, theme: 'dark', screens: 'all', windows: FEW },
   // 환경설정 화면 배치 (P59-1) - 휴대폰 선택지를 모두 바꾼 모습 + 칸 머리 ⇅를 누른 하루·메모 화면
   { name: 'ph360-p59', dev: PH360, prefs: { memoNavAt: 'top', phoneCols: 1, orderArrows: 'toggle', cardTime: false }, screens: ['day', 'memo'], windows: ['settings-layout', 'note-view'], extra: ['reorderOn'] },
+  // 화면 배치 달력 (P59-2) - 월요일부터·월간 화면 맞춤·주간 과목 칩·월간 '수업 n'
+  { name: 'pc1400-p59', dev: PC1400, common: { weekStart: 1 }, prefs: { monthFit: true, weekLessons: 'chips', monthLessons: 'count' }, screens: ['month', 'week', 'board', 'year'], windows: ['settings-layout'] },
+  { name: 'pc1400-p59cal', dev: PC1400, prefs: { monthFit: true }, screens: ['month'], windows: [] },
+  { name: 'ph360-p59cal', dev: PH360, common: { weekStart: 1 }, prefs: { monthFit: true, weekLessons: 'chips', monthLessons: 'count' }, screens: ['month', 'week', 'year'], windows: [], extra: ['sheet'] },
   { name: 'ph390-p59', dev: PH390, prefs: { memoNavAt: 'top', orderArrows: 'toggle' }, screens: ['day', 'memo'], windows: [], extra: ['reorderOn'] },
 ];
 
@@ -210,10 +214,23 @@ async function setDevicePrefs(kind, prefs) {
   await setDoc(d, { ...base, popupStyle: 'side', sideAt: 'right', fontSizes: {}, ...prefs, v: 1, updatedAt: serverTimestamp() });
 }
 
+/** 계정 공통 문서(settings/common)에 상황 값을 넣는다 (P59-2 한 주의 시작) - 다음 묶음은 처음 것으로 돌아간다 */
+async function setCommonPrefs(prefs) {
+  const d = ref('settings', 'common');
+  if (!('common' in origSettings)) {
+    if (!Object.keys(prefs).length) return;
+    const s = await getDoc(d);
+    origSettings.common = s.exists() ? s.data() : null;
+    undo.add(async () => (origSettings.common ? setDoc(d, origSettings.common) : deleteDoc(d)));
+  }
+  await setDoc(d, { ...(origSettings.common ?? {}), ...prefs, v: 1, updatedAt: serverTimestamp() });
+}
+
 async function runSet(browser, set) {
   const { dev } = set;
   const kind = dev.mobile ? 'mobile' : 'pc';
   await setDevicePrefs(kind, set.prefs ?? {});
+  await setCommonPrefs(set.common ?? {});
   const { ctx, page, errors, dialogs } = await newPage(browser, {
     width: dev.width,
     height: dev.height,

@@ -29,8 +29,8 @@ import { gcalKey, type GcalBarItem, type GcalShown } from '../../domain/gcalShow
 import { GcalBar, GcalLine } from '../gcal/GcalItems';
 import { Glyph } from '../../ui/Icon';
 
-/** 화면 맞춤 높이 = 화면 - 머리줄 - 위아래 여백(PC) · 휴대폰은 아래 탭바까지 (P59-2) */
-const MONTH_FIT = 'flex flex-col min-h-[calc(100dvh-var(--app-header-h,64px)-2.5rem)] max-sm:min-h-[calc(100dvh-var(--app-header-h,64px)-7rem)]';
+/** 화면 맞춤 높이 = 화면 - 머리줄 - 위아래 여백(PC) · 휴대폰은 아래 탭바와 둥근 ＋ 위까지 (P59-2 - 탭바까지면 마지막 줄 오른쪽 칸을 ＋가 7px 덮었다) */
+const MONTH_FIT = 'flex flex-col min-h-[calc(100dvh-var(--app-header-h,64px)-2.5rem)] max-sm:min-h-[calc(100dvh-var(--app-header-h,64px)-8.25rem)]';
 
 const WEEKDAYS = [
   { name: '일', color: 'text-red-500' },
