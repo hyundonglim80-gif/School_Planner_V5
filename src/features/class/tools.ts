@@ -9,6 +9,8 @@ export interface ClassTool {
   desc: string;
   homeroom?: true;
   classUnit?: true;
+  /** 학급 화면 위 탭에 이미 있어 카드로 그리지 않는다 (P59-3 - 같은 곳으로 가는 길이 둘이었다) */
+  onTab?: true;
 }
 
 export const CLASS_TOOLS: readonly ClassTool[] = [
@@ -19,5 +21,5 @@ export const CLASS_TOOLS: readonly ClassTool[] = [
   { id: 'drawStudent', icon: '🎯', label: '발표자 뽑기', desc: '겹치지 않게 차례로' },
   { id: 'studentRecord', icon: '🧑‍🎓', label: '학생 기록(누가기록)', desc: '학생마다 기록 · 출결 · 조사표' },
   { id: 'evalOverview', icon: '📊', label: '조사표 모아 보기', desc: '조사표를 학생 × 조사표 표로' },
-  { id: 'roster', icon: '🧑‍🤝‍🧑', label: '명렬표', desc: '관리 · 검색 · 암기' },
+  { id: 'roster', icon: '🧑‍🤝‍🧑', label: '명렬표', desc: '관리 · 검색 · 암기', onTab: true },
 ];

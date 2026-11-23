@@ -248,7 +248,8 @@ function NewMenu() {
 /** 계정 사진 (없으면 이름 첫 글자) */
 function Avatar({ size }: { size: 'sm' | 'lg' }) {
   const user = useSession((s) => s.user);
-  const box = size === 'lg' ? 'w-10 h-10 text-base' : 'w-6 h-6 sm:w-8 sm:h-8 text-xs';
+  // 작은 것: 휴대폰 손가락 화면은 머리줄 단추가 32px 칸이라(index.css) 28px로 가운데에 (P59-3 - 24px가 칸 왼쪽 위에 붙어 위로 치우쳤다)
+  const box = size === 'lg' ? 'w-10 h-10 text-base' : 'w-6 h-6 pointer-coarse:w-7 pointer-coarse:h-7 sm:w-8 sm:h-8 text-xs';
   return user?.photoURL ? (
     <img src={user.photoURL} alt="" className={`${box} rounded-full border-2 border-white shadow-xs object-cover shrink-0`} />
   ) : (
@@ -276,7 +277,7 @@ function AccountMenu({ title }: { title: string }) {
         aria-expanded={open}
         title={title}
         aria-label={`계정: ${title}`}
-        className="flex rounded-full cursor-pointer"
+        className="flex items-center justify-center rounded-full cursor-pointer"
       >
         <Avatar size="sm" />
       </button>

@@ -206,6 +206,8 @@ const OPTIONS: Record<string, OptionDef> = {
     get: () => useScreenPrefs.getState().monthLessons,
     set: (v) => setScreenPref('monthLessons', v as MonthLessons),
   },
+  headerToggles: { kind: 'toggle', title: '머리줄 주말·일정·수업 단추', get: () => useScreenPrefs.getState().headerToggles, set: (on) => setScreenPref('headerToggles', on) },
+  buildId: { kind: 'toggle', title: '화면 구석 빌드 번호', get: () => useScreenPrefs.getState().buildId, set: (on) => setScreenPref('buildId', on) },
   monthFit: { kind: 'toggle', title: '월간 칸 화면에 맞추기', get: () => useScreenPrefs.getState().monthFit, set: (on) => setScreenPref('monthFit', on) },
   cardTime: { kind: 'toggle', title: '메모 카드 쓴 시각', get: () => useScreenPrefs.getState().cardTime, set: (on) => setScreenPref('cardTime', on) },
   startupScope: {

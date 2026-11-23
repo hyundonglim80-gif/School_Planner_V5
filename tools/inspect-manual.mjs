@@ -658,10 +658,10 @@ try {
     await go('#/class', 'class');
     if (await count(sel('roster'))) await q(sel('class-mode', 'hub')).click();
     const tools = await page.locator(sel('class-tool')).evaluateAll((els) => els.map((e) => e.getAttribute('data-class-tool')));
-    r.check(['attendance', 'notices', 'seating', 'drawStudent', 'studentRecord', 'evalOverview', 'roster'].every((t) => tools.includes(t)), `도구 카드 (${tools.length}) - 담임`);
+    r.check(['attendance', 'notices', 'seating', 'drawStudent', 'studentRecord', 'evalOverview'].every((t) => tools.includes(t)) && !tools.includes('roster') && (await count(sel('class-mode', 'roster'))) === 1, `도구 카드 (${tools.length}) - 담임 · 명렬표는 위 탭 (P59-3)`);
     r.check(await has(sel('class-students')), '학생 명단');
     r.check((await count(sel('class-view'))) === 2, '이름 / 📷 사진');
-    r.check((await count(sel('class-today'))) === 1, '📋 오늘 출결 줄');
+    r.check((await count(sel('class-today'))) === 1, '📋 출석부 카드에 오늘 출결 (P59-3)');
   });
 
   /** 학급 화면의 명렬표 (관리 · 검색 · 암기) */

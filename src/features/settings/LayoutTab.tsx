@@ -22,7 +22,9 @@ export default function LayoutTab() {
   const screen = useScreenPrefs();
   const weekStart = useCommonSettings((s) => s.weekStart);
   const [device] = useState(detectDeviceKind);
-  const withKey = useShortcutTitle();
+  const withShortcutKey = useShortcutTitle();
+  // 휴대폰(손가락 화면)에는 단축키 안내를 적지 않는다 - 누를 키보드가 없다 (P59-3)
+  const withKey: typeof withShortcutKey = (text, id) => (device === 'mobile' ? text : withShortcutKey(text, id));
 
   return (
     <div>
@@ -50,6 +52,15 @@ export default function LayoutTab() {
           hint={withKey('시간표와 교시', 'toggleClass')}
           checked={nav.showClass}
           onChange={(v) => setToggle('showClass', v)}
+        />
+        {/* P59-3 - 둘째 줄 단추를 숨겨도 값은 위 셋·단축키로 바꾼다 */}
+        <ToggleRow
+          id="headerToggles"
+          option="headerToggles"
+          label="둘째 줄에 주말·일정·수업 단추"
+          hint="끄면 날짜 줄이 넓어집니다 (값은 위에서 바꿉니다)"
+          checked={screen.headerToggles}
+          onChange={(v) => setScreenPref('headerToggles', v)}
         />
         {/* V4는 휴대폰 첫 화면에 손짓 안내를 띄웠지만 기본이 꺼져 있어 맞지 않았다 - 켜는 자리에 적는다 */}
         <ToggleRow

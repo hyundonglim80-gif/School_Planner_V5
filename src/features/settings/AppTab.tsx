@@ -5,7 +5,8 @@ import { installApp, useInstall } from '../../app/install';
 import { showErrorToast, showToast } from '../../app/toast';
 import { useMirror } from '../../data/mirror/store';
 import { resetMirror } from '../../data/mirror/sync';
-import { Section } from './parts';
+import { Section, ToggleRow } from './parts';
+import { setScreenPref, useScreenPrefs } from '../../app/screenPrefs';
 import { Glyph } from '../../ui/Icon';
 
 /** 이 기기 사본: 어디에 두나(IndexedDB / 메모리로만)·몇 개 - 다시 받기 */
@@ -53,6 +54,7 @@ function MirrorSection() {
 
 export default function AppTab() {
   const { canPrompt, standalone } = useInstall();
+  const buildId = useScreenPrefs((s) => s.buildId);
   return (
     <div>
       <ResetSection />
@@ -76,6 +78,15 @@ export default function AppTab() {
         <code data-settings-build className="text-sm font-bold text-slate-700">
           {__BUILD_ID__}
         </code>
+        {/* P59-3 - 화면 오른쪽 아래 작은 글(주간 일요일 칸 + 단추와 겹쳐 보였다) */}
+        <ToggleRow
+          id="buildId"
+          option="buildId"
+          saved="split"
+          label="화면 오른쪽 아래에도 보이기"
+          checked={buildId}
+          onChange={(v) => setScreenPref('buildId', v)}
+        />
       </Section>
     </div>
   );

@@ -89,6 +89,8 @@ export interface DevicePrefs {
   monthFit: boolean;
   weekLessons: WeekLessons;
   monthLessons: MonthLessons;
+  headerToggles: boolean;
+  buildId: boolean;
 }
 
 const overridesField: SettingField<ShortcutOverrides> = { def: {}, read: readShortcutOverrides };
@@ -118,6 +120,8 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   monthFit: boolField(SCREEN_DEFAULTS.monthFit),
   weekLessons: oneOfField<WeekLessons>(SCREEN_DEFAULTS.weekLessons, ['rows', 'chips']),
   monthLessons: oneOfField<MonthLessons>(SCREEN_DEFAULTS.monthLessons, ['chips', 'count']),
+  headerToggles: boolField(SCREEN_DEFAULTS.headerToggles),
+  buildId: boolField(SCREEN_DEFAULTS.buildId),
 };
 
 /** 지금 이 기기의 기기 칸 값 (초기화 설정 묶음도 여기서 모은다 - app/settingsSnapshot) */

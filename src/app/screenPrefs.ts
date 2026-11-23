@@ -13,6 +13,8 @@
 //     weekLessons 주간 수업 - 교시마다 한 줄(기본) / 과목 칩 (휴대폰 주간 하루 칸의 절반이 수업이었다)
 //     monthLessons 월간 수업 - 과목 칩(기본) / '수업 n' 한 칩 (휴대폰 월간 칸마다 칩 세 줄이 일정을 두세 글자로 밀어냈다)
 //     머리줄 '수업' 단추는 그대로 모든 화면의 수업을 켜고 끈다 - 이 둘은 켠 때의 모양
+//     headerToggles 머리줄 둘째 줄 주말·일정·수업 단추 - 보이기(기본) / 숨기기 (같은 값을 환경설정 화면 표시·단축키로 바꾼다 - 휴대폰 날짜 제목 자리)
+//     buildId     화면 오른쪽 아래 빌드 번호 - 보이기(기본) / 숨기기 (주간 일요일 칸 + 단추와 겹쳐 보였다 · 환경설정 앱 탭에는 늘 있다)
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -30,9 +32,11 @@ export interface ScreenPrefs {
   monthFit: boolean;
   weekLessons: WeekLessons;
   monthLessons: MonthLessons;
+  headerToggles: boolean;
+  buildId: boolean;
 }
 
-export const SCREEN_DEFAULTS: ScreenPrefs = { memoNavAt: 'side', phoneCols: 2, orderArrows: 'always', cardTime: true, monthFit: false, weekLessons: 'rows', monthLessons: 'chips' };
+export const SCREEN_DEFAULTS: ScreenPrefs = { memoNavAt: 'side', phoneCols: 2, orderArrows: 'always', cardTime: true, monthFit: false, weekLessons: 'rows', monthLessons: 'chips', headerToggles: true, buildId: true };
 export const SCREEN_KEYS = Object.keys(SCREEN_DEFAULTS) as ReadonlyArray<keyof ScreenPrefs>;
 
 export const useScreenPrefs = create<ScreenPrefs>()(persist((): ScreenPrefs => ({ ...SCREEN_DEFAULTS }), { name: 'sp5-screen' }));
