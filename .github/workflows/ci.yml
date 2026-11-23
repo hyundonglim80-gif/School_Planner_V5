@@ -141,9 +141,22 @@ jobs:
       # 러너에 깔린 구글 크롬을 쓴다(probe browserOptions - /opt/google/chrome/chrome이면 channel 'chrome', 받기 없음).
       # 한글 글꼴이 없으면 글자 폭을 재는 점검이 틀린다 - 없을 때만 깐다.
       # 우분투 꾸러미 서버가 잠깐 끊기면 받기가 틀려 CI·배포가 멈췄다(11-19 P47-2 합침) - 세 번까지 다시 받는다.
+      # 그 서버가 느리면 이 단계만 20분(11-23 #198 합침) → 한 번 받은 글꼴 파일을 보관해 두고 다음부터는 풀기만(P60-1).
+      - name: Restore Korean font
+        id: kofont
+        uses: actions/cache/restore@v6
+        with:
+          path: ~/ko-font
+          key: ko-font-noto-cjk-${{ runner.os }}-v1
+
       - name: Chrome and Korean font
         run: |
           google-chrome --version
+          # 보관이 있으면 꾸러미가 깐 파일(글꼴 + 글꼴 설정) 그대로 풀고 글꼴 목록을 다시 만든다
+          if [ -f ~/ko-font/ko-font.tar ]; then
+            sudo tar -xf ~/ko-font/ko-font.tar -C /
+            sudo fc-cache -f
+          fi
           for i in 1 2 3; do
             fc-list :lang=ko | grep -q . && break
             sudo apt-get update -q -o Acquire::Retries=3 || true
@@ -153,6 +166,20 @@ jobs:
           done
           fc-list :lang=ko | head -3
           fc-list :lang=ko | grep -q .
+          # 방금 서버에서 받았으면 그 꾸러미가 깐 파일을 묶어 둔다(아래 단계가 보관)
+          if [ ! -f ~/ko-font/ko-font.tar ]; then
+            mkdir -p ~/ko-font
+            dpkg -L fonts-noto-cjk | while read -r f; do [ -f "$f" ] && echo "$f"; done > ~/ko-font/files.txt
+            tar -cf ~/ko-font/ko-font.tar -T ~/ko-font/files.txt
+            ls -lh ~/ko-font/ko-font.tar
+          fi
+
+      - name: Save Korean font
+        if: steps.kofont.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: ~/ko-font
+          key: ko-font-noto-cjk-${{ runner.os }}-v1
 
       - name: Chrome probes
         run: npx firebase emulators:exec --only auth,firestore --project schoolplannerv3 "node tools/ci-chrome.mjs"
