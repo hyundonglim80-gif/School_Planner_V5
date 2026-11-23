@@ -2,7 +2,7 @@
 //
 // V4 Layout은 창 30여 개의 열림 상태와 키 처리를 모두 들고 있었다(1,200줄). V5는 창을 창 목록(windows.ts)에,
 // 키를 단축키 한 곳(shortcuts.ts)에 두고, 여기는 자리만 잡는다.
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import EventAlarms from '../features/events/EventAlarms';
 import ForwardMarks from '../features/events/ForwardMarks';
 import MultiSelectGate from '../features/events/MultiSelectGate';
@@ -153,23 +153,8 @@ export default function Shell() {
     };
   }, []);
 
-  // 본문의 실제 폭. 오른쪽 칸이 열려 좁아지면 화면들이 그에 맞춰 칸 수를 줄인다 (ui/useMainWidth)
+  // 본문의 실제 폭은 화면만 받는다(MainWidthBox) - 껍데기가 들면 칸이 열리며 줄어드는 동안 껍데기·창까지 다시 그린다
   const mainRef = useRef<HTMLElement>(null);
-  const [mainWidth, setMainWidth] = useState(() => window.innerWidth);
-  useEffect(() => {
-    const el = mainRef.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    // 안쪽 여백을 뺀 폭 (CSS의 @container 가 재는 폭과 같게) - PC 한눈에 글자 바탕(90%)은 걷는다 (unscaledWidth).
-    // 화면이 바뀌면 다시 잰다 - 바탕(한눈에 90%·다른 화면 100%)이 바뀌면 폭이 같아도 걷는 값이 다르다
-    const measure = () => {
-      const cs = getComputedStyle(el);
-      setMainWidth(unscaledWidth(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)));
-    };
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    measure();
-    return () => ro.disconnect();
-  }, [scope]);
 
   const Screen = SCREEN_COMPONENTS[scope];
 
@@ -210,11 +195,11 @@ export default function Shell() {
         {/* 앱을 열 때 남은 쓰던 글 '📝 저장하지 않은 글 n개 - 보기' (P14-6 ■1b) */}
         <DraftsBanner />
         <NewYearBanner />
-        <MainWidthContext.Provider value={mainWidth}>
+        <MainWidthBox target={mainRef} scope={scope}>
           <Suspense fallback={<p className="p-6 text-xs text-slate-500">불러오는 중…</p>}>
             <Screen />
           </Suspense>
-        </MainWidthContext.Provider>
+        </MainWidthBox>
       </main>
 
       <MobileTabBar />
@@ -261,3 +246,28 @@ export default function Shell() {
   );
 }
 
+
+/**
+ * 본문의 실제 폭을 재서 화면에만 준다 (ui/useMainWidth) - 오른쪽 칸이 열려 좁아지면 화면들이 그에 맞춰 칸 수를 줄인다.
+ * 껍데기(Shell)가 이 값을 들면 칸이 열리며 본문이 줄어드는 0.2초 동안 껍데기 전체와 열린 창까지 폭이 바뀔 때마다 다시 그렸다 -
+ * 그 사이 누른 체크 칸은 다시 그리기가 앱 값으로 되돌려 눌리지 않았다(P60-3 - 환경설정 고대비 칸, inspect-shortcut-record).
+ * 이 안만 다시 그리고, 화면(children)은 같은 요소라 폭을 읽는 부품만 따라 그린다.
+ */
+function MainWidthBox({ target, scope, children }: { target: RefObject<HTMLElement | null>; scope: string; children: ReactNode }) {
+  const [mainWidth, setMainWidth] = useState(() => window.innerWidth);
+  useEffect(() => {
+    const el = target.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    // 안쪽 여백을 뺀 폭 (CSS의 @container 가 재는 폭과 같게) - PC 한눈에 글자 바탕(90%)은 걷는다 (unscaledWidth).
+    // 화면이 바뀌면 다시 잰다 - 바탕(한눈에 90%·다른 화면 100%)이 바뀌면 폭이 같아도 걷는 값이 다르다
+    const measure = () => {
+      const cs = getComputedStyle(el);
+      setMainWidth(unscaledWidth(el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)));
+    };
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    measure();
+    return () => ro.disconnect();
+  }, [target, scope]);
+  return <MainWidthContext.Provider value={mainWidth}>{children}</MainWidthContext.Provider>;
+}
