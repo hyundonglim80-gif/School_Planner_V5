@@ -96,7 +96,7 @@ export default function DayJournal({ date }: { date: YMD }) {
               type="button"
               data-journal-collapse
               onClick={() => setCollapsed(!collapsed)}
-              className="text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
+              className="tap-area text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
               title={collapsed ? '펼치기' : '접기'}
             >
               <Glyph e={collapsed ? '▶' : '▼'} />
@@ -116,7 +116,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                 onClick={openCreate}
                 aria-label="메모 추가"
                 title="이 날의 메모 추가 (오른쪽 칸) - 쓰는 칸의 📅 날짜로 다른 날도 이을 수 있습니다"
-                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors shrink-0"
+                className="tap-area px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors shrink-0"
               >
                 + 추가
               </button>
@@ -129,7 +129,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                 onClick={() => openEvaluation({ sid, date, place: 'journal' })}
                 title={journalEvals ? `메모 칸 조사표 ${journalEvals}건` : '메모 칸에 조사표 만들기'}
                 aria-label={journalEvals ? `메모 칸 조사표 ${journalEvals}건` : '메모 칸에 조사표 만들기'}
-                className={`px-2 py-1 text-xs font-bold rounded-xl transition-colors shrink-0 cursor-pointer ${
+                className={`tap-area px-2 py-1 text-xs font-bold rounded-xl transition-colors shrink-0 cursor-pointer ${
                   journalEvals ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700' : 'text-slate-500 hover:text-emerald-700 hover:bg-slate-100'
                 }`}
               >
@@ -145,7 +145,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                 onClick={() => setJournalFilterOpen(!filterOpen)}
                 title={filterOpen ? '라벨로 보기 접기' : picked ? `라벨로 보기 - ${picked}개 고름 (펴기)` : '라벨로 보기 펴기'}
                 aria-label={filterOpen ? '라벨로 보기 접기' : '라벨로 보기 펴기'}
-                className={`px-2 py-1 text-xs font-bold rounded-xl transition-colors shrink-0 cursor-pointer ${
+                className={`tap-area px-2 py-1 text-xs font-bold rounded-xl transition-colors shrink-0 cursor-pointer ${
                   picked ? 'bg-sky-50 hover:bg-sky-100 text-sky-700' : filterOpen ? 'bg-slate-100 text-slate-700' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
                 }`}
               >
@@ -176,7 +176,7 @@ export default function DayJournal({ date }: { date: YMD }) {
             data-journal-labels-settings
             {...shortcutTarget('labels')}
             onClick={() => openWindow('labels', { tab: 'note' })}
-            className="ml-auto w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+            className="tap-area ml-auto w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
             title="메모 라벨 설정"
             aria-label="메모 라벨 설정"
           >

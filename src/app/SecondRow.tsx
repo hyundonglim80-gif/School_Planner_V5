@@ -70,7 +70,7 @@ export default function SecondRow() {
                     data-semester={s.id}
                     aria-pressed={nav.semesterFilter === s.id}
                     onClick={() => setSemesterFilter(s.id)}
-                    className={`px-1.5 py-0.5 text-2xs sm:px-2 sm:py-1 sm:text-xs rounded-lg font-bold whitespace-nowrap transition-all ${
+                    className={`tap-area px-1.5 py-0.5 text-2xs sm:px-2 sm:py-1 sm:text-xs rounded-lg font-bold whitespace-nowrap transition-all ${
                       nav.semesterFilter === s.id ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'
                     }`}
                   >

@@ -280,7 +280,7 @@ export default function MemoScreen() {
       data-memo-section-toggle={key}
       onClick={toggle}
       aria-expanded={open}
-      className="flex items-center gap-1.5 px-1 text-sm sm:text-base font-extrabold text-slate-900 cursor-pointer select-none"
+      className="tap-area flex items-center gap-1.5 px-1 text-sm sm:text-base font-extrabold text-slate-900 cursor-pointer select-none"
     >
       <span>{text}</span>
       <span className="text-xs text-slate-500"><Glyph e={open ? '▲' : '▼'} /></span>
@@ -327,7 +327,7 @@ export default function MemoScreen() {
                 data-memo-labels-settings
                 {...shortcutTarget('labels')}
                 onClick={() => openWindow('labels', { tab: 'note' })}
-                className="flex items-center gap-1 px-1 -mx-1 rounded-lg hover:bg-slate-100 hover:text-blue-900 cursor-pointer min-w-0"
+                className="tap-area flex items-center gap-1 px-1 -mx-1 rounded-lg hover:bg-slate-100 hover:text-blue-900 cursor-pointer min-w-0"
                 title="메모 라벨 관리 (이름·색·상위 라벨·차례)"
               >
                 <Glyph e="🏷" /> 라벨<span className="hidden sm:inline"> 관리</span>
@@ -359,7 +359,7 @@ export default function MemoScreen() {
                     disabled={busy}
                     onClick={() => sid && void run(() => labelNotes(sid, unlabeled, FALLBACK_LABEL, tree))}
                     title={`라벨이 없는 메모(완료된 것 포함)에 '${FALLBACK_LABEL}' 라벨을 붙여 라벨로 보기에서도 찾게 합니다`}
-                    className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold cursor-pointer disabled:opacity-50"
+                    className="tap-area px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold cursor-pointer disabled:opacity-50"
                   >
                     &apos;{FALLBACK_LABEL}&apos; 라벨 붙이기
                   </button>

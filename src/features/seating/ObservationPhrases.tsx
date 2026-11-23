@@ -35,7 +35,7 @@ export default function ObservationPhrases({ onPick, disabled }: Props) {
             disabled={disabled && !editing}
             data-observation-phrase={p}
             title={editing ? undefined : `'${p}'을(를) 오늘 메모로 남깁니다`}
-            className={`px-2 py-0.5 border text-2xs font-bold ${
+            className={`tap-area px-2 py-0.5 border text-2xs font-bold ${
               editing
                 ? 'rounded-l-full bg-white border-slate-200 text-slate-500 cursor-default'
                 : 'rounded-full bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100 disabled:opacity-40 cursor-pointer'
@@ -84,7 +84,7 @@ export default function ObservationPhrases({ onPick, disabled }: Props) {
         data-observation-phrases-edit
         onClick={() => setEditing(!editing)}
         aria-pressed={editing}
-        className="px-2 py-0.5 rounded-full text-2xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
+        className="tap-area px-2 py-0.5 rounded-full text-2xs font-bold text-slate-500 hover:text-slate-700 cursor-pointer"
       >
         {glyphText(editing ? '✓ 다 고침' : '✏️ 문구')}
       </button>

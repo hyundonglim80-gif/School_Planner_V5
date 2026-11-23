@@ -70,13 +70,13 @@ export default function MonthDaySheet({ date, events, gcal = [], hiddenCount, sh
         <h3 className={`font-black text-sm whitespace-nowrap ${d.getDay() === 0 ? 'text-red-600' : d.getDay() === 6 ? 'text-cobalt-600' : 'text-slate-800'}`}>{title}</h3>
         <SchoolEventName items={schoolEvents[date]} />
         <div className="ml-auto flex items-center gap-1 shrink-0">
-          <button type="button" data-sheet-add onClick={onAdd} className="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer">
+          <button type="button" data-sheet-add onClick={onAdd} className="tap-area px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer">
             + 일정
           </button>
-          <button type="button" data-sheet-go-day onClick={onGoDay} className="px-2 py-1 rounded-lg bg-primary text-white text-xs font-bold cursor-pointer">
+          <button type="button" data-sheet-go-day onClick={onGoDay} className="tap-area px-2 py-1 rounded-lg bg-primary text-white text-xs font-bold cursor-pointer">
             하루 화면 →
           </button>
-          <button type="button" data-sheet-close onClick={onClose} title="닫기" className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-500 font-bold cursor-pointer">
+          <button type="button" data-sheet-close onClick={onClose} title="닫기" className="tap-area w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-500 font-bold cursor-pointer">
             ✕
           </button>
         </div>
@@ -106,7 +106,7 @@ export default function MonthDaySheet({ date, events, gcal = [], hiddenCount, sh
                       done={done}
                       onToggle={onToggleDone ? () => onToggleDone(ev) : undefined}
                       forward={!!label?.props?.forward}
-                      className="max-w-[40%] text-2xs px-1.5 py-0.5"
+                      className="tap-area max-w-[40%] text-2xs px-1.5 py-0.5"
                       data={{ 'data-sheet-event-chip': ev.id }}
                     />
                     <span className="min-w-0 flex-1 break-words">{ev.text}</span>

@@ -217,7 +217,7 @@ function ClassHub() {
                 aria-pressed={showPhotos === on}
                 onClick={() => setPhotoMode(on)}
                 title={on ? '구글 드라이브의 학생 사진으로 봅니다 (명렬표 관리의 사진과 같습니다)' : '번호와 이름으로 봅니다'}
-                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${showPhotos === on ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500'}`}
+                className={`tap-area rounded-lg px-2.5 py-1 text-xs font-bold transition-colors cursor-pointer ${showPhotos === on ? 'bg-white text-slate-800 shadow-xs' : 'text-slate-500'}`}
               >
                 {glyphText(on ? '📷 사진' : '이름')}
               </button>

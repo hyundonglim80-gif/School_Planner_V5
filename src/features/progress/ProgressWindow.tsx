@@ -709,7 +709,7 @@ export default function ProgressWindow({ params, close, raise }: WindowProps<Pro
                         type="button"
                         data-progress-key-option={k}
                         onClick={() => update({ key: k })}
-                        className={`px-2 py-0.5 rounded-lg text-xs border cursor-pointer ${
+                        className={`tap-area px-2 py-0.5 rounded-lg text-xs border cursor-pointer ${
                           key === k ? 'bg-indigo-100 text-indigo-800 border-indigo-300 font-bold' : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-indigo-300'
                         }`}
                         title={has ? '이 과목의 진도가 이미 있습니다' : '이 과목으로 세기'}

@@ -3,7 +3,8 @@
 // 보이는 누를 것(button·a·role=button/tab…·입력 칸·cursor:pointer 뿌리)마다:
 //   cover  가림 - 가운데 점을 다른 것이 받는다(elementFromPoint) = 눌러도 그것이 눌린다
 //   overlap 겹침 - 서로 품지 않는 둘이 작은 쪽 넓이의 15% 넘게 겹친다
-//   small  작은 누를 곳 - 휴대폰에서 폭·높이 24px 아래 (WCAG 2.5.8 - 글 속 링크는 뺀다)
+//   small  작은 누를 곳 - 휴대폰에서 폭·높이 24px 아래 (WCAG 2.5.8 - 글 속 링크는 뺀다 · 손가락 화면에서 넓힌 ::after(tap-area)까지 센다)
+//   reach  누르는 자리 겹침 - 휴대폰에서 넓힌 누르는 자리(tap-area)가 옆 단추의 보이는 상자에 닿는다(그 단추를 누를 때 이것이 눌릴 수 있다)
 //   spill  단추 글이 단추 밖으로 나간다(넘침이 보임)
 //   cut    말줄임(…) 없이 잘린 글 - 제 칸(overflow hidden)이나 둘레 칸이 자른다
 //   wide   본문이 화면 폭보다 넓다(가로 넘침)
@@ -18,11 +19,21 @@ export const IGNORE = [
   ['overlap', /^filter-chip/, /^filter-caret/, '라벨로 보기 상위 칩의 펴기 꺾쇠는 칩 안쪽 왼끝에 겹쳐 둔 단추(꺾쇠 = 펴기, 나머지 = 고르기)'],
   ['overlap', /^(note-text-input|note-table|table-)/, /(^|@)table-/, '표 띠는 칸을 고른 동안 표 제목 줄 자리에 겹쳐 뜬다(P49-2 - 흐름 밖에 띄워 표가 밀리지 않게, 본문을 누르면 접힘)'],
   ['cover', /^(note-text-input|note-table|table-)/, /(^|@)table-/, '표 띠는 칸을 고른 동안 표 제목 줄 자리에 겹쳐 뜬다(P49-2)'],
+  ['reach', /^table-/, /^note-text-input/, '표 띠는 칸을 고른 동안 표 제목 줄 자리에 겹쳐 뜬다(P49-2 - 글 칸 위에 뜬 띠)'],
   ['overlap', /^check-(up|down|toggle|line)/, /^note-text-input/, '체크 줄 ▲▼·☐는 글 칸 위 덧그림(P10-5 CheckLinesOverlay - 글 칸 하나 + 덧그림)'],
   ['overlap', /^note-text-input/, /^check-(up|down|toggle|line)/, '체크 줄 ▲▼·☐는 글 칸 위 덧그림(P10-5 CheckLinesOverlay)'],
   ['small', /^clipboard-toggle/, null, '휴대폰 📋는 화면 끝에 붙은 가는 손잡이(P57-2 - 여백 13px 안에 들어 오른끝 칸을 덮지 않게, 손가락이 화면 밖으로 더 나갈 수 없어 폭이 좁아도 누르기 쉽다 · 높이는 그대로)'],
   ['spill', /^week-event-delete/, /^week-event/, '주간 일정 ✕는 카드 모서리에 걸친 배지(올렸을 때만 - 휴대폰은 일정 칸에서 지운다)'],
   ['overlap', /^year-/, /^year-/, '년간 학사력 기간 줄은 날 칸 위에 겹쳐 그린다'],
+  // ── 휴대폰 24px 아래로 그대로 둔 것 (P57-2 ■3 - 늘 쓰는 단추는 index.css tap-area로 누르는 자리만 넓혔다. 이것들은 넓히면 옆 것을 누르게 된다) ──
+  ['small', /^header-fold/, null, '머리줄 테두리에 걸친 접기 손잡이(P53-1 - ::before로 둘레를 넓혀 둠, 더 넓히면 머리줄 바로 밑 내용의 누름을 빼앗는다 · 단축키 머리줄 접기)'],
+  ['small', /^check-(line|up|down)/, null, '체크 줄과 그 ▲▼ 덧그림은 글 줄 높이 - 줄이 붙어 있어 넓히면 옆 줄을 누른다(줄 폭 전체가 누르는 자리)'],
+  ['small', /^(week-lesson|week-event-chip)/, null, '주간 카드의 교시·일정 줄 목록(줄이 붙어 있다 - 줄 폭 전체가 누르는 자리, 20~22px)'],
+  ['small', /^(month-notes|month-event|month-lesson|period-cell|period-bar-chip|board-cal-day|sheet-month-name|sheet-date|sheet-item)/, null, '달력 칸 안(P57-1 ③ ㉨ 그대로 둘 것 - 휴대폰 월간은 날을 누르면 그날 목록, 칸을 키우면 달력이 화면을 넘는다)'],
+  ['small', /^filter-caret/, null, '라벨로 보기 상위 칩 안쪽의 펴기 꺾쇠(칩 안 - 넓히면 칩 고르기를 빼앗는다)'],
+  ['small', /^(cell|table-(input|all|col|row))/, null, '표 칸·행·열 머리(시간표·메모 표 - 칸 크기가 곧 표 모양)'],
+  ['small', /^restore-file/, null, '파일 고르기 칸(브라우저가 그린다 - 가끔 쓰는 되살리기)'],
+  ['small', /^text-link/, null, '글 속 링크(글 줄 높이)'],
   ['cover', /^year-/, /^year-/, '년간 학사력 기간 줄은 날 칸 위에 겹쳐 그린다'],
 ];
 
@@ -73,6 +84,11 @@ export function scanInPage({ width, height, mobile, minTarget = 24 }) {
   };
   const fixedOf = (el) => {
     for (let e = el; e && e !== document.documentElement; e = e.parentElement) if (st(e).position === 'fixed') return e;
+    return null;
+  };
+  /** 가장 가까운 고정·붙은 층 (없으면 null = 본문) */
+  const layerOf = (el) => {
+    for (let e = el; e && e !== document.documentElement; e = e.parentElement) if (/^(fixed|sticky)$/.test(st(e).position)) return e;
     return null;
   };
   const isOverlay = (f) => {
@@ -257,11 +273,58 @@ export function scanInPage({ width, height, mobile, minTarget = 24 }) {
   }
 
   // ── 작은 누를 곳 (휴대폰) ──
+  // 누르는 자리 = 단추 상자 + 손가락 화면에서 넓힌 ::after(index.css tap-area - P57-2 ■3: 보이는 모양은 그대로, 가운데 맞춘 빈 자리).
+  // 단추가 제 overflow를 자르면 넓힌 자리도 잘려 셈하지 않는다.
+  // clip: 둘레 칸이 자르는 만큼 뺀다(누르는 자리 겹침용 - 작은 누를 곳은 스크롤 자리에 따라 바뀌지 않게 자르지 않는다)
+  const hitOf = (it, clip = false) => {
+    const r = it.r;
+    if (st(it.el).overflow !== 'visible') return r;
+    let w = r.width;
+    let h = r.height;
+    // ::after(tap-area) · ::before(머리줄 접기 손잡이처럼 직접 넓힌 것) - 가운데 맞춘 빈 자리로 본다
+    for (const pseudo of ['::after', '::before']) {
+      const a = getComputedStyle(it.el, pseudo);
+      if (!a || a.content === 'none' || a.position !== 'absolute') continue;
+      w = Math.max(w, parseFloat(a.width) || 0);
+      h = Math.max(h, parseFloat(a.height) || 0);
+    }
+    if (w === r.width && h === r.height) return r;
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    let [l, t, rr, b] = [cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2];
+    // 둘레 칸(스크롤 칸 등)이 자르는 만큼은 누를 수 없다
+    for (let e = clip ? it.el.parentElement : null; e && e !== document.documentElement; e = e.parentElement) {
+      const cs = st(e);
+      if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+      const p = e.getBoundingClientRect();
+      if (cs.overflowX !== 'visible') [l, rr] = [Math.max(l, p.left), Math.min(rr, p.right)];
+      if (cs.overflowY !== 'visible') [t, b] = [Math.max(t, p.top), Math.min(b, p.bottom)];
+    }
+    return { left: l, top: t, right: rr, bottom: b, width: Math.max(0, rr - l), height: Math.max(0, b - t), wide: true };
+  };
   if (mobile) {
     for (const it of okItems) {
-      const { width: w, height: h } = it.r;
+      const hr = hitOf(it, true);
+      const { width: w, height: h } = hitOf(it);
+      // 넓힌 자리가 옆 단추의 보이는 상자에 닿으면 그 단추를 누를 때 이것이 눌릴 수 있다(넓힌 ::after는 위에 그려진다)
+      if (hr.wide) {
+        for (const b of okItems) {
+          if (b === it || b.el.contains(it.el) || it.el.contains(b.el)) continue;
+          // 다른 층(붙은 머리줄·탭바·둥근 ＋)과 닿는 것은 뺀다 - 위층이 늘 먼저 받는다(겹침 재기와 같이). 위층이 넓힌 것(머리줄 접기 손잡이)은 IGNORE에 까닭
+          if (layerOf(b.el) !== layerOf(it.el)) continue;
+          const ow = Math.min(hr.right, b.r.right) - Math.max(hr.left, b.r.left);
+          const oh = Math.min(hr.bottom, b.r.bottom) - Math.max(hr.top, b.r.top);
+          if (ow > 1 && oh > 1) add('reach', it, b.el, `${Math.round(ow)}×${Math.round(oh)}`);
+        }
+      }
       if (w >= minTarget && h >= minTarget) continue;
       const cs = st(it.el);
+      // 글(label) 안 체크 상자·고르기 = 그 글이 누르는 자리 (글이 24px 넘게 잡히면 넘어간다 - index.css 체크 상자 줄)
+      const lab = it.el.tagName === 'INPUT' && /^(checkbox|radio)$/.test(it.el.type) ? it.el.closest('label') : null;
+      if (lab) {
+        const lr = hitOf({ el: lab, r: lab.getBoundingClientRect() });
+        if (lr.width >= minTarget && lr.height >= minTarget) continue;
+      }
       // 글 속 링크(줄 안)는 WCAG도 뺀다
       if (it.el.tagName === 'A' && cs.display === 'inline') continue;
       add('small', it, null, `${Math.round(w)}×${Math.round(h)}`);
