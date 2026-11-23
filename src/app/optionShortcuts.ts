@@ -17,12 +17,14 @@ import { setWindowPlace, useLayoutPrefs, windowPlace, type WindowPlace } from '.
 import { setEnableScrollNav, setStartupScope, useNav, type StartupScope } from './nav';
 import { setCommonSetting, useCommonSettings } from './prefs';
 import { SCREENS } from './screens';
+import type { WeekStart } from '../domain/dateUtils';
 import { readThemeMode, setThemeMode, type ThemeMode } from './theme';
 import { setPalette } from './palette';
 import { setDecor } from './decor';
 import { readContrast, readDim, setContrast, setCvd, setDim } from './viewAids';
 import { showToast } from './toast';
 import { useShortcutOverrides } from './keys';
+import { setScreenPref, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols, type WeekLessons, type MonthLessons } from './screenPrefs';
 
 type Value = string | number;
 export interface OptionChoice<T extends Value = Value> {
@@ -63,6 +65,35 @@ export const POPUP_STYLE_OPTIONS: Record<'pc' | 'mobile', OptionChoice<WindowPla
 };
 
 export const STARTUP_OPTIONS: OptionChoice<StartupScope>[] = [{ value: 'last', label: '마지막에 보던 화면' }, ...SCREENS.map((s) => ({ value: s.id, label: s.label }))];
+
+// 화면 배치 (P59 - 휴대폰 손가락 화면에서만 듣는다, 첫 값 = 기본 = P59 전 모습)
+export const MEMO_NAV_OPTIONS: OptionChoice<MemoNavAt>[] = [
+  { value: 'side', label: '왼쪽 칸' },
+  { value: 'top', label: '위 칩 줄' },
+];
+export const PHONE_COLS_OPTIONS: OptionChoice<PhoneCols>[] = [
+  { value: 2, label: '2열' },
+  { value: 1, label: '1열' },
+];
+export const ORDER_ARROWS_OPTIONS: OptionChoice<OrderArrowsMode>[] = [
+  { value: 'always', label: '늘 보이기' },
+  { value: 'toggle', label: '⇅ 누를 때만' },
+];
+
+// 한 주의 시작 (P59-2 - 계정에 하나, 첫 값 = 기본 = P59 전 월간·년간)
+export const WEEK_START_OPTIONS: OptionChoice<WeekStart>[] = [
+  { value: 0, label: '일요일' },
+  { value: 1, label: '월요일' },
+];
+
+export const WEEK_LESSONS_OPTIONS: OptionChoice<WeekLessons>[] = [
+  { value: 'rows', label: '교시마다 한 줄' },
+  { value: 'chips', label: '과목 칩' },
+];
+export const MONTH_LESSONS_OPTIONS: OptionChoice<MonthLessons>[] = [
+  { value: 'chips', label: '과목 칩' },
+  { value: 'count', label: "'수업 n' 한 칩" },
+];
 
 export const INTERVAL_OPTIONS: OptionChoice<number>[] = INTERVAL_CHOICES.map((d) => ({ value: d, label: `${d}일마다` }));
 export const KEEP_OPTIONS: OptionChoice<number>[] = KEEP_CHOICES.map((n) => ({ value: n, label: `최근 ${n}개` }));
@@ -127,6 +158,58 @@ const OPTIONS: Record<string, OptionDef> = {
     get: () => windowPlace(useLayoutPrefs.getState().popupStyle, useLayoutPrefs.getState().sideAt),
     set: (v) => setWindowPlace(v as WindowPlace),
   },
+  weekStart: {
+    kind: 'choice',
+    title: '한 주의 시작',
+    def: 0,
+    values: () => WEEK_START_OPTIONS,
+    get: () => useCommonSettings.getState().weekStart,
+    set: (v) => setCommonSetting('weekStart', Number(v) === 1 ? 1 : 0),
+  },
+  memoNavAt: {
+    kind: 'choice',
+    title: '메모 화면 라벨 칸',
+    def: 'side',
+    values: () => MEMO_NAV_OPTIONS,
+    get: () => useScreenPrefs.getState().memoNavAt,
+    set: (v) => setScreenPref('memoNavAt', v as MemoNavAt),
+  },
+  phoneCols: {
+    kind: 'choice',
+    title: '카드 열',
+    def: 2,
+    values: () => PHONE_COLS_OPTIONS,
+    get: () => useScreenPrefs.getState().phoneCols,
+    set: (v) => setScreenPref('phoneCols', Number(v) === 1 ? 1 : 2),
+  },
+  orderArrows: {
+    kind: 'choice',
+    title: '카드 차례 단추',
+    def: 'always',
+    values: () => ORDER_ARROWS_OPTIONS,
+    get: () => useScreenPrefs.getState().orderArrows,
+    set: (v) => setScreenPref('orderArrows', v as OrderArrowsMode),
+  },
+  weekLessons: {
+    kind: 'choice',
+    title: '주간 수업',
+    def: 'rows',
+    values: () => WEEK_LESSONS_OPTIONS,
+    get: () => useScreenPrefs.getState().weekLessons,
+    set: (v) => setScreenPref('weekLessons', v as WeekLessons),
+  },
+  monthLessons: {
+    kind: 'choice',
+    title: '월간 수업',
+    def: 'chips',
+    values: () => MONTH_LESSONS_OPTIONS,
+    get: () => useScreenPrefs.getState().monthLessons,
+    set: (v) => setScreenPref('monthLessons', v as MonthLessons),
+  },
+  headerToggles: { kind: 'toggle', title: '머리줄 주말·일정·수업 단추', get: () => useScreenPrefs.getState().headerToggles, set: (on) => setScreenPref('headerToggles', on) },
+  buildId: { kind: 'toggle', title: '화면 구석 빌드 번호', get: () => useScreenPrefs.getState().buildId, set: (on) => setScreenPref('buildId', on) },
+  monthFit: { kind: 'toggle', title: '월간 칸 화면에 맞추기', get: () => useScreenPrefs.getState().monthFit, set: (on) => setScreenPref('monthFit', on) },
+  cardTime: { kind: 'toggle', title: '메모 카드 쓴 시각', get: () => useScreenPrefs.getState().cardTime, set: (on) => setScreenPref('cardTime', on) },
   startupScope: {
     kind: 'choice',
     title: '시작 화면',

@@ -1,10 +1,8 @@
 // 환경설정 '보기' 탭 (MENU 3-6). 모두 누르는 즉시 바뀐다 - V4는 글자 크기·창 위치·화면 밝기만 즉시, 나머지는 '저장'을 기다렸다.
-// 화면 밝기·고대비·어둡게를 부드럽게(이 기기에만)·색 테마·색약 배려·꾸미기(계정에 하나 - PC·휴대폰 같게, P20) 말고는 계정에 PC·휴대폰 따로 올라간다(app/prefs).
+// 화면 표시·창 위치·시작 화면은 '화면 배치' 탭으로 옮겼다(P59-1). 글자 크기 말고는 이 기기 또는 계정에 하나(PC·휴대폰 같게) - 칸 제목 옆 표시.
 // 어디에 남는지는 칸 제목 옆 같은 모양 표시(parts SavedBadge)로 - 글로 되풀이하지 않는다(P44-3 11-17: 칸 아홉에 안내 열 개, '이 기기' 10번·'계정에' 7번·'PC와 휴대폰' 8번·'인쇄' 5번).
 import { useEffect, useState } from 'react';
-import { setWindowPlace, useLayoutPrefs, windowPlace } from '../../app/layoutPrefs';
 import { detectDeviceKind } from '../../app/deviceKind';
-import { setEnableScrollNav, setStartupScope, setToggle, useNav } from '../../app/nav';
 import { isDarkMode, readThemeMode, setThemeMode, THEME_CHANGED_EVENT, type ThemeMode } from '../../app/theme';
 import { setPalette } from '../../app/palette';
 import { setDecor, useDecorChoice } from '../../app/decor';
@@ -14,21 +12,13 @@ import { PALETTES, paletteSwatch, sanitizePalette } from '../../domain/palette';
 import { decorKind } from '../../domain/decor';
 import { DecorPicture } from '../../ui/decorArt';
 import { useToday } from '../../ui/useToday';
-import { useShortcutTitle } from '../../app/keys';
-import { DECOR_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, THEME_OPTIONS, useOptionTarget } from '../../app/optionShortcuts';
+import { DECOR_OPTIONS, THEME_OPTIONS, useOptionTarget } from '../../app/optionShortcuts';
 import { Choices, Section, ToggleRow } from './parts';
 import FontSizeRows from './FontSizeRows';
 import GcalOverlaySection from '../gcal/GcalOverlaySection';
 import { Glyph } from '../../ui/Icon';
 
-const POPUP_STYLE_DESC: Record<'pc' | 'mobile', string> = {
-  pc: '오른쪽·왼쪽 칸 = 화면을 나눠 그쪽에 · 팝업창 = 창마다 브라우저 새 창(다른 모니터로 옮길 수 있고 자리·크기는 창마다 기억)',
-  mobile: '오른쪽 칸 = 오른쪽에서 나오는 배너 · 가운데 창 = 화면 가운데에 (쓰는 칸은 늘 오른쪽)',
-};
-
 export default function ViewTab() {
-  const nav = useNav();
-  const { popupStyle, sideAt } = useLayoutPrefs();
   const [device] = useState(detectDeviceKind);
   // 화면 밝기는 이 기기에만 (localStorage) - 단축키로 바꿔도 창에 보이게 알림을 듣는다
   const [themeMode, setThemeModeState] = useState<ThemeMode>(readThemeMode);
@@ -44,7 +34,6 @@ export default function ViewTab() {
     window.addEventListener(VIEW_AIDS_CHANGED_EVENT, onChange);
     return () => window.removeEventListener(VIEW_AIDS_CHANGED_EVENT, onChange);
   }, []);
-  const withKey = useShortcutTitle();
   const optionTarget = useOptionTarget();
   const palette = sanitizePalette(useCommonSettings((s) => s.palette));
   const cvd = useCommonSettings((s) => s.cvd);
@@ -54,42 +43,6 @@ export default function ViewTab() {
 
   return (
     <div>
-      <Section id="display" title="화면 표시" saved="split" desc="둘째 줄 주말 · 일정 · 수업 단추와 같은 값">
-        <ToggleRow
-          id="showWeekend"
-          option="showWeekend"
-          label="주말"
-          hint={withKey('토·일 칸', 'toggleWeekend')}
-          checked={nav.showWeekend}
-          onChange={(v) => setToggle('showWeekend', v)}
-        />
-        <ToggleRow
-          id="showEvents"
-          option="showEvents"
-          label="일정"
-          hint={withKey('하루·주간·월간·년간의 일정', 'toggleEvents')}
-          checked={nav.showEvents}
-          onChange={(v) => setToggle('showEvents', v)}
-        />
-        <ToggleRow
-          id="showClass"
-          option="showClass"
-          label="수업"
-          hint={withKey('시간표와 교시', 'toggleClass')}
-          checked={nav.showClass}
-          onChange={(v) => setToggle('showClass', v)}
-        />
-        {/* V4는 휴대폰 첫 화면에 손짓 안내를 띄웠지만 기본이 꺼져 있어 맞지 않았다 - 켜는 자리에 적는다 */}
-        <ToggleRow
-          id="enableScrollNav"
-          option="enableScrollNav"
-          label="스크롤로 페이지 이동"
-          hint="맨 위·맨 아래에서 더 굴리면 이전·다음 날짜 · 휴대폰은 옆으로 밀면 이전·다음 화면"
-          checked={nav.enableScrollNav}
-          onChange={setEnableScrollNav}
-        />
-      </Section>
-
       {/* P36-3 - 고른 것은 계정에 하나(PC·휴대폰 같게), 받은 일정은 이 기기에만 */}
       <Section
         id="gcalOverlay"
@@ -226,18 +179,6 @@ export default function ViewTab() {
         />
       </Section>
 
-      <Section
-        id="popupStyle"
-        title="창 위치"
-        saved="split"
-        desc={POPUP_STYLE_DESC[device]}
-      >
-        <Choices name="popupStyle" option="popupStyle" value={windowPlace(popupStyle, sideAt, device)} onChange={setWindowPlace} options={POPUP_STYLE_OPTIONS[device]} />
-      </Section>
-
-      <Section id="startupScope" title="시작 화면" saved="split" desc="앱을 열 때 처음 화면 (새로고침은 보던 화면 그대로)">
-        <Choices name="startupScope" option="startupScope" value={nav.startupScope} onChange={setStartupScope} options={STARTUP_OPTIONS} />
-      </Section>
       <p data-view-print-note className="px-5 py-3 text-xs text-slate-500">인쇄는 이 탭의 밝기·색·꾸미기와 상관없이 늘 밝은 기본 모양입니다.</p>
     </div>
   );

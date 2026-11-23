@@ -7,6 +7,9 @@ const server = vi.hoisted(() => ({ docs: [] as ErrorReportDoc[], fail: null as E
 const deleteErrorReports = vi.hoisted(() => vi.fn(async (ids: readonly string[]) => {
   server.docs = server.docs.filter((d) => !ids.includes(d.id));
 }));
+// 진짜 Firebase 앱이 뜨면 시험이 끝난 뒤 하트비트의 IndexedDB 확인이 늦게 돌아 가끔 '처리하지 않은 오류'가 된다(CI #198 - 다른 파일 차례에 'deleteDatabase'):
+// 환경설정 부품이 optionShortcuts → prefs → settingsSync → data/firebase로 이어진다
+vi.mock('../../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
 vi.mock('../../data/errorReport', () => ({
   loadErrorReports: vi.fn(async () => {
     if (server.fail) throw server.fail;

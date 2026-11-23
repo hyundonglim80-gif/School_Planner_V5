@@ -58,7 +58,7 @@ export function LessonStrip({ date, subjects, tag, onOpen, height = 20 }: Props 
 export function LessonWraps({ date, subjects, tag, onOpen }: Props) {
   if (!hasLessons(subjects)) return null;
   return (
-    <div {...{ [`data-${tag}-lessons`]: date }} className="flex flex-wrap gap-1 mt-0.5">
+    <div {...{ [`data-${tag}-lessons`]: date }} className="flex flex-wrap gap-1 pointer-coarse:gap-1.5 mt-0.5">
       {subjects.map((subject, i) => {
         if (!subject) return null;
         const body = (
@@ -79,7 +79,8 @@ export function LessonWraps({ date, subjects, tag, onOpen }: Props) {
               onOpen(date, i + 1);
             }}
             title={`${i + 1}교시 ${subject} - 누르면 고치기`}
-            className={`${cls} cursor-pointer`}
+            // 손가락 화면 누르는 자리 24px (P59-2 - 주간 과목 칩이 21px였다, P57-2 tap-area)
+            className={`${cls} tap-area cursor-pointer`}
           >
             {body}
           </button>
@@ -89,6 +90,23 @@ export function LessonWraps({ date, subjects, tag, onOpen }: Props) {
           </span>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * 한 칩으로 줄이기 (P59-2 - 환경설정 화면 배치 '월간 수업: 수업 n 한 칩'): 휴대폰 월간 칸마다 과목 칩 세 줄이 일정을 두세 글자로 밀어냈다.
+ * 교시·과목은 title에, 누르면 칸을 누른 것(그날로) - 교시를 겨누지 않는다.
+ */
+export function LessonCount({ date, subjects, tag }: Omit<Props, 'onOpen'>) {
+  const n = subjects.filter(Boolean).length;
+  if (!n) return null;
+  const list = subjects.map((s, i) => (s ? `${i + 1}교시 ${s}` : '')).filter(Boolean);
+  return (
+    <div {...{ [`data-${tag}-lessons`]: date }} data-lesson-count={n} title={list.join('\n')} className="mt-0.5 mb-1 flex">
+      <span className="inline-flex items-center px-1.5 py-px rounded-[3px] border border-emerald-300 bg-emerald-50 text-emerald-700 text-2xs font-bold leading-tight whitespace-nowrap">
+        수업 {n}
+      </span>
     </div>
   );
 }

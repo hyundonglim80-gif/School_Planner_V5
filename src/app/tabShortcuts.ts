@@ -33,6 +33,7 @@ export const TAB_SHORTCUTS: TabShortcut[] = [
   // 개발자 탭은 개발자 계정에만 보여 뺀다
   ...tabsOf<Exclude<SettingsTabId, 'dev'>>('settings', '환경설정', [
     ['view', '보기'],
+    ['layout', '화면 배치'],
     ['notify', '알림'],
     ['school', '학교'],
     ['shortcuts', '단축키'],

@@ -8,6 +8,8 @@ import { slotId, type ProgressMark } from '../../domain/progress';
 import { parseSlot, type ClassColorClasses } from '../../domain/teachingSlot';
 import { pressKeys } from '../../ui/pressKeys';
 import { Glyph } from '../../ui/Icon';
+import { LessonWraps } from './CalendarLessons';
+import { hasLessons, lessonSubjects } from './lessonSubjects';
 
 interface Props {
   date: string;
@@ -23,11 +25,29 @@ interface Props {
   onLinks: (n: number) => void;
   /** 시간표를 아직 받지 못함 (P32-2) - 빈 교시 줄 대신 '받는 중', 높이는 교시 줄과 같게(받은 뒤 카드가 출렁이지 않게) */
   loading?: boolean;
+  /** 과목 칩으로 (P59-2 - 환경설정 화면 배치 주간 수업) */
+  chips?: boolean;
 }
 
 const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
-export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUnit, classColorOf, marks, onOpen, onLinks, loading = false }: Props) {
+export default function WeekLessonRows({ date, view, rows, nowPeriod, isClassUnit, classColorOf, marks, onOpen, onLinks, loading = false, chips = false }: Props) {
+  // 과목 칩 (P59-2 - 환경설정 화면 배치 '주간 수업: 과목 칩'): 든 교시만 번호와 함께 줄바꿈(월간 그날 목록과 같은 꼴) - 빈 교시·진도·링크·비고는 수업 칸에서
+  if (chips)
+    return (
+      <div className="mb-4" data-week-lessons={date} data-week-lessons-chips>
+        <div className="text-xs font-extrabold text-slate-500 mb-2">수업</div>
+        {loading ? (
+          <div data-week-lessons-loading className="h-7 flex items-center justify-center rounded-lg border border-dashed border-slate-200 text-xs text-slate-500">
+            수업을 받는 중…
+          </div>
+        ) : hasLessons(lessonSubjects(view)) ? (
+          <LessonWraps date={date} subjects={lessonSubjects(view)} tag="week-chip" onOpen={(_d, n) => onOpen(n)} />
+        ) : (
+          <p className="text-xs text-slate-300">-</p>
+        )}
+      </div>
+    );
   return (
     <div className="mb-4" data-week-lessons={date}>
       <div className="text-xs font-extrabold text-slate-500 mb-2 flex items-center gap-1">

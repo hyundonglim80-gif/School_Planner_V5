@@ -4,6 +4,7 @@ import { useState, type Ref } from 'react';
 import { parseDateStr, todayStr } from '../domain/dateUtils';
 import { POPOVER_WIDTH } from './MiniCalendarPicker';
 import MiniMonth from './MiniMonth';
+import { useCommonSettings } from '../app/prefs';
 import { Glyph } from './Icon';
 
 export interface MiniCalendarPopoverProps {
@@ -31,6 +32,8 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
   };
 
   const today = todayStr();
+  // 한 주의 시작 (P59-2 - 환경설정 화면 배치, 월간·년간과 같게)
+  const weekStart = useCommonSettings((s) => s.weekStart);
 
   return (
     // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- 달력 판 - 바깥 누르기로 닫히지 않게 막기만(날짜는 단추) (P22-7)
@@ -83,6 +86,7 @@ export default function MiniCalendarPopover({ date, marked, hint, pos, popoverRe
       <MiniMonth
         year={viewYear}
         month={viewMonth + 1}
+        weekStart={weekStart}
         day={(dateStr, inMonth) => {
           if (!inMonth) {
             return (

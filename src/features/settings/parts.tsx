@@ -79,20 +79,16 @@ export function ToggleRow({
 }
 
 /** 여럿 가운데 하나 고르기 (누르는 즉시). option = 환경설정 값 단축키 이름(값마다 단축키 설정이 고른다 - app/optionShortcuts) */
-export function Choices<T extends string | number>({
-  options,
-  value,
-  onChange,
-  name,
-  option,
-}: {
+interface ChoicesProps<T extends string | number> {
   options: ReadonlyArray<{ value: T; label: string; style?: CSSProperties }>;
   value: T;
   onChange: (v: T) => void;
   /** 점검용 data-choice="<name>:<값>" */
   name: string;
   option?: string;
-}) {
+}
+
+export function Choices<T extends string | number>({ options, value, onChange, name, option }: ChoicesProps<T>) {
   const target = useOptionTarget();
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -114,6 +110,22 @@ export function Choices<T extends string | number>({
           {opt.label}
         </button>
       ))}
+    </div>
+  );
+}
+
+/** 이름 + 여럿 가운데 하나 - 한 구역에 고르기가 여럿일 때(P59 화면 배치). 좁으면 고르기가 이름 아래로 */
+export function ChoiceRow<T extends string | number>({ label, hint, saved, ...choices }: { label: string; hint?: string; saved?: Saved } & ChoicesProps<T>) {
+  return (
+    <div data-settings-row={choices.name} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2">
+      <span className="min-w-0">
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-slate-700">
+          {label}
+          {saved && <SavedBadge saved={saved} />}
+        </span>
+        {hint && <span className="block text-xs text-slate-500 mt-0.5">{hint}</span>}
+      </span>
+      <Choices {...choices} />
     </div>
   );
 }

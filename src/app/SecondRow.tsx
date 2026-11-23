@@ -8,6 +8,7 @@ import SpaceChips from './SpaceChips';
 import GcalToggle from '../features/gcal/GcalToggle';
 import { useSpacePickerShown } from '../data/session';
 import { dateLabel, goToday, setDate, setSemesterFilter, setToggle, stepDate, useNav, type SemesterFilter } from './nav';
+import { useScreenPrefs } from './screenPrefs';
 import { shortcutTarget } from '../ui/shortcutTarget';
 import { Glyph } from '../ui/Icon';
 
@@ -45,6 +46,7 @@ function DateLabelText({ label, day }: { label: string; day: boolean }) {
  */
 export default function SecondRow() {
   const nav = useNav();
+  const headerToggles = useScreenPrefs((s) => s.headerToggles);
   const withShortcut = useShortcutTitle();
   const today = useToday();
   const primary = useCommonSettings((st) => primaryDDay({ list: st.ddays, pick: st.ddayPick }));
@@ -90,7 +92,8 @@ export default function SecondRow() {
 
       {/* 주말·일정·수업 토글 - 늘 쓰는 것이라 휴대폰에서도 ⋮에 넣지 않고 작게 줄여 날짜와 한 줄에 둔다 (V4) */}
       <div className="flex order-1 sm:order-2 items-center gap-1 sm:gap-1.5 flex-none">
-        {VIEW_TOGGLES.map((t) => {
+        {/* 환경설정 화면 배치 '머리줄 단추' 끄기(P59-3)면 숨긴다 - 값은 화면 표시·단축키로 그대로 바꾼다 */}
+        {headerToggles && VIEW_TOGGLES.map((t) => {
           const on = nav[t.key];
           return (
             <button

@@ -9,6 +9,7 @@ import { CLIPBOARD_POPOUT_ID, POPOUT } from '../ui/popout';
 import Shell from './Shell';
 import { useFollowToday } from './nav';
 import { usePrefsSync } from './prefs';
+import { useScreenPrefs } from './screenPrefs';
 import { useResetSync } from './settingsReset';
 import { lazyWithReload } from './lazyWithReload';
 
@@ -19,6 +20,8 @@ const WAIT = <p className="p-6 text-slate-500">불러오는 중…</p>;
 
 export default function App() {
   const loading = useSession((s) => s.loading);
+  // 화면 구석 빌드 번호 (P59-3 - 환경설정 앱 탭에서 끈다)
+  const buildId = useScreenPrefs((s) => s.buildId);
   const user = useSession((s) => s.user);
   // 로그인한 동안 설정(글자 크기·단축키 …)을 계정과 맞춘다
   usePrefsSync(user?.uid);
@@ -49,7 +52,8 @@ export default function App() {
         </div>
       )}
       {/* 어느 빌드가 돌고 있는지 화면에서 본다(V4 규칙). */}
-      <p data-build-id className="pointer-events-none fixed bottom-1 right-2 text-[10px] text-slate-500">
+      {/* 환경설정 '빌드 번호 화면 구석에도'(P59-3)를 끄면 숨긴다 - 글은 남긴다(앱 탭에는 늘) */}
+      <p data-build-id hidden={!buildId} className="pointer-events-none fixed bottom-1 right-2 text-[10px] text-slate-500">
         빌드 {__BUILD_ID__}
       </p>
     </>

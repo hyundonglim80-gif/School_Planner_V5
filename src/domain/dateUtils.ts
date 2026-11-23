@@ -78,11 +78,22 @@ export function weekMonday(dateStr: string): string {
   return addDays(dateStr, day === 0 ? -6 : 1 - day);
 }
 
+/** 한 주의 시작 요일 (P59-2 환경설정 화면 배치 - 0 = 일요일 · 1 = 월요일) */
+export type WeekStart = 0 | 1;
+
+/** 요일 머리 차례 (getDay 값 일곱) - 일요일부터 [0..6] · 월요일부터 [1..6, 0] */
+export const weekdayOrder = (weekStart: WeekStart): number[] => Array.from({ length: 7 }, (_, i) => (i + weekStart) % 7);
+
+/** 그 날이 든 주(달력 줄)의 첫날 - 한 주의 시작 요일로 */
+export function weekRowStart(dateStr: string, weekStart: WeekStart): string {
+  return addDays(dateStr, -((weekdayOf(dateStr) - weekStart + 7) % 7));
+}
+
 /**
  * 월간 달력의 날들 - 그 달 1일이 든 주의 일요일부터 말일이 든 주의 토요일까지 (주 단위, V4 getMonthCalendarDays).
  * weekStart = 1이면 월요일부터 일요일까지 (한눈에 화면 작은 달력 - 옆 요일 칸이 월~일, P24-2).
  */
-export function monthGridDates(year: number, month: number, weekStart: 0 | 1 = 0): string[] {
+export function monthGridDates(year: number, month: number, weekStart: WeekStart = 0): string[] {
   const first = `${year}-${String(month).padStart(2, '0')}-01`;
   const last = monthEnd(year, month);
   const start = addDays(first, -((weekdayOf(first) - weekStart + 7) % 7));

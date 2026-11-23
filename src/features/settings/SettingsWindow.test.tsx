@@ -73,9 +73,9 @@ beforeEach(() => {
 const openSettings = (tab?: 'view' | 'school' | 'shortcuts' | 'app' | 'dev') => render(<SettingsWindow params={tab ? { tab } : undefined} close={vi.fn()} raise={0} setParams={vi.fn()} />);
 
 describe('환경설정 창', () => {
-  it('지금 있는 탭만 (보기·알림·학교·단축키·앱 - 가져오기는 백업 창으로) - 아직 옮기지 않은 기능의 탭은 숨긴다', () => {
+  it('지금 있는 탭만 (보기·화면 배치·알림·학교·단축키·앱 - 가져오기는 백업 창으로) - 아직 옮기지 않은 기능의 탭은 숨긴다', () => {
     openSettings();
-    expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'notify', 'school', 'shortcuts', 'app']);
+    expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'layout', 'notify', 'school', 'shortcuts', 'app']);
     expect(q('[data-settings-tab="view"]')).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -89,7 +89,7 @@ describe('환경설정 창', () => {
 
     useSession.setState({ loading: false, user: { uid: 'u2', email: 'HyunDongLim80@gmail.com', displayName: '', photoURL: '' } });
     openSettings('dev');
-    expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'notify', 'school', 'shortcuts', 'app', 'dev']);
+    expect(qa('[data-settings-tab]').map((b) => b.dataset.settingsTab)).toEqual(['view', 'layout', 'notify', 'school', 'shortcuts', 'app', 'dev']);
     expect(q('[data-settings-panel="dev"]')).toBeVisible();
     expect(q('[data-dev-tab] [data-settings-section="dev-errors"]')).toBeInTheDocument();
     expect(q('[data-dev-tab] [data-settings-section="dev-holidays"]')).toBeInTheDocument();
@@ -239,7 +239,8 @@ describe('환경설정 창', () => {
     expect(saved('[data-settings-section="theme"]')).toBe('device');
     const rowSaved = (id: string) => q(`[data-settings-toggle="${id}"]`).closest('label')!.querySelector<HTMLElement>('[data-settings-saved]')!.dataset.settingsSaved;
     expect([rowSaved('contrast'), rowSaved('cvd'), rowSaved('dim')]).toEqual(['device', 'all', 'device']);
-    const text = q('[data-settings-section="display"]').closest('[role="tabpanel"], div')!.parentElement!.textContent ?? '';
+    // 보기·화면 배치 두 탭 글 (P59-1 - 화면 표시·창 위치·시작 화면을 화면 배치 탭으로)
+    const text = (q('[data-settings-panel="view"]').textContent ?? '') + (q('[data-settings-panel="layout"]').textContent ?? '');
     expect(text).not.toContain('이 기기에만 남습니다');
     expect(text).not.toContain('계정에 저장해');
     expect(text.match(/인쇄/g) ?? []).toHaveLength(1);

@@ -4,6 +4,7 @@
 //   달 아래에는 그 달의 것을 날짜 차례로 한 줄씩 적는다. 수업은 그리지 않는다(그것은 '자세히').
 //   공휴일·D-Day는 P5-3, 학사일정(나이스)은 P6-3이 넣는다 - 그 전에는 비어 있다.
 import type { ShownPeriod } from './periodBars';
+import type { WeekStart } from './dateUtils';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -47,19 +48,20 @@ export function followSemesterFilter(filter: 'all' | 1 | 2, at: string, today: s
 }
 
 /**
- * 한 달을 주(일~토)로 나눈다. 칸 밖 날은 null.
+ * 한 달을 주(일~토 - 한 주의 시작이 월요일이면 월~일, P59-2)로 나눈다. 칸 밖 날은 null.
  * 주말을 숨기면 월~금 다섯 칸으로, 그러고 나서 빈 주(1일이 토요일인 달의 첫 주 등)는 뺀다.
  */
-export function monthWeeks(year: number, month: number, showWeekend: boolean): (string | null)[][] {
+export function monthWeeks(year: number, month: number, showWeekend: boolean, weekStart: WeekStart = 0): (string | null)[][] {
   const first = new Date(year, month - 1, 1);
   const days = new Date(year, month, 0).getDate();
-  const cells: (string | null)[] = Array(first.getDay()).fill(null);
+  const cells: (string | null)[] = Array((first.getDay() - weekStart + 7) % 7).fill(null);
   for (let d = 1; d <= days; d++) cells.push(`${year}-${pad(month)}-${pad(d)}`);
   while (cells.length % 7) cells.push(null);
   const weeks: (string | null)[][] = [];
   for (let i = 0; i < cells.length; i += 7) {
     const week = cells.slice(i, i + 7);
-    const shown = showWeekend ? week : week.slice(1, 6);
+    // 주말을 감추면 평일 다섯 - 일요일부터면 가운데 다섯, 월요일부터면 앞 다섯 (P59-2)
+    const shown = showWeekend ? week : weekStart === 1 ? week.slice(0, 5) : week.slice(1, 6);
     if (shown.some(Boolean)) weeks.push(shown);
   }
   return weeks;

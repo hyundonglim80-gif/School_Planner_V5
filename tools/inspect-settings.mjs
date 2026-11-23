@@ -48,7 +48,7 @@ try {
   await a.page.click(sel('menu-item', 'settings'));
   r.check(await waitFor(a.page.locator(sel('settings-window'))), '⋮ → 환경설정이 열린다');
   const tabs = await a.page.locator(sel('settings-tab')).evaluateAll((els) => els.map((e) => e.dataset.settingsTab));
-  r.check(tabs.join() === 'view,notify,school,shortcuts,app', `탭은 지금 있는 것만 (${tabs.join()})`);
+  r.check(tabs.join() === 'view,layout,notify,school,shortcuts,app', `탭은 지금 있는 것만 (${tabs.join()})`);
 
   r.section('글자 크기 (화면마다 % - 메모 요청 #145) → 계정 → 다른 창');
   // PC 바탕 = 한눈에만 90%, 하루 등 다른 화면은 100% (11-08 80% → 11-09 90% → 같은 날 한눈에만 - P29-1). 점검 창 폭은 1400
@@ -213,7 +213,7 @@ try {
   await serverUntil(serverPc, (d) => !('fontSizes' in d));
 
   r.section('시작 화면');
-  await a.page.click(sel('settings-tab', 'view'));
+  await a.page.click(sel('settings-tab', 'layout')); // 시작 화면·창 위치·화면 표시는 '화면 배치' 탭 (P59-1)
   await a.page.click(sel('choice', 'startupScope:memo'));
   await serverUntil(serverPc, (d) => d.startupScope === 'memo');
   await a.page.goto(SITE);
@@ -316,7 +316,7 @@ try {
   await d.page.evaluate(() => window.sp5.openWindow('settings'));
   await waitFor(d.page.locator(sel('settings-window')));
   const devTabs = await d.page.locator(sel('settings-tab')).evaluateAll((els) => els.map((e) => e.dataset.settingsTab));
-  r.check(devTabs.join() === 'view,notify,school,shortcuts,app,dev', `개발자 계정은 개발자 탭까지 (${devTabs.join()})`);
+  r.check(devTabs.join() === 'view,layout,notify,school,shortcuts,app,dev', `개발자 계정은 개발자 탭까지 (${devTabs.join()})`);
   await d.page.click(sel('settings-tab', 'dev'));
   r.check(await waitFor(d.page.locator(sel('settings-section', 'dev-errors'))), '개발자 탭에 오류 기록 칸');
 

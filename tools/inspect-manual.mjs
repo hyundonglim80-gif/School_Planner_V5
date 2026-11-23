@@ -217,7 +217,7 @@ try {
 
   await topic('popups', async () => {
     await win('settings');
-    await q(sel('settings-tab', 'view')).click();
+    await q(sel('settings-tab', 'layout')).click(); // 시작 화면·창 위치·화면 표시는 '화면 배치' 탭 (P59-1)
     r.check(
       (await waitFor(page.locator(sel('choice', 'popupStyle:popup')), 4000)) &&
         (await count(sel('choice', 'popupStyle:left'))) === 1 &&
@@ -658,10 +658,10 @@ try {
     await go('#/class', 'class');
     if (await count(sel('roster'))) await q(sel('class-mode', 'hub')).click();
     const tools = await page.locator(sel('class-tool')).evaluateAll((els) => els.map((e) => e.getAttribute('data-class-tool')));
-    r.check(['attendance', 'notices', 'seating', 'drawStudent', 'studentRecord', 'evalOverview', 'roster'].every((t) => tools.includes(t)), `도구 카드 (${tools.length}) - 담임`);
+    r.check(['attendance', 'notices', 'seating', 'drawStudent', 'studentRecord', 'evalOverview'].every((t) => tools.includes(t)) && !tools.includes('roster') && (await count(sel('class-mode', 'roster'))) === 1, `도구 카드 (${tools.length}) - 담임 · 명렬표는 위 탭 (P59-3)`);
     r.check(await has(sel('class-students')), '학생 명단');
     r.check((await count(sel('class-view'))) === 2, '이름 / 📷 사진');
-    r.check((await count(sel('class-today'))) === 1, '📋 오늘 출결 줄');
+    r.check((await count(sel('class-today'))) === 1, '📋 출석부 카드에 오늘 출결 (P59-3)');
   });
 
   /** 학급 화면의 명렬표 (관리 · 검색 · 암기) */
@@ -830,7 +830,7 @@ try {
     await q(sel('menu-item', 'settings')).click();
     await has(sel('settings-tab', 'view')); // 창은 열 때 싣는다 - 뜬 뒤에 센다
     const tabs = await page.locator(sel('settings-tab')).evaluateAll((els) => els.map((e) => e.getAttribute('data-settings-tab')));
-    r.check(tabs.join(',') === 'view,notify,school,shortcuts,app', `탭 다섯 (${tabs.join('·')})`);
+    r.check(tabs.join(',') === 'view,layout,notify,school,shortcuts,app', `탭 여섯 - 화면 배치(P59-1) (${tabs.join('·')})`);
   });
 
   await topic('reset-settings', async () => {

@@ -140,7 +140,7 @@ try {
   await page.locator(sel('close')).first().click();
   await page.goto(page.url().split('#')[0] + '#/class');
   const todayLine = page.locator('[data-class-today]');
-  r.check(await waitFor(todayLine, 8000), '📋 오늘 출결 줄 (담임)');
+  r.check(await waitFor(todayLine, 8000), '📋 출석부 카드에 오늘 출결 (담임 - P59-3)');
   r.check((await todayLine.getAttribute('data-class-today')) === '3' && (await todayLine.textContent()).includes('결석'), `오늘 적힌 학생 셋 (${(await todayLine.textContent()).replace(/\s+/g, ' ')})`);
   await page.locator(sel('class-tool', 'attendance')).click();
   r.check(await waitFor(panel, 8000), '도구 카드 📋 출석부 = 그 학급 오늘');

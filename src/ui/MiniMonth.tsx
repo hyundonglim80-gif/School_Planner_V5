@@ -1,15 +1,15 @@
-// 작은 달력 판 (P24-2 - MiniCalendarPicker에서 뗌): 요일 머리 + 날 칸 판. 날 칸 모양(단추·색·점)은 부르는 쪽이 정한다.
+// 작은 달력 판 (P24-2 - MiniCalendarPicker에서 뗌): 요일 머리 + 날 칸 판. 첫 요일 = weekStart(📅 판은 환경설정 한 주의 시작 - P59-2). 날 칸 모양(단추·색·점)은 부르는 쪽이 정한다.
 //   📅 뜨는 달력(ui/MiniCalendarPicker)은 일요일부터, 한눈에 화면 첫 칸(features/board/BoardMonth)은 월요일부터(옆 요일 칸이 월~일).
 //   날 칸 = 그 달 1일이 든 주 ~ 말일이 든 주(domain/dateUtils monthGridDates), 주마다 한 줄 - 줄을 칠할 수 있다(보는 주).
 import { Fragment, type ReactNode } from 'react';
-import { DAY_NAMES, monthGridDates } from '../domain/dateUtils';
+import { DAY_NAMES, monthGridDates, type WeekStart } from '../domain/dateUtils';
 
 interface Props {
   year: number;
   /** 1 ~ 12 */
   month: number;
   /** 0 = 일요일부터(기본), 1 = 월요일부터 */
-  weekStart?: 0 | 1;
+  weekStart?: WeekStart;
   /** 날 칸 하나 - 보통 단추 (inMonth = 그 달 날) */
   day: (date: string, inMonth: boolean) => ReactNode;
   /** 주 한 줄의 class·data (보는 주 칠하기) */

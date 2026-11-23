@@ -2,6 +2,9 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent, act, waitFor } from '@testing-library/react';
 import MiniCalendarPicker from './MiniCalendarPicker';
 
+// 뜨는 판이 한 주의 시작(P59-2)을 계정 설정(app/prefs → settingsSync → data/firebase)에서 읽는다 - 진짜 Firebase 앱을 띄우지 않게
+vi.mock('../data/firebase', () => ({ auth: {}, db: {}, googleProvider: {} }));
+
 // 둘째 줄 📅 - 올려도 눌러도 열린다. 올리자마자 누르면(휴대폰 톡·빠른 클릭) 열었다 닫는 일이 있었다(P36-1 CI가 다섯에 한 번 찾음).
 // 뜨는 판은 처음 열 때 받는다(P49-3 - ui/MiniCalendarPopover) - 열림은 단추 aria-expanded로 곧바로, 판은 기다려 본다.
 const btn = (c: HTMLElement) => c.querySelector('[data-date-picker]') as HTMLElement;

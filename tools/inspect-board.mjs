@@ -88,7 +88,7 @@ try {
     const tip = await page.locator(sel('scope-tab', 'board')).getAttribute('title');
     r.check(/한눈에 화면.*Space/.test(tip ?? ''), `탭 툴팁에 단축키 (${tip})`);
     await page.evaluate(() => window.sp5.openWindow('settings'));
-    await page.locator(sel('settings-tab', 'view')).click();
+    await page.locator(sel('settings-tab', 'layout')).click(); // 시작 화면·창 위치·화면 표시는 '화면 배치' 탭 (P59-1)
     const startup = page.locator(sel('choice', 'startupScope:board'));
     r.check(await waitFor(startup, 5000), '환경설정 시작 화면에 \'한눈에\'');
     r.check(((await startup.textContent()) ?? '').includes('한눈에'), `시작 화면 칸에 글자 (${await startup.textContent()})`);

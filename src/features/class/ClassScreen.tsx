@@ -2,7 +2,7 @@
 //   학급 도구: 학급을 고르면(이 기기에 남는다 - 도구가 그 학급으로 연다) 도구 카드(CLASS_TOOLS)·학생 명단. 이름을 누르면 그 학생의 누가기록.
 //   학생 명단은 '이름 / 📷 사진'으로 본다(명렬표 관리의 사진 보기와 같은 것, 켜 둔 것은 이 기기 sp5-class-photos). 사진을 누르면 크게(아래 '사진 바꾸기').
 //   교과 모드: 올해 반을 학년별 줄의 반 색 칩으로 고른다. 교과 + 담임은 담임반에서만 담임 도구.
-//   📋 오늘 출결 한 줄(담임 도구 - 적힌 학생만, 누르면 출석부). 도구는 그 기능을 옮기는 세션이 창을 등록하면 열린다(그 전에는 🚧 안내).
+//   📋 오늘 출결 = 출석부 카드 안 글(P59-3 - 따로 있던 한 줄을 합쳤다 · 적힌 학생만, 누르면 출석부) · 명렬표는 위 탭(카드 없음). 도구는 그 기능을 옮기는 세션이 창을 등록하면 열린다(그 전에는 🚧 안내).
 import { useMemo, useState } from 'react';
 import { KIND_LABEL, attendanceDocId, readMarks } from '../../domain/attendance';
 import { useDocs } from '../../data/select';
@@ -153,48 +153,45 @@ function ClassHub() {
         </div>
       )}
 
-      {/* 오늘 출결 한 줄 (교과 전담은 출석부를 숨긴다) */}
-      {showHomeroomTools && cls && (
-        <button
-          type="button"
-          data-class-today={todayRows.length}
-          {...shortcutTarget('attendance')}
-          onClick={() => openTool('attendance')}
-          className="text-left bg-white border border-slate-200 rounded-xl px-4 py-3 hover:bg-slate-50 flex flex-wrap items-center gap-x-3 gap-y-1 cursor-pointer"
-        >
-          <span className="font-black text-sm text-slate-700"><Glyph e="📋" /> 오늘 출결</span>
-          {todayRows.length === 0 ? (
-            <span className="text-sm text-emerald-700 font-bold">적힌 결석·지각·조퇴·결과가 없습니다</span>
-          ) : (
-            todayRows.map((s) => (
-              <span key={s.sid} className="text-sm text-slate-700">
-                <span className="font-bold">
-                  {s.num} {s.name}
-                </span>{' '}
-                <span className="text-rose-600 font-bold">{KIND_LABEL[todayMarks[s.sid].kind]}</span>
-              </span>
-            ))
-          )}
-          <span className="ml-auto text-xs font-bold text-primary">출석부 열기 →</span>
-        </button>
-      )}
-
       {/* 도구 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
-        {CLASS_TOOLS.filter((t) => (showHomeroomTools || !t.homeroom) && (isClassUnit || !t.classUnit)).map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            data-class-tool={t.id}
-            {...shortcutTarget(t.id)}
-            onClick={() => openTool(t.id)}
-            className="text-left bg-white border border-slate-200 rounded-xl p-3 sm:p-4 hover:border-primary/50 hover:shadow-xs transition-all flex flex-col gap-1 cursor-pointer"
-          >
-            <Glyph e={t.icon} className="w-7 h-7 text-primary" />
-            <span className="font-black text-sm text-slate-800">{t.label}</span>
-            <span className="text-xs text-slate-500">{t.desc}</span>
-          </button>
-        ))}
+        {CLASS_TOOLS.filter((t) => !t.onTab && (showHomeroomTools || !t.homeroom) && (isClassUnit || !t.classUnit)).map((t) => {
+          // 출석부 카드에 오늘 출결 (P59-3 - 따로 있던 '오늘 출결' 줄과 카드가 같은 출석부를 열었다). 적힌 학생만, 출석은 적지 않는다
+          const today = t.id === 'attendance' && cls;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              data-class-tool={t.id}
+              {...(today ? { 'data-class-today': todayRows.length } : {})}
+              {...shortcutTarget(t.id)}
+              onClick={() => openTool(t.id)}
+              className="text-left bg-white border border-slate-200 rounded-xl p-3 sm:p-4 hover:border-primary/50 hover:shadow-xs transition-all flex flex-col gap-1 cursor-pointer"
+            >
+              <Glyph e={t.icon} className="w-7 h-7 text-primary" />
+              <span className="font-black text-sm text-slate-800">{t.label}</span>
+              {today ? (
+                todayRows.length === 0 ? (
+                  <span className="text-xs text-emerald-700 font-bold">오늘 적힌 결석·지각·조퇴·결과 없음</span>
+                ) : (
+                  <span className="text-xs text-slate-700 flex flex-wrap gap-x-2">
+                    <span className="text-slate-500">오늘</span>
+                    {todayRows.map((s) => (
+                      <span key={s.sid}>
+                        <span className="font-bold">
+                          {s.num} {s.name}
+                        </span>{' '}
+                        <span className="text-rose-600 font-bold">{KIND_LABEL[todayMarks[s.sid].kind]}</span>
+                      </span>
+                    ))}
+                  </span>
+                )
+              ) : (
+                <span className="text-xs text-slate-500">{t.desc}</span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* 학생 명단 - 이름 / 사진. 이름을 누르면 그 학생의 누가기록 */}

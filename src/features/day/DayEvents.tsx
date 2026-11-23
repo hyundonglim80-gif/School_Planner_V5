@@ -17,6 +17,8 @@ import { lazyWithReload } from '../../app/lazyWithReload';
 import { OfflineInlineWindow } from '../../app/OfflineChunk';
 import { goToday } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
+import { useScreenPrefs } from '../../app/screenPrefs';
+import { useReorderToggle } from '../../ui/useReorderToggle';
 import { openWindow } from '../../app/windows';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
 import { carriedSince } from '../../domain/forward';
@@ -94,6 +96,8 @@ export default function DayEvents({ date }: { date: YMD }) {
   const events = useItemsOn(date, 'event');
   const carried = useCarried(sid);
   const forwardDays = useCommonSettings((s) => s.forwardDays);
+  const phoneCols = useScreenPrefs((s) => s.phoneCols);
+  const { reorderAttr, reorderButton } = useReorderToggle('events');
   const today = carried.today;
   // 오늘 칸이면 오늘로 따라오는 일정을 오늘 것 아래에 (지난 날에서 따라오는 것만 - 제 날짜는 그대로다)
   const follow = date === today ? carried.list : NONE;
@@ -147,6 +151,7 @@ export default function DayEvents({ date }: { date: YMD }) {
   return (
     <section
       data-day-events={date}
+      {...reorderAttr}
       className={`bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 flex flex-col ${collapsed ? '' : 'h-full'}`}
     >
       {/* 머리줄: ▼ 📅 일정 8 [+ 추가] ……… ⚙️ */}
@@ -183,23 +188,27 @@ export default function DayEvents({ date }: { date: YMD }) {
             </button>
           )}
         </div>
-        <button
-          type="button"
-          data-event-labels-settings
-          {...shortcutTarget('labels')}
-          onClick={() => openWindow('labels', { tab: 'event' })}
-          className="tap-area w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
-          title="일정 라벨 설정"
-          aria-label="일정 라벨 설정"
-        >
-          <Glyph e="⚙" />
-        </button>
+        <div className="flex items-center gap-1 shrink-0">
+          {/* 휴대폰 카드 ▲▼ '⇅ 누를 때만'(P59-1)이면 ⇅ */}
+          {!collapsed && reorderButton}
+          <button
+            type="button"
+            data-event-labels-settings
+            {...shortcutTarget('labels')}
+            onClick={() => openWindow('labels', { tab: 'event' })}
+            className="tap-area w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+            title="일정 라벨 설정"
+            aria-label="일정 라벨 설정"
+          >
+            <Glyph e="⚙" />
+          </button>
+        </div>
       </div>
 
       {!collapsed && (
-        // 카드. 휴대폰은 2열, PC(sm 이상)는 1열
+        // 카드. 휴대폰은 2열(환경설정 화면 배치 '카드 열 1열'이면 1열 - P59-1), PC(sm 이상)는 1열
         // PC 위 여백 12px(머리줄 아래 여백에서 옮김 - 합은 그대로): 카드 위 테두리에 걸쳐 뜨는 ✏️🗑️(ui/cardTools FLOAT_TOOLS)가 첫 카드에서 이 스크롤 칸에 잘리지 않게
-        <div className={`flex-1 overflow-y-auto pr-1 sm:pt-3 min-h-[110px] ${shownCount > 0 ? 'grid grid-cols-2 sm:grid-cols-1 gap-2 content-start' : ''}`}>
+        <div className={`flex-1 overflow-y-auto pr-1 sm:pt-3 min-h-[110px] ${shownCount > 0 ? `grid ${phoneCols === 1 ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-1'} gap-2 content-start` : ''}`}>
           {shownCount > 0 ? (
             <>
               {events.map((ev, idx) => (

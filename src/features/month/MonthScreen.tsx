@@ -9,6 +9,8 @@
 //   - 구글 캘린더 겹쳐 보기(P36-4): 앱 일정 뒤에 읽기 전용(점선 - 하루짜리는 칸 안 줄, 여러 날은 막대). 누르면 그 일정 창(휴대폰은 그날 목록). 인쇄에는 없다.
 import { useMemo, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { setDate, setScope, useNav } from '../../app/nav';
+import { useCommonSettings } from '../../app/prefs';
+import { useScreenPrefs } from '../../app/screenPrefs';
 import { monthGridDates } from '../../domain/dateUtils';
 import { onPeriodDay } from '../../domain/period';
 import { itemLabels, itemsOn, useDocs, useLabelTree, useOverlaySpaces } from '../../data/select';
@@ -58,7 +60,12 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
   const year = Number(date.slice(0, 4));
   const month = Number(date.slice(5, 7));
   const monthKey = date.slice(0, 7);
-  const dates = useMemo(() => monthGridDates(year, month), [year, month]);
+  // 한 주의 시작 (P59-2 - 환경설정 화면 배치, 계정에 하나 - 기본 일요일)
+  const weekStart = useCommonSettings((s) => s.weekStart);
+  // 월간 칸 높이 (P59-2 - 화면에 맞추기)
+  const monthFit = useScreenPrefs((s) => s.monthFit);
+  const monthLessons = useScreenPrefs((s) => s.monthLessons);
+  const dates = useMemo(() => monthGridDates(year, month, weekStart), [year, month, weekStart]);
   // 구글 캘린더 일정 (P36-4 - 인쇄 창이면 없다)
   const gcal = useGcalShown(dates[0], dates[dates.length - 1]);
   const cal = useMemo(() => calendarEvents(items, dates[0], dates[dates.length - 1], tree, overlays, gcal), [items, dates, tree, overlays, gcal]);
@@ -131,8 +138,11 @@ export default function MonthScreen({ printAt }: { printAt?: string }) {
   const sheetHidden = sheetDate ? itemsOn(items, sheetDate, 'event').length - sheetEvents.filter((ev) => !spaceOf(ev)).length : 0;
 
   return (
-    <div data-screen="month" className={`animate-fade-in ${sheetDate ? 'pb-[48vh]' : 'pb-12'}`}>
+    <div data-screen="month" className={`animate-fade-in ${sheetDate ? 'pb-[48vh]' : monthFit ? 'pb-4' : 'pb-12'}`}>
       <MonthGrid
+        weekStart={weekStart}
+        fit={monthFit}
+        lessonCount={monthLessons === 'count'}
         dates={dates}
         month={monthKey}
         today={today}

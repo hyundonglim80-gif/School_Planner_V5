@@ -28,7 +28,8 @@ export default function FontSizeRows() {
   const [device] = useState(detectDeviceKind);
   const withKey = useShortcutTitle();
   const current = POPOUT ? POPOUT_FONT_PAGE : scope;
-  const pages = FONT_PAGES.filter((p) => p !== POPOUT_FONT_PAGE || device === 'pc');
+  // 팝업창·한눈에는 PC만 (휴대폰 탭바에 한눈에가 없다 - P59-3)
+  const pages = FONT_PAGES.filter((p) => (p !== POPOUT_FONT_PAGE && p !== 'board') || device === 'pc');
 
   return (
     <div className="flex flex-col gap-0.5">

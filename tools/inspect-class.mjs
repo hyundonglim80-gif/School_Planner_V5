@@ -158,13 +158,13 @@ try {
   await page.locator(sel('class-pick')).selectOption(`${year}-5-1`);
   r.check(await waitFor(page.locator(sel('class-students', 2))), '학급 고르기 = 그 학급 학생 명단');
   r.check(JSON.parse(await page.evaluate(() => localStorage.getItem('sp5-class-hub'))).id === `${year}-5-1`, '고른 학급은 이 기기에 남는다');
-  r.check((await page.locator(sel('class-tool')).count()) === 7 && !(await page.locator(sel('class-tool', 'subjectAttendance')).count()), '담임 = 도구 카드 7 (교과 출결 빼고)');
+  r.check((await page.locator(sel('class-tool')).count()) === 6 && !(await page.locator(sel('class-tool', 'subjectAttendance')).count()) && !(await page.locator(sel('class-tool', 'roster')).count()), '담임 = 도구 카드 6 (교과 출결 빼고 · 명렬표는 위 탭 - P59-3)');
   // 도구 카드 = 그 학급으로 (여덟 도구 모두 창이 있다 - P7-4)
   await page.locator(sel('class-tool', 'evalOverview')).click();
   r.check(await waitFor(page.locator(sel('eval-overview-window', `${year}-5-1`))), "카드 '조사표 모아 보기' = 그 학급");
   await page.evaluate(() => window.sp5.closeAllWindows());
-  await page.locator(sel('class-tool', 'roster')).click();
-  r.check(await waitFor(page.locator(sel('roster', `${year}-5-1`))), "카드 '명렬표' = 명렬표로 (그 학급)");
+  await page.locator(sel('class-mode', 'roster')).click();
+  r.check(await waitFor(page.locator(sel('roster', `${year}-5-1`))), "위 탭 '명렬표' = 명렬표로 (그 학급)");
   await page.locator(sel('class-mode', 'hub')).click();
   await page.goto(page.url().replace(/#.*$/, '#/day'));
   await page.evaluate(() => window.sp5.runShortcut('roster'));

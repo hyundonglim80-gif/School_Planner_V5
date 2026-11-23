@@ -16,6 +16,9 @@ import { itemLabels, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
 import { useMainWidth } from '../../ui/useMainWidth';
+import { useIsMobile } from '../../ui/useIsMobile';
+import { useScreenPrefs } from '../../app/screenPrefs';
+import { useReorderToggle } from '../../ui/useReorderToggle';
 import type { ItemDoc } from '../events/eventOps';
 import { reorderDragProps } from '../../ui/reorderDrag';
 import { deleteNote, moveNoteByDrag, moveNoteInList, setNoteDone, setNoteFavorite, toggleNoteCheckLine } from '../notes/actions';
@@ -76,9 +79,13 @@ export default function DayJournal({ date }: { date: YMD }) {
   const waiting = notes.length === 0 && (status === 'idle' || status === 'loading');
   const picked = filter.labels.length + filter.others.length;
 
-  // 칸 수는 창 폭이 아니라 본문 폭으로 - 오른쪽 칸이 열려 본문이 좁아지면 줄인다. 휴대폰도 2열(일정 칸과 같게)
+  // 칸 수는 창 폭이 아니라 본문 폭으로 - 오른쪽 칸이 열려 본문이 좁아지면 줄인다. 휴대폰도 2열(일정 칸과 같게) -
+  // 환경설정 화면 배치 '카드 열 1열'(P59-1)이면 휴대폰 폭에서 1열
   const mainWidth = useMainWidth();
-  const columnsCount = journalColumnsFor(mainWidth);
+  const isMobile = useIsMobile();
+  const phoneCols = useScreenPrefs((s) => s.phoneCols);
+  const { reorderAttr, reorderButton } = useReorderToggle('journal');
+  const columnsCount = isMobile && phoneCols === 1 ? 1 : journalColumnsFor(mainWidth);
   const columns = Array.from({ length: columnsCount }, () => [] as { item: ItemDoc; index: number }[]);
   shown.forEach((item, index) => columns[index % columnsCount].push({ item, index }));
 
@@ -87,7 +94,7 @@ export default function DayJournal({ date }: { date: YMD }) {
   const openEdit = (item: ItemDoc, edit?: boolean) => sid && openNotePanel({ sid, date, id: item.id, ...(edit ? { edit } : {}) });
 
   return (
-    <section data-day-journal={date} className="flex flex-col gap-4">
+    <section data-day-journal={date} {...reorderAttr} className="flex flex-col gap-4">
       <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
         {/* 머리줄: ▼ 📝 메모 N [+ 추가] 📊 🏷️ ……… ⚙️ */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -171,17 +178,21 @@ export default function DayJournal({ date }: { date: YMD }) {
               </span>
             </div>
           )}
-          <button
-            type="button"
-            data-journal-labels-settings
-            {...shortcutTarget('labels')}
-            onClick={() => openWindow('labels', { tab: 'note' })}
-            className="tap-area ml-auto w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
-            title="메모 라벨 설정"
-            aria-label="메모 라벨 설정"
-          >
-            <Glyph e="⚙" />
-          </button>
+          <div className="ml-auto flex items-center gap-1 shrink-0">
+            {/* 휴대폰 카드 ▲▼ '⇅ 누를 때만'(P59-1)이면 ⇅ */}
+            {reorderButton}
+            <button
+              type="button"
+              data-journal-labels-settings
+              {...shortcutTarget('labels')}
+              onClick={() => openWindow('labels', { tab: 'note' })}
+              className="tap-area w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+              title="메모 라벨 설정"
+              aria-label="메모 라벨 설정"
+            >
+              <Glyph e="⚙" />
+            </button>
+          </div>
         </div>
       </div>
 
