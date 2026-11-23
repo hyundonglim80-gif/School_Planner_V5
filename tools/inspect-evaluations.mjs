@@ -4,6 +4,7 @@
 //   3) 조별 평가 = 자리표에서 저장한 모둠 · 열 때 명렬표와 맞추기(새 학생) · 지우기 → 휴지통 → 되살리기 · 검색 '조사표'
 //   4) 평가 단계 '기타'(P46-1): 만들기 '기타' → 서버 free·단계 없음 → 결과 글 칸에 85·A+·통과 → 저장(앞뒤 빈칸 걷음) → 다시 열기 · 모아 보기 '적음 3'·칸 · 학생 기록
 //   5) 자리표 학생 칸의 '오늘 조사표' = 그 학생 값만(기타는 글 칸 - Enter에 저장) · 교과 전담(teacher3) 교시 카드 반 도구 📊 = 그 반·과목
+//   6) 표 안 스크롤 없음(11-23 사용자 요청): 조사표·모아 보기 표와 창 본문 사이에 스크롤 상자가 없고, 머리 줄·번호·이름 sticky가 창 본문 여백만큼 바깥으로(창 가장자리에 붙게)
 //
 //   npm run emu · npm run dev:emu (켜 둔다) → npm run seed → node tools/inspect-evaluations.mjs
 // 에뮬레이터 teacher·teacher3의 classes를 비우고 점검 학급을 심었다가 끝에 되돌린다. 점검 학급의 조사표·자리표·학급 허브·수업 칸은 끝에 지우거나 되돌린다.
@@ -37,6 +38,25 @@ const same = (a, b) => JSON.stringify(sorted(a)) === JSON.stringify(sorted(b));
 const st = (s, num, name, out = false) => ({ sid: s, num, name, status: out ? 'out' : 'active' });
 const evalsOf = async (db = em.db, space = sid) => (await getDocs(collection(db, 'spaces', space, 'evaluations'))).docs.map((d) => ({ id: d.id, ...d.data() }));
 const liveEvals = async () => (await evalsOf()).filter((e) => e.classId === CLASS_ID && !e.deletedAt);
+/** 표와 창 본문(ModalShell [data-scroll-lock]) 사이 스크롤 상자 + sticky 자리를 창 본문 여백과 견준다 (11-23 - 표 안 스크롤 없이 창 전체가 스크롤) */
+const stickyOf = (locator) =>
+  locator.evaluate((box) => {
+    const body = box.closest('[data-scroll-lock]');
+    const between = [];
+    for (let el = box.querySelector('table'); el && el !== body; el = el.parentElement) {
+      const cs = getComputedStyle(el);
+      if (/auto|scroll|hidden/.test(cs.overflowX + cs.overflowY) || cs.maxHeight !== 'none') between.push(`${el.tagName} ${cs.overflowX}/${cs.overflowY} ${cs.maxHeight}`);
+    }
+    const bs = getComputedStyle(body);
+    const px = (v) => parseFloat(v);
+    const heads = [...box.querySelectorAll('thead tr:first-child th')].slice(0, 2).map((th) => getComputedStyle(th));
+    return {
+      between,
+      top: px(getComputedStyle(box.querySelector('thead')).top) + px(bs.paddingTop),
+      lefts: heads.filter((c) => c.position === 'sticky').map((c) => px(c.left) + px(bs.paddingLeft)),
+      col1: box.querySelector('thead th').getBoundingClientRect().width,
+    };
+  });
 const evalDoc = async (id) => {
   const s = await getDoc(ref('evaluations', id));
   return s.exists() ? s.data() : null;
@@ -96,6 +116,8 @@ try {
   );
   r.check(same(e1?.students?.map((s) => s.sid), ['a1', 'a2', 'a3', 'a4']) && same(e1?.values, {}), '명단 = 재학생 sid (전출 빼고) · 값 없음');
   r.check(await waitFor(w3.locator(sel('eval-view', e1.id))), '만든 조사표가 곧바로 열린다');
+  const k1 = await stickyOf(w3.locator(sel('eval-table', e1.id)));
+  r.check(k1.between.length === 0 && Math.abs(k1.top) < 1, `표 안 스크롤 없음 - 창 본문이 스크롤, 머리 줄은 창 위 가장자리에 (${JSON.stringify(k1)})`);
   await row(w3, 'a1').locator('[data-eval-indiv-score]').selectOption('우수');
   await row(w3, 'a1').locator('[data-eval-text]').fill('식을 세움');
   r.check(await waitFor(page.locator('[data-eval-dirty]')), "적는 동안 '저장 전'");
@@ -221,6 +243,11 @@ try {
   const steps4 = ov.locator(sel('eval-col', e4.id)).locator('[data-eval-steps]');
   r.check(await waitFor(async () => ((await steps4.count()) ? ((await steps4.textContent()) ?? '') : '') === '적음 3', 8000), "모아 보기 머리 = '적음 3' (단계별 수 대신)");
   r.check(((await ov.locator(sel('eval-cell', `${e4.id}:a1`)).textContent()) ?? '') === '85', "모아 보기 칸 = '85'");
+  const k4 = await stickyOf(ov.locator('[data-eval-overview]'));
+  r.check(
+    k4.between.length === 0 && Math.abs(k4.top) < 1 && k4.lefts.length === 2 && Math.abs(k4.lefts[0]) < 1 && Math.abs(k4.lefts[1] - k4.col1) <= 1,
+    `모아 보기도 표 안 스크롤 없음 - 머리 줄·번호·이름 칸이 창 가장자리에 (${JSON.stringify(k4)})`,
+  );
   await page.evaluate(() => window.sp5.closeAllWindows());
   await page.locator(sel('class-student', 2)).first().click();
   const rec = page.locator(sel('student-record', CLASS_ID));

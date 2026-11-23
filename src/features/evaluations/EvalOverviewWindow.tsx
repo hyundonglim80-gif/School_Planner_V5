@@ -34,6 +34,7 @@ import { rememberHubClass, useClasses, useHubClassId } from '../class/classes';
 import { useTeaching } from '../lessons/teaching';
 import CourseEvalOverview from './CourseEvalOverview';
 import { useSpacesEvals, type SpaceEval } from './evalData';
+import { EVAL_STICKY_COL1, EVAL_STICKY_COL2, EVAL_STICKY_HEAD, EVAL_TABLE_BOX } from './evalTableBox';
 import { openEvaluation, type EvalOverviewParams } from './open';
 import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
@@ -198,12 +199,12 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
               ) : shown.length === 0 ? (
                 <p className="text-center text-slate-500 py-8">고른 교과·학기·유형에 맞는 조사표가 없습니다.</p>
               ) : (
-                <div ref={tableRef} className="border border-slate-200 rounded-xl overflow-auto max-h-[65vh]" data-eval-overview>
+                <div ref={tableRef} className={EVAL_TABLE_BOX} data-eval-overview>
                   <table className="text-xs border-collapse min-w-full">
-                    <thead className="bg-slate-100 sticky top-0 z-20">
+                    <thead className={`bg-slate-100 ${EVAL_STICKY_HEAD} z-20`}>
                       <tr>
-                        <th className="sticky left-0 z-10 bg-slate-100 p-1.5 w-10 min-w-10 whitespace-nowrap border-b border-r border-slate-200">번호</th>
-                        <th className="sticky left-10 z-10 bg-slate-100 p-1.5 min-w-16 text-left border-b border-r border-slate-200">이름</th>
+                        <th className={`${EVAL_STICKY_COL1} z-10 bg-slate-100 p-1.5 w-10 min-w-10 whitespace-nowrap border-b border-r border-slate-200`}>번호</th>
+                        <th className={`${EVAL_STICKY_COL2} z-10 bg-slate-100 p-1.5 min-w-16 text-left border-b border-r border-slate-200`}>이름</th>
                         {shown.map((ev) => {
                           const counts = stepCounts(ev, sids);
                           return (
@@ -234,8 +235,8 @@ export default function EvalOverviewWindow({ params, close, raise }: WindowProps
                     <tbody>
                       {students.map((st) => (
                         <tr key={st.sid} className={st.out ? 'text-slate-300' : 'hover:bg-slate-50'} data-eval-overview-row={st.sid}>
-                          <td className="sticky left-0 bg-white p-1.5 w-10 min-w-10 text-center font-bold text-slate-500 border-b border-r border-slate-100">{st.num}</td>
-                          <td className="sticky left-10 bg-white p-1.5 font-bold border-b border-r border-slate-100 whitespace-nowrap">
+                          <td className={`${EVAL_STICKY_COL1} bg-white p-1.5 w-10 min-w-10 text-center font-bold text-slate-500 border-b border-r border-slate-100`}>{st.num}</td>
+                          <td className={`${EVAL_STICKY_COL2} bg-white p-1.5 font-bold border-b border-r border-slate-100 whitespace-nowrap`}>
                             {st.name}
                             {st.out && <span className="ml-1 text-2xs">(전출)</span>}
                           </td>
