@@ -16,5 +16,32 @@ export const ORDER_ARROWS = 'transition-opacity pointer-fine:opacity-0 pointer-f
  */
 export const HOVER_ONLY = 'transition-opacity pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:group-focus-within:opacity-100';
 
-export const FLOAT_TOOLS =
-  'hidden sm:flex items-center gap-0.5 absolute top-1 right-1 z-10 px-0.5 rounded-lg border border-slate-200 bg-white/95 shadow-xs opacity-0 transition-opacity group-hover:opacity-100 has-[:focus-visible]:opacity-100';
+/**
+ * 수업 카드 ▲▼ (P58-1 사용자 '마우스를 올릴 때 나오는 칩·단추가 미리 자리를 차지하지 않게 - 그 위에 불투명한 바탕으로'): 마우스 화면에서는
+ * 카드 왼쪽 테두리에 걸쳐 뜨는 작은 손잡이(불투명 바탕) - 자리를 차지하지 않고 글도 덮지 않는다(카드 왼쪽 여백 14px 안까지만).
+ * 카드가 relative여야 하고, 둘레 칸에 왼쪽 여백(8px 넘게)이 있어야 잘리지 않는다(하루 수업 칸 p-5). 휴대폰은 ORDER_ARROWS 그대로(글 앞 칸·늘 보인다).
+ * 일정·메모 카드는 아직 ORDER_ARROWS(자리는 그대로 - 5장 'P58' ③).
+ */
+export const ORDER_ARROWS_EDGE = `${ORDER_ARROWS} pointer-fine:absolute pointer-fine:top-1/2 pointer-fine:-translate-y-1/2 pointer-fine:-left-3 pointer-fine:z-10 pointer-fine:w-5 pointer-fine:px-0 pointer-fine:py-0.5 pointer-fine:gap-0 pointer-fine:rounded-lg pointer-fine:border pointer-fine:border-slate-200 pointer-fine:bg-white pointer-fine:shadow-xs`;
+
+// 떠 있는 묶음의 바탕은 불투명(P58-1 - 덮은 글이 비치지 않게. 어두운 화면의 bg-white는 카드 바탕색)
+const FLOAT_BASE =
+  'hidden sm:flex items-center gap-0.5 absolute z-10 px-0.5 rounded-lg border border-slate-200 bg-white shadow-xs opacity-0 transition-opacity group-hover:opacity-100 has-[:focus-visible]:opacity-100';
+
+export const FLOAT_TOOLS = `${FLOAT_BASE} top-1 right-1`;
+
+/**
+ * 수업 카드의 떠 있는 묶음 (P58-1): 카드 첫 줄(relative)의 가운데에 맞춰 그 줄을 깨끗이 덮는다 - 카드 위 4px에 붙이면 첫 줄 글의 아래 절반이
+ * 묶음 밑으로 비어져 나왔다(사용자 '불투명한 배경 위에').
+ */
+export const FLOAT_TOOLS_ROW = `${FLOAT_BASE} top-1/2 -translate-y-1/2 -right-1`;
+
+/**
+ * 진도 줄 끝에 겹쳐 뜨는 단추 묶음 (P58-1 - 🔗 이 차시에 메모 잇기 · 이 교시 밀기): PC에서는 올렸을 때만, 흐름 밖(자리 없음) · 불투명 바탕.
+ * 부르는 쪽은 줄 끝 묶음(relative - 늘 보이는 🔗 n이 든다)에 넣는다 - 그 왼쪽(right-full)에 떠서 🔗 n을 덮지 않는다.
+ * 🔗 n이 없으면 그 묶음 폭이 0이라 w-max가 없으면 글이 묶음 밖으로 넘친다(11-23 그림 - '이 교시 밀기'가 칸 밖으로).
+ * 오른쪽 끝은 부르는 쪽이 정한다(🔗 n이 있으면 sm:mr-1 - 덮지 않게, 없으면 sm:-mr-1 - 수업 카드 위 묶음과 끝을 맞춘다).
+ * 휴대폰은 흐름 안에 늘 보인다(올릴 마우스가 없다).
+ */
+export const FLOAT_LINE =
+  'flex items-center gap-2 sm:absolute sm:right-full sm:w-max sm:-top-1 sm:z-10 sm:gap-0.5 sm:p-0.5 sm:rounded-lg sm:border sm:border-slate-200 sm:bg-white sm:shadow-xs sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100 sm:has-[:focus-visible]:opacity-100';
