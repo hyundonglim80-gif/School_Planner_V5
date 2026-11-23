@@ -121,8 +121,8 @@ export default function EntryCard(props: EntryCardProps) {
       {/* 머리줄 */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-x-1.5 gap-y-1 flex-wrap min-w-0">
-          {/* 자리가 모자라면 칩부터 다음 줄로 (P57-2 ■4 - 한 줄로 묶어 두니 글자 130% 휴대폰 두 줄 카드에서 칩이 카드 밖으로 나갔다) */}
-          <span className="flex items-center gap-x-1.5 gap-y-1 flex-wrap min-w-0 max-w-full">
+          {/* 자리가 모자라면 칩부터 다음 줄로 (P57-2 ■4 - 한 줄로 묶어 두니 글자 130% 휴대폰 두 줄 카드에서 칩이 카드 밖으로 나갔다 · 손가락 화면 줄 간격은 ▼의 넓힌 누르는 자리가 아래 줄 칩에 닿지 않게) */}
+          <span className="flex items-center gap-x-1.5 gap-y-1 pointer-coarse:gap-y-1.5 flex-wrap min-w-0 max-w-full">
             <button
               type="button"
               data-entry-collapse
