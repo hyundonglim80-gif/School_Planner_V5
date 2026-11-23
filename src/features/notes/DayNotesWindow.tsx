@@ -51,7 +51,7 @@ export default function DayNotesWindow({ params, close, raise }: WindowProps<Day
           data-day-notes-add
           onClick={() => openNotePanel({ sid, date })}
           title="이 날의 메모 추가 (하루 화면과 같은 쓰는 칸)"
-          className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+          className="tap-area px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
         >
           + 추가
         </button>

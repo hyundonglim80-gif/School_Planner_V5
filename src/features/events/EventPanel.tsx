@@ -503,7 +503,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                   data-event-date-prev
                   onClick={() => pickDate(addDays(form.date, -1))}
                   title="전날로"
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-black cursor-pointer"
+                  className="tap-area w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-black cursor-pointer"
                 >
                   <Glyph e="◀" />
                 </button>
@@ -520,7 +520,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                   data-event-date-next
                   onClick={() => pickDate(addDays(form.date, 1))}
                   title="다음 날로"
-                  className="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-black cursor-pointer"
+                  className="tap-area w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-black cursor-pointer"
                 >
                   <Glyph e="▶" />
                 </button>
@@ -530,7 +530,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                     data-event-period-open
                     onClick={() => setPeriodPicked(true)}
                     title={isEditing ? '여러 날에 걸친 일정 (끝 날 정하기)' : '여러 날에 걸친 일정 (끝 날 정하기) - 요일을 고르면 그 요일만 반복'}
-                    className="ml-1 px-2 py-1 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 cursor-pointer"
+                    className="tap-area ml-1 px-2 py-1 rounded-lg text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 cursor-pointer"
                   >
                     <Glyph e="📆" /> 끝 날{isEditing ? '' : <> · <Glyph e="🔁" /> 반복</>}
                   </button>

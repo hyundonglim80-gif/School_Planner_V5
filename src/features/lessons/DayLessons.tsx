@@ -164,7 +164,7 @@ export default function DayLessons({ date }: { date: string }) {
               type="button"
               data-lessons-collapse
               onClick={() => setCollapsed(!collapsed)}
-              className="text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
+              className="tap-area text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors cursor-pointer"
               title={collapsed ? '수업 펼치기' : '수업 접기'}
             >
               <Glyph e={collapsed ? '▶' : '▼'} />
@@ -179,7 +179,7 @@ export default function DayLessons({ date }: { date: string }) {
             data-day-bell
             aria-expanded={bellOpen}
             onClick={() => setBellOpen((v) => !v)}
-            className={`whitespace-nowrap px-2 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+            className={`tap-area whitespace-nowrap px-2 py-1 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
               bell.enabled ? 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-200' : 'bg-white hover:bg-slate-50 text-slate-500 border-slate-200'
             }`}
             title="수업 종 - 교시 시작·끝 시각에 종을 울립니다"
@@ -199,7 +199,7 @@ export default function DayLessons({ date }: { date: string }) {
                 data-lessons-tool={d.id}
                 {...(isShortcutId(d.id) ? shortcutTarget(d.id) : {})}
                 onClick={() => openWindow(d.id, { date, ...(sid ? { sid } : {}) })}
-                className="whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                className="tap-area whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
               >
                 <Glyph e={d.icon} /> {d.title}
               </button>
@@ -211,7 +211,7 @@ export default function DayLessons({ date }: { date: string }) {
               {...shortcutTarget('drawStudent')}
               onClick={() => openSeating({ draw: true, classId: homeroomClass?.id })}
               title="발표자 뽑기 - 자리표가 뽑기 칸을 펴서 열립니다"
-              className="whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+              className="tap-area whitespace-nowrap px-2 py-1 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
             >
               <Glyph e="🎯" /> 뽑기
             </button>
@@ -230,7 +230,7 @@ export default function DayLessons({ date }: { date: string }) {
             data-lessons-settings
             {...shortcutTarget('timetable')}
             onClick={() => openWindow('timetable')}
-            className="order-2 @min-[600px]:order-3 shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="tap-area order-2 @min-[600px]:order-3 shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
             title="시간표 설정 (시간표·교시·학기·교사 유형)"
             aria-label="시간표 설정"
           >
@@ -307,7 +307,7 @@ export default function DayLessons({ date }: { date: string }) {
               >
                 <div className="flex gap-3 h-full items-stretch">
                   {/* ▲▼ - PC는 카드 왼쪽 여백 안에 떠서 자리를 차지하지 않는다 (P58-1 · 휴대폰은 글 앞 칸에 늘) */}
-                  <div className={`flex flex-col items-center justify-center gap-1 shrink-0 px-1 ${ORDER_ARROWS_EDGE}`}>
+                  <div className={`flex flex-col items-center justify-center gap-1 pointer-coarse:gap-1.5 shrink-0 px-1 ${ORDER_ARROWS_EDGE}`}>
                     <button
                       type="button"
                       data-lesson-up={n}
@@ -318,7 +318,7 @@ export default function DayLessons({ date }: { date: string }) {
                       disabled={n <= 1}
                       title="위 교시와 맞바꾸기"
                       aria-label="위 교시와 맞바꾸기"
-                      className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 pointer-fine:px-0 leading-none text-xs cursor-pointer"
+                      className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 pointer-fine:px-0 leading-none text-xs cursor-pointer"
                     >
                       <Glyph e="▲" />
                     </button>
@@ -332,7 +332,7 @@ export default function DayLessons({ date }: { date: string }) {
                       disabled={n >= view.cells.length}
                       title="아래 교시와 맞바꾸기"
                       aria-label="아래 교시와 맞바꾸기"
-                      className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 pointer-fine:px-0 leading-none text-xs cursor-pointer"
+                      className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 pointer-fine:px-0 leading-none text-xs cursor-pointer"
                     >
                       <Glyph e="▼" />
                     </button>

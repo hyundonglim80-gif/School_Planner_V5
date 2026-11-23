@@ -242,7 +242,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
             }}
             title={`메모 ${noteCount}건 보기`}
             aria-label={`메모 ${noteCount}건 보기`}
-            className="inline-flex items-center gap-px px-1 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-2xs font-bold leading-none hover:bg-amber-100 transition-colors shrink-0 cursor-pointer"
+            className="tap-area inline-flex items-center gap-px px-1 py-0.5 rounded border border-amber-200 bg-amber-50 text-amber-700 text-2xs font-bold leading-none hover:bg-amber-100 transition-colors shrink-0 cursor-pointer"
           >
             <span aria-hidden><Glyph e="📝" /></span>
             <span>{noteCount}</span>
@@ -271,7 +271,7 @@ export default function WeekDayCard(props: WeekDayCardProps) {
                   stop(e);
                   props.onAdd();
                 }}
-                className="ml-1 w-5 h-5 rounded hover:bg-slate-200 text-slate-500 hover:text-primary flex items-center justify-center transition-colors text-xs font-bold leading-none cursor-pointer"
+                className="tap-area ml-1 w-5 h-5 rounded hover:bg-slate-200 text-slate-500 hover:text-primary flex items-center justify-center transition-colors text-xs font-bold leading-none cursor-pointer"
                 title="이 날 새 일정 (오른쪽 칸)"
                 aria-label="이 날 새 일정"
               >

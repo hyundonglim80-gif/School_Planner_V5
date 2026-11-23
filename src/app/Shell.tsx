@@ -251,7 +251,7 @@ export default function Shell() {
           onClick={() => closeAllWindows()}
           title={`${sideLeft ? '왼쪽' : '오른쪽'} 칸 닫기 (ESC와 같음)`}
           aria-label={`${sideLeft ? '왼쪽' : '오른쪽'} 칸 닫기`}
-          className={`fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center bg-white/90 border border-slate-200 shadow-lg text-xs text-slate-500 hover:bg-primary/10 hover:w-7 transition-all cursor-pointer ${sideLeft ? 'rounded-r-xl border-l-0' : 'rounded-l-xl border-r-0'}`}
+          className={`tap-area-abs fixed top-1/2 -translate-y-1/2 z-[46] w-6 h-14 flex items-center justify-center bg-white/90 border border-slate-200 shadow-lg text-xs text-slate-500 hover:bg-primary/10 hover:w-7 transition-all cursor-pointer ${sideLeft ? 'rounded-r-xl border-l-0' : 'rounded-l-xl border-r-0'}`}
           style={sideLeft ? { left: RIGHT_COLUMN_CSS_WIDTH } : { right: RIGHT_COLUMN_CSS_WIDTH }}
         >
           <Glyph e={sideLeft ? '◀' : '▶'} />

@@ -157,7 +157,7 @@ export default function DayEvents({ date }: { date: YMD }) {
             type="button"
             data-event-collapse
             onClick={() => setCollapsed(!collapsed)}
-            className="text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
+            className="tap-area text-slate-500 hover:text-slate-700 text-xs px-1 py-0.5 rounded hover:bg-slate-100 transition-colors"
             title={collapsed ? '펼치기' : '접기'}
           >
             <Glyph e={collapsed ? '▶' : '▼'} />
@@ -177,7 +177,7 @@ export default function DayEvents({ date }: { date: YMD }) {
               onClick={openCreate}
               aria-label="일정 추가"
               title="일정 추가 (오른쪽 칸)"
-              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors shrink-0"
+              className="tap-area px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors shrink-0"
             >
               + 추가
             </button>
@@ -188,7 +188,7 @@ export default function DayEvents({ date }: { date: YMD }) {
           data-event-labels-settings
           {...shortcutTarget('labels')}
           onClick={() => openWindow('labels', { tab: 'event' })}
-          className="w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
+          className="tap-area w-7 h-7 flex items-center justify-center rounded-lg text-sm text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           title="일정 라벨 설정"
           aria-label="일정 라벨 설정"
         >
@@ -404,7 +404,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
         {overlay ? (
           <span aria-hidden className="w-4 shrink-0 sm:order-1" />
         ) : (
-          <div className={`flex items-center gap-0.5 shrink-0 sm:flex-col sm:order-1 sm:mt-0.5 ${ORDER_ARROWS}`}>
+          <div className={`flex items-center gap-0.5 pointer-coarse:gap-1.5 shrink-0 sm:flex-col sm:order-1 sm:mt-0.5 ${ORDER_ARROWS}`}>
             <button
               type="button"
               data-event-up
@@ -415,7 +415,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               disabled={first}
               title="위로"
               aria-label="위로"
-              className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs"
+              className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs"
             >
               <Glyph e="▲" />
             </button>
@@ -429,7 +429,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               disabled={last}
               title="아래로"
               aria-label="아래로"
-              className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs"
+              className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs"
             >
               <Glyph e="▼" />
             </button>
@@ -480,7 +480,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               mark={i === 0}
               onToggle={onToggle}
               forward={!!l?.props?.forward}
-              className="mr-1.5 text-xs px-2 py-0.5 rounded-lg"
+              className="tap-area mr-1.5 text-xs px-2 py-0.5 rounded-lg"
               data={{ 'data-event-chip': l?.id ?? '' }}
             />
           ))}
@@ -495,7 +495,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
                 onAlarm();
               }}
               title="클릭하여 알림 시간 변경"
-              className={`inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-lg border transition-colors cursor-pointer ${
+              className={`tap-area inline-flex items-center align-middle mr-1.5 text-xs font-bold px-1.5 py-0.5 rounded-lg border transition-colors cursor-pointer ${
                 ev.alarmDone ? 'text-slate-500 bg-slate-100 border-slate-200' : 'text-primary bg-blue-50 border-blue-200'
               }`}
             >

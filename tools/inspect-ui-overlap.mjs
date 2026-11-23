@@ -140,7 +140,7 @@ const SETS = [
 // ── 결과 모으기 ──
 const all = new Map(); // 종류|이름|상대 → { …, at: [상황] }
 let situations = 0;
-const KIND = { cover: '가림', overlap: '겹침', small: '작은 누를 곳', spill: '글 넘침', cut: '잘린 글', wide: '가로 넘침' };
+const KIND = { cover: '가림', overlap: '겹침', reach: '누르는 자리 겹침', small: '작은 누를 곳', spill: '글 넘침', cut: '잘린 글', wide: '가로 넘침' };
 const fmt = (f) => `${KIND[f.kind]} ${f.name}${f.other ? ` ⨯ ${f.other}` : ''} (${f.detail})`;
 const want = (name) => !ONLY || ONLY.test(name);
 
@@ -448,7 +448,7 @@ try {
     for (const a of f.at) g.at.add(a);
     groups.set(k, g);
   }
-  const order = ['wide', 'cover', 'overlap', 'cut', 'spill', 'small'];
+  const order = ['wide', 'cover', 'overlap', 'reach', 'cut', 'spill', 'small'];
   for (const g of [...groups.values()].sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind) || b.at.size - a.at.size)) {
     const at = [...g.at];
     console.log(`  · ${KIND[g.kind]} ${bare(g.name)}${g.other ? ` ⨯ ${bare(g.other)}` : ''} ×${g.n} (보기 ${g.name} ${g.detail}) - ${at.length}상황: ${at.slice(0, 5).join(', ')}${at.length > 5 ? ' …' : ''}`);

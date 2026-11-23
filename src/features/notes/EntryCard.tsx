@@ -126,12 +126,12 @@ export default function EntryCard(props: EntryCardProps) {
                 stop(e);
                 onToggleCollapse();
               }}
-              className="text-slate-500 hover:text-primary transition-colors p-0.5 text-xs cursor-pointer shrink-0"
+              className="tap-area text-slate-500 hover:text-primary transition-colors p-0.5 text-xs cursor-pointer shrink-0"
               title={collapsed ? '펼치기' : '접기'}
             >
               <Glyph e={collapsed ? '▶' : '▼'} />
             </button>
-            <div className={`flex flex-col items-center gap-0.5 shrink-0 px-0.5 ${ORDER_ARROWS}`}>
+            <div className={`flex flex-col items-center gap-0.5 pointer-coarse:gap-1.5 shrink-0 px-0.5 ${ORDER_ARROWS}`}>
               <button
                 type="button"
                 data-entry-up
@@ -142,7 +142,7 @@ export default function EntryCard(props: EntryCardProps) {
                 disabled={!onMoveUp}
                 title="앞으로"
                 aria-label="앞으로"
-                className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
+                className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
               >
                 <Glyph e="▲" />
               </button>
@@ -156,7 +156,7 @@ export default function EntryCard(props: EntryCardProps) {
                 disabled={!onMoveDown}
                 title="뒤로"
                 aria-label="뒤로"
-                className="text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
+                className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
               >
                 <Glyph e="▼" />
               </button>
@@ -170,7 +170,7 @@ export default function EntryCard(props: EntryCardProps) {
                 props.onToggleFavorite();
               }}
               aria-pressed={favorite}
-              className={`p-0.5 text-sm leading-none transition-colors cursor-pointer shrink-0 ${
+              className={`tap-area p-0.5 text-sm leading-none transition-colors cursor-pointer shrink-0 ${
                 favorite ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'
               }`}
               title={favorite ? '즐겨찾기 풀기' : '즐겨찾기'}
@@ -189,7 +189,7 @@ export default function EntryCard(props: EntryCardProps) {
                 hint={l ? (pathOf?.(l.id) ?? l.name) : undefined}
                 truncate
                 // 줄어도 된다(P57-2 - shrink-0이라 휴대폰 두 줄 카드에서 접기·☆와 한 줄인 칩이 카드 밖으로 54px 삐졌다)
-                className="px-2 py-0.5 rounded-lg text-xs min-w-0 max-w-[10rem]"
+                className="tap-area px-2 py-0.5 rounded-lg text-xs min-w-0 max-w-[10rem]"
                 data={{ 'data-entry-chip': l?.id ?? '' }}
               />
             ))}
@@ -212,7 +212,7 @@ export default function EntryCard(props: EntryCardProps) {
                 props.onOpenDate?.(d);
               }}
               title={`${shortDateLabel(d)} 하루 화면으로`}
-              className="px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
+              className="tap-area px-1.5 py-0.5 rounded-lg text-2xs font-bold bg-sky-50 border border-sky-200 text-sky-800 hover:bg-sky-100 cursor-pointer whitespace-nowrap"
             >
               <Glyph e="📅" /> {shortDateLabel(d)}
             </button>

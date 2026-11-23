@@ -276,7 +276,7 @@ export default function YearScreen({ printAt }: { printAt?: string }) {
               aria-pressed={view === v}
               onClick={() => setYearView(v)}
               title={hint}
-              className={`px-2.5 py-1 text-xs rounded-lg font-bold whitespace-nowrap transition-all cursor-pointer ${view === v ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
+              className={`tap-area px-2.5 py-1 text-xs rounded-lg font-bold whitespace-nowrap transition-all cursor-pointer ${view === v ? 'bg-white text-primary shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}
             >
               {glyphText(label)}
             </button>
