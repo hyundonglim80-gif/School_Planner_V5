@@ -142,6 +142,7 @@
 - **창 목록(`app/windowList`)이 부르는 `features/*/open.ts`는 `data/session`·`select`를 import하지 않는다** - windowConventions.test가 창 목록을 읽어 진짜 Firebase가 뜨고 CI에서 가끔 '처리하지 않은 오류'(P7-2 알림장 - 단축키는 `shortcuts.ts`로 나눴다).
 - **단위 테스트가 `data/select`·`session`·`space`를 부르면 `vi.mock('…/data/firebase')`** - 진짜 Firebase 앱이 뜨면 시험이 끝난 뒤 IndexedDB를 열다
   '처리하지 않은 오류'가 가끔 남는다(P3-1 - 셋에 한 번). vitest가 'originated in <파일>'로 그 파일을 알려 준다. 끝에 `Errors`가 0인지도 본다.
+  **'originated in'은 그때 돌던 파일일 뿐 - 진짜 Firebase를 띄운 파일은 따로 찾는다**(11-23 PR #198 - EventAlarms 차례에 'deleteDatabase' 오류, 범인은 환경설정 부품 시험 둘(optionShortcuts → prefs → settingsSync → data/firebase)): `data/firebase.ts` 맨 위에 잠깐 `void import('node:fs').then((fs) => fs.appendFileSync(<파일>, String(globalThis.__vitest_worker__?.filepath) + '\\n'))`를 넣고 전체를 돌리면 띄운 파일이 적힌다(console.log는 보이지 않는다) - 0이 될 때까지 흉내.
 - **IndexedDB(idb)는 트랜잭션을 열어 일과 `tx.done`을 함께 기다린다**(P3-2) - `db.get`·`db.put` 줄임은 읽기 트랜잭션의 done을 아무도 받지 않아, 트랜잭션이 끊기면 '처리하지 않은 오류'(AbortError)가 된다.
   **`openDB`의 upgrade도 넷째 인자 `tx`의 `done`을 받아 둔다**(P41-1 - idb가 판 올리기 트랜잭션을 감싸며 done 약속을 따로 만들어, 그 트랜잭션이 끊기면 여는 약속과 별도로 '처리하지 않은 오류'가 되어 CI가 멈췄다. 새 IndexedDB를 열면 `void tx.done.catch(() => {})`).
   쓰던 글 보관을 여는 칸을 그리는 시험 파일은 `afterAll`에서 `wipeDrafts`를 기다린다 - 마지막 시험이 연 DB가 환경이 걷힌 뒤 열리면 'IDBRequest is not defined'(P4-2).
