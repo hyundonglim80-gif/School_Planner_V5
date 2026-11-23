@@ -125,8 +125,10 @@ describe('범위 복사 (rangeTsv · rangeHtml)', () => {
     // 원 = #,##0"원" (따옴표는 엑셀 HTML처럼 \0022), % = 보이는 소수 자리만큼
     expect(html).toContain('mso-number-format:&quot;#,##0\\0022원\\0022&quot;');
     expect(html).toContain('mso-number-format:&quot;0.0%&quot;');
-    // 글 칸('항목')에는 x:num 없음
+    // 글 칸('항목')에는 x:num 없이 x:str · 맨 앞에 엑셀 이름표 (없으면 진짜 엑셀이 x:num을 버려 '12,000원'이 글이 됐다 - 11-23 PC)
     expect(html).not.toMatch(/x:num="[^"]*">항목/);
+    expect(html).toMatch(/<td x:str[^>]*>항목/);
+    expect(html.startsWith('<html xmlns:x="urn:schemas-microsoft-com:office:excel">')).toBe(true);
     const back = parseClipboardTable(html) as EntryTable;
     expect(values(back)).toEqual([
       ['항목', '금액', '비율'],
@@ -139,6 +141,30 @@ describe('범위 복사 (rangeTsv · rangeHtml)', () => {
     expect(styleOf(back, at(back, 'A3'))?.ha).toBe('center');
     // 수 칸은 오른쪽 (x:num - 엑셀 '일반' 맞춤)
     expect(styleOf(back, at(back, 'B2'))?.ha).toBe('right');
+  });
+
+  it('서식 없는 칸도 엑셀이 같은 모양으로 받게: 보이는 글 꼴대로 표시 형식 · 글은 x:str · 모르는 꼴은 엑셀이 글을 읽게', () => {
+    const t = grid(['95', '1,234', '3.10', '50%', '12,000원'], ['₩8,000', '5-2', '007', '1/2', '']);
+    const html = rangeHtml(t, R('A1:E2'));
+    const td = (v: string) => new RegExp(`<td([^>]*)>${v}</td>`).exec(html)?.[1] ?? null;
+    // 꾸밈 없는 수 = 일반 (표시 형식 없음)
+    expect(td('95')).toBe(' x:num="95"');
+    expect(td('1,234')).toBe(' x:num="1234" style="mso-number-format:&quot;#,##0&quot;"');
+    expect(td('3.10')).toBe(' x:num="3.1" style="mso-number-format:&quot;0.00&quot;"');
+    expect(td('50%')).toBe(' x:num="0.5" style="mso-number-format:&quot;0%&quot;"');
+    expect(td('12,000원')).toBe(' x:num="12000" style="mso-number-format:&quot;#,##0\\0022원\\0022&quot;"');
+    // ₩·괄호 꼴은 표시 형식을 만들지 않고 엑셀이 글을 읽게 (x:num이 있으면 엑셀은 그 수를 '일반'으로 보여 ₩가 빠진다)
+    expect(td('₩8,000')).toBe('');
+    // 번호·반 이름·분수 꼴 글 = x:str (엑셀이 5-2 → 5월 2일, 007 → 7로 바꾸지 않게) · 빈 칸은 아무것도
+    expect(td('5-2')).toBe(' x:str');
+    expect(td('007')).toBe(' x:str');
+    expect(td('1/2')).toBe(' x:str');
+    expect(html).toContain('<td></td>');
+    // V5로 되읽어도 보이는 값 그대로
+    expect(values(parseClipboardTable(html) as EntryTable)).toEqual([
+      ['95', '1,234', '3.10', '50%', '12,000원'],
+      ['₩8,000', '5-2', '007', '1/2', ''],
+    ]);
   });
 
   it('병합·줄 바꿈·앞 빈칸·열 너비·줄 높이째 · 범위 밖 칸은 빼고', () => {

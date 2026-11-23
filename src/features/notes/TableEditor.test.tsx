@@ -538,7 +538,7 @@ describe('고치는 표 - 엑셀과 오가기 (P48-5)', () => {
     const c = clip();
     expect(fireEvent.copy(input(), { clipboardData: c })).toBe(false);
     expect(c.store['text/plain']).toBe('0,0\t0,1\n1,0\t1,1');
-    expect(c.store['text/html']).toContain('<td>1,1</td>');
+    expect(c.store['text/html']).toContain('<td x:str>1,1</td>');
     const x = clip();
     act(() => void fireEvent.cut(input(), { clipboardData: x }));
     expect(x.store['text/plain']).toBe('0,0\t0,1\n1,0\t1,1');
