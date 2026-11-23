@@ -5,6 +5,7 @@ import { STARTUP_SCOPES, useNav } from './nav';
 import { useLayoutPrefs } from './layoutPrefs';
 import { useShortcutOverrides } from './keys';
 import { startPrefsSync, useCommonSettings } from './prefs';
+import { SCREEN_DEFAULTS, useScreenPrefs } from './screenPrefs';
 
 // 서버 없이: 맞추기가 받은 문서 이름과 이음(binding)만 모은다
 const started: Array<{ docId: string; binding: SettingsBinding }> = [];
@@ -34,6 +35,7 @@ function resetStores() {
   useNav.setState({ scope: 'day', showWeekend: true, showEvents: true, showClass: true, semesterFilter: 'all', semesterFilterAt: '', enableScrollNav: false, startupScope: 'last' });
   useShortcutOverrides.setState({ overrides: {}, tabs: {} });
   useCommonSettings.setState({ forwardDays: 14 });
+  useScreenPrefs.setState({ ...SCREEN_DEFAULTS });
 }
 
 beforeEach(() => {
@@ -123,6 +125,21 @@ describe('설정 문서 나누기', () => {
     expect(useLayoutPrefs.getState().sideAt).toBe('left');
     binding('pc').apply({ sideAt: 'top' });
     expect(useLayoutPrefs.getState().sideAt).toBe('right');
+  });
+
+  it('화면 배치(P59-1): 바꾼 것만 적고 받으면 입힌다 · 모르는 값은 기본(P59 전 모습) · ▲▼·쓴 시각은 html 표시로', () => {
+    startPrefsSync('u1');
+    expect(binding('pc').local()).toEqual({});
+    useScreenPrefs.setState({ phoneCols: 1, orderArrows: 'toggle' });
+    expect(binding('pc').local()).toEqual({ phoneCols: 1, orderArrows: 'toggle' });
+    expect(document.documentElement.dataset.orderArrows).toBe('toggle');
+    binding('pc').apply({ memoNavAt: 'top', cardTime: false, phoneCols: 3 });
+    expect(useScreenPrefs.getState()).toMatchObject({ ...SCREEN_DEFAULTS, memoNavAt: 'top', cardTime: false });
+    expect(document.documentElement.dataset.orderArrows).toBeUndefined();
+    expect(document.documentElement.dataset.cardTime).toBe('off');
+    binding('pc').apply({});
+    expect(useScreenPrefs.getState()).toMatchObject(SCREEN_DEFAULTS);
+    expect(document.documentElement.dataset.cardTime).toBeUndefined();
   });
 
   it('옛 문서의 글자 크기 다섯 단계(fontScale)는 모든 화면에 같은 %로 옮겨 읽는다 (메모 요청 #145)', () => {

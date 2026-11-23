@@ -213,7 +213,7 @@ try {
   await serverUntil(serverPc, (d) => !('fontSizes' in d));
 
   r.section('시작 화면');
-  await a.page.click(sel('settings-tab', 'view'));
+  await a.page.click(sel('settings-tab', 'layout')); // 시작 화면·창 위치·화면 표시는 '화면 배치' 탭 (P59-1)
   await a.page.click(sel('choice', 'startupScope:memo'));
   await serverUntil(serverPc, (d) => d.startupScope === 'memo');
   await a.page.goto(SITE);

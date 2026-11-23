@@ -95,7 +95,7 @@ try {
   r.section('한눈에 화면 - 남은 폭 안에');
   await page.goto(page.url().replace(/#.*/, `#/board/${DAY}`));
   await page.locator('[data-screen="board"]').waitFor({ timeout: 8000 });
-  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'view' }));
+  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'layout' })); // 시작 화면·창 위치·화면 표시는 '화면 배치' 탭 (P59-1)
   await page.locator(sel('settings-section', 'popupStyle')).waitFor({ timeout: 8000 });
   await page.waitForTimeout(500);
   const board = await box(page.locator('[data-screen="board"]'));

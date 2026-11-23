@@ -49,6 +49,7 @@ import { prunePressTargets, readPressTargets, type PressTargets } from '../domai
 import { isKnownTabShortcut } from './tabShortcuts';
 import { useNav, type SemesterFilter, type StartupScope, STARTUP_SCOPES } from './nav';
 import { detectDeviceKind, type DeviceKind } from './deviceKind';
+import { SCREEN_DEFAULTS, SCREEN_KEYS, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols, type ScreenPrefs } from './screenPrefs';
 
 // PC인가 휴대폰인가는 app/deviceKind에 (창 목록도 본다)
 export { detectDeviceKind, type DeviceKind };
@@ -79,6 +80,11 @@ export interface DevicePrefs {
   /** 학기 칩을 고른 때의 학기 열쇠 (P26-3 - 학기가 바뀌면 따라간다) */
   semesterFilterAt: string;
   enableScrollNav: boolean;
+  /** 화면 배치 (P59 - app/screenPrefs, 환경설정 '화면 배치' 탭). 기본값 = P59 전 모습 */
+  memoNavAt: MemoNavAt;
+  phoneCols: PhoneCols;
+  orderArrows: OrderArrowsMode;
+  cardTime: boolean;
 }
 
 const overridesField: SettingField<ShortcutOverrides> = { def: {}, read: readShortcutOverrides };
@@ -101,6 +107,10 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   semesterFilter: oneOfField<SemesterFilter>('all', ['all', 1, 2]),
   semesterFilterAt: customField<string>('', (v) => (typeof v === 'string' && /^(\d{4}-[12])?$/.test(v) ? v : undefined)),
   enableScrollNav: boolField(false),
+  memoNavAt: oneOfField<MemoNavAt>(SCREEN_DEFAULTS.memoNavAt, ['side', 'top']),
+  phoneCols: oneOfField<PhoneCols>(SCREEN_DEFAULTS.phoneCols, [2, 1]),
+  orderArrows: oneOfField<OrderArrowsMode>(SCREEN_DEFAULTS.orderArrows, ['always', 'toggle']),
+  cardTime: boolField(SCREEN_DEFAULTS.cardTime),
 };
 
 /** 지금 이 기기의 기기 칸 값 (초기화 설정 묶음도 여기서 모은다 - app/settingsSnapshot) */
@@ -122,8 +132,11 @@ export function currentDevicePrefs(): DevicePrefs {
     semesterFilter,
     semesterFilterAt,
     enableScrollNav,
+    ...pickScreen(useScreenPrefs.getState()),
   };
 }
+
+const pickScreen = (o: ScreenPrefs): ScreenPrefs => Object.fromEntries(SCREEN_KEYS.map((k) => [k, o[k]])) as unknown as ScreenPrefs;
 
 /** 기기 칸 값을 이 기기 store에 입힌다 (바뀐 것만 - 초기화도 같은 길로 입혀 계정 맞추기가 1초 뒤 올린다) */
 export function applyDevicePrefs(p: DevicePrefs) {
@@ -139,6 +152,8 @@ export function applyDevicePrefs(p: DevicePrefs) {
   const navKeys = ['startupScope', 'showWeekend', 'showEvents', 'showClass', 'semesterFilter', 'semesterFilterAt', 'enableScrollNav'] as const;
   const navChanges = Object.fromEntries(navKeys.filter((k) => p[k] !== now[k]).map((k) => [k, p[k]]));
   if (Object.keys(navChanges).length > 0) useNav.setState(navChanges);
+  const screenChanges = Object.fromEntries(SCREEN_KEYS.filter((k) => p[k] !== now[k]).map((k) => [k, p[k]]));
+  if (Object.keys(screenChanges).length > 0) useScreenPrefs.setState(screenChanges);
 }
 
 /**
@@ -159,7 +174,7 @@ const deviceBinding: SettingsBinding = {
   local: () => sparseSettings(DEVICE_PREFS, currentDevicePrefs()),
   apply: (data) => applyDevicePrefs(readDevicePrefs(data)),
   subscribe: (onChange) => {
-    const subs = [useLayoutPrefs.subscribe(onChange), useNav.subscribe(onChange), useShortcutOverrides.subscribe(onChange)];
+    const subs = [useLayoutPrefs.subscribe(onChange), useNav.subscribe(onChange), useShortcutOverrides.subscribe(onChange), useScreenPrefs.subscribe(onChange)];
     return () => subs.forEach((u) => u());
   },
 };

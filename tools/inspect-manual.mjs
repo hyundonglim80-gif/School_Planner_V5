@@ -217,7 +217,7 @@ try {
 
   await topic('popups', async () => {
     await win('settings');
-    await q(sel('settings-tab', 'view')).click();
+    await q(sel('settings-tab', 'layout')).click(); // 시작 화면·창 위치·화면 표시는 '화면 배치' 탭 (P59-1)
     r.check(
       (await waitFor(page.locator(sel('choice', 'popupStyle:popup')), 4000)) &&
         (await count(sel('choice', 'popupStyle:left'))) === 1 &&

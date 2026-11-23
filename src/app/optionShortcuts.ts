@@ -23,6 +23,7 @@ import { setDecor } from './decor';
 import { readContrast, readDim, setContrast, setCvd, setDim } from './viewAids';
 import { showToast } from './toast';
 import { useShortcutOverrides } from './keys';
+import { setScreenPref, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols } from './screenPrefs';
 
 type Value = string | number;
 export interface OptionChoice<T extends Value = Value> {
@@ -63,6 +64,20 @@ export const POPUP_STYLE_OPTIONS: Record<'pc' | 'mobile', OptionChoice<WindowPla
 };
 
 export const STARTUP_OPTIONS: OptionChoice<StartupScope>[] = [{ value: 'last', label: '마지막에 보던 화면' }, ...SCREENS.map((s) => ({ value: s.id, label: s.label }))];
+
+// 화면 배치 (P59 - 휴대폰 손가락 화면에서만 듣는다, 첫 값 = 기본 = P59 전 모습)
+export const MEMO_NAV_OPTIONS: OptionChoice<MemoNavAt>[] = [
+  { value: 'side', label: '왼쪽 칸' },
+  { value: 'top', label: '위 칩 줄' },
+];
+export const PHONE_COLS_OPTIONS: OptionChoice<PhoneCols>[] = [
+  { value: 2, label: '2열' },
+  { value: 1, label: '1열' },
+];
+export const ORDER_ARROWS_OPTIONS: OptionChoice<OrderArrowsMode>[] = [
+  { value: 'always', label: '늘 보이기' },
+  { value: 'toggle', label: '⇅ 누를 때만' },
+];
 
 export const INTERVAL_OPTIONS: OptionChoice<number>[] = INTERVAL_CHOICES.map((d) => ({ value: d, label: `${d}일마다` }));
 export const KEEP_OPTIONS: OptionChoice<number>[] = KEEP_CHOICES.map((n) => ({ value: n, label: `최근 ${n}개` }));
@@ -127,6 +142,31 @@ const OPTIONS: Record<string, OptionDef> = {
     get: () => windowPlace(useLayoutPrefs.getState().popupStyle, useLayoutPrefs.getState().sideAt),
     set: (v) => setWindowPlace(v as WindowPlace),
   },
+  memoNavAt: {
+    kind: 'choice',
+    title: '메모 화면 라벨 칸',
+    def: 'side',
+    values: () => MEMO_NAV_OPTIONS,
+    get: () => useScreenPrefs.getState().memoNavAt,
+    set: (v) => setScreenPref('memoNavAt', v as MemoNavAt),
+  },
+  phoneCols: {
+    kind: 'choice',
+    title: '카드 열',
+    def: 2,
+    values: () => PHONE_COLS_OPTIONS,
+    get: () => useScreenPrefs.getState().phoneCols,
+    set: (v) => setScreenPref('phoneCols', Number(v) === 1 ? 1 : 2),
+  },
+  orderArrows: {
+    kind: 'choice',
+    title: '카드 차례 단추',
+    def: 'always',
+    values: () => ORDER_ARROWS_OPTIONS,
+    get: () => useScreenPrefs.getState().orderArrows,
+    set: (v) => setScreenPref('orderArrows', v as OrderArrowsMode),
+  },
+  cardTime: { kind: 'toggle', title: '메모 카드 쓴 시각', get: () => useScreenPrefs.getState().cardTime, set: (on) => setScreenPref('cardTime', on) },
   startupScope: {
     kind: 'choice',
     title: '시작 화면',

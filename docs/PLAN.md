@@ -5280,7 +5280,8 @@ CLAUDE.md 5장 '하루 화면'(수업 칸 단추 '마우스를 올렸을 때만(
 
 ### P59-1. 휴대폰 메모·카드 + 환경설정 '화면 배치' 탭
 **먼저 읽을 것**: 이 절 · 5장 'P59' · `app/prefs`(DEVICE_PREFS·currentDevicePrefs·applyDevicePrefs) · `app/layoutPrefs` · `domain/settingsSnapshot` · `app/optionShortcuts` · `features/settings/SettingsWindow`·`ViewTab`·`parts` · `features/memo/MemoScreen` · `ui/cardTools` · CLAUDE.md 5장 '하루 화면'·'메모 화면'.
-- [ ] ■1 바탕: 새 기기 칸 묶음(`app/screenPrefs` - 계정 기기 칸 + 초기화·설정 묶음·환경설정 값 키) · 환경설정 새 탭 '화면 배치'(휴대폰 구역은 휴대폰에서만) · 부품 시험
+- [x] ■1 바탕: 새 기기 칸 묶음(`app/screenPrefs` - 계정 기기 칸 + 초기화·설정 묶음·환경설정 값 키) · 환경설정 새 탭 '화면 배치'(휴대폰 구역은 휴대폰에서만) · 부품 시험
+  → **11-23 ■1 끝**: `app/screenPrefs`(sp5-screen + html data-order-arrows·data-card-time) · DEVICE_PREFS 넷·초기화 묶음·값 단축키 넷(`opt.memoNavAt.top` 등) · 새 탭 `layout`(`LayoutTab` - 화면 표시·창 위치·시작 화면을 보기 탭에서 옮김 + 휴대폰 카드·메모 구역) · 탭 글 `px-2 sm:px-3`(휴대폰 360에 여섯) · 점검 다섯(board·manual·settings·shortcut-record·side-left) 탭 이름 · 설명서(settings·start) · 부품 시험 471 통과.
 - [ ] ■2 휴대폰 메모 화면 라벨 칸 '왼쪽 칸 / 위 칩 줄' · 휴대폰 카드 열 '2열 / 1열'(하루 일정·메모 칸, 메모 화면)
 - [ ] ■3 휴대폰 카드 ▲▼ '늘 / ⇅ 누를 때만'(칸 머리 ⇅) · 휴대폰 메모 카드 쓴 시각 '보이기 / 숨기기'
 - [ ] ■4 닿는 크롬 점검(settings·memo·notes·events·lessons·mobile 해당 묶음·ui-overlap 휴대폰) · 설명서(환경설정·메모 화면 주제) · CLAUDE.md 5장 · MAP · 커밋

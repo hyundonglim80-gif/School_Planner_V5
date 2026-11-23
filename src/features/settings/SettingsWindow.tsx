@@ -1,4 +1,4 @@
-// ⚙️ 환경설정 창 (MENU 3-6, V4 components/SettingsModal.tsx). 탭: 보기 · 알림 · 학교 · 단축키 · 앱 (+ 관리자 - 관리자 계정에만, P14-2 '개발자' → P33-1). 가져오기는 백업 창 탭(P8-3).
+// ⚙️ 환경설정 창 (MENU 3-6, V4 components/SettingsModal.tsx). 탭: 보기 · 화면 배치(P59-1) · 알림 · 학교 · 단축키 · 앱 (+ 관리자 - 관리자 계정에만, P14-2 '개발자' → P33-1). 가져오기는 백업 창 탭(P8-3).
 // 그 기능이 V5로 옮겨 오기 전에는 탭·칸을 숨긴다(빈 탭을 보이지 않는다) - 기능을 옮기는 세션이 아래 표의 ready를 켜고 칸을 더한다.
 // 계정에 PC·휴대폰 따로 올라가는 값이 대부분이다(app/prefs). 휴지통 자동 비우기·드라이브 백업·교시 이름은 그 기능 창 안으로 옮겼다(MENU 3-7).
 import { useState } from 'react';
@@ -13,12 +13,14 @@ import ShortcutsTab from './ShortcutsTab';
 import { requestShortcutRecord } from '../../app/shortcutRecord';
 import type { AnyShortcutId } from '../../domain/shortcuts';
 import ViewTab from './ViewTab';
+import LayoutTab from './LayoutTab';
 import { useTabTarget } from '../../app/keys';
 
-export type SettingsTabId = 'view' | 'notify' | 'school' | 'shortcuts' | 'app' | 'dev';
+export type SettingsTabId = 'view' | 'layout' | 'notify' | 'school' | 'shortcuts' | 'app' | 'dev';
 
 const TABS: ReadonlyArray<{ id: SettingsTabId; label: string; ready: boolean; dev?: true }> = [
   { id: 'view', label: '보기', ready: true },
+  { id: 'layout', label: '화면 배치', ready: true },
   // 일정 알림(앱을 닫아도) - P8-2 서버 푸시
   { id: 'notify', label: '알림', ready: true },
   // 이월 기간(P3-3) · 교사 유형 → 시간표 창 P6-1 · 우리 학교 P6-3
@@ -68,7 +70,7 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
               {...tabTarget('settings', t.id)}
               aria-selected={tab === t.id}
               onClick={() => setTab(t.id)}
-              className={`px-3 py-2 -mb-px text-sm font-bold border-b-2 transition-colors cursor-pointer ${
+              className={`px-2 sm:px-3 py-2 -mb-px text-sm font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
                 tab === t.id ? 'border-primary text-primary' : 'border-transparent text-slate-500 hover:text-slate-700'
               }`}
             >
@@ -79,6 +81,9 @@ export default function SettingsWindow({ params, close, raise }: WindowProps<{ t
         {/* 탭을 바꿔도 펴 둔 것·스크롤이 남게 숨기기만 한다 */}
         <div role="tabpanel" data-settings-panel="view" hidden={tab !== 'view'}>
           <ViewTab />
+        </div>
+        <div role="tabpanel" data-settings-panel="layout" hidden={tab !== 'layout'}>
+          <LayoutTab />
         </div>
         <div role="tabpanel" data-settings-panel="notify" hidden={tab !== 'notify'}>
           <NotifyTab />

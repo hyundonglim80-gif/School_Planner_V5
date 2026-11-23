@@ -236,7 +236,7 @@ try {
   await page.click(sel('menu-item', 'settings'));
   r.check(await waitFor(page.locator(sel('settings-tab', 'view'))), '팝업창 모드여도 고르는 동안 환경설정은 큰 창 안에');
   r.check(page.context().pages().length === pagesBefore, `브라우저 팝업창은 뜨지 않는다 (창 ${page.context().pages().length}개)`);
-  await page.click(sel('settings-tab', 'view'));
+  await page.click(sel('settings-tab', 'layout')); // 시작 화면·창 위치·화면 표시는 '화면 배치' 탭 (P59-1)
   const choiceOutline = await page.locator(sel('choice', 'popupStyle:popup')).evaluate((el) => getComputedStyle(el).outlineStyle);
   r.check(choiceOutline === 'dashed', `값 단추에 점선 테두리 (팝업창 = ${choiceOutline})`);
   const toggleOutline = await page.locator(sel('settings-toggle', 'contrast')).evaluate((el) => getComputedStyle(el.closest('label')).outlineStyle);
@@ -271,7 +271,7 @@ try {
   await page.keyboard.press('Control+Alt+KeyP');
   r.check(await waitFor(async () => (await styleNow()) === 'side'), '다시 누르면 = 앞 값(오른쪽 칸)으로');
   r.check(await waitFor(async () => (await lastToast()).includes('⚙️ 창 위치: 오른쪽 칸')), `안내 '⚙️ 창 위치: 오른쪽 칸' (${await lastToast()})`);
-  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'view' }));
+  await page.evaluate(() => window.sp5.openWindow('settings', { tab: 'layout' }));
   const optTip = await page.getAttribute(sel('choice', 'popupStyle:popup'), 'title');
   r.check(optTip?.includes('Ctrl + Alt + P'), `팝업창 단추 툴팁에 키 (${optTip})`);
   await page.evaluate(() => window.sp5.openWindow('help', { topic: 'shortcuts' }));
