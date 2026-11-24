@@ -181,16 +181,15 @@ describe('하루 기록 칸', () => {
     expect(opened.calls).toEqual([]);
   });
 
-  it('카드 누르기 = 메모 보기 칸, ✏️ = 곧바로 수정 칸 (11-09)', () => {
+  it('카드 누르기 = 메모 보기 칸 (11-09) · 카드에 ✏️ 없음 (#200 - 보기 칸 바닥 ✏️ 수정으로)', () => {
     seed();
     render(<DayJournal date={DAY} />);
     opened.calls = [];
     fireEvent.click(q('[data-entry-card="a"]')!);
-    fireEvent.click(q('[data-entry-card="b"] [data-entry-edit]')!);
-    expect(opened.calls).toEqual([
-      { sid: SID, date: DAY, id: 'a' },
-      { sid: SID, date: DAY, id: 'b', edit: true },
-    ]);
+    expect(opened.calls).toEqual([{ sid: SID, date: DAY, id: 'a' }]);
+    expect(q('[data-entry-edit]')).toBeNull();
+    // 마우스를 올리면 뜨는 묶음에는 지우기만 남는다
+    expect(q('[data-entry-card="b"] [data-entry-tools] [data-entry-delete]')).not.toBeNull();
   });
 
   it('체크 줄 누르기 = 그 줄의 체크 글자만 바꾼 글', async () => {

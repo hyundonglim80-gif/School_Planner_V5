@@ -97,9 +97,8 @@ try {
   );
   const ask = page.locator(sel('note-claude-ask'));
   const openPanel = async () => {
-    // 카드 ✏️ = 곧바로 수정 칸 (11-09 - 카드 누르기는 보기 칸, 글을 고치는 묶음이라 수정 칸으로)
-    await page.locator(sel('entry-card', id)).hover();
-    await page.locator(sel('entry-card', id)).locator(sel('entry-edit')).click();
+    // 곧바로 수정 칸 (11-09 - 카드 누르기는 보기 칸, 글을 고치는 묶음이라 수정 칸으로 · 카드 ✏️는 #200에 뺐다 - 검색·연결 창 ✏️와 같은 길)
+    await page.evaluate(([s, i]) => window.sp5.openWindow('note', { sid: s, date: null, id: i, edit: true }), [sid, id]);
     await waitFor(page.locator(`${sel('note-panel', 'edit')}[data-note-mode="edit"]`), 8000);
   };
   await openPanel();

@@ -113,7 +113,8 @@ export default function LabelFilterChips({ tree, filter, onChange, countOf, row 
         key={id}
         chipKey={id}
         text={l?.name ?? ''}
-        title={labelPath(id, tree.parents, nameOf)}
+        // 라벨 이름(상위 › 하위) + 고르는 법 - PC는 칩 아래 안내 줄 대신 마우스를 올리면 (#200)
+        title={`${labelPath(id, tree.parents, nameOf)}\n${FILTER_HELP}`}
         count={countOf(id)}
         selected={isSelected(id)}
         included={extra.included}
@@ -162,7 +163,7 @@ export default function LabelFilterChips({ tree, filter, onChange, countOf, row 
                     <FilterChip
                       chipKey={`기타:${r.id}`}
                       text="기타"
-                      title={`하위 라벨 없이 ${name}만 붙은 것`}
+                      title={`하위 라벨 없이 ${name}만 붙은 것\n${FILTER_HELP}`}
                       count={countOf(other)}
                       selected={isSelected(other)}
                       included={parentOn}
@@ -182,14 +183,14 @@ export default function LabelFilterChips({ tree, filter, onChange, countOf, row 
   );
 }
 
-/** 숨은 조작 안내 (V4 UX-AUDIT H4 - 키 조합은 글로 박지 않는다는 규칙의 예외: 마우스 누르기 방법이라 단축키가 아니다) */
+/** 숨은 조작 안내 (V4 UX-AUDIT H4 - 키 조합은 글로 박지 않는다는 규칙의 예외: 마우스 누르기 방법이라 단축키가 아니다) - 라벨 칩에 마우스를 올리면 이름 아래 줄에 (#200) */
 export const FILTER_HELP = '누르기: 그 라벨 하나만 · Ctrl+누르기(휴대폰은 길게 누르기): 더하기·빼기 · Shift+누르기: 범위 · ESC: 모두 떼기 · 상위를 고르면 하위도 함께 (▸로 펴서 \'기타\' = 상위만)';
-/** 칩 아래(옆)에 보이는 짧은 안내 - 마우스를 올리면 FILTER_HELP 전부 (P11-1 사용자 의견 - 옛 '?'는 뜻을 몰랐다) */
+/** 칩 아래(옆)에 보이던 짧은 안내 (P11-1 사용자 의견 - 옛 '?'는 뜻을 몰랐다) - 11-24 메모 요청 #200부터 PC(마우스)는 늘 적지 않고 칩에 마우스를 올리면 FILTER_HELP */
 export const FILTER_HINT = 'Ctrl·Shift+누르기 = 여러 개';
 /** 손가락 화면의 같은 안내 (P57-2 ■4 - 휴대폰에는 Ctrl·Shift가 없다) */
 export const FILTER_HINT_TOUCH = '길게 누르기 = 여러 개';
 
-/** 여러 개 고르기 안내 글 - 마우스 화면은 FILTER_HINT, 손가락 화면(pointer: coarse)은 FILTER_HINT_TOUCH */
+/** 여러 개 고르기 안내 글 - 마우스 화면은 FILTER_HINT(감춘 채 - 부르는 쪽 `hidden pointer-coarse:…`, 칩 title이 대신), 손가락 화면(pointer: coarse)은 FILTER_HINT_TOUCH */
 export function FilterHint() {
   return (
     <>

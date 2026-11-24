@@ -55,11 +55,11 @@ try {
   }
   const { page, errors, dialogs } = await newPage(browser);
   await open(page, `#/day/${DAY}`);
-  /** 카드의 ✏️로 그 메모의 수정 칸을 연다 - 앞 칸이 닫히는 사이에 누르면 빠질 때가 있어 뜰 때까지 다시 */
+  /** 그 메모의 수정 칸을 곧바로 연다(카드 ✏️는 #200에 뺐다 - 카드 누르기는 보기 칸) - 앞 칸이 닫히는 사이에 열면 빠질 때가 있어 뜰 때까지 다시 */
   const openEdit = async (id) => {
-    const p = page.locator(`${sel('note-panel', 'edit')}[data-note-id="${id}"]`);
+    const p = page.locator(`${sel('note-panel', 'edit')}[data-note-id="${id}"][data-note-mode="edit"]`);
     for (let i = 0; i < 4 && !(await p.count()); i++) {
-      await page.locator(sel('entry-card', id)).locator(sel('entry-edit')).click({ force: true });
+      await page.evaluate(([s, d, i2]) => window.sp5.openWindow('note', { sid: s, date: d, id: i2, edit: true }), [sid, DAY, id]);
       await waitFor(p, 3000);
     }
     return p;

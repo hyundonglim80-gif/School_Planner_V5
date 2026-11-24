@@ -2,7 +2,8 @@
 //
 // - 머리줄 `▼ 📅 일정 N [+ 추가] ……… ⚙️` (기록 칸과 같은 배치 - V4 사용자 결정).
 // - 카드: 휴대폰 2열, PC 1열. 라벨 칩(누르면 완료 - 끝내면 칩 앞에 ✓, 라벨이 없으면 회색 ○ 칩 - P10-1) · ⏰ 알림 · ⏳ 기한 · 글 · 🔗 링크 수 · 첨부.
-//   카드를 누르면 오른쪽 일정 칸(수정)이 열린다. 고치는 일정은 파란 테두리로 짚는다.
+//   카드를 누르면 오른쪽 일정 칸(수정)이 열린다(카드 ✏️는 없다 - 11-24 메모 요청 #200, 누르기와 같은 일). 고치는 일정은 파란 테두리로 짚는다.
+//   PC(마우스)의 ▲▼는 수업 카드처럼 카드 왼쪽 테두리에 걸친 손잡이(ui/cardTools ORDER_ARROWS_EDGE - #200, 자리를 차지하지 않는다).
 // - ▲▼ 순서 = 옮긴 일정의 order 하나만 (features/events/eventOps reorderOps).
 // - 이월(DESIGN 5-1 - 계산): 오늘 칸은 오늘 것 아래에 따라오는 일정을 '↪ 10/5부터'와 함께(▲▼는 각 무리 안에서),
 //   지난 날 칸에서는 그 일정을 흐리게 '→ 오늘로'(누르면 오늘). 오늘 칸에서 끝내면 그날로 옮겨 적는다(eventOps carriedDoneChanges).
@@ -43,7 +44,7 @@ import { shortcutTarget } from '../../ui/shortcutTarget';
 import DecorSpot from '../../ui/DecorSpot';
 import { useGcalShown } from '../gcal/gcalView';
 import { pressKeys } from '../../ui/pressKeys';
-import { FLOAT_TOOLS, ORDER_ARROWS } from '../../ui/cardTools';
+import { FLOAT_TOOLS, ORDER_ARROWS_EDGE } from '../../ui/cardTools';
 import { Glyph } from '../../ui/Icon';
 
 // 누를 때만 뜨는 창 - 열 때 받는다 (P49-3 첫 화면 JS)
@@ -207,8 +208,9 @@ export default function DayEvents({ date }: { date: YMD }) {
 
       {!collapsed && (
         // 카드. 휴대폰은 2열(환경설정 화면 배치 '카드 열 1열'이면 1열 - P59-1), PC(sm 이상)는 1열
-        // PC 위 여백 12px(머리줄 아래 여백에서 옮김 - 합은 그대로): 카드 위 테두리에 걸쳐 뜨는 ✏️🗑️(ui/cardTools FLOAT_TOOLS)가 첫 카드에서 이 스크롤 칸에 잘리지 않게
-        <div className={`flex-1 overflow-y-auto pr-1 sm:pt-3 min-h-[110px] ${shownCount > 0 ? `grid ${phoneCols === 1 ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-1'} gap-2 content-start` : ''}`}>
+        // PC 위 여백 12px(머리줄 아래 여백에서 옮김 - 합은 그대로): 카드 위 테두리에 걸쳐 뜨는 🗑️(ui/cardTools FLOAT_TOOLS)가 첫 카드에서 이 스크롤 칸에 잘리지 않게
+        // 마우스 화면 왼쪽 여백 12px(칸 여백 p-5에서 빌림 - 카드 자리는 그대로): 카드 왼쪽 테두리에 걸친 ▲▼ 손잡이(ORDER_ARROWS_EDGE)가 이 스크롤 칸에 잘리지 않게(#200)
+        <div className={`flex-1 overflow-y-auto pr-1 sm:pt-3 pointer-fine:-ml-3 pointer-fine:pl-3 min-h-[110px] ${shownCount > 0 ? `grid ${phoneCols === 1 ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-1'} gap-2 content-start` : ''}`}>
           {shownCount > 0 ? (
             <>
               {events.map((ev, idx) => (
@@ -227,7 +229,6 @@ export default function DayEvents({ date }: { date: YMD }) {
                   picked={pickedHere.has(ev.id)}
                   onCardClick={(e) => cardClick(ev, e)}
                   onLongPress={() => togglePick({ id: ev.id, day: date })}
-                  onOpen={() => openEdit(ev)}
                   onOpenLinks={() => sid && openLinkViewer({ sid, id: ev.id })}
                   onAlarm={() => setAlarmFor(ev)}
                   onDelete={() => remove(ev)}
@@ -251,7 +252,6 @@ export default function DayEvents({ date }: { date: YMD }) {
                   picked={pickedHere.has(ev.id)}
                   onCardClick={(e) => cardClick(ev, e)}
                   onLongPress={() => togglePick({ id: ev.id, day: date })}
-                  onOpen={() => openEdit(ev)}
                   onOpenLinks={() => sid && openLinkViewer({ sid, id: ev.id })}
                   onAlarm={() => setAlarmFor(ev)}
                   onDelete={() => remove(ev)}
@@ -275,7 +275,6 @@ export default function DayEvents({ date }: { date: YMD }) {
                       overlay={space}
                       onCardClick={() => !multi.on && openOverlay(space, ev)}
                       onLongPress={nothing}
-                      onOpen={() => openOverlay(space, ev)}
                       onOpenLinks={() => openLinkViewer({ sid: space.sid, id: ev.id })}
                       // 알림 시각도 그 공간 칸에서
                       onAlarm={() => openOverlay(space, ev)}
@@ -360,7 +359,6 @@ interface EventCardProps {
   since?: string;
   /** 지난 날 칸에서, 오늘로 따라간 일정 (흐리게 '→ 오늘로') */
   away?: boolean;
-  onOpen: () => void;
   /** 🔗 n - 이은 항목 보기 */
   onOpenLinks: () => void;
   onAlarm: () => void;
@@ -370,7 +368,7 @@ interface EventCardProps {
   onDown: () => void;
 }
 
-function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpen, onOpenLinks, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
+function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpenLinks, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
   const done = doneOn(ev, day);
   // 휴대폰 길게 누르기 = 여러 개 고르기 시작 (ui/longPress)
   const longPress = useLongPress(onLongPress);
@@ -407,14 +405,15 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
           : 'bg-white border-slate-200/60 hover:border-slate-300 text-slate-800'
       }`}
     >
-      {/* 휴대폰(2열 카드): 위 줄에 순서 바꾸기 · 수정, 아래에 내용. PC(1열): 한 줄 - 왼쪽 ▲▼(세로), 가운데 내용, 오른쪽 수정.
-          PC에서는 이 줄 틀을 없는 셈 치고(sm:contents) 순서(order)로 자리를 잡는다 (V4 그대로). */}
-      <div className="flex items-center justify-between -mt-0.5 sm:contents">
-        {/* 겹친 일정은 ▲▼ 자리를 비워 둔다 (순서는 공간마다라 섞어 바꾸지 않는다 - 글 줄은 위 카드와 맞춘다) */}
+      {/* 휴대폰(2열 카드): 위 줄에 순서 바꾸기, 아래에 내용. PC(1열): 한 줄 - 가운데 내용, 오른쪽 위 테두리에 🗑️.
+          PC에서는 이 줄 틀을 없는 셈 치고(sm:contents) 순서(order)로 자리를 잡는다 (V4 그대로).
+          마우스 화면은 ▲▼가 왼쪽 테두리에 걸친 손잡이라(#200 - 흐름 밖) 좁은 창에서도 이 줄 틀이 빈 줄로 남지 않게 contents */}
+      <div className="flex items-center justify-between -mt-0.5 sm:contents pointer-fine:contents">
+        {/* 겹친 일정은 ▲▼ 자리를 비워 둔다 (순서는 공간마다라 섞어 바꾸지 않는다 - 글 줄은 위 카드와 맞춘다 · 마우스 화면은 ▲▼가 자리를 차지하지 않아 비울 것도 없다) */}
         {overlay ? (
-          <span aria-hidden className="w-4 shrink-0 sm:order-1" />
+          <span aria-hidden className="w-4 shrink-0 sm:order-1 pointer-fine:hidden" />
         ) : (
-          <div className={`flex items-center gap-0.5 pointer-coarse:gap-1.5 shrink-0 sm:flex-col sm:order-1 sm:mt-0.5 ${ORDER_ARROWS}`}>
+          <div className={`flex items-center gap-0.5 pointer-coarse:gap-1.5 shrink-0 sm:flex-col sm:order-1 sm:pointer-coarse:mt-0.5 pointer-fine:flex-col ${ORDER_ARROWS_EDGE}`}>
             <button
               type="button"
               data-event-up
@@ -445,23 +444,11 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
             </button>
           </div>
         )}
-        {/* 마우스를 올리면 나오는 ✏️ 수정 · 🗑️ 삭제 (V4 EventItemActions - 확인 창 없이 지우고 안내의 되돌리기로 돌아온다).
-            P41-2: 카드 오른쪽 위에 떠서 자리를 차지하지 않는다(ui/cardTools) · 휴대폰에는 없다 - 예전에는 휴대폰에서도 안 보인 채 눌려 카드 오른쪽 위를 누르면 지워졌다. 휴대폰은 카드를 눌러 연 수정 칸에서 */}
-        <span data-event-tools className={FLOAT_TOOLS}>
-          <button
-            type="button"
-            data-event-edit
-            onClick={(e) => {
-              stop(e);
-              onOpen();
-            }}
-            className="p-1 text-xs leading-none text-slate-500 hover:text-primary cursor-pointer"
-            title="일정 수정"
-            aria-label="일정 수정"
-          >
-            <Glyph e="✏" />
-          </button>
-          {!overlay && (
+        {/* 마우스를 올리면 나오는 🗑️ 삭제 (V4 EventItemActions - 확인 창 없이 지우고 안내의 되돌리기로 돌아온다).
+            P41-2: 카드 오른쪽 위에 떠서 자리를 차지하지 않는다(ui/cardTools) · 휴대폰에는 없다 - 예전에는 휴대폰에서도 안 보인 채 눌려 카드 오른쪽 위를 누르면 지워졌다. 휴대폰은 카드를 눌러 연 수정 칸에서.
+            ✏️ 수정은 뺐다(11-24 메모 요청 #200 - 카드를 누르면 곧바로 수정 칸). 겹친 일정은 지우기가 없어 묶음도 없다 */}
+        {!overlay && (
+          <span data-event-tools className={FLOAT_TOOLS}>
             <button
               type="button"
               data-event-delete
@@ -475,8 +462,8 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
             >
               <Glyph e="🗑" />
             </button>
-          )}
-        </span>
+          </span>
+        )}
       </div>
 
       <div className="min-w-0 sm:order-2 sm:flex-1">

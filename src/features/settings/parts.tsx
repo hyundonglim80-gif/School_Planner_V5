@@ -1,4 +1,6 @@
 // 환경설정 창의 작은 부품 (V4 SettingsModal의 Section·ToggleRow·고르기 단추).
+//   구역 설명(desc)·줄 설명(hint)은 마우스 화면(PC)에서는 늘 적지 않고 그 구역·줄에 마우스를 올리면 뜬다(title - 단축키 풀이와 같은 꼴,
+//   11-24 메모 요청 #200 '버튼·동작 설명 문구는 늘 보이기보다 가리켰을 때'). 휴대폰은 올릴 마우스가 없어 글로 그대로(HINT_TEXT).
 import type { CSSProperties, ReactNode } from 'react';
 import { useOptionTarget } from '../../app/optionShortcuts';
 import { glyphText } from '../../ui/glyphText';
@@ -25,15 +27,30 @@ export function SavedBadge({ saved }: { saved: Saved }) {
   );
 }
 
-export function Section({ title, desc, children, id, saved }: { title: string; desc?: ReactNode; children: ReactNode; id?: string; saved?: Saved }) {
+/** 설명 글 - 마우스 화면(PC)에서는 숨기고 마우스를 올리면 title로 (#200). 휴대폰은 글로 그대로 */
+const HINT_TEXT = 'pointer-fine:hidden';
+
+/** title로 띄울 글 - 둘 다 있으면 줄을 바꿔 잇는다 (설명 + 단축키) */
+const joinTips = (...tips: Array<string | undefined>): string | undefined => tips.filter(Boolean).join('\n') || undefined;
+
+/**
+ * 구역 하나. desc = 구역 설명(PC는 구역에 마우스를 올리면 뜬다 - #200). desc가 글이 아니면(그림이 든 글) tip에 같은 뜻의 글을 준다 -
+ * tip이 없으면 PC에서도 글로 둔다(설명을 잃지 않게).
+ */
+export function Section({ title, desc, tip, children, id, saved }: { title: string; desc?: ReactNode; tip?: string; children: ReactNode; id?: string; saved?: Saved }) {
+  const hover = tip ?? (typeof desc === 'string' ? desc : undefined);
   return (
-    <div data-settings-section={id} className="px-5 py-4 border-b border-slate-100 last:border-b-0">
+    <div data-settings-section={id} title={hover} className="px-5 py-4 border-b border-slate-100 last:border-b-0">
       <h3 className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-black text-slate-800">
         <span>{glyphText(title)}</span>
         {saved && <SavedBadge saved={saved} />}
       </h3>
-      {desc && <p className="text-xs text-slate-500 mt-0.5 mb-2 leading-relaxed">{desc}</p>}
-      <div className={desc ? '' : 'mt-2'}>{children}</div>
+      {desc && (
+        <p data-settings-desc className={`text-xs text-slate-500 mt-0.5 mb-2 leading-relaxed ${hover ? HINT_TEXT : ''}`}>
+          {desc}
+        </p>
+      )}
+      <div className={!desc ? 'mt-2' : hover ? 'pointer-fine:mt-2' : ''}>{children}</div>
     </div>
   );
 }
@@ -58,14 +75,16 @@ export function ToggleRow({
   saved?: Saved;
 }) {
   const target = useOptionTarget();
+  const t = option ? target(option) : {};
   return (
-    <label {...(option ? target(option) : {})} className="flex items-center justify-between gap-3 py-2 cursor-pointer">
+    // 줄 설명은 PC에서 줄에 마우스를 올리면 (단축키가 있으면 그 아래 줄에 - #200)
+    <label {...t} title={joinTips(hint, t.title)} className="flex items-center justify-between gap-3 py-2 cursor-pointer">
       <span className="min-w-0">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-slate-700">
           {label}
           {saved && <SavedBadge saved={saved} />}
         </span>
-        {hint && <span className="block text-xs text-slate-500 mt-0.5">{hint}</span>}
+        {hint && <span data-settings-hint className={`block text-xs text-slate-500 mt-0.5 ${HINT_TEXT}`}>{hint}</span>}
       </span>
       <input
         type="checkbox"
@@ -117,13 +136,14 @@ export function Choices<T extends string | number>({ options, value, onChange, n
 /** 이름 + 여럿 가운데 하나 - 한 구역에 고르기가 여럿일 때(P59 화면 배치). 좁으면 고르기가 이름 아래로 */
 export function ChoiceRow<T extends string | number>({ label, hint, saved, ...choices }: { label: string; hint?: string; saved?: Saved } & ChoicesProps<T>) {
   return (
-    <div data-settings-row={choices.name} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2">
+    // 줄 설명은 PC에서 줄에 마우스를 올리면 (#200 - 값 단추에 단축키가 있으면 그 단추는 단축키 풀이)
+    <div data-settings-row={choices.name} title={hint} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2">
       <span className="min-w-0">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-bold text-slate-700">
           {label}
           {saved && <SavedBadge saved={saved} />}
         </span>
-        {hint && <span className="block text-xs text-slate-500 mt-0.5">{hint}</span>}
+        {hint && <span data-settings-hint className={`block text-xs text-slate-500 mt-0.5 ${HINT_TEXT}`}>{hint}</span>}
       </span>
       <Choices {...choices} />
     </div>

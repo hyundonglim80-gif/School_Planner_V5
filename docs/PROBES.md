@@ -62,6 +62,7 @@
   (10-22: #60 '바뀜'·#88 이은 곳 표시·#94 오른쪽 수정 칸 뒤 inspect-lessons·progress·seating·manual이 옛 `data-*`를 찾았다). PC에서 이어 할 때 그 요청이 건드린 화면의 점검부터 돌린다.
   10-29(P14-4)부터 자동 요청이 옛 글·`data-*`를 grep 해 **점검 줄도 고친다**(돌리지는 않는다) - 커밋 메시지 끝 **'점검 고침: …'**이 있으면 PC에서 그 점검부터 돌려 본다.
   **줄을 눌러 여는 점검은 줄 가운데가 아니라 그 글(`data-…-text`)을 누른다** - 10-29: #123이 라벨 칩에 ✓ 자리를 늘 잡아 월간 칩이 넓어지자 줄 가운데가 칩(= 완료)에 걸려 inspect-month-year 셋이 깨졌다.
+  11-24 #200: 카드 ✏️를 빼고 ▲▼를 흐름 밖 손잡이로 옮기자 글이 당겨져 일정 카드 가운데가 🔗 n에 걸렸다(Ctrl+누르기가 고르기 대신 이은 항목 보기 - inspect-manual 여러 개 고르기 일곱 줄). 멈춤의 Playwright 기록이 '다음 단추를 기다림'이면 누르기는 됐고 다른 것이 받은 것 - `elementFromPoint`로 그 자리에 무엇이 있나 본다.
 - **앱이 꺼진 기기 흉내**(P22-3 inspect-two-devices): `page.close()`해도 그 컨텍스트의 IndexedDB는 남는다 → `ctx.newPage()` + `clock.setFixedTime(지금 + 25시간)`로 열면 하루 한 번 일(`maybePrune`)까지 돈다. **Firestore만 끊기**는 `page.route('**/google.firestore.v1.Firestore/**', abort)`(로그인은 그대로 - Firestore가 '끊김'으로 보는 데 10초, 풀고 `window.dispatchEvent(new Event('online'))`).
   **새 기기의 '받기 전' 모습**은 새 창(빈 사본) + `page.route(/127\.0\.0\.1:8080\/google\.firestore/, …)`에서 약속을 기다렸다 `route.continue()` - 붙잡는 동안 화면은 '받는 중', 풀면 받는다(P32-2 inspect-lessons. 같은 창에서 `#` 주소만 바꾸면 붙잡은 채 화면을 옮겨 본다).
 - **점검이 `try { … } finally { done(); process.exit(); }`만 있으면 예외가 '✔ 모두 통과'로 끝난다**(P23-2 - 없는 `data-*`를 30초 기다리다 던졌는데 뒤 묶음이 말없이 빠졌다, 줄 수가 줄어 알았다). `} catch (e) { 틀림으로 센다 }`를 넣는다. 새 점검도 이 꼴로(P26-1에 남은 8개를 넣어 이제 모든 점검에 있다 - `grep -L "^} catch" tools/inspect-*.mjs`가 비어야 한다).
@@ -73,7 +74,7 @@
   **실제 자료 사본 연습은 사용자 💾 백업 JSON을 `?as=new-…` 계정에 앱 되살리기로 넣는다**(P26-3 - 새 계정이라 설정 셋까지 빠짐없이, 되살리기 길도 함께 본다. 실제 자료는 스크래치패드에만, 끝에 지운다).
   1천여 문서면 화면이 다 받는 데 3초를 넘어 **'받기 전' 갈래가 드러난다**(새 학년도 창이 '베낄 표 없음'을 보였다 - 작은 seed로는 보이지 않는다). 에뮬레이터는 자료를 디스크에 남기지 않아 끄면 사본도 사라진다.
   **점검의 `page.reload()`가 30초 멈추면 서버가 받기 전 저장의 '떠나기 전에 묻기'(beforeunload)다** - probe의 기본 답이 '아니오'라 머문다. 저장 바로 뒤 새로고침하는 점검은 그때만 `dialogs.answer = true`(inspect-week). **서버 문서가 보여도(`serverUntil`) 앱은 쓰기 대답을 아직 못 받았을 수 있다** - 새로고침 앞에서 `hasPendingWrites()`(`data/pendingWrites`)가 빌 때까지 기다린다(11-17 inspect-memo 끌어 놓기 뒤 CI 한 번 30초 멈춤). **저장 바로 뒤 ESC로 닫는 앞에서도**(11-20 P48-5 - 이미 있는 메모를 Ctrl+S 하고 곧바로 ESC = 앱이 아직 '저장 안 함'이라 묻고 점검 답 '아니오'로 칸이 남았다, CI 세 바퀴 중 둘. 새 메모는 '수정 칸이 됨'을 기다려 괜찮다 - inspect-table `appSaved`).
-- **메모 카드 누르기 = 보기 칸**(11-09): 글을 고치는 점검은 카드 ✏️(`entry-edit`)나 `openWindow('note', { …, edit: true })`로 연다. 보기 칸은 `data-note-mode=view`(`data-note-panel`은 있는 메모면 그대로 `edit`), 안내·알림으로 연 칸의 글은 `note-view-body`에서 읽는다.
+- **메모 카드 누르기 = 보기 칸**(11-09): 글을 고치는 점검은 `openWindow('note', { …, edit: true })`나 카드 제목(`entry-title`) → 보기 칸 `note-edit`로 연다(카드 ✏️ `entry-edit`·일정 `event-edit`·수업 `lesson-edit`는 11-24 #200에 뺐다 - 일정은 `event-text`를 누르면 수정 칸). 보기 칸은 `data-note-mode=view`(`data-note-panel`은 있는 메모면 그대로 `edit`), 안내·알림으로 연 칸의 글은 `note-view-body`에서 읽는다.
   메모 칩도 이제 누르면 완료다(`[data-note-done-chip]`) - 카드 가운데를 누르지 말고 글(`entry-text`·`entry-preview`)을 누른다. 새로 연 칸의 커서는 글 맨 앞이다(친 글은 앞에 든다).
 - **처음 화면 밝기가 어둡게(#113)라 '밝은 화면'을 보는 점검은 `localStorage sp5_theme = light`를 심고 시작한다**(10-28 - inspect-handwriting 셋이 #113 뒤로 깨져 있었다).
   **창을 닫게 하는 키(ESC)는 keydown 사이에 팝업이 닫혀 `keyboard.press`가 '닫혔다'로 실패한다** - `.catch(() => {})`로 누르고 닫힘은 `waitForEvent('close')`로 본다(inspect-popout).

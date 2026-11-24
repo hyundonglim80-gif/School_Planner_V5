@@ -24,13 +24,13 @@ export const HOVER_ONLY = 'transition-opacity pointer-fine:opacity-0 pointer-fin
  */
 const ORDER_ARROWS_EDGE_BASE = `${ORDER_ARROWS} pointer-fine:absolute pointer-fine:-translate-y-1/2 pointer-fine:-left-3 pointer-fine:z-10 pointer-fine:w-5 pointer-fine:px-0 pointer-fine:py-0.5 pointer-fine:gap-0 pointer-fine:rounded-lg pointer-fine:border pointer-fine:border-slate-200 pointer-fine:bg-white pointer-fine:shadow-xs`;
 
-/** 수업 카드 ▲▼ (P58-1): 카드 왼쪽 테두리 가운데 (둘레 칸 = 하루 수업 칸 p-5) */
+/** 수업 카드 ▲▼ (P58-1): 카드 왼쪽 테두리 가운데 (둘레 칸 = 하루 수업 칸 p-5) · 일정 카드도 이것(11-24 메모 요청 #200 - 짧은 카드라 가운데, 일정 목록 스크롤 칸은 마우스 화면에서 왼쪽 여백 12px) */
 export const ORDER_ARROWS_EDGE = `${ORDER_ARROWS_EDGE_BASE} pointer-fine:top-1/2`;
 
 /**
  * 메모 카드 ▲▼ (메모 요청 #202 '메모의 순서 변경 칩도 수업과 같이 항목의 왼쪽 테두리 위에서'): 수업 카드와 같은 손잡이를 **머리줄 높이**에 -
  * 메모 카드는 펼치면 길어(28rem, 그날 메모 창은 끝까지) 가운데에 두면 손잡이가 머리줄(▼ 접기·☆)에서 멀리, 창에서는 화면 밖으로 간다.
- * 가운데가 첫 줄 가운데(1.75rem = 위 여백 16px + 첫 줄 반)쯤, 아주 짧은 카드는 카드 가운데(min). 일정 카드는 아직 ORDER_ARROWS(자리 그대로).
+ * 가운데가 첫 줄 가운데(1.75rem = 위 여백 16px + 첫 줄 반)쯤, 아주 짧은 카드는 카드 가운데(min).
  */
 export const ORDER_ARROWS_EDGE_HEAD = `${ORDER_ARROWS_EDGE_BASE} pointer-fine:top-[min(50%,1.75rem)]`;
 

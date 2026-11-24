@@ -63,6 +63,14 @@ const count = (s) => page.locator(s).count();
 const has = (s, ms = 6000) => waitFor(page.locator(s).first(), ms);
 const win = (id, params) => page.evaluate(([i, p]) => window.sp5.openWindow(i, p), [id, params]);
 const shortcut = (id) => page.evaluate((i) => window.sp5.runShortcut(i), id);
+/** 메모 수정 칸 - 카드(제목)를 누르면 보기 칸, 바닥 ✏️ 수정 (#200 카드 ✏️는 뺐다 · 이미 수정 칸인 칸이면 그대로) */
+const editNote = async (id) => {
+  await q(sel('entry-card', id)).locator(sel('entry-title')).click();
+  const panel = q(`${sel('note-panel')}[data-note-id="${id}"]`);
+  await waitFor(panel, 6000);
+  if ((await panel.getAttribute('data-note-mode').catch(() => '')) === 'view') await q(sel('note-edit')).click();
+  await waitFor(q(`${sel('note-panel')}[data-note-id="${id}"][data-note-mode="edit"]`), 6000);
+};
 /** 항목 사이에 오른쪽 칸을 모두 닫는다 - 저장 안 한 칸이 있으면 묻는 창에 '닫기'로 (점검 자료는 끝에 지운다) */
 const closeAll = async () => {
   dialogs.answer = true;
@@ -341,9 +349,10 @@ try {
   await topic('event-edit', async () => {
     const card = q(sel('event-card', 'insp_man_e1'));
     r.check(await waitFor(card), '일정 카드');
-    for (const s of ['event-up', 'event-edit', 'event-delete']) r.check((await card.locator(sel(s)).count()) === 1, `카드 ${s}`);
-    await card.locator(sel('event-edit')).click();
-    r.check(await has(sel('event-panel', 'edit')), '✏️ → 일정 수정 칸');
+    for (const s of ['event-up', 'event-delete']) r.check((await card.locator(sel(s)).count()) === 1, `카드 ${s}`);
+    r.check((await card.locator(sel('event-edit')).count()) === 0, '카드 ✏️ 없음 (누르면 곧바로 수정 칸 - #200)');
+    await card.locator(sel('event-text')).click();
+    r.check(await has(sel('event-panel', 'edit')), '일정을 누르면 → 일정 수정 칸');
   });
 
   await topic('event-complete', async () => {
@@ -419,7 +428,8 @@ try {
   });
 
   await topic('multi-select', async () => {
-    await q(sel('event-card', 'insp_man_e1')).click({ modifiers: ['Control'] });
+    // 카드 가운데가 아니라 글을 누른다 - #200에 ✏️·▲▼가 흐름에서 빠져 글이 당겨지자 가운데가 🔗 n(이은 항목 보기)에 걸려 고르기가 되지 않았다
+    await q(sel('event-card', 'insp_man_e1')).locator(sel('event-text')).click({ modifiers: ['Control'] });
     r.check(await has(sel('multi-bar')), 'Ctrl+누르기 → 여러 개 고르기 막대');
     r.check(await has(sel('event-picked')), '고른 일정이 짚인다');
     for (const s of ['multi-complete', 'multi-label-open', 'multi-move-open', 'multi-delete']) r.check((await count(sel(s))) === 1, `막대 ${s}`);
@@ -526,7 +536,7 @@ try {
     r.check(await has(sel('memo-filter-nav')), '왼쪽 라벨로 보기 칩');
     r.check((await q(sel('memo-labels-settings')).textContent()).includes('라벨'), '제목 🏷️ 라벨 관리 (P10-5)');
     r.check((await count(sel('memo-view-toggle'))) === 1, '머리줄 ☰ / ▦ 카드·목록 보기 (메모 화면에서만)');
-    r.check(((await q(`${sel('memo-filter-nav')} ${sel('filter-help')}`).textContent()) ?? '').includes('여러 개'), "칩 아래 '여러 개' 안내 (P11-1)");
+    r.check(((await q(`${sel('memo-filter-nav')} ${sel('filter-help')}`).textContent()) ?? '').includes('여러 개'), "칩 아래 '여러 개' 안내 (P11-1 - 휴대폰에만 보이는 글, PC는 칩에 마우스를 올리면 - #200)");
     r.check(await has(sel('entry-card', 'insp_man_m1')), '메모 카드');
     r.check(await waitFor(async () => (await count(sel('entry-date-chip'))) > 0), '날짜에 이은 메모도 (카드에 📅 날짜 칩)');
     r.check((await count(sel('memo-active'))) === 1 && (await count(sel('memo-done'))) === 1, '진행 / 완료 구역');
@@ -563,7 +573,7 @@ try {
 
   await topic('move-entry', async () => {
     await go('#/memo', 'memo');
-    await q(sel('entry-card', 'insp_man_m1')).locator(sel('entry-edit')).click();
+    await editNote('insp_man_m1');
     r.check(await has(sel('note-panel', 'edit')), '메모 수정 칸');
     await q(sel('note-date-add')).click();
     r.check(await has(sel('date-picker-popover')), '+ 날짜 → 작은 달력');
@@ -581,13 +591,13 @@ try {
 
   // ════════ 6장 첨부 · 캡처 · 링크 ════════
   await topic('attach', async () => {
-    await q(sel('entry-card', 'insp_man_n1')).locator(sel('entry-edit')).click();
+    await editNote('insp_man_n1');
     r.check(await has(sel('note-attach')), '쓰는 칸의 📎 파일 첨부');
     r.check(await has(sel('note-attach-public')), "📎 아래 '링크가 있는 사람은 보기' 안내");
   });
 
   await topic('paste-table', async () => {
-    await q(sel('entry-card', 'insp_man_n1')).locator(sel('entry-edit')).click();
+    await editNote('insp_man_n1');
     r.check(await has(sel('note-table')), '칸 안의 표 (칸 글자·행/열 고치기)');
     r.check((await count(sel('table-op'))) === 0, '칸을 누르기 전에는 단추 줄 없음 (P49-2)');
     await q(`${sel('note-table')} [data-cell="0-0"]`).click();
@@ -598,7 +608,7 @@ try {
   });
 
   await topic('table-make', async () => {
-    await q(sel('entry-card', 'insp_man_n1')).locator(sel('entry-edit')).click();
+    await editNote('insp_man_n1');
     await q(sel('note-table-add')).click();
     r.check(await waitFor(async () => (await count(sel('table-input'))) === 1), '▦ 표 = 빈 표, 첫 칸 고치기 (P48-1)');
     r.check((await count(sel('table-col'))) >= 3 && (await count(sel('table-row'))) >= 3, '위 A·B·C / 왼쪽 1·2·3 띠');
@@ -614,7 +624,7 @@ try {
   });
 
   await topic('paste-image', async () => {
-    await q(sel('entry-card', 'insp_man_n1')).locator(sel('entry-edit')).click();
+    await editNote('insp_man_n1');
     r.check(await has(sel('note-text-input')), '내용 칸 (Ctrl + V로 캡처 붙이기)');
     r.check((await count(sel('note-attach'))) === 1, '📎 (붙인 그림은 첨부로)');
   });
@@ -638,7 +648,7 @@ try {
   });
 
   await topic('links', async () => {
-    await q(sel('event-card', 'insp_man_e1')).locator(sel('event-edit')).click();
+    await q(sel('event-card', 'insp_man_e1')).locator(sel('event-text')).click();
     await has(sel('event-panel', 'edit'));
     await q(sel('event-link-add')).click();
     r.check(await has(sel('linker')), '🔗 링크 추가 → 새 데이터 연결하기');
