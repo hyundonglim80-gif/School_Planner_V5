@@ -156,7 +156,8 @@ function Pane({ name, children }: { name: string; children: ReactNode }) {
   );
 }
 
-/** 메모 칸 - 메모 열 수는 이 칸 폭으로(하루 화면은 본문 폭). 열 수가 바뀔 때만 다시 그린다 */
+/** 메모 칸 - 메모 열 수는 이 칸 폭으로(하루 화면은 본문 폭). 열 수가 바뀔 때만 다시 그린다.
+ *  이 칸은 스크롤 칸이라 카드 밖을 자른다 - 카드 왼쪽 테두리에 걸친 ▲▼ 손잡이(#202)가 잘리지 않게 카드 줄만 왼쪽 여백(edgeRoom - 머리 상자는 위 수업 칸과 맞춘 그대로) */
 function MemoPane({ date }: { date: string }) {
   const ref = useRef<HTMLDivElement>(null);
   // PC 한눈에 글자 바탕(90%)은 걷고 견준다 - 하루 화면(바탕 100%) 본문 폭과 같게 (ui/useMainWidth unscaledWidth)
@@ -164,7 +165,7 @@ function MemoPane({ date }: { date: string }) {
   return (
     <div ref={ref} data-board-pane="memo" className="@container flex-1 min-h-0 overflow-y-auto overscroll-contain rounded-xl">
       <MainWidthContext.Provider value={width}>
-        <DayJournal date={date} />
+        <DayJournal date={date} edgeRoom />
       </MainWidthContext.Provider>
     </div>
   );

@@ -1,6 +1,7 @@
 // 메모·기록 카드 하나 (V4 components/EntryCard.tsx - 메모 화면과 하루 화면 기록 칸이 같은 카드를 쓴다).
 //
 //   머리줄: ▶ ▲▼ ☆ 라벨칩…  시각·📅 날짜 칩·📌/🏫 온 길  ☑ 2/5  🔗 n (접혔을 때 🖼️)·📎·▦  ……  🔗 ✏️ 🗑️(마우스를 올리면)
+//   - ▲▼: PC(마우스)는 올렸을 때만 카드 왼쪽 테두리에 걸친 손잡이로 뜬다(머리줄 높이 - 자리 없음, 메모 요청 #202 · 수업 카드와 같은 꼴). 휴대폰은 머리줄 안에 늘.
 //   - 라벨 칩 = 완료(11-09 사용자 요청 - 일정과 같이 ☐ 체크 칸을 없앴다): 누르면 완료·풀기, 끝내면 칩 크기 그대로 글자를 줄이고 ✓(EventDoneChip). 라벨이 없으면 회색 ○ 칩.
 //   - 카드를 누르면 메모 보기 칸(내용만 - 11-09), ✏️는 곧바로 수정 칸.
 //   - 단추·라벨 칩은 한 줄에(V4 10-07 사용자 요청), 시각·표시는 넘치면 다음 줄로. 라벨 칩은 위(머리줄)에 - 메모·기록 라벨 한 목록의 색.
@@ -26,7 +27,7 @@ import { EntryStudents } from './StudentTags';
 import { pressKeys } from '../../ui/pressKeys';
 import EventDoneChip from '../events/EventDoneChip';
 import ScrollCap, { ENTRY_SCROLL_MAX } from '../../ui/ScrollCap';
-import { FLOAT_TOOLS, HOVER_ONLY, ORDER_ARROWS } from '../../ui/cardTools';
+import { FLOAT_TOOLS, HOVER_ONLY, ORDER_ARROWS_EDGE_HEAD } from '../../ui/cardTools';
 import { Glyph } from '../../ui/Icon';
 
 export interface EntryCardProps {
@@ -135,7 +136,8 @@ export default function EntryCard(props: EntryCardProps) {
             >
               <Glyph e={collapsed ? '▶' : '▼'} />
             </button>
-            <div className={`flex flex-col items-center gap-0.5 pointer-coarse:gap-1.5 shrink-0 px-0.5 ${ORDER_ARROWS}`}>
+            {/* ▲▼ - PC는 카드 왼쪽 테두리에 걸쳐 떠서 자리를 차지하지 않는다 (#202 · 휴대폰은 머리줄 안에 늘) */}
+            <div className={`flex flex-col items-center gap-0.5 pointer-coarse:gap-1.5 shrink-0 px-0.5 ${ORDER_ARROWS_EDGE_HEAD}`}>
               <button
                 type="button"
                 data-entry-up
@@ -146,7 +148,7 @@ export default function EntryCard(props: EntryCardProps) {
                 disabled={!onMoveUp}
                 title="앞으로"
                 aria-label="앞으로"
-                className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
+                className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 pointer-fine:px-0 leading-none text-xs cursor-pointer"
               >
                 <Glyph e="▲" />
               </button>
@@ -160,7 +162,7 @@ export default function EntryCard(props: EntryCardProps) {
                 disabled={!onMoveDown}
                 title="뒤로"
                 aria-label="뒤로"
-                className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 leading-none text-xs cursor-pointer"
+                className="tap-area text-slate-500 hover:text-primary disabled:opacity-30 disabled:hover:text-slate-500 p-0.5 pointer-fine:px-0 leading-none text-xs cursor-pointer"
               >
                 <Glyph e="▼" />
               </button>
