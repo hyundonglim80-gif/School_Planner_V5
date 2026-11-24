@@ -62,6 +62,7 @@
   (10-22: #60 '바뀜'·#88 이은 곳 표시·#94 오른쪽 수정 칸 뒤 inspect-lessons·progress·seating·manual이 옛 `data-*`를 찾았다). PC에서 이어 할 때 그 요청이 건드린 화면의 점검부터 돌린다.
   10-29(P14-4)부터 자동 요청이 옛 글·`data-*`를 grep 해 **점검 줄도 고친다**(돌리지는 않는다) - 커밋 메시지 끝 **'점검 고침: …'**이 있으면 PC에서 그 점검부터 돌려 본다.
   **줄을 눌러 여는 점검은 줄 가운데가 아니라 그 글(`data-…-text`)을 누른다** - 10-29: #123이 라벨 칩에 ✓ 자리를 늘 잡아 월간 칩이 넓어지자 줄 가운데가 칩(= 완료)에 걸려 inspect-month-year 셋이 깨졌다.
+  11-24 #200: 카드 ✏️를 빼고 ▲▼를 흐름 밖 손잡이로 옮기자 글이 당겨져 일정 카드 가운데가 🔗 n에 걸렸다(Ctrl+누르기가 고르기 대신 이은 항목 보기 - inspect-manual 여러 개 고르기 일곱 줄). 멈춤의 Playwright 기록이 '다음 단추를 기다림'이면 누르기는 됐고 다른 것이 받은 것 - `elementFromPoint`로 그 자리에 무엇이 있나 본다.
 - **앱이 꺼진 기기 흉내**(P22-3 inspect-two-devices): `page.close()`해도 그 컨텍스트의 IndexedDB는 남는다 → `ctx.newPage()` + `clock.setFixedTime(지금 + 25시간)`로 열면 하루 한 번 일(`maybePrune`)까지 돈다. **Firestore만 끊기**는 `page.route('**/google.firestore.v1.Firestore/**', abort)`(로그인은 그대로 - Firestore가 '끊김'으로 보는 데 10초, 풀고 `window.dispatchEvent(new Event('online'))`).
   **새 기기의 '받기 전' 모습**은 새 창(빈 사본) + `page.route(/127\.0\.0\.1:8080\/google\.firestore/, …)`에서 약속을 기다렸다 `route.continue()` - 붙잡는 동안 화면은 '받는 중', 풀면 받는다(P32-2 inspect-lessons. 같은 창에서 `#` 주소만 바꾸면 붙잡은 채 화면을 옮겨 본다).
 - **점검이 `try { … } finally { done(); process.exit(); }`만 있으면 예외가 '✔ 모두 통과'로 끝난다**(P23-2 - 없는 `data-*`를 30초 기다리다 던졌는데 뒤 묶음이 말없이 빠졌다, 줄 수가 줄어 알았다). `} catch (e) { 틀림으로 센다 }`를 넣는다. 새 점검도 이 꼴로(P26-1에 남은 8개를 넣어 이제 모든 점검에 있다 - `grep -L "^} catch" tools/inspect-*.mjs`가 비어야 한다).

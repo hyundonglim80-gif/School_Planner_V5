@@ -17,12 +17,22 @@ export const ORDER_ARROWS = 'order-arrows transition-opacity pointer-fine:opacit
 export const HOVER_ONLY = 'transition-opacity pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100 pointer-fine:group-focus-within:opacity-100';
 
 /**
- * 수업 카드 ▲▼ (P58-1 사용자 '마우스를 올릴 때 나오는 칩·단추가 미리 자리를 차지하지 않게 - 그 위에 불투명한 바탕으로'): 마우스 화면에서는
- * 카드 왼쪽 테두리에 걸쳐 뜨는 작은 손잡이(불투명 바탕) - 자리를 차지하지 않고 글도 덮지 않는다(카드 왼쪽 여백 14px 안까지만).
- * 카드가 relative여야 하고, 둘레 칸에 왼쪽 여백(8px 넘게)이 있어야 잘리지 않는다(하루 수업 칸 p-5). 휴대폰은 ORDER_ARROWS 그대로(글 앞 칸·늘 보인다).
- * 일정 카드도 이것(11-24 메모 요청 #200 - 일정 목록 스크롤 칸은 마우스 화면에서 왼쪽 여백 12px를 둔다). 메모 카드는 아직 ORDER_ARROWS(자리는 그대로 - 5장 'P58' ③).
+ * 카드 왼쪽 테두리에 걸친 ▲▼ 손잡이의 바탕 (P58-1 사용자 '마우스를 올릴 때 나오는 칩·단추가 미리 자리를 차지하지 않게 - 그 위에 불투명한 바탕으로'):
+ * 마우스 화면에서는 카드 왼쪽 테두리에 걸쳐 뜨는 작은 손잡이(불투명 바탕) - 자리를 차지하지 않고 글도 덮지 않는다(카드 안으로는 8px - 카드 왼쪽 여백 안까지만).
+ * 카드가 relative여야 하고(가장 가까운 relative가 카드여야 한다 - 그 사이에 relative가 있으면 그것에 붙는다), 카드 밖으로 12px 나가므로
+ * 둘레 칸이 자르면(스크롤 칸) 그만큼 왼쪽 여백이 있어야 한다. 휴대폰은 ORDER_ARROWS 그대로(글 앞 칸·늘 보인다). 세로 자리는 아래 둘이 정한다.
  */
-export const ORDER_ARROWS_EDGE = `${ORDER_ARROWS} pointer-fine:absolute pointer-fine:top-1/2 pointer-fine:-translate-y-1/2 pointer-fine:-left-3 pointer-fine:z-10 pointer-fine:w-5 pointer-fine:px-0 pointer-fine:py-0.5 pointer-fine:gap-0 pointer-fine:rounded-lg pointer-fine:border pointer-fine:border-slate-200 pointer-fine:bg-white pointer-fine:shadow-xs`;
+const ORDER_ARROWS_EDGE_BASE = `${ORDER_ARROWS} pointer-fine:absolute pointer-fine:-translate-y-1/2 pointer-fine:-left-3 pointer-fine:z-10 pointer-fine:w-5 pointer-fine:px-0 pointer-fine:py-0.5 pointer-fine:gap-0 pointer-fine:rounded-lg pointer-fine:border pointer-fine:border-slate-200 pointer-fine:bg-white pointer-fine:shadow-xs`;
+
+/** 수업 카드 ▲▼ (P58-1): 카드 왼쪽 테두리 가운데 (둘레 칸 = 하루 수업 칸 p-5) · 일정 카드도 이것(11-24 메모 요청 #200 - 짧은 카드라 가운데, 일정 목록 스크롤 칸은 마우스 화면에서 왼쪽 여백 12px) */
+export const ORDER_ARROWS_EDGE = `${ORDER_ARROWS_EDGE_BASE} pointer-fine:top-1/2`;
+
+/**
+ * 메모 카드 ▲▼ (메모 요청 #202 '메모의 순서 변경 칩도 수업과 같이 항목의 왼쪽 테두리 위에서'): 수업 카드와 같은 손잡이를 **머리줄 높이**에 -
+ * 메모 카드는 펼치면 길어(28rem, 그날 메모 창은 끝까지) 가운데에 두면 손잡이가 머리줄(▼ 접기·☆)에서 멀리, 창에서는 화면 밖으로 간다.
+ * 가운데가 첫 줄 가운데(1.75rem = 위 여백 16px + 첫 줄 반)쯤, 아주 짧은 카드는 카드 가운데(min).
+ */
+export const ORDER_ARROWS_EDGE_HEAD = `${ORDER_ARROWS_EDGE_BASE} pointer-fine:top-[min(50%,1.75rem)]`;
 
 // 떠 있는 묶음의 바탕은 불투명(P58-1 - 덮은 글이 비치지 않게. 어두운 화면의 bg-white는 카드 바탕색)
 const FLOAT_BASE =

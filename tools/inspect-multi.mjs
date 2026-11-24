@@ -56,7 +56,8 @@ try {
 
   const { page, errors } = await newPage(browser);
   await open(page, `#/day/${DAY}`);
-  const card = (id) => page.locator(sel('event-card', id));
+  // 카드 누르기는 글을 (가운데는 라벨 칩·🔗 n에 걸릴 수 있다 - #200 inspect-manual)
+  const card = (id) => page.locator(`${sel('event-card', id)} ${sel('event-text')}`);
   const bar = page.locator(sel('multi-bar'));
   const picked = () => page.locator('[data-event-picked="1"]').evaluateAll((els) => els.map((e) => e.dataset.eventCard));
   await waitFor(card('insp_mp'), 8000);

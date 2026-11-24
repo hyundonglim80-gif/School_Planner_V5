@@ -428,7 +428,8 @@ try {
   });
 
   await topic('multi-select', async () => {
-    await q(sel('event-card', 'insp_man_e1')).click({ modifiers: ['Control'] });
+    // 카드 가운데가 아니라 글을 누른다 - #200에 ✏️·▲▼가 흐름에서 빠져 글이 당겨지자 가운데가 🔗 n(이은 항목 보기)에 걸려 고르기가 되지 않았다
+    await q(sel('event-card', 'insp_man_e1')).locator(sel('event-text')).click({ modifiers: ['Control'] });
     r.check(await has(sel('multi-bar')), 'Ctrl+누르기 → 여러 개 고르기 막대');
     r.check(await has(sel('event-picked')), '고른 일정이 짚인다');
     for (const s of ['multi-complete', 'multi-label-open', 'multi-move-open', 'multi-delete']) r.check((await count(sel(s))) === 1, `막대 ${s}`);

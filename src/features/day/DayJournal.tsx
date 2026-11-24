@@ -3,6 +3,7 @@
 // - 머리줄 `▼ 📝 메모 N [+ 추가] 📊 🏷️ ……… ⚙️` (일정 칸과 같은 배치 - V4 사용자 결정). ⚙️ = 메모 라벨 관리.
 //   + 추가 = 그 날짜 링크 하나로 새 메모(P10-3 2g). 옛 '+ 메모'(날짜 없는 메모 - V4 UX-AUDIT C2)는 뺐다(사용자 의견 2i).
 // - 카드: 메모 화면과 같은 카드(features/notes/EntryCard). 휴대폰 2열, 본문 폭에 따라 3·4열(가로 우선으로 나눠 담는다).
+//   PC 카드 ▲▼는 카드 왼쪽 테두리 밖으로 12px 나간다(#202) - 스크롤 칸에 바로 든 곳(한눈에 메모 칸)은 edgeRoom으로 카드 줄 왼쪽에 그만큼 여백.
 //   즐겨찾기한 메모는 그날 칸의 맨 위. 긴 메모는 접힌 채 시작(누른 것만 기억한다 - 메모가 새로 오거나 길어져도 낡지 않게).
 // - 쓰기마다 문서 하나. 완료·즐겨찾기·순서·체크 줄은 안내 없이 Ctrl+Z 더미에, 지우기는 안내 + 되돌리기.
 // - 라벨로 보기(V4 journal-view): '전체 · 라벨 칩'(메모 화면과 같은 LabelFilterChips - 여러 개·탐색기식·상위 → 하위·'기타'), 고른 것은 이 기기에 기억, ESC = 모두 떼기.
@@ -45,7 +46,8 @@ const quiet = () => {
   /* 실패 안내는 저장 도우미가 이미 했다 */
 };
 
-export default function DayJournal({ date }: { date: YMD }) {
+export default function DayJournal({ date, edgeRoom = false }: { date: YMD; /** 카드 줄 왼쪽에 ▲▼ 손잡이 자리(마우스 화면) - 둘레가 스크롤 칸이라 카드 밖을 자를 때 */ edgeRoom?: boolean }) {
+  const room = edgeRoom ? 'pointer-fine:pl-3' : '';
   const sid = useCurrentSpaceId();
   // 이 메모를 이은 진도 차시 수 (🔗 n에 더한다 - P10-4)
   const progressLinks = useProgressNoteLinks(sid);
@@ -199,7 +201,7 @@ export default function DayJournal({ date }: { date: YMD }) {
       </div>
 
       {!collapsed && cards.length > 0 && (
-        <div className="grid gap-4 items-start" data-day-cards={cards.length} style={{ gridTemplateColumns: `repeat(${Math.min(columnsCount, Math.max(cards.length, 2))}, minmax(0, 1fr))` }}>
+        <div className={`grid gap-4 items-start ${room}`} data-day-cards={cards.length} style={{ gridTemplateColumns: `repeat(${Math.min(columnsCount, Math.max(cards.length, 2))}, minmax(0, 1fr))` }}>
           {cards.map((c) => (
             <DayCardView key={c.key} card={c} sid={sid} />
           ))}
@@ -207,7 +209,7 @@ export default function DayJournal({ date }: { date: YMD }) {
       )}
       {!collapsed &&
         (shown.length > 0 ? (
-          <div className="grid gap-4 items-start" style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}>
+          <div className={`grid gap-4 items-start ${room}`} style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}>
             {columns.map((col, ci) => (
               <div key={ci} className="flex flex-col gap-4">
                 {col.map(({ item, index }) => {
