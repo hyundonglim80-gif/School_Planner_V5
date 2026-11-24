@@ -391,11 +391,11 @@ html.hc .decor-band { display: none; }
 /* 종이에 필요 없는 단추(추가·▲▼·고치기·지우기·도구·설정)와 지금 시각 줄은 미리보기에서도 뺀다 - 찍을 때는 [data-print-hide]째 복제에서 빠진다 */
 [data-print-paper] :is(
     [data-print-hide],
-    [data-event-add], [data-event-up], [data-event-down], [data-event-edit], [data-event-delete], [data-event-labels-settings],
+    [data-event-add], [data-event-up], [data-event-down], [data-event-delete], [data-event-labels-settings],
     [data-journal-add], [data-journal-filter-toggle], [data-journal-filter], [data-journal-labels-settings], [data-filter-help],
     [data-day-bell], [data-day-bell-panel], [data-lessons-tool], [data-lessons-settings], [data-now-line],
-    [data-lesson-up], [data-lesson-down], [data-lesson-edit], [data-lesson-link], [data-class-tools],
-    [data-entry-up], [data-entry-down], [data-entry-edit], [data-entry-delete], [data-entry-link-add], [data-entry-favorite-toggle],
+    [data-lesson-up], [data-lesson-down], [data-lesson-link], [data-class-tools],
+    [data-entry-up], [data-entry-down], [data-entry-delete], [data-entry-link-add], [data-entry-favorite-toggle],
     [data-progress-create], [data-progress-link-add], [data-progress-bump], [data-month-add]
   ) {
   display: none !important;

@@ -17,6 +17,9 @@ import { Glyph } from '../../ui/Icon';
 import { PICK_ON } from '../../ui/buttons';
 import { useLongPress } from '../../ui/longPress';
 
+/** 메모 라벨 고르는 법 - PC는 라벨 줄 제목·칩에 마우스를 올리면 (11-24 메모 요청 #200 - 늘 보이던 '(Ctrl+누르기 = 여러 개)' 대신), 휴대폰은 글 '(길게 누르기 = 여러 개)' */
+const NOTE_PICK_HELP = '누르기 = 그 라벨 하나만 · Ctrl+누르기 = 여러 개 (더하기·빼기)';
+
 interface LabelPickerProps {
   kind: ItemKind;
   /** 그 종류의 라벨 (data/select useLabelTree) */
@@ -63,11 +66,10 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
   return (
     <div data-label-picker={kind} className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span data-label-picker-hint className="text-xs font-bold text-slate-500">
+        <span data-label-picker-hint title={kind === 'note' ? NOTE_PICK_HELP : undefined} className="text-xs font-bold text-slate-500">
           {kind === 'note' ? (
             <>
-              라벨 (<span className="pointer-coarse:hidden">Ctrl+누르기</span>
-              <span className="hidden pointer-coarse:inline">길게 누르기</span> = 여러 개)
+              라벨<span className="hidden pointer-coarse:inline"> (길게 누르기 = 여러 개)</span>
             </>
           ) : (
             '라벨'
@@ -102,7 +104,7 @@ export default function LabelPicker({ kind, tree, selected, onChange, newNames =
               key={id}
               id={id}
               on={on}
-              title={labelPath(id, tree.parents, nameOf)}
+              title={kind === 'note' ? `${labelPath(id, tree.parents, nameOf)}\n${NOTE_PICK_HELP}` : labelPath(id, tree.parents, nameOf)}
               style={style}
               className={cls}
               onPick={(multi) => pick(id, multi)}

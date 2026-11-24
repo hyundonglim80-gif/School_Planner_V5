@@ -91,7 +91,8 @@ export default function DayJournal({ date }: { date: YMD }) {
 
   const pathOf = (id: string) => labelPath(id, tree.parents, (x) => tree.byId.get(x)?.name);
   const openCreate = () => sid && openNotePanel({ sid, date });
-  const openEdit = (item: ItemDoc, edit?: boolean) => sid && openNotePanel({ sid, date, id: item.id, ...(edit ? { edit } : {}) });
+  // 카드를 누르면 보기 칸 (곧바로 수정 칸이던 카드 ✏️는 뺐다 - #200)
+  const openView = (item: ItemDoc) => sid && openNotePanel({ sid, date, id: item.id });
 
   return (
     <section data-day-journal={date} {...reorderAttr} className="flex flex-col gap-4">
@@ -173,7 +174,8 @@ export default function DayJournal({ date }: { date: YMD }) {
                 onClick={() => setJournalFilter(EMPTY_FILTER)}
               />
               <LabelFilterChips tree={tree} filter={filter} onChange={setJournalFilter} countOf={countOf} row />
-              <span data-filter-help title={FILTER_HELP} className="hidden sm:inline pointer-coarse:inline text-2xs text-slate-500 whitespace-nowrap">
+              {/* 여러 개 고르기 안내 - 휴대폰만 글로('길게 누르기'). PC는 라벨 칩에 마우스를 올리면 (#200 - 늘 보이는 안내 줄 대신) */}
+              <span data-filter-help title={FILTER_HELP} className="hidden pointer-coarse:inline text-2xs text-slate-500 whitespace-nowrap">
                 <FilterHint />
               </span>
             </div>
@@ -223,8 +225,7 @@ export default function DayJournal({ date }: { date: YMD }) {
                       dragProps={sid ? reorderDragProps(`note:day:${date}`, index, (f, t) => void moveNoteByDrag(sid, dated, f, t).catch(quiet)) : undefined}
                       onMoveUp={sid && canMoveNote(dated, index, -1) ? () => void moveNoteInList(sid, dated, index, -1).catch(quiet) : undefined}
                       onMoveDown={sid && canMoveNote(dated, index, 1) ? () => void moveNoteInList(sid, dated, index, 1).catch(quiet) : undefined}
-                      onOpen={() => openEdit(item)}
-                      onEdit={() => openEdit(item, true)}
+                      onOpen={() => openView(item)}
                       onOpenLinks={() => sid && openLinkViewer({ sid, id: item.id })}
                       moreLinks={progressLinks.get(item.id)?.length}
                       onAddLink={() => sid && openLinker({ sid, id: item.id })}

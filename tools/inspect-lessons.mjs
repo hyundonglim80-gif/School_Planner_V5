@@ -431,7 +431,8 @@ try {
   r.check(!(await serverUntil(() => read(A.ref('items', 'insp_le1')), (d) => !d?.linkIds?.length))?.linkIds?.length, '끊기 = 일정 쪽도');
   await page.keyboard.press('Escape');
   // 항목에서 🏫 수업 탭으로 잇기
-  await page.locator(`${sel('event-card', 'insp_le1')} ${sel('event-edit')}`).click();
+  // 일정 글을 누르면 수정 칸 (카드 ✏️는 #200에 뺐다)
+  await page.locator(`${sel('event-card', 'insp_le1')} ${sel('event-text')}`).click();
   await page.locator(sel('event-link-add')).click({ timeout: 5000 }).catch(() => {});
   const linkerOpen = await waitFor(page.locator(sel('linker', 'insp_le1')), 3000);
   if (linkerOpen) {

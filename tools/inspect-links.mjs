@@ -102,7 +102,7 @@ try {
   await escClose(page);
 
   r.section('🔗 링크 추가 → 연결 창 → 저장');
-  await evCard.locator(sel('event-edit')).click({ force: true });
+  await evCard.locator(sel('event-text')).click({ force: true }); // 일정 글을 누르면 수정 칸 (카드 ✏️는 #200에 뺐다)
   const evPanel = page.locator(sel('event-panel', 'edit'));
   await waitFor(evPanel, 8000);
   r.check((await evPanel.locator(sel('event-links-open')).getAttribute('data-event-links-open')) === '3', '일정 칸에 📑 연결 3개');
@@ -143,7 +143,7 @@ try {
 
   r.section("'+ 새 메모 만들어 연결' - 🛒가 비어 있으면 저장과 함께 연결 창이 닫힌다");
   await escClose(page); // 닫히는 움직임이 끝난 뒤 다시 연다 (닫히는 칸의 단추를 누르면 놓친다)
-  await evCard.locator(sel('event-edit')).click({ force: true });
+  await evCard.locator(sel('event-text')).click({ force: true });
   await waitFor(evPanel, 8000);
   await evPanel.locator(sel('event-link-add')).click();
   r.check(await waitFor(linker), '연결 창');

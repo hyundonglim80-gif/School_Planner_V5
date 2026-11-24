@@ -182,8 +182,10 @@ try {
   r.check((await page.locator(`${sel('note-panel', 'edit')}[data-note-id="insp_mm5"]`).count()) === 0, '▶는 쓰는 칸을 열지 않는다');
   await row5.locator(sel('memo-row-expand')).click();
   r.check(await waitFor(async () => !(await row5.locator(sel('memo-row-body')).count())), '▼ = 다시 한 줄');
+  // 여러 개 고르기 안내 - PC는 칩 아래에 늘 적지 않고 라벨 칩에 마우스를 올리면 (11-24 메모 요청 #200 · 휴대폰은 칩 아래 '길게 누르기 = 여러 개' 글)
   const hint = page.locator(`${sel('memo-filter-nav')} ${sel('filter-help')}`);
-  r.check(((await hint.textContent()) ?? '').includes('여러 개') && (await hint.isVisible()), "칩 아래 'Ctrl·Shift+누르기 = 여러 개' (옛 '?' - P11-1)");
+  const chipTip = (await page.locator(`${sel('memo-filter-nav')} ${sel('filter-chip', 'insp_mlu')}`).getAttribute('title').catch(() => '')) ?? '';
+  r.check(!(await hint.isVisible()) && chipTip.startsWith('점검개인') && chipTip.includes('Ctrl+누르기'), `PC: 칩 아래 안내 줄 없이 칩에 올리면 이름 + 고르는 법 (#200 - ${JSON.stringify(chipTip.slice(0, 30))})`);
   await page.locator(sel('memo-row', 'insp_mm1')).click();
   r.check(await waitFor(page.locator(`${sel('note-panel', 'edit')}[data-note-id="insp_mm1"]`)), '줄을 누르면 쓰는 칸');
   await page.keyboard.press('Escape');
@@ -243,12 +245,9 @@ try {
   await vText.fill('점검 메모 학교');
   await page.keyboard.press('Escape');
   await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0);
+  // 카드 ✏️(곧바로 수정 칸)는 뺐다 (11-24 메모 요청 #200 - 누르면 열리니 필요 없다) - 올려도 🔗·🗑️만
   await card('insp_mm2').hover();
-  await card('insp_mm2').locator(sel('entry-edit')).click();
-  const ed = page.locator(`${sel('note-panel')}[data-note-id="insp_mm2"]`);
-  r.check(await waitFor(async () => (await modeOf(ed)) === 'edit'), '카드 ✏️ = 곧바로 수정 칸');
-  await page.keyboard.press('Escape');
-  await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0);
+  r.check((await card('insp_mm2').locator(sel('entry-edit')).count()) === 0 && (await card('insp_mm2').locator(sel('entry-delete')).count()) === 1, '카드에 ✏️ 없음 (🗑️는 그대로 - #200)');
 
   r.section('제목 = 글의 첫 줄 · 쓰는 칸에 제목 칸 없음 (P35 11-13 사용자 요청)');
   const TITLE_MEMOS = {
@@ -283,10 +282,11 @@ try {
   r.check((await v1.locator(sel('note-text-input')).inputValue()) === '점검 제목 첫 줄\n\n둘째 줄 본문', '글 칸 = 글 그대로 (첫 줄 포함)');
   await page.keyboard.press('Escape');
   await waitFor(async () => (await page.locator(sel('note-panel')).count()) === 0);
-  // 예전 제목 메모 - 고치는 칸에서는 글 첫 줄, 글을 고쳐 저장하면 제목 칸을 지우고 글에 담는다
-  await card('insp_mt2').hover();
-  await card('insp_mt2').locator(sel('entry-edit')).click();
+  // 예전 제목 메모 - 고치는 칸에서는 글 첫 줄, 글을 고쳐 저장하면 제목 칸을 지우고 글에 담는다 (카드 누르기 = 보기 칸 → ✏️ 수정 - #200)
+  await card('insp_mt2').locator(sel('entry-title')).click();
   const e2 = page.locator(`${sel('note-panel')}[data-note-id="insp_mt2"]`);
+  r.check(await waitFor(async () => (await modeOf(e2)) === 'view'), '예전 제목 메모도 보기 칸부터');
+  await page.locator(sel('note-edit')).click();
   const t2 = e2.locator(sel('note-text-input'));
   r.check(await waitFor(async () => (await t2.inputValue().catch(() => '')) === '점검 예전 제목\n예전 본문'), '예전 제목은 글 첫 줄로 올라온다');
   await t2.fill('점검 예전 제목\n예전 본문 고침');

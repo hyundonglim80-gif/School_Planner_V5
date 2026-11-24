@@ -70,7 +70,8 @@ describe('라벨 고르기', () => {
     render(<Harness kind="note" />);
     expect(qa('[data-label-pick]').map((b) => b.dataset.labelPick)).toEqual(['w', 's', 'a']);
     expect(q('[data-label-pick="a"]')).toHaveTextContent('└');
-    expect(q('[data-label-pick="a"]')).toHaveAttribute('title', '학교 › A초');
+    // 첫 줄 = 상위 › 하위, 다음 줄 = 고르는 법 (#200 - PC는 늘 보이던 안내 대신 마우스를 올리면)
+    expect(q('[data-label-pick="a"]').title.split('\n')[0]).toBe('학교 › A초');
   });
 
   it('메모: 그냥 누르면 하나만, Ctrl+누르면 여러 개', () => {
@@ -96,9 +97,11 @@ describe('라벨 고르기', () => {
         fireEvent.click(b);
       };
       const { unmount } = render(<Harness kind="note" />);
-      // 안내 글은 둘 다 그려 두고 화면 종류(pointer)로 하나만 보인다
-      expect(q('[data-label-picker-hint]')).toHaveTextContent('Ctrl+누르기');
+      // 휴대폰 안내는 글('길게 누르기' - PC는 숨김), PC 안내는 라벨 줄 제목·칩에 마우스를 올리면 (#200)
       expect(q('[data-label-picker-hint]')).toHaveTextContent('길게 누르기');
+      expect(q('[data-label-picker-hint]')).not.toHaveTextContent('Ctrl+누르기');
+      expect(q('[data-label-picker-hint]').title).toContain('Ctrl+누르기');
+      expect(q('[data-label-pick="w"]').title).toContain('Ctrl+누르기 = 여러 개');
       fireEvent.click(q('[data-label-pick="w"]'));
       long('s');
       expect(out().dataset.ids).toBe('w,s');

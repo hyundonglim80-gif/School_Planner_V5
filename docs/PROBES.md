@@ -73,7 +73,7 @@
   **실제 자료 사본 연습은 사용자 💾 백업 JSON을 `?as=new-…` 계정에 앱 되살리기로 넣는다**(P26-3 - 새 계정이라 설정 셋까지 빠짐없이, 되살리기 길도 함께 본다. 실제 자료는 스크래치패드에만, 끝에 지운다).
   1천여 문서면 화면이 다 받는 데 3초를 넘어 **'받기 전' 갈래가 드러난다**(새 학년도 창이 '베낄 표 없음'을 보였다 - 작은 seed로는 보이지 않는다). 에뮬레이터는 자료를 디스크에 남기지 않아 끄면 사본도 사라진다.
   **점검의 `page.reload()`가 30초 멈추면 서버가 받기 전 저장의 '떠나기 전에 묻기'(beforeunload)다** - probe의 기본 답이 '아니오'라 머문다. 저장 바로 뒤 새로고침하는 점검은 그때만 `dialogs.answer = true`(inspect-week). **서버 문서가 보여도(`serverUntil`) 앱은 쓰기 대답을 아직 못 받았을 수 있다** - 새로고침 앞에서 `hasPendingWrites()`(`data/pendingWrites`)가 빌 때까지 기다린다(11-17 inspect-memo 끌어 놓기 뒤 CI 한 번 30초 멈춤). **저장 바로 뒤 ESC로 닫는 앞에서도**(11-20 P48-5 - 이미 있는 메모를 Ctrl+S 하고 곧바로 ESC = 앱이 아직 '저장 안 함'이라 묻고 점검 답 '아니오'로 칸이 남았다, CI 세 바퀴 중 둘. 새 메모는 '수정 칸이 됨'을 기다려 괜찮다 - inspect-table `appSaved`).
-- **메모 카드 누르기 = 보기 칸**(11-09): 글을 고치는 점검은 카드 ✏️(`entry-edit`)나 `openWindow('note', { …, edit: true })`로 연다. 보기 칸은 `data-note-mode=view`(`data-note-panel`은 있는 메모면 그대로 `edit`), 안내·알림으로 연 칸의 글은 `note-view-body`에서 읽는다.
+- **메모 카드 누르기 = 보기 칸**(11-09): 글을 고치는 점검은 `openWindow('note', { …, edit: true })`나 카드 제목(`entry-title`) → 보기 칸 `note-edit`로 연다(카드 ✏️ `entry-edit`·일정 `event-edit`·수업 `lesson-edit`는 11-24 #200에 뺐다 - 일정은 `event-text`를 누르면 수정 칸). 보기 칸은 `data-note-mode=view`(`data-note-panel`은 있는 메모면 그대로 `edit`), 안내·알림으로 연 칸의 글은 `note-view-body`에서 읽는다.
   메모 칩도 이제 누르면 완료다(`[data-note-done-chip]`) - 카드 가운데를 누르지 말고 글(`entry-text`·`entry-preview`)을 누른다. 새로 연 칸의 커서는 글 맨 앞이다(친 글은 앞에 든다).
 - **처음 화면 밝기가 어둡게(#113)라 '밝은 화면'을 보는 점검은 `localStorage sp5_theme = light`를 심고 시작한다**(10-28 - inspect-handwriting 셋이 #113 뒤로 깨져 있었다).
   **창을 닫게 하는 키(ESC)는 keydown 사이에 팝업이 닫혀 `keyboard.press`가 '닫혔다'로 실패한다** - `.catch(() => {})`로 누르고 닫힘은 `waitForEvent('close')`로 본다(inspect-popout).

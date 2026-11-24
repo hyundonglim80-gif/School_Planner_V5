@@ -6,7 +6,8 @@
 //   - 지금 몇 교시: 교시 시각(시간표 창 '교시')을 적어 두면 오늘은 '지금 · N분 남음' / '다음 · N분 뒤', 머리줄에 다음 교시와 비고 첫 줄.
 //     카드에는 교시 시각을 적지 않는다(P11-1 사용자 의견 - 수업 종 설정에서만 본다, 카드 title에만).
 //   - 교과 모드(전담·(중등) 전담 + 담임): 반을 크게·반 색 막대, 수정 칸은 학년-반 + 과목 두 칸, '⏪ 지난 시간' 줄(같은 반·과목의 바로 앞 수업 비고).
-//   - ▲▼ 위아래 교시와 맞바꾸기, 🔗 링크 추가, 📑 n 연결된 것, ✏️ 고치기. 머리줄 ⚙️ = 시간표 창.
+//   - ▲▼ 위아래 교시와 맞바꾸기, 🔗 링크 추가, 📑 n 연결된 것. 머리줄 ⚙️ = 시간표 창.
+//     카드 ✏️는 없다(11-24 메모 요청 #200 - 교시를 누르면 곧바로 수정 칸이라 같은 일을 하는 단추가 둘이었다).
 //   - 📘 진도 줄(features/progress - P6-2): 진도를 넣은 과목이면 그 교시의 차시·준비물, 수정 칸에서 진도가 없으면 '📘 진도 만들기'(개인 공간만).
 //   - 🔔 종(features/bell - P6-3): '수업' 옆 단추로 수업 종 설정을 펼친다.
 //   - 🍚 급식·📚 학사(features/school - P6-3): 카드 아래, 환경설정 '우리 학교'를 골랐을 때만.
@@ -70,7 +71,7 @@ const PERIOD_COLORS = [
 /** 과목이 있는 교시 카드 왼쪽의 굵은 막대 - 교시 칩과 같은 색 (차례도 같다) */
 const PERIOD_ACCENTS = ['border-l-cobalt-400', 'border-l-emerald-400', 'border-l-amber-400', 'border-l-purple-400', 'border-l-rose-400', 'border-l-indigo-400', 'border-l-slate-400'];
 
-/** 카드 단추 (P41-2 - 예전 P10-2 '마우스를 올렸을 때만'은 안 보여도 자리를 차지했다): 🙋 출결·🪑·🎯·📊·🔗·✏️는 PC에서 카드 오른쪽 위에 떠서(ui/cardTools),
+/** 카드 단추 (P41-2 - 예전 P10-2 '마우스를 올렸을 때만'은 안 보여도 자리를 차지했다): 🙋 출결·🪑·🎯·📊·🔗는 PC에서 카드 오른쪽 위에 떠서(ui/cardTools),
  *  적힌 것이 있는 것(출결 요약·📊 n·📑 n)만 카드 줄에 늘. 휴대폰은 적힌 것만 - 나머지는 교시를 눌러 연 수정 칸에서(그 칸에 모두 있다) */
 const TOOL_BTN = 'text-slate-500 hover:text-blue-600 p-1 rounded hover:bg-slate-100 text-xs cursor-pointer';
 /** 지난 시간을 거슬러 찾는 날 수 */
@@ -499,19 +500,6 @@ export default function DayLessons({ date }: { date: string }) {
                           aria-label="링크 추가"
                         >
                           <Glyph e="🔗" />
-                        </button>
-                        <button
-                          type="button"
-                          data-lesson-edit={n}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startEdit(c);
-                          }}
-                          className={TOOL_BTN}
-                          title="수업 수정"
-                          aria-label="수업 수정"
-                        >
-                          <Glyph e="✏" />
                         </button>
                       </div>
                     </div>

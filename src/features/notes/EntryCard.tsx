@@ -1,8 +1,8 @@
 // 메모·기록 카드 하나 (V4 components/EntryCard.tsx - 메모 화면과 하루 화면 기록 칸이 같은 카드를 쓴다).
 //
-//   머리줄: ▶ ▲▼ ☆ 라벨칩…  시각·📅 날짜 칩·📌/🏫 온 길  ☑ 2/5  🔗 n (접혔을 때 🖼️)·📎·▦  ……  🔗 ✏️ 🗑️(마우스를 올리면)
+//   머리줄: ▶ ▲▼ ☆ 라벨칩…  시각·📅 날짜 칩·📌/🏫 온 길  ☑ 2/5  🔗 n (접혔을 때 🖼️)·📎·▦  ……  🔗 🗑️(마우스를 올리면)
 //   - 라벨 칩 = 완료(11-09 사용자 요청 - 일정과 같이 ☐ 체크 칸을 없앴다): 누르면 완료·풀기, 끝내면 칩 크기 그대로 글자를 줄이고 ✓(EventDoneChip). 라벨이 없으면 회색 ○ 칩.
-//   - 카드를 누르면 메모 보기 칸(내용만 - 11-09), ✏️는 곧바로 수정 칸.
+//   - 카드를 누르면 메모 보기 칸(내용만 - 11-09) - 그 칸 바닥 ✏️ 수정으로 고친다. 카드 ✏️(곧바로 수정 칸)는 뺐다(11-24 메모 요청 #200 - 누르면 열리니 필요 없다).
 //   - 단추·라벨 칩은 한 줄에(V4 10-07 사용자 요청), 시각·표시는 넘치면 다음 줄로. 라벨 칩은 위(머리줄)에 - 메모·기록 라벨 한 목록의 색.
 //   - 지운 라벨·모르는 라벨은 그리지 않는다(부르는 쪽이 itemLabels로 고른다).
 //   - 완료는 줄 긋기, ★ 즐겨찾기. 체크 줄(☐/☑)은 눌러서 체크 - 체크한 줄은 카드 아래쪽에 모아 보이기만 한다(V4 10-07, 구글 Keep처럼).
@@ -53,13 +53,11 @@ export interface EntryCardProps {
   dragProps?: object;
   /** 카드 누르기 = 메모 보기 칸 */
   onOpen: () => void;
-  /** ✏️ = 곧바로 수정 칸 (없으면 onOpen) */
-  onEdit?: () => void;
   /** 🔗 n - 이은 항목 보기 (links/LinkViewerWindow) */
   onOpenLinks?: () => void;
   /** 🔗 n에 더할 수 - 이 메모를 이은 진도 차시 (진도 쪽에만 적혀 있다 - P10-4) */
   moreLinks?: number;
-  /** 🔗 링크 추가 - 연결 창 (마우스를 올렸을 때 ✏️ 앞에, P10-4 5g) */
+  /** 🔗 링크 추가 - 연결 창 (마우스를 올렸을 때 🗑️ 앞에, P10-4 5g) */
   onAddLink?: () => void;
   onToggleDone: () => void;
   onToggleFavorite: () => void;
@@ -109,7 +107,7 @@ export default function EntryCard(props: EntryCardProps) {
         stop(e);
         props.onOpen();
       }}
-      title="클릭하여 보기 (✏️ = 수정)"
+      title="클릭하여 보기"
       className={`relative w-full rounded-xl p-3 sm:p-4 min-w-0 transition-all duration-200 border flex flex-col gap-2 group shadow-xs hover:shadow-lg cursor-pointer ${
         editing
           ? 'border-primary ring-1 ring-primary bg-primary/5'
@@ -295,19 +293,6 @@ export default function EntryCard(props: EntryCardProps) {
               <Glyph e="🔗" />
             </button>
           )}
-          <button
-            type="button"
-            data-entry-edit
-            onClick={(e) => {
-              stop(e);
-              (props.onEdit ?? props.onOpen)();
-            }}
-            className="p-1 text-slate-500 hover:text-primary hover:bg-slate-100 rounded-lg text-xs font-semibold transition-all cursor-pointer"
-            title={`${noun} 수정`}
-            aria-label={`${noun} 수정`}
-          >
-            <Glyph e="✏" />
-          </button>
           <button
             type="button"
             data-entry-delete

@@ -20,7 +20,7 @@ export const HOVER_ONLY = 'transition-opacity pointer-fine:opacity-0 pointer-fin
  * 수업 카드 ▲▼ (P58-1 사용자 '마우스를 올릴 때 나오는 칩·단추가 미리 자리를 차지하지 않게 - 그 위에 불투명한 바탕으로'): 마우스 화면에서는
  * 카드 왼쪽 테두리에 걸쳐 뜨는 작은 손잡이(불투명 바탕) - 자리를 차지하지 않고 글도 덮지 않는다(카드 왼쪽 여백 14px 안까지만).
  * 카드가 relative여야 하고, 둘레 칸에 왼쪽 여백(8px 넘게)이 있어야 잘리지 않는다(하루 수업 칸 p-5). 휴대폰은 ORDER_ARROWS 그대로(글 앞 칸·늘 보인다).
- * 일정·메모 카드는 아직 ORDER_ARROWS(자리는 그대로 - 5장 'P58' ③).
+ * 일정 카드도 이것(11-24 메모 요청 #200 - 일정 목록 스크롤 칸은 마우스 화면에서 왼쪽 여백 12px를 둔다). 메모 카드는 아직 ORDER_ARROWS(자리는 그대로 - 5장 'P58' ③).
  */
 export const ORDER_ARROWS_EDGE = `${ORDER_ARROWS} pointer-fine:absolute pointer-fine:top-1/2 pointer-fine:-translate-y-1/2 pointer-fine:-left-3 pointer-fine:z-10 pointer-fine:w-5 pointer-fine:px-0 pointer-fine:py-0.5 pointer-fine:gap-0 pointer-fine:rounded-lg pointer-fine:border pointer-fine:border-slate-200 pointer-fine:bg-white pointer-fine:shadow-xs`;
 

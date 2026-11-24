@@ -2,7 +2,7 @@
 //
 // - 왼쪽: '+ 새 메모'와 '🏷️ 라벨 관리'(제목을 누르면 라벨 관리 창 - P10-5, 아래 칩 = ⭐ 즐겨찾기 → 라벨(트리 차례) → 전체 메모). 라벨은 여러 개 고르기(LabelFilterChips - 하루 기록 칸과 같은 부품).
 //   고른 것은 이 기기에 기억한다(features/notes/labelFilter). 처음은 즐겨찾기 - 즐겨찾기한 메모가 하나도 없으면 화면을 열 때 전체로(빈 화면 대신, V4).
-//   옆 숫자는 진행 중 메모 수. ESC = 고른 라벨 모두 떼기(오른쪽 칸도 함께 닫힌다). 칩 아래 'Ctrl·Shift+누르기 = 여러 개'(옛 '?' - P11-1).
+//   옆 숫자는 진행 중 메모 수. ESC = 고른 라벨 모두 떼기(오른쪽 칸도 함께 닫힌다). 고르는 법은 라벨 칩에 마우스를 올리면(#200 - PC의 칩 아래 안내 줄 대신), 휴대폰은 칩 아래 '길게 누르기 = 여러 개'.
 // - 오른쪽: 진행 / 완료 두 구역(제목을 누르면 접고 편다). 카드는 가장 짧은 열부터 쌓는다(ui/Masonry - 칸 폭으로 2~4열, 휴대폰도 2열).
 //   머리줄 ☰ / ▦(메모 화면에서만)로 목록 보기 - 한 줄에 메모 하나(MemoListRow, P10-5 사용자 의견 5e), ▶로 그 줄의 본문을 펴고 접는다(P11-1).
 //   차례 = 즐겨찾기 → 날짜 없는 메모(새 메모는 맨 위, P11-1) → 날짜 링크 메모(가장 늦은 날이 최근인 것부터, 카드에 📅 날짜 칩 = 그날 하루 화면).
@@ -252,7 +252,6 @@ export default function MemoScreen() {
                   onMoveUp={sid && i >= 0 && canMoveNote(movable, i, -1) ? () => move(i, i - 1) : undefined}
                   onMoveDown={sid && i >= 0 && canMoveNote(movable, i, 1) ? () => move(i, i + 1) : undefined}
                   onOpen={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id })}
-                  onEdit={() => sid && openNotePanel({ sid, date: dates[0] ?? null, id: m.id, edit: true })}
                   onOpenLinks={() => sid && openLinkViewer({ sid, id: m.id })}
                   moreLinks={progressLinks.get(m.id)?.length}
                   onAddLink={() => sid && openLinker({ sid, id: m.id })}
@@ -357,8 +356,9 @@ export default function MemoScreen() {
             {specialChip('fav', '⭐ 즐겨찾기', 'bg-amber-100 text-amber-900 border-amber-300', '즐겨찾기한 메모만 보기')}
             <LabelFilterChips tree={tree} filter={labelFilter ?? { labels: [], others: [] }} onChange={(f) => choose(f)} countOf={countOf} row={navTop} />
             {specialChip('all', '전체 메모', 'bg-slate-800 text-white border-slate-800', '모든 메모 보기')}
-            {/* 여러 개 고르기 안내 - 보이는 글로 (옛 '?'는 무슨 뜻인지 몰랐다 - P11-1 사용자 의견 · 손가락 화면은 '길게 누르기' - P57-2 ■4) */}
-            <p data-filter-help title={FILTER_HELP} className={`hidden sm:block pointer-coarse:block px-1 text-2xs leading-snug text-slate-500 ${navTop ? 'basis-full' : 'pt-1'}`}>
+            {/* 여러 개 고르기 안내 - 휴대폰만 보이는 글로('길게 누르기' - P57-2 ■4 · 옛 '?'는 무슨 뜻인지 몰랐다 - P11-1).
+                PC는 라벨 칩에 마우스를 올리면 이름 아래에 (11-24 메모 요청 #200 - 늘 보이는 안내 줄 대신) */}
+            <p data-filter-help title={FILTER_HELP} className={`hidden pointer-coarse:block px-1 text-2xs leading-snug text-slate-500 ${navTop ? 'basis-full' : 'pt-1'}`}>
               <FilterHint />
             </p>
           </nav>
