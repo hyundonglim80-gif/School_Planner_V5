@@ -15,6 +15,8 @@ import { undoCount } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
 import DayEvents from './DayEvents';
 import { useDayView } from './dayView';
+import { setCardCols } from '../../app/cardCols';
+import { useEntryOpen } from '../notes/entryOpen';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 // 일정 칸 열기는 그대로 하되 무엇으로 열었는지 본다 (창 목록은 이 시험에 등록하지 않는다)
@@ -233,6 +235,47 @@ describe('하루 일정 칸', () => {
       expect(q('[data-event-card="a"] [data-event-files]')).toBeNull();
     } finally {
       useDayView.setState({ events: 'card' });
+    }
+  });
+
+  it('목록 줄 맨 앞 ▶ = 그 줄만 카드처럼 펴기(글 전체·첨부 - 이 기기에 기억, 수정 칸은 열지 않음) · 카드 열을 고르면 그 수 (#206)', () => {
+    useDayView.setState({ events: 'list' });
+    useEntryOpen.setState({ open: {} });
+    const docs = new Map(items);
+    docs.set('f', { ...base, kind: 'event', date: DAY, text: '첨부 일정', labelIds: [], order: 'a4', attachments: [{ name: 'a.pdf', url: 'https://x/a', type: 'file' }] });
+    seed('live', docs);
+    try {
+      render(<DayEvents date={DAY} />);
+      expect(qa('[data-event-row-expand]')).toHaveLength(cards().length);
+      expect(q('[data-event-card="f"] [data-event-files]')).not.toBeNull();
+      fireEvent.click(q('[data-event-row-expand="f"]')!);
+      expect(useEntryOpen.getState().open.f).toBe(true);
+      expect(opened.calls).toEqual([]);
+      expect(q('[data-event-row-expand="f"]')!.getAttribute('aria-expanded')).toBe('true');
+      expect(q('[data-event-card="f"] [data-event-text]')!.className).not.toContain('truncate');
+      expect(q('[data-event-card="f"] a[href="https://x/a"]')).not.toBeNull();
+      expect(q('[data-event-card="f"] [data-event-files]')).toBeNull();
+      // 다른 줄은 그대로 한 줄
+      expect(q('[data-event-card="a"] [data-event-text]')!.className).toContain('truncate');
+      fireEvent.click(q('[data-event-row-expand="f"]')!);
+      expect(useEntryOpen.getState().open.f).toBe(false);
+      expect(q('[data-event-card="f"] [data-event-text]')!.className).toContain('truncate');
+      // 카드로 - ▶ 없음 · 카드 열 자동 = 휴대폰 2열·PC 1열, 고르면 어디서나 그 수
+      fireEvent.click(q('[data-event-view-toggle="list"]')!);
+      expect(q('[data-event-row-expand]')).toBeNull();
+      const grid = () => q('[data-event-card="a"]')!.parentElement!.className;
+      expect(grid()).toContain('grid-cols-2 sm:grid-cols-1');
+      act(() => setCardCols('eventCols', 3));
+      expect(grid()).toContain('grid-cols-3');
+      expect(grid()).not.toContain('sm:grid-cols-1');
+      // 목록은 늘 한 줄에 하나
+      fireEvent.click(q('[data-event-view-toggle="card"]')!);
+      expect(grid()).toContain('grid-cols-1');
+      expect(grid()).not.toContain('grid-cols-3');
+    } finally {
+      useDayView.setState({ events: 'card' });
+      setCardCols('eventCols', 0);
+      useEntryOpen.setState({ open: {} });
     }
   });
 

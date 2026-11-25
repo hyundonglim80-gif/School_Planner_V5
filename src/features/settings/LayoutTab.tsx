@@ -1,13 +1,15 @@
 // 환경설정 '화면 배치' 탭 (P59 - 11-23 사용자 'ui 개선점 - 선택할 수 있는 요소는 환경설정에서 직접 선택'). 칸·카드·창이 어디에 어떻게 서는지.
 //   글자·밝기·색·꾸미기(보이는 모양)는 '보기' 탭 · 이 탭은 배치 - 화면 표시·창 위치·시작 화면을 보기 탭에서 옮겼다(보기 탭이 아홉 구역이었다).
 //   새 선택지의 값은 app/screenPrefs(계정에 PC·휴대폰 따로) - 기본값은 P59 전 모습 그대로. 휴대폰 구역은 휴대폰(손가락 화면)에서만 보인다.
+//   카드 열(11-25 메모 요청 #206 - 칸마다 자동·1~5열)은 이 기기에만(app/cardCols) - 옛 휴대폰 구역의 '카드 열 2열 / 1열'을 바꿨다.
 import { useState } from 'react';
 import { setWindowPlace, useLayoutPrefs, windowPlace } from '../../app/layoutPrefs';
 import { detectDeviceKind } from '../../app/deviceKind';
 import { setEnableScrollNav, setStartupScope, setToggle, useNav } from '../../app/nav';
 import { useShortcutTitle } from '../../app/keys';
 import { setScreenPref, useScreenPrefs } from '../../app/screenPrefs';
-import { MEMO_NAV_OPTIONS, ORDER_ARROWS_OPTIONS, PHONE_COLS_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, WEEK_START_OPTIONS, WEEK_LESSONS_OPTIONS, MONTH_LESSONS_OPTIONS } from '../../app/optionShortcuts';
+import { setCardCols, useCardCols } from '../../app/cardCols';
+import { CARD_COLS_OPTIONS, CARD_COLS_PANES, MEMO_NAV_OPTIONS, ORDER_ARROWS_OPTIONS, POPUP_STYLE_OPTIONS, STARTUP_OPTIONS, WEEK_START_OPTIONS, WEEK_LESSONS_OPTIONS, MONTH_LESSONS_OPTIONS } from '../../app/optionShortcuts';
 import { setCommonSetting, useCommonSettings } from '../../app/prefs';
 import { ChoiceRow, Choices, Section, ToggleRow } from './parts';
 
@@ -20,6 +22,7 @@ export default function LayoutTab() {
   const nav = useNav();
   const { popupStyle, sideAt } = useLayoutPrefs();
   const screen = useScreenPrefs();
+  const cardCols = useCardCols();
   const weekStart = useCommonSettings((s) => s.weekStart);
   const [device] = useState(detectDeviceKind);
   const withShortcutKey = useShortcutTitle();
@@ -116,18 +119,16 @@ export default function LayoutTab() {
         />
       </Section>
 
+      {/* #206 - 카드로 볼 때 한 줄의 카드 수, 칸마다 (목록 ☰은 늘 한 줄에 하나) · 자동 = 고르기 전 모습 · PC·휴대폰 모두, 이 기기에만 */}
+      <Section id="cardCols" title="카드 열" saved="device" desc="카드로 볼 때 한 줄의 카드 수 - 자동은 휴대폰 2열, PC는 수업·일정 1열·메모 2~4열(칸 폭에 따라)">
+        {CARD_COLS_PANES.map(({ key, label }) => (
+          <ChoiceRow key={key} label={label} name={key} option={key} value={cardCols[key]} onChange={(v) => setCardCols(key, v)} options={CARD_COLS_OPTIONS} />
+        ))}
+      </Section>
+
       {/* P59-1 - 휴대폰(손가락 화면)에서만 듣는 것. 고르지 않으면 P59 전 모습 */}
       {device === 'mobile' && (
         <Section id="phoneCards" title="휴대폰 카드·메모" saved="split">
-          <ChoiceRow
-            label="카드 열"
-            hint="하루 일정·메모 칸과 메모 화면"
-            name="phoneCols"
-            option="phoneCols"
-            value={screen.phoneCols}
-            onChange={(v) => setScreenPref('phoneCols', v)}
-            options={PHONE_COLS_OPTIONS}
-          />
           <ChoiceRow
             label="카드 차례 단추 (▲▼)"
             hint="⇅ 누를 때만 = 칸 머리 ⇅를 누르면 그 칸 카드에 섭니다"

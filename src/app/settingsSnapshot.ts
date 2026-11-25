@@ -35,6 +35,7 @@ import { readContrast, readDim, setContrast, setDim } from './viewAids';
 import { setHeaderFolded, useHeaderFold } from './headerFold';
 import { useMemoView } from '../features/memo/memoView';
 import { useMemoSort } from '../features/memo/memoSort';
+import { useCardCols } from './cardCols';
 import { setYearView, useYearView } from '../features/year/prefs';
 import { useShowLastYear } from '../features/week/prefs';
 
@@ -43,6 +44,7 @@ export function currentLocalPrefs(): LocalPrefs {
   const board = useBoardPrefs.getState();
   const layout = useLayoutPrefs.getState();
   const sort = useMemoSort.getState();
+  const cols = useCardCols.getState();
   return {
     boardMain: board.main,
     boardDay: board.day,
@@ -55,6 +57,10 @@ export function currentLocalPrefs(): LocalPrefs {
     memoView: useMemoView.getState().view,
     memoSortKey: sort.key,
     memoSortDir: sort.dir,
+    lessonCols: cols.lessonCols,
+    eventCols: cols.eventCols,
+    journalCols: cols.journalCols,
+    memoCols: cols.memoCols,
     yearView: useYearView.getState().view,
     lastYear: useShowLastYear.getState().on,
   };
@@ -73,6 +79,8 @@ function applyLocalPrefs(p: LocalPrefs) {
   if (p.headerFold !== now.headerFold) setHeaderFolded(p.headerFold);
   if (p.memoView !== now.memoView) useMemoView.setState({ view: p.memoView });
   if (p.memoSortKey !== now.memoSortKey || p.memoSortDir !== now.memoSortDir) useMemoSort.setState({ key: p.memoSortKey, dir: p.memoSortDir });
+  const cols = { lessonCols: p.lessonCols, eventCols: p.eventCols, journalCols: p.journalCols, memoCols: p.memoCols };
+  if ((Object.keys(cols) as Array<keyof typeof cols>).some((k) => cols[k] !== now[k])) useCardCols.setState(cols);
   if (p.yearView !== now.yearView) setYearView(p.yearView);
   if (p.lastYear !== now.lastYear) useShowLastYear.setState({ on: p.lastYear });
 }

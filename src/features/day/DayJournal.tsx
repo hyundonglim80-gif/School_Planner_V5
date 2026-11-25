@@ -17,8 +17,8 @@ import { itemLabels, useLabelTree, useMirrorStatus } from '../../data/select';
 import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
 import { useMainWidth } from '../../ui/useMainWidth';
-import { useIsMobile } from '../../ui/useIsMobile';
-import { useScreenPrefs } from '../../app/screenPrefs';
+import { useCardCols } from '../../app/cardCols';
+import { cardColumns } from '../../domain/cardCols';
 import { useReorderToggle } from '../../ui/useReorderToggle';
 import type { ItemDoc } from '../events/eventOps';
 import { reorderDragProps } from '../../ui/reorderDrag';
@@ -82,12 +82,11 @@ export default function DayJournal({ date, edgeRoom = false }: { date: YMD; /** 
   const picked = filter.labels.length + filter.others.length;
 
   // 칸 수는 창 폭이 아니라 본문 폭으로 - 오른쪽 칸이 열려 본문이 좁아지면 줄인다. 휴대폰도 2열(일정 칸과 같게) -
-  // 환경설정 화면 배치 '카드 열 1열'(P59-1)이면 휴대폰 폭에서 1열
+  // 환경설정 화면 배치 '카드 열'(#206 - 이 기기에만)에서 1~5열을 고르면 폭과 상관없이 그 수
   const mainWidth = useMainWidth();
-  const isMobile = useIsMobile();
-  const phoneCols = useScreenPrefs((s) => s.phoneCols);
+  const cardCols = useCardCols((s) => s.journalCols);
   const { reorderAttr, reorderButton } = useReorderToggle('journal');
-  const columnsCount = isMobile && phoneCols === 1 ? 1 : journalColumnsFor(mainWidth);
+  const columnsCount = cardColumns(cardCols, journalColumnsFor(mainWidth));
   const columns = Array.from({ length: columnsCount }, () => [] as { item: ItemDoc; index: number }[]);
   shown.forEach((item, index) => columns[index % columnsCount].push({ item, index }));
 

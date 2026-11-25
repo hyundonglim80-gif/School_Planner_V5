@@ -50,7 +50,7 @@ import { isKnownTabShortcut } from './tabShortcuts';
 import { useNav, type SemesterFilter, type StartupScope, STARTUP_SCOPES } from './nav';
 import { detectDeviceKind, type DeviceKind } from './deviceKind';
 import type { WeekStart } from '../domain/dateUtils';
-import { SCREEN_DEFAULTS, SCREEN_KEYS, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols, type ScreenPrefs, type WeekLessons, type MonthLessons } from './screenPrefs';
+import { SCREEN_DEFAULTS, SCREEN_KEYS, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type ScreenPrefs, type WeekLessons, type MonthLessons } from './screenPrefs';
 
 // PC인가 휴대폰인가는 app/deviceKind에 (창 목록도 본다)
 export { detectDeviceKind, type DeviceKind };
@@ -83,7 +83,6 @@ export interface DevicePrefs {
   enableScrollNav: boolean;
   /** 화면 배치 (P59 - app/screenPrefs, 환경설정 '화면 배치' 탭). 기본값 = P59 전 모습 */
   memoNavAt: MemoNavAt;
-  phoneCols: PhoneCols;
   orderArrows: OrderArrowsMode;
   cardTime: boolean;
   monthFit: boolean;
@@ -114,7 +113,6 @@ export const DEVICE_PREFS: SettingsSpec<DevicePrefs> = {
   semesterFilterAt: customField<string>('', (v) => (typeof v === 'string' && /^(\d{4}-[12])?$/.test(v) ? v : undefined)),
   enableScrollNav: boolField(false),
   memoNavAt: oneOfField<MemoNavAt>(SCREEN_DEFAULTS.memoNavAt, ['side', 'top']),
-  phoneCols: oneOfField<PhoneCols>(SCREEN_DEFAULTS.phoneCols, [2, 1]),
   orderArrows: oneOfField<OrderArrowsMode>(SCREEN_DEFAULTS.orderArrows, ['always', 'toggle']),
   cardTime: boolField(SCREEN_DEFAULTS.cardTime),
   monthFit: boolField(SCREEN_DEFAULTS.monthFit),

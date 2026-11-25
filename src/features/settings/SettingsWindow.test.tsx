@@ -3,6 +3,8 @@ import { render, fireEvent, act } from '@testing-library/react';
 import { resetHistoryForTest } from '../../app/history';
 import { setPopupStyle, useLayoutPrefs } from '../../app/layoutPrefs';
 import { useNav } from '../../app/nav';
+import { useCardCols } from '../../app/cardCols';
+import { CARD_COLS_DEFAULTS } from '../../domain/cardCols';
 import { useCommonSettings } from '../../app/prefs';
 import { handleAppKeyDown, setCustomShortcuts, setShortcutOverrides, setTabShortcuts, useShortcutOverrides } from '../../app/keys';
 import { anyWindowUnsaved, getWindowDef, openWindow, registerWindow, useWindows } from '../../app/windows';
@@ -66,6 +68,7 @@ beforeEach(() => {
   setShortcutOverrides({});
   setTabShortcuts({});
   setCustomShortcuts({});
+  useCardCols.setState({ ...CARD_COLS_DEFAULTS });
   // 앞 시험의 안내(되돌리기 단추)를 걷는다
   document.getElementById('sp5-toast-container')?.remove();
 });
@@ -151,6 +154,22 @@ describe('환경설정 창', () => {
     expect(document.querySelector('[data-shortcut-save]')).toBeNull();
     fireEvent.click(q('[data-font-step="day:reset"]'));
     expect(document.documentElement.style.getPropertyValue('--font-scale')).toBe('');
+  });
+
+  it('카드 열 (#206): PC에서도 칸 넷마다 자동 · 1~5열 - 누르는 즉시, 이 기기에만', () => {
+    openSettings();
+    const section = '[data-settings-section="cardCols"]';
+    expect(q(`${section} [data-settings-saved]`).dataset.settingsSaved).toBe('device');
+    expect(qa(`${section} [data-settings-row]`).map((r) => r.dataset.settingsRow)).toEqual(['lessonCols', 'eventCols', 'journalCols', 'memoCols']);
+    expect(qa('[data-settings-row="memoCols"] [data-choice]').map((b) => b.textContent)).toEqual(['자동', '1열', '2열', '3열', '4열', '5열']);
+    expect(q('[data-choice="lessonCols:0"]')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(q('[data-choice="lessonCols:3"]'));
+    expect(useCardCols.getState()).toMatchObject({ lessonCols: 3, memoCols: 0 });
+    expect(q('[data-choice="lessonCols:3"]')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(q('[data-choice="lessonCols:0"]'));
+    expect(useCardCols.getState().lessonCols).toBe(0);
+    // 옛 휴대폰 '카드 열 2열 / 1열'은 없다
+    expect(document.querySelector('[data-settings-row="phoneCols"]')).toBeNull();
   });
 
   it('창 위치 (P47-2): PC = 오른쪽 칸 · 왼쪽 칸 · 팝업창 한 줄 - 왼쪽 칸 = 오른쪽 칸 모양 + 창 칸 쪽 왼쪽', () => {

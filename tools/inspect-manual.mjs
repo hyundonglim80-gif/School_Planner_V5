@@ -253,9 +253,15 @@ try {
     r.check((await count(sel('lessons-tool', 'drawStudent'))) === 1, '담임: 🎯 뽑기');
     r.check((await count(sel('journal-add'))) === 1 && (await count(sel('journal-add-memo'))) === 0, "📝 메모 칸 + 추가 ('+ 메모'는 없다 - P10-3)");
     // 카드 / 목록 (#204) - 수업·일정 칸 머리 ☰ = 한 줄 목록, ▦ = 카드로 (뒤 주제가 카드를 보게 되돌린다)
-    for (const [what, toggle, view] of [['수업', 'lessons-view-toggle', 'lessons-view'], ['일정', 'event-view-toggle', 'event-view']]) {
+    // 목록 줄 맨 앞 ▶/▼ 펴기 (#206 - 줄마다 하나, 펼 것이 없는 교시는 자리만)
+    for (const [what, toggle, view, pane, card, expand] of [
+      ['수업', 'lessons-view-toggle', 'lessons-view', 'day-lessons', 'lesson-card', 'lesson-row-expand'],
+      ['일정', 'event-view-toggle', 'event-view', 'day-events', 'event-card', 'event-row-expand'],
+    ]) {
       await q(sel(toggle, 'card')).click();
       r.check(await waitFor(async () => (await count(sel(view, 'list'))) === 1, 3000), `${what} 칸 머리 ☰ → 목록`);
+      const rows = await count(`${sel(pane)} ${sel(card)}`);
+      r.check((await count(`${sel(pane)} ${sel(expand)}`)) === rows, `${what} 목록 줄마다 맨 앞 ▶ 펴기 (${rows}줄)`);
       await q(sel(toggle, 'list')).click();
       r.check(await waitFor(async () => (await count(sel(view, 'card'))) === 1, 3000), `${what} 칸 머리 ▦ → 카드로`);
     }

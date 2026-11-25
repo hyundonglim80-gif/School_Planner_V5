@@ -15,6 +15,8 @@ import { nextOptionValue, optionShortcutId, optionTargetOf } from './optionShort
 import { useCommonSettings } from './prefs';
 import { isKnownShortcut, shortcutLabel } from './tabShortcuts';
 import { readContrast } from './viewAids';
+import { useCardCols } from './cardCols';
+import { CARD_COLS_DEFAULTS } from '../domain/cardCols';
 
 const alt = (key: string) => ({ ctrl: false, alt: true, shift: false, key });
 
@@ -71,6 +73,17 @@ describe('환경설정 값 단축키 (P28-2)', () => {
     runCustomShortcut('opt.decor.spring');
     expect(useCommonSettings.getState().decor).toBe('winter');
     expect(toast).toHaveBeenLastCalledWith('⚙️ 꾸미기: 겨울');
+  });
+
+  it('카드 열 키 (#206): 칸마다 그 열 수 - 다시 누르면 앞 값(자동), 다른 칸은 그대로', () => {
+    useCardCols.setState({ ...CARD_COLS_DEFAULTS });
+    expect(runCustomShortcut('opt.memoCols.5')).toBe(true);
+    expect(useCardCols.getState()).toEqual({ ...CARD_COLS_DEFAULTS, memoCols: 5 });
+    expect(toast).toHaveBeenLastCalledWith('⚙️ 카드 열 (메모 화면): 5열');
+    runCustomShortcut('opt.memoCols.5');
+    expect(useCardCols.getState().memoCols).toBe(0);
+    expect(toast).toHaveBeenLastCalledWith('⚙️ 카드 열 (메모 화면): 자동');
+    expect(customShortcutOf('opt.lessonCols.6')).toBeUndefined();
   });
 
   it('창 위치 키: 팝업창 ↔ 오른쪽 칸 (창은 열지 않는다 - 값만)', () => {

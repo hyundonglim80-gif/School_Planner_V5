@@ -25,9 +25,14 @@ interface Props {
   hideContent?: boolean;
   /** 생략하지 않고 줄을 바꿔 다 보인다 (수정 칸 - 아래 여유가 있다) */
   wrap?: boolean;
+  /**
+   * 좁은 카드(한 줄에 카드 둘 이상 - 메모 요청 #206 카드 열): 줄 끝 묶음을 아래 줄로 내리고, 🔗 잇기·이 교시 밀기는 빼서 교시를 눌러 연 수정 칸에서 한다
+   * ('이 교시 밀기' 하나가 휴대폰 2열 카드의 글 폭 93px보다 넓어 카드 밖으로 나갔다). 🔗 n·밀린 교시의 되돌리기는 그대로
+   */
+  narrow?: boolean;
 }
 
-export default function ProgressMarkLine({ mark, date, period, alwaysShowAction = false, hideContent = false, wrap = false }: Props) {
+export default function ProgressMarkLine({ mark, date, period, alwaysShowAction = false, hideContent = false, wrap = false, narrow = false }: Props) {
   const [busy, setBusy] = useState(false);
   const sid = usePersonalSpaceId();
   const docs = useDocs('progress', sid);
@@ -67,7 +72,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
       ' (누르면 진도 관리)';
 
   return (
-    <div data-progress-mark={mark.bumped ? 'bumped' : n} className="flex gap-2 text-sm min-w-0 items-start">
+    <div data-progress-mark={mark.bumped ? 'bumped' : n} className={`flex text-sm min-w-0 ${narrow ? 'flex-col gap-1' : 'gap-2 items-start'}`}>
       {/* 단원 · 차시 · 내용 · 준비물은 항목마다 줄을 바꿔 보인다 */}
       <div className="flex-1 min-w-0 flex flex-col items-start gap-0.5">
         <button
@@ -121,7 +126,7 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
         )}
       </div>
       {/* 줄 끝 묶음: 🔗 n(이은 메모 - 늘)은 흐름 안, 🔗 잇기·밀기는 PC 하루 카드에서 그 왼쪽에 겹쳐 뜬다(P58-1) */}
-      <span className="relative shrink-0 flex items-start gap-2">
+      <span className="relative shrink-0 flex items-start gap-2 empty:hidden">
         {hasLinks && (
           <button
             type="button"
@@ -136,39 +141,41 @@ export default function ProgressMarkLine({ mark, date, period, alwaysShowAction 
             <Glyph e="🔗" /> {lesson!.linkIds!.length}
           </button>
         )}
-        <span data-progress-actions className={floating ? `${FLOAT_LINE} ${hasLinks ? 'sm:mr-1' : 'sm:-mr-1'}` : 'flex items-center gap-2'}>
-          {!mark.bumped && sid && mark.row !== null && (
+        {!(narrow && floating) && (
+          <span data-progress-actions className={floating ? `${FLOAT_LINE} ${hasLinks ? 'sm:mr-1' : 'sm:-mr-1'}` : 'flex items-center gap-2'}>
+            {!mark.bumped && sid && mark.row !== null && (
+              <button
+                type="button"
+                data-progress-link-add
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openLinker({ sid, id: progressLinkId(mark.planId, mark.row!) });
+                }}
+                className="shrink-0 px-1 py-0.5 rounded text-slate-500 hover:text-yellow-700 hover:bg-yellow-50"
+                title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다"
+                aria-label="이 차시에 메모 잇기"
+              >
+                <Glyph e="🔗" />
+              </button>
+            )}
             <button
               type="button"
-              data-progress-link-add
-              onClick={(e) => {
-                e.stopPropagation();
-                openLinker({ sid, id: progressLinkId(mark.planId, mark.row!) });
-              }}
-              className="shrink-0 px-1 py-0.5 rounded text-slate-500 hover:text-yellow-700 hover:bg-yellow-50"
-              title="이 차시에 메모 잇기 - 이 차시를 하는 모든 수업 칸과 그날 메모 칸에 보입니다"
-              aria-label="이 차시에 메모 잇기"
+              data-progress-bump={mark.bumped ? 'undo' : 'bump'}
+              onClick={toggle}
+              disabled={busy}
+              className={`shrink-0 px-1.5 py-0.5 rounded border font-bold disabled:opacity-50 ${
+                mark.bumped ? 'text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100' : 'text-slate-500 border-slate-200 bg-white hover:bg-slate-50'
+              }`}
+              title={
+                mark.bumped
+                  ? '밀기를 되돌립니다 - 뒤 차시가 한 칸씩 당겨집니다'
+                  : '이 교시에 수업을 못 했으면 밉니다 - 이 교시는 차시 없이 두고 뒤 차시가 한 칸씩 밀립니다'
+              }
             >
-              <Glyph e="🔗" />
+              {mark.bumped ? '되돌리기' : '이 교시 밀기'}
             </button>
-          )}
-          <button
-            type="button"
-            data-progress-bump={mark.bumped ? 'undo' : 'bump'}
-            onClick={toggle}
-            disabled={busy}
-            className={`shrink-0 px-1.5 py-0.5 rounded border font-bold disabled:opacity-50 ${
-              mark.bumped ? 'text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100' : 'text-slate-500 border-slate-200 bg-white hover:bg-slate-50'
-            }`}
-            title={
-              mark.bumped
-                ? '밀기를 되돌립니다 - 뒤 차시가 한 칸씩 당겨집니다'
-                : '이 교시에 수업을 못 했으면 밉니다 - 이 교시는 차시 없이 두고 뒤 차시가 한 칸씩 밀립니다'
-            }
-          >
-            {mark.bumped ? '되돌리기' : '이 교시 밀기'}
-          </button>
-        </span>
+          </span>
+        )}
       </span>
     </div>
   );

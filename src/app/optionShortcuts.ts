@@ -24,7 +24,9 @@ import { setDecor } from './decor';
 import { readContrast, readDim, setContrast, setCvd, setDim } from './viewAids';
 import { showToast } from './toast';
 import { useShortcutOverrides } from './keys';
-import { setScreenPref, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type PhoneCols, type WeekLessons, type MonthLessons } from './screenPrefs';
+import { setScreenPref, useScreenPrefs, type MemoNavAt, type OrderArrowsMode, type WeekLessons, type MonthLessons } from './screenPrefs';
+import { setCardCols, useCardCols } from './cardCols';
+import { CARD_COLS_VALUES, isCardCols, type CardCols, type CardColsKey } from '../domain/cardCols';
 
 type Value = string | number;
 export interface OptionChoice<T extends Value = Value> {
@@ -71,9 +73,14 @@ export const MEMO_NAV_OPTIONS: OptionChoice<MemoNavAt>[] = [
   { value: 'side', label: '왼쪽 칸' },
   { value: 'top', label: '위 칩 줄' },
 ];
-export const PHONE_COLS_OPTIONS: OptionChoice<PhoneCols>[] = [
-  { value: 2, label: '2열' },
-  { value: 1, label: '1열' },
+/** 카드 열 (메모 요청 #206 - 칸마다, 이 기기에만 · 0 = 자동 = 고르기 전 모습) */
+export const CARD_COLS_OPTIONS: OptionChoice<CardCols>[] = CARD_COLS_VALUES.map((n) => ({ value: n, label: n === 0 ? '자동' : `${n}열` }));
+/** 카드 열을 고르는 칸 - 환경설정 줄 이름·값 단축키 제목 */
+export const CARD_COLS_PANES: ReadonlyArray<{ key: CardColsKey; label: string }> = [
+  { key: 'lessonCols', label: '하루 수업 칸' },
+  { key: 'eventCols', label: '하루 일정 칸' },
+  { key: 'journalCols', label: '하루 메모 칸' },
+  { key: 'memoCols', label: '메모 화면' },
 ];
 export const ORDER_ARROWS_OPTIONS: OptionChoice<OrderArrowsMode>[] = [
   { value: 'always', label: '늘 보이기' },
@@ -174,14 +181,6 @@ const OPTIONS: Record<string, OptionDef> = {
     get: () => useScreenPrefs.getState().memoNavAt,
     set: (v) => setScreenPref('memoNavAt', v as MemoNavAt),
   },
-  phoneCols: {
-    kind: 'choice',
-    title: '카드 열',
-    def: 2,
-    values: () => PHONE_COLS_OPTIONS,
-    get: () => useScreenPrefs.getState().phoneCols,
-    set: (v) => setScreenPref('phoneCols', Number(v) === 1 ? 1 : 2),
-  },
   orderArrows: {
     kind: 'choice',
     title: '카드 차례 단추',
@@ -210,6 +209,23 @@ const OPTIONS: Record<string, OptionDef> = {
   buildId: { kind: 'toggle', title: '화면 구석 빌드 번호', get: () => useScreenPrefs.getState().buildId, set: (on) => setScreenPref('buildId', on) },
   monthFit: { kind: 'toggle', title: '월간 칸 화면에 맞추기', get: () => useScreenPrefs.getState().monthFit, set: (on) => setScreenPref('monthFit', on) },
   cardTime: { kind: 'toggle', title: '메모 카드 쓴 시각', get: () => useScreenPrefs.getState().cardTime, set: (on) => setScreenPref('cardTime', on) },
+  // 카드 열 (#206 - 칸마다 'opt.lessonCols.3' 꼴, 이 기기에만)
+  ...Object.fromEntries(
+    CARD_COLS_PANES.map(({ key, label }): [string, OptionDef] => [
+      key,
+      {
+        kind: 'choice',
+        title: `카드 열 (${label})`,
+        def: 0,
+        values: () => CARD_COLS_OPTIONS,
+        get: () => useCardCols.getState()[key],
+        set: (v) => {
+          const n = Number(v);
+          setCardCols(key, isCardCols(n) ? n : 0);
+        },
+      },
+    ]),
+  ),
   startupScope: {
     kind: 'choice',
     title: '시작 화면',
