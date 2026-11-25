@@ -1,10 +1,11 @@
 // 하루 수업 칸 - 받는 중 (P32-2): 시간표·그날 바꾼 칸이 사본에도 없고 서버에서도 다 받지 못했으면 교시 카드 대신 '수업을 받는 중…'
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
 import { applyBase, resetMirrorStore, setStatus, trackColl, type MirrorStatus } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
 import DayLessons from './DayLessons';
+import { useDayView } from '../day/dayView';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 
@@ -70,5 +71,34 @@ describe('하루 수업 칸 - 받는 중 (P32-2)', () => {
     render(<DayLessons date={DAY} />);
     q('[data-lessons-collapse]')!.click();
     return Promise.resolve().then(() => expect(q('[data-lessons-loading]')).toBeNull());
+  });
+});
+
+describe('하루 수업 칸 - 카드 / 목록 (#204)', () => {
+  it('머리 ☰ = 목록 - 교시 하나 = 한 줄(비고는 첫 줄만 과목 뒤에), ▦ = 카드로 (비고 칸이 다시)', () => {
+    useDayView.setState({ lessons: 'card' });
+    seed('timetables', 'live', TT);
+    seed('lessonDays', 'live', new Map([['2026-10-12', { ...base, periods: { '1': { supplies: '돋보기\n모둠 활동' } } }]]));
+    try {
+      render(<DayLessons date={DAY} />);
+      expect(q('[data-day-lessons]')?.dataset.lessonsView).toBe('card');
+      expect(q('[data-lesson-card="1"] [data-lesson-note]')?.textContent).toContain('모둠 활동');
+      expect(q('[data-lesson-note-line]')).toBeNull();
+      fireEvent.click(q('[data-lessons-view-toggle="card"]')!);
+      expect(useDayView.getState().lessons).toBe('list');
+      expect(q('[data-day-lessons]')?.dataset.lessonsView).toBe('list');
+      expect(qa('[data-lesson-card]').map((c) => c.dataset.lessonCard)).toEqual(['1', '2', '3', '4', '5', '6']);
+      expect(q('[data-lesson-card="1"] [data-lesson-note]')).toBeNull();
+      const line = q('[data-lesson-card="1"] [data-lesson-note-line]')!;
+      expect(line.textContent).toContain('돋보기');
+      expect(line.textContent).not.toContain('모둠 활동');
+      expect(line.title).toContain('모둠 활동');
+      expect(q('[data-lesson-card="1"] [data-lesson-subject]')?.dataset.lessonSubject).toBe('국어');
+      fireEvent.click(q('[data-lessons-view-toggle="list"]')!);
+      expect(useDayView.getState().lessons).toBe('card');
+      expect(q('[data-lesson-card="1"] [data-lesson-note]')).not.toBeNull();
+    } finally {
+      useDayView.setState({ lessons: 'card' });
+    }
   });
 });

@@ -1,4 +1,5 @@
 // 라벨 칩·고르기 - 고른 것은 id로, 메모·기록은 트리 차례(└), 새 라벨은 저장 때 만들 이름으로, ⚙️ = 라벨 관리 그 탭
+// 칩 목록은 '라벨 [고른 라벨 ▾]' 단추를 누르면 뜨는 판에 (11-25 메모 요청 #204 - 닫혀도 DOM에 숨어 있다)
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
@@ -48,6 +49,10 @@ function Harness({ kind, withNew }: { kind: 'event' | 'note'; withNew?: boolean 
   );
 }
 const out = () => q('output');
+const isOpen = () => !q('[data-label-picker-pop]').className.split(' ').includes('hidden');
+const openPop = () => {
+  if (!isOpen()) fireEvent.click(q('[data-label-picker-open]'));
+};
 
 beforeEach(() => openWindow.mockClear());
 
@@ -55,11 +60,14 @@ describe('라벨 고르기', () => {
   it('일정: 라벨 차례대로, 눌러서 붙이고 떼기(여러 개), 고른 칩은 라벨 색', () => {
     render(<Harness kind="event" />);
     expect(qa('[data-label-pick]').map((b) => b.dataset.labelPick)).toEqual(['e1', 'e2']);
+    openPop();
     fireEvent.click(q('[data-label-pick="e2"]'));
+    openPop();
     fireEvent.click(q('[data-label-pick="e1"]'));
     expect(out().dataset.ids).toBe('e1');
     expect(q('[data-label-pick="e1"]')).toHaveAttribute('aria-pressed', 'true');
     expect(q('[data-label-pick="e1"]').style.backgroundColor).not.toBe('');
+    openPop();
     fireEvent.click(q('[data-label-pick="e1"]'));
     expect(out().dataset.ids).toBe('');
     // 일정에는 '+ 새 라벨'이 없다 (V4 그대로)
@@ -76,11 +84,18 @@ describe('라벨 고르기', () => {
 
   it('메모: 그냥 누르면 하나만, Ctrl+누르면 여러 개', () => {
     render(<Harness kind="note" />);
+    openPop();
     fireEvent.click(q('[data-label-pick="w"]'));
+    // 그냥 누르기 = 하나로 끝 - 판을 닫는다
+    expect(isOpen()).toBe(false);
+    openPop();
     fireEvent.click(q('[data-label-pick="s"]'), { ctrlKey: true });
+    // Ctrl+누르기 = 더 고를 수 있게 판은 열린 채
+    expect(isOpen()).toBe(true);
     expect(out().dataset.ids).toBe('w,s');
     fireEvent.click(q('[data-label-pick="a"]'));
     expect(out().dataset.ids).toBe('a');
+    openPop();
     fireEvent.click(q('[data-label-pick="w"]'), { ctrlKey: true });
     fireEvent.click(q('[data-label-pick="a"]'), { ctrlKey: true });
     expect(out().dataset.ids).toBe('w');
@@ -97,19 +112,25 @@ describe('라벨 고르기', () => {
         fireEvent.click(b);
       };
       const { unmount } = render(<Harness kind="note" />);
-      // 휴대폰 안내는 글('길게 누르기' - PC는 숨김), PC 안내는 라벨 줄 제목·칩에 마우스를 올리면 (#200)
-      expect(q('[data-label-picker-hint]')).toHaveTextContent('길게 누르기');
+      // 휴대폰 안내는 판 위 글('길게 누르기' - PC는 숨김), PC 안내는 라벨 줄 제목·칩에 마우스를 올리면 (#200)
+      expect(q('[data-label-picker-pop]')).toHaveTextContent('길게 누르기 = 여러 개');
       expect(q('[data-label-picker-hint]')).not.toHaveTextContent('Ctrl+누르기');
       expect(q('[data-label-picker-hint]').title).toContain('Ctrl+누르기');
+      openPop();
       expect(q('[data-label-pick="w"]').title).toContain('Ctrl+누르기 = 여러 개');
       fireEvent.click(q('[data-label-pick="w"]'));
+      openPop();
       long('s');
       expect(out().dataset.ids).toBe('w,s');
+      // 길게 누르기도 Ctrl처럼 판은 열린 채
+      expect(isOpen()).toBe(true);
       long('w');
       expect(out().dataset.ids).toBe('s');
       unmount();
       render(<Harness kind="event" />);
+      openPop();
       long('e1');
+      openPop();
       long('e2');
       expect(out().dataset.ids).toBe('e2');
     } finally {
@@ -119,6 +140,7 @@ describe('라벨 고르기', () => {
 
   it('새 라벨: 없는 이름은 저장 때 만들 이름으로, 있는 이름은 그 라벨을 고른다, 누르면 뺀다', () => {
     render(<Harness kind="note" withNew />);
+    openPop();
     fireEvent.click(q('[data-label-pick-new]'));
     fireEvent.change(q('[data-label-pick-new-input]'), { target: { value: '#회의' } });
     fireEvent.keyDown(q('[data-label-pick-new-input]'), { key: 'Enter' });
@@ -128,6 +150,10 @@ describe('라벨 고르기', () => {
     fireEvent.keyDown(q('[data-label-pick-new-input]'), { key: 'Enter' });
     expect(out().dataset.ids).toBe('s');
     expect(out().dataset.names).toBe('회의');
+    // 닫힌 단추에도 고른 라벨·새 라벨 이름
+    expect(q('[data-label-picker-open]')).toHaveTextContent('학교');
+    expect(q('[data-label-picker-open]')).toHaveTextContent('회의');
+    expect(q('[data-label-picker-open]').dataset.labelPickerOpen).toBe('2');
     fireEvent.click(q('[data-label-pick-pending="회의"]'));
     expect(out().dataset.names).toBe('');
   });
@@ -139,10 +165,62 @@ describe('라벨 고르기', () => {
         <Harness kind="note" withNew />
       </div>,
     );
+    openPop();
     fireEvent.click(q('[data-label-pick-new]'));
     fireEvent.keyDown(q('[data-label-pick-new-input]'), { key: 'Escape' });
     expect(outer).not.toHaveBeenCalled();
     expect(document.querySelector('[data-label-pick-new-input]')).toBeNull();
+    // 판은 열린 채, 초점은 '+ 새 라벨'로 (body로 빠지면 다음 ESC가 쓰는 칸을 닫는다)
+    expect(isOpen()).toBe(true);
+    expect(document.activeElement).toBe(q('[data-label-pick-new]'));
+  });
+
+  it('라벨 판 (#204): 처음엔 접힘 - 단추를 누르면 펴고, ESC는 판만 닫는다(쓰는 칸으로 번지지 않음) · 바깥 누르기도 닫는다', () => {
+    const outer = vi.fn();
+    render(
+      <div onKeyDown={outer}>
+        <Harness kind="note" />
+        <button type="button" data-outside>
+          밖
+        </button>
+      </div>,
+    );
+    expect(isOpen()).toBe(false);
+    expect(q('[data-label-picker-open]')).toHaveAttribute('aria-expanded', 'false');
+    expect(q('[data-label-picker-none]')).toHaveTextContent('라벨 고르기');
+    openPop();
+    expect(isOpen()).toBe(true);
+    expect(q('[data-label-picker]').dataset.labelPickerState).toBe('open');
+    // 열면 첫 칩에 초점 - 그 자리의 ESC를 판이 받는다
+    expect(document.activeElement).toBe(q('[data-label-pick="w"]'));
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    expect(isOpen()).toBe(false);
+    expect(outer).not.toHaveBeenCalled();
+    expect(document.activeElement).toBe(q('[data-label-picker-open]'));
+    // 닫힌 때의 ESC는 쓰는 칸으로 간다 (칸 닫기)
+    fireEvent.keyDown(q('[data-label-picker-open]'), { key: 'Escape' });
+    expect(outer).toHaveBeenCalledTimes(1);
+    openPop();
+    fireEvent.mouseDown(q('[data-outside]'));
+    expect(isOpen()).toBe(false);
+    // 단추를 다시 누르면 닫는다
+    openPop();
+    fireEvent.click(q('[data-label-picker-open]'));
+    expect(isOpen()).toBe(false);
+  });
+
+  it('라벨 판 (#204): 일정은 고르면 판을 닫고, 닫힌 단추에 고른 라벨(라벨 색)', () => {
+    render(<Harness kind="event" />);
+    openPop();
+    expect(document.activeElement).toBe(q('[data-label-pick="e1"]'));
+    fireEvent.click(q('[data-label-pick="e2"]'));
+    expect(isOpen()).toBe(false);
+    expect(q('[data-label-picked="e2"]')).toHaveTextContent('행사');
+    expect(q('[data-label-picked="e2"]').style.backgroundColor).not.toBe('');
+    expect(q('[data-label-picker-none]')).toBeNull();
+    // 다시 열면 고른 칩에 초점
+    openPop();
+    expect(document.activeElement).toBe(q('[data-label-pick="e2"]'));
   });
 
   it('⚙️ 라벨 수정 = 라벨 관리 창의 그 탭', () => {

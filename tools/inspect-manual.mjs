@@ -252,6 +252,13 @@ try {
     r.check((await count(sel('lessons-tool', 'attendance'))) + (await count(sel('lessons-tool', 'notices'))) === 2, '담임: 📋 출석부·📢 알림장');
     r.check((await count(sel('lessons-tool', 'drawStudent'))) === 1, '담임: 🎯 뽑기');
     r.check((await count(sel('journal-add'))) === 1 && (await count(sel('journal-add-memo'))) === 0, "📝 메모 칸 + 추가 ('+ 메모'는 없다 - P10-3)");
+    // 카드 / 목록 (#204) - 수업·일정 칸 머리 ☰ = 한 줄 목록, ▦ = 카드로 (뒤 주제가 카드를 보게 되돌린다)
+    for (const [what, toggle, view] of [['수업', 'lessons-view-toggle', 'lessons-view'], ['일정', 'event-view-toggle', 'event-view']]) {
+      await q(sel(toggle, 'card')).click();
+      r.check(await waitFor(async () => (await count(sel(view, 'list'))) === 1, 3000), `${what} 칸 머리 ☰ → 목록`);
+      await q(sel(toggle, 'list')).click();
+      r.check(await waitFor(async () => (await count(sel(view, 'card'))) === 1, 3000), `${what} 칸 머리 ▦ → 카드로`);
+    }
   });
 
   await topic('week', async () => {
@@ -366,10 +373,18 @@ try {
     await q(sel('event-add')).click();
     await has(sel('event-panel', 'new'));
     r.check((await count(sel('label-picker'))) === 1 && (await count(sel('label-picker-settings'))) === 1, '라벨 줄 + ⚙️ 라벨 수정');
+    // 라벨 칩은 '라벨 [고른 라벨 ▾]' 단추를 누르면 뜨는 판에 (#204) - 일정은 고르면 판이 닫힌다
+    const pop = q(sel('event-panel', 'new')).locator(sel('label-picker-pop'));
+    const openPop = () => q(sel('event-panel', 'new')).locator(sel('label-picker-open')).click();
+    r.check(!(await pop.isVisible()), '라벨 칩은 접힌 채 (단추를 누르면 판)');
     // 일정 라벨은 하나만 (#92) - 다른 라벨을 누르면 그 라벨로 바뀐다
     const picks = q(sel('event-panel', 'new')).locator(sel('label-pick'));
     if ((await picks.count()) >= 2) {
+      await openPop();
+      r.check(await waitFor(pop, 3000), '단추 → 라벨 판');
       await picks.nth(0).click();
+      r.check(await waitFor(async () => !(await pop.isVisible()), 3000), '일정 라벨을 고르면 판이 닫힌다');
+      await openPop();
       await picks.nth(1).click();
       const pressed = await picks.evaluateAll((els) => els.filter((e) => e.getAttribute('aria-pressed') === 'true').map((e) => e.getAttribute('data-label-pick')));
       r.check(pressed.length === 1 && pressed[0] === (await picks.nth(1).getAttribute('data-label-pick')), `라벨 하나만 - 다른 라벨을 누르면 그것으로 (${pressed.join()})`);
@@ -552,12 +567,16 @@ try {
     r.check(await has(sel('check-row', 1)), '체크 줄 그림 (☐ 누르기 = 맨 아래로·줄긋기)');
     r.check((await count(sel('check-down', 0))) === 1, '체크 줄 ▲▼');
     await q(sel('note-text-input')).fill('');
-    // 메모 라벨: 그냥 누르기 = 하나, Ctrl + 누르기 = 여러 개 (#92)
+    // 메모 라벨: 그냥 누르기 = 하나(판이 닫힌다), Ctrl + 누르기 = 여러 개(판은 열린 채) (#92 · 판은 #204)
     const picks = q(sel('note-panel', 'new')).locator(sel('label-pick'));
+    const openPop = () => q(sel('note-panel', 'new')).locator(sel('label-picker-open')).click();
     if ((await picks.count()) >= 2) {
+      await openPop();
       await picks.nth(0).click();
+      await openPop();
       await picks.nth(1).click();
       const one = await picks.evaluateAll((els) => els.filter((e) => e.getAttribute('aria-pressed') === 'true').length);
+      await openPop();
       await picks.nth(0).click({ modifiers: ['Control'] });
       const two = await picks.evaluateAll((els) => els.filter((e) => e.getAttribute('aria-pressed') === 'true').length);
       r.check(one === 1 && two === 2, `메모 라벨 - 누르기 = 하나 (${one}), Ctrl + 누르기 = 여러 개 (${two})`);

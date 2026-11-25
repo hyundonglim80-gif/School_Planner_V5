@@ -13,6 +13,8 @@
 //   - 🍚 급식·📚 학사(features/school - P6-3): 카드 아래, 환경설정 '우리 학교'를 골랐을 때만.
 // 교과 모드 칸의 🙋 = 그 반·그 교시 교과 출결(P7-2 - 개인 공간에서, 칸의 반이 그 학년도 명렬표에 있을 때). 교시 카드의 반 도구 = 🪑 자리표·🎯 뽑기(P7-3 - 그 반으로 연다).
 // 교시마다 📊n = 그 교시 조사표(P7-4). 반 도구·🙋·📊는 적힌 것(출결·조사표 수)이 없으면 마우스를 올려야 보인다(P10-2), 수정 칸에도 같은 단추 줄.
+// 카드 / 목록(11-25 메모 요청 #204 - 머리 ☰/▦, 이 기기에 기억 day/dayView): 목록은 교시 하나 = 한 줄 - 교시·반·과목·내용 + 📌 비고 첫 줄(말줄임),
+//   진도 줄·지난 시간·비고 전체는 카드에서(교시를 누르면 수정 칸). 누르기·▲▼·끌기·떠 있는 단추는 카드와 같다.
 import { Suspense, useMemo, useState } from 'react';
 import { lazyWithReload } from '../../app/lazyWithReload';
 import { setDate } from '../../app/nav';
@@ -55,6 +57,8 @@ import { FLOAT_TOOLS_ROW, ORDER_ARROWS_EDGE } from '../../ui/cardTools';
 import { useReorderToggle } from '../../ui/useReorderToggle';
 import { Glyph } from '../../ui/Icon';
 import { leadGlyph } from '../../ui/glyphText';
+import { useDayView } from '../day/dayView';
+import DayViewToggle from '../day/DayViewToggle';
 
 // 🔔 수업 종 설정은 머리의 '종' 단추로 펼 때 받는다 (P49-3 첫 화면 JS - 끊겨서 못 받으면 판 없이)
 const BellSettings = lazyWithReload(() => import('../bell/BellSettings'), () => null);
@@ -96,6 +100,9 @@ export default function DayLessons({ date }: { date: string }) {
 
   const [collapsed, setCollapsed] = useState(false);
   const { reorderAttr, reorderButton } = useReorderToggle('lessons');
+  // 카드 / 목록 (#204 - 목록은 한 줄에 교시 하나)
+  const look = useDayView((s) => s.lessons);
+  const list = look === 'list';
   // 수업 종 설정 - '⏰ 수업' 옆 🔔 단추로 펼친다 (V4 10-07 사용자 요청 - 시간표 창에서 옮김)
   const bell = useClassBell();
   const [bellOpen, setBellOpen] = useState(false);
@@ -155,7 +162,7 @@ export default function DayLessons({ date }: { date: string }) {
   const headerWindows = listWindows().filter((d) => d.lessonHeader && (d.show?.({ homeroom: showHomeroomTools, classUnit: isClassUnit }) ?? true));
 
   return (
-    <section data-day-lessons={date} {...reorderAttr} className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
+    <section data-day-lessons={date} data-lessons-view={look} {...reorderAttr} className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
       <div className={`flex flex-wrap @min-[37.5rem]:flex-nowrap items-start @min-[37.5rem]:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
         {/* 제목은 줄어들지 않는다. 좁으면 오른쪽의 '지금' 안내만 줄어든다 (V4 - '수업'이 '수/업'으로 꺾였다).
             휴대폰은 단추(종·출석부·알림장·진도·뽑기)가 제목 뒤에서 줄을 바꾼다 - 한 줄이면 390px 화면 밖으로 나갔다(P9-3).
@@ -232,6 +239,8 @@ export default function DayLessons({ date }: { date: string }) {
           <div className="order-2 @min-[37.5rem]:order-3 shrink-0 flex items-center gap-1">
             {/* 휴대폰 카드 ▲▼ '⇅ 누를 때만'(P59-1)이면 ⇅ */}
             {reorderButton}
+            {/* 카드 / 목록 (#204 - 메모 화면 머리줄 ☰/▦와 같은 꼴) */}
+            <DayViewToggle pane="lessons" />
             <button
               type="button"
               data-lessons-settings
@@ -271,7 +280,7 @@ export default function DayLessons({ date }: { date: string }) {
         </p>
       )}
       {!collapsed && !loading && (
-        <div className="grid grid-cols-1 gap-3">
+        <div className={`grid grid-cols-1 ${list ? 'gap-1.5' : 'gap-3'}`}>
           {view.cells.map((c) => {
             const n = c.n;
             const colorClass = PERIOD_COLORS[(n - 1) % PERIOD_COLORS.length];
@@ -309,13 +318,13 @@ export default function DayLessons({ date }: { date: string }) {
                 {...reorderDragProps(`lesson:${date}`, n, swap)}
                 onClick={() => startEdit(c)}
                 title={`${range ? `${range} · ` : ''}눌러서 고치기`}
-                className={`group relative ${hasDetails ? 'p-3.5' : 'px-3.5 py-2'} rounded-xl border border-slate-200/70 transition-all flex flex-col justify-between min-h-[40px] hover:border-primary/50 hover:bg-slate-50/50 cursor-pointer ${
+                className={`group relative ${list ? 'px-3 py-1 rounded-lg' : `${hasDetails ? 'p-3.5' : 'px-3.5 py-2'} rounded-xl min-h-[40px]`} border border-slate-200/70 transition-all flex flex-col justify-between hover:border-primary/50 hover:bg-slate-50/50 cursor-pointer ${
                   c.subject ? `border-l-4 ${slotColor ? slotColor.bar : accentClass}` : ''
                 } ${isNow ? 'ring-2 ring-primary/60 bg-blue-50/40' : isNext ? 'ring-1 ring-primary/30' : ''}`}
               >
-                <div className="flex gap-3 h-full items-stretch">
-                  {/* ▲▼ - PC는 카드 왼쪽 여백 안에 떠서 자리를 차지하지 않는다 (P58-1 · 휴대폰은 글 앞 칸에 늘) */}
-                  <div className={`flex flex-col items-center justify-center gap-1 pointer-coarse:gap-1.5 shrink-0 px-1 ${ORDER_ARROWS_EDGE}`}>
+                <div className={`flex ${list ? 'gap-2' : 'gap-3'} h-full items-stretch`}>
+                  {/* ▲▼ - PC는 카드 왼쪽 여백 안에 떠서 자리를 차지하지 않는다 (P58-1 · 휴대폰은 글 앞 칸에 늘 - 목록은 줄이 높아지지 않게 가로로) */}
+                  <div className={`flex ${list ? 'pointer-fine:flex-col' : 'flex-col'} items-center justify-center gap-1 pointer-coarse:gap-1.5 shrink-0 px-1 ${ORDER_ARROWS_EDGE}`}>
                     <button
                       type="button"
                       data-lesson-up={n}
@@ -346,7 +355,7 @@ export default function DayLessons({ date }: { date: string }) {
                     </button>
                   </div>
                   <div className="flex-1 flex flex-col min-w-0">
-                    <div className={`relative flex items-center justify-between gap-1 ${hasDetails ? 'mb-2' : ''}`}>
+                    <div className={`relative flex items-center justify-between gap-1 ${hasDetails && !list ? 'mb-2' : ''}`}>
                       <div className="flex items-center gap-1.5 min-w-0 flex-1">
                         <span className={`px-2 py-0.5 shrink-0 rounded-lg text-xs font-bold border ${colorClass}`}>{name}</span>
                         {slot?.cls ? (
@@ -375,6 +384,12 @@ export default function DayLessons({ date }: { date: string }) {
                         {mark && !mark.bumped && mark.lesson?.content && (
                           <span data-lesson-content className="min-w-0 truncate text-sm sm:text-base font-extrabold text-indigo-700">
                             {mark.lesson.content}
+                          </span>
+                        )}
+                        {/* 목록(#204): 비고는 첫 줄만 과목·내용 뒤에 (진도 줄·지난 시간은 카드에서) */}
+                        {list && c.note && (
+                          <span data-lesson-note-line title={c.note} className="min-w-0 truncate text-xs font-medium text-amber-700">
+                            <Glyph e="📌" /> {firstLine(c.note)}
                           </span>
                         )}
                         {slotClass && attSummary && (
@@ -504,7 +519,7 @@ export default function DayLessons({ date }: { date: string }) {
                       </div>
                     </div>
 
-                    {prevNote && prev && (
+                    {!list && prevNote && prev && (
                       <button
                         type="button"
                         data-lesson-prev={prev.date}
@@ -519,14 +534,14 @@ export default function DayLessons({ date }: { date: string }) {
                       </button>
                     )}
 
-                    {mark && (
+                    {!list && mark && (
                       <div className={c.note ? 'mb-2' : ''}>
                         <ProgressMarkLine mark={mark} date={date} period={n} hideContent />
                       </div>
                     )}
 
                     {/* 차례: 교시·반·과목·내용 / 단원·준비물(진도 줄) / 비고 */}
-                    {c.note && (
+                    {!list && c.note && (
                       <div className="flex flex-col text-xs" data-lesson-note>
                         <span className="text-slate-500 text-xs mb-0.5"><Glyph e="📌" /> 비고</span>
                         <p className="text-amber-700 font-medium whitespace-pre-wrap leading-relaxed">{c.note}</p>

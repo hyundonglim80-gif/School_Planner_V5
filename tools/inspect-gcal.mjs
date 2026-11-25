@@ -385,10 +385,12 @@ async function drawBundle() {
 const hashOf = (page) => new URL(page.url()).hash;
 
 const base = { deletedAt: null, v: 1, updatedAt: serverTimestamp() };
-/** 라벨 고르기 - 이미 골라져 있으면 그대로 (일정 라벨이 하나뿐이면 기본 라벨로 골라져 있다) */
+/** 라벨 고르기 - 이미 골라져 있으면 그대로 (일정 라벨이 하나뿐이면 기본 라벨로 골라져 있다) · 칩은 '라벨 [▾]' 단추를 누르면 뜨는 판에 (#204) */
 const pickLabel = async (page) => {
   const chip = page.locator(sel('label-pick', LABEL));
-  if ((await chip.getAttribute('aria-pressed')) !== 'true') await chip.click();
+  if ((await chip.getAttribute('aria-pressed')) === 'true') return;
+  await page.locator(`[data-label-picker]:has(${sel('label-pick', LABEL)})`).locator(sel('label-picker-open')).click();
+  await chip.click();
 };
 const queueIds = async () => (await getDocs(collection(em.db, 'spaces', sid, 'gcalQueue'))).docs.map((d) => d.id);
 const madeItems = async () =>
