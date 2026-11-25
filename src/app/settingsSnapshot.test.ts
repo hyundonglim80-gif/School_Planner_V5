@@ -44,6 +44,8 @@ import { useShortcutOverrides } from './keys';
 import { useBoardPrefs } from './boardPrefs';
 import { readThemeMode } from './theme';
 import { useMemoView } from '../features/memo/memoView';
+import { useCardCols } from './cardCols';
+import { CARD_COLS_DEFAULTS } from '../domain/cardCols';
 import { MEMO_SORT_OPTIONS, useMemoSort } from '../features/memo/memoSort';
 
 const K = { ctrl: true, alt: true, shift: false, key: 'K' };
@@ -60,6 +62,7 @@ function clearAll() {
   useBoardPrefs.setState({ main: null, day: null, memo: null });
   useMemoView.setState({ view: 'card' });
   useMemoSort.setState({ key: 'manual', dir: 'asc' });
+  useCardCols.setState({ ...CARD_COLS_DEFAULTS });
   act(() => useResetSnapshots.setState({ mine: null, admin: null, loaded: false }));
 }
 
@@ -109,6 +112,16 @@ describe('💾 초기화 설정', () => {
     useLayoutPrefs.setState({ sideAt: 'right' });
     act(() => void resetToInitial());
     expect(useLayoutPrefs.getState().sideAt).toBe('left');
+  });
+
+  it('카드 열(#206 - 이 기기 값)도 이 기기 몫에 - 초기화하면 그 열 수로', async () => {
+    useCardCols.setState({ memoCols: 4, lessonCols: 2 });
+    await saveMyResetSnapshot('u1', 3);
+    expect(saved[0].data.pc).toMatchObject({ local: { memoCols: 4, lessonCols: 2 } });
+    act(() => receiveMyReset(saved[0].data));
+    useCardCols.setState({ ...CARD_COLS_DEFAULTS, eventCols: 5 });
+    act(() => void resetToInitial());
+    expect(useCardCols.getState()).toEqual({ ...CARD_COLS_DEFAULTS, memoCols: 4, lessonCols: 2 });
   });
 
   it('휴대폰 몫이 있으면 그대로 두고 PC 몫만 바꾼다', async () => {

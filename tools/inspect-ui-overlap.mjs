@@ -120,6 +120,8 @@ const PH390 = { width: 390, height: 844, mobile: true };
 const PH360 = { width: 360, height: 780, mobile: true };
 const PHLAND = { width: 844, height: 390, mobile: true };
 const ALL_FONT = (p) => Object.fromEntries([...SCREENS.map(([s]) => s), 'popout'].map((s) => [s, p]));
+/** 카드 열 (#206 - app/cardCols 이 기기 값) - 네 칸 모두 n열 */
+const CARD_COLS = (n) => JSON.stringify({ state: { lessonCols: n, eventCols: n, journalCols: n, memoCols: n }, version: 0 });
 
 /** 묶음 - 한 창(기기 설정 하나)에서 도는 상황들 */
 const SETS = [
@@ -142,7 +144,10 @@ const SETS = [
   { name: 'ph360-font130', dev: PH360, prefs: { fontSizes: ALL_FONT(130) }, screens: 'all', windows: FEW },
   { name: 'ph390-dark', dev: PH390, theme: 'dark', screens: 'all', windows: FEW },
   // 환경설정 화면 배치 (P59-1) - 휴대폰 선택지를 모두 바꾼 모습 + 칸 머리 ⇅를 누른 하루·메모 화면
-  { name: 'ph360-p59', dev: PH360, prefs: { memoNavAt: 'top', phoneCols: 1, orderArrows: 'toggle', cardTime: false }, screens: ['day', 'memo'], windows: ['settings-layout', 'note-view'], extra: ['reorderOn'] },
+  { name: 'ph360-p59', dev: PH360, prefs: { memoNavAt: 'top', orderArrows: 'toggle', cardTime: false }, local: { 'sp5-card-cols': CARD_COLS(1) }, screens: ['day', 'memo'], windows: ['settings-layout', 'note-view'], extra: ['reorderOn'] },
+  // 카드 열 (#206 - 이 기기 값): 휴대폰 3열·PC 5열 - 좁은 카드에서 수업 첫 줄이 줄을 바꾸고 칩·단추가 겹치지 않나
+  { name: 'ph360-cols3', dev: PH360, local: { 'sp5-card-cols': CARD_COLS(3) }, screens: ['day', 'memo'], windows: ['settings-layout'] },
+  { name: 'pc1400-cols5', dev: PC1400, local: { 'sp5-card-cols': CARD_COLS(5) }, screens: ['day', 'board', 'memo'], windows: [], hover: true },
   // 화면 배치 달력 (P59-2) - 월요일부터·월간 화면 맞춤·주간 과목 칩·월간 '수업 n'
   { name: 'pc1400-p59', dev: PC1400, common: { weekStart: 1 }, prefs: { monthFit: true, weekLessons: 'chips', monthLessons: 'count' }, screens: ['month', 'week', 'board', 'year'], windows: ['settings-layout'] },
   { name: 'pc1400-p59cal', dev: PC1400, prefs: { monthFit: true }, screens: ['month'], windows: [] },

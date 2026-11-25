@@ -1,11 +1,13 @@
 // 하루 수업 칸 - 받는 중 (P32-2): 시간표·그날 바꾼 칸이 사본에도 없고 서버에서도 다 받지 못했으면 교시 카드 대신 '수업을 받는 중…'
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render } from '@testing-library/react';
+import { act, fireEvent, render } from '@testing-library/react';
 import { Timestamp } from 'firebase/firestore';
 import { applyBase, resetMirrorStore, setStatus, trackColl, type MirrorStatus } from '../../data/mirror/store';
 import { useSession } from '../../data/session';
 import DayLessons from './DayLessons';
 import { useDayView } from '../day/dayView';
+import { setCardCols } from '../../app/cardCols';
+import { useEntryOpen } from '../notes/entryOpen';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 
@@ -99,6 +101,67 @@ describe('하루 수업 칸 - 카드 / 목록 (#204)', () => {
       expect(q('[data-lesson-card="1"] [data-lesson-note]')).not.toBeNull();
     } finally {
       useDayView.setState({ lessons: 'card' });
+    }
+  });
+});
+
+describe('하루 수업 칸 - 카드 열 · 목록 줄 펴기 (#206)', () => {
+  const grid = () => q('[data-lesson-card="1"]')!.parentElement!.className;
+
+  it('카드 열 자동 = 휴대폰 2열(일정·메모 칸과 같게)·PC 1열, 고르면 어디서나 그 수 - 좁은 카드는 첫 줄이 줄을 바꾼다 · 목록은 늘 한 줄에 하나', () => {
+    useDayView.setState({ lessons: 'card' });
+    seed('timetables', 'live', TT);
+    seed('lessonDays', 'live');
+    try {
+      render(<DayLessons date={DAY} />);
+      expect(grid()).toContain('grid-cols-2 gap-2 sm:grid-cols-1');
+      const firstRow = () => q('[data-lesson-card="1"] [data-lesson-subject]')!.parentElement!.className;
+      expect(firstRow()).toContain('flex-wrap gap-y-1 sm:flex-nowrap');
+      act(() => setCardCols('lessonCols', 3));
+      expect(grid()).toContain('grid-cols-3');
+      expect(grid()).not.toContain('sm:grid-cols-1');
+      expect(firstRow()).not.toContain('sm:flex-nowrap');
+      act(() => setCardCols('lessonCols', 1));
+      expect(grid()).toContain('grid-cols-1');
+      expect(grid()).not.toContain('grid-cols-2');
+      expect(firstRow()).not.toContain('flex-wrap');
+      act(() => setCardCols('lessonCols', 4));
+      fireEvent.click(q('[data-lessons-view-toggle="card"]')!);
+      expect(grid()).toContain('grid-cols-1');
+      expect(grid()).not.toContain('grid-cols-4');
+    } finally {
+      useDayView.setState({ lessons: 'card' });
+      setCardCols('lessonCols', 0);
+    }
+  });
+
+  it('목록 줄 맨 앞 ▶ = 그 줄 아래에 비고 전체(이 기기에 기억) · ▼ = 다시 한 줄 · 펼 것이 없는 교시는 자리만', () => {
+    useDayView.setState({ lessons: 'list' });
+    useEntryOpen.setState({ open: {} });
+    seed('timetables', 'live', TT);
+    seed('lessonDays', 'live', new Map([[DAY, { ...base, periods: { '1': { supplies: '돋보기\n모둠 활동' } } }]]));
+    try {
+      render(<DayLessons date={DAY} />);
+      const btn = () => q('[data-lesson-row-expand="lesson:2026-10-12:1"]')!;
+      expect(qa('[data-lesson-row-expand]')).toHaveLength(qa('[data-lesson-card]').length);
+      expect(btn().getAttribute('aria-expanded')).toBe('false');
+      expect(q('[data-lesson-card="1"] [data-lesson-note-line]')).not.toBeNull();
+      expect(q('[data-lesson-card="1"] [data-lesson-note]')).toBeNull();
+      fireEvent.click(btn());
+      expect(useEntryOpen.getState().open['lesson:2026-10-12:1']).toBe(true);
+      expect(btn().getAttribute('aria-expanded')).toBe('true');
+      expect(q('[data-lesson-card="1"] [data-lesson-note]')?.textContent).toContain('모둠 활동');
+      expect(q('[data-lesson-card="1"] [data-lesson-note-line]')).toBeNull();
+      fireEvent.click(btn());
+      expect(q('[data-lesson-card="1"] [data-lesson-note]')).toBeNull();
+      expect(q('[data-lesson-card="1"] [data-lesson-note-line]')).not.toBeNull();
+      // 2교시는 펼 것(진도 줄·지난 시간·비고)이 없다 - 줄 머리를 맞추는 자리만
+      const empty = q('[data-lesson-row-expand="lesson:2026-10-12:2"]')!;
+      expect(empty.className).toContain('invisible');
+      expect(empty).toBeDisabled();
+    } finally {
+      useDayView.setState({ lessons: 'card' });
+      useEntryOpen.setState({ open: {} });
     }
   });
 });

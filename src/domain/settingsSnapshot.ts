@@ -3,7 +3,7 @@
 //   묶음 = { common, pc?: { prefs, local, at }, mobile?: … } - 칸마다 **기본값과 다른 것만**(설정 문서와 같은 규칙 - 없는 칸 = 앱 기본값).
 //     common = 계정 칸 가운데 보기·쓰는 법(이월 기간·휴지통·알림 소리·색 테마·색약 배려·꾸미기)
 //     prefs  = 기기 칸(설정 문서 pc|mobile) - 글자 크기·창 위치(창 칸 쪽 포함)·시작 화면·단축키 넷·주말/일정/학급 표시·스크롤 이동·화면 배치(P59)
-//     local  = 이 기기에만 두는 것 - 화면 비율(한눈에 경계선 셋·오른쪽/왼쪽 칸 폭)·밝기·고대비·부드럽게·머리줄 접기·메모 카드/목록·정렬·년간 보기·작년 이맘때
+//     local  = 이 기기에만 두는 것 - 화면 비율(한눈에 경계선 셋·오른쪽/왼쪽 칸 폭)·밝기·고대비·부드럽게·머리줄 접기·메모 카드/목록·정렬·카드 열(#206)·년간 보기·작년 이맘때
 //   빼는 것 = 사람마다 다른 자료(학교·교사 유형·교시·방학·수업 종·D-Day·개인 공휴일·사진 폴더·관찰 문구·자동 백업·띠 닫음·새 학년도)와 학기 칩(때를 따른다).
 //   기기 종류마다 따로(⑤): PC에서 저장하면 PC 몫 + 계정 몫만 바뀌고 휴대폰 몫은 그대로.
 //
@@ -12,6 +12,7 @@
 //
 // 기기·계정 칸의 표(DEVICE_PREFS·COMMON_SETTINGS)는 app/prefs가 가진다 - 여기는 받은 표에서 고른 칸만 쓴다(순수 - 서버·store 없이 시험).
 import { boolField, customField, oneOfField, readSettings, sparseSettings, type SettingsSpec } from './settings';
+import { CARD_COLS_VALUES, type CardCols } from './cardCols';
 
 export type DeviceSort = 'pc' | 'mobile';
 export type Fields = Record<string, unknown>;
@@ -32,7 +33,6 @@ export const RESET_DEVICE_KEYS = [
   'enableScrollNav',
   // 화면 배치 (P59 - app/screenPrefs)
   'memoNavAt',
-  'phoneCols',
   'orderArrows',
   'cardTime',
   'monthFit',
@@ -67,6 +67,11 @@ export interface LocalPrefs {
   memoView: 'card' | 'list';
   memoSortKey: (typeof MEMO_SORT_KEYS)[number];
   memoSortDir: 'asc' | 'desc';
+  /** 카드 열 (app/cardCols - 0 = 자동, 1~5 - 메모 요청 #206) - 하루 수업·일정·메모 칸, 메모 화면 */
+  lessonCols: CardCols;
+  eventCols: CardCols;
+  journalCols: CardCols;
+  memoCols: CardCols;
   /** 년간 보기 (features/year/prefs) */
   yearView: 'sheet' | 'detail';
   /** 주간 작년 이맘때 (features/week/prefs) */
@@ -90,6 +95,10 @@ export const LOCAL_PREFS: SettingsSpec<LocalPrefs> = {
   memoView: oneOfField<LocalPrefs['memoView']>('card', ['card', 'list']),
   memoSortKey: oneOfField<LocalPrefs['memoSortKey']>('manual', MEMO_SORT_KEYS),
   memoSortDir: oneOfField<LocalPrefs['memoSortDir']>('asc', ['asc', 'desc']),
+  lessonCols: oneOfField<CardCols>(0, CARD_COLS_VALUES),
+  eventCols: oneOfField<CardCols>(0, CARD_COLS_VALUES),
+  journalCols: oneOfField<CardCols>(0, CARD_COLS_VALUES),
+  memoCols: oneOfField<CardCols>(0, CARD_COLS_VALUES),
   yearView: oneOfField<LocalPrefs['yearView']>('sheet', ['sheet', 'detail']),
   lastYear: boolField(false),
 };

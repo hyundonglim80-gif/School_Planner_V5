@@ -43,6 +43,8 @@ import { Glyph } from '../../ui/Icon';
 import { glyphText } from '../../ui/glyphText';
 import { BTN_DANGER } from '../../ui/buttons';
 import { useScreenPrefs } from '../../app/screenPrefs';
+import { useCardCols } from '../../app/cardCols';
+import { cardColumns } from '../../domain/cardCols';
 import { useReorderToggle } from '../../ui/useReorderToggle';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
@@ -96,15 +98,15 @@ export default function MemoScreen() {
   const remembered = useLabelFilters((s) => s.memo);
   const loaded = status !== 'idle' && status !== 'loading';
   const isMobile = useIsMobile();
-  // 화면 배치 (P59-1 - 휴대폰 폭에서만): 라벨 칸 위치 · 카드 열
+  // 화면 배치 (P59-1 - 휴대폰 폭에서만): 라벨 칸 위치 · 카드 열(#206 - PC에서도, 이 기기에만 - 자동 = 칸 폭에 따라 2~4열)
   const memoNavAt = useScreenPrefs((s) => s.memoNavAt);
-  const phoneCols = useScreenPrefs((s) => s.phoneCols);
+  const cardCols = useCardCols((s) => s.memoCols);
   const navTop = isMobile && memoNavAt === 'top';
   const { reorderAttr, reorderButton } = useReorderToggle('memo');
   // 카드 / 목록 (머리줄 그림 단추 - 이 기기 기억)
   const view = useMemoView((s) => s.view);
   const listRef = useRef<HTMLElement>(null);
-  const columns = useColumnCount(listRef, isMobile ? phoneCols : MIN_COLUMNS);
+  const columns = cardColumns(cardCols, useColumnCount(listRef, MIN_COLUMNS));
   const [activeOpen, setActiveOpen] = useState(true);
   const [doneOpen, setDoneOpen] = useState(true);
   // 검색 결과로 메모를 짚으러 오면 그 메모가 든 칸(진행/완료)을 편다

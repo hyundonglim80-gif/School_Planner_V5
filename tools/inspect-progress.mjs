@@ -400,9 +400,22 @@ try {
     const cls = box('[data-slot-class]');
     const sub = box('[data-slot-subject]');
     const con = box('[data-lesson-content]');
-    return { card: Math.round(el.getBoundingClientRect().width), subW: Math.round(sub?.width ?? -1), subRight: Math.round(sub?.right ?? cls?.right ?? 0), conLeft: Math.round(con?.left ?? -1), hasCon: !!con };
+    const subBox = sub ?? cls;
+    return {
+      card: Math.round(el.getBoundingClientRect().width),
+      subW: Math.round(sub?.width ?? -1),
+      subRight: Math.round(subBox?.right ?? 0),
+      subBottom: Math.round(subBox?.bottom ?? 0),
+      conLeft: Math.round(con?.left ?? -1),
+      conTop: Math.round(con?.top ?? -1),
+      hasCon: !!con,
+    };
   });
-  r.check(lap.hasCon && lap.subW > 0 && lap.conLeft >= lap.subRight, `좁은 칸(카드 ${lap.card}px·글자 140%) - 과목이 보이고(폭 ${lap.subW}) 내용 글은 그 뒤에서 (과목 끝 ${lap.subRight} ≤ 내용 시작 ${lap.conLeft})`);
+  // 휴대폰은 수업 카드도 2열(메모 요청 #206) - 좁은 카드는 첫 줄이 줄을 바꿔 내용 글이 아래 줄에 올 수 있다(그때도 과목과 겹치지 않는다)
+  r.check(
+    lap.hasCon && lap.subW > 0 && (lap.conLeft >= lap.subRight || lap.conTop >= lap.subBottom - 1),
+    `좁은 칸(카드 ${lap.card}px·글자 140%) - 과목이 보이고(폭 ${lap.subW}) 내용 글은 그 뒤나 아래 줄에서 (과목 끝 ${lap.subRight}·아래 ${lap.subBottom} / 내용 시작 ${lap.conLeft}·위 ${lap.conTop})`,
+  );
   await p3.evaluate(() => document.documentElement.style.removeProperty('--font-scale'));
   await p3.setViewportSize({ width: 1400, height: 900 });
   r.check(await waitFor(card3(2).locator(sel('progress-mark', 'bumped')), 8000), '5-3 = 민 교시 (반마다 따로 센다)');

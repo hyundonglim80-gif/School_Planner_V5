@@ -130,10 +130,11 @@ describe('설정 문서 나누기', () => {
   it('화면 배치(P59-1): 바꾼 것만 적고 받으면 입힌다 · 모르는 값은 기본(P59 전 모습) · ▲▼·쓴 시각은 html 표시로', () => {
     startPrefsSync('u1');
     expect(binding('pc').local()).toEqual({});
-    useScreenPrefs.setState({ phoneCols: 1, orderArrows: 'toggle' });
-    expect(binding('pc').local()).toEqual({ phoneCols: 1, orderArrows: 'toggle' });
+    useScreenPrefs.setState({ weekLessons: 'chips', orderArrows: 'toggle' });
+    expect(binding('pc').local()).toEqual({ weekLessons: 'chips', orderArrows: 'toggle' });
     expect(document.documentElement.dataset.orderArrows).toBe('toggle');
-    binding('pc').apply({ memoNavAt: 'top', cardTime: false, phoneCols: 3 });
+    // 옛 칸 phoneCols(P59-1 - 카드 열은 #206에 이 기기 값 app/cardCols로)는 읽지 않는다
+    binding('pc').apply({ memoNavAt: 'top', cardTime: false, weekLessons: 'nope', phoneCols: 1 });
     expect(useScreenPrefs.getState()).toMatchObject({ ...SCREEN_DEFAULTS, memoNavAt: 'top', cardTime: false });
     expect(document.documentElement.dataset.orderArrows).toBeUndefined();
     expect(document.documentElement.dataset.cardTime).toBe('off');

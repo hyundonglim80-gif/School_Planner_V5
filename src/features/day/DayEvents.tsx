@@ -20,7 +20,7 @@ import { lazyWithReload } from '../../app/lazyWithReload';
 import { OfflineInlineWindow } from '../../app/OfflineChunk';
 import { goToday } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
-import { useScreenPrefs } from '../../app/screenPrefs';
+import { GRID_COLS, useCardCols } from '../../app/cardCols';
 import { useReorderToggle } from '../../ui/useReorderToggle';
 import { openWindow } from '../../app/windows';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
@@ -49,6 +49,8 @@ import { pressKeys } from '../../ui/pressKeys';
 import { FLOAT_TOOLS, FLOAT_TOOLS_LIST, ORDER_ARROWS_EDGE } from '../../ui/cardTools';
 import { Glyph } from '../../ui/Icon';
 import { useDayView } from './dayView';
+import { isRowExpanded } from '../../domain/entryCollapse';
+import { setEntryOpen, useEntryOpen } from '../notes/entryOpen';
 import DayViewToggle from './DayViewToggle';
 
 // 누를 때만 뜨는 창 - 열 때 받는다 (P49-3 첫 화면 JS)
@@ -101,7 +103,8 @@ export default function DayEvents({ date }: { date: YMD }) {
   const events = useItemsOn(date, 'event');
   const carried = useCarried(sid);
   const forwardDays = useCommonSettings((s) => s.forwardDays);
-  const phoneCols = useScreenPrefs((s) => s.phoneCols);
+  // 카드 열 (#206 - 환경설정 화면 배치 '카드 열', 이 기기에만): 자동(0) = 휴대폰 2열·PC(sm 이상) 1열
+  const cardCols = useCardCols((s) => s.eventCols);
   // 카드 / 목록 (#204 - 목록은 한 줄에 일정 하나, 휴대폰도 1열)
   const view = useDayView((s) => s.events);
   const asList = view === 'list';
@@ -217,13 +220,13 @@ export default function DayEvents({ date }: { date: YMD }) {
       </div>
 
       {!collapsed && (
-        // 카드. 휴대폰은 2열(환경설정 화면 배치 '카드 열 1열'이면 1열 - P59-1), PC(sm 이상)는 1열
+        // 카드. 휴대폰은 2열, PC(sm 이상)는 1열 - 환경설정 화면 배치 '카드 열'(#206)에서 1~5열을 고르면 어디서나 그 수
         // PC 위 여백 12px(머리줄 아래 여백에서 옮김 - 합은 그대로): 카드 위 테두리에 걸쳐 뜨는 🗑️(ui/cardTools FLOAT_TOOLS)가 첫 카드에서 이 스크롤 칸에 잘리지 않게
         // 마우스 화면 왼쪽 여백 12px(칸 여백 p-5에서 빌림 - 카드 자리는 그대로): 카드 왼쪽 테두리에 걸친 ▲▼ 손잡이(ORDER_ARROWS_EDGE)가 이 스크롤 칸에 잘리지 않게(#200)
         // 목록(#204): 휴대폰도 1열·줄 사이 4px, 🗑️가 줄 안에 떠서 위 여백은 4px(손잡이가 첫 줄 위로 조금 나온다)
         <div
           className={`flex-1 overflow-y-auto pr-1 ${asList ? 'sm:pt-1' : 'sm:pt-3'} pointer-fine:-ml-3 pointer-fine:pl-3 min-h-[110px] ${
-            shownCount > 0 ? `grid ${asList || phoneCols === 1 ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-1'} ${asList ? 'gap-1' : 'gap-2'} content-start` : ''
+            shownCount > 0 ? `grid ${asList ? 'grid-cols-1' : cardCols ? GRID_COLS[cardCols] : 'grid-cols-2 sm:grid-cols-1'} ${asList ? 'gap-1' : 'gap-2'} content-start` : ''
           }`}
         >
           {shownCount > 0 ? (
@@ -377,7 +380,7 @@ interface EventCardProps {
   since?: string;
   /** 지난 날 칸에서, 오늘로 따라간 일정 (흐리게 '→ 오늘로') */
   away?: boolean;
-  /** 목록 보기 한 줄 (#204 - 글은 말줄임, 첨부는 📎 n) */
+  /** 목록 보기 한 줄 (#204 - 글은 말줄임, 첨부는 📎 n · 줄 맨 앞 ▶ = 그 줄을 펴서 카드처럼 - #206) */
   list?: boolean;
   /** 🔗 n - 이은 항목 보기 */
   onOpenLinks: () => void;
@@ -396,6 +399,9 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
   const pos = periodPosition(ev, day);
   const links = ev.linkIds?.length ?? 0;
   const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
+  // 목록 줄 펴기 (#206 - 메모 화면 목록 줄 ▶/▼와 같다): 편 줄은 글 전체·첨부를 카드처럼. 누른 것만 이 기기에 기억(메모 펼침과 같은 곳 - 일정 id)
+  const open = useEntryOpen((s) => !!list && isRowExpanded(s.open, ev.id));
+  const oneLine = list && !open;
 
   return (
     <div
@@ -418,7 +424,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
       }}
       title={overlay ? `${overlay.name} 공간 일정 - 클릭하여 오른쪽 칸에서 수정 (겹쳐 보기)` : '클릭하여 오른쪽 칸에서 수정 (Ctrl·Shift와 함께 누르면 여러 개 고르기)'}
       className={`group relative ${
-        list ? 'flex flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg' : 'flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl shadow-xs'
+        list ? `flex flex-row ${open ? 'items-start' : 'items-center'} gap-1.5 px-2.5 py-1 rounded-lg` : 'flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl shadow-xs'
       } border transition-all cursor-pointer min-w-0 select-none sm:select-auto ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
         picked
           ? 'border-primary ring-2 ring-primary bg-blue-50 text-slate-800'
@@ -427,6 +433,23 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
           : 'bg-white border-slate-200/60 hover:border-slate-300 text-slate-800'
       }`}
     >
+      {/* 목록 줄 맨 앞 ▶/▼ (#206) - 누르면 이 줄만 펴고 접는다(수정 칸은 열지 않는다) */}
+      {list && (
+        <button
+          type="button"
+          data-event-row-expand={ev.id}
+          aria-expanded={open}
+          onClick={(e) => {
+            stop(e);
+            setEntryOpen(ev.id, !open);
+          }}
+          title={open ? '접기' : '펼치기'}
+          aria-label={open ? '접기' : '펼치기'}
+          className={`tap-area order-first text-slate-500 hover:text-slate-700 text-xs w-5 h-5 -ml-1 flex items-center justify-center rounded hover:bg-slate-100 shrink-0 cursor-pointer ${open ? 'mt-0.5' : ''}`}
+        >
+          <Glyph e={open ? '▼' : '▶'} />
+        </button>
+      )}
       {/* 휴대폰(2열 카드): 위 줄에 순서 바꾸기, 아래에 내용. PC(1열): 한 줄 - 가운데 내용, 오른쪽 위 테두리에 🗑️.
           PC에서는 이 줄 틀을 없는 셈 치고(sm:contents) 순서(order)로 자리를 잡는다 (V4 그대로).
           마우스 화면은 ▲▼가 왼쪽 테두리에 걸친 손잡이라(#200 - 흐름 밖) 좁은 창에서도 이 줄 틀이 빈 줄로 남지 않게 contents.
@@ -492,8 +515,8 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
       </div>
 
       <div className={`min-w-0 ${list ? 'order-2 flex-1' : 'sm:order-2 sm:flex-1'}`}>
-        {/* 목록(#204): 한 줄 - 글만 줄어 말줄임(…), 칩·🔗 n은 그대로 보인다 */}
-        <div className={`leading-relaxed text-sm ${list ? 'flex items-center min-w-0 whitespace-nowrap' : 'break-words'}`}>
+        {/* 목록(#204): 한 줄 - 글만 줄어 말줄임(…), 칩·🔗 n은 그대로 보인다 · 편 줄(#206)은 카드처럼 글이 줄을 바꾼다 */}
+        <div className={`leading-relaxed text-sm ${oneLine ? 'flex items-center min-w-0 whitespace-nowrap' : 'break-words'}`}>
           {/* 라벨 칩 = 완료 (P10-1: ☐는 없앴다, 끝내면 칩 앞에 ✓ - 색·글은 그대로). 라벨이 없으면 회색 ○ 칩 */}
           {(labels.length > 0 ? labels : [null]).map((l, i) => (
             <EventDoneChip
@@ -503,7 +526,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               mark={i === 0}
               onToggle={onToggle}
               forward={!!l?.props?.forward}
-              className={`tap-area mr-1.5 text-xs px-2 py-0.5 rounded-lg ${list ? 'shrink-0 max-w-[8rem]' : ''}`}
+              className={`tap-area mr-1.5 text-xs px-2 py-0.5 rounded-lg ${oneLine ? 'shrink-0 max-w-[8rem]' : ''}`}
               data={{ 'data-event-chip': l?.id ?? '' }}
             />
           ))}
@@ -554,7 +577,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
 
           <DueBadge due={ev.due} today={today} completed={done} />
 
-          <span data-event-text className={list ? 'min-w-0 truncate' : 'inline align-middle'}>
+          <span data-event-text className={oneLine ? 'min-w-0 truncate' : 'inline align-middle'}>
             {ev.text}
           </span>
           {ev.seriesId && (
@@ -588,14 +611,14 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
             </button>
           )}
 
-          {/* 첨부 (드라이브 파일 - 올리기는 P4-2) · 목록은 📎 n만 (수정 칸에서 연다) */}
-          {list && ev.attachments && ev.attachments.length > 0 && (
+          {/* 첨부 (드라이브 파일 - 올리기는 P4-2) · 목록은 📎 n만 (수정 칸에서 연다 - 편 줄은 카드처럼) */}
+          {oneLine && ev.attachments && ev.attachments.length > 0 && (
             <span data-event-files={ev.attachments.length} title={`첨부 ${ev.attachments.length}개`} className="shrink-0 ml-1 text-xs text-slate-500">
               <Glyph e="📎" />
               {ev.attachments.length}
             </span>
           )}
-          {!list && ev.attachments && ev.attachments.length > 0 && (
+          {!oneLine && ev.attachments && ev.attachments.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {ev.attachments.map((att, i) =>
                 att.type === 'image' ? (

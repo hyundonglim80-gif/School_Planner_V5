@@ -15,6 +15,9 @@
 // 교시마다 📊n = 그 교시 조사표(P7-4). 반 도구·🙋·📊는 적힌 것(출결·조사표 수)이 없으면 마우스를 올려야 보인다(P10-2), 수정 칸에도 같은 단추 줄.
 // 카드 / 목록(11-25 메모 요청 #204 - 머리 ☰/▦, 이 기기에 기억 day/dayView): 목록은 교시 하나 = 한 줄 - 교시·반·과목·내용 + 📌 비고 첫 줄(말줄임),
 //   진도 줄·지난 시간·비고 전체는 카드에서(교시를 누르면 수정 칸). 누르기·▲▼·끌기·떠 있는 단추는 카드와 같다.
+//   목록 줄 맨 앞 ▶/▼(11-25 메모 요청 #206 - 메모 화면 목록 줄과 같다) = 그 줄 아래에 진도 줄·지난 시간·비고 전체를 펴고 접는다(이 기기에 기억 - notes/entryOpen).
+// 카드 열(#206 - 환경설정 화면 배치 '카드 열', 이 기기에만): 자동 = 휴대폰 2열(일정·메모 칸과 같게)·PC 1열, 1~5열을 고르면 어디서나 그 수.
+//   한 줄에 둘 이상이면 카드가 좁아 첫 줄(교시·과목·내용·칩)이 줄을 바꾸고 여백이 준다.
 import { Suspense, useMemo, useState } from 'react';
 import { lazyWithReload } from '../../app/lazyWithReload';
 import { setDate } from '../../app/nav';
@@ -58,6 +61,10 @@ import { useReorderToggle } from '../../ui/useReorderToggle';
 import { Glyph } from '../../ui/Icon';
 import { leadGlyph } from '../../ui/glyphText';
 import { useDayView } from '../day/dayView';
+import { GRID_COLS, useCardCols } from '../../app/cardCols';
+import { useIsMobile } from '../../ui/useIsMobile';
+import { isRowExpanded } from '../../domain/entryCollapse';
+import { setEntryOpen, useEntryOpen } from '../notes/entryOpen';
 import DayViewToggle from '../day/DayViewToggle';
 
 // 🔔 수업 종 설정은 머리의 '종' 단추로 펼 때 받는다 (P49-3 첫 화면 JS - 끊겨서 못 받으면 판 없이)
@@ -78,6 +85,18 @@ const PERIOD_ACCENTS = ['border-l-cobalt-400', 'border-l-emerald-400', 'border-l
 /** 카드 단추 (P41-2 - 예전 P10-2 '마우스를 올렸을 때만'은 안 보여도 자리를 차지했다): 🙋 출결·🪑·🎯·📊·🔗는 PC에서 카드 오른쪽 위에 떠서(ui/cardTools),
  *  적힌 것이 있는 것(출결 요약·📊 n·📑 n)만 카드 줄에 늘. 휴대폰은 적힌 것만 - 나머지는 교시를 눌러 연 수정 칸에서(그 칸에 모두 있다) */
 const TOOL_BTN = 'text-slate-500 hover:text-blue-600 p-1 rounded hover:bg-slate-100 text-xs cursor-pointer';
+/**
+ * 카드 모양 - 한 줄에 카드가 하나(wide)인가 둘 이상(narrow)인가 (#206). 좁은 카드는 첫 줄을 접어 내리고 여백을 줄인다
+ * (휴대폰 360 2열 = 카드 144px - 여백·▲▼를 빼고 남는 93px에 교시 칩과 두 글자 과목이 한 줄에, 긴 과목은 다음 줄에서 말줄임).
+ * 교과 모드 반·과목 묶음(slot)은 넓은 카드에서 줄지 않고(11-17 - 줄면 반 이름이 넘쳐 내용 글과 겹쳤다), 좁은 카드에서는 그 줄에 혼자 서서 긴 과목 이름만 말줄임
+ * (줄을 바꾸므로 내용 글은 다음 줄 - 묶음이 카드보다 넓으면 카드 밖으로 나갔다: 휴대폰 390·글자 140%에서 글 폭 75px < 묶음 83px).
+ * phone = 자동(휴대폰 sm 아래만 2열) · Tailwind가 글을 읽어 만들므로 sm: 갈래도 통째로 적는다
+ */
+const CARD_LOOK = {
+  wide: { grid: 'grid-cols-1 gap-3', row: '', gap: 'gap-3', pad: 'p-3.5', padShort: 'px-3.5 py-2', slot: 'shrink-0' },
+  phone: { grid: 'grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-3', row: 'flex-wrap gap-y-1 sm:flex-nowrap', gap: 'gap-1.5 sm:gap-3', pad: 'px-2 py-2.5 sm:px-3.5 sm:py-3.5', padShort: 'px-2 py-2 sm:px-3.5', slot: 'min-w-0 sm:shrink-0' },
+  narrow: { grid: 'gap-2', row: 'flex-wrap gap-y-1', gap: 'gap-1.5', pad: 'px-2 py-2.5', padShort: 'px-2 py-2', slot: 'min-w-0' },
+} as const;
 /** 지난 시간을 거슬러 찾는 날 수 */
 const PREV_LOOKBACK_DAYS = 60;
 
@@ -103,6 +122,15 @@ export default function DayLessons({ date }: { date: string }) {
   // 카드 / 목록 (#204 - 목록은 한 줄에 교시 하나)
   const look = useDayView((s) => s.lessons);
   const list = look === 'list';
+  // 카드 열 (#206) - 목록은 늘 한 줄에 하나
+  const cardCols = useCardCols((s) => s.lessonCols);
+  const shape = list || cardCols === 1 ? CARD_LOOK.wide : cardCols ? CARD_LOOK.narrow : CARD_LOOK.phone;
+  const gridClass = list ? 'grid-cols-1 gap-1.5' : cardCols > 1 ? `${GRID_COLS[cardCols]} ${shape.grid}` : shape.grid;
+  // 좁은 카드인가 - 진도 줄 끝 단추(🔗 잇기·이 교시 밀기)는 카드 폭에 들지 않아 수정 칸에서 (자동이면 휴대폰 폭 = sm 아래에서만 2열)
+  const isMobile = useIsMobile();
+  const narrowCard = !list && (cardCols > 1 || (cardCols === 0 && isMobile));
+  // 목록 줄 펴기 (#206 - 누른 것만 이 기기에, 메모 펼침과 같은 곳 - 수업 링크 id 'lesson:날짜:교시')
+  const opened = useEntryOpen((s) => s.open);
   // 수업 종 설정 - '⏰ 수업' 옆 🔔 단추로 펼친다 (V4 10-07 사용자 요청 - 시간표 창에서 옮김)
   const bell = useClassBell();
   const [bellOpen, setBellOpen] = useState(false);
@@ -280,7 +308,7 @@ export default function DayLessons({ date }: { date: string }) {
         </p>
       )}
       {!collapsed && !loading && (
-        <div className={`grid grid-cols-1 ${list ? 'gap-1.5' : 'gap-3'}`}>
+        <div className={`grid ${gridClass}`}>
           {view.cells.map((c) => {
             const n = c.n;
             const colorClass = PERIOD_COLORS[(n - 1) % PERIOD_COLORS.length];
@@ -305,6 +333,9 @@ export default function DayLessons({ date }: { date: string }) {
             const prevNote = prev ? firstLine(lessonNote(src.days[prev.date]?.periods?.[prev.period])) : '';
             const mark = marks[slotId(date, n)];
             const hasDetails = !!(c.note || prevNote || mark);
+            // 목록 줄을 폈나 (#206) - 편 줄은 카드처럼 진도 줄·지난 시간·비고 전체
+            const open = list && hasDetails && isRowExpanded(opened, id);
+            const oneLine = list && !open;
             return (
               <div
                 key={n}
@@ -318,11 +349,31 @@ export default function DayLessons({ date }: { date: string }) {
                 {...reorderDragProps(`lesson:${date}`, n, swap)}
                 onClick={() => startEdit(c)}
                 title={`${range ? `${range} · ` : ''}눌러서 고치기`}
-                className={`group relative ${list ? 'px-3 py-1 rounded-lg' : `${hasDetails ? 'p-3.5' : 'px-3.5 py-2'} rounded-xl min-h-[40px]`} border border-slate-200/70 transition-all flex flex-col justify-between hover:border-primary/50 hover:bg-slate-50/50 cursor-pointer ${
+                className={`group relative ${list ? 'px-3 py-1 rounded-lg' : `${hasDetails ? shape.pad : shape.padShort} rounded-xl min-h-[40px]`} border border-slate-200/70 transition-all flex flex-col justify-between hover:border-primary/50 hover:bg-slate-50/50 cursor-pointer ${
                   c.subject ? `border-l-4 ${slotColor ? slotColor.bar : accentClass}` : ''
                 } ${isNow ? 'ring-2 ring-primary/60 bg-blue-50/40' : isNext ? 'ring-1 ring-primary/30' : ''}`}
               >
-                <div className={`flex ${list ? 'gap-2' : 'gap-3'} h-full items-stretch`}>
+                <div className={`flex ${list ? 'gap-2' : shape.gap} h-full items-stretch`}>
+                  {/* 목록 줄 맨 앞 ▶/▼ (#206) - 펼 것(진도 줄·지난 시간·비고)이 없는 교시는 자리만 (줄 머리를 맞춘다) */}
+                  {list && (
+                    <button
+                      type="button"
+                      data-lesson-row-expand={id}
+                      aria-expanded={open}
+                      disabled={!hasDetails}
+                      aria-hidden={hasDetails ? undefined : true}
+                      tabIndex={hasDetails ? undefined : -1}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEntryOpen(id, !open);
+                      }}
+                      title={open ? '접기' : '펼치기 (진도 줄·지난 시간·비고)'}
+                      aria-label={open ? '접기' : '펼치기'}
+                      className={`tap-area text-slate-500 hover:text-slate-700 text-xs w-5 h-5 -ml-1 flex items-center justify-center rounded hover:bg-slate-100 shrink-0 cursor-pointer ${open ? 'self-start mt-0.5' : 'self-center'} ${hasDetails ? '' : 'invisible'}`}
+                    >
+                      <Glyph e={open ? '▼' : '▶'} />
+                    </button>
+                  )}
                   {/* ▲▼ - PC는 카드 왼쪽 여백 안에 떠서 자리를 차지하지 않는다 (P58-1 · 휴대폰은 글 앞 칸에 늘 - 목록은 줄이 높아지지 않게 가로로) */}
                   <div className={`flex ${list ? 'pointer-fine:flex-col' : 'flex-col'} items-center justify-center gap-1 pointer-coarse:gap-1.5 shrink-0 px-1 ${ORDER_ARROWS_EDGE}`}>
                     <button
@@ -355,13 +406,13 @@ export default function DayLessons({ date }: { date: string }) {
                     </button>
                   </div>
                   <div className="flex-1 flex flex-col min-w-0">
-                    <div className={`relative flex items-center justify-between gap-1 ${hasDetails && !list ? 'mb-2' : ''}`}>
-                      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                    <div className={`relative flex items-center justify-between gap-1 ${hasDetails && !oneLine ? 'mb-2' : ''}`}>
+                      <div className={`flex items-center gap-1.5 min-w-0 flex-1 ${list ? '' : shape.row}`}>
                         <span className={`px-2 py-0.5 shrink-0 rounded-lg text-xs font-bold border ${colorClass}`}>{name}</span>
                         {slot?.cls ? (
-                          // 반·과목 묶음은 줄지 않는다 - 좁으면 내용 글이 먼저 준다 (11-17 PC: min-w-0이라 묶음이 반 이름보다 좁아져
+                          // 반·과목 묶음은 줄지 않는다(좁은 카드 #206는 CARD_LOOK slot) - 좁으면 내용 글이 먼저 준다 (11-17 PC: min-w-0이라 묶음이 반 이름보다 좁아져
                           //   반 이름이 넘쳐 내용 글과 겹쳤다 - 한눈에 오른쪽 하루 칸·하루 화면 + 오른쪽 칸 + 글자 140%). 긴 과목 이름만 10em에서 줄임
-                          <span data-lesson-subject={c.subject} className="flex items-baseline gap-1.5 shrink-0 leading-tight">
+                          <span data-lesson-subject={c.subject} className={`flex items-baseline gap-1.5 leading-tight ${list ? 'shrink-0' : shape.slot}`}>
                             <span data-slot-class className="shrink-0 font-black text-base sm:text-lg text-slate-900 tabular-nums">
                               {slot.cls}
                             </span>
@@ -386,8 +437,8 @@ export default function DayLessons({ date }: { date: string }) {
                             {mark.lesson.content}
                           </span>
                         )}
-                        {/* 목록(#204): 비고는 첫 줄만 과목·내용 뒤에 (진도 줄·지난 시간은 카드에서) */}
-                        {list && c.note && (
+                        {/* 목록(#204): 비고는 첫 줄만 과목·내용 뒤에 (진도 줄·지난 시간은 카드에서 - 편 줄은 아래에 전체) */}
+                        {oneLine && c.note && (
                           <span data-lesson-note-line title={c.note} className="min-w-0 truncate text-xs font-medium text-amber-700">
                             <Glyph e="📌" /> {firstLine(c.note)}
                           </span>
@@ -519,7 +570,7 @@ export default function DayLessons({ date }: { date: string }) {
                       </div>
                     </div>
 
-                    {!list && prevNote && prev && (
+                    {!oneLine && prevNote && prev && (
                       <button
                         type="button"
                         data-lesson-prev={prev.date}
@@ -534,14 +585,14 @@ export default function DayLessons({ date }: { date: string }) {
                       </button>
                     )}
 
-                    {!list && mark && (
+                    {!oneLine && mark && (
                       <div className={c.note ? 'mb-2' : ''}>
-                        <ProgressMarkLine mark={mark} date={date} period={n} hideContent />
+                        <ProgressMarkLine mark={mark} date={date} period={n} hideContent narrow={narrowCard} />
                       </div>
                     )}
 
                     {/* 차례: 교시·반·과목·내용 / 단원·준비물(진도 줄) / 비고 */}
-                    {!list && c.note && (
+                    {!oneLine && c.note && (
                       <div className="flex flex-col text-xs" data-lesson-note>
                         <span className="text-slate-500 text-xs mb-0.5"><Glyph e="📌" /> 비고</span>
                         <p className="text-amber-700 font-medium whitespace-pre-wrap leading-relaxed">{c.note}</p>

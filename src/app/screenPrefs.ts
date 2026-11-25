@@ -4,7 +4,7 @@
 //
 //   휴대폰(손가락 화면)에서만 듣는 것 - 환경설정도 휴대폰에서만 보인다:
 //     memoNavAt   메모 화면 라벨 칸 - 왼쪽 칸(기본) / 위 칩 줄 (좁은 화면에서 왼쪽 칸이 116px을 차지해 카드가 100px쯤이었다)
-//     phoneCols   일정·메모 카드 열 - 2열(기본) / 1열 (하루 일정·메모 칸, 메모 화면)
+//     (옛 phoneCols '카드 열 2열 / 1열'은 칸마다 고르는 '카드 열'(app/cardCols - 이 기기에만, PC에서도)로 바꿨다 - 11-25 메모 요청 #206)
 //     orderArrows 카드 ▲▼ - 늘(기본) / 칸 머리 ⇅를 눌렀을 때만 (html data-order-arrows - index.css가 숨긴다)
 //     cardTime    메모 카드 쓴 시각 - 보이기(기본) / 숨기기 (html data-card-time - index.css가 숨긴다)
 //
@@ -19,14 +19,12 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type MemoNavAt = 'side' | 'top';
-export type PhoneCols = 1 | 2;
 export type OrderArrowsMode = 'always' | 'toggle';
 export type WeekLessons = 'rows' | 'chips';
 export type MonthLessons = 'chips' | 'count';
 
 export interface ScreenPrefs {
   memoNavAt: MemoNavAt;
-  phoneCols: PhoneCols;
   orderArrows: OrderArrowsMode;
   cardTime: boolean;
   monthFit: boolean;
@@ -36,7 +34,7 @@ export interface ScreenPrefs {
   buildId: boolean;
 }
 
-export const SCREEN_DEFAULTS: ScreenPrefs = { memoNavAt: 'side', phoneCols: 2, orderArrows: 'always', cardTime: true, monthFit: false, weekLessons: 'rows', monthLessons: 'chips', headerToggles: true, buildId: true };
+export const SCREEN_DEFAULTS: ScreenPrefs = { memoNavAt: 'side', orderArrows: 'always', cardTime: true, monthFit: false, weekLessons: 'rows', monthLessons: 'chips', headerToggles: true, buildId: true };
 export const SCREEN_KEYS = Object.keys(SCREEN_DEFAULTS) as ReadonlyArray<keyof ScreenPrefs>;
 
 export const useScreenPrefs = create<ScreenPrefs>()(persist((): ScreenPrefs => ({ ...SCREEN_DEFAULTS }), { name: 'sp5-screen' }));
