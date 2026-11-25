@@ -4,6 +4,8 @@
 // - 카드: 휴대폰 2열, PC 1열. 라벨 칩(누르면 완료 - 끝내면 칩 앞에 ✓, 라벨이 없으면 회색 ○ 칩 - P10-1) · ⏰ 알림 · ⏳ 기한 · 글 · 🔗 링크 수 · 첨부.
 //   카드를 누르면 오른쪽 일정 칸(수정)이 열린다(카드 ✏️는 없다 - 11-24 메모 요청 #200, 누르기와 같은 일). 고치는 일정은 파란 테두리로 짚는다.
 //   PC(마우스)의 ▲▼는 수업 카드처럼 카드 왼쪽 테두리에 걸친 손잡이(ui/cardTools ORDER_ARROWS_EDGE - #200, 자리를 차지하지 않는다).
+// - 카드 / 목록(11-25 메모 요청 #204 - 머리 ☰/▦, 이 기기에 기억 dayView): 목록은 일정 하나 = 한 줄(휴대폰도 1열·글은 말줄임·첨부는 📎 n) -
+//   누르기·완료 칩·⏰·▲▼·끌기·🗑️는 카드와 같다(🗑️는 줄 오른쪽 끝에 겹쳐 뜬다 - FLOAT_TOOLS_LIST).
 // - ▲▼ 순서 = 옮긴 일정의 order 하나만 (features/events/eventOps reorderOps).
 // - 이월(DESIGN 5-1 - 계산): 오늘 칸은 오늘 것 아래에 따라오는 일정을 '↪ 10/5부터'와 함께(▲▼는 각 무리 안에서),
 //   지난 날 칸에서는 그 일정을 흐리게 '→ 오늘로'(누르면 오늘). 오늘 칸에서 끝내면 그날로 옮겨 적는다(eventOps carriedDoneChanges).
@@ -44,8 +46,10 @@ import { shortcutTarget } from '../../ui/shortcutTarget';
 import DecorSpot from '../../ui/DecorSpot';
 import { useGcalShown } from '../gcal/gcalView';
 import { pressKeys } from '../../ui/pressKeys';
-import { FLOAT_TOOLS, ORDER_ARROWS_EDGE } from '../../ui/cardTools';
+import { FLOAT_TOOLS, FLOAT_TOOLS_LIST, ORDER_ARROWS_EDGE } from '../../ui/cardTools';
 import { Glyph } from '../../ui/Icon';
+import { useDayView } from './dayView';
+import DayViewToggle from './DayViewToggle';
 
 // 누를 때만 뜨는 창 - 열 때 받는다 (P49-3 첫 화면 JS)
 const EventAlarmWindow = lazyWithReload(() => import('../events/EventAlarmWindow'), OfflineInlineWindow);
@@ -77,7 +81,7 @@ function OverlayGroup({ space, count, children }: { space: OverlaySpace; count: 
       <div
         data-overlay-group={space.sid}
         title={`겹쳐 보는 공간 - 누르면 ${space.name} 공간에서 고칩니다`}
-        className="col-span-2 sm:col-span-1 flex items-center gap-1.5 pt-1.5 text-2xs font-bold text-slate-500 min-w-0"
+        className="col-span-full flex items-center gap-1.5 pt-1.5 text-2xs font-bold text-slate-500 min-w-0"
       >
         <span data-overlay-name className="truncate px-1.5 py-0.5 rounded-lg border text-slate-600" style={space.tone}>
           {spaceTitle(space)}
@@ -98,6 +102,9 @@ export default function DayEvents({ date }: { date: YMD }) {
   const carried = useCarried(sid);
   const forwardDays = useCommonSettings((s) => s.forwardDays);
   const phoneCols = useScreenPrefs((s) => s.phoneCols);
+  // 카드 / 목록 (#204 - 목록은 한 줄에 일정 하나, 휴대폰도 1열)
+  const view = useDayView((s) => s.events);
+  const asList = view === 'list';
   const { reorderAttr, reorderButton } = useReorderToggle('events');
   const today = carried.today;
   // 오늘 칸이면 오늘로 따라오는 일정을 오늘 것 아래에 (지난 날에서 따라오는 것만 - 제 날짜는 그대로다)
@@ -152,6 +159,7 @@ export default function DayEvents({ date }: { date: YMD }) {
   return (
     <section
       data-day-events={date}
+      data-event-view={view}
       {...reorderAttr}
       className={`bg-white rounded-xl border border-slate-200/80 shadow-xs p-5 flex flex-col ${collapsed ? '' : 'h-full'}`}
     >
@@ -192,6 +200,8 @@ export default function DayEvents({ date }: { date: YMD }) {
         <div className="flex items-center gap-1 shrink-0">
           {/* 휴대폰 카드 ▲▼ '⇅ 누를 때만'(P59-1)이면 ⇅ */}
           {!collapsed && reorderButton}
+          {/* 카드 / 목록 (#204 - 메모 화면 머리줄 ☰/▦와 같은 꼴) */}
+          {!collapsed && <DayViewToggle pane="events" />}
           <button
             type="button"
             data-event-labels-settings
@@ -210,13 +220,19 @@ export default function DayEvents({ date }: { date: YMD }) {
         // 카드. 휴대폰은 2열(환경설정 화면 배치 '카드 열 1열'이면 1열 - P59-1), PC(sm 이상)는 1열
         // PC 위 여백 12px(머리줄 아래 여백에서 옮김 - 합은 그대로): 카드 위 테두리에 걸쳐 뜨는 🗑️(ui/cardTools FLOAT_TOOLS)가 첫 카드에서 이 스크롤 칸에 잘리지 않게
         // 마우스 화면 왼쪽 여백 12px(칸 여백 p-5에서 빌림 - 카드 자리는 그대로): 카드 왼쪽 테두리에 걸친 ▲▼ 손잡이(ORDER_ARROWS_EDGE)가 이 스크롤 칸에 잘리지 않게(#200)
-        <div className={`flex-1 overflow-y-auto pr-1 sm:pt-3 pointer-fine:-ml-3 pointer-fine:pl-3 min-h-[110px] ${shownCount > 0 ? `grid ${phoneCols === 1 ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-1'} gap-2 content-start` : ''}`}>
+        // 목록(#204): 휴대폰도 1열·줄 사이 4px, 🗑️가 줄 안에 떠서 위 여백은 4px(손잡이가 첫 줄 위로 조금 나온다)
+        <div
+          className={`flex-1 overflow-y-auto pr-1 ${asList ? 'sm:pt-1' : 'sm:pt-3'} pointer-fine:-ml-3 pointer-fine:pl-3 min-h-[110px] ${
+            shownCount > 0 ? `grid ${asList || phoneCols === 1 ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-1'} ${asList ? 'gap-1' : 'gap-2'} content-start` : ''
+          }`}
+        >
           {shownCount > 0 ? (
             <>
               {events.map((ev, idx) => (
                 <EventCard
                   key={ev.id}
                   ev={ev}
+                  list={asList}
                   day={date}
                   labels={itemLabels(tree, ev.labelIds)}
                   editing={shownId === ev.id}
@@ -241,6 +257,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                 <EventCard
                   key={ev.id}
                   ev={ev}
+                  list={asList}
                   day={date}
                   labels={itemLabels(tree, ev.labelIds)}
                   editing={shownId === ev.id}
@@ -266,6 +283,7 @@ export default function DayEvents({ date }: { date: YMD }) {
                     <EventCard
                       key={`${space.sid}/${ev.id}`}
                       ev={ev}
+                      list={asList}
                       day={date}
                       labels={itemLabels(space.tree, ev.labelIds)}
                       editing={shownKey === shownEventKey(space.sid, ev.id)}
@@ -359,6 +377,8 @@ interface EventCardProps {
   since?: string;
   /** 지난 날 칸에서, 오늘로 따라간 일정 (흐리게 '→ 오늘로') */
   away?: boolean;
+  /** 목록 보기 한 줄 (#204 - 글은 말줄임, 첨부는 📎 n) */
+  list?: boolean;
   /** 🔗 n - 이은 항목 보기 */
   onOpenLinks: () => void;
   onAlarm: () => void;
@@ -368,7 +388,7 @@ interface EventCardProps {
   onDown: () => void;
 }
 
-function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, onOpenLinks, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
+function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPress, labels, editing, today, first, last, since, away, list, onOpenLinks, onAlarm, onDelete, onToggle, onUp, onDown }: EventCardProps) {
   const done = doneOn(ev, day);
   // 휴대폰 길게 누르기 = 여러 개 고르기 시작 (ui/longPress)
   const longPress = useLongPress(onLongPress);
@@ -397,7 +417,9 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
         onCardClick(e);
       }}
       title={overlay ? `${overlay.name} 공간 일정 - 클릭하여 오른쪽 칸에서 수정 (겹쳐 보기)` : '클릭하여 오른쪽 칸에서 수정 (Ctrl·Shift와 함께 누르면 여러 개 고르기)'}
-      className={`group relative flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl border shadow-xs transition-all cursor-pointer min-w-0 select-none sm:select-auto ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
+      className={`group relative ${
+        list ? 'flex flex-row items-center gap-1.5 px-2.5 py-1 rounded-lg' : 'flex flex-col gap-1.5 sm:flex-row sm:items-start p-2.5 sm:p-3 rounded-xl shadow-xs'
+      } border transition-all cursor-pointer min-w-0 select-none sm:select-auto ${away ? 'opacity-50 hover:opacity-80 ' : ''}${
         picked
           ? 'border-primary ring-2 ring-primary bg-blue-50 text-slate-800'
           : editing
@@ -407,13 +429,16 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
     >
       {/* 휴대폰(2열 카드): 위 줄에 순서 바꾸기, 아래에 내용. PC(1열): 한 줄 - 가운데 내용, 오른쪽 위 테두리에 🗑️.
           PC에서는 이 줄 틀을 없는 셈 치고(sm:contents) 순서(order)로 자리를 잡는다 (V4 그대로).
-          마우스 화면은 ▲▼가 왼쪽 테두리에 걸친 손잡이라(#200 - 흐름 밖) 좁은 창에서도 이 줄 틀이 빈 줄로 남지 않게 contents */}
-      <div className="flex items-center justify-between -mt-0.5 sm:contents pointer-fine:contents">
+          마우스 화면은 ▲▼가 왼쪽 테두리에 걸친 손잡이라(#200 - 흐름 밖) 좁은 창에서도 이 줄 틀이 빈 줄로 남지 않게 contents.
+          목록(#204)은 어디서나 한 줄 - 휴대폰 ▲▼는 글 앞에 가로로, 🗑️는 줄 오른쪽 끝에 겹쳐 뜬다 */}
+      <div className={list ? 'contents' : 'flex items-center justify-between -mt-0.5 sm:contents pointer-fine:contents'}>
         {/* 겹친 일정은 ▲▼ 자리를 비워 둔다 (순서는 공간마다라 섞어 바꾸지 않는다 - 글 줄은 위 카드와 맞춘다 · 마우스 화면은 ▲▼가 자리를 차지하지 않아 비울 것도 없다) */}
         {overlay ? (
-          <span aria-hidden className="w-4 shrink-0 sm:order-1 pointer-fine:hidden" />
+          <span aria-hidden className={`w-4 shrink-0 ${list ? 'order-1' : 'sm:order-1'} pointer-fine:hidden`} />
         ) : (
-          <div className={`flex items-center gap-0.5 pointer-coarse:gap-1.5 shrink-0 sm:flex-col sm:order-1 sm:pointer-coarse:mt-0.5 pointer-fine:flex-col ${ORDER_ARROWS_EDGE}`}>
+          <div
+            className={`flex items-center gap-0.5 pointer-coarse:gap-1.5 shrink-0 ${list ? 'order-1' : 'sm:flex-col sm:order-1 sm:pointer-coarse:mt-0.5'} pointer-fine:flex-col ${ORDER_ARROWS_EDGE}`}
+          >
             <button
               type="button"
               data-event-up
@@ -448,7 +473,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
             P41-2: 카드 오른쪽 위에 떠서 자리를 차지하지 않는다(ui/cardTools) · 휴대폰에는 없다 - 예전에는 휴대폰에서도 안 보인 채 눌려 카드 오른쪽 위를 누르면 지워졌다. 휴대폰은 카드를 눌러 연 수정 칸에서.
             ✏️ 수정은 뺐다(11-24 메모 요청 #200 - 카드를 누르면 곧바로 수정 칸). 겹친 일정은 지우기가 없어 묶음도 없다 */}
         {!overlay && (
-          <span data-event-tools className={FLOAT_TOOLS}>
+          <span data-event-tools className={list ? FLOAT_TOOLS_LIST : FLOAT_TOOLS}>
             <button
               type="button"
               data-event-delete
@@ -466,8 +491,9 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
         )}
       </div>
 
-      <div className="min-w-0 sm:order-2 sm:flex-1">
-        <div className="leading-relaxed text-sm break-words">
+      <div className={`min-w-0 ${list ? 'order-2 flex-1' : 'sm:order-2 sm:flex-1'}`}>
+        {/* 목록(#204): 한 줄 - 글만 줄어 말줄임(…), 칩·🔗 n은 그대로 보인다 */}
+        <div className={`leading-relaxed text-sm ${list ? 'flex items-center min-w-0 whitespace-nowrap' : 'break-words'}`}>
           {/* 라벨 칩 = 완료 (P10-1: ☐는 없앴다, 끝내면 칩 앞에 ✓ - 색·글은 그대로). 라벨이 없으면 회색 ○ 칩 */}
           {(labels.length > 0 ? labels : [null]).map((l, i) => (
             <EventDoneChip
@@ -477,7 +503,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
               mark={i === 0}
               onToggle={onToggle}
               forward={!!l?.props?.forward}
-              className="tap-area mr-1.5 text-xs px-2 py-0.5 rounded-lg"
+              className={`tap-area mr-1.5 text-xs px-2 py-0.5 rounded-lg ${list ? 'shrink-0 max-w-[8rem]' : ''}`}
               data={{ 'data-event-chip': l?.id ?? '' }}
             />
           ))}
@@ -528,7 +554,7 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
 
           <DueBadge due={ev.due} today={today} completed={done} />
 
-          <span data-event-text className="inline align-middle">
+          <span data-event-text className={list ? 'min-w-0 truncate' : 'inline align-middle'}>
             {ev.text}
           </span>
           {ev.seriesId && (
@@ -562,8 +588,14 @@ function EventCard({ ev, overlay, day, dragProps, picked, onCardClick, onLongPre
             </button>
           )}
 
-          {/* 첨부 (드라이브 파일 - 올리기는 P4-2) */}
-          {ev.attachments && ev.attachments.length > 0 && (
+          {/* 첨부 (드라이브 파일 - 올리기는 P4-2) · 목록은 📎 n만 (수정 칸에서 연다) */}
+          {list && ev.attachments && ev.attachments.length > 0 && (
+            <span data-event-files={ev.attachments.length} title={`첨부 ${ev.attachments.length}개`} className="shrink-0 ml-1 text-xs text-slate-500">
+              <Glyph e="📎" />
+              {ev.attachments.length}
+            </span>
+          )}
+          {!list && ev.attachments && ev.attachments.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
               {ev.attachments.map((att, i) =>
                 att.type === 'image' ? (

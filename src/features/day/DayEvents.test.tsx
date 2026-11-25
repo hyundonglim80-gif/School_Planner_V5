@@ -14,6 +14,7 @@ import { spaceHue } from '../../domain/spaceColor';
 import { undoCount } from '../../data/undo';
 import type { WriteOp } from '../../data/repo';
 import DayEvents from './DayEvents';
+import { useDayView } from './dayView';
 
 vi.mock('../../data/firebase', () => ({ auth: {}, db: {} }));
 // 일정 칸 열기는 그대로 하되 무엇으로 열었는지 본다 (창 목록은 이 시험에 등록하지 않는다)
@@ -197,6 +198,42 @@ describe('하루 일정 칸', () => {
     expect(q('[data-toast]')?.textContent).toContain('일정을 삭제했습니다');
     expect(q('[data-toast-action="되돌리기"]')).not.toBeNull();
     expect(useWindows.getState().windows.map((w) => w.key)).toEqual([2]);
+  });
+
+  it('카드 / 목록 (#204): 머리 ☰ = 목록 - 휴대폰도 1열·글은 말줄임·첨부는 📎 n, 누르기·완료 칩은 카드와 같다, ▦ = 카드로 (이 기기에 기억)', async () => {
+    useDayView.setState({ events: 'card' });
+    const docs = new Map(items);
+    docs.set('f', { ...base, kind: 'event', date: DAY, text: '첨부 일정', labelIds: [], order: 'a4', attachments: [{ name: 'a.pdf', url: 'https://x/a', type: 'file' }] });
+    seed('live', docs);
+    try {
+      render(<DayEvents date={DAY} />);
+      expect(q('[data-day-events]')?.dataset.eventView).toBe('card');
+      expect(q('[data-event-card="f"] a[href="https://x/a"]')).not.toBeNull();
+      fireEvent.click(q('[data-event-view-toggle="card"]')!);
+      expect(useDayView.getState().events).toBe('list');
+      expect(q('[data-day-events]')?.dataset.eventView).toBe('list');
+      expect(cards()).toEqual(['a', 'b', 'c', 'f']);
+      const grid = q('[data-event-card="a"]')!.parentElement!;
+      expect(grid.className).toContain('grid-cols-1');
+      expect(grid.className).not.toContain('grid-cols-2');
+      expect(q('[data-event-card="a"] [data-event-text]')!.className).toContain('truncate');
+      // 첨부는 수 하나 (그림·파일 링크는 수정 칸에서)
+      expect(q('[data-event-card="f"] [data-event-files]')?.dataset.eventFiles).toBe('1');
+      expect(q('[data-event-card="f"] a[href="https://x/a"]')).toBeNull();
+      // 칩·🔗·▲▼·🗑️는 그대로
+      expect(q('[data-event-card="a"] [data-event-links]')).not.toBeNull();
+      expect(q('[data-event-card="a"] [data-event-up]')).not.toBeNull();
+      expect(q('[data-event-card="a"] [data-event-delete]')).not.toBeNull();
+      await act(async () => fireEvent.click(q('[data-event-card="c"] [data-event-done-chip]')!));
+      expect(written.batches[0][0]).toMatchObject({ at: { id: 'c' }, changes: { done: true } });
+      fireEvent.click(q('[data-event-card="c"] [data-event-text]')!);
+      expect(opened.calls).toEqual([{ sid: SID, date: DAY, id: 'c' }]);
+      fireEvent.click(q('[data-event-view-toggle="list"]')!);
+      expect(useDayView.getState().events).toBe('card');
+      expect(q('[data-event-card="a"] [data-event-files]')).toBeNull();
+    } finally {
+      useDayView.setState({ events: 'card' });
+    }
   });
 
   it('▼ 접으면 카드와 + 추가를 숨긴다', () => {

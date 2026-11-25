@@ -53,6 +53,12 @@ export const FLOAT_TOOLS = `${FLOAT_BASE} -top-3 right-2`;
 export const FLOAT_TOOLS_ROW = `${FLOAT_BASE} top-1/2 -translate-y-1/2 -right-1`;
 
 /**
+ * 하루 일정 칸 '목록' 보기 한 줄의 떠 있는 묶음 (11-25 메모 요청 #204): 줄 오른쪽 끝 가운데에 겹쳐 그 끝을 덮는다 - 줄 사이 틈이 4px라
+ * 카드처럼 위 테두리에 걸치면 위 줄의 글을 덮는다.
+ */
+export const FLOAT_TOOLS_LIST = `${FLOAT_BASE} top-1/2 -translate-y-1/2 right-1.5`;
+
+/**
  * 진도 줄 끝에 겹쳐 뜨는 단추 묶음 (P58-1 - 🔗 이 차시에 메모 잇기 · 이 교시 밀기): PC에서는 올렸을 때만, 흐름 밖(자리 없음) · 불투명 바탕.
  * 부르는 쪽은 줄 끝 묶음(relative - 늘 보이는 🔗 n이 든다)에 넣는다 - 그 왼쪽(right-full)에 떠서 🔗 n을 덮지 않는다.
  * 🔗 n이 없으면 그 묶음 폭이 0이라 w-max가 없으면 글이 묶음 밖으로 넘친다(11-23 그림 - '이 교시 밀기'가 칸 밖으로).

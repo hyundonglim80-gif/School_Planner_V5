@@ -216,7 +216,7 @@ export function GcalBar({ bar, compact, isCurrentMonth, style, instead }: { bar:
 /** 하루 화면 구분 줄 '📅 구글 캘린더 n ----' (겹친 공간 구분 줄과 같은 꼴 - 휴대폰 2열에서도 한 줄을 다 쓴다) */
 export function GcalGroupHeader({ count }: { count: number }) {
   return (
-    <div data-gcal-group title="구글 캘린더 일정 - 보기만 합니다 (둘째 줄 '📅 구글'로 끄고 켭니다)" className="col-span-2 sm:col-span-1 flex items-center gap-1.5 pt-1.5 text-2xs font-bold text-slate-500 min-w-0">
+    <div data-gcal-group title="구글 캘린더 일정 - 보기만 합니다 (둘째 줄 '📅 구글'로 끄고 켭니다)" className="col-span-full flex items-center gap-1.5 pt-1.5 text-2xs font-bold text-slate-500 min-w-0">
       <span className="truncate px-1.5 py-0.5 rounded-lg border border-dashed border-slate-300 bg-white text-slate-600"><Glyph e="📅" /> 구글 캘린더</span>
       <span data-gcal-group-count={count} className="px-1.5 rounded-full bg-slate-100 text-slate-500 shrink-0">
         {count}
