@@ -29,5 +29,7 @@ skills-lock.json
 
 # 메모 요청 실행에서 Claude가 남기는 요약·커밋 글 (.github/workflows/claude-request.yml - 10-16)
 .claude-request/
+# 세션 인계 글 - 그 컴퓨터에만 둔다 (docs/WORK-RULES.md 4번 · .claude/hooks/handoff-session-start.mjs - 11-25)
+HANDOFF.md
 # CI 크롬 점검 결과 (tools/ci-chrome.mjs - P36-1)
 ci-out/
