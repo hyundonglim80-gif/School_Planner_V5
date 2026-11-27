@@ -394,7 +394,7 @@ export default function MemoScreen() {
                 </div>
               )}
 
-              <div className="mb-2 sm:mb-3 flex items-center justify-between gap-2" data-memo-active={active.length}>
+              <div className="mb-2 sm:mb-3 flex flex-wrap items-center justify-between gap-2" data-memo-active={active.length}>
                 {sectionTitle('active', `진행 (${active.length})`, activeOpen, () => setActiveOpen(!activeOpen))}
                 {/* 정렬 - 이 기기 기억. '내 차례'가 아니면 ▲▼ 차례 바꾸기는 숨는다 */}
                 <div data-memo-sort-bar className="flex items-center gap-1 shrink-0">

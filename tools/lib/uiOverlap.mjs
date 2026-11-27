@@ -159,13 +159,22 @@ export function scanInPage({ width, height, mobile, minTarget = 24 }) {
     }
     return document.scrollingElement;
   };
-  /** 고정·붙은 것(머리줄·탭바·둥근 ＋·가장자리 탭) 밑에 든 것이 스크롤하면 드러나나 - 더 내릴 자리·올릴 자리로 그 밑을 벗어나면 */
+  /** el을 품은 스크롤 칸 모두 (가까운 것부터, 끝은 문서) */
+  const scrollersOf = (el) => {
+    const out = [];
+    for (let e = scrollerOf(el); e; e = e === document.scrollingElement ? null : scrollerOf(e)) out.push(e);
+    return out;
+  };
+  /** 고정·붙은 것(머리줄·탭바·둥근 ＋·가장자리 탭) 밑에 든 것이 스크롤하면 드러나나 - 더 내릴 자리·올릴 자리로 그 밑을 벗어나면.
+   *  가까운 칸만 보지 않고 바깥 칸·문서까지 (P61 - 가로 휴대폰 한눈에: 요일 칸(스크롤 칸) 안의 교시가 문서를 내린 자리에서 머리줄 밑에 들었는데,
+   *  요일 칸은 올릴 자리가 없어 '가림'으로 셌다 - 문서를 올리면 드러난다) */
   const revealable = (bar, el) => {
     const fb = bar.getBoundingClientRect();
     const eb = el.getBoundingClientRect();
-    const sc = scrollerOf(el);
-    const down = sc.scrollHeight - sc.scrollTop - sc.clientHeight; // 더 내리면 el이 위로 간다
-    return down > eb.bottom - fb.top + 1 || sc.scrollTop > fb.bottom - eb.top + 1;
+    return scrollersOf(el).some((sc) => {
+      const down = sc.scrollHeight - sc.scrollTop - sc.clientHeight; // 더 내리면 el이 위로 간다
+      return down > eb.bottom - fb.top + 1 || sc.scrollTop > fb.bottom - eb.top + 1;
+    });
   };
   /** el 위로 가장 가까운 고정·붙은 층 가운데 other를 품지 않는 것 - other를 덮는 층(창 칸 안의 붙은 탭 줄이면 그 줄) */
   const barOver = (el, other) => {

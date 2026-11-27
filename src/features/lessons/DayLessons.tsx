@@ -195,12 +195,13 @@ export default function DayLessons({ date }: { date: string }) {
 
   return (
     <section data-day-lessons={date} data-lessons-view={look} {...reorderAttr} className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
-      <div className={`flex flex-wrap @min-[37.5rem]:flex-nowrap items-start @min-[37.5rem]:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
+      <div className={`flex flex-wrap items-start @min-[37.5rem]:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
         {/* 제목은 줄어들지 않는다. 좁으면 오른쪽의 '지금' 안내만 줄어든다 (V4 - '수업'이 '수/업'으로 꺾였다).
             휴대폰은 단추(종·출석부·알림장·진도·뽑기)가 제목 뒤에서 줄을 바꾼다 - 한 줄이면 390px 화면 밖으로 나갔다(P9-3).
             휴대폰의 ⚙️는 첫 줄 오른쪽 끝, '지금' 안내는 그 아래 한 줄(P22-7 - ⚙️가 혼자 한 줄을 차지했다). 넓으면 단추 | 지금 … ⚙️ 그대로.
             '좁다'는 창 폭(sm)이 아니라 둘레 칸 폭(@container 37.5rem = 글자 100%에서 600px - 하루 화면은 본문 = 창 폭 − 여백이라 sm과 같다): 한눈에 화면의 수업 칸(P24)·수정 칸이 열린 좁은 본문에서도 줄을 바꾼다.
-            rem이라 글자를 키우면 경계도 함께 커진다(P57-3 - 600px이면 글자 150%에서 단추 줄이 칸 밖으로 140px 나가 옆 일정 칸 머리의 접기·⚙를 덮었다) */}
+            rem이라 글자를 키우면 경계도 함께 커진다(P57-3 - 600px이면 글자 150%에서 단추 줄이 칸 밖으로 140px 나가 옆 일정 칸 머리의 접기·⚙를 덮었다).
+            넓은 꼴에서도 줄은 바꿀 수 있다(P61 - 가로 휴대폰은 둘레가 844px라 넓은 꼴인데 수업 칸은 460px 남짓, 휴대폰 ⇅까지 서면 ⚙가 칸 밖 9px - 넘칠 때만 ⇅☰⚙가 다음 줄) */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0 flex-1 basis-0 @min-[37.5rem]:flex-none @min-[37.5rem]:basis-auto @min-[37.5rem]:shrink-0">
           <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             <button
