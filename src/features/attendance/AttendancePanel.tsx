@@ -271,7 +271,7 @@ export default function AttendancePanel({ params, close, raise }: WindowProps<At
                           {st.name || '(이름 없음)'}
                         </span>
                         <div className="flex items-center gap-1 flex-wrap">
-                          <button type="button" data-attendance-kind="present" aria-pressed={!r} onClick={() => edit((m) => withKind(m, st.sid, null))} className={chip(!r, 'bg-emerald-600 text-white border-emerald-600')}>
+                          <button type="button" data-attendance-kind="present" aria-pressed={!r} onClick={() => edit((m) => withKind(m, st.sid, null))} className={chip(!r, 'bg-emerald-700 text-white border-emerald-700')}>
                             출석
                           </button>
                           {KINDS.map((k) => (

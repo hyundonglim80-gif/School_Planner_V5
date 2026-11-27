@@ -382,7 +382,7 @@ export default function MemoScreen() {
                     disabled={busy}
                     onClick={() => sid && void run(() => labelNotes(sid, unlabeled, FALLBACK_LABEL, tree))}
                     title={`라벨이 없는 메모(완료된 것 포함)에 '${FALLBACK_LABEL}' 라벨을 붙여 라벨로 보기에서도 찾게 합니다`}
-                    className="tap-area px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold cursor-pointer disabled:opacity-50"
+                    className="tap-area px-2.5 py-1 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-bold cursor-pointer disabled:opacity-50"
                   >
                     &apos;{FALLBACK_LABEL}&apos; 라벨 붙이기
                   </button>

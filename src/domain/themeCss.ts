@@ -309,6 +309,15 @@ const whiteRules = (sel: string) => [
   ...[15, 25, 30].map((a) => `  ${sel} .bg-white\\/${a}, ${sel} .hover\\:bg-white\\/${a}:hover { background-color: rgb(255 255 255 / ${a / 100}); }`),
 ];
 
+/**
+ * 어두운 바탕의 강조 글자 (P61 11-27 어두운 화면 전검): 강조(--color-primary)는 꽉 찬 단추 바탕이라 어둡게에서도 그대로 두는데,
+ * 같은 값을 글자로 쓰면 어두운 칸 위에서 3.3~3.75:1(켜진 화면 탭·주말/일정/수업·창 머리 글·탭 글자)이었다 →
+ * 글자만 어둡게 사다리의 밝은 파랑(blue-600 = 어둡게 70.7%, 색 테마는 그 빛깔)으로. 부드럽게(blue-700)·고대비는 셀렉터가 더 세서 이긴다.
+ */
+const darkAccentText = () => [
+  `  html.dark .text-primary, html.dark .hover\\:text-primary:hover, html.dark .group:hover .group-hover\\:text-primary { color: var(--color-blue-600); }`,
+];
+
 function paletteBlock(orig: ColorTable, p: PaletteDef): string {
   const sel = `html[data-palette="${p.id}"]`;
   const dsel = `html.dark[data-palette="${p.id}"]`;
@@ -611,6 +620,7 @@ ${vars.join('\n')}
   }
 ${keep.join('\n')}
 ${whiteRules('html.dark').join('\n')}
+${darkAccentText().join('\n')}
 
   html[data-palette] body {
     background-color: var(--color-bg-body);

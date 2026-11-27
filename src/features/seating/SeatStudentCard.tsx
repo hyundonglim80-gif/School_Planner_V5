@@ -200,7 +200,7 @@ export default function SeatStudentCard({ sid, cls, student, date, stored, marks
                 data-seat-att-kind="present"
                 onClick={() => record && saveMarks(withKind(marks, student.sid, null))}
                 aria-pressed={!record}
-                className={chip(!record, 'bg-emerald-600 text-white border-emerald-600')}
+                className={chip(!record, 'bg-emerald-700 text-white border-emerald-700')}
               >
                 출석
               </button>

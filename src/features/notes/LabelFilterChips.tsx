@@ -71,7 +71,7 @@ export function FilterChip({ chipKey, text, title, count, selected, included, ot
         className={`shrink-0 font-black ${
           row
             ? 'ml-1 px-1.5 rounded-full bg-black/10 text-current'
-            : 'absolute -top-1.5 -right-1 min-w-4 h-4 px-1 rounded-full bg-slate-600 text-white text-2xs leading-4 text-center sm:static sm:min-w-0 sm:h-auto sm:px-1.5 sm:bg-black/10 sm:text-current sm:text-xs sm:leading-normal'
+            : 'absolute -top-1.5 -right-1 min-w-4 h-4 px-1 rounded-full bg-slate-700 text-white text-2xs leading-4 text-center sm:static sm:min-w-0 sm:h-auto sm:px-1.5 sm:bg-black/10 sm:text-current sm:text-xs sm:leading-normal'
         }`}
       >
         {count}

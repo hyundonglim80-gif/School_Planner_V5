@@ -104,6 +104,15 @@ describe('어둡게 진한 띠 (P20-2 ■1)', () => {
       expect(css).toContain(`html.dark .${cls} {`);
     }
   });
+
+  it('강조 글자는 어둡게에서 밝은 파랑 - 어두운 칸 위 4.5:1 (P61 - #1a73e8 그대로는 3.7:1)', () => {
+    const css = buildThemeCss(tw, file);
+    expect(css).toContain('html.dark .text-primary, html.dark .hover\\:text-primary:hover');
+    const blue600 = css.match(/html\.dark \{[^}]*--color-blue-600: (oklch\([^)]*\));/)?.[1];
+    expect(blue600).toBeTruthy();
+    expect(contrast(parseOklch(blue600!), parseOklch('oklch(23% 0.028 262)'))).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(hexLch('#1a73e8'), parseOklch('oklch(23% 0.028 262)'))).toBeLessThan(4.5); // 고치기 전 값
+  });
 });
 
 describe('어둡게를 부드럽게 (P20-2 html.dim)', () => {
