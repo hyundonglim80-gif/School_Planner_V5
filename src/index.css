@@ -58,6 +58,11 @@
     font-size: calc(100% * var(--font-scale, 1));
     /* 지금 html 글자 크기 ÷ 브라우저 기본 - 머리줄([data-fixed-font])이 이것으로 나눠 늘 100%를 지킨다 */
     --root-scale: var(--font-scale, 1);
+    /* 한글 줄바꿈은 낱말(띄어쓰기) 단위 (P61 11-27 - 카드 글이 '학/부모'·'결/재'처럼 낱말 가운데서 꺾였다).
+     * 칸보다 긴 낱말은 글이 길게 오는 칸(카드 글·메모 본문 - break-words)만 그 자리에서 끊는다. 여기 overflow-wrap을 두면
+     * 정한 폭 상자(년간 날짜 18px)의 '10'이 글자 150%에서 '1/0' 두 줄로 꺾였다(겹침 측정 257건) - 두지 않는다.
+     * 글 칸(textarea)도 이어받고, 높이 재기 거울(ui/AutoTextarea)은 칸의 wordBreak를 옮겨 같다 */
+    word-break: keep-all;
   }
   /* PC(폭 640px 이상) '한눈에' 화면만 바탕 90% (11-08 사용자 요청 80% → 11-09 '좀 작다'로 90% → 같은 날 '한눈에는 볼 것이 많으니 90%,
    * 나머지 화면은 100%'). data-dense = 지금 화면이 한눈에(app/nav가 붙인다 - 팝업창은 없다). 휴대폰은 그대로(한눈에가 없다).
@@ -289,6 +294,16 @@ html.dark .decor-art[data-art='animal'] {
 }
 .decor-band { opacity: 0.45; }
 html.dark .decor-band { opacity: 0.2; }
+
+/* P61 기간 막대 (11-27 어두운 화면 전검): 라벨 빛깔(밝은 바탕·짙은 글자)을 그대로 쓰면 어두운 달력에서 긴 막대가 눈부셨고
+   글자 대비도 셈이 어려웠다 → 어두운 화면에서는 라벨 테 빛깔을 어두운 바탕에 30% 섞은 막대 + 라벨 바탕 빛깔(밝은) 글자.
+   빛깔 값은 PeriodBar가 막대에 --pb-tint(테)·--pb-paper(바탕)로 단다. 고대비는 그대로(고대비 규칙이 칸 색을 정한다). */
+html.dark:not(.hc) [data-period-tone='label'] [data-period-cell] {
+  background-color: color-mix(in oklab, var(--pb-tint) 30%, var(--sp5-dark-surface)) !important;
+}
+html.dark:not(.hc) [data-period-tone='label'] [data-period-text] { color: var(--pb-paper) !important; }
+/* 막대 안 라벨 칩은 다른 라벨 칩처럼 라벨 바탕(밝은 막대 위 흰 70%는 어두운 막대에서 회색이 되어 3.7:1이었다) */
+html.dark:not(.hc) [data-period-tone='label'] [data-period-bar-chip] { background-color: var(--pb-paper) !important; }
 html .decor-art.decor-band[data-art='spring'] { --decor-3: #fbcfe8; --decor-4: #fbcfe8; }
 html .decor-art.decor-band[data-art='summer'] { --decor-2: #a5e1fd; --decor-3: #fcd34d; --decor-4: #7dd3fc; }
 html .decor-art.decor-band[data-art='autumn'] { --decor-1: #fdba74; --decor-2: #fcd34d; }

@@ -54,9 +54,12 @@ export default function PeriodBar({ bar, space, label, compact, multiOn, picked,
       data-period-bar={ev.id}
       data-period-bar-done={allDone ? '1' : '0'}
       data-event-space={space?.sid}
+      // 라벨 막대는 어두운 화면에서 어둡게 물든 막대 + 밝은 글자(index.css 'P61 기간 막대') - 밝은 빛깔 막대가 어두운 달력에서 눈부셨다
+      data-period-tone={space ? undefined : 'label'}
       className={`relative z-10 min-w-0 self-start ${compact ? 'h-[14px]' : ''}`}
       style={{
         ...style,
+        ...(space ? {} : ({ '--pb-tint': color.border, '--pb-paper': color.bg } as CSSProperties)),
         // 기간의 첫날·끝날만 둥글고 안으로 들인다. 앞뒤 주(달)로 이어지면 칸 끝까지 닿아 이어 보인다
         marginLeft: bar.startsPeriod ? (compact ? 2 : 4) : 0,
         marginRight: bar.endsPeriod ? (compact ? 2 : 4) : 0,
@@ -102,6 +105,7 @@ export default function PeriodBar({ bar, space, label, compact, multiOn, picked,
       </div>
       {/* 글은 막대 전체에 한 줄로 (누르는 것은 아래 조각으로 지나간다) */}
       <div
+        data-period-text
         className={`relative pointer-events-none flex items-center gap-1 whitespace-nowrap overflow-hidden ${compact ? 'h-full px-1 text-2xs leading-none' : 'px-1.5 py-0.5 text-2xs leading-tight'} font-bold`}
         style={{ color: color.text }}
       >

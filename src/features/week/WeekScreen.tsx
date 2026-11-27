@@ -139,7 +139,7 @@ export default function WeekScreen({ printAt }: { printAt?: string }) {
                 disabled={importing}
                 onClick={() => void runImport()}
                 title="고른 작년 일정·메모를 올해 같은 요일에 복사합니다 (작년 것은 그대로)"
-                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50 shadow-xs whitespace-nowrap cursor-pointer"
+                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-700 text-white hover:bg-amber-800 disabled:opacity-50 shadow-xs whitespace-nowrap cursor-pointer"
               >
                 {glyphText(importing ? '가져오는 중…' : '📥 올해로 가져오기')}
               </button>

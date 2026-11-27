@@ -62,6 +62,7 @@ import { Glyph } from '../../ui/Icon';
 import { leadGlyph } from '../../ui/glyphText';
 import { useDayView } from '../day/dayView';
 import { GRID_COLS, useCardCols } from '../../app/cardCols';
+import { cappedColumns, useFitColumns } from '../../ui/useFitColumns';
 import { useIsMobile } from '../../ui/useIsMobile';
 import { isRowExpanded } from '../../domain/entryCollapse';
 import { setEntryOpen, useEntryOpen } from '../notes/entryOpen';
@@ -95,7 +96,7 @@ const TOOL_BTN = 'text-slate-500 hover:text-blue-600 p-1 rounded hover:bg-slate-
 const CARD_LOOK = {
   wide: { grid: 'grid-cols-1 gap-3', row: '', gap: 'gap-3', pad: 'p-3.5', padShort: 'px-3.5 py-2', slot: 'shrink-0' },
   phone: { grid: 'grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-3', row: 'flex-wrap gap-y-1 sm:flex-nowrap', gap: 'gap-1.5 sm:gap-3', pad: 'px-2 py-2.5 sm:px-3.5 sm:py-3.5', padShort: 'px-2 py-2 sm:px-3.5', slot: 'min-w-0 sm:shrink-0' },
-  narrow: { grid: 'gap-2', row: 'flex-wrap gap-y-1', gap: 'gap-1.5', pad: 'px-2 py-2.5', padShort: 'px-2 py-2', slot: 'min-w-0' },
+  narrow: { grid: 'gap-2 pointer-fine:gap-x-3', row: 'flex-wrap gap-y-1', gap: 'gap-1.5', pad: 'px-2 py-2.5', padShort: 'px-2 py-2', slot: 'min-w-0' },
 } as const;
 /** 지난 시간을 거슬러 찾는 날 수 */
 const PREV_LOOKBACK_DAYS = 60;
@@ -123,7 +124,10 @@ export default function DayLessons({ date }: { date: string }) {
   const look = useDayView((s) => s.lessons);
   const list = look === 'list';
   // 카드 열 (#206) - 목록은 늘 한 줄에 하나
-  const cardCols = useCardCols((s) => s.lessonCols);
+  const pickedCols = useCardCols((s) => s.lessonCols);
+  // 고른 열이라도 칸 폭에 드는 만큼만 (P61)
+  const [gridRef, fitCols] = useFitColumns(12, pickedCols > 0 && !list);
+  const cardCols = cappedColumns(pickedCols, fitCols);
   const shape = list || cardCols === 1 ? CARD_LOOK.wide : cardCols ? CARD_LOOK.narrow : CARD_LOOK.phone;
   const gridClass = list ? 'grid-cols-1 gap-1.5' : cardCols > 1 ? `${GRID_COLS[cardCols]} ${shape.grid}` : shape.grid;
   // 좁은 카드인가 - 진도 줄 끝 단추(🔗 잇기·이 교시 밀기)는 카드 폭에 들지 않아 수정 칸에서 (자동이면 휴대폰 폭 = sm 아래에서만 2열)
@@ -191,12 +195,13 @@ export default function DayLessons({ date }: { date: string }) {
 
   return (
     <section data-day-lessons={date} data-lessons-view={look} {...reorderAttr} className="bg-white rounded-xl border border-slate-200/80 shadow-xs p-5">
-      <div className={`flex flex-wrap @min-[37.5rem]:flex-nowrap items-start @min-[37.5rem]:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
+      <div className={`flex flex-wrap items-start @min-[37.5rem]:items-center justify-between gap-2 ${collapsed ? '' : 'mb-4'}`}>
         {/* 제목은 줄어들지 않는다. 좁으면 오른쪽의 '지금' 안내만 줄어든다 (V4 - '수업'이 '수/업'으로 꺾였다).
             휴대폰은 단추(종·출석부·알림장·진도·뽑기)가 제목 뒤에서 줄을 바꾼다 - 한 줄이면 390px 화면 밖으로 나갔다(P9-3).
             휴대폰의 ⚙️는 첫 줄 오른쪽 끝, '지금' 안내는 그 아래 한 줄(P22-7 - ⚙️가 혼자 한 줄을 차지했다). 넓으면 단추 | 지금 … ⚙️ 그대로.
             '좁다'는 창 폭(sm)이 아니라 둘레 칸 폭(@container 37.5rem = 글자 100%에서 600px - 하루 화면은 본문 = 창 폭 − 여백이라 sm과 같다): 한눈에 화면의 수업 칸(P24)·수정 칸이 열린 좁은 본문에서도 줄을 바꾼다.
-            rem이라 글자를 키우면 경계도 함께 커진다(P57-3 - 600px이면 글자 150%에서 단추 줄이 칸 밖으로 140px 나가 옆 일정 칸 머리의 접기·⚙를 덮었다) */}
+            rem이라 글자를 키우면 경계도 함께 커진다(P57-3 - 600px이면 글자 150%에서 단추 줄이 칸 밖으로 140px 나가 옆 일정 칸 머리의 접기·⚙를 덮었다).
+            넓은 꼴에서도 줄은 바꿀 수 있다(P61 - 가로 휴대폰은 둘레가 844px라 넓은 꼴인데 수업 칸은 460px 남짓, 휴대폰 ⇅까지 서면 ⚙가 칸 밖 9px - 넘칠 때만 ⇅☰⚙가 다음 줄) */}
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0 flex-1 basis-0 @min-[37.5rem]:flex-none @min-[37.5rem]:basis-auto @min-[37.5rem]:shrink-0">
           <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
             <button
@@ -308,7 +313,7 @@ export default function DayLessons({ date }: { date: string }) {
         </p>
       )}
       {!collapsed && !loading && (
-        <div className={`grid ${gridClass}`}>
+        <div ref={gridRef} className={`grid ${gridClass}`}>
           {view.cells.map((c) => {
             const n = c.n;
             const colorClass = PERIOD_COLORS[(n - 1) % PERIOD_COLORS.length];

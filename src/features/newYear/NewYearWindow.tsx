@@ -28,7 +28,7 @@ function Step({ id, n, title, done, children }: { id: string; n: number; title: 
   return (
     <section data-new-year-step={id} data-done={done ? 'true' : 'false'} className={`rounded-xl border p-3 space-y-2 ${done ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-white'}`}>
       <h3 className="flex items-center gap-2 text-sm font-black text-slate-800">
-        <span className={`w-5 h-5 rounded-full text-2xs flex items-center justify-center ${done ? 'bg-emerald-500 text-white' : 'bg-slate-200 text-slate-600'}`}>{done ? '✓' : n}</span>
+        <span className={`w-5 h-5 rounded-full text-2xs flex items-center justify-center ${done ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-600'}`}>{done ? '✓' : n}</span>
         {title}
       </h3>
       {children}

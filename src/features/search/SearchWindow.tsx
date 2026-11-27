@@ -245,7 +245,7 @@ export default function SearchWindow({ close, raise }: WindowProps) {
               </span>
             )}
             <span className="text-xs font-bold text-slate-700 ml-2">라벨</span>
-            <select data-search-label value={labelId} onChange={(e) => setLabelId(e.target.value)} className="text-xs px-1.5 py-1 border border-slate-200 rounded-lg bg-white font-semibold cursor-pointer max-w-[12rem]">
+            <select data-search-label aria-label="라벨" value={labelId} onChange={(e) => setLabelId(e.target.value)} className="text-xs px-1.5 py-1 border border-slate-200 rounded-lg bg-white font-semibold cursor-pointer max-w-[12rem]">
               <option value="">모든 라벨</option>
               {labelOptions.map((o) => (
                 <option key={o.id} value={o.id}>

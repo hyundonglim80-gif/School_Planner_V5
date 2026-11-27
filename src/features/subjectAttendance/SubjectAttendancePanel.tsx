@@ -135,7 +135,7 @@ export default function SubjectAttendancePanel({ params, close, raise }: WindowP
                           {st.name || '(이름 없음)'}
                         </span>
                         <div className={`flex items-center gap-1 flex-wrap ${busy === st.sid ? 'opacity-60' : ''}`}>
-                          <button type="button" data-subject-att-kind="present" onClick={() => setKind(st.sid, null)} aria-pressed={!r} className={chip(!r, 'bg-emerald-600 text-white border-emerald-600')}>
+                          <button type="button" data-subject-att-kind="present" onClick={() => setKind(st.sid, null)} aria-pressed={!r} className={chip(!r, 'bg-emerald-700 text-white border-emerald-700')}>
                             출석
                           </button>
                           {SUBJECT_KINDS.map((k) => (

@@ -18,7 +18,12 @@ afterEach(() => {
 });
 
 describe('카드 차례 바꾸기 ⇅ (P59-1)', () => {
-  it("기본(늘 보이기)이면 ⇅도 칸 표시도 없다 - html 표시도 없다", () => {
+  it('기본은 \'⇅ 누를 때만\'(P61 - 휴대폰 카드 ▲▼가 한 줄을 차지했다)', () => {
+    expect(SCREEN_DEFAULTS.orderArrows).toBe('toggle');
+  });
+
+  it("'늘 보이기'면 ⇅도 칸 표시도 없다 - html 표시도 없다", () => {
+    act(() => useScreenPrefs.setState({ orderArrows: 'always' }));
     const { container } = render(<Box />);
     expect(container.querySelector('[data-reorder-toggle]')).toBeNull();
     expect(container.querySelector('[data-box]')!.hasAttribute('data-reorder-on')).toBe(false);

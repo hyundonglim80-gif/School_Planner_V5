@@ -21,6 +21,7 @@ import { OfflineInlineWindow } from '../../app/OfflineChunk';
 import { goToday } from '../../app/nav';
 import { useCommonSettings } from '../../app/prefs';
 import { GRID_COLS, useCardCols } from '../../app/cardCols';
+import { cappedColumns, useFitColumns } from '../../ui/useFitColumns';
 import { useReorderToggle } from '../../ui/useReorderToggle';
 import { openWindow } from '../../app/windows';
 import { monthDayLabel, shortDateLabel } from '../../domain/dateUtils';
@@ -104,7 +105,10 @@ export default function DayEvents({ date }: { date: YMD }) {
   const carried = useCarried(sid);
   const forwardDays = useCommonSettings((s) => s.forwardDays);
   // 카드 열 (#206 - 환경설정 화면 배치 '카드 열', 이 기기에만): 자동(0) = 휴대폰 2열·PC(sm 이상) 1열
-  const cardCols = useCardCols((s) => s.eventCols);
+  const pickedCols = useCardCols((s) => s.eventCols);
+  // 고른 열이라도 칸 폭에 드는 만큼만 (P61 - 한눈에 하루 칸에 5열이면 카드가 한 글자 폭이었다)
+  const [gridRef, fitCols] = useFitColumns(12, pickedCols > 0);
+  const cardCols = cappedColumns(pickedCols, fitCols);
   // 카드 / 목록 (#204 - 목록은 한 줄에 일정 하나, 휴대폰도 1열)
   const view = useDayView((s) => s.events);
   const asList = view === 'list';
@@ -225,8 +229,9 @@ export default function DayEvents({ date }: { date: YMD }) {
         // 마우스 화면 왼쪽 여백 12px(칸 여백 p-5에서 빌림 - 카드 자리는 그대로): 카드 왼쪽 테두리에 걸친 ▲▼ 손잡이(ORDER_ARROWS_EDGE)가 이 스크롤 칸에 잘리지 않게(#200)
         // 목록(#204): 휴대폰도 1열·줄 사이 4px, 🗑️가 줄 안에 떠서 위 여백은 4px(손잡이가 첫 줄 위로 조금 나온다)
         <div
+          ref={gridRef}
           className={`flex-1 overflow-y-auto pr-1 ${asList ? 'sm:pt-1' : 'sm:pt-3'} pointer-fine:-ml-3 pointer-fine:pl-3 min-h-[110px] ${
-            shownCount > 0 ? `grid ${asList ? 'grid-cols-1' : cardCols ? GRID_COLS[cardCols] : 'grid-cols-2 sm:grid-cols-1'} ${asList ? 'gap-1' : 'gap-2'} content-start` : ''
+            shownCount > 0 ? `grid ${asList ? 'grid-cols-1' : cardCols ? GRID_COLS[cardCols] : 'grid-cols-2 sm:grid-cols-1'} ${asList ? 'gap-1' : 'gap-2 pointer-fine:gap-x-3'} content-start` : ''
           }`}
         >
           {shownCount > 0 ? (

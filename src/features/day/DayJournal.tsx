@@ -18,6 +18,7 @@ import { useCurrentSpaceId } from '../../data/session';
 import type { YMD } from '../../data/types';
 import { useMainWidth } from '../../ui/useMainWidth';
 import { useCardCols } from '../../app/cardCols';
+import { MIN_PICKED_NOTE_PX, cappedColumns, useFitColumns } from '../../ui/useFitColumns';
 import { cardColumns } from '../../domain/cardCols';
 import { useReorderToggle } from '../../ui/useReorderToggle';
 import type { ItemDoc } from '../events/eventOps';
@@ -84,7 +85,10 @@ export default function DayJournal({ date, edgeRoom = false }: { date: YMD; /** 
   // 칸 수는 창 폭이 아니라 본문 폭으로 - 오른쪽 칸이 열려 본문이 좁아지면 줄인다. 휴대폰도 2열(일정 칸과 같게) -
   // 환경설정 화면 배치 '카드 열'(#206 - 이 기기에만)에서 1~5열을 고르면 폭과 상관없이 그 수
   const mainWidth = useMainWidth();
-  const cardCols = useCardCols((s) => s.journalCols);
+  const pickedCols = useCardCols((s) => s.journalCols);
+  // 고른 열이라도 칸 폭에 드는 만큼만 (P61 - 한눈에 메모 칸)
+  const [gridRef, fitCols] = useFitColumns(16, pickedCols > 0, MIN_PICKED_NOTE_PX);
+  const cardCols = cappedColumns(pickedCols, fitCols, journalColumnsFor(mainWidth));
   const { reorderAttr, reorderButton } = useReorderToggle('journal');
   const columnsCount = cardColumns(cardCols, journalColumnsFor(mainWidth));
   const columns = Array.from({ length: columnsCount }, () => [] as { item: ItemDoc; index: number }[]);
@@ -208,7 +212,7 @@ export default function DayJournal({ date, edgeRoom = false }: { date: YMD; /** 
       )}
       {!collapsed &&
         (shown.length > 0 ? (
-          <div className={`grid gap-4 items-start ${room}`} style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}>
+          <div ref={gridRef} className={`grid gap-4 items-start ${room}`} style={{ gridTemplateColumns: `repeat(${columnsCount}, minmax(0, 1fr))` }}>
             {columns.map((col, ci) => (
               <div key={ci} className="flex flex-col gap-4">
                 {col.map(({ item, index }) => {

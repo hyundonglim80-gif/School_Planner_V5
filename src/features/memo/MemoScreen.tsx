@@ -45,6 +45,7 @@ import { BTN_DANGER } from '../../ui/buttons';
 import { useScreenPrefs } from '../../app/screenPrefs';
 import { useCardCols } from '../../app/cardCols';
 import { cardColumns } from '../../domain/cardCols';
+import { MIN_PICKED_NOTE_PX, cappedColumns, fitColumns } from '../../ui/useFitColumns';
 import { useReorderToggle } from '../../ui/useReorderToggle';
 
 /** 라벨 없는 메모에 붙여 주는 라벨 (V4 그대로) */
@@ -63,17 +64,20 @@ const quiet = () => {
 /** 목록 칸의 실제 폭으로 열 수 (왼쪽 라벨 칸이 있어 화면 폭이 아니라 칸 폭을 잰다 - V4) */
 function useColumnCount(ref: React.RefObject<HTMLElement | null>, min: number) {
   const [count, setCount] = useState(min);
+  // 카드 열을 골랐을 때 드는 수 (P61 - 고른 수라도 카드가 ui/useFitColumns 최소 폭보다 좁아지면 줄인다)
+  const [fit, setFit] = useState(Infinity);
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(([entry]) => {
       const fit = Math.floor((entry.contentRect.width + 16) / (MIN_CARD_WIDTH + 16));
       setCount(Math.min(MAX_COLUMNS, Math.max(min, fit)));
+      setFit(fitColumns(entry.contentRect.width, 16, MIN_PICKED_NOTE_PX));
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, [ref, min]);
-  return count;
+  return { count, fit };
 }
 
 /** 'n월 n일 오후 3:20' (V4 MemoCard) */
@@ -106,7 +110,8 @@ export default function MemoScreen() {
   // 카드 / 목록 (머리줄 그림 단추 - 이 기기 기억)
   const view = useMemoView((s) => s.view);
   const listRef = useRef<HTMLElement>(null);
-  const columns = cardColumns(cardCols, useColumnCount(listRef, MIN_COLUMNS));
+  const counted = useColumnCount(listRef, MIN_COLUMNS);
+  const columns = cardColumns(cappedColumns(cardCols, counted.fit, counted.count), counted.count);
   const [activeOpen, setActiveOpen] = useState(true);
   const [doneOpen, setDoneOpen] = useState(true);
   // 검색 결과로 메모를 짚으러 오면 그 메모가 든 칸(진행/완료)을 편다
@@ -382,14 +387,14 @@ export default function MemoScreen() {
                     disabled={busy}
                     onClick={() => sid && void run(() => labelNotes(sid, unlabeled, FALLBACK_LABEL, tree))}
                     title={`라벨이 없는 메모(완료된 것 포함)에 '${FALLBACK_LABEL}' 라벨을 붙여 라벨로 보기에서도 찾게 합니다`}
-                    className="tap-area px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold cursor-pointer disabled:opacity-50"
+                    className="tap-area px-2.5 py-1 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-bold cursor-pointer disabled:opacity-50"
                   >
                     &apos;{FALLBACK_LABEL}&apos; 라벨 붙이기
                   </button>
                 </div>
               )}
 
-              <div className="mb-2 sm:mb-3 flex items-center justify-between gap-2" data-memo-active={active.length}>
+              <div className="mb-2 sm:mb-3 flex flex-wrap items-center justify-between gap-2" data-memo-active={active.length}>
                 {sectionTitle('active', `진행 (${active.length})`, activeOpen, () => setActiveOpen(!activeOpen))}
                 {/* 정렬 - 이 기기 기억. '내 차례'가 아니면 ▲▼ 차례 바꾸기는 숨는다 */}
                 <div data-memo-sort-bar className="flex items-center gap-1 shrink-0">

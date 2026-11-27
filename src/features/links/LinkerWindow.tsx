@@ -253,6 +253,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
             <span className="text-xs font-bold text-slate-600 shrink-0">조회 범위:</span>
             <select
               data-linker-range
+              aria-label="조회 범위"
               value={rangeKey}
               onChange={(e) => {
                 const key = e.target.value as RangeKey;
@@ -331,8 +332,9 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
                       setPage(1);
                     }}
                     className={chip(on)}
-                    style={on ? undefined : { color: c.text }}
                   >
+                    {/* 라벨 색은 점으로 (P61 - 글자를 라벨 글자색으로 칠하면 어두운 화면에서 1.9:1로 묻혔다) */}
+                    <span aria-hidden className="inline-block w-2 h-2 rounded-full mr-1 align-[1px] border" style={{ backgroundColor: c.bg, borderColor: c.text }} />
                     {l.name}
                   </button>
                 );
@@ -387,7 +389,7 @@ export default function LinkerWindow({ params, close, raise }: WindowProps<LinkW
                       onClick={() => toggle(c.id)}
                       className="w-full flex items-center px-4 py-2 hover:bg-slate-50 disabled:hover:bg-white text-left cursor-pointer disabled:cursor-default"
                     >
-                      <input type="checkbox" checked={on} readOnly tabIndex={-1} className="w-4 h-4 rounded border-slate-300 pointer-events-none mr-3 shrink-0" />
+                      <input type="checkbox" checked={on} readOnly tabIndex={-1} aria-hidden className="w-4 h-4 rounded border-slate-300 pointer-events-none mr-3 shrink-0" />
                       {c.date && <span className="text-xs text-slate-500 shrink-0 whitespace-nowrap font-medium mr-2">{c.date}</span>}
                       <span className="text-xs text-slate-800 font-medium truncate flex-1" title={c.text}>
                         {c.text.split('\n')[0] || '(표·첨부만)'}

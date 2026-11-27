@@ -131,7 +131,7 @@ export function StudentTagRow({ studentIds, onChange, year }: { studentIds: stri
                       data-note-student-option={key}
                       aria-pressed={on}
                       onClick={() => toggle(key)}
-                      className={`px-2 py-1 rounded-lg border text-xs font-bold cursor-pointer ${on ? 'bg-amber-500 text-white border-amber-500' : 'bg-white text-slate-600 border-slate-200 hover:border-amber-400'}`}
+                      className={`px-2 py-1 rounded-lg border text-xs font-bold cursor-pointer ${on ? 'bg-amber-700 text-white border-amber-700' : 'bg-white text-slate-600 border-slate-200 hover:border-amber-400'}`}
                     >
                       {s.num} {s.name}
                     </button>
