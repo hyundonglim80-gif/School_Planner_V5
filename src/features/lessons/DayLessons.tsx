@@ -62,6 +62,7 @@ import { Glyph } from '../../ui/Icon';
 import { leadGlyph } from '../../ui/glyphText';
 import { useDayView } from '../day/dayView';
 import { GRID_COLS, useCardCols } from '../../app/cardCols';
+import { cappedColumns, useFitColumns } from '../../ui/useFitColumns';
 import { useIsMobile } from '../../ui/useIsMobile';
 import { isRowExpanded } from '../../domain/entryCollapse';
 import { setEntryOpen, useEntryOpen } from '../notes/entryOpen';
@@ -95,7 +96,7 @@ const TOOL_BTN = 'text-slate-500 hover:text-blue-600 p-1 rounded hover:bg-slate-
 const CARD_LOOK = {
   wide: { grid: 'grid-cols-1 gap-3', row: '', gap: 'gap-3', pad: 'p-3.5', padShort: 'px-3.5 py-2', slot: 'shrink-0' },
   phone: { grid: 'grid-cols-2 gap-2 sm:grid-cols-1 sm:gap-3', row: 'flex-wrap gap-y-1 sm:flex-nowrap', gap: 'gap-1.5 sm:gap-3', pad: 'px-2 py-2.5 sm:px-3.5 sm:py-3.5', padShort: 'px-2 py-2 sm:px-3.5', slot: 'min-w-0 sm:shrink-0' },
-  narrow: { grid: 'gap-2', row: 'flex-wrap gap-y-1', gap: 'gap-1.5', pad: 'px-2 py-2.5', padShort: 'px-2 py-2', slot: 'min-w-0' },
+  narrow: { grid: 'gap-2 pointer-fine:gap-x-3', row: 'flex-wrap gap-y-1', gap: 'gap-1.5', pad: 'px-2 py-2.5', padShort: 'px-2 py-2', slot: 'min-w-0' },
 } as const;
 /** 지난 시간을 거슬러 찾는 날 수 */
 const PREV_LOOKBACK_DAYS = 60;
@@ -123,7 +124,10 @@ export default function DayLessons({ date }: { date: string }) {
   const look = useDayView((s) => s.lessons);
   const list = look === 'list';
   // 카드 열 (#206) - 목록은 늘 한 줄에 하나
-  const cardCols = useCardCols((s) => s.lessonCols);
+  const pickedCols = useCardCols((s) => s.lessonCols);
+  // 고른 열이라도 칸 폭에 드는 만큼만 (P61)
+  const [gridRef, fitCols] = useFitColumns(12, pickedCols > 0 && !list);
+  const cardCols = cappedColumns(pickedCols, fitCols);
   const shape = list || cardCols === 1 ? CARD_LOOK.wide : cardCols ? CARD_LOOK.narrow : CARD_LOOK.phone;
   const gridClass = list ? 'grid-cols-1 gap-1.5' : cardCols > 1 ? `${GRID_COLS[cardCols]} ${shape.grid}` : shape.grid;
   // 좁은 카드인가 - 진도 줄 끝 단추(🔗 잇기·이 교시 밀기)는 카드 폭에 들지 않아 수정 칸에서 (자동이면 휴대폰 폭 = sm 아래에서만 2열)
@@ -308,7 +312,7 @@ export default function DayLessons({ date }: { date: string }) {
         </p>
       )}
       {!collapsed && !loading && (
-        <div className={`grid ${gridClass}`}>
+        <div ref={gridRef} className={`grid ${gridClass}`}>
           {view.cells.map((c) => {
             const n = c.n;
             const colorClass = PERIOD_COLORS[(n - 1) % PERIOD_COLORS.length];
