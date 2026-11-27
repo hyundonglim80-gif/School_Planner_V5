@@ -91,6 +91,8 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [alarmOpen, setAlarmOpen] = useState(false);
+  // 기한 줄은 기한이 있거나 '⏳ 기한 추가'를 눌렀을 때만 (P61 - 빈 날짜 칸이 늘 보여 날짜·끝 날·기한 세 날짜가 한꺼번에 보였다)
+  const [dueOpen, setDueOpen] = useState(false);
   const [deleteAsk, setDeleteAsk] = useState(false);
   // 끝 날 줄: 끝 날이 있거나, 눌러 폈거나, 새 일정에서 '기간'·'반복' 속성 라벨을 골랐으면
   const [periodPicked, setPeriodPicked] = useState(false);
@@ -629,6 +631,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                   {seriesInfo.series?.until ? ` (${shortDateLabel(seriesInfo.series.until)}까지)` : ''} - 고치거나 지우면 어디까지 할지 묻습니다.
                 </p>
               )}
+              {(form.due || dueOpen) && (
               <div className="flex items-center gap-1.5 flex-wrap" data-event-due>
                 <span className="text-xs font-bold text-slate-500 mr-1">기한</span>
                 <input
@@ -636,6 +639,8 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                   data-event-due-input
                   value={form.due}
                   onChange={(e) => setForm((f) => ({ ...f, due: e.target.value }))}
+                  // '⏳ 기한 추가'로 막 연 칸이면 곧바로 고르게
+                  autoFocus={dueOpen && !form.due}
                   aria-label="기한"
                   className="px-2 py-1 text-sm border border-slate-200 rounded-lg font-bold text-slate-700 bg-white"
                 />
@@ -645,7 +650,10 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                     <button
                       type="button"
                       data-event-due-clear
-                      onClick={() => setForm((f) => ({ ...f, due: '' }))}
+                      onClick={() => {
+                        setForm((f) => ({ ...f, due: '' }));
+                        setDueOpen(false);
+                      }}
                       title="기한 빼기"
                       aria-label="기한 빼기"
                       className="w-6 h-6 rounded-full text-slate-500 hover:text-red-500 hover:bg-slate-100 text-xs cursor-pointer"
@@ -655,6 +663,7 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
                   </>
                 )}
               </div>
+              )}
               {form.due && !attrs.forward && <p className="text-2xs text-slate-500">이월을 켜면 끝낼 때까지 날마다 따라오며 D-day가 줄어듭니다.</p>}
             </div>
 
@@ -674,6 +683,17 @@ export default function EventPanel({ params, close, raise, setParams }: WindowPr
               >
                 <Glyph e="⏰" /> {form.time ? `${shortDateLabel(form.date)} ${form.time}` : '알림 추가'}
               </button>
+              {/* 기한 - 고르면 위 날짜 줄 아래에 기한 줄이 서고, 끝내지 않은 동안 ⏳ D-3 (P61 - 늘 보이던 빈 날짜 칸을 단추로) */}
+              {!form.due && !dueOpen && (
+                <button
+                  type="button"
+                  data-event-due-open
+                  onClick={() => setDueOpen(true)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer text-slate-600 bg-slate-100 hover:bg-slate-200"
+                >
+                  <Glyph e="⏳" /> 기한 추가
+                </button>
+              )}
               {/* 링크 - 새 일정은 먼저 저장한다 */}
               <button
                 type="button"

@@ -127,16 +127,18 @@ describe('설정 문서 나누기', () => {
     expect(useLayoutPrefs.getState().sideAt).toBe('right');
   });
 
-  it('화면 배치(P59-1): 바꾼 것만 적고 받으면 입힌다 · 모르는 값은 기본(P59 전 모습) · ▲▼·쓴 시각은 html 표시로', () => {
+  it('화면 배치(P59-1): 바꾼 것만 적고 받으면 입힌다 · 모르는 값은 기본 · ▲▼·쓴 시각은 html 표시로', () => {
     startPrefsSync('u1');
     expect(binding('pc').local()).toEqual({});
-    useScreenPrefs.setState({ weekLessons: 'chips', orderArrows: 'toggle' });
-    expect(binding('pc').local()).toEqual({ weekLessons: 'chips', orderArrows: 'toggle' });
+    // ▲▼ 기본은 '⇅ 누를 때만'(P61) - 늘 보이기를 고른 것만 적힌다
     expect(document.documentElement.dataset.orderArrows).toBe('toggle');
+    useScreenPrefs.setState({ weekLessons: 'chips', orderArrows: 'always' });
+    expect(binding('pc').local()).toEqual({ weekLessons: 'chips', orderArrows: 'always' });
+    expect(document.documentElement.dataset.orderArrows).toBeUndefined();
     // 옛 칸 phoneCols(P59-1 - 카드 열은 #206에 이 기기 값 app/cardCols로)는 읽지 않는다
     binding('pc').apply({ memoNavAt: 'top', cardTime: false, weekLessons: 'nope', phoneCols: 1 });
     expect(useScreenPrefs.getState()).toMatchObject({ ...SCREEN_DEFAULTS, memoNavAt: 'top', cardTime: false });
-    expect(document.documentElement.dataset.orderArrows).toBeUndefined();
+    expect(document.documentElement.dataset.orderArrows).toBe('toggle');
     expect(document.documentElement.dataset.cardTime).toBe('off');
     binding('pc').apply({});
     expect(useScreenPrefs.getState()).toMatchObject(SCREEN_DEFAULTS);

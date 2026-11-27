@@ -353,7 +353,11 @@ try {
   await topic('event-add', async () => {
     await q(sel('event-add')).click();
     r.check(await has(sel('event-panel', 'new')), '+ 추가 → 새 일정 칸');
-    for (const s of ['event-text-input', 'event-date', 'event-due-input', 'event-alarm-open', 'event-period-open', 'label-picker']) r.check((await count(sel(s))) > 0, `칸: ${s}`);
+    for (const s of ['event-text-input', 'event-date', 'event-due-open', 'event-alarm-open', 'event-period-open', 'label-picker']) r.check((await count(sel(s))) > 0, `칸: ${s}`);
+    // 기한은 '⏳ 기한 추가'를 눌러야 날짜 칸이 선다 (P61)
+    r.check((await count(sel('event-due-input'))) === 0, '기한 칸은 처음엔 숨음');
+    await q(sel('event-due-open')).click();
+    r.check(await has(sel('event-due-input')), '⏳ 기한 추가 → 기한 날짜 칸');
     await q(sel('event-text-input')).fill('내일 15:00 점검');
     r.check(await waitFor(async () => (await count(sel('quick-chip'))) >= 2, 3000), '빠른 입력 칩 (내일·15:00)');
     await q(sel('event-text-input')).fill('');

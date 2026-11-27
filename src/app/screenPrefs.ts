@@ -5,7 +5,8 @@
 //   휴대폰(손가락 화면)에서만 듣는 것 - 환경설정도 휴대폰에서만 보인다:
 //     memoNavAt   메모 화면 라벨 칸 - 왼쪽 칸(기본) / 위 칩 줄 (좁은 화면에서 왼쪽 칸이 116px을 차지해 카드가 100px쯤이었다)
 //     (옛 phoneCols '카드 열 2열 / 1열'은 칸마다 고르는 '카드 열'(app/cardCols - 이 기기에만, PC에서도)로 바꿨다 - 11-25 메모 요청 #206)
-//     orderArrows 카드 ▲▼ - 늘(기본) / 칸 머리 ⇅를 눌렀을 때만 (html data-order-arrows - index.css가 숨긴다)
+//     orderArrows 카드 ▲▼ - 늘 / 칸 머리 ⇅를 눌렀을 때만(기본 - 11-27 P61 사용자 '추천대로': 휴대폰 2열 일정 카드에서 ▲▼가 한 줄을 통째로,
+//                 수업 목록 줄 앞 절반을 차지했다. 고르지 않은 휴대폰은 모두 이것 - 계정에는 기본과 다른 값만 적힌다) (html data-order-arrows - index.css가 숨긴다)
 //     cardTime    메모 카드 쓴 시각 - 보이기(기본) / 숨기기 (html data-card-time - index.css가 숨긴다)
 //
 //   PC·휴대폰 모두 (P59-2):
@@ -34,7 +35,7 @@ export interface ScreenPrefs {
   buildId: boolean;
 }
 
-export const SCREEN_DEFAULTS: ScreenPrefs = { memoNavAt: 'side', orderArrows: 'always', cardTime: true, monthFit: false, weekLessons: 'rows', monthLessons: 'chips', headerToggles: true, buildId: true };
+export const SCREEN_DEFAULTS: ScreenPrefs = { memoNavAt: 'side', orderArrows: 'toggle', cardTime: true, monthFit: false, weekLessons: 'rows', monthLessons: 'chips', headerToggles: true, buildId: true };
 export const SCREEN_KEYS = Object.keys(SCREEN_DEFAULTS) as ReadonlyArray<keyof ScreenPrefs>;
 
 export const useScreenPrefs = create<ScreenPrefs>()(persist((): ScreenPrefs => ({ ...SCREEN_DEFAULTS }), { name: 'sp5-screen' }));
