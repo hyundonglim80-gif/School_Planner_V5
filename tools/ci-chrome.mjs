@@ -26,6 +26,8 @@ import { join } from 'node:path';
 //   새로 더할 점검도 2월 말·3월 1일·두 해 뒤로 한 바퀴씩(CLAUDE.md 2장).
 // + 단추 겹침 측정 짧은 묶음(P57-3 - P57-1~3에 고친 겹침·잘린 글·가로 넘침·휴대폰 작은 누를 곳이 다시 생기지 않게: PC 1400·휴대폰 360 44상황 90초 쯤 ·
 //   SUITE=ci가 오늘을 2026-11-20에 묶어 FAKE_TODAY 2027-03-01·2028-03-02도 같다 · 일부러 옛 카드 단추 자리로 되돌리면 두 상황이 틀린다).
+// + 접근성 짧은 묶음(P62 - 읽어 주는 이름 없는 누를 것·콘솔 오류·어두운 화면과 흰 글씨 대비·☆ 꺼진 단추 3:1·Tab 초점: PC 밝은·어두운 + 휴대폰 어두운 34상황 70초 쯤 ·
+//   오늘을 2026-11-20에 묶음 · ☆를 옛 옅은 색으로 되돌리면 넷이 틀린다).
 const CI_PROBES = [
   ...['shell', 'memo', 'notes', 'progress', 'lessons', 'settings', 'events', 'week'],
   ...['month-year', 'board', 'gcal', 'forward', 'print'],
@@ -34,9 +36,10 @@ const CI_PROBES = [
   ...['clipboard-popup', 'attach', 'evaluations', 'side-left'],
   'manual',
   'ui-overlap',
+  'a11y',
 ];
 /** 점검마다 더 줄 값 - 겹침 측정은 짧은 묶음으로(넓은 상황 표는 손으로) */
-const PROBE_ENV = { 'ui-overlap': { SUITE: 'ci' } };
+const PROBE_ENV = { 'ui-overlap': { SUITE: 'ci' }, a11y: { SUITE: 'ci' } };
 
 const OUT = 'ci-out';
 const SITE = 'http://localhost:5175/';

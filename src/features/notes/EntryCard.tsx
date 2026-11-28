@@ -175,7 +175,7 @@ export default function EntryCard(props: EntryCardProps) {
               }}
               aria-pressed={favorite}
               className={`tap-area p-0.5 text-sm leading-none transition-colors cursor-pointer shrink-0 ${
-                favorite ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'
+                favorite ? 'text-amber-500' : 'text-slate-500 hover:text-amber-500'
               }`}
               title={favorite ? '즐겨찾기 풀기' : '즐겨찾기'}
             >

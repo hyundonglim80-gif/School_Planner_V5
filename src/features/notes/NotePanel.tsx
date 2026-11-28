@@ -558,7 +558,7 @@ export default function NotePanel({ params, close, raise, setParams }: WindowPro
                   disabled={flagBusy}
                   onClick={() => void toggleFlag('favorite')}
                   title={favorite ? '즐겨찾기 풀기' : '즐겨찾기'}
-                  className={`tap-area p-0.5 text-base leading-none transition-colors cursor-pointer shrink-0 ${favorite ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'}`}
+                  className={`tap-area p-0.5 text-base leading-none transition-colors cursor-pointer shrink-0 ${favorite ? 'text-amber-500' : 'text-slate-500 hover:text-amber-500'}`}
                 >
                   {favorite ? '★' : '☆'}
                 </button>
