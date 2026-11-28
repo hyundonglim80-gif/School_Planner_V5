@@ -157,11 +157,15 @@ const SETS = [
 
 /**
  * 자동 검사 짧은 묶음 (P57-3 - SUITE=ci): 다시 겹치지 않게 지킨다. 화면 일곱 × PC 1400(카드 올림·창 여덟)·휴대폰 360(창 여덟·여러 개 고르기·월간 그날 목록).
- * 넓은 상황 표(폭 1100·900·글자 150%·130%·왼쪽 칸·팝업창 …)는 손으로 - 화면 자리를 바꾸면 그 묶음을 SET_RE로 돌린다(CLAUDE.md 2장).
+ * + 글자 150%(PC 년간·하루·한눈에)·가로 휴대폰(하루·한눈에)·휴대폰 360 글자 130%(하루·메모) 화면만(P62). 나머지 넓은 상황 표(폭 1100·900·왼쪽 칸·팝업창 …)는 손으로 - 화면 자리를 바꾸면 그 묶음을 SET_RE로 돌린다(CLAUDE.md 2장).
  */
 const CI_SETS = [
   { name: 'pc1400', dev: PC1400, screens: 'all', windows: FEW, hover: true },
   { name: 'ph360', dev: PH360, screens: 'all', windows: FEW, extra: ['multi', 'sheet'] },
+  // 글자 크게·가로 휴대폰 (P62 - P61에서 이 셋에서만 생긴 것: 년간 날짜 '1/0' 꺾임 · 가로 휴대폰 수업 칸 머리 ⚙ 9px · 360 글자 130% 메모 정렬 줄)
+  { name: 'pc1400-font150', dev: PC1400, prefs: { fontSizes: ALL_FONT(150) }, screens: ['year', 'day', 'board'], windows: [] },
+  { name: 'phLand', dev: PHLAND, screens: ['day', 'board'], windows: [] },
+  { name: 'ph360-font130', dev: PH360, prefs: { fontSizes: ALL_FONT(130) }, screens: ['day', 'memo'], windows: [] },
 ];
 const RUN_SETS = SUITE === 'ci' ? CI_SETS : SETS;
 

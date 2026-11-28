@@ -128,7 +128,7 @@ export default function MemoListRow(props: Props) {
             onToggleFavorite();
           }}
           title={item.favorite ? '즐겨찾기 풀기' : '즐겨찾기'}
-          className={`text-sm leading-none shrink-0 cursor-pointer ${item.favorite ? 'text-amber-500' : 'text-slate-300 hover:text-amber-400'}`}
+          className={`text-sm leading-none shrink-0 cursor-pointer ${item.favorite ? 'text-amber-500' : 'text-slate-500 hover:text-amber-500'}`}
         >
           {item.favorite ? '★' : '☆'}
         </button>

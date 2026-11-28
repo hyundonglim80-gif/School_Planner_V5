@@ -253,7 +253,7 @@ function Avatar({ size }: { size: 'sm' | 'lg' }) {
   return user?.photoURL ? (
     <img src={user.photoURL} alt="" className={`${box} rounded-full border-2 border-white shadow-xs object-cover shrink-0`} />
   ) : (
-    <span className={`${box} rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-bold text-slate-500 shadow-xs shrink-0`}>
+    <span className={`${box} rounded-full bg-slate-200 border-2 border-white flex items-center justify-center font-bold text-slate-600 shadow-xs shrink-0`}>
       {(user?.displayName || '선').charAt(0)}
     </span>
   );
